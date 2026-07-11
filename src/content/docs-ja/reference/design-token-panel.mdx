@@ -44,7 +44,7 @@ export default defineConfig(
 );
 ```
 
-このショーケースは独自の `src/config/design-token-panel-config.ts` を正当なデータモジュールとして保持していますが（現状はパッケージのデフォルトをそのままミラーしています）、`designTokenPanelConfigModule` を指すのではなく、独自のブートストラップアイランド（`src/components/design-token-panel-bootstrap.tsx` → `src/lib/design-token-panel-bootstrap.ts`、[実装](#実装)を参照）を通して直接配線しています。`designTokenPanelConfigModule` は、独自のブートストラップアイランドを自作する代わりに、パッケージが自動注入するブートストラップ（`packageOwnedRoutes` 使用時のデフォルトの body-end アイランド）に自作のビルダーを読み込ませたい場合に使用します。
+このショーケースはパッケージのデフォルトビルダー（`@takazudo/zudo-doc/design-token-panel-config`）を、独自のブートストラップアイランド（`src/components/design-token-panel-bootstrap.tsx` → `src/lib/design-token-panel-bootstrap.ts`、[実装](#実装)を参照）に直接インポートしており、`designTokenPanelConfigModule` を指すのではなく直接配線しています（かつては `src/config/design-token-panel-config.ts` にビルダーをバイト単位でミラーしたコピーを保持していましたが、冗長だったため廃止しました）。`designTokenPanelConfigModule` は、独自のブートストラップアイランドを自作する代わりに、パッケージが自動注入するブートストラップ（`packageOwnedRoutes` 使用時のデフォルトの body-end アイランド）に自作のビルダーを読み込ませたい場合に使用します。
 
 ## 5つのタブ
 
@@ -205,13 +205,13 @@ Colorタブは常に、現在アクティブなモード（ライトまたはダ
 
 <Note title="ストレージプレフィックスの継続性保証">
 
-ストレージプレフィックス `zudo-doc-tweak` は、パッケージのデフォルトビルダー（`@takazudo/zudo-doc/design-token-panel-config`）— そしてこのショーケース自身のコピー（`src/config/design-token-panel-config.ts`、両者は同期されています）— に固定されており、変わりません。古いバージョンのキーで保存されたトークンも自動的に読み込まれ、初回ロード時に現在の `zudo-doc-tweak-state-v3` エンベロープへとマイグレーションされるため、手動のマイグレーション作業は不要です。
+ストレージプレフィックス `zudo-doc-tweak` は、パッケージのデフォルトビルダー（`@takazudo/zudo-doc/design-token-panel-config`、このショーケースもそのまま利用しています）に固定されており、変わりません。古いバージョンのキーで保存されたトークンも自動的に読み込まれ、初回ロード時に現在の `zudo-doc-tweak-state-v3` エンベロープへとマイグレーションされるため、手動のマイグレーション作業は不要です。
 
 </Note>
 
 ## 実装
 
-パネルUIは `@takazudo/zdtp`（zdtp）npmパッケージが提供します。配線の仕組み — `configurePanel` の呼び出し、zfb のナビゲーションライフサイクルへのフック、および後述のモードスコープな destroy+reconfigure — は `@takazudo/zudo-doc/design-token-panel-bootstrap` にあります。プロジェクトの `src/lib/design-token-panel-bootstrap.ts` は、`bootstrapDesignTokenPanel(buildDesignTokenPanelConfig)` を呼び出すことで、その仕組みにプロジェクトの設定*データ*を渡します。ここで `buildDesignTokenPanelConfig`（`src/config/design-token-panel-config.ts`）は、プレーンな設定オブジェクトではなく `(mode) => PanelConfig` のビルダーです — これが Color タブをライト/ダークに追従させる仕組みです。パネルはこの呼び出しのサイドエフェクトとして自己マウントされるため、Preactアイランドの登録は不要です。
+パネルUIは `@takazudo/zdtp`（zdtp）npmパッケージが提供します。配線の仕組み — `configurePanel` の呼び出し、zfb のナビゲーションライフサイクルへのフック、および後述のモードスコープな destroy+reconfigure — は `@takazudo/zudo-doc/design-token-panel-bootstrap` にあります。プロジェクトの `src/lib/design-token-panel-bootstrap.ts` は、`bootstrapDesignTokenPanel(buildDesignTokenPanelConfig)` を呼び出すことで、その仕組みにパネルの設定*データ*を渡します。ここで `buildDesignTokenPanelConfig`（`@takazudo/zudo-doc/design-token-panel-config` から直接インポートされる、パッケージデフォルトのビルダー）は、プレーンな設定オブジェクトではなく `(mode) => PanelConfig` のビルダーです — これが Color タブをライト/ダークに追従させる仕組みです。パネルはこの呼び出しのサイドエフェクトとして自己マウントされるため、Preactアイランドの登録は不要です。
 
 （テーマトグルがディスパッチする）`color-scheme-changed` イベントのたびに、ブートストラップは新しいモードを読み取り、素早い連続トグルを 1 つのマクロタスクにまとめてから、`handle.destroy()` に続けて `configurePanel(buildDesignTokenPanelConfig(mode))` を呼び出します — zdtp の `configurePanel` は、構造的に異なる設定でその場で再実行すると例外を投げるため、destroy してから再構成することが、Color タブのモードスコープなデフォルトを差し替える唯一のサポートされた方法です。パネルが開いていた場合は、開いた状態で再マウントされます。
 

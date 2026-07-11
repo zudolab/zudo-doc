@@ -7,8 +7,12 @@
  *
  * The wiring MECHANISM (configurePanel + setLifecycleAdapter + the mode-scoped
  * reconfigure) lives in the package at
- * `@takazudo/zudo-doc/design-token-panel-bootstrap`. This file passes the
- * project's PanelConfig DATA to that mechanism.
+ * `@takazudo/zudo-doc/design-token-panel-bootstrap`. This file passes that
+ * mechanism the PanelConfig DATA — the package-default builder from
+ * `@takazudo/zudo-doc/design-token-panel-config` (the showcase used to keep a
+ * byte-for-byte-mirrored copy of this builder at
+ * `src/config/design-token-panel-config.ts`; that copy was dropped as
+ * redundant, see #2682).
  *
  * We pass the `buildDesignTokenPanelConfig` BUILDER (not the plain
  * `designTokenPanelConfig` object) so the bootstrap rebuilds the panel per
@@ -27,6 +31,6 @@
  */
 
 import { bootstrapDesignTokenPanel } from "@takazudo/zudo-doc/design-token-panel-bootstrap";
-import { buildDesignTokenPanelConfig } from "@/config/design-token-panel-config";
+import { buildDesignTokenPanelConfig } from "@takazudo/zudo-doc/design-token-panel-config";
 
 bootstrapDesignTokenPanel(buildDesignTokenPanelConfig);

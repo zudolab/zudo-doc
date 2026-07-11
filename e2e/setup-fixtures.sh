@@ -61,9 +61,7 @@
 #         i18n.ts                   src/config/*.ts | *.tsx except
 #         sidebars.ts               settings.ts; auto-overwrite keeps
 #         contrast-utils.ts         drift in check)
-#         design-token-panel-config.ts
 #         frontmatter-preview-renderers.tsx
-#         design-tokens-manifest.ts
 #       content/             (fixture-specific, kept in git)
 #       components/          → ../../../../src/components
 #       lib/                 → ../../../../src/lib
@@ -317,10 +315,21 @@ setup_fixture() {
     ln -sfn "$source" "$fixture_dir/src/$dir"
   done
 
+  # ----- Prune stale gitignored copies of files retired from src/config/ -----
+  # The copy loop below only copies files that currently exist under
+  # src/config/ — it never deletes a fixture-side copy left over from a
+  # previous run once the source file is gone. `design-token-panel-config.ts`
+  # and `design-tokens-manifest.ts` were retired from src/config/ in #2682
+  # (the showcase now consumes the package-default DTP config directly); a
+  # fixture set up before that change keeps stale copies around otherwise,
+  # since `e2e/fixtures/*/src/config/*` is gitignored.
+  rm -f "$fixture_dir/src/config/design-token-panel-config.ts" \
+    "$fixture_dir/src/config/design-tokens-manifest.ts"
+
   # ----- Copy src/config/* (except settings.ts) -----
   # Each fixture provides its own settings.ts; the rest of src/config/
-  # is copied so relative imports inside i18n.ts / design-token-panel-config.ts /
-  # etc. resolve against the fixture's settings.ts (which differs from
+  # is copied so relative imports inside i18n.ts / sidebars.ts / etc.
+  # resolve against the fixture's settings.ts (which differs from
   # the repo-root one).
   for file in "$REPO_ROOT"/src/config/*.ts "$REPO_ROOT"/src/config/*.tsx; do
     [ -e "$file" ] || continue

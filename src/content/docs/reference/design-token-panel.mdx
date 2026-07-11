@@ -44,7 +44,7 @@ export default defineConfig(
 );
 ```
 
-This showcase keeps its own `src/config/design-token-panel-config.ts` as a legitimate data module (it currently mirrors the package default) — but wires it directly through its own bootstrap island (`src/components/design-token-panel-bootstrap.tsx` → `src/lib/design-token-panel-bootstrap.ts`, see [Implementation](#implementation)) rather than through `designTokenPanelConfigModule`. Use `designTokenPanelConfigModule` when you want the package's own auto-injected bootstrap (the default body-end island under `packageOwnedRoutes`) to pick up your custom builder instead of hand-rolling a bootstrap island of your own.
+This showcase imports the package-default builder (`@takazudo/zudo-doc/design-token-panel-config`) directly into its own bootstrap island (`src/components/design-token-panel-bootstrap.tsx` → `src/lib/design-token-panel-bootstrap.ts`, see [Implementation](#implementation)) rather than going through `designTokenPanelConfigModule` — it used to keep a byte-for-byte-mirrored copy of the builder at `src/config/design-token-panel-config.ts`, retired as redundant. Use `designTokenPanelConfigModule` when you want the package's own auto-injected bootstrap (the default body-end island under `packageOwnedRoutes`) to pick up your custom builder instead of hand-rolling a bootstrap island of your own.
 
 ## The Five Tabs
 
@@ -205,13 +205,13 @@ Switching the light/dark theme does **not** delete your saved tweaks, and an ope
 
 <Note title="Storage prefix continuity guarantee">
 
-The storage prefix `zudo-doc-tweak` is locked in the package-default builder (`@takazudo/zudo-doc/design-token-panel-config`) — and in this showcase's own copy (`src/config/design-token-panel-config.ts`, kept in lockstep) — and will not change. Any tokens a user saved under an older key version continue to load automatically — they are migrated into the current `zudo-doc-tweak-state-v3` envelope on first load, with no manual migration step needed.
+The storage prefix `zudo-doc-tweak` is locked in the package-default builder (`@takazudo/zudo-doc/design-token-panel-config`, which this showcase consumes directly) and will not change. Any tokens a user saved under an older key version continue to load automatically — they are migrated into the current `zudo-doc-tweak-state-v3` envelope on first load, with no manual migration step needed.
 
 </Note>
 
 ## Implementation
 
-The panel UI is provided by the `@takazudo/zdtp` (zdtp) npm package. The wiring mechanism — calling `configurePanel`, hooking zfb's navigation lifecycle, and the mode-scoped destroy+reconfigure described below — lives in `@takazudo/zudo-doc/design-token-panel-bootstrap`. The project's `src/lib/design-token-panel-bootstrap.ts` passes that mechanism the project's config *data* by calling `bootstrapDesignTokenPanel(buildDesignTokenPanelConfig)`, where `buildDesignTokenPanelConfig` (`src/config/design-token-panel-config.ts`) is a `(mode) => PanelConfig` builder, not a plain config object — this is what lets the Color tab follow light/dark. The panel self-mounts as a side-effect of that call — there is no Preact island registration for it.
+The panel UI is provided by the `@takazudo/zdtp` (zdtp) npm package. The wiring mechanism — calling `configurePanel`, hooking zfb's navigation lifecycle, and the mode-scoped destroy+reconfigure described below — lives in `@takazudo/zudo-doc/design-token-panel-bootstrap`. The project's `src/lib/design-token-panel-bootstrap.ts` passes that mechanism the panel's config *data* by calling `bootstrapDesignTokenPanel(buildDesignTokenPanelConfig)`, where `buildDesignTokenPanelConfig` (imported directly from `@takazudo/zudo-doc/design-token-panel-config`, the package-default builder) is a `(mode) => PanelConfig` builder, not a plain config object — this is what lets the Color tab follow light/dark. The panel self-mounts as a side-effect of that call — there is no Preact island registration for it.
 
 On every `color-scheme-changed` event (dispatched by the theme toggle), the bootstrap reads the new mode and coalesces rapid toggles onto a single macrotask, then calls `handle.destroy()` followed by `configurePanel(buildDesignTokenPanelConfig(mode))` — zdtp's `configurePanel` throws if re-run in place with a structurally different config, so destroy-then-reconfigure is the only supported way to swap the Color tab's mode-scoped defaults. If the panel was open, it's re-mounted open.
 
