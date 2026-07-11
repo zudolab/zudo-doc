@@ -1,5 +1,6 @@
 import type {
   HeaderNavItem,
+  ChangelogConfig,
   ColorModeConfig,
   LocaleConfig,
   MetaTagsConfig,
@@ -38,7 +39,7 @@ export const settings = {
   sitemap: false,
   docMetainfo: false,
   docTags: false,
-  changelogs: false,
+  changelogs: false as ChangelogConfig[] | false,
   math: false,
   docHistory: false,
   claudeResources: false as { claudeDir: string; projectRoot?: string; scanRoot?: string } | false,

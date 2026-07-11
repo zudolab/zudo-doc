@@ -1,6 +1,7 @@
 import type {
   HeaderNavItem,
   HeaderRightItem,
+  ChangelogConfig,
   ColorModeConfig,
   LocaleConfig,
   MetaTagsConfig,
@@ -35,7 +36,7 @@ export const settings = {
   sitemap: false,
   docMetainfo: false,
   docTags: false,
-  changelogs: false,
+  changelogs: false as ChangelogConfig[] | false,
   math: false,
   designTokenPanel: true as boolean,
   dynamicPageTransition: true as boolean,
