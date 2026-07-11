@@ -90,13 +90,13 @@ Set `REPO_ROOT` to the repository root (absolute path). Run the generator from w
 
 ### CLI Commands per Pattern
 
-**barebone** — every flag with a `default: true` in `constants.ts` (`search`, `sidebarFilter`, `imageEnlarge`, `dynamicPageTransition`) must be EXPLICITLY turned off, or `--yes` fills it in as ON:
+**barebone** — every flag with a `default: true` in `constants.ts` (`search`, `sidebarFilter`, `imageEnlarge`, `dynamicPageTransition`, `footerCopyright`) must be EXPLICITLY turned off, or `--yes` fills it in as ON:
 
 ```bash
 cd __inbox/generator-test-barebone && \
   node $REPO_ROOT/packages/create-zudo-doc/dist/index.js test-project --yes \
   --no-search --no-sidebar-filter --no-i18n --no-claude-resources \
-  --no-image-enlarge --no-dynamic-page-transition --no-tag-governance \
+  --no-image-enlarge --no-dynamic-page-transition --no-footer-copyright --no-tag-governance \
   --color-scheme-mode single --scheme "Default Dark" --no-install
 ```
 
@@ -525,7 +525,7 @@ Provide a clear pass/fail report:
 ## Important Notes
 
 - Always `cd` back to the repo root between major steps (use absolute paths)
-- The `--yes` flag auto-fills all unspecified options with defaults. Feature defaults with `--yes`: search=true, sidebarFilter=true, imageEnlarge=true, dynamicPageTransition=true, tagGovernance=false, i18n=false, claudeResources=false, designTokenPanel=false (all other features false)
+- The `--yes` flag auto-fills all unspecified options with defaults. Feature defaults with `--yes`: search=true, sidebarFilter=true, imageEnlarge=true, dynamicPageTransition=true, footerCopyright=true, tagGovernance=false, i18n=false, claudeResources=false, designTokenPanel=false (all other features false)
 - Use `--no-install` with CLI to prevent auto-install, then install manually for better error visibility
 - `sidebarFilter` has zero structural effect in the minimal manifest (no TODO, no strip step needed — it never had a file or field to remove)
 - The dev server smoke test uses `pnpm dev` (generated projects have a single `dev` script)
