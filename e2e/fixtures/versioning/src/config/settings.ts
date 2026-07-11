@@ -36,6 +36,7 @@ export const settings = {
   changelogs: false as ChangelogConfig[] | false,
   math: false,
   docHistory: false,
+  findInPage: false as boolean,
   dynamicPageTransition: true as boolean,
   versions: [
     {
