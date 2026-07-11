@@ -118,7 +118,6 @@ pages/                    # File-routed pages (.tsx) — zfb resolves these
                             # src/chrome-bindings.tsx + the chromeBindingsModule setting.
                             # NOT present in a fresh create-zudo-doc scaffold (package-owned there).
 packages/
-├── md-plugins/           # Legacy JS remark/rehype plugins (superseded by zfb Rust pipeline; kept for fixture/unit-test coverage)
 ├── search-worker/        # CF Worker for search API
 ├── doc-history-server/   # Doc history REST API + CLI generator
 ├── zudo-doc/             # Shared layout + integration package — owns chrome/routes/islands/plugins/preset (@takazudo/zudo-doc)
