@@ -53,6 +53,7 @@ export const settings = {
   sidebarResizer: false,
   sidebarToggle: false,
   imageEnlarge: false,
+  findInPage: false,
   dynamicPageTransition: false,
   frontmatterPreview: false,
   docHistory: false,

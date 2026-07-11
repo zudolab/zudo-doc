@@ -33,12 +33,14 @@ const ALL_ON = {
   imageEnlarge: true,
   mermaid: true,
   dynamicPageTransition: true,
+  findInPage: true,
 };
 const ALL_OFF = {
   aiAssistant: false,
   imageEnlarge: false,
   mermaid: false,
   dynamicPageTransition: false,
+  findInPage: false,
 };
 
 function renderIslands(
@@ -48,6 +50,7 @@ function renderIslands(
     mermaid: boolean;
     dynamicPageTransition: boolean;
     designTokenPanel?: boolean;
+    findInPage?: boolean;
   },
   deps: { DesignTokenPanelBootstrap?: typeof FakeDesignTokenPanelBootstrap } = {},
 ): string {
@@ -249,5 +252,57 @@ describe("BodyEndIslands — DesignTokenPanelBootstrap island gate (#2658)", () 
     );
     expect(html).toContain(MARKER);
     expect(html).toContain('data-zfb-island-skip-ssr="ImageEnlarge"');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// FindInPageInit island gate (zudolab/zudo-doc#2689). Unlike
+// DesignTokenPanelBootstrap, `FindInPageInit` is a plain static top-level
+// import (no `deps` injection — see the module header note in `../index.tsx`),
+// so this only needs to gate on `settings.findInPage`. It renders nothing on
+// either side (self-gates on `window.__TAURI_INTERNALS__`), so — mirroring
+// DesignTokenPanelBootstrap — it is the plain (non-skip-ssr) `Island` form:
+// `data-zfb-island="FindInPageInit"`.
+// ---------------------------------------------------------------------------
+
+describe("BodyEndIslands — FindInPageInit island gate (#2689)", () => {
+  const MARKER = 'data-zfb-island="FindInPageInit"';
+
+  it("findInPage ON: emits the (non-skip-ssr) island marker", () => {
+    const html = renderIslands({ ...ALL_OFF, findInPage: true });
+    expect(html).toContain(MARKER);
+    // Not the skip-ssr variant — the component has no SSR fallback to skip.
+    expect(html).not.toContain('data-zfb-island-skip-ssr="FindInPageInit"');
+  });
+
+  it("findInPage OFF: emits no marker", () => {
+    const html = renderIslands({ ...ALL_OFF, findInPage: false });
+    expect(html).not.toContain(MARKER);
+  });
+
+  it("findInPage undefined (external caller compat, mirrors dynamicPageTransition/designTokenPanel): treated as OFF", () => {
+    const html = renderIslands({
+      aiAssistant: false,
+      imageEnlarge: false,
+      mermaid: false,
+      dynamicPageTransition: false,
+    });
+    expect(html).not.toContain(MARKER);
+  });
+
+  it("gates independently of the other island flags (findInPage ON + imageEnlarge ON)", () => {
+    const html = renderIslands({ ...ALL_OFF, imageEnlarge: true, findInPage: true });
+    expect(html).toContain(MARKER);
+    expect(html).toContain('data-zfb-island-skip-ssr="ImageEnlarge"');
+  });
+
+  it("all package-island flags ON (ALL_ON) includes the FindInPageInit marker", () => {
+    const html = renderIslands(ALL_ON);
+    expect(html).toContain(MARKER);
+  });
+
+  it("all package-island flags OFF (ALL_OFF) emits no FindInPageInit marker", () => {
+    const html = renderIslands(ALL_OFF);
+    expect(html).not.toContain(MARKER);
   });
 });

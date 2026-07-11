@@ -321,6 +321,12 @@ export interface Settings {
   sidebarResizer: boolean;
   sidebarToggle: boolean;
   imageEnlarge: boolean;
+  /**
+   * Mount the `FindInPageInit` island (Cmd/Ctrl+F find bar). Self-gates on
+   * `window.__TAURI_INTERNALS__` — a no-op outside a Tauri shell even when
+   * `true`, since the OS/browser already own that shortcut elsewhere.
+   */
+  findInPage: boolean;
   dynamicPageTransition: boolean;
   frontmatterPreview: FrontmatterPreviewConfig | false;
   docHistory: boolean;
