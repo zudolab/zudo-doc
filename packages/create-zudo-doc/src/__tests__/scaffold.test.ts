@@ -902,7 +902,16 @@ describe("scaffold — the doc-route stub is patched (not duplicated) when docHi
     expect(stub).toContain(
       'import { DocHistory } from "@takazudo/zudo-doc/doc-history";',
     );
-    expect(stub).toContain("DocHistory: DocHistory as unknown as ChromeHostBindings[\"DocHistory\"]");
+    expect(stub).toContain(
+      'import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";',
+    );
+    expect(stub).toContain(
+      "createChrome(routeCtx, defineChromeBindings({ DocHistory }))",
+    );
+    // Only the DocHistory-specific widening cast is in scope here — the
+    // unrelated `routeContext as unknown as RouteContextPayload` cast earlier
+    // in the stub (base template, #2653) is a separate concern.
+    expect(stub).not.toContain("DocHistory as unknown as");
   });
 
   it("also patches the i18n locale stub when both i18n and docHistory are selected", async () => {
