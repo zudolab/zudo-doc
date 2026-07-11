@@ -156,12 +156,12 @@ export default defineConfig(
 ```
 
 ```tsx title="src/chrome-bindings.tsx"
-import type { ChromeHostBindings } from "@takazudo/zudo-doc/factory-context";
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
 
-export const chromeBindings: ChromeHostBindings = {
+export const chromeBindings = defineChromeBindings({
   docContentHeaderExtras: ({ entry }) =>
     entry.data.tier === "core" ? <span class="...">Core</span> : null,
-};
+});
 ```
 
 Design Token Panel には並行チャネル `designTokenPanelConfigModule` があります。パッケージデフォルトのパネルはゼロコンフィグ（`designTokenPanel: true` だけ）で動作し、完全にカスタマイズするには、その設定を `buildDesignTokenPanelConfig(mode)` をエクスポートするホストモジュールに向けます。両チャネルは — ファイルが無いときの大きな声での失敗挙動も含め — [ホストクロームバインディング](./host-chrome-bindings.mdx)で詳しく説明されています。

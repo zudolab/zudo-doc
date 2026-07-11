@@ -156,12 +156,12 @@ export default defineConfig(
 ```
 
 ```tsx title="src/chrome-bindings.tsx"
-import type { ChromeHostBindings } from "@takazudo/zudo-doc/factory-context";
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
 
-export const chromeBindings: ChromeHostBindings = {
+export const chromeBindings = defineChromeBindings({
   docContentHeaderExtras: ({ entry }) =>
     entry.data.tier === "core" ? <span class="...">Core</span> : null,
-};
+});
 ```
 
 The Design Token Panel has a parallel channel, `designTokenPanelConfigModule`: the package-default panel works with zero config (just `designTokenPanel: true`), and to fully customize it you point that setting at a host module exporting `buildDesignTokenPanelConfig(mode)`. Both channels are documented in full — including their loud missing-file behavior — on [Host Chrome Bindings](./host-chrome-bindings.mdx).

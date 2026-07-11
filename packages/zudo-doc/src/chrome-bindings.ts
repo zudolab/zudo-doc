@@ -33,10 +33,7 @@
 // `@takazudo/zudo-doc/chrome-bindings` (NOT folded into `./chrome`, which would
 // drag the whole `createChrome` tree into hosts that only want the helper).
 
-import type {
-  ChromeHostBindings,
-  FactoryComponent,
-} from "./factory-context/index.js";
+import type { ChromeHostBindings } from "./factory-context/index.js";
 
 // ===========================================================================
 // Per-slot CALL-SIDE prop/arg contracts.

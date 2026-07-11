@@ -491,7 +491,7 @@ Default: `true`
 
 ### chromeBindingsModule
 
-Project-root-relative path to a host module exporting `chromeBindings: ChromeHostBindings` (only consumed when `packageOwnedRoutes` is on). Omit to keep the injected chrome shim at its package-default stubs.
+Project-root-relative path to a host module exporting a `chromeBindings` object built with `defineChromeBindings` (from `@takazudo/zudo-doc/chrome-bindings`; only consumed when `packageOwnedRoutes` is on). Omit to keep the injected chrome shim at its package-default stubs.
 
 Default: `undefined`
 
