@@ -600,7 +600,7 @@
     "@takazudo/zfb": "^0.1.0-next.78",
     "@takazudo/zfb-runtime": "^0.1.0-next.78",
     "@takazudo/zudo-doc-history-server": "^3.1.0",
-    "@takazudo/zdtp": "^0.4.5",
+    "@takazudo/zdtp": "^0.4.6",
     "shiki": "^4.0.2",
     "zod": "^4.3.6",
     "katex": "^0.16.0",

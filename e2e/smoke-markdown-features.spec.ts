@@ -9,15 +9,16 @@ import { readDistFile } from "./smoke-dist-helper";
 /**
  * L3 golden coverage for markdown-behavior clusters that matter to this
  * project, asserted against the SHIPPING zfb Rust pipeline's built `dist/`
- * output — not the retired `packages/md-plugins` JS shim corpus.
+ * output.
  *
- * Why this file exists (zudolab/zudo-doc#2539): `packages/md-plugins`'
- * 80-test golden corpus tests a JS pipeline that no production code path
- * imports anymore (production markdown is entirely the zfb Rust pipeline),
- * and nothing previously asserted the Rust pipeline's own markdown-link /
- * CJK / table behavior end-to-end. See `packages/md-plugins/AUDIT.md` for
- * the full plugin-by-plugin classification and the corrected NOTE-1/NOTE-2
- * entries this spec makes true.
+ * Why this file exists (zudolab/zudo-doc#2539): the legacy JS remark/rehype
+ * pipeline that used to live at `packages/md-plugins/` (80-test golden
+ * corpus) tested a pipeline that no production code path imported anymore
+ * (production markdown is entirely the zfb Rust pipeline), and nothing
+ * previously asserted the Rust pipeline's own markdown-link / CJK / table
+ * behavior end-to-end. This spec fills that gap. `packages/md-plugins/` was
+ * itself deleted outright in #2683, once this spec (and the rest of the L3
+ * suite) made it redundant even as a parity-diffing fixture corpus.
  *
  * Cluster coverage split across specs (do not duplicate):
  *   - admonitions/directives → e2e/smoke-admonitions.spec.ts,
@@ -25,12 +26,11 @@ import { readDistFile } from "./smoke-dist-helper";
  *   - CJK-friendly emphasis, .md/.mdx link rewriting (incl. query strings),
  *     GFM tables, KaTeX math → THIS file
  *
- * The retired-JS-bug decision (do not relitigate): `packages/md-plugins/
- * __fixtures__/expected-html/08-md-links.html` line 6 still pins the old
- * `rehypeStripMdExtension` regex bug (`./other.md?foo=bar` left unrewritten)
- * on purpose — that fixture proves the JS shim's own historical behavior for
- * parity-diffing, not what ships. The "With query" case below is the L3
- * proof that the PRODUCTION Rust pipeline does not have this bug.
+ * The retired-JS-bug decision (do not relitigate): the old JS pipeline's
+ * `rehypeStripMdExtension` regex had a bug where `./other.md?foo=bar` was
+ * left unrewritten (its golden fixture pinned that as expected JS-shim
+ * behavior). The "With query" case below is the L3 proof that the
+ * PRODUCTION Rust pipeline does not have this bug.
  */
 
 // ---------------------------------------------------------------------------
@@ -53,11 +53,11 @@ test.describe("Markdown links: resolveMarkdownLinks + stripMdExt", () => {
   });
 
   test("markdown-syntax link with a query string resolves AND keeps the query string (the retired JS bug does not reproduce in production)", () => {
-    // This is the golden that proves packages/md-plugins/__fixtures__/
-    // expected-html/08-md-links.html line 6 pins RETIRED JS behavior, not a
-    // live regression: the JS regex /\.mdx?(#.*)?$/ never matched query
-    // strings, so `./other.md?foo=bar` stayed unrewritten there. The Rust
-    // pipeline resolves the link to its real route AND preserves `?foo=bar`.
+    // This is the golden that proves the old JS pipeline's behavior (now
+    // retired, #2683) was a JS-only limitation, not a live regression: its
+    // regex /\.mdx?(#.*)?$/ never matched query strings, so
+    // `./other.md?foo=bar` stayed unrewritten there. The Rust pipeline
+    // resolves the link to its real route AND preserves `?foo=bar`.
     expectHtmlLink(html, "/docs/guides/page-1/?foo=bar", "With query");
   });
 
@@ -82,13 +82,13 @@ test.describe("Markdown links: resolveMarkdownLinks + stripMdExt", () => {
   });
 
   test("a JSX-authored raw <a> keeps its authored href (not a markdown link node, so resolveMarkdownLinks/stripMdExt never see it)", () => {
-    // Documents a genuine divergence from the JS pipeline: the JS driver
-    // parses raw HTML via rehype-raw into the same hast tree markdown
-    // links flow through, so rehypeStripMdExtension touches BOTH forms
-    // (see packages/md-plugins/__fixtures__/13-strip-md-extension.mdx). In
-    // the production MDX pipeline, JSX-authored <a> compiles straight to
-    // JSX and never becomes a markdown mdast link node, so neither
-    // resolveMarkdownLinks nor StripMdExtensionPlugin process it.
+    // Documents a genuine divergence from the old (now-retired, #2683) JS
+    // pipeline: that JS driver parsed raw HTML via rehype-raw into the same
+    // hast tree markdown links flow through, so its rehypeStripMdExtension
+    // touched BOTH forms. In the production MDX pipeline, JSX-authored <a>
+    // compiles straight to JSX and never becomes a markdown mdast link
+    // node, so neither resolveMarkdownLinks nor StripMdExtensionPlugin
+    // process it.
     expectHtmlLink(
       html,
       "./page-1.md?foo=bar",

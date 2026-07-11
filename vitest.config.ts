@@ -9,8 +9,8 @@ export default defineConfig({
       // mode (the production zfb/vite build aliases these too). The precompiled
       // zfb island runtime (@takazudo/zfb/dist/island.js) hardcodes
       // `import { jsx } from "react/jsx-runtime"`; without these aliases any test
-      // that transitively loads it (e.g. src/config/__tests__/design-token-panel-config)
-      // fails with "Cannot find package 'react'" since this is a Preact project.
+      // that transitively loads it fails with "Cannot find package 'react'"
+      // since this is a Preact project.
       // Most-specific keys first so `react/jsx-runtime` is not swallowed by `react`.
       // Mirrors packages/zudo-doc/vitest.config.ts.
       "react/jsx-runtime": "preact/jsx-runtime",

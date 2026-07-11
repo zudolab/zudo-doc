@@ -6,11 +6,10 @@ sidebar_position: 20
 {/*
   L3 golden coverage for markdown-link rewriting against the production
   zfb Rust pipeline (resolveMarkdownLinks + stripMdExt) — including the
-  query-string case that packages/md-plugins/__fixtures__ pins as a
-  RETIRED JS bug (see packages/md-plugins/AUDIT.md NOTE-2 and
-  expected-html/08-md-links.html line 6: `./other.md?foo=bar` is left
-  unrewritten by the old JS regex `/\.mdx?(#.*)?$/`, which does not match
-  query strings). The production Rust pipeline resolves markdown-syntax
+  query-string case that used to be a RETIRED JS bug in the now-deleted
+  packages/md-plugins/ pipeline (#2683): `./other.md?foo=bar` was left
+  unrewritten by the old JS regex `/\.mdx?(#.*)?$/`, which did not match
+  query strings. The production Rust pipeline resolves markdown-syntax
   `.mdx` links (including the query-string case) to real routes instead.
   zudolab/zudo-doc#2539.
 */}

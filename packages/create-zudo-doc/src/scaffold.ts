@@ -475,8 +475,10 @@ export async function scaffold(choices: UserChoices): Promise<void> {
 
 function generatePackageJson(choices: UserChoices) {
   // Intentionally absent from scaffolded deps:
-  //   @takazudo/zudo-doc-md-plugins — private fixture/parity-test asset; not published,
-  //   not for app import. Zero references in generator templates/source.
+  //   @takazudo/zudo-doc-md-plugins — the legacy JS remark/rehype pipeline it
+  //   would have named was retired outright (packages/md-plugins/ deleted,
+  //   #2683); its parity coverage lives in e2e/smoke-markdown-features.spec.ts.
+  //   Zero references in generator templates/source.
   const deps: Record<string, string> = {
     // zfb engine — distributed as published npm packages (the prebuilt binary
     // ships via an optionalDependency of @takazudo/zfb-<platform>); pinned to
@@ -692,8 +694,10 @@ function generatePackageJson(choices: UserChoices) {
     // the setting, not the import. Without this dep, `zfb build` fails with
     // "Could not resolve '@takazudo/zdtp'" even on a fully barebone project.
     // `preact ^10.29.1` (see the floor comment above) is required for the
-    // same reason.
-    "@takazudo/zdtp": "0.4.5",
+    // same reason. This is the ACCEPTED, permanent contract per #2668 — see
+    // the "@takazudo/zdtp dep implication" note in
+    // packages/zudo-doc/docs/adr/route-injection-seam.md.
+    "@takazudo/zdtp": "0.4.6",
   };
 
   const devDeps: Record<string, string> = {

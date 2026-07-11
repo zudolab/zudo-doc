@@ -298,6 +298,19 @@ the same `setup(ctx)` hook.
   `packageOwnedRoutes: false` host that bundles chrome must register/alias
   that module itself (the package vitest config aliases it to the package
   default for fast tests).
+- **`@takazudo/zdtp` dep implication:** the same static import that makes
+  `DesignTokenPanelBootstrap` the seam default (`chrome/derive.tsx`, ~line
+  55) makes `@takazudo/zdtp` an **unconditional build-time dependency** of
+  every `createChrome` consumer — even `designTokenPanel: false` projects
+  (the "Could not resolve '@takazudo/zdtp'" failure class from #2660). Same
+  shape as the `diff` peer implication above: only RENDERING is gated on the
+  setting, not the import, and there is no way to keep the static import
+  (required for scanner reachability) *and* avoid bundling zdtp when the
+  feature is off. This is the ACCEPTED, permanent contract per #2668. The
+  generator's unconditional `"@takazudo/zdtp"` dependency in
+  `generatePackageJson()` (`packages/create-zudo-doc/src/scaffold.ts`) is the
+  corresponding scaffold-side guarantee — without it `zfb build` fails with
+  the same error even on a fully barebone project.
 - **Mode-scoped BUILDER, not a resolved config** (#2610): the virtual module
   re-exports a `(mode: "light" | "dark") => PanelConfig` function, never a
   plain object — `@takazudo/zudo-doc/design-token-panel-bootstrap`'s

@@ -38,11 +38,11 @@ export default defineConfig(
     // Cloudflare adapter — required for routes with `prerender = false`
     // (currently pages/api/ai-chat.tsx). Bindings via wrangler.toml.
     adapter: "@takazudo/zfb-adapter-cloudflare",
-    // Keep the md-plugins test fixtures and e2e fixtures out of the bundler's
-    // shadow-tree walk. bundle.exclude (zfb next.22) is the intended escape
-    // hatch; adopted with next.23 after the stale ambient-type fix (#1834).
+    // Keep the e2e fixtures out of the bundler's shadow-tree walk.
+    // bundle.exclude (zfb next.22) is the intended escape hatch; adopted with
+    // next.23 after the stale ambient-type fix (#1834).
     bundle: {
-      exclude: ["packages/md-plugins/__fixtures__/**", "e2e/fixtures/**", "_temp-resource/**"],
+      exclude: ["e2e/fixtures/**", "_temp-resource/**"],
     },
   }),
 );

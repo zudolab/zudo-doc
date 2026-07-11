@@ -52,6 +52,11 @@ import { createBodyEndIslands } from "../doc-body-end-islands/index.js";
 // `@takazudo/zudo-doc/design-token-panel-config`) itself — see the KNOWN
 // COUPLING note in `../design-token-panel-bootstrap.tsx`. The package's own
 // vitest config aliases it for fast tests (vitest.config.ts).
+//
+// This same static import also makes `@takazudo/zdtp` an unconditional
+// build-time dependency of every `createChrome` consumer — accepted,
+// permanent contract per #2668; see the "@takazudo/zdtp dep implication"
+// note in docs/adr/route-injection-seam.md.
 import { DesignTokenPanelBootstrap } from "../design-token-panel-bootstrap.js";
 import { SearchWidget } from "../search-widget/index.js";
 import { createMdxComponents } from "../mdx-components/index.js";

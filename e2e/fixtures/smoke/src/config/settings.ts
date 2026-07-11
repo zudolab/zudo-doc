@@ -1,6 +1,7 @@
 import type {
   HeaderNavItem,
   HeaderRightItem,
+  ChangelogConfig,
   ColorModeConfig,
   HtmlPreviewConfig,
   LocaleConfig,
@@ -35,7 +36,7 @@ export const settings = {
   docMetainfo: false,
   docTags: false,
   llmsTxt: true,
-  changelogs: false,
+  changelogs: false as ChangelogConfig[] | false,
   math: true,
   aiAssistant: true as boolean,
   aiChatDemoMode: true as boolean,
