@@ -129,7 +129,7 @@ describe("design-token-panel-config manifest mirrors theme.css defaults", () => 
       const cssValues = cssDecls.get(cssVar);
       expect(cssValues, `${cssVar} not found in theme.css`).toBeDefined();
       const cssValue = cssValues![0]!;
-      const manifestDefault = String(token.default);
+      const manifestDefault = token.default;
 
       if (REM_TO_PX_NORMALIZED_VARS.has(cssVar)) {
         const normalized = remToPx(cssValue);
