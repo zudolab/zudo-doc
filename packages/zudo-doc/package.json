@@ -227,6 +227,10 @@
       "types": "./dist/chrome/index.d.ts",
       "default": "./dist/chrome/index.js"
     },
+    "./chrome-bindings": {
+      "types": "./dist/chrome-bindings.d.ts",
+      "default": "./dist/chrome-bindings.js"
+    },
     "./home-page": {
       "types": "./dist/home-page/index.d.ts",
       "default": "./dist/home-page/index.js"
