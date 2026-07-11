@@ -13,8 +13,13 @@
 import { routeCtx } from "./_context.js";
 import { createChrome } from "../chrome/index.js";
 import { DocHistory } from "../doc-history/index.js";
-import type { ChromeHostBindings } from "../factory-context/index.js";
 import type { DocNavNode } from "./_docs-helpers.js";
+// Imported via the BARE published subpath (not a relative `../chrome-bindings.js`
+// path): this file is copied verbatim into consumer projects by the
+// routes-src mechanism (see `scripts/copy-routes-src.mjs`), where a relative
+// import would resolve against the consumer's own tree instead of this
+// package's `dist/`.
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
 // Host-callables channel (#2501): re-exports `settings.chromeBindingsModule`
 // when the host configured one, else `{}` — see
 // `plugins/routes.ts` and `docs/adr/route-injection-seam.md`
@@ -31,14 +36,21 @@ import { chromeBindings } from "virtual:zudo-doc-chrome-bindings";
 // The import MUST stay static — a dynamic/type-only import stops zfb's island
 // scanner from walking it. SSR output is unchanged: `DocHistoryArea` gates on
 // `settings.docHistory` and the island is skip-SSR, so binding the real component
-// vs the stub is byte-identical. Mirrors the host's `pages/lib/_chrome.ts`.
+// vs the stub is byte-identical. Mirrors the host's `src/chrome-bindings.tsx`.
 // (The narrow real-island props signature isn't assignable to the structural
-// `FactoryComponent`, so cast — same as the host.)
+// `FactoryComponent`, so it's widened through `defineChromeBindings` — same
+// helper the host uses — which checks `DocHistory` against its real call-side
+// prop contract before performing the widening, restoring the #2674
+// drift-detection check a bare cast would erase.)
 //
-// `...chromeBindings` is spread AFTER the `DocHistory` default so a host that
-// configured `chromeBindingsModule` can override ANY slot — including
-// DocHistory itself — while a host that didn't still gets the #2480 fix for
-// free. Note the SSR-presentational-only limitation: a client island defined
+// `...chromeBindings` is spread AFTER the `defineChromeBindings({ DocHistory })`
+// result so a host that configured `chromeBindingsModule` can override ANY
+// slot — including DocHistory itself — while a host that didn't still gets
+// the #2480 fix for free. `chromeBindings` (the virtual re-export) is already
+// erased to the structural `ChromeHostBindings` at its own source, so it is
+// spread as-is rather than run back through `defineChromeBindings` (which
+// cannot recover types `defineChromeBindings` never checked in the first
+// place). Note the SSR-presentational-only limitation: a client island defined
 // INSIDE the bindings module is not guaranteed to register on injected routes
 // the way the static `DocHistory` import above is (the virtual re-export sits
 // outside zfb's static-import scanner reachability graph) — see the ADR.
@@ -52,7 +64,7 @@ import { chromeBindings } from "virtual:zudo-doc-chrome-bindings";
 // static chain route → this shim → `createChrome` → `chrome/derive` →
 // `design-token-panel-bootstrap`.
 const chrome = createChrome(routeCtx, {
-  DocHistory: DocHistory as unknown as ChromeHostBindings["DocHistory"],
+  ...defineChromeBindings({ DocHistory }),
   ...chromeBindings,
 });
 
