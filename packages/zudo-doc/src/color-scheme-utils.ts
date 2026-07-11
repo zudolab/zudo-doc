@@ -252,7 +252,7 @@ export interface TierItem {
  *
  * Always the explicit form (independent of `referencesRamps` declaration
  * order) — see item-id contract in `buildRampTiers`
- * (`src/config/design-token-panel-config.ts`): tier ids `base`/`accent`/`state`,
+ * (`./design-token-panel-config/index.ts`): tier ids `base`/`accent`/`state`,
  * item ids `base-0..4`/`accent-0..2`/`state-{danger,success,warning,info}`.
  */
 export function rampRefToPanelDefault(ref: RampRef): string {
