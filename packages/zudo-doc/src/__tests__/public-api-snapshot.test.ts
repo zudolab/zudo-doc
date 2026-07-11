@@ -269,6 +269,7 @@ describe("Settings public field set snapshot", () => {
         "sidebarResizer",
         "sidebarToggle",
         "imageEnlarge",
+        "findInPage",
         "dynamicPageTransition",
         "frontmatterPreview",
         "docHistory",
