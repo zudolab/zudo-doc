@@ -37,6 +37,7 @@ export const settings = {
   changelogs: false as ChangelogConfig[] | false,
   math: false,
   docHistory: false,
+  findInPage: false as boolean,
   dynamicPageTransition: true as boolean,
   claudeResources: false as { claudeDir: string; projectRoot?: string; scanRoot?: string } | false,
   defaultLocaleOnlyPrefixes: [] as string[],

@@ -39,6 +39,7 @@ export const settings = {
   changelogs: false as ChangelogConfig[] | false,
   math: false,
   designTokenPanel: true as boolean,
+  findInPage: false as boolean,
   dynamicPageTransition: true as boolean,
   docHistory: false,
   claudeResources: false as { claudeDir: string; projectRoot?: string; scanRoot?: string } | false,

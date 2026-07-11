@@ -1,0 +1,15 @@
+---
+title: 3.3.0
+description: 3.3.0のリリースノート。
+sidebar_position: 1056
+---
+
+リリース日: 2026-07-11
+
+### 機能
+
+- Tauri の find-in-page アイランド（Cmd/Ctrl+F 検索バー）を `@takazudo/zudo-doc/find-in-page` に取り込み、パッケージの body-end islands から新しい `findInPage` 設定（デフォルト `false`）でマウントするようにしました。アイランドは `window.__TAURI_INTERNALS__` で自己ゲートするため、Tauri シェル外では安全に何もしません。`create-zudo-doc` の tauri フィーチャーがこの設定を自動的に有効化するよう配線するのはフォローアップとして別途トラッキングしています (97885c5d)。
+
+### その他の変更
+
+- パッケージの `Settings` 型とのセンサスパリティのため、`findInPage` 設定をショーケースと e2e フィクスチャの設定、および設定ガイドのエントリに追加しました。
