@@ -80,6 +80,7 @@ describe("package.json exports keyset snapshot", () => {
         "./extract-headings",
         "./factory-context",
         "./features.css",
+        "./find-in-page",
         "./footer",
         "./footer-with-defaults",
         "./frontmatter-preview-data",

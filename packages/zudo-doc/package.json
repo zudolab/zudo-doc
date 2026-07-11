@@ -324,6 +324,10 @@
       "types": "./dist/ai-chat-modal/index.d.ts",
       "default": "./dist/ai-chat-modal/index.js"
     },
+    "./find-in-page": {
+      "types": "./dist/find-in-page/index.d.ts",
+      "default": "./dist/find-in-page/index.js"
+    },
     "./doc-history": {
       "types": "./dist/doc-history/index.d.ts",
       "default": "./dist/doc-history/index.js"
