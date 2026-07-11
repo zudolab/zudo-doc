@@ -342,15 +342,17 @@ export function buildDesignTokenPanelConfig(mode: PanelMode): PanelConfig {
     storagePrefix: "zudo-doc-tweak",
     consoleNamespace: "zudoDoc",
     modalClassPrefix: "zudo-doc-design-token-panel-modal",
-    // DISPLAY-ONLY in zdtp 0.4.5: the panel's export hard-codes
+    // DISPLAY-ONLY in zdtp 0.4.6: the panel's export hard-codes
     // `zudo-design-tokens/v2` and auto-upgrades to `.../v3` when object leaves
     // ({ref}/{literal}/per-mode) are present — which the semantic tier's ramp
     // refs always are, so real exports carry v3. `schemaId` does NOT gate
-    // import; it only labels the Import-modal hint. zdtp DOES export its own
-    // `SCHEMA_V1`/`SCHEMA_V2`/`SCHEMA_V3` constants (#498/#505), but those are
-    // zdtp's fixed internal schema strings, unrelated to this field. Set to v3
-    // (a literal, not one of those constants) so the hint matches what exports
-    // actually carry. Distinct from the host serde's `DESIGN_TOKEN_SCHEMA`
+    // import, and (verified against the installed zdtp 0.4.6 bundle) zdtp's
+    // Import/Export modals do not read this field at all — their hint/error
+    // text is hardcoded to zdtp's own internal `SCHEMA_V1`/`SCHEMA_V2`/
+    // `SCHEMA_V3` constants (#498/#505), which are unrelated to this field.
+    // It is thus a purely descriptive config value with no runtime effect;
+    // set to v3 (a literal, not one of those constants) to match what real
+    // exports carry. Distinct from the host serde's `DESIGN_TOKEN_SCHEMA`
     // (`zudo-doc-design-tokens/v3` — bumped from v2 in #2599 so a stale
     // pre-5/3-minimize export resets instead of crashing on import), which
     // governs a separate round-trip.
