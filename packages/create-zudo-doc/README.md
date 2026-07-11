@@ -86,7 +86,7 @@ Each feature has a `--[no-]<flag>` form. Passing `--feature` enables it; `--no-f
 | `--[no-]tauri` | Tauri desktop app — Mode 1 offline reader | off |
 | `--[no-]tauri-dev` | Tauri dev wrapper — Mode 2 configurable dev wrapper | off |
 | `--[no-]footer-nav-group` | Navigation links in the footer | off |
-| `--[no-]footer-copyright` | Copyright notice in the footer | off |
+| `--[no-]footer-copyright` | Copyright notice in the footer | on |
 | `--[no-]footer-taglist` | Grouped tag index in the footer (requires tag-governance) | off |
 | `--[no-]changelog` | Changelog page | off |
 

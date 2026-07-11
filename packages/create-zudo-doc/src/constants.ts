@@ -172,7 +172,7 @@ export const FEATURES: Feature[] = [
     value: "footerCopyright",
     label: "Footer copyright",
     hint: "Copyright notice in the footer",
-    default: false,
+    default: true,
     cliFlag: "footer-copyright",
   },
   {
