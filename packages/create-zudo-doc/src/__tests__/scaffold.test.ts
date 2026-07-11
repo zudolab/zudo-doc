@@ -20,9 +20,13 @@ import { createZudoDoc } from "../api.js";
 // scratch for Wave 7 (#2662) against the locked ~12-file manifest landed by
 // Wave 6 (#2660) — see that issue's completion comment for the deleted-file
 // set and the documented deviations (tagGovernance's src/config/ pair, the
-// unwired tauri find-in-page island, the unconditional @takazudo/zdtp dep).
-// The old suite asserted a 64-file project shape (settings.ts, pages/lib/*,
-// src/components/*, per-page anchor injections) that no longer exists.
+// unconditional @takazudo/zdtp dep). The tauri feature's find-in-page island
+// used to be a documented "ships unwired" file-copy deviation; #2690 retired
+// it — find-in-page is now package-owned and emitted via `findInPage: true`
+// (see the "tauri no longer ships find-in-page template files" describe
+// block below). The old suite asserted a 64-file project shape (settings.ts,
+// pages/lib/*, src/components/*, per-page anchor injections) that no longer
+// exists.
 
 const TEMP_PREFIX = "create-zudo-doc-test-";
 
@@ -249,8 +253,11 @@ describe("scaffold — absence assertions (deleted legacy files never resurrecte
     "pages/docs/tags/[tag].tsx",
     "pages/v/[version]/docs/[[...slug]].tsx",
     "pages/api/ai-chat.tsx",
-    // src/components/* (the tauri find-bar/find-in-page-init exception is
-    // covered separately below).
+    // src/components/* (tauri's find-bar.tsx/find-in-page-init.tsx used to be
+    // a documented exception here — #2690 deleted those template files
+    // entirely, so tauri no longer writes anything under src/components/
+    // either; see the dedicated tauri describe block below for the absence
+    // assertion).
     "src/components/ai-chat-modal.tsx",
     "src/components/content/code-group.tsx",
     "src/components/content/content-admonition.tsx",
@@ -260,7 +267,8 @@ describe("scaffold — absence assertions (deleted legacy files never resurrecte
     "src/components/preset-generator.tsx",
     "src/components/sidebar-toggle.tsx",
     "src/components/sidebar-tree.tsx",
-    // src/utils/* (the tauri find-in-page.ts exception is covered separately).
+    // src/utils/* (tauri's find-in-page.ts used to be a documented exception
+    // here — #2690 deleted it too; see the dedicated tauri describe block).
     "src/utils/base.ts",
     "src/utils/docs.ts",
     "src/utils/git-info.ts",
@@ -368,14 +376,17 @@ describe("scaffold — .zudo-doc.json is never seeded (lazy-create, locked decis
   });
 });
 
-describe("scaffold — documented deviation: tauri ships an unwired find-in-page island", () => {
-  // #2660 completion comment deviation: the Rust shell (src-tauri/**) is a
-  // genuine unconditional copy, AND the FindInPageInit island files are
-  // still copied (kept per the sub-issue's original survivor list) even
-  // though their old auto-mount point (pages/lib/_body-end-islands.tsx) no
-  // longer exists — the island ships unwired. This is intentional, not a
-  // gap this wave should paper over with a wrong absence assertion.
-  it("copies src-tauri/** and the 3 find-in-page files when tauri is selected", async () => {
+describe("scaffold — tauri no longer ships find-in-page template files (package-owned, #2690)", () => {
+  // #2689 moved the FindInPageInit island (Cmd/Ctrl+F find bar) into
+  // @takazudo/zudo-doc as a package-owned, settings-gated island. #2690
+  // retired the old "ships unwired" deviation: the generator no longer
+  // copies src/components/find-bar.tsx, src/components/find-in-page-init.tsx,
+  // or src/utils/find-in-page.ts — it emits `findInPage: true` in
+  // zfb.config.ts instead (see the zfb.config.ts content-shape describe
+  // block below), and `zudoDocPreset()` mounts the island from there. tauri
+  // now copies ONLY the Rust shell (src-tauri/**), which still has no
+  // package equivalent.
+  it("copies src-tauri/** only when tauri is selected — no find-in-page files", async () => {
     await scaffold({ ...baseChoices, projectName: "test-tauri", features: ["tauri"] });
     const project = projectPath("test-tauri");
     for (const rel of [
@@ -385,23 +396,23 @@ describe("scaffold — documented deviation: tauri ships an unwired find-in-page
       "src-tauri/capabilities/default.json",
       "src-tauri/src/main.rs",
       "src-tauri/tauri.conf.json",
+    ]) {
+      expect(await fs.pathExists(path.join(project, rel)), rel).toBe(true);
+    }
+    for (const rel of [
       "src/components/find-bar.tsx",
       "src/components/find-in-page-init.tsx",
       "src/utils/find-in-page.ts",
     ]) {
-      expect(await fs.pathExists(path.join(project, rel)), rel).toBe(true);
+      expect(await fs.pathExists(path.join(project, rel)), rel).toBe(false);
     }
   });
 
-  it("does NOT copy any other src/components or src/utils file when only tauri is selected", async () => {
+  it("does NOT create a src/components or src/utils directory at all when only tauri is selected", async () => {
     await scaffold({ ...baseChoices, projectName: "test-tauri-2", features: ["tauri"] });
     const project = projectPath("test-tauri-2");
-    expect((await listFiles(path.join(project, "src/components"))).sort()).toEqual(
-      ["find-bar.tsx", "find-in-page-init.tsx"].sort(),
-    );
-    expect((await listFiles(path.join(project, "src/utils"))).sort()).toEqual([
-      "find-in-page.ts",
-    ]);
+    expect(await fs.pathExists(path.join(project, "src/components"))).toBe(false);
+    expect(await fs.pathExists(path.join(project, "src/utils"))).toBe(false);
   });
 
   it("tauriDev ships src-tauri-dev/** only (no src/components or src/utils files)", async () => {
@@ -615,7 +626,7 @@ describe("scaffold — changelog feature", () => {
 });
 
 describe("scaffold — every-feature manifest is exactly base + the documented per-feature deltas", () => {
-  it("all-on scaffold emits exactly the expected 44-file set", async () => {
+  it("all-on scaffold emits exactly the expected 41-file set", async () => {
     await scaffold({
       ...baseChoices,
       projectName: "test-all-on",
@@ -651,8 +662,6 @@ describe("scaffold — every-feature manifest is exactly base + the documented p
       "src-tauri/capabilities/default.json",
       "src-tauri/src/main.rs",
       "src-tauri/tauri.conf.json",
-      "src/components/find-bar.tsx",
-      "src/components/find-in-page-init.tsx",
       "src/config/settings.ts",
       "src/config/tag-vocabulary.ts",
       "src/content/docs-ja/changelog/index.mdx",
@@ -664,7 +673,6 @@ describe("scaffold — every-feature manifest is exactly base + the documented p
       "src/content/docs/getting-started/installation.mdx",
       "src/content/docs/getting-started/introduction.mdx",
       "src/styles/global.css",
-      "src/utils/find-in-page.ts",
       "tsconfig.json",
       "zfb.config.ts",
     ].sort();
@@ -694,9 +702,23 @@ describe("scaffold — zfb.config.ts content shape (integration with generateZfb
       "tagGovernance",
       "footer:",
       "versions:",
+      "findInPage",
     ]) {
       expect(config).not.toContain(token);
     }
+  });
+
+  it("emits findInPage: true when tauri is selected (#2690 — rides the tauri feature, package-owned island)", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-tauri-config",
+      features: ["tauri"],
+    });
+    const config = await fs.readFile(
+      projectPath("test-tauri-config", "zfb.config.ts"),
+      "utf-8",
+    );
+    expect(config).toContain("findInPage: true");
   });
 
   it("does NOT emit inline plugins, collections, or zod (all delegated to the package)", async () => {

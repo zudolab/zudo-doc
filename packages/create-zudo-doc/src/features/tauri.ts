@@ -8,18 +8,17 @@ import { pmRunCommand } from "../utils.js";
  *
  * Minimal-scaffold cutover (epic zudolab/zudo-doc#2651, Wave 6 #2660): the
  * `src-tauri/**` Rust shell is a genuine, unconditional file copy (no
- * package equivalent — kept exactly as before). The FindInPageInit island
- * (Cmd/Ctrl+F find bar, #2052) is ALSO still copied
- * (`src/components/find-bar.tsx`, `src/components/find-in-page-init.tsx`,
- * `src/utils/find-in-page.ts`) but is NO LONGER auto-mounted: its old mount
- * point (`pages/lib/_body-end-islands.tsx`) doesn't exist anymore — the
- * package now owns the entire chrome for both the home route and the
- * self-contained doc stub. See the loud note in
- * `find-in-page-init.tsx` for the `chromeBindingsModule` wiring path that
- * restores it. The find-match highlight CSS still ships unconditionally
- * from `@takazudo/zudo-doc/features.css`; the component itself
- * runtime-gates on `window.__TAURI_INTERNALS__`, so it's inert either way
- * in a plain browser build.
+ * package equivalent — kept exactly as before).
+ *
+ * The FindInPageInit island (Cmd/Ctrl+F find bar, #2052) is now
+ * package-owned (`@takazudo/zudo-doc`, #2689) instead of a template file
+ * copy — `zfb-config-gen.ts`'s `buildDesiredConfig()` sets
+ * `findInPage: true` whenever this feature is selected (#2690), which mounts
+ * the package's `FindInPageInit` island via `zudoDocPreset()`. There is no
+ * separate `findInPage` feature module or CLI flag; it rides this one. The
+ * island self-gates on `window.__TAURI_INTERNALS__`, so it's a safe no-op in
+ * a plain browser build even though `findInPage: true` is unconditionally
+ * emitted for every tauri-feature scaffold.
  */
 export const tauriFeature: FeatureModule = (choices) => ({
   name: "tauri",
