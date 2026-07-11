@@ -102,10 +102,11 @@ cd __inbox/generator-test-barebone && \
 
 > This exact invocation is the one verified against the locked 12-file
 > manifest in `packages/create-zudo-doc/src/__tests__/scaffold.test.ts`
-> (`BAREBONE_MANIFEST`) — do not drop `--no-dynamic-page-transition` or
-> `--no-image-enlarge`; both default to `true` and, while they don't add any
-> files, dropping them would emit extra fields into `zfb.config.ts` and
-> defeat the "everything OFF" premise of this pattern.
+> (`BAREBONE_MANIFEST`) — do not drop `--no-dynamic-page-transition`,
+> `--no-image-enlarge`, or `--no-footer-copyright`; all three default to
+> `true` and, while they don't add any files, dropping them would emit extra
+> fields into `zfb.config.ts` and defeat the "everything OFF" premise of this
+> pattern.
 
 **search:**
 
@@ -404,7 +405,11 @@ There is no more `src/config/settings.ts` to read in a fresh scaffold (except th
 
 **sidebar-filter:**
 
-- Identical to barebone's `zfb.config.ts` — no field this flag would set
+- `sidebarFilter` itself sets no field, but this pattern's CLI command doesn't
+  turn off `imageEnlarge` / `dynamicPageTransition` / `footerCopyright` (all
+  default to `true`), so — unlike barebone, which explicitly disables all
+  three — the generated `zfb.config.ts` additionally has `imageEnlarge: true`,
+  `dynamicPageTransition: true`, and a `footer: { copyright: "..." }` field
 
 **claude-resources:**
 
