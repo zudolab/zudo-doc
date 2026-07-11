@@ -121,7 +121,7 @@ sidebar_position: 2
 
 ## Requirements
 
-- Node.js 18 or later
+- Node.js 22 or later
 - pnpm (recommended), npm, yarn, or bun
 
 ## Create a New Project
@@ -150,7 +150,7 @@ sidebar_position: 2
 
 ## 動作要件
 
-- Node.js 18 以降
+- Node.js 22 以降
 - pnpm（推奨）、npm、yarn、または bun
 
 ## 新しいプロジェクトを作成する
@@ -808,6 +808,9 @@ function generatePackageJson(choices: UserChoices) {
     version: "0.0.1",
     private: true,
     type: "module",
+    // @takazudo/zfb + @takazudo/zfb-runtime declare engines.node ">=22.0.0";
+    // emit the floor so `<pm> install` warns early on an unsupported Node.
+    engines: { node: ">=22" },
     scripts,
     dependencies: deps,
     devDependencies: devDeps,
