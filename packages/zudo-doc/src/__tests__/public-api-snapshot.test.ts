@@ -46,6 +46,7 @@ describe("package.json exports keyset snapshot", () => {
         "./category-nav",
         "./category-tree-nav",
         "./chrome",
+        "./chrome-bindings",
         "./code-group",
         "./code-syntax",
         "./color-scheme-utils",
