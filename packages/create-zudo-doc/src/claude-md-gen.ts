@@ -102,6 +102,30 @@ export function generateCLAUDEFile(choices: UserChoices): string {
   );
   lines.push(``);
 
+  // Built-in MDX components. The seeded getting-started/index.mdx uses
+  // <CategoryNav>, a package-provided global — without this section a new user
+  // has no in-project pointer to what it is or which siblings exist (#2703).
+  lines.push(`### Built-in MDX components`);
+  lines.push(``);
+  lines.push(
+    `\`@takazudo/zudo-doc\` ships a few **globally-available MDX components** — usable in any \`.mdx\` file with **no import**. The seeded \`getting-started/index.mdx\` already uses one:`,
+  );
+  lines.push(``);
+  lines.push(
+    `- \`<CategoryNav category="..." />\` — a card-grid list of the pages in a docs category (this is the one seeded into \`getting-started/index.mdx\`).`,
+  );
+  lines.push(
+    `- \`<CategoryTreeNav category="..." />\` — the same listing as a compact nested tree, better for deeper hierarchies.`,
+  );
+  lines.push(
+    `- \`<SiteTreeNavDemo />\` — a full-site documentation tree (the MDX-available wrapper of the \`SiteTreeNav\` island).`,
+  );
+  lines.push(``);
+  lines.push(
+    `Admonitions (above), tabbed content (\`<Tabs>\` / \`<TabItem>\`, \`<CodeGroup>\`), and block math (\`<MathBlock>\`) work the same way — no import. Full reference: https://zudo-doc.takazudomodular.com/docs/components/`,
+  );
+  lines.push(``);
+
   // i18n section
   if (choices.features.includes("i18n")) {
     const secondaryLang = choices.defaultLang === "ja" ? "en" : "ja";

@@ -1058,6 +1058,17 @@ describe("scaffold — CLAUDE.md generation", () => {
     expect(content).toContain("npm run build");
     expect(content).not.toContain("pnpm");
   });
+
+  it("documents the built-in MDX components the seed content uses (CategoryNav) (#2703)", async () => {
+    await scaffold(baseChoices);
+    const content = await fs.readFile(
+      projectPath("test-doc", "CLAUDE.md"),
+      "utf-8",
+    );
+    expect(content).toContain("### Built-in MDX components");
+    expect(content).toContain("CategoryNav");
+    expect(content).toContain("/docs/components/");
+  });
 });
 
 describe("scaffold — generated package.json", () => {
@@ -1070,6 +1081,38 @@ describe("scaffold — generated package.json", () => {
       preview: "zfb preview",
       check: "zfb check",
     });
+  });
+
+  it("emits engines.node >=22 to match zfb's Node floor (#2702)", async () => {
+    await scaffold(baseChoices);
+    const pkg = await fs.readJson(projectPath("test-doc", "package.json"));
+    expect(pkg.engines).toEqual({ node: ">=22" });
+  });
+
+  it("seeds the installation doc with the real Node floor (>=22), both locales (#2702)", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-node-floor",
+      features: ["i18n"],
+    });
+    const en = await fs.readFile(
+      projectPath(
+        "test-node-floor",
+        "src/content/docs/getting-started/installation.mdx",
+      ),
+      "utf-8",
+    );
+    expect(en).toContain("Node.js 22 or later");
+    expect(en).not.toContain("Node.js 18");
+    const ja = await fs.readFile(
+      projectPath(
+        "test-node-floor",
+        "src/content/docs-ja/getting-started/installation.mdx",
+      ),
+      "utf-8",
+    );
+    expect(ja).toContain("Node.js 22 以降");
+    expect(ja).not.toContain("Node.js 18");
   });
 
   it("does NOT include html-validate in devDependencies", async () => {
