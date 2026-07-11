@@ -1,7 +1,15 @@
 "use client";
 
+/** @jsxRuntime automatic */
+/** @jsxImportSource preact */
+
+// FindBar UI — relocated from
+// `create-zudo-doc/templates/features/tauri/files/src/components/find-bar.tsx`
+// into the package as part of the `findInPage` package-owned island
+// (zudolab/zudo-doc#2689).
+
 import { useState, useRef, useEffect, useCallback } from "preact/hooks";
-import type { FindResult, FindInPage } from "@/utils/find-in-page";
+import type { FindResult, FindInPage } from "./find-in-page.js";
 
 interface FindBarProps {
   visible: boolean;
@@ -56,7 +64,10 @@ export function FindBar({ visible, onClose, findInPage, containerSelector }: Fin
   );
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Plain DOM `KeyboardEvent` — matches the ai-chat-modal onKeyDown
+    // precedent (`../ai-chat-modal/index.tsx`); Preact's JSX
+    // `onKeyDown` prop accepts it directly, no React-namespace type needed.
+    (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         onClose();
       } else if (e.key === "Enter") {

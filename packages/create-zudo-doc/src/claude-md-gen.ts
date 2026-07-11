@@ -139,7 +139,7 @@ export function generateCLAUDEFile(choices: UserChoices): string {
     claudeResources: "Auto-generated docs for Claude Code resources",
     changelog: "Changelog page at `/docs/changelog`",
     tauri:
-      "Desktop app wrapper (`cargo tauri dev` / `cargo tauri build`) — Cmd/Ctrl+F find bar ships unwired; see `src/components/find-in-page-init.tsx`",
+      "Desktop app wrapper (`cargo tauri dev` / `cargo tauri build`) — Cmd/Ctrl+F find bar via the package-owned `FindInPageInit` island (`findInPage: true` in `zfb.config.ts`)",
     tagGovernance:
       "Vocabulary-aware tag audit (`tags:audit`) / suggest (`tags:suggest`) scripts",
   };

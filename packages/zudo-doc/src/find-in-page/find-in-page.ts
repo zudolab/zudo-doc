@@ -1,3 +1,9 @@
+// DOM-based find-in-page utility — relocated from
+// `create-zudo-doc/templates/features/tauri/files/src/utils/find-in-page.ts`
+// into the package as part of the `findInPage` package-owned island
+// (zudolab/zudo-doc#2689). Pure DOM logic, no framework dependency, so it
+// moved unchanged aside from its new home.
+
 export interface FindResult {
   matches: number;
   activeMatchOrdinal: number; // 1-based
@@ -31,7 +37,7 @@ export function createFindInPage(): FindInPage {
     const parentsToNormalize = new Set<Node>();
 
     for (let i = matchElements.length - 1; i >= 0; i--) {
-      const mark = matchElements[i];
+      const mark = matchElements[i]!;
       const parent = mark.parentNode;
       if (parent) {
         const textNode = document.createTextNode(mark.textContent || "");
@@ -48,13 +54,13 @@ export function createFindInPage(): FindInPage {
 
   function setActive(index: number): void {
     if (activeIndex >= 0 && activeIndex < matchElements.length) {
-      const prev = matchElements[activeIndex];
+      const prev = matchElements[activeIndex]!;
       prev.classList.remove(ACTIVE_CLASS);
       prev.removeAttribute(ACTIVE_ATTR);
     }
     activeIndex = index;
     if (activeIndex >= 0 && activeIndex < matchElements.length) {
-      const current = matchElements[activeIndex];
+      const current = matchElements[activeIndex]!;
       current.classList.add(ACTIVE_CLASS);
       current.setAttribute(ACTIVE_ATTR, "true");
       current.scrollIntoView?.({ block: "center" });
@@ -114,7 +120,7 @@ export function createFindInPage(): FindInPage {
       const nodeMarks: HTMLElement[] = [];
 
       for (let i = positions.length - 1; i >= 0; i--) {
-        const pos = positions[i];
+        const pos = positions[i]!;
         const matchLen = query.length;
 
         if (pos + matchLen < remainingNode.length) {

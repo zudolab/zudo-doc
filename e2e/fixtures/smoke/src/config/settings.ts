@@ -44,6 +44,7 @@ export const settings = {
   aiChatGlobalDailyLimit: false as number | false,
   designTokenPanel: true as boolean,
   imageEnlarge: true as boolean,
+  findInPage: false as boolean,
   dynamicPageTransition: true as boolean,
   frontmatterPreview: {} satisfies FrontmatterPreviewConfig as FrontmatterPreviewConfig | false,
   docHistory: true,

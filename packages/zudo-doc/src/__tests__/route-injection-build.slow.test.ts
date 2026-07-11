@@ -764,6 +764,71 @@ describe("DTP off: designTokenPanel false emits no island marker on the page (HA
 });
 
 // ---------------------------------------------------------------------------
+// Case FIP — FindInPageInit package-default island (zudolab/zudo-doc#2689).
+// Mirrors the DH (DocHistory) / DTP island-registration proof: unlike
+// DesignTokenPanelBootstrap, `FindInPageInit` is a plain static top-level
+// import (no `deps` injection — see the module header note in
+// `../doc-body-end-islands/index.tsx`), so this only needs to gate on
+// `settings.findInPage`.
+//
+//   1. findInPage: true → the injected doc route emits the
+//      `data-zfb-island="FindInPageInit"` marker (non-skip-ssr — the
+//      component renders nothing on either side, self-gating on
+//      `window.__TAURI_INTERNALS__`) AND the emitted islands client bundle
+//      registers the real component (marker <-> registry match =>
+//      hydration — an SSR marker alone doesn't prove client hydration).
+//   2. findInPage: false (the fixture default) → no island marker reaches
+//      the SSR HTML.
+// ---------------------------------------------------------------------------
+
+/** Flip `findInPage` ON in a fixture's settings.ts (it ships OFF). */
+function enableFindInPage(dir: string): void {
+  const settingsPath = join(dir, "src/config/settings.ts");
+  const src = readFileSync(settingsPath, "utf-8").replace(
+    /findInPage:\s*false/,
+    "findInPage: true",
+  );
+  writeFileSync(settingsPath, src);
+}
+
+describe("FIP find-in-page: injected doc route registers the FindInPageInit island (packageOwnedRoutes + findInPage)", () => {
+  let fixtureDir: string;
+
+  it("setup: fixture builds with findInPage enabled + empty pages/", { timeout: 180_000 }, () => {
+    fixtureDir = setupFixture({ emptyPages: true });
+    enableFindInPage(fixtureDir);
+    runZfbBuild(fixtureDir);
+  });
+
+  it("marker: injected /docs/getting-started/ HTML carries the FindInPageInit island marker (non-skip-ssr)", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    expectHtmlAttr(html, "data-zfb-island", "FindInPageInit");
+  });
+
+  it("bundle: the emitted islands client bundle registers FindInPageInit (marker <-> registry match => hydration)", () => {
+    // Marker present (above) + FindInPageInit in the client bundle = the
+    // marker has a matching registry entry, which is exactly what zfb's
+    // hydration requires (same structural proof as Case DH/DTP).
+    expect(readIslandsBundles(fixtureDir)).toContain("FindInPageInit");
+  });
+});
+
+describe("FIP off: findInPage false (fixture default) emits no island marker on the page", () => {
+  let fixtureDir: string;
+
+  it("setup: fixture builds with findInPage left at its default (false) + empty pages/", { timeout: 180_000 }, () => {
+    fixtureDir = setupFixture({ emptyPages: true });
+    // findInPage already ships `false` in the fixture — no mutation needed.
+    runZfbBuild(fixtureDir);
+  });
+
+  it("no marker: injected /docs/getting-started/ HTML carries no FindInPageInit marker", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    expect(html).not.toMatch(htmlAttrPattern("data-zfb-island", "FindInPageInit"));
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Case HOME — `createHomePageView` adoption on the injected `/[locale]` home
 // (S3 #2502, epic #2499). Uses the i18n fixture (symlink method, cheap — NOT
 // `npm pack`) because the `/[locale]` home route only exists when a locale is

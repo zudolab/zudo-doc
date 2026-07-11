@@ -1,23 +1,38 @@
 "use client";
 
-// NOT auto-mounted (epic zudolab/zudo-doc#2651 minimal-scaffold cutover):
-// the old host `pages/lib/_body-end-islands.tsx` that used to statically
-// import + mount this island no longer exists — the package now owns the
-// entire chrome (see `pages/docs/[[...slug]].tsx`, `createChrome(routeCtx)`).
-// To wire Cmd/Ctrl+F back in, add a `settings.chromeBindingsModule` host
-// file that overrides the `BodyEndIslands` chrome slot (wrapping
-// `@takazudo/zudo-doc/doc-body-end-islands`'s `createBodyEndIslands` and
-// mounting `<FindInPageInit />` alongside it) — see
-// `docs/adr/route-injection-seam.md` ("Host-callables channel") in
-// @takazudo/zudo-doc. This file (and find-bar.tsx / ../utils/find-in-page.ts)
-// ship as ready-to-wire reference material either way.
+/** @jsxRuntime automatic */
+/** @jsxImportSource preact */
+
+// FindInPageInit — the package-owned find-in-page island (zudolab/zudo-doc#2689).
+//
+// Relocated from
+// `create-zudo-doc/templates/features/tauri/files/src/components/find-in-page-init.tsx`
+// into the package as part of the `findInPage` settings census field. Unlike
+// its pre-#2689 tauri-template home (which shipped as inert reference
+// material — no host ever imported it), this island is now statically
+// imported and mounted by `../doc-body-end-islands/index.tsx`, gated on
+// `settings.findInPage` (default `false`), mirroring how AiChatModal /
+// ImageEnlarge / MermaidEnlarge are wired there.
+//
+// Behavior is unchanged: it self-gates on `window.__TAURI_INTERNALS__` so it
+// stays a no-op outside a Tauri shell even when `findInPage` is on — Cmd/Ctrl+F
+// interception only makes sense where the OS/browser doesn't already own that
+// shortcut. A non-Tauri host that sets `findInPage: true` ships the island's
+// (tiny) code with no visible effect.
 import { useState, useEffect, useRef } from "preact/compat";
-import { FindBar } from "./find-bar";
-import { createFindInPage } from "@/utils/find-in-page";
+import type { JSX } from "preact";
+import { FindBar } from "./find-bar.js";
+import { createFindInPage } from "./find-in-page.js";
 
 const CONTENT_SELECTOR = "article.zd-content";
 
-export default function FindInPageInit() {
+/**
+ * `displayName` pinned explicitly (matching
+ * `AiChatModal`/`ImageEnlarge`/`MermaidEnlarge`/`DesignTokenPanelBootstrap`)
+ * so zfb's `captureComponentName` emits a stable
+ * `data-zfb-island="FindInPageInit"` marker independent of minification.
+ */
+export function FindInPageInit(): JSX.Element | null {
   const [isTauri, setIsTauri] = useState(false);
   const [visible, setVisible] = useState(false);
   const findInPageRef = useRef(createFindInPage());
@@ -68,3 +83,4 @@ export default function FindInPageInit() {
     />
   );
 }
+FindInPageInit.displayName = "FindInPageInit";

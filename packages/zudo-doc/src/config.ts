@@ -154,6 +154,7 @@ export const DEFAULT_SETTINGS: Settings = {
   sidebarResizer: false,
   sidebarToggle: false,
   imageEnlarge: false,
+  findInPage: false,
   dynamicPageTransition: false,
   frontmatterPreview: false,
   docHistory: false,
@@ -389,6 +390,13 @@ export interface ZudoDocConfig {
    * @default false
    */
   imageEnlarge?: boolean;
+  /**
+   * Mount the `FindInPageInit` island (Cmd/Ctrl+F find bar). Self-gates on
+   * `window.__TAURI_INTERNALS__`, so it is a safe no-op outside a Tauri
+   * shell even when `true`.
+   * @default false
+   */
+  findInPage?: boolean;
   /**
    * Enable the dynamic (view-transition) page-loading overlay.
    * @default false

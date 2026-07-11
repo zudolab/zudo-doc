@@ -4,6 +4,16 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [3.3.0] - 2026-07-11
+
+### Features
+
+- Absorbed the Tauri find-in-page island (Cmd/Ctrl+F find bar) into `@takazudo/zudo-doc/find-in-page`, mounted from the package's body-end islands behind a new `findInPage` setting (default `false`). The island self-gates on `window.__TAURI_INTERNALS__`, so it stays a safe no-op outside a Tauri shell. `create-zudo-doc`'s tauri feature now emits `findInPage: true` for generated Tauri scaffolds (auto-enabling the find bar); this ships with the next `create-zudo-doc` release.
+
+### Other Changes
+
+- Added the `findInPage` setting to the showcase and e2e fixture settings, plus a configuration guide entry, for census parity with the package `Settings` type.
+
 ## [3.2.0] - 2026-07-08
 
 ### Features

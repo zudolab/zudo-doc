@@ -223,6 +223,26 @@ describe("generateZfbConfig — simple boolean feature fields", () => {
   }
 });
 
+describe("generateZfbConfig — findInPage rides the tauri feature (#2690)", () => {
+  // findInPage has no CLI flag/prompt of its own — it is set whenever the
+  // tauri feature is selected (the Cmd/Ctrl+F find bar only makes sense
+  // inside the Tauri desktop shell). Deliberately its own describe block,
+  // NOT folded into the "simple boolean feature fields" table above: that
+  // table's negative-case helper assumes feature name === field name
+  // (`expected_field_name(feature) === feature`), which would check for a
+  // literal `tauri: true` — the wrong field name — and pass vacuously
+  // without proving findInPage is actually omitted.
+  it("selecting tauri emits findInPage: true", () => {
+    const result = generateZfbConfig({ ...baseChoices, features: ["tauri"] });
+    expect(result).toContain("findInPage: true");
+  });
+
+  it("NOT selecting tauri omits findInPage entirely (matches its false default)", () => {
+    const result = generateZfbConfig(baseChoices);
+    expect(result).not.toContain("findInPage");
+  });
+});
+
 describe("generateZfbConfig — designTokenPanel headerRightItems trigger", () => {
   it("prepends the design-token-panel trigger when enabled", () => {
     const result = generateZfbConfig({

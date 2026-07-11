@@ -18,6 +18,9 @@
 //   - mermaid               → idle skip-ssr MermaidEnlarge (SSR dialog-shell fallback)
 //   - dynamicPageTransition → pure-SSR <PageLoadingOverlay/> (zudolab/zudo-doc#2482)
 //   - designTokenPanel      → load (non-skip-ssr*) DesignTokenPanelBootstrap (see below, #2658)
+//   - findInPage            → load (non-skip-ssr*) FindInPageInit — Cmd/Ctrl+F find
+//                             bar, self-gated on `window.__TAURI_INTERNALS__`
+//                             (zudolab/zudo-doc#2689)
 // It deliberately OMITS the host-owned `ClientRouterBootstrap`: it imports from
 // `@/components/*` and is NOT reconstructable from package settings. The page-
 // loading overlay, by contrast, is a pure PACKAGE component (`../page-loading`)
@@ -64,13 +67,18 @@
 // marker — no call-site pinning needed here. `DesignTokenPanelBootstrap` is
 // NOT imported at this module's top level (see the note above) — it arrives
 // as an already-real component via `deps.DesignTokenPanelBootstrap`, pinned by
-// its own module (`../design-token-panel-bootstrap.tsx`).
+// its own module (`../design-token-panel-bootstrap.tsx`). `FindInPageInit`
+// (`../find-in-page/index.tsx`) follows the AiChatModal/ImageEnlarge/
+// MermaidEnlarge shape — a plain static top-level import, own `displayName`
+// pin — NOT the deps-injection dance, since it has no virtual-module
+// coupling to keep out of this factory's reachability graph.
 
 import type { JSX, VNode } from "preact";
 import { Island } from "@takazudo/zfb";
 import { AiChatModal } from "../ai-chat-modal/index.js";
 import { ImageEnlarge, ImageEnlargeSsrFallback } from "../image-enlarge/index.js";
 import { MermaidEnlarge, MermaidEnlargeSsrFallback } from "../mermaid-enlarge/index.js";
+import { FindInPageInit } from "../find-in-page/index.js";
 // Named export (`page-loading/index.ts` re-exports `{ default as PageLoadingOverlay }`).
 import { PageLoadingOverlay } from "../page-loading/index.js";
 // Type-only — erased at build, so importing it does not pull `factory-context`'s
@@ -133,6 +141,15 @@ export interface BodyEndIslandsSettings {
    *  nothing mounts unless `deps.DesignTokenPanelBootstrap` was also supplied
    *  — see {@link BodyEndIslandsDeps}. */
   designTokenPanel?: boolean;
+  /**
+   * Gates the `FindInPageInit` island mount (zudolab/zudo-doc#2689). Optional
+   * for the same external-caller-compat reason as `dynamicPageTransition`/
+   * `designTokenPanel` above. `undefined` is treated as `false` (no island).
+   * Controls the PACKAGE-DEFAULT `BodyEndIslands` slot only — a host that
+   * overrides the `BodyEndIslands` chrome binding must mount `FindInPageInit`
+   * itself.
+   */
+  findInPage?: boolean;
 }
 
 /** Dependencies injected by `_chrome.tsx` (carries the virtual-module settings). */
@@ -261,6 +278,21 @@ export function createBodyEndIslands(
           )
         : null;
 
+    // Gated on `settings.findInPage` (zudolab/zudo-doc#2689). This gate
+    // controls the PACKAGE-DEFAULT `BodyEndIslands` slot ONLY — a host that
+    // overrides the `BodyEndIslands` chrome binding must mount
+    // `FindInPageInit` itself. Mirrors `designTokenPanelBootstrap` above:
+    // `when: "load"` so the Cmd/Ctrl+F listener is registered as early as
+    // possible, no `ssrFallback` (the component renders nothing on either
+    // side — it self-gates on `window.__TAURI_INTERNALS__` — so this is the
+    // plain non-skip-ssr `Island` form, `data-zfb-island="FindInPageInit"`).
+    const findInPageInit = settings.findInPage
+      ? (Island({
+          when: "load",
+          children: <FindInPageInit />,
+        }) as unknown as VNode)
+      : null;
+
     return (
       <>
         {/* Pure SSR — no <Island> wrap. Gated on `settings.dynamicPageTransition`
@@ -274,6 +306,7 @@ export function createBodyEndIslands(
             `enableClientRouter` on this same flag. */}
         {settings.dynamicPageTransition ? <PageLoadingOverlay /> : null}
         {designTokenPanelBootstrap}
+        {findInPageInit}
         {aiAssistant}
         {imageEnlarge}
         {mermaidEnlarge}
