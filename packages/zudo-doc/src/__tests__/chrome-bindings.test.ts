@@ -34,7 +34,7 @@ export function _positiveCompileAssertions(): void {
     docHistoryMeta: {} as Record<string, unknown>,
     sidebarsConfig: concreteSidebars, // concrete object, no index signature — no cast
     tagVocabulary: [{ id: "topic" }],
-    frontmatterRenderers: {} as Record<string, unknown>,
+    frontmatterRenderers: { badge: (props) => props.value }, // reads a SUBSET of the renderer props
     mdxExtras: { Stub: (_p: unknown) => null }, // MdxStub edge — `unknown` props accepted
     buildFrontmatterPreviewEntries: (data) => Object.entries(data),
     loadTagsForLocale: (lang) => [{ tag: lang, count: 1 }], // (lang: string) => Tag[]
@@ -57,9 +57,13 @@ export function _positiveCompileAssertions(): void {
   // A concrete typed sidebars object in `sidebarsConfig`.
   defineChromeBindings({ sidebarsConfig: concreteSidebars });
 
-  // `Record<string, unknown>` in `frontmatterRenderers` / `mdxExtras`.
+  // A real renderer in `frontmatterRenderers` (typed by its call-side contract),
+  // and a loose `Record<string, unknown>` in `mdxExtras` (legitimately loose —
+  // author-controlled MDX has no fixed prop contract).
   defineChromeBindings({
-    frontmatterRenderers: {} as Record<string, unknown>,
+    frontmatterRenderers: {
+      badge: ({ value, entryKey }) => `${entryKey}:${String(value)}`,
+    },
     mdxExtras: {} as Record<string, unknown>,
   });
 }
@@ -88,6 +92,21 @@ export function _negativeCompileAssertions(): void {
   defineChromeBindings({
     // @ts-expect-error loadTagsForLocale must return a tag array, not a number
     loadTagsForLocale: (_lang: string) => 123,
+  });
+
+  // (4) a record-slot with a NON-callable value — `frontmatterRenderers` has a
+  //     fixed call-side contract, so a non-function is drift (unlike `mdxExtras`).
+  defineChromeBindings({
+    // @ts-expect-error a frontmatter renderer must be callable, not a number
+    frontmatterRenderers: { foo: 42 },
+  });
+
+  // (5) a `frontmatterRenderers` entry REQUIRING a prop the chrome never passes.
+  defineChromeBindings({
+    frontmatterRenderers: {
+      // @ts-expect-error renderer requires `extra`, which the chrome never passes
+      foo: (props: { value: unknown; extra: string }) => props.extra,
+    },
   });
 }
 

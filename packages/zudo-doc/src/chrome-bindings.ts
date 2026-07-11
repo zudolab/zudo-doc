@@ -104,6 +104,21 @@ export interface FooterTagEntry {
   count: number;
 }
 
+/**
+ * Props the chrome passes to each `frontmatterRenderers[key]` renderer —
+ * mirrors `FrontmatterCellRendererProps` at the real call site
+ * (`metainfo/frontmatter-preview.tsx`: `rendererFn({ value, entryKey, data,
+ * locale })`). A provided renderer's parameter must be a SUPERTYPE of this (it
+ * may read a subset), so a renderer REQUIRING a prop the chrome never passes is
+ * a compile error — the #2674 drift check this slot would otherwise erase.
+ */
+export interface FrontmatterRendererSlotProps {
+  value: NonNullable<unknown>;
+  entryKey: string;
+  data: Record<string, unknown>;
+  locale?: string;
+}
+
 // ===========================================================================
 // ChromeBindingsInput — the compile-time-checked input surface.
 //
@@ -149,11 +164,17 @@ export interface ChromeBindingsInput {
   /** Footer tag vocabulary (data slot); read structurally by `footer-with-defaults`. */
   tagVocabulary?: readonly unknown[];
   /**
-   * Frontmatter preview renderers keyed by field (renderer record). Loose
-   * `Record<string, unknown>` value type so narrow-props host renderers — and
-   * the showcase's `unknown`-props MDX stub — are accepted without a cast.
+   * Frontmatter preview renderers keyed by field (renderer record). Each value
+   * must be callable with {@link FrontmatterRendererSlotProps} (the fixed
+   * package call-side contract), so a non-function or a renderer requiring an
+   * unpassed prop is a compile error. Narrow-props renderers still work
+   * (parameter contravariance). Unlike `mdxExtras`, this slot has a fixed call
+   * site, so it carries the real contract rather than a loose `Record`.
    */
-  frontmatterRenderers?: Record<string, unknown>;
+  frontmatterRenderers?: Record<
+    string,
+    (props: FrontmatterRendererSlotProps) => unknown
+  >;
   /**
    * MDX content-component overrides (renderer record). Same loose value type as
    * `frontmatterRenderers`; the showcase's `MdxStub = (_props: unknown) => null`
@@ -162,10 +183,14 @@ export interface ChromeBindingsInput {
   mdxExtras?: Record<string, unknown>;
   /**
    * Frontmatter preview entry builder. `doc-content-header` calls it with the
-   * page `data` (`Record<string, unknown>`) and spreads the result as
-   * `<FrontmatterPreview entries={…} />`, so the return must be an array.
+   * page `data` (`Record<string, unknown>`) and spreads the result into
+   * `<FrontmatterPreview entries={…} />`, which destructures each entry as
+   * `[key, value]` — so the return must be an array of `[string, unknown]`
+   * tuples, not merely an array.
    */
-  buildFrontmatterPreviewEntries?: (data: Record<string, unknown>) => readonly unknown[];
+  buildFrontmatterPreviewEntries?: (
+    data: Record<string, unknown>,
+  ) => readonly (readonly [string, unknown])[];
   /**
    * Footer tag-list loader. `footer-with-defaults` calls it with the locale and
    * maps the result reading `{ tag, count }` — see {@link FooterTagEntry}.

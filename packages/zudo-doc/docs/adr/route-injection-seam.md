@@ -207,14 +207,16 @@ Decision: a host module **PATH is a string** — serializable — so it rides
 `settings` without violating the data-only rule. New optional setting
 `settings.chromeBindingsModule?: string`, a project-root-relative path (e.g.
 `"./src/chrome-bindings.tsx"`) to a host module with a **named export
-`chromeBindings: ChromeHostBindings`** (type importable from
-`@takazudo/zudo-doc/factory-context`). The routes plugin's `setup(ctx)`
-registers a SECOND virtual module, `virtual:zudo-doc-chrome-bindings`, that
-**re-exports** the host module; the bundler imports the actual callables
-through that re-export. `routes/_chrome.tsx` imports it and spreads the result
-AFTER the `DocHistory` default:
-`createChrome(routeCtx, { DocHistory, ...chromeBindings })` — so a host can
-override every slot, including DocHistory itself.
+`chromeBindings`**, built with `defineChromeBindings()` from
+`@takazudo/zudo-doc/chrome-bindings` (#2693 — a typed adapter that per-slot
+prop-checks the bindings and returns `ChromeHostBindings`, replacing the old
+`as ChromeHostBindings` cast). The routes plugin's `setup(ctx)` registers a
+SECOND virtual module, `virtual:zudo-doc-chrome-bindings`, that **re-exports**
+the host module; the bundler imports the actual callables through that
+re-export. `routes/_chrome.tsx` imports it and spreads the result AFTER the
+`DocHistory` default:
+`createChrome(routeCtx, { ...defineChromeBindings({ DocHistory }), ...chromeBindings })`
+— so a host can override every slot, including DocHistory itself.
 
 - **Data-only rule holds.** Only the PATH is serialized into `settings` (and
   thus into the route-context virtual module); the chrome-bindings virtual
