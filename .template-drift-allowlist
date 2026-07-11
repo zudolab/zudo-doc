@@ -11,8 +11,11 @@
 # `find packages/create-zudo-doc/templates -type f` walk — this is NOT an
 # incremental edit of the pre-#2660 265-line list (which referenced ~250
 # now-deleted files; none of that history is preserved here, see git log for
-# the prior form). Six entries remain, matched 1:1 against the six template↔
-# host pairs that genuinely differ once the walk is this small.
+# the prior form). Five entries remain, matched 1:1 against the five template↔
+# host pairs that genuinely differ once the walk is this small. (A sixth,
+# the tauri feature's find-bar/find-in-page-init/find-in-page.ts trio, was
+# removed by #2690 — find-in-page is now package-owned and settings-gated
+# via `findInPage: true`, so those template files no longer exist to diff.)
 
 # ── src/styles/global.css ───────────────────────────────────────────────────
 # The template ships a fixed ~29-line @import chain (Tailwind preflight +
@@ -82,19 +85,3 @@ pages/index.tsx
 # the documented escape hatch, not drift.
 pages/docs/[[...slug]].tsx
 pages/[locale]/docs/[[...slug]].tsx
-
-# ── tauri feature: src/components/find-bar.tsx, find-in-page-init.tsx, ─────
-# ── src/utils/find-in-page.ts ───────────────────────────────────────────────
-# The `tauri` feature (templates/features/tauri/files/) still ships real find-
-# in-page island files for generated Tauri projects — genuinely no package-
-# owned equivalent exists (find-in-page is a desktop-only, non-web feature).
-# The showcase itself no longer uses these: per the Wave 6 (#2661) completion
-# notes, `pages/lib/_body-end-islands.tsx` (their old mount point) is gone —
-# "tauri's find-in-page island ships unwired" is a documented, intentional gap
-# in the showcase, restorable via `chromeBindingsModule`'s `BodyEndIslands`
-# slot if the showcase ever wants it back. There is no host prod file left to
-# diff against (check_pair() reports [MISSING IN PROD] for all three without
-# this entry).
-src/components/find-bar.tsx
-src/components/find-in-page-init.tsx
-src/utils/find-in-page.ts
