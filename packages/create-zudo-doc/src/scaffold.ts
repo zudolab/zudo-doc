@@ -612,13 +612,15 @@ function generatePackageJson(choices: UserChoices) {
     // lockstep with the root package.json pins. No consumer-facing / CLI change.
     // next.77: router persistence/history fixes and runtime island remount
     // support, adopted in lockstep with the root package.json pins. No
-    // scaffold API change. next.78 (current pin): production HTML minification
+    // scaffold API change. next.78: production HTML minification
     // support via minifyHtml, adopted as a zudo-doc default through settings.
-    "@takazudo/zfb": "0.1.0-next.78",
-    "@takazudo/zfb-runtime": "0.1.0-next.78",
+    // next.79 (current pin): routine toolchain bump from next.78, adopted in
+    // lockstep with the root package.json pins. No consumer-facing / CLI change.
+    "@takazudo/zfb": "0.1.0-next.79",
+    "@takazudo/zfb-runtime": "0.1.0-next.79",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.78",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.79",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
@@ -697,7 +699,7 @@ function generatePackageJson(choices: UserChoices) {
     // same reason. This is the ACCEPTED, permanent contract per #2668 — see
     // the "@takazudo/zdtp dep implication" note in
     // packages/zudo-doc/docs/adr/route-injection-seam.md.
-    "@takazudo/zdtp": "0.4.6",
+    "@takazudo/zdtp": "0.4.8",
   };
 
   const devDeps: Record<string, string> = {
