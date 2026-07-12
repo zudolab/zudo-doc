@@ -697,7 +697,7 @@ function generatePackageJson(choices: UserChoices) {
     // same reason. This is the ACCEPTED, permanent contract per #2668 — see
     // the "@takazudo/zdtp dep implication" note in
     // packages/zudo-doc/docs/adr/route-injection-seam.md.
-    "@takazudo/zdtp": "0.4.6",
+    "@takazudo/zdtp": "0.4.8",
   };
 
   const devDeps: Record<string, string> = {
