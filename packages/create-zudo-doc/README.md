@@ -72,7 +72,7 @@ Each feature has a `--[no-]<flag>` form. Passing `--feature` enables it; `--no-f
 | `--[no-]search` | Pagefind full-text search | on |
 | `--[no-]sidebar-filter` | Real-time sidebar filter | on |
 | `--[no-]image-enlarge` | Click-to-enlarge for oversized images | on |
-| `--[no-]tag-governance` | Vocabulary-aware tag audit + suggest scripts | on |
+| `--[no-]tag-governance` | Vocabulary-aware tag audit + suggest scripts | off |
 | `--[no-]claude-resources` | Auto-generate Claude Code docs (`CLAUDE.md`, `llms.txt`) | off |
 | `--[no-]claude-skills` | Ship zudo-doc Claude Code skills (design-system, translate, version-bump) | off |
 | `--[no-]design-token-panel` | Interactive panel for tweaking spacing, font, color tokens | off |
@@ -86,6 +86,7 @@ Each feature has a `--[no-]<flag>` form. Passing `--feature` enables it; `--no-f
 | `--[no-]tauri` | Tauri desktop app — Mode 1 offline reader | off |
 | `--[no-]tauri-dev` | Tauri dev wrapper — Mode 2 configurable dev wrapper | off |
 | `--[no-]footer-nav-group` | Navigation links in the footer | off |
+| `--[no-]dynamic-page-transition` | SPA-style page transition with history handling | on |
 | `--[no-]footer-copyright` | Copyright notice in the footer | on |
 | `--[no-]footer-taglist` | Grouped tag index in the footer (requires tag-governance) | off |
 | `--[no-]changelog` | Changelog page | off |
