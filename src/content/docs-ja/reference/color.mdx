@@ -6,7 +6,7 @@ tags:
   - design-system
 ---
 
-zudo-docは**3層カラー戦略**を採用し、サイト上のすべての色をテーマ切り替え可能にしています。デフォルトのTailwindテーマはインポートされず、`@theme`ブロックで`--color-*: initial`としてカラー名前空間をリセットしてからプロジェクトトークンを定義します。これにより、カラースキームを切り替えるだけでサイト全体が一括で更新されます。
+zudo-docは**3層カラー戦略**を採用し、サイト上のすべての色をテーマ切り替え可能にしています。パッケージの`@takazudo/zudo-doc/theme.css`はTailwindのデフォルトカラーテーマをインポートせず、その`@theme`ブロックで`--color-*: initial`としてカラー名前空間をリセットしてから同梱トークンを定義します。プロジェクト側の後続の`@theme`ブロックはオーバーライドポイントです。これにより、カラースキームを切り替えるだけでサイト全体が一括で更新されます。
 
 ## 3層カラー戦略
 
@@ -15,7 +15,7 @@ zudo-docは**3層カラー戦略**を採用し、サイト上のすべての色�
 | 層 | 名前 | 目的 | 定義場所 |
 |----|------|------|----------|
 | 1 | **ランプ** | スキームの土台となる、共有される OKLCH カラーランプ | `zfb.config.ts` の自作 `colorSchemes` 上書き（任意 — 未設定ならパッケージのデフォルト）→ `ColorSchemeProvider` → `:root` |
-| 2 | **セマンティック** | デザイン上の意味 — 各色がUIで何を表すか | `src/styles/global.css` `@theme` |
+| 2 | **セマンティック** | デザイン上の意味 — 各色がUIで何を表すか | パッケージの`@takazudo/zudo-doc/theme.css` `@theme`（プロジェクト側の後続の`@theme`ブロックでオーバーライド可能） |
 | 3 | **コンポーネント** | 特定コンポーネント向けのスコープ付きオーバーライド | `.zd-content`（共有 `content.css`） |
 
 この階層構造により：
@@ -90,9 +90,9 @@ type RampRef =
 
 ## Tier 2：セマンティックトークン
 
-23 のセマンティックロールが、コンポーネントが実際に使用するカラーの面です。`src/styles/global.css`の`@theme`ブロックが、それら（および 4 つの base ロール）を Tailwind 互換トークンにマッピングします：
+23 のセマンティックロールが、コンポーネントが実際に使用するカラーの面です。パッケージの`@takazudo/zudo-doc/theme.css`が、それら（および 4 つの base ロール）を Tailwind 互換トークンにマッピングします。スキャフォールドではこのファイルを独自の`src/styles/global.css`にある`@theme`オーバーライドブロックより前にインポートするため、変更が必要なエイリアスだけを再定義してください：
 
-```css
+```css title="@takazudo/zudo-doc/theme.css"
 @theme {
   --color-*: initial;  /* Tailwindデフォルトをすべてリセット */
 
@@ -259,7 +259,7 @@ Tier 3のトークンはコンポーネント内部のものです。独自のUI
 
 ## カラースキーム
 
-アクティブなカラースキームを変更するには、`zfb.config.ts`の`colorScheme`を設定します：
+デフォルトでは`colorMode`が有効なため、`lightScheme`と`darkScheme`がアクティブなスキームを選び、`colorScheme`より優先されます。`defaultMode`は`"dark"`で、同梱のダークスキームに対応します。`respectPrefersColorScheme: true`では、OSの設定によりもう一方のモードが選ばれることがあります：
 
 ```ts title="zfb.config.ts"
 import { defineConfig } from "zfb/config";
@@ -267,9 +267,25 @@ import { zudoDoc } from "@takazudo/zudo-doc/config";
 
 export default defineConfig(
   zudoDoc({
-    colorScheme: "Default Dark", // ここを変更
+    colorMode: {
+      defaultMode: "dark",
+      lightScheme: "Default Light",
+      darkScheme: "Default Dark",
+      respectPrefersColorScheme: true,
+    },
     siteName: "My Docs",
     // ...
+  }),
+);
+```
+
+ライト／ダーク切り替えなしで1つの固定スキームを使うには、`colorMode: false`を設定します。この場合は`colorScheme`がスキームを選びます：
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    colorMode: false,
+    colorScheme: "My Theme",
   }),
 );
 ```
@@ -280,7 +296,7 @@ zudo-docはちょうど 2 つのカラースキーム — **Default Light**と**
 
 ## カスタムカラースキームの追加
 
-`colorSchemes`は`zudoDoc()`のエスケープハッチの1つです — 省略した場合は上記の2つの同梱スキームがそのまま使われます。スキームを追加または置き換えるには、独自のモジュール（例：`src/config/color-schemes.ts`）を作成して`Record<string, ColorScheme>`を組み立て、`zfb.config.ts`の`colorSchemes`フィールドで渡します。新しいスキームには独自の`ramps`と、必要な各モードの`map`が必要です（`SEMANTIC_RAMP_DEFAULTS`をスプレッドし、異なる必要のあるものだけを上書きします）。2つの同梱スキームも一緒に残したい場合は`defaultColorSchemes`もスプレッドしてください：
+`colorSchemes`は`zudoDoc()`のエスケープハッチの1つです — 省略した場合は上記の2つの同梱スキームがそのまま使われます。スキャフォールドには`src/config/color-schemes.ts`はありません。スキームを追加または置き換える場合は、独自のモジュール（例：そのパス）を作成して`Record<string, ColorScheme>`を組み立て、`zfb.config.ts`の`colorSchemes`フィールドで渡します。新しいスキームには独自の`ramps`と、必要な各モードの`map`が必要です（`SEMANTIC_RAMP_DEFAULTS`をスプレッドし、異なる必要のあるものだけを上書きします）。2つの同梱スキームも一緒に残したい場合は`defaultColorSchemes`もスプレッドしてください：
 
 ```ts title="src/config/color-schemes.ts"
 import { SEMANTIC_RAMP_DEFAULTS } from "@takazudo/zudo-doc/color-scheme-utils";
@@ -330,6 +346,7 @@ import { colorSchemes } from "./src/config/color-schemes";
 
 export default defineConfig(
   zudoDoc({
+    colorMode: false,
     colorScheme: "My Theme",
     colorSchemes,
     // ...
@@ -339,7 +356,7 @@ export default defineConfig(
 
 <Tip>
 
-スキームを追加または調整した後は、`pnpm contrast:audit`を実行して WCAG コントラストマトリクスのすべてのペアをチェックしてください — 完全な手法としきい値については`color-scheme-a11y`スキルを参照してください。
+このショーケースリポジトリでは、同梱スキームを変更するときにコントリビューターが`pnpm contrast:audit`を実行し、`color-scheme-a11y`スキルを使用します。これらはショーケース保守用のツールであり、生成されたスキャフォールド用のコマンドではありません。カスタムスキームを作成する場合は、プロジェクトに適したコントラスト要件を検証してください。
 
 </Tip>
 
