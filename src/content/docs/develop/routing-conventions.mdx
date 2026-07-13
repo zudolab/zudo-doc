@@ -120,6 +120,40 @@ export default function DocsPage({ params }: { params: { slug: string[] } }) {
 `/docs/guides/configuration` matches with `params.slug === ["guides", "configuration"]`.
 Rejoin with `slug.join("/")` to reconstruct the lookup key for `getEntry`.
 
+## Package route injection and shadowing
+
+With `packageOwnedRoutes` (the default) set to `true`, the
+`@takazudo/zudo-doc` routes plugin injects the documentation routes at build
+time. That includes `/docs/[[...slug]]`, its locale and version variants, and
+the tag and version routes. A generated project therefore ships almost no
+`pages/` files of its own.
+
+A project route still has priority over an injected route at the same path.
+When that happens, the build log reports:
+
+```text
+shadowed by a user pages/ route (user wins); skipping
+```
+
+The user file is used and the package route is not injected. Use this
+intentionally when a route needs a project-specific implementation.
+
+The `/` route is different. zfb does not permit injecting `/`, so the
+scaffold's `pages/index.tsx` is a one-line re-export of
+`@takazudo/zudo-doc/routes/index`. It provides the home page; it is not an
+example of route shadowing.
+
+The self-contained documentation-route stubs in the scaffold are also not
+optional shadowing examples. Injected dynamic routes currently return 404 in
+`zfb dev`, so the stubs are required to keep `pnpm dev` working for doc pages.
+This is a separate upstream limitation from the `/` injection restriction.
+
+When you customize a doc-route stub that shadows an injected route, it must
+also import `chromeBindings` from `virtual:zudo-doc-chrome-bindings` and pass it
+to `createChrome`. Otherwise the `chromeBindingsModule` channel is severed for
+your doc pages. See [Custom Components](../guides/custom-components.mdx) for
+the complete stub-threading patterns.
+
 ## Migration from Astro's getStaticPaths
 
 If you're migrating a project from Astro, `paths()` replaces `getStaticPaths()`.

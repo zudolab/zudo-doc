@@ -114,6 +114,35 @@ export default function DocsPage({ params }: { params: { slug: string[] } }) {
 `/docs/guides/configuration`は`params.slug === ["guides", "configuration"]`でマッチします。
 `slug.join("/")`で再結合して`getEntry`のルックアップキーを再構築します。
 
+## パッケージルートの注入とシャドーイング
+
+`packageOwnedRoutes`（デフォルトで`true`）が有効な場合、
+`@takazudo/zudo-doc`のroutesプラグインはビルド時にドキュメントルートを注入します。
+これには`/docs/[[...slug]]`、そのロケール・バージョン別のバリアント、タグとバージョンのルートが含まれます。
+したがって、生成されたプロジェクト自身が持つ`pages/`ファイルはほとんどありません。
+
+同じパスでは、プロジェクトのルートが注入されたルートより常に優先されます。
+この場合、ビルドログには次のように表示されます。
+
+```text
+shadowed by a user pages/ route (user wins); skipping
+```
+
+ユーザーファイルが使用され、パッケージルートは注入されません。プロジェクト固有の実装が必要なルートでは、これを意図的に使用します。
+
+`/`ルートは異なります。zfbは`/`の注入を許可しないため、スキャフォールドの`pages/index.tsx`は
+`@takazudo/zudo-doc/routes/index`を再エクスポートする1行のファイルです。
+これはホームページを提供する仕組みであり、ルートのシャドーイング例ではありません。
+
+スキャフォールド内の自己完結型ドキュメントルートスタブも、任意のシャドーイング例ではありません。
+注入された動的ルートは現在`zfb dev`で404を返すため、ドキュメントページで`pnpm dev`を動作させ続けるにはスタブが必要です。
+これは`/`の注入制限とは別の、上流の制約です。
+
+注入されたルートをシャドーするドキュメントルートスタブをカスタマイズする場合は、
+`virtual:zudo-doc-chrome-bindings`から`chromeBindings`もインポートし、`createChrome`へ渡す必要があります。
+そうしなければ、ドキュメントページでは`chromeBindingsModule`チャネルが切断されます。
+完全なスタブ配線パターンについては[カスタムコンポーネント](../guides/custom-components.mdx)を参照してください。
+
 ## AstroのgetStaticPathsからの移行
 
 Astroからプロジェクトを移行する場合、`paths()`が`getStaticPaths()`の代わりになります。
