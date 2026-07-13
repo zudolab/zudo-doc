@@ -12,7 +12,7 @@ tags:
 
 フッタータグリストは、既存のフッターグリッドの中にレンダリングされるタグの索引です。読者は今開いているドキュメントから離れずに、常にすべてのタグページへアクセスできるようになります。
 
-この機能は**デフォルトでオフ**です。`zfb.config.ts`で`footer.taglist.enabled`を`true`にするまで、フッターの見た目は従来と変わりません。ページごとのタグバッジ行やトップページの"All Tags"セクションも影響を受けません。
+この機能は**デフォルトでオフ**です。`zfb.config.ts`で`footer.taglist.enabled`を`true`にするまで、フッターの見た目は従来と変わりません。新しいscaffoldでは、この設定だけでは空のタグリストになります。chrome にタグローダーとボキャブラリの binding がないためです。ページごとのタグバッジ行やトップページの"All Tags"セクションも影響を受けません。
 
 ## 有効化
 
@@ -49,14 +49,65 @@ footer: {
 
 `enabled`以外のフィールドはすべて任意です。省略した項目には妥当なデフォルトが適用されます。
 
+<Warning title="新しいscaffoldではクロームバインディングが必要です">
+
+この設定フィールドだけではscaffoldプロジェクトに何も描画されません。ドキュメントルートの
+スタブはホストバインディングなしで`createChrome(routeCtx)`を呼び出すため、`loadTagsForLocale`と
+`tagVocabulary`スロットはno-opのデフォルトのままです。`chromeBindingsModule`を通し、両方の
+スロットをバインドしてください。詳しくは[Custom Components](./custom-components.mdx)と
+[ホストクロームバインディング](../reference/host-chrome-bindings.mdx)を参照してください。[テンプレート修正](https://github.com/zudolab/zudo-doc/issues/2716)後に生成されたscaffoldは
+表示用／データ用スロットを自動で通しますが、独自のハイドレートするアイランドには引き続きガイドで説明する静的インポートの配線が必要です。
+
+</Warning>
+
+ボキャブラリとロケール対応の件数ローダーを提供するbindingsモジュールを追加します。ローダーの
+契約は正確に`(lang: string) => readonly { tag: string; count: number }[]`です。静的なリストを
+返すのではなく、コンテンツコレクションからエントリーを導出してください。
+
+```ts title="src/chrome-bindings.ts"
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
+import { tagVocabulary } from "./tag-vocabulary";
+import { collectTagsForLocale } from "./tag-data";
+
+function loadTagsForLocale(
+  lang: string,
+): readonly { tag: string; count: number }[] {
+  return collectTagsForLocale(lang).map(({ tag, count }) => ({ tag, count }));
+}
+
+export const chromeBindings = defineChromeBindings({
+  loadTagsForLocale,
+  tagVocabulary,
+});
+```
+
+`zudoDoc()`からそのモジュールを指定し、同じボキャブラリをビルド時のタグ設定に渡します。
+
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+import { tagVocabulary } from "./src/tag-vocabulary";
+
+export default defineConfig(
+  zudoDoc({
+    // ...your settings, including footer.taglist.enabled: true
+    tagVocabulary: true,
+    tagVocabularyEntries: tagVocabulary,
+    chromeBindingsModule: "./src/chrome-bindings.ts",
+  }),
+);
+```
+
 ## `groupBy: "group"`と`"flat"`
 
 タグリストは2つのモードでレンダリングできます。
 
-- **`groupBy: "group"`** — ボキャブラリの`group`ごとに1カラム。順序は[`src/config/tag-vocabulary.ts`](./tag-governance.mdx)でその group が最初に登場する順です。ボキャブラリが有効なとき(`tagVocabulary: true`かつ`tagGovernance !== "off"`)のデフォルトです。各カラムのタイトルは`groupTitles[<group>]`から取られ、未指定なら group 名を先頭大文字にしたもの(`topic` → `Topic`)にフォールバックします。
+- **`groupBy: "group"`** — バインドしたボキャブラリの`group`ごとに1カラム。順序はその group が最初に登場する順です。ボキャブラリが有効なとき(`tagVocabulary: true`かつ`tagGovernance !== "off"`)のデフォルトです。各カラムのタイトルは`groupTitles[<group>]`から取られ、未指定なら group 名を先頭大文字にしたもの(`topic` → `Topic`)にフォールバックします。
 - **`groupBy: "flat"`** — `title`を見出しにした単一のアルファベット順カラム。ボキャブラリが無効のときは強制的にこれになります。タグがほんの少ししかなくグループ表示ではスカスカになる場合にも便利です。
 
 タグが増えてグループ表示で topic と type が実際に分離されるようになったら`"group"`へ切り替えます。それまでは`"flat"`で十分です。
+
+このリポジトリの`src/config/tag-vocabulary.ts`はショーケース専用の実装例です。新しいscaffoldには`src/config/`ディレクトリがありません。プロジェクトに合う場所にボキャブラリを作成し、上記のように`tagVocabularyEntries`と`chromeBindings`を通して配線してください。
 
 ## ロケールオーバーライド
 
