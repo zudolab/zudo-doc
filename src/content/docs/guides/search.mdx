@@ -8,7 +8,7 @@ tags:
 
 ## How Search Works
 
-zudo-doc uses [MiniSearch](https://lucaong.github.io/minisearch/) for full-text site search. A search index is generated from your content files (title, description, and body text) and served as a single JSON file. The browser loads this index and performs all searching client-side — no server or external service required.
+zudo-doc's built-in search widget uses a client-side word-match scorer for full-text site search. A search index is generated from your content files (title, description, and body text) and served as a single JSON file. The browser loads this index and performs all searching client-side — no server or external service required.
 
 ## Using Search
 
@@ -52,13 +52,31 @@ This is useful for pages like changelogs, imported content (e.g., CLAUDE.md), or
 
 </Tip>
 
+## Replacing the Search Widget
+
+Use the `SearchWidget` slot in [Host Chrome Bindings](../reference/host-chrome-bindings.mdx) to replace the header search widget. The chrome passes exactly these seven locale-aware props:
+
+```ts
+SearchWidget: (props: {
+  placeholderText: string;
+  shortcutHint: string;
+  resultCountTemplate: string;
+  searchLabel: string;
+  searchUnavailableText: string;
+  loadingIndexText: string;
+  noResultsText: string;
+}) => unknown;
+```
+
+The chrome binds the site `base` path internally. A host widget never receives `base`, so do not require it in the replacement component.
+
 ## Search Features
 
-MiniSearch provides:
+The built-in widget provides:
 
-- **Fuzzy matching**: Tolerates typos (up to 20% character difference)
-- **Prefix search**: Finds results as you type (e.g., "conf" matches "Configuration")
-- **Field boosting**: Title matches rank 3x higher than body text, descriptions 2x
+- **Word matching**: Matches query terms in titles, descriptions, and body text
+- **Field scoring**: Title matches add 3 points, descriptions add 2, and body text adds 1
+- **Multiple terms**: Scores accumulate across matching terms and fields
 - **Instant results**: The full index is loaded once and queried in-memory
 
 ## Server-Side Search (Search Worker)
@@ -75,7 +93,7 @@ The built-in client-side search works well for small-to-medium documentation sit
 
 ### How It Works
 
-The Search Worker fetches the same `search-index.json` from your deployed site and caches it with a 5-minute TTL. It uses identical MiniSearch configuration (prefix, fuzzy, boost settings), so results are consistent with client-side search.
+The Search Worker fetches the same `search-index.json` from your deployed site and caches it with a 5-minute TTL. It uses MiniSearch with prefix, fuzzy, and field-boost settings; its matching behavior is independent from the built-in widget's word-match scorer.
 
 ### Comparison
 
