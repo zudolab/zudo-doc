@@ -4,26 +4,45 @@ description: Development commands, build tools, and component development patter
 sidebar_position: 17
 ---
 
-## Development Commands
+## Commands in a Fresh Scaffold
 
-These commands start the local development servers.
+A project created with `create-zudo-doc` starts with these scripts:
 
 | Command | What it does |
 |---|---|
-| `pnpm dev` | Runs the zfb dev server (port 4321) and doc-history-server (port 4322) concurrently |
+| `pnpm dev` | Start the zfb development server |
+| `pnpm build` | Export static HTML to `dist/` |
+| `pnpm preview` | Serve the built `dist/` output locally |
+| `pnpm check` | Run TypeScript type checking |
+
+<Tip>
+
+Feature choices can add scripts to the generated `package.json`; treat that file as the project's command reference.
+
+</Tip>
+
+## Contributing to This Repository
+
+This repository is also zudo-doc's showcase. Its commands include package development, doc-history data, and CI tooling that a fresh scaffold does not ship.
+
+### Development Commands
+
+| Command | What it does |
+|---|---|
+| `pnpm dev` | Runs the zfb dev server (port 4321), doc-history-server (port 4322), package watch, and showcase development helpers concurrently |
 | `pnpm dev:zfb` | zfb dev server only (port 4321) |
-| `pnpm dev:history` | Doc history API server only (port 4322) |
+| `pnpm dev:history` | doc-history API server only (port 4322) |
 | `pnpm dev:zudo-doc` | tsup `--watch` for the `@takazudo/zudo-doc` package |
 | `pnpm dev:stable` | Alternative build-then-serve mode (avoids HMR crashes on content file add/remove) |
 | `pnpm dev:network` | zfb dev server with `--host 0.0.0.0` for LAN access |
 
 <Tip>
 
-Use `pnpm dev:stable` when you're adding or removing content files frequently. Standard `pnpm dev` can crash on file system changes due to Vite HMR.
+Use `pnpm dev:stable` when you're adding or removing showcase content files frequently. Standard `pnpm dev` can crash on file system changes due to Vite HMR.
 
 </Tip>
 
-## Build & Quality Commands
+### Build & Quality Commands
 
 | Command | What it does |
 |---|---|
@@ -56,9 +75,13 @@ By default, every `.tsx` component renders to HTML at build time and ships zero 
 
 ### Client-hydrated islands
 
-When a component needs interactivity — local state, event handlers, animations — it registers itself with zfb's island runtime through its own `useEffect` / event-binding code. Server-render output is reused; only the interactive part hydrates.
+When a component needs interactivity — local state, event handlers, animations — wrap it with zfb's `Island()` helper at its render site. Server-rendered output is reused; only the interactive part hydrates.
 
-Current islands in the project: `toc.tsx`, `mobile-toc.tsx`, `sidebar-toggle.tsx`, `sidebar-tree.tsx`, `theme-toggle.tsx`, `doc-history.tsx`, zdtp panel (Design Token Panel — self-mounted via `configurePanel()` from the `@takazudo/zdtp` package, not registered in the island registry), `ai-chat-modal`.
+The standard chrome islands — including the table of contents, mobile TOC, sidebar tree and toggles, theme toggle, and doc history — are implemented by `@takazudo/zudo-doc`. A fresh scaffold consumes those package components; it does not contain copies of their source files.
+
+This showcase retains a few project-specific integrations: `client-router-bootstrap`, `design-token-panel-bootstrap`, `desktop-sidebar-toggle`, and the `preset-generator` island. The Design Token Panel self-mounts through `configurePanel()` rather than an island registry, and small re-export shims preserve existing showcase import paths. These are showcase implementation details, not a starter inventory for new projects.
+
+To add a project-owned presentational component or an interactive island to a scaffold, follow the [Custom Components guide](./custom-components.mdx). It covers the `mdxExtras` registration path and the static import route required for an island to be discovered.
 
 Use client-hydrated islands for:
 
@@ -68,11 +91,11 @@ Use client-hydrated islands for:
 
 ### Content Typography Components
 
-These live in `src/components/content/` and are Preact function components that render purely on the server — no client hydration. They override standard HTML elements in MDX via the `_mdx-components.ts` mapping consumed by the doc page route.
+Content typography is package-owned. `@takazudo/zudo-doc/content.css` supplies the shared `.zd-content` stylesheet, while package Preact components render the major MDX HTML overrides on the server with no client hydration.
 
-Current overrides: headings (h2–h4), paragraph, link, strong, blockquote, lists (ul/ol), table.
+The default component map covers headings (h2–h4), paragraph, link, strong, blockquote, lists (ul/ol), and tables. A project can override those bindings, or add other MDX components, through `mdxExtras`.
 
-Use content typography components when you need to apply project design tokens to standard MDX prose elements.
+Use `mdxExtras` when a project needs intentional MDX rendering changes; keep shared typography fixes in the package rather than copying `.zd-content` rules into a project's `global.css`.
 
 ## Content Development Cycle
 
