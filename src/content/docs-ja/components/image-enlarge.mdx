@@ -32,7 +32,7 @@ sidebar_position: 10
 
 この機能は 2 つの部分で構成されています。
 
-- **サーバーレンダリング（SSR）** — `pages/_mdx-components.ts` の MDX 段落（`p`）コンポーネントオーバーライドが、画像 1 枚だけを含む段落を `<figure class="zd-enlargeable">` でラップし、非表示の `<button class="zd-enlarge-btn">` を注入します。インラインテキストと混在する画像はラップされません。
+- **サーバーレンダリング（SSR）** — zudo-doc のパッケージ MDX コンポーネント（`packages/zudo-doc/src/mdx-components/`）にある MDX 段落（`p`）コンポーネントオーバーライドが、画像 1 枚だけを含む段落を `<figure class="zd-enlargeable">` でラップし、非表示の `<button class="zd-enlarge-btn">` を注入します。インラインテキストと混在する画像はラップされません。
 - **実行時** — Preact アイランド（`ImageEnlarge`）が `ResizeObserver` を使用して `naturalWidth` と `clientWidth × devicePixelRatio` を比較し、ボタンの `hidden` 属性を切り替えます。`hidden` が外れている間は画像全体がクリック対象となり、ホバー時のフィードバックも表示されるため、画像のどこをクリックしても `<dialog>` で開きます。**ESC** キー、ビューポート右上の閉じるボタン、または画像の外側をクリックすると閉じられます。
 
 :::note
@@ -65,7 +65,7 @@ export default defineConfig(
 適切なオーバーレイ色はコンテンツ画像に依存し、サイトによって異なります。デフォルト値はほとんどのケースで機能しますが、3 層カラー戦略（[Color](../reference/color.mdx) を参照）に従い、任意のカラースキームで上書きできます。
 
 ```ts
-// zfb.config.ts の colorSchemes フィールドに渡す、自作の colorSchemes 上書きモジュール
+// your colorSchemes override module, passed via the `colorSchemes` field in zfb.config.ts
 semantic: {
   imageOverlayBg: { base: 4 },   // ramp stop — deep surface
   imageOverlayFg: { base: 0 },  // ramp stop — light text
