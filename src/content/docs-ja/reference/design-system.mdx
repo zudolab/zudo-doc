@@ -6,33 +6,55 @@ tags:
   - design-system
 ---
 
-zudo-docは**タイトトークン戦略**を採用しています。Tailwindフレームワーク全体をインポートするのではなく、`preflight`と`utilities`のみを読み込み、デフォルトテーマ層を完全にスキップします。小さく意図的なデザイントークンのセットをゼロから定義します。このページでは、スペーシング、タイポグラフィ、カラー、角丸、ブレークポイントの全体像を解説します。
+zudo-docは**タイトトークン戦略**を採用しています。Tailwindフレームワーク全体をインポートするのではなく、`preflight`と`utilities`のみを読み込み、デフォルトテーマ層を完全にスキップします。その後パッケージが、小さく意図的なデザイントークンのセットを提供します。このページでは、スペーシング、タイポグラフィ、カラー、角丸、ブレークポイント、レイヤリングの全体像を解説します。
 
 ## タイトトークン戦略
 
 Tailwind CSSには数百の組み込み値（カラー、スペーシングスケール、フォントサイズなど）が用意されています。テーマ切り替え可能なプロジェクトでは、これらのデフォルト値が問題を引き起こします。ハードコードされた値はテーマ変更を無視し、一貫性を崩します。
 
-zudo-docでは`src/styles/global.css`内で選択的インポートを使い、`preflight`（リセット）と`utilities`（ユーティリティクラス）のみを読み込んでいます。デフォルトテーマ層は完全にスキップされます:
+scaffold の `src/styles/global.css` は、Tailwind の `preflight`（リセット）と `utilities`（ユーティリティクラス）のみをインポートした後、パッケージのトークンスタイルシートをインポートします。デフォルトの Tailwind テーマ層は意図的にスキップされます:
 
 ```css
-@import "tailwindcss/preflight";
+@layer zd-preflight, zd-flow;
+@import "tailwindcss/preflight" layer(zd-preflight);
 @import "tailwindcss/utilities";
+@import "@takazudo/zudo-doc/theme.css";
+@import "@takazudo/zudo-doc/safelist.css";
+@import "@takazudo/zudo-doc/content.css";
+@import "@takazudo/zudo-doc/page-loading.css";
+@import "@takazudo/zudo-doc/features.css";
 
+/* Override package defaults here when the project needs to. */
 @theme {
-  --color-*: initial;  /* Tailwindのデフォルトカラーをリセット */
-  --color-bg: var(--zd-bg);
-  --color-fg: var(--zd-fg);
-  /* ... */
+  /* e.g. --color-accent: oklch(0.6 0.2 250); */
 }
 ```
 
-`@theme`ブロックは`--color-*: initial`で始まり、Tailwindのデフォルトカラートークンをすべて消去してからプロジェクトトークンを定義します。`@theme`内で明示的に定義されたトークンのみが機能します。未定義のトークン（`p-4`や`bg-gray-500`など）を使っても効果はありません。値自体が存在しないためです。これにより**無効なトークンはビルドエラーやスタイル欠落として現れ、視覚的なバグにはなりません**。
+`@takazudo/zudo-doc/theme.css` がデフォルトの `@theme` トークンを提供します。パッケージのソースである `packages/zudo-doc/src/theme.css` が唯一の情報源であり、scaffold の後続の空の `@theme` ブロックは上書きポイントです。出荷されるブロックは `--color-*: initial` で始まり、プロジェクトのカラートークンを再追加する前に Tailwind のデフォルトパレットを消去します。
 
 <Info>
 
 これが核となる設計思想です。プロジェクトに必要なものだけを定義する。システム内のすべての値は意図的であり、Tailwindデフォルトの誤使用はすぐに判明します。
 
 </Info>
+
+## 利用できるTailwindの語彙
+
+タイトトークン戦略は Tailwind のユーティリティ構文を取り除くものではありません。トークンを持つユーティリティを絞り込みます。MDX やコンポーネントでは以下のプロジェクト語彙を使ってください。
+
+| 機能するもの | 機能しないもの（スタイルなし） |
+|-------|--------------------------|
+| プロジェクトトークン: `text-caption`、`bg-accent`、`px-hsp-*`、`py-vsp-*`、`w-icon-*`、`z-modal` などの z-index tier | 数値スペーシング: `p-4`、`mt-8`、`w-64` |
+| `tracking-tight`、`tracking-normal`、`tracking-wide`、`tracking-wider` | `tracking-tighter`、`tracking-widest` |
+| `rounded`、`rounded-lg`、`rounded-full` | デフォルトの文字サイズ: `text-sm`、`text-lg` |
+| 静的ユーティリティ: `flex`、`grid-cols-3`、`hidden`、... | デフォルトパレット: `bg-blue-500`（設計上リセットされる） |
+| 任意値: `m-[13.37px]`、`w-[42%]` — 完全なエスケープハッチ | `shadow-md`（存在するのは `shadow-lg` のみ） |
+
+scaffold は `@source` のカバレッジと Tailwind の自動検出によって、MDX コンテンツ、`src/components/`、`src/chrome-bindings.tsx`、`pages/` を走査します。走査対象外の場所で使ったクラスはスタイルなしのマークアップとして出力されるため、新しいソース位置を導入するときは `@source` ディレクティブを追加してください。
+
+Tailwind のデフォルト語彙を再有効化するには、`tailwindcss/theme` をインポートするか、プロジェクトの `@theme` 上書きブロックに必要なトークンを定義します。値がプロジェクトのデザイン言語の一部なら、ローカルのセマンティックトークンを優先してください。
+
+この語彙を MDX コンポーネントで使う例は、[カスタムコンポーネント](../guides/custom-components.mdx)を参照してください。
 
 ## スペーシング
 
@@ -42,7 +64,7 @@ zudo-docではスペーシングを**水平（hsp）**と**垂直（vsp）**の2
 
 | トークン | 値 | 使用例 |
 |-------|-------|---------------|
-| `hsp-2xs` | `0.25rem` (4px) | `px-hsp-2xs` |
+| `hsp-2xs` | `0.125rem` (2px) | `px-hsp-2xs` |
 | `hsp-xs` | `0.375rem` (6px) | `px-hsp-xs` |
 | `hsp-sm` | `0.5rem` (8px) | `gap-x-hsp-sm` |
 | `hsp-md` | `0.75rem` (12px) | `px-hsp-md` |
@@ -54,13 +76,14 @@ zudo-docではスペーシングを**水平（hsp）**と**垂直（vsp）**の2
 
 | トークン | 値 | 使用例 |
 |-------|-------|---------------|
-| `vsp-2xs` | `0.25rem` (4px) | `py-vsp-2xs` |
-| `vsp-xs` | `0.5rem` (8px) | `py-vsp-xs` |
-| `vsp-sm` | `0.75rem` (12px) | `gap-y-vsp-sm` |
-| `vsp-md` | `1rem` (16px) | `py-vsp-md` |
-| `vsp-lg` | `1.5rem` (24px) | `py-vsp-lg` |
-| `vsp-xl` | `2rem` (32px) | `py-vsp-xl` |
-| `vsp-2xl` | `3rem` (48px) | `py-vsp-2xl` |
+| `vsp-3xs` | `0.25rem` (4px) | `py-vsp-3xs` |
+| `vsp-2xs` | `0.4375rem` (7px) | `py-vsp-2xs` |
+| `vsp-xs` | `0.875rem` (14px) | `py-vsp-xs` |
+| `vsp-sm` | `1.25rem` (20px) | `gap-y-vsp-sm` |
+| `vsp-md` | `1.5rem` (24px) | `py-vsp-md` |
+| `vsp-lg` | `1.75rem` (28px) | `py-vsp-lg` |
+| `vsp-xl` | `2.5rem` (40px) | `py-vsp-xl` |
+| `vsp-2xl` | `3.5rem` (56px) | `py-vsp-2xl` |
 
 両軸とも`0`（`0px`）と`px`（`1px`）のユーティリティ値も含まれます。
 
@@ -74,9 +97,28 @@ zudo-docではスペーシングを**水平（hsp）**と**垂直（vsp）**の2
 
 <Tip>
 
-`hsp-lg`は`1rem`ですが`vsp-lg`は`1.5rem`と、垂直軸は大きいサイズほど広がります。これは意図的な設計です。垂直方向の流れには水平方向のリズムより多くの余白が必要です。
+`hsp-lg`は`1rem`ですが`vsp-lg`は`1.75rem`と、垂直軸は大きいサイズほど広がります。これは意図的な設計です。垂直方向の流れには水平方向のリズムより多くの余白が必要です。
 
 </Tip>
+
+## 要素サイズ
+
+### アイコンサイズ
+
+| トークン | 値 | 使用例 |
+|-------|-------|---------------|
+| `icon-xs` | `0.75rem` (12px) | `w-icon-xs h-icon-xs` |
+| `icon-sm` | `1rem` (16px) | `w-icon-sm h-icon-sm` |
+| `icon-md` | `1.25rem` (20px) | `w-icon-md h-icon-md` |
+| `icon-lg` | `1.5rem` (24px) | `w-icon-lg h-icon-lg` |
+
+## エレベーション
+
+定義されているシャドウトークンは1つだけです。
+
+| トークン | 値 | 使用例 |
+|-------|-------|---------------|
+| `lg` | `0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)` | `shadow-lg` |
 
 ## タイポグラフィ
 
@@ -164,6 +206,26 @@ zudo-docではスペーシングを**水平（hsp）**と**垂直（vsp）**の2
 </div>
 ```
 
+## Z-index Tier
+
+任意のスタック値ではなく、意味を持つ z-index tier を使ってください。
+
+| トークン | 値 | 使用例 |
+|-------|-------|---------------|
+| `content` | `0` | `z-content` |
+| `local-1` | `1` | `z-local-1` |
+| `local-2` | `2` | `z-local-2` |
+| `local-3` | `3` | `z-local-3` |
+| `sidebar` | `10` | `z-sidebar` |
+| `toolbar` | `20` | `z-toolbar` |
+| `dropdown` | `30` | `z-dropdown` |
+| `popover` | `40` | `z-popover` |
+| `modal-backdrop` | `50` | `z-modal-backdrop` |
+| `modal` | `60` | `z-modal` |
+| `toast` | `70` | `z-toast` |
+| `tooltip` | `80` | `z-tooltip` |
+| `drag` | `90` | `z-drag` |
+
 ## カラー
 
 カラーは**3層戦略**を採用しています。生のパレット値（Tier 1）がセマンティックトークン（Tier 2）に流れ込み、さらにコンポーネントスコープのトークン（Tier 3）に供給されます。各層は上の層のみを参照するため、カラースキームを切り替えるとサイト全体が一括で更新されます。
@@ -172,9 +234,9 @@ zudo-docではスペーシングを**水平（hsp）**と**垂直（vsp）**の2
 
 ## 使用ルール
 
-<Warning title="Tailwindデフォルトは無効">
+<Warning title="Tailwindのデフォルトテーマは無効">
 
-Tailwindのデフォルトテーマはインポートされていません。`tailwindcss/preflight`と`tailwindcss/utilities`のみが読み込まれます。プロジェクトで定義されたトークンのみが機能します。
+Tailwindのデフォルトテーマはインポートされていません。プロジェクトトークンは `@takazudo/zudo-doc/theme.css` から来て、その後にプロジェクトの `@theme` 上書きブロックが適用されます。定義されていないトークンはスタイルなしのマークアップになります。
 
 </Warning>
 
@@ -204,7 +266,7 @@ Tailwindのデフォルトテーマはインポートされていません。`ta
 <div class="bg-[#1e1e2e] text-[#f8f8f2]">テーマ切り替え時に壊れる</div>
 ```
 
-すべてのトークンは`src/styles/global.css`で定義されています。このファイルがデザインシステムの唯一の情報源です。
+デフォルトトークンは `@takazudo/zudo-doc/theme.css` から提供され、`packages/zudo-doc/src/theme.css` が唯一の情報源です。scaffold の `src/styles/global.css` はそれらのデフォルトをインポートし、プロジェクトの上書きポイントを提供します。
 
 ## インタラクションのルール
 
