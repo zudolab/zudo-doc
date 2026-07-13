@@ -32,6 +32,12 @@ A few things a fresh scaffold intentionally does **not** include:
 
 </Note>
 
+## Color Schemes
+
+zudo-doc ships exactly two color schemes — `Default Light` and `Default Dark` — sharing one set of OKLCH ramps. There is no bundled catalog of community or terminal presets to pick a `--scheme` value from.
+
+Customization happens one level deeper, through the `colorSchemes` escape-hatch field in `zfb.config.ts`: pass your own `{ ramps, map }` palette map to `zudoDoc({ colorSchemes: { … } })` (see [Color](./color.mdx#adding-a-custom-color-scheme) — "Adding a Custom Color Scheme"). Preview the result live in the [Design Token Panel](./design-token-panel.mdx#ai-workflow)'s Palette tab (see [Color Scheme Preview](../guides/color-scheme-preview.mdx)) before committing it to source.
+
 ## Options
 
 ### Project
@@ -43,6 +49,7 @@ A few things a fresh scaffold intentionally does **not** include:
 | `--github-url <url>` | GitHub repository URL (drives header link + source link) | — |
 | `--pm <manager>` | Package manager: `pnpm`, `npm`, `yarn`, `bun` | `pnpm` |
 | `--[no-]install` | Install dependencies after scaffolding | prompt |
+| `--[no-]git` | Initialize a git repository + initial commit (enables doc-history metadata) | on |
 
 ### Color Scheme
 
@@ -54,12 +61,6 @@ A few things a fresh scaffold intentionally does **not** include:
 | `--dark-scheme <name>` | Dark scheme (light-dark mode) | `Default Dark` |
 | `--default-mode <mode>` | `light` or `dark` (light-dark mode) | `dark` |
 | `--[no-]respect-system-preference` | Respect OS color scheme preference | `true` |
-
-## Color Schemes
-
-zudo-doc ships exactly two color schemes — `Default Light` and `Default Dark` — sharing one set of OKLCH ramps. There is no bundled catalog of community or terminal presets to pick a `--scheme` value from.
-
-Customization happens one level deeper, through the `colorSchemes` escape-hatch field in `zfb.config.ts`: pass your own `{ ramps, map }` palette map to `zudoDoc({ colorSchemes: { … } })` (see [Color](./color.mdx#adding-a-custom-color-scheme) — "Adding a Custom Color Scheme"). Preview the result live in the [Design Token Panel](./design-token-panel.mdx#ai-workflow)'s Palette tab (see [Color Scheme Preview](../guides/color-scheme-preview.mdx)) before committing it to source.
 
 ### Features
 
@@ -88,6 +89,7 @@ Customization happens one level deeper, through the `colorSchemes` escape-hatch 
 | `--[no-]tag-governance` | Vocabulary-aware tag audit + suggest scripts | off |
 | `--[no-]doc-tags` | Per-tag and tag-index browsing routes (docs/tags/...) | off |
 | `--[no-]footer-taglist` | Grouped tag index in the footer (requires tagGovernance) | off |
+| `--[no-]noindex` | Avoid robots indexing — noindex meta + robots.txt | off |
 
 ### Preset
 
@@ -182,7 +184,7 @@ pnpm create zudo-doc my-docs \
 
 ## Programmatic API
 
-The package also exports a programmatic API. The options object accepts the same fields as the JSON preset, plus an `install` option:
+The package also exports a programmatic API. The options object accepts the same fields as the JSON preset, plus `install` and `git` options. The programmatic API defaults both to `false`.
 
 ```ts
 import { createZudoDoc } from "create-zudo-doc";
@@ -205,5 +207,6 @@ await createZudoDoc({
   ],
   packageManager: "pnpm",
   install: true,
+  git: true,
 });
 ```
