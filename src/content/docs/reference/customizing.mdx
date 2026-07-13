@@ -18,13 +18,11 @@ That "one config file" ideal covers the common cases. This page is the **escalat
 | **1. `buildDocsSchema` override** | You need a custom, validated frontmatter key | Replace one function; own the schema |
 | **2. Config fields** | Toggling a feature or tuning behavior | None — it is just a field |
 | **3. Token overrides** | Re-theming colors, spacing, typography | A `@theme` block in `global.css` |
-| **4. `zudo-doc eject`** | A component's markup itself must change | You own the ejected copy |
-| **5. `chromeBindingsModule`** | Injecting host content/callables into injected routes | One host module |
+| **4. `zudo-doc eject`** | A content-layer component you re-reference must change | You own the ejected copy and its imports |
+| **5. `chromeBindingsModule`** | Injecting host content/callables into injected routes, including [custom MDX components](../guides/custom-components.mdx#global-registration-mdxextras) | One host module plus stub wiring |
 | **6. Your own `pages/*.tsx`** | A whole route must be yours | You own that route |
 | **7. Deploy path** | Going live (especially with SSR features) | Adapter + `wrangler.toml` + secrets |
 | **8. Restoring pre-push / HTML checks** | You want the showcase's validation gates | Copy a script + add deps |
-
----
 
 ## Rung 1 — Custom frontmatter keys (`buildDocsSchema`)
 
@@ -62,8 +60,6 @@ Now pages can declare `tier: core` in frontmatter and it validates at build time
 
 </Note>
 
----
-
 ## Rung 2 — Config fields
 
 Almost everything else **is** a field. `zudoDoc()` defaults every setting, so your `zfb.config.ts` lists only what differs:
@@ -89,8 +85,6 @@ export default defineConfig(
 
 The full field list — with the default for every one — is the [Configuration](../guides/configuration.mdx) reference, which mirrors the `ZudoDocConfig` type's own JSDoc.
 
----
-
 ## Rung 3 — Token overrides
 
 The scaffold's `src/styles/global.css` is a short `@import` chain that pulls the package's `theme.css` (all the `@theme` design tokens), `content.css`, and `features.css` — followed by an empty `@theme { … }` block reserved for you. Because it comes **after** the package imports, anything you redefine there wins the cascade:
@@ -111,36 +105,33 @@ For per-component rebranding without touching every element that reads a global 
 
 **Limit:** tokens restyle; they do not restructure markup. See [Design System](./design-system.mdx), [Color](./color.mdx), and [Component Tokens](./component-tokens.mdx).
 
----
-
 ## Rung 4 — Ejecting a component
 
-When no token can reach the change — the markup itself is wrong for you — eject the component. Ejection copies its source out of the package into your project so you own the file directly:
+When no token can reach the change — the markup itself is wrong for you — eject a **content-layer** component that your project re-references (for example through `mdxExtras`). Ejection copies its source out of the package into your project and rewrites matching host imports to the local copy:
 
 ```sh
 # eject a component (run via your package manager's bin runner)
-pnpm exec zudo-doc eject header
+pnpm exec zudo-doc eject details
 # → copies source into your project and rewrites imports to resolve locally
 
 # see the full list
 pnpm exec zudo-doc --help
 ```
 
-The 18 ejectable components:
+The 18 ejectable components include two different scopes:
 
-`header`, `footer`, `breadcrumb`, `toc`, `sidebar`, `theme-toggle`, `page-loading`, `tab-item`, `doc-pager`, `content-admonition`, `code-group`, `details`, `sidebar-tree-island`, `sidebar-toggle-island`, `desktop-sidebar-toggle-island`, `image-enlarge`, `doc-history`, `site-tree-nav-island`
+- **Content-layer:** `tab-item`, `content-admonition`, `code-group`, and `details`. Re-reference these from project-owned bindings or MDX component registration when you need the local copy to render.
+- **Chrome-rendered:** `header`, `footer`, `breadcrumb`, `toc`, `sidebar`, `theme-toggle`, `page-loading`, `doc-pager`, `sidebar-tree-island`, `sidebar-toggle-island`, `desktop-sidebar-toggle-island`, `image-enlarge`, `doc-history`, and `site-tree-nav-island`. The CLI can copy these sources, but a fresh scaffold has no host call site for them, so the copy is a functional no-op: editing it does not change the rendered chrome.
 
-After ejecting, edit the local copy — changes take effect immediately under `pnpm dev`.
+For content-layer components, wire the local import into the host code that renders it, then edit the local copy. The [custom components guide](../guides/custom-components.mdx#global-registration-mdxextras) shows the bindings and route-stub setup required for `mdxExtras`.
 
 <Note>
 
-Eject writes provenance into a `.zudo-doc.json` file recording which components you own. That file is **lazy-created on the first eject** — a fresh scaffold does not ship it, so an un-ejected project never carries an unexplained config file. Remove a component's directory and its `.zudo-doc.json` entry to go back to the package version.
+Eject writes provenance into a `.zudo-doc.json` file recording which components you own. That file is **lazy-created on the first eject** — a fresh scaffold does not ship it, so an un-ejected project never carries an unexplained config file. To revert an eject, first restore every rewritten or manually added local import to its original `@takazudo/zudo-doc/...` package import; then remove the component directory and its `.zudo-doc.json` entry. Removing the directory first breaks those imports.
 
 </Note>
 
-**Limit:** an ejected copy no longer receives package updates for that component — you take on its maintenance.
-
----
+**Limit:** an ejected copy no longer receives package updates for that component — you take on its maintenance. The [CLI warning work](https://github.com/zudolab/zudo-doc/issues/2717) tracks clearer guidance for chrome copies; [the chrome-markup seam discussion](https://github.com/zudolab/zudo-doc/issues/2719) tracks the missing supported customization path. Today, there is no supported way to customize chrome markup through ejection.
 
 ## Rung 5 — `chromeBindingsModule` (host-callables)
 
@@ -164,17 +155,15 @@ export const chromeBindings = defineChromeBindings({
 });
 ```
 
-The Design Token Panel has a parallel channel, `designTokenPanelConfigModule`: the package-default panel works with zero config (just `designTokenPanel: true`), and to fully customize it you point that setting at a host module exporting `buildDesignTokenPanelConfig(mode)`. Both channels are documented in full — including their loud missing-file behavior — on [Host Chrome Bindings](./host-chrome-bindings.mdx).
+A fresh scaffold needs one more change before this example can affect its doc pages. Its self-contained `pages/docs/[[...slug]].tsx` stub shadows the injected route and calls `createChrome(routeCtx)` without bindings. Statically import `chromeBindings` into that stub and pass it to `createChrome()`; apply the equivalent change to locale or versioned stubs that your project uses. A scaffold generated after [the stub-threading fix](https://github.com/zudolab/zudo-doc/issues/2716) may already contain the presentational wiring, but the [custom components guide](../guides/custom-components.mdx#global-registration-mdxextras) is the complete, universal recipe.
 
----
+The Design Token Panel has a parallel channel, `designTokenPanelConfigModule`: the package-default panel works with zero config (just `designTokenPanel: true`), and to fully customize it you point that setting at a host module exporting `buildDesignTokenPanelConfig(mode)`. Both channels are documented in full — including their loud missing-file behavior — on [Host Chrome Bindings](./host-chrome-bindings.mdx).
 
 ## Rung 6 — Your own `pages/*.tsx`
 
-If a whole route needs to be yours, add the `.tsx` file to `pages/` at the matching path. **A project-owned page always wins over the package-injected route for the same path** — the host file shadows the injection. This is how you replace the home page, add an entirely custom landing route, or take over a specific doc path.
+If a whole route needs to be yours, add the `.tsx` file to `pages/` at the matching path. **A project-owned page always wins over the package-injected route for the same path** — the host file shadows the injection. This is how you add an entirely custom landing route or take over a specific injected doc path.
 
-The two scaffold stubs (`pages/index.tsx`, `pages/docs/[[...slug]].tsx`) are themselves ordinary host pages using this precedence; you can expand them or add siblings. See [Routing Conventions](../develop/routing-conventions.mdx) for how routes are enumerated and shadowed.
-
----
+The scaffold stubs are special. `pages/index.tsx` shadows nothing: `/` is never injected, so it is a one-line re-export that provides the package home page. `pages/docs/[[...slug]].tsx` does shadow the injected doc route, but it is load-bearing rather than an optional customization example: injected dynamic routes currently return 404 in `zfb dev`, so the stub keeps doc pages working during development. See [Routing Conventions](../develop/routing-conventions.mdx#package-route-injection-and-shadowing) for the complete injection and shadowing model.
 
 ## Rung 7 — The deploy path (an explicit extend step)
 
@@ -201,8 +190,6 @@ The minimal scaffold builds a **pure static site** — `pnpm build` emits `dist/
 
 See the [Deployment guide](../guides/deployment.mdx) and the [AI Assistant API reference](./ai-assistant-api.mdx) for the full runbook (secrets, KV, CORS, rate limiting).
 
----
-
 ## Rung 8 — Restoring pre-push and HTML validation
 
 The minimal scaffold **drops the validation gates** the showcase runs — they were dead weight for a small doc set. If your project grows to want them back, add them explicitly:
@@ -216,11 +203,10 @@ The `gen:z-index` / `check:z-index` codegen was likewise removed from generated 
 
 </Note>
 
----
-
 ## See also
 
 - [Configuration](../guides/configuration.mdx) — every `zudoDoc()` field and its default
+- [Custom Components](../guides/custom-components.mdx) — register project-owned MDX components and thread bindings through route stubs
 - [Host Chrome Bindings](./host-chrome-bindings.mdx) — `chromeBindingsModule` and `designTokenPanelConfigModule` in depth
 - [create-zudo-doc CLI](./create-zudo-doc.mdx) — what the scaffold emits
 - [Migrating from v3](../getting-started/migrating-from-v3.mdx) — moving an existing generated project onto this shape

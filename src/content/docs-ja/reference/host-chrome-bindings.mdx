@@ -13,7 +13,7 @@ tags:
 
 <Note>
 
-これらの継ぎ目が主に意味を持つのは `packageOwnedRoutes: true` のときです。自前の `pages/*.tsx` スタブを引き続き持つプロジェクトは、レンダリング先のホストファイルをすでに持っており、`createChrome(context, hostBindings)` を直接呼び出せます。パッケージ所有ルートがどのように列挙されるかは[ルーティング規約](../develop/routing-conventions.mdx)を参照してください。
+これらの継ぎ目が主に意味を持つのは `packageOwnedRoutes: true` のときです。自前の `pages/*.tsx` スタブを引き続き持つプロジェクトは、レンダリング先のホストファイルをすでに持っており、`createChrome(context, hostBindings)` を直接呼び出せます。パッケージ所有ルートがどのように列挙されるかは[ルーティング規約](../develop/routing-conventions.mdx#パッケージルートの注入とシャドーイング)を参照してください。
 
 </Note>
 
@@ -38,7 +38,7 @@ import type { ChromeHostBindings } from "@takazudo/zudo-doc/factory-context";
 ```ts title="zfb.config.ts"
 export default defineConfig(
   zudoDoc({
-    // packageOwnedRoutes はデフォルトで true
+    // packageOwnedRoutes defaults to true
     chromeBindingsModule: "./src/chrome-bindings.tsx",
   }),
 );
@@ -48,24 +48,37 @@ export default defineConfig(
 import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
 
 export const chromeBindings = defineChromeBindings({
-  // ...ここに各継ぎ目を記述（後述）
+  // ...seams go here (see below)
 });
 ```
 
 ビルド時にルートプラグインが `chromeBindings` を再エクスポートする仮想モジュールを登録し、注入されたクロームシムがそれをクロームファクトリへスプレッドします。文字列パスはシリアライズ可能なので、「ルートコンテキストはデータのみ」というルールは依然として保たれます — 異なるのはローダーのソースだけです。
 
+<Warning title="新しい scaffold のドキュメントルートスタブには配線が必要">
+
+新しい scaffold には自己完結型のドキュメントルートスタブが含まれます。これらは注入ルートをシャドーし、bindings を渡さずに `createChrome(routeCtx)` を呼び出すため、スタブを編集するまで `chromeBindingsModule` はドキュメントページに届きません。[`mdxExtras` のグローバル登録パターン](../guides/custom-components.mdx#グローバル登録-mdxextras)に従い、該当するすべてのスタブへ bindings を渡してください。scaffold テンプレートの修正は [#2716](https://github.com/zudolab/zudo-doc/issues/2716) で追跡されています。
+
+</Warning>
+
 ### 既存スロットの「取り残し」も解消する
 
 `docContentHeaderExtras` と `homeExtras` は新しい継ぎ目ですが、`ChromeHostBindings` にはこのチャネルが存在する以前から、注入ルートへ**届く手段がなかった**スロットがいくつかありました — それらはスタブのデフォルトのまま黙って据え置かれていました。`chromeBindingsModule` はそれらをまとめて解消します。
 
-| スロット | チャネルなしでのデフォルト |
+| スロット | 省略時のデフォルト |
 | --- | --- |
+| `SearchWidget` | サイトの base を内部で束縛したパッケージ検索ウィジェット |
+| `docHistoryMeta` | `{}` — Created/Updated ブロックなし |
+| `sidebarsConfig` | `{}` — 自動生成ツリーのみ |
 | `frontmatterRenderers` | `{}` — カスタム[フロントマタープレビュー](./frontmatter-preview.mdx)レンダラーなし |
 | `buildFrontmatterPreviewEntries` | `() => []` — プレビューテーブルが描画されない |
-| `SearchWidget` | パッケージデフォルトのみ |
-| `loadTagsForLocale` / `tagVocabulary` | 空 — フッターのタグ列なし |
-| `sidebarsConfig` | `{}` — 自動生成ツリーのみ |
-| `docHistoryMeta` | `{}` — Created/Updated ブロックなし |
+| `loadTagsForLocale` | `() => []` — フッターのタグエントリーなし |
+| `tagVocabulary` | `[]` — フッターのタグ語彙なし |
+| `BodyEndIslands` | settings から導出されるパッケージのアイランド群 |
+| `DocHistory` | 何も描画しない no-op スタブ |
+| `DesignTokenPanelBootstrap` | 実際のパッケージ bootstrap。ホスト配線なしで `designTokenPanel: true` のときにマウントされる |
+| `mdxExtras` | パッケージの SSR コンポーネント（`Details`、`HtmlPreview`、`Island`）と no-op の `PresetGenerator` |
+| `docContentHeaderExtras` | 未指定 — 何も描画されない |
+| `homeExtras` | 未指定 — 何も描画されない |
 
 つまり、`docContentHeaderExtras` のために作成するモジュールは、たとえば以前はホスト所有ルートでしか機能しなかったカスタムフロントマターレンダラーを登録する場所でもあります。
 
@@ -153,7 +166,7 @@ export const chromeBindings = defineChromeBindings({
 共有のホーム本体は `HomePageView` が組み立て、パッケージルートとホストページのどちらもこれを呼び出します。`HomePageView` は `extras` プロパティ — ホストページが直接渡す描画済みの値 — を受け取ります。両方が存在する場合は**プロパティが勝ちます**。
 
 ```tsx
-// HomePageView 内で次のように解決される:
+// resolved inside HomePageView as:
 extras ?? hostBindings.homeExtras?.({ locale })
 ```
 
@@ -161,12 +174,12 @@ extras ?? hostBindings.homeExtras?.({ locale })
 
 ### `/` ルートのトポロジー
 
-`/` にあるデフォルトホームは、ルートプラグインによって**決して注入されません** — zfb が `/` パターンを拒否するためです（アップストリーム [Takazudo/zudo-front-builder#1227](https://github.com/Takazudo/zudo-front-builder/issues/1227)）。これにより、知っておくべき分岐が生じます。
+`/` にあるデフォルトホームは、ルートプラグインによって**決して注入されません** — zfb が `/` パターンを拒否するためです（アップストリーム [Takazudo/zudo-front-builder#1227](https://github.com/Takazudo/zudo-front-builder/issues/1227)）。scaffold の `pages/index.tsx` は `@takazudo/zudo-doc/routes/index` を再エクスポートする1行のファイルで、`extras` プロパティは渡しません。使用する注入済み `/` ルートが存在しないため、`/` では常にホストファイルが優先されます。
 
-- **`/` ホーム**は常にホストの薄い `pages/index.tsx` アダプター経由で描画されるため、extras は `HomePageView` の `extras` プロパティ（またはホスト自身の `createChrome` 呼び出し）経由で届きます。
+- 変更していない **`/` ホーム**はパッケージルートの再エクスポートを使い、`extras` プロパティ経由で `homeExtras` を受け取りません。
 - **注入された `/[locale]` ホーム**は `chromeBindingsModule` を通じて `hostBindings.homeExtras` を読み取ります。
 
-i18n サイトでは、バインディングモジュールで `homeExtras` を設定し、*かつ* `pages/index.tsx` の `extras` プロパティに同じコンテンツを渡すことが、デフォルトホームとロケールホームを一貫させる方法です。
+ルートホームをカスタマイズするには、再エクスポートを `HomePageView` を呼び出して `extras` を渡す自前のページに置き換えます。i18n サイトでは、その値とロケールホーム用の `homeExtras` が返す値を同じ内容にしてください。
 
 ## Design Token Panel チャネル（`designTokenPanelConfigModule`）
 
@@ -182,7 +195,7 @@ import type { PanelConfig } from "@takazudo/zdtp";
 type PanelMode = "light" | "dark";
 
 export function buildDesignTokenPanelConfig(mode: PanelMode): PanelConfig {
-  // モードスコープのパネル設定（spacing/font/size/color ティア）を返す
+  // return a mode-scoped panel config (spacing/font/size/color tiers)
   // ...
 }
 ```

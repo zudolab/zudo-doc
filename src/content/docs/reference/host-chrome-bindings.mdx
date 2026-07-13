@@ -13,7 +13,7 @@ This page covers the two content-injection seams — `docContentHeaderExtras` an
 
 <Note>
 
-These seams matter mainly under `packageOwnedRoutes: true`. A project that still ships its own `pages/*.tsx` stubs already has host files to render into and can call `createChrome(context, hostBindings)` directly. See [Routing Conventions](../develop/routing-conventions.mdx) for how package-owned routes are enumerated.
+These seams matter mainly under `packageOwnedRoutes: true`. A project that still ships its own `pages/*.tsx` stubs already has host files to render into and can call `createChrome(context, hostBindings)` directly. See [Routing Conventions](../develop/routing-conventions.mdx#package-route-injection-and-shadowing) for how package-owned routes are enumerated.
 
 </Note>
 
@@ -54,18 +54,31 @@ export const chromeBindings = defineChromeBindings({
 
 At build time the routes plugin registers a virtual module that re-exports your `chromeBindings`, and the injected chrome shim spreads it into the chrome factory. A string path is serializable, so the "route context is data only" rule still holds — only the loader source differs.
 
+<Warning title="Fresh scaffold doc-route stubs need threading">
+
+A fresh scaffold includes self-contained document-route stubs. They shadow the injected routes and call `createChrome(routeCtx)` without bindings, so `chromeBindingsModule` does not reach document pages until you edit those stubs. Follow the [global `mdxExtras` registration pattern](../guides/custom-components.mdx#global-registration-mdxextras) to thread the bindings through every relevant stub. The scaffold-template fix is tracked in [#2716](https://github.com/zudolab/zudo-doc/issues/2716).
+
+</Warning>
+
 ### It un-strands the pre-existing slots too
 
 `docContentHeaderExtras` and `homeExtras` are new, but `ChromeHostBindings` already had several slots that had **no way to reach injected routes** before this channel existed — they silently stayed at their stub defaults. `chromeBindingsModule` un-strands all of them at once:
 
-| Slot | Default without the channel |
+| Slot | Default when omitted |
 | --- | --- |
-| `frontmatterRenderers` | `{}` — no custom [frontmatter preview](./frontmatter-preview.mdx) renderers |
-| `buildFrontmatterPreviewEntries` | `() => []` — the preview table never rendered |
-| `SearchWidget` | package default only |
-| `loadTagsForLocale` / `tagVocabulary` | empty — no footer tag columns |
-| `sidebarsConfig` | `{}` — auto-generated tree only |
+| `SearchWidget` | Package search widget, with the site base bound internally |
 | `docHistoryMeta` | `{}` — no Created/Updated block |
+| `sidebarsConfig` | `{}` — auto-generated tree only |
+| `frontmatterRenderers` | `{}` — no custom [frontmatter preview](./frontmatter-preview.mdx) renderers |
+| `buildFrontmatterPreviewEntries` | `() => []` — the preview table never renders |
+| `loadTagsForLocale` | `() => []` — no footer tag entries |
+| `tagVocabulary` | `[]` — no footer tag vocabulary |
+| `BodyEndIslands` | Package island subset derived from settings |
+| `DocHistory` | No-op stub — renders nothing |
+| `DesignTokenPanelBootstrap` | Real package bootstrap; it mounts when `designTokenPanel: true`, with no host wiring |
+| `mdxExtras` | Package SSR components (`Details`, `HtmlPreview`, `Island`) plus a no-op `PresetGenerator` |
+| `docContentHeaderExtras` | Absent — nothing renders |
+| `homeExtras` | Absent — nothing renders |
 
 So the same module you create for `docContentHeaderExtras` is also where you would, for example, register the custom frontmatter renderers that previously only worked on host-owned routes.
 
@@ -161,12 +174,12 @@ The asymmetry is intentional: a host page has its JSX in hand (a value), while t
 
 ### The `/` route topology
 
-The default home at `/` is **never injected** by the routes plugin — zfb rejects a `/` pattern (upstream [Takazudo/zudo-front-builder#1227](https://github.com/Takazudo/zudo-front-builder/issues/1227)). This creates a split you should know about:
+The default home at `/` is **never injected** by the routes plugin — zfb rejects a `/` pattern (upstream [Takazudo/zudo-front-builder#1227](https://github.com/Takazudo/zudo-front-builder/issues/1227)). The scaffold's `pages/index.tsx` is a one-line re-export of `@takazudo/zudo-doc/routes/index`; it supplies no `extras` prop. The host file always wins at `/` because there is no injected `/` route to use instead.
 
-- The **`/` home** always renders through the host's thin `pages/index.tsx` adapter, so extras arrive via its `HomePageView` `extras` prop (or the host's own `createChrome` call).
+- The unmodified **`/` home** uses the package route re-export and does not receive `homeExtras` through an `extras` prop.
 - **Injected `/[locale]` homes** read `hostBindings.homeExtras` through `chromeBindingsModule`.
 
-For an i18n site, setting `homeExtras` in your bindings module — *and* passing the same content as the `extras` prop in `pages/index.tsx` — is what keeps the default home and the locale homes consistent.
+To customize the root home, replace the re-export with your own page that calls `HomePageView` and passes `extras`. For an i18n site, pass the same content there that `homeExtras` returns for locale homes.
 
 ## The Design Token Panel channel (`designTokenPanelConfigModule`)
 

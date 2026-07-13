@@ -6,22 +6,23 @@ sidebar_position: 18
 
 `codeTabs` 機能は、関連するコードブロックをインタラクティブなタブストリップにまとめます。連続するフェンスブロックを `:::code-group` ディレクティブでラップすると、zfb がフレームワーク側でタブとして描画する `<CodeGroup>` 要素を出力します。
 
-:::note[オプトイン機能]
+:::note[標準プリセットに含まれます]
 
-この機能はデフォルトで無効です。`zfb.config.ts` の `codeTabs` キーで有効化します。`true` のショートハンドを受け付けます。
+`zudoDoc()` は Code Tabs を有効にします。個別の設定フィールドは不要です。
 
 :::
 
 ## 設定
 
 ```ts title="zfb.config.ts"
-export default defineConfig({
-  markdown: {
-    features: {
-      codeTabs: true,
-    },
-  },
-});
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+  }),
+);
 ```
 
 ## 記述構文
@@ -42,23 +43,23 @@ export const greeting = "hello";
 :::
 ````
 
-:::warning[トリガーは `:::code-group` ディレクティブ — 単なる連続フェンスではありません]
+:::warning[The `:::code-group` directive is the trigger — not bare consecutive fences]
 
-隣接した 2 つのフェンスコードブロックだけではタブになりません。それらは独立した 2 つのコードブロックとして描画されます。タブ化は、フェンスをラップする明示的な `:::code-group` ディレクティブによってのみトリガーされます。
+Two adjacent fenced code blocks on their own do **not** become tabs; they render as two independent code blocks. The tab grouping is triggered only by the explicit `:::code-group` directive wrapping the fences.
 
 :::
 
-## タブラベルの解決
+## Tab label resolution
 
-各タブのラベルは次の優先順位で決定されます。
+Each tab's label follows this priority order:
 
-1. フェンスの `title="…"` 属性
-2. 言語 id（例: `ts`、`js`）
-3. いずれもない場合のフォールバック文字列 `"tab"`
+1. The `title="…"` attribute on the fence
+2. The language id (e.g. `ts`, `js`)
+3. The fallback string `"tab"` when neither is present
 
-## ライブデモ
+## Live demo
 
-上記のディレクティブは次のように描画されます。
+The directive above renders as:
 
 :::code-group
 
@@ -83,7 +84,7 @@ export const greeting = "hello";
 </CodeGroup>
 ```
 
-フレームワークは `<CodeGroup>` を同梱していません — zudo-doc は `pages/_mdx-components.ts` で独自の実装を登録し、`tabs` 配列と `<pre data-lang>` の子要素を既存の `<Tabs>` / `<TabItem>` UI にマッピングします。各 `<pre>` 内のコードは生のテキストです（Rust パイプラインは `:::code-group` フェンス内でシンタックスハイライトを実行しません）。
+zudo-doc はパッケージ所有の `<CodeGroup>` 実装をデフォルトで登録し、`tabs` 配列と `<pre data-lang>` の子要素を既存の `<Tabs>` / `<TabItem>` UI にマッピングします。[`mdxExtras`](../guides/custom-components.mdx#グローバル登録-mdxextras) を通じて上書きできます。各 `<pre>` 内のコードは生のテキストです（Rust パイプラインは `:::code-group` フェンス内でシンタックスハイライトを実行しません）。
 
 ## `name` によるタブの同期
 

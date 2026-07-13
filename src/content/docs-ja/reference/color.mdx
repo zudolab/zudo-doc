@@ -6,7 +6,7 @@ tags:
   - design-system
 ---
 
-zudo-docは**3層カラー戦略**を採用し、サイト上のすべての色をテーマ切り替え可能にしています。デフォルトのTailwindテーマはインポートされず、`@theme`ブロックで`--color-*: initial`としてカラー名前空間をリセットしてからプロジェクトトークンを定義します。これにより、カラースキームを切り替えるだけでサイト全体が一括で更新されます。
+zudo-docは**3層カラー戦略**を採用し、サイト上のすべての色をテーマ切り替え可能にしています。パッケージの`@takazudo/zudo-doc/theme.css`はTailwindのデフォルトカラーテーマをインポートせず、その`@theme`ブロックで`--color-*: initial`としてカラー名前空間をリセットしてから同梱トークンを定義します。プロジェクト側の後続の`@theme`ブロックはオーバーライドポイントです。これにより、カラースキームを切り替えるだけでサイト全体が一括で更新されます。
 
 ## 3層カラー戦略
 
@@ -15,7 +15,7 @@ zudo-docは**3層カラー戦略**を採用し、サイト上のすべての色�
 | 層 | 名前 | 目的 | 定義場所 |
 |----|------|------|----------|
 | 1 | **ランプ** | スキームの土台となる、共有される OKLCH カラーランプ | `zfb.config.ts` の自作 `colorSchemes` 上書き（任意 — 未設定ならパッケージのデフォルト）→ `ColorSchemeProvider` → `:root` |
-| 2 | **セマンティック** | デザイン上の意味 — 各色がUIで何を表すか | `src/styles/global.css` `@theme` |
+| 2 | **セマンティック** | デザイン上の意味 — 各色がUIで何を表すか | パッケージの`@takazudo/zudo-doc/theme.css` `@theme`（プロジェクト側の後続の`@theme`ブロックでオーバーライド可能） |
 | 3 | **コンポーネント** | 特定コンポーネント向けのスコープ付きオーバーライド | `.zd-content`（共有 `content.css`） |
 
 この階層構造により：
@@ -54,7 +54,7 @@ type RampRef =
   | { base: number }     // ramps.base[n]
   | { accent: number }   // ramps.accent[n]
   | { state: StateRole } // ramps.state[role]
-  | string;              // リテラル OKLCH 値、そのまま使用
+  | string;              // a literal OKLCH value, used as-is
 ```
 
 スキームの`map`は、4 つの base ロール（`bg`、`fg`、`selectionBg`、`selectionFg`）と 23 のセマンティックロールすべてに`RampRef`を使用します。ほとんどのロールは共有ランプストップを参照しますが、一部は代わりに**リテラル OKLCH 文字列**を持ちます — これは、共有ストップでは作り出せない色をロールが必要とする場合（通常はモードごとの AA コントラスト調整）に使われます。[モードごとのリテラルオーバーライド](#モードごとのリテラルオーバーライド)を参照してください。
@@ -72,9 +72,9 @@ type RampRef =
 
   --palette-base-0: oklch(.965 .004 65);
   --palette-base-1: oklch(.705 .008 65);
-  /* ... --palette-base-4 まで続く */
+  /* ... through --palette-base-4 */
   --palette-accent-0: oklch(.755 .130 64);
-  /* ... --palette-accent-2 まで続く */
+  /* ... through --palette-accent-2 */
   --palette-state-danger: oklch(.640 .170 25);
   --palette-state-success: oklch(.680 .145 145);
   --palette-state-warning: oklch(.760 .135 82);
@@ -82,7 +82,7 @@ type RampRef =
 
   --zd-accent: oklch(.700 .158 62);
   --zd-code-bg: oklch(.300 .006 65);
-  /* ... さらに 21 個の --zd-{role} セマンティックプロパティ */
+  /* ... 21 more --zd-{role} semantic properties */
 }
 ```
 
@@ -90,19 +90,19 @@ type RampRef =
 
 ## Tier 2：セマンティックトークン
 
-23 のセマンティックロールが、コンポーネントが実際に使用するカラーの面です。`src/styles/global.css`の`@theme`ブロックが、それら（および 4 つの base ロール）を Tailwind 互換トークンにマッピングします：
+23 のセマンティックロールが、コンポーネントが実際に使用するカラーの面です。パッケージの`@takazudo/zudo-doc/theme.css`が、それら（および 4 つの base ロール）を Tailwind 互換トークンにマッピングします。スキャフォールドではこのファイルを独自の`src/styles/global.css`にある`@theme`オーバーライドブロックより前にインポートするため、変更が必要なエイリアスだけを再定義してください：
 
-```css
+```css title="@takazudo/zudo-doc/theme.css"
 @theme {
-  --color-*: initial;  /* Tailwindデフォルトをすべてリセット */
+  --color-*: initial;  /* reset ALL Tailwind defaults */
 
-  /* ベース */
+  /* Base */
   --color-bg: var(--zd-bg);
   --color-fg: var(--zd-fg);
   --color-sel-bg: var(--zd-selection-bg);
   --color-sel-fg: var(--zd-selection-fg);
 
-  /* セマンティックエイリアス */
+  /* Semantic aliases */
   --color-surface: var(--zd-surface);
   --color-muted: var(--zd-muted);
   --color-accent: var(--zd-accent);
@@ -114,7 +114,7 @@ type RampRef =
   --color-warning: var(--zd-warning);
   --color-info: var(--zd-info);
 
-  /* 検索ハイライト（専用トークン、Design Token Panel でライブ編集可能） */
+  /* Search highlight (dedicated, live-editable in Design Token Panel) */
   --color-matched-keyword-bg: var(--zd-matched-keyword-bg);
   --color-matched-keyword-fg: var(--zd-matched-keyword-fg);
 }
@@ -176,8 +176,8 @@ const darkMap: ModeMap = {
   selectionFg: { base: 0 },
   semantic: {
     accent: { accent: 1 },
-    // モードごとに AA 調整したリテラル — 共有の state.danger は、
-    // 12% ティントのダーク背景上の danger アドモニションタイトルには暗すぎる。
+    // Per-mode AA-tuned literal — shared state.danger is too dark for the
+    // danger-admonition title on its 12%-tint dark bg.
     danger: "oklch(.655 .170 25)",
     // ...
   },
@@ -235,17 +235,17 @@ Tier 3のトークンはコンポーネント内部のものです。独自のUI
 標準的なUIパターンにはセマンティックトークンを使用します：
 
 ```html
-<!-- テキスト -->
-<p class="text-fg">メインテキスト</p>
-<p class="text-muted">補助テキスト</p>
-<a class="text-accent hover:text-accent-hover">リンク</a>
+<!-- Text -->
+<p class="text-fg">Primary text</p>
+<p class="text-muted">Secondary text</p>
+<a class="text-accent hover:text-accent-hover">Link</a>
 
-<!-- 背景 -->
-<div class="bg-bg">ページ背景</div>
-<div class="bg-surface">パネルやサイドバー</div>
+<!-- Backgrounds -->
+<div class="bg-bg">Page background</div>
+<div class="bg-surface">Panel or sidebar</div>
 
-<!-- ボーダー -->
-<div class="border border-muted">ボーダー付き要素</div>
+<!-- Borders -->
+<div class="border border-muted">Bordered element</div>
 ```
 
 ### 検索とハイライトのトークン（役割を分離）
@@ -259,7 +259,7 @@ Tier 3のトークンはコンポーネント内部のものです。独自のUI
 
 ## カラースキーム
 
-アクティブなカラースキームを変更するには、`zfb.config.ts`の`colorScheme`を設定します：
+デフォルトでは`colorMode`が有効なため、`lightScheme`と`darkScheme`がアクティブなスキームを選び、`colorScheme`より優先されます。`defaultMode`は`"dark"`で、同梱のダークスキームに対応します。`respectPrefersColorScheme: true`では、OSの設定によりもう一方のモードが選ばれることがあります：
 
 ```ts title="zfb.config.ts"
 import { defineConfig } from "zfb/config";
@@ -267,9 +267,25 @@ import { zudoDoc } from "@takazudo/zudo-doc/config";
 
 export default defineConfig(
   zudoDoc({
-    colorScheme: "Default Dark", // ここを変更
+    colorMode: {
+      defaultMode: "dark",
+      lightScheme: "Default Light",
+      darkScheme: "Default Dark",
+      respectPrefersColorScheme: true,
+    },
     siteName: "My Docs",
     // ...
+  }),
+);
+```
+
+ライト／ダーク切り替えなしで1つの固定スキームを使うには、`colorMode: false`を設定します。この場合は`colorScheme`がスキームを選びます：
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    colorMode: false,
+    colorScheme: "My Theme",
   }),
 );
 ```
@@ -280,20 +296,20 @@ zudo-docはちょうど 2 つのカラースキーム — **Default Light**と**
 
 ## カスタムカラースキームの追加
 
-`colorSchemes`は`zudoDoc()`のエスケープハッチの1つです — 省略した場合は上記の2つの同梱スキームがそのまま使われます。スキームを追加または置き換えるには、独自のモジュール（例：`src/config/color-schemes.ts`）を作成して`Record<string, ColorScheme>`を組み立て、`zfb.config.ts`の`colorSchemes`フィールドで渡します。新しいスキームには独自の`ramps`と、必要な各モードの`map`が必要です（`SEMANTIC_RAMP_DEFAULTS`をスプレッドし、異なる必要のあるものだけを上書きします）。2つの同梱スキームも一緒に残したい場合は`defaultColorSchemes`もスプレッドしてください：
+`colorSchemes`は`zudoDoc()`のエスケープハッチの1つです — 省略した場合は上記の2つの同梱スキームがそのまま使われます。新しいスキャフォールドにはカラースキームモジュールがありません。スキームを追加または置き換える場合は、独自のモジュール（例：`src/color-schemes.ts`）を作成して`Record<string, ColorScheme>`を組み立て、`zfb.config.ts`の`colorSchemes`フィールドで渡します。新しいスキームには独自の`ramps`と、必要な各モードの`map`が必要です（`SEMANTIC_RAMP_DEFAULTS`をスプレッドし、異なる必要のあるものだけを上書きします）。2つの同梱スキームも一緒に残したい場合は`defaultColorSchemes`もスプレッドしてください：
 
-```ts title="src/config/color-schemes.ts"
+```ts title="src/color-schemes.ts"
 import { SEMANTIC_RAMP_DEFAULTS } from "@takazudo/zudo-doc/color-scheme-utils";
 import { defaultColorSchemes } from "@takazudo/zudo-doc/color-schemes-defaults";
 import type { ColorScheme, ModeMap, Ramps } from "@takazudo/zudo-doc/color-scheme-utils";
 
 const myRamps: Ramps = {
   base: [
-    "oklch(.97 .01 250)", // 0 — 最も明るい
+    "oklch(.97 .01 250)", // 0 — lightest
     "oklch(.72 .02 250)", // 1
     "oklch(.48 .03 250)", // 2
     "oklch(.28 .03 250)", // 3
-    "oklch(.15 .02 250)", // 4 — 最も暗い
+    "oklch(.15 .02 250)", // 4 — darkest
   ],
   accent: [
     "oklch(.78 .12 30)", // 0
@@ -315,21 +331,22 @@ const myMap: ModeMap = {
   selectionFg: { base: 0 },
   semantic: {
     ...SEMANTIC_RAMP_DEFAULTS,
-    accent: { accent: 1 }, // 異なる必要のあるロールだけを上書き
+    accent: { accent: 1 }, // only override the roles that need to differ
   },
 };
 
 export const colorSchemes: Record<string, ColorScheme> = {
-  ...defaultColorSchemes, // "Default Light" / "Default Dark" を維持
+  ...defaultColorSchemes, // keep "Default Light" / "Default Dark"
   "My Theme": { ramps: myRamps, map: myMap },
 };
 ```
 
 ```ts title="zfb.config.ts"
-import { colorSchemes } from "./src/config/color-schemes";
+import { colorSchemes } from "./src/color-schemes";
 
 export default defineConfig(
   zudoDoc({
+    colorMode: false,
     colorScheme: "My Theme",
     colorSchemes,
     // ...
@@ -339,7 +356,7 @@ export default defineConfig(
 
 <Tip>
 
-スキームを追加または調整した後は、`pnpm contrast:audit`を実行して WCAG コントラストマトリクスのすべてのペアをチェックしてください — 完全な手法としきい値については`color-scheme-a11y`スキルを参照してください。
+このショーケースリポジトリでは、同梱スキームを変更するときにコントリビューターが`pnpm contrast:audit`を実行し、`color-scheme-a11y`スキルを使用します。これらはショーケース保守用のツールであり、生成されたスキャフォールド用のコマンドではありません。カスタムスキームを作成する場合は、プロジェクトに適したコントラスト要件を検証してください。
 
 </Tip>
 
@@ -350,32 +367,32 @@ export default defineConfig(
 **Tailwindデフォルトを使わない** — `initial`にリセットされています：
 
 ```html
-<!-- NG -->
-<div class="bg-gray-800 text-blue-500">色が表示されない</div>
+<!-- WRONG -->
+<div class="bg-gray-800 text-blue-500">No visible color</div>
 
-<!-- OK -->
-<div class="bg-surface text-accent">正しく動作する</div>
+<!-- RIGHT -->
+<div class="bg-surface text-accent">Works correctly</div>
 ```
 
 **16進数値をハードコードしない** — テーマ切り替えが壊れます：
 
 ```html
-<!-- NG -->
-<div class="bg-[#1e1e2e]">テーマ切り替えで壊れる</div>
+<!-- WRONG -->
+<div class="bg-[#1e1e2e]">Breaks on theme switch</div>
 
-<!-- OK -->
-<div class="bg-surface">どのテーマにも適応する</div>
+<!-- RIGHT -->
+<div class="bg-surface">Adapts to any theme</div>
 ```
 
 **Tier 3の変数を自分のコンポーネントで参照しない**：
 
 ```css
-/* NG */
+/* WRONG — don't use hardcoded colors */
 .my-component {
-  color: var(--tw-prose-links);
+  color: #3b82f6;
 }
 
-/* OK */
+/* RIGHT — use semantic tokens */
 .my-component {
   color: var(--color-accent);
 }

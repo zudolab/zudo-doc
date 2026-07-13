@@ -1,6 +1,6 @@
 ---
 title: Frontmatter Preview
-description: Automatically display custom frontmatter fields as a metadata table beneath the page title.
+description: Configure custom frontmatter fields as a metadata table beneath the page title.
 sidebar_position: 7
 author: zudo-doc
 status: stable
@@ -10,13 +10,52 @@ tags:
   - content
 ---
 
-The frontmatter preview block appears automatically below the page title whenever a document contains non-ignored frontmatter keys. It renders those custom fields as a compact key/value table — useful for surfacing document metadata such as authorship, status, or version without embedding it inline in the prose.
+The frontmatter preview block renders custom frontmatter fields as a compact key/value table below the page title — useful for surfacing document metadata such as authorship, status, or version without embedding it inline in the prose. It is not automatic in a fresh scaffold: `frontmatterPreview` defaults to `false`, and the unbound `buildFrontmatterPreviewEntries` slot defaults to `() => []`.
 
-This very page demonstrates the feature: the `author` and `status` fields you see rendered above were declared in its own frontmatter.
+This showcase page demonstrates the feature: the `author` and `status` fields rendered above were declared in its own frontmatter and its showcase bindings supply the entry builder.
+
+<Warning title="Requires chrome bindings on a fresh scaffold">
+
+Setting this config field alone renders nothing in a scaffolded project: the doc-route
+stub calls `createChrome(routeCtx)` without host bindings, so the `buildFrontmatterPreviewEntries` slot stays at
+its no-op default. Thread `chromeBindingsModule` and bind `buildFrontmatterPreviewEntries` — see
+[Custom Components](../guides/custom-components.mdx) and
+[Host Chrome Bindings](./host-chrome-bindings.mdx). Scaffolds generated
+after the [template fix](https://github.com/zudolab/zudo-doc/issues/2716) thread the presentational/data slots automatically;
+your own hydrating islands still need the static-import threading described in the guide.
+
+</Warning>
+
+Enable the setting and create the builder in your bindings module. Keep the value passed to
+`frontmatterPreview` in the builder aligned with the `zudoDoc()` setting.
+
+```ts title="src/chrome-bindings.ts"
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
+import { createBuildFrontmatterPreviewEntries } from "@takazudo/zudo-doc/frontmatter-preview-data";
+import { defaultFrontmatterPreviewIgnoreKeys } from "@takazudo/zudo-doc/frontmatter-preview-defaults";
+import { frontmatterRenderers } from "./frontmatter-preview-renderers";
+
+export const chromeBindings = defineChromeBindings({
+  buildFrontmatterPreviewEntries: createBuildFrontmatterPreviewEntries({
+    frontmatterPreview: {},
+    defaultIgnoreKeys: defaultFrontmatterPreviewIgnoreKeys,
+  }),
+  frontmatterRenderers,
+});
+```
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    frontmatterPreview: {},
+    chromeBindingsModule: "./src/chrome-bindings.ts",
+  }),
+);
+```
 
 ## When the Block Appears
 
-The block appears only when at least one frontmatter key survives filtering. Framework-managed keys (`title`, `description`, `sidebar_position`, `tags`, etc.) are stripped by default. If every key is on the ignore list, nothing is rendered.
+Once enabled and bound, the block appears only when at least one frontmatter key survives filtering. Framework-managed keys (`title`, `description`, `sidebar_position`, `tags`, etc.) are stripped by default. If every key is on the ignore list, nothing is rendered.
 
 Set `frontmatterPreview: false` in `zfb.config.ts` (the `zudoDoc({...})` call) to disable the feature entirely for all pages.
 
@@ -43,7 +82,7 @@ The following keys are ignored by default. They correspond to every field define
 | `slug` | URL override |
 | `generated` | Build-time flag |
 
-Any key not in this list will be shown automatically.
+Once the builder is bound, any key not in this list is shown automatically.
 
 ## Customizing the Ignore List
 
@@ -108,7 +147,7 @@ For the full configuration reference, see [Configuration — frontmatterPreview]
 
 ## Custom Renderers
 
-By default, frontmatter values render as plain text. To replace a value with a styled component — a colored pill, a link, an icon — register a custom renderer in `src/config/frontmatter-preview-renderers.tsx`.
+By default, frontmatter values render as plain text. To replace a value with a styled component — a colored pill, a link, an icon — create a renderer map and bind it through the `frontmatterRenderers` slot shown above. This repository's `src/config/frontmatter-preview-renderers.tsx`, threaded through `src/chrome-bindings.tsx`, is a showcase wiring example; a fresh scaffold has neither file.
 
 ### Component contract
 
@@ -123,7 +162,7 @@ Each renderer is a Preact component that receives `FrontmatterRendererProps`:
 
 ### Registering a renderer
 
-Open `src/config/frontmatter-preview-renderers.tsx` and add a key to the exported `frontmatterRenderers` map. Each value is a component function that receives `FrontmatterRendererProps` and returns JSX or `null`:
+Add a key to your renderer map. Each value is a component function that receives `FrontmatterRendererProps` and returns JSX or `null`:
 
 ```tsx
 discount: ({ value }) => {
@@ -157,4 +196,4 @@ frontmatterPreview: {
 
 </Warning>
 
-Register your renderers in `src/config/frontmatter-preview-renderers.tsx` in your project. The empty map ships by default.
+The showcase's renderer map is not scaffolded or auto-consumed. Bind your own map through `frontmatterRenderers`; omitting that slot leaves all values on the plain-text fallback.

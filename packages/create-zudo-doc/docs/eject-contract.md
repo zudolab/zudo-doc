@@ -50,10 +50,16 @@ component dir is copied):
 | `@takazudo/zudo-doc/content-admonition` | `src/content-admonition/` | `src/components/zudo-doc/content-admonition/` |
 | `@takazudo/zudo-doc/code-group` | `src/code-group/` | `src/components/zudo-doc/code-group/` |
 | `@takazudo/zudo-doc/details` | `src/details/` | `src/components/zudo-doc/details/` |
+| `@takazudo/zudo-doc/sidebar-tree-island` | `src/sidebar-tree-island/` | `src/components/zudo-doc/sidebar-tree-island/` |
+| `@takazudo/zudo-doc/sidebar-toggle-island` | `src/sidebar-toggle-island/` | `src/components/zudo-doc/sidebar-toggle-island/` |
+| `@takazudo/zudo-doc/desktop-sidebar-toggle-island` | `src/desktop-sidebar-toggle-island/` | `src/components/zudo-doc/desktop-sidebar-toggle-island/` |
+| `@takazudo/zudo-doc/image-enlarge` | `src/image-enlarge/` | `src/components/zudo-doc/image-enlarge/` |
+| `@takazudo/zudo-doc/doc-history` | `src/doc-history/` | `src/components/zudo-doc/doc-history/` |
+| `@takazudo/zudo-doc/site-tree-nav-island` | `src/site-tree-nav-island/` | `src/components/zudo-doc/site-tree-nav-island/` |
 
 `<component>` CLI name = the subpath tail (`header`, `theme-toggle`, …). The
 allowlist is a **single source map** in code (`EJECTABLE` in
-`packages/create-zudo-doc/src/eject.ts`); anything not in it is rejected with the list
+`packages/zudo-doc/src/eject/index.ts`, exported as `@takazudo/zudo-doc/eject`); anything not in it is rejected with the list
 of valid names. Excluded by design: factories, pure utils, nav builders, plugins,
 integrations, `*-with-defaults` host-wiring shells, type-only subpaths, `.css` assets.
 

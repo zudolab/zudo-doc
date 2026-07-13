@@ -10,12 +10,12 @@ sidebar_position: 3
 
 ```mdx
 ---
-title: マイページ
-description: このページの簡単な説明。
+title: My Page
+description: A brief summary of this page.
 sidebar_position: 1
 ---
 
-ここにコンテンツを記述します。
+Your content here.
 ```
 
 ### フロントマターフィールド
@@ -61,9 +61,9 @@ src/content/docs/
 **相対ファイルパス**を使って他のドキュメントにリンクできます：
 
 ```mdx
-[インストールガイド](./installation.mdx)
-[フロントマターリファレンス](../guides/frontmatter.mdx)
-[インデックスに戻る](./index.mdx)
+[Installation guide](./installation.mdx)
+[Frontmatter reference](../guides/frontmatter.mdx)
+[Back to index](./index.mdx)
 ```
 
 これらの相対パスはビルド時に正しいURLに自動的に解決されます。リンクリゾルバーが動作するには `.md`/`.mdx` 拡張子が必要です。これによりファイルリンクとURLリンクを区別します。
@@ -71,7 +71,7 @@ src/content/docs/
 アンカーやクエリ文字列も含めることができます：
 
 ```mdx
-[フロントマターフィールド](../guides/frontmatter.mdx#required-fields)
+[Frontmatter fields](../guides/frontmatter.mdx#required-fields)
 ```
 
 <Tip>
@@ -83,8 +83,8 @@ src/content/docs/
 外部リンクやドキュメント以外のページへのリンクには、通常のURLを使用してください：
 
 ```mdx
-[外部サイト](https://example.com)
-[APIリファレンス](/api/v1)
+[External site](https://example.com)
+[API reference](/api/v1)
 ```
 
 ## アドモニション
@@ -136,9 +136,9 @@ zudo-docはDocusaurusスタイルのアドモニションをサポートして�
 **ディレクティブ構文**（コンテンツ作成者向け推奨）：
 
 ```mdx
-:::note[任意のタイトル]
+:::note[Optional Title]
 
-ここにコンテンツを記述します。
+Content here.
 
 :::
 ```
@@ -147,11 +147,11 @@ zudo-docはDocusaurusスタイルのアドモニションをサポートして�
 
 ```mdx
 <Note>
-自動生成タイトルのデフォルトノート。
+Default note with auto-generated title.
 </Note>
 
-<Warning title="注意">
-カスタムタイトルの警告。
+<Warning title="Be Careful">
+Warning with a custom title.
 </Warning>
 ```
 
@@ -173,7 +173,7 @@ zudo-docはDocusaurusスタイルのアドモニションをサポートして�
 
 ## i18n（国際化）
 
-zudo-docは英語と日本語をすぐに使える状態でサポートしています。日本語ドキュメントは `src/content/docs-ja/` で英語のディレクトリ構造をミラーリングします。
+デフォルトのスキャフォールドは1つのロケールだけで、`src/content/docs-ja/` ディレクトリもロケールルートもありません。スキャフォールディング時に `i18n` 機能を選ぶと、セカンダリ言語、そのミラーリングされたコンテンツディレクトリ、`pages/[locale]/docs/[[...slug]].tsx` が追加されます。後から `zudoDoc({ ... })` の `locales` フィールドでロケールを追加することもできます。
 
 <Tip>
 
@@ -183,7 +183,7 @@ zudo-docは英語と日本語をすぐに使える状態でサポートしてい
 
 ## MDXの機能
 
-ドキュメント内でPreactコンポーネントを使用できます。インタラクティブなコンポーネントはzfbのアイランドランタイムを介してクライアント側でハイドレートされ、残りは純粋なHTMLとしてJavaScriptゼロで配信されます。
+ドキュメント内でPreactコンポーネントを使用できます。素の MDX コンポーネントインポートはサーバーでレンダリングされ、JavaScriptゼロの HTML として配信されます。
 
 新しくスキャフォールドされたプロジェクトには `src/components/` ディレクトリはありません — カスタムコンポーネントが必要になったら自分で作成します。`@/*` パスエイリアスは `src/*` にマップされるので、`src/components/my-component.tsx` のファイルは次のようにインポートします:
 
@@ -195,7 +195,7 @@ import MyComponent from "@/components/my-component";
 
 <Info>
 
-コンポーネントを単にインポートするだけではサーバー側でのみレンダリングされ、JavaScriptはゼロです。インタラクティブアイランドはプロジェクトのアイランドランタイムを通じて登録されます — 単なるコンポーネントのインポートはクライアントでハイドレートされません。アイランドとして登録されたコンポーネントのみがハイドレートされます。
+コンポーネントを単にインポートするだけではサーバー側でのみレンダリングされ、JavaScriptはゼロです。ドキュメント全体でコンポーネントを登録する場合やインタラクティブアイランドを追加する場合は、[カスタムコンポーネント](../guides/custom-components.mdx) を参照してください。グローバル登録には `mdxExtras` を、クライアントハイドレーションには実験的な `Island()` レシピを使います。
 
 </Info>
 

@@ -37,6 +37,7 @@ Schema in repo-root `zfb.config.ts` (`docsSchema`). Required: `title` (string). 
 - **No h1 in content**: The frontmatter `title` renders as the page h1. Start with `## h2`.
 - **Always set `sidebar_position`**: Without it, pages sort alphabetically.
 - **Kebab-case file names**: Use `my-article.mdx`, not `myArticle.mdx`.
+- **Do not use horizontal rules as section separators**: Headings and whitespace already express document structure. Use `---` in the body only when the rule itself has semantic meaning, such as a page that documents horizontal-rule syntax.
 
 ## Admonitions
 

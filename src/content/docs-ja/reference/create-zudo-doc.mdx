@@ -32,6 +32,12 @@ create-zudo-doc [project-name] [options]
 
 </Note>
 
+## カラースキーム
+
+zudo-doc が同梱するカラースキームは `Default Light` と `Default Dark` の 2 つだけで、両者は 1 セットの OKLCH ランプを共有しています。`--scheme` の値として選べる、コミュニティ製やターミナル由来のプリセットカタログはバンドルされていません。
+
+カスタマイズはもう一段深いレイヤー、`zfb.config.ts` の `colorSchemes` エスケープハッチフィールドで行います。独自の `{ ramps, map }` パレットマップを `zudoDoc({ colorSchemes: { … } })` に渡します（[Color](./color.mdx#カスタムカラースキームの追加) の「カスタムカラースキームの追加」を参照）。ソースにコミットする前に [Design Token Panel](./design-token-panel.mdx#aiワークフロー) の Palette タブで結果をライブプレビューできます（[カラースキームプレビュー](../guides/color-scheme-preview.mdx)を参照）。
+
 ## オプション
 
 ### プロジェクト
@@ -43,6 +49,7 @@ create-zudo-doc [project-name] [options]
 | `--github-url <url>` | GitHub リポジトリ URL（ヘッダーリンク + ソースリンクに使用） | — |
 | `--pm <manager>` | パッケージマネージャー: `pnpm`, `npm`, `yarn`, `bun` | `pnpm` |
 | `--[no-]install` | スキャフォールディング後に依存関係をインストール | プロンプト |
+| `--[no-]git` | git リポジトリと初回コミットを初期化（doc-history メタデータを有効化） | オン |
 
 ### カラースキーム
 
@@ -54,12 +61,6 @@ create-zudo-doc [project-name] [options]
 | `--dark-scheme <name>` | ダークスキーム（light-dark モード） | `Default Dark` |
 | `--default-mode <mode>` | `light` または `dark`（light-dark モード） | `dark` |
 | `--[no-]respect-system-preference` | OS のカラースキーム設定を尊重 | `true` |
-
-## カラースキーム
-
-zudo-doc が同梱するカラースキームは `Default Light` と `Default Dark` の 2 つだけで、両者は 1 セットの OKLCH ランプを共有しています。`--scheme` の値として選べる、コミュニティ製やターミナル由来のプリセットカタログはバンドルされていません。
-
-カスタマイズはもう一段深いレイヤー、`zfb.config.ts` の `colorSchemes` エスケープハッチフィールドで行います。独自の `{ ramps, map }` パレットマップを `zudoDoc({ colorSchemes: { … } })` に渡します（[Color](./color.mdx#カスタムカラースキームの追加) の「カスタムカラースキームの追加」を参照）。ソースにコミットする前に [Design Token Panel](./design-token-panel.mdx#aiワークフロー) の Palette タブで結果をライブプレビューできます（[カラースキームプレビュー](../guides/color-scheme-preview.mdx)を参照）。
 
 ### 機能
 
@@ -88,6 +89,7 @@ zudo-doc が同梱するカラースキームは `Default Light` と `Default Da
 | `--[no-]tag-governance` | 語彙対応タグ監査・サジェストスクリプト | オフ |
 | `--[no-]doc-tags` | タグ別・タグ一覧の閲覧ルート（docs/tags/...） | オフ |
 | `--[no-]footer-taglist` | フッターのグループ化されたタグ一覧（tagGovernance が必要） | オフ |
+| `--[no-]noindex` | ロボットによるインデックスを回避 — noindex メタ + robots.txt | オフ |
 
 ### プリセット
 
@@ -182,7 +184,7 @@ pnpm create zudo-doc my-docs \
 
 ## プログラム API
 
-パッケージはプログラム API もエクスポートしています。オプションオブジェクトは JSON プリセットと同じフィールドに加え、`install` オプションを受け付けます:
+パッケージはプログラム API もエクスポートしています。オプションオブジェクトは JSON プリセットと同じフィールドに加え、`install` と `git` オプションを受け付けます。プログラム API ではどちらもデフォルトで `false` です:
 
 ```ts
 import { createZudoDoc } from "create-zudo-doc";
@@ -205,5 +207,6 @@ await createZudoDoc({
   ],
   packageManager: "pnpm",
   install: true,
+  git: true,
 });
 ```

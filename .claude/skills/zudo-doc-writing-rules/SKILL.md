@@ -31,6 +31,11 @@ sidebar_position: 1
 ...
 ```
 
+### Do not use horizontal rules as section separators
+
+- Headings and whitespace already express document structure; do not add body-level `---` merely to divide sections.
+- Use a horizontal rule only when the rule itself has semantic meaning, such as documentation that demonstrates horizontal-rule syntax.
+
 ### Always set `sidebar_position`
 
 - Without it, pages sort alphabetically within their category — almost never what you want.
@@ -114,6 +119,7 @@ All five components accept an optional `title` prop.
 ## Common Mistakes (Do Not Do)
 
 - **Starting content with `# Foo`** — duplicates the h1. Start with `## Foo`.
+- **Adding `---` between headed sections** — headings and whitespace already provide the separation.
 - **Forgetting `sidebar_position`** — produces alphabetical chaos in the sidebar.
 - **camelCase or PascalCase file names** — breaks on some filesystems.
 - **Updating only the EN or only the JA version** — breaks the bilingual mirror (except for pages under `defaultLocaleOnlyPrefixes` or with `generated: true`).

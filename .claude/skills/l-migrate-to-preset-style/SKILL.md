@@ -42,8 +42,6 @@ before touching it.
 > insufficient proof that an island migration succeeded. Every
 > island-touching step is gated behind a hydration smoke test.
 
----
-
 ## Preconditions
 
 Verify ALL of the following before proceeding. Stop and tell the user if any fails.
@@ -62,8 +60,6 @@ Verify ALL of the following before proceeding. Stop and tell the user if any fai
 4. **`--dry-run`** — when passed, run Steps 1–3 (diff + classify + report) but apply no
    mutations, perform no hydration checks, and print the plan without executing it.
 
----
-
 ## Step 0 — Detect the starting shape
 
 Read the target project's `zfb.config.ts` (or, for a pre-#2657 project,
@@ -75,8 +71,6 @@ decides which later steps apply:
 | **Already minimal** (`zudoDoc({...})` in `zfb.config.ts`, no `src/config/settings.ts`) | `zfb.config.ts` imports `zudoDoc` from `@takazudo/zudo-doc/config` | Steps 1–3, 6–8 (config already merged) |
 | **Preset-style** (`zudoDocPreset({...})` spread inline in `zfb.config.ts`, `src/config/settings.ts` still the real settings object) | `zfb.config.ts` imports `zudoDocPreset` from `@takazudo/zudo-doc/preset` | All steps, including Step 4 (config-merge) |
 | **Legacy flat-config** (hand-rolled `defineConfig({...})` with inline plugin wiring, `src/config/settings.ts`) | No `zudoDocPreset`/`zudoDoc` import at all | All steps — expect the largest Step 1 diff |
-
----
 
 ## Step 1 — Template-baseline diff
 
@@ -134,8 +128,6 @@ or a `TagVocabularyEntry[]` array) — they are current, not legacy. If
 object (dozens of fields), it IS legacy — route it to Step 4 (config-merge),
 not Step 3 (delete).
 
----
-
 ## Step 2 — Classify each drifted / legacy file
 
 For every file flagged by Step 1 or Step 1b, classify it into one of four categories:
@@ -158,8 +150,6 @@ diff -q <template-file> <target-file>
 Build three lists — `AUTO_DELETE` (A + D), `NEEDS_CONFIRMATION` (B + C), and
 `CONFIG_MERGE` (a full legacy `src/config/settings.ts`, routed to Step 4) —
 before taking any action.
-
----
 
 ## Step 3 — Delete Category A + D files
 
@@ -207,8 +197,6 @@ completion comment's delete-list rather than a flat file dump.
 > Route it to Step 4 (config-merge) instead — deleting it before merging its
 > fields into `zfb.config.ts` silently reverts every non-default setting to
 > the package default.
-
----
 
 ## Step 4 — Config-merge: `settings.ts` → `zfb.config.ts`'s `zudoDoc({...})`
 
@@ -273,8 +261,6 @@ channel — chromeBindingsModule" section for the contract. If the project has
 NO custom host bindings, skip this — the package's own stubs (empty
 search results, no-op DocHistory, etc.) cover a plain scaffold fine.
 
----
-
 ## Step 5 — tsconfig swap to the extends form
 
 Replace the target project's hand-rolled `tsconfig.json` with the extends
@@ -313,8 +299,6 @@ base" section for the full contract):
 
 After swapping, run `pnpm check` and fix any newly-surfaced type errors
 before continuing — this step commonly surfaces stale imports Step 3 missed.
-
----
 
 ## Step 6 — Hydration smoke gate (mandatory for every island-touching change)
 
@@ -364,8 +348,6 @@ pnpm dev &
 2. Report which component is dead (compare the distinct-island set: `grep -roh 'data-zfb-island="[^"]*"' dist/ | sort -u`).
 3. Offer to restore the file from git (`git checkout -- <path>`) or wire a `chromeBindingsModule` (Step 4c).
 
----
-
 ## Step 7 — Verify build and types
 
 After all mutations, run a full build + typecheck to confirm nothing is broken:
@@ -384,8 +366,6 @@ Fix any TypeScript errors before committing. The most common post-migration erro
   a `chromeBindingsModule` slot.
 - `zfb.config.ts` field errors — cross-check against `ZudoDocConfig` in
   `packages/zudo-doc/src/config.ts` (every field has a `@default` JSDoc).
-
----
 
 ## Step 8 — Emit summary report
 
@@ -430,8 +410,6 @@ Legacy flat-config / Preset-style / Already minimal
 ### Next steps
 <list any remaining manual steps>
 ```
-
----
 
 ## Human-gated loop for edited / ambiguous files (Category B + C)
 
@@ -505,16 +483,12 @@ reject it. In that case, and the file is a deleted-from-template legacy wiring s
 (Category D), route to **delete**; otherwise route to **keep** and advise the
 user to handle it manually.
 
----
-
 ## Flags
 
 | Flag | Effect |
 |---|---|
 | `--dry-run` | Run Steps 1–3 classification only; print the plan without mutating any files. |
 | `--skip-hydration-check` | Skip Step 6 (only for non-island migrations or known-safe deletions). Must be explicit — not implied by any other flag. |
-
----
 
 ## Key files and references
 

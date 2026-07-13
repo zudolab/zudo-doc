@@ -283,7 +283,7 @@ Heading-ID (anchor) strategy. `"hierarchical"` prefixes each anchor with its anc
 
 Type: `"flat" | "hierarchical"` · Default: `"hierarchical"`
 
-## Chrome and UI features
+## Site Settings
 
 ### designTokenPanel
 
@@ -344,6 +344,18 @@ Enable per-page git history (Created/Updated + dropdown). In dev, history is ser
 
 Default: `false`
 
+<Warning title="Requires chrome bindings on a fresh scaffold">
+
+Setting this config field alone renders nothing in a scaffolded project: the doc-route
+stub calls `createChrome(routeCtx)` without host bindings, so the `DocHistory` slot stays at
+its no-op default. Thread `chromeBindingsModule` and bind `DocHistory` — see
+[Custom Components](./custom-components.mdx) and
+[Host Chrome Bindings](../reference/host-chrome-bindings.mdx). Scaffolds generated
+after the [template fix](https://github.com/zudolab/zudo-doc/issues/2716) thread the presentational/data slots automatically;
+your own hydrating islands still need the static-import threading described in the guide.
+
+</Warning>
+
 See the [Document History guide](./doc-history.mdx).
 
 ### docMetainfo
@@ -351,6 +363,20 @@ See the [Document History guide](./doc-history.mdx).
 Show the Created/Updated/Author meta block on doc pages (extracted from git history at build).
 
 Default: `false`
+
+<Warning title="Requires chrome bindings on a fresh scaffold">
+
+Setting this config field alone renders nothing in a scaffolded project: the doc-route
+stub calls `createChrome(routeCtx)` without host bindings, so the `docHistoryMeta` slot stays at
+its `{}` default. Thread `chromeBindingsModule` and bind `docHistoryMeta` to the build-time history
+manifest — see [Custom Components](./custom-components.mdx) and
+[Host Chrome Bindings](../reference/host-chrome-bindings.mdx). Scaffolds generated
+after the [template fix](https://github.com/zudolab/zudo-doc/issues/2716) thread the presentational/data slots automatically;
+your own hydrating islands still need the static-import threading described in the guide.
+
+</Warning>
+
+The binding module must provide `docHistoryMeta`; with the default `{}` data slot, there is no metadata block to render. Follow the [Document History guide](./doc-history.mdx) for the paired `docHistory` setup.
 
 ### bodyFootUtilArea
 
@@ -526,6 +552,27 @@ Type: `PresetTranslations` · Default: `undefined`
 Override the directive → JSX-component-name map. When omitted, the canonical seven are used.
 
 Type: `DirectiveVocabulary` · Default: `undefined`
+
+<Warning>
+
+`directives` replaces the vocabulary wholesale. Preserve the canonical directives when adding one, or existing `:::note`, `:::warning`, and other built-ins stop resolving.
+
+</Warning>
+
+```ts title="zfb.config.ts"
+import { defaultDirectiveVocabulary } from "@takazudo/zudo-doc/directive-vocabulary-defaults";
+
+export default defineConfig(
+  zudoDoc({
+    directives: {
+      ...defaultDirectiveVocabulary,
+      callout: "Callout",
+    },
+  }),
+);
+```
+
+See the [Directives Registry](../markdown-features/directives-registry.mdx) for the complete component-registration recipe.
 
 ### tagVocabularyEntries
 

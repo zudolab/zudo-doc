@@ -45,7 +45,7 @@ pnpm create zudo-doc my-docs --sidebar-filter
 
 ### In an Existing Project
 
-The sidebar filter is built into the `SidebarTree` Preact component, shipped by `@takazudo/zudo-doc` as the `sidebar-tree-island` component. It is always rendered as part of the sidebar — there is no separate config field in `zfb.config.ts` to toggle it. To remove it from a scaffolded project, [eject the `sidebar-tree-island` component](../reference/customizing.mdx) and modify the filter logic directly.
+Use the `sidebarFilter` feature/configuration to disable the filter; it is the supported control, rather than an ejected chrome component. For a new project, pass `--no-sidebar-filter` or leave `sidebarFilter` out of the selected features. Deeper changes to the filter's chrome implementation await [the supported chrome-markup seam](https://github.com/zudolab/zudo-doc/issues/2719).
 
 <Tip>
 
