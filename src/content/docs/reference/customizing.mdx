@@ -24,8 +24,6 @@ That "one config file" ideal covers the common cases. This page is the **escalat
 | **7. Deploy path** | Going live (especially with SSR features) | Adapter + `wrangler.toml` + secrets |
 | **8. Restoring pre-push / HTML checks** | You want the showcase's validation gates | Copy a script + add deps |
 
----
-
 ## Rung 1 — Custom frontmatter keys (`buildDocsSchema`)
 
 This is the **first place the one-config ideal breaks**, so it leads the ladder.
@@ -62,8 +60,6 @@ Now pages can declare `tier: core` in frontmatter and it validates at build time
 
 </Note>
 
----
-
 ## Rung 2 — Config fields
 
 Almost everything else **is** a field. `zudoDoc()` defaults every setting, so your `zfb.config.ts` lists only what differs:
@@ -89,8 +85,6 @@ export default defineConfig(
 
 The full field list — with the default for every one — is the [Configuration](../guides/configuration.mdx) reference, which mirrors the `ZudoDocConfig` type's own JSDoc.
 
----
-
 ## Rung 3 — Token overrides
 
 The scaffold's `src/styles/global.css` is a short `@import` chain that pulls the package's `theme.css` (all the `@theme` design tokens), `content.css`, and `features.css` — followed by an empty `@theme { … }` block reserved for you. Because it comes **after** the package imports, anything you redefine there wins the cascade:
@@ -110,8 +104,6 @@ For per-component rebranding without touching every element that reads a global 
 **Reach for it when:** the change is a re-theme — colors, spacing, typography, radii.
 
 **Limit:** tokens restyle; they do not restructure markup. See [Design System](./design-system.mdx), [Color](./color.mdx), and [Component Tokens](./component-tokens.mdx).
-
----
 
 ## Rung 4 — Ejecting a component
 
@@ -141,8 +133,6 @@ Eject writes provenance into a `.zudo-doc.json` file recording which components 
 
 **Limit:** an ejected copy no longer receives package updates for that component — you take on its maintenance. The [CLI warning work](https://github.com/zudolab/zudo-doc/issues/2717) tracks clearer guidance for chrome copies; [the chrome-markup seam discussion](https://github.com/zudolab/zudo-doc/issues/2719) tracks the missing supported customization path. Today, there is no supported way to customize chrome markup through ejection.
 
----
-
 ## Rung 5 — `chromeBindingsModule` (host-callables)
 
 Under `packageOwnedRoutes: true` (the default) the doc chrome is wired inside the package, so there is no host file to render project-specific content into. `chromeBindingsModule` is the seam that gives it back: point it at a host module that exports a `chromeBindings` object, and the injected routes pick up your slots — a content-header renderer, home-hero extras, custom frontmatter-preview renderers, a footer tag loader, and more.
@@ -169,15 +159,11 @@ A fresh scaffold needs one more change before this example can affect its doc pa
 
 The Design Token Panel has a parallel channel, `designTokenPanelConfigModule`: the package-default panel works with zero config (just `designTokenPanel: true`), and to fully customize it you point that setting at a host module exporting `buildDesignTokenPanelConfig(mode)`. Both channels are documented in full — including their loud missing-file behavior — on [Host Chrome Bindings](./host-chrome-bindings.mdx).
 
----
-
 ## Rung 6 — Your own `pages/*.tsx`
 
 If a whole route needs to be yours, add the `.tsx` file to `pages/` at the matching path. **A project-owned page always wins over the package-injected route for the same path** — the host file shadows the injection. This is how you add an entirely custom landing route or take over a specific injected doc path.
 
 The scaffold stubs are special. `pages/index.tsx` shadows nothing: `/` is never injected, so it is a one-line re-export that provides the package home page. `pages/docs/[[...slug]].tsx` does shadow the injected doc route, but it is load-bearing rather than an optional customization example: injected dynamic routes currently return 404 in `zfb dev`, so the stub keeps doc pages working during development. See [Routing Conventions](../develop/routing-conventions.mdx#package-route-injection-and-shadowing) for the complete injection and shadowing model.
-
----
 
 ## Rung 7 — The deploy path (an explicit extend step)
 
@@ -204,8 +190,6 @@ The minimal scaffold builds a **pure static site** — `pnpm build` emits `dist/
 
 See the [Deployment guide](../guides/deployment.mdx) and the [AI Assistant API reference](./ai-assistant-api.mdx) for the full runbook (secrets, KV, CORS, rate limiting).
 
----
-
 ## Rung 8 — Restoring pre-push and HTML validation
 
 The minimal scaffold **drops the validation gates** the showcase runs — they were dead weight for a small doc set. If your project grows to want them back, add them explicitly:
@@ -218,8 +202,6 @@ The minimal scaffold **drops the validation gates** the showcase runs — they w
 The `gen:z-index` / `check:z-index` codegen was likewise removed from generated projects — the 13 default z-index tiers now ship unconditionally from `@takazudo/zudo-doc/theme.css`, so a project only re-adds that codegen if it maintains a *custom* tier set. Overriding a single tier is a one-line `@theme` change (rung 3), not a codegen concern.
 
 </Note>
-
----
 
 ## See also
 

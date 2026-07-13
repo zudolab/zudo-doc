@@ -40,8 +40,6 @@ Both schemes currently **pass the full matrix with an empty allowlist** (`pnpm
 contrast:audit` → 25/25 pairs PASS for each). Keep it that way: a new allowlist entry is a
 last resort, not a starting point (§2.3).
 
----
-
 ## 1. The pair matrix + thresholds
 
 How a color renders decides its threshold: **text ≥ 4.5:1 (AA normal text), non-text
@@ -128,8 +126,6 @@ These are documented per-value in `packages/zudo-doc/src/color-schemes-defaults/
 (don't try to force it back onto a shared ramp stop) unless the retune is meant to move the
 *shared* ramp value for both modes at once.
 
----
-
 ## 2. Tweak methodology
 
 Adjust the failing color **in the data file**, not the pipeline. Work per scheme, per
@@ -206,8 +202,6 @@ justification naming *why it never renders*. "Upstream fidelity" / "palette intr
 `ADMONITION_ALLOWLIST` in `src/config/__tests__/contrast.test.ts` are currently **empty**
 — both schemes clear the full matrix outright. Keep it that way; default to tweaking.
 
----
-
 ## 3. The `muted` dual-role DECISION
 
 `muted` is **both** secondary text (4.5 floor — blockquote body, footer, TOC, pager;
@@ -256,8 +250,6 @@ background is effectively `min(bg, codeBg)`. `codeBg` sits on its own ramp stop
 only a small extra nudge, if any, to also clear `codeBg` — `contrast-suggest.ts` computes
 the `min` over these backgrounds automatically.
 
----
-
 ## 4. Verification workflow
 
 1. **Audit (primary, both schemes):**
@@ -294,8 +286,6 @@ the `min` over these backgrounds automatically.
    title, `<mark>`). Note: worktree agents do **not** run dev servers/browsers — this step
    is for manual/live confirm sweeps, not batch tweak edits.
 
----
-
 ## 5. New-scheme checklist
 
 Before adding a new entry to `colorSchemes` in
@@ -318,8 +308,6 @@ Before adding a new entry to `colorSchemes` in
       DOES carry its own `colorSchemes` override (an escape-hatch field on `ZudoDocConfig`,
       not a file), that project owns its own contrast audit independently.
 - [ ] NOT touch e2e fixtures.
-
----
 
 ## 6. Documented exceptions & scope
 
