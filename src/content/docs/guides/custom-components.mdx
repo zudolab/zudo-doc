@@ -1,0 +1,182 @@
+---
+title: Custom Components
+description: Add presentational MDX components, overrides, and experimental interactive islands.
+sidebar_position: 1.5
+tags:
+  - customization
+  - type:guide
+---
+
+## Two ways to add a component
+
+You can make a component available to MDX in two ways:
+
+- **Import it in one file** when it belongs to a single document or a small, explicit set of documents.
+- **Register it globally with `mdxExtras`** when authors should be able to use the component throughout the documentation, or when you are replacing a built-in MDX component.
+
+Both approaches render on the server. Choose global registration only for a shared authoring surface; it is not required for ordinary document-specific UI.
+
+## Per-file imports
+
+Import a component directly at the top of an `.mdx` file. The scaffold's `@/` alias works from MDX, so the component can live with the rest of your project code.
+
+```mdx
+import { MyBadge } from "@/components/my-badge";
+
+<MyBadge>New</MyBadge>
+```
+
+This is the smallest and most local option. A bare MDX import is SSR-only: it renders the component into HTML, but it does not make a client component hydrate. See [Interactive islands (experimental)](#interactive-islands-experimental) when the component needs browser-side state or event handlers.
+
+## Global registration: mdxExtras
+
+`mdxExtras` is the global registry for project-owned MDX components. Create a bindings module, point `zudoDoc()` at it, and pass those bindings to the scaffold's document-route stub.
+
+The route-stub change is required. A fresh scaffold includes `pages/docs/[[...slug]].tsx`, whose bare `createChrome(routeCtx)` call shadows the package-injected route. Importing the bindings statically and passing them to `createChrome()` is the universal recipe: it works for ordinary presentational `mdxExtras` **and** keeps a future island import reachable by zfb's scanner.
+
+Start with this complete example.
+
+```tsx title="src/components/my-badge.tsx"
+import type { ComponentChildren } from "preact";
+
+export function MyBadge({ children }: { children: ComponentChildren }) {
+  return (
+    <span className="rounded-full bg-surface px-hsp-sm py-vsp-2xs text-caption text-fg">
+      {children}
+    </span>
+  );
+}
+```
+
+```ts title="src/chrome-bindings.tsx"
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
+import { MyBadge } from "./components/my-badge";
+
+export const chromeBindings = defineChromeBindings({
+  mdxExtras: { MyBadge },
+});
+```
+
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    chromeBindingsModule: "./src/chrome-bindings.tsx",
+  }),
+);
+```
+
+In `pages/docs/[[...slug]].tsx`, add the static import next to the existing `createChrome` import, then replace the bare call with this call:
+
+```tsx title="pages/docs/[[...slug]].tsx"
+import { createChrome } from "@takazudo/zudo-doc/chrome";
+import { chromeBindings } from "../../src/chrome-bindings";
+
+const { renderDocPage } = createChrome(routeCtx, chromeBindings);
+```
+
+`pages/[locale]/docs/[[...slug]].tsx` has the same boundary when you use i18n; apply the equivalent static import there as well. Versioned document stubs need the same treatment when your project uses versions.
+
+You can instead import `chromeBindings` from `virtual:zudo-doc-chrome-bindings`. That virtual module follows `chromeBindingsModule` from your config and is useful for **presentational, server-rendered** `mdxExtras`. Keep the static import above when the bindings contain an island: the virtual-module path is outside the static import graph that discovers client components.
+
+<Warning title="The virtual path does not make islands hydrate">
+
+[Issue #2716](https://github.com/zudolab/zudo-doc/issues/2716) will auto-thread the virtual form for presentational and data slots. It does not make a client island scanner-reachable. Use the static route-stub import for islands.
+
+</Warning>
+
+Once registered, every MDX page can use the component without an import:
+
+```mdx
+<MyBadge>New</MyBadge>
+```
+
+For the delivery channel and its other host-bound slots, see [Host Chrome Bindings](../reference/host-chrome-bindings.mdx).
+
+## Overriding built-in components
+
+`mdxExtras` also overrides a built-in component when it uses the same key. This resolves in two stages: `chrome/derive` merges host `mdxExtras` over its package defaults, then the package MDX-component factory spreads those extras last after its default map. Your same-named binding therefore wins.
+
+The overridable names include:
+
+- Admonitions: `Note`, `Tip`, `Info`, `Warning`, `Danger`, `Important`, and `Caution`
+- Content helpers: `Details`, `HtmlPreview`, `CodeGroup`, `Tabs`, `TabItem`, `Island`, and `PresetGenerator`
+- HTML overrides such as `p`, `a`, `img`, and `table`
+
+Keep the replacement compatible with the MDX syntax and props that your existing documents use. Replacing `p` or another HTML element affects every matching element in the documentation, so prefer a new named component unless a global rendering change is intentional.
+
+## className, not class
+
+Write `className` in project `.tsx` components, not `class`. The scaffold maps `react` to `preact/compat`, so authored components type-check through the React-compatible JSX types. `class=` fails `zfb check` with `TS2322`; `className` works in both the scaffold and Preact-compatible code.
+
+```tsx
+// Correct in project-owned .tsx files.
+export function MyBadge() {
+  return <span className="text-caption">New</span>;
+}
+```
+
+Some zudo-doc package and showcase source uses `class=`. That source follows its own Preact compilation boundary; do not copy that spelling into a newly authored scaffold component.
+
+## Interactive islands (experimental)
+
+An interactive component needs more than an MDX import: its module must opt into client execution, and zfb must be able to reach that import through a static route graph. This recipe registers a visible-on-scroll counter island through the same static bindings path described above.
+
+```tsx title="src/components/counter.tsx"
+"use client";
+
+import { useState } from "preact/hooks";
+
+export default function Counter() {
+  const [count, setCount] = useState(0);
+
+  return (
+    <button type="button" className="rounded-full bg-surface px-hsp-sm py-vsp-2xs text-caption text-fg" onClick={() => setCount((value) => value + 1)}>
+      Count: {count}
+    </button>
+  );
+}
+```
+
+```tsx title="src/chrome-bindings.tsx"
+import { Island } from "@takazudo/zfb";
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
+import Counter from "./components/counter";
+
+(Counter as { displayName?: string }).displayName = "Counter";
+
+const CounterIsland = () =>
+  Island({
+    when: "visible",
+    children: <Counter />,
+  });
+
+export const chromeBindings = defineChromeBindings({
+  mdxExtras: { CounterIsland },
+});
+```
+
+Keep the static `../../src/chrome-bindings` import in `pages/docs/[[...slug]].tsx` from the global-registration recipe. The virtual-module alternative is SSR-presentational only and cannot guarantee that this island is discovered. Setting `Counter.displayName` pins the island marker name even when the render pipeline rewrites function names.
+
+<Warning title="Experimental scanner contract">
+
+This pattern is experimental because upstream island-marker deduplication remains fragile; follow [issue #2718](https://github.com/zudolab/zudo-doc/issues/2718) for that work. Test the hydrated behavior in your built site whenever you change an island's registration path.
+
+</Warning>
+
+The package's `pages/lib/_preset-generator.tsx` demonstrates the same `Island({...})` call form and display-name pinning. For a presentational `className`-based component, see the `Pill` renderer in `src/config/frontmatter-preview-renderers.tsx` in this showcase.
+
+Use the registered island from MDX like any other global component:
+
+```mdx
+<CounterIsland />
+```
+
+## See also
+
+- [Customizing zudo-doc](../reference/customizing.mdx) for the minimal-to-extended customization ladder
+- [Host Chrome Bindings](../reference/host-chrome-bindings.mdx) for the bindings module and its non-component slots
+- [Writing Documentation](../getting-started/writing-docs.mdx) for regular MDX authoring
