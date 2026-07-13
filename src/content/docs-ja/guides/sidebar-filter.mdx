@@ -45,7 +45,7 @@ pnpm create zudo-doc my-docs --sidebar-filter
 
 ### 既存プロジェクトの場合
 
-サイドバーフィルターは `SidebarTree` Preact コンポーネントに組み込まれており、`@takazudo/zudo-doc` から `sidebar-tree-island` コンポーネントとして提供されます。サイドバーの一部として常にレンダリングされ、`zfb.config.ts` に個別の切り替え設定フィールドはありません。スキャフォールドされたプロジェクトから削除するには、[`sidebar-tree-island` コンポーネントを eject](../reference/customizing.mdx) してフィルターロジックを直接変更する必要があります。
+フィルターを無効にするには、`sidebarFilter` の機能／設定を使います。これはサポートされている制御であり、クロームコンポーネントのエジェクトではありません。新しいプロジェクトでは `--no-sidebar-filter` を渡すか、選択する機能から `sidebarFilter` を外してください。フィルターのクローム実装をより深く変更するには、[サポート済みクロームマークアップ継ぎ目](https://github.com/zudolab/zudo-doc/issues/2719)を待つ必要があります。
 
 <Tip>
 
