@@ -173,7 +173,7 @@ For a complete list of all available components including admonitions, code bloc
 
 ## i18n (Internationalization)
 
-zudo-doc supports English and Japanese out of the box. Japanese docs mirror the English directory structure in `src/content/docs-ja/`.
+The default scaffold has one locale and no `src/content/docs-ja/` directory or locale route. Select the `i18n` feature during scaffolding to add a secondary language, its mirrored content directory, and `pages/[locale]/docs/[[...slug]].tsx`. You can also add locales later through the `locales` field in `zudoDoc({ ... })`.
 
 <Tip>
 
@@ -183,7 +183,7 @@ See the [i18n guide](../guides/i18n.mdx) for detailed instructions on managing t
 
 ## MDX Features
 
-You can use Preact components in your documentation. Interactive components hydrate on the client via zfb's island runtime — the rest ships as pure HTML with zero JavaScript.
+You can use Preact components in your documentation. A plain MDX component import renders on the server and ships as HTML with zero JavaScript.
 
 A fresh scaffold has no `src/components/` directory — you create one when you want custom components. The `@/*` path alias maps to `src/*`, so a file at `src/components/my-component.tsx` imports as:
 
@@ -195,7 +195,7 @@ import MyComponent from "@/components/my-component";
 
 <Info>
 
-A plain component import renders server-side only and ships zero JavaScript. Interactive islands are registered via the project's island runtime — a bare component import does not hydrate on the client; only components wired up as islands do.
+A plain component import renders server-side only and ships zero JavaScript. To register a component for use across documents or to add an interactive island, follow [Custom Components](../guides/custom-components.mdx): it uses `mdxExtras` for global registration and the experimental `Island()` recipe for client hydration.
 
 </Info>
 
