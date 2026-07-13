@@ -41,7 +41,7 @@ export default function DocsPage({ params }: { params: { slug: string[] } }) {
 import { getCollection } from "zfb/content";
 
 export function paths() {
-  const docs = getCollection("docs"); // 同期的 — awaitなし
+  const docs = getCollection("docs"); // synchronous — no await
   return docs
     .filter((entry) => !entry.data.draft)
     .map((entry) => ({
@@ -67,7 +67,7 @@ Rust ↔ JSブリッジ契約の詳細は[ADR-004](https://takazudomodular.com/p
 `paths()`は技術的には`async`として書けますが、そうするとSSGの保証が破れます。
 
 ```tsx
-// ❌ アンチパターン — paths()内でライブフェッチ
+// ❌ Anti-pattern — live fetch inside paths()
 export async function paths() {
   const res = await fetch("https://api.example.com/items");
   const items = await res.json();
@@ -153,7 +153,7 @@ Astroの`getStaticPaths()`は任意の非同期操作を受け付けていまし
 次のようなパターンがよく見られました：
 
 ```ts
-// ❌ Astro — 移行前
+// ❌ Astro — before migration
 // pages/docs/tags/[tag].tsx
 export async function getStaticPaths() {
   const res = await fetch("https://api.example.com/tags");
@@ -170,7 +170,7 @@ zfbでは、これを2ステップのプロセスに変換します。
 `zfb build`の前に実行し、その結果をコンテンツコレクションまたは静的JSONファイルに書き込みます：
 
 ```ts
-// scripts/fetch-tags.ts — ビルド前のステップとして実行
+// scripts/fetch-tags.ts — run as a pre-build step
 import { writeFileSync, mkdirSync } from "fs";
 
 const res = await fetch("https://api.example.com/tags");
@@ -188,12 +188,12 @@ for (const tag of tags) {
 **ステップ2** — `getCollection`を使って`paths()`内でプリフェッチ済みデータを読み込みます：
 
 ```tsx
-// ✅ zfb — 移行後
+// ✅ zfb — after migration
 // pages/tags/[tag].tsx
 import { getCollection, getEntry } from "zfb/content";
 
 export function paths() {
-  const tags = getCollection("tags"); // 事前生成されたコンテンツを読み込む
+  const tags = getCollection("tags"); // reads the pre-generated content
   return tags.map((tag) => ({
     params: { tag: tag.slug },
     props: { label: tag.data.label },

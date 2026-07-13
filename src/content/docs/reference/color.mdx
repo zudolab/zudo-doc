@@ -296,9 +296,9 @@ zudo-doc ships exactly two color schemes — **Default Light** and **Default Dar
 
 ## Adding a Custom Color Scheme
 
-`colorSchemes` is one of `zudoDoc()`'s escape hatches — when omitted, the two packaged schemes above are used as-is. There is no scaffold `src/config/color-schemes.ts`; create your own module (for example, at that path) to add or replace a scheme, then pass it through the `colorSchemes` field in `zfb.config.ts`. A new scheme needs its own `ramps` and a `map` for each mode you want (spread `SEMANTIC_RAMP_DEFAULTS` and override only what needs to differ). Spread in `defaultColorSchemes` too if you want to keep the two packaged schemes alongside your own:
+`colorSchemes` is one of `zudoDoc()`'s escape hatches — when omitted, the two packaged schemes above are used as-is. A fresh scaffold has no color-scheme module; create one (for example, `src/color-schemes.ts`) to add or replace a scheme, then pass it through the `colorSchemes` field in `zfb.config.ts`. A new scheme needs its own `ramps` and a `map` for each mode you want (spread `SEMANTIC_RAMP_DEFAULTS` and override only what needs to differ). Spread in `defaultColorSchemes` too if you want to keep the two packaged schemes alongside your own:
 
-```ts title="src/config/color-schemes.ts"
+```ts title="src/color-schemes.ts"
 import { SEMANTIC_RAMP_DEFAULTS } from "@takazudo/zudo-doc/color-scheme-utils";
 import { defaultColorSchemes } from "@takazudo/zudo-doc/color-schemes-defaults";
 import type { ColorScheme, ModeMap, Ramps } from "@takazudo/zudo-doc/color-scheme-utils";
@@ -342,7 +342,7 @@ export const colorSchemes: Record<string, ColorScheme> = {
 ```
 
 ```ts title="zfb.config.ts"
-import { colorSchemes } from "./src/config/color-schemes";
+import { colorSchemes } from "./src/color-schemes";
 
 export default defineConfig(
   zudoDoc({

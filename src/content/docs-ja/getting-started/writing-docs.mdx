@@ -10,12 +10,12 @@ sidebar_position: 3
 
 ```mdx
 ---
-title: マイページ
-description: このページの簡単な説明。
+title: My Page
+description: A brief summary of this page.
 sidebar_position: 1
 ---
 
-ここにコンテンツを記述します。
+Your content here.
 ```
 
 ### フロントマターフィールド
@@ -61,9 +61,9 @@ src/content/docs/
 **相対ファイルパス**を使って他のドキュメントにリンクできます：
 
 ```mdx
-[インストールガイド](./installation.mdx)
-[フロントマターリファレンス](../guides/frontmatter.mdx)
-[インデックスに戻る](./index.mdx)
+[Installation guide](./installation.mdx)
+[Frontmatter reference](../guides/frontmatter.mdx)
+[Back to index](./index.mdx)
 ```
 
 これらの相対パスはビルド時に正しいURLに自動的に解決されます。リンクリゾルバーが動作するには `.md`/`.mdx` 拡張子が必要です。これによりファイルリンクとURLリンクを区別します。
@@ -71,7 +71,7 @@ src/content/docs/
 アンカーやクエリ文字列も含めることができます：
 
 ```mdx
-[フロントマターフィールド](../guides/frontmatter.mdx#required-fields)
+[Frontmatter fields](../guides/frontmatter.mdx#required-fields)
 ```
 
 <Tip>
@@ -83,8 +83,8 @@ src/content/docs/
 外部リンクやドキュメント以外のページへのリンクには、通常のURLを使用してください：
 
 ```mdx
-[外部サイト](https://example.com)
-[APIリファレンス](/api/v1)
+[External site](https://example.com)
+[API reference](/api/v1)
 ```
 
 ## アドモニション
@@ -136,9 +136,9 @@ zudo-docはDocusaurusスタイルのアドモニションをサポートして�
 **ディレクティブ構文**（コンテンツ作成者向け推奨）：
 
 ```mdx
-:::note[任意のタイトル]
+:::note[Optional Title]
 
-ここにコンテンツを記述します。
+Content here.
 
 :::
 ```
@@ -147,11 +147,11 @@ zudo-docはDocusaurusスタイルのアドモニションをサポートして�
 
 ```mdx
 <Note>
-自動生成タイトルのデフォルトノート。
+Default note with auto-generated title.
 </Note>
 
-<Warning title="注意">
-カスタムタイトルの警告。
+<Warning title="Be Careful">
+Warning with a custom title.
 </Warning>
 ```
 

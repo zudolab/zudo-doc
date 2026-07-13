@@ -43,23 +43,23 @@ export const greeting = "hello";
 :::
 ````
 
-:::warning[トリガーは `:::code-group` ディレクティブ — 単なる連続フェンスではありません]
+:::warning[The `:::code-group` directive is the trigger — not bare consecutive fences]
 
-隣接した 2 つのフェンスコードブロックだけではタブになりません。それらは独立した 2 つのコードブロックとして描画されます。タブ化は、フェンスをラップする明示的な `:::code-group` ディレクティブによってのみトリガーされます。
+Two adjacent fenced code blocks on their own do **not** become tabs; they render as two independent code blocks. The tab grouping is triggered only by the explicit `:::code-group` directive wrapping the fences.
 
 :::
 
-## タブラベルの解決
+## Tab label resolution
 
-各タブのラベルは次の優先順位で決定されます。
+Each tab's label follows this priority order:
 
-1. フェンスの `title="…"` 属性
-2. 言語 id（例: `ts`、`js`）
-3. いずれもない場合のフォールバック文字列 `"tab"`
+1. The `title="…"` attribute on the fence
+2. The language id (e.g. `ts`, `js`)
+3. The fallback string `"tab"` when neither is present
 
-## ライブデモ
+## Live demo
 
-上記のディレクティブは次のように描画されます。
+The directive above renders as:
 
 :::code-group
 

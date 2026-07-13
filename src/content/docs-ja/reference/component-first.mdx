@@ -70,7 +70,7 @@ const CounterIsland = () =>
 zudo-docプロジェクトでCSSクラス名を作成しては**いけません**：
 
 ```css
-/* 間違い — カスタムCSSクラスを作成しない */
+/* WRONG — don't create custom CSS classes */
 .profile-card {
   display: flex;
   gap: 1rem;
@@ -83,7 +83,7 @@ zudo-docプロジェクトでCSSクラス名を作成しては**いけません*
 ```
 
 ```tsx
-// 間違い — カスタムクラス名はデザインシステムをバイパスする
+// WRONG — custom class names bypass the design system
 <div className="profile-card">
   <h3 className="profile-card__name">{name}</h3>
 </div>
@@ -92,7 +92,7 @@ zudo-docプロジェクトでCSSクラス名を作成しては**いけません*
 代わりに：
 
 ```tsx
-// 正しい — ユーティリティクラス、コンポーネントが抽象化
+// RIGHT — utility classes, the component is the abstraction
 <div className="flex gap-hsp-md p-hsp-lg">
   <h3 className="text-body font-semibold">{name}</h3>
 </div>
@@ -150,10 +150,10 @@ function Button({ variant = "primary", children }) {
 任意の値ではなく、プロジェクトトークンを常に使用：
 
 ```tsx
-// 間違い — 任意の値はデザインシステムをバイパスする
-<div className="p-[1.2rem] text-[0.875rem]">
+// WRONG — arbitrary values bypass the design system
+<div className="p-[1.2rem] text-[0.875rem] text-[#6b7280]">
 
-// 正しい — デザイントークンを使用
+// RIGHT — use design tokens
 <div className="p-hsp-md text-small text-muted">
 ```
 
