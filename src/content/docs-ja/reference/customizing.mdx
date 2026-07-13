@@ -18,8 +18,8 @@ tags:
 | **1. `buildDocsSchema` の上書き** | カスタムの検証付きフロントマターキーが必要 | 関数を1つ置き換え、スキーマを所有する |
 | **2. 設定フィールド** | 機能のオン/オフや挙動の調整 | なし — ただのフィールド |
 | **3. トークンの上書き** | 色・スペーシング・タイポグラフィの再テーマ | `global.css` の `@theme` ブロック |
-| **4. `zudo-doc eject`** | コンポーネントのマークアップ自体を変える必要 | eject したコピーを所有する |
-| **5. `chromeBindingsModule`** | 注入ルートにホストのコンテンツ/コーラブルを差し込む | ホストモジュール1つ |
+| **4. `zudo-doc eject`** | 再参照するコンテンツ層コンポーネントを変更する必要 | eject したコピーとそのインポートを所有する |
+| **5. `chromeBindingsModule`** | [カスタム MDX コンポーネント](../guides/custom-components.mdx#グローバル登録-mdxextras)を含め、注入ルートにホストのコンテンツ/コーラブルを差し込む | ホストモジュール1つとスタブ配線 |
 | **6. 自前の `pages/*.tsx`** | ルート全体を自分のものにする必要 | そのルートを所有する |
 | **7. デプロイ経路** | 本番公開（特に SSR 機能を伴う場合） | アダプター + `wrangler.toml` + シークレット |
 | **8. pre-push / HTML チェックの復元** | ショーケースの検証ゲートを取り戻したい | スクリプトのコピー + 依存追加 |
@@ -115,30 +115,31 @@ export default defineConfig(
 
 ## 第4段 — コンポーネントのエジェクト
 
-どのトークンでも変更に届かない — マークアップ自体があなたに合わない — 場合は、コンポーネントをエジェクトします。エジェクトはそのソースをパッケージからプロジェクトへコピーし、ファイルを直接所有できるようにします:
+どのトークンでも変更に届かない — マークアップ自体があなたに合わない — 場合は、プロジェクトが再参照する**コンテンツ層**コンポーネント（たとえば `mdxExtras` 経由）をエジェクトします。エジェクトはそのソースをパッケージからプロジェクトへコピーし、該当するホストインポートをローカルコピーへ書き換えます:
 
 ```sh
 # eject a component (run via your package manager's bin runner)
-pnpm exec zudo-doc eject header
+pnpm exec zudo-doc eject details
 # → copies source into your project and rewrites imports to resolve locally
 
 # see the full list
 pnpm exec zudo-doc --help
 ```
 
-エジェクト可能な18コンポーネント:
+エジェクト可能な18コンポーネントには、2つの異なる範囲があります:
 
-`header`, `footer`, `breadcrumb`, `toc`, `sidebar`, `theme-toggle`, `page-loading`, `tab-item`, `doc-pager`, `content-admonition`, `code-group`, `details`, `sidebar-tree-island`, `sidebar-toggle-island`, `desktop-sidebar-toggle-island`, `image-enlarge`, `doc-history`, `site-tree-nav-island`
+- **コンテンツ層:** `tab-item`、`content-admonition`、`code-group`、`details`。ローカルコピーをレンダリングする必要があるときは、プロジェクト所有の bindings または MDX コンポーネント登録から再参照します。
+- **クローム描画:** `header`、`footer`、`breadcrumb`、`toc`、`sidebar`、`theme-toggle`、`page-loading`、`doc-pager`、`sidebar-tree-island`、`sidebar-toggle-island`、`desktop-sidebar-toggle-island`、`image-enlarge`、`doc-history`、`site-tree-nav-island`。CLI はこれらのソースをコピーできますが、新しい scaffold にはホストの呼び出し地点がないため、コピーは機能上の no-op です。編集しても描画済みクロームは変わりません。
 
-エジェクト後は、ローカルコピーを編集します。変更は `pnpm dev` で即座に反映されます。
+コンテンツ層コンポーネントでは、まずそれをレンダリングするホストコードにローカルインポートを配線してから、ローカルコピーを編集します。`mdxExtras` に必要な bindings とルートスタブの設定は[カスタムコンポーネントガイド](../guides/custom-components.mdx#グローバル登録-mdxextras)にあります。
 
 <Note>
 
-エジェクトは、どのコンポーネントを所有しているかを記録するプロベナンスを `.zudo-doc.json` ファイルに書き込みます。このファイルは**最初のエジェクト時に遅延生成**されます — 新しいスキャフォールドには存在しないため、エジェクトしていないプロジェクトは説明不能な設定ファイルを持ちません。コンポーネントのディレクトリと `.zudo-doc.json` のエントリを削除すれば、パッケージ版に戻ります。
+エジェクトは、どのコンポーネントを所有しているかを記録するプロベナンスを `.zudo-doc.json` ファイルに書き込みます。このファイルは**最初のエジェクト時に遅延生成**されます — 新しいスキャフォールドには存在しないため、エジェクトしていないプロジェクトは説明不能な設定ファイルを持ちません。エジェクトを戻すには、まず書き換えられた、または手作業で追加したローカルインポートを元の `@takazudo/zudo-doc/...` パッケージインポートへ戻します。その後にコンポーネントディレクトリと `.zudo-doc.json` のエントリを削除します。先にディレクトリを削除すると、それらのインポートが壊れます。
 
 </Note>
 
-**限界:** エジェクトしたコピーは、そのコンポーネントのパッケージ更新をもう受け取りません — メンテナンスを引き受けることになります。
+**限界:** エジェクトしたコピーは、そのコンポーネントのパッケージ更新をもう受け取りません — メンテナンスを引き受けることになります。[CLI 警告の作業](https://github.com/zudolab/zudo-doc/issues/2717)はクロームコピーへのより明確な案内を追跡し、[クロームマークアップ継ぎ目の議論](https://github.com/zudolab/zudo-doc/issues/2719)は不足しているサポート済みカスタマイズ経路を追跡しています。現在、エジェクトによるクロームマークアップのカスタマイズはサポートされていません。
 
 ---
 
@@ -164,15 +165,17 @@ export const chromeBindings = defineChromeBindings({
 });
 ```
 
+新しい scaffold では、この例がドキュメントページに影響する前にもう1つ変更が必要です。自己完結型の `pages/docs/[[...slug]].tsx` スタブが注入ルートをシャドーし、bindings なしで `createChrome(routeCtx)` を呼びます。`chromeBindings` をそのスタブへ静的にインポートして `createChrome()` に渡してください。プロジェクトが使うロケールまたはバージョン付きスタブにも同じ変更を適用します。[スタブ配線の修正](https://github.com/zudolab/zudo-doc/issues/2716)後に生成した scaffold には表示用の配線がすでに含まれる場合がありますが、完全で普遍的なレシピは[カスタムコンポーネントガイド](../guides/custom-components.mdx#グローバル登録-mdxextras)です。
+
 Design Token Panel には並行チャネル `designTokenPanelConfigModule` があります。パッケージデフォルトのパネルはゼロコンフィグ（`designTokenPanel: true` だけ）で動作し、完全にカスタマイズするには、その設定を `buildDesignTokenPanelConfig(mode)` をエクスポートするホストモジュールに向けます。両チャネルは — ファイルが無いときの大きな声での失敗挙動も含め — [ホストクロームバインディング](./host-chrome-bindings.mdx)で詳しく説明されています。
 
 ---
 
 ## 第6段 — 自前の `pages/*.tsx`
 
-ルート全体を自分のものにする必要があるなら、対応するパスの `.tsx` ファイルを `pages/` に追加します。**同じパスに対して、プロジェクト所有のページは常にパッケージ注入ルートに勝ちます** — ホストファイルが注入をシャドウします。これがホームページの置き換え、完全にカスタムなランディングルートの追加、特定のドキュメントパスの引き取りの方法です。
+ルート全体を自分のものにする必要があるなら、対応するパスの `.tsx` ファイルを `pages/` に追加します。**同じパスに対して、プロジェクト所有のページは常にパッケージ注入ルートに勝ちます** — ホストファイルが注入をシャドウします。これが完全にカスタムなランディングルートの追加、特定の注入ドキュメントパスの引き取りの方法です。
 
-2つのスキャフォールドスタブ（`pages/index.tsx`、`pages/docs/[[...slug]].tsx`）自体が、この優先順位を使う普通のホストページです。拡張したり兄弟を追加したりできます。ルートがどのように列挙されシャドウされるかは[ルーティング規約](../develop/routing-conventions.mdx)を参照してください。
+scaffold のスタブは特別です。`pages/index.tsx` は何もシャドーしません。`/` は注入されないため、これはパッケージホームページを提供する1行の再エクスポートです。`pages/docs/[[...slug]].tsx` は注入されたドキュメントルートをシャドーしますが、任意のカスタマイズ例ではなく、動作に必要です。注入された動的ルートは現在 `zfb dev` で404を返すため、このスタブが開発時のドキュメントページを動かし続けます。完全な注入とシャドーイングのモデルは[ルーティング規約](../develop/routing-conventions.mdx#パッケージルートの注入とシャドーイング)を参照してください。
 
 ---
 
@@ -221,6 +224,7 @@ Design Token Panel には並行チャネル `designTokenPanelConfigModule` が�
 ## 関連ページ
 
 - [設定](../guides/configuration.mdx) — すべての `zudoDoc()` フィールドとそのデフォルト
+- [カスタムコンポーネント](../guides/custom-components.mdx) — プロジェクト所有の MDX コンポーネントを登録し、bindings をルートスタブへ配線する
 - [ホストクロームバインディング](./host-chrome-bindings.mdx) — `chromeBindingsModule` と `designTokenPanelConfigModule` の詳細
 - [create-zudo-doc CLI](./create-zudo-doc.mdx) — スキャフォールドが出力するもの
 - [v3 からの移行](../getting-started/migrating-from-v3.mdx) — 既存の生成プロジェクトをこの形状へ移す
