@@ -6,19 +6,20 @@ sidebar_position: 14
 
 The **GitHub Alerts** feature converts GitHub-style alert blockquotes — the `> [!NOTE]` syntax you see in README files — into the same admonition markup produced by the [admonitions recipe (the `directives` map)](./admonitions-preset.mdx). This lets you author callouts with the familiar GitHub syntax and have them rendered identically to `:::note`-style directives.
 
-:::note Opt-in feature
+:::note[Included in the standard preset]
 
-Enable it with the `githubAlerts` key in `zfb.config.ts`:
+`zudoDoc()` enables GitHub Alerts. No separate configuration field is necessary:
 
 ```ts
 // zfb.config.ts
-export default defineConfig({
-  markdown: {
-    features: {
-      githubAlerts: true,
-    },
-  },
-});
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+  }),
+);
 ```
 
 :::
@@ -44,9 +45,9 @@ Five alert types are supported. Each maps to an admonition variant:
 | `[!WARNING]`   | `warning`   |
 | `[!CAUTION]`   | `caution`   |
 
-:::warning Component dependency
+:::note[Package-provided components]
 
-`[!IMPORTANT]` and `[!CAUTION]` map to `important`/`caution` admonition variants, which require their components to be registered in this project (`pages/_mdx-components.ts`). zudo-doc registers `Important`/`Caution` stubs, so all five variants render here. If you adopt this feature in another project **without** registering those two components, `[!IMPORTANT]`/`[!CAUTION]` will 500 the SSR render — register them (or restrict authoring to NOTE/TIP/WARNING) first.
+zudo-doc registers the `Important` and `Caution` components, so all five alert variants render without project-side component registration. You can override any of these components through [`mdxExtras`](../guides/custom-components.mdx#global-registration-mdxextras).
 
 :::
 

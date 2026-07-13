@@ -6,19 +6,20 @@ sidebar_position: 14
 
 **GitHub Alerts** 機能は、GitHub 形式のアラートブロック引用（README で見かける `> [!NOTE]` 構文）を、[アドモニションレシピ（`directives` マップ）](./admonitions-preset.mdx)が生成するのと同じアドモニションマークアップに変換します。これにより、使い慣れた GitHub 構文でコールアウトを書きながら、`:::note` 形式のディレクティブとまったく同じように描画できます。
 
-:::note Opt-in 機能
+:::note[標準プリセットに含まれます]
 
-`zfb.config.ts` の `githubAlerts` キーで有効化します。
+`zudoDoc()` は GitHub Alerts を有効にします。個別の設定フィールドは不要です。
 
 ```ts
 // zfb.config.ts
-export default defineConfig({
-  markdown: {
-    features: {
-      githubAlerts: true,
-    },
-  },
-});
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+  }),
+);
 ```
 
 :::
@@ -29,7 +30,7 @@ export default defineConfig({
 
 ```md
 > [!NOTE]
-> ユーザーが流し読みしていても知っておくべき有用な情報。
+> Useful information that users should know, even when skimming content.
 ```
 
 ## バリアント
@@ -44,9 +45,9 @@ export default defineConfig({
 | `[!WARNING]`    | `warning`   |
 | `[!CAUTION]`    | `caution`   |
 
-:::warning コンポーネント依存
+:::note[パッケージが提供するコンポーネント]
 
-`[!IMPORTANT]` と `[!CAUTION]` は `important`/`caution` アドモニションバリアントに対応し、これらはプロジェクト（`pages/_mdx-components.ts`）でコンポーネントが登録されている必要があります。zudo-doc は `Important`/`Caution` スタブを登録しているため、ここでは 5 つのバリアントすべてが描画されます。これら 2 つのコンポーネントを登録**せずに**別プロジェクトでこの機能を採用すると、`[!IMPORTANT]`/`[!CAUTION]` が SSR レンダリングを 500 にします。先にそれらを登録する（または NOTE/TIP/WARNING に限定する）必要があります。
+zudo-doc は `Important` と `Caution` コンポーネントを登録するため、5 つのアラートバリアントはプロジェクト側でコンポーネントを登録しなくてもすべて描画されます。これらのコンポーネントは [`mdxExtras`](../guides/custom-components.mdx#グローバル登録-mdxextras) を通じて上書きできます。
 
 :::
 

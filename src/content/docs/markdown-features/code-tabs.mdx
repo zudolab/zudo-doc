@@ -6,22 +6,23 @@ sidebar_position: 18
 
 The `codeTabs` feature groups related code blocks into an interactive tab strip. You wrap consecutive fenced blocks in a `:::code-group` directive, and zfb emits a `<CodeGroup>` element that the framework renders as tabs.
 
-:::note[Opt-in feature]
+:::note[Included in the standard preset]
 
-This feature is disabled by default. Enable it with the `codeTabs` key in `zfb.config.ts`. It accepts the `true` shorthand.
+`zudoDoc()` enables Code Tabs. No separate configuration field is necessary.
 
 :::
 
 ## Configuration
 
 ```ts title="zfb.config.ts"
-export default defineConfig({
-  markdown: {
-    features: {
-      codeTabs: true,
-    },
-  },
-});
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+  }),
+);
 ```
 
 ## Authoring syntax
@@ -83,7 +84,7 @@ The `:::code-group` directive produces a `<CodeGroup>` JSX element with a `tabs`
 </CodeGroup>
 ```
 
-The framework does not ship `<CodeGroup>` — zudo-doc registers its own implementation in `pages/_mdx-components.ts`, mapping the `tabs` array and `<pre data-lang>` children onto the existing `<Tabs>` / `<TabItem>` UI. The code inside each `<pre>` is raw text (the Rust pipeline does not run syntax highlighting inside `:::code-group` fences).
+zudo-doc registers its package-owned `<CodeGroup>` implementation by default, mapping the `tabs` array and `<pre data-lang>` children onto the existing `<Tabs>` / `<TabItem>` UI. You can override it through [`mdxExtras`](../guides/custom-components.mdx#global-registration-mdxextras). The code inside each `<pre>` is raw text (the Rust pipeline does not run syntax highlighting inside `:::code-group` fences).
 
 ## Syncing tabs with `name`
 

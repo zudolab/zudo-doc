@@ -71,8 +71,8 @@ Directives Registry は、markdown における `:::name`（および `::name` /
 ## 構文
 
 ```md
-:::note[任意のタイトル]
-コンテンツをここに記述します。
+:::note[Optional title]
+Content goes here.
 :::
 ```
 
@@ -93,41 +93,31 @@ Directives Registry は、markdown における `:::name`（および `::name` /
 
 ## カスタムディレクティブ
 
-カスタムディレクティブの登録には 2 つのステップが必要です。`zfb.config.ts` でディレクティブ名とコンポーネント名のマッピングを定義し、`pages/_mdx-components.ts` でコンポーネントの実装を提供します。
+カスタムディレクティブの登録には 2 つのステップが必要です。`zfb.config.ts` でディレクティブ名とコンポーネント名のマッピングを定義し、[`mdxExtras`](../guides/custom-components.mdx#グローバル登録-mdxextras) を通じてコンポーネントを登録します。
 
 **ステップ 1 — `zfb.config.ts` にディレクティブ名 → コンポーネント名のマッピングを追加する:**
 
 ```ts title="zfb.config.ts"
-export default defineConfig({
-  markdown: {
-    features: {
-      directives: {
-        // 既存のエントリ...
-        callout: "Callout", // :::callout → <Callout>
-      },
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+import { defaultDirectiveVocabulary } from "@takazudo/zudo-doc/directive-vocabulary-defaults";
+
+export default defineConfig(
+  zudoDoc({
+    directives: {
+      ...defaultDirectiveVocabulary,
+      callout: "Callout", // :::callout → <Callout>
     },
-  },
-});
+  }),
+);
 ```
 
-値（`"Callout"`）は、コンパイル済みの MDX 出力で zfb が出力する JSX タグ名です。コンポーネントマップに登録するキーと一致している必要があります。
+値（`"Callout"`）は、コンパイル済みの MDX 出力で zfb が出力する JSX タグ名です。`mdxExtras` を通じて登録するキーと一致している必要があります。
 
-**ステップ 2 — `pages/_mdx-components.ts` でコンポーネント名を実装にバインドする:**
+`directives` はディレクティブマップ全体を置き換えます。エントリの追加または上書きでは、必ず先に `defaultDirectiveVocabulary` をスプレッドしてください。スプレッドを省くと、組み込みの 7 つのディレクティブ（`note`、`tip`、`info`、`warning`、`danger`、`caution`、`details`）がすべてなくなります。
 
-```ts title="pages/_mdx-components.ts"
-import { Callout } from "@/components/content/callout";
-
-export function createMdxComponents(lang) {
-  return {
-    // 既存のエントリ...
-    Callout,
-  };
-}
-```
-
-作者が `:::callout` と書くと、zfb はコンパイル済みの MDX に `<Callout>` を出力します。`<entry.Content components={createMdxComponents(lang)} />` の呼び出しが、このマップを通じて `Callout` をコンポーネントに解決します。Rust コードは不要です。
+**ステップ 2 — [`mdxExtras`](../guides/custom-components.mdx#グローバル登録-mdxextras) を通じて `Callout` コンポーネントを登録する。** 作者が `:::callout` と書くと、zfb はコンパイル済みの MDX に `<Callout>` を出力し、グローバル MDX レジストリーがそのコンポーネントに解決します。Rust コードは不要です。
 
 ## 補足
 
-- アドモニションディレクティブ（`note`、`tip`、`info`、`warning`、`danger`、`caution`、`details`）は、このプロジェクトが `directives` マップで登録している[アドモニションレシピ](./admonitions-preset.mdx)が提供します。Core レジストリ自体ではありません。レジストリはエンジンであり、`zfb.config.ts` の `directives` マップがディレクティブ名 → コンポーネント名のバインディングを、`pages/_mdx-components.ts` がコンポーネント名 → 実装のバインディングを提供します。
-- `important` と `caution` コンポーネントが登録されていることを確認しない限り、`> [!IMPORTANT]` や `> [!CAUTION]` の GitHub アラート構文は使用しないでください。それぞれ `data-admonition="important"` / `data-admonition="caution"` にマッピングされ、コンポーネントが存在しない場合は 500 エラーになります。
+- アドモニションディレクティブ（`note`、`tip`、`info`、`warning`、`danger`、`caution`、`details`）は、このプロジェクトが `directives` マップで登録している[アドモニションレシピ](./admonitions-preset.mdx)が提供します。Core レジストリ自体ではありません。レジストリはエンジンであり、`zfb.config.ts` の `directives` マップがディレクティブ名 → コンポーネント名のバインディングを、[`mdxExtras`](../guides/custom-components.mdx#グローバル登録-mdxextras) がカスタムコンポーネントのバインディングを提供します。
