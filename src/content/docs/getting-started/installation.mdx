@@ -59,18 +59,13 @@ Choose how your site handles color schemes:
 
 When using light/dark mode, you can also set the default mode (light or dark) and whether to respect the user's system color scheme preference.
 
-zudo-doc ships exactly these two schemes, sharing one set of OKLCH ramps — there is no catalog of community or terminal presets to browse. To customize the palette, edit the ramps and semantic map in `src/config/color-schemes.ts` (see the [Color guide](../reference/color.mdx#adding-a-custom-color-scheme)), and preview changes live with the [Design Token Panel](../reference/design-token-panel.mdx)'s Palette tab (see [Color Scheme Preview](../guides/color-scheme-preview.mdx)).
+zudo-doc ships exactly these two schemes, sharing one set of OKLCH ramps — there is no catalog of community or terminal presets to browse. The defaults are package-owned; a fresh scaffold has no `src/config/color-schemes.ts`. To customize the palette, create your own scheme module and pass it through the `colorSchemes` field of `zudoDoc({ ... })` in `zfb.config.ts` (see the [Color guide](../reference/color.mdx#adding-a-custom-color-scheme)), then preview changes live with the [Design Token Panel](../reference/design-token-panel.mdx)'s Palette tab (see [Color Scheme Preview](../guides/color-scheme-preview.mdx)).
 
 ### Features
 
-Select which optional features to include:
+Use the interactive picker to choose optional modules for internationalization, search and sidebar tools, Claude resources and skills, design and navigation controls, versioning and document history, tags and changelogs, desktop wrappers, and indexing. Pagefind search, sidebar filtering, image enlarge, dynamic page transitions, and footer copyright are selected by default.
 
-| Feature | Default | Description |
-|---------|---------|-------------|
-| [i18n (multi-language)](../guides/i18n.mdx) | Off | Add a secondary language with mirrored content directories |
-| [Pagefind search](../guides/search.mdx) | On | Full-text search across all documentation |
-| [Sidebar filter](../guides/sidebar-filter.mdx) | On | Real-time filtering of sidebar navigation items |
-| [Claude Resources](../guides/claude-resources.mdx) | Off | Auto-generated documentation for Claude Code components |
+For the complete feature list, defaults, and non-interactive flags, see the [CLI reference](../reference/create-zudo-doc.mdx#options-features).
 
 ### Package Manager
 
@@ -141,7 +136,7 @@ A freshly scaffolded project is deliberately small — around a dozen files:
 ```
 my-docs/
 ├── .gitignore              # node_modules, dist, .zfb
-├── .npmrc                  # engine-strict=true
+├── .npmrc                  # trust-policy-exclude[]=undici-types@6.21.0
 ├── CLAUDE.md               # project notes for Claude Code
 ├── package.json            # deps + dev/build/preview/check scripts
 ├── tsconfig.json           # 5-line extends of the package base config
@@ -152,7 +147,11 @@ my-docs/
 │       └── [[...slug]].tsx # doc-route stub (see the callout below)
 └── src/
     ├── content/
-    │   └── docs/           # your MDX content (seeded getting-started pages)
+    │   └── docs/
+    │       └── getting-started/
+    │           ├── index.mdx
+    │           ├── installation.mdx
+    │           └── introduction.mdx
     └── styles/
         └── global.css      # ~20-line @import chain + your token overrides
 ```
