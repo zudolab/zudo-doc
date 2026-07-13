@@ -12,7 +12,7 @@ tags:
 
 The footer taglist is an optional index of tags rendered inside the existing footer grid. It gives readers a persistent way to reach every tag page without leaving the current doc.
 
-It is **off by default** — the footer looks the same as before until `footer.taglist.enabled` is set to `true` in `zfb.config.ts`. Nothing about the per-page tag badge row or the homepage "All Tags" section changes.
+It is **off by default** — the footer looks the same as before until `footer.taglist.enabled` is set to `true` in `zfb.config.ts`. On a fresh scaffold, that setting alone renders an empty taglist: its chrome has no tag loader or vocabulary binding. Nothing about the per-page tag badge row or the homepage "All Tags" section changes.
 
 ## Enabling
 
@@ -49,14 +49,69 @@ footer: {
 
 Each field is optional except `enabled`. Sensible defaults take over for anything you omit.
 
+<Warning title="Requires chrome bindings on a fresh scaffold">
+
+Setting this config field alone renders nothing in a scaffolded project: the doc-route
+stub calls `createChrome(routeCtx)` without host bindings, so the `loadTagsForLocale` and
+`tagVocabulary` slots stay at their no-op defaults. Thread `chromeBindingsModule` and bind
+both slots — see [Custom Components](./custom-components.mdx) and
+[Host Chrome Bindings](../reference/host-chrome-bindings.mdx). Scaffolds generated
+after the [template fix](https://github.com/zudolab/zudo-doc/issues/2716) thread the presentational/data slots automatically;
+your own hydrating islands still need the static-import threading described in the guide.
+
+</Warning>
+
+Add a bindings module that provides the vocabulary and a locale-aware count loader. The
+loader contract is exactly `(lang: string) => readonly { tag: string; count: number }[]`;
+derive its entries from your content collection rather than returning a static list.
+
+```ts title="src/chrome-bindings.ts"
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
+import { tagVocabulary } from "./tag-vocabulary";
+import { collectTagsForLocale } from "./tag-data";
+
+function loadTagsForLocale(
+  lang: string,
+): readonly { tag: string; count: number }[] {
+  return collectTagsForLocale(lang).map(({ tag, count }) => ({ tag, count }));
+}
+
+export const chromeBindings = defineChromeBindings({
+  loadTagsForLocale,
+  tagVocabulary,
+});
+```
+
+Point `zudoDoc()` at that module and pass the same vocabulary to its build-time tag
+configuration:
+
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+import { tagVocabulary } from "./src/tag-vocabulary";
+
+export default defineConfig(
+  zudoDoc({
+    // ...your settings, including footer.taglist.enabled: true
+    tagVocabulary: true,
+    tagVocabularyEntries: tagVocabulary,
+    chromeBindingsModule: "./src/chrome-bindings.ts",
+  }),
+);
+```
+
 ## `groupBy: "group"` vs `"flat"`
 
 The taglist can render in two modes.
 
-- **`groupBy: "group"`** — one column per vocabulary `group`, in the order the groups first appear in [`src/config/tag-vocabulary.ts`](./tag-governance.mdx). This is the default whenever the vocabulary is active (`tagVocabulary: true` and `tagGovernance !== "off"`). Each column's title comes from `groupTitles[<group>]`, falling back to a capitalised version of the group name (`topic` → `Topic`).
+- **`groupBy: "group"`** — one column per vocabulary `group`, in the order the groups first appear in the vocabulary you bind. This is the default whenever the vocabulary is active (`tagVocabulary: true` and `tagGovernance !== "off"`). Each column's title comes from `groupTitles[<group>]`, falling back to a capitalised version of the group name (`topic` → `Topic`).
 - **`groupBy: "flat"`** — a single alphabetised column titled `title`. Forced when the vocabulary is inactive, and a useful choice when you have fewer than a handful of tags and grouping would look sparse.
 
 Pick `"group"` once you have enough tags that a grouped view actually separates topics from types. Stick with `"flat"` until then.
+
+This repository's `src/config/tag-vocabulary.ts` is a showcase-only worked example; a
+fresh scaffold has no `src/config/` directory. Create your vocabulary wherever it fits your
+project and wire it through `tagVocabularyEntries` and `chromeBindings` as above.
 
 ## Locale Overrides
 

@@ -1,6 +1,6 @@
 ---
 title: フロントマタープレビュー
-description: カスタムフロントマターフィールドをページタイトルの下にメタデータテーブルとして自動表示します。
+description: カスタムフロントマターフィールドをページタイトルの下にメタデータテーブルとして表示するよう設定します。
 sidebar_position: 7
 author: zudo-doc
 status: stable
@@ -10,13 +10,51 @@ tags:
   - content
 ---
 
-フロントマタープレビューブロックは、ドキュメントに無視されていないフロントマターキーが含まれている場合、ページタイトルの下に自動的に表示されます。カスタムフィールドをコンパクトなキー/値テーブルとしてレンダリングし、著者情報、ステータス、バージョンなどのドキュメントメタデータを本文中に埋め込まずに表示するのに便利です。
+フロントマタープレビューブロックは、カスタムフロントマターフィールドをページタイトルの下にコンパクトなキー/値テーブルとしてレンダリングします。著者情報、ステータス、バージョンなどのドキュメントメタデータを本文中に埋め込まずに表示するのに便利です。新しいscaffoldでは自動的には有効になりません。`frontmatterPreview`のデフォルトは`false`であり、バインドされていない`buildFrontmatterPreviewEntries`スロットのデフォルトは`() => []`です。
 
-このページ自体がその機能のデモです。上部に表示されている `author` と `status` フィールドは、このページ自身のフロントマターで宣言されています。
+このショーケースページがその機能のデモです。上部に表示されている`author`と`status`フィールドは、このページ自身のフロントマターで宣言され、ショーケースの bindings がエントリービルダーを提供しています。
+
+<Warning title="新しいscaffoldではクロームバインディングが必要です">
+
+この設定フィールドだけではscaffoldプロジェクトに何も描画されません。ドキュメントルートの
+スタブはホストバインディングなしで`createChrome(routeCtx)`を呼び出すため、`buildFrontmatterPreviewEntries`スロットは
+no-opのデフォルトのままです。`chromeBindingsModule`を通し、`buildFrontmatterPreviewEntries`をバインドしてください。詳しくは
+[Custom Components](../guides/custom-components.mdx)と
+[ホストクロームバインディング](./host-chrome-bindings.mdx)を参照してください。[テンプレート修正](https://github.com/zudolab/zudo-doc/issues/2716)後に生成されたscaffoldは
+表示用／データ用スロットを自動で通しますが、独自のハイドレートするアイランドには引き続きガイドで説明する静的インポートの配線が必要です。
+
+</Warning>
+
+設定を有効にし、bindingsモジュールにビルダーを作成します。ビルダーの`frontmatterPreview`へ渡す値は、
+`zudoDoc()`の設定と一致させてください。
+
+```ts title="src/chrome-bindings.ts"
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
+import { createBuildFrontmatterPreviewEntries } from "@takazudo/zudo-doc/frontmatter-preview-data";
+import { defaultFrontmatterPreviewIgnoreKeys } from "@takazudo/zudo-doc/frontmatter-preview-defaults";
+import { frontmatterRenderers } from "./frontmatter-preview-renderers";
+
+export const chromeBindings = defineChromeBindings({
+  buildFrontmatterPreviewEntries: createBuildFrontmatterPreviewEntries({
+    frontmatterPreview: {},
+    defaultIgnoreKeys: defaultFrontmatterPreviewIgnoreKeys,
+  }),
+  frontmatterRenderers,
+});
+```
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    frontmatterPreview: {},
+    chromeBindingsModule: "./src/chrome-bindings.ts",
+  }),
+);
+```
 
 ## ブロックが表示される条件
 
-フィルタリングを経て少なくとも1つのフロントマターキーが残った場合のみブロックが表示されます。フレームワーク管理のキー（`title`、`description`、`sidebar_position`、`tags` など）はデフォルトで除外されます。すべてのキーが無視リストに含まれている場合は何も表示されません。
+有効化してバインドした後、フィルタリングを経て少なくとも1つのフロントマターキーが残った場合のみブロックが表示されます。フレームワーク管理のキー（`title`、`description`、`sidebar_position`、`tags` など）はデフォルトで除外されます。すべてのキーが無視リストに含まれている場合は何も表示されません。
 
 `zfb.config.ts`（`zudoDoc({...})` の呼び出し）で `frontmatterPreview: false` を設定すると、すべてのページでこの機能を無効にできます。
 
@@ -43,7 +81,7 @@ tags:
 | `slug` | URL オーバーライド |
 | `generated` | ビルド時フラグ |
 
-このリストにないキーは自動的に表示されます。
+ビルダーをバインドすると、このリストにないキーは自動的に表示されます。
 
 ## 無視リストのカスタマイズ
 
@@ -108,7 +146,7 @@ status: released
 
 ## カスタムレンダラー
 
-デフォルトでは、フロントマターの値はプレーンテキストとしてレンダリングされます。値をスタイル付きコンポーネント（カラーピル、リンク、アイコンなど）に置き換えるには、`src/config/frontmatter-preview-renderers.tsx` にカスタムレンダラーを登録します。
+デフォルトでは、フロントマターの値はプレーンテキストとしてレンダリングされます。値をスタイル付きコンポーネント（カラーピル、リンク、アイコンなど）に置き換えるには、独自のレンダラーマップを作成し、上記の`frontmatterRenderers`スロットからバインドします。このリポジトリの`src/config/frontmatter-preview-renderers.tsx`は`src/chrome-bindings.tsx`を通すショーケース配線の例です。新しいscaffoldにはどちらのファイルもありません。
 
 ### コンポーネントの型
 
@@ -123,7 +161,7 @@ status: released
 
 ### レンダラーの登録
 
-`src/config/frontmatter-preview-renderers.tsx` を開き、エクスポートされた `frontmatterRenderers` マップにキーを追加します。各値は `FrontmatterRendererProps` を受け取り、JSX または `null` を返すコンポーネント関数です：
+独自のレンダラーマップにキーを追加します。各値は`FrontmatterRendererProps`を受け取り、JSXまたは`null`を返すコンポーネント関数です：
 
 ```tsx
 discount: ({ value }) => {
@@ -157,4 +195,4 @@ frontmatterPreview: {
 
 </Warning>
 
-レンダラーはプロジェクトの `src/config/frontmatter-preview-renderers.tsx` に登録します。デフォルトでは空のマップが用意されています。
+ショーケースのレンダラーマップはscaffoldされず、自動で消費されるものでもありません。独自のマップを`frontmatterRenderers`からバインドしてください。このスロットを省略すると、すべての値はプレーンテキストのフォールバックのままです。
