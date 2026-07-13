@@ -6,7 +6,7 @@ tags:
   - design-system
 ---
 
-zudo-doc uses a **three-tier color strategy** to keep every color on the site themeable. The default Tailwind theme is not imported, and the `@theme` block resets the color namespace with `--color-*: initial` before defining project tokens — only project tokens work. This ensures switching a color scheme updates the entire site at once.
+zudo-doc uses a **three-tier color strategy** to keep every color on the site themeable. The package's `@takazudo/zudo-doc/theme.css` does not import Tailwind's default color theme: its `@theme` block resets the color namespace with `--color-*: initial` before defining the shipped tokens. A project's later `@theme` block is an override point. This ensures switching a color scheme updates the entire site at once.
 
 ## Three-Tier Color Strategy
 
@@ -15,7 +15,7 @@ Colors are organized into three tiers. Each tier only references the tier above 
 | Tier | Name | Purpose | Defined In |
 |------|------|---------|------------|
 | 1 | **Ramps** | Shared OKLCH color ramps a scheme is built from | your `colorSchemes` override in `zfb.config.ts` (optional — packaged defaults otherwise) → `ColorSchemeProvider` → `:root` |
-| 2 | **Semantic** | Design meaning — what each color represents | `src/styles/global.css` `@theme` |
+| 2 | **Semantic** | Design meaning — what each color represents | packaged `@takazudo/zudo-doc/theme.css` `@theme` (a project's later `@theme` block can override it) |
 | 3 | **Component** | Scoped overrides for specific components | `.zd-content` (shared `content.css`) |
 
 This layering means you can:
@@ -90,9 +90,9 @@ The `--zd-*` properties (base roles + semantic roles) are the source of truth ev
 
 ## Tier 2: Semantic Tokens
 
-The 23 semantic roles are the color surface components actually use. In `src/styles/global.css`, the `@theme` block maps them (plus the 4 base roles) into Tailwind-compatible tokens:
+The 23 semantic roles are the color surface components actually use. The package's `@takazudo/zudo-doc/theme.css` maps them (plus the 4 base roles) into Tailwind-compatible tokens. A scaffold imports that file before its own `src/styles/global.css` `@theme` override block, so redefine only the aliases you need to change:
 
-```css
+```css title="@takazudo/zudo-doc/theme.css"
 @theme {
   --color-*: initial;  /* reset ALL Tailwind defaults */
 
@@ -259,7 +259,7 @@ When a new highlight role appears (new kind of `<mark>`, new pill, new callout),
 
 ## Color Schemes
 
-To change the active color scheme, set `colorScheme` in `zfb.config.ts`:
+By default, `colorMode` is enabled, so `lightScheme` and `darkScheme` select the active scheme and take precedence over `colorScheme`. Its `defaultMode` is `"dark"`, mapping to the packaged dark scheme; with `respectPrefersColorScheme: true`, an operating-system preference can select the other mode instead:
 
 ```ts title="zfb.config.ts"
 import { defineConfig } from "zfb/config";
@@ -267,9 +267,25 @@ import { zudoDoc } from "@takazudo/zudo-doc/config";
 
 export default defineConfig(
   zudoDoc({
-    colorScheme: "Default Dark", // Change this
+    colorMode: {
+      defaultMode: "dark",
+      lightScheme: "Default Light",
+      darkScheme: "Default Dark",
+      respectPrefersColorScheme: true,
+    },
     siteName: "My Docs",
     // ...
+  }),
+);
+```
+
+To use one fixed scheme with no light/dark toggle, set `colorMode: false`; in that case `colorScheme` chooses the scheme:
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    colorMode: false,
+    colorScheme: "My Theme",
   }),
 );
 ```
@@ -280,7 +296,7 @@ zudo-doc ships exactly two color schemes — **Default Light** and **Default Dar
 
 ## Adding a Custom Color Scheme
 
-`colorSchemes` is one of `zudoDoc()`'s escape hatches — when omitted, the two packaged schemes above are used as-is. To add or replace a scheme, write your own module (e.g. `src/config/color-schemes.ts`) building a `Record<string, ColorScheme>`, then pass it through the `colorSchemes` field in `zfb.config.ts`. A new scheme needs its own `ramps` and a `map` for each mode you want (spread `SEMANTIC_RAMP_DEFAULTS` and override only what needs to differ). Spread in `defaultColorSchemes` too if you want to keep the two packaged schemes alongside your own:
+`colorSchemes` is one of `zudoDoc()`'s escape hatches — when omitted, the two packaged schemes above are used as-is. There is no scaffold `src/config/color-schemes.ts`; create your own module (for example, at that path) to add or replace a scheme, then pass it through the `colorSchemes` field in `zfb.config.ts`. A new scheme needs its own `ramps` and a `map` for each mode you want (spread `SEMANTIC_RAMP_DEFAULTS` and override only what needs to differ). Spread in `defaultColorSchemes` too if you want to keep the two packaged schemes alongside your own:
 
 ```ts title="src/config/color-schemes.ts"
 import { SEMANTIC_RAMP_DEFAULTS } from "@takazudo/zudo-doc/color-scheme-utils";
@@ -330,6 +346,7 @@ import { colorSchemes } from "./src/config/color-schemes";
 
 export default defineConfig(
   zudoDoc({
+    colorMode: false,
     colorScheme: "My Theme",
     colorSchemes,
     // ...
@@ -339,7 +356,7 @@ export default defineConfig(
 
 <Tip>
 
-After adding or tweaking a scheme, run `pnpm contrast:audit` to check every pair in the WCAG contrast matrix — see the `color-scheme-a11y` skill for the full methodology and thresholds.
+In this showcase repository, contributors run `pnpm contrast:audit` and use the `color-scheme-a11y` skill when changing packaged schemes. Those are showcase-maintenance tools, not generated-scaffold commands; validate the contrast requirements appropriate to your project when you create a custom scheme.
 
 </Tip>
 

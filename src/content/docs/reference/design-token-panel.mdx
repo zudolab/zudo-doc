@@ -89,7 +89,7 @@ The Color tab always edits the wiring for whichever mode — light or dark — i
 
 - **Toggling light/dark re-seeds the tab's ref/literal defaults** to the new mode's wiring (e.g. `bg` flips `base-0` ↔ `base-4`) — see [Implementation](#implementation) for the destroy+reconfigure mechanism behind this.
 - **Palette, Spacing, Font, and Size tweaks carry over the toggle untouched.** Those tabs are mode-independent, so a ramp-curve edit or a spacing-slider change survives light↔dark exactly as before.
-- **A saved Color-tab override is mode-agnostic, not mode-scoped.** An override made in one mode repaints in the *other* mode too, until you click **Reset all** — only the *defaults* are mode-faithful. This is a deliberate consequence of this showcase's **scheme-less** color config, not a zdtp limitation: zdtp 0.4.5 does ship per-scheme, per-mode keyed color persistence ([zdtp#500](https://github.com/Takazudo/zudo-design-token-panel/issues/500)), but this site runs a single scheme-less cluster (`colorSchemes = {}`, no `colorMode`) and switches light/dark externally, so zdtp resolves one shared scheme identity and a saved override applies to both modes by design.
+- **A saved Color-tab override is scheme- and mode-scoped.** The package-default builder pairs `Default Light` and `Default Dark` in `panelSettings.colorMode`, so a saved Color override is restored only for its active scheme identity. An override made in one mode does not repaint the other; the Palette, Spacing, Font, and Size tabs remain shared across the toggle.
 
 <Note title="Known limitations">
 
@@ -193,19 +193,18 @@ Because the default export is a diff, the AI only sees the tokens you care about
 
 ## Persistence and Migration
 
-State is persisted to `localStorage` under the key `zudo-doc-tweak-state-v3`. The v3 envelope is a single object holding every tab's state side-by-side (color, spacing, typography, size, and any generic tabs), so a single read restores the whole panel.
+State is persisted to `localStorage` under the key `zudo-doc-tweak-state-v4`. The v4 envelope is a single object holding every tab's state side-by-side (color, spacing, typography, size, and any generic tabs). Its color state is keyed by active scheme identity, so light and dark scheme tweaks can be restored independently.
 
-Older projects that persisted an earlier format — `zudo-doc-tweak-state-v2` (v2) or `zudo-doc-tweak-state` (v1, color-only) — are migrated automatically:
+Older projects that persisted an earlier format — `zudo-doc-tweak-state-v3` (v3), `zudo-doc-tweak-state-v2` (v2), or `zudo-doc-tweak-state` (v1, color-only) — are migrated automatically:
 
-- On load, the panel reads v3 first. If absent, it falls back to the v2 envelope, then the v1 color-only state, promotes whichever it finds into the v3 envelope, writes the v3 key, and removes the legacy key.
-- The FOUC-prevention script injected into `<head>` by the doc layout (`@takazudo/zudo-doc/doclayout`) performs the same lookup so saved tokens apply before first paint on old devices too.
-- Clicking **Reset all** in the panel header clears the v3 envelope (and any lingering legacy keys), restoring the color scheme declared by the `colorScheme` field in `zfb.config.ts`.
+- On load, the panel reads v4 first. A v3 envelope is promoted to v4 and left in place so a downgraded package can still read it; v2 and v1 values are promoted through the older format and then into v4.
+- Clicking **Reset all** in the panel header clears the saved panel overrides and restores the configured defaults.
 
-Switching the light/dark theme does **not** delete your saved tweaks, and an open panel stays open across the toggle. The theme toggle dispatches a `color-scheme-changed` event; the host destroys and reconfigures the panel for the new mode (see [Implementation](#implementation)) rather than patching it in place, so the Color tab's ref/literal *defaults* follow the newly active mode while every tweak on Palette, Spacing, Font, and Size — plus any saved Color-tab *override* — carries over untouched. See [Mode-scoped editing model](#the-five-tabs-color-mode-scoped-editing-model) for the override-carries-across-modes caveat.
+Switching the light/dark theme does **not** delete your saved tweaks, and an open panel stays open across the toggle. The theme toggle dispatches a `color-scheme-changed` event; the host destroys and reconfigures the panel for the new mode (see [Implementation](#implementation)) rather than patching it in place, so the Color tab's ref/literal *defaults* follow the newly active mode and any saved Color override is restored for that mode's scheme identity. Palette, Spacing, Font, and Size tweaks carry over untouched. See [Mode-scoped editing model](#the-five-tabs-color-mode-scoped-editing-model).
 
 <Note title="Storage prefix continuity guarantee">
 
-The storage prefix `zudo-doc-tweak` is locked in the package-default builder (`@takazudo/zudo-doc/design-token-panel-config`, which this showcase consumes directly) and will not change. Any tokens a user saved under an older key version continue to load automatically — they are migrated into the current `zudo-doc-tweak-state-v3` envelope on first load, with no manual migration step needed.
+The storage prefix `zudo-doc-tweak` is locked in the package-default builder (`@takazudo/zudo-doc/design-token-panel-config`, which this showcase consumes directly) and will not change. Any tokens a user saved under an older key version continue to load automatically — they are migrated into the current `zudo-doc-tweak-state-v4` envelope on first load, with no manual migration step needed.
 
 </Note>
 
@@ -224,7 +223,7 @@ The header trigger button dispatches the `toggle-design-token-panel` custom even
 | `designTokenPanel` | `boolean` | Enables the panel. Default `false`. |
 | `designTokenPanelConfigModule` | `string` | Project-root-relative path to a module exporting `buildDesignTokenPanelConfig(mode)` for a fully custom panel. Default `undefined` (package-default builder is used). |
 
-The tokens themselves — spacing scale, font scale, icon sizes, palette — are still configured in `src/styles/global.css` (`@theme`) and, for the color palette, either the package's `@takazudo/zudo-doc/color-schemes-defaults` or your own `colorSchemes` override (see [Color](./color.mdx)). The panel only tweaks the in-browser copy of those tokens; it never writes to source files.
+The default tokens themselves — spacing scale, font scale, icon sizes, and palette aliases — ship in `@takazudo/zudo-doc/theme.css`. A scaffold's later `src/styles/global.css` `@theme` block is an override point; for color ramps and mappings, use the package's `@takazudo/zudo-doc/color-schemes-defaults` or your own `colorSchemes` override (see [Color](./color.mdx)). The panel only tweaks the in-browser copy of those tokens; it never writes to source files.
 
 <Tip>
 
