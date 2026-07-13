@@ -88,11 +88,11 @@ zudo-docではスペーシングを**水平（hsp）**と**垂直（vsp）**の2
 両軸とも`0`（`0px`）と`px`（`1px`）のユーティリティ値も含まれます。
 
 ```html
-<!-- 水平パディング + 垂直パディング -->
-<div class="px-hsp-lg py-vsp-md">非対称なスペーシングのコンテンツ</div>
+<!-- Horizontal padding + vertical padding -->
+<div class="px-hsp-lg py-vsp-md">Content with asymmetric spacing</div>
 
-<!-- 2軸ギャップのグリッド -->
-<div class="grid gap-x-hsp-md gap-y-vsp-lg">グリッドアイテム</div>
+<!-- Grid with dual-axis gaps -->
+<div class="grid gap-x-hsp-md gap-y-vsp-lg">Grid items</div>
 ```
 
 <Tip>
@@ -173,9 +173,9 @@ zudo-docではスペーシングを**水平（hsp）**と**垂直（vsp）**の2
 | `mono` | システムモノスペーススタック | `font-mono` |
 
 ```html
-<h1 class="text-heading font-bold leading-tight">ページタイトル</h1>
-<p class="text-body font-normal leading-normal">本文テキスト</p>
-<code class="text-small font-mono">インラインコード</code>
+<h1 class="text-heading font-bold leading-tight">Page Title</h1>
+<p class="text-body font-normal leading-normal">Body text</p>
+<code class="text-small font-mono">inline code</code>
 ```
 
 ## 角丸（Border Radius）
@@ -187,9 +187,9 @@ zudo-docではスペーシングを**水平（hsp）**と**垂直（vsp）**の2
 | `full` | `9999px` | `rounded-full` |
 
 ```html
-<button class="rounded bg-accent text-bg">デフォルトの角丸</button>
-<div class="rounded-lg bg-surface">大きめの角丸のカード</div>
-<span class="rounded-full bg-muted">ピルバッジ</span>
+<button class="rounded bg-accent text-bg">Default radius</button>
+<div class="rounded-lg bg-surface">Card with larger radius</div>
+<span class="rounded-full bg-muted">Pill badge</span>
 ```
 
 ## ブレークポイント
@@ -202,7 +202,7 @@ zudo-docではスペーシングを**水平（hsp）**と**垂直（vsp）**の2
 
 ```html
 <div class="px-hsp-sm sm:px-hsp-md lg:px-hsp-lg xl:px-hsp-xl">
-  レスポンシブな水平パディング
+  Responsive horizontal padding
 </div>
 ```
 
@@ -243,27 +243,27 @@ Tailwindのデフォルトテーマはインポートされていません。プ
 ### 推奨
 
 ```html
-<!-- セマンティックカラートークン -->
-<p class="text-fg">メインテキスト</p>
-<div class="bg-surface border border-muted">パネル</div>
-<a class="text-accent hover:text-accent-hover">リンク</a>
+<!-- Semantic color tokens -->
+<p class="text-fg">Primary text</p>
+<div class="bg-surface border border-muted">Panel</div>
+<a class="text-accent hover:text-accent-hover">Link</a>
 
-<!-- スペーシングトークン -->
-<div class="px-hsp-lg py-vsp-md">適切なスペーシング</div>
-<div class="gap-x-hsp-sm gap-y-vsp-md">グリッドギャップ</div>
+<!-- Spacing tokens -->
+<div class="px-hsp-lg py-vsp-md">Proper spacing</div>
+<div class="gap-x-hsp-sm gap-y-vsp-md">Grid gaps</div>
 
-<!-- タイポグラフィトークン -->
-<h2 class="text-title font-semibold leading-tight">見出し</h2>
+<!-- Typography tokens -->
+<h2 class="text-title font-semibold leading-tight">Heading</h2>
 ```
 
 ### 非推奨
 
 ```html
-<!-- NG: Tailwindデフォルト — 未定義で何も表示されない -->
-<div class="p-4 bg-gray-500 text-sm">表示されない</div>
+<!-- DON'T: Tailwind defaults — not defined and produce nothing -->
+<div class="p-4 bg-gray-500 text-sm">Broken</div>
 
-<!-- NG: ハードコードされたhex — テーマ切り替えで壊れる -->
-<div class="bg-[#1e1e2e] text-[#f8f8f2]">テーマ切り替え時に壊れる</div>
+<!-- DON'T: Hardcoded hex — breaks theming -->
+<div class="bg-[#1e1e2e] text-[#f8f8f2]">Breaks on theme switch</div>
 ```
 
 デフォルトトークンは `@takazudo/zudo-doc/theme.css` から提供され、`packages/zudo-doc/src/theme.css` が唯一の情報源です。scaffold の `src/styles/global.css` はそれらのデフォルトをインポートし、プロジェクトの上書きポイントを提供します。
@@ -277,22 +277,22 @@ _遷移する_ 要素（`<a href>`、またはリンクとして振る舞う要�
 **OK**（ナビゲーション用のリンク）：
 
 ```html
-<a class="text-accent hover:underline focus-visible:underline">リンク</a>
-<a class="text-fg hover:text-accent hover:underline focus-visible:underline">サイドバー項目</a>
+<a class="text-accent hover:underline focus-visible:underline">Link</a>
+<a class="text-fg hover:text-accent hover:underline focus-visible:underline">Sidebar item</a>
 ```
 
 **NG**（focus-visible が欠けている）：
 
 ```html
-<!-- NG: マウスだけ下線、キーボード操作では出ない -->
-<a class="text-fg hover:underline">キーボードフォーカスで下線が出ない</a>
+<!-- DON'T: mouse users get an underline, keyboard users don't -->
+<a class="text-fg hover:underline">Inaccessible to keyboard focus</a>
 ```
 
 **NG**（コントロール）：
 
 ```html
-<!-- NG: ボタンは下線ではなくボーダー／背景ホバーを使う -->
-<button class="hover:underline">代わりに hover:bg-accent/10 などを使う</button>
+<!-- DON'T: buttons use border/bg hover, not underline -->
+<button class="hover:underline">Use hover:bg-accent/10 instead</button>
 ```
 
 `hover:underline focus-visible:underline` のペアが正規形です。必ず両方を書き、片方だけにはしないでください。実装例：`packages/zudo-doc/src/header/header.tsx`、`src/components/site-tree-nav.tsx`、`packages/zudo-doc/src/footer/footer.tsx`。

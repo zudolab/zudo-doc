@@ -38,7 +38,7 @@ import type { ChromeHostBindings } from "@takazudo/zudo-doc/factory-context";
 ```ts title="zfb.config.ts"
 export default defineConfig(
   zudoDoc({
-    // packageOwnedRoutes はデフォルトで true
+    // packageOwnedRoutes defaults to true
     chromeBindingsModule: "./src/chrome-bindings.tsx",
   }),
 );
@@ -48,7 +48,7 @@ export default defineConfig(
 import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
 
 export const chromeBindings = defineChromeBindings({
-  // ...ここに各継ぎ目を記述（後述）
+  // ...seams go here (see below)
 });
 ```
 
@@ -166,7 +166,7 @@ export const chromeBindings = defineChromeBindings({
 共有のホーム本体は `HomePageView` が組み立て、パッケージルートとホストページのどちらもこれを呼び出します。`HomePageView` は `extras` プロパティ — ホストページが直接渡す描画済みの値 — を受け取ります。両方が存在する場合は**プロパティが勝ちます**。
 
 ```tsx
-// HomePageView 内で次のように解決される:
+// resolved inside HomePageView as:
 extras ?? hostBindings.homeExtras?.({ locale })
 ```
 
@@ -195,7 +195,7 @@ import type { PanelConfig } from "@takazudo/zdtp";
 type PanelMode = "light" | "dark";
 
 export function buildDesignTokenPanelConfig(mode: PanelMode): PanelConfig {
-  // モードスコープのパネル設定（spacing/font/size/color ティア）を返す
+  // return a mode-scoped panel config (spacing/font/size/color tiers)
   // ...
 }
 ```

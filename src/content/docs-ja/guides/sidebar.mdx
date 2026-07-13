@@ -87,12 +87,12 @@ sidebar_position: 2
 ```
 src/content/docs/
   getting-started/         → "Getting Started"
-    index.mdx              → カテゴリインデックス (sidebar_position: 0)
+    index.mdx              → category index (sidebar_position: 0)
     introduction.mdx       → sidebar_position: 1
     installation.mdx       → sidebar_position: 2
     writing-docs.mdx       → sidebar_position: 3
   guides/                  → "Guides"
-    index.mdx              → カテゴリインデックス (sidebar_position: 1)
+    index.mdx              → category index (sidebar_position: 1)
     configuration.mdx      → sidebar_position: 1
     frontmatter.mdx        → sidebar_position: 2
 ```
@@ -119,10 +119,10 @@ src/content/docs/
 
 ```
 Methodology            (depth 0)
-  ▸ Architecture       (depth 1, 折りたたみ可能)
+  ▸ Architecture       (depth 1, collapsible)
     BEM Strategy       (depth 2)
     Component First    (depth 2)
-  ▸ Design Systems     (depth 1, 折りたたみ可能)
+  ▸ Design Systems     (depth 1, collapsible)
     Tight Token        (depth 2)
     Two-Tier Size      (depth 2)
 ```
@@ -216,11 +216,11 @@ const sidebars: SidebarsConfig = {
 
 ```
 
-Methodology            (depth 0, リーフリンク)
-▸ Architecture         (depth 0, 折りたたみ可能)
+Methodology            (depth 0, leaf link)
+▸ Architecture         (depth 0, collapsible)
   BEM Strategy         (depth 1)
   Component First      (depth 1)
-▸ Design Systems       (depth 0, 折りたたみ可能)
+▸ Design Systems       (depth 0, collapsible)
   Tight Token          (depth 1)
   Two-Tier Size        (depth 1)
 
