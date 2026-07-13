@@ -1,0 +1,182 @@
+---
+title: カスタムコンポーネント
+description: 表示用 MDX コンポーネント、オーバーライド、実験的なインタラクティブアイランドを追加する。
+sidebar_position: 1.5
+tags:
+  - customization
+  - type:guide
+---
+
+## コンポーネントを追加する2つの方法
+
+コンポーネントを MDX から利用可能にする方法は2つあります。
+
+- **1ファイルでインポートする**: 1つのドキュメント、または明示的な少数のドキュメントだけで使う場合に向いています。
+- **`mdxExtras` でグローバル登録する**: ドキュメント全体でコンポーネントを使えるようにする場合、または組み込みの MDX コンポーネントを置き換える場合に向いています。
+
+どちらもサーバーでレンダリングされます。共有のオーサリング面が必要なときだけグローバル登録を選んでください。通常のドキュメント専用 UI には必須ではありません。
+
+## ファイル単位のインポート
+
+`.mdx` ファイルの先頭で直接コンポーネントをインポートします。scaffold の `@/` エイリアスは MDX からも使えるため、他のプロジェクトコードと同じ場所にコンポーネントを置けます。
+
+```mdx
+import { MyBadge } from "@/components/my-badge";
+
+<MyBadge>New</MyBadge>
+```
+
+これは最小で最もローカルな選択肢です。素の MDX インポートは SSR 専用です。コンポーネントを HTML としてレンダリングしますが、クライアントコンポーネントをハイドレートしません。ブラウザー側の状態やイベントハンドラーが必要な場合は、[インタラクティブアイランド（実験的）](#インタラクティブアイランド実験的)を参照してください。
+
+## グローバル登録: mdxExtras
+
+`mdxExtras` はプロジェクト所有の MDX コンポーネントのグローバルレジストリーです。bindings モジュールを作成し、`zudoDoc()` からそのモジュールを指定して、scaffold のドキュメントルートスタブへ bindings を渡します。
+
+ルートスタブの変更は必須です。新しい scaffold には `pages/docs/[[...slug]].tsx` があり、その素の `createChrome(routeCtx)` 呼び出しがパッケージ注入ルートをシャドーします。bindings を静的にインポートして `createChrome()` に渡す方法は普遍的なレシピです。通常の表示用 `mdxExtras` に加えて、将来のアイランドのインポートも zfb のスキャナーから到達可能に保てます。
+
+まず、次の完全な例から始めます。
+
+```tsx title="src/components/my-badge.tsx"
+import type { ComponentChildren } from "preact";
+
+export function MyBadge({ children }: { children: ComponentChildren }) {
+  return (
+    <span className="rounded-full bg-surface px-hsp-sm py-vsp-2xs text-caption text-fg">
+      {children}
+    </span>
+  );
+}
+```
+
+```ts title="src/chrome-bindings.tsx"
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
+import { MyBadge } from "./components/my-badge";
+
+export const chromeBindings = defineChromeBindings({
+  mdxExtras: { MyBadge },
+});
+```
+
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    chromeBindingsModule: "./src/chrome-bindings.tsx",
+  }),
+);
+```
+
+`pages/docs/[[...slug]].tsx` では、既存の `createChrome` インポートの横に静的インポートを追加し、素の呼び出しを次の呼び出しへ置き換えます。
+
+```tsx title="pages/docs/[[...slug]].tsx"
+import { createChrome } from "@takazudo/zudo-doc/chrome";
+import { chromeBindings } from "../../src/chrome-bindings";
+
+const { renderDocPage } = createChrome(routeCtx, chromeBindings);
+```
+
+i18n を使う場合、`pages/[locale]/docs/[[...slug]].tsx` にも同じ境界があります。そこにも同等の静的インポートを適用してください。プロジェクトでバージョンを使う場合、バージョン付きドキュメントスタブにも同じ対応が必要です。
+
+代わりに `virtual:zudo-doc-chrome-bindings` から `chromeBindings` をインポートできます。この仮想モジュールは設定の `chromeBindingsModule` に従い、**表示専用でサーバーレンダリングされる** `mdxExtras` に向いています。bindings にアイランドを含める場合は、上記の静的インポートを使い続けてください。仮想モジュールの経路は、クライアントコンポーネントを見つける静的インポートグラフの外にあります。
+
+<Warning title="仮想パスではアイランドをハイドレートできない">
+
+[Issue #2716](https://github.com/zudolab/zudo-doc/issues/2716) は表示用およびデータ用スロットに対して仮想形式を自動で通す予定です。クライアントアイランドをスキャナーから到達可能にはしません。アイランドには静的なルートスタブインポートを使ってください。
+
+</Warning>
+
+登録後は、すべての MDX ページでインポートなしにコンポーネントを使えます。
+
+```mdx
+<MyBadge>New</MyBadge>
+```
+
+配信チャネルと他のホストバインドスロットについては、[ホストクロームバインディング](../reference/host-chrome-bindings.mdx)を参照してください。
+
+## 組み込みコンポーネントのオーバーライド
+
+`mdxExtras` は、組み込みコンポーネントと同じキーを使うと、そのコンポーネントをオーバーライドします。解決は2段階です。`chrome/derive` がホストの `mdxExtras` をパッケージデフォルトの上にマージし、その後パッケージの MDX コンポーネントファクトリーがデフォルトマップの後で extras を最後にスプレッドします。そのため、同名の bindings が優先されます。
+
+オーバーライド可能な名前には次が含まれます。
+
+- アドモニション: `Note`、`Tip`、`Info`、`Warning`、`Danger`、`Important`、`Caution`
+- コンテンツヘルパー: `Details`、`HtmlPreview`、`CodeGroup`、`Tabs`、`TabItem`、`Island`、`PresetGenerator`
+- `p`、`a`、`img`、`table` などの HTML オーバーライド
+
+置き換えるコンポーネントは、既存ドキュメントが使う MDX 構文と props に互換性を持たせてください。`p` などの HTML 要素を置き換えると、ドキュメント内の該当するすべての要素に影響します。グローバルなレンダリング変更が意図的な場合を除き、新しい名前付きコンポーネントを優先してください。
+
+## class ではなく className
+
+プロジェクトの `.tsx` コンポーネントでは `class` ではなく `className` を書きます。scaffold は `react` を `preact/compat` にマッピングするため、作成したコンポーネントは React 互換 JSX 型を通して型チェックされます。`class=` は `zfb check` で `TS2322` となり、`className` は scaffold と Preact 互換コードの両方で動きます。
+
+```tsx
+// Correct in project-owned .tsx files.
+export function MyBadge() {
+  return <span className="text-caption">New</span>;
+}
+```
+
+zudo-doc のパッケージやショーケースのソースには `class=` を使うものがあります。それらは独自の Preact コンパイル境界に従っています。その綴りを新しく作成する scaffold コンポーネントへコピーしないでください。
+
+## インタラクティブアイランド（実験的）
+
+インタラクティブなコンポーネントには MDX インポート以上のものが必要です。モジュールでクライアント実行を明示的に有効にし、zfb が静的ルートグラフを通じてそのインポートへ到達できなければなりません。次のレシピは、同じ静的 bindings 経路から、画面に現れたときに動くカウンターアイランドを登録します。
+
+```tsx title="src/components/counter.tsx"
+"use client";
+
+import { useState } from "preact/hooks";
+
+export default function Counter() {
+  const [count, setCount] = useState(0);
+
+  return (
+    <button type="button" className="rounded-full bg-surface px-hsp-sm py-vsp-2xs text-caption text-fg" onClick={() => setCount((value) => value + 1)}>
+      Count: {count}
+    </button>
+  );
+}
+```
+
+```tsx title="src/chrome-bindings.tsx"
+import { Island } from "@takazudo/zfb";
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
+import Counter from "./components/counter";
+
+(Counter as { displayName?: string }).displayName = "Counter";
+
+const CounterIsland = () =>
+  Island({
+    when: "visible",
+    children: <Counter />,
+  });
+
+export const chromeBindings = defineChromeBindings({
+  mdxExtras: { CounterIsland },
+});
+```
+
+グローバル登録のレシピにある `pages/docs/[[...slug]].tsx` の静的 `../../src/chrome-bindings` インポートを残してください。仮想モジュールの代替案は SSR 表示専用であり、このアイランドが検出されることを保証できません。`Counter.displayName` を設定すると、レンダリングパイプラインが関数名を書き換える場合にもアイランドマーカー名を固定できます。
+
+<Warning title="実験的なスキャナー契約">
+
+アップストリームのアイランドマーカー重複排除は依然として壊れやすいため、このパターンは実験的です。その作業は [issue #2718](https://github.com/zudolab/zudo-doc/issues/2718) を追跡してください。アイランドの登録経路を変更したときは、必ずビルド済みサイトでハイドレート後の動作を確認してください。
+
+</Warning>
+
+パッケージの `pages/lib/_preset-generator.tsx` は、同じ `Island({...})` 呼び出し形式と display-name の固定を示しています。表示専用の `className` ベースコンポーネントについては、このショーケースの `src/config/frontmatter-preview-renderers.tsx` にある `Pill` レンダラーを参照してください。
+
+登録したアイランドは、他のグローバルコンポーネントと同様に MDX から使えます。
+
+```mdx
+<CounterIsland />
+```
+
+## 関連項目
+
+- 最小から拡張までのカスタマイズのはしごは [zudo-docのカスタマイズ](../reference/customizing.mdx)
+- bindings モジュールとコンポーネント以外のスロットは [ホストクロームバインディング](../reference/host-chrome-bindings.mdx)
+- 通常の MDX オーサリングは [ドキュメントを書く](../getting-started/writing-docs.mdx)
