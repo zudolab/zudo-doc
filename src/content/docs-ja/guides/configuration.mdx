@@ -344,6 +344,17 @@ body-end islands に `FindInPageInit` アイランド（Cmd/Ctrl+F 検索バー�
 
 デフォルト: `false`
 
+<Warning title="新しいscaffoldではクロームバインディングが必要です">
+
+この設定フィールドだけではscaffoldプロジェクトに何も描画されません。ドキュメントルートの
+スタブはホストバインディングなしで`createChrome(routeCtx)`を呼び出すため、`DocHistory`スロットは
+no-opのデフォルトのままです。`chromeBindingsModule`を通し、`DocHistory`をバインドしてください。詳しくは
+[Custom Components](./custom-components.mdx)と
+[ホストクロームバインディング](../reference/host-chrome-bindings.mdx)を参照してください。[テンプレート修正](https://github.com/zudolab/zudo-doc/issues/2716)後に生成されたscaffoldは
+表示用／データ用スロットを自動で通しますが、独自のハイドレートするアイランドには引き続きガイドで説明する静的インポートの配線が必要です。
+
+</Warning>
+
 [ドキュメント履歴ガイド](./doc-history.mdx)を参照してください。
 
 ### docMetainfo
@@ -351,6 +362,19 @@ body-end islands に `FindInPageInit` アイランド（Cmd/Ctrl+F 検索バー�
 ドキュメントページに Created/Updated/Author メタブロックを表示します（ビルド時に git 履歴から抽出）。
 
 デフォルト: `false`
+
+<Warning title="新しいscaffoldではクロームバインディングが必要です">
+
+この設定フィールドだけではscaffoldプロジェクトに何も描画されません。ドキュメントルートの
+スタブはホストバインディングなしで`createChrome(routeCtx)`を呼び出すため、`docHistoryMeta`スロットは
+`{}`のデフォルトのままです。`chromeBindingsModule`を通し、`docHistoryMeta`をビルド時の履歴
+マニフェストへバインドしてください。詳しくは[Custom Components](./custom-components.mdx)と
+[ホストクロームバインディング](../reference/host-chrome-bindings.mdx)を参照してください。[テンプレート修正](https://github.com/zudolab/zudo-doc/issues/2716)後に生成されたscaffoldは
+表示用／データ用スロットを自動で通しますが、独自のハイドレートするアイランドには引き続きガイドで説明する静的インポートの配線が必要です。
+
+</Warning>
+
+bindingsモジュールは`docHistoryMeta`を提供する必要があります。デフォルトの`{}`データスロットでは、描画するメタデータブロックがありません。組み合わせる`docHistory`設定については[ドキュメント履歴ガイド](./doc-history.mdx)を参照してください。
 
 ### bodyFootUtilArea
 
@@ -526,6 +550,27 @@ UI 文字列の翻訳テーブルを上書きします。省略時、出荷済�
 ディレクティブ → JSX コンポーネント名マップを上書きします。省略時、標準の7つを使います。
 
 型: `DirectiveVocabulary` · デフォルト: `undefined`
+
+<Warning>
+
+`directives`はボキャブラリ全体を置き換えます。1つ追加するときも標準のディレクティブを保持してください。そうしないと、既存の`:::note`、`:::warning`などの組み込みが解決されなくなります。
+
+</Warning>
+
+```ts title="zfb.config.ts"
+import { defaultDirectiveVocabulary } from "@takazudo/zudo-doc/directive-vocabulary-defaults";
+
+export default defineConfig(
+  zudoDoc({
+    directives: {
+      ...defaultDirectiveVocabulary,
+      callout: "Callout",
+    },
+  }),
+);
+```
+
+コンポーネント登録を含む完全なレシピは[Directives Registry](../markdown-features/directives-registry.mdx)を参照してください。
 
 ### tagVocabularyEntries
 

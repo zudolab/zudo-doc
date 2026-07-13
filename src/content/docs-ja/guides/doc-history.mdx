@@ -8,7 +8,7 @@ tags:
 
 ## 概要
 
-zudo-docは各ドキュメントページのgitリビジョン履歴を表示できます。有効にすると、各詳細ページに**History**ボタンが表示され、過去のリビジョンを閲覧したり、行単位のdiffビューアで任意の2つのバージョンを比較できるサイドパネルが開きます。
+zudo-docは各ドキュメントページのgitリビジョン履歴を表示できます。`docHistory`を有効にし、`DocHistory`クロームバインディングを設定すると、各詳細ページに**History**ボタンが表示され、過去のリビジョンを閲覧したり、行単位のdiffビューアで任意の2つのバージョンを比較できるサイドパネルが開きます。
 
 これは以下の用途に便利です：
 
@@ -35,6 +35,42 @@ export default defineConfig(
 );
 ```
 
+<Warning title="新しいscaffoldではクロームバインディングが必要です">
+
+この設定フィールドだけではscaffoldプロジェクトに何も描画されません。ドキュメントルートの
+スタブはホストバインディングなしで`createChrome(routeCtx)`を呼び出すため、`DocHistory`スロットは
+no-opのデフォルトのままです。`chromeBindingsModule`を通し、`DocHistory`をバインドしてください。詳しくは
+[Custom Components](./custom-components.mdx)と
+[ホストクロームバインディング](../reference/host-chrome-bindings.mdx)を参照してください。[テンプレート修正](https://github.com/zudolab/zudo-doc/issues/2716)後に生成されたscaffoldは
+表示用／データ用スロットを自動で通しますが、独自のハイドレートするアイランドには引き続きガイドで説明する静的インポートの配線が必要です。
+
+</Warning>
+
+実際のHistoryアイランドをbindingsモジュールにバインドします。
+
+```tsx title="src/chrome-bindings.tsx"
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
+import { DocHistory } from "@takazudo/zudo-doc/doc-history";
+
+export const chromeBindings = defineChromeBindings({
+  DocHistory,
+});
+```
+
+同じ設定からそのモジュールを指定します。
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // ...
+    docHistory: true,
+    chromeBindingsModule: "./src/chrome-bindings.tsx",
+  }),
+);
+```
+
+プロジェクト作成時、ジェネレーターがこのバインディングのためにドキュメントルートスタブをパッチするのはdoc-history機能を選択した場合だけです。既存のscaffoldではモジュールとルートスタブの配線を手動で追加してください。このハイドレートするアイランドには、[Custom Components](./custom-components.mdx)の静的インポート形式を使います。
+
 この機能はビルドを高速に保つため、**デフォルトでは無効**です。
 
 ## ページごとの表示制御
@@ -49,14 +85,14 @@ export default defineConfig(
 ```yaml
 ---
 title: My Page
-doc_history: false # このページでは常にボタンを非表示
+doc_history: false # always hide the button on this page
 ---
 ```
 
 ```yaml
 ---
 title: My Category Index
-doc_history: true # インデックスページでも明示的に表示
+doc_history: true # opt back in even though this is an index page
 ---
 ```
 
@@ -141,7 +177,7 @@ dist/doc-history/
   getting-started.json
   guides/writing-docs.json
   guides/color.json
-  ja/getting-started.json      # ロケールプレフィックス付き
+  ja/getting-started.json      # locale-prefixed
   ja/guides/writing-docs.json
 ```
 
@@ -193,14 +229,14 @@ zudo-docはサーバーサイドランタイムなしの完全な静的サイト
 
 ```ts
 interface DocHistoryData {
-  slug: string;          // ドキュメントのルートパス
-  filePath: string;      // リポジトリ内のファイルパス
+  slug: string;          // Document route path
+  filePath: string;      // File path in the repository
   entries: Array<{
-    hash: string;        // 完全なコミットハッシュ
-    date: string;        // ISO 8601形式の日付
-    author: string;      // コミット著者名
-    message: string;     // コミットメッセージ（1行目）
-    content: string;     // このリビジョンでの完全なファイル内容
+    hash: string;        // Full commit hash
+    date: string;        // ISO 8601 date
+    author: string;      // Commit author name
+    message: string;     // Commit message (first line)
+    content: string;     // Full file content at this revision
   }>;
 }
 ```
