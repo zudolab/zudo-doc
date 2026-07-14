@@ -4,22 +4,19 @@
 // Pin-parity gate (W4A — #1732). Failure mode:
 //   "W1A §5#4 — pin sources out of lockstep"
 //
-// The same upstream version of @takazudo/zfb (and @takazudo/zfb-runtime)
-// is pinned in FIVE places that must stay in lockstep:
+// The same upstream zfb-family release is represented across five surfaces
+// that must stay in lockstep:
 //
-//   1. Root package.json `dependencies["@takazudo/zfb"]`
-//      (what this repo builds against)
-//   2. Root package.json `dependencies["@takazudo/zfb-runtime"]`
-//   3. packages/create-zudo-doc/src/scaffold.ts — the literal version
-//      strings emitted into the generated downstream package.json by
-//      `generatePackageJson()`. A fresh scaffold gets EXACTLY this version.
-//   4. packages/zudo-doc/package.json `devDependencies["@takazudo/zfb"]`
-//      and `["@takazudo/zfb-runtime"]` — exact-equal to the root pins
-//      (used to build the package locally against the exact same version)
-//   5. packages/zudo-doc/package.json `peerDependencies["@takazudo/zfb"]`
-//      and `["@takazudo/zfb-runtime"]` — exact-equal to the root pins.
-//      These peers are temporarily exact because prerelease caret ranges would
-//      admit next.79+, which hangs when bundle.exclude is non-empty (#1631).
+//   1. Root package.json `@takazudo/zfb` engine pin.
+//   2. Root package.json companion pins (runtime, adapter, and md-wasm).
+//   3. packages/create-zudo-doc/src/scaffold.ts — the literal versions emitted
+//      into generated downstream package.json files by `generatePackageJson()`.
+//      A fresh scaffold gets EXACTLY these versions.
+//   4. packages/zudo-doc/package.json zfb-family `devDependencies` —
+//      exact-equal to the root pins used to build the package locally.
+//   5. packages/zudo-doc/package.json zfb-family `peerDependencies` — caret
+//      floors derived from the exact root pins, so compatible later releases
+//      are accepted without weakening the root/dev/scaffold reproducibility.
 //
 // Historically, bumping #1/#2 (e.g. via `pnpm up @takazudo/zfb@latest`)
 // silently left #3/#4/#5 stale. This script makes that drift a CI/b4push error.
@@ -53,6 +50,7 @@ const PINNED_PACKAGES = [
   "@takazudo/zfb",
   "@takazudo/zfb-runtime",
   "@takazudo/zfb-adapter-cloudflare",
+  "@takazudo/zfb-md-wasm",
   "@takazudo/zdtp",
 ];
 
@@ -69,23 +67,33 @@ const INTERNAL_PINNED_PACKAGES = [
   "@takazudo/zudo-doc-history-server",
 ];
 
-// packages/zudo-doc/package.json carries zfb pins in two fields:
+// packages/zudo-doc/package.json carries zfb-family versions in two fields:
 //   devDependencies — exact-equal to the root pin (build-time version)
-//   peerDependencies — exact-equal to the root pin (temporary #1631 bound)
-// Note: @takazudo/zfb-adapter-cloudflare is NOT in packages/zudo-doc — only these two.
-const ZUDO_DOC_ZFB_PACKAGES = ["@takazudo/zfb", "@takazudo/zfb-runtime"];
+//   peerDependencies — exact ^<root pin> compatible floors
+// Note: @takazudo/zfb-adapter-cloudflare is host-only and is not in this package.
+const ZUDO_DOC_ZFB_PACKAGES = [
+  "@takazudo/zfb",
+  "@takazudo/zfb-runtime",
+  "@takazudo/zfb-md-wasm",
+];
 
 /**
- * Workspace zfb dev and peer pins must exactly match the root pin. In
- * particular, a prerelease caret such as ^0.1.0-next.78 is not equivalent: npm
- * may resolve it to next.79+, which is intentionally excluded while #1631 is
- * open.
+ * Workspace zfb dev pins must exactly match the root pin.
  */
-export function workspaceZfbPinMatches(rootPin, actualPin) {
+export function workspaceZfbDevPinMatches(rootPin, actualPin) {
   return (
     typeof rootPin === "string" &&
     typeof actualPin === "string" &&
     actualPin === rootPin
+  );
+}
+
+/** Workspace zfb peer floors must be the canonical caret of the root pin. */
+export function workspaceZfbPeerFloorMatches(rootPin, actualPin) {
+  return (
+    typeof rootPin === "string" &&
+    typeof actualPin === "string" &&
+    actualPin === `^${rootPin}`
   );
 }
 
@@ -376,12 +384,12 @@ function main() {
     }
   }
 
-  // ── packages/zudo-doc pins: devDependencies + peerDependencies exact ────────
+  // ── packages/zudo-doc: exact dev pins + compatible peer floors ─────────────
   for (const pkgName of ZUDO_DOC_ZFB_PACKAGES) {
     const rootPin = rootPkg.dependencies?.[pkgName];
     const devPin = zudoDocPkg.devDependencies?.[pkgName];
     const peerPin = zudoDocPkg.peerDependencies?.[pkgName];
-    const expectedPeerPin = rootPin;
+    const expectedPeerPin = `^${rootPin}`;
 
     if (rootPin === undefined) {
       // Reported by the external pins loop above; skip here to avoid duplicate.
@@ -398,7 +406,7 @@ function main() {
         field: "devDependencies",
         kind: "workspace-package",
       });
-    } else if (!workspaceZfbPinMatches(rootPin, devPin)) {
+    } else if (!workspaceZfbDevPinMatches(rootPin, devPin)) {
       mismatches.push({
         pkg: pkgName,
         reason: `Pin drift in packages/zudo-doc/package.json devDependencies`,
@@ -420,10 +428,10 @@ function main() {
         field: "peerDependencies",
         kind: "workspace-package",
       });
-    } else if (!workspaceZfbPinMatches(rootPin, peerPin)) {
+    } else if (!workspaceZfbPeerFloorMatches(rootPin, peerPin)) {
       mismatches.push({
         pkg: pkgName,
-        reason: `Pin drift in packages/zudo-doc/package.json peerDependencies`,
+        reason: `Peer floor drift in packages/zudo-doc/package.json peerDependencies`,
         expected: expectedPeerPin,
         actual: peerPin,
         file: ZUDO_DOC_PKG_PATH,
@@ -525,7 +533,7 @@ function main() {
         `  packages/zudo-doc devDependencies[${pkgName}] = ${zudoDocPkg.devDependencies?.[pkgName]} (exact)`,
       );
       console.log(
-        `  packages/zudo-doc peerDependencies[${pkgName}] = ${zudoDocPkg.peerDependencies?.[pkgName]} (exact; temporary #1631 bound)`,
+        `  packages/zudo-doc peerDependencies[${pkgName}] = ${zudoDocPkg.peerDependencies?.[pkgName]} (compatible floor)`,
       );
     }
     for (const { pkg, actual, expected } of firstPartyOk) {
@@ -576,7 +584,7 @@ function main() {
   console.error(`  - ${SCAFFOLD_TS_PATH}`);
   console.error(`  - ${ZUDO_DOC_PKG_PATH}`);
   console.error(
-    `      zfb devDependencies and peers must be exact-equal to root pins; the lockstep peer floor must INCLUDE the root version (caret range), the pinned peer floor must be ^<root pin>`,
+    `      zfb devDependencies must be exact-equal to root pins; zfb peerDependencies and pinned peer floors must be ^<root pin>; the lockstep peer floor must INCLUDE the root version`,
   );
   console.error("then re-run this check.");
   return 1;
