@@ -539,9 +539,10 @@ function parseMap(raw: unknown, baseline: ModeMap, warnings: string[]): ModeMap 
 /**
  * Parse the optional, deliberately-partial syntax map. An absent block means
  * "use the baseline" (diff-only omission / old v3 compatibility). A present
- * object overlays only the baseline's explicit syntax entries: shipped
- * contrast-tuned refs survive a one-role partial import, while alias-only
- * roles stay missing and are not materialized during round-trips.
+ * object is authoritative: it is the complete set of explicit syntax
+ * overrides, so missing roles use their semantic aliases rather than baseline
+ * overrides. This preserves whole-map export/import fidelity, including an
+ * intentional empty object that clears the baseline's contrast-tuned refs.
  */
 function parseSyntaxMap(
   raw: unknown,
@@ -555,14 +556,14 @@ function parseSyntaxMap(
   }
 
   const src = raw as Record<string, unknown>;
-  const out: Partial<Record<SyntaxSemanticKey, RampRef>> = cloneSyntaxMap(baseline) ?? {};
+  const out: Partial<Record<SyntaxSemanticKey, RampRef>> = {};
   for (const key of SYNTAX_SEMANTIC_KEYS) {
     if (!Object.prototype.hasOwnProperty.call(src, key)) continue;
     const value = src[key];
     if (isValidRampRef(value)) {
       out[key] = cloneRef(value);
     } else {
-      warnings.push(`color.map.syntax.${key} is not a valid RampRef (${JSON.stringify(value)}); kept baseline/inherited value.`);
+      warnings.push(`color.map.syntax.${key} is not a valid RampRef (${JSON.stringify(value)}); ignored so the inherited syntax alias is used.`);
     }
   }
   return out;

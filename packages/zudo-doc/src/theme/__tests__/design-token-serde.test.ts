@@ -218,6 +218,48 @@ describe("deserialize", () => {
     expect(state.color).toEqual(original.color);
   });
 
+  it("round-trips an authoritative empty syntax map that clears baseline overrides", () => {
+    const baseline = cloneBaseline();
+    baseline.map.syntax = {
+      syntaxInserted: "oklch(0.75 0.145 145)",
+      syntaxDeleted: "oklch(0.82 0.1 25)",
+    };
+    const color = structuredClone(baseline);
+    color.map.syntax = {};
+    const original = makeState({ color });
+
+    const json = serialize(original, { manifest: MANIFEST, colorDefaults: baseline });
+    expect(json.color?.map?.syntax).toEqual({});
+
+    const { state, warnings } = deserialize(JSON.parse(JSON.stringify(json)), {
+      manifest: MANIFEST,
+      colorDefaults: baseline,
+    });
+    expect(warnings).toEqual([]);
+    expect(state.color).toEqual(original.color);
+  });
+
+  it("round-trips a one-role syntax map without restoring baseline overrides", () => {
+    const baseline = cloneBaseline();
+    baseline.map.syntax = {
+      syntaxInserted: "oklch(0.75 0.145 145)",
+      syntaxDeleted: "oklch(0.82 0.1 25)",
+    };
+    const color = structuredClone(baseline);
+    color.map.syntax = { syntaxKeyword: { accent: 2 } };
+    const original = makeState({ color });
+
+    const json = serialize(original, { manifest: MANIFEST, colorDefaults: baseline });
+    expect(json.color?.map?.syntax).toEqual({ syntaxKeyword: { accent: 2 } });
+
+    const { state, warnings } = deserialize(JSON.parse(JSON.stringify(json)), {
+      manifest: MANIFEST,
+      colorDefaults: baseline,
+    });
+    expect(warnings).toEqual([]);
+    expect(state.color).toEqual(original.color);
+  });
+
   it("export → import (modal round-trip) reproduces the exact scheme", () => {
     // Mirrors the export-modal flow: serialize the panel state to a JSON string,
     // then re-import that string and expect an identical state.
@@ -330,7 +372,7 @@ describe("deserialize", () => {
     expect(state.color.map.semantic.muted).toEqual(COLOR_BASELINE.map.semantic.muted);
   });
 
-  it("overlays a partial syntax import onto baseline explicit refs without materializing aliases", () => {
+  it("treats a present partial syntax object as the authoritative override set", () => {
     const baseline = cloneBaseline();
     baseline.map.syntax = {
       syntaxInserted: "oklch(0.75 0.145 145)",
@@ -347,11 +389,7 @@ describe("deserialize", () => {
     });
 
     expect(warnings).toEqual([]);
-    expect(state.color.map.syntax).toEqual({
-      syntaxInserted: "oklch(0.75 0.145 145)",
-      syntaxDeleted: "oklch(0.82 0.1 25)",
-      syntaxKeyword: { accent: 2 },
-    });
+    expect(state.color.map.syntax).toEqual({ syntaxKeyword: { accent: 2 } });
     expect(state.color.map.syntax).not.toHaveProperty("syntaxComment");
   });
 
@@ -400,7 +438,7 @@ describe("deserialize", () => {
     expect(warnings.some((w) => w.includes("color.map.bg"))).toBe(true);
   });
 
-  it("warns and ignores an invalid syntax ref while preserving baseline explicit tuning", () => {
+  it("warns and ignores an invalid ref in an authoritative syntax object", () => {
     const baseline = cloneBaseline();
     baseline.map.syntax = { syntaxInserted: "oklch(0.75 0.145 145)" };
     const payload: DesignTokenJson = {
@@ -413,7 +451,6 @@ describe("deserialize", () => {
       colorDefaults: baseline,
     });
     expect(state.color.map.syntax).toEqual({
-      syntaxInserted: "oklch(0.75 0.145 145)",
       syntaxComment: { accent: 99 },
     });
     expect(warnings.some((warning) => warning.includes("syntaxInserted"))).toBe(true);
