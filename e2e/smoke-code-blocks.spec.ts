@@ -1,4 +1,10 @@
 import { test, expect } from "@playwright/test";
+import {
+  expectHtmlClass,
+  expectHtmlTagWithAttr,
+  expectHtmlTagWithClass,
+} from "./html-assertions";
+import { readDistFile } from "./smoke-dist-helper";
 
 /**
  * E2E tests for the code block enhancer component.
@@ -8,8 +14,70 @@ import { test, expect } from "@playwright/test";
  */
 
 const PAGE = "/docs/guides/code-blocks-test";
+const DIST_PAGE = "docs/guides/code-blocks-test/index.html";
+
+test.describe("Code blocks: static compatibility shape", () => {
+  let html: string;
+
+  test.beforeAll(() => {
+    html = readDistFile(DIST_PAGE);
+  });
+
+  test("current output retains title and line-highlight structure", () => {
+    expectHtmlClass(html, "code-block-container");
+    expectHtmlClass(html, "code-block-title");
+    expect(html).toContain("legacy-compat-title.js");
+    expectHtmlTagWithAttr(html, "span", "data-line-highlight", "true");
+    expectHtmlTagWithClass(html, "pre", "syntect-dual");
+  });
+
+  test("representative class output retains word and diff structure", () => {
+    expectHtmlTagWithClass(html, "pre", "hi-root");
+    expectHtmlClass(html, "highlighted-word");
+    expectHtmlTagWithAttr(html, "span", "data-line-diff", "removed");
+    expectHtmlTagWithAttr(html, "span", "data-line-diff", "added");
+    expect(html).toContain("class-mode-compat.ts");
+    expectHtmlTagWithAttr(html, "pre", "data-code-compat-fixture", "class");
+  });
+
+  test("keeps an unrelated plain pre fixture distinguishable", () => {
+    expectHtmlTagWithAttr(html, "pre", "data-code-compat-fixture", "plain");
+  });
+});
 
 test.describe("Code blocks: copy and wrap buttons", () => {
+  test("enhances highlighted and raw-tab blocks but leaves unrelated pre untouched", async ({
+    page,
+  }) => {
+    await page.goto(PAGE, { waitUntil: "load" });
+
+    const legacy = page.locator('main pre[class*="syntect-"]').first();
+    const classMode = page.locator(
+      'main pre.hi-root[data-code-compat-fixture="class"]',
+    );
+    const rawTabFallback = page.locator("main .tab-panel pre").first();
+    const plain = page.locator(
+      'main pre[data-code-compat-fixture="plain"]',
+    );
+
+    for (const enhanceable of [legacy, classMode, rawTabFallback]) {
+      await expect(enhanceable).toHaveAttribute("data-enhanced", "true");
+      const wrapper = enhanceable.locator("xpath=..");
+      await expect(wrapper).toHaveClass(/\bcode-block-wrapper\b/);
+      await expect(
+        wrapper.getByRole("button", { name: "Copy code" }),
+      ).toHaveCount(1);
+      await expect(
+        wrapper.locator('button[aria-label="Toggle word wrap"]'),
+      ).toHaveCount(1);
+    }
+
+    await expect(plain).not.toHaveAttribute("data-enhanced", "true");
+    await expect(plain.locator("xpath=..")).not.toHaveClass(
+      /\bcode-block-wrapper\b/,
+    );
+  });
+
   test("copy button is present on code blocks", async ({ page }) => {
     await page.goto(PAGE, { waitUntil: "load" });
 

@@ -24,6 +24,13 @@ import {
   BEFORE_NAVIGATE_EVENT,
 } from "../transitions/page-events.js";
 
+/** Highlighted block shapes emitted by current Syntect and future class mode. */
+export const HIGHLIGHTED_CODE_BLOCK_SELECTOR =
+  ':is(pre.hi-root, pre[class*="syntect-"])';
+
+/** Highlighted blocks plus the intentional raw-code fallback inside tabs. */
+export const CODE_BLOCK_ENHANCER_SELECTOR = `${HIGHLIGHTED_CODE_BLOCK_SELECTOR}, .tab-panel pre`;
+
 export const CODE_BLOCK_ENHANCER_SCRIPT = `(function () {
   // Single shared ResizeObserver for all code blocks on the page.
   var wrapButtons = new Map();
@@ -35,16 +42,17 @@ export const CODE_BLOCK_ENHANCER_SCRIPT = `(function () {
   });
 
   function enhanceCodeBlocks() {
-    // Selector covers two shapes:
-    //   1. pre.syntect-... from the syntect highlighter (the class
-    //      is anchored or merged with other classes).
-    //   2. bare pre inside .tab-panel (TabItem) wrappers where some
+    // Selector covers three shapes:
+    //   1. pre.hi-root from the class-mode highlighter.
+    //   2. pre.syntect-... from the legacy syntect highlighter (the class
+    //      may be merged with other classes).
+    //   3. bare pre inside .tab-panel (TabItem) wrappers where some
     //      pipelines emit class-less pre elements.
     // No backticks in this comment: this whole script body lives inside
     // a template literal in the host .ts module, so an inline backtick
     // would close the literal and make 'panel' a free identifier.
     var pres = document.querySelectorAll(
-      'pre[class*="syntect-"], .tab-panel pre',
+      ${JSON.stringify(CODE_BLOCK_ENHANCER_SELECTOR)},
     );
 
     for (var pi = 0; pi < pres.length; pi++) {

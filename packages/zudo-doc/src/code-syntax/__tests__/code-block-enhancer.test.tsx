@@ -4,7 +4,11 @@
 import { describe, expect, it } from "vitest";
 import { render } from "preact-render-to-string";
 import { CodeBlockEnhancer } from "../code-block-enhancer.js";
-import { CODE_BLOCK_ENHANCER_SCRIPT } from "../code-block-enhancer-script.js";
+import {
+  CODE_BLOCK_ENHANCER_SCRIPT,
+  CODE_BLOCK_ENHANCER_SELECTOR,
+  HIGHLIGHTED_CODE_BLOCK_SELECTOR,
+} from "../code-block-enhancer-script.js";
 import {
   AFTER_NAVIGATE_EVENT,
   BEFORE_NAVIGATE_EVENT,
@@ -58,12 +62,31 @@ describe("CODE_BLOCK_ENHANCER_SCRIPT", () => {
     expect(CODE_BLOCK_ENHANCER_SCRIPT.trimEnd()).toMatch(/\)\(\);$/);
   });
 
-  it("targets syntect-class pre elements", () => {
-    expect(CODE_BLOCK_ENHANCER_SCRIPT).toContain('pre[class*="syntect-"]');
+  it("targets current and future highlighted pre elements", () => {
+    expect(HIGHLIGHTED_CODE_BLOCK_SELECTOR).toBe(
+      ':is(pre.hi-root, pre[class*="syntect-"])',
+    );
+    expect(CODE_BLOCK_ENHANCER_SELECTOR).toContain("pre.hi-root");
+    expect(CODE_BLOCK_ENHANCER_SELECTOR).toContain(
+      'pre[class*="syntect-"]',
+    );
   });
 
   it("also targets bare <pre> inside tab panels", () => {
-    expect(CODE_BLOCK_ENHANCER_SCRIPT).toContain(".tab-panel pre");
+    expect(CODE_BLOCK_ENHANCER_SELECTOR).toBe(
+      `${HIGHLIGHTED_CODE_BLOCK_SELECTOR}, .tab-panel pre`,
+    );
+  });
+
+  it("does not broaden enhancement to unrelated plain pre elements", () => {
+    expect(CODE_BLOCK_ENHANCER_SELECTOR.split(", ")).not.toContain("pre");
+    expect(CODE_BLOCK_ENHANCER_SCRIPT).toContain(
+      JSON.stringify(CODE_BLOCK_ENHANCER_SELECTOR),
+    );
+  });
+
+  it("remains valid browser JavaScript", () => {
+    expect(() => new Function(CODE_BLOCK_ENHANCER_SCRIPT)).not.toThrow();
   });
 
   it("uses ResizeObserver for overflow detection", () => {
