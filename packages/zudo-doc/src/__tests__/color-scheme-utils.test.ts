@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   resolveRampRef,
   resolveSemanticColors,
+  resolveSyntaxColors,
   schemeToCssPairs,
   generateCssCustomProperties,
   generateLightDarkCssProperties,
@@ -11,6 +12,11 @@ import {
   SEMANTIC_CSS_NAMES,
   SEMANTIC_KEYS,
   STATE_ROLES,
+  SYNTAX_CSS_NAMES,
+  SYNTAX_DIFF_BACKGROUND_CSS,
+  SYNTAX_SEMANTIC_ALIASES,
+  SYNTAX_SEMANTIC_KEYS,
+  ZFB_HIGHLIGHT_ROLE_TO_ZUDO_TOKEN,
   type ColorScheme,
   type Ramps,
   type RampRef,
@@ -105,6 +111,83 @@ describe("resolveSemanticColors", () => {
   });
 });
 
+describe("resolveSyntaxColors — optional backward-compatible syntax map", () => {
+  it("resolves all nine roles from semantic aliases for an old ModeMap with no syntax property", () => {
+    const scheme = makeScheme();
+    const syntax = resolveSyntaxColors(scheme);
+    expect(Object.keys(syntax)).toEqual([...SYNTAX_SEMANTIC_KEYS]);
+    for (const key of SYNTAX_SEMANTIC_KEYS) {
+      expect(syntax[key]).toBe(resolveSemanticColors(scheme)[SYNTAX_SEMANTIC_ALIASES[key]]);
+    }
+  });
+
+  it("lets a partial syntax map override only selected roles", () => {
+    const scheme = makeScheme();
+    scheme.map.syntax = { syntaxKeyword: { accent: 2 } };
+    const syntax = resolveSyntaxColors(scheme);
+    expect(syntax.syntaxKeyword).toBe("accent-2");
+    expect(syntax.syntaxComment).toBe("base-1");
+    expect(syntax.syntaxString).toBe("state-success");
+  });
+
+  it("treats an explicit empty syntax map as all inherited aliases", () => {
+    const scheme = makeScheme();
+    scheme.map.syntax = {};
+    expect(resolveSyntaxColors(scheme)).toEqual(resolveSyntaxColors(makeScheme()));
+  });
+
+  it("falls back safely when runtime-authored syntax refs are invalid", () => {
+    const scheme = makeScheme();
+    scheme.map.syntax = {
+      syntaxComment: { base: 99 },
+      syntaxKeyword: "",
+    } as never;
+    expect(() => resolveSyntaxColors(scheme)).not.toThrow();
+    expect(resolveSyntaxColors(scheme).syntaxComment).toBe("base-1");
+    expect(resolveSyntaxColors(scheme).syntaxKeyword).toBe("accent-1");
+  });
+
+  it("uses a valid base foreground when an inherited semantic ref is also invalid", () => {
+    const scheme = makeScheme();
+    scheme.map.semantic.success = { accent: 99 };
+    expect(resolveSyntaxColors(scheme).syntaxString).toBe("base-0");
+  });
+});
+
+describe("zfb renderer mapping contract", () => {
+  it("contracts foreground/background plus all 18 zfb roles onto semantic tokens", () => {
+    expect(ZFB_HIGHLIGHT_ROLE_TO_ZUDO_TOKEN).toEqual({
+      foreground: "codeFg",
+      background: "codeBg",
+      escape: "syntaxString",
+      operator: "codeFg",
+      comment: "syntaxComment",
+      string: "syntaxString",
+      number: "syntaxNumber",
+      constant: "syntaxNumber",
+      keyword: "syntaxKeyword",
+      function: "syntaxCallable",
+      type: "syntaxType",
+      namespace: "syntaxType",
+      property: "syntaxName",
+      variable: "syntaxName",
+      tag: "syntaxName",
+      attribute: "syntaxName",
+      punctuation: "codeFg",
+      inserted: "syntaxInserted",
+      deleted: "syntaxDeleted",
+      heading: "syntaxKeyword",
+    });
+  });
+
+  it("derives diff backgrounds from public foreground semantics and codeBg", () => {
+    expect(SYNTAX_DIFF_BACKGROUND_CSS).toEqual({
+      inserted: "color-mix(in srgb, var(--zd-syntax-inserted) 15%, var(--zd-code-bg))",
+      deleted: "color-mix(in srgb, var(--zd-syntax-deleted) 15%, var(--zd-code-bg))",
+    });
+  });
+});
+
 describe("schemeToCssPairs — emit contract", () => {
   const emitted = new Map(schemeToCssPairs(makeScheme()));
   const keys = [...emitted.keys()];
@@ -124,11 +207,13 @@ describe("schemeToCssPairs — emit contract", () => {
       ...STATE_ROLES.map((r) => `--palette-state-${r}`),
       // 23 --zd-{role}
       ...SEMANTIC_KEYS.map((k) => SEMANTIC_CSS_NAMES[k]),
+      // 9 --zd-syntax-* roles
+      ...SYNTAX_SEMANTIC_KEYS.map((k) => SYNTAX_CSS_NAMES[k]),
     ];
     expect(keys.slice().sort()).toEqual(expected.slice().sort());
-    // 4 + 5 + 3 + 4 + 23 = 39, and no duplicate keys.
-    expect(keys.length).toBe(39);
-    expect(new Set(keys).size).toBe(39);
+    // 4 + 5 + 3 + 4 + 23 + 9 = 48, and no duplicate keys.
+    expect(keys.length).toBe(48);
+    expect(new Set(keys).size).toBe(48);
   });
 
   it("does NOT emit the retired --zd-0..15 slots", () => {
@@ -153,6 +238,15 @@ describe("schemeToCssPairs — emit contract", () => {
     expect(emitted.get("--palette-accent-2")).toBe("accent-2");
     expect(emitted.get("--palette-state-danger")).toBe("state-danger");
   });
+
+  it("emits a partial syntax override without changing inherited syntax values", () => {
+    const scheme = makeScheme();
+    scheme.map.syntax = { syntaxKeyword: { accent: 2 } };
+    const partial = new Map(schemeToCssPairs(scheme));
+    expect(partial.get("--zd-syntax-keyword")).toBe("accent-2");
+    expect(partial.get("--zd-syntax-comment")).toBe("base-1");
+    expect(partial.get("--zd-syntax-string")).toBe("state-success");
+  });
 });
 
 describe("schemeToCssPairs — scopes", () => {
@@ -164,9 +258,9 @@ describe("schemeToCssPairs — scopes", () => {
     expect(keys.every((k) => k.startsWith("--palette-"))).toBe(true);
   });
 
-  it('"roles" scope emits base roles + 23 semantic (--zd-*) pairs', () => {
+  it('"roles" scope emits base roles + 23 UI + 9 syntax semantic (--zd-*) pairs', () => {
     const keys = schemeToCssPairs(scheme, "roles").map(([k]) => k);
-    expect(keys.length).toBe(27); // 4 + 23
+    expect(keys.length).toBe(36); // 4 + 23 + 9
     expect(keys.every((k) => k.startsWith("--zd-"))).toBe(true);
     expect(keys.some((k) => k.startsWith("--palette-"))).toBe(false);
   });
@@ -180,6 +274,7 @@ describe("generateCssCustomProperties", () => {
     expect(css).toContain("--zd-bg: base-4;");
     expect(css).toContain("--palette-base-0: base-0;");
     expect(css).toContain("--zd-surface: base-4;");
+    expect(css).toContain("--zd-syntax-comment: base-1;");
     expect(css).not.toContain("--zd-cursor");
     expect(css).not.toMatch(/--zd-\d+:/);
   });
@@ -207,6 +302,7 @@ describe("generateLightDarkCssProperties", () => {
     // light bg = base-4, dark bg = base-0
     expect(css).toContain("--zd-bg: light-dark(base-4, base-0);");
     expect(css).toContain("--zd-surface: light-dark(base-4, base-4);");
+    expect(css).toContain("--zd-syntax-comment: light-dark(base-1, base-1);");
   });
 
   it("does not emit retired slots or cursor", () => {
@@ -243,14 +339,14 @@ describe("buildSemanticTierItems", () => {
   const scheme = makeScheme();
   const items = buildSemanticTierItems(scheme);
 
-  it("returns exactly 27 rows: 4 base roles + 23 semantic keys", () => {
-    expect(items.length).toBe(27);
+  it("returns exactly 36 rows: 4 base + 23 UI semantic + 9 syntax roles", () => {
+    expect(items.length).toBe(36);
   });
 
-  it("orders the 4 base-role rows first, then the 23 SEMANTIC_KEYS rows", () => {
+  it("orders base roles, existing SEMANTIC_KEYS, then syntax roles", () => {
     const ids = items.map((item) => item.id);
     expect(ids.slice(0, 4)).toEqual(["bg", "fg", "selection-bg", "selection-fg"]);
-    expect(ids.slice(4)).toEqual([...SEMANTIC_KEYS]);
+    expect(ids.slice(4)).toEqual([...SEMANTIC_KEYS, ...SYNTAX_SEMANTIC_KEYS]);
   });
 
   it("wires base-role cssVars and defaults from map.bg/fg/selectionBg/selectionFg", () => {
@@ -283,6 +379,17 @@ describe("buildSemanticTierItems", () => {
       expect(item?.default).toBe(rampRefToPanelDefault(scheme.map.semantic[key]));
       expect(item?.type).toEqual({ kind: "color", format: "oklch" });
     }
+  });
+
+  it("seeds syntax rows from explicit refs first and inherited aliases otherwise", () => {
+    const partial = makeScheme();
+    partial.map.syntax = { syntaxKeyword: { accent: 2 } };
+    const byId = new Map(buildSemanticTierItems(partial).map((item) => [item.id, item]));
+    for (const key of SYNTAX_SEMANTIC_KEYS) {
+      expect(byId.get(key)?.cssVar).toBe(SYNTAX_CSS_NAMES[key]);
+    }
+    expect(byId.get("syntaxKeyword")?.default).toBe("accent:accent-2");
+    expect(byId.get("syntaxComment")?.default).toBe("base:base-1");
   });
 });
 
@@ -343,6 +450,10 @@ const HOST_DARK_MAP: ColorScheme["map"] = {
     matchedKeywordBg: "oklch(.700 .158 62)",
     matchedKeywordFg: "oklch(.300 .003 65)",
   },
+  syntax: {
+    syntaxInserted: "oklch(.750 .145 145)",
+    syntaxDeleted: "oklch(.820 .100 25)",
+  },
 };
 
 const HOST_LIGHT_MAP: ColorScheme["map"] = {
@@ -375,6 +486,10 @@ const HOST_LIGHT_MAP: ColorScheme["map"] = {
     matchedKeywordBg: "oklch(.700 .158 62)",
     matchedKeywordFg: "oklch(.300 .003 65)",
   },
+  syntax: {
+    syntaxInserted: "oklch(.460 .140 145)",
+    syntaxDeleted: "oklch(.490 .170 25)",
+  },
 };
 
 const HOST_SCHEMES: Record<"Default Light" | "Default Dark", ColorScheme> = {
@@ -401,6 +516,7 @@ describe("parity property — no-snapping guard (Default Light / Default Dark)",
     describe(name, () => {
       const items = buildSemanticTierItems(scheme);
       const resolvedSemantic = resolveSemanticColors(scheme);
+      const resolvedSyntax = resolveSyntaxColors(scheme);
 
       it("every base-role row's default decodes+resolves to the exact scheme value", () => {
         const byId = new Map(items.map((item) => [item.id, item]));
@@ -425,6 +541,16 @@ describe("parity property — no-snapping guard (Default Light / Default Dark)",
           expect(item).toBeDefined();
           const decoded = decodePanelDefault(item!.default);
           expect(resolveRampRef(decoded, scheme.ramps)).toBe(resolvedSemantic[key]);
+        }
+      });
+
+      it("every syntax row's default decodes+resolves to resolveSyntaxColors' exact value", () => {
+        const byId = new Map(items.map((item) => [item.id, item]));
+        for (const key of SYNTAX_SEMANTIC_KEYS) {
+          const item = byId.get(key);
+          expect(item).toBeDefined();
+          const decoded = decodePanelDefault(item!.default);
+          expect(resolveRampRef(decoded, scheme.ramps)).toBe(resolvedSyntax[key]);
         }
       });
 
