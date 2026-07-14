@@ -4,7 +4,20 @@ import {
   parseSemverCore,
   satisfiesCaret,
   evaluateFirstPartyPeer,
+  workspaceZfbPinMatches,
 } from "../check-pin-parity.mjs";
+
+describe("workspaceZfbPinMatches", () => {
+  const rootPin = "0.1.0-next.78";
+
+  it("accepts the exact workspace peer pin", () => {
+    expect(workspaceZfbPinMatches(rootPin, rootPin)).toBe(true);
+  });
+
+  it("rejects the prerelease caret that can admit next.79+ (#1631)", () => {
+    expect(workspaceZfbPinMatches(rootPin, `^${rootPin}`)).toBe(false);
+  });
+});
 
 describe("parseSemverCore", () => {
   it("parses a plain version", () => {
