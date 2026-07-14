@@ -96,6 +96,13 @@ const darkMap: ModeMap = {
     matchedKeywordBg: "oklch(.700 .158 62)",
     matchedKeywordFg: "oklch(.300 .003 65)",
   },
+  // Diff foregrounds are checked against their actual 15% foreground tint on
+  // codeBg. The ordinary success/danger aliases are not light enough on that
+  // derived dark background, so only these two syntax roles need overrides.
+  syntax: {
+    syntaxInserted: "oklch(.750 .145 145)",
+    syntaxDeleted: "oklch(.820 .100 25)",
+  },
 };
 
 /**
@@ -151,6 +158,12 @@ const lightMap: ModeMap = {
     // Default Dark (an amber-on-white highlight reads identically in both modes).
     matchedKeywordBg: "oklch(.700 .158 62)",
     matchedKeywordFg: "oklch(.300 .003 65)",
+  },
+  // Slightly darker than the shared success/danger aliases so the foregrounds
+  // retain >= 4.6:1 on their own 15% tints over the light code background.
+  syntax: {
+    syntaxInserted: "oklch(.460 .140 145)",
+    syntaxDeleted: "oklch(.490 .170 25)",
   },
 };
 

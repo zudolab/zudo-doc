@@ -35,11 +35,22 @@ describe("buildDesignTokenPanelConfig — tab structure", () => {
     expect(palette.tiers.find((t) => t.id === "state")!.items).toHaveLength(4);
   });
 
-  it("the color tab has one semantic tier of 27 items (4 base roles + 23 semantic roles)", () => {
+  it("the color tab has one semantic tier with base, UI semantic, and syntax rows", () => {
     const color = buildDesignTokenPanelConfig("light").tabs.find((t) => t.id === "color")!;
     expect(color.tiers).toHaveLength(1);
     expect(color.tiers[0]!.id).toBe("semantic");
-    expect(color.tiers[0]!.items).toHaveLength(27);
+    expect(color.tiers[0]!.items).toHaveLength(36);
+    expect(color.tiers[0]!.items.slice(-9).map((item) => item.id)).toEqual([
+      "syntaxComment",
+      "syntaxString",
+      "syntaxNumber",
+      "syntaxKeyword",
+      "syntaxCallable",
+      "syntaxType",
+      "syntaxName",
+      "syntaxInserted",
+      "syntaxDeleted",
+    ]);
   });
 
   it("the font tab's role tier references the font-scale tier (three-tier font strategy)", () => {
@@ -62,6 +73,18 @@ describe("buildDesignTokenPanelConfig — mode-scoping (#2610 mode-scoped BUILDE
     // Default Light: bg = base:base-0 (lightest). Default Dark: bg = base:base-4 (darkest).
     expect(lightBg).toBe("base:base-0");
     expect(darkBg).toBe("base:base-4");
+  });
+
+  it("uses mode-specific diff overrides while inherited syntax rows stay ramp references", () => {
+    const lightItems = buildDesignTokenPanelConfig("light").tabs.find((t) => t.id === "color")!.tiers[0]!.items;
+    const darkItems = buildDesignTokenPanelConfig("dark").tabs.find((t) => t.id === "color")!.tiers[0]!.items;
+    const light = new Map(lightItems.map((item) => [item.id, item.default]));
+    const dark = new Map(darkItems.map((item) => [item.id, item.default]));
+
+    expect(light.get("syntaxComment")).toBe("base:base-2");
+    expect(dark.get("syntaxComment")).toBe("base:base-1");
+    expect(light.get("syntaxInserted")).toBe("oklch(.460 .140 145)");
+    expect(dark.get("syntaxInserted")).toBe("oklch(.750 .145 145)");
   });
 
   it("light and dark modes share identical Palette-tab ramp values (ramps are mode-independent)", () => {
