@@ -219,7 +219,9 @@ test.describe("smart-break: regression guards", () => {
     await page.setViewportSize(NARROW);
     await page.goto(TEST_PAGE, { waitUntil: "load" });
 
-    const pre = page.locator('main pre[class^="syntect-"]').first();
+    const pre = page
+      .locator('main :is(pre.hi-root, pre[class*="syntect-"])')
+      .first();
     await expect(pre).toBeVisible();
 
     // The pre may show a horizontal scrollbar (overflow-x: auto) — the
