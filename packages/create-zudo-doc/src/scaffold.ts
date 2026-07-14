@@ -614,6 +614,8 @@ function generatePackageJson(choices: UserChoices) {
     // support, adopted in lockstep with the root package.json pins. No
     // scaffold API change. next.78 (current pin): production HTML minification
     // support via minifyHtml, adopted as a zudo-doc default through settings.
+    // Keep next.78 until the bundle.exclude regression is fixed:
+    // https://github.com/Takazudo/zudo-front-builder/issues/1631
     "@takazudo/zfb": "0.1.0-next.78",
     "@takazudo/zfb-runtime": "0.1.0-next.78",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
@@ -697,7 +699,7 @@ function generatePackageJson(choices: UserChoices) {
     // same reason. This is the ACCEPTED, permanent contract per #2668 — see
     // the "@takazudo/zdtp dep implication" note in
     // packages/zudo-doc/docs/adr/route-injection-seam.md.
-    "@takazudo/zdtp": "0.4.8",
+    "@takazudo/zdtp": "0.4.9",
   };
 
   const devDeps: Record<string, string> = {
