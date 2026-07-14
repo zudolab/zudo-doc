@@ -68,7 +68,7 @@ test.describe("Code blocks: copy and wrap buttons", () => {
         wrapper.getByRole("button", { name: "Copy code" }),
       ).toHaveCount(1);
       await expect(
-        wrapper.getByRole("button", { name: "Toggle word wrap" }),
+        wrapper.locator('button[aria-label="Toggle word wrap"]'),
       ).toHaveCount(1);
     }
 
