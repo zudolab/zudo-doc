@@ -564,16 +564,17 @@ function generatePackageJson(choices: UserChoices) {
     // fix, additive. next.49: client-router WebKit bfcache fix —
     // re-sync the history index + originalLocation on a bfcache restore so
     // browser Back after an SPA navigation returns to the previous page instead
-    // of skipping an entry — runtime-only bug fix, additive. next.50 (current
-    // pin): client-router fix to commit the SPA history entry BEFORE the View
+    // of skipping an entry — runtime-only bug fix, additive. next.50:
+    // client-router fix to commit the SPA history entry BEFORE the View
     // Transition, so on WebKit/iOS a single browser Back after an SPA navigation
     // creates a distinct history entry instead of falling off the site —
-    // runtime-only bug fix, additive. next.51 (current pin): additive public-API
+    // runtime-only bug fix, additive. next.51: additive public-API
     // surface — VNode/VNodeArray/VNodeObject are now exported from
     // "@takazudo/zfb" (#972) — plus removal of the no-op linkValidation.allowExternal
-    // knob (#925); both are non-breaking for a fresh scaffold. A fresh scaffold
-    // sets codeHighlight.themeLight/themeDark for dual-theme syntect output. No
-    // consumer-facing / CLI breaking change. next.52: adds the
+    // knob (#925); both are non-breaking for a fresh scaffold. Highlight config
+    // is package-preset-owned: fresh scaffolds delegate to zudoDoc(), whose
+    // preset selects class mode without emitting theme names project-side.
+    // next.52 adds the
     // `ClientRouter({ preserveHtmlAttrs })` option (zfb#1104) — consumers can
     // declare runtime `<html>` attribute names to preserve across SPA swaps so
     // e.g. `data-sidebar-hidden` / `data-theme` survive (zudolab/zudo-doc#2200).

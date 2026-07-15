@@ -53,8 +53,8 @@ describe("zudoDoc() returns a complete ZfbConfig", () => {
     const config = zudoDoc({ siteName: "X" });
     expect(config.collections?.map((c) => c.name)).toEqual(["docs"]);
     expect(config.codeHighlight).toEqual({
-      themeLight: "base16-ocean.light",
-      themeDark: "base16-ocean.dark",
+      mode: "class",
+      defaultStylesheet: true,
     });
     expect(config.stripMdExt).toBe(true);
     // packageOwnedRoutes defaults on, so the routes plugin is present + first.

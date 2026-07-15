@@ -3,7 +3,7 @@
  *
  * `zudoDocPreset()` returns the zfb config fragment that every zudo-doc
  * project previously hand-wrote in its `zfb.config.ts` (collections loop,
- * markdown.features, dual-theme codeHighlight, resolveMarkdownLinks,
+ * markdown.features, class-mode codeHighlight, resolveMarkdownLinks,
  * stripMdExt, trailingSlash, minifyHtml, and the integration plugins array). The host
  * config spreads this fragment into `defineConfig` and supplies only the
  * project-specific shell fields it still owns (`framework`, `port`,
@@ -237,8 +237,8 @@ export interface PresetMarkdown {
 }
 
 export interface PresetCodeHighlight {
-  themeLight: string;
-  themeDark: string;
+  mode: "class";
+  defaultStylesheet: true;
 }
 
 /** The config fragment returned by {@link zudoDocPreset}. */
@@ -294,13 +294,12 @@ export function zudoDocPreset({
       features: buildMarkdownFeatures(settings, directiveVocabulary),
       ...(settings.cjkFriendly !== undefined ? { cjkFriendly: settings.cjkFriendly } : {}),
     },
-    // Dual-theme syntect (zfb >= 0.1.0-next.45). Theme names are SYNTECT
-    // built-ins, NOT Shiki names. Tokens emit `--shiki-light`/`--shiki-dark`
-    // CSS custom properties resolved by the host CSS via `light-dark()`, so
-    // code follows the in-page light/dark switch with zero client JS.
+    // zfb class mode keeps renderer output semantic and delegates color to
+    // the package's --zfb-hi-* → --zd-syntax-* CSS adapter. Keep the upstream
+    // layered stylesheet enabled as the fallback beneath zudo's unlayered CSS.
     codeHighlight: {
-      themeLight: "base16-ocean.light",
-      themeDark: "base16-ocean.dark",
+      mode: "class",
+      defaultStylesheet: true,
     },
     resolveMarkdownLinks: buildResolveMarkdownLinks(settings),
     // Strip `.md` / `.mdx` from in-page `<a href>` so author-written

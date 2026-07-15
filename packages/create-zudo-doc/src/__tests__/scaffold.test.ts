@@ -693,6 +693,18 @@ describe("scaffold — zfb.config.ts content shape (integration with generateZfb
     expect(config).toContain("export default defineConfig(");
     expect(config).toContain("zudoDoc({");
     expect(config).toContain('siteName: "Test Doc"');
+    // Highlighting is package-preset-owned. The generated project delegates to
+    // zudoDoc() and must not freeze an inline/dual-theme renderer config.
+    for (const token of [
+      "codeHighlight",
+      "themeLight",
+      "themeDark",
+      "themesDir",
+      "base16-ocean.light",
+      "base16-ocean.dark",
+    ]) {
+      expect(config).not.toContain(token);
+    }
     // Nothing feature-specific should appear in a zero-feature scaffold.
     for (const token of [
       "docHistory",
