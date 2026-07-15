@@ -7,9 +7,9 @@ tags:
   - i18n
 ---
 
-長いURLやファイルシステムパス — 例えば `packages/create-zudo-doc/templates/base/src/utils/smart-break.tsx` — は任意の文字境界では折り返されません。狭いUI（サイドバーのラベル、パンくず、インラインコード、検索スニペットなど）ではコンテナからあふれたり、レイアウトを本来より広くしてしまいます。
+長いURLやファイルシステムパス — 例えば `packages/zudo-doc/src/smart-break/index.tsx` — は任意の文字境界では折り返されません。狭いUI（サイドバーのラベル、パンくず、インラインコード、検索スニペットなど）ではコンテナからあふれたり、レイアウトを本来より広くしてしまいます。
 
-`src/utils/smart-break.tsx` にある smart-break ユーティリティは、パス風に見える文字列のデリミタごとに `<wbr>`（word-break opportunity）ヒントを挿入することでこの問題を解決します。実際にどこで折り返すかはブラウザが利用可能な幅に応じて判断します。
+パッケージの smart-break ユーティリティは、パス風に見える文字列のデリミタごとに `<wbr>`（word-break opportunity）ヒントを挿入することでこの問題を解決します。実際にどこで折り返すかはブラウザが利用可能な幅に応じて判断します。
 
 ## 自動適用
 
@@ -29,7 +29,7 @@ zudo-doc のいくつかの表示面では、すでに smart-break が自動的�
 Preact アイランド（あるいはプロジェクト内の任意の `.tsx` コンポーネント）では `SmartBreak` コンポーネントを使います。子要素を文字列化し、適切な位置に `<wbr>` を挿入します：
 
 ```tsx
-import { SmartBreak } from "@/utils/smart-break";
+import { SmartBreak } from "@takazudo/zudo-doc/smart-break";
 
 export function FileBadge({ path }: { path: string }) {
   return (
@@ -47,7 +47,7 @@ export function FileBadge({ path }: { path: string }) {
 HTML 文字列を描画するコードパス（`dangerouslySetInnerHTML` など）では、Preact の VNode を直接マウントできません。その場合は `smartBreakToHtml` を使ってください。HTML エスケープ済みの文字列に、リテラルの `<wbr>` タグを挿入した結果を返します：
 
 ```tsx
-import { smartBreakToHtml } from "@/utils/smart-break";
+import { smartBreakToHtml } from "@takazudo/zudo-doc/smart-break";
 
 export function PathLabel({ label }: { label: string }) {
   return <span dangerouslySetInnerHTML={{ __html: smartBreakToHtml(label) }} />;
@@ -87,13 +87,13 @@ smart-break は2段階で動作します：まず入力を `isPathLike` ヒュ�
 次のような入力を考えてみます：
 
 ```
-packages/create-zudo-doc/templates/base/src/utils/smart-break.tsx
+packages/zudo-doc/src/smart-break/index.tsx
 ```
 
 `isPathLike` は `true` を返し、`smartBreakToHtml` は概念的に次のような結果を返します：
 
 ```html
-packages<wbr>/create<wbr>-zudo<wbr>-doc<wbr>/templates<wbr>/base<wbr>/src<wbr>/utils<wbr>/smart<wbr>-break<wbr>.tsx
+packages<wbr>/zudo<wbr>-doc<wbr>/src<wbr>/smart<wbr>-break<wbr>/index<wbr>.tsx
 ```
 
 コンテナが十分広ければブラウザは1行で保ち、狭い場合は最も近い `<wbr>` の位置で折り返します。常にセグメントの境界で折り返され、セグメントの途中で切られることはありません。

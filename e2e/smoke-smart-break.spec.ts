@@ -213,20 +213,18 @@ test.describe("smart-break: visual wrapping on narrow viewports", () => {
 // --------------------------------------------------------------------------
 
 test.describe("smart-break: regression guards", () => {
-  test("fenced code blocks render unwrapped (smart-break skips Shiki output)", async ({
+  test("fenced code blocks render unwrapped (smart-break skips highlighted output)", async ({
     page,
   }) => {
     await page.setViewportSize(NARROW);
     await page.goto(TEST_PAGE, { waitUntil: "load" });
 
-    const pre = page
-      .locator('main :is(pre.hi-root, pre[class*="syntect-"])')
-      .first();
+    const pre = page.locator("main pre.hi-root").first();
     await expect(pre).toBeVisible();
 
     // The pre may show a horizontal scrollbar (overflow-x: auto) — the
     // content is wider than the visible box but stays on one physical line.
-    // If smart-break had polluted Shiki spans with <wbr>, the long line
+    // If smart-break had polluted highlighted spans with <wbr>, the long line
     // would wrap instead of overflowing, and scrollWidth would equal
     // clientWidth.
     const { scrollWidth, clientWidth, wbrInsideCode } = await pre.evaluate(

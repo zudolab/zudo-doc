@@ -44,7 +44,7 @@ export default defineConfig(
 );
 ```
 
-このショーケースはパッケージのデフォルトビルダー（`@takazudo/zudo-doc/design-token-panel-config`）を、独自のブートストラップアイランド（`src/components/design-token-panel-bootstrap.tsx` → `src/lib/design-token-panel-bootstrap.ts`、[実装](#実装)を参照）に直接インポートしており、`designTokenPanelConfigModule` を指すのではなく直接配線しています（かつては `src/config/design-token-panel-config.ts` にビルダーをバイト単位でミラーしたコピーを保持していましたが、冗長だったため廃止しました）。`designTokenPanelConfigModule` は、独自のブートストラップアイランドを自作する代わりに、パッケージが自動注入するブートストラップ（`packageOwnedRoutes` 使用時のデフォルトの body-end アイランド）に自作のビルダーを読み込ませたい場合に使用します。
+このショーケースは、パッケージ所有のブートストラップとパッケージのデフォルトビルダーを使用します。自動注入されるブートストラップに独自のモードスコープなビルダーを読み込ませたい場合にのみ、`designTokenPanelConfigModule` を設定してください。
 
 ## 5つのタブ
 
@@ -191,26 +191,23 @@ Colorタブは常に、現在アクティブなモード（ライトまたはダ
 
 既定のエクスポートが差分になっているため、AIは気にしているトークンだけを読むことになり、未変更のデフォルトを推理する必要がありません。AIに全体像が必要な場合（例: ゼロから新しいテーマを作らせるとき）にだけ **Show defaults too** をオンにしてください。
 
-## 永続化とマイグレーション
+## 永続化
 
 状態は `localStorage` のキー `zudo-doc-tweak-state-v4` に永続化されます。v4エンベロープは各タブの状態（カラー・スペーシング・タイポグラフィ・サイズ、および任意の汎用タブ）を横並びにした単一オブジェクトです。カラー状態はアクティブなスキームの識別子ごとにキー付けされるため、ライトとダークのスキーム編集を独立して復元できます。
 
-以前のプロジェクトで保存されていた古い形式 — `zudo-doc-tweak-state-v3`（v3）、`zudo-doc-tweak-state-v2`（v2）、または `zudo-doc-tweak-state`（v1、カラーのみ） — は、自動的にマイグレーションされます:
-
-- 読み込み時にパネルはまずv4を参照します。v3エンベロープはv4へ昇格され、ダウングレードしたパッケージでも読み出せるようv3キーは残されます。v2とv1の値は古い形式を経由してv4へ昇格されます。
-- ヘッダーの **Reset all** をクリックすると、保存済みのパネルオーバーライドがクリアされ、設定済みのデフォルトに戻ります。
+ヘッダーの **Reset all** をクリックすると、保存済みのパネルオーバーライドがクリアされ、設定済みのデフォルトに戻ります。ストレージ形式とライフサイクルはインストール済みの `@takazudo/zdtp` パッケージが所有し、zudo-doc 自身は永続化エンベロープを解析・変換しません。
 
 ライト/ダークテーマの切り替えで保存済みの編集が消えることは**なく**、開いているパネルは切り替えをまたいで開いたままになります。テーマトグルは `color-scheme-changed` イベントをディスパッチし、ホストはパネルをその場でパッチするのではなく、新しいモード用に destroy して再構成します（[実装](#実装)を参照）。そのため、Color タブの ref/literal の*デフォルト*は新しくアクティブになったモードに追従し、保存済みの Color オーバーライドもそのモードのスキーム識別子に対して復元されます。Palette・Spacing・Font・Size の編集はそのまま引き継がれます。[モードスコープの編集モデル](#5つのタブ-color-モードスコープの編集モデル)を参照してください。
 
 <Note title="ストレージプレフィックスの継続性保証">
 
-ストレージプレフィックス `zudo-doc-tweak` は、パッケージのデフォルトビルダー（`@takazudo/zudo-doc/design-token-panel-config`、このショーケースもそのまま利用しています）に固定されており、変わりません。古いバージョンのキーで保存されたトークンも自動的に読み込まれ、初回ロード時に現在の `zudo-doc-tweak-state-v4` エンベロープへとマイグレーションされるため、手動のマイグレーション作業は不要です。
+ストレージプレフィックス `zudo-doc-tweak` は、パッケージのデフォルトビルダー（`@takazudo/zudo-doc/design-token-panel-config`、このショーケースもそのまま利用しています）に固定されており、変わりません。それ以外の永続化の詳細は `@takazudo/zdtp` が所有し、リポジトリ内の zudo-doc 互換レイヤーには属しません。
 
 </Note>
 
 ## 実装
 
-パネルUIは `@takazudo/zdtp`（zdtp）npmパッケージが提供します。配線の仕組み — `configurePanel` の呼び出し、zfb のナビゲーションライフサイクルへのフック、および後述のモードスコープな destroy+reconfigure — は `@takazudo/zudo-doc/design-token-panel-bootstrap` にあります。プロジェクトの `src/lib/design-token-panel-bootstrap.ts` は、`bootstrapDesignTokenPanel(buildDesignTokenPanelConfig)` を呼び出すことで、その仕組みにパネルの設定*データ*を渡します。ここで `buildDesignTokenPanelConfig`（`@takazudo/zudo-doc/design-token-panel-config` から直接インポートされる、パッケージデフォルトのビルダー）は、プレーンな設定オブジェクトではなく `(mode) => PanelConfig` のビルダーです — これが Color タブをライト/ダークに追従させる仕組みです。パネルはこの呼び出しのサイドエフェクトとして自己マウントされるため、Preactアイランドの登録は不要です。
+パネルUIは `@takazudo/zdtp`（zdtp）npmパッケージが提供します。パッケージ所有の `DesignTokenPanelBootstrap` アイランドと、`configurePanel` の呼び出し、zfb のナビゲーションライフサイクルへのフック、および後述のモードスコープな destroy+reconfigure の仕組みは `@takazudo/zudo-doc/design-token-panel-bootstrap` にあります。アイランドは `bootstrapDesignTokenPanel(buildDesignTokenPanelConfig)` を呼び出します。`buildDesignTokenPanelConfig` は `(mode) => PanelConfig` のビルダーであり、これが Color タブをライト/ダークに追従させる仕組みです。アイランドがハイドレートすると、パネルはその副作用として自己マウントされます。
 
 （テーマトグルがディスパッチする）`color-scheme-changed` イベントのたびに、ブートストラップは新しいモードを読み取り、素早い連続トグルを 1 つのマクロタスクにまとめてから、`handle.destroy()` に続けて `configurePanel(buildDesignTokenPanelConfig(mode))` を呼び出します — zdtp の `configurePanel` は、構造的に異なる設定でその場で再実行すると例外を投げるため、destroy してから再構成することが、Color タブのモードスコープなデフォルトを差し替える唯一のサポートされた方法です。パネルが開いていた場合は、開いた状態で再マウントされます。
 

@@ -17,8 +17,8 @@
 // sibling `doc-history.ts` for the rationale.
 
 import type { ZfbBuildHookContext, ZfbDevMiddlewareContext, ZfbPlugin } from "@takazudo/zfb/plugins";
-import type { SearchIndexBuildOptions, SearchIndexConfig } from "../integrations/search-index/index.js";
-import { emitSearchIndex, createSearchIndexDevMiddleware } from "../integrations/search-index/index.js";
+import type { SearchIndexBuildOptions, SearchIndexConfig } from "./internal/search-index/index.js";
+import { emitSearchIndex, createSearchIndexDevMiddleware } from "./internal/search-index/index.js";
 import { connectToZfbHandler } from "./connect-adapter.js";
 import { getBasePrefix } from "./plugin-utils.js";
 

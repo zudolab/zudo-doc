@@ -43,7 +43,7 @@ const greeting = "hello";
 ```
 ````
 
-The emitted markup is `<div class="code-block-container"><div class="code-block-title">example.ts</div><pre class="syntect-base16-ocean-dark"><code>…</code></pre></div>`. A fence without a title emits a bare `<pre class="syntect-base16-ocean-dark"><code>…</code></pre>` — no container, no title bar.
+The emitted markup is `<div class="code-block-container"><div class="code-block-title">example.ts</div><pre class="hi-root"><code>…</code></pre></div>`. A fence without a title emits a bare `<pre class="hi-root"><code>…</code></pre>` — no container, no title bar.
 
 Live example with a title:
 
@@ -98,7 +98,7 @@ The copy button is added by client-side JavaScript at runtime; it is not present
 
 | Trigger | Emitted element(s) | Class names |
 | --- | --- | --- |
-| Fence with `title="x"` | `<div><div>title</div><pre><code></code></pre></div>` | `.code-block-container` > `.code-block-title` + `pre.syntect-base16-ocean-dark` |
-| Fence without title | bare `<pre><code></code></pre>` | `pre.syntect-base16-ocean-dark` |
+| Fence with `title="x"` | `<div><div>title</div><pre><code></code></pre></div>` | `.code-block-container` > `.code-block-title` + `pre.hi-root` |
+| Fence without title | bare `<pre><code></code></pre>` | `pre.hi-root` |
 | Diff marker line | `<span class="line" data-line-diff="added\|removed">` | `span.line[data-line-diff]` |
 | Highlighted line | `<span class="line" data-line-highlight="true">` | `span.line[data-line-highlight]` |

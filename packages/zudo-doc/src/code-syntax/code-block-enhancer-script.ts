@@ -24,9 +24,8 @@ import {
   BEFORE_NAVIGATE_EVENT,
 } from "../transitions/page-events.js";
 
-/** Highlighted block shapes emitted by current Syntect and future class mode. */
-export const HIGHLIGHTED_CODE_BLOCK_SELECTOR =
-  ':is(pre.hi-root, pre[class*="syntect-"])';
+/** Highlighted blocks emitted by the current class-mode highlighter. */
+export const HIGHLIGHTED_CODE_BLOCK_SELECTOR = "pre.hi-root";
 
 /** Highlighted blocks plus the intentional raw-code fallback inside tabs. */
 export const CODE_BLOCK_ENHANCER_SELECTOR = `${HIGHLIGHTED_CODE_BLOCK_SELECTOR}, .tab-panel pre`;
@@ -42,11 +41,9 @@ export const CODE_BLOCK_ENHANCER_SCRIPT = `(function () {
   });
 
   function enhanceCodeBlocks() {
-    // Selector covers three shapes:
+    // Selector covers two shapes:
     //   1. pre.hi-root from the class-mode highlighter.
-    //   2. pre.syntect-... from the legacy syntect highlighter (the class
-    //      may be merged with other classes).
-    //   3. bare pre inside .tab-panel (TabItem) wrappers where some
+    //   2. bare pre inside .tab-panel (TabItem) wrappers where some
     //      pipelines emit class-less pre elements.
     // No backticks in this comment: this whole script body lives inside
     // a template literal in the host .ts module, so an inline backtick

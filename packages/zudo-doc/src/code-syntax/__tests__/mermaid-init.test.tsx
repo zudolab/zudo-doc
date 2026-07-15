@@ -5,11 +5,12 @@ import { describe, expect, it } from "vitest";
 import { render } from "preact-render-to-string";
 import { MermaidInit } from "../mermaid-init.js";
 import {
-  MERMAID_INIT_SCRIPT,
   MERMAID_CDN_MODULE_URL,
   buildMermaidInitScript,
 } from "../mermaid-init-script.js";
 import { AFTER_NAVIGATE_EVENT } from "../../transitions/page-events.js";
+
+const MERMAID_INIT_SCRIPT = buildMermaidInitScript(MERMAID_CDN_MODULE_URL);
 
 describe("<MermaidInit />", () => {
   it("renders a <script> tag", () => {
@@ -585,7 +586,7 @@ describe("buildMermaidInitScript / cdnUrl override", () => {
     expect(built).not.toContain(JSON.stringify(MERMAID_CDN_MODULE_URL));
   });
 
-  it("the default-URL constant is built via the same builder for parity", () => {
+  it("the default-URL script is built via the public builder for parity", () => {
     expect(MERMAID_INIT_SCRIPT).toBe(
       buildMermaidInitScript(MERMAID_CDN_MODULE_URL),
     );

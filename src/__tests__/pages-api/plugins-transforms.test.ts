@@ -1,8 +1,8 @@
 /**
  * plugins-transforms.test.ts
  *
- * Focused vitest tests for the pure-function layer that the zfb plugin modules
- * delegate to: the @takazudo/zudo-doc integration transforms.
+ * Focused vitest tests for the package-internal pure-function layer that the
+ * public @takazudo/zudo-doc/plugins/* modules delegate to.
  *
  * After the package-first migration (#2321) and cleanup (#2337), the host-side
  * plugin .mjs wrappers (doc-history, search-index, llms-txt, claude-resources)
@@ -22,11 +22,11 @@
  *   git-log subprocess calls. The shared basePrefix/stripTrailingSlash helpers
  *   were extracted into plugin-utils.ts (#2338); they are not re-tested here.
  *
- * @takazudo/zudo-doc/integrations/search-index
+ * @takazudo/zudo-doc/plugins/search-index
  *   Pure transforms: `stripMarkdown` (strips markdown from body text) and the
  *   body-truncation logic (MAX_BODY_LENGTH=300). Tested below.
  *
- * @takazudo/zudo-doc/integrations/llms-txt
+ * @takazudo/zudo-doc/plugins/llms-txt
  *   Pure transforms: `generateLlmsTxt` and `generateLlmsFullTxt` (format llms.txt
  *   output from an entries array). Tested below.
  *
@@ -36,9 +36,9 @@
  *   (treat missing publicDir as a no-op) which is an fs error path, not a
  *   pure transform. Testing would require a real or mocked filesystem.
  *
- * @takazudo/zudo-doc/integrations/claude-resources
+ * @takazudo/zudo-doc/plugins/claude-resources
  *   No pure-function surface for the plugin hooks. The escapeForMdx helper
- *   inside the integration package IS a pure function — tested below.
+ *   inside the package-internal graph IS a pure function — tested below.
  */
 
 import { describe, it, expect } from "vitest";
@@ -47,9 +47,10 @@ import { describe, it, expect } from "vitest";
 // search-index transforms: stripMarkdown, body-truncation constant
 // ---------------------------------------------------------------------------
 
-import { stripMarkdown } from "@takazudo/zudo-doc/integrations/llms-txt";
+// @ts-ignore — repository-owned test of a deliberately unexported internal
+import { stripMarkdown } from "../../../packages/zudo-doc/dist/md-utils/index.js";
 
-describe("stripMarkdown (shared md-utils helper, exposed via llms-txt)", () => {
+describe("stripMarkdown (shared md-utils helper used by llms-txt)", () => {
   it("removes ATX headings (#, ##, ...)", () => {
     expect(stripMarkdown("# Heading\n## Sub")).not.toMatch(/#/);
   });
@@ -109,10 +110,9 @@ describe("stripMarkdown (shared md-utils helper, exposed via llms-txt)", () => {
 // llms-txt transforms: generateLlmsTxt, generateLlmsFullTxt
 // ---------------------------------------------------------------------------
 
-// These are pure functions shipped in the integration package dist.
-// Import the generate functions directly from the integration dist path.
-// @ts-ignore — no type declaration for this internal subpath
-import { generateLlmsTxt, generateLlmsFullTxt } from "@takazudo/zudo-doc/integrations/llms-txt";
+// These are package-internal pure functions used by the public plugin.
+// @ts-ignore — repository-owned test of a deliberately unexported internal
+import { generateLlmsTxt, generateLlmsFullTxt } from "../../../packages/zudo-doc/dist/plugins/internal/llms-txt/generate.js";
 
 const SAMPLE_META = {
   siteName: "My Docs",
@@ -204,9 +204,9 @@ describe("generateLlmsFullTxt", () => {
 
 // escapeForMdx is an internal helper not exposed in the public package exports map.
 // We import it directly from the dist file to test the pure transform used by
-// claude-resources-plugin.mjs (which delegates to generateClaudeResourcesDocs → escapeForMdx).
+// the claude-resources plugin (which delegates to generateClaudeResourcesDocs → escapeForMdx).
 // @ts-ignore — bypasses the exports map restriction
-import { escapeForMdx } from "../../../node_modules/@takazudo/zudo-doc/dist/integrations/claude-resources/escape-for-mdx.js";
+import { escapeForMdx } from "../../../packages/zudo-doc/dist/plugins/internal/claude-resources/escape-for-mdx.js";
 
 describe("escapeForMdx", () => {
   it("passes HTML tags through unchanged (they are valid in MDX)", () => {

@@ -4,7 +4,7 @@ description: h2 以上の見出しにスラグベースの id 属性と自己参
 sidebar_position: 3
 ---
 
-**Core 機能** — 常に有効です。アンカー ID の _方式_ は設定可能です（後述）。
+**Core 機能** — 常に有効です。見出し ID は階層形式です。
 
 ## 概要
 
@@ -16,24 +16,18 @@ sidebar_position: 3
 
 `h1` には `id` が付与されません。ドキュメント唯一の `h1` はフロントマターのページタイトルです。
 
-## ID 方式
+## 階層 ID
 
-`id` の生成方式は、生成される `zfb.config.ts` の `markdown.features.headingIds.strategy` で選択します。zudo-doc ではこれを単一の設定、`zudoDoc({...})` に渡す `headingIdStrategy` フィールドに紐付けており、レンダリングされる ID と右側 TOC のアンカーが 1 つの設定値で駆動されます。
+zudo-doc は常に zfb の階層見出し ID を有効にします。パッケージプリセットと右側 TOC の抽出処理は同じ割り当て規約を使うため、ユーザー向けの方式設定なしでレンダリング ID と TOC アンカーが同期します。
 
 ```ts
-// zudoDoc() が内部的に配線する内容（headingIdStrategy フィールドから）
+// zudoDoc() が内部的に配線する内容
 markdown: {
   features: {
-    headingIds: { strategy: settings.headingIdStrategy }, // "flat" | "hierarchical"
+    headingIds: { strategy: "hierarchical" },
   },
 }
 ```
-
-### `flat`
-
-`h2`–`h6` 全体で 1 つの重複カウンターを共有するスラグ方式（`overview`、`overview-1` など）。スラグは npm の `github-slugger` ではなく zfb 独自の `slugify` で生成されます。zfb のデフォルトです。
-
-### `hierarchical`（このサイトで使用）
 
 各見出しの `id` は、祖先の連なりを `-` で結合したプレフィックスを持ちます。
 
@@ -45,23 +39,17 @@ markdown: {
 #### Mew
 ```
 
-は `id="foo"`、`id="foo-moo"`、`id="foo-moo-mew"` としてレンダリングされます（フラットな `foo`、`moo`、`mew` ではなく）。見出し内アンカーの `href`、右側 TOC、[Heading Marker TOC](./heading-marker-toc.mdx)、[TOC export](./toc-export.mdx) はすべて同じ ID に従います。
+は `id="foo"`、`id="foo-moo"`、`id="foo-moo-mew"` としてレンダリングされます。見出し内アンカーの `href`、右側 TOC、[Heading Marker TOC](./heading-marker-toc.mdx)、[TOC export](./toc-export.mdx) はすべて同じ ID に従います。
 
 詳細:
 
 - 完全パスが重複した場合は重複カウンターが付与されます（`a-b`、`a-b-1`）。
 - 重複解消された親はその **最終** ID を子に与えます。2 つ目の `## Foo` は `foo-1` となり、その配下の `### Bar` は `foo-1-bar` になります。
-- 階層アンカーは見出しのアウトラインから再構築でき、フラットなスラグより衝突がはるかに少なくなります（URL が長くなる代わりに）。
-
-:::warning[アンカーが変わります]
-
-方式を切り替えると **既存のアンカーが壊れます**。ネストした見出しへの既存ディープリンク（`#moo`）は、ID が `#foo-moo` になると解決されなくなります。zudo-doc は後方互換性を取らずに意図的に `hierarchical` を採用しました（upstream [zfb#871](https://github.com/Takazudo/zudo-front-builder/issues/871)、元の指摘 [#1938](https://github.com/zudolab/zudo-doc/issues/1938)）。
-
-:::
+- 階層アンカーは見出しのアウトラインから再構築でき、衝突を減らせます（URL が長くなる代わりに）。
 
 ## 他のページからのディープリンク
 
-各見出しに安定した `id` が付与されるため、別のページの特定セクションにリンクできます。`hierarchical` 方式では、ネストした見出しには祖先プレフィックス付きの形式を使います。
+各見出しに安定した `id` が付与されるため、別のページの特定セクションにリンクできます。ネストした見出しには祖先プレフィックス付きの形式を使います。
 
 ```md
 [Moo セクションを参照](./other-page.mdx#foo-moo)
@@ -69,5 +57,5 @@ markdown: {
 
 ## 補足
 
-- zudo-doc の右側 TOC ビルダー（`pages/lib/_extract-headings.ts`）も同じ方式をミラーしているため、TOC の `href="#…"` 値は常にレンダリングされた見出し `id` と一致します。
+- zudo-doc の右側 TOC ビルダー（`pages/lib/_extract-headings.ts`）も同じ割り当て処理をミラーしているため、TOC の `href="#…"` 値は常にレンダリングされた見出し `id` と一致します。
 - オプトインの Heading Marker TOC 機能は、このプラグインが生成した安定した見出し識別子に依存します。`headingMarkerToc` が有効な場合、Heading Links の後で実行されます。

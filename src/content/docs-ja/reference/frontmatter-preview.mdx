@@ -150,7 +150,7 @@ status: released
 
 ### コンポーネントの型
 
-各レンダラーは `FrontmatterRendererProps` を受け取る Preact コンポーネントです：
+各レンダラーは `@takazudo/zudo-doc/metainfo` の `FrontmatterCellRendererProps` を受け取る Preact コンポーネントです：
 
 | プロップ | 型 | 説明 |
 |------|------|-------------|
@@ -161,7 +161,7 @@ status: released
 
 ### レンダラーの登録
 
-独自のレンダラーマップにキーを追加します。各値は`FrontmatterRendererProps`を受け取り、JSXまたは`null`を返すコンポーネント関数です：
+独自のレンダラーマップにキーを追加します。各値は`FrontmatterCellRendererProps`を受け取り、JSXまたは`null`を返すコンポーネント関数です：
 
 ```tsx
 discount: ({ value }) => {

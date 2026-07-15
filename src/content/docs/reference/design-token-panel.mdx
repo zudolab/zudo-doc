@@ -44,7 +44,7 @@ export default defineConfig(
 );
 ```
 
-This showcase imports the package-default builder (`@takazudo/zudo-doc/design-token-panel-config`) directly into its own bootstrap island (`src/components/design-token-panel-bootstrap.tsx` → `src/lib/design-token-panel-bootstrap.ts`, see [Implementation](#implementation)) rather than going through `designTokenPanelConfigModule` — it used to keep a byte-for-byte-mirrored copy of the builder at `src/config/design-token-panel-config.ts`, retired as redundant. Use `designTokenPanelConfigModule` when you want the package's own auto-injected bootstrap (the default body-end island under `packageOwnedRoutes`) to pick up your custom builder instead of hand-rolling a bootstrap island of your own.
+This showcase uses the package-owned bootstrap and package-default builder. Set `designTokenPanelConfigModule` only when the auto-injected bootstrap should load a custom mode-scoped builder instead.
 
 ## The Five Tabs
 
@@ -191,26 +191,23 @@ The diff-only export and Load-from-JSON together enable a simple round-trip with
 
 Because the default export is a diff, the AI only sees the tokens you care about — it doesn't have to reason around dozens of unchanged defaults. Turn on **Show defaults too** only when the AI needs the complete picture (for example, producing a new theme from scratch).
 
-## Persistence and Migration
+## Persistence
 
 State is persisted to `localStorage` under the key `zudo-doc-tweak-state-v4`. The v4 envelope is a single object holding every tab's state side-by-side (color, spacing, typography, size, and any generic tabs). Its color state is keyed by active scheme identity, so light and dark scheme tweaks can be restored independently.
 
-Older projects that persisted an earlier format — `zudo-doc-tweak-state-v3` (v3), `zudo-doc-tweak-state-v2` (v2), or `zudo-doc-tweak-state` (v1, color-only) — are migrated automatically:
-
-- On load, the panel reads v4 first. A v3 envelope is promoted to v4 and left in place so a downgraded package can still read it; v2 and v1 values are promoted through the older format and then into v4.
-- Clicking **Reset all** in the panel header clears the saved panel overrides and restores the configured defaults.
+Clicking **Reset all** in the panel header clears the saved panel overrides and restores the configured defaults. The installed `@takazudo/zdtp` package owns the storage format and lifecycle; zudo-doc does not parse or rewrite persisted envelopes itself.
 
 Switching the light/dark theme does **not** delete your saved tweaks, and an open panel stays open across the toggle. The theme toggle dispatches a `color-scheme-changed` event; the host destroys and reconfigures the panel for the new mode (see [Implementation](#implementation)) rather than patching it in place, so the Color tab's ref/literal *defaults* follow the newly active mode and any saved Color override is restored for that mode's scheme identity. Palette, Spacing, Font, and Size tweaks carry over untouched. See [Mode-scoped editing model](#the-five-tabs-color-mode-scoped-editing-model).
 
 <Note title="Storage prefix continuity guarantee">
 
-The storage prefix `zudo-doc-tweak` is locked in the package-default builder (`@takazudo/zudo-doc/design-token-panel-config`, which this showcase consumes directly) and will not change. Any tokens a user saved under an older key version continue to load automatically — they are migrated into the current `zudo-doc-tweak-state-v4` envelope on first load, with no manual migration step needed.
+The storage prefix `zudo-doc-tweak` is locked in the package-default builder (`@takazudo/zudo-doc/design-token-panel-config`, which this showcase consumes directly) and will not change. Persistence details beyond that prefix belong to `@takazudo/zdtp`, not to a repository-owned zudo-doc compatibility layer.
 
 </Note>
 
 ## Implementation
 
-The panel UI is provided by the `@takazudo/zdtp` (zdtp) npm package. The wiring mechanism — calling `configurePanel`, hooking zfb's navigation lifecycle, and the mode-scoped destroy+reconfigure described below — lives in `@takazudo/zudo-doc/design-token-panel-bootstrap`. The project's `src/lib/design-token-panel-bootstrap.ts` passes that mechanism the panel's config *data* by calling `bootstrapDesignTokenPanel(buildDesignTokenPanelConfig)`, where `buildDesignTokenPanelConfig` (imported directly from `@takazudo/zudo-doc/design-token-panel-config`, the package-default builder) is a `(mode) => PanelConfig` builder, not a plain config object — this is what lets the Color tab follow light/dark. The panel self-mounts as a side-effect of that call — there is no Preact island registration for it.
+The panel UI is provided by the `@takazudo/zdtp` (zdtp) npm package. The package-owned `DesignTokenPanelBootstrap` island and its wiring mechanism — calling `configurePanel`, hooking zfb's navigation lifecycle, and the mode-scoped destroy+reconfigure described below — live in `@takazudo/zudo-doc/design-token-panel-bootstrap`. The island calls `bootstrapDesignTokenPanel(buildDesignTokenPanelConfig)`, where `buildDesignTokenPanelConfig` is a `(mode) => PanelConfig` builder — this is what lets the Color tab follow light/dark. The panel self-mounts as a side effect once the island hydrates.
 
 On every `color-scheme-changed` event (dispatched by the theme toggle), the bootstrap reads the new mode and coalesces rapid toggles onto a single macrotask, then calls `handle.destroy()` followed by `configurePanel(buildDesignTokenPanelConfig(mode))` — zdtp's `configurePanel` throws if re-run in place with a structurally different config, so destroy-then-reconfigure is the only supported way to swap the Color tab's mode-scoped defaults. If the panel was open, it's re-mounted open.
 

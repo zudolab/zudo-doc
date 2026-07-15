@@ -10,7 +10,7 @@
 // a real file system / git repo / running server) — just structural
 // presence guards so a botched relocation surfaces immediately. The
 // dist/exports-map surface is verified separately by the build + the
-// `check-plugins.mjs` prepack guard, not here.
+// `check-plugin-resolution.mjs` prepack guard, not here.
 
 import { describe, it, expect } from "vitest";
 
@@ -18,6 +18,7 @@ import docHistory from "../plugins/doc-history.js";
 import llmsTxt from "../plugins/llms-txt.js";
 import searchIndex from "../plugins/search-index.js";
 import claudeResources from "../plugins/claude-resources.js";
+import changelog from "../plugins/changelog.js";
 import { connectToZfbHandler } from "../plugins/connect-adapter.js";
 
 describe("doc-history plugin shape", () => {
@@ -65,6 +66,13 @@ describe("claude-resources plugin shape", () => {
 
   it("has a preBuild function", () => {
     expect(typeof claudeResources.preBuild).toBe("function");
+  });
+});
+
+describe("changelog plugin shape", () => {
+  it("retains the current changelog plugin", () => {
+    expect(changelog.name).toBe("changelog");
+    expect(typeof changelog.postBuild).toBe("function");
   });
 });
 

@@ -46,13 +46,13 @@ src/
 
 ### zfb Integration
 
-In dev mode, the zfb integration at `packages/zudo-doc/src/integrations/doc-history/` proxies `/doc-history/*` requests to this server. In build mode, that integration falls back to inline generation when `SKIP_DOC_HISTORY` is not set.
+In dev mode, the zfb plugin implemented at `packages/zudo-doc/src/plugins/internal/doc-history/index.ts` proxies `/doc-history/*` requests to this server. In build mode, that plugin falls back to inline generation when `SKIP_DOC_HISTORY` is not set.
 
 Root `pnpm dev` runs both the zfb dev server and this server via `run-p`.
 
 ## Key Design Decisions
 
-- **Async git everywhere** — both the server and CLI use `getDocHistoryAsync` (#1986). The CLI wraps every file in a semaphore-bounded Promise; async git calls (`execFile` / `spawn`) mean the concurrency cap actually parallelizes work. The server also awaits the same function, keeping the event loop unblocked. The pure parsers (`parseCommitLog`, `parseHashToPathMap`, `parseBatchContents`) are shared between the content-fetch and the rename-fallback paths.
+- **One async extraction path** — both the server and CLI use `getDocHistoryAsync` (#1986). The CLI wraps every file in a semaphore-bounded Promise; async history calls (`execFile` / `spawn`) mean the concurrency cap actually parallelizes work. The server awaits the same function, keeping history walks and content reads off the blocking path. A cached `execFileSync` call remains only for the one-time repository-root probe. The pure parsers (`parseCommitLog`, `parseHashToPathMap`, `parseBatchContents`) are shared between the content-fetch and rename-fallback paths.
 - **Localhost-only bind** — the server binds to `127.0.0.1` by default to avoid exposing full git history (including unpublished content) on the LAN. The zfb dev plugin proxies server-side, so LAN exposure is not needed. Pass `--host 0.0.0.0` to opt in.
 - **Repo-relative paths** — API responses use relative file paths to avoid leaking absolute server paths
 - **`--follow` for renames** — tracks file history across renames with multiple fallback strategies

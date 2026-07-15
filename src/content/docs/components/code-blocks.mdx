@@ -1,10 +1,10 @@
 ---
 title: Code Blocks
-description: Syntax-highlighted fenced code blocks powered by syntect, with support for titles, line highlighting, and diff display.
+description: "Syntax-highlighted fenced code blocks powered by zfb's semantic class mode, with support for titles, line highlighting, and diff display."
 sidebar_position: 1.5
 ---
 
-Fenced code blocks in zudo-doc are powered by [syntect](https://github.com/trishume/syntect), a Rust-native syntax highlighter run during the build by the zfb engine. Specify the language after the opening fence to activate highlighting.
+Fenced code blocks in zudo-doc use zfb's build-time semantic class-mode highlighter. Specify the language after the opening fence to activate highlighting.
 
 ## Basic Usage
 
@@ -26,7 +26,7 @@ function add(a: number, b: number): number {
 
 ## Supported Languages
 
-syntect ships a wide range of languages out of the box. Common identifiers:
+zfb's class-mode highlighter supports a wide range of languages. Common identifiers:
 
 | Language | Identifier |
 | -------- | ---------- |
@@ -100,6 +100,4 @@ const x = 1;
 
 ## Syntax-highlight Theme
 
-The build-time highlighter is syntect, configured in **dual-theme** mode (`codeHighlight.themeLight`/`themeDark` in `zfb.config.ts` — `base16-ocean.light` / `base16-ocean.dark`). Each token's two colors are emitted as `--shiki-light` / `--shiki-dark` CSS custom properties (not inline `color:#hex`), and the stylesheet resolves them with `light-dark()` so code follows the active light/dark theme with no client-side JavaScript.
-
-The `shikiTheme` field on a color scheme is unrelated to this and has no effect on the rendered page: it is a vestigial field carried in the zdtp panel's color-scheme envelope (`@takazudo/zdtp`; optional since zdtp 0.2.3). The panel does not re-highlight code — its Shiki integration is a no-op stub.
+The build-time highlighter is zfb's class-mode renderer. It emits semantic classes such as `hi-kw` and `hi-str` beneath `pre.hi-root`; zudo-doc maps those roles to its current `--zd-syntax-*` design tokens. Document fences therefore follow the active color scheme without inline palette colors or client-side JavaScript. Shiki is used only by the separate HtmlPreview component.

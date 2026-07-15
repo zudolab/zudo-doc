@@ -62,14 +62,10 @@ describe("CODE_BLOCK_ENHANCER_SCRIPT", () => {
     expect(CODE_BLOCK_ENHANCER_SCRIPT.trimEnd()).toMatch(/\)\(\);$/);
   });
 
-  it("targets current and future highlighted pre elements", () => {
-    expect(HIGHLIGHTED_CODE_BLOCK_SELECTOR).toBe(
-      ':is(pre.hi-root, pre[class*="syntect-"])',
-    );
-    expect(CODE_BLOCK_ENHANCER_SELECTOR).toContain("pre.hi-root");
-    expect(CODE_BLOCK_ENHANCER_SELECTOR).toContain(
-      'pre[class*="syntect-"]',
-    );
+  it("targets current highlighted pre elements only", () => {
+    expect(HIGHLIGHTED_CODE_BLOCK_SELECTOR).toBe("pre.hi-root");
+    expect(CODE_BLOCK_ENHANCER_SELECTOR).not.toContain("syntect-");
+    expect(CODE_BLOCK_ENHANCER_SCRIPT).not.toContain("syntect-");
   });
 
   it("also targets bare <pre> inside tab panels", () => {

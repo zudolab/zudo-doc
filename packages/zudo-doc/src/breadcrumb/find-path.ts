@@ -1,4 +1,4 @@
-import type { BreadcrumbNode, SidebarNode } from "./types.js";
+import type { BreadcrumbNode } from "./types.js";
 
 /**
  * Walk the sidebar tree and return the chain of nodes from the root
@@ -11,7 +11,7 @@ import type { BreadcrumbNode, SidebarNode } from "./types.js";
  * ancestry. The home/root crumb is the renderer's responsibility — this
  * helper deals strictly with the tree itself.
  */
-export function findPath<T extends BreadcrumbNode = SidebarNode>(
+export function findPath<T extends BreadcrumbNode = BreadcrumbNode>(
   nodes: readonly T[],
   targetId: string,
 ): T[] {

@@ -64,15 +64,15 @@ All 6 presets are structurally valid `ColorScheme` objects.
 | Item | Result | Notes |
 |------|--------|-------|
 | `designTokenPanel: true` in settings | PASS | `src/config/settings.ts` line 95. |
-| Deprecated alias `colorTweakPanel` retained | PASS | Settings line 101; panel checks either key (confirmed in `_body-end-islands.tsx`). |
-| Island registration | PASS | `pages/lib/_body-end-islands.tsx` wraps `DesignTokenTweakPanel` in `Island({when:"load"})`. |
+| Current setting only | PASS | `designTokenPanel` is the sole setting; the package-owned island is derived through current chrome wiring. |
+| Island registration | PASS | `@takazudo/zudo-doc/doc-body-end-islands` owns the single `DesignTokenPanelBootstrap` island. |
 | 4 tabs: Spacing, Font, Size, Color | PASS | `TABS` const in `src/components/design-token-tweak/index.tsx` lines 46-51: `[{id:"spacing"},{id:"font"},{id:"size"},{id:"color"}]`. |
 | Color tab reproduces former Color-Tweak behavior | PASS | `ColorTab` imported from `./tabs/color-tab`; handles palette p0-p15, base tokens, and semantic overrides — same surface as the old color-tweak panel. |
 | Export button | PASS | Header "Export" button opens `DesignTokenExportModal`; modal calls `navigator.clipboard.writeText(code)` (line 119 of `export-modal.tsx`). |
 | Export format | STALE-SPEC | Sub-issue says "clipboard ColorScheme TS code". Actual: JSON diff format (not TypeScript). This is intentional — the panel was redesigned to use a JSON import/export workflow. The doc (`reference/design-token-panel.mdx`) correctly describes JSON export. No fix needed; spec was written against the old Color-Tweak behavior. |
-| `localStorage` key for panel state | NOTE | Implementation uses two keys: `zudo-doc-tweak-state` (v1, legacy) and `zudo-doc-tweak-state-v2` (current). Sub-issue spec references only `zudo-doc-tweak-state`. The v1 key is migrated to v2 on first load and then removed. The v2 key is the active persistence key. |
+| Persisted panel state | PASS | Storage format and migrations are dependency-owned by `@takazudo/zdtp`; repository code configures only the stable `zudo-doc-tweak` prefix. |
 | Panel open state persistence | PASS | `OPEN_KEY = "zudo-doc-tweak-open"` (not `zudo-doc-tweak-state`). Written in `useEffect` when `open` toggles. |
-| `toggle-design-token-panel` custom event | PASS | Header trigger dispatches the event; panel listens. Also listens for deprecated alias `toggle-color-tweak-panel`. |
+| `toggle-design-token-panel` custom event | PASS | Header trigger dispatches the current event; the panel listens. |
 | `id="design-token-trigger"` in dist HTML | PASS | Confirmed in `dist/index.html`. |
 
 ---

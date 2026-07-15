@@ -151,7 +151,7 @@ By default, frontmatter values render as plain text. To replace a value with a s
 
 ### Component contract
 
-Each renderer is a Preact component that receives `FrontmatterRendererProps`:
+Each renderer is a Preact component that receives `FrontmatterCellRendererProps` from `@takazudo/zudo-doc/metainfo`:
 
 | Prop | Type | Description |
 |------|------|-------------|
@@ -162,7 +162,7 @@ Each renderer is a Preact component that receives `FrontmatterRendererProps`:
 
 ### Registering a renderer
 
-Add a key to your renderer map. Each value is a component function that receives `FrontmatterRendererProps` and returns JSX or `null`:
+Add a key to your renderer map. Each value is a component function that receives `FrontmatterCellRendererProps` and returns JSX or `null`:
 
 ```tsx
 discount: ({ value }) => {

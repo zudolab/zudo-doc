@@ -257,7 +257,7 @@ zfb の CJK フレンドリーな改行 / 強調処理を有効化します。
 
 ### tagVocabulary
 
-タグ語彙がランタイムで参照されるか（エイリアス解決、非推奨フィルタリング、グループ化フッター）。**`tagGovernance` と直交**。これはブールゲートで、エントリ自体は `tagVocabularyEntries` から来ます。
+タグ語彙がランタイムで参照されるか（正確な id の認識、グループ化フッター）。**`tagGovernance` と直交**。これはブールゲートで、エントリ自体は `tagVocabularyEntries` から来ます。
 
 デフォルト: `false`
 
@@ -276,12 +276,6 @@ TOC に含まれる最小見出し深度（2〜4）。
 TOC に含まれる最大見出し深度（2〜4）。
 
 デフォルト: `4`
-
-### headingIdStrategy
-
-見出し ID（アンカー）戦略。`"hierarchical"` は各アンカーに祖先チェーンをプレフィックスします。`"flat"` は zfb のレガシー github-slugger スキームです。切り替えは既存のディープリンクに対してアンカー破壊的です。
-
-型: `"flat" | "hierarchical"` · デフォルト: `"hierarchical"`
 
 ## サイト設定
 

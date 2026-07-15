@@ -11,8 +11,8 @@
 //
 // The host content bridge (`stableDocs`) is injected so the docs read + nav
 // enumeration match the project's existing `pages/*` paths() exactly (host
-// `bridgeDocsEntries` over the `@takazudo/zfb/content` snapshot), not the
-// package default. `colorSchemes` is the package default
+// current `@takazudo/zfb/content` snapshot), not the package default.
+// `colorSchemes` is the package default
 // (`@takazudo/zudo-doc/color-schemes-defaults`) — the showcase's former
 // `src/config/color-schemes.ts` override was byte-identical to it and was
 // retired in zudolab/zudo-doc#2661.

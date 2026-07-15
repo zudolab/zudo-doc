@@ -110,12 +110,9 @@ do not widen this into a generic component bag.
   getPathForLocale / buildLocaleLinks / versionedDocsUrl / …). The host's
   `src/utils/base.ts` keeps the singleton import; the logic lives here.
 
-The host originals `src/utils/{render-markdown,slug,smart-break}` are now thin
-re-export shims pointing at these subpaths (kept so the many `@/utils/*` call
-sites — and their byte-identical create-zudo-doc template copies — stay
-unchanged). `buildNavTree(entries, lang, categoryMeta, { buildHref })` in
-`src/utils/docs.ts` gained an optional `buildHref` injection point
-(backward-compatible — existing 3-arg call sites are unchanged).
+Host code imports these canonical package subpaths directly. The host
+`buildNavTree(entries, lang, categoryMeta, { buildHref })` adapter retains its
+explicit `buildHref` injection point for current route construction.
 
 ## `./preset` — `zudoDocPreset()`
 
@@ -210,7 +207,7 @@ onSuccess: "node scripts/copy-theme-css.mjs && node scripts/copy-content-css.mjs
      `--text-*`, `--font-*`, `--leading-*`, `--radius-DEFAULT`), and also import
      `safelist.css` so the component-emitted utility classes are generated.
    - Major-element visuals (h2–h4, p, a, strong, blockquote, ul, ol, table) do
-     NOT live here — they are emitted by the `htmlOverrides` components in
+     NOT live here — they are emitted by the `defaultComponents` map in
      `src/content/` (Tailwind classes + inline styles). `content.css` owns only
      what those components don't emit.
    - **Editing**: change `src/content.css`, then rebuild the package so
@@ -401,8 +398,8 @@ entry pointing at `.zfb/doc-history-meta.json`, same as before.
 
 ### Doc-history self-seed (`.zfb/doc-history-meta.json`)
 
-`plugins/doc-history`'s `preBuild` hook (`runDocHistoryMetaStep`, in
-`src/integrations/doc-history/pre-build.ts`) already unconditionally writes
+`plugins/internal/doc-history`'s `preBuild` hook (`runDocHistoryMetaStep`, in
+`src/plugins/internal/doc-history/pre-build.ts`) already unconditionally writes
 `.zfb/doc-history-meta.json` — creating the `.zfb/` directory if absent —
 before every build, whether populated from git history or short-circuited to
 `{}` under `SKIP_DOC_HISTORY=1`. No code change was needed for #2656: this

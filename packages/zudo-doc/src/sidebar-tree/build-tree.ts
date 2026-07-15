@@ -19,9 +19,10 @@ import type {
   SidebarNode,
 } from "./types.js";
 
-/** Strip a trailing `/index` segment to match Astro 5's glob() id stripping. */
-function toRouteSlug(id: string): string {
-  return id.replace(/\/index$/, "");
+/** Convert a zfb content slug into the canonical docs route slug. */
+function toRouteSlug(slug: string): string {
+  if (slug === "index") return "";
+  return slug.replace(/\/index$/, "");
 }
 
 /** kebab-case → Title Case, used as the fallback label for directory-only nodes. */
@@ -61,11 +62,10 @@ interface BuildNode<T extends SidebarFrontmatter> {
  * Build a recursive sidebar tree from `entries`. Visibility filtering is
  * applied first; the resulting structure mirrors the filesystem.
  *
- * - Multi-segment ids (e.g. `getting-started/intro`) walk the tree creating
+ * - Multi-segment slugs (e.g. `getting-started/intro`) walk the tree creating
  *   intermediate category nodes as needed.
- * - Single-segment ids represent category index pages (Astro 5 strips
- *   `/index` from the id, so `getting-started/index.mdx` arrives as the id
- *   `getting-started`).
+ * - A trailing `/index` represents a category index page and is stripped from
+ *   the canonical route slug.
  * - Sibling order is determined by `sidebar_position` then alphabetical
  *   slug, with the parent's `sortOrder` (from `_category_.json`) flipping
  *   the comparator when set to `"desc"`.
@@ -92,7 +92,7 @@ export function buildSidebarTree<
   for (const entry of entries) {
     if (!isNavVisible(entry)) continue;
 
-    const slug = entry.data.slug ?? entry.slug ?? toRouteSlug(entry.id);
+    const slug = entry.data.slug ?? toRouteSlug(entry.slug);
     if (!slug) continue;
 
     const parts = slug.split("/");

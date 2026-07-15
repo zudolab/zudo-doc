@@ -26,32 +26,32 @@
 
 import { describe, expect, it } from "vitest";
 import { render } from "preact-render-to-string";
-import { createBodyEndIslands } from "../index.js";
+import {
+  createBodyEndIslands,
+  type BodyEndIslandsSettings,
+} from "../index.js";
+import { deriveBodyEndIslands } from "../../chrome/derive.js";
+import type { ChromeContext } from "../../factory-context/index.js";
 
 const ALL_ON = {
   aiAssistant: true,
   imageEnlarge: true,
   mermaid: true,
   dynamicPageTransition: true,
+  designTokenPanel: true,
   findInPage: true,
-};
+} satisfies BodyEndIslandsSettings;
 const ALL_OFF = {
   aiAssistant: false,
   imageEnlarge: false,
   mermaid: false,
   dynamicPageTransition: false,
+  designTokenPanel: false,
   findInPage: false,
-};
+} satisfies BodyEndIslandsSettings;
 
 function renderIslands(
-  settings: {
-    aiAssistant: boolean;
-    imageEnlarge: boolean;
-    mermaid: boolean;
-    dynamicPageTransition: boolean;
-    designTokenPanel?: boolean;
-    findInPage?: boolean;
-  },
+  settings: BodyEndIslandsSettings,
   deps: { DesignTokenPanelBootstrap?: typeof FakeDesignTokenPanelBootstrap } = {},
 ): string {
   const BodyEndIslands = createBodyEndIslands({ settings, ...deps });
@@ -65,6 +65,10 @@ function FakeDesignTokenPanelBootstrap() {
   return null;
 }
 FakeDesignTokenPanelBootstrap.displayName = "DesignTokenPanelBootstrap";
+
+function markerCount(html: string, marker: string): number {
+  return html.split(marker).length - 1;
+}
 
 describe("BodyEndIslands — all package-island flags ON", () => {
   const html = renderIslands(ALL_ON);
@@ -107,10 +111,8 @@ describe("BodyEndIslands — all package-island flags OFF", () => {
 describe("BodyEndIslands — flags gate independently", () => {
   it("imageEnlarge ON alone emits only the ImageEnlarge marker", () => {
     const html = renderIslands({
-      aiAssistant: false,
+      ...ALL_OFF,
       imageEnlarge: true,
-      mermaid: false,
-      dynamicPageTransition: false,
     });
     expect(html).toContain('data-zfb-island-skip-ssr="ImageEnlarge"');
     expect(html).not.toContain('data-zfb-island-skip-ssr="AiChatModal"');
@@ -119,10 +121,8 @@ describe("BodyEndIslands — flags gate independently", () => {
 
   it("aiAssistant ON alone emits only the AiChatModal marker + landmark", () => {
     const html = renderIslands({
+      ...ALL_OFF,
       aiAssistant: true,
-      imageEnlarge: false,
-      mermaid: false,
-      dynamicPageTransition: false,
     });
     expect(html).toContain('data-zfb-island-skip-ssr="AiChatModal"');
     expect(html).toContain("AI Assistant");
@@ -144,9 +144,7 @@ describe("BodyEndIslands — page-loading overlay gates on dynamicPageTransition
 
   it("dynamicPageTransition ON emits the overlay markup + nav-lifecycle bootstrap", () => {
     const html = renderIslands({
-      aiAssistant: false,
-      imageEnlarge: false,
-      mermaid: false,
+      ...ALL_OFF,
       dynamicPageTransition: true,
     });
     expect(html).toContain(OVERLAY_ID);
@@ -159,12 +157,7 @@ describe("BodyEndIslands — page-loading overlay gates on dynamicPageTransition
   });
 
   it("dynamicPageTransition OFF omits the overlay entirely", () => {
-    const html = renderIslands({
-      aiAssistant: false,
-      imageEnlarge: false,
-      mermaid: false,
-      dynamicPageTransition: false,
-    });
+    const html = renderIslands(ALL_OFF);
     expect(html).not.toContain(OVERLAY_ID);
     expect(html).not.toContain('class="page-loading-overlay"');
     expect(html).not.toContain("zfb:before-preparation");
@@ -172,9 +165,7 @@ describe("BodyEndIslands — page-loading overlay gates on dynamicPageTransition
 
   it("gates independently of the island flags (overlay ON, islands OFF)", () => {
     const html = renderIslands({
-      aiAssistant: false,
-      imageEnlarge: false,
-      mermaid: false,
+      ...ALL_OFF,
       dynamicPageTransition: true,
     });
     expect(html).toContain(OVERLAY_ID);
@@ -184,9 +175,8 @@ describe("BodyEndIslands — page-loading overlay gates on dynamicPageTransition
 
   it("composes with an island flag (overlay ON + imageEnlarge ON)", () => {
     const html = renderIslands({
-      aiAssistant: false,
+      ...ALL_OFF,
       imageEnlarge: true,
-      mermaid: false,
       dynamicPageTransition: true,
     });
     expect(html).toContain(OVERLAY_ID);
@@ -214,6 +204,7 @@ describe("BodyEndIslands — DesignTokenPanelBootstrap island gate (#2658)", () 
       { DesignTokenPanelBootstrap: FakeDesignTokenPanelBootstrap },
     );
     expect(html).toContain(MARKER);
+    expect(markerCount(html, MARKER)).toBe(1);
     // Not the skip-ssr variant — the component has no SSR fallback to skip.
     expect(html).not.toContain("data-zfb-island-skip-ssr=\"DesignTokenPanelBootstrap\"");
     // Pre-hydration toggle shim (zudolab/zudo-doc#1627 Part B).
@@ -237,14 +228,6 @@ describe("BodyEndIslands — DesignTokenPanelBootstrap island gate (#2658)", () 
     expect(html).not.toContain(MARKER);
   });
 
-  it("designTokenPanel undefined (external caller compat, mirrors dynamicPageTransition): treated as OFF", () => {
-    // ALL_ON/ALL_OFF (used throughout this file) never set `designTokenPanel` —
-    // this asserts that omission stays backward compatible for external
-    // callers constructing the documented `BodyEndIslandsSettings` subset.
-    const html = renderIslands(ALL_ON, { DesignTokenPanelBootstrap: FakeDesignTokenPanelBootstrap });
-    expect(html).not.toContain(MARKER);
-  });
-
   it("gates independently of the other island flags (panel ON + imageEnlarge ON)", () => {
     const html = renderIslands(
       { ...ALL_OFF, imageEnlarge: true, designTokenPanel: true },
@@ -252,6 +235,39 @@ describe("BodyEndIslands — DesignTokenPanelBootstrap island gate (#2658)", () 
     );
     expect(html).toContain(MARKER);
     expect(html).toContain('data-zfb-island-skip-ssr="ImageEnlarge"');
+  });
+});
+
+describe("deriveBodyEndIslands — package DTP ownership with a host body-end override (#2760)", () => {
+  const MARKER = 'data-zfb-island="DesignTokenPanelBootstrap"';
+
+  function HostBodyEndIslands() {
+    return <div data-testid="host-body-end">host-only islands</div>;
+  }
+
+  function renderDerived(designTokenPanel: boolean): string {
+    const BodyEndIslands = deriveBodyEndIslands({
+      settings: { ...ALL_OFF, designTokenPanel },
+      hostBindings: {
+        BodyEndIslands: HostBodyEndIslands,
+        DesignTokenPanelBootstrap: FakeDesignTokenPanelBootstrap,
+      },
+    } as unknown as ChromeContext);
+    return render(<BodyEndIslands basePath="/" />);
+  }
+
+  it("composes host-only islands with exactly one package-owned DTP marker when enabled", () => {
+    const html = renderDerived(true);
+    expect(html).toContain('data-testid="host-body-end"');
+    expect(markerCount(html, MARKER)).toBe(1);
+    expect(html).toContain("__zdtpToggleShimInstalled");
+  });
+
+  it("preserves the package settings gate while retaining host-only islands", () => {
+    const html = renderDerived(false);
+    expect(html).toContain('data-testid="host-body-end"');
+    expect(markerCount(html, MARKER)).toBe(0);
+    expect(html).not.toContain("__zdtpToggleShimInstalled");
   });
 });
 
@@ -277,16 +293,6 @@ describe("BodyEndIslands — FindInPageInit island gate (#2689)", () => {
 
   it("findInPage OFF: emits no marker", () => {
     const html = renderIslands({ ...ALL_OFF, findInPage: false });
-    expect(html).not.toContain(MARKER);
-  });
-
-  it("findInPage undefined (external caller compat, mirrors dynamicPageTransition/designTokenPanel): treated as OFF", () => {
-    const html = renderIslands({
-      aiAssistant: false,
-      imageEnlarge: false,
-      mermaid: false,
-      dynamicPageTransition: false,
-    });
     expect(html).not.toContain(MARKER);
   });
 

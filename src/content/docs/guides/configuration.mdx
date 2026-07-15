@@ -257,7 +257,7 @@ Default: `"off"`
 
 ### tagVocabulary
 
-Whether the tag vocabulary is consulted at runtime (alias resolution, deprecation filtering, grouped footer). **Orthogonal to `tagGovernance`.** This is the boolean gate — the entries themselves come from `tagVocabularyEntries`.
+Whether the tag vocabulary is consulted at runtime (exact-id recognition and grouped footer). **Orthogonal to `tagGovernance`.** This is the boolean gate — the entries themselves come from `tagVocabularyEntries`.
 
 Default: `false`
 
@@ -276,12 +276,6 @@ Default: `2`
 Maximum heading depth included in the TOC (2–4).
 
 Default: `4`
-
-### headingIdStrategy
-
-Heading-ID (anchor) strategy. `"hierarchical"` prefixes each anchor with its ancestor chain; `"flat"` is zfb's legacy github-slugger scheme. Switching is anchor-breaking for existing deep links.
-
-Type: `"flat" | "hierarchical"` · Default: `"hierarchical"`
 
 ## Site Settings
 

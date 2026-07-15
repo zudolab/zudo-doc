@@ -169,7 +169,7 @@ keeping <consumer>/src/components/theme-toggle.tsx and dropping
 
 <Note title="スキーム変更時に tweak 状態はクリアされない">
 
-パッケージの `applyColorScheme`(`theme-toggle/color-scheme-sync.ts` 内)は、カラースキームの変更時にデザイントークンの tweak エンベロープ(`zudo-doc-tweak-state-v3`、レガシーの `zudo-doc-tweak-state-v2` / `zudo-doc-tweak-state` キーから自動マイグレーション)を意図的に **クリアしません** — ストレージのライフサイクルは zdtp が管理します。Design Token Panel を使っていて、トグル時に tweak 状態を消していた手書きトグルから移行する場合は、パッケージのトグルは代わりにそれを保持する点に注意してください：Palette・Spacing・Font・Size の編集はライト/ダークの切り替えをまたいでそのまま保持され、Color タブの ref/literal の*デフォルト*は新しいモードに再シードされる一方で、保存されたオーバーライドはリセットするまでモード非依存で引き継がれます。詳しいセマンティクスは[モードスコープの編集モデル](../reference/design-token-panel.mdx#5つのタブ-color-モードスコープの編集モデル)を参照してください。
+パッケージの `applyColorScheme`(`theme-toggle/color-scheme-sync.ts` 内)は、カラースキームの変更時に Design Token Panel の状態を意図的に **クリアしません** — ストレージのライフサイクルは `@takazudo/zdtp` が管理します。Palette・Spacing・Font・Size の編集はライト/ダークの切り替えをまたいでそのまま保持され、Color タブの ref/literal の*デフォルト*は新しいモードに再シードされる一方で、保存されたオーバーライドはリセットするまでモード非依存で引き継がれます。詳しいセマンティクスは[モードスコープの編集モデル](../reference/design-token-panel.mdx#5つのタブ-color-モードスコープの編集モデル)を参照してください。
 
 </Note>
 

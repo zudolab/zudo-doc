@@ -43,7 +43,7 @@ const greeting = "hello";
 ```
 ````
 
-出力されるマークアップは `<div class="code-block-container"><div class="code-block-title">example.ts</div><pre class="syntect-base16-ocean-dark"><code>…</code></pre></div>` です。タイトルのないフェンスは、コンテナもタイトルバーもない素の `<pre class="syntect-base16-ocean-dark"><code>…</code></pre>` を出力します。
+出力されるマークアップは `<div class="code-block-container"><div class="code-block-title">example.ts</div><pre class="hi-root"><code>…</code></pre></div>` です。タイトルのないフェンスは、コンテナもタイトルバーもない素の `<pre class="hi-root"><code>…</code></pre>` を出力します。
 
 タイトル付きの実例:
 
@@ -98,7 +98,7 @@ const e = 5;
 
 | トリガー | 出力される要素 | クラス名 |
 | --- | --- | --- |
-| `title="x"` 付きフェンス | `<div><div>title</div><pre><code></code></pre></div>` | `.code-block-container` > `.code-block-title` + `pre.syntect-base16-ocean-dark` |
-| タイトルなしフェンス | 素の `<pre><code></code></pre>` | `pre.syntect-base16-ocean-dark` |
+| `title="x"` 付きフェンス | `<div><div>title</div><pre><code></code></pre></div>` | `.code-block-container` > `.code-block-title` + `pre.hi-root` |
+| タイトルなしフェンス | 素の `<pre><code></code></pre>` | `pre.hi-root` |
 | Diff マーカー行 | `<span class="line" data-line-diff="added\|removed">` | `span.line[data-line-diff]` |
 | ハイライト行 | `<span class="line" data-line-highlight="true">` | `span.line[data-line-highlight]` |

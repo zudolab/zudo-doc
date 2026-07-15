@@ -33,7 +33,7 @@ injection anchors:
    package-owned (package-first migration, epics #2321/#2344/#2356). Only a
    handful still do real work:
    - **Genuine file copies**: `i18n` (locale doc-route stub), `tagGovernance`
-     (`scripts/tags-audit.ts` / `scripts/tags-suggest.ts`), `tauri` /
+     (one explicit `src/config/tag-vocabulary.ts` CLI/config module), `tauri` /
      `tauriDev` (Rust shells under `src-tauri*/`), `skillSymlinker`
      (`scripts/setup-doc-skill.sh`, copied in `scaffold.ts` directly, not a
      `templates/features/` dir), `claudeSkills` (copies curated
@@ -46,20 +46,13 @@ injection anchors:
      conditional `@import "@takazudo/zdtp/styles.css";` line into
      `global.css` — the one thing that can't ship unconditionally from
      `@takazudo/zudo-doc/theme.css`, since it pulls in zdtp's own bytes),
-     `tagGovernance` (also writes a tiny `src/config/settings.ts` +
-     `tag-vocabulary.ts` pair — see "Known deviation" below), `tauri`
+     `tagGovernance` (writes the explicit `tag-vocabulary.ts` module), `tauri`
      (patches `Cargo.toml`/`tauri.conf.json` names + appends `.gitignore`
      entries), `tauriDev` (similar name patching).
 
-**Known deviation (not a bug — verify it stays true, don't "fix" it):**
-`tagGovernance`'s `postProcess` writes `src/config/settings.ts` +
-`src/config/tag-vocabulary.ts` even though there is no more project-wide
-settings file. This exists ONLY because `@takazudo/zudo-doc`'s `tags-audit`
-bin (`packages/zudo-doc/bin/tags-audit-runner.ts`) still dynamically
-`import()`s those exact paths by string — a legacy coupling that predates
-the single-`zfb.config.ts` model and is out of the generator's scope to fix
-(a package-side follow-up would remove it). See `src/features/tag-governance.ts`'s
-header comment.
+`tagGovernance` passes its module explicitly to the package-owned
+`tags-audit`/`tags-suggest` bins with `--config`; there are no project-side CLI
+shims and no duplicate settings module.
 
 ## When to Use
 

@@ -21,12 +21,12 @@
 // standalone modules and referenced from `zfb.config.ts` by `name`.
 
 import type { ZfbBuildHookContext, ZfbDevMiddlewareContext, ZfbPlugin } from "@takazudo/zfb/plugins";
-import type { DocHistoryOptions } from "../integrations/doc-history/index.js";
+import type { DocHistoryOptions } from "./internal/doc-history/index.js";
 import {
   runDocHistoryMetaStep,
   runDocHistoryPostBuild,
   createDocHistoryDevMiddleware,
-} from "../integrations/doc-history/index.js";
+} from "./internal/doc-history/index.js";
 import { connectToZfbHandler } from "./connect-adapter.js";
 import { getBasePrefix } from "./plugin-utils.js";
 

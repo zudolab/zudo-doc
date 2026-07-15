@@ -34,6 +34,7 @@ import {
   type Ramps,
 } from "../color-scheme-utils.js";
 import { createBodyEndIslands } from "../doc-body-end-islands/index.js";
+import { createDesignTokenPanelIsland } from "../doc-body-end-islands/design-token-panel-island.js";
 // Island-scanner contract (load-bearing, #2658 gate-2 fix from the Wave-5
 // confirm #2659): the PACKAGE-DEFAULT DesignTokenPanelBootstrap island is the
 // DEFAULT for the `hostBindings.DesignTokenPanelBootstrap` slot, so ANY
@@ -122,6 +123,7 @@ export const DEFAULT_SCHEME: ColorScheme = {
     selectionBg: { base: 2 },
     selectionFg: { base: 0 },
     semantic: { ...SEMANTIC_RAMP_DEFAULTS },
+    syntax: {},
   },
 };
 
@@ -287,22 +289,53 @@ export function deriveSearchWidgetSlot(ctx: ChromeContext) {
 // BodyEndIslands (DocBodyEnd + page views)
 // ---------------------------------------------------------------------------
 
-/** Derive the body-end islands: `ctx.hostBindings.BodyEndIslands` when supplied,
- *  else the package-island subset reconstructed from `settings`. The design-
- *  token-panel bootstrap slot defaults to the PACKAGE-DEFAULT
- *  `DesignTokenPanelBootstrap` island (statically imported above — #2658
- *  gate-2 fix, Wave-5 confirm #2659) so a bare `createChrome(routeCtx)` call
- *  (the locked-manifest self-contained doc stub, #2653) still mounts the
- *  settings-gated panel; `ctx.hostBindings.DesignTokenPanelBootstrap`
- *  overrides it when a host supplies its own. */
+/**
+ * Derive the body-end islands. The package owns the settings-gated
+ * DesignTokenPanelBootstrap mount even when a host supplies a BodyEndIslands
+ * override; the override is composed with that one package island rather than
+ * replacing it. Without an override, `createBodyEndIslands` already contains
+ * the same package island, so the two paths are deliberately exclusive.
+ *
+ * The bootstrap component defaults to the statically imported package island
+ * (#2658 gate-2 fix), preserving route → chrome → derive → bootstrap scanner
+ * reachability for bare `createChrome(routeCtx)` callers. A host may still
+ * replace the component through `hostBindings.DesignTokenPanelBootstrap`, but
+ * the package remains the sole owner of its mount and settings gate.
+ */
 export function deriveBodyEndIslands(ctx: ChromeContext) {
-  return (ctx.hostBindings.BodyEndIslands ??
-    createBodyEndIslands({
+  const designTokenPanelDeps = {
+    DesignTokenPanelBootstrap:
+      ctx.hostBindings.DesignTokenPanelBootstrap ??
+      (DesignTokenPanelBootstrap as unknown as FactoryComponent),
+  };
+  const HostBodyEndIslands = ctx.hostBindings.BodyEndIslands;
+
+  if (!HostBodyEndIslands) {
+    return createBodyEndIslands({
       settings: ctx.settings,
-      DesignTokenPanelBootstrap:
-        ctx.hostBindings.DesignTokenPanelBootstrap ??
-        (DesignTokenPanelBootstrap as unknown as FactoryComponent),
-    })) as ReturnType<typeof createBodyEndIslands>;
+      ...designTokenPanelDeps,
+    });
+  }
+
+  const DesignTokenPanelIsland = createDesignTokenPanelIsland({
+    designTokenPanel: ctx.settings.designTokenPanel,
+    ...designTokenPanelDeps,
+  });
+  type BodyEndIslandsProps = { basePath: string; aiChatBodyLabel?: string };
+  const HostBodyEnd = HostBodyEndIslands as unknown as (
+    props: BodyEndIslandsProps,
+  ) => JSX.Element;
+
+  function BodyEndIslands(props: BodyEndIslandsProps): JSX.Element {
+    return (
+      <>
+        <HostBodyEnd {...props} />
+        <DesignTokenPanelIsland />
+      </>
+    );
+  }
+
+  return BodyEndIslands as ReturnType<typeof createBodyEndIslands>;
 }
 
 // ---------------------------------------------------------------------------

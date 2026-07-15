@@ -49,7 +49,6 @@ export const settings = {
   designTokenPanel: false,
   tocMinDepth: 2,
   tocMaxDepth: 4,
-  headingIdStrategy: "hierarchical",
   sidebarResizer: false,
   sidebarToggle: false,
   imageEnlarge: false,

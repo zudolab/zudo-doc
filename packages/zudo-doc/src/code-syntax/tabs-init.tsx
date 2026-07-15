@@ -33,5 +33,3 @@ import { TABS_INIT_SCRIPT } from "./tabs-init-script.js";
 export function TabsInit(): JSX.Element {
   return <script dangerouslySetInnerHTML={{ __html: TABS_INIT_SCRIPT }} />;
 }
-
-export default TabsInit;

@@ -56,13 +56,15 @@ Build the site first, then run the checker:
 pnpm build && pnpm check:links
 ```
 
-### With `--strict` flag
+### Failure category flags
 
-By default, the checker exits with code 0 even when issues are found (non-strict mode). Use `--strict` to fail on issues:
+By default, the checker exits with code 0 even when issues are found. Select the categories that should fail the command with the explicit `--strict-broken`, `--strict-absolute`, and `--strict-trailing` flags. The b4push and CI workflows fail on broken links and absolute MDX links while leaving trailing-slash findings informational:
 
 ```bash
-pnpm check:links --strict
+pnpm check:links -- --strict-broken --strict-absolute
 ```
+
+Run `pnpm check:links -- --help` to see the current CLI options.
 
 ### As part of b4push
 

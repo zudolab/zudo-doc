@@ -23,9 +23,9 @@ async function generate(options: {
 
   // Bounded parallelism: default to CPU count (min 2, max 8) to saturate git
   // without spawning excessively — each getDocHistoryAsync issues ~3 git
-  // processes. The async variant is load-bearing here: the prior sync
-  // getDocHistory blocked the event loop on execFileSync, so this semaphore's
-  // concurrency cap was a no-op and every file ran serially (issue #1986).
+  // processes. The async path is load-bearing here: the previous synchronous
+  // implementation blocked the event loop, so this semaphore's concurrency
+  // cap was a no-op and every file ran serially (issue #1986).
   const concurrency = defaultGitConcurrency();
   const acquire = makeSemaphore(concurrency);
 

@@ -181,6 +181,8 @@ const darkMap: ModeMap = {
     danger: "oklch(.655 .170 25)",
     // ...
   },
+  // 必須の map。省略した syntax ロールは対応する semantic ロールを継承します。
+  syntax: {},
 };
 ```
 
@@ -333,6 +335,7 @@ const myMap: ModeMap = {
     ...SEMANTIC_RAMP_DEFAULTS,
     accent: { accent: 1 }, // only override the roles that need to differ
   },
+  syntax: {}, // 必須。syntax 固有の上書きだけをここへ追加します
 };
 
 export const colorSchemes: Record<string, ColorScheme> = {

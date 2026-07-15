@@ -3,7 +3,7 @@
 //
 // Moved from the showcase's `pages/lib/_doc-route-entries.ts` into the shared
 // package. Previously this imported host utilities (`@/utils/docs`,
-// `@/utils/nav-scope`, `@/utils/slug`, `@/config/i18n`) directly — imports
+// `@/utils/nav-scope`, the package slug helpers, `@/config/i18n`) directly — imports
 // that would not resolve in downstream consumers. The package version accepts
 // all host-specific functions via injected context through
 // `createDocRouteEntries(ctx)`.
@@ -108,7 +108,7 @@ export interface DocRouteEntriesContext {
   /** Filter top-level nav nodes by a categoryMatch value. */
   getNavSubtree: (tree: DocNavNode[], categoryMatch?: string) => DocNavNode[];
   /** Convert a content entry slug to a canonical route slug. */
-  toRouteSlug: (id: string) => string;
+  toRouteSlug: (entrySlug: string) => string;
   /** Convert a canonical route slug to an optional-catchall params array. */
   toSlugParams: (slug: string) => string[];
   /** Extract headings from a raw MDX body (bound to settings depth/strategy). */
@@ -142,7 +142,7 @@ export interface DocRouteEntriesAPI {
  * import { createDocRouteEntries } from "@takazudo/zudo-doc/doc-route-entries";
  * import { buildNavTree, buildBreadcrumbs, collectAutoIndexNodes } from "@/utils/docs";
  * import { getNavSectionForSlug, getNavSubtree } from "@/utils/nav-scope";
- * import { toRouteSlug, toSlugParams } from "@/utils/slug";
+ * import { toRouteSlug, toSlugParams } from "@takazudo/zudo-doc/slug";
  * import { extractHeadings } from "./_extract-headings";
  *
  * export const { buildDocRouteEntries } = createDocRouteEntries(routeContext);

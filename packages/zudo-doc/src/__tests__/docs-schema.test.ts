@@ -3,9 +3,16 @@ import { buildDocsSchema } from "../docs-schema/index.js";
 import type { PresetTagVocabularyEntry } from "../preset.js";
 
 const vocabulary: PresetTagVocabularyEntry[] = [
-  { id: "type:guide", aliases: ["guide", "guides"] },
+  { id: "type:guide", label: "Guide", group: "type" },
   { id: "topic:ai" },
 ];
+
+// @ts-expect-error canonical vocabulary entries do not accept migration aliases
+const aliasEntry: PresetTagVocabularyEntry = { id: "type:guide", aliases: ["guide"] };
+// @ts-expect-error canonical vocabulary entries do not accept deprecation state
+const deprecatedEntry: PresetTagVocabularyEntry = { id: "old", deprecated: true };
+void aliasEntry;
+void deprecatedEntry;
 
 describe("buildDocsSchema", () => {
   it("requires title and allows a bare minimal frontmatter", () => {
@@ -71,11 +78,11 @@ describe("buildDocsSchema", () => {
       ).toBe(true);
     });
 
-    it("restricts to canonical ids + aliases when tagGovernance is 'strict'", () => {
+    it("restricts to exact canonical ids when tagGovernance is 'strict'", () => {
       const schema = buildDocsSchema({ tagGovernance: "strict", tagVocabulary: vocabulary });
       expect(schema.safeParse({ title: "Hello", tags: ["type:guide"] }).success).toBe(true);
-      expect(schema.safeParse({ title: "Hello", tags: ["guide"] }).success).toBe(true);
       expect(schema.safeParse({ title: "Hello", tags: ["topic:ai"] }).success).toBe(true);
+      expect(schema.safeParse({ title: "Hello", tags: ["guide"] }).success).toBe(false);
       expect(schema.safeParse({ title: "Hello", tags: ["unknown-tag"] }).success).toBe(false);
     });
 

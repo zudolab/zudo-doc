@@ -29,6 +29,7 @@ function makeState(overrides: Partial<FormState> = {}): FormState {
     cjkFriendly: false,
     packageManager: "pnpm",
     headerRightItems: [...DEFAULT_HEADER_RIGHT_ITEMS],
+    metaTags: makeMetaState(),
     ...overrides,
   };
 }
@@ -270,6 +271,7 @@ describe("default generator state — regression: matches target JSON", () => {
       cjkFriendly: true,
       packageManager: "pnpm",
       headerRightItems: [...INITIAL_HEADER_RIGHT_ITEMS],
+      metaTags: makeMetaState(),
     };
 
     expect(buildJson(initialState)).toEqual({
@@ -299,9 +301,9 @@ describe("buildJson — metaTags (S5 #2079)", () => {
     expect(json).not.toHaveProperty("metaTags");
   });
 
-  it("also omits metaTags when state.metaTags is absent (makeState backward compat)", () => {
-    const json = buildJson(makeState());
-    expect(json).not.toHaveProperty("metaTags");
+  it("rejects a missing required metaTags state instead of supplying defaults", () => {
+    const state = { ...makeState(), metaTags: undefined } as unknown as FormState;
+    expect(() => buildJson(state)).toThrow("state.metaTags is required");
   });
 
   it("emits metaTags when description is turned off", () => {

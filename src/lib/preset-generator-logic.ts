@@ -197,8 +197,10 @@ export function buildJson(state: FormState): Record<string, unknown> {
 
   // Omit metaTags entirely when every value equals the S4 scaffold defaults —
   // keeps the default JSON clean (S2 regression test asserts no metaTags key).
-  // state.metaTags may be absent in tests using makeState() without it.
-  const mt = state.metaTags ?? DEFAULT_META_TAGS;
+  const mt = state.metaTags;
+  if (!mt) {
+    throw new TypeError("state.metaTags is required");
+  }
   const d = DEFAULT_META_TAGS;
   const isDefault =
     mt.description === d.description &&

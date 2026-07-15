@@ -14,7 +14,7 @@
 #   E2E Spec Naming Guard    — pure-Node, no install; scripts/check-e2e-spec-naming.mjs
 #   Flaky Tracking-Issue Guard — pure-Node, no install; scripts/check-flaky-tracking-issue.mjs
 #   Wait-Debt Guard           — pure-Node, no install; scripts/check-wait-debt.mjs
-#   Lint Gates               — pnpm install; pnpm tags:audit --ci + pnpm lint:tokens
+#   Lint Gates               — pnpm install; tag guards + pnpm lint:tokens
 #   Type Check               — pnpm install; pnpm check (zfb check → tsc --noEmit)
 #   Package Unit Tests       — pnpm install; pnpm test:packages (all 5 package suites)
 #   Root Unit Tests          — pnpm install; pnpm test:unit (src/**/__tests__, scripts/__tests__)
@@ -111,7 +111,7 @@ jobs:
   # Verifies that every top-level key in src/config/settings.ts (canonical)
   # is either present in each of the five e2e fixture settings.ts files or
   # explicitly listed in .fixture-settings-drift-allowlist.
-  # Closes the headingIdStrategy gap (#1946): that drift reached main because
+  # Closes the heading-ID parity gap (#1946): that drift reached main because
   # this check existed only in pnpm b4push, not CI.
   # Pure-Node script — uses preinstalled Node 22 on the runner image, no pnpm.
   check-fixture-settings-drift:
@@ -257,10 +257,11 @@ jobs:
         run: node packages/zudo-doc/bin/gen-component-tokens.mjs --check
 
   # ---------------------------------------------------------------------------
-  # Job 0.7: Lint gates (tags audit + design token lint)
+  # Job 0.7: Lint gates (tag guards + design token lint)
   # ---------------------------------------------------------------------------
-  # Runs pnpm tags:audit --ci (tsx scripts/tags-audit.ts) and pnpm lint:tokens
-  # (design-token-lint bin from @takazudo/zudo-design-token-lint). Both require
+  # Runs the vocabulary audit, the canonical authored/template data guard, and
+  # pnpm lint:tokens (design-token-lint from @takazudo/zudo-design-token-lint).
+  # The installed tag-audit and lint bins require
   # the installed node_modules, so a pnpm install is needed. Combined into one
   # job (single install, two run steps) to avoid a redundant install.
   lint-gates:
@@ -287,6 +288,12 @@ jobs:
 
       - name: Run tags audit
         run: pnpm tags:audit --ci
+
+      - name: Check canonical tag data
+        run: pnpm check:canonical-tags
+
+      - name: Check current-only compatibility contract
+        run: pnpm check:compatibility-contract
 
       - name: Run design token lint
         run: pnpm lint:tokens
@@ -374,6 +381,9 @@ jobs:
 
       - name: Run package unit tests
         run: pnpm test:packages
+
+      - name: Check current and retired package subpath resolution
+        run: pnpm --filter @takazudo/zudo-doc test:plugin-resolution
 
   # ---------------------------------------------------------------------------
   # Job 1.6: Root unit suite

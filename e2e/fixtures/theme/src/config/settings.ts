@@ -19,9 +19,11 @@ const syntaxVariation = {
     selectionFg: defaultDark.map.selectionFg,
     semantic: {
       ...defaultDark.map.semantic,
-      // No explicit map.syntax: syntaxKeyword must inherit this named
-      // variation's accent reference through the public alias contract.
       accent: { state: "info" },
+    },
+    syntax: {
+      ...defaultDark.map.syntax,
+      syntaxKeyword: { state: "info" },
     },
   },
 } satisfies ColorScheme;
@@ -69,7 +71,6 @@ export const settings = {
   defaultLocaleOnlyPrefixes: [] as string[],
   tocMinDepth: 2 as number,
   tocMaxDepth: 4 as number,
-  headingIdStrategy: "hierarchical" as "flat" | "hierarchical",
   headerNav: [
     {
       label: "Getting Started",

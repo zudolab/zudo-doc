@@ -14,22 +14,25 @@
 
 import { describe, it, expect } from "vitest";
 import { collectTags } from "@/utils/tags";
-import type { DocsEntry } from "@/types/docs-entry";
+import type { DocPageEntry } from "@takazudo/zudo-doc/doc-page-props";
+import { toRouteSlug } from "@takazudo/zudo-doc/slug";
 
-function entry(id: string, data: Partial<DocsEntry["data"]> = {}): DocsEntry {
+function entry(slug: string, data: Partial<DocPageEntry["data"]> = {}): DocPageEntry {
   return {
-    id,
-    collection: "docs",
-    data: { title: data.title ?? id, ...data },
+    slug,
+    data: { title: data.title ?? slug, ...data },
+    body: "",
+    module_specifier: `mdx://docs/${slug}`,
+    Content: () => ({ type: "div", props: {}, key: null }),
   };
 }
 
 /** The predicate every tag enumerator applies before collectTags. */
-const tagVisible = (d: DocsEntry): boolean =>
+const tagVisible = (d: DocPageEntry): boolean =>
   !d.data.unlisted && !d.data.draft && !d.data.category_no_page;
 
-const slugFn = (id: string, data: { slug?: string }): string =>
-  data.slug ?? id;
+const slugFn = (entrySlug: string, data: { slug?: string }): string =>
+  data.slug ?? toRouteSlug(entrySlug);
 
 describe("tag enumeration excludes category_no_page docs", () => {
   it("drops a tag that lives ONLY on a category_no_page index (no dead tag page)", () => {

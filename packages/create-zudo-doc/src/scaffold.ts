@@ -525,9 +525,9 @@ function generatePackageJson(choices: UserChoices) {
     // disabled, reproducible CSS-Modules scoped names (project-relative paths),
     // dev-mode git-restore detection, Tailwind temp-file cleanup, and a
     // near-miss `"use client"` directive scanner.
-    // next.33 added the opt-in hierarchical heading-ID strategy
+    // next.33 added hierarchical heading IDs
     // (Takazudo/zudo-front-builder#871): `markdown.features.headingIds.strategy`.
-    // The generated config + TOC builder use it via settings.headingIdStrategy.
+    // zudo-doc now uses that strategy unconditionally in its package preset.
     // next.35 fixes resolve_links rewriting bare same-page `[text](#anchor)` /
     // `[text](?query)` links to `/<parent-dir>/#anchor` (zudolab/zudo-doc#1948,
     // upstream Takazudo/zudo-front-builder#875).
@@ -732,8 +732,8 @@ function generatePackageJson(choices: UserChoices) {
     // required regardless of this feature flag.)
     // @takazudo/zudo-doc has @takazudo/zudo-doc-history-server as an optional
     // peer dep. When docHistory is selected the zfb plugin
-    // (@takazudo/zudo-doc/plugins/doc-history) eagerly imports
-    // @takazudo/zudo-doc/integrations/doc-history which in turn imports
+    // (@takazudo/zudo-doc/plugins/doc-history) eagerly imports its internal
+    // doc-history helpers, which in turn import
     // @takazudo/zudo-doc-history-server/git-history. Without this dep the
     // plugin host fails at init with ERR_MODULE_NOT_FOUND — W8A (#1739).
     deps["@takazudo/zudo-doc-history-server"] = "^3.3.0";
@@ -745,18 +745,6 @@ function generatePackageJson(choices: UserChoices) {
   // claudeResources: tsx is no longer needed. The relocated package plugin
   // (@takazudo/zudo-doc/plugins/claude-resources) imports the runner directly
   // since the package ships compiled dist/ — package-first migration #2321 (#2337).
-
-  if (choices.features.includes("tagGovernance")) {
-    // gray-matter is already in `deps` unconditionally (base template uses it),
-    // so we only add the tooling deps specific to tags:audit / tags:suggest.
-    devDeps["string-similarity"] = "^4.0.4";
-    devDeps["@types/string-similarity"] = "^4.0.2";
-    devDeps["pluralize"] = "^8.0.0";
-    devDeps["@types/pluralize"] = "^0.0.33";
-    devDeps["picocolors"] = "^1.1.1";
-    devDeps["@inquirer/prompts"] = "^8.4.2";
-    devDeps["tsx"] = "^4.21.0";
-  }
 
   // check:html and gen:z-index/check:z-index are DROPPED from the default
   // scaffold (locked decision, epic #2651 #2660 work item 6):
@@ -774,11 +762,12 @@ function generatePackageJson(choices: UserChoices) {
   };
 
   if (choices.features.includes("tagGovernance")) {
-    // tags-audit bin is provided by @takazudo/zudo-doc (S9b #2334);
-    // tsx is still required as a devDep because the bin's runner imports
-    // the project's TypeScript config files at runtime via tsx.
-    scripts["tags:audit"] = "tags-audit";
-    scripts["tags:suggest"] = "tsx scripts/tags-suggest.ts";
+    // Both package-owned bins load the same explicit project config. `--`
+    // supplied by pnpm/npm is preserved by the runners for forwarded options.
+    scripts["tags:audit"] =
+      "tags-audit --config src/config/tag-vocabulary.ts";
+    scripts["tags:suggest"] =
+      "tags-suggest --config src/config/tag-vocabulary.ts";
   }
 
   if (choices.features.includes("skillSymlinker")) {

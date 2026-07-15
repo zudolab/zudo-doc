@@ -14,7 +14,7 @@
 // The fix anchors identity on the ONE thing stable across the whole build:
 // `getContentSnapshot().collections[name]` — the readonly snapshot array zfb
 // installs once at worker boot (verified INSTALLED during `pnpm build`,
-// collections `[docs, docs-ja, docs-v-*]`). We memoize the bridged +
+// collections `[docs, docs-ja, docs-v-*]`). We memoize the current +
 // draft-filtered arrays on that anchor (WeakMap) so every repeat caller
 // receives the SAME array instance. `buildNavTree`'s WeakMap fast-path
 // (`src/utils/docs.ts`) then short-circuits the key computation on identity,
@@ -41,14 +41,14 @@
 //   provided by the zfb SSG build system at compile time — not an npm package.
 
 import { getCollection, getContentSnapshot } from "@takazudo/zfb/content";
-import { bridgeDocsEntries, type ZfbDocsData } from "../_data";
-import type { DocPageEntry } from "./doc-page-props";
+import type { ZfbDocsData } from "../_data";
+import type { DocPageEntry } from "@takazudo/zudo-doc/doc-page-props";
 
 // Re-export memoizeDerived from the package (pure, no zfb dep).
 export { memoizeDerived } from "@takazudo/zudo-doc/nav-source-cache";
 
 // ---------------------------------------------------------------------------
-// Snapshot anchor → stable bridged arrays
+// Snapshot anchor → stable current-entry arrays
 // ---------------------------------------------------------------------------
 
 /**
@@ -61,25 +61,23 @@ function snapshotAnchor(name: string): readonly unknown[] | undefined {
   return getContentSnapshot()?.collections[name];
 }
 
-// Per-anchor-array memo of the bridged + draft-filtered entries. Keyed on the
+// Per-anchor-array memo of the draft-filtered entries. Keyed on the
 // snapshot array identity so a new build snapshot invalidates automatically.
-const bridgedByAnchor = new WeakMap<object, DocPageEntry[]>();
+const docsByAnchor = new WeakMap<object, DocPageEntry[]>();
 
-function buildBridged(collectionName: string): DocPageEntry[] {
-  const raw = getCollection<ZfbDocsData>(collectionName);
-  return bridgeDocsEntries(raw, collectionName).filter(
-    (d) => !d.data.draft,
+function buildDocs(collectionName: string): DocPageEntry[] {
+  return getCollection<ZfbDocsData>(collectionName).filter(
+    (entry) => !entry.data.draft,
   );
 }
 
 /**
- * Identity-stable, draft-filtered `DocPageEntry[]` for a collection.
+ * Identity-stable, draft-filtered current zfb entries for a collection.
  *
  * Returns the SAME array instance on every call within one build (anchored on
  * the snapshot array), so downstream derived arrays — and ultimately
- * `buildNavTree` — can rely on reference equality. The entries carry the full
- * `DocPageEntry` shape (Content, body, module_specifier, id, collection) the
- * route `paths()` props need.
+ * `buildNavTree` — can rely on reference equality. Entries are returned in the
+ * native zfb shape; route identity is derived from `entry.slug` by consumers.
  *
  * Passed as `stableDocs` to `createNavSourceDocs` in `_nav-source-docs.ts`.
  */
@@ -89,12 +87,12 @@ export function stableDocs(collectionName: string): DocPageEntry[] {
   // No snapshot (fs-fallback / unit tests): compute fresh, do not memoize —
   // see the no-snapshot rationale in the module header.
   if (anchor === undefined) {
-    return buildBridged(collectionName);
+    return buildDocs(collectionName);
   }
 
-  const cached = bridgedByAnchor.get(anchor);
+  const cached = docsByAnchor.get(anchor);
   if (cached) return cached;
-  const built = buildBridged(collectionName);
-  bridgedByAnchor.set(anchor, built);
+  const built = buildDocs(collectionName);
+  docsByAnchor.set(anchor, built);
   return built;
 }

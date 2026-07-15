@@ -4,7 +4,7 @@ import { readDistFile } from "./smoke-dist-helper";
 // The smoke fixture enables `llmsTxt` (zudolab/zudo-doc#2536) — previously
 // this feature was allowlisted out of every fixture (.fixture-settings-drift-
 // allowlist) and only unit-covered at the strip/load level
-// (packages/zudo-doc/src/integrations/llms-txt/__tests__/); the end-to-end
+// (packages/zudo-doc/src/plugins/internal/llms-txt/__tests__/); the end-to-end
 // emission into dist/ (settings.llmsTxt -> zfb postBuild -> dist/llms.txt)
 // was verified nowhere. These are L3 static reads, mirroring
 // smoke-robots.spec.ts.

@@ -30,20 +30,14 @@ export type TagGovernanceMode = "off" | "warn" | "strict";
  * - `description`— optional short description for tooling / tag index pages.
  * - `group`      — optional grouping key used by the grouped tag footer
  *                  (e.g. `"type"`, `"level"`, `"topic"`).
- * - `aliases`    — alternate strings that content files may use. Alias
- *                  resolution rewrites these to `id` before aggregation.
- * - `deprecated` — `true` marks the tag as deprecated with no redirect: the
- *                  canonical id is dropped from aggregation. Pass
- *                  `{ redirect: "<other-id>" }` to rewrite this tag to another
- *                  canonical id when it appears in content.
+ * Content must use `id` exactly. Retired or misspelled ids are unknown tags;
+ * the vocabulary intentionally has no alias or deprecation migration fields.
  */
 export interface TagVocabularyEntry {
   id: string;
   label?: string;
   description?: string;
   group?: string;
-  aliases?: readonly string[];
-  deprecated?: boolean | { redirect?: string };
 }
 
 export interface HeaderNavChildItem {
@@ -317,7 +311,6 @@ export interface Settings {
   designTokenPanel: boolean;
   tocMinDepth: number;
   tocMaxDepth: number;
-  headingIdStrategy: "flat" | "hierarchical";
   sidebarResizer: boolean;
   sidebarToggle: boolean;
   imageEnlarge: boolean;

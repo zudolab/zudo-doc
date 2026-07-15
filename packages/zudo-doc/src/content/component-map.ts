@@ -17,7 +17,7 @@ import { ContentCode } from "./content-code.js";
  * into a larger components object that also includes admonition overrides,
  * custom shortcodes, etc.) at the Astro page layer.
  */
-export const htmlOverrides = {
+export const defaultComponents = {
   h2: HeadingH2,
   h3: HeadingH3,
   h4: HeadingH4,
@@ -30,8 +30,3 @@ export const htmlOverrides = {
   table: ContentTable,
   code: ContentCode,
 };
-
-/**
- * Alias for `htmlOverrides`. Prefer this name in new consumer code.
- */
-export const defaultComponents = htmlOverrides;

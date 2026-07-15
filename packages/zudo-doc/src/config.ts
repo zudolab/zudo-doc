@@ -150,7 +150,6 @@ export const DEFAULT_SETTINGS: Settings = {
   designTokenPanel: false,
   tocMinDepth: 2,
   tocMaxDepth: 4,
-  headingIdStrategy: "hierarchical",
   sidebarResizer: false,
   sidebarToggle: false,
   imageEnlarge: false,
@@ -300,8 +299,8 @@ export interface ZudoDocConfig {
    */
   tagGovernance?: TagGovernanceMode;
   /**
-   * Whether the tag vocabulary is consulted at runtime (alias resolution,
-   * deprecation filtering, grouped footer). Orthogonal to `tagGovernance`.
+   * Whether the canonical tag vocabulary is consulted at runtime (validation
+   * and grouped footer rendering). Orthogonal to `tagGovernance`.
    * The vocabulary ENTRIES are supplied separately via `tagVocabularyEntries`.
    * @default false
    */
@@ -369,12 +368,6 @@ export interface ZudoDocConfig {
    * @default 4
    */
   tocMaxDepth?: number;
-  /**
-   * Heading-ID (anchor) strategy. `"hierarchical"` prefixes each anchor with
-   * its ancestor chain; `"flat"` is zfb's legacy github-slugger scheme.
-   * @default "hierarchical"
-   */
-  headingIdStrategy?: "flat" | "hierarchical";
   /**
    * Enable the draggable sidebar resizer.
    * @default false
@@ -559,6 +552,12 @@ export interface ZudoDocConfig {
  *   `defineConfig`.
  */
 export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
+  if ("headingIdStrategy" in user) {
+    throw new TypeError(
+      "headingIdStrategy is no longer supported; heading IDs are always hierarchical",
+    );
+  }
+
   // Peel the non-serializable / data overrides and shell fields off `user`
   // first so they never pollute the merged `settings` object (which is
   // JSON-serialized into the routes plugin's virtual module). `settingsOverrides`

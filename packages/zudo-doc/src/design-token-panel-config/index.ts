@@ -45,8 +45,8 @@ import { defaultColorSchemes } from "../color-schemes-defaults/index.js";
 
 /**
  * Inert fallback for the still-REQUIRED `ColorClusterExtras.defaultShikiTheme`.
- * zdtp's Shiki integration is a no-op stub and page code highlighting is
- * syntect's, so this value has no visible effect — but the field is typed
+ * zdtp's Shiki integration is a no-op stub and page code highlighting uses
+ * zfb's semantic class mode, so this value has no visible effect — but the field is typed
  * `string`, so a value is required. See zudo-doc#2037.
  */
 const DEFAULT_SHIKI_THEME = "github-dark";
@@ -354,10 +354,7 @@ export function buildDesignTokenPanelConfig(mode: PanelMode): PanelConfig {
     // `SCHEMA_V3` constants (#498/#505), which are unrelated to this field.
     // It is thus a purely descriptive config value with no runtime effect;
     // set to v3 (a literal, not one of those constants) to match what real
-    // exports carry. Distinct from the host serde's `DESIGN_TOKEN_SCHEMA`
-    // (`zudo-doc-design-tokens/v3` — bumped from v2 in #2599 so a stale
-    // pre-5/3-minimize export resets instead of crashing on import), which
-    // governs a separate round-trip.
+    // exports carry.
     schemaId: "zudo-design-tokens/v3",
     exportFilenameBase: "zudo-doc-design-tokens",
     tabs: [buildPaletteTab(mode), buildColorTab(mode), buildFontTab(), buildSpacingTab(), buildSizeTab()],
