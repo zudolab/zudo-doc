@@ -685,7 +685,7 @@ describe("scaffold — zfb.config.ts content shape (integration with generateZfb
   // function unit test against generateZfbConfig() directly). These tests
   // only check that scaffold() writes exactly what that function returns,
   // plus the top-level shape guarantees the locked spec calls out.
-  it("barebone emits a near-empty zudoDoc({...}) — only siteName + always-different nav/header fields", async () => {
+  it("barebone emits a near-empty zudoDoc({...}) without an inert GitHub header item", async () => {
     await scaffold(baseChoices);
     const config = await fs.readFile(projectPath("test-doc", "zfb.config.ts"), "utf-8");
     expect(config).toMatch(/^import \{ defineConfig \} from "zfb\/config";$/m);
@@ -693,6 +693,8 @@ describe("scaffold — zfb.config.ts content shape (integration with generateZfb
     expect(config).toContain("export default defineConfig(");
     expect(config).toContain("zudoDoc({");
     expect(config).toContain('siteName: "Test Doc"');
+    expect(config).not.toContain('component: "github-link"');
+    expect(config).not.toContain("headerRightItems:");
     // Highlighting is package-preset-owned. The generated project delegates to
     // zudoDoc() and must not freeze an inline/dual-theme renderer config.
     for (const token of [
@@ -718,6 +720,20 @@ describe("scaffold — zfb.config.ts content shape (integration with generateZfb
     ]) {
       expect(config).not.toContain(token);
     }
+  });
+
+  it("scaffolds the GitHub header item when a usable GitHub URL is configured", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-github-header",
+      githubUrl: "  https://github.com/x/y  ",
+    });
+    const config = await fs.readFile(
+      projectPath("test-github-header", "zfb.config.ts"),
+      "utf-8",
+    );
+    expect(config).toContain('githubUrl: "https://github.com/x/y"');
+    expect(config).toContain('component: "github-link"');
   });
 
   it("emits findInPage: true when tauri is selected (#2690 — rides the tauri feature, package-owned island)", async () => {
