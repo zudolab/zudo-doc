@@ -9,7 +9,7 @@ tags:
 
 ## What the Audit Reports
 
-`pnpm tags:audit` walks `src/content/docs/**` and every configured locale directory, collects the `tags:` arrays from each page's frontmatter, and reports three kinds of finding against `src/config/tag-vocabulary.ts`.
+`pnpm tags:audit` runs the package-owned audit CLI. It walks the content directories declared by the default `TagCliConfig` export in `src/config/tag-vocabulary.ts`, collects the `tags:` arrays from each page's frontmatter, and reports three kinds of finding against that module's named `tagVocabulary` export.
 
 - **Unknown tags** — the string does not exactly match a canonical id. Either add a vocabulary entry, replace it with the intended id, or remove it from the page. Under [`tagGovernance: "strict"`](./tag-governance.mdx), unknowns fail the build.
 - **Near-duplicates** — two distinct tags that look like variants of each other (high string similarity, or the same singular form). Pick one canonical id and update the content using the other.
@@ -17,12 +17,28 @@ tags:
 
 A clean run prints `✓ No tag issues found`.
 
+## CLI Config and Package Script
+
+The scaffold binds the explicit config module in `package.json`:
+
+```json
+{
+  "scripts": {
+    "tags:audit": "tags-audit --config src/config/tag-vocabulary.ts"
+  }
+}
+```
+
+The config path is resolved from the project root. The CLI exits with a clear error if `--config` is missing, cannot be loaded, or does not default-export a valid `TagCliConfig`. Keep the named `tagVocabulary` export too—the generated `zfb.config.ts` consumes the same module, so runtime governance and CLI auditing share one source of truth.
+
+Options can be forwarded through the package manager with `--`, which works consistently with pnpm and npm:
+
 ## Reading the Report
 
 The default output is colorized text grouped by category. For machine consumption, pass `--json`:
 
 ```sh
-pnpm tags:audit --json > audit.json
+pnpm tags:audit -- --json > audit.json
 ```
 
 The JSON payload is an `AuditReport` with `unknowns`, `nearDuplicates`, `orphans`, `filesScanned`, and an exact-id `frequency` map. This is what CI dashboards should consume.
@@ -32,7 +48,7 @@ The JSON payload is an `AuditReport` with `unknowns`, `nearDuplicates`, `orphans
 The project's pre-push validation script ([`pnpm b4push`](./development-workflow.mdx)) runs the audit with `--ci`:
 
 ```sh
-pnpm tags:audit --ci
+pnpm tags:audit -- --ci
 ```
 
 `--ci` forces a non-zero exit on any **hard issue** (an unknown tag) regardless of the configured `tagGovernance` mode. This means:

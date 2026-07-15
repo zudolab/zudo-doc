@@ -564,6 +564,7 @@
     "gen-component-tokens": "./bin/gen-component-tokens.mjs",
     "gen-z-index": "./bin/gen-z-index.mjs",
     "tags-audit": "./bin/tags-audit.mjs",
+    "tags-suggest": "./bin/tags-suggest.mjs",
     "zudo-doc": "./bin/zudo-doc.mjs"
   },
   "scripts": {
@@ -620,15 +621,21 @@
     }
   },
   "dependencies": {
+    "@inquirer/prompts": "^8.4.2",
     "fs-extra": "^11.3.0",
     "gray-matter": "^4.0.3",
     "minimist": "^1.2.8",
-    "picocolors": "^1.1.1"
+    "picocolors": "^1.1.1",
+    "pluralize": "^8.0.0",
+    "string-similarity": "^4.0.4",
+    "tsx": "^4.21.0"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
     "@types/minimist": "^1.2.5",
     "@types/node": "^25.3.5",
+    "@types/pluralize": "^0.0.33",
+    "@types/string-similarity": "^4.0.2",
     "cross-env": "^7.0.3",
     "preact": "^10.29.1",
     "preact-render-to-string": "^6.6.6",
