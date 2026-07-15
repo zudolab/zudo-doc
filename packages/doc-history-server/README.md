@@ -55,7 +55,11 @@ pnpm generate -- \
 
 ## zfb integration
 
-In dev mode, the zfb plugin at `packages/zudo-doc/src/plugins/doc-history.ts` proxies `/doc-history/*` requests to this server. In build mode, the plugin falls back to inline generation unless `SKIP_DOC_HISTORY=1` is set — which is the case in the CI `build-site` job so that the zfb build completes fast while the CLI `build-history` job generates the JSONs in parallel.
+In dev mode, the zfb plugin implemented at `packages/zudo-doc/src/plugins/internal/doc-history/index.ts` proxies `/doc-history/*` requests to this server. In build mode, the plugin falls back to inline generation unless `SKIP_DOC_HISTORY=1` is set — which is the case in the CI `build-site` job so that the zfb build completes fast while the CLI `build-history` job generates the JSONs in parallel.
+
+## Programmatic API
+
+The `@takazudo/zudo-doc-history-server/git-history` subpath exposes the current async history path (`getDocHistoryAsync`), the single-pass manifest walk (`getAllFilesFirstLastMetaAsync`), content-file collection, repository detection, and the pure rename parsers. Server and CLI callers both await `getDocHistoryAsync`.
 
 ## Build
 
@@ -67,7 +71,7 @@ Uses `tsup` to emit ESM output + DTS into `dist/`.
 
 ## Design notes
 
-- **Async git** — all git calls use `execFile` / `spawn` (non-blocking). The CLI batch generator wraps each file in a semaphore-bounded Promise, so the async variant genuinely parallelizes across files (#1986). The server also uses the same async path so the event loop is never blocked.
+- **Async history extraction** — history walks and content reads use `execFile` / `spawn` (non-blocking). The only synchronous git call is the cached one-time repository-root probe. The CLI batch generator wraps each file in a semaphore-bounded Promise, and the server uses the same async extraction path.
 - **Repo-relative paths** — responses use relative file paths to avoid leaking absolute server paths.
 - **`--follow` for renames** — file history is tracked across renames with multiple fallback strategies.
 - **pnpm --filter CWD** — when run via `pnpm --filter`, the CWD is this package dir. pnpm sets `INIT_CWD` to the repo root, so pass repo-root-relative content paths (e.g. `src/content/docs`) without any `../../` prefix.

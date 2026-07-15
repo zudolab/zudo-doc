@@ -1,17 +1,16 @@
 // Package-internal preBuild runner used by the public doc-history plugin.
 //
 // Emits `<projectRoot>/.zfb/doc-history-meta.json`, the per-page git
-// metadata manifest consumed at bundle time by
-// `pages/lib/_doc-history-area.tsx` (via the `#doc-history-meta`
-// tsconfig path alias). The page imports the JSON statically so esbuild
-// inlines it; this avoids pulling Node-only `fs` / `child_process` code
-// into the client bundle.
+// metadata manifest consumed at bundle time through the host's
+// `#doc-history-meta` binding. The host imports the JSON statically so esbuild
+// inlines it; this avoids pulling Node-only `fs` / `child_process` code into
+// the client bundle.
 //
 // Schema: `{ [composedSlug]: { author, createdDate, updatedDate, ext } }`,
 // where `composedSlug` is the bare slug for the default locale
 // (e.g. `getting-started/intro`) and `<localeKey>/<slug>` for non-default
 // locales (e.g. `ja/getting-started/intro`). Pages with no manifest entry
-// fall through to the SSR-empty branch in `_doc-history-area.tsx`.
+// render without git metadata while keeping their current source extension.
 //
 // ### SKIP_DOC_HISTORY=1 contract
 //
@@ -89,11 +88,9 @@ export interface DocHistoryMetaEntry {
   /**
    * Source file extension (".mdx" or ".md") — the content walkers accept
    * both (`collectContentFiles` matches `\.mdx?$`), so the view-source URL
-   * builder in the host's `_doc-history-area.tsx` reads this instead of
-   * hardcoding ".mdx". Optional in older manifests; readers fall back to
-   * ".mdx" when absent.
+   * builder uses the actual source extension.
    */
-  ext?: ".mdx" | ".md";
+  ext: ".mdx" | ".md";
 }
 
 /** Manifest shape — keyed by composedSlug. */

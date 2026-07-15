@@ -41,6 +41,7 @@ export const chromeBindings: ChromeHostBindings = {
       author: "CB-AUTHOR-MARKER",
       createdDate: "2024-01-01T00:00:00Z",
       updatedDate: "2024-06-01T00:00:00Z",
+      ext: ".mdx",
     },
   },
 };

@@ -33,8 +33,8 @@ export interface DocHistoryMetaEntry {
   author: string;
   createdDate: string;
   updatedDate: string;
-  /** Source file extension (".mdx" | ".md") — optional in older manifests. */
-  ext?: string;
+  /** Source file extension recorded by the current build-time manifest. */
+  ext: ".mdx" | ".md";
 }
 
 /** Settings subset read by the DocHistoryArea factory. */
@@ -62,12 +62,18 @@ export interface DocHistoryAreaProps {
   /**
    * Raw zfb entry slug (relative path without extension), e.g.
    * "getting-started/intro" or "getting-started/index". Appended with
-   * the source extension from the build-time manifest (".mdx" fallback)
-   * to form the file path passed to buildGitHubSourceUrl.
+   * the source extension from the build-time manifest to form the file path
+   * passed to buildGitHubSourceUrl.
    * Omit for auto-index pages (no underlying MDX file) — sourceUrl
    * will be suppressed automatically.
    */
   entrySlug?: string;
+  /**
+   * Source extension from the current content entry. Used only when the file
+   * has no manifest metadata yet (for example, an untracked file or a build
+   * with `SKIP_DOC_HISTORY=1`). A present manifest owns its required `ext`.
+   */
+  sourceFileExt?: ".mdx" | ".md";
   /**
    * Content directory for the active locale, e.g. "src/content/docs"
    * or "src/content/docs-ja". Combined with entrySlug to build the
@@ -121,6 +127,7 @@ export function createDocHistoryArea<S extends Settings = Settings>(
     slug,
     locale,
     entrySlug,
+    sourceFileExt,
     contentDir,
     isFallback,
   }: DocHistoryAreaProps): VNode | null {
@@ -200,12 +207,17 @@ export function createDocHistoryArea<S extends Settings = Settings>(
     // (auto-index pages pass neither). The real source extension comes from the
     // build-time manifest (`ext`, written by pre-build.ts) — the content walkers
     // accept both .mdx and .md, so hardcoding ".mdx" produced broken view-source
-    // URLs for .md pages. ".mdx" remains the fallback for entries without a
-    // manifest record (untracked files, SKIP_DOC_HISTORY=1, stale manifests).
+    // URLs for .md pages. An absent manifest (untracked file or
+    // SKIP_DOC_HISTORY=1) uses the extension supplied explicitly from the
+    // current content entry; it is not treated as an old-manifest fallback.
     const utilSettings = settings.bodyFootUtilArea;
-    const sourceExt = meta?.ext ?? ".mdx";
+    const sourceExt = meta ? meta.ext : sourceFileExt;
     const sourceUrl =
-      utilSettings && utilSettings.viewSourceLink && entrySlug && contentDir
+      utilSettings &&
+      utilSettings.viewSourceLink &&
+      entrySlug &&
+      sourceExt &&
+      contentDir
         ? buildGitHubSourceUrl(contentDir, entrySlug + sourceExt)
         : null;
 
