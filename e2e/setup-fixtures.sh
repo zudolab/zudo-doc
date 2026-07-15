@@ -317,10 +317,14 @@ setup_fixture() {
   # ----- Copy shared first-party src/* dirs (everything but config + content) -----
   for dir in "${SRC_SHARED_DIRS[@]}"; do
     local source="$REPO_ROOT/src/$dir"
+    # Mirror source removal as well as source contents. Checking the source
+    # before deleting the destination would leave a live, stale copy behind
+    # when a shared directory is retired upstream; that stale tree is no
+    # longer represented in compute_build_hash() and could become "fresh".
+    rm -rf "$fixture_dir/src/$dir"
     if [ ! -e "$source" ]; then
       continue
     fi
-    rm -rf "$fixture_dir/src/$dir"
     cp -RL "$source" "$fixture_dir/src/$dir"
   done
 
@@ -371,8 +375,10 @@ setup_fixture() {
 
   # ----- Copy top-level first-party dirs (pages/, plugins/) -----
   for dir in "${ROOT_COPIED_DIRS[@]}"; do
-    [ -e "$REPO_ROOT/$dir" ] || continue
     rm -rf "$fixture_dir/$dir"
+    # `plugins/` is optional. Removing the fixture destination first keeps
+    # repeated setup runs a true mirror if that optional source disappears.
+    [ -e "$REPO_ROOT/$dir" ] || continue
     cp -RL "$REPO_ROOT/$dir" "$fixture_dir/$dir"
   done
 

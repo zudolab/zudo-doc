@@ -29,7 +29,10 @@ const syntaxVariation = {
 export const settings = {
   colorScheme: "Default Dark",
   colorMode: {
-    defaultMode: "light",
+    // Keep the fixture's established SSR default dark. Syntax-highlight tests
+    // explicitly preseed light when they need the Default Light branch, while
+    // theme-toggle's stored-light case remains the hydration-mismatch guard.
+    defaultMode: "dark",
     lightScheme: "Default Light",
     darkScheme: "Syntax Variation",
     respectPrefersColorScheme: true,
