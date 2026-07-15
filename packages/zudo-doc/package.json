@@ -605,8 +605,9 @@
   ],
   "peerDependencies": {
     "preact": "^10.29.1",
-    "@takazudo/zfb": "0.1.0-next.78",
-    "@takazudo/zfb-runtime": "0.1.0-next.78",
+    "@takazudo/zfb": "^0.1.0-next.86",
+    "@takazudo/zfb-md-wasm": "^0.1.0-next.86",
+    "@takazudo/zfb-runtime": "^0.1.0-next.86",
     "@takazudo/zudo-doc-history-server": "^3.3.0",
     "@takazudo/zdtp": "^0.4.9",
     "shiki": "^4.0.2",
@@ -619,6 +620,9 @@
       "optional": true
     },
     "@takazudo/zdtp": {
+      "optional": true
+    },
+    "@takazudo/zfb-md-wasm": {
       "optional": true
     },
     "shiki": {
@@ -649,8 +653,9 @@
     "typescript": "^5.0.0",
     "vitest": "^4.1.0",
     "zod": "^4.3.6",
-    "@takazudo/zfb": "0.1.0-next.78",
-    "@takazudo/zfb-runtime": "0.1.0-next.78",
+    "@takazudo/zfb": "0.1.0-next.86",
+    "@takazudo/zfb-md-wasm": "0.1.0-next.86",
+    "@takazudo/zfb-runtime": "0.1.0-next.86",
     "@takazudo/zudo-doc-history-server": "workspace:*"
   }
 }

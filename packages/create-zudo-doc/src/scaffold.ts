@@ -564,16 +564,17 @@ function generatePackageJson(choices: UserChoices) {
     // fix, additive. next.49: client-router WebKit bfcache fix —
     // re-sync the history index + originalLocation on a bfcache restore so
     // browser Back after an SPA navigation returns to the previous page instead
-    // of skipping an entry — runtime-only bug fix, additive. next.50 (current
-    // pin): client-router fix to commit the SPA history entry BEFORE the View
+    // of skipping an entry — runtime-only bug fix, additive. next.50:
+    // client-router fix to commit the SPA history entry BEFORE the View
     // Transition, so on WebKit/iOS a single browser Back after an SPA navigation
     // creates a distinct history entry instead of falling off the site —
-    // runtime-only bug fix, additive. next.51 (current pin): additive public-API
+    // runtime-only bug fix, additive. next.51: additive public-API
     // surface — VNode/VNodeArray/VNodeObject are now exported from
     // "@takazudo/zfb" (#972) — plus removal of the no-op linkValidation.allowExternal
-    // knob (#925); both are non-breaking for a fresh scaffold. A fresh scaffold
-    // sets codeHighlight.themeLight/themeDark for dual-theme syntect output. No
-    // consumer-facing / CLI breaking change. next.52: adds the
+    // knob (#925); both are non-breaking for a fresh scaffold. Highlight config
+    // is package-preset-owned: fresh scaffolds delegate to zudoDoc(), whose
+    // preset selects class mode without emitting theme names project-side.
+    // next.52 adds the
     // `ClientRouter({ preserveHtmlAttrs })` option (zfb#1104) — consumers can
     // declare runtime `<html>` attribute names to preserve across SPA swaps so
     // e.g. `data-sidebar-hidden` / `data-theme` survive (zudolab/zudo-doc#2200).
@@ -611,16 +612,22 @@ function generatePackageJson(choices: UserChoices) {
     // next.76: routine toolchain bump from next.75, adopted in
     // lockstep with the root package.json pins. No consumer-facing / CLI change.
     // next.77: router persistence/history fixes and runtime island remount
-    // support, adopted in lockstep with the root package.json pins. No
-    // scaffold API change. next.78 (current pin): production HTML minification
-    // support via minifyHtml, adopted as a zudo-doc default through settings.
-    // Keep next.78 until the bundle.exclude regression is fixed:
-    // https://github.com/Takazudo/zudo-front-builder/issues/1631
-    "@takazudo/zfb": "0.1.0-next.78",
-    "@takazudo/zfb-runtime": "0.1.0-next.78",
+    // support. next.78 added production HTML minification. next.81 added the
+    // package-root semantic highlight API plus island resource delivery
+    // (zfb#1633/#1643). next.83 completes bundle.exclude dependency staging
+    // for package-owned overlay routes (zfb#1645/#1649); next.84 canonicalizes
+    // linked package-route identity so SSR shares one framework singleton
+    // (zfb#1650/#1651). next.85 also remaps absolute project imports from
+    // virtual host modules into the staged project graph, preserving that
+    // singleton across host-callable wiring (zfb#1652/#1653). The zfb family
+    // must stay in lockstep because the WASM browser entry depends on its
+    // resource-aware island pipeline.
+    "@takazudo/zfb": "0.1.0-next.86",
+    "@takazudo/zfb-runtime": "0.1.0-next.86",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.78",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.86",
+    "@takazudo/zfb-md-wasm": "0.1.0-next.86",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
@@ -655,6 +662,7 @@ function generatePackageJson(choices: UserChoices) {
     // compiles. Same pin as host. Caught by W6B (#1735) consumer-build
     // verification.
     "preact-render-to-string": "^6.6.6",
+    // Retained until #2742 atomically moves HTML Preview to zfb-md-wasm.
     shiki: "^4.0.2",
     "@shikijs/transformers": "^4.0.0",
     "gray-matter": "^4.0.0",

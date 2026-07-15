@@ -47,6 +47,42 @@ declare module "zfb/config" {
     options?: Record<string, unknown>;
   }
 
+  /** Output mode for syntect-backed fenced-code highlighting. */
+  export type CodeHighlightMode = "inline" | "class";
+
+  /** Fixed semantic taxonomy accepted by class-mode `roleClasses`. */
+  export type CodeHighlightRole =
+    | "escape"
+    | "operator"
+    | "comment"
+    | "string"
+    | "number"
+    | "constant"
+    | "keyword"
+    | "function"
+    | "type"
+    | "namespace"
+    | "property"
+    | "variable"
+    | "tag"
+    | "attribute"
+    | "punctuation"
+    | "inserted"
+    | "deleted"
+    | "heading";
+
+  /** Syntect inline-theme or semantic class-mode configuration. */
+  export type CodeHighlightConfig = {
+    theme?: string;
+    themesDir?: string;
+    themeLight?: string;
+    themeDark?: string;
+    mode?: CodeHighlightMode;
+    classPrefix?: string;
+    roleClasses?: Partial<Record<CodeHighlightRole, string>>;
+    defaultStylesheet?: boolean;
+  };
+
   /**
    * Bundler options. Mirrors `BundleConfig` in crates/zfb/src/config.rs
    * and the published `@takazudo/zfb/config` (`dist/config.d.ts`). Added
@@ -108,25 +144,11 @@ declare module "zfb/config" {
      */
     base?: string;
     /**
-     * Configures the syntect-based syntax highlighter shipped with zfb.
-     * Mirrors `CodeHighlightConfig` / `code_highlight` in crates/zfb/src/config.rs
-     * (single-theme: Takazudo/zudo-front-builder#188 / sub #194, commit 339e30f;
-     * dual-theme themeLight/themeDark added in the follow-up shipped in
-     * zfb 0.1.0-next.45+).
-     * When omitted, the engine falls back to the hardcoded default theme `base16-ocean.dark`.
-     *
-     * Single-theme mode: set `theme` — tokens get inline `style="color:#hex"`.
-     * Dual-theme mode: set BOTH `themeLight` and `themeDark` (mutually exclusive
-     * with `theme`) — tokens get `--shiki-light`/`--shiki-dark` CSS custom
-     * properties and the `<pre>` gains `class="syntect-dual"` + `--shiki-*-bg`.
-     * All names are SYNTECT theme names, not Shiki names.
+     * Configures zfb's syntect highlighter. Class mode is mutually exclusive
+     * with every theme field and emits semantic role classes; inline mode
+     * retains the single/dual theme fields for general zfb consumers.
      */
-    codeHighlight?: {
-      theme?: string;
-      themesDir?: string;
-      themeLight?: string;
-      themeDark?: string;
-    };
+    codeHighlight?: CodeHighlightConfig;
     /**
      * Markdown link resolver (port of `remarkResolveMarkdownLinks`).
      * Mirrors `Config::resolve_markdown_links` in crates/zfb/src/config.rs
