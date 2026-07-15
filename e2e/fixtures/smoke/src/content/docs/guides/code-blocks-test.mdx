@@ -17,9 +17,27 @@ const x = 1;
 const longVariable = "this string is intentionally very long to test horizontal scrolling and word wrap functionality in code blocks";
 ```
 
+## Enriched Native Code Block
+
+```js title="class-mode-native.js"
+const unchanged = 1;
+const removed = 2; // [!code --]
+const added = 3; // [!code ++]
+```
+
+```js {2}
+const normalLine = true;
+const highlightedLine = true;
+```
+
+## Unrelated Plain Pre Fixture
+
+<div data-code-compat-fixture="plain-container"><pre data-code-compat-fixture="plain"><code>plain code must stay unenhanced</code></pre></div>
+
 ## Tabs Component
 
 <Tabs>
+
   <TabItem label="JavaScript" value="js">
     ```js
     console.log("Hello from JS");
@@ -37,12 +55,15 @@ const longVariable = "this string is intentionally very long to test horizontal 
     }
     ```
   </TabItem>
+
 </Tabs>
 
 ## Details Component
 
 <Details title="Click to expand">
+
   This is hidden content inside a details block.
+
 </Details>
 
 ## Mermaid Diagram

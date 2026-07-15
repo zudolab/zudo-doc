@@ -693,6 +693,18 @@ describe("scaffold — zfb.config.ts content shape (integration with generateZfb
     expect(config).toContain("export default defineConfig(");
     expect(config).toContain("zudoDoc({");
     expect(config).toContain('siteName: "Test Doc"');
+    // Highlighting is package-preset-owned. The generated project delegates to
+    // zudoDoc() and must not freeze an inline/dual-theme renderer config.
+    for (const token of [
+      "codeHighlight",
+      "themeLight",
+      "themeDark",
+      "themesDir",
+      "base16-ocean.light",
+      "base16-ocean.dark",
+    ]) {
+      expect(config).not.toContain(token);
+    }
     // Nothing feature-specific should appear in a zero-feature scaffold.
     for (const token of [
       "docHistory",
@@ -1121,15 +1133,19 @@ describe("scaffold — generated package.json", () => {
     expect(pkg.devDependencies["html-validate"]).toBeUndefined();
   });
 
-  it("includes @takazudo/zfb, @takazudo/zudo-doc, and @takazudo/zdtp unconditionally (build-time couplings)", async () => {
+  it("includes the coordinated zfb family, @takazudo/zudo-doc, and @takazudo/zdtp unconditionally", async () => {
     // diff and @takazudo/zdtp are unconditional dependencies regardless of
     // docHistory/designTokenPanel selection — see the #2660 completion
     // comment: packageOwnedRoutes always bundles the doc-history-area path
     // and the chrome-derive seam always imports DesignTokenPanelBootstrap.
     await scaffold(baseChoices);
     const pkg = await fs.readJson(projectPath("test-doc", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBeDefined();
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBeDefined();
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.87");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.87");
+    expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
+      "0.1.0-next.87",
+    );
+    expect(pkg.dependencies["@takazudo/zfb-md-wasm"]).toBe("0.1.0-next.87");
     expect(pkg.dependencies["@takazudo/zudo-doc"]).toMatch(/^\^\d+\.\d+\.\d+/);
     expect(pkg.dependencies["diff"]).toBeDefined();
     expect(pkg.dependencies["@takazudo/zdtp"]).toBeDefined();

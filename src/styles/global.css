@@ -74,7 +74,9 @@
  *
  * Base roles: --zd-bg/--zd-fg/--zd-selection-bg/--zd-selection-fg + ramps
  * (--palette-base-0..4 / --palette-accent-0..2 / --palette-state-*) +
- * 23 --zd-{role} semantic tokens, all injected by ColorSchemeProvider.
+ * 23 --zd-{role} UI semantics + 9 compact --zd-syntax-* semantics, all
+ * injected by ColorSchemeProvider. zfb's 18 class-mode renderer roles contract
+ * onto those syntax semantics in the package-shipped unlayered features.css.
  * Tailwind tokens: registered below via @theme
  * ======================================== */
 

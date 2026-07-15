@@ -15,8 +15,9 @@
  *   - `ramps` — the shared Tier-1 source of truth (`base[5]`, `accent[3]`,
  *     `state{danger,success,warning,info}`), emitted verbatim as OKLCH strings.
  *   - `map`   — the per-mode Tier-2 wiring (`bg`/`fg`/`selectionBg`/`selectionFg`
- *     + 23 `semantic` roles), each a `RampRef` (`{base:n}` / `{accent:n}` /
- *     `{state:role}` / a literal OKLCH string).
+ *     + 23 required `semantic` roles + an optional partial nine-role `syntax`
+ *     map), each a `RampRef` (`{base:n}` / `{accent:n}` / `{state:role}` / a
+ *     literal OKLCH string).
  *
  * The legacy v1 color slice (`palette: string[16]`, numeric `base`, `cursor`,
  * `semanticMappings`) is gone. Both `ramps` and `map` are plain JSON data, so
@@ -105,12 +106,14 @@ import {
   SEMANTIC_KEYS,
   SEMANTIC_RAMP_DEFAULTS,
   STATE_ROLES,
+  SYNTAX_SEMANTIC_KEYS,
   type ColorScheme,
   type ModeMap,
   type OKLCH,
   type RampRef,
   type Ramps,
   type SemanticKey,
+  type SyntaxSemanticKey,
 } from "../color-scheme-utils.js";
 
 export const DESIGN_TOKEN_SCHEMA = "zudo-doc-design-tokens/v3" as const;
@@ -522,13 +525,48 @@ function parseMap(raw: unknown, baseline: ModeMap, warnings: string[]): ModeMap 
   for (const key of SEMANTIC_KEYS) {
     semantic[key] = parseRef(semRaw[key], baseline.semantic[key], `color.map.semantic.${key}`, warnings);
   }
+  const syntax = parseSyntaxMap(m.syntax, baseline.syntax, warnings);
   return {
     bg: parseRef(m.bg, baseline.bg, "color.map.bg", warnings),
     fg: parseRef(m.fg, baseline.fg, "color.map.fg", warnings),
     selectionBg: parseRef(m.selectionBg, baseline.selectionBg, "color.map.selectionBg", warnings),
     selectionFg: parseRef(m.selectionFg, baseline.selectionFg, "color.map.selectionFg", warnings),
     semantic,
+    ...(syntax === undefined ? {} : { syntax }),
   };
+}
+
+/**
+ * Parse the optional, deliberately-partial syntax map. An absent block means
+ * "use the baseline" (diff-only omission / old v3 compatibility). A present
+ * object is authoritative: it is the complete set of explicit syntax
+ * overrides, so missing roles use their semantic aliases rather than baseline
+ * overrides. This preserves whole-map export/import fidelity, including an
+ * intentional empty object that clears the baseline's contrast-tuned refs.
+ */
+function parseSyntaxMap(
+  raw: unknown,
+  baseline: ModeMap["syntax"],
+  warnings: string[],
+): ModeMap["syntax"] {
+  if (raw === undefined) return cloneSyntaxMap(baseline);
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    warnings.push("color.map.syntax is not an object; kept baseline syntax map.");
+    return cloneSyntaxMap(baseline);
+  }
+
+  const src = raw as Record<string, unknown>;
+  const out: Partial<Record<SyntaxSemanticKey, RampRef>> = {};
+  for (const key of SYNTAX_SEMANTIC_KEYS) {
+    if (!Object.prototype.hasOwnProperty.call(src, key)) continue;
+    const value = src[key];
+    if (isValidRampRef(value)) {
+      out[key] = cloneRef(value);
+    } else {
+      warnings.push(`color.map.syntax.${key} is not a valid RampRef (${JSON.stringify(value)}); ignored so the inherited syntax alias is used.`);
+    }
+  }
+  return out;
 }
 
 function parseRef(
@@ -616,13 +654,25 @@ function cloneMap(map: ModeMap): ModeMap {
   for (const key of SEMANTIC_KEYS) {
     semantic[key] = cloneRef(map.semantic[key]);
   }
+  const syntax = cloneSyntaxMap(map.syntax);
   return {
     bg: cloneRef(map.bg),
     fg: cloneRef(map.fg),
     selectionBg: cloneRef(map.selectionBg),
     selectionFg: cloneRef(map.selectionFg),
     semantic,
+    ...(syntax === undefined ? {} : { syntax }),
   };
+}
+
+function cloneSyntaxMap(syntax: ModeMap["syntax"]): ModeMap["syntax"] {
+  if (syntax === undefined) return undefined;
+  const out: Partial<Record<SyntaxSemanticKey, RampRef>> = {};
+  for (const key of SYNTAX_SEMANTIC_KEYS) {
+    const ref = syntax[key];
+    if (ref !== undefined) out[key] = cloneRef(ref);
+  }
+  return out;
 }
 
 function cloneScheme(scheme: ColorScheme): ColorScheme {

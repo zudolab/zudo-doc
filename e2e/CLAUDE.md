@@ -49,26 +49,36 @@ test("feature works", async ({ page }) => {
 
 ## Fixture Setup Pipeline (`setup-fixtures.sh`)
 
-Each fixture shares the project tree from repo root via **symlinks**, but has its own content and settings.
+Each fixture materializes first-party source from the repo root, while keeping
+dependency resolution linked and owning its own content and settings. zfb's
+module-preprocessing containment contract requires canonical first-party files
+to stay inside the fixture root.
 
-- **Symlinked at fixture root**: `pages/`, `plugins/`, `packages/`, `node_modules/`
-- **Symlinked under `src/`**: `components/`, `lib/`, `styles/`, `types/`, `utils/`
-- **Copied** (relative imports): `zfb.config.ts`, `tsconfig.json`, `src/chrome-bindings.tsx`, and every `src/config/*.ts | *.tsx` *except* `settings.ts`
+- **Copied at fixture root**: `pages/`, `plugins/` (when present)
+- **Symlinked at fixture root**: `packages/`, `node_modules/`
+- **Copied under `src/`**: `components/`, `lib/`, `styles/`, `types/`, `utils/`
+- **Copied files** (relative imports): `zfb.config.ts`, `tsconfig.json`, `src/chrome-bindings.tsx`, and every `src/config/*.ts | *.tsx` *except* `settings.ts`
 - **Fixture-specific** (kept in git per fixture): `src/config/settings.ts`, `src/content/`, optionally `public/<fixture-only-files>/`
 - **Seed file**: `.zfb/doc-history-meta.json` is created as `{}` so the bundler's static `#doc-history-meta` import resolves on the first run; the doc-history plugin's preBuild hook overwrites it on subsequent builds.
+
+The `theme` fixture removes the copied `pages/docs/` user stub during setup so
+its docs route is package-owned. This is load-bearing for tests of fixture-local
+`colorSchemes`: the showcase's legacy user-route context deliberately supplies
+only the package defaults, while the package route consumes the preset's
+virtualized color-scheme payload.
 
 Minimal-scaffold cutover (epic zudolab/zudo-doc#2651, Wave 7 #2663): `zfb-shim.d.ts`
 is gone from the copy list — the ambient `zfb/config` types now ship from
 `@takazudo/zudo-doc/zfb-config-shim.d.ts`, pulled in transitively via the copied
 `tsconfig.json`'s `extends: "@takazudo/zudo-doc/tsconfig.base.json"`. `src/hooks/`,
-`src/mocks/`, `src/plugins/`, `src/scripts/` are gone from the symlink list — the
+`src/mocks/`, `src/plugins/`, `src/scripts/` are gone from the shared-copy list — the
 host's own `src/` no longer has those subdirectories. Fixture `settings.ts` files
 import their types from `@takazudo/zudo-doc/settings` directly (the local
 `./settings-types` shim they used to import from was deleted — byte-identical to
 the package export). `src/chrome-bindings.tsx` is the host's real chrome-bindings
 module (SearchWidget, DocHistory, frontmatter renderers, …), wired via the
 `chromeBindingsModule` setting in the copied `zfb.config.ts`; each fixture gets its
-own copy so the doc-route stubs under the symlinked `pages/` (which all call
+own copy so the doc-route stubs under the copied `pages/` (which all call
 `createChrome(routeCtx, chromeBindings)`) resolve real bindings instead of the
 package's empty-object default — this is what makes the smoke fixture's
 doc-history specs work.

@@ -20,6 +20,8 @@
  *   --text-{small,caption}
  *   --leading-relaxed
  *   --zd-fg
+ *   --zd-code-{bg,fg}
+ *   --zd-syntax-{comment,string,number,keyword,callable,type,name,inserted,deleted}
  *   --zd-sidebar-w
  *   --zd-header-h
  *   --zd-transition-slow
@@ -46,11 +48,11 @@ header[data-header] {
   position: relative;
 }
 
-pre[class^="syntect-"].word-wrap {
+:is(pre.hi-root, pre[class*="syntect-"], .tab-panel pre).word-wrap {
   overflow-x: hidden;
 }
 
-pre[class^="syntect-"].word-wrap code {
+:is(pre.hi-root, pre[class*="syntect-"], .tab-panel pre).word-wrap code {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -139,38 +141,52 @@ pre[class^="syntect-"].word-wrap code {
  * Code-block syntax-highlight token color rule
  * ======================================== */
 
-/* Code-block token colors come from CSS custom properties in two cases on this
- * site, both resolved here via light-dark():
- *
- *   1. Build-time — zfb DUAL-theme syntect (codeHighlight.themeLight/themeDark
- *      in zfb.config.ts). Emits <pre class="syntect-dual"> whose token spans
- *      carry style="--shiki-light:#X;--shiki-dark:#Y" (no `color` declaration)
- *      and whose <pre> carries --shiki-{light,dark}-bg. Zero client JS.
- *
- *   2. Runtime — the HtmlPreview component's Shiki blocks (<pre class="shiki">),
- *      which emit the same --shiki-* custom properties.
- *
- * Both resolve through the `color-scheme` property, which ColorSchemeProvider /
- * ThemeToggle toggle per active theme — the same mechanism the palette tokens
- * use — so code follows the in-page light/dark switch.
- *
- * Compatibility: SINGLE-theme syntect (the zfb default, NOT used here) instead
- * bakes inline style="color:#hex". This rule deliberately uses NO !important so
- * that such an inline `color` — a higher-precedence author declaration — still
- * wins, leaving single-theme output untouched. The --shiki-* spans have no
- * inline `color`, so the rule applies cleanly. Same logic for background-color
- * on the <pre>. See zudolab/zudo-doc#1457.
- *
- * NOTE: the zdtp design-token panel does NOT highlight code — its Shiki
- * integration is a no-op stub upstream. Earlier revisions of this comment
- * wrongly attributed the --shiki-* vars to a zdtp client-side re-highlight. */
-/* Token color + font-style on the spans (and harmlessly on the <pre>/<code>,
- * where the per-token --shiki-* vars are undefined so the declaration is
- * ignored). */
+/* zfb's default class-mode stylesheet lives in `@layer zfb-hi`. This adapter
+ * stays unlayered, so zudo's semantic design tokens win without specificity or
+ * import-order coupling. The indirections deliberately stay as var() values:
+ * ColorSchemeProvider and the Design Token Panel can replace any --zd-* source
+ * live, and existing highlighted DOM recomputes without a renderer pass. */
+:root {
+  --zfb-hi-fg: var(--zd-code-fg);
+  --zfb-hi-bg: var(--zd-code-bg);
+  --zfb-hi-esc: var(--zd-syntax-string);
+  --zfb-hi-op: var(--zd-code-fg);
+  --zfb-hi-com: var(--zd-syntax-comment);
+  --zfb-hi-str: var(--zd-syntax-string);
+  --zfb-hi-num: var(--zd-syntax-number);
+  --zfb-hi-const: var(--zd-syntax-number);
+  --zfb-hi-kw: var(--zd-syntax-keyword);
+  --zfb-hi-fn: var(--zd-syntax-callable);
+  --zfb-hi-ty: var(--zd-syntax-type);
+  --zfb-hi-ns: var(--zd-syntax-type);
+  --zfb-hi-prop: var(--zd-syntax-name);
+  --zfb-hi-var: var(--zd-syntax-name);
+  --zfb-hi-tag: var(--zd-syntax-name);
+  --zfb-hi-attr: var(--zd-syntax-name);
+  --zfb-hi-punct: var(--zd-code-fg);
+  --zfb-hi-ins: var(--zd-syntax-inserted);
+  --zfb-hi-ins-bg: color-mix(
+    in srgb,
+    var(--zd-syntax-inserted) 15%,
+    var(--zd-code-bg)
+  );
+  --zfb-hi-del: var(--zd-syntax-deleted);
+  --zfb-hi-del-bg: color-mix(
+    in srgb,
+    var(--zd-syntax-deleted) 15%,
+    var(--zd-code-bg)
+  );
+  --zfb-hi-hd: var(--zd-syntax-keyword);
+}
+
+/* HTML Preview remains on Shiki until #2742. Its dual-theme variables, plus
+ * legacy syntect-dual output supplied by downstream content, continue to
+ * resolve through color-scheme. These selectors intentionally exclude
+ * `.hi-root`, whose colors come from the semantic bridge above. */
 [data-theme] .shiki,
 [data-theme] .shiki span,
-[data-theme] pre[class^="syntect-"],
-[data-theme] pre[class^="syntect-"] span {
+[data-theme] pre[class*="syntect-"],
+[data-theme] pre[class*="syntect-"] span {
   color: light-dark(var(--shiki-light), var(--shiki-dark));
   font-style: light-dark(
     var(--shiki-light-font-style, inherit),
@@ -184,7 +200,7 @@ pre[class^="syntect-"].word-wrap code {
  * translucent line-/word-highlight backgrounds that sit on the enclosing
  * .line span (see .line.highlighted below). */
 [data-theme] .shiki,
-[data-theme] pre[class^="syntect-"] {
+[data-theme] pre[class*="syntect-"] {
   background-color: light-dark(var(--shiki-light-bg), var(--shiki-dark-bg));
 }
 
@@ -212,13 +228,13 @@ pre[class^="syntect-"].word-wrap code {
  * zfb emits data-line-highlight="true" on the <span class="line"> element
  * (verified empirically at next.13). The .highlighted class form is kept for
  * forward-compat in case a future zfb version emits both. */
-pre[class^="syntect-"] .line.highlighted,
-pre[class^="syntect-"] [data-line-highlight="true"] {
+:is(pre.hi-root, pre[class*="syntect-"]) .line.highlighted,
+:is(pre.hi-root, pre[class*="syntect-"]) [data-line-highlight="true"] {
   background-color: color-mix(in srgb, var(--color-accent) 15%, transparent);
 }
 
 /* Word highlighting via /word/ meta syntax */
-pre[class^="syntect-"] .line .highlighted-word {
+:is(pre.hi-root, pre[class*="syntect-"]) .line .highlighted-word {
   background-color: color-mix(in srgb, var(--color-accent) 25%, transparent);
   border-bottom: 1px solid var(--color-accent);
 }
@@ -242,7 +258,7 @@ pre[class^="syntect-"] .line .highlighted-word {
   padding: var(--spacing-vsp-2xs) var(--spacing-hsp-lg);
 }
 
-.code-block-container pre[class^="syntect-"] {
+.code-block-container :is(pre.hi-root, pre[class*="syntect-"]) {
   margin-top: 0 !important;
   border-top-left-radius: 0;
   border-top-right-radius: 0;

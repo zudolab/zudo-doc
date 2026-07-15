@@ -245,6 +245,21 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
     expect(html).toContain("injected-route-render-proof");
   });
 
+  it("highlight: a native fenced block emits semantic class HTML without fixed colors", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    const highlightedBlock =
+      html.match(
+        /<pre\b[^>]*\bclass=(?:"hi-root"|'hi-root'|hi-root)(?=[\s>])[^>]*>[\s\S]*?<\/pre>/,
+      )?.[0] ?? "";
+    expect(highlightedBlock).not.toBe("");
+    expect(highlightedBlock).toMatch(/<pre\b[^>]*><code\b[^>]*>/);
+    expectHtmlAttr(highlightedBlock, "class", "hi-kw");
+    expectHtmlAttr(highlightedBlock, "class", "hi-var");
+    expect(highlightedBlock).not.toContain("syntect-dual");
+    expect(highlightedBlock).not.toContain("--shiki-light");
+    expect(highlightedBlock).not.toMatch(/\bstyle=/);
+  });
+
   // CB #2501 baseline: `settings.chromeBindingsModule` is unset in this
   // fixture, so `buildFrontmatterPreviewEntries` stays at its package-default
   // `() => []` stub and the FrontmatterPreview table stays absent — the
@@ -286,12 +301,12 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
 
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"747a02deee65b2ce66003ba70f694091da85c8ea62718a4997ae8046cb2d9cb1"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"0fa10d4eee6e3cfb6241cb1ab02275b10b06405f7d7c3ebf2caf698b1f5d4142"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"de951109913d398101a3f40401f3fa5d537df657e7019eebac8d5b3ea4b4efbb"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"6dbcfab172d10e786a4fffdece86b8cc61e14c65128314aa53353580115e60da"`);
   });
 });
 

@@ -185,12 +185,14 @@ function buildPaletteTab(mode: PanelMode): TabConfig {
 }
 
 // ---------------------------------------------------------------------------
-// Color tab — mode-scoped semantic tier (4 base roles + 23 --zd-* roles) as
-// grouped ramp dropdowns referencing the Palette tab (#2606 / #2610).
+// Color tab — mode-scoped semantic tier (4 base roles + 23 existing --zd-*
+// roles + 9 syntax roles) as grouped ramp dropdowns referencing the Palette
+// tab (#2606 / #2610 / syntax token contract #2739).
 // ---------------------------------------------------------------------------
 
 /**
- * Semantic tier — 4 base roles + 23 `--zd-*` roles, each a grouped ramp
+ * Semantic tier — 4 base roles + 23 existing `--zd-*` roles + 9 syntax roles,
+ * each a grouped ramp
  * dropdown. `referencesRamps` names the Palette tab's ramp tiers this tier's
  * `{ref}` mappings resolve against; `semantic: true` marks it so zdtp never
  * mistakes it for the palette tier. Seeded from `schemeForMode(mode)`.

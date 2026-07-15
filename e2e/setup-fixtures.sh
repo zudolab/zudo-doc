@@ -1,13 +1,16 @@
 #!/bin/bash
-# Setup symlinks and copies for E2E test fixtures (zfb topology).
+# Materialize and link E2E test fixtures (zfb topology).
 #
 # Each fixture has its own `src/config/settings.ts` and its own
 # `src/content/`, but shares the rest of the project tree (pages,
-# plugins, src/components, etc.) via symlinks back to the repo root.
+# plugins, src/components, etc.) by copying first-party sources from the repo
+# root. Only dependency-resolution directories stay symlinked.
 #
-# Files that contain relative imports (zfb.config.ts → "./src/config/...",
-# tsconfig.json → "src/*", "#doc-history-meta") are *copied* so their
-# imports resolve from the fixture directory; everything else is symlinked.
+# zfb's module-preprocessing graph canonicalizes first-party files and rejects
+# symlinks whose targets escape the project root. Materializing pages/ and
+# src/* therefore is part of the fixture contract, not just a portability
+# choice. `packages/` and `node_modules/` remain links because they represent
+# installed/workspace dependency resolution rather than fixture-owned source.
 #
 # Pre-zfb-cutover this script symlinked `src/{components,layouts,...}`,
 # copied `astro.config.ts` + `src/content.config.ts`, and ran `astro build`.
@@ -41,8 +44,8 @@
 #     tsconfig.json          (copied — `@/*` path; extends the package's
 #                             `tsconfig.base.json`, which ships the ambient
 #                             `zfb/config` + virtual-module shims)
-#     pages/                 → ../../../pages
-#     plugins/               → ../../../plugins
+#     pages/                 (copied from root)
+#     plugins/               (copied from root, when present)
 #     packages/              → ../../../packages
 #     node_modules/          → ../../../node_modules
 #     public/                (mixed: fixture-specific files plus COPIED
@@ -53,7 +56,7 @@
 #     src/
 #       chrome-bindings.tsx  (copied — the `chromeBindingsModule` target;
 #                             relative imports of `../pages/lib/*` resolve
-#                             against the fixture's own symlinked `pages/`)
+#                             against the fixture's own copied `pages/`)
 #       config/
 #         settings.ts        (fixture-specific, kept in git; types import
 #                             from `@takazudo/zudo-doc/settings` directly)
@@ -63,11 +66,11 @@
 #         contrast-utils.ts         drift in check)
 #         frontmatter-preview-renderers.tsx
 #       content/             (fixture-specific, kept in git)
-#       components/          → ../../../../src/components
-#       lib/                 → ../../../../src/lib
-#       styles/              → ../../../../src/styles
-#       types/               → ../../../../src/types
-#       utils/               → ../../../../src/utils
+#       components/          (copied from root)
+#       lib/                 (copied from root)
+#       styles/              (copied from root)
+#       types/               (copied from root)
+#       utils/               (copied from root)
 #
 # Build invocation (per fixture, end of this script):
 #
@@ -150,17 +153,23 @@ ROOT_COPIED_FILES=(
 # a SRC_SHARED_DIRS directory) because they have relative imports that must
 # resolve from the fixture directory. `chrome-bindings.tsx` is the
 # `chromeBindingsModule` target zfb.config.ts points at (#2663) — its
-# `../pages/lib/*` imports resolve against the fixture's own symlinked
+# `../pages/lib/*` imports resolve against the fixture's own copied
 # `pages/`, and its `@/config/*` / `@/utils/*` imports resolve against the
 # fixture's own settings + the shared dirs above.
 SRC_SINGLE_FILES=(
   chrome-bindings.tsx
 )
 
-# Project-root directories symlinked at fixture root.
-ROOT_SYMLINKED_DIRS=(
+# Project-root first-party directories copied into each fixture. zfb's
+# module-worker/preprocessing containment checks intentionally reject these
+# graphs when they resolve through a symlink outside the fixture root.
+ROOT_COPIED_DIRS=(
   pages
   plugins
+)
+
+# Project-root dependency directories symlinked at fixture root.
+ROOT_SYMLINKED_DIRS=(
   packages
   node_modules
 )
@@ -305,14 +314,14 @@ setup_fixture() {
 
   mkdir -p "$fixture_dir/src/config"
 
-  # ----- Symlink shared src/* dirs (everything but config + content) -----
+  # ----- Copy shared first-party src/* dirs (everything but config + content) -----
   for dir in "${SRC_SHARED_DIRS[@]}"; do
     local source="$REPO_ROOT/src/$dir"
     if [ ! -e "$source" ]; then
       continue
     fi
     rm -rf "$fixture_dir/src/$dir"
-    ln -sfn "$source" "$fixture_dir/src/$dir"
+    cp -RL "$source" "$fixture_dir/src/$dir"
   done
 
   # ----- Prune stale gitignored copies of files retired from src/config/ -----
@@ -360,7 +369,24 @@ setup_fixture() {
     cp -f "$REPO_ROOT/$file" "$fixture_dir/$file"
   done
 
-  # ----- Symlink top-level dirs (pages/, plugins/, packages/, node_modules/) -----
+  # ----- Copy top-level first-party dirs (pages/, plugins/) -----
+  for dir in "${ROOT_COPIED_DIRS[@]}"; do
+    # Clean first: a directory removed from the root must not leave a stale
+    # fixture copy (or dangling symlink) behind on the next setup run.
+    rm -rf "$fixture_dir/$dir"
+    [ -e "$REPO_ROOT/$dir" ] || continue
+    cp -RL "$REPO_ROOT/$dir" "$fixture_dir/$dir"
+  done
+
+  # The theme fixture intentionally exercises the package-owned docs route.
+  # This lets fixture-local colorSchemes travel through the preset's virtual
+  # route context instead of the showcase's legacy user-route context, which
+  # is intentionally pinned to the package defaults.
+  if [ "$fixture" = "theme" ]; then
+    rm -rf "$fixture_dir/pages/docs"
+  fi
+
+  # ----- Symlink dependency dirs (packages/, node_modules/) -----
   for dir in "${ROOT_SYMLINKED_DIRS[@]}"; do
     [ -e "$REPO_ROOT/$dir" ] || continue
     rm -rf "$fixture_dir/$dir"
@@ -565,7 +591,7 @@ fi
 # actual `zfb build` happens once here so we surface bundler errors at
 # bootstrap time instead of inside the test runner. Sequential keeps the
 # log readable and avoids any future races between concurrent zfb builds
-# that share the symlinked `pages/` tree.
+# that share the same package dependency graph.
 #
 # Skip-rebuild-when-fresh: each fixture tracks a hash of its build inputs
 # in <fixture>/.build-marker.sha256. When the hash matches the stored

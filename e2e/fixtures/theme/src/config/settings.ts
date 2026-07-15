@@ -6,15 +6,38 @@ import type {
   LocaleConfig,
   MetaTagsConfig,
 } from "@takazudo/zudo-doc/settings";
+import type { ColorScheme } from "@takazudo/zudo-doc/color-scheme-utils";
+import { defaultColorSchemes } from "@takazudo/zudo-doc/color-schemes-defaults";
+
+const defaultDark = defaultColorSchemes["Default Dark"]!;
+const syntaxVariation = {
+  ramps: defaultDark.ramps,
+  map: {
+    bg: defaultDark.map.bg,
+    fg: defaultDark.map.fg,
+    selectionBg: defaultDark.map.selectionBg,
+    selectionFg: defaultDark.map.selectionFg,
+    semantic: {
+      ...defaultDark.map.semantic,
+      // No explicit map.syntax: syntaxKeyword must inherit this named
+      // variation's accent reference through the public alias contract.
+      accent: { state: "info" },
+    },
+  },
+} satisfies ColorScheme;
 
 export const settings = {
   colorScheme: "Default Dark",
   colorMode: {
     defaultMode: "light",
     lightScheme: "Default Light",
-    darkScheme: "Default Dark",
+    darkScheme: "Syntax Variation",
     respectPrefersColorScheme: true,
   } satisfies ColorModeConfig as ColorModeConfig | false,
+  colorSchemes: {
+    ...defaultColorSchemes,
+    "Syntax Variation": syntaxVariation,
+  },
   siteName: "Theme Test",
   siteDescription: "Test fixture for theme toggle E2E tests" as string,
   base: "/",

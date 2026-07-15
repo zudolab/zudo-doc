@@ -104,6 +104,50 @@ export const SEMANTIC_KEYS: readonly SemanticKey[] = [
   "matchedKeywordFg",
 ];
 
+/**
+ * Compact Tier-2 syntax vocabulary. zfb's fixed 18-role renderer taxonomy is
+ * intentionally collapsed onto these nine public design decisions; see
+ * `ZFB_HIGHLIGHT_ROLE_TO_ZUDO_TOKEN` below.
+ */
+export const SYNTAX_SEMANTIC_KEYS = [
+  "syntaxComment",
+  "syntaxString",
+  "syntaxNumber",
+  "syntaxKeyword",
+  "syntaxCallable",
+  "syntaxType",
+  "syntaxName",
+  "syntaxInserted",
+  "syntaxDeleted",
+] as const;
+
+export type SyntaxSemanticKey = (typeof SYNTAX_SEMANTIC_KEYS)[number];
+
+/** Existing semantic role inherited when a syntax role has no explicit map. */
+export const SYNTAX_SEMANTIC_ALIASES: Readonly<Record<SyntaxSemanticKey, SemanticKey>> = {
+  syntaxComment: "muted",
+  syntaxString: "success",
+  syntaxNumber: "warning",
+  syntaxKeyword: "accent",
+  syntaxCallable: "info",
+  syntaxType: "warning",
+  syntaxName: "codeFg",
+  syntaxInserted: "success",
+  syntaxDeleted: "danger",
+};
+
+export const SYNTAX_CSS_NAMES: Readonly<Record<SyntaxSemanticKey, string>> = {
+  syntaxComment: "--zd-syntax-comment",
+  syntaxString: "--zd-syntax-string",
+  syntaxNumber: "--zd-syntax-number",
+  syntaxKeyword: "--zd-syntax-keyword",
+  syntaxCallable: "--zd-syntax-callable",
+  syntaxType: "--zd-syntax-type",
+  syntaxName: "--zd-syntax-name",
+  syntaxInserted: "--zd-syntax-inserted",
+  syntaxDeleted: "--zd-syntax-deleted",
+};
+
 /** The per-mode wiring: each UI role points at a ramp stop (or literal OKLCH)
  *  via a `RampRef`. Two `ColorScheme`s (light + dark) share `ramps` but carry
  *  their own `ModeMap`. */
@@ -113,6 +157,9 @@ export interface ModeMap {
   selectionBg: RampRef;
   selectionFg: RampRef;
   semantic: Record<SemanticKey, RampRef>;
+  /** Optional syntax-specific overrides. Missing roles inherit the aliases in
+   *  `SYNTAX_SEMANTIC_ALIASES`, preserving old complete `ModeMap` objects. */
+  syntax?: Partial<Record<SyntaxSemanticKey, RampRef>>;
 }
 
 /** A complete color scheme — shared Tier-1 ramps + per-mode Tier-2 wiring. */
@@ -182,6 +229,49 @@ export const SEMANTIC_CSS_NAMES: Record<SemanticKey, string> = {
 };
 
 /**
+ * Canonical renderer-role contraction shared by native zfb fenced code and
+ * `@takazudo/zfb-md-wasm` HTML Preview output. Values name zudo-doc semantic
+ * tokens, never palette stops, so renderer/component CSS stays downstream of
+ * the theme tier.
+ */
+export const ZFB_HIGHLIGHT_ROLE_TO_ZUDO_TOKEN = {
+  foreground: "codeFg",
+  background: "codeBg",
+  escape: "syntaxString",
+  operator: "codeFg",
+  comment: "syntaxComment",
+  string: "syntaxString",
+  number: "syntaxNumber",
+  constant: "syntaxNumber",
+  keyword: "syntaxKeyword",
+  function: "syntaxCallable",
+  type: "syntaxType",
+  namespace: "syntaxType",
+  property: "syntaxName",
+  variable: "syntaxName",
+  tag: "syntaxName",
+  attribute: "syntaxName",
+  punctuation: "codeFg",
+  inserted: "syntaxInserted",
+  deleted: "syntaxDeleted",
+  heading: "syntaxKeyword",
+} as const satisfies Record<string, SemanticKey | SyntaxSemanticKey>;
+
+export type ZfbHighlightRole = keyof typeof ZFB_HIGHLIGHT_ROLE_TO_ZUDO_TOKEN;
+
+/** Percentage of the inserted/deleted foreground mixed into `codeBg`. */
+export const SYNTAX_DIFF_BACKGROUND_MIX_PERCENT = 15;
+
+/**
+ * Component-token values for zfb's inserted/deleted background variables.
+ * They deliberately do not create public `--zd-syntax-*-bg` roles.
+ */
+export const SYNTAX_DIFF_BACKGROUND_CSS = {
+  inserted: `color-mix(in srgb, var(${SYNTAX_CSS_NAMES.syntaxInserted}) ${SYNTAX_DIFF_BACKGROUND_MIX_PERCENT}%, var(${SEMANTIC_CSS_NAMES.codeBg}))`,
+  deleted: `color-mix(in srgb, var(${SYNTAX_CSS_NAMES.syntaxDeleted}) ${SYNTAX_DIFF_BACKGROUND_MIX_PERCENT}%, var(${SEMANTIC_CSS_NAMES.codeBg}))`,
+} as const;
+
+/**
  * Resolve a `RampRef` to a concrete color string against the given `ramps`.
  *   - `{ base: n }`   → `ramps.base[n]`
  *   - `{ accent: n }` → `ramps.accent[n]`
@@ -220,6 +310,85 @@ export function resolveSemanticColors(scheme: ColorScheme): Record<SemanticKey, 
     out[key] = resolveRampRef(map.semantic[key], ramps);
   }
   return out;
+}
+
+/** Return a non-empty color only when `ref` is structurally resolvable. */
+function tryResolveRampRef(ref: unknown, ramps: Ramps): string | undefined {
+  if (typeof ref === "string") return ref.trim().length > 0 ? ref : undefined;
+  if (!ref || typeof ref !== "object") return undefined;
+  const candidate = ref as Record<string, unknown>;
+  if ("base" in candidate) {
+    const index = candidate.base;
+    if (typeof index !== "number" || !Number.isInteger(index) || index < 0) return undefined;
+    const value = ramps.base[index];
+    return typeof value === "string" && value.trim().length > 0 ? value : undefined;
+  }
+  if ("accent" in candidate) {
+    const index = candidate.accent;
+    if (typeof index !== "number" || !Number.isInteger(index) || index < 0) return undefined;
+    const value = ramps.accent[index];
+    return typeof value === "string" && value.trim().length > 0 ? value : undefined;
+  }
+  if ("state" in candidate) {
+    const state = candidate.state;
+    if (typeof state !== "string" || !(STATE_ROLES as readonly string[]).includes(state)) return undefined;
+    const value = ramps.state[state as StateRole];
+    return typeof value === "string" && value.trim().length > 0 ? value : undefined;
+  }
+  return undefined;
+}
+
+function copyRampRef(ref: RampRef): RampRef {
+  return typeof ref === "string" ? ref : { ...ref };
+}
+
+export interface ResolvedSyntaxPalette {
+  /** Effective refs retain ramp identity for design-token-panel rows. */
+  refs: Record<SyntaxSemanticKey, RampRef>;
+  /** Concrete colors used by generated CSS and contrast validation. */
+  colors: Record<SyntaxSemanticKey, string>;
+}
+
+/**
+ * Canonical complete syntax resolver. Explicit partial overrides win; missing
+ * or invalid overrides inherit the scheme's semantic alias. A defensive
+ * `codeFg` / `fg` / first-ramp chain keeps runtime-authored data non-throwing
+ * even when it bypasses TypeScript or serde validation.
+ */
+export function resolveSyntaxPalette(scheme: ColorScheme): ResolvedSyntaxPalette {
+  const { ramps, map } = scheme;
+  const refs = {} as Record<SyntaxSemanticKey, RampRef>;
+  const colors = {} as Record<SyntaxSemanticKey, string>;
+  const emergencyCandidates: unknown[] = [
+    map.semantic.codeFg,
+    map.fg,
+    ramps.base.find((value) => typeof value === "string" && value.trim().length > 0),
+    "currentColor",
+  ];
+  const emergencyRef = emergencyCandidates.find(
+    (candidate) => tryResolveRampRef(candidate, ramps) !== undefined,
+  ) as RampRef;
+  const emergencyColor = tryResolveRampRef(emergencyRef, ramps) ?? "currentColor";
+
+  for (const key of SYNTAX_SEMANTIC_KEYS) {
+    const explicitRef = map.syntax?.[key];
+    const explicitColor = tryResolveRampRef(explicitRef, ramps);
+    const inheritedRef = map.semantic[SYNTAX_SEMANTIC_ALIASES[key]];
+    const inheritedColor = tryResolveRampRef(inheritedRef, ramps);
+    const effectiveRef = explicitColor !== undefined
+      ? explicitRef as RampRef
+      : inheritedColor !== undefined
+        ? inheritedRef
+        : emergencyRef;
+    refs[key] = copyRampRef(effectiveRef);
+    colors[key] = explicitColor ?? inheritedColor ?? emergencyColor;
+  }
+  return { refs, colors };
+}
+
+/** Convenience view of the canonical syntax palette's concrete colors. */
+export function resolveSyntaxColors(scheme: ColorScheme): Record<SyntaxSemanticKey, string> {
+  return resolveSyntaxPalette(scheme).colors;
 }
 
 // Structural copy of @takazudo/zdtp's TierItem — keeps the optional peer out of
@@ -263,10 +432,10 @@ export function rampRefToPanelDefault(ref: RampRef): string {
 }
 
 /**
- * Build the 27-row mode-scoped semantic tier's `items` for the design-token
+ * Build the 36-row mode-scoped semantic tier's `items` for the design-token
  * panel, from a single (already mode-resolved) `ColorScheme`: 4 base roles
  * (`bg`, `fg`, `selection-bg`, `selection-fg`) followed by the 23
- * `SEMANTIC_KEYS` rows, in that order. Every row's `default` is
+ * `SEMANTIC_KEYS` rows and 9 syntax rows, in that order. Every row's `default` is
  * `rampRefToPanelDefault` of the scheme's `map` entry for that role — never a
  * resolved literal color — so the panel's grouped ramp dropdown can decode it
  * back to a ramp reference (the no-snapping guarantee: a scheme with no
@@ -275,6 +444,7 @@ export function rampRefToPanelDefault(ref: RampRef): string {
  */
 export function buildSemanticTierItems(scheme: ColorScheme): TierItem[] {
   const { map } = scheme;
+  const syntax = resolveSyntaxPalette(scheme);
   const items: TierItem[] = [
     {
       id: "bg",
@@ -314,13 +484,22 @@ export function buildSemanticTierItems(scheme: ColorScheme): TierItem[] {
       type: { kind: "color", format: "oklch" },
     });
   }
+  for (const key of SYNTAX_SEMANTIC_KEYS) {
+    items.push({
+      id: key,
+      cssVar: SYNTAX_CSS_NAMES[key],
+      label: key,
+      default: rampRefToPanelDefault(syntax.refs[key]),
+      type: { kind: "color", format: "oklch" },
+    });
+  }
   return items;
 }
 
 /** Which tiers a `schemeToCssPairs` call emits:
  *   - `"all"` (default) — base roles + `--palette-*` + `--zd-*` semantic
  *   - `"palette"`       — only the bare Tier-1 `--palette-*` pairs
- *   - `"roles"`         — base roles + the 23 `--zd-*` semantic pairs
+ *   - `"roles"`         — base roles + the 23 UI and 9 syntax semantic pairs
  *
  * The split lets `generateLightDarkCssProperties` emit the shared `--palette-*`
  * once (bare) while wrapping the per-mode `--zd-*` roles in `light-dark(…)`.
@@ -337,6 +516,7 @@ export type CssEmitScope = "all" | "palette" | "roles";
  *   - Tier-1 ramps: `--palette-base-0..4`, `--palette-accent-0..2`,
  *     `--palette-state-{danger,success,warning,info}`
  *   - the 23 Tier-2 `--zd-{role}` semantic tokens
+ *   - the 9 Tier-2 `--zd-syntax-*` semantic tokens
  *
  * It intentionally does NOT emit the retired `--zd-0..15` slots or `--zd-cursor`.
  */
@@ -365,6 +545,10 @@ export function schemeToCssPairs(scheme: ColorScheme, scope: CssEmitScope = "all
     const sem = resolveSemanticColors(scheme);
     for (const key of SEMANTIC_KEYS) {
       pairs.push([SEMANTIC_CSS_NAMES[key], sem[key]]);
+    }
+    const syntax = resolveSyntaxColors(scheme);
+    for (const key of SYNTAX_SEMANTIC_KEYS) {
+      pairs.push([SYNTAX_CSS_NAMES[key], syntax[key]]);
     }
   }
 

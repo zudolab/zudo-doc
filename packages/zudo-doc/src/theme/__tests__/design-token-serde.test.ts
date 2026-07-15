@@ -36,6 +36,7 @@ import {
 } from "../design-token-serde.js";
 import type { TweakState } from "../design-token-types.js";
 import {
+  resolveSyntaxColors,
   SEMANTIC_RAMP_DEFAULTS,
   type ColorScheme,
 } from "../../color-scheme-utils.js";
@@ -178,6 +179,17 @@ describe("serialize", () => {
     });
     expect(json.color?.map?.selectionBg).toBe("oklch(0.300 0.020 65)");
   });
+
+  it("serializes only explicit syntax overrides without materializing inherited roles", () => {
+    const color = cloneBaseline();
+    color.map.syntax = { syntaxKeyword: { accent: 2 } };
+    const json = serialize(makeState({ color }), {
+      manifest: MANIFEST,
+      colorDefaults: COLOR_BASELINE,
+    });
+    expect(json.color?.map?.syntax).toEqual({ syntaxKeyword: { accent: 2 } });
+    expect(json.color?.map?.syntax).not.toHaveProperty("syntaxComment");
+  });
 });
 
 describe("deserialize", () => {
@@ -203,6 +215,48 @@ describe("deserialize", () => {
     expect(state.spacing).toEqual(original.spacing);
     expect(state.font).toEqual(original.font);
     expect(state.size).toEqual(original.size);
+    expect(state.color).toEqual(original.color);
+  });
+
+  it("round-trips an authoritative empty syntax map that clears baseline overrides", () => {
+    const baseline = cloneBaseline();
+    baseline.map.syntax = {
+      syntaxInserted: "oklch(0.75 0.145 145)",
+      syntaxDeleted: "oklch(0.82 0.1 25)",
+    };
+    const color = structuredClone(baseline);
+    color.map.syntax = {};
+    const original = makeState({ color });
+
+    const json = serialize(original, { manifest: MANIFEST, colorDefaults: baseline });
+    expect(json.color?.map?.syntax).toEqual({});
+
+    const { state, warnings } = deserialize(JSON.parse(JSON.stringify(json)), {
+      manifest: MANIFEST,
+      colorDefaults: baseline,
+    });
+    expect(warnings).toEqual([]);
+    expect(state.color).toEqual(original.color);
+  });
+
+  it("round-trips a one-role syntax map without restoring baseline overrides", () => {
+    const baseline = cloneBaseline();
+    baseline.map.syntax = {
+      syntaxInserted: "oklch(0.75 0.145 145)",
+      syntaxDeleted: "oklch(0.82 0.1 25)",
+    };
+    const color = structuredClone(baseline);
+    color.map.syntax = { syntaxKeyword: { accent: 2 } };
+    const original = makeState({ color });
+
+    const json = serialize(original, { manifest: MANIFEST, colorDefaults: baseline });
+    expect(json.color?.map?.syntax).toEqual({ syntaxKeyword: { accent: 2 } });
+
+    const { state, warnings } = deserialize(JSON.parse(JSON.stringify(json)), {
+      manifest: MANIFEST,
+      colorDefaults: baseline,
+    });
+    expect(warnings).toEqual([]);
     expect(state.color).toEqual(original.color);
   });
 
@@ -318,6 +372,44 @@ describe("deserialize", () => {
     expect(state.color.map.semantic.muted).toEqual(COLOR_BASELINE.map.semantic.muted);
   });
 
+  it("treats a present partial syntax object as the authoritative override set", () => {
+    const baseline = cloneBaseline();
+    baseline.map.syntax = {
+      syntaxInserted: "oklch(0.75 0.145 145)",
+      syntaxDeleted: "oklch(0.82 0.1 25)",
+    };
+    const payload: DesignTokenJson = {
+      $schema: DESIGN_TOKEN_SCHEMA,
+      exportedAt: new Date().toISOString(),
+      color: { map: { syntax: { syntaxKeyword: { accent: 2 } } } as never },
+    };
+    const { state, warnings } = deserialize(payload, {
+      manifest: MANIFEST,
+      colorDefaults: baseline,
+    });
+
+    expect(warnings).toEqual([]);
+    expect(state.color.map.syntax).toEqual({ syntaxKeyword: { accent: 2 } });
+    expect(state.color.map.syntax).not.toHaveProperty("syntaxComment");
+  });
+
+  it("keeps an old v3 map with no syntax block compatible with the current baseline", () => {
+    const baseline = cloneBaseline();
+    baseline.map.syntax = { syntaxInserted: "oklch(0.75 0.145 145)" };
+    const payload: DesignTokenJson = {
+      $schema: DESIGN_TOKEN_SCHEMA,
+      exportedAt: new Date().toISOString(),
+      color: { map: { semantic: { accent: { accent: 2 } } } as never },
+    };
+    const { state, warnings } = deserialize(payload, {
+      manifest: MANIFEST,
+      colorDefaults: baseline,
+    });
+    expect(warnings).toEqual([]);
+    expect(state.color.map.syntax).toEqual(baseline.map.syntax);
+    expect(state.color.map.semantic.accent).toEqual({ accent: 2 });
+  });
+
   it("warns-then-falls-back when a ramp has the wrong length", () => {
     const payload: DesignTokenJson = {
       $schema: DESIGN_TOKEN_SCHEMA,
@@ -344,6 +436,26 @@ describe("deserialize", () => {
     });
     expect(state.color.map.bg).toEqual(COLOR_BASELINE.map.bg);
     expect(warnings.some((w) => w.includes("color.map.bg"))).toBe(true);
+  });
+
+  it("warns and ignores an invalid ref in an authoritative syntax object", () => {
+    const baseline = cloneBaseline();
+    baseline.map.syntax = { syntaxInserted: "oklch(0.75 0.145 145)" };
+    const payload: DesignTokenJson = {
+      $schema: DESIGN_TOKEN_SCHEMA,
+      exportedAt: new Date().toISOString(),
+      color: { map: { syntax: { syntaxInserted: { base: -1 }, syntaxComment: { accent: 99 } } } as never },
+    };
+    const { state, warnings } = deserialize(payload, {
+      manifest: MANIFEST,
+      colorDefaults: baseline,
+    });
+    expect(state.color.map.syntax).toEqual({
+      syntaxComment: { accent: 99 },
+    });
+    expect(warnings.some((warning) => warning.includes("syntaxInserted"))).toBe(true);
+    expect(() => resolveSyntaxColors(state.color)).not.toThrow();
+    expect(resolveSyntaxColors(state.color).syntaxComment).toBe(BASE_RAMP[1]);
   });
 });
 
