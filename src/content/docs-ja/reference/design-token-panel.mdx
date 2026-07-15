@@ -44,7 +44,7 @@ export default defineConfig(
 );
 ```
 
-このショーケースはパッケージのデフォルトビルダー（`@takazudo/zudo-doc/design-token-panel-config`）を、独自のブートストラップアイランド（`src/components/design-token-panel-bootstrap.tsx` → `src/lib/design-token-panel-bootstrap.ts`、[実装](#実装)を参照）に直接インポートしており、`designTokenPanelConfigModule` を指すのではなく直接配線しています（かつては `src/config/design-token-panel-config.ts` にビルダーをバイト単位でミラーしたコピーを保持していましたが、冗長だったため廃止しました）。`designTokenPanelConfigModule` は、独自のブートストラップアイランドを自作する代わりに、パッケージが自動注入するブートストラップ（`packageOwnedRoutes` 使用時のデフォルトの body-end アイランド）に自作のビルダーを読み込ませたい場合に使用します。
+このショーケースは、パッケージ所有のブートストラップとパッケージのデフォルトビルダーを使用します。自動注入されるブートストラップに独自のモードスコープなビルダーを読み込ませたい場合にのみ、`designTokenPanelConfigModule` を設定してください。
 
 ## 5つのタブ
 
@@ -210,7 +210,7 @@ Colorタブは常に、現在アクティブなモード（ライトまたはダ
 
 ## 実装
 
-パネルUIは `@takazudo/zdtp`（zdtp）npmパッケージが提供します。配線の仕組み — `configurePanel` の呼び出し、zfb のナビゲーションライフサイクルへのフック、および後述のモードスコープな destroy+reconfigure — は `@takazudo/zudo-doc/design-token-panel-bootstrap` にあります。プロジェクトの `src/lib/design-token-panel-bootstrap.ts` は、`bootstrapDesignTokenPanel(buildDesignTokenPanelConfig)` を呼び出すことで、その仕組みにパネルの設定*データ*を渡します。ここで `buildDesignTokenPanelConfig`（`@takazudo/zudo-doc/design-token-panel-config` から直接インポートされる、パッケージデフォルトのビルダー）は、プレーンな設定オブジェクトではなく `(mode) => PanelConfig` のビルダーです — これが Color タブをライト/ダークに追従させる仕組みです。パネルはこの呼び出しのサイドエフェクトとして自己マウントされるため、Preactアイランドの登録は不要です。
+パネルUIは `@takazudo/zdtp`（zdtp）npmパッケージが提供します。パッケージ所有の `DesignTokenPanelBootstrap` アイランドと、`configurePanel` の呼び出し、zfb のナビゲーションライフサイクルへのフック、および後述のモードスコープな destroy+reconfigure の仕組みは `@takazudo/zudo-doc/design-token-panel-bootstrap` にあります。アイランドは `bootstrapDesignTokenPanel(buildDesignTokenPanelConfig)` を呼び出します。`buildDesignTokenPanelConfig` は `(mode) => PanelConfig` のビルダーであり、これが Color タブをライト/ダークに追従させる仕組みです。アイランドがハイドレートすると、パネルはその副作用として自己マウントされます。
 
 （テーマトグルがディスパッチする）`color-scheme-changed` イベントのたびに、ブートストラップは新しいモードを読み取り、素早い連続トグルを 1 つのマクロタスクにまとめてから、`handle.destroy()` に続けて `configurePanel(buildDesignTokenPanelConfig(mode))` を呼び出します — zdtp の `configurePanel` は、構造的に異なる設定でその場で再実行すると例外を投げるため、destroy してから再構成することが、Color タブのモードスコープなデフォルトを差し替える唯一のサポートされた方法です。パネルが開いていた場合は、開いた状態で再マウントされます。
 

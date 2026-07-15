@@ -294,8 +294,11 @@ the same `setup(ctx)` hook.
   calls `createChrome(routeCtx)` with no `hostBindings` — silently emitting
   NO panel island under `designTokenPanel: true` (the confirm gate's blocking
   finding on #2658). Defaulting at the seam gives every consumer the
-  settings-gated island with zero explicit wiring, while the slot still
-  accepts a host override. Consequence: `@takazudo/zudo-doc/chrome` now
+  settings-gated island with zero explicit wiring, while the component slot
+  still accepts a host override. If a host supplies a whole `BodyEndIslands`
+  override, the derive seam composes the package-owned panel island alongside
+  it; the host override does not replace or duplicate the panel mount.
+  Consequence: `@takazudo/zudo-doc/chrome` now
   transitively imports `virtual:zudo-doc-design-token-panel-config`, so a
   `packageOwnedRoutes: false` host that bundles chrome must register/alias
   that module itself (the package vitest config aliases it to the package
@@ -324,9 +327,10 @@ the same `setup(ctx)` hook.
   via `designTokenPanelConfigModule` may choose its own prefix if desired.
 
 Regression coverage: `__tests__/route-injection-build.slow.test.ts` (Case DTP
-— the island marker + client-bundle registry match with no host module, the
-host's builder reaching the bundle with the setting, and the missing-file
-error naming the resolved path); `plugins/__tests__/routes.test.ts` (fast,
+— exactly one island marker + a client-bundle registry match with and without
+a host body-end override, the host's builder reaching the bundle with the
+setting, and the missing-file error naming the resolved path);
+`plugins/__tests__/routes.test.ts` (fast,
 isolated `setup()` coverage of all three guard cases without a full build);
 `design-token-panel-config/__tests__/index.test.ts` (the package-default
 builder's tab structure, mode-scoping, and the unchanged `storagePrefix`).

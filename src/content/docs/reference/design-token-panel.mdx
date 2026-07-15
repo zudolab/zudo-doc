@@ -44,7 +44,7 @@ export default defineConfig(
 );
 ```
 
-This showcase imports the package-default builder (`@takazudo/zudo-doc/design-token-panel-config`) directly into its own bootstrap island (`src/components/design-token-panel-bootstrap.tsx` → `src/lib/design-token-panel-bootstrap.ts`, see [Implementation](#implementation)) rather than going through `designTokenPanelConfigModule` — it used to keep a byte-for-byte-mirrored copy of the builder at `src/config/design-token-panel-config.ts`, retired as redundant. Use `designTokenPanelConfigModule` when you want the package's own auto-injected bootstrap (the default body-end island under `packageOwnedRoutes`) to pick up your custom builder instead of hand-rolling a bootstrap island of your own.
+This showcase uses the package-owned bootstrap and package-default builder. Set `designTokenPanelConfigModule` only when the auto-injected bootstrap should load a custom mode-scoped builder instead.
 
 ## The Five Tabs
 
@@ -210,7 +210,7 @@ The storage prefix `zudo-doc-tweak` is locked in the package-default builder (`@
 
 ## Implementation
 
-The panel UI is provided by the `@takazudo/zdtp` (zdtp) npm package. The wiring mechanism — calling `configurePanel`, hooking zfb's navigation lifecycle, and the mode-scoped destroy+reconfigure described below — lives in `@takazudo/zudo-doc/design-token-panel-bootstrap`. The project's `src/lib/design-token-panel-bootstrap.ts` passes that mechanism the panel's config *data* by calling `bootstrapDesignTokenPanel(buildDesignTokenPanelConfig)`, where `buildDesignTokenPanelConfig` (imported directly from `@takazudo/zudo-doc/design-token-panel-config`, the package-default builder) is a `(mode) => PanelConfig` builder, not a plain config object — this is what lets the Color tab follow light/dark. The panel self-mounts as a side-effect of that call — there is no Preact island registration for it.
+The panel UI is provided by the `@takazudo/zdtp` (zdtp) npm package. The package-owned `DesignTokenPanelBootstrap` island and its wiring mechanism — calling `configurePanel`, hooking zfb's navigation lifecycle, and the mode-scoped destroy+reconfigure described below — live in `@takazudo/zudo-doc/design-token-panel-bootstrap`. The island calls `bootstrapDesignTokenPanel(buildDesignTokenPanelConfig)`, where `buildDesignTokenPanelConfig` is a `(mode) => PanelConfig` builder — this is what lets the Color tab follow light/dark. The panel self-mounts as a side effect once the island hydrates.
 
 On every `color-scheme-changed` event (dispatched by the theme toggle), the bootstrap reads the new mode and coalesces rapid toggles onto a single macrotask, then calls `handle.destroy()` followed by `configurePanel(buildDesignTokenPanelConfig(mode))` — zdtp's `configurePanel` throws if re-run in place with a structurally different config, so destroy-then-reconfigure is the only supported way to swap the Color tab's mode-scoped defaults. If the panel was open, it's re-mounted open.
 

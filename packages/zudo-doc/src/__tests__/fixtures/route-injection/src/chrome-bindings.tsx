@@ -25,6 +25,9 @@
 import type { ChromeHostBindings } from "@takazudo/zudo-doc/factory-context";
 
 export const chromeBindings: ChromeHostBindings = {
+  BodyEndIslands: () => (
+    <div data-testid="host-body-end-marker">HOST-BODY-END-MARKER</div>
+  ),
   buildFrontmatterPreviewEntries: () => [
     ["cb-demo-key", "CB-DEMO-VALUE-MARKER"],
   ],

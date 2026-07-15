@@ -187,6 +187,11 @@ function expectHtmlAttr(html: string, name: string, value: string): void {
   expect(html).toMatch(htmlAttrPattern(name, value));
 }
 
+function countHtmlAttr(html: string, name: string, value: string): number {
+  const pattern = htmlAttrPattern(name, value);
+  return html.match(new RegExp(pattern.source, "g"))?.length ?? 0;
+}
+
 // ---------------------------------------------------------------------------
 // Cleanup
 // ---------------------------------------------------------------------------
@@ -695,6 +700,7 @@ describe("DTP design-token-panel: injected doc route registers the DesignTokenPa
   it("marker: injected /docs/getting-started/ HTML carries the DesignTokenPanelBootstrap island marker (non-skip-ssr)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
     expectHtmlAttr(html, "data-zfb-island", "DesignTokenPanelBootstrap");
+    expect(countHtmlAttr(html, "data-zfb-island", "DesignTokenPanelBootstrap")).toBe(1);
   });
 
   it("shim: injected /docs/getting-started/ HTML carries the pre-hydration toggle-shim script", () => {
@@ -712,6 +718,30 @@ describe("DTP design-token-panel: injected doc route registers the DesignTokenPa
 
   it("package-default builder: the bundle carries the unchanged storagePrefix 'zudo-doc-tweak' (HARD GATE #4)", () => {
     expect(readIslandsBundles(fixtureDir)).toContain("zudo-doc-tweak");
+  });
+});
+
+describe("DTP host body-end override: package derive seam retains exactly one DesignTokenPanelBootstrap", () => {
+  let fixtureDir: string;
+  let buildOutput: string;
+
+  it("setup: fixture builds with designTokenPanel + chromeBindingsModule", { timeout: 180_000 }, () => {
+    fixtureDir = setupFixture({ emptyPages: true });
+    enableDesignTokenPanel(fixtureDir);
+    enableChromeBindingsModule(fixtureDir);
+    buildOutput = runZfbBuild(fixtureDir);
+  });
+
+  it("composes the host body-end content with exactly one package-owned marker", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    expect(html).toContain("HOST-BODY-END-MARKER");
+    expect(countHtmlAttr(html, "data-zfb-island", "DesignTokenPanelBootstrap")).toBe(1);
+    expect(html).toContain("__zdtpToggleShimInstalled");
+  });
+
+  it("keeps a matching client registry entry without the duplicate-component warning", () => {
+    expect(readIslandsBundles(fixtureDir)).toContain("DesignTokenPanelBootstrap");
+    expect(buildOutput).not.toMatch(/cannot hydrate both components/i);
   });
 });
 

@@ -79,7 +79,7 @@ When a component needs interactivity — local state, event handlers, animations
 
 The standard chrome islands — including the table of contents, mobile TOC, sidebar tree and toggles, theme toggle, and doc history — are implemented by `@takazudo/zudo-doc`. A fresh scaffold consumes those package components; it does not contain copies of their source files.
 
-This showcase retains a few project-specific integrations: `client-router-bootstrap`, `design-token-panel-bootstrap`, `desktop-sidebar-toggle`, and the `preset-generator` island. The Design Token Panel self-mounts through `configurePanel()` rather than an island registry, and small re-export shims preserve existing showcase import paths. These are showcase implementation details, not a starter inventory for new projects.
+This showcase retains a few project-specific integrations: `client-router-bootstrap`, `desktop-sidebar-toggle`, and the `preset-generator` island. The Design Token Panel bootstrap is package-owned and reaches the island scanner through the static package route → chrome → derive import chain. These are showcase implementation details, not a starter inventory for new projects.
 
 To add a project-owned presentational component or an interactive island to a scaffold, follow the [Custom Components guide](./custom-components.mdx). It covers the `mdxExtras` registration path and the static import route required for an island to be discovered.
 
