@@ -17,7 +17,7 @@ The goal is to keep discovery sharp as the doc base grows. Start loose; tighten 
 
 ## The Vocabulary File
 
-`src/config/tag-vocabulary.ts` is an array of `TagVocabularyEntry` objects. Each entry declares a canonical tag id, an optional display label, a group, and any aliases content is allowed to use:
+`src/config/tag-vocabulary.ts` is an array of `TagVocabularyEntry` objects. Each entry declares a canonical tag id plus optional display metadata:
 
 ```ts
 {
@@ -25,11 +25,10 @@ The goal is to keep discovery sharp as the doc base grows. Start loose; tighten 
   label: "Deployment",
   description: "Hosting, CI, and release workflows.",
   group: "topic",
-  aliases: ["deploy", "deploys"],
 }
 ```
 
-To phase out a tag without breaking existing pages, either mark it deprecated or redirect it to a replacement. Never silently delete an entry — see the inline comments in `src/config/tag-vocabulary.ts` for the full phase-out contract.
+Content must use `id` exactly. If an id is renamed or removed, update every referencing page in the same change; the old string becomes unknown rather than being rewritten or dropped.
 
 ### Extending the Vocabulary in Your Project
 
@@ -69,7 +68,7 @@ Governance is controlled by two independent fields in `zudoDoc({...})` (set in `
 
 | Setting          | Type      | Purpose                                                                                    |
 | ---------------- | --------- | ------------------------------------------------------------------------------------------ |
-| `tagVocabulary`  | `boolean` | Whether the vocabulary file is consulted at all (alias resolution, deprecation, grouping). |
+| `tagVocabulary`  | `boolean` | Whether the vocabulary file is consulted at all (exact-id recognition and grouping). |
 | `tagGovernance`  | `"off" \| "warn" \| "strict"` | Enforcement level when the vocabulary is consulted.                                        |
 
 They are **orthogonal**. `tagVocabulary: false` disables vocabulary entirely, regardless of `tagGovernance`. Leave `tagVocabulary: true` (the default) and tune enforcement via `tagGovernance`.
@@ -77,13 +76,13 @@ They are **orthogonal**. `tagVocabulary: false` disables vocabulary entirely, re
 ### The Three Modes
 
 - `"off"` — vocabulary-aware enforcement is skipped. Tags stay completely loose. Useful for legacy migrations or prototypes.
-- `"warn"` (default) — `pnpm tags:audit` reports unknown tags, deprecations, and near-duplicates, but `pnpm build` still passes. Fixes can land at your own pace.
+- `"warn"` (default) — `pnpm tags:audit` reports unknown tags and near-duplicates, but `pnpm build` still passes. Fixes can land at your own pace.
 - `"strict"` — unknown tags fail Zod validation at `pnpm check` / `pnpm build` time. The vocabulary becomes the single source of truth.
 
 ### Recommended Escalation Path
 
 1. **Seed the vocabulary** from the tags you already use — `tag-vocabulary.ts` ships pre-filled with every tag that appears in the default showcase content.
-2. **Run `warn` until the audit is clean.** Fix unknowns, resolve aliases with `pnpm tags:audit --fix`, and retire near-duplicates by adding them as aliases of the canonical id.
+2. **Run `warn` until the audit is clean.** Replace unknown or near-duplicate strings in content with the chosen canonical id.
 3. **Flip to `strict`** once the audit is green. From that point on, new tags require a matching vocabulary entry — which is exactly the friction you want to prevent drift.
 
 Adopt `strict` as soon as the backlog is empty; the earlier the constraint is in place, the cheaper it stays.

@@ -19,47 +19,19 @@ export type { TagVocabularyEntry, TagGovernanceMode };
 
 /** Result of resolving a raw tag string. */
 export interface ResolvedTag {
-  /** Canonical id after alias/redirect rewrites. Equal to the raw input when unchanged. */
+  /** Exact canonical id, or the raw input when it is unknown/inactive. */
   canonical: string;
-  /** True when the canonical id should be dropped from aggregation (deprecated without redirect). */
-  deprecated: boolean;
-  /** True when the raw input matched a vocabulary entry (as id or alias). */
+  /** True when the raw input exactly matched a vocabulary id. */
   known: boolean;
 }
 
-interface VocabularyIndex {
-  byId: Map<string, TagVocabularyEntry>;
-  byAlias: Map<string, TagVocabularyEntry>;
-}
-
-function buildIndex(tagVocabulary: readonly TagVocabularyEntry[]): VocabularyIndex {
-  const byId = new Map<string, TagVocabularyEntry>();
-  const byAlias = new Map<string, TagVocabularyEntry>();
-  for (const entry of tagVocabulary) {
-    byId.set(entry.id, entry);
-    for (const alias of entry.aliases ?? []) byAlias.set(alias, entry);
-  }
-  return { byId, byAlias };
+function buildIndex(tagVocabulary: readonly TagVocabularyEntry[]): Set<string> {
+  return new Set(tagVocabulary.map((entry) => entry.id));
 }
 
 /** Resolve a single raw tag using a pre-built index (internal). */
-function resolveTagWithIndex(
-  raw: string,
-  index: VocabularyIndex,
-): ResolvedTag {
-  const entry = index.byId.get(raw) ?? index.byAlias.get(raw);
-  if (!entry) return { canonical: raw, deprecated: false, known: false };
-  const dep = entry.deprecated;
-  if (dep && typeof dep === "object" && dep.redirect) {
-    const target = index.byId.get(dep.redirect);
-    if (target) return { canonical: target.id, deprecated: false, known: true };
-    // Redirect points at a missing id — treat like plain deprecation.
-    return { canonical: entry.id, deprecated: true, known: true };
-  }
-  if (dep === true) {
-    return { canonical: entry.id, deprecated: true, known: true };
-  }
-  return { canonical: entry.id, deprecated: false, known: true };
+function resolveTagWithIndex(raw: string, ids: Set<string>): ResolvedTag {
+  return { canonical: raw, known: ids.has(raw) };
 }
 
 /**
@@ -70,13 +42,9 @@ function resolveTagWithIndex(
  *
  * When the vocabulary is inactive (`tagVocabulary` is empty/falsy or
  * `tagGovernance` is `"off"`), the raw value passes through unchanged with
- * `known: false, deprecated: false`. Otherwise:
+ * `known: false`. Otherwise:
  *
- * - A direct id match returns that id.
- * - An alias match returns the aliased entry's id.
- * - `deprecated: { redirect: "<id>" }` rewrites to the redirect target.
- * - `deprecated: true` (no redirect) returns `deprecated: true` so callers
- *   can drop the tag from aggregation.
+ * - An exact id match returns that id with `known: true`.
  * - An unknown value returns the raw string with `known: false`.
  */
 export function resolveTag(
@@ -85,15 +53,14 @@ export function resolveTag(
   tagGovernance: TagGovernanceMode | undefined,
 ): ResolvedTag {
   if (!tagVocabulary || tagGovernance === "off") {
-    return { canonical: raw, deprecated: false, known: false };
+    return { canonical: raw, known: false };
   }
   return resolveTagWithIndex(raw, buildIndex(tagVocabulary));
 }
 
 /**
- * Resolve a list of raw tag strings (e.g. from frontmatter) to canonical ids,
- * dropping deprecated-without-redirect entries and preserving order. Duplicates
- * produced by alias collapse are removed.
+ * Resolve a list of raw tag strings (e.g. from frontmatter), preserving order
+ * and removing exact duplicates. Unknown strings pass through unchanged.
  *
  * Builds the vocabulary index once and reuses it for all tags — O(N) index
  * construction instead of O(N×M) when called with M tags.
@@ -119,8 +86,7 @@ export function resolvePageTags(
   // Build the index once for all tags in this call.
   const index = buildIndex(tagVocabulary);
   for (const raw of rawTags) {
-    const { canonical, deprecated } = resolveTagWithIndex(raw, index);
-    if (deprecated) continue;
+    const { canonical } = resolveTagWithIndex(raw, index);
     if (seen.has(canonical)) continue;
     seen.add(canonical);
     out.push(canonical);

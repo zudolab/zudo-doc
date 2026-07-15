@@ -14,7 +14,6 @@
  * Do NOT compile it — it is only ever run through tsx.
  *
  * Flags:
- *   --fix    rewrite alias tags to canonical ids, byte-stable
  *   --ci     force non-zero exit on any hard issue regardless of governance
  *   --json   emit the report as JSON instead of colorized text
  */
@@ -27,8 +26,6 @@ import stringSimilarity from "string-similarity";
 
 import {
   audit,
-  applyFixes,
-  computeRewrites,
   formatTextReport,
   hasHardIssues,
   type AuditOptions,
@@ -59,7 +56,6 @@ const tagVocabulary: readonly { id: string; [k: string]: unknown }[] =
 
 const argv = process.argv.slice(2);
 const flags = {
-  fix: argv.includes("--fix"),
   ci: argv.includes("--ci"),
   json: argv.includes("--json"),
 };
@@ -74,22 +70,6 @@ const contentDirs = [docsDir, ...localeDirs];
 
 const vocabularyActive =
   Boolean(settings.tagVocabulary) && settings.tagGovernance !== "off";
-
-// ── Fix mode ───────────────────────────────────────────────────────────────
-
-if (flags.fix) {
-  const rewrites = computeRewrites(tagVocabulary);
-  const touched = await applyFixes(contentDirs, rewrites, ROOT_DIR);
-  if (flags.json) {
-    process.stdout.write(JSON.stringify({ fixed: touched }, null, 2) + "\n");
-  } else if (touched.length === 0) {
-    console.log(pc.green("✓ No alias rewrites needed"));
-  } else {
-    console.log(pc.green(`✓ Rewrote aliases in ${touched.length} file(s):`));
-    for (const f of touched) console.log(`  ${f}`);
-  }
-  process.exit(0);
-}
 
 // ── Audit mode ─────────────────────────────────────────────────────────────
 

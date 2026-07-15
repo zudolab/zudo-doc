@@ -173,7 +173,6 @@ export function createRouteContext<S extends Settings = Settings>(
       const seen = new Set<string>();
       for (const raw of rawTags) {
         const resolved = resolveTagBound(raw);
-        if (resolved.deprecated) continue;
         if (seen.has(resolved.canonical)) continue;
         seen.add(resolved.canonical);
         if (!tagMap.has(resolved.canonical)) {

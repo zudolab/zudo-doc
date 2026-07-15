@@ -12,10 +12,8 @@ import type { TagVocabularyEntry } from "@takazudo/zudo-doc/settings";
  * - `type`   — content-type tags (guide, reference, tutorial)
  * - `level`  — reader-level tags (beginner, advanced)
  *
- * To phase out a tag: set `deprecated: { redirect: "<new-id>" }` (content
- * using the old id will resolve to the new one) or `deprecated: true` to
- * drop it from aggregation entirely. Do not silently remove entries — other
- * docs may still reference them.
+ * Content must use these ids exactly. A renamed or removed id becomes unknown,
+ * so update every referencing page in the same change.
  */
 export const tagVocabulary: readonly TagVocabularyEntry[] = [
   // ── topic ─────────────────────────────────────────────────────────

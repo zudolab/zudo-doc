@@ -35,6 +35,7 @@
 
 import { z } from "zod";
 import type { ColorScheme } from "./color-scheme-utils.js";
+import type { TagVocabularyEntry } from "./settings.js";
 
 // ---------------------------------------------------------------------------
 // Input contract — structurally typed so the preset is portable to every
@@ -155,14 +156,7 @@ export type PresetTranslations = Record<string, Record<string, string>>;
  * data, threaded into the route-context virtual module when
  * `packageOwnedRoutes` is on. Optional — only consumed by the routes plugin.
  */
-export type PresetTagVocabularyEntry = {
-  id: string;
-  label?: string;
-  description?: string;
-  group?: string;
-  aliases?: readonly string[];
-  deprecated?: boolean | { redirect?: string };
-};
+export type PresetTagVocabularyEntry = TagVocabularyEntry;
 
 /** Arguments to `zudoDocPreset`. */
 export interface ZudoDocPresetArgs {

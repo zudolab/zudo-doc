@@ -33,8 +33,8 @@ const SCAN_TARGETS = [
 ];
 
 const SCANNED_EXTENSION_RE = /\.(?:cjs|js|json|md|mdx|mjs|ts|tsx|yaml|yml)$/;
-const ARRAY_FIELD_RE = /["']?(tags|aliases)["']?\s*:\s*\[([^\]]*)\]/g;
-const BLOCK_FIELD_RE = /^(\s*)["']?(tags|aliases)["']?\s*:\s*(.*)$/;
+const ARRAY_FIELD_RE = /["']?(tags)["']?\s*:\s*\[([^\]]*)\]/g;
+const BLOCK_FIELD_RE = /^(\s*)["']?(tags)["']?\s*:\s*(.*)$/;
 
 function stripValueSyntax(value) {
   return value
@@ -55,7 +55,7 @@ function lineNumberAt(source, offset) {
   return source.slice(0, offset).split("\n").length;
 }
 
-/** Find retired IDs specifically where text declares tag or alias data. */
+/** Find retired IDs specifically where text declares tag data. */
 export function scanCanonicalSource(source, path) {
   const findings = [];
   const seen = new Set();
