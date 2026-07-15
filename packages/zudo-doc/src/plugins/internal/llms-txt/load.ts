@@ -17,7 +17,7 @@ import {
   parseMarkdownFile,
   slugToUrl,
   stripMarkdown,
-} from "../../md-utils/index.js";
+} from "../../../md-utils/index.js";
 import { stripImportsAndJsx } from "./strip.js";
 import type { LlmsDocEntry, LlmsTxtLoadOptions } from "./types.js";
 
@@ -26,7 +26,7 @@ export {
   isExcluded,
   parseMarkdownFile,
   slugToUrl,
-} from "../../md-utils/index.js";
+} from "../../../md-utils/index.js";
 
 /**
  * Build the sorted {@link LlmsDocEntry} list for a single content root.

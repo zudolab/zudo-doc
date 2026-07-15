@@ -55,7 +55,7 @@ pnpm generate -- \
 
 ## zfb integration
 
-In dev mode, the zfb integration at `packages/zudo-doc/src/integrations/doc-history/` proxies `/doc-history/*` requests to this server. In build mode, the integration falls back to inline generation unless `SKIP_DOC_HISTORY=1` is set — which is the case in the CI `build-site` job so that the zfb build completes fast while the CLI `build-history` job generates the JSONs in parallel.
+In dev mode, the zfb plugin at `packages/zudo-doc/src/plugins/doc-history.ts` proxies `/doc-history/*` requests to this server. In build mode, the plugin falls back to inline generation unless `SKIP_DOC_HISTORY=1` is set — which is the case in the CI `build-site` job so that the zfb build completes fast while the CLI `build-history` job generates the JSONs in parallel.
 
 ## Build
 

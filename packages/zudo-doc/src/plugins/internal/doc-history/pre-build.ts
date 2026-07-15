@@ -1,4 +1,4 @@
-// `@takazudo/zudo-doc/integrations/doc-history` — preBuild runner.
+// Package-internal preBuild runner used by the public doc-history plugin.
 //
 // Emits `<projectRoot>/.zfb/doc-history-meta.json`, the per-page git
 // metadata manifest consumed at bundle time by
@@ -214,4 +214,3 @@ const defaultLogger = {
     console.warn(msg);
   },
 };
-

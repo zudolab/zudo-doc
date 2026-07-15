@@ -11,7 +11,7 @@ import {
   parseMarkdownFile,
   slugToUrl,
   stripMarkdown,
-} from "../../md-utils/index.js";
+} from "../../../md-utils/index.js";
 import {
   MAX_BODY_LENGTH,
   type SearchIndexConfig,

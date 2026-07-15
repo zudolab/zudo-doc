@@ -1,7 +1,6 @@
 // zfb plugin module: claude-resources.
 //
-// Wires `runClaudeResourcesPreStep` (from
-// `@takazudo/zudo-doc/integrations/claude-resources`) into zfb's
+// Wires the package-internal Claude resources generator into zfb's
 // `preBuild` lifecycle hook.
 //
 // Previously this shim spawned a `tsx` subprocess because the integration
@@ -12,7 +11,11 @@
 // bundle), so the runner can be imported directly.
 
 import type { ZfbBuildHookContext, ZfbPlugin } from "@takazudo/zfb/plugins";
-import { runClaudeResourcesPreStep } from "../integrations/claude-resources/index.js";
+import { runClaudeResourcesPreStep } from "./internal/claude-resources/index.js";
+
+// The repository's live-regeneration watcher uses the same current runner
+// through this plugin subpath; the implementation remains package-internal.
+export { runClaudeResourcesPreStep } from "./internal/claude-resources/index.js";
 
 const PLUGIN_NAME = "@takazudo/zudo-doc-claude-resources";
 
