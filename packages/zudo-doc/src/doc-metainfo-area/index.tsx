@@ -44,6 +44,7 @@ export interface DocHistoryMetaEntry {
   author: string;
   createdDate: string;
   updatedDate: string;
+  ext: ".mdx" | ".md";
 }
 
 /** Settings subset read by the DocMetainfoArea factory. */

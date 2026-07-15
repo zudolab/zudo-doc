@@ -2,12 +2,11 @@
 //
 // The content walkers (`collectContentFiles` in
 // @takazudo/zudo-doc-history-server) accept both .md and .mdx, but the
-// host's `_doc-history-area.tsx` historically hardcoded ".mdx" when
+// doc-history area historically hardcoded ".mdx" when
 // composing the GitHub view-source URL — producing broken links for .md
-// pages. The preBuild manifest now records each file's real extension via
-// deriveSourceExt; the page side falls back to ".mdx" only when no
-// manifest entry exists (untracked file, SKIP_DOC_HISTORY=1, stale
-// manifest).
+// pages. The preBuild manifest records each tracked file's real extension via
+// deriveSourceExt; no-meta pages receive the current entry's extension through
+// a separate explicit path.
 
 import { describe, it, expect } from "vitest";
 import { deriveSourceExt } from "../pre-build.js";

@@ -146,6 +146,7 @@ export interface DocPageRendererDeps {
     slug: string;
     locale: string;
     entrySlug?: string;
+    sourceFileExt?: ".mdx" | ".md";
     contentDir?: string;
     isFallback?: boolean;
   }) => VNode | null;
@@ -330,6 +331,13 @@ export function createRenderDocPage<S extends Settings = Settings>(
               slug={slug}
               locale={locale}
               entrySlug={props.entry.slug}
+              sourceFileExt={
+                props.entry.module_specifier.endsWith(".mdx")
+                  ? ".mdx"
+                  : props.entry.module_specifier.endsWith(".md")
+                    ? ".md"
+                    : undefined
+              }
               contentDir={opts.docHistoryContentDir}
               isFallback={isFallback}
             />

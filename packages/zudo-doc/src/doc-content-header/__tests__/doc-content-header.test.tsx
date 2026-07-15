@@ -45,7 +45,12 @@ describe("createDocContentHeader — docContentHeaderExtras seam", () => {
       overrides: {
         hostBindings: {
           docHistoryMeta: {
-            "test-page": { author: "A", createdDate: "2024-01-01", updatedDate: "2024-01-02" },
+            "test-page": {
+              author: "A",
+              createdDate: "2024-01-01",
+              updatedDate: "2024-01-02",
+              ext: ".mdx",
+            },
           },
           docContentHeaderExtras: () => <div class="extra">EXTRA</div>,
         },
@@ -70,7 +75,12 @@ describe("createDocContentHeader — docContentHeaderExtras seam", () => {
       overrides: {
         hostBindings: {
           docHistoryMeta: {
-            "test-page": { author: "A", createdDate: "2024-01-01", updatedDate: "2024-01-02" },
+            "test-page": {
+              author: "A",
+              createdDate: "2024-01-01",
+              updatedDate: "2024-01-02",
+              ext: ".mdx",
+            },
           },
           docContentHeaderExtras: (args) => <div class="extra">v={String(args.version)}</div>,
         },

@@ -401,7 +401,7 @@ entry pointing at `.zfb/doc-history-meta.json`, same as before.
 
 ### Doc-history self-seed (`.zfb/doc-history-meta.json`)
 
-`plugins/doc-history`'s `preBuild` hook (`runDocHistoryMetaStep`, in
+`plugins/internal/doc-history`'s `preBuild` hook (`runDocHistoryMetaStep`, in
 `src/plugins/internal/doc-history/pre-build.ts`) already unconditionally writes
 `.zfb/doc-history-meta.json` — creating the `.zfb/` directory if absent —
 before every build, whether populated from git history or short-circuited to

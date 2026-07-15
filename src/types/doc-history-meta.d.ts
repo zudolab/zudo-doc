@@ -1,8 +1,8 @@
 // Ambient declaration for the build-time doc-history manifest.
 //
-// `.zfb/doc-history-meta.json` is emitted by `scripts/zfb-prebuild.mjs`
-// (step 2: doc-history-meta) before `zfb build` runs. It maps composed
-// slugs to { author, createdDate, updatedDate } triples derived from git
+// `.zfb/doc-history-meta.json` is emitted by the package's internal doc-history
+// preBuild hook before `zfb build` renders pages. It maps composed
+// slugs to { author, createdDate, updatedDate, ext } records derived from git
 // history. The `#doc-history-meta` path alias in tsconfig.json resolves
 // this alias to the absolute path of the generated file so esbuild can
 // find it outside the shadow tree.
@@ -15,6 +15,7 @@ declare module "#doc-history-meta" {
     author: string;
     createdDate: string;
     updatedDate: string;
+    ext: ".mdx" | ".md";
   }
   const meta: Record<string, DocHistoryMetaEntry>;
   export default meta;
