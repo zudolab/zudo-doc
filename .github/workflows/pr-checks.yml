@@ -111,7 +111,7 @@ jobs:
   # Verifies that every top-level key in src/config/settings.ts (canonical)
   # is either present in each of the five e2e fixture settings.ts files or
   # explicitly listed in .fixture-settings-drift-allowlist.
-  # Closes the headingIdStrategy gap (#1946): that drift reached main because
+  # Closes the heading-ID parity gap (#1946): that drift reached main because
   # this check existed only in pnpm b4push, not CI.
   # Pure-Node script — uses preinstalled Node 22 on the runner image, no pnpm.
   check-fixture-settings-drift:

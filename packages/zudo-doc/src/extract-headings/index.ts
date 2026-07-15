@@ -2,10 +2,9 @@
 // Moved from the showcase's `pages/lib/_extract-headings.ts` into the shared
 // package as part of the package-first migration (epic #2321, S4 #2327).
 //
-// Key change: the original read `settings.headingIdStrategy`,
-// `settings.tocMinDepth`, and `settings.tocMaxDepth` directly (a project
-// singleton import). The package-side version takes those values as explicit
-// parameters (`opts.strategy`, `opts.tocMinDepth`, `opts.tocMaxDepth`) so the
+// Key change: the original read `settings.tocMinDepth` and
+// `settings.tocMaxDepth` directly (a project singleton import). The
+// package-side version takes those values as explicit parameters so the
 // package never imports the project's settings singleton.
 //
 // The showcase re-exports this from `@takazudo/zudo-doc/extract-headings` and
@@ -17,17 +16,11 @@
 //   2. Strip inline markdown markup (links, inline code, bold, italic) from the
 //      heading text to get the plain visible text — matching what the renderer's
 //      `extractText` HAST walker sees after MDX → HTML conversion.
-//   3. Compute a heading ID that matches what zfb's Rust `HeadingLinks` plugin
-//      emits at render time, using the strategy in `opts.strategy`
-//      (single source of truth, also read by `zfb.config.ts`):
-//        - `"flat"`: one dedup counter shared across ALL h2–h6 (even those not
-//          emitted into the TOC), so TOC anchor hrefs match the rendered IDs.
-//        - `"hierarchical"`: ancestor-prefixed IDs (`## Foo` / `### Moo` /
-//          `#### Mew` → `foo`, `foo-moo`, `foo-moo-mew`), deduped on the full
-//          path — see `SlugAllocator` below, a faithful mirror of zfb's Rust
-//          allocator (upstream zfb#871).
-//      Either way the allocator runs over ALL matched h2–h6 so its per-document
-//      state (dedup counter + ancestor stack) stays in lockstep with the
+//   3. Compute a hierarchical heading ID that matches what zfb's Rust
+//      `HeadingLinks` plugin emits at render time. IDs are ancestor-prefixed
+//      (`## Foo` / `### Moo` / `#### Mew` → `foo`, `foo-moo`,
+//      `foo-moo-mew`) and deduped on the full path. The allocator runs over ALL
+//      matched h2–h6 so its per-document state stays in lockstep with the
 //      renderer. h1 is NOT slugged — the renderer never assigns an id to h1.
 //   4. Return only depth 2–4 headings by default (h1 is the page title; h5–h6
 //      are too granular). The window is configurable via `tocMinDepth` /
@@ -52,9 +45,6 @@
 //     divergence would desync the TOC anchor from the rendered heading id.
 //   - Residual risk: text-extraction parity (inline JSX / reference links not
 //     fully stripped) — the slug parity itself is now exact.
-
-/** Heading-ID (anchor) strategy. Mirrors `settings.headingIdStrategy`. */
-export type HeadingIdStrategy = "flat" | "hierarchical";
 
 // Punctuation stripped (treated as a separator) by zfb's slugify — the ASCII
 // set from `crates/zfb-content/src/plugins/heading_links.rs::slugify`. Note `-`
@@ -106,34 +96,21 @@ export interface HeadingItem {
  * one per document; call `allocate(depth, text)` for every matched h2–h6 in
  * document order (the result is the rendered heading `id`).
  *
- * Both strategies share one `slugify` (the exact zfb port) and one per-document
- * dedup counter:
- *
- * - `"flat"`: `id = nextSlug(slugify(text))` — one counter shared across all
- *   levels (`overview`, `overview-1`, …). Byte-identical to zfb's flat path.
- * - `"hierarchical"`: `base = slugify(text)`; pop the ancestor stack while its
- *   top is at or deeper than `depth`; `candidate = {parent.id}-{base}` (just
- *   `base` at the top of the outline); `id = nextSlug(candidate)` (dedup on the
- *   *full path*); push `(depth, id)`. A deduped parent therefore contributes its
- *   FINAL id to children. Empty-text headings get the empty string and touch no
- *   state (the renderer skips them entirely).
+ * `base = slugify(text)`; pop the ancestor stack while its top is at or deeper
+ * than `depth`; `candidate = {parent.id}-{base}` (just `base` at the top of the
+ * outline); `id = nextSlug(candidate)` (dedup on the *full path*); push
+ * `(depth, id)`. A deduped parent therefore contributes its FINAL id to
+ * children. Empty-text headings get the empty string and touch no state (the
+ * renderer skips them entirely).
  */
 class SlugAllocator {
-  private readonly strategy: HeadingIdStrategy;
   /** Dedup counter, keyed by the (possibly ancestor-prefixed) slug path. */
   private readonly seen = new Map<string, number>();
-  /** Hierarchical ancestor stack of `{ depth, final id }` (unused when flat). */
+  /** Hierarchical ancestor stack of `{ depth, final id }`. */
   private readonly stack: { depth: number; id: string }[] = [];
-
-  constructor(strategy: HeadingIdStrategy) {
-    this.strategy = strategy;
-  }
 
   allocate(depth: number, text: string): string {
     const base = slugify(text);
-    if (this.strategy === "flat") {
-      return this.nextSlug(base);
-    }
     if (base === "") return "";
     // Pop ancestors at or below this depth so a sibling/shallower heading
     // re-roots the chain (h2 → h4 jumps nest under the nearest real ancestor).
@@ -224,9 +201,9 @@ function resolveDepthWindow(
 /**
  * Extract TOC headings from a raw MDX/markdown body.
  *
- * Uses the same slugging algorithm as zfb's `HeadingLinks` plugin (selected by
- * `opts.strategy`) so the `href="#slug"` values in the TOC match the rendered
- * heading element IDs. Allocates over ALL matched h2–h6 (keeping the dedup
+ * Uses the same hierarchical slugging algorithm as zfb's `HeadingLinks` plugin
+ * so the `href="#slug"` values in the TOC match the rendered heading element
+ * IDs. Allocates over ALL matched h2–h6 (keeping the dedup
  * counter and hierarchical ancestor stack in sync with the renderer) but only
  * pushes depth 2–4 items into the result (configurable via opts). h1 is not
  * matched — the renderer does not assign ids to h1.
@@ -236,8 +213,8 @@ function resolveDepthWindow(
  * This keeps the package import-graph free of project singletons.
  *
  * @param body - Raw markdown body string (frontmatter already stripped).
- * @param opts - Settings for heading depth window and ID strategy. Production
- *   call sites should pass values from the project's `settings` object.
+ * @param opts - Settings for the heading depth window. Production call sites
+ *   should pass values from the project's `settings` object.
  * @returns Array of `{ depth, slug, text }` items in document order.
  */
 export function extractHeadings(
@@ -245,7 +222,6 @@ export function extractHeadings(
   opts?: {
     tocMinDepth?: number;
     tocMaxDepth?: number;
-    strategy?: HeadingIdStrategy;
   },
 ): HeadingItem[] {
   const { lo, hi } = resolveDepthWindow(
@@ -253,7 +229,7 @@ export function extractHeadings(
     opts?.tocMaxDepth ?? 4,
   );
 
-  const allocator = new SlugAllocator(opts?.strategy ?? "flat");
+  const allocator = new SlugAllocator();
   const headings: HeadingItem[] = [];
 
   // Track the opening fence character and length so we correctly match the
@@ -303,9 +279,9 @@ export function extractHeadings(
     // matches the heading element's rendered id attribute.
     const text = stripInlineMarkdown(rawText.trim());
 
-    // Always allocate (advancing the dedup counter and, in hierarchical mode,
-    // the ancestor stack — maintaining parity with the renderer across all
-    // h2–h6), but only push within the configured depth window.
+    // Always allocate (advancing the dedup counter and ancestor stack to
+    // maintain parity with the renderer across all h2–h6), but only push
+    // within the configured depth window.
     const slug = allocator.allocate(depth, text);
     if (depth >= lo && depth <= hi) {
       headings.push({ depth, slug, text });

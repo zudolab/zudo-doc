@@ -48,7 +48,7 @@ package-side **without `@/`** (all already exist as package factories/pure fns):
 |---|---|
 | `buildNavTree`, `collectAutoIndexNodes`, `groupSatelliteNodes`, `isNavVisible`, `loadCategoryMeta` | `@takazudo/zudo-doc/sidebar-tree` (+ the package `docs` helpers); `buildNavTree` accepts the optional `buildHref` injection |
 | `buildBreadcrumbs` | `@takazudo/zudo-doc/sidebar-tree` |
-| `extractHeadings` | `@takazudo/zudo-doc/extract-headings`, called with `tocMinDepth`/`tocMaxDepth`/`headingIdStrategy` read from the virtual-module `settings` |
+| `extractHeadings` | `@takazudo/zudo-doc/extract-headings`, called with `tocMinDepth`/`tocMaxDepth` read from the virtual-module `settings`; heading IDs are always hierarchical |
 | `toRouteSlug`, `toSlugParams`, `toHistorySlug`, `toTitleCase` | `@takazudo/zudo-doc/slug` (pure) |
 | `collectTags` / `resolveTag` | `@takazudo/zudo-doc/tag-helpers`, parameterized by `settings` + `tagVocabulary` from the virtual module |
 | category-metadata loading | `loadCategoryMeta` from `@takazudo/zudo-doc/sidebar-tree` (memoized per resolved dir) |

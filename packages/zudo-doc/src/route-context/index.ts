@@ -149,12 +149,11 @@ export function createRouteContext<S extends Settings = Settings>(
     return getNavSubtreeBase(tree, categoryMatch, settings.headerNav);
   }
 
-  // ── extract-headings (bound to settings depth window + id strategy) ──────
+  // ── extract-headings (bound to the settings depth window) ────────────────
   function extractHeadings(body: string): HeadingItem[] {
     return extractHeadingsBase(body, {
       tocMinDepth: settings.tocMinDepth,
       tocMaxDepth: settings.tocMaxDepth,
-      strategy: settings.headingIdStrategy,
     });
   }
 
