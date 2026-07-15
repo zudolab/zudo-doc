@@ -5,7 +5,7 @@ import {
   smartBreak,
   smartBreakToHtml,
   SmartBreak,
-} from "../smart-break";
+} from "@takazudo/zudo-doc/smart-break";
 
 // -----------------------------------------------------------------------------
 // Test-only helpers: walk a Preact VNode tree and produce an HTML string, so

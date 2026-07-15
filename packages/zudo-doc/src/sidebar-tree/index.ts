@@ -9,8 +9,8 @@
  *     type SidebarNode,
  *   } from "@takazudo/zudo-doc/sidebar-tree";
  *
- * The builder takes a flat list of content collection entries (in either
- * Astro or zfb shape) plus a locale, and emits a recursive `SidebarNode[]`
+ * The builder takes a flat list of current zfb collection entries plus a
+ * locale, and emits a recursive `SidebarNode[]`
  * suitable for rendering or for further sidebar-config processing.
  */
 

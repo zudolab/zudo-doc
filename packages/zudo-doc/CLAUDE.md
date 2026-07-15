@@ -110,12 +110,9 @@ do not widen this into a generic component bag.
   getPathForLocale / buildLocaleLinks / versionedDocsUrl / …). The host's
   `src/utils/base.ts` keeps the singleton import; the logic lives here.
 
-The host originals `src/utils/{render-markdown,slug,smart-break}` are now thin
-re-export shims pointing at these subpaths (kept so the many `@/utils/*` call
-sites — and their byte-identical create-zudo-doc template copies — stay
-unchanged). `buildNavTree(entries, lang, categoryMeta, { buildHref })` in
-`src/utils/docs.ts` gained an optional `buildHref` injection point
-(backward-compatible — existing 3-arg call sites are unchanged).
+Host code imports these canonical package subpaths directly. The host
+`buildNavTree(entries, lang, categoryMeta, { buildHref })` adapter retains its
+explicit `buildHref` injection point for current route construction.
 
 ## `./preset` — `zudoDocPreset()`
 

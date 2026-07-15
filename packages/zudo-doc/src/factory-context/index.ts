@@ -205,10 +205,10 @@ export interface RouteContext<S = Settings>
   /** Aggregate a `tag → docs` index from a doc collection. */
   collectTags(
     entries: ReadonlyArray<{
-      id: string;
+      slug: string;
       data: { slug?: string; title?: string; description?: string; tags?: string[] };
     }>,
-    slugFn: (id: string, data: { slug?: string }) => string,
+    slugFn: (entrySlug: string, data: { slug?: string }) => string,
   ): Map<string, TagInfo>;
   /** Build a recursive nav tree from a flat doc collection. */
   buildNavTree(
@@ -230,8 +230,8 @@ export interface RouteContext<S = Settings>
   isNavVisible(doc: DocPageEntry): boolean;
   /** The content-bridge handle: identity-stable, draft-filtered docs loader. */
   stableDocs(collectionName: string): DocPageEntry[];
-  /** Canonical route slug for a doc id. */
-  toRouteSlug(id: string): string;
+  /** Canonical route slug for a zfb content slug. */
+  toRouteSlug(entrySlug: string): string;
   /** Split a route slug into path params. */
   toSlugParams(routeSlug: string): string[];
 }

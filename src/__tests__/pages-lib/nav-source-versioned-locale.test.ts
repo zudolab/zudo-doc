@@ -114,7 +114,7 @@ describe("resolveNavSource — versioned + non-default locale (configured)", () 
       keepUnlisted: true,
     });
 
-    const slugs = docs.map((d) => d.data.slug ?? d.id);
+    const slugs = docs.map((d) => d.data.slug ?? d.slug);
     // "intro" comes from the JA collection; "guide" falls back to EN base.
     expect(slugs).toContain("intro");
     expect(slugs).toContain("guide");
@@ -155,11 +155,11 @@ describe("resolveNavSource — versioned + non-default locale (not configured)",
       keepUnlisted: true,
     });
 
-    const slugs = docs.map((d) => d.data.slug ?? d.id);
+    const slugs = docs.map((d) => d.data.slug ?? d.slug);
     // Raw EN base — both EN entries, with their EN titles, no JA override.
     expect(slugs).toContain("intro");
     expect(slugs).toContain("guide");
-    expect(docs.find((d) => (d.data.slug ?? d.id) === "intro")?.data.title).toBe("EN intro");
+    expect(docs.find((d) => (d.data.slug ?? d.slug) === "intro")?.data.title).toBe("EN intro");
     // Base single-collection case carries an empty localeSlugSet.
     expect(localeSlugSet.size).toBe(0);
   });

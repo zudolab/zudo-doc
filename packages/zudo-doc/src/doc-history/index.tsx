@@ -460,7 +460,7 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
   // under "index" (an empty path segment is unroutable — the server regex
   // /^\/doc-history\/(.+)\.json$/ rejects ""). The host wrapper already passes
   // the sentineled slug, but defend the boundary so the component is correct
-  // for any caller. Mirrors `toHistorySlug` in @/utils/slug (inlined here
+  // for any caller. Mirrors `toHistorySlug` in @takazudo/zudo-doc/slug (inlined here
   // rather than imported to keep this bundled island free of host-util
   // coupling — see .template-drift-allowlist). (#1891)
   const historySlug = slug === "" ? "index" : slug;

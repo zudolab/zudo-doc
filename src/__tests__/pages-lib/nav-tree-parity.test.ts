@@ -21,10 +21,10 @@
 
 import { describe, it, expect } from "vitest";
 import { buildNavTree, type CategoryMeta, type NavNode } from "@/utils/docs";
-import { toTitleCase, toRouteSlug } from "@/utils/slug";
+import { toTitleCase, toRouteSlug } from "@takazudo/zudo-doc/slug";
 import { docsUrl } from "@/utils/base";
 import { defaultLocale, type Locale } from "@/config/i18n";
-import type { DocsEntry } from "@/types/docs-entry";
+import type { DocPageEntry } from "@takazudo/zudo-doc/doc-page-props";
 
 // ---------------------------------------------------------------------------
 // Frozen legacy implementation (pre-#2030 src/utils/docs.ts, caching removed)
@@ -33,12 +33,12 @@ import type { DocsEntry } from "@/types/docs-entry";
 interface LegacyBuildNode {
   segment: string;
   fullPath: string;
-  doc?: DocsEntry;
+  doc?: DocPageEntry;
   children: Map<string, LegacyBuildNode>;
 }
 
 function legacyBuildNavTree(
-  docs: DocsEntry[],
+  docs: DocPageEntry[],
   lang: Locale = defaultLocale,
   categoryMeta?: Map<string, CategoryMeta>,
 ): NavNode[] {
@@ -49,11 +49,11 @@ function legacyBuildNavTree(
   };
 
   for (const doc of docs) {
-    const slug = doc.data.slug ?? toRouteSlug(doc.id);
+    const slug = doc.data.slug ?? toRouteSlug(doc.slug);
     const parts = slug.split("/");
 
     if (parts.length <= 1) {
-      const segment = parts[0] || doc.id;
+      const segment = parts[0] || slug;
       if (!root.children.has(segment)) {
         root.children.set(segment, {
           segment,
@@ -132,18 +132,18 @@ function legacyToNavNodes(
 // Fixtures
 // ---------------------------------------------------------------------------
 
-function entry(id: string, data: Partial<DocsEntry["data"]> = {}): DocsEntry {
+function entry(slug: string, data: Partial<DocPageEntry["data"]> = {}): DocPageEntry {
+  const entrySlug = slug === "" ? "index" : slug;
   return {
-    id,
-    // zfb raw engine slug — intentionally the UNSTRIPPED form to mirror what
-    // _data.ts-bridged entries carry; buildNavTree must ignore this field.
-    slug: id === "" ? "index" : `${id}/index`,
-    collection: "docs",
-    data: { title: data.title ?? id, ...data },
+    slug: entrySlug,
+    data: { title: data.title ?? slug, ...data },
+    body: "",
+    module_specifier: `mdx://docs/${entrySlug}`,
+    Content: () => ({ type: "div", props: {}, key: null }),
   };
 }
 
-const richCorpus: DocsEntry[] = [
+const richCorpus: DocPageEntry[] = [
   entry("getting-started/index", { title: "Getting Started", sidebar_position: 1 }),
   entry("getting-started/install", { title: "Install", sidebar_position: 1 }),
   entry("getting-started/intro", {

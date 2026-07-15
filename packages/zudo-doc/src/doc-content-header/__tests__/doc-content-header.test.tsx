@@ -20,11 +20,10 @@ import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-cont
 function makeEntry(data: Record<string, unknown> = {}): DocPageEntry {
   return {
     slug: "test-page",
-    id: "test-page",
-    collection: "docs",
     data: { title: "Test Page", ...data },
+    body: "",
     module_specifier: "test-page.mdx",
-    Content: () => null,
+    Content: () => ({ type: "div", props: {}, key: null }),
   } as unknown as DocPageEntry;
 }
 

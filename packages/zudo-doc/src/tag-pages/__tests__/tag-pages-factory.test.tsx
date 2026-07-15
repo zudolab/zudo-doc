@@ -21,31 +21,34 @@ import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-cont
 // ---------------------------------------------------------------------------
 
 function makeEntry(
-  id: string,
+  slug: string,
   tags: string[] = [],
   overrides: Partial<TagPagesDocsEntry["data"]> = {},
 ): TagPagesDocsEntry {
   return {
-    id,
+    slug,
     data: {
-      title: `Title ${id}`,
+      title: `Title ${slug}`,
       tags,
       draft: false,
       unlisted: false,
       category_no_page: false,
       ...overrides,
     },
+    body: "",
+    module_specifier: `mdx://docs/${slug}`,
+    Content: () => ({ type: "div", props: {}, key: null }),
   };
 }
 
 function makeCollectTags(
   entries: TagPagesDocsEntry[],
-  slugFn: (id: string, data: { slug?: string }) => string,
+  slugFn: (entrySlug: string, data: { slug?: string }) => string,
 ): Map<string, TagInfo> {
   const tagMap = new Map<string, TagInfo>();
   for (const entry of entries) {
     const rawTags = entry.data.tags ?? [];
-    const slug = slugFn(entry.id, entry.data);
+    const slug = slugFn(entry.slug, entry.data);
     for (const tag of rawTags) {
       if (!tagMap.has(tag)) {
         tagMap.set(tag, { tag, count: 0, docs: [] });

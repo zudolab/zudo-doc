@@ -96,7 +96,7 @@ export function createDocMetainfoArea<S extends Settings = Settings>(
     // under "index" (collectContentFiles keeps the bare root; an empty path
     // segment is unroutable). Apply the sentinel BEFORE locale composition so
     // the visible Created/Updated/Author block resolves for a root page — see
-    // @/utils/slug `toHistorySlug` and _doc-history-area.tsx. (#1891)
+    // @takazudo/zudo-doc/slug `toHistorySlug` and _doc-history-area.tsx. (#1891)
     const historySlug = toHistorySlug(slug);
 
     // On EN-fallback locale pages the manifest only has the bare
