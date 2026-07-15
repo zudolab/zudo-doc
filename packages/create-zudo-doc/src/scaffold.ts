@@ -611,17 +611,18 @@ function generatePackageJson(choices: UserChoices) {
     // next.76: routine toolchain bump from next.75, adopted in
     // lockstep with the root package.json pins. No consumer-facing / CLI change.
     // next.77: router persistence/history fixes and runtime island remount
-    // support. next.78 added production HTML minification. next.81 fixes the
-    // bundle.exclude cycle from next.79/80 (zfb#1631/#1644) and adds the
+    // support. next.78 added production HTML minification. next.81 added the
     // package-root semantic highlight API plus island resource delivery
-    // (zfb#1633/#1643). The zfb family must stay in lockstep because the WASM
-    // browser entry depends on next.81's resource-aware island pipeline.
-    "@takazudo/zfb": "0.1.0-next.81",
-    "@takazudo/zfb-runtime": "0.1.0-next.81",
+    // (zfb#1633/#1643). next.83 completes bundle.exclude dependency staging
+    // for package-owned overlay routes (zfb#1645/#1649). The zfb family must
+    // stay in lockstep because the WASM browser entry depends on its
+    // resource-aware island pipeline.
+    "@takazudo/zfb": "0.1.0-next.83",
+    "@takazudo/zfb-runtime": "0.1.0-next.83",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.81",
-    "@takazudo/zfb-md-wasm": "0.1.0-next.81",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.83",
+    "@takazudo/zfb-md-wasm": "0.1.0-next.83",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
