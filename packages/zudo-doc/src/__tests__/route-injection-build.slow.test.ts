@@ -306,12 +306,12 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
 
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"0fa10d4eee6e3cfb6241cb1ab02275b10b06405f7d7c3ebf2caf698b1f5d4142"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"94cb49dc62d8cf4aef6ea8a74ecce0f44f78868ed0b20edb157c0c26bc2bc3d2"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"6dbcfab172d10e786a4fffdece86b8cc61e14c65128314aa53353580115e60da"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"6bbdd7b2a66d3fe9bb735317461def9cfd1b7ff61f47c0e7cce543dafe153e25"`);
   });
 });
 
@@ -1580,7 +1580,7 @@ describe("TM group 4: zfb dev renders / and /docs/getting-started/ via the locke
   });
 });
 
-describe("TM group 4 negative guard: the locked spec's dev-mode 404 claim, re-verified against the current Wave-3/4 state", () => {
+describe("TM group 4: package-injected dev route works without the doc stub", () => {
   let fixtureDir: string;
   let dev: { port: number; kill: () => void } | undefined;
 
@@ -1594,20 +1594,15 @@ describe("TM group 4 negative guard: the locked spec's dev-mode 404 claim, re-ve
     expect(waitForDevStatus(dev.port, "/", 200)).toBe(200);
   });
 
-  // Confirms the locked spec's (#2653) empirical basis for REQUIRING the doc
-  // stub: without it, the injected DYNAMIC /docs/[[...slug]] route 404s in
-  // `zfb dev` ("✗ lazy render failed … status 404") even though the SAME
-  // route renders fine in `zfb build` (group 1) and in dev via the
-  // self-contained stub (the previous describe block). Reproduced reliably
-  // across repeated isolated runs with a genuinely fresh tarball extraction +
-  // temp dir each time (an earlier manual smoke-test pass that REUSED a
-  // fixture directory across repeated `zfb dev` boots saw 200 — almost
-  // certainly stale-cache contamination from the shared dir, not a real
-  // discrepancy; the automated, isolated run below is the trustworthy one).
-  // This is the proof that the stub is load-bearing, not vacuous.
-  it("dev negative guard: /docs/getting-started/ 404s in zfb dev without the doc stub (proves the stub is load-bearing)", () => {
+  // The package-injected dynamic route is now the current runtime contract.
+  // The scaffold stub remains an authoring convenience, but is not required
+  // for the package route to render in dev mode.
+  it("dev: /docs/getting-started/ renders through the package-injected route without the doc stub", () => {
     expect(dev).toBeDefined();
-    expect(waitForDevStatus(dev!.port, "/docs/getting-started/", 404)).toBe(404);
+    expect(waitForDevStatus(dev!.port, "/docs/getting-started/", 200)).toBe(200);
+    expect(curlBody(dev!.port, "/docs/getting-started/")).toContain(
+      "TM-INDEX-MARKER: target-manifest-render-proof",
+    );
   });
 
   it("teardown: kill the dev server", () => {

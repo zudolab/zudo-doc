@@ -1,18 +1,15 @@
 /**
  * Internal types for the framework-agnostic llms-txt build emitter.
  *
- * The shapes here are deliberately decoupled from `astro:content` and
- * Astro's `AstroIntegration` API so the emitter can run on top of any
- * pipeline that exposes a `dist/` output directory and a list of
- * markdown content roots — Astro today, zfb tomorrow, plain Node tooling
- * in a unit test, etc.
+ * The shapes are deliberately framework-neutral so the current zfb plugin
+ * and plain Node test tooling can share the same emitter.
  */
 
 import type { MdDocFrontmatter } from "../../../md-utils/index.js";
 
 /**
  * Frontmatter fields the loader reads off of each MDX/MD file. Callers
- * are free to extend this; unrecognised fields are ignored. Alias of the
+ * are free to extend this; unrecognised fields are ignored. Re-export of the
  * shared {@link MdDocFrontmatter} shape (`md-utils`, zudo-doc#2024) —
  * search-index and llms-txt read the same fields.
  */
@@ -48,8 +45,8 @@ export interface LlmsDocEntry {
 
 /**
  * Site-level metadata threaded through the generators. Matches the
- * `siteName` / `siteDescription` fields on the legacy settings object
- * one-for-one so callers can pass `settings` straight through.
+ * current `siteName` / `siteDescription` settings one-for-one so callers can
+ * pass the current settings object straight through.
  */
 export interface LlmsTxtSiteMeta {
   siteName: string;
@@ -87,17 +84,14 @@ export interface LlmsTxtLoadOptions {
   /**
    * Optional absolute site URL. When set, the loader produces fully
    * qualified URLs by prefixing the base+path with `siteUrl`. When
-   * empty, URLs are returned path-only (matching the legacy emitter's
-   * behaviour for projects that omit `siteUrl`).
+   * empty, URLs are returned path-only for projects that omit `siteUrl`.
    */
   siteUrl?: string;
 }
 
 /**
- * Top-level options for {@link emitLlmsTxt}. Mirrors the inputs the
- * legacy Astro emitter pulled implicitly off of the project's `settings`
- * module so that a one-line registration in `zfb.config.ts` (or a
- * `b4-build` hook in Astro) can wire the same behaviour.
+ * Top-level options for {@link emitLlmsTxt}. The current zfb plugin supplies
+ * these explicitly from its resolved config.
  */
 export interface LlmsTxtEmitOptions extends LlmsTxtSiteMeta {
   /** Absolute output directory — typically `dist/`. */
@@ -117,17 +111,14 @@ export interface LlmsTxtEmitOptions extends LlmsTxtSiteMeta {
    */
   locales?: LlmsTxtLocaleConfig[];
   /**
-   * Optional logger. Defaults to a no-op so unit tests stay quiet; the
-   * Astro adapter can wire `astro:build:done`'s `logger` through, and
-   * a future zfb plugin can pipe its own.
+   * Optional logger. Defaults to a no-op so unit tests stay quiet; the zfb
+   * plugin can pipe its logger through.
    */
   logger?: LlmsTxtLogger;
 }
 
 /**
- * Minimal logger interface — a structural subset of both Astro's
- * `logger` and `console`. Only `info` is used today; the wider shape is
- * provided so the option can hold either object without type acrobatics.
+ * Minimal logger interface. Only `info` is used today.
  */
 export interface LlmsTxtLogger {
   info: (msg: string) => void;

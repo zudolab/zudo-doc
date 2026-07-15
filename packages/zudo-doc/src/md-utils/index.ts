@@ -1,10 +1,8 @@
 // Shared markdown content-file utilities for the build-time integrations.
 //
-// Single source of truth (zudo-doc#2024) for the helpers that previously
-// lived as near-verbatim copies in `integrations/search-index/content-files.ts`
-// and `integrations/llms-txt/load.ts` / `strip.ts`, each carrying a
-// "keep in sync" comment. Internal module — not exposed on the package's
-// exports map; consumers go through the integration entry points.
+// Single source of truth (zudo-doc#2024) for helpers shared by current plugin
+// internals. Internal module — not exposed on the package's exports map;
+// consumers go through the plugin entry points.
 
 import { readFileSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";

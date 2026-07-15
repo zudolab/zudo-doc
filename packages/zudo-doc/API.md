@@ -1,23 +1,10 @@
-# @takazudo/zudo-doc — 2.0 Public API Contract
+# @takazudo/zudo-doc — Current Public API Contract
 
 This document enumerates the **stable surface** of `@takazudo/zudo-doc`.
 
-> **BREAKING — MAJOR version bump (B4PUSH wave #2431):** The Collapse Wiring
-> Shells epic (#2420) introduced two breaking changes that require a MAJOR version
-> bump:
->
-> 1. Every public page-chrome factory (`createX`) now takes the unified
->    `ChromeContext` (from `./factory-context`) instead of a per-factory narrow
->    context. Sole consumer is the host's wiring shell; downstream projects that
->    only import UI components or the preset are unaffected.
-> 2. Two new public subpaths (`./route-context`, `./chrome`) are added to the
->    stable surface.
->
-> **Do NOT publish here** — version bumping and publishing are handled in the
-> B4PUSH wave (#2431). Run `/l-make-release` there.
-
-Decision: **freeze** the current surface — do not restructure or curate exports before publishing.
-Post-merge in B4PUSH wave (#2431), run `/l-make-release` to publish the lockstep MAJOR release across the workspace.
+The package exposes one current contract. Removed compatibility aliases and
+descriptor integration wrappers are intentionally absent; consumers use the
+named exports and `./plugins/*` entrypoints listed below.
 
 ## Drift Guards (authoritative)
 
@@ -31,7 +18,7 @@ New snapshot guards (added in `packages/zudo-doc/src/__tests__/public-api-snapsh
 
 ---
 
-## 1. Subpath Exports (137 total)
+## 1. Subpath Exports (139 total)
 
 The full `package.json#exports` keyset is the contract. Any addition or removal requires a deliberate, reviewed change that will fail the snapshot guard.
 
@@ -211,15 +198,6 @@ row.
 | `./plugins/search-index` | Search index zfb plugin |
 | `./plugins/claude-resources` | Claude resources generation zfb plugin |
 | `./plugins/routes` | Package-owned route injection zfb plugin. Registers `virtual:zudo-doc-route-context` (serializable data only) and `virtual:zudo-doc-chrome-bindings` (re-export of the host module named by `settings.chromeBindingsModule`, or an empty-object fallback), then injects the derived route catalog |
-
-### Integrations (legacy wrappers, still shipped)
-
-| Subpath | Description |
-|---|---|
-| `./integrations/doc-history` | Legacy integration re-export |
-| `./integrations/llms-txt` | Legacy integration re-export |
-| `./integrations/search-index` | Legacy integration re-export |
-| `./integrations/claude-resources` | Legacy integration re-export |
 
 ### Utilities
 

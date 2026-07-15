@@ -1,8 +1,8 @@
 // Host thin-stub — see @takazudo/zudo-doc/tag-helpers (epic #2344, S7).
 //
 // `resolveTag` and `resolvePageTags` are now parameterized pure functions in the
-// package; this module remains backward-compatible by wrapping them with the
-// host's `settings.tagVocabulary` / `settings.tagGovernance` + the
+// package; this current host adapter supplies `settings.tagVocabulary` /
+// `settings.tagGovernance` + the
 // `tagVocabulary` entries from `@/config/tag-vocabulary`.
 //
 // `collectTags` stays host-side for current zfb entry typing. It accepts current

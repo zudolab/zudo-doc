@@ -16,11 +16,12 @@ const CURRENT_PLUGINS = {
   "@takazudo/zudo-doc/plugins/changelog": ["postBuild"],
 };
 
-const REMOVED_INTEGRATIONS = [
+const REMOVED_SUBPATHS = [
   "@takazudo/zudo-doc/integrations/doc-history",
   "@takazudo/zudo-doc/integrations/llms-txt",
   "@takazudo/zudo-doc/integrations/search-index",
   "@takazudo/zudo-doc/integrations/claude-resources",
+  "@takazudo/zudo-doc/safelist",
 ];
 
 const loadedPlugins = new Map();
@@ -39,7 +40,7 @@ for (const [specifier, hooks] of Object.entries(CURRENT_PLUGINS)) {
   process.stdout.write(`[check-plugin-resolution] ${specifier} OK\n`);
 }
 
-for (const specifier of REMOVED_INTEGRATIONS) {
+for (const specifier of REMOVED_SUBPATHS) {
   try {
     await import(specifier);
   } catch (error) {

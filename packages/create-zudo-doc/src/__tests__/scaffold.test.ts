@@ -263,6 +263,7 @@ describe("scaffold — absence assertions (deleted legacy files never resurrecte
     "src/components/content/content-admonition.tsx",
     "src/components/desktop-sidebar-toggle.tsx",
     "src/components/doc-history.tsx",
+    "src/components/design-token-panel-bootstrap.tsx",
     "src/components/image-enlarge.tsx",
     "src/components/preset-generator.tsx",
     "src/components/sidebar-toggle.tsx",
@@ -278,6 +279,7 @@ describe("scaffold — absence assertions (deleted legacy files never resurrecte
     "src/utils/slug.ts",
     "src/utils/smart-break.tsx",
     "src/utils/tags.ts",
+    "src/lib/design-token-panel-bootstrap.ts",
     // src/types/*
     "src/types/docs-entry.ts",
     "src/types/heading.ts",
@@ -294,12 +296,15 @@ describe("scaffold — absence assertions (deleted legacy files never resurrecte
     "src/config/sidebars.ts",
     "src/config/tag-vocabulary-types.ts",
     "src/config/z-index-tokens.ts",
+    "src/config/settings.ts",
     // Standalone deleted files.
     "zfb-shim.d.ts",
     ".htmlvalidate.json",
     ".zfb/doc-history-meta.json",
     ".zudo-doc.json",
     "scripts/run-b4push.sh",
+    "scripts/tags-audit.ts",
+    "scripts/tags-suggest.ts",
     "src/content.config.ts",
   ];
 

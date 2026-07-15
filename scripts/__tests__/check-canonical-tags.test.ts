@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdtempSync,
+  mkdirSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -68,6 +74,22 @@ describe("check-canonical-tags", () => {
       ]);
     } finally {
       rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("does not traverse materialized fixture dependency symlinks", () => {
+    const root = mkdtempSync(join(tmpdir(), "canonical-tags-symlink-root-"));
+    const outside = mkdtempSync(join(tmpdir(), "canonical-tags-symlink-target-"));
+    try {
+      const fixture = join(root, "e2e/fixtures/smoke");
+      mkdirSync(fixture, { recursive: true });
+      writeFileSync(join(outside, "retired.ts"), 'const data = { tags: ["guide"] };\n');
+      symlinkSync(outside, join(fixture, "packages"), "dir");
+
+      expect(checkCanonicalTags(root).findings).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+      rmSync(outside, { recursive: true, force: true });
     }
   });
 });

@@ -2,13 +2,13 @@
 
 Standalone package for extracting and serving git history of documentation files. Has two modes: an HTTP server for local development and a CLI generator for CI builds.
 
-The history extraction logic was extracted from the Astro build pipeline so that expensive `git log --follow` calls do not block the main build, enabling a parallel CI strategy.
+History extraction runs independently from the zfb site build so expensive `git log --follow` calls can be generated in a dedicated CI job.
 
 ## Modes
 
 ### Server mode (local development)
 
-Runs an HTTP server that serves history on demand. Used by `pnpm dev` at the repository root, which starts both Astro and this server concurrently via `run-p`.
+Runs an HTTP server that serves history on demand. Used by `pnpm dev` at the repository root, which starts zfb, this server, and the package dev processes concurrently via `run-p`.
 
 ```bash
 pnpm dev -- \
@@ -37,7 +37,7 @@ The file index is refreshed every 10 seconds so newly added or renamed files are
 
 ### CLI mode (CI builds)
 
-Generates static `{slug}.json` files into an output directory. Used by the `build-history` CI job, which runs in parallel with the `build-site` Astro build.
+Generates static `{slug}.json` files into an output directory. Used by the `build-history` CI job, which runs in parallel with the zfb `build-site` job.
 
 ```bash
 pnpm generate -- \
@@ -55,7 +55,7 @@ pnpm generate -- \
 
 ## zfb integration
 
-In dev mode, the zfb plugin implemented at `packages/zudo-doc/src/plugins/internal/doc-history/index.ts` proxies `/doc-history/*` requests to this server. In build mode, the plugin falls back to inline generation unless `SKIP_DOC_HISTORY=1` is set — which is the case in the CI `build-site` job so that the zfb build completes fast while the CLI `build-history` job generates the JSONs in parallel.
+In dev mode, the zfb plugin implemented at `packages/zudo-doc/src/plugins/internal/doc-history/index.ts` proxies `/doc-history/*` requests to this server. In build mode, preBuild produces the current metadata manifest; standard CI deliberately keeps `SKIP_DOC_HISTORY` unset so that metadata comes from the full clone. The separate `build-history` job generates per-page revision JSON in parallel. `SKIP_DOC_HISTORY=1` remains an explicit escape hatch for shallow/custom builds that cannot read Git history.
 
 ## Programmatic API
 

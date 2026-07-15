@@ -4,7 +4,7 @@ Documentation base framework built with [zfb](https://www.npmjs.com/package/@tak
 
 This repository is both the framework's source and its own showcase: the content under `src/content/` is the live documentation you see when running the dev server.
 
-> Originally built on Astro; migrated to zfb. If you find lingering references to Astro tooling in long-form prose, they describe legacy state, not the current authoring target.
+> Built on zfb. Current setup and authoring guidance in this repository targets the zfb runtime exclusively.
 
 ## Tech Stack
 

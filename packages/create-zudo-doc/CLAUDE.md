@@ -42,7 +42,7 @@ left to inject or copy.
 | `src/zfb-config-gen.ts` | The SINGLE config generator — emits the one `zfb.config.ts` (`defineConfig(zudoDoc({...}))`), diff-from-defaults against a local mirror of `packages/zudo-doc/src/config.ts`'s `DEFAULT_SETTINGS`. Replaces the former `settings-gen.ts` + `zfb-config-gen.ts` two-file split — there is no more `src/config/settings.ts` in a fresh scaffold |
 | `src/claude-md-gen.ts` | Generates the per-project `CLAUDE.md` for the scaffolded site (minimal-shape, no stale `src/components/`/`pages/lib/*` references) |
 | `src/preset.ts` | Resolves a JSON `--preset` file (or CLI flags) into `UserChoices` — unrelated to the package's own `@takazudo/zudo-doc/preset`, despite the similar name |
-| `src/constants.ts` | Feature definitions, supported langs, header-right labels, and the two Default color schemes (single Default light/dark pairing — the legacy multi-scheme catalog was dropped) |
+| `src/constants.ts` | Feature definitions, supported langs, header-right labels, and the current Default light/dark scheme pairing |
 | `src/utils.ts` | Shared utilities (patchFile, patchDefaultLang, getSecondaryLang) |
 | `src/cli.ts` | CLI argument parsing (minimist) |
 | `src/api.ts` | Programmatic API (`createZudoDoc()`) |
@@ -54,7 +54,7 @@ left to inject or copy.
 | Directory | Role |
 |-----------|------|
 | `templates/base/` | The locked ~12-file minimal manifest (barebone, EN-only): `pages/index.tsx` (1-line re-export), `pages/docs/[[...slug]].tsx` (self-contained doc stub — see its header comment for why it's required), `src/styles/global.css` (~20-line `@import` chain + token-override slot), `tsconfig.json` (5-line extends form). `zfb.config.ts`/`package.json`/`CLAUDE.md`/`.gitignore`/`.npmrc` are generated programmatically, not copied from here. |
-| `templates/features/*/files/` | Feature-specific files copied when a feature is selected. Only `i18n` (locale doc stub), `tagGovernance` (audit/suggest scripts), `tauri`, and `tauriDev` (Rust shells) still ship real files — every other feature directory that used to hold a host component/config shim was deleted (superseded by a package-owned equivalent; see each feature module's header comment for the specific replacement). |
+| `templates/features/*/files/` | Feature-specific files copied when a feature is selected. Only `i18n` (locale doc stub), `tauri`, and `tauriDev` (Rust shells) have template directories. `tagGovernance` writes one explicit tag vocabulary/config module in its `postProcess`; all audit/suggest behavior comes from package-owned bins. |
 
 ### Injection anchors — mostly retired
 
