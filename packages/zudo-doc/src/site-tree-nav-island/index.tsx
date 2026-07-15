@@ -8,6 +8,7 @@ import { useState } from "preact/hooks";
 import type { SidebarNavNode } from "../sidebar/types.js";
 import { INDENT, connectorLeft, ConnectorLines, CategoryLinkIcon } from "../tree-nav-shared/index.js";
 import { ChevronRight } from "../icons/index.js";
+import { initialCategoryOpenState, toggleCategoryOpenState } from "./state.js";
 
 // site-tree-nav uses wider padding than the narrow sidebar
 const SITE_BASE_PAD = "clamp(0.5rem, 0.8vw, 1rem)";
@@ -39,6 +40,8 @@ export interface SiteTreeNavProps {
   ariaLabel?: string;
   categoryOrder?: string[];
   categoryIgnore?: string[];
+  /** Root-category slugs that should start collapsed. */
+  initiallyCollapsedCategorySlugs?: string[];
 }
 
 export function SiteTreeNav({
@@ -46,6 +49,7 @@ export function SiteTreeNav({
   ariaLabel = "Site index",
   categoryOrder,
   categoryIgnore,
+  initiallyCollapsedCategorySlugs,
 }: SiteTreeNavProps) {
   let processedTree = tree;
   if (categoryIgnore) {
@@ -55,6 +59,7 @@ export function SiteTreeNav({
   if (categoryOrder) {
     processedTree = reorderTree(processedTree, categoryOrder);
   }
+  const initiallyCollapsed = new Set(initiallyCollapsedCategorySlugs);
   return (
     <nav
       aria-label={ariaLabel}
@@ -67,7 +72,12 @@ export function SiteTreeNav({
       {processedTree.map((node) => (
         <div key={node.slug} className="min-w-0 border border-muted pl-hsp-sm py-vsp-2xs">
           {node.children.length > 0 ? (
-            <CategoryNode node={node} depth={0} isLast={true} />
+            <CategoryNode
+              node={node}
+              depth={0}
+              isLast={true}
+              initiallyCollapsed={initiallyCollapsed.has(node.slug)}
+            />
           ) : (
             <LeafNode node={node} depth={0} isLast={true} />
           )}
@@ -107,13 +117,15 @@ function CategoryNode({
   node,
   depth,
   isLast,
+  initiallyCollapsed = false,
 }: {
   node: SidebarNavNode;
   depth: number;
   isLast: boolean;
+  initiallyCollapsed?: boolean;
 }) {
-  const [open, setOpen] = useState(true);
-  const toggle = () => setOpen((prev) => !prev);
+  const [open, setOpen] = useState(() => initialCategoryOpenState(initiallyCollapsed));
+  const toggle = () => setOpen(toggleCategoryOpenState);
   const paddingLeft = padLeft(depth);
 
   return (
