@@ -9,7 +9,7 @@ import {
 } from "../check-pin-parity.mjs";
 
 describe("workspace zfb pin policy", () => {
-  const rootPin = "0.1.0-next.85";
+  const rootPin = "0.1.0-next.86";
 
   it("requires an exact dev pin", () => {
     expect(workspaceZfbDevPinMatches(rootPin, rootPin)).toBe(true);
