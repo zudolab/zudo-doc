@@ -98,17 +98,6 @@ function parseCliArgs(argv: string[]): Args {
   };
 }
 
-function activeVocabulary(): TagVocabularyEntry[] {
-  return tagVocabulary.filter((entry) => {
-    const d = entry.deprecated;
-    // Exclude fully-retired tags. Redirect-style deprecation still points
-    // at a live canonical id, which the model may surface if relevant.
-    if (d === true) return false;
-    if (typeof d === "object" && d !== null && !("redirect" in d)) return false;
-    return true;
-  });
-}
-
 function buildPrompt(
   entries: TagVocabularyEntry[],
   title: string,
@@ -315,7 +304,7 @@ async function main(): Promise<void> {
 
   const repoRoot = process.cwd();
   const files = resolveFiles(repoRoot, args.files);
-  const vocab = activeVocabulary();
+  const vocab = [...tagVocabulary];
   const allowedIds = new Set(vocab.map((e) => e.id));
 
   const isTty = Boolean(process.stdout.isTTY);

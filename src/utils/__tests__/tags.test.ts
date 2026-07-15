@@ -4,8 +4,7 @@ import { settings } from "@/config/settings";
 
 // Guard: these tests rely on the default settings shipping
 // `tagVocabulary: true` with a non-"off" governance mode. The host vocabulary
-// itself is canonical-only; package-level tests retain coverage for the alias
-// compatibility paths until their removal in #2769.
+// itself is canonical-only.
 beforeAll(() => {
   expect(settings.tagVocabulary).toBe(true);
   expect(settings.tagGovernance).not.toBe("off");
@@ -16,7 +15,6 @@ describe("resolveTag", () => {
     expect(resolveTag("tutorials")).toEqual({
       canonical: "tutorials",
       known: false,
-      deprecated: false,
     });
   });
 
@@ -24,7 +22,6 @@ describe("resolveTag", () => {
     expect(resolveTag("type:tutorial")).toEqual({
       canonical: "type:tutorial",
       known: true,
-      deprecated: false,
     });
   });
 
@@ -32,7 +29,6 @@ describe("resolveTag", () => {
     expect(resolveTag("this-tag-does-not-exist")).toEqual({
       canonical: "this-tag-does-not-exist",
       known: false,
-      deprecated: false,
     });
   });
 });
@@ -42,6 +38,13 @@ describe("resolvePageTags", () => {
     expect(resolvePageTags(["type:tutorial", "type:tutorial", "ai"])).toEqual([
       "type:tutorial",
       "ai",
+    ]);
+  });
+
+  it("preserves retired ids as unknown strings instead of rewriting or dropping", () => {
+    expect(resolvePageTags(["tutorials", "type:tutorial"])).toEqual([
+      "tutorials",
+      "type:tutorial",
     ]);
   });
 });

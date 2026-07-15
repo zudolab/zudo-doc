@@ -8,14 +8,12 @@ import {
 } from "../check-canonical-tags.mjs";
 
 describe("check-canonical-tags", () => {
-  it("reports retired tag and vocabulary alias values with paths and lines", () => {
+  it("reports retired tag values with paths and lines", () => {
     const findings = scanCanonicalSource(
       [
         "---",
         "tags: [tutorial, cloudflare-worker]",
         "---",
-        "aliases:",
-        "  - cf-worker",
       ].join("\n"),
       "src/content/docs/example.mdx",
     );
@@ -27,13 +25,6 @@ describe("check-canonical-tags", () => {
         field: "tags",
         value: "tutorial",
         canonical: "type:tutorial",
-      }),
-      expect.objectContaining({
-        path: "src/content/docs/example.mdx",
-        line: 5,
-        field: "aliases",
-        value: "cf-worker",
-        canonical: "cloudflare-worker",
       }),
     ]);
   });

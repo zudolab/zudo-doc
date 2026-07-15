@@ -27,19 +27,13 @@ export interface BuildDocsSchemaOptions {
 
 /**
  * Build the `tags` schema based on governance mode. `"strict"` tightens to a
- * `z.enum` of every canonical id plus every alias (content still uses
- * aliases verbatim — resolution happens at the aggregation layer, after
- * parsing).
+ * `z.enum` containing the exact canonical ids from the vocabulary.
  */
 function buildTagsSchema(opts?: BuildDocsSchemaOptions) {
   const vocabulary = opts?.tagVocabulary ?? [];
   const vocabularyActive = vocabulary.length > 0 && opts?.tagGovernance === "strict";
   if (!vocabularyActive) return z.array(z.string()).optional();
-  const allowed = new Set<string>();
-  for (const entry of vocabulary) {
-    allowed.add(entry.id);
-    for (const alias of entry.aliases ?? []) allowed.add(alias);
-  }
+  const allowed = new Set(vocabulary.map((entry) => entry.id));
   const allowedList = [...allowed];
   if (allowedList.length === 0) return z.array(z.string()).optional();
   const [first, ...rest] = allowedList;

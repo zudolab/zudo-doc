@@ -117,6 +117,18 @@ describe("createTagPages — collectTagMapForLocale", () => {
     expect(map.get("guide")?.count).toBe(1);
   });
 
+  it("preserves canonical namespaced ids in the tag-page map", () => {
+    const { collectTagMapForLocale } = createTagPages(
+      makeDeps({ docs: [makeEntry("doc/tutorial", ["type:tutorial"])] }),
+    );
+    const map = collectTagMapForLocale("en");
+    expect([...map.keys()]).toEqual(["type:tutorial"]);
+    expect(map.get("type:tutorial")).toMatchObject({
+      tag: "type:tutorial",
+      count: 1,
+    });
+  });
+
   it("excludes category_no_page docs from tag aggregation (default locale)", () => {
     const { collectTagMapForLocale } = createTagPages(
       makeDeps({

@@ -5,8 +5,8 @@
 // host's `settings.tagVocabulary` / `settings.tagGovernance` + the
 // `tagVocabulary` entries from `@/config/tag-vocabulary`.
 //
-// `collectTags` stays host-side while tag alias/deprecation runtime remains.
-// It accepts current zfb entries and delegates resolution to the package.
+// `collectTags` stays host-side for current zfb entry typing. It accepts current
+// entries and delegates exact-id recognition to the package.
 
 import type { DocPageEntry } from "@takazudo/zudo-doc/doc-page-props";
 import { settings } from "@/config/settings";
@@ -40,9 +40,8 @@ export function resolveTag(raw: string) {
 }
 
 /**
- * Resolve a list of raw tag strings (e.g. from frontmatter) to canonical ids,
- * dropping deprecated-without-redirect entries and preserving order. Duplicates
- * produced by alias collapse are removed.
+ * Resolve a list of raw tag strings (e.g. from frontmatter), preserving order
+ * and removing exact duplicates.
  */
 export function resolvePageTags(rawTags: readonly string[]): string[] {
   return _resolvePageTags(rawTags, getVocab(), settings.tagGovernance);
@@ -61,7 +60,6 @@ export function collectTags(
     const seen = new Set<string>();
     for (const raw of rawTags) {
       const resolved = resolveTag(raw);
-      if (resolved.deprecated) continue;
       if (seen.has(resolved.canonical)) continue;
       seen.add(resolved.canonical);
 

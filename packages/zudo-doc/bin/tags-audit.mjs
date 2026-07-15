@@ -13,7 +13,6 @@
 //
 // Usage (via package.json scripts):
 //   tags-audit          # report only (exit 0 in warn mode)
-//   tags-audit --fix    # rewrite alias tags in place
 //   tags-audit --ci     # force exit 1 on any hard issue
 //   tags-audit --json   # emit JSON report
 

@@ -10,7 +10,7 @@
  * it uses the `tags-audit` package bin from @takazudo/zudo-doc instead.
  *
  * CLI usage (still works via tsx for debugging):
- *   tsx scripts/tags-audit.ts [--fix] [--ci] [--json]
+ *   tsx scripts/tags-audit.ts [--ci] [--json]
  */
 
 import { join, resolve } from "node:path";
@@ -27,20 +27,15 @@ import { tagVocabulary } from "../src/config/tag-vocabulary";
 // to work unchanged.
 export {
   audit,
-  applyFixes,
   buildIndex,
   collectMdxFiles,
-  computeRewrites,
   formatTextReport,
   hasHardIssues,
   normalizeTags,
-  rewriteAliasesByteStable,
 } from "@takazudo/zudo-doc/tags-audit";
 export type {
-  AliasIssue,
   AuditOptions,
   AuditReport,
-  DeprecatedIssue,
   NearDuplicatePair,
   NearDupHelpers,
   TagVocabularyEntry,
@@ -66,12 +61,11 @@ const isMain =
   resolve(process.argv[1]) === resolve(__filename);
 
 if (isMain) {
-  const { audit: coreAudit, computeRewrites: coreComputeRewrites, applyFixes: coreApplyFixes, hasHardIssues: coreHasHardIssues, formatTextReport: coreFormatReport } =
+  const { audit: coreAudit, hasHardIssues: coreHasHardIssues, formatTextReport: coreFormatReport } =
     await import("@takazudo/zudo-doc/tags-audit");
 
   const argv = process.argv.slice(2);
   const flags = {
-    fix: argv.includes("--fix"),
     ci: argv.includes("--ci"),
     json: argv.includes("--json"),
   };
@@ -84,20 +78,6 @@ if (isMain) {
   const contentDirs = [docsDir, ...localeDirs];
   const vocabularyActive =
     Boolean(settings.tagVocabulary) && settings.tagGovernance !== "off";
-
-  if (flags.fix) {
-    const rewrites = coreComputeRewrites(tagVocabulary);
-    const touched = await coreApplyFixes(contentDirs, rewrites, ROOT_DIR);
-    if (flags.json) {
-      process.stdout.write(JSON.stringify({ fixed: touched }, null, 2) + "\n");
-    } else if (touched.length === 0) {
-      console.log(pc.green("✓ No alias rewrites needed"));
-    } else {
-      console.log(pc.green(`✓ Rewrote aliases in ${touched.length} file(s):`));
-      for (const f of touched) console.log(`  ${f}`);
-    }
-    process.exit(0);
-  }
 
   const report = await coreAudit({
     rootDir: ROOT_DIR,
