@@ -172,6 +172,33 @@ test.describe("HtmlPreview: zfb md-wasm resources and semantic output", () => {
     // it must not inject that source as live HTML inside the code panel.
     await expect(highlighted.nth(0).locator("#js-target")).toHaveCount(0);
 
+    const defaultDarkColors = await highlighted
+      .nth(2)
+      .locator("span.hi-kw")
+      .first()
+      .evaluate((token) => {
+        const resolveColor = (cssVar: string) => {
+          const probe = document.createElement("span");
+          probe.style.color = `var(${cssVar})`;
+          document.body.append(probe);
+          const color = getComputedStyle(probe).color;
+          probe.remove();
+          return color;
+        };
+
+        return {
+          theme: document.documentElement.dataset.theme,
+          token: getComputedStyle(token).color,
+          semantic: resolveColor("--zd-syntax-keyword"),
+          defaultDarkAccent: resolveColor("--palette-accent-1"),
+        };
+      });
+    expect(defaultDarkColors.theme).toBeUndefined();
+    expect(defaultDarkColors.token).toBe(defaultDarkColors.semantic);
+    expect(defaultDarkColors.token).toBe(
+      defaultDarkColors.defaultDarkAccent,
+    );
+
     const glueRequests = resourceRequests.filter(({ kind }) => kind === "glue");
     const wasmRequests = resourceRequests.filter(({ kind }) => kind === "wasm");
     const glueResponses = resourceResponses.filter(({ kind }) => kind === "glue");
