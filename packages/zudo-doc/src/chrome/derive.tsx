@@ -123,6 +123,7 @@ export const DEFAULT_SCHEME: ColorScheme = {
     selectionBg: { base: 2 },
     selectionFg: { base: 0 },
     semantic: { ...SEMANTIC_RAMP_DEFAULTS },
+    syntax: {},
   },
 };
 

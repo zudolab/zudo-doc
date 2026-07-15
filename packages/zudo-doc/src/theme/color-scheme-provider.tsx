@@ -39,9 +39,8 @@ export interface ColorSchemeProviderProps {
    */
   cssText: string;
   /**
-   * Active light/dark mode config, or `null` for the persisted-tweak
-   * bootstrap path (no light/dark; the in-browser tweak panel may inject
-   * custom CSS vars from localStorage instead).
+   * Active light/dark mode config, or `null` for a single fixed scheme. The
+   * external design-token panel owns applying any persisted token overrides.
    */
   colorMode: ColorSchemeProviderColorMode | null;
   /** Optional children; preserved for forward compatibility. */
@@ -75,23 +74,6 @@ if(respectPrefersColorScheme){window.matchMedia("(prefers-color-scheme: dark)").
 })();`;
 }
 
-/**
- * Bootstrap script for the persisted-tweak path (no light/dark mode).
- *
- * Built lazily so the `AFTER_NAVIGATE_EVENT` constant from
- * `transitions/page-events.ts` is interpolated into the script body
- * (zudolab/zudo-doc#1335 E2 task 2 half B). The previous module-scope
- * literal hard-coded `astro:after-swap`.
- */
-function buildPersistedTweakBootstrap(): string {
-  const afterNav = JSON.stringify(AFTER_NAVIGATE_EVENT);
-  return `(function(){
-function applyStoredScheme(){var css=localStorage.getItem("zudo-doc-color-scheme-css");if(!css)return;try{var pairs=JSON.parse(css);var root=document.documentElement;for(var i=0;i<pairs.length;i++){root.style.setProperty(pairs[i][0],pairs[i][1]);}}catch(e){localStorage.removeItem("zudo-doc-color-scheme-css");}}
-applyStoredScheme();
-document.addEventListener(${afterNav},applyStoredScheme);
-})();`;
-}
-
 export default function ColorSchemeProvider({
   cssText,
   colorMode,
@@ -101,12 +83,12 @@ export default function ColorSchemeProvider({
         colorMode.defaultMode,
         Boolean(colorMode.respectPrefersColorScheme),
       )
-    : buildPersistedTweakBootstrap();
+    : null;
 
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: cssText }} />
-      <script dangerouslySetInnerHTML={{ __html: bootstrap }} />
+      {bootstrap !== null && <script dangerouslySetInnerHTML={{ __html: bootstrap }} />}
     </>
   );
 }

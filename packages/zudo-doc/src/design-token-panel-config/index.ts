@@ -354,10 +354,7 @@ export function buildDesignTokenPanelConfig(mode: PanelMode): PanelConfig {
     // `SCHEMA_V3` constants (#498/#505), which are unrelated to this field.
     // It is thus a purely descriptive config value with no runtime effect;
     // set to v3 (a literal, not one of those constants) to match what real
-    // exports carry. Distinct from the host serde's `DESIGN_TOKEN_SCHEMA`
-    // (`zudo-doc-design-tokens/v3` — bumped from v2 in #2599 so a stale
-    // pre-5/3-minimize export resets instead of crashing on import), which
-    // governs a separate round-trip.
+    // exports carry.
     schemaId: "zudo-design-tokens/v3",
     exportFilenameBase: "zudo-doc-design-tokens",
     tabs: [buildPaletteTab(mode), buildColorTab(mode), buildFontTab(), buildSpacingTab(), buildSizeTab()],
