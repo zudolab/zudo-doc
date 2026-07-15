@@ -29,6 +29,25 @@ import type { ChromeContext } from "../../factory-context/index.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 
 const EMPTY_TREE: DocNavNode[] = [];
+const CHANGELOG_TREE: DocNavNode[] = [
+  {
+    slug: "changelog",
+    label: "Release notes",
+    position: 0,
+    href: "/docs/changelog",
+    hasPage: true,
+    children: [
+      {
+        slug: "changelog/1.0.0",
+        label: "1.0.0",
+        position: 0,
+        href: "/docs/changelog/1.0.0",
+        hasPage: true,
+        children: [],
+      },
+    ],
+  },
+];
 
 function makeProps(overrides: Partial<HomePageViewProps> = {}): HomePageViewProps {
   return {
@@ -108,6 +127,31 @@ describe("createHomePageView — SiteTreeNav island", () => {
     const html = render(<HomePageView {...makeProps()} />);
 
     expect(html).toContain('data-zfb-island="SiteTreeNav"');
+  });
+
+  it("forwards the explicit initial-collapse slugs to SiteTreeNav", () => {
+    const ctx = makeFakeChromeContext();
+    const HomePageView = createHomePageView(ctx);
+    const html = render(
+      <HomePageView
+        {...makeProps({
+          tree: CHANGELOG_TREE,
+          initiallyCollapsedCategorySlugs: ["changelog"],
+        })}
+      />,
+    );
+
+    expect(html).toContain('aria-expanded="false" aria-label="Expand Release notes"');
+    expect(html).not.toContain('href="/docs/changelog/1.0.0"');
+  });
+
+  it("keeps the existing expanded default when no initial-collapse slugs are provided", () => {
+    const ctx = makeFakeChromeContext();
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps({ tree: CHANGELOG_TREE })} />);
+
+    expect(html).toContain('aria-expanded="true" aria-label="Collapse Release notes"');
+    expect(html).toContain('href="/docs/changelog/1.0.0"');
   });
 });
 

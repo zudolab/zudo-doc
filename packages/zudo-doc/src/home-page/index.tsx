@@ -71,6 +71,8 @@ export interface HomePageViewProps {
   tree: DocNavNode[];
   /** Ordered category prefixes, passed through to `SiteTreeNav`. */
   categoryOrder: string[];
+  /** Root-category slugs that should start collapsed in `SiteTreeNav`. */
+  initiallyCollapsedCategorySlugs?: string[];
   /** Unique tag count for the current locale — gates the "all tags" section
    *  together with `settings.docTags`. */
   tagCount: number;
@@ -119,6 +121,7 @@ export function createHomePageView<S extends Settings = Settings>(
     extras,
     tree,
     categoryOrder,
+    initiallyCollapsedCategorySlugs,
     tagCount,
     wide,
   }: HomePageViewProps): JSX.Element {
@@ -195,6 +198,7 @@ export function createHomePageView<S extends Settings = Settings>(
               tree={tree as unknown as SidebarNavNode[]}
               categoryOrder={categoryOrder}
               categoryIgnore={["inbox", "develop"]}
+              initiallyCollapsedCategorySlugs={initiallyCollapsedCategorySlugs}
             />
           ),
         }) as unknown as VNode}

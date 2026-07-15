@@ -33,9 +33,26 @@ const SAMPLE_TREE: SidebarNavNode[] = [
     ],
   },
   {
+    slug: "changelog",
+    label: "Release notes",
+    position: 1,
+    href: "/docs/changelog",
+    hasPage: true,
+    children: [
+      {
+        slug: "changelog/1.0.0",
+        label: "1.0.0",
+        position: 0,
+        href: "/docs/changelog/1.0.0",
+        hasPage: true,
+        children: [],
+      },
+    ],
+  },
+  {
     slug: "reference",
     label: "Reference",
-    position: 1,
+    position: 2,
     href: "/docs/reference",
     hasPage: true,
     children: [],
@@ -63,6 +80,27 @@ describe("SiteTreeNav — SSG HTML presence", () => {
   it("renders child node href in static HTML", () => {
     const html = render(<SiteTreeNav tree={SAMPLE_TREE} />);
     expect(html).toContain('href="/docs/guides/getting-started"');
+  });
+
+  it("starts only explicitly selected root-category slugs collapsed", () => {
+    const html = render(
+      <SiteTreeNav
+        tree={SAMPLE_TREE}
+        initiallyCollapsedCategorySlugs={["changelog"]}
+      />,
+    );
+
+    expect(html).toContain('aria-expanded="false" aria-label="Expand Release notes"');
+    expect(html).not.toContain('href="/docs/changelog/1.0.0"');
+    expect(html).toContain('aria-expanded="true" aria-label="Collapse Guides"');
+    expect(html).toContain('href="/docs/guides/getting-started"');
+  });
+
+  it("keeps all categories expanded by default without inferring from labels", () => {
+    const html = render(<SiteTreeNav tree={SAMPLE_TREE} />);
+
+    expect(html).toContain('aria-expanded="true" aria-label="Collapse Release notes"');
+    expect(html).toContain('href="/docs/changelog/1.0.0"');
   });
 
   it("renders the data-site-nav attribute in static HTML", () => {
