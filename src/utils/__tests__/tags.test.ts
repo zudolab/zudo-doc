@@ -3,19 +3,19 @@ import { resolveTag, resolvePageTags } from "../tags";
 import { settings } from "@/config/settings";
 
 // Guard: these tests rely on the default settings shipping
-// `tagVocabulary: true` with a non-"off" governance mode, and on the
-// vocabulary declaring `"tutorials"` as an alias for `"type:tutorial"`.
-// If any of those change, fail loudly here instead of via cryptic asserts below.
+// `tagVocabulary: true` with a non-"off" governance mode. The host vocabulary
+// itself is canonical-only; package-level tests retain coverage for the alias
+// compatibility paths until their removal in #2769.
 beforeAll(() => {
   expect(settings.tagVocabulary).toBe(true);
   expect(settings.tagGovernance).not.toBe("off");
 });
 
 describe("resolveTag", () => {
-  it("rewrites a known alias to its canonical id", () => {
+  it("treats a retired alias as unknown when the host does not declare it", () => {
     expect(resolveTag("tutorials")).toEqual({
-      canonical: "type:tutorial",
-      known: true,
+      canonical: "tutorials",
+      known: false,
       deprecated: false,
     });
   });
@@ -38,8 +38,8 @@ describe("resolveTag", () => {
 });
 
 describe("resolvePageTags", () => {
-  it("rewrites aliases and deduplicates after collapse", () => {
-    expect(resolvePageTags(["tutorials", "type:tutorial", "ai"])).toEqual([
+  it("preserves canonical ids and deduplicates exact repeats", () => {
+    expect(resolvePageTags(["type:tutorial", "type:tutorial", "ai"])).toEqual([
       "type:tutorial",
       "ai",
     ]);
