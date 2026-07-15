@@ -30,11 +30,12 @@ import { frontmatterRenderers } from "@/config/frontmatter-preview-renderers";
 import { createBuildFrontmatterPreviewEntries } from "@takazudo/zudo-doc/frontmatter-preview-data";
 import { defaultFrontmatterPreviewIgnoreKeys } from "@takazudo/zudo-doc/frontmatter-preview-defaults";
 import { collectTags } from "@/utils/tags";
-import { toRouteSlug } from "@/utils/slug";
-import type { DocsEntry } from "@/types/docs-entry";
+import { toRouteSlug } from "@takazudo/zudo-doc/slug";
+import type { DocPageEntry } from "@takazudo/zudo-doc/doc-page-props";
+import { mergeLocaleDocs } from "@takazudo/zudo-doc/locale-merge";
+import { isDefaultLocaleOnlyPath } from "@/utils/base";
 
 import { stableDocs, memoizeDerived } from "../pages/lib/_nav-source-cache";
-import { mergeLocaleDocs } from "../pages/lib/locale-merge";
 import { SearchWidget } from "../pages/lib/_search-widget";
 import { BodyEndIslands as BodyEndIslandsSeam } from "../pages/lib/_body-end-islands";
 import { DetailsWrapper } from "../pages/lib/_details";
@@ -68,10 +69,13 @@ function loadTagsForLocale(lang: string) {
   if (lang === defaultLocale) {
     const baseDocs = stableDocs("docs");
     return memoizeDerived([baseDocs], "footerTaglist;default", () => {
-      const docs: DocsEntry[] = baseDocs.filter(
+      const docs: DocPageEntry[] = baseDocs.filter(
         (d) => !d.data.draft && !d.data.unlisted && !d.data.category_no_page,
       );
-      const tagMap = collectTags(docs, (id, data) => data.slug ?? toRouteSlug(id));
+      const tagMap = collectTags(
+        docs,
+        (entrySlug, data) => data.slug ?? toRouteSlug(entrySlug),
+      );
       return [...tagMap.values()].sort((a, b) => a.tag.localeCompare(b.tag, lang));
     });
   }
@@ -82,9 +86,13 @@ function loadTagsForLocale(lang: string) {
       baseDocs: baseDocs.filter((d) => !d.data.draft),
       localeDocs: localeDocs.filter((d) => !d.data.draft),
       applyDefaultLocaleOnlyFilter: true,
+      isDefaultLocaleOnlyPath,
     });
-    const docs: DocsEntry[] = result.docs.filter((d) => !d.data.category_no_page);
-    const tagMap = collectTags(docs, (id, data) => data.slug ?? toRouteSlug(id));
+    const docs: DocPageEntry[] = result.docs.filter((d) => !d.data.category_no_page);
+    const tagMap = collectTags(
+      docs,
+      (entrySlug, data) => data.slug ?? toRouteSlug(entrySlug),
+    );
     return [...tagMap.values()].sort((a, b) => a.tag.localeCompare(b.tag, lang));
   });
 }

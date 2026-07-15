@@ -383,12 +383,10 @@ describe("enumerateDocsRoutes — toRouteSlug strips /index suffix", () => {
   });
 
   it("does not emit /docs/category/index/ for a category index entry", () => {
-    // _data.ts stripIndexSuffix converts "getting-started/index" → "getting-started"
-    // before passing to enumerators. Simulate that by providing already-stripped slugs.
     mockGetCollection.mockImplementation((name: string) => {
       if (name === "docs") {
         return [
-          makeEntry("getting-started", { title: "Getting Started" }),
+          makeEntry("getting-started/index", { title: "Getting Started" }),
           makeEntry("getting-started/intro", { title: "Intro" }),
         ];
       }
@@ -400,5 +398,41 @@ describe("enumerateDocsRoutes — toRouteSlug strips /index suffix", () => {
     expect(urls.every((u) => !u.includes("/index/"))).toBe(true);
     expect(urls.some((u) => u.endsWith("/docs/getting-started/"))).toBe(true);
     expect(urls.some((u) => u.endsWith("/docs/getting-started/intro/"))).toBe(true);
+  });
+
+  it("maps a raw root index entry to the canonical docs root", () => {
+    mockGetCollection.mockImplementation((name: string) =>
+      name === "docs" ? [makeEntry("index", { title: "Docs" })] : [],
+    );
+
+    expect(enumerateDocsRoutes("en")).toEqual([expect.stringMatching(/\/docs\/$/)]);
+  });
+
+  it("preserves root/index behavior through locale fallback merging", () => {
+    mockGetCollection.mockImplementation((name: string) => {
+      if (name === "docs-ja") return [makeEntry("index", { title: "ドキュメント" })];
+      if (name === "docs") return [makeEntry("index", { title: "Docs" })];
+      return [];
+    });
+
+    const urls = enumerateDocsRoutes("ja");
+    expect(urls.filter((url) => /\/ja\/docs\/$/.test(url))).toHaveLength(1);
+    expect(urls.every((url) => !url.includes("/index/"))).toBe(true);
+  });
+
+  it("maps raw root and nested index entries on versioned routes", () => {
+    mockGetCollection.mockImplementation((name: string) =>
+      name === "docs-v-1.0"
+        ? [makeEntry("index", { title: "Docs" }), makeEntry("guide/index", { title: "Guide" })]
+        : [],
+    );
+
+    const urls = enumerateVersionedRoutes(
+      { slug: "1.0", docsDir: "src/content/docs-v1" },
+      "en",
+    );
+    expect(urls).toContainEqual(expect.stringMatching(/\/v\/1\.0\/docs\/$/));
+    expect(urls).toContainEqual(expect.stringMatching(/\/v\/1\.0\/docs\/guide\/$/));
+    expect(urls.every((url) => !url.includes("/index/"))).toBe(true);
   });
 });

@@ -24,7 +24,6 @@ import type {
 } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
 import { makeUrlHelpers } from "../url-helpers/index.js";
-import { loadCategoryMeta, type CategoryMeta } from "../sidebar-tree/index.js";
 import { extractHeadings as extractHeadingsBase } from "../extract-headings/index.js";
 import { toRouteSlug, toSlugParams } from "../slug/index.js";
 import { resolveTag } from "../tag-helpers/index.js";
@@ -34,7 +33,6 @@ import {
   getNavSectionForSlug as getNavSectionForSlugBase,
   getNavSubtree as getNavSubtreeBase,
 } from "../nav-scope/index.js";
-import { mergeLocaleDocs } from "../locale-merge/index.js";
 import {
   createNavSourceDocs,
   type NavSourceDocsContext,
@@ -46,8 +44,6 @@ import {
 import {
   createRouteEnumerators,
   type RouteEnumeratorsContext,
-  type DocsEntryForTags,
-  type TagInfoForEnum,
 } from "../route-enumerators/index.js";
 import type { DocNavNode, DocPageEntry } from "../doc-page-props/index.js";
 import type { HeadingItem } from "../extract-headings/index.js";
@@ -80,9 +76,6 @@ export interface CreateRouteContextOptions {
    */
   stableDocs?: ContentBridge;
 }
-
-// Local alias so the `mergeLocaleDocs` cast below reads clearly.
-type RouteEnumeratorsAPIDeps = Parameters<typeof createRouteEnumerators>[0];
 
 /**
  * Reconstruct the full runtime route context from the serializable payload.
@@ -168,15 +161,15 @@ export function createRouteContext<S extends Settings = Settings>(
 
   function collectTags(
     entries: ReadonlyArray<{
-      id: string;
+      slug: string;
       data: { slug?: string; title?: string; description?: string; tags?: string[] };
     }>,
-    slugFn: (id: string, data: { slug?: string }) => string,
+    slugFn: (entrySlug: string, data: { slug?: string }) => string,
   ): Map<string, TagInfo> {
     const tagMap = new Map<string, TagInfo>();
     for (const entry of entries) {
       const rawTags = entry.data.tags ?? [];
-      const slug = slugFn(entry.id, entry.data);
+      const slug = slugFn(entry.slug, entry.data);
       const seen = new Set<string>();
       for (const raw of rawTags) {
         const resolved = resolveTagBound(raw);

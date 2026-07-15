@@ -35,14 +35,13 @@ function makeEntryProps(
     kind: "entry",
     entry: {
       slug: "test-page",
-      id: "test-page",
-      collection: "docs",
       data: {
         title: "Test Page",
         ...data,
       },
+      body: "",
       module_specifier: "test-page.mdx",
-      Content: () => null,
+      Content: () => ({ type: "div", props: {}, key: null }),
     },
     breadcrumbs: [],
     prev: null,

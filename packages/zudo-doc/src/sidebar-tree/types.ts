@@ -25,7 +25,7 @@ export interface SidebarFrontmatter {
   standalone?: boolean;
   /**
    * Optional override for the route slug. When omitted, the builder derives
-   * the slug from the entry's id (stripping a trailing `/index`).
+   * the route slug from the entry's zfb slug (stripping a trailing `/index`).
    */
   slug?: string;
   /**
@@ -45,29 +45,18 @@ export interface SidebarFrontmatter {
 }
 
 /**
- * Minimum shape required of a content collection entry. Designed to be a
- * structural superset of both Astro's `CollectionEntry` and zfb's
- * `CollectionEntry<T>` so callers can pass either through unchanged.
+ * Minimum current zfb collection-entry shape required by the builder.
  */
 export interface CollectionEntryLike<
   T extends SidebarFrontmatter = SidebarFrontmatter,
 > {
   /**
-   * Stable identifier. For Astro entries this is the file path without the
-   * extension (e.g. `getting-started/index`). For zfb entries the project
-   * convention is to put the cleaned slug here too — either form is fine
-   * because the builder strips a trailing `/index`.
+   * Filename without the extension. Canonical route identity is derived by
+   * stripping the root or nested `index` suffix.
    */
-  id: string;
-  /**
-   * Optional pre-computed slug. When present it wins over the id-derived
-   * value. zfb entries always populate this field; Astro callers can leave
-   * it undefined.
-   */
-  slug?: string;
+  slug: string;
   data: T;
-  /** Free-form fields kept for forward compatibility — never read here. */
-  collection?: string;
+  /** Other native zfb fields are accepted structurally and never read here. */
   body?: string;
 }
 

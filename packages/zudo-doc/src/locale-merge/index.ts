@@ -3,10 +3,8 @@
 //
 // Moved from the showcase's `pages/lib/locale-merge.ts` into the shared
 // package. Previously this imported `isDefaultLocaleOnlyPath` from the host's
-// `@/utils/base` and `DocsEntry` / `CategoryMeta` from `@/types/docs-entry` /
-// `@/utils/docs` — host-alias imports that would not resolve in downstream
-// consumers. The package version:
-//   - Makes `DocsEntry` generic (`T extends { id: string; data: { slug?: string; unlisted?: boolean } }`)
+// host singletons. The package version:
+//   - Accepts the current zfb entry shape (`slug` + `data`) generically
 //   - Accepts `isDefaultLocaleOnlyPath` as an injected parameter in options
 //   - Inlines `mergeCategoryMeta` as a pure helper (no `loadCategoryMeta` call)
 //
@@ -18,6 +16,8 @@
 // This is a pure module — no node builtins, no `@/` imports, safe in the
 // config eval graph and in client islands.
 
+import { toRouteSlug } from "../slug/index.js";
+
 // ---------------------------------------------------------------------------
 // Minimal structural DocsEntry shape the merge functions need
 // ---------------------------------------------------------------------------
@@ -25,12 +25,11 @@
 /**
  * Minimal structural interface for a docs entry.
  *
- * Structurally compatible with the host's `DocsEntry` from
- * `@/types/docs-entry`. Callers pass their concrete entry arrays and
- * TypeScript's structural typing ensures compatibility.
+ * Structurally compatible with a current zfb collection entry. Callers pass
+ * concrete entry arrays and TypeScript preserves the subtype in the result.
  */
 export interface MergeDocsEntry {
-  id: string;
+  slug: string;
   data: {
     slug?: string;
     unlisted?: boolean;
@@ -87,13 +86,10 @@ export interface MergeLocaleDocsOptions<T extends MergeDocsEntry = MergeDocsEntr
    * Only called when `applyDefaultLocaleOnlyFilter` is true. The host stub
    * passes `isDefaultLocaleOnlyPath` from `@/utils/base`.
    *
-   * When omitted (or when `applyDefaultLocaleOnlyFilter` is false), no path
-   * filtering is applied.
-   *
-   * Example: host passes `(path) => isDefaultLocaleOnlyPath(path)` where
-   * `isDefaultLocaleOnlyPath` is from `src/utils/base.ts`.
+   * Required explicitly so the merge never silently omits the current
+   * default-locale-only path contract.
    */
-  isDefaultLocaleOnlyPath?: (path: string) => boolean;
+  isDefaultLocaleOnlyPath: (path: string) => boolean;
 }
 
 /**
@@ -134,10 +130,9 @@ export interface MergeLocaleDocsResult<T extends MergeDocsEntry = MergeDocsEntry
  * Locale docs take priority; base docs fill in slugs not covered by the locale
  * collection. Optionally excludes default-locale-only paths and/or unlisted pages.
  *
- * **Slug keying**: slug identity uses `d.data.slug ?? d.id`. Since `loadDocs`
- * already strips the `/index` suffix (via `stripIndexSuffix` in `pages/_data.ts`),
- * this key is consistent across all call sites regardless of whether they
- * loaded docs via `loadDocs` or `bridgeEntries`.
+ * **Slug keying**: slug identity uses the explicit frontmatter override or
+ * the canonical route form of the current zfb `entry.slug`. This preserves
+ * root `index` and nested index-page behavior without mutating the entries.
  *
  * **Array identity**: returns a fresh array on each call — see
  * {@link MergeLocaleDocsResult} for caching guidance.
@@ -161,15 +156,18 @@ export function mergeLocaleDocs<T extends MergeDocsEntry = MergeDocsEntry>(
     ? baseDocs
     : baseDocs.filter((d) => !d.data.unlisted);
 
-  const localeSlugSet = new Set(filteredLocale.map((d) => d.data.slug ?? d.id));
+  const routeSlug = (entry: T): string =>
+    entry.data.slug ?? toRouteSlug(entry.slug);
+
+  const localeSlugSet = new Set(filteredLocale.map(routeSlug));
 
   let fallbackDocs = filteredBase.filter(
-    (d) => !localeSlugSet.has(d.data.slug ?? d.id),
+    (entry) => !localeSlugSet.has(routeSlug(entry)),
   );
 
-  if (applyDefaultLocaleOnlyFilter && isDefaultLocaleOnlyPath) {
+  if (applyDefaultLocaleOnlyFilter) {
     fallbackDocs = fallbackDocs.filter(
-      (d) => !isDefaultLocaleOnlyPath(`/docs/${d.data.slug ?? d.id}`),
+      (entry) => !isDefaultLocaleOnlyPath("/docs/" + routeSlug(entry)),
     );
   }
 

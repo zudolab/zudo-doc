@@ -7,9 +7,9 @@ tags:
   - i18n
 ---
 
-Long URLs and filesystem paths — for example `packages/create-zudo-doc/templates/base/src/utils/smart-break.tsx` — do not wrap at arbitrary character boundaries. In narrow UI (sidebar labels, breadcrumbs, inline code, search snippets) they overflow the container or push layout wider than it should be.
+Long URLs and filesystem paths — for example `packages/zudo-doc/src/smart-break/index.tsx` — do not wrap at arbitrary character boundaries. In narrow UI (sidebar labels, breadcrumbs, inline code, search snippets) they overflow the container or push layout wider than it should be.
 
-The `smart-break` utility at `src/utils/smart-break.tsx` solves this by injecting `<wbr>` (word-break opportunity) hints after each delimiter in strings that look path-like. The browser then decides where to break based on available width.
+The package's `smart-break` utility solves this by injecting `<wbr>` (word-break opportunity) hints after each delimiter in strings that look path-like. The browser then decides where to break based on available width.
 
 ## Automatic Behavior
 
@@ -29,7 +29,7 @@ You only need to invoke the utility yourself when building a custom component th
 For Preact islands (or any `.tsx` component in the project) use the `SmartBreak` component. It stringifies its children and injects `<wbr>` where appropriate:
 
 ```tsx
-import { SmartBreak } from "@/utils/smart-break";
+import { SmartBreak } from "@takazudo/zudo-doc/smart-break";
 
 export function FileBadge({ path }: { path: string }) {
   return (
@@ -47,7 +47,7 @@ If `path` is not path-like (plain prose, `and/or`, `state-of-the-art`, etc.) it 
 Any code path that renders an HTML string (for example `dangerouslySetInnerHTML`) cannot mount Preact VNodes directly. Use `smartBreakToHtml` instead — it returns an HTML-escaped string with literal `<wbr>` tags injected:
 
 ```tsx
-import { smartBreakToHtml } from "@/utils/smart-break";
+import { smartBreakToHtml } from "@takazudo/zudo-doc/smart-break";
 
 export function PathLabel({ label }: { label: string }) {
   return <span dangerouslySetInnerHTML={{ __html: smartBreakToHtml(label) }} />;
@@ -87,13 +87,13 @@ It returns `false` for prose-y fragments that happen to contain delimiters: `and
 For an input like:
 
 ```
-packages/create-zudo-doc/templates/base/src/utils/smart-break.tsx
+packages/zudo-doc/src/smart-break/index.tsx
 ```
 
 `isPathLike` returns `true` and `smartBreakToHtml` emits (conceptually):
 
 ```html
-packages<wbr>/create<wbr>-zudo<wbr>-doc<wbr>/templates<wbr>/base<wbr>/src<wbr>/utils<wbr>/smart<wbr>-break<wbr>.tsx
+packages<wbr>/zudo<wbr>-doc<wbr>/src<wbr>/smart<wbr>-break<wbr>/index<wbr>.tsx
 ```
 
 The browser keeps the line intact when the container is wide enough, and breaks at the nearest `<wbr>` when it must — always between segments, never mid-segment.

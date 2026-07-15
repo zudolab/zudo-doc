@@ -139,7 +139,7 @@ export function createDocHistoryArea<S extends Settings = Settings>(
     // is unroutable — the server regex and the prebuild key composition both
     // reject ""). Apply the sentinel to the slug segment BEFORE locale
     // composition so root pages resolve to e.g. /doc-history/index.json and the
-    // meta key "ja/index". See @/utils/slug `toHistorySlug` and the
+    // meta key "ja/index". See @takazudo/zudo-doc/slug `toHistorySlug` and the
     // collectContentFiles walk in packages/doc-history-server. (#1891)
     const historySlug = toHistorySlug(slug);
 

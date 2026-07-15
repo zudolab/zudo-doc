@@ -7,7 +7,7 @@ import type { NavNode, CategoryMeta } from "@/utils/docs";
 import { buildNavTree } from "@/utils/docs";
 import { getCategoryOrder } from "@/utils/nav-scope";
 import type { Locale } from "@/config/i18n";
-import type { DocsEntry } from "@/types/docs-entry";
+import type { DocPageEntry } from "@takazudo/zudo-doc/doc-page-props";
 import { buildSidebarForSection as _buildSidebarForSection } from "@takazudo/zudo-doc/sidebar-utils";
 
 export type { SidebarItem };
@@ -18,7 +18,7 @@ export type { SidebarItem };
  * Otherwise fall back to auto-generated tree.
  */
 export function buildSidebarForSection(
-  docs: DocsEntry[],
+  docs: DocPageEntry[],
   lang: Locale,
   categoryMatch?: string,
   categoryMeta?: Map<string, CategoryMeta>,
@@ -30,7 +30,7 @@ export function buildSidebarForSection(
     categoryMatch,
     categoryMeta,
     sidebars,
-    (d, l, meta) => buildNavTree(d as DocsEntry[], l as Locale, meta as Map<string, CategoryMeta>),
+    (d, l, meta) => buildNavTree(d as DocPageEntry[], l as Locale, meta as Map<string, CategoryMeta>),
     explicitPrefixes,
   ) as NavNode[];
 }

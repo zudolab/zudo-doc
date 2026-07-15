@@ -5,7 +5,7 @@
 //
 // The host's `pages/lib/_footer-with-defaults.tsx` previously imported
 // host singletons (`@/config/settings`, `@/config/i18n`, `@/config/tag-vocabulary`,
-// `@/utils/base`, `@/utils/tags`, `@/utils/slug`). This factory receives those
+// `@/utils/base`, `@/utils/tags`, `@takazudo/zudo-doc/slug`). This factory receives those
 // as arguments so the logic lives in the package while the host stub keeps
 // the singleton imports.
 

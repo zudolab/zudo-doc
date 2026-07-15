@@ -5,11 +5,10 @@
 // host's `settings.tagVocabulary` / `settings.tagGovernance` + the
 // `tagVocabulary` entries from `@/config/tag-vocabulary`.
 //
-// `collectTags` stays host-side because it depends on `DocsEntry` from the
-// host's content collections. It calls the local `resolveTag` wrapper which
-// in turn delegates to the package.
+// `collectTags` stays host-side while tag alias/deprecation runtime remains.
+// It accepts current zfb entries and delegates resolution to the package.
 
-import type { DocsEntry } from "@/types/docs-entry";
+import type { DocPageEntry } from "@takazudo/zudo-doc/doc-page-props";
 import { settings } from "@/config/settings";
 import { tagVocabulary } from "@/config/tag-vocabulary";
 import {
@@ -50,14 +49,14 @@ export function resolvePageTags(rawTags: readonly string[]): string[] {
 }
 
 export function collectTags(
-  entries: DocsEntry[],
-  slugFn: (id: string, data: { slug?: string }) => string,
+  entries: DocPageEntry[],
+  slugFn: (entrySlug: string, data: { slug?: string }) => string,
 ): Map<string, TagInfo> {
   const tagMap = new Map<string, TagInfo>();
 
   for (const entry of entries) {
     const rawTags = entry.data.tags ?? [];
-    const slug = slugFn(entry.id, entry.data);
+    const slug = slugFn(entry.slug, entry.data);
 
     const seen = new Set<string>();
     for (const raw of rawTags) {
