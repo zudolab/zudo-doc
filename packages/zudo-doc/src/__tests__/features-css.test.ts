@@ -31,20 +31,19 @@ describe("src/features.css source contract", () => {
     expect(css).toContain("z-index: var(--z-index-toolbar, 20);");
   });
 
-  it("styles both highlighted block shapes without matching every pre", () => {
-    const highlightedPre = ':is(pre.hi-root, pre[class*="syntect-"])';
+  it("styles current highlighted blocks without matching every pre", () => {
+    const highlightedPre = "pre.hi-root";
 
     expect(css).toContain(
       `${highlightedPre} [data-line-highlight="true"]`,
     );
     expect(css).toContain(`${highlightedPre} .line .highlighted-word`);
     expect(css).toContain(`.code-block-container ${highlightedPre}`);
-    expect(css).not.toContain('pre[class^="syntect-"]');
+    expect(css).not.toContain("syntect-");
   });
 
   it("applies word wrapping to highlighted blocks and raw tab fallbacks", () => {
-    const enhanceablePre =
-      ':is(pre.hi-root, pre[class*="syntect-"], .tab-panel pre)';
+    const enhanceablePre = ":is(pre.hi-root, .tab-panel pre)";
 
     expect(css).toContain(`${enhanceablePre}.word-wrap {`);
     expect(css).toContain(`${enhanceablePre}.word-wrap code {`);
@@ -95,7 +94,8 @@ describe("src/features.css source contract", () => {
   });
 
   it("keeps Shiki compatibility colors scoped away from class output", () => {
-    expect(css).toContain('[data-theme] pre[class*="syntect-"] span');
+    expect(css).toContain("[data-theme] .shiki span");
+    expect(css).toContain("[data-theme] .shiki {");
     expect(css).toContain("color: light-dark(var(--shiki-light)");
     expect(css).not.toMatch(
       /\[data-theme\][^{]*hi-root[^{]*\{[^}]*--shiki-/s,
