@@ -184,7 +184,8 @@ function buildDesiredConfig(choices: UserChoices): Record<string, unknown> {
   // ── Misc site fields ──────────────────────────────────────────────────
   desired.minifyHtml = choices.minifyHtml ?? true;
   desired.noindex = choices.features.includes("noindex");
-  const rawGithubUrl = (choices.githubUrl ?? "").trim();
+  const rawGithubUrl =
+    typeof choices.githubUrl === "string" ? choices.githubUrl.trim() : "";
   desired.githubUrl = rawGithubUrl ? rawGithubUrl : false;
   desired.cjkFriendly = choices.cjkFriendly ?? false;
 
@@ -320,16 +321,8 @@ function buildDesiredConfig(choices: UserChoices): Record<string, unknown> {
   desired.headerNav = headerNav;
 
   if (choices.headerRightItems !== undefined) {
-    // User-supplied override (including empty array) — emit verbatim, minus
-    // a defensive strip of "design-token-panel" when the feature is off.
-    desired.headerRightItems = choices.headerRightItems.filter(
-      (item) =>
-        !(
-          item.type === "trigger" &&
-          item.trigger === "design-token-panel" &&
-          !choices.features.includes("designTokenPanel")
-        ),
-    );
+    // User-supplied override (including empty array) — emit verbatim.
+    desired.headerRightItems = choices.headerRightItems;
   } else {
     const items: Array<Record<string, unknown>> = [];
     if (choices.features.includes("designTokenPanel")) {
@@ -338,7 +331,9 @@ function buildDesiredConfig(choices: UserChoices): Record<string, unknown> {
     if (choices.features.includes("versioning")) {
       items.push({ type: "component", component: "version-switcher" });
     }
-    items.push({ type: "component", component: "github-link" });
+    if (rawGithubUrl) {
+      items.push({ type: "component", component: "github-link" });
+    }
     items.push({ type: "component", component: "theme-toggle" });
     if (choices.features.includes("search")) {
       items.push({ type: "component", component: "search" });
