@@ -56,13 +56,15 @@ zudo-docには、サイトビルド後に2種類の検証を行う組み込み�
 pnpm build && pnpm check:links
 ```
 
-### `--strict`フラグ
+### 失敗対象カテゴリのフラグ
 
-デフォルトでは、問題が見つかってもチェッカーは終了コード0で終了します（非strictモード）。問題発見時に失敗させるには`--strict`を使用します：
+デフォルトでは、問題が見つかってもチェッカーは終了コード0で終了します。コマンドを失敗させるカテゴリは、`--strict-broken`、`--strict-absolute`、`--strict-trailing`で明示的に選択します。b4pushとCIのワークフローでは、末尾スラッシュの指摘を情報扱いのままにし、リンク切れとMDX内の絶対リンクを失敗対象にしています：
 
 ```bash
-pnpm check:links --strict
+pnpm check:links -- --strict-broken --strict-absolute
 ```
+
+現在のCLIオプションは`pnpm check:links -- --help`で確認できます。
 
 ### b4pushの一部として
 

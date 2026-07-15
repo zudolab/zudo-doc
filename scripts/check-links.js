@@ -16,6 +16,52 @@ const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
 // --- Utilities ---
 
+const CLI_USAGE = `Usage: pnpm check:links -- [options]
+
+Options:
+  -h, --help           Show this help
+  --strict-broken      Fail when broken links remain after the allowlist
+  --strict-absolute    Fail when absolute MDX links remain after the allowlist
+  --strict-trailing    Fail when trailing-slash warnings remain after the allowlist
+  --allowlist=PATH     Exclude exact <file>:<line>:<href> entries from failure counts`;
+
+class CliArgumentError extends Error {}
+
+function parseCliArgs(argv) {
+  const result = {
+    help: false,
+    strictBroken: false,
+    strictAbsolute: false,
+    strictTrailing: false,
+    allowlistPath: null,
+  };
+
+  for (const arg of argv) {
+    // A package manager normally consumes its `--` separator. Accept it here
+    // too so direct `node scripts/check-links.js -- ...` usage stays convenient.
+    if (arg === "--") continue;
+    if (arg === "-h" || arg === "--help") {
+      result.help = true;
+    } else if (arg === "--strict-broken") {
+      result.strictBroken = true;
+    } else if (arg === "--strict-absolute") {
+      result.strictAbsolute = true;
+    } else if (arg === "--strict-trailing") {
+      result.strictTrailing = true;
+    } else if (arg.startsWith("--allowlist=")) {
+      const allowlistPath = arg.slice("--allowlist=".length);
+      if (!allowlistPath) {
+        throw new CliArgumentError("--allowlist requires a non-empty path");
+      }
+      result.allowlistPath = allowlistPath;
+    } else {
+      throw new CliArgumentError(`Unknown option: ${arg}\n\n${CLI_USAGE}`);
+    }
+  }
+
+  return result;
+}
+
 export async function parseBasePath(settingsPath) {
   const content = await readFile(settingsPath, "utf-8");
   const match = content.match(/base:\s*["']([^"']*)["']/);
@@ -207,15 +253,21 @@ export function stripInlineCode(line) {
   return result;
 }
 
-export function extractMdxAbsoluteLinks(content, locales = []) {
+function assertLocaleList(locales) {
+  if (!Array.isArray(locales) || !locales.every((locale) => typeof locale === "string")) {
+    throw new TypeError("locales must be passed explicitly as an array of locale keys");
+  }
+}
+
+export function extractMdxAbsoluteLinks(content, locales) {
+  assertLocaleList(locales);
   // Build a locale prefix alternation from the provided locale keys.
-  // Falls back to the legacy "ja" only when no locale list is given, to
-  // keep existing call sites working. The alternation is escaped for use
-  // inside a regex character group, then wrapped in `(?:<locale>/)?` so
-  // the pattern matches both bare `/docs/...` and `/de/docs/...` etc.
+  // The alternation is escaped for use inside a regex, then wrapped in
+  // `(?:<locale>/)?` so the pattern matches both bare `/docs/...` and every
+  // configured locale path such as `/de/docs/...`.
   const localeAlternation = locales.length > 0
     ? `(?:${locales.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\/").join("|")})?`
-    : "(?:ja\\/)?";
+    : "";
   // e.g. ["ja","de"] → "(?:ja\/|de\/)?" so the regex matches /ja/docs/... and /de/docs/...
 
   const issues = [];
@@ -254,9 +306,7 @@ export function extractMdxAbsoluteLinks(content, locales = []) {
 
 /**
  * Single-pass dist walker: collects broken links and (optionally) trailing-
- * slash warnings in one read of every HTML file. Both `checkHtmlLinks` and
- * `checkTrailingSlashLinks` previously re-walked and re-read the same dist
- * tree — merging them halves the I/O on large builds.
+ * slash warnings in one read of every HTML file.
  *
  * When `checkTrailing` is false the trailing-slash warnings array is always
  * empty; callers that don't need it pay no extra cost.
@@ -321,19 +371,8 @@ export async function checkHtmlLinksAndTrailing(
   return { broken, trailingSlash };
 }
 
-/** @deprecated Use checkHtmlLinksAndTrailing — retained for test compatibility. */
-export async function checkHtmlLinks(distDir, rootDir, basePath = "/", excludePatterns = []) {
-  const { broken } = await checkHtmlLinksAndTrailing(distDir, rootDir, basePath, excludePatterns, false);
-  return broken;
-}
-
-/** @deprecated Use checkHtmlLinksAndTrailing — retained for test compatibility. */
-export async function checkTrailingSlashLinks(distDir, rootDir, basePath = "/", excludePatterns = []) {
-  const { trailingSlash } = await checkHtmlLinksAndTrailing(distDir, rootDir, basePath, excludePatterns, true);
-  return trailingSlash;
-}
-
-export async function checkMdxLinks(contentDirs, rootDir, distDir = null, basePath = "/", locales = []) {
+export async function checkMdxLinks(contentDirs, rootDir, distDir = null, basePath = "/", locales) {
+  assertLocaleList(locales);
   const warnings = [];
 
   for (const dir of contentDirs) {
@@ -435,6 +474,18 @@ function entryKey(e) {
 // --- Main ---
 
 async function main() {
+  const {
+    help,
+    strictBroken,
+    strictAbsolute,
+    strictTrailing,
+    allowlistPath,
+  } = parseCliArgs(process.argv.slice(2));
+  if (help) {
+    console.log(CLI_USAGE);
+    return;
+  }
+
   const rootDir = resolve(__dirname, "..");
   const settingsPath = join(rootDir, "src", "config", "settings.ts");
   const basePath = await parseBasePath(settingsPath);
@@ -466,19 +517,11 @@ async function main() {
   // Three strict knobs (separable so a deploy can fail on real 404s
   // without blocking on warn-only categories) plus an allowlist:
   //
-  //   --strict           legacy: fail when any category has entries
   //   --strict-broken    fail when broken links > 0 (after allowlist)
   //   --strict-absolute  fail when absolute warnings > 0 (after allowlist)
   //   --strict-trailing  fail when trailing-slash warnings > 0 (after allowlist)
   //   --allowlist=PATH   skip entries listed in PATH (one
   //                      `<file>:<line>:<href>` per line, `#` comments)
-  const argv = process.argv.slice(2);
-  const strict = argv.includes("--strict");
-  const strictBroken = strict || argv.includes("--strict-broken");
-  const strictAbsolute = strict || argv.includes("--strict-absolute");
-  const strictTrailing = strict || argv.includes("--strict-trailing");
-  const allowlistArg = argv.find((a) => a.startsWith("--allowlist="));
-  const allowlistPath = allowlistArg ? allowlistArg.split("=").slice(1).join("=") : null;
   const resolvedAllowlist = allowlistPath
     ? (allowlistPath.startsWith("/") ? allowlistPath : join(rootDir, allowlistPath))
     : null;
@@ -532,7 +575,7 @@ async function main() {
   if (hasIssues && !strictBroken && !strictAbsolute && !strictTrailing) {
     console.log("\nNote: Issues found but running in non-strict mode (exit 0).");
     console.log(
-      "Use --strict-broken / --strict-absolute / --strict-trailing (or --strict for all) to fail on issues.",
+      "Use --strict-broken / --strict-absolute / --strict-trailing to fail on selected issue categories.",
     );
   }
 }
@@ -542,7 +585,7 @@ const isMain =
 
 if (isMain) {
   main().catch((err) => {
-    console.error(err);
+    console.error(err instanceof CliArgumentError ? err.message : err);
     process.exit(1);
   });
 }
