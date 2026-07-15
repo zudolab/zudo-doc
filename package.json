@@ -59,6 +59,7 @@
     "check:wait-debt": "node scripts/check-wait-debt.mjs",
     "check:package-safelist": "node scripts/check-package-safelist.mjs",
     "check:no-host-alias-in-package": "node scripts/check-no-host-alias-in-package.mjs",
+    "check:canonical-tags": "node scripts/check-canonical-tags.mjs",
     "// ── Tags ────────────────────────────────────────": "",
     "tags:audit": "tags-audit",
     "tags:suggest": "tsx scripts/tags-suggest.ts",

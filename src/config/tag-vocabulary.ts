@@ -30,7 +30,6 @@ export const tagVocabulary: readonly TagVocabularyEntry[] = [
     label: "Cloudflare Worker",
     description: "Cloudflare Workers used by zudo-doc features.",
     group: "topic",
-    aliases: ["cf-worker"],
   },
   {
     id: "content",
@@ -72,21 +71,18 @@ export const tagVocabulary: readonly TagVocabularyEntry[] = [
     label: "Guide",
     description: "Task-oriented walkthrough of a feature.",
     group: "type",
-    aliases: ["guide", "guides"],
   },
   {
     id: "type:reference",
     label: "Reference",
     description: "Exhaustive reference material for a subsystem.",
     group: "type",
-    aliases: ["reference"],
   },
   {
     id: "type:tutorial",
     label: "Tutorial",
     description: "Step-by-step learn-by-doing content.",
     group: "type",
-    aliases: ["tutorial", "tutorials"],
   },
 
   // ── level ─────────────────────────────────────────────────────────
@@ -95,13 +91,11 @@ export const tagVocabulary: readonly TagVocabularyEntry[] = [
     label: "Beginner",
     description: "Introductory material; no prior knowledge assumed.",
     group: "level",
-    aliases: ["beginner"],
   },
   {
     id: "level:advanced",
     label: "Advanced",
     description: "Assumes familiarity with the underlying concepts.",
     group: "level",
-    aliases: ["advanced"],
   },
 ];

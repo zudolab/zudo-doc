@@ -9,7 +9,7 @@ set -euo pipefail
 #   3. No-host-alias-in-package guard (#2344) — package must not import the `@/` host alias
 #   4. Pin parity check (root pkg.json ↔ scaffold.ts zfb pins — W4A #1732)
 #   5. Fixture settings drift check
-#   6. Tags audit (--ci)
+#   6. Tags audit (--ci) + canonical authored/template tag guard
 #   7. Design token lint
 #   8. Component-tokens codegen drift check (check:component-tokens — #2448)
 #   9. E2E spec naming guard (#2095) — asserts fixture-prefix + no orphan specs
@@ -134,12 +134,12 @@ else
   fail "Fixture settings drift check"
 fi
 
-# ── Step 6: Tags audit ────────────────────────────────
-step "Tags audit (tags:audit --ci)"
-if (cd "$ROOT_DIR" && pnpm tags:audit --ci); then
-  pass "Tags audit passed"
+# ── Step 6: Tags audit + canonical data guard ─────────
+step "Tags audit + canonical tag guard"
+if (cd "$ROOT_DIR" && pnpm tags:audit --ci && pnpm check:canonical-tags); then
+  pass "Tags audit + canonical tag guard passed"
 else
-  fail "Tags audit"
+  fail "Tags audit + canonical tag guard"
 fi
 
 # ── Step 7: Design token lint ────────────────────────

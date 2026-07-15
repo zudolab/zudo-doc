@@ -71,6 +71,13 @@ const REQUIRED_CI_GUARDS = [
     comment: "Tags audit (tags-audit package bin, S9b #2334)",
   },
   {
+    // Canonical tags: authored content/templates/fixtures must not reintroduce
+    // retired alias IDs; paired EN/JA tag sets must remain equivalent (#2768).
+    ciNeedle: "check:canonical-tags",
+    b4pushScript: "check:canonical-tags",
+    comment: "Canonical authored/template tag guard (#2768)",
+  },
+  {
     // Design token lint: pnpm lint:tokens (both CI and b4push)
     ciNeedle: "lint:tokens",
     b4pushScript: "lint:tokens",
