@@ -25,7 +25,7 @@ if(pending){pending=false;window.dispatchEvent(new CustomEvent('toggle-design-to
 type DesignTokenPanelBootstrapComponent = () => JSX.Element | null;
 
 export interface DesignTokenPanelIslandDeps {
-  designTokenPanel: boolean | undefined;
+  designTokenPanel: boolean;
   DesignTokenPanelBootstrap?: FactoryComponent;
 }
 

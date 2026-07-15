@@ -30,4 +30,4 @@ export { ContentTable } from "./content-table.js";
 export { ContentCode } from "./content-code.js";
 
 // Component map
-export { htmlOverrides, defaultComponents } from "./component-map.js";
+export { defaultComponents } from "./component-map.js";

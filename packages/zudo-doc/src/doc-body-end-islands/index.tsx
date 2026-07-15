@@ -92,34 +92,26 @@ import type { FactoryComponent } from "../factory-context/index.js";
  *  `aiChatBodyLabel` to localise. */
 const DEFAULT_AI_CHAT_BODY_LABEL = "Ask a question about the documentation.";
 
-/** The `settings` subset this factory reads — the four package-island flags.
+/** The `settings` subset this factory reads — the package feature flags.
  *  A structural subset so the host can pass its full `Settings` object. */
 export interface BodyEndIslandsSettings {
   aiAssistant: boolean;
   imageEnlarge: boolean;
   mermaid: boolean;
   /** Gates the pure-SSR `<PageLoadingOverlay/>` mount (zudolab/zudo-doc#2482),
-   *  mirroring the host gate and `enableClientRouter`'s on package-owned routes.
-   *  Optional so adding it is NOT a breaking change for external callers that
-   *  construct this documented subset — this is an exported package subpath API.
-   *  `undefined` is treated as `false` (no overlay) at the mount site, preserving
-   *  pre-#2482 behavior; internal callers always pass the full `Settings`. */
-  dynamicPageTransition?: boolean;
-  /** Gates the `DesignTokenPanelBootstrap` island mount (#2658). Optional for
-   *  the same external-caller-compat reason as `dynamicPageTransition` above.
-   *  `undefined` is treated as `false` (no panel island). Even when `true`,
-   *  nothing mounts unless `deps.DesignTokenPanelBootstrap` was also supplied
-   *  — see {@link BodyEndIslandsDeps}. */
-  designTokenPanel?: boolean;
+   *  mirroring the host gate and `enableClientRouter` on package-owned routes. */
+  dynamicPageTransition: boolean;
+  /** Gates the `DesignTokenPanelBootstrap` island mount (#2658). Even when
+   *  `true`, nothing mounts unless `deps.DesignTokenPanelBootstrap` was also
+   *  supplied — see {@link BodyEndIslandsDeps}. */
+  designTokenPanel: boolean;
   /**
-   * Gates the `FindInPageInit` island mount (zudolab/zudo-doc#2689). Optional
-   * for the same external-caller-compat reason as `dynamicPageTransition`/
-   * `designTokenPanel` above. `undefined` is treated as `false` (no island).
+   * Gates the `FindInPageInit` island mount (zudolab/zudo-doc#2689).
    * Controls the PACKAGE-DEFAULT `BodyEndIslands` slot only — a host that
    * overrides the `BodyEndIslands` chrome binding must mount `FindInPageInit`
    * itself.
    */
-  findInPage?: boolean;
+  findInPage: boolean;
 }
 
 /** Dependencies injected by `_chrome.tsx` (carries the virtual-module settings). */

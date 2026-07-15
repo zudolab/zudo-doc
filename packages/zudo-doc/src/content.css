@@ -10,7 +10,7 @@
  * drift). See zudolab/zudo-doc#2188.
  *
  * Component-first split: the major elements (h2–h4, p, a, strong, blockquote,
- * ul, ol, table) get their VISUALS from the package's `htmlOverrides` Preact
+ * ul, ol, table) get their VISUALS from the package's `defaultComponents` Preact
  * components (Tailwind classes + inline styles), whose utilities ship in
  * `dist/safelist.css`. This file owns only what those components do NOT emit:
  * the flow-space vertical rhythm, heading `--flow-space` + tightening, the

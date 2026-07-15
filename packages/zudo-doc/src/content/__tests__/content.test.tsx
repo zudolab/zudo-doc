@@ -14,7 +14,7 @@ import { ContentUl } from "../content-ul.js";
 import { ContentOl } from "../content-ol.js";
 import { ContentTable } from "../content-table.js";
 import { ContentCode } from "../content-code.js";
-import { htmlOverrides, defaultComponents } from "../component-map.js";
+import { defaultComponents } from "../component-map.js";
 
 // ---------------------------------------------------------------------------
 // Minimal VNode serializer (copied from breadcrumb tests to avoid pulling in
@@ -268,52 +268,48 @@ describe("ContentCode", () => {
 // ---------------------------------------------------------------------------
 // component-map
 // ---------------------------------------------------------------------------
-describe("htmlOverrides / defaultComponents", () => {
+describe("defaultComponents", () => {
   it("maps h2 to HeadingH2", () => {
-    expect(htmlOverrides.h2).toBe(HeadingH2);
+    expect(defaultComponents.h2).toBe(HeadingH2);
   });
 
   it("maps h3 to HeadingH3", () => {
-    expect(htmlOverrides.h3).toBe(HeadingH3);
+    expect(defaultComponents.h3).toBe(HeadingH3);
   });
 
   it("maps h4 to HeadingH4", () => {
-    expect(htmlOverrides.h4).toBe(HeadingH4);
+    expect(defaultComponents.h4).toBe(HeadingH4);
   });
 
   it("maps p to ContentParagraph", () => {
-    expect(htmlOverrides.p).toBe(ContentParagraph);
+    expect(defaultComponents.p).toBe(ContentParagraph);
   });
 
   it("maps a to ContentLink", () => {
-    expect(htmlOverrides.a).toBe(ContentLink);
+    expect(defaultComponents.a).toBe(ContentLink);
   });
 
   it("maps strong to ContentStrong", () => {
-    expect(htmlOverrides.strong).toBe(ContentStrong);
+    expect(defaultComponents.strong).toBe(ContentStrong);
   });
 
   it("maps blockquote to ContentBlockquote", () => {
-    expect(htmlOverrides.blockquote).toBe(ContentBlockquote);
+    expect(defaultComponents.blockquote).toBe(ContentBlockquote);
   });
 
   it("maps ul to ContentUl", () => {
-    expect(htmlOverrides.ul).toBe(ContentUl);
+    expect(defaultComponents.ul).toBe(ContentUl);
   });
 
   it("maps ol to ContentOl", () => {
-    expect(htmlOverrides.ol).toBe(ContentOl);
+    expect(defaultComponents.ol).toBe(ContentOl);
   });
 
   it("maps table to ContentTable", () => {
-    expect(htmlOverrides.table).toBe(ContentTable);
+    expect(defaultComponents.table).toBe(ContentTable);
   });
 
   it("maps code to ContentCode", () => {
-    expect(htmlOverrides.code).toBe(ContentCode);
-  });
-
-  it("defaultComponents is an alias for htmlOverrides", () => {
-    expect(defaultComponents).toBe(htmlOverrides);
+    expect(defaultComponents.code).toBe(ContentCode);
   });
 });

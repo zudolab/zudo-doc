@@ -153,5 +153,3 @@ export function Tabs({ groupId, children }: TabsProps): JSX.Element {
     </div>
   );
 }
-
-export default Tabs;

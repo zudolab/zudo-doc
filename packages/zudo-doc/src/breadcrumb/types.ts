@@ -17,12 +17,6 @@ export interface BreadcrumbNode {
 }
 
 /**
- * Backward-compatible alias retained for callers that previously imported
- * `SidebarNode` from this subpath.
- */
-export type SidebarNode = BreadcrumbNode;
-
-/**
  * One rung of the breadcrumb trail. `href` is omitted on the final
  * (current-page) item so the renderer can present it as plain text.
  */

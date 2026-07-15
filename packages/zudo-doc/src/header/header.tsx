@@ -137,10 +137,9 @@ export interface HeaderProps {
   search?: ComponentChildren;
 
   /**
-   * When provided, emits `data-zfb-transition-persist={persistKey}` on the
+   * Emits `data-zfb-transition-persist={persistKey}` on the
    * `<header>` element so zfb's client-router preserves DOM-node identity
-   * across same-locale View Transition swaps. Omit to disable persist
-   * (back-compat default — the header is re-rendered on every swap).
+   * across same-locale View Transition swaps.
    *
    * **Locale keying**: callers MUST key by locale (e.g. `"header-en"`,
    * `"header-ja"`). Cross-locale swaps must NOT share the same key; a
@@ -156,7 +155,7 @@ export interface HeaderProps {
    * for consistency, matching the Astro reference implementation
    * (zudolab/zudo-doc#1546).
    */
-  persistKey?: string;
+  persistKey: string;
 
   /** Site-name string shown in the logo anchor (host `settings.siteName`). */
   siteName: string;
@@ -273,8 +272,8 @@ export function Header(props: HeaderProps): JSX.Element {
       class="sticky top-0 z-toolbar flex h-[3.5rem] items-center border-b border-muted bg-surface px-hsp-lg"
       data-header
       // Strategy B persist (zudolab/zudo-doc#1546): the header now carries
-      // data-zfb-transition-persist when a locale-keyed persistKey is
-      // supplied (e.g. "header-en" / "header-ja"). Cross-locale swaps use
+      // data-zfb-transition-persist with a locale-keyed persistKey
+      // (e.g. "header-en" / "header-ja"). Cross-locale swaps use
       // different keys, so the router replaces the header element entirely,
       // re-rendering the locale toggle anchors and all locale-specific SSR
       // content with fresh markup. Same-locale swaps share the key and
@@ -303,7 +302,6 @@ export function Header(props: HeaderProps): JSX.Element {
       //     LANGUAGE_SWITCHER_INIT_SCRIPT recomputes each anchor's href from
       //     window.location on AFTER_NAVIGATE_EVENT, same as the controls above
       //     (zudolab/zudo-doc#2551).
-      // Omit persistKey to fall back to the old repaint-on-every-swap path.
       data-zfb-transition-persist={persistKey}
     >
       {sidebarToggle ?? (

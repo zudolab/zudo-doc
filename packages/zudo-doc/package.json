@@ -221,7 +221,6 @@
     },
     "./theme.css": "./dist/theme.css",
     "./safelist.css": "./dist/safelist.css",
-    "./safelist": "./dist/safelist.css",
     "./content.css": "./dist/content.css",
     "./page-loading.css": "./dist/page-loading.css",
     "./features.css": "./dist/features.css",
