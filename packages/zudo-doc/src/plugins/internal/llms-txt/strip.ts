@@ -10,11 +10,10 @@
  * `stripMarkdown` (used to derive a fallback `description` from the body
  * when frontmatter doesn't carry one) lives in the shared `md-utils`
  * module — one implementation for search-index and llms-txt
- * (zudo-doc#2024) — and is re-exported here to keep the public surface
- * unchanged.
+ * (zudo-doc#2024) — and is re-exported here for the internal loader barrel.
  */
 
-export { stripMarkdown } from "../../md-utils/index.js";
+export { stripMarkdown } from "../../../md-utils/index.js";
 
 /**
  * Strip imports, exports, and HTML/JSX tags from MDX/MD content while

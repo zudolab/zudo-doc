@@ -107,25 +107,9 @@
       "types": "./dist/transitions/index.d.ts",
       "default": "./dist/transitions/index.js"
     },
-    "./integrations/doc-history": {
-      "types": "./dist/integrations/doc-history/index.d.ts",
-      "default": "./dist/integrations/doc-history/index.js"
-    },
-    "./integrations/llms-txt": {
-      "types": "./dist/integrations/llms-txt/index.d.ts",
-      "default": "./dist/integrations/llms-txt/index.js"
-    },
     "./integrations/changelog": {
       "types": "./dist/integrations/changelog/index.d.ts",
       "default": "./dist/integrations/changelog/index.js"
-    },
-    "./integrations/search-index": {
-      "types": "./dist/integrations/search-index/index.d.ts",
-      "default": "./dist/integrations/search-index/index.js"
-    },
-    "./integrations/claude-resources": {
-      "types": "./dist/integrations/claude-resources/index.d.ts",
-      "default": "./dist/integrations/claude-resources/index.js"
     },
     "./content": {
       "types": "./dist/content/index.d.ts",
@@ -587,7 +571,8 @@
     "build": "tsup && tsc -p tsconfig.build.json",
     "dev": "tsup --watch",
     "prepare": "tsup --silent && tsc -p tsconfig.build.json",
-    "prepack": "pnpm --dir ../.. gen:changelog && node scripts/check-theme-css.mjs && node scripts/check-safelist.mjs && node scripts/check-content-css.mjs && node scripts/check-page-loading-css.mjs && node scripts/check-features-css.mjs && node scripts/check-plugins.mjs && node scripts/check-eject-sources.mjs && node scripts/check-routes-src.mjs && node scripts/check-shim-artifacts.mjs && node scripts/check-virtual-modules.mjs && node bin/gen-component-tokens.mjs --check",
+    "prepack": "pnpm --dir ../.. gen:changelog && node scripts/check-theme-css.mjs && node scripts/check-safelist.mjs && node scripts/check-content-css.mjs && node scripts/check-page-loading-css.mjs && node scripts/check-features-css.mjs && node scripts/check-plugins.mjs && node scripts/check-plugin-resolution.mjs && node scripts/check-eject-sources.mjs && node scripts/check-routes-src.mjs && node scripts/check-shim-artifacts.mjs && node scripts/check-virtual-modules.mjs && node bin/gen-component-tokens.mjs --check",
+    "test:plugin-resolution": "node scripts/check-plugin-resolution.mjs",
     "test": "vitest run --config vitest.config.ts",
     "test:slow": "vitest run --config vitest.slow.config.ts",
     "typecheck": "tsc --noEmit"

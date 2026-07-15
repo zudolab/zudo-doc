@@ -1,4 +1,4 @@
-// Public types for the zfb search-index integration.
+// Internal types for the zfb search-index plugin implementation.
 //
 // The on-disk schema (one entry per page in `dist/search-index.json`) is
 // frozen — both the in-browser search island and the Cloudflare

@@ -1,9 +1,8 @@
-// `@takazudo/zudo-doc/integrations/doc-history`
+// Current doc-history implementation used by the public zfb plugin.
+// This module is package-internal; consumers load
+// `@takazudo/zudo-doc/plugins/doc-history`.
 //
-// Forward-port of the legacy Astro integration at
-// `src/integrations/doc-history.ts` onto the zfb config form. The
-// integration has two halves and the host wires both into
-// `zfb.config.ts`:
+// The implementation has three halves wired directly by that plugin:
 //
 //   1. **Dev proxy** — a Connect/Vite-compatible middleware that
 //      forwards `/doc-history/*` requests to the standalone
@@ -22,20 +21,7 @@
 //      from the dedicated parallel `build-history` job (the CLI directly),
 //      which is merged into `dist/doc-history/` at deploy time; the build-site
 //      postBuild output is redundant with it.
-//
-// zfb's plugin runtime API for dev middleware and post-build hooks is
-// still TBD in v0 (see `packages/zfb/src/config.ts` — `plugins?` is
-// declared as `PluginConfig[] = { name; options }` only). Rather than
-// invent the missing surface, this module ships:
-//
-//   - `docHistoryPlugin(options)` — the v0-compatible
-//     `{ name, options }` config descriptor for the zfb `plugins` array,
-//   - `createDocHistoryDevMiddleware(options)` — the dev proxy
-//     callable from a Vite/Connect-style middleware stack, and
-//   - `runDocHistoryPostBuild(options, ctx)` — the post-build worker.
-//
-// Once the zfb plugin runtime lands, an adapter can wire these helpers
-// into the future hook surface without changing this module.
+//   3. **Pre-build metadata** — emits the manifest consumed during SSG.
 
 import { spawn } from "node:child_process";
 import type { IncomingMessage, ServerResponse } from "node:http";
@@ -55,7 +41,7 @@ export {
 } from "./pre-build.js";
 
 // ---------------------------------------------------------------------------
-// Public option / descriptor shapes
+// Plugin option shapes
 // ---------------------------------------------------------------------------
 
 /** A single non-default locale entry; mirrors `settings.locales[*]`. */
@@ -84,14 +70,6 @@ export interface DocHistoryOptions {
   maxEntries?: number;
 }
 
-/** zfb v0 plugin descriptor — mirrors `PluginConfig` in `zfb/config`. */
-export interface DocHistoryPluginDescriptor {
-  /** Stable plugin id used by the future zfb plugin runtime to dispatch hooks. */
-  name: "doc-history";
-  /** Options forwarded verbatim into the zfb config; must be JSON-serialisable. */
-  options: DocHistoryOptions;
-}
-
 /** Default doc-history-server port — matches `@takazudo/zudo-doc-history-server`. */
 export const DEFAULT_SERVER_PORT = 4322;
 
@@ -106,21 +84,6 @@ export const DOC_HISTORY_OUTPUT_DIRNAME = "doc-history";
 
 /** CLI bin name exposed by `@takazudo/zudo-doc-history-server` for inline generation. */
 export const DOC_HISTORY_GENERATE_BIN = "doc-history-generate";
-
-/**
- * Build the zfb config-side descriptor. Add the return value to the
- * `plugins: [...]` array in `zfb.config.ts`.
- *
- * The shape is intentionally limited to `{ name, options }` because
- * that is the only thing today's zfb config loader consumes (see the
- * Rust `PluginConfig` struct in zfb's `config.rs`). Runtime wiring is
- * done through the sibling helpers in this module.
- */
-export function docHistoryPlugin(
-  options: DocHistoryOptions,
-): DocHistoryPluginDescriptor {
-  return { name: "doc-history", options };
-}
 
 // ---------------------------------------------------------------------------
 // Dev-mode proxy middleware

@@ -732,8 +732,8 @@ function generatePackageJson(choices: UserChoices) {
     // required regardless of this feature flag.)
     // @takazudo/zudo-doc has @takazudo/zudo-doc-history-server as an optional
     // peer dep. When docHistory is selected the zfb plugin
-    // (@takazudo/zudo-doc/plugins/doc-history) eagerly imports
-    // @takazudo/zudo-doc/integrations/doc-history which in turn imports
+    // (@takazudo/zudo-doc/plugins/doc-history) eagerly imports its internal
+    // doc-history helpers, which in turn import
     // @takazudo/zudo-doc-history-server/git-history. Without this dep the
     // plugin host fails at init with ERR_MODULE_NOT_FOUND — W8A (#1739).
     deps["@takazudo/zudo-doc-history-server"] = "^3.3.0";

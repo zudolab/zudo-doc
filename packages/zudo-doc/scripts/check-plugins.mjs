@@ -5,7 +5,7 @@
 // that skipped compilation fails loudly instead of publishing a package whose
 // `./plugins/*` exports 404 for consumers.
 //
-// Exit 0 → all 4 plugin files exist and are non-empty.
+// Exit 0 → all 5 current integration plugin files exist and are non-empty.
 // Exit 1 → any file is missing or empty (with a clear diagnostic message).
 //
 // connect-adapter.js is intentionally absent from this list: it is an
@@ -24,6 +24,7 @@ const PLUGIN_FILES = [
   "plugins/llms-txt.js",
   "plugins/search-index.js",
   "plugins/claude-resources.js",
+  "plugins/changelog.js",
 ];
 
 let allOk = true;

@@ -1,5 +1,5 @@
 /**
- * Public types for the framework-agnostic llms-txt build emitter.
+ * Internal types for the framework-agnostic llms-txt build emitter.
  *
  * The shapes here are deliberately decoupled from `astro:content` and
  * Astro's `AstroIntegration` API so the emitter can run on top of any
@@ -8,7 +8,7 @@
  * in a unit test, etc.
  */
 
-import type { MdDocFrontmatter } from "../../md-utils/index.js";
+import type { MdDocFrontmatter } from "../../../md-utils/index.js";
 
 /**
  * Frontmatter fields the loader reads off of each MDX/MD file. Callers

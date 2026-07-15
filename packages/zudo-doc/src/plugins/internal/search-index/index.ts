@@ -1,4 +1,4 @@
-// Public surface for the zfb search-index integration.
+// Package-internal surface for the public zfb search-index plugin.
 //
 // The integration ships two runtime entry points — a build emitter and
 // a dev-server middleware — plus the shared types and the route
