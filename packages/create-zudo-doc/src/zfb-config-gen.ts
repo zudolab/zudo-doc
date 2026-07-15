@@ -212,12 +212,11 @@ function buildDesiredConfig(choices: UserChoices): Record<string, unknown> {
   // ── Tags / docs ───────────────────────────────────────────────────────
   desired.docTags = choices.features.includes("docTags");
   if (choices.features.includes("tagGovernance")) {
-    desired.tagGovernance = "warn";
-    desired.tagVocabulary = true;
-    // Wired to the src/config/tag-vocabulary.ts starter file the
-    // tagGovernance feature module emits (single source of truth shared
-    // with scripts/tags-audit.ts and scripts/tags-suggest.ts).
-    desired.tagVocabularyEntries = raw("tagVocabulary");
+    // The explicit tag CLI config is also the zfb source of truth, so the
+    // package-owned bins and runtime settings cannot drift.
+    desired.tagGovernance = raw("tagCliConfig.governance");
+    desired.tagVocabulary = raw("tagCliConfig.vocabularyActive");
+    desired.tagVocabularyEntries = raw("tagCliConfig.vocabulary");
   } else {
     desired.tagGovernance = "off";
     desired.tagVocabulary = false;
@@ -425,7 +424,7 @@ export function generateZfbConfig(choices: UserChoices): string {
   lines.push(`import { defineConfig } from "zfb/config";`);
   lines.push(`import { zudoDoc } from "@takazudo/zudo-doc/config";`);
   if (choices.features.includes("tagGovernance")) {
-    lines.push(`import { tagVocabulary } from "./src/config/tag-vocabulary";`);
+    lines.push(`import tagCliConfig from "./src/config/tag-vocabulary";`);
   }
   lines.push(``);
   lines.push(`export default defineConfig(`);

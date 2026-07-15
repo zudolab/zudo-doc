@@ -5,22 +5,29 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 const PROJECT_ROOT = resolve(__dirname, "../..");
-const SCRIPT_PATH = resolve(PROJECT_ROOT, "scripts/tags-suggest.ts");
+const CLI_PATH = resolve(
+  PROJECT_ROOT,
+  "packages/zudo-doc/bin/tags-suggest.mjs",
+);
+const CONFIG_PATH = "src/config/tag-vocabulary.ts";
 
 /**
- * Invoke the CLI out-of-process via the locally-installed `tsx` binary so
- * we exercise the exact entrypoint users run through `pnpm tags:suggest`.
+ * Invoke the package bin out-of-process so we exercise the exact entrypoint
+ * users run through `pnpm tags:suggest`.
  * These tests never hit a real Ollama — the script is opt-in and running
  * an LLM in unit tests would be too slow and nondeterministic.
  */
 function runCli(args: string[]): { status: number; stdout: string; stderr: string } {
-  const tsxBin = resolve(PROJECT_ROOT, "node_modules/.bin/tsx");
-  const result = spawnSync(tsxBin, [SCRIPT_PATH, ...args], {
-    cwd: PROJECT_ROOT,
-    encoding: "utf-8",
-    env: { ...process.env, NO_COLOR: "1" },
-    timeout: 30_000,
-  });
+  const result = spawnSync(
+    process.execPath,
+    [CLI_PATH, "--config", CONFIG_PATH, "--", ...args],
+    {
+      cwd: PROJECT_ROOT,
+      encoding: "utf-8",
+      env: { ...process.env, NO_COLOR: "1" },
+      timeout: 30_000,
+    },
+  );
   if (result.error) throw result.error;
   return {
     status: result.status ?? -1,

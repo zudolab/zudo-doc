@@ -19,7 +19,7 @@ import { createZudoDoc } from "../api.js";
 // Minimal-scaffold cutover (epic zudolab/zudo-doc#2651). Rewritten from
 // scratch for Wave 7 (#2662) against the locked ~12-file manifest landed by
 // Wave 6 (#2660) — see that issue's completion comment for the deleted-file
-// set and the documented deviations (tagGovernance's src/config/ pair, the
+// set and the documented deviations (tagGovernance's tag config module, the
 // unconditional @takazudo/zdtp dep). The tauri feature's find-in-page island
 // used to be a documented "ships unwired" file-copy deviation; #2690 retired
 // it — find-in-page is now package-owned and emitted via `findInPage: true`
@@ -282,8 +282,8 @@ describe("scaffold — absence assertions (deleted legacy files never resurrecte
     "src/types/docs-entry.ts",
     "src/types/heading.ts",
     "src/types/locale.ts",
-    // src/config/* (the tagGovernance settings.ts/tag-vocabulary.ts pair
-    // exception is covered separately below).
+    // src/config/* (the tagGovernance tag-vocabulary.ts exception is covered
+    // separately below).
     "src/config/color-scheme-utils.ts",
     "src/config/color-schemes.ts",
     "src/config/docs-schema.ts",
@@ -426,12 +426,8 @@ describe("scaffold — tauri no longer ships find-in-page template files (packag
   });
 });
 
-describe("scaffold — documented deviation: tagGovernance's src/config/ pair (legacy tags-audit bin coupling)", () => {
-  // #2660 completion comment deviation: @takazudo/zudo-doc's tags-audit bin
-  // still dynamically imports src/config/settings.ts + tag-vocabulary.ts BY
-  // PATH — a legacy coupling out of this generator's scope to fix. This is
-  // the ONE feature that still needs a tiny src/config/ pair.
-  it("writes src/config/settings.ts and src/config/tag-vocabulary.ts when tagGovernance is selected", async () => {
+describe("scaffold — tagGovernance explicit CLI config", () => {
+  it("writes one tag vocabulary/config module and no duplicate settings module", async () => {
     await scaffold({
       ...baseChoices,
       projectName: "test-tag-gov",
@@ -439,24 +435,19 @@ describe("scaffold — documented deviation: tagGovernance's src/config/ pair (l
     });
     const project = projectPath("test-tag-gov");
     expect(await fs.pathExists(path.join(project, "src/config/settings.ts"))).toBe(
-      true,
+      false,
     );
     expect(
       await fs.pathExists(path.join(project, "src/config/tag-vocabulary.ts")),
     ).toBe(true);
-
-    const settings = await fs.readFile(
-      path.join(project, "src/config/settings.ts"),
-      "utf-8",
-    );
-    expect(settings).toContain('tagGovernance: "warn" as const');
-    expect(settings).toContain("tagVocabulary: true");
 
     const vocab = await fs.readFile(
       path.join(project, "src/config/tag-vocabulary.ts"),
       "utf-8",
     );
     expect(vocab).toContain("export const tagVocabulary");
+    expect(vocab).toContain("satisfies TagCliConfig");
+    expect(vocab).toContain("export default tagCliConfig");
   });
 
   it("does NOT write src/config/ at all when tagGovernance is disabled", async () => {
@@ -464,6 +455,23 @@ describe("scaffold — documented deviation: tagGovernance's src/config/ pair (l
     expect(
       await fs.pathExists(projectPath("test-no-tag-gov", "src/config")),
     ).toBe(false);
+  });
+
+  it("includes the generated locale directory in the shared CLI config", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-tag-gov-i18n",
+      features: ["tagGovernance", "i18n"],
+    });
+    const vocab = await fs.readFile(
+      projectPath(
+        "test-tag-gov-i18n",
+        "src/config/tag-vocabulary.ts",
+      ),
+      "utf-8",
+    );
+    expect(vocab).toContain('"src/content/docs"');
+    expect(vocab).toContain('"src/content/docs-ja"');
   });
 
   it("does NOT write settings-types.ts, docs-schema.ts, or any other src/config/* file", async () => {
@@ -475,7 +483,7 @@ describe("scaffold — documented deviation: tagGovernance's src/config/ pair (l
     const files = (
       await listFiles(projectPath("test-tag-gov-2", "src/config"))
     ).sort();
-    expect(files).toEqual(["settings.ts", "tag-vocabulary.ts"]);
+    expect(files).toEqual(["tag-vocabulary.ts"]);
   });
 });
 
@@ -626,7 +634,7 @@ describe("scaffold — changelog feature", () => {
 });
 
 describe("scaffold — every-feature manifest is exactly base + the documented per-feature deltas", () => {
-  it("all-on scaffold emits exactly the expected 41-file set", async () => {
+  it("all-on scaffold emits exactly the expected 38-file set", async () => {
     await scaffold({
       ...baseChoices,
       projectName: "test-all-on",
@@ -645,8 +653,6 @@ describe("scaffold — every-feature manifest is exactly base + the documented p
       "pages/docs/[[...slug]].tsx",
       "pages/index.tsx",
       "scripts/setup-doc-skill.sh",
-      "scripts/tags-audit.ts",
-      "scripts/tags-suggest.ts",
       "src-tauri-dev/.gitignore",
       "src-tauri-dev/Cargo.toml",
       "src-tauri-dev/build.rs",
@@ -662,7 +668,6 @@ describe("scaffold — every-feature manifest is exactly base + the documented p
       "src-tauri/capabilities/default.json",
       "src-tauri/src/main.rs",
       "src-tauri/tauri.conf.json",
-      "src/config/settings.ts",
       "src/config/tag-vocabulary.ts",
       "src/content/docs-ja/changelog/index.mdx",
       "src/content/docs-ja/getting-started/index.mdx",
@@ -1198,7 +1203,7 @@ describe("scaffold — generated package.json", () => {
     expect(pkg.dependencies["@takazudo/zudo-doc-history-server"]).toBeDefined();
   });
 
-  it("adds tag-governance tooling devDeps and the tags:audit/tags:suggest scripts only when tagGovernance is enabled", async () => {
+  it("adds package-owned tags:audit/tags:suggest scripts without project-side tooling deps", async () => {
     await scaffold({
       ...baseChoices,
       projectName: "test-tag-gov-deps",
@@ -1207,11 +1212,15 @@ describe("scaffold — generated package.json", () => {
     const pkg = await fs.readJson(
       projectPath("test-tag-gov-deps", "package.json"),
     );
-    expect(pkg.devDependencies["string-similarity"]).toBeDefined();
-    expect(pkg.devDependencies["pluralize"]).toBeDefined();
-    expect(pkg.devDependencies["tsx"]).toBeDefined();
-    expect(pkg.scripts["tags:audit"]).toBe("tags-audit");
-    expect(pkg.scripts["tags:suggest"]).toBe("tsx scripts/tags-suggest.ts");
+    expect(pkg.devDependencies["string-similarity"]).toBeUndefined();
+    expect(pkg.devDependencies["pluralize"]).toBeUndefined();
+    expect(pkg.devDependencies["tsx"]).toBeUndefined();
+    expect(pkg.scripts["tags:audit"]).toBe(
+      "tags-audit --config src/config/tag-vocabulary.ts",
+    );
+    expect(pkg.scripts["tags:suggest"]).toBe(
+      "tags-suggest --config src/config/tag-vocabulary.ts",
+    );
   });
 
   it("adds dev:tauri/build:tauri scripts only when tauri is enabled", async () => {

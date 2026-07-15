@@ -169,16 +169,20 @@ describe("generateZfbConfig — i18n", () => {
 });
 
 describe("generateZfbConfig — tagGovernance", () => {
-  it("emits tagGovernance: warn, tagVocabulary: true, and tagVocabularyEntries when enabled", () => {
+  it("derives all tag settings from the explicit tag CLI config", () => {
     const result = generateZfbConfig({
       ...baseChoices,
       features: ["tagGovernance"],
     });
-    expect(result).toContain('tagGovernance: "warn"');
-    expect(result).toContain("tagVocabulary: true");
-    expect(result).toContain("tagVocabularyEntries: tagVocabulary");
+    expect(result).toContain("tagGovernance: tagCliConfig.governance");
     expect(result).toContain(
-      'import { tagVocabulary } from "./src/config/tag-vocabulary";',
+      "tagVocabulary: tagCliConfig.vocabularyActive",
+    );
+    expect(result).toContain(
+      "tagVocabularyEntries: tagCliConfig.vocabulary",
+    );
+    expect(result).toContain(
+      'import tagCliConfig from "./src/config/tag-vocabulary";',
     );
   });
 

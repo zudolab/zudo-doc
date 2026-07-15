@@ -746,18 +746,6 @@ function generatePackageJson(choices: UserChoices) {
   // (@takazudo/zudo-doc/plugins/claude-resources) imports the runner directly
   // since the package ships compiled dist/ — package-first migration #2321 (#2337).
 
-  if (choices.features.includes("tagGovernance")) {
-    // gray-matter is already in `deps` unconditionally (base template uses it),
-    // so we only add the tooling deps specific to tags:audit / tags:suggest.
-    devDeps["string-similarity"] = "^4.0.4";
-    devDeps["@types/string-similarity"] = "^4.0.2";
-    devDeps["pluralize"] = "^8.0.0";
-    devDeps["@types/pluralize"] = "^0.0.33";
-    devDeps["picocolors"] = "^1.1.1";
-    devDeps["@inquirer/prompts"] = "^8.4.2";
-    devDeps["tsx"] = "^4.21.0";
-  }
-
   // check:html and gen:z-index/check:z-index are DROPPED from the default
   // scaffold (locked decision, epic #2651 #2660 work item 6):
   //   - `.htmlvalidate.json` no longer ships — html-validate becomes an
@@ -774,11 +762,12 @@ function generatePackageJson(choices: UserChoices) {
   };
 
   if (choices.features.includes("tagGovernance")) {
-    // tags-audit bin is provided by @takazudo/zudo-doc (S9b #2334);
-    // tsx is still required as a devDep because the bin's runner imports
-    // the project's TypeScript config files at runtime via tsx.
-    scripts["tags:audit"] = "tags-audit";
-    scripts["tags:suggest"] = "tsx scripts/tags-suggest.ts";
+    // Both package-owned bins load the same explicit project config. `--`
+    // supplied by pnpm/npm is preserved by the runners for forwarded options.
+    scripts["tags:audit"] =
+      "tags-audit --config src/config/tag-vocabulary.ts";
+    scripts["tags:suggest"] =
+      "tags-suggest --config src/config/tag-vocabulary.ts";
   }
 
   if (choices.features.includes("skillSymlinker")) {

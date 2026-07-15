@@ -9,7 +9,7 @@ tags:
 
 ## 監査が報告する内容
 
-`pnpm tags:audit`は`src/content/docs/**`と設定済みのすべてのロケールディレクトリを走査し、各ページのフロントマターから`tags:`配列を収集して、`src/config/tag-vocabulary.ts`と照合した3種類の指摘を報告します。
+`pnpm tags:audit`はパッケージ所有の監査 CLI を実行します。`src/config/tag-vocabulary.ts`のデフォルト`TagCliConfig`エクスポートで宣言されたコンテンツディレクトリを走査し、各ページのフロントマターから`tags:`配列を収集して、同じモジュールの名前付き`tagVocabulary`エクスポートと照合した3種類の指摘を報告します。
 
 - **Unknown tags** — 正規 id と完全一致しない文字列です。ボキャブラリエントリを追加するか、意図した id に置き換えるか、ページから削除してください。[`tagGovernance: "strict"`](./tag-governance.mdx)では unknown はビルドを失敗させます。
 - **Near-duplicates** — 互いに変種のように見える2つの別個のタグ(文字列類似度が高い、または同じ単数形を持つ)。正規 id を1つ選び、もう一方を使うコンテンツを更新します。
@@ -17,12 +17,28 @@ tags:
 
 クリーンな実行では`✓ No tag issues found`と表示されます。
 
+## CLI 設定と package script
+
+scaffold は明示的な設定モジュールを`package.json`で指定します。
+
+```json
+{
+  "scripts": {
+    "tags:audit": "tags-audit --config src/config/tag-vocabulary.ts"
+  }
+}
+```
+
+設定パスはプロジェクトルートから解決されます。`--config`がない、読み込めない、または有効な`TagCliConfig`をデフォルトエクスポートしていない場合、CLI は明確なエラーで終了します。名前付き`tagVocabulary`エクスポートも維持してください。生成された`zfb.config.ts`が同じモジュールを参照するため、ランタイムのガバナンスと CLI 監査が単一の情報源を共有します。
+
+package manager の`--`を使えば、pnpm と npm のどちらでもオプションを一貫して転送できます。
+
 ## レポートの読み方
 
 デフォルトの出力はカテゴリ別にグループ化された色付きテキストです。機械処理には`--json`を渡します。
 
 ```sh
-pnpm tags:audit --json > audit.json
+pnpm tags:audit -- --json > audit.json
 ```
 
 JSON のペイロードは`AuditReport`で、`unknowns`、`nearDuplicates`、`orphans`、`filesScanned`、そして正確な id をキーとする`frequency`マップを含みます。CI ダッシュボードはこれを利用できます。
@@ -32,7 +48,7 @@ JSON のペイロードは`AuditReport`で、`unknowns`、`nearDuplicates`、`or
 プロジェクトのプリプッシュ検証スクリプト([`pnpm b4push`](./development-workflow.mdx))は`--ci`付きで監査を実行します。
 
 ```sh
-pnpm tags:audit --ci
+pnpm tags:audit -- --ci
 ```
 
 `--ci`は`tagGovernance`の設定値に関わらず、**ハード指摘**(unknown)があれば非ゼロ終了を強制します。つまり:

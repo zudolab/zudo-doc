@@ -1,4 +1,6 @@
+import type { TagCliConfig } from "@takazudo/zudo-doc/tags-audit";
 import type { TagVocabularyEntry } from "@takazudo/zudo-doc/settings";
+import { settings } from "./settings";
 
 /**
  * Canonical tag vocabulary for this documentation base.
@@ -97,3 +99,16 @@ export const tagVocabulary: readonly TagVocabularyEntry[] = [
     group: "level",
   },
 ];
+
+const tagCliConfig = {
+  contentDirs: [
+    settings.docsDir,
+    ...Object.values(settings.locales).map((locale) => locale.dir),
+  ],
+  vocabulary: tagVocabulary,
+  governance: settings.tagGovernance,
+  vocabularyActive:
+    settings.tagVocabulary && settings.tagGovernance !== "off",
+} satisfies TagCliConfig;
+
+export default tagCliConfig;

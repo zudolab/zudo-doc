@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * tags:suggest — optional local-LLM tag suggester.
+ * Package-owned tags:suggest runner — optional local-LLM tag suggester.
  *
  * Reads one or more doc files, asks a local Ollama instance for up to 3 tag
  * ids from the project vocabulary, and either opens an interactive approval
@@ -15,10 +15,11 @@ import { isAbsolute, relative, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import matter from "gray-matter";
 
-import { tagVocabulary } from "../src/config/tag-vocabulary";
-// Minimal-scaffold cutover (epic zudolab/zudo-doc#2651): the standalone
-// `tag-vocabulary-types.ts` shim is gone — the type ships from the package.
 import type { TagVocabularyEntry } from "@takazudo/zudo-doc/settings";
+import {
+  loadTagCliConfig,
+  takeTagCliConfigInput,
+} from "./tag-cli-config.ts";
 
 const DEFAULT_HOST = "http://localhost:11434";
 const DEFAULT_MODEL = "qwen2.5:7b";
@@ -34,6 +35,10 @@ interface Args {
   help: boolean;
 }
 
+interface ParsedArgs extends Args {
+  configInput: string | undefined;
+}
+
 interface Suggestion {
   file: string;
   current: string[];
@@ -41,7 +46,7 @@ interface Suggestion {
 }
 
 function printHelp(): void {
-  process.stdout.write(`Usage: pnpm tags:suggest [options] <file...>
+  process.stdout.write(`Usage: tags-suggest --config <path> [options] <file...>
 
 Ask a local Ollama LLM to suggest up to 3 tag ids from the project
 vocabulary for each doc file. Opt-in developer tool — never runs in CI.
@@ -71,11 +76,12 @@ Exit codes:
 `);
 }
 
-function parseCliArgs(argv: string[]): Args {
+function parseCliArgs(argv: string[]): ParsedArgs {
+  const configArgs = takeTagCliConfigInput(argv);
   let parsed;
   try {
     parsed = parseArgs({
-      args: argv,
+      args: configArgs.argv,
       allowPositionals: true,
       options: {
         host: { type: "string", default: DEFAULT_HOST },
@@ -90,6 +96,7 @@ function parseCliArgs(argv: string[]): Args {
     process.exit(1);
   }
   return {
+    configInput: configArgs.configInput,
     files: parsed.positionals,
     host: String(parsed.values.host ?? DEFAULT_HOST),
     model: String(parsed.values.model ?? DEFAULT_MODEL),
@@ -295,6 +302,10 @@ async function main(): Promise<void> {
     printHelp();
     return;
   }
+
+  const repoRoot = process.cwd();
+  const { config } = await loadTagCliConfig(args.configInput, repoRoot);
+
   if (args.files.length === 0) {
     process.stderr.write(
       "tags:suggest: no input files. Pass one or more `.mdx` paths, or run with --help.\n",
@@ -302,9 +313,8 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const repoRoot = process.cwd();
   const files = resolveFiles(repoRoot, args.files);
-  const vocab = [...tagVocabulary];
+  const vocab = [...config.vocabulary];
   const allowedIds = new Set(vocab.map((e) => e.id));
 
   const isTty = Boolean(process.stdout.isTTY);

@@ -36,7 +36,6 @@ Removed ids become unknown; vocabulary entries do not provide migration aliases.
 The core audit logic now ships from `@takazudo/zudo-doc`:
 
 - **Core library (package-side):** `@takazudo/zudo-doc/tags-audit` — exports `audit()`, `hasHardIssues()`, `formatTextReport()`, detection helpers, and all current types. The package bin runner imports from this compiled module.
-- **Data (project-side, stays here):** `src/config/tag-vocabulary.ts` and `src/config/settings.ts` — the vocabulary entries and settings (docsDir, tagGovernance, locales, etc.) remain project-specific.
-- **Bin (package-side):** `tags-audit` — provided by `@takazudo/zudo-doc`. At runtime, the bin spawns tsx to load this project's TypeScript config and run the audit.
-- **Script:** `pnpm tags:audit` (via the `tags-audit` package bin) — equivalent to the old `tsx scripts/tags-audit.ts` but the logic now lives in the package.
-- **Suggest script** (`tags:suggest`) still runs `tsx scripts/tags-suggest.ts` — the suggest logic imports from `@takazudo/zudo-doc/tags-audit` for shared types but the interactive prompt logic remains project-side.
+- **Data (project-side, stays here):** `src/config/tag-vocabulary.ts` keeps the named vocabulary export used by zfb and default-exports the explicit `TagCliConfig`; it derives showcase directories/governance from `src/config/settings.ts`.
+- **Bins (package-side):** `tags-audit` and `tags-suggest` are provided by `@takazudo/zudo-doc`. Both load the one TypeScript module passed with `--config`; neither imports a project path by convention.
+- **Scripts:** `pnpm tags:audit` and `pnpm tags:suggest` pre-bind `--config src/config/tag-vocabulary.ts`. Forward additional flags through the package manager with `--`.

@@ -4,8 +4,8 @@
  * Core library for vocabulary-aware frontmatter tag auditing.
  *
  * Exports pure functions and types consumed by:
- *   - the package bin  (packages/zudo-doc/bin/tags-audit.mjs)
- *   - the project-side tags-suggest script (scripts/tags-suggest.ts)
+ *   - the package bins (packages/zudo-doc/bin/tags-audit.mjs and
+ *     packages/zudo-doc/bin/tags-suggest.mjs)
  *   - custom integrations
  *
  * Does NOT import from project-specific config (settings, tag-vocabulary).
@@ -62,6 +62,18 @@ export interface AuditOptions {
    * can still use the core functions.
    */
   nearDupHelpers?: NearDupHelpers;
+}
+
+/**
+ * Explicit project input shared by the package-owned tag audit and suggestion
+ * CLIs. Paths are project-root-relative and are resolved from the CLI's cwd.
+ * A config module passed with `--config` must default-export this shape.
+ */
+export interface TagCliConfig {
+  contentDirs: readonly string[];
+  vocabulary: readonly TagVocabularyEntry[];
+  governance: "off" | "warn" | "strict";
+  vocabularyActive: boolean;
 }
 
 export interface NearDupHelpers {
