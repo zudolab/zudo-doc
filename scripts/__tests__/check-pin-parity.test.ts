@@ -4,18 +4,22 @@ import {
   parseSemverCore,
   satisfiesCaret,
   evaluateFirstPartyPeer,
-  workspaceZfbPinMatches,
+  workspaceZfbDevPinMatches,
+  workspaceZfbPeerFloorMatches,
 } from "../check-pin-parity.mjs";
 
-describe("workspaceZfbPinMatches", () => {
-  const rootPin = "0.1.0-next.78";
+describe("workspace zfb pin policy", () => {
+  const rootPin = "0.1.0-next.85";
 
-  it("accepts the exact workspace peer pin", () => {
-    expect(workspaceZfbPinMatches(rootPin, rootPin)).toBe(true);
+  it("requires an exact dev pin", () => {
+    expect(workspaceZfbDevPinMatches(rootPin, rootPin)).toBe(true);
+    expect(workspaceZfbDevPinMatches(rootPin, `^${rootPin}`)).toBe(false);
   });
 
-  it("rejects the prerelease caret that can admit next.79+ (#1631)", () => {
-    expect(workspaceZfbPinMatches(rootPin, `^${rootPin}`)).toBe(false);
+  it("requires the canonical compatible peer floor", () => {
+    expect(workspaceZfbPeerFloorMatches(rootPin, `^${rootPin}`)).toBe(true);
+    expect(workspaceZfbPeerFloorMatches(rootPin, rootPin)).toBe(false);
+    expect(workspaceZfbPeerFloorMatches(rootPin, "^0.1.0-next.80")).toBe(false);
   });
 });
 
