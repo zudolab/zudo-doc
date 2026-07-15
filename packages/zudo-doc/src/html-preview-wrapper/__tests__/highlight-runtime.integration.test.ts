@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -10,6 +11,17 @@ const runtime = createHighlightRuntime(
 );
 
 describe("HTML Preview zfb-md-wasm integration", () => {
+  it("keeps the lazy runtime edge on the public package root", () => {
+    const source = readFileSync(
+      new URL("../highlight-runtime.ts", import.meta.url),
+      "utf8",
+    );
+
+    expect(source).toContain('import("@takazudo/zfb-md-wasm")');
+    expect(source).not.toContain("@takazudo/zfb-md-wasm/");
+    expect(source).not.toMatch(/zfb_md_wasm|\.zfb-resource|\.wasm["']/);
+  });
+
   it.each([
     {
       language: "html",
