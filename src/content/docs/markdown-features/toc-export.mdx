@@ -67,10 +67,10 @@ export const toc = [
 ];
 ```
 
-The nested `id: "introduction-background"` reflects this site's `hierarchical` [Heading Links](./heading-links.mdx#id-strategy) strategy (the h3 `id` is prefixed with its h2 ancestor). Under the `flat` strategy it would simply be `id: "background"`.
+The nested `id: "introduction-background"` reflects zudo-doc's [hierarchical heading IDs](./heading-links.mdx#hierarchical-ids): the h3 `id` is prefixed with its h2 ancestor.
 
 ## Notes
 
-- The export runs after the heading-links pass, so the `id` slugs are final, deduplicated, and follow the configured [heading-ID strategy](./heading-links.mdx#id-strategy).
+- The export runs after the heading-links pass, so the `id` slugs are final, deduplicated, and follow the [hierarchical ID contract](./heading-links.mdx#hierarchical-ids).
 - `tocExport` works independently of [Heading Marker TOC](./heading-marker-toc.mdx) — enabling one does not interfere with the other.
 - zudo-doc's existing TOC island is not driven by this export; the two are separate mechanisms.

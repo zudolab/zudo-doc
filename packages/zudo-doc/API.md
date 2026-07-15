@@ -319,7 +319,6 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `designTokenPanel` | `boolean` | Enable the design token panel |
 | `tocMinDepth` | `number` | Minimum heading depth for TOC |
 | `tocMaxDepth` | `number` | Maximum heading depth for TOC |
-| `headingIdStrategy` | `"flat" \| "hierarchical"` | Heading ID generation strategy |
 | `sidebarResizer` | `boolean` | Enable sidebar resizer handle |
 | `sidebarToggle` | `boolean` | Enable sidebar mobile toggle |
 | `imageEnlarge` | `boolean` | Enable image enlarge on click |

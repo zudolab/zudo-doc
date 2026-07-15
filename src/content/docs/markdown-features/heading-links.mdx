@@ -4,7 +4,7 @@ description: Adds slug-based id attributes and self-referencing anchor links to 
 sidebar_position: 3
 ---
 
-**Core feature** — always active. The anchor-ID _strategy_ is configurable (see below).
+**Core feature** — always active. Heading IDs are hierarchical.
 
 ## What it does
 
@@ -16,24 +16,18 @@ Every heading at `h2` and below automatically receives:
 
 `h1` is never assigned an `id` — the page title (from frontmatter) is the document's only `h1`.
 
-## ID strategy
+## Hierarchical IDs
 
-The scheme used to build the `id` is selected by `markdown.features.headingIds.strategy` in the generated `zfb.config.ts`. zudo-doc wires this to a single setting, the `headingIdStrategy` field you pass to `zudoDoc({...})`, so the rendered IDs and the right-hand TOC anchors are driven by one source of truth.
+zudo-doc always enables zfb's hierarchical heading IDs. The package preset and the right-hand TOC extractor use the same allocation contract, so rendered IDs and TOC anchors stay in sync without a user-facing strategy setting.
 
 ```ts
-// what zudoDoc() wires internally, from your headingIdStrategy field
+// what zudoDoc() wires internally
 markdown: {
   features: {
-    headingIds: { strategy: settings.headingIdStrategy }, // "flat" | "hierarchical"
+    headingIds: { strategy: "hierarchical" },
   },
 }
 ```
-
-### `flat`
-
-Slugs (from zfb's own `slugify`, not npm `github-slugger`) with one dedup counter shared across `h2`–`h6` (`overview`, `overview-1`, …). This is zfb's default scheme.
-
-### `hierarchical` (used by this site)
 
 Each heading's `id` is prefixed with its ancestor chain, joined by `-`:
 
@@ -45,23 +39,17 @@ Each heading's `id` is prefixed with its ancestor chain, joined by `-`:
 #### Mew
 ```
 
-renders as `id="foo"`, `id="foo-moo"`, `id="foo-moo-mew"` (instead of the flat `foo`, `moo`, `mew`). The in-heading anchor `href`, the right-hand TOC, the [Heading Marker TOC](./heading-marker-toc.mdx), and the [TOC export](./toc-export.mdx) all follow the same IDs.
+renders as `id="foo"`, `id="foo-moo"`, `id="foo-moo-mew"`. The in-heading anchor `href`, the right-hand TOC, the [Heading Marker TOC](./heading-marker-toc.mdx), and the [TOC export](./toc-export.mdx) all follow the same IDs.
 
 Details:
 
 - A duplicated full path still gets the dedup counter (`a-b`, `a-b-1`).
 - A deduplicated parent contributes its **final** ID to children: a second `## Foo` becomes `foo-1`, so its `### Bar` becomes `foo-1-bar`.
-- Hierarchical anchors are reconstructible from the heading outline and collide far less often than flat slugs, at the cost of longer URLs.
-
-:::warning[Anchor-breaking]
-
-Switching strategies is **anchor-breaking**: existing deep links to nested headings (`#moo`) stop resolving once IDs become `#foo-moo`. zudo-doc adopted `hierarchical` deliberately (upstream [zfb#871](https://github.com/Takazudo/zudo-front-builder/issues/871); original finding [#1938](https://github.com/zudolab/zudo-doc/issues/1938)) with no backward-compat for old anchors.
-
-:::
+- Hierarchical anchors are reconstructible from the heading outline and reduce collisions, at the cost of longer URLs.
 
 ## Deep-linking
 
-Because each heading carries a stable `id`, you can link to any section of a page from another page. Under the `hierarchical` strategy, use the ancestor-prefixed form for nested headings:
+Because each heading carries a stable `id`, you can link to any section of a page from another page. Use the ancestor-prefixed form for nested headings:
 
 ```md
 [See the Moo section](./other-page.mdx#foo-moo)
@@ -69,5 +57,5 @@ Because each heading carries a stable `id`, you can link to any section of a pag
 
 ## Notes
 
-- zudo-doc's right-hand TOC builder (`pages/lib/_extract-headings.ts`) mirrors the same strategy, so the TOC `href="#…"` values always match the rendered heading `id`s.
+- zudo-doc's right-hand TOC builder (`pages/lib/_extract-headings.ts`) mirrors the same allocator, so the TOC `href="#…"` values always match the rendered heading `id`s.
 - The Heading Marker TOC opt-in feature depends on the stable heading identifiers produced by this plugin. When `headingMarkerToc` is enabled, it runs after heading links have been applied.

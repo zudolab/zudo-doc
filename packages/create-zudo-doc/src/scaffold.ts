@@ -525,9 +525,9 @@ function generatePackageJson(choices: UserChoices) {
     // disabled, reproducible CSS-Modules scoped names (project-relative paths),
     // dev-mode git-restore detection, Tailwind temp-file cleanup, and a
     // near-miss `"use client"` directive scanner.
-    // next.33 added the opt-in hierarchical heading-ID strategy
+    // next.33 added hierarchical heading IDs
     // (Takazudo/zudo-front-builder#871): `markdown.features.headingIds.strategy`.
-    // The generated config + TOC builder use it via settings.headingIdStrategy.
+    // zudo-doc now uses that strategy unconditionally in its package preset.
     // next.35 fixes resolve_links rewriting bare same-page `[text](#anchor)` /
     // `[text](?query)` links to `/<parent-dir>/#anchor` (zudolab/zudo-doc#1948,
     // upstream Takazudo/zudo-front-builder#875).

@@ -1,38 +1,12 @@
 /**
  * extract-headings.test.ts
  *
- * Unit tests for pages/lib/_extract-headings.ts covering slug fidelity:
- * the slug computed by extractHeadings must match the rendered heading id
- * produced by rehype-heading-links (which extracts plain text via extractText,
- * then slugs via GithubSlugger).
- *
- * The expected slug in each test is derived independently:
- *   new GithubSlugger().slug(<plain visible text>)
- * matching exactly what the renderer computes from the HAST node's text
- * content after MDX → HTML conversion.
+ * Unit tests for pages/lib/_extract-headings.ts covering slug fidelity and the
+ * hierarchical allocation contract mirrored from zfb's Heading Links plugin.
  */
 
 import { describe, it, expect } from "vitest";
-import {
-  extractHeadings as extractHeadingsRaw,
-  slugify,
-  type HeadingIdStrategy,
-} from "../../../pages/lib/_extract-headings";
-
-/**
- * The suites below test the FLAT heading-ID contract. Production now defaults
- * to "hierarchical" (`settings.headingIdStrategy`), so pin these calls to flat
- * via a thin wrapper — existing call sites stay unchanged and decoupled from
- * the showcase default. The hierarchical contract has its own suite at the
- * bottom (calling `extractHeadingsRaw` with `strategy: "hierarchical"`), plus a
- * settings-default guard that calls `extractHeadingsRaw` with no strategy.
- */
-function extractHeadings(
-  body: string,
-  opts?: { tocMinDepth?: number; tocMaxDepth?: number; strategy?: HeadingIdStrategy },
-) {
-  return extractHeadingsRaw(body, { strategy: "flat", ...opts });
-}
+import { extractHeadings, slugify } from "../../../pages/lib/_extract-headings";
 
 /**
  * Reference: the slug the renderer assigns is `slugify(plainText)` for a first
@@ -127,64 +101,54 @@ describe("extractHeadings — slug fidelity", () => {
   });
 });
 
-describe("extractHeadings — cross-level dedup (h5/h6 counter parity)", () => {
-  it("h5 duplicating an earlier h2 advances the renderer counter — second h2 gets -2 suffix", () => {
-    // The renderer slugs ALL headings (h2–h6), so an h5 with text "Dup" that
-    // follows the first h2 "Dup" advances the shared counter. Without the fix,
-    // extractHeadings only slugged h2–h4 and the second h2 anchor would be
-    // "#dup-1" while the rendered id would be "#dup-2" — a broken TOC link.
+describe("extractHeadings — cross-level hierarchical dedup (h5/h6 parity)", () => {
+  it("an out-of-window h5 advances the full-path counter for a matching h4", () => {
     const body = [
-      "## Dup",    // rendered id: "dup"  / TOC slug: "dup"
-      "##### Dup", // rendered id: "dup-1" (renderer counts it; not in TOC)
-      "## Dup",   // rendered id: "dup-2" / TOC slug must also be "dup-2"
+      "## Parent",    // rendered id: "parent"
+      "##### Dup",    // rendered id: "parent-dup" (not in TOC)
+      "#### Dup",     // rendered id: "parent-dup-1"
     ].join("\n");
     const headings = extractHeadings(body);
-    // Only depth-2 items are pushed; the h5 is invisible to the result.
     expect(headings).toHaveLength(2);
-    expect(headings[0]?.slug).toBe("dup");
-    // Post-fix: second h2 gets "dup-2" (h5 consumed "dup-1" in the counter).
-    // Pre-fix: would have been "dup-1" (counter didn't advance for the h5).
-    expect(headings[1]?.slug).toBe("dup-2");
+    expect(headings[0]?.slug).toBe("parent");
+    expect(headings[1]?.slug).toBe("parent-dup-1");
   });
 
-  it("h6 duplicating an earlier h3 advances the renderer counter — second h3 gets -2 suffix", () => {
+  it("an out-of-window h6 advances the full-path counter for a matching h4", () => {
     const body = [
-      "### Alpha",   // slug: "alpha"
-      "###### Alpha", // not in TOC, but advances counter to "alpha-1"
-      "### Alpha",   // slug must be "alpha-2", not "alpha-1"
+      "## Parent",
+      "###### Alpha",
+      "#### Alpha",
     ].join("\n");
     const headings = extractHeadings(body);
     expect(headings).toHaveLength(2);
-    expect(headings[0]?.slug).toBe("alpha");
-    expect(headings[1]?.slug).toBe("alpha-2");
+    expect(headings[0]?.slug).toBe("parent");
+    expect(headings[1]?.slug).toBe("parent-alpha-1");
   });
 
-  it("multiple h5/h6 dup entries each advance the counter correctly", () => {
-    // Each intermediate h5/h6 with the same text advances the counter by one.
+  it("multiple out-of-window duplicates each advance the full-path counter", () => {
     const body = [
-      "## Foo",    // slug: "foo"
-      "##### Foo", // not in TOC, counter: "foo-1"
-      "##### Foo", // not in TOC, counter: "foo-2"
-      "## Foo",   // slug must be "foo-3"
+      "## Parent",
+      "##### Foo",
+      "##### Foo",
+      "#### Foo",
     ].join("\n");
     const headings = extractHeadings(body);
     expect(headings).toHaveLength(2);
-    expect(headings[0]?.slug).toBe("foo");
-    expect(headings[1]?.slug).toBe("foo-3");
+    expect(headings[0]?.slug).toBe("parent");
+    expect(headings[1]?.slug).toBe("parent-foo-2");
   });
 
-  it("h5 with unique text does not affect counter for different h2 text", () => {
-    // Counter is per-text (slug-based), so an h5 with a different slug does
-    // not affect the dedup count for unrelated headings.
+  it("an out-of-window heading with unique text does not affect another path", () => {
     const body = [
-      "## Setup",       // slug: "setup"
-      "##### Details",  // slug: "details" (different text; does not affect "setup" counter)
-      "## Setup",       // slug must be "setup-1"
+      "## Parent",
+      "##### Details",
+      "#### Setup",
     ].join("\n");
     const headings = extractHeadings(body);
     expect(headings).toHaveLength(2);
-    expect(headings[0]?.slug).toBe("setup");
-    expect(headings[1]?.slug).toBe("setup-1");
+    expect(headings[0]?.slug).toBe("parent");
+    expect(headings[1]?.slug).toBe("parent-setup");
   });
 });
 
@@ -287,16 +251,14 @@ describe("extractHeadings — configurable depth window (opts override)", () => 
     expect(headings[0]?.depth).toBe(2);
   });
 
-  it("window-excluded h2 still advances counter for subsequent same-text h3 in window", () => {
-    // When tocMinDepth:3, h2 headings are not pushed but must still be slugged
-    // so that a subsequent h3 with the same text gets the correct dedup suffix.
+  it("window-excluded h2 still contributes to a subsequent h3 path", () => {
     const body = [
-      "## Concept",   // excluded from result, but slugger consumes "concept"
-      "### Concept",  // included; slug must be "concept-1" (not "concept")
+      "## Concept",
+      "### Concept",
     ].join("\n");
     const headings = extractHeadings(body, { tocMinDepth: 3, tocMaxDepth: 4 });
     expect(headings).toHaveLength(1);
-    expect(headings[0]?.slug).toBe("concept-1");
+    expect(headings[0]?.slug).toBe("concept-concept");
   });
 
   it("invalid tocMinDepth > tocMaxDepth falls back to 2/4", () => {
@@ -336,15 +298,12 @@ describe("extractHeadings — configurable depth window (opts override)", () => 
   });
 });
 
-describe("extractHeadings — hierarchical strategy (zfb#871 contract)", () => {
+describe("extractHeadings — hierarchical IDs (zfb#871 contract)", () => {
   // These cases are ported verbatim from zfb's own Rust unit tests
   // (crates/zfb-content/src/plugins/heading_links.rs) — they ARE the contract
   // the host TOC builder must mirror so TOC anchors match the rendered ids.
-  const hier = (body: string, opts?: { tocMinDepth?: number; tocMaxDepth?: number }) =>
-    extractHeadingsRaw(body, { ...opts, strategy: "hierarchical" });
-
   const slugs = (body: string, opts?: { tocMinDepth?: number; tocMaxDepth?: number }) =>
-    hier(body, opts).map((h) => h.slug);
+    extractHeadings(body, opts).map((h) => h.slug);
 
   it("the headline example: ## Foo / ### Moo / #### Mew → foo, foo-moo, foo-moo-mew", () => {
     expect(slugs("## Foo\n### Moo\n#### Mew")).toEqual(["foo", "foo-moo", "foo-moo-mew"]);
@@ -381,7 +340,7 @@ describe("extractHeadings — hierarchical strategy (zfb#871 contract)", () => {
     expect(slugs("# Title\n## A\n### B")).toEqual(["a", "a-b"]);
   });
 
-  it("each call is its own document — no ancestor stack leaks across calls", () => {
+  it("a standalone nested-depth heading stays unprefixed and calls do not leak state", () => {
     expect(slugs("## A\n### B")).toEqual(["a", "a-b"]);
     // A fresh call must NOT inherit the stale "a" ancestor from the previous one.
     expect(slugs("### B")).toEqual(["b"]);
@@ -391,7 +350,7 @@ describe("extractHeadings — hierarchical strategy (zfb#871 contract)", () => {
     // h2 A / h3 B / h5 C (out of [2,4] window) / h3 D.
     // The h5 is allocated (id "a-b-c", pushed to the ancestor stack) but not
     // emitted; the following h3 D pops past it and re-roots under "a" → "a-d".
-    const headings = hier("## A\n### B\n##### C\n### D");
+    const headings = extractHeadings("## A\n### B\n##### C\n### D");
     expect(headings.map((h) => h.slug)).toEqual(["a", "a-b", "a-d"]);
     expect(headings.map((h) => h.depth)).toEqual([2, 3, 3]);
   });
@@ -399,16 +358,6 @@ describe("extractHeadings — hierarchical strategy (zfb#871 contract)", () => {
   it("preserves CJK heading text in the ancestor chain", () => {
     // github-slugger preserves CJK; the hierarchical prefix joins them with "-".
     expect(slugs("## 概要\n### 詳細")).toEqual(["概要", "概要-詳細"]);
-  });
-});
-
-describe("extractHeadings — settings default", () => {
-  it("uses settings.headingIdStrategy (hierarchical) when no strategy override is passed", () => {
-    // Guards the showcase config: settings.headingIdStrategy is "hierarchical",
-    // and zfb.config.ts reads the same value — so an unqualified call must
-    // produce ancestor-prefixed ids matching the rendered output.
-    const headings = extractHeadingsRaw("## Foo\n### Moo");
-    expect(headings.map((h) => h.slug)).toEqual(["foo", "foo-moo"]);
   });
 });
 

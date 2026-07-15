@@ -208,7 +208,6 @@ const fixtureSettings: PresetSettings = {
   minifyHtml: true,
   mermaid: true,
   onBrokenMarkdownLinks: "warn",
-  headingIdStrategy: "hierarchical",
   llmsTxt: true,
   changelogs: [
     {
@@ -556,14 +555,14 @@ describe("zudoDocPreset markdown.features", () => {
     expect(r.markdown.features.directives).not.toBe(directives);
   });
 
-  it("threads settings.mermaid and settings.headingIdStrategy", () => {
+  it("threads settings.mermaid while keeping hierarchical heading IDs", () => {
     const r = zudoDocPreset({
-      settings: { ...fixtureSettings, mermaid: false, headingIdStrategy: "flat" },
+      settings: { ...fixtureSettings, mermaid: false },
       buildDocsSchema: buildFixtureSchema,
       directiveVocabulary: fixtureDirectives,
     });
     expect(r.markdown.features.mermaid).toBe(false);
-    expect(r.markdown.features.headingIds).toEqual({ strategy: "flat" });
+    expect(r.markdown.features.headingIds).toEqual({ strategy: "hierarchical" });
   });
 
   it("omits githubAutolinks when githubAutolinksRepo is absent (#2321)", () => {

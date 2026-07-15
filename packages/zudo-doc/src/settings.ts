@@ -317,7 +317,6 @@ export interface Settings {
   designTokenPanel: boolean;
   tocMinDepth: number;
   tocMaxDepth: number;
-  headingIdStrategy: "flat" | "hierarchical";
   sidebarResizer: boolean;
   sidebarToggle: boolean;
   imageEnlarge: boolean;

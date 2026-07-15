@@ -1341,7 +1341,6 @@ describe("scaffold — settings-drift guard: generator-known fields must cover e
       aiChatGlobalDailyLimit: "no CLI/prompt surface yet — companion to aiAssistant",
       tocMinDepth: "no CLI/prompt surface yet — package default is correct for all scaffolds",
       tocMaxDepth: "no CLI/prompt surface yet — package default is correct for all scaffolds",
-      headingIdStrategy: "no CLI/prompt surface yet — package default is correct for all scaffolds",
       frontmatterPreview: "no CLI/prompt surface yet — hand-edit post-scaffold",
       htmlPreview: "no CLI/prompt surface yet — hand-edit post-scaffold",
       packageOwnedRoutes: "no CLI/prompt surface — flipping this off requires shipping the project's own route stubs, an eject-time decision, not a scaffold-time one",

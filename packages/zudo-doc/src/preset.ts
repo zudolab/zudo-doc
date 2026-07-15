@@ -89,7 +89,6 @@ export interface PresetSettings {
   minifyHtml?: boolean;
   mermaid: boolean;
   onBrokenMarkdownLinks: "warn" | "error" | "ignore";
-  headingIdStrategy: "flat" | "hierarchical";
   llmsTxt?: boolean;
   changelogs?: PresetChangelogConfig[] | false;
   docHistory?: boolean;
@@ -418,9 +417,9 @@ function buildMarkdownFeatures(
     imageDimensions: {},
     // warn-only: failOnBroken=false never fails the build.
     linkValidation: { failOnBroken: false },
-    // Heading-ID strategy is the single source of truth in settings, mirrored
-    // by the host TOC builder so anchors match the rendered IDs.
-    headingIds: { strategy: settings.headingIdStrategy },
+    // Hierarchical heading IDs are zudo-doc's sole contract. The host TOC
+    // builder mirrors the same allocator so anchors match the rendered IDs.
+    headingIds: { strategy: "hierarchical" },
   };
 }
 
