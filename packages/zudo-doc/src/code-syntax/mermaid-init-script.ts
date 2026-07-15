@@ -70,19 +70,10 @@ export const MERMAID_CDN_MODULE_URL = "https://esm.sh/mermaid@11.15.0";
 /**
  * Build the inline init script with a caller-supplied module URL.
  *
- * Why a builder (vs. just exporting `MERMAID_INIT_SCRIPT`): the
- * constant interpolates `MERMAID_CDN_MODULE_URL` at module-load time,
- * so reassigning the exported binding has no runtime effect — ESM
- * exports are read-only and the script string is already frozen by
- * the time consumers see it. Hosts that need a self-hosted /
+ * Hosts that need a self-hosted /
  * version-pinned / CSP-allowlisted mermaid URL call this builder
  * with their URL and pass the result to `<MermaidInit script={…}/>`
  * (or to their own `<script dangerouslySetInnerHTML>` site).
- *
- * The default-URL flow stays available via `MERMAID_INIT_SCRIPT`
- * (built once below by calling this builder with
- * `MERMAID_CDN_MODULE_URL`) so existing callers keep working
- * unchanged.
  */
 export function buildMermaidInitScript(cdnUrl: string): string {
   // JSON.stringify produces a valid JS string literal but does NOT
@@ -488,16 +479,3 @@ export function buildMermaidInitScript(cdnUrl: string): string {
   });
 })();`;
 }
-
-/**
- * Default-URL init script. Built once at module load by passing
- * `MERMAID_CDN_MODULE_URL` to `buildMermaidInitScript`. Kept as the
- * primary export for backward compatibility — `<MermaidInit/>` (no
- * props) and any direct consumer that grabs this string both end up
- * importing mermaid from `https://esm.sh/mermaid@11`.
- *
- * For a custom URL (self-hosted mirror, version-pinned package,
- * CSP-allowlisted host) call `buildMermaidInitScript(yourUrl)` and
- * pass the result to `<MermaidInit script={…}/>`.
- */
-export const MERMAID_INIT_SCRIPT = buildMermaidInitScript(MERMAID_CDN_MODULE_URL);

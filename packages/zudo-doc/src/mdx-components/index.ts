@@ -18,7 +18,7 @@
 // ## What the package bakes vs what the host supplies
 //
 // The factory bakes every component that lives entirely inside the package:
-//   - htmlOverrides (h2..h4, p, a, ul, ol, blockquote, strong, table, code)
+//   - defaultComponents (h2..h4, p, a, ul, ol, blockquote, strong, table, code)
 //   - admonitions (Note/Tip/Info/Warning/Danger/Important/Caution)
 //   - CodeGroup, Tabs, TabItem
 //   - MathBlock
@@ -38,7 +38,7 @@
 import { toChildArray } from "preact";
 import type { ComponentChildren, VNode } from "preact";
 import type { Settings } from "../settings.js";
-import { htmlOverrides } from "../content/index.js";
+import { defaultComponents } from "../content/index.js";
 import { makeAdmonition } from "../content-admonition/index.js";
 import { CodeGroup } from "../code-group/index.js";
 import { Tabs } from "../code-syntax/index.js";
@@ -201,7 +201,7 @@ const ENLARGE_SVG = {
  * h() is lazy — child.type is still the ContentImg function, not yet called).
  * ContentImg strips the sentinel from the rendered img DOM.
  *
- * All other paragraphs delegate to htmlOverrides.p (ContentParagraph).
+ * All other paragraphs delegate to defaultComponents.p (ContentParagraph).
  */
 function makeEnlargeableParagraph(
   imageEnlarge: boolean,
@@ -258,7 +258,7 @@ function makeEnlargeableParagraph(
       }
     }
 
-    return (htmlOverrides.p as (props: unknown) => unknown)(props);
+    return (defaultComponents.p as (props: unknown) => unknown)(props);
   };
 }
 
@@ -292,11 +292,11 @@ export function createMdxComponents(
     navData.SiteTreeNav({ ...props, lang: locale });
 
   return {
-    ...htmlOverrides,
+    ...defaultComponents,
     // img override: rewrites root-relative src to include settings.base.
     img: ContentImg,
     // p override: wraps block-level images in <figure class="zd-enlargeable">.
-    // Must come AFTER ...htmlOverrides to override ContentParagraph.
+    // Must come AFTER ...defaultComponents to override ContentParagraph.
     p: EnlargeableParagraph,
     // Admonitions — real typed Preact components emitting the
     // `.admonition` / `data-admonition` structure the design-system CSS

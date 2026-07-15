@@ -210,7 +210,7 @@ onSuccess: "node scripts/copy-theme-css.mjs && node scripts/copy-content-css.mjs
      `--text-*`, `--font-*`, `--leading-*`, `--radius-DEFAULT`), and also import
      `safelist.css` so the component-emitted utility classes are generated.
    - Major-element visuals (h2–h4, p, a, strong, blockquote, ul, ol, table) do
-     NOT live here — they are emitted by the `htmlOverrides` components in
+     NOT live here — they are emitted by the `defaultComponents` map in
      `src/content/` (Tailwind classes + inline styles). `content.css` owns only
      what those components don't emit.
    - **Editing**: change `src/content.css`, then rebuild the package so

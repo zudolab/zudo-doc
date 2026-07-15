@@ -19,25 +19,22 @@
 //                       activates the correct panel and wires click handlers.
 //                       Include <TabsInit> once in the layout.
 //
-// Script constants are also exported so consumers can emit the scripts via
-// their own mechanisms (e.g. a framework-native <script> integration).
+// Public script builders/constants let consumers emit scripts via their own
+// mechanisms. MermaidInit keeps its default generated script private; use
+// buildMermaidInitScript for a custom emission path.
 
-export { CodeBlockEnhancer, default as CodeBlockEnhancerDefault } from "./code-block-enhancer.js";
+export { CodeBlockEnhancer } from "./code-block-enhancer.js";
 export { CODE_BLOCK_ENHANCER_SCRIPT } from "./code-block-enhancer-script.js";
 
-export {
-  MermaidInit,
-  default as MermaidInitDefault,
-} from "./mermaid-init.js";
+export { MermaidInit } from "./mermaid-init.js";
 export type { MermaidInitProps } from "./mermaid-init.js";
 export {
-  MERMAID_INIT_SCRIPT,
   MERMAID_CDN_MODULE_URL,
   buildMermaidInitScript,
 } from "./mermaid-init-script.js";
 
-export { Tabs, default as TabsDefault } from "./tabs.js";
+export { Tabs } from "./tabs.js";
 export type { TabsProps } from "./tabs.js";
 
-export { TabsInit, default as TabsInitDefault } from "./tabs-init.js";
+export { TabsInit } from "./tabs-init.js";
 export { TABS_INIT_SCRIPT } from "./tabs-init-script.js";

@@ -266,7 +266,6 @@ project's `ZudoDocConfig` override over each default before threading it into
 |---|---|
 | `./content.css` | `.zd-content` typography stylesheet (single source of truth) |
 | `./safelist.css` | Generated Tailwind safelist for component classes |
-| `./safelist` | Alias for `./safelist.css` |
 | `./page-loading.css` | Page-loading overlay stylesheet |
 | `./features.css` | Feature CSS (code blocks, dual-theme, KaTeX, etc.) |
 

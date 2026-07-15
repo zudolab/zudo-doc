@@ -25,9 +25,11 @@
 
 import type { JSX } from "preact";
 import {
-  MERMAID_INIT_SCRIPT,
+  MERMAID_CDN_MODULE_URL,
   buildMermaidInitScript,
 } from "./mermaid-init-script.js";
+
+const MERMAID_INIT_SCRIPT = buildMermaidInitScript(MERMAID_CDN_MODULE_URL);
 
 /**
  * Props for `<MermaidInit/>`.
@@ -76,5 +78,3 @@ export function MermaidInit(props: MermaidInitProps = {}): JSX.Element {
     (props.cdnUrl ? buildMermaidInitScript(props.cdnUrl) : MERMAID_INIT_SCRIPT);
   return <script dangerouslySetInnerHTML={{ __html: script }} />;
 }
-
-export default MermaidInit;

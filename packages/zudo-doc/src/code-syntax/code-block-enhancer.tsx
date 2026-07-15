@@ -38,5 +38,3 @@ export function CodeBlockEnhancer(): JSX.Element {
     </>
   );
 }
-
-export default CodeBlockEnhancer;
