@@ -11,7 +11,7 @@ Minimal documentation framework built with zfb, MDX, Tailwind CSS v4, and Preact
 - **Tailwind CSS v4** — via `@tailwindcss/vite`
 - **Preact** — for interactive islands (TOC scroll spy, sidebar toggle, collapsible categories) and server-rendered content typography components; runs in compat mode for React API compatibility
 - **syntect** — built-in code highlighting, run by zfb's Rust pipeline at build time, configured for **dual-theme** output in `zfb.config.ts` (`codeHighlight.themeLight`/`themeDark` = `base16-ocean.light`/`base16-ocean.dark`). Tokens are emitted as `--shiki-light`/`--shiki-dark` CSS custom properties (not inline colors) and `src/styles/global.css` resolves them via `light-dark()`, so code follows the light/dark toggle with no client JS. The `shikiTheme` field on each color scheme is unrelated and vestigial — it rides along in zdtp's color-scheme config envelope (optional since zdtp 0.2.3) but has no visible effect: zdtp's Shiki preview is a no-op stub, and page highlighting is syntect's.
-- **@takazudo/zdtp (zdtp)** — external npm package that owns the Design Token Panel UI; wired via `configurePanel(designTokenPanelConfig)` in `src/lib/design-token-panel-bootstrap.ts`; self-mounts as a side-effect (no Preact island registration needed)
+- **@takazudo/zdtp (zdtp)** — external npm package that owns the Design Token Panel UI; the package-owned `DesignTokenPanelBootstrap` island configures it from a mode-scoped builder and self-mounts it as a side effect
 - **TypeScript** — strict mode (project `tsconfig.json` sets `strict: true` plus the full set of `strict*` flags directly)
 
 ## Commands

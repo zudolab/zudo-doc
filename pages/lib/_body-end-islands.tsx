@@ -33,7 +33,6 @@ import { Island } from "@takazudo/zfb";
 import { settings } from "@/config/settings";
 
 import ClientRouterBootstrap from "@/components/client-router-bootstrap";
-import DesignTokenPanelBootstrap from "@/components/design-token-panel-bootstrap";
 import { AiChatModal } from "@takazudo/zudo-doc/ai-chat-modal";
 import { ImageEnlarge, ImageEnlargeSsrFallback } from "@takazudo/zudo-doc/image-enlarge";
 import { MermaidEnlarge, MermaidEnlargeSsrFallback } from "@takazudo/zudo-doc/mermaid-enlarge";
@@ -50,8 +49,6 @@ import { PageLoadingOverlay } from "@takazudo/zudo-doc/page-loading";
 // the package (packages/zudo-doc/src/{ai-chat-modal,image-enlarge,mermaid-enlarge}).
 (ClientRouterBootstrap as { displayName?: string }).displayName =
   "ClientRouterBootstrap";
-(DesignTokenPanelBootstrap as { displayName?: string }).displayName =
-  "DesignTokenPanelBootstrap";
 
 /**
  * Default sr-only label rendered as the AiChatModal SSR fallback. This
@@ -62,37 +59,6 @@ import { PageLoadingOverlay } from "@takazudo/zudo-doc/page-loading";
  * localise.
  */
 const DEFAULT_AI_CHAT_BODY_LABEL = "Ask a question about the documentation.";
-
-/**
- * SSR-emitted inline script that acts as a pre-hydration shim for the
- * `toggle-design-token-panel` window event. Because the
- * DesignTokenPanelBootstrap Island is deferred, zdtp's real
- * `toggle-design-token-panel` listener (registered in index.tsx at
- * module init) is not yet installed when the user clicks the header
- * palette button. This shim:
- *
- *  1. Records the first (and only meaningful) click as a boolean flag.
- *  2. Exposes `window.__zdtpReadyClicks` so the bootstrap Island can
- *     drain the queue and re-dispatch a single event once the real
- *     listener is live.
- *  3. Guards against double-installation across any re-evaluation path
- *     (SPA body swap, HMR, etc.) via `__zdtpToggleShimInstalled`.
- *
- * A single boolean (not an array) is used because the panel is a toggle —
- * any number of pre-hydration clicks should result in at most one open.
- */
-const ZDTP_TOGGLE_SHIM_SRC = `(function(){
-if(window.__zdtpToggleShimInstalled)return;
-window.__zdtpToggleShimInstalled=true;
-var pending=false;
-function shim(){pending=true;}
-window.addEventListener('toggle-design-token-panel',shim);
-window.__zdtpReadyClicks=function(){
-window.removeEventListener('toggle-design-token-panel',shim);
-delete window.__zdtpReadyClicks;
-if(pending){pending=false;window.dispatchEvent(new CustomEvent('toggle-design-token-panel'));}
-};
-})();`;
 
 /** Props for {@link BodyEndIslands}. */
 export interface BodyEndIslandsProps {
@@ -108,14 +74,11 @@ export interface BodyEndIslandsProps {
 }
 
 /**
- * The default body-end islands a doc page may mount: the design-token
- * tweak panel (overlay, fixed-position), the AI chat modal (`<dialog>`
- * overlay), and the image-enlarge dialog (mounted lazily based on
- * viewport scan). Each is feature-gated — the design-token panel on
- * `settings.designTokenPanel`, the AI chat modal (and its sr-only
- * landmark heading) on `settings.aiAssistant`, and image-enlarge on
- * `settings.imageEnlarge` — so a feature-off consumer ships neither the
- * island marker nor a misleading landmark (zudolab/zudo-doc#2058).
+ * The host-owned body-end islands a doc page may mount: the client-router
+ * bootstrap, AI chat modal (`<dialog>` overlay), and image-enlarge dialog
+ * (mounted lazily based on viewport scan). The package composes its own
+ * settings-gated DesignTokenPanelBootstrap alongside this host override at
+ * the chrome-derive seam.
  *
  * Each island is wrapped in `<Island ssrFallback>` so the heavy
  * component is NOT evaluated server-side — they depend on
@@ -148,37 +111,12 @@ export function BodyEndIslands({
       }) as unknown as VNode)
     : null;
 
-  // Hydrates on load so configurePanel() runs as early as possible and
-  // the `toggle-design-token-panel` window listener is registered before
-  // the user can click the header trigger. Renders nothing visually —
-  // the zdtp panel self-mounts as a side-effect (zudolab/zudo-doc#1623).
-  //
-  // The inline <script> emitted alongside the Island is the pre-hydration
-  // toggle shim (zudolab/zudo-doc#1627 Part B). It captures the first
-  // click as a boolean flag and exposes window.__zdtpReadyClicks so the
-  // bootstrap module can drain and re-dispatch once the real zdtp listener
-  // is registered. Mirrors the PageLoadingOverlay SSR-script pattern.
-  const designTokenPanelBootstrap =
-    settings.designTokenPanel
-      ? (
-          <>
-            <script
-              dangerouslySetInnerHTML={{ __html: ZDTP_TOGGLE_SHIM_SRC }}
-            />
-            {Island({
-              when: "load",
-              children: <DesignTokenPanelBootstrap />,
-            }) as unknown as VNode}
-          </>
-        )
-      : null;
-
   // Gated on `settings.aiAssistant` (zudolab/zudo-doc#2058): when the AI
   // assistant feature is off, neither the AiChatModal island marker nor the
   // sr-only "AI Assistant" landmark heading should reach the SSG output —
   // otherwise feature-off consumers ship a dead island marker plus a
   // misleading screen-reader landmark for a section that never hydrates.
-  // Mirrors the `designTokenPanel` gating above.
+  // Mirrors the other feature gates above.
   //
   // KNOWN CAVEAT: zfb's island scanner walks the static `"use client"`
   // import chain, so gating this JSX removes the SSR marker and heading but
@@ -243,7 +181,6 @@ export function BodyEndIslands({
           bootstrap above (zudolab/zudo-doc#2266): no transition → no overlay. */}
       {settings.dynamicPageTransition ? <PageLoadingOverlay /> : null}
       {clientRouterBootstrap}
-      {designTokenPanelBootstrap}
       {aiAssistant}
       {imageEnlarge}
       {mermaidEnlarge}

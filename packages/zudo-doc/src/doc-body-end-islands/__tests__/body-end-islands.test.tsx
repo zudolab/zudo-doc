@@ -27,6 +27,8 @@
 import { describe, expect, it } from "vitest";
 import { render } from "preact-render-to-string";
 import { createBodyEndIslands } from "../index.js";
+import { deriveBodyEndIslands } from "../../chrome/derive.js";
+import type { ChromeContext } from "../../factory-context/index.js";
 
 const ALL_ON = {
   aiAssistant: true,
@@ -65,6 +67,10 @@ function FakeDesignTokenPanelBootstrap() {
   return null;
 }
 FakeDesignTokenPanelBootstrap.displayName = "DesignTokenPanelBootstrap";
+
+function markerCount(html: string, marker: string): number {
+  return html.split(marker).length - 1;
+}
 
 describe("BodyEndIslands — all package-island flags ON", () => {
   const html = renderIslands(ALL_ON);
@@ -214,6 +220,7 @@ describe("BodyEndIslands — DesignTokenPanelBootstrap island gate (#2658)", () 
       { DesignTokenPanelBootstrap: FakeDesignTokenPanelBootstrap },
     );
     expect(html).toContain(MARKER);
+    expect(markerCount(html, MARKER)).toBe(1);
     // Not the skip-ssr variant — the component has no SSR fallback to skip.
     expect(html).not.toContain("data-zfb-island-skip-ssr=\"DesignTokenPanelBootstrap\"");
     // Pre-hydration toggle shim (zudolab/zudo-doc#1627 Part B).
@@ -252,6 +259,39 @@ describe("BodyEndIslands — DesignTokenPanelBootstrap island gate (#2658)", () 
     );
     expect(html).toContain(MARKER);
     expect(html).toContain('data-zfb-island-skip-ssr="ImageEnlarge"');
+  });
+});
+
+describe("deriveBodyEndIslands — package DTP ownership with a host body-end override (#2760)", () => {
+  const MARKER = 'data-zfb-island="DesignTokenPanelBootstrap"';
+
+  function HostBodyEndIslands() {
+    return <div data-testid="host-body-end">host-only islands</div>;
+  }
+
+  function renderDerived(designTokenPanel: boolean): string {
+    const BodyEndIslands = deriveBodyEndIslands({
+      settings: { ...ALL_OFF, designTokenPanel },
+      hostBindings: {
+        BodyEndIslands: HostBodyEndIslands,
+        DesignTokenPanelBootstrap: FakeDesignTokenPanelBootstrap,
+      },
+    } as unknown as ChromeContext);
+    return render(<BodyEndIslands basePath="/" />);
+  }
+
+  it("composes host-only islands with exactly one package-owned DTP marker when enabled", () => {
+    const html = renderDerived(true);
+    expect(html).toContain('data-testid="host-body-end"');
+    expect(markerCount(html, MARKER)).toBe(1);
+    expect(html).toContain("__zdtpToggleShimInstalled");
+  });
+
+  it("preserves the package settings gate while retaining host-only islands", () => {
+    const html = renderDerived(false);
+    expect(html).toContain('data-testid="host-body-end"');
+    expect(markerCount(html, MARKER)).toBe(0);
+    expect(html).not.toContain("__zdtpToggleShimInstalled");
   });
 });
 
