@@ -3,6 +3,7 @@ import {
   expectHtmlClass,
   expectHtmlTagWithAttr,
   expectHtmlTagWithClass,
+  tagWithClassPattern,
 } from "./html-assertions";
 import { readDistFile } from "./smoke-dist-helper";
 
@@ -16,51 +17,121 @@ import { readDistFile } from "./smoke-dist-helper";
 const PAGE = "/docs/guides/code-blocks-test";
 const DIST_PAGE = "docs/guides/code-blocks-test/index.html";
 
-test.describe("Code blocks: static compatibility shape", () => {
+test.describe("Code blocks: native class-mode output", () => {
   let html: string;
 
   test.beforeAll(() => {
     html = readDistFile(DIST_PAGE);
   });
 
-  test("current output retains title and line-highlight structure", () => {
+  test("retains title, line-highlight, and diff structure on real fences", () => {
     expectHtmlClass(html, "code-block-container");
     expectHtmlClass(html, "code-block-title");
-    expect(html).toContain("legacy-compat-title.js");
-    expectHtmlTagWithAttr(html, "span", "data-line-highlight", "true");
-    expectHtmlTagWithClass(html, "pre", "syntect-dual");
-  });
-
-  test("representative class output retains word and diff structure", () => {
+    expect(html).toContain("class-mode-native.js");
     expectHtmlTagWithClass(html, "pre", "hi-root");
-    expectHtmlClass(html, "highlighted-word");
+    expectHtmlTagWithClass(html, "span", "line");
+    expectHtmlTagWithAttr(html, "span", "data-line-highlight", "true");
     expectHtmlTagWithAttr(html, "span", "data-line-diff", "removed");
     expectHtmlTagWithAttr(html, "span", "data-line-diff", "added");
-    expect(html).toContain("class-mode-compat.ts");
-    expectHtmlTagWithAttr(html, "pre", "data-code-compat-fixture", "class");
+    expect(html).not.toContain("[!code --]");
+    expect(html).not.toContain("[!code ++]");
   });
 
-  test("keeps an unrelated plain pre fixture distinguishable", () => {
+  test("uses native semantic roles without inline or legacy palette colors", () => {
+    for (const tokenClass of ["hi-kw", "hi-var", "hi-num"]) {
+      const tokenTag = html.match(
+        tagWithClassPattern("span", tokenClass),
+      )?.[0];
+      expect(tokenTag, `expected a native ${tokenClass} token`).toBeDefined();
+    }
+
+    const tokenTags = (html.match(/<span\b[^>]*>/gi) ?? []).filter((tag) =>
+      /\bhi-[a-z]+\b/i.test(tag),
+    );
+    expect(tokenTags.length).toBeGreaterThan(0);
+    for (const tokenTag of tokenTags) {
+      expect(tokenTag).not.toMatch(/\bstyle\s*=/i);
+    }
+
+    const preTags = html.match(/<pre\b[^>]*>/gi) ?? [];
+    const nativePreTags = preTags.filter((tag) => /\bhi-root\b/i.test(tag));
+    expect(nativePreTags.length).toBeGreaterThan(0);
+    for (const nativePreTag of nativePreTags) {
+      expect(nativePreTag).not.toMatch(/\bstyle\s*=/i);
+    }
+    expect(preTags.some((tag) => tag.includes("syntect-"))).toBe(false);
+    expect(html).not.toContain("--shiki-light");
+    expect(html).not.toContain("--shiki-dark");
+  });
+
+  test("keeps tabs and an unrelated plain pre fixture distinguishable", () => {
+    expectHtmlClass(html, "tab-panel");
+    expectHtmlTagWithAttr(html, "div", "data-tab-value", "js");
+    expectHtmlTagWithAttr(html, "div", "data-tab-value", "py");
+    expectHtmlTagWithAttr(html, "div", "data-tab-value", "rust");
     expectHtmlTagWithAttr(html, "pre", "data-code-compat-fixture", "plain");
   });
 });
 
 test.describe("Code blocks: copy and wrap buttons", () => {
-  test("enhances highlighted and raw-tab blocks but leaves unrelated pre untouched", async ({
+  test("Default Dark resolves native keywords through the syntax semantic", async ({
     page,
   }) => {
     await page.goto(PAGE, { waitUntil: "load" });
 
-    const legacy = page.locator('main pre[class*="syntect-"]').first();
-    const classMode = page.locator(
-      'main pre.hi-root[data-code-compat-fixture="class"]',
-    );
-    const rawTabFallback = page.locator("main .tab-panel pre").first();
-    const plain = page.locator(
-      'main pre[data-code-compat-fixture="plain"]',
-    );
+    const colors = await page
+      .locator("main pre.hi-root span.hi-kw")
+      .first()
+      .evaluate((token) => {
+        const resolveColor = (value: string) => {
+          const probe = document.createElement("span");
+          probe.style.position = "fixed";
+          probe.style.visibility = "hidden";
+          probe.style.color = value;
+          document.body.append(probe);
+          const color = getComputedStyle(probe).color;
+          probe.remove();
+          return color;
+        };
 
-    for (const enhanceable of [legacy, classMode, rawTabFallback]) {
+        return {
+          theme: document.documentElement.dataset.theme,
+          colorScheme: getComputedStyle(document.documentElement).colorScheme,
+          token: getComputedStyle(token).color,
+          syntaxSemantic: resolveColor("var(--zd-syntax-keyword)"),
+          defaultDarkAccent: resolveColor("var(--palette-accent-1)"),
+        };
+      });
+
+    expect(colors.theme).toBeUndefined();
+    expect(colors.colorScheme).toBe("normal");
+    expect(colors.token).toBe(colors.syntaxSemantic);
+    expect(colors.token).toBe(colors.defaultDarkAccent);
+  });
+
+  test("enhances native and tab blocks but leaves unrelated pre untouched", async ({
+    page,
+  }) => {
+    await page.goto(PAGE, { waitUntil: "load" });
+
+    const native = page.locator("main pre.hi-root").first();
+    const titledNative = page
+      .locator("main .code-block-container", { hasText: "class-mode-native.js" })
+      .locator("pre.hi-root");
+    const tabBlock = page.locator("main .tab-panel pre").first();
+    const plain = page.locator('main pre[data-code-compat-fixture="plain"]');
+
+    await expect(
+      titledNative.locator('span[data-line-diff="removed"]'),
+    ).toHaveCount(1);
+    await expect(
+      titledNative.locator('span[data-line-diff="added"]'),
+    ).toHaveCount(1);
+    await expect(
+      page.locator('main pre.hi-root span[data-line-highlight="true"]'),
+    ).toHaveCount(1);
+
+    for (const enhanceable of [native, titledNative, tabBlock]) {
       await expect(enhanceable).toHaveAttribute("data-enhanced", "true");
       const wrapper = enhanceable.locator("xpath=..");
       await expect(wrapper).toHaveClass(/\bcode-block-wrapper\b/);
