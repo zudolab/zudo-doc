@@ -49,7 +49,7 @@ files:
 | Feature | What it touches |
 |---|---|
 | `i18n` | Adds `pages/[locale]/docs/[[...slug]].tsx` + `src/content/docs-<lang>/getting-started/{index,introduction,installation}.mdx` |
-| `tagGovernance` | Adds `scripts/tags-audit.ts`, `scripts/tags-suggest.ts`, and (postProcess) a tiny `src/config/settings.ts` + `src/config/tag-vocabulary.ts` pair (see "Known deviation" in `/l-update-generator` — required only because the package's `tags-audit` bin still imports those exact paths) |
+| `tagGovernance` | Adds one explicit `src/config/tag-vocabulary.ts` module consumed by zfb and passed to the package-owned audit/suggest bins with `--config` |
 | `docHistory` | (postProcess) patches the doc-route stub(s) in place to thread the real `DocHistory` component — no new file |
 | `designTokenPanel` | (postProcess) inserts one `@import "@takazudo/zdtp/styles.css";` line into `src/styles/global.css` — no new file |
 | `tauri` / `tauriDev` | Ship `src-tauri/**` / `src-tauri-dev/**` Rust project shells |
@@ -367,10 +367,10 @@ Confirm the 5 directories above (`pages/lib`, `src/components`, `src/utils`, `sr
 | `src/content/docs-ja/getting-started/index.mdx` | PRESENT |
 | `src/content/docs/changelog/index.mdx` | PRESENT |
 | `src/content/docs-ja/changelog/index.mdx` | PRESENT (i18n is also on) |
-| `scripts/tags-audit.ts` | PRESENT |
-| `scripts/tags-suggest.ts` | PRESENT |
-| `src/config/tag-vocabulary.ts` | PRESENT (tagGovernance's narrow postProcess exception) |
-| `src/config/settings.ts` | PRESENT (tagGovernance's narrow postProcess exception — a minimal audit-only mirror, NOT the old project-wide settings object) |
+| `scripts/tags-audit.ts` | ABSENT (the package-owned bin is the only current CLI) |
+| `scripts/tags-suggest.ts` | ABSENT (the package-owned bin is the only current CLI) |
+| `src/config/tag-vocabulary.ts` | PRESENT (explicit `TagCliConfig` + zfb vocabulary module) |
+| `src/config/settings.ts` | ABSENT |
 | `scripts/setup-doc-skill.sh` | PRESENT (skillSymlinker) |
 | `.claude/skills/zudo-doc-design-system/` | PRESENT (claudeSkills) |
 | `.claude/skills/zudo-doc-translate/` | PRESENT (claudeSkills) |
@@ -381,7 +381,7 @@ Confirm the 5 directories above (`pages/lib`, `src/components`, `src/utils`, `sr
 
 ## Step 7: Verify Settings
 
-There is no more `src/config/settings.ts` to read in a fresh scaffold (except the narrow `tagGovernance` audit-mirror pair, which is NOT the field census). Read `__inbox/generator-test-<pattern>/test-project/zfb.config.ts` instead — it is the ONE config file, a `defineConfig(zudoDoc({...}))` call with only diff-from-default fields.
+There is no `src/config/settings.ts` to read in a fresh scaffold. Read `__inbox/generator-test-<pattern>/test-project/zfb.config.ts` instead — it is the ONE config file, a `defineConfig(zudoDoc({...}))` call with only diff-from-default fields.
 
 ### zfb.config.ts Expectations per Pattern
 

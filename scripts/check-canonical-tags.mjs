@@ -4,7 +4,7 @@ import {
   existsSync,
   readFileSync,
   readdirSync,
-  statSync,
+  lstatSync,
 } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -124,7 +124,8 @@ function collectFiles(root, target) {
     for (const entry of readdirSync(directory)) {
       const absolutePath = join(directory, entry);
       const repoPath = relative(root, absolutePath).split("\\").join("/");
-      const stats = statSync(absolutePath);
+      const stats = lstatSync(absolutePath);
+      if (stats.isSymbolicLink()) continue;
       if (stats.isDirectory()) {
         if (entry === "node_modules" || entry === "dist") continue;
         if (target.skipTests && entry === "__tests__") continue;
@@ -185,7 +186,8 @@ function collectMdxFiles(directory, prefix = "") {
   for (const entry of readdirSync(directory)) {
     const absolutePath = join(directory, entry);
     const relativePath = prefix ? `${prefix}/${entry}` : entry;
-    const stats = statSync(absolutePath);
+    const stats = lstatSync(absolutePath);
+    if (stats.isSymbolicLink()) continue;
     if (stats.isDirectory()) {
       for (const [nestedPath, nestedAbsolute] of collectMdxFiles(
         absolutePath,

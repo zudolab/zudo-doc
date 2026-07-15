@@ -1,6 +1,6 @@
 ---
 title: Syntax Highlighting
-description: Build-time code highlighting via syntect, with dual light/dark themes that follow the active color scheme.
+description: Build-time class-mode highlighting with semantic tokens that follow the active zudo-doc color scheme.
 sidebar_position: 8
 ---
 
@@ -8,19 +8,17 @@ sidebar_position: 8
 
 ## What it does
 
-Every fenced code block is highlighted at build time using [syntect](https://github.com/trishume/syntect), a Rust library that uses Sublime Text–compatible grammar definitions. The highlighted HTML is embedded directly in the SSR output — no JavaScript is required in the browser.
+Every fenced code block is highlighted at build time by zfb's native class-mode highlighter. The highlighted HTML is embedded directly in the SSR output — no JavaScript is required in the browser.
 
 ## Theme
 
-zudo-doc highlights code in **dual-theme** mode: a light theme (`base16-ocean.light`) and a dark theme (`base16-ocean.dark`), set via `codeHighlight.themeLight` / `codeHighlight.themeDark` in `zfb.config.ts`.
+zfb emits semantic classes such as `hi-kw`, `hi-str`, `hi-num`, and `hi-com` under a `pre.hi-root` wrapper. zudo-doc maps those roles to its `--zd-syntax-*` design tokens through the `--zfb-hi-*` CSS bridge. Switching the active zudo-doc color scheme therefore recolors existing code without rebuilding the page or running a client-side highlighter.
 
-Rather than baking one theme's colors as inline `color:#hex` (the single-theme default — unreadable on the opposite background), syntect highlights twice and emits each token's two colors as CSS custom properties: `--shiki-light` and `--shiki-dark`. The stylesheet resolves them with `light-dark()`, driven by the same `color-scheme` property the theme toggle sets, so code follows the light/dark switch with **no client-side JavaScript**. All `<pre>` elements receive the class `syntect-dual`.
-
-Theme names are syntect built-ins (e.g. `base16-ocean.light`, `InspiredGitHub`, `Solarized (dark)`), not Shiki theme names.
+This contract is package-owned: generated projects do not emit a renderer or theme-name block in `zfb.config.ts`.
 
 ## Supported languages
 
-Any language with a Sublime Text–compatible grammar is supported. Specify the language identifier on the opening fence:
+Specify the language identifier on the opening fence:
 
 ````md
 ```ts
@@ -41,8 +39,8 @@ Without a language identifier, the block is rendered as plain text with no highl
 A highlighted code block renders as:
 
 ```html
-<pre class="syntect-dual" style="--shiki-light-bg:#eff1f5;--shiki-dark-bg:#2b303b">
-  <code><span style="--shiki-light:#4f5b66;--shiki-dark:#c0c5ce">…</span></code>
+<pre class="hi-root">
+  <code><span class="hi-kw">const</span> <span class="hi-var">greeting</span> …</code>
 </pre>
 ```
 
@@ -50,9 +48,9 @@ When used together with the [Code Title](./code-title.mdx) feature, the `<pre>` 
 
 ## Processing order
 
-The syntax highlighter runs last in the hast phase, after Code Title and any other code-block plugins. It replaces each `<pre><code>` element with raw highlighted HTML, so any plugin that needs to read the structured `<pre>` element must run before it.
+The syntax highlighter runs in zfb's build pipeline after code-block structure has been prepared. Features that annotate a structured `<pre><code>` block run before class-mode output is finalized.
 
 ## Notes
 
-- Highlighting is performed entirely by Rust at build time; no Shiki, Prism, or other JS highlighter runs at build or serve time. Dual-theme switching is pure CSS (`light-dark()` over the emitted custom properties), so it needs no JS either.
-- The `shikiTheme` field in color-scheme config is unrelated and has no effect on build output: it is a vestigial field carried in the design token panel's color-scheme envelope (optional since zdtp 0.2.3), and the panel's Shiki preview is a no-op stub.
+- Document fences contain semantic classes and no inline palette colors.
+- Shiki remains an optional client-side dependency only for the separate HtmlPreview component; it is not the document-fence renderer.

@@ -82,8 +82,8 @@ export const settings = {
   /**
    * Whether `tag-vocabulary.ts` is consulted at runtime.
    *
-   * - `true`  — alias rewrites, deprecation filtering, and grouped-footer
-   *             rendering are active. Governance level is decided by
+   * - `true`  — canonical validation and grouped-footer rendering are active.
+   *             Governance level is decided by
    *             `tagGovernance`.
    * - `false` — the vocabulary file is ignored entirely, regardless of
    *             `tagGovernance`. Tags stay completely loose. Useful to keep

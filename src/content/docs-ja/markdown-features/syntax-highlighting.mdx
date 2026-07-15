@@ -1,6 +1,6 @@
 ---
 title: Syntax Highlighting
-description: syntect によるビルド時コードハイライト。アクティブなカラースキームに追従するライト/ダークのデュアルテーマ対応。
+description: zudo-doc のカラースキームに追従する、ビルド時のセマンティッククラス方式ハイライト。
 sidebar_position: 8
 ---
 
@@ -8,19 +8,17 @@ sidebar_position: 8
 
 ## 概要
 
-すべてのコードフェンスブロックは、ビルド時に [syntect](https://github.com/trishume/syntect) を使ってハイライトされます。syntect は Sublime Text 互換の文法定義を使用する Rust ライブラリです。ハイライト済みの HTML は SSR 出力に直接埋め込まれるため、ブラウザで JavaScript は不要です。
+すべてのコードフェンスブロックは、zfb のネイティブなクラス方式ハイライターによってビルド時に処理されます。ハイライト済みの HTML は SSR 出力に直接埋め込まれるため、ブラウザ側の JavaScript は不要です。
 
 ## テーマ
 
-zudo-doc はコードを**デュアルテーマ**でハイライトします。ライトテーマ（`base16-ocean.light`）とダークテーマ（`base16-ocean.dark`）を、`zfb.config.ts` の `codeHighlight.themeLight` / `codeHighlight.themeDark` で設定します。
+zfb は `pre.hi-root` の配下に `hi-kw`、`hi-str`、`hi-num`、`hi-com` などのセマンティッククラスを出力します。zudo-doc は `--zfb-hi-*` CSS ブリッジを通して、それらを `--zd-syntax-*` デザイントークンへ対応付けます。そのため、アクティブなカラースキームを切り替えると、ページの再ビルドやクライアント側ハイライターなしで既存のコードも再配色されます。
 
-単一テーマの色を `color:#hex` としてインラインで焼き込む（シングルテーマ時のデフォルト。反対の背景では読めなくなります）のではなく、syntect は2回ハイライトを行い、各トークンの2色を CSS カスタムプロパティ `--shiki-light` と `--shiki-dark` として出力します。スタイルシートはこれらを `light-dark()` で解決します。これはテーマトグルが設定する `color-scheme` プロパティと同じ仕組みで駆動されるため、**クライアントサイドの JavaScript なし**でコードがライト/ダークの切り替えに追従します。すべての `<pre>` 要素には `syntect-dual` クラスが付与されます。
-
-テーマ名は syntect の組み込み名（例: `base16-ocean.light`、`InspiredGitHub`、`Solarized (dark)`）であり、Shiki のテーマ名ではありません。
+この契約はパッケージが所有します。生成プロジェクトの `zfb.config.ts` にレンダラーやテーマ名の設定ブロックは出力されません。
 
 ## 対応言語
 
-Sublime Text 互換の文法がある言語はすべて対応しています。開始フェンスに言語識別子を指定します。
+開始フェンスに言語識別子を指定します。
 
 ````md
 ```ts
@@ -41,8 +39,8 @@ const greeting: string = "hello";
 ハイライトされたコードブロックは以下のようにレンダリングされます。
 
 ```html
-<pre class="syntect-dual" style="--shiki-light-bg:#eff1f5;--shiki-dark-bg:#2b303b">
-  <code><span style="--shiki-light:#4f5b66;--shiki-dark:#c0c5ce">…</span></code>
+<pre class="hi-root">
+  <code><span class="hi-kw">const</span> <span class="hi-var">greeting</span> …</code>
 </pre>
 ```
 
@@ -50,9 +48,9 @@ const greeting: string = "hello";
 
 ## 処理順序
 
-シンタックスハイライターは hast フェーズで最後に実行されます。Code Title やその他のコードブロックプラグインの後で動作します。各 `<pre><code>` 要素をハイライト済みの生 HTML で置き換えるため、構造化された `<pre>` 要素を読む必要があるプラグインはより前に実行される必要があります。
+シンタックスハイライターは、コードブロックの構造が準備された後に zfb のビルドパイプラインで実行されます。構造化された `<pre><code>` を注釈する機能は、クラス方式の出力が確定する前に実行されます。
 
 ## 補足
 
-- ハイライトはビルド時にすべて Rust で処理されます。Shiki、Prism などの JS ハイライターはビルド時にも配信時にも実行されません。デュアルテーマの切り替えも純粋な CSS（出力されたカスタムプロパティに対する `light-dark()`）で行われるため、JS は不要です。
-- カラースキーム設定の `shikiTheme` フィールドは無関係で、ビルド出力には影響しません。これはデザイントークンパネルのカラースキームエンベロープに含まれる名残りのフィールド（zdtp 0.2.3 以降はオプショナル）であり、パネルの Shiki プレビューは no-op スタブです。
+- ドキュメントのフェンスにはセマンティッククラスが出力され、パレット色のインライン指定は含まれません。
+- Shiki は別機能である HtmlPreview のオプションなクライアント側依存としてのみ残り、ドキュメントフェンスのレンダラーではありません。

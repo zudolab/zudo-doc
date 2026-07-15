@@ -19,9 +19,11 @@ const syntaxVariation = {
     selectionFg: defaultDark.map.selectionFg,
     semantic: {
       ...defaultDark.map.semantic,
-      // No explicit map.syntax: syntaxKeyword must inherit this named
-      // variation's accent reference through the public alias contract.
       accent: { state: "info" },
+    },
+    syntax: {
+      ...defaultDark.map.syntax,
+      syntaxKeyword: { state: "info" },
     },
   },
 } satisfies ColorScheme;

@@ -45,8 +45,8 @@ import { defaultColorSchemes } from "../color-schemes-defaults/index.js";
 
 /**
  * Inert fallback for the still-REQUIRED `ColorClusterExtras.defaultShikiTheme`.
- * zdtp's Shiki integration is a no-op stub and page code highlighting is
- * syntect's, so this value has no visible effect — but the field is typed
+ * zdtp's Shiki integration is a no-op stub and page code highlighting uses
+ * zfb's semantic class mode, so this value has no visible effect — but the field is typed
  * `string`, so a value is required. See zudo-doc#2037.
  */
 const DEFAULT_SHIKI_THEME = "github-dark";

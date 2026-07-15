@@ -11,11 +11,6 @@ export function getDocs(collectionName: string): ZfbDocsEntry[] {
   return getCollection<ZfbDocsData>(collectionName);
 }
 
-/** Alias retained for callers that describe the operation as a load. */
-export function loadDocs(collectionName: string): ZfbDocsEntry[] {
-  return getDocs(collectionName);
-}
-
 /** Drafts are never included in statically generated routes. */
 export function filterDrafts(entries: ZfbDocsEntry[]): ZfbDocsEntry[] {
   return entries.filter((entry) => !entry.data.draft);

@@ -84,6 +84,18 @@ const REQUIRED_CI_GUARDS = [
     comment: "Design token lint",
   },
   {
+    // Current-only contract: executable deletion matrix and survivor scan.
+    ciNeedle: "check:compatibility-contract",
+    b4pushScript: "check:compatibility-contract",
+    comment: "Current-only compatibility deletion matrix (#2772)",
+  },
+  {
+    // Consumer resolution rejects removed exports even through wildcard keys.
+    ciNeedle: "test:plugin-resolution",
+    b4pushScript: "test:plugin-resolution",
+    comment: "Current and retired package subpath resolution (#2772)",
+  },
+  {
     // Package safelist: node scripts/check-package-safelist.mjs (CI) / pnpm check:package-safelist (b4push)
     ciNeedle: "check-package-safelist.mjs",
     b4pushScript: "check:package-safelist",

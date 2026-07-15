@@ -299,8 +299,8 @@ export interface ZudoDocConfig {
    */
   tagGovernance?: TagGovernanceMode;
   /**
-   * Whether the tag vocabulary is consulted at runtime (alias resolution,
-   * deprecation filtering, grouped footer). Orthogonal to `tagGovernance`.
+   * Whether the canonical tag vocabulary is consulted at runtime (validation
+   * and grouped footer rendering). Orthogonal to `tagGovernance`.
    * The vocabulary ENTRIES are supplied separately via `tagVocabularyEntries`.
    * @default false
    */

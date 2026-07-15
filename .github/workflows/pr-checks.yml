@@ -292,6 +292,9 @@ jobs:
       - name: Check canonical tag data
         run: pnpm check:canonical-tags
 
+      - name: Check current-only compatibility contract
+        run: pnpm check:compatibility-contract
+
       - name: Run design token lint
         run: pnpm lint:tokens
 
@@ -378,6 +381,9 @@ jobs:
 
       - name: Run package unit tests
         run: pnpm test:packages
+
+      - name: Check current and retired package subpath resolution
+        run: pnpm --filter @takazudo/zudo-doc test:plugin-resolution
 
   # ---------------------------------------------------------------------------
   # Job 1.6: Root unit suite

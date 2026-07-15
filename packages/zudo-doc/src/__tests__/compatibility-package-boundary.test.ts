@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import * as breadcrumb from "../breadcrumb/index.js";
@@ -85,5 +86,10 @@ describe("collapsed compatibility package boundary", () => {
 
     expect(packageJson.exports).toHaveProperty("./safelist.css");
     expect(packageJson.exports).not.toHaveProperty("./safelist");
+
+    const require = createRequire(import.meta.url);
+    expect(() => require.resolve("@takazudo/zudo-doc/safelist")).toThrow(
+      /Package subpath '.\/safelist' is not defined|ERR_PACKAGE_PATH_NOT_EXPORTED/,
+    );
   });
 });

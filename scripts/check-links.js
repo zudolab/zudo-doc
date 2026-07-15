@@ -84,7 +84,7 @@ export async function parseContentDirs(settingsPath) {
   // Extract locale keys and dirs from `locales: { ja: { dir: "..." } }` entries
   // (top-level and per-version). Locale keys (e.g. "ja", "de") are captured so
   // the MDX link scanner can build a dynamic alternation instead of hardcoding
-  // `(?:ja/)?`.
+  // a hard-coded locale alternation.
   const localeDirs = [];
   const localeKeys = [];
   // Match locale block entries: `  ja: { ... dir: "..." ... }` or `ja: { dir: "..." }`
