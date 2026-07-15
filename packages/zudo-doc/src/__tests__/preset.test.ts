@@ -586,12 +586,17 @@ describe("zudoDocPreset markdown.features", () => {
 });
 
 describe("zudoDocPreset top-level pipeline fields", () => {
-  it("emits dual-theme codeHighlight, stripMdExt, trailingSlash, and minifyHtml", () => {
+  it("emits class-mode codeHighlight, stripMdExt, trailingSlash, and minifyHtml", () => {
     const r = preset();
     expect(r.codeHighlight).toEqual({
-      themeLight: "base16-ocean.light",
-      themeDark: "base16-ocean.dark",
+      mode: "class",
+      defaultStylesheet: true,
     });
+    expect(r.codeHighlight).not.toHaveProperty("themeLight");
+    expect(r.codeHighlight).not.toHaveProperty("themeDark");
+    expect(r.codeHighlight).not.toHaveProperty("themesDir");
+    expect(r.codeHighlight).not.toHaveProperty("classPrefix");
+    expect(r.codeHighlight).not.toHaveProperty("roleClasses");
     expect(r.stripMdExt).toBe(true);
     expect(r.trailingSlash).toBe(true);
     expect(r.minifyHtml).toBe(true);
