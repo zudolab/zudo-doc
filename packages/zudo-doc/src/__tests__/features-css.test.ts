@@ -94,11 +94,11 @@ describe("src/features.css source contract", () => {
     expect(highlightBridgeRules).not.toContain("@layer");
   });
 
-  it("keeps Shiki compatibility colors scoped away from class output", () => {
-    expect(css).toContain('[data-theme] pre[class*="syntect-"] span');
-    expect(css).toContain("color: light-dark(var(--shiki-light)");
-    expect(css).not.toMatch(
-      /\[data-theme\][^{]*hi-root[^{]*\{[^}]*--shiki-/s,
-    );
+  it("uses the semantic class contract for HTML Preview without a legacy theme palette", () => {
+    expect(css).toContain(".zd-html-preview-code pre.hi-root {");
+    expect(css).toContain(".zd-html-preview-code pre.hi-root code {");
+    expect(css).not.toContain(".shiki");
+    expect(css).not.toContain("--shiki-");
+    expect(css).not.toMatch(/Catppuccin|Vitesse/i);
   });
 });

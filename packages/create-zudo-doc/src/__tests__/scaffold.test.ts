@@ -1150,6 +1150,8 @@ describe("scaffold — generated package.json", () => {
     expect(pkg.dependencies["diff"]).toBeDefined();
     expect(pkg.dependencies["@takazudo/zdtp"]).toBeDefined();
     expect(pkg.dependencies["astro"]).toBeUndefined();
+    expect(pkg.dependencies["shiki"]).toBeUndefined();
+    expect(pkg.dependencies["@shikijs/transformers"]).toBeUndefined();
   });
 
   it("includes zod, preact-render-to-string, and katex as always-on runtime deps", async () => {

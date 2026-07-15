@@ -610,7 +610,6 @@
     "@takazudo/zfb-runtime": "^0.1.0-next.85",
     "@takazudo/zudo-doc-history-server": "^3.3.0",
     "@takazudo/zdtp": "^0.4.9",
-    "shiki": "^4.0.2",
     "zod": "^4.3.6",
     "katex": "^0.16.0",
     "diff": "^8.0.0"
@@ -623,9 +622,6 @@
       "optional": true
     },
     "@takazudo/zfb-md-wasm": {
-      "optional": true
-    },
-    "shiki": {
       "optional": true
     },
     "katex": {
@@ -648,7 +644,6 @@
     "cross-env": "^7.0.3",
     "preact": "^10.29.1",
     "preact-render-to-string": "^6.6.6",
-    "shiki": "^4.0.2",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
     "vitest": "^4.1.0",

@@ -18,12 +18,12 @@ This package provides the missing-by-design framework concerns:
 - **Head injection** (`./head`) — canonical, og:\*, twitter:\*, robots, preload hints, RSS link, sitemap link, theme-color — byte-equal to today's legacy doc-layout output.
 - **SSR-skip wrappers** (`./ssr-skip`) — `<AiChatModalIsland>`, `<ImageEnlargeIsland>`, `<DesignTokenTweakPanelIsland>`, `<MockInitIsland>` — wrap zfb's `<Island ssrFallback>` with the right fallback markup so doc pages don't have to re-implement the SSR-skip pattern.
 
-## Optional peer dependency: shiki
+## Optional peer dependency: `@takazudo/zfb-md-wasm`
 
-`./html-preview-wrapper`'s `<HighlightedCode>` lazily `import("shiki")`s at runtime for client-side syntax highlighting. `shiki` is declared as an **optional peerDependency** — install it in your project if you use that subpath:
+`./html-preview-wrapper`'s `<HighlightedCode>` lazily imports the package root and calls `highlightCode()` for client-side semantic syntax highlighting. `@takazudo/zfb-md-wasm` is declared as an **optional peerDependency** — install the same prerelease version as the rest of your zfb packages if you use that subpath:
 
 ```sh
-pnpm add shiki
+pnpm add @takazudo/zfb-md-wasm
 ```
 
 Projects scaffolded by `create-zudo-doc` already include it. If you never render `<HtmlPreview>` / `<HighlightedCode>`, you can omit it.
