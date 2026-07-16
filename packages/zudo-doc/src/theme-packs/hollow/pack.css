@@ -1,0 +1,427 @@
+/* ============================================================
+   Hollow — zudo-doc theme pack (ADR docs/adr/theme-packs.md;
+   epic Theme Batch 3, sub-issue #2842)
+
+   Dark violet space: a CSS-only starfield (two tiled star layers
+   + violet/pink nebula washes, fixed attachment) behind a
+   transparent floating sidebar, razor-square midnight chrome, and
+   strict neon discipline — pink belongs to headings and active
+   markers only (with a dark-mode-only h1 glow), violet to links,
+   everything else stays calm midnight indigo. Space Grotesk
+   carries all prose and headings; Space Mono the code.
+
+   Every rule below is scoped under html[data-theme-pack="hollow"]
+   — this is what makes the runtime pack swap atomic (Decision 3)
+   and lets the validator prove a pack can never leak styles while
+   inactive (Decision 6.7). The @font-face blocks are the sole
+   exception (at-rules can't be selector-scoped).
+
+   The prototype's --hollow-* helper properties are not part of
+   the closed token manifest, so their light-dark() values are
+   inlined at each use site:
+     pink         light-dark(oklch(0.52 0.2 350), oklch(0.78 0.17 348))
+     violet       = var(--zd-accent)
+     star         light-dark(oklch(0.5 0.07 300 / 0.16), oklch(0.9 0.06 300 / 0.3))
+     star-dim     light-dark(oklch(0.5 0.07 320 / 0.09), oklch(0.85 0.08 320 / 0.16))
+     nebula       light-dark(oklch(0.7 0.1 300 / 0.1), oklch(0.42 0.15 300 / 0.22))
+     nebula-pink  light-dark(oklch(0.75 0.12 345 / 0.06), oklch(0.48 0.16 345 / 0.13))
+
+   Prototype-selector adaptations against the REAL DOM (tokens-dump
+   §6 + component sources):
+   - `html[data-theme="dark"] .zd-content h1` (glow) → packs may
+     never select on [data-theme] (Decision 6.2); the dark-only
+     glow is expressed as a light-dark() shadow color whose light
+     value is transparent.
+   - `--radius` / `--radius-lg` are not manifest tokens — the
+     razor-square shape is carried by --zdc-admonition-radius /
+     --zdc-card-radius plus explicit border-radius: 0 on the
+     remaining rounded surfaces.
+   - `.doc-pager` → `.zd-content > nav:last-of-type:not([aria-label])`
+     (the DocPager nav is the article's last unlabelled direct-child
+     nav; breadcrumb and NavCardGrid navs carry aria-labels — the
+     `> a` child combinator keeps NavCardGrid card links out).
+   - `.toc-active` → `nav[data-zd-toc] a[aria-current="true"]`
+     (toc/toc.tsx marks the active entry with aria-current).
+   - `footer[data-footer]` → `.zd-sidebar-content-wrapper footer`
+     (no data-footer attribute in the real DOM).
+   - `.sb-group a[data-nav-active]` → `a[data-nav-active]` (the
+     real active link already paints --zdc-nav-active-indicator-color
+     as its fill with bg-token text — only the token + weight land).
+   - the flyout/launcher mock classes → the switcher's stable
+     role/aria-label handles (the swissgrid precedent).
+   - `.zd-content .lead` — prototype-mock class with no stable
+     hook; NOT ported.
+   ============================================================ */
+
+/* ---- Space Grotesk — geometric grotesque for prose AND display
+        (the pack's single voice). Variable 300–700, latin subset
+        only (a stray latin-ext glyph falls back to the system
+        stack). No italic exists — emphasis stays upright-adjacent
+        via synthesis, which suits the geometric brief. ---- */
+
+@font-face {
+  font-family: "Space Grotesk";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("./fonts/SpaceGrotesk-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- Space Mono — retro-futurist mono for the midnight code
+        panels. Static 400 + 700 (real bold for emphasized tokens)
+        + true italic 400 (comments read italic in this pack). ---- */
+
+@font-face {
+  font-family: "Space Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/SpaceMono-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Space Mono";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/SpaceMono-700-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Space Mono";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/SpaceMono-400-italic-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+html[data-theme-pack="hollow"] {
+  /* Tier-2 semantic roles — pale violet-tinted paper by day, deep
+     violet space after dark. Both modes always via light-dark(). */
+  --zd-bg: light-dark(oklch(0.962 0.012 300), oklch(0.155 0.035 295));
+  --zd-fg: light-dark(oklch(0.24 0.045 295), oklch(0.93 0.015 295));
+  --zd-selection-bg: light-dark(oklch(0.86 0.09 348), oklch(0.4 0.14 348));
+  --zd-selection-fg: light-dark(oklch(0.2 0.05 295), oklch(0.97 0.01 340));
+  --zd-surface: light-dark(oklch(0.976 0.008 300), oklch(0.132 0.032 293));
+  --zd-muted: light-dark(oklch(0.46 0.05 297), oklch(0.71 0.045 293));
+  --zd-accent: light-dark(oklch(0.45 0.17 300), oklch(0.74 0.14 300));
+  --zd-accent-hover: light-dark(oklch(0.38 0.19 315), oklch(0.83 0.11 305));
+  --zd-code-bg: light-dark(oklch(0.934 0.018 298), oklch(0.122 0.032 293));
+  --zd-code-fg: light-dark(oklch(0.26 0.045 295), oklch(0.9 0.02 293));
+  --zd-success: light-dark(oklch(0.44 0.11 170), oklch(0.78 0.12 172));
+  --zd-danger: light-dark(oklch(0.5 0.17 18), oklch(0.7 0.16 15));
+  --zd-warning: light-dark(oklch(0.51 0.11 75), oklch(0.8 0.12 80));
+  --zd-info: light-dark(oklch(0.46 0.13 258), oklch(0.75 0.1 250));
+
+  /* syntax — all 9 roles, both modes: neon-restrained midnight
+     code. Pink keywords, violet callables, aqua strings, amber
+     numbers — each neon rationed to one role. inserted/deleted
+     reuse the success/danger hues. */
+  --zd-syntax-comment: light-dark(oklch(0.51 0.035 292), oklch(0.62 0.045 292));
+  --zd-syntax-string: light-dark(oklch(0.45 0.1 195), oklch(0.83 0.1 190));
+  --zd-syntax-number: light-dark(oklch(0.5 0.11 80), oklch(0.84 0.11 85));
+  --zd-syntax-keyword: light-dark(oklch(0.53 0.2 348), oklch(0.76 0.17 347));
+  --zd-syntax-callable: light-dark(oklch(0.46 0.16 300), oklch(0.76 0.13 300));
+  --zd-syntax-type: light-dark(oklch(0.45 0.1 252), oklch(0.8 0.09 250));
+  --zd-syntax-name: light-dark(oklch(0.25 0.04 295), oklch(0.92 0.02 292));
+  --zd-syntax-inserted: light-dark(oklch(0.44 0.11 170), oklch(0.78 0.12 172));
+  --zd-syntax-deleted: light-dark(oklch(0.5 0.17 18), oklch(0.7 0.16 15));
+
+  /* fonts — one geometric voice: Space Grotesk everywhere prose
+     lives, Space Mono in the code panels. */
+  --font-sans: "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Tier-3 component seams — tight-tracked Grotesk headings;
+     razor-square shape language (radius 0 everywhere); the sidebar
+     active pill is the one pink fill outside headings. */
+  --zdc-doc-title-font: var(--font-sans);
+  --zdc-doc-title-weight: 700;
+  --zdc-doc-title-tracking: -0.03em;
+  --zdc-doc-h2-font: var(--font-sans);
+  --zdc-doc-h2-weight: 600;
+  --zdc-doc-h2-tracking: -0.015em;
+  --zdc-doc-link-decoration: underline;
+  --zdc-admonition-radius: 0;
+  --zdc-card-radius: 0;
+  --zdc-nav-active-indicator-color: light-dark(oklch(0.52 0.2 350), oklch(0.78 0.17 348));
+}
+
+/* ---- deep-space backdrop: nebula washes + two star layers,
+        fixed so the sky holds still while the page scrolls ---- */
+html[data-theme-pack="hollow"] body {
+  background-image:
+    radial-gradient(
+      70rem 44rem at 108% -10%,
+      light-dark(oklch(0.7 0.1 300 / 0.1), oklch(0.42 0.15 300 / 0.22)),
+      transparent 68%
+    ),
+    radial-gradient(
+      56rem 38rem at -18% 30%,
+      light-dark(oklch(0.75 0.12 345 / 0.06), oklch(0.48 0.16 345 / 0.13)),
+      transparent 66%
+    ),
+    radial-gradient(
+      1.3px 1.3px at 23px 41px,
+      light-dark(oklch(0.5 0.07 300 / 0.16), oklch(0.9 0.06 300 / 0.3)),
+      transparent
+    ),
+    radial-gradient(
+      1px 1px at 141px 97px,
+      light-dark(oklch(0.5 0.07 320 / 0.09), oklch(0.85 0.08 320 / 0.16)),
+      transparent
+    ),
+    radial-gradient(
+      1.5px 1.5px at 247px 202px,
+      light-dark(oklch(0.5 0.07 300 / 0.16), oklch(0.9 0.06 300 / 0.3)),
+      transparent
+    ),
+    radial-gradient(
+      1px 1px at 317px 138px,
+      light-dark(oklch(0.5 0.07 320 / 0.09), oklch(0.85 0.08 320 / 0.16)),
+      transparent
+    ),
+    radial-gradient(
+      1.2px 1.2px at 79px 283px,
+      light-dark(oklch(0.5 0.07 320 / 0.09), oklch(0.85 0.08 320 / 0.16)),
+      transparent
+    );
+  background-size:
+    100% 100%,
+    100% 100%,
+    373px 373px,
+    373px 373px,
+    373px 373px,
+    373px 373px,
+    373px 373px;
+  background-attachment: fixed;
+}
+
+/* sidebar floats transparently over the starfield */
+html[data-theme-pack="hollow"] #desktop-sidebar {
+  background-color: transparent;
+  border-right-color: color-mix(in oklch, var(--zd-accent) 26%, transparent);
+}
+
+/* sidebar active: the pink pill fill comes from the indicator
+   token above (the real link already paints bg-token text over
+   it); sharpen the label */
+html[data-theme-pack="hollow"] a[data-nav-active] {
+  font-weight: 600;
+}
+
+/* header: opaque panel with a faint violet drift + violet hairline */
+html[data-theme-pack="hollow"] header[data-header] {
+  border-bottom-color: color-mix(in oklch, var(--zd-accent) 32%, transparent);
+  background-image: linear-gradient(
+    to right,
+    color-mix(in oklch, var(--zd-accent) 8%, transparent),
+    transparent 45%
+  );
+}
+html[data-theme-pack="hollow"] [data-header-logo] {
+  letter-spacing: -0.025em;
+}
+html[data-theme-pack="hollow"] [data-header-logo]::after {
+  content: "·";
+  color: light-dark(oklch(0.52 0.2 350), oklch(0.78 0.17 348));
+  margin-left: 0.18rem;
+}
+
+/* ---- neon discipline: headings are the only pink prose. The h1
+        glow is dark-mode-only — its light value is transparent
+        (packs may not select on [data-theme]). ---- */
+html[data-theme-pack="hollow"] .zd-content h1,
+html[data-theme-pack="hollow"] .zd-content h2,
+html[data-theme-pack="hollow"] .zd-content h3 {
+  color: light-dark(oklch(0.52 0.2 350), oklch(0.78 0.17 348));
+}
+html[data-theme-pack="hollow"] .zd-content h1 {
+  text-shadow: 0 0 22px light-dark(transparent, oklch(0.7 0.19 348 / 0.38));
+}
+
+/* h2: the SSR-inlined gradient bar is re-pointed at a fading pink
+   rule (Decision 6.6's sole allowlisted !important carve-out —
+   border-image only) */
+html[data-theme-pack="hollow"] .zd-content h2 {
+  border-image: linear-gradient(
+      to right,
+      color-mix(
+        in oklch,
+        light-dark(oklch(0.52 0.2 350), oklch(0.78 0.17 348)) 62%,
+        transparent
+      ),
+      transparent 72%
+    )
+    1 !important;
+}
+
+/* links: violet, quiet underline that ignites on hover */
+html[data-theme-pack="hollow"] .zd-content a {
+  text-decoration-color: color-mix(in oklch, var(--zd-accent) 45%, transparent);
+  text-underline-offset: 3px;
+}
+html[data-theme-pack="hollow"] .zd-content a:hover {
+  text-decoration-color: currentColor;
+}
+
+/* inline code: square chip with a faint violet edge */
+html[data-theme-pack="hollow"] .zd-content code:not(pre code) {
+  border: 1px solid color-mix(in oklch, var(--zd-accent) 24%, transparent);
+  border-radius: 0;
+}
+
+/* code block: deepest panel on the page, violet-lit top edge;
+   comments speak in the true mono italic */
+html[data-theme-pack="hollow"] pre.hi-root {
+  border-radius: 0;
+  border-color: color-mix(in oklch, var(--zd-accent) 30%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in oklch, var(--zd-accent) 28%, transparent);
+}
+html[data-theme-pack="hollow"] .hi-com {
+  font-style: italic;
+}
+
+/* admonitions: emoji out, geometric glyphs in; typographic labels */
+html[data-theme-pack="hollow"] [data-admonition="note"] .admonition-title::before {
+  content: "◈ ";
+}
+html[data-theme-pack="hollow"] [data-admonition="tip"] .admonition-title::before {
+  content: "✦ ";
+}
+html[data-theme-pack="hollow"] [data-admonition="warning"] .admonition-title::before {
+  content: "△ ";
+}
+html[data-theme-pack="hollow"] [data-admonition] .admonition-title {
+  font-family: var(--font-sans);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+}
+
+/* blockquote: violet spine, spoken softly */
+html[data-theme-pack="hollow"] .zd-content blockquote {
+  border-left-color: color-mix(in oklch, var(--zd-accent) 60%, transparent);
+  font-style: italic;
+}
+
+/* table: violet rules under headers */
+html[data-theme-pack="hollow"] .zd-content th {
+  border-bottom-color: color-mix(in oklch, var(--zd-accent) 45%, transparent);
+  letter-spacing: 0.02em;
+}
+
+/* hr: a thin violet horizon */
+html[data-theme-pack="hollow"] .zd-content hr {
+  border-top: none;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    color-mix(in oklch, var(--zd-accent) 55%, transparent),
+    transparent
+  );
+}
+
+/* ---- TOC: the active heading is lit pink, not blocked out. The
+        real Toc island marks the active entry with
+        aria-current="true" (toc/toc.tsx). ---- */
+html[data-theme-pack="hollow"] nav[data-zd-toc] ul {
+  border-left-color: color-mix(in oklch, var(--zd-accent) 30%, transparent);
+}
+html[data-theme-pack="hollow"] nav[data-zd-toc] a[aria-current="true"] {
+  background: color-mix(
+    in oklch,
+    light-dark(oklch(0.52 0.2 350), oklch(0.78 0.17 348)) 14%,
+    transparent
+  );
+  color: light-dark(oklch(0.52 0.2 350), oklch(0.78 0.17 348));
+  box-shadow: inset 2px 0 0 light-dark(oklch(0.52 0.2 350), oklch(0.78 0.17 348));
+  border-radius: 0;
+}
+
+/* ---- pager: square translucent cards that glow pink on hover.
+        The DocPager is the article's LAST unlabelled direct-child
+        nav (breadcrumb and NavCardGrid navs carry aria-labels). ---- */
+html[data-theme-pack="hollow"] .zd-content > nav:last-of-type:not([aria-label]) > a {
+  background: color-mix(in srgb, var(--zd-surface) 60%, transparent);
+  border-radius: 0;
+}
+html[data-theme-pack="hollow"] .zd-content > nav:last-of-type:not([aria-label]) > a:hover {
+  border-color: light-dark(oklch(0.52 0.2 350), oklch(0.78 0.17 348));
+  box-shadow: 0 0 16px -6px
+    color-mix(
+      in oklch,
+      light-dark(oklch(0.52 0.2 350), oklch(0.78 0.17 348)) 65%,
+      transparent
+    );
+}
+
+/* footer: calm panel, violet hairline (the real footer has no
+   data-footer hook; it lives inside the wrapper) */
+html[data-theme-pack="hollow"] .zd-sidebar-content-wrapper footer {
+  border-top-color: color-mix(in oklch, var(--zd-accent) 26%, transparent);
+}
+
+/* ---- theme-pack switcher: the pack's own card — square, neon
+        pink top edge, violet halo (the flyout/launcher carry no
+        dedicated hook classes; their accessible names are the
+        stable handle) ---- */
+html[data-theme-pack="hollow"] div[role="dialog"][aria-label="Theme pack switcher"] {
+  border-radius: 0;
+  border-color: color-mix(in oklch, var(--zd-accent) 45%, transparent);
+  border-top: 2px solid light-dark(oklch(0.52 0.2 350), oklch(0.78 0.17 348));
+  box-shadow:
+    0 0 24px -8px color-mix(in oklch, var(--zd-accent) 55%, transparent),
+    0 18px 50px -12px oklch(0.2 0.1 300 / 0.55);
+}
+html[data-theme-pack="hollow"] div[role="dialog"][aria-label="Theme pack switcher"] span {
+  border-radius: 0;
+}
+html[data-theme-pack="hollow"] div[role="dialog"][aria-label="Theme pack switcher"] button {
+  border-radius: 0;
+}
+html[data-theme-pack="hollow"] div[role="dialog"][aria-label="Theme pack switcher"] button:hover {
+  border-color: light-dark(oklch(0.52 0.2 350), oklch(0.78 0.17 348));
+  color: light-dark(oklch(0.52 0.2 350), oklch(0.78 0.17 348));
+}
+html[data-theme-pack="hollow"] button[aria-haspopup="dialog"][aria-label="Theme pack switcher"] {
+  border-radius: 0;
+}
+html[data-theme-pack="hollow"] button[aria-haspopup="dialog"][aria-label="Theme pack switcher"]:hover {
+  color: light-dark(oklch(0.52 0.2 350), oklch(0.78 0.17 348));
+  border-color: light-dark(oklch(0.52 0.2 350), oklch(0.78 0.17 348));
+  box-shadow: 0 0 18px -4px
+    color-mix(
+      in oklch,
+      light-dark(oklch(0.52 0.2 350), oklch(0.78 0.17 348)) 60%,
+      transparent
+    );
+}
+
+/* browse-all dialog: same square treatment */
+html[data-theme-pack="hollow"] dialog[aria-labelledby="zd-theme-pack-dialog-title"] {
+  border-radius: 0;
+  border-top: 2px solid light-dark(oklch(0.52 0.2 350), oklch(0.78 0.17 348));
+}
+html[data-theme-pack="hollow"] dialog[aria-labelledby="zd-theme-pack-dialog-title"] button {
+  border-radius: 0;
+}
+
+/* focus ring joins the neon system */
+html[data-theme-pack="hollow"] :focus-visible {
+  outline: 2px solid light-dark(oklch(0.52 0.2 350), oklch(0.78 0.17 348));
+  outline-offset: 2px;
+}
