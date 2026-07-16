@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "slug": "futura-editorial",
+  "name": "Futura Editorial",
+  "description": "Normal-weight geometric Futura headings over Noto Sans body — clean white, near-black ink, one restrained red accent.",
+  "mode": "light",
+  "version": "1.0.0",
+  "fonts": {
+    "sans": "Noto Sans",
+    "mono": "Space Mono",
+    "display": "Jost",
+    "loaded": ["Jost", "Noto Sans", "Space Mono"]
+  },
+  "preview": {
+    "light": {
+      "bg": "oklch(1 0 0)",
+      "fg": "oklch(0.17 0 0)",
+      "accent": "oklch(0.505 0.18 28)",
+      "syntax": {
+        "keyword": "oklch(0.505 0.18 28)",
+        "string": "oklch(0.47 0.09 160)",
+        "comment": "oklch(0.52 0 0)",
+        "callable": "oklch(0.45 0.1 250)"
+      }
+    },
+    "dark": {
+      "bg": "oklch(0.165 0 0)",
+      "fg": "oklch(0.935 0 0)",
+      "accent": "oklch(0.72 0.15 29)",
+      "syntax": {
+        "keyword": "oklch(0.72 0.15 29)",
+        "string": "oklch(0.76 0.1 160)",
+        "comment": "oklch(0.63 0 0)",
+        "callable": "oklch(0.73 0.095 250)"
+      }
+    }
+  }
+}

@@ -1,0 +1,471 @@
+/* ============================================================
+   Washi — zudo-doc theme pack (ADR docs/adr/theme-packs.md)
+
+   Warm washi paper, sumi ink, and ai-iro indigo seals — quiet
+   Japanese stationery for calm documentation. Zen Kaku Gothic New
+   prose over a CSS-only paper grain, Shippori Mincho headings, an
+   indigo hanko (判子) stamp language: a tilted 藍 seal on the h1,
+   kanji seal chips on admonitions, an asymmetric two-tone h2 rule.
+   Everything is cut square (washi is cut straight — no rounding),
+   with a generous 1.95 prose leading. Light = raw warm paper;
+   dark = aizome night — the same sheet dyed indigo-charcoal, warm
+   paper-white ink, asagi (pale indigo) seals.
+
+   Every rule below is scoped under html[data-theme-pack="washi"]
+   — this is what makes the runtime pack swap atomic (Decision 3)
+   and lets the validator prove a pack can never leak styles while
+   inactive (Decision 6.7). The @font-face blocks are the sole
+   exception (at-rules can't be selector-scoped).
+
+   CJK font rule (Decision 5): packs do NOT ship CJK subsets. All
+   three families load their latin subset only; every family stack
+   ends in the correct bare generic (sans-serif / serif / monospace)
+   so the platform's own Japanese fonts carry CJK glyphs. The 藍 and
+   kanji chip glyphs below are decorative CSS content characters
+   rendered by that platform CJK fallback — intentional.
+
+   Prototype-selector adaptations against the REAL DOM (tokens-dump
+   §6 + component sources), noted inline where they matter:
+   - `.lead`            → `.zd-content > p:first-of-type` (the
+                          description paragraph DocContentHeader
+                          emits; broadsheet precedent + known limit)
+   - `.sb-group > p::before` (sidebar group-label seal squares) →
+                          NOT ported — sidebar group labels have no
+                          stable hook; the sidebar keeps its
+                          vertical-fiber sheet + accent hover
+   - `.toc-active`      → `nav[data-zd-toc] a[aria-current="true"]`
+   - `.doc-pager`       → `.zd-content > nav:last-of-type:not([aria-label])`
+                          (DocPager is the article's last direct-child
+                          nav and ships no aria-label; the :not guard
+                          excludes NavCardGrid "Child pages")
+   - `footer[data-footer]` → `.zd-sidebar-content-wrapper > footer`
+                          (no data-footer attribute in the real DOM)
+   - the theme-switcher flyout/launcher (the square indigo hanko
+     launcher + 和紙 stamp) has NO stable hook — intentionally NOT
+     ported (broadsheet precedent)
+   - prototype `--radius`/`--radius-lg` were structural mock tokens,
+     not part of the pack token contract — squareness lands via
+     `--zdc-admonition-radius: 0`, `--zdc-card-radius: 0`, and
+     explicit border-radius: 0 on pager cards + inline code
+   - prototype `p { margin-bottom: 1.3rem }` rhythm → NOT ported;
+     the real DOM's flow-space owl owns vertical rhythm (margin-top
+     based) — the 1.95 leading alone carries the airy feel
+   ============================================================ */
+
+/* ---- Zen Kaku Gothic New — body/prose gothic (static 400/500/700;
+        500 keeps chrome "medium" weights true, 700 for bold prose).
+        Latin subsets only (all three families) — the platform's own
+        Japanese fonts render CJK via the bare generic. ---- */
+
+@font-face {
+  font-family: "Zen Kaku Gothic New";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/ZenKakuGothicNew-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Zen Kaku Gothic New";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./fonts/ZenKakuGothicNew-500-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Zen Kaku Gothic New";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/ZenKakuGothicNew-700-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- Shippori Mincho — heading/display serif (static 500/600/700;
+        600 is the heading weight, 700 the logo, 500 catches the
+        normal-weight mincho voices: lead, blockquote). ---- */
+
+@font-face {
+  font-family: "Shippori Mincho";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./fonts/ShipporiMincho-500-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Shippori Mincho";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("./fonts/ShipporiMincho-600-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Shippori Mincho";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/ShipporiMincho-700-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- M PLUS 1 Code — code face (static 400 + 500; 500 keeps the
+        inline-code medium weight true). ---- */
+
+@font-face {
+  font-family: "M PLUS 1 Code";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/MPlus1Code-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "M PLUS 1 Code";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./fonts/MPlus1Code-500-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+html[data-theme-pack="washi"] {
+  /* Tier-2 semantic roles — warm off-white washi + sumi ink + ai-iro
+     indigo (#274a78). Dark: aizome night — indigo-dyed charcoal paper,
+     warm paper-white ink, asagi (pale indigo) seals. Same paper, dyed
+     instead of raw. Both modes always via light-dark(). */
+  --zd-bg: light-dark(#f6f1e4, #1b212c);
+  --zd-fg: light-dark(#2b2822, #eae3d2);
+  --zd-selection-bg: light-dark(#274a78, #8ab0dd);
+  --zd-selection-fg: light-dark(#f6f1e4, #161b24);
+  --zd-surface: light-dark(#faf6ec, #202836);
+  --zd-muted: light-dark(#6d6553, #98a2b0);
+  --zd-accent: light-dark(#274a78, #8ab0dd);
+  --zd-accent-hover: light-dark(#1c3a62, #aecaec);
+  --zd-code-bg: light-dark(#efe9d8, #222a38);
+  --zd-code-fg: light-dark(#2b2822, #ece5d5);
+  --zd-success: light-dark(#3f6237, #a3c98e);
+  --zd-danger: light-dark(#a03a2e, #e0968a);
+  --zd-warning: light-dark(#875c12, #d9ac60);
+  --zd-info: light-dark(#31608f, #8ab0dd);
+
+  /* syntax — all 9 roles, both modes: sumi ink annotated with mineral
+     pigments. Moss (strings), kuchiba ochre (numbers), ai indigo
+     (keywords), muted shu vermilion (callables), asagi teal (types);
+     inserted/deleted reuse the moss and vermilion state hues. */
+  /* dark comment nudged from the prototype's #828f9f to keep AA
+     contrast on the aizome code sheet (4.68:1 vs 4.38:1) */
+  --zd-syntax-comment: light-dark(#6f6654, #8894a4);
+  --zd-syntax-string: light-dark(#41653a, #a9cb90);
+  --zd-syntax-number: light-dark(#8f5716, #ddaa6e);
+  --zd-syntax-keyword: light-dark(#274a78, #97b9e6);
+  --zd-syntax-callable: light-dark(#963f34, #e0a49a);
+  --zd-syntax-type: light-dark(#2a6167, #85c7cc);
+  --zd-syntax-name: light-dark(#2b2822, #ece5d5);
+  --zd-syntax-inserted: light-dark(#3f6237, #a3c98e);
+  --zd-syntax-deleted: light-dark(#a03a2e, #e0968a);
+
+  /* fonts — JP-friendly gothic prose, mincho display face for
+     headings, M PLUS 1 Code for code. Latin subsets loaded; each
+     stack ends in its bare generic so platform CJK fonts carry
+     Japanese glyphs (Decision 5). */
+  --font-sans: "Zen Kaku Gothic New", system-ui, sans-serif;
+  --font-mono: "M PLUS 1 Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-display: "Shippori Mincho", serif;
+
+  /* Tier-3 component seams — mincho headings at 600, gently opened
+     tracking, indigo active-nav seal. Washi is cut straight: zero
+     radii on admonitions and cards. */
+  --zdc-doc-title-font: var(--font-display);
+  --zdc-doc-title-weight: 600;
+  --zdc-doc-title-tracking: 0.02em;
+  --zdc-doc-h2-font: var(--font-display);
+  --zdc-doc-h2-weight: 600;
+  --zdc-doc-h2-tracking: 0.015em;
+  --zdc-admonition-radius: 0;
+  --zdc-admonition-border-width: 3px;
+  --zdc-card-radius: 0;
+  --zdc-nav-active-indicator-color: var(--zd-accent);
+}
+
+/* ---- Washi extras ---- */
+
+/* signature move #1 — CSS-only paper grain: two fleck sizes + faint
+   horizontal fiber lines on the page sheet */
+html[data-theme-pack="washi"] body {
+  background-image:
+    radial-gradient(
+      light-dark(rgb(101 78 42 / 0.05), rgb(214 205 180 / 0.035)) 1px,
+      transparent 1.2px
+    ),
+    radial-gradient(
+      light-dark(rgb(101 78 42 / 0.033), rgb(214 205 180 / 0.022)) 1px,
+      transparent 1.2px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 3px,
+      light-dark(rgb(80 60 30 / 0.014), rgb(220 210 185 / 0.012)) 3px 4px
+    );
+  background-size:
+    9px 11px,
+    17px 13px,
+    auto;
+  background-position:
+    0 0,
+    6px 7px,
+    0 0;
+}
+
+/* header and footer: single-fleck grain over the surface tone */
+html[data-theme-pack="washi"] header[data-header],
+html[data-theme-pack="washi"] .zd-sidebar-content-wrapper > footer {
+  background-image: radial-gradient(
+    light-dark(rgb(101 78 42 / 0.04), rgb(214 205 180 / 0.028)) 1px,
+    transparent 1.2px
+  );
+  background-size: 11px 13px;
+}
+
+/* sidebar: a second sheet of paper — slightly deeper tone, vertical
+   fibers (distinct from the page sheet's horizontal ones) */
+html[data-theme-pack="washi"] #desktop-sidebar {
+  background-color: light-dark(#f2ecdc, #191f29);
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0 5px,
+    light-dark(rgb(90 70 40 / 0.025), rgb(225 215 190 / 0.018)) 5px 6px
+  );
+}
+
+/* a thin indigo band across the top of the page — the binding edge */
+html[data-theme-pack="washi"] header[data-header] {
+  border-top: 3px solid var(--zd-accent);
+}
+
+/* header logo: mincho wordmark with a small square indigo mark */
+html[data-theme-pack="washi"] [data-header-logo] {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+html[data-theme-pack="washi"] [data-header-logo]::before {
+  content: "";
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  background: var(--zd-accent);
+  margin-right: 0.55em;
+  vertical-align: 0.06em;
+}
+
+/* vertical rhythm: generous JP-friendly 1.95 leading */
+html[data-theme-pack="washi"] .zd-content {
+  line-height: 1.95;
+  letter-spacing: 0.01em;
+}
+
+/* the lead: mincho standfirst. The prototype's `.lead` is the
+   description paragraph DocContentHeader renders as the FIRST
+   direct-child <p> of the article. Known limit (broadsheet
+   precedent): the description is optional frontmatter — on a page
+   without one the first BODY paragraph takes the mincho voice
+   instead (reads as an emphasized opening paragraph, fails soft). */
+html[data-theme-pack="washi"] .zd-content > p:first-of-type {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  line-height: 1.8;
+  color: color-mix(in srgb, var(--zd-fg) 72%, var(--zd-bg));
+}
+
+/* signature move #2 — the h1 carries a small tilted 藍 seal, like a
+   maker's hanko stamp on the sheet (platform CJK font renders the
+   glyph — decorative content character, Decision 5 CJK rule) */
+html[data-theme-pack="washi"] .zd-content h1::after {
+  content: "藍";
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1;
+  color: light-dark(#f6f1e4, #161b24);
+  background: var(--zd-accent);
+  padding: 0.3em 0.32em 0.24em;
+  margin-left: 0.8rem;
+  vertical-align: 0.5em;
+  border-radius: 2px;
+  transform: rotate(-4deg);
+  box-shadow: 0 1px 2px light-dark(rgb(43 40 34 / 0.25), rgb(0 0 0 / 0.5));
+}
+
+/* signature move #3 — quiet asymmetry: the h2 rule is two-tone, a
+   short indigo stroke then a long faded one. Replaces the
+   SSR-inlined `style="border-image:linear-gradient(...)"` — the
+   border-image !important carve-out (Decision 6.6), here re-pointing
+   the gradient rather than clearing it. */
+html[data-theme-pack="washi"] .zd-content h2 {
+  border-top-width: 2px;
+  border-image: linear-gradient(
+      to right,
+      var(--zd-accent) 0 3.5rem,
+      color-mix(in srgb, var(--zd-muted) 38%, transparent) 3.5rem 100%
+    )
+    1 !important;
+}
+
+/* h3: an unstamped (outline) seal square */
+html[data-theme-pack="washi"] .zd-content h3::before {
+  content: "";
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  border: 1px solid var(--zd-accent);
+  margin-right: 0.5em;
+  vertical-align: 0.05em;
+}
+
+/* links: patient underlines */
+html[data-theme-pack="washi"] .zd-content a {
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+
+/* blockquote: mincho voice on an indigo thread */
+html[data-theme-pack="washi"] .zd-content blockquote {
+  font-family: var(--font-display);
+  border-left: 2px solid var(--zd-accent);
+  padding-left: 1.2rem;
+  color: color-mix(in srgb, var(--zd-fg) 76%, var(--zd-bg));
+}
+
+/* hr: a torn deckle edge */
+html[data-theme-pack="washi"] .zd-content hr {
+  border-top: 1px dashed color-mix(in srgb, var(--zd-muted) 65%, transparent);
+}
+
+/* code blocks: an annotated margin with an indigo rule; faint top
+   sheen like a pressed sheet */
+html[data-theme-pack="washi"] pre.hi-root {
+  border-left: 3px solid color-mix(in srgb, var(--zd-accent) 75%, transparent);
+  box-shadow: inset 0 1px 0 light-dark(rgb(255 255 255 / 0.5), rgb(255 255 255 / 0.04));
+}
+
+/* inline code: hairline-framed square chip */
+html[data-theme-pack="washi"] .zd-content code:not(pre code) {
+  border: 1px solid color-mix(in srgb, var(--zd-muted) 28%, transparent);
+  padding: 1px 0.35rem;
+  border-radius: 0;
+}
+
+/* signature move #4 — admonitions: kanji seal chips instead of emoji,
+   across all seven variants; mincho titles */
+html[data-theme-pack="washi"] [data-admonition] .admonition-title {
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+}
+html[data-theme-pack="washi"] [data-admonition] .admonition-title::before {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4em;
+  height: 1.4em;
+  margin-right: 0.55em;
+  font-family: var(--font-display);
+  font-size: 0.82em;
+  font-weight: 600;
+  line-height: 1;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  vertical-align: -0.22em;
+}
+html[data-theme-pack="washi"] [data-admonition="note"] .admonition-title::before {
+  content: "註"; /* annotation */
+}
+html[data-theme-pack="washi"] [data-admonition="tip"] .admonition-title::before {
+  content: "智"; /* wisdom */
+}
+html[data-theme-pack="washi"] [data-admonition="info"] .admonition-title::before {
+  content: "報"; /* information */
+}
+html[data-theme-pack="washi"] [data-admonition="warning"] .admonition-title::before {
+  content: "警"; /* warning */
+}
+html[data-theme-pack="washi"] [data-admonition="important"] .admonition-title::before {
+  content: "要"; /* essential */
+}
+html[data-theme-pack="washi"] [data-admonition="danger"] .admonition-title::before {
+  content: "危"; /* danger */
+}
+html[data-theme-pack="washi"] [data-admonition="caution"] .admonition-title::before {
+  content: "注"; /* attention */
+}
+
+/* table: indigo-threaded header row */
+html[data-theme-pack="washi"] .zd-content th {
+  background: color-mix(in srgb, var(--zd-accent) 8%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--zd-accent) 55%, transparent);
+  letter-spacing: 0.04em;
+}
+
+/* sidebar: indigo hover ink. The active link's background is already
+   the indigo seal (--zdc-nav-active-indicator-color) with bg-colored
+   text — exclude it so hover never paints accent-on-accent. */
+html[data-theme-pack="washi"] #desktop-sidebar a:not([data-nav-active]):hover {
+  color: var(--zd-accent);
+}
+
+/* TOC: indigo thread rail, indigo hover, solid indigo seal on the
+   active entry (real DOM marks it aria-current="true"; its text-bg
+   utility keeps paper-colored text on the seal) */
+html[data-theme-pack="washi"] nav[data-zd-toc] ul {
+  border-left-color: color-mix(in srgb, var(--zd-accent) 35%, transparent);
+}
+html[data-theme-pack="washi"] nav[data-zd-toc] a:not([aria-current="true"]):hover {
+  color: var(--zd-accent);
+}
+html[data-theme-pack="washi"] nav[data-zd-toc] a[aria-current="true"] {
+  background: var(--zd-accent);
+}
+
+/* pager: flat square paper cards with the sheet grain; hover slides
+   an indigo binding edge in from the reading direction (prev = left
+   card = left edge; next = right card = right edge — DocPager always
+   renders two grid children, so :first/:last-child are stable) */
+html[data-theme-pack="washi"] .zd-content > nav:last-of-type:not([aria-label]) > a {
+  background-color: var(--zd-surface);
+  background-image: radial-gradient(
+    light-dark(rgb(101 78 42 / 0.04), rgb(214 205 180 / 0.028)) 1px,
+    transparent 1.2px
+  );
+  background-size: 11px 13px;
+  border-radius: 0;
+}
+html[data-theme-pack="washi"] .zd-content > nav:last-of-type:not([aria-label]) > a:first-child:hover {
+  box-shadow: inset 3px 0 0 var(--zd-accent);
+}
+html[data-theme-pack="washi"] .zd-content > nav:last-of-type:not([aria-label]) > a:last-child:hover {
+  box-shadow: inset -3px 0 0 var(--zd-accent);
+}

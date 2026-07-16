@@ -318,8 +318,17 @@ function checkCommercialDenylist(
   meta: ThemePackMeta,
   issues: ThemePackValidationIssue[],
 ): void {
+  // The mandatory `[data-theme-pack="<slug>"]` scoping attribute (present on
+  // every rule) is not a font reference — its value is always the pack's own
+  // slug (slug-dir-parity enforces this). A slug that legitimately names a pack
+  // after a face — e.g. "futura-editorial", whose LOADED face is the OFL
+  // substitute Jost and never Futura — would otherwise trip this denylist on
+  // every scoping selector, making such a pack impossible to author. Strip the
+  // scoping attribute selector before scanning so the check only sees real font
+  // references (@font-face src + font-family stacks + meta font names).
+  const scannedCss = (cssContent ?? "").replace(/\[data-theme-pack="[^"]*"\]/g, "");
   const haystack = [
-    cssContent ?? "",
+    scannedCss,
     meta.fonts.sans,
     meta.fonts.mono,
     meta.fonts.display ?? "",

@@ -1,0 +1,501 @@
+/* ============================================================
+   Sumi — zudo-doc theme pack (ADR docs/adr/theme-packs.md)
+
+   Sumi-e ink on washi. Bold Shippori Mincho brush headings over
+   tapered clip-path ink strokes, clean Zen Kaku Gothic body copy,
+   deep sumi black, one vermillion hanko seal accent. Shapes are
+   SQUARE (hanko), strokes are thick and tapered (fude). Light =
+   ink on warm washi; dark = night ink — near-black paper, bone
+   type, the same seal red a touch brighter. Code is an inked slab
+   in BOTH modes — the darkest thing on the page — stamped with a
+   hard offset shadow and a red corner seal.
+
+   Every rule below is scoped under html[data-theme-pack="sumi"] —
+   this is what makes the runtime pack swap atomic (Decision 3) and
+   lets the validator prove a pack can never leak styles while
+   inactive (Decision 6.7). The @font-face blocks are the sole
+   exception (at-rules can't be selector-scoped).
+
+   CJK note (Decision 5): a Japanese-flavored pack that ships NO
+   CJK subsets — each Japanese face loads its latin subset only,
+   and every family stack ends in the right bare generic (mincho
+   headings → serif, gothic body → sans-serif) so the platform's
+   own Japanese fonts carry CJK text in the matching style.
+
+   Prototype-selector adaptations against the REAL DOM (tokens-dump
+   §6 + component sources), noted inline where they matter:
+   - the prototype's theme-private seal custom property → the pigment
+     is inlined as light-dark(#c2242f, #d9333f) at every seal site
+     (packs may only declare manifest-listed token names)
+   - `.sb-group > p::before` seal markers → no stable hook exists for
+     sidebar group headers; the hanko-stamp role moves onto
+     a[data-nav-active] (a vermillion stamp via
+     --zdc-nav-active-indicator-color + an offset stamp shadow)
+   - `.code-block-wrapper::after` corner seal → painted as a
+     no-repeat background on pre.hi-root, bottom-right (the wrapper
+     has no stable hook, the top-right corner belongs to the
+     injected copy/wrap buttons, and a background pins to the
+     scrollport instead of scrolling away with wide code)
+   - `.doc-pager` → `.zd-content > nav:not([aria-label="Breadcrumb"]) > a`
+     (the ledger idiom: DocPager is the only direct-child nav of the
+     article whose children are bare <a> cards; list-structured
+     CategoryNav / NavCardGrid never match the `> a` step)
+   - `footer[data-footer] .footer-copy::before` → the closing
+     artist's seal becomes ::after on the stable
+     `.zd-sidebar-content-wrapper > footer` hook
+   - the square 印 launcher stamp and the flyout's stamp-shadow frame
+     have NO stable hook — intentionally NOT ported (pack notes).
+   ============================================================ */
+
+/* ---- Shippori Mincho B1 — the brush hand: h1/h2/h3, lead, block
+        quotes, admonition titles, table heads. Static 600/700/800
+        (no variable file exists), latin subset ONLY — CJK glyphs
+        fall through to the platform mincho via the bare `serif`. ---- */
+
+@font-face {
+  font-family: "Shippori Mincho B1";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("./fonts/ShipporiMinchoB1-600-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Shippori Mincho B1";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/ShipporiMinchoB1-700-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Shippori Mincho B1";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("./fonts/ShipporiMinchoB1-800-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- Zen Kaku Gothic New — the reading hand (400/500), latin
+        subset only; platform gothic carries CJK via `sans-serif`.
+        Bold prose (700) synthesizes from the 500 — accepted trade
+        against the payload budget. ---- */
+
+@font-face {
+  font-family: "Zen Kaku Gothic New";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/ZenKakuGothicNew-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Zen Kaku Gothic New";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./fonts/ZenKakuGothicNew-500-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- IBM Plex Mono — the code face (400/500, latin + latin-ext) ---- */
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/IBMPlexMono-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/IBMPlexMono-400-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./fonts/IBMPlexMono-500-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./fonts/IBMPlexMono-500-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+html[data-theme-pack="sumi"] {
+  /* Tier-2 semantic roles — washi paper / sumi ink / vermillion seal.
+     Both modes always via light-dark(). */
+  --zd-bg: light-dark(#f7f4ec, #161514);
+  --zd-fg: light-dark(#1b1a18, #ece7db);
+  /* dark branch sits a step below the seal pigment's #d9333f so selected
+     text keeps ≥4.5:1 against the paper-white selection fg */
+  --zd-selection-bg: light-dark(#c2242f, #d5303b);
+  --zd-selection-fg: light-dark(#fdfaf3, #fdfaf3);
+  --zd-surface: light-dark(#fdfbf5, #1d1c1a);
+  --zd-muted: light-dark(#5f5c55, #a49e93);
+  --zd-accent: light-dark(#b8232e, #ea6a72);
+  --zd-accent-hover: light-dark(#8f1a23, #f2919a);
+  /* code is an inked slab in BOTH modes — the darkest thing on the page */
+  --zd-code-bg: light-dark(#1c1b1e, #100f11);
+  --zd-code-fg: light-dark(#f3efe6, #e9e4d8);
+  --zd-success: light-dark(#2e6b45, #82c197); /* matsu pine */
+  --zd-danger: light-dark(#b8232e, #ea6a72); /* shu vermillion */
+  --zd-warning: light-dark(#8a6414, #d9a84e); /* ochre / aged paper */
+  --zd-info: light-dark(#2c5977, #82abc9); /* ai indigo wash */
+
+  /* syntax — all 9 roles, both modes: monochrome ink washes on the
+     dark slab plus seal-red keywords. Because the slab stays dark in
+     BOTH modes, both light-dark() branches are pale washes; inserted/
+     deleted take a pine wash and a diluted vermillion. */
+  --zd-syntax-comment: light-dark(#8a8479, #837d72);
+  --zd-syntax-string: light-dark(#cfc6ae, #c8bfa6); /* raw washi tone */
+  --zd-syntax-number: light-dark(#f0a58c, #eda183); /* diluted vermillion */
+  --zd-syntax-keyword: light-dark(#e86a72, #ee7a81); /* seal red */
+  --zd-syntax-callable: light-dark(#f7f3ea, #f4efe4); /* untouched paper */
+  --zd-syntax-type: light-dark(#a9bccb, #a2b8c9); /* cool ink wash */
+  --zd-syntax-name: light-dark(#dcd6c8, #d7d1c2);
+  --zd-syntax-inserted: light-dark(#8fc7a1, #8ac29c);
+  --zd-syntax-deleted: light-dark(#f0919a, #ee8b94);
+
+  /* fonts — gothic body, mincho display, Plex code. Latin faces load;
+     the terminal bare generic keeps platform CJK in the right style. */
+  --font-sans: "Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN", system-ui,
+    sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-display: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho",
+    serif;
+
+  /* Tier-3 component seams — mincho brush headings, seal-red active
+     nav stamp. Hanko are square: zero radii everywhere. */
+  --zdc-doc-title-font: var(--font-display);
+  --zdc-doc-title-weight: 800;
+  --zdc-doc-title-tracking: 0.01em;
+  --zdc-doc-h2-font: var(--font-display);
+  --zdc-doc-h2-weight: 700;
+  --zdc-doc-h2-tracking: 0.02em;
+  --zdc-admonition-radius: 0;
+  --zdc-admonition-border-width: 5px;
+  --zdc-card-radius: 0;
+  --zdc-nav-active-indicator-color: light-dark(#b8232e, #ea6a72);
+}
+
+/* ---- Sumi extras ---- */
+
+/* washi grain: faint fibrous texture + soft ink-wash clouds */
+html[data-theme-pack="sumi"] body {
+  background-image:
+    radial-gradient(
+      58rem 38rem at 88% -12%,
+      color-mix(in srgb, var(--zd-fg) 4%, transparent),
+      transparent 62%
+    ),
+    radial-gradient(
+      46rem 32rem at -8% 34%,
+      color-mix(in srgb, var(--zd-fg) 3%, transparent),
+      transparent 58%
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      color-mix(in srgb, var(--zd-fg) 1.5%, transparent) 0 1px,
+      transparent 1px 7px
+    );
+  background-attachment: fixed;
+}
+
+/* header: one decisive ink rule; mincho logo signed with a seal */
+html[data-theme-pack="sumi"] header[data-header] {
+  border-bottom: 3px solid var(--zd-fg);
+}
+html[data-theme-pack="sumi"] [data-header-logo] {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+html[data-theme-pack="sumi"] [data-header-logo]::after {
+  content: "";
+  display: inline-block;
+  width: 0.4em;
+  height: 0.4em;
+  background: light-dark(#c2242f, #d9333f);
+  margin-left: 0.45em;
+}
+html[data-theme-pack="sumi"] [data-nav-item]:hover {
+  color: var(--zd-accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+/* sidebar: the active page is a vermillion hanko stamp (paper-colored
+   text via the indicator token above) pressed with an offset shadow */
+html[data-theme-pack="sumi"] a[data-nav-active] {
+  border-radius: 0;
+  box-shadow: 2px 2px 0 color-mix(in srgb, var(--zd-fg) 30%, transparent);
+}
+
+/* h1: thick tapered brush stroke beneath, sealed at its end */
+html[data-theme-pack="sumi"] .zd-content h1 {
+  position: relative;
+  padding-bottom: 0.95rem;
+  margin-bottom: 0.9rem;
+}
+html[data-theme-pack="sumi"] .zd-content h1::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: min(28rem, 92%);
+  height: 0.55rem;
+  background: linear-gradient(
+    90deg,
+    var(--zd-fg) 0%,
+    var(--zd-fg) 58%,
+    color-mix(in srgb, var(--zd-fg) 70%, transparent) 82%,
+    color-mix(in srgb, var(--zd-fg) 45%, transparent) 100%
+  );
+  clip-path: polygon(
+    0 55%,
+    2% 18%,
+    18% 30%,
+    38% 6%,
+    62% 22%,
+    84% 2%,
+    100% 26%,
+    99.5% 58%,
+    82% 74%,
+    60% 96%,
+    36% 74%,
+    14% 98%,
+    3% 80%
+  );
+}
+html[data-theme-pack="sumi"] .zd-content h1::before {
+  content: "";
+  position: absolute;
+  bottom: 0.05rem;
+  left: calc(min(28rem, 92%) + 0.6rem);
+  width: 0.55rem;
+  height: 0.55rem;
+  background: light-dark(#c2242f, #d9333f);
+}
+
+/* h2: replace the gradient hairline with a fat fading fude stroke.
+   The !important defeats the SSR-inlined
+   `style="border-image:linear-gradient(...)"` (Decision 6.6's sole
+   allowlisted carve-out). */
+html[data-theme-pack="sumi"] .zd-content h2 {
+  border-image: none !important;
+  border-top-width: 0;
+  position: relative;
+  padding-top: 1.15rem;
+}
+html[data-theme-pack="sumi"] .zd-content h2::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 0.45rem;
+  background: linear-gradient(
+    90deg,
+    var(--zd-fg),
+    color-mix(in srgb, var(--zd-fg) 55%, transparent) 60%,
+    transparent 95%
+  );
+  clip-path: polygon(
+    0 40%,
+    2% 4%,
+    30% 18%,
+    55% 0,
+    78% 14%,
+    100% 8%,
+    100% 46%,
+    74% 66%,
+    48% 96%,
+    22% 70%,
+    2% 94%,
+    0 68%
+  );
+}
+
+/* h3: mincho, punctuated by a small hanko square */
+html[data-theme-pack="sumi"] .zd-content h3 {
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+}
+html[data-theme-pack="sumi"] .zd-content h3::before {
+  content: "";
+  display: inline-block;
+  width: 0.32em;
+  height: 0.32em;
+  background: light-dark(#c2242f, #d9333f);
+  margin-right: 0.5em;
+  vertical-align: 0.12em;
+}
+
+/* the lead: subtitle in the brush hand. The prototype's `.lead` is the
+   description paragraph DocContentHeader renders as the FIRST direct-
+   child <p> of the article (broadsheet's adaptation + caveat: on a page
+   without a frontmatter description the first BODY paragraph takes this
+   styling instead — reads as an emphasized opening line, fails soft). */
+html[data-theme-pack="sumi"] .zd-content > p:first-of-type {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+/* blockquote: heavy ink margin stroke, calligraphic voice (600 is the
+   lightest loaded mincho weight — pinned so nothing synthesizes) */
+html[data-theme-pack="sumi"] .zd-content blockquote {
+  border-left: 5px solid var(--zd-fg);
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: color-mix(in srgb, var(--zd-fg) 82%, var(--zd-bg));
+}
+
+/* code: a stamped slab of ink — hard offset stamp shadow, square, a red
+   seal pressed into the bottom-right corner (painted as a background so
+   it pins to the scrollport; top-right belongs to the copy/wrap buttons) */
+html[data-theme-pack="sumi"] pre.hi-root {
+  border: none;
+  border-radius: 0;
+  box-shadow: 5px 5px 0 color-mix(in srgb, var(--zd-fg) 16%, transparent);
+  background-image: linear-gradient(
+    light-dark(#c2242f, #d9333f),
+    light-dark(#c2242f, #d9333f)
+  );
+  background-size: 0.55rem 0.55rem;
+  background-position: right 0.7rem bottom 0.7rem;
+  background-repeat: no-repeat;
+}
+html[data-theme-pack="sumi"] .hi-fn {
+  font-weight: 500;
+}
+html[data-theme-pack="sumi"] .hi-com {
+  font-style: italic;
+}
+
+/* inline code: square ink chips (hanko have no rounded corners) */
+html[data-theme-pack="sumi"] .zd-content code:not(pre code) {
+  border-radius: 0;
+}
+
+/* admonitions: square, mincho titles, seal-square icons across all
+   seven variants (each square takes its variant's title color) */
+html[data-theme-pack="sumi"] [data-admonition] .admonition-title {
+  font-family: var(--font-display);
+  letter-spacing: 0.05em;
+}
+html[data-theme-pack="sumi"] [data-admonition="note"] .admonition-title::before {
+  content: "■ ";
+  font-size: 0.8em;
+}
+html[data-theme-pack="sumi"] [data-admonition="tip"] .admonition-title::before {
+  content: "■ ";
+  font-size: 0.8em;
+}
+html[data-theme-pack="sumi"] [data-admonition="info"] .admonition-title::before {
+  content: "■ ";
+  font-size: 0.8em;
+}
+html[data-theme-pack="sumi"] [data-admonition="warning"] .admonition-title::before {
+  content: "■ ";
+  font-size: 0.8em;
+}
+html[data-theme-pack="sumi"] [data-admonition="danger"] .admonition-title::before {
+  content: "■ ";
+  font-size: 0.8em;
+}
+html[data-theme-pack="sumi"] [data-admonition="important"] .admonition-title::before {
+  content: "■ ";
+  font-size: 0.8em;
+}
+html[data-theme-pack="sumi"] [data-admonition="caution"] .admonition-title::before {
+  content: "■ ";
+  font-size: 0.8em;
+}
+
+/* tables: one thick ink rule under the header row, mincho heads */
+html[data-theme-pack="sumi"] .zd-content th {
+  border-bottom: 3px solid var(--zd-fg);
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+/* pager: square cards that stamp down on hover with a seal-red offset
+   shadow. Target the LAST unlabelled nav under .zd-content — the DocPager.
+   `:last-of-type:not([aria-label])` (the batch-2 sibling idiom) excludes BOTH
+   the Breadcrumb and the NavCardGrid ("Child pages") nav, whose <a> are also
+   direct children of a `.zd-content > nav` — a bare `:not([aria-label="Breadcrumb"])`
+   would wrongly stamp the child-page cards on auto-index pages. */
+html[data-theme-pack="sumi"] .zd-content > nav:last-of-type:not([aria-label]) > a {
+  border-radius: 0;
+  border-color: color-mix(in srgb, var(--zd-fg) 45%, transparent);
+}
+html[data-theme-pack="sumi"] .zd-content > nav:last-of-type:not([aria-label]) > a:hover {
+  border-color: var(--zd-fg);
+  box-shadow: 4px 4px 0
+    color-mix(in srgb, light-dark(#c2242f, #d9333f) 45%, transparent);
+}
+html[data-theme-pack="sumi"] .zd-content > nav:last-of-type:not([aria-label]) > a p {
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
+/* TOC: firmer ink spine (the active entry keeps the default fg-on-bg
+   treatment — already an ink stamp in this palette) */
+html[data-theme-pack="sumi"] nav[data-zd-toc] ul {
+  border-left: 2px solid color-mix(in srgb, var(--zd-muted) 55%, transparent);
+}
+
+/* footer: one decisive ink rule; the artist's seal closes the scroll
+   (the real footer has no data-footer hook — it is the wrapper's
+   direct child, and the seal renders ::after its content, centered) */
+html[data-theme-pack="sumi"] .zd-sidebar-content-wrapper > footer {
+  border-top: 3px solid var(--zd-fg);
+}
+html[data-theme-pack="sumi"] .zd-sidebar-content-wrapper > footer::after {
+  content: "";
+  display: block;
+  width: 0.55rem;
+  height: 0.55rem;
+  background: light-dark(#c2242f, #d9333f);
+  margin: 0 auto 1.5rem;
+}

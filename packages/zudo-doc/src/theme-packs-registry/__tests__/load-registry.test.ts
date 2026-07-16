@@ -11,15 +11,20 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const THEME_PACKS_DIR = resolve(__dirname, "../../theme-packs");
 
 describe("loadThemePackRegistry (real bundled packs)", () => {
-  it("aggregates the 6 shipped packs, in canonical alphabetical order", () => {
+  it("aggregates the 11 shipped packs, in canonical alphabetical order", () => {
     const registry = loadThemePackRegistry(THEME_PACKS_DIR);
     expect(registry.map((e) => e.slug)).toEqual([
       "broadsheet",
       "default",
       "foundry",
+      "futura-editorial",
+      "hearth",
       "ledger",
       "manuscript",
+      "matcha",
+      "sumi",
       "swissgrid",
+      "washi",
     ]);
   });
 
@@ -44,9 +49,14 @@ describe("loadThemePackRegistry (real bundled packs)", () => {
       "default",
       "broadsheet",
       "foundry",
+      "futura-editorial",
+      "hearth",
       "ledger",
       "manuscript",
+      "matcha",
+      "sumi",
       "swissgrid",
+      "washi",
     ]);
   });
 

@@ -4,7 +4,7 @@
 // build`) — mirrors `routes.test.ts`'s style.
 //
 // Exercised against the REAL bundled
-// `src/theme-packs/{broadsheet,default,foundry,ledger,manuscript,swissgrid}/`
+// `src/theme-packs/{broadsheet,default,foundry,futura-editorial,hearth,ledger,manuscript,matcha,sumi,swissgrid,washi}/`
 // directories (resolved via the plugin's own `new URL("../theme-packs/",
 // import.meta.url)`, which — under vitest, running the source directly —
 // resolves to `src/theme-packs/`): no fixture directory needed, and this
@@ -62,7 +62,7 @@ describe("theme-packs plugin — setup()", () => {
 });
 
 describe("theme-packs plugin — postBuild()", () => {
-  it("copies the full bundled set (6 packs) when themePacks is omitted", async () => {
+  it("copies the full bundled set (11 packs) when themePacks is omitted", async () => {
     const outDir = makeOutDir();
     await themePacksPlugin.postBuild!({
       outDir,
@@ -90,9 +90,14 @@ describe("theme-packs plugin — postBuild()", () => {
       "default",
       "broadsheet",
       "foundry",
+      "futura-editorial",
+      "hearth",
       "ledger",
       "manuscript",
+      "matcha",
+      "sumi",
       "swissgrid",
+      "washi",
     ]);
   });
 
@@ -150,9 +155,14 @@ describe("theme-packs plugin — devMiddleware()", () => {
       "default",
       "broadsheet",
       "foundry",
+      "futura-editorial",
+      "hearth",
       "ledger",
       "manuscript",
+      "matcha",
+      "sumi",
       "swissgrid",
+      "washi",
     ]);
   });
 

@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "slug": "matcha",
+  "name": "Matcha",
+  "description": "Green tea ceremony — deep matcha on warm cream, mincho headings, zen whitespace, tea-foam surfaces in both modes.",
+  "mode": "light",
+  "version": "1.0.0",
+  "fonts": {
+    "sans": "Zen Kaku Gothic New",
+    "mono": "M PLUS 1 Code",
+    "display": "Shippori Mincho",
+    "loaded": ["Zen Kaku Gothic New", "Shippori Mincho", "M PLUS 1 Code"]
+  },
+  "preview": {
+    "light": {
+      "bg": "oklch(0.973 0.012 106)",
+      "fg": "oklch(0.245 0.018 148)",
+      "accent": "oklch(0.435 0.105 142)",
+      "syntax": {
+        "keyword": "oklch(0.418 0.105 150)",
+        "string": "oklch(0.47 0.092 106)",
+        "comment": "oklch(0.512 0.034 130)",
+        "callable": "oklch(0.438 0.082 196)"
+      }
+    },
+    "dark": {
+      "bg": "oklch(0.205 0.016 152)",
+      "fg": "oklch(0.938 0.018 106)",
+      "accent": "oklch(0.79 0.115 138)",
+      "syntax": {
+        "keyword": "oklch(0.782 0.118 148)",
+        "string": "oklch(0.822 0.102 108)",
+        "comment": "oklch(0.668 0.034 130)",
+        "callable": "oklch(0.772 0.088 192)"
+      }
+    }
+  }
+}

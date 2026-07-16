@@ -129,9 +129,14 @@ test.describe("Theme pack switcher", () => {
       "broadsheet",
       "default",
       "foundry",
+      "futura-editorial",
+      "hearth",
       "ledger",
       "manuscript",
+      "matcha",
+      "sumi",
       "swissgrid",
+      "washi",
     ]);
   });
 
