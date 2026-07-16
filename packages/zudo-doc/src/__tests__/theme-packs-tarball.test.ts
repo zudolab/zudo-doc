@@ -30,20 +30,41 @@ interface NpmPackDryRunEntry {
   files: NpmPackDryRunFile[];
 }
 
+/**
+ * Extract the JSON array from `npm pack --json` stdout. `--ignore-scripts`
+ * SHOULD keep lifecycle output off stdout, but some npm/CI combinations still
+ * leak a copy-script line ahead of the JSON — CI observed
+ * `[copy-theme-packs] dist/theme-packs/ OK` prepended, which broke a naive
+ * `JSON.parse(stdout)` with "Unexpected token 'c'". That leaked line itself
+ * starts with `[`, so we can't just slice from the first bracket; scan every
+ * `[` and return the first slice that parses to an array.
+ */
+function parsePackJson(stdout: string): NpmPackDryRunEntry[] {
+  for (let i = stdout.indexOf("["); i !== -1; i = stdout.indexOf("[", i + 1)) {
+    try {
+      const value = JSON.parse(stdout.slice(i));
+      if (Array.isArray(value)) return value as NpmPackDryRunEntry[];
+    } catch {
+      // Not the JSON array (e.g. a leaked "[copy-*] …" log line) — keep scanning.
+    }
+  }
+  throw new Error(
+    `npm pack --dry-run --json produced no parseable JSON array. stdout:\n${stdout}`,
+  );
+}
+
 function packFileList(): string[] {
   // --ignore-scripts: this is a file-listing check against the CURRENT
   // dist/ (the test harness already ran the real prepack/check-*.mjs guards
   // via `pnpm --filter @takazudo/zudo-doc build`+`test` — see this repo's
-  // CLAUDE.md). Without it, npm still runs the package's prepack/prepare
-  // lifecycle scripts even under --dry-run, and their own stdout (e.g.
-  // "> @takazudo/zudo-doc@x.y.z prepack") interleaves with and corrupts the
-  // `--json` output, breaking JSON.parse below.
+  // CLAUDE.md). It suppresses the lifecycle banners on most npm versions;
+  // parsePackJson() makes the parse robust to any that still leak.
   const stdout = execFileSync(
     "npm",
     ["pack", "--dry-run", "--json", "--ignore-scripts"],
     { cwd: PKG_ROOT, encoding: "utf8" },
   );
-  const parsed = JSON.parse(stdout) as NpmPackDryRunEntry[];
+  const parsed = parsePackJson(stdout);
   const entry = parsed[0];
   if (!entry) throw new Error("npm pack --dry-run --json produced no entries");
   return entry.files.map((f) => f.path);

@@ -40,6 +40,13 @@ function collectRepositoryFiles(): string[] {
     .filter((path) => existsSync(resolve(root, path)))
     .filter((path) => textExtensions.has(extname(path)))
     .filter((path) => !selfPaths.has(path))
+    // `_temp-resource/` is committed planning scratch handed off between the
+    // planning session and the implementer (the dev-setup-temp-resource
+    // contract: "tooling ignores _temp-resource/"). It is deleted before it
+    // reaches a parent branch, so it must not be held to the current-platform
+    // compatibility contract — e.g. a token dump that mentions `.shiki` in
+    // passing is reference material, not a shipped survivor.
+    .filter((path) => !path.startsWith("_temp-resource/"))
     .sort();
 }
 
