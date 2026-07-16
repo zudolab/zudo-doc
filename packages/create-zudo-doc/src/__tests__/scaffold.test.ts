@@ -218,7 +218,12 @@ describe("scaffold — i18n locale doc stub threads isFallback + per-locale cont
     expect(stub).toContain(
       'import { createChrome } from "@takazudo/zudo-doc/chrome";',
     );
-    expect(stub).toContain("const { renderDocPage } = createChrome(routeCtx);");
+    expect(stub).toContain(
+      'import { chromeBindings } from "virtual:zudo-doc-chrome-bindings";',
+    );
+    expect(stub).toContain(
+      "const { renderDocPage } = createChrome(routeCtx, chromeBindings);",
+    );
   });
 });
 
@@ -926,63 +931,68 @@ describe("scaffold — global.css", () => {
   });
 });
 
-describe("scaffold — the doc-route stub is patched (not duplicated) when docHistory is selected", () => {
-  it("statically imports DocHistory and threads it into createChrome", async () => {
-    await scaffold({
-      ...baseChoices,
-      projectName: "test-doc-history-stub",
-      features: ["docHistory"],
-    });
-    const stub = await fs.readFile(
-      projectPath("test-doc-history-stub", "pages/docs/[[...slug]].tsx"),
-      "utf-8",
-    );
-    expect(stub).toContain(
-      'import { DocHistory } from "@takazudo/zudo-doc/doc-history";',
-    );
-    expect(stub).toContain(
-      'import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";',
-    );
-    expect(stub).toContain(
-      "createChrome(routeCtx, defineChromeBindings({ DocHistory }))",
-    );
-    // Only the DocHistory-specific widening cast is in scope here — the
-    // unrelated `routeContext as unknown as RouteContextPayload` cast earlier
-    // in the stub (base template, #2653) is a separate concern.
-    expect(stub).not.toContain("DocHistory as unknown as");
-  });
+describe("scaffold — every docHistory × i18n route stub threads chrome bindings", () => {
+  it.each([
+    { docHistory: false, i18n: false },
+    { docHistory: true, i18n: false },
+    { docHistory: false, i18n: true },
+    { docHistory: true, i18n: true },
+  ])(
+    "emits the exact merged binding shape for docHistory=$docHistory, i18n=$i18n",
+    async ({ docHistory, i18n }) => {
+      const projectName =
+        `test-bindings-dh-${docHistory ? "on" : "off"}` +
+        `-i18n-${i18n ? "on" : "off"}`;
+      const features: UserChoices["features"] = [
+        ...(docHistory ? ["docHistory"] : []),
+        ...(i18n ? ["i18n"] : []),
+      ];
+      await scaffold({ ...baseChoices, projectName, features });
 
-  it("also patches the i18n locale stub when both i18n and docHistory are selected", async () => {
-    await scaffold({
-      ...baseChoices,
-      projectName: "test-doc-history-i18n",
-      features: ["docHistory", "i18n"],
-    });
-    const stub = await fs.readFile(
-      projectPath(
-        "test-doc-history-i18n",
-        "pages/[locale]/docs/[[...slug]].tsx",
-      ),
-      "utf-8",
-    );
-    expect(stub).toContain(
-      'import { DocHistory } from "@takazudo/zudo-doc/doc-history";',
-    );
-  });
+      const stubPaths = [
+        "pages/docs/[[...slug]].tsx",
+        ...(i18n ? ["pages/[locale]/docs/[[...slug]].tsx"] : []),
+      ];
+      for (const stubPath of stubPaths) {
+        const stub = await fs.readFile(
+          projectPath(projectName, stubPath),
+          "utf-8",
+        );
+        expect(stub).toContain(
+          'import { chromeBindings } from "virtual:zudo-doc-chrome-bindings";',
+        );
 
-  it("leaves the stub unpatched when docHistory is off", async () => {
-    // The stub's own header comment explains the docHistory patch in prose
-    // (mentions "DocHistory" even when unpatched) — assert on the actual
-    // inserted import statement, not a bare substring match.
-    await scaffold(baseChoices);
-    const stub = await fs.readFile(
-      projectPath("test-doc", "pages/docs/[[...slug]].tsx"),
-      "utf-8",
-    );
-    expect(stub).not.toContain(
-      'import { DocHistory } from "@takazudo/zudo-doc/doc-history";',
-    );
-  });
+        const docHistoryImport =
+          'import { DocHistory } from "@takazudo/zudo-doc/doc-history";';
+        if (docHistory) {
+          // The real component stays statically reachable by zfb's island
+          // scanner, while the spread preserves every configured host slot.
+          expect(stub).toContain(docHistoryImport);
+          expect(stub).toContain(
+            'import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";',
+          );
+          expect(stub).toContain(
+            `const { renderDocPage } = createChrome(routeCtx, {
+  ...chromeBindings,
+  ...defineChromeBindings({ DocHistory }),
+});`,
+          );
+          expect(stub).not.toContain("DocHistory as unknown as");
+        } else {
+          expect(stub).not.toContain(docHistoryImport);
+          expect(stub).toContain(
+            "const { renderDocPage } = createChrome(routeCtx, chromeBindings);",
+          );
+        }
+      }
+
+      expect(
+        await fs.pathExists(
+          projectPath(projectName, "pages/[locale]/docs/[[...slug]].tsx"),
+        ),
+      ).toBe(i18n);
+    },
+  );
 });
 
 describe("scaffold — bodyFootUtil auto-enables docHistory (#1795 behavior, re-targeted to zfb.config.ts)", () => {
@@ -1330,7 +1340,8 @@ describe("scaffold — settings-drift guard: generator-known fields must cover e
       port: "shell passthrough — dev/preview server port, not a scaffold prompt",
       adapter: "shell passthrough — deploy-target wiring, project-specific",
       bundle: "shell passthrough — raw esbuild bundler options",
-      chromeBindingsModule: "shell passthrough — host-callables wiring, hand-authored after scaffold",
+      chromeBindingsModule:
+        "shell passthrough — host-callables module path is hand-authored after scaffold; generated doc routes consume it automatically",
       designTokenPanelConfigModule: "shell passthrough — mirrors chromeBindingsModule's contract exactly (module-path wiring, hand-authored after scaffold)",
       // Fields with no CLI/prompt surface (yet) — hand-edit zfb.config.ts
       // after scaffold, or covered by a future sub-issue.

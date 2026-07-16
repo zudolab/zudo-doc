@@ -71,17 +71,16 @@ pages/index.tsx
 # Both are self-contained doc-route stubs (#2653 Decision 4; locked form
 # #2660) — REQUIRED because the injected DYNAMIC `/docs/[[...slug]]` route
 # 404s in `zfb dev` (see each file's own header comment for the full
-# rationale). The template's copies use only the three sanctioned package
-# entrypoints (virtual:zudo-doc-route-context, @takazudo/zudo-doc/route-context,
-# @takazudo/zudo-doc/routes/_chrome's createChrome) with no fourth argument —
-# `createChrome(routeCtx)`. The showcase's copies additionally import
-# `virtual:zudo-doc-chrome-bindings` and call `createChrome(routeCtx,
-# chromeBindings)`, threading the showcase's real host-bound slots (search,
-# doc history, frontmatter renderers, PresetGenerator, MDX overrides — see
-# src/chrome-bindings.tsx) through the `chromeBindingsModule` host-callables
-# channel (ADR "Host-callables channel", #2501), plus locale-specific extra
-# fallback-tracking props on the [locale] variant. A project that sets its own
-# `chromeBindingsModule` diverges from the template the same way — this is
-# the documented escape hatch, not drift.
+# rationale). The template's copies use only the sanctioned package
+# entrypoints (virtual:zudo-doc-route-context,
+# virtual:zudo-doc-chrome-bindings, @takazudo/zudo-doc/route-context, and
+# @takazudo/zudo-doc/chrome's createChrome). Both template stubs now thread
+# `chromeBindings` unconditionally, matching the showcase's host-callables
+# channel: projects without a `chromeBindingsModule` receive the plugin's `{}`
+# fallback, while configured projects reach their MDX/chrome slots without a
+# manual stub edit (#2774). The whole files remain allowlisted because the
+# showcase carries project-specific typed page props, much fuller rationale
+# comments, and locale-specific fallback-tracking shapes; those differences
+# are intentional and independent of the bindings channel now shared by both.
 pages/docs/[[...slug]].tsx
 pages/[locale]/docs/[[...slug]].tsx
