@@ -14,6 +14,7 @@ const CURRENT_PLUGINS = {
   "@takazudo/zudo-doc/plugins/search-index": ["postBuild", "devMiddleware"],
   "@takazudo/zudo-doc/plugins/claude-resources": ["preBuild"],
   "@takazudo/zudo-doc/plugins/changelog": ["postBuild"],
+  "@takazudo/zudo-doc/plugins/theme-packs": ["setup", "postBuild", "devMiddleware"],
 };
 
 const REMOVED_SUBPATHS = [
@@ -115,15 +116,26 @@ try {
     logger,
   });
 
+  // theme-packs — options omitted resolves to the full bundled set
+  // ("default" + "foundry"), which includes a CSS-bearing pack, so setup()
+  // validates cleanly and postBuild/devMiddleware do real work (not the
+  // ADR's no-CSS-bearing-pack no-op path).
+  const themePacks = loadedPlugins.get("@takazudo/zudo-doc/plugins/theme-packs");
+  themePacks.setup({ options: {}, logger });
+  await themePacks.postBuild({ projectRoot, outDir, options: {}, logger });
+  themePacks.devMiddleware({ options: { base: "/" }, logger, register });
+
   for (const expected of [
     join(projectRoot, ".zfb/doc-history-meta.json"),
     join(outDir, "llms.txt"),
     join(outDir, "llms-full.txt"),
     join(outDir, "search-index.json"),
+    join(outDir, "theme-packs/index.json"),
+    join(outDir, "theme-packs/foundry/pack.css"),
   ]) {
     if (!existsSync(expected)) throw new Error(`plugin smoke output missing: ${expected}`);
   }
-  if (registered.length < 4) {
+  if (registered.length < 5) {
     throw new Error(`plugin middleware smoke registered only ${registered.length} routes`);
   }
   process.stdout.write("[check-plugin-resolution] lifecycle smoke OK\n");

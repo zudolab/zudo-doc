@@ -296,6 +296,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       "@takazudo/zudo-doc/plugins/claude-resources",
       "@takazudo/zudo-doc/plugins/doc-history",
       "@takazudo/zudo-doc/plugins/search-index",
+      "@takazudo/zudo-doc/plugins/theme-packs",
       "@takazudo/zudo-doc/plugins/llms-txt",
       "@takazudo/zudo-doc/plugins/changelog",
     ]);
@@ -318,6 +319,11 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       locales: { ja: { dir: "src/content/docs-ja" } },
       base: "/",
     });
+    expect(byName["@takazudo/zudo-doc/plugins/theme-packs"]).toEqual({
+      base: "/",
+      themePack: undefined,
+      themePacks: undefined,
+    });
     expect(byName["@takazudo/zudo-doc/plugins/llms-txt"]).toEqual({
       siteName: "zudo-doc",
       siteDescription: "Documentation base framework.",
@@ -338,6 +344,20 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
     // copy-public-plugin.mjs was removed in #2358; no project-relative plugin expected.
   });
 
+  it("threads settings.themePack / themePacks into the theme-packs plugin options", () => {
+    const r = zudoDocPreset({
+      settings: { ...fixtureSettings, themePack: "foundry", themePacks: ["default", "foundry"] },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+    const themePacks = r.plugins.find((p) => p.name === "@takazudo/zudo-doc/plugins/theme-packs");
+    expect(themePacks?.options).toEqual({
+      base: "/",
+      themePack: "foundry",
+      themePacks: ["default", "foundry"],
+    });
+  });
+
   it("omits claude-resources / doc-history / llms-txt / changelog when their settings are falsy", () => {
     const r = zudoDocPreset({
       settings: { ...fixtureSettings, claudeResources: false, docHistory: false, llmsTxt: false, changelogs: false, packageOwnedRoutes: false },
@@ -346,6 +366,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
     });
     expect(r.plugins.map((p) => p.name)).toEqual([
       "@takazudo/zudo-doc/plugins/search-index",
+      "@takazudo/zudo-doc/plugins/theme-packs",
     ]);
   });
 
