@@ -41,11 +41,12 @@ export interface ThemePackOption {
 
 // Hand-kept mirror of the bundled theme-pack registry
 // (packages/zudo-doc/src/theme-packs/<slug>/meta.json — theme pack ADR
-// #2818, census landed by #2819). Same convention as DEFAULT_MIRROR in
+// #2818, census landed by #2819, full catalog synced by the Finalize epic's
+// catalog-sync sub-issue #2855). Same convention as DEFAULT_MIRROR in
 // zfb-config-gen.ts: create-zudo-doc cannot import @takazudo/zudo-doc at
-// generator-build time, so the CLI/prompt catalog is a local copy. The later
-// Finalize epic syncs the full ~20-pack list — this only needs the slugs the
-// generator can offer today.
+// generator-build time, so the CLI/prompt catalog is a local copy. Order
+// mirrors the package's own default enablement order (resolveEnabledPacks):
+// "default" first, then the rest alphabetically by slug.
 export const THEME_PACKS: ThemePackOption[] = [
   {
     slug: "default",
@@ -53,9 +54,104 @@ export const THEME_PACKS: ThemePackOption[] = [
     hint: "Stock zudo-doc look — no extra stylesheet loaded",
   },
   {
+    slug: "beacon",
+    label: "Beacon",
+    hint: "WCAG-AAA high contrast — 7:1+ ink, 3px focus rings, always-underlined links",
+  },
+  {
+    slug: "broadsheet",
+    label: "Broadsheet",
+    hint: "Newspaper editorial — Playfair masthead, Oxford ink rules, a red drop cap",
+  },
+  {
+    slug: "brutalist",
+    label: "Brutalist",
+    hint: "Raw concrete web — stark black on white, 4px slab borders, hazard-orange tape",
+  },
+  {
+    slug: "drift",
+    label: "Drift",
+    hint: "Floaty slate-blue comfort dark for long reading, relaxed Plex type",
+  },
+  {
+    slug: "fjord",
+    label: "Fjord",
+    hint: "Polar-night blue under a faint aurora — frost-cyan accents, icy borders",
+  },
+  {
     slug: "foundry",
     label: "Foundry",
     hint: "GitHub-neutral baseline — white paper, Primer-blue accents",
+  },
+  {
+    slug: "futura-editorial",
+    label: "Futura Editorial",
+    hint: "Geometric Futura headings over Noto Sans body, one restrained red accent",
+  },
+  {
+    slug: "hearth",
+    label: "Hearth",
+    hint: "Warm cream & brick-red fireside docs — Fraunces headings, ember-glow dark mode",
+  },
+  {
+    slug: "hollow",
+    label: "Hollow",
+    hint: "Dark violet space — neon pink headings, violet links, a quiet starfield",
+  },
+  {
+    slug: "ledger",
+    label: "Ledger",
+    hint: "Cream academic serif in the Tufte tradition — warm paper, oxblood links",
+  },
+  {
+    slug: "manuscript",
+    label: "Manuscript",
+    hint: "A quiet Garamond book page — warm paper, soft ink, sepia rubrication",
+  },
+  {
+    slug: "matcha",
+    label: "Matcha",
+    hint: "Green tea ceremony — deep matcha on warm cream, mincho headings, zen whitespace",
+  },
+  {
+    slug: "nocturne",
+    label: "Nocturne",
+    hint: "Purple midnight — velvet aubergine depths, lavender links, muted gold hairlines",
+  },
+  {
+    slug: "observatory",
+    label: "Observatory",
+    hint: "Night-sky atlas — star-field depth, nebula violet and comet gold over navy",
+  },
+  {
+    slug: "onyx",
+    label: "Onyx",
+    hint: "Luxury noir — jet black, champagne serif headings, a single gold hairline accent",
+  },
+  {
+    slug: "phosphor",
+    label: "Phosphor",
+    hint: "Green CRT terminal — phosphor glow, scanlines, inverse-video nav",
+  },
+  {
+    slug: "solar",
+    label: "Solar",
+    hint: "Solarized precision — low-eyestrain paper tones, blue/cyan/orange accents",
+  },
+  {
+    slug: "sumi",
+    label: "Sumi",
+    hint: "Sumi-e ink on washi — bold mincho brush headings, one vermillion hanko seal accent",
+  },
+  {
+    slug: "swissgrid",
+    label: "Swissgrid",
+    hint: "International Typographic Style — grid discipline, one hot Swiss-red accent",
+  },
+  {
+    slug: "washi",
+    label: "Washi",
+    hint: "Warm washi paper, sumi ink, and ai-iro indigo seals for calm documentation",
   },
 ];
 
