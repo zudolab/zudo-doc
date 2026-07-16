@@ -451,15 +451,30 @@ Rules:
    `.zd-doc-content-band`, `.zd-content`, `[data-admonition]` (+ variant
    values) and `.admonition-title::before` (icon overrides allowed),
    `pre.hi-root` / `.hi-*` token classes, `nav[data-zd-toc]`,
-   `a[data-nav-active]`, `body`. NEVER select on Tailwind utility class
-   names (not a contract surface) and never reintroduce Tailwind default
-   palette tokens.
+   `a[data-nav-active]`, `body`, `footer[data-footer]`,
+   `nav[data-doc-pager]`, `p[data-doc-description]`,
+   `[data-theme-pack-switcher]`, `[data-switcher-card]`,
+   `[data-switcher-launcher]`. The TOC's active-item hook is
+   `nav[data-zd-toc] a[aria-current="true"]` — there is no `.toc-active`
+   class; the `aria-current` state IS the contract. NEVER select on
+   Tailwind utility class names (not a contract surface) and never
+   reintroduce Tailwind default palette tokens. **Custom-chrome caveat:**
+   a replacement supplied via `defineChromeBindings` (e.g. a custom
+   `Footer` or `DocPager`) must emit these same stable hooks to retain
+   shipped-pack styling — packs select on `[data-footer]`/
+   `[data-doc-pager]`, not on component structure.
 6. **`!important` is forbidden**, with one enumerated exception: defeating
-   SSR-inlined styles — today exactly one exists, the h2 gradient rule
-   (`style="border-image:linear-gradient(…)"` emitted by the h2 content
-   component). A pack replacing the h2 rule uses
-   `html[data-theme-pack="x"] .zd-content h2 { border-image: none !important; … }`.
-   (A follow-up may tokenize that seam; until then this is the allowlist.)
+   SSR-inlined styles — the h2/h3/h4 heading-rule gradient. All three
+   heading components (`packages/zudo-doc/src/content/heading-h2.tsx`,
+   `heading-h3.tsx`, `heading-h4.tsx`) SSR-inline a
+   `style="border-image:linear-gradient(…)"` rule on their respective
+   element; a pack restyling any of the three bars uses the same
+   carve-out, e.g.
+   `html[data-theme-pack="x"] .zd-content h2 { border-image: none !important; … }`
+   (the same pattern applies to `h3`/`h4`). The validator allowlists by CSS
+   property (`border-image`), not by selector or heading level, so all
+   three already pass. (A follow-up may tokenize that seam; until then
+   this is the allowlist.)
 7. **Validator (build-time, #2819)** enforces: slug regex + directory-name
    parity; meta schema; `pack.css` present and non-empty for every
    non-`default` slug (and absent for `default`); every rule scoped under
