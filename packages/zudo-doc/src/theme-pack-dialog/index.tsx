@@ -31,7 +31,7 @@ import { useCallback, useEffect, useRef, useState } from "preact/compat";
 import { Close } from "../icons/index.js";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
 import type { ThemePackMeta } from "../theme-packs-registry/index.js";
-import { applyThemePack } from "../theme-pack-switcher/theme-pack-sync.js";
+import { applyThemePack, DEFAULT_THEME_PACK_SLUG } from "../theme-pack-switcher/theme-pack-sync.js";
 import { connectActivePackSync } from "../theme-pack-switcher/switcher-state.js";
 import type { ThemePackDialogProps } from "../theme-pack-switcher/index.js";
 import { useModalDialog } from "../use-modal-dialog/index.js";
@@ -62,6 +62,18 @@ export function ThemePackDialog({ open, onClose, order, active, base }: ThemePac
   );
   const [activeSlug, setActiveSlug] = useState(active);
   const launcherFocusRef = useRef<HTMLElement | null>(null);
+
+  // Whether there is anything to fetch at all. The theme-packs plugin
+  // deliberately emits NEITHER a postBuild `index.json` NOR a devMiddleware
+  // route when the resolved `themePacks` census has no CSS-bearing pack (ADR
+  // `docs/adr/theme-packs.md` Decision 2: "no-ops when the resolved enabled
+  // set contains no CSS-bearing pack, i.e. only `default`"). A site can
+  // enable the switcher with e.g. `themePacks: ["default"]` — the flyout's
+  // browse-all button isn't gated on `order.length` (that file is out of
+  // this sub-issue's scope), so this dialog can still be opened in that
+  // configuration. Fetching `theme-packs/index.json` there would always 404;
+  // detect it from the SSR `order` prop up front and skip the doomed fetch.
+  const hasBrowsablePacks = order.some((entry) => entry.slug !== DEFAULT_THEME_PACK_SLUG);
 
   // Live sync: the selected ring only ever advances from a COMMITTED switch
   // (flyout Prev/Next, another open dialog card, or this one) — never the
@@ -107,9 +119,9 @@ export function ThemePackDialog({ open, onClose, order, active, base }: ThemePac
   useEffect(() => {
     if (open && !hasOpenedRef.current) {
       hasOpenedRef.current = true;
-      setFetchToken((t) => t + 1);
+      if (hasBrowsablePacks) setFetchToken((t) => t + 1);
     }
-  }, [open]);
+  }, [open, hasBrowsablePacks]);
 
   useEffect(() => {
     if (fetchToken === 0) return;
@@ -172,53 +184,61 @@ export function ThemePackDialog({ open, onClose, order, active, base }: ThemePac
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-hsp-lg py-vsp-lg">
-          {registryState === "error" && (
-            <div
-              role="alert"
-              className="mx-auto flex max-w-sm flex-col items-center gap-vsp-xs rounded-[0.75rem] border border-danger bg-bg px-hsp-lg py-vsp-lg text-center text-small text-danger"
-            >
-              <p>Could not load theme previews.</p>
-              <button
-                type="button"
-                onClick={retry}
-                className="rounded border border-danger px-hsp-md py-hsp-2xs text-caption text-danger transition-colors hover:bg-danger/10"
-              >
-                Retry
-              </button>
-            </div>
-          )}
-          {(registryState === "idle" || registryState === "loading") && (
+          {!hasBrowsablePacks ? (
+            <p className="py-vsp-xl text-center text-small text-muted">
+              No other theme packs are configured — only the default look is available.
+            </p>
+          ) : (
             <>
-              <p role="status" className="sr-only">
-                Loading theme previews…
-              </p>
-              <div
-                aria-hidden="true"
-                className="grid grid-cols-1 gap-hsp-lg sm:grid-cols-2 lg:grid-cols-3"
-              >
-                {order.map((entry) => (
+              {registryState === "error" && (
+                <div
+                  role="alert"
+                  className="mx-auto flex max-w-sm flex-col items-center gap-vsp-xs rounded-[0.75rem] border border-danger bg-bg px-hsp-lg py-vsp-lg text-center text-small text-danger"
+                >
+                  <p>Could not load theme previews.</p>
+                  <button
+                    type="button"
+                    onClick={retry}
+                    className="rounded border border-danger px-hsp-md py-hsp-2xs text-caption text-danger transition-colors hover:bg-danger/10"
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+              {(registryState === "idle" || registryState === "loading") && (
+                <>
+                  <p role="status" className="sr-only">
+                    Loading theme previews…
+                  </p>
                   <div
-                    key={entry.slug}
-                    className="h-40 animate-pulse rounded-lg border border-muted bg-surface/50"
-                  />
-                ))}
-              </div>
+                    aria-hidden="true"
+                    className="grid grid-cols-1 gap-hsp-lg sm:grid-cols-2 lg:grid-cols-3"
+                  >
+                    {order.map((entry) => (
+                      <div
+                        key={entry.slug}
+                        className="h-40 animate-pulse rounded-lg border border-muted bg-surface/50"
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+              {packs !== null && (
+                <div className="grid grid-cols-1 gap-hsp-lg sm:grid-cols-2 lg:grid-cols-3">
+                  {packs.map((meta) => (
+                    <ThemePackCard
+                      key={meta.slug}
+                      meta={meta}
+                      mode={mode}
+                      isActive={meta.slug === activeSlug}
+                      onSelect={() => {
+                        void applyThemePack(meta.slug);
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
             </>
-          )}
-          {packs !== null && (
-            <div className="grid grid-cols-1 gap-hsp-lg sm:grid-cols-2 lg:grid-cols-3">
-              {packs.map((meta) => (
-                <ThemePackCard
-                  key={meta.slug}
-                  meta={meta}
-                  mode={mode}
-                  isActive={meta.slug === activeSlug}
-                  onSelect={() => {
-                    void applyThemePack(meta.slug);
-                  }}
-                />
-              ))}
-            </div>
           )}
         </div>
       </div>

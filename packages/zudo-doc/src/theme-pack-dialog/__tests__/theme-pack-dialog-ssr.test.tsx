@@ -66,3 +66,27 @@ describe("ThemePackDialog — SSR shape", () => {
     expect(ThemePackDialog.displayName).toBe("ThemePackDialog");
   });
 });
+
+describe("ThemePackDialog — default-only configuration (no CSS-bearing pack)", () => {
+  // ADR Decision 2: the theme-packs plugin emits neither a postBuild
+  // index.json nor a devMiddleware route when the resolved themePacks census
+  // has no CSS-bearing pack (i.e. only "default") — so a site can enable the
+  // switcher with e.g. themePacks: ["default"] and fetching would always
+  // 404. This must be detected from the SSR order prop and short-circuited,
+  // never attempted as a fetch that can only fail (codex-review finding).
+  const DEFAULT_ONLY_PROPS: ThemePackDialogProps = {
+    open: false,
+    onClose: () => {},
+    order: [{ slug: "default", name: "Default", mode: "light", description: "The stock zudo-doc look." }],
+    active: "default",
+    base: "/",
+  };
+
+  it("shows a static note instead of a loading skeleton or an error state", () => {
+    const html = render(<ThemePackDialog {...DEFAULT_ONLY_PROPS} />);
+    expect(html).toContain("No other theme packs are configured");
+    expect(html).not.toContain("Loading theme previews");
+    expect(html).not.toContain("Could not load theme previews");
+    expect(html).not.toContain("Retry");
+  });
+});
