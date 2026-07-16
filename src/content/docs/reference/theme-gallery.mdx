@@ -1,0 +1,269 @@
+---
+title: Theme Gallery
+description: The official theme pack collection — every bundled pack with its designed-primary mode, fonts, and a one-line apply snippet.
+sidebar_position: 3.4
+tags:
+  - design-system
+  - customization
+---
+
+Twenty-one theme packs ship with `@takazudo/zudo-doc`: the reserved `default` plus twenty designed looks. This page is the full catalog. For how packs work — the config fields, the switcher UI, the CLI, and the authoring contract — see [Theme Packs](./theme-packs.mdx).
+
+Each entry shows the pack's **badge** (its designed-primary mode — a hint about which mode the pack was designed around, not a capability flag; every pack defines both modes and the header mode toggle works on all of them), its font stacks, and an apply snippet. Applying a pack is one move, done either way:
+
+```sh
+# via the CLI (rewrites themePack in zfb.config.ts)
+pnpm exec zudo-doc theme apply <slug>
+```
+
+```ts title="zfb.config.ts"
+// or set the field by hand
+themePack: "<slug>",
+```
+
+One caveat: if your project sets an explicit `themePacks` list, that list is authoritative — a `themePack` slug it omits **fails the build loudly**. Add the slug to `themePacks` too (or drop the list to enable every bundled pack).
+
+<Tip>
+
+This showcase site has the switcher enabled — use the round launcher at the bottom-right of any page to preview every pack below live, or open its browse-all grid to compare them side by side without downloading a single stylesheet.
+
+</Tip>
+
+Packs are listed in the default switcher order: `default` first, the rest alphabetical.
+
+## Default
+
+The stock zudo-doc look. No pack stylesheet is loaded — your project's configured color scheme and fonts render unchanged, at zero extra requests.
+
+- **Badge:** Dark
+- **Fonts:** system stacks (nothing loaded)
+
+```sh
+pnpm exec zudo-doc theme apply default
+```
+
+## Beacon
+
+WCAG-AAA high contrast — 7:1+ ink everywhere, 3px focus rings, always-underlined links. Clarity as beauty.
+
+- **Badge:** Light
+- **Fonts:** Atkinson Hyperlegible (sans) · Atkinson Hyperlegible Mono (mono)
+
+```sh
+pnpm exec zudo-doc theme apply beacon
+```
+
+## Broadsheet
+
+Newspaper editorial — Playfair masthead, Oxford ink rules, a red drop cap, and a night-edition dark mode.
+
+- **Badge:** Light
+- **Fonts:** Playfair Display (display) · Source Serif 4 (body) · Courier Prime (mono)
+
+```sh
+pnpm exec zudo-doc theme apply broadsheet
+```
+
+## Brutalist
+
+Raw concrete web — stark black on white, 4px slab borders, zero radius, hazard-orange tape. Structure you can see.
+
+- **Badge:** Light
+- **Fonts:** Archivo Black (display) · Space Grotesk (sans) · IBM Plex Mono (mono)
+
+```sh
+pnpm exec zudo-doc theme apply brutalist
+```
+
+## Drift
+
+Floaty slate-blue comfort dark for long reading — soft glows in place of borders, gentle elevation, relaxed Plex type.
+
+- **Badge:** Dark
+- **Fonts:** IBM Plex Sans (sans) · IBM Plex Mono (mono)
+
+```sh
+pnpm exec zudo-doc theme apply drift
+```
+
+## Fjord
+
+Polar-night blue under a faint aurora — frost-cyan accents, icy borders, snow-white text. Cold nordic calm.
+
+- **Badge:** Dark
+- **Fonts:** Inter (sans) · JetBrains Mono (mono)
+
+```sh
+pnpm exec zudo-doc theme apply fjord
+```
+
+## Foundry
+
+GitHub-neutral baseline — white paper, near-black ink, Primer-blue links, quiet gray rules. Restraint, perfected. This is the reference pack: it restyles every token surface, including all 9 `--zd-syntax-*` code-highlighting roles, in both modes.
+
+- **Badge:** Light
+- **Fonts:** Inter (sans) · system mono
+
+```sh
+pnpm exec zudo-doc theme apply foundry
+```
+
+## Futura Editorial
+
+Normal-weight geometric Futura headings over Noto Sans body — clean white, near-black ink, one restrained red accent. Loads **Jost**, the OFL stand-in for Futura, per the collection's fonts contract.
+
+- **Badge:** Light
+- **Fonts:** Jost (display) · Noto Sans (sans) · Space Mono (mono)
+
+```sh
+pnpm exec zudo-doc theme apply futura-editorial
+```
+
+## Hearth
+
+Warm cream & brick-red fireside docs — Fraunces headings, amber code blocks, ember-glow dark mode.
+
+- **Badge:** Light
+- **Fonts:** Fraunces (display) · Nunito (sans) · Spline Sans Mono (mono)
+
+```sh
+pnpm exec zudo-doc theme apply hearth
+```
+
+## Hollow
+
+Dark violet space — neon pink headings, violet links, a quiet starfield, and razor-square midnight chrome.
+
+- **Badge:** Dark
+- **Fonts:** Space Grotesk (sans) · Space Mono (mono)
+
+```sh
+pnpm exec zudo-doc theme apply hollow
+```
+
+## Ledger
+
+Cream academic serif in the Tufte tradition — warm paper, ink prose, oxblood links, hairline rules, quiet code.
+
+- **Badge:** Light
+- **Fonts:** Crimson Pro (body) · IBM Plex Mono (mono)
+
+```sh
+pnpm exec zudo-doc theme apply ledger
+```
+
+## Manuscript
+
+A quiet Garamond book page — warm paper, soft ink, sepia rubrication, small-caps subheads, fleuron section marks.
+
+- **Badge:** Light
+- **Fonts:** EB Garamond (body) · Courier Prime (mono)
+
+```sh
+pnpm exec zudo-doc theme apply manuscript
+```
+
+## Matcha
+
+Green tea ceremony — deep matcha on warm cream, mincho headings, zen whitespace, tea-foam surfaces in both modes.
+
+- **Badge:** Light
+- **Fonts:** Shippori Mincho (display) · Zen Kaku Gothic New (sans) · M PLUS 1 Code (mono)
+
+```sh
+pnpm exec zudo-doc theme apply matcha
+```
+
+## Nocturne
+
+Purple midnight — velvet aubergine depths, lavender links, and muted gold hairlines. Elegant, never neon.
+
+- **Badge:** Dark
+- **Fonts:** Cormorant Garamond (display) · Manrope (sans) · IBM Plex Mono (mono)
+
+```sh
+pnpm exec zudo-doc theme apply nocturne
+```
+
+## Observatory
+
+Night-sky atlas: star-field depth, constellation-line rules, nebula violet and comet gold over astronomer's navy.
+
+- **Badge:** Dark
+- **Fonts:** Josefin Sans (display) · Jost (sans) · Space Mono (mono)
+
+```sh
+pnpm exec zudo-doc theme apply observatory
+```
+
+## Onyx
+
+Luxury noir — jet black, champagne serif headings, and a single gold hairline accent. Watch-brand restraint.
+
+- **Badge:** Dark
+- **Fonts:** Cormorant Garamond (display) · Jost (sans) · IBM Plex Mono (mono)
+
+```sh
+pnpm exec zudo-doc theme apply onyx
+```
+
+## Phosphor
+
+Green CRT terminal — phosphor glow, scanlines, inverse-video nav, monospace everything.
+
+- **Badge:** Dark
+- **Fonts:** VT323 (display) · JetBrains Mono (sans & mono)
+
+```sh
+pnpm exec zudo-doc theme apply phosphor
+```
+
+## Solar
+
+Solarized precision — low-eyestrain paper tones, blue/cyan/orange accents, mono labels, technical calm in both modes.
+
+- **Badge:** Light
+- **Fonts:** Source Sans 3 (sans) · Source Code Pro (mono)
+
+```sh
+pnpm exec zudo-doc theme apply solar
+```
+
+## Sumi
+
+Sumi-e ink on washi — bold mincho brush headings, deep black strokes, one vermillion hanko seal accent.
+
+- **Badge:** Light
+- **Fonts:** Shippori Mincho B1 (display) · Zen Kaku Gothic New (sans) · IBM Plex Mono (mono)
+
+```sh
+pnpm exec zudo-doc theme apply sumi
+```
+
+## Swissgrid
+
+International Typographic Style — grid discipline, black on white, one hot Swiss-red accent, oversized section numbers.
+
+- **Badge:** Light
+- **Fonts:** Inter Tight (display) · Inter (sans) · IBM Plex Mono (mono)
+
+```sh
+pnpm exec zudo-doc theme apply swissgrid
+```
+
+## Washi
+
+Warm washi paper, sumi ink, and ai-iro indigo seals — quiet Japanese stationery for calm documentation.
+
+- **Badge:** Light
+- **Fonts:** Shippori Mincho (display) · Zen Kaku Gothic New (sans) · M PLUS 1 Code (mono)
+
+```sh
+pnpm exec zudo-doc theme apply washi
+```
+
+## See also
+
+- [Theme Packs](./theme-packs.mdx) — how the pack system works: config fields, switcher UI, the theme CLI, and the authoring contract
+- [Color](./color.mdx) — the color-scheme layer packs build on
+- [create-zudo-doc CLI](./create-zudo-doc.mdx) — scaffold a new project directly on any pack with `--theme-pack`
