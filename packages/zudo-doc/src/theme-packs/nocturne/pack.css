@@ -1,0 +1,503 @@
+/* ============================================================
+   Nocturne — zudo-doc theme pack (ADR docs/adr/theme-packs.md)
+
+   Purple midnight: velvet aubergine depths, lavender links, and
+   muted gold hairlines — elegant, never neon. Cormorant Garamond
+   serif display layer (h1/h2, italic lead, blockquote, pager
+   titles) over a Manrope reading face and IBM Plex Mono code.
+   Gold hairline rules everywhere: fading h1/h2 rules, sidebar/TOC
+   active markers, table header, header/footer bands. Velvet-depth
+   surfaces via fixed moonlit radial glows plus gradient-lit code
+   blocks, pager cards, and a jewel-box flyout. Light mode is the
+   same room at first light: lilac paper, aubergine ink,
+   antique-brass rules.
+
+   RADIUS DECISION: near-square. Elegance comes from gold hairlines,
+   not rounded corners — cards/admonitions at 0, chrome at 2px.
+
+   Every rule below is scoped under html[data-theme-pack="nocturne"]
+   — this is what makes the runtime pack swap atomic (Decision 3)
+   and lets the validator prove a pack can never leak styles while
+   inactive (Decision 6.7). The @font-face blocks are the sole
+   exception (at-rules can't be selector-scoped).
+
+   Prototype-selector adaptations against the REAL DOM (tokens-dump
+   §6 + component sources), noted inline where they matter:
+   - `.sb-group a`       → `#desktop-sidebar a` (hover) +
+                           `a[data-nav-active]` (gilded active marker;
+                           the gold spine is an inset box-shadow so the
+                           nested tree's own padding never shifts)
+   - `.lead`             → `.zd-content > p:first-of-type` (the
+                           description paragraph DocContentHeader
+                           renders as the article's first direct-child
+                           <p>; on a page without a frontmatter
+                           description the first body paragraph takes
+                           this styling — reads as an emphasized
+                           opening line, fails soft)
+   - `.toc-active`       → `nav[data-zd-toc] a[aria-current="true"]`
+                           (toc/toc.tsx marks the active entry with
+                           aria-current, not a mock class)
+   - `.doc-pager`        → `.zd-content > nav:last-of-type:not([aria-label]) > a`
+                           (the DocPager is the article's last
+                           unlabelled direct-child nav whose children
+                           are bare <a> cards; breadcrumb and
+                           NavCardGrid navs carry aria-labels, and
+                           list-structured navs never match `> a`)
+   - `footer[data-footer]` → `.zd-sidebar-content-wrapper > footer`
+                           (no data-footer attribute in the real DOM)
+   - `.crumb-sep`        → the breadcrumb separators are inline SVG
+                           chevrons inside the nav's <li>s; gilded via
+                           `nav[aria-label="Breadcrumb"] li > svg`
+   - `.tp-flyout`        → `div[role="dialog"][aria-label="Theme pack
+                           switcher"]` (the ledger precedent); its
+                           title is `p[aria-live="polite"]`. The
+                           launcher button has NO stable hook —
+                           intentionally NOT ported.
+   - `.hdr-search` / `.hdr-icon-btn` / `.sb-group > p` / `.toc-title`
+                           — prototype-mock markup with no stable
+                           hook; NOT ported.
+   - the prototype's `--nx-gold` / `--nx-hairline(-soft)` helper
+     properties are not part of the token manifest; their values are
+     inlined at each use site (gold at full strength, 45% alpha for
+     hairlines, 26% for soft hairlines).
+   - the prototype's `--font-sans` second entry (a commercial
+     geometric-humanist face on the Decision 5 denylist) was
+     dropped; Manrope is the loaded face, system-ui covers the rest.
+   ============================================================ */
+
+/* ---- Cormorant Garamond — the display serif: h1/h2, logo, lead,
+        blockquote, pager titles, flyout title. Variable 300–700,
+        both styles — the lead and blockquote want a TRUE italic.
+        Latin subsets only (all three families): a stray latin-ext
+        or CJK glyph falls through to the stack's system face. ---- */
+
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("./fonts/CormorantGaramond-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: italic;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("./fonts/CormorantGaramond-italic-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- Manrope — the reading face. Variable 200–800 (bold prose
+        emphasis and the 600 nav weights ride the same file). ---- */
+
+@font-face {
+  font-family: "Manrope";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("./fonts/Manrope-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- IBM Plex Mono — code. Static 400/500 + a true 400 italic
+        for comments (no variable file exists). ---- */
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/IBMPlexMono-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./fonts/IBMPlexMono-500-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/IBMPlexMono-italic-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+html[data-theme-pack="nocturne"] {
+  /* Tier-2 semantic roles — lilac paper at first light / velvet
+     aubergine after dark. Both modes always via light-dark(). */
+  --zd-bg: light-dark(oklch(0.958 0.012 300), oklch(0.155 0.03 310));
+  --zd-fg: light-dark(oklch(0.245 0.05 312), oklch(0.922 0.018 300));
+  --zd-selection-bg: light-dark(oklch(0.872 0.085 90), oklch(0.78 0.108 88));
+  --zd-selection-fg: light-dark(oklch(0.23 0.045 310), oklch(0.17 0.035 310));
+  --zd-surface: light-dark(oklch(0.932 0.018 300), oklch(0.19 0.038 309));
+  --zd-muted: light-dark(oklch(0.462 0.048 305), oklch(0.705 0.042 300));
+  --zd-accent: light-dark(oklch(0.455 0.15 295), oklch(0.765 0.105 292));
+  --zd-accent-hover: light-dark(oklch(0.375 0.165 295), oklch(0.838 0.082 290));
+  --zd-code-bg: light-dark(oklch(0.912 0.02 302), oklch(0.128 0.028 312));
+  --zd-code-fg: light-dark(oklch(0.25 0.05 310), oklch(0.908 0.02 300));
+  --zd-success: light-dark(oklch(0.455 0.105 150), oklch(0.722 0.1 150));
+  --zd-danger: light-dark(oklch(0.495 0.145 15), oklch(0.705 0.12 15));
+  --zd-warning: light-dark(oklch(0.498 0.108 85), oklch(0.78 0.108 86));
+  --zd-info: light-dark(oklch(0.455 0.12 270), oklch(0.742 0.092 268));
+
+  /* syntax — moonlit velvet, all 9 roles in both modes: lavender
+     keywords, gold strings, amber numbers, periwinkle callables,
+     dusty-rose types. The light comment/string/number inks run a
+     step darker than the prototype (comment L .52 → .50, string
+     .52 → .50, number .54 → .505) to clear WCAG AA (≥4.5:1) on the
+     lilac code panel. inserted/deleted reuse the success/danger
+     hues. */
+  --zd-syntax-comment: light-dark(oklch(0.5 0.042 305), oklch(0.645 0.045 302));
+  --zd-syntax-string: light-dark(oklch(0.5 0.105 85), oklch(0.8 0.108 88));
+  --zd-syntax-number: light-dark(oklch(0.505 0.115 55), oklch(0.782 0.112 62));
+  --zd-syntax-keyword: light-dark(oklch(0.46 0.16 295), oklch(0.772 0.128 293));
+  --zd-syntax-callable: light-dark(oklch(0.455 0.125 265), oklch(0.77 0.095 262));
+  --zd-syntax-type: light-dark(oklch(0.5 0.125 340), oklch(0.795 0.085 338));
+  --zd-syntax-name: light-dark(oklch(0.25 0.05 310), oklch(0.91 0.02 300));
+  --zd-syntax-inserted: light-dark(oklch(0.455 0.105 150), oklch(0.722 0.1 150));
+  --zd-syntax-deleted: light-dark(oklch(0.495 0.145 15), oklch(0.705 0.12 15));
+
+  /* fonts — Manrope reading face, IBM Plex Mono code, Cormorant
+     Garamond display serif for headings/serif chrome. */
+  --font-sans: "Manrope", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-display: "Cormorant Garamond", Georgia, serif;
+
+  /* Tier-3 component seams — serif display headings, square velvet
+     trays, gilded active nav (the fill token goes transparent; the
+     gradient + gold spine are painted in the extras below). */
+  --zdc-doc-title-font: var(--font-display);
+  --zdc-doc-title-weight: 600;
+  --zdc-doc-title-tracking: 0.005em;
+  --zdc-doc-h2-font: var(--font-display);
+  --zdc-doc-h2-weight: 600;
+  --zdc-doc-h2-tracking: 0.01em;
+  --zdc-admonition-radius: 0;
+  --zdc-admonition-border-width: 2px;
+  --zdc-card-radius: 0;
+  --zdc-nav-active-indicator-color: transparent;
+  --zdc-nav-active-weight: 600;
+}
+
+/* ---- Nocturne extras ---- */
+
+/* velvet-depth page: a moonlit glow from above, warm dusk in the
+   corner — fixed, so the depth holds while scrolling */
+html[data-theme-pack="nocturne"] body {
+  background-image:
+    radial-gradient(
+      1200px 640px at 50% -12%,
+      light-dark(oklch(0.925 0.03 296 / 0.6), oklch(0.235 0.062 302 / 0.55)),
+      transparent 70%
+    ),
+    radial-gradient(
+      950px 720px at 102% 102%,
+      light-dark(oklch(0.93 0.028 85 / 0.35), oklch(0.195 0.045 330 / 0.5)),
+      transparent 65%
+    );
+  background-attachment: fixed;
+}
+
+/* header: velvet band under a gold hairline */
+html[data-theme-pack="nocturne"] header[data-header] {
+  border-bottom-color: light-dark(oklch(0.53 0.105 85 / 0.45), oklch(0.78 0.105 87 / 0.45));
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in oklch, var(--zd-accent) 7%, var(--zd-surface)),
+    var(--zd-surface)
+  );
+}
+html[data-theme-pack="nocturne"] [data-header-logo] {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.45rem;
+  letter-spacing: 0.02em;
+}
+/* Exclude the current page: it carries the base `bg-fg text-bg` inverted
+   fill, so recoloring its text to the accent on hover would sit accent-on-fg
+   (~2.12:1 light / ~1.71:1 dark). Non-current items keep the accent hover. */
+html[data-theme-pack="nocturne"] [data-nav-item]:not([aria-current="page"]):hover {
+  color: var(--zd-accent);
+  text-decoration-color: light-dark(oklch(0.53 0.105 85), oklch(0.78 0.105 87));
+  text-underline-offset: 5px;
+  text-decoration-thickness: 1px;
+}
+
+/* sidebar: velvet panel behind a soft gold hairline */
+html[data-theme-pack="nocturne"] #desktop-sidebar {
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in oklch, var(--zd-surface) 65%, var(--zd-bg)),
+    var(--zd-bg) 45%
+  );
+  border-right-color: light-dark(oklch(0.53 0.105 85 / 0.26), oklch(0.78 0.105 87 / 0.26));
+}
+html[data-theme-pack="nocturne"] #desktop-sidebar a {
+  border-radius: 0;
+}
+html[data-theme-pack="nocturne"] #desktop-sidebar a:hover {
+  color: var(--zd-accent);
+  text-decoration: none;
+  background: color-mix(in oklch, var(--zd-accent) 8%, transparent);
+}
+/* active item: a lavender wash fading rightward under a gold spine.
+   The spine is an inset box-shadow (not a border) so the tree's own
+   indentation never shifts; the fill token above is transparent so
+   the gradient is the only paint. */
+html[data-theme-pack="nocturne"] a[data-nav-active] {
+  background-image: linear-gradient(
+    to right,
+    color-mix(in oklch, var(--zd-accent) 16%, transparent),
+    transparent 85%
+  );
+  color: var(--zd-fg);
+  border-radius: 0;
+  box-shadow: inset 2px 0 0 0 light-dark(oklch(0.53 0.105 85), oklch(0.78 0.105 87));
+}
+
+/* breadcrumb: quiet, gilded separators (inline SVG chevrons) */
+html[data-theme-pack="nocturne"] main nav[aria-label="Breadcrumb"] li > svg {
+  color: light-dark(oklch(0.53 0.105 85 / 0.8), oklch(0.78 0.105 87 / 0.8));
+}
+html[data-theme-pack="nocturne"] main nav[aria-label="Breadcrumb"] a:hover {
+  color: var(--zd-accent);
+}
+
+/* h1: display serif over a gold hairline fading rightward */
+html[data-theme-pack="nocturne"] .zd-content h1 {
+  font-size: 2.9rem;
+  line-height: 1.12;
+}
+html[data-theme-pack="nocturne"] .zd-content h1::after {
+  content: "";
+  display: block;
+  height: 1px;
+  margin-top: 0.6rem;
+  background: linear-gradient(
+    to right,
+    light-dark(oklch(0.53 0.105 85), oklch(0.78 0.105 87)),
+    light-dark(oklch(0.53 0.105 85 / 0.35), oklch(0.78 0.105 87 / 0.35)) 55%,
+    transparent
+  );
+}
+
+/* the lead: an italic serif whisper under the title */
+html[data-theme-pack="nocturne"] .zd-content > p:first-of-type {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.4rem;
+  line-height: 1.45;
+  color: color-mix(in oklch, var(--zd-fg) 62%, var(--zd-muted));
+}
+
+/* h2: gold fading rule. The SSR-inlined
+   `style="border-image:linear-gradient(...)"` bar is defeated with
+   border-image none !important (Decision 6.6's sole allowlisted
+   carve-out) + a zeroed border-top; the fading gold hairline is then
+   painted as a 1px top-anchored background gradient instead. */
+html[data-theme-pack="nocturne"] .zd-content h2 {
+  border-image: none !important;
+  border-top-width: 0;
+  font-size: 1.9rem;
+  background-image: linear-gradient(
+    to right,
+    light-dark(oklch(0.53 0.105 85), oklch(0.78 0.105 87)),
+    light-dark(oklch(0.53 0.105 85 / 0.3), oklch(0.78 0.105 87 / 0.3)) 60%,
+    transparent
+  );
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
+  background-position: top left;
+}
+html[data-theme-pack="nocturne"] .zd-content h3 {
+  letter-spacing: 0.01em;
+}
+
+/* prose links: lavender ink, gilded on hover */
+html[data-theme-pack="nocturne"] .zd-content a {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in oklch, var(--zd-accent) 55%, transparent);
+}
+html[data-theme-pack="nocturne"] .zd-content a:hover {
+  text-decoration-color: light-dark(oklch(0.53 0.105 85), oklch(0.78 0.105 87));
+}
+
+/* blockquote: a serif whisper behind a gold hairline */
+html[data-theme-pack="nocturne"] .zd-content blockquote {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.25rem;
+  line-height: 1.5;
+  border-left: 1px solid light-dark(oklch(0.53 0.105 85), oklch(0.78 0.105 87));
+  padding-left: 1.25rem;
+  color: color-mix(in oklch, var(--zd-fg) 75%, var(--zd-muted));
+}
+html[data-theme-pack="nocturne"] .zd-content hr {
+  border-top: 1px solid light-dark(oklch(0.53 0.105 85 / 0.26), oklch(0.78 0.105 87 / 0.26));
+}
+
+/* code block: the deepest velvet, lit from its gold top edge */
+html[data-theme-pack="nocturne"] pre.hi-root {
+  border-radius: 2px;
+  border-color: light-dark(oklch(0.53 0.105 85 / 0.26), oklch(0.78 0.105 87 / 0.26));
+  border-top-color: light-dark(oklch(0.53 0.105 85 / 0.45), oklch(0.78 0.105 87 / 0.45));
+  background-image: linear-gradient(
+    to bottom,
+    light-dark(oklch(0.94 0.016 300), oklch(0.168 0.036 310)),
+    var(--zd-code-bg) 4.5rem
+  );
+  box-shadow:
+    inset 0 1px 0 light-dark(oklch(1 0 0 / 0.55), oklch(1 0 0 / 0.045)),
+    0 14px 30px -20px light-dark(oklch(0.35 0.06 300 / 0.45), oklch(0 0 0 / 0.7));
+}
+html[data-theme-pack="nocturne"] .hi-com {
+  font-style: italic;
+}
+
+/* inline code: near-square chips */
+html[data-theme-pack="nocturne"] .zd-content code:not(pre code) {
+  border-radius: 2px;
+}
+
+/* admonitions: square velvet trays, engraved glyph titles.
+   note/tip/warning swap to the prototype's star/diamond glyphs;
+   the other four variants keep the stock icons. */
+html[data-theme-pack="nocturne"] [data-admonition] .admonition-title {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.78rem;
+}
+html[data-theme-pack="nocturne"] [data-admonition="note"] .admonition-title::before {
+  content: "✦ ";
+}
+html[data-theme-pack="nocturne"] [data-admonition="tip"] .admonition-title::before {
+  content: "✧ ";
+}
+html[data-theme-pack="nocturne"] [data-admonition="warning"] .admonition-title::before {
+  content: "◆ ";
+}
+
+/* table: gold rule under the header row, feather-light body rules */
+html[data-theme-pack="nocturne"] .zd-content th {
+  border-bottom: 1px solid light-dark(oklch(0.53 0.105 85 / 0.45), oklch(0.78 0.105 87 / 0.45));
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  color: var(--zd-muted);
+  font-weight: 600;
+}
+html[data-theme-pack="nocturne"] .zd-content td {
+  border-bottom-color: color-mix(in oklch, var(--zd-muted) 22%, transparent);
+}
+
+/* pager: velvet cards, serif destinations, gilt on hover. The
+   DocPager is the article's LAST unlabelled direct-child nav
+   (breadcrumb and NavCardGrid navs carry aria-labels). */
+html[data-theme-pack="nocturne"] .zd-content > nav:last-of-type:not([aria-label]) > a {
+  border-radius: 0;
+  background-image: linear-gradient(
+    150deg,
+    color-mix(in oklch, var(--zd-surface) 85%, var(--zd-accent)),
+    var(--zd-bg) 70%
+  );
+  border-color: color-mix(in oklch, var(--zd-muted) 32%, transparent);
+  transition:
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+html[data-theme-pack="nocturne"] .zd-content > nav:last-of-type:not([aria-label]) > a:hover {
+  border-color: light-dark(oklch(0.53 0.105 85 / 0.45), oklch(0.78 0.105 87 / 0.45));
+  box-shadow: 0 12px 28px -18px light-dark(oklch(0.35 0.06 300 / 0.5), oklch(0 0 0 / 0.7));
+}
+html[data-theme-pack="nocturne"] .zd-content > nav:last-of-type:not([aria-label]) > a div {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.66rem;
+  /* darker than the decorative gold hairline: this 0.66rem caption is small
+     text over the surface-heavy (lightest) end of the pager gradient, so it
+     needs 4.5:1 there (gold L .53 → .46). */
+  color: light-dark(oklch(0.46 0.105 85), oklch(0.78 0.105 87));
+}
+html[data-theme-pack="nocturne"] .zd-content > nav:last-of-type:not([aria-label]) > a p {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+/* TOC: hairline spine, gilded active marker. The real DOM marks the
+   active entry with aria-current="true" (toc/toc.tsx). The ul's
+   overflow clips at its padding edge (foundry note), so the entry
+   pulls back exactly to the padding edge and the 2px gold spine
+   sits snug against the rail. */
+html[data-theme-pack="nocturne"] nav[data-zd-toc] ul {
+  border-left-color: light-dark(oklch(0.53 0.105 85 / 0.26), oklch(0.78 0.105 87 / 0.26));
+}
+html[data-theme-pack="nocturne"] nav[data-zd-toc] a:hover {
+  color: var(--zd-accent);
+}
+html[data-theme-pack="nocturne"] nav[data-zd-toc] a[aria-current="true"] {
+  background: none;
+  color: var(--zd-accent);
+  font-weight: 600;
+  margin-left: calc(-1 * var(--spacing-hsp-lg, 1rem));
+  padding-left: calc(var(--spacing-hsp-lg, 1rem) - 2px);
+  border-left: 2px solid light-dark(oklch(0.53 0.105 85), oklch(0.78 0.105 87));
+}
+
+/* footer: dusk band above a soft gold hairline (the real footer has
+   no data-footer hook; it is the wrapper's direct child) */
+html[data-theme-pack="nocturne"] .zd-sidebar-content-wrapper > footer {
+  border-top-color: light-dark(oklch(0.53 0.105 85 / 0.26), oklch(0.78 0.105 87 / 0.26));
+  background-image: linear-gradient(
+    to bottom,
+    var(--zd-bg),
+    color-mix(in oklch, var(--zd-accent) 6%, var(--zd-surface))
+  );
+}
+
+/* theme-pack flyout: a jewel box — velvet glow, gold hairline frame,
+   serif title (the launcher button has no stable hook) */
+html[data-theme-pack="nocturne"] div[role="dialog"][aria-label="Theme pack switcher"] {
+  border: 1px solid light-dark(oklch(0.53 0.105 85 / 0.45), oklch(0.78 0.105 87 / 0.45));
+  border-radius: 2px;
+  background:
+    radial-gradient(
+      130% 95% at 18% 0%,
+      color-mix(in oklch, var(--zd-accent) 13%, transparent),
+      transparent 62%
+    ),
+    var(--zd-surface);
+  box-shadow:
+    inset 0 1px 0 light-dark(oklch(0.53 0.105 85 / 0.28), oklch(0.78 0.105 87 / 0.28)),
+    0 22px 48px -16px light-dark(oklch(0.3 0.06 300 / 0.4), oklch(0 0 0 / 0.7));
+}
+html[data-theme-pack="nocturne"]
+  div[role="dialog"][aria-label="Theme pack switcher"]
+  p[aria-live="polite"] {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.5rem;
+  letter-spacing: 0.01em;
+}

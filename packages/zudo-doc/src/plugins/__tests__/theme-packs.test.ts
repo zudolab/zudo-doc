@@ -4,7 +4,7 @@
 // build`) — mirrors `routes.test.ts`'s style.
 //
 // Exercised against the REAL bundled
-// `src/theme-packs/{broadsheet,default,foundry,futura-editorial,hearth,ledger,manuscript,matcha,sumi,swissgrid,washi}/`
+// `src/theme-packs/{broadsheet,default,drift,fjord,foundry,futura-editorial,hearth,hollow,ledger,manuscript,matcha,nocturne,onyx,sumi,swissgrid,washi}/`
 // directories (resolved via the plugin's own `new URL("../theme-packs/",
 // import.meta.url)`, which — under vitest, running the source directly —
 // resolves to `src/theme-packs/`): no fixture directory needed, and this
@@ -89,12 +89,17 @@ describe("theme-packs plugin — postBuild()", () => {
     expect(manifest.packs.map((p) => p.slug)).toEqual([
       "default",
       "broadsheet",
+      "drift",
+      "fjord",
       "foundry",
       "futura-editorial",
       "hearth",
+      "hollow",
       "ledger",
       "manuscript",
       "matcha",
+      "nocturne",
+      "onyx",
       "sumi",
       "swissgrid",
       "washi",
@@ -154,12 +159,17 @@ describe("theme-packs plugin — devMiddleware()", () => {
     expect(manifest.packs.map((p) => p.slug)).toEqual([
       "default",
       "broadsheet",
+      "drift",
+      "fjord",
       "foundry",
       "futura-editorial",
       "hearth",
+      "hollow",
       "ledger",
       "manuscript",
       "matcha",
+      "nocturne",
+      "onyx",
       "sumi",
       "swissgrid",
       "washi",
