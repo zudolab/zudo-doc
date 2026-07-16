@@ -1,0 +1,155 @@
+---
+title: Theme Packs
+description: Installable design bundles layered on top of the color-scheme system — bundled packs, the switcher UI, and the zudo-doc theme CLI.
+sidebar_position: 3.3
+tags:
+  - design-system
+  - customization
+---
+
+A **theme pack** is an installable design bundle — a stylesheet, a metadata file, and optional self-hosted fonts — that restyles the whole site in one move: design tokens, font stacks, and component details. Packs ship inside `@takazudo/zudo-doc`, are selected with a single config field, and can be switched live from an optional on-page switcher.
+
+## Theme packs vs color schemes
+
+zudo-doc has two theming layers, and they are independent by contract:
+
+- **Color schemes** are the ramp-native **light/dark palettes** — the `colorScheme`/`colorMode` config fields, the header mode toggle, and `light-dark()` resolution. They decide what "light" and "dark" mean on your site. See [Color](./color.mdx).
+- **Theme packs** are **installable design bundles layered on top**. A pack overrides design tokens, swaps font stacks, and may restyle components — and it defines **both** its light and dark values via `light-dark()`, so the existing mode toggle keeps working on every pack.
+
+Switching packs never touches the light/dark state, and toggling the mode never touches the active pack.
+
+|                 | Color schemes (mode system)      | Theme packs                                 |
+| --------------- | -------------------------------- | ------------------------------------------- |
+| Config fields   | `colorScheme`, `colorMode`       | `themePack`, `themePackSwitcher`, `themePacks` |
+| DOM attribute   | `<html data-theme>`              | `<html data-theme-pack>`                    |
+| Persistence key | `localStorage["zudo-doc-theme"]` | `localStorage["zudo-doc-theme-pack"]`       |
+| Change event    | `color-scheme-changed`           | `theme-pack-changed`                        |
+
+<Note>
+
+The bare word "theme" always refers to the light/dark mode system. Everything in the pack layer says **theme pack** — `data-theme` and `color-scheme-changed` are not part of the theme-pack API, and packs never read or write them.
+
+</Note>
+
+## Bundled packs
+
+| Slug      | Description                                                                                                                                                                                                        |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `default` | The stock zudo-doc look. A reserved pack that ships only metadata — **no pack stylesheet is ever loaded** for it, so the stock look costs zero extra requests.                                                       |
+| `foundry` | The reference pack: a GitHub-neutral baseline — white paper, near-black ink, Primer-blue links — that restyles every token surface, including all 9 `--zd-syntax-*` code-highlighting roles, in both light and dark. |
+
+## Choosing a pack
+
+Three config fields control the feature:
+
+| Field               | Default     | What it does                                                                                                              |
+| ------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `themePack`         | `"default"` | The active pack slug.                                                                                                      |
+| `themePackSwitcher` | `false`     | Mounts the bottom-right switcher flyout (and its browse-all dialog) on every page.                                         |
+| `themePacks`        | `undefined` | The enabled pack slugs, in switcher order. `undefined` enables all bundled packs — `"default"` first, the rest alphabetical. |
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    themePack: "foundry",
+    themePackSwitcher: true,
+    themePacks: ["default", "foundry"],
+  }),
+);
+```
+
+- An explicit `themePacks` list is authoritative: it may omit `"default"`, and its order **is** the switcher's Prev/Next cycle and the browse-all grid order.
+- An unknown or duplicate slug — in `themePack` or `themePacks` — **fails the build loudly** at plugin setup, naming the bad slug and the available ones. There is no silent fallback at build time.
+- `themePack` can name a non-default pack while `themePackSwitcher` stays `false`: a build-pinned look with no switching UI.
+
+## The switcher UI
+
+With `themePackSwitcher: true`, a small round launcher button sits fixed at the viewport's bottom-right. Clicking it opens a flyout card showing the active pack's name, its **Light/Dark badge** (the pack's designed-primary mode), and its description, along with:
+
+- **Prev / Next** — cycle through the enabled packs, with wraparound, in `themePacks` order.
+- **Browse all** (grid icon) — opens the full-grid dialog described below.
+- **✕ / Esc** — close the card.
+
+The card only advances when a switch actually commits — if a pack's stylesheet fails to load, the current pack stays applied and the UI does not move.
+
+### The browse-all dialog
+
+The grid dialog shows one card per enabled pack — a mini preview (heading sample, prose line, and a code line in the pack's syntax colors), the pack name, its Light/Dark badge, and its description. Two behaviors are deliberate:
+
+- **Browsing downloads no packs.** Cards are painted from resolved preview swatches in each pack's metadata, matching the current light/dark mode — browsing the whole catalog fetches zero pack stylesheets and zero webfonts.
+- **Applying keeps the dialog open.** Clicking a card applies that pack to the live page immediately; the dialog stays open so you can compare looks side by side. Close it with Esc, the ✕ button, or the backdrop. The active card carries a selected ring that follows switches made from any surface.
+
+### Persistence and runtime behavior
+
+- The reader's choice persists in `localStorage["zudo-doc-theme-pack"]` and is re-applied by a pre-paint bootstrap — hard loads render with the right pack from the first frame (no flash of the default look), and the choice survives SPA navigation. Visitors without JavaScript get the configured `themePack`.
+- A stored slug that is no longer enabled (removed pack, typo, tampering) silently falls back to the configured `themePack`.
+- Only the **active** pack's CSS and fonts are ever downloaded — switching fetches the incoming pack's stylesheet, waits for it to load, then flips atomically. The `default` pack loads nothing.
+- For tests and integrations: the active slug is always readable from `<html data-theme-pack="…">`, and every committed switch dispatches a `theme-pack-changed` event on `window` with `detail: { pack, previous }`.
+
+## The theme CLI
+
+The `zudo-doc` bin (from `@takazudo/zudo-doc`) has a `theme` subcommand. It is **fully offline** — the catalog comes from the installed package and the active pack from your `zfb.config.ts`; nothing is fetched from the network.
+
+```sh
+# list the installed packs and which one is active
+pnpm exec zudo-doc theme list
+
+# switch the project to the foundry pack
+pnpm exec zudo-doc theme apply foundry
+```
+
+`theme list` prints each installed pack's slug, name, mode, version, and description, and marks the one your project currently has configured.
+
+`theme apply <slug>`:
+
+- validates the slug against the installed catalog first — an unknown slug is rejected along with the list of available ones;
+- rewrites the `themePack` field inside the `zudoDoc({ … })` call in `zfb.config.ts`, adding the field if it is missing;
+- **refuses cleanly** when the config is not in the canonical scaffold shape (for example, settings hidden behind a spread) — it explains why, prints the one-line edit to make by hand, and never writes a partial change;
+- is idempotent — re-applying the already-configured slug leaves the file untouched;
+- records provenance (slug, pack version, timestamp) in `.zudo-doc.json`, the same lazily-created file `zudo-doc eject` uses.
+
+## Scaffolding with a pack
+
+`create-zudo-doc` can start a project on any bundled pack — via the `--theme-pack <slug>` flag or the interactive "Theme pack:" prompt (asked between the color-scheme questions and the feature multiselect). The switcher UI is a separate feature toggle. See the [create-zudo-doc CLI reference](./create-zudo-doc.mdx#theme-pack).
+
+```sh
+pnpm create zudo-doc my-docs --theme-pack foundry --theme-pack-switcher
+```
+
+## Light/dark and the Design Token Panel
+
+- A pack's **Light/Dark badge** is its designed-primary mode — a hint about which mode the pack was designed around, not a capability flag. Every pack defines both modes, and the header mode toggle works identically on all of them.
+- [Design Token Panel](./design-token-panel.mdx) tweaks are **per-pack**: an override you save while pack A is active is stored against pack A, hidden while another pack is active, and restored verbatim when you switch back. On the `default` pack the panel keeps using its original storage, so tweaks saved before theme packs existed survive an upgrade untouched.
+
+## Authoring a pack
+
+A pack is one directory — `theme-packs/<slug>/` — holding `pack.css`, `meta.json`, and an optional `fonts/` folder. `meta.json` carries the pack's identity (slug, display name, description, Light/Dark badge, version) plus the resolved preview swatches the browse-all dialog paints its cards from.
+
+```css title="theme-packs/my-pack/pack.css"
+html[data-theme-pack="my-pack"] {
+  --zd-bg: light-dark(#ffffff, #0d1117);
+  --zd-accent: light-dark(#0969da, #4493f8);
+  --zd-syntax-keyword: light-dark(#cf222e, #ff7b72);
+  --font-sans: "Jost", system-ui, sans-serif;
+  --zdc-doc-title-weight: 600;
+}
+```
+
+The short version of the authoring contract:
+
+- **Scope every rule** under `html[data-theme-pack="<slug>"]`. This is what makes switching atomic and guarantees an inactive pack can never leak styles.
+- **Define both modes** for every color via `light-dark(lightValue, darkValue)`. Packs never declare `color-scheme:` and never select on `[data-theme]` — mode stays the toggle's job.
+- **Override the `--zd-*` semantic roles** (including the 9 `--zd-syntax-*` highlighting roles) and `--zdc-*` component seams — never the `--color-*` Tailwind aliases, which would break the Design Token Panel's live-edit round-trip.
+- **Restyle extras only against stable DOM hooks** (`header[data-header]`, `#desktop-sidebar`, `[data-admonition]`, `pre.hi-root`, …) — never against Tailwind utility class names.
+- **Fonts are self-hosted OFL Google Fonts or system stacks — nothing else**, declared with `font-display: swap` and a fallback stack that ends in a generic family. Commercial faces are never load-bearing and never referenced (no `local("Futura")` entries) — a Futura-flavored pack loads **Jost**, its OFL stand-in. This is what makes every pack render identically offline (the Tauri reader) and under a strict CSP.
+
+A build-time validator enforces the whole contract — scoping, the token-name manifest, font parity, the commercial-face denylist — so a broken pack fails the package build, never your site build. The full architecture (metadata schema, swap algorithm, validator rules) is locked in the [theme-packs ADR](https://github.com/zudolab/zudo-doc/blob/main/packages/zudo-doc/docs/adr/theme-packs.md).
+
+## See also
+
+- [Color](./color.mdx) — the color-scheme layer packs build on
+- [Design Token Panel](./design-token-panel.mdx) — live token tweaking; tweaks are saved per pack
+- [Customizing zudo-doc](./customizing.mdx) — where theme packs sit on the escalation ladder
+- [create-zudo-doc CLI](./create-zudo-doc.mdx) — scaffolding with `--theme-pack`
+- [Configuration](../guides/configuration.mdx) — the full `zudoDoc()` field reference
