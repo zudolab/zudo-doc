@@ -4,7 +4,7 @@
 // build`) — mirrors `routes.test.ts`'s style.
 //
 // Exercised against the REAL bundled
-// `src/theme-packs/{broadsheet,default,drift,fjord,foundry,futura-editorial,hearth,hollow,ledger,manuscript,matcha,nocturne,onyx,sumi,swissgrid,washi}/`
+// `src/theme-packs/{beacon,broadsheet,brutalist,default,drift,fjord,foundry,futura-editorial,hearth,hollow,ledger,manuscript,matcha,nocturne,observatory,onyx,phosphor,solar,sumi,swissgrid,washi}/`
 // directories (resolved via the plugin's own `new URL("../theme-packs/",
 // import.meta.url)`, which — under vitest, running the source directly —
 // resolves to `src/theme-packs/`): no fixture directory needed, and this
@@ -88,7 +88,9 @@ describe("theme-packs plugin — postBuild()", () => {
     expect(manifest.schemaVersion).toBe(1);
     expect(manifest.packs.map((p) => p.slug)).toEqual([
       "default",
+      "beacon",
       "broadsheet",
+      "brutalist",
       "drift",
       "fjord",
       "foundry",
@@ -99,7 +101,10 @@ describe("theme-packs plugin — postBuild()", () => {
       "manuscript",
       "matcha",
       "nocturne",
+      "observatory",
       "onyx",
+      "phosphor",
+      "solar",
       "sumi",
       "swissgrid",
       "washi",
@@ -158,7 +163,9 @@ describe("theme-packs plugin — devMiddleware()", () => {
     const manifest = JSON.parse(res!.body!) as { packs: Array<{ slug: string }> };
     expect(manifest.packs.map((p) => p.slug)).toEqual([
       "default",
+      "beacon",
       "broadsheet",
+      "brutalist",
       "drift",
       "fjord",
       "foundry",
@@ -169,7 +176,10 @@ describe("theme-packs plugin — devMiddleware()", () => {
       "manuscript",
       "matcha",
       "nocturne",
+      "observatory",
       "onyx",
+      "phosphor",
+      "solar",
       "sumi",
       "swissgrid",
       "washi",

@@ -126,7 +126,9 @@ test.describe("Theme pack switcher", () => {
     expect(runtime.base).toBe("/");
     expect(runtime.configured).toBe("default");
     expect(Object.keys(runtime.packs).sort()).toEqual([
+      "beacon",
       "broadsheet",
+      "brutalist",
       "default",
       "drift",
       "fjord",
@@ -138,7 +140,10 @@ test.describe("Theme pack switcher", () => {
       "manuscript",
       "matcha",
       "nocturne",
+      "observatory",
       "onyx",
+      "phosphor",
+      "solar",
       "sumi",
       "swissgrid",
       "washi",
