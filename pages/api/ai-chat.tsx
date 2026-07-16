@@ -6,8 +6,8 @@
 //   - src/pages/api/ai-chat.ts  (Astro APIRoute, deleted)
 //   - packages/ai-chat-worker/  (standalone CF Worker, deleted)
 //
-// All worker-side protections from packages/ai-chat-worker/ are preserved
-// verbatim: CORS, input screening, rate limiting, audit logging.
+// Worker-side protections from packages/ai-chat-worker/ are preserved:
+// CORS, input screening, rate limiting, and audit logging.
 // The Astro version's "local" mode (claude CLI via spawn) is not portable to
 // CF Workers and is omitted; "remote" mode (Anthropic API via raw fetch) is
 // the only execution path.
@@ -17,6 +17,7 @@
 //   ANTHROPIC_API_KEY     — secret  (wrangler secret put ANTHROPIC_API_KEY)
 //   DOCS_SITE_URL         — var     (your deployed docs URL, for llms-full.txt)
 //   RATE_LIMIT            — KV namespace (wrangler kv namespace create RATE_LIMIT)
+//   AI_CHAT_DAILY_SPEND_CAP — Durable Object namespace for exact paid-call admission
 //   RATE_LIMIT_PER_MINUTE — optional var (default 10)
 //   RATE_LIMIT_PER_DAY    — optional var (default 100)
 //   IP_HASH_SECRET        — optional secret (wrangler secret put IP_HASH_SECRET);
@@ -30,7 +31,11 @@ import { resolveAllowOrigin, corsHeaders, handleOptions } from "./_ai-chat-cors"
 import { screenInput } from "./_ai-chat-screening";
 import { hashIp, fireAuditLog } from "./_ai-chat-audit";
 import { checkRateLimit } from "./_ai-chat-rate-limit";
-import { callClaude } from "./_ai-chat-client";
+import { callClaude, prepareClaudeRequest } from "./_ai-chat-client";
+import {
+  admitAiChatPaidCall,
+  secondsUntilNextUtcDay,
+} from "./_ai-chat-admission";
 import type { AiChatEnv, ChatMessage, BlockReason } from "./_ai-chat-types";
 
 // `frontmatter` is required by zfb's TSX page contract (see
@@ -88,6 +93,181 @@ function isValidMessage(msg: unknown): msg is ChatMessage {
   );
 }
 
+interface ValidatedChatRequest {
+  ok: true;
+  message: string;
+  history: ChatMessage[];
+}
+
+interface InvalidChatRequest {
+  ok: false;
+  message: string;
+  error: string;
+  status: number;
+  blockReason: BlockReason;
+}
+
+type ChatRequestValidation = ValidatedChatRequest | InvalidChatRequest;
+
+/**
+ * Performs request parsing, input validation, and prompt-injection screening
+ * before either rate limiter is touched. The caller deliberately defers audit
+ * writes until after the per-IP guard so malformed floods cannot amplify KV
+ * writes without bound.
+ */
+async function validateChatRequest(request: Request): Promise<ChatRequestValidation> {
+  // A non-JSON cross-origin POST must preflight, where the CORS allowlist is
+  // enforced before a browser can expose the response to the caller.
+  const contentType = request.headers.get("Content-Type") ?? "";
+  if (!contentType.startsWith("application/json")) {
+    return {
+      ok: false,
+      message: "",
+      error: "Content-Type must be application/json",
+      status: 415,
+      blockReason: "invalid_input",
+    };
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return {
+      ok: false,
+      message: "",
+      error: "Invalid JSON body",
+      status: 400,
+      blockReason: "invalid_input",
+    };
+  }
+
+  if (typeof body !== "object" || body === null || Array.isArray(body)) {
+    return {
+      ok: false,
+      message: "",
+      error: "message is required",
+      status: 400,
+      blockReason: "invalid_input",
+    };
+  }
+
+  const candidate = body as Record<string, unknown>;
+  if (!candidate.message || typeof candidate.message !== "string") {
+    return {
+      ok: false,
+      message: "",
+      error: "message is required",
+      status: 400,
+      blockReason: "invalid_input",
+    };
+  }
+
+  const message = candidate.message;
+  if (message.length > MAX_MESSAGE_LENGTH) {
+    return {
+      ok: false,
+      message,
+      error: `message exceeds ${MAX_MESSAGE_LENGTH} character limit`,
+      status: 400,
+      blockReason: "invalid_input",
+    };
+  }
+  if (message.trim().length === 0) {
+    return {
+      ok: false,
+      message,
+      error: "message must not be empty",
+      status: 400,
+      blockReason: "invalid_input",
+    };
+  }
+  if (!screenInput(message)) {
+    return {
+      ok: false,
+      message,
+      error: "I can only help with questions about the documentation.",
+      status: 400,
+      blockReason: "prompt_injection",
+    };
+  }
+
+  let history: ChatMessage[] = [];
+  if (candidate.history !== undefined && candidate.history !== null) {
+    if (!Array.isArray(candidate.history)) {
+      return {
+        ok: false,
+        message,
+        error: "history must be an array",
+        status: 400,
+        blockReason: "invalid_input",
+      };
+    }
+    if (candidate.history.length > MAX_HISTORY_LENGTH) {
+      return {
+        ok: false,
+        message,
+        error: `history exceeds ${MAX_HISTORY_LENGTH} entry limit`,
+        status: 400,
+        blockReason: "invalid_input",
+      };
+    }
+
+    const sanitizedHistory: ChatMessage[] = [];
+    for (const entry of candidate.history) {
+      if (!isValidMessage(entry)) {
+        return {
+          ok: false,
+          message,
+          error: "history contains malformed entries",
+          status: 400,
+          blockReason: "invalid_input",
+        };
+      }
+      if (entry.content.length > MAX_HISTORY_CONTENT_LENGTH) {
+        return {
+          ok: false,
+          message,
+          error: `history content exceeds ${MAX_HISTORY_CONTENT_LENGTH} character limit`,
+          status: 400,
+          blockReason: "invalid_input",
+        };
+      }
+      // Only user-authored turns are screened. Assistant turns may quote
+      // injection-shaped language in legitimate answers. The client can forge
+      // assistant turns because history is stateless; the structural check
+      // below and the system prompt constrain that accepted residual risk.
+      if (entry.role === "user" && !screenInput(entry.content)) {
+        return {
+          ok: false,
+          message,
+          error: "I can only help with questions about the documentation.",
+          status: 400,
+          blockReason: "prompt_injection",
+        };
+      }
+      sanitizedHistory.push({ role: entry.role, content: entry.content });
+    }
+    history = sanitizedHistory;
+
+    // Defense in depth: reject transcripts with implausibly many assistant
+    // turns while allowing one model-primed opener.
+    const userTurns = history.filter((entry) => entry.role === "user").length;
+    const assistantTurns = history.filter((entry) => entry.role === "assistant").length;
+    if (assistantTurns > userTurns + 1) {
+      return {
+        ok: false,
+        message,
+        error: "history structure is invalid",
+        status: 400,
+        blockReason: "invalid_input",
+      };
+    }
+  }
+
+  return { ok: true, message, history };
+}
+
 // ---------------------------------------------------------------------------
 // SSR handler — default export (called per-request by the zfb engine)
 // ---------------------------------------------------------------------------
@@ -117,173 +297,79 @@ export default async function AiChatHandler(): Promise<Response> {
   }
 
   // Demo-mode short-circuit: when enabled, reply with a fixed message before
-  // touching the API key, KV namespace, audit logger, or rate limiter. Lets
-  // the showcase deploy run without ANTHROPIC_API_KEY / RATE_LIMIT bindings.
+  // touching the API key, KV/DO bindings, audit logger, or rate limiters. Lets
+  // the showcase deploy run without any paid-call infrastructure.
   if (settings.aiChatDemoMode) {
     return reply({ response: DEMO_MODE_MESSAGE }, 200);
   }
 
-  // cf-connecting-ip is only set by the Cloudflare edge. On non-Cloudflare deployments
-  // this header is absent, collapsing all callers into one shared "unknown" rate-limit
-  // bucket — every caller competes against the same counters, effectively a global cap.
-  const clientIp = request.headers.get("cf-connecting-ip") ?? "unknown";
-  // HMAC-SHA-256 keyed by the optional IP_HASH_SECRET when provisioned; falls
-  // back to unsalted SHA-256 when it is absent (#2038).
-  const ipHash = await hashIp(clientIp, env.IP_HASH_SECRET);
-
-  // Rate limit FIRST — before parsing the body, running validation, or writing
-  // any audit-log entry. Every audit write touches KV, so gating audits behind
-  // the limiter is what stops an unauthenticated flood from amplifying into
-  // unbounded KV writes (and from exploiting the fail-open limiter). The
-  // tradeoff is deliberate: a malformed request from a legitimate caller also
-  // consumes quota. The rate-limited path writes no audit entry, so a blocked
-  // request performs no KV writes at all.
-  const rateLimit = await checkRateLimit(ipHash, env);
-  if (!rateLimit.allowed) {
-    return reply(
-      { error: "Too many requests" },
-      429,
-      { "Retry-After": String(rateLimit.retryAfter ?? 60) },
-    );
-  }
-
-  /** Fire-and-forget audit entry via ctx.waitUntil. */
-  function audit(
-    message: string,
-    opts: { blocked: boolean; blockReason?: BlockReason; responsePreview?: string },
-  ): void {
-    fireAuditLog(ctx.waitUntil.bind(ctx), env.RATE_LIMIT, {
-      timestamp: new Date().toISOString(),
-      ipHash,
-      message: message.slice(0, 500),
-      responsePreview: opts.responsePreview?.slice(0, 200) ?? "",
-      blocked: opts.blocked,
-      blockReason: opts.blockReason,
-    });
-  }
-
-  // Content-Type guard: reject non-JSON bodies with 415 Unsupported Media Type.
-  // A missing or non-JSON Content-Type on a cross-origin POST forces the browser to
-  // send a CORS preflight (OPTIONS) first, which this handler allows-or-denies via
-  // the allowlist, preventing credentialed cross-origin reads without a preflight.
-  const contentType = request.headers.get("Content-Type") ?? "";
-  if (!contentType.startsWith("application/json")) {
-    return reply({ error: "Content-Type must be application/json" }, 415);
-  }
-
   try {
-    let body: { message?: unknown; history?: unknown };
-    try {
-      body = (await request.json()) as { message?: unknown; history?: unknown };
-    } catch {
-      audit("", { blocked: true, blockReason: "invalid_input" });
-      return reply({ error: "Invalid JSON body" }, 400);
-    }
+    // Parse and screen first, but defer all audit KV writes until after the
+    // per-IP guard. Malformed requests still consume approximate per-IP quota.
+    const validation = await validateChatRequest(request);
 
-    if (!body.message || typeof body.message !== "string") {
-      audit("", { blocked: true, blockReason: "invalid_input" });
-      return reply({ error: "message is required" }, 400);
-    }
-
-    if (body.message.length > MAX_MESSAGE_LENGTH) {
-      audit(body.message, { blocked: true, blockReason: "invalid_input" });
+    // cf-connecting-ip is only set by the Cloudflare edge. Elsewhere, callers
+    // share the "unknown" per-IP bucket. The exact global cap is independent.
+    const clientIp = request.headers.get("cf-connecting-ip") ?? "unknown";
+    const ipHash = await hashIp(clientIp, env.IP_HASH_SECRET);
+    const rateLimit = await checkRateLimit(ipHash, env);
+    if (!rateLimit.allowed) {
       return reply(
-        { error: `message exceeds ${MAX_MESSAGE_LENGTH} character limit` },
-        400,
+        { error: "Too many requests" },
+        429,
+        { "Retry-After": String(rateLimit.retryAfter ?? 60) },
       );
     }
 
-    if (body.message.trim().length === 0) {
-      audit(body.message, { blocked: true, blockReason: "invalid_input" });
-      return reply({ error: "message must not be empty" }, 400);
+    /** Fire-and-forget audit entry via ctx.waitUntil. */
+    function audit(
+      message: string,
+      opts: { blocked: boolean; blockReason?: BlockReason; responsePreview?: string },
+    ): void {
+      fireAuditLog(ctx.waitUntil.bind(ctx), env.RATE_LIMIT, {
+        timestamp: new Date().toISOString(),
+        ipHash,
+        message: message.slice(0, 500),
+        responsePreview: opts.responsePreview?.slice(0, 200) ?? "",
+        blocked: opts.blocked,
+        blockReason: opts.blockReason,
+      });
     }
 
-    // Screen for prompt injection. Rate limiting already ran above, so a flood
-    // of injection attempts cannot amplify audit-log KV writes.
-    if (!screenInput(body.message)) {
-      audit(body.message, { blocked: true, blockReason: "prompt_injection" });
-      return reply(
-        { error: "I can only help with questions about the documentation." },
-        400,
-      );
+    if (!validation.ok) {
+      audit(validation.message, {
+        blocked: true,
+        blockReason: validation.blockReason,
+      });
+      return reply({ error: validation.error }, validation.status);
     }
 
-    let history: ChatMessage[] = [];
-    if (body.history !== undefined && body.history !== null) {
-      if (!Array.isArray(body.history)) {
-        audit(body.message, { blocked: true, blockReason: "invalid_input" });
-        return reply({ error: "history must be an array" }, 400);
-      }
-      if (body.history.length > MAX_HISTORY_LENGTH) {
-        audit(body.message, { blocked: true, blockReason: "invalid_input" });
-        return reply(
-          { error: `history exceeds ${MAX_HISTORY_LENGTH} entry limit` },
-          400,
-        );
-      }
-      const candidates = body.history as unknown[];
-      const sanitizedHistory: ChatMessage[] = [];
-      for (const entry of candidates) {
-        if (!isValidMessage(entry)) {
-          audit(body.message, { blocked: true, blockReason: "invalid_input" });
-          return reply({ error: "history contains malformed entries" }, 400);
-        }
-        if (entry.content.length > MAX_HISTORY_CONTENT_LENGTH) {
-          audit(body.message, { blocked: true, blockReason: "invalid_input" });
-          return reply(
-            {
-              error: `history content exceeds ${MAX_HISTORY_CONTENT_LENGTH} character limit`,
-            },
-            400,
-          );
-        }
-        // Apply prompt-injection screening only to user-authored turns;
-        // assistant turns are model-emitted text already constrained by
-        // the system prompt and may legitimately quote injection-shaped
-        // language in normal answers.
-        //
-        // RESIDUAL RISK (accepted by design — see issue #2036, Option 1):
-        // `history` is client-supplied and the server is stateless, so it
-        // cannot verify that an `assistant`-role entry was actually emitted
-        // by a prior model response. A caller can forge an `assistant` turn
-        // carrying hostile instructions, which skips this screening. We accept
-        // this rather than (a) screening assistant turns too — false positives
-        // on legitimate quoted content — or (b) server-issued signed history,
-        // which would add a secret and change the client/server payload
-        // contract. The blast radius is low (docs-chat only) and the system
-        // prompt instructs the model to treat all prior turns as untrusted.
-        if (entry.role === "user" && !screenInput(entry.content)) {
-          audit(body.message, { blocked: true, blockReason: "prompt_injection" });
-          return reply(
-            { error: "I can only help with questions about the documentation." },
-            400,
-          );
-        }
-        // Rebuild each entry from the validated fields only — a bare cast
-        // would smuggle unknown extra fields (e.g. cache_control) verbatim
-        // into the Anthropic API request body.
-        sanitizedHistory.push({ role: entry.role, content: entry.content });
-      }
-      history = sanitizedHistory;
+    // Resolve every non-paid prerequisite, including docs context and request
+    // serialization, before claiming an exact global admission.
+    const requestBody = await prepareClaudeRequest(
+      validation.message,
+      validation.history,
+      env,
+    );
 
-      // Defense-in-depth against forged assistant turns (residual risk #2036).
-      // A well-formed transcript alternates: the number of assistant turns may
-      // never exceed the number of user turns + 1 (one model-primed opener is
-      // valid; more means the caller injected extra assistant-role entries).
-      // Cheap structural guard — does not replace system-prompt sandboxing.
-      const userTurns = history.filter((m) => m.role === "user").length;
-      const assistantTurns = history.filter((m) => m.role === "assistant").length;
-      if (assistantTurns > userTurns + 1) {
-        audit(body.message, { blocked: true, blockReason: "invalid_input" });
+    const globalDailyLimit = settings.aiChatGlobalDailyLimit;
+    if (globalDailyLimit !== false) {
+      const admissionTime = new Date();
+      const admission = await admitAiChatPaidCall(globalDailyLimit, env, admissionTime);
+      if (!admission.allowed) {
+        const retryAfter = secondsUntilNextUtcDay(admissionTime);
         return reply(
-          { error: "history structure is invalid" },
-          400,
+          { error: "Too many requests", retryAfter },
+          429,
+          { "Retry-After": String(retryAfter) },
         );
       }
     }
 
-    const response = await callClaude(body.message, history, env);
-    audit(body.message, { blocked: false, responsePreview: response });
+    // An admission intentionally remains consumed if this single paid fetch
+    // fails. There is no refund and no automatic provider retry.
+    const response = await callClaude(requestBody, env);
+    audit(validation.message, { blocked: false, responsePreview: response });
     return reply({ response }, 200);
   } catch (err) {
     console.error("Chat endpoint error:", err instanceof Error ? err.message : err);

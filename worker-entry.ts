@@ -1,10 +1,9 @@
 import { DurableObject } from "cloudflare:workers";
 import adapterWorker from "./dist/_worker.js";
+import type { AiChatDailySpendAdmission } from "./pages/api/_ai-chat-types";
 
-export interface AiChatDailySpendAdmission {
-  allowed: boolean;
-  count: number;
-}
+export { aiChatDailySpendCapObjectName } from "./pages/api/_ai-chat-admission";
+export type { AiChatDailySpendAdmission } from "./pages/api/_ai-chat-types";
 
 interface AdmissionRow extends Record<string, SqlStorageValue> {
   allowed: number;
@@ -12,14 +11,6 @@ interface AdmissionRow extends Record<string, SqlStorageValue> {
 }
 
 const DAILY_COUNTER_ID = 1;
-
-/**
- * Returns the stable Durable Object name for the UTC day containing `now`.
- * Callers may inject the time so rollover behavior is deterministic in tests.
- */
-export function aiChatDailySpendCapObjectName(now: Date = new Date()): string {
-  return `ai-chat-daily-spend-cap:${now.toISOString().slice(0, 10)}`;
-}
 
 /**
  * Exact paid-call admission counter. One object is addressed per UTC day and
