@@ -257,7 +257,8 @@ jobs:
         #   dist/search-index.json                              (e) plugin
         #   dist/llms*.txt                                      (f) plugin
         #   dist/doc-history/*.json                             (g) merged below
-        #   dist/_worker.js + dist/_zfb_inner.mjs               (h) CF adapter
+        #   dist/_worker.js + dist/_zfb_inner.mjs               (h) generated CF
+        #                                                       adapter graph
         #   dist/.assetsignore                                  excludes (h) from
         #                                                       public asset index
         #
@@ -277,6 +278,7 @@ jobs:
       - name: Deploy to Cloudflare Workers Assets (preview alias)
         id: deploy
         run: |
+          set -o pipefail
           SLUG="${{ steps.branch.outputs.slug }}"
 
           # `wrangler versions upload --preview-alias=<slug>` uploads a new
@@ -285,16 +287,53 @@ jobs:
           # Parse it — not the per-version hash URL — so smoke gates and PR
           # comments always target the stable, predictable alias host.
           DEPLOY_LOG=$(mktemp)
-          npx wrangler@4.85.0 versions upload \
-            --preview-alias="$SLUG" \
-            --message="Preview: ${SLUG} @ ${GITHUB_SHA:0:7}" \
-            2>&1 | tee "$DEPLOY_LOG"
+          # Cloudflare does not generate preview URLs for versions implementing
+          # Durable Objects. The already-built adapter graph is uploaded through
+          # an adapter-only entry to a separate preview service with only preview
+          # aliases enabled. Production alone uses worker-entry.ts and applies
+          # the DO migration.
+          PREVIEW_CONFIG=$(mktemp "$PWD/.wrangler-preview.XXXXXX.toml")
+          trap 'rm -f "$PREVIEW_CONFIG"' EXIT
+          node scripts/write-worker-preview-config.mjs "$PREVIEW_CONFIG"
+          # Establish an active deployment for the isolated preview service
+          # before assigning a version alias. The preview config has no custom
+          # routes and keeps its primary workers.dev route disabled, so this
+          # applies service-level settings without receiving public traffic.
+          npx wrangler@4.85.0 deploy \
+            --config "$PREVIEW_CONFIG" \
+            --message="Preview service bootstrap @ ${GITHUB_SHA:0:7}"
+          upload_preview() {
+            : > "$DEPLOY_LOG"
+            npx wrangler@4.85.0 versions upload \
+              --config "$PREVIEW_CONFIG" \
+              --preview-alias="$SLUG" \
+              --message="Preview: ${SLUG} @ ${GITHUB_SHA:0:7}" \
+              2>&1 | tee "$DEPLOY_LOG"
+          }
+          # Reconcile the service's non-versioned subdomain state on every run:
+          # aliases public, primary workers.dev route private.
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --url "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/zudo-doc-preview/subdomain" \
+            --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            --header "Content-Type: application/json" \
+            --data '{"enabled":false,"previews_enabled":true}' \
+            | jq -e '.success and (.result.enabled | not) and .result.previews_enabled' > /dev/null
+          upload_preview
+          DEPLOY_URL=$(grep -oE "https://${SLUG}-[a-z0-9.-]+\.workers\.dev" "$DEPLOY_LOG" | head -1 || true)
+          if [ -z "$DEPLOY_URL" ]; then
+            # Retry once if Wrangler did not print the stable alias URL even
+            # though the service-level preview setting is active.
+            upload_preview
+            DEPLOY_URL=$(grep -oE "https://${SLUG}-[a-z0-9.-]+\.workers\.dev" "$DEPLOY_LOG" | head -1 || true)
+          fi
+          rm -f "$PREVIEW_CONFIG"
+          trap - EXIT
 
           # Match the stable alias URL: the subdomain starts with the slug
           # followed by a hyphen and the worker name (slug-zudo-doc), anchored
           # on the .workers.dev boundary so log noise after the URL can't be
           # swallowed. Parse this — not the per-version hash URL.
-          DEPLOY_URL=$(grep -oE "https://${SLUG}-[a-z0-9.-]+\.workers\.dev" "$DEPLOY_LOG" | head -1)
           if [ -z "$DEPLOY_URL" ]; then
             echo "::error::Failed to parse alias preview URL for slug '$SLUG' from wrangler output"
             exit 1
@@ -314,7 +353,10 @@ jobs:
           set -euo pipefail
           PREVIEW_URL="${{ steps.deploy.outputs.deploy_url }}/"
           echo "Checking root asset URLs at: $PREVIEW_URL"
-          HTML=$(curl -fsSL "$PREVIEW_URL")
+          # A newly assigned workers.dev alias can briefly return 404 while it
+          # propagates to the edge. Retry that bounded transient window before
+          # evaluating the deployed HTML contract.
+          HTML=$(curl --retry 6 --retry-all-errors --retry-delay 2 --retry-max-time 30 -fsSL "$PREVIEW_URL")
           # Use here-strings (not echo|grep) so grep -q exiting early on a
           # match cannot SIGPIPE upstream echo + flip pipefail.
           grep -qE "href=[\"']?/assets/" <<<"$HTML" \

@@ -25,7 +25,7 @@ The current repository contract targets zfb exclusively.
 - `pnpm build` — static HTML export to `dist/` (runs `zfb build`)
 - `pnpm preview` — serve the built `dist/` (runs `zfb preview`)
 - `pnpm check` — type checking (runs `zfb check`, which delegates to `tsc --noEmit`)
-- `pnpm b4push` — pre-push validation: 22-step suite (format check → template drift → no-host-alias guard → pin parity → fixture drift → tags audit → current-only compatibility contract → token lint → component-tokens drift → e2e spec naming guard → @flaky tracking-issue guard → wait-debt guard → b4push/CI parity → typecheck → root unit tests → package tests → safelist check → build → link check → html validation → preview smoke → manual smoke); each step's elapsed time is recorded and printed as a breakdown in the final summary. Playwright E2E runs in CI (pr-checks e2e job) and is intentionally excluded from b4push for time-budget reasons — see `TESTING.md` for the full tier rationale
+- `pnpm b4push` — pre-push validation: 23-step suite (format check → template drift → no-host-alias guard → pin parity → fixture drift → tags audit → current-only compatibility contract → token lint → component-tokens drift → e2e spec naming guard → @flaky tracking-issue guard → wait-debt guard → b4push/CI parity → typecheck → Worker contract proof → root unit tests → package tests → safelist check → build → link check → html validation → preview smoke → manual smoke); each step's elapsed time is recorded and printed as a breakdown in the final summary. Playwright E2E runs in CI (pr-checks e2e job) and is intentionally excluded from b4push for time-budget reasons — see `TESTING.md` for the full tier rationale
 - `pnpm test` — unified test entry point: builds `@takazudo/zudo-doc` dist/ then runs root unit tests (`test:unit`) and workspace package tests (`test:packages`); does not include e2e
 
 ## First-time setup on a new machine
@@ -229,15 +229,28 @@ wrangler secret put ANTHROPIC_API_KEY
 
 Paste the key when prompted. The value is stored in Cloudflare's secret store and never appears in `wrangler.toml`.
 
+### 2a. Keep the exact paid-call Durable Object migration
+
+`wrangler.toml` binds `AI_CHAT_DAILY_SPEND_CAP` to the exported `AiChatDailySpendCap` class and
+declares migration tag `v1-ai-chat-daily-spend-cap` with
+`new_sqlite_classes = ["AiChatDailySpendCap"]`. Do not replace this with D1 migration commands.
+The first production `wrangler deploy` applies the Worker migration. Build first: the custom
+`worker-entry.ts` imports the generated `dist/_worker.js`, whose adapter graph retains
+`dist/_zfb_inner.mjs`.
+
+Preview workflows intentionally generate an adapter-only config for the separate preview service;
+Cloudflare does not issue preview URLs for versions implementing Durable Objects. Preview smoke
+therefore validates SSR/assets wiring, not the live exact-cap binding.
+
 ### 2b. (Optional) Add the IP-hash HMAC secret
 
 ```sh
 wrangler secret put IP_HASH_SECRET
 ```
 
-Optional and non-breaking. When set, the ai-chat rate limiter and 7-day audit log key client IPs with **HMAC-SHA-256(ip)** instead of unsalted `SHA-256(ip)`, which defeats reversing the stored hashes by enumerating the (small) IPv4 space (#2038). When the secret is absent the worker falls back to the original unsalted SHA-256, so existing deployments behave identically and the step can be skipped.
+Optional and non-breaking. When set, the ai-chat per-IP rate limiter keys clients with **HMAC-SHA-256(ip)** instead of unsalted `SHA-256(ip)`, which defeats reversing stored rate-limit keys by enumerating the (small) IPv4 space (#2038). Audit values never contain an IP or IP hash. When the secret is absent the worker falls back to the original unsalted SHA-256 for rate-limit keys, so the step can be skipped.
 
-> **Rotation caveat.** Setting or rotating `IP_HASH_SECRET` changes every derived key. In-flight rate-limit buckets reset (acceptable — 60s windows) and audit-entry hash continuity breaks for the current 7-day window (acceptable — entries age out).
+> **Rotation caveat.** Setting or rotating `IP_HASH_SECRET` changes every derived rate-limit key. In-flight buckets reset (acceptable — 60s windows).
 
 ### 3. Verify DOCS_SITE_URL
 

@@ -5,29 +5,14 @@
  *
  * Covered:
  *   - parseLimit — valid values, NaN/negative fallback, undefined fallback
- *   - checkRateLimit — allow when below limits; deny (per-minute, per-day, global)
- *     with retryAfter; KV fail-CLOSED behaviour; global daily limit path
+ *   - checkRateLimit — approximate per-IP minute/day guards with retryAfter
+ *     and fail-CLOSED KV reads
  *
  * No real KV, no real Cloudflare globals. Settings are mocked so the
  * globalDailyLimit path can be exercised.
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-
-// ---------------------------------------------------------------------------
-// Mocks — declared before module import so vi.mock hoisting works
-// ---------------------------------------------------------------------------
-
-const mockSettingsValues = {
-  aiChatDemoMode: false,
-  aiChatGlobalDailyLimit: false as number | false,
-};
-
-vi.mock("@/config/settings", () => ({
-  get settings() {
-    return mockSettingsValues;
-  },
-}));
 
 // ---------------------------------------------------------------------------
 // Import module under test (after mocks)
@@ -76,8 +61,6 @@ let mockKV: MockKV;
 beforeEach(() => {
   vi.clearAllMocks();
   mockKV = makeMockKV();
-  mockSettingsValues.aiChatDemoMode = false;
-  mockSettingsValues.aiChatGlobalDailyLimit = false;
 });
 
 // ---------------------------------------------------------------------------
@@ -243,50 +226,6 @@ describe("checkRateLimit — deny (per-day exceeded)", () => {
   });
 });
 
-describe("checkRateLimit — global daily limit", () => {
-  it("returns allowed=false when global daily count >= globalDailyLimit", async () => {
-    mockSettingsValues.aiChatGlobalDailyLimit = 50;
-    mockKV.get.mockImplementation(async (key: string) => {
-      if (key.startsWith("rate:global:")) return "50"; // at global limit
-      return null;
-    });
-    const env = makeEnv(mockKV, "999", "999");
-    const result = await checkRateLimit("hash123", env);
-    expect(result.allowed).toBe(false);
-    expect(result.retryAfter).toBeGreaterThanOrEqual(1);
-  });
-
-  it("writes global counter key when globalDailyLimit is set and allowed", async () => {
-    mockSettingsValues.aiChatGlobalDailyLimit = 50;
-    const env = makeEnv(mockKV, "999", "999");
-    await checkRateLimit("hash123", env);
-    const keys: string[] = (mockKV.put as ReturnType<typeof vi.fn>).mock.calls.map(
-      ([k]: [string]) => k,
-    );
-    expect(keys.some((k) => k.startsWith("rate:global:"))).toBe(true);
-  });
-
-  it("does NOT write global counter key when globalDailyLimit is false", async () => {
-    mockSettingsValues.aiChatGlobalDailyLimit = false;
-    const env = makeEnv(mockKV, "999", "999");
-    await checkRateLimit("hash123", env);
-    const keys: string[] = (mockKV.put as ReturnType<typeof vi.fn>).mock.calls.map(
-      ([k]: [string]) => k,
-    );
-    expect(keys.some((k) => k.startsWith("rate:global:"))).toBe(false);
-  });
-
-  it("reads global counter key when globalDailyLimit is set", async () => {
-    mockSettingsValues.aiChatGlobalDailyLimit = 50;
-    const env = makeEnv(mockKV, "999", "999");
-    await checkRateLimit("hash123", env);
-    const readKeys: string[] = (mockKV.get as ReturnType<typeof vi.fn>).mock.calls.map(
-      ([k]: [string]) => k,
-    );
-    expect(readKeys.some((k) => k.startsWith("rate:global:"))).toBe(true);
-  });
-});
-
 // ---------------------------------------------------------------------------
 // checkRateLimit — KV error / fail-CLOSED
 // ---------------------------------------------------------------------------
@@ -299,12 +238,11 @@ describe("checkRateLimit — KV failure (fail-CLOSED)", () => {
     expect(result.allowed).toBe(false);
   });
 
-  it("returns allowed=true when KV.get throws in demo mode", async () => {
-    mockSettingsValues.aiChatDemoMode = true;
+  it("remains fail-closed because demo mode bypasses this helper", async () => {
     mockKV.get.mockRejectedValue(new Error("KV unavailable"));
     const env = makeEnv(mockKV);
     const result = await checkRateLimit("hash123", env);
-    expect(result.allowed).toBe(true);
+    expect(result.allowed).toBe(false);
   });
 });
 
@@ -313,6 +251,16 @@ describe("checkRateLimit — KV failure (fail-CLOSED)", () => {
 // ---------------------------------------------------------------------------
 
 describe("checkRateLimit — KV key format", () => {
+  it("never reads or writes the removed global KV counter", async () => {
+    const env = makeEnv(mockKV, "999", "999");
+    await checkRateLimit("myIpHash", env);
+    const keys = [
+      ...mockKV.get.mock.calls.map(([key]: [string]) => key),
+      ...mockKV.put.mock.calls.map(([key]: [string]) => key),
+    ];
+    expect(keys.some((key: string) => key.startsWith("rate:global:"))).toBe(false);
+  });
+
   it("per-minute key matches rate:min:{ipHash}:{bucket}", async () => {
     const env = makeEnv(mockKV, "999", "999");
     await checkRateLimit("myIpHash", env);

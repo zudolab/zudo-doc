@@ -11,7 +11,7 @@ function toHex(buffer: ArrayBuffer): string {
 }
 
 /**
- * Derive a stable key from a client IP for rate-limit and audit-log KV keys.
+ * Derive a stable key from a client IP for per-IP rate-limit KV keys.
  *
  * When `secret` is provided (the optional `IP_HASH_SECRET` Workers secret),
  * the IP is hashed with HMAC-SHA-256 so stored hashes cannot be reversed by
@@ -21,9 +21,8 @@ function toHex(buffer: ArrayBuffer): string {
  * unaffected.
  *
  * Both branches emit a 64-char hex SHA-256 digest, so KV key shapes are
- * unchanged. Setting or rotating the secret changes every derived key:
- * in-flight rate-limit buckets reset (60s windows, negligible) and audit-entry
- * hash continuity breaks for the current 7-day window (acceptable).
+ * unchanged. Setting or rotating the secret changes every derived rate-limit
+ * key, so in-flight buckets reset (60s windows, negligible).
  */
 export async function hashIp(ip: string, secret?: string): Promise<string> {
   const data = new TextEncoder().encode(ip);
@@ -49,6 +48,12 @@ export function fireAuditLog(
   waitUntil(
     kv
       .put(key, JSON.stringify(entry), { expirationTtl: 7 * 24 * 60 * 60 })
-      .catch((err) => console.error("Audit log write failed:", err)),
+      .catch(() =>
+        console.error({
+          event: "ai_chat_audit_write",
+          outcome: "failed",
+          utc_day: entry.timestamp.slice(0, 10),
+        }),
+      ),
   );
 }

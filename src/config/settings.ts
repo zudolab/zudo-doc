@@ -121,7 +121,7 @@ export const settings = {
    * API key endpoint. Harden your deployment with the settings below:
    * - `aiChatAllowedOrigins` — restrict CORS to known origins (default blocks
    *   all cross-origin requests when not in demo mode).
-   * - `aiChatGlobalDailyLimit` — cap total daily requests as a cost backstop.
+   * - `aiChatGlobalDailyLimit` — exact daily paid-call admission cap.
    * Rate limiting also becomes fail-closed (KV errors → HTTP 429) when
    * `aiChatDemoMode` is `false`, so a KV outage cannot unlock unbounded spend.
    * Note: `cf-connecting-ip` is only trustworthy when deployed behind Cloudflare.
@@ -141,10 +141,12 @@ export const settings = {
    */
   aiChatAllowedOrigins: [] as string[],
   /**
-   * Optional global daily request ceiling across all IPs as a cost backstop
-   * against IP rotation / botnets. `false` (default) disables the ceiling.
-   * When set to a positive integer (e.g. `500`), the endpoint returns HTTP 429
-   * once that many requests have been served in the current UTC day.
+   * Optional exact daily paid-call admission cap across all IPs as a cost
+   * backstop against IP rotation / botnets. `false` (default) disables the
+   * cap. When set to a positive integer (e.g. `500`), a UTC-day Durable Object
+   * admits at most that many Anthropic fetch attempts before returning 429.
+   * Admissions are consumed immediately before fetch and are not refunded on
+   * provider/network failure; this is not provider-confirmed spend accounting.
    *
    * Has no effect in demo mode (`aiChatDemoMode: true`).
    */

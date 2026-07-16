@@ -48,7 +48,7 @@ Use `pnpm dev:stable` when you're adding or removing showcase content files freq
 |---|---|
 | `pnpm build` | Static HTML export to `dist/` |
 | `pnpm check` | TypeScript type checking |
-| `pnpm b4push` | Pre-push validation: ~22-step pipeline (format check → ... → build → link check → HTML validation → preview smoke); `scripts/run-b4push.sh` is authoritative for the current count. E2E runs in CI (pr-checks), not in b4push, for time-budget reasons |
+| `pnpm b4push` | Pre-push validation: 23-step pipeline (format check → ... → Worker contract proof → build → link check → HTML validation → preview smoke); `scripts/run-b4push.sh` is authoritative for the current count. E2E runs in CI (pr-checks), not in b4push, for time-budget reasons |
 | `pnpm format` | Format MDX files |
 | `pnpm test:unit` | Run unit tests (Vitest) |
 | `pnpm test:e2e` | Run E2E tests (Playwright) |
