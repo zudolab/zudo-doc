@@ -3,6 +3,7 @@ import type { PanelConfig } from "@takazudo/zdtp";
 
 const zdtp = vi.hoisted(() => ({
   configurePanel: vi.fn(),
+  reapplyPersistedOverrides: vi.fn(),
   setLifecycleAdapter: vi.fn(),
   showDesignTokenPanel: vi.fn(),
 }));
@@ -263,6 +264,18 @@ describe("bootstrapDesignTokenPanel — theme-pack interplay", () => {
       zdtp.configurePanel.mock.calls.map(([cfg]) => (cfg as PanelConfig).storagePrefix),
     ).toEqual(["zudo-doc-tweak", "zudo-doc-tweak--foundry"]);
     expect(builder).toHaveBeenLastCalledWith("dark");
+    // The incoming namespace's persisted overrides are pushed back onto :root
+    // AFTER the reconfigure — configurePanel alone does not (ADR Decision 4
+    // invariant (b); regression the #2826 zdtp-interplay e2e caught). Without
+    // this, switching A→B→A leaves A's live vars cleared while the panel rows
+    // still show them.
+    expect(zdtp.reapplyPersistedOverrides).toHaveBeenCalledOnce();
+    const lastConfigureOrder = Math.max(
+      ...zdtp.configurePanel.mock.invocationCallOrder,
+    );
+    expect(zdtp.reapplyPersistedOverrides.mock.invocationCallOrder[0]!).toBeGreaterThan(
+      lastConfigureOrder,
+    );
     // Open state restored.
     expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce();
   });

@@ -57,6 +57,7 @@
 import type { JSX } from "preact";
 import {
   configurePanel,
+  reapplyPersistedOverrides,
   setLifecycleAdapter,
   showDesignTokenPanel,
   type LifecycleAdapter,
@@ -324,12 +325,22 @@ export function bootstrapDesignTokenPanel(
       // 3. Clear the OUTGOING instance's applied inline token overrides —
       //    config-driven removeProperty, never a blanket sweep.
       clearAppliedTokenOverrides(outgoingConfig);
-      // 4. Reconfigure with the NEW pack's scoped prefix; zdtp's
-      //    persisted-override reapply then seeds from that namespace,
-      //    restoring the pack's saved tweaks.
+      // 4. Reconfigure with the NEW pack's scoped prefix. This registers the
+      //    new instance and makes it the active config, but does NOT itself
+      //    push that namespace's persisted overrides onto :root — configurePanel
+      //    only wires the panel UI. On the color-scheme path zdtp's OWN
+      //    listener reapplies; on this theme-pack event zdtp is unaware
+      //    (ADR Decision 4 step 4), so nothing would restore the live vars.
       currentConfig = withPackScopedStoragePrefix(buildConfig(readMode()), pack);
       handle = configurePanel(currentConfig);
-      // 5. Restore visibility.
+      // 5. Push the now-active namespace's persisted overrides back onto :root.
+      //    Without this the switch clears the outgoing pack's inline vars
+      //    (step 3) but never re-applies the incoming pack's saved tweaks —
+      //    switching A→B→A would leave A's overrides visible only inside the
+      //    panel rows, not on the live document (regression caught by the
+      //    #2826 zdtp-interplay e2e; ADR Decision 4 invariant (b)).
+      reapplyPersistedOverrides();
+      // 6. Restore visibility.
       if (wasOpen) showDesignTokenPanel();
     }, 0);
   });
