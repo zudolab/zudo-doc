@@ -1,0 +1,443 @@
+/* ============================================================
+   Beacon — zudo-doc theme pack (ADR docs/adr/theme-packs.md)
+
+   WCAG-AAA high contrast: 7:1+ ink everywhere, 3px focus rings,
+   always-underlined links — clarity as beauty. Pure white/black
+   ground; the palette is locked to two AAA-checked accents —
+   blue (#0044cc light / #6db3ff dark) and dark red (#a50000 /
+   #ff8f8f) — and admits nothing else (success collapses to ink;
+   the palette has no green). Atkinson Hyperlegible reading face,
+   Atkinson Hyperlegible Mono code. Shape language: square —
+   every radius forced to 0. Oversized 112.5% rem grid, 1.7 body
+   line-height, thick honest chrome rules (3px header/footer,
+   2px sidebar), fully boxed admonitions with monochrome text
+   glyphs in place of the stock emoji icons.
+
+   Every ink below is verified at >= 7:1 (WCAG AAA) against its
+   background in BOTH modes:
+     light — muted #595959 7.0:1, accent #0044cc 7.8:1, hover
+     #002e8a 12.0:1, red #a50000 8.1:1, deep red #6e0000 12.6:1,
+     deep blue #00287a 13.3:1, body ink 21:1
+     dark — muted #b3b3b3 10.0:1, accent #6db3ff 9.5:1, hover
+     #9cccff 12.5:1, red #ff8f8f 9.6:1, salmon #ffb3ab 12.3:1,
+     ice blue #a8d1ff 13.2:1, body ink 21:1
+   Admonition backgrounds are pinned to the page ground (not the
+   stock 12% variant tint) so every variant title ink keeps its
+   full 7:1+ ratio; the 6px signal edge does the color-coding.
+
+   RADIUS DECISION: 0 across the board — square, uncompromising.
+   Clarity comes from thick rules and focus rings, not corners.
+
+   Every rule below is scoped under html[data-theme-pack="beacon"]
+   — this is what makes the runtime pack swap atomic (Decision 3)
+   and lets the validator prove a pack can never leak styles while
+   inactive (Decision 6.7). The @font-face blocks are the sole
+   exception (at-rules can't be selector-scoped).
+
+   Prototype-selector adaptations against the REAL DOM (tokens-dump
+   §6 + component sources), noted inline where they matter:
+   - `:where(a, button, …):focus-visible` → expanded into a
+     comma list of fully-prefixed branches (the validator checks
+     every comma-separated branch for the scope prefix, so the
+     comma-bearing :where() argument list can't be used)
+   - `.lead`             → `.zd-content > p:first-of-type` (the
+                           description paragraph DocContentHeader
+                           renders as the article's first direct-child
+                           <p>; fails soft on pages without one)
+   - `.doc-pager`        → `.zd-content > nav:last-of-type:not([aria-label]) > a`
+                           (the DocPager is the article's last
+                           unlabelled direct-child nav whose children
+                           are bare <a> cards; breadcrumb and
+                           NavCardGrid navs carry aria-labels)
+   - `.pager-title`      → the pager card's <p> (its only <p>)
+   - `footer[data-footer]` → `.zd-sidebar-content-wrapper > footer`
+                           (no data-footer attribute in the real DOM)
+   - `.tp-flyout`        → `div[role="dialog"][aria-label="Theme pack
+                           switcher"]` (the ledger/nocturne precedent).
+                           The launcher button and `.tp-btn` controls
+                           have NO stable hook — intentionally NOT
+                           ported.
+   - `.hdr-search` / `.hdr-icon-btn` / `.toc-title` / `.sb-group > p`
+                           — prototype-mock markup with no stable
+                           hook; NOT ported.
+   - the prototype's `--radius` / `--radius-lg` overrides are not
+     part of the token manifest; squareness is carried by the
+     `--zdc-*-radius` seams plus explicit border-radius: 0 on the
+     stable hooks below.
+   ============================================================ */
+
+/* ---- Atkinson Hyperlegible — the reading face, designed by the
+        Braille Institute for maximum legibility. Static 400/700 +
+        true italics. Latin subsets only (both families): a stray
+        latin-ext or CJK glyph falls through to the stack's system
+        face. ---- */
+
+@font-face {
+  font-family: "Atkinson Hyperlegible";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/AtkinsonHyperlegible-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Atkinson Hyperlegible";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/AtkinsonHyperlegible-700-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Atkinson Hyperlegible";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/AtkinsonHyperlegible-italic-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Atkinson Hyperlegible";
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/AtkinsonHyperlegible-italic-700-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- Atkinson Hyperlegible Mono — code. Variable 200–800 (bold
+        code emphasis rides the same file) + a true italic for
+        comments. ---- */
+
+@font-face {
+  font-family: "Atkinson Hyperlegible Mono";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("./fonts/AtkinsonHyperlegibleMono-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Atkinson Hyperlegible Mono";
+  font-style: italic;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("./fonts/AtkinsonHyperlegibleMono-italic-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+html[data-theme-pack="beacon"] {
+  /* the oversized readable grid: scale the whole rem system up */
+  font-size: 112.5%;
+
+  /* Tier-2 semantic roles — pure white / pure black ground,
+     21:1 body text in both modes. Both modes always via
+     light-dark(). */
+  --zd-bg: light-dark(#ffffff, #000000);
+  --zd-fg: light-dark(#000000, #ffffff);
+  --zd-surface: light-dark(#ffffff, #000000);
+  --zd-selection-bg: light-dark(#0044cc, #6db3ff);
+  --zd-selection-fg: light-dark(#ffffff, #000000);
+  --zd-muted: light-dark(#595959, #b3b3b3);
+  --zd-accent: light-dark(#0044cc, #6db3ff);
+  --zd-accent-hover: light-dark(#002e8a, #9cccff);
+  --zd-code-bg: light-dark(#ffffff, #000000);
+  --zd-code-fg: light-dark(#000000, #ffffff);
+  /* success collapses to ink — the palette does not admit green */
+  --zd-success: light-dark(#000000, #ffffff);
+  --zd-danger: light-dark(#a50000, #ff8f8f);
+  --zd-warning: light-dark(#a50000, #ff8f8f);
+  --zd-info: light-dark(#0044cc, #6db3ff);
+
+  /* search + chat roles — left to the bundled color scheme these
+     resolve to sub-AAA values (search mark 4.9:1, user bubble
+     6.7:1). Matched keywords invert into the accent like the
+     selection (7.8:1 light / 9.5:1 dark); chat bubbles stay on
+     AAA pairs (user 7.8/9.5, assistant 17.9/16.5). */
+  --zd-matched-keyword-bg: light-dark(#0044cc, #6db3ff);
+  --zd-matched-keyword-fg: light-dark(#ffffff, #000000);
+  --zd-chat-user-bg: light-dark(#0044cc, #6db3ff);
+  --zd-chat-user-text: light-dark(#ffffff, #000000);
+  --zd-chat-assistant-bg: light-dark(#ededed, #1f1f1f);
+  --zd-chat-assistant-text: light-dark(#000000, #ffffff);
+
+  /* syntax — two blues, two reds, one grey, one ink; all 9 roles
+     in both modes, every value >= 7:1 on the page ground. */
+  --zd-syntax-comment: light-dark(#595959, #b3b3b3);
+  --zd-syntax-string: light-dark(#a50000, #ff8f8f);
+  --zd-syntax-number: light-dark(#6e0000, #ffb3ab);
+  --zd-syntax-keyword: light-dark(#0044cc, #6db3ff);
+  --zd-syntax-callable: light-dark(#00287a, #a8d1ff);
+  --zd-syntax-type: light-dark(#6e0000, #ffb3ab);
+  --zd-syntax-name: light-dark(#000000, #ffffff);
+  --zd-syntax-inserted: light-dark(#000000, #ffffff);
+  --zd-syntax-deleted: light-dark(#a50000, #ff8f8f);
+  /* features.css derives the deleted-line background as a 15% mix
+     of the deleted ink itself, which drops #a50000 to 6.0:1 there —
+     a 6% mix keeps the red cue and clears AAA (7.2:1 light /
+     9.0:1 dark; inserted stays 14.9/15.1 even at the stock 15%). */
+  --zfb-hi-del-bg: color-mix(in srgb, var(--zd-syntax-deleted) 6%, var(--zd-code-bg));
+
+  /* fonts — Atkinson Hyperlegible everywhere; headings share the
+     reading face (hierarchy comes from size + weight + rules). */
+  --font-sans: "Atkinson Hyperlegible", system-ui, sans-serif;
+  --font-mono: "Atkinson Hyperlegible Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Tier-3 component seams — square, uncompromising */
+  --zdc-doc-title-font: var(--font-sans);
+  --zdc-doc-title-weight: 700;
+  --zdc-doc-title-tracking: -0.01em;
+  --zdc-doc-h2-font: var(--font-sans);
+  --zdc-doc-h2-weight: 700;
+  --zdc-doc-h2-tracking: 0;
+  --zdc-doc-link-decoration: underline;
+  --zdc-admonition-radius: 0;
+  --zdc-admonition-border-width: 6px;
+  --zdc-card-radius: 0;
+  --zdc-nav-active-indicator-color: var(--zd-fg);
+  --zdc-nav-active-weight: 700;
+}
+
+/* ---- Beacon extras ---- */
+
+html[data-theme-pack="beacon"] body {
+  line-height: 1.7;
+}
+
+/* the signature: 3px focus rings on every interactive element.
+   Written as fully-prefixed branches (not :where(a, button, …))
+   so the validator's per-branch scope check passes. */
+html[data-theme-pack="beacon"] a:focus-visible,
+html[data-theme-pack="beacon"] button:focus-visible,
+html[data-theme-pack="beacon"] input:focus-visible,
+html[data-theme-pack="beacon"] select:focus-visible,
+html[data-theme-pack="beacon"] textarea:focus-visible,
+html[data-theme-pack="beacon"] summary:focus-visible,
+html[data-theme-pack="beacon"] [tabindex]:focus-visible {
+  outline: 3px solid var(--zd-accent);
+  outline-offset: 2px;
+  border-radius: 0;
+}
+
+/* links are underlined, always — everywhere. `aside a` (not
+   `#desktop-sidebar a`) so the rule also reaches the mobile sidebar
+   panel, which is a separate hook-less <aside> rendered by the
+   SidebarToggle island — the package's only two <aside>s are the
+   two sidebars. */
+html[data-theme-pack="beacon"] [data-nav-item],
+html[data-theme-pack="beacon"] aside a,
+html[data-theme-pack="beacon"] main nav[aria-label="Breadcrumb"] a,
+html[data-theme-pack="beacon"] nav[data-zd-toc] a,
+html[data-theme-pack="beacon"] .zd-sidebar-content-wrapper > footer a {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+/* chrome framing: thick, black, honest rules */
+html[data-theme-pack="beacon"] header[data-header] {
+  border-bottom: 3px solid var(--zd-fg);
+}
+/* the header logo carries the beacon mark */
+html[data-theme-pack="beacon"] [data-header-logo]::before {
+  content: "◉";
+  color: var(--zd-accent);
+  margin-right: 0.45rem;
+}
+html[data-theme-pack="beacon"] #desktop-sidebar {
+  border-right: 2px solid var(--zd-fg);
+}
+html[data-theme-pack="beacon"] aside a,
+html[data-theme-pack="beacon"] a[data-nav-active] {
+  border-radius: 0;
+}
+html[data-theme-pack="beacon"] .zd-sidebar-content-wrapper > footer {
+  border-top: 3px solid var(--zd-fg);
+}
+
+/* strong hierarchy in the prose */
+html[data-theme-pack="beacon"] .zd-content h1 {
+  font-size: 3rem;
+}
+html[data-theme-pack="beacon"] .zd-content > p:first-of-type {
+  font-size: 1.3rem;
+}
+/* h2: a 4px ink rule. The SSR-inlined
+   `style="border-image:linear-gradient(...)"` bar is defeated with
+   border-image none !important (Decision 6.6's sole allowlisted
+   carve-out); a solid full-strength top border replaces it. */
+html[data-theme-pack="beacon"] .zd-content h2 {
+  border-image: none !important;
+  border-top: 4px solid var(--zd-fg);
+  font-size: 1.55rem;
+}
+html[data-theme-pack="beacon"] .zd-content h3 {
+  font-size: 1.25rem;
+}
+html[data-theme-pack="beacon"] .zd-content blockquote {
+  border-left: 6px solid var(--zd-fg);
+  color: var(--zd-fg);
+  font-style: italic;
+}
+html[data-theme-pack="beacon"] .zd-content hr {
+  border-top: 3px solid var(--zd-fg);
+}
+
+/* prose links: 2px underlines, 3px on hover — the ring language */
+html[data-theme-pack="beacon"] .zd-content a {
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.2em;
+}
+html[data-theme-pack="beacon"] .zd-content a:hover {
+  text-decoration-thickness: 3px;
+}
+
+/* inline code: crisp square chip behind a hairline ink rule */
+html[data-theme-pack="beacon"] .zd-content code:not(pre code) {
+  background: color-mix(in srgb, var(--zd-fg) 7%, var(--zd-bg));
+  border: 1px solid color-mix(in srgb, var(--zd-fg) 35%, transparent);
+  border-radius: 0;
+}
+
+/* code block: page-ground panel behind a 2px ink frame */
+html[data-theme-pack="beacon"] pre.hi-root {
+  border: 2px solid var(--zd-fg);
+  border-radius: 0;
+}
+html[data-theme-pack="beacon"] .hi-kw,
+html[data-theme-pack="beacon"] .hi-fn {
+  font-weight: 700;
+}
+/* comments ride the shipped mono italic face */
+html[data-theme-pack="beacon"] .hi-com {
+  font-style: italic;
+}
+
+/* find-in-page: the stock warning-tinted washes drop body ink below
+   AA on beacon's red warning role — repaint them in the accent.
+   Ink stays 12.3:1+ on the 30% wash; the active match inverts like
+   the selection (7.8:1 light / 9.5:1 dark). */
+html[data-theme-pack="beacon"] .find-match {
+  background-color: color-mix(in srgb, var(--zd-accent) 30%, transparent);
+  border-radius: 0;
+}
+html[data-theme-pack="beacon"] .find-match-active {
+  background-color: var(--zd-accent);
+  color: var(--zd-selection-fg);
+  border-radius: 0;
+  outline: 2px solid var(--zd-accent);
+}
+
+/* admonitions: fully boxed, square, 6px signal edge. Backgrounds
+   pin to the page ground (not the stock 12% tint) so every variant
+   title ink keeps its full AAA ratio — the border does the
+   color-coding. Emoji icons swap for monochrome text glyphs that
+   inherit each title's AAA ink. */
+html[data-theme-pack="beacon"] [data-admonition] {
+  border-style: solid;
+  border-width: 2px 2px 2px var(--zdc-admonition-border-width);
+  border-color: var(--zd-muted);
+  background-color: var(--zd-bg);
+}
+html[data-theme-pack="beacon"] [data-admonition="note"],
+html[data-theme-pack="beacon"] [data-admonition="important"] {
+  border-color: var(--zd-accent);
+}
+html[data-theme-pack="beacon"] [data-admonition="tip"] {
+  border-color: var(--zd-success);
+}
+html[data-theme-pack="beacon"] [data-admonition="info"] {
+  border-color: var(--zd-info);
+}
+html[data-theme-pack="beacon"] [data-admonition="warning"] {
+  border-color: var(--zd-warning);
+}
+html[data-theme-pack="beacon"] [data-admonition="danger"],
+html[data-theme-pack="beacon"] [data-admonition="caution"] {
+  border-color: var(--zd-danger);
+}
+html[data-theme-pack="beacon"] [data-admonition="note"] .admonition-title::before {
+  content: "◆ ";
+}
+html[data-theme-pack="beacon"] [data-admonition="tip"] .admonition-title::before {
+  content: "✓ ";
+}
+html[data-theme-pack="beacon"] [data-admonition="info"] .admonition-title::before {
+  content: "● ";
+}
+html[data-theme-pack="beacon"] [data-admonition="warning"] .admonition-title::before {
+  content: "▲ ";
+}
+html[data-theme-pack="beacon"] [data-admonition="danger"] .admonition-title::before {
+  content: "■ ";
+}
+html[data-theme-pack="beacon"] [data-admonition="important"] .admonition-title::before {
+  content: "! ";
+}
+html[data-theme-pack="beacon"] [data-admonition="caution"] .admonition-title::before {
+  content: "✕ ";
+}
+
+/* table: 3px header rule, honest row rules */
+html[data-theme-pack="beacon"] .zd-content th {
+  border-bottom: 3px solid var(--zd-fg);
+  font-weight: 700;
+}
+html[data-theme-pack="beacon"] .zd-content td {
+  border-bottom: 1px solid color-mix(in srgb, var(--zd-fg) 30%, transparent);
+}
+
+/* TOC: 2px spine; the inverted active pill (bg-fg text-bg, 21:1)
+   stays stock */
+html[data-theme-pack="beacon"] nav[data-zd-toc] ul {
+  border-left: 2px solid color-mix(in srgb, var(--zd-fg) 30%, transparent);
+}
+
+/* pager cards: 2px ink frames whose hover echoes the focus-ring
+   language. The DocPager is the article's LAST unlabelled
+   direct-child nav (breadcrumb and NavCardGrid navs carry
+   aria-labels). */
+html[data-theme-pack="beacon"] .zd-content > nav:last-of-type:not([aria-label]) > a {
+  border: 2px solid var(--zd-fg);
+  border-radius: 0;
+}
+html[data-theme-pack="beacon"] .zd-content > nav:last-of-type:not([aria-label]) > a:hover {
+  border-color: var(--zd-accent);
+  outline: 3px solid var(--zd-accent);
+  outline-offset: 0;
+}
+html[data-theme-pack="beacon"] .zd-content > nav:last-of-type:not([aria-label]) > a p {
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.2em;
+}
+
+/* theme-pack flyout: square, 3px-framed, hard offset shadow (the
+   launcher button has no stable hook) */
+html[data-theme-pack="beacon"] div[role="dialog"][aria-label="Theme pack switcher"] {
+  border: 3px solid var(--zd-fg);
+  border-radius: 0;
+  box-shadow: 6px 6px 0 0 color-mix(in srgb, var(--zd-fg) 18%, transparent);
+}
+html[data-theme-pack="beacon"]
+  div[role="dialog"][aria-label="Theme pack switcher"]
+  p[aria-live="polite"]::before {
+  content: "◉ ";
+  color: var(--zd-accent);
+}
