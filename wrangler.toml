@@ -15,16 +15,15 @@ compatibility_flags = ["nodejs_compat"]
 # warns "Unexpected fields found in assets field" and silently ignores them).
 #
 # preview_urls enables *.workers.dev version-preview URLs for staging/preview
-# deploys (consumed by preview-deploy.yml / pr-checks.yml via
-# `wrangler versions upload --preview-alias`).
+# deploys. Cloudflare does not generate them for versions that implement a
+# Durable Object, so preview workflows generate an adapter-only config for the
+# separate zudo-doc-preview service. Production keeps this complete config.
 preview_urls = true
 workers_dev = false  # prevent serving on *.workers.dev prod route; previews use preview_urls above
 
-# A preview-version upload cannot introduce a Durable Object migration because
-# migrations are atomic. scripts/write-worker-preview-config.mjs removes this
-# marked bootstrap block only when a versions upload reports that exact
-# migration constraint; normal previews keep the binding after production has
-# applied the migration.
+# scripts/write-worker-preview-config.mjs removes this marked block and switches
+# to worker-preview-entry.ts for preview uploads. Cloudflare preview URLs cannot
+# be generated for a version that implements a Durable Object.
 # BEGIN AI_CHAT_DAILY_SPEND_CAP_BOOTSTRAP
 [[durable_objects.bindings]]
 name = "AI_CHAT_DAILY_SPEND_CAP"

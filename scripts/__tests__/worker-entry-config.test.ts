@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { withoutUnappliedDurableObjectMigration } from "../write-worker-preview-config.mjs";
+import { createPreviewWorkerConfig } from "../write-worker-preview-config.mjs";
 
 const ROOT = resolve(import.meta.dirname, "../..");
 const read = (path: string) => readFileSync(resolve(ROOT, path), "utf8");
@@ -46,15 +46,23 @@ describe("custom Worker deployment contract", () => {
     expect(entry).toContain('import adapterWorker from "./dist/_worker.js";');
     expect(entry).toMatch(/export default adapterWorker;\s*$/);
     expect(entry).not.toMatch(/export default \{/);
+
+    const previewEntry = read("worker-preview-entry.ts");
+    expect(previewEntry).toContain('import adapterWorker from "./dist/_worker.js";');
+    expect(previewEntry).toMatch(/export default adapterWorker;\s*$/);
+    expect(previewEntry).not.toContain("AiChatDailySpendCap");
   });
 
-  it("can omit only an unapplied migration from a bootstrap preview", () => {
+  it("uses an adapter-only service for preview URLs", () => {
     const config = read("wrangler.toml");
-    const previewConfig = withoutUnappliedDurableObjectMigration(config);
+    const previewConfig = createPreviewWorkerConfig(config);
 
     expect(previewConfig).not.toContain('name = "AI_CHAT_DAILY_SPEND_CAP"');
     expect(previewConfig).not.toContain('new_sqlite_classes = ["AiChatDailySpendCap"]');
-    expect(previewConfig).toContain('main = "./worker-entry.ts"');
+    expect(previewConfig).toContain('name = "zudo-doc-preview"');
+    expect(previewConfig).toContain('main = "./worker-preview-entry.ts"');
+    expect(previewConfig).not.toContain('name = "zudo-doc"\n');
+    expect(previewConfig).not.toContain('main = "./worker-entry.ts"');
     expect(previewConfig).toContain('[assets]\ndirectory = "./dist"');
     expect(previewConfig).toContain('binding = "RATE_LIMIT"');
     expect(previewConfig).toContain('pattern = "zudo-doc.takazudomodular.com"');
@@ -64,8 +72,11 @@ describe("custom Worker deployment contract", () => {
       ".github/workflows/preview-deploy.yml",
     ]) {
       const source = read(workflow);
-      expect(source).toContain('mktemp "$PWD/.wrangler-preview-bootstrap.XXXXXX.toml"');
+      expect(source).toContain('mktemp "$PWD/.wrangler-preview.XXXXXX.toml"');
+      expect(source).toContain('node scripts/write-worker-preview-config.mjs "$PREVIEW_CONFIG"');
+      expect(source).toContain('--config "$PREVIEW_CONFIG"');
       expect(source).not.toContain('$RUNNER_TEMP/wrangler-preview-bootstrap.toml');
+      expect(source).not.toContain("UPLOAD_STATUS");
     }
   });
 });

@@ -285,33 +285,19 @@ jobs:
           # Parse it — not the per-version hash URL — so smoke gates and PR
           # comments always target the stable, predictable alias host.
           DEPLOY_LOG=$(mktemp)
-          set +e
+          # Cloudflare does not generate preview URLs for versions implementing
+          # Durable Objects. Upload an adapter-only entry to a separate preview
+          # service; production remains on worker-entry.ts with its DO binding.
+          PREVIEW_CONFIG=$(mktemp "$PWD/.wrangler-preview.XXXXXX.toml")
+          trap 'rm -f "$PREVIEW_CONFIG"' EXIT
+          node scripts/write-worker-preview-config.mjs "$PREVIEW_CONFIG"
           npx wrangler@4.85.0 versions upload \
+            --config "$PREVIEW_CONFIG" \
             --preview-alias="$SLUG" \
             --message="Preview: ${SLUG} @ ${GITHUB_SHA:0:7}" \
             2>&1 | tee "$DEPLOY_LOG"
-          UPLOAD_STATUS=${PIPESTATUS[0]}
-          set -e
-          if [ "$UPLOAD_STATUS" -ne 0 ]; then
-            # `versions upload` cannot introduce an atomic Durable Object
-            # migration. Retry only that known bootstrap failure without the
-            # not-yet-created namespace; all unrelated failures remain fatal.
-            if ! grep -Eiq 'new.{0,80}migrations cannot be uploaded|cannot upload.{0,80}migration|migrations?.{0,120}(wrangler deploy|atomic|cannot be uploaded)' "$DEPLOY_LOG"; then
-              exit "$UPLOAD_STATUS"
-            fi
-            # Keep the generated config beside wrangler.toml: Wrangler resolves
-            # relative main/assets paths from the config file's directory.
-            PREVIEW_CONFIG=$(mktemp "$PWD/.wrangler-preview-bootstrap.XXXXXX.toml")
-            trap 'rm -f "$PREVIEW_CONFIG"' EXIT
-            node scripts/write-worker-preview-config.mjs "$PREVIEW_CONFIG"
-            npx wrangler@4.85.0 versions upload \
-              --config "$PREVIEW_CONFIG" \
-              --preview-alias="$SLUG" \
-              --message="Preview bootstrap (no unapplied DO migration): ${SLUG} @ ${GITHUB_SHA:0:7}" \
-              2>&1 | tee "$DEPLOY_LOG"
-            rm -f "$PREVIEW_CONFIG"
-            trap - EXIT
-          fi
+          rm -f "$PREVIEW_CONFIG"
+          trap - EXIT
 
           # Match the stable alias URL: the subdomain starts with the slug
           # followed by a hyphen and the worker name (slug-zudo-doc), anchored

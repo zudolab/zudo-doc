@@ -4,8 +4,12 @@ import { pathToFileURL } from "node:url";
 
 const START = "# BEGIN AI_CHAT_DAILY_SPEND_CAP_BOOTSTRAP";
 const END = "# END AI_CHAT_DAILY_SPEND_CAP_BOOTSTRAP";
+const PRODUCTION_NAME = 'name = "zudo-doc"';
+const PREVIEW_NAME = 'name = "zudo-doc-preview"';
+const PRODUCTION_ENTRY = 'main = "./worker-entry.ts"';
+const PREVIEW_ENTRY = 'main = "./worker-preview-entry.ts"';
 
-export function withoutUnappliedDurableObjectMigration(source) {
+export function createPreviewWorkerConfig(source) {
   const start = source.indexOf(START);
   const end = source.indexOf(END);
 
@@ -17,7 +21,15 @@ export function withoutUnappliedDurableObjectMigration(source) {
   }
 
   const afterEnd = end + END.length;
-  return `${source.slice(0, start)}${source.slice(afterEnd).replace(/^\r?\n/, "")}`;
+  const withoutObject = `${source.slice(0, start)}${source.slice(afterEnd).replace(/^\r?\n/, "")}`;
+
+  if (!withoutObject.includes(PRODUCTION_NAME) || !withoutObject.includes(PRODUCTION_ENTRY)) {
+    throw new Error("wrangler.toml is missing the production Worker name or entry");
+  }
+
+  return withoutObject
+    .replace(PRODUCTION_NAME, PREVIEW_NAME)
+    .replace(PRODUCTION_ENTRY, PREVIEW_ENTRY);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
@@ -28,5 +40,5 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 
   const root = resolve(import.meta.dirname, "..");
   const source = readFileSync(resolve(root, "wrangler.toml"), "utf8");
-  writeFileSync(outputPath, withoutUnappliedDurableObjectMigration(source));
+  writeFileSync(outputPath, createPreviewWorkerConfig(source));
 }
