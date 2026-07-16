@@ -1561,4 +1561,32 @@ describe("scaffold — programmatic API rejects invalid project names (F4 #2013)
     });
     expect(await fs.pathExists(path.join(targetDir, "zfb.config.ts"))).toBe(true);
   });
+
+  // codex-review follow-up (#2823) — the programmatic API lacked themePack
+  // support/validation entirely; the CLI and preset paths already had it.
+  it("createZudoDoc() throws for an unknown theme pack slug", async () => {
+    await expect(
+      createZudoDoc({
+        projectName: "valid-name",
+        colorSchemeMode: "single",
+        singleScheme: "Default Dark",
+        themePack: "not-a-real-pack",
+        features: [],
+        packageManager: "pnpm",
+      }),
+    ).rejects.toThrow(/Unknown theme pack "not-a-real-pack"/);
+  });
+
+  it("createZudoDoc() accepts a known theme pack slug and threads it into zfb.config.ts", async () => {
+    const targetDir = await createZudoDoc({
+      projectName: "valid-theme-pack-test",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      themePack: "foundry",
+      features: [],
+      packageManager: "pnpm",
+    });
+    const config = await fs.readFile(path.join(targetDir, "zfb.config.ts"), "utf-8");
+    expect(config).toContain('themePack: "foundry"');
+  });
 });
