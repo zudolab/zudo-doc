@@ -4,6 +4,25 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [Unreleased]
+
+> Manual placeholder — the real release changelog is authored as
+> `src/content/docs/changelog/<version>.mdx` (+ JA mirror) and this file is
+> regenerated from those pages via `/l-make-release`. This section is
+> replaced once that flow runs; it exists so the pending scope is visible in
+> the meantime. Covers all three lockstep packages (`@takazudo/zudo-doc`,
+> `create-zudo-doc`, `@takazudo/zudo-doc-history-server`) — the lockstep
+> release ships one shared changelog body for all three.
+
+### Features
+
+- Added a 21-pack theme collection (`packages/zudo-doc/src/theme-packs/`): `default`, `foundry`, and 19 new packs — `beacon`, `broadsheet`, `brutalist`, `drift`, `fjord`, `futura-editorial`, `hearth`, `hollow`, `ledger`, `manuscript`, `matcha`, `nocturne`, `observatory`, `onyx`, `phosphor`, `solar`, `sumi`, `swissgrid`, `washi` — plus the pack gallery and switcher UI for browsing/previewing them.
+- Synced the final 21-pack catalog into `create-zudo-doc`'s CLI catalog (`packages/create-zudo-doc/src/constants.ts` `THEME_PACKS`) and the web preset generator (`src/lib/preset-generator-logic.ts`), so both surfaces offer the same pack list in the same order (#2855).
+
+### Bug Fixes
+
+- Fixed light-mode WCAG contrast issues across 4 theme packs found during pack-set integration review.
+
 ## [3.3.0] - 2026-07-12
 
 ### Features
