@@ -1,0 +1,529 @@
+/* ============================================================
+   Brutalist — zudo-doc theme pack (ADR docs/adr/theme-packs.md)
+
+   Raw concrete web: stark black ink on poured-white slab, 4px
+   structural borders, zero radius everywhere, hazard-orange tape.
+   Archivo Black uppercase display headings with mono section
+   counters (01 /) and orange // h3 prefixes over a Space Grotesk
+   reading face and IBM Plex Mono signage. The header is an
+   inverted slab (black bar on white / white bar on black) with a
+   hazard-tape edge, echoed on the shadowless 4px flyout crate.
+   The code slab is a black room in BOTH modes — white/gray
+   structure, orange for the load-bearing words. Admonitions are
+   4px boxes with stamped full-bleed title bars; links, pager
+   cards, and sidebar entries fully invert on hover. Dark mode is
+   the same structure at night: near-black concrete, white rebar
+   borders, orange kept hot.
+
+   RADIUS DECISION: zero. Everything is square — the brief is
+   structure you can see, and rounded corners lie about it.
+
+   Every rule below is scoped under html[data-theme-pack="brutalist"]
+   — this is what makes the runtime pack swap atomic (Decision 3)
+   and lets the validator prove a pack can never leak styles while
+   inactive (Decision 6.7). The @font-face blocks are the sole
+   exception (at-rules can't be selector-scoped).
+
+   Prototype-selector adaptations against the REAL DOM (tokens-dump
+   §6 + component sources), noted inline where they matter:
+   - `.hdr-icon-btn` / `.hdr-search` → the header-right controls
+     have no per-control hooks; the inverted slab instead recolors
+     every header control via ONE exclusion-listed rule (see the
+     header section) that skips the popover surfaces nested inside
+     the header (nav-more menu, nav dropdown panels, the version-
+     switcher menu, the search <dialog>) — those keep their default
+     ink-on-surface colors, which stay readable unchanged.
+   - `.sb-group a`       → `#desktop-sidebar a`; the default active
+                           item is ALREADY the inverted bg-fg/text-bg
+                           stamp, so the pack only bolds it
+                           (--zdc-nav-active-weight) and squares it.
+   - `.sb-group > p`     → prototype-mock markup with no stable
+                           hook; NOT ported.
+   - `.crumb-current`    → `nav[aria-label="Breadcrumb"] li > span`
+                           (the current page is the only <span>
+                           directly inside a breadcrumb <li>).
+   - `.doc-pager`        → `.zd-content > nav:last-of-type:not([aria-label]) > a`
+                           (the DocPager is the article's last
+                           unlabelled direct-child nav whose children
+                           are bare <a> cards — the nocturne/ledger
+                           precedent); label = `> a div`, title =
+                           `> a p`.
+   - `.toc-active`       → the real TOC active entry already carries
+                           the inverted `bg-fg text-bg` fill
+                           (toc.tsx aria-current) — the pack only
+                           bolds it.
+   - `footer[data-footer]` → `.zd-sidebar-content-wrapper > footer`
+                           (no data-footer attribute in the real DOM);
+                           the mock's `.footer-copy` has no hook, so
+                           only the 4px signage rule is ported.
+   - `.tp-flyout`        → `div[role="dialog"][aria-label="Theme pack
+                           switcher"]`; its title is
+                           `p[aria-live="polite"]`. The launcher
+                           button and control buttons have NO stable
+                           hooks — intentionally NOT ported.
+   - the prototype's `--bru-tape` / `--bru-hot` helper properties are
+     not part of the token manifest; their values are inlined at each
+     use site (tape = repeating -45deg #ff5c00/fg 10px stripes; hot =
+     light-dark(#ff5c00, #ff6a1f)).
+   - `--radius` / `--radius-lg` are not pack-settable tokens; the
+     zero-radius decision is carried by --zdc-admonition-radius /
+     --zdc-card-radius plus explicit border-radius: 0 on the
+     remaining square-cornered hooks.
+   - light-mode --zd-warning runs a step darker than the prototype
+     (#d14b00 → #c24400) to clear WCAG AA (≥4.5:1) as text on the
+     white slab.
+   ============================================================ */
+
+/* ---- Archivo Black — the display face: h1/h2, logo, flyout
+        title. Single 400 weight (that IS the family). Latin subset
+        only (all three families): a stray latin-ext or CJK glyph
+        falls through to the stack's system face. ---- */
+
+@font-face {
+  font-family: "Archivo Black";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/ArchivoBlack-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- Space Grotesk — the reading face. Variable 300–700 (bold
+        prose emphasis and nav weights ride the same file). ---- */
+
+@font-face {
+  font-family: "Space Grotesk";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("./fonts/SpaceGrotesk-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- IBM Plex Mono — code + signage (section counters, table
+        headers, admonition stamps). Static 400/500/700 — the
+        stamped labels want a TRUE bold, not a synthesized one. ---- */
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/IBMPlexMono-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./fonts/IBMPlexMono-500-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/IBMPlexMono-700-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+html[data-theme-pack="brutalist"] {
+  /* Tier-2 semantic roles — poured white slab, black ink, hazard
+     orange. Dark: the same structure at night. Both modes always
+     via light-dark(). */
+  --zd-bg: light-dark(#ffffff, #0d0d0d);
+  --zd-fg: light-dark(#000000, #f5f5f5);
+  --zd-selection-bg: light-dark(#ff5c00, #ff6a1f);
+  --zd-selection-fg: light-dark(#000000, #000000);
+  --zd-surface: light-dark(#ffffff, #0d0d0d);
+  --zd-muted: light-dark(#444444, #b0b0b0);
+  --zd-accent: light-dark(#c2410c, #ff6a1f);
+  --zd-accent-hover: light-dark(#9a3412, #ff8a4d);
+  --zd-code-bg: light-dark(#0a0a0a, #000000);
+  --zd-code-fg: light-dark(#f5f5f5, #f0f0f0);
+  --zd-success: light-dark(#000000, #f5f5f5);
+  --zd-danger: light-dark(#c2410c, #ff6a1f);
+  --zd-warning: light-dark(#c24400, #ff7a2e);
+  --zd-info: light-dark(#000000, #f5f5f5);
+
+  /* syntax — the code slab is a black room in BOTH modes: white/
+     gray structure, orange for the load-bearing words. All 9 roles;
+     inserted/deleted (absent from the prototype) read as restrained
+     mint/salmon so diffs stay legible on the black room without
+     breaking the mono+orange discipline. */
+  --zd-syntax-comment: light-dark(#8f8f8f, #878787);
+  --zd-syntax-string: light-dark(#ffb38a, #ffb38a);
+  --zd-syntax-number: light-dark(#ff9d5c, #ff9d5c);
+  --zd-syntax-keyword: light-dark(#ff6a1f, #ff7a2e);
+  --zd-syntax-callable: light-dark(#ffffff, #ffffff);
+  --zd-syntax-type: light-dark(#d4d4d4, #d4d4d4);
+  --zd-syntax-name: light-dark(#f0f0f0, #ececec);
+  --zd-syntax-inserted: light-dark(#9be9a8, #9be9a8);
+  --zd-syntax-deleted: light-dark(#ff8a8a, #ff8a8a);
+
+  /* fonts — Space Grotesk reading face, IBM Plex Mono signage,
+     Archivo Black display caps. */
+  --font-sans: "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-display: "Archivo Black", "Space Grotesk", system-ui, sans-serif;
+
+  /* Tier-3 component seams — poured-concrete caps, square slabs,
+     the stock inverted nav stamp kept and bolded. */
+  --zdc-doc-title-font: var(--font-display);
+  --zdc-doc-title-weight: 400;
+  --zdc-doc-title-tracking: 0.01em;
+  --zdc-doc-h2-font: var(--font-display);
+  --zdc-doc-h2-weight: 400;
+  --zdc-doc-h2-tracking: 0.02em;
+  --zdc-doc-link-decoration: underline;
+  --zdc-admonition-radius: 0;
+  --zdc-admonition-border-width: 4px;
+  --zdc-card-radius: 0;
+  --zdc-nav-active-indicator-color: var(--zd-fg);
+  --zdc-nav-active-weight: 700;
+}
+
+/* ---- Brutalist extras ---- */
+
+/* honest focus — a 3px hazard outline on every interactive element */
+html[data-theme-pack="brutalist"] a:focus-visible,
+html[data-theme-pack="brutalist"] button:focus-visible {
+  outline: 3px solid var(--zd-accent);
+  outline-offset: 2px;
+}
+
+/* header: inverted slab (black bar on white / white bar on black)
+   with a hazard-tape edge below it */
+html[data-theme-pack="brutalist"] header[data-header] {
+  background-color: var(--zd-fg);
+  border-bottom-color: transparent;
+}
+html[data-theme-pack="brutalist"] header[data-header]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  height: 6px;
+  background: repeating-linear-gradient(
+    -45deg,
+    #ff5c00 0 10px,
+    var(--zd-fg) 10px 20px
+  );
+  pointer-events: none;
+}
+
+/* every control sitting directly on the slab flips to bg-colored
+   ink. The :not() exclusion skips the popover surfaces nested
+   inside the header (nav-more menu, nav dropdown panels, the
+   version-switcher menu, the search <dialog>) — those keep their
+   default ink-on-surface colors. */
+html[data-theme-pack="brutalist"] header[data-header] a:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *),
+html[data-theme-pack="brutalist"] header[data-header] button:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *),
+html[data-theme-pack="brutalist"] header[data-header] span:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *) {
+  color: color-mix(in srgb, var(--zd-bg) 80%, var(--zd-fg));
+}
+html[data-theme-pack="brutalist"] header[data-header] a:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *):hover,
+html[data-theme-pack="brutalist"] header[data-header] button:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *):hover {
+  color: var(--zd-bg);
+}
+
+html[data-theme-pack="brutalist"] [data-header-logo] {
+  color: var(--zd-bg);
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.02rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+html[data-theme-pack="brutalist"] header[data-header] [data-header-logo]:hover {
+  color: var(--zd-bg);
+}
+
+/* nav: mono signage; the current page is a reversed stamp (white
+   chip, black ink) punched into the slab */
+html[data-theme-pack="brutalist"] header[data-header] a[data-nav-item],
+html[data-theme-pack="brutalist"] header[data-header] [data-nav-item] > a,
+html[data-theme-pack="brutalist"] header[data-header] [data-nav-more-toggle] {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+html[data-theme-pack="brutalist"] header[data-header] a[data-nav-item]:hover,
+html[data-theme-pack="brutalist"] header[data-header] [data-nav-item] > a:hover {
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+html[data-theme-pack="brutalist"] header[data-header] a[aria-current="page"],
+html[data-theme-pack="brutalist"] header[data-header] a[aria-current="page"]:hover {
+  background-color: var(--zd-bg);
+  color: var(--zd-fg);
+}
+html[data-theme-pack="brutalist"] header[data-header] a[aria-current="page"] svg {
+  color: var(--zd-fg);
+}
+
+/* the language switcher's current-locale marker sits directly on
+   the slab as a bare span — full bg-colored ink, not the 80% mix */
+html[data-theme-pack="brutalist"]
+  header[data-header]
+  [data-header-right]
+  span[aria-current="true"] {
+  color: var(--zd-bg);
+}
+
+/* the version-switcher trigger: a stamped outline chip on the slab */
+html[data-theme-pack="brutalist"] header[data-header] [data-version-switcher] > button {
+  border-color: color-mix(in srgb, var(--zd-bg) 55%, var(--zd-fg));
+  border-radius: 0;
+}
+
+/* popover crates hanging off the slab: square, 2px ink frame, no
+   shadow (their inner ink-on-surface colors are untouched) */
+html[data-theme-pack="brutalist"] header[data-header] [data-nav-more-menu],
+html[data-theme-pack="brutalist"] header[data-header] [data-version-switcher] ul,
+html[data-theme-pack="brutalist"] header[data-header] [data-nav-item-dropdown] div > div {
+  border: 2px solid var(--zd-fg);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* sidebar: a 4px structural wall, hover inverts like a stamp */
+html[data-theme-pack="brutalist"] #desktop-sidebar {
+  border-right: 4px solid var(--zd-fg);
+}
+html[data-theme-pack="brutalist"] #desktop-sidebar a {
+  border-radius: 0;
+}
+html[data-theme-pack="brutalist"] #desktop-sidebar a:hover {
+  background-color: var(--zd-fg);
+  color: var(--zd-bg);
+  text-decoration: none;
+}
+
+/* breadcrumb: wayfinding signage (the current page is the only
+   <span> directly inside a breadcrumb <li>) */
+html[data-theme-pack="brutalist"] main nav[aria-label="Breadcrumb"] {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+html[data-theme-pack="brutalist"] main nav[aria-label="Breadcrumb"] li > span {
+  font-weight: 700;
+}
+
+/* headings: poured-concrete caps with visible section numbering */
+html[data-theme-pack="brutalist"] .zd-content {
+  counter-reset: bru-sec;
+}
+html[data-theme-pack="brutalist"] .zd-content h1 {
+  text-transform: uppercase;
+  line-height: 1.08;
+  border-bottom: 8px solid var(--zd-fg);
+  padding-bottom: 0.4rem;
+}
+html[data-theme-pack="brutalist"] .zd-content h2 {
+  text-transform: uppercase;
+  border-image: none !important;
+  border-top: 4px solid var(--zd-fg);
+  counter-increment: bru-sec;
+}
+html[data-theme-pack="brutalist"] .zd-content h2::before {
+  content: counter(bru-sec, decimal-leading-zero) " / ";
+  font-family: var(--font-mono);
+  font-size: 0.78em;
+  color: var(--zd-accent);
+  letter-spacing: 0;
+}
+html[data-theme-pack="brutalist"] .zd-content h3 {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+html[data-theme-pack="brutalist"] .zd-content h3::before {
+  content: "// ";
+  font-family: var(--font-mono);
+  color: var(--zd-accent);
+}
+
+/* prose links: thick ink underlines; hover paints over in hazard
+   orange. Scoped to prose containers so pager cards, tag pills, and
+   heading anchors keep their own hover treatments. */
+html[data-theme-pack="brutalist"] .zd-content p a,
+html[data-theme-pack="brutalist"] .zd-content li a,
+html[data-theme-pack="brutalist"] .zd-content td a,
+html[data-theme-pack="brutalist"] .zd-content blockquote a {
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  font-weight: 500;
+}
+html[data-theme-pack="brutalist"] .zd-content p a:hover,
+html[data-theme-pack="brutalist"] .zd-content li a:hover,
+html[data-theme-pack="brutalist"] .zd-content td a:hover,
+html[data-theme-pack="brutalist"] .zd-content blockquote a:hover {
+  background-color: var(--zd-accent);
+  color: var(--zd-bg);
+  text-decoration-color: var(--zd-bg);
+}
+
+/* prose furniture */
+html[data-theme-pack="brutalist"] .zd-content blockquote {
+  border-left: 4px solid var(--zd-fg);
+  color: var(--zd-fg);
+  font-weight: 500;
+  background-color: color-mix(in srgb, var(--zd-fg) 6%, var(--zd-bg));
+  padding: 0.8rem 1.1rem;
+}
+html[data-theme-pack="brutalist"] .zd-content hr {
+  border-top: 4px solid var(--zd-fg);
+}
+html[data-theme-pack="brutalist"] .zd-content code:not(pre code) {
+  border: 1px solid color-mix(in srgb, var(--zd-fg) 35%, transparent);
+  border-radius: 0;
+}
+
+/* code slab: black room, 4px frame (white rebar in dark mode) */
+html[data-theme-pack="brutalist"] pre.hi-root {
+  border: 4px solid var(--zd-fg);
+  border-radius: 0;
+}
+
+/* tables: full 2px grid, inverted header row */
+html[data-theme-pack="brutalist"] .zd-content th,
+html[data-theme-pack="brutalist"] .zd-content td {
+  border: 2px solid var(--zd-fg);
+}
+html[data-theme-pack="brutalist"] .zd-content th {
+  background-color: var(--zd-fg);
+  color: var(--zd-bg);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* admonitions: 4px boxes with stamped full-bleed title bars. The
+   title bar's negative margins pull it flush against the box border
+   (the box's own padding is vsp-md/hsp-lg, content.css). */
+html[data-theme-pack="brutalist"] [data-admonition] {
+  border: 4px solid var(--zd-fg);
+  background-color: var(--zd-bg);
+}
+html[data-theme-pack="brutalist"] [data-admonition] .admonition-title {
+  margin: calc(-1 * var(--spacing-vsp-md, 1rem)) calc(-1 * var(--spacing-hsp-lg, 1rem))
+    0.8rem;
+  padding: 0.45rem 1rem 0.4rem;
+  background-color: var(--zd-fg);
+  color: var(--zd-bg);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+html[data-theme-pack="brutalist"] [data-admonition="note"] .admonition-title::before {
+  content: "■ ";
+}
+html[data-theme-pack="brutalist"] [data-admonition="tip"] .admonition-title::before {
+  content: "→ ";
+}
+html[data-theme-pack="brutalist"] [data-admonition="warning"] {
+  border-color: light-dark(#ff5c00, #ff6a1f);
+}
+html[data-theme-pack="brutalist"] [data-admonition="warning"] .admonition-title {
+  background-color: light-dark(#ff5c00, #ff6a1f);
+  color: #000000;
+}
+html[data-theme-pack="brutalist"] [data-admonition="warning"] .admonition-title::before {
+  content: "▲ ";
+}
+
+/* pager: slab cards, full inversion on hover. The DocPager is the
+   article's LAST unlabelled direct-child nav (breadcrumb and
+   NavCardGrid navs carry aria-labels). */
+html[data-theme-pack="brutalist"] .zd-content > nav:last-of-type:not([aria-label]) > a {
+  border: 4px solid var(--zd-fg);
+  border-radius: 0;
+}
+html[data-theme-pack="brutalist"]
+  .zd-content
+  > nav:last-of-type:not([aria-label])
+  > a:hover {
+  border-color: var(--zd-fg);
+  background-color: var(--zd-fg);
+}
+html[data-theme-pack="brutalist"] .zd-content > nav:last-of-type:not([aria-label]) > a div {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+html[data-theme-pack="brutalist"] .zd-content > nav:last-of-type:not([aria-label]) > a p {
+  font-weight: 700;
+}
+html[data-theme-pack="brutalist"] .zd-content > nav:last-of-type:not([aria-label]) > a:hover div,
+html[data-theme-pack="brutalist"] .zd-content > nav:last-of-type:not([aria-label]) > a:hover p,
+html[data-theme-pack="brutalist"] .zd-content > nav:last-of-type:not([aria-label]) > a:hover svg {
+  color: var(--zd-bg);
+}
+
+/* TOC: a 2px plumb line; the active entry already carries the
+   inverted bg-fg/text-bg stamp — just bold it */
+html[data-theme-pack="brutalist"] nav[data-zd-toc] ul {
+  border-left: 2px solid var(--zd-fg);
+}
+html[data-theme-pack="brutalist"] nav[data-zd-toc] a[aria-current="true"] {
+  font-weight: 700;
+}
+
+/* footer: signage strip (the real footer has no data-footer hook;
+   it is the wrapper's direct child) */
+html[data-theme-pack="brutalist"] .zd-sidebar-content-wrapper > footer {
+  border-top: 4px solid var(--zd-fg);
+  background-color: var(--zd-bg);
+}
+
+/* theme-pack flyout: a shadowless 4px crate with a hazard-tape lid
+   (the launcher button and control buttons have no stable hooks) */
+html[data-theme-pack="brutalist"] div[role="dialog"][aria-label="Theme pack switcher"] {
+  border: 4px solid var(--zd-fg);
+  border-radius: 0;
+  box-shadow: none;
+}
+html[data-theme-pack="brutalist"]
+  div[role="dialog"][aria-label="Theme pack switcher"]::before {
+  content: "";
+  height: 6px;
+  margin: calc(-1 * var(--spacing-hsp-lg, 1rem)) calc(-1 * var(--spacing-hsp-lg, 1rem)) 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    #ff5c00 0 10px,
+    var(--zd-fg) 10px 20px
+  );
+}
+html[data-theme-pack="brutalist"]
+  div[role="dialog"][aria-label="Theme pack switcher"]
+  p[aria-live="polite"] {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
