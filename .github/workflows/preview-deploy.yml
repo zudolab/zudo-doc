@@ -304,17 +304,20 @@ jobs:
               2>&1 | tee "$DEPLOY_LOG"
           }
           upload_preview
+          # The first upload creates the service when necessary. Reconcile its
+          # non-versioned subdomain state on every run: aliases public, primary
+          # workers.dev route private.
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --url "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/zudo-doc-preview/subdomain" \
+            --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            --header "Content-Type: application/json" \
+            --data '{"enabled":false,"previews_enabled":true}' \
+            | jq -e '.success and (.result.enabled | not) and .result.previews_enabled' > /dev/null
           DEPLOY_URL=$(grep -oE "https://${SLUG}-[a-z0-9.-]+\.workers\.dev" "$DEPLOY_LOG" | head -1 || true)
           if [ -z "$DEPLOY_URL" ]; then
-            # Bootstrap the isolated preview service's non-versioned routing,
-            # then retry so Cloudflare creates the requested preview alias.
-            curl --fail-with-body --silent --show-error \
-              --request POST \
-              --url "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/zudo-doc-preview/subdomain" \
-              --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-              --header "Content-Type: application/json" \
-              --data '{"enabled":false,"previews_enabled":true}' \
-              | jq -e '.success and (.result.enabled | not) and .result.previews_enabled' > /dev/null
+            # The first upload bootstrapped the service before preview aliases
+            # were active. Retry to create the requested alias.
             upload_preview
             DEPLOY_URL=$(grep -oE "https://${SLUG}-[a-z0-9.-]+\.workers\.dev" "$DEPLOY_LOG" | head -1 || true)
           fi

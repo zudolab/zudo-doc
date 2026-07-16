@@ -769,18 +769,21 @@ jobs:
               2>&1 | tee "$DEPLOY_LOG"
           }
           upload_preview
+          # The first upload creates the service when necessary. Reconcile its
+          # non-versioned subdomain state on every run: aliases public, primary
+          # workers.dev route private.
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --url "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/zudo-doc-preview/subdomain" \
+            --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            --header "Content-Type: application/json" \
+            --data '{"enabled":false,"previews_enabled":true}' \
+            | jq -e '.success and (.result.enabled | not) and .result.previews_enabled' > /dev/null
           DEPLOY_URL=$(grep -oE "https://${ALIAS}-[a-z0-9.-]+\.workers\.dev" "$DEPLOY_LOG" | head -1 || true)
           if [ -z "$DEPLOY_URL" ]; then
             # A new service is created by the first upload, but versions upload
-            # does not apply its non-versioned subdomain settings. Enable the
-            # isolated service explicitly, then create the aliased version.
-            curl --fail-with-body --silent --show-error \
-              --request POST \
-              --url "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/zudo-doc-preview/subdomain" \
-              --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-              --header "Content-Type: application/json" \
-              --data '{"enabled":false,"previews_enabled":true}' \
-              | jq -e '.success and (.result.enabled | not) and .result.previews_enabled' > /dev/null
+            # does not apply its non-versioned subdomain settings. Now that the
+            # alias setting is active, create the aliased version.
             upload_preview
             DEPLOY_URL=$(grep -oE "https://${ALIAS}-[a-z0-9.-]+\.workers\.dev" "$DEPLOY_LOG" | head -1 || true)
           fi
