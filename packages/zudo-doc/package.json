@@ -563,6 +563,10 @@
     "./config": {
       "types": "./dist/config.d.ts",
       "default": "./dist/config.js"
+    },
+    "./theme-cli": {
+      "types": "./dist/theme-cli/index.d.ts",
+      "default": "./dist/theme-cli/index.js"
     }
   },
   "bin": {
