@@ -66,6 +66,12 @@ describe("custom Worker deployment contract", () => {
     expect(previewConfig).toContain("preview_urls = true");
     expect(previewConfig).toContain("workers_dev = false");
     expect(previewConfig).not.toContain("workers_dev = true");
+    expect(previewConfig).toContain(
+      'compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]',
+    );
+    expect(config).not.toContain(
+      'compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]',
+    );
     expect(previewConfig).not.toContain('name = "zudo-doc"\n');
     expect(previewConfig).not.toContain('main = "./worker-entry.ts"');
     expect(previewConfig).toContain('[assets]\ndirectory = "./dist"');

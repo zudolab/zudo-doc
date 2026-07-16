@@ -92,6 +92,7 @@ https://<alias>-zudo-doc-preview.<your-subdomain>.workers.dev
 
 CI parses the exact host from wrangler's output and posts it automatically as a comment on the PR by the **preview** job.
 When the isolated service is first created, CI explicitly enables only its preview-URL subdomain setting through the Cloudflare API, then retries the aliased upload.
+The preview-only config also adds `global_fetch_strictly_public`, which Cloudflare requires for same-zone Worker fetches; production's compatibility flags remain unchanged.
 
 Cloudflare does not issue preview URLs for versions implementing Durable Objects. Preview workflows
 therefore generate an adapter-only config/entry for a separate preview service after the site build.
