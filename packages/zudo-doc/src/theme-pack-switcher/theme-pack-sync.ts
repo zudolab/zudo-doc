@@ -168,9 +168,17 @@ export async function applyThemePack(next: string): Promise<boolean> {
     return false;
   }
 
-  // 2. No-op when already active.
+  // 2. No-op when already active — but still supersede any in-flight swap:
+  //    "stay on the current pack" is itself the user's LATEST instruction.
+  //    Without the bump, a still-loading earlier call would pass its step-5
+  //    token check and commit the pack the user just cancelled (last-write-
+  //    wins violation; review finding). The superseded call aborts at step 5
+  //    (or in its failure branch) and removes its own loading link.
   const current = readThemePackFromDom();
-  if (next === current) return true;
+  if (next === current) {
+    seq++;
+    return true;
+  }
 
   // 3. Take the race token.
   const token = ++seq;

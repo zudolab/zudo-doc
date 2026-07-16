@@ -26,7 +26,14 @@
 // (the incoming SSR head never carries one), so the handler re-resolves the
 // slug, re-asserts the html attribute, and re-inserts the link via
 // `createElement`/`appendChild` — NEVER `document.write`, which after load
-// would clobber the document. The script's text is build-static and identical
+// would clobber the document. Slug resolution is stored-first (validated) per
+// the ADR, with a validated LIVE `<html data-theme-pack>` fallback before the
+// configured default: `data-theme-pack` rides `preserveHtmlAttrs`, so when
+// persistence failed during a runtime switch (private mode / disabled
+// storage) the user's in-session pack survives soft navigations instead of
+// silently reverting (review finding). On hard load the live attribute is the
+// SSR-rendered configured slug, so the fallback is behavior-identical there.
+// The script's text is build-static and identical
 // on every page, so zfb's already-executed-script dedupe
 // (`scriptsAlreadyRan`, keyed on textContent) guarantees it runs exactly once
 // per hard load — the handler is never double-registered.
@@ -120,7 +127,7 @@ var KEY=${key};
 var ATTR=${attr};
 var LINK_ATTR=${linkAttr};
 var DEFAULT_SLUG=${defaultSlug};
-function resolveSlug(){var stored=null;try{stored=localStorage.getItem(KEY);}catch(e){}return stored&&Object.prototype.hasOwnProperty.call(packs,stored)?stored:configured;}
+function resolveSlug(){var stored=null;try{stored=localStorage.getItem(KEY);}catch(e){}if(stored&&Object.prototype.hasOwnProperty.call(packs,stored))return stored;var live=document.documentElement.getAttribute(ATTR);if(live&&Object.prototype.hasOwnProperty.call(packs,live))return live;return configured;}
 function packHref(slug){return base+"theme-packs/"+slug+"/pack.css?v="+packs[slug];}
 var slug=resolveSlug();
 document.documentElement.setAttribute(ATTR,slug);

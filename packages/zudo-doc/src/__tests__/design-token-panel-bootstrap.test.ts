@@ -160,9 +160,12 @@ describe("withPackScopedStoragePrefix", () => {
 });
 
 describe("bootstrapDesignTokenPanel — theme-pack interplay", () => {
-  /** A PanelConfig with a real tabs/tiers/items shape so the config-driven
-   *  clear has token names to enumerate. */
-  function makeTokenConfig(storagePrefix: string): PanelConfig {
+  /** A PanelConfig with a real tabs/tiers/items (+ colorExtras.baseRoles)
+   *  shape so the config-driven clear has token names to enumerate. */
+  function makeTokenConfig(
+    storagePrefix: string,
+    extras: Record<string, unknown> = {},
+  ): PanelConfig {
     return {
       storagePrefix,
       tabs: [
@@ -179,6 +182,12 @@ describe("bootstrapDesignTokenPanel — theme-pack interplay", () => {
               ],
             },
           ],
+          // zdtp applies these base-role vars inline too — they are NOT
+          // represented by any TierItem.cssVar, so the clear must include
+          // them (review finding).
+          colorExtras: {
+            baseRoles: { background: "--zdtp-role-bg", foreground: "--zdtp-role-fg" },
+          },
         },
         {
           id: "spacing",
@@ -192,8 +201,18 @@ describe("bootstrapDesignTokenPanel — theme-pack interplay", () => {
           ],
         },
       ],
+      ...extras,
     } as unknown as PanelConfig;
   }
+
+  /** The full clear set makeTokenConfig declares, in traversal order. */
+  const DECLARED_TOKEN_NAMES = [
+    "--zd-accent",
+    "--zd-bg",
+    "--zdtp-role-bg",
+    "--zdtp-role-fg",
+    "--spacing-hsp-md",
+  ];
 
   it("configures with the pack-scoped prefix when a non-default pack is already active at boot", () => {
     installBrowser("light", "foundry");
@@ -232,12 +251,11 @@ describe("bootstrapDesignTokenPanel — theme-pack interplay", () => {
     expect(destroy.mock.invocationCallOrder[0]!).toBeLessThan(
       browser.removeProperty.mock.invocationCallOrder[0]!,
     );
-    // Config-driven clear: EXACTLY the outgoing config's declared token names.
-    expect(browser.removeProperty.mock.calls.map(([name]) => name)).toEqual([
-      "--zd-accent",
-      "--zd-bg",
-      "--spacing-hsp-md",
-    ]);
+    // Config-driven clear: EXACTLY the outgoing config's declared token names
+    // (tier items + colorExtras.baseRoles values).
+    expect(browser.removeProperty.mock.calls.map(([name]) => name)).toEqual(
+      DECLARED_TOKEN_NAMES,
+    );
     // Never a blanket sweep: foreign inline props stay untouched.
     expect(browser.removeProperty).not.toHaveBeenCalledWith("--zd-sidebar-w");
     // Reconfigured with the NEW pack's scoped prefix; mode still respected.
@@ -247,6 +265,96 @@ describe("bootstrapDesignTokenPanel — theme-pack interplay", () => {
     expect(builder).toHaveBeenLastCalledWith("dark");
     // Open state restored.
     expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce();
+  });
+
+  it("routes the pack-switch clear through the config's applySink when one is configured", () => {
+    vi.useFakeTimers();
+    const browser = installBrowser("light", "default");
+    const destroy = vi.fn();
+    const sinkClear = vi.fn();
+    const builder = vi.fn<PanelConfigBuilder>(() =>
+      makeTokenConfig("zudo-doc-tweak", {
+        applySink: { apply: vi.fn(), clear: sinkClear },
+      }),
+    );
+    zdtp.configurePanel.mockImplementation((cfg: PanelConfig) => ({
+      instanceId: cfg.storagePrefix,
+      destroy,
+    }));
+
+    bootstrapDesignTokenPanel(builder);
+    browser.setPack("foundry");
+    browser.windowTarget.dispatchEvent(new Event("theme-pack-changed"));
+    vi.runAllTimers();
+
+    // The overrides live in the sink's target, not on the document root —
+    // clear through the SAME sink, never removeProperty on documentElement.
+    expect(sinkClear).toHaveBeenCalledExactlyOnceWith(DECLARED_TOKEN_NAMES);
+    expect(browser.removeProperty).not.toHaveBeenCalled();
+    expect(
+      zdtp.configurePanel.mock.calls.map(([cfg]) => (cfg as PanelConfig).storagePrefix),
+    ).toEqual(["zudo-doc-tweak", "zudo-doc-tweak--foundry"]);
+  });
+
+  it("a throwing applySink.clear is non-fatal — the rebuild still completes", () => {
+    vi.useFakeTimers();
+    const browser = installBrowser("light", "default");
+    const destroy = vi.fn();
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const builder = vi.fn<PanelConfigBuilder>(() =>
+      makeTokenConfig("zudo-doc-tweak", {
+        applySink: {
+          apply: vi.fn(),
+          clear: () => {
+            throw new Error("sink target detached");
+          },
+        },
+      }),
+    );
+    zdtp.configurePanel.mockImplementation((cfg: PanelConfig) => ({
+      instanceId: cfg.storagePrefix,
+      destroy,
+    }));
+
+    bootstrapDesignTokenPanel(builder);
+    browser.setPack("foundry");
+    browser.windowTarget.dispatchEvent(new Event("theme-pack-changed"));
+    vi.runAllTimers();
+
+    expect(warnSpy).toHaveBeenCalledOnce();
+    expect(
+      zdtp.configurePanel.mock.calls.map(([cfg]) => (cfg as PanelConfig).storagePrefix),
+    ).toEqual(["zudo-doc-tweak", "zudo-doc-tweak--foundry"]);
+    warnSpy.mockRestore();
+  });
+
+  it("still rebuilds on pack switch when localStorage is unavailable (open state treated as closed)", () => {
+    vi.useFakeTimers();
+    const browser = installBrowser("light", "default");
+    const destroy = vi.fn();
+    const builder = vi.fn<PanelConfigBuilder>(() => makeTokenConfig("zudo-doc-tweak"));
+    zdtp.configurePanel.mockImplementation((cfg: PanelConfig) => ({
+      instanceId: cfg.storagePrefix,
+      destroy,
+    }));
+
+    bootstrapDesignTokenPanel(builder);
+    // Storage dies mid-session (private mode / policy). The engine still
+    // commits pack switches (best-effort persistence), so the panel MUST
+    // still rebind to the new pack's namespace.
+    browser.storage.getItem = () => {
+      throw new Error("storage disabled");
+    };
+    browser.setPack("foundry");
+    browser.windowTarget.dispatchEvent(new Event("theme-pack-changed"));
+    vi.runAllTimers();
+
+    expect(destroy).toHaveBeenCalledOnce();
+    expect(
+      zdtp.configurePanel.mock.calls.map(([cfg]) => (cfg as PanelConfig).storagePrefix),
+    ).toEqual(["zudo-doc-tweak", "zudo-doc-tweak--foundry"]);
+    // Unreadable open state is treated as closed — no spurious reopen.
+    expect(zdtp.showDesignTokenPanel).not.toHaveBeenCalled();
   });
 
   it("coalesces rapid pack switches into one destroy/reconfigure targeting the LATEST pack", () => {

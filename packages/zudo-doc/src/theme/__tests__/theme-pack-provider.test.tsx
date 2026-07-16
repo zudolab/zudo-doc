@@ -245,6 +245,29 @@ describe("buildThemePackBootstrap (executed)", () => {
       expect(env.head.children).toEqual([existing]);
     });
 
+    it("keeps a live (unpersisted) pack across soft navigation when storage has nothing", () => {
+      // Scenario: applyThemePack committed "foundry" at runtime but
+      // localStorage.setItem failed (private mode) — the live html attribute
+      // (which rides preserveHtmlAttrs) is the only surviving record.
+      const env = makeBootstrapEnv(null);
+      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+      (env.document.documentElement as unknown as {
+        setAttribute(n: string, v: string): void;
+      }).setAttribute(THEME_PACK_ATTR, "foundry");
+      // The head swap dropped the runtime link.
+      env.head.children.length = 0;
+
+      env.fireAfterNavigate();
+
+      // The validated live attribute wins over the configured fallback —
+      // the in-session pack survives instead of silently reverting.
+      expect(env.attr(THEME_PACK_ATTR)).toBe("foundry");
+      expect(env.head.children).toHaveLength(1);
+      expect(env.head.children[0]!.getAttribute("href")).toBe(
+        "/theme-packs/foundry/pack.css?v=1.2.3",
+      );
+    });
+
     it("removes stale pack links (wrong slug) and removes the link entirely for default", () => {
       const env = makeBootstrapEnv(null);
       runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);

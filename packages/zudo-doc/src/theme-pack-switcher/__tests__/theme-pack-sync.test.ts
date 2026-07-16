@@ -390,6 +390,31 @@ describe("applyThemePack", () => {
     expect(warnSpy).not.toHaveBeenCalled();
   });
 
+  it("switching back to the CURRENT pack supersedes an in-flight swap (no late commit)", async () => {
+    // Active pack: default. A foundry swap is still loading…
+    const p1 = applyThemePack("foundry");
+    const [loadingLink] = packLinks();
+    expect(loadingLink).toBeDefined();
+
+    // …when the user cancels by picking the already-active pack. The no-op
+    // must supersede the pending swap (its commit would otherwise land the
+    // pack the user just cancelled).
+    await expect(applyThemePack("default")).resolves.toBe(true);
+
+    loadingLink!.fire("load");
+    await expect(p1).resolves.toBe(false);
+
+    expect(readThemePackFromDom()).toBe("default");
+    expect(packLinks()).toHaveLength(0);
+    expect(fakeStorage.getItem(THEME_PACK_STORAGE_KEY)).toBeNull();
+    // The attribute never flipped away from default.
+    expect(
+      fakeDocument.attrHistory.filter(([n]) => n === THEME_PACK_ATTR),
+    ).toEqual([]);
+    // Superseded abort is silent — not a load failure.
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
   it("rapid switching: latest call winning FIRST leaves the earlier call impotent", async () => {
     vi.useFakeTimers();
     const p1 = applyThemePack("foundry");

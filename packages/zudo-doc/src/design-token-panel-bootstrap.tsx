@@ -114,6 +114,22 @@ function openStateKey(instancePrefix: string): string {
   return `${instancePrefix}-open`;
 }
 
+/**
+ * Whether the given instance's panel is currently open, per its public
+ * open-state mirror key. Guarded: with browser storage disabled,
+ * `localStorage.getItem` throws — an unguarded read inside the rebuild timers
+ * would abort the whole destroy/reconfigure cycle and leave the panel bound
+ * to a stale mode/pack (the theme-pack engine treats storage as best-effort
+ * and still commits + dispatches). Treat unreadable state as "closed".
+ */
+function readOpenState(instancePrefix: string): boolean {
+  try {
+    return localStorage.getItem(openStateKey(instancePrefix)) === "1";
+  } catch {
+    return false;
+  }
+}
+
 /** Read the active mode from `<html data-theme>`, defaulting to `light`. */
 function readMode(): ColorSchemeMode {
   return document.documentElement.getAttribute("data-theme") === "dark"
@@ -148,29 +164,68 @@ export function withPackScopedStoragePrefix(
 }
 
 /**
- * Remove the OUTGOING panel instance's applied inline token overrides from
- * `document.documentElement.style` (theme-pack switch step 4, ADR Decision 4).
- * zdtp's own clear+reseed runs only on `color-scheme-changed` (it does not
- * know the theme-pack event) and `destroy()` only deregisters, so without
- * this the old pack's tweaks would keep repainting the new pack.
- *
- * Removal is CONFIG-DRIVEN: exactly the `cssVar` names declared in the
- * outgoing PanelConfig's tabs/tiers/items — NEVER a blanket `--zd-*` sweep
- * (`style.colorScheme` is mode-toggle-owned and `--zd-sidebar-w` belongs to
- * the sidebar-resize island). Upstream check (2026-07, zdtp 0.4.9): the
- * package exposes no sanctioned `clearApplied()`-style API on
- * `PanelInstanceHandle` (only instanceId/open/close/toggle/destroy), so this
- * config-driven fallback is the current mechanism; prefer a zdtp API if one
- * lands (Takazudo/zudo-design-token-panel).
+ * Every CSS custom-property name the given PanelConfig declares as an
+ * override target: the `cssVar` of every tab/tier item, PLUS the color tabs'
+ * `colorExtras.baseRoles` values — zdtp's apply pipeline writes those
+ * base-role variables (background/foreground/cursor/selection) inline too,
+ * and they are not represented by any `TierItem.cssVar` (review finding).
  */
-function clearAppliedTokenOverrides(config: PanelConfig): void {
-  const style = document.documentElement.style;
+function collectDeclaredTokenNames(config: PanelConfig): string[] {
+  const names: string[] = [];
   for (const tab of config.tabs ?? []) {
     for (const tier of tab.tiers ?? []) {
       for (const item of tier.items ?? []) {
-        style.removeProperty(item.cssVar);
+        names.push(item.cssVar);
       }
     }
+    const baseRoles = tab.colorExtras?.baseRoles;
+    if (baseRoles) {
+      for (const cssVar of Object.values(baseRoles)) {
+        if (typeof cssVar === "string" && cssVar.length > 0) {
+          names.push(cssVar);
+        }
+      }
+    }
+  }
+  return names;
+}
+
+/**
+ * Remove the OUTGOING panel instance's applied token overrides (theme-pack
+ * switch step 4, ADR Decision 4). zdtp's own clear+reseed runs only on
+ * `color-scheme-changed` (it does not know the theme-pack event) and
+ * `destroy()` only deregisters, so without this the old pack's tweaks would
+ * keep repainting the new pack.
+ *
+ * Removal is CONFIG-DRIVEN: exactly the names declared by the outgoing
+ * PanelConfig ({@link collectDeclaredTokenNames}) — NEVER a blanket `--zd-*`
+ * sweep (`style.colorScheme` is mode-toggle-owned and `--zd-sidebar-w`
+ * belongs to the sidebar-resize island). When the config routes writes
+ * through an `applySink`, the clear goes through the SAME sink
+ * (`sink.clear(names)`, errors non-fatal per zdtp's own contract) — the
+ * overrides live in the sink's target, not on the document root. Upstream
+ * check (2026-07, zdtp 0.4.9): the package exposes no sanctioned
+ * `clearApplied()`-style API on `PanelInstanceHandle` (only
+ * instanceId/open/close/toggle/destroy), so this config-driven path is the
+ * current mechanism; prefer a zdtp API if one lands
+ * (Takazudo/zudo-design-token-panel).
+ */
+function clearAppliedTokenOverrides(config: PanelConfig): void {
+  const names = collectDeclaredTokenNames(config);
+  if (config.applySink) {
+    try {
+      config.applySink.clear(names);
+    } catch (err) {
+      console.warn(
+        "[zudo-doc] applySink.clear threw during theme-pack switch; outgoing overrides may linger.",
+        err,
+      );
+    }
+    return;
+  }
+  const style = document.documentElement.style;
+  for (const name of names) {
+    style.removeProperty(name);
   }
 }
 
@@ -225,7 +280,7 @@ export function bootstrapDesignTokenPanel(
       // Read the open state BEFORE destroy (destroy keeps localStorage),
       // keyed off the CURRENT instance's prefix so a non-showcase host prefix
       // still round-trips correctly.
-      const wasOpen = localStorage.getItem(openStateKey(handle.instanceId)) === "1";
+      const wasOpen = readOpenState(handle.instanceId);
       // MACROTASK (setTimeout 0), NOT a microtask: zdtp flushes its own
       // mount-time `color-scheme-changed` handler (clear applied vars +
       // reseed) on microtasks/rAF, so a macrotask guarantees that settled
@@ -259,8 +314,9 @@ export function bootstrapDesignTokenPanel(
       packTimer = null;
       const pack = pendingPack;
       // 1. Read the open state from the CURRENT (outgoing) instance's
-      //    `${prefix}-open` key BEFORE destroy.
-      const wasOpen = localStorage.getItem(openStateKey(handle.instanceId)) === "1";
+      //    `${prefix}-open` key BEFORE destroy (guarded — storage may be
+      //    disabled while the engine still commits pack switches).
+      const wasOpen = readOpenState(handle.instanceId);
       const outgoingConfig = currentConfig;
       // 2. Destroy the outgoing instance (deregisters only — it does NOT
       //    clear applied inline vars, hence step 3).
