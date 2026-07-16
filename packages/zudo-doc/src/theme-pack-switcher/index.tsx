@@ -36,6 +36,7 @@
 import type { JSX, VNode } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { ChevronLeft, ChevronRight, Close } from "../icons/index.js";
+import { ThemePackDialog } from "../theme-pack-dialog/index.js";
 import { applyThemePack } from "./theme-pack-sync.js";
 import {
   connectActivePackSync,
@@ -99,7 +100,7 @@ export type ThemePackDialogComponent = (props: ThemePackDialogProps) => JSX.Elem
  * While `null`, the browse-all grid button renders disabled and nothing
  * mounts at the render point below.
  */
-const ThemePackDialogSlot: ThemePackDialogComponent | null = null;
+const ThemePackDialogSlot: ThemePackDialogComponent | null = ThemePackDialog;
 
 /** Browse-all grid icon (2×2 rounded squares) — local like the theme-toggle
  *  sun/moon icons; `../icons` has no grid glyph and this stays private. */
