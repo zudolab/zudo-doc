@@ -713,9 +713,32 @@ jobs:
           # alias URL (subdomain starts with the alias) — not the per-version
           # hash URL — so smoke gates + PR comments hit a stable host.
           DEPLOY_LOG=$(mktemp)
+          set +e
           npx wrangler@4.85.0 versions upload \
             --preview-alias "$ALIAS" \
             2>&1 | tee "$DEPLOY_LOG"
+          UPLOAD_STATUS=${PIPESTATUS[0]}
+          set -e
+          if [ "$UPLOAD_STATUS" -ne 0 ]; then
+            # New Durable Object migrations are atomic and Cloudflare rejects
+            # them from `versions upload`. For the one introducing preview,
+            # retry without the not-yet-created namespace; after production
+            # applies the migration, the normal upload above keeps the binding.
+            if ! grep -Eiq 'new.{0,80}migrations cannot be uploaded|cannot upload.{0,80}migration|migrations?.{0,120}(wrangler deploy|atomic|cannot be uploaded)' "$DEPLOY_LOG"; then
+              exit "$UPLOAD_STATUS"
+            fi
+            # Keep the generated config beside wrangler.toml: Wrangler resolves
+            # relative main/assets paths from the config file's directory.
+            PREVIEW_CONFIG=$(mktemp "$PWD/.wrangler-preview-bootstrap.XXXXXX.toml")
+            trap 'rm -f "$PREVIEW_CONFIG"' EXIT
+            node scripts/write-worker-preview-config.mjs "$PREVIEW_CONFIG"
+            npx wrangler@4.85.0 versions upload \
+              --config "$PREVIEW_CONFIG" \
+              --preview-alias "$ALIAS" \
+              2>&1 | tee "$DEPLOY_LOG"
+            rm -f "$PREVIEW_CONFIG"
+            trap - EXIT
+          fi
           DEPLOY_URL=$(grep -oE "https://${ALIAS}-[a-z0-9.-]+\.workers\.dev" "$DEPLOY_LOG" | head -1)
           if [ -z "$DEPLOY_URL" ]; then
             echo "::error::Failed to parse alias preview URL for '$ALIAS' from wrangler output"
