@@ -27,6 +27,7 @@ import {
   createSidebarVisibilityPrepaint,
 } from "../sidebar-prepaint/index.js";
 import { createHeadWithDefaults } from "../head-with-defaults/index.js";
+import { resolveThemePackSsrSlug } from "../theme/theme-pack-provider.js";
 import { createDocBodyEnd } from "../doc-body-end/index.js";
 import { deriveComposeMetaTitle } from "../chrome/derive.js";
 import { derivePrimaryChromeSlots } from "../chrome/primary-slots.js";
@@ -203,6 +204,13 @@ export function createDocPageShell<S extends Settings = Settings>(
     sidebarToggle: sidebarToggleEnabled,
   });
   const DocBodyEnd = createDocBodyEnd(ctx);
+  // SSR `data-theme-pack` html attribute — the CONFIGURED pack slug
+  // (build-static; `undefined` keeps the attribute off when the theme-pack
+  // registry was not threaded). ADR theme-packs.md Decision 3, #2822.
+  const dataThemePack = resolveThemePackSsrSlug(
+    ctx.themePackRegistry,
+    ctx.settings as { themePack?: string },
+  );
   /**
    * Render shell shared by all 4 doc-route page components.
    */
@@ -275,6 +283,7 @@ export function createDocPageShell<S extends Settings = Settings>(
           </>
         }
         lang={locale}
+        dataThemePack={dataThemePack}
         noindex={settings.noindex}
         hideSidebar={hideSidebar}
         hideToc={hideToc}

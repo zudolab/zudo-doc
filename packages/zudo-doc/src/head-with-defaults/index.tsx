@@ -17,6 +17,10 @@ import type { HeadProps } from "../head/types.js";
 import { SIDEBAR_RESIZER_RESTORE_SCRIPT } from "../sidebar-resizer/index.js";
 import ColorSchemeProvider from "../theme/color-scheme-provider.js";
 import type { ColorSchemeProviderColorMode } from "../theme/color-scheme-provider.js";
+import ThemePackProvider, {
+  themePackVersionMap,
+} from "../theme/theme-pack-provider.js";
+import { DEFAULT_THEME_PACK_SLUG } from "../theme-pack-switcher/theme-pack-sync.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
 import { deriveComposeMetaTitle, deriveColorSchemeGenerators } from "../chrome/derive.js";
@@ -49,6 +53,8 @@ export interface HeadWithDefaultsSettings {
   siteName: string;
   colorMode?: ColorSchemeProviderColorMode | null | false;
   sidebarResizer?: boolean;
+  /** Configured theme-pack slug (ADR `docs/adr/theme-packs.md`, #2822). */
+  themePack?: string;
 }
 
 /**
@@ -71,6 +77,18 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
   const absoluteUrl = ctx.absoluteUrl;
   const { generateCssCustomProperties, generateLightDarkCssProperties } =
     deriveColorSchemeGenerators(ctx);
+
+  // Theme-pack bootstrap inputs (ADR theme-packs.md Decision 3, #2822). The
+  // registry is the resolved, enabled, ORDERED subset threaded by the routes
+  // plugin; `null` renders the whole feature inert (no bootstrap, no noscript).
+  const themePackRegistry = ctx.themePackRegistry;
+  const themePackEnabled =
+    themePackRegistry !== null ? themePackVersionMap(themePackRegistry) : null;
+  const themePackConfigured = settings.themePack ?? DEFAULT_THEME_PACK_SLUG;
+  // Base prefix WITH trailing slash — `withBase("/")` yields "/" for the
+  // default base and "/sub/" for a sub-path deployment, so the bootstrap can
+  // concatenate `base + "theme-packs/<slug>/pack.css?v=…"` verbatim.
+  const themePackBase = withBase("/");
 
   /**
    * Default-bearing host wrapper that injects og:title / og:description,
@@ -138,6 +156,19 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
           />
         )}
         <ColorSchemeProvider cssText={cssText} colorMode={colorMode} />
+        {/* Theme-pack bootstrap — MUST render immediately after
+            <ColorSchemeProvider/> (ADR theme-packs.md Decision 3 ordering
+            note, #2822). Emits the pre-paint slug-resolution script (which
+            document.writes the render-blocking pack link for a non-default
+            active pack) plus the no-JS <noscript> fallback link for the
+            configured pack. */}
+        {themePackEnabled !== null && (
+          <ThemePackProvider
+            configuredSlug={themePackConfigured}
+            enabled={themePackEnabled}
+            base={themePackBase}
+          />
+        )}
         {/* Pre-paint inline script: restore persisted sidebar width to
             --zd-sidebar-w on :root before first paint, so a reload after
             drag-resizing the sidebar doesn't snap back to the CSS default

@@ -39,6 +39,7 @@ import type { DocNavNode } from "../doc-page-props/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
 import { createHeadWithDefaults } from "../head-with-defaults/index.js";
+import { resolveThemePackSsrSlug } from "../theme/theme-pack-provider.js";
 import { deriveComposeMetaTitle, deriveBodyEndIslands } from "../chrome/derive.js";
 import { derivePrimaryChromeSlots } from "../chrome/primary-slots.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
@@ -113,6 +114,11 @@ export function createHomePageView<S extends Settings = Settings>(
     derivePrimaryChromeSlots(ctx);
   const BodyEndIslands = deriveBodyEndIslands(ctx);
   const homeExtras = ctx.hostBindings.homeExtras;
+  // SSR `data-theme-pack` html attribute (ADR theme-packs.md Decision 3, #2822).
+  const dataThemePack = resolveThemePackSsrSlug(
+    ctx.themePackRegistry,
+    ctx.settings as { themePack?: string },
+  );
 
   /** Site index: hero + `SiteTreeNav` grid + optional tag-count section. */
   function HomePageView({
@@ -135,6 +141,7 @@ export function createHomePageView<S extends Settings = Settings>(
         title={composeMetaTitle(settings.siteName)}
         head={<HeadWithDefaults title={settings.siteName} />}
         lang={locale}
+        dataThemePack={dataThemePack}
         noindex={settings.noindex}
         hideSidebar={true}
         hideToc={true}

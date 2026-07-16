@@ -37,6 +37,7 @@ import { toRouteSlug } from "../slug/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
 import { createHeadWithDefaults } from "../head-with-defaults/index.js";
+import { resolveThemePackSsrSlug } from "../theme/theme-pack-provider.js";
 import { createDocHistoryArea } from "../doc-history-area/index.js";
 import { deriveComposeMetaTitle, deriveBodyEndIslands } from "../chrome/derive.js";
 import { derivePrimaryChromeSlots } from "../chrome/primary-slots.js";
@@ -159,6 +160,11 @@ export function createTagPages<S extends Settings = Settings>(
   } = derivePrimaryChromeSlots(ctx);
   const BodyEndIslands = deriveBodyEndIslands(ctx) as TagPagesComponents["BodyEndIslands"];
   const DocHistoryArea = createDocHistoryArea(ctx) as TagPagesComponents["DocHistoryArea"];
+  // SSR `data-theme-pack` html attribute (ADR theme-packs.md Decision 3, #2822).
+  const dataThemePack = resolveThemePackSsrSlug(
+    ctx.themePackRegistry,
+    ctx.settings as { themePack?: string },
+  );
 
   // ---------------------------------------------------------------------------
   // Tag collection
@@ -242,6 +248,7 @@ export function createTagPages<S extends Settings = Settings>(
         // The original default-locale page omitted `lang` entirely; passing
         // undefined relies on Preact treating an undefined prop as absent.
         lang={isDefault ? undefined : locale}
+        dataThemePack={dataThemePack}
         noindex={settings.noindex}
         hideSidebar={true}
         hideToc={true}
@@ -301,6 +308,7 @@ export function createTagPages<S extends Settings = Settings>(
         head={<HeadWithDefaults title={pageTitle} />}
         // Same undefined-≡-absent reliance as TagDetailPageView above.
         lang={isDefault ? undefined : locale}
+        dataThemePack={dataThemePack}
         noindex={settings.noindex}
         hideSidebar={true}
         hideToc={true}
