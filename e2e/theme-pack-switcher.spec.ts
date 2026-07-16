@@ -48,6 +48,38 @@ const HOME = "/";
 const THEME_STORAGE_KEY = "zudo-doc-theme";
 const DESKTOP_TOGGLE_SELECTOR = 'header .ml-auto button[aria-label*="Switch to"]';
 
+/**
+ * Mirrors the `theme` fixture's pinned `themePacks` order (this fixture's own
+ * `src/config/settings.ts`) — the full current bundled collection, kept in
+ * sync as batches add packs (Theme Finalize epic #2812 full-collection QA,
+ * sub-issue #2854). If this list and the fixture's `themePacks` array drift
+ * apart, the full-cycle test below fails loudly rather than silently testing
+ * a stale subset.
+ */
+const FULL_PACK_CYCLE = [
+  "default",
+  "foundry",
+  "broadsheet",
+  "ledger",
+  "manuscript",
+  "swissgrid",
+  "futura-editorial",
+  "hearth",
+  "matcha",
+  "sumi",
+  "washi",
+  "drift",
+  "fjord",
+  "hollow",
+  "nocturne",
+  "onyx",
+  "beacon",
+  "brutalist",
+  "observatory",
+  "phosphor",
+  "solar",
+];
+
 async function preseedTheme(page: Page, mode: "light" | "dark") {
   await page.addInitScript(
     ({ key, value }) => localStorage.setItem(key, value),
@@ -196,6 +228,32 @@ test.describe("Theme pack switcher", () => {
     await expect(page.locator(THEME_PACK_LINK_SELECTOR)).toHaveCount(0);
     expect(await readStoredPack(page)).toBe("default");
     await expect(flyoutCard(page)).toContainText("Default");
+  });
+
+  test("Next cycles through the ENTIRE current pack list in order and wraps back to default; Prev walks the same list backward", async ({
+    page,
+  }) => {
+    test.slow();
+    await page.goto(HOME, { waitUntil: "load" });
+    await waitForActivePack(page, "default");
+    await openFlyout(page);
+
+    // Forward: default -> foundry -> ... -> solar -> (wrap) -> default.
+    for (const slug of [...FULL_PACK_CYCLE.slice(1), "default"]) {
+      await nextPackButton(page).click();
+      await waitForActivePack(page, slug);
+    }
+    expect(await readActivePack(page)).toBe("default");
+
+    // Backward: default -> solar -> ... -> foundry -> (wrap) -> default,
+    // i.e. the reverse of FULL_PACK_CYCLE (whose own last element is
+    // "default", so this sequence needs no extra wrap-around append).
+    const reverseOrder = [...FULL_PACK_CYCLE].reverse();
+    for (const slug of reverseOrder) {
+      await prevPackButton(page).click();
+      await waitForActivePack(page, slug);
+    }
+    expect(await readActivePack(page)).toBe("default");
   });
 
   test("browse-all dialog: selecting a card applies the pack immediately and the dialog stays open; Escape restores focus to the launcher", async ({
