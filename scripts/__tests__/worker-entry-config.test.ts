@@ -90,6 +90,7 @@ describe("custom Worker deployment contract", () => {
       expect(source).toContain("wrangler@4.85.0 deploy");
       expect(source).toContain('Preview service bootstrap @ ${GITHUB_SHA:0:7}');
       expect(source).toContain('--config "$PREVIEW_CONFIG"');
+      expect(source).toContain("--retry 6 --retry-all-errors --retry-delay 2 --retry-max-time 30");
       expect(source).toContain("/workers/scripts/zudo-doc-preview/subdomain");
       expect(source).toContain("previews_enabled");
       expect(source).toContain(`--data '{"enabled":false,"previews_enabled":true}'`);
