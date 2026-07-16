@@ -39,8 +39,14 @@ describe("ThemePackSwitcher — SSR shape", () => {
     expect(html).not.toContain('role="dialog"');
     expect(html).not.toContain("Foundry");
     expect(html).not.toContain("Industrial dark pack.");
-    expect(html).not.toContain("Prev");
-    expect(html).not.toContain("Next");
+    // Matched by aria-label rather than the raw "Prev"/"Next" substrings:
+    // since #2825 filled the ThemePackDialogSlot seam, this SSR output also
+    // includes the (always-closed) browse-all dialog's "Preview theme" title
+    // — which contains "Prev" as a substring — so a bare text match would
+    // false-positive on unrelated dialog markup instead of the flyout's own
+    // Prev/Next buttons this test actually cares about.
+    expect(html).not.toContain('aria-label="Previous theme pack"');
+    expect(html).not.toContain('aria-label="Next theme pack"');
   });
 
   it("anchors viewport-fixed at the bottom-right on the semantic popover tier", () => {
