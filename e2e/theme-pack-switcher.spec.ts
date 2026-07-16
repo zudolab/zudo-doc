@@ -34,9 +34,11 @@ import {
  * independent.
  *
  * Bundled packs in this fixture (`themePacks` left `undefined` = all
- * bundled): "default" (no stylesheet) then "foundry" (alphabetical) — see
- * `packages/zudo-doc/src/theme-packs/`. With exactly two packs, Next and Prev
- * both cycle between them.
+ * bundled), in canonical alphabetical order: "broadsheet", "default" (no
+ * stylesheet), "foundry", "ledger", "manuscript", "swissgrid" — see
+ * `packages/zudo-doc/src/theme-packs/`. The Next/Prev assertions below rely
+ * only on "foundry" immediately following "default" in that order (default →
+ * Next → foundry → Prev → default), which holds regardless of the total count.
  */
 
 const HOME = "/";
@@ -120,7 +122,14 @@ test.describe("Theme pack switcher", () => {
     );
     expect(runtime.base).toBe("/");
     expect(runtime.configured).toBe("default");
-    expect(Object.keys(runtime.packs).sort()).toEqual(["default", "foundry"]);
+    expect(Object.keys(runtime.packs).sort()).toEqual([
+      "broadsheet",
+      "default",
+      "foundry",
+      "ledger",
+      "manuscript",
+      "swissgrid",
+    ]);
   });
 
   test("opens the flyout showing the active pack name and moves focus into it; Escape closes it and returns focus to the launcher", async ({
