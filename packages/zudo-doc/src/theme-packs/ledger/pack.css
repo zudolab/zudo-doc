@@ -188,7 +188,7 @@ html[data-theme-pack="ledger"] .zd-doc-content-band:not([data-zd-wide]) .zd-cont
   max-width: 44rem;
 }
 html[data-theme-pack="ledger"] .zd-doc-content-band:not([data-zd-wide]) main nav[aria-label="Breadcrumb"],
-html[data-theme-pack="ledger"] .zd-doc-content-band:not([data-zd-wide]) .zd-content > nav:not([aria-label="Breadcrumb"]) {
+html[data-theme-pack="ledger"] .zd-doc-content-band:not([data-zd-wide]) .zd-content > nav:last-of-type:not([aria-label]) {
   max-width: 44rem;
 }
 
@@ -400,19 +400,19 @@ html[data-theme-pack="ledger"] .zd-content tbody tr:last-child td {
         The DocPager is a <nav> rendered as a direct child of
         <article class="zd-content">, with no aria-label (the breadcrumb nav
         carries one). ---- */
-html[data-theme-pack="ledger"] .zd-content > nav:not([aria-label="Breadcrumb"]) > a {
+html[data-theme-pack="ledger"] .zd-content > nav:last-of-type:not([aria-label]) > a {
   border-color: color-mix(in srgb, var(--zd-fg) 25%, transparent);
   border-radius: 0;
   background: transparent;
 }
-html[data-theme-pack="ledger"] .zd-content > nav:not([aria-label="Breadcrumb"]) > a:hover {
+html[data-theme-pack="ledger"] .zd-content > nav:last-of-type:not([aria-label]) > a:hover {
   background: color-mix(in srgb, var(--zd-accent) 5%, transparent);
 }
-html[data-theme-pack="ledger"] .zd-content > nav:not([aria-label="Breadcrumb"]) > a div {
+html[data-theme-pack="ledger"] .zd-content > nav:last-of-type:not([aria-label]) > a div {
   font-variant-caps: all-small-caps;
   letter-spacing: 0.12em;
 }
-html[data-theme-pack="ledger"] .zd-content > nav:not([aria-label="Breadcrumb"]) > a p {
+html[data-theme-pack="ledger"] .zd-content > nav:last-of-type:not([aria-label]) > a p {
   font-style: italic;
 }
 
