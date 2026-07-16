@@ -25,8 +25,14 @@ const concreteSidebars: ShowcaseSidebars = { "!": [], guides: [] };
  * caller-side cast. If any stops compiling, the adapter has over-tightened.
  */
 export function _positiveCompileAssertions(): void {
-  // All 13 slots at once, with narrow/concrete real-world values.
+  // All slots at once, with narrow/concrete real-world values.
   defineChromeBindings({
+    Header: (props) => props.lang,
+    Footer: (props) => props.lang,
+    Sidebar: (props) => props.currentSlug,
+    Toc: (props) => props.headings.length,
+    Breadcrumb: (props) => props.items.length,
+    DocPager: (props) => props.locale,
     SearchWidget: (props) => props.searchLabel,
     BodyEndIslands: (props) => props.basePath,
     DocHistory: (props: { slug: string }) => props.slug, // reads a SUBSET of the passed props
@@ -56,6 +62,17 @@ export function _positiveCompileAssertions(): void {
 
   // A concrete typed sidebars object in `sidebarsConfig`.
   defineChromeBindings({ sidebarsConfig: concreteSidebars });
+
+  // Primary replacements may require every prop that the real call site
+  // always supplies, while reading only a subset is also safe.
+  defineChromeBindings({
+    Header: ({ lang }: { lang: string }) => lang,
+    Footer: ({ lang }: { lang: string }) => lang,
+    Sidebar: ({ currentSlug }: { currentSlug: string }) => currentSlug,
+    Toc: ({ title }: { title: string }) => title,
+    Breadcrumb: ({ items }: { items: unknown[] }) => items.length,
+    DocPager: ({ locale }: { locale: string }) => locale,
+  });
 
   // A real renderer in `frontmatterRenderers` (typed by its call-side contract),
   // and a loose `Record<string, unknown>` in `mdxExtras` (legitimately loose —
@@ -107,6 +124,36 @@ export function _negativeCompileAssertions(): void {
       // @ts-expect-error renderer requires `extra`, which the chrome never passes
       foo: (props: { value: unknown; extra: string }) => props.extra,
     },
+  });
+
+  // (6) each primary component rejects a required prop its call site never
+  // supplies. These guard the exact contracts independently so widening one
+  // slot cannot silently weaken the rest.
+  defineChromeBindings({
+    // @ts-expect-error Header never supplies `accountId`
+    Header: (props: { lang: string; accountId: string }) => props.accountId,
+  });
+  defineChromeBindings({
+    // @ts-expect-error Footer never supplies `legalNotice`
+    Footer: (props: { lang: string; legalNotice: string }) => props.legalNotice,
+  });
+  defineChromeBindings({
+    // @ts-expect-error Sidebar never supplies `expandedDepth`
+    Sidebar: (props: { currentSlug: string; expandedDepth: number }) =>
+      props.expandedDepth,
+  });
+  defineChromeBindings({
+    // @ts-expect-error Toc never supplies `activeSlug`
+    Toc: (props: { headings: unknown[]; title: string; activeSlug: string }) =>
+      props.activeSlug,
+  });
+  defineChromeBindings({
+    // @ts-expect-error Breadcrumb never supplies `homeLabel`
+    Breadcrumb: (props: { items: unknown[]; homeLabel: string }) => props.homeLabel,
+  });
+  defineChromeBindings({
+    // @ts-expect-error DocPager never supplies `pageCount`
+    DocPager: (props: { locale: string; pageCount: number }) => props.pageCount,
   });
 }
 

@@ -31,9 +31,6 @@ import type {
 import type { Settings } from "../settings.js";
 
 import { createHeadWithDefaults } from "../head-with-defaults/index.js";
-import { createHeaderWithDefaults } from "../header-with-defaults/index.js";
-import { createFooterWithDefaults } from "../footer-with-defaults/index.js";
-import { createSidebarWithDefaults } from "../sidebar-with-defaults/index.js";
 import { createRenderDocPage } from "../doc-page-renderer/index.js";
 import { createVersionsPageView } from "../versions-page/index.js";
 import { createTagPages } from "../tag-pages/index.js";
@@ -43,6 +40,7 @@ import {
   deriveBodyEndIslands,
   deriveMdxComponents,
 } from "./derive.js";
+import { derivePrimaryChromeSlots } from "./primary-slots.js";
 
 /**
  * Build the wired page-chrome factories from a reconstructed route context plus
@@ -61,9 +59,11 @@ export function createChrome<S extends Settings = Settings>(
 
   const composeMetaTitle = deriveComposeMetaTitle(ctx);
   const HeadWithDefaults = createHeadWithDefaults(ctx);
-  const HeaderWithDefaults = createHeaderWithDefaults(ctx);
-  const FooterWithDefaults = createFooterWithDefaults(ctx);
-  const SidebarWithDefaults = createSidebarWithDefaults(ctx);
+  const {
+    Header: HeaderWithDefaults,
+    Footer: FooterWithDefaults,
+    Sidebar: SidebarWithDefaults,
+  } = derivePrimaryChromeSlots(ctx);
   const renderDocPage = createRenderDocPage(ctx);
   const VersionsPageView = createVersionsPageView(ctx);
   const { collectTagMapForLocale, TagDetailPageView, TagsIndexPageView } =

@@ -39,9 +39,8 @@ import type { DocNavNode } from "../doc-page-props/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
 import { createHeadWithDefaults } from "../head-with-defaults/index.js";
-import { createHeaderWithDefaults } from "../header-with-defaults/index.js";
-import { createFooterWithDefaults } from "../footer-with-defaults/index.js";
 import { deriveComposeMetaTitle, deriveBodyEndIslands } from "../chrome/derive.js";
+import { derivePrimaryChromeSlots } from "../chrome/primary-slots.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 
 export { prepareHomeData } from "./prepare-home-data.js";
@@ -110,8 +109,8 @@ export function createHomePageView<S extends Settings = Settings>(
   const defaultLocale = ctx.defaultLocale;
   const composeMetaTitle = deriveComposeMetaTitle(ctx);
   const HeadWithDefaults = createHeadWithDefaults(ctx);
-  const HeaderWithDefaults = createHeaderWithDefaults(ctx);
-  const FooterWithDefaults = createFooterWithDefaults(ctx);
+  const { Header: HeaderWithDefaults, Footer: FooterWithDefaults } =
+    derivePrimaryChromeSlots(ctx);
   const BodyEndIslands = deriveBodyEndIslands(ctx);
   const homeExtras = ctx.hostBindings.homeExtras;
 
