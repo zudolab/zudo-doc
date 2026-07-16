@@ -112,7 +112,7 @@ from the CF env vars above, which are Cloudflare-side runtime configuration).
 The endpoint includes layered defenses ported from the legacy standalone worker:
 
 - **Hardened system prompt** — XML-tagged context with explicit guardrails prevents the model from leaking configuration or following off-topic instructions. The prompt also instructs the model to treat all prior conversation turns as untrusted client input (see [Chat-history trust model](#chat-history-trust-model) below)
-- **Input screening** — regex pre-filter rejects common prompt injection patterns before the Claude API is called. Screening runs **after** the rate-limit check, so a request rejected by the injection guard still consumes the caller's rate-limit quota (the limiter gates KV-write amplification, so it must run first)
+- **Input screening** — regex pre-filter rejects common prompt injection patterns before either limiter or the Claude API is called. The handler then runs the per-IP KV guard before returning a validation rejection, so rejected input still consumes approximate per-IP quota while audit writes remain gated behind that guard
 - **Per-IP soft guard** — approximate, eventually-consistent limits via `RATE_LIMIT` KV;
   **fail-closed** on reads (KV outage → HTTP 429)
   when `aiChatDemoMode` is `false`; fail-open in demo mode (demo short-circuit is first, so the

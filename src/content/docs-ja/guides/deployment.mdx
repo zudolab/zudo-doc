@@ -16,7 +16,7 @@ CIパイプラインは合計ビルド時間を短縮するために並列ジョ
 
 - zfbのビルド出力（`dist/`）
 - 事前生成されたdocヒストリーJSONファイル（`docHistory`が有効な場合）
-- `dist/_worker.js` — CFアダプターが生成する明示的なメインエントリー
+- `worker-entry.ts` — source-ownedのWrangler entry。生成された`dist/_worker.js`をimportし、`dist/_zfb_inner.mjs`を維持します
 
 サイトはWorkers静的アセット層によりルート（`base = "/"`）で配信されます。動的ルート（例：`/api/ai-chat`）は`dist/_worker.js`が処理し、それ以外のGETリクエストは`dist/`から静的アセットとして配信されます。
 
@@ -54,23 +54,28 @@ Wrangler dry-runをその同一ファイルに対して実行します。
 
 ### PRチェック（`pr-checks.yml`）
 
-`main`を対象としたプルリクエストでトリガーされます。15のジョブが実行されます：
+`main`を対象としたプルリクエストでトリガーされます。20のジョブが実行されます：
 
 1. **check-template-drift** — ソースファイルとジェネレーターテンプレート間のドリフトを検証
-2. **check-pin-parity** — `@takazudo/zfb`のピンがすべてのパッケージソース間で一致しているか確認
-3. **check-fixture-settings-drift** — `src/config/settings.ts`のすべてのキーがe2eフィクスチャー設定ファイルに存在するか（またはアローリスト済みか）を確認
-4. **check-package-safelist** — `@takazudo/zudo-doc`パッケージ内のすべてのレスポンシブ・任意値ユーティリティクラスを生成済みの`dist/safelist.css`がカバーしているか検証
-5. **check-b4push-ci-parity** — `scripts/run-b4push.sh`の軽量ガードゲートすべてに対応するCIジョブが存在するか確認
-6. **check-e2e-spec-naming** — すべてのe2eスペックファイル名が既知のフィクスチャープレフィックスを使用しているか確認（Playwrightが確実に検出できるよう）
-7. **lint-gates** — `pnpm tags:audit --ci`と`pnpm lint:tokens`（デザイントークンリント）を実行
-8. **typecheck** — `pnpm check`を実行（TypeScript型チェック）
-9. **package-tests** — すべてのパッケージスコープのvitestスイートを実行
-10. **root-tests** — ルートユニットテストスイートを実行
-11. **build-site** — フルクローン（`fetch-depth: 0`）、`pnpm build`、その後`check:links`（`SKIP_DOC_HISTORY`なし — 本番と同じ理由：preBuildにSSGメタ日付のためのフルgit履歴が必要）
-12. **html-validate** — ビルド済み`dist/`のHTMLエレメントエラーを検証
-13. **build-history** — フルクローン、docヒストリーの生成
-14. **e2e** — Playwrightエンドツーエンドテストを実行
-15. **preview** — アーティファクトをマージして`wrangler versions upload --preview-alias`でプレビューをアップロード、PRコメントとしてURLを投稿
+2. **check-no-host-alias-in-package** — package sourceからhost専用import aliasを拒否
+3. **check-pin-parity** — `@takazudo/zfb`のピンがすべてのパッケージソース間で一致しているか確認
+4. **check-fixture-settings-drift** — `src/config/settings.ts`のすべてのキーがe2eフィクスチャー設定ファイルに存在するか（またはアローリスト済みか）を確認
+5. **check-package-safelist** — `@takazudo/zudo-doc`パッケージ内のすべてのレスポンシブ・任意値ユーティリティクラスを生成済みの`dist/safelist.css`がカバーしているか検証
+6. **check-b4push-ci-parity** — `scripts/run-b4push.sh`の軽量ガードゲートすべてに対応するCIジョブが存在するか確認
+7. **check-e2e-spec-naming** — すべてのe2eスペックファイル名が既知のフィクスチャープレフィックスを使用しているか確認（Playwrightが確実に検出できるよう）
+8. **check-flaky-tracking-issue** — flaky/local-only testにtracking issueを必須化
+9. **check-wait-debt** — E2E testの注釈なし固定waitを拒否
+10. **check-component-tokens** — 生成されたcomponent-token CSSが最新か確認
+11. **lint-gates** — tag、compatibility、resolution、design-token guardを実行
+12. **typecheck** — rootとworkspaceのTypeScript checkを実行
+13. **worker-contract** — `build-site` artifactを復元し、Workers-runtime Durable Object testとWrangler dry-runを実行
+14. **package-tests** — すべてのパッケージスコープのvitestスイートを実行
+15. **root-tests** — ルートユニットテストスイートを実行
+16. **build-site** — フルクローン（`fetch-depth: 0`）、`pnpm build`、その後`check:links`（`SKIP_DOC_HISTORY`なし — 本番と同じ理由：preBuildにSSGメタ日付のためのフルgit履歴が必要）
+17. **html-validate** — ビルド済み`dist/`のHTMLエレメントエラーを検証
+18. **build-history** — フルクローン、docヒストリーの生成
+19. **e2e** — Playwrightエンドツーエンドテストを実行
+20. **preview** — アーティファクトをマージして`wrangler versions upload --preview-alias`でプレビューをアップロード、PRコメントとしてURLを投稿
 
 **コンカレンシー:** `group: pr-checks-{pr-number}, cancel-in-progress: true` — 古い実行はCIの消費を節約するためにキャンセルされます。
 

@@ -16,7 +16,7 @@ The built site is deployed using `wrangler deploy`. The deploy artifact includes
 
 - The zfb build output (`dist/`)
 - Pre-generated doc history JSON files (if `docHistory` is enabled)
-- `dist/_worker.js` — the explicit main entry produced by the CF adapter
+- `worker-entry.ts` — the source-owned Wrangler entry; it imports generated `dist/_worker.js`, which retains `dist/_zfb_inner.mjs`
 
 The site is served at root (`base = "/"`) via the Workers static asset layer. Dynamic routes (e.g. `/api/ai-chat`) are handled by `dist/_worker.js`; all other GET requests are served as static assets from `dist/`.
 
@@ -53,23 +53,28 @@ Triggered on push to `main`. Runs five jobs:
 
 ### PR Checks (`pr-checks.yml`)
 
-Triggered on pull requests targeting `main`. Runs fifteen jobs:
+Triggered on pull requests targeting `main`. Runs twenty jobs:
 
 1. **check-template-drift** — verifies no drift between source files and generator templates
-2. **check-pin-parity** — verifies `@takazudo/zfb` pin is consistent across all package sources
-3. **check-fixture-settings-drift** — verifies every key in `src/config/settings.ts` is present in all e2e fixture settings files (or allowlisted)
-4. **check-package-safelist** — verifies the generated `dist/safelist.css` covers all responsive/arbitrary utility classes in the `@takazudo/zudo-doc` package
-5. **check-b4push-ci-parity** — verifies every lightweight guard gate in `scripts/run-b4push.sh` has a matching CI job
-6. **check-e2e-spec-naming** — verifies all e2e spec filenames use known fixture prefixes so Playwright picks them up
-7. **lint-gates** — runs `pnpm tags:audit --ci` and `pnpm lint:tokens` (design token lint)
-8. **typecheck** — runs `pnpm check` (TypeScript type checking)
-9. **package-tests** — runs all package-scoped vitest suites
-10. **root-tests** — runs the root unit test suite
-11. **build-site** — full clone (`fetch-depth: 0`), `pnpm build`, then `check:links` (no `SKIP_DOC_HISTORY` — same rationale as production: preBuild needs full history for SSG meta dates)
-12. **html-validate** — validates the built `dist/` for HTML element errors
-13. **build-history** — full clone, doc history generation
-14. **e2e** — runs Playwright end-to-end tests
-15. **preview** — merges artifacts and uploads a preview via `wrangler versions upload --preview-alias`, then posts the URL as a PR comment
+2. **check-no-host-alias-in-package** — rejects host-only import aliases from package sources
+3. **check-pin-parity** — verifies `@takazudo/zfb` pin is consistent across all package sources
+4. **check-fixture-settings-drift** — verifies every key in `src/config/settings.ts` is present in all e2e fixture settings files (or allowlisted)
+5. **check-package-safelist** — verifies the generated `dist/safelist.css` covers all responsive/arbitrary utility classes in the `@takazudo/zudo-doc` package
+6. **check-b4push-ci-parity** — verifies every lightweight guard gate in `scripts/run-b4push.sh` has a matching CI job
+7. **check-e2e-spec-naming** — verifies all e2e spec filenames use known fixture prefixes so Playwright picks them up
+8. **check-flaky-tracking-issue** — requires tracked issues for flaky/local-only tests
+9. **check-wait-debt** — rejects unannotated fixed waits in E2E tests
+10. **check-component-tokens** — verifies generated component-token CSS is current
+11. **lint-gates** — runs tag, compatibility, resolution, and design-token guards
+12. **typecheck** — runs root and workspace TypeScript checks
+13. **worker-contract** — restores the `build-site` artifact, runs Workers-runtime Durable Object tests, and verifies the Wrangler dry-run
+14. **package-tests** — runs all package-scoped vitest suites
+15. **root-tests** — runs the root unit test suite
+16. **build-site** — full clone (`fetch-depth: 0`), `pnpm build`, then `check:links` (no `SKIP_DOC_HISTORY` — same rationale as production: preBuild needs full history for SSG meta dates)
+17. **html-validate** — validates the built `dist/` for HTML element errors
+18. **build-history** — full clone, doc history generation
+19. **e2e** — runs Playwright end-to-end tests
+20. **preview** — merges artifacts and uploads a preview via `wrangler versions upload --preview-alias`, then posts the URL as a PR comment
 
 **Concurrency:** `group: pr-checks-{pr-number}, cancel-in-progress: true` — outdated runs are cancelled to save CI minutes.
 

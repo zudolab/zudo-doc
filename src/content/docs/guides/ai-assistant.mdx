@@ -97,10 +97,9 @@ Paste the returned `id` into the `[[kv_namespaces]]` block in `wrangler.toml`.
 **Durable Object namespace** — exact UTC-day paid-call admission:
 
 ```toml title="wrangler.toml"
-[durable_objects]
-bindings = [
-  { name = "AI_CHAT_DAILY_SPEND_CAP", class_name = "AiChatDailySpendCap" },
-]
+[[durable_objects.bindings]]
+name = "AI_CHAT_DAILY_SPEND_CAP"
+class_name = "AiChatDailySpendCap"
 
 [[migrations]]
 tag = "v1-ai-chat-daily-spend-cap"
@@ -121,7 +120,7 @@ cap; `aiChatDemoMode: true` skips KV, the Durable Object, and Anthropic entirely
 Preview aliases use an adapter-only service/config because versions implementing Durable Objects
 do not receive preview URLs. They prove the SSR adapter/assets path, not live paid-call admission;
 production `wrangler deploy` owns the migration. See Cloudflare's
-[Durable Object migrations](https://developers.cloudflare.com/durable-objects/reference/durable-objects-migrations/)
+[Durable Object migrations](https://developers.cloudflare.com/durable-objects/reference/durable-objects-migrations/),
 the [Cloudflare Wisdom Durable Objects article](https://github.com/Takazudo/zudo-cloudflare-wisdom/blob/main/src/content/docs/workers/durable-objects.mdx),
 and [Workers Logs structured-object guidance](https://developers.cloudflare.com/workers/observability/logs/workers-logs/).
 

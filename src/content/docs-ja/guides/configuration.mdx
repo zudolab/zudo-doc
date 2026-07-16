@@ -445,7 +445,7 @@ AI チャットアシスタントルート（`/api/ai-chat`、SSR）を有効化
 
 ### aiChatDemoMode
 
-`/api/ai-chat` を固定の「無効」応答でショートサーキットします（API キー / KV / レートリミッターに触れません）。ライブの Claude 対応チャットを有効化するには `false` にします。
+`/api/ai-chat` を固定の「無効」応答でショートサーキットします（API キー、KV、Durable Object、レートリミッター、provider fetchに触れません）。ライブの Claude 対応チャットを有効化するには `false` にします。
 
 デフォルト: `false`
 

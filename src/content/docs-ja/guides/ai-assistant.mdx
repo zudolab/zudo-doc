@@ -97,10 +97,9 @@ wrangler kv namespace create RATE_LIMIT
 **Durable Object名前空間** — UTC日ごとの正確な有料呼び出し許可判定：
 
 ```toml title="wrangler.toml"
-[durable_objects]
-bindings = [
-  { name = "AI_CHAT_DAILY_SPEND_CAP", class_name = "AiChatDailySpendCap" },
-]
+[[durable_objects.bindings]]
+name = "AI_CHAT_DAILY_SPEND_CAP"
+class_name = "AiChatDailySpendCap"
 
 [[migrations]]
 tag = "v1-ai-chat-daily-spend-cap"
