@@ -18,7 +18,7 @@ New snapshot guards (added in `packages/zudo-doc/src/__tests__/public-api-snapsh
 
 ---
 
-## 1. Subpath Exports (139 total)
+## 1. Subpath Exports (142 total)
 
 The full `package.json#exports` keyset is the contract. Any addition or removal requires a deliberate, reviewed change that will fail the snapshot guard.
 
@@ -35,6 +35,7 @@ The full `package.json#exports` keyset is the contract. Any addition or removal 
 | `./route-context` | `createRouteContext(payload, options?)` — reconstructs the full `RouteContext` callable surface from the serializable `RouteContextPayload`; also re-exports `RouteContext` / `RouteContextPayload` / `TagInfo` / `ContentBridge` types |
 | `./chrome` | `createChrome(context, hostBindings?)` — assembles a `ChromeContext` from a `RouteContext` + `ChromeHostBindings` (stub defaults) and wires all page-chrome factories; returns the `Chrome` surface |
 | `./eject` | `EJECTABLE` map + `eject()` function + `ZudoDocJson` type — ejectable component registry for the `zudo-doc eject` CLI |
+| `./theme-cli` | `listThemePacks()` / `formatThemeList()` / `applyThemePack()` + config-rewrite/provenance types — implementation behind the `zudo-doc theme list\|apply <slug>` CLI (issue #2824) |
 | `./component-tokens` | `COMPONENT_TOKENS` const + `ComponentToken` / `ComponentTokenCategory` / `ComponentTokenName` types — the `--zdc-*` component-level CSS custom property registry. Consumers read this to discover every rebrand knob; redefine the listed `cssVar`s in `:root` to override defaults. **Snapshot-guarded** (`component-tokens-snapshot.test.ts`). |
 
 ### `ChromeHostBindings` Slots (`./factory-context`)
