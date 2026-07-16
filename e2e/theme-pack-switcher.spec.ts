@@ -33,12 +33,15 @@ import {
  * vocabulary (`zudo-doc-theme`, `data-theme`) to prove the two systems are
  * independent.
  *
- * Bundled packs in this fixture (`themePacks` left `undefined` = all
- * bundled), in canonical alphabetical order: "broadsheet", "default" (no
- * stylesheet), "foundry", "ledger", "manuscript", "swissgrid" — see
- * `packages/zudo-doc/src/theme-packs/`. The Next/Prev assertions below rely
- * only on "foundry" immediately following "default" in that order (default →
- * Next → foundry → Prev → default), which holds regardless of the total count.
+ * Bundled packs available in this fixture: "default" (no stylesheet),
+ * "foundry", "broadsheet", "ledger", "manuscript", "swissgrid" — see
+ * `packages/zudo-doc/src/theme-packs/`. The fixture PINS `themePacks` to a
+ * fixed order with "foundry" held SECOND (see this fixture's settings.ts), so
+ * the switcher's Prev/Next cycle is `default → foundry → …`; the specs below
+ * rely on `default → Next → foundry → Prev → default`, which the pin keeps
+ * stable as later batches add packs. (`runtime.packs` is unordered — the
+ * hard-load test re-sorts it, so it asserts the full bundled set
+ * alphabetically.)
  */
 
 const HOME = "/";
