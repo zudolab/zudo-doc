@@ -453,6 +453,64 @@ describe("ai-chat handler — exact global paid-call admission", () => {
     }
   });
 
+  it("logs exact-cap decisions without request, credential, or identifier material", async () => {
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    mockSettingsValues.aiChatGlobalDailyLimit = 1;
+    setupSuccessfulFetch("private provider response");
+
+    mockRequest = makeRequest({
+      body: { message: "private prompt content" },
+      headers: { "cf-connecting-ip": "203.0.113.42" },
+    });
+    expect((await AiChatHandler()).status).toBe(200);
+
+    mockRequest = makeRequest({
+      body: { message: "another private prompt" },
+      headers: { "cf-connecting-ip": "203.0.113.42" },
+    });
+    expect((await AiChatHandler()).status).toBe(429);
+
+    const serialized = JSON.stringify([...info.mock.calls.flat(), ...warn.mock.calls.flat()]);
+    expect(serialized).toContain('"outcome":"admitted"');
+    expect(serialized).toContain('"outcome":"denied"');
+    expect(serialized).not.toContain("private prompt");
+    expect(serialized).not.toContain("private provider response");
+    expect(serialized).not.toContain("203.0.113.42");
+    expect(serialized).not.toContain("test-key");
+    expect(serialized).not.toContain("ai-chat-daily-spend-cap:");
+
+    const auditValues = [...mockKV.data.entries()]
+      .filter(([key]) => key.startsWith("audit:"))
+      .map(([, value]) => value);
+    expect(auditValues).toHaveLength(1);
+    expect(JSON.parse(auditValues[0]!)).toEqual(
+      expect.objectContaining({ outcome: "completed" }),
+    );
+    const persistedAudit = auditValues.join("\n");
+    expect(persistedAudit).not.toContain("private prompt");
+    expect(persistedAudit).not.toContain("private provider response");
+    expect(persistedAudit).not.toContain("203.0.113.42");
+  });
+
+  it("logs missing admission infrastructure as failed-closed without error text", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    mockSettingsValues.aiChatGlobalDailyLimit = 1;
+    mockEnv.AI_CHAT_DAILY_SPEND_CAP = undefined;
+    setupSuccessfulFetch();
+    mockRequest = makeRequest({ body: { message: "Question with secret details" } });
+
+    const response = await AiChatHandler();
+
+    expect(response.status).toBe(500);
+    expect(anthropicFetchCalls()).toHaveLength(0);
+    const serialized = JSON.stringify(error.mock.calls.flat());
+    expect(serialized).toContain('"outcome":"failed_closed"');
+    expect(serialized).toContain('"configured_limit":1');
+    expect(serialized).not.toContain("Question with secret details");
+    expect(serialized).not.toContain("binding is unavailable");
+  });
+
   it("checks the approximate per-IP guard before claiming a global slot", async () => {
     mockSettingsValues.aiChatGlobalDailyLimit = 1;
     (mockKV.get as ReturnType<typeof vi.fn>).mockImplementation(async (key: string) =>

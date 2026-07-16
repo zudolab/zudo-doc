@@ -1,5 +1,45 @@
 # S11 AI Chat Audit
 
+> **Historical audit, superseded by #2779 (2026-07-16).** The original page-count,
+> missing-JA findings, handler ordering, and binding inventory below describe the
+> 2026-02 snapshot and are not current. Both JA pages now exist; use the current
+> architecture and proof section immediately below for operational decisions.
+
+## Current #2779 architecture and proof
+
+The production graph is:
+
+```text
+worker-entry.ts (custom entry; exports AiChatDailySpendCap)
+  -> dist/_worker.js (generated adapter handler)
+  -> dist/_zfb_inner.mjs (generated SSR route sidecar)
+  -> request/security validation
+  -> RATE_LIMIT KV (soft, eventually-consistent per-IP guard)
+  -> docs-context fetch + provider-request preparation (non-paid prerequisites)
+  -> AI_CHAT_DAILY_SPEND_CAP / AiChatDailySpendCap
+     (SQLite, exact admission; one object per UTC day)
+  -> exactly one Anthropic fetch
+```
+
+`aiChatGlobalDailyLimit: false` skips the exact Durable Object admission only.
+`aiChatDemoMode: true` short-circuits before KV, Durable Objects, audit writes,
+and Anthropic. An exact admission is never refunded after provider/network
+failure. Production applies migration `v1-ai-chat-daily-spend-cap` with
+`new_sqlite_classes = ["AiChatDailySpendCap"]`; preview aliases intentionally
+use an adapter-only service because Durable Object versions do not receive
+preview URLs.
+
+Current proof is mechanical: `pnpm check:worker`, `pnpm test:worker` (Workers
+runtime + real SQLite DO concurrency), and `pnpm verify:worker-dry-run`. PR CI's
+Worker Contract Proof restores the exact `build-site` artifact, runs the
+runtime-only suite, and dry-runs Wrangler against that same output. Operational
+logs and seven-day KV audit values use closed privacy-safe schemas: no prompt,
+response, raw IP, IP hash, secret, object ID/name, or raw error text.
+
+---
+
+## Original 2026-02 snapshot (historical)
+
 **Sub-issue:** #1371 (epic #1360)
 **Build command:** `pnpm build` (zfb build) from worktree root
 **Base value:** `/pj/zudo-doc/` (from `settings.base`)

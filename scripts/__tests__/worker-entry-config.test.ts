@@ -17,6 +17,8 @@ describe("custom Worker deployment contract", () => {
     expect(config).toContain('class_name = "AiChatDailySpendCap"');
     expect(config.match(/new_sqlite_classes = \["AiChatDailySpendCap"\]/g)).toHaveLength(1);
     expect(config.match(/tag = "v1-ai-chat-daily-spend-cap"/g)).toHaveLength(1);
+    expect(config).toContain("[observability]");
+    expect(config).toContain("enabled = true");
   });
 
   it("preserves the static assets, route, flags, KV, and workflow ignore graph", () => {
@@ -78,5 +80,24 @@ describe("custom Worker deployment contract", () => {
       expect(source).not.toContain('$RUNNER_TEMP/wrangler-preview-bootstrap.toml');
       expect(source).not.toContain("UPLOAD_STATUS");
     }
+  });
+
+  it("gates the custom Worker against one exact built artifact in CI and b4push", () => {
+    const ci = read(".github/workflows/pr-checks.yml");
+    expect(ci).toContain("worker-contract:");
+    expect(ci).toContain("needs: build-site");
+    expect(ci).toContain("name: site-dist");
+    expect(ci).toContain("run: pnpm test:worker:built");
+    expect(ci).toContain("node scripts/verify-worker-dry-run.mjs --skip-build");
+
+    const localGate = read("scripts/run-b4push.sh");
+    expect(localGate).toContain("pnpm verify:worker-contract");
+
+    const packageJson = JSON.parse(read("package.json")) as {
+      scripts: Record<string, string>;
+    };
+    expect(packageJson.scripts["verify:worker-contract"]).toContain("pnpm build");
+    expect(packageJson.scripts["verify:worker-contract"]).toContain("pnpm test:worker:built");
+    expect(packageJson.scripts["verify:worker-contract"]).toContain("--skip-build");
   });
 });

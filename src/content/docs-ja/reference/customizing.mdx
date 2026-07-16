@@ -183,13 +183,15 @@ scaffold のスタブは特別です。`pages/index.tsx` は何もシャドー�
 
 2. **`wrangler.toml` を追加する。** Worker 名、カスタムドメインルート、各種バインディングを宣言します。このファイルは新しいスキャフォールドには存在しません — デプロイを決めたときに作成します。
 
-3. **AI アシスタントを有効化する場合は配線する。** `aiAssistant: true` は SSR の `/api/ai-chat` ルートをマウントします。デフォルトでは**デモモード**で出荷されます（`aiChatDemoMode` は設定上デフォルト `false` ですが、ライブバックエンドに切り替えるまでスキャフォールドのチャットは静的デモです）。本物の Claude 対応アシスタントには次が必要です:
-   - `aiChatDemoMode: false` に設定する;
+3. **AI アシスタントを有効化する場合は配線する。** `aiAssistant: true` はpackage-ownedな SSR `/api/ai-chat` seamをマウントします。demo modeでは固定応答を返し、host実装なしでlive modeを選ぶとHTTP 501を返します。package/scaffoldはshowcaseのfull handler、`worker-entry.ts`、`AiChatDailySpendCap`を出荷しません。本物のClaude対応アシスタントには、まずshowcaseと同等のhost-owned `/api/ai-chat` handlerとsource Worker entry/Durable Objectを実装し、その後に次を行います:
+   - host handlerを導入した後で`aiChatDemoMode: false`に設定する;
    - `RATE_LIMIT` KV 名前空間を作成し（`wrangler kv namespace create RATE_LIMIT`）、`wrangler.toml` でバインドする;
+   - `AI_CHAT_DAILY_SPEND_CAP`を`AiChatDailySpendCap`へバインドし、migration tag
+     `v1-ai-chat-daily-spend-cap`と`new_sqlite_classes = ["AiChatDailySpendCap"]`を追加する;
    - `ANTHROPIC_API_KEY` シークレットを追加する（`wrangler secret put ANTHROPIC_API_KEY`）;
    - `aiChatAllowedOrigins` をサイトのオリジンに設定する。
 
-完全なランブック（シークレット、KV、CORS、レート制限）は[デプロイガイド](../guides/deployment.mdx)と [AI Assistant API リファレンス](./ai-assistant-api.mdx)を参照してください。
+showcaseの[デプロイガイド](../guides/deployment.mdx)と[AI Assistant APIリファレンス](./ai-assistant-api.mdx)は、host実装の参照として利用してください（シークレット、ソフトなIPごとのKV、UTC日ごとの正確な許可、CORS、プレビュー制約）。class sourceを用意せず名前だけbindingしても動作しません。
 
 ## 第8段 — pre-push と HTML バリデーションの復元
 

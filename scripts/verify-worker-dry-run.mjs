@@ -5,11 +5,15 @@ import { join, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
 const outdir = mkdtempSync(join(tmpdir(), "zudo-doc-worker-dry-run-"));
+const skipBuild = process.argv.includes("--skip-build");
 
 try {
-  // The source entry imports adapter output from dist/, so stale or absent
-  // generated files must never be accepted as deployment proof.
-  execFileSync("pnpm", ["build"], { cwd: root, stdio: "inherit" });
+  // The default remains a standalone fresh-build proof. CI/local contract
+  // orchestration may pass --skip-build only after producing or restoring the
+  // exact dist artifact that the runtime suite also consumes.
+  if (!skipBuild) {
+    execFileSync("pnpm", ["build"], { cwd: root, stdio: "inherit" });
+  }
 
   execFileSync(
     "pnpm",

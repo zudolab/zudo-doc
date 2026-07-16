@@ -7,6 +7,15 @@ tags:
 
 AIアシスタントのチャットエンドポイントのAPI仕様です。
 
+<Warning title="showcase実装の境界">
+
+このreferenceはzudo-doc showcase repositoryのhost-ownedなlive実装を説明します。
+`@takazudo/zudo-doc` package/scaffoldは、このhandler、`worker-entry.ts`、
+`AiChatDailySpendCap`を出荷しません。host実装なしでlive modeを選ぶとpackage-owned routeは
+HTTP 501を返します。downstream projectは同等のhandlerとWorker graphを用意する必要があります。
+
+</Warning>
+
 ## エンドポイント
 
 ```
@@ -90,7 +99,8 @@ interface AiChatErrorResponse {
 | ----------------------- | ------------- | ---- | -------------------------------------------------------------------------- |
 | `ANTHROPIC_API_KEY`     | secret        | はい | Anthropic APIキー                                                          |
 | `DOCS_SITE_URL`         | var           | はい | デプロイ済みのドキュメントサイトURL（`llms-full.txt`の取得に使用）         |
-| `RATE_LIMIT`            | KV namespace  | はい | レート制限のカウンタと監査ログを保存                                       |
+| `RATE_LIMIT`            | KV namespace  | はい | ソフトなIPごとのカウンタとprivacy-safeな結果監査recordを保存                |
+| `AI_CHAT_DAILY_SPEND_CAP` | Durable Object namespace | `aiChatGlobalDailyLimit`が数値の場合 | 正確な有料呼び出し許可。クラス`AiChatDailySpendCap`、SQLite migration `v1-ai-chat-daily-spend-cap` |
 | `RATE_LIMIT_PER_MINUTE` | var           | いいえ | IPあたりの1分間の最大リクエスト数（デフォルト`10`）                        |
 | `RATE_LIMIT_PER_DAY`    | var           | いいえ | IPあたりの1日の最大リクエスト数（デフォルト`100`）                         |
 | `PUBLIC_ENABLE_MOCKS`   | var           | いいえ | `"true"`に設定するとMSWのモックレスポンスが有効になる（開発モードのみ）    |
@@ -102,27 +112,40 @@ interface AiChatErrorResponse {
 
 | 設定                     | 型                  | デフォルト | 説明                                                                    |
 | ------------------------ | ------------------- | ---------- | ----------------------------------------------------------------------- |
-| `aiChatDemoMode`         | `boolean`           | `true`     | エンドポイントを固定返答でショートサーキット。APIキーやKVにアクセスしない |
+| `aiChatDemoMode`         | `boolean`           | `false`（ショーケース: `true`） | 固定返答でショートサーキット。APIキー、KV、Durable Object、provider fetchにアクセスしない |
 | `aiChatAllowedOrigins`   | `string[]`          | `[]`       | CORSオリジン許可リスト（非デモ時のみ有効）。空配列 = 全クロスオリジンリクエストをブロック |
-| `aiChatGlobalDailyLimit` | `number \| false`   | `false`    | 全IPを合算した1日のリクエスト上限。`false` = 上限なし                    |
+| `aiChatGlobalDailyLimit` | `number \| false`   | `false`    | UTC日ごとの正確なAnthropic fetch許可上限。`false` = 正確な上限なし       |
 
 ## セキュリティ
 
 このエンドポイントは、レガシーのスタンドアロンWorkerから移植された多層的な防御を備えています：
 
 - **ハードニングされたシステムプロンプト** — XMLタグでコンテキストを区切り、明示的なガードレールによってモデルが設定情報を漏洩したり、トピック外の指示に従ったりすることを防ぎます。さらに、過去の会話ターンはすべてクライアント由来の信頼できない入力として扱うようモデルに指示します（下記の **チャット履歴の信頼モデル** を参照）
-- **入力スクリーニング** — 一般的なプロンプトインジェクションパターンを正規表現の事前フィルタで弾き、Claude APIに到達する前に拒否します。スクリーニングはレート制限チェックの**後**に実行されるため、インジェクションガードで拒否されたリクエストでも呼び出し元のレート制限の枠は消費します（リミッターはKV書き込みの増幅を防ぐため先に実行する必要があります）
-- **レート制限** — `RATE_LIMIT` KVを使ったIPごとの制限。`aiChatDemoMode` が `false` の場合は
+- **入力スクリーニング** — 一般的なプロンプトインジェクションパターンを、どちらのリミッターやClaude APIよりも先に正規表現で検査します。その後、validation rejectionを返す前にIPごとのKVガードを実行するため、拒否された入力も近似的なIPごとのquotaを消費しますが、audit writeはそのガードより後ろに保たれます
+- **IPごとのソフトガード** — `RATE_LIMIT` KVを使う近似的で結果整合な制限。`aiChatDemoMode` が `false` の場合は
   **フェイルクローズ**（KV障害時 → HTTP 429）。デモモードではフェイルオープン（デモのショートサーキットが先に実行されるため、実際にはレートリミッターには到達しない）
 - **CORSオリジン許可リスト** — 非デモ時、`Access-Control-Allow-Origin` は `aiChatAllowedOrigins`
   に含まれるオリジンにのみエコーされます。リスト外のオリジンからのクロスオリジンリクエストはブラウザでブロックされます。デモモードは後方互換性のため常に `*` を送信します
-- **グローバル1日上限** — IPローテーションやボットネットへの対策として `aiChatGlobalDailyLimit`
-  でオプションのバックストップを設定できます。デフォルトは無効
-- **監査ログ** — すべてのインタラクションを`audit:`プレフィックスで`RATE_LIMIT` KVに記録（7日のTTL、ファイア・アンド・フォーゲット）
+- **正確な有料呼び出し許可** — UTC日ごとのSQLite `AiChatDailySpendCap`が、ちょうど1回のAnthropic
+  fetch直前の許可判定を直列化します。名前空間は`AI_CHAT_DAILY_SPEND_CAP`、Worker migration tagは
+  `v1-ai-chat-daily-spend-cap`、設定は`new_sqlite_classes = ["AiChatDailySpendCap"]`です。上限超過は
+  次のUTC日まで429、binding/RPC/storage障害は500でフェイルクローズします。provider/network障害でも
+  許可枠は返却せず、providerが確定した請求数ではありません
+- **Privacy-safeな監査record** — `RATE_LIMIT` KVの`audit:`にはtimestamp、`completed`/`blocked`
+  outcome、任意の限定されたblock-reason enumだけを保存します（7日のTTL、fire-and-forget）。prompt／response
+  text、IP、IP hashは永続化しません
 - **メッセージ長制限** — 4000文字を超えるメッセージはAPIに到達する前に拒否されます
 - **`cf-connecting-ip`の注意点** — IPごとのレート制限にはこのヘッダーを使用しており、WorkerがCloudflareのネットワーク経由でデプロイされている場合にのみ信頼できます
 
-### チャット履歴の信頼モデル
+## 運用ログ
+
+Wranglerの`[observability] enabled = true`により、Workers Logsへ正確な上限の`admitted`、`denied`、
+`failed_closed`をclosed-schemaオブジェクトとして記録します。各イベントには`utc_day`、
+`configured_limit`と非機密な結果フィールドだけが含まれます。別の`per_ip_kv`イベントで、通常の
+上限拒否とKV障害によるフェイルクローズを区別できます。prompt、response、生IP、IP hash、secret、
+Durable Object名／ID、raw error textは記録しません。
+
+## チャット履歴の信頼モデル
 
 `history`配列は**クライアント由来かつステートレス**です。サーバーはセッション記録を一切保持しないため、`assistant`ロールのターンが実際に過去のモデル応答によって生成されたものかを検証できません。各エントリは依然としてハードニングされています。すなわち、`user`/`assistant`への厳格なロールホワイトリスト、上記のエントリ件数および1エントリあたりの長さ制限、そして紛れ込んだ余分なフィールドを取り除く`{ role, content }`への再構築です。`user`ロールのターンはインジェクションスクリーニングされますが、`assistant`ロールのターンは**されません**（本物のアシスタント応答はインジェクションのような文面を正当に引用しうるためです）。
 

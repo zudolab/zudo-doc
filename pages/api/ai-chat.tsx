@@ -36,7 +36,17 @@ import {
   admitAiChatPaidCall,
   secondsUntilNextUtcDay,
 } from "./_ai-chat-admission";
-import type { AiChatEnv, ChatMessage, BlockReason } from "./_ai-chat-types";
+import {
+  logExactAdmission,
+  logInternalFailure,
+  logPerIpGuard,
+} from "./_ai-chat-observability";
+import type {
+  AiChatDailySpendAdmission,
+  AiChatEnv,
+  ChatMessage,
+  BlockReason,
+} from "./_ai-chat-types";
 
 // `frontmatter` is required by zfb's TSX page contract (see
 // `crates/zfb-content/src/tsx_frontmatter.rs`). Without it, zfb defaults
@@ -314,6 +324,21 @@ export default async function AiChatHandler(): Promise<Response> {
     const ipHash = await hashIp(clientIp, env.IP_HASH_SECRET);
     const rateLimit = await checkRateLimit(ipHash, env);
     if (!rateLimit.allowed) {
+      const guardTime = new Date();
+      logPerIpGuard(
+        rateLimit.denialReason === "kv_unavailable" ? "failed_closed" : "denied",
+        guardTime,
+        {
+          window:
+            rateLimit.denialReason === "minute_limit"
+              ? "minute"
+              : rateLimit.denialReason === "day_limit"
+                ? "day"
+                : "unknown",
+          configuredLimit: rateLimit.configuredLimit,
+          retryAfter: rateLimit.retryAfter,
+        },
+      );
       return reply(
         { error: "Too many requests" },
         429,
@@ -322,23 +347,17 @@ export default async function AiChatHandler(): Promise<Response> {
     }
 
     /** Fire-and-forget audit entry via ctx.waitUntil. */
-    function audit(
-      message: string,
-      opts: { blocked: boolean; blockReason?: BlockReason; responsePreview?: string },
-    ): void {
+    function audit(opts: { outcome: "completed" | "blocked"; blockReason?: BlockReason }): void {
       fireAuditLog(ctx.waitUntil.bind(ctx), env.RATE_LIMIT, {
         timestamp: new Date().toISOString(),
-        ipHash,
-        message: message.slice(0, 500),
-        responsePreview: opts.responsePreview?.slice(0, 200) ?? "",
-        blocked: opts.blocked,
+        outcome: opts.outcome,
         blockReason: opts.blockReason,
       });
     }
 
     if (!validation.ok) {
-      audit(validation.message, {
-        blocked: true,
+      audit({
+        outcome: "blocked",
         blockReason: validation.blockReason,
       });
       return reply({ error: validation.error }, validation.status);
@@ -355,7 +374,19 @@ export default async function AiChatHandler(): Promise<Response> {
     const globalDailyLimit = settings.aiChatGlobalDailyLimit;
     if (globalDailyLimit !== false) {
       const admissionTime = new Date();
-      const admission = await admitAiChatPaidCall(globalDailyLimit, env, admissionTime);
+      let admission: AiChatDailySpendAdmission;
+      try {
+        admission = await admitAiChatPaidCall(globalDailyLimit, env, admissionTime);
+      } catch {
+        logExactAdmission("failed_closed", admissionTime, globalDailyLimit);
+        return reply({ error: "Internal server error" }, 500);
+      }
+      logExactAdmission(
+        admission.allowed ? "admitted" : "denied",
+        admissionTime,
+        globalDailyLimit,
+        admission.count,
+      );
       if (!admission.allowed) {
         const retryAfter = secondsUntilNextUtcDay(admissionTime);
         return reply(
@@ -369,10 +400,10 @@ export default async function AiChatHandler(): Promise<Response> {
     // An admission intentionally remains consumed if this single paid fetch
     // fails. There is no refund and no automatic provider retry.
     const response = await callClaude(requestBody, env);
-    audit(validation.message, { blocked: false, responsePreview: response });
+    audit({ outcome: "completed" });
     return reply({ response }, 200);
-  } catch (err) {
-    console.error("Chat endpoint error:", err instanceof Error ? err.message : err);
+  } catch {
+    logInternalFailure(new Date());
     return reply({ error: "Internal server error" }, 500);
   }
 }

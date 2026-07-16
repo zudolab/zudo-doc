@@ -183,13 +183,15 @@ The minimal scaffold builds a **pure static site** — `pnpm build` emits `dist/
 
 2. **Add `wrangler.toml`.** Declare the Worker name, the custom domain route, and any bindings. This file does not exist in a fresh scaffold — you author it when you decide to deploy.
 
-3. **Wire the AI assistant, if you enable it.** `aiAssistant: true` mounts an SSR `/api/ai-chat` route. It ships in **demo mode by default** (`aiChatDemoMode` defaults to `false` in config, but the scaffold's chat is a static demo until you flip it to a live backend). For a real, Claude-backed assistant you must:
-   - set `aiChatDemoMode: false`;
+3. **Wire the AI assistant, if you enable it.** `aiAssistant: true` mounts a package-owned SSR `/api/ai-chat` seam. It returns the fixed demo response while demo mode is enabled and HTTP 501 if live mode is selected without a host implementation. The package/scaffold does **not** ship the showcase's full handler, `worker-entry.ts`, or `AiChatDailySpendCap`. For a real, Claude-backed assistant you must first implement a host-owned `/api/ai-chat` handler and source Worker entry/Durable Object equivalent to the showcase, then:
+   - set `aiChatDemoMode: false` after that host handler is installed;
    - create a `RATE_LIMIT` KV namespace (`wrangler kv namespace create RATE_LIMIT`) and bind it in `wrangler.toml`;
+   - bind `AI_CHAT_DAILY_SPEND_CAP` to `AiChatDailySpendCap` and add migration tag
+     `v1-ai-chat-daily-spend-cap` with `new_sqlite_classes = ["AiChatDailySpendCap"]`;
    - add the `ANTHROPIC_API_KEY` secret (`wrangler secret put ANTHROPIC_API_KEY`);
    - set `aiChatAllowedOrigins` to your site origin.
 
-See the [Deployment guide](../guides/deployment.mdx) and the [AI Assistant API reference](./ai-assistant-api.mdx) for the full runbook (secrets, KV, CORS, rate limiting).
+See the showcase [Deployment guide](../guides/deployment.mdx) and [AI Assistant API reference](./ai-assistant-api.mdx) as a host-implementation reference (secrets, soft per-IP KV, exact UTC-day admission, CORS, and preview limitations). Binding the named class without supplying its source is not sufficient.
 
 ## Rung 8 — Restoring pre-push and HTML validation
 

@@ -21,6 +21,11 @@ compatibility_flags = ["nodejs_compat"]
 preview_urls = true
 workers_dev = false  # prevent serving on *.workers.dev prod route; previews use preview_urls above
 
+# Retain structured operational events for exact-cap admitted/denied/failed-closed
+# outcomes. Log payloads use a closed, non-sensitive schema.
+[observability]
+enabled = true
+
 # scripts/write-worker-preview-config.mjs removes this marked block and switches
 # to worker-preview-entry.ts for preview uploads. Cloudflare preview URLs cannot
 # be generated for a version that implements a Durable Object.
@@ -75,15 +80,21 @@ custom_domain = true
 #   2. Add the Anthropic API key as a secret:
 #        wrangler secret put ANTHROPIC_API_KEY
 #
-#   3. Set DOCS_SITE_URL to your deployed docs site URL.
+#   3. Keep AI_CHAT_DAILY_SPEND_CAP / AiChatDailySpendCap and the
+#      v1-ai-chat-daily-spend-cap new_sqlite_classes migration above. A
+#      production `wrangler deploy` applies it; preview uploads intentionally
+#      use the adapter-only service and do not exercise paid-call admission.
 #
-#   4. (Optional, non-breaking) Salt the IP hash with an HMAC secret:
+#   4. Set DOCS_SITE_URL to your deployed docs site URL.
+#
+#   5. (Optional, non-breaking) Salt per-IP rate-limit keys with an HMAC secret:
 #        wrangler secret put IP_HASH_SECRET
 #      When set, client IPs are keyed with HMAC-SHA-256 instead of unsalted
 #      SHA-256, defeating IPv4-enumeration reversal of stored hashes (#2038).
 #      Absent → falls back to unsalted SHA-256 (identical to prior behaviour).
 #      Setting/rotating it resets in-flight rate-limit buckets (60s) and breaks
-#      audit-hash continuity for the current 7-day window — both acceptable.
+#      per-IP rate-limit buckets — acceptable for these soft guards. Audit
+#      values never store IPs or hashes.
 # ---------------------------------------------------------------------------
 
 [vars]

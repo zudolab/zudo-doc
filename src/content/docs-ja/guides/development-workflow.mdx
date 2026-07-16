@@ -48,7 +48,7 @@ sidebar_position: 17
 |---|---|
 | `pnpm build` | 静的HTMLを`dist/`にエクスポート |
 | `pnpm check` | TypeScript型チェック |
-| `pnpm b4push` | プッシュ前の検証：約22ステップのパイプライン（フォーマットチェック → … → ビルド → リンクチェック → HTML検証 → プレビュースモーク）。正確なステップ数は`scripts/run-b4push.sh`を正とする。E2Eは時間予算の都合でこのパイプラインには含まれず、CI（pr-checks）側で実行される |
+| `pnpm b4push` | プッシュ前の検証：23ステップのパイプライン（フォーマットチェック → … → Worker contract proof → ビルド → リンクチェック → HTML検証 → プレビュースモーク）。正確なステップ数は`scripts/run-b4push.sh`を正とする。E2Eは時間予算の都合でこのパイプラインには含まれず、CI（pr-checks）側で実行される |
 | `pnpm format` | MDXファイルのフォーマット |
 | `pnpm test:unit` | ユニットテストを実行（Vitest） |
 | `pnpm test:e2e` | E2Eテストを実行（Playwright） |
