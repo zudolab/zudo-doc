@@ -31,6 +31,20 @@ function samplePack(slug: string) {
   };
 }
 
+/** Deep-clone `samplePack(slug)` and delete a nested field by dotted path
+ *  (e.g. "preview.dark.syntax.keyword") — used to build "one field missing"
+ *  malformed fixtures without hand-duplicating the whole object per case. */
+function packMissing(slug: string, dottedPath: string): unknown {
+  const pack = structuredClone(samplePack(slug)) as Record<string, unknown>;
+  const parts = dottedPath.split(".");
+  let cursor: Record<string, unknown> = pack;
+  for (let i = 0; i < parts.length - 1; i++) {
+    cursor = cursor[parts[i]!] as Record<string, unknown>;
+  }
+  delete cursor[parts[parts.length - 1]!];
+  return pack;
+}
+
 describe("parseThemePackRegistryPayload", () => {
   it("accepts a well-formed { schemaVersion: 1, packs: [...] } payload", () => {
     const payload = { schemaVersion: 1, packs: [samplePack("default"), samplePack("foundry")] };
@@ -57,6 +71,42 @@ describe("parseThemePackRegistryPayload", () => {
     ["a pack entry that is not an object", { schemaVersion: 1, packs: [null] }],
   ])("rejects %s (returns null, never throws)", (_label, input) => {
     expect(parseThemePackRegistryPayload(input)).toBeNull();
+  });
+
+  // Every field ThemePackCard actually dereferences must be validated, not
+  // just `slug`/`preview` presence — a malformed entry that still has
+  // *some* preview object but is missing a field several levels in
+  // (e.g. `preview.dark.syntax.keyword`) must be rejected too, since
+  // ThemePackCard would otherwise crash dereferencing it rather than the
+  // caller showing its inline error note (codex-review finding).
+  it.each([
+    "name",
+    "description",
+    "mode",
+    "fonts",
+    "fonts.sans",
+    "preview.light",
+    "preview.dark",
+    "preview.light.bg",
+    "preview.light.fg",
+    "preview.light.accent",
+    "preview.light.syntax",
+    "preview.light.syntax.keyword",
+    "preview.dark.syntax.callable",
+  ])("rejects a pack entry missing %s (deep field, not just top-level shape)", (dottedPath) => {
+    const payload = { schemaVersion: 1, packs: [packMissing("foundry", dottedPath)] };
+    expect(parseThemePackRegistryPayload(payload)).toBeNull();
+  });
+
+  it("rejects a pack entry with an invalid mode value", () => {
+    const pack = { ...samplePack("foundry"), mode: "sepia" };
+    expect(parseThemePackRegistryPayload({ schemaVersion: 1, packs: [pack] })).toBeNull();
+  });
+
+  it("does not require fonts.display (optional even in the real schema)", () => {
+    const pack = samplePack("foundry");
+    expect((pack as { fonts: { display?: string } }).fonts.display).toBeUndefined();
+    expect(parseThemePackRegistryPayload({ schemaVersion: 1, packs: [pack] })).toHaveLength(1);
   });
 });
 
