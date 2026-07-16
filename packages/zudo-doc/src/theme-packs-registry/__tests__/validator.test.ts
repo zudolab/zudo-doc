@@ -263,6 +263,32 @@ describe("validateThemePack", () => {
     expect(inCss.issues.some((i) => i.rule === "commercial-font-denylist")).toBe(true);
   });
 
+  it("does NOT flag a denylisted substring that appears only in the scoping-attribute slug", () => {
+    // A pack legitimately named after a face (e.g. "futura-editorial") must be
+    // authorable: the LOADED face is the OFL substitute (Jost), and "futura"
+    // appears only inside the mandatory html[data-theme-pack="futura-editorial"]
+    // scoping selector — never in a real font reference. The denylist scan must
+    // ignore the scoping attribute value (its value is always the slug).
+    const result = validateThemePack(
+      baseInput({
+        dirName: "futura-editorial",
+        metaRaw: {
+          ...VALID_FOUNDRY_META,
+          slug: "futura-editorial",
+          name: "Futura Editorial",
+          fonts: { sans: "Jost", mono: "Space Mono", loaded: ["Jost", "Space Mono"] },
+        },
+        cssContent: `
+@font-face { font-family: "Jost"; font-display: swap; src: url("./fonts/Jost-latin.woff2") format("woff2"); }
+html[data-theme-pack="futura-editorial"] { --font-sans: "Jost", system-ui, sans-serif; }
+html[data-theme-pack="futura-editorial"] header[data-header] { background: var(--zd-surface); }
+`,
+        fontFiles: ["Jost-latin.woff2", "OFL.txt"],
+      }),
+    );
+    expect(result.issues.some((i) => i.rule === "commercial-font-denylist")).toBe(false);
+  });
+
   it("rejects preview swatches that aren't plain resolved colors", () => {
     const withVar = validateThemePack(
       baseInput({
