@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "slug": "sumi",
+  "name": "Sumi",
+  "description": "Sumi-e ink on washi — bold mincho brush headings, deep black strokes, one vermillion hanko seal accent.",
+  "mode": "light",
+  "version": "1.0.0",
+  "fonts": {
+    "sans": "Zen Kaku Gothic New",
+    "mono": "IBM Plex Mono",
+    "display": "Shippori Mincho B1",
+    "loaded": ["Shippori Mincho B1", "Zen Kaku Gothic New", "IBM Plex Mono"]
+  },
+  "preview": {
+    "light": {
+      "bg": "#f7f4ec",
+      "fg": "#1b1a18",
+      "accent": "#b8232e",
+      "syntax": {
+        "keyword": "#e86a72",
+        "string": "#cfc6ae",
+        "comment": "#8a8479",
+        "callable": "#f7f3ea"
+      }
+    },
+    "dark": {
+      "bg": "#161514",
+      "fg": "#ece7db",
+      "accent": "#ea6a72",
+      "syntax": {
+        "keyword": "#ee7a81",
+        "string": "#c8bfa6",
+        "comment": "#837d72",
+        "callable": "#f4efe4"
+      }
+    }
+  }
+}
