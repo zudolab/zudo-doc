@@ -151,12 +151,16 @@ html[data-theme-pack="foundry"] nav[data-zd-toc] a[aria-current="true"] {
   background: none;
   color: var(--zd-fg);
   font-weight: 600;
-  /* The toc <ul> carries the 1px rail + var(--spacing-hsp-lg) left padding —
-     pull the link back over both, paint the bar, and repad so the text stays
-     put. Depth-3/4 items (indented via their <li>) show the bar at their own
-     indent, same as the prototype. */
-  margin-left: calc(-1 * var(--spacing-hsp-lg, 1rem) - 1px);
-  padding-left: calc(var(--spacing-hsp-lg, 1rem) - 1px);
+  /* The toc <ul> carries the 1px rail + var(--spacing-hsp-lg) left padding.
+     Its overflow-y-auto makes overflow-x compute to auto too, clipping
+     descendants at the padding edge — so the bar can't paint OVER the rail;
+     pull back exactly to the padding edge instead, so the 2px blue bar sits
+     snug against the rail and stays fully visible. Text position is
+     preserved (-pad + 2px border + pad - 2px = 0). Depth-3/4 items
+     (indented via their <li>) show the bar at their own indent, same as
+     the prototype. */
+  margin-left: calc(-1 * var(--spacing-hsp-lg, 1rem));
+  padding-left: calc(var(--spacing-hsp-lg, 1rem) - 2px);
   border-left: 2px solid var(--zd-accent);
 }
 
@@ -182,10 +186,8 @@ html[data-theme-pack="foundry"] .zd-content tbody tr:nth-child(even) {
   background-color: var(--zd-code-bg);
 }
 
-/* pager cards: whisper of a wash on hover, keep the blue border cue. The
-   DocPager <nav> has no class hook (the prototype's .doc-pager was mock
-   markup) — it renders as the only direct-child nav of article.zd-content
-   (doc-page-shell/index.tsx). */
-html[data-theme-pack="foundry"] .zd-content > nav a:hover {
-  background: color-mix(in srgb, var(--zd-muted) 8%, transparent);
-}
+/* pager cards: the prototype's hover wash is intentionally NOT ported — the
+   DocPager <nav> has no stable hook (.doc-pager was prototype-mock markup),
+   and any structural selector (.zd-content > nav) also catches NavCardGrid /
+   CategoryNav navs in the same position. The default hover:border-accent
+   blue border cue already carries the affordance. */
