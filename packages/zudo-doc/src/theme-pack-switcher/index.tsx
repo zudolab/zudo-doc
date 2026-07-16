@@ -220,7 +220,9 @@ export function ThemePackSwitcher({ active, order, base }: ThemePackSwitcherProp
           class="flex w-72 max-w-[calc(100vw-2rem)] flex-col gap-vsp-2xs rounded-lg border border-muted bg-surface p-hsp-lg shadow-lg focus-visible:outline-2 focus-visible:outline-accent"
         >
           <div class="flex items-start justify-between gap-hsp-sm">
-            <p class="text-body font-bold text-fg" aria-live="polite">
+            {/* min-w-0 + break-words: a flex child's min-width:auto would let a
+                long unbroken pack name push the button group out of the card. */}
+            <p class="min-w-0 break-words text-body font-bold text-fg" aria-live="polite">
               {entry?.name ?? activeSlug}
             </p>
             <div class="flex shrink-0 items-center gap-hsp-2xs">
