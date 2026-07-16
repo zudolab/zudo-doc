@@ -22,6 +22,7 @@ import { routeContext } from "virtual:zudo-doc-route-context";
 
 import type { Settings } from "../settings.js";
 import type { ColorScheme } from "../color-scheme-utils.js";
+import type { ThemePackRegistry } from "../theme-packs-registry/index.js";
 import {
   createRouteContext,
   type RouteContextPayload,
@@ -42,6 +43,9 @@ export const settings: Settings = routeCtx.settings;
 /** Host color-scheme palette map. `null` when not supplied — `_chrome.tsx`
  *  falls back to `DEFAULT_SCHEME` in that case. */
 export const colorSchemes: Record<string, ColorScheme> | null = routeCtx.colorSchemes;
+/** Resolved, enabled, ordered theme-pack registry. `null` when the routes
+ *  plugin did not thread one (ADR `docs/adr/theme-packs.md`, Decision 2). */
+export const themePackRegistry: ThemePackRegistry | null = routeCtx.themePackRegistry;
 
 export const {
   i18n,

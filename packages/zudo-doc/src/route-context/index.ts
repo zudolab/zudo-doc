@@ -93,6 +93,7 @@ export function createRouteContext<S extends Settings = Settings>(
   const translations = payload.translations;
   const tagVocabulary = payload.tagVocabulary;
   const colorSchemes = payload.colorSchemes;
+  const themePackRegistry = payload.themePackRegistry;
   const stableDocs: ContentBridge = options.stableDocs ?? defaultStableDocs;
 
   // ── i18n ────────────────────────────────────────────────────────────────
@@ -205,6 +206,7 @@ export function createRouteContext<S extends Settings = Settings>(
   const base = {
     settings,
     colorSchemes,
+    themePackRegistry,
     i18n,
     defaultLocale,
     locales,

@@ -1,0 +1,173 @@
+/* ============================================================
+   Foundry — reference zudo-doc theme pack (ADR docs/adr/theme-packs.md)
+
+   GitHub-neutral baseline: white paper, near-black ink, Primer-blue
+   links, quiet gray rules. Restraint, perfected. Self-hosted Inter
+   (variable, weights 400-700, latin + latin-ext), system mono stack.
+
+   Every rule below is scoped under html[data-theme-pack="foundry"] —
+   this is what makes the runtime pack swap atomic (Decision 3) and lets
+   the validator prove a pack can never leak styles while inactive
+   (Decision 6.7). The two @font-face blocks are the sole exception
+   (at-rules can't be selector-scoped).
+   ============================================================ */
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/Inter-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/Inter-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+html[data-theme-pack="foundry"] {
+  /* Tier-2 semantic roles — GitHub Primer palette, both modes always via
+     light-dark(). Radius decision: Primer's 6px — modest rounding. */
+  --zd-bg: light-dark(#ffffff, #0d1117);
+  --zd-fg: light-dark(#1f2328, #e6edf3);
+  --zd-selection-bg: light-dark(#b6d9ff, #1b4b91);
+  --zd-selection-fg: light-dark(#1f2328, #ffffff);
+  --zd-surface: light-dark(#ffffff, #161b22);
+  --zd-muted: light-dark(#59636e, #9198a1);
+  --zd-accent: light-dark(#0969da, #4493f8);
+  --zd-accent-hover: light-dark(#0550ae, #79c0ff);
+  --zd-code-bg: light-dark(#f6f8fa, #161b22);
+  --zd-code-fg: light-dark(#1f2328, #e6edf3);
+  --zd-success: light-dark(#1a7f37, #3fb950);
+  --zd-danger: light-dark(#d1242f, #f85149);
+  --zd-warning: light-dark(#9a6700, #d29922);
+  --zd-info: light-dark(#0969da, #4493f8);
+
+  /* syntax — all 9 roles restyled, both modes (the foundry syntax-theming
+     proof). Primer's classic highlighting palette; inserted/deleted reuse
+     the success/danger hues (Primer's diff colors). */
+  --zd-syntax-comment: light-dark(#6e7781, #8b949e);
+  --zd-syntax-string: light-dark(#0a3069, #a5d6ff);
+  --zd-syntax-number: light-dark(#0550ae, #79c0ff);
+  --zd-syntax-keyword: light-dark(#cf222e, #ff7b72);
+  --zd-syntax-callable: light-dark(#8250df, #d2a8ff);
+  --zd-syntax-type: light-dark(#953800, #ffa657);
+  --zd-syntax-name: light-dark(#1f2328, #e6edf3);
+  --zd-syntax-inserted: light-dark(#1a7f37, #3fb950);
+  --zd-syntax-deleted: light-dark(#d1242f, #f85149);
+
+  /* fonts — self-hosted Inter (variable, 400-700) for body/prose; system
+     mono stack (no webfont fetched for code). */
+  --font-sans: "Inter", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  /* Tier-3 component seams — semibold, gently tightened Inter headings (the
+     Inter signature); bare links until hover, GitHub-style. */
+  --zdc-doc-title-weight: 600;
+  --zdc-doc-title-tracking: -0.02em;
+  --zdc-doc-h2-weight: 600;
+  --zdc-doc-h2-tracking: -0.011em;
+  --zdc-doc-link-decoration: none;
+  --zdc-admonition-radius: 0 6px 6px 0;
+  --zdc-admonition-border-width: 4px;
+  --zdc-card-radius: 6px;
+}
+
+/* ---- Foundry extras: every move is a subtraction ---- */
+
+html[data-theme-pack="foundry"] .zd-content a:hover {
+  text-decoration: underline;
+}
+html[data-theme-pack="foundry"] footer[data-footer] a {
+  text-decoration: none;
+}
+html[data-theme-pack="foundry"] footer[data-footer] a:hover {
+  text-decoration: underline;
+}
+
+/* headings: flat GitHub hairline rules instead of the default gradient bar.
+   The h2 rule needs !important to defeat the SSR-inlined
+   `style="border-image:linear-gradient(...)"` (Decision 6.6's sole
+   allowlisted carve-out). */
+html[data-theme-pack="foundry"] .zd-content h1 {
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--zd-muted) 42%, transparent);
+}
+html[data-theme-pack="foundry"] .zd-content h2 {
+  border-image: none !important;
+  border-top-width: 1px;
+  border-top-color: color-mix(in srgb, var(--zd-muted) 42%, transparent);
+}
+
+/* inline code: neutral wash that holds up in both modes */
+html[data-theme-pack="foundry"] .zd-content code:not(pre code) {
+  background-color: color-mix(in srgb, var(--zd-muted) 18%, transparent);
+}
+
+/* header nav: pill wash on hover, never an underline */
+html[data-theme-pack="foundry"] [data-nav-item] {
+  border-radius: 6px;
+}
+html[data-theme-pack="foundry"] [data-nav-item]:hover {
+  text-decoration: none;
+  background: color-mix(in srgb, var(--zd-muted) 14%, transparent);
+}
+
+/* sidebar: gray hover wash; active item = subtle fill + Primer-blue bar */
+html[data-theme-pack="foundry"] #desktop-sidebar a:hover {
+  text-decoration: none;
+  background: color-mix(in srgb, var(--zd-muted) 14%, transparent);
+}
+html[data-theme-pack="foundry"] a[data-nav-active] {
+  background: color-mix(in srgb, var(--zd-muted) 16%, transparent);
+  color: var(--zd-fg);
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--zd-accent);
+  border-radius: 0 6px 6px 0;
+}
+
+/* TOC: active entry = ink text, no pill */
+html[data-theme-pack="foundry"] nav[data-zd-toc] a:hover {
+  text-decoration: none;
+  color: var(--zd-fg);
+}
+html[data-theme-pack="foundry"] nav[data-zd-toc] a.toc-active {
+  background: none;
+  color: var(--zd-fg);
+  font-weight: 600;
+}
+
+/* admonitions: GitHub alert style — colored bar and title, no tinted fill */
+html[data-theme-pack="foundry"] [data-admonition] {
+  background-color: transparent;
+}
+html[data-theme-pack="foundry"] [data-admonition="note"] .admonition-title::before {
+  content: "ⓘ ";
+}
+html[data-theme-pack="foundry"] [data-admonition="tip"] .admonition-title::before {
+  content: "✦ ";
+}
+html[data-theme-pack="foundry"] [data-admonition="warning"] .admonition-title::before {
+  content: "⚠︎ ";
+}
+
+/* tables: Primer zebra striping */
+html[data-theme-pack="foundry"] .zd-content tbody tr:nth-child(even) {
+  background-color: var(--zd-code-bg);
+}
+
+/* pager cards: whisper of a wash on hover */
+html[data-theme-pack="foundry"] .doc-pager a:hover {
+  background: color-mix(in srgb, var(--zd-muted) 8%, transparent);
+}

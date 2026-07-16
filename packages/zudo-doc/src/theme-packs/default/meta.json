@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "slug": "default",
+  "name": "Default",
+  "description": "The stock zudo-doc look. No pack stylesheet is loaded — your project's configured color scheme and fonts render unchanged.",
+  "mode": "dark",
+  "version": "1.0.0",
+  "fonts": {
+    "sans": "System",
+    "mono": "System",
+    "loaded": []
+  },
+  "preview": {
+    "light": {
+      "bg": "oklch(0.965 0.004 65)",
+      "fg": "oklch(0.185 0.005 65)",
+      "accent": "oklch(0.470 0.120 56)",
+      "syntax": {
+        "keyword": "oklch(0.470 0.120 56)",
+        "string": "oklch(0.470 0.140 145)",
+        "comment": "oklch(0.480 0.008 65)",
+        "callable": "oklch(0.485 0.122 245)"
+      }
+    },
+    "dark": {
+      "bg": "oklch(0.185 0.005 65)",
+      "fg": "oklch(0.965 0.004 65)",
+      "accent": "oklch(0.700 0.158 62)",
+      "syntax": {
+        "keyword": "oklch(0.700 0.158 62)",
+        "string": "oklch(0.680 0.145 145)",
+        "comment": "oklch(0.705 0.008 65)",
+        "callable": "oklch(0.680 0.130 245)"
+      }
+    }
+  }
+}
