@@ -234,8 +234,12 @@ html[data-theme-pack="phosphor"] [data-header-logo]::after {
   margin-left: 0.14em;
 }
 /* Exclude the current page: it carries the base `bg-fg text-bg` inverted
-   fill — recoloring its text to the accent would sit bright-on-bright. */
-html[data-theme-pack="phosphor"] [data-nav-item]:not([aria-current="page"]):hover {
+   fill — recoloring its text to the accent would sit bright-on-bright.
+   Two shapes exist (header.tsx): a plain `a[data-nav-item]`, and a dropdown
+   whose data-nav-item sits on the wrapper div while aria-current + the
+   colors live on its child anchor — target the anchor in both. */
+html[data-theme-pack="phosphor"] a[data-nav-item]:not([aria-current="page"]):hover,
+html[data-theme-pack="phosphor"] [data-nav-item-dropdown] > a:not([aria-current="page"]):hover {
   text-decoration: none;
   color: var(--zd-accent);
   text-shadow: 0 0 8px light-dark(oklch(0.42 0.13 150 / 0.22), oklch(0.87 0.215 148 / 0.55));
@@ -249,19 +253,17 @@ html[data-theme-pack="phosphor"] #desktop-sidebar {
 html[data-theme-pack="phosphor"] #desktop-sidebar a {
   border-radius: 0;
 }
-html[data-theme-pack="phosphor"] #desktop-sidebar a:hover {
+/* Every active sidebar anchor — root links included, which get the
+   inverse `bg-fg text-bg` fill WITHOUT data-nav-active — carries
+   aria-current="page" (sidebar-tree-island); excluding it here keeps
+   the glow recolor off every inverse-video row. */
+html[data-theme-pack="phosphor"] #desktop-sidebar a:not([aria-current="page"]):hover {
   text-decoration: none;
   color: var(--zd-accent);
   text-shadow: 0 0 8px light-dark(oklch(0.42 0.13 150 / 0.22), oklch(0.87 0.215 148 / 0.55));
 }
 html[data-theme-pack="phosphor"] a[data-nav-active] {
   border-radius: 0;
-}
-html[data-theme-pack="phosphor"] a[data-nav-active]:hover {
-  /* the inverse-video row keeps its dark-on-bright text; a glowing
-     accent recolor would vanish against the accent fill */
-  color: var(--zd-bg);
-  text-shadow: none;
 }
 html[data-theme-pack="phosphor"] a[data-nav-active]::before {
   content: "> ";
@@ -430,7 +432,7 @@ html[data-theme-pack="phosphor"] .zd-content > nav:last-of-type:not([aria-label]
 html[data-theme-pack="phosphor"] nav[data-zd-toc] ul {
   border-left-color: color-mix(in oklch, var(--zd-accent) 40%, transparent);
 }
-html[data-theme-pack="phosphor"] nav[data-zd-toc] a:hover {
+html[data-theme-pack="phosphor"] nav[data-zd-toc] a:not([aria-current="true"]):hover {
   text-decoration: none;
   color: var(--zd-accent);
   text-shadow: 0 0 8px light-dark(oklch(0.42 0.13 150 / 0.22), oklch(0.87 0.215 148 / 0.55));
