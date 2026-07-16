@@ -157,12 +157,13 @@ html[data-theme-pack="drift"] {
   /* syntax — all 9 roles, both modes: hushed pastels drifting around
      the blue axis — periwinkle keywords, cyan callables, sea-green
      strings, teal types, one warm amber float for numbers. Comments
-     run a step further from the prototype's ink (light L .545 → .505,
-     dark L .600 → .660) to clear WCAG AA (≥4.7:1) on the code panel.
+     and light-mode numbers run a step darker than the prototype's ink
+     (comment light L .545 → .505, dark L .600 → .660; number light
+     L .545 → .515) to clear WCAG AA (≥4.5:1) on the code panel.
      inserted/deleted reuse the success/danger hues. */
   --zd-syntax-comment: light-dark(oklch(0.505 0.026 248), oklch(0.66 0.03 246));
   --zd-syntax-string: light-dark(oklch(0.505 0.095 158), oklch(0.785 0.088 158));
-  --zd-syntax-number: light-dark(oklch(0.545 0.105 72), oklch(0.805 0.09 84));
+  --zd-syntax-number: light-dark(oklch(0.515 0.105 72), oklch(0.805 0.09 84));
   --zd-syntax-keyword: light-dark(oklch(0.47 0.118 275), oklch(0.76 0.095 272));
   --zd-syntax-callable: light-dark(oklch(0.485 0.1 232), oklch(0.785 0.088 222));
   --zd-syntax-type: light-dark(oklch(0.5 0.085 195), oklch(0.785 0.078 192));
@@ -209,10 +210,19 @@ html[data-theme-pack="drift"] body {
     );
   background-attachment: fixed;
 }
+/* the base stylesheet sets `.zd-content { line-height: var(--leading-relaxed) }`
+   (1.625), which beats the inherited body value — restate the relaxed
+   1.75 rhythm on the prose container itself */
+html[data-theme-pack="drift"] .zd-content {
+  line-height: 1.75;
+}
 
-/* soft focus halo everywhere instead of hard outlines */
+/* soft focus halo everywhere instead of hard outlines. The light
+   ring runs less transparent than the prototype's 65% (composited
+   ~2.75:1 on the pale page) to clear the 3:1 focus-indicator
+   minimum; dark keeps the softer halo (3.7:1 there). */
 html[data-theme-pack="drift"] :focus-visible {
-  outline: 2px solid color-mix(in oklch, var(--zd-accent) 65%, transparent);
+  outline: 2px solid light-dark(oklch(0.495 0.105 245 / 0.8), oklch(0.725 0.092 238 / 0.65));
   outline-offset: 2px;
   border-radius: 6px;
 }
