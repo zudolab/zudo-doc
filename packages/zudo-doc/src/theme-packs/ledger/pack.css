@@ -172,20 +172,23 @@ html[data-theme-pack="ledger"] {
 
 /* ---- Ledger extras: hairlines, double rules, printer's marks ---- */
 
-/* Crimson Pro runs small — set the reading size up. Prose paragraphs
-   inherit from body; token-sized chrome (text-small etc.) is unaffected. */
-html[data-theme-pack="ledger"] body {
+/* Crimson Pro runs small — set the reading size up on the prose container
+   itself (content.css pins `.zd-content { font-size: var(--text-body) }`,
+   so a body-level size never reaches paragraphs). Token-sized chrome and
+   explicitly-sized elements below are unaffected. */
+html[data-theme-pack="ledger"] .zd-content {
   font-size: 1.16rem;
+  font-variant-numeric: oldstyle-nums;
 }
 
 /* the book measure: cap the text column, breadcrumb, and pager like a
-   printed page (left-set, Tufte-style wide right margin). */
-html[data-theme-pack="ledger"] .zd-content {
+   printed page (left-set, Tufte-style wide right margin). Wide pages
+   (`data-zd-wide` — e.g. the site home) keep their full-band layout. */
+html[data-theme-pack="ledger"] .zd-doc-content-band:not([data-zd-wide]) .zd-content {
   max-width: 44rem;
-  font-variant-numeric: oldstyle-nums;
 }
-html[data-theme-pack="ledger"] main nav[aria-label="Breadcrumb"],
-html[data-theme-pack="ledger"] main > nav:not([aria-label="Breadcrumb"]) {
+html[data-theme-pack="ledger"] .zd-doc-content-band:not([data-zd-wide]) main nav[aria-label="Breadcrumb"],
+html[data-theme-pack="ledger"] .zd-doc-content-band:not([data-zd-wide]) main > nav:not([aria-label="Breadcrumb"]) {
   max-width: 44rem;
 }
 
@@ -439,7 +442,10 @@ html[data-theme-pack="ledger"] nav[data-zd-toc] a[aria-current="true"] {
 html[data-theme-pack="ledger"] .zd-sidebar-content-wrapper > footer {
   border-top: 3px double color-mix(in srgb, var(--zd-fg) 45%, transparent);
 }
-html[data-theme-pack="ledger"] .zd-sidebar-content-wrapper > footer > div > div:last-child {
+/* italicize the copyright line only when it coexists with link/tag columns
+   (`:not(:first-child)` keeps a columns-only footer's grid — which is then
+   the sole child — out of this positional rule). */
+html[data-theme-pack="ledger"] .zd-sidebar-content-wrapper > footer > div > div:last-child:not(:first-child) {
   font-style: italic;
 }
 
