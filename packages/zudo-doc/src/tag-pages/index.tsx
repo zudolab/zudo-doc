@@ -28,7 +28,6 @@
 
 import type { ComponentChildren, JSX } from "preact";
 import { DocLayoutWithDefaults } from "../doclayout/index.js";
-import { Breadcrumb } from "../breadcrumb/index.js";
 import type { BreadcrumbItem } from "../breadcrumb/index.js";
 import { DocCardGrid, TagNav } from "../nav-indexing/index.js";
 import type { TagItem, TagNavLabels } from "../nav-indexing/index.js";
@@ -38,10 +37,9 @@ import { toRouteSlug } from "../slug/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
 import { createHeadWithDefaults } from "../head-with-defaults/index.js";
-import { createHeaderWithDefaults } from "../header-with-defaults/index.js";
-import { createFooterWithDefaults } from "../footer-with-defaults/index.js";
 import { createDocHistoryArea } from "../doc-history-area/index.js";
 import { deriveComposeMetaTitle, deriveBodyEndIslands } from "../chrome/derive.js";
+import { derivePrimaryChromeSlots } from "../chrome/primary-slots.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 import type { DocPageEntry } from "../doc-page-props/index.js";
 
@@ -70,8 +68,8 @@ export interface TagPagesSettings {
 /** Host-supplied component bindings injected into the tag-pages factory. */
 export interface TagPagesComponents {
   HeadWithDefaults: (props: { title: string }) => JSX.Element;
-  HeaderWithDefaults: (props: { lang?: string; currentPath?: string }) => JSX.Element;
-  FooterWithDefaults: (props: { lang?: string }) => JSX.Element;
+  HeaderWithDefaults: (props: { lang: string; currentPath?: string }) => JSX.Element;
+  FooterWithDefaults: (props: { lang: string }) => JSX.Element;
   BodyEndIslands: (props: { basePath: string }) => JSX.Element;
   DocHistoryArea: (props: { slug: string; locale: string }) => JSX.Element | null;
 }
@@ -154,12 +152,11 @@ export function createTagPages<S extends Settings = Settings>(
   const stableDocs = ctx.stableDocs;
   const isDefaultLocaleOnlyPath = ctx.isDefaultLocaleOnlyPath;
   const HeadWithDefaults = createHeadWithDefaults(ctx) as TagPagesComponents["HeadWithDefaults"];
-  const HeaderWithDefaults = createHeaderWithDefaults(
-    ctx,
-  ) as TagPagesComponents["HeaderWithDefaults"];
-  const FooterWithDefaults = createFooterWithDefaults(
-    ctx,
-  ) as TagPagesComponents["FooterWithDefaults"];
+  const {
+    Header: HeaderWithDefaults,
+    Footer: FooterWithDefaults,
+    Breadcrumb,
+  } = derivePrimaryChromeSlots(ctx);
   const BodyEndIslands = deriveBodyEndIslands(ctx) as TagPagesComponents["BodyEndIslands"];
   const DocHistoryArea = createDocHistoryArea(ctx) as TagPagesComponents["DocHistoryArea"];
 

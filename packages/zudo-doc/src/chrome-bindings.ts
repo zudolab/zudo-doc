@@ -33,6 +33,10 @@
 // `@takazudo/zudo-doc/chrome-bindings` (NOT folded into `./chrome`, which would
 // drag the whole `createChrome` tree into hosts that only want the helper).
 
+import type { ComponentChildren } from "preact";
+import type { BreadcrumbItem } from "./breadcrumb/index.js";
+import type { DocPageNavNode } from "./doc-page-shell/index.js";
+import type { HeadingItem } from "./toc/index.js";
 import type { ChromeHostBindings } from "./factory-context/index.js";
 
 // ===========================================================================
@@ -119,10 +123,62 @@ export interface FrontmatterRendererSlotProps {
   locale?: string;
 }
 
+/**
+ * Props supplied at every package `Header` replacement call site. `lang` is
+ * always present; the remaining fields are route-specific.
+ */
+export interface HeaderSlotProps {
+  lang: string;
+  currentPath?: string;
+  currentVersion?: string;
+  currentSlug?: string;
+  navSection?: string;
+}
+
+/** Props supplied at every package `Footer` replacement call site. */
+export interface FooterSlotProps {
+  lang: string;
+}
+
+/**
+ * Props supplied to the doc-route `Sidebar` replacement. Properties whose
+ * values may be absent remain present with `undefined`, matching the real JSX
+ * call site.
+ */
+export interface SidebarSlotProps {
+  currentSlug: string;
+  lang: string;
+  navSection: string | undefined;
+  currentVersion: string | undefined;
+  currentPath: string;
+}
+
+/** Props supplied to the desktop `Toc` replacement. */
+export interface TocSlotProps {
+  headings: readonly HeadingItem[];
+  title: string;
+}
+
+/**
+ * Props supplied to `Breadcrumb` replacements. All package call sites provide
+ * pre-built items; doc routes additionally provide the optional right slot.
+ */
+export interface BreadcrumbSlotProps {
+  items: BreadcrumbItem[];
+  rightSlot?: ComponentChildren;
+}
+
+/** Props supplied to the doc-route `DocPager` replacement. */
+export interface DocPagerSlotProps {
+  prev: DocPageNavNode | null;
+  next: DocPageNavNode | null;
+  locale: string;
+}
+
 // ===========================================================================
 // ChromeBindingsInput — the compile-time-checked input surface.
 //
-// Every one of the 13 `ChromeHostBindings` slots appears here, optional, typed
+// Every `ChromeHostBindings` slot appears here, optional, typed
 // to its call-side contract above. Component slots are `(props: Expected) =>
 // unknown` (accept the chrome's props, return anything renderable). Function
 // slots carry their real param + return contract. Data/record slots use the
@@ -140,6 +196,18 @@ export interface FrontmatterRendererSlotProps {
  * module header for the drift-detection rationale.
  */
 export interface ChromeBindingsInput {
+  /** Primary header replacement — see {@link HeaderSlotProps}. */
+  Header?: (props: HeaderSlotProps) => unknown;
+  /** Primary footer replacement — see {@link FooterSlotProps}. */
+  Footer?: (props: FooterSlotProps) => unknown;
+  /** Primary doc-sidebar replacement — see {@link SidebarSlotProps}. */
+  Sidebar?: (props: SidebarSlotProps) => unknown;
+  /** Primary desktop TOC replacement — see {@link TocSlotProps}. */
+  Toc?: (props: TocSlotProps) => unknown;
+  /** Primary breadcrumb replacement — see {@link BreadcrumbSlotProps}. */
+  Breadcrumb?: (props: BreadcrumbSlotProps) => unknown;
+  /** Primary previous/next pager replacement — see {@link DocPagerSlotProps}. */
+  DocPager?: (props: DocPagerSlotProps) => unknown;
   /** Header search widget — see {@link SearchWidgetSlotProps}. */
   SearchWidget?: (props: SearchWidgetSlotProps) => unknown;
   /** Body-end bootstrap islands — see {@link BodyEndIslandsSlotProps}. */

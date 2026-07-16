@@ -31,7 +31,7 @@ The full `package.json#exports` keyset is the contract. Any addition or removal 
 | `./preset` | `zudoDocPreset()` — zfb config preset factory (internal fragment builder; `./config` is the documented API) |
 | `./settings` | `Settings` / `PresetSettings` type definitions |
 | `./factory-context` | `FactoryContext` / `ChromeContext` / `RouteContext` / `ChromeHostBindings` — the full shared type surface for package factories and chrome wiring (types only, node-free) |
-| `./chrome-bindings` | `defineChromeBindings(input)` — compile-time-checked widening adapter that builds a host's `ChromeHostBindings` object from the narrower, call-site-precise `ChromeBindingsInput` type; use it instead of a raw object literal or an `as`/`as unknown as` cast on `ChromeHostBindings` (drift detection, #2674) |
+| `./chrome-bindings` | `defineChromeBindings(input)` — compile-time-checked widening adapter that builds a host's `ChromeHostBindings` object from the narrower, call-site-precise `ChromeBindingsInput` type; exports exact props for every component slot, including `HeaderSlotProps`, `FooterSlotProps`, `SidebarSlotProps`, `TocSlotProps`, `BreadcrumbSlotProps`, and `DocPagerSlotProps`; use it instead of a raw object literal or an `as`/`as unknown as` cast on `ChromeHostBindings` (drift detection, #2674) |
 | `./route-context` | `createRouteContext(payload, options?)` — reconstructs the full `RouteContext` callable surface from the serializable `RouteContextPayload`; also re-exports `RouteContext` / `RouteContextPayload` / `TagInfo` / `ContentBridge` types |
 | `./chrome` | `createChrome(context, hostBindings?)` — assembles a `ChromeContext` from a `RouteContext` + `ChromeHostBindings` (stub defaults) and wires all page-chrome factories; returns the `Chrome` surface |
 | `./eject` | `EJECTABLE` map + `eject()` function + `ZudoDocJson` type — ejectable component registry for the `zudo-doc eject` CLI |
@@ -47,6 +47,12 @@ behaviour byte-for-byte.
 
 | Slot | Default when absent |
 |---|---|
+| `Header` | The package `HeaderWithDefaults`; receives `HeaderSlotProps` |
+| `Footer` | The package `FooterWithDefaults`; receives `FooterSlotProps` |
+| `Sidebar` | The package `SidebarWithDefaults`; receives `SidebarSlotProps` |
+| `Toc` | The package desktop `Toc` island component; receives `TocSlotProps` |
+| `Breadcrumb` | The package `Breadcrumb`; receives `BreadcrumbSlotProps` |
+| `DocPager` | The package `DocPager`; receives `DocPagerSlotProps` |
 | `SearchWidget` | The package `SearchWidget` bound to the site base |
 | `docHistoryMeta` | `{}` (no Created/Updated block) |
 | `sidebarsConfig` | `{}` (auto-generated tree only) |

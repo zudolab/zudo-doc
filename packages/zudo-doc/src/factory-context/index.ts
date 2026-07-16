@@ -245,6 +245,18 @@ export interface RouteContext<S = Settings>
  * (HOSTCOLLAPSE wave) later passes the real bindings.
  */
 export interface ChromeHostBindings {
+  /** Primary header chrome. Default: the package HeaderWithDefaults component. */
+  Header?: FactoryComponent;
+  /** Primary footer chrome. Default: the package FooterWithDefaults component. */
+  Footer?: FactoryComponent;
+  /** Primary doc sidebar chrome. Default: the package SidebarWithDefaults component. */
+  Sidebar?: FactoryComponent;
+  /** Primary desktop table of contents. Default: the package Toc component. */
+  Toc?: FactoryComponent;
+  /** Primary breadcrumb trail. Default: the package Breadcrumb component. */
+  Breadcrumb?: FactoryComponent;
+  /** Primary previous/next document pager. Default: the package DocPager component. */
+  DocPager?: FactoryComponent;
   /** Header search widget. Default: the package SearchWidget bound to the site base. */
   SearchWidget?: FactoryComponent;
   /** Per-page git-history meta manifest. Default: `{}` (no Created/Updated block). */
