@@ -21,6 +21,10 @@
 //   - findInPage            → load (non-skip-ssr*) FindInPageInit — Cmd/Ctrl+F find
 //                             bar, self-gated on `window.__TAURI_INTERNALS__`
 //                             (zudolab/zudo-doc#2689)
+//   - themePackSwitcher     → load (hydrating, SSR'd launcher) ThemePackSwitcher
+//                             flyout — component + registry-derived props are
+//                             injected by `chrome/derive.tsx` (#2821), the
+//                             DesignTokenPanelBootstrap deps pattern
 // It deliberately OMITS the host-owned `ClientRouterBootstrap`: it imports from
 // `@/components/*` and is NOT reconstructable from package settings. The page-
 // loading overlay, by contrast, is a pure PACKAGE component (`../page-loading`)
@@ -82,9 +86,11 @@ import { FindInPageInit } from "../find-in-page/index.js";
 // Named export (`page-loading/index.ts` re-exports `{ default as PageLoadingOverlay }`).
 import { PageLoadingOverlay } from "../page-loading/index.js";
 import { createDesignTokenPanelIsland } from "./design-token-panel-island.js";
+import { createThemePackSwitcherIsland } from "./theme-pack-switcher-island.js";
 // Type-only — erased at build, so importing it does not pull `factory-context`'s
 // (node-free, but otherwise unrelated) runtime graph into this module.
 import type { FactoryComponent } from "../factory-context/index.js";
+import type { ThemePackSwitcherProps } from "../theme-pack-switcher/index.js";
 
 /** Default sr-only label rendered as the AiChatModal SSR fallback. Mirrors the
  *  host helper's default verbatim so assistive tech can discover the chat
@@ -112,6 +118,15 @@ export interface BodyEndIslandsSettings {
    * itself.
    */
   findInPage: boolean;
+  /**
+   * Gates the `ThemePackSwitcher` flyout island mount (ADR
+   * `docs/adr/theme-packs.md` Decision 7; #2821). Optional — the field is
+   * optional on the host `Settings` census too (default `false`). Even when
+   * `true`, nothing mounts unless `deps.themePackSwitcherProps` AND
+   * `deps.ThemePackSwitcher` were also supplied — see
+   * {@link BodyEndIslandsDeps}.
+   */
+  themePackSwitcher?: boolean;
 }
 
 /** Dependencies injected by `_chrome.tsx` (carries the virtual-module settings). */
@@ -130,6 +145,20 @@ export interface BodyEndIslandsDeps {
    * not a crash.
    */
   DesignTokenPanelBootstrap?: FactoryComponent;
+  /**
+   * SSR props for the theme-pack switcher flyout (#2821) — derived from
+   * `ctx.themePackRegistry` by `chrome/derive.tsx` (only the chrome-derive
+   * path knows the registry). `null`/omitted renders the feature inert even
+   * when `settings.themePackSwitcher` is `true`.
+   */
+  themePackSwitcherProps?: ThemePackSwitcherProps | null;
+  /**
+   * The real `ThemePackSwitcher` island component (#2821), injected by
+   * `chrome/derive.tsx` (which statically imports it — the island-scanner
+   * reachability chain, mirroring `DesignTokenPanelBootstrap` above).
+   * Omitted means no switcher island mounts — a safe no-op, not a crash.
+   */
+  ThemePackSwitcher?: FactoryComponent;
 }
 
 /** Props for the produced `BodyEndIslands` component. */
@@ -157,6 +186,11 @@ export function createBodyEndIslands(
   const DesignTokenPanelIsland = createDesignTokenPanelIsland({
     designTokenPanel: settings.designTokenPanel,
     DesignTokenPanelBootstrap: deps.DesignTokenPanelBootstrap,
+  });
+  const ThemePackSwitcherIsland = createThemePackSwitcherIsland({
+    themePackSwitcher: settings.themePackSwitcher === true,
+    themePackSwitcherProps: deps.themePackSwitcherProps ?? null,
+    ThemePackSwitcher: deps.ThemePackSwitcher,
   });
 
   function BodyEndIslands({
@@ -236,6 +270,9 @@ export function createBodyEndIslands(
             this same mount available when deriveBodyEndIslands composes a
             host BodyEndIslands override instead of using this default. */}
         <DesignTokenPanelIsland />
+        {/* Package-owned, settings-gated load-time island (#2821) — same
+            composition contract as DesignTokenPanelIsland above. */}
+        <ThemePackSwitcherIsland />
         {findInPageInit}
         {aiAssistant}
         {imageEnlarge}
