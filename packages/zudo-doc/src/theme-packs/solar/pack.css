@@ -246,7 +246,11 @@ html[data-theme-pack="solar"] #desktop-sidebar {
 html[data-theme-pack="solar"] #desktop-sidebar a {
   border-radius: 0;
 }
-html[data-theme-pack="solar"] #desktop-sidebar a:hover {
+/* Exclude the current page: root/branch current nodes carry
+   aria-current="page" without data-nav-active and keep the base
+   inverted `bg-fg text-bg` fill — recoloring their text to the
+   accent on hover would sit accent-on-fg (~1:1). */
+html[data-theme-pack="solar"] #desktop-sidebar a:not([aria-current="page"]):hover {
   color: var(--zd-accent);
 }
 html[data-theme-pack="solar"] a[data-nav-active] {
