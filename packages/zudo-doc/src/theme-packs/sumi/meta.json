@@ -17,10 +17,10 @@
       "fg": "#1b1a18",
       "accent": "#b8232e",
       "syntax": {
-        "keyword": "#e86a72",
-        "string": "#cfc6ae",
-        "comment": "#8a8479",
-        "callable": "#f7f3ea"
+        "keyword": "#b8232e",
+        "string": "#6a6156",
+        "comment": "#726b5e",
+        "callable": "#433d35"
       }
     },
     "dark": {

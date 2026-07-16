@@ -460,17 +460,21 @@ html[data-theme-pack="sumi"] .zd-content th {
 }
 
 /* pager: square cards that stamp down on hover with a seal-red offset
-   shadow (the ledger DocPager idiom — see the header adaptation note) */
-html[data-theme-pack="sumi"] .zd-content > nav:not([aria-label="Breadcrumb"]) > a {
+   shadow. Target the LAST unlabelled nav under .zd-content — the DocPager.
+   `:last-of-type:not([aria-label])` (the batch-2 sibling idiom) excludes BOTH
+   the Breadcrumb and the NavCardGrid ("Child pages") nav, whose <a> are also
+   direct children of a `.zd-content > nav` — a bare `:not([aria-label="Breadcrumb"])`
+   would wrongly stamp the child-page cards on auto-index pages. */
+html[data-theme-pack="sumi"] .zd-content > nav:last-of-type:not([aria-label]) > a {
   border-radius: 0;
   border-color: color-mix(in srgb, var(--zd-fg) 45%, transparent);
 }
-html[data-theme-pack="sumi"] .zd-content > nav:not([aria-label="Breadcrumb"]) > a:hover {
+html[data-theme-pack="sumi"] .zd-content > nav:last-of-type:not([aria-label]) > a:hover {
   border-color: var(--zd-fg);
   box-shadow: 4px 4px 0
     color-mix(in srgb, light-dark(#c2242f, #d9333f) 45%, transparent);
 }
-html[data-theme-pack="sumi"] .zd-content > nav:not([aria-label="Breadcrumb"]) > a p {
+html[data-theme-pack="sumi"] .zd-content > nav:last-of-type:not([aria-label]) > a p {
   font-family: var(--font-display);
   font-weight: 700;
 }
