@@ -55,9 +55,9 @@ HTTP 500を返します。
 export default defineConfig(
   zudoDoc({
     aiChatDemoMode: false,
-    // クロスオリジンリクエストを許可するオリジンを限定する。
+    // Allow only your deployed docs site to make cross-origin requests.
     aiChatAllowedOrigins: ["https://your-docs-site.example.com"],
-    // UTC日ごとの正確な有料呼び出し許可上限（false = 正確な上限なし）。
+    // Exact UTC-day paid-call admission cap (false = no exact cap).
     aiChatGlobalDailyLimit: 500,
     // ...
   }),
