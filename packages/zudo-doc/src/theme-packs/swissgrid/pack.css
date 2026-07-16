@@ -1,0 +1,499 @@
+/* ============================================================
+   Swissgrid — International Typographic Style theme pack
+   (ADR docs/adr/theme-packs.md; epic #2813, sub-issue #2831)
+
+   A neo-grotesque grid: pure white paper, near-black ink, ONE hot
+   Swiss-red accent, oversized counter-driven section numbers, and a
+   1px baseline-grid ruling on the page and sidebar. Everything is
+   square — zero radius across every seam — and hover states throw
+   hard red offset shadows instead of soft blurs. Self-hosted Inter
+   (body, variable 400-900), Inter Tight (display, variable 700-900,
+   latin subset only — latin-ext display glyphs fall back to Inter),
+   and IBM Plex Mono (code, 400 latin + latin-ext, 600 latin only —
+   bolded code tokens are ASCII in practice).
+
+   Every rule below is scoped under html[data-theme-pack="swissgrid"]
+   — this is what makes the runtime pack swap atomic (Decision 3) and
+   lets the validator prove a pack can never leak styles while
+   inactive (Decision 6.7). The @font-face blocks are the sole
+   exception (at-rules can't be selector-scoped).
+
+   The prototype's --sw-* helper values are inlined at each use site
+   (the token contract is a closed allowlist):
+     red display mark  #ff0000 (both modes — chrome, marks, numbers)
+     red text          = var(--zd-accent) (contrast-safe text red)
+     hairline          light-dark(rgb(0 0 0 / .2), rgb(255 255 255 / .24))
+     grid line         light-dark(rgb(0 0 0 / .05), rgb(255 255 255 / .055))
+     panel             light-dark(#f4f4f4, #161616)
+     baseline unit     calc(1.05rem * 1.65)
+   ============================================================ */
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url("./fonts/Inter-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url("./fonts/Inter-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Inter Tight";
+  font-style: normal;
+  font-weight: 700 900;
+  font-display: swap;
+  src: url("./fonts/InterTight-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/IBMPlexMono-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/IBMPlexMono-400-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("./fonts/IBMPlexMono-600-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+html[data-theme-pack="swissgrid"] {
+  /* Tier-2 semantic roles — both modes always via light-dark(). Swiss
+     palette: ink, paper, one red. Success carries no hue of its own
+     (semantics by shape + label, not color). */
+  --zd-bg: light-dark(#ffffff, #0c0c0c);
+  --zd-fg: light-dark(#0a0a0a, #f2f2f2);
+  --zd-selection-bg: light-dark(#ff0000, #ff0000);
+  --zd-selection-fg: light-dark(#ffffff, #ffffff);
+  --zd-surface: light-dark(#ffffff, #0c0c0c);
+  --zd-muted: light-dark(#595959, #9a9a9a);
+  --zd-accent: light-dark(#e60000, #ff4d4d);
+  --zd-accent-hover: light-dark(#a30000, #ff8585);
+  --zd-code-bg: light-dark(#f4f4f4, #151515);
+  --zd-code-fg: light-dark(#0a0a0a, #ededed);
+  --zd-success: light-dark(#0a0a0a, #f2f2f2);
+  --zd-danger: light-dark(#c40000, #ff6b6b);
+  --zd-warning: light-dark(#c40000, #ff6b6b);
+  --zd-info: light-dark(#595959, #9a9a9a);
+
+  /* syntax — all 9 roles, both modes: a monochrome ink ladder with red
+     reserved for keywords/numbers. Diff roles follow the pack's
+     success/danger philosophy: inserted = ink, deleted = red (the
+     default --zfb-hi-ins-bg/del-bg mixes turn these into a gray wash
+     vs a red wash, keeping diffs legible without new hues). */
+  --zd-syntax-comment: light-dark(#6b6b6b, #8c8c8c);
+  --zd-syntax-string: light-dark(#3f3f3f, #c9c9c9);
+  --zd-syntax-number: light-dark(#8f0000, #ff9a9a);
+  --zd-syntax-keyword: light-dark(#e60000, #ff4d4d);
+  --zd-syntax-callable: light-dark(#0a0a0a, #ffffff);
+  --zd-syntax-type: light-dark(#595959, #b3b3b3);
+  --zd-syntax-name: light-dark(#0a0a0a, #ededed);
+  --zd-syntax-inserted: light-dark(#0a0a0a, #f2f2f2);
+  --zd-syntax-deleted: light-dark(#c40000, #ff6b6b);
+
+  /* fonts — self-hosted OFL neo-grotesques (Decision 5). Inter for
+     body, Inter Tight for display, IBM Plex Mono for code. */
+  --font-sans: "Inter", Arial, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo,
+    monospace;
+  --font-display: "Inter Tight", "Inter", Arial, system-ui, sans-serif;
+
+  /* Tier-3 component seams — heavy tight display headings; ruthless
+     zero radius on every tokenized shape. */
+  --zdc-doc-title-font: var(--font-display);
+  --zdc-doc-title-weight: 900;
+  --zdc-doc-title-tracking: -0.045em;
+  --zdc-doc-h2-font: var(--font-display);
+  --zdc-doc-h2-weight: 800;
+  --zdc-doc-h2-tracking: -0.025em;
+  --zdc-doc-h3-weight: 800;
+  --zdc-doc-prose-font: var(--font-sans);
+  --zdc-doc-link-decoration: underline;
+  --zdc-admonition-radius: 0;
+  --zdc-admonition-border-width: 5px;
+  --zdc-card-radius: 0;
+  --zdc-nav-active-indicator-color: var(--zd-fg);
+}
+
+/* ---- baseline-grid hint: 1px rules on the body rhythm ---- */
+
+html[data-theme-pack="swissgrid"] body {
+  letter-spacing: -0.008em;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    light-dark(rgb(0 0 0 / 0.05), rgb(255 255 255 / 0.055)) 0 1px,
+    transparent 1px calc(1.05rem * 1.65)
+  );
+}
+
+html[data-theme-pack="swissgrid"] #desktop-sidebar {
+  border-right: 1px solid light-dark(rgb(0 0 0 / 0.2), rgb(255 255 255 / 0.24));
+  background-image: repeating-linear-gradient(
+    to bottom,
+    light-dark(rgb(0 0 0 / 0.05), rgb(255 255 255 / 0.055)) 0 1px,
+    transparent 1px calc(1.05rem * 1.65)
+  );
+}
+
+html[data-theme-pack="swissgrid"] :focus-visible {
+  outline: 2px solid #ff0000;
+  outline-offset: 2px;
+}
+
+/* ---- no italics, anywhere (the Swiss rule) ---- */
+
+html[data-theme-pack="swissgrid"] .zd-content em {
+  font-style: normal;
+}
+html[data-theme-pack="swissgrid"] .zd-content i {
+  font-style: normal;
+}
+html[data-theme-pack="swissgrid"] .zd-content blockquote {
+  font-style: normal;
+}
+html[data-theme-pack="swissgrid"] .hi-com {
+  font-style: normal;
+}
+
+/* ---- header: white bar, heavy black rule, red logo square ---- */
+
+html[data-theme-pack="swissgrid"] header[data-header] {
+  border-bottom: 3px solid var(--zd-fg);
+}
+html[data-theme-pack="swissgrid"] [data-header-logo] {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+html[data-theme-pack="swissgrid"] [data-header-logo]::before {
+  content: "";
+  width: 0.72em;
+  height: 0.72em;
+  flex-shrink: 0;
+  background: #ff0000;
+}
+html[data-theme-pack="swissgrid"] [data-nav-item] {
+  text-transform: uppercase;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+html[data-theme-pack="swissgrid"] [data-nav-item]:hover {
+  color: var(--zd-fg);
+  text-decoration-line: underline;
+  text-decoration-color: #ff0000;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
+}
+
+/* ---- sidebar: red hover underline, red active bar ----
+   (The prototype's static ".sb-group > p" group heads don't exist in
+   the real SidebarTree island — category rows keep their tree layout;
+   the active page link is the a[data-nav-active] stable hook.) */
+
+html[data-theme-pack="swissgrid"] #desktop-sidebar a:hover {
+  text-decoration-line: underline;
+  text-decoration-color: #ff0000;
+  text-decoration-thickness: 2px;
+}
+html[data-theme-pack="swissgrid"] a[data-nav-active] {
+  background: transparent;
+  color: var(--zd-fg);
+  font-weight: 700;
+  box-shadow: inset 4px 0 0 0 #ff0000;
+}
+
+/* ---- breadcrumb as a small-caps meta line ---- */
+
+html[data-theme-pack="swissgrid"] nav[aria-label="Breadcrumb"] {
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+}
+
+/* ---- content: oversized numbered sections, hard rules ---- */
+
+html[data-theme-pack="swissgrid"] .zd-content {
+  counter-reset: sw-section;
+}
+html[data-theme-pack="swissgrid"] .zd-content h1 {
+  font-size: clamp(2.3rem, 5vw + 1rem, 3.1rem);
+  line-height: 1.02;
+}
+html[data-theme-pack="swissgrid"] .zd-content h1::after {
+  content: "";
+  display: block;
+  width: 4.5rem;
+  height: 6px;
+  background: #ff0000;
+  margin-top: 0.9rem;
+}
+
+/* h2: counter-driven oversized red section number above a 4px ink
+   rule. border-image none !important defeats the SSR-inlined gradient
+   bar (Decision 6.6's sole allowlisted carve-out). */
+html[data-theme-pack="swissgrid"] .zd-content h2 {
+  counter-increment: sw-section;
+  border-image: none !important;
+  border-top-width: 4px;
+  border-top-style: solid;
+  border-top-color: var(--zd-fg);
+  padding-top: 0.8rem;
+}
+html[data-theme-pack="swissgrid"] .zd-content h2::before {
+  content: counter(sw-section, decimal-leading-zero);
+  display: block;
+  font-family: var(--font-display);
+  font-size: 3.6rem;
+  font-weight: 900;
+  line-height: 0.95;
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
+  color: #ff0000;
+  margin-bottom: 0.4rem;
+}
+
+html[data-theme-pack="swissgrid"] .zd-content h3 {
+  letter-spacing: -0.015em;
+}
+html[data-theme-pack="swissgrid"] .zd-content h3::before {
+  content: "";
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  background: #ff0000;
+  margin-right: 0.5rem;
+}
+
+/* links: ink text, red underline, red on hover */
+html[data-theme-pack="swissgrid"] .zd-content a {
+  color: var(--zd-fg);
+  text-decoration-color: #ff0000;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+html[data-theme-pack="swissgrid"] .zd-content a:hover {
+  color: var(--zd-accent);
+}
+
+html[data-theme-pack="swissgrid"] .zd-content blockquote {
+  border-left: 4px solid #ff0000;
+  color: var(--zd-fg);
+  font-weight: 500;
+}
+html[data-theme-pack="swissgrid"] .zd-content hr {
+  border-top: 2px solid var(--zd-fg);
+}
+
+/* ---- code: ruled panel, bold red keywords, bold ink callables ----
+   (IBM Plex Mono ships 400 + 600; keyword/callable bolding uses the
+   real 600 face.) */
+
+html[data-theme-pack="swissgrid"] pre.hi-root {
+  border: 1px solid var(--zd-fg);
+  border-top-width: 4px;
+  border-radius: 0;
+}
+html[data-theme-pack="swissgrid"] .hi-kw {
+  font-weight: 600;
+}
+html[data-theme-pack="swissgrid"] .hi-fn {
+  font-weight: 600;
+}
+html[data-theme-pack="swissgrid"] .zd-content code:not(pre code) {
+  border: 1px solid light-dark(rgb(0 0 0 / 0.2), rgb(255 255 255 / 0.24));
+  border-radius: 0;
+}
+
+/* ---- admonitions: flat panels, geometry markers, typographic labels ---- */
+
+html[data-theme-pack="swissgrid"] [data-admonition] .admonition-title {
+  text-transform: uppercase;
+  font-size: 0.74rem;
+  letter-spacing: 0.14em;
+}
+html[data-theme-pack="swissgrid"] [data-admonition="note"] {
+  border-left-color: var(--zd-fg);
+  background-color: light-dark(#f4f4f4, #161616);
+}
+html[data-theme-pack="swissgrid"] [data-admonition="note"] .admonition-title {
+  color: var(--zd-fg);
+}
+html[data-theme-pack="swissgrid"] [data-admonition="note"] .admonition-title::before {
+  content: "■ ";
+  color: #ff0000;
+}
+html[data-theme-pack="swissgrid"] [data-admonition="tip"] {
+  border-left-color: light-dark(#8c8c8c, #6e6e6e);
+  background-color: light-dark(#f4f4f4, #161616);
+}
+html[data-theme-pack="swissgrid"] [data-admonition="tip"] .admonition-title {
+  color: var(--zd-fg);
+}
+html[data-theme-pack="swissgrid"] [data-admonition="tip"] .admonition-title::before {
+  content: "● ";
+  color: #ff0000;
+}
+html[data-theme-pack="swissgrid"] [data-admonition="warning"] {
+  border-left-color: #ff0000;
+  background-color: light-dark(#fdeeee, #1d1010);
+}
+html[data-theme-pack="swissgrid"] [data-admonition="warning"] .admonition-title {
+  color: light-dark(#c40000, #ff6b6b);
+}
+html[data-theme-pack="swissgrid"] [data-admonition="warning"] .admonition-title::before {
+  content: "▲ ";
+  color: #ff0000;
+}
+
+/* ---- table: black rules, small-caps heads ---- */
+
+html[data-theme-pack="swissgrid"] .zd-content th {
+  text-transform: uppercase;
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  border-bottom: 3px solid var(--zd-fg);
+}
+html[data-theme-pack="swissgrid"] .zd-content td {
+  border-bottom: 1px solid light-dark(rgb(0 0 0 / 0.2), rgb(255 255 255 / 0.24));
+}
+
+/* ---- pager: square cards, hard red offset on hover ----
+   (DocPager renders as the direct-child <nav> of article.zd-content —
+   the prototype's ".doc-pager" class doesn't exist in the real DOM.
+   Inside each card: <div> = the small prev/next label row, <p> = the
+   destination title.) */
+
+html[data-theme-pack="swissgrid"] .zd-content > nav a {
+  border: 1px solid var(--zd-fg);
+  border-radius: 0;
+}
+html[data-theme-pack="swissgrid"] .zd-content > nav a:hover {
+  border-color: #ff0000;
+  box-shadow: 4px 4px 0 0 #ff0000;
+}
+html[data-theme-pack="swissgrid"] .zd-content > nav a div {
+  text-transform: uppercase;
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+}
+html[data-theme-pack="swissgrid"] .zd-content > nav a p {
+  font-weight: 700;
+}
+
+/* ---- TOC: ruled list, red hover underline, red active bar ----
+   (The real Toc island has no title element and marks the active entry
+   with aria-current="true" — adapted from the prototype's .toc-active.) */
+
+html[data-theme-pack="swissgrid"] nav[data-zd-toc] ul {
+  border-left: 1px solid light-dark(rgb(0 0 0 / 0.2), rgb(255 255 255 / 0.24));
+}
+html[data-theme-pack="swissgrid"] nav[data-zd-toc] a:hover {
+  text-decoration-line: underline;
+  text-decoration-color: #ff0000;
+  text-decoration-thickness: 2px;
+}
+html[data-theme-pack="swissgrid"] nav[data-zd-toc] a[aria-current="true"] {
+  background: transparent;
+  color: var(--zd-fg);
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 0 #ff0000;
+}
+
+/* ---- footer: heavy rule, ink links with red underlines ---- */
+
+html[data-theme-pack="swissgrid"] .zd-sidebar-content-wrapper footer {
+  border-top: 4px solid var(--zd-fg);
+}
+html[data-theme-pack="swissgrid"] .zd-sidebar-content-wrapper footer a {
+  color: var(--zd-fg);
+  text-decoration-color: #ff0000;
+  text-decoration-thickness: 2px;
+}
+html[data-theme-pack="swissgrid"] .zd-sidebar-content-wrapper footer a:hover {
+  color: var(--zd-accent);
+}
+
+/* ---- theme-pack switcher: square, black frame, hard red shadow ----
+   (The flyout card and launcher carry no dedicated hook classes; their
+   accessible names are the stable handle.) */
+
+html[data-theme-pack="swissgrid"] div[role="dialog"][aria-label="Theme pack switcher"] {
+  border: 2px solid var(--zd-fg);
+  border-radius: 0;
+  box-shadow: 10px 10px 0 0 #ff0000;
+}
+html[data-theme-pack="swissgrid"] div[role="dialog"][aria-label="Theme pack switcher"] span {
+  border-radius: 0;
+}
+html[data-theme-pack="swissgrid"] div[role="dialog"][aria-label="Theme pack switcher"] button {
+  border-radius: 0;
+  border-color: var(--zd-fg);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+html[data-theme-pack="swissgrid"] div[role="dialog"][aria-label="Theme pack switcher"] button:hover {
+  background-color: var(--zd-accent);
+  border-color: var(--zd-accent);
+  color: light-dark(#ffffff, #0c0c0c);
+}
+html[data-theme-pack="swissgrid"] button[aria-haspopup="dialog"][aria-label="Theme pack switcher"] {
+  border-radius: 0;
+  border: 2px solid var(--zd-fg);
+  box-shadow: 5px 5px 0 0 #ff0000;
+}
+html[data-theme-pack="swissgrid"] button[aria-haspopup="dialog"][aria-label="Theme pack switcher"]:hover {
+  color: var(--zd-accent);
+  border-color: var(--zd-accent);
+}
+
+/* browse-all dialog: same square black-frame treatment */
+html[data-theme-pack="swissgrid"] dialog[aria-labelledby="zd-theme-pack-dialog-title"] {
+  border: 2px solid var(--zd-fg);
+  border-radius: 0;
+  box-shadow: 10px 10px 0 0 #ff0000;
+}
+html[data-theme-pack="swissgrid"] dialog[aria-labelledby="zd-theme-pack-dialog-title"] button {
+  border-radius: 0;
+}
