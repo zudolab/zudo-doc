@@ -3,6 +3,7 @@
   "extends": "./tsconfig.json",
   "include": [
     "worker-entry.ts",
+    "worker-preview-entry.ts",
     "generated-worker.d.ts",
     "worker-configuration.d.ts",
     "worker-tests/**/*.ts",
