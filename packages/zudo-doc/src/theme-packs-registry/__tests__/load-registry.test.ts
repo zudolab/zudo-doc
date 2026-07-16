@@ -11,9 +11,16 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const THEME_PACKS_DIR = resolve(__dirname, "../../theme-packs");
 
 describe("loadThemePackRegistry (real bundled packs)", () => {
-  it("aggregates the 2 shipped packs, in canonical alphabetical order", () => {
+  it("aggregates the 6 shipped packs, in canonical alphabetical order", () => {
     const registry = loadThemePackRegistry(THEME_PACKS_DIR);
-    expect(registry.map((e) => e.slug)).toEqual(["default", "foundry"]);
+    expect(registry.map((e) => e.slug)).toEqual([
+      "broadsheet",
+      "default",
+      "foundry",
+      "ledger",
+      "manuscript",
+      "swissgrid",
+    ]);
   });
 
   it("the default pack has no stylesheet; foundry does", () => {
@@ -30,7 +37,17 @@ describe("loadThemePackRegistry (real bundled packs)", () => {
   it("resolveEnabledPacks accepts the real registry with default settings", () => {
     const registry = loadThemePackRegistry(THEME_PACKS_DIR);
     const enabled = resolveEnabledPacks(registry, {});
-    expect(enabled.map((e) => e.slug)).toEqual(["default", "foundry"]);
+    // `resolveEnabledPacks` pins the reserved `default` pack first, then the
+    // rest alphabetically (distinct from `loadThemePackRegistry`'s pure
+    // alphabetical order above).
+    expect(enabled.map((e) => e.slug)).toEqual([
+      "default",
+      "broadsheet",
+      "foundry",
+      "ledger",
+      "manuscript",
+      "swissgrid",
+    ]);
   });
 
   it("resolveEnabledPacks throws loudly for an unknown themePack against the real registry", () => {

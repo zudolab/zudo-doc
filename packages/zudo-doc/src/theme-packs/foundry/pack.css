@@ -89,10 +89,13 @@ html[data-theme-pack="foundry"] {
 html[data-theme-pack="foundry"] .zd-content a:hover {
   text-decoration: underline;
 }
-html[data-theme-pack="foundry"] footer[data-footer] a {
+/* footer: quiet links, underline only on intent. The real footer carries no
+   data-footer hook (that was prototype-mock markup) — it is the sole <footer>
+   inside the stable .zd-sidebar-content-wrapper (doclayout/doc-layout.tsx). */
+html[data-theme-pack="foundry"] .zd-sidebar-content-wrapper footer a {
   text-decoration: none;
 }
-html[data-theme-pack="foundry"] footer[data-footer] a:hover {
+html[data-theme-pack="foundry"] .zd-sidebar-content-wrapper footer a:hover {
   text-decoration: underline;
 }
 
@@ -137,20 +140,36 @@ html[data-theme-pack="foundry"] a[data-nav-active] {
   border-radius: 0 6px 6px 0;
 }
 
-/* TOC: active entry = ink text, no pill */
+/* TOC: active entry = 2px Primer-blue bar laid over the rail, ink text — no
+   pill. The real DOM marks the active entry with aria-current="true"
+   (toc/toc.tsx), not the prototype's .toc-active mock class. */
 html[data-theme-pack="foundry"] nav[data-zd-toc] a:hover {
   text-decoration: none;
   color: var(--zd-fg);
 }
-html[data-theme-pack="foundry"] nav[data-zd-toc] a.toc-active {
+html[data-theme-pack="foundry"] nav[data-zd-toc] a[aria-current="true"] {
   background: none;
   color: var(--zd-fg);
   font-weight: 600;
+  /* The toc <ul> carries the 1px rail + var(--spacing-hsp-lg) left padding.
+     Its overflow-y-auto makes overflow-x compute to auto too, clipping
+     descendants at the padding edge — so the bar can't paint OVER the rail;
+     pull back exactly to the padding edge instead, so the 2px blue bar sits
+     snug against the rail and stays fully visible. Text position is
+     preserved (-pad + 2px border + pad - 2px = 0). Depth-3/4 items
+     (indented via their <li>) show the bar at their own indent, same as
+     the prototype. */
+  margin-left: calc(-1 * var(--spacing-hsp-lg, 1rem));
+  padding-left: calc(var(--spacing-hsp-lg, 1rem) - 2px);
+  border-left: 2px solid var(--zd-accent);
 }
 
-/* admonitions: GitHub alert style — colored bar and title, no tinted fill */
+/* admonitions: GitHub alert style — colored bar and title, no tinted fill.
+   With the fill gone, the default generous vertical padding reads as dead
+   air — tighten to the prototype's GitHub-alert hug. */
 html[data-theme-pack="foundry"] [data-admonition] {
   background-color: transparent;
+  padding: 0.35rem 1rem 0.35rem;
 }
 html[data-theme-pack="foundry"] [data-admonition="note"] .admonition-title::before {
   content: "ⓘ ";
@@ -167,7 +186,8 @@ html[data-theme-pack="foundry"] .zd-content tbody tr:nth-child(even) {
   background-color: var(--zd-code-bg);
 }
 
-/* pager cards: whisper of a wash on hover */
-html[data-theme-pack="foundry"] .doc-pager a:hover {
-  background: color-mix(in srgb, var(--zd-muted) 8%, transparent);
-}
+/* pager cards: the prototype's hover wash is intentionally NOT ported — the
+   DocPager <nav> has no stable hook (.doc-pager was prototype-mock markup),
+   and any structural selector (.zd-content > nav) also catches NavCardGrid /
+   CategoryNav navs in the same position. The default hover:border-accent
+   blue border cue already carries the affordance. */

@@ -70,6 +70,21 @@ export const settings = {
   // default for fixture/showcase drift-diff clarity.
   themePack: "default" as string,
   themePackSwitcher: true as boolean,
+  // Pin the switcher's Prev/Next cycle order explicitly (resolveEnabledPacks
+  // treats an explicit themePacks array as authoritative and preserves its
+  // order). This keeps the switcher-mechanics specs deterministic and stable
+  // as batches add packs: "foundry" is held SECOND so the specs' `default →
+  // Next → foundry → Prev → default` assertions never churn. Production leaves
+  // themePacks undefined (default-first, then alphabetical — unit-tested in
+  // load-registry.test.ts); this pin is a fixture-only cycle-order convenience.
+  themePacks: [
+    "default",
+    "foundry",
+    "broadsheet",
+    "ledger",
+    "manuscript",
+    "swissgrid",
+  ] as string[],
   findInPage: false as boolean,
   dynamicPageTransition: true as boolean,
   docHistory: false,

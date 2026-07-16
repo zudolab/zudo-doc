@@ -3,12 +3,13 @@
 // `devMiddleware()` directly against a minimal mock context (no full `zfb
 // build`) — mirrors `routes.test.ts`'s style.
 //
-// Exercised against the REAL bundled `src/theme-packs/{default,foundry}/`
+// Exercised against the REAL bundled
+// `src/theme-packs/{broadsheet,default,foundry,ledger,manuscript,swissgrid}/`
 // directories (resolved via the plugin's own `new URL("../theme-packs/",
 // import.meta.url)`, which — under vitest, running the source directly —
 // resolves to `src/theme-packs/`): no fixture directory needed, and this
-// doubles as a smoke test that the committed default/foundry packs actually
-// satisfy the registry loader + validator.
+// doubles as a smoke test that the committed packs actually satisfy the
+// registry loader + validator.
 
 import { describe, it, expect, afterEach } from "vitest";
 import { mkdtempSync, rmSync, existsSync, readFileSync } from "node:fs";
@@ -61,7 +62,7 @@ describe("theme-packs plugin — setup()", () => {
 });
 
 describe("theme-packs plugin — postBuild()", () => {
-  it("copies default + foundry (the full bundled set) when themePacks is omitted", async () => {
+  it("copies the full bundled set (6 packs) when themePacks is omitted", async () => {
     const outDir = makeOutDir();
     await themePacksPlugin.postBuild!({
       outDir,
@@ -85,7 +86,14 @@ describe("theme-packs plugin — postBuild()", () => {
       packs: Array<{ slug: string }>;
     };
     expect(manifest.schemaVersion).toBe(1);
-    expect(manifest.packs.map((p) => p.slug)).toEqual(["default", "foundry"]);
+    expect(manifest.packs.map((p) => p.slug)).toEqual([
+      "default",
+      "broadsheet",
+      "foundry",
+      "ledger",
+      "manuscript",
+      "swissgrid",
+    ]);
   });
 
   it('no-ops (writes nothing) when themePacks is explicitly ["default"]', async () => {
@@ -138,7 +146,14 @@ describe("theme-packs plugin — devMiddleware()", () => {
     const res = await handler({ method: "GET", url: "/theme-packs/index.json", headers: {} });
     expect(res?.headers?.["content-type"]).toBe("application/json");
     const manifest = JSON.parse(res!.body!) as { packs: Array<{ slug: string }> };
-    expect(manifest.packs.map((p) => p.slug)).toEqual(["default", "foundry"]);
+    expect(manifest.packs.map((p) => p.slug)).toEqual([
+      "default",
+      "broadsheet",
+      "foundry",
+      "ledger",
+      "manuscript",
+      "swissgrid",
+    ]);
   });
 
   it("does not register anything when only default is enabled (no-op)", () => {

@@ -1,0 +1,371 @@
+/* ============================================================
+   Manuscript — zudo-doc theme pack (ADR docs/adr/theme-packs.md)
+
+   A quiet Garamond book page: warm paper, soft ink, sepia
+   rubrication, letterspaced small-caps subheads, fleuron section
+   marks, marginalia admonition glyphs, and a faint laid-paper
+   ruling. Dark mode is the same book read by lamplight — umber
+   page, parchment ink, amber-sepia rubrication. Self-hosted
+   EB Garamond (variable 400-800, roman + italic) for body and
+   display; Courier Prime (400/700) as the typewritten code face.
+
+   Every rule below is scoped under html[data-theme-pack="manuscript"]
+   — this is what makes the runtime pack swap atomic (Decision 3) and
+   lets the validator prove a pack can never leak styles while
+   inactive (Decision 6.7). The @font-face blocks are the sole
+   exception (at-rules can't be selector-scoped).
+
+   Ported from _temp-resource/2812-theme-prototypes/themes/
+   05-manuscript.html; prototype-only selectors (.sb-group > p,
+   .toc-title, .lead, .footer-copy, .tp-flyout) were adapted to the
+   real DOM's stable hooks or dropped — see the extras comments.
+   ============================================================ */
+
+/* EB Garamond — variable weight 400-800, roman. Body, headings, chrome.
+   Latin subset only (latin-ext trimmed for the ~250 KB payload budget —
+   rare extended-Latin glyphs fall back to the generic serif tail). */
+@font-face {
+  font-family: "EB Garamond";
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("./fonts/EBGaramond-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* EB Garamond — italic. Blockquotes, emphasis, pager titles. */
+@font-face {
+  font-family: "EB Garamond";
+  font-style: italic;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("./fonts/EBGaramond-latin-italic.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Courier Prime — the typewritten insert tipped into the book. */
+@font-face {
+  font-family: "Courier Prime";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/CourierPrime-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Courier Prime";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/CourierPrime-400-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Courier Prime";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/CourierPrime-700-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Courier Prime";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/CourierPrime-700-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+html[data-theme-pack="manuscript"] {
+  /* Tier-2 semantic roles — warm paper & soft ink (light hero); dark mode
+     is the same book read by lamplight. Both modes always via light-dark(). */
+  --zd-bg: light-dark(oklch(0.963 0.013 85), oklch(0.215 0.015 65));
+  --zd-fg: light-dark(oklch(0.245 0.018 60), oklch(0.885 0.022 80));
+  --zd-selection-bg: light-dark(oklch(0.878 0.048 82), oklch(0.425 0.055 62));
+  --zd-selection-fg: light-dark(oklch(0.22 0.02 60), oklch(0.96 0.015 85));
+  --zd-surface: light-dark(oklch(0.945 0.016 85), oklch(0.245 0.016 62));
+  --zd-muted: light-dark(oklch(0.455 0.035 62), oklch(0.685 0.035 75));
+  --zd-accent: light-dark(oklch(0.44 0.095 55), oklch(0.735 0.095 70));
+  --zd-accent-hover: light-dark(oklch(0.355 0.095 45), oklch(0.8 0.085 78));
+  --zd-code-bg: light-dark(oklch(0.928 0.016 85), oklch(0.255 0.016 62));
+  --zd-code-fg: light-dark(oklch(0.26 0.02 60), oklch(0.885 0.022 80));
+  --zd-success: light-dark(oklch(0.45 0.085 145), oklch(0.72 0.09 145));
+  --zd-danger: light-dark(oklch(0.475 0.125 30), oklch(0.7 0.12 30));
+  --zd-warning: light-dark(oklch(0.485 0.09 80), oklch(0.77 0.1 85));
+  --zd-info: light-dark(oklch(0.455 0.08 245), oklch(0.72 0.08 245));
+
+  /* syntax — all 9 roles restyled, both modes. Annotated-manuscript inks:
+     pencil comments, bottle-green strings, sienna numbers, rubric-red
+     keywords, indigo callables, olive-gold types; inserted/deleted reuse
+     the bottle-green / rubric-red hues. */
+  --zd-syntax-comment: light-dark(oklch(0.5 0.03 70), oklch(0.645 0.03 75));
+  --zd-syntax-string: light-dark(oklch(0.44 0.085 150), oklch(0.745 0.085 150));
+  --zd-syntax-number: light-dark(oklch(0.475 0.1 45), oklch(0.755 0.1 60));
+  --zd-syntax-keyword: light-dark(oklch(0.455 0.13 30), oklch(0.72 0.115 35));
+  --zd-syntax-callable: light-dark(oklch(0.435 0.09 275), oklch(0.745 0.07 275));
+  --zd-syntax-type: light-dark(oklch(0.465 0.08 95), oklch(0.775 0.09 95));
+  --zd-syntax-name: light-dark(oklch(0.28 0.02 60), oklch(0.86 0.022 80));
+  --zd-syntax-inserted: light-dark(oklch(0.45 0.085 145), oklch(0.72 0.09 145));
+  --zd-syntax-deleted: light-dark(oklch(0.475 0.125 30), oklch(0.7 0.12 30));
+
+  /* fonts — self-hosted EB Garamond for body AND display (one face, the
+     book way); Courier Prime for code. Generic-family tail keeps CJK on
+     platform serifs. */
+  --font-sans: "EB Garamond", "Iowan Old Style", "Palatino Linotype", Georgia,
+    serif;
+  --font-mono: "Courier Prime", "Courier New", Courier, monospace;
+
+  /* Tier-3 component seams — medium-weight Garamond headings; the h2
+     tracking carries the letterspaced-small-caps signature. A book page
+     has no rounded corners — admonitions and cards square off. */
+  --zdc-doc-title-font: var(--font-sans);
+  --zdc-doc-title-weight: 500;
+  --zdc-doc-title-tracking: 0.005em;
+  --zdc-doc-h2-font: var(--font-sans);
+  --zdc-doc-h2-weight: 500;
+  --zdc-doc-h2-tracking: 0.1em;
+  --zdc-doc-h3-weight: 500;
+  --zdc-admonition-radius: 0;
+  --zdc-admonition-border-width: 2px;
+  --zdc-card-radius: 0;
+  --zdc-nav-active-indicator-color: light-dark(
+    oklch(0.35 0.05 55),
+    oklch(0.82 0.05 80)
+  );
+}
+
+/* ---- Manuscript extras ---- */
+
+/* the page: comfortable book measure, old-style numerals, the faintest
+   laid-paper ruling. (EB Garamond's default figures are old-style; the
+   explicit declarations keep the intent when a fallback face renders.) */
+html[data-theme-pack="manuscript"] body {
+  font-size: 1.14rem;
+  line-height: 1.72;
+  font-variant-numeric: oldstyle-nums;
+  font-feature-settings: "onum" 1, "liga" 1;
+  background-image: repeating-linear-gradient(
+    0deg,
+    color-mix(in oklch, var(--zd-fg) 2%, transparent) 0 1px,
+    transparent 1px 30px
+  );
+}
+/* .zd-content re-declares font-size/line-height on itself (content.css), so
+   the body values above never reach the prose — restate the book measure on
+   the content root. */
+html[data-theme-pack="manuscript"] .zd-content {
+  font-size: 1.14rem;
+  line-height: 1.72;
+}
+
+/* masthead: title-page double rule, small-caps wordmark + nav */
+html[data-theme-pack="manuscript"] header[data-header] {
+  border-bottom: 3px double color-mix(in oklch, var(--zd-fg) 50%, transparent);
+}
+html[data-theme-pack="manuscript"] [data-header-logo] {
+  font-variant-caps: small-caps;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  font-size: 1.35rem;
+}
+html[data-theme-pack="manuscript"] [data-nav-item] {
+  font-variant-caps: small-caps;
+  letter-spacing: 0.07em;
+  font-weight: 500;
+  font-size: 1.02rem;
+}
+
+/* sidebar & TOC: a touch more size — Garamond's small x-height reads tight
+   at the default text-small. (The prototype sized the containers; the real
+   links carry fixed-size utilities, so the bump targets the elements.) */
+html[data-theme-pack="manuscript"] #desktop-sidebar a,
+html[data-theme-pack="manuscript"] #desktop-sidebar button {
+  font-size: 0.98rem;
+}
+html[data-theme-pack="manuscript"] nav[data-zd-toc] a {
+  font-size: 0.95rem;
+}
+
+/* the signature: letterspaced small-capital subheads. The real h2/h3 carry
+   an SSR-inlined `style="border-image:linear-gradient(...)"` bar: the h2
+   replaces it with a hairline rule (border-image none !important is
+   Decision 6.6's sole allowlisted carve-out); the h3 wants NO bar, which
+   zeroing the class-level border-top-width achieves without !important
+   (a zero-width border area leaves the inline border-image nothing to
+   paint on). */
+html[data-theme-pack="manuscript"] .zd-content h2 {
+  border-image: none !important;
+  border-top-width: 1px;
+  border-top-color: color-mix(in oklch, var(--zd-fg) 28%, transparent);
+  padding-top: 1.35rem;
+  font-variant-caps: small-caps;
+  font-size: 1.55rem;
+}
+html[data-theme-pack="manuscript"] .zd-content h3 {
+  border-top-width: 0;
+  font-variant-caps: small-caps;
+  letter-spacing: 0.09em;
+  font-size: 1.28rem;
+}
+
+/* rubricated drop cap on the opening paragraph. The prototype's `.lead + p`
+   has no stable-DOM equivalent (the frontmatter-description <p> carries only
+   utility classes), so the drop cap sits on the article's first direct-child
+   paragraph — the description when present, the opening prose otherwise. */
+html[data-theme-pack="manuscript"] .zd-content > p:first-of-type::first-letter {
+  float: left;
+  font-size: 3.4em;
+  line-height: 0.8;
+  padding: 0.07em 0.12em 0 0;
+  font-weight: 500;
+  color: var(--zd-accent);
+}
+
+/* the other signature: centered ornamental rest (fleuron) */
+html[data-theme-pack="manuscript"] .zd-content hr {
+  border: none;
+  height: auto;
+  overflow: visible;
+  text-align: center;
+  margin: 2.75rem 0;
+}
+html[data-theme-pack="manuscript"] .zd-content hr::before {
+  content: "❦";
+  display: inline-block;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--zd-accent);
+}
+
+/* literary details */
+html[data-theme-pack="manuscript"] .zd-content a {
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in oklch, var(--zd-accent) 55%, transparent);
+}
+html[data-theme-pack="manuscript"] .zd-content a:hover {
+  text-decoration-color: currentColor;
+}
+html[data-theme-pack="manuscript"] .zd-content blockquote {
+  font-style: italic;
+  font-size: 1.06em;
+  border-left: 2px solid var(--zd-accent);
+  color: color-mix(in oklch, var(--zd-fg) 82%, var(--zd-muted));
+}
+html[data-theme-pack="manuscript"] .zd-content th {
+  font-variant-caps: small-caps;
+  letter-spacing: 0.08em;
+  border-bottom-color: color-mix(in oklch, var(--zd-fg) 55%, transparent);
+}
+
+/* marginalia marks instead of emoji: reference mark, hedera, pilcrow,
+   manicule, dagger ladder — the full admonition vocabulary so no variant
+   keeps a stray emoji. */
+html[data-theme-pack="manuscript"] [data-admonition] .admonition-title {
+  font-variant-caps: small-caps;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+html[data-theme-pack="manuscript"]
+  [data-admonition="note"]
+  .admonition-title::before {
+  content: "※ ";
+}
+html[data-theme-pack="manuscript"]
+  [data-admonition="tip"]
+  .admonition-title::before {
+  content: "❧ ";
+}
+html[data-theme-pack="manuscript"]
+  [data-admonition="info"]
+  .admonition-title::before {
+  content: "¶ ";
+}
+html[data-theme-pack="manuscript"]
+  [data-admonition="important"]
+  .admonition-title::before {
+  content: "☞ ";
+}
+html[data-theme-pack="manuscript"]
+  [data-admonition="warning"]
+  .admonition-title::before {
+  content: "† ";
+}
+html[data-theme-pack="manuscript"]
+  [data-admonition="caution"]
+  .admonition-title::before {
+  content: "‡ ";
+}
+html[data-theme-pack="manuscript"]
+  [data-admonition="danger"]
+  .admonition-title::before {
+  content: "‡ ";
+}
+
+/* code: a typewritten insert tipped into the book — square, hairline-framed */
+html[data-theme-pack="manuscript"] pre.hi-root {
+  font-size: 0.95rem;
+  line-height: 1.65;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid color-mix(in oklch, var(--zd-fg) 25%, transparent);
+}
+html[data-theme-pack="manuscript"] .zd-content code:not(pre code) {
+  font-size: 0.92em;
+  border-radius: 0;
+}
+
+/* pager: colophon cards. The DocPager <nav> is the article's only direct
+   nav child (doc-page-shell renders it inside .zd-content); the prototype's
+   .doc-pager/.pager-label/.pager-title classes don't exist in the real DOM. */
+html[data-theme-pack="manuscript"] .zd-content > nav a {
+  border-radius: 0;
+  border-color: color-mix(in oklch, var(--zd-fg) 25%, transparent);
+}
+html[data-theme-pack="manuscript"] .zd-content > nav a:hover {
+  border-color: var(--zd-accent);
+}
+html[data-theme-pack="manuscript"] .zd-content > nav a > div {
+  font-variant-caps: small-caps;
+  letter-spacing: 0.08em;
+}
+html[data-theme-pack="manuscript"] .zd-content > nav a > p {
+  font-style: italic;
+}
+
+/* footer: closing double rule + fleuron colophon above the copyright line
+   (the prototype's .footer-copy class does not exist in the real DOM). The
+   :not(:has(ul)) guard keeps the ornament off the link/tag column grid when
+   a footer configures columns but no copyright — the grid's div always
+   contains <ul> lists, the copyright block never does. */
+html[data-theme-pack="manuscript"] .zd-sidebar-content-wrapper footer {
+  border-top: 3px double color-mix(in oklch, var(--zd-fg) 50%, transparent);
+}
+html[data-theme-pack="manuscript"]
+  .zd-sidebar-content-wrapper
+  footer
+  > div
+  > div:last-child:not(:has(ul))::before {
+  content: "❦";
+  display: block;
+  font-size: 1.05rem;
+  color: var(--zd-accent);
+  margin-bottom: 0.4rem;
+}
