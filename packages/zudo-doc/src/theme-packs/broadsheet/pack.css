@@ -1,0 +1,417 @@
+/* ============================================================
+   Broadsheet — zudo-doc theme pack (ADR docs/adr/theme-packs.md)
+
+   Newspaper editorial: a Playfair Display masthead over a thick-thin
+   Oxford rule, Source Serif 4 body copy, Courier Prime wire-report
+   code, one deep editorial red. Light = morning edition on warm
+   newsprint; dark = the night desk — warm charcoal ink field, cream
+   type, the same red running a touch brighter. Print is square: no
+   rounded corners anywhere on a broadsheet.
+
+   Every rule below is scoped under html[data-theme-pack="broadsheet"]
+   — this is what makes the runtime pack swap atomic (Decision 3) and
+   lets the validator prove a pack can never leak styles while
+   inactive (Decision 6.7). The @font-face blocks are the sole
+   exception (at-rules can't be selector-scoped).
+
+   Prototype-selector adaptations against the REAL DOM (tokens-dump
+   §6 + component sources), noted inline where they matter:
+   - `.lead`            → `.zd-content > p:first-of-type` (the
+                          description paragraph DocContentHeader emits)
+   - `.lead + p`        → `.zd-content > p:first-of-type + p`
+   - `.toc-title`       → no desktop TOC heading exists (#1655); the
+                          double head-rule moves onto the TOC's <ul>
+   - `.doc-pager`       → `.zd-content > nav:not([aria-label])` (the
+                          DocPager nav is a direct child of the
+                          article and is the only unlabelled nav there;
+                          NavCardGrid carries aria-label="Child pages")
+   - `footer[data-footer]` → `.zd-sidebar-content-wrapper > footer`
+                          (no data-footer attribute in the real DOM;
+                          the footer is a direct child of the wrapper
+                          hook — doc-layout.tsx)
+   - the theme-switcher flyout has NO stable hook — its classified-ad
+     double frame is intentionally NOT ported (see pack notes).
+   ============================================================ */
+
+/* ---- Playfair Display — masthead / headlines / pull quotes / drop
+        cap. Variable file covering the 700–900 range, both styles.
+        Latin subsets only (all three families): latin-ext was dropped
+        to meet the ~250KB payload budget — a stray latin-ext glyph
+        falls back to the stack's system face. ---- */
+
+@font-face {
+  font-family: "Playfair Display";
+  font-style: normal;
+  font-weight: 700 900;
+  font-display: swap;
+  src: url("./fonts/PlayfairDisplay-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Playfair Display";
+  font-style: italic;
+  font-weight: 700 900;
+  font-display: swap;
+  src: url("./fonts/PlayfairDisplay-italic-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- Source Serif 4 — body copy. Weight-only variable file
+        (400–700; the opsz axis is dropped to halve the payload),
+        both styles — the deck and prose emphasis want TRUE italics. ---- */
+
+@font-face {
+  font-family: "Source Serif 4";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/SourceSerif4-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Source Serif 4";
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/SourceSerif4-italic-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- Courier Prime — typewriter code face (static 400 + 700; the
+        700 keeps wire-report keywords genuinely bold, not smeared). ---- */
+
+@font-face {
+  font-family: "Courier Prime";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/CourierPrime-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Courier Prime";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/CourierPrime-700-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+html[data-theme-pack="broadsheet"] {
+  /* Tier-2 semantic roles — newsprint paper, rich black ink, one deep
+     editorial red. Both modes always via light-dark(). */
+  --zd-bg: light-dark(oklch(0.955 0.012 92), oklch(0.185 0.012 75));
+  --zd-fg: light-dark(oklch(0.205 0.012 80), oklch(0.935 0.015 90));
+  --zd-selection-bg: light-dark(oklch(0.455 0.155 27), oklch(0.7 0.145 27));
+  --zd-selection-fg: light-dark(oklch(0.965 0.01 92), oklch(0.165 0.012 75));
+  --zd-surface: light-dark(oklch(0.97 0.01 92), oklch(0.215 0.013 75));
+  --zd-muted: light-dark(oklch(0.445 0.016 78), oklch(0.72 0.02 85));
+  --zd-accent: light-dark(oklch(0.455 0.155 27), oklch(0.7 0.145 27));
+  --zd-accent-hover: light-dark(oklch(0.37 0.135 27), oklch(0.775 0.125 27));
+  --zd-code-bg: light-dark(oklch(0.925 0.012 90), oklch(0.235 0.012 75));
+  --zd-code-fg: light-dark(oklch(0.225 0.012 80), oklch(0.925 0.015 90));
+  --zd-success: light-dark(oklch(0.44 0.1 150), oklch(0.73 0.115 150));
+  --zd-danger: light-dark(oklch(0.48 0.16 27), oklch(0.69 0.155 27));
+  --zd-warning: light-dark(oklch(0.495 0.105 80), oklch(0.79 0.12 85));
+  --zd-info: light-dark(oklch(0.43 0.09 252), oklch(0.73 0.085 250));
+
+  /* syntax — all 9 roles, both modes: pressroom inks only. Black type,
+     red rubrics for keywords, sepia strings, ballpoint blue callables,
+     proofreader green types; inserted/deleted reuse the proof-mark
+     green and red-ink hues. */
+  --zd-syntax-comment: light-dark(oklch(0.5 0.016 78), oklch(0.7 0.02 85));
+  --zd-syntax-string: light-dark(oklch(0.45 0.075 60), oklch(0.79 0.07 70));
+  --zd-syntax-number: light-dark(oklch(0.48 0.1 80), oklch(0.8 0.11 85));
+  --zd-syntax-keyword: light-dark(oklch(0.445 0.155 27), oklch(0.72 0.14 27));
+  --zd-syntax-callable: light-dark(oklch(0.42 0.09 252), oklch(0.74 0.08 248));
+  --zd-syntax-type: light-dark(oklch(0.44 0.065 130), oklch(0.78 0.07 130));
+  --zd-syntax-name: light-dark(oklch(0.225 0.012 80), oklch(0.93 0.015 90));
+  --zd-syntax-inserted: light-dark(oklch(0.44 0.1 150), oklch(0.73 0.115 150));
+  --zd-syntax-deleted: light-dark(oklch(0.48 0.16 27), oklch(0.69 0.155 27));
+
+  /* fonts — serif body (the --font-sans token carries the reading
+     face), typewriter mono, Playfair display face for headlines. */
+  --font-sans: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-mono: "Courier Prime", "Courier New", ui-monospace, monospace;
+  --font-display: "Playfair Display", Georgia, serif;
+
+  /* Tier-3 component seams — Playfair black headline, Playfair bold
+     crossheads, red active-nav ink. Print is square: zero radii. */
+  --zdc-doc-title-font: var(--font-display);
+  --zdc-doc-title-weight: 900;
+  --zdc-doc-title-tracking: -0.015em;
+  --zdc-doc-h2-font: var(--font-display);
+  --zdc-doc-h2-weight: 700;
+  --zdc-admonition-radius: 0;
+  --zdc-card-radius: 0;
+  --zdc-nav-active-indicator-color: var(--zd-accent);
+}
+
+/* ---- Broadsheet extras ---- */
+
+/* faint fibrous washes: newsprint, not flat paper */
+html[data-theme-pack="broadsheet"] body {
+  background-image:
+    radial-gradient(
+      120% 70% at 18% -8%,
+      color-mix(in oklch, var(--zd-fg) 3.5%, transparent),
+      transparent 62%
+    ),
+    radial-gradient(
+      90% 60% at 100% 100%,
+      color-mix(in oklch, var(--zd-fg) 2.5%, transparent),
+      transparent 55%
+    );
+  background-attachment: fixed;
+}
+
+/* masthead: Playfair black wordmark over a thick-thin Oxford rule */
+html[data-theme-pack="broadsheet"] header[data-header] {
+  border-bottom: 3px solid var(--zd-fg);
+  box-shadow: 0 6px 0 -5px var(--zd-fg);
+}
+html[data-theme-pack="broadsheet"] [data-header-logo] {
+  font-family: var(--font-display);
+  font-weight: 900;
+  letter-spacing: 0.01em;
+}
+html[data-theme-pack="broadsheet"] [data-nav-item] {
+  text-transform: uppercase;
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+html[data-theme-pack="broadsheet"] [data-nav-item]:hover {
+  color: var(--zd-accent);
+  text-decoration-thickness: 2px;
+}
+
+/* sidebar: single hairline column rule in ink */
+html[data-theme-pack="broadsheet"] #desktop-sidebar {
+  border-right-color: color-mix(in oklch, var(--zd-fg) 30%, transparent);
+}
+
+/* headline: Oxford rule (thick over thin) under the h1 */
+html[data-theme-pack="broadsheet"] .zd-content h1 {
+  padding-bottom: 0.55rem;
+  border-bottom: 3px solid var(--zd-fg);
+  box-shadow: 0 7px 0 -6px var(--zd-fg);
+  margin-bottom: 1rem;
+}
+
+/* the deck: italic standfirst under the headline. The prototype's
+   `.lead` is the description paragraph DocContentHeader renders as the
+   FIRST direct-child <p> of the article (metainfo/tags render as divs,
+   so p:first-of-type is the deck on every page with a description).
+   Known limit: the description is optional frontmatter — on a page
+   without one (~4% of the showcase corpus) the first BODY paragraph
+   takes the standfirst styling instead (reads as an emphasized opening
+   paragraph) and the drop cap below lands on the second paragraph.
+   CSS alone can't tell the two apart; a stable hook on the emitted
+   description paragraph would fix this properly (follow-up). */
+html[data-theme-pack="broadsheet"] .zd-content > p:first-of-type {
+  font-style: italic;
+  line-height: 1.5;
+}
+
+/* signature move #1 — red Playfair drop cap opening the first body
+   paragraph (prototype `.lead + p`). Fails safe: on a page whose body
+   doesn't open with a paragraph right after the deck (or with a
+   frontmatter-preview table between them) no cap is drawn, rather than
+   capping a random mid-article paragraph. */
+html[data-theme-pack="broadsheet"] .zd-content > p:first-of-type + p::first-letter {
+  float: left;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 3.6rem;
+  line-height: 0.8;
+  padding: 0.3rem 0.55rem 0.05rem 0;
+  color: var(--zd-accent);
+}
+
+/* signature move #2 — 4px double rules under headings. The h2 rule
+   needs !important to defeat the SSR-inlined
+   `style="border-image:linear-gradient(...)"` (Decision 6.6's sole
+   allowlisted carve-out). */
+html[data-theme-pack="broadsheet"] .zd-content h2 {
+  border-image: none !important;
+  border-top-width: 0;
+  padding-top: 0.2rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 4px double color-mix(in oklch, var(--zd-fg) 80%, transparent);
+}
+html[data-theme-pack="broadsheet"] .zd-content h3 {
+  text-transform: uppercase;
+  font-size: 0.95rem;
+  letter-spacing: 0.12em;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid color-mix(in oklch, var(--zd-fg) 35%, transparent);
+}
+
+/* pull quote: ruled top and bottom, Playfair italic, centered */
+html[data-theme-pack="broadsheet"] .zd-content blockquote {
+  border-left: none;
+  border-top: 4px double color-mix(in oklch, var(--zd-fg) 70%, transparent);
+  border-bottom: 4px double color-mix(in oklch, var(--zd-fg) 70%, transparent);
+  padding: 1.1rem 0.75rem;
+  margin: 1.9rem 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.3rem;
+  line-height: 1.45;
+  text-align: center;
+  color: var(--zd-fg);
+}
+html[data-theme-pack="broadsheet"] .zd-content blockquote::before {
+  content: "\201C\2009";
+  color: var(--zd-accent);
+  font-size: 1.35em;
+  line-height: 0;
+}
+
+/* dinkus instead of a plain hr */
+html[data-theme-pack="broadsheet"] .zd-content hr {
+  border: none;
+  text-align: center;
+  margin: 2.5rem 0 2.25rem;
+}
+html[data-theme-pack="broadsheet"] .zd-content hr::after {
+  content: "\2042";
+  font-size: 1.15rem;
+  color: var(--zd-muted);
+  letter-spacing: 0.4em;
+}
+
+/* end-of-story slug on the final paragraph */
+html[data-theme-pack="broadsheet"] .zd-content > p:last-of-type::after {
+  content: "\2002\25A0";
+  color: var(--zd-accent);
+  font-size: 0.78em;
+}
+
+/* wire-report code boxes: heavy top rule, hairline frame, square,
+   typewriter face with genuinely bold keywords */
+html[data-theme-pack="broadsheet"] pre.hi-root {
+  border: 1px solid color-mix(in oklch, var(--zd-fg) 45%, transparent);
+  border-top: 3px solid var(--zd-fg);
+  border-radius: 0;
+}
+html[data-theme-pack="broadsheet"] .hi-kw {
+  font-weight: 700;
+}
+html[data-theme-pack="broadsheet"] .hi-com {
+  font-style: italic;
+}
+
+/* inline code: square corners (print has none) */
+html[data-theme-pack="broadsheet"] .zd-content code:not(pre code) {
+  border-radius: 0;
+}
+
+/* notice boxes: fully framed, ruled titles set in caps, printers'
+   marks instead of emoji across all seven variants */
+html[data-theme-pack="broadsheet"] [data-admonition] {
+  border-top: 1px solid color-mix(in oklch, var(--zd-fg) 45%, transparent);
+  border-right: 1px solid color-mix(in oklch, var(--zd-fg) 45%, transparent);
+  border-bottom: 1px solid color-mix(in oklch, var(--zd-fg) 45%, transparent);
+}
+html[data-theme-pack="broadsheet"] [data-admonition] .admonition-title {
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+}
+html[data-theme-pack="broadsheet"] [data-admonition="note"] .admonition-title::before {
+  content: "\00B6\2002"; /* pilcrow */
+}
+html[data-theme-pack="broadsheet"] [data-admonition="tip"] .admonition-title::before {
+  content: "\261E\2002"; /* manicule */
+}
+html[data-theme-pack="broadsheet"] [data-admonition="info"] .admonition-title::before {
+  content: "\00A7\2002"; /* section sign */
+}
+html[data-theme-pack="broadsheet"] [data-admonition="warning"] .admonition-title::before {
+  content: "\203C\FE0E\2002"; /* double exclamation, text style */
+}
+html[data-theme-pack="broadsheet"] [data-admonition="important"] .admonition-title::before {
+  content: "\2020\2002"; /* dagger */
+}
+html[data-theme-pack="broadsheet"] [data-admonition="danger"] .admonition-title::before {
+  content: "\2021\2002"; /* double dagger */
+}
+html[data-theme-pack="broadsheet"] [data-admonition="caution"] .admonition-title::before {
+  content: "\203B\2002"; /* reference mark */
+}
+
+/* listings tables: heavy top/bottom rules, caps heads, dotted leaders */
+html[data-theme-pack="broadsheet"] .zd-content table {
+  border-top: 3px solid var(--zd-fg);
+  border-bottom: 3px solid var(--zd-fg);
+}
+html[data-theme-pack="broadsheet"] .zd-content th {
+  text-transform: uppercase;
+  font-size: 0.76rem;
+  letter-spacing: 0.1em;
+  border-bottom: 1px solid var(--zd-fg);
+}
+html[data-theme-pack="broadsheet"] .zd-content td {
+  border-bottom: 1px dotted color-mix(in oklch, var(--zd-fg) 45%, transparent);
+}
+
+/* TOC — "in this edition" index. The desktop TOC renders no visible
+   heading (#1655), so the prototype's ruled `.toc-title` becomes a
+   double head-rule on the list itself; the column hairline shifts
+   from gray to ink. */
+html[data-theme-pack="broadsheet"] nav[data-zd-toc] ul {
+  border-top: 4px double color-mix(in oklch, var(--zd-fg) 70%, transparent);
+  border-left-color: color-mix(in oklch, var(--zd-fg) 30%, transparent);
+  padding-top: 0.5rem;
+}
+
+/* pager: classified-corner cards under a closing double rule. DocPager
+   renders after the MDX content on every regular doc page, so it is
+   always the article's LAST direct-child nav; the :not([aria-label])
+   guard excludes NavCardGrid ("Child pages") on auto-index pages, and
+   :last-of-type excludes an unlabelled <CategoryNav> used mid-content
+   (its nav also ships without an aria-label — review finding). */
+html[data-theme-pack="broadsheet"] .zd-content > nav:last-of-type:not([aria-label]) {
+  border-top: 4px double color-mix(in oklch, var(--zd-fg) 70%, transparent);
+  padding-top: 1.25rem;
+}
+html[data-theme-pack="broadsheet"] .zd-content > nav:last-of-type:not([aria-label]) a {
+  border-radius: 0;
+  border-color: color-mix(in oklch, var(--zd-fg) 50%, transparent);
+}
+html[data-theme-pack="broadsheet"] .zd-content > nav:last-of-type:not([aria-label]) a:hover {
+  border-color: var(--zd-accent);
+}
+html[data-theme-pack="broadsheet"] .zd-content > nav:last-of-type:not([aria-label]) a > div {
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+}
+html[data-theme-pack="broadsheet"] .zd-content > nav:last-of-type:not([aria-label]) a p {
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
+/* colophon footer under its own thick-thin Oxford rule (the real
+   footer has no data-footer hook; it is the wrapper's direct child) */
+html[data-theme-pack="broadsheet"] .zd-sidebar-content-wrapper > footer {
+  border-top: 3px solid var(--zd-fg);
+  box-shadow: 0 -6px 0 -5px var(--zd-fg);
+}
