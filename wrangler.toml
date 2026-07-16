@@ -19,9 +19,9 @@ compatibility_flags = ["nodejs_compat"]
 # Durable Object, so preview workflows generate an adapter-only config for the
 # separate zudo-doc-preview service. Production keeps this complete config.
 preview_urls = true
-# Production never serves its primary workers.dev route. The generated config
-# for the isolated adapter-only preview service switches this to true so the
-# first version upload activates its workers.dev routing and preview aliases.
+# Neither service exposes its primary workers.dev route. Preview workflows use
+# the Cloudflare subdomain API to enable only version and alias preview URLs on
+# the isolated adapter-only service.
 workers_dev = false
 
 # Retain structured operational events for exact-cap admitted/denied/failed-closed

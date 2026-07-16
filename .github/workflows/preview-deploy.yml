@@ -289,9 +289,9 @@ jobs:
           DEPLOY_LOG=$(mktemp)
           # Cloudflare does not generate preview URLs for versions implementing
           # Durable Objects. The already-built adapter graph is uploaded through
-          # an adapter-only entry to a separate preview service whose generated
-          # config enables workers.dev. Production alone uses worker-entry.ts
-          # and applies the DO migration.
+          # an adapter-only entry to a separate preview service with only preview
+          # aliases enabled. Production alone uses worker-entry.ts and applies
+          # the DO migration.
           PREVIEW_CONFIG=$(mktemp "$PWD/.wrangler-preview.XXXXXX.toml")
           trap 'rm -f "$PREVIEW_CONFIG"' EXIT
           node scripts/write-worker-preview-config.mjs "$PREVIEW_CONFIG"
@@ -313,8 +313,8 @@ jobs:
               --url "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/zudo-doc-preview/subdomain" \
               --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
               --header "Content-Type: application/json" \
-              --data '{"enabled":true,"previews_enabled":true}' \
-              | jq -e '.success and .result.enabled and .result.previews_enabled' > /dev/null
+              --data '{"enabled":false,"previews_enabled":true}' \
+              | jq -e '.success and (.result.enabled | not) and .result.previews_enabled' > /dev/null
             upload_preview
             DEPLOY_URL=$(grep -oE "https://${SLUG}-[a-z0-9.-]+\.workers\.dev" "$DEPLOY_LOG" | head -1 || true)
           fi

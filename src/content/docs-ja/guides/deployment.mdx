@@ -85,14 +85,14 @@ Wrangler dry-runをその同一ファイルに対して実行します。
 
 ### プレビューデプロイ
 
-各PRは`wrangler versions upload --preview-alias <alias>`により**安定したプレビューエイリアス**URLを取得します。生成されるアダプター専用preview configは`preview_urls = true`を維持して`workers_dev`を有効化し、本番ではprimary `workers.dev` routeを無効のままにします。エイリアスはPRチェックでは`pr-<番号>`、ブランチプレビューではブランチスラッグです。URLは`*.workers.dev`上にあり（本番のカスタムドメインではありません）、サブドメインはエイリアスで始まります：
+各PRは`wrangler versions upload --preview-alias <alias>`により**安定したプレビューエイリアス**URLを取得します。生成されるアダプター専用preview configは`preview_urls = true`を維持し、本番と同様にprimary `workers_dev` routeは無効のままにします。エイリアスはPRチェックでは`pr-<番号>`、ブランチプレビューではブランチスラッグです。URLは`*.workers.dev`上にあり（本番のカスタムドメインではありません）、サブドメインはエイリアスで始まります：
 
 ```
 https://<alias>-zudo-doc-preview.<your-subdomain>.workers.dev
 ```
 
 CIはwranglerの出力から正確なホストを解析し、**preview**ジョブによってPRのコメントとして自動的に投稿されます。
-分離されたserviceを初めて作成するときは、CIがCloudflare APIを介してworkers.devとpreview URLのsubdomain設定を明示的に有効化し、alias付きuploadを再試行します。
+分離されたserviceを初めて作成するときは、CIがCloudflare APIを介してpreview URLのsubdomain設定だけを明示的に有効化し、alias付きuploadを再試行します。
 
 Durable Objectsを実装するversionにはCloudflareがプレビューURLを発行しないため、プレビューworkflowは
 サイトのビルド後に、別のpreview service用のアダプター専用config/entryを生成します。プレビューはSSRと

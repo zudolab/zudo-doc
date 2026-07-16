@@ -84,14 +84,14 @@ Triggered on pull requests targeting `main`. Runs twenty jobs:
 
 ### Preview Deployments
 
-Each PR gets a **stable preview-alias** URL via `wrangler versions upload --preview-alias <alias>`. The generated adapter-only preview config keeps `preview_urls = true` and enables `workers_dev`; production keeps its primary `workers.dev` route disabled. The alias is `pr-<number>` for PR checks and the branch slug for branch previews. The URL is on `*.workers.dev` (not the production custom domain) and its subdomain starts with the alias:
+Each PR gets a **stable preview-alias** URL via `wrangler versions upload --preview-alias <alias>`. The generated adapter-only preview config keeps `preview_urls = true` while leaving the primary `workers_dev` route disabled, just like production. The alias is `pr-<number>` for PR checks and the branch slug for branch previews. The URL is on `*.workers.dev` (not the production custom domain) and its subdomain starts with the alias:
 
 ```
 https://<alias>-zudo-doc-preview.<your-subdomain>.workers.dev
 ```
 
 CI parses the exact host from wrangler's output and posts it automatically as a comment on the PR by the **preview** job.
-When the isolated service is first created, CI explicitly enables its workers.dev and preview-URL subdomain settings through the Cloudflare API, then retries the aliased upload.
+When the isolated service is first created, CI explicitly enables only its preview-URL subdomain setting through the Cloudflare API, then retries the aliased upload.
 
 Cloudflare does not issue preview URLs for versions implementing Durable Objects. Preview workflows
 therefore generate an adapter-only config/entry for a separate preview service after the site build.

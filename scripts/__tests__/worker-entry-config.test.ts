@@ -64,8 +64,8 @@ describe("custom Worker deployment contract", () => {
     expect(previewConfig).toContain('name = "zudo-doc-preview"');
     expect(previewConfig).toContain('main = "./worker-preview-entry.ts"');
     expect(previewConfig).toContain("preview_urls = true");
-    expect(previewConfig).toContain("workers_dev = true");
-    expect(previewConfig).not.toContain("workers_dev = false");
+    expect(previewConfig).toContain("workers_dev = false");
+    expect(previewConfig).not.toContain("workers_dev = true");
     expect(previewConfig).not.toContain('name = "zudo-doc"\n');
     expect(previewConfig).not.toContain('main = "./worker-entry.ts"');
     expect(previewConfig).toContain('[assets]\ndirectory = "./dist"');
@@ -82,6 +82,7 @@ describe("custom Worker deployment contract", () => {
       expect(source).toContain('--config "$PREVIEW_CONFIG"');
       expect(source).toContain("/workers/scripts/zudo-doc-preview/subdomain");
       expect(source).toContain("previews_enabled");
+      expect(source).toContain(`--data '{"enabled":false,"previews_enabled":true}'`);
       expect(source).toContain("upload_preview");
       expect(source).not.toContain('$RUNNER_TEMP/wrangler-preview-bootstrap.toml');
       expect(source).not.toContain("UPLOAD_STATUS");

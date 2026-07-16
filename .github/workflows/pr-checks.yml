@@ -747,9 +747,9 @@ jobs:
           ALIAS="pr-${PR_NUMBER}"
           # pr-${PR_NUMBER} is alias-safe (lowercase, no slashes/underscores).
           # `wrangler versions upload` has no --json flag; it prints the stable
-          # preview-alias URL (on *.workers.dev — the generated preview config
-          # enables both preview_urls and workers_dev) to stdout/stderr. Capture
-          # both via tee and grep
+          # preview-alias URL (on *.workers.dev — preview_urls is explicitly
+          # enabled while the primary workers.dev route stays disabled) to
+          # stdout/stderr. Capture both via tee and grep
           # the alias URL line, anchored on the .workers.dev boundary. Parse the
           # alias URL (subdomain starts with the alias) — not the per-version
           # hash URL — so smoke gates + PR comments hit a stable host.
@@ -779,8 +779,8 @@ jobs:
               --url "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/zudo-doc-preview/subdomain" \
               --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
               --header "Content-Type: application/json" \
-              --data '{"enabled":true,"previews_enabled":true}' \
-              | jq -e '.success and .result.enabled and .result.previews_enabled' > /dev/null
+              --data '{"enabled":false,"previews_enabled":true}' \
+              | jq -e '.success and (.result.enabled | not) and .result.previews_enabled' > /dev/null
             upload_preview
             DEPLOY_URL=$(grep -oE "https://${ALIAS}-[a-z0-9.-]+\.workers\.dev" "$DEPLOY_LOG" | head -1 || true)
           fi
