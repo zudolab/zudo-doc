@@ -151,11 +151,17 @@ export interface RouteContextPayload<S = Settings> {
    * Resolved, enabled, ordered theme-pack registry (ADR
    * `docs/adr/theme-packs.md`, Decision 2 "Registry threading to
    * SSR/islands") — settings ∩ the bundled `theme-packs/` directories, in
-   * switcher order. `null` renders the whole feature inert (same accepted
-   * coupling class as {@link colorSchemes} for a `packageOwnedRoutes: false`
-   * host that builds its own payload without threading one).
+   * switcher order. `null` (or omitted) renders the whole feature inert (same
+   * accepted coupling class as {@link colorSchemes} for a
+   * `packageOwnedRoutes: false` host that builds its own payload without
+   * threading one).
+   *
+   * OPTIONAL on purpose: this field was added after the payload shape
+   * shipped, so an existing `packageOwnedRoutes: false` host that constructs
+   * its own payload predates it. `createRouteContext` normalizes an omitted
+   * value to `null` (→ inert) so upgrading such a host does not throw at SSR.
    */
-  themePackRegistry: ThemePackRegistry | null;
+  themePackRegistry?: ThemePackRegistry | null;
 }
 
 /** Aggregated `tag → docs` index entry built by `collectTags`. */

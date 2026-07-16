@@ -268,6 +268,25 @@ describe("applyThemePackToConfigSource — refusal contract", () => {
     expect(result.reason).toMatch(/no zudoDoc\(\.\.\.\) call found/i);
   });
 
+  it("refuses a config with duplicate themePack keys (JS uses the last; a first-match rewrite would mis-report)", () => {
+    const dup = [
+      "import { defineConfig } from '@takazudo/zfb/config';",
+      "import { zudoDoc } from '@takazudo/zudo-doc/config';",
+      "export default defineConfig(",
+      "  zudoDoc({",
+      '    themePack: "default",',
+      '    siteName: "x",',
+      '    themePack: "foundry",',
+      "  }),",
+      ");",
+      "",
+    ].join("\n");
+    const result = applyThemePackToConfigSource(dup, "foundry");
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.reason).toMatch(/more than once|duplicate/i);
+  });
+
   it("refuses when there are multiple zudoDoc(...) call sites", () => {
     const result = applyThemePackToConfigSource(NONCANONICAL_MULTIPLE_CALLS, "foundry");
     expect(result.ok).toBe(false);

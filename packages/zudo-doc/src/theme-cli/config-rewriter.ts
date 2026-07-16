@@ -157,7 +157,21 @@ export function applyThemePackToConfigSource(
   }
 
   const newValueLiteral = JSON.stringify(slug);
-  const themePackMember = members.find((m) => m.key === "themePack");
+  // Refuse a config carrying more than one top-level `themePack` property. JS
+  // resolves the object to the LAST such key, but the rewrite below targets the
+  // FIRST match — so a naive rewrite could report success (or an idempotent
+  // no-op) while the pack the runtime actually reads is a different, untouched
+  // property, and provenance would be recorded wrong. Duplicate keys are not
+  // the canonical generated shape; refuse rather than silently mis-rewrite.
+  const themePackMembers = members.filter((m) => m.key === "themePack");
+  if (themePackMembers.length > 1) {
+    return refuse(
+      'zfb.config.ts declares "themePack" more than once inside zudoDoc({ ... }). ' +
+        "This CLI only rewrites a single canonical field; remove the duplicate and re-run.",
+      slug,
+    );
+  }
+  const themePackMember = themePackMembers[0];
 
   if (themePackMember) {
     if (themePackMember.valueStart === null || themePackMember.valueEnd === null) {

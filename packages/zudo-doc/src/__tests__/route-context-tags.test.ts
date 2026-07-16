@@ -23,6 +23,25 @@ function makeContext(tagGovernance: "off" | "warn" | "strict" = "warn") {
   );
 }
 
+describe("createRouteContext theme-pack registry normalization", () => {
+  it("normalizes an OMITTED themePackRegistry to null (upgrade compat — must not stay undefined)", () => {
+    // A `packageOwnedRoutes: false` host whose payload predates the field omits
+    // it entirely. Leaving it `undefined` slips past head-with-defaults'
+    // `!== null` inert-guard and throws at SSR; it must become `null` (inert).
+    const ctx = createRouteContext(
+      {
+        settings: { ...DEFAULT_SETTINGS },
+        translations: {},
+        tagVocabulary: [],
+        colorSchemes: null,
+        // themePackRegistry intentionally omitted
+      },
+      { stableDocs: () => [] },
+    );
+    expect(ctx.themePackRegistry).toBeNull();
+  });
+});
+
 describe("createRouteContext canonical tag aggregation", () => {
   it("keeps exact canonical ids and retired ids as separate tag pages", () => {
     const ctx = makeContext();

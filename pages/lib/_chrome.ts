@@ -33,7 +33,10 @@ import { chromeBindings } from "virtual:zudo-doc-chrome-bindings";
 // `virtual:zudo-doc-chrome-bindings`), so it can read the routes plugin's
 // resolved registry and layer it over the test-safe base context.
 // ADR docs/adr/theme-packs.md Decision 2.
-const { themePackRegistry } = virtualRouteContext as unknown as RouteContextPayload;
+// `?? null` because RouteContextPayload.themePackRegistry is optional (upgrade
+// compat) — the routes plugin always threads it, but the type admits undefined.
+const themePackRegistry =
+  (virtualRouteContext as unknown as RouteContextPayload).themePackRegistry ?? null;
 
 export const { HomePageView } = createChrome(
   { ...routeContext, themePackRegistry },
