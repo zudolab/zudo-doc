@@ -17,7 +17,7 @@
       "fg": "#0a0a0a",
       "accent": "#e60000",
       "syntax": {
-        "keyword": "#e60000",
+        "keyword": "#d40000",
         "string": "#3f3f3f",
         "comment": "#6b6b6b",
         "callable": "#0a0a0a"

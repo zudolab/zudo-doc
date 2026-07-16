@@ -102,7 +102,9 @@ html[data-theme-pack="swissgrid"] {
      (semantics by shape + label, not color). */
   --zd-bg: light-dark(#ffffff, #0c0c0c);
   --zd-fg: light-dark(#0a0a0a, #f2f2f2);
-  --zd-selection-bg: light-dark(#ff0000, #ff0000);
+  /* selection: red flag over white text — #e60000 keeps white at 4.8:1
+     (pure #ff0000 fails the 4.5:1 selection floor at 4.0:1) */
+  --zd-selection-bg: light-dark(#e60000, #e60000);
   --zd-selection-fg: light-dark(#ffffff, #ffffff);
   --zd-surface: light-dark(#ffffff, #0c0c0c);
   --zd-muted: light-dark(#595959, #9a9a9a);
@@ -123,7 +125,9 @@ html[data-theme-pack="swissgrid"] {
   --zd-syntax-comment: light-dark(#6b6b6b, #8c8c8c);
   --zd-syntax-string: light-dark(#3f3f3f, #c9c9c9);
   --zd-syntax-number: light-dark(#8f0000, #ff9a9a);
-  --zd-syntax-keyword: light-dark(#e60000, #ff4d4d);
+  /* keyword light #d40000: 5.0:1 on the #f4f4f4 code panel (the hotter
+     #e60000 sits at 4.37:1, under the 4.6:1 syntax floor) */
+  --zd-syntax-keyword: light-dark(#d40000, #ff4d4d);
   --zd-syntax-callable: light-dark(#0a0a0a, #ffffff);
   --zd-syntax-type: light-dark(#595959, #b3b3b3);
   --zd-syntax-name: light-dark(#0a0a0a, #ededed);
@@ -294,8 +298,14 @@ html[data-theme-pack="swissgrid"] .zd-content h2::before {
   margin-bottom: 0.4rem;
 }
 
+/* h3: red square marker only — no rule above. border-image none
+   !important defeats HeadingH3's SSR-inlined muted gradient (same
+   inline-style class as the h2 carve-out), and zeroing the top border
+   removes its 2px bar. */
 html[data-theme-pack="swissgrid"] .zd-content h3 {
   letter-spacing: -0.015em;
+  border-image: none !important;
+  border-top-width: 0;
 }
 html[data-theme-pack="swissgrid"] .zd-content h3::before {
   content: "";
