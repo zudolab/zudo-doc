@@ -93,6 +93,12 @@ export function createRouteContext<S extends Settings = Settings>(
   const translations = payload.translations;
   const tagVocabulary = payload.tagVocabulary;
   const colorSchemes = payload.colorSchemes;
+  // Normalize an omitted registry to null (→ feature inert). The payload field
+  // is optional (added after the shape shipped); a `packageOwnedRoutes: false`
+  // host that predates it would otherwise pass `undefined`, which slips past
+  // head-with-defaults' `!== null` inert-guard and throws
+  // `themePackVersionMap(undefined)` at SSR. ADR Decision 2: omit = inert.
+  const themePackRegistry = payload.themePackRegistry ?? null;
   const stableDocs: ContentBridge = options.stableDocs ?? defaultStableDocs;
 
   // ── i18n ────────────────────────────────────────────────────────────────
@@ -205,6 +211,7 @@ export function createRouteContext<S extends Settings = Settings>(
   const base = {
     settings,
     colorSchemes,
+    themePackRegistry,
     i18n,
     defaultLocale,
     locales,

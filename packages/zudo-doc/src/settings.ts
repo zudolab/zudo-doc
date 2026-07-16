@@ -421,4 +421,23 @@ export interface Settings {
    * module. Irrelevant when `designTokenPanel` is `false`.
    */
   designTokenPanelConfigModule?: string;
+  /**
+   * Active theme-pack slug (ADR `docs/adr/theme-packs.md`). `"default"` is
+   * the stock zudo-doc look — no pack stylesheet is loaded. Must be a member
+   * of the resolved `themePacks` list; an unknown slug fails the build
+   * loudly at plugin setup (`src/plugins/routes.ts`).
+   */
+  themePack?: string;
+  /**
+   * Mount the bottom-right theme-pack switcher flyout (and its browse-all
+   * dialog) on every page.
+   */
+  themePackSwitcher?: boolean;
+  /**
+   * Enabled theme-pack slugs, in switcher order. `undefined` = every bundled
+   * pack, `"default"` first then the rest in canonical (alphabetical-by-slug)
+   * order. An explicit list is authoritative: may omit `"default"`, reorder
+   * freely; duplicate or unknown slugs fail the build loudly.
+   */
+  themePacks?: string[];
 }

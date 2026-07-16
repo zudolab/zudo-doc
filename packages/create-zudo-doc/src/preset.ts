@@ -1,5 +1,5 @@
 import fs from "fs";
-import { FEATURES, SINGLE_SCHEMES, SUPPORTED_LANGS } from "./constants.js";
+import { FEATURES, SINGLE_SCHEMES, SUPPORTED_LANGS, THEME_PACKS } from "./constants.js";
 import type { PartialChoices } from "./prompts.js";
 import { validateProjectName } from "./utils.js";
 
@@ -67,6 +67,8 @@ export interface PresetJson {
   darkScheme?: string;
   defaultMode?: "light" | "dark";
   respectPrefersColorScheme?: boolean;
+  /** Theme pack slug (ADR #2818 Decision 7), validated against THEME_PACKS. */
+  themePack?: string;
   features?: string[];
   githubUrl?: string;
   cjkFriendly?: boolean;
@@ -95,6 +97,7 @@ export function loadPreset(pathOrStdin: string): PartialChoices {
 const VALID_LANGS = new Set(SUPPORTED_LANGS.map((l) => l.value));
 const VALID_SCHEMES = new Set(SINGLE_SCHEMES);
 const VALID_PMS = new Set(["pnpm", "npm", "yarn", "bun"]);
+const VALID_THEME_PACKS = new Set(THEME_PACKS.map((t) => t.slug));
 
 export function validatePreset(json: unknown): string | null {
   if (json === null || typeof json !== "object" || Array.isArray(json)) {
@@ -130,6 +133,14 @@ export function validatePreset(json: unknown): string | null {
   }
   if (p.defaultMode && !["light", "dark"].includes(p.defaultMode)) {
     return `Invalid defaultMode "${p.defaultMode}" in preset`;
+  }
+  if (p.themePack !== undefined) {
+    if (typeof p.themePack !== "string") {
+      return `"themePack" must be a string in preset`;
+    }
+    if (!VALID_THEME_PACKS.has(p.themePack)) {
+      return `Unknown theme pack "${p.themePack}" in preset. Available: ${[...VALID_THEME_PACKS].join(", ")}`;
+    }
   }
   if (p.packageManager && !VALID_PMS.has(p.packageManager)) {
     return `Invalid packageManager "${p.packageManager}" in preset`;
@@ -239,6 +250,7 @@ export function presetToChoices(json: PresetJson): PartialChoices {
   if (json.respectPrefersColorScheme !== undefined) {
     choices.respectPrefersColorScheme = json.respectPrefersColorScheme;
   }
+  if (json.themePack) choices.themePack = json.themePack;
   if (json.packageManager) choices.packageManager = json.packageManager;
   if (json.githubUrl !== undefined) choices.githubUrl = json.githubUrl;
   if (json.cjkFriendly !== undefined) choices.cjkFriendly = json.cjkFriendly;

@@ -23,7 +23,7 @@ Your feature choices are written into a **single `zfb.config.ts`** as a `zudoDoc
 A few things a fresh scaffold intentionally does **not** include:
 
 - **No `.zudo-doc.json`** — the eject provenance file is lazy-created on your first `zudo-doc eject`, so an un-ejected project never carries it.
-- **No `check:html` / HTML-validation** step and **no `gen:z-index` / `check:z-index`** codegen — both were pruned from generated projects. The default z-index tiers ship from the package; HTML validation and pre-push suites are opt-in add-backs (see [Customizing → Restoring pre-push and HTML validation](./customizing.mdx#rung-8-—-restoring-pre-push-and-html-validation)).
+- **No `check:html` / HTML-validation** step and **no `gen:z-index` / `check:z-index`** codegen — both were pruned from generated projects. The default z-index tiers ship from the package; HTML validation and pre-push suites are opt-in add-backs (see [Customizing → Restoring pre-push and HTML validation](./customizing.mdx#rung-9-—-restoring-pre-push-and-html-validation)).
 - **No deploy adapter or `wrangler.toml`** — the default build is a pure static export. Deploying (or enabling SSR features like the AI assistant) is an explicit extend step.
 
 <Note>
@@ -37,6 +37,10 @@ A few things a fresh scaffold intentionally does **not** include:
 zudo-doc ships exactly two color schemes — `Default Light` and `Default Dark` — sharing one set of OKLCH ramps. There is no bundled catalog of community or terminal presets to pick a `--scheme` value from.
 
 Customization happens one level deeper, through the `colorSchemes` escape-hatch field in `zfb.config.ts`: pass your own `{ ramps, map }` palette map to `zudoDoc({ colorSchemes: { … } })` (see [Color](./color.mdx#adding-a-custom-color-scheme) — "Adding a Custom Color Scheme"). Preview the result live in the [Design Token Panel](./design-token-panel.mdx#ai-workflow)'s Palette tab (see [Color Scheme Preview](../guides/color-scheme-preview.mdx)) before committing it to source.
+
+## Theme Packs
+
+Independently of the color scheme, the scaffold can start a project on any bundled [theme pack](./theme-packs.mdx) — a prebuilt design bundle layered on top of the scheme system. Pass `--theme-pack <slug>`, or answer the interactive "Theme pack:" prompt (asked between the color-scheme questions and the feature multiselect). The chosen slug is written to `themePack` in the generated `zfb.config.ts` (only when it differs from `default`, per the diff-from-defaults rule). The on-page switcher UI is a separate feature toggle, `--theme-pack-switcher`.
 
 ## Options
 
@@ -62,6 +66,12 @@ Customization happens one level deeper, through the `colorSchemes` escape-hatch 
 | `--default-mode <mode>` | `light` or `dark` (light-dark mode) | `dark` |
 | `--[no-]respect-system-preference` | Respect OS color scheme preference | `true` |
 
+### Theme Pack
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--theme-pack <slug>` | Theme pack applied to the generated project (`default`, `foundry`) | `default` |
+
 ### Features
 
 | Flag | Description | Default |
@@ -72,6 +82,7 @@ Customization happens one level deeper, through the `colorSchemes` escape-hatch 
 | `--[no-]claude-resources` | Claude Code docs generation | off |
 | `--[no-]claude-skills` | Ship zudo-doc-* Claude Code skills (design-system, translate, version-bump) | off |
 | `--[no-]design-token-panel` | Interactive tabbed panel for tweaking spacing, font, size, and color tokens | off |
+| `--[no-]theme-pack-switcher` | Bottom-right flyout (and browse-all dialog) to switch between installed theme packs | off |
 | `--[no-]sidebar-resizer` | Draggable sidebar width | off |
 | `--[no-]sidebar-toggle` | Show/hide desktop sidebar | off |
 | `--[no-]versioning` | Multi-version documentation support | off |
@@ -197,6 +208,7 @@ await createZudoDoc({
   darkScheme: "Default Dark",
   defaultMode: "dark",
   respectPrefersColorScheme: true,
+  themePack: "foundry",
   features: [
     "search",
     "sidebarFilter",

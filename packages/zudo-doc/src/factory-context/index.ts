@@ -19,6 +19,7 @@ import type { Settings, TagVocabularyEntry } from "../settings.js";
 // Type-only imports (erased at build — they never enter the runtime/eval graph,
 // so this module stays node-free; the foundation-eval-graph guard covers it).
 import type { ColorScheme } from "../color-scheme-utils.js";
+import type { ThemePackRegistry } from "../theme-packs-registry/index.js";
 import type { UrlHelpers } from "../url-helpers/index.js";
 import type { NavSourceDocsAPI } from "../nav-source-docs/index.js";
 import type { DocRouteEntriesAPI } from "../doc-route-entries/index.js";
@@ -146,6 +147,21 @@ export interface RouteContextPayload<S = Settings> {
   /** Host color-scheme palette map; `null` when the host passed none (chrome
    *  then falls back to a neutral default scheme). */
   colorSchemes: Record<string, ColorScheme> | null;
+  /**
+   * Resolved, enabled, ordered theme-pack registry (ADR
+   * `docs/adr/theme-packs.md`, Decision 2 "Registry threading to
+   * SSR/islands") — settings ∩ the bundled `theme-packs/` directories, in
+   * switcher order. `null` (or omitted) renders the whole feature inert (same
+   * accepted coupling class as {@link colorSchemes} for a
+   * `packageOwnedRoutes: false` host that builds its own payload without
+   * threading one).
+   *
+   * OPTIONAL on purpose: this field was added after the payload shape
+   * shipped, so an existing `packageOwnedRoutes: false` host that constructs
+   * its own payload predates it. `createRouteContext` normalizes an omitted
+   * value to `null` (→ inert) so upgrading such a host does not throw at SSR.
+   */
+  themePackRegistry?: ThemePackRegistry | null;
 }
 
 /** Aggregated `tag → docs` index entry built by `collectTags`. */
@@ -179,6 +195,9 @@ export interface RouteContext<S = Settings>
   settings: S;
   /** Host color-scheme palette map (or `null`); threaded to chrome head CSS. */
   colorSchemes: Record<string, ColorScheme> | null;
+  /** Resolved, enabled, ordered theme-pack registry (or `null`) — see
+   *  {@link RouteContextPayload.themePackRegistry}. */
+  themePackRegistry: ThemePackRegistry | null;
   /** The reconstructed i18n surface. */
   i18n: FactoryI18n;
   /** Default locale code (un-prefixed `/docs/...`). */

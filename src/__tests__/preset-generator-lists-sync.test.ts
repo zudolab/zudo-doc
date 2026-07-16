@@ -4,6 +4,7 @@ import {
   LIGHT_SCHEMES,
   SUPPORTED_LANGS,
   HEADER_RIGHT_LABELS,
+  THEME_PACKS,
 } from "../../packages/create-zudo-doc/src/constants";
 import {
   LIGHT_DARK_PAIRINGS,
@@ -14,11 +15,12 @@ import {
   LIGHT_SCHEMES as HOST_LIGHT_SCHEMES,
   SUPPORTED_LANGS as HOST_SUPPORTED_LANGS,
   HEADER_RIGHT_LABELS as HOST_HEADER_RIGHT_LABELS,
+  THEME_PACKS as HOST_THEME_PACKS,
 } from "../lib/preset-generator-logic";
 import { validateArgs } from "../../packages/create-zudo-doc/src/cli";
 
 // ── Host mirror ↔ canonical constants.ts parity ─────────────────────────────
-// preset-generator-logic.ts mirrors these four lists (it is bundled into a
+// preset-generator-logic.ts mirrors these five lists (it is bundled into a
 // client island and cannot reach the generator package's source at build time).
 // This block fails if either side drifts — the single-source-of-truth guard.
 
@@ -34,6 +36,9 @@ describe("host preset-generator lists mirror constants.ts exactly", () => {
   });
   it("HEADER_RIGHT_LABELS matches", () => {
     expect(HOST_HEADER_RIGHT_LABELS).toEqual(HEADER_RIGHT_LABELS);
+  });
+  it("THEME_PACKS matches", () => {
+    expect(HOST_THEME_PACKS).toEqual(THEME_PACKS);
   });
 });
 
@@ -94,6 +99,21 @@ describe("SUPPORTED_LANGS accepted by CLI validateArgs", () => {
       expect(
         error,
         `validateArgs({lang: "${value}"}) should return null but got: "${error}"`,
+      ).toBeNull();
+    },
+  );
+});
+
+// ── THEME_PACKS ──────────────────────────────────────────────────────────────
+
+describe("THEME_PACKS accepted by CLI validateArgs", () => {
+  it.each(THEME_PACKS.map((t) => [t.slug, t.label]))(
+    "--theme-pack %s is accepted by validateArgs",
+    (slug) => {
+      const error = validateArgs({ themePack: slug });
+      expect(
+        error,
+        `validateArgs({themePack: "${slug}"}) should return null but got: "${error}"`,
       ).toBeNull();
     },
   );

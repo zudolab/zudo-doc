@@ -15,3 +15,18 @@ export type {
   ColorSchemeProviderProps,
   ColorSchemeProviderColorMode,
 } from "./color-scheme-provider.js";
+
+// `resolveThemePackSsrSlug` MUST be re-exported here, and is deliberately the
+// ONLY theme-pack symbol on this subpath: `copy-routes-src.mjs` rewrites a
+// route's `../theme/<file>` import to the bare `@takazudo/zudo-doc/theme`
+// specifier, so anything `src/routes/**` imports from this directory has to be
+// reachable from this barrel or the site build fails with "No matching export"
+// (the in-package relative import typechecks fine, so only a real build catches
+// it). `src/routes/404.tsx` is the sole such importer today.
+//
+// The rest of `theme-pack-provider.js` (the ThemePackProvider component,
+// themePackVersionMap, buildThemePackBootstrap) stays OFF this public subpath —
+// its only other consumer is `head-with-defaults`, which lives outside
+// `src/routes/**` and therefore keeps its relative import unrewritten. Adding
+// them here would widen the frozen public API for no consumer.
+export { resolveThemePackSsrSlug } from "./theme-pack-provider.js";

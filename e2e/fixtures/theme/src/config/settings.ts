@@ -64,6 +64,12 @@ export const settings = {
   changelogs: false as ChangelogConfig[] | false,
   math: false,
   designTokenPanel: true as boolean,
+  // Enabled so e2e/theme-pack-switcher*.spec.ts and
+  // e2e/theme-pack-zdtp-interplay.spec.ts have the flyout to drive
+  // (epic Theme Core #2812, #2826). themePack stays explicit at its own
+  // default for fixture/showcase drift-diff clarity.
+  themePack: "default" as string,
+  themePackSwitcher: true as boolean,
   findInPage: false as boolean,
   dynamicPageTransition: true as boolean,
   docHistory: false,

@@ -10,7 +10,7 @@
 // client-side hydration never fires (orphan-component problem; same root
 // cause fixed for body-end islands in _body-end-islands.tsx).
 //
-// The fallback renders all 8 section headings as static SSR HTML so:
+// The fallback renders all 9 section headings as static SSR HTML so:
 //   1. Screen readers and search engines see the section structure (a11y/SEO).
 //   2. Layout does not collapse to nothing while JS loads (no-JS layout).
 //   3. The scanner traces this file → preset-generator.tsx via the Island child
@@ -31,7 +31,7 @@ import PresetGenerator from "@/components/preset-generator";
 // queries. Mirrors the pattern in _body-end-islands.tsx.
 (PresetGenerator as { displayName?: string }).displayName = "PresetGenerator";
 
-// Heading text for each of the 8 sections — must match the original
+// Heading text for each of the 9 sections — must match the original
 // SectionHeading calls in src/components/preset-generator.tsx exactly
 // so the SSR fallback and the real component render the same section labels.
 // Order must mirror the JSX source order in preset-generator.tsx — do NOT
@@ -42,6 +42,7 @@ const SECTION_HEADINGS = [
   "Default Language",
   "Color Scheme Mode",
   "Color Scheme",
+  "Theme Pack",
   "Features",
   "Header right items",
   "Markdown Options",
@@ -51,7 +52,7 @@ const SECTION_HEADINGS = [
 /**
  * Static SSR fallback for the interactive PresetGenerator form.
  *
- * Renders all 8 section headings as static HTML for a11y/SEO and no-JS
+ * Renders all 9 section headings as static HTML for a11y/SEO and no-JS
  * layout stability. Uses Island with ssrFallback so the zfb scanner traces
  * this file → preset-generator.tsx and registers the real component in the
  * island manifest for client-side mounting.

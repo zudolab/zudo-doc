@@ -25,6 +25,9 @@ export const settings = {
   // mount in this fixture — required to exercise the SPA-nav flash regression
   // (#2198), which only reproduces with the toggle island present.
   sidebarToggle: true as boolean,
+  // Mirrors the showcase default — themePackSwitcher stays off here
+  // (allowlisted, epic Theme Core #2812, #2826).
+  themePack: "default" as string,
   findInPage: false as boolean,
   dynamicPageTransition: true as boolean,
   noindex: true as boolean,

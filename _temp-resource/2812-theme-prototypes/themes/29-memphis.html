@@ -1,0 +1,744 @@
+<!doctype html>
+<!-- @theme-proto name="Memphis" slug="memphis" mode="light" fonts="Baloo 2, Nunito, Space Mono" description="80s Memphis toy-box: coral, teal, yellow & lilac confetti, squiggle underlines, offset shadow blocks on warm white." -->
+<html lang="en" data-theme="light" style="color-scheme: light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Memphis — zudo-doc theme prototype</title>
+<style>
+/* ============================================================
+   STRUCTURAL CSS — fixed. Mirrors the real zudo-doc page shape
+   and token contract. DO NOT EDIT below this block's rules;
+   themes express themselves ONLY through the THEME LAYER at the
+   end of this stylesheet (tokens + free-form extras).
+   Token names match the real @takazudo/zudo-doc contract:
+   --zd-* (semantic), --zd-syntax-* (code), --zdc-* (component
+   seams), --font-* (families). Dark/light uses the REAL
+   mechanism: light-dark() + html style="color-scheme:".
+   ============================================================ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  color-scheme: light dark;
+
+  /* ---- default token values (Default Light/Dark equivalents);
+          the THEME LAYER at the bottom overrides these ---- */
+  --zd-bg:           light-dark(oklch(.965 .004 65), oklch(.185 .005 65));
+  --zd-fg:           light-dark(oklch(.185 .005 65), oklch(.965 .004 65));
+  --zd-selection-bg: light-dark(oklch(.705 .008 65), oklch(.480 .008 65));
+  --zd-selection-fg: light-dark(oklch(.185 .005 65), oklch(.965 .004 65));
+  --zd-surface:      light-dark(oklch(.965 .004 65), oklch(.185 .005 65));
+  --zd-muted:        light-dark(oklch(.480 .008 65), oklch(.705 .008 65));
+  --zd-accent:       light-dark(oklch(.470 .120 56), oklch(.700 .158 62));
+  --zd-accent-hover: light-dark(oklch(.400 .096 56), oklch(.755 .130 64));
+  --zd-code-bg:      light-dark(oklch(.965 .004 65), oklch(.300 .006 65));
+  --zd-code-fg:      light-dark(oklch(.185 .005 65), oklch(.965 .004 65));
+  --zd-success:      light-dark(oklch(.470 .140 145), oklch(.680 .145 145));
+  --zd-danger:       light-dark(oklch(.505 .170 25),  oklch(.655 .170 25));
+  --zd-warning:      light-dark(oklch(.490 .100 82),  oklch(.760 .135 82));
+  --zd-info:         light-dark(oklch(.485 .122 245), oklch(.680 .130 245));
+
+  --zd-syntax-comment:  light-dark(oklch(.480 .008 65), oklch(.705 .008 65));
+  --zd-syntax-string:   light-dark(oklch(.470 .140 145), oklch(.680 .145 145));
+  --zd-syntax-number:   light-dark(oklch(.490 .100 82), oklch(.760 .135 82));
+  --zd-syntax-keyword:  light-dark(oklch(.470 .120 56), oklch(.700 .158 62));
+  --zd-syntax-callable: light-dark(oklch(.485 .122 245), oklch(.680 .130 245));
+  --zd-syntax-type:     light-dark(oklch(.490 .100 82), oklch(.760 .135 82));
+  --zd-syntax-name:     light-dark(oklch(.185 .005 65), oklch(.965 .004 65));
+
+  --font-sans: system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* component-token seams (Tier 3) — themes may re-point these */
+  --zdc-doc-title-font: inherit;
+  --zdc-doc-title-weight: 700;
+  --zdc-doc-title-tracking: normal;
+  --zdc-doc-h2-font: inherit;
+  --zdc-doc-h2-weight: 700;
+  --zdc-doc-h2-tracking: normal;
+  --zdc-doc-prose-font: var(--font-sans);
+  --zdc-doc-link-decoration: underline;
+  --zdc-admonition-radius: 0 4px 4px 0;
+  --zdc-admonition-border-width: 4px;
+  --zdc-card-radius: 4px;
+  --zdc-nav-active-indicator-color: var(--zd-fg);
+
+  --radius: 4px;
+  --radius-lg: 8px;
+  --header-h: 3.5rem;
+  --sidebar-w: 16rem;
+  --toc-w: 240px;
+}
+
+::selection { background: var(--zd-selection-bg); color: var(--zd-selection-fg); }
+
+body {
+  min-height: 100vh;
+  background-color: var(--zd-bg);
+  color: var(--zd-fg);
+  font-family: var(--font-sans);
+  font-size: 1.05rem;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- header ---------- */
+header[data-header] {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center;
+  height: var(--header-h);
+  padding: 0 1rem;
+  background-color: var(--zd-surface);
+  border-bottom: 1px solid color-mix(in oklch, var(--zd-muted) 45%, transparent);
+}
+[data-header-logo] {
+  font-size: 1.25rem; font-weight: 700;
+  color: var(--zd-fg); text-decoration: none; white-space: nowrap;
+}
+[data-header-nav] { display: flex; align-items: center; gap: .25rem; margin-left: 1.5rem; flex: 1; min-width: 0; }
+[data-nav-item] {
+  padding: .3rem .75rem; font-size: .9rem; font-weight: 500;
+  color: var(--zd-muted); text-decoration: none; white-space: nowrap;
+}
+[data-nav-item]:hover { text-decoration: underline; color: var(--zd-fg); }
+[data-header-right] { margin-left: auto; display: flex; align-items: center; gap: .75rem; }
+.hdr-icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 2rem; height: 2rem; border: none; background: none; cursor: pointer;
+  color: var(--zd-muted); border-radius: var(--radius);
+}
+.hdr-icon-btn:hover { color: var(--zd-fg); background: color-mix(in oklch, var(--zd-muted) 15%, transparent); }
+.hdr-search {
+  display: flex; align-items: center; gap: .4rem;
+  border: 1px solid color-mix(in oklch, var(--zd-muted) 50%, transparent);
+  border-radius: var(--radius); padding: .25rem .6rem;
+  font-size: .85rem; color: var(--zd-muted); background: var(--zd-bg);
+}
+
+/* ---------- sidebar ---------- */
+#desktop-sidebar {
+  position: fixed; top: var(--header-h); left: 0; z-index: 10;
+  width: var(--sidebar-w); height: calc(100vh - var(--header-h));
+  overflow-y: auto;
+  background-color: var(--zd-bg);
+  border-right: 1px solid color-mix(in oklch, var(--zd-muted) 45%, transparent);
+  padding: 1.25rem .9rem 2.5rem;
+  font-size: .9rem;
+}
+.sb-group { margin-bottom: 1.1rem; }
+.sb-group > p {
+  font-size: .78rem; font-weight: 600; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--zd-muted); margin-bottom: .35rem;
+}
+.sb-group a {
+  display: block; padding: .28rem .55rem; color: var(--zd-muted);
+  text-decoration: none; border-radius: var(--radius);
+}
+.sb-group a:hover { color: var(--zd-fg); text-decoration: underline; }
+.sb-group a[data-nav-active] {
+  background: var(--zdc-nav-active-indicator-color);
+  color: var(--zd-bg); font-weight: 500;
+}
+
+/* ---------- layout band ---------- */
+.zd-sidebar-content-wrapper { margin-left: var(--sidebar-w); }
+.zd-doc-content-band {
+  display: flex; gap: clamp(1.5rem, 3vw, 4rem);
+  max-width: clamp(50rem, 78vw, 88rem);
+  margin: 0 auto; width: 100%;
+}
+main { flex: 1; min-width: 0; padding: 2.5rem 2rem 3.5rem; }
+
+/* ---------- breadcrumb ---------- */
+nav[aria-label="Breadcrumb"] { font-size: .85rem; margin-bottom: 1.25rem; }
+nav[aria-label="Breadcrumb"] ol { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; list-style: none; }
+nav[aria-label="Breadcrumb"] a { color: var(--zd-muted); }
+nav[aria-label="Breadcrumb"] .crumb-sep { color: var(--zd-muted); opacity: .6; }
+nav[aria-label="Breadcrumb"] .crumb-current { color: var(--zd-fg); }
+
+/* ---------- content typography (.zd-content) ---------- */
+.zd-content { font-family: var(--zdc-doc-prose-font); }
+.zd-content h1 {
+  font-family: var(--zdc-doc-title-font);
+  font-weight: var(--zdc-doc-title-weight);
+  letter-spacing: var(--zdc-doc-title-tracking);
+  font-size: 2.6rem; line-height: 1.15; margin-bottom: .5rem;
+}
+.zd-content .lead { font-size: 1.25rem; color: var(--zd-muted); margin-bottom: 1.75rem; }
+.zd-content h2 {
+  font-family: var(--zdc-doc-h2-font);
+  font-weight: var(--zdc-doc-h2-weight);
+  letter-spacing: var(--zdc-doc-h2-tracking);
+  font-size: 1.45rem; line-height: 1.25;
+  margin-top: 2.75rem; margin-bottom: 1rem; padding-top: 1.1rem;
+  border-top: 3px solid transparent;
+  border-image: linear-gradient(to right, var(--zd-fg), transparent) 1;
+}
+.zd-content h3 { font-size: 1.15rem; font-weight: 700; margin-top: 2rem; margin-bottom: .75rem; }
+.zd-content p { margin-bottom: 1rem; }
+.zd-content a { color: var(--zd-accent); text-decoration: var(--zdc-doc-link-decoration); }
+.zd-content a:hover { color: var(--zd-accent-hover); }
+.zd-content strong { font-weight: 700; }
+.zd-content ul, .zd-content ol { margin: 0 0 1rem 1.4rem; }
+.zd-content li { margin-bottom: .35rem; }
+.zd-content blockquote {
+  border-left: 3px solid var(--zd-muted); padding: .25rem 0 .25rem 1.1rem;
+  color: var(--zd-muted); margin: 0 0 1rem;
+}
+.zd-content hr { border: none; border-top: 1px solid color-mix(in oklch, var(--zd-muted) 45%, transparent); margin: 2.25rem 0; }
+
+/* inline code */
+.zd-content code:not(pre code) {
+  font-family: var(--font-mono); font-size: .88em; font-weight: 500;
+  background-color: var(--zd-code-bg); color: var(--zd-code-fg);
+  border-radius: var(--radius); padding: 2px .4rem;
+}
+
+/* ---------- code blocks (class-mode highlighter) ---------- */
+.code-block-wrapper { position: relative; margin: 0 0 1.25rem; }
+pre.hi-root {
+  font-family: var(--font-mono); font-size: .9rem; line-height: 1.6;
+  border: 1px solid color-mix(in oklch, var(--zd-muted) 45%, transparent);
+  border-radius: var(--radius);
+  padding: 1rem 1.1rem; overflow-x: auto;
+  background-color: var(--zd-code-bg); color: var(--zd-code-fg);
+}
+.hi-com   { color: var(--zd-syntax-comment); font-style: italic; }
+.hi-str   { color: var(--zd-syntax-string); }
+.hi-num, .hi-const { color: var(--zd-syntax-number); }
+.hi-kw    { color: var(--zd-syntax-keyword); }
+.hi-fn    { color: var(--zd-syntax-callable); }
+.hi-ty    { color: var(--zd-syntax-type); }
+.hi-prop, .hi-var, .hi-tag, .hi-attr { color: var(--zd-syntax-name); }
+.hi-punct, .hi-op { color: var(--zd-code-fg); opacity: .75; }
+
+/* ---------- admonitions ---------- */
+[data-admonition] {
+  border-left: var(--zdc-admonition-border-width) solid var(--zd-muted);
+  padding: 1rem 1rem .8rem;
+  background-color: color-mix(in srgb, var(--zd-muted) 12%, var(--zd-bg));
+  border-radius: var(--zdc-admonition-radius);
+  margin: 0 0 1.25rem;
+}
+[data-admonition] .admonition-title { font-weight: 700; margin-bottom: .35rem; }
+[data-admonition] .admonition-body p:last-child { margin-bottom: 0; }
+[data-admonition="note"]    { border-left-color: var(--zd-accent);  background-color: color-mix(in srgb, var(--zd-accent) 12%, var(--zd-bg)); }
+[data-admonition="note"]    .admonition-title { color: var(--zd-accent); }
+[data-admonition="note"]    .admonition-title::before { content: "📝 "; }
+[data-admonition="tip"]     { border-left-color: var(--zd-success); background-color: color-mix(in srgb, var(--zd-success) 12%, var(--zd-bg)); }
+[data-admonition="tip"]     .admonition-title { color: var(--zd-success); }
+[data-admonition="tip"]     .admonition-title::before { content: "💡 "; }
+[data-admonition="warning"] { border-left-color: var(--zd-warning); background-color: color-mix(in srgb, var(--zd-warning) 12%, var(--zd-bg)); }
+[data-admonition="warning"] .admonition-title { color: var(--zd-warning); }
+[data-admonition="warning"] .admonition-title::before { content: "⚠️ "; }
+
+/* ---------- table ---------- */
+.table-wrap { overflow-x: auto; margin: 0 0 1.25rem; }
+.zd-content table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+.zd-content th, .zd-content td {
+  padding: .55rem .75rem; text-align: left;
+  border-bottom: 1px solid color-mix(in oklch, var(--zd-muted) 45%, transparent);
+}
+.zd-content th { border-bottom-width: 2px; font-weight: 600; }
+
+/* ---------- pager ---------- */
+.doc-pager { display: flex; justify-content: space-between; gap: 1rem; margin-top: 3rem; }
+.doc-pager a {
+  flex: 1; max-width: 48%; border: 1px solid color-mix(in oklch, var(--zd-muted) 45%, transparent);
+  border-radius: var(--zdc-card-radius); padding: .8rem 1rem;
+  text-decoration: none; color: var(--zd-fg);
+}
+.doc-pager a:hover { border-color: var(--zd-accent); }
+.doc-pager .pager-label { display: block; font-size: .78rem; color: var(--zd-muted); margin-bottom: .2rem; }
+.doc-pager .pager-title { color: var(--zd-accent); font-weight: 500; }
+.doc-pager a.next { text-align: right; }
+
+/* ---------- TOC ---------- */
+nav[data-zd-toc] {
+  width: var(--toc-w); flex-shrink: 0;
+  position: sticky; top: var(--header-h); align-self: flex-start;
+  padding-top: 2.5rem; height: calc(100vh - var(--header-h));
+  font-size: .85rem;
+}
+nav[data-zd-toc] .toc-title { font-size: .78rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--zd-muted); margin-bottom: .5rem; padding-left: 1rem; }
+nav[data-zd-toc] ul { list-style: none; border-left: 1px solid color-mix(in oklch, var(--zd-muted) 45%, transparent); padding-left: 1rem; }
+nav[data-zd-toc] a { display: block; padding: .22rem 0; color: var(--zd-muted); text-decoration: none; line-height: 1.4; }
+nav[data-zd-toc] a:hover { text-decoration: underline; }
+nav[data-zd-toc] a.toc-active { color: var(--zd-bg); background: var(--zd-fg); font-weight: 500; padding-left: .4rem; margin-left: -.4rem; }
+
+/* ---------- footer ---------- */
+footer[data-footer] {
+  border-top: 1px solid color-mix(in oklch, var(--zd-muted) 45%, transparent);
+  background-color: var(--zd-surface); margin-top: 2rem;
+}
+footer[data-footer] .footer-inner { max-width: clamp(50rem, 78vw, 88rem); margin: 0 auto; padding: 2rem; }
+footer[data-footer] .footer-copy { text-align: center; font-size: .8rem; color: var(--zd-muted); }
+footer[data-footer] a { color: var(--zd-accent); }
+
+/* ---------- theme-switcher flyout mock (the feature itself) ---------- */
+.tp-flyout {
+  position: fixed; right: 1.25rem; bottom: 4.25rem; z-index: 40;
+  width: 21rem; max-width: calc(100vw - 2.5rem);
+  background: var(--zd-surface); color: var(--zd-fg);
+  border: 1px solid color-mix(in oklch, var(--zd-muted) 50%, transparent);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 30px -6px rgb(0 0 0 / .3);
+  padding: 1.1rem 1.2rem 1rem;
+}
+.tp-flyout-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem; margin-bottom: .4rem; }
+.tp-flyout-title { font-size: 1.15rem; font-weight: 700; }
+.tp-flyout-close { border: none; background: none; color: var(--zd-muted); cursor: pointer; font-size: 1rem; line-height: 1; padding: .2rem; }
+.tp-flyout-notes { font-size: .85rem; color: var(--zd-muted); margin-bottom: .85rem; }
+.tp-flyout-controls { display: flex; align-items: center; gap: .5rem; }
+.tp-flyout-controls .tp-btn {
+  display: inline-flex; align-items: center; gap: .3rem;
+  border: 1px solid color-mix(in oklch, var(--zd-muted) 50%, transparent);
+  background: var(--zd-bg); color: var(--zd-fg);
+  border-radius: var(--radius); padding: .35rem .7rem;
+  font-size: .82rem; cursor: pointer;
+}
+.tp-flyout-controls .tp-btn:hover { border-color: var(--zd-accent); color: var(--zd-accent); }
+.tp-flyout-controls .tp-grid-btn { margin-left: auto; }
+.tp-launcher {
+  position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 40;
+  width: 2.4rem; height: 2.4rem; border-radius: 9999px;
+  border: 1px solid color-mix(in oklch, var(--zd-muted) 50%, transparent);
+  background: var(--zd-surface); color: var(--zd-fg);
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; box-shadow: 0 4px 14px -4px rgb(0 0 0 / .35);
+  font-size: 1.05rem;
+}
+.tp-launcher:hover { color: var(--zd-accent); border-color: var(--zd-accent); }
+
+@media (max-width: 1100px) { nav[data-zd-toc] { display: none; } }
+@media (max-width: 860px)  { #desktop-sidebar { display: none; } .zd-sidebar-content-wrapper { margin-left: 0; } }
+
+/* ============================================================
+   THEME LAYER — "Memphis"
+   The theme prototype edits ONLY from here down (plus the meta
+   comment on line 2, the <title>, the html[data-theme]/style
+   initial mode, and the flyout mock's title/notes text).
+   1) Web font imports (Google Fonts @import ok)
+   2) Token overrides — BOTH light and dark values via light-dark()
+   3) Free-form extras: backgrounds, borders, per-component
+      restyling, ::before icon swaps... go as aggressive as the
+      brief demands, but keep the page readable and usable.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,400&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+
+:root {
+  /* Memphis confetti primitives — one hue per toy in the box.
+     Radius decision: the brief is a rounded toy-box, so cards and
+     admonitions get a deliberate 14px; pills for nav; offset BLOCK
+     shadows (solid, no blur) carry the 80s Memphis geometry. */
+  --mem-coral:  light-dark(oklch(.62 .17 30),  oklch(.72 .15 28));
+  --mem-teal:   light-dark(oklch(.63 .11 185), oklch(.70 .11 182));
+  --mem-yellow: light-dark(oklch(.84 .15 90),  oklch(.80 .14 90));
+  --mem-lilac:  light-dark(oklch(.70 .11 300), oklch(.64 .11 300));
+  --mem-line:   light-dark(oklch(.26 .02 50),  oklch(.90 .015 90));
+
+  /* warm white paper / deep plum toy-box after dark */
+  --zd-bg:           light-dark(oklch(.973 .013 85), oklch(.228 .022 300));
+  --zd-fg:           light-dark(oklch(.25 .02 50),   oklch(.94 .012 85));
+  --zd-selection-bg: light-dark(oklch(.86 .15 92),   oklch(.44 .10 300));
+  --zd-selection-fg: light-dark(oklch(.25 .02 50),   oklch(.97 .01 90));
+  --zd-surface:      light-dark(oklch(.99 .008 90),  oklch(.262 .025 300));
+  --zd-muted:        light-dark(oklch(.46 .03 55),   oklch(.75 .03 300));
+  --zd-accent:       light-dark(oklch(.54 .17 28),   oklch(.76 .13 27));
+  --zd-accent-hover: light-dark(oklch(.46 .16 28),   oklch(.82 .11 30));
+  --zd-code-bg:      light-dark(oklch(.99 .006 95),  oklch(.272 .028 300));
+  --zd-code-fg:      light-dark(oklch(.27 .02 50),   oklch(.93 .012 90));
+  --zd-success:      light-dark(oklch(.47 .10 185),  oklch(.75 .11 180));
+  --zd-danger:       light-dark(oklch(.52 .18 26),   oklch(.72 .15 26));
+  --zd-warning:      light-dark(oklch(.54 .12 80),   oklch(.83 .13 88));
+  --zd-info:         light-dark(oklch(.49 .12 240),  oklch(.75 .10 232));
+
+  /* syntax = the confetti, one shape per token family */
+  --zd-syntax-comment:  light-dark(oklch(.51 .025 60),  oklch(.70 .03 300));
+  --zd-syntax-string:   light-dark(oklch(.47 .10 188),  oklch(.80 .11 180));
+  --zd-syntax-number:   light-dark(oklch(.53 .12 78),   oklch(.85 .13 92));
+  --zd-syntax-keyword:  light-dark(oklch(.53 .18 28),   oklch(.76 .14 26));
+  --zd-syntax-callable: light-dark(oklch(.48 .15 300),  oklch(.79 .10 300));
+  --zd-syntax-type:     light-dark(oklch(.47 .11 235),  oklch(.78 .09 225));
+  --zd-syntax-name:     light-dark(oklch(.27 .02 50),   oklch(.93 .012 90));
+
+  --font-sans: "Nunito", "Avenir Next", "Trebuchet MS", system-ui, sans-serif;
+  --font-mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --zdc-doc-title-font: "Baloo 2", "Nunito", system-ui, sans-serif;
+  --zdc-doc-title-weight: 700;
+  --zdc-doc-title-tracking: .005em;
+  --zdc-doc-h2-font: "Baloo 2", "Nunito", system-ui, sans-serif;
+  --zdc-doc-h2-weight: 700;
+  --zdc-doc-h2-tracking: .01em;
+  --zdc-admonition-radius: 14px;
+  --zdc-card-radius: 14px;
+  --zdc-nav-active-indicator-color: var(--zd-accent);
+
+  --radius: 10px;
+  --radius-lg: 18px;
+}
+
+/* ============ Memphis extras ============ */
+
+/* -- focus ring in toy teal, everywhere -- */
+:focus-visible { outline: 3px solid var(--mem-teal); outline-offset: 2px; }
+
+/* -- header: chunky logo dot + coral squiggle baseline -- */
+header[data-header] {
+  border-bottom-color: transparent;
+  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='12' viewBox='0 0 28 12'><path d='M0 6.5q7-7 14 0t14 0' fill='none' stroke='%23d95d43' stroke-width='2.4' stroke-linecap='round'/></svg>");
+  background-repeat: repeat-x;
+  background-position: left bottom;
+  background-size: 28px 12px;
+}
+[data-header-logo] { font-family: var(--zdc-doc-title-font); font-weight: 800; font-size: 1.35rem; letter-spacing: .01em; }
+[data-header-logo]::after {
+  content: ""; display: inline-block; width: .45rem; height: .45rem;
+  margin-left: .4rem; border-radius: 50%; background: var(--mem-coral);
+  vertical-align: baseline;
+}
+[data-nav-item] { font-weight: 700; font-size: .88rem; }
+[data-nav-item]:hover {
+  color: var(--zd-fg);
+  text-decoration: underline wavy var(--mem-coral) 2px;
+  text-underline-offset: 6px;
+}
+.hdr-icon-btn:hover { color: var(--zd-fg); background: color-mix(in srgb, var(--mem-yellow) 35%, transparent); }
+.hdr-search {
+  border: 2px solid color-mix(in srgb, var(--mem-line) 55%, transparent);
+  border-radius: 999px; padding: .25rem .8rem; font-weight: 600;
+}
+
+/* -- sidebar: confetti wall + geometric group markers + pill links -- */
+#desktop-sidebar {
+  border-right: 2px dotted color-mix(in srgb, var(--mem-lilac) 65%, transparent);
+  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='170' height='170' viewBox='0 0 170 170'><g fill='none' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round' opacity='.34'><path d='M18 30q7-7 14 0t14 0' stroke='%23d95d43'/><path d='M100 134q7-7 14 0t14 0' stroke='%239b7fc7'/><path d='M116 40l11-18 11 18z' stroke='%232e9d92'/><path d='M34 112h16M42 104v16' stroke='%23e0a90f'/><circle cx='74' cy='76' r='5' stroke='%23d95d43'/><circle cx='148' cy='92' r='3.5' fill='%232e9d92' stroke='none'/><circle cx='56' cy='152' r='3.5' fill='%23e0a90f' stroke='none'/><path d='M132 148l9 9M141 148l-9 9' stroke='%239b7fc7'/></g></svg>");
+  background-size: 170px 170px;
+}
+.sb-group > p { font-family: var(--zdc-doc-h2-font); font-weight: 700; letter-spacing: .1em; }
+.sb-group > p::before {
+  content: ""; display: inline-block; width: .55em; height: .55em;
+  margin-right: .5em; background: var(--mem-coral); transform: rotate(10deg);
+  vertical-align: baseline;
+}
+.sb-group:nth-of-type(2) > p::before { background: var(--mem-teal); border-radius: 50%; transform: none; }
+.sb-group:nth-of-type(3) > p::before {
+  width: 0; height: 0; background: transparent; transform: rotate(-6deg);
+  border-left: .35em solid transparent; border-right: .35em solid transparent;
+  border-bottom: .55em solid var(--mem-yellow);
+}
+.sb-group a { border-radius: 999px; font-weight: 600; }
+.sb-group a:hover {
+  text-decoration: none; color: var(--zd-fg);
+  background: color-mix(in srgb, var(--mem-yellow) 26%, transparent);
+}
+.sb-group a[data-nav-active] { font-weight: 800; }
+
+/* -- title: chunky Baloo + yellow offset shadow + coral squiggle underline -- */
+.zd-content h1 {
+  padding-bottom: 1rem;
+  text-shadow: 3px 3px 0 color-mix(in srgb, var(--mem-yellow) 85%, transparent);
+  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='12' viewBox='0 0 28 12'><path d='M0 6.5q7-7 14 0t14 0' fill='none' stroke='%23d95d43' stroke-width='2.4' stroke-linecap='round'/></svg>");
+  background-repeat: repeat-x;
+  background-position: left bottom;
+  background-size: 28px 12px;
+}
+.zd-content .lead { font-weight: 600; }
+
+/* -- h2: four-color confetti rule instead of the fading gradient -- */
+.zd-content h2 {
+  border-top-width: 4px;
+  border-image: linear-gradient(to right,
+    var(--mem-coral) 0 22%, var(--mem-yellow) 22% 44%,
+    var(--mem-teal) 44% 66%, var(--mem-lilac) 66% 88%,
+    transparent 88% 100%) 1;
+}
+.zd-content h3 { font-family: var(--zdc-doc-h2-font); letter-spacing: .01em; }
+
+/* -- prose details -- */
+.zd-content a:hover { text-decoration: underline wavy; text-underline-offset: 4px; }
+.zd-content ul li::marker { color: var(--mem-coral); }
+.zd-content ol li::marker { color: var(--mem-teal); font-weight: 800; }
+.zd-content blockquote {
+  border-left: 4px solid var(--mem-lilac);
+  font-style: italic; color: var(--zd-muted);
+}
+.zd-content hr {
+  border: none; height: 12px; margin: 2.5rem 0;
+  background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='12' viewBox='0 0 28 12'><path d='M0 6.5q7-7 14 0t14 0' fill='none' stroke='%239b7fc7' stroke-width='2.4' stroke-linecap='round'/></svg>") repeat-x left center / 28px 12px;
+}
+
+/* -- inline code: butter-yellow candy pill -- */
+.zd-content code:not(pre code) {
+  background: color-mix(in srgb, var(--mem-yellow) 26%, var(--zd-bg));
+  border: 1px solid color-mix(in srgb, var(--mem-yellow) 55%, transparent);
+  border-radius: 8px; color: var(--zd-fg); font-weight: 700;
+}
+
+/* -- code block: ink outline + solid teal offset block shadow -- */
+pre.hi-root {
+  border: 2px solid var(--mem-line);
+  border-radius: 12px;
+  box-shadow: 7px 7px 0 var(--mem-teal);
+}
+.code-block-wrapper { margin-right: 7px; }
+
+/* -- admonitions: toy cards — full ink outline, fat colored spine,
+      matching solid offset shadow, geometric glyph icons -- */
+[data-admonition] {
+  border: 2px solid var(--mem-line);
+  border-left-width: 10px;
+  margin-right: 6px;
+}
+[data-admonition] .admonition-title { font-family: var(--zdc-doc-h2-font); font-size: 1.05rem; letter-spacing: .01em; }
+[data-admonition="note"]    { border-left-color: var(--zd-accent);  box-shadow: 6px 6px 0 color-mix(in srgb, var(--mem-coral) 55%, transparent); }
+[data-admonition="note"]    .admonition-title::before { content: "✱ "; }
+[data-admonition="tip"]     { border-left-color: var(--zd-success); box-shadow: 6px 6px 0 color-mix(in srgb, var(--mem-teal) 55%, transparent); }
+[data-admonition="tip"]     .admonition-title::before { content: "◉ "; }
+[data-admonition="warning"] { border-left-color: var(--zd-warning); box-shadow: 6px 6px 0 color-mix(in srgb, var(--mem-yellow) 70%, transparent); }
+[data-admonition="warning"] .admonition-title::before { content: "▲ "; }
+
+/* -- table: Baloo headers on a hard ink rule, lilac zebra -- */
+.zd-content th {
+  font-family: var(--zdc-doc-h2-font); font-weight: 700; letter-spacing: .02em;
+  border-bottom: 3px solid var(--mem-line);
+}
+.zd-content tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--mem-lilac) 8%, transparent); }
+
+/* -- pager: toy cards with lilac/teal offset shadows -- */
+.doc-pager a {
+  border: 2px solid var(--mem-line);
+  background: var(--zd-surface);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.doc-pager a.prev { box-shadow: 5px 5px 0 color-mix(in srgb, var(--mem-lilac) 70%, transparent); }
+.doc-pager a.next { box-shadow: 5px 5px 0 color-mix(in srgb, var(--mem-teal) 70%, transparent); }
+.doc-pager a:hover {
+  border-color: var(--mem-line);
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0 var(--mem-coral);
+}
+.doc-pager .pager-label { font-weight: 700; letter-spacing: .04em; }
+.doc-pager .pager-title { font-family: var(--zdc-doc-h2-font); font-weight: 700; }
+
+/* -- TOC: dotted lilac spine, coral pill for the active line -- */
+nav[data-zd-toc] ul { border-left: 2px dotted color-mix(in srgb, var(--mem-lilac) 70%, transparent); }
+nav[data-zd-toc] .toc-title { font-family: var(--zdc-doc-h2-font); font-weight: 700; letter-spacing: .1em; }
+nav[data-zd-toc] a.toc-active {
+  background: var(--zd-accent); color: var(--zd-bg);
+  border-radius: 999px; font-weight: 700;
+  padding-left: .55rem; padding-right: .55rem; margin-left: -.55rem;
+}
+
+/* -- footer: teal squiggle top edge + faint confetti -- */
+footer[data-footer] {
+  border-top-color: transparent;
+  background-image:
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='12' viewBox='0 0 28 12'><path d='M0 6.5q7-7 14 0t14 0' fill='none' stroke='%232e9d92' stroke-width='2.4' stroke-linecap='round'/></svg>"),
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='170' height='170' viewBox='0 0 170 170'><g fill='none' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round' opacity='.22'><path d='M18 30q7-7 14 0t14 0' stroke='%23d95d43'/><path d='M100 134q7-7 14 0t14 0' stroke='%239b7fc7'/><path d='M116 40l11-18 11 18z' stroke='%232e9d92'/><path d='M34 112h16M42 104v16' stroke='%23e0a90f'/><circle cx='74' cy='76' r='5' stroke='%23d95d43'/><circle cx='148' cy='92' r='3.5' fill='%232e9d92' stroke='none'/><circle cx='56' cy='152' r='3.5' fill='%23e0a90f' stroke='none'/><path d='M132 148l9 9M141 148l-9 9' stroke='%239b7fc7'/></g></svg>");
+  background-repeat: repeat-x, repeat;
+  background-position: left top, left top;
+  background-size: 28px 12px, 170px 170px;
+}
+footer[data-footer] .footer-copy { font-weight: 600; }
+
+/* -- breadcrumb -- */
+nav[aria-label="Breadcrumb"] .crumb-current { font-weight: 700; }
+nav[aria-label="Breadcrumb"] .crumb-sep { color: var(--mem-coral); opacity: 1; }
+
+/* -- selection already tokenized; give ::selection candy handled above -- */
+
+/* -- flyout: the hero toy — ink outline, coral block shadow, gentle tilt -- */
+.tp-flyout {
+  border: 2px solid var(--mem-line);
+  box-shadow: 9px 9px 0 var(--mem-coral);
+  transform: rotate(-.6deg);
+}
+.tp-flyout-title { font-family: var(--zdc-doc-h2-font); font-weight: 800; font-size: 1.25rem; }
+.tp-flyout-title::before { content: "✱ "; color: var(--mem-coral); }
+.tp-flyout-notes { font-weight: 600; }
+.tp-flyout-controls .tp-btn {
+  border: 2px solid color-mix(in srgb, var(--mem-line) 70%, transparent);
+  border-radius: 999px; font-weight: 700;
+}
+.tp-flyout-controls .tp-btn:hover {
+  border-color: var(--mem-line); color: var(--zd-fg);
+  background: color-mix(in srgb, var(--mem-yellow) 30%, transparent);
+}
+.tp-flyout-close:hover { color: var(--mem-coral); }
+
+/* -- launcher: a yellow toy button -- */
+.tp-launcher {
+  border: 2px solid var(--mem-line);
+  background: color-mix(in srgb, var(--mem-yellow) 80%, var(--zd-surface));
+  box-shadow: 4px 4px 0 var(--mem-coral);
+  transition: transform .15s ease;
+}
+.tp-launcher:hover { border-color: var(--mem-line); transform: rotate(-10deg) scale(1.06); }
+</style>
+</head>
+<body>
+
+<header data-header>
+  <a href="#" data-header-logo>zudo-doc</a>
+  <nav data-header-nav aria-label="Main">
+    <a href="#" data-nav-item>Getting Started</a>
+    <a href="#" data-nav-item>Guides</a>
+    <a href="#" data-nav-item>Reference</a>
+    <a href="#" data-nav-item>Examples</a>
+  </nav>
+  <div data-header-right>
+    <span class="hdr-search">🔍 Search docs…</span>
+    <button class="hdr-icon-btn" id="mode-toggle" title="Toggle light/dark" aria-label="Toggle color mode">◐</button>
+    <button class="hdr-icon-btn" title="Theme" aria-label="Theme switcher">🎨</button>
+    <button class="hdr-icon-btn" title="GitHub" aria-label="GitHub">
+      <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+    </button>
+  </div>
+</header>
+
+<aside id="desktop-sidebar" aria-label="Documentation sidebar">
+  <div class="sb-group">
+    <p>Getting Started</p>
+    <a href="#">Introduction</a>
+    <a href="#">Installation</a>
+    <a href="#">Project Structure</a>
+  </div>
+  <div class="sb-group">
+    <p>Guides</p>
+    <a href="#">Writing Content</a>
+    <a href="#" data-nav-active>Theming Your Docs</a>
+    <a href="#">Color Schemes</a>
+    <a href="#">Search</a>
+    <a href="#">Internationalization</a>
+  </div>
+  <div class="sb-group">
+    <p>Reference</p>
+    <a href="#">Configuration</a>
+    <a href="#">Design Tokens</a>
+    <a href="#">Components</a>
+    <a href="#">CLI</a>
+  </div>
+</aside>
+
+<div class="zd-sidebar-content-wrapper">
+  <div class="zd-doc-content-band">
+    <main>
+      <nav aria-label="Breadcrumb">
+        <ol>
+          <li><a href="#">🏠</a></li>
+          <li><span class="crumb-sep">›</span> <a href="#">Guides</a></li>
+          <li><span class="crumb-sep">›</span> <span class="crumb-current">Theming Your Docs</span></li>
+        </ol>
+      </nav>
+
+      <article class="zd-content">
+        <h1>Theming Your Docs</h1>
+        <p class="lead">Give your documentation a personality — swap tokens, fonts, and component styling with a single installable theme.</p>
+
+        <p>Every zudo-doc site ships with a <strong>design-token contract</strong>: colors, typography, spacing, and component seams are all expressed as CSS custom properties. A theme is a curated bundle that overrides those tokens — and, when it wants to go further, restyles <a href="#">individual components</a> directly. Install one with <code>zudo-doc theme apply</code> and the whole site repaints.</p>
+
+        <h2 id="how-themes-work">How themes work</h2>
+        <p>A theme layers on top of your color scheme. It can re-point semantic roles like <code>--zd-accent</code>, swap the reading typeface, attach backgrounds, and re-shape details like admonition borders or heading rules.</p>
+
+        <div class="admonition admonition-note" data-admonition="note">
+          <p class="admonition-title">Note</p>
+          <div class="admonition-body"><p>Themes are independent from the light/dark mode toggle — every theme defines both a light and a dark palette, and the toggle keeps working.</p></div>
+        </div>
+
+        <pre class="hi-root"><code><span class="line"><span class="hi-com">// zfb.config.ts — pick your theme</span>
+</span><span class="line"><span class="hi-kw">import</span> { <span class="hi-fn">zudoDoc</span> } <span class="hi-kw">from</span> <span class="hi-str">"@takazudo/zudo-doc/config"</span>;
+</span><span class="line">
+</span><span class="line"><span class="hi-kw">export default</span> <span class="hi-fn">zudoDoc</span>({
+</span><span class="line">  <span class="hi-prop">title</span>: <span class="hi-str">"My Docs"</span>,
+</span><span class="line">  <span class="hi-prop">themePack</span>: <span class="hi-str">"memphis"</span>,
+</span><span class="line">  <span class="hi-prop">themePackSwitcher</span>: <span class="hi-kw">true</span>,  <span class="hi-com">// bottom-right flyout</span>
+</span><span class="line">  <span class="hi-prop">maxTocDepth</span>: <span class="hi-num">3</span>,
+</span><span class="line">});</span></code></pre>
+
+        <h2 id="what-a-theme-controls">What a theme controls</h2>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Layer</th><th>Tokens</th><th>Examples</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Colors</td><td><code>--zd-*</code></td><td>backgrounds, accents, syntax palette</td></tr>
+              <tr><td>Typography</td><td><code>--font-*</code>, <code>--zdc-doc-*</code></td><td>reading face, heading face &amp; weight</td></tr>
+              <tr><td>Components</td><td><code>--zdc-*</code></td><td>admonition shape, card radius, nav marker</td></tr>
+              <tr><td>Extras</td><td>free CSS</td><td>page backgrounds, borders, decorations</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="admonition admonition-tip" data-admonition="tip">
+          <p class="admonition-title">Tip</p>
+          <div class="admonition-body"><p>Use the <strong>prev / next</strong> buttons in the theme flyout to walk the whole collection live on your own content.</p></div>
+        </div>
+
+        <h3 id="syntax-highlighting">Syntax highlighting</h3>
+        <p>Code fences render with semantic token classes, so a theme restyles every language at once: <code>keywords</code>, strings, numbers, and callables each follow their own token.</p>
+
+        <blockquote>Good themes change the mood, not the meaning — hierarchy and affordances survive every swap.</blockquote>
+
+        <div class="admonition admonition-warning" data-admonition="warning">
+          <p class="admonition-title">Warning</p>
+          <div class="admonition-body"><p>Aggressive themes may restyle components entirely. Check contrast in both modes before shipping to production.</p></div>
+        </div>
+
+        <hr />
+        <p>Ready to build your own? Start from any official theme and adjust the tokens — the <a href="#">Design Tokens reference</a> lists every seam.</p>
+      </article>
+
+      <nav class="doc-pager" aria-label="Docs pages">
+        <a href="#" class="prev"><span class="pager-label">« Previous</span><span class="pager-title">Writing Content</span></a>
+        <a href="#" class="next"><span class="pager-label">Next »</span><span class="pager-title">Color Schemes</span></a>
+      </nav>
+    </main>
+
+    <nav data-zd-toc aria-label="Table of contents">
+      <p class="toc-title">On this page</p>
+      <ul>
+        <li><a href="#how-themes-work" class="toc-active">How themes work</a></li>
+        <li><a href="#what-a-theme-controls">What a theme controls</a></li>
+        <li><a href="#syntax-highlighting" style="margin-left:.9rem">Syntax highlighting</a></li>
+      </ul>
+    </nav>
+  </div>
+
+  <footer data-footer>
+    <div class="footer-inner">
+      <p class="footer-copy">Copyright © 2026 — Built with <a href="#">zudo-doc</a></p>
+    </div>
+  </footer>
+</div>
+
+<!-- theme-switcher flyout mock (the feature this theme collection ships with) -->
+<div class="tp-flyout" role="dialog" aria-label="Theme switcher">
+  <div class="tp-flyout-head">
+    <p class="tp-flyout-title">Memphis</p>
+    <button class="tp-flyout-close" aria-label="Close">✕</button>
+  </div>
+  <p class="tp-flyout-notes">80s Memphis toy-box: coral, teal, yellow & lilac confetti, squiggle underlines, offset shadow blocks on warm white.</p>
+  <div class="tp-flyout-controls">
+    <button class="tp-btn">‹ Prev</button>
+    <button class="tp-btn">Next ›</button>
+    <button class="tp-btn tp-grid-btn" title="Browse all themes" aria-label="Browse all themes">▦</button>
+  </div>
+</div>
+<button class="tp-launcher" title="Themes" aria-label="Open theme switcher">🎨</button>
+
+<script>
+// mode toggle — mirrors the real mechanism: style.colorScheme flips light-dark()
+document.getElementById('mode-toggle').addEventListener('click', function () {
+  var el = document.documentElement;
+  var next = (el.style.colorScheme === 'dark') ? 'light' : 'dark';
+  el.style.colorScheme = next;
+  el.setAttribute('data-theme', next);
+});
+</script>
+</body>
+</html>

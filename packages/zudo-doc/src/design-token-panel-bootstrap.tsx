@@ -57,6 +57,7 @@
 import type { JSX } from "preact";
 import {
   configurePanel,
+  reapplyPersistedOverrides,
   setLifecycleAdapter,
   showDesignTokenPanel,
   type LifecycleAdapter,
@@ -67,6 +68,16 @@ import {
   BEFORE_NAVIGATE_EVENT,
   AFTER_NAVIGATE_EVENT,
 } from "./transitions/page-events.js";
+// Theme-pack layer (ADR docs/adr/theme-packs.md Decision 4, #2822): the active
+// pack scopes zdtp's storage prefix, and the engine's `theme-pack-changed`
+// event triggers a destroy → clear → reconfigure cycle parallel to the
+// existing `color-scheme-changed` one. Plain browser-only helpers — importing
+// them does not widen the island graph (no "use client" in that module).
+import {
+  DEFAULT_THEME_PACK_SLUG,
+  THEME_PACK_CHANGED_EVENT,
+  readThemePackFromDom,
+} from "./theme-pack-switcher/theme-pack-sync.js";
 // Host-callables channel, third virtual module (#2658, mirrors #2501's
 // chromeBindingsModule): absent `settings.designTokenPanelConfigModule` →
 // re-exports the package default (`@takazudo/zudo-doc/design-token-panel-config`);
@@ -104,6 +115,22 @@ function openStateKey(instancePrefix: string): string {
   return `${instancePrefix}-open`;
 }
 
+/**
+ * Whether the given instance's panel is currently open, per its public
+ * open-state mirror key. Guarded: with browser storage disabled,
+ * `localStorage.getItem` throws — an unguarded read inside the rebuild timers
+ * would abort the whole destroy/reconfigure cycle and leave the panel bound
+ * to a stale mode/pack (the theme-pack engine treats storage as best-effort
+ * and still commits + dispatches). Treat unreadable state as "closed".
+ */
+function readOpenState(instancePrefix: string): boolean {
+  try {
+    return localStorage.getItem(openStateKey(instancePrefix)) === "1";
+  } catch {
+    return false;
+  }
+}
+
 /** Read the active mode from `<html data-theme>`, defaulting to `light`. */
 function readMode(): ColorSchemeMode {
   return document.documentElement.getAttribute("data-theme") === "dark"
@@ -112,12 +139,106 @@ function readMode(): ColorSchemeMode {
 }
 
 /**
+ * Theme-pack storage-prefix rule (ADR theme-packs.md Decision 4), enforced
+ * CENTRALLY here — never per-builder, so host builders supplied via
+ * `designTokenPanelConfigModule` cannot cross-contaminate namespaces even if
+ * unaware of packs:
+ *
+ * - active pack `default` → the builder's `storagePrefix` stays BYTE-UNCHANGED
+ *   (the existing-user carry-over guarantee: `zudo-doc-tweak` keys keep
+ *   working on the stock look).
+ * - any other pack → `${storagePrefix}--<slug>` (double hyphen avoids
+ *   colliding with zdtp's own `-open`/version suffixes). zdtp derives every
+ *   key — including the `${prefix}-open` open-state mirror — from the prefix,
+ *   so tweaks saved under pack A are invisible under pack B and restored
+ *   verbatim on switch-back.
+ *
+ * The `PanelConfigBuilder` signature stays `(mode) => PanelConfig` — this is a
+ * post-process of the RETURNED config, not a builder-contract change.
+ */
+export function withPackScopedStoragePrefix(
+  config: PanelConfig,
+  activePack: string,
+): PanelConfig {
+  if (activePack === DEFAULT_THEME_PACK_SLUG) return config;
+  return { ...config, storagePrefix: `${config.storagePrefix}--${activePack}` };
+}
+
+/**
+ * Every CSS custom-property name the given PanelConfig declares as an
+ * override target: the `cssVar` of every tab/tier item, PLUS the color tabs'
+ * `colorExtras.baseRoles` values — zdtp's apply pipeline writes those
+ * base-role variables (background/foreground/cursor/selection) inline too,
+ * and they are not represented by any `TierItem.cssVar` (review finding).
+ */
+function collectDeclaredTokenNames(config: PanelConfig): string[] {
+  const names: string[] = [];
+  for (const tab of config.tabs ?? []) {
+    for (const tier of tab.tiers ?? []) {
+      for (const item of tier.items ?? []) {
+        names.push(item.cssVar);
+      }
+    }
+    const baseRoles = tab.colorExtras?.baseRoles;
+    if (baseRoles) {
+      for (const cssVar of Object.values(baseRoles)) {
+        if (typeof cssVar === "string" && cssVar.length > 0) {
+          names.push(cssVar);
+        }
+      }
+    }
+  }
+  return names;
+}
+
+/**
+ * Remove the OUTGOING panel instance's applied token overrides (theme-pack
+ * switch step 4, ADR Decision 4). zdtp's own clear+reseed runs only on
+ * `color-scheme-changed` (it does not know the theme-pack event) and
+ * `destroy()` only deregisters, so without this the old pack's tweaks would
+ * keep repainting the new pack.
+ *
+ * Removal is CONFIG-DRIVEN: exactly the names declared by the outgoing
+ * PanelConfig ({@link collectDeclaredTokenNames}) — NEVER a blanket `--zd-*`
+ * sweep (`style.colorScheme` is mode-toggle-owned and `--zd-sidebar-w`
+ * belongs to the sidebar-resize island). When the config routes writes
+ * through an `applySink`, the clear goes through the SAME sink
+ * (`sink.clear(names)`, errors non-fatal per zdtp's own contract) — the
+ * overrides live in the sink's target, not on the document root. Upstream
+ * check (2026-07, zdtp 0.4.9): the package exposes no sanctioned
+ * `clearApplied()`-style API on `PanelInstanceHandle` (only
+ * instanceId/open/close/toggle/destroy), so this config-driven path is the
+ * current mechanism; prefer a zdtp API if one lands
+ * (Takazudo/zudo-design-token-panel).
+ */
+function clearAppliedTokenOverrides(config: PanelConfig): void {
+  const names = collectDeclaredTokenNames(config);
+  if (config.applySink) {
+    try {
+      config.applySink.clear(names);
+    } catch (err) {
+      console.warn(
+        "[zudo-doc] applySink.clear threw during theme-pack switch; outgoing overrides may linger.",
+        err,
+      );
+    }
+    return;
+  }
+  const style = document.documentElement.style;
+  for (const name of names) {
+    style.removeProperty(name);
+  }
+}
+
+/**
  * Bootstrap zdtp for a project. Configures the panel, drains any pre-hydration
  * click queue, and wires the zdtp lifecycle adapter to zfb's navigation events
  * so persisted token overrides re-apply on every soft navigation.
  *
  * Wires a `color-scheme-changed` listener that rebuilds the panel per
- * light/dark mode (see the toggle sequence below).
+ * light/dark mode (see the toggle sequence below), and a parallel
+ * `theme-pack-changed` listener that rebuilds it per theme pack with a
+ * pack-scoped storage prefix (ADR theme-packs.md Decision 4, #2822).
  *
  * @param buildConfig - The project's `(mode) => PanelConfig` builder for
  *   mode-scoped rebuilds.
@@ -133,7 +254,15 @@ export function bootstrapDesignTokenPanel(
     return;
   }
 
-  let handle: PanelInstanceHandle = configurePanel(buildConfig(readMode()));
+  // Every configurePanel call goes through the pack-prefix post-process
+  // (withPackScopedStoragePrefix) so the namespacing rule is enforced
+  // centrally, and the CURRENT config is tracked so the theme-pack switch
+  // sequence can clear exactly the outgoing instance's token names.
+  let currentConfig: PanelConfig = withPackScopedStoragePrefix(
+    buildConfig(readMode()),
+    readThemePackFromDom(),
+  );
+  let handle: PanelInstanceHandle = configurePanel(currentConfig);
 
   // Register the color-scheme-changed listener BEFORE draining the click queue
   // (a queued click can mount the panel first and flip listener order).
@@ -152,15 +281,66 @@ export function bootstrapDesignTokenPanel(
       // Read the open state BEFORE destroy (destroy keeps localStorage),
       // keyed off the CURRENT instance's prefix so a non-showcase host prefix
       // still round-trips correctly.
-      const wasOpen = localStorage.getItem(openStateKey(handle.instanceId)) === "1";
+      const wasOpen = readOpenState(handle.instanceId);
       // MACROTASK (setTimeout 0), NOT a microtask: zdtp flushes its own
       // mount-time `color-scheme-changed` handler (clear applied vars +
       // reseed) on microtasks/rAF, so a macrotask guarantees that settled
       // before we destroy + reconfigure with the new mode's defaults.
       handle.destroy();
-      handle = configurePanel(buildConfig(mode));
+      // The pack prefix follows the LIVE pack so a mode toggle on a
+      // non-default pack keeps reading/writing that pack's namespace.
+      currentConfig = withPackScopedStoragePrefix(
+        buildConfig(mode),
+        readThemePackFromDom(),
+      );
+      handle = configurePanel(currentConfig);
       // configurePanel with a structurally-different config after destroy is
       // the ONLY sanctioned swap (a same-prefix reconfigure otherwise throws).
+      if (wasOpen) showDesignTokenPanel();
+    }, 0);
+  });
+
+  // theme-pack-changed listener — PARALLEL to the color-scheme one, same
+  // coalescing macrotask shape (ADR theme-packs.md Decision 4 switch
+  // sequence). The engine dispatches the event only AFTER its commit
+  // (attribute + links + persistence), so every read below sees post-switch
+  // state.
+  let pendingPack: string = readThemePackFromDom();
+  let packTimer: ReturnType<typeof setTimeout> | null = null;
+
+  window.addEventListener(THEME_PACK_CHANGED_EVENT, () => {
+    pendingPack = readThemePackFromDom();
+    if (packTimer !== null) return;
+    packTimer = setTimeout(() => {
+      packTimer = null;
+      const pack = pendingPack;
+      // 1. Read the open state from the CURRENT (outgoing) instance's
+      //    `${prefix}-open` key BEFORE destroy (guarded — storage may be
+      //    disabled while the engine still commits pack switches).
+      const wasOpen = readOpenState(handle.instanceId);
+      const outgoingConfig = currentConfig;
+      // 2. Destroy the outgoing instance (deregisters only — it does NOT
+      //    clear applied inline vars, hence step 3).
+      handle.destroy();
+      // 3. Clear the OUTGOING instance's applied inline token overrides —
+      //    config-driven removeProperty, never a blanket sweep.
+      clearAppliedTokenOverrides(outgoingConfig);
+      // 4. Reconfigure with the NEW pack's scoped prefix. This registers the
+      //    new instance and makes it the active config, but does NOT itself
+      //    push that namespace's persisted overrides onto :root — configurePanel
+      //    only wires the panel UI. On the color-scheme path zdtp's OWN
+      //    listener reapplies; on this theme-pack event zdtp is unaware
+      //    (ADR Decision 4 step 4), so nothing would restore the live vars.
+      currentConfig = withPackScopedStoragePrefix(buildConfig(readMode()), pack);
+      handle = configurePanel(currentConfig);
+      // 5. Push the now-active namespace's persisted overrides back onto :root.
+      //    Without this the switch clears the outgoing pack's inline vars
+      //    (step 3) but never re-applies the incoming pack's saved tweaks —
+      //    switching A→B→A would leave A's overrides visible only inside the
+      //    panel rows, not on the live document (regression caught by the
+      //    #2826 zdtp-interplay e2e; ADR Decision 4 invariant (b)).
+      reapplyPersistedOverrides();
+      // 6. Restore visibility.
       if (wasOpen) showDesignTokenPanel();
     }, 0);
   });

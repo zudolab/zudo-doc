@@ -131,6 +131,20 @@ export interface PresetSettings {
   /** When `false`, disables zfb's CJK-friendly line-break behaviour.
    *  Absent means "use the engine default" (currently `true`). */
   cjkFriendly?: boolean;
+  /**
+   * Active theme pack slug (ADR docs/adr/theme-packs.md, Decision 2/7).
+   * Threaded into the `@takazudo/zudo-doc/plugins/theme-packs` descriptor's
+   * options; the plugin's `setup()` validates it against the resolved
+   * registry and throws loudly on an unknown slug. Omit to use the package
+   * default (`"default"`).
+   */
+  themePack?: string;
+  /**
+   * Enabled pack slugs, in switcher order (ADR Decision 7). `undefined` = all
+   * bundled packs. Threaded into the `@takazudo/zudo-doc/plugins/theme-packs`
+   * descriptor's options alongside `themePack`.
+   */
+  themePacks?: string[];
 }
 
 /**
@@ -550,6 +564,22 @@ function buildPlugins(
         docsDir: settings.docsDir,
         locales: localeRecord,
         base: settings.base,
+      },
+    },
+    // Theme packs (ADR docs/adr/theme-packs.md, Decision 2, #2820) — a
+    // bare-specifier descriptor, added UNCONDITIONALLY like search-index
+    // above (never an imported plugin function, keeping this preset's
+    // node-free eval-graph guard green). The plugin internally no-ops
+    // (postBuild/devMiddleware write/serve nothing) when the resolved
+    // enabled set has no CSS-bearing pack (i.e. only "default" is enabled),
+    // so an unconfigured project pays no asset cost beyond the bundled
+    // registry scan at plugin setup.
+    {
+      name: "@takazudo/zudo-doc/plugins/theme-packs",
+      options: {
+        base: settings.base,
+        themePack: settings.themePack,
+        themePacks: settings.themePacks,
       },
     },
     ...(settings.llmsTxt

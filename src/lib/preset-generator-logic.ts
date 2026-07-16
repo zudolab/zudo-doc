@@ -1,5 +1,5 @@
 // Single source of truth: packages/create-zudo-doc/src/constants.ts.
-// These four lists are mirrored here (not runtime-imported) because this file
+// These five lists are mirrored here (not runtime-imported) because this file
 // is bundled by zfb into a client island, and the host cannot reach into the
 // generator package's source across the e2e-fixture symlink boundary (the
 // package is not a host dependency). Parity with constants.ts is enforced by
@@ -14,6 +14,26 @@ export interface SupportedLang {
 export const SINGLE_SCHEMES = ["Default Dark", "Default Light"];
 
 export const LIGHT_SCHEMES = ["Default Light"];
+
+export interface ThemePackOption {
+  slug: string;
+  label: string;
+  hint: string;
+}
+
+/** Mirrors THEME_PACKS from packages/create-zudo-doc/src/constants.ts (ADR #2818). */
+export const THEME_PACKS: ThemePackOption[] = [
+  {
+    slug: "default",
+    label: "Default",
+    hint: "Stock zudo-doc look — no extra stylesheet loaded",
+  },
+  {
+    slug: "foundry",
+    label: "Foundry",
+    hint: "GitHub-neutral baseline — white paper, Primer-blue accents",
+  },
+];
 
 export const SUPPORTED_LANGS: SupportedLang[] = [
   { value: "en", label: "English" },
@@ -97,6 +117,9 @@ export const FEATURES = [
   { value: "claudeResources", label: "Claude Resources", cliFlag: "claude-resources", default: false, docPath: "/docs/guides/claude-resources/" },
   { value: "claudeSkills", label: "Claude skills (user-facing)", cliFlag: "claude-skills", default: false, docPath: "/docs/guides/claude-skills/" },
   { value: "designTokenPanel", label: "Design Token Panel", cliFlag: "design-token-panel", default: false, docPath: "/docs/reference/design-token-panel/" },
+  // No docPath yet — the theme-packs guide page lands with #2827; add it
+  // here once that page exists.
+  { value: "themePackSwitcher", label: "Theme pack switcher", cliFlag: "theme-pack-switcher", default: false },
   { value: "sidebarResizer", label: "Sidebar resizer", cliFlag: "sidebar-resizer", default: false, docPath: "/docs/guides/configuration/#sidebarresizer" },
   { value: "sidebarToggle", label: "Sidebar toggle", cliFlag: "sidebar-toggle", default: false, docPath: "/docs/guides/configuration/#sidebartoggle" },
   { value: "versioning", label: "Versioning", cliFlag: "versioning", default: false, docPath: "/docs/guides/versioning/" },
@@ -165,6 +188,8 @@ export interface FormState {
   darkScheme: string;
   defaultMode: "light" | "dark";
   respectPrefersColorScheme: boolean;
+  /** Theme pack slug (ADR #2818 Decision 7). "default" = the stock look. */
+  themePack: string;
   features: string[];
   cjkFriendly: boolean;
   packageManager: string;
@@ -186,6 +211,13 @@ export function buildJson(state: FormState): Record<string, unknown> {
     base.darkScheme = state.darkScheme;
     base.defaultMode = state.defaultMode;
     base.respectPrefersColorScheme = state.respectPrefersColorScheme;
+  }
+
+  // "Omit when default" — mirrors zfb-config-gen.ts's diff-from-defaults
+  // emission rule (ADR #2818 Decision 7 / #2823) so the JSON preset stays
+  // lossless without freezing an inert themePack: "default" into every preset.
+  if (state.themePack && state.themePack !== "default") {
+    base.themePack = state.themePack;
   }
 
   base.features = state.features;
@@ -255,6 +287,8 @@ export function buildCliCommand(state: FormState): string {
       parts.push("--no-respect-system-preference");
     }
   }
+
+  parts.push(`--theme-pack ${state.themePack}`);
 
   for (const feat of FEATURES) {
     const enabled = state.features.includes(feat.value);

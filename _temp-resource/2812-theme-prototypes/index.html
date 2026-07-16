@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>zudo-doc theme prototypes — 50 candidates (#2811)</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: system-ui, sans-serif; background:#111318; color:#e8e8ea; padding:2rem; }
+h1 { font-size:1.4rem; margin-bottom:.35rem; }
+.sub { color:#9a9aa2; font-size:.9rem; margin-bottom:1.6rem; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:1.25rem; }
+.card { display:block; background:#1b1e26; border:1px solid #2c3040; border-radius:8px; overflow:hidden; text-decoration:none; color:inherit; transition:border-color .15s; }
+.card:hover { border-color:#6f83c4; }
+.frame { aspect-ratio: 16/10; overflow:hidden; position:relative; background:#fff; }
+.frame iframe { width:1280px; height:800px; border:0; transform-origin:0 0; transform:scale(var(--s,0.266)); pointer-events:none; position:absolute; top:0; left:0; }
+.meta { padding: .8rem .95rem 1rem; }
+.row { display:flex; align-items:center; gap:.5rem; margin-bottom:.35rem; }
+.num { color:#7a7f92; font-size:.8rem; font-variant-numeric:tabular-nums; }
+strong { font-size:1.02rem; }
+.badge { margin-left:auto; font-size:.7rem; padding:.1rem .5rem; border-radius:999px; border:1px solid #3a3f52; color:#b9bdd0; }
+.badge.dark { background:#0d0f14; }
+.badge.light { background:#e9e9ee; color:#25272e; border-color:#c9c9d4; }
+.meta p { font-size:.82rem; color:#b8bac4; line-height:1.45; }
+.meta .fonts { margin-top:.3rem; color:#7a7f92; font-size:.75rem; }
+</style>
+<script>
+addEventListener('resize', fit); addEventListener('load', fit);
+function fit() { document.querySelectorAll('.frame').forEach(f => {
+  const s = f.clientWidth / 1280; f.style.setProperty('--s', s);
+}); }
+</script>
+</head><body>
+<h1>zudo-doc theme prototypes — 50 candidates</h1>
+<p class="sub">Issue zudolab/zudo-doc#2811 · generated 2026-07-16 by the /big-plan planning session · click a card to open the full prototype (each has a working light/dark toggle in its header: ◐)</p>
+<div class="grid">
+  <a class="card" href="themes/01-foundry.html" target="_blank">
+    <div class="frame"><iframe src="themes/01-foundry.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">01</span><strong>Foundry</strong><span class="badge light">Light</span></div>
+      <p>GitHub-neutral baseline — white paper, near-black ink, Primer-blue links, quiet gray rules. Restraint, perfected.</p>
+      <p class="fonts">Inter (400–700), ui-monospace system stack (SF Mono/Menlo/Consolas)</p>
+    </div>
+  </a>
+  <a class="card" href="themes/02-ledger.html" target="_blank">
+    <div class="frame"><iframe src="themes/02-ledger.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">02</span><strong>Ledger</strong><span class="badge light">Light</span></div>
+      <p>Cream academic serif in the Tufte tradition — warm paper, ink prose, oxblood links, hairline rules, quiet code.</p>
+      <p class="fonts">Crimson Pro, IBM Plex Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/03-broadsheet.html" target="_blank">
+    <div class="frame"><iframe src="themes/03-broadsheet.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">03</span><strong>Broadsheet</strong><span class="badge light">Light</span></div>
+      <p>Newspaper editorial — Playfair masthead, Oxford ink rules, a red drop cap, and a night-edition dark mode.</p>
+      <p class="fonts">Playfair Display, Source Serif 4, Courier Prime</p>
+    </div>
+  </a>
+  <a class="card" href="themes/04-swissgrid.html" target="_blank">
+    <div class="frame"><iframe src="themes/04-swissgrid.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">04</span><strong>Swissgrid</strong><span class="badge light">Light</span></div>
+      <p>International Typographic Style — Helvetica grid, black on white, one hot Swiss-red accent, oversized section numbers.</p>
+      <p class="fonts">Helvetica/Inter, Inter Tight, IBM Plex Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/05-manuscript.html" target="_blank">
+    <div class="frame"><iframe src="themes/05-manuscript.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">05</span><strong>Manuscript</strong><span class="badge light">Light</span></div>
+      <p>A quiet Garamond book page — warm paper, soft ink, sepia rubrication, small-caps subheads, fleuron section marks.</p>
+      <p class="fonts">EB Garamond, Courier Prime</p>
+    </div>
+  </a>
+  <a class="card" href="themes/06-solar.html" target="_blank">
+    <div class="frame"><iframe src="themes/06-solar.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">06</span><strong>Solar</strong><span class="badge light">Light</span></div>
+      <p>Solarized precision — low-eyestrain paper tones, blue/cyan/orange accents, mono labels, technical calm in both modes.</p>
+      <p class="fonts">Source Sans 3, Source Code Pro</p>
+    </div>
+  </a>
+  <a class="card" href="themes/07-drift.html" target="_blank">
+    <div class="frame"><iframe src="themes/07-drift.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">07</span><strong>Drift</strong><span class="badge dark">Dark</span></div>
+      <p>Floaty slate-blue comfort dark for long reading — soft glows in place of borders, gentle elevation, relaxed Plex type.</p>
+      <p class="fonts">IBM Plex Sans, IBM Plex Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/08-hollow.html" target="_blank">
+    <div class="frame"><iframe src="themes/08-hollow.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">08</span><strong>Hollow</strong><span class="badge dark">Dark</span></div>
+      <p>Dark violet space — neon pink headings, violet links, a quiet starfield, and razor-square midnight chrome.</p>
+      <p class="fonts">Space Grotesk, Space Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/09-hearth.html" target="_blank">
+    <div class="frame"><iframe src="themes/09-hearth.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">09</span><strong>Hearth</strong><span class="badge light">Light</span></div>
+      <p>Warm cream &amp;amp; brick-red fireside docs — Fraunces headings, amber code blocks, ember-glow dark mode.</p>
+      <p class="fonts">Fraunces, Nunito, Spline Sans Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/10-futura-editorial.html" target="_blank">
+    <div class="frame"><iframe src="themes/10-futura-editorial.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">10</span><strong>Futura Editorial</strong><span class="badge light">Light</span></div>
+      <p>Normal-weight geometric Futura headings over Noto Sans body — clean white, near-black ink, one restrained red accent.</p>
+      <p class="fonts">Futura/Jost, Noto Sans, Space Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/11-phosphor.html" target="_blank">
+    <div class="frame"><iframe src="themes/11-phosphor.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">11</span><strong>Phosphor</strong><span class="badge dark">Dark</span></div>
+      <p>Green CRT terminal — phosphor glow, scanlines, inverse-video nav, monospace everything.</p>
+      <p class="fonts">VT323, JetBrains Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/12-eink.html" target="_blank">
+    <div class="frame"><iframe src="themes/12-eink.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">12</span><strong>E-Ink</strong><span class="badge light">Light</span></div>
+      <p>E-reader grayscale: paper-device calm, crisp 1px rules, Literata prose, one dark-teal accent — no shadows, no color.</p>
+      <p class="fonts">Literata, IBM Plex Sans, IBM Plex Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/13-blueprint.html" target="_blank">
+    <div class="frame"><iframe src="themes/13-blueprint.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">13</span><strong>Blueprint</strong><span class="badge dark">Dark</span></div>
+      <p>Cyanotype engineering sheet — white line-work, mono-caps labels on prussian grid paper, yellow highlighter callouts.</p>
+      <p class="fonts">Inter, IBM Plex Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/14-washi.html" target="_blank">
+    <div class="frame"><iframe src="themes/14-washi.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">14</span><strong>Washi</strong><span class="badge light">Light</span></div>
+      <p>Warm washi paper, sumi ink, and ai-iro indigo seals — quiet Japanese stationery for calm documentation.</p>
+      <p class="fonts">Zen Kaku Gothic New, Shippori Mincho, M PLUS 1 Code</p>
+    </div>
+  </a>
+  <a class="card" href="themes/15-sumi.html" target="_blank">
+    <div class="frame"><iframe src="themes/15-sumi.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">15</span><strong>Sumi</strong><span class="badge light">Light</span></div>
+      <p>Sumi-e ink on washi — bold mincho brush headings, deep black strokes, one vermillion hanko seal accent.</p>
+      <p class="fonts">Shippori Mincho B1, Zen Kaku Gothic New, IBM Plex Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/16-sakura.html" target="_blank">
+    <div class="frame"><iframe src="themes/16-sakura.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">16</span><strong>Sakura</strong><span class="badge light">Light</span></div>
+      <p>Cherry-blossom pastels — blush white, sakura pink, plum ink; petal-soft corners and a quiet yozakura dark mode.</p>
+      <p class="fonts">M PLUS Rounded 1c, Quicksand, M PLUS 1 Code</p>
+    </div>
+  </a>
+  <a class="card" href="themes/17-matcha.html" target="_blank">
+    <div class="frame"><iframe src="themes/17-matcha.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">17</span><strong>Matcha</strong><span class="badge light">Light</span></div>
+      <p>Green tea ceremony — deep matcha on warm cream, mincho headings, zen whitespace, tea-foam surfaces in both modes.</p>
+      <p class="fonts">Zen Kaku Gothic New, Shippori Mincho, M PLUS 1 Code</p>
+    </div>
+  </a>
+  <a class="card" href="themes/18-fjord.html" target="_blank">
+    <div class="frame"><iframe src="themes/18-fjord.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">18</span><strong>Fjord</strong><span class="badge dark">Dark</span></div>
+      <p>Polar-night blue under a faint aurora — frost-cyan accents, icy borders, snow-white text. Cold nordic calm.</p>
+      <p class="fonts">Inter, JetBrains Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/19-barnwood.html" target="_blank">
+    <div class="frame"><iframe src="themes/19-barnwood.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">19</span><strong>Barnwood</strong><span class="badge dark">Dark</span></div>
+      <p>Warm umber and cream with harvest orange, aqua, and rye accents — chunky square joinery and vintage terminal glow.</p>
+      <p class="fonts">Zilla Slab, IBM Plex Sans, IBM Plex Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/20-nocturne.html" target="_blank">
+    <div class="frame"><iframe src="themes/20-nocturne.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">20</span><strong>Nocturne</strong><span class="badge dark">Dark</span></div>
+      <p>Purple midnight — velvet aubergine depths, lavender links, and muted gold hairlines. Elegant, never neon.</p>
+      <p class="fonts">Cormorant Garamond, Manrope, IBM Plex Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/21-abyss.html" target="_blank">
+    <div class="frame"><iframe src="themes/21-abyss.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">21</span><strong>Abyss</strong><span class="badge dark">Dark</span></div>
+      <p>Deep-ocean navy with bioluminescent cyan — depth-graded backgrounds and glowing links for pressure-calm reading.</p>
+      <p class="fonts">Sora, Outfit, JetBrains Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/22-aurora.html" target="_blank">
+    <div class="frame"><iframe src="themes/22-aurora.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">22</span><strong>Aurora</strong><span class="badge dark">Dark</span></div>
+      <p>Night-sky docs beneath the northern lights — teal-to-violet aurora gradients, star-dust sky, feather-light type.</p>
+      <p class="fonts">Outfit, Manrope, JetBrains Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/23-cyberdeck.html" target="_blank">
+    <div class="frame"><iframe src="themes/23-cyberdeck.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">23</span><strong>Cyberdeck</strong><span class="badge dark">Dark</span></div>
+      <p>Neon terminal for night ops — magenta and cyan on near-black, clipped corners, glitch underlines, mono caps headings.</p>
+      <p class="fonts">Chakra Petch, JetBrains Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/24-vaporwave.html" target="_blank">
+    <div class="frame"><iframe src="themes/24-vaporwave.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">24</span><strong>Vaporwave</strong><span class="badge dark">Dark</span></div>
+      <p>Retro-future mall at midnight — chrome-gradient headings, hot pink and cyan on deep purple, horizon-grid footer.</p>
+      <p class="fonts">Michroma, Outfit, Space Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/25-synthwave.html" target="_blank">
+    <div class="frame"><iframe src="themes/25-synthwave.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">25</span><strong>Synthwave</strong><span class="badge dark">Dark</span></div>
+      <p>Sunset horizon drive — orange-to-magenta heat over dark asphalt, neon horizon rules and warm-glow code.</p>
+      <p class="fonts">Exo 2, Outfit, JetBrains Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/26-brutalist.html" target="_blank">
+    <div class="frame"><iframe src="themes/26-brutalist.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">26</span><strong>Brutalist</strong><span class="badge light">Light</span></div>
+      <p>Raw concrete web — stark black on white, 4px slab borders, zero radius, hazard-orange tape. Structure you can see.</p>
+      <p class="fonts">Archivo Black, Space Grotesk, IBM Plex Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/27-bauhaus.html" target="_blank">
+    <div class="frame"><iframe src="themes/27-bauhaus.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">27</span><strong>Bauhaus</strong><span class="badge light">Light</span></div>
+      <p>form follows function — paper white, ink black, and primary red, yellow, blue used as structural geometry.</p>
+      <p class="fonts">Jost, Space Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/28-artdeco.html" target="_blank">
+    <div class="frame"><iframe src="themes/28-artdeco.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">28</span><strong>Art Deco</strong><span class="badge dark">Dark</span></div>
+      <p>Gatsby black and gold — Poiret One display caps, gilt double frames, and a sunburst fan on every rule.</p>
+      <p class="fonts">Poiret One, Jost, IBM Plex Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/29-memphis.html" target="_blank">
+    <div class="frame"><iframe src="themes/29-memphis.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">29</span><strong>Memphis</strong><span class="badge light">Light</span></div>
+      <p>80s Memphis toy-box: coral, teal, yellow &amp; lilac confetti, squiggle underlines, offset shadow blocks on warm white.</p>
+      <p class="fonts">Baloo 2, Nunito, Space Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/30-halftone.html" target="_blank">
+    <div class="frame"><iframe src="themes/30-halftone.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">30</span><strong>Halftone</strong><span class="badge light">Light</span></div>
+      <p>Comic print played straight — halftone-dot paper, thick ink outlines, ben-day primaries, speech-bubble admonitions.</p>
+      <p class="fonts">Bangers, Archivo, Space Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/31-sketchbook.html" target="_blank">
+    <div class="frame"><iframe src="themes/31-sketchbook.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">31</span><strong>Sketchbook</strong><span class="badge light">Light</span></div>
+      <p>A designer&#x27;s notebook — paper-white pages, graphite ink, wobbly pencil borders, and highlighter-yellow marks.</p>
+      <p class="fonts">Caveat, Inter, Space Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/32-academia.html" target="_blank">
+    <div class="frame"><iframe src="themes/32-academia.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">32</span><strong>Academia</strong><span class="badge light">Light</span></div>
+      <p>A LaTeX paper for the web — small-caps title, numbered theorems, booktabs tables, and hyperref navy links.</p>
+      <p class="fonts">STIX Two Text, Cousine (Latin Modern / CMU Typewriter fallbacks)</p>
+    </div>
+  </a>
+  <a class="card" href="themes/33-chancery.html" target="_blank">
+    <div class="frame"><iframe src="themes/33-chancery.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">33</span><strong>Chancery</strong><span class="badge light">Light</span></div>
+      <p>Legal-document formality — §-numbered clauses, ruled sub-sections, forest-green ink on white bond, embossed seal footer.</p>
+      <p class="fonts">Besley, Courier Prime (Century Schoolbook first in stack)</p>
+    </div>
+  </a>
+  <a class="card" href="themes/34-gloss.html" target="_blank">
+    <div class="frame"><iframe src="themes/34-gloss.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">34</span><strong>Gloss</strong><span class="badge light">Light</span></div>
+      <p>Fashion-editorial white: hairline frames, huge thin Didot headlines, and a single stroke of lipstick red.</p>
+      <p class="fonts">Bodoni Moda, Jost, IBM Plex Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/35-scandi.html" target="_blank">
+    <div class="frame"><iframe src="themes/35-scandi.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">35</span><strong>Scandi</strong><span class="badge light">Light</span></div>
+      <p>Oat linen, sage and clay — hygge minimalism with soft 12px corners, warm charcoal type, no hard black anywhere.</p>
+      <p class="fonts">Quicksand, Nunito Sans, JetBrains Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/36-kinfolk.html" target="_blank">
+    <div class="frame"><iframe src="themes/36-kinfolk.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">36</span><strong>Kinfolk</strong><span class="badge light">Light</span></div>
+      <p>Slow-living editorial calm — warm ecru, light serif headlines, terracotta accents, and gallery whitespace.</p>
+      <p class="fonts">Cormorant Garamond, Jost, IBM Plex Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/37-onyx.html" target="_blank">
+    <div class="frame"><iframe src="themes/37-onyx.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">37</span><strong>Onyx</strong><span class="badge dark">Dark</span></div>
+      <p>Luxury noir — jet black, champagne serif headings, and a single gold hairline accent. Watch-brand restraint.</p>
+      <p class="fonts">Cormorant Garamond, Jost, IBM Plex Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/38-timberline.html" target="_blank">
+    <div class="frame"><iframe src="themes/38-timberline.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">38</span><strong>Timberline</strong><span class="badge dark">Dark</span></div>
+      <p>Forest cabin at night — deep pine, cream prose, and lantern-amber links glowing against wood-grain chrome.</p>
+      <p class="fonts">Cabin, Bitter, JetBrains Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/39-adobe.html" target="_blank">
+    <div class="frame"><iframe src="themes/39-adobe.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">39</span><strong>Adobe</strong><span class="badge light">Light</span></div>
+      <p>Desert southwest sand &amp; terracotta — slab headings, pueblo-stepped admonitions, turquoise &amp; cactus accents.</p>
+      <p class="fonts">Rokkitt, Cabin, IBM Plex Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/40-seaglass.html" target="_blank">
+    <div class="frame"><iframe src="themes/40-seaglass.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">40</span><strong>Seaglass</strong><span class="badge light">Light</span></div>
+      <p>Coastal morning — fog white, driftwood gray, seaglass teal, frosted-glass chrome and a tide-line hr.</p>
+      <p class="fonts">Quicksand, Karla, IBM Plex Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/41-bonbon.html" target="_blank">
+    <div class="frame"><iframe src="themes/41-bonbon.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">41</span><strong>Bonbon</strong><span class="badge light">Light</span></div>
+      <p>Candy-shop docs: cream pages, bubblegum &amp; grape pills, candy-stripe rules, chocolate code blocks with pastel syntax.</p>
+      <p class="fonts">Baloo 2, Nunito, JetBrains Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/42-macintosh.html" target="_blank">
+    <div class="frame"><iframe src="themes/42-macintosh.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">42</span><strong>Macintosh</strong><span class="badge light">Light</span></div>
+      <p>System 7 platinum — pinstriped title bars, 1-bit dither desktop, Chicago-style pixel headings, one rainbow stripe.</p>
+      <p class="fonts">Pixelify Sans, Libre Franklin, IBM Plex Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/43-arcade.html" target="_blank">
+    <div class="frame"><iframe src="themes/43-arcade.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">43</span><strong>Arcade</strong><span class="badge dark">Dark</span></div>
+      <p>8-bit cabinet: navy CRT glow, sprite red/yellow/green/cyan, pixel-notched borders, and an insert-coin scoreboard.</p>
+      <p class="fonts">Press Start 2P, IBM Plex Sans, IBM Plex Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/44-hud.html" target="_blank">
+    <div class="frame"><iframe src="themes/44-hud.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">44</span><strong>HUD</strong><span class="badge dark">Dark</span></div>
+      <p>Holographic heads-up display — cyan wireframes on black, corner-bracket panels, scan-line sweeps, telemetry labels.</p>
+      <p class="fonts">Rajdhani, Saira Semi Condensed, Share Tech Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/45-observatory.html" target="_blank">
+    <div class="frame"><iframe src="themes/45-observatory.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">45</span><strong>Observatory</strong><span class="badge dark">Dark</span></div>
+      <p>Night-sky atlas: star-field depth, constellation-line rules, nebula violet and comet gold over astronomer&#x27;s navy.</p>
+      <p class="fonts">Josefin Sans, Jost, Space Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/46-botanica.html" target="_blank">
+    <div class="frame"><iframe src="themes/46-botanica.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">46</span><strong>Botanica</strong><span class="badge light">Light</span></div>
+      <p>Vintage botanical plate — cream stock, deep green ink, engraved double rules, and italic Latin specimen labels.</p>
+      <p class="fonts">Cormorant Garamond, Lora, Courier Prime</p>
+    </div>
+  </a>
+  <a class="card" href="themes/47-beacon.html" target="_blank">
+    <div class="frame"><iframe src="themes/47-beacon.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">47</span><strong>Beacon</strong><span class="badge light">Light</span></div>
+      <p>WCAG-AAA high contrast: 7:1+ ink everywhere, 3px focus rings, always-underlined links — clarity as beauty.</p>
+      <p class="fonts">Atkinson Hyperlegible, Atkinson Hyperlegible Mono</p>
+    </div>
+  </a>
+  <a class="card" href="themes/48-amberterm.html" target="_blank">
+    <div class="frame"><iframe src="themes/48-amberterm.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">48</span><strong>Amberterm</strong><span class="badge dark">Dark</span></div>
+      <p>Amber phosphor workstation — warm monochrome amber on black; intensity is hierarchy, block cursors mark the beat.</p>
+      <p class="fonts">IBM Plex Mono, IBM Plex Sans</p>
+    </div>
+  </a>
+  <a class="card" href="themes/49-zine.html" target="_blank">
+    <div class="frame"><iframe src="themes/49-zine.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">49</span><strong>Zine</strong><span class="badge light">Light</span></div>
+      <p>Punk photocopy zine — newsprint paper, xerox black, stamp red. Typewriter body, rubber-stamp labels, torn-edge rules.</p>
+      <p class="fonts">Anton, Courier Prime, Special Elite</p>
+    </div>
+  </a>
+  <a class="card" href="themes/50-glacier.html" target="_blank">
+    <div class="frame"><iframe src="themes/50-glacier.html" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="meta">
+      <div class="row"><span class="num">50</span><strong>Glacier</strong><span class="badge light">Light</span></div>
+      <p>Ice-pale minimalism — barely-there blues, hairline borders, frost-blue selection, and cold clean air in both modes.</p>
+      <p class="fonts">Outfit, Inter, IBM Plex Mono</p>
+    </div>
+  </a>
+</div>
+</body></html>

@@ -160,6 +160,18 @@ export const settings = {
    */
   designTokenPanel: true as boolean,
   /**
+   * Active theme pack — "default" is the stock zudo-doc look (no pack
+   * stylesheet loaded). Explicit here (matches the field's own default) for
+   * fixture/showcase drift-diff clarity (epic Theme Core #2812, #2826).
+   */
+  themePack: "default" as string,
+  /**
+   * Mounts the bottom-right theme-pack switcher flyout (+ browse-all dialog)
+   * so every preview deploy demonstrates the feature with the stock look
+   * active (epic Theme Core #2812, #2826).
+   */
+  themePackSwitcher: true as boolean,
+  /**
    * Minimum heading depth included in the TOC (restriction-only: 2–4, default 2).
    *
    * Raise to 3 or 4 to hide shallower headings from the TOC. Cannot go below 2

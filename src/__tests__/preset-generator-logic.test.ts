@@ -25,6 +25,7 @@ function makeState(overrides: Partial<FormState> = {}): FormState {
     darkScheme: "Default Dark",
     defaultMode: "dark",
     respectPrefersColorScheme: true,
+    themePack: "default",
     features: [],
     cjkFriendly: false,
     packageManager: "pnpm",
@@ -185,6 +186,29 @@ describe("buildCliCommand", () => {
   });
 });
 
+describe("buildJson — themePack (ADR #2818 / #2823)", () => {
+  it("omits themePack when it equals the default", () => {
+    const json = buildJson(makeState({ themePack: "default" }));
+    expect(json).not.toHaveProperty("themePack");
+  });
+
+  it("emits themePack when a non-default pack is chosen", () => {
+    const json = buildJson(makeState({ themePack: "foundry" }));
+    expect(json).toHaveProperty("themePack", "foundry");
+  });
+});
+
+describe("buildCliCommand — themePack (ADR #2818 / #2823)", () => {
+  it("always emits --theme-pack with the chosen slug", () => {
+    expect(buildCliCommand(makeState({ themePack: "default" }))).toContain(
+      "--theme-pack default",
+    );
+    expect(buildCliCommand(makeState({ themePack: "foundry" }))).toContain(
+      "--theme-pack foundry",
+    );
+  });
+});
+
 describe("headerRightItems — DEFAULT_HEADER_RIGHT_ITEMS", () => {
   it("matches the canonical default order from src/config/settings.ts", () => {
     // This is the live default from src/config/settings.ts and the user-facing
@@ -267,6 +291,7 @@ describe("default generator state — regression: matches target JSON", () => {
       darkScheme: "Default Dark",
       defaultMode: "dark",
       respectPrefersColorScheme: true,
+      themePack: "default",
       features: FEATURES.filter((f) => f.default).map((f) => f.value),
       cjkFriendly: true,
       packageManager: "pnpm",

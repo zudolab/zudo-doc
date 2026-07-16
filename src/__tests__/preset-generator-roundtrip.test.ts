@@ -51,6 +51,7 @@ function makeState(overrides: Partial<FormState> = {}): FormState {
     darkScheme: "Default Dark",
     defaultMode: "dark",
     respectPrefersColorScheme: true,
+    themePack: "default",
     features: FEATURES.filter((f) => f.default).map((f) => f.value),
     cjkFriendly: false,
     packageManager: "pnpm",
@@ -69,6 +70,7 @@ function verifyRoundtrip(state: FormState) {
   expect(parsed.colorSchemeMode).toBe(state.colorSchemeMode);
   expect(parsed.pm).toBe(state.packageManager);
   expect(parsed.yes).toBe(true);
+  expect(parsed.themePack).toBe(state.themePack);
 
   if (state.colorSchemeMode === "single") {
     expect(parsed.scheme).toBe(state.singleScheme);
@@ -117,6 +119,10 @@ describe("roundtrip: buildCliCommand → parseArgs", () => {
 
   it("project name with spaces", () => {
     verifyRoundtrip(makeState({ projectName: "my cool docs" }));
+  });
+
+  it("non-default theme pack (ADR #2818 / #2823)", () => {
+    verifyRoundtrip(makeState({ themePack: "foundry" }));
   });
 
   it("light-dark scheme names with spaces roundtrip correctly", () => {

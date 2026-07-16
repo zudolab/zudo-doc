@@ -1,5 +1,5 @@
 import path from "path";
-import { SINGLE_SCHEMES } from "./constants.js";
+import { SINGLE_SCHEMES, THEME_PACKS } from "./constants.js";
 import { scaffold } from "./scaffold.js";
 import { initGitRepo, installDependencies, validateProjectName } from "./utils.js";
 
@@ -15,6 +15,8 @@ export interface CreateOptions {
   darkScheme?: string;
   respectPrefersColorScheme?: boolean;
   defaultMode?: "light" | "dark";
+  /** Theme pack slug (ADR #2818 Decision 7), validated against THEME_PACKS. Default: "default". */
+  themePack?: string;
   features: string[];
   /** GitHub repository URL — drives the header GitHub link and body-foot
    *  "View source on GitHub" link. Empty = disabled. */
@@ -48,6 +50,14 @@ export async function createZudoDoc(options: CreateOptions): Promise<string> {
     if (value && !SINGLE_SCHEMES.includes(value)) {
       throw new Error(`Unknown ${label} "${value}"`);
     }
+  }
+  // Validate the theme pack slug like the CLI (cli.ts) and preset (preset.ts)
+  // paths do (ADR #2818 Decision 7 / #2823 codex-review follow-up) — an
+  // unvalidated slug here would be written verbatim into zfb.config.ts and
+  // only fail when the generated site's build reaches plugin setup.
+  if (rest.themePack && !THEME_PACKS.some((t) => t.slug === rest.themePack)) {
+    const catalog = THEME_PACKS.map((t) => t.slug).join(", ");
+    throw new Error(`Unknown theme pack "${rest.themePack}". Available: ${catalog}`);
   }
   const choices = { ...rest, defaultLang: rest.defaultLang ?? "en" };
   await scaffold(choices);

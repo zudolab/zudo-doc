@@ -59,6 +59,15 @@ import { createDesignTokenPanelIsland } from "../doc-body-end-islands/design-tok
 // permanent contract per #2668; see the "@takazudo/zdtp dep implication"
 // note in docs/adr/route-injection-seam.md.
 import { DesignTokenPanelBootstrap } from "../design-token-panel-bootstrap.js";
+// Island-scanner contract (#2821, ADR theme-packs.md Decision 7): the
+// theme-pack switcher flyout island is injected into the body-end islands the
+// same way as DesignTokenPanelBootstrap above, so ANY `createChrome` consumer
+// gets the settings-gated mount. The import MUST stay static (route → chrome
+// → derive → component is the scanner-reachability chain; a dynamic or
+// type-only import silently kills island registration — the #2480 lesson).
+import { ThemePackSwitcher, type ThemePackSwitcherProps } from "../theme-pack-switcher/index.js";
+import { createThemePackSwitcherIsland } from "../doc-body-end-islands/theme-pack-switcher-island.js";
+import { DEFAULT_THEME_PACK_SLUG } from "../theme-pack-switcher/theme-pack-sync.js";
 import { SearchWidget } from "../search-widget/index.js";
 import { createMdxComponents } from "../mdx-components/index.js";
 import { createCategoryNavWrapper } from "../category-nav/index.js";
@@ -290,17 +299,46 @@ export function deriveSearchWidgetSlot(ctx: ChromeContext) {
 // ---------------------------------------------------------------------------
 
 /**
+ * Derive the SSR props of the theme-pack switcher flyout island from the
+ * context's resolved registry (ADR theme-packs.md Decision 7 "Switcher data
+ * flow"): the lightweight serializable `{ active, order, base }` projection.
+ * `themePackRegistry: null` (registry not threaded) → `null`, which renders
+ * the whole feature inert — the same accepted coupling class as
+ * `colorSchemes` for a `packageOwnedRoutes: false` host.
+ */
+function deriveThemePackSwitcherProps(ctx: ChromeContext): ThemePackSwitcherProps | null {
+  // `== null` on purpose: a pre-#2819 host-built payload (or a minimal test
+  // context) may omit the field entirely — treat `undefined` like `null`.
+  const registry = ctx.themePackRegistry;
+  if (registry == null) return null;
+  return {
+    active: ctx.settings.themePack ?? DEFAULT_THEME_PACK_SLUG,
+    order: registry.map((entry) => ({
+      slug: entry.slug,
+      name: entry.meta.name,
+      mode: entry.meta.mode,
+      description: entry.meta.description,
+    })),
+    // Base prefix WITH trailing slash — the head-with-defaults themePackBase
+    // convention; the dialog (#2825) concatenates "theme-packs/index.json".
+    base: ctx.withBase("/"),
+  };
+}
+
+/**
  * Derive the body-end islands. The package owns the settings-gated
- * DesignTokenPanelBootstrap mount even when a host supplies a BodyEndIslands
- * override; the override is composed with that one package island rather than
- * replacing it. Without an override, `createBodyEndIslands` already contains
- * the same package island, so the two paths are deliberately exclusive.
+ * DesignTokenPanelBootstrap + ThemePackSwitcher mounts even when a host
+ * supplies a BodyEndIslands override; the override is composed with those
+ * package islands rather than replacing them. Without an override,
+ * `createBodyEndIslands` already contains the same package islands, so the
+ * two paths are deliberately exclusive.
  *
- * The bootstrap component defaults to the statically imported package island
- * (#2658 gate-2 fix), preserving route → chrome → derive → bootstrap scanner
- * reachability for bare `createChrome(routeCtx)` callers. A host may still
- * replace the component through `hostBindings.DesignTokenPanelBootstrap`, but
- * the package remains the sole owner of its mount and settings gate.
+ * The components default to the statically imported package islands
+ * (#2658 gate-2 fix; #2821), preserving route → chrome → derive → component
+ * scanner reachability for bare `createChrome(routeCtx)` callers. A host may
+ * still replace the DTP component through
+ * `hostBindings.DesignTokenPanelBootstrap`, but the package remains the sole
+ * owner of the mounts and settings gates.
  */
 export function deriveBodyEndIslands(ctx: ChromeContext) {
   const designTokenPanelDeps = {
@@ -308,18 +346,27 @@ export function deriveBodyEndIslands(ctx: ChromeContext) {
       ctx.hostBindings.DesignTokenPanelBootstrap ??
       (DesignTokenPanelBootstrap as unknown as FactoryComponent),
   };
+  const themePackSwitcherDeps = {
+    themePackSwitcherProps: deriveThemePackSwitcherProps(ctx),
+    ThemePackSwitcher: ThemePackSwitcher as unknown as FactoryComponent,
+  };
   const HostBodyEndIslands = ctx.hostBindings.BodyEndIslands;
 
   if (!HostBodyEndIslands) {
     return createBodyEndIslands({
       settings: ctx.settings,
       ...designTokenPanelDeps,
+      ...themePackSwitcherDeps,
     });
   }
 
   const DesignTokenPanelIsland = createDesignTokenPanelIsland({
     designTokenPanel: ctx.settings.designTokenPanel,
     ...designTokenPanelDeps,
+  });
+  const ThemePackSwitcherIsland = createThemePackSwitcherIsland({
+    themePackSwitcher: ctx.settings.themePackSwitcher === true,
+    ...themePackSwitcherDeps,
   });
   type BodyEndIslandsProps = { basePath: string; aiChatBodyLabel?: string };
   const HostBodyEnd = HostBodyEndIslands as unknown as (
@@ -331,6 +378,7 @@ export function deriveBodyEndIslands(ctx: ChromeContext) {
       <>
         <HostBodyEnd {...props} />
         <DesignTokenPanelIsland />
+        <ThemePackSwitcherIsland />
       </>
     );
   }

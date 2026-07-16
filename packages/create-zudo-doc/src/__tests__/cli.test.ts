@@ -45,6 +45,14 @@ describe("parseArgs", () => {
     it("--pm", () => {
       expect(parseArgs(["--pm", "npm"]).pm).toBe("npm");
     });
+
+    it("--theme-pack", () => {
+      expect(parseArgs(["--theme-pack", "foundry"]).themePack).toBe("foundry");
+    });
+
+    it("--theme-pack undefined when not provided", () => {
+      expect(parseArgs([]).themePack).toBeUndefined();
+    });
   });
 
   describe("boolean feature flags — enabled", () => {
@@ -185,5 +193,20 @@ describe("validateArgs — project-name validation (F4 #2013)", () => {
 
   it("accepts a name exactly 214 characters long", () => {
     expect(validateArgs({ name: "a".repeat(214) })).toBeNull();
+  });
+});
+
+// #2823 — theme-pack CLI catalog validation
+describe("validateArgs — theme-pack (ADR #2818)", () => {
+  it("accepts a known theme pack slug", () => {
+    expect(validateArgs({ themePack: "default" })).toBeNull();
+    expect(validateArgs({ themePack: "foundry" })).toBeNull();
+  });
+
+  it("rejects an unknown theme pack slug and lists the catalog", () => {
+    const error = validateArgs({ themePack: "not-a-real-pack" });
+    expect(error).toMatch(/Unknown theme pack "not-a-real-pack"/);
+    expect(error).toMatch(/default/);
+    expect(error).toMatch(/foundry/);
   });
 });

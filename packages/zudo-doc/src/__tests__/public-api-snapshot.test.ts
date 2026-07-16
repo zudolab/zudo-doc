@@ -119,6 +119,7 @@ describe("package.json exports keyset snapshot", () => {
         "./plugins/llms-txt",
         "./plugins/routes",
         "./plugins/search-index",
+        "./plugins/theme-packs",
         "./preset",
         "./render-markdown",
         "./robots",
@@ -164,6 +165,8 @@ describe("package.json exports keyset snapshot", () => {
         "./tag-pages",
         "./tags-audit",
         "./theme",
+        "./theme-cli",
+        "./theme-packs/*",
         "./theme-toggle",
         "./theme.css",
         "./theme/color-scheme-provider",
@@ -280,6 +283,9 @@ describe("Settings public field set snapshot", () => {
         "packageOwnedRoutes",
         "chromeBindingsModule",
         "designTokenPanelConfigModule",
+        "themePack",
+        "themePackSwitcher",
+        "themePacks",
       ]
     `);
   });
