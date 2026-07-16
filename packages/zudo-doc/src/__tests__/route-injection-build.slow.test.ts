@@ -447,10 +447,15 @@ describe("DH doc-history: injected doc route registers the DocHistory island (pa
  *  `src/chrome-bindings.tsx` — flips ON the CB #2501 host-callables channel. */
 function enableChromeBindingsModule(dir: string): void {
   const settingsPath = join(dir, "src/config/settings.ts");
-  const src = readFileSync(settingsPath, "utf-8").replace(
-    /packageOwnedRoutes:\s*true,/,
-    'packageOwnedRoutes: true,\n  chromeBindingsModule: "./src/chrome-bindings.tsx",',
-  );
+  const src = readFileSync(settingsPath, "utf-8")
+    .replace(
+      /packageOwnedRoutes:\s*true,/,
+      'packageOwnedRoutes: true,\n  chromeBindingsModule: "./src/chrome-bindings.tsx",',
+    )
+    .replace(
+      /headerRightItems:\s*\[\],/,
+      'headerRightItems: [{ type: "component", component: "injected-route-badge" }],',
+    );
   writeFileSync(settingsPath, src);
 }
 
@@ -521,6 +526,14 @@ describe("CB chrome-bindings: chromeBindingsModule wires host bindings into crea
     expectHtmlAttr(html, "data-testid", "frontmatter-preview");
     expect(html).toContain("cb-demo-key");
     expect(html).toContain("CB-DEMO-VALUE-MARKER");
+  });
+
+  it("headerRightComponents: injected route resolves the serialized name through the callable host registry", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    expect(html).toMatch(
+      /data-header-registry=(?:"injected:en:0"|injected:en:0)/,
+    );
+    expect(html).toContain("INJECTED-HEADER-REGISTRY-MARKER");
   });
 
   // CONFIRM #2505 — end-to-end proof that `ctx.hostBindings.docContentHeaderExtras`

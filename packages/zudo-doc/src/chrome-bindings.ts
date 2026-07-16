@@ -38,6 +38,7 @@ import type { BreadcrumbItem } from "./breadcrumb/index.js";
 import type { DocPageNavNode } from "./doc-page-shell/index.js";
 import type { HeadingItem } from "./toc/index.js";
 import type { ChromeHostBindings } from "./factory-context/index.js";
+import type { HeaderRightComponentRegistry } from "./header/types.js";
 
 // ===========================================================================
 // Per-slot CALL-SIDE prop/arg contracts.
@@ -210,6 +211,11 @@ export interface ChromeBindingsInput {
   DocPager?: (props: DocPagerSlotProps) => unknown;
   /** Header search widget — see {@link SearchWidgetSlotProps}. */
   SearchWidget?: (props: SearchWidgetSlotProps) => unknown;
+  /**
+   * Named header-right renderers. Values are callable-only and receive the
+   * exact `HeaderRightComponentProps` used by the header renderer.
+   */
+  headerRightComponents?: HeaderRightComponentRegistry;
   /** Body-end bootstrap islands — see {@link BodyEndIslandsSlotProps}. */
   BodyEndIslands?: (props: BodyEndIslandsSlotProps) => unknown;
   /** DocHistory island — see {@link DocHistorySlotProps}. */
