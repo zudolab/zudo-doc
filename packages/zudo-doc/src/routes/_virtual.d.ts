@@ -29,6 +29,10 @@ declare module "virtual:zudo-doc-route-context" {
      *  `colorSchemes` to `zudoDocPreset` — `_chrome.tsx` falls back to
      *  `DEFAULT_SCHEME` in that case. */
     colorSchemes: Record<string, unknown> | null;
+    /** Resolved, enabled, ordered theme-pack registry (ADR
+     *  `docs/adr/theme-packs.md`, Decision 2). `null` when the routes plugin
+     *  did not thread one. */
+    themePackRegistry: Array<Record<string, unknown>> | null;
   };
 }
 

@@ -280,6 +280,9 @@ describe("Settings public field set snapshot", () => {
         "packageOwnedRoutes",
         "chromeBindingsModule",
         "designTokenPanelConfigModule",
+        "themePack",
+        "themePackSwitcher",
+        "themePacks",
       ]
     `);
   });

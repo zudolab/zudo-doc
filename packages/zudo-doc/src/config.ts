@@ -168,6 +168,9 @@ export const DEFAULT_SETTINGS: Settings = {
   headerNav: [],
   headerRightItems: [{ type: "component", component: "theme-toggle" }],
   packageOwnedRoutes: true,
+  themePack: "default",
+  themePackSwitcher: false,
+  themePacks: undefined,
 };
 
 // ---------------------------------------------------------------------------
@@ -478,6 +481,27 @@ export interface ZudoDocConfig {
    * @default undefined (package-default builder is used)
    */
   designTokenPanelConfigModule?: string;
+  /**
+   * Active theme pack slug. "default" is the stock zudo-doc look (no pack
+   * stylesheet loaded). Must be a member of the resolved `themePacks` list;
+   * an unknown slug fails the build loudly at plugin setup.
+   * @default "default"
+   */
+  themePack?: string;
+  /**
+   * Mount the bottom-right theme-pack switcher flyout (and its browse-all
+   * dialog) on every page.
+   * @default false
+   */
+  themePackSwitcher?: boolean;
+  /**
+   * Enabled pack slugs, in switcher order. `undefined` = all bundled packs:
+   * "default" first, then the bundled registry in canonical
+   * (alphabetical-by-slug) order. An explicit list is authoritative — may omit
+   * "default", reorder freely; duplicates/unknown slugs fail loudly.
+   * @default undefined
+   */
+  themePacks?: string[];
 
   // ── Escape hatches (non-serializable / data overrides) ───────────────────
 

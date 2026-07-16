@@ -68,6 +68,11 @@ import { createRequire } from "node:module";
 import { existsSync, statSync, cpSync, rmSync, mkdirSync } from "node:fs";
 import { dirname, basename, join } from "node:path";
 import { definePlugin, type ZfbSetupContext } from "@takazudo/zfb/plugins";
+import {
+  loadThemePackRegistry,
+  resolveEnabledPacks,
+  type ThemePackRegistry,
+} from "../theme-packs-registry/index.js";
 
 // ---------------------------------------------------------------------------
 // Options shape (filled by the preset from settings — fully serializable).
@@ -101,6 +106,10 @@ interface RoutesSettings {
   /** See `settings.ts` — project-root-relative path to a host design-token
    *  panel config module (#2658). */
   designTokenPanelConfigModule?: string;
+  /** See `settings.ts` / ADR `docs/adr/theme-packs.md` — active theme-pack slug. */
+  themePack?: string;
+  /** See `settings.ts` / ADR `docs/adr/theme-packs.md` — enabled pack slugs, in order. */
+  themePacks?: string[];
   [key: string]: unknown;
 }
 
@@ -255,6 +264,25 @@ const plugin = definePlugin({
     const tagVocabulary = options.tagVocabulary ?? [];
     const colorSchemes = options.colorSchemes ?? null;
 
+    // (0) Theme-pack registry (ADR docs/adr/theme-packs.md, Decision 2
+    // "Registry threading to SSR/islands", #2819). Resolves the shipped
+    // `theme-packs/` directory relative to THIS module — works from
+    // `dist/plugins/routes.js` in the published/workspace-built package and
+    // from `src/plugins/routes.ts` here under vitest (which runs the source
+    // directly) — scans + validates every bundled pack
+    // (`loadThemePackRegistry`), then resolves the enabled/ordered subset
+    // against `settings.themePack`/`settings.themePacks`
+    // (`resolveEnabledPacks`, PURE). An unknown/duplicate slug THROWS here,
+    // naming the bad slug and the available ones — the `chromeBindingsModule`
+    // fail-loudly precedent, never a silent fallback. The asset-serving
+    // (postBuild/devMiddleware) side of this directory is #2820's
+    // `plugins/theme-packs.ts`, not this plugin.
+    const themePacksDir = new URL("../theme-packs/", import.meta.url);
+    const themePackRegistry: ThemePackRegistry = resolveEnabledPacks(
+      loadThemePackRegistry(themePacksDir),
+      { themePack: settings.themePack, themePacks: settings.themePacks },
+    );
+
     // (1) Route-context virtual module — SERIALIZABLE DATA ONLY (Decision 1).
     // `JSON.stringify` is the boundary that enforces "no functions / no
     // components": any non-serializable value would silently drop, so the
@@ -268,6 +296,7 @@ const plugin = definePlugin({
           translations,
           tagVocabulary,
           colorSchemes,
+          themePackRegistry,
         })};\n`,
     );
 

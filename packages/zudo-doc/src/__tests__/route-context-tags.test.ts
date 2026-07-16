@@ -17,6 +17,7 @@ function makeContext(tagGovernance: "off" | "warn" | "strict" = "warn") {
         { id: "ai", label: "AI", group: "topic" },
       ],
       colorSchemes: null,
+      themePackRegistry: null,
     },
     { stableDocs: () => [] },
   );
