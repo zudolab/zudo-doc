@@ -52,7 +52,9 @@ describe("custom Worker deployment contract", () => {
     const previewEntry = read("worker-preview-entry.ts");
     expect(previewEntry).toContain('import adapterWorker from "./dist/_worker.js";');
     expect(previewEntry).toContain('assetUrl.host = "assets.local"');
-    expect(previewEntry).toContain("adapterWorker.fetch(request, previewEnv, ctx)");
+    expect(previewEntry).toContain('request.method === "GET" || request.method === "HEAD"');
+    expect(previewEntry).toContain("fetchPreviewAsset(request, env.ASSETS)");
+    expect(previewEntry).toContain("adapterWorker.fetch(request, env, ctx)");
     expect(previewEntry).toContain("satisfies ExportedHandler<Cloudflare.Env>");
     expect(previewEntry).not.toContain("AiChatDailySpendCap");
   });

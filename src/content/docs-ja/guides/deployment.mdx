@@ -93,7 +93,7 @@ https://<alias>-zudo-doc-preview.<your-subdomain>.workers.dev
 
 CIはwranglerの出力から正確なホストを解析し、**preview**ジョブによってPRのコメントとして自動的に投稿されます。
 分離されたserviceを初めて作成するときは、CIがCloudflare APIを介してpreview URLのsubdomain設定だけを明示的に有効化し、alias付きuploadを再試行します。
-preview entryは、生成されたadapterへのpublic requestを維持しつつ、内部hostnameで`ASSETS`をprobeします。Cloudflareのasset bindingはpathnameだけでmatchするため、preview aliasがsame-zone Worker fetchとして扱われることを避けられます。本番は生成されたadapterを引き続き直接exportします。
+preview entryはGET/HEADを内部hostnameで`ASSETS`へ直接送り、その他のmethodを生成されたadapterへ委譲します。Cloudflareのasset bindingはpathnameだけでmatchするため、API POST smoke gateを維持しながらpreview aliasがsame-zone Worker fetchとして扱われることを避けられます。本番は生成されたadapterを引き続き直接exportします。
 
 Durable Objectsを実装するversionにはCloudflareがプレビューURLを発行しないため、プレビューworkflowは
 サイトのビルド後に、別のpreview service用のアダプター専用config/entryを生成します。プレビューはSSRと
