@@ -51,12 +51,20 @@ export interface HeaderNavItem extends HeaderNavChildItem {
   children?: HeaderNavChildItem[];
 }
 
-export type HeaderRightComponentName =
+export type HeaderRightBuiltinComponentName =
   | "theme-toggle"
   | "language-switcher"
   | "version-switcher"
   | "github-link"
   | "search";
+
+/**
+ * Serializable component name. Built-ins remain suggested, while host-owned
+ * names resolve through `ChromeHostBindings.headerRightComponents`.
+ */
+export type HeaderRightComponentName =
+  | HeaderRightBuiltinComponentName
+  | (string & {});
 
 export type HeaderRightTriggerName = "design-token-panel" | "ai-chat";
 

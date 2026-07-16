@@ -435,7 +435,7 @@ describe("DH doc-history: injected doc route registers the DocHistory island (pa
 // `settings.chromeBindingsModule` points at a host module exporting a named
 // `chromeBindings: ChromeHostBindings`. The routes plugin re-exports it
 // through `virtual:zudo-doc-chrome-bindings`; `routes/_chrome.tsx` spreads it
-// into `createChrome(routeCtx, { DocHistory, ...chromeBindings })`. This
+// into `createChrome(routeCtx, { ...chromeBindings, DocHistory })`. This
 // proves the un-stranding: `buildFrontmatterPreviewEntries` — a
 // `ChromeHostBindings` slot that stays at its package-default `() => []` stub
 // on every other injected-route fixture in this file (see the baseline
@@ -447,10 +447,15 @@ describe("DH doc-history: injected doc route registers the DocHistory island (pa
  *  `src/chrome-bindings.tsx` — flips ON the CB #2501 host-callables channel. */
 function enableChromeBindingsModule(dir: string): void {
   const settingsPath = join(dir, "src/config/settings.ts");
-  const src = readFileSync(settingsPath, "utf-8").replace(
-    /packageOwnedRoutes:\s*true,/,
-    'packageOwnedRoutes: true,\n  chromeBindingsModule: "./src/chrome-bindings.tsx",',
-  );
+  const src = readFileSync(settingsPath, "utf-8")
+    .replace(
+      /packageOwnedRoutes:\s*true,/,
+      'packageOwnedRoutes: true,\n  chromeBindingsModule: "./src/chrome-bindings.tsx",',
+    )
+    .replace(
+      /headerRightItems:\s*\[\],/,
+      'headerRightItems: [{ type: "component", component: "injected-route-badge" }],',
+    );
   writeFileSync(settingsPath, src);
 }
 
@@ -523,6 +528,14 @@ describe("CB chrome-bindings: chromeBindingsModule wires host bindings into crea
     expect(html).toContain("CB-DEMO-VALUE-MARKER");
   });
 
+  it("headerRightComponents: injected route resolves the serialized name through the callable host registry", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    expect(html).toMatch(
+      /data-header-registry=(?:"injected:en:0"|injected:en:0)/,
+    );
+    expect(html).toContain("INJECTED-HEADER-REGISTRY-MARKER");
+  });
+
   // CONFIRM #2505 — end-to-end proof that `ctx.hostBindings.docContentHeaderExtras`
   // reaches `DocContentHeader` on an injected doc route: renders a
   // frontmatter-keyed badge sourced from `entry.data.tier` (the fixture's MDX
@@ -554,7 +567,8 @@ describe("CB chrome-bindings: chromeBindingsModule wires host bindings into crea
   });
 
   // Case DH (DocHistory hydration pairing) regression guard: spreading
-  // `...chromeBindings` AFTER the `DocHistory` default must not disturb the
+  // The scanner-reachable `DocHistory` default AFTER `...chromeBindings` must
+  // not be disturbed by other host slots in the configured object.
   // #2480 island-scanner wiring when the host binding doesn't touch that slot.
   it("regression: DocHistory island registration (#2480) still works with chromeBindingsModule set", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");

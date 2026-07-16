@@ -131,14 +131,9 @@ Methodology            (depth 0)
 
 より読みやすくするため、明示的なサイドバー設定を使用してサブグループをトップレベルに昇格できます。ネストが1レベル減少します。設定ファイルは自動で消費されないため、`sidebarsConfig` chrome スロットからバインドしてください。
 
-<Warning title="新しいscaffoldではクロームバインディングが必要です">
+<Warning title="サイドバーデータ binding が必要です">
 
-サイドバー設定を追加するだけではscaffoldプロジェクトに何も描画されません。ドキュメントルートの
-スタブはホストバインディングなしで`createChrome(routeCtx)`を呼び出すため、`sidebarsConfig`スロットは
-`{}`のデフォルトのままとなり、すべてのセクションでファイルシステムの自動生成が使われます。`chromeBindingsModule`を通し、
-`sidebarsConfig`をバインドしてください。詳しくは[Custom Components](./custom-components.mdx)と
-[ホストクロームバインディング](../reference/host-chrome-bindings.mdx)を参照してください。[テンプレート修正](https://github.com/zudolab/zudo-doc/issues/2716)後に生成されたscaffoldは
-表示用／データ用スロットを自動で通しますが、独自のハイドレートするアイランドには引き続きガイドで説明する静的インポートの配線が必要です。
+`sidebarsConfig` のデフォルトは `{}` で、すべてのセクションがファイルシステムの自動生成を使います。`chromeBindingsModule` を設定をバインドするモジュールへ向けてください。新しいルートスタブはそれをすでに消費するため編集しません。詳しくは [Custom Components](./custom-components.mdx) と [ホストクロームバインディング](../reference/host-chrome-bindings.mdx)を参照してください。
 
 </Warning>
 

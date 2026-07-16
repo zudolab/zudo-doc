@@ -31,7 +31,7 @@ The full `package.json#exports` keyset is the contract. Any addition or removal 
 | `./preset` | `zudoDocPreset()` — zfb config preset factory (internal fragment builder; `./config` is the documented API) |
 | `./settings` | `Settings` / `PresetSettings` type definitions |
 | `./factory-context` | `FactoryContext` / `ChromeContext` / `RouteContext` / `ChromeHostBindings` — the full shared type surface for package factories and chrome wiring (types only, node-free) |
-| `./chrome-bindings` | `defineChromeBindings(input)` — compile-time-checked widening adapter that builds a host's `ChromeHostBindings` object from the narrower, call-site-precise `ChromeBindingsInput` type; use it instead of a raw object literal or an `as`/`as unknown as` cast on `ChromeHostBindings` (drift detection, #2674) |
+| `./chrome-bindings` | `defineChromeBindings(input)` — compile-time-checked widening adapter that builds a host's `ChromeHostBindings` object from the narrower, call-site-precise `ChromeBindingsInput` type; exports exact props for every component slot, including `HeaderSlotProps`, `FooterSlotProps`, `SidebarSlotProps`, `TocSlotProps`, `BreadcrumbSlotProps`, and `DocPagerSlotProps`; use it instead of a raw object literal or an `as`/`as unknown as` cast on `ChromeHostBindings` (drift detection, #2674) |
 | `./route-context` | `createRouteContext(payload, options?)` — reconstructs the full `RouteContext` callable surface from the serializable `RouteContextPayload`; also re-exports `RouteContext` / `RouteContextPayload` / `TagInfo` / `ContentBridge` types |
 | `./chrome` | `createChrome(context, hostBindings?)` — assembles a `ChromeContext` from a `RouteContext` + `ChromeHostBindings` (stub defaults) and wires all page-chrome factories; returns the `Chrome` surface |
 | `./eject` | `EJECTABLE` map + `eject()` function + `ZudoDocJson` type — ejectable component registry for the `zudo-doc eject` CLI |
@@ -47,7 +47,14 @@ behaviour byte-for-byte.
 
 | Slot | Default when absent |
 |---|---|
+| `Header` | The package `HeaderWithDefaults`; receives `HeaderSlotProps` |
+| `Footer` | The package `FooterWithDefaults`; receives `FooterSlotProps` |
+| `Sidebar` | The package `SidebarWithDefaults`; receives `SidebarSlotProps` |
+| `Toc` | The package desktop `Toc` island component; receives `TocSlotProps` |
+| `Breadcrumb` | The package `Breadcrumb`; receives `BreadcrumbSlotProps` |
+| `DocPager` | The package `DocPager`; receives `DocPagerSlotProps` |
 | `SearchWidget` | The package `SearchWidget` bound to the site base |
+| `headerRightComponents` | `{}` (only built-in names resolve); maps project-owned string names in `headerRightItems` to exact `HeaderRightComponentProps` renderers. Built-in names are reserved. |
 | `docHistoryMeta` | `{}` (no Created/Updated block) |
 | `sidebarsConfig` | `{}` (auto-generated tree only) |
 | `frontmatterRenderers` | `{}` |
@@ -56,6 +63,7 @@ behaviour byte-for-byte.
 | `tagVocabulary` | `[]` |
 | `BodyEndIslands` | The package-island subset derived from `settings` |
 | `DocHistory` | A no-op stub rendering an empty fragment |
+| `DesignTokenPanelBootstrap` | The settings-gated package bootstrap. Custom panel data belongs in `designTokenPanelConfigModule`; replace this slot only when replacing the island implementation. |
 | `mdxExtras` | Package SSR impls + a `PresetGenerator` stub |
 | `docContentHeaderExtras` | Renders nothing. A renderer (not a component) called as `({ entry, slug, locale, isFallback?, version? }) => unknown` for `kind === "entry"` doc pages on all 4 doc routes (including versioned pages — it receives `version` and decides for itself). Renders between the `<h1>` and the metainfo/tags block in `DocContentHeader`. |
 | `homeExtras` | Renders nothing. A renderer called as `({ locale }) => unknown` for the home hero. The `/` home route is never injected by the routes plugin (zfb rejects `/`), so this fires on injected `/[locale]` homes and on any host that threads it through `createChrome`; a `HomePageView` `extras` prop takes precedence when both are present. |

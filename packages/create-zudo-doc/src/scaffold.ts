@@ -557,7 +557,7 @@ function generatePackageJson(choices: UserChoices) {
     // extraWatchPaths rebuilds, and TS-config-loader path canonicalization
     // (Takazudo/zudo-front-builder#1036–#1043). next.45: docs-only. next.46:
     // opt-in dev boot-lazy mode (#1057) + client-router timer lifecycle fixes —
-    // dev-server-only. next.47: dual light/dark syntect themes (themeLight/
+    // dev-server-only. Historical dual light/dark theme support (themeLight/
     // themeDark on CodeHighlightConfig, --shiki-light/--shiki-dark, #1067) plus
     // stricter build-start validation that rejects unknown theme names. next.48:
     // re-export @takazudo/zfb/config from the zfb-shim.d.ts type shim — type-only

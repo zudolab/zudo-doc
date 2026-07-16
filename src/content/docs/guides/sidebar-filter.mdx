@@ -45,7 +45,7 @@ pnpm create zudo-doc my-docs --sidebar-filter
 
 ### In an Existing Project
 
-Use the `sidebarFilter` feature/configuration to disable the filter; it is the supported control, rather than an ejected chrome component. For a new project, pass `--no-sidebar-filter` or leave `sidebarFilter` out of the selected features. Deeper changes to the filter's chrome implementation await [the supported chrome-markup seam](https://github.com/zudolab/zudo-doc/issues/2719).
+Use the `sidebarFilter` feature/configuration to disable the filter. For a new project, pass `--no-sidebar-filter` or leave `sidebarFilter` out of the selected features. For markup changes, replace the primary `Sidebar` through [`chromeBindingsModule`](../reference/host-chrome-bindings.mdx); if you eject nested sidebar pieces, follow the CLI's owner-level remediation because copying a child island alone does not replace the package sidebar.
 
 <Tip>
 
