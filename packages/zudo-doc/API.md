@@ -54,6 +54,7 @@ behaviour byte-for-byte.
 | `Breadcrumb` | The package `Breadcrumb`; receives `BreadcrumbSlotProps` |
 | `DocPager` | The package `DocPager`; receives `DocPagerSlotProps` |
 | `SearchWidget` | The package `SearchWidget` bound to the site base |
+| `headerRightComponents` | `{}` (only built-in names resolve); maps project-owned string names in `headerRightItems` to exact `HeaderRightComponentProps` renderers. Built-in names are reserved. |
 | `docHistoryMeta` | `{}` (no Created/Updated block) |
 | `sidebarsConfig` | `{}` (auto-generated tree only) |
 | `frontmatterRenderers` | `{}` |
@@ -62,6 +63,7 @@ behaviour byte-for-byte.
 | `tagVocabulary` | `[]` |
 | `BodyEndIslands` | The package-island subset derived from `settings` |
 | `DocHistory` | A no-op stub rendering an empty fragment |
+| `DesignTokenPanelBootstrap` | The settings-gated package bootstrap. Custom panel data belongs in `designTokenPanelConfigModule`; replace this slot only when replacing the island implementation. |
 | `mdxExtras` | Package SSR impls + a `PresetGenerator` stub |
 | `docContentHeaderExtras` | Renders nothing. A renderer (not a component) called as `({ entry, slug, locale, isFallback?, version? }) => unknown` for `kind === "entry"` doc pages on all 4 doc routes (including versioned pages — it receives `version` and decides for itself). Renders between the `<h1>` and the metainfo/tags block in `DocContentHeader`. |
 | `homeExtras` | Renders nothing. A renderer called as `({ locale }) => unknown` for the home hero. The `/` home route is never injected by the routes plugin (zfb rejects `/`), so this fires on injected `/[locale]` homes and on any host that threads it through `createChrome`; a `HomePageView` `extras` prop takes precedence when both are present. |

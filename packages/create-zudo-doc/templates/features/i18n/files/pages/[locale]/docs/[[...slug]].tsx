@@ -63,7 +63,7 @@ export function paths(): Array<{
       result.push({
         params: { locale, slug: item.slugParams },
         props: {
-          ...(item.props as Record<string, unknown>),
+          ...(item.props as unknown as Record<string, unknown>),
           // Fallback pages exist only in the default locale, so their
           // doc-history lives under the EN docsDir; translated pages read
           // their own locale dir.

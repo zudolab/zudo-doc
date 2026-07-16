@@ -25,6 +25,12 @@ chrome, islands, default `@theme` tokens, even the doc ROUTES themselves via
    line; `tagGovernance` writes a tiny `src/config/` pair — see each
    module's header comment for why).
 
+Both base and i18n document stubs unconditionally consume
+`virtual:zudo-doc-chrome-bindings`. The doc-history post-processor spreads the
+configured object first and replaces only `DocHistory`, so it must never drop
+primary slots, `headerRightComponents`, or `mdxExtras`. Presentational chrome
+customization is config + one typed module; it does not require a route fork.
+
 Most feature modules are now **pure settings-field emission**: the feature
 only changes what `zfb-config-gen.ts` writes into `zudoDoc({...})`, because
 the corresponding UI/behavior is entirely package-owned already (package-first
@@ -40,7 +46,7 @@ left to inject or copy.
 | `src/compose.ts` | Composition engine: injection system (mostly unused now — see below), feature resolution |
 | `src/features/*.ts` | Feature modules — settings-field emission via `zfb-config-gen.ts` + a handful of genuine file copies / `postProcess` patches (18 modules) |
 | `src/zfb-config-gen.ts` | The SINGLE config generator — emits the one `zfb.config.ts` (`defineConfig(zudoDoc({...}))`), diff-from-defaults against a local mirror of `packages/zudo-doc/src/config.ts`'s `DEFAULT_SETTINGS`. Replaces the former `settings-gen.ts` + `zfb-config-gen.ts` two-file split — there is no more `src/config/settings.ts` in a fresh scaffold |
-| `src/claude-md-gen.ts` | Generates the per-project `CLAUDE.md` for the scaffolded site (minimal-shape, no stale `src/components/`/`pages/lib/*` references) |
+| `src/claude-md-gen.ts` | Generates the per-project `CLAUDE.md` for the scaffolded site, including current-only Shiki, chrome bindings, and binding-aware eject guidance |
 | `src/preset.ts` | Resolves a JSON `--preset` file (or CLI flags) into `UserChoices` — unrelated to the package's own `@takazudo/zudo-doc/preset`, despite the similar name |
 | `src/constants.ts` | Feature definitions, supported langs, header-right labels, and the current Default light/dark scheme pairing |
 | `src/utils.ts` | Shared utilities (patchFile, patchDefaultLang, getSecondaryLang) |

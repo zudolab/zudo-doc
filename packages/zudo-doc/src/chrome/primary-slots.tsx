@@ -37,9 +37,17 @@ type PrimarySlot<P> = (props: P) => ComponentChildren;
  * route factories from inventing their own override logic.
  */
 function resolvePrimarySlot<P>(
+  slot: "Header" | "Footer" | "Sidebar" | "Toc" | "Breadcrumb" | "DocPager",
   replacement: FactoryComponent | undefined,
   createPackageDefault: () => PrimarySlot<P>,
 ): PrimarySlot<P> {
+  if (replacement !== undefined && typeof replacement !== "function") {
+    throw new TypeError(
+      `Invalid primary chrome replacement at chromeBindings.${slot}: expected a callable component. ` +
+        `Export ${slot} from the object built with defineChromeBindings() and point ` +
+        `settings.chromeBindingsModule at that module.`,
+    );
+  }
   return replacement
     ? (replacement as unknown as PrimarySlot<P>)
     : createPackageDefault();
@@ -55,32 +63,35 @@ export function derivePrimaryChromeSlots<S extends Settings = Settings>(
 ) {
   return {
     get Header() {
-      return resolvePrimarySlot<HeaderSlotProps>(ctx.hostBindings.Header, () =>
+      return resolvePrimarySlot<HeaderSlotProps>("Header", ctx.hostBindings.Header, () =>
         createHeaderWithDefaults(ctx),
       );
     },
     get Footer() {
-      return resolvePrimarySlot<FooterSlotProps>(ctx.hostBindings.Footer, () =>
+      return resolvePrimarySlot<FooterSlotProps>("Footer", ctx.hostBindings.Footer, () =>
         createFooterWithDefaults(ctx),
       );
     },
     get Sidebar() {
-      return resolvePrimarySlot<SidebarSlotProps>(ctx.hostBindings.Sidebar, () =>
+      return resolvePrimarySlot<SidebarSlotProps>("Sidebar", ctx.hostBindings.Sidebar, () =>
         createSidebarWithDefaults(ctx),
       );
     },
     get Toc() {
-      return resolvePrimarySlot<TocSlotProps>(ctx.hostBindings.Toc, () => Toc);
+      return resolvePrimarySlot<TocSlotProps>("Toc", ctx.hostBindings.Toc, () => Toc);
     },
     get Breadcrumb() {
       return resolvePrimarySlot<BreadcrumbSlotProps>(
+        "Breadcrumb",
         ctx.hostBindings.Breadcrumb,
         () => Breadcrumb,
       );
     },
     get DocPager() {
-      return resolvePrimarySlot<DocPagerSlotProps>(ctx.hostBindings.DocPager, () =>
-        createDocPager(ctx),
+      return resolvePrimarySlot<DocPagerSlotProps>(
+        "DocPager",
+        ctx.hostBindings.DocPager,
+        () => createDocPager(ctx),
       );
     },
   };

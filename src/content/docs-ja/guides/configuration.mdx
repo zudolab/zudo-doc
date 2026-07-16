@@ -338,16 +338,11 @@ body-end islands に `FindInPageInit` アイランド（Cmd/Ctrl+F 検索バー�
 
 デフォルト: `false`
 
-<Warning title="新しいscaffoldではクロームバインディングが必要です">
+<Note>
 
-この設定フィールドだけではscaffoldプロジェクトに何も描画されません。ドキュメントルートの
-スタブはホストバインディングなしで`createChrome(routeCtx)`を呼び出すため、`DocHistory`スロットは
-no-opのデフォルトのままです。`chromeBindingsModule`を通し、`DocHistory`をバインドしてください。詳しくは
-[Custom Components](./custom-components.mdx)と
-[ホストクロームバインディング](../reference/host-chrome-bindings.mdx)を参照してください。[テンプレート修正](https://github.com/zudolab/zudo-doc/issues/2716)後に生成されたscaffoldは
-表示用／データ用スロットを自動で通しますが、独自のハイドレートするアイランドには引き続きガイドで説明する静的インポートの配線が必要です。
+新しい scaffold は、この機能を選択したとき、スキャナーから到達可能な実際の `DocHistory` アイランドを生成されるすべてのドキュメントルート形状へ配線します。履歴ボタン自体には `chromeBindingsModule` もルート編集も不要です。
 
-</Warning>
+</Note>
 
 [ドキュメント履歴ガイド](./doc-history.mdx)を参照してください。
 
@@ -357,14 +352,9 @@ no-opのデフォルトのままです。`chromeBindingsModule`を通し、`DocH
 
 デフォルト: `false`
 
-<Warning title="新しいscaffoldではクロームバインディングが必要です">
+<Warning title="メタデータにはホスト binding が必要です">
 
-この設定フィールドだけではscaffoldプロジェクトに何も描画されません。ドキュメントルートの
-スタブはホストバインディングなしで`createChrome(routeCtx)`を呼び出すため、`docHistoryMeta`スロットは
-`{}`のデフォルトのままです。`chromeBindingsModule`を通し、`docHistoryMeta`をビルド時の履歴
-マニフェストへバインドしてください。詳しくは[Custom Components](./custom-components.mdx)と
-[ホストクロームバインディング](../reference/host-chrome-bindings.mdx)を参照してください。[テンプレート修正](https://github.com/zudolab/zudo-doc/issues/2716)後に生成されたscaffoldは
-表示用／データ用スロットを自動で通しますが、独自のハイドレートするアイランドには引き続きガイドで説明する静的インポートの配線が必要です。
+`docHistoryMeta` スロットのデフォルトは `{}` です。`chromeBindingsModule` をビルド時の履歴マニフェストへバインドするモジュールに向けてください。新しいルートスタブはそのモジュールをすでに消費するため編集しません。詳しくは [Custom Components](./custom-components.mdx) と [ホストクロームバインディング](../reference/host-chrome-bindings.mdx)を参照してください。
 
 </Warning>
 

@@ -136,6 +136,16 @@ src/
                           # shared @takazudo/zudo-doc/theme.css + content.css
 ```
 
+`chromeBindingsModule` is the supported callable/markup seam for package-owned
+chrome. `defineChromeBindings` accepts partial objects: omitted slots retain
+package defaults. Its six primary replacement keys are `Header`, `Footer`,
+`Sidebar`, `Toc`, `Breadcrumb`, and `DocPager`; serializable custom
+`headerRightItems` names resolve through `headerRightComponents`. Generated
+default/locale routes already pass the same virtual binding object to
+`createChrome`, and doc-history merges only its `DocHistory` island over it.
+Do not add a legacy host DesignTokenPanel override or resurrect removed public
+aliases while extending this channel.
+
 ## Content Collections
 
 - Schema and collection wiring live in `zfb.config.ts` (Zod validation)

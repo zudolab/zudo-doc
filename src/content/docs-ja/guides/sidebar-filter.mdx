@@ -45,7 +45,7 @@ pnpm create zudo-doc my-docs --sidebar-filter
 
 ### 既存プロジェクトの場合
 
-フィルターを無効にするには、`sidebarFilter` の機能／設定を使います。これはサポートされている制御であり、クロームコンポーネントのエジェクトではありません。新しいプロジェクトでは `--no-sidebar-filter` を渡すか、選択する機能から `sidebarFilter` を外してください。フィルターのクローム実装をより深く変更するには、[サポート済みクロームマークアップ継ぎ目](https://github.com/zudolab/zudo-doc/issues/2719)を待つ必要があります。
+フィルターを無効にするには、`sidebarFilter` の機能／設定を使います。新しいプロジェクトでは `--no-sidebar-filter` を渡すか、選択する機能から `sidebarFilter` を外してください。マークアップ変更では、[`chromeBindingsModule`](../reference/host-chrome-bindings.mdx) 経由で主要 `Sidebar` を置き換えます。入れ子のサイドバー部品を eject する場合、子アイランドをコピーするだけではパッケージのサイドバーは置き換わらないため、CLI の所有者レベル修正案に従ってください。
 
 <Tip>
 

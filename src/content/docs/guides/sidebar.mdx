@@ -131,15 +131,12 @@ Methodology            (depth 0)
 
 For better readability, use explicit sidebar configuration to promote sub-groups to the top level. This reduces nesting by one level. A configuration file is not auto-consumed: bind it through the `sidebarsConfig` chrome slot.
 
-<Warning title="Requires chrome bindings on a fresh scaffold">
+<Warning title="Requires a sidebar-data binding">
 
-Adding sidebar configuration alone renders nothing in a scaffolded project: the doc-route
-stub calls `createChrome(routeCtx)` without host bindings, so the `sidebarsConfig` slot stays at
-its `{}` default and every section uses filesystem auto-generation. Thread `chromeBindingsModule`
-and bind `sidebarsConfig` — see [Custom Components](./custom-components.mdx) and
-[Host Chrome Bindings](../reference/host-chrome-bindings.mdx). Scaffolds generated
-after the [template fix](https://github.com/zudolab/zudo-doc/issues/2716) thread the presentational/data slots automatically;
-your own hydrating islands still need the static-import threading described in the guide.
+`sidebarsConfig` defaults to `{}`, so every section uses filesystem
+auto-generation. Point `chromeBindingsModule` at a module that binds your
+config. Fresh route stubs already consume it; do not edit them. See
+[Custom Components](./custom-components.mdx) and [Host Chrome Bindings](../reference/host-chrome-bindings.mdx).
 
 </Warning>
 

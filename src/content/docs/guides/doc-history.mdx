@@ -35,42 +35,7 @@ export default defineConfig(
 );
 ```
 
-<Warning title="Requires chrome bindings on a fresh scaffold">
-
-Setting this config field alone renders nothing in a scaffolded project: the doc-route
-stub calls `createChrome(routeCtx)` without host bindings, so the `DocHistory` slot stays at
-its no-op default. Thread `chromeBindingsModule` and bind `DocHistory` — see
-[Custom Components](./custom-components.mdx) and
-[Host Chrome Bindings](../reference/host-chrome-bindings.mdx). Scaffolds generated
-after the [template fix](https://github.com/zudolab/zudo-doc/issues/2716) thread the presentational/data slots automatically;
-your own hydrating islands still need the static-import threading described in the guide.
-
-</Warning>
-
-Bind the real History island in the bindings module:
-
-```tsx title="src/chrome-bindings.tsx"
-import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
-import { DocHistory } from "@takazudo/zudo-doc/doc-history";
-
-export const chromeBindings = defineChromeBindings({
-  DocHistory,
-});
-```
-
-Point the same config at that module:
-
-```ts title="zfb.config.ts"
-export default defineConfig(
-  zudoDoc({
-    // ...
-    docHistory: true,
-    chromeBindingsModule: "./src/chrome-bindings.tsx",
-  }),
-);
-```
-
-When creating a project, the generator patches the document-route stubs for this binding only when the doc-history feature was selected. Add the module and route-stub threading manually to an existing scaffold; use the static-import form in [Custom Components](./custom-components.mdx) for this hydrating island.
+Fresh scaffolds statically wire the real History island into all generated route shapes when `docHistory` is selected. No bindings module or route edit is required for the button. An older existing scaffold must update each document stub to the current generated shape: import `DocHistory` statically and overlay it after `chromeBindings`, so the island remains scanner-reachable without dropping other host slots.
 
 The feature is **disabled by default** to keep builds fast for projects that don't need it.
 

@@ -338,17 +338,11 @@ Enable per-page git history (Created/Updated + dropdown). In dev, history is ser
 
 Default: `false`
 
-<Warning title="Requires chrome bindings on a fresh scaffold">
+<Note>
 
-Setting this config field alone renders nothing in a scaffolded project: the doc-route
-stub calls `createChrome(routeCtx)` without host bindings, so the `DocHistory` slot stays at
-its no-op default. Thread `chromeBindingsModule` and bind `DocHistory` — see
-[Custom Components](./custom-components.mdx) and
-[Host Chrome Bindings](../reference/host-chrome-bindings.mdx). Scaffolds generated
-after the [template fix](https://github.com/zudolab/zudo-doc/issues/2716) thread the presentational/data slots automatically;
-your own hydrating islands still need the static-import threading described in the guide.
+Fresh scaffolds wire the real scanner-reachable `DocHistory` island into every generated document-route shape when this feature is selected. No `chromeBindingsModule` or route edit is required for the history button itself.
 
-</Warning>
+</Note>
 
 See the [Document History guide](./doc-history.mdx).
 
@@ -358,15 +352,9 @@ Show the Created/Updated/Author meta block on doc pages (extracted from git hist
 
 Default: `false`
 
-<Warning title="Requires chrome bindings on a fresh scaffold">
+<Warning title="Metadata data requires a host binding">
 
-Setting this config field alone renders nothing in a scaffolded project: the doc-route
-stub calls `createChrome(routeCtx)` without host bindings, so the `docHistoryMeta` slot stays at
-its `{}` default. Thread `chromeBindingsModule` and bind `docHistoryMeta` to the build-time history
-manifest — see [Custom Components](./custom-components.mdx) and
-[Host Chrome Bindings](../reference/host-chrome-bindings.mdx). Scaffolds generated
-after the [template fix](https://github.com/zudolab/zudo-doc/issues/2716) thread the presentational/data slots automatically;
-your own hydrating islands still need the static-import threading described in the guide.
+The `docHistoryMeta` slot defaults to `{}`. Point `chromeBindingsModule` at a module that binds it to the build-time history manifest. Fresh route stubs already consume that module; do not edit them. See [Custom Components](./custom-components.mdx) and [Host Chrome Bindings](../reference/host-chrome-bindings.mdx).
 
 </Warning>
 

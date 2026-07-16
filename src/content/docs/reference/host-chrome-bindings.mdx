@@ -109,6 +109,12 @@ Only the item name travels in the route-context data. `headerRightComponents` re
 
 | Slot | Default when omitted |
 | --- | --- |
+| `Header` | Package `HeaderWithDefaults`; receives `HeaderSlotProps` |
+| `Footer` | Package `FooterWithDefaults`; receives `FooterSlotProps` |
+| `Sidebar` | Package `SidebarWithDefaults`; receives `SidebarSlotProps` |
+| `Toc` | Package desktop `Toc`; receives `TocSlotProps` |
+| `Breadcrumb` | Package `Breadcrumb`; receives `BreadcrumbSlotProps` |
+| `DocPager` | Package `DocPager`; receives `DocPagerSlotProps` |
 | `SearchWidget` | Package search widget, with the site base bound internally |
 | `headerRightComponents` | `{}` — only package built-in header-right names resolve |
 | `docHistoryMeta` | `{}` — no Created/Updated block |
@@ -125,6 +131,13 @@ Only the item name travels in the route-context data. `headerRightComponents` re
 | `homeExtras` | Absent — nothing renders |
 
 So the same module you create for `docContentHeaderExtras` is also where you would, for example, register the custom frontmatter renderers that previously only worked on host-owned routes.
+
+Generated and package-owned document routes are one deliberate exception to
+normal object precedence: when `docHistory` is enabled, their statically
+imported package `DocHistory` is overlaid after the configured object. That
+keeps its client-island registration scanner-reachable while preserving every
+other binding. A `DocHistory` value declared only in the virtual host module
+cannot replace it on those routes.
 
 <Warning>
 

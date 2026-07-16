@@ -1033,6 +1033,11 @@ describe("scaffold — CLAUDE.md generation", () => {
     expect(content).toContain("zfb.config.ts");
     expect(content).toContain("node_modules/@takazudo/zudo-doc");
     expect(content).toContain("zudo-doc eject");
+    expect(content).toContain("defineChromeBindings");
+    expect(content).toContain("headerRightComponents");
+    expect(content).toContain("do not fork a route stub");
+    expect(content).toContain("**Shiki**");
+    expect(content).not.toContain("syntect");
   });
 
   it("does NOT reference deleted directories (src/components/, pages/lib/*, src/layouts/)", async () => {
