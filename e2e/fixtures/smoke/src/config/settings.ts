@@ -43,6 +43,9 @@ export const settings = {
   aiChatAllowedOrigins: [] as string[],
   aiChatGlobalDailyLimit: false as number | false,
   designTokenPanel: true as boolean,
+  // Mirrors the showcase default — themePackSwitcher stays off here
+  // (allowlisted, epic Theme Core #2812, #2826).
+  themePack: "default" as string,
   imageEnlarge: true as boolean,
   findInPage: false as boolean,
   dynamicPageTransition: true as boolean,
