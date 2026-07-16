@@ -295,6 +295,13 @@ jobs:
           PREVIEW_CONFIG=$(mktemp "$PWD/.wrangler-preview.XXXXXX.toml")
           trap 'rm -f "$PREVIEW_CONFIG"' EXIT
           node scripts/write-worker-preview-config.mjs "$PREVIEW_CONFIG"
+          # Establish an active deployment for the isolated preview service
+          # before assigning a version alias. The preview config has no custom
+          # routes and keeps its primary workers.dev route disabled, so this
+          # applies service-level settings without receiving public traffic.
+          npx wrangler@4.85.0 deploy \
+            --config "$PREVIEW_CONFIG" \
+            --message="Preview service bootstrap @ ${GITHUB_SHA:0:7}"
           upload_preview() {
             : > "$DEPLOY_LOG"
             npx wrangler@4.85.0 versions upload \
@@ -303,10 +310,8 @@ jobs:
               --message="Preview: ${SLUG} @ ${GITHUB_SHA:0:7}" \
               2>&1 | tee "$DEPLOY_LOG"
           }
-          upload_preview
-          # The first upload creates the service when necessary. Reconcile its
-          # non-versioned subdomain state on every run: aliases public, primary
-          # workers.dev route private.
+          # Reconcile the service's non-versioned subdomain state on every run:
+          # aliases public, primary workers.dev route private.
           curl --fail-with-body --silent --show-error \
             --request POST \
             --url "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/zudo-doc-preview/subdomain" \
@@ -314,10 +319,11 @@ jobs:
             --header "Content-Type: application/json" \
             --data '{"enabled":false,"previews_enabled":true}' \
             | jq -e '.success and (.result.enabled | not) and .result.previews_enabled' > /dev/null
+          upload_preview
           DEPLOY_URL=$(grep -oE "https://${SLUG}-[a-z0-9.-]+\.workers\.dev" "$DEPLOY_LOG" | head -1 || true)
           if [ -z "$DEPLOY_URL" ]; then
-            # The first upload bootstrapped the service before preview aliases
-            # were active. Retry to create the requested alias.
+            # Retry once if Wrangler did not print the stable alias URL even
+            # though the service-level preview setting is active.
             upload_preview
             DEPLOY_URL=$(grep -oE "https://${SLUG}-[a-z0-9.-]+\.workers\.dev" "$DEPLOY_LOG" | head -1 || true)
           fi

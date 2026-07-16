@@ -87,6 +87,8 @@ describe("custom Worker deployment contract", () => {
       const source = read(workflow);
       expect(source).toContain('mktemp "$PWD/.wrangler-preview.XXXXXX.toml"');
       expect(source).toContain('node scripts/write-worker-preview-config.mjs "$PREVIEW_CONFIG"');
+      expect(source).toContain("wrangler@4.85.0 deploy");
+      expect(source).toContain('Preview service bootstrap @ ${GITHUB_SHA:0:7}');
       expect(source).toContain('--config "$PREVIEW_CONFIG"');
       expect(source).toContain("/workers/scripts/zudo-doc-preview/subdomain");
       expect(source).toContain("previews_enabled");
