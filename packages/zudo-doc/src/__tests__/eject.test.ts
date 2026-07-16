@@ -49,6 +49,15 @@ function makeResolver(fixturePkgRoot: string) {
   return (_cwd: string) => fixturePkgRoot;
 }
 
+const ANSI_ESCAPE = new RegExp(
+  `${String.fromCharCode(27)}\\[[0-?]*[ -/]*[@-~]`,
+  "g",
+);
+
+function capturedOutput(spy: ReturnType<typeof vi.spyOn>): string {
+  return spy.mock.calls.flat().join("\n").replace(ANSI_ESCAPE, "");
+}
+
 // ── Test state ────────────────────────────────────────────────────────────────
 
 let tempDir: string;
@@ -60,6 +69,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
+  vi.restoreAllMocks();
   process.chdir(originalCwd);
   await fs.remove(tempDir);
 });
@@ -164,8 +174,8 @@ describe("eject() — binding-aware guidance", () => {
         resolvePackageRoot: makeResolver(pkgRoot),
       });
 
-      const warning = warn.mock.calls.flat().join("\n");
-      const output = log.mock.calls.flat().join("\n");
+      const warning = capturedOutput(warn);
+      const output = capturedOutput(log);
       expect(warning).toContain(`chromeBindings.${slot}`);
       expect(warning).toContain(`the ${slot} primary replacement slot`);
       expect(warning).toContain("Editing the copy will not change your site");
@@ -202,11 +212,11 @@ describe("eject() — binding-aware guidance", () => {
         resolvePackageRoot: makeResolver(pkgRoot),
       });
 
-      const warning = warn.mock.calls.flat().join("\n");
+      const warning = capturedOutput(warn);
       expect(warning).toContain("rendered by package chrome");
       expect(warning).toContain(remediation);
       expect(warning).toContain("/docs/reference/customizing/");
-      expect(log.mock.calls.flat().join("\n")).toContain(
+      expect(capturedOutput(log)).toContain(
         "but it is not wired into the rendered site",
       );
 
@@ -227,7 +237,7 @@ describe("eject() — binding-aware guidance", () => {
       resolvePackageRoot: makeResolver(pkgRoot),
     });
 
-    const warning = warn.mock.calls.flat().join("\n");
+    const warning = capturedOutput(warn);
     expect(warning).toContain("under a new name");
     expect(warning).toContain("settings.headerRightItems");
     expect(warning).toContain('built-in name "theme-toggle" is reserved');
@@ -257,7 +267,7 @@ describe("eject() — binding-aware guidance", () => {
       });
 
       expect(warn).not.toHaveBeenCalled();
-      const output = log.mock.calls.flat().join("\n");
+      const output = capturedOutput(log);
       expect(output).toContain(remediation);
       expect(output).toContain("/docs/guides/custom-components/");
       expect(output).toContain(`✓ Ejected ${component}`);
@@ -284,7 +294,7 @@ describe("eject() — binding-aware guidance", () => {
     });
 
     expect(warn).not.toHaveBeenCalled();
-    expect(log.mock.calls.flat().join("\n")).toContain("✓ Ejected header");
+    expect(capturedOutput(log)).toContain("✓ Ejected header");
     expect(await fs.readFile(hostFile, "utf8")).not.toContain(
       '@takazudo/zudo-doc/header',
     );
@@ -473,8 +483,8 @@ describe("eject() — host call site rewiring", () => {
       resolvePackageRoot: makeResolver(pkgRoot),
     });
 
-    const warning = warn.mock.calls.flat().join("\n");
-    const output = log.mock.calls.flat().join("\n");
+    const warning = capturedOutput(warn);
+    const output = capturedOutput(log);
     expect(warning).toContain("chromeBindings.Header");
     expect(output).not.toContain("Rewrote 1 host file(s)");
     expect(output).toContain("but it is not wired into the rendered site");
