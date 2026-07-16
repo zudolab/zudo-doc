@@ -19,7 +19,10 @@ compatibility_flags = ["nodejs_compat"]
 # Durable Object, so preview workflows generate an adapter-only config for the
 # separate zudo-doc-preview service. Production keeps this complete config.
 preview_urls = true
-workers_dev = false  # prevent serving on *.workers.dev prod route; previews use preview_urls above
+# Production never serves its primary workers.dev route. The generated config
+# for the isolated adapter-only preview service switches this to true so the
+# first version upload activates its workers.dev routing and preview aliases.
+workers_dev = false
 
 # Retain structured operational events for exact-cap admitted/denied/failed-closed
 # outcomes. Log payloads use a closed, non-sensitive schema.

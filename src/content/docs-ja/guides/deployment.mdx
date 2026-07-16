@@ -85,10 +85,10 @@ Wrangler dry-runをその同一ファイルに対して実行します。
 
 ### プレビューデプロイ
 
-各PRは`wrangler versions upload --preview-alias <alias>`により**安定したプレビューエイリアス**URLを取得します（`wrangler.toml`の`preview_urls = true`で有効化）。エイリアスはPRチェックでは`pr-<番号>`、ブランチプレビューではブランチスラッグです。URLは`*.workers.dev`上にあり（本番のカスタムドメインではありません）、サブドメインはエイリアスで始まります：
+各PRは`wrangler versions upload --preview-alias <alias>`により**安定したプレビューエイリアス**URLを取得します。生成されるアダプター専用preview configは`preview_urls = true`を維持して`workers_dev`を有効化し、本番ではprimary `workers.dev` routeを無効のままにします。エイリアスはPRチェックでは`pr-<番号>`、ブランチプレビューではブランチスラッグです。URLは`*.workers.dev`上にあり（本番のカスタムドメインではありません）、サブドメインはエイリアスで始まります：
 
 ```
-https://<alias>-zudo-doc.<your-subdomain>.workers.dev
+https://<alias>-zudo-doc-preview.<your-subdomain>.workers.dev
 ```
 
 CIはwranglerの出力から正確なホストを解析し、**preview**ジョブによってPRのコメントとして自動的に投稿されます。

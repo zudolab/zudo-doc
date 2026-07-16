@@ -288,8 +288,9 @@ jobs:
           DEPLOY_LOG=$(mktemp)
           # Cloudflare does not generate preview URLs for versions implementing
           # Durable Objects. The already-built adapter graph is uploaded through
-          # an adapter-only entry to a separate preview service. Production alone
-          # uses worker-entry.ts and applies the DO migration.
+          # an adapter-only entry to a separate preview service whose generated
+          # config enables workers.dev. Production alone uses worker-entry.ts
+          # and applies the DO migration.
           PREVIEW_CONFIG=$(mktemp "$PWD/.wrangler-preview.XXXXXX.toml")
           trap 'rm -f "$PREVIEW_CONFIG"' EXIT
           node scripts/write-worker-preview-config.mjs "$PREVIEW_CONFIG"

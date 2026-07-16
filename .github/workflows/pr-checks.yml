@@ -746,8 +746,9 @@ jobs:
           ALIAS="pr-${PR_NUMBER}"
           # pr-${PR_NUMBER} is alias-safe (lowercase, no slashes/underscores).
           # `wrangler versions upload` has no --json flag; it prints the stable
-          # preview-alias URL (on *.workers.dev — requires preview_urls = true
-          # in wrangler.toml) to stdout/stderr. Capture both via tee and grep
+          # preview-alias URL (on *.workers.dev — the generated preview config
+          # enables both preview_urls and workers_dev) to stdout/stderr. Capture
+          # both via tee and grep
           # the alias URL line, anchored on the .workers.dev boundary. Parse the
           # alias URL (subdomain starts with the alias) — not the per-version
           # hash URL — so smoke gates + PR comments hit a stable host.

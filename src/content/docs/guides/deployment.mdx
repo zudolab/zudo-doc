@@ -84,10 +84,10 @@ Triggered on pull requests targeting `main`. Runs twenty jobs:
 
 ### Preview Deployments
 
-Each PR gets a **stable preview-alias** URL via `wrangler versions upload --preview-alias <alias>` (enabled by `preview_urls = true` in `wrangler.toml`). The alias is `pr-<number>` for PR checks and the branch slug for branch previews. The URL is on `*.workers.dev` (not the production custom domain) and its subdomain starts with the alias:
+Each PR gets a **stable preview-alias** URL via `wrangler versions upload --preview-alias <alias>`. The generated adapter-only preview config keeps `preview_urls = true` and enables `workers_dev`; production keeps its primary `workers.dev` route disabled. The alias is `pr-<number>` for PR checks and the branch slug for branch previews. The URL is on `*.workers.dev` (not the production custom domain) and its subdomain starts with the alias:
 
 ```
-https://<alias>-zudo-doc.<your-subdomain>.workers.dev
+https://<alias>-zudo-doc-preview.<your-subdomain>.workers.dev
 ```
 
 CI parses the exact host from wrangler's output and posts it automatically as a comment on the PR by the **preview** job.
