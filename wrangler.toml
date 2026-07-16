@@ -67,9 +67,11 @@ run_worker_first = false
 # ---------------------------------------------------------------------------
 # Custom domain routing
 # ---------------------------------------------------------------------------
+# BEGIN PRODUCTION_CUSTOM_DOMAIN
 [[routes]]
 pattern = "zudo-doc.takazudomodular.com"
 custom_domain = true
+# END PRODUCTION_CUSTOM_DOMAIN
 
 # ---------------------------------------------------------------------------
 # AI chat endpoint (pages/api/ai-chat.tsx)
@@ -108,8 +110,10 @@ DOCS_SITE_URL = "https://zudo-doc.takazudomodular.com"
 RATE_LIMIT_PER_MINUTE = "10"
 RATE_LIMIT_PER_DAY = "100"
 
+# BEGIN PRODUCTION_RATE_LIMIT_KV
 [[kv_namespaces]]
 binding = "RATE_LIMIT"
 # KV namespace id (not a secret — account-scoped identifier). Created via
 # `wrangler kv namespace create RATE_LIMIT` per zudolab/zudo-doc#1691.
 id = "19cd1f19d18d4d50b79db8198b3479b3"
+# END PRODUCTION_RATE_LIMIT_KV

@@ -97,8 +97,8 @@ preview entryは、生成されたadapterへのpublic requestを維持しつつ�
 
 Durable Objectsを実装するversionにはCloudflareがプレビューURLを発行しないため、プレビューworkflowは
 サイトのビルド後に、別のpreview service用のアダプター専用config/entryを生成します。プレビューはSSRと
-assetsを検証しますが、`AI_CHAT_DAILY_SPEND_CAP`をバインドせず、migrationも適用しません。正確な
-有料呼び出し許可のlive経路は本番専用です。
+assetsを検証しますが、`AI_CHAT_DAILY_SPEND_CAP`をバインドせず、migrationも適用せず、本番の`RATE_LIMIT`
+KVとcustom-domain routeもコピーしません。liveのAI admissionとrate-limit経路は本番専用です。
 
 ## SKIP_DOC_HISTORY
 

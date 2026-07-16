@@ -73,8 +73,10 @@ describe("custom Worker deployment contract", () => {
     expect(previewConfig).not.toContain('name = "zudo-doc"\n');
     expect(previewConfig).not.toContain('main = "./worker-entry.ts"');
     expect(previewConfig).toContain('[assets]\ndirectory = "./dist"');
-    expect(previewConfig).toContain('binding = "RATE_LIMIT"');
-    expect(previewConfig).toContain('pattern = "zudo-doc.takazudomodular.com"');
+    expect(previewConfig).not.toContain('binding = "RATE_LIMIT"');
+    expect(previewConfig).not.toContain("PRODUCTION_RATE_LIMIT_KV");
+    expect(previewConfig).not.toContain('pattern = "zudo-doc.takazudomodular.com"');
+    expect(previewConfig).not.toContain("PRODUCTION_CUSTOM_DOMAIN");
 
     for (const workflow of [
       ".github/workflows/pr-checks.yml",

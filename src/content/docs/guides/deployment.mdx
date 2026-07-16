@@ -97,7 +97,8 @@ Its entry keeps the public request intact for the generated adapter but probes `
 Cloudflare does not issue preview URLs for versions implementing Durable Objects. Preview workflows
 therefore generate an adapter-only config/entry for a separate preview service after the site build.
 The preview validates SSR and assets, but does not bind `AI_CHAT_DAILY_SPEND_CAP` or apply its
-migration; the live exact paid-call admission path is production-only.
+migration, production `RATE_LIMIT` KV, or production's custom-domain route; the live AI admission and
+rate-limit path is production-only.
 
 ## SKIP_DOC_HISTORY
 
