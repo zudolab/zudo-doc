@@ -213,10 +213,13 @@ prop-checks the bindings and returns `ChromeHostBindings`, replacing the old
 `as ChromeHostBindings` cast). The routes plugin's `setup(ctx)` registers a
 SECOND virtual module, `virtual:zudo-doc-chrome-bindings`, that **re-exports**
 the host module; the bundler imports the actual callables through that
-re-export. `routes/_chrome.tsx` imports it and spreads the result AFTER the
-`DocHistory` default:
-`createChrome(routeCtx, { ...defineChromeBindings({ DocHistory }), ...chromeBindings })`
-— so a host can override every slot, including DocHistory itself.
+re-export. `routes/_chrome.tsx` imports it and spreads the result BEFORE the
+scanner-reachable `DocHistory` binding:
+`createChrome(routeCtx, { ...chromeBindings, ...defineChromeBindings({ DocHistory }) })`.
+The statically imported real `DocHistory` deliberately wins on package and
+generated routes: its scanner-reachable registration is required for
+hydration, while a callable supplied only through the virtual module is not
+scanner-safe. Every other host slot remains intact.
 
 - **Data-only rule holds.** Only the PATH is serialized into `settings` (and
   thus into the route-context virtual module); the chrome-bindings virtual
@@ -239,6 +242,17 @@ re-export. `routes/_chrome.tsx` imports it and spreads the result AFTER the
   (contrast the #2480 static `DocHistory` import above, which IS on the
   scanner's static-import graph). Hosts needing a hydrating island on injected
   routes still need a statically-imported registration path.
+- **Primary chrome and named header registry.** The same object is the
+  sanctioned markup seam: optional `Header`, `Footer`, `Sidebar`, `Toc`,
+  `Breadcrumb`, and `DocPager` keys replace those package components, while
+  callable `headerRightComponents` resolve the serializable names in
+  `settings.headerRightItems`. Missing keys keep package defaults; unknown or
+  reserved header names fail loudly.
+- **Fresh stubs already consume it.** Both generated default and locale doc
+  stubs import `virtual:zudo-doc-chrome-bindings`. When doc history is enabled,
+  generation preserves the whole object and overlays only the statically
+  reachable `DocHistory` island. Presentational customization therefore does
+  not require a route fork.
 
 Regression coverage: `__tests__/route-injection-build.test.ts` (Case CB — the
 FrontmatterPreview table appears with the setting, stays absent without it, and

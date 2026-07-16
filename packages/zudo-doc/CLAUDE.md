@@ -241,7 +241,7 @@ onSuccess: "node scripts/copy-theme-css.mjs && node scripts/copy-content-css.mjs
 5. **`dist/features.css`** ← copied verbatim from `src/features.css` by
    `scripts/copy-features-css.mjs`. Exported as `@takazudo/zudo-doc/features.css`.
    Contains **all** feature CSS every project using the package needs,
-   island-coupled or not: code block buttons, syntect/shiki dual-theme token
+   island-coupled or not: code block buttons, Shiki dual-theme token
    color rule, `.zd-html-preview-code`, KaTeX, desktop sidebar toggle
    geometry, view-transition chrome (epic #2331), and — since S4 of epic
    #2344 — the `.ai-chat-md`/`.zd-enlargeable`/`.zd-mermaid-enlargeable`
@@ -346,6 +346,16 @@ specifier end-to-end.
      virtual-module contract, edit `src/routes/_virtual.d.ts` and rebuild —
      never edit the generated file. `scripts/check-virtual-modules.mjs`
      (prepack) guards presence + the rewritten specifier.
+
+4. **Chrome bindings are the public customization boundary.**
+   `defineChromeBindings` type-checks exact call-side props for all six primary
+   components (`Header`, `Footer`, `Sidebar`, `Toc`, `Breadcrumb`, `DocPager`)
+   and carries named `headerRightComponents` separately from serializable
+   `settings.headerRightItems`. Omitted keys retain package defaults. Fresh
+   base/i18n stubs consume the virtual object; the generator's doc-history
+   patch must spread it before replacing only `DocHistory`. Components declared
+   only inside the virtual module are SSR-presentational unless a separate
+   static island registration path exists.
 
 ### GOTCHA — preact/compat `paths` stay in the PROJECT tsconfig, not the base
 

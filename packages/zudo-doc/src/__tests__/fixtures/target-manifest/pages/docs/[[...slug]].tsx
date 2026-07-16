@@ -5,11 +5,12 @@
 // `zfb dev` (real pre-existing gap in zfb's dev-mode dynamic-route rendering,
 // distinct from the `/`-injection gap zfb#1227; empirically confirmed on
 // #2653). This stub reconstructs the doc route from scratch using ONLY the
-// three sanctioned package entrypoints — no `pages/lib`, no `@/config`:
+// four sanctioned package entrypoints — no `pages/lib`, no `@/config`:
 //   1. the `virtual:zudo-doc-route-context` virtual module (serializable
 //      settings/translations/tagVocabulary/colorSchemes payload),
 //   2. `@takazudo/zudo-doc/route-context` (`createRouteContext`), and
-//   3. `@takazudo/zudo-doc/chrome` (`createChrome`).
+//   3. `@takazudo/zudo-doc/chrome` (`createChrome`), and
+//   4. `virtual:zudo-doc-chrome-bindings` (host callables or `{}` fallback).
 // Makes `/docs/getting-started/` return 200 in BOTH `zfb dev` and `zfb build`
 // (see the "TM negative guard" case in route-injection-build.slow.test.ts for
 // the no-stub 404 proof this fixes).
@@ -21,10 +22,11 @@ import {
   type RouteContextPayload,
 } from "@takazudo/zudo-doc/route-context";
 import { createChrome } from "@takazudo/zudo-doc/chrome";
+import { chromeBindings } from "virtual:zudo-doc-chrome-bindings";
 
 const ctx = routeContext as unknown as RouteContextPayload;
 const routeCtx = createRouteContext(ctx);
-const { renderDocPage } = createChrome(routeCtx);
+const { renderDocPage } = createChrome(routeCtx, chromeBindings);
 
 export const frontmatter = { title: "Docs" };
 

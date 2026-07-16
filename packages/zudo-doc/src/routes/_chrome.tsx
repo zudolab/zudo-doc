@@ -44,10 +44,11 @@ import { chromeBindings } from "virtual:zudo-doc-chrome-bindings";
 // prop contract before performing the widening, restoring the #2674
 // drift-detection check a bare cast would erase.)
 //
-// `...chromeBindings` is spread AFTER the `defineChromeBindings({ DocHistory })`
-// result so a host that configured `chromeBindingsModule` can override ANY
-// slot — including DocHistory itself — while a host that didn't still gets
-// the #2480 fix for free. `chromeBindings` (the virtual re-export) is already
+// The statically imported DocHistory is spread AFTER `...chromeBindings` so
+// scanner-safe hydration wins consistently with generated self-contained
+// routes. Hosts can override every other slot; DocHistory customization uses
+// the package island's supported owner path rather than a virtual callable
+// that the scanner cannot register. `chromeBindings` (the virtual re-export) is already
 // erased to the structural `ChromeHostBindings` at its own source, so it is
 // spread as-is rather than run back through `defineChromeBindings` (which
 // cannot recover types `defineChromeBindings` never checked in the first
@@ -65,8 +66,8 @@ import { chromeBindings } from "virtual:zudo-doc-chrome-bindings";
 // static chain route → this shim → `createChrome` → `chrome/derive` →
 // `design-token-panel-bootstrap`.
 const chrome = createChrome(routeCtx, {
-  ...defineChromeBindings({ DocHistory }),
   ...chromeBindings,
+  ...defineChromeBindings({ DocHistory }),
 });
 
 export const {

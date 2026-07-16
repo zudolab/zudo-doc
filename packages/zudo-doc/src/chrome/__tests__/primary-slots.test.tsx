@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from "vitest";
 import { render } from "preact-render-to-string";
-import type { ComponentChildren } from "preact";
+import type { ComponentChildren, JSX, VNode } from "preact";
 import { defineChromeBindings } from "../../chrome-bindings.js";
 import type {
   BreadcrumbSlotProps,
@@ -16,8 +16,24 @@ import type {
 import { createDocPageShell } from "../../doc-page-shell/index.js";
 import type { DocPageShellProps } from "../../doc-page-shell/index.js";
 import { createChrome } from "../index.js";
+import { derivePrimaryChromeSlots } from "../primary-slots.js";
 import type { ChromeContext, RouteContext } from "../../factory-context/index.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
+import type { HeaderWithDefaultsProps } from "../../header-with-defaults/index.js";
+import type { SidebarWithDefaultsProps } from "../../sidebar-with-defaults/index.js";
+
+/** Declaration guard: primary replacement plumbing must not narrow the public
+ * createChrome wrapper signatures that existed before the seam. */
+export function _createChromeDeclarationAssertions(
+  chrome: ReturnType<typeof createChrome>,
+): void {
+  const header: (props: HeaderWithDefaultsProps) => JSX.Element =
+    chrome.HeaderWithDefaults;
+  const footer: (props: { lang?: string }) => VNode = chrome.FooterWithDefaults;
+  const sidebar: (props: SidebarWithDefaultsProps) => JSX.Element =
+    chrome.SidebarWithDefaults;
+  void [header, footer, sidebar];
+}
 
 function shellProps(): DocPageShellProps {
   return {
@@ -201,6 +217,26 @@ describe("primary chrome replacement slots", () => {
     ]) {
       expect(html).toContain(`data-route-slot="${slot}"`);
     }
+    expect(html).not.toContain('data-zfb-island="Toc"');
     expect(html).toContain("data-route-content");
   });
+
+  it.each(["Header", "Footer", "Sidebar", "Toc", "Breadcrumb", "DocPager"] as const)(
+    "fails a non-callable %s replacement with its exact binding location and remediation",
+    (slot) => {
+      const ctx = makeFakeChromeContext({
+        overrides: {
+          hostBindings: { [slot]: 42 },
+        } as unknown as Partial<ChromeContext>,
+      });
+      const primary = derivePrimaryChromeSlots(ctx);
+
+      expect(() => primary[slot]).toThrowError(
+        new RegExp(
+          `Invalid primary chrome replacement at chromeBindings\\.${slot}.*expected a callable component.*defineChromeBindings.*chromeBindingsModule`,
+          "s",
+        ),
+      );
+    },
+  );
 });

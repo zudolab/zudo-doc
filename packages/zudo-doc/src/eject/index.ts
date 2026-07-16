@@ -313,6 +313,7 @@ async function rewireHostCallSites(
   localDir: string,
 ): Promise<number> {
   const packageSubpath = EJECTABLE[component]!.packageSubpath;
+  const destinationDir = path.resolve(projectRoot, localDir);
   // Escape the subpath for use in a RegExp literal
   const escapedSubpath = packageSubpath.replace(/[/\\^$*+?.()|[\]{}]/g, "\\$&");
   const re = new RegExp(`(from\\s+)(["'])${escapedSubpath}\\2`, "g");
@@ -331,6 +332,18 @@ async function rewireHostCallSites(
       const entries = await fs.readdir(dir, { withFileTypes: true });
       for (const entry of entries) {
         const abs = path.join(dir, entry.name);
+        const resolvedAbs = path.resolve(abs);
+        // The freshly copied eject tree lives under src/**, but it is not a
+        // host call site. In particular, public-entry comments can contain a
+        // literal package import example that matches the rewrite regexp. If
+        // we scan the destination, that example is rewritten and falsely
+        // suppresses the required unwired primary/nested warning.
+        if (
+          resolvedAbs === destinationDir ||
+          resolvedAbs.startsWith(`${destinationDir}${path.sep}`)
+        ) {
+          continue;
+        }
         if (entry.isDirectory()) {
           await rewriteDir(abs, path.join(relFromProject, entry.name));
           continue;
@@ -342,9 +355,8 @@ async function rewireHostCallSites(
 
         // Compute the relative path from this file to the local dest dir
         const fileDir = path.join(projectRoot, relFromProject);
-        const destAbs = path.join(projectRoot, localDir);
         let rel = path
-          .relative(fileDir, destAbs)
+          .relative(fileDir, destinationDir)
           .split(path.sep)
           .join("/");
         if (!rel.startsWith(".")) rel = `./${rel}`;

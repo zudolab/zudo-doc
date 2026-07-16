@@ -453,6 +453,42 @@ describe("eject() — import rewiring", () => {
 // ── eject() — host call site rewiring ────────────────────────────────────────
 
 describe("eject() — host call site rewiring", () => {
+  it("does not mistake an import example inside the copied tree for a host call site", async () => {
+    const projectDir = path.join(tempDir, "project-self-import-comment");
+    await fs.ensureDir(projectDir);
+    const pkgRoot = await buildFixturePackage(tempDir, "header", {
+      "index.ts": [
+        "/** Consumers can import the package entry like this:",
+        ' * import { Header } from "@takazudo/zudo-doc/header";',
+        " */",
+        'export { Header } from "./header.js";',
+      ].join("\n"),
+      "header.tsx": "export function Header() { return null; }\n",
+    });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+    await eject("header", {
+      cwd: projectDir,
+      resolvePackageRoot: makeResolver(pkgRoot),
+    });
+
+    const warning = warn.mock.calls.flat().join("\n");
+    const output = log.mock.calls.flat().join("\n");
+    expect(warning).toContain("chromeBindings.Header");
+    expect(output).not.toContain("Rewrote 1 host file(s)");
+    expect(output).toContain("but it is not wired into the rendered site");
+    expect(
+      await fs.readFile(
+        path.join(projectDir, "src/components/zudo-doc/header/index.ts"),
+        "utf8",
+      ),
+    ).toContain('from "@takazudo/zudo-doc/header"');
+
+    warn.mockRestore();
+    log.mockRestore();
+  });
+
   it("rewrites host src/ import of the package subpath to local path", async () => {
     const projectDir = path.join(tempDir, "project");
 

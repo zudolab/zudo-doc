@@ -30,7 +30,7 @@ export function generateCLAUDEFile(choices: UserChoices): string {
     `- **Preact** — for interactive islands only (with compat mode for React API)`,
   );
   lines.push(
-    `- **syntect** — built-in code highlighting, run by zfb's Rust pipeline at build time (dual light/dark theme, follows the site's color-mode toggle)`,
+    `- **Shiki** — package-owned code highlighting with the configured light/dark theme pair`,
   );
   lines.push(
     `- **@takazudo/zudo-doc** — the package that owns everything: layout, chrome, islands, default \`@theme\` design tokens, and (via \`packageOwnedRoutes\`, on by default) the doc routes themselves`,
@@ -59,6 +59,7 @@ export function generateCLAUDEFile(choices: UserChoices): string {
     lines.push(`  [locale]/docs/[[...slug]].tsx  # same, for non-default locales`);
   }
   lines.push(`src/`);
+  lines.push(`├── chrome-bindings.tsx   # optional typed primary chrome / named header / MDX bindings`);
   lines.push(`├── content/`);
   lines.push(`│   └── docs/             # MDX content (this project's showcase docs)`);
 
@@ -74,7 +75,7 @@ export function generateCLAUDEFile(choices: UserChoices): string {
   lines.push("```");
   lines.push(``);
   lines.push(
-    `Everything else — layout, header, sidebar, footer, doc chrome, islands, and the default design tokens — lives in \`node_modules/@takazudo/zudo-doc\`. To customize a specific piece, use the eject CLI: \`npx zudo-doc eject <component>\` copies one package component into this project so you can edit it (see \`@takazudo/zudo-doc\`'s eject-contract docs). Settings you didn't set explicitly in \`zfb.config.ts\` use the package's documented defaults — hover \`zudoDoc\`'s \`ZudoDocConfig\` argument in your editor to see every field and its \`@default\`.`,
+    `Everything else — layout, header, sidebar, footer, doc chrome, islands, and the default design tokens — lives in \`node_modules/@takazudo/zudo-doc\`. For supported markup replacement, create \`src/chrome-bindings.tsx\` with \`defineChromeBindings\`, set \`chromeBindingsModule\`, and use the primary \`Header\` / \`Footer\` / \`Sidebar\` / \`Toc\` / \`Breadcrumb\` / \`DocPager\` slots or the named \`headerRightComponents\` registry. The generated default, locale, and doc-history route shapes already consume the same binding object; do not fork a route stub for presentational customization. \`npx zudo-doc eject <component>\` only copies source: heed its primary, nested-chrome, or content-layer remediation before expecting the copy to render. Settings you didn't set explicitly in \`zfb.config.ts\` use the package's documented defaults — hover \`zudoDoc\`'s \`ZudoDocConfig\` argument in your editor to see every field and its \`@default\`.`,
   );
   lines.push(``);
 

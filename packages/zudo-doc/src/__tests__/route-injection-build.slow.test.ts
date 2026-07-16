@@ -435,7 +435,7 @@ describe("DH doc-history: injected doc route registers the DocHistory island (pa
 // `settings.chromeBindingsModule` points at a host module exporting a named
 // `chromeBindings: ChromeHostBindings`. The routes plugin re-exports it
 // through `virtual:zudo-doc-chrome-bindings`; `routes/_chrome.tsx` spreads it
-// into `createChrome(routeCtx, { DocHistory, ...chromeBindings })`. This
+// into `createChrome(routeCtx, { ...chromeBindings, DocHistory })`. This
 // proves the un-stranding: `buildFrontmatterPreviewEntries` — a
 // `ChromeHostBindings` slot that stays at its package-default `() => []` stub
 // on every other injected-route fixture in this file (see the baseline
@@ -567,7 +567,8 @@ describe("CB chrome-bindings: chromeBindingsModule wires host bindings into crea
   });
 
   // Case DH (DocHistory hydration pairing) regression guard: spreading
-  // `...chromeBindings` AFTER the `DocHistory` default must not disturb the
+  // The scanner-reachable `DocHistory` default AFTER `...chromeBindings` must
+  // not be disturbed by other host slots in the configured object.
   // #2480 island-scanner wiring when the host binding doesn't touch that slot.
   it("regression: DocHistory island registration (#2480) still works with chromeBindingsModule set", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");

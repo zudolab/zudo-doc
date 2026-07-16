@@ -30,9 +30,7 @@ This is the smallest and most local option. A bare MDX import is SSR-only: it re
 
 ## Global registration: mdxExtras
 
-`mdxExtras` is the global registry for project-owned MDX components. Create a bindings module, point `zudoDoc()` at it, and pass those bindings to the scaffold's document-route stub.
-
-The route-stub change is required. A fresh scaffold includes `pages/docs/[[...slug]].tsx`, whose bare `createChrome(routeCtx)` call shadows the package-injected route. Importing the bindings statically and passing them to `createChrome()` is the universal recipe: it works for ordinary presentational `mdxExtras` **and** keeps a future island import reachable by zfb's scanner.
+`mdxExtras` is the global registry for project-owned MDX components. Create a bindings module and point `zudoDoc()` at it. Fresh scaffold routes already consume the configured module through `virtual:zudo-doc-chrome-bindings`, so presentational components need no route-stub edit.
 
 Start with this complete example.
 
@@ -69,22 +67,11 @@ export default defineConfig(
 );
 ```
 
-In `pages/docs/[[...slug]].tsx`, add the static import next to the existing `createChrome` import, then replace the bare call with this call:
-
-```tsx title="pages/docs/[[...slug]].tsx"
-import { createChrome } from "@takazudo/zudo-doc/chrome";
-import { chromeBindings } from "../../src/chrome-bindings";
-
-const { renderDocPage } = createChrome(routeCtx, chromeBindings);
-```
-
-`pages/[locale]/docs/[[...slug]].tsx` has the same boundary when you use i18n; apply the equivalent static import there as well. Versioned document stubs need the same treatment when your project uses versions.
-
-You can instead import `chromeBindings` from `virtual:zudo-doc-chrome-bindings`. That virtual module follows `chromeBindingsModule` from your config and is useful for **presentational, server-rendered** `mdxExtras`. Keep the static import above when the bindings contain an island: the virtual-module path is outside the static import graph that discovers client components.
+The generated `pages/docs/[[...slug]].tsx` and locale counterpart both import `chromeBindings` from `virtual:zudo-doc-chrome-bindings` and call `createChrome(routeCtx, chromeBindings)`. When doc history is enabled, the generator merges `DocHistory` over that same object rather than replacing it. This is the supported no-fork path for **presentational, server-rendered** `mdxExtras` and every other host binding.
 
 <Warning title="The virtual path does not make islands hydrate">
 
-[Issue #2716](https://github.com/zudolab/zudo-doc/issues/2716) will auto-thread the virtual form for presentational and data slots. It does not make a client island scanner-reachable. Use the static route-stub import for islands.
+The generated virtual path does not make a component declared inside the bindings module scanner-reachable. It therefore does not turn a presentational binding into a hydrating client island. If an experimental island needs route-level static reachability, explicitly import the project bindings module from every applicable route stub as described below; that is an advanced route customization, not required for ordinary `mdxExtras`.
 
 </Warning>
 
@@ -159,7 +146,7 @@ export const chromeBindings = defineChromeBindings({
 });
 ```
 
-Keep the static `../../src/chrome-bindings` import in `pages/docs/[[...slug]].tsx` from the global-registration recipe. The virtual-module alternative is SSR-presentational only and cannot guarantee that this island is discovered. Setting `Counter.displayName` pins the island marker name even when the render pipeline rewrites function names.
+For this experimental island case only, replace the generated virtual import in every applicable document-route stub with a static `../../src/chrome-bindings` import (adjusting the relative path for locale routes). The default virtual-module path is SSR-presentational and cannot guarantee discovery. Setting `Counter.displayName` pins the island marker name even when the render pipeline rewrites function names.
 
 <Warning title="Experimental scanner contract">
 

@@ -190,6 +190,7 @@ export function createDocPageShell<S extends Settings = Settings>(
     Breadcrumb,
     DocPager,
   } = derivePrimaryChromeSlots(ctx);
+  const customTocIsPresent = ctx.hostBindings.Toc !== undefined;
   const sidebarToggleEnabled = Boolean(
     (ctx.settings as { sidebarToggle?: boolean }).sidebarToggle,
   );
@@ -241,11 +242,17 @@ export function createDocPageShell<S extends Settings = Settings>(
     // falls back to the package default with a different title.
     const tocTitle = getTocTitle(locale);
     const shouldRenderToc = !hideToc && headings.length > 0;
+    // A host Toc delivered through chromeBindingsModule is an
+    // SSR-presentational callable: the virtual module is intentionally outside
+    // zfb's island scanner graph. Only the statically imported package default
+    // receives an Island hydration wrapper.
     const tocOverride = shouldRenderToc
-      ? (Island({
-          when: "load",
-          children: <Toc headings={headings} title={tocTitle} />,
-        }) as unknown as VNode)
+      ? customTocIsPresent
+        ? <Toc headings={headings} title={tocTitle} />
+        : (Island({
+            when: "load",
+            children: <Toc headings={headings} title={tocTitle} />,
+          }) as unknown as VNode)
       : undefined;
     const mobileTocOverride = shouldRenderToc
       ? (Island({
