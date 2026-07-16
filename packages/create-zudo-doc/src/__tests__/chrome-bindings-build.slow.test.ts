@@ -57,7 +57,7 @@ beforeAll(async () => {
     configPath,
     config.replace(
       /siteName: ([^,]+),/,
-      'siteName: $1,\n    chromeBindingsModule: "./src/chrome-bindings.tsx",',
+      'siteName: $1,\n    chromeBindingsModule: "./src/chrome-bindings.tsx",\n    headerRightItems: [{ type: "component", component: "scaffold-route-badge" }],',
     ),
   );
 
@@ -71,8 +71,13 @@ function MyBadge() {
   return <span data-my-badge="reachable">Bound badge</span>;
 }
 
+function HeaderBadge({ index, lang }: { index: number; lang?: string }) {
+  return <span data-header-registry={\`scaffold:\${lang}:\${index}\`}>Bound header badge</span>;
+}
+
 export const chromeBindings = defineChromeBindings({
   mdxExtras: { MyBadge },
+  headerRightComponents: { "scaffold-route-badge": HeaderBadge },
 });
 `,
   );
@@ -114,6 +119,10 @@ describe("generated chromeBindingsModule reaches the self-contained doc route", 
     );
     expect(html).toMatch(/data-my-badge=(?:"reachable"|reachable)/);
     expect(html).toContain("Bound badge");
+    expect(html).toMatch(
+      /data-header-registry=(?:"scaffold:en:0"|scaffold:en:0)/,
+    );
+    expect(html).toContain("Bound header badge");
     expect(html).toMatch(
       /data-zfb-island-skip-ssr=(?:"DocHistory"|DocHistory)/,
     );

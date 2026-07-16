@@ -27,6 +27,7 @@ import type { ResolvedTag } from "../tag-helpers/index.js";
 import type { DocNavNode, DocPageEntry } from "../doc-page-props/index.js";
 import type { HeadingItem } from "../extract-headings/index.js";
 import type { CategoryMeta } from "../sidebar-tree/index.js";
+import type { HeaderRightComponentRegistry } from "../header/types.js";
 
 /**
  * The i18n surface a factory may read. Parameterizes what `base.ts` used to read
@@ -259,6 +260,12 @@ export interface ChromeHostBindings {
   DocPager?: FactoryComponent;
   /** Header search widget. Default: the package SearchWidget bound to the site base. */
   SearchWidget?: FactoryComponent;
+  /**
+   * Project-owned header-right renderers keyed by the serializable component
+   * name in `settings.headerRightItems`. Built-in names are reserved and may
+   * not be shadowed. Default: `{}`.
+   */
+  headerRightComponents?: HeaderRightComponentRegistry;
   /** Per-page git-history meta manifest. Default: `{}` (no Created/Updated block). */
   docHistoryMeta?: Record<string, unknown>;
   /** Sidebar section config. Default: `{}` (auto-generated tree only). */

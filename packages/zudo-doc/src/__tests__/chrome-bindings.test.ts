@@ -34,6 +34,10 @@ export function _positiveCompileAssertions(): void {
     Breadcrumb: (props) => props.items.length,
     DocPager: (props) => props.locale,
     SearchWidget: (props) => props.searchLabel,
+    headerRightComponents: {
+      "release-badge": ({ item, index, lang }) =>
+        `${item.component}:${index}:${lang ?? "default"}`,
+    },
     BodyEndIslands: (props) => props.basePath,
     DocHistory: (props: { slug: string }) => props.slug, // reads a SUBSET of the passed props
     DesignTokenPanelBootstrap: () => null, // zero-prop component
@@ -63,6 +67,15 @@ export function _positiveCompileAssertions(): void {
   // A concrete typed sidebars object in `sidebarsConfig`.
   defineChromeBindings({ sidebarsConfig: concreteSidebars });
 
+  // Header-right registry values receive the exact renderer context and must
+  // remain callable. Project-owned names are intentionally open strings.
+  defineChromeBindings({
+    headerRightComponents: {
+      status: ({ item, index, githubLabel }) =>
+        `${item.component}:${index}:${githubLabel}`,
+    },
+  });
+
   // Primary replacements may require every prop that the real call site
   // always supplies, while reading only a subset is also safe.
   defineChromeBindings({
@@ -90,6 +103,18 @@ export function _positiveCompileAssertions(): void {
  * an unused directive would itself fail the typecheck gate).
  */
 export function _negativeCompileAssertions(): void {
+  defineChromeBindings({
+    // @ts-expect-error headerRightComponents values must be callable renderers
+    headerRightComponents: { status: "not-callable" },
+  });
+
+  defineChromeBindings({
+    headerRightComponents: {
+      // @ts-expect-error renderer requires `accountId`, which Header never passes
+      status: (props: { index: number; accountId: string }) => props.accountId,
+    },
+  });
+
   // (1) prop-drift: a component REQUIRING a prop the chrome never passes for
   //     that slot. The chrome renders `<DocHistory slug locale basePath />` —
   //     `revision` is not among them, so requiring it is drift, not a mere
