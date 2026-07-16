@@ -33,6 +33,32 @@ export const SUPPORTED_LANGS: SupportedLang[] = [
   { value: "pt", label: "Portuguese" },
 ];
 
+export interface ThemePackOption {
+  slug: string;
+  label: string;
+  hint: string;
+}
+
+// Hand-kept mirror of the bundled theme-pack registry
+// (packages/zudo-doc/src/theme-packs/<slug>/meta.json — theme pack ADR
+// #2818, census landed by #2819). Same convention as DEFAULT_MIRROR in
+// zfb-config-gen.ts: create-zudo-doc cannot import @takazudo/zudo-doc at
+// generator-build time, so the CLI/prompt catalog is a local copy. The later
+// Finalize epic syncs the full ~20-pack list — this only needs the slugs the
+// generator can offer today.
+export const THEME_PACKS: ThemePackOption[] = [
+  {
+    slug: "default",
+    label: "Default",
+    hint: "Stock zudo-doc look — no extra stylesheet loaded",
+  },
+  {
+    slug: "foundry",
+    label: "Foundry",
+    hint: "GitHub-neutral baseline — white paper, Primer-blue accents",
+  },
+];
+
 export interface Feature {
   value: string;
   label: string;
@@ -83,6 +109,13 @@ export const FEATURES: Feature[] = [
     hint: "Interactive tabbed panel for tweaking spacing, font, size, and color tokens",
     default: false,
     cliFlag: "design-token-panel",
+  },
+  {
+    value: "themePackSwitcher",
+    label: "Theme pack switcher",
+    hint: "Bottom-right flyout to switch between installed theme packs",
+    default: false,
+    cliFlag: "theme-pack-switcher",
   },
   {
     value: "sidebarResizer",

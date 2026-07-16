@@ -14,6 +14,7 @@ import {
   LIGHT_SCHEMES,
   SUPPORTED_LANGS,
   HEADER_RIGHT_LABELS,
+  THEME_PACKS,
   type FormState,
   type HeaderRightItemSpec,
   type FeatureEntry,
@@ -215,6 +216,7 @@ export default function PresetGenerator() {
     darkScheme: "Default Dark",
     defaultMode: "dark",
     respectPrefersColorScheme: true,
+    themePack: "default",
     features: FEATURES.filter((f) => f.default).map((f) => f.value),
     cjkFriendly: true,
     packageManager: "pnpm",
@@ -431,6 +433,28 @@ export default function PresetGenerator() {
             </div>
           </div>
         )}
+      </section>
+
+      {/* Theme Pack (ADR #2818 Decision 7) */}
+      <section>
+        <SectionHeading>Theme Pack</SectionHeading>
+        <select
+          value={state.themePack}
+          aria-label="Theme pack"
+          onChange={(e) =>
+            update("themePack", (e.target as HTMLSelectElement).value)
+          }
+          className={inputClass}
+        >
+          {THEME_PACKS.map((t) => (
+            <option key={t.slug} value={t.slug}>
+              {t.label}
+            </option>
+          ))}
+        </select>
+        <p className="mt-vsp-2xs text-caption text-muted">
+          {THEME_PACKS.find((t) => t.slug === state.themePack)?.hint}
+        </p>
       </section>
 
       {/* Features */}

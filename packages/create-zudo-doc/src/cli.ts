@@ -1,6 +1,6 @@
 import minimist from "minimist";
 import pc from "picocolors";
-import { FEATURES, SINGLE_SCHEMES, SUPPORTED_LANGS } from "./constants.js";
+import { FEATURES, SINGLE_SCHEMES, SUPPORTED_LANGS, THEME_PACKS } from "./constants.js";
 import { validateProjectName } from "./utils.js";
 
 export interface CliArgs {
@@ -12,6 +12,8 @@ export interface CliArgs {
   darkScheme?: string;
   defaultMode?: "light" | "dark";
   respectSystemPreference?: boolean;
+  /** Theme pack slug (ADR #2818 Decision 7). Validated against THEME_PACKS. */
+  themePack?: string;
   i18n?: boolean;
   search?: boolean;
   sidebarFilter?: boolean;
@@ -54,6 +56,7 @@ export function parseArgs(argv: string[] = process.argv.slice(2)): CliArgs {
       "light-scheme",
       "dark-scheme",
       "default-mode",
+      "theme-pack",
       "github-url",
       "preset",
       "pm",
@@ -90,6 +93,7 @@ export function parseArgs(argv: string[] = process.argv.slice(2)): CliArgs {
   if (raw["light-scheme"]) args.lightScheme = raw["light-scheme"];
   if (raw["dark-scheme"]) args.darkScheme = raw["dark-scheme"];
   if (raw["default-mode"]) args.defaultMode = raw["default-mode"];
+  if (raw["theme-pack"]) args.themePack = raw["theme-pack"];
   if (raw.preset) args.preset = raw.preset;
   if (raw.pm) args.pm = raw.pm;
   if (typeof raw["github-url"] === "string") args.githubUrl = raw["github-url"];
@@ -116,6 +120,7 @@ export function parseArgs(argv: string[] = process.argv.slice(2)): CliArgs {
 
 export function printHelp(): void {
   const langList = SUPPORTED_LANGS.map((l) => l.value).join(", ");
+  const themePackList = THEME_PACKS.map((t) => t.slug).join(", ");
   const featureHelp = FEATURES.map(
     (f) => `  --[no-]${f.cliFlag.padEnd(22)} ${f.hint}`,
   ).join("\n");
@@ -133,6 +138,8 @@ ${pc.bold("Options:")}
   --default-mode <mode>        light | dark (light-dark mode)
   --[no-]respect-system-preference
                                Respect OS color scheme preference
+  --theme-pack <slug>          Theme pack (${themePackList})
+                               Default: default
 ${featureHelp}
   --github-url <url>           GitHub repository URL (drives header link + source link)
   --preset <path>              Load settings from a JSON preset file (use "-" for stdin)
@@ -181,6 +188,11 @@ export function validateArgs(args: CliArgs): string | null {
 
   if (args.defaultMode && !["light", "dark"].includes(args.defaultMode)) {
     return `Invalid default-mode "${args.defaultMode}". Must be "light" or "dark"`;
+  }
+
+  if (args.themePack && !THEME_PACKS.some((t) => t.slug === args.themePack)) {
+    const catalog = THEME_PACKS.map((t) => t.slug).join(", ");
+    return `Unknown theme pack "${args.themePack}". Available: ${catalog}`;
   }
 
   if (args.pm && !["pnpm", "npm", "yarn", "bun"].includes(args.pm)) {
