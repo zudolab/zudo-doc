@@ -25,12 +25,7 @@ hard-claimed by the light/dark mode system (`data-theme` attr,
 `color-scheme-changed` — which has 3 consumers including zdtp's mode-scoped
 panel rebuild in `src/design-token-panel-bootstrap.tsx`). Never reuse it.
 
-Reference material: `_temp-resource/2812-theme-prototypes/tokens-dump.md`
-(token inventory + DOM hooks), `themes/01-foundry.html` (reference pack's
-THEME LAYER), `src/theme/color-scheme-provider.tsx`
-(`buildColorModeBootstrap` — the pre-paint bootstrap pattern mirrored here),
-`src/theme-toggle/color-scheme-sync.ts` (the event/storage contract pattern),
-`docs/adr/route-injection-seam.md` (virtual-module / plugin precedents).
+Reference material: the theme-prototype bundle formerly at `_temp-resource/2812-theme-prototypes/` (tokens-dump.md token inventory + DOM hooks; themes/01-foundry.html reference THEME LAYER — removed after all packs shipped, see zudolab/zudo-doc#2856 or git history), `src/theme/color-scheme-provider.tsx` (`buildColorModeBootstrap` — the pre-paint bootstrap pattern mirrored here), `src/theme-toggle/color-scheme-sync.ts` (the event/storage contract pattern), `docs/adr/route-injection-seam.md` (virtual-module / plugin precedents).
 
 ## Decisions
 
@@ -528,8 +523,8 @@ themePacks?: string[];
   (`loadThemePackRegistry` fs scan + `resolveEnabledPacks` pure +
   `validateThemePack`), the routes-plugin threading, and the `default` +
   `foundry` pack directories (foundry restyles all `--zd-syntax-*` in both
-  modes — the syntax proof — per
-  `_temp-resource/2812-theme-prototypes/themes/01-foundry.html`).
+  modes — the syntax proof — per the foundry prototype, formerly at
+  `_temp-resource/2812-theme-prototypes/themes/01-foundry.html`, removed in zudolab/zudo-doc#2856 — see git history).
 - #2820 implements `copy-theme-packs.mjs` + prepack check, the
   `files`/`exports` shipping surface, and
   `src/plugins/theme-packs.ts` (postBuild + devMiddleware). Preview-service
