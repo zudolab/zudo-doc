@@ -8,6 +8,10 @@ sidebar_position: 18
 
 zudo-docは完全な静的サイトジェネレーターです。`pnpm build`の出力はHTML、CSS、JavaScriptファイルのディレクトリであり、どこでもデプロイできます。デフォルトのデプロイ先は**Cloudflare Workers**（静的アセット）で、CI/CDの自動化にはGitHub Actionsを使用します。
 
+このguideはzudo-doc **showcase repository**のhost-owned Workerとworkflowを説明します。
+fresh downstream scaffoldには、これらworkflow file、live AI handler、`worker-entry.ts`、
+`AiChatDailySpendCap`は含まれません。host側の部品を追加するときの参照として利用してください。
+
 CIパイプラインは合計ビルド時間を短縮するために並列ジョブに分割されています。サイト生成とドキュメント履歴の抽出は独立したジョブとして実行され、デプロイ前にマージされます。
 
 ## Cloudflare Workers静的アセット
@@ -129,18 +133,23 @@ postBuildがローカルでデフォルトオフなのは、コンテンツフ�
 
 ## ジョブ間のデータ共有
 
-ビルドアーティファクトは`actions/upload-artifact`ではなく**`actions/cache`**を使用してジョブ間で共有されます。キャッシュキーはクロスラン汚染を防ぐために`github.run_id`にスコープされています：
+build jobは出力をtarにまとめ、**`actions/upload-artifact`**で公開します。consumer jobは
+`actions/download-artifact`を使い、validation/deploy前に`${{ runner.temp }}`から展開します：
 
 ```yaml
-key: dist-${{ github.run_id }}
-key: doc-history-${{ github.run_id }}
+name: site-dist       # contains site-dist.tar
+name: doc-history     # contains doc-history.tar
+retention-days: 1
 ```
 
-**deploy**（または**preview**）ジョブは両方のキャッシュを復元し、`wrangler deploy`（本番）または`wrangler versions upload`（プレビュー）を呼び出す前に`dist/`ディレクトリをマージします。
+**deploy**と**preview** jobは両archiveを復元し、Wranglerの前にdoc historyを`dist/`へmergeします。
+**worker-contract** jobも同じ`site-dist` artifactを復元するため、runtime testとdry-runは後で
+preview/deployが使うものと同じbuildを検証します。
 
 <Note>
 
-ジョブ間のデータ転送に`actions/cache`を使用すること（アーティファクトではなく）は、大きなZIPアーカイブのアップロードとダウンロードのオーバーヘッドを回避します。キャッシュエントリは一時的なイントラランデータに対してより効率的です。
+tarはartifact upload中も任意のroute filenameを維持します。retentionを1日にすることでstorageを
+抑えながらrun単位のpaper trailを残し、このhandoffはmutable cache keyやcross-run cache stateに依存しません。
 
 </Note>
 

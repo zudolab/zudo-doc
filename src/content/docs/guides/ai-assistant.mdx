@@ -30,6 +30,17 @@ When enabled:
 - A sparkle icon appears in the header bar
 - The `POST /api/ai-chat` endpoint becomes available as a Cloudflare Workers SSR route
 
+<Warning title="The live backend is host-owned">
+
+The production handler, `worker-entry.ts`, and `AiChatDailySpendCap` class described below belong
+to this showcase repository; they are not exported by `@takazudo/zudo-doc` or added by a fresh
+scaffold. The package-owned SSR route is a safe seam: it returns the fixed demo response while
+demo mode is enabled and HTTP 501 if live mode is selected without a host handler. Downstream
+projects must keep demo mode enabled or implement their own host `/api/ai-chat` handler, source
+Worker entry, Durable Object class, and migration. Adding bindings alone does not activate live AI.
+
+</Warning>
+
 ## Security Warning for Non-Demo Deployments
 
 <Warning title="Harden before disabling demo mode">
@@ -65,8 +76,10 @@ export default defineConfig(
 
 ## Environment Setup
 
-The chat endpoint runs as a Cloudflare Workers SSR route (`pages/api/ai-chat.tsx`) and reads its
-configuration from Cloudflare env bindings set in `wrangler.toml`.
+In this showcase repository, the chat endpoint runs as a Cloudflare Workers SSR route
+(`pages/api/ai-chat.tsx`) and reads its configuration from Cloudflare env bindings set in
+`wrangler.toml`. Downstream implementations can use this graph as a reference, but these
+host-owned files are not package APIs.
 
 ### Required CF bindings
 

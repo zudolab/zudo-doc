@@ -441,7 +441,7 @@ AI チャットアシスタントルート（`/api/ai-chat`、SSR）を有効化
 
 ライブアシスタントの実行にはデプロイアダプター、IPごとのKV、Anthropicシークレット、そして正確な
 上限を有効にする場合は`AI_CHAT_DAILY_SPEND_CAP` Durable Object migrationが必要です —
-[カスタマイズ → デプロイ経路](../reference/customizing.mdx)と[AI Assistant API](../reference/ai-assistant-api.mdx)を参照してください。
+[カスタマイズ → デプロイ経路](../reference/customizing.mdx)と[AI Assistant API](../reference/ai-assistant-api.mdx)を参照してください。これらはhost-ownedな部品です。package/scaffoldが提供するのは安全なplaceholder routeであり、showcaseのlive handler、Worker entry、Durable Object classではありません。
 
 ### aiChatDemoMode
 

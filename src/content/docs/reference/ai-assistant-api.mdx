@@ -7,6 +7,15 @@ tags:
 
 API specification for the AI assistant chat endpoint.
 
+<Warning title="Showcase implementation boundary">
+
+This reference describes the host-owned live implementation in the zudo-doc showcase repository.
+The `@takazudo/zudo-doc` package/scaffold does not ship this handler, `worker-entry.ts`, or
+`AiChatDailySpendCap`; its package-owned route returns HTTP 501 when live mode is selected without
+a host implementation. Downstream projects must supply an equivalent handler and Worker graph.
+
+</Warning>
+
 ## Endpoint
 
 ```

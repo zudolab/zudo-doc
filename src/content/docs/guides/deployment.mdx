@@ -8,6 +8,10 @@ sidebar_position: 18
 
 zudo-doc is a fully static site generator — the output of `pnpm build` is a directory of HTML, CSS, and JavaScript files that can be deployed anywhere. The default deployment target is **Cloudflare Workers** (static assets), using GitHub Actions for CI/CD automation.
 
+This guide documents the zudo-doc **showcase repository's** host-owned Worker and workflows. A
+fresh downstream scaffold does not include these workflow files, the live AI handler,
+`worker-entry.ts`, or `AiChatDailySpendCap`; use this as a reference when adding those host pieces.
+
 The CI pipeline is split into parallel jobs to keep total build time low. Site generation and document history extraction run as separate jobs and are merged before deployment.
 
 ## Cloudflare Workers Static Assets
@@ -128,18 +132,25 @@ postBuild is off by default locally because its per-content-file `git log --foll
 
 ## Inter-Job Data Sharing
 
-Build artifacts are shared between jobs using **`actions/cache`** rather than `actions/upload-artifact`. Cache keys are scoped to `github.run_id` to prevent cross-run contamination:
+Build jobs tar their output and publish it with **`actions/upload-artifact`**. Consumer jobs use
+`actions/download-artifact` and extract the archives from `${{ runner.temp }}` before validation
+or deployment:
 
 ```yaml
-key: dist-${{ github.run_id }}
-key: doc-history-${{ github.run_id }}
+name: site-dist       # contains site-dist.tar
+name: doc-history     # contains doc-history.tar
+retention-days: 1
 ```
 
-The **deploy** (or **preview**) job restores both caches and merges the `dist/` directories before calling `wrangler deploy` (production) or `wrangler versions upload` (preview).
+The **deploy** and **preview** jobs restore both archives and merge doc history into `dist/` before
+Wrangler. The **worker-contract** job restores the same `site-dist` artifact, so runtime tests and
+the dry-run verify the exact build later used by preview/deploy jobs.
 
 <Note>
 
-Using `actions/cache` for job-to-job data transfer (rather than artifacts) avoids the overhead of uploading and downloading large ZIP archives. Cache entries are cheaper for temporary intra-run data.
+Tar keeps arbitrary route filenames intact during artifact upload. One-day retention bounds
+storage while preserving a run-scoped paper trail; this handoff does not rely on mutable cache
+keys or cross-run cache state.
 
 </Note>
 

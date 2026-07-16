@@ -442,7 +442,9 @@ Default: `false`
 Running a live assistant requires a deploy adapter, per-IP KV, an Anthropic secret, and the
 `AI_CHAT_DAILY_SPEND_CAP` Durable Object migration when the exact cap is enabled — see
 [Customizing → Deploy path](../reference/customizing.mdx#rung-7-—-the-deploy-path-an-explicit-extend-step)
-and the [AI Assistant API](../reference/ai-assistant-api.mdx).
+and the [AI Assistant API](../reference/ai-assistant-api.mdx). These are host-owned pieces: the
+package/scaffold supplies a safe placeholder route, not the showcase's live handler, Worker entry,
+or Durable Object class.
 
 ### aiChatDemoMode
 

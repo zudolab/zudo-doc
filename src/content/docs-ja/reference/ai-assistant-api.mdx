@@ -7,6 +7,15 @@ tags:
 
 AIアシスタントのチャットエンドポイントのAPI仕様です。
 
+<Warning title="showcase実装の境界">
+
+このreferenceはzudo-doc showcase repositoryのhost-ownedなlive実装を説明します。
+`@takazudo/zudo-doc` package/scaffoldは、このhandler、`worker-entry.ts`、
+`AiChatDailySpendCap`を出荷しません。host実装なしでlive modeを選ぶとpackage-owned routeは
+HTTP 501を返します。downstream projectは同等のhandlerとWorker graphを用意する必要があります。
+
+</Warning>
+
 ## エンドポイント
 
 ```

@@ -30,6 +30,17 @@ export default defineConfig(
 - ヘッダーバーにスパークルアイコンが表示されます
 - `POST /api/ai-chat`エンドポイントがCloudflare WorkersのSSRルートとして利用可能になります
 
+<Warning title="ライブバックエンドはhost側の責務です">
+
+以下で説明するproduction handler、`worker-entry.ts`、`AiChatDailySpendCap` classはこの
+showcase repositoryが所有しており、`@takazudo/zudo-doc`からexportされたりfresh scaffoldへ
+追加されたりしません。package-owned SSR routeは安全なseamで、demo modeでは固定応答を返し、
+host handlerなしでlive modeを選ぶとHTTP 501を返します。downstream projectはdemo modeを維持するか、
+host側の`/api/ai-chat` handler、source Worker entry、Durable Object class、migrationを実装する必要が
+あります。bindingを追加するだけではlive AIは有効になりません。
+
+</Warning>
+
 ## デモモード無効化時のセキュリティ警告
 
 <Warning title="デモモードを無効にする前にセキュリティを強化してください">
@@ -66,7 +77,9 @@ export default defineConfig(
 
 ## 環境設定
 
-チャットエンドポイントはCloudflare WorkersのSSRルート（`pages/api/ai-chat.tsx`）として動作し、設定は`wrangler.toml`に定義されたCloudflare環境バインディングから読み込みます。
+このshowcase repositoryでは、チャットエンドポイントはCloudflare WorkersのSSRルート
+（`pages/api/ai-chat.tsx`）として動作し、`wrangler.toml`のCloudflare環境bindingから設定を
+読み込みます。downstream実装はこのgraphを参照できますが、これらhost-owned fileはpackage APIではありません。
 
 ### 必要なCFバインディング
 

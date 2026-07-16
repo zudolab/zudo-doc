@@ -48,7 +48,7 @@ the target spec never touches `page` — `playwright.config.ts` boots one `webSe
 active fixture regardless of which specs in that fixture's project actually use it.
 
 **Three b4push steps are also L3 in spirit** — they verify the *built* `dist/` rather than
-source, just outside the Playwright/`makeDistReader` pattern: link check (step 19, reads
+source, just outside the Playwright/`makeDistReader` pattern: link check (step 20, reads
 `dist/**/*.html` for broken links), HTML validation (step 21, `html-validate
 dist/**/*.html`), and the automated preview smoke (step 22, `scripts/smoke-preview.mjs` —
 boots a real `pnpm preview` server and asserts on live HTTP responses). These run as part of
@@ -114,8 +114,8 @@ its Playwright webServer. Repeated runs skip the build when inputs are unchanged
 **b4push** (`pnpm b4push`) is the bounded local convenience pass — wisdom-tier **T4**, not
 T1 (see the note above the tiers table); it's covered here for workflow ergonomics only. It
 runs a 23-step suite
-(format → template drift → no-host-alias guard → pin parity → fixture drift → tags audit →
-token lint → z-index drift → component-tokens drift → e2e spec naming guard →
+(format → template drift → no-host-alias guard → pin parity → fixture drift → tags/canonical audit →
+current-only compatibility → token lint → component-tokens drift → e2e spec naming guard →
 @flaky tracking-issue guard → wait-debt guard → b4push/CI parity → typecheck → Worker contract proof → unit tests →
 package tests → safelist check → build → link check → HTML validation → preview smoke →
 manual smoke). Each step's elapsed time is recorded and printed as a breakdown in the final
