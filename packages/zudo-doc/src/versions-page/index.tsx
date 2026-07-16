@@ -15,6 +15,7 @@ import type { VersionPageEntry, VersionsPageLabels } from "../nav-indexing/index
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
 import { createHeadWithDefaults } from "../head-with-defaults/index.js";
+import { resolveThemePackSsrSlug } from "../theme/theme-pack-provider.js";
 import { deriveComposeMetaTitle, deriveBodyEndIslands } from "../chrome/derive.js";
 import { derivePrimaryChromeSlots } from "../chrome/primary-slots.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
@@ -88,6 +89,11 @@ export function createVersionsPageView<S extends Settings = Settings>(
   const { Header: HeaderWithDefaults, Footer: FooterWithDefaults } =
     derivePrimaryChromeSlots(ctx);
   const BodyEndIslands = deriveBodyEndIslands(ctx) as VersionsPageComponents["BodyEndIslands"];
+  // SSR `data-theme-pack` html attribute (ADR theme-packs.md Decision 3, #2822).
+  const dataThemePack = resolveThemePackSsrSlug(
+    ctx.themePackRegistry,
+    ctx.settings as { themePack?: string },
+  );
 
   /** Versions index page for one locale. Lists the latest version and any past
    *  versions configured in settings.versions. */
@@ -130,6 +136,7 @@ export function createVersionsPageView<S extends Settings = Settings>(
         title={composeMetaTitle(pageTitle)}
         head={<HeadWithDefaults title={pageTitle} />}
         lang={locale}
+        dataThemePack={dataThemePack}
         noindex={settings.noindex}
         hideSidebar={true}
         hideToc={true}
