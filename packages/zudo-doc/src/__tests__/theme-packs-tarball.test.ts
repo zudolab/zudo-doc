@@ -14,7 +14,7 @@
 // extracted package resolves/builds/runs) lives in the slow tier —
 // `route-injection-build.slow.test.ts`.
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll } from "vitest";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
@@ -71,9 +71,18 @@ function packFileList(): string[] {
 }
 
 describe("npm tarball ships theme-pack assets (ADR docs/adr/theme-packs.md, #2820)", () => {
-  it("includes every bundled pack's meta.json, pack.css (when shipped), and fonts/*", () => {
-    const files = packFileList();
+  // `npm pack --dry-run --json` shells out to npm, which builds the ideal
+  // dependency tree even for a dry run — cheap on a warm local npm (~1s) but
+  // observed at ~11s on a cold CI runner, blowing vitest's 5s per-test default.
+  // Run it ONCE in beforeAll with a generous timeout and assert against the
+  // cached list, so the slow subprocess is paid once and the assertions are
+  // instant (and the second test never pays it at all).
+  let files: string[];
+  beforeAll(() => {
+    files = packFileList();
+  }, 60_000);
 
+  it("includes every bundled pack's meta.json, pack.css (when shipped), and fonts/*", () => {
     // "default" — meta.json only; the reserved no-op pack must NOT ship
     // pack.css (ADR Decision 1).
     expect(files).toContain("dist/theme-packs/default/meta.json");
