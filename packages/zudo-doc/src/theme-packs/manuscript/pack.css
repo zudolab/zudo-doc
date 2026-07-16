@@ -190,6 +190,13 @@ html[data-theme-pack="manuscript"] body {
     transparent 1px 30px
   );
 }
+/* .zd-content re-declares font-size/line-height on itself (content.css), so
+   the body values above never reach the prose — restate the book measure on
+   the content root. */
+html[data-theme-pack="manuscript"] .zd-content {
+  font-size: 1.14rem;
+  line-height: 1.72;
+}
 
 /* masthead: title-page double rule, small-caps wordmark + nav */
 html[data-theme-pack="manuscript"] header[data-header] {
@@ -366,8 +373,10 @@ html[data-theme-pack="manuscript"] .zd-content > nav a > p {
 }
 
 /* footer: closing double rule + fleuron colophon above the copyright line
-   (the footer's last inner block; the prototype's .footer-copy class does
-   not exist in the real DOM). */
+   (the prototype's .footer-copy class does not exist in the real DOM). The
+   :not(:has(ul)) guard keeps the ornament off the link/tag column grid when
+   a footer configures columns but no copyright — the grid's div always
+   contains <ul> lists, the copyright block never does. */
 html[data-theme-pack="manuscript"] .zd-sidebar-content-wrapper footer {
   border-top: 3px double color-mix(in oklch, var(--zd-fg) 50%, transparent);
 }
@@ -375,7 +384,7 @@ html[data-theme-pack="manuscript"]
   .zd-sidebar-content-wrapper
   footer
   > div
-  > div:last-child::before {
+  > div:last-child:not(:has(ul))::before {
   content: "❦";
   display: block;
   font-size: 1.05rem;
