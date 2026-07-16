@@ -11,10 +11,12 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const THEME_PACKS_DIR = resolve(__dirname, "../../theme-packs");
 
 describe("loadThemePackRegistry (real bundled packs)", () => {
-  it("aggregates the 16 shipped packs, in canonical alphabetical order", () => {
+  it("aggregates the 21 shipped packs, in canonical alphabetical order", () => {
     const registry = loadThemePackRegistry(THEME_PACKS_DIR);
     expect(registry.map((e) => e.slug)).toEqual([
+      "beacon",
       "broadsheet",
+      "brutalist",
       "default",
       "drift",
       "fjord",
@@ -26,7 +28,10 @@ describe("loadThemePackRegistry (real bundled packs)", () => {
       "manuscript",
       "matcha",
       "nocturne",
+      "observatory",
       "onyx",
+      "phosphor",
+      "solar",
       "sumi",
       "swissgrid",
       "washi",
@@ -52,7 +57,9 @@ describe("loadThemePackRegistry (real bundled packs)", () => {
     // alphabetical order above).
     expect(enabled.map((e) => e.slug)).toEqual([
       "default",
+      "beacon",
       "broadsheet",
+      "brutalist",
       "drift",
       "fjord",
       "foundry",
@@ -63,7 +70,10 @@ describe("loadThemePackRegistry (real bundled packs)", () => {
       "manuscript",
       "matcha",
       "nocturne",
+      "observatory",
       "onyx",
+      "phosphor",
+      "solar",
       "sumi",
       "swissgrid",
       "washi",
