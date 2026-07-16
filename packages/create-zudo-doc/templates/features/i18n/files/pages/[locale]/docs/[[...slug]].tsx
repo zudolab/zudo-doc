@@ -2,8 +2,11 @@
 /** @jsxImportSource preact */
 // Locked manifest (#2653 Decision 4, i18n addendum): the locale-prefixed
 // counterpart of pages/docs/[[...slug]].tsx — required for the same reason
-// (injected DYNAMIC routes 404 in `zfb dev`). Self-contained: only the three
-// sanctioned package entrypoints — no `pages/lib`, no `@/config`. Mirrors
+// (injected DYNAMIC routes 404 in `zfb dev`). Self-contained: only the
+// sanctioned package entrypoints — no `pages/lib`, no `@/config`. The
+// `virtual:zudo-doc-chrome-bindings` import is unconditional, just like the
+// default-locale stub: the routes plugin supplies `{}` when no host module is
+// configured. Mirrors
 // the package's own `routes/locale-docs-slug.tsx` shape, rebuilt from the
 // route-context payload instead of the package-internal `_context.js`.
 //
@@ -28,10 +31,11 @@ import {
   type RouteContextPayload,
 } from "@takazudo/zudo-doc/route-context";
 import { createChrome } from "@takazudo/zudo-doc/chrome";
+import { chromeBindings } from "virtual:zudo-doc-chrome-bindings";
 
 const ctx = routeContext as unknown as RouteContextPayload;
 const routeCtx = createRouteContext(ctx);
-const { renderDocPage } = createChrome(routeCtx);
+const { renderDocPage } = createChrome(routeCtx, chromeBindings);
 
 export const frontmatter = { title: "Docs" };
 
