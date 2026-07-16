@@ -122,7 +122,7 @@ html[data-theme-pack="hollow"] {
   --zd-code-fg: light-dark(oklch(0.26 0.045 295), oklch(0.9 0.02 293));
   --zd-success: light-dark(oklch(0.44 0.11 170), oklch(0.78 0.12 172));
   --zd-danger: light-dark(oklch(0.5 0.17 18), oklch(0.7 0.16 15));
-  --zd-warning: light-dark(oklch(0.51 0.11 75), oklch(0.8 0.12 80));
+  --zd-warning: light-dark(oklch(0.5 0.11 75), oklch(0.8 0.12 80));
   --zd-info: light-dark(oklch(0.46 0.13 258), oklch(0.75 0.1 250));
 
   /* syntax — all 9 roles, both modes: neon-restrained midnight
@@ -342,13 +342,16 @@ html[data-theme-pack="hollow"] nav[data-zd-toc] ul {
   border-left-color: color-mix(in oklch, var(--zd-accent) 30%, transparent);
 }
 html[data-theme-pack="hollow"] nav[data-zd-toc] a[aria-current="true"] {
+  /* Small active-entry text over its own 14% pink tint over --zd-bg needs
+     4.5:1; the light pink darkens L .52 → .508 (tint source, text, and spine
+     kept in lockstep so the marker stays one colour). */
   background: color-mix(
     in oklch,
-    light-dark(oklch(0.52 0.2 350), oklch(0.78 0.17 348)) 14%,
+    light-dark(oklch(0.508 0.2 350), oklch(0.78 0.17 348)) 14%,
     transparent
   );
-  color: light-dark(oklch(0.52 0.2 350), oklch(0.78 0.17 348));
-  box-shadow: inset 2px 0 0 light-dark(oklch(0.52 0.2 350), oklch(0.78 0.17 348));
+  color: light-dark(oklch(0.508 0.2 350), oklch(0.78 0.17 348));
+  box-shadow: inset 2px 0 0 light-dark(oklch(0.508 0.2 350), oklch(0.78 0.17 348));
   border-radius: 0;
 }
 
