@@ -119,7 +119,7 @@ html[data-theme-pack="fjord"] {
   --zd-code-fg: light-dark(oklch(0.27 0.03 255), oklch(0.912 0.015 235));
   --zd-success: light-dark(oklch(0.485 0.115 165), oklch(0.8 0.12 160));
   --zd-danger: light-dark(oklch(0.505 0.15 20), oklch(0.705 0.12 15));
-  --zd-warning: light-dark(oklch(0.54 0.105 80), oklch(0.83 0.095 85));
+  --zd-warning: light-dark(oklch(0.508 0.105 80), oklch(0.83 0.095 85));
   --zd-info: light-dark(oklch(0.475 0.095 240), oklch(0.76 0.085 235));
 
   /* syntax — all 9 roles, both modes: a cold "frost family" — blue

@@ -149,10 +149,10 @@ html[data-theme-pack="drift"] {
   --zd-accent-hover: light-dark(oklch(0.415 0.11 248), oklch(0.79 0.08 232));
   --zd-code-bg: light-dark(oklch(0.928 0.013 243), oklch(0.278 0.022 251));
   --zd-code-fg: light-dark(oklch(0.3 0.028 250), oklch(0.9 0.012 242));
-  --zd-success: light-dark(oklch(0.49 0.095 160), oklch(0.745 0.095 158));
-  --zd-danger: light-dark(oklch(0.52 0.14 22), oklch(0.705 0.115 22));
-  --zd-warning: light-dark(oklch(0.535 0.1 80), oklch(0.795 0.095 84));
-  --zd-info: light-dark(oklch(0.5 0.1 240), oklch(0.735 0.095 234));
+  --zd-success: light-dark(oklch(0.485 0.095 160), oklch(0.745 0.095 158));
+  --zd-danger: light-dark(oklch(0.51 0.14 22), oklch(0.705 0.115 22));
+  --zd-warning: light-dark(oklch(0.5 0.1 80), oklch(0.795 0.095 84));
+  --zd-info: light-dark(oklch(0.49 0.1 240), oklch(0.735 0.095 234));
 
   /* syntax — all 9 roles, both modes: hushed pastels drifting around
      the blue axis — periwinkle keywords, cyan callables, sea-green
