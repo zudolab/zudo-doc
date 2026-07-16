@@ -246,9 +246,10 @@ test.describe("Theme pack switcher", () => {
     expect(await readActivePack(page)).toBe("default");
 
     // Backward: default -> solar -> ... -> foundry -> (wrap) -> default,
-    // i.e. the reverse of FULL_PACK_CYCLE.
+    // i.e. the reverse of FULL_PACK_CYCLE (whose own last element is
+    // "default", so this sequence needs no extra wrap-around append).
     const reverseOrder = [...FULL_PACK_CYCLE].reverse();
-    for (const slug of [...reverseOrder.slice(1), "default"]) {
+    for (const slug of reverseOrder) {
       await prevPackButton(page).click();
       await waitForActivePack(page, slug);
     }
