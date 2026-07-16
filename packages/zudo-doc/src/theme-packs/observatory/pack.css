@@ -1,0 +1,729 @@
+/* ============================================================
+   Observatory — zudo-doc theme pack (ADR docs/adr/theme-packs.md)
+
+   Night-sky atlas: star-field depth, constellation-line rules,
+   nebula violet and comet gold over astronomer's navy. Dark mode
+   is a night session at the eyepiece — navy-black sky, star-white
+   text, comet-gold accents, nebula violet. Light mode is the day
+   atlas: the same chart printed as navy ink and gilt on pale
+   celestial-blue paper. Josefin Sans chart-label headings (thin,
+   tracked, uppercase h2s) over a Jost reading face and Space Mono
+   code. Signature moves: fixed-attachment multi-depth star-dot sky
+   with nebula washes on page, sidebar, code blocks and flyout;
+   constellation-line rules — h1/h2 borders, pager cards and flyout
+   carry glowing gold star nodes joined by fading lines; dashed gold
+   ecliptic hr with a sun node; square chart-plate radii.
+
+   RADIUS DECISION: SQUARE — chart plates and instrument panels;
+   cards/admonitions/code at 0, flyout chrome at 2px.
+
+   Every rule below is scoped under html[data-theme-pack="observatory"]
+   — this is what makes the runtime pack swap atomic (Decision 3)
+   and lets the validator prove a pack can never leak styles while
+   inactive (Decision 6.7). The @font-face blocks are the sole
+   exception (at-rules can't be selector-scoped).
+
+   Prototype-selector adaptations against the REAL DOM (tokens-dump
+   §6 + component sources), noted inline where they matter:
+   - `.lead`             → `.zd-content > p:first-of-type` (the
+                           description paragraph DocContentHeader
+                           renders as the article's first direct-child
+                           <p>; fails soft on pages without one)
+   - `.toc-active`       → `nav[data-zd-toc] a[aria-current="true"]`
+                           (toc/toc.tsx marks the active entry with
+                           aria-current, not a mock class)
+   - `.doc-pager`        → `.zd-content > nav:last-of-type:not([aria-label]) > a`
+                           (the DocPager is the article's last
+                           unlabelled direct-child nav whose children
+                           are bare <a> cards; breadcrumb and
+                           NavCardGrid navs carry aria-labels)
+   - `footer[data-footer]` → `.zd-sidebar-content-wrapper > footer`
+                           (no data-footer attribute in the real DOM)
+   - `.hdr-search` / `.hdr-icon-btn` / `.sb-group > p` / `.toc-title`
+                           — prototype-mock markup with no stable
+                           hook; NOT ported.
+   - `.tp-flyout`        → `div[role="dialog"][aria-label="Theme pack
+                           switcher"]`; its title is
+                           `p[aria-live="polite"]`. The launcher
+                           button has NO stable hook — NOT ported.
+   - the prototype's `--obs-*` helper properties are not part of the
+     token manifest; their values are inlined at each use site:
+       gold        = var(--zd-accent)
+       violet      = light-dark(oklch(0.48 0.125 300), oklch(0.74 0.115 300))
+       node        = light-dark(oklch(0.5 0.105 78), oklch(0.87 0.13 88))
+       node-glow   = light-dark(oklch(0.52 0.11 80 / 0.35), oklch(0.86 0.13 88 / 0.55))
+       line        = light-dark(oklch(0.33 0.05 268 / 0.4), oklch(0.86 0.05 265 / 0.34))
+       hairline    = light-dark(oklch(0.33 0.05 268 / 0.22), oklch(0.88 0.04 265 / 0.16))
+       star-a      = light-dark(oklch(0.32 0.05 268 / 0.22), oklch(0.96 0.015 255 / 0.4))
+       star-b      = light-dark(oklch(0.32 0.05 268 / 0.12), oklch(0.96 0.015 255 / 0.2))
+       star-gold   = light-dark(oklch(0.52 0.11 80 / 0.28), oklch(0.85 0.13 88 / 0.45))
+       star-violet = light-dark(oklch(0.48 0.125 300 / 0.2), oklch(0.74 0.12 300 / 0.36))
+       nebula      = light-dark(oklch(0.6 0.1 300 / 0.06), oklch(0.43 0.17 300 / 0.15))
+       nebula-gold = light-dark(oklch(0.6 0.11 85 / 0.05), oklch(0.6 0.14 85 / 0.07))
+       indicator   = light-dark(oklch(0.415 0.088 76), oklch(0.84 0.13 88))
+   - the prototype's `--font-sans` second entry (a commercial
+     geometric-humanist face on the Decision 5 denylist) was
+     dropped; Jost is the loaded face, system-ui covers the rest.
+   - the light syntax comment ink runs a step darker than the
+     prototype (L .52 → .50) to clear WCAG AA (≥4.5:1) on the pale
+     celestial code panel.
+   ============================================================ */
+
+/* ---- Josefin Sans — the chart-label display face: h1 (thin 200),
+        uppercase h2s (300), h3s / admonition titles / table headers
+        (400), logo and flyout title. Variable 100–700.
+        Latin subsets only (all three families): a stray latin-ext
+        or CJK glyph falls through to the stack's system face. ---- */
+
+@font-face {
+  font-family: "Josefin Sans";
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: swap;
+  src: url("./fonts/JosefinSans-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- Jost — the geometric reading face (the body prose, nav, UI).
+        Variable 100–900, plus a true italic for blockquote margin
+        notes. ---- */
+
+@font-face {
+  font-family: "Jost";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./fonts/Jost-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Jost";
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./fonts/Jost-italic-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- Space Mono — code. Static 400/700 + a true 400 italic for
+        comments (no variable file exists). ---- */
+
+@font-face {
+  font-family: "Space Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/SpaceMono-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Space Mono";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/SpaceMono-700-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Space Mono";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/SpaceMono-italic-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+html[data-theme-pack="observatory"] {
+  /* Tier-2 semantic roles — pale celestial-blue day atlas / navy
+     night sky. Both modes always via light-dark(). */
+  --zd-bg: light-dark(oklch(0.965 0.012 255), oklch(0.155 0.028 268));
+  --zd-fg: light-dark(oklch(0.235 0.045 268), oklch(0.93 0.015 255));
+  --zd-selection-bg: light-dark(oklch(0.855 0.07 300), oklch(0.405 0.13 300));
+  --zd-selection-fg: light-dark(oklch(0.22 0.06 300), oklch(0.965 0.01 300));
+  --zd-surface: light-dark(oklch(0.94 0.018 255), oklch(0.18 0.033 268));
+  --zd-muted: light-dark(oklch(0.44 0.038 266), oklch(0.705 0.032 262));
+  --zd-accent: light-dark(oklch(0.47 0.1 75), oklch(0.82 0.13 86));
+  --zd-accent-hover: light-dark(oklch(0.4 0.09 72), oklch(0.88 0.12 90));
+  --zd-code-bg: light-dark(oklch(0.93 0.02 260), oklch(0.128 0.028 270));
+  --zd-code-fg: light-dark(oklch(0.25 0.042 268), oklch(0.92 0.018 258));
+  --zd-success: light-dark(oklch(0.45 0.105 162), oklch(0.78 0.118 162));
+  --zd-danger: light-dark(oklch(0.49 0.16 22), oklch(0.7 0.15 22));
+  --zd-warning: light-dark(oklch(0.5 0.105 80), oklch(0.82 0.13 86));
+  --zd-info: light-dark(oklch(0.46 0.12 288), oklch(0.75 0.105 288));
+
+  /* syntax — spectral classes of the night sky, all 9 roles in both
+     modes: nebula-violet keywords, aurora-green strings, comet-gold
+     numbers/types, Rigel-blue callables, dim atmospheric-grey
+     comments. inserted/deleted reuse the success/danger hues. */
+  --zd-syntax-comment: light-dark(oklch(0.5 0.03 265), oklch(0.61 0.038 265));
+  --zd-syntax-string: light-dark(oklch(0.45 0.1 162), oklch(0.8 0.112 162));
+  --zd-syntax-number: light-dark(oklch(0.5 0.105 80), oklch(0.845 0.13 88));
+  --zd-syntax-keyword: light-dark(oklch(0.46 0.14 300), oklch(0.76 0.118 300));
+  --zd-syntax-callable: light-dark(oklch(0.46 0.11 250), oklch(0.78 0.095 240));
+  --zd-syntax-type: light-dark(oklch(0.5 0.085 60), oklch(0.865 0.068 78));
+  --zd-syntax-name: light-dark(oklch(0.27 0.04 268), oklch(0.93 0.015 255));
+  --zd-syntax-inserted: light-dark(oklch(0.45 0.105 162), oklch(0.78 0.118 162));
+  --zd-syntax-deleted: light-dark(oklch(0.49 0.16 22), oklch(0.7 0.15 22));
+
+  /* fonts — Jost reading face, Space Mono code, Josefin Sans
+     chart-label display face. */
+  --font-sans: "Jost", system-ui, sans-serif;
+  --font-mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-display: "Josefin Sans", "Jost", system-ui, sans-serif;
+
+  /* Tier-3 component seams — thin tracked display headings, square
+     chart plates, gold nav marker. */
+  --zdc-doc-title-font: var(--font-display);
+  --zdc-doc-title-weight: 200;
+  --zdc-doc-title-tracking: 0.045em;
+  --zdc-doc-h2-font: var(--font-display);
+  --zdc-doc-h2-weight: 300;
+  --zdc-doc-h2-tracking: 0.1em;
+  --zdc-admonition-radius: 0;
+  --zdc-admonition-border-width: 2px;
+  --zdc-card-radius: 0;
+  --zdc-nav-active-indicator-color: light-dark(oklch(0.415 0.088 76), oklch(0.84 0.13 88));
+}
+
+/* ---- Observatory extras ---- */
+
+/* faint star-dot field, three depths + two nebula washes; fixed
+   attachment so the sky holds still while the page scrolls */
+html[data-theme-pack="observatory"] body {
+  background-image:
+    radial-gradient(
+      70rem 46rem at 84% -12%,
+      light-dark(oklch(0.6 0.1 300 / 0.06), oklch(0.43 0.17 300 / 0.15)),
+      transparent 62%
+    ),
+    radial-gradient(
+      52rem 36rem at -12% 108%,
+      light-dark(oklch(0.6 0.11 85 / 0.05), oklch(0.6 0.14 85 / 0.07)),
+      transparent 60%
+    ),
+    radial-gradient(
+      1.5px 1.5px at 73px 210px,
+      light-dark(oklch(0.52 0.11 80 / 0.28), oklch(0.85 0.13 88 / 0.45)),
+      transparent
+    ),
+    radial-gradient(
+      1.5px 1.5px at 246px 66px,
+      light-dark(oklch(0.48 0.125 300 / 0.2), oklch(0.74 0.12 300 / 0.36)),
+      transparent
+    ),
+    radial-gradient(
+      1px 1px at 22px 34px,
+      light-dark(oklch(0.32 0.05 268 / 0.22), oklch(0.96 0.015 255 / 0.4)),
+      transparent
+    ),
+    radial-gradient(
+      1px 1px at 191px 122px,
+      light-dark(oklch(0.32 0.05 268 / 0.22), oklch(0.96 0.015 255 / 0.4)),
+      transparent
+    ),
+    radial-gradient(
+      1px 1px at 118px 250px,
+      light-dark(oklch(0.32 0.05 268 / 0.12), oklch(0.96 0.015 255 / 0.2)),
+      transparent
+    ),
+    radial-gradient(
+      1px 1px at 301px 172px,
+      light-dark(oklch(0.32 0.05 268 / 0.12), oklch(0.96 0.015 255 / 0.2)),
+      transparent
+    );
+  background-size:
+    auto,
+    auto,
+    420px 420px,
+    380px 380px,
+    260px 260px,
+    300px 300px,
+    340px 340px,
+    360px 360px;
+  background-attachment: fixed;
+  letter-spacing: 0.005em;
+}
+
+/* header — observatory signage over a gold→violet ecliptic rule */
+html[data-theme-pack="observatory"] header[data-header] {
+  border-image: linear-gradient(
+      to right,
+      var(--zd-accent),
+      light-dark(oklch(0.48 0.125 300), oklch(0.74 0.115 300)) 34%,
+      light-dark(oklch(0.33 0.05 268 / 0.22), oklch(0.88 0.04 265 / 0.16)) 72%,
+      transparent
+    )
+    1;
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(
+      in oklch,
+      light-dark(oklch(0.48 0.125 300), oklch(0.74 0.115 300)) 7%,
+      transparent
+    ),
+    transparent
+  );
+}
+html[data-theme-pack="observatory"] [data-header-logo] {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: 1.05rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+html[data-theme-pack="observatory"] [data-header-logo]::after {
+  content: " ✦";
+  color: var(--zd-accent);
+  font-size: 0.8em;
+}
+html[data-theme-pack="observatory"] [data-nav-item] {
+  letter-spacing: 0.03em;
+}
+
+/* sidebar — dimmer star field behind the catalog */
+html[data-theme-pack="observatory"] #desktop-sidebar {
+  border-right-color: light-dark(oklch(0.33 0.05 268 / 0.22), oklch(0.88 0.04 265 / 0.16));
+  background-image:
+    radial-gradient(
+      1px 1px at 31px 44px,
+      light-dark(oklch(0.32 0.05 268 / 0.12), oklch(0.96 0.015 255 / 0.2)),
+      transparent
+    ),
+    radial-gradient(
+      1px 1px at 140px 170px,
+      light-dark(oklch(0.32 0.05 268 / 0.12), oklch(0.96 0.015 255 / 0.2)),
+      transparent
+    ),
+    radial-gradient(
+      1.5px 1.5px at 88px 236px,
+      light-dark(oklch(0.48 0.125 300 / 0.2), oklch(0.74 0.12 300 / 0.36)),
+      transparent
+    );
+  background-size:
+    220px 220px,
+    260px 260px,
+    320px 320px;
+  background-attachment: fixed;
+}
+html[data-theme-pack="observatory"] #desktop-sidebar a {
+  border-radius: 0;
+}
+html[data-theme-pack="observatory"] #desktop-sidebar a:hover {
+  color: var(--zd-accent);
+}
+/* active item: the gold indicator token fills it; square plate */
+html[data-theme-pack="observatory"] a[data-nav-active] {
+  border-radius: 0;
+}
+
+/* breadcrumb: gilded hover */
+html[data-theme-pack="observatory"] main nav[aria-label="Breadcrumb"] a:hover {
+  color: var(--zd-accent);
+}
+
+/* h1 — constellation underline: gold star nodes joined by a fading
+   line, glowing faintly */
+html[data-theme-pack="observatory"] .zd-content h1 {
+  position: relative;
+  padding-bottom: 0.8rem;
+}
+html[data-theme-pack="observatory"] .zd-content h1::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: min(24rem, 100%);
+  height: 7px;
+  background:
+    radial-gradient(
+        circle,
+        light-dark(oklch(0.5 0.105 78), oklch(0.87 0.13 88)) 0 2.2px,
+        transparent 2.8px
+      )
+      0% 50% / 7px 7px no-repeat,
+    radial-gradient(
+        circle,
+        light-dark(oklch(0.5 0.105 78), oklch(0.87 0.13 88)) 0 1.7px,
+        transparent 2.3px
+      )
+      36% 50% / 6px 6px no-repeat,
+    radial-gradient(
+        circle,
+        light-dark(oklch(0.5 0.105 78), oklch(0.87 0.13 88)) 0 1.4px,
+        transparent 2px
+      )
+      68% 50% / 5px 5px no-repeat,
+    radial-gradient(
+        circle,
+        light-dark(oklch(0.5 0.105 78), oklch(0.87 0.13 88)) 0 1.7px,
+        transparent 2.3px
+      )
+      100% 50% / 6px 6px no-repeat,
+    linear-gradient(
+        to right,
+        light-dark(oklch(0.33 0.05 268 / 0.4), oklch(0.86 0.05 265 / 0.34)) 0%,
+        light-dark(oklch(0.33 0.05 268 / 0.4), oklch(0.86 0.05 265 / 0.34)) 60%,
+        transparent
+      )
+      0 50% / 100% 1px no-repeat;
+  filter: drop-shadow(
+    0 0 4px light-dark(oklch(0.52 0.11 80 / 0.35), oklch(0.86 0.13 88 / 0.55))
+  );
+}
+
+/* the lead: a light-weight opening line under the title */
+html[data-theme-pack="observatory"] .zd-content > p:first-of-type {
+  font-weight: 300;
+}
+
+/* h2 — chart-label caps over a constellation line with star nodes.
+   The SSR-inlined `style="border-image:linear-gradient(...)"` bar is
+   defeated with border-image none !important (Decision 6.6's sole
+   allowlisted carve-out) + a zeroed border-top; the node-to-line rule
+   is then painted as a top-anchored background gradient, with the two
+   glowing star nodes as pseudo-element dots. */
+html[data-theme-pack="observatory"] .zd-content h2 {
+  border-image: none !important;
+  border-top-width: 0;
+  position: relative;
+  text-transform: uppercase;
+  background-image: linear-gradient(
+    to right,
+    light-dark(oklch(0.5 0.105 78), oklch(0.87 0.13 88)),
+    light-dark(oklch(0.33 0.05 268 / 0.4), oklch(0.86 0.05 265 / 0.34)) 45%,
+    transparent 85%
+  );
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
+  background-position: top left;
+}
+html[data-theme-pack="observatory"] .zd-content h2::before,
+html[data-theme-pack="observatory"] .zd-content h2::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  background: light-dark(oklch(0.5 0.105 78), oklch(0.87 0.13 88));
+  box-shadow: 0 0 6px light-dark(oklch(0.52 0.11 80 / 0.35), oklch(0.86 0.13 88 / 0.55));
+}
+html[data-theme-pack="observatory"] .zd-content h2::before {
+  top: -3px;
+  left: 0;
+  width: 5px;
+  height: 5px;
+}
+html[data-theme-pack="observatory"] .zd-content h2::after {
+  top: -2.5px;
+  left: 38%;
+  width: 4px;
+  height: 4px;
+  opacity: 0.85;
+}
+
+/* h3 — chart labels with a small gold star marker */
+html[data-theme-pack="observatory"] .zd-content h3 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.05em;
+}
+html[data-theme-pack="observatory"] .zd-content h3::before {
+  content: "✦ ";
+  color: var(--zd-accent);
+  font-size: 0.75em;
+  vertical-align: 0.12em;
+}
+
+/* links — gilt underlines */
+html[data-theme-pack="observatory"] .zd-content a {
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in oklch, var(--zd-accent) 55%, transparent);
+}
+html[data-theme-pack="observatory"] .zd-content a:hover {
+  text-decoration-color: var(--zd-accent-hover);
+}
+
+/* blockquote — a violet margin note in the observer's log */
+html[data-theme-pack="observatory"] .zd-content blockquote {
+  border-left-color: light-dark(oklch(0.48 0.125 300), oklch(0.74 0.115 300));
+  font-style: italic;
+}
+
+/* gold ecliptic hr — dashed orbit path with a sun node and outriders */
+html[data-theme-pack="observatory"] .zd-content hr {
+  border: none;
+  height: 9px;
+  margin: 2.75rem 0;
+  background:
+    radial-gradient(circle, var(--zd-accent) 0 2.6px, transparent 3.2px) 50% 50% / 9px 9px
+      no-repeat,
+    radial-gradient(circle, var(--zd-accent) 0 1.4px, transparent 2px) 18% 50% / 5px 5px
+      no-repeat,
+    radial-gradient(circle, var(--zd-accent) 0 1.4px, transparent 2px) 82% 50% / 5px 5px
+      no-repeat,
+    repeating-linear-gradient(
+        to right,
+        color-mix(in oklch, var(--zd-accent) 55%, transparent) 0 12px,
+        transparent 12px 22px
+      )
+      0 50% / 100% 1px no-repeat;
+  filter: drop-shadow(
+    0 0 5px light-dark(oklch(0.52 0.11 80 / 0.35), oklch(0.86 0.13 88 / 0.55))
+  );
+}
+
+/* inline code — hairline instrument tag, square */
+html[data-theme-pack="observatory"] .zd-content code:not(pre code) {
+  border: 1px solid light-dark(oklch(0.33 0.05 268 / 0.22), oklch(0.88 0.04 265 / 0.16));
+  border-radius: 0;
+}
+
+/* code block — a deep-space viewport: darker than the page, its own
+   stars, a violet frame lit from its top edge */
+html[data-theme-pack="observatory"] pre.hi-root {
+  border-radius: 0;
+  border-color: color-mix(
+    in oklch,
+    light-dark(oklch(0.48 0.125 300), oklch(0.74 0.115 300)) 38%,
+    transparent
+  );
+  background-image:
+    radial-gradient(
+      1px 1px at 34px 26px,
+      light-dark(oklch(0.32 0.05 268 / 0.12), oklch(0.96 0.015 255 / 0.2)),
+      transparent
+    ),
+    radial-gradient(
+      1px 1px at 150px 74px,
+      light-dark(oklch(0.32 0.05 268 / 0.12), oklch(0.96 0.015 255 / 0.2)),
+      transparent
+    ),
+    radial-gradient(
+      1.5px 1.5px at 220px 40px,
+      light-dark(oklch(0.48 0.125 300 / 0.2), oklch(0.74 0.12 300 / 0.36)),
+      transparent
+    );
+  background-size:
+    200px 120px,
+    260px 140px,
+    340px 160px;
+  box-shadow: inset 0 1px 0
+    color-mix(
+      in oklch,
+      light-dark(oklch(0.48 0.125 300), oklch(0.74 0.115 300)) 22%,
+      transparent
+    );
+}
+html[data-theme-pack="observatory"] .hi-com {
+  font-style: italic;
+}
+
+/* admonitions — framed chart plates, astronomical marginalia glyphs
+   for note/tip/warning; the other variants keep the stock icons */
+html[data-theme-pack="observatory"] [data-admonition] {
+  border-top: 1px solid light-dark(oklch(0.33 0.05 268 / 0.22), oklch(0.88 0.04 265 / 0.16));
+  border-right: 1px solid light-dark(oklch(0.33 0.05 268 / 0.22), oklch(0.88 0.04 265 / 0.16));
+  border-bottom: 1px solid light-dark(oklch(0.33 0.05 268 / 0.22), oklch(0.88 0.04 265 / 0.16));
+}
+html[data-theme-pack="observatory"] [data-admonition] .admonition-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+html[data-theme-pack="observatory"] [data-admonition="note"] .admonition-title::before {
+  content: "✦  ";
+}
+html[data-theme-pack="observatory"] [data-admonition="tip"] .admonition-title::before {
+  content: "☄\fe0e  ";
+}
+html[data-theme-pack="observatory"] [data-admonition="warning"] .admonition-title::before {
+  content: "⚠\fe0e  ";
+}
+
+/* table — catalog columns under a gilt rule */
+html[data-theme-pack="observatory"] .zd-content th {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-bottom: 1px solid color-mix(in oklch, var(--zd-accent) 55%, transparent);
+  color: color-mix(in oklch, var(--zd-accent) 40%, var(--zd-fg));
+}
+html[data-theme-pack="observatory"] .zd-content td {
+  border-bottom-color: light-dark(oklch(0.33 0.05 268 / 0.22), oklch(0.88 0.04 265 / 0.16));
+}
+
+/* TOC — meridian line with a gold active marker. The real DOM marks
+   the active entry with aria-current="true" (toc/toc.tsx); the entry
+   pulls back to the ul's padding edge (it clips at padding, foundry
+   note) so the gold plate sits snug against the rail. */
+html[data-theme-pack="observatory"] nav[data-zd-toc] ul {
+  border-left-color: light-dark(oklch(0.33 0.05 268 / 0.22), oklch(0.88 0.04 265 / 0.16));
+}
+html[data-theme-pack="observatory"] nav[data-zd-toc] a:hover {
+  color: var(--zd-accent);
+}
+html[data-theme-pack="observatory"] nav[data-zd-toc] a[aria-current="true"] {
+  background: light-dark(oklch(0.415 0.088 76), oklch(0.84 0.13 88));
+  color: var(--zd-bg);
+  font-weight: 500;
+  margin-left: calc(-1 * var(--spacing-hsp-lg, 1rem));
+  padding-left: var(--spacing-hsp-lg, 1rem);
+}
+
+/* pager — constellation cards: glowing nodes pinned to opposite
+   corners; gilt frame and node-glow on hover. The DocPager is the
+   article's LAST unlabelled direct-child nav (breadcrumb and
+   NavCardGrid navs carry aria-labels). */
+html[data-theme-pack="observatory"] .zd-content > nav:last-of-type:not([aria-label]) > a {
+  border-radius: 0;
+  border-color: light-dark(oklch(0.33 0.05 268 / 0.22), oklch(0.88 0.04 265 / 0.16));
+  background-color: color-mix(in oklch, var(--zd-surface) 60%, transparent);
+  background-image:
+    radial-gradient(
+      circle,
+      light-dark(oklch(0.5 0.105 78), oklch(0.87 0.13 88)) 0 1.8px,
+      transparent 2.4px
+    ),
+    radial-gradient(
+      circle,
+      light-dark(oklch(0.5 0.105 78), oklch(0.87 0.13 88)) 0 1.8px,
+      transparent 2.4px
+    );
+  background-position:
+    9px 9px,
+    calc(100% - 9px) calc(100% - 9px);
+  background-size: 6px 6px;
+  background-repeat: no-repeat;
+  transition:
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+html[data-theme-pack="observatory"]
+  .zd-content
+  > nav:last-of-type:not([aria-label])
+  > a:hover {
+  border-color: color-mix(in oklch, var(--zd-accent) 65%, transparent);
+  box-shadow: 0 0 16px -4px
+    light-dark(oklch(0.52 0.11 80 / 0.35), oklch(0.86 0.13 88 / 0.55));
+}
+html[data-theme-pack="observatory"] .zd-content > nav:last-of-type:not([aria-label]) > a div {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+}
+
+/* footer — the horizon: gilt rule fading at both ends, last stars
+   (the real footer has no data-footer hook; it is the wrapper's
+   direct child) */
+html[data-theme-pack="observatory"] .zd-sidebar-content-wrapper > footer {
+  border-image: linear-gradient(
+      to right,
+      transparent,
+      color-mix(in oklch, var(--zd-accent) 60%, transparent) 30% 70%,
+      transparent
+    )
+    1;
+  background-image:
+    radial-gradient(
+      1px 1px at 60px 30px,
+      light-dark(oklch(0.32 0.05 268 / 0.12), oklch(0.96 0.015 255 / 0.2)),
+      transparent
+    ),
+    radial-gradient(
+      1px 1px at 220px 70px,
+      light-dark(oklch(0.32 0.05 268 / 0.12), oklch(0.96 0.015 255 / 0.2)),
+      transparent
+    );
+  background-size:
+    280px 110px,
+    340px 130px;
+}
+
+/* theme-pack flyout — a framed star chart: violet frame, nebula wash,
+   its own stars, glowing gold nodes on opposing corners; Josefin
+   chart-label title (the launcher button has no stable hook) */
+html[data-theme-pack="observatory"] div[role="dialog"][aria-label="Theme pack switcher"] {
+  /* the dialog is a static flex child of the fixed wrapper — anchor
+     the corner-node pseudos to the card itself */
+  position: relative;
+  border: 1px solid
+    color-mix(
+      in oklch,
+      light-dark(oklch(0.48 0.125 300), oklch(0.74 0.115 300)) 45%,
+      transparent
+    );
+  border-radius: 2px;
+  background-image:
+    radial-gradient(
+      26rem 16rem at 100% 0%,
+      light-dark(oklch(0.6 0.1 300 / 0.06), oklch(0.43 0.17 300 / 0.15)),
+      transparent 65%
+    ),
+    radial-gradient(
+      1px 1px at 40px 30px,
+      light-dark(oklch(0.32 0.05 268 / 0.22), oklch(0.96 0.015 255 / 0.4)),
+      transparent
+    ),
+    radial-gradient(
+      1.5px 1.5px at 150px 62px,
+      light-dark(oklch(0.52 0.11 80 / 0.28), oklch(0.85 0.13 88 / 0.45)),
+      transparent
+    ),
+    radial-gradient(
+      1px 1px at 250px 104px,
+      light-dark(oklch(0.32 0.05 268 / 0.12), oklch(0.96 0.015 255 / 0.2)),
+      transparent
+    );
+  box-shadow:
+    0 10px 34px -6px rgb(2 6 20 / 0.5),
+    0 0 22px -8px light-dark(oklch(0.52 0.11 80 / 0.35), oklch(0.86 0.13 88 / 0.55));
+}
+html[data-theme-pack="observatory"]
+  div[role="dialog"][aria-label="Theme pack switcher"]::before,
+html[data-theme-pack="observatory"]
+  div[role="dialog"][aria-label="Theme pack switcher"]::after {
+  content: "";
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: light-dark(oklch(0.5 0.105 78), oklch(0.87 0.13 88));
+  box-shadow: 0 0 6px light-dark(oklch(0.52 0.11 80 / 0.35), oklch(0.86 0.13 88 / 0.55));
+  pointer-events: none;
+}
+html[data-theme-pack="observatory"]
+  div[role="dialog"][aria-label="Theme pack switcher"]::before {
+  top: -2.5px;
+  left: -2.5px;
+}
+html[data-theme-pack="observatory"]
+  div[role="dialog"][aria-label="Theme pack switcher"]::after {
+  bottom: -2.5px;
+  right: -2.5px;
+}
+html[data-theme-pack="observatory"]
+  div[role="dialog"][aria-label="Theme pack switcher"]
+  p[aria-live="polite"] {
+  font-family: var(--font-display);
+  font-weight: 300;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--zd-accent);
+}
