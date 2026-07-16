@@ -146,6 +146,8 @@ export const DEFAULT_SETTINGS: Settings = {
   aiAssistant: false,
   aiChatDemoMode: false,
   aiChatAllowedOrigins: [],
+  // Exact UTC-day paid-call admission cap; false disables it. An admission is
+  // consumed before provider fetch and is not provider-confirmed accounting.
   aiChatGlobalDailyLimit: false,
   designTokenPanel: false,
   tocMinDepth: 2,
@@ -336,8 +338,8 @@ export interface ZudoDocConfig {
    */
   aiAssistant?: boolean;
   /**
-   * Short-circuit `/api/ai-chat` with a fixed "disabled" reply (no API key /
-   * KV / rate limiter touched).
+   * Short-circuit `/api/ai-chat` with a fixed "disabled" reply (no API key,
+   * KV/DO binding, or rate limiter touched).
    * @default false
    */
   aiChatDemoMode?: boolean;
@@ -348,8 +350,9 @@ export interface ZudoDocConfig {
    */
   aiChatAllowedOrigins?: string[];
   /**
-   * Global daily request ceiling across all IPs for `/api/ai-chat`, or `false`
-   * to disable the ceiling.
+   * Exact UTC-day paid-call admission cap across all IPs for `/api/ai-chat`,
+   * or `false` to disable it. Admissions are not refunded after provider
+   * failure and are not provider-confirmed spend accounting.
    * @default false
    */
   aiChatGlobalDailyLimit?: number | false;

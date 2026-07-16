@@ -4,6 +4,7 @@
 // Uses raw fetch (no SDK) to keep the CF Workers bundle lean.
 
 import { buildClaudeRequestBody } from "./_ai-chat-payload";
+import type { ClaudeRequestBody } from "./_ai-chat-payload";
 import type { AiChatEnv, ChatMessage, ClaudeTextBlock, ClaudeApiResponse } from "./_ai-chat-types";
 
 // ---------------------------------------------------------------------------
@@ -103,11 +104,11 @@ export function isClaudeApiResponse(data: unknown): data is ClaudeApiResponse {
 // Claude API call
 // ---------------------------------------------------------------------------
 
-export async function callClaude(
+export async function prepareClaudeRequest(
   message: string,
   history: ChatMessage[],
   env: AiChatEnv,
-): Promise<string> {
+): Promise<ClaudeRequestBody> {
   // DOCS_SITE_URL must be a non-empty absolute http(s) URL set via wrangler.toml
   // (see Workers Cutover Runbook step 3). An absent/malformed value would silently
   // fetch `undefined/llms-full.txt` or a relative path, making the failure very
@@ -121,9 +122,18 @@ export async function callClaude(
         "Set it in wrangler.toml or via --var DOCS_SITE_URL=<url>.",
     );
   }
+  if (!env.ANTHROPIC_API_KEY || env.ANTHROPIC_API_KEY.trim().length === 0) {
+    throw new Error("ANTHROPIC_API_KEY is not set");
+  }
   const docsContent = await fetchDocsContext(env.DOCS_SITE_URL);
-  const requestBody = buildClaudeRequestBody(message, history, docsContent);
+  return buildClaudeRequestBody(message, history, docsContent);
+}
 
+/** Performs exactly one paid Anthropic request for an already-prepared body. */
+export async function callClaude(
+  requestBody: ClaudeRequestBody,
+  env: AiChatEnv,
+): Promise<string> {
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
