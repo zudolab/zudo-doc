@@ -21,6 +21,8 @@ pnpm exec zudo-doc theme apply <slug>
 themePack: "<slug>",
 ```
 
+One caveat: if your project sets an explicit `themePacks` list, that list is authoritative — a `themePack` slug it omits **fails the build loudly**. Add the slug to `themePacks` too (or drop the list to enable every bundled pack).
+
 <Tip>
 
 This showcase site has the switcher enabled — use the round launcher at the bottom-right of any page to preview every pack below live, or open its browse-all grid to compare them side by side without downloading a single stylesheet.
