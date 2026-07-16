@@ -19,7 +19,7 @@
       "syntax": {
         "keyword": "oklch(0.51 0.105 82)",
         "string": "oklch(0.47 0.07 155)",
-        "comment": "oklch(0.54 0.015 85)",
+        "comment": "oklch(0.5 0.015 85)",
         "callable": "oklch(0.45 0.045 250)"
       }
     },
@@ -30,7 +30,7 @@
       "syntax": {
         "keyword": "oklch(0.8 0.115 88)",
         "string": "oklch(0.78 0.07 155)",
-        "comment": "oklch(0.575 0.02 85)",
+        "comment": "oklch(0.62 0.02 85)",
         "callable": "oklch(0.82 0.04 250)"
       }
     }

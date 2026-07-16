@@ -160,14 +160,18 @@ html[data-theme-pack="onyx"] {
   /* statuses, desaturated to boutique volume */
   --zd-success: light-dark(oklch(0.46 0.085 150), oklch(0.72 0.09 150));
   --zd-danger: light-dark(oklch(0.48 0.13 25), oklch(0.66 0.12 25));
-  --zd-warning: light-dark(oklch(0.52 0.11 65), oklch(0.75 0.12 70));
+  /* light branch sits below the prototype's .52 so warning admonition
+     titles clear 4.5:1 over the 12% warning tint (review) */
+  --zd-warning: light-dark(oklch(0.49 0.11 65), oklch(0.75 0.12 70));
   --zd-info: light-dark(oklch(0.46 0.07 250), oklch(0.74 0.06 250));
 
   /* syntax — all 9 roles, both modes: champagne, jade, copper,
      platinum — jewel tones at whisper level. inserted/deleted (not
      in the prototype's 7) follow the same register: a jade wash in,
      a muted ruby out. */
-  --zd-syntax-comment: light-dark(oklch(0.54 0.015 85), oklch(0.575 0.02 85));
+  /* both branches pushed past the prototype's values so comments clear
+     4.5:1 on the code slab in each mode (review) */
+  --zd-syntax-comment: light-dark(oklch(0.5 0.015 85), oklch(0.62 0.02 85));
   --zd-syntax-string: light-dark(oklch(0.47 0.07 155), oklch(0.78 0.07 155));
   --zd-syntax-number: light-dark(oklch(0.49 0.1 55), oklch(0.76 0.1 60));
   --zd-syntax-keyword: light-dark(oklch(0.51 0.105 82), oklch(0.8 0.115 88));
@@ -227,7 +231,9 @@ html[data-theme-pack="onyx"] [data-nav-item] {
   text-transform: uppercase;
   letter-spacing: 0.18em;
 }
-html[data-theme-pack="onyx"] [data-nav-item]:hover {
+/* `:not([aria-current="page"])` keeps the active item's fg-on-bg pill
+   readable — gold text on the fg ground would fail contrast (review) */
+html[data-theme-pack="onyx"] [data-nav-item]:not([aria-current="page"]):hover {
   text-decoration: none;
   color: var(--zd-accent);
 }
@@ -455,6 +461,20 @@ html[data-theme-pack="onyx"] div[role="dialog"][aria-label="Theme pack switcher"
   font-size: 1.45rem;
   font-weight: 600;
   letter-spacing: 0.03em;
+}
+
+/* browse-all dialog: the same jewelry-box framing at cabinet size —
+   square case, double gold frame, square card buttons (the flyout's
+   role/aria-label hook doesn't match this <dialog>) */
+html[data-theme-pack="onyx"] dialog[aria-labelledby="zd-theme-pack-dialog-title"] {
+  border: 1px solid color-mix(in oklch, var(--zd-accent) 55%, transparent);
+  outline: 1px solid color-mix(in oklch, var(--zd-accent) 22%, transparent);
+  outline-offset: 4px;
+  border-radius: 0;
+  box-shadow: 0 18px 44px -10px rgb(0 0 0 / 0.55);
+}
+html[data-theme-pack="onyx"] dialog[aria-labelledby="zd-theme-pack-dialog-title"] button {
+  border-radius: 0;
 }
 
 /* launcher: the crown — the page's only circle, gold-ringed */
