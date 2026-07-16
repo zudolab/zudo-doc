@@ -1,0 +1,267 @@
+---
+title: テーマギャラリー
+description: 公式テーマパックコレクションの全カタログ — 各パックの主想定モード、フォント、1 行の適用スニペット。
+sidebar_position: 3.4
+tags:
+  - design-system
+  - customization
+---
+
+`@takazudo/zudo-doc` には 21 のテーマパックが同梱されています。予約された `default` に、デザインされた 20 の見た目を加えたコレクションです。このページはその全カタログです。パックの仕組み — 設定フィールド、スイッチャー UI、CLI、オーサリング契約 — については[テーマパック](./theme-packs.mdx)を参照してください。
+
+各エントリには、パックの**バッジ**（そのパックがどちらのモードを主として設計されたかのヒントであって、対応可否のフラグではありません — すべてのパックが両モードを定義しており、ヘッダーのモードトグルはどのパックでも機能します）、フォントスタック、そして適用スニペットを載せています。パックの適用はどちらの方法でも一手で済みます:
+
+```sh
+# via the CLI (rewrites themePack in zfb.config.ts)
+pnpm exec zudo-doc theme apply <slug>
+```
+
+```ts title="zfb.config.ts"
+// or set the field by hand
+themePack: "<slug>",
+```
+
+<Tip>
+
+このショーケースサイトではスイッチャーが有効になっています。どのページでも右下の丸いランチャーから、以下のすべてのパックをライブでプレビューできます。一覧グリッドを開けば、スタイルシートを 1 枚もダウンロードせずに見た目を並べて比較できます。
+
+</Tip>
+
+パックはスイッチャーのデフォルト順 — `default` が先頭、残りはアルファベット順 — で並べています。
+
+## Default
+
+zudo-doc 標準の見た目。パックのスタイルシートは読み込まれず、プロジェクトで設定したカラースキームとフォントがそのまま描画されます。追加リクエストはゼロです。
+
+- **バッジ:** Dark
+- **フォント:** システムスタック（何も読み込みません）
+
+```sh
+pnpm exec zudo-doc theme apply default
+```
+
+## Beacon
+
+WCAG AAA の高コントラスト — 全域 7:1 以上のインク、3px のフォーカスリング、常に下線の付いたリンク。明瞭さこそ美しさ。
+
+- **バッジ:** Light
+- **フォント:** Atkinson Hyperlegible（sans）· Atkinson Hyperlegible Mono（mono）
+
+```sh
+pnpm exec zudo-doc theme apply beacon
+```
+
+## Broadsheet
+
+新聞のエディトリアル — Playfair のマストヘッド、オックスフォードインクの罫線、赤のドロップキャップ、そして夜間版のダークモード。
+
+- **バッジ:** Light
+- **フォント:** Playfair Display（display）· Source Serif 4（本文）· Courier Prime（mono）
+
+```sh
+pnpm exec zudo-doc theme apply broadsheet
+```
+
+## Brutalist
+
+コンクリート打ちっぱなしの Web — 白地に漆黒、4px のスラブボーダー、角丸ゼロ、ハザードオレンジのテープ。構造がそのまま見えるデザイン。
+
+- **バッジ:** Light
+- **フォント:** Archivo Black（display）· Space Grotesk（sans）· IBM Plex Mono（mono）
+
+```sh
+pnpm exec zudo-doc theme apply brutalist
+```
+
+## Drift
+
+長い読書のための、浮遊感のあるスレートブルーの快適ダーク — ボーダーの代わりに柔らかなグロー、穏やかなエレベーション、ゆったりした Plex の文字組み。
+
+- **バッジ:** Dark
+- **フォント:** IBM Plex Sans（sans）· IBM Plex Mono（mono）
+
+```sh
+pnpm exec zudo-doc theme apply drift
+```
+
+## Fjord
+
+かすかなオーロラの下に広がる極夜のブルー — フロストシアンのアクセント、氷のようなボーダー、雪白のテキスト。冷たく静かな北欧の落ち着き。
+
+- **バッジ:** Dark
+- **フォント:** Inter（sans）· JetBrains Mono（mono）
+
+```sh
+pnpm exec zudo-doc theme apply fjord
+```
+
+## Foundry
+
+GitHub ニュートラルなベースライン — 白い紙面、ほぼ黒のインク、Primer ブルーのリンク、控えめなグレーの罫線。抑制の美学を極めた見た目です。これはリファレンスパックでもあり、9 つの `--zd-syntax-*` コードハイライトロールを含むすべてのトークン面を、両モードで再スタイルします。
+
+- **バッジ:** Light
+- **フォント:** Inter（sans）· システム mono
+
+```sh
+pnpm exec zudo-doc theme apply foundry
+```
+
+## Futura Editorial
+
+ノーマルウェイトの幾何学的な Futura 見出しに Noto Sans の本文 — クリーンな白、ほぼ黒のインク、抑制の効いた赤のアクセント 1 色。コレクションのフォント契約に従い、Futura の OFL 代替である **Jost** を読み込みます。
+
+- **バッジ:** Light
+- **フォント:** Jost（display）· Noto Sans（sans）· Space Mono（mono）
+
+```sh
+pnpm exec zudo-doc theme apply futura-editorial
+```
+
+## Hearth
+
+温かなクリームとレンガ色の、暖炉のそばのドキュメント — Fraunces の見出し、アンバーのコードブロック、残り火の灯るダークモード。
+
+- **バッジ:** Light
+- **フォント:** Fraunces（display）· Nunito（sans）· Spline Sans Mono（mono）
+
+```sh
+pnpm exec zudo-doc theme apply hearth
+```
+
+## Hollow
+
+ダークバイオレットの宇宙 — ネオンピンクの見出し、バイオレットのリンク、静かな星空、鋭く角ばったミッドナイトのクローム。
+
+- **バッジ:** Dark
+- **フォント:** Space Grotesk（sans）· Space Mono（mono）
+
+```sh
+pnpm exec zudo-doc theme apply hollow
+```
+
+## Ledger
+
+Tufte の伝統に連なる、クリーム地のアカデミックセリフ — 温かな紙、インクの本文、オックスブラッドのリンク、ヘアラインの罫、静かなコード。
+
+- **バッジ:** Light
+- **フォント:** Crimson Pro（本文）· IBM Plex Mono（mono）
+
+```sh
+pnpm exec zudo-doc theme apply ledger
+```
+
+## Manuscript
+
+静かな Garamond の書物のページ — 温かな紙、柔らかなインク、セピアの朱書き、スモールキャップスの小見出し、フルーロンのセクションマーク。
+
+- **バッジ:** Light
+- **フォント:** EB Garamond（本文）· Courier Prime（mono）
+
+```sh
+pnpm exec zudo-doc theme apply manuscript
+```
+
+## Matcha
+
+緑茶の茶席 — 温かなクリームに深い抹茶色、明朝の見出し、禅の余白、両モードに広がる茶の泡のようなサーフェス。
+
+- **バッジ:** Light
+- **フォント:** しっぽり明朝（display）· Zen角ゴシック New（sans）· M PLUS 1 Code（mono）
+
+```sh
+pnpm exec zudo-doc theme apply matcha
+```
+
+## Nocturne
+
+紫の真夜中 — ベルベットのようなオーベルジーヌの深み、ラベンダーのリンク、控えめなゴールドのヘアライン。エレガントで、決してネオンにはならない。
+
+- **バッジ:** Dark
+- **フォント:** Cormorant Garamond（display）· Manrope（sans）· IBM Plex Mono（mono）
+
+```sh
+pnpm exec zudo-doc theme apply nocturne
+```
+
+## Observatory
+
+夜空の星図 — 星野の奥行き、星座線の罫、天文学者のネイビーに浮かぶ星雲のバイオレットと彗星のゴールド。
+
+- **バッジ:** Dark
+- **フォント:** Josefin Sans（display）· Jost（sans）· Space Mono（mono）
+
+```sh
+pnpm exec zudo-doc theme apply observatory
+```
+
+## Onyx
+
+ラグジュアリーなノワール — 漆黒、シャンパンカラーのセリフ見出し、ただ 1 本のゴールドのヘアラインアクセント。時計ブランドのような抑制。
+
+- **バッジ:** Dark
+- **フォント:** Cormorant Garamond（display）· Jost（sans）· IBM Plex Mono（mono）
+
+```sh
+pnpm exec zudo-doc theme apply onyx
+```
+
+## Phosphor
+
+緑の CRT ターミナル — 蛍光体の残光、走査線、反転表示のナビ、そしてすべてがモノスペース。
+
+- **バッジ:** Dark
+- **フォント:** VT323（display）· JetBrains Mono（sans & mono）
+
+```sh
+pnpm exec zudo-doc theme apply phosphor
+```
+
+## Solar
+
+Solarized の精密さ — 目に優しい紙のトーン、ブルー/シアン/オレンジのアクセント、モノスペースのラベル、両モードに通じる技術的な静けさ。
+
+- **バッジ:** Light
+- **フォント:** Source Sans 3（sans）· Source Code Pro（mono）
+
+```sh
+pnpm exec zudo-doc theme apply solar
+```
+
+## Sumi
+
+和紙に引く水墨のインク — 力強い明朝の筆致の見出し、深い黒のストローク、朱の判子をひとつだけ効かせたアクセント。
+
+- **バッジ:** Light
+- **フォント:** しっぽり明朝 B1（display）· Zen角ゴシック New（sans）· IBM Plex Mono（mono）
+
+```sh
+pnpm exec zudo-doc theme apply sumi
+```
+
+## Swissgrid
+
+国際タイポグラフィ様式 — グリッドの規律、白地に黒、鮮烈なスイスレッドのアクセント 1 色、特大のセクション番号。
+
+- **バッジ:** Light
+- **フォント:** Inter Tight（display）· Inter（sans）· IBM Plex Mono（mono）
+
+```sh
+pnpm exec zudo-doc theme apply swissgrid
+```
+
+## Washi
+
+温かな和紙、墨のインク、藍色の印章 — 静かなドキュメントのための、落ち着いた和の文房具。
+
+- **バッジ:** Light
+- **フォント:** しっぽり明朝（display）· Zen角ゴシック New（sans）· M PLUS 1 Code（mono）
+
+```sh
+pnpm exec zudo-doc theme apply washi
+```
+
+## 関連項目
+
+- [テーマパック](./theme-packs.mdx) — パックシステムの仕組み: 設定フィールド、スイッチャー UI、theme CLI、オーサリング契約
+- [Color](./color.mdx) — パックの土台となるカラースキーム層
+- [create-zudo-doc CLI](./create-zudo-doc.mdx) — `--theme-pack` で任意のパックを起点に新規プロジェクトを生成
