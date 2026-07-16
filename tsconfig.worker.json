@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "./tsconfig.json",
+  "include": [
+    "worker-entry.ts",
+    "generated-worker.d.ts",
+    "worker-configuration.d.ts",
+    "worker-tests/**/*.ts",
+    "vitest.worker.config.ts"
+  ],
+  "exclude": [],
+  "compilerOptions": {
+    "noEmit": true,
+    "types": [
+      "@cloudflare/workers-types",
+      "@cloudflare/vitest-pool-workers/types"
+    ]
+  }
+}

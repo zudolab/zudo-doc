@@ -2,7 +2,7 @@
 # Migrated from Cloudflare Pages — see zudolab/zudo-doc#1691
 
 name = "zudo-doc"
-main = "./dist/_worker.js"
+main = "./worker-entry.ts"
 
 compatibility_date = "2024-12-01"
 # nodejs_compat is required by the CF adapter bundle at dist/_worker.js,
@@ -19,6 +19,21 @@ compatibility_flags = ["nodejs_compat"]
 # `wrangler versions upload --preview-alias`).
 preview_urls = true
 workers_dev = false  # prevent serving on *.workers.dev prod route; previews use preview_urls above
+
+# A preview-version upload cannot introduce a Durable Object migration because
+# migrations are atomic. scripts/write-worker-preview-config.mjs removes this
+# marked bootstrap block only when a versions upload reports that exact
+# migration constraint; normal previews keep the binding after production has
+# applied the migration.
+# BEGIN AI_CHAT_DAILY_SPEND_CAP_BOOTSTRAP
+[[durable_objects.bindings]]
+name = "AI_CHAT_DAILY_SPEND_CAP"
+class_name = "AiChatDailySpendCap"
+
+[[migrations]]
+tag = "v1-ai-chat-daily-spend-cap"
+new_sqlite_classes = ["AiChatDailySpendCap"]
+# END AI_CHAT_DAILY_SPEND_CAP_BOOTSTRAP
 
 # ---------------------------------------------------------------------------
 # Static asset serving
