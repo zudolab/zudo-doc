@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "slug": "hearth",
+  "name": "Hearth",
+  "description": "Warm cream & brick-red fireside docs — Fraunces headings, amber code blocks, ember-glow dark mode.",
+  "mode": "light",
+  "version": "1.0.0",
+  "fonts": {
+    "sans": "Nunito",
+    "mono": "Spline Sans Mono",
+    "display": "Fraunces",
+    "loaded": ["Fraunces", "Nunito", "Spline Sans Mono"]
+  },
+  "preview": {
+    "light": {
+      "bg": "oklch(0.958 0.02 85)",
+      "fg": "oklch(0.255 0.028 40)",
+      "accent": "oklch(0.49 0.145 31)",
+      "syntax": {
+        "keyword": "oklch(0.48 0.148 30)",
+        "string": "oklch(0.47 0.1 135)",
+        "comment": "oklch(0.51 0.035 60)",
+        "callable": "oklch(0.45 0.092 245)"
+      }
+    },
+    "dark": {
+      "bg": "oklch(0.215 0.022 45)",
+      "fg": "oklch(0.915 0.02 80)",
+      "accent": "oklch(0.735 0.128 45)",
+      "syntax": {
+        "keyword": "oklch(0.745 0.138 40)",
+        "string": "oklch(0.785 0.1 130)",
+        "comment": "oklch(0.645 0.032 65)",
+        "callable": "oklch(0.765 0.075 235)"
+      }
+    }
+  }
+}
