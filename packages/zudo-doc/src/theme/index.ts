@@ -15,3 +15,16 @@ export type {
   ColorSchemeProviderProps,
   ColorSchemeProviderColorMode,
 } from "./color-scheme-provider.js";
+
+// Theme-pack SSR helpers. `resolveThemePackSsrSlug` MUST be re-exported here:
+// `copy-routes-src.mjs` rewrites a route's `../theme/<file>` import to the bare
+// `@takazudo/zudo-doc/theme` subpath, so anything `src/routes/**` imports from
+// this directory has to be reachable from this barrel or the site build fails
+// with "No matching export" (the in-package relative import typechecks fine).
+export { default as ThemePackProvider } from "./theme-pack-provider.js";
+export {
+  resolveThemePackSsrSlug,
+  themePackVersionMap,
+  buildThemePackBootstrap,
+} from "./theme-pack-provider.js";
+export type { ThemePackProviderProps } from "./theme-pack-provider.js";

@@ -19,7 +19,23 @@
 // `pages/lib` or `@/config` imports.
 
 import { routeContext } from "./_route-context";
+import { routeContext as virtualRouteContext } from "virtual:zudo-doc-route-context";
 import { createChrome } from "@takazudo/zudo-doc/chrome";
+import type { RouteContextPayload } from "@takazudo/zudo-doc/factory-context";
 import { chromeBindings } from "virtual:zudo-doc-chrome-bindings";
 
-export const { HomePageView } = createChrome(routeContext, chromeBindings);
+// `_route-context.ts` threads `themePackRegistry: null` because it must stay
+// importable from vitest (no virtual modules). The home pages built here DO
+// render `<head>`, so they need the REAL resolved registry or the theme-pack
+// bootstrap would be missing on `/` — a hard reload of the home page would
+// then drop the visitor's selected pack while every doc page kept it. This
+// file is build-time-only (it already consumes
+// `virtual:zudo-doc-chrome-bindings`), so it can read the routes plugin's
+// resolved registry and layer it over the test-safe base context.
+// ADR docs/adr/theme-packs.md Decision 2.
+const { themePackRegistry } = virtualRouteContext as unknown as RouteContextPayload;
+
+export const { HomePageView } = createChrome(
+  { ...routeContext, themePackRegistry },
+  chromeBindings,
+);
