@@ -11,6 +11,7 @@ link here rather than duplicating policy.
 | Level | What | Scope | Command |
 |-------|------|-------|---------|
 | L1 | Vitest unit tests | `src/**/__tests__/`, `scripts/__tests__/` (~1,981 tests) + workspace packages (~1,535 tests) — counts as of 2026-07, see `pnpm test` / `pnpm test:unit` / `pnpm test:packages` | `pnpm test` |
+| L1 Worker | Workers-runtime unit/integration tests | Custom entry export graph and SQLite `AiChatDailySpendCap` concurrency using `@cloudflare/vitest-pool-workers` | `pnpm test:worker` |
 | L2 | *Not used* — jsdom/happy-dom + Testing Library DOM component tests | Intentionally skipped in this repo — see "Why L2 is skipped" below | — |
 | L3 | Static dist reads + build-output verification | Read pre-built `dist/` HTML with `readFileSync` (Playwright specs using `makeDistReader(fixture)`); also covers the b4push build-output steps (link check, HTML validation, preview smoke) — see "L3 details" below | `E2E_FIXTURES=<fixture> npx playwright test --project <fixture> e2e/<fixture>-*.spec.ts` (e.g. `E2E_FIXTURES=versioning npx playwright test --project versioning e2e/versioning.spec.ts`) — any spec using `makeDistReader(fixture)` from `e2e/dist-helper.ts` |
 | L4 | Playwright E2E | 5-fixture browser suite — interactive, full-build, full-browser; fixtures: sidebar (4500), i18n (4501), theme (4502), smoke (4503), versioning (4504) | `pnpm test:e2e` (local), `pnpm test:e2e:ci` (CI) |
@@ -47,9 +48,9 @@ the target spec never touches `page` — `playwright.config.ts` boots one `webSe
 active fixture regardless of which specs in that fixture's project actually use it.
 
 **Three b4push steps are also L3 in spirit** — they verify the *built* `dist/` rather than
-source, just outside the Playwright/`makeDistReader` pattern: link check (step 19, reads
-`dist/**/*.html` for broken links), HTML validation (step 20, `html-validate
-dist/**/*.html`), and the automated preview smoke (step 21, `scripts/smoke-preview.mjs` —
+source, just outside the Playwright/`makeDistReader` pattern: link check (step 20, reads
+`dist/**/*.html` for broken links), HTML validation (step 21, `html-validate
+dist/**/*.html`), and the automated preview smoke (step 22, `scripts/smoke-preview.mjs` —
 boots a real `pnpm preview` server and asserts on live HTTP responses). These run as part of
 `pnpm b4push` and CI's build-site job family, not as `*.spec.ts` files.
 
@@ -91,6 +92,9 @@ Run before pushing, or when iterating on a change:
 ```bash
 pnpm test          # L1: builds @takazudo/zudo-doc, runs ~1,981 root vitest + ~1,535 package tests (as of 2026-07)
 pnpm check         # TypeScript typecheck (zfb check)
+pnpm check:worker  # generated binding + custom Worker typecheck
+pnpm test:worker   # builds first, then runs Workers-runtime/SQLite DO tests
+pnpm verify:worker-dry-run # builds first, then verifies the Wrangler production bundle
 
 # Single-fixture E2E fast path (builds only the named fixture, then runs only its tests):
 E2E_FIXTURES=smoke npx playwright test --project smoke
@@ -109,10 +113,10 @@ its Playwright webServer. Repeated runs skip the build when inputs are unchanged
 
 **b4push** (`pnpm b4push`) is the bounded local convenience pass — wisdom-tier **T4**, not
 T1 (see the note above the tiers table); it's covered here for workflow ergonomics only. It
-runs a 22-step suite
-(format → template drift → no-host-alias guard → pin parity → fixture drift → tags audit →
-token lint → z-index drift → component-tokens drift → e2e spec naming guard →
-@flaky tracking-issue guard → wait-debt guard → b4push/CI parity → typecheck → unit tests →
+runs a 23-step suite
+(format → template drift → no-host-alias guard → pin parity → fixture drift → tags/canonical audit →
+current-only compatibility → token lint → component-tokens drift → e2e spec naming guard →
+@flaky tracking-issue guard → wait-debt guard → b4push/CI parity → typecheck → Worker contract proof → unit tests →
 package tests → safelist check → build → link check → HTML validation → preview smoke →
 manual smoke). Each step's elapsed time is recorded and printed as a breakdown in the final
 SUMMARY block, so budget creep in any one step is visible instead of only the aggregate run

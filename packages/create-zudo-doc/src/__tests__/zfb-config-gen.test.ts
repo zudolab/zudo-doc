@@ -85,20 +85,19 @@ describe("generateZfbConfig — siteName always emitted", () => {
 });
 
 describe("generateZfbConfig — diff-from-defaults (near-empty case)", () => {
-  it("emits ONLY siteName + the always-different headerNav/headerRightItems when every other choice matches the package default", () => {
+  it("emits ONLY siteName + the always-different headerNav when every other choice matches the package default", () => {
     // packageDefaultChoices resolves colorMode/colorScheme to the exact
     // DEFAULT_MIRROR values, so both are diffed away. headerNav always gets
-    // a "Getting Started" entry (default mirror is []) and headerRightItems
-    // always gets a github-link entry (default mirror is just theme-toggle)
-    // — both are therefore always emitted, even in the "everything default"
-    // case. No other field should appear.
+    // a "Getting Started" entry (default mirror is []). With no GitHub URL,
+    // headerRightItems is just theme-toggle and therefore matches the default
+    // mirror. No other field should appear.
     const result = generateZfbConfig(packageDefaultChoices);
     const bodyMatch = result.match(/zudoDoc\(\{([\s\S]*)\}\),/);
     expect(bodyMatch).not.toBeNull();
     const fieldNames = [...bodyMatch![1]!.matchAll(/^\s{4}(\w+):/gm)].map(
       (m) => m[1],
     );
-    expect(fieldNames).toEqual(["siteName", "headerNav", "headerRightItems"]);
+    expect(fieldNames).toEqual(["siteName", "headerNav"]);
     expect(result).not.toContain("colorMode");
     expect(result).not.toContain("colorScheme:");
   });
@@ -170,16 +169,20 @@ describe("generateZfbConfig — i18n", () => {
 });
 
 describe("generateZfbConfig — tagGovernance", () => {
-  it("emits tagGovernance: warn, tagVocabulary: true, and tagVocabularyEntries when enabled", () => {
+  it("derives all tag settings from the explicit tag CLI config", () => {
     const result = generateZfbConfig({
       ...baseChoices,
       features: ["tagGovernance"],
     });
-    expect(result).toContain('tagGovernance: "warn"');
-    expect(result).toContain("tagVocabulary: true");
-    expect(result).toContain("tagVocabularyEntries: tagVocabulary");
+    expect(result).toContain("tagGovernance: tagCliConfig.governance");
     expect(result).toContain(
-      'import { tagVocabulary } from "./src/config/tag-vocabulary";',
+      "tagVocabulary: tagCliConfig.vocabularyActive",
+    );
+    expect(result).toContain(
+      "tagVocabularyEntries: tagCliConfig.vocabulary",
+    );
+    expect(result).toContain(
+      'import tagCliConfig from "./src/config/tag-vocabulary";',
     );
   });
 
@@ -250,11 +253,12 @@ describe("generateZfbConfig — designTokenPanel headerRightItems trigger", () =
       features: ["designTokenPanel"],
     });
     expect(result).toContain('trigger: "design-token-panel"');
-    // Trigger must appear before github-link (order matters — it's the
-    // first pushed item in the default-fallback builder).
+    // Trigger remains the first item in the default builder. With no GitHub
+    // URL, the inert github-link is omitted.
     expect(result.indexOf('trigger: "design-token-panel"')).toBeLessThan(
-      result.indexOf('component: "github-link"'),
+      result.indexOf('component: "theme-toggle"'),
     );
+    expect(result).not.toContain('component: "github-link"');
   });
 
   it("omits the trigger when disabled", () => {
@@ -387,15 +391,22 @@ describe("generateZfbConfig — headerRightItems override", () => {
   it("emits a user-supplied headerRightItems array verbatim", () => {
     const result = generateZfbConfig({
       ...baseChoices,
+      features: ["search", "i18n"],
       headerRightItems: [
-        { type: "component", component: "theme-toggle" },
+        { type: "component", component: "github-link" },
         { type: "trigger", trigger: "ai-chat" },
       ],
     });
+    const githubIndex = result.indexOf('component: "github-link"');
+    const aiChatIndex = result.indexOf('trigger: "ai-chat"');
+    expect(githubIndex).toBeGreaterThan(-1);
     expect(result).toContain('trigger: "ai-chat"');
-    // The default-fallback github-link item must NOT appear — the override
-    // replaces the whole array.
-    expect(result).not.toContain('component: "github-link"');
+    expect(githubIndex).toBeLessThan(aiChatIndex);
+    // No URL is configured, but explicit items are preserved. Feature-based
+    // defaults are not added to the override.
+    expect(result).not.toContain('component: "theme-toggle"');
+    expect(result).not.toContain('component: "search"');
+    expect(result).not.toContain('component: "language-switcher"');
   });
 
   it("honors an explicit empty array (user wants no header-right items)", () => {
@@ -403,7 +414,7 @@ describe("generateZfbConfig — headerRightItems override", () => {
     expect(result).toContain("headerRightItems: []");
   });
 
-  it("strips a design-token-panel trigger from the override when the feature is off", () => {
+  it("does not filter a design-token-panel trigger from an explicit override when the feature is off", () => {
     const result = generateZfbConfig({
       ...baseChoices,
       headerRightItems: [
@@ -412,9 +423,32 @@ describe("generateZfbConfig — headerRightItems override", () => {
         { type: "component", component: "github-link" },
       ],
     });
-    expect(result).not.toContain("design-token-panel");
+    expect(result).toContain('trigger: "design-token-panel"');
     expect(result).toContain('component: "theme-toggle"');
     expect(result).toContain('component: "github-link"');
+  });
+
+  it("keeps the remaining default items in order around a URL-backed github-link", () => {
+    const result = generateZfbConfig({
+      ...baseChoices,
+      githubUrl: "https://github.com/x/y",
+      features: ["designTokenPanel", "versioning", "search", "i18n"],
+    });
+    const headerRightItems = result.match(
+      /headerRightItems: \[([\s\S]*?)\n    \],/,
+    );
+    expect(headerRightItems).not.toBeNull();
+    const itemNames = [
+      ...headerRightItems![1]!.matchAll(/(?:trigger|component): "([^"]+)"/g),
+    ].map((match) => match[1]);
+    expect(itemNames).toEqual([
+      "design-token-panel",
+      "version-switcher",
+      "github-link",
+      "theme-toggle",
+      "search",
+      "language-switcher",
+    ]);
   });
 });
 
@@ -467,15 +501,30 @@ describe("generateZfbConfig — misc scalar fields", () => {
     expect(result).toContain("cjkFriendly: true");
   });
 
-  it("emits githubUrl as a string when set, omits when blank", () => {
+  it("emits a trimmed githubUrl and default github-link when set", () => {
     const withUrl = generateZfbConfig({
       ...baseChoices,
-      githubUrl: "https://github.com/x/y",
+      githubUrl: "  https://github.com/x/y  ",
     });
     expect(withUrl).toContain('githubUrl: "https://github.com/x/y"');
+    expect(withUrl).toContain('component: "github-link"');
+    expect(withUrl.indexOf('component: "github-link"')).toBeLessThan(
+      withUrl.indexOf('component: "theme-toggle"'),
+    );
+  });
 
-    const blank = generateZfbConfig({ ...baseChoices, githubUrl: "" });
-    expect(blank).not.toContain("githubUrl");
+  it.each([
+    ["omitted", undefined],
+    ["false", false],
+    ["empty", ""],
+    ["whitespace-only", "  \t  "],
+  ])("omits githubUrl and the default github-link when %s", (_label, githubUrl) => {
+    const result = generateZfbConfig({
+      ...baseChoices,
+      githubUrl: githubUrl as UserChoices["githubUrl"],
+    });
+    expect(result).not.toContain("githubUrl");
+    expect(result).not.toContain('component: "github-link"');
   });
 });
 

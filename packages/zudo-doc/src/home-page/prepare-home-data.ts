@@ -111,7 +111,7 @@ export function prepareHomeData(
 
   const tagCount = ctx.collectTags(
     navDocs.filter((d) => !d.data.category_no_page),
-    (id, data) => data.slug ?? ctx.toRouteSlug(id),
+    (entrySlug, data) => data.slug ?? ctx.toRouteSlug(entrySlug),
   ).size;
 
   return { tree: grouped, categoryOrder, tagCount };

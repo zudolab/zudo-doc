@@ -1,6 +1,6 @@
 ---
 title: ホストクロームバインディング
-description: パッケージ所有ルートのドキュメントヘッダーやホームヒーローにホスト側のコンテンツを注入する。単一のchromeBindingsモジュール経由で届けられます。
+description: パッケージ所有ルートの主要クローム、名前付きヘッダー項目、コンテンツへホスト側の実装を注入する。
 sidebar_position: 9
 tags:
   - customization
@@ -9,7 +9,7 @@ tags:
 
 プロジェクトで `packageOwnedRoutes: true` を設定すると、`@takazudo/zudo-doc` がドキュメントルートを自前で注入し、プロジェクト側はほぼ空の `pages/` ディレクトリだけを持つことになります。これは便利な反面、通常であればプロジェクト固有のレンダリングを差し込むホストファイルが失われます。**ホストクロームバインディング**はそれを取り戻すための継ぎ目です。型付けされた小さなスロット群（`ChromeHostBindings`）を通じて、コンポーネントをエジェクトすることなく、パッケージ所有のクロームにホスト独自のコンテンツやコーラブルを注入できます。
 
-このページでは、2つのコンテンツ注入用の継ぎ目 — `docContentHeaderExtras` と `homeExtras` — に加え、それらのバインディングを注入ルートへ届ける配信チャネルである `settings.chromeBindingsModule` を扱います。
+このページでは、6つの主要クローム置換、名前付きヘッダー右コンポーネント、`docContentHeaderExtras` と `homeExtras` のコンテンツ継ぎ目、そしてすべてのバインディングを注入ルートと自己完結型ルートへ届ける `settings.chromeBindingsModule` を扱います。
 
 <Note>
 
@@ -54,11 +54,48 @@ export const chromeBindings = defineChromeBindings({
 
 ビルド時にルートプラグインが `chromeBindings` を再エクスポートする仮想モジュールを登録し、注入されたクロームシムがそれをクロームファクトリへスプレッドします。文字列パスはシリアライズ可能なので、「ルートコンテキストはデータのみ」というルールは依然として保たれます — 異なるのはローダーのソースだけです。
 
-<Warning title="新しい scaffold のドキュメントルートスタブには配線が必要">
+<Note title="scaffold とカスタムルートの配線">
 
-新しい scaffold には自己完結型のドキュメントルートスタブが含まれます。これらは注入ルートをシャドーし、bindings を渡さずに `createChrome(routeCtx)` を呼び出すため、スタブを編集するまで `chromeBindingsModule` はドキュメントページに届きません。[`mdxExtras` のグローバル登録パターン](../guides/custom-components.mdx#グローバル登録-mdxextras)に従い、該当するすべてのスタブへ bindings を渡してください。scaffold テンプレートの修正は [#2716](https://github.com/zudolab/zudo-doc/issues/2716) で追跡されています。
+新しい scaffold のドキュメントルートスタブは `virtual:zudo-doc-chrome-bindings` をインポートし、その値を `createChrome` へ渡します。そのため、同じモジュールが自己完結型ルートと注入ルートの両方へ届きます。ルートをゼロから作成する場合も、`createChrome(routeCtx, chromeBindings)` の第2引数として渡してください。[`mdxExtras` のグローバル登録パターン](../guides/custom-components.mdx#グローバル登録-mdxextras)にルート側の完全な例があります。
 
-</Warning>
+</Note>
+
+## 名前付きヘッダー右コンポーネント
+
+`headerRightItems` はシリアライズ可能なままです。カスタムコンポーネント項目には文字列名だけを置き、呼び出し可能なレンダラーは `chromeBindings.headerRightComponents` で同じ名前へ登録します。
+
+```ts title="zfb.config.ts"
+zudoDoc({
+  chromeBindingsModule: "./src/chrome-bindings.tsx",
+  headerRightItems: [
+    { type: "link", href: "/status", label: "Status" },
+    { type: "component", component: "release-badge" },
+    { type: "component", component: "search" },
+  ],
+});
+```
+
+```tsx title="src/chrome-bindings.tsx"
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
+
+export const chromeBindings = defineChromeBindings({
+  headerRightComponents: {
+    "release-badge": ({ item, index, lang }) => (
+      <a
+        href={`/${lang ?? "ja"}/releases`}
+        data-component={item.component}
+        data-position={index}
+      >
+        v4
+      </a>
+    ),
+  },
+});
+```
+
+レンダラーはシリアライズ済みの `item`、0始まりの `index`、ロケール、GitHub 値、組み込み子スロット、カラーモード／ロケールのゲートを受け取ります。組み込み名（`theme-toggle`、`language-switcher`、`version-switcher`、`github-link`、`search`）は予約済みです。未知の名前や予約名の上書きは、黙って消えるのではなく、設定位置と修正方法を含むエラーになります。
+
+ルートコンテキストを通るのは項目名だけで、`headerRightComponents` 自体はホストのコーラブルモジュールに残ります。ほかの bindings モジュール内コンポーネントと同様、静的なアイランド登録経路も持たない限り SSR 表示用として扱ってください。
 
 ### 既存スロットの「取り残し」も解消する
 
@@ -66,7 +103,14 @@ export const chromeBindings = defineChromeBindings({
 
 | スロット | 省略時のデフォルト |
 | --- | --- |
+| `Header` | パッケージの `HeaderWithDefaults`。`HeaderSlotProps` を受け取る |
+| `Footer` | パッケージの `FooterWithDefaults`。`FooterSlotProps` を受け取る |
+| `Sidebar` | パッケージの `SidebarWithDefaults`。`SidebarSlotProps` を受け取る |
+| `Toc` | パッケージのデスクトップ `Toc`。`TocSlotProps` を受け取る |
+| `Breadcrumb` | パッケージの `Breadcrumb`。`BreadcrumbSlotProps` を受け取る |
+| `DocPager` | パッケージの `DocPager`。`DocPagerSlotProps` を受け取る |
 | `SearchWidget` | サイトの base を内部で束縛したパッケージ検索ウィジェット |
+| `headerRightComponents` | `{}` — パッケージ組み込みのヘッダー右名だけを解決する |
 | `docHistoryMeta` | `{}` — Created/Updated ブロックなし |
 | `sidebarsConfig` | `{}` — 自動生成ツリーのみ |
 | `frontmatterRenderers` | `{}` — カスタム[フロントマタープレビュー](./frontmatter-preview.mdx)レンダラーなし |
@@ -81,6 +125,8 @@ export const chromeBindings = defineChromeBindings({
 | `homeExtras` | 未指定 — 何も描画されない |
 
 つまり、`docContentHeaderExtras` のために作成するモジュールは、たとえば以前はホスト所有ルートでしか機能しなかったカスタムフロントマターレンダラーを登録する場所でもあります。
+
+生成されたドキュメントルートとパッケージ所有ドキュメントルートでは、通常のオブジェクト優先順位に1つだけ意図的な例外があります。`docHistory` が有効な場合、静的にインポートされたパッケージ `DocHistory` を設定済みオブジェクトの後から重ねます。これによりクライアントアイランド登録をスキャナーから到達可能に保ち、ほかのすべての binding は維持されます。仮想ホストモジュール内だけで宣言した `DocHistory` は、これらのルートでは置き換えられません。
 
 <Warning>
 

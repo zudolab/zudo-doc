@@ -408,9 +408,9 @@ export function DocLayoutWithDefaults(
         bodyEndScripts={
           bodyEndScripts ?? (
             // Default body-end scripts:
-            //   - CodeBlockEnhancer wraps every highlighted <pre> (`.hi-root`
-            //     or legacy `.syntect-*`) with copy + word-wrap controls and
-            //     emits an SR-announce live region for clipboard feedback.
+            //   - CodeBlockEnhancer wraps every highlighted <pre> (`.hi-root`)
+            //     with copy + word-wrap controls and emits an SR-announce live
+            //     region for clipboard feedback.
             //     Idempotent on pages with no fenced code.
             //   - TabsInit activates the correct tab panel and wires click
             //     handlers for <Tabs> components.

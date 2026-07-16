@@ -20,11 +20,10 @@ import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-cont
 function makeEntry(data: Record<string, unknown> = {}): DocPageEntry {
   return {
     slug: "test-page",
-    id: "test-page",
-    collection: "docs",
     data: { title: "Test Page", ...data },
+    body: "",
     module_specifier: "test-page.mdx",
-    Content: () => null,
+    Content: () => ({ type: "div", props: {}, key: null }),
   } as unknown as DocPageEntry;
 }
 
@@ -45,7 +44,12 @@ describe("createDocContentHeader — docContentHeaderExtras seam", () => {
       overrides: {
         hostBindings: {
           docHistoryMeta: {
-            "test-page": { author: "A", createdDate: "2024-01-01", updatedDate: "2024-01-02" },
+            "test-page": {
+              author: "A",
+              createdDate: "2024-01-01",
+              updatedDate: "2024-01-02",
+              ext: ".mdx",
+            },
           },
           docContentHeaderExtras: () => <div class="extra">EXTRA</div>,
         },
@@ -70,7 +74,12 @@ describe("createDocContentHeader — docContentHeaderExtras seam", () => {
       overrides: {
         hostBindings: {
           docHistoryMeta: {
-            "test-page": { author: "A", createdDate: "2024-01-01", updatedDate: "2024-01-02" },
+            "test-page": {
+              author: "A",
+              createdDate: "2024-01-01",
+              updatedDate: "2024-01-02",
+              ext: ".mdx",
+            },
           },
           docContentHeaderExtras: (args) => <div class="extra">v={String(args.version)}</div>,
         },

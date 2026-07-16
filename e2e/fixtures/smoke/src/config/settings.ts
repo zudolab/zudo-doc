@@ -59,7 +59,6 @@ export const settings = {
   defaultLocaleOnlyPrefixes: [] as string[],
   tocMinDepth: 2 as number,
   tocMaxDepth: 4 as number,
-  headingIdStrategy: "hierarchical" as "flat" | "hierarchical",
   headerNav: [
     {
       label: "Getting Started",

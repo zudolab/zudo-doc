@@ -181,6 +181,8 @@ const darkMap: ModeMap = {
     danger: "oklch(.655 .170 25)",
     // ...
   },
+  // Required map; omitted syntax roles inherit their documented semantic role.
+  syntax: {},
 };
 ```
 
@@ -333,6 +335,7 @@ const myMap: ModeMap = {
     ...SEMANTIC_RAMP_DEFAULTS,
     accent: { accent: 1 }, // only override the roles that need to differ
   },
+  syntax: {}, // required; add only syntax-specific overrides here
 };
 
 export const colorSchemes: Record<string, ColorScheme> = {

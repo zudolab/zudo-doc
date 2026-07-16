@@ -29,11 +29,11 @@ import type {
   FactoryComponents,
 } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
+import type { JSX, VNode } from "preact";
+import type { HeaderWithDefaultsProps } from "../header-with-defaults/index.js";
+import type { SidebarWithDefaultsProps } from "../sidebar-with-defaults/index.js";
 
 import { createHeadWithDefaults } from "../head-with-defaults/index.js";
-import { createHeaderWithDefaults } from "../header-with-defaults/index.js";
-import { createFooterWithDefaults } from "../footer-with-defaults/index.js";
-import { createSidebarWithDefaults } from "../sidebar-with-defaults/index.js";
 import { createRenderDocPage } from "../doc-page-renderer/index.js";
 import { createVersionsPageView } from "../versions-page/index.js";
 import { createTagPages } from "../tag-pages/index.js";
@@ -43,6 +43,7 @@ import {
   deriveBodyEndIslands,
   deriveMdxComponents,
 } from "./derive.js";
+import { derivePrimaryChromeSlots } from "./primary-slots.js";
 
 /**
  * Build the wired page-chrome factories from a reconstructed route context plus
@@ -61,9 +62,28 @@ export function createChrome<S extends Settings = Settings>(
 
   const composeMetaTitle = deriveComposeMetaTitle(ctx);
   const HeadWithDefaults = createHeadWithDefaults(ctx);
-  const HeaderWithDefaults = createHeaderWithDefaults(ctx);
-  const FooterWithDefaults = createFooterWithDefaults(ctx);
-  const SidebarWithDefaults = createSidebarWithDefaults(ctx);
+  const primary = derivePrimaryChromeSlots(ctx);
+  // Preserve createChrome's established public wrapper declarations even when
+  // a strict host replacement is installed. The wrappers normalize the old
+  // optional props to the exact replacement call contracts and always return
+  // a VNode, while internal package call sites keep the stricter slot types.
+  const HeaderWithDefaults = (props: HeaderWithDefaultsProps): JSX.Element => (
+    <>{primary.Header({ ...props, lang: props.lang ?? context.defaultLocale })}</>
+  );
+  const FooterWithDefaults = (props: { lang?: string }): VNode => (
+    <>{primary.Footer({ lang: props.lang ?? context.defaultLocale })}</>
+  );
+  const SidebarWithDefaults = (props: SidebarWithDefaultsProps): JSX.Element => (
+    <>
+      {primary.Sidebar({
+        currentSlug: props.currentSlug ?? "",
+        lang: props.lang ?? context.defaultLocale,
+        navSection: props.navSection,
+        currentVersion: props.currentVersion,
+        currentPath: props.currentPath ?? "",
+      })}
+    </>
+  );
   const renderDocPage = createRenderDocPage(ctx);
   const VersionsPageView = createVersionsPageView(ctx);
   const { collectTagMapForLocale, TagDetailPageView, TagsIndexPageView } =

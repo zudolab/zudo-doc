@@ -49,14 +49,9 @@ footer: {
 
 `enabled`以外のフィールドはすべて任意です。省略した項目には妥当なデフォルトが適用されます。
 
-<Warning title="新しいscaffoldではクロームバインディングが必要です">
+<Warning title="タグデータ binding が必要です">
 
-この設定フィールドだけではscaffoldプロジェクトに何も描画されません。ドキュメントルートの
-スタブはホストバインディングなしで`createChrome(routeCtx)`を呼び出すため、`loadTagsForLocale`と
-`tagVocabulary`スロットはno-opのデフォルトのままです。`chromeBindingsModule`を通し、両方の
-スロットをバインドしてください。詳しくは[Custom Components](./custom-components.mdx)と
-[ホストクロームバインディング](../reference/host-chrome-bindings.mdx)を参照してください。[テンプレート修正](https://github.com/zudolab/zudo-doc/issues/2716)後に生成されたscaffoldは
-表示用／データ用スロットを自動で通しますが、独自のハイドレートするアイランドには引き続きガイドで説明する静的インポートの配線が必要です。
+`loadTagsForLocale` と `tagVocabulary` のデフォルトは no-op データです。`chromeBindingsModule` を両スロットをバインドするモジュールへ向けてください。新しいルートスタブはそれをすでに消費するため編集しません。詳しくは [Custom Components](./custom-components.mdx) と [ホストクロームバインディング](../reference/host-chrome-bindings.mdx)を参照してください。
 
 </Warning>
 
@@ -131,7 +126,7 @@ taglist: {
 
 ## 読者に見える内容
 
-少なくとも1つのドラフトでも unlisted でもないページから参照されているボキャブラリタグは、そのタグのインデックスページ(`/docs/tags/<id>/`または`/{locale}/docs/tags/<id>/`)へのリンクとして表示されます。deprecated エントリはスキップされます。空のグループは折りたたまれ、埋めたカラムぶんだけ場所を取ります。
+少なくとも1つのドラフトでも unlisted でもないページから参照されているボキャブラリタグは、そのタグのインデックスページ(`/docs/tags/<id>/`または`/{locale}/docs/tags/<id>/`)へのリンクとして表示されます。空のグループは折りたたまれ、埋めたカラムぶんだけ場所を取ります。
 
 ## 関連
 

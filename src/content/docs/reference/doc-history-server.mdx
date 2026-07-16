@@ -163,7 +163,7 @@ dist/doc-history/
 
 ### Git Operations
 
-History extraction uses synchronous git calls (`execFileSync`) for:
+History extraction uses non-blocking `execFile` / `spawn` calls for:
 
 - `git log` -- commit listing with `--follow` for rename tracking
 - `git show` -- file content at each revision
@@ -172,7 +172,7 @@ The `--follow` flag tracks file history across renames with multiple fallback st
 
 ### Key Design Decisions
 
-- **Synchronous git** -- `execFileSync` is acceptable for the dev server (same-process, sequential). The CI CLI uses bounded parallelism: tasks run via `Promise.all` with a semaphore limited to `Math.min(8, Math.max(2, cpus().length))` concurrent workers
+- **One async extraction path** -- both the dev server and CI CLI await `getDocHistoryAsync`. The CLI uses bounded parallelism with a semaphore limited to `Math.min(8, Math.max(2, cpus().length))` concurrent workers; only the cached one-time repository-root probe is synchronous
 - **Repo-relative paths** -- API responses use relative file paths to avoid leaking absolute server paths
 - **Standalone package** -- decoupled from zfb to enable parallel CI builds and independent versioning
 

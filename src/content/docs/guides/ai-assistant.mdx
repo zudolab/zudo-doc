@@ -30,6 +30,17 @@ When enabled:
 - A sparkle icon appears in the header bar
 - The `POST /api/ai-chat` endpoint becomes available as a Cloudflare Workers SSR route
 
+<Warning title="The live backend is host-owned">
+
+The production handler, `worker-entry.ts`, and `AiChatDailySpendCap` class described below belong
+to this showcase repository; they are not exported by `@takazudo/zudo-doc` or added by a fresh
+scaffold. The package-owned SSR route is a safe seam: it returns the fixed demo response while
+demo mode is enabled and HTTP 501 if live mode is selected without a host handler. Downstream
+projects must keep demo mode enabled or implement their own host `/api/ai-chat` handler, source
+Worker entry, Durable Object class, and migration. Adding bindings alone does not activate live AI.
+
+</Warning>
+
 ## Security Warning for Non-Demo Deployments
 
 <Warning title="Harden before disabling demo mode">
@@ -39,14 +50,14 @@ deployment is at risk for cost abuse via unauthenticated API calls. Before going
 
 1. **Restrict CORS origins** — set `aiChatAllowedOrigins` to your deployed docs URL(s).
    The default empty array blocks all cross-origin browser requests.
-2. **Add a global daily ceiling** — set `aiChatGlobalDailyLimit` to cap total requests per day
-   as a backstop against IP rotation and botnets.
+2. **Add an exact paid-call admission cap** — set `aiChatGlobalDailyLimit` to cap Anthropic
+   fetch attempts per UTC day across all IPs. A SQLite Durable Object serializes concurrent
+   decisions, so they cannot overshoot the configured value.
 3. **Deploy behind Cloudflare** — `cf-connecting-ip` (used for per-IP rate limiting) is only
    trustworthy when the request passes through Cloudflare's network.
 
-When `aiChatDemoMode` is `false`, the rate limiter also becomes **fail-closed**: a KV outage
-returns HTTP 429 instead of allowing the request through, preventing unbounded spend on
-infrastructure failure.
+When `aiChatDemoMode` is `false`, both guards fail closed. A per-IP KV read failure returns HTTP
+429, while missing or failing exact-cap infrastructure returns HTTP 500 before Anthropic is called.
 
 </Warning>
 
@@ -56,7 +67,7 @@ export default defineConfig(
     aiChatDemoMode: false,
     // Allow only your deployed docs site to make cross-origin requests.
     aiChatAllowedOrigins: ["https://your-docs-site.example.com"],
-    // Cap global daily requests as a cost backstop (false = no ceiling).
+    // Exact UTC-day paid-call admission cap (false = no exact cap).
     aiChatGlobalDailyLimit: 500,
     // ...
   }),
@@ -65,8 +76,10 @@ export default defineConfig(
 
 ## Environment Setup
 
-The chat endpoint runs as a Cloudflare Workers SSR route (`pages/api/ai-chat.tsx`) and reads its
-configuration from Cloudflare env bindings set in `wrangler.toml`.
+In this showcase repository, the chat endpoint runs as a Cloudflare Workers SSR route
+(`pages/api/ai-chat.tsx`) and reads its configuration from Cloudflare env bindings set in
+`wrangler.toml`. Downstream implementations can use this graph as a reference, but these
+host-owned files are not package APIs.
 
 ### Required CF bindings
 
@@ -85,13 +98,44 @@ RATE_LIMIT_PER_MINUTE = "10"
 RATE_LIMIT_PER_DAY = "100"
 ```
 
-**KV namespace** — rate limiting and audit logging:
+**KV namespace** — soft per-IP rate limiting and privacy-safe outcome audit records (no prompt,
+response, IP, or IP hash fields):
 
 ```sh
 wrangler kv namespace create RATE_LIMIT
 ```
 
 Paste the returned `id` into the `[[kv_namespaces]]` block in `wrangler.toml`.
+
+**Durable Object namespace** — exact UTC-day paid-call admission:
+
+```toml title="wrangler.toml"
+[[durable_objects.bindings]]
+name = "AI_CHAT_DAILY_SPEND_CAP"
+class_name = "AiChatDailySpendCap"
+
+[[migrations]]
+tag = "v1-ai-chat-daily-spend-cap"
+new_sqlite_classes = ["AiChatDailySpendCap"]
+```
+
+Keep these names exact. The first `wrangler deploy` applies the Worker migration; this is not a
+`wrangler d1 migrations` operation. Production uses custom `worker-entry.ts`, which preserves the
+generated adapter handler from `dist/_worker.js`, its `dist/_zfb_inner.mjs` sidecar, and the
+exported Durable Object class. Always build before Wrangler.
+
+Each UTC date routes to a new object, so the cap resets at `00:00 UTC`. Admission occurs after
+request checks, the softer eventually-consistent per-IP KV guard, and docs-context preparation,
+immediately before exactly one Anthropic fetch. An admitted slot is not refunded if that fetch
+fails and is not provider-confirmed billing. `aiChatGlobalDailyLimit: false` skips only this exact
+cap; `aiChatDemoMode: true` skips KV, the Durable Object, and Anthropic entirely.
+
+Preview aliases use an adapter-only service/config because versions implementing Durable Objects
+do not receive preview URLs. They prove the SSR adapter/assets path, not live paid-call admission;
+production `wrangler deploy` owns the migration. See Cloudflare's
+[Durable Object migrations](https://developers.cloudflare.com/durable-objects/reference/durable-objects-migrations/),
+the [Cloudflare Wisdom Durable Objects article](https://github.com/Takazudo/zudo-cloudflare-wisdom/blob/main/src/content/docs/workers/durable-objects.mdx),
+and [Workers Logs structured-object guidance](https://developers.cloudflare.com/workers/observability/logs/workers-logs/).
 
 Uses `claude-haiku-4-5-20251001` for fast, low-cost responses.
 

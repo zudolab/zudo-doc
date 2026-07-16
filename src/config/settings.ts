@@ -82,8 +82,8 @@ export const settings = {
   /**
    * Whether `tag-vocabulary.ts` is consulted at runtime.
    *
-   * - `true`  — alias rewrites, deprecation filtering, and grouped-footer
-   *             rendering are active. Governance level is decided by
+   * - `true`  — canonical validation and grouped-footer rendering are active.
+   *             Governance level is decided by
    *             `tagGovernance`.
    * - `false` — the vocabulary file is ignored entirely, regardless of
    *             `tagGovernance`. Tags stay completely loose. Useful to keep
@@ -121,7 +121,7 @@ export const settings = {
    * API key endpoint. Harden your deployment with the settings below:
    * - `aiChatAllowedOrigins` — restrict CORS to known origins (default blocks
    *   all cross-origin requests when not in demo mode).
-   * - `aiChatGlobalDailyLimit` — cap total daily requests as a cost backstop.
+   * - `aiChatGlobalDailyLimit` — exact daily paid-call admission cap.
    * Rate limiting also becomes fail-closed (KV errors → HTTP 429) when
    * `aiChatDemoMode` is `false`, so a KV outage cannot unlock unbounded spend.
    * Note: `cf-connecting-ip` is only trustworthy when deployed behind Cloudflare.
@@ -141,10 +141,12 @@ export const settings = {
    */
   aiChatAllowedOrigins: [] as string[],
   /**
-   * Optional global daily request ceiling across all IPs as a cost backstop
-   * against IP rotation / botnets. `false` (default) disables the ceiling.
-   * When set to a positive integer (e.g. `500`), the endpoint returns HTTP 429
-   * once that many requests have been served in the current UTC day.
+   * Optional exact daily paid-call admission cap across all IPs as a cost
+   * backstop against IP rotation / botnets. `false` (default) disables the
+   * cap. When set to a positive integer (e.g. `500`), a UTC-day Durable Object
+   * admits at most that many Anthropic fetch attempts before returning 429.
+   * Admissions are consumed immediately before fetch and are not refunded on
+   * provider/network failure; this is not provider-confirmed spend accounting.
    *
    * Has no effect in demo mode (`aiChatDemoMode: true`).
    */
@@ -173,23 +175,6 @@ export const settings = {
    * back to the default of 4.
    */
   tocMaxDepth: 4 as number,
-  /**
-   * Heading-ID (anchor) strategy. Single source of truth shared by the zfb
-   * engine config (`markdown.features.headingIds.strategy` in `zfb.config.ts`)
-   * and the host TOC builder (`extractHeadings` in `pages/lib/_extract-headings.ts`)
-   * so the rendered `<hN id>` and the TOC `href="#…"` can never diverge.
-   *
-   * - `"flat"` (zfb default): github-slugger slugs with one dedup counter shared
-   *   across h2–h6 (`overview`, `overview-1`, …).
-   * - `"hierarchical"`: each heading's slug is prefixed with its ancestor chain
-   *   (`## Foo` / `### Moo` / `#### Mew` → `foo`, `foo-moo`, `foo-moo-mew`),
-   *   deduped on the full path — anchors become reconstructible from the
-   *   heading outline and collide far less often.
-   *
-   * Switching to `"hierarchical"` is **anchor-breaking** for existing deep
-   * links to nested headings (upstream zfb#871; original finding #1938).
-   */
-  headingIdStrategy: "hierarchical" as "flat" | "hierarchical",
   sidebarResizer: true as boolean,
   sidebarToggle: true as boolean,
   imageEnlarge: true as boolean,

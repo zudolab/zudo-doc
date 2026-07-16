@@ -67,10 +67,10 @@ export const toc = [
 ];
 ```
 
-ネストした `id: "introduction-background"` は、このサイトの `hierarchical` な [Heading Links](./heading-links.mdx#id-方式) 方式を反映しています（h3 の `id` に h2 の祖先がプレフィックスされます）。`flat` 方式では単に `id: "background"` になります。
+ネストした `id: "introduction-background"` は、zudo-doc の[階層見出し ID](./heading-links.mdx#階層-id)を反映しています。h3 の `id` には h2 の祖先がプレフィックスされます。
 
 ## 補足
 
-- このエクスポートは見出しリンクパスの後に実行されるため、`id` スラッグは最終的で重複が解消されており、設定された [見出し ID 方式](./heading-links.mdx#id-方式) に従います。
+- このエクスポートは見出しリンクパスの後に実行されるため、`id` スラッグは最終的で重複が解消されており、[階層 ID の規約](./heading-links.mdx#階層-id)に従います。
 - `tocExport` は [Heading Marker TOC](./heading-marker-toc.mdx) とは独立して動作します — 一方を有効化しても他方に干渉しません。
 - zudo-doc の既存の TOC アイランドはこのエクスポートで駆動されていません。両者は別々の仕組みです。

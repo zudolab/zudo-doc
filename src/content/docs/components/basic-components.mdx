@@ -67,7 +67,7 @@ Use backticks to mark `inline code` within a sentence.
 
 ## Code Blocks
 
-Fenced code blocks support syntax highlighting via syntect, run by zfb's Rust pipeline at build time. Specify the language after the opening backticks. See the [Code Blocks](./code-blocks.mdx) page for the full rundown.
+Fenced code blocks use zfb's build-time semantic class-mode highlighter. Specify the language after the opening backticks. See the [Code Blocks](./code-blocks.mdx) page for the full rundown.
 
 ```ts
 function greet(name: string): string {
@@ -87,7 +87,7 @@ function greet(name: string): string {
 
 ### Supported Languages
 
-syntect supports a wide range of languages. Common ones include:
+zfb's class-mode highlighter supports a wide range of languages. Common ones include:
 
 | Language | Identifier |
 | -------- | ---------- |
@@ -160,14 +160,14 @@ If a language identifier isn't recognised, the block falls back to a plain unhig
 | Feature    | Status      | Notes              |
 | ---------- | ----------- | ------------------ |
 | MDX        | Supported   | Built into zfb     |
-| syntect    | Built-in    | Code highlighting  |
+| zfb class mode | Built-in | Code highlighting |
 | Tailwind   | v4          | Token-based design |
 
 ```mdx
 | Feature    | Status      | Notes              |
 | ---------- | ----------- | ------------------ |
 | MDX        | Supported   | Built into zfb     |
-| syntect    | Built-in    | Code highlighting  |
+| zfb class mode | Built-in | Code highlighting |
 | Tailwind   | v4          | Token-based design |
 ```
 

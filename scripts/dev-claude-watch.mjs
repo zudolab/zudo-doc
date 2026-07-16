@@ -16,7 +16,7 @@
  */
 
 import { watch } from "chokidar";
-import { runClaudeResourcesPreStep } from "@takazudo/zudo-doc/integrations/claude-resources";
+import { runClaudeResourcesPreStep } from "@takazudo/zudo-doc/plugins/claude-resources";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 

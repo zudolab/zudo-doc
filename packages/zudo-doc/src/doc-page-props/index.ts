@@ -1,25 +1,13 @@
-// doc-page-props — shared discriminated-union props types for all 4 doc-route
-// pages (epic #2344, S6).
-//
-// Moved from the showcase's `pages/lib/doc-page-props.ts` into the shared
-// package. Previously the types imported `DocsEntry` from `@/types/docs-entry`
-// and `NavNode`/`BreadcrumbItem` from `@/utils/docs` — host-alias imports that
-// would not resolve in downstream consumers. The package defines its own
-// structural interfaces for these types (no `@/` imports).
-//
-// TYPE COMPATIBILITY:
-//   The `DocNavNode` interface is structurally compatible with the host's
-//   `NavNode` from `src/utils/docs.ts`. The host stub re-exports these types
-//   so callers that imported from `pages/lib/doc-page-props` continue to work
-//   unchanged. `HeadingItem` is imported from the package's own
-//   `extract-headings` subpath (already a package export).
+// Shared current zfb entry and discriminated-union props types for all four
+// doc-route variants.
 
 export type { HeadingItem } from "../extract-headings/index.js";
 import type { HeadingItem } from "../extract-headings/index.js";
 import type { BreadcrumbItem } from "../breadcrumb/types.js";
+import type { CollectionEntry } from "@takazudo/zfb/content";
 
 // ---------------------------------------------------------------------------
-// Structural NavNode — structurally identical to host's `NavNode`
+// Structural navigation node
 // ---------------------------------------------------------------------------
 
 /**
@@ -43,7 +31,7 @@ export interface DocNavNode {
 }
 
 // ---------------------------------------------------------------------------
-// Structural DocsEntry for the DocPageEntry bridge
+// Current zfb docs entry
 // ---------------------------------------------------------------------------
 
 /**
@@ -61,7 +49,10 @@ export interface DocPageFrontmatter {
   draft?: boolean;
   unlisted?: boolean;
   standalone?: boolean;
+  sidebar_position?: number;
+  sidebar_label?: string;
   category_no_page?: boolean;
+  category_sort_order?: "asc" | "desc";
   pagination_prev?: string | null;
   pagination_next?: string | null;
   tags?: string[];
@@ -73,30 +64,10 @@ export interface DocPageFrontmatter {
 // ---------------------------------------------------------------------------
 
 /**
- * A zfb content collection entry augmented with the `id`/`collection` fields
- * the host's `@/utils/docs` helpers expect, plus the typed `data` and
- * renderer surface.
- *
- * Structural counterpart of the host's `DocPageEntry` (from
- * `pages/lib/doc-page-props.ts`). The host stub re-exports this type under
- * the original name.
+ * The native zfb collection entry with docs frontmatter. Route consumers
+ * derive canonical route slugs from `entry.data.slug ?? toRouteSlug(entry.slug)`.
  */
-export interface DocPageEntry {
-  /** zfb content engine slug (filename without `.md`/`.mdx`). */
-  slug: string;
-  /** Bridged from `slug` for host `@/utils/docs` compat. */
-  id: string;
-  /** Collection name, e.g. "docs", "docs-ja", "docs-v-1.0". */
-  collection: string;
-  /** Parsed frontmatter. Structural superset of `DocPageFrontmatter`. */
-  data: DocPageFrontmatter;
-  /** Raw MDX body (for heading extraction). */
-  body?: string;
-  /** zfb module specifier (for Content bridge). */
-  module_specifier: string;
-  /** zfb content renderer — callable Preact component. */
-  Content: unknown;
-}
+export type DocPageEntry = CollectionEntry<DocPageFrontmatter>;
 
 // ---------------------------------------------------------------------------
 // AutoIndexNode — auto-generated category index page node

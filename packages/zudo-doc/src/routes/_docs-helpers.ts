@@ -22,7 +22,6 @@
 import {
   getCollection,
   getContentSnapshot,
-  type CollectionEntry,
 } from "@takazudo/zfb/content";
 import {
   buildSidebarTree,
@@ -44,29 +43,10 @@ function snapshotAnchor(name: string): readonly unknown[] | undefined {
   return getContentSnapshot()?.collections[name];
 }
 
-const bridgedByAnchor = new WeakMap<object, DocPageEntry[]>();
+const docsByAnchor = new WeakMap<object, DocPageEntry[]>();
 
-/** Bridge a raw zfb collection entry onto the `DocPageEntry` shape the factories
- *  expect (Astro-compat `id`/`collection`, with `index` suffix stripped via the
- *  canonical root-slug rule). */
-function bridgeEntry(
-  e: CollectionEntry<DocPageFrontmatter>,
-  collectionName: string,
-): DocPageEntry {
-  return {
-    slug: e.slug,
-    id: toRouteSlug(e.slug),
-    collection: collectionName,
-    data: e.data,
-    body: e.body,
-    module_specifier: e.module_specifier,
-    Content: e.Content,
-  };
-}
-
-function buildBridged(collectionName: string): DocPageEntry[] {
-  const raw = getCollection<DocPageFrontmatter>(collectionName);
-  return raw.map((e) => bridgeEntry(e, collectionName)).filter((d) => !d.data.draft);
+function buildDocs(collectionName: string): DocPageEntry[] {
+  return getCollection<DocPageFrontmatter>(collectionName).filter((entry) => !entry.data.draft);
 }
 
 /**
@@ -77,11 +57,11 @@ function buildBridged(collectionName: string): DocPageEntry[] {
  */
 export function stableDocs(collectionName: string): DocPageEntry[] {
   const anchor = snapshotAnchor(collectionName);
-  if (anchor === undefined) return buildBridged(collectionName);
-  const cached = bridgedByAnchor.get(anchor);
+  if (anchor === undefined) return buildDocs(collectionName);
+  const cached = docsByAnchor.get(anchor);
   if (cached) return cached;
-  const built = buildBridged(collectionName);
-  bridgedByAnchor.set(anchor, built);
+  const built = buildDocs(collectionName);
+  docsByAnchor.set(anchor, built);
   return built;
 }
 
@@ -119,7 +99,7 @@ function toNavNode(node: SidebarNode): DocNavNode {
 function findRootIndexDoc(docs: DocPageEntry[]): DocPageEntry | undefined {
   let found: DocPageEntry | undefined;
   for (const d of docs) {
-    const slug = d.data.slug ?? d.id.replace(/\/index$/, "");
+    const slug = d.data.slug ?? toRouteSlug(d.slug);
     if (slug === "") found = d;
   }
   return found;
@@ -169,7 +149,7 @@ export function buildNavTree(
 ): DocNavNode[] {
   const href: BuildHref = options?.buildHref ?? buildHref;
   const sidebarTree = buildSidebarTree(
-    docs.map((d) => ({ id: d.id, data: d.data })),
+    docs,
     locale,
     {
       categoryMeta,

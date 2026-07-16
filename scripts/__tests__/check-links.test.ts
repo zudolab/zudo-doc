@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   parseBasePath,
   parseTrailingSlash,
@@ -10,12 +12,13 @@ import {
   resolveLinkDetail,
   resolveLink,
   extractMdxAbsoluteLinks,
-  checkHtmlLinks,
-  checkTrailingSlashLinks,
+  checkHtmlLinksAndTrailing,
   checkMdxLinks,
   formatReport,
   collectFiles,
 } from "../check-links.js";
+
+const CHECK_LINKS_SCRIPT = fileURLToPath(new URL("../check-links.js", import.meta.url));
 
 describe("check-links", () => {
   let tmpDir: string;
@@ -26,6 +29,37 @@ describe("check-links", () => {
 
   afterEach(() => {
     rmSync(tmpDir, { recursive: true });
+  });
+
+  describe("CLI arguments", () => {
+    it("shows current help through the package-manager separator", () => {
+      const result = spawnSync(process.execPath, [
+        CHECK_LINKS_SCRIPT,
+        "--",
+        "--strict-broken",
+        "--strict-absolute",
+        "--strict-trailing",
+        "--allowlist=.check-links-allowlist",
+        "-h",
+      ], {
+        encoding: "utf8",
+      });
+
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain("--strict-broken");
+      expect(result.stdout).toContain("--strict-absolute");
+      expect(result.stdout).toContain("--strict-trailing");
+      expect(result.stdout).not.toMatch(/^\s*--strict\s/m);
+    });
+
+    it("rejects the removed aggregate --strict option", () => {
+      const result = spawnSync(process.execPath, [CHECK_LINKS_SCRIPT, "--strict"], {
+        encoding: "utf8",
+      });
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("Unknown option: --strict");
+    });
   });
 
   // --- parseBasePath ---
@@ -451,35 +485,35 @@ describe("check-links", () => {
   describe("extractMdxAbsoluteLinks", () => {
     it("finds markdown links starting with /docs/", () => {
       const content = `See [guide](/docs/guides/foo) for details.`;
-      expect(extractMdxAbsoluteLinks(content)).toEqual([
+      expect(extractMdxAbsoluteLinks(content, [])).toEqual([
         { href: "/docs/guides/foo", line: 1 },
       ]);
     });
 
     it("finds markdown links starting with /ja/docs/", () => {
       const content = `See [guide](/ja/docs/guides/foo) for details.`;
-      expect(extractMdxAbsoluteLinks(content)).toEqual([
+      expect(extractMdxAbsoluteLinks(content, ["ja"])).toEqual([
         { href: "/ja/docs/guides/foo", line: 1 },
       ]);
     });
 
     it("finds JSX href with /docs/", () => {
       const content = `<a href="/docs/guides/foo">link</a>`;
-      expect(extractMdxAbsoluteLinks(content)).toEqual([
+      expect(extractMdxAbsoluteLinks(content, [])).toEqual([
         { href: "/docs/guides/foo", line: 1 },
       ]);
     });
 
     it("finds JSX href with /ja/docs/", () => {
       const content = `<a href="/ja/docs/guides/foo">link</a>`;
-      expect(extractMdxAbsoluteLinks(content)).toEqual([
+      expect(extractMdxAbsoluteLinks(content, ["ja"])).toEqual([
         { href: "/ja/docs/guides/foo", line: 1 },
       ]);
     });
 
     it("ignores links that include base path", () => {
       const content = `[link](/pj/zudo-doc/docs/guides/foo)`;
-      expect(extractMdxAbsoluteLinks(content)).toEqual([]);
+      expect(extractMdxAbsoluteLinks(content, [])).toEqual([]);
     });
 
     it("reports correct line numbers", () => {
@@ -490,7 +524,7 @@ describe("check-links", () => {
         "line 4",
         "[link2](/docs/bar)",
       ].join("\n");
-      expect(extractMdxAbsoluteLinks(content)).toEqual([
+      expect(extractMdxAbsoluteLinks(content, [])).toEqual([
         { href: "/docs/foo", line: 3 },
         { href: "/docs/bar", line: 5 },
       ]);
@@ -498,7 +532,7 @@ describe("check-links", () => {
 
     it("finds multiple links on same line", () => {
       const content = `[a](/docs/foo) and [b](/docs/bar)`;
-      expect(extractMdxAbsoluteLinks(content)).toEqual([
+      expect(extractMdxAbsoluteLinks(content, [])).toEqual([
         { href: "/docs/foo", line: 1 },
         { href: "/docs/bar", line: 1 },
       ]);
@@ -506,7 +540,7 @@ describe("check-links", () => {
 
     it("does not match partial paths like /documentary/", () => {
       const content = `[link](/documentary/something)`;
-      expect(extractMdxAbsoluteLinks(content)).toEqual([]);
+      expect(extractMdxAbsoluteLinks(content, [])).toEqual([]);
     });
 
     it("finds /de/docs/... link when 'de' locale is in the locales list", () => {
@@ -516,9 +550,11 @@ describe("check-links", () => {
       ]);
     });
 
-    it("does NOT find /de/docs/... link when no locales list is provided (legacy ja-only default)", () => {
-      const content = `See [guide](/de/docs/guides/foo) for details.`;
-      expect(extractMdxAbsoluteLinks(content)).toEqual([]);
+    it("rejects a missing locale list instead of assuming a locale", () => {
+      const content = `See [guide](/ja/docs/guides/foo) for details.`;
+      expect(() => extractMdxAbsoluteLinks(content)).toThrow(
+        "locales must be passed explicitly",
+      );
     });
 
     it("finds links for all declared locales when multiple locales are provided", () => {
@@ -550,7 +586,7 @@ describe("check-links", () => {
         "```",
         "[after](/docs/also-visible)",
       ].join("\n");
-      const result = extractMdxAbsoluteLinks(content);
+      const result = extractMdxAbsoluteLinks(content, []);
       expect(result).toEqual([
         { href: "/docs/visible", line: 1 },
         { href: "/docs/also-visible", line: 5 },
@@ -567,14 +603,14 @@ describe("check-links", () => {
         '[c](/docs/hidden2)',
         "```",
       ].join("\n");
-      const result = extractMdxAbsoluteLinks(content);
+      const result = extractMdxAbsoluteLinks(content, []);
       expect(result).toEqual([{ href: "/docs/visible", line: 4 }]);
     });
   });
 
-  // --- checkHtmlLinks (integration) ---
+  // --- checkHtmlLinksAndTrailing (integration) ---
 
-  describe("checkHtmlLinks", () => {
+  describe("checkHtmlLinksAndTrailing", () => {
     const BASE = "/pj/zudo-doc/";
 
     it("detects broken internal links with base path stripping", async () => {
@@ -585,7 +621,11 @@ describe("check-links", () => {
         `<a href="/pj/zudo-doc/docs/missing">Missing</a>`,
       );
 
-      const broken = await checkHtmlLinks(distDir, tmpDir, BASE);
+      const { broken, trailingSlash } = await checkHtmlLinksAndTrailing(
+        distDir,
+        tmpDir,
+        BASE,
+      );
       expect(broken).toEqual([
         {
           file: "dist/docs/page1/index.html",
@@ -593,6 +633,7 @@ describe("check-links", () => {
           href: "/pj/zudo-doc/docs/missing",
         },
       ]);
+      expect(trailingSlash).toEqual([]);
     });
 
     it("passes when all links resolve", async () => {
@@ -605,7 +646,7 @@ describe("check-links", () => {
       );
       writeFileSync(join(distDir, "docs", "b", "index.html"), "<p>B</p>");
 
-      const broken = await checkHtmlLinks(distDir, tmpDir, BASE);
+      const { broken } = await checkHtmlLinksAndTrailing(distDir, tmpDir, BASE);
       expect(broken).toEqual([]);
     });
   });
@@ -621,7 +662,7 @@ describe("check-links", () => {
         "---\ntitle: Test\n---\n\nSee [foo](/docs/guides/foo) for details.",
       );
 
-      const warnings = await checkMdxLinks([docsDir], tmpDir);
+      const warnings = await checkMdxLinks([docsDir], tmpDir, null, "/", []);
       expect(warnings).toEqual([
         {
           file: "src/content/docs/guides/test.mdx",
@@ -639,24 +680,68 @@ describe("check-links", () => {
         "[link](/docs/ref)",
       );
 
-      const warnings = await checkMdxLinks([docsDir], tmpDir);
+      const warnings = await checkMdxLinks([docsDir], tmpDir, null, "/", []);
       expect(warnings).toHaveLength(1);
       expect(warnings[0]?.href).toBe("/docs/ref");
+    });
+
+    it("scans links for every explicitly provided locale", async () => {
+      const docsDir = join(tmpDir, "docs");
+      mkdirSync(docsDir, { recursive: true });
+      writeFileSync(
+        join(docsDir, "locales.mdx"),
+        "[ja](/ja/docs/a)\n[de](/de/docs/b)\n[unknown](/zh/docs/c)",
+      );
+
+      const warnings = await checkMdxLinks(
+        [docsDir],
+        tmpDir,
+        null,
+        "/",
+        ["ja", "de"],
+      );
+      expect(warnings.map(({ href }) => href)).toEqual([
+        "/ja/docs/a",
+        "/de/docs/b",
+      ]);
+    });
+
+    it("rejects a missing locale list", async () => {
+      await expect(checkMdxLinks([], tmpDir)).rejects.toThrow(
+        "locales must be passed explicitly",
+      );
     });
 
     it("skips non-existent directories", async () => {
       const warnings = await checkMdxLinks(
         [join(tmpDir, "nonexistent")],
         tmpDir,
+        null,
+        "/",
+        [],
       );
       expect(warnings).toEqual([]);
     });
   });
 
-  // --- checkTrailingSlashLinks ---
+  // --- checkHtmlLinksAndTrailing trailing-slash output ---
 
-  describe("checkTrailingSlashLinks", () => {
+  describe("checkHtmlLinksAndTrailing trailing-slash output", () => {
     const BASE = "/pj/zudo-doc/";
+
+    async function collectTrailingSlashWarnings(
+      distDir: string,
+      excludePatterns: RegExp[] = [],
+    ) {
+      const { trailingSlash } = await checkHtmlLinksAndTrailing(
+        distDir,
+        tmpDir,
+        BASE,
+        excludePatterns,
+        true,
+      );
+      return trailingSlash;
+    }
 
     it("warns when a page link resolves via directory index but has no trailing slash", async () => {
       const distDir = join(tmpDir, "dist");
@@ -668,7 +753,7 @@ describe("check-links", () => {
       );
       writeFileSync(join(distDir, "docs", "page2", "index.html"), "<p>Page2</p>");
 
-      const warnings = await checkTrailingSlashLinks(distDir, tmpDir, BASE);
+      const warnings = await collectTrailingSlashWarnings(distDir);
       expect(warnings).toEqual([
         {
           file: "dist/docs/page1/index.html",
@@ -688,7 +773,7 @@ describe("check-links", () => {
       );
       writeFileSync(join(distDir, "docs", "page2", "index.html"), "<p>Page2</p>");
 
-      const warnings = await checkTrailingSlashLinks(distDir, tmpDir, BASE);
+      const warnings = await collectTrailingSlashWarnings(distDir);
       expect(warnings).toEqual([]);
     });
 
@@ -702,7 +787,7 @@ describe("check-links", () => {
       );
       writeFileSync(join(distDir, "_astro", "style.css"), "body {}");
 
-      const warnings = await checkTrailingSlashLinks(distDir, tmpDir, BASE);
+      const warnings = await collectTrailingSlashWarnings(distDir);
       expect(warnings).toEqual([]);
     });
 
@@ -714,7 +799,7 @@ describe("check-links", () => {
         `<a href="/">Home</a>`,
       );
 
-      const warnings = await checkTrailingSlashLinks(distDir, tmpDir, BASE);
+      const warnings = await collectTrailingSlashWarnings(distDir);
       expect(warnings).toEqual([]);
     });
 
@@ -726,7 +811,7 @@ describe("check-links", () => {
         `<a href=".">Dot</a><a href="./">DotSlash</a>`,
       );
 
-      const warnings = await checkTrailingSlashLinks(distDir, tmpDir, BASE);
+      const warnings = await collectTrailingSlashWarnings(distDir);
       expect(warnings).toEqual([]);
     });
 
@@ -740,7 +825,7 @@ describe("check-links", () => {
       );
       writeFileSync(join(distDir, "docs", "page2", "index.html"), "<p>Page2</p>");
 
-      const warnings = await checkTrailingSlashLinks(distDir, tmpDir, BASE);
+      const warnings = await collectTrailingSlashWarnings(distDir);
       expect(warnings).toEqual([
         {
           file: "dist/docs/page1/index.html",
@@ -760,7 +845,7 @@ describe("check-links", () => {
       );
       writeFileSync(join(distDir, "docs", "foo.html"), "<p>Foo</p>");
 
-      const warnings = await checkTrailingSlashLinks(distDir, tmpDir, BASE);
+      const warnings = await collectTrailingSlashWarnings(distDir);
       expect(warnings).toEqual([]);
     });
 
@@ -775,25 +860,13 @@ describe("check-links", () => {
       writeFileSync(join(distDir, "v", "1.0", "page2", "index.html"), "<p>V</p>");
 
       const excludePatterns = [/\/v\/[^/]+\//];
-      const warnings = await checkTrailingSlashLinks(distDir, tmpDir, BASE, excludePatterns);
-      expect(warnings).toEqual([]);
-    });
-
-    it("returns empty array when trailingSlash is false (no call made)", async () => {
-      // This tests that when trailingSlash is false we simply don't invoke the function.
-      // But we also verify the function itself returns empty for an already-correct site.
-      const distDir = join(tmpDir, "dist");
-      mkdirSync(join(distDir, "docs", "page1"), { recursive: true });
-      mkdirSync(join(distDir, "docs", "page2"), { recursive: true });
-      writeFileSync(
-        join(distDir, "docs", "page1", "index.html"),
-        `<a href="/pj/zudo-doc/docs/page2/">Page2</a>`,
+      const warnings = await collectTrailingSlashWarnings(
+        distDir,
+        excludePatterns,
       );
-      writeFileSync(join(distDir, "docs", "page2", "index.html"), "<p>Page2</p>");
-
-      const warnings = await checkTrailingSlashLinks(distDir, tmpDir, BASE);
       expect(warnings).toEqual([]);
     });
+
   });
 
   // --- formatReport ---

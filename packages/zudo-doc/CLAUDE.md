@@ -110,12 +110,9 @@ do not widen this into a generic component bag.
   getPathForLocale / buildLocaleLinks / versionedDocsUrl / …). The host's
   `src/utils/base.ts` keeps the singleton import; the logic lives here.
 
-The host originals `src/utils/{render-markdown,slug,smart-break}` are now thin
-re-export shims pointing at these subpaths (kept so the many `@/utils/*` call
-sites — and their byte-identical create-zudo-doc template copies — stay
-unchanged). `buildNavTree(entries, lang, categoryMeta, { buildHref })` in
-`src/utils/docs.ts` gained an optional `buildHref` injection point
-(backward-compatible — existing 3-arg call sites are unchanged).
+Host code imports these canonical package subpaths directly. The host
+`buildNavTree(entries, lang, categoryMeta, { buildHref })` adapter retains its
+explicit `buildHref` injection point for current route construction.
 
 ## `./preset` — `zudoDocPreset()`
 
@@ -210,7 +207,7 @@ onSuccess: "node scripts/copy-theme-css.mjs && node scripts/copy-content-css.mjs
      `--text-*`, `--font-*`, `--leading-*`, `--radius-DEFAULT`), and also import
      `safelist.css` so the component-emitted utility classes are generated.
    - Major-element visuals (h2–h4, p, a, strong, blockquote, ul, ol, table) do
-     NOT live here — they are emitted by the `htmlOverrides` components in
+     NOT live here — they are emitted by the `defaultComponents` map in
      `src/content/` (Tailwind classes + inline styles). `content.css` owns only
      what those components don't emit.
    - **Editing**: change `src/content.css`, then rebuild the package so
@@ -244,7 +241,7 @@ onSuccess: "node scripts/copy-theme-css.mjs && node scripts/copy-content-css.mjs
 5. **`dist/features.css`** ← copied verbatim from `src/features.css` by
    `scripts/copy-features-css.mjs`. Exported as `@takazudo/zudo-doc/features.css`.
    Contains **all** feature CSS every project using the package needs,
-   island-coupled or not: code block buttons, syntect/shiki dual-theme token
+   island-coupled or not: code block buttons, Shiki dual-theme token
    color rule, `.zd-html-preview-code`, KaTeX, desktop sidebar toggle
    geometry, view-transition chrome (epic #2331), and — since S4 of epic
    #2344 — the `.ai-chat-md`/`.zd-enlargeable`/`.zd-mermaid-enlargeable`
@@ -350,6 +347,16 @@ specifier end-to-end.
      never edit the generated file. `scripts/check-virtual-modules.mjs`
      (prepack) guards presence + the rewritten specifier.
 
+4. **Chrome bindings are the public customization boundary.**
+   `defineChromeBindings` type-checks exact call-side props for all six primary
+   components (`Header`, `Footer`, `Sidebar`, `Toc`, `Breadcrumb`, `DocPager`)
+   and carries named `headerRightComponents` separately from serializable
+   `settings.headerRightItems`. Omitted keys retain package defaults. Fresh
+   base/i18n stubs consume the virtual object; the generator's doc-history
+   patch must spread it before replacing only `DocHistory`. Components declared
+   only inside the virtual module are SSR-presentational unless a separate
+   static island registration path exists.
+
 ### GOTCHA — preact/compat `paths` stay in the PROJECT tsconfig, not the base
 
 The pre-package-first template mapped `react` / `react-dom` /
@@ -401,8 +408,8 @@ entry pointing at `.zfb/doc-history-meta.json`, same as before.
 
 ### Doc-history self-seed (`.zfb/doc-history-meta.json`)
 
-`plugins/doc-history`'s `preBuild` hook (`runDocHistoryMetaStep`, in
-`src/integrations/doc-history/pre-build.ts`) already unconditionally writes
+`plugins/internal/doc-history`'s `preBuild` hook (`runDocHistoryMetaStep`, in
+`src/plugins/internal/doc-history/pre-build.ts`) already unconditionally writes
 `.zfb/doc-history-meta.json` — creating the `.zfb/` directory if absent —
 before every build, whether populated from git history or short-circuited to
 `{}` under `SKIP_DOC_HISTORY=1`. No code change was needed for #2656: this

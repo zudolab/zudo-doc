@@ -25,6 +25,16 @@
 import type { ChromeHostBindings } from "@takazudo/zudo-doc/factory-context";
 
 export const chromeBindings: ChromeHostBindings = {
+  headerRightComponents: {
+    "injected-route-badge": ({ index, lang }) => (
+      <span data-header-registry={`injected:${lang}:${index}`}>
+        INJECTED-HEADER-REGISTRY-MARKER
+      </span>
+    ),
+  },
+  BodyEndIslands: () => (
+    <div data-testid="host-body-end-marker">HOST-BODY-END-MARKER</div>
+  ),
   buildFrontmatterPreviewEntries: () => [
     ["cb-demo-key", "CB-DEMO-VALUE-MARKER"],
   ],
@@ -38,6 +48,7 @@ export const chromeBindings: ChromeHostBindings = {
       author: "CB-AUTHOR-MARKER",
       createdDate: "2024-01-01T00:00:00Z",
       updatedDate: "2024-06-01T00:00:00Z",
+      ext: ".mdx",
     },
   },
 };

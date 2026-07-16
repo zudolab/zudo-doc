@@ -26,7 +26,7 @@ const CATFILE_OUT = Buffer.from(
   "utf-8",
 );
 
-/** Resolve a fake git response for a given argv (shared by sync + async + spawn). */
+/** Resolve a fake git response for a given argv. */
 function fakeGit(args: string[]): Buffer | string {
   if (args[0] === "rev-parse") return `${FAKE_REPO_ROOT}\n`;
   if (args[0] === "log") {
@@ -198,48 +198,6 @@ describe("getDocHistoryAsync (#1986)", () => {
   });
 });
 
-describe("getFileCommitsMetaAsync — maxBuffer warning (#2293)", () => {
-  it("logs a console.warn when the git command fails (e.g. maxBuffer exceeded)", async () => {
-    const { getFileCommitsMetaAsync } = await import("../git-history.js");
-
-    // Simulate execFile throwing an error (e.g. RangeError from maxBuffer overflow)
-    mocks.execFile.mockImplementation((...callArgs: unknown[]) => {
-      const callback = callArgs[callArgs.length - 1] as (
-        err: Error,
-        result?: unknown,
-      ) => void;
-      callback(new RangeError("stdout maxBuffer length exceeded"));
-    });
-
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-    const result = await getFileCommitsMetaAsync(ABS);
-
-    // Must return [] (not throw) so the caller can keep processing other files
-    expect(result).toEqual([]);
-
-    // Must emit a warning — silent swallowing was the bug
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining("getFileCommitsMetaAsync failed"),
-      expect.stringContaining("maxBuffer"),
-    );
-
-    warnSpy.mockRestore();
-  });
-
-  it("passes maxBuffer option to execFile", async () => {
-    const { getFileCommitsMetaAsync, MAX_BUFFER_BYTES } = await import("../git-history.js");
-    await getFileCommitsMetaAsync(ABS);
-
-    const logCall = mocks.execFile.mock.calls.find(
-      (c) => (c[1] as string[])[0] === "log",
-    );
-    expect(logCall).toBeDefined();
-    const opts = logCall?.[2] as Record<string, unknown>;
-    expect(opts?.["maxBuffer"]).toBe(MAX_BUFFER_BYTES);
-  });
-});
-
 describe("parseHashToPathMap — structured parse (#2293)", () => {
   it("parses standard git log --format=%H --name-only output correctly", async () => {
     const { parseHashToPathMap } = await import("../git-history.js");
@@ -308,29 +266,6 @@ describe("no git repository — graceful degradation (preBuild crash fix)", () =
     warnSpy.mockRestore();
   });
 
-  it("getFileCommitsMetaAsync returns [], spawns no git, emits the git-init hint (not the data-loss warning)", async () => {
-    const { getFileCommitsMetaAsync } = await import("../git-history.js");
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-    const result = await getFileCommitsMetaAsync(ABS);
-
-    expect(result).toEqual([]);
-    // The early guard means no per-file `git log` is spawned.
-    expect(mocks.execFile).not.toHaveBeenCalled();
-
-    const messages = warnSpy.mock.calls.map((c) => String(c[0]));
-    // The maxBuffer-style data-loss warning (#2293) must NOT misfire — this is
-    // the expected "no repo" path, not a per-file git failure.
-    expect(messages.some((m) => m.includes("getFileCommitsMetaAsync failed"))).toBe(
-      false,
-    );
-    // The friendly one-time hint IS expected so the empty history is explainable.
-    expect(messages.some((m) => m.includes("not inside a git repository"))).toBe(
-      true,
-    );
-    warnSpy.mockRestore();
-  });
-
   it("getDocHistoryAsync returns empty entries without spawning git", async () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const { getDocHistoryAsync } = await import("../git-history.js");
@@ -341,22 +276,10 @@ describe("no git repository — graceful degradation (preBuild crash fix)", () =
     warnSpy.mockRestore();
   });
 
-  it("getFileCommitsMeta (sync) and getFileCommits return empty", async () => {
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const { getFileCommitsMeta, getFileCommits } = await import(
-      "../git-history.js"
-    );
-    expect(getFileCommitsMeta(ABS)).toEqual([]);
-    expect(getFileCommits(ABS)).toEqual([]);
-    warnSpy.mockRestore();
-  });
-
   it("probes git exactly once (cached) across many calls", async () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const { isGitRepo, getFileCommitsMetaAsync, getDocHistoryAsync } =
-      await import("../git-history.js");
+    const { isGitRepo, getDocHistoryAsync } = await import("../git-history.js");
     isGitRepo();
-    await getFileCommitsMetaAsync(ABS);
     await getDocHistoryAsync(ABS, "page", 50);
     const revParseCalls = mocks.execFileSync.mock.calls.filter(
       (c) => (c[1] as string[])[0] === "rev-parse",

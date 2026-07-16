@@ -7,6 +7,12 @@ import { defaultDirectiveVocabulary } from "../directive-vocabulary-defaults/ind
 import { defaultTranslations } from "../i18n-defaults/index.js";
 import { defaultColorSchemes } from "../color-schemes-defaults/index.js";
 
+const invalidHeadingIdConfig: Parameters<typeof zudoDoc>[0] = {
+  // @ts-expect-error The removed strategy setting is rejected by the config type.
+  headingIdStrategy: "flat",
+};
+void invalidHeadingIdConfig;
+
 // The routes plugin descriptor's options carry the serializable virtual-module
 // payload. Helper to pull it out of a built config.
 function routesOptions(config: ReturnType<typeof zudoDoc>) {
@@ -82,6 +88,14 @@ describe("zudoDoc() returns a complete ZfbConfig", () => {
 
 // ── Default-merge semantics (omitted vs explicit-false vs override) ───────────
 describe("zudoDoc() default-merge semantics", () => {
+  it("rejects the removed headingIdStrategy setting", () => {
+    expect(() =>
+      zudoDoc({
+        headingIdStrategy: "flat",
+      } as unknown as Parameters<typeof zudoDoc>[0]),
+    ).toThrow(/headingIdStrategy is no longer supported/);
+  });
+
   it("omitted field falls back to DEFAULT_SETTINGS (mermaid defaults true)", () => {
     expect(zudoDoc({}).markdown?.features?.mermaid).toBe(true);
   });

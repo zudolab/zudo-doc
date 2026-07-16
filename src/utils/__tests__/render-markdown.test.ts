@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { renderMarkdown } from "../render-markdown";
+import { renderMarkdown } from "@takazudo/zudo-doc/render-markdown";
 
 describe("renderMarkdown — bold + italic interaction", () => {
   it("renders two bold spans with no stray <em> when input has multiple ** pairs", () => {

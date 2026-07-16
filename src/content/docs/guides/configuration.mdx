@@ -257,7 +257,7 @@ Default: `"off"`
 
 ### tagVocabulary
 
-Whether the tag vocabulary is consulted at runtime (alias resolution, deprecation filtering, grouped footer). **Orthogonal to `tagGovernance`.** This is the boolean gate — the entries themselves come from `tagVocabularyEntries`.
+Whether the tag vocabulary is consulted at runtime (exact-id recognition and grouped footer). **Orthogonal to `tagGovernance`.** This is the boolean gate — the entries themselves come from `tagVocabularyEntries`.
 
 Default: `false`
 
@@ -276,12 +276,6 @@ Default: `2`
 Maximum heading depth included in the TOC (2–4).
 
 Default: `4`
-
-### headingIdStrategy
-
-Heading-ID (anchor) strategy. `"hierarchical"` prefixes each anchor with its ancestor chain; `"flat"` is zfb's legacy github-slugger scheme. Switching is anchor-breaking for existing deep links.
-
-Type: `"flat" | "hierarchical"` · Default: `"hierarchical"`
 
 ## Site Settings
 
@@ -344,17 +338,11 @@ Enable per-page git history (Created/Updated + dropdown). In dev, history is ser
 
 Default: `false`
 
-<Warning title="Requires chrome bindings on a fresh scaffold">
+<Note>
 
-Setting this config field alone renders nothing in a scaffolded project: the doc-route
-stub calls `createChrome(routeCtx)` without host bindings, so the `DocHistory` slot stays at
-its no-op default. Thread `chromeBindingsModule` and bind `DocHistory` — see
-[Custom Components](./custom-components.mdx) and
-[Host Chrome Bindings](../reference/host-chrome-bindings.mdx). Scaffolds generated
-after the [template fix](https://github.com/zudolab/zudo-doc/issues/2716) thread the presentational/data slots automatically;
-your own hydrating islands still need the static-import threading described in the guide.
+Fresh scaffolds wire the real scanner-reachable `DocHistory` island into every generated document-route shape when this feature is selected. No `chromeBindingsModule` or route edit is required for the history button itself.
 
-</Warning>
+</Note>
 
 See the [Document History guide](./doc-history.mdx).
 
@@ -364,15 +352,9 @@ Show the Created/Updated/Author meta block on doc pages (extracted from git hist
 
 Default: `false`
 
-<Warning title="Requires chrome bindings on a fresh scaffold">
+<Warning title="Metadata data requires a host binding">
 
-Setting this config field alone renders nothing in a scaffolded project: the doc-route
-stub calls `createChrome(routeCtx)` without host bindings, so the `docHistoryMeta` slot stays at
-its `{}` default. Thread `chromeBindingsModule` and bind `docHistoryMeta` to the build-time history
-manifest — see [Custom Components](./custom-components.mdx) and
-[Host Chrome Bindings](../reference/host-chrome-bindings.mdx). Scaffolds generated
-after the [template fix](https://github.com/zudolab/zudo-doc/issues/2716) thread the presentational/data slots automatically;
-your own hydrating islands still need the static-import threading described in the guide.
+The `docHistoryMeta` slot defaults to `{}`. Point `chromeBindingsModule` at a module that binds it to the build-time history manifest. Fresh route stubs already consume that module; do not edit them. See [Custom Components](./custom-components.mdx) and [Host Chrome Bindings](../reference/host-chrome-bindings.mdx).
 
 </Warning>
 
@@ -457,11 +439,16 @@ Enable the AI-chat assistant route (`/api/ai-chat`, SSR).
 
 Default: `false`
 
-Running a live assistant requires a deploy adapter, KV, and secrets — see [Customizing → Deploy path](../reference/customizing.mdx#rung-7-—-the-deploy-path-an-explicit-extend-step) and the [AI Assistant API](../reference/ai-assistant-api.mdx).
+Running a live assistant requires a deploy adapter, per-IP KV, an Anthropic secret, and the
+`AI_CHAT_DAILY_SPEND_CAP` Durable Object migration when the exact cap is enabled — see
+[Customizing → Deploy path](../reference/customizing.mdx#rung-7-—-the-deploy-path-an-explicit-extend-step)
+and the [AI Assistant API](../reference/ai-assistant-api.mdx). These are host-owned pieces: the
+package/scaffold supplies a safe placeholder route, not the showcase's live handler, Worker entry,
+or Durable Object class.
 
 ### aiChatDemoMode
 
-Short-circuit `/api/ai-chat` with a fixed "disabled" reply (no API key / KV / rate limiter touched). Set `false` to enable live Claude-backed chat.
+Short-circuit `/api/ai-chat` with a fixed "disabled" reply (no API key, KV, Durable Object, rate limiter, or provider fetch touched). Set `false` to enable live Claude-backed chat.
 
 Default: `false`
 
@@ -473,7 +460,8 @@ Default: `[]`
 
 ### aiChatGlobalDailyLimit
 
-Global daily request ceiling across all IPs for `/api/ai-chat`, or `false` to disable the ceiling.
+Exact Anthropic fetch-admission limit per UTC day across all IPs, or `false` to skip the exact
+cap. Provider/network failure does not refund an admitted slot.
 
 Type: `number | false` · Default: `false`
 

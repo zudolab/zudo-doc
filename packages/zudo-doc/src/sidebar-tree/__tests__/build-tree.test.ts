@@ -14,13 +14,13 @@ type Entry = CollectionEntryLike<SidebarFrontmatter>;
 
 /** Tiny test factory to keep the table-style assertions readable. */
 function entry(
-  id: string,
+  slug: string,
   data: Partial<SidebarFrontmatter> = {},
   overrides: Partial<Entry> = {},
 ): Entry {
   return {
-    id,
-    data: { title: data.title ?? id, ...data },
+    slug,
+    data: { title: data.title ?? slug, ...data },
     ...overrides,
   };
 }
@@ -309,13 +309,11 @@ describe("buildSidebarTree", () => {
     expect(guides.href).toBe("/x/en/guides");
   });
 
-  it("prefers entry.data.slug, then entry.slug, then derives from id", () => {
+  it("prefers entry.data.slug, otherwise derives from the current entry slug", () => {
     const tree = buildSidebarTree(
       [
         entry("foo/index", { title: "From data.slug", slug: "renamed" }),
-        // zfb-style: top-level slug field
         {
-          id: "ignored",
           slug: "from-slug",
           data: { title: "From slug" },
         },

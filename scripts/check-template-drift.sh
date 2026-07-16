@@ -79,8 +79,8 @@ DRIFTED=()
 # `claudeResources` feature's template directory
 # (templates/features/claudeResources/files/src/integrations/claude-resources/)
 # was deleted entirely — empirically verified dead (nothing imported it; the
-# package already ships the same generator/escape-helper logic re-exported as
-# @takazudo/zudo-doc/integrations/claude-resources, and the feature is now
+# package already ships the same generator/escape-helper logic behind
+# @takazudo/zudo-doc/plugins/claude-resources, and the feature is now
 # pure settings-field emission, same as most other features post package-first
 # migration). There is no template-side claude-resources file left to diff, so
 # this map is EMPTY. Kept (not deleted) as live infrastructure — should a

@@ -27,17 +27,16 @@ export interface UserChoices {
   // Preset-only for now — no interactive prompt.
   cjkFriendly?: boolean;
   // Minify production HTML output. Preset-only for now; generated projects
-  // default to true and can flip src/config/settings.ts later.
+  // default to true and can override it in zfb.config.ts later.
   minifyHtml?: boolean;
   // Package manager
   packageManager: "pnpm" | "npm" | "yarn" | "bun";
   // Header-right items override. Preset-only — no interactive prompt because
   // the array-of-discriminated-union shape does not fit `--flag` style prompts
-  // or CLI args. When omitted, settings-gen.ts emits the existing hardcoded
-  // fallback.
+  // or CLI args. When omitted, zfb-config-gen.ts keeps the package default.
   headerRightItems?: PresetHeaderRightItem[];
   // Meta tags config. Preset-only — no interactive prompt.
-  // When omitted, settings-gen.ts emits the S4 scaffold defaults.
+  // When omitted, zfb-config-gen.ts keeps the package defaults.
   metaTags?: PresetMetaTagsConfig;
 }
 

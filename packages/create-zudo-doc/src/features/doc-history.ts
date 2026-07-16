@@ -15,14 +15,15 @@ import type { FeatureModule } from "../compose.js";
  *
  * What's left to wire: the self-contained doc-route stub(s)
  * (`pages/docs/[[...slug]].tsx`, and its i18n locale sibling when i18n is
- * also selected) call `createChrome(routeCtx)` with NO hostBindings — unlike
+ * also selected) always thread the host's `chromeBindings`. Unlike
  * `DesignTokenPanelBootstrap` (auto-defaulted at the chrome-derive seam,
  * #2658 gate-2 fix), `DocHistory`'s derive-level default is a deliberate
  * no-op stub (see `routes/_chrome.tsx`'s comment on why — its own island
  * needs the REAL host binding to hydrate). So when docHistory is selected,
  * this feature patches the stub(s) to statically import the real
- * `DocHistory` component and thread it through — the same #2480 chain
- * `routes/_chrome.tsx` uses for the package's own routes.
+ * `DocHistory` component and merge it over those bindings — preserving every
+ * configured host slot while maintaining the same #2480 scanner-reachability
+ * chain `routes/_chrome.tsx` uses for the package's own routes.
  */
 export const docHistoryFeature: FeatureModule = () => ({
   name: "docHistory",
@@ -50,8 +51,11 @@ ${importMarker}
 import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";`,
       );
       content = content.replace(
-        `const { renderDocPage } = createChrome(routeCtx);`,
-        `const { renderDocPage } = createChrome(routeCtx, defineChromeBindings({ DocHistory }));`,
+        `const { renderDocPage } = createChrome(routeCtx, chromeBindings);`,
+        `const { renderDocPage } = createChrome(routeCtx, {
+  ...chromeBindings,
+  ...defineChromeBindings({ DocHistory }),
+});`,
       );
       await fs.writeFile(stubPath, content);
     }

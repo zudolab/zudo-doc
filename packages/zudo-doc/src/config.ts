@@ -146,11 +146,12 @@ export const DEFAULT_SETTINGS: Settings = {
   aiAssistant: false,
   aiChatDemoMode: false,
   aiChatAllowedOrigins: [],
+  // Exact UTC-day paid-call admission cap; false disables it. An admission is
+  // consumed before provider fetch and is not provider-confirmed accounting.
   aiChatGlobalDailyLimit: false,
   designTokenPanel: false,
   tocMinDepth: 2,
   tocMaxDepth: 4,
-  headingIdStrategy: "hierarchical",
   sidebarResizer: false,
   sidebarToggle: false,
   imageEnlarge: false,
@@ -300,8 +301,8 @@ export interface ZudoDocConfig {
    */
   tagGovernance?: TagGovernanceMode;
   /**
-   * Whether the tag vocabulary is consulted at runtime (alias resolution,
-   * deprecation filtering, grouped footer). Orthogonal to `tagGovernance`.
+   * Whether the canonical tag vocabulary is consulted at runtime (validation
+   * and grouped footer rendering). Orthogonal to `tagGovernance`.
    * The vocabulary ENTRIES are supplied separately via `tagVocabularyEntries`.
    * @default false
    */
@@ -337,8 +338,8 @@ export interface ZudoDocConfig {
    */
   aiAssistant?: boolean;
   /**
-   * Short-circuit `/api/ai-chat` with a fixed "disabled" reply (no API key /
-   * KV / rate limiter touched).
+   * Short-circuit `/api/ai-chat` with a fixed "disabled" reply (no API key,
+   * KV/DO binding, or rate limiter touched).
    * @default false
    */
   aiChatDemoMode?: boolean;
@@ -349,8 +350,9 @@ export interface ZudoDocConfig {
    */
   aiChatAllowedOrigins?: string[];
   /**
-   * Global daily request ceiling across all IPs for `/api/ai-chat`, or `false`
-   * to disable the ceiling.
+   * Exact UTC-day paid-call admission cap across all IPs for `/api/ai-chat`,
+   * or `false` to disable it. Admissions are not refunded after provider
+   * failure and are not provider-confirmed spend accounting.
    * @default false
    */
   aiChatGlobalDailyLimit?: number | false;
@@ -369,12 +371,6 @@ export interface ZudoDocConfig {
    * @default 4
    */
   tocMaxDepth?: number;
-  /**
-   * Heading-ID (anchor) strategy. `"hierarchical"` prefixes each anchor with
-   * its ancestor chain; `"flat"` is zfb's legacy github-slugger scheme.
-   * @default "hierarchical"
-   */
-  headingIdStrategy?: "flat" | "hierarchical";
   /**
    * Enable the draggable sidebar resizer.
    * @default false
@@ -559,6 +555,12 @@ export interface ZudoDocConfig {
  *   `defineConfig`.
  */
 export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
+  if ("headingIdStrategy" in user) {
+    throw new TypeError(
+      "headingIdStrategy is no longer supported; heading IDs are always hierarchical",
+    );
+  }
+
   // Peel the non-serializable / data overrides and shell fields off `user`
   // first so they never pollute the merged `settings` object (which is
   // JSON-serialized into the routes plugin's virtual module). `settingsOverrides`

@@ -19,13 +19,15 @@ import {
   findNode,
   type CategoryMeta,
 } from "@/utils/docs";
-import type { DocsEntry } from "@/types/docs-entry";
+import type { DocPageEntry } from "@takazudo/zudo-doc/doc-page-props";
 
-function entry(id: string, data: Partial<DocsEntry["data"]> = {}): DocsEntry {
+function entry(slug: string, data: Partial<DocPageEntry["data"]> = {}): DocPageEntry {
   return {
-    id,
-    collection: "docs",
-    data: { title: data.title ?? id, ...data },
+    slug,
+    data: { title: data.title ?? slug, ...data },
+    body: "",
+    module_specifier: `mdx://docs/${slug}`,
+    Content: () => ({ type: "div", props: {}, key: null }),
   };
 }
 

@@ -19,7 +19,7 @@ import { createZudoDoc } from "../api.js";
 // Minimal-scaffold cutover (epic zudolab/zudo-doc#2651). Rewritten from
 // scratch for Wave 7 (#2662) against the locked ~12-file manifest landed by
 // Wave 6 (#2660) — see that issue's completion comment for the deleted-file
-// set and the documented deviations (tagGovernance's src/config/ pair, the
+// set and the documented deviations (tagGovernance's tag config module, the
 // unconditional @takazudo/zdtp dep). The tauri feature's find-in-page island
 // used to be a documented "ships unwired" file-copy deviation; #2690 retired
 // it — find-in-page is now package-owned and emitted via `findInPage: true`
@@ -218,7 +218,12 @@ describe("scaffold — i18n locale doc stub threads isFallback + per-locale cont
     expect(stub).toContain(
       'import { createChrome } from "@takazudo/zudo-doc/chrome";',
     );
-    expect(stub).toContain("const { renderDocPage } = createChrome(routeCtx);");
+    expect(stub).toContain(
+      'import { chromeBindings } from "virtual:zudo-doc-chrome-bindings";',
+    );
+    expect(stub).toContain(
+      "const { renderDocPage } = createChrome(routeCtx, chromeBindings);",
+    );
   });
 });
 
@@ -263,6 +268,7 @@ describe("scaffold — absence assertions (deleted legacy files never resurrecte
     "src/components/content/content-admonition.tsx",
     "src/components/desktop-sidebar-toggle.tsx",
     "src/components/doc-history.tsx",
+    "src/components/design-token-panel-bootstrap.tsx",
     "src/components/image-enlarge.tsx",
     "src/components/preset-generator.tsx",
     "src/components/sidebar-toggle.tsx",
@@ -278,12 +284,13 @@ describe("scaffold — absence assertions (deleted legacy files never resurrecte
     "src/utils/slug.ts",
     "src/utils/smart-break.tsx",
     "src/utils/tags.ts",
+    "src/lib/design-token-panel-bootstrap.ts",
     // src/types/*
     "src/types/docs-entry.ts",
     "src/types/heading.ts",
     "src/types/locale.ts",
-    // src/config/* (the tagGovernance settings.ts/tag-vocabulary.ts pair
-    // exception is covered separately below).
+    // src/config/* (the tagGovernance tag-vocabulary.ts exception is covered
+    // separately below).
     "src/config/color-scheme-utils.ts",
     "src/config/color-schemes.ts",
     "src/config/docs-schema.ts",
@@ -294,12 +301,15 @@ describe("scaffold — absence assertions (deleted legacy files never resurrecte
     "src/config/sidebars.ts",
     "src/config/tag-vocabulary-types.ts",
     "src/config/z-index-tokens.ts",
+    "src/config/settings.ts",
     // Standalone deleted files.
     "zfb-shim.d.ts",
     ".htmlvalidate.json",
     ".zfb/doc-history-meta.json",
     ".zudo-doc.json",
     "scripts/run-b4push.sh",
+    "scripts/tags-audit.ts",
+    "scripts/tags-suggest.ts",
     "src/content.config.ts",
   ];
 
@@ -426,12 +436,8 @@ describe("scaffold — tauri no longer ships find-in-page template files (packag
   });
 });
 
-describe("scaffold — documented deviation: tagGovernance's src/config/ pair (legacy tags-audit bin coupling)", () => {
-  // #2660 completion comment deviation: @takazudo/zudo-doc's tags-audit bin
-  // still dynamically imports src/config/settings.ts + tag-vocabulary.ts BY
-  // PATH — a legacy coupling out of this generator's scope to fix. This is
-  // the ONE feature that still needs a tiny src/config/ pair.
-  it("writes src/config/settings.ts and src/config/tag-vocabulary.ts when tagGovernance is selected", async () => {
+describe("scaffold — tagGovernance explicit CLI config", () => {
+  it("writes one tag vocabulary/config module and no duplicate settings module", async () => {
     await scaffold({
       ...baseChoices,
       projectName: "test-tag-gov",
@@ -439,24 +445,19 @@ describe("scaffold — documented deviation: tagGovernance's src/config/ pair (l
     });
     const project = projectPath("test-tag-gov");
     expect(await fs.pathExists(path.join(project, "src/config/settings.ts"))).toBe(
-      true,
+      false,
     );
     expect(
       await fs.pathExists(path.join(project, "src/config/tag-vocabulary.ts")),
     ).toBe(true);
-
-    const settings = await fs.readFile(
-      path.join(project, "src/config/settings.ts"),
-      "utf-8",
-    );
-    expect(settings).toContain('tagGovernance: "warn" as const');
-    expect(settings).toContain("tagVocabulary: true");
 
     const vocab = await fs.readFile(
       path.join(project, "src/config/tag-vocabulary.ts"),
       "utf-8",
     );
     expect(vocab).toContain("export const tagVocabulary");
+    expect(vocab).toContain("satisfies TagCliConfig");
+    expect(vocab).toContain("export default tagCliConfig");
   });
 
   it("does NOT write src/config/ at all when tagGovernance is disabled", async () => {
@@ -464,6 +465,23 @@ describe("scaffold — documented deviation: tagGovernance's src/config/ pair (l
     expect(
       await fs.pathExists(projectPath("test-no-tag-gov", "src/config")),
     ).toBe(false);
+  });
+
+  it("includes the generated locale directory in the shared CLI config", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-tag-gov-i18n",
+      features: ["tagGovernance", "i18n"],
+    });
+    const vocab = await fs.readFile(
+      projectPath(
+        "test-tag-gov-i18n",
+        "src/config/tag-vocabulary.ts",
+      ),
+      "utf-8",
+    );
+    expect(vocab).toContain('"src/content/docs"');
+    expect(vocab).toContain('"src/content/docs-ja"');
   });
 
   it("does NOT write settings-types.ts, docs-schema.ts, or any other src/config/* file", async () => {
@@ -475,7 +493,7 @@ describe("scaffold — documented deviation: tagGovernance's src/config/ pair (l
     const files = (
       await listFiles(projectPath("test-tag-gov-2", "src/config"))
     ).sort();
-    expect(files).toEqual(["settings.ts", "tag-vocabulary.ts"]);
+    expect(files).toEqual(["tag-vocabulary.ts"]);
   });
 });
 
@@ -626,7 +644,7 @@ describe("scaffold — changelog feature", () => {
 });
 
 describe("scaffold — every-feature manifest is exactly base + the documented per-feature deltas", () => {
-  it("all-on scaffold emits exactly the expected 41-file set", async () => {
+  it("all-on scaffold emits exactly the expected 38-file set", async () => {
     await scaffold({
       ...baseChoices,
       projectName: "test-all-on",
@@ -645,8 +663,6 @@ describe("scaffold — every-feature manifest is exactly base + the documented p
       "pages/docs/[[...slug]].tsx",
       "pages/index.tsx",
       "scripts/setup-doc-skill.sh",
-      "scripts/tags-audit.ts",
-      "scripts/tags-suggest.ts",
       "src-tauri-dev/.gitignore",
       "src-tauri-dev/Cargo.toml",
       "src-tauri-dev/build.rs",
@@ -662,7 +678,6 @@ describe("scaffold — every-feature manifest is exactly base + the documented p
       "src-tauri/capabilities/default.json",
       "src-tauri/src/main.rs",
       "src-tauri/tauri.conf.json",
-      "src/config/settings.ts",
       "src/config/tag-vocabulary.ts",
       "src/content/docs-ja/changelog/index.mdx",
       "src/content/docs-ja/getting-started/index.mdx",
@@ -685,7 +700,7 @@ describe("scaffold — zfb.config.ts content shape (integration with generateZfb
   // function unit test against generateZfbConfig() directly). These tests
   // only check that scaffold() writes exactly what that function returns,
   // plus the top-level shape guarantees the locked spec calls out.
-  it("barebone emits a near-empty zudoDoc({...}) — only siteName + always-different nav/header fields", async () => {
+  it("barebone emits a near-empty zudoDoc({...}) without an inert GitHub header item", async () => {
     await scaffold(baseChoices);
     const config = await fs.readFile(projectPath("test-doc", "zfb.config.ts"), "utf-8");
     expect(config).toMatch(/^import \{ defineConfig \} from "zfb\/config";$/m);
@@ -693,6 +708,8 @@ describe("scaffold — zfb.config.ts content shape (integration with generateZfb
     expect(config).toContain("export default defineConfig(");
     expect(config).toContain("zudoDoc({");
     expect(config).toContain('siteName: "Test Doc"');
+    expect(config).not.toContain('component: "github-link"');
+    expect(config).not.toContain("headerRightItems:");
     // Highlighting is package-preset-owned. The generated project delegates to
     // zudoDoc() and must not freeze an inline/dual-theme renderer config.
     for (const token of [
@@ -718,6 +735,20 @@ describe("scaffold — zfb.config.ts content shape (integration with generateZfb
     ]) {
       expect(config).not.toContain(token);
     }
+  });
+
+  it("scaffolds the GitHub header item when a usable GitHub URL is configured", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-github-header",
+      githubUrl: "  https://github.com/x/y  ",
+    });
+    const config = await fs.readFile(
+      projectPath("test-github-header", "zfb.config.ts"),
+      "utf-8",
+    );
+    expect(config).toContain('githubUrl: "https://github.com/x/y"');
+    expect(config).toContain('component: "github-link"');
   });
 
   it("emits findInPage: true when tauri is selected (#2690 — rides the tauri feature, package-owned island)", async () => {
@@ -900,63 +931,68 @@ describe("scaffold — global.css", () => {
   });
 });
 
-describe("scaffold — the doc-route stub is patched (not duplicated) when docHistory is selected", () => {
-  it("statically imports DocHistory and threads it into createChrome", async () => {
-    await scaffold({
-      ...baseChoices,
-      projectName: "test-doc-history-stub",
-      features: ["docHistory"],
-    });
-    const stub = await fs.readFile(
-      projectPath("test-doc-history-stub", "pages/docs/[[...slug]].tsx"),
-      "utf-8",
-    );
-    expect(stub).toContain(
-      'import { DocHistory } from "@takazudo/zudo-doc/doc-history";',
-    );
-    expect(stub).toContain(
-      'import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";',
-    );
-    expect(stub).toContain(
-      "createChrome(routeCtx, defineChromeBindings({ DocHistory }))",
-    );
-    // Only the DocHistory-specific widening cast is in scope here — the
-    // unrelated `routeContext as unknown as RouteContextPayload` cast earlier
-    // in the stub (base template, #2653) is a separate concern.
-    expect(stub).not.toContain("DocHistory as unknown as");
-  });
+describe("scaffold — every docHistory × i18n route stub threads chrome bindings", () => {
+  it.each([
+    { docHistory: false, i18n: false },
+    { docHistory: true, i18n: false },
+    { docHistory: false, i18n: true },
+    { docHistory: true, i18n: true },
+  ])(
+    "emits the exact merged binding shape for docHistory=$docHistory, i18n=$i18n",
+    async ({ docHistory, i18n }) => {
+      const projectName =
+        `test-bindings-dh-${docHistory ? "on" : "off"}` +
+        `-i18n-${i18n ? "on" : "off"}`;
+      const features: UserChoices["features"] = [
+        ...(docHistory ? ["docHistory"] : []),
+        ...(i18n ? ["i18n"] : []),
+      ];
+      await scaffold({ ...baseChoices, projectName, features });
 
-  it("also patches the i18n locale stub when both i18n and docHistory are selected", async () => {
-    await scaffold({
-      ...baseChoices,
-      projectName: "test-doc-history-i18n",
-      features: ["docHistory", "i18n"],
-    });
-    const stub = await fs.readFile(
-      projectPath(
-        "test-doc-history-i18n",
-        "pages/[locale]/docs/[[...slug]].tsx",
-      ),
-      "utf-8",
-    );
-    expect(stub).toContain(
-      'import { DocHistory } from "@takazudo/zudo-doc/doc-history";',
-    );
-  });
+      const stubPaths = [
+        "pages/docs/[[...slug]].tsx",
+        ...(i18n ? ["pages/[locale]/docs/[[...slug]].tsx"] : []),
+      ];
+      for (const stubPath of stubPaths) {
+        const stub = await fs.readFile(
+          projectPath(projectName, stubPath),
+          "utf-8",
+        );
+        expect(stub).toContain(
+          'import { chromeBindings } from "virtual:zudo-doc-chrome-bindings";',
+        );
 
-  it("leaves the stub unpatched when docHistory is off", async () => {
-    // The stub's own header comment explains the docHistory patch in prose
-    // (mentions "DocHistory" even when unpatched) — assert on the actual
-    // inserted import statement, not a bare substring match.
-    await scaffold(baseChoices);
-    const stub = await fs.readFile(
-      projectPath("test-doc", "pages/docs/[[...slug]].tsx"),
-      "utf-8",
-    );
-    expect(stub).not.toContain(
-      'import { DocHistory } from "@takazudo/zudo-doc/doc-history";',
-    );
-  });
+        const docHistoryImport =
+          'import { DocHistory } from "@takazudo/zudo-doc/doc-history";';
+        if (docHistory) {
+          // The real component stays statically reachable by zfb's island
+          // scanner, while the spread preserves every configured host slot.
+          expect(stub).toContain(docHistoryImport);
+          expect(stub).toContain(
+            'import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";',
+          );
+          expect(stub).toContain(
+            `const { renderDocPage } = createChrome(routeCtx, {
+  ...chromeBindings,
+  ...defineChromeBindings({ DocHistory }),
+});`,
+          );
+          expect(stub).not.toContain("DocHistory as unknown as");
+        } else {
+          expect(stub).not.toContain(docHistoryImport);
+          expect(stub).toContain(
+            "const { renderDocPage } = createChrome(routeCtx, chromeBindings);",
+          );
+        }
+      }
+
+      expect(
+        await fs.pathExists(
+          projectPath(projectName, "pages/[locale]/docs/[[...slug]].tsx"),
+        ),
+      ).toBe(i18n);
+    },
+  );
 });
 
 describe("scaffold — bodyFootUtil auto-enables docHistory (#1795 behavior, re-targeted to zfb.config.ts)", () => {
@@ -997,6 +1033,11 @@ describe("scaffold — CLAUDE.md generation", () => {
     expect(content).toContain("zfb.config.ts");
     expect(content).toContain("node_modules/@takazudo/zudo-doc");
     expect(content).toContain("zudo-doc eject");
+    expect(content).toContain("defineChromeBindings");
+    expect(content).toContain("headerRightComponents");
+    expect(content).toContain("do not fork a route stub");
+    expect(content).toContain("**Shiki**");
+    expect(content).not.toContain("syntect");
   });
 
   it("does NOT reference deleted directories (src/components/, pages/lib/*, src/layouts/)", async () => {
@@ -1182,7 +1223,7 @@ describe("scaffold — generated package.json", () => {
     expect(pkg.dependencies["@takazudo/zudo-doc-history-server"]).toBeDefined();
   });
 
-  it("adds tag-governance tooling devDeps and the tags:audit/tags:suggest scripts only when tagGovernance is enabled", async () => {
+  it("adds package-owned tags:audit/tags:suggest scripts without project-side tooling deps", async () => {
     await scaffold({
       ...baseChoices,
       projectName: "test-tag-gov-deps",
@@ -1191,11 +1232,15 @@ describe("scaffold — generated package.json", () => {
     const pkg = await fs.readJson(
       projectPath("test-tag-gov-deps", "package.json"),
     );
-    expect(pkg.devDependencies["string-similarity"]).toBeDefined();
-    expect(pkg.devDependencies["pluralize"]).toBeDefined();
-    expect(pkg.devDependencies["tsx"]).toBeDefined();
-    expect(pkg.scripts["tags:audit"]).toBe("tags-audit");
-    expect(pkg.scripts["tags:suggest"]).toBe("tsx scripts/tags-suggest.ts");
+    expect(pkg.devDependencies["string-similarity"]).toBeUndefined();
+    expect(pkg.devDependencies["pluralize"]).toBeUndefined();
+    expect(pkg.devDependencies["tsx"]).toBeUndefined();
+    expect(pkg.scripts["tags:audit"]).toBe(
+      "tags-audit --config src/config/tag-vocabulary.ts",
+    );
+    expect(pkg.scripts["tags:suggest"]).toBe(
+      "tags-suggest --config src/config/tag-vocabulary.ts",
+    );
   });
 
   it("adds dev:tauri/build:tauri scripts only when tauri is enabled", async () => {
@@ -1300,7 +1345,8 @@ describe("scaffold — settings-drift guard: generator-known fields must cover e
       port: "shell passthrough — dev/preview server port, not a scaffold prompt",
       adapter: "shell passthrough — deploy-target wiring, project-specific",
       bundle: "shell passthrough — raw esbuild bundler options",
-      chromeBindingsModule: "shell passthrough — host-callables wiring, hand-authored after scaffold",
+      chromeBindingsModule:
+        "shell passthrough — host-callables module path is hand-authored after scaffold; generated doc routes consume it automatically",
       designTokenPanelConfigModule: "shell passthrough — mirrors chromeBindingsModule's contract exactly (module-path wiring, hand-authored after scaffold)",
       // Fields with no CLI/prompt surface (yet) — hand-edit zfb.config.ts
       // after scaffold, or covered by a future sub-issue.
@@ -1325,7 +1371,6 @@ describe("scaffold — settings-drift guard: generator-known fields must cover e
       aiChatGlobalDailyLimit: "no CLI/prompt surface yet — companion to aiAssistant",
       tocMinDepth: "no CLI/prompt surface yet — package default is correct for all scaffolds",
       tocMaxDepth: "no CLI/prompt surface yet — package default is correct for all scaffolds",
-      headingIdStrategy: "no CLI/prompt surface yet — package default is correct for all scaffolds",
       frontmatterPreview: "no CLI/prompt surface yet — hand-edit post-scaffold",
       htmlPreview: "no CLI/prompt surface yet — hand-edit post-scaffold",
       packageOwnedRoutes: "no CLI/prompt surface — flipping this off requires shipping the project's own route stubs, an eject-time decision, not a scaffold-time one",

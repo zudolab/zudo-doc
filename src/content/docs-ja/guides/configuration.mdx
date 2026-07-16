@@ -257,7 +257,7 @@ zfb の CJK フレンドリーな改行 / 強調処理を有効化します。
 
 ### tagVocabulary
 
-タグ語彙がランタイムで参照されるか（エイリアス解決、非推奨フィルタリング、グループ化フッター）。**`tagGovernance` と直交**。これはブールゲートで、エントリ自体は `tagVocabularyEntries` から来ます。
+タグ語彙がランタイムで参照されるか（正確な id の認識、グループ化フッター）。**`tagGovernance` と直交**。これはブールゲートで、エントリ自体は `tagVocabularyEntries` から来ます。
 
 デフォルト: `false`
 
@@ -276,12 +276,6 @@ TOC に含まれる最小見出し深度（2〜4）。
 TOC に含まれる最大見出し深度（2〜4）。
 
 デフォルト: `4`
-
-### headingIdStrategy
-
-見出し ID（アンカー）戦略。`"hierarchical"` は各アンカーに祖先チェーンをプレフィックスします。`"flat"` は zfb のレガシー github-slugger スキームです。切り替えは既存のディープリンクに対してアンカー破壊的です。
-
-型: `"flat" | "hierarchical"` · デフォルト: `"hierarchical"`
 
 ## サイト設定
 
@@ -344,16 +338,11 @@ body-end islands に `FindInPageInit` アイランド（Cmd/Ctrl+F 検索バー�
 
 デフォルト: `false`
 
-<Warning title="新しいscaffoldではクロームバインディングが必要です">
+<Note>
 
-この設定フィールドだけではscaffoldプロジェクトに何も描画されません。ドキュメントルートの
-スタブはホストバインディングなしで`createChrome(routeCtx)`を呼び出すため、`DocHistory`スロットは
-no-opのデフォルトのままです。`chromeBindingsModule`を通し、`DocHistory`をバインドしてください。詳しくは
-[Custom Components](./custom-components.mdx)と
-[ホストクロームバインディング](../reference/host-chrome-bindings.mdx)を参照してください。[テンプレート修正](https://github.com/zudolab/zudo-doc/issues/2716)後に生成されたscaffoldは
-表示用／データ用スロットを自動で通しますが、独自のハイドレートするアイランドには引き続きガイドで説明する静的インポートの配線が必要です。
+新しい scaffold は、この機能を選択したとき、スキャナーから到達可能な実際の `DocHistory` アイランドを生成されるすべてのドキュメントルート形状へ配線します。履歴ボタン自体には `chromeBindingsModule` もルート編集も不要です。
 
-</Warning>
+</Note>
 
 [ドキュメント履歴ガイド](./doc-history.mdx)を参照してください。
 
@@ -363,14 +352,9 @@ no-opのデフォルトのままです。`chromeBindingsModule`を通し、`DocH
 
 デフォルト: `false`
 
-<Warning title="新しいscaffoldではクロームバインディングが必要です">
+<Warning title="メタデータにはホスト binding が必要です">
 
-この設定フィールドだけではscaffoldプロジェクトに何も描画されません。ドキュメントルートの
-スタブはホストバインディングなしで`createChrome(routeCtx)`を呼び出すため、`docHistoryMeta`スロットは
-`{}`のデフォルトのままです。`chromeBindingsModule`を通し、`docHistoryMeta`をビルド時の履歴
-マニフェストへバインドしてください。詳しくは[Custom Components](./custom-components.mdx)と
-[ホストクロームバインディング](../reference/host-chrome-bindings.mdx)を参照してください。[テンプレート修正](https://github.com/zudolab/zudo-doc/issues/2716)後に生成されたscaffoldは
-表示用／データ用スロットを自動で通しますが、独自のハイドレートするアイランドには引き続きガイドで説明する静的インポートの配線が必要です。
+`docHistoryMeta` スロットのデフォルトは `{}` です。`chromeBindingsModule` をビルド時の履歴マニフェストへバインドするモジュールに向けてください。新しいルートスタブはそのモジュールをすでに消費するため編集しません。詳しくは [Custom Components](./custom-components.mdx) と [ホストクロームバインディング](../reference/host-chrome-bindings.mdx)を参照してください。
 
 </Warning>
 
@@ -455,11 +439,13 @@ AI チャットアシスタントルート（`/api/ai-chat`、SSR）を有効化
 
 デフォルト: `false`
 
-ライブアシスタントの実行にはデプロイアダプター、KV、シークレットが必要です — [カスタマイズ → デプロイ経路](../reference/customizing.mdx)と [AI Assistant API](../reference/ai-assistant-api.mdx)を参照してください。
+ライブアシスタントの実行にはデプロイアダプター、IPごとのKV、Anthropicシークレット、そして正確な
+上限を有効にする場合は`AI_CHAT_DAILY_SPEND_CAP` Durable Object migrationが必要です —
+[カスタマイズ → デプロイ経路](../reference/customizing.mdx)と[AI Assistant API](../reference/ai-assistant-api.mdx)を参照してください。これらはhost-ownedな部品です。package/scaffoldが提供するのは安全なplaceholder routeであり、showcaseのlive handler、Worker entry、Durable Object classではありません。
 
 ### aiChatDemoMode
 
-`/api/ai-chat` を固定の「無効」応答でショートサーキットします（API キー / KV / レートリミッターに触れません）。ライブの Claude 対応チャットを有効化するには `false` にします。
+`/api/ai-chat` を固定の「無効」応答でショートサーキットします（API キー、KV、Durable Object、レートリミッター、provider fetchに触れません）。ライブの Claude 対応チャットを有効化するには `false` にします。
 
 デフォルト: `false`
 
@@ -471,7 +457,8 @@ AI チャットアシスタントルート（`/api/ai-chat`、SSR）を有効化
 
 ### aiChatGlobalDailyLimit
 
-`/api/ai-chat` の全 IP を通じたグローバルな1日あたりリクエスト上限、または上限を無効化するなら `false`。
+`/api/ai-chat`の全IPを合算したUTC日ごとの正確なAnthropic fetch許可上限です。`false`なら
+正確な上限を無効化します。provider/network障害でも許可枠は返却しません。
 
 型: `number | false` · デフォルト: `false`
 

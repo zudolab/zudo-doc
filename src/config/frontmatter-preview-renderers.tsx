@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { FrontmatterCellRenderer, FrontmatterCellRendererProps } from "@takazudo/zudo-doc/metainfo";
+import type { FrontmatterCellRenderer } from "@takazudo/zudo-doc/metainfo";
 
 /**
  * Props passed to every custom frontmatter renderer component.
@@ -20,12 +20,6 @@ import type { FrontmatterCellRenderer, FrontmatterCellRendererProps } from "@tak
  * Null/undefined skipping: values of `null` or `undefined` are filtered out
  * before renderer lookup. Renderers can assume `value` is defined.
  */
-// Re-export the canonical props type from the package so project code has a
-// single import path. The locale field is typed as string (the package uses
-// string rather than the project-specific Locale union to avoid a circular
-// dependency); the runtime values are identical.
-export type { FrontmatterCellRendererProps as FrontmatterRendererProps };
-
 type PillColor = "danger" | "success" | "warning" | "info" | "muted";
 
 const pillColorClass: Record<PillColor, string> = {

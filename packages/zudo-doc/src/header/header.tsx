@@ -49,6 +49,8 @@ import { LANGUAGE_SWITCHER_INIT_SCRIPT } from "../i18n-version/language-switcher
 import { VERSION_SWITCHER_REWIRE_SCRIPT } from "../i18n-version/version-switcher.js";
 import type {
   HeaderNavItem,
+  HeaderRightComponentProps,
+  HeaderRightComponentRegistry,
   HeaderRightItem,
   Locale,
 } from "./types.js";
@@ -137,10 +139,9 @@ export interface HeaderProps {
   search?: ComponentChildren;
 
   /**
-   * When provided, emits `data-zfb-transition-persist={persistKey}` on the
+   * Emits `data-zfb-transition-persist={persistKey}` on the
    * `<header>` element so zfb's client-router preserves DOM-node identity
-   * across same-locale View Transition swaps. Omit to disable persist
-   * (back-compat default — the header is re-rendered on every swap).
+   * across same-locale View Transition swaps.
    *
    * **Locale keying**: callers MUST key by locale (e.g. `"header-en"`,
    * `"header-ja"`). Cross-locale swaps must NOT share the same key; a
@@ -156,7 +157,7 @@ export interface HeaderProps {
    * for consistency, matching the Astro reference implementation
    * (zudolab/zudo-doc#1546).
    */
-  persistKey?: string;
+  persistKey: string;
 
   /** Site-name string shown in the logo anchor (host `settings.siteName`). */
   siteName: string;
@@ -174,6 +175,13 @@ export interface HeaderProps {
    * wrapper, matching prior behaviour.
    */
   headerRightItems: HeaderRightItem[];
+
+  /**
+   * Host-callable renderers for project-owned component names. The registry is
+   * carried through `chromeBindingsModule`; it is never part of the serialized
+   * settings payload. Package built-in names are reserved.
+   */
+  headerRightComponents?: HeaderRightComponentRegistry;
 
   /**
    * Whether the host has a `colorMode` config. Required because the
@@ -253,6 +261,7 @@ export function Header(props: HeaderProps): JSX.Element {
     siteName,
     headerNav,
     headerRightItems,
+    headerRightComponents,
     colorModeEnabled,
     hasLocales,
     hasVersions,
@@ -267,14 +276,15 @@ export function Header(props: HeaderProps): JSX.Element {
   const matchPath = pathForMatch(pathWithoutBase, lang, i18n.defaultLocale);
 
   const activeNavPath = computeActiveNavPath(headerNav, matchPath);
+  const rightItemDispatch = createRightItemDispatch(headerRightComponents);
 
   return (
     <header
       class="sticky top-0 z-toolbar flex h-[3.5rem] items-center border-b border-muted bg-surface px-hsp-lg"
       data-header
       // Strategy B persist (zudolab/zudo-doc#1546): the header now carries
-      // data-zfb-transition-persist when a locale-keyed persistKey is
-      // supplied (e.g. "header-en" / "header-ja"). Cross-locale swaps use
+      // data-zfb-transition-persist with a locale-keyed persistKey
+      // (e.g. "header-en" / "header-ja"). Cross-locale swaps use
       // different keys, so the router replaces the header element entirely,
       // re-rendering the locale toggle anchors and all locale-specific SSR
       // content with fresh markup. Same-locale swaps share the key and
@@ -303,7 +313,6 @@ export function Header(props: HeaderProps): JSX.Element {
       //     LANGUAGE_SWITCHER_INIT_SCRIPT recomputes each anchor's href from
       //     window.location on AFTER_NAVIGATE_EVENT, same as the controls above
       //     (zudolab/zudo-doc#2551).
-      // Omit persistKey to fall back to the old repaint-on-every-swap path.
       data-zfb-transition-persist={persistKey}
     >
       {sidebarToggle ?? (
@@ -371,6 +380,7 @@ export function Header(props: HeaderProps): JSX.Element {
             colorModeEnabled,
             hasLocales,
           },
+          rightItemDispatch,
         ))}
       </div>
 
@@ -513,17 +523,7 @@ function renderNavItem(
   );
 }
 
-interface RightItemContext {
-  lang: Locale | undefined;
-  githubRepoUrl: string | null;
-  githubLabel: string;
-  themeToggle: ComponentChildren;
-  languageSwitcher: ComponentChildren;
-  versionSwitcher: ComponentChildren;
-  search: ComponentChildren;
-  colorModeEnabled: boolean;
-  hasLocales: boolean;
-}
+type RightItemContext = Omit<HeaderRightComponentProps, "item" | "index">;
 
 /**
  * Shared trigger-button shell for header-right items that dispatch a
@@ -591,7 +591,15 @@ type RightItemHandler = (
 
 // Dispatch table keyed by `${type}:${trigger|component}`, or just `type`
 // for link/html items that carry no sub-type discriminant.
-const RIGHT_ITEM_DISPATCH: Record<string, RightItemHandler> = {
+const BUILTIN_COMPONENT_NAMES = [
+  "theme-toggle",
+  "language-switcher",
+  "version-switcher",
+  "github-link",
+  "search",
+] as const;
+
+const BASE_RIGHT_ITEM_DISPATCH: Readonly<Record<string, RightItemHandler>> = {
   "trigger:design-token-panel": (_item, index) => (
     <TriggerButton
       index={index}
@@ -737,10 +745,55 @@ const RIGHT_ITEM_DISPATCH: Record<string, RightItemHandler> = {
   },
 };
 
+/**
+ * Compose the immutable package dispatch table with host-callable component
+ * entries. Built-ins are reserved: a host collision is almost certainly a
+ * typo or an attempted override, so reject it rather than silently changing
+ * package markup. Runtime callable checks keep JavaScript/untyped consumers on
+ * the same contract as TypeScript callers.
+ */
+function createRightItemDispatch(
+  hostRegistry: HeaderRightComponentRegistry | undefined,
+): ReadonlyMap<string, RightItemHandler> {
+  const dispatch = new Map<string, RightItemHandler>(
+    Object.entries(BASE_RIGHT_ITEM_DISPATCH),
+  );
+  if (hostRegistry === undefined) return dispatch;
+
+  for (const [name, component] of Object.entries(hostRegistry)) {
+    if (BUILTIN_COMPONENT_NAMES.includes(name as typeof BUILTIN_COMPONENT_NAMES[number])) {
+      throw new Error(
+        `[zudo-doc] Duplicate header-right component name "${name}" at ` +
+          `chromeBindings.headerRightComponents[${JSON.stringify(name)}]: built-in names are reserved and ` +
+          `cannot be shadowed. Remove this registry entry or choose a project-owned name.`,
+      );
+    }
+    if (typeof component !== "function") {
+      throw new TypeError(
+        `[zudo-doc] Invalid header-right component "${name}" at ` +
+          `chromeBindings.headerRightComponents[${JSON.stringify(name)}]: expected a callable renderer.`,
+      );
+    }
+
+    dispatch.set(`component:${name}`, (item, index, ctx) => {
+      if (item.type !== "component") return null;
+      const CustomComponent = component;
+      return (
+        <SlotWrapper index={index}>
+          <CustomComponent item={item} index={index} {...ctx} />
+        </SlotWrapper>
+      );
+    });
+  }
+
+  return dispatch;
+}
+
 function renderRightItem(
   item: HeaderRightItem,
   index: number,
   ctx: RightItemContext,
+  dispatch: ReadonlyMap<string, RightItemHandler>,
 ): VNode | null {
   const key =
     item.type === "trigger"
@@ -748,6 +801,18 @@ function renderRightItem(
       : item.type === "component"
         ? `component:${item.component}`
         : item.type;
-  const handler = RIGHT_ITEM_DISPATCH[key];
-  return handler ? handler(item, index, ctx) : null;
+  const handler = dispatch.get(key);
+  if (handler) return handler(item, index, ctx);
+
+  if (item.type === "component") {
+    throw new Error(
+      `[zudo-doc] Unknown header-right component "${item.component}" at ` +
+        `Header.headerRightItems[${index}].component. Register a callable renderer as ` +
+        `chromeBindings.headerRightComponents["${item.component}"] through ` +
+        `settings.chromeBindingsModule, or use a built-in name: ` +
+        `${BUILTIN_COMPONENT_NAMES.join(", ")}.`,
+    );
+  }
+
+  return null;
 }

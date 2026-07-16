@@ -36,6 +36,7 @@ export default function IndexPage(): JSX.Element {
       locale={locale}
       tree={tree}
       categoryOrder={categoryOrder}
+      initiallyCollapsedCategorySlugs={["changelog"]}
       tagCount={tagCount}
       // Showcase opts into the wide layout so the category grid fills the
       // viewport (better readability for the multi-column sitemap). Downstream

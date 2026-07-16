@@ -19,7 +19,7 @@ tags:
 | **2. 設定フィールド** | 機能のオン/オフや挙動の調整 | なし — ただのフィールド |
 | **3. トークンの上書き** | 色・スペーシング・タイポグラフィの再テーマ | `global.css` の `@theme` ブロック |
 | **4. `zudo-doc eject`** | 再参照するコンテンツ層コンポーネントを変更する必要 | eject したコピーとそのインポートを所有する |
-| **5. `chromeBindingsModule`** | [カスタム MDX コンポーネント](../guides/custom-components.mdx#グローバル登録-mdxextras)を含め、注入ルートにホストのコンテンツ/コーラブルを差し込む | ホストモジュール1つとスタブ配線 |
+| **5. `chromeBindingsModule`** | 主要クロームの置換や、[カスタム MDX コンポーネント](../guides/custom-components.mdx#グローバル登録-mdxextras)を含むホストコーラブルの注入 | ホストモジュール1つ |
 | **6. 自前の `pages/*.tsx`** | ルート全体を自分のものにする必要 | そのルートを所有する |
 | **7. デプロイ経路** | 本番公開（特に SSR 機能を伴う場合） | アダプター + `wrangler.toml` + シークレット |
 | **8. pre-push / HTML チェックの復元** | ショーケースの検証ゲートを取り戻したい | スクリプトのコピー + 依存追加 |
@@ -118,10 +118,11 @@ pnpm exec zudo-doc eject details
 pnpm exec zudo-doc --help
 ```
 
-エジェクト可能な18コンポーネントには、2つの異なる範囲があります:
+エジェクト可能な18コンポーネントには、3つの異なる範囲があります:
 
 - **コンテンツ層:** `tab-item`、`content-admonition`、`code-group`、`details`。ローカルコピーをレンダリングする必要があるときは、プロジェクト所有の bindings または MDX コンポーネント登録から再参照します。
-- **クローム描画:** `header`、`footer`、`breadcrumb`、`toc`、`sidebar`、`theme-toggle`、`page-loading`、`doc-pager`、`sidebar-tree-island`、`sidebar-toggle-island`、`desktop-sidebar-toggle-island`、`image-enlarge`、`doc-history`、`site-tree-nav-island`。CLI はこれらのソースをコピーできますが、新しい scaffold にはホストの呼び出し地点がないため、コピーは機能上の no-op です。編集しても描画済みクロームは変わりません。
+- **主要クローム:** `header`、`footer`、`breadcrumb`、`toc`、`sidebar`、`doc-pager`。ローカルコピーを対応する `chromeBindings.Header`、`Footer`、`Breadcrumb`、`Toc`、`Sidebar`、`DocPager` スロットへバインドします。
+- **入れ子クローム:** `theme-toggle`、`page-loading`、`sidebar-tree-island`、`sidebar-toggle-island`、`desktop-sidebar-toggle-island`、`image-enlarge`、`doc-history`、`site-tree-nav-island`。CLI 警告が示す所有者レベルの binding が必要です。入れ子ファイルをコピーするだけでは、パッケージ所有の親は置き換わりません。
 
 コンテンツ層コンポーネントでは、まずそれをレンダリングするホストコードにローカルインポートを配線してから、ローカルコピーを編集します。`mdxExtras` に必要な bindings とルートスタブの設定は[カスタムコンポーネントガイド](../guides/custom-components.mdx#グローバル登録-mdxextras)にあります。
 
@@ -131,7 +132,7 @@ pnpm exec zudo-doc --help
 
 </Note>
 
-**限界:** エジェクトしたコピーは、そのコンポーネントのパッケージ更新をもう受け取りません — メンテナンスを引き受けることになります。[CLI 警告の作業](https://github.com/zudolab/zudo-doc/issues/2717)はクロームコピーへのより明確な案内を追跡し、[クロームマークアップ継ぎ目の議論](https://github.com/zudolab/zudo-doc/issues/2719)は不足しているサポート済みカスタマイズ経路を追跡しています。現在、エジェクトによるクロームマークアップのカスタマイズはサポートされていません。
+**限界:** エジェクトしたコピーは、そのコンポーネントのパッケージ更新をもう受け取りません — メンテナンスを引き受けることになります。CLI は各 eject を静的に分類します。主要／入れ子クロームはサポート済み binding が見つかるまで大きく警告し、コンテンツ層は静かな手動 `mdxExtras` 案内を出します。eject はソースをコピーし、`chromeBindingsModule` が主要または所有者レベルの置換を実際の描画へ接続するサポート済み継ぎ目です。
 
 ## 第5段 — `chromeBindingsModule`（ホストコーラブル）
 
@@ -155,7 +156,7 @@ export const chromeBindings = defineChromeBindings({
 });
 ```
 
-新しい scaffold では、この例がドキュメントページに影響する前にもう1つ変更が必要です。自己完結型の `pages/docs/[[...slug]].tsx` スタブが注入ルートをシャドーし、bindings なしで `createChrome(routeCtx)` を呼びます。`chromeBindings` をそのスタブへ静的にインポートして `createChrome()` に渡してください。プロジェクトが使うロケールまたはバージョン付きスタブにも同じ変更を適用します。[スタブ配線の修正](https://github.com/zudolab/zudo-doc/issues/2716)後に生成した scaffold には表示用の配線がすでに含まれる場合がありますが、完全で普遍的なレシピは[カスタムコンポーネントガイド](../guides/custom-components.mdx#グローバル登録-mdxextras)です。
+新しい scaffold のドキュメントルートスタブは、ロケール版と doc-history 版を含め、すでに `virtual:zudo-doc-chrome-bindings` をインポートして `createChrome` へ渡します。設定フィールドとモジュールを追加するだけで、ルートスタブを fork する必要はありません。自作ルートでは同じオブジェクトを `createChrome(routeCtx, chromeBindings)` の第2引数へ渡してください。完全なパターンは[カスタムコンポーネントガイド](../guides/custom-components.mdx#グローバル登録-mdxextras)にあります。
 
 Design Token Panel には並行チャネル `designTokenPanelConfigModule` があります。パッケージデフォルトのパネルはゼロコンフィグ（`designTokenPanel: true` だけ）で動作し、完全にカスタマイズするには、その設定を `buildDesignTokenPanelConfig(mode)` をエクスポートするホストモジュールに向けます。両チャネルは — ファイルが無いときの大きな声での失敗挙動も含め — [ホストクロームバインディング](./host-chrome-bindings.mdx)で詳しく説明されています。
 
@@ -182,13 +183,15 @@ scaffold のスタブは特別です。`pages/index.tsx` は何もシャドー�
 
 2. **`wrangler.toml` を追加する。** Worker 名、カスタムドメインルート、各種バインディングを宣言します。このファイルは新しいスキャフォールドには存在しません — デプロイを決めたときに作成します。
 
-3. **AI アシスタントを有効化する場合は配線する。** `aiAssistant: true` は SSR の `/api/ai-chat` ルートをマウントします。デフォルトでは**デモモード**で出荷されます（`aiChatDemoMode` は設定上デフォルト `false` ですが、ライブバックエンドに切り替えるまでスキャフォールドのチャットは静的デモです）。本物の Claude 対応アシスタントには次が必要です:
-   - `aiChatDemoMode: false` に設定する;
+3. **AI アシスタントを有効化する場合は配線する。** `aiAssistant: true` はpackage-ownedな SSR `/api/ai-chat` seamをマウントします。demo modeでは固定応答を返し、host実装なしでlive modeを選ぶとHTTP 501を返します。package/scaffoldはshowcaseのfull handler、`worker-entry.ts`、`AiChatDailySpendCap`を出荷しません。本物のClaude対応アシスタントには、まずshowcaseと同等のhost-owned `/api/ai-chat` handlerとsource Worker entry/Durable Objectを実装し、その後に次を行います:
+   - host handlerを導入した後で`aiChatDemoMode: false`に設定する;
    - `RATE_LIMIT` KV 名前空間を作成し（`wrangler kv namespace create RATE_LIMIT`）、`wrangler.toml` でバインドする;
+   - `AI_CHAT_DAILY_SPEND_CAP`を`AiChatDailySpendCap`へバインドし、migration tag
+     `v1-ai-chat-daily-spend-cap`と`new_sqlite_classes = ["AiChatDailySpendCap"]`を追加する;
    - `ANTHROPIC_API_KEY` シークレットを追加する（`wrangler secret put ANTHROPIC_API_KEY`）;
    - `aiChatAllowedOrigins` をサイトのオリジンに設定する。
 
-完全なランブック（シークレット、KV、CORS、レート制限）は[デプロイガイド](../guides/deployment.mdx)と [AI Assistant API リファレンス](./ai-assistant-api.mdx)を参照してください。
+showcaseの[デプロイガイド](../guides/deployment.mdx)と[AI Assistant APIリファレンス](./ai-assistant-api.mdx)は、host実装の参照として利用してください（シークレット、ソフトなIPごとのKV、UTC日ごとの正確な許可、CORS、プレビュー制約）。class sourceを用意せず名前だけbindingしても動作しません。
 
 ## 第8段 — pre-push と HTML バリデーションの復元
 
@@ -206,7 +209,6 @@ scaffold のスタブは特別です。`pages/index.tsx` は何もシャドー�
 ## 関連ページ
 
 - [設定](../guides/configuration.mdx) — すべての `zudoDoc()` フィールドとそのデフォルト
-- [カスタムコンポーネント](../guides/custom-components.mdx) — プロジェクト所有の MDX コンポーネントを登録し、bindings をルートスタブへ配線する
+- [カスタムコンポーネント](../guides/custom-components.mdx) — 共有 bindings モジュール経由でプロジェクト所有の MDX コンポーネントを登録する
 - [ホストクロームバインディング](./host-chrome-bindings.mdx) — `chromeBindingsModule` と `designTokenPanelConfigModule` の詳細
 - [create-zudo-doc CLI](./create-zudo-doc.mdx) — スキャフォールドが出力するもの
-- [v3 からの移行](../getting-started/migrating-from-v3.mdx) — 既存の生成プロジェクトをこの形状へ移す

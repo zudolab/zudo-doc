@@ -52,7 +52,7 @@ declare module "zfb/config" {
     options?: Record<string, unknown>;
   }
 
-  /** Output mode for syntect-backed fenced-code highlighting. */
+  /** Output mode for zfb fenced-code highlighting. */
   export type CodeHighlightMode = "inline" | "class";
 
   /** Fixed semantic taxonomy accepted by class-mode `roleClasses`. */
@@ -76,7 +76,7 @@ declare module "zfb/config" {
     | "deleted"
     | "heading";
 
-  /** Syntect inline-theme or semantic class-mode configuration. */
+  /** zfb inline-theme or semantic class-mode configuration. */
   export type CodeHighlightConfig = {
     theme?: string;
     themesDir?: string;
@@ -149,7 +149,7 @@ declare module "zfb/config" {
      */
     base?: string;
     /**
-     * Configures zfb's syntect highlighter. Class mode is mutually exclusive
+     * Configures zfb's code highlighter. Class mode is mutually exclusive
      * with every theme field and emits semantic role classes; inline mode
      * retains the single/dual theme fields for general zfb consumers.
      */

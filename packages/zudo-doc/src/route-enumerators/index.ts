@@ -3,7 +3,7 @@
 //
 // Moved from the showcase's `pages/lib/route-enumerators.ts` into the shared
 // package. Previously this imported host singletons (`@/config/settings`,
-// `@/config/i18n`, `@/utils/base`, `@/utils/tags`, `@/utils/slug`,
+// `@/config/i18n`, `@/utils/base`, `@/utils/tags`, the package slug helpers,
 // `@/utils/docs`) directly — imports that would not resolve in downstream
 // consumers. The package version accepts all host-specific dependencies via
 // injected context through `createRouteEnumerators(ctx)`.
@@ -16,14 +16,14 @@
 // Design principles (unchanged):
 //   - Draft pages are always excluded (never built).
 //   - Unlisted pages ARE included — they have real HTML files.
-//   - toRouteSlug() is applied to all entry ids.
+//   - toRouteSlug() is applied to all current zfb entry slugs.
 //   - Auto-generated category index pages are emitted via collectAutoIndexNodes.
 
 import type { NavSourceDocs } from "../nav-source-docs/index.js";
 import type { DocPageEntry, DocNavNode } from "../doc-page-props/index.js";
 import type { CategoryMeta } from "../sidebar-tree/index.js";
 import type { Settings } from "../settings.js";
-import { mergeLocaleDocs as mergeLocaleDocsImpl } from "../locale-merge/index.js";
+import { mergeLocaleDocs } from "../locale-merge/index.js";
 
 export type { DocPageEntry, DocNavNode, NavSourceDocs };
 
@@ -31,20 +31,8 @@ export type { DocPageEntry, DocNavNode, NavSourceDocs };
 // DocsEntry shape (structural subset used by route enumerators)
 // ---------------------------------------------------------------------------
 
-/**
- * Minimal docs entry shape needed for tag enumeration (no Content/module_specifier).
- */
-export interface DocsEntryForTags {
-  id: string;
-  data: {
-    slug?: string;
-    draft?: boolean;
-    unlisted?: boolean;
-    category_no_page?: boolean;
-    tags?: string[];
-    [key: string]: unknown;
-  };
-}
+/** Current zfb docs entry used by tag enumeration. */
+export type DocsEntryForTags = DocPageEntry;
 
 // ---------------------------------------------------------------------------
 // VersionConfig shape (structural)
@@ -102,10 +90,10 @@ export interface RouteEnumeratorsContext {
   /** Aggregate a `tag → docs` index from a doc collection. */
   collectTags: (
     docs: DocsEntryForTags[],
-    slugFn: (id: string, data: { slug?: string }) => string,
+    slugFn: (entrySlug: string, data: { slug?: string }) => string,
   ) => Map<string, TagInfoForEnum>;
   /** Convert a content entry slug to a canonical route slug. */
-  toRouteSlug: (id: string) => string;
+  toRouteSlug: (entrySlug: string) => string;
   /** Build the nav tree for a locale (4-arg form with an explicit href builder). */
   buildNavTree: (
     docs: DocPageEntry[],
@@ -195,10 +183,10 @@ export interface RouteEnumeratorsAPI {
  * import { docsUrl, versionedDocsUrl, withBase, isDefaultLocaleOnlyPath } from "@/utils/base";
  * import { buildNavTree, collectAutoIndexNodes } from "@/utils/docs";
  * import { collectTags } from "@/utils/tags";
- * import { toRouteSlug } from "@/utils/slug";
+ * import { toRouteSlug } from "@takazudo/zudo-doc/slug";
  * import { loadDocs } from "../_data";
  * import { resolveNavSource, resolveVersionedLocaleSource } from "./_nav-source-docs";
- * import { mergeLocaleDocs } from "./locale-merge";
+ * import { mergeLocaleDocs } from "@takazudo/zudo-doc/locale-merge";
  *
  * export const {
  *   enumerateDocsRoutes,
@@ -239,7 +227,7 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
   const versionedDocsUrl = ctx.versionedDocsUrl;
   const withBase = ctx.withBase;
   const loadDocs = (collectionName: string): DocsEntryForTags[] =>
-    ctx.stableDocs(collectionName) as unknown as DocsEntryForTags[];
+    ctx.stableDocs(collectionName);
   const isDefaultLocaleOnlyPath = ctx.isDefaultLocaleOnlyPath;
   const collectTags = ctx.collectTags;
   const toRouteSlug = ctx.toRouteSlug;
@@ -252,14 +240,6 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
   const collectAutoIndexNodes = ctx.collectAutoIndexNodes;
   const resolveNavSource = ctx.resolveNavSource;
   const resolveVersionedLocaleSource = ctx.resolveVersionedLocaleSource;
-  const mergeLocaleDocs = mergeLocaleDocsImpl as unknown as (options: {
-    baseDocs: DocsEntryForTags[];
-    localeDocs: DocsEntryForTags[];
-    applyDefaultLocaleOnlyFilter?: boolean;
-    keepUnlisted?: boolean;
-    isDefaultLocaleOnlyPath?: (path: string) => boolean;
-  }) => { docs: DocsEntryForTags[]; localeSlugSet: ReadonlySet<string> };
-
   // ---------------------------------------------------------------------------
   // enumerateDocsRoutes
   // ---------------------------------------------------------------------------
@@ -278,7 +258,7 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
 
     for (const doc of allDocs) {
       if (doc.data.category_no_page === true) continue;
-      urls.push(docsUrl(doc.data.slug ?? toRouteSlug(doc.id), locale));
+      urls.push(docsUrl(doc.data.slug ?? toRouteSlug(doc.slug), locale));
     }
     for (const node of collectAutoIndexNodes(tree)) {
       urls.push(docsUrl(node.slug, locale));
@@ -318,7 +298,10 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
       docs = result.docs.filter((d) => !d.data.category_no_page);
     }
 
-    const tagMap = collectTags(docs, (id, data) => data.slug ?? toRouteSlug(id));
+    const tagMap = collectTags(
+      docs,
+      (entrySlug, data) => data.slug ?? toRouteSlug(entrySlug),
+    );
 
     for (const tag of tagMap.keys()) {
       const encoded = encodeURIComponent(tag);
@@ -351,7 +334,7 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
 
       for (const doc of allDocs) {
         if (doc.data.category_no_page === true) continue;
-        const slug = doc.data.slug ?? toRouteSlug(doc.id);
+        const slug = doc.data.slug ?? toRouteSlug(doc.slug);
         urls.push(versionedDocsUrl(slug, version.slug));
       }
       for (const node of collectAutoIndexNodes(tree)) {
@@ -371,7 +354,7 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
 
       for (const doc of allDocs) {
         if (doc.data.category_no_page === true) continue;
-        const slug = doc.data.slug ?? toRouteSlug(doc.id);
+        const slug = doc.data.slug ?? toRouteSlug(doc.slug);
         urls.push(versionedDocsUrl(slug, version.slug, locale));
       }
       for (const node of collectAutoIndexNodes(tree)) {
