@@ -286,7 +286,13 @@ html[data-theme-pack="broadsheet"] .zd-content h1 {
 /* the deck: italic standfirst under the headline. The prototype's
    `.lead` is the description paragraph DocContentHeader renders as the
    FIRST direct-child <p> of the article (metainfo/tags render as divs,
-   so p:first-of-type is the deck on every page with a description). */
+   so p:first-of-type is the deck on every page with a description).
+   Known limit: the description is optional frontmatter — on a page
+   without one (~4% of the showcase corpus) the first BODY paragraph
+   takes the standfirst styling instead (reads as an emphasized opening
+   paragraph) and the drop cap below lands on the second paragraph.
+   CSS alone can't tell the two apart; a stable hook on the emitted
+   description paragraph would fix this properly (follow-up). */
 html[data-theme-pack="broadsheet"] .zd-content > p:first-of-type {
   font-style: italic;
   line-height: 1.5;
@@ -445,26 +451,29 @@ html[data-theme-pack="broadsheet"] nav[data-zd-toc] ul {
   padding-top: 0.5rem;
 }
 
-/* pager: classified-corner cards under a closing double rule. The
-   DocPager nav is the article's only direct-child nav WITHOUT an
-   aria-label (NavCardGrid's nav carries aria-label="Child pages"). */
-html[data-theme-pack="broadsheet"] .zd-content > nav:not([aria-label]) {
+/* pager: classified-corner cards under a closing double rule. DocPager
+   renders after the MDX content on every regular doc page, so it is
+   always the article's LAST direct-child nav; the :not([aria-label])
+   guard excludes NavCardGrid ("Child pages") on auto-index pages, and
+   :last-of-type excludes an unlabelled <CategoryNav> used mid-content
+   (its nav also ships without an aria-label — review finding). */
+html[data-theme-pack="broadsheet"] .zd-content > nav:last-of-type:not([aria-label]) {
   border-top: 4px double color-mix(in oklch, var(--zd-fg) 70%, transparent);
   padding-top: 1.25rem;
 }
-html[data-theme-pack="broadsheet"] .zd-content > nav:not([aria-label]) a {
+html[data-theme-pack="broadsheet"] .zd-content > nav:last-of-type:not([aria-label]) a {
   border-radius: 0;
   border-color: color-mix(in oklch, var(--zd-fg) 50%, transparent);
 }
-html[data-theme-pack="broadsheet"] .zd-content > nav:not([aria-label]) a:hover {
+html[data-theme-pack="broadsheet"] .zd-content > nav:last-of-type:not([aria-label]) a:hover {
   border-color: var(--zd-accent);
 }
-html[data-theme-pack="broadsheet"] .zd-content > nav:not([aria-label]) a > div {
+html[data-theme-pack="broadsheet"] .zd-content > nav:last-of-type:not([aria-label]) a > div {
   text-transform: uppercase;
   font-size: 0.68rem;
   letter-spacing: 0.12em;
 }
-html[data-theme-pack="broadsheet"] .zd-content > nav:not([aria-label]) a p {
+html[data-theme-pack="broadsheet"] .zd-content > nav:last-of-type:not([aria-label]) a p {
   font-family: var(--font-display);
   font-weight: 700;
 }
