@@ -165,6 +165,18 @@ html[data-theme-pack="beacon"] {
   --zd-warning: light-dark(#a50000, #ff8f8f);
   --zd-info: light-dark(#0044cc, #6db3ff);
 
+  /* search + chat roles — left to the bundled color scheme these
+     resolve to sub-AAA values (search mark 4.9:1, user bubble
+     6.7:1). Matched keywords invert into the accent like the
+     selection (7.8:1 light / 9.5:1 dark); chat bubbles stay on
+     AAA pairs (user 7.8/9.5, assistant 17.9/16.5). */
+  --zd-matched-keyword-bg: light-dark(#0044cc, #6db3ff);
+  --zd-matched-keyword-fg: light-dark(#ffffff, #000000);
+  --zd-chat-user-bg: light-dark(#0044cc, #6db3ff);
+  --zd-chat-user-text: light-dark(#ffffff, #000000);
+  --zd-chat-assistant-bg: light-dark(#ededed, #1f1f1f);
+  --zd-chat-assistant-text: light-dark(#000000, #ffffff);
+
   /* syntax — two blues, two reds, one grey, one ink; all 9 roles
      in both modes, every value >= 7:1 on the page ground. */
   --zd-syntax-comment: light-dark(#595959, #b3b3b3);
@@ -176,6 +188,11 @@ html[data-theme-pack="beacon"] {
   --zd-syntax-name: light-dark(#000000, #ffffff);
   --zd-syntax-inserted: light-dark(#000000, #ffffff);
   --zd-syntax-deleted: light-dark(#a50000, #ff8f8f);
+  /* features.css derives the deleted-line background as a 15% mix
+     of the deleted ink itself, which drops #a50000 to 6.0:1 there —
+     a 6% mix keeps the red cue and clears AAA (7.2:1 light /
+     9.0:1 dark; inserted stays 14.9/15.1 even at the stock 15%). */
+  --zfb-hi-del-bg: color-mix(in srgb, var(--zd-syntax-deleted) 6%, var(--zd-code-bg));
 
   /* fonts — Atkinson Hyperlegible everywhere; headings share the
      reading face (hierarchy comes from size + weight + rules). */
@@ -218,9 +235,13 @@ html[data-theme-pack="beacon"] [tabindex]:focus-visible {
   border-radius: 0;
 }
 
-/* links are underlined, always — everywhere */
+/* links are underlined, always — everywhere. `aside a` (not
+   `#desktop-sidebar a`) so the rule also reaches the mobile sidebar
+   panel, which is a separate hook-less <aside> rendered by the
+   SidebarToggle island — the package's only two <aside>s are the
+   two sidebars. */
 html[data-theme-pack="beacon"] [data-nav-item],
-html[data-theme-pack="beacon"] #desktop-sidebar a,
+html[data-theme-pack="beacon"] aside a,
 html[data-theme-pack="beacon"] main nav[aria-label="Breadcrumb"] a,
 html[data-theme-pack="beacon"] nav[data-zd-toc] a,
 html[data-theme-pack="beacon"] .zd-sidebar-content-wrapper > footer a {
@@ -241,7 +262,7 @@ html[data-theme-pack="beacon"] [data-header-logo]::before {
 html[data-theme-pack="beacon"] #desktop-sidebar {
   border-right: 2px solid var(--zd-fg);
 }
-html[data-theme-pack="beacon"] #desktop-sidebar a,
+html[data-theme-pack="beacon"] aside a,
 html[data-theme-pack="beacon"] a[data-nav-active] {
   border-radius: 0;
 }
@@ -301,6 +322,25 @@ html[data-theme-pack="beacon"] pre.hi-root {
 html[data-theme-pack="beacon"] .hi-kw,
 html[data-theme-pack="beacon"] .hi-fn {
   font-weight: 700;
+}
+/* comments ride the shipped mono italic face */
+html[data-theme-pack="beacon"] .hi-com {
+  font-style: italic;
+}
+
+/* find-in-page: the stock warning-tinted washes drop body ink below
+   AA on beacon's red warning role — repaint them in the accent.
+   Ink stays 12.3:1+ on the 30% wash; the active match inverts like
+   the selection (7.8:1 light / 9.5:1 dark). */
+html[data-theme-pack="beacon"] .find-match {
+  background-color: color-mix(in srgb, var(--zd-accent) 30%, transparent);
+  border-radius: 0;
+}
+html[data-theme-pack="beacon"] .find-match-active {
+  background-color: var(--zd-accent);
+  color: var(--zd-selection-fg);
+  border-radius: 0;
+  outline: 2px solid var(--zd-accent);
 }
 
 /* admonitions: fully boxed, square, 6px signal edge. Backgrounds
