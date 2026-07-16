@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "fs-extra";
 import os from "os";
 import path from "path";
@@ -102,6 +102,195 @@ describe("EJECTABLE map", () => {
       expect(entry.packageSubpath).toBe(`@takazudo/zudo-doc/${name}`);
       expect(entry.localDir).toBe(`src/components/zudo-doc/${name}`);
     }
+  });
+
+  it("statically classifies every entry and fails closed on new classes or entries", () => {
+    const byClass: Record<string, Array<[string, (typeof EJECTABLE)[string]]>> = {};
+    for (const pair of Object.entries(EJECTABLE)) {
+      const kind = pair[1].classification.kind;
+      (byClass[kind] ??= []).push(pair);
+    }
+
+    expect((byClass.primary ?? []).map(([name]) => name).sort()).toEqual([
+      "breadcrumb",
+      "doc-pager",
+      "footer",
+      "header",
+      "sidebar",
+      "toc",
+    ]);
+    expect((byClass.nested ?? []).map(([name]) => name).sort()).toEqual([
+      "desktop-sidebar-toggle-island",
+      "doc-history",
+      "image-enlarge",
+      "page-loading",
+      "sidebar-toggle-island",
+      "sidebar-tree-island",
+      "site-tree-nav-island",
+      "theme-toggle",
+    ]);
+    expect((byClass.content ?? []).map(([name]) => name).sort()).toEqual([
+      "code-group",
+      "content-admonition",
+      "details",
+      "tab-item",
+    ]);
+    expect(Object.keys(byClass).sort()).toEqual(["content", "nested", "primary"]);
+  });
+});
+
+// ── eject() — binding-aware guidance ─────────────────────────────────────────
+
+describe("eject() — binding-aware guidance", () => {
+  const primaryCases = [
+    ["header", "Header"],
+    ["footer", "Footer"],
+    ["sidebar", "Sidebar"],
+    ["toc", "Toc"],
+    ["breadcrumb", "Breadcrumb"],
+    ["doc-pager", "DocPager"],
+  ] as const;
+
+  for (const [component, slot] of primaryCases) {
+    it(`warns that an unwired ${component} copy needs the ${slot} primary slot`, async () => {
+      const projectDir = path.join(tempDir, `project-${component}`);
+      await fs.ensureDir(projectDir);
+      const pkgRoot = await buildFixturePackage(tempDir, component);
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+      const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+      await eject(component, {
+        cwd: projectDir,
+        resolvePackageRoot: makeResolver(pkgRoot),
+      });
+
+      const warning = warn.mock.calls.flat().join("\n");
+      const output = log.mock.calls.flat().join("\n");
+      expect(warning).toContain(`chromeBindings.${slot}`);
+      expect(warning).toContain(`the ${slot} primary replacement slot`);
+      expect(warning).toContain("Editing the copy will not change your site");
+      expect(warning).toContain("/docs/reference/customizing/");
+      expect(output).toContain("but it is not wired into the rendered site");
+      expect(output).not.toContain(`✓ Ejected ${component}`);
+
+      warn.mockRestore();
+      log.mockRestore();
+    });
+  }
+
+  const nestedCases = [
+    ["theme-toggle", "chromeBindings.headerRightComponents"],
+    ["page-loading", "chromeBindings.BodyEndIslands"],
+    ["sidebar-tree-island", "chromeBindings.Sidebar"],
+    ["sidebar-toggle-island", "chromeBindings.Header"],
+    ["desktop-sidebar-toggle-island", "settings.sidebarToggle"],
+    ["image-enlarge", "chromeBindings.BodyEndIslands"],
+    ["doc-history", "chromeBindings.DocHistory"],
+    ["site-tree-nav-island", "chromeBindings.mdxExtras.SiteTreeNav"],
+  ] as const;
+
+  for (const [component, remediation] of nestedCases) {
+    it(`warns with the exact supported remediation for nested ${component}`, async () => {
+      const projectDir = path.join(tempDir, `project-${component}`);
+      await fs.ensureDir(projectDir);
+      const pkgRoot = await buildFixturePackage(tempDir, component);
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+      const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+      await eject(component, {
+        cwd: projectDir,
+        resolvePackageRoot: makeResolver(pkgRoot),
+      });
+
+      const warning = warn.mock.calls.flat().join("\n");
+      expect(warning).toContain("rendered by package chrome");
+      expect(warning).toContain(remediation);
+      expect(warning).toContain("/docs/reference/customizing/");
+      expect(log.mock.calls.flat().join("\n")).toContain(
+        "but it is not wired into the rendered site",
+      );
+
+      warn.mockRestore();
+      log.mockRestore();
+    });
+  }
+
+  it("points theme-toggle at a new named registry entry, not the reserved built-in", async () => {
+    const projectDir = path.join(tempDir, "project-theme-toggle-registry");
+    await fs.ensureDir(projectDir);
+    const pkgRoot = await buildFixturePackage(tempDir, "theme-toggle");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+    await eject("theme-toggle", {
+      cwd: projectDir,
+      resolvePackageRoot: makeResolver(pkgRoot),
+    });
+
+    const warning = warn.mock.calls.flat().join("\n");
+    expect(warning).toContain("under a new name");
+    expect(warning).toContain("settings.headerRightItems");
+    expect(warning).toContain('built-in name "theme-toggle" is reserved');
+
+    warn.mockRestore();
+    log.mockRestore();
+  });
+
+  const contentCases = [
+    ["tab-item", "chromeBindings.mdxExtras.TabItem"],
+    ["content-admonition", "matching chromeBindings.mdxExtras keys"],
+    ["code-group", "chromeBindings.mdxExtras.CodeGroup"],
+    ["details", "chromeBindings.mdxExtras.Details"],
+  ] as const;
+
+  for (const [component, remediation] of contentCases) {
+    it(`keeps quiet manual mdxExtras guidance for ${component}`, async () => {
+      const projectDir = path.join(tempDir, `project-${component}`);
+      await fs.ensureDir(projectDir);
+      const pkgRoot = await buildFixturePackage(tempDir, component);
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+      const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+      await eject(component, {
+        cwd: projectDir,
+        resolvePackageRoot: makeResolver(pkgRoot),
+      });
+
+      expect(warn).not.toHaveBeenCalled();
+      const output = log.mock.calls.flat().join("\n");
+      expect(output).toContain(remediation);
+      expect(output).toContain("/docs/guides/custom-components/");
+      expect(output).toContain(`✓ Ejected ${component}`);
+
+      warn.mockRestore();
+      log.mockRestore();
+    });
+  }
+
+  it("stays successful and quiet when a configured chrome import is rewritten", async () => {
+    const projectDir = path.join(tempDir, "project-configured-header");
+    const hostFile = path.join(projectDir, "src/chrome-bindings.tsx");
+    await fs.outputFile(
+      hostFile,
+      `import { Header } from "@takazudo/zudo-doc/header";\nexport { Header };\n`,
+    );
+    const pkgRoot = await buildFixturePackage(tempDir, "header");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+    await eject("header", {
+      cwd: projectDir,
+      resolvePackageRoot: makeResolver(pkgRoot),
+    });
+
+    expect(warn).not.toHaveBeenCalled();
+    expect(log.mock.calls.flat().join("\n")).toContain("✓ Ejected header");
+    expect(await fs.readFile(hostFile, "utf8")).not.toContain(
+      '@takazudo/zudo-doc/header',
+    );
+
+    warn.mockRestore();
+    log.mockRestore();
   });
 });
 

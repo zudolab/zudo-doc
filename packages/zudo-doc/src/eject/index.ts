@@ -12,87 +12,238 @@ import pc from "picocolors";
 // packages/zudo-doc/scripts/copy-eject-sources.mjs and check-eject-sources.mjs
 // import this constant so all three are always in sync (S4 de-dup — #2373).
 
+export type PrimaryChromeSlot =
+  | "Header"
+  | "Footer"
+  | "Sidebar"
+  | "Toc"
+  | "Breadcrumb"
+  | "DocPager";
+
+export type EjectableClassification =
+  | {
+      kind: "primary";
+      /** The matching primary replacement key in `ChromeHostBindings`. */
+      slot: PrimaryChromeSlot;
+    }
+  | {
+      kind: "nested";
+      /** Exact supported binding or owner-replacement instructions. */
+      remediation: string;
+    }
+  | {
+      kind: "content";
+      /** Exact project-owned MDX registration instructions. */
+      remediation: string;
+    };
+
 export interface EjectableEntry {
   /** Package subpath, e.g. `@takazudo/zudo-doc/header` */
   packageSubpath: string;
   /** Local destination dir, project-relative POSIX (no trailing slash) */
   localDir: string;
+  /** Static rendering/binding class. Never infer this from host call sites. */
+  classification: EjectableClassification;
 }
 
 export const EJECTABLE: Record<string, EjectableEntry> = {
   header: {
     packageSubpath: "@takazudo/zudo-doc/header",
     localDir: "src/components/zudo-doc/header",
+    classification: { kind: "primary", slot: "Header" },
   },
   footer: {
     packageSubpath: "@takazudo/zudo-doc/footer",
     localDir: "src/components/zudo-doc/footer",
+    classification: { kind: "primary", slot: "Footer" },
   },
   breadcrumb: {
     packageSubpath: "@takazudo/zudo-doc/breadcrumb",
     localDir: "src/components/zudo-doc/breadcrumb",
+    classification: { kind: "primary", slot: "Breadcrumb" },
   },
   toc: {
     packageSubpath: "@takazudo/zudo-doc/toc",
     localDir: "src/components/zudo-doc/toc",
+    classification: { kind: "primary", slot: "Toc" },
   },
   sidebar: {
     packageSubpath: "@takazudo/zudo-doc/sidebar",
     localDir: "src/components/zudo-doc/sidebar",
+    classification: { kind: "primary", slot: "Sidebar" },
   },
   "theme-toggle": {
     packageSubpath: "@takazudo/zudo-doc/theme-toggle",
     localDir: "src/components/zudo-doc/theme-toggle",
+    classification: {
+      kind: "nested",
+      remediation:
+        "Register the local ThemeToggle under a new name in " +
+        "chromeBindings.headerRightComponents, then use that same name in " +
+        "settings.headerRightItems. The built-in name \"theme-toggle\" is reserved.",
+    },
   },
   "page-loading": {
     packageSubpath: "@takazudo/zudo-doc/page-loading",
     localDir: "src/components/zudo-doc/page-loading",
+    classification: {
+      kind: "nested",
+      remediation:
+        "Replace chromeBindings.BodyEndIslands with a project-owned composition " +
+        "that imports the local PageLoadingOverlay.",
+    },
   },
   "tab-item": {
     packageSubpath: "@takazudo/zudo-doc/tab-item",
     localDir: "src/components/zudo-doc/tab-item",
+    classification: {
+      kind: "content",
+      remediation: "Set chromeBindings.mdxExtras.TabItem to the local TabItem.",
+    },
   },
   "doc-pager": {
     packageSubpath: "@takazudo/zudo-doc/doc-pager",
     localDir: "src/components/zudo-doc/doc-pager",
+    classification: { kind: "primary", slot: "DocPager" },
   },
   "content-admonition": {
     packageSubpath: "@takazudo/zudo-doc/content-admonition",
     localDir: "src/components/zudo-doc/content-admonition",
+    classification: {
+      kind: "content",
+      remediation:
+        "Create the local admonition renderers with makeAdmonition, then set the " +
+        "matching chromeBindings.mdxExtras keys (Note, Tip, Info, Warning, and Danger).",
+    },
   },
   "code-group": {
     packageSubpath: "@takazudo/zudo-doc/code-group",
     localDir: "src/components/zudo-doc/code-group",
+    classification: {
+      kind: "content",
+      remediation: "Set chromeBindings.mdxExtras.CodeGroup to the local CodeGroup.",
+    },
   },
   details: {
     packageSubpath: "@takazudo/zudo-doc/details",
     localDir: "src/components/zudo-doc/details",
+    classification: {
+      kind: "content",
+      remediation: "Set chromeBindings.mdxExtras.Details to the local Details component.",
+    },
   },
   "sidebar-tree-island": {
     packageSubpath: "@takazudo/zudo-doc/sidebar-tree-island",
     localDir: "src/components/zudo-doc/sidebar-tree-island",
+    classification: {
+      kind: "nested",
+      remediation:
+        "Replace the chromeBindings.Sidebar primary component with a project-owned " +
+        "sidebar composition that imports the local SidebarTree island.",
+    },
   },
   "sidebar-toggle-island": {
     packageSubpath: "@takazudo/zudo-doc/sidebar-toggle-island",
     localDir: "src/components/zudo-doc/sidebar-toggle-island",
+    classification: {
+      kind: "nested",
+      remediation:
+        "Replace the chromeBindings.Header primary component with a project-owned " +
+        "header composition that imports the local SidebarToggle island.",
+    },
   },
   "desktop-sidebar-toggle-island": {
     packageSubpath: "@takazudo/zudo-doc/desktop-sidebar-toggle-island",
     localDir: "src/components/zudo-doc/desktop-sidebar-toggle-island",
+    classification: {
+      kind: "nested",
+      remediation:
+        "Disable settings.sidebarToggle, then replace the chromeBindings.Sidebar " +
+        "primary component with a project-owned composition that imports the local " +
+        "DesktopSidebarToggle island.",
+    },
   },
   "image-enlarge": {
     packageSubpath: "@takazudo/zudo-doc/image-enlarge",
     localDir: "src/components/zudo-doc/image-enlarge",
+    classification: {
+      kind: "nested",
+      remediation:
+        "Replace chromeBindings.BodyEndIslands with a project-owned composition " +
+        "that imports the local ImageEnlarge island.",
+    },
   },
   "doc-history": {
     packageSubpath: "@takazudo/zudo-doc/doc-history",
     localDir: "src/components/zudo-doc/doc-history",
+    classification: {
+      kind: "nested",
+      remediation: "Set chromeBindings.DocHistory to the local DocHistory component.",
+    },
   },
   "site-tree-nav-island": {
     packageSubpath: "@takazudo/zudo-doc/site-tree-nav-island",
     localDir: "src/components/zudo-doc/site-tree-nav-island",
+    classification: {
+      kind: "nested",
+      remediation:
+        "Set chromeBindings.mdxExtras.SiteTreeNav to a project-owned wrapper that " +
+        "imports the local SiteTreeNav island. A project-owned home route must also " +
+        "use that wrapper if its home grid should change.",
+    },
   },
 };
+
+const CUSTOMIZING_GUIDE_URL =
+  "https://zudo-doc.takazudomodular.com/docs/reference/customizing/";
+const MDX_EXTRAS_GUIDE_URL =
+  "https://zudo-doc.takazudomodular.com/docs/guides/custom-components/#global-registration-mdxextras";
+
+function assertNeverClassification(value: never): never {
+  throw new Error(`Unknown ejectable classification: ${JSON.stringify(value)}`);
+}
+
+function chromeRemediation(classification: EjectableClassification): string {
+  switch (classification.kind) {
+    case "primary":
+      return (
+        `Export the local component as chromeBindings.${classification.slot} ` +
+        `(the ${classification.slot} primary replacement slot) from your ` +
+        "chromeBindingsModule."
+      );
+    case "nested":
+      return classification.remediation;
+    case "content":
+      throw new Error("Content-layer ejectables do not use chrome remediation.");
+    default:
+      return assertNeverClassification(classification);
+  }
+}
+
+function printNoCallSiteGuidance(entry: EjectableEntry, component: string): boolean {
+  const classification = entry.classification;
+
+  if (classification.kind === "content") {
+    console.log(
+      pc.dim(
+        `  No host call sites found for ${entry.packageSubpath}.\n` +
+          `  This is expected for a content-layer copy. ${classification.remediation}\n` +
+          `  Guide: ${MDX_EXTRAS_GUIDE_URL}`,
+      ),
+    );
+    return false;
+  }
+
+  console.warn(
+    pc.bold(pc.red(`\nWARNING: the ejected ${component} copy is not wired into your site.`)) +
+      `\nThis component is rendered by package chrome. The source was copied to ` +
+      `${entry.localDir}, but no host import referenced ${entry.packageSubpath}.\n` +
+      pc.bold("Editing the copy will not change your site until you bind it.") +
+      `\nRemediation: ${chromeRemediation(classification)}` +
+      `\nCustomization guide: ${CUSTOMIZING_GUIDE_URL}\n`,
+  );
+  return true;
+}
 
 // ── .zudo-doc.json schema ─────────────────────────────────────────────────────
 
@@ -357,18 +508,13 @@ export async function eject(
 
   // 9. Rewrite host call sites
   const rewroteCount = await rewireHostCallSites(cwd, component, localDir);
+  let unwiredChrome = false;
   if (rewroteCount > 0) {
     console.log(
       pc.dim(`  Rewrote ${rewroteCount} host file(s) to import from ${localDir}`),
     );
   } else {
-    console.log(
-      pc.dim(
-        `  No host call sites found for ${entry.packageSubpath}.\n` +
-          `  Update your imports manually: change the \`"${entry.packageSubpath}"\`\n` +
-          `  specifier to a local one, e.g. \`"@/${localDir}/index.js"\` or a relative path.`,
-      ),
-    );
+    unwiredChrome = printNoCallSiteGuidance(entry, component);
   }
 
   // 10. Update .zudo-doc.json provenance
@@ -377,9 +523,12 @@ export async function eject(
   await fs.writeJson(provenancePath, provenance, { spaces: 2 });
   console.log(pc.green(`Updated .zudo-doc.json`));
 
+  const status = unwiredChrome
+    ? `${pc.yellow("⚠")} Copied ${component}, but it is not wired into the rendered site`
+    : `${pc.green("✓")} Ejected ${component}`;
   console.log(
     pc.bold(
-      `\n${pc.green("✓")} Ejected ${component} from @takazudo/zudo-doc@${installedVersion}\n` +
+      `\n${status} from @takazudo/zudo-doc@${installedVersion}\n` +
         `  Source:      node_modules/@takazudo/zudo-doc/eject/${component}/\n` +
         `  Destination: ${localDir}/\n` +
         `  Provenance:  .zudo-doc.json\n`,
