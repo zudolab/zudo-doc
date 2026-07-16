@@ -93,12 +93,26 @@ export function ThemePackDialog({ open, onClose, order, active, base }: ThemePac
     launcherFocusRef.current = document.querySelector<HTMLElement>(LAUNCHER_SELECTOR);
   }, [open]);
 
-  // Lazy fetch — FIRST open only. This component never unmounts (it lives
-  // inside the persistent switcher island), so "still idle" == "never
-  // fetched yet"; a failed attempt leaves `registryState` at "error" until
-  // the user hits Retry (which resets to "idle" and re-runs this effect).
+  // Lazy fetch — FIRST open only, plus an explicit Retry. Split into two
+  // effects on purpose: `fetchToken` is the ONLY fetch trigger, bumped either
+  // by the first open (guarded by `hasOpenedRef` below) or by `retry()`. The
+  // fetch effect must NOT depend on `registryState` even though it sets it —
+  // an earlier version did, and `setRegistryState("loading")` inside the
+  // effect made it re-run against its own dependency, firing the cleanup
+  // (`cancelled = true`) on the in-flight closure before the real fetch ever
+  // resolved, so every successful load was silently discarded.
+  const hasOpenedRef = useRef(false);
+  const [fetchToken, setFetchToken] = useState(0);
+
   useEffect(() => {
-    if (!open || registryState !== "idle") return;
+    if (open && !hasOpenedRef.current) {
+      hasOpenedRef.current = true;
+      setFetchToken((t) => t + 1);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (fetchToken === 0) return;
     let cancelled = false;
     setRegistryState("loading");
     fetch(`${base}theme-packs/index.json`)
@@ -122,9 +136,9 @@ export function ThemePackDialog({ open, onClose, order, active, base }: ThemePac
     return () => {
       cancelled = true;
     };
-  }, [open, base, registryState]);
+  }, [fetchToken, base]);
 
-  const retry = useCallback(() => setRegistryState("idle"), []);
+  const retry = useCallback(() => setFetchToken((t) => t + 1), []);
 
   const { dialogRef, handleBackdropClick } = useModalDialog({
     isOpen: open,
