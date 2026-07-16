@@ -49,8 +49,10 @@ type RegistryState = "idle" | "loading" | "loaded" | "error";
 const COLOR_SCHEME_CHANGED_EVENT = "color-scheme-changed";
 
 /** Stable selector for the flyout's ALWAYS-mounted round launcher button
- *  (`theme-pack-switcher/index.tsx`) — see the focus-restore note below. */
-const LAUNCHER_SELECTOR = '[aria-label="Theme pack switcher"]';
+ *  (`theme-pack-switcher/index.tsx`) — see the focus-restore note below.
+ *  Strictly more precise than the prior `[aria-label="Theme pack switcher"]`
+ *  selector: that aria-label value also matches the flyout card (#2873). */
+const LAUNCHER_SELECTOR = "[data-switcher-launcher]";
 
 export function ThemePackDialog({ open, onClose, order, active, base }: ThemePackDialogProps) {
   const [registryState, setRegistryState] = useState<RegistryState>("idle");

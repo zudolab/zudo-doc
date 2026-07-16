@@ -598,16 +598,16 @@
     "CHANGELOG.md"
   ],
   "peerDependencies": {
-    "preact": "^10.29.1",
+    "@takazudo/zdtp": "^0.4.9",
     "@takazudo/zfb": "^0.1.0-next.87",
     "@takazudo/zfb-md-wasm": "^0.1.0-next.87",
     "@takazudo/zfb-runtime": "^0.1.0-next.87",
     "@takazudo/zudo-doc-history-server": "^3.3.0",
-    "@takazudo/zdtp": "^0.4.9",
-    "shiki": "^4.0.2",
-    "zod": "^4.3.6",
+    "diff": "^8.0.0",
     "katex": "^0.16.0",
-    "diff": "^8.0.0"
+    "preact": "^10.29.1",
+    "shiki": "^4.0.2",
+    "zod": "^4.3.6"
   },
   "peerDependenciesMeta": {
     "@takazudo/zudo-doc-history-server": {
@@ -640,22 +640,23 @@
     "tsx": "^4.21.0"
   },
   "devDependencies": {
+    "@takazudo/zfb": "0.1.0-next.87",
+    "@takazudo/zfb-md-wasm": "0.1.0-next.87",
+    "@takazudo/zfb-runtime": "0.1.0-next.87",
+    "@takazudo/zudo-doc-history-server": "workspace:*",
     "@types/fs-extra": "^11.0.4",
     "@types/minimist": "^1.2.5",
     "@types/node": "^25.3.5",
     "@types/pluralize": "^0.0.33",
     "@types/string-similarity": "^4.0.2",
     "cross-env": "^7.0.3",
+    "happy-dom": "^20.10.6",
     "preact": "^10.29.1",
     "preact-render-to-string": "^6.6.6",
     "shiki": "^4.0.2",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
     "vitest": "^4.1.0",
-    "zod": "^4.3.6",
-    "@takazudo/zfb": "0.1.0-next.87",
-    "@takazudo/zfb-md-wasm": "0.1.0-next.87",
-    "@takazudo/zfb-runtime": "0.1.0-next.87",
-    "@takazudo/zudo-doc-history-server": "workspace:*"
+    "zod": "^4.3.6"
   }
 }
