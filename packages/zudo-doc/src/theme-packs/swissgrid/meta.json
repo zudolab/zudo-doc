@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "slug": "swissgrid",
+  "name": "Swissgrid",
+  "description": "International Typographic Style — grid discipline, black on white, one hot Swiss-red accent, oversized section numbers.",
+  "mode": "light",
+  "version": "1.0.0",
+  "fonts": {
+    "sans": "Inter",
+    "mono": "IBM Plex Mono",
+    "display": "Inter Tight",
+    "loaded": ["Inter", "Inter Tight", "IBM Plex Mono"]
+  },
+  "preview": {
+    "light": {
+      "bg": "#ffffff",
+      "fg": "#0a0a0a",
+      "accent": "#e60000",
+      "syntax": {
+        "keyword": "#d40000",
+        "string": "#3f3f3f",
+        "comment": "#6b6b6b",
+        "callable": "#0a0a0a"
+      }
+    },
+    "dark": {
+      "bg": "#0c0c0c",
+      "fg": "#f2f2f2",
+      "accent": "#ff4d4d",
+      "syntax": {
+        "keyword": "#ff4d4d",
+        "string": "#c9c9c9",
+        "comment": "#8c8c8c",
+        "callable": "#ffffff"
+      }
+    }
+  }
+}
