@@ -80,6 +80,9 @@ describe("custom Worker deployment contract", () => {
       expect(source).toContain('mktemp "$PWD/.wrangler-preview.XXXXXX.toml"');
       expect(source).toContain('node scripts/write-worker-preview-config.mjs "$PREVIEW_CONFIG"');
       expect(source).toContain('--config "$PREVIEW_CONFIG"');
+      expect(source).toContain("/workers/scripts/zudo-doc-preview/subdomain");
+      expect(source).toContain("previews_enabled");
+      expect(source).toContain("upload_preview");
       expect(source).not.toContain('$RUNNER_TEMP/wrangler-preview-bootstrap.toml');
       expect(source).not.toContain("UPLOAD_STATUS");
     }

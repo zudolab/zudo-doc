@@ -278,6 +278,7 @@ jobs:
       - name: Deploy to Cloudflare Workers Assets (preview alias)
         id: deploy
         run: |
+          set -o pipefail
           SLUG="${{ steps.branch.outputs.slug }}"
 
           # `wrangler versions upload --preview-alias=<slug>` uploads a new
@@ -294,11 +295,29 @@ jobs:
           PREVIEW_CONFIG=$(mktemp "$PWD/.wrangler-preview.XXXXXX.toml")
           trap 'rm -f "$PREVIEW_CONFIG"' EXIT
           node scripts/write-worker-preview-config.mjs "$PREVIEW_CONFIG"
-          npx wrangler@4.85.0 versions upload \
-            --config "$PREVIEW_CONFIG" \
-            --preview-alias="$SLUG" \
-            --message="Preview: ${SLUG} @ ${GITHUB_SHA:0:7}" \
-            2>&1 | tee "$DEPLOY_LOG"
+          upload_preview() {
+            : > "$DEPLOY_LOG"
+            npx wrangler@4.85.0 versions upload \
+              --config "$PREVIEW_CONFIG" \
+              --preview-alias="$SLUG" \
+              --message="Preview: ${SLUG} @ ${GITHUB_SHA:0:7}" \
+              2>&1 | tee "$DEPLOY_LOG"
+          }
+          upload_preview
+          DEPLOY_URL=$(grep -oE "https://${SLUG}-[a-z0-9.-]+\.workers\.dev" "$DEPLOY_LOG" | head -1 || true)
+          if [ -z "$DEPLOY_URL" ]; then
+            # Bootstrap the isolated preview service's non-versioned routing,
+            # then retry so Cloudflare creates the requested preview alias.
+            curl --fail-with-body --silent --show-error \
+              --request POST \
+              --url "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/zudo-doc-preview/subdomain" \
+              --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              --header "Content-Type: application/json" \
+              --data '{"enabled":true,"previews_enabled":true}' \
+              | jq -e '.success and .result.enabled and .result.previews_enabled' > /dev/null
+            upload_preview
+            DEPLOY_URL=$(grep -oE "https://${SLUG}-[a-z0-9.-]+\.workers\.dev" "$DEPLOY_LOG" | head -1 || true)
+          fi
           rm -f "$PREVIEW_CONFIG"
           trap - EXIT
 
@@ -306,7 +325,6 @@ jobs:
           # followed by a hyphen and the worker name (slug-zudo-doc), anchored
           # on the .workers.dev boundary so log noise after the URL can't be
           # swallowed. Parse this — not the per-version hash URL.
-          DEPLOY_URL=$(grep -oE "https://${SLUG}-[a-z0-9.-]+\.workers\.dev" "$DEPLOY_LOG" | head -1)
           if [ -z "$DEPLOY_URL" ]; then
             echo "::error::Failed to parse alias preview URL for slug '$SLUG' from wrangler output"
             exit 1
