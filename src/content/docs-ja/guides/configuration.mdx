@@ -439,7 +439,9 @@ AI チャットアシスタントルート（`/api/ai-chat`、SSR）を有効化
 
 デフォルト: `false`
 
-ライブアシスタントの実行にはデプロイアダプター、KV、シークレットが必要です — [カスタマイズ → デプロイ経路](../reference/customizing.mdx)と [AI Assistant API](../reference/ai-assistant-api.mdx)を参照してください。
+ライブアシスタントの実行にはデプロイアダプター、IPごとのKV、Anthropicシークレット、そして正確な
+上限を有効にする場合は`AI_CHAT_DAILY_SPEND_CAP` Durable Object migrationが必要です —
+[カスタマイズ → デプロイ経路](../reference/customizing.mdx)と[AI Assistant API](../reference/ai-assistant-api.mdx)を参照してください。
 
 ### aiChatDemoMode
 
@@ -455,7 +457,8 @@ AI チャットアシスタントルート（`/api/ai-chat`、SSR）を有効化
 
 ### aiChatGlobalDailyLimit
 
-`/api/ai-chat` の全 IP を通じたグローバルな1日あたりリクエスト上限、または上限を無効化するなら `false`。
+`/api/ai-chat`の全IPを合算したUTC日ごとの正確なAnthropic fetch許可上限です。`false`なら
+正確な上限を無効化します。provider/network障害でも許可枠は返却しません。
 
 型: `number | false` · デフォルト: `false`
 

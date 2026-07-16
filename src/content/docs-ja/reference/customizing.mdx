@@ -186,10 +186,12 @@ scaffold のスタブは特別です。`pages/index.tsx` は何もシャドー�
 3. **AI アシスタントを有効化する場合は配線する。** `aiAssistant: true` は SSR の `/api/ai-chat` ルートをマウントします。デフォルトでは**デモモード**で出荷されます（`aiChatDemoMode` は設定上デフォルト `false` ですが、ライブバックエンドに切り替えるまでスキャフォールドのチャットは静的デモです）。本物の Claude 対応アシスタントには次が必要です:
    - `aiChatDemoMode: false` に設定する;
    - `RATE_LIMIT` KV 名前空間を作成し（`wrangler kv namespace create RATE_LIMIT`）、`wrangler.toml` でバインドする;
+   - `AI_CHAT_DAILY_SPEND_CAP`を`AiChatDailySpendCap`へバインドし、migration tag
+     `v1-ai-chat-daily-spend-cap`と`new_sqlite_classes = ["AiChatDailySpendCap"]`を追加する;
    - `ANTHROPIC_API_KEY` シークレットを追加する（`wrangler secret put ANTHROPIC_API_KEY`）;
    - `aiChatAllowedOrigins` をサイトのオリジンに設定する。
 
-完全なランブック（シークレット、KV、CORS、レート制限）は[デプロイガイド](../guides/deployment.mdx)と [AI Assistant API リファレンス](./ai-assistant-api.mdx)を参照してください。
+完全なランブック（シークレット、ソフトなIPごとのKV、UTC日ごとの正確な許可、CORS、プレビュー制約）は[デプロイガイド](../guides/deployment.mdx)と[AI Assistant APIリファレンス](./ai-assistant-api.mdx)を参照してください。
 
 ## 第8段 — pre-push と HTML バリデーションの復元
 

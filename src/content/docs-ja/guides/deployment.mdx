@@ -22,7 +22,17 @@ CIパイプラインは合計ビルド時間を短縮するために並列ジョ
 
 <Info>
 
-サイトURLは`wrangler.toml`の`[[routes]]`でカスタムドメインバインディングとして設定します。`ANTHROPIC_API_KEY`、`DOCS_SITE_URL`、`RATE_LIMIT` KVなどのバインディングも`wrangler.toml`で宣言します。
+サイトURLは`wrangler.toml`の`[[routes]]`でカスタムドメインバインディングとして設定します。
+ライブAIチャットでは`ANTHROPIC_API_KEY`シークレット、`DOCS_SITE_URL`、ソフトなIPごとの
+`RATE_LIMIT` KV、そしてexport class `AiChatDailySpendCap`へバインドした
+`AI_CHAT_DAILY_SPEND_CAP`名前空間も使います。Worker migrationは
+`v1-ai-chat-daily-spend-cap`と`new_sqlite_classes = ["AiChatDailySpendCap"]`で、
+本番の`wrangler deploy`が適用します。
+
+デプロイentryは生成されたアダプターだけでなく、カスタム`worker-entry.ts`です。Wranglerより前に
+ビルドして`dist/_worker.js`と`dist/_zfb_inner.mjs`を用意し、カスタムentryがアダプターハンドラーと
+Durable Object exportを維持します。PR CIは同じビルドartifactを復元し、Workers-runtime SQLite testと
+Wrangler dry-runをその同一ファイルに対して実行します。
 
 </Info>
 
@@ -73,6 +83,11 @@ https://<alias>-zudo-doc.<your-subdomain>.workers.dev
 ```
 
 CIはwranglerの出力から正確なホストを解析し、**preview**ジョブによってPRのコメントとして自動的に投稿されます。
+
+Durable Objectsを実装するversionにはCloudflareがプレビューURLを発行しないため、プレビューworkflowは
+サイトのビルド後に、別のpreview service用のアダプター専用config/entryを生成します。プレビューはSSRと
+assetsを検証しますが、`AI_CHAT_DAILY_SPEND_CAP`をバインドせず、migrationも適用しません。正確な
+有料呼び出し許可のlive経路は本番専用です。
 
 ## SKIP_DOC_HISTORY
 

@@ -20,15 +20,19 @@ const DEFAULT_PER_DAY = 100;
 export interface RateLimitResult {
   allowed: boolean;
   retryAfter?: number;
+  denialReason?: "minute_limit" | "day_limit" | "kv_unavailable";
+  configuredLimit?: number;
 }
 
 export function parseLimit(value: string | undefined, fallback: number): number {
   if (value !== undefined) {
     const parsed = parseInt(value, 10);
     if (Number.isNaN(parsed) || parsed <= 0) {
-      console.warn(
-        `parseLimit: env value ${JSON.stringify(value)} is not a positive integer; using default ${fallback}`,
-      );
+      console.warn({
+        event: "ai_chat_rate_limit_config_fallback",
+        outcome: "fallback",
+        configured_limit: fallback,
+      });
       return fallback;
     }
     return parsed;
@@ -59,25 +63,34 @@ export async function checkRateLimit(ipHash: string, env: AiChatEnv): Promise<Ra
     const results = await Promise.all(reads);
     minCount = results[0]!;
     dayCount = results[1]!;
-  } catch (err) {
+  } catch {
     // Fail-CLOSED on KV error (#1918): a KV outage must not unlock unbounded API spend.
     // This deliberately diverges from search-worker/src/rate-limit.ts, which fails OPEN
     // because search has no metered per-call cost — callers get degraded rate-guard,
     // not blocked results. Here the cost is real (Anthropic API tokens), so we block.
     // Demo mode short-circuits before this helper, so every call here is a
     // non-demo request and must fail closed.
-    console.error("Rate limit KV read failed, blocking request:", err);
-    return { allowed: false };
+    return { allowed: false, denialReason: "kv_unavailable" };
   }
 
   if (minCount >= perMinute) {
     const secondsIntoMinute = Math.floor((now % MS_PER_MINUTE) / 1000);
-    return { allowed: false, retryAfter: Math.max(1, SECONDS_PER_MINUTE - secondsIntoMinute) };
+    return {
+      allowed: false,
+      retryAfter: Math.max(1, SECONDS_PER_MINUTE - secondsIntoMinute),
+      denialReason: "minute_limit",
+      configuredLimit: perMinute,
+    };
   }
 
   if (dayCount >= perDay) {
     const secondsIntoDay = Math.floor((now % MS_PER_DAY) / 1000);
-    return { allowed: false, retryAfter: Math.max(1, SECONDS_PER_DAY - secondsIntoDay) };
+    return {
+      allowed: false,
+      retryAfter: Math.max(1, SECONDS_PER_DAY - secondsIntoDay),
+      denialReason: "day_limit",
+      configuredLimit: perDay,
+    };
   }
 
   // Increment counters (non-atomic read-modify-write: KV has no CAS primitive).
@@ -91,10 +104,14 @@ export async function checkRateLimit(ipHash: string, env: AiChatEnv): Promise<Ra
     env.RATE_LIMIT.put(dayKey, String(dayCount + 1), { expirationTtl: DAY_KEY_TTL }),
   ];
   const writeResults = await Promise.allSettled(writes);
-  for (const r of writeResults) {
-    if (r.status === "rejected") {
-      console.error("Rate limit KV write failed:", r.reason);
-    }
+  if (writeResults.some(({ status }) => status === "rejected")) {
+    console.warn({
+      event: "ai_chat_request_guard",
+      guard: "per_ip_kv",
+      outcome: "degraded",
+      utc_day: new Date(now).toISOString().slice(0, 10),
+      stage: "counter_write",
+    });
   }
 
   return { allowed: true };

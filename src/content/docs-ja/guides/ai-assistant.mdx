@@ -39,14 +39,15 @@ export default defineConfig(
 
 1. **CORSオリジンを制限する** — `aiChatAllowedOrigins` にデプロイ済みのドキュメントサイトのURL
    を設定します。デフォルトの空配列はすべてのクロスオリジンブラウザリクエストをブロックします。
-2. **グローバルな1日の上限を設定する** — `aiChatGlobalDailyLimit` でIPローテーションや
-   ボットネットへの対策として、1日のリクエスト総数を制限します。
+2. **有料呼び出しの正確な上限を設定する** — `aiChatGlobalDailyLimit` で、全IPを合算した
+   UTC日ごとのAnthropic fetch試行数を制限します。SQLite Durable Objectが同時判定を直列化するため、
+   設定値を超過しません。
 3. **Cloudflare経由でデプロイする** — IPごとのレート制限に使用される `cf-connecting-ip` は、
    Cloudflareのネットワークを経由したリクエストにのみ信頼できます。
 
-`aiChatDemoMode` が `false` のとき、レートリミッターも**フェイルクローズ**になります：
-KVが障害を起こすとリクエストを通過させる代わりにHTTP 429を返し、インフラ障害による
-無制限の費用発生を防ぎます。
+`aiChatDemoMode` が `false` の場合は両方のガードがフェイルクローズです。IPごとのKV読み取り
+障害はHTTP 429を返し、正確な上限のバインディング欠落やRPC障害はAnthropic呼び出し前に
+HTTP 500を返します。
 
 </Warning>
 
@@ -56,7 +57,7 @@ export default defineConfig(
     aiChatDemoMode: false,
     // クロスオリジンリクエストを許可するオリジンを限定する。
     aiChatAllowedOrigins: ["https://your-docs-site.example.com"],
-    // コスト上限として1日のグローバルリクエスト数を制限する（false = 上限なし）。
+    // UTC日ごとの正確な有料呼び出し許可上限（false = 正確な上限なし）。
     aiChatGlobalDailyLimit: 500,
     // ...
   }),
@@ -84,13 +85,45 @@ RATE_LIMIT_PER_MINUTE = "10"
 RATE_LIMIT_PER_DAY = "100"
 ```
 
-**KV名前空間** — レート制限と監査ログ用：
+**KV名前空間** — ソフトなIPごとのレート制限とprivacy-safeな結果監査record用（prompt、response、
+IP、IP hashフィールドは保存しません）：
 
 ```sh
 wrangler kv namespace create RATE_LIMIT
 ```
 
 返却された`id`を`wrangler.toml`の`[[kv_namespaces]]`ブロックに貼り付けます。
+
+**Durable Object名前空間** — UTC日ごとの正確な有料呼び出し許可判定：
+
+```toml title="wrangler.toml"
+[durable_objects]
+bindings = [
+  { name = "AI_CHAT_DAILY_SPEND_CAP", class_name = "AiChatDailySpendCap" },
+]
+
+[[migrations]]
+tag = "v1-ai-chat-daily-spend-cap"
+new_sqlite_classes = ["AiChatDailySpendCap"]
+```
+
+これらの名前は正確に維持してください。最初の`wrangler deploy`がWorker migrationを適用します。
+これは`wrangler d1 migrations`ではありません。本番のカスタム`worker-entry.ts`は、生成された
+`dist/_worker.js`のアダプターハンドラー、`dist/_zfb_inner.mjs`サイドカー、Durable Objectクラスを
+すべて維持します。Wranglerの前には必ずビルドしてください。
+
+UTC日ごとに新しいオブジェクトへルーティングするため、上限は`00:00 UTC`にリセットされます。
+許可判定はリクエスト検証、よりソフトで結果整合なIPごとのKVガード、ドキュメントコンテキスト
+準備の後、ちょうど1回のAnthropic fetch直前に行われます。fetch失敗時も許可枠は返却されず、
+プロバイダーが確定した請求数ではありません。`aiChatGlobalDailyLimit: false`は正確な上限だけを
+無効化し、`aiChatDemoMode: true`はKV、Durable Object、Anthropicをすべて迂回します。
+
+Durable Objectsを実装するversionにはプレビューURLが生成されないため、プレビューエイリアスは
+アダプター専用のサービス／設定を使います。検証対象はSSRアダプターとassets経路で、有料呼び出し
+許可判定ではありません。migrationの適用は本番の`wrangler deploy`が担います。Cloudflareの
+[Durable Object migrations](https://developers.cloudflare.com/durable-objects/reference/durable-objects-migrations/)
+と[Cloudflare WisdomのDurable Objects記事](https://github.com/Takazudo/zudo-cloudflare-wisdom/blob/main/src/content/docs/workers/durable-objects.mdx)、
+[Workers Logsのstructured-objectガイド](https://developers.cloudflare.com/workers/observability/logs/workers-logs/)も参照してください。
 
 応答の高速性とコストを抑えるため、`claude-haiku-4-5-20251001`を使用しています。
 

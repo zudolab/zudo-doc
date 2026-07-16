@@ -22,7 +22,16 @@ The site is served at root (`base = "/"`) via the Workers static asset layer. Dy
 
 <Info>
 
-The site URL is configured via `[[routes]]` in `wrangler.toml` (custom domain binding). Bindings such as `ANTHROPIC_API_KEY`, `DOCS_SITE_URL`, and `RATE_LIMIT` KV are also declared in `wrangler.toml`.
+The site URL is configured via `[[routes]]` in `wrangler.toml` (custom domain binding). Live AI
+chat also uses the `ANTHROPIC_API_KEY` secret, `DOCS_SITE_URL`, soft per-IP `RATE_LIMIT` KV, and
+the `AI_CHAT_DAILY_SPEND_CAP` namespace bound to exported class `AiChatDailySpendCap`. Its Worker
+migration is `v1-ai-chat-daily-spend-cap` with
+`new_sqlite_classes = ["AiChatDailySpendCap"]`; production `wrangler deploy` applies it.
+
+The deployment entry is custom `worker-entry.ts`, not the generated adapter entry alone. The build
+must run before Wrangler so `dist/_worker.js` and `dist/_zfb_inner.mjs` exist; the custom entry
+preserves both the adapter handler and Durable Object export. PR CI restores that exact build
+artifact, runs Workers-runtime SQLite tests, then dry-runs Wrangler against the same files.
 
 </Info>
 
@@ -73,6 +82,11 @@ https://<alias>-zudo-doc.<your-subdomain>.workers.dev
 ```
 
 CI parses the exact host from wrangler's output and posts it automatically as a comment on the PR by the **preview** job.
+
+Cloudflare does not issue preview URLs for versions implementing Durable Objects. Preview workflows
+therefore generate an adapter-only config/entry for a separate preview service after the site build.
+The preview validates SSR and assets, but does not bind `AI_CHAT_DAILY_SPEND_CAP` or apply its
+migration; the live exact paid-call admission path is production-only.
 
 ## SKIP_DOC_HISTORY
 

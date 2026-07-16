@@ -439,7 +439,10 @@ Enable the AI-chat assistant route (`/api/ai-chat`, SSR).
 
 Default: `false`
 
-Running a live assistant requires a deploy adapter, KV, and secrets — see [Customizing → Deploy path](../reference/customizing.mdx#rung-7-—-the-deploy-path-an-explicit-extend-step) and the [AI Assistant API](../reference/ai-assistant-api.mdx).
+Running a live assistant requires a deploy adapter, per-IP KV, an Anthropic secret, and the
+`AI_CHAT_DAILY_SPEND_CAP` Durable Object migration when the exact cap is enabled — see
+[Customizing → Deploy path](../reference/customizing.mdx#rung-7-—-the-deploy-path-an-explicit-extend-step)
+and the [AI Assistant API](../reference/ai-assistant-api.mdx).
 
 ### aiChatDemoMode
 
@@ -455,7 +458,8 @@ Default: `[]`
 
 ### aiChatGlobalDailyLimit
 
-Global daily request ceiling across all IPs for `/api/ai-chat`, or `false` to disable the ceiling.
+Exact Anthropic fetch-admission limit per UTC day across all IPs, or `false` to skip the exact
+cap. Provider/network failure does not refund an admitted slot.
 
 Type: `number | false` · Default: `false`
 

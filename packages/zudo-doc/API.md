@@ -300,7 +300,7 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `aiAssistant` | `boolean` | Enable AI chat assistant |
 | `aiChatDemoMode` | `boolean` | Enable AI chat demo mode (no real API calls) |
 | `aiChatAllowedOrigins` | `string[]` | Allowed origins for AI chat CORS |
-| `aiChatGlobalDailyLimit` | `number \| false` | Daily request limit for AI chat |
+| `aiChatGlobalDailyLimit` | `number \| false` | Exact Anthropic fetch-admission cap per UTC day; `false` disables the exact cap |
 | `designTokenPanel` | `boolean` | Enable the design token panel |
 | `tocMinDepth` | `number` | Minimum heading depth for TOC |
 | `tocMaxDepth` | `number` | Maximum heading depth for TOC |

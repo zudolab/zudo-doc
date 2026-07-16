@@ -48,10 +48,7 @@ export type BlockReason = "rate_limit" | "invalid_input" | "prompt_injection";
 
 export interface AuditLogEntry {
   timestamp: string;
-  ipHash: string;
-  message: string;
-  responsePreview: string;
-  blocked: boolean;
+  outcome: "completed" | "blocked";
   blockReason?: BlockReason;
 }
 

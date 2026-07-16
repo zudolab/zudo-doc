@@ -16,6 +16,7 @@
 #   Wait-Debt Guard           — pure-Node, no install; scripts/check-wait-debt.mjs
 #   Lint Gates               — pnpm install; tag guards + pnpm lint:tokens
 #   Type Check               — pnpm install; pnpm check (zfb check → tsc --noEmit)
+#   Worker Contract Proof    — Worker typecheck + runtime DO tests + Wrangler dry-run
 #   Package Unit Tests       — pnpm install; pnpm test:packages (all 5 package suites)
 #   Root Unit Tests          — pnpm install; pnpm test:unit (src/**/__tests__, scripts/__tests__)
 #   Build Site               — full clone, pnpm install; pnpm build + check:links
@@ -338,6 +339,44 @@ jobs:
       # Mirrors the per-package typecheck step that local b4push already runs.
       - name: Run workspace package typechecks
         run: pnpm -r --filter './packages/*' typecheck
+
+  # ---------------------------------------------------------------------------
+  # Job 1.25: Custom Worker + Durable Object contract
+  # ---------------------------------------------------------------------------
+  # Build-before-Wrangler is mandatory: worker-entry.ts imports the adapter's
+  # dist/_worker.js, which in turn retains dist/_zfb_inner.mjs.
+  worker-contract:
+    name: Worker Contract Proof
+    needs: build-site
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+        with:
+          dest: ~/setup-pnpm-${{ github.job }}
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Download exact site build output
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: site-dist
+          path: ${{ runner.temp }}
+      - name: Extract site build output
+        run: mkdir -p dist && tar -xf "$RUNNER_TEMP/site-dist.tar" -C dist
+      - name: Type-check custom Worker and bindings
+        run: pnpm check:worker
+      - name: Run Workers-runtime Durable Object tests against built output
+        run: pnpm test:worker:built
+      - name: Verify Wrangler production dry-run against the same output
+        run: node scripts/verify-worker-dry-run.mjs --skip-build
 
   # ---------------------------------------------------------------------------
   # Job 1.5: Package unit suites
@@ -714,8 +753,9 @@ jobs:
           # hash URL — so smoke gates + PR comments hit a stable host.
           DEPLOY_LOG=$(mktemp)
           # Cloudflare does not generate preview URLs for versions implementing
-          # Durable Objects. Upload an adapter-only entry to a separate preview
-          # service; production remains on worker-entry.ts with its DO binding.
+          # Durable Objects. Upload the already-built adapter graph through an
+          # adapter-only entry to a separate preview service; production alone
+          # uses worker-entry.ts and applies the DO migration.
           PREVIEW_CONFIG=$(mktemp "$PWD/.wrangler-preview.XXXXXX.toml")
           trap 'rm -f "$PREVIEW_CONFIG"' EXIT
           node scripts/write-worker-preview-config.mjs "$PREVIEW_CONFIG"

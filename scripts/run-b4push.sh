@@ -18,14 +18,15 @@ set -euo pipefail
 #  12. Wait-debt guard (#2538) — zero-tolerance waitForTimeout wait-ok annotation check
 #  13. B4push/CI parity check (guard manifest meta-check — #1967)
 #  14. Type checking (zfb check + workspace package typechecks)
-#  15. Root unit tests (test:unit) — builds @takazudo/zudo-doc as a side-effect
-#  16. Package tests (test:packages) — ~1,535 suite tests across workspace packages (as of 2026-07)
-#  17. Package safelist check (#1994) — requires dist/safelist.css from step 15
-#  18. Build (zfb build)
-#  19. Link check
-#  20. HTML validation (html-validate dist/**/*.html)
-#  21. Automated preview smoke (blocking)
-#  22. Manual interactive smoke (operator-driven)
+#  15. Worker contract proof (types + Workers runtime + Wrangler dry-run)
+#  16. Root unit tests (test:unit) — builds @takazudo/zudo-doc as a side-effect
+#  17. Package tests (test:packages) — ~1,535 suite tests across workspace packages (as of 2026-07)
+#  18. Package safelist check (#1994) — requires dist/safelist.css from step 16
+#  19. Build (zfb build)
+#  20. Link check
+#  21. HTML validation (html-validate dist/**/*.html)
+#  22. Automated preview smoke (blocking)
+#  23. Manual interactive smoke (operator-driven)
 #
 # The former "Z-index codegen drift check" step was retired in
 # zudolab/zudo-doc#2661: the project-side src/config/z-index-tokens.ts (and
@@ -38,13 +39,13 @@ set -euo pipefail
 # it for time-budget reasons — the bounded fast pass stays fast.
 #
 # Env overrides for non-interactive use:
-#   B4PUSH_SKIP_HTML_VALIDATE=1  — skip HTML validation (step 20)
+#   B4PUSH_SKIP_HTML_VALIDATE=1  — skip HTML validation (step 21)
 #   B4PUSH_SKIP_PREVIEW_SMOKE=1  — skip the automated preview smoke
 #   B4PUSH_SKIP_MANUAL_SMOKE=1   — skip the manual interactive smoke
 
 START_TIME=$(date +%s)
 FAILURES=()
-TOTAL_STEPS=22
+TOTAL_STEPS=23
 CURRENT_STEP=0
 
 # Per-step elapsed timing (#2538) — makes budget creep in any one step
@@ -256,7 +257,15 @@ else
   fail "Package typechecks"
 fi
 
-# ── Step 15: Root unit tests ──────────────────────────
+# ── Step 15: Worker contract proof ───────────────────
+step "Worker contract proof (types + runtime + dry-run)"
+if (cd "$ROOT_DIR" && pnpm verify:worker-contract); then
+  pass "Worker contract proof passed"
+else
+  fail "Worker contract proof"
+fi
+
+# ── Step 16: Root unit tests ──────────────────────────
 # Root `test:unit` (vitest) guards src/**/__tests__ and scripts/__tests__,
 # which previously ran in no local gate and no CI workflow (#1856). Runs
 # before the expensive site build for fast logic-level feedback.
@@ -275,7 +284,7 @@ else
   fail "Root unit tests"
 fi
 
-# ── Step 16: Package tests ────────────────────────────
+# ── Step 17: Package tests ────────────────────────────
 # Runs all workspace package test suites (~1,535 tests as of 2026-07). Closes the local/CI
 # asymmetry where package tests ran in CI but not in b4push (#1851/#1856).
 # dist/ is already built by step 14 — no extra prep needed.
@@ -286,7 +295,7 @@ else
   fail "Package tests + subpath resolution"
 fi
 
-# ── Step 17: Package safelist check ──────────────────
+# ── Step 18: Package safelist check ──────────────────
 # Verifies that the generated dist/safelist.css in packages/zudo-doc/ covers
 # every responsive-variant + arbitrary-value utility class used in
 # packages/zudo-doc/src/**/*.tsx. Catches regressions where gen-safelist.mjs
@@ -299,7 +308,7 @@ else
   fail "Package safelist check"
 fi
 
-# ── Step 18: Build ────────────────────────────────────
+# ── Step 19: Build ────────────────────────────────────
 step "Build (zfb build)"
 if (cd "$ROOT_DIR" && pnpm build); then
   pass "Build passed"
@@ -307,7 +316,7 @@ else
   fail "Build"
 fi
 
-# ── Step 19: Link check ───────────────────────────────
+# ── Step 20: Link check ───────────────────────────────
 #
 # Strict on broken links + absolute MDX-source warnings (real 404s
 # / sub-path bypass). Trailing-slash warnings stay warn-only — they
@@ -327,7 +336,7 @@ else
   fail "Link check"
 fi
 
-# ── Step 20: HTML validation ──────────────────────────
+# ── Step 21: HTML validation ──────────────────────────
 step "HTML validation (html-validate)"
 if [[ "${B4PUSH_SKIP_HTML_VALIDATE:-}" == "1" ]]; then
   skip "HTML validation (B4PUSH_SKIP_HTML_VALIDATE=1)"
@@ -339,7 +348,7 @@ else
   fi
 fi
 
-# ── Step 21: Automated preview smoke (blocking) ──────
+# ── Step 22: Automated preview smoke (blocking) ──────
 step "Preview smoke (automated)"
 if [[ "${B4PUSH_SKIP_PREVIEW_SMOKE:-}" == "1" ]]; then
   skip "Preview smoke (B4PUSH_SKIP_PREVIEW_SMOKE=1)"
@@ -351,7 +360,7 @@ else
   fi
 fi
 
-# ── Step 22: Manual interactive smoke ────────────────
+# ── Step 23: Manual interactive smoke ────────────────
 step "Manual interactive smoke"
 if [[ "${B4PUSH_SKIP_MANUAL_SMOKE:-}" == "1" ]]; then
   skip "Manual smoke (B4PUSH_SKIP_MANUAL_SMOKE=1)"
