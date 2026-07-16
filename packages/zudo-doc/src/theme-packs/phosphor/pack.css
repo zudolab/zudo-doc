@@ -1,0 +1,486 @@
+/* ============================================================
+   Phosphor — zudo-doc theme pack (ADR docs/adr/theme-packs.md)
+
+   Green CRT terminal: P1 green phosphor on a near-black tube in
+   dark (the hero mode); light is the same terminal printed out —
+   dark green ink on pale green-bar tractor-feed paper. Monospace
+   everything (JetBrains Mono prose AND code), VT323 for the
+   display layer (logo, h1, h2, flyout title) under a phosphor-glow
+   text-shadow. Fixed CRT overlay — scanlines + tube vignette via
+   body pseudo-elements, tuned per mode with light-dark(). ASCII
+   shape language: box-drawing h2 rules, "> " / ">> " prompt
+   prefixes, [i]/[+]/[!] admonition badges in a green/cyan/amber
+   phosphor triad, dashed table rules, block cursors on the logo
+   and h1 prompt.
+
+   RADIUS DECISION: zero. A CRT draws no rounded rects — cards,
+   admonitions, code blocks, chips, and the flyout all sit square.
+
+   Every rule below is scoped under html[data-theme-pack="phosphor"]
+   — this is what makes the runtime pack swap atomic (Decision 3)
+   and lets the validator prove a pack can never leak styles while
+   inactive (Decision 6.7). The @font-face blocks are the sole
+   exception (at-rules can't be selector-scoped).
+
+   Prototype-selector adaptations against the REAL DOM (tokens-dump
+   §6 + component sources), noted inline where they matter:
+   - `.sb-group a`       → `#desktop-sidebar a` (hover glow) +
+                           `a[data-nav-active]` (inverse-video row —
+                           the indicator token paints the accent
+                           fill; the real markup's `text-bg` class
+                           supplies the dark-on-bright text)
+   - `.toc-active`       → `nav[data-zd-toc] a[aria-current="true"]`
+                           (toc/toc.tsx marks the active entry with
+                           aria-current, not a mock class)
+   - `.doc-pager`        → `.zd-content > nav:last-of-type:not([aria-label]) > a`
+                           (the DocPager is the article's last
+                           unlabelled direct-child nav; breadcrumb
+                           and NavCardGrid navs carry aria-labels)
+   - `footer[data-footer]` → `.zd-sidebar-content-wrapper > footer`
+                           (no data-footer attribute in the real
+                           DOM); the "── EOF ──" end-of-stream mark
+                           rides the footer's own ::after
+   - `.tp-flyout`        → `div[role="dialog"][aria-label="Theme pack
+                           switcher"]`; its title is
+                           `p[aria-live="polite"]`. The launcher
+                           button has NO stable hook — NOT ported.
+   - `.hdr-search` / `.sb-group > p` — prototype-mock markup with no
+                           stable hook; NOT ported.
+   - the prototype's `--phos-*` helper properties (glow, scanline,
+     vignette, line) are not part of the token manifest; their
+     light-dark() values are inlined at each use site below.
+     The recurring inks: glow
+     light-dark(oklch(0.42 0.13 150 / 0.22), oklch(0.87 0.215 148 / 0.55)),
+     large glow (same hues at /0.10, /0.28), and the hairline
+     color-mix(in oklch, var(--zd-accent) 40%, transparent).
+   - the prototype's blinking-cursor @keyframes is NOT portable: the
+     validator scopes every top-level rule under the pack attribute
+     and exempts only @font-face, so @keyframes cannot ship in a
+     pack. The logo/h1 block cursors render as steady glowing
+     cursors instead (cursor-on state).
+   ============================================================ */
+
+/* ---- VT323 — the CRT display face: logo, h1, h2, flyout title.
+        Single 400 weight (that's the whole family), latin +
+        latin-ext. The ▊ block cursors deliberately sit OUTSIDE its
+        unicode-range — Block Elements glyphs fall through to the
+        platform face, which renders a solid block identically. ---- */
+
+@font-face {
+  font-family: "VT323";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/VT323-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "VT323";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/VT323-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+/* ---- JetBrains Mono — the workhorse: prose, chrome, AND code
+        ("monospace everything"). Variable 400–700, latin +
+        latin-ext. No italic file is shipped; the .hi-com italic
+        renders synthesized-oblique (the fjord/ledger precedent). ---- */
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/JetBrainsMono-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/JetBrainsMono-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+html[data-theme-pack="phosphor"] {
+  /* Tier-2 semantic roles — P1 green phosphor on tube black (dark) /
+     green ink on tractor-feed paper (light). Both modes always via
+     light-dark(). Every pair clears WCAG AA ≥4.5:1 (verified
+     computationally against bg/surface/code-bg and the admonition
+     tints in both modes). */
+  --zd-bg: light-dark(oklch(0.955 0.014 150), oklch(0.135 0.014 150));
+  --zd-fg: light-dark(oklch(0.28 0.058 150), oklch(0.845 0.145 150));
+  --zd-selection-bg: light-dark(oklch(0.4 0.12 150), oklch(0.87 0.215 148));
+  --zd-selection-fg: light-dark(oklch(0.97 0.012 150), oklch(0.13 0.02 150));
+  --zd-surface: light-dark(oklch(0.93 0.02 150), oklch(0.165 0.018 150));
+  --zd-muted: light-dark(oklch(0.45 0.068 150), oklch(0.64 0.095 150));
+  --zd-accent: light-dark(oklch(0.42 0.13 150), oklch(0.87 0.215 148));
+  --zd-accent-hover: light-dark(oklch(0.33 0.11 150), oklch(0.94 0.15 148));
+  --zd-code-bg: light-dark(oklch(0.905 0.024 150), oklch(0.1 0.014 150));
+  --zd-code-fg: light-dark(oklch(0.26 0.058 150), oklch(0.855 0.16 150));
+  --zd-success: light-dark(oklch(0.42 0.13 150), oklch(0.87 0.215 148));
+  --zd-danger: light-dark(oklch(0.5 0.17 28), oklch(0.72 0.185 28));
+  --zd-warning: light-dark(oklch(0.5 0.11 85), oklch(0.8 0.155 85));
+  --zd-info: light-dark(oklch(0.45 0.095 200), oklch(0.8 0.125 200));
+
+  /* syntax — a green-screen palette, all 9 roles in both modes:
+     brightness does the work, with amber (P3) and cyan (P4)
+     phosphors as the only guests. inserted/deleted reuse the
+     success/danger inks. */
+  --zd-syntax-comment: light-dark(oklch(0.49 0.05 150), oklch(0.58 0.062 150));
+  --zd-syntax-string: light-dark(oklch(0.39 0.095 165), oklch(0.9 0.12 165));
+  --zd-syntax-number: light-dark(oklch(0.49 0.11 85), oklch(0.82 0.16 85));
+  --zd-syntax-keyword: light-dark(oklch(0.4 0.13 148), oklch(0.9 0.21 148));
+  --zd-syntax-callable: light-dark(oklch(0.43 0.095 200), oklch(0.83 0.125 200));
+  --zd-syntax-type: light-dark(oklch(0.47 0.105 110), oklch(0.85 0.155 112));
+  --zd-syntax-name: light-dark(oklch(0.27 0.058 150), oklch(0.86 0.14 150));
+  --zd-syntax-inserted: light-dark(oklch(0.42 0.13 150), oklch(0.87 0.215 148));
+  --zd-syntax-deleted: light-dark(oklch(0.5 0.17 28), oklch(0.72 0.185 28));
+
+  /* fonts — monospace everywhere, prose included; VT323 is the
+     display face for headings and terminal chrome. */
+  --font-sans: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-display: "VT323", "JetBrains Mono", monospace;
+
+  /* Tier-3 component seams — VT323 display headings (single 400
+     weight), square everything, inverse-video active nav (the
+     accent fill + the markup's own text-bg class = dark-on-bright
+     terminal highlight). */
+  --zdc-doc-title-font: var(--font-display);
+  --zdc-doc-title-weight: 400;
+  --zdc-doc-title-tracking: 0.015em;
+  --zdc-doc-h2-font: var(--font-display);
+  --zdc-doc-h2-weight: 400;
+  --zdc-doc-h2-tracking: 0.02em;
+  --zdc-admonition-radius: 0;
+  --zdc-admonition-border-width: 4px;
+  --zdc-card-radius: 0;
+  --zdc-nav-active-indicator-color: var(--zd-accent);
+  --zdc-nav-active-weight: 700;
+}
+
+/* ---- Phosphor extras ---- */
+
+/* CRT overlay: tube vignette (::before) under scanlines (::after) —
+   fixed, non-interactive, above ALL UI including modals: it is the
+   glass of the tube, so everything renders behind it. */
+html[data-theme-pack="phosphor"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 98;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 130% 100% at 50% 42%,
+    transparent 58%,
+    light-dark(oklch(0.35 0.08 150 / 0.1), oklch(0 0 0 / 0.52)) 125%
+  );
+}
+html[data-theme-pack="phosphor"] body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    light-dark(oklch(0.4 0.1 150 / 0.055), oklch(0 0 0 / 0.26)) 0 1px,
+    transparent 1px 3px
+  );
+}
+
+/* phosphor persistence: glow on the display type */
+html[data-theme-pack="phosphor"] .zd-content h1,
+html[data-theme-pack="phosphor"] .zd-content h2,
+html[data-theme-pack="phosphor"] [data-header-logo] {
+  text-shadow:
+    0 0 8px light-dark(oklch(0.42 0.13 150 / 0.22), oklch(0.87 0.215 148 / 0.55)),
+    0 0 26px light-dark(oklch(0.42 0.13 150 / 0.1), oklch(0.87 0.215 148 / 0.28));
+}
+
+/* header: prompt logo — ~$ zudo-doc ▊ (steady cursor; the blink
+   @keyframes can't ship, see the header comment) */
+html[data-theme-pack="phosphor"] header[data-header] {
+  border-bottom-color: color-mix(in oklch, var(--zd-accent) 40%, transparent);
+}
+html[data-theme-pack="phosphor"] [data-header-logo] {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.55rem;
+  color: var(--zd-accent);
+}
+html[data-theme-pack="phosphor"] [data-header-logo]::before {
+  content: "~$ ";
+  color: var(--zd-muted);
+}
+html[data-theme-pack="phosphor"] [data-header-logo]::after {
+  content: "▊";
+  margin-left: 0.14em;
+}
+/* Exclude the current page: it carries the base `bg-fg text-bg` inverted
+   fill — recoloring its text to the accent would sit bright-on-bright. */
+html[data-theme-pack="phosphor"] [data-nav-item]:not([aria-current="page"]):hover {
+  text-decoration: none;
+  color: var(--zd-accent);
+  text-shadow: 0 0 8px light-dark(oklch(0.42 0.13 150 / 0.22), oklch(0.87 0.215 148 / 0.55));
+}
+
+/* sidebar: square rows, glow hover, inverse-video active line with
+   a prompt caret (the fill comes from the indicator token above) */
+html[data-theme-pack="phosphor"] #desktop-sidebar {
+  border-right-color: color-mix(in oklch, var(--zd-accent) 40%, transparent);
+}
+html[data-theme-pack="phosphor"] #desktop-sidebar a {
+  border-radius: 0;
+}
+html[data-theme-pack="phosphor"] #desktop-sidebar a:hover {
+  text-decoration: none;
+  color: var(--zd-accent);
+  text-shadow: 0 0 8px light-dark(oklch(0.42 0.13 150 / 0.22), oklch(0.87 0.215 148 / 0.55));
+}
+html[data-theme-pack="phosphor"] a[data-nav-active] {
+  border-radius: 0;
+}
+html[data-theme-pack="phosphor"] a[data-nav-active]:hover {
+  /* the inverse-video row keeps its dark-on-bright text; a glowing
+     accent recolor would vanish against the accent fill */
+  color: var(--zd-bg);
+  text-shadow: none;
+}
+html[data-theme-pack="phosphor"] a[data-nav-active]::before {
+  content: "> ";
+}
+
+/* h1 = a command being typed; cursor at rest */
+html[data-theme-pack="phosphor"] .zd-content h1 {
+  color: var(--zd-accent);
+  font-size: 2.9rem;
+  line-height: 1.1;
+}
+html[data-theme-pack="phosphor"] .zd-content h1::before {
+  content: "> ";
+  color: var(--zd-muted);
+}
+html[data-theme-pack="phosphor"] .zd-content h1::after {
+  content: "▊";
+  margin-left: 0.12em;
+  color: var(--zd-accent);
+}
+
+/* h2: box-drawing ASCII rule instead of the gradient border. The
+   SSR-inlined `style="border-image:linear-gradient(...)"` bar is
+   defeated with border-image none !important (Decision 6.6's sole
+   allowlisted carve-out) + a zeroed border-top; the ─── rule is a
+   clipped ::before line. */
+html[data-theme-pack="phosphor"] .zd-content h2 {
+  border-image: none !important;
+  border-top-width: 0;
+  padding-top: 0;
+  color: var(--zd-accent);
+  font-size: 2rem;
+  line-height: 1.15;
+}
+html[data-theme-pack="phosphor"] .zd-content h2::before {
+  content: "─────────────────────────────────────────────────────────────────────────────";
+  display: block;
+  overflow: hidden;
+  max-width: 100%;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1;
+  color: color-mix(in oklch, var(--zd-accent) 40%, transparent);
+  margin-bottom: 0.65rem;
+  text-shadow: none;
+}
+html[data-theme-pack="phosphor"] .zd-content h3::before {
+  content: ">> ";
+  color: var(--zd-muted);
+}
+
+/* links glow on hover; the underline affordance stays */
+html[data-theme-pack="phosphor"] .zd-content a:hover {
+  text-shadow: 0 0 8px light-dark(oklch(0.42 0.13 150 / 0.22), oklch(0.87 0.215 148 / 0.55));
+}
+
+/* horizontal rule: dashed ASCII break */
+html[data-theme-pack="phosphor"] .zd-content hr {
+  border-top: 1px dashed color-mix(in oklch, var(--zd-accent) 40%, transparent);
+}
+
+/* blockquote as quoted terminal output */
+html[data-theme-pack="phosphor"] .zd-content blockquote {
+  border-left: 3px double color-mix(in oklch, var(--zd-accent) 40%, transparent);
+  font-style: italic;
+}
+
+/* inline code: framed cell, square */
+html[data-theme-pack="phosphor"] .zd-content code:not(pre code) {
+  border: 1px solid color-mix(in oklch, var(--zd-accent) 30%, transparent);
+  border-radius: 0;
+}
+
+/* code block = the brightest part of the tube */
+html[data-theme-pack="phosphor"] pre.hi-root {
+  border-radius: 0;
+  border-color: color-mix(in oklch, var(--zd-accent) 40%, transparent);
+  box-shadow:
+    inset 0 0 42px color-mix(in oklch, var(--zd-accent) 7%, transparent),
+    0 0 18px light-dark(oklch(0.42 0.13 150 / 0.1), oklch(0.87 0.215 148 / 0.28));
+}
+html[data-theme-pack="phosphor"] .hi-kw {
+  font-weight: 700;
+}
+
+/* admonitions: [i]/[+]/[!] status lines, boxed and square — the
+   left band keeps its 4px weight; the other three sides get a
+   hairline so each reads as a framed terminal message. Phosphor
+   triad: note+info=P4 cyan, tip=P1 green, warning=P3 amber; the
+   remaining variants keep their roles with ASCII badges. */
+html[data-theme-pack="phosphor"] [data-admonition] {
+  border-top: 1px solid color-mix(in oklch, var(--zd-accent) 40%, transparent);
+  border-right: 1px solid color-mix(in oklch, var(--zd-accent) 40%, transparent);
+  border-bottom: 1px solid color-mix(in oklch, var(--zd-accent) 40%, transparent);
+}
+html[data-theme-pack="phosphor"] [data-admonition] .admonition-title {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.85rem;
+}
+/* note re-points from the green accent to the cyan phosphor so it
+   reads distinct from tip's P1 green */
+html[data-theme-pack="phosphor"] [data-admonition="note"] {
+  border-left-color: var(--zd-info);
+  background-color: color-mix(in srgb, var(--zd-info) 10%, var(--zd-bg));
+}
+html[data-theme-pack="phosphor"] [data-admonition="note"] .admonition-title {
+  color: var(--zd-info);
+}
+html[data-theme-pack="phosphor"] [data-admonition="note"] .admonition-title::before {
+  content: "[i]";
+}
+html[data-theme-pack="phosphor"] [data-admonition="info"] .admonition-title::before {
+  content: "[i]";
+}
+html[data-theme-pack="phosphor"] [data-admonition="tip"] .admonition-title::before {
+  content: "[+]";
+}
+html[data-theme-pack="phosphor"] [data-admonition="warning"] .admonition-title::before {
+  content: "[!]";
+}
+html[data-theme-pack="phosphor"] [data-admonition="danger"] .admonition-title::before {
+  content: "[x]";
+}
+html[data-theme-pack="phosphor"] [data-admonition="caution"] .admonition-title::before {
+  content: "[!!]";
+}
+html[data-theme-pack="phosphor"] [data-admonition="important"] .admonition-title::before {
+  content: "[*]";
+}
+
+/* table: header like a column legend, dashed row rules */
+html[data-theme-pack="phosphor"] .zd-content th {
+  border-bottom-color: color-mix(in oklch, var(--zd-accent) 40%, transparent);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.8rem;
+  color: var(--zd-muted);
+}
+html[data-theme-pack="phosphor"] .zd-content td {
+  border-bottom-style: dashed;
+}
+
+/* pager: bracketed jump targets — faint green fill, glow on hover.
+   The DocPager is the article's LAST unlabelled direct-child nav
+   (breadcrumb and NavCardGrid navs carry aria-labels). */
+html[data-theme-pack="phosphor"] .zd-content > nav:last-of-type:not([aria-label]) > a {
+  border-radius: 0;
+  background: color-mix(in srgb, var(--zd-accent) 4%, transparent);
+}
+html[data-theme-pack="phosphor"] .zd-content > nav:last-of-type:not([aria-label]) > a:hover {
+  box-shadow:
+    0 0 14px light-dark(oklch(0.42 0.13 150 / 0.1), oklch(0.87 0.215 148 / 0.28)),
+    inset 0 0 20px color-mix(in oklch, var(--zd-accent) 6%, transparent);
+}
+html[data-theme-pack="phosphor"] .zd-content > nav:last-of-type:not([aria-label]) > a div {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+}
+
+/* TOC: hairline spine, glow hover, inverse-video active line (the
+   real DOM marks it with aria-current="true"; its own text-bg class
+   supplies the dark text over the accent fill) */
+html[data-theme-pack="phosphor"] nav[data-zd-toc] ul {
+  border-left-color: color-mix(in oklch, var(--zd-accent) 40%, transparent);
+}
+html[data-theme-pack="phosphor"] nav[data-zd-toc] a:hover {
+  text-decoration: none;
+  color: var(--zd-accent);
+  text-shadow: 0 0 8px light-dark(oklch(0.42 0.13 150 / 0.22), oklch(0.87 0.215 148 / 0.55));
+}
+html[data-theme-pack="phosphor"] nav[data-zd-toc] a[aria-current="true"] {
+  background: var(--zd-accent);
+  text-shadow: none;
+}
+
+/* footer: end of stream (the real footer has no data-footer hook;
+   it is the wrapper's direct child) */
+html[data-theme-pack="phosphor"] .zd-sidebar-content-wrapper > footer {
+  border-top-color: color-mix(in oklch, var(--zd-accent) 40%, transparent);
+}
+html[data-theme-pack="phosphor"] .zd-sidebar-content-wrapper > footer::after {
+  content: "── EOF ──";
+  display: block;
+  text-align: center;
+  padding-bottom: 1.25rem;
+  font-size: 0.8rem;
+  color: var(--zd-muted);
+}
+
+/* theme-pack flyout: a small terminal window with a glowing bezel
+   (the launcher button has no stable hook) */
+html[data-theme-pack="phosphor"] div[role="dialog"][aria-label="Theme pack switcher"] {
+  border: 1px solid color-mix(in oklch, var(--zd-accent) 55%, transparent);
+  border-radius: 0;
+  box-shadow:
+    0 0 26px light-dark(oklch(0.42 0.13 150 / 0.1), oklch(0.87 0.215 148 / 0.28)),
+    0 10px 30px -6px oklch(0 0 0 / 0.45);
+}
+html[data-theme-pack="phosphor"]
+  div[role="dialog"][aria-label="Theme pack switcher"]
+  p[aria-live="polite"] {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.55rem;
+  color: var(--zd-accent);
+  text-shadow: 0 0 8px light-dark(oklch(0.42 0.13 150 / 0.22), oklch(0.87 0.215 148 / 0.55));
+}
+html[data-theme-pack="phosphor"]
+  div[role="dialog"][aria-label="Theme pack switcher"]
+  p[aria-live="polite"]::before {
+  content: "$ ";
+  color: var(--zd-muted);
+}
+
+/* keyboard focus reads as a terminal highlight */
+html[data-theme-pack="phosphor"] :focus-visible {
+  outline: 1px solid var(--zd-accent);
+  outline-offset: 2px;
+}
