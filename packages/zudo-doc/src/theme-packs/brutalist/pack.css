@@ -234,12 +234,23 @@ html[data-theme-pack="brutalist"] header[data-header]::after {
    default ink-on-surface colors. */
 html[data-theme-pack="brutalist"] header[data-header] a:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *),
 html[data-theme-pack="brutalist"] header[data-header] button:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *),
-html[data-theme-pack="brutalist"] header[data-header] span:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *) {
+html[data-theme-pack="brutalist"] header[data-header] span:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *),
+html[data-theme-pack="brutalist"] header[data-header] svg:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *) {
   color: color-mix(in srgb, var(--zd-bg) 80%, var(--zd-fg));
 }
 html[data-theme-pack="brutalist"] header[data-header] a:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *):hover,
-html[data-theme-pack="brutalist"] header[data-header] button:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *):hover {
+html[data-theme-pack="brutalist"] header[data-header] button:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *):hover,
+html[data-theme-pack="brutalist"] header[data-header] a:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *):hover svg,
+html[data-theme-pack="brutalist"] header[data-header] button:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *):hover svg {
   color: var(--zd-bg);
+}
+
+/* the inverted slab needs its own focus-ring color: the page-level
+   hazard outline fails 3:1 against the dark-mode header (a light
+   surface there), so pick per-mode oranges that clear it on the slab */
+html[data-theme-pack="brutalist"] header[data-header] a:focus-visible,
+html[data-theme-pack="brutalist"] header[data-header] button:focus-visible {
+  outline-color: light-dark(#ff6a1f, #c2410c);
 }
 
 html[data-theme-pack="brutalist"] [data-header-logo] {
@@ -364,9 +375,11 @@ html[data-theme-pack="brutalist"] .zd-content h3::before {
 
 /* prose links: thick ink underlines; hover paints over in hazard
    orange. Scoped to prose containers so pager cards, tag pills, and
-   heading anchors keep their own hover treatments. */
+   heading anchors keep their own hover treatments. The li branches
+   exclude [aria-label] anchors — TagNav's all-tags chips render as
+   li > a[aria-label] and keep their clipped-chip hover. */
 html[data-theme-pack="brutalist"] .zd-content p a,
-html[data-theme-pack="brutalist"] .zd-content li a,
+html[data-theme-pack="brutalist"] .zd-content li a:not([aria-label]),
 html[data-theme-pack="brutalist"] .zd-content td a,
 html[data-theme-pack="brutalist"] .zd-content blockquote a {
   text-decoration-thickness: 2px;
@@ -374,7 +387,7 @@ html[data-theme-pack="brutalist"] .zd-content blockquote a {
   font-weight: 500;
 }
 html[data-theme-pack="brutalist"] .zd-content p a:hover,
-html[data-theme-pack="brutalist"] .zd-content li a:hover,
+html[data-theme-pack="brutalist"] .zd-content li a:not([aria-label]):hover,
 html[data-theme-pack="brutalist"] .zd-content td a:hover,
 html[data-theme-pack="brutalist"] .zd-content blockquote a:hover {
   background-color: var(--zd-accent);
@@ -417,6 +430,11 @@ html[data-theme-pack="brutalist"] .zd-content th {
   font-size: 0.74rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+}
+/* links inside the inverted header row carry their own accent color
+   (ContentLink) — repaint them bg-colored so they clear 4.5:1 */
+html[data-theme-pack="brutalist"] .zd-content th a {
+  color: var(--zd-bg);
 }
 
 /* admonitions: 4px boxes with stamped full-bleed title bars. The
