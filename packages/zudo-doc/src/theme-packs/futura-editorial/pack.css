@@ -1,0 +1,314 @@
+/* ============================================================
+   Geometric editorial — zudo-doc theme pack (ADR docs/adr/theme-packs.md)
+
+   Normal-weight Jost headings over a Noto Sans reading face — clean
+   white paper, near-black ink, ONE restrained editorial red. Jost is
+   the mandated OFL homage for the classic commercial geometric sans
+   this pack is named after (ADR Decision 5); the commercial name is
+   never load-bearing and never appears in this stylesheet. Signature
+   moves: weight-400 display headings with tight tracking and a red
+   tick above the h1; all radii zeroed with solid ink hairline rules
+   on masthead, h2, thead, and footer; a near-monochrome Space Mono
+   syntax palette reserving the single red for keywords; emoji
+   admonition icons swapped for uppercase typographic labels.
+
+   Every rule below is scoped under the pack's own
+   html[data-theme-pack="…"] attribute selector — this is what makes
+   the runtime pack swap atomic (Decision 3) and lets the validator
+   prove a pack can never leak styles while inactive (Decision 6.7).
+   The @font-face blocks are the sole exception (at-rules can't be
+   selector-scoped).
+
+   Prototype-selector adaptations against the REAL DOM (tokens-dump
+   §6 + component sources), noted inline where they matter:
+   - `.lead`         → `.zd-content > p:first-of-type` (the description
+                       paragraph DocContentHeader emits — broadsheet's
+                       adaptation, same known limit: on a page without a
+                       frontmatter description the first BODY paragraph
+                       takes the deck styling instead)
+   - `.sb-group > p` → the static group heads don't exist in the real
+                       SidebarTree island; not ported. The active link
+                       already renders the prototype's ink fill (the
+                       stock a[data-nav-active] ink indicator).
+   - `.toc-title`    → no desktop TOC heading exists (#1655), and the
+                       prototype's `.toc-active` ink fill IS the stock
+                       active style — the TOC needs no extras at all.
+   - `.doc-pager`    → `.zd-content > nav:last-of-type:not([aria-label])`
+                       (DocPager is the article's last direct-child nav
+                       and ships no aria-label; the :not guard excludes
+                       NavCardGrid's "Child pages" nav).
+   - `footer[data-footer]` → `.zd-sidebar-content-wrapper > footer` (no
+                       data-footer attribute in the real DOM). The
+                       prototype's uppercase colophon line has no stable
+                       hook and is intentionally not ported.
+   - the theme-switcher flyout has NO stable hook — its square-card
+     print-offset shadow is intentionally NOT ported.
+
+   Fonts: latin subsets only (all three families) to stay well inside
+   the ~250 KB payload budget — a stray latin-ext glyph falls back to
+   the stack's system face.
+   ============================================================ */
+
+/* ---- Jost — display/heading face. Variable file covering 400–600:
+        weight 400 carries the headings (the signature), 500 the small
+        uppercase labels. ---- */
+
+@font-face {
+  font-family: "Jost";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("./fonts/Jost-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- Noto Sans — reading text. Weight-range variable file (400–700),
+        both styles — prose emphasis wants TRUE italics. ---- */
+
+@font-face {
+  font-family: "Noto Sans";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/NotoSans-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Noto Sans";
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/NotoSans-italic-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- Space Mono — code face (static 400 + 700; the 700 keeps
+        keywords genuinely bold, not smeared). ---- */
+
+@font-face {
+  font-family: "Space Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/SpaceMono-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Space Mono";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/SpaceMono-700-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+html[data-theme-pack="futura-editorial"] {
+  /* Tier-2 semantic roles — ink on paper both ways: a pure-white /
+     near-black flip, the same restrained editorial red in both modes.
+     Both modes always via light-dark(). */
+  --zd-bg: light-dark(oklch(1 0 0), oklch(0.165 0 0));
+  --zd-fg: light-dark(oklch(0.17 0 0), oklch(0.935 0 0));
+  --zd-selection-bg: light-dark(oklch(0.17 0 0), oklch(0.935 0 0));
+  --zd-selection-fg: light-dark(oklch(1 0 0), oklch(0.165 0 0));
+  --zd-surface: light-dark(oklch(1 0 0), oklch(0.145 0 0));
+  --zd-muted: light-dark(oklch(0.44 0 0), oklch(0.71 0 0));
+  --zd-accent: light-dark(oklch(0.505 0.18 28), oklch(0.72 0.15 29));
+  --zd-accent-hover: light-dark(oklch(0.42 0.16 28), oklch(0.78 0.12 29));
+  --zd-code-bg: light-dark(oklch(0.965 0 0), oklch(0.215 0 0));
+  --zd-code-fg: light-dark(oklch(0.22 0 0), oklch(0.93 0 0));
+  --zd-success: light-dark(oklch(0.46 0.11 155), oklch(0.72 0.12 155));
+  --zd-danger: light-dark(oklch(0.505 0.18 28), oklch(0.7 0.16 28));
+  --zd-warning: light-dark(oklch(0.5 0.11 75), oklch(0.78 0.12 80));
+  --zd-info: light-dark(oklch(0.46 0.1 250), oklch(0.72 0.1 250));
+
+  /* syntax — all 9 roles, both modes: near-monochrome editorial ink
+     with the red reserved for keywords; strings/numbers/callables stay
+     low-chroma. inserted/deleted reuse the success/danger hues. The
+     light comment is nudged from the prototype's 0.55 gray to 0.52 to
+     clear WCAG 4.5:1 on the code background. */
+  --zd-syntax-comment: light-dark(oklch(0.52 0 0), oklch(0.63 0 0));
+  --zd-syntax-string: light-dark(oklch(0.47 0.09 160), oklch(0.76 0.1 160));
+  --zd-syntax-number: light-dark(oklch(0.5 0.1 60), oklch(0.78 0.11 75));
+  --zd-syntax-keyword: light-dark(oklch(0.505 0.18 28), oklch(0.72 0.15 29));
+  --zd-syntax-callable: light-dark(oklch(0.45 0.1 250), oklch(0.73 0.095 250));
+  --zd-syntax-type: light-dark(oklch(0.42 0.06 250), oklch(0.79 0.06 250));
+  --zd-syntax-name: light-dark(oklch(0.2 0 0), oklch(0.93 0 0));
+  --zd-syntax-inserted: light-dark(oklch(0.46 0.11 155), oklch(0.72 0.12 155));
+  --zd-syntax-deleted: light-dark(oklch(0.505 0.18 28), oklch(0.7 0.16 28));
+
+  /* fonts — Noto Sans carries the reading text, Space Mono the code,
+     Jost the display face for headings and labels. */
+  --font-sans: "Noto Sans", system-ui, sans-serif;
+  --font-mono: "Space Mono", ui-monospace, monospace;
+  --font-display: "Jost", system-ui, sans-serif;
+
+  /* Tier-3 component seams — NORMAL-weight display headings with tight
+     tracking (the signature move); square print geometry: zero radii,
+     hairline 2px admonition spines. */
+  --zdc-doc-title-font: var(--font-display);
+  --zdc-doc-title-weight: 400;
+  --zdc-doc-title-tracking: -0.02em;
+  --zdc-doc-h2-font: var(--font-display);
+  --zdc-doc-h2-weight: 400;
+  --zdc-doc-h2-tracking: -0.01em;
+  --zdc-doc-h3-weight: 500;
+  --zdc-admonition-radius: 0;
+  --zdc-admonition-border-width: 2px;
+  --zdc-card-radius: 0;
+}
+
+/* ---- extras ---- */
+
+/* masthead: geometric logotype over a solid ink rule */
+html[data-theme-pack="futura-editorial"] header[data-header] {
+  border-bottom: 1px solid var(--zd-fg);
+}
+html[data-theme-pack="futura-editorial"] [data-header-logo] {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.05rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+html[data-theme-pack="futura-editorial"] [data-nav-item] {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+/* sidebar: the stock ink-fill active indicator already matches the
+   prototype; only its optical tracking tweak is ported */
+html[data-theme-pack="futura-editorial"] a[data-nav-active] {
+  letter-spacing: 0.01em;
+}
+
+/* title block: red tick above the h1 (signature move #1) */
+html[data-theme-pack="futura-editorial"] .zd-content h1::before {
+  content: "";
+  display: block;
+  width: 3.25rem;
+  height: 0.25rem;
+  background: var(--zd-accent);
+  margin-bottom: 1.4rem;
+}
+
+/* the deck: display-face standfirst under the headline (prototype
+   `.lead` — see the adaptation note in the header comment) */
+html[data-theme-pack="futura-editorial"] .zd-content > p:first-of-type {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.3rem;
+  line-height: 1.5;
+}
+
+/* headings: full-width solid ink hairline over h2 instead of the stock
+   fade (signature move #2). The h2 rule needs !important to defeat the
+   SSR-inlined `style="border-image:linear-gradient(...)"` (Decision
+   6.6's sole allowlisted carve-out). */
+html[data-theme-pack="futura-editorial"] .zd-content h2 {
+  border-image: none !important;
+  border-top-width: 1px;
+  border-top-color: var(--zd-fg);
+}
+html[data-theme-pack="futura-editorial"] .zd-content h3 {
+  font-family: var(--font-display);
+  letter-spacing: 0.01em;
+  font-size: 1.2rem;
+}
+
+/* prose details: hairline underlines with print offset */
+html[data-theme-pack="futura-editorial"] .zd-content a {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+html[data-theme-pack="futura-editorial"] .zd-content blockquote {
+  border-left: 2px solid var(--zd-fg);
+  color: var(--zd-fg);
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.2rem;
+  line-height: 1.5;
+  padding: 0.35rem 0 0.35rem 1.25rem;
+}
+
+/* code: Space Mono at print scale inside a quiet ink hairline frame;
+   square corners (print has none) */
+html[data-theme-pack="futura-editorial"] pre.hi-root {
+  font-size: 0.85rem;
+  border-color: color-mix(in oklch, var(--zd-fg) 20%, transparent);
+  border-radius: 0;
+}
+html[data-theme-pack="futura-editorial"] .hi-com {
+  font-style: italic;
+}
+html[data-theme-pack="futura-editorial"] .zd-content code:not(pre code) {
+  font-weight: 400;
+  border-radius: 0;
+}
+
+/* admonitions: uppercase typographic labels, em-dash ticks instead of
+   emoji across all seven variants (signature move #4) */
+html[data-theme-pack="futura-editorial"] [data-admonition] .admonition-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.8rem;
+}
+html[data-theme-pack="futura-editorial"] [data-admonition="note"] .admonition-title::before,
+html[data-theme-pack="futura-editorial"] [data-admonition="tip"] .admonition-title::before,
+html[data-theme-pack="futura-editorial"] [data-admonition="info"] .admonition-title::before,
+html[data-theme-pack="futura-editorial"] [data-admonition="warning"] .admonition-title::before,
+html[data-theme-pack="futura-editorial"] [data-admonition="danger"] .admonition-title::before,
+html[data-theme-pack="futura-editorial"] [data-admonition="important"] .admonition-title::before,
+html[data-theme-pack="futura-editorial"] [data-admonition="caution"] .admonition-title::before {
+  content: "\2014\2002";
+}
+
+/* tables: uppercase display column heads over a solid ink rule
+   (signature move #3) */
+html[data-theme-pack="futura-editorial"] .zd-content th {
+  font-family: var(--font-display);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.78rem;
+  border-bottom: 2px solid var(--zd-fg);
+}
+
+/* pager: square folio cards, ink border on hover, uppercase display
+   labels (DocPager selector — see the header adaptation note) */
+html[data-theme-pack="futura-editorial"] .zd-content > nav:last-of-type:not([aria-label]) a {
+  border-radius: 0;
+}
+html[data-theme-pack="futura-editorial"] .zd-content > nav:last-of-type:not([aria-label]) a:hover {
+  border-color: var(--zd-fg);
+}
+html[data-theme-pack="futura-editorial"] .zd-content > nav:last-of-type:not([aria-label]) a > div {
+  font-family: var(--font-display);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.68rem;
+}
+html[data-theme-pack="futura-editorial"] .zd-content > nav:last-of-type:not([aria-label]) a p {
+  font-family: var(--font-display);
+  font-weight: 500;
+}
+
+/* footer: colophon under a solid ink hairline */
+html[data-theme-pack="futura-editorial"] .zd-sidebar-content-wrapper > footer {
+  border-top: 1px solid var(--zd-fg);
+}
