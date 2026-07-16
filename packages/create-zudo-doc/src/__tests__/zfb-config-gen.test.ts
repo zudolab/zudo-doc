@@ -138,6 +138,45 @@ describe("generateZfbConfig — color scheme", () => {
   });
 });
 
+describe("generateZfbConfig — theme pack (ADR #2818)", () => {
+  it("emits themePack when a non-default slug is chosen", () => {
+    const result = generateZfbConfig({ ...baseChoices, themePack: "foundry" });
+    expect(result).toContain('themePack: "foundry"');
+  });
+
+  it("omits themePack when it matches the default", () => {
+    const result = generateZfbConfig({ ...baseChoices, themePack: "default" });
+    expect(result).not.toContain("themePack");
+  });
+
+  it("omits themePack entirely when no theme-pack choice was made", () => {
+    const result = generateZfbConfig(baseChoices);
+    expect(result).not.toContain("themePack");
+  });
+
+  it("emits themePackSwitcher: true when the feature is selected", () => {
+    const result = generateZfbConfig({
+      ...baseChoices,
+      features: ["themePackSwitcher"],
+    });
+    expect(result).toContain("themePackSwitcher: true");
+  });
+
+  it("omits themePackSwitcher when not selected (matches its false default)", () => {
+    const result = generateZfbConfig(baseChoices);
+    expect(result).not.toContain("themePackSwitcher");
+  });
+
+  it("never emits themePacks (advanced, hand-edit-only field — no CLI/prompt surface)", () => {
+    const result = generateZfbConfig({
+      ...baseChoices,
+      themePack: "foundry",
+      features: ["themePackSwitcher"],
+    });
+    expect(result).not.toContain("themePacks");
+  });
+});
+
 describe("generateZfbConfig — i18n", () => {
   it("emits a locales entry keyed by the secondary language", () => {
     const result = generateZfbConfig({ ...baseChoices, features: ["i18n"] });

@@ -57,6 +57,7 @@ async function main() {
   if (args.respectSystemPreference !== undefined) {
     prefilled.respectPrefersColorScheme = args.respectSystemPreference;
   }
+  if (args.themePack) prefilled.themePack = args.themePack;
   if (args.pm) prefilled.packageManager = args.pm;
   if (args.githubUrl !== undefined) prefilled.githubUrl = args.githubUrl;
 
@@ -91,6 +92,7 @@ async function main() {
     } else {
       prefilled.singleScheme ??= "Default Dark";
     }
+    prefilled.themePack ??= "default";
     prefilled.packageManager ??= "pnpm";
     prefilled.githubUrl ??= "";
     // For features: set defaults for any not explicitly specified

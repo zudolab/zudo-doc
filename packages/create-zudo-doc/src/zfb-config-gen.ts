@@ -36,6 +36,9 @@ export const DEFAULT_MIRROR: Record<string, unknown> = {
     darkScheme: "Default Dark",
     respectPrefersColorScheme: true,
   },
+  themePack: "default",
+  themePackSwitcher: false,
+  themePacks: undefined,
   siteName: "Docs",
   minifyHtml: true,
   defaultLocale: "en",
@@ -166,6 +169,13 @@ function buildDesiredConfig(choices: UserChoices): Record<string, unknown> {
       respectPrefersColorScheme: choices.respectPrefersColorScheme ?? true,
     };
   }
+
+  // ── Theme pack (ADR #2818 Decision 7) ────────────────────────────────
+  // themePacks (the enabled-slugs allowlist) is intentionally NOT set here —
+  // it is an advanced, hand-edited-only field with no CLI/prompt surface
+  // (locked spec, #2823).
+  desired.themePack = choices.themePack ?? "default";
+  desired.themePackSwitcher = choices.features.includes("themePackSwitcher");
 
   // ── i18n ──────────────────────────────────────────────────────────────
   desired.defaultLocale = choices.defaultLang ?? "en";
@@ -358,6 +368,9 @@ function buildDesiredConfig(choices: UserChoices): Record<string, unknown> {
 const FIELD_ORDER = [
   "colorScheme",
   "colorMode",
+  "themePack",
+  "themePackSwitcher",
+  "themePacks",
   "siteName",
   "defaultLocale",
   "locales",

@@ -68,6 +68,41 @@ describe("validatePreset — minifyHtml", () => {
   });
 });
 
+describe("presetToChoices — themePack (ADR #2818)", () => {
+  it("forwards a valid theme pack slug", () => {
+    const choices = presetToChoices({ themePack: "foundry" });
+    expect(choices.themePack).toBe("foundry");
+  });
+
+  it("leaves themePack undefined when omitted", () => {
+    const choices = presetToChoices({});
+    expect(choices.themePack).toBeUndefined();
+  });
+});
+
+describe("validatePreset — themePack (ADR #2818)", () => {
+  it("accepts a known theme pack slug", () => {
+    expect(validatePreset({ themePack: "default" })).toBeNull();
+    expect(validatePreset({ themePack: "foundry" })).toBeNull();
+  });
+
+  it("accepts the field being omitted entirely", () => {
+    expect(validatePreset({})).toBeNull();
+  });
+
+  it("rejects an unknown theme pack slug", () => {
+    expect(validatePreset({ themePack: "not-a-real-pack" })).toMatch(
+      /Unknown theme pack "not-a-real-pack"/,
+    );
+  });
+
+  it("rejects a non-string value", () => {
+    expect(validatePreset({ themePack: 42 })).toMatch(
+      /"themePack" must be a string/,
+    );
+  });
+});
+
 describe("validatePreset — headerRightItems (sub #440)", () => {
   it("accepts a valid mix of component and trigger items", () => {
     expect(

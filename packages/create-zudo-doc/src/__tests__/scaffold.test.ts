@@ -97,7 +97,7 @@ const BAREBONE_MANIFEST = [
   "zfb.config.ts",
 ].sort();
 
-/** All 24 feature values wired to a real (non-pseudo, non-scaffold.ts-only) module. */
+/** All 25 feature values wired to a real (non-pseudo, non-scaffold.ts-only) module. */
 const ALL_FEATURES = [
   "i18n",
   "search",
@@ -105,6 +105,7 @@ const ALL_FEATURES = [
   "claudeResources",
   "claudeSkills",
   "designTokenPanel",
+  "themePackSwitcher",
   "sidebarResizer",
   "sidebarToggle",
   "versioning",
