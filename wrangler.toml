@@ -8,9 +8,6 @@ compatibility_date = "2024-12-01"
 # nodejs_compat is required by the CF adapter bundle at dist/_worker.js,
 # which imports node:async_hooks (AsyncLocalStorage). Without this flag
 # wrangler 4.x refuses to load the worker even when dist/_worker.js exists.
-# The generated adapter-only preview config additionally opts into
-# global_fetch_strictly_public so its workers.dev alias can make same-zone
-# requests without Cloudflare runtime error 1042. Production stays unchanged.
 compatibility_flags = ["nodejs_compat"]
 
 # Top-level fields (MUST stay above the [assets] table — in TOML any key after

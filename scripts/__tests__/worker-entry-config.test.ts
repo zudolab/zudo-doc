@@ -51,7 +51,9 @@ describe("custom Worker deployment contract", () => {
 
     const previewEntry = read("worker-preview-entry.ts");
     expect(previewEntry).toContain('import adapterWorker from "./dist/_worker.js";');
-    expect(previewEntry).toMatch(/export default adapterWorker;\s*$/);
+    expect(previewEntry).toContain('assetUrl.host = "assets.local"');
+    expect(previewEntry).toContain("adapterWorker.fetch(request, previewEnv, ctx)");
+    expect(previewEntry).toContain("satisfies ExportedHandler<Cloudflare.Env>");
     expect(previewEntry).not.toContain("AiChatDailySpendCap");
   });
 
@@ -66,12 +68,8 @@ describe("custom Worker deployment contract", () => {
     expect(previewConfig).toContain("preview_urls = true");
     expect(previewConfig).toContain("workers_dev = false");
     expect(previewConfig).not.toContain("workers_dev = true");
-    expect(previewConfig).toContain(
-      'compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]',
-    );
-    expect(config).not.toContain(
-      'compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]',
-    );
+    expect(previewConfig).toContain('compatibility_flags = ["nodejs_compat"]');
+    expect(previewConfig).not.toContain("global_fetch_strictly_public");
     expect(previewConfig).not.toContain('name = "zudo-doc"\n');
     expect(previewConfig).not.toContain('main = "./worker-entry.ts"');
     expect(previewConfig).toContain('[assets]\ndirectory = "./dist"');

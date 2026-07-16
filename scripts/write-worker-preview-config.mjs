@@ -8,8 +8,6 @@ const PRODUCTION_NAME = 'name = "zudo-doc"';
 const PREVIEW_NAME = 'name = "zudo-doc-preview"';
 const PRODUCTION_ENTRY = 'main = "./worker-entry.ts"';
 const PREVIEW_ENTRY = 'main = "./worker-preview-entry.ts"';
-const PRODUCTION_FLAGS = 'compatibility_flags = ["nodejs_compat"]';
-const PREVIEW_FLAGS = 'compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]';
 
 export function createPreviewWorkerConfig(source) {
   const start = source.indexOf(START);
@@ -25,18 +23,13 @@ export function createPreviewWorkerConfig(source) {
   const afterEnd = end + END.length;
   const withoutObject = `${source.slice(0, start)}${source.slice(afterEnd).replace(/^\r?\n/, "")}`;
 
-  if (
-    !withoutObject.includes(PRODUCTION_NAME) ||
-    !withoutObject.includes(PRODUCTION_ENTRY) ||
-    !withoutObject.includes(PRODUCTION_FLAGS)
-  ) {
-    throw new Error("wrangler.toml is missing the production Worker name, entry, or compatibility flags");
+  if (!withoutObject.includes(PRODUCTION_NAME) || !withoutObject.includes(PRODUCTION_ENTRY)) {
+    throw new Error("wrangler.toml is missing the production Worker name or entry");
   }
 
   return withoutObject
     .replace(PRODUCTION_NAME, PREVIEW_NAME)
-    .replace(PRODUCTION_ENTRY, PREVIEW_ENTRY)
-    .replace(PRODUCTION_FLAGS, PREVIEW_FLAGS);
+    .replace(PRODUCTION_ENTRY, PREVIEW_ENTRY);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
