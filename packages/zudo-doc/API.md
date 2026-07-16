@@ -320,6 +320,9 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `headerRightItems` | `HeaderRightItem[]` | Header right side items |
 | `packageOwnedRoutes?` | `boolean` | Package-owned route injection seam. Default `true` (#2404). See ADR `docs/adr/route-injection-seam.md`. |
 | `chromeBindingsModule?` | `string` | Project-root-relative path (e.g. `"./src/chrome-bindings.tsx"`) to a host module with a **named export `chromeBindings`**, built with `defineChromeBindings` (from `./chrome-bindings`) and typed `ChromeHostBindings` (type from `./factory-context`). Only consumed under `packageOwnedRoutes`: the routes plugin re-exports the module through `virtual:zudo-doc-chrome-bindings` so the injected chrome shim spreads real host bindings into `createChrome(...)`. Absent → byte-identical stub-defaults behavior; explicitly empty string → the build fails loudly at plugin setup; present but file missing → the build fails at plugin setup, naming the resolved absolute path. SSR-presentational only — client islands inside the module are not guaranteed to register on injected routes. See ADR `docs/adr/route-injection-seam.md` ("Host-callables channel — chromeBindingsModule"). |
+| `themePack?` | `string` | Active theme-pack slug. Default `"default"` (the stock look — no pack stylesheet loaded). Must be a member of the resolved `themePacks` list; an unknown slug fails the build loudly at plugin setup. See ADR `docs/adr/theme-packs.md`. |
+| `themePackSwitcher?` | `boolean` | Mount the bottom-right theme-pack switcher flyout (and its browse-all dialog). Default `false`. |
+| `themePacks?` | `string[]` | Enabled theme-pack slugs, in switcher order. Default `undefined` (every bundled pack, `"default"` first then alphabetical). An explicit list is authoritative — may omit `"default"`, reorder freely; duplicate/unknown slugs fail the build loudly. |
 
 ---
 
