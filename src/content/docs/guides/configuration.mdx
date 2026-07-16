@@ -165,6 +165,32 @@ colorMode: false, // single fixed scheme (colorScheme only)
 
 See the [Color reference](../reference/color.mdx) for the ramp-native model and adding a custom scheme (via the `colorSchemes` escape hatch below).
 
+## Theme packs
+
+Theme packs are installable design bundles layered **on top of** the color-scheme system above — every pack defines both its light and dark values, so the mode toggle keeps working on any pack. See the [Theme Packs reference](../reference/theme-packs.mdx) for the switcher UI, the theme CLI, and pack authoring.
+
+### themePack
+
+Active theme pack slug. `"default"` is the stock zudo-doc look (no pack stylesheet loaded). Must be a member of the resolved `themePacks` list; an unknown slug fails the build loudly.
+
+Default: `"default"`
+
+### themePackSwitcher
+
+Mount the bottom-right theme-pack switcher flyout (and its browse-all dialog) on every page.
+
+Default: `false`
+
+### themePacks
+
+Enabled pack slugs, in switcher order — the list order is the switcher's Prev/Next cycle order and the browse-all grid order. `undefined` enables all bundled packs: `"default"` first, then the rest alphabetically. An explicit list is authoritative — it may omit `"default"` and reorder freely; duplicates or unknown slugs fail the build loudly.
+
+Default: `undefined`
+
+```ts
+themePacks: ["default", "foundry"],
+```
+
 ## Content and i18n
 
 ### docsDir
