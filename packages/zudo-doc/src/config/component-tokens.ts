@@ -467,48 +467,64 @@ export const COMPONENT_TOKENS: ComponentToken[] = [
       "Base font family for the whole document, and the seam that lets `--font-sans` reach the app shell (header/sidebar/TOC/breadcrumb/footer) at all — without it those surfaces inherit Tailwind preflight's hardcoded literal stack instead of the token. Defaults to `var(--font-sans)`. Redefine `--font-sans` (the usual theme-pack route) to restyle everything, or `--zdc-chrome-font` to move the shell independently of prose.",
   },
   // ── Per-surface chrome font knobs (#2887 / epic #2886) ────────────────────
-  // Each defaults to `inherit` — i.e. to the `body` seam above — so they are
-  // byte-identical no-ops until a consumer redefines one. They exist so a pack
-  // can give a single shell surface its own face (e.g. a display font in the
-  // header while nav and TOC stay on the body font) without ejecting anything.
+  // Each lets a pack give ONE shell surface its own face (e.g. a display font in
+  // the header while nav and TOC stay on the body font) without ejecting
+  // anything. Each selector deliberately covers BOTH the desktop and the mobile
+  // emitter of its surface, so one override lands on both viewports. The mobile
+  // hooks (`data-zd-mobile-sidebar`, `data-zd-mobile-toc`) were added in #2887
+  // for exactly this — the mobile drawer and the mobile TOC previously had no
+  // stable anchor at all, and the mobile TOC does NOT reuse `nav[data-zd-toc]`
+  // (it emits its own `<div>` markup).
   //
-  // Each selector deliberately covers BOTH the desktop and the mobile emitter of
-  // its surface, so one override lands on both viewports. The mobile hooks
-  // (`data-zd-mobile-sidebar`, `data-zd-mobile-toc`) were added in #2887 for
-  // exactly this — the mobile drawer and the mobile TOC previously had no stable
-  // anchor at all, and the mobile TOC does NOT reuse `nav[data-zd-toc]` (it
-  // emits its own `<div>` markup).
+  // ── Why the default is the chrome seam, NOT `inherit` ─────────────────────
+  // These three chain to `var(--zdc-chrome-font, var(--font-sans))` — the same
+  // value the `body` seam above resolves to — rather than to `inherit` like the
+  // content-surface `-font` tokens do. `inherit` is the WRONG default here
+  // because a surface's two emitters live in DIFFERENT parts of the DOM, so
+  // `inherit` resolves them against different ancestors and silently splits them:
+  //   - The mobile drawer renders INSIDE `header[data-header]` (Header projects
+  //     `SidebarToggle` into its `sidebarToggle` slot). Under `inherit`, a pack
+  //     setting ONLY `--zdc-header-font` would leak that face into the drawer
+  //     while `#desktop-sidebar` — which inherits from `body` — kept the body
+  //     font. One "sidebar", two fonts.
+  //   - The mobile TOC renders inside `.zd-content`, so under `inherit` it would
+  //     follow `--zdc-doc-prose-font` while the desktop rail followed the chrome
+  //     font. The TOC is navigation, not prose; it belongs on the chrome font.
+  // Anchoring to the seam makes each knob depend only on its own value and the
+  // chrome font — never on where the component happens to be mounted. Still a
+  // no-op by default: the resolved value is identical to what `inherit` produced
+  // when nothing is overridden (both land on `var(--font-sans)`).
   {
     cssVar: "--zdc-header-font",
     selector: "header[data-header]",
     property: "font-family",
-    default: "inherit",
+    default: "var(--zdc-chrome-font, var(--font-sans))",
     component: "header",
     surface: "chrome",
     category: "typography",
     description:
-      "Font family of the site header. Defaults to `inherit` (the `--zdc-chrome-font` body seam — byte-identical); redefine in :root to give the header its own face, e.g. a display font for the wordmark and nav.",
+      "Font family of the site header. Defaults to the `--zdc-chrome-font` seam (a no-op until redefined); set in :root to give the header its own face, e.g. a display font for the wordmark and nav. Scoped to the header itself — it does not leak into the mobile sidebar drawer that the header hosts.",
   },
   {
     cssVar: "--zdc-sidebar-font",
     selector: "#desktop-sidebar, aside[data-zd-mobile-sidebar]",
     property: "font-family",
-    default: "inherit",
+    default: "var(--zdc-chrome-font, var(--font-sans))",
     component: "sidebar",
     surface: "chrome",
     category: "typography",
     description:
-      "Font family of the navigation sidebar — covers BOTH the desktop `#desktop-sidebar` rail and the mobile drawer, so one override styles both viewports. Defaults to `inherit` (the `--zdc-chrome-font` body seam — byte-identical).",
+      "Font family of the navigation sidebar — covers BOTH the desktop `#desktop-sidebar` rail and the mobile drawer, so one override styles both viewports and neither drifts onto a different face. Defaults to the `--zdc-chrome-font` seam (a no-op until redefined).",
   },
   {
     cssVar: "--zdc-toc-font",
     selector: "nav[data-zd-toc], div[data-zd-mobile-toc]",
     property: "font-family",
-    default: "inherit",
+    default: "var(--zdc-chrome-font, var(--font-sans))",
     component: "toc",
     surface: "chrome",
     category: "typography",
     description:
-      "Font family of the table of contents — covers BOTH the desktop right rail and the mobile collapsible TOC, so one override styles both viewports. Defaults to `inherit` (byte-identical); note the desktop TOC inherits from `body` while the mobile TOC renders inside `.zd-content` and so inherits the prose font.",
+      "Font family of the table of contents — covers BOTH the desktop right rail and the mobile collapsible TOC, so one override styles both viewports. Defaults to the `--zdc-chrome-font` seam (a no-op until redefined), which also keeps the mobile TOC on the chrome font rather than the prose font of the `.zd-content` it renders inside.",
   },
 ];

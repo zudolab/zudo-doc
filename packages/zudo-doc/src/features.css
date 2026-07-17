@@ -981,15 +981,15 @@ body {
 }
 
 header[data-header] {
-  font-family: var(--zdc-header-font, inherit);
+  font-family: var(--zdc-header-font, var(--zdc-chrome-font, var(--font-sans)));
 }
 
 #desktop-sidebar, aside[data-zd-mobile-sidebar] {
-  font-family: var(--zdc-sidebar-font, inherit);
+  font-family: var(--zdc-sidebar-font, var(--zdc-chrome-font, var(--font-sans)));
 }
 
 nav[data-zd-toc], div[data-zd-mobile-toc] {
-  font-family: var(--zdc-toc-font, inherit);
+  font-family: var(--zdc-toc-font, var(--zdc-chrome-font, var(--font-sans)));
 }
 
 /* END --zdc-* chrome component tokens */

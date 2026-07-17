@@ -453,9 +453,14 @@ Rules:
    hardcoded literal stack (no `--default-font-family` is defined), so before
    zudolab/zudo-doc#2887 a pack's `--font-sans` could only ever reach
    `.zd-content` prose. Per-surface knobs — `--zdc-header-font`,
-   `--zdc-sidebar-font`, `--zdc-toc-font`, each defaulting to `inherit` —
-   let one shell surface diverge (e.g. a display face in the header) without
-   extras; the sidebar and TOC selectors cover their mobile emitters too.
+   `--zdc-sidebar-font`, `--zdc-toc-font` — let one shell surface diverge
+   (e.g. a display face in the header) without extras; the sidebar and TOC
+   selectors cover their mobile emitters too. Each knob falls back to the
+   `--zdc-chrome-font` seam rather than `inherit`, deliberately: the mobile
+   drawer renders inside `header[data-header]` and the mobile TOC inside
+   `.zd-content`, so an `inherit` default would resolve a surface's two
+   emitters against different ancestors and split them (a header-only
+   override would leak into the drawer but not the desktop rail).
    `--font-mono` needs no such seam: every code surface sets `font-family`
    on itself explicitly.
 5. **Extras only against the stable hooks:** `header[data-header]`,

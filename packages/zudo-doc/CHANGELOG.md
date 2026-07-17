@@ -9,7 +9,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 ### Features
 
 - Theme-pack fonts now reach the app shell. A new `--zdc-chrome-font` component token backs an unlayered `body { font-family: var(--zdc-chrome-font, var(--font-sans)) }` rule in `features.css`, so a pack's `--font-sans` override applies to the header, sidebars, TOCs, breadcrumb, and footer — not just `.zd-content` prose (#2887)
-- New per-surface chrome font tokens, each defaulting to `inherit` so they are no-ops until redefined: `--zdc-header-font` (`header[data-header]`), `--zdc-sidebar-font` (desktop rail + mobile drawer), and `--zdc-toc-font` (desktop right rail + mobile TOC). Each selector covers both the desktop and mobile emitter, so one override styles every viewport (#2887)
+- New per-surface chrome font tokens, no-ops until redefined: `--zdc-header-font` (`header[data-header]`), `--zdc-sidebar-font` (desktop rail + mobile drawer), and `--zdc-toc-font` (desktop right rail + mobile TOC). Each selector covers both the desktop and mobile emitter, so one override styles every viewport, and each falls back to the `--zdc-chrome-font` seam rather than `inherit` so a surface's two emitters can never resolve to different fonts (the mobile drawer renders inside the header; the mobile TOC inside `.zd-content`) (#2887)
 - New stable DOM hooks for the two mobile surfaces that previously had no anchor: `data-zd-mobile-sidebar` on the mobile drawer `<aside>` and `data-zd-mobile-toc` on the mobile TOC panel. Neither surface shares its desktop counterpart's selector — the drawer is not `#desktop-sidebar`, and the mobile TOC emits its own `<div>` rather than a `nav[data-zd-toc]` (#2887)
 
 ### Notes
