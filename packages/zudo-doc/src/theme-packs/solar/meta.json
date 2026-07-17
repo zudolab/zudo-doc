@@ -4,7 +4,7 @@
   "name": "Solar",
   "description": "Solarized precision — low-eyestrain paper tones, blue/cyan/orange accents, mono labels, technical calm in both modes.",
   "mode": "light",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "fonts": {
     "sans": "Source Sans 3",
     "mono": "Source Code Pro",

@@ -410,25 +410,29 @@ html[data-theme-pack="swissgrid"] .zd-content td {
 }
 
 /* ---- pager: square cards, hard red offset on hover ----
-   (DocPager renders as the direct-child <nav> of article.zd-content —
-   the prototype's ".doc-pager" class doesn't exist in the real DOM.
-   Inside each card: <div> = the small prev/next label row, <p> = the
-   destination title.) */
+   (Retargeted onto the stable `data-doc-pager` hook on the DocPager
+   <nav>, zudolab/zudo-doc#2879 — was the bare `.zd-content > nav`,
+   which had no exclusion for the NavCardGrid "Child pages" nav that
+   also renders as a `.zd-content > nav` on auto-index pages; this
+   pack's rules were accidentally stamping those child-page cards with
+   the pager's square-card treatment too. The hook-scoped selector
+   fixes that overreach. Inside each card: <div> = the small prev/next
+   label row, <p> = the destination title.) */
 
-html[data-theme-pack="swissgrid"] .zd-content > nav a {
+html[data-theme-pack="swissgrid"] .zd-content > nav[data-doc-pager] a {
   border: 1px solid var(--zd-fg);
   border-radius: 0;
 }
-html[data-theme-pack="swissgrid"] .zd-content > nav a:hover {
+html[data-theme-pack="swissgrid"] .zd-content > nav[data-doc-pager] a:hover {
   border-color: #ff0000;
   box-shadow: 4px 4px 0 0 #ff0000;
 }
-html[data-theme-pack="swissgrid"] .zd-content > nav a div {
+html[data-theme-pack="swissgrid"] .zd-content > nav[data-doc-pager] a div {
   text-transform: uppercase;
   font-size: 0.66rem;
   letter-spacing: 0.14em;
 }
-html[data-theme-pack="swissgrid"] .zd-content > nav a p {
+html[data-theme-pack="swissgrid"] .zd-content > nav[data-doc-pager] a p {
   font-weight: 700;
 }
 
@@ -451,49 +455,54 @@ html[data-theme-pack="swissgrid"] nav[data-zd-toc] a[aria-current="true"] {
   box-shadow: inset 3px 0 0 0 #ff0000;
 }
 
-/* ---- footer: heavy rule, ink links with red underlines ---- */
+/* ---- footer: heavy rule, ink links with red underlines ----
+   (Retargeted onto the stable data-footer hook, zudolab/zudo-doc#2879
+   — was `.zd-sidebar-content-wrapper footer`.) */
 
-html[data-theme-pack="swissgrid"] .zd-sidebar-content-wrapper footer {
+html[data-theme-pack="swissgrid"] footer[data-footer] {
   border-top: 4px solid var(--zd-fg);
 }
-html[data-theme-pack="swissgrid"] .zd-sidebar-content-wrapper footer a {
+html[data-theme-pack="swissgrid"] footer[data-footer] a {
   color: var(--zd-fg);
   text-decoration-color: #ff0000;
   text-decoration-thickness: 2px;
 }
-html[data-theme-pack="swissgrid"] .zd-sidebar-content-wrapper footer a:hover {
+html[data-theme-pack="swissgrid"] footer[data-footer] a:hover {
   color: var(--zd-accent);
 }
 
 /* ---- theme-pack switcher: square, black frame, hard red shadow ----
-   (The flyout card and launcher carry no dedicated hook classes; their
-   accessible names are the stable handle.) */
+   (Retargeted onto the stable data-switcher-card / data-switcher-launcher
+   hooks, zudolab/zudo-doc#2879 — was the flyout card/launcher's
+   accessible names, `div[role="dialog"][aria-label="Theme pack
+   switcher"]` and `button[aria-haspopup="dialog"][aria-label="Theme
+   pack switcher"]`.) */
 
-html[data-theme-pack="swissgrid"] div[role="dialog"][aria-label="Theme pack switcher"] {
+html[data-theme-pack="swissgrid"] div[data-switcher-card] {
   border: 2px solid var(--zd-fg);
   border-radius: 0;
   box-shadow: 10px 10px 0 0 #ff0000;
 }
-html[data-theme-pack="swissgrid"] div[role="dialog"][aria-label="Theme pack switcher"] span {
+html[data-theme-pack="swissgrid"] div[data-switcher-card] span {
   border-radius: 0;
 }
-html[data-theme-pack="swissgrid"] div[role="dialog"][aria-label="Theme pack switcher"] button {
+html[data-theme-pack="swissgrid"] div[data-switcher-card] button {
   border-radius: 0;
   border-color: var(--zd-fg);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
-html[data-theme-pack="swissgrid"] div[role="dialog"][aria-label="Theme pack switcher"] button:hover {
+html[data-theme-pack="swissgrid"] div[data-switcher-card] button:hover {
   background-color: var(--zd-accent);
   border-color: var(--zd-accent);
   color: light-dark(#ffffff, #0c0c0c);
 }
-html[data-theme-pack="swissgrid"] button[aria-haspopup="dialog"][aria-label="Theme pack switcher"] {
+html[data-theme-pack="swissgrid"] button[data-switcher-launcher] {
   border-radius: 0;
   border: 2px solid var(--zd-fg);
   box-shadow: 5px 5px 0 0 #ff0000;
 }
-html[data-theme-pack="swissgrid"] button[aria-haspopup="dialog"][aria-label="Theme pack switcher"]:hover {
+html[data-theme-pack="swissgrid"] button[data-switcher-launcher]:hover {
   color: var(--zd-accent);
   border-color: var(--zd-accent);
 }

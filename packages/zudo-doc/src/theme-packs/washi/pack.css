@@ -26,23 +26,31 @@
 
    Prototype-selector adaptations against the REAL DOM (tokens-dump
    §6 + component sources), noted inline where they matter:
-   - `.lead`            → `.zd-content > p:first-of-type` (the
-                          description paragraph DocContentHeader
-                          emits; broadsheet precedent + known limit)
+   - `.lead`            → `.zd-content > p[data-doc-description]`
+                          (retargeted onto the stable hook,
+                          zudolab/zudo-doc#2879 — was
+                          `.zd-content > p:first-of-type`, which fell
+                          back to the first body paragraph on
+                          description-less pages; that fallback deck
+                          is intentionally gone now, same rationale as
+                          broadsheet's own retarget)
    - `.sb-group > p::before` (sidebar group-label seal squares) →
                           NOT ported — sidebar group labels have no
                           stable hook; the sidebar keeps its
                           vertical-fiber sheet + accent hover
    - `.toc-active`      → `nav[data-zd-toc] a[aria-current="true"]`
-   - `.doc-pager`       → `.zd-content > nav:last-of-type:not([aria-label])`
-                          (DocPager is the article's last direct-child
-                          nav and ships no aria-label; the :not guard
-                          excludes NavCardGrid "Child pages")
-   - `footer[data-footer]` → `.zd-sidebar-content-wrapper > footer`
-                          (no data-footer attribute in the real DOM)
+   - `.doc-pager`       → `.zd-content > nav[data-doc-pager]`
+                          (retargeted onto the stable hook,
+                          zudolab/zudo-doc#2879 — was
+                          `.zd-content > nav:last-of-type:not([aria-label])`)
+   - `footer[data-footer]` → `footer[data-footer]` (retargeted onto the
+                          stable hook, zudolab/zudo-doc#2879 — was
+                          `.zd-sidebar-content-wrapper > footer`)
    - the theme-switcher flyout/launcher (the square indigo hanko
-     launcher + 和紙 stamp) has NO stable hook — intentionally NOT
-     ported (broadsheet precedent)
+     launcher + 和紙 stamp) — `[data-switcher-card]` /
+     `[data-switcher-launcher]` are stable hooks now too, but stay
+     unstyled — pack choice (broadsheet precedent), not a
+     missing-hook limitation
    - prototype `--radius`/`--radius-lg` were structural mock tokens,
      not part of the pack token contract — squareness lands via
      `--zdc-admonition-radius: 0`, `--zdc-card-radius: 0`, and
@@ -242,7 +250,7 @@ html[data-theme-pack="washi"] body {
 
 /* header and footer: single-fleck grain over the surface tone */
 html[data-theme-pack="washi"] header[data-header],
-html[data-theme-pack="washi"] .zd-sidebar-content-wrapper > footer {
+html[data-theme-pack="washi"] footer[data-footer] {
   background-image: radial-gradient(
     light-dark(rgb(101 78 42 / 0.04), rgb(214 205 180 / 0.028)) 1px,
     transparent 1.2px
@@ -288,13 +296,13 @@ html[data-theme-pack="washi"] .zd-content {
   letter-spacing: 0.01em;
 }
 
-/* the lead: mincho standfirst. The prototype's `.lead` is the
-   description paragraph DocContentHeader renders as the FIRST
-   direct-child <p> of the article. Known limit (broadsheet
-   precedent): the description is optional frontmatter — on a page
-   without one the first BODY paragraph takes the mincho voice
-   instead (reads as an emphasized opening paragraph, fails soft). */
-html[data-theme-pack="washi"] .zd-content > p:first-of-type {
+/* the lead: mincho standfirst — the description paragraph
+   DocContentHeader renders, targeted via the stable
+   `data-doc-description` hook. Description-less pages no longer get
+   a fallback deck (the prior `:first-of-type` selector fell back to
+   the first body paragraph; that soft-fail behavior is intentionally
+   gone, same rationale as broadsheet's own retarget). */
+html[data-theme-pack="washi"] .zd-content > p[data-doc-description] {
   font-family: var(--font-display);
   font-size: 1.2rem;
   line-height: 1.8;
@@ -454,7 +462,7 @@ html[data-theme-pack="washi"] nav[data-zd-toc] a[aria-current="true"] {
    an indigo binding edge in from the reading direction (prev = left
    card = left edge; next = right card = right edge — DocPager always
    renders two grid children, so :first/:last-child are stable) */
-html[data-theme-pack="washi"] .zd-content > nav:last-of-type:not([aria-label]) > a {
+html[data-theme-pack="washi"] .zd-content > nav[data-doc-pager] > a {
   background-color: var(--zd-surface);
   background-image: radial-gradient(
     light-dark(rgb(101 78 42 / 0.04), rgb(214 205 180 / 0.028)) 1px,
@@ -463,9 +471,9 @@ html[data-theme-pack="washi"] .zd-content > nav:last-of-type:not([aria-label]) >
   background-size: 11px 13px;
   border-radius: 0;
 }
-html[data-theme-pack="washi"] .zd-content > nav:last-of-type:not([aria-label]) > a:first-child:hover {
+html[data-theme-pack="washi"] .zd-content > nav[data-doc-pager] > a:first-child:hover {
   box-shadow: inset 3px 0 0 var(--zd-accent);
 }
-html[data-theme-pack="washi"] .zd-content > nav:last-of-type:not([aria-label]) > a:last-child:hover {
+html[data-theme-pack="washi"] .zd-content > nav[data-doc-pager] > a:last-child:hover {
   box-shadow: inset -3px 0 0 var(--zd-accent);
 }
