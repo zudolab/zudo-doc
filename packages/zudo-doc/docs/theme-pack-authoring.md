@@ -134,7 +134,7 @@ The complete extras-authoring surface (ADR Decision 6, rule 5). Select ONLY on t
 | `[data-header-nav]` | The header's top-level nav `<nav>` | Nav bar layout |
 | `[data-nav-item]` | Individual header nav item wrapper | Per-item nav styling |
 | `#desktop-sidebar` | The desktop `<aside>` sidebar container | Sidebar background/border/width |
-| `aside[data-zd-mobile-sidebar]` | The mobile sidebar drawer `<aside>` (the off-canvas panel behind the hamburger) | Mobile drawer styling — it does NOT share `#desktop-sidebar`, so style both to cover every viewport |
+| `aside[data-zd-mobile-sidebar]` | The mobile sidebar drawer `<aside>` (the off-canvas panel behind the hamburger) | Mobile drawer styling — it does NOT share `#desktop-sidebar`. **Currently a no-op for ANY rule** (not just fonts) — see the caveat after this table (zudolab/zudo-doc#2898) |
 | `.zd-sidebar-content-wrapper` | Wrapper that shifts content right of the sidebar | Content-area left-margin geometry |
 | `.zd-doc-content-band` | Flex row containing `<main>` + TOC | Content band width/gap |
 | `.zd-content` | The `<article>` MDX content root | Prose typography extras (beyond `content.css`) |
@@ -143,7 +143,7 @@ The complete extras-authoring surface (ADR Decision 6, rule 5). Select ONLY on t
 | `pre.hi-root` / `.hi-*` | Code-fence syntax highlighting root + token classes | Code block colors/spacing |
 | `nav[data-zd-toc]` | The right-rail table of contents `<nav>` | TOC panel styling |
 | `nav[data-zd-toc] a[aria-current="true"]` | The currently-active TOC entry | Active-item highlight — there is no `.toc-active` class; `aria-current` IS the contract |
-| `div[data-zd-mobile-toc]` | The mobile collapsible TOC panel | Mobile TOC styling — it emits its own markup and is NOT a `nav[data-zd-toc]`, so style both to cover every viewport |
+| `div[data-zd-mobile-toc]` | The mobile collapsible TOC panel | Mobile TOC styling — it emits its own markup and is NOT a `nav[data-zd-toc]`. **Currently a no-op for ANY rule** (not just fonts) — see the caveat after this table (zudolab/zudo-doc#2898) |
 | `a[data-nav-active]` | Sidebar's active nav item | Active sidebar-item highlight |
 | `body` | The document body | Global background/base color |
 | `footer[data-footer]` | The page footer `<footer>` | Footer background/border/link colors |
@@ -152,6 +152,8 @@ The complete extras-authoring surface (ADR Decision 6, rule 5). Select ONLY on t
 | `[data-theme-pack-switcher]` | The switcher flyout's root `<div>` | Positioning/z-index overrides of the whole flyout |
 | `[data-switcher-card]` | The switcher's open card (present only while open) | Card background/border/shadow |
 | `[data-switcher-launcher]` | The switcher's round launcher button | Launcher button styling |
+
+**Mobile hook limitation (zudolab/zudo-doc#2898).** `aside[data-zd-mobile-sidebar]` and `div[data-zd-mobile-toc]` are listed above as the intended per-viewport hooks, but neither currently matches any rendered element: both surfaces are zfb client islands, and zfb strips bare `data-*` attributes from island roots during SSR. A `pack.css` rule written against either selector is a no-op today, for **any** CSS property — not a fonts-only limitation. Until #2898 is resolved, the only way to style these two mobile surfaces is through the ordinary CSS cascade from their real DOM ancestor: the drawer renders inside `header[data-header]`, and the mobile TOC renders inside `.zd-content`.
 
 ### Chrome font tokens — optional per-surface hooks
 
@@ -168,7 +170,7 @@ Four `--zdc-*` component tokens exist as **optional** hooks for a pack that deli
 
 Each falls back to the `--zdc-chrome-font` seam rather than `inherit` — deliberately, not an oversight: under an `inherit` default, a header-only override would leak into the mobile drawer (which mounts inside `header[data-header]`), and the mobile TOC (which mounts inside `.zd-content`) would follow the prose font instead of the chrome font. Anchoring to the seam keeps each knob dependent only on its own value.
 
-**Mobile reach caveat (zudolab/zudo-doc#2898).** `--zdc-sidebar-font` and `--zdc-toc-font` are authored against a selector naming both a desktop and a mobile emitter, but only the **desktop** half is delivered today. The mobile drawer and mobile TOC are zfb client islands, and zfb strips bare `data-*` attributes from island roots during SSR, so `aside[data-zd-mobile-sidebar]` / `div[data-zd-mobile-toc]` never actually matches in the rendered DOM. On mobile, both surfaces render on the `--zdc-chrome-font` seam base regardless of what the granular token is set to. Do not design a pack around a desktop-only per-surface sidebar/TOC font expecting it to reach mobile — invisible today because every shipped pack uses a uniform chrome font, but a future pack that diverges the desktop sidebar/TOC from the rest of the chrome will visibly split between viewports.
+**Mobile reach caveat (zudolab/zudo-doc#2898).** `--zdc-sidebar-font` and `--zdc-toc-font` are authored against a selector naming both a desktop and a mobile emitter, but only the **desktop** half is delivered today, for the reason given in the mobile hook limitation above. Because the mobile selectors never match, each mobile surface instead inherits the ordinary CSS cascade from its real DOM ancestor rather than falling back to `--zdc-chrome-font` directly: the drawer follows `--zdc-header-font` (it renders inside `header[data-header]`), and the mobile TOC follows `--zdc-doc-prose-font` (it renders inside `.zd-content`) — not `--zdc-sidebar-font`/`--zdc-toc-font` either way. Do not design a pack around a desktop-only per-surface sidebar/TOC font expecting it to reach mobile — invisible today because every shipped pack leaves the header and prose fonts at the seam default (so every ancestor resolves to the same `--font-sans`), but a future pack that gives the header or the prose area its own distinct face, independent of `--zdc-sidebar-font`/`--zdc-toc-font`, will see the mobile drawer/TOC follow that ancestor's font instead of the token it actually set.
 
 ## (c) The `!important` carve-out — heading border-image gradients
 
