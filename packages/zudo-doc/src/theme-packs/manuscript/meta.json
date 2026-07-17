@@ -4,7 +4,7 @@
   "name": "Manuscript",
   "description": "A quiet Garamond book page — warm paper, soft ink, sepia rubrication, small-caps subheads, fleuron section marks.",
   "mode": "light",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "fonts": {
     "sans": "EB Garamond",
     "mono": "Courier Prime",
