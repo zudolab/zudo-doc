@@ -52,6 +52,15 @@ export interface HtmlPreviewWrapperProps {
   height?: number;
   /** When true, the code section is expanded by default. */
   defaultOpen?: boolean;
+  /**
+   * Forwarded to `<HtmlPreview>`. When true, makes the preview document's
+   * `html`/`body` stretch to 100% height. Interacts with auto-height — pair
+   * with an explicit `height` prop. See `HtmlPreviewProps.fullHeight` for
+   * details.
+   *
+   * @default false
+   */
+  fullHeight?: boolean;
 
   /**
    * iframe `sandbox` attribute value, forwarded to `<HtmlPreview>`. Omit to
@@ -107,6 +116,7 @@ export function HtmlPreviewWrapperInner(
     title,
     height,
     defaultOpen,
+    fullHeight,
     sandbox,
   } = props;
 
@@ -126,6 +136,7 @@ export function HtmlPreviewWrapperInner(
       title={title}
       height={height}
       defaultOpen={defaultOpen}
+      fullHeight={fullHeight}
       sandbox={sandbox}
       componentCss={css}
       componentHead={head}

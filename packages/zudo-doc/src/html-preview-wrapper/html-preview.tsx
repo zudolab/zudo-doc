@@ -16,6 +16,23 @@ export interface HtmlPreviewProps {
   height?: number;
   defaultOpen?: boolean;
   /**
+   * When true, injects `<style>html,body{height:100%}</style>` into the
+   * preview document so the preview's content can stretch to fill the
+   * iframe (e.g. a flex/grid layout that relies on `height: 100%` reaching
+   * the viewport).
+   *
+   * ⚠️ **Interacts with auto-height — pair with an explicit
+   * {@link HtmlPreviewProps.height}.** Auto-height measures
+   * `iframe.contentDocument.body.scrollHeight` and resizes the iframe to
+   * fit; `fullHeight` makes the body's height derive FROM the iframe's own
+   * height instead, which creates a feedback loop when the iframe height is
+   * itself derived from the body. This component does not attempt to
+   * detect or break that loop — always set `height` alongside `fullHeight`.
+   *
+   * @default false
+   */
+  fullHeight?: boolean;
+  /**
    * iframe `sandbox` attribute value. When omitted, defaults to the value
    * computed from the preview content (`allow-scripts allow-same-origin`
    * when scripts are present, `allow-same-origin` otherwise — see
@@ -78,11 +95,18 @@ export function resolveSandbox(
   );
 }
 
-function buildSrcdoc(
+// Injection order contract (epic-wide): preflight -> fullHeight style ->
+// externalStyles links -> head -> author css / js. Keep the fullHeight
+// style immediately after preflight so later Wave-2 props (externalStyles,
+// etc.) can insert cleanly between it and `head` without reordering this.
+const fullHeightStyle = "<style>html,body{height:100%}</style>";
+
+export function buildSrcdoc(
   html: string,
   css?: string,
   head?: string,
   js?: string,
+  fullHeight?: boolean,
 ): string {
   return `<!doctype html>
 <html>
@@ -90,6 +114,7 @@ function buildSrcdoc(
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>${preflightCss}</style>
+${fullHeight ? fullHeightStyle : ""}
 ${head ?? ""}
 ${css ? `<style>${css}</style>` : ""}
 </head>
@@ -119,14 +144,15 @@ export function HtmlPreview({
   title,
   height,
   defaultOpen,
+  fullHeight,
   sandbox,
   componentCss,
   componentHead,
   componentJs,
 }: HtmlPreviewProps): VNode {
   const srcdoc = useMemo(
-    () => buildSrcdoc(html, css, head, js),
-    [html, css, head, js],
+    () => buildSrcdoc(html, css, head, js, fullHeight),
+    [html, css, head, js, fullHeight],
   );
   const hasScripts = containsScript(head, js);
   const syncDelay = hasScripts ? 300 : 0;
