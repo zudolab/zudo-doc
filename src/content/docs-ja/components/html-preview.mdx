@@ -142,6 +142,48 @@ sidebar_position: 9
   `}
 />
 
+## 高さ100%
+
+`fullHeight` プロップを使うと、プレビュードキュメントの `html`/`body` を iframe いっぱいに広げられます。`height: 100%` がビューポートまで届くレイアウト（利用可能なスペースを埋めるフレックスカラムなど）に便利です。
+
+:::warning[明示的な `height` と併用する]
+`fullHeight` は高さ自動調整の仕組みと干渉します — 高さ自動調整は iframe の body を計測して iframe の高さをそれに合わせますが、`fullHeight` は逆に body の高さを iframe 側から導出させます。両方を組み合わせると、安定した解決策のないフィードバックループが発生します。`fullHeight` を使うときは必ず明示的な `height` も指定してください。
+:::
+
+<HtmlPreview
+  title="高さ100%のフレックスカラム"
+  height={200}
+  fullHeight
+  html={`
+    <div class="fill">
+      <header>ヘッダー</header>
+      <main>メイン（残りのスペースを埋める）</main>
+      <footer>フッター</footer>
+    </div>
+  `}
+  css={`
+    .fill {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      font-family: system-ui, sans-serif;
+      color: #fff;
+      text-align: center;
+    }
+    .fill header, .fill footer {
+      padding: 8px;
+      background: #334155;
+    }
+    .fill main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #64748b;
+    }
+  `}
+/>
+
 ## 外部リソース
 
 CSS フレームワーク、Web フォント、スクリプトなどの外部リソースをプレビューに読み込めます。`zfb.config.ts` でグローバルに設定するか、コンポーネントのプロップで個別に指定します。
@@ -233,6 +275,7 @@ export default defineConfig(
 | `title` | string | `undefined` | プレビューヘッダーバーに表示するタイトル |
 | `height` | number | auto | iframe の固定高さ（ピクセル）。省略時はコンテンツに合わせて自動調整 |
 | `defaultOpen` | boolean | `false` | ソースコードパネルをデフォルトで展開表示する |
+| `fullHeight` | boolean | `false` | プレビュードキュメントの `html`/`body` を高さ100%まで広げる。高さ自動調整と干渉するため、必ず明示的な `height` と併用する |
 | `sandbox` | string | auto | iframe の `sandbox` 属性。省略時は計算済みのデフォルト（スクリプトありなら `allow-scripts allow-same-origin`、なしなら `allow-same-origin`）。信頼できないコンテンツにはより厳しい値を指定 — ただし `allow-same-origin` を外すと高さ自動調整が無効になるため `height` も併せて指定する |
 
 ## サポートされている言語
