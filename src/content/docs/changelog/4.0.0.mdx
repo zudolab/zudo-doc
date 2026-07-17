@@ -1,0 +1,37 @@
+---
+title: 4.0.0
+description: Release notes for 4.0.0.
+sidebar_position: 1057
+---
+
+Released: 2026-07-17
+
+### Breaking Changes
+
+- Current-only compatibility contract: legacy integration subpaths, the tag alias/deprecation runtime, legacy token storage bridges, legacy Syntect markup support, legacy doc-history contracts, and the legacy link-checker entrypoints are removed (c8b6d3da, 08338a8f, 701b4aea, 16edbe8b, e8ce8929, cc2bb792, f2c9b925)
+- Heading IDs are hierarchical-only; the legacy flat-ID fallback is gone (390064ff)
+- Doc entries use the current zfb entry model exclusively (df048e30)
+
+### Features
+
+- Theme pack system: pack registry with config census and validator, asset delivery pipeline (build, npm tarball, dev), runtime switching engine with FOUC-safe bootstrap, bottom-right switcher flyout, browse-all theme grid dialog, and a `zudo-doc theme list|apply` CLI (aab0014f, 9eddd9ba, f5f83b43, adf81c9a, 07b77eb1, a33f66ef)
+- 20 official theme packs shipped across four batches — foundry, swissgrid, broadsheet, ledger, manuscript, futura-editorial, washi, sumi, matcha, hearth, hollow, fjord, nocturne, drift, onyx, phosphor, observatory, solar, beacon, brutalist — with the full 21-pack catalog (including default) synced into create-zudo-doc and the preset generator (487b1761)
+- Stable DOM hooks for theme packs: `data-footer`, `data-doc-pager`, `data-doc-description`, and `data-theme-pack-switcher` / `data-switcher-card` / `data-switcher-launcher`; all 20 packs retargeted onto the hooks and every changed pack's `meta.json` version bumped for the stylesheet cache buster (c8bb4421, ac654a8a, 2b2a46d5, b5fffb01, d7c67ca7)
+- Restored pack styling that previously lacked hooks: foundry's pager hover wash and broadsheet's classified-ad flyout frame (850a30fb)
+- Semantic syntax-highlight class mode: document fences render `hi-*` token classes with a stable token contract, mapped by `features.css` (c1237dcd, c305fdf8, 920be3d2)
+- AI chat exact daily spend cap enforced via a Durable Object, with paid-call admission control and an operations runbook (0b46e23c, 15e3b891, 491116c5)
+- Chrome customization: typed primary replacement slots (`Header`, `Footer`, `Sidebar`, `Toc`, `Breadcrumb`, `DocPager`), a named header-component registry, binding-aware eject warnings, and end-to-end proof (a3ae76cc, 9d8e7901, 5346b2ef, 0e92dbc2)
+- create-zudo-doc: `footerCopyright` feature defaults to on; theme-pack scaffold prompt and programmatic `themePack` option (51307cd4, acf20690, b287e94d)
+
+### Bug Fixes
+
+- onyx: the decorative gold outline on the switcher card and browse-all dialog no longer masks the keyboard focus-visible ring (11d5cc0f)
+- ledger: DocPager selector no longer over-matches NavCardGrid on auto-index pages (eff8e1b8)
+- Light-mode WCAG contrast corrections across several packs after review (46e1e6b2)
+
+### Other Changes
+
+- Theme pack architecture ADR, hardened Decisions 6.5/6.6 (stable-hook list, h2–h4 gradient carve-out), and a new durable `theme-pack-authoring.md` pack-author reference (4f5cc90c, ed287e1a, 4856c44b)
+- Theme gallery reference docs (EN+JA) covering the full pack catalog (2b73cffa, 3068fbca)
+- Scaffold customization docs overhaul: customization ladder, chrome bindings, custom components guide, route injection, color-token guidance (8a54b3df)
+- Toolchain: zfb family adopted through next.87; zdtp 0.4.8 (151f09bb, efc3afdc)
