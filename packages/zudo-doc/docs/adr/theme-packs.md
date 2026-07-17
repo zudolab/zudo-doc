@@ -455,7 +455,21 @@ Rules:
    `.zd-content` prose. Per-surface knobs — `--zdc-header-font`,
    `--zdc-sidebar-font`, `--zdc-toc-font` — let one shell surface diverge
    (e.g. a display face in the header) without extras; the sidebar and TOC
-   selectors cover their mobile emitters too. Each knob falls back to the
+   selectors are *authored* to cover their mobile emitters too
+   (`aside[data-zd-mobile-sidebar]`, `div[data-zd-mobile-toc]`), but that
+   mobile half does not match in practice today — both are zfb client
+   islands, and zfb strips bare `data-*` attributes from island roots
+   during SSR, so those two selectors never match any real element. The
+   mobile drawer and mobile TOC instead inherit ordinary CSS cascade from
+   their real DOM ancestor: the drawer renders inside `header[data-header]`
+   (so it follows `--zdc-header-font`, not `--zdc-sidebar-font`), and the
+   mobile TOC renders inside `.zd-content` (so it follows
+   `--zdc-doc-prose-font`, not `--zdc-toc-font`) — NOT a uniform fallback to
+   `--zdc-chrome-font` (zudolab/zudo-doc#2898). All 20 shipped packs are
+   unaffected in practice — the Wave-3 audit (zudolab/zudo-doc#2889) locked
+   every pack to the uniform seam, so every one of these tokens resolves to
+   the same `--font-sans` value regardless of which ancestor a mobile
+   surface inherits from. Each knob falls back to the
    `--zdc-chrome-font` seam rather than `inherit`, deliberately: the mobile
    drawer renders inside `header[data-header]` and the mobile TOC inside
    `.zd-content`, so an `inherit` default would resolve a surface's two
