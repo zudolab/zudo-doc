@@ -456,20 +456,19 @@ Rules:
    `--zdc-sidebar-font`, `--zdc-toc-font` — let one shell surface diverge
    (e.g. a display face in the header) without extras; the sidebar and TOC
    selectors are *authored* to cover their mobile emitters too
-   (`aside[data-zd-mobile-sidebar]`, `div[data-zd-mobile-toc]`), but that
-   mobile half does not match in practice today — both are zfb client
-   islands, and zfb strips bare `data-*` attributes from island roots
-   during SSR, so those two selectors never match any real element. The
-   mobile drawer and mobile TOC instead inherit ordinary CSS cascade from
-   their real DOM ancestor: the drawer renders inside `header[data-header]`
-   (so it follows `--zdc-header-font`, not `--zdc-sidebar-font`), and the
-   mobile TOC renders inside `.zd-content` (so it follows
-   `--zdc-doc-prose-font`, not `--zdc-toc-font`) — NOT a uniform fallback to
-   `--zdc-chrome-font` (zudolab/zudo-doc#2898). All 20 shipped packs are
-   unaffected in practice — the Wave-3 audit (zudolab/zudo-doc#2889) locked
-   every pack to the uniform seam, so every one of these tokens resolves to
-   the same `--font-sans` value regardless of which ancestor a mobile
-   surface inherits from. Each knob falls back to the
+   (`aside[data-zd-mobile-sidebar]`, `div[data-zd-mobile-toc]`), and both
+   halves match in the production build: those surfaces are zfb client
+   islands, but Preact hydration preserves the SSR-rendered `data-*`
+   attributes on island roots that match the virtual DOM, so the mobile
+   drawer and mobile TOC pick up `--zdc-sidebar-font`/`--zdc-toc-font`
+   exactly as their desktop counterparts do. The one gap is the zfb **dev
+   server** (`pnpm dev`), which strips island-root `data-*` attributes and
+   so does not match either mobile selector — a dev/prod inconsistency
+   tracked at zudolab/zudo-doc#2898; verify a per-surface mobile font
+   against a build, not the dev server. All 20 shipped packs are unaffected
+   either way — the Wave-3 audit (zudolab/zudo-doc#2889) locked every pack
+   to the uniform seam, so every one of these tokens resolves to the same
+   `--font-sans` value regardless of surface. Each knob falls back to the
    `--zdc-chrome-font` seam rather than `inherit`, deliberately: the mobile
    drawer renders inside `header[data-header]` and the mobile TOC inside
    `.zd-content`, so an `inherit` default would resolve a surface's two
