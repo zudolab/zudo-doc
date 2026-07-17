@@ -134,6 +134,7 @@ The complete extras-authoring surface (ADR Decision 6, rule 5). Select ONLY on t
 | `[data-header-nav]` | The header's top-level nav `<nav>` | Nav bar layout |
 | `[data-nav-item]` | Individual header nav item wrapper | Per-item nav styling |
 | `#desktop-sidebar` | The desktop `<aside>` sidebar container | Sidebar background/border/width |
+| `aside[data-zd-mobile-sidebar]` | The mobile sidebar drawer `<aside>` (the off-canvas panel behind the hamburger) | Mobile drawer styling — it does NOT share `#desktop-sidebar`, so style both to cover every viewport |
 | `.zd-sidebar-content-wrapper` | Wrapper that shifts content right of the sidebar | Content-area left-margin geometry |
 | `.zd-doc-content-band` | Flex row containing `<main>` + TOC | Content band width/gap |
 | `.zd-content` | The `<article>` MDX content root | Prose typography extras (beyond `content.css`) |
@@ -142,6 +143,7 @@ The complete extras-authoring surface (ADR Decision 6, rule 5). Select ONLY on t
 | `pre.hi-root` / `.hi-*` | Code-fence syntax highlighting root + token classes | Code block colors/spacing |
 | `nav[data-zd-toc]` | The right-rail table of contents `<nav>` | TOC panel styling |
 | `nav[data-zd-toc] a[aria-current="true"]` | The currently-active TOC entry | Active-item highlight — there is no `.toc-active` class; `aria-current` IS the contract |
+| `div[data-zd-mobile-toc]` | The mobile collapsible TOC panel | Mobile TOC styling — it emits its own markup and is NOT a `nav[data-zd-toc]`, so style both to cover every viewport |
 | `a[data-nav-active]` | Sidebar's active nav item | Active sidebar-item highlight |
 | `body` | The document body | Global background/base color |
 | `footer[data-footer]` | The page footer `<footer>` | Footer background/border/link colors |

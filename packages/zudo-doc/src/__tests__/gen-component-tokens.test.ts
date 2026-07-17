@@ -373,9 +373,31 @@ describe("Default-value test — generated content.css block", () => {
     expect(featuresCss).toContain(generated);
   });
 
-  it("12 tokens route to content; 5 chrome tokens added by S4+S5 (#2461/#2462)", () => {
+  it("12 tokens route to content; 9 chrome tokens after the #2887 font seam", () => {
     expect(contentTokens).toHaveLength(12);
-    expect(chromeTokens).toHaveLength(5);
+    expect(chromeTokens).toHaveLength(9);
+  });
+
+  // The compiled proof of the chrome font seam (#2887): the generated rule must
+  // reach features.css verbatim, or a theme pack's `--font-sans` never escapes
+  // `.zd-content` and the whole epic's premise breaks.
+  it("--zdc-chrome-font emits the body font seam into features.css", () => {
+    expect(featuresCss).toContain("body {");
+    expect(featuresCss).toContain(
+      "  font-family: var(--zdc-chrome-font, var(--font-sans));",
+    );
+  });
+
+  it("per-surface chrome font knobs emit rules covering desktop + mobile emitters", () => {
+    expect(featuresCss).toContain(
+      "  font-family: var(--zdc-header-font, inherit);",
+    );
+    expect(featuresCss).toContain("#desktop-sidebar, aside[data-zd-mobile-sidebar] {");
+    expect(featuresCss).toContain(
+      "  font-family: var(--zdc-sidebar-font, inherit);",
+    );
+    expect(featuresCss).toContain("nav[data-zd-toc], div[data-zd-mobile-toc] {");
+    expect(featuresCss).toContain("  font-family: var(--zdc-toc-font, inherit);");
   });
 
   // Spot-check each known token in the current registry so regressions in

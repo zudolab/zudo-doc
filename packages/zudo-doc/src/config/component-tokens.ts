@@ -17,7 +17,7 @@
 //     (shipped to consumers as `@takazudo/zudo-doc/content.css`).
 //   - `surface: "chrome"`  → a `BEGIN/END`-marked block in `src/features.css`
 //     (shipped as `@takazudo/zudo-doc/features.css`) for app-shell components
-//     (header/footer/sidebar/toc/cards). Seeded empty — no chrome tokens yet.
+//     (header/footer/sidebar/toc/cards).
 // Both blocks stay UNLAYERED, mirroring each other. Each rule:
 //   - targets an ALREADY-RENDERED, component-anchored selector (the classes the
 //     component already emits) so NO JSX/class change is needed;
@@ -106,7 +106,11 @@ export type ComponentTokenName =
   | "--zdc-content-max-width"
   | "--zdc-toc-width"
   | "--zdc-nav-active-indicator-color"
-  | "--zdc-nav-active-weight";
+  | "--zdc-nav-active-weight"
+  | "--zdc-chrome-font"
+  | "--zdc-header-font"
+  | "--zdc-sidebar-font"
+  | "--zdc-toc-font";
 
 export interface ComponentToken {
   /**
@@ -253,11 +257,17 @@ export const COMPONENT_TOKENS: ComponentToken[] = [
   },
   // ── Content prose font (.zd-content, #2460) ────────────────────────────────
   // Sets font-family on the content root so every element inside inherits it by
-  // default. The headings whose `--zdc-doc-*-font` default to `inherit` will
-  // inherit this value — safe because the current computed heading family already
-  // resolves to `var(--font-sans)` (Tailwind preflight sets it on `html`).
-  // Byte-identical: `.zd-content` currently carries no explicit font-family, so
-  // setting it to `var(--font-sans)` produces the same computed value.
+  // default. The headings whose `--zdc-doc-*-font` default to `inherit` inherit
+  // this value.
+  // NOT byte-identical, by design (#2887 corrects the original claim here): this
+  // project imports only `tailwindcss/preflight` + `utilities` and never defines
+  // `--default-font-family`, so preflight's `html, :host` rule compiles its
+  // `--theme(--default-font-family, ui-sans-serif, system-ui, …)` down to the
+  // LITERAL fallback stack — it does NOT resolve to `var(--font-sans)`. Pointing
+  // `.zd-content` at `var(--font-sans)` therefore moved prose off that literal
+  // onto the token (`system-ui, sans-serif` by default) — the same system UI face
+  // on every major platform, which is why the delta went unnoticed. `body` takes
+  // the identical step for the app shell — see `--zdc-chrome-font` below.
   {
     cssVar: "--zdc-doc-prose-font",
     selector: ".zd-content",
@@ -419,5 +429,86 @@ export const COMPONENT_TOKENS: ComponentToken[] = [
     category: "typography",
     description:
       "Font weight of the active sidebar nav link (non-root leaf, the current page). Defaults to `var(--font-weight-medium)` (byte-identical to the current `font-medium` utility). Redefine in :root to use semibold or bold for stronger active emphasis.",
+  },
+  // ── Chrome font seam (body, #2887 / epic #2886) ───────────────────────────
+  // THE foundation the chrome-font epic stacks on. Every app-shell surface —
+  // header, desktop sidebar, mobile drawer, right-rail TOC, mobile TOC,
+  // breadcrumb, footer — sets NO font-family of its own, so all of them inherit
+  // Tailwind preflight's `html, :host` rule. Because this project imports only
+  // `tailwindcss/preflight` + `utilities` and never defines
+  // `--default-font-family`, that rule's `--theme(--default-font-family,
+  // ui-sans-serif, system-ui, …)` compiles to the HARDCODED LITERAL fallback
+  // stack. A theme pack's `--font-sans` override therefore had no path to any of
+  // those surfaces at all — only `.zd-content` prose consumed the token.
+  //
+  // This rule is that path: `body` is UNLAYERED here, so it beats preflight
+  // (which the consumer imports into `layer(zd-preflight)`), and every chrome
+  // surface inherits `var(--font-sans)` — including any surface a future
+  // component adds, since inheritance is the mechanism.
+  //
+  // NOT byte-identical — the ONE deliberate exception in this registry. Chrome
+  // falls from preflight's `ui-sans-serif, system-ui, …` literal to whatever
+  // `--font-sans` resolves to (`system-ui, sans-serif` by default): the same
+  // system UI face on every major platform, and the identical step `.zd-content`
+  // already took in #2460 (see `--zdc-doc-prose-font` above). Accepted per #2887.
+  //
+  // Deliberately NO `--font-mono` counterpart: every code surface (`code`, `pre`,
+  // `.hi-root`, the diff viewer, …) sets `font-family: var(--font-mono)` on
+  // itself explicitly, so the mono token already reaches all of them.
+  {
+    cssVar: "--zdc-chrome-font",
+    selector: "body",
+    property: "font-family",
+    default: "var(--font-sans)",
+    component: "chrome",
+    surface: "chrome",
+    category: "typography",
+    description:
+      "Base font family for the whole document, and the seam that lets `--font-sans` reach the app shell (header/sidebar/TOC/breadcrumb/footer) at all — without it those surfaces inherit Tailwind preflight's hardcoded literal stack instead of the token. Defaults to `var(--font-sans)`. Redefine `--font-sans` (the usual theme-pack route) to restyle everything, or `--zdc-chrome-font` to move the shell independently of prose.",
+  },
+  // ── Per-surface chrome font knobs (#2887 / epic #2886) ────────────────────
+  // Each defaults to `inherit` — i.e. to the `body` seam above — so they are
+  // byte-identical no-ops until a consumer redefines one. They exist so a pack
+  // can give a single shell surface its own face (e.g. a display font in the
+  // header while nav and TOC stay on the body font) without ejecting anything.
+  //
+  // Each selector deliberately covers BOTH the desktop and the mobile emitter of
+  // its surface, so one override lands on both viewports. The mobile hooks
+  // (`data-zd-mobile-sidebar`, `data-zd-mobile-toc`) were added in #2887 for
+  // exactly this — the mobile drawer and the mobile TOC previously had no stable
+  // anchor at all, and the mobile TOC does NOT reuse `nav[data-zd-toc]` (it
+  // emits its own `<div>` markup).
+  {
+    cssVar: "--zdc-header-font",
+    selector: "header[data-header]",
+    property: "font-family",
+    default: "inherit",
+    component: "header",
+    surface: "chrome",
+    category: "typography",
+    description:
+      "Font family of the site header. Defaults to `inherit` (the `--zdc-chrome-font` body seam — byte-identical); redefine in :root to give the header its own face, e.g. a display font for the wordmark and nav.",
+  },
+  {
+    cssVar: "--zdc-sidebar-font",
+    selector: "#desktop-sidebar, aside[data-zd-mobile-sidebar]",
+    property: "font-family",
+    default: "inherit",
+    component: "sidebar",
+    surface: "chrome",
+    category: "typography",
+    description:
+      "Font family of the navigation sidebar — covers BOTH the desktop `#desktop-sidebar` rail and the mobile drawer, so one override styles both viewports. Defaults to `inherit` (the `--zdc-chrome-font` body seam — byte-identical).",
+  },
+  {
+    cssVar: "--zdc-toc-font",
+    selector: "nav[data-zd-toc], div[data-zd-mobile-toc]",
+    property: "font-family",
+    default: "inherit",
+    component: "toc",
+    surface: "chrome",
+    category: "typography",
+    description:
+      "Font family of the table of contents — covers BOTH the desktop right rail and the mobile collapsible TOC, so one override styles both viewports. Defaults to `inherit` (byte-identical); note the desktop TOC inherits from `body` while the mobile TOC renders inside `.zd-content` and so inherits the prose font.",
   },
 ];

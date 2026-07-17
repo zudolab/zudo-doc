@@ -68,8 +68,16 @@ export function MobileToc({
     );
   }
 
+  // `data-zd-mobile-toc` is the stable theme-pack hook for this panel. It is
+  // deliberately NOT `data-zd-toc`: this component emits its own markup and
+  // never renders the desktop `nav[data-zd-toc]`, so packs need a separate
+  // anchor to reach the mobile TOC (zudolab/zudo-doc#2887). Unconditional, so
+  // it is hydration-stable by construction — it does not vary with `open`.
+  // The empty-headings early return above stays unhooked on purpose: that
+  // branch is a `display:none` placeholder carrying only the locale label, so
+  // there is nothing for a pack to style.
   return (
-    <div className="xl:hidden border border-muted mb-vsp-lg">
+    <div data-zd-mobile-toc className="xl:hidden border border-muted mb-vsp-lg">
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}

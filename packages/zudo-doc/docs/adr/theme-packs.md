@@ -445,18 +445,39 @@ Rules:
    `--zdc-doc-prose-font`) when headings diverge from body. Per Decision 5:
    loaded OFL face first, generic last, `font-display: swap`, relative
    font URLs.
+   `--font-sans` reaches the app shell (header, sidebars, TOCs, breadcrumb,
+   footer) through the `--zdc-chrome-font` seam — an unlayered
+   `body { font-family: var(--zdc-chrome-font, var(--font-sans)) }` rule in
+   `features.css`. It is load-bearing: those surfaces declare no font of
+   their own, and Tailwind preflight's `html, :host` rule compiles to a
+   hardcoded literal stack (no `--default-font-family` is defined), so before
+   zudolab/zudo-doc#2887 a pack's `--font-sans` could only ever reach
+   `.zd-content` prose. Per-surface knobs — `--zdc-header-font`,
+   `--zdc-sidebar-font`, `--zdc-toc-font`, each defaulting to `inherit` —
+   let one shell surface diverge (e.g. a display face in the header) without
+   extras; the sidebar and TOC selectors cover their mobile emitters too.
+   `--font-mono` needs no such seam: every code surface sets `font-family`
+   on itself explicitly.
 5. **Extras only against the stable hooks:** `header[data-header]`,
    `[data-header-logo]`, `[data-header-nav]` / `[data-nav-item]`,
-   `#desktop-sidebar`, `.zd-sidebar-content-wrapper`,
+   `#desktop-sidebar`, `aside[data-zd-mobile-sidebar]`,
+   `.zd-sidebar-content-wrapper`,
    `.zd-doc-content-band`, `.zd-content`, `[data-admonition]` (+ variant
    values) and `.admonition-title::before` (icon overrides allowed),
    `pre.hi-root` / `.hi-*` token classes, `nav[data-zd-toc]`,
+   `div[data-zd-mobile-toc]`,
    `a[data-nav-active]`, `body`, `footer[data-footer]`,
    `nav[data-doc-pager]`, `p[data-doc-description]`,
    `[data-theme-pack-switcher]`, `[data-switcher-card]`,
    `[data-switcher-launcher]`. The TOC's active-item hook is
    `nav[data-zd-toc] a[aria-current="true"]` — there is no `.toc-active`
-   class; the `aria-current` state IS the contract. NEVER select on
+   class; the `aria-current` state IS the contract. **Mobile counterparts
+   are separate hooks** (zudolab/zudo-doc#2887): the mobile drawer does not
+   share `#desktop-sidebar`, and the mobile TOC emits its own `<div>` rather
+   than a `nav[data-zd-toc]` — a pack that styles only the desktop selector
+   silently misses narrow viewports. The `--zdc-sidebar-font` /
+   `--zdc-toc-font` component tokens already select both, so font overrides
+   need no extras at all. NEVER select on
    Tailwind utility class names (not a contract surface) and never
    reintroduce Tailwind default palette tokens. **Custom-chrome caveat:**
    a replacement supplied via `defineChromeBindings` (e.g. a custom
