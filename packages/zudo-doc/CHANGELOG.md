@@ -4,6 +4,25 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [4.1.0] - 2026-07-18
+
+### Features
+
+- Theme-pack fonts now reach the app shell (header, sidebar, TOC, breadcrumb, pager) via a global body font seam, with per-surface chrome font tokens for finer control (f84b2bd2)
+
+### Bug Fixes
+
+- Per-surface chrome font knobs anchor to the seam token instead of relying on inheritance (dbd95365)
+- Docs: corrected the false claim that mobile chrome strips theme-pack font tokens — mobile hooks receive them like desktop (3cbe0d45, 493f76dc)
+- E2E: theme-pack font specs assert the body font-family directly, target the bundled foundry pack, and wait for switcher hydration (d88e4c5a, 218e8844)
+- Reverted a hand-edited generated CHANGELOG.md — it is corpus-generated (ef43274c)
+
+### Other Changes
+
+- Toolchain: @takazudo/zfb family (zfb, zfb-runtime, zfb-adapter-cloudflare, zfb-md-wasm) adopted through 0.1.0-next.89 (02268414)
+- Bilingual docs for the chrome font seam tokens and the mobile reach caveat (58cf6fc2)
+- Durable e2e regression spec for the chrome font seam (69af425e)
+
 ## [4.0.0] - 2026-07-17
 
 ### Breaking Changes
