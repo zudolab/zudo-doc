@@ -186,7 +186,11 @@ describe("validateThemePack", () => {
         cssContent: `html[data-theme-pack="foundry"] .zd-content h2 { color: red !important; }`,
       }),
     );
-    expect(disallowed.issues.some((i) => i.rule === "important-allowlist")).toBe(true);
+    const importantIssues = disallowed.issues.filter((i) => i.rule === "important-allowlist");
+    expect(importantIssues).toHaveLength(1);
+    expect(importantIssues[0]?.message).toContain(
+      "the h2–h4 heading-rule gradient carve-out, Decision 6.6",
+    );
 
     const allowed = validateThemePack(
       baseInput({

@@ -10,8 +10,8 @@
 // `html[data-theme-pack="<slug>"]`; the known-custom-property-name manifest;
 // preview swatches are plain resolved colors; `fonts.loaded` ⇄ `@font-face`
 // parity; `OFL.txt` presence when font files ship; the commercial-typeface
-// denylist; the `!important` allowlist (the h2 `border-image` carve-out
-// only); no `color-scheme:` declarations; no `[data-theme]` selectors. A
+// denylist; the `!important` allowlist (the h2–h4 heading-rule
+// `border-image` carve-out); no `color-scheme:` declarations; no `[data-theme]` selectors. A
 // total-payload-size overage is a WARNING, not an error (Decision 6.7's
 // soft ~250 KB budget).
 
@@ -223,7 +223,7 @@ function checkImportantAllowlist(cssContent: string, issues: ThemePackValidation
       issues.push({
         rule: "important-allowlist",
         severity: "error",
-        message: `"!important" is only allowed on a "border-image" declaration (the h2 gradient carve-out, Decision 6.6) — found on "${prop}"`,
+        message: `"!important" is only allowed on a "border-image" declaration (the h2–h4 heading-rule gradient carve-out, Decision 6.6) — found on "${prop}"`,
       });
     }
   }
