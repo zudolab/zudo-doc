@@ -26,17 +26,17 @@
    - `.toc-active`       → `nav[data-zd-toc] a[aria-current="true"]`
                            (toc/toc.tsx marks the active entry with
                            aria-current, not a mock class)
-   - `.doc-pager`        → `.zd-content > nav:last-of-type:not([aria-label]) > a`
-                           (the DocPager nav is the article's last
-                           unlabelled direct-child nav; the :not
-                           guard excludes NavCardGrid's labelled
-                           "Child pages" nav — see #2862)
-   - `footer[data-footer]` → `.zd-sidebar-content-wrapper > footer`
-                           (no data-footer attribute in the real DOM)
+   - `.doc-pager`        → `.zd-content > nav[data-doc-pager] > a`
+                           (the DocPager nav now carries a stable
+                           data-doc-pager hook, #2876)
+   - `footer[data-footer]` → ships literally now — the real footer
+                           carries the stable data-footer hook (#2876)
    - `.hdr-search` / `.hdr-icon-btn` — prototype-mock markup with no
      stable hook; their pill/glow styling is NOT ported.
-   - the theme-switcher flyout + launcher have NO stable hook —
-     intentionally NOT ported.
+   - the theme-switcher flyout + launcher carry stable hooks now
+     ([data-switcher-card] / [data-switcher-launcher]) but their
+     styling is intentionally NOT ported — no visual intent to
+     preserve there.
    - the prototype's `--drift-hairline` / `--drift-shadow` /
      `--drift-halo` helper properties are not part of the token
      manifest, so their light-dark() values are inlined at each use
@@ -409,9 +409,8 @@ html[data-theme-pack="drift"] .zd-content hr {
 }
 
 /* pager cards: levitating panels — glow ring, lift on hover. The
-   DocPager is the article's LAST unlabelled direct-child nav
-   (breadcrumb and NavCardGrid navs carry aria-labels). */
-html[data-theme-pack="drift"] .zd-content > nav:last-of-type:not([aria-label]) > a {
+   DocPager nav now carries a stable data-doc-pager hook (#2876). */
+html[data-theme-pack="drift"] .zd-content > nav[data-doc-pager] > a {
   border-color: transparent;
   border-radius: 14px;
   background: color-mix(in oklch, var(--zd-surface) 72%, var(--zd-bg));
@@ -422,7 +421,7 @@ html[data-theme-pack="drift"] .zd-content > nav:last-of-type:not([aria-label]) >
     box-shadow 0.25s,
     transform 0.25s;
 }
-html[data-theme-pack="drift"] .zd-content > nav:last-of-type:not([aria-label]) > a:hover {
+html[data-theme-pack="drift"] .zd-content > nav[data-doc-pager] > a:hover {
   border-color: transparent;
   transform: translateY(-2px);
   box-shadow:
@@ -467,8 +466,8 @@ html[data-theme-pack="drift"] main nav[aria-label="Breadcrumb"] a:hover {
 }
 
 /* footer: dissolves upward, hairline + settling gradient (the real
-   footer has no data-footer hook; it is the wrapper's direct child) */
-html[data-theme-pack="drift"] .zd-sidebar-content-wrapper > footer {
+   footer now carries the stable data-footer hook, #2876) */
+html[data-theme-pack="drift"] footer[data-footer] {
   border-top-color: transparent;
   box-shadow: 0 -1px 0 light-dark(oklch(0.45 0.04 248 / 0.17), oklch(0.78 0.04 240 / 0.13));
   background: linear-gradient(
