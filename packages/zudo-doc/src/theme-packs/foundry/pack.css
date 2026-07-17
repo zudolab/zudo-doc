@@ -89,13 +89,13 @@ html[data-theme-pack="foundry"] {
 html[data-theme-pack="foundry"] .zd-content a:hover {
   text-decoration: underline;
 }
-/* footer: quiet links, underline only on intent. The real footer carries no
-   data-footer hook (that was prototype-mock markup) — it is the sole <footer>
-   inside the stable .zd-sidebar-content-wrapper (doclayout/doc-layout.tsx). */
-html[data-theme-pack="foundry"] .zd-sidebar-content-wrapper footer a {
+/* footer: quiet links, underline only on intent. footer[data-footer] is the
+   stable hook (footer/footer.tsx) — the sole <footer> inside
+   .zd-sidebar-content-wrapper (doclayout/doc-layout.tsx). */
+html[data-theme-pack="foundry"] footer[data-footer] a {
   text-decoration: none;
 }
-html[data-theme-pack="foundry"] .zd-sidebar-content-wrapper footer a:hover {
+html[data-theme-pack="foundry"] footer[data-footer] a:hover {
   text-decoration: underline;
 }
 
@@ -186,8 +186,9 @@ html[data-theme-pack="foundry"] .zd-content tbody tr:nth-child(even) {
   background-color: var(--zd-code-bg);
 }
 
-/* pager cards: the prototype's hover wash is intentionally NOT ported — the
-   DocPager <nav> has no stable hook (.doc-pager was prototype-mock markup),
-   and any structural selector (.zd-content > nav) also catches NavCardGrid /
-   CategoryNav navs in the same position. The default hover:border-accent
-   blue border cue already carries the affordance. */
+/* pager cards: the prototype's hover wash is intentionally NOT ported. A
+   stable hook now exists (.zd-content > nav[data-doc-pager]), but foundry has
+   never carried a live pager rule (it was dropped in the #2828 parity pass
+   before the hook existed) — restoring it is a separate Wave-3 sub-issue, not
+   this retarget. The default hover:border-accent blue border cue already
+   carries the affordance. */

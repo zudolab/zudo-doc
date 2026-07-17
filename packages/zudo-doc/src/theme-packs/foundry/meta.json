@@ -4,7 +4,7 @@
   "name": "Foundry",
   "description": "GitHub-neutral baseline — white paper, near-black ink, Primer-blue links, quiet gray rules. Restraint, perfected.",
   "mode": "light",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "fonts": {
     "sans": "Inter",
     "mono": "System",

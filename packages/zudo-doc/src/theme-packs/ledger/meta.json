@@ -4,7 +4,7 @@
   "name": "Ledger",
   "description": "Cream academic serif in the Tufte tradition — warm paper, ink prose, oxblood links, hairline rules, quiet code.",
   "mode": "light",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "fonts": {
     "sans": "Crimson Pro",
     "mono": "IBM Plex Mono",

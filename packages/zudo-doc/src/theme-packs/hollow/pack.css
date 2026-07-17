@@ -36,19 +36,19 @@
      razor-square shape is carried by --zdc-admonition-radius /
      --zdc-card-radius plus explicit border-radius: 0 on the
      remaining rounded surfaces.
-   - `.doc-pager` → `.zd-content > nav:last-of-type:not([aria-label])`
-     (the DocPager nav is the article's last unlabelled direct-child
-     nav; breadcrumb and NavCardGrid navs carry aria-labels — the
-     `> a` child combinator keeps NavCardGrid card links out).
+   - `.doc-pager` → `.zd-content > nav[data-doc-pager]` (stable hook on
+     the DocPager nav, kept anchored under the structural
+     `.zd-content >` chain — the `> a` child combinator keeps
+     NavCardGrid card links out).
    - `.toc-active` → `nav[data-zd-toc] a[aria-current="true"]`
      (toc/toc.tsx marks the active entry with aria-current).
-   - `footer[data-footer]` → `.zd-sidebar-content-wrapper footer`
-     (no data-footer attribute in the real DOM).
+   - `footer[data-footer]` → `footer[data-footer]` (stable hook on the
+     sole <footer> inside .zd-sidebar-content-wrapper).
    - `.sb-group a[data-nav-active]` → `a[data-nav-active]` (the
      real active link already paints --zdc-nav-active-indicator-color
      as its fill with bg-token text — only the token + weight land).
    - the flyout/launcher mock classes → the switcher's stable
-     role/aria-label handles (the swissgrid precedent).
+     [data-switcher-card] / [data-switcher-launcher] hooks.
    - `.zd-content .lead` — prototype-mock class with no stable
      hook; NOT ported.
    ============================================================ */
@@ -356,13 +356,12 @@ html[data-theme-pack="hollow"] nav[data-zd-toc] a[aria-current="true"] {
 }
 
 /* ---- pager: square translucent cards that glow pink on hover.
-        The DocPager is the article's LAST unlabelled direct-child
-        nav (breadcrumb and NavCardGrid navs carry aria-labels). ---- */
-html[data-theme-pack="hollow"] .zd-content > nav:last-of-type:not([aria-label]) > a {
+        DocPager carries the stable data-doc-pager hook. ---- */
+html[data-theme-pack="hollow"] .zd-content > nav[data-doc-pager] > a {
   background: color-mix(in srgb, var(--zd-surface) 60%, transparent);
   border-radius: 0;
 }
-html[data-theme-pack="hollow"] .zd-content > nav:last-of-type:not([aria-label]) > a:hover {
+html[data-theme-pack="hollow"] .zd-content > nav[data-doc-pager] > a:hover {
   border-color: light-dark(oklch(0.52 0.2 350), oklch(0.78 0.17 348));
   box-shadow: 0 0 16px -6px
     color-mix(
@@ -372,17 +371,16 @@ html[data-theme-pack="hollow"] .zd-content > nav:last-of-type:not([aria-label]) 
     );
 }
 
-/* footer: calm panel, violet hairline (the real footer has no
-   data-footer hook; it lives inside the wrapper) */
-html[data-theme-pack="hollow"] .zd-sidebar-content-wrapper footer {
+/* footer: calm panel, violet hairline (footer carries the stable
+   data-footer hook) */
+html[data-theme-pack="hollow"] footer[data-footer] {
   border-top-color: color-mix(in oklch, var(--zd-accent) 26%, transparent);
 }
 
 /* ---- theme-pack switcher: the pack's own card — square, neon
-        pink top edge, violet halo (the flyout/launcher carry no
-        dedicated hook classes; their accessible names are the
-        stable handle) ---- */
-html[data-theme-pack="hollow"] div[role="dialog"][aria-label="Theme pack switcher"] {
+        pink top edge, violet halo. Both the flyout card and the
+        launcher button carry stable [data-switcher-*] hooks. ---- */
+html[data-theme-pack="hollow"] div[data-switcher-card] {
   border-radius: 0;
   border-color: color-mix(in oklch, var(--zd-accent) 45%, transparent);
   border-top: 2px solid light-dark(oklch(0.52 0.2 350), oklch(0.78 0.17 348));
@@ -390,20 +388,20 @@ html[data-theme-pack="hollow"] div[role="dialog"][aria-label="Theme pack switche
     0 0 24px -8px color-mix(in oklch, var(--zd-accent) 55%, transparent),
     0 18px 50px -12px oklch(0.2 0.1 300 / 0.55);
 }
-html[data-theme-pack="hollow"] div[role="dialog"][aria-label="Theme pack switcher"] span {
+html[data-theme-pack="hollow"] div[data-switcher-card] span {
   border-radius: 0;
 }
-html[data-theme-pack="hollow"] div[role="dialog"][aria-label="Theme pack switcher"] button {
+html[data-theme-pack="hollow"] div[data-switcher-card] button {
   border-radius: 0;
 }
-html[data-theme-pack="hollow"] div[role="dialog"][aria-label="Theme pack switcher"] button:hover {
+html[data-theme-pack="hollow"] div[data-switcher-card] button:hover {
   border-color: light-dark(oklch(0.52 0.2 350), oklch(0.78 0.17 348));
   color: light-dark(oklch(0.52 0.2 350), oklch(0.78 0.17 348));
 }
-html[data-theme-pack="hollow"] button[aria-haspopup="dialog"][aria-label="Theme pack switcher"] {
+html[data-theme-pack="hollow"] button[data-switcher-launcher] {
   border-radius: 0;
 }
-html[data-theme-pack="hollow"] button[aria-haspopup="dialog"][aria-label="Theme pack switcher"]:hover {
+html[data-theme-pack="hollow"] button[data-switcher-launcher]:hover {
   color: light-dark(oklch(0.52 0.2 350), oklch(0.78 0.17 348));
   border-color: light-dark(oklch(0.52 0.2 350), oklch(0.78 0.17 348));
   box-shadow: 0 0 18px -4px

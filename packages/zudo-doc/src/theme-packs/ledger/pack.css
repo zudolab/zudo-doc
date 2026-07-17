@@ -188,7 +188,7 @@ html[data-theme-pack="ledger"] .zd-doc-content-band:not([data-zd-wide]) .zd-cont
   max-width: 44rem;
 }
 html[data-theme-pack="ledger"] .zd-doc-content-band:not([data-zd-wide]) main nav[aria-label="Breadcrumb"],
-html[data-theme-pack="ledger"] .zd-doc-content-band:not([data-zd-wide]) .zd-content > nav:last-of-type:not([aria-label]) {
+html[data-theme-pack="ledger"] .zd-doc-content-band:not([data-zd-wide]) .zd-content > nav[data-doc-pager] {
   max-width: 44rem;
 }
 
@@ -397,22 +397,20 @@ html[data-theme-pack="ledger"] .zd-content tbody tr:last-child td {
 }
 
 /* ---- pager: square hairline cards, small-caps labels, italic titles.
-        The DocPager is a <nav> rendered as a direct child of
-        <article class="zd-content">, with no aria-label (the breadcrumb nav
-        carries one). ---- */
-html[data-theme-pack="ledger"] .zd-content > nav:last-of-type:not([aria-label]) > a {
+        DocPager carries the stable data-doc-pager hook. ---- */
+html[data-theme-pack="ledger"] .zd-content > nav[data-doc-pager] > a {
   border-color: color-mix(in srgb, var(--zd-fg) 25%, transparent);
   border-radius: 0;
   background: transparent;
 }
-html[data-theme-pack="ledger"] .zd-content > nav:last-of-type:not([aria-label]) > a:hover {
+html[data-theme-pack="ledger"] .zd-content > nav[data-doc-pager] > a:hover {
   background: color-mix(in srgb, var(--zd-accent) 5%, transparent);
 }
-html[data-theme-pack="ledger"] .zd-content > nav:last-of-type:not([aria-label]) > a div {
+html[data-theme-pack="ledger"] .zd-content > nav[data-doc-pager] > a div {
   font-variant-caps: all-small-caps;
   letter-spacing: 0.12em;
 }
-html[data-theme-pack="ledger"] .zd-content > nav:last-of-type:not([aria-label]) > a p {
+html[data-theme-pack="ledger"] .zd-content > nav[data-doc-pager] > a p {
   font-style: italic;
 }
 
@@ -440,25 +438,25 @@ html[data-theme-pack="ledger"] nav[data-zd-toc] a[aria-current="true"] {
 }
 
 /* ---- footer: the closing double rule of the ledger ---- */
-html[data-theme-pack="ledger"] .zd-sidebar-content-wrapper > footer {
+html[data-theme-pack="ledger"] footer[data-footer] {
   border-top: 3px double color-mix(in srgb, var(--zd-fg) 45%, transparent);
 }
 /* italicize the copyright line only when it coexists with link/tag columns
    (`:not(:first-child)` keeps a columns-only footer's grid — which is then
    the sole child — out of this positional rule). */
-html[data-theme-pack="ledger"] .zd-sidebar-content-wrapper > footer > div > div:last-child:not(:first-child) {
+html[data-theme-pack="ledger"] footer[data-footer] > div > div:last-child:not(:first-child) {
   font-style: italic;
 }
 
 /* ---- theme-pack flyout: a catalogue card — oxblood double rule at its
         head, square corners, roman italic title ---- */
-html[data-theme-pack="ledger"] div[role="dialog"][aria-label="Theme pack switcher"] {
+html[data-theme-pack="ledger"] div[data-switcher-card] {
   border: 1px solid color-mix(in srgb, var(--zd-fg) 30%, transparent);
   border-top: 4px double var(--zd-accent);
   border-radius: 0;
   box-shadow: 0 16px 40px -18px light-dark(rgb(60 30 10 / 0.4), rgb(0 0 0 / 0.7));
 }
-html[data-theme-pack="ledger"] div[role="dialog"][aria-label="Theme pack switcher"] p[aria-live="polite"] {
+html[data-theme-pack="ledger"] div[data-switcher-card] p[aria-live="polite"] {
   font-style: italic;
   font-weight: 500;
   font-size: 1.2rem;
