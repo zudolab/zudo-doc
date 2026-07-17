@@ -19,31 +19,35 @@ The tree below is not reconstructed from memory or from the old prototype bundle
   <aside id="desktop-sidebar"><!-- SidebarTree island --></aside>
 
   <div class="zd-sidebar-content-wrapper">
-    <div class="zd-doc-content-band">
-      <main>
-        <nav aria-label="Breadcrumb">…</nav>
-        <!-- MobileToc island (xl:hidden) -->
+    <div class="flex min-h-[calc(100vh-3.5rem)] justify-center">
+      <div class="zd-doc-content-band">
+        <main>
+          <nav aria-label="Breadcrumb">…</nav>
+          <!-- MobileToc island (xl:hidden) -->
 
-        <article class="zd-content max-w-none">
-          <h1>Test Page</h1>
-          <p data-doc-description>A test description.</p>
-          <!-- MDX content -->
-          <nav data-doc-pager>
-            <a href="/docs/a"><!-- prev card --></a>
-            <a href="/docs/b"><!-- next card --></a>
-          </nav>
-        </article>
-      </main>
+          <article class="zd-content max-w-none">
+            <h1>Test Page</h1>
+            <p data-doc-description>A test description.</p>
+            <!-- MDX content -->
+            <nav data-doc-pager>
+              <a href="/docs/a"><!-- prev card --></a>
+              <a href="/docs/b"><!-- next card --></a>
+            </nav>
+            <!-- docHistorySlot (DocHistoryArea) — AFTER the pager, still
+                 inside article.zd-content, when docHistory is enabled -->
+          </article>
+        </main>
 
-      <!-- Toc island (hidden xl:flex) -->
-      <nav aria-label="Table of contents" data-zd-toc>
-        <ul>
-          <li><a href="#h2-a">H2 A</a></li>
-          <li class="ml-hsp-lg">
-            <a href="#h3-a" aria-current="true">H3 A</a>
-          </li>
-        </ul>
-      </nav>
+        <!-- Toc island (hidden xl:flex) -->
+        <nav aria-label="Table of contents" data-zd-toc>
+          <ul>
+            <li><a href="#h2-a">H2 A</a></li>
+            <li class="ml-hsp-lg">
+              <a href="#h3-a">H3 A</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
     </div>
 
     <footer data-footer>
@@ -55,12 +59,12 @@ The tree below is not reconstructed from memory or from the old prototype bundle
 
 Key structural facts a pack author needs, all confirmed against the render above:
 
-- **`nav[data-doc-pager]` is a direct child of `article.zd-content`** — the last element inside the article, after the MDX content. It is NOT a sibling of the article (the old tokens-dump.md skeleton showed it outside — that was wrong).
-- **`footer[data-footer]`** sits at the very end of `.zd-sidebar-content-wrapper`, a sibling of `.zd-doc-content-band` (main + TOC) — outside `article.zd-content` and outside `<main>`.
-- **`p[data-doc-description]`** on the entry-page path is the first element inside `article.zd-content` after `<h1>` (before `DocMetainfoArea`/`DocTagsArea` when those are present — see below).
-- **TOC active state has no dedicated class.** `nav[data-zd-toc] a[aria-current="true"]` is the only signal a currently-active heading link carries; an inactive link has no `aria-current` attribute at all (not `aria-current="false"`). In pure SSR output no link is ever marked active — activation is client-only (scroll-spy), so this hook only fires after hydration.
+- **`nav[data-doc-pager]` is a direct child of `article.zd-content`**, after the MDX content — but it is not necessarily the article's *last* child: when `docHistory` is enabled, `docHistorySlot` (`DocHistoryArea`) renders immediately after it, still inside the article. Do not rely on `:last-child`/`:last-of-type` for the pager. The pager is NOT a sibling of the article (the old tokens-dump.md skeleton showed it outside — that was wrong).
+- **`footer[data-footer]`** is a direct child of `.zd-sidebar-content-wrapper`, but NOT a sibling of `.zd-doc-content-band` directly — an intermediate centering `<div class="flex min-h-[…] justify-center">` sits between `.zd-sidebar-content-wrapper` and `.zd-doc-content-band` (see the tree above). The footer is a sibling of that intermediate wrapper, not of the content band itself. A sibling/adjacency selector built against `.zd-doc-content-band` will not match the footer.
+- **`p[data-doc-description]`** on the entry-page path renders AFTER `<h1>` and after any `docContentHeaderExtras`/`DocMetainfoArea`/`DocTagsArea`/fallback-notice content — see the expanded article order below. It is not the element immediately following `<h1>` whenever any of those optional slots are present.
+- **TOC active state has no dedicated class.** `nav[data-zd-toc] a[aria-current="true"]` is the only signal a currently-active heading link carries; an inactive link has no `aria-current` attribute at all (not `aria-current="false"`). The skeleton above is literal SSR output, where `aria-current` never appears on any link — `useActiveHeading` initializes with no active id and only sets one from a client-side scroll-spy effect that runs after hydration. Expect `aria-current="true"` to show up only when inspecting a hydrated page in a real browser, never in a raw SSR/build HTML diff.
 
-The full entry-page article, with `DocMetainfoArea`/tags/frontmatter-preview slots present, is (in order):
+The full entry-page article, with every optional slot present, in ACTUAL order:
 
 ```html
 <article class="zd-content max-w-none">
@@ -73,6 +77,7 @@ The full entry-page article, with `DocMetainfoArea`/tags/frontmatter-preview slo
   <!-- FrontmatterPreview table, only when custom frontmatter keys exist -->
   <!-- MDX <Content /> -->
   <nav data-doc-pager>…</nav>
+  <!-- docHistorySlot (DocHistoryArea), when docHistory is enabled -->
 </article>
 ```
 
