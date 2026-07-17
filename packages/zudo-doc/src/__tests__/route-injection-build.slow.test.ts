@@ -303,15 +303,29 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   //
   // To update: run `vitest run --update-snapshots`, inspect the diff, and
   // confirm the output delta is intentional before committing.
+  //
+  // 2026-07-18 re-baseline (zudolab/zudo-doc#2911): old-vs-new normalized-HTML
+  // diff confirmed every changed byte traces to already-merged, intentional
+  // output changes since the prior baseline (set at 27d95e578, compat-cleanup) —
+  //   - `<html data-theme-pack=default>` + the inlined FOUC-safe theme-pack
+  //     bootstrap `<script>` in `<head>` (theme-packs runtime switching engine,
+  //     #2822, base/theme-feature-core)
+  //   - `data-footer`, `data-doc-description`, `data-doc-pager` stable data-*
+  //     DOM hooks (#2873, base/theme-pack-hooks)
+  //   - `data-zd-mobile-sidebar` stable DOM hook on the mobile sidebar aside
+  //     (#2887, base/theme-nav-fonts chrome font seam + mobile hooks)
+  //   - the stateDiagram `;`→newline mermaid-init fix + its explanatory
+  //     comment (#2909, this epic's Wave-1 mermaid-semicolon-fix)
+  // No other bytes changed. See sub-issue #2911 for the full diff.
 
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"94cb49dc62d8cf4aef6ea8a74ecce0f44f78868ed0b20edb157c0c26bc2bc3d2"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"b2328e098a65b1056ecd8b604dac7baaceed936b61be1caee2b03524119abdb6"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"6bbdd7b2a66d3fe9bb735317461def9cfd1b7ff61f47c0e7cce543dafe153e25"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"e412483fcbf75cd0db3f71cacfb4b251d0bdb30337c6203a21af3e029ac3b04a"`);
   });
 });
 
