@@ -452,10 +452,15 @@ html[data-theme-pack="onyx"] footer[data-footer] > div > div:last-child:not(:fir
    the `data-switcher-card` hook (#2873). */
 html[data-theme-pack="onyx"] div[data-switcher-card] {
   border: 1px solid color-mix(in oklch, var(--zd-accent) 55%, transparent);
-  outline: 1px solid color-mix(in oklch, var(--zd-accent) 22%, transparent);
-  outline-offset: 4px;
   border-radius: 0;
   box-shadow: 0 18px 44px -10px rgb(0 0 0 / 0.55);
+}
+/* decorative gold rule only while NOT keyboard-focused — an unconditional
+   outline would beat the layered focus-visible utility and hide the focus
+   ring (#2883) */
+html[data-theme-pack="onyx"] div[data-switcher-card]:not(:focus-visible) {
+  outline: 1px solid color-mix(in oklch, var(--zd-accent) 22%, transparent);
+  outline-offset: 4px;
 }
 html[data-theme-pack="onyx"] div[data-switcher-card] p[aria-live="polite"] {
   font-family: var(--font-display);
@@ -469,10 +474,14 @@ html[data-theme-pack="onyx"] div[data-switcher-card] p[aria-live="polite"] {
    role/aria-label hook doesn't match this <dialog>) */
 html[data-theme-pack="onyx"] dialog[aria-labelledby="zd-theme-pack-dialog-title"] {
   border: 1px solid color-mix(in oklch, var(--zd-accent) 55%, transparent);
-  outline: 1px solid color-mix(in oklch, var(--zd-accent) 22%, transparent);
-  outline-offset: 4px;
   border-radius: 0;
   box-shadow: 0 18px 44px -10px rgb(0 0 0 / 0.55);
+}
+/* same focus-visible gate as the flyout card (#2883) */
+html[data-theme-pack="onyx"]
+  dialog[aria-labelledby="zd-theme-pack-dialog-title"]:not(:focus-visible) {
+  outline: 1px solid color-mix(in oklch, var(--zd-accent) 22%, transparent);
+  outline-offset: 4px;
 }
 html[data-theme-pack="onyx"] dialog[aria-labelledby="zd-theme-pack-dialog-title"] button {
   border-radius: 0;
