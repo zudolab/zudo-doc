@@ -4,7 +4,7 @@
   "name": "Phosphor",
   "description": "Green CRT terminal — phosphor glow, scanlines, inverse-video nav, monospace everything.",
   "mode": "dark",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "fonts": {
     "sans": "JetBrains Mono",
     "mono": "JetBrains Mono",

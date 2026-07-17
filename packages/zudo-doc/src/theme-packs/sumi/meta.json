@@ -4,7 +4,7 @@
   "name": "Sumi",
   "description": "Sumi-e ink on washi — bold mincho brush headings, deep black strokes, one vermillion hanko seal accent.",
   "mode": "light",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "fonts": {
     "sans": "Zen Kaku Gothic New",
     "mono": "IBM Plex Mono",
