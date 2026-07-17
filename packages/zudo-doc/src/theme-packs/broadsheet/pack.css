@@ -33,9 +33,11 @@
                           data-doc-pager hook, #2876)
    - `footer[data-footer]` → ships literally now — the real footer
                           carries the stable data-footer hook (#2876)
-   - the theme-switcher flyout has NO stable hook ported — its
-     classified-ad double frame is intentionally NOT ported (see pack
-     notes).
+   - `.tp-flyout`       → `div[data-switcher-card]` (the flyout card
+                          now carries a stable data-switcher-card
+                          hook, #2873) — its classified-ad double
+                          frame, originally left unported for lack of
+                          a hook, ships now (#2880).
    ============================================================ */
 
 /* ---- Playfair Display — masthead / headlines / pull quotes / drop
@@ -414,4 +416,33 @@ html[data-theme-pack="broadsheet"] .zd-content > nav[data-doc-pager] a p {
 html[data-theme-pack="broadsheet"] footer[data-footer] {
   border-top: 3px solid var(--zd-fg);
   box-shadow: 0 -6px 0 -5px var(--zd-fg);
+}
+
+/* switcher flyout: a classified-ad box — square, inner ink hairline
+   with an offset outer rule (the prototype's double frame, restored in
+   #2880 against the stable data-switcher-card hook, #2873). The outer
+   rule + 3px paper gap are drawn as box-shadow rings, NOT `outline`,
+   so the card's keyboard focus-visible accent outline keeps working
+   (an unlayered pack `outline` would silently override that utility);
+   the rings also replace the default elevation shadow — print floats
+   nothing. */
+html[data-theme-pack="broadsheet"] div[data-switcher-card] {
+  border-radius: 0;
+  border: 1px solid var(--zd-fg);
+  box-shadow:
+    0 0 0 3px var(--zd-surface),
+    0 0 0 4px var(--zd-fg);
+}
+/* the ad's head: pack name set in the Playfair display face (the
+   p[aria-live="polite"] hook is the live pack-name line — the onyx/
+   ledger/nocturne precedent) */
+html[data-theme-pack="broadsheet"] div[data-switcher-card] p[aria-live="polite"] {
+  font-family: var(--font-display);
+  font-weight: 900;
+}
+/* print is square — the card's internal controls and the mode badge
+   drop their rounding too */
+html[data-theme-pack="broadsheet"] div[data-switcher-card] button,
+html[data-theme-pack="broadsheet"] div[data-switcher-card] > span {
+  border-radius: 0;
 }
