@@ -38,18 +38,21 @@ import {
  * second, separately-maintained activation mechanism, and the fixture
  * already ships the switcher (`themePackSwitcher: true`).
  *
- * Pack: "manuscript" (packages/zudo-doc/src/theme-packs/manuscript/pack.css)
- * sets `--font-sans: "EB Garamond", …` — unambiguously distinct from the
- * default chrome font (`system-ui, sans-serif`), so a substring match on
- * "EB Garamond" is an unambiguous signal that the pack's font actually
- * reached the surface.
+ * Pack: "foundry" (packages/zudo-doc/src/theme-packs/foundry/pack.css) sets
+ * `--font-sans: "Inter", …` — unambiguously distinct from the default chrome
+ * font (`system-ui, sans-serif`), so a substring match on "Inter" is a clear
+ * signal that the pack's font actually reached the surface. Foundry is the
+ * one non-default pack the `theme` fixture actually bundles (its built
+ * `dist/theme-packs/index.json` ships only `default` + `foundry`; the
+ * fixture's `settings.ts` themePacks array is a pin-ORDER, not the bundled
+ * set), which is why the sibling `theme-pack-switcher.spec.ts` uses it too.
  */
 
 const PAGE = "/docs/getting-started/";
 const TOC_LINK_SELECTOR = "nav[data-zd-toc] a";
-const PACK_SLUG = "manuscript";
-const PACK_NAME = "Manuscript";
-const PACK_FONT_FAMILY = "EB Garamond";
+const PACK_SLUG = "foundry";
+const PACK_NAME = "Foundry";
+const PACK_FONT_FAMILY = "Inter";
 
 // xl viewport (>=1280px) so both #desktop-sidebar and the TOC nav (`hidden
 // xl:flex` in toc.tsx) are actually visible — matches the project convention
@@ -69,6 +72,11 @@ test.describe("Theme pack chrome font seam", () => {
     page,
   }) => {
     await page.goto(PAGE, { waitUntil: "load" });
+    // Wait for the theme-pack switcher island to hydrate and settle on the
+    // default pack before driving it — mirrors theme-pack-switcher.spec.ts.
+    // Opening the browse-all dialog before hydration lands it empty, so the
+    // pack card never appears.
+    await waitForActivePack(page, "default");
 
     const sidebarLink = desktopSidebar(page).locator("a").first();
     const tocLink = page.locator(TOC_LINK_SELECTOR).first();
@@ -85,11 +93,11 @@ test.describe("Theme pack chrome font seam", () => {
     await browseAllButton(page).click();
     await expect(dialogLocator(page)).toBeVisible();
 
-    const manuscriptCard = packCard(page, PACK_NAME);
+    const foundryCard = packCard(page, PACK_NAME);
     // Playwright's own retry covers the lazy theme-packs/index.json fetch —
     // no arbitrary wait needed (mirrors theme-pack-switcher.spec.ts).
-    await expect(manuscriptCard).toBeVisible({ timeout: 10000 });
-    await manuscriptCard.click();
+    await expect(foundryCard).toBeVisible({ timeout: 10000 });
+    await foundryCard.click();
     await waitForActivePack(page, PACK_SLUG);
     await page.keyboard.press("Escape");
     await expect(dialogLocator(page)).toBeHidden();
