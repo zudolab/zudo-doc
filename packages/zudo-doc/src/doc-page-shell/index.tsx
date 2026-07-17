@@ -335,7 +335,7 @@ export function createDocPageShell<S extends Settings = Settings>(
             {metainfoSlot}
 
             {description && (
-              <p class="mb-vsp-lg text-title text-muted">{description}</p>
+              <p class="mb-vsp-lg text-title text-muted" data-doc-description>{description}</p>
             )}
             <NavCardGrid children={autoIndexChildren ?? []} />
           </>

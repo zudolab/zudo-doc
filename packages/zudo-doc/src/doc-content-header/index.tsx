@@ -170,7 +170,7 @@ export function createDocContentHeader<S extends Settings = Settings>(
         )}
 
         {entry.data.description && (
-          <p class="mb-vsp-lg text-title text-muted">
+          <p class="mb-vsp-lg text-title text-muted" data-doc-description>
             {entry.data.description}
           </p>
         )}

@@ -211,13 +211,17 @@ export function ThemePackSwitcher({ active, order, base }: ThemePackSwitcherProp
   }
 
   return (
-    <div class="fixed right-hsp-lg bottom-hsp-lg z-popover flex flex-col items-end gap-vsp-2xs">
+    <div
+      class="fixed right-hsp-lg bottom-hsp-lg z-popover flex flex-col items-end gap-vsp-2xs"
+      data-theme-pack-switcher
+    >
       {open ? (
         <div
           ref={cardRef}
           tabIndex={-1}
           role="dialog"
           aria-label="Theme pack switcher"
+          data-switcher-card
           class="flex w-72 max-w-[calc(100vw-2rem)] flex-col gap-vsp-2xs rounded-lg border border-muted bg-surface p-hsp-lg shadow-lg focus-visible:outline-2 focus-visible:outline-accent"
         >
           <div class="flex items-start justify-between gap-hsp-sm">
@@ -287,6 +291,7 @@ export function ThemePackSwitcher({ active, order, base }: ThemePackSwitcherProp
         aria-expanded={open}
         aria-label="Theme pack switcher"
         title="Theme packs"
+        data-switcher-launcher
         onClick={() => setOpen(!open)}
         class="flex h-10 w-10 items-center justify-center rounded-full border border-muted bg-surface text-fg shadow-lg transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
       >

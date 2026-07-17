@@ -35,8 +35,16 @@ describe("ThemePackSwitcher — SSR shape", () => {
     expect(html).toContain('aria-expanded="false"');
   });
 
+  it("renders stable DOM hooks: data-theme-pack-switcher on the root, data-switcher-launcher on the launcher (zudolab/zudo-doc#2873)", () => {
+    expect(html).toMatch(/<div[^>]*data-theme-pack-switcher[^>]*>/);
+    expect(html).toMatch(
+      /<button[^>]*aria-label="Theme pack switcher"[^>]*data-switcher-launcher[^>]*>/,
+    );
+  });
+
   it("renders NO card content while closed (the card is toggled client-side)", () => {
     expect(html).not.toContain('role="dialog"');
+    expect(html).not.toContain("data-switcher-card");
     expect(html).not.toContain("Foundry");
     expect(html).not.toContain("Industrial dark pack.");
     // Matched by aria-label rather than the raw "Prev"/"Next" substrings:
