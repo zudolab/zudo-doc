@@ -40,23 +40,22 @@
      comma list of fully-prefixed branches (the validator checks
      every comma-separated branch for the scope prefix, so the
      comma-bearing :where() argument list can't be used)
-   - `.lead`             → `.zd-content > p:first-of-type` (the
-                           description paragraph DocContentHeader
-                           renders as the article's first direct-child
-                           <p>; fails soft on pages without one)
-   - `.doc-pager`        → `.zd-content > nav:last-of-type:not([aria-label]) > a`
-                           (the DocPager is the article's last
-                           unlabelled direct-child nav whose children
-                           are bare <a> cards; breadcrumb and
-                           NavCardGrid navs carry aria-labels)
+   - `.lead`             → `.zd-content > p[data-doc-description]`
+                           (the description paragraph DocContentHeader
+                           renders now carries a stable data-doc-description
+                           hook; fails soft on pages without one, #2876)
+   - `.doc-pager`        → `.zd-content > nav[data-doc-pager] > a`
+                           (the DocPager nav now carries a stable
+                           data-doc-pager hook, #2876)
    - `.pager-title`      → the pager card's <p> (its only <p>)
-   - `footer[data-footer]` → `.zd-sidebar-content-wrapper > footer`
-                           (no data-footer attribute in the real DOM)
-   - `.tp-flyout`        → `div[role="dialog"][aria-label="Theme pack
-                           switcher"]` (the ledger/nocturne precedent).
-                           The launcher button and `.tp-btn` controls
-                           have NO stable hook — intentionally NOT
-                           ported.
+   - `footer[data-footer]` → ships literally now — the real footer
+                           carries the stable data-footer hook (#2876)
+   - `.tp-flyout`        → `div[data-switcher-card]` (the flyout card
+                           now carries a stable data-switcher-card
+                           hook, #2876). The launcher button and
+                           `.tp-btn` controls carry a data-switcher-launcher
+                           hook too, but their styling is intentionally
+                           NOT ported.
    - `.hdr-search` / `.hdr-icon-btn` / `.toc-title` / `.sb-group > p`
                            — prototype-mock markup with no stable
                            hook; NOT ported.
@@ -244,7 +243,7 @@ html[data-theme-pack="beacon"] [data-nav-item],
 html[data-theme-pack="beacon"] aside a,
 html[data-theme-pack="beacon"] main nav[aria-label="Breadcrumb"] a,
 html[data-theme-pack="beacon"] nav[data-zd-toc] a,
-html[data-theme-pack="beacon"] .zd-sidebar-content-wrapper > footer a {
+html[data-theme-pack="beacon"] footer[data-footer] a {
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }
@@ -266,7 +265,7 @@ html[data-theme-pack="beacon"] aside a,
 html[data-theme-pack="beacon"] a[data-nav-active] {
   border-radius: 0;
 }
-html[data-theme-pack="beacon"] .zd-sidebar-content-wrapper > footer {
+html[data-theme-pack="beacon"] footer[data-footer] {
   border-top: 3px solid var(--zd-fg);
 }
 
@@ -274,7 +273,7 @@ html[data-theme-pack="beacon"] .zd-sidebar-content-wrapper > footer {
 html[data-theme-pack="beacon"] .zd-content h1 {
   font-size: 3rem;
 }
-html[data-theme-pack="beacon"] .zd-content > p:first-of-type {
+html[data-theme-pack="beacon"] .zd-content > p[data-doc-description] {
   font-size: 1.3rem;
 }
 /* h2: a 4px ink rule. The SSR-inlined
@@ -412,16 +411,16 @@ html[data-theme-pack="beacon"] nav[data-zd-toc] ul {
    language. The DocPager is the article's LAST unlabelled
    direct-child nav (breadcrumb and NavCardGrid navs carry
    aria-labels). */
-html[data-theme-pack="beacon"] .zd-content > nav:last-of-type:not([aria-label]) > a {
+html[data-theme-pack="beacon"] .zd-content > nav[data-doc-pager] > a {
   border: 2px solid var(--zd-fg);
   border-radius: 0;
 }
-html[data-theme-pack="beacon"] .zd-content > nav:last-of-type:not([aria-label]) > a:hover {
+html[data-theme-pack="beacon"] .zd-content > nav[data-doc-pager] > a:hover {
   border-color: var(--zd-accent);
   outline: 3px solid var(--zd-accent);
   outline-offset: 0;
 }
-html[data-theme-pack="beacon"] .zd-content > nav:last-of-type:not([aria-label]) > a p {
+html[data-theme-pack="beacon"] .zd-content > nav[data-doc-pager] > a p {
   font-weight: 700;
   text-decoration: underline;
   text-decoration-thickness: 2px;
@@ -429,14 +428,14 @@ html[data-theme-pack="beacon"] .zd-content > nav:last-of-type:not([aria-label]) 
 }
 
 /* theme-pack flyout: square, 3px-framed, hard offset shadow (the
-   launcher button has no stable hook) */
-html[data-theme-pack="beacon"] div[role="dialog"][aria-label="Theme pack switcher"] {
+   launcher button's styling is intentionally not ported) */
+html[data-theme-pack="beacon"] div[data-switcher-card] {
   border: 3px solid var(--zd-fg);
   border-radius: 0;
   box-shadow: 6px 6px 0 0 color-mix(in srgb, var(--zd-fg) 18%, transparent);
 }
 html[data-theme-pack="beacon"]
-  div[role="dialog"][aria-label="Theme pack switcher"]
+  div[data-switcher-card]
   p[aria-live="polite"]::before {
   content: "◉ ";
   color: var(--zd-accent);
