@@ -138,9 +138,15 @@ export function SidebarToggle({
           stay in the tab order and accessibility tree while off-screen
           (zudolab/zudo-doc#2059). `inert={false}` serialises to no attribute,
           so the SSR (open=false → `inert`) and initial client render stay
-          byte-stable for hydration. */}
+          byte-stable for hydration.
+          `data-zd-mobile-sidebar` is the stable theme-pack hook for this
+          drawer — the mobile counterpart of the desktop `#desktop-sidebar`,
+          which has no id of its own here (zudolab/zudo-doc#2887). Unlike
+          `inert` it is UNCONDITIONAL, so it is hydration-stable by
+          construction: it does not vary with `open`. */}
       <aside
         inert={!open}
+        data-zd-mobile-sidebar
         className={`
           fixed top-[3.5rem] left-0 z-modal h-[calc(100vh-3.5rem)] w-[16rem] flex flex-col
           border-r border-muted bg-bg transition-transform duration-200

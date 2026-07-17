@@ -181,12 +181,48 @@ describe("COMPONENT_TOKENS keyset snapshot", () => {
           "selector": "a[data-nav-active]",
           "surface": "chrome",
         },
+        {
+          "category": "typography",
+          "component": "chrome",
+          "cssVar": "--zdc-chrome-font",
+          "default": "var(--font-sans)",
+          "property": "font-family",
+          "selector": "body",
+          "surface": "chrome",
+        },
+        {
+          "category": "typography",
+          "component": "header",
+          "cssVar": "--zdc-header-font",
+          "default": "var(--zdc-chrome-font, var(--font-sans))",
+          "property": "font-family",
+          "selector": "header[data-header]",
+          "surface": "chrome",
+        },
+        {
+          "category": "typography",
+          "component": "sidebar",
+          "cssVar": "--zdc-sidebar-font",
+          "default": "var(--zdc-chrome-font, var(--font-sans))",
+          "property": "font-family",
+          "selector": "#desktop-sidebar, aside[data-zd-mobile-sidebar]",
+          "surface": "chrome",
+        },
+        {
+          "category": "typography",
+          "component": "toc",
+          "cssVar": "--zdc-toc-font",
+          "default": "var(--zdc-chrome-font, var(--font-sans))",
+          "property": "font-family",
+          "selector": "nav[data-zd-toc], div[data-zd-mobile-toc]",
+          "surface": "chrome",
+        },
       ]
     `);
   });
 
-  it("contains exactly 17 tokens in the Wave 5+S5 registry (12 content + 5 chrome)", () => {
-    expect(COMPONENT_TOKENS).toHaveLength(17);
+  it("contains exactly 21 tokens in the #2887 registry (12 content + 9 chrome)", () => {
+    expect(COMPONENT_TOKENS).toHaveLength(21);
   });
 
   it("every cssVar follows the --zdc- prefix convention", () => {
@@ -201,11 +237,38 @@ describe("COMPONENT_TOKENS keyset snapshot", () => {
     }
   });
 
-  it("12 content tokens and 5 chrome tokens (S5 adds nav-active chrome tokens)", () => {
+  it("12 content tokens and 9 chrome tokens (#2887 adds the body font seam + 3 per-surface knobs)", () => {
     const contentTokens = COMPONENT_TOKENS.filter((t) => t.surface === "content");
     const chromeTokens = COMPONENT_TOKENS.filter((t) => t.surface === "chrome");
     expect(contentTokens).toHaveLength(12);
-    expect(chromeTokens).toHaveLength(5);
+    expect(chromeTokens).toHaveLength(9);
+  });
+
+  // The seam that makes theme-pack fonts reach the app shell (#2887 / epic
+  // #2886). Without a `body` rule pointing at the token, header/sidebar/TOC/
+  // footer inherit Tailwind preflight's hardcoded literal stack and a pack's
+  // `--font-sans` override is unreachable. Pinned here so a future edit cannot
+  // quietly retarget or drop it.
+  it("--zdc-chrome-font is the body-level font seam defaulting to var(--font-sans)", () => {
+    const seam = COMPONENT_TOKENS.find((t) => t.cssVar === "--zdc-chrome-font");
+    expect(seam).toBeDefined();
+    expect(seam?.selector).toBe("body");
+    expect(seam?.property).toBe("font-family");
+    expect(seam?.default).toBe("var(--font-sans)");
+    expect(seam?.surface).toBe("chrome");
+  });
+
+  // Each per-surface font knob must cover BOTH its desktop and mobile emitter,
+  // so one consumer override lands on both viewports. The mobile TOC in
+  // particular does NOT reuse `nav[data-zd-toc]` — it emits its own <div>.
+  it("per-surface chrome font knobs cover both the desktop and mobile emitters", () => {
+    const bySurface = (name: string) =>
+      COMPONENT_TOKENS.find((t) => t.cssVar === name)?.selector;
+
+    expect(bySurface("--zdc-sidebar-font")).toContain("#desktop-sidebar");
+    expect(bySurface("--zdc-sidebar-font")).toContain("[data-zd-mobile-sidebar]");
+    expect(bySurface("--zdc-toc-font")).toContain("nav[data-zd-toc]");
+    expect(bySurface("--zdc-toc-font")).toContain("[data-zd-mobile-toc]");
   });
 
   it("every default chains to a token or inherit — never a bare literal color/size", () => {
