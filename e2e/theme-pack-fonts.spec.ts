@@ -1,4 +1,4 @@
-import type { Locator } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { test, expect } from "./fixtures";
 import { desktopSidebar } from "./sidebar-helpers";
 import {
@@ -17,7 +17,11 @@ import {
  * sidebar, TOC, footer), not just `.zd-content` prose. If that rule were
  * ever removed, or chrome got re-frozen onto Tailwind preflight's hardcoded
  * `ui-sans-serif, system-ui, …` literal, sidebar/TOC links would stop
- * tracking the active pack's font — this spec catches that.
+ * tracking the active pack's font — this spec catches that. `body` itself
+ * is asserted directly (not just the sidebar/TOC surfaces, which each carry
+ * their own independent `--zdc-sidebar-font`/`--zdc-toc-font` fallback
+ * chain) so the seam rule's removal can't hide behind those per-surface
+ * rules still resolving correctly on their own.
  *
  * Targets the `theme` fixture's `/docs/getting-started` page (routed here
  * via the `theme*.spec.ts` testMatch convention, see e2e/CLAUDE.md), which
@@ -56,8 +60,12 @@ async function fontFamilyOf(locator: Locator): Promise<string> {
   return locator.evaluate((el) => getComputedStyle(el).fontFamily);
 }
 
+async function bodyFontFamily(page: Page): Promise<string> {
+  return page.evaluate(() => getComputedStyle(document.body).fontFamily);
+}
+
 test.describe("Theme pack chrome font seam", () => {
-  test("activating a pack changes computed font-family on a sidebar link and a TOC link", async ({
+  test("activating a pack changes computed font-family on body, a sidebar link, and a TOC link", async ({
     page,
   }) => {
     await page.goto(PAGE, { waitUntil: "load" });
@@ -69,6 +77,7 @@ test.describe("Theme pack chrome font seam", () => {
 
     // Default pack — the "before" baseline. Must NOT already contain the
     // pack's font, or the contrast below would prove nothing.
+    expect(await bodyFontFamily(page)).not.toContain(PACK_FONT_FAMILY);
     expect(await fontFamilyOf(sidebarLink)).not.toContain(PACK_FONT_FAMILY);
     expect(await fontFamilyOf(tocLink)).not.toContain(PACK_FONT_FAMILY);
 
@@ -85,6 +94,14 @@ test.describe("Theme pack chrome font seam", () => {
     await page.keyboard.press("Escape");
     await expect(dialogLocator(page)).toBeHidden();
 
+    // `body` is the literal seam rule (`--zdc-chrome-font`) this spec
+    // guards — asserted directly, not just via surfaces that also carry
+    // their own independent `--zdc-sidebar-font`/`--zdc-toc-font` rules
+    // (codex review: those two alone wouldn't catch the seam rule itself
+    // being removed while the per-surface rules survived).
+    await expect
+      .poll(() => bodyFontFamily(page), { timeout: 5000 })
+      .toContain(PACK_FONT_FAMILY);
     // Same elements, same selectors — only the active pack changed.
     await expect
       .poll(() => fontFamilyOf(sidebarLink), { timeout: 5000 })
