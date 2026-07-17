@@ -153,6 +153,23 @@ The complete extras-authoring surface (ADR Decision 6, rule 5). Select ONLY on t
 | `[data-switcher-card]` | The switcher's open card (present only while open) | Card background/border/shadow |
 | `[data-switcher-launcher]` | The switcher's round launcher button | Launcher button styling |
 
+### Chrome font tokens — optional per-surface hooks
+
+Since the chrome font seam (zudolab/zudo-doc#2887), a pack's `--font-sans` already reaches the whole shell — header, sidebar, TOC, breadcrumb, footer — through an unlayered `body { font-family: var(--zdc-chrome-font, var(--font-sans)) }` rule in `features.css`. A pack that wants one cohesive chrome typeface needs no extra rule for this: setting `--font-sans` in the pack's token block is enough. The Wave-3 audit of all 20 shipped packs (zudolab/zudo-doc#2889/#2886) confirmed this — every pack ships unchanged, with no per-pack override needed.
+
+Four `--zdc-*` component tokens exist as **optional** hooks for a pack that deliberately wants ONE shell surface to diverge from the rest — they are authoring hooks, not something every pack is expected to set:
+
+| Token | Selector | Default | Use when |
+|---|---|---|---|
+| `--zdc-chrome-font` | `body` | `var(--font-sans)` | The whole shell should use a font different from `--font-sans` itself (rare — usually just set `--font-sans`). |
+| `--zdc-header-font` | `header[data-header]` | `var(--zdc-chrome-font, var(--font-sans))` | The header (logo + nav) should use its own face, independent of the rest of the chrome. |
+| `--zdc-sidebar-font` | `#desktop-sidebar`, `aside[data-zd-mobile-sidebar]` | `var(--zdc-chrome-font, var(--font-sans))` | The sidebar alone should diverge from the rest of the chrome. See the mobile caveat below. |
+| `--zdc-toc-font` | `nav[data-zd-toc]`, `div[data-zd-mobile-toc]` | `var(--zdc-chrome-font, var(--font-sans))` | The TOC alone should diverge from the rest of the chrome. See the mobile caveat below. |
+
+Each falls back to the `--zdc-chrome-font` seam rather than `inherit` — deliberately, not an oversight: under an `inherit` default, a header-only override would leak into the mobile drawer (which mounts inside `header[data-header]`), and the mobile TOC (which mounts inside `.zd-content`) would follow the prose font instead of the chrome font. Anchoring to the seam keeps each knob dependent only on its own value.
+
+**Mobile reach caveat (zudolab/zudo-doc#2898).** `--zdc-sidebar-font` and `--zdc-toc-font` are authored against a selector naming both a desktop and a mobile emitter, but only the **desktop** half is delivered today. The mobile drawer and mobile TOC are zfb client islands, and zfb strips bare `data-*` attributes from island roots during SSR, so `aside[data-zd-mobile-sidebar]` / `div[data-zd-mobile-toc]` never actually matches in the rendered DOM. On mobile, both surfaces render on the `--zdc-chrome-font` seam base regardless of what the granular token is set to. Do not design a pack around a desktop-only per-surface sidebar/TOC font expecting it to reach mobile — invisible today because every shipped pack uses a uniform chrome font, but a future pack that diverges the desktop sidebar/TOC from the rest of the chrome will visibly split between viewports.
+
 ## (c) The `!important` carve-out — heading border-image gradients
 
 `!important` is **forbidden** everywhere else in a pack. The one enumerated exception exists because `h2`/`h3`/`h4` SSR-inline a `border-image` rule directly on the element (`packages/zudo-doc/src/content/heading-h2.tsx`, `heading-h3.tsx`, `heading-h4.tsx`), and an inline `style` attribute beats any stylesheet rule regardless of specificity — the only way to override it from `pack.css` is `!important`:
