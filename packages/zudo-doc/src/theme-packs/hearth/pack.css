@@ -23,17 +23,17 @@
    - `.toc-active`       → `nav[data-zd-toc] a[aria-current="true"]`
                            (toc/toc.tsx marks the active entry with
                            aria-current, not a mock class)
-   - `.doc-pager`        → `.zd-content > nav:last-of-type:not([aria-label])`
-                           (the DocPager nav is the article's last
-                           unlabelled direct-child nav; breadcrumb and
-                           NavCardGrid navs carry aria-labels)
-   - `footer[data-footer]` → `.zd-sidebar-content-wrapper > footer`
-                           (no data-footer attribute in the real DOM)
+   - `.doc-pager`        → `.zd-content > nav[data-doc-pager]` (stable
+                           hook on the DocPager nav, kept anchored under
+                           the structural `.zd-content >` chain)
+   - `footer[data-footer]` → `footer[data-footer]` (stable hook on the
+                           sole <footer> inside .zd-sidebar-content-wrapper)
    - `.hdr-search` / `.hdr-icon-btn` / `.sb-group > p` — prototype-mock
      markup with no stable hook; their rounded/brick styling is NOT
      ported.
-   - the theme-switcher flyout + glowing-coal launcher have NO stable
-     hook — intentionally NOT ported.
+   - the theme-switcher flyout + glowing-coal launcher have stable hooks
+     now ([data-switcher-card] / [data-switcher-launcher]), but this pack
+     styles neither — intentionally NOT ported.
    - the prototype's `--hearth-shadow` / `--hearth-line` helper
      properties are not part of the token manifest, so their
      light-dark() values are inlined at each use site below.
@@ -336,10 +336,9 @@ html[data-theme-pack="hearth"] .zd-content hr {
   );
 }
 
-/* pager: cushioned cards that lift toward the fire. The DocPager is
-   the article's LAST unlabelled direct-child nav (breadcrumb and
-   NavCardGrid navs carry aria-labels). */
-html[data-theme-pack="hearth"] .zd-content > nav:last-of-type:not([aria-label]) a {
+/* pager: cushioned cards that lift toward the fire. DocPager carries the
+   stable data-doc-pager hook. */
+html[data-theme-pack="hearth"] .zd-content > nav[data-doc-pager] a {
   background: var(--zd-surface);
   border-radius: 12px;
   border-color: light-dark(oklch(0.85 0.042 76), oklch(0.335 0.034 48));
@@ -349,7 +348,7 @@ html[data-theme-pack="hearth"] .zd-content > nav:last-of-type:not([aria-label]) 
     border-color 0.18s ease,
     transform 0.18s ease;
 }
-html[data-theme-pack="hearth"] .zd-content > nav:last-of-type:not([aria-label]) a:hover {
+html[data-theme-pack="hearth"] .zd-content > nav[data-doc-pager] a:hover {
   border-color: color-mix(in oklch, var(--zd-accent) 60%, transparent);
   box-shadow: 0 12px 26px -14px light-dark(oklch(0.42 0.09 45 / 0.2), oklch(0.05 0.01 45 / 0.6));
   transform: translateY(-1px);
@@ -376,12 +375,11 @@ html[data-theme-pack="hearth"] nav[data-zd-toc] a[aria-current="true"] {
   box-shadow: 0 3px 10px -4px light-dark(oklch(0.42 0.09 45 / 0.2), oklch(0.05 0.01 45 / 0.6));
 }
 
-/* breadcrumb + footer warmth (the real footer has no data-footer
-   hook; it is the wrapper's direct child) */
+/* breadcrumb + footer warmth (footer carries the stable data-footer hook) */
 html[data-theme-pack="hearth"] main nav[aria-label="Breadcrumb"] a:hover {
   color: var(--zd-accent);
 }
-html[data-theme-pack="hearth"] .zd-sidebar-content-wrapper > footer {
+html[data-theme-pack="hearth"] footer[data-footer] {
   background-color: light-dark(oklch(0.936 0.026 80), oklch(0.196 0.02 45));
   border-top-color: light-dark(oklch(0.85 0.042 76), oklch(0.335 0.034 48));
 }

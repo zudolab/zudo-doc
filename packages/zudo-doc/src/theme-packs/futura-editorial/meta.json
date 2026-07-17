@@ -4,7 +4,7 @@
   "name": "Futura Editorial",
   "description": "Normal-weight geometric Futura headings over Noto Sans body — clean white, near-black ink, one restrained red accent.",
   "mode": "light",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "fonts": {
     "sans": "Noto Sans",
     "mono": "Space Mono",

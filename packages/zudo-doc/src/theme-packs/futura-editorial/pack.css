@@ -21,11 +21,10 @@
 
    Prototype-selector adaptations against the REAL DOM (tokens-dump
    §6 + component sources), noted inline where they matter:
-   - `.lead`         → `.zd-content > p:first-of-type` (the description
-                       paragraph DocContentHeader emits — broadsheet's
-                       adaptation, same known limit: on a page without a
-                       frontmatter description the first BODY paragraph
-                       takes the deck styling instead)
+   - `.lead`         → `p[data-doc-description]` (the description
+                       paragraph DocContentHeader/DocPageShell emit —
+                       stable hook, kept anchored under the structural
+                       `.zd-content >` chain)
    - `.sb-group > p` → the static group heads don't exist in the real
                        SidebarTree island; not ported. The active link
                        already renders the prototype's ink fill (the
@@ -33,16 +32,16 @@
    - `.toc-title`    → no desktop TOC heading exists (#1655), and the
                        prototype's `.toc-active` ink fill IS the stock
                        active style — the TOC needs no extras at all.
-   - `.doc-pager`    → `.zd-content > nav:last-of-type:not([aria-label])`
-                       (DocPager is the article's last direct-child nav
-                       and ships no aria-label; the :not guard excludes
-                       NavCardGrid's "Child pages" nav).
-   - `footer[data-footer]` → `.zd-sidebar-content-wrapper > footer` (no
-                       data-footer attribute in the real DOM). The
-                       prototype's uppercase colophon line has no stable
-                       hook and is intentionally not ported.
-   - the theme-switcher flyout has NO stable hook — its square-card
-     print-offset shadow is intentionally NOT ported.
+   - `.doc-pager`    → `.zd-content > nav[data-doc-pager]` (stable hook
+                       on the DocPager <nav>, kept anchored under the
+                       structural `.zd-content >` chain).
+   - `footer[data-footer]` → `footer[data-footer]` (stable hook on the
+                       sole <footer> inside .zd-sidebar-content-wrapper).
+                       The prototype's uppercase colophon line has no
+                       stable hook and is intentionally not ported.
+   - the theme-switcher flyout has stable hooks now ([data-switcher-card]
+     / [data-switcher-launcher]), but this pack styles neither — its
+     square-card print-offset shadow is intentionally NOT ported.
 
    Fonts: latin subsets only (all three families) to stay well inside
    the ~250 KB payload budget — a stray latin-ext glyph falls back to
@@ -206,7 +205,7 @@ html[data-theme-pack="futura-editorial"] .zd-content h1::before {
 
 /* the deck: display-face standfirst under the headline (prototype
    `.lead` — see the adaptation note in the header comment) */
-html[data-theme-pack="futura-editorial"] .zd-content > p:first-of-type {
+html[data-theme-pack="futura-editorial"] .zd-content > p[data-doc-description] {
   font-family: var(--font-display);
   font-weight: 400;
   font-size: 1.3rem;
@@ -290,25 +289,25 @@ html[data-theme-pack="futura-editorial"] .zd-content th {
 
 /* pager: square folio cards, ink border on hover, uppercase display
    labels (DocPager selector — see the header adaptation note) */
-html[data-theme-pack="futura-editorial"] .zd-content > nav:last-of-type:not([aria-label]) a {
+html[data-theme-pack="futura-editorial"] .zd-content > nav[data-doc-pager] a {
   border-radius: 0;
 }
-html[data-theme-pack="futura-editorial"] .zd-content > nav:last-of-type:not([aria-label]) a:hover {
+html[data-theme-pack="futura-editorial"] .zd-content > nav[data-doc-pager] a:hover {
   border-color: var(--zd-fg);
 }
-html[data-theme-pack="futura-editorial"] .zd-content > nav:last-of-type:not([aria-label]) a > div {
+html[data-theme-pack="futura-editorial"] .zd-content > nav[data-doc-pager] a > div {
   font-family: var(--font-display);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-size: 0.68rem;
 }
-html[data-theme-pack="futura-editorial"] .zd-content > nav:last-of-type:not([aria-label]) a p {
+html[data-theme-pack="futura-editorial"] .zd-content > nav[data-doc-pager] a p {
   font-family: var(--font-display);
   font-weight: 500;
 }
 
 /* footer: colophon under a solid ink hairline */
-html[data-theme-pack="futura-editorial"] .zd-sidebar-content-wrapper > footer {
+html[data-theme-pack="futura-editorial"] footer[data-footer] {
   border-top: 1px solid var(--zd-fg);
 }
