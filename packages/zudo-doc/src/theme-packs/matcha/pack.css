@@ -21,18 +21,22 @@
 
    Prototype-selector adaptations against the REAL DOM (tokens-dump
    §6 + component sources), noted inline where they matter:
-   - `.lead`         → `.zd-content > p:first-of-type` (the
-                       description paragraph DocContentHeader emits)
+   - `.lead`         → `p[data-doc-description]` (#2873 stable hook on
+                       the description paragraph DocContentHeader
+                       emits; only renders when the page has a
+                       frontmatter description — no longer falls back
+                       onto the opening body paragraph)
    - `.toc-active`   → `nav[data-zd-toc] a[aria-current="true"]`
-   - `.doc-pager`    → `.zd-content > nav:last-of-type:not([aria-label])`
-                       (DocPager is the article's last direct-child
-                       nav and ships no aria-label; NavCardGrid
-                       carries aria-label="Child pages")
-   - `footer[data-footer]` → `.zd-sidebar-content-wrapper > footer`
+   - `.doc-pager`    → `.zd-content > nav[data-doc-pager]` (#2873
+                       stable hook on the DocPager nav)
+   - `footer[data-footer]` → `footer[data-footer]` (#2873 stable hook;
+                       the wrapper-descendant form is no longer needed)
    - the h2 chashaku-scoop rule → a background-image gradient after
      `border-image: none !important` clears the SSR-inlined default
-   - the theme-switcher flyout ("the presented bowl") has NO stable
-     hook — its matcha lip is intentionally NOT ported.
+   - the theme-switcher flyout ("the presented bowl") now HAS stable
+     hooks (`[data-switcher-card]` / `[data-switcher-launcher]`,
+     #2873); its matcha lip remains intentionally NOT ported — an
+     unchanged design decision, not a selector gap.
    ============================================================ */
 
 /* ---- Zen Kaku Gothic New — the reading face (static 400 + 500;
@@ -186,13 +190,11 @@ html[data-theme-pack="matcha"] .zd-content {
   line-height: 1.9;
 }
 
-/* the lead: mincho standfirst under the ceremony title. The
-   prototype's `.lead` is the description paragraph DocContentHeader
-   renders as the FIRST direct-child <p> of the article. Known limit
-   (same as broadsheet): on a page without a frontmatter description
-   the first body paragraph takes the mincho styling instead — reads
-   as an emphasized opening line, fails safe. */
-html[data-theme-pack="matcha"] .zd-content > p:first-of-type {
+/* the lead: mincho standfirst under the ceremony title. Targets the
+   `data-doc-description` hook (#2873) — the description paragraph
+   DocContentHeader renders. Only present when the page has a
+   frontmatter description; pages without one simply render no lead. */
+html[data-theme-pack="matcha"] .zd-content > p[data-doc-description] {
   font-family: var(--font-display);
   line-height: 1.75;
 }
@@ -374,12 +376,10 @@ html[data-theme-pack="matcha"] nav[data-zd-toc] a[aria-current="true"] {
   color: var(--zd-bg);
 }
 
-/* pager: tea-foam cards, mincho titles, whispered labels. DocPager is
-   the article's LAST direct-child nav and ships no aria-label; the
-   :not([aria-label]) guard excludes NavCardGrid ("Child pages") and
-   :last-of-type excludes an unlabelled mid-content CategoryNav
-   (broadsheet's reviewed selector). */
-html[data-theme-pack="matcha"] .zd-content > nav:last-of-type:not([aria-label]) > a {
+/* pager: tea-foam cards, mincho titles, whispered labels. Targets the
+   DocPager's `data-doc-pager` hook (#2873) directly instead of the
+   positional :last-of-type:not([aria-label]) guard. */
+html[data-theme-pack="matcha"] .zd-content > nav[data-doc-pager] > a {
   background: var(--zd-surface);
   border-color: color-mix(in oklch, var(--zd-muted) 30%, transparent);
   border-radius: 0;
@@ -388,22 +388,22 @@ html[data-theme-pack="matcha"] .zd-content > nav:last-of-type:not([aria-label]) 
     border-color 0.18s ease,
     background-color 0.18s ease;
 }
-html[data-theme-pack="matcha"] .zd-content > nav:last-of-type:not([aria-label]) > a:hover {
+html[data-theme-pack="matcha"] .zd-content > nav[data-doc-pager] > a:hover {
   background: color-mix(in srgb, var(--zd-accent) 6%, var(--zd-surface));
   border-color: var(--zd-accent);
 }
-html[data-theme-pack="matcha"] .zd-content > nav:last-of-type:not([aria-label]) > a > div {
+html[data-theme-pack="matcha"] .zd-content > nav[data-doc-pager] > a > div {
   text-transform: uppercase;
   font-size: 0.72rem;
   letter-spacing: 0.1em;
 }
-html[data-theme-pack="matcha"] .zd-content > nav:last-of-type:not([aria-label]) > a p {
+html[data-theme-pack="matcha"] .zd-content > nav[data-doc-pager] > a p {
   font-family: var(--font-display);
   font-weight: 600;
 }
 
-/* footer: the room's far wall under a matcha hairline (the real
-   footer has no data-footer hook; it is the wrapper's direct child) */
-html[data-theme-pack="matcha"] .zd-sidebar-content-wrapper > footer {
+/* footer: the room's far wall under a matcha hairline. Targets the
+   `data-footer` hook (#2873) directly. */
+html[data-theme-pack="matcha"] footer[data-footer] {
   border-top-color: color-mix(in oklch, var(--zd-accent) 26%, transparent);
 }

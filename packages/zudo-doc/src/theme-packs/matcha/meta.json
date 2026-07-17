@@ -4,7 +4,7 @@
   "name": "Matcha",
   "description": "Green tea ceremony — deep matcha on warm cream, mincho headings, zen whitespace, tea-foam surfaces in both modes.",
   "mode": "light",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "fonts": {
     "sans": "Zen Kaku Gothic New",
     "mono": "M PLUS 1 Code",

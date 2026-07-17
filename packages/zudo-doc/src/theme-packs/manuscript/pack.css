@@ -332,21 +332,26 @@ html[data-theme-pack="manuscript"] .zd-content code:not(pre code) {
   border-radius: 0;
 }
 
-/* pager: colophon cards. The DocPager <nav> is the article's only direct
-   nav child (doc-page-shell renders it inside .zd-content); the prototype's
-   .doc-pager/.pager-label/.pager-title classes don't exist in the real DOM. */
-html[data-theme-pack="manuscript"] .zd-content > nav a {
+/* pager: colophon cards, targeted at the DocPager's `data-doc-pager` hook
+   (#2873). The prior broad `.zd-content > nav a` form matched EVERY direct-
+   child nav's descendant <a> — including NavCardGrid's `aria-label="Child
+   pages"` grid on auto-index pages, which picked up the colophon-card
+   framing by accident (no NavCardGrid-specific intent was ever documented
+   here). The `[data-doc-pager]` hook scopes this to the pager only; the
+   prototype's .doc-pager/.pager-label/.pager-title classes don't exist in
+   the real DOM. */
+html[data-theme-pack="manuscript"] .zd-content > nav[data-doc-pager] a {
   border-radius: 0;
   border-color: color-mix(in oklch, var(--zd-fg) 25%, transparent);
 }
-html[data-theme-pack="manuscript"] .zd-content > nav a:hover {
+html[data-theme-pack="manuscript"] .zd-content > nav[data-doc-pager] a:hover {
   border-color: var(--zd-accent);
 }
-html[data-theme-pack="manuscript"] .zd-content > nav a > div {
+html[data-theme-pack="manuscript"] .zd-content > nav[data-doc-pager] a > div {
   font-variant-caps: small-caps;
   letter-spacing: 0.08em;
 }
-html[data-theme-pack="manuscript"] .zd-content > nav a > p {
+html[data-theme-pack="manuscript"] .zd-content > nav[data-doc-pager] a > p {
   font-style: italic;
 }
 
@@ -354,13 +359,13 @@ html[data-theme-pack="manuscript"] .zd-content > nav a > p {
    (the prototype's .footer-copy class does not exist in the real DOM). The
    :not(:has(ul)) guard keeps the ornament off the link/tag column grid when
    a footer configures columns but no copyright — the grid's div always
-   contains <ul> lists, the copyright block never does. */
-html[data-theme-pack="manuscript"] .zd-sidebar-content-wrapper footer {
+   contains <ul> lists, the copyright block never does. Targets the
+   `data-footer` hook (#2873) instead of the wrapper-descendant form. */
+html[data-theme-pack="manuscript"] footer[data-footer] {
   border-top: 3px double color-mix(in oklch, var(--zd-fg) 50%, transparent);
 }
 html[data-theme-pack="manuscript"]
-  .zd-sidebar-content-wrapper
-  footer
+  footer[data-footer]
   > div
   > div:last-child:not(:has(ul))::before {
   content: "❦";

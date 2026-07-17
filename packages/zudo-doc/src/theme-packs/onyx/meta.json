@@ -4,7 +4,7 @@
   "name": "Onyx",
   "description": "Luxury noir — jet black, champagne serif headings, and a single gold hairline accent. Watch-brand restraint.",
   "mode": "dark",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "fonts": {
     "sans": "Jost",
     "mono": "IBM Plex Mono",

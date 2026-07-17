@@ -25,27 +25,26 @@
 
    Prototype-selector adaptations against the REAL DOM (tokens-dump
    §6 + component sources), noted inline where they matter:
-   - `.lead`             → `.zd-content > p:first-of-type` (the
-                           description paragraph DocContentHeader
-                           renders as the article's first direct-child
-                           <p>; fails soft on pages without one)
+   - `.lead`             → `p[data-doc-description]` (#2873 stable
+                           hook on the description paragraph
+                           DocContentHeader renders; only present when
+                           the page has a frontmatter description)
    - `.toc-active`       → `nav[data-zd-toc] a[aria-current="true"]`
                            (toc/toc.tsx marks the active entry with
                            aria-current, not a mock class)
-   - `.doc-pager`        → `.zd-content > nav:last-of-type:not([aria-label]) > a`
-                           (the DocPager is the article's last
-                           unlabelled direct-child nav whose children
-                           are bare <a> cards; breadcrumb and
-                           NavCardGrid navs carry aria-labels)
-   - `footer[data-footer]` → `.zd-sidebar-content-wrapper > footer`
-                           (no data-footer attribute in the real DOM)
+   - `.doc-pager`        → `.zd-content > nav[data-doc-pager] > a`
+                           (#2873 stable hook on the DocPager nav)
+   - `footer[data-footer]` → `footer[data-footer]` (#2873 stable hook;
+                           the wrapper-descendant form is no longer
+                           needed)
    - `.hdr-search` / `.hdr-icon-btn` / `.sb-group > p` / `.toc-title`
                            — prototype-mock markup with no stable
                            hook; NOT ported.
-   - `.tp-flyout`        → `div[role="dialog"][aria-label="Theme pack
-                           switcher"]`; its title is
-                           `p[aria-live="polite"]`. The launcher
-                           button has NO stable hook — NOT ported.
+   - `.tp-flyout`        → `div[data-switcher-card]` (#2873 stable
+                           hook); its title is `p[aria-live="polite"]`.
+                           The launcher now has a stable hook too but
+                           remains NOT ported (unchanged design
+                           decision).
    - the prototype's `--obs-*` helper properties are not part of the
      token manifest; their values are inlined at each use site:
        gold        = var(--zd-accent)
@@ -386,8 +385,9 @@ html[data-theme-pack="observatory"] .zd-content h1::after {
   );
 }
 
-/* the lead: a light-weight opening line under the title */
-html[data-theme-pack="observatory"] .zd-content > p:first-of-type {
+/* the lead: a light-weight opening line under the title. Targets the
+   `data-doc-description` hook (#2873). */
+html[data-theme-pack="observatory"] .zd-content > p[data-doc-description] {
   font-weight: 300;
 }
 
@@ -588,10 +588,9 @@ html[data-theme-pack="observatory"] nav[data-zd-toc] a[aria-current="true"] {
 }
 
 /* pager — constellation cards: glowing nodes pinned to opposite
-   corners; gilt frame and node-glow on hover. The DocPager is the
-   article's LAST unlabelled direct-child nav (breadcrumb and
-   NavCardGrid navs carry aria-labels). */
-html[data-theme-pack="observatory"] .zd-content > nav:last-of-type:not([aria-label]) > a {
+   corners; gilt frame and node-glow on hover. Targets the DocPager's
+   `data-doc-pager` hook (#2873) directly. */
+html[data-theme-pack="observatory"] .zd-content > nav[data-doc-pager] > a {
   border-radius: 0;
   border-color: light-dark(oklch(0.33 0.05 268 / 0.22), oklch(0.88 0.04 265 / 0.16));
   background-color: color-mix(in oklch, var(--zd-surface) 60%, transparent);
@@ -617,22 +616,21 @@ html[data-theme-pack="observatory"] .zd-content > nav:last-of-type:not([aria-lab
 }
 html[data-theme-pack="observatory"]
   .zd-content
-  > nav:last-of-type:not([aria-label])
+  > nav[data-doc-pager]
   > a:hover {
   border-color: color-mix(in oklch, var(--zd-accent) 65%, transparent);
   box-shadow: 0 0 16px -4px
     light-dark(oklch(0.52 0.11 80 / 0.35), oklch(0.86 0.13 88 / 0.55));
 }
-html[data-theme-pack="observatory"] .zd-content > nav:last-of-type:not([aria-label]) > a div {
+html[data-theme-pack="observatory"] .zd-content > nav[data-doc-pager] > a div {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: 0.72rem;
 }
 
-/* footer — the horizon: gilt rule fading at both ends, last stars
-   (the real footer has no data-footer hook; it is the wrapper's
-   direct child) */
-html[data-theme-pack="observatory"] .zd-sidebar-content-wrapper > footer {
+/* footer — the horizon: gilt rule fading at both ends, last stars.
+   Targets the `data-footer` hook (#2873) directly. */
+html[data-theme-pack="observatory"] footer[data-footer] {
   border-image: linear-gradient(
       to right,
       transparent,
@@ -658,8 +656,9 @@ html[data-theme-pack="observatory"] .zd-sidebar-content-wrapper > footer {
 
 /* theme-pack flyout — a framed star chart: violet frame, nebula wash,
    its own stars, glowing gold nodes on opposing corners; Josefin
-   chart-label title (the launcher button has no stable hook) */
-html[data-theme-pack="observatory"] div[role="dialog"][aria-label="Theme pack switcher"] {
+   chart-label title. Targets the `data-switcher-card` hook (#2873);
+   the launcher now has a stable hook too but remains NOT ported. */
+html[data-theme-pack="observatory"] div[data-switcher-card] {
   /* the dialog is a static flex child of the fixed wrapper — anchor
      the corner-node pseudos to the card itself */
   position: relative;
@@ -696,9 +695,9 @@ html[data-theme-pack="observatory"] div[role="dialog"][aria-label="Theme pack sw
     0 0 22px -8px light-dark(oklch(0.52 0.11 80 / 0.35), oklch(0.86 0.13 88 / 0.55));
 }
 html[data-theme-pack="observatory"]
-  div[role="dialog"][aria-label="Theme pack switcher"]::before,
+  div[data-switcher-card]::before,
 html[data-theme-pack="observatory"]
-  div[role="dialog"][aria-label="Theme pack switcher"]::after {
+  div[data-switcher-card]::after {
   content: "";
   position: absolute;
   width: 5px;
@@ -709,17 +708,17 @@ html[data-theme-pack="observatory"]
   pointer-events: none;
 }
 html[data-theme-pack="observatory"]
-  div[role="dialog"][aria-label="Theme pack switcher"]::before {
+  div[data-switcher-card]::before {
   top: -2.5px;
   left: -2.5px;
 }
 html[data-theme-pack="observatory"]
-  div[role="dialog"][aria-label="Theme pack switcher"]::after {
+  div[data-switcher-card]::after {
   bottom: -2.5px;
   right: -2.5px;
 }
 html[data-theme-pack="observatory"]
-  div[role="dialog"][aria-label="Theme pack switcher"]
+  div[data-switcher-card]
   p[aria-live="polite"] {
   font-family: var(--font-display);
   font-weight: 300;

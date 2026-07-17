@@ -27,32 +27,29 @@
                            `a[data-nav-active]` (gilded active marker;
                            the gold spine is an inset box-shadow so the
                            nested tree's own padding never shifts)
-   - `.lead`             → `.zd-content > p:first-of-type` (the
-                           description paragraph DocContentHeader
-                           renders as the article's first direct-child
-                           <p>; on a page without a frontmatter
-                           description the first body paragraph takes
-                           this styling — reads as an emphasized
-                           opening line, fails soft)
+   - `.lead`             → `p[data-doc-description]` (#2873 stable
+                           hook on the description paragraph
+                           DocContentHeader renders; only present when
+                           the page has a frontmatter description — no
+                           longer falls back onto the first body
+                           paragraph)
    - `.toc-active`       → `nav[data-zd-toc] a[aria-current="true"]`
                            (toc/toc.tsx marks the active entry with
                            aria-current, not a mock class)
-   - `.doc-pager`        → `.zd-content > nav:last-of-type:not([aria-label]) > a`
-                           (the DocPager is the article's last
-                           unlabelled direct-child nav whose children
-                           are bare <a> cards; breadcrumb and
-                           NavCardGrid navs carry aria-labels, and
-                           list-structured navs never match `> a`)
-   - `footer[data-footer]` → `.zd-sidebar-content-wrapper > footer`
-                           (no data-footer attribute in the real DOM)
+   - `.doc-pager`        → `.zd-content > nav[data-doc-pager] > a`
+                           (#2873 stable hook on the DocPager nav)
+   - `footer[data-footer]` → `footer[data-footer]` (#2873 stable hook;
+                           the wrapper-descendant form is no longer
+                           needed)
    - `.crumb-sep`        → the breadcrumb separators are inline SVG
                            chevrons inside the nav's <li>s; gilded via
                            `nav[aria-label="Breadcrumb"] li > svg`
-   - `.tp-flyout`        → `div[role="dialog"][aria-label="Theme pack
-                           switcher"]` (the ledger precedent); its
-                           title is `p[aria-live="polite"]`. The
-                           launcher button has NO stable hook —
-                           intentionally NOT ported.
+   - `.tp-flyout`        → `div[data-switcher-card]` (#2873 stable
+                           hook); its title is `p[aria-live="polite"]`.
+                           The launcher now has a stable hook too
+                           (`[data-switcher-launcher]`) but remains
+                           intentionally NOT ported — unchanged design
+                           decision.
    - `.hdr-search` / `.hdr-icon-btn` / `.sb-group > p` / `.toc-title`
                            — prototype-mock markup with no stable
                            hook; NOT ported.
@@ -302,8 +299,9 @@ html[data-theme-pack="nocturne"] .zd-content h1::after {
   );
 }
 
-/* the lead: an italic serif whisper under the title */
-html[data-theme-pack="nocturne"] .zd-content > p:first-of-type {
+/* the lead: an italic serif whisper under the title. Targets the
+   `data-doc-description` hook (#2873). */
+html[data-theme-pack="nocturne"] .zd-content > p[data-doc-description] {
   font-family: var(--font-display);
   font-style: italic;
   font-size: 1.4rem;
@@ -412,10 +410,9 @@ html[data-theme-pack="nocturne"] .zd-content td {
   border-bottom-color: color-mix(in oklch, var(--zd-muted) 22%, transparent);
 }
 
-/* pager: velvet cards, serif destinations, gilt on hover. The
-   DocPager is the article's LAST unlabelled direct-child nav
-   (breadcrumb and NavCardGrid navs carry aria-labels). */
-html[data-theme-pack="nocturne"] .zd-content > nav:last-of-type:not([aria-label]) > a {
+/* pager: velvet cards, serif destinations, gilt on hover. Targets the
+   DocPager's `data-doc-pager` hook (#2873) directly. */
+html[data-theme-pack="nocturne"] .zd-content > nav[data-doc-pager] > a {
   border-radius: 0;
   background-image: linear-gradient(
     150deg,
@@ -427,11 +424,11 @@ html[data-theme-pack="nocturne"] .zd-content > nav:last-of-type:not([aria-label]
     box-shadow 0.18s ease,
     border-color 0.18s ease;
 }
-html[data-theme-pack="nocturne"] .zd-content > nav:last-of-type:not([aria-label]) > a:hover {
+html[data-theme-pack="nocturne"] .zd-content > nav[data-doc-pager] > a:hover {
   border-color: light-dark(oklch(0.53 0.105 85 / 0.45), oklch(0.78 0.105 87 / 0.45));
   box-shadow: 0 12px 28px -18px light-dark(oklch(0.35 0.06 300 / 0.5), oklch(0 0 0 / 0.7));
 }
-html[data-theme-pack="nocturne"] .zd-content > nav:last-of-type:not([aria-label]) > a div {
+html[data-theme-pack="nocturne"] .zd-content > nav[data-doc-pager] > a div {
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-size: 0.66rem;
@@ -440,7 +437,7 @@ html[data-theme-pack="nocturne"] .zd-content > nav:last-of-type:not([aria-label]
      needs 4.5:1 there (gold L .53 → .46). */
   color: light-dark(oklch(0.46 0.105 85), oklch(0.78 0.105 87));
 }
-html[data-theme-pack="nocturne"] .zd-content > nav:last-of-type:not([aria-label]) > a p {
+html[data-theme-pack="nocturne"] .zd-content > nav[data-doc-pager] > a p {
   font-family: var(--font-display);
   font-weight: 600;
   font-size: 1.2rem;
@@ -466,9 +463,9 @@ html[data-theme-pack="nocturne"] nav[data-zd-toc] a[aria-current="true"] {
   border-left: 2px solid light-dark(oklch(0.53 0.105 85), oklch(0.78 0.105 87));
 }
 
-/* footer: dusk band above a soft gold hairline (the real footer has
-   no data-footer hook; it is the wrapper's direct child) */
-html[data-theme-pack="nocturne"] .zd-sidebar-content-wrapper > footer {
+/* footer: dusk band above a soft gold hairline. Targets the
+   `data-footer` hook (#2873) directly. */
+html[data-theme-pack="nocturne"] footer[data-footer] {
   border-top-color: light-dark(oklch(0.53 0.105 85 / 0.26), oklch(0.78 0.105 87 / 0.26));
   background-image: linear-gradient(
     to bottom,
@@ -478,8 +475,10 @@ html[data-theme-pack="nocturne"] .zd-sidebar-content-wrapper > footer {
 }
 
 /* theme-pack flyout: a jewel box — velvet glow, gold hairline frame,
-   serif title (the launcher button has no stable hook) */
-html[data-theme-pack="nocturne"] div[role="dialog"][aria-label="Theme pack switcher"] {
+   serif title. Targets the `data-switcher-card` hook (#2873); the
+   launcher button now has a stable hook too but remains intentionally
+   NOT ported. */
+html[data-theme-pack="nocturne"] div[data-switcher-card] {
   border: 1px solid light-dark(oklch(0.53 0.105 85 / 0.45), oklch(0.78 0.105 87 / 0.45));
   border-radius: 2px;
   background:
@@ -494,7 +493,7 @@ html[data-theme-pack="nocturne"] div[role="dialog"][aria-label="Theme pack switc
     0 22px 48px -16px light-dark(oklch(0.3 0.06 300 / 0.4), oklch(0 0 0 / 0.7));
 }
 html[data-theme-pack="nocturne"]
-  div[role="dialog"][aria-label="Theme pack switcher"]
+  div[data-switcher-card]
   p[aria-live="polite"] {
   font-family: var(--font-display);
   font-weight: 600;
