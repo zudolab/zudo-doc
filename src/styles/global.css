@@ -235,14 +235,21 @@
   --breakpoint-xl: 1280px;
 }
 
-/* Z-index tiers: the showcase does not customize beyond the package default —
- * the 13 semantic --z-index-* tiers ship unconditionally from
- * @takazudo/zudo-doc/theme.css (imported above). The former project-side
- * gen-z-index codegen (src/config/z-index-tokens.ts + `pnpm gen:z-index`/
- * `check:z-index`) was retired in zudolab/zudo-doc#2661 — it produced this
- * exact tier list byte-for-byte, so it is now dead weight. A project that
- * wants a genuinely CUSTOM tier still can — see the token-override `@theme`
- * block above and packages/zudo-doc/CLAUDE.md's "z-index defaults" note. */
+/* Z-index tiers: the showcase does not customize beyond the package default.
+ * The 13 semantic --z-index-* tiers ship from @takazudo/zudo-doc/theme.css,
+ * and the former project-side gen-z-index codegen (src/config/z-index-tokens.ts
+ * + `pnpm gen:z-index`/`check:z-index`) was retired in zudolab/zudo-doc#2661 —
+ * it produced that exact tier list byte-for-byte, so it was dead weight. A
+ * project that wants a genuinely CUSTOM tier still can — see the token-override
+ * `@theme` block above and packages/zudo-doc/CLAUDE.md's "z-index defaults" note.
+ *
+ * CAVEAT (zudolab/zudo-doc#2897, found during #2887): this comment used to claim
+ * theme.css was "imported above". It is NOT — unlike the create-zudo-doc
+ * template, this file imports only preflight/utilities, zdtp, content.css,
+ * page-loading.css and features.css (see the top of this file), and carries its
+ * own @theme block instead. That block defines no --z-index-* tiers, so the
+ * tokens are currently undefined here and Tailwind emits no `z-*` utilities at
+ * all. Tracked in #2897 — do not re-assert the import without fixing it. */
 
 :root {
   /* Default responsive range; sidebar-resizer.ts allows 192–448px for explicit resizing. */

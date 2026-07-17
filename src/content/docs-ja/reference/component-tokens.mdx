@@ -48,7 +48,7 @@ zudo-docのトークンは3つの層に整理されており、各層は1つ上�
 
 以下の表は、すべての`--zdc-*`トークンの一覧です。レジストリから直接生成しているため、パッケージが配布する内容と常に一致します。
 
-トークンは**レンダリングサーフェス**によって分かれています。コンテンツトークンは`.zd-content`プロズ領域を対象とし（`@takazudo/zudo-doc/content.css`として配布）、クロームトークンはアプリシェル（サイドバーナビゲーション、目次、カードグリッド）を対象とします（`@takazudo/zudo-doc/features.css`として配布）。
+トークンは**レンダリングサーフェス**によって分かれています。コンテンツトークンは`.zd-content`プロズ領域を対象とし（`@takazudo/zudo-doc/content.css`として配布）、クロームトークンはアプリシェル（ドキュメントの body、ヘッダー、サイドバーナビゲーション、目次、カードグリッド）を対象とします（`@takazudo/zudo-doc/features.css`として配布）。
 
 ### コンテンツトークン
 
@@ -76,6 +76,18 @@ zudo-docのトークンは3つの層に整理されており、各層は1つ上�
 | `--zdc-toc-width` | `toc` | `280px` | Width of the desktop Table of Contents right rail. |
 | `--zdc-nav-active-indicator-color` | `nav-active` | `var(--color-fg)` | Background color of the active sidebar nav link (the inversion fill that marks the current page). |
 | `--zdc-nav-active-weight` | `nav-active` | `var(--font-weight-medium)` | Font weight of the active sidebar nav link. |
+| `--zdc-chrome-font` | `chrome` | `var(--font-sans)` | Base font family of the document `body` — the seam that lets a theme pack's `--font-sans` reach the whole app shell (header, sidebar, TOC, breadcrumb, footer), not just `.zd-content` prose. Redefine `--font-sans` to restyle chrome and content together, or `--zdc-chrome-font` directly to move the shell independently of prose. |
+| `--zdc-header-font` | `header` | `var(--zdc-chrome-font, var(--font-sans))` | Font family of the site header (`header[data-header]`). A no-op until redefined; set it to give the header its own face (for example a display font for the wordmark and nav) without touching the rest of the chrome. |
+| `--zdc-sidebar-font` | `sidebar` | `var(--zdc-chrome-font, var(--font-sans))` | Font family of the navigation sidebar. The selector names both the desktop rail (`#desktop-sidebar`) and the mobile drawer (`aside[data-zd-mobile-sidebar]`) — 本番ビルドでは両方に一致します（詳細は表の下の注記を参照）。 |
+| `--zdc-toc-font` | `toc` | `var(--zdc-chrome-font, var(--font-sans))` | Font family of the table of contents. The selector names both the desktop rail (`nav[data-zd-toc]`) and the mobile TOC (`div[data-zd-mobile-toc]`) — 本番ビルドでは両方に一致します（詳細は表の下の注記を参照）。 |
+
+<Note>
+
+`--zdc-sidebar-font`と`--zdc-toc-font`は、すべてのパックが設定すべきトークンではなく、オプションのサーフェスごとのアートディレクション用フックです — クロームフォントシーム（`--zdc-chrome-font`、デフォルトは`--font-sans`）だけで、シェル全体に一貫したひとつの書体を届けられ、これは同梱されているすべてのテーマパックが望んでいることです。これらのトークンに手を伸ばすのは、パックがサイドバーまたは目次だけを他のクロームとあえて異なる書体にしたい場合に限られます。
+
+これらのセレクタはデスクトップとモバイルの両方のサーフェスを指定しており、本番ビルドでは両方とも届きます。モバイルのサイドバードロワーとモバイル目次はzfbのクライアントアイランドですが、Preactのハイドレーションは仮想DOMと一致するSSRレンダリング済みの`data-*`属性を保持するため、`aside[data-zd-mobile-sidebar]`／`div[data-zd-mobile-toc]`はデスクトップ側のセレクタと同様に、実際にレンダリングされたページ内に存在します。したがって`--zdc-sidebar-font`／`--zdc-toc-font`は、デスクトップのレールに届くのとまったく同じようにモバイルのドロワーとモバイル目次にも届きます。唯一の例外はzfbの**開発サーバー**（`pnpm dev`）で、これは開発時特有の挙動としてアイランドのルート要素から`data-*`属性を取り除くため、`pnpm dev`実行中はこれら2つのセレクタが一致しません — サーフェスごとのモバイルフォントを確認する際は、開発サーバーではなくビルド（`pnpm build` + `pnpm preview`）に対して検証してください。[zudolab/zudo-doc#2898](https://github.com/zudolab/zudo-doc/issues/2898)で追跡中です。`--zdc-header-font`はどちらにせよ影響を受けません — そのセレクタ`header[data-header]`はアイランドではないためです。
+
+</Note>
 
 ### `--zdc-surface-radius` メタノブ
 

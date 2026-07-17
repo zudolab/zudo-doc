@@ -373,9 +373,42 @@ describe("Default-value test — generated content.css block", () => {
     expect(featuresCss).toContain(generated);
   });
 
-  it("12 tokens route to content; 5 chrome tokens added by S4+S5 (#2461/#2462)", () => {
+  it("12 tokens route to content; 9 chrome tokens after the #2887 font seam", () => {
     expect(contentTokens).toHaveLength(12);
-    expect(chromeTokens).toHaveLength(5);
+    expect(chromeTokens).toHaveLength(9);
+  });
+
+  // The compiled proof of the chrome font seam (#2887): the generated rule must
+  // reach features.css verbatim, or a theme pack's `--font-sans` never escapes
+  // `.zd-content` and the whole epic's premise breaks.
+  it("--zdc-chrome-font emits the body font seam into features.css", () => {
+    expect(featuresCss).toContain("body {");
+    expect(featuresCss).toContain(
+      "  font-family: var(--zdc-chrome-font, var(--font-sans));",
+    );
+  });
+
+  it("per-surface chrome font knobs emit rules covering desktop + mobile emitters", () => {
+    expect(featuresCss).toContain("header[data-header] {");
+    expect(featuresCss).toContain("#desktop-sidebar, aside[data-zd-mobile-sidebar] {");
+    expect(featuresCss).toContain("nav[data-zd-toc], div[data-zd-mobile-toc] {");
+  });
+
+  // Each per-surface knob must fall back to the chrome seam, NOT to `inherit`.
+  // `inherit` resolves against whatever ancestor the component happens to sit
+  // under, which splits a surface's two emitters: the mobile drawer renders
+  // inside `header[data-header]`, so a header-only override would leak into it
+  // while `#desktop-sidebar` kept the body font; and the mobile TOC renders
+  // inside `.zd-content`, so it would follow the prose font while the desktop
+  // rail followed chrome. Pinned because the bug is invisible until a pack
+  // overrides exactly one surface.
+  it("per-surface chrome font knobs fall back to the chrome seam, never to inherit", () => {
+    for (const name of ["--zdc-header-font", "--zdc-sidebar-font", "--zdc-toc-font"]) {
+      expect(featuresCss).toContain(
+        `  font-family: var(${name}, var(--zdc-chrome-font, var(--font-sans)));`,
+      );
+      expect(featuresCss).not.toContain(`var(${name}, inherit)`);
+    }
   });
 
   // Spot-check each known token in the current registry so regressions in

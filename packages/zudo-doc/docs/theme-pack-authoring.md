@@ -134,6 +134,7 @@ The complete extras-authoring surface (ADR Decision 6, rule 5). Select ONLY on t
 | `[data-header-nav]` | The header's top-level nav `<nav>` | Nav bar layout |
 | `[data-nav-item]` | Individual header nav item wrapper | Per-item nav styling |
 | `#desktop-sidebar` | The desktop `<aside>` sidebar container | Sidebar background/border/width |
+| `aside[data-zd-mobile-sidebar]` | The mobile sidebar drawer `<aside>` (the off-canvas panel behind the hamburger) | Mobile drawer styling — it does NOT share `#desktop-sidebar`. Matches in the production build; see the dev-server caveat after this table (zudolab/zudo-doc#2898) |
 | `.zd-sidebar-content-wrapper` | Wrapper that shifts content right of the sidebar | Content-area left-margin geometry |
 | `.zd-doc-content-band` | Flex row containing `<main>` + TOC | Content band width/gap |
 | `.zd-content` | The `<article>` MDX content root | Prose typography extras (beyond `content.css`) |
@@ -142,6 +143,7 @@ The complete extras-authoring surface (ADR Decision 6, rule 5). Select ONLY on t
 | `pre.hi-root` / `.hi-*` | Code-fence syntax highlighting root + token classes | Code block colors/spacing |
 | `nav[data-zd-toc]` | The right-rail table of contents `<nav>` | TOC panel styling |
 | `nav[data-zd-toc] a[aria-current="true"]` | The currently-active TOC entry | Active-item highlight — there is no `.toc-active` class; `aria-current` IS the contract |
+| `div[data-zd-mobile-toc]` | The mobile collapsible TOC panel | Mobile TOC styling — it emits its own markup and is NOT a `nav[data-zd-toc]`. Matches in the production build; see the dev-server caveat after this table (zudolab/zudo-doc#2898) |
 | `a[data-nav-active]` | Sidebar's active nav item | Active sidebar-item highlight |
 | `body` | The document body | Global background/base color |
 | `footer[data-footer]` | The page footer `<footer>` | Footer background/border/link colors |
@@ -150,6 +152,25 @@ The complete extras-authoring surface (ADR Decision 6, rule 5). Select ONLY on t
 | `[data-theme-pack-switcher]` | The switcher flyout's root `<div>` | Positioning/z-index overrides of the whole flyout |
 | `[data-switcher-card]` | The switcher's open card (present only while open) | Card background/border/shadow |
 | `[data-switcher-launcher]` | The switcher's round launcher button | Launcher button styling |
+
+**Dev-server caveat (zudolab/zudo-doc#2898).** `aside[data-zd-mobile-sidebar]` and `div[data-zd-mobile-toc]` render correctly in the production build: both surfaces are zfb client islands, but Preact hydration preserves the SSR-rendered `data-*` attributes that match the virtual DOM, so both selectors match the live DOM and a `pack.css` rule against either one applies normally, for any CSS property. The one place this breaks is the zfb **dev server** (`pnpm dev`), which strips island-root `data-*` attributes as a dev-only quirk — these two selectors won't match while developing against `pnpm dev`. Verify a `pack.css` rule targeting either mobile hook against a build (`pnpm build` + `pnpm preview`), not the dev server.
+
+### Chrome font tokens — optional per-surface hooks
+
+Since the chrome font seam (zudolab/zudo-doc#2887), a pack's `--font-sans` already reaches the whole shell — header, sidebar, TOC, breadcrumb, footer — through an unlayered `body { font-family: var(--zdc-chrome-font, var(--font-sans)) }` rule in `features.css`. A pack that wants one cohesive chrome typeface needs no extra rule for this: setting `--font-sans` in the pack's token block is enough. The Wave-3 audit of all 20 shipped packs (zudolab/zudo-doc#2889/#2886) confirmed this — every pack ships unchanged, with no per-pack override needed.
+
+Four `--zdc-*` component tokens exist as **optional** hooks for a pack that deliberately wants ONE shell surface to diverge from the rest — they are authoring hooks, not something every pack is expected to set:
+
+| Token | Selector | Default | Use when |
+|---|---|---|---|
+| `--zdc-chrome-font` | `body` | `var(--font-sans)` | The whole shell should use a font different from `--font-sans` itself (rare — usually just set `--font-sans`). |
+| `--zdc-header-font` | `header[data-header]` | `var(--zdc-chrome-font, var(--font-sans))` | The header (logo + nav) should use its own face, independent of the rest of the chrome. |
+| `--zdc-sidebar-font` | `#desktop-sidebar`, `aside[data-zd-mobile-sidebar]` | `var(--zdc-chrome-font, var(--font-sans))` | The sidebar alone should diverge from the rest of the chrome — reaches both desktop and mobile in the production build (see the note below). |
+| `--zdc-toc-font` | `nav[data-zd-toc]`, `div[data-zd-mobile-toc]` | `var(--zdc-chrome-font, var(--font-sans))` | The TOC alone should diverge from the rest of the chrome — reaches both desktop and mobile in the production build (see the note below). |
+
+Each falls back to the `--zdc-chrome-font` seam rather than `inherit` — deliberately, not an oversight: under an `inherit` default, a header-only override would leak into the mobile drawer (which mounts inside `header[data-header]`), and the mobile TOC (which mounts inside `.zd-content`) would follow the prose font instead of the chrome font. Anchoring to the seam keeps each knob dependent only on its own value.
+
+**Mobile reach (production build).** `--zdc-sidebar-font` and `--zdc-toc-font` are authored against a selector naming both a desktop and a mobile emitter, and both halves are delivered in the production build, for the reason given in the dev-server caveat above: Preact hydration preserves the SSR-rendered `data-*` attributes, so `aside[data-zd-mobile-sidebar]` / `div[data-zd-mobile-toc]` match the live DOM alongside `#desktop-sidebar` / `nav[data-zd-toc]`. A pack can rely on a single `--zdc-sidebar-font` / `--zdc-toc-font` override reaching the mobile drawer/TOC exactly as it reaches the desktop rail. The one exception is the zfb **dev server** (`pnpm dev`), which strips island-root `data-*` attributes — the two mobile selectors won't match while running `pnpm dev`, tracked as zudolab/zudo-doc#2898. Verify a per-surface mobile font against a build (`pnpm build` + `pnpm preview`), not the dev server.
 
 ## (c) The `!important` carve-out — heading border-image gradients
 

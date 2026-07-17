@@ -77,3 +77,37 @@ describe("MobileToc — SSG HTML presence", () => {
     expect(html).not.toContain('href="#too-deep"');
   });
 });
+
+// Stable theme-pack DOM hook (zudolab/zudo-doc#2887). The mobile TOC emits its
+// own markup and never renders the desktop `nav[data-zd-toc]`, so packs need
+// this separate anchor to reach it; `--zdc-toc-font` selects on both.
+describe("MobileToc — data-zd-mobile-toc hook", () => {
+  it("renders data-zd-mobile-toc on the panel root <div>", () => {
+    const html = render(<MobileToc headings={SAMPLE_HEADINGS} title="On this page" />);
+    expect(html).toMatch(/<div[^>]*data-zd-mobile-toc[^>]*>/);
+  });
+
+  it("does not emit the desktop nav[data-zd-toc] markup", () => {
+    // Pins the reason the hook exists: a pack selecting only `nav[data-zd-toc]`
+    // would never match this component.
+    const html = render(<MobileToc headings={SAMPLE_HEADINGS} title="On this page" />);
+    expect(html).not.toContain("data-zd-toc=");
+    expect(html).not.toMatch(/<nav[^>]*data-zd-toc/);
+  });
+
+  it("is unconditional, so the hook is byte-stable across a re-render", () => {
+    // The hook does not vary with `open` (SSR renders closed), so hydration
+    // sees byte-identical markup.
+    const first = render(<MobileToc headings={SAMPLE_HEADINGS} title="On this page" />);
+    const second = render(<MobileToc headings={SAMPLE_HEADINGS} title="On this page" />);
+    expect(first).toBe(second);
+    expect(first).toMatch(/<div[^>]*data-zd-mobile-toc[^>]*>/);
+  });
+
+  it("leaves the empty-headings placeholder unhooked", () => {
+    // The no-headings branch is a display:none placeholder carrying only the
+    // locale label — deliberately not a pack-styleable surface.
+    const html = render(<MobileToc headings={[]} title="On this page" />);
+    expect(html).not.toContain("data-zd-mobile-toc");
+  });
+});
