@@ -87,6 +87,7 @@ export function Footer(props: FooterProps): VNode {
   return (
     <footer
       class="border-t border-muted bg-surface"
+      data-footer
       // Strategy B: locale-keyed persist (zudolab/zudo-doc#1546).
       // The footer's locale-aware bits (link labels, copyright) are SSR'd
       // per locale; a locale-keyed persist key (`footer-en`, `footer-ja`)

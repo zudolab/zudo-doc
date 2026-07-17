@@ -23,17 +23,14 @@
    - `.toc-active`      → `nav[data-zd-toc] a[aria-current="true"]`
                           (toc/toc.tsx marks the active entry with
                           aria-current, not a mock class)
-   - `.doc-pager`       → `.zd-content > nav:last-of-type:not([aria-label]) > a`
-                          (DocPager is the article's last unlabelled
-                          direct-child nav; the child combinator keeps
-                          NavCardGrid/CategoryNav card anchors — which
-                          sit one level deeper — out of the match)
-   - `footer[data-footer]` → `.zd-sidebar-content-wrapper > footer`
-                          (no data-footer attribute in the real DOM)
-   - `.tp-flyout`       → `div[role="dialog"][aria-label="Theme pack switcher"]`
-                          (the real flyout's stable hook — the ledger
-                          precedent); the aurora cap rides its top
-                          border via border-image
+   - `.doc-pager`       → `.zd-content > nav[data-doc-pager] > a`
+                          (the DocPager nav now carries a stable
+                          data-doc-pager hook, #2876)
+   - `footer[data-footer]` → ships literally now — the real footer
+                          carries the stable data-footer hook (#2876)
+   - `.tp-flyout`       → `div[data-switcher-card]` (the flyout's
+                          stable hook, #2876); the aurora cap rides
+                          its top border via border-image
    - `.hdr-search` / `.sb-group > p` — prototype-mock markup with no
      stable hook; their frost styling is NOT ported.
    - the prototype's `--fjord-*` helper properties (ice-border,
@@ -332,22 +329,21 @@ html[data-theme-pack="fjord"] nav[data-zd-toc] a[aria-current="true"] {
   box-shadow: inset 2px 0 0 var(--zd-accent);
 }
 
-/* pager cards: translucent ice, cold glow on hover. The DocPager is
-   the article's LAST unlabelled direct-child nav; the > a child
-   combinator keeps NavCardGrid/CategoryNav anchors out. */
-html[data-theme-pack="fjord"] .zd-content > nav:last-of-type:not([aria-label]) > a {
+/* pager cards: translucent ice, cold glow on hover. The DocPager nav
+   now carries a stable data-doc-pager hook (#2876). */
+html[data-theme-pack="fjord"] .zd-content > nav[data-doc-pager] > a {
   border-radius: 0;
   border-color: light-dark(oklch(0.79 0.038 220 / 0.9), oklch(0.56 0.055 220 / 0.4));
   background: color-mix(in oklch, var(--zd-surface) 55%, transparent);
 }
-html[data-theme-pack="fjord"] .zd-content > nav:last-of-type:not([aria-label]) > a:hover {
+html[data-theme-pack="fjord"] .zd-content > nav[data-doc-pager] > a:hover {
   border-color: color-mix(in oklch, var(--zd-accent) 70%, transparent);
   box-shadow: 0 0 22px -8px color-mix(in oklch, var(--zd-accent) 50%, transparent);
 }
 
-/* footer: icy top rule, faint frost drift (the real footer has no
-   data-footer hook; it is the wrapper's direct child) */
-html[data-theme-pack="fjord"] .zd-sidebar-content-wrapper > footer {
+/* footer: icy top rule, faint frost drift (the real footer now
+   carries the stable data-footer hook, #2876) */
+html[data-theme-pack="fjord"] footer[data-footer] {
   border-top-color: light-dark(oklch(0.79 0.038 220 / 0.9), oklch(0.56 0.055 220 / 0.4));
   background: linear-gradient(
     180deg,
@@ -360,7 +356,7 @@ html[data-theme-pack="fjord"] .zd-sidebar-content-wrapper > footer {
    painted as a top-anchored background gradient (the hearth h2
    technique) so the icy 1px border keeps its own color on all four
    sides */
-html[data-theme-pack="fjord"] div[role="dialog"][aria-label="Theme pack switcher"] {
+html[data-theme-pack="fjord"] div[data-switcher-card] {
   border-color: light-dark(oklch(0.79 0.038 220 / 0.9), oklch(0.56 0.055 220 / 0.4));
   background-color: color-mix(in oklch, var(--zd-surface) 90%, transparent);
   background-image: linear-gradient(

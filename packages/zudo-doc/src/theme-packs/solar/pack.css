@@ -33,17 +33,20 @@
                            aria-current, not a mock class); the
                            prototype's absolute ::before bar becomes
                            a border-left snug against the rail
-   - `.doc-pager`        → `.zd-content > nav:last-of-type:not([aria-label]) > a`
-                           (DocPager is the article's last unlabelled
-                           direct-child nav; the child combinator
-                           keeps NavCardGrid card anchors out)
+   - `.doc-pager`        → `.zd-content > nav[data-doc-pager] > a`
+                           (retargeted onto the stable hook,
+                           zudolab/zudo-doc#2879 — was
+                           `.zd-content > nav:last-of-type:not([aria-label])`)
    - `.crumb-current`    → `main nav[aria-label="Breadcrumb"] li > span`
                            (the current page is the only bare <span>
                            in the breadcrumb list)
-   - `footer[data-footer]` → `.zd-sidebar-content-wrapper > footer`
-                           (no data-footer attribute in the real DOM)
-   - `.tp-flyout`        → `div[role="dialog"][aria-label="Theme pack
-                           switcher"]`; the spectrum cap strip is a
+   - `footer[data-footer]` → `footer[data-footer]` (retargeted onto the
+                           stable hook, zudolab/zudo-doc#2879 — was
+                           `.zd-sidebar-content-wrapper > footer`)
+   - `.tp-flyout`        → `div[data-switcher-card]` (retargeted onto
+                           the stable hook, zudolab/zudo-doc#2879 — was
+                           `div[role="dialog"][aria-label="Theme pack
+                           switcher"]`); the spectrum cap strip is a
                            top-anchored background gradient (the
                            fjord/hearth technique) instead of the
                            prototype's ::before overlay
@@ -337,14 +340,14 @@ html[data-theme-pack="solar"] .zd-content tbody tr:hover td {
 /* pager: crisp cards, mono uppercase yellow micro-labels (the
    solarized-yellow terminal dialect), cyan hover wash. The DocPager
    is the article's LAST unlabelled direct-child nav. */
-html[data-theme-pack="solar"] .zd-content > nav:last-of-type:not([aria-label]) > a div {
+html[data-theme-pack="solar"] .zd-content > nav[data-doc-pager] > a div {
   font-family: var(--font-mono);
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: light-dark(#876500, #be9000);
 }
-html[data-theme-pack="solar"] .zd-content > nav:last-of-type:not([aria-label]) > a:hover {
+html[data-theme-pack="solar"] .zd-content > nav[data-doc-pager] > a:hover {
   border-color: var(--zd-accent-hover);
   background: color-mix(in srgb, var(--zd-accent-hover) 7%, transparent);
 }
@@ -353,14 +356,14 @@ html[data-theme-pack="solar"] .zd-content > nav:last-of-type:not([aria-label]) >
 html[data-theme-pack="solar"] header[data-header] {
   border-bottom-color: light-dark(#ddd6c1, #0b4354);
 }
-html[data-theme-pack="solar"] .zd-sidebar-content-wrapper > footer {
+html[data-theme-pack="solar"] footer[data-footer] {
   border-top-color: light-dark(#ddd6c1, #0b4354);
 }
 
 /* theme-pack flyout: the solarized accent spectrum as a 3px cap
    strip — painted as a top-anchored background gradient (the fjord
    technique) so the hairline border keeps its own color */
-html[data-theme-pack="solar"] div[role="dialog"][aria-label="Theme pack switcher"] {
+html[data-theme-pack="solar"] div[data-switcher-card] {
   border-color: light-dark(#ddd6c1, #0e4250);
   background-color: var(--zd-surface);
   background-image: linear-gradient(90deg, #268bd2, #2aa198, #b58900, #cb4b16);
@@ -370,7 +373,7 @@ html[data-theme-pack="solar"] div[role="dialog"][aria-label="Theme pack switcher
   box-shadow: 0 12px 32px -8px light-dark(rgba(88, 110, 117, 0.35), rgba(0, 0, 0, 0.55));
 }
 html[data-theme-pack="solar"]
-  div[role="dialog"][aria-label="Theme pack switcher"]
+  div[data-switcher-card]
   p[aria-live="polite"] {
   color: light-dark(#073642, #eee8d5);
   font-weight: 600;

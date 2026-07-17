@@ -16,21 +16,28 @@
 
    Prototype-selector adaptations against the REAL DOM (tokens-dump
    §6 + component sources), noted inline where they matter:
-   - `.lead`            → `.zd-content > p:first-of-type` (the
-                          description paragraph DocContentHeader emits)
-   - `.lead + p`        → `.zd-content > p:first-of-type + p`
+   - `.lead`            → `.zd-content > p[data-doc-description]` (the
+                          description paragraph DocContentHeader emits
+                          now carries a stable data-doc-description
+                          hook, #2876)
+   - `.lead + p`        → `.zd-content > p[data-doc-description] + p`
+                          — a description-less page now gets neither
+                          the deck nor the drop cap (the old
+                          `.zd-content > p:first-of-type` fallback
+                          mis-styled body text there — intended fix,
+                          #2876)
    - `.toc-title`       → no desktop TOC heading exists (#1655); the
                           double head-rule moves onto the TOC's <ul>
-   - `.doc-pager`       → `.zd-content > nav:not([aria-label])` (the
-                          DocPager nav is a direct child of the
-                          article and is the only unlabelled nav there;
-                          NavCardGrid carries aria-label="Child pages")
-   - `footer[data-footer]` → `.zd-sidebar-content-wrapper > footer`
-                          (no data-footer attribute in the real DOM;
-                          the footer is a direct child of the wrapper
-                          hook — doc-layout.tsx)
-   - the theme-switcher flyout has NO stable hook — its classified-ad
-     double frame is intentionally NOT ported (see pack notes).
+   - `.doc-pager`       → `.zd-content > nav[data-doc-pager]` (the
+                          DocPager nav now carries a stable
+                          data-doc-pager hook, #2876)
+   - `footer[data-footer]` → ships literally now — the real footer
+                          carries the stable data-footer hook (#2876)
+   - `.tp-flyout`       → `div[data-switcher-card]` (the flyout card
+                          now carries a stable data-switcher-card
+                          hook, #2873) — its classified-ad double
+                          frame, originally left unported for lack of
+                          a hook, ships now (#2880).
    ============================================================ */
 
 /* ---- Playfair Display — masthead / headlines / pull quotes / drop
@@ -214,27 +221,26 @@ html[data-theme-pack="broadsheet"] .zd-content h1 {
   margin-bottom: 1rem;
 }
 
-/* the deck: italic standfirst under the headline. The prototype's
-   `.lead` is the description paragraph DocContentHeader renders as the
-   FIRST direct-child <p> of the article (metainfo/tags render as divs,
-   so p:first-of-type is the deck on every page with a description).
-   Known limit: the description is optional frontmatter — on a page
-   without one (~4% of the showcase corpus) the first BODY paragraph
-   takes the standfirst styling instead (reads as an emphasized opening
-   paragraph) and the drop cap below lands on the second paragraph.
-   CSS alone can't tell the two apart; a stable hook on the emitted
-   description paragraph would fix this properly (follow-up). */
-html[data-theme-pack="broadsheet"] .zd-content > p:first-of-type {
+/* the deck: italic standfirst under the headline. The description
+   paragraph DocContentHeader renders now carries a stable
+   data-doc-description hook (#2876), so the deck only ever styles the
+   real description — not the first body paragraph. Behavior change,
+   intended fix: on a page without a description (~4% of the showcase
+   corpus) NEITHER the deck NOR the drop cap below is drawn, rather
+   than the old fallback mis-styling the first body paragraph as a
+   standfirst. */
+html[data-theme-pack="broadsheet"] .zd-content > p[data-doc-description] {
   font-style: italic;
   line-height: 1.5;
 }
 
 /* signature move #1 — red Playfair drop cap opening the first body
-   paragraph (prototype `.lead + p`). Fails safe: on a page whose body
-   doesn't open with a paragraph right after the deck (or with a
-   frontmatter-preview table between them) no cap is drawn, rather than
-   capping a random mid-article paragraph. */
-html[data-theme-pack="broadsheet"] .zd-content > p:first-of-type + p::first-letter {
+   paragraph immediately after the description. Fails safe: on a page
+   without a description, or whose body doesn't open with a paragraph
+   right after it (or with a frontmatter-preview table between them),
+   no cap is drawn, rather than capping a random mid-article
+   paragraph. */
+html[data-theme-pack="broadsheet"] .zd-content > p[data-doc-description] + p::first-letter {
   float: left;
   font-family: var(--font-display);
   font-weight: 900;
@@ -382,36 +388,61 @@ html[data-theme-pack="broadsheet"] nav[data-zd-toc] ul {
   padding-top: 0.5rem;
 }
 
-/* pager: classified-corner cards under a closing double rule. DocPager
-   renders after the MDX content on every regular doc page, so it is
-   always the article's LAST direct-child nav; the :not([aria-label])
-   guard excludes NavCardGrid ("Child pages") on auto-index pages, and
-   :last-of-type excludes an unlabelled <CategoryNav> used mid-content
-   (its nav also ships without an aria-label — review finding). */
-html[data-theme-pack="broadsheet"] .zd-content > nav:last-of-type:not([aria-label]) {
+/* pager: classified-corner cards under a closing double rule. The
+   DocPager nav now carries a stable data-doc-pager hook (#2876). */
+html[data-theme-pack="broadsheet"] .zd-content > nav[data-doc-pager] {
   border-top: 4px double color-mix(in oklch, var(--zd-fg) 70%, transparent);
   padding-top: 1.25rem;
 }
-html[data-theme-pack="broadsheet"] .zd-content > nav:last-of-type:not([aria-label]) a {
+html[data-theme-pack="broadsheet"] .zd-content > nav[data-doc-pager] a {
   border-radius: 0;
   border-color: color-mix(in oklch, var(--zd-fg) 50%, transparent);
 }
-html[data-theme-pack="broadsheet"] .zd-content > nav:last-of-type:not([aria-label]) a:hover {
+html[data-theme-pack="broadsheet"] .zd-content > nav[data-doc-pager] a:hover {
   border-color: var(--zd-accent);
 }
-html[data-theme-pack="broadsheet"] .zd-content > nav:last-of-type:not([aria-label]) a > div {
+html[data-theme-pack="broadsheet"] .zd-content > nav[data-doc-pager] a > div {
   text-transform: uppercase;
   font-size: 0.68rem;
   letter-spacing: 0.12em;
 }
-html[data-theme-pack="broadsheet"] .zd-content > nav:last-of-type:not([aria-label]) a p {
+html[data-theme-pack="broadsheet"] .zd-content > nav[data-doc-pager] a p {
   font-family: var(--font-display);
   font-weight: 700;
 }
 
 /* colophon footer under its own thick-thin Oxford rule (the real
-   footer has no data-footer hook; it is the wrapper's direct child) */
-html[data-theme-pack="broadsheet"] .zd-sidebar-content-wrapper > footer {
+   footer now carries the stable data-footer hook, #2876) */
+html[data-theme-pack="broadsheet"] footer[data-footer] {
   border-top: 3px solid var(--zd-fg);
   box-shadow: 0 -6px 0 -5px var(--zd-fg);
+}
+
+/* switcher flyout: a classified-ad box — square, inner ink hairline
+   with an offset outer rule (the prototype's double frame, restored in
+   #2880 against the stable data-switcher-card hook, #2873). The outer
+   rule + 3px paper gap are drawn as box-shadow rings, NOT `outline`,
+   so the card's keyboard focus-visible accent outline keeps working
+   (an unlayered pack `outline` would silently override that utility);
+   the rings also replace the default elevation shadow — print floats
+   nothing. */
+html[data-theme-pack="broadsheet"] div[data-switcher-card] {
+  border-radius: 0;
+  border: 1px solid var(--zd-fg);
+  box-shadow:
+    0 0 0 3px var(--zd-surface),
+    0 0 0 4px var(--zd-fg);
+}
+/* the ad's head: pack name set in the Playfair display face (the
+   p[aria-live="polite"] hook is the live pack-name line — the onyx/
+   ledger/nocturne precedent) */
+html[data-theme-pack="broadsheet"] div[data-switcher-card] p[aria-live="polite"] {
+  font-family: var(--font-display);
+  font-weight: 900;
+}
+/* print is square — the card's internal controls and the mode badge
+   drop their rounding too */
+html[data-theme-pack="broadsheet"] div[data-switcher-card] button,
+html[data-theme-pack="broadsheet"] div[data-switcher-card] > span {
+  border-radius: 0;
 }

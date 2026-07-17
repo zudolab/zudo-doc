@@ -4,7 +4,7 @@
   "name": "Beacon",
   "description": "WCAG-AAA high contrast — 7:1+ ink everywhere, 3px focus rings, always-underlined links. Clarity as beauty.",
   "mode": "light",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "fonts": {
     "sans": "Atkinson Hyperlegible",
     "mono": "Atkinson Hyperlegible Mono",

@@ -4,7 +4,7 @@
   "name": "Observatory",
   "description": "Night-sky atlas: star-field depth, constellation-line rules, nebula violet and comet gold over astronomer's navy.",
   "mode": "dark",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "fonts": {
     "sans": "Jost",
     "mono": "Space Mono",

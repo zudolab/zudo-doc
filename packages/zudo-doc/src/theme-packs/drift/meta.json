@@ -4,7 +4,7 @@
   "name": "Drift",
   "description": "Floaty slate-blue comfort dark for long reading — soft glows in place of borders, gentle elevation, relaxed Plex type.",
   "mode": "dark",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "fonts": {
     "sans": "IBM Plex Sans",
     "mono": "IBM Plex Mono",

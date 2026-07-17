@@ -4,7 +4,7 @@
   "name": "Broadsheet",
   "description": "Newspaper editorial — Playfair masthead, Oxford ink rules, a red drop cap, and a night-edition dark mode.",
   "mode": "light",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "fonts": {
     "sans": "Source Serif 4",
     "mono": "Courier Prime",

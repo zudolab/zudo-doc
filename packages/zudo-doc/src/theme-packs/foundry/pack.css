@@ -10,6 +10,11 @@
    the validator prove a pack can never leak styles while inactive
    (Decision 6.7). The two @font-face blocks are the sole exception
    (at-rules can't be selector-scoped).
+
+   Prototype-selector adaptation against the REAL DOM:
+   - `.doc-pager a`     → `.zd-content > nav[data-doc-pager] > a` (the
+                          DocPager nav carries a stable data-doc-pager
+                          hook, #2873; hover wash restored in #2880)
    ============================================================ */
 
 @font-face {
@@ -89,13 +94,13 @@ html[data-theme-pack="foundry"] {
 html[data-theme-pack="foundry"] .zd-content a:hover {
   text-decoration: underline;
 }
-/* footer: quiet links, underline only on intent. The real footer carries no
-   data-footer hook (that was prototype-mock markup) — it is the sole <footer>
-   inside the stable .zd-sidebar-content-wrapper (doclayout/doc-layout.tsx). */
-html[data-theme-pack="foundry"] .zd-sidebar-content-wrapper footer a {
+/* footer: quiet links, underline only on intent. footer[data-footer] is the
+   stable hook (footer/footer.tsx) — the sole <footer> inside
+   .zd-sidebar-content-wrapper (doclayout/doc-layout.tsx). */
+html[data-theme-pack="foundry"] footer[data-footer] a {
   text-decoration: none;
 }
-html[data-theme-pack="foundry"] .zd-sidebar-content-wrapper footer a:hover {
+html[data-theme-pack="foundry"] footer[data-footer] a:hover {
   text-decoration: underline;
 }
 
@@ -186,8 +191,12 @@ html[data-theme-pack="foundry"] .zd-content tbody tr:nth-child(even) {
   background-color: var(--zd-code-bg);
 }
 
-/* pager cards: the prototype's hover wash is intentionally NOT ported — the
-   DocPager <nav> has no stable hook (.doc-pager was prototype-mock markup),
-   and any structural selector (.zd-content > nav) also catches NavCardGrid /
-   CategoryNav navs in the same position. The default hover:border-accent
-   blue border cue already carries the affordance. */
+/* pager cards: quiet gray hover wash under the default blue-border cue —
+   the prototype's `.doc-pager a:hover` treatment, dropped in the #2828
+   parity pass because `.zd-content > nav` over-matched NavCardGrid, and
+   restored (#2880) against the stable data-doc-pager hook (#2873). 8% muted
+   — one notch softer than the 14% nav/sidebar washes, since the pager card
+   is a much larger surface. */
+html[data-theme-pack="foundry"] .zd-content > nav[data-doc-pager] > a:hover {
+  background: color-mix(in srgb, var(--zd-muted) 8%, transparent);
+}

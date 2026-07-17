@@ -32,18 +32,23 @@
    - `.toc-active`       → `nav[data-zd-toc] a[aria-current="true"]`
                            (toc/toc.tsx marks the active entry with
                            aria-current, not a mock class)
-   - `.doc-pager`        → `.zd-content > nav:last-of-type:not([aria-label]) > a`
-                           (the DocPager is the article's last
-                           unlabelled direct-child nav; breadcrumb
-                           and NavCardGrid navs carry aria-labels)
-   - `footer[data-footer]` → `.zd-sidebar-content-wrapper > footer`
-                           (no data-footer attribute in the real
-                           DOM); the "── EOF ──" end-of-stream mark
-                           rides the footer's own ::after
-   - `.tp-flyout`        → `div[role="dialog"][aria-label="Theme pack
-                           switcher"]`; its title is
+   - `.doc-pager`        → `.zd-content > nav[data-doc-pager] > a`
+                           (retargeted onto the stable hook,
+                           zudolab/zudo-doc#2879 — was
+                           `.zd-content > nav:last-of-type:not([aria-label])`)
+   - `footer[data-footer]` → `footer[data-footer]` (retargeted onto the
+                           stable hook, zudolab/zudo-doc#2879 — was
+                           `.zd-sidebar-content-wrapper > footer`); the
+                           "── EOF ──" end-of-stream mark rides the
+                           footer's own ::after
+   - `.tp-flyout`        → `div[data-switcher-card]` (retargeted onto
+                           the stable hook, zudolab/zudo-doc#2879 — was
+                           `div[role="dialog"][aria-label="Theme pack
+                           switcher"]`); its title is
                            `p[aria-live="polite"]`. The launcher
-                           button has NO stable hook — NOT ported.
+                           (`button[data-switcher-launcher]`) has a
+                           stable hook now too but stays unstyled —
+                           pack choice, not a missing-hook limitation.
    - `.hdr-search` / `.sb-group > p` — prototype-mock markup with no
                            stable hook; NOT ported.
    - the prototype's `--phos-*` helper properties (glow, scanline,
@@ -411,16 +416,16 @@ html[data-theme-pack="phosphor"] .zd-content td {
 /* pager: bracketed jump targets — faint green fill, glow on hover.
    The DocPager is the article's LAST unlabelled direct-child nav
    (breadcrumb and NavCardGrid navs carry aria-labels). */
-html[data-theme-pack="phosphor"] .zd-content > nav:last-of-type:not([aria-label]) > a {
+html[data-theme-pack="phosphor"] .zd-content > nav[data-doc-pager] > a {
   border-radius: 0;
   background: color-mix(in srgb, var(--zd-accent) 4%, transparent);
 }
-html[data-theme-pack="phosphor"] .zd-content > nav:last-of-type:not([aria-label]) > a:hover {
+html[data-theme-pack="phosphor"] .zd-content > nav[data-doc-pager] > a:hover {
   box-shadow:
     0 0 14px light-dark(oklch(0.42 0.13 150 / 0.1), oklch(0.87 0.215 148 / 0.28)),
     inset 0 0 20px color-mix(in oklch, var(--zd-accent) 6%, transparent);
 }
-html[data-theme-pack="phosphor"] .zd-content > nav:last-of-type:not([aria-label]) > a div {
+html[data-theme-pack="phosphor"] .zd-content > nav[data-doc-pager] > a div {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: 0.72rem;
@@ -442,12 +447,11 @@ html[data-theme-pack="phosphor"] nav[data-zd-toc] a[aria-current="true"] {
   text-shadow: none;
 }
 
-/* footer: end of stream (the real footer has no data-footer hook;
-   it is the wrapper's direct child) */
-html[data-theme-pack="phosphor"] .zd-sidebar-content-wrapper > footer {
+/* footer: end of stream */
+html[data-theme-pack="phosphor"] footer[data-footer] {
   border-top-color: color-mix(in oklch, var(--zd-accent) 40%, transparent);
 }
-html[data-theme-pack="phosphor"] .zd-sidebar-content-wrapper > footer::after {
+html[data-theme-pack="phosphor"] footer[data-footer]::after {
   content: "── EOF ──";
   display: block;
   text-align: center;
@@ -457,8 +461,9 @@ html[data-theme-pack="phosphor"] .zd-sidebar-content-wrapper > footer::after {
 }
 
 /* theme-pack flyout: a small terminal window with a glowing bezel
-   (the launcher button has no stable hook) */
-html[data-theme-pack="phosphor"] div[role="dialog"][aria-label="Theme pack switcher"] {
+   (the launcher is a stable hook now too but stays unstyled — pack
+   choice, not a missing-hook limitation) */
+html[data-theme-pack="phosphor"] div[data-switcher-card] {
   border: 1px solid color-mix(in oklch, var(--zd-accent) 55%, transparent);
   border-radius: 0;
   box-shadow:
@@ -466,7 +471,7 @@ html[data-theme-pack="phosphor"] div[role="dialog"][aria-label="Theme pack switc
     0 10px 30px -6px oklch(0 0 0 / 0.45);
 }
 html[data-theme-pack="phosphor"]
-  div[role="dialog"][aria-label="Theme pack switcher"]
+  div[data-switcher-card]
   p[aria-live="polite"] {
   font-family: var(--font-display);
   font-weight: 400;
@@ -475,7 +480,7 @@ html[data-theme-pack="phosphor"]
   text-shadow: 0 0 8px light-dark(oklch(0.42 0.13 150 / 0.22), oklch(0.87 0.215 148 / 0.55));
 }
 html[data-theme-pack="phosphor"]
-  div[role="dialog"][aria-label="Theme pack switcher"]
+  div[data-switcher-card]
   p[aria-live="polite"]::before {
   content: "$ ";
   color: var(--zd-muted);

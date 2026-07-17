@@ -42,25 +42,24 @@
    - `.crumb-current`    → `nav[aria-label="Breadcrumb"] li > span`
                            (the current page is the only <span>
                            directly inside a breadcrumb <li>).
-   - `.doc-pager`        → `.zd-content > nav:last-of-type:not([aria-label]) > a`
-                           (the DocPager is the article's last
-                           unlabelled direct-child nav whose children
-                           are bare <a> cards — the nocturne/ledger
-                           precedent); label = `> a div`, title =
-                           `> a p`.
+   - `.doc-pager`        → `.zd-content > nav[data-doc-pager] > a`
+                           (the DocPager nav now carries a stable
+                           data-doc-pager hook, #2876); label =
+                           `> a div`, title = `> a p`.
    - `.toc-active`       → the real TOC active entry already carries
                            the inverted `bg-fg text-bg` fill
                            (toc.tsx aria-current) — the pack only
                            bolds it.
-   - `footer[data-footer]` → `.zd-sidebar-content-wrapper > footer`
-                           (no data-footer attribute in the real DOM);
+   - `footer[data-footer]` → ships literally now — the real footer
+                           carries the stable data-footer hook (#2876);
                            the mock's `.footer-copy` has no hook, so
                            only the 4px signage rule is ported.
-   - `.tp-flyout`        → `div[role="dialog"][aria-label="Theme pack
-                           switcher"]`; its title is
+   - `.tp-flyout`        → `div[data-switcher-card]`; its title is
                            `p[aria-live="polite"]`. The launcher
-                           button and control buttons have NO stable
-                           hooks — intentionally NOT ported.
+                           button carries a data-switcher-launcher
+                           hook too, but its styling and the other
+                           control buttons are intentionally NOT
+                           ported.
    - the prototype's `--bru-tape` / `--bru-hot` helper properties are
      not part of the token manifest; their values are inlined at each
      use site (tape = repeating -45deg #ff5c00/fg 10px stripes; hot =
@@ -473,32 +472,31 @@ html[data-theme-pack="brutalist"] [data-admonition="warning"] .admonition-title:
   content: "▲ ";
 }
 
-/* pager: slab cards, full inversion on hover. The DocPager is the
-   article's LAST unlabelled direct-child nav (breadcrumb and
-   NavCardGrid navs carry aria-labels). */
-html[data-theme-pack="brutalist"] .zd-content > nav:last-of-type:not([aria-label]) > a {
+/* pager: slab cards, full inversion on hover. The DocPager nav now
+   carries a stable data-doc-pager hook (#2876). */
+html[data-theme-pack="brutalist"] .zd-content > nav[data-doc-pager] > a {
   border: 4px solid var(--zd-fg);
   border-radius: 0;
 }
 html[data-theme-pack="brutalist"]
   .zd-content
-  > nav:last-of-type:not([aria-label])
+  > nav[data-doc-pager]
   > a:hover {
   border-color: var(--zd-fg);
   background-color: var(--zd-fg);
 }
-html[data-theme-pack="brutalist"] .zd-content > nav:last-of-type:not([aria-label]) > a div {
+html[data-theme-pack="brutalist"] .zd-content > nav[data-doc-pager] > a div {
   font-family: var(--font-mono);
   font-size: 0.66rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
-html[data-theme-pack="brutalist"] .zd-content > nav:last-of-type:not([aria-label]) > a p {
+html[data-theme-pack="brutalist"] .zd-content > nav[data-doc-pager] > a p {
   font-weight: 700;
 }
-html[data-theme-pack="brutalist"] .zd-content > nav:last-of-type:not([aria-label]) > a:hover div,
-html[data-theme-pack="brutalist"] .zd-content > nav:last-of-type:not([aria-label]) > a:hover p,
-html[data-theme-pack="brutalist"] .zd-content > nav:last-of-type:not([aria-label]) > a:hover svg {
+html[data-theme-pack="brutalist"] .zd-content > nav[data-doc-pager] > a:hover div,
+html[data-theme-pack="brutalist"] .zd-content > nav[data-doc-pager] > a:hover p,
+html[data-theme-pack="brutalist"] .zd-content > nav[data-doc-pager] > a:hover svg {
   color: var(--zd-bg);
 }
 
@@ -511,22 +509,23 @@ html[data-theme-pack="brutalist"] nav[data-zd-toc] a[aria-current="true"] {
   font-weight: 700;
 }
 
-/* footer: signage strip (the real footer has no data-footer hook;
-   it is the wrapper's direct child) */
-html[data-theme-pack="brutalist"] .zd-sidebar-content-wrapper > footer {
+/* footer: signage strip (the real footer now carries the stable
+   data-footer hook, #2876) */
+html[data-theme-pack="brutalist"] footer[data-footer] {
   border-top: 4px solid var(--zd-fg);
   background-color: var(--zd-bg);
 }
 
 /* theme-pack flyout: a shadowless 4px crate with a hazard-tape lid
-   (the launcher button and control buttons have no stable hooks) */
-html[data-theme-pack="brutalist"] div[role="dialog"][aria-label="Theme pack switcher"] {
+   (the launcher button and control buttons keep their styling
+   intentionally NOT ported) */
+html[data-theme-pack="brutalist"] div[data-switcher-card] {
   border: 4px solid var(--zd-fg);
   border-radius: 0;
   box-shadow: none;
 }
 html[data-theme-pack="brutalist"]
-  div[role="dialog"][aria-label="Theme pack switcher"]::before {
+  div[data-switcher-card]::before {
   content: "";
   height: 6px;
   margin: calc(-1 * var(--spacing-hsp-lg, 1rem)) calc(-1 * var(--spacing-hsp-lg, 1rem)) 0;
@@ -537,7 +536,7 @@ html[data-theme-pack="brutalist"]
   );
 }
 html[data-theme-pack="brutalist"]
-  div[role="dialog"][aria-label="Theme pack switcher"]
+  div[data-switcher-card]
   p[aria-live="polite"] {
   font-family: var(--font-display);
   font-weight: 400;

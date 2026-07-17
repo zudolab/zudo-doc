@@ -4,7 +4,7 @@
   "name": "Brutalist",
   "description": "Raw concrete web — stark black on white, 4px slab borders, zero radius, hazard-orange tape. Structure you can see.",
   "mode": "light",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "fonts": {
     "sans": "Space Grotesk",
     "mono": "IBM Plex Mono",

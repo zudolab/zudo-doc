@@ -132,3 +132,29 @@ describe("createDocContentHeader — docContentHeaderExtras seam", () => {
     ]);
   });
 });
+
+describe("createDocContentHeader — data-doc-description hook (zudolab/zudo-doc#2873)", () => {
+  it("emits data-doc-description on the description <p> when a description is set", () => {
+    const ctx = makeFakeChromeContext({ overrides: { hostBindings: {} } as Partial<ChromeContext> });
+    const DocContentHeader = createDocContentHeader(ctx);
+    const out = render(
+      <DocContentHeader
+        entry={makeEntry({ description: "A test description." })}
+        slug="test-page"
+        locale="en"
+      />,
+    );
+
+    expect(out).toMatch(/<p[^>]*data-doc-description[^>]*>A test description\.<\/p>/);
+  });
+
+  it("omits the <p> entirely when no description is set (no stray hook)", () => {
+    const ctx = makeFakeChromeContext({ overrides: { hostBindings: {} } as Partial<ChromeContext> });
+    const DocContentHeader = createDocContentHeader(ctx);
+    const out = render(
+      <DocContentHeader entry={makeEntry()} slug="test-page" locale="en" />,
+    );
+
+    expect(out).not.toContain("data-doc-description");
+  });
+});

@@ -36,13 +36,12 @@
      has no stable hook, the top-right corner belongs to the
      injected copy/wrap buttons, and a background pins to the
      scrollport instead of scrolling away with wide code)
-   - `.doc-pager` → `.zd-content > nav:not([aria-label="Breadcrumb"]) > a`
-     (the ledger idiom: DocPager is the only direct-child nav of the
-     article whose children are bare <a> cards; list-structured
-     CategoryNav / NavCardGrid never match the `> a` step)
-   - `footer[data-footer] .footer-copy::before` → the closing
-     artist's seal becomes ::after on the stable
-     `.zd-sidebar-content-wrapper > footer` hook
+   - `.doc-pager` → `.zd-content > nav[data-doc-pager] > a` (retargeted
+     onto the stable hook, zudolab/zudo-doc#2879 — was
+     `.zd-content > nav:last-of-type:not([aria-label]) > a`)
+   - the closing artist's seal becomes ::after on the stable
+     `footer[data-footer]` hook (retargeted from
+     `.zd-sidebar-content-wrapper > footer`, zudolab/zudo-doc#2879)
    - the square 印 launcher stamp and the flyout's stamp-shadow frame
      have NO stable hook — intentionally NOT ported (pack notes).
    ============================================================ */
@@ -370,12 +369,14 @@ html[data-theme-pack="sumi"] .zd-content h3::before {
   vertical-align: 0.12em;
 }
 
-/* the lead: subtitle in the brush hand. The prototype's `.lead` is the
-   description paragraph DocContentHeader renders as the FIRST direct-
-   child <p> of the article (broadsheet's adaptation + caveat: on a page
-   without a frontmatter description the first BODY paragraph takes this
-   styling instead — reads as an emphasized opening line, fails soft). */
-html[data-theme-pack="sumi"] .zd-content > p:first-of-type {
+/* the lead: subtitle in the brush hand — the description paragraph
+   DocContentHeader renders, retargeted onto the stable
+   `data-doc-description` hook (zudolab/zudo-doc#2879; was
+   `.zd-content > p:first-of-type`, which carried a broadsheet-style
+   soft fallback onto the first body paragraph on description-less
+   pages). Description-less pages now intentionally lose that fallback
+   deck — same rationale as broadsheet's own retarget. */
+html[data-theme-pack="sumi"] .zd-content > p[data-doc-description] {
   font-family: var(--font-display);
   font-weight: 600;
 }
@@ -460,21 +461,21 @@ html[data-theme-pack="sumi"] .zd-content th {
 }
 
 /* pager: square cards that stamp down on hover with a seal-red offset
-   shadow. Target the LAST unlabelled nav under .zd-content — the DocPager.
-   `:last-of-type:not([aria-label])` (the batch-2 sibling idiom) excludes BOTH
-   the Breadcrumb and the NavCardGrid ("Child pages") nav, whose <a> are also
-   direct children of a `.zd-content > nav` — a bare `:not([aria-label="Breadcrumb"])`
-   would wrongly stamp the child-page cards on auto-index pages. */
-html[data-theme-pack="sumi"] .zd-content > nav:last-of-type:not([aria-label]) > a {
+   shadow. Targets the stable `data-doc-pager` hook on the DocPager
+   <nav> (retargeted, zudolab/zudo-doc#2879 — was
+   `.zd-content > nav:last-of-type:not([aria-label])`, the sibling
+   idiom that excluded the Breadcrumb and NavCardGrid navs by
+   position/aria-label instead of a dedicated hook). */
+html[data-theme-pack="sumi"] .zd-content > nav[data-doc-pager] > a {
   border-radius: 0;
   border-color: color-mix(in srgb, var(--zd-fg) 45%, transparent);
 }
-html[data-theme-pack="sumi"] .zd-content > nav:last-of-type:not([aria-label]) > a:hover {
+html[data-theme-pack="sumi"] .zd-content > nav[data-doc-pager] > a:hover {
   border-color: var(--zd-fg);
   box-shadow: 4px 4px 0
     color-mix(in srgb, light-dark(#c2242f, #d9333f) 45%, transparent);
 }
-html[data-theme-pack="sumi"] .zd-content > nav:last-of-type:not([aria-label]) > a p {
+html[data-theme-pack="sumi"] .zd-content > nav[data-doc-pager] > a p {
   font-family: var(--font-display);
   font-weight: 700;
 }
@@ -486,12 +487,12 @@ html[data-theme-pack="sumi"] nav[data-zd-toc] ul {
 }
 
 /* footer: one decisive ink rule; the artist's seal closes the scroll
-   (the real footer has no data-footer hook — it is the wrapper's
-   direct child, and the seal renders ::after its content, centered) */
-html[data-theme-pack="sumi"] .zd-sidebar-content-wrapper > footer {
+   (targets the stable data-footer hook; the seal renders ::after its
+   content, centered) */
+html[data-theme-pack="sumi"] footer[data-footer] {
   border-top: 3px solid var(--zd-fg);
 }
-html[data-theme-pack="sumi"] .zd-sidebar-content-wrapper > footer::after {
+html[data-theme-pack="sumi"] footer[data-footer]::after {
   content: "";
   display: block;
   width: 0.55rem;
