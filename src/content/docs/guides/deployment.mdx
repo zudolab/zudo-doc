@@ -122,7 +122,8 @@ When `SKIP_DOC_HISTORY=1` is set, the doc-history zfb plugin skips all git histo
 
 | Context | postBuild JSON | Why |
 |---|---|---|
-| `SKIP_DOC_HISTORY=1` | skipped | overrides `GEN_DOC_HISTORY` and CI — wins over everything |
+| `SKIP_DOC_HISTORY=1` | skipped | overrides everything below — wins over `DOC_HISTORY_SKIP_POSTBUILD`, `GEN_DOC_HISTORY`, and CI |
+| `DOC_HISTORY_SKIP_POSTBUILD=1` | skipped | overrides `GEN_DOC_HISTORY` and CI, loses only to `SKIP_DOC_HISTORY` |
 | `GEN_DOC_HISTORY=1` | generated | explicit local opt-in |
 | `CI` / `GITHUB_ACTIONS` set | generated | keeps the `build-site` artifact byte-identical to before |
 | plain local `pnpm build` | skipped | the #1986 default — see Tip below |
@@ -130,6 +131,18 @@ When `SKIP_DOC_HISTORY=1` is set, the doc-history zfb plugin skips all git histo
 <Tip>
 
 postBuild is off by default locally because its per-content-file `git log --follow` chain exceeds zfb's 120s postBuild lifecycle budget on a large corpus and fails a plain `pnpm build`. It is redundant locally anyway: dev reads history live from the standalone `:4322` server, and CI generates the JSON in the dedicated parallel `build-history` job. To make the dropdown work when previewing a locally-built `dist/` (or building the Tauri offline reader), run `GEN_DOC_HISTORY=1 pnpm build`. Note this gates only the zfb plugin's postBuild — the standalone `@takazudo/zudo-doc-history-server generate` CLI used by the `build-history` job is never gated and always generates when invoked.
+
+</Tip>
+
+## DOC_HISTORY_SKIP_POSTBUILD
+
+`DOC_HISTORY_SKIP_POSTBUILD=1` (introduced in #2927) skips only the postBuild per-page dropdown JSON step from the decision table above — the same step `GEN_DOC_HISTORY` opts into. Unlike `SKIP_DOC_HISTORY=1`, it does **not** blank the preBuild manifest, so the Created/Updated/Author block still shows real git dates.
+
+Use it for a shallow-clone CI variant: one with enough git history for the cheap preBuild `--name-status` walk, but that wants to explicitly opt out of the heavier per-file postBuild `git log --follow` chain rather than relying on the plain-local-build default (which would not apply if that variant also sets `CI=true`, since CI otherwise generates).
+
+<Tip>
+
+The name deliberately does not contain the substring `SKIP_DOC_HISTORY`, so it is a distinct marker for `scripts/check-compatibility-contract.ts`'s literal survivor scan and needs no allowlist changes.
 
 </Tip>
 

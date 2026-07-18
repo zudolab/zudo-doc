@@ -36,6 +36,16 @@
 // truly shallow clone with no git history, a custom CI variant, or a
 // future optimisation that passes a pre-computed manifest via a different
 // mechanism).
+//
+// ### DOC_HISTORY_SKIP_POSTBUILD=1 does NOT affect this runner (#2927)
+//
+// A separate env var, `DOC_HISTORY_SKIP_POSTBUILD=1`, exists to skip only
+// the heavier postBuild per-page dropdown JSON step (see
+// `shouldGeneratePostBuild` in `./index.ts` for its decision table). This
+// preBuild runner does not read that var at all — it keys off
+// SKIP_DOC_HISTORY alone, same as before — so a shallow-clone CI variant
+// can set DOC_HISTORY_SKIP_POSTBUILD=1 to skip the heavy step while this
+// step still runs and populates real Created/Updated/Author metadata.
 
 import fs from "node:fs";
 import path from "node:path";

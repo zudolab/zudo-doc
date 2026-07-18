@@ -134,6 +134,8 @@ GEN_DOC_HISTORY=1 pnpm build
 
 This is useful when previewing a locally-built `dist/` or bundling an offline reader. See the [deployment guide](./deployment.mdx) for details.
 
+Conversely, a shallow-clone CI variant that wants to keep the Created/Updated/Author metadata but explicitly skip this same postBuild step can set `DOC_HISTORY_SKIP_POSTBUILD=1` instead of `SKIP_DOC_HISTORY=1` — see the deployment guide's decision table.
+
 </Note>
 
 The output structure mirrors the content directory:
