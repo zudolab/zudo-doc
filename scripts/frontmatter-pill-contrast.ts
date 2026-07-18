@@ -3,11 +3,11 @@
  *
  * The foreground/background recipes are parsed from `src/styles/global.css`
  * so this guard measures the CSS that renders, rather than duplicating its
- * percentages in test code. The required catalog is pinned to the 16 packs
- * accepted for #2869; changes to that contract must be deliberate.
+ * percentages in test code. Every currently shipped pack is discovered from
+ * the package catalog, so adding a pack automatically extends this guard.
  */
 
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defaultColorSchemes } from "@takazudo/zudo-doc/color-schemes-defaults";
@@ -18,29 +18,10 @@ export const PILL_ROLES = ["danger", "success", "warning", "info", "muted"] as c
 export type PillRole = (typeof PILL_ROLES)[number];
 export type ColorMode = "light" | "dark";
 
-export const REQUIRED_PILL_PACKS = [
-  "default",
-  "foundry",
-  "broadsheet",
-  "ledger",
-  "manuscript",
-  "swissgrid",
-  "futura-editorial",
-  "hearth",
-  "matcha",
-  "sumi",
-  "washi",
-  "drift",
-  "fjord",
-  "hollow",
-  "nocturne",
-  "onyx",
-] as const;
-
 export const PILL_CONTRAST_THRESHOLD = 4.5;
 
 interface PillCssRecipe {
-  foregroundRolePct: number;
+  foregroundRolePct: Record<PillRole, number>;
   backgroundRolePct: number;
 }
 
@@ -65,7 +46,8 @@ function escapeRegExp(value: string): string {
 
 /** Parse and validate the actual per-role CSS derivation. */
 export function parsePillCssRecipe(css: string): PillCssRecipe {
-  let sharedRecipe: PillCssRecipe | undefined;
+  const foregroundRolePct = {} as Record<PillRole, number>;
+  let backgroundRolePct: number | undefined;
 
   for (const role of PILL_ROLES) {
     const block = css.match(
@@ -89,25 +71,36 @@ export function parsePillCssRecipe(css: string): PillCssRecipe {
       );
     }
 
-    const recipe = {
-      foregroundRolePct: Number(foreground[1]),
-      backgroundRolePct: Number(background[1]),
-    };
-    if (recipe.backgroundRolePct !== 12) {
+    foregroundRolePct[role] = Number(foreground[1]);
+    const roleBackgroundPct = Number(background[1]);
+    if (roleBackgroundPct !== 12) {
       throw new Error(`Pill ${role} background tint must remain locked at 12%`);
     }
     if (
-      sharedRecipe &&
-      (recipe.foregroundRolePct !== sharedRecipe.foregroundRolePct ||
-        recipe.backgroundRolePct !== sharedRecipe.backgroundRolePct)
+      backgroundRolePct !== undefined &&
+      roleBackgroundPct !== backgroundRolePct
     ) {
-      throw new Error(`Pill ${role} derivation differs from the other roles`);
+      throw new Error(
+        `Pill ${role} background derivation differs from the other roles`,
+      );
     }
-    sharedRecipe = recipe;
+    backgroundRolePct = roleBackgroundPct;
   }
 
-  if (!sharedRecipe) throw new Error("No frontmatter pill CSS recipes found");
-  return sharedRecipe;
+  if (backgroundRolePct === undefined) {
+    throw new Error("No frontmatter pill CSS recipes found");
+  }
+  return { foregroundRolePct, backgroundRolePct };
+}
+
+/** Default first, followed by every bundled custom pack in stable slug order. */
+export function getShippedPillPacks(repoRoot = REPO_ROOT): string[] {
+  const packsDir = resolve(repoRoot, "packages/zudo-doc/src/theme-packs");
+  const slugs = readdirSync(packsDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && entry.name !== "default")
+    .map((entry) => entry.name)
+    .sort();
+  return ["default", ...slugs];
 }
 
 function resolveDefaultColors(mode: ColorMode): ResolvedColors {
@@ -156,14 +149,14 @@ export function evaluateFrontmatterPillContrast(repoRoot = REPO_ROOT): PillContr
   const recipe = parsePillCssRecipe(css);
   const results: PillContrastResult[] = [];
 
-  for (const pack of REQUIRED_PILL_PACKS) {
+  for (const pack of getShippedPillPacks(repoRoot)) {
     for (const mode of ["light", "dark"] as const) {
       const colors = resolvePackColors(repoRoot, pack, mode);
       for (const role of PILL_ROLES) {
         const foreground = colorMixSrgb(
           colors[role],
           colors.fg,
-          recipe.foregroundRolePct,
+          recipe.foregroundRolePct[role],
         );
         const background = colorMixSrgb(
           colors[role],

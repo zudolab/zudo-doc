@@ -77,7 +77,8 @@
 /* Showcase-only frontmatter preview pills. These explicit rules keep the
    role-dynamic classes available even though src/config is not an @source
    root. Backgrounds mirror the package admonition's locked 12% tint; text
-   stays 90% role-colored while borrowing AA headroom from the theme fg. */
+   borrows AA headroom from the theme fg while preserving role-colored fills
+   (and, for muted, the raw role-colored border). */
 .zd-fm-pill--danger {
   color: color-mix(in srgb, var(--color-danger) 90%, var(--color-fg));
   background-color: color-mix(in srgb, var(--color-danger) 12%, var(--color-bg));
@@ -99,7 +100,7 @@
 }
 
 .zd-fm-pill--muted {
-  color: color-mix(in srgb, var(--color-muted) 90%, var(--color-fg));
+  color: color-mix(in srgb, var(--color-muted) 30%, var(--color-fg));
   background-color: color-mix(in srgb, var(--color-muted) 12%, var(--color-bg));
   border: 1px solid var(--color-muted);
 }

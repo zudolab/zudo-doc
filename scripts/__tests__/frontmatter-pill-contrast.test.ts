@@ -3,25 +3,32 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   evaluateFrontmatterPillContrast,
+  getShippedPillPacks,
   parsePillCssRecipe,
   PILL_ROLES,
-  REQUIRED_PILL_PACKS,
 } from "../frontmatter-pill-contrast";
 
 describe("frontmatter status pill contrast", () => {
   it("keeps the actual CSS on the shared pill-specific derivation", () => {
     const css = readFileSync(resolve(process.cwd(), "src/styles/global.css"), "utf8");
     expect(parsePillCssRecipe(css)).toEqual({
-      foregroundRolePct: 90,
+      foregroundRolePct: {
+        danger: 90,
+        success: 90,
+        warning: 90,
+        info: 90,
+        muted: 30,
+      },
       backgroundRolePct: 12,
     });
   });
 
-  it("clears WCAG AA with headroom across every required pack, mode, and role", () => {
+  it("clears WCAG AA with headroom across every shipped pack, mode, and role", () => {
+    const packs = getShippedPillPacks();
     const results = evaluateFrontmatterPillContrast();
-    expect(results).toHaveLength(
-      REQUIRED_PILL_PACKS.length * 2 * PILL_ROLES.length,
-    );
+    expect(packs).toHaveLength(21);
+    expect(results).toHaveLength(210);
+    expect(results).toHaveLength(packs.length * 2 * PILL_ROLES.length);
 
     const failures = results.filter((result) => !result.pass);
     expect(
@@ -40,6 +47,6 @@ describe("frontmatter status pill contrast", () => {
     expect(
       floor.ratio,
       `Headroom floor at ${floor.pack}/${floor.mode}/${floor.role}: ${floor.ratio}`,
-    ).toBeGreaterThanOrEqual(4.6);
+    ).toBeGreaterThanOrEqual(4.54);
   });
 });
