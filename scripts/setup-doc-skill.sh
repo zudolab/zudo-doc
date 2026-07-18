@@ -81,6 +81,8 @@ REPO_ROOT="$(git -C "$ROOT_DIR" worktree list | head -1 | awk '{print $1}')"
 # worktree root, above) reconstructs the equivalent path there even when
 # running from inside a different worktree.
 PROJECT_PREFIX="$(git -C "$ROOT_DIR" rev-parse --show-prefix)"
+MAIN_PROJECT_DIR="$REPO_ROOT/${PROJECT_PREFIX}"
+MAIN_PROJECT_DIR="${MAIN_PROJECT_DIR%/}"
 REPO_DOCS_DIR="$REPO_ROOT/${PROJECT_PREFIX}src/content/docs"
 REPO_DOCS_JA_DIR="$REPO_ROOT/${PROJECT_PREFIX}src/content/docs-ja"
 
@@ -142,7 +144,7 @@ fi
 # even when the project is nested inside a larger git repo (running `pnpm
 # build` from the outer repo root would otherwise invoke the wrong
 # package.json, #2918).
-VERIFY_STEP="Run \`pnpm build\` from \`$ROOT_DIR\` to confirm the site builds correctly."
+VERIFY_STEP="Run \`pnpm build\` from \`$MAIN_PROJECT_DIR\` to confirm the site builds correctly."
 
 resolve_targets() {
   case "$TARGET_MODE" in
@@ -204,7 +206,7 @@ argument-hint: "[-u|--update] [topic keyword, e.g., 'configuration', 'sidebar', 
 # $PROJECT_NAME Documentation Reference
 
 Look up documentation from the $PROJECT_NAME project for $assistant_label.
-Documentation base path: \`src/content/docs\` (relative to the project root: \`$ROOT_DIR\`)
+Documentation base path: \`src/content/docs\` (relative to the project root: \`$MAIN_PROJECT_DIR\`)
 
 ## Mode Detection
 
@@ -234,7 +236,7 @@ The user has new information and wants to add or update documentation in this re
    the topic. Read them to understand what is already covered.
 3. **Decide create vs update**: If an existing article covers the topic, update
    it. Otherwise, create a new \`.mdx\` file in the appropriate subdirectory.
-4. **Write the content**: Follow the doc-authoring rules in this project's CLAUDE.md (\`$ROOT_DIR/CLAUDE.md\`):
+4. **Write the content**: Follow the doc-authoring rules in this project's CLAUDE.md (\`$MAIN_PROJECT_DIR/CLAUDE.md\`):
    - Required frontmatter: \`title\` (string). Always set \`sidebar_position\`.
      Optional: \`description\`, \`sidebar_label\`, \`tags\`, etc.
    - Do NOT use \`# h1\` in content — the frontmatter \`title\` renders as h1.
