@@ -122,7 +122,8 @@ KVとcustom-domain routeもコピーしません。liveのAI admissionとrate-li
 
 | コンテキスト | postBuild JSON | 理由 |
 |---|---|---|
-| `SKIP_DOC_HISTORY=1` | スキップ | `GEN_DOC_HISTORY`とCIを上書きする — すべてに優先する |
+| `SKIP_DOC_HISTORY=1` | スキップ | 以下すべてを上書きする — `DOC_HISTORY_SKIP_POSTBUILD`、`GEN_DOC_HISTORY`、CIに優先する |
+| `DOC_HISTORY_SKIP_POSTBUILD=1` | スキップ | `GEN_DOC_HISTORY`とCIを上書きする — `SKIP_DOC_HISTORY`にのみ劣後する |
 | `GEN_DOC_HISTORY=1` | 生成 | 明示的なローカルオプトイン |
 | `CI` / `GITHUB_ACTIONS`が設定 | 生成 | `build-site`アーティファクトを以前とバイト単位で同一に保つ |
 | 通常のローカル`pnpm build` | スキップ | #1986のデフォルト — 下記のTipを参照 |
@@ -130,6 +131,18 @@ KVとcustom-domain routeもコピーしません。liveのAI admissionとrate-li
 <Tip>
 
 postBuildがローカルでデフォルトオフなのは、コンテンツファイルごとの`git log --follow`チェーンが大規模なコーパスではzfbの120秒のpostBuildライフサイクル予算を超え、通常の`pnpm build`を失敗させるためです。ローカルでは冗長でもあります：開発時は履歴をスタンドアロンの`:4322`サーバーからライブで読み取り、CIは専用の並列`build-history`ジョブでJSONを生成します。ローカルビルドした`dist/`をプレビューするとき（またはTauriオフラインリーダーをビルドするとき）にドロップダウンを動作させるには、`GEN_DOC_HISTORY=1 pnpm build`を実行します。これはzfbプラグインのpostBuildのみを制御する点に注意してください — `build-history`ジョブで使われるスタンドアロンの`@takazudo/zudo-doc-history-server generate` CLIは制御対象外で、呼び出されると常に生成します。
+
+</Tip>
+
+## DOC_HISTORY_SKIP_POSTBUILD
+
+`DOC_HISTORY_SKIP_POSTBUILD=1`（#2927で導入）は、上の決定表にあるpostBuildのページごとのドロップダウンJSONステップのみをスキップします — `GEN_DOC_HISTORY`がオプトインするのと同じステップです。`SKIP_DOC_HISTORY=1`と異なり、preBuildマニフェストは空にしません。そのため、作成日・更新日・著者ブロックには実際のgit日付が引き続き表示されます。
+
+これはシャロークローンのCIバリアント向けです：軽量なpreBuildの`--name-status`走査には十分なgit履歴があるものの、より重いpostBuildのファイルごとの`git log --follow`チェーンは明示的にオプトアウトしたい場合に使います。ローカルビルドのデフォルト（postBuildをスキップ）に頼るのではなく明示的に指定する必要があるのは、そのバリアントが`CI=true`も設定している場合、CIではデフォルトで生成されるためです。
+
+<Tip>
+
+この名前は意図的に`SKIP_DOC_HISTORY`という部分文字列を含みません。そのため`scripts/check-compatibility-contract.ts`のリテラル文字列によるサバイバースキャンでは別のマーカーとして扱われ、許可リストの変更は不要です。
 
 </Tip>
 

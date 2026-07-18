@@ -121,7 +121,7 @@ packages/
 ├── search-worker/        # CF Worker for search API
 ├── doc-history-server/   # Doc history REST API + CLI generator
 ├── zudo-doc/             # Shared layout + integration package — owns chrome/routes/islands/plugins/preset (@takazudo/zudo-doc)
-└── create-zudo-doc/      # CLI scaffold tool — emits the locked ~12-file minimal manifest
+└── create-zudo-doc/      # CLI scaffold tool — emits the locked ~13-file minimal manifest
 
 src/
 ├── chrome-bindings.tsx   # Real ChromeHostBindings implementation, wired via zfb.config.ts's chromeBindingsModule
@@ -187,11 +187,16 @@ When `SKIP_DOC_HISTORY=1` is set, the doc-history plugin short-circuits and writ
 The plugin's **postBuild** step (which writes the per-page history-dropdown JSON into `dist/doc-history/`) is **skipped by default on local builds** and opt-in via `GEN_DOC_HISTORY=1` (#1986). It defaults off locally because that step runs one `git log --follow` chain per content file, which on a large corpus exceeds zfb's 120s postBuild lifecycle-hook budget and fails a plain `pnpm build`. The JSON is redundant for the normal paths anyway: dev reads it live from the `:4322` server, and CI generates it in the dedicated parallel `build-history` job. The decision table (in `runDocHistoryPostBuild` / `shouldGeneratePostBuild`):
 
 - `SKIP_DOC_HISTORY=1` → never generate (wins over everything).
+- `DOC_HISTORY_SKIP_POSTBUILD=1` → never generate (wins over `GEN_DOC_HISTORY` and CI, loses only to `SKIP_DOC_HISTORY`).
 - `GEN_DOC_HISTORY=1` → generate (local opt-in — e.g. before `pnpm preview` of a locally-built `dist/`).
 - CI (`CI` / `GITHUB_ACTIONS`) → generate (keeps the CI build-site artifact identical; the async generator stays within budget).
 - otherwise (plain local build) → skip.
 
 This gates **only** the postBuild dropdown JSON. The **preBuild** Created/Updated/Author manifest (gated by `SKIP_DOC_HISTORY` alone) still runs locally, so a plain `pnpm build` keeps real page metadata.
+
+### `DOC_HISTORY_SKIP_POSTBUILD` env var (postBuild-only skip)
+
+`DOC_HISTORY_SKIP_POSTBUILD=1` skips only the postBuild dropdown JSON step above, leaving the preBuild Created/Updated/Author manifest untouched — unlike `SKIP_DOC_HISTORY=1`, which blanks both. Use it for a shallow-clone CI variant that keeps enough git history for the cheap preBuild walk but wants to explicitly opt out of the heavier postBuild `git log --follow` chain (#2927). The name deliberately avoids the substring `SKIP_DOC_HISTORY` so `scripts/check-compatibility-contract.ts`'s literal survivor scan for that marker needs no allowlist update.
 
 ## CI Pipeline
 

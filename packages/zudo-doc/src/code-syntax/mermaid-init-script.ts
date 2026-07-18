@@ -276,9 +276,13 @@ export function buildMermaidInitScript(cdnUrl: string): string {
         .replace(/\\s+(Note\\s+(?:left|right|over)\\s+of\\s+)/gi, ";\\n$1")
         .replace(/\\s+(loop|alt|else|opt|par|and|rect|critical|break|end)\\b/gi, ";\\n$1");
     } else if (/^stateDiagram(?:-v2)?\\b/i.test(out)) {
+      // Newline only — unlike flowchart/sequenceDiagram, \`;\` is not a
+      // trailing separator mermaid strips from a stateDiagram state id;
+      // it parses "Draft;" as a state DISTINCT from "Draft", producing
+      // a spurious node (zudolab/zudo-doc#2909).
       out = out.replace(
         /([A-Za-z0-9_*\\]\\)\\}])\\s+((?:\\[\\*\\]|[A-Za-z0-9_][\\w-]*)\\s*--?>)/g,
-        "$1;\\n$2",
+        "$1\\n$2",
       );
     }
 

@@ -90,6 +90,15 @@ const componentSources: Record<PrimarySlot, string> = {
   )`,
 };
 
+// spawnSync captures raw stdout/stderr bytes. picocolors treats `CI=true`
+// (set by GitHub Actions, incl. the nightly slow-test run) as color support
+// even though the piped stream isn't a TTY, so the eject CLI's nested
+// pc.bold(...pc.green("✓")...) composition inserts an ANSI reset between "✓"
+// and " Ejected <component>" — breaking a plain substring check. Strip ANSI
+// once here so every assertion below tests human-visible text, not byte
+// adjacency (mirrors packages/zudo-doc/src/__tests__/eject.test.ts).
+const ANSI_ESCAPE = new RegExp(`${String.fromCharCode(27)}\\[[0-?]*[ -/]*[@-~]`, "g");
+
 const TEMP_PREFIX = "create-zudo-doc-chrome-matrix-";
 const projectDirs = new Map<string, string>();
 let tempDir: string;
@@ -314,7 +323,7 @@ describe("generated chrome customization matrix", () => {
     const outputFor = (component: string): string => {
       const proof = ejectProofs.get(component)!;
       expect(proof.status).toBe(0);
-      return `${proof.stdout}\n${proof.stderr}`;
+      return `${proof.stdout}\n${proof.stderr}`.replace(ANSI_ESCAPE, "");
     };
     const headerOutput = outputFor("header");
     expect(headerOutput).toContain("WARNING: the ejected header copy is not wired");

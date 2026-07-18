@@ -137,6 +137,7 @@ pnpm check
 my-docs/
 ├── .gitignore              # node_modules, dist, .zfb
 ├── .npmrc                  # trust-policy-exclude[]=undici-types@6.21.0
+├── pnpm-workspace.yaml     # minimumReleaseAge: 0（pnpm 11 のリリース経過時間ゲートを無効化）
 ├── CLAUDE.md               # project notes for Claude Code
 ├── package.json            # deps + dev/build/preview/check scripts
 ├── tsconfig.json           # 5-line extends of the package base config

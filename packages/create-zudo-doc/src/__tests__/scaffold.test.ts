@@ -6,6 +6,7 @@ import {
   afterEach,
   beforeAll,
   afterAll,
+  vi,
 } from "vitest";
 import fs from "fs-extra";
 import os from "os";
@@ -15,6 +16,8 @@ import type { UserChoices } from "../prompts.js";
 import { scaffold } from "../scaffold.js";
 import { validateProjectName } from "../utils.js";
 import { createZudoDoc } from "../api.js";
+import type { PresetHeaderRightItem, PresetMetaTagsConfig } from "../preset.js";
+import { validatePreset } from "../preset.js";
 
 // Minimal-scaffold cutover (epic zudolab/zudo-doc#2651). Rewritten from
 // scratch for Wave 7 (#2662) against the locked ~12-file manifest landed by
@@ -81,7 +84,8 @@ const baseChoices: UserChoices = {
 // The locked manifest (#2653 Decision 4 / #2660 completion comment).
 // ---------------------------------------------------------------------------
 
-/** The locked ~12-file barebone (EN-only) manifest. */
+/** The locked ~13-file barebone (EN-only) manifest. Grew from 12 to 13 with
+ *  pnpm-workspace.yaml (#2923 — disables pnpm 11's minimumReleaseAge gate). */
 const BAREBONE_MANIFEST = [
   ".gitignore",
   ".npmrc",
@@ -89,6 +93,7 @@ const BAREBONE_MANIFEST = [
   "package.json",
   "pages/docs/[[...slug]].tsx",
   "pages/index.tsx",
+  "pnpm-workspace.yaml",
   "src/content/docs/getting-started/index.mdx",
   "src/content/docs/getting-started/installation.mdx",
   "src/content/docs/getting-started/introduction.mdx",
@@ -126,7 +131,7 @@ const ALL_FEATURES = [
   "noindex",
 ];
 
-describe("scaffold — barebone manifest (locked 12-file shape, #2653 Decision 4)", () => {
+describe("scaffold — barebone manifest (locked 13-file shape, #2653 Decision 4)", () => {
   let files: string[];
 
   beforeAll(async () => {
@@ -139,7 +144,7 @@ describe("scaffold — barebone manifest (locked 12-file shape, #2653 Decision 4
     await fs.remove(dir);
   });
 
-  it("emits EXACTLY the 12 locked-manifest files — no more, no less", () => {
+  it("emits EXACTLY the 13 locked-manifest files — no more, no less", () => {
     expect(files).toEqual(BAREBONE_MANIFEST);
   });
 });
@@ -604,6 +609,67 @@ describe("scaffold — claudeSkills feature", () => {
     const pkg = await fs.readJson(projectPath("test-doc", "package.json"));
     expect(pkg.scripts.b4push).toBeUndefined();
   });
+
+  // Unreachable in a healthy checkout — the template sources are committed
+  // alongside scaffold.ts. Simulated by making fs.pathExists lie about one
+  // skill's TEMPLATE SOURCE path specifically, so the other 2 skills still
+  // take the real (non-mocked) code path. The match is scoped to
+  // "templates/features/claudeSkills" so it can never accidentally match the
+  // generated project's destination path (which lives under a tempDir with
+  // no such segment) — a looser substring match would make the destination
+  // assertion below pass vacuously (the mock lying, not scaffold's own
+  // skip-on-missing behavior).
+  it("warns and skips a skill whose template source is missing", async () => {
+    const realPathExists = fs.pathExists;
+    const pathExistsSpy = vi
+      .spyOn(fs, "pathExists")
+      .mockImplementation(async (p: string) => {
+        if (
+          p.includes(path.join("templates/features/claudeSkills")) &&
+          p.includes("zudo-doc-translate")
+        ) {
+          return false;
+        }
+        return realPathExists(p);
+      });
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    try {
+      await scaffold({
+        ...baseChoices,
+        projectName: "test-claude-skills-missing",
+        features: ["claudeSkills"],
+      });
+    } finally {
+      // Restore before the assertions below so the destination-existence
+      // checks hit the real filesystem, not the mock.
+      pathExistsSpy.mockRestore();
+    }
+
+    try {
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'missing template source for "zudo-doc-translate"',
+        ),
+      );
+      const project = projectPath("test-claude-skills-missing");
+      expect(
+        await fs.pathExists(
+          path.join(project, ".claude/skills/zudo-doc-translate/SKILL.md"),
+        ),
+      ).toBe(false);
+      // The other 2 skills are unaffected by the one missing source.
+      for (const skill of ["zudo-doc-design-system", "zudo-doc-version-bump"]) {
+        expect(
+          await fs.pathExists(
+            path.join(project, `.claude/skills/${skill}/SKILL.md`),
+          ),
+        ).toBe(true);
+      }
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
 });
 
 describe("scaffold — changelog feature", () => {
@@ -645,7 +711,7 @@ describe("scaffold — changelog feature", () => {
 });
 
 describe("scaffold — every-feature manifest is exactly base + the documented per-feature deltas", () => {
-  it("all-on scaffold emits exactly the expected 38-file set", async () => {
+  it("all-on scaffold emits exactly the expected 39-file set", async () => {
     await scaffold({
       ...baseChoices,
       projectName: "test-all-on",
@@ -663,6 +729,7 @@ describe("scaffold — every-feature manifest is exactly base + the documented p
       "pages/[locale]/docs/[[...slug]].tsx",
       "pages/docs/[[...slug]].tsx",
       "pages/index.tsx",
+      "pnpm-workspace.yaml",
       "scripts/setup-doc-skill.sh",
       "src-tauri-dev/.gitignore",
       "src-tauri-dev/Cargo.toml",
@@ -825,10 +892,18 @@ describe("scaffold — package-injected routes are never emitted as project file
 });
 
 describe("scaffold — .gitignore base blocks", () => {
-  it("always ignores node_modules, dist, .zfb, .env*, and .zudo-doc/ build artifacts", async () => {
+  it("always ignores node_modules, dist, .zfb, .zfb-build/, .env*, and .zudo-doc/ build artifacts", async () => {
     await scaffold(baseChoices);
     const gitignore = await fs.readFile(projectPath("test-doc", ".gitignore"), "utf-8");
-    for (const line of ["node_modules", "dist", ".zfb", ".env", ".wrangler/", ".zudo-doc/"]) {
+    for (const line of [
+      "node_modules",
+      "dist",
+      ".zfb",
+      ".zfb-build/",
+      ".env",
+      ".wrangler/",
+      ".zudo-doc/",
+    ]) {
       expect(gitignore).toContain(line);
     }
   });
@@ -863,6 +938,49 @@ describe("scaffold — .npmrc", () => {
     await scaffold(baseChoices);
     const npmrc = await fs.readFile(projectPath("test-doc", ".npmrc"), "utf-8");
     expect(npmrc).toBe("trust-policy-exclude[]=undici-types@6.21.0\n");
+  });
+});
+
+describe("scaffold — pnpm-workspace.yaml (#2923)", () => {
+  it("disables pnpm 11's minimumReleaseAge gate", async () => {
+    await scaffold(baseChoices);
+    const workspaceYaml = await fs.readFile(
+      projectPath("test-doc", "pnpm-workspace.yaml"),
+      "utf-8",
+    );
+    expect(workspaceYaml).toContain("minimumReleaseAge: 0");
+  });
+
+  it("is emitted regardless of the chosen package manager (matches the .npmrc block's unconditional emission)", async () => {
+    await scaffold({ ...baseChoices, projectName: "test-npm-pm", packageManager: "npm" });
+    const workspaceYaml = await fs.readFile(
+      projectPath("test-npm-pm", "pnpm-workspace.yaml"),
+      "utf-8",
+    );
+    expect(workspaceYaml).toContain("minimumReleaseAge: 0");
+  });
+
+  it("is SKIPPED when scaffolding into an existing pnpm monorepo (never nest a workspace boundary, codex-review finding), and warns the user to disable the gate in the parent workspace", async () => {
+    // tempDir (cwd, set up by the outer beforeEach) stands in for a parent
+    // monorepo root — e.g. scaffolding into `apps/docs/` under a workspace
+    // that already owns a pnpm-workspace.yaml.
+    await fs.outputFile(
+      path.join(tempDir, "pnpm-workspace.yaml"),
+      "packages:\n  - packages/*\n",
+    );
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    await scaffold({ ...baseChoices, projectName: "test-nested-ws" });
+    expect(
+      await fs.pathExists(projectPath("test-nested-ws", "pnpm-workspace.yaml")),
+    ).toBe(false);
+    // Skipping silently would leave the scaffold blocked by the parent's
+    // minimumReleaseAge default — instead the user is told to disable it there
+    // (codex-review #2920 follow-up).
+    const warned = warnSpy.mock.calls.some((c) =>
+      String(c[0]).includes("minimumReleaseAge: 0"),
+    );
+    expect(warned).toBe(true);
+    warnSpy.mockRestore();
   });
 });
 
@@ -1113,6 +1231,31 @@ describe("scaffold — CLAUDE.md generation", () => {
     expect(content).not.toContain("pnpm");
   });
 
+  it("describes the two-process dev command only when docHistory is enabled (#2926)", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-claudemd-doc-history",
+      features: ["docHistory"],
+    });
+    const withDocHistory = await fs.readFile(
+      projectPath("test-claudemd-doc-history", "CLAUDE.md"),
+      "utf-8",
+    );
+    expect(withDocHistory).toContain("doc-history API server (port 4322)");
+    expect(withDocHistory).toContain("run-p");
+    expect(withDocHistory).toContain("pnpm dev:zfb");
+    expect(withDocHistory).toContain("pnpm dev:history");
+
+    await scaffold(baseChoices);
+    const without = await fs.readFile(
+      projectPath("test-doc", "CLAUDE.md"),
+      "utf-8",
+    );
+    expect(without).not.toContain("doc-history API server");
+    expect(without).not.toContain("run-p");
+    expect(without).toContain("zfb dev server (port 4321)");
+  });
+
   it("documents the built-in MDX components the seed content uses (CategoryNav) (#2703)", async () => {
     await scaffold(baseChoices);
     const content = await fs.readFile(
@@ -1222,6 +1365,77 @@ describe("scaffold — generated package.json", () => {
     });
     const pkg = await fs.readJson(projectPath("test-history-dep", "package.json"));
     expect(pkg.dependencies["@takazudo/zudo-doc-history-server"]).toBeDefined();
+  });
+
+  it("wires a two-process dev script + pinned npm-run-all2 when docHistory is enabled (#2926)", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-history-dev-script",
+      features: ["docHistory"],
+    });
+    const pkg = await fs.readJson(
+      projectPath("test-history-dev-script", "package.json"),
+    );
+    expect(pkg.scripts.dev).toBe("run-p dev:zfb dev:history");
+    expect(pkg.scripts["dev:zfb"]).toBe("zfb dev");
+    expect(pkg.scripts["dev:history"]).toBe(
+      "doc-history-server --port 4322 --content-dir src/content/docs",
+    );
+    expect(pkg.devDependencies["npm-run-all2"]).toBe("^7.0.2");
+  });
+
+  it("does NOT add the docHistory dev scripts or npm-run-all2 when docHistory is disabled", async () => {
+    await scaffold(baseChoices);
+    const pkg = await fs.readJson(projectPath("test-doc", "package.json"));
+    expect(pkg.scripts.dev).toBe("zfb dev");
+    expect(pkg.scripts["dev:zfb"]).toBeUndefined();
+    expect(pkg.scripts["dev:history"]).toBeUndefined();
+    expect(pkg.devDependencies["npm-run-all2"]).toBeUndefined();
+  });
+
+  it("appends a derived --locale flag to dev:history when i18n is also enabled", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-history-dev-script-i18n",
+      features: ["docHistory", "i18n"],
+    });
+    const pkg = await fs.readJson(
+      projectPath("test-history-dev-script-i18n", "package.json"),
+    );
+    expect(pkg.scripts["dev:history"]).toBe(
+      "doc-history-server --port 4322 --content-dir src/content/docs --locale ja:src/content/docs-ja",
+    );
+  });
+
+  it("derives the --locale flag from the secondary lang for a ja-default project (secondary is en, never hardcoded ja)", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-history-dev-script-ja-default",
+      defaultLang: "ja",
+      features: ["docHistory", "i18n"],
+    });
+    const pkg = await fs.readJson(
+      projectPath("test-history-dev-script-ja-default", "package.json"),
+    );
+    expect(pkg.scripts["dev:history"]).toBe(
+      "doc-history-server --port 4322 --content-dir src/content/docs --locale en:src/content/docs-en",
+    );
+  });
+
+  it("gives a bodyFootUtil-only project (which auto-enables docHistory) the docHistory dev scripts too", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-body-foot-dev-script",
+      features: ["bodyFootUtil"],
+    });
+    const pkg = await fs.readJson(
+      projectPath("test-body-foot-dev-script", "package.json"),
+    );
+    expect(pkg.scripts.dev).toBe("run-p dev:zfb dev:history");
+    expect(pkg.scripts["dev:history"]).toBe(
+      "doc-history-server --port 4322 --content-dir src/content/docs",
+    );
+    expect(pkg.devDependencies["npm-run-all2"]).toBe("^7.0.2");
   });
 
   it("adds package-owned tags:audit/tags:suggest scripts without project-side tooling deps", async () => {
@@ -1588,5 +1802,146 @@ describe("scaffold — programmatic API rejects invalid project names (F4 #2013)
     });
     const config = await fs.readFile(path.join(targetDir, "zfb.config.ts"), "utf-8");
     expect(config).toContain('themePack: "foundry"');
+  });
+});
+
+describe("createZudoDoc() — CreateOptions preset parity (#2922)", () => {
+  // UserChoices/PresetJson/zfb-config-gen.ts already supported
+  // headerRightItems, metaTags, cjkFriendly, and minifyHtml end to end —
+  // only the programmatic CreateOptions type was missing them. Shape
+  // validation for headerRightItems/metaTags is shared with the preset
+  // (JSON) path via preset.ts's validateHeaderRightItems()/
+  // validateMetaTags(); the "same rule as validatePreset()" tests below
+  // assert both callers reject the identical input with the identical
+  // message, proving the shared helper (not a duplicated allowlist) is in
+  // effect.
+
+  it("createZudoDoc() throws for an unknown headerRightItems component, same rule as validatePreset()", async () => {
+    const invalidItems = [
+      { type: "component", component: "not-a-real-thing" },
+    ] as unknown as PresetHeaderRightItem[];
+    await expect(
+      createZudoDoc({
+        projectName: "valid-name",
+        colorSchemeMode: "single",
+        singleScheme: "Default Dark",
+        headerRightItems: invalidItems,
+        features: [],
+        packageManager: "pnpm",
+      }),
+    ).rejects.toThrow(/unknown component "not-a-real-thing"/);
+    expect(validatePreset({ headerRightItems: invalidItems })).toMatch(
+      /unknown component "not-a-real-thing"/,
+    );
+  });
+
+  it("createZudoDoc() throws for an unsupported headerRightItems type, same message as validatePreset()", async () => {
+    const invalidItems = [
+      { type: "link", href: "https://example.com", label: "Custom" },
+    ] as unknown as PresetHeaderRightItem[];
+    const expectedMessage =
+      /type "link" is not supported in presets \(v1\) — edit zfb\.config\.ts after scaffold/;
+    await expect(
+      createZudoDoc({
+        projectName: "valid-name",
+        colorSchemeMode: "single",
+        singleScheme: "Default Dark",
+        headerRightItems: invalidItems,
+        features: [],
+        packageManager: "pnpm",
+      }),
+    ).rejects.toThrow(expectedMessage);
+    expect(validatePreset({ headerRightItems: invalidItems })).toMatch(expectedMessage);
+  });
+
+  it("createZudoDoc() accepts a valid headerRightItems array and threads it into zfb.config.ts", async () => {
+    const targetDir = await createZudoDoc({
+      projectName: "valid-header-items-test",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      headerRightItems: [
+        { type: "component", component: "github-link" },
+        { type: "trigger", trigger: "ai-chat" },
+      ],
+      features: [],
+      packageManager: "pnpm",
+    });
+    const config = await fs.readFile(path.join(targetDir, "zfb.config.ts"), "utf-8");
+    expect(config).toContain('component: "github-link"');
+    expect(config).toContain('trigger: "ai-chat"');
+  });
+
+  it("createZudoDoc() throws for a non-object metaTags value, same rule as validatePreset()", async () => {
+    const invalidMetaTags = "yes" as unknown as PresetMetaTagsConfig;
+    await expect(
+      createZudoDoc({
+        projectName: "valid-name",
+        colorSchemeMode: "single",
+        singleScheme: "Default Dark",
+        metaTags: invalidMetaTags,
+        features: [],
+        packageManager: "pnpm",
+      }),
+    ).rejects.toThrow(/"metaTags" must be an object/);
+    expect(validatePreset({ metaTags: invalidMetaTags })).toMatch(
+      /"metaTags" must be an object/,
+    );
+  });
+
+  it("createZudoDoc() throws for an invalid metaTags.twitterCard value, same rule as validatePreset()", async () => {
+    const invalidMetaTags = { twitterCard: "player" } as unknown as PresetMetaTagsConfig;
+    const expectedMessage =
+      /"metaTags\.twitterCard" must be "summary", "summary_large_image", or false/;
+    await expect(
+      createZudoDoc({
+        projectName: "valid-name",
+        colorSchemeMode: "single",
+        singleScheme: "Default Dark",
+        metaTags: invalidMetaTags,
+        features: [],
+        packageManager: "pnpm",
+      }),
+    ).rejects.toThrow(expectedMessage);
+    expect(validatePreset({ metaTags: invalidMetaTags })).toMatch(expectedMessage);
+  });
+
+  it("createZudoDoc() accepts a valid metaTags object and threads it into zfb.config.ts", async () => {
+    const targetDir = await createZudoDoc({
+      projectName: "valid-meta-tags-test",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      metaTags: { ogImage: "/img/og.png" },
+      features: [],
+      packageManager: "pnpm",
+    });
+    const config = await fs.readFile(path.join(targetDir, "zfb.config.ts"), "utf-8");
+    expect(config).toContain("metaTags: {");
+    expect(config).toContain('ogImage: "/img/og.png"');
+  });
+
+  it("createZudoDoc() threads cjkFriendly: true into zfb.config.ts", async () => {
+    const targetDir = await createZudoDoc({
+      projectName: "valid-cjk-friendly-test",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      cjkFriendly: true,
+      features: [],
+      packageManager: "pnpm",
+    });
+    const config = await fs.readFile(path.join(targetDir, "zfb.config.ts"), "utf-8");
+    expect(config).toContain("cjkFriendly: true");
+  });
+
+  it("createZudoDoc() threads minifyHtml: false into zfb.config.ts", async () => {
+    const targetDir = await createZudoDoc({
+      projectName: "valid-minify-html-test",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      minifyHtml: false,
+      features: [],
+      packageManager: "pnpm",
+    });
+    const config = await fs.readFile(path.join(targetDir, "zfb.config.ts"), "utf-8");
+    expect(config).toContain("minifyHtml: false");
   });
 });

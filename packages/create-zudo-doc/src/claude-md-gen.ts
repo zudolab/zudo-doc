@@ -6,7 +6,7 @@ import { capitalize, pmRunCommand } from "./utils.js";
  * zudolab/zudo-doc#2651, Wave 6 #2660). Rewritten from scratch — the old
  * generator described a 64-file project (`src/components/admonitions/`,
  * `src/layouts/`, `src/utils/`, per-page `pages/lib/*` wiring) that no
- * longer exists. The scaffolded project is now ~12 files; almost
+ * longer exists. The scaffolded project is now ~13 files; almost
  * everything referenced here lives in `node_modules/@takazudo/zudo-doc`.
  */
 export function generateCLAUDEFile(choices: UserChoices): string {
@@ -41,7 +41,13 @@ export function generateCLAUDEFile(choices: UserChoices): string {
   lines.push(`## Commands`);
   lines.push(``);
   const pm = choices.packageManager;
-  lines.push(`- \`${pmRunCommand(pm, "dev")}\` — zfb dev server (port 4321)`);
+  if (choices.features.includes("docHistory")) {
+    lines.push(
+      `- \`${pmRunCommand(pm, "dev")}\` — runs the zfb dev server (port 4321) and the doc-history API server (port 4322) concurrently via \`run-p\` (\`${pmRunCommand(pm, "dev:zfb")}\` / \`${pmRunCommand(pm, "dev:history")}\` individually)`,
+    );
+  } else {
+    lines.push(`- \`${pmRunCommand(pm, "dev")}\` — zfb dev server (port 4321)`);
+  }
   lines.push(`- \`${pmRunCommand(pm, "build")}\` — static HTML export to \`dist/\``);
   lines.push(`- \`${pmRunCommand(pm, "check")}\` — TypeScript type checking`);
   lines.push(`- \`${pmRunCommand(pm, "preview")}\` — serve the built \`dist/\``);

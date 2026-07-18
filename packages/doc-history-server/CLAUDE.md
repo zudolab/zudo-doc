@@ -46,7 +46,7 @@ src/
 
 ### zfb Integration
 
-In dev mode, the zfb plugin implemented at `packages/zudo-doc/src/plugins/internal/doc-history/index.ts` proxies `/doc-history/*` requests to this server. In build mode, that plugin falls back to inline generation when `SKIP_DOC_HISTORY` is not set.
+In dev mode, the zfb plugin implemented at `packages/zudo-doc/src/plugins/internal/doc-history/index.ts` proxies `/doc-history/*` requests to this server. In build mode, that plugin's postBuild hook falls back to inline generation per its own `shouldGeneratePostBuild` decision table (CI or `GEN_DOC_HISTORY=1`), suppressed by either `SKIP_DOC_HISTORY=1` (also blanks preBuild) or `DOC_HISTORY_SKIP_POSTBUILD=1` (postBuild only, #2927).
 
 Root `pnpm dev` runs both the zfb dev server and this server via `run-p`.
 
