@@ -292,9 +292,8 @@ html[data-theme-pack="hearth"] .zd-content blockquote {
   color: light-dark(oklch(0.38 0.052 42), oklch(0.83 0.032 70));
 }
 
-/* admonitions: soft-cornered, warm-shadowed, hearth icon swaps on
-   the prototype's three variants (candle / coffee / fire); the other
-   four variants keep the stock icons */
+/* admonitions: soft-cornered, warm-shadowed, with a distinct icon
+   from the hearth and fireside vocabulary for every variant */
 html[data-theme-pack="hearth"] [data-admonition] {
   box-shadow: 0 8px 18px -14px light-dark(oklch(0.42 0.09 45 / 0.2), oklch(0.05 0.01 45 / 0.6));
 }
@@ -304,8 +303,20 @@ html[data-theme-pack="hearth"] [data-admonition="note"] .admonition-title::befor
 html[data-theme-pack="hearth"] [data-admonition="tip"] .admonition-title::before {
   content: "☕ ";
 }
+html[data-theme-pack="hearth"] [data-admonition="info"] .admonition-title::before {
+  content: "📜 ";
+}
 html[data-theme-pack="hearth"] [data-admonition="warning"] .admonition-title::before {
   content: "🔥 ";
+}
+html[data-theme-pack="hearth"] [data-admonition="important"] .admonition-title::before {
+  content: "🔔 ";
+}
+html[data-theme-pack="hearth"] [data-admonition="danger"] .admonition-title::before {
+  content: "🧯 ";
+}
+html[data-theme-pack="hearth"] [data-admonition="caution"] .admonition-title::before {
+  content: "♨️ ";
 }
 
 /* table: brick Fraunces header over an accent rule, warm row hover */
