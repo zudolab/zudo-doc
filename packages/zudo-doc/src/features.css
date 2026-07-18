@@ -245,7 +245,7 @@ pre.hi-root .line .highlighted-word {
  * zfb's :::code-group emits <CodeGroup tabs={[...]}> with one
  * <pre data-lang="…">{RAW text}</pre> child per fence. These <pre> elements
  * are NOT syntax-highlighted (the Rust pipeline doesn't highlight inside
- * code-group fences), so they get no `.hi-root` or legacy `.syntect-*` class.
+ * code-group fences), so they get no `.hi-root` class.
  * Apply explicit code-block visual treatment via tokens to match the
  * highlighted code blocks surrounding them.
  * ======================================== */

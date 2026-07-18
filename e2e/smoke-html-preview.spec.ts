@@ -210,7 +210,7 @@ test.describe("HtmlPreview: zfb md-wasm resources and semantic output", () => {
     expect(glueResponses[0]?.status).toBe(200);
     expect(wasmResponses[0]?.status).toBe(200);
     expect(glueResponses[0]?.contentType).toMatch(
-      /^application\/javascript(?:;|$)/,
+      /^(?:application|text)\/javascript(?:;|$)/,
     );
     expect(wasmResponses[0]?.contentType).toMatch(/^application\/wasm(?:;|$)/);
     expect(

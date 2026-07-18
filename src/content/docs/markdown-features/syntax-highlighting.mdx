@@ -50,7 +50,17 @@ When used together with the [Code Title](./code-title.mdx) feature, the `<pre>` 
 
 The syntax highlighter runs in zfb's build pipeline after code-block structure has been prepared. Features that annotate a structured `<pre><code>` block run before class-mode output is finalized.
 
+Code titles, copy and wrap controls, line and word emphasis, diff markers, tabs/code groups, Mermaid, and plain fallbacks remain separate structural features. They do not introduce a second token palette.
+
+## Shared runtime contract
+
+The [HtmlPreview](../components/html-preview.mdx) source panel uses the browser-time `@takazudo/zfb-md-wasm` renderer, but it emits the same `pre.hi-root` / `hi-*` vocabulary and consumes the same syntax design tokens. The WASM module is loaded only when a source panel is opened (or initially rendered with `defaultOpen`); changing a color scheme or editing a syntax token recolors the existing DOM without rerunning either renderer.
+
+## Migration from theme-name output
+
+Current zudo-doc projects do not configure `codeHighlight.themeLight` / `themeDark`, consume `--shiki-*` variables, or install Shiki for HtmlPreview. Remove those project-owned settings and palette rules when upgrading. Existing color schemes remain compatible: every syntax role inherits an existing semantic color unless the scheme provides a syntax-specific override. See [Color — Syntax semantics](../reference/color.mdx#syntax-semantics).
+
 ## Notes
 
 - Document fences contain semantic classes and no inline palette colors.
-- Shiki remains an optional client-side dependency only for the separate HtmlPreview component; it is not the document-fence renderer.
+- Both build-time and HtmlPreview highlighting use zfb renderers; Shiki is not a runtime or peer requirement.

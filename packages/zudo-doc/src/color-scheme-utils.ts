@@ -157,9 +157,10 @@ export interface ModeMap {
   selectionBg: RampRef;
   selectionFg: RampRef;
   semantic: Record<SemanticKey, RampRef>;
-  /** Syntax-specific overrides. The map is required, while omitted roles
-   *  inherit the aliases in `SYNTAX_SEMANTIC_ALIASES`. */
-  syntax: Partial<Record<SyntaxSemanticKey, RampRef>>;
+  /** Optional syntax-specific overrides. An absent map and omitted roles
+   *  inherit the aliases in `SYNTAX_SEMANTIC_ALIASES`, preserving schemes
+   *  authored before syntax tokens existed. */
+  syntax?: Partial<Record<SyntaxSemanticKey, RampRef>>;
 }
 
 /** A complete color scheme — shared Tier-1 ramps + per-mode Tier-2 wiring. */
@@ -371,7 +372,7 @@ export function resolveSyntaxPalette(scheme: ColorScheme): ResolvedSyntaxPalette
   const emergencyColor = tryResolveRampRef(emergencyRef, ramps) ?? "currentColor";
 
   for (const key of SYNTAX_SEMANTIC_KEYS) {
-    const explicitRef = map.syntax[key];
+    const explicitRef = map.syntax?.[key];
     const explicitColor = tryResolveRampRef(explicitRef, ramps);
     const inheritedRef = map.semantic[SYNTAX_SEMANTIC_ALIASES[key]];
     const inheritedColor = tryResolveRampRef(inheritedRef, ramps);

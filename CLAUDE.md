@@ -10,7 +10,7 @@ The current repository contract targets zfb exclusively.
 - **MDX** — authored under `src/content/`, content directory configurable via `docsDir` setting; pipeline configured in `zfb.config.ts`
 - **Tailwind CSS v4** — via `@tailwindcss/vite`
 - **Preact** — for interactive islands (TOC scroll spy, sidebar toggle, collapsible categories) and server-rendered content typography components; runs in compat mode for React API compatibility
-- **zfb class-mode highlighting** — document fences render as `pre.hi-root` with semantic `hi-*` token classes. `@takazudo/zudo-doc/features.css` maps them to current `--zd-syntax-*` tokens. Shiki is optional and scoped to HtmlPreview only.
+- **zfb semantic highlighting** — document fences use zfb's native build-time renderer; HtmlPreview lazily imports the public `@takazudo/zfb-md-wasm` root for browser-time HTML/CSS/JavaScript. Both emit `pre.hi-root` / `hi-*` classes and resolve through `--zd-syntax-*` design tokens. Do not add Shiki, theme-name config, inline token colors, or package-internal WASM paths.
 - **@takazudo/zdtp (zdtp)** — external npm package that owns the Design Token Panel UI; the package-owned `DesignTokenPanelBootstrap` island configures it from a mode-scoped builder and self-mounts it as a side effect
 - **TypeScript** — strict mode (project `tsconfig.json` sets `strict: true` plus the full set of `strict*` flags directly)
 
