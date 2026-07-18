@@ -218,6 +218,7 @@ const fixtureSettings: PresetSettings = {
     },
   ],
   docHistory: true,
+  docHistoryExclude: ["drafts/**"],
   claudeResources: { claudeDir: ".claude" },
   githubAutolinksRepo: "zudolab/zudo-doc",
   packageOwnedRoutes: true,
@@ -313,6 +314,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       docsDir: "src/content/docs",
       locales: { ja: { dir: "src/content/docs-ja" } },
       base: "/",
+      exclude: ["drafts/**"],
     });
     expect(byName["@takazudo/zudo-doc/plugins/search-index"]).toEqual({
       docsDir: "src/content/docs",
@@ -356,6 +358,19 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       themePack: "foundry",
       themePacks: ["default", "foundry"],
     });
+  });
+
+  it("defaults doc-history exclude patterns to an empty array", () => {
+    const result = zudoDocPreset({
+      settings: { ...fixtureSettings, docHistoryExclude: undefined },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+    const docHistory = result.plugins.find(
+      (plugin) => plugin.name === "@takazudo/zudo-doc/plugins/doc-history",
+    );
+
+    expect(docHistory?.options?.["exclude"]).toEqual([]);
   });
 
   it("omits claude-resources / doc-history / llms-txt / changelog when their settings are falsy", () => {

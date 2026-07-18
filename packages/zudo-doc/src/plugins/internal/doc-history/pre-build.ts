@@ -53,6 +53,7 @@ import {
   collectContentFiles,
   getAllFilesFirstLastMetaAsync,
 } from "@takazudo/zudo-doc-history-server/git-history";
+import { compileExclude } from "@takazudo/zudo-doc-history-server/exclude";
 
 /** A single non-default locale entry; mirrors `settings.locales[*]`. */
 export interface DocHistoryMetaLocaleConfig {
@@ -78,6 +79,8 @@ export interface RunDocHistoryMetaOptions {
   docsDir: string;
   /** Optional non-default locales, keyed by locale code. */
   locales?: Record<string, DocHistoryMetaLocaleConfig>;
+  /** Slug globs excluded from the emitted metadata manifest. */
+  exclude?: string[];
   /**
    * Optional versioned docs (e.g. legacy `1.0`). Each version produces
    * its own default-locale collection plus per-locale variants.
@@ -169,9 +172,11 @@ export async function runDocHistoryMetaStep(
   // is critical for byte-identical JSON output: JSON key insertion order below
   // follows this list, independent of anything git emits.
   const jobs: Array<{ composedSlug: string; filePath: string }> = [];
+  const isExcluded = compileExclude(options.exclude ?? []);
   for (const [localeKey, contentDir] of dirEntries) {
     const files = collectContentFiles(contentDir);
     for (const { filePath, slug } of files) {
+      if (isExcluded(slug)) continue;
       const composedSlug = localeKey ? `${localeKey}/${slug}` : slug;
       jobs.push({ composedSlug, filePath });
     }

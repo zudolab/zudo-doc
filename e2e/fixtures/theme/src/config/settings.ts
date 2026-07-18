@@ -103,6 +103,7 @@ export const settings = {
   findInPage: false as boolean,
   dynamicPageTransition: true as boolean,
   docHistory: false,
+  docHistoryExclude: [],
   claudeResources: false as { claudeDir: string; projectRoot?: string; scanRoot?: string } | false,
   defaultLocaleOnlyPrefixes: [] as string[],
   tocMinDepth: 2 as number,

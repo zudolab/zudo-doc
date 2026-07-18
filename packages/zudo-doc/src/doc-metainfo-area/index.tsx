@@ -117,6 +117,7 @@ export function createDocMetainfoArea<S extends Settings = Settings>(
 
     const meta = docHistoryMeta[composedSlug];
 
+    // Pages matched by docHistoryExclude are intentionally absent from the manifest.
     if (!meta) return null;
 
     return (

@@ -16,6 +16,7 @@ vi.mock("../git-history.js", () => ({
   collectContentFiles: vi.fn().mockReturnValue([
     { filePath: "/fake/docs/getting-started.mdx", slug: "getting-started" },
     { filePath: "/fake/docs/guides/page-1.mdx", slug: "guides/page-1" },
+    { filePath: "/fake/docs/private/draft.mdx", slug: "private/draft" },
   ]),
   getDocHistoryAsync: vi.fn().mockImplementation((_filePath, slug) =>
     Promise.resolve({
@@ -36,6 +37,7 @@ vi.mock("../git-history.js", () => ({
 
 // Import after mocks are set up
 const { startServer } = await import("../server.js");
+const { getDocHistoryAsync } = await import("../git-history.js");
 
 let server: http.Server;
 let baseUrl: string;
@@ -90,6 +92,7 @@ beforeAll(async () => {
     contentDir: "/fake/docs",
     locales: [],
     maxEntries: 50,
+    exclude: ["private/**"],
   });
 
   await ready;
@@ -173,6 +176,16 @@ describe("Server routes", () => {
     );
     expect(res.status).toBe(404);
     expect(data!.error).toContain("No doc found");
+  });
+
+  it("GET /doc-history/<excluded-slug>.json returns 404", async () => {
+    const callsBeforeRequest = vi.mocked(getDocHistoryAsync).mock.calls.length;
+    const { res, data } = await fetchJson(
+      `${baseUrl}/doc-history/private/draft.json`,
+    );
+    expect(res.status).toBe(404);
+    expect(data!.error).toContain("No doc found");
+    expect(getDocHistoryAsync).toHaveBeenCalledTimes(callsBeforeRequest);
   });
 
   it("GET /doc-history/getting-started.json?cachebust=1 ignores the query string", async () => {

@@ -51,6 +51,7 @@ export const settings = {
   dynamicPageTransition: true as boolean,
   frontmatterPreview: {} satisfies FrontmatterPreviewConfig as FrontmatterPreviewConfig | false,
   docHistory: true,
+  docHistoryExclude: [],
   bodyFootUtilArea: {
     docHistory: true,
     viewSourceLink: true,
