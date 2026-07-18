@@ -26,10 +26,20 @@ describe("frontmatter status pill contrast", () => {
     const failures = results.filter((result) => !result.pass);
     expect(
       failures,
-      failures.map((result) => `${result.pack}/${result.mode}/${result.role}: ${result.ratio}`).join("\n"),
+      failures
+        .map(
+          (result) =>
+            `${result.pack}/${result.mode}/${result.role}: ${result.ratio}`,
+        )
+        .join("\n"),
     ).toEqual([]);
 
-    const floor = Math.min(...results.map((result) => result.ratio));
-    expect(floor).toBeGreaterThanOrEqual(4.6);
+    const floor = results.reduce((lowest, result) =>
+      result.ratio < lowest.ratio ? result : lowest,
+    );
+    expect(
+      floor.ratio,
+      `Headroom floor at ${floor.pack}/${floor.mode}/${floor.role}: ${floor.ratio}`,
+    ).toBeGreaterThanOrEqual(4.6);
   });
 });

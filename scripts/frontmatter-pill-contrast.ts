@@ -84,7 +84,9 @@ export function parsePillCssRecipe(css: string): PillCssRecipe {
       ),
     );
     if (!foreground || !background) {
-      throw new Error(`Pill ${role} must derive foreground from role + fg and background from role + bg`);
+      throw new Error(
+        `Pill ${role} must derive foreground from role + fg and background from role + bg`,
+      );
     }
 
     const recipe = {
@@ -109,7 +111,8 @@ export function parsePillCssRecipe(css: string): PillCssRecipe {
 }
 
 function resolveDefaultColors(mode: ColorMode): ResolvedColors {
-  const scheme = defaultColorSchemes[mode === "light" ? "Default Light" : "Default Dark"];
+  const scheme =
+    defaultColorSchemes[mode === "light" ? "Default Light" : "Default Dark"];
   if (!scheme) throw new Error(`Missing default ${mode} color scheme`);
   const pairs = new Map(schemeToCssPairs(scheme));
   return Object.fromEntries(
@@ -121,9 +124,16 @@ function resolveDefaultColors(mode: ColorMode): ResolvedColors {
   ) as ResolvedColors;
 }
 
-function resolvePackColors(repoRoot: string, pack: string, mode: ColorMode): ResolvedColors {
+function resolvePackColors(
+  repoRoot: string,
+  pack: string,
+  mode: ColorMode,
+): ResolvedColors {
   if (pack === "default") return resolveDefaultColors(mode);
-  const css = readFileSync(resolve(repoRoot, "packages/zudo-doc/src/theme-packs", pack, "pack.css"), "utf8");
+  const css = readFileSync(
+    resolve(repoRoot, "packages/zudo-doc/src/theme-packs", pack, "pack.css"),
+    "utf8",
+  );
   const modeIndex = mode === "light" ? 1 : 2;
 
   return Object.fromEntries(
@@ -131,7 +141,11 @@ function resolvePackColors(repoRoot: string, pack: string, mode: ColorMode): Res
       const match = css.match(
         new RegExp(`--zd-${escapeRegExp(key)}:\\s*light-dark\\((.+?),\\s*(.+?)\\)\\s*;`),
       );
-      if (!match) throw new Error(`Pack ${pack} is missing a light-dark() --zd-${key} declaration`);
+      if (!match) {
+        throw new Error(
+          `Pack ${pack} is missing a light-dark() --zd-${key} declaration`,
+        );
+      }
       return [key, match[modeIndex].trim()];
     }),
   ) as ResolvedColors;
@@ -146,8 +160,16 @@ export function evaluateFrontmatterPillContrast(repoRoot = REPO_ROOT): PillContr
     for (const mode of ["light", "dark"] as const) {
       const colors = resolvePackColors(repoRoot, pack, mode);
       for (const role of PILL_ROLES) {
-        const foreground = colorMixSrgb(colors[role], colors.fg, recipe.foregroundRolePct);
-        const background = colorMixSrgb(colors[role], colors.bg, recipe.backgroundRolePct);
+        const foreground = colorMixSrgb(
+          colors[role],
+          colors.fg,
+          recipe.foregroundRolePct,
+        );
+        const background = colorMixSrgb(
+          colors[role],
+          colors.bg,
+          recipe.backgroundRolePct,
+        );
         const ratio = contrastRatio(foreground, background);
         results.push({
           pack,
@@ -167,7 +189,9 @@ export function evaluateFrontmatterPillContrast(repoRoot = REPO_ROOT): PillContr
 function main(): void {
   const results = evaluateFrontmatterPillContrast();
   const failures = results.filter((result) => !result.pass);
-  const floor = results.reduce((lowest, result) => (result.ratio < lowest.ratio ? result : lowest));
+  const floor = results.reduce((lowest, result) =>
+    result.ratio < lowest.ratio ? result : lowest,
+  );
   console.log(
     `Frontmatter pills: ${results.length - failures.length}/${results.length} pass; floor ${floor.ratio.toFixed(6)}:1 at ${floor.pack}/${floor.mode}/${floor.role}`,
   );
