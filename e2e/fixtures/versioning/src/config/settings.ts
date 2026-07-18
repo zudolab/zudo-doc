@@ -36,6 +36,7 @@ export const settings = {
   changelogs: false as ChangelogConfig[] | false,
   math: false,
   docHistory: false,
+  docHistoryExclude: [],
   // Mirrors the showcase default — themePackSwitcher stays off here
   // (allowlisted, epic Theme Core #2812, #2826).
   themePack: "default" as string,

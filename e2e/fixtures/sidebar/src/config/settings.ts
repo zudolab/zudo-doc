@@ -46,6 +46,7 @@ export const settings = {
   changelogs: false as ChangelogConfig[] | false,
   math: false,
   docHistory: false,
+  docHistoryExclude: [],
   claudeResources: false as { claudeDir: string; projectRoot?: string; scanRoot?: string } | false,
   defaultLocaleOnlyPrefixes: [] as string[],
   tocMinDepth: 2 as number,

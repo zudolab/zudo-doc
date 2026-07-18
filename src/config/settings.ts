@@ -200,6 +200,8 @@ export const settings = {
   dynamicPageTransition: true as boolean,
   frontmatterPreview: {} satisfies FrontmatterPreviewConfig as FrontmatterPreviewConfig | false,
   docHistory: true,
+  // Generated from project CLAUDE.md files; omit these high-churn pages from history capture.
+  docHistoryExclude: ["claude-md/**"],
   bodyFootUtilArea: {
     docHistory: true,
     viewSourceLink: true,
