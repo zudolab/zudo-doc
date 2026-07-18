@@ -81,8 +81,12 @@ the two CDNs the content genuinely uses, `object-src 'none'`,
 
 - `script-src … https://esm.sh` — Mermaid is loaded at runtime via
   `import("https://esm.sh/mermaid@11…")` (`packages/zudo-doc/src/code-syntax/mermaid-init-script.ts`).
-- `style-src` / `font-src … https://cdn.jsdelivr.net` — KaTeX CSS + fonts are
-  pulled from jsDelivr when a page uses math (`packages/zudo-doc/src/head/doc-head.tsx`).
+- `script-src` / `style-src` / `font-src … https://cdn.jsdelivr.net` — KaTeX CSS
+  + fonts are pulled from jsDelivr when a page uses math
+  (`packages/zudo-doc/src/head/doc-head.tsx`); `script-src` also covers the
+  `HtmlPreview` `externalScripts`/`externalStyles` demo on the
+  `components/html-preview` doc page (e.g. the `@tailwindcss/browser` CDN
+  recipe), since a `srcdoc` iframe inherits its parent document's CSP.
 - `'unsafe-inline'` on `script-src`/`style-src` — the site relies on inline
   pre-paint scripts (sidebar/theme/page-loading) and inline `style=` attributes.
   Exfiltration is still blocked by `connect-src`/`img-src`/`default-src`.

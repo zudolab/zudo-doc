@@ -142,6 +142,48 @@ Use the `height` prop to set a fixed iframe height instead of auto-sizing.
   `}
 />
 
+## Full Height
+
+Use the `fullHeight` prop to make the preview document's `html`/`body` stretch to fill the iframe — useful for layouts that rely on `height: 100%` reaching the viewport (e.g. a flex column that fills the available space).
+
+:::warning[Pair with an explicit `height`]
+`fullHeight` interacts with the auto-height mechanism: auto-height measures the iframe body and resizes the iframe to fit, but `fullHeight` makes the body's height derive *from* the iframe instead — combining the two creates a feedback loop with no stable resolution. Always set an explicit `height` alongside `fullHeight`.
+:::
+
+<HtmlPreview
+  title="Full Height Flex Column"
+  height={200}
+  fullHeight
+  html={`
+    <div class="fill">
+      <header>Header</header>
+      <main>Main (fills remaining space)</main>
+      <footer>Footer</footer>
+    </div>
+  `}
+  css={`
+    .fill {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      font-family: system-ui, sans-serif;
+      color: #fff;
+      text-align: center;
+    }
+    .fill header, .fill footer {
+      padding: 8px;
+      background: #334155;
+    }
+    .fill main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #64748b;
+    }
+  `}
+/>
+
 ## External Resources
 
 You can inject external resources (CSS frameworks, webfonts, scripts) into previews. Configure globally via `zfb.config.ts` or per-component via props.
@@ -202,9 +244,65 @@ Use `head` and `js` props to add resources to individual previews. These are mer
 />
 ````
 
+### External Stylesheets & Scripts
+
+`head` and `js` are stringly-typed and always render into a visible "Head"/"JS" code block, and the preflight reset (Tailwind v4 CSS reset injected into every preview) is always applied on top — no way to skip it for a framework that ships its own. `externalStyles`, `externalScripts`, `preflight`, and `showResources` give CDN resources (a CSS framework, webfont, or script like `@tailwindcss/browser`, Bootstrap, or htmx) a structured, code-panel-aware alternative:
+
+- **`externalStyles`** — array of stylesheet URLs, emitted as `<link rel="stylesheet" href="...">` tags. Loaded **before** the author `css`, so `css` can still override the framework.
+- **`externalScripts`** — array of script URLs, emitted as `<script src="...">` tags. Flows through the same sandbox/`syncDelay` derivation as an inline `js` prop — the preview automatically gets `sandbox="allow-scripts allow-same-origin"` and the 300ms height re-sync delay.
+- **`preflight`** — set to `false` to skip the injected preflight reset entirely, for a framework (like Tailwind) that ships its own base styles.
+- **`showResources`** — both arrays are **excluded from the visible code panel by default** (unlike `head`/`js`); set to `true` to surface them as literal `<link>`/`<script src>` lines at the top of the "HTML" panel when it's pedagogically useful to show the reader what's loaded.
+
+These four props are **per-usage only** — unlike `head`/`css`/`js`, they are not part of the global `htmlPreview` configuration in `zfb.config.ts`.
+
+:::warning[External resources load client-side, not at build time]
+`externalStyles`/`externalScripts` are network requests the browser makes **when the preview iframe renders**, not assets bundled at build time. The preview may briefly show unstyled/unstyled content while the resource loads, and it depends on the resource staying available at that URL.
+:::
+
+A one-line Tailwind CDN demo, using `preflight={false}` since `@tailwindcss/browser` ships its own reset:
+
+<HtmlPreview
+  title="Tailwind CDN"
+  externalScripts={["https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"]}
+  preflight={false}
+  html={`
+    <div class="flex gap-4 p-6 bg-slate-100">
+      <div class="px-4 py-2 bg-blue-500 text-white rounded-lg font-sans">Tailwind</div>
+      <div class="px-4 py-2 bg-emerald-500 text-white rounded-lg font-sans">via CDN</div>
+    </div>
+  `}
+/>
+
+````mdx
+<HtmlPreview
+  title="Tailwind CDN"
+  externalScripts={["https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"]}
+  preflight={false}
+  html={`
+    <div class="flex gap-4 p-6 bg-slate-100">
+      <div class="px-4 py-2 bg-blue-500 text-white rounded-lg font-sans">Tailwind</div>
+      <div class="px-4 py-2 bg-emerald-500 text-white rounded-lg font-sans">via CDN</div>
+    </div>
+  `}
+/>
+````
+
+With `showResources`, the CDN URL is shown as a literal line at the top of the "HTML" code panel instead of being hidden:
+
+<HtmlPreview
+  title="Tailwind CDN (resources visible)"
+  showResources
+  externalScripts={["https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"]}
+  preflight={false}
+  defaultOpen
+  html={`
+    <div class="px-4 py-2 bg-violet-500 text-white rounded-lg font-sans w-fit">Show code to see the CDN line</div>
+  `}
+/>
+
 ## Security & the `sandbox` prop
 
-Previews render inside an isolated `<iframe srcdoc>`. Its `sandbox` attribute **defaults** to `allow-scripts allow-same-origin` when the preview contains scripts (a `js` prop or a `<script>` in `head`), and `allow-same-origin` otherwise.
+Previews render inside an isolated `<iframe srcdoc>`. Its `sandbox` attribute **defaults** to `allow-scripts allow-same-origin` when the preview contains scripts (a `js` prop, a `<script>` in `head`, or a non-empty `externalScripts`), and `allow-same-origin` otherwise.
 
 :::danger[Trust assumption]
 `allow-scripts` + `allow-same-origin` together **void the iframe sandbox** — scripts inside the preview share the parent page's origin and can reach the parent document. zudo-doc keeps this default because preview content is **author-trusted MDX**, and `allow-same-origin` is what powers the auto-height measurement.
@@ -233,7 +331,12 @@ Removing `allow-same-origin` gives the iframe an opaque origin, which blocks the
 | `title` | string | `undefined` | Title displayed in the preview header bar |
 | `height` | number | auto | Fixed iframe height in pixels. When omitted, height auto-adjusts to content |
 | `defaultOpen` | boolean | `false` | Show the source code panel expanded by default |
+| `fullHeight` | boolean | `false` | Makes the preview document's `html`/`body` stretch to 100% height. Interacts with auto-height — always pair with an explicit `height` |
 | `sandbox` | string | auto | iframe `sandbox` attribute. Omit for the computed default (`allow-scripts allow-same-origin` with scripts, `allow-same-origin` without). Pass a stricter value for untrusted content — but disables auto-height when `allow-same-origin` is dropped, so set `height` too |
+| `externalStyles` | string[] | `undefined` | External stylesheet URLs, injected as `<link rel="stylesheet">` before `head`/`css`. Per-usage only — loads client-side at view time, not build-bundled |
+| `externalScripts` | string[] | `undefined` | External script URLs, injected as `<script src>`. Flips the sandbox/`syncDelay` derivation the same as `js`. Per-usage only — loads client-side at view time, not build-bundled |
+| `preflight` | boolean | `true` | Set to `false` to skip the injected preflight reset — for a framework (loaded via `externalStyles`/`externalScripts`) that ships its own |
+| `showResources` | boolean | `false` | Surfaces `externalStyles`/`externalScripts` as literal lines at the top of the "HTML" code panel. Excluded from the panel by default |
 
 ## Supported Languages
 
@@ -252,3 +355,5 @@ Unsupported languages fall back to plain text (no highlighting). This is a small
 - Global resources from the `htmlPreview` config field are injected before per-component props.
 - The `html`, `css`, and `js` props support template literals with indentation. Leading whitespace is automatically stripped (dedented) in the source code display.
 - Client-side hydration is handled automatically by the component wrapper — no `client:load` directive needed in MDX.
+- `externalStyles`/`externalScripts` load client-side at view time — they are network requests the browser makes when the preview iframe renders, not assets bundled at build time. See [External Stylesheets & Scripts](#external-resources-external-stylesheets-scripts) above.
+- Injection order in the srcdoc: preflight reset (unless `preflight={false}`) → `fullHeight` style → `externalStyles` → `head` → `css`.
