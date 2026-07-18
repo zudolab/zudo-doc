@@ -1,16 +1,27 @@
-// Monorepo-side drift/lint guard (#2921, reworked by #2946/#2947): the 3
-// user-facing zudo-doc-* skills ship to consumers under
+// Monorepo-side drift/lint guard (#2921, reworked by #2946/#2947/#2948): the
+// 3 user-facing zudo-doc-* skills ship to consumers under
 // templates/features/claudeSkills/ (npm `files` cannot reach outside the
 // package dir, so scaffold.ts can no longer read the monorepo's root
 // .claude/skills/ at generate time — see scaffold.ts's claudeSkills copy
 // step). This file covers two independent concerns:
 //
-// 1. PARITY (`PARITY_SKILLS`) — skills whose template copy is still a
-//    byte-mirror of its monorepo `.claude/skills/` source. This is the
-//    original #2921 guard, unchanged in behavior, just re-scoped to the
-//    subset of skills that haven't yet been converted to a scaffold-authored
-//    variant (epic #2946). As each skill is converted, it moves OUT of
-//    PARITY_SKILLS and INTO LINT_SKILLS below.
+// 1. PARITY (`PARITY_SKILLS`) — skills whose template copy is a deliberate
+//    byte-mirror of its monorepo `.claude/skills/` source, because nothing
+//    in the skill's content is monorepo-specific. This was the ONLY guard
+//    when introduced by #2921: all 3 skills started as byte-mirrors, copied
+//    verbatim from the maintainer's own `.claude/skills/`. Epic #2946
+//    found that byte-parity was actually a bug for 2 of the 3 — their
+//    mirrored content silently assumed a monorepo checkout (references like
+//    `src/config/settings.ts`, `packages/zudo-doc`, `/css-wisdom`) that
+//    doesn't exist in a scaffolded project, so the skill would be broken
+//    out of the box for every downstream user. Wave 1 (#2947) and Wave 2
+//    (#2948) converted all 3 skills to scaffold-authored variants, so
+//    `PARITY_SKILLS` is empty as of #2948 — but the mechanism (the array +
+//    the comparison plumbing below) is kept for a future shipped skill that
+//    IS a deliberate, intentional byte-mirror (i.e. one with no
+//    monorepo-only content to diverge from). List it here when that
+//    happens; an empty array just means the `it.each` below iterates to
+//    zero tests.
 //
 // 2. SCAFFOLD-CORRECTNESS LINT (`LINT_SKILLS`) — skills that HAVE been
 //    converted to a scaffold-authored variant. Their template copy
@@ -22,9 +33,9 @@
 //    `src/config/settings.ts`, etc., so a skill referencing those paths
 //    would be broken out of the box.
 //
-// Epic #2946 converts all 3 skills wave by wave; until every skill has
-// moved to LINT_SKILLS, PARITY_SKILLS and LINT_SKILLS partition the full
-// SKILLS set (every skill is in exactly one).
+// As of #2948 (epic #2946 complete), all 3 skills are in LINT_SKILLS and
+// PARITY_SKILLS is empty — see the note on PARITY_SKILLS below for why the
+// mechanism stays.
 
 import { describe, it, expect, beforeAll } from "vitest";
 import { execFileSync } from "node:child_process";
@@ -38,19 +49,28 @@ const PKG_ROOT = path.resolve(__dirname, "../..");
 const MONOREPO_ROOT = path.resolve(PKG_ROOT, "../..");
 
 /**
- * Skills still shipped as byte-mirrors of their monorepo `.claude/skills/`
- * source — covered by the parity test below. Shrinks as each skill is
- * converted to a scaffold-authored variant (epic #2946).
+ * Skills shipped as a deliberate byte-mirror of their monorepo
+ * `.claude/skills/` source — covered by the parity test below. Empty as of
+ * #2948 (epic #2946 converted all 3 shipped skills to scaffold-authored
+ * variants). Kept as a live mechanism, not dead code: list a FUTURE shipped
+ * skill here if — and only if — it has no monorepo-only content to diverge
+ * from and is genuinely meant to be a byte-for-byte copy. Do not use this
+ * as a default for new skills; LINT_SKILLS is the default (see its comment).
  */
-export const PARITY_SKILLS = ["zudo-doc-design-system", "zudo-doc-translate"];
+export const PARITY_SKILLS: string[] = [];
 
 /**
- * Skills already converted to a scaffold-authored variant — covered by the
- * scaffold-correctness lint below instead of parity. Grows as each skill is
- * converted (epic #2946); `zudo-doc-version-bump` is the Wave 1 conversion
- * (#2947).
+ * Skills converted to a scaffold-authored variant — covered by the
+ * scaffold-correctness lint below instead of parity. This is the default
+ * home for any user-facing skill: `zudo-doc-version-bump` was the Wave 1
+ * conversion (#2947); `zudo-doc-design-system` and `zudo-doc-translate`
+ * followed in Wave 2 (#2948), completing epic #2946.
  */
-export const LINT_SKILLS = ["zudo-doc-version-bump"];
+export const LINT_SKILLS = [
+  "zudo-doc-version-bump",
+  "zudo-doc-design-system",
+  "zudo-doc-translate",
+];
 
 /**
  * Monorepo-only paths/idioms that must never appear in a LINT_SKILLS
@@ -113,11 +133,16 @@ describe("claudeSkills template copies match their .claude/skills/ source (#2921
         }
       }
 
-      execFileSync(
-        "pnpm",
-        ["dlx", "@takazudo/mdx-formatter", "--write", ...files.map((f) => f.tempFile)],
-        { cwd: tempDir, encoding: "utf8" },
-      );
+      // Skip the formatter invocation entirely when PARITY_SKILLS is empty —
+      // `pnpm dlx ... --write` with no file args is pointless work and not
+      // guaranteed to be a no-op across formatter versions.
+      if (files.length > 0) {
+        execFileSync(
+          "pnpm",
+          ["dlx", "@takazudo/mdx-formatter", "--write", ...files.map((f) => f.tempFile)],
+          { cwd: tempDir, encoding: "utf8" },
+        );
+      }
 
       formatted = {};
       for (const { skill, side, tempFile } of files) {
@@ -129,12 +154,23 @@ describe("claudeSkills template copies match their .claude/skills/ source (#2921
     }
   }, 60_000);
 
-  it.each(PARITY_SKILLS)("%s template matches its monorepo source", (skill) => {
-    expect(formatted[skill]!.template).toBe(formatted[skill]!.source);
-  });
+  // Vitest errors ("No test found in suite") on a describe block that
+  // registers zero tests, which `it.each([])` would do while PARITY_SKILLS
+  // is empty — guard with a single documenting placeholder test instead of
+  // dropping the describe block (or the beforeAll formatting plumbing)
+  // entirely, so the mechanism is ready the moment a skill is added back.
+  if (PARITY_SKILLS.length === 0) {
+    it("has no skills configured (PARITY_SKILLS is empty — see its comment)", () => {
+      expect(PARITY_SKILLS).toEqual([]);
+    });
+  } else {
+    it.each(PARITY_SKILLS)("%s template matches its monorepo source", (skill) => {
+      expect(formatted[skill]!.template).toBe(formatted[skill]!.source);
+    });
+  }
 });
 
-describe("claudeSkills template copies are scaffold-correct (#2946/#2947)", () => {
+describe("claudeSkills template copies are scaffold-correct (#2946/#2947/#2948)", () => {
   it.each(LINT_SKILLS)(
     "%s template contains no monorepo-only reference",
     (skill) => {
