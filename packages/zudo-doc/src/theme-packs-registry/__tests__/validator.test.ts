@@ -237,6 +237,37 @@ describe("validateThemePack", () => {
     expect(extraFontFace.issues.some((i) => i.rule === "font-face-parity")).toBe(true);
   });
 
+  it("rejects a local @font-face source missing from fontFiles", () => {
+    const result = validateThemePack(
+      baseInput({
+        cssContent: VALID_FOUNDRY_CSS.replace("Inter-latin.woff2", "Missing.woff2"),
+      }),
+    );
+    const issue = result.issues.find((i) => i.rule === "font-file-missing");
+    expect(issue?.severity).toBe("error");
+    expect(result.valid).toBe(false);
+  });
+
+  it("accepts local @font-face sources listed in fontFiles", () => {
+    const result = validateThemePack(baseInput());
+    expect(result.issues.filter((i) => i.rule === "font-file-missing")).toEqual([]);
+  });
+
+  it("skips non-local and cache-busted @font-face sources", () => {
+    const cssContent = VALID_FOUNDRY_CSS.replace(
+      'url("./fonts/Inter-latin.woff2")',
+      [
+        'url("data:font/woff2;base64,AA==")',
+        'url("https://example.com/Inter.woff2")',
+        'url("../fonts/Inter.woff2")',
+        'url("./fonts/Inter.woff2?v=1")',
+        'url("./fonts/Inter.woff2#variation")',
+      ].join(", "),
+    );
+    const result = validateThemePack(baseInput({ cssContent, fontFiles: [] }));
+    expect(result.issues.filter((i) => i.rule === "font-file-missing")).toEqual([]);
+  });
+
   it("requires OFL.txt when font binaries ship", () => {
     const result = validateThemePack(baseInput({ fontFiles: ["Inter-latin.woff2"] }));
     expect(result.issues.some((i) => i.rule === "ofl-required")).toBe(true);
@@ -291,6 +322,14 @@ html[data-theme-pack="futura-editorial"] header[data-header] { background: var(-
       }),
     );
     expect(result.issues.some((i) => i.rule === "commercial-font-denylist")).toBe(false);
+  });
+
+  it("does NOT flag a commercial typeface mentioned only in a CSS comment", () => {
+    const result = validateThemePack(
+      baseInput({ cssContent: `/* Futura substitute: Inter */\n${VALID_FOUNDRY_CSS}` }),
+    );
+    expect(result.issues.some((i) => i.rule === "commercial-font-denylist")).toBe(false);
+    expect(result.valid).toBe(true);
   });
 
   it("rejects preview swatches that aren't plain resolved colors", () => {
