@@ -495,6 +495,17 @@ export async function scaffold(choices: UserChoices): Promise<void> {
       path.join(targetDir, "pnpm-workspace.yaml"),
       "# pnpm 11 defaults minimumReleaseAge to 1440min; its exclude matcher can't match this project's peer-nested lockfile keys (upstream pnpm bug), so disable the gate outright.\nminimumReleaseAge: 0\n",
     );
+  } else {
+    // Ancestor already has a pnpm-workspace.yaml: we deliberately do NOT write
+    // our own (it would carve this project out of the parent workspace — see
+    // above). But then pnpm applies the PARENT workspace's minimumReleaseAge
+    // (1440min by default in pnpm 11), so freshly-published @takazudo bumps
+    // still can't install for a day — the exact failure this file guards
+    // against. We can't safely edit the parent's config, so instruct the user
+    // to disable the gate there instead of silently leaving them blocked.
+    console.warn(
+      "pnpm-workspace.yaml exists in an ancestor directory — skipping the generated one to avoid nesting a second workspace. If `pnpm install` blocks freshly-published @takazudo releases, add `minimumReleaseAge: 0` to your parent pnpm-workspace.yaml.",
+    );
   }
 
   const claudeContent = generateCLAUDEFile(choices);

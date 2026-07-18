@@ -960,7 +960,7 @@ describe("scaffold — pnpm-workspace.yaml (#2923)", () => {
     expect(workspaceYaml).toContain("minimumReleaseAge: 0");
   });
 
-  it("is SKIPPED when scaffolding into an existing pnpm monorepo (never nest a workspace boundary, codex-review finding)", async () => {
+  it("is SKIPPED when scaffolding into an existing pnpm monorepo (never nest a workspace boundary, codex-review finding), and warns the user to disable the gate in the parent workspace", async () => {
     // tempDir (cwd, set up by the outer beforeEach) stands in for a parent
     // monorepo root — e.g. scaffolding into `apps/docs/` under a workspace
     // that already owns a pnpm-workspace.yaml.
@@ -968,10 +968,19 @@ describe("scaffold — pnpm-workspace.yaml (#2923)", () => {
       path.join(tempDir, "pnpm-workspace.yaml"),
       "packages:\n  - packages/*\n",
     );
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     await scaffold({ ...baseChoices, projectName: "test-nested-ws" });
     expect(
       await fs.pathExists(projectPath("test-nested-ws", "pnpm-workspace.yaml")),
     ).toBe(false);
+    // Skipping silently would leave the scaffold blocked by the parent's
+    // minimumReleaseAge default — instead the user is told to disable it there
+    // (codex-review #2920 follow-up).
+    const warned = warnSpy.mock.calls.some((c) =>
+      String(c[0]).includes("minimumReleaseAge: 0"),
+    );
+    expect(warned).toBe(true);
+    warnSpy.mockRestore();
   });
 });
 
