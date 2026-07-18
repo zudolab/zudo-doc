@@ -5,15 +5,18 @@ import { parseCliArgs } from "./args.js";
 import { collectContentFiles, getDocHistoryAsync } from "./git-history.js";
 import { getContentDirEntries } from "./shared.js";
 import { makeSemaphore, defaultGitConcurrency } from "./concurrency.js";
+import { compileExclude } from "./exclude.js";
 
 async function generate(options: {
   contentDir: string;
   locales: Array<{ key: string; dir: string }>;
   outDir: string;
   maxEntries: number;
+  exclude: string[];
 }): Promise<number> {
-  const { contentDir, locales, outDir, maxEntries } = options;
+  const { contentDir, locales, outDir, maxEntries, exclude } = options;
   const startTime = performance.now();
+  const isExcluded = compileExclude(exclude);
 
   const dirEntries = getContentDirEntries(contentDir, locales);
 
@@ -32,7 +35,7 @@ async function generate(options: {
   const tasks: Promise<void>[] = [];
 
   for (const [localeKey, dir] of dirEntries) {
-    const files = collectContentFiles(dir);
+    const files = collectContentFiles(dir).filter(({ slug }) => !isExcluded(slug));
     const label = localeKey ?? "default";
     console.log(`Processing ${label}: ${files.length} files in ${dir}`);
 

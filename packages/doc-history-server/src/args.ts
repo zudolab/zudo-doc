@@ -84,6 +84,7 @@ export interface CommonArgs {
   contentDir: string;
   locales: LocaleEntry[];
   maxEntries: number;
+  exclude: string[];
 }
 
 export interface ServerArgs extends CommonArgs {
@@ -103,7 +104,7 @@ export interface CliArgs extends CommonArgs {
   outDir: string;
 }
 
-/** Parse shared flags (--content-dir, --locale, --max-entries) */
+/** Parse shared flags (--content-dir, --locale, --max-entries, --exclude) */
 export function parseCommonArgs(
   args: string[],
   extra: {
@@ -113,6 +114,7 @@ export function parseCommonArgs(
   let contentDir = "";
   const locales: LocaleEntry[] = [];
   let maxEntries = 50;
+  const exclude: string[] = [];
 
   for (let i = 0; i < args.length; i++) {
     const flag = args[i];
@@ -125,6 +127,9 @@ export function parseCommonArgs(
         break;
       case "--locale":
         locales.push(parseLocaleArg(next()));
+        break;
+      case "--exclude":
+        exclude.push(next());
         break;
       case "--max-entries": {
         const raw = next();
@@ -152,7 +157,7 @@ export function parseCommonArgs(
     process.exit(1);
   }
 
-  return { contentDir, locales, maxEntries };
+  return { contentDir, locales, maxEntries, exclude };
 }
 
 /**
