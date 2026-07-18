@@ -514,7 +514,7 @@ export const COMPONENT_TOKENS: ComponentToken[] = [
     surface: "chrome",
     category: "typography",
     description:
-      "Font family of the navigation sidebar — covers BOTH the desktop `#desktop-sidebar` rail and the mobile drawer, so one override styles both viewports and neither drifts onto a different face. Defaults to the `--zdc-chrome-font` seam (a no-op until redefined).",
+      "Font family of the navigation sidebar — covers BOTH the desktop `#desktop-sidebar` rail and the mobile drawer, so one override styles both viewports and neither drifts onto a different face. Defaults to the `--zdc-chrome-font` seam (a no-op until redefined). Verify granular MOBILE chrome-font overrides with `zfb build`/preview, not `pnpm dev`: the current zfb dev server strips island-root `data-*` attributes, so the mobile selector silently does not match.",
   },
   {
     cssVar: "--zdc-toc-font",
@@ -525,6 +525,6 @@ export const COMPONENT_TOKENS: ComponentToken[] = [
     surface: "chrome",
     category: "typography",
     description:
-      "Font family of the table of contents — covers BOTH the desktop right rail and the mobile collapsible TOC, so one override styles both viewports. Defaults to the `--zdc-chrome-font` seam (a no-op until redefined), which also keeps the mobile TOC on the chrome font rather than the prose font of the `.zd-content` it renders inside.",
+      "Font family of the table of contents — covers BOTH the desktop right rail and the mobile collapsible TOC, so one override styles both viewports. Defaults to the `--zdc-chrome-font` seam (a no-op until redefined), which also keeps the mobile TOC on the chrome font rather than the prose font of the `.zd-content` it renders inside. Verify granular MOBILE chrome-font overrides with `zfb build`/preview, not `pnpm dev`: the current zfb dev server strips island-root `data-*` attributes, so the mobile selector silently does not match.",
   },
 ];
