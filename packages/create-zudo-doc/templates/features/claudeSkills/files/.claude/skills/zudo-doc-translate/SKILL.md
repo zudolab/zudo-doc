@@ -17,11 +17,25 @@ Translate documentation between English and Japanese following project-specific 
 
 ## i18n Structure
 
-- English docs: `src/content/docs/` — routes at `/docs/...`
-- Japanese docs: `src/content/docs-ja/` — routes at `/ja/docs/...`
+This skill only applies when this project's i18n feature is enabled. A
+non-i18n scaffold has no secondary-locale content directory (e.g. no
+`docs-ja/`) and no locale-prefixed routes — there's nothing to translate.
+Check `zfb.config.ts`'s `zudoDoc({...})` call: if it sets a non-empty
+`locales` field, i18n is on.
+
+- Default-locale docs: `src/content/docs/` — routes at `/docs/...` (the
+  default locale is never prefixed)
+- Secondary-locale docs: `src/content/docs-<locale>/` — routes at
+  `/<locale>/docs/...`. For the common preset (English default, Japanese
+  secondary) this is `src/content/docs-ja/` at `/ja/docs/...`; the rest of
+  this skill assumes that pairing, but confirm the actual locale code and
+  directory from `zfb.config.ts` if this project uses a different one
 - Directory structures must mirror each other exactly (same filenames, same folder hierarchy)
-- Locale settings: `locales` in `src/config/settings.ts`
-- zfb i18n config: `zfb.config.ts` with `prefixDefaultLocale: false` (English has no prefix, Japanese uses `/ja/`)
+- Locale configuration lives in this project's `zfb.config.ts`, inside the
+  `zudoDoc({...})` call: `defaultLocale` (the default locale code — always
+  unprefixed, no separate flag needed) and `locales` (a map of additional
+  locale code → `{ label, dir }`; each entry becomes a `/<code>/docs/...`
+  route tree)
 
 ## Translation Rules
 
@@ -30,7 +44,7 @@ Translate documentation between English and Japanese following project-specific 
 - Component names: `<Note>`, `<Tip>`, `<Info>`, `<Warning>`, `<Danger>`, `<Tabs>`, `<TabItem>`, `<Details>`
 - Code blocks — code is universal
 - File paths: `src/content/docs/...`, `.claude/skills/...`, etc.
-- CLI commands: `pnpm dev`, `pnpm build`, etc.
+- CLI commands: `<pm> run dev`, `<pm> run build`, etc. (`<pm>` = this project's package manager)
 - Technical terms that are standard in English (e.g., component, props, frontmatter, slug)
 - Frontmatter field keys (`title`, `description`, `sidebar_position`, `category`)
 

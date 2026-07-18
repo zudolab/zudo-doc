@@ -84,3 +84,24 @@ pages/index.tsx
 # are intentional and independent of the bindings channel now shared by both.
 pages/docs/[[...slug]].tsx
 pages/[locale]/docs/[[...slug]].tsx
+
+# ── .claude/skills/{zudo-doc-version-bump,zudo-doc-design-system,zudo-doc-translate}/SKILL.md ──
+# The three shipped claudeSkills template SKILL.md files were byte-mirrors of
+# the monorepo's own .claude/skills/ (the old #2921 parity story). Epic
+# zudolab/zudo-doc#2946 deliberately turned them into scaffold-authored
+# VARIANTS: they now describe a scaffold-real flow (no ./scripts/version-bump.sh,
+# no src/config/settings.ts, package-manager-neutral commands, published-doc
+# URLs instead of monorepo reference pages, feature-conditional steps) so the
+# skills work on first use in a generated project. Byte parity with the
+# monorepo source is therefore neither expected nor desired. Correctness is
+# instead guarded IN the generator's own test suite — the reworked
+# packages/create-zudo-doc/src/__tests__/claude-skills-drift.test.ts
+# (a monorepo-only-reference DENYLIST lint over all three) plus the committed
+# claude-skills-scaffold-refs.test.ts (generates real scaffolds and asserts
+# every referenced path exists). The monorepo's own .claude/skills/ sources are
+# untouched by that epic and keep their monorepo-specific flow. So this shell
+# whole-file content check must exempt the three template copies here (the
+# vitest guards, not byte-parity, are their source of truth).
+.claude/skills/zudo-doc-version-bump/SKILL.md
+.claude/skills/zudo-doc-design-system/SKILL.md
+.claude/skills/zudo-doc-translate/SKILL.md
