@@ -6,7 +6,12 @@ import { generateZfbConfig } from "./zfb-config-gen.js";
 import { generateCLAUDEFile } from "./claude-md-gen.js";
 import { composeFeatures } from "./compose.js";
 import { featureModules } from "./features/index.js";
-import { capitalize, getSecondaryLang, pmRunCommand } from "./utils.js";
+import {
+  capitalize,
+  getSecondaryLang,
+  hasAncestorPnpmWorkspace,
+  pmRunCommand,
+} from "./utils.js";
 
 export { getSecondaryLang };
 
@@ -470,6 +475,27 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     path.join(targetDir, ".npmrc"),
     "trust-policy-exclude[]=undici-types@6.21.0\n",
   );
+
+  // Emit a pnpm-workspace.yaml disabling pnpm 11's minimumReleaseAge gate.
+  // pnpm >= 11 defaults minimumReleaseAge to 1440 (1 day), which blocks
+  // `pnpm install`/CI from resolving a freshly-published @takazudo bump for
+  // a full day; the built-in minimumReleaseAgeExclude matcher can't be
+  // pointed at this project's peer-nested lockfile keys (upstream pnpm
+  // limitation), so the gate is disabled outright rather than excluded
+  // per-package. As of pnpm 11, non-auth/registry settings like this one
+  // live in pnpm-workspace.yaml, not .npmrc (.npmrc is auth/registry only).
+  // Skipped when an ANCESTOR directory already has a pnpm-workspace.yaml
+  // (e.g. scaffolding into `apps/docs/` under an existing pnpm monorepo) —
+  // pnpm resolves the nearest pnpm-workspace.yaml upward from cwd as the
+  // workspace root, so writing a new one here would carve the generated
+  // project out of the parent workspace instead of joining it. Mirrors
+  // `initGitRepo`'s "never nest" precedent (see utils.ts).
+  if (!hasAncestorPnpmWorkspace(targetDir)) {
+    await fs.outputFile(
+      path.join(targetDir, "pnpm-workspace.yaml"),
+      "# pnpm 11 defaults minimumReleaseAge to 1440min; its exclude matcher can't match this project's peer-nested lockfile keys (upstream pnpm bug), so disable the gate outright.\nminimumReleaseAge: 0\n",
+    );
+  }
 
   const claudeContent = generateCLAUDEFile(choices);
   await fs.outputFile(path.join(targetDir, "CLAUDE.md"), claudeContent);
