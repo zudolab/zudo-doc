@@ -32,6 +32,37 @@ The defaults here are the **package defaults** a fresh `create-zudo-doc` project
 
 </Info>
 
+## Home page
+
+### home
+
+Layout options for the package-owned home page. The default keeps the home
+content band at the standard no-sidebar width.
+
+Default: `{ wide: false }`
+
+Set `wide` to `true` when a larger multi-column category grid benefits from
+using most of the viewport:
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    home: { wide: true },
+  }),
+);
+```
+
+The setting applies to both `/` and locale-prefixed home pages such as `/ja`.
+It works through the package-owned routes, so the scaffolded root route stays
+the locked one-line re-export:
+
+```tsx title="pages/index.tsx"
+export { default } from "@takazudo/zudo-doc/routes/index";
+```
+
+Type: `{ wide?: boolean }` · Default: `{ wide: false }`
+
 ## Identity and URLs
 
 ### siteName

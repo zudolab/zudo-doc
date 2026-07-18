@@ -122,6 +122,18 @@ describe("zudoDoc() default-merge semantics", () => {
     const opts = routesOptions(zudoDoc({ siteName: "Custom Name" }));
     expect(opts?.settings.siteName).toBe("Custom Name");
   });
+
+  it("defaults the package-owned home layout to narrow", () => {
+    const opts = routesOptions(zudoDoc({}));
+    expect(DEFAULT_SETTINGS.home).toEqual({ wide: false });
+    expect(opts?.settings.home).toEqual({ wide: false });
+  });
+
+  it("serializes the wide home opt-in into the route settings", () => {
+    const opts = routesOptions(zudoDoc({ home: { wide: true } }));
+    expect(opts?.settings.home).toEqual({ wide: true });
+    expect(JSON.parse(JSON.stringify(opts?.settings)).home).toEqual({ wide: true });
+  });
 });
 
 // ── Serializability split (virtual-module payload carries no functions) ───────

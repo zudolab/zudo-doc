@@ -121,6 +121,21 @@ describe("createHomePageView — hero markup", () => {
 });
 
 describe("createHomePageView — SiteTreeNav island", () => {
+  it("uses the narrow content band when wide is omitted", () => {
+    const HomePageView = createHomePageView(makeFakeChromeContext());
+    const html = render(<HomePageView {...makeProps()} />);
+
+    expect(html).toContain("data-zd-nosidebar");
+    expect(html).not.toContain("data-zd-wide");
+  });
+
+  it("uses the wide content band when wide is true", () => {
+    const HomePageView = createHomePageView(makeFakeChromeContext());
+    const html = render(<HomePageView {...makeProps({ wide: true })} />);
+
+    expect(html).toContain("data-zd-wide");
+  });
+
   it("wraps SiteTreeNav in the real Island(when: idle) — same marker as before extraction", () => {
     const ctx = makeFakeChromeContext();
     const HomePageView = createHomePageView(ctx);

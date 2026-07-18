@@ -32,6 +32,37 @@ export default defineConfig(
 
 </Info>
 
+## ホームページ
+
+### home
+
+パッケージ所有のホームページに対するレイアウト設定です。デフォルトでは、
+ホームのコンテンツ帯は標準のサイドバーなし幅になります。
+
+デフォルト: `{ wide: false }`
+
+大きな複数列のカテゴリグリッドでビューポートの大部分を使いたい場合は、
+`wide` を `true` にします。
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    home: { wide: true },
+  }),
+);
+```
+
+この設定は `/` と `/ja` のようなロケール接頭辞付きホームページの両方に
+適用されます。パッケージ所有ルートを通して動作するため、スキャフォールドの
+ルートページはロックされた1行の再エクスポートのままです。
+
+```tsx title="pages/index.tsx"
+export { default } from "@takazudo/zudo-doc/routes/index";
+```
+
+型: `{ wide?: boolean }` · デフォルト: `{ wide: false }`
+
 ## アイデンティティと URL
 
 ### siteName

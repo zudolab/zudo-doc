@@ -194,6 +194,12 @@ export interface FrontmatterPreviewConfig {
   extraIgnoreKeys?: string[];
 }
 
+/** Home-page layout options used by the package-owned root and locale routes. */
+export interface HomeConfig {
+  /** Widen the home content band for larger multi-column navigation grids. */
+  wide?: boolean;
+}
+
 export type TagPlacement = "after-title" | "before-pager";
 
 export interface VersionConfig {
@@ -277,6 +283,8 @@ export interface Settings {
   siteDescription: string;
   base: string;
   trailingSlash: boolean;
+  /** Package-owned home-page layout. Narrow when omitted. */
+  home?: HomeConfig;
   /** Minify production HTML output from `zfb build`. Defaults to `true` when omitted. */
   minifyHtml?: boolean;
   docsDir: string;

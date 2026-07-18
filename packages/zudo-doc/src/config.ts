@@ -81,6 +81,7 @@ import type {
   FooterConfig,
   HeaderNavItem,
   HeaderRightItem,
+  HomeConfig,
   FrontmatterPreviewConfig,
   BodyFootUtilAreaConfig,
   HtmlPreviewConfig,
@@ -116,6 +117,7 @@ export const DEFAULT_SETTINGS: Settings = {
   siteDescription: "",
   base: "/",
   trailingSlash: false,
+  home: { wide: false },
   minifyHtml: true,
   docsDir: "src/content/docs",
   defaultLocale: "en",
@@ -216,6 +218,12 @@ export interface ZudoDocConfig {
    * @default false
    */
   trailingSlash?: boolean;
+  /**
+   * Package-owned home-page layout. Set `wide: true` to let the category grid
+   * fill most of the viewport on both `/` and locale home routes.
+   * @default { wide: false }
+   */
+  home?: HomeConfig;
   /**
    * Minify production HTML output from `zfb build`.
    * @default true
