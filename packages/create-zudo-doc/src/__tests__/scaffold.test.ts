@@ -1127,6 +1127,12 @@ describe("scaffold — bodyFootUtil auto-enables docHistory (#1795 behavior, re-
     );
     expect(config).toContain("docHistory: true");
     expect(config).toContain("bodyFootUtilArea: {");
+
+    const pkg = await fs.readJson(projectPath("test-body-foot", "package.json"));
+    expect(pkg.scripts["dev:zfb:network"]).toBe("zfb dev --host 0.0.0.0");
+    expect(pkg.scripts["dev:network"]).toBe(
+      "run-p dev:zfb:network dev:history",
+    );
   });
 });
 
@@ -1245,6 +1251,9 @@ describe("scaffold — CLAUDE.md generation", () => {
     expect(withDocHistory).toContain("run-p");
     expect(withDocHistory).toContain("pnpm dev:zfb");
     expect(withDocHistory).toContain("pnpm dev:history");
+    expect(withDocHistory).toContain("pnpm dev:network");
+    expect(withDocHistory).toContain("pnpm dev:zfb:network");
+    expect(withDocHistory).toContain("pnpm run dev:zfb -- <flags>");
 
     await scaffold(baseChoices);
     const without = await fs.readFile(
@@ -1254,6 +1263,7 @@ describe("scaffold — CLAUDE.md generation", () => {
     expect(without).not.toContain("doc-history API server");
     expect(without).not.toContain("run-p");
     expect(without).toContain("zfb dev server (port 4321)");
+    expect(without).not.toContain("dev:network");
   });
 
   it("documents the built-in MDX components the seed content uses (CategoryNav) (#2703)", async () => {
@@ -1381,6 +1391,10 @@ describe("scaffold — generated package.json", () => {
     expect(pkg.scripts["dev:history"]).toBe(
       "doc-history-server --port 4322 --content-dir src/content/docs",
     );
+    expect(pkg.scripts["dev:zfb:network"]).toBe("zfb dev --host 0.0.0.0");
+    expect(pkg.scripts["dev:network"]).toBe(
+      "run-p dev:zfb:network dev:history",
+    );
     expect(pkg.devDependencies["npm-run-all2"]).toBe("^7.0.2");
   });
 
@@ -1390,6 +1404,8 @@ describe("scaffold — generated package.json", () => {
     expect(pkg.scripts.dev).toBe("zfb dev");
     expect(pkg.scripts["dev:zfb"]).toBeUndefined();
     expect(pkg.scripts["dev:history"]).toBeUndefined();
+    expect(pkg.scripts["dev:zfb:network"]).toBeUndefined();
+    expect(pkg.scripts["dev:network"]).toBeUndefined();
     expect(pkg.devDependencies["npm-run-all2"]).toBeUndefined();
   });
 
@@ -1434,6 +1450,10 @@ describe("scaffold — generated package.json", () => {
     expect(pkg.scripts.dev).toBe("run-p dev:zfb dev:history");
     expect(pkg.scripts["dev:history"]).toBe(
       "doc-history-server --port 4322 --content-dir src/content/docs",
+    );
+    expect(pkg.scripts["dev:zfb:network"]).toBe("zfb dev --host 0.0.0.0");
+    expect(pkg.scripts["dev:network"]).toBe(
+      "run-p dev:zfb:network dev:history",
     );
     expect(pkg.devDependencies["npm-run-all2"]).toBe("^7.0.2");
   });
