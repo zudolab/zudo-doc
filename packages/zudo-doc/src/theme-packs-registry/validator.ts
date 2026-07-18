@@ -9,11 +9,11 @@
 // schema; `pack.css` presence/absence; every rule scoped under
 // `html[data-theme-pack="<slug>"]`; the known-custom-property-name manifest;
 // preview swatches are plain resolved colors; `fonts.loaded` ⇄ `@font-face`
-// parity; `OFL.txt` presence when font files ship; the commercial-typeface
-// denylist; the `!important` allowlist (the h2–h4 heading-rule
-// `border-image` carve-out); no `color-scheme:` declarations; no `[data-theme]` selectors. A
-// total-payload-size overage is a WARNING, not an error (Decision 6.7's
-// soft ~250 KB budget).
+// parity; local `@font-face` sources exist in `fonts/`; `OFL.txt` presence when
+// font files ship; the commercial-typeface denylist; the `!important`
+// allowlist (the h2–h4 heading-rule `border-image` carve-out); no
+// `color-scheme:` declarations; no `[data-theme]` selectors. A total-payload-
+// size overage is a WARNING, not an error (Decision 6.7's soft ~250 KB budget).
 
 import {
   themePackMetaSchema,
@@ -280,6 +280,34 @@ function checkFontFaceParity(
   }
 }
 
+function checkFontFileExistence(
+  cssContent: string,
+  fontFiles: string[],
+  issues: ThemePackValidationIssue[],
+): void {
+  const availableFiles = new Set(fontFiles);
+  const urlRe = /url\(\s*(?:"([^"]*)"|'([^']*)'|([^)]*))\s*\)/gi;
+
+  for (const rule of parseTopLevelRules(cssContent)) {
+    if (!isFontFaceRule(rule)) continue;
+
+    let match: RegExpExecArray | null;
+    while ((match = urlRe.exec(rule.body)) !== null) {
+      const url = (match[1] ?? match[2] ?? match[3] ?? "").trim();
+      if (!url.startsWith("./fonts/") || /[?#]/.test(url)) continue;
+
+      const basename = url.slice("./fonts/".length).split("/").pop();
+      if (!basename || availableFiles.has(basename)) continue;
+
+      issues.push({
+        rule: "font-file-missing",
+        severity: "error",
+        message: `@font-face references "${url}" but "${basename}" is not present in fonts/`,
+      });
+    }
+  }
+}
+
 function isPlainColorValue(value: string): boolean {
   const v = value.trim();
   if (/var\(|light-dark\(/i.test(v)) return false;
@@ -326,7 +354,10 @@ function checkCommercialDenylist(
   // every scoping selector, making such a pack impossible to author. Strip the
   // scoping attribute selector before scanning so the check only sees real font
   // references (@font-face src + font-family stacks + meta font names).
-  const scannedCss = (cssContent ?? "").replace(/\[data-theme-pack="[^"]*"\]/g, "");
+  const scannedCss = stripComments(cssContent ?? "").replace(
+    /\[data-theme-pack="[^"]*"\]/g,
+    "",
+  );
   const haystack = [
     scannedCss,
     meta.fonts.sans,
@@ -408,6 +439,7 @@ export function validateThemePack(input: ThemePackValidationInput): ThemePackVal
     checkImportantAllowlist(input.cssContent, issues);
     checkNoColorScheme(input.cssContent, issues);
     checkNoDataThemeSelector(input.cssContent, issues);
+    checkFontFileExistence(input.cssContent, input.fontFiles, issues);
   }
 
   if (meta) {
