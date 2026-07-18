@@ -64,6 +64,7 @@ export const DEFAULT_MIRROR: Record<string, unknown> = {
   findInPage: false,
   dynamicPageTransition: false,
   docHistory: false,
+  docHistoryExclude: [],
   bodyFootUtilArea: false,
   versions: false,
   claudeResources: false,
