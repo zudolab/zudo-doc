@@ -217,8 +217,20 @@ await createZudoDoc({
     "docHistory",
     "footerCopyright",
   ],
+  cjkFriendly: false,
+  minifyHtml: true,
+  headerRightItems: [
+    { type: "component", component: "theme-toggle" },
+    { type: "component", component: "github-link" },
+  ],
+  metaTags: {
+    description: true,
+    ogImage: "/img/ogp.png",
+  },
   packageManager: "pnpm",
   install: true,
   git: true,
 });
 ```
+
+`headerRightItems`（[Header Right Items ガイド](../guides/header-right-items.mdx)を参照）と `metaTags`（[設定](../guides/configuration.mdx#metatags)を参照）は、同名の JSON プリセットフィールドと同じ形式を受け付け、同じルールで検証されます — 未知の `headerRightItems` コンポーネント/トリガー名や不正な `metaTags` サブフィールドの型は、スキャフォールド開始前に例外をスローします。

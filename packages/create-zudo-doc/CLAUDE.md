@@ -51,7 +51,7 @@ left to inject or copy.
 | `src/constants.ts` | Feature definitions, supported langs, header-right labels, and the current Default light/dark scheme pairing |
 | `src/utils.ts` | Shared utilities (patchFile, patchDefaultLang, getSecondaryLang) |
 | `src/cli.ts` | CLI argument parsing (minimist) |
-| `src/api.ts` | Programmatic API (`createZudoDoc()`) |
+| `src/api.ts` | Programmatic API (`createZudoDoc()`). `CreateOptions` must stay in sync with `PresetJson` (`preset.ts`) — a field added to one and not the other is a type-level parity gap (#2922). Shape validation for `headerRightItems`/`metaTags` is shared via `preset.ts`'s exported `validateHeaderRightItems()`/`validateMetaTags()` — extend those, don't re-implement the allowlists here. |
 | `src/prompts.ts` | Interactive prompts (@clack/prompts) |
 | `src/index.ts` | Entry point |
 
