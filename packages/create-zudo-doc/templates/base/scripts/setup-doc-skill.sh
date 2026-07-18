@@ -74,6 +74,16 @@ fi
 # Use the main worktree path so symlinks survive worktree removal
 REPO_ROOT="$(git -C "$ROOT_DIR" worktree list | head -1 | awk '{print $1}')"
 
+# Path from the repository root to the project directory: "" at the repo
+# root, "doc/" (trailing slash) when the project lives in a subdirectory
+# (nested layout, #2918). `rev-parse --show-prefix` is relative to the
+# CURRENT worktree's top level, so combining it with REPO_ROOT (the MAIN
+# worktree root, above) reconstructs the equivalent path there even when
+# running from inside a different worktree.
+PROJECT_PREFIX="$(git -C "$ROOT_DIR" rev-parse --show-prefix)"
+REPO_DOCS_DIR="$REPO_ROOT/${PROJECT_PREFIX}src/content/docs"
+REPO_DOCS_JA_DIR="$REPO_ROOT/${PROJECT_PREFIX}src/content/docs-ja"
+
 DOCS_DIR="$ROOT_DIR/src/content/docs"
 
 # Validate docs directory exists
@@ -106,6 +116,33 @@ for dir in "$DOCS_DIR"/*/; do
   DOC_TREE="${DOC_TREE}- ${dirname}/
 "
 done
+
+# The SKILL.md "Format"/"Verify" steps must only reference commands that
+# actually exist on the running project's package.json — a fresh
+# create-zudo-doc scaffold has no format script at all, while this repo's own
+# showcase exposes `format` (there is no `format:md` script anywhere, #2918).
+# `format:md` is checked too in case a downstream project defines its own
+# script under that literal name.
+FORMAT_SCRIPT="$(node -e "
+const scripts = (require('$ROOT_DIR/package.json').scripts) || {};
+console.log(
+  scripts.format ? 'format'
+  : scripts['format:mdx'] ? 'format:mdx'
+  : scripts['format:md'] ? 'format:md'
+  : ''
+);
+")"
+if [ -n "$FORMAT_SCRIPT" ]; then
+  FORMAT_STEP="Run \`pnpm $FORMAT_SCRIPT\` to format the new/changed MDX files."
+else
+  FORMAT_STEP="No format script is configured for this project; formatting is optional."
+fi
+
+# Name the project directory explicitly so the instruction resolves correctly
+# even when the project is nested inside a larger git repo (running `pnpm
+# build` from the outer repo root would otherwise invoke the wrong
+# package.json, #2918).
+VERIFY_STEP="Run \`pnpm build\` from \`$ROOT_DIR\` to confirm the site builds correctly."
 
 resolve_targets() {
   case "$TARGET_MODE" in
@@ -145,12 +182,12 @@ generate_skill() {
 
   mkdir -p "$skill_dir"
 
-  ensure_symlink "$skill_dir/docs" "$REPO_ROOT/src/content/docs"
-  echo "  [$target] Created docs symlink -> $REPO_ROOT/src/content/docs"
+  ensure_symlink "$skill_dir/docs" "$REPO_DOCS_DIR"
+  echo "  [$target] Created docs symlink -> $REPO_DOCS_DIR"
 
   if [ "$HAS_JA" = "true" ]; then
-    ensure_symlink "$skill_dir/docs-ja" "$REPO_ROOT/src/content/docs-ja"
-    echo "  [$target] Created docs-ja symlink -> $REPO_ROOT/src/content/docs-ja"
+    ensure_symlink "$skill_dir/docs-ja" "$REPO_DOCS_JA_DIR"
+    echo "  [$target] Created docs-ja symlink -> $REPO_DOCS_JA_DIR"
   fi
 
   cat > "$skill_dir/SKILL.md" << SKILLEOF
@@ -167,7 +204,7 @@ argument-hint: "[-u|--update] [topic keyword, e.g., 'configuration', 'sidebar', 
 # $PROJECT_NAME Documentation Reference
 
 Look up documentation from the $PROJECT_NAME project for $assistant_label.
-Documentation base path: \`src/content/docs\` (relative to repo root)
+Documentation base path: \`src/content/docs\` (relative to the project root: \`$ROOT_DIR\`)
 
 ## Mode Detection
 
@@ -197,7 +234,7 @@ The user has new information and wants to add or update documentation in this re
    the topic. Read them to understand what is already covered.
 3. **Decide create vs update**: If an existing article covers the topic, update
    it. Otherwise, create a new \`.mdx\` file in the appropriate subdirectory.
-4. **Write the content**: Follow the doc-authoring rules in the root CLAUDE.md:
+4. **Write the content**: Follow the doc-authoring rules in this project's CLAUDE.md (\`$ROOT_DIR/CLAUDE.md\`):
    - Required frontmatter: \`title\` (string). Always set \`sidebar_position\`.
      Optional: \`description\`, \`sidebar_label\`, \`tags\`, etc.
    - Do NOT use \`# h1\` in content — the frontmatter \`title\` renders as h1.
@@ -210,8 +247,8 @@ The user has new information and wants to add or update documentation in this re
    \`docs-ja/\` mirroring the English directory structure. Keep code blocks,
    Mermaid diagrams, and \`<HtmlPreview>\` blocks identical — only translate
    surrounding prose. Exception: pages with \`generated: true\` skip translation.
-6. **Format**: Run \`pnpm format:md\` to format the new/changed MDX files.
-7. **Verify**: Run \`pnpm build\` to confirm the site builds correctly.
+6. **Format**: ${FORMAT_STEP}
+7. **Verify**: ${VERIFY_STEP}
 
 ## Documentation Structure
 
