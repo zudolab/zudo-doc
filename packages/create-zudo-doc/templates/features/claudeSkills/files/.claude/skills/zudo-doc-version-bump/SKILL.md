@@ -118,7 +118,13 @@ Unlike a per-version file, a scaffolded changelog is a single `index.mdx` page. 
 release as a section **above** the existing ones (newest first), using only the categories that
 have entries.
 
-### English changelog (`src/content/docs/changelog/index.mdx`)
+### Default-language changelog (`src/content/docs/changelog/index.mdx`)
+
+This is the project's PRIMARY changelog page. It was seeded in whichever language the project's
+`defaultLang` setting is, so use whichever heading set below already matches the page — don't
+assume English.
+
+**If the page uses English headings:**
 
 ```mdx
 ## {NEW_VERSION}
@@ -143,9 +149,7 @@ have entries.
 On the very first bump, the page still has the scaffold's starter `## Unreleased` section —
 replace that heading with `## {NEW_VERSION}` rather than adding a second heading.
 
-### Japanese changelog (`src/content/docs-ja/changelog/index.mdx`)
-
-Only applies when i18n is enabled (the `docs-ja` directory exists). If it doesn't, skip this file.
+**If the page uses Japanese headings:**
 
 ```mdx
 ## {NEW_VERSION}
@@ -167,7 +171,21 @@ Only applies when i18n is enabled (the `docs-ja` directory exists). If it doesn'
 - Description (commit-hash)
 ```
 
-On the first bump, replace the starter `## 未リリース` heading the same way.
+On the very first bump, the page still has the scaffold's starter `## 未リリース` section —
+replace that heading with `## {NEW_VERSION}` the same way.
+
+### Other-locale changelog
+
+Only applies when i18n is enabled — i.e. a second content directory exists alongside the primary
+one. Which locale that is depends on the project's `defaultLang`: for an English-default project
+this is the Japanese changelog at `src/content/docs-ja/changelog/index.mdx`; for a
+Japanese-default project this is the English changelog under the `docs-en` directory instead. If
+the other-locale changelog page doesn't exist, skip this file.
+
+Use the OTHER heading set from above (the one you didn't use for the default-language page —
+English primary means Japanese secondary, and vice versa), following the same "add a new
+`## {NEW_VERSION}` section above the existing ones" rule, and replace that page's own starter
+heading on the very first bump.
 
 Rules:
 

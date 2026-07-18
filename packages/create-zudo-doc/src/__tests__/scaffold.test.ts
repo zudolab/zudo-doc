@@ -708,6 +708,22 @@ describe("scaffold — changelog feature", () => {
       await fs.pathExists(projectPath("test-doc", "src/content/docs/changelog")),
     ).toBe(false);
   });
+
+  it("seeds the JA starter (## 未リリース) into the primary changelog page for a ja-default project (i18n off)", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-changelog-ja-default",
+      defaultLang: "ja",
+      features: ["changelog"],
+    });
+    const changelogPath = projectPath(
+      "test-changelog-ja-default",
+      "src/content/docs/changelog/index.mdx",
+    );
+    expect(await fs.pathExists(changelogPath)).toBe(true);
+    const content = await fs.readFile(changelogPath, "utf-8");
+    expect(content.includes("## 未リリース")).toBe(true);
+  });
 });
 
 describe("scaffold — every-feature manifest is exactly base + the documented per-feature deltas", () => {
