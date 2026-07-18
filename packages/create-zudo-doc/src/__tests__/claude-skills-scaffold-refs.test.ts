@@ -99,7 +99,11 @@ function extractReferencedPaths(markdown: string): string[] {
   // paths (`src/content/docs-v{OLD_SLUG}`) and are never the source of a
   // *documented* path claim; the prose around them (headings, sentences)
   // is what asserts a path's existence, and that prose always uses
-  // single-backtick inline spans.
+  // single-backtick inline spans. Trade-off: a dead path that appears ONLY
+  // inside a fenced code block is not checked (a real but low-risk
+  // false-negative window), and widening the scan to fenced spans would
+  // risk false positives on illustrative example paths — so the
+  // single-backtick prose spans are the intentional scan surface.
   const withoutFences = markdown.replace(/```[\s\S]*?```/g, "");
   const spans = [...withoutFences.matchAll(/`([^`\n]+)`/g)].map((m) => m[1]!);
   return [...new Set(spans.filter(looksLikeRepoPath))];
