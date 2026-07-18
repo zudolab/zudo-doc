@@ -121,9 +121,16 @@ done
 # actually exist on the running project's package.json — a fresh
 # create-zudo-doc scaffold has no format script at all, while this repo's own
 # showcase exposes `format` (there is no `format:md` script anywhere, #2918).
+# `format:md` is checked too in case a downstream project defines its own
+# script under that literal name.
 FORMAT_SCRIPT="$(node -e "
 const scripts = (require('$ROOT_DIR/package.json').scripts) || {};
-console.log(scripts.format ? 'format' : (scripts['format:mdx'] ? 'format:mdx' : ''));
+console.log(
+  scripts.format ? 'format'
+  : scripts['format:mdx'] ? 'format:mdx'
+  : scripts['format:md'] ? 'format:md'
+  : ''
+);
 ")"
 if [ -n "$FORMAT_SCRIPT" ]; then
   FORMAT_STEP="Run \`pnpm $FORMAT_SCRIPT\` to format the new/changed MDX files."
