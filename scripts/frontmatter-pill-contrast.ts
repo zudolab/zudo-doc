@@ -142,7 +142,13 @@ function resolvePackColors(
           `Pack ${pack} is missing a light-dark() --zd-${key} declaration`,
         );
       }
-      return [key, match[modeIndex].trim()];
+      const value = match[modeIndex];
+      if (!value) {
+        throw new Error(
+          `Pack ${pack} has an invalid light-dark() --zd-${key} declaration`,
+        );
+      }
+      return [key, value.trim()];
     }),
   ) as ResolvedColors;
 }
