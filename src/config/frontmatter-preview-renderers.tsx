@@ -23,11 +23,11 @@ import type { FrontmatterCellRenderer } from "@takazudo/zudo-doc/metainfo";
 type PillColor = "danger" | "success" | "warning" | "info" | "muted";
 
 const pillColorClass: Record<PillColor, string> = {
-  danger: "bg-danger text-fg",
-  success: "bg-success text-fg",
-  warning: "bg-warning text-fg",
-  info: "bg-info text-fg",
-  muted: "bg-surface text-muted border border-muted",
+  danger: "zd-fm-pill--danger",
+  success: "zd-fm-pill--success",
+  warning: "zd-fm-pill--warning",
+  info: "zd-fm-pill--info",
+  muted: "zd-fm-pill--muted",
 };
 
 function Pill({ children, color }: { children: ReactNode; color: PillColor }) {

@@ -49,6 +49,9 @@ export function generateCLAUDEFile(choices: UserChoices): string {
       `- \`${pmRunCommand(pm, "dev:network")}\` — same, but zfb binds \`--host 0.0.0.0\` for LAN access (\`${pmRunCommand(pm, "dev:zfb:network")}\` individually); the doc-history server stays loopback-only and LAN clients reach it through zfb's \`/doc-history/*\` dev proxy`,
     );
     lines.push(
+      `- **Trusted networks only:** this also serves your git doc-history — including UNPUBLISHED local commits — to anyone on the LAN via the \`/doc-history/*\` proxy`,
+    );
+    lines.push(
       `- \`run-p\` swallows trailing args, so other zfb flags don't forward through \`${pmRunCommand(pm, "dev")}\` — pass them directly instead: \`${pm} run dev:zfb -- <flags>\``,
     );
   } else {

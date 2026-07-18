@@ -73,3 +73,32 @@
 @theme {
   --color-page-loading-overlay: color-mix(in oklch, var(--color-overlay) 60%, transparent);
 }
+
+/* Showcase-only frontmatter preview pills. These explicit rules keep the
+   role-dynamic classes available even though src/config is not an @source
+   root, and mirror the package admonition's 12% semantic-color tint. */
+.zd-fm-pill--danger {
+  color: var(--color-danger);
+  background-color: color-mix(in srgb, var(--color-danger) 12%, var(--color-bg));
+}
+
+.zd-fm-pill--success {
+  color: var(--color-success);
+  background-color: color-mix(in srgb, var(--color-success) 12%, var(--color-bg));
+}
+
+.zd-fm-pill--warning {
+  color: var(--color-warning);
+  background-color: color-mix(in srgb, var(--color-warning) 12%, var(--color-bg));
+}
+
+.zd-fm-pill--info {
+  color: var(--color-info);
+  background-color: color-mix(in srgb, var(--color-info) 12%, var(--color-bg));
+}
+
+.zd-fm-pill--muted {
+  color: var(--color-muted);
+  background-color: color-mix(in srgb, var(--color-muted) 12%, var(--color-bg));
+  border: 1px solid var(--color-muted);
+}

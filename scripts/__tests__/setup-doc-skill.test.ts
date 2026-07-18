@@ -81,6 +81,23 @@ describe("setup-doc-skill.sh", () => {
     expect(skillMd).toContain("zudo-doc");
   });
 
+  it("uses the main worktree project path in generated instructions", () => {
+    runScript(TEST_SKILL_NAME, fakeHome);
+
+    const skillMd = readFileSync(
+      join(PROJECT_ROOT, ".claude", "skills", TEST_SKILL_NAME, "SKILL.md"),
+      "utf-8",
+    );
+
+    expect(skillMd).toContain(
+      `Run \`pnpm build\` from \`${MAIN_WORKTREE_ROOT}\``,
+    );
+    expect(skillMd).toContain(
+      `(relative to the project root: \`${MAIN_WORKTREE_ROOT}\`)`,
+    );
+    expect(skillMd).toContain(`${MAIN_WORKTREE_ROOT}/CLAUDE.md`);
+  });
+
   it("creates docs symlink pointing to src/content/docs", () => {
     runScript(TEST_SKILL_NAME, fakeHome);
 
