@@ -211,7 +211,7 @@
  * GENERATED:Z_INDEX block that used to live in every project's global.css is
  * now opt-in customization only, not a mandatory per-project artifact.
  * ======================================== */
-@theme {
+@theme inline {
   --z-index-content: 0;
   --z-index-local-1: 1;
   --z-index-local-2: 2;
