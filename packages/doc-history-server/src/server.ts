@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { statSync } from "node:fs";
 import { collectContentFiles, getDocHistoryAsync } from "./git-history.js";
 import { getContentDirEntries } from "./shared.js";
+import { compileExclude } from "./exclude.js";
 
 export interface ServerOptions {
   port: number;
@@ -11,6 +12,7 @@ export interface ServerOptions {
   contentDir: string;
   locales: Array<{ key: string; dir: string }>;
   maxEntries: number;
+  exclude: string[];
 }
 
 /** Interval (ms) at which the file index is refreshed to pick up new/renamed files */
@@ -70,11 +72,13 @@ function sendJson(res: ServerResponse, status: number, data: unknown, origin?: s
 /** Build a slug→filePath lookup map from content directories */
 function buildFileIndex(
   dirEntries: Array<[string | null, string]>,
+  isExcluded: (slug: string) => boolean,
 ): Map<string, { filePath: string; slug: string }> {
   const index = new Map<string, { filePath: string; slug: string }>();
   for (const [localeKey, contentDir] of dirEntries) {
     const files = collectContentFiles(contentDir);
     for (const file of files) {
+      if (isExcluded(file.slug)) continue;
       const prefixedSlug = localeKey ? `${localeKey}/${file.slug}` : file.slug;
       index.set(prefixedSlug, file);
     }
@@ -102,9 +106,10 @@ async function handleDocHistory(
 
 /** Create and start the HTTP server */
 export function startServer(options: ServerOptions): void {
-  const { port, host, contentDir, locales, maxEntries } = options;
+  const { port, host, contentDir, locales, maxEntries, exclude } = options;
   const dirEntries = getContentDirEntries(contentDir, locales);
-  let fileIndex = buildFileIndex(dirEntries);
+  const isExcluded = compileExclude(exclude);
+  let fileIndex = buildFileIndex(dirEntries, isExcluded);
   console.log(`Indexed ${fileIndex.size} documents`);
 
   // Periodically refresh file index to pick up new/renamed files during dev.
@@ -120,7 +125,7 @@ export function startServer(options: ServerOptions): void {
     try {
       const currentMtime = getContentDirsMtime(dirEntries);
       if (currentMtime === lastMtime) return; // nothing changed — skip walk
-      fileIndex = buildFileIndex(dirEntries);
+      fileIndex = buildFileIndex(dirEntries, isExcluded);
       lastMtime = currentMtime;
     } catch {
       // Ignore refresh errors — keep using the last good index

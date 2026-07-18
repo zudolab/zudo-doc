@@ -42,6 +42,7 @@ describe("parseCliArgs", () => {
       outDir: "dist/history",
       locales: [],
       maxEntries: 50,
+      exclude: [],
     });
   });
 
@@ -55,6 +56,10 @@ describe("parseCliArgs", () => {
       "ja:src/content/docs-ja",
       "--max-entries",
       "10",
+      "--exclude",
+      "drafts/**",
+      "--exclude",
+      "internal/*",
     ]);
     expect(result).toEqual({
       contentDir: expect.stringMatching(/src[\\/]content[\\/]docs$/),
@@ -63,6 +68,7 @@ describe("parseCliArgs", () => {
         { key: "ja", dir: expect.stringMatching(/src[\\/]content[\\/]docs-ja$/) },
       ],
       maxEntries: 10,
+      exclude: ["drafts/**", "internal/*"],
     });
   });
 
@@ -174,6 +180,7 @@ describe("parseServerArgs", () => {
       port: 3000,
       host: "127.0.0.1",
       allowLan: false,
+      exclude: [],
     });
   });
 
