@@ -393,6 +393,7 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     "node_modules",
     "dist",
     ".zfb",
+    ".zfb-build/",
     "",
     "# macOS",
     ".DS_Store",

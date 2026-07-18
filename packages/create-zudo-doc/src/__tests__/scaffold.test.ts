@@ -825,10 +825,18 @@ describe("scaffold — package-injected routes are never emitted as project file
 });
 
 describe("scaffold — .gitignore base blocks", () => {
-  it("always ignores node_modules, dist, .zfb, .env*, and .zudo-doc/ build artifacts", async () => {
+  it("always ignores node_modules, dist, .zfb, .zfb-build/, .env*, and .zudo-doc/ build artifacts", async () => {
     await scaffold(baseChoices);
     const gitignore = await fs.readFile(projectPath("test-doc", ".gitignore"), "utf-8");
-    for (const line of ["node_modules", "dist", ".zfb", ".env", ".wrangler/", ".zudo-doc/"]) {
+    for (const line of [
+      "node_modules",
+      "dist",
+      ".zfb",
+      ".zfb-build/",
+      ".env",
+      ".wrangler/",
+      ".zudo-doc/",
+    ]) {
       expect(gitignore).toContain(line);
     }
   });
