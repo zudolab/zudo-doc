@@ -63,6 +63,25 @@ export function colorMixSrgb(color: string, bg: string, pct: number): string {
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
+/**
+ * Simulate CSS color-mix(in srgb, ...) without quantizing the result to 8-bit
+ * hex channels. Use this when guarding the rendered CSS itself; browsers keep
+ * fractional sRGB components during interpolation.
+ */
+export function colorMixSrgbPrecise(
+  color: string,
+  bg: string,
+  pct: number,
+): string {
+  const f = parseSrgb(color);
+  const bv = parseSrgb(bg);
+  const ratio = pct / 100;
+  const r = (f.r * ratio + bv.r * (1 - ratio)) * 255;
+  const g = (f.g * ratio + bv.g * (1 - ratio)) * 255;
+  const b = (f.b * ratio + bv.b * (1 - ratio)) * 255;
+  return `rgb(${r} ${g} ${b})`;
+}
+
 // ---------------------------------------------------------------------------
 // Color resolution — delegates to the SAME `resolveRampRef` path production
 // uses (`schemeToCssPairs` in `@takazudo/zudo-doc/color-scheme-utils`), so

@@ -12,7 +12,10 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defaultColorSchemes } from "@takazudo/zudo-doc/color-schemes-defaults";
 import { schemeToCssPairs } from "@takazudo/zudo-doc/color-scheme-utils";
-import { colorMixSrgb, contrastRatio } from "../src/config/contrast-utils";
+import {
+  colorMixSrgbPrecise,
+  contrastRatio,
+} from "../src/config/contrast-utils";
 
 export const PILL_ROLES = ["danger", "success", "warning", "info", "muted"] as const;
 export type PillRole = (typeof PILL_ROLES)[number];
@@ -153,12 +156,12 @@ export function evaluateFrontmatterPillContrast(repoRoot = REPO_ROOT): PillContr
     for (const mode of ["light", "dark"] as const) {
       const colors = resolvePackColors(repoRoot, pack, mode);
       for (const role of PILL_ROLES) {
-        const foreground = colorMixSrgb(
+        const foreground = colorMixSrgbPrecise(
           colors[role],
           colors.fg,
           recipe.foregroundRolePct[role],
         );
-        const background = colorMixSrgb(
+        const background = colorMixSrgbPrecise(
           colors[role],
           colors.bg,
           recipe.backgroundRolePct,

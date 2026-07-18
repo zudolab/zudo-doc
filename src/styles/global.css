@@ -80,27 +80,27 @@
    borrows AA headroom from the theme fg while preserving role-colored fills
    (and, for muted, the raw role-colored border). */
 .zd-fm-pill--danger {
-  color: color-mix(in srgb, var(--color-danger) 90%, var(--color-fg));
+  color: color-mix(in srgb, var(--color-danger) 92%, var(--color-fg));
   background-color: color-mix(in srgb, var(--color-danger) 12%, var(--color-bg));
 }
 
 .zd-fm-pill--success {
-  color: color-mix(in srgb, var(--color-success) 90%, var(--color-fg));
+  color: color-mix(in srgb, var(--color-success) 92%, var(--color-fg));
   background-color: color-mix(in srgb, var(--color-success) 12%, var(--color-bg));
 }
 
 .zd-fm-pill--warning {
-  color: color-mix(in srgb, var(--color-warning) 90%, var(--color-fg));
+  color: color-mix(in srgb, var(--color-warning) 92%, var(--color-fg));
   background-color: color-mix(in srgb, var(--color-warning) 12%, var(--color-bg));
 }
 
 .zd-fm-pill--info {
-  color: color-mix(in srgb, var(--color-info) 90%, var(--color-fg));
+  color: color-mix(in srgb, var(--color-info) 92%, var(--color-fg));
   background-color: color-mix(in srgb, var(--color-info) 12%, var(--color-bg));
 }
 
 .zd-fm-pill--muted {
-  color: color-mix(in srgb, var(--color-muted) 30%, var(--color-fg));
+  color: color-mix(in srgb, var(--color-muted) 45%, var(--color-fg));
   background-color: color-mix(in srgb, var(--color-muted) 12%, var(--color-bg));
   border: 1px solid var(--color-muted);
 }

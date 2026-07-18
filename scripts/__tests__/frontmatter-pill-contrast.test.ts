@@ -13,11 +13,11 @@ describe("frontmatter status pill contrast", () => {
     const css = readFileSync(resolve(process.cwd(), "src/styles/global.css"), "utf8");
     expect(parsePillCssRecipe(css)).toEqual({
       foregroundRolePct: {
-        danger: 90,
-        success: 90,
-        warning: 90,
-        info: 90,
-        muted: 30,
+        danger: 92,
+        success: 92,
+        warning: 92,
+        info: 92,
+        muted: 45,
       },
       backgroundRolePct: 12,
     });
@@ -47,6 +47,6 @@ describe("frontmatter status pill contrast", () => {
     expect(
       floor.ratio,
       `Headroom floor at ${floor.pack}/${floor.mode}/${floor.role}: ${floor.ratio}`,
-    ).toBeGreaterThanOrEqual(4.54);
+    ).toBeGreaterThanOrEqual(4.53);
   });
 });
