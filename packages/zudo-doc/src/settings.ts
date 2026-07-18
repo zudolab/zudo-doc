@@ -331,6 +331,7 @@ export interface Settings {
   dynamicPageTransition: boolean;
   frontmatterPreview: FrontmatterPreviewConfig | false;
   docHistory: boolean;
+  docHistoryExclude: string[];
   bodyFootUtilArea: BodyFootUtilAreaConfig | false;
   htmlPreview: HtmlPreviewConfig | undefined;
   versions: VersionConfig[] | false;

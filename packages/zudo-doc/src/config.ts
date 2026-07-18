@@ -159,6 +159,7 @@ export const DEFAULT_SETTINGS: Settings = {
   dynamicPageTransition: false,
   frontmatterPreview: false,
   docHistory: false,
+  docHistoryExclude: [],
   bodyFootUtilArea: false,
   htmlPreview: undefined,
   versions: false,
@@ -412,6 +413,14 @@ export interface ZudoDocConfig {
    * @default false
    */
   docHistory?: boolean;
+  /**
+   * Glob patterns matched against the doc slug (path minus extension, `/index`
+   * stripped, root = `index`) that exclude matching pages from git-history
+   * capture entirely. Excluded pages have no dropdown JSON or
+   * Created/Updated/Author block; matching is locale/version-independent.
+   * @default []
+   */
+  docHistoryExclude?: string[];
   /**
    * Body-foot utility area (doc-history / view-source), or `false` to disable.
    * @default false
