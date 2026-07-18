@@ -1269,6 +1269,10 @@ describe("scaffold — CLAUDE.md generation", () => {
     expect(withDocHistory).toContain("pnpm dev:history");
     expect(withDocHistory).toContain("pnpm dev:network");
     expect(withDocHistory).toContain("pnpm dev:zfb:network");
+    expect(withDocHistory).toContain("**Trusted networks only:**");
+    expect(withDocHistory).toContain(
+      "UNPUBLISHED local commits — to anyone on the LAN via the `/doc-history/*` proxy",
+    );
     expect(withDocHistory).toContain("pnpm run dev:zfb -- <flags>");
 
     await scaffold(baseChoices);
@@ -1280,6 +1284,7 @@ describe("scaffold — CLAUDE.md generation", () => {
     expect(without).not.toContain("run-p");
     expect(without).toContain("zfb dev server (port 4321)");
     expect(without).not.toContain("dev:network");
+    expect(without).not.toContain("Trusted networks only");
   });
 
   it("documents the built-in MDX components the seed content uses (CategoryNav) (#2703)", async () => {
