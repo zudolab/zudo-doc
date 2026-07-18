@@ -1,0 +1,13 @@
+---
+title: 4.2.1
+description: 4.2.1のリリースノート。
+sidebar_position: 1060
+---
+
+リリース日: 2026-07-19
+
+### その他の変更
+
+- create-zudo-doc: 配布される `zudo-doc-version-bump` スキルのチェンジログ案内を、既定言語を考慮したものにしました。プライマリ/セカンダリのサブセクションを「既定言語」対「その他のロケール」という枠組みに整理し、EN/JA 両方の見出しセットを提示するようにしたため、プライマリのチェンジログページが `## 未リリース` で始まる `defaultLang: "ja"` のスキャフォールドでも、読者の目の前のページに合った案内が得られます (9fda96a6)
+- create-zudo-doc: 配布される `zudo-doc-design-system` スキルの Tier 1 に「Palette index convention」セクションを追加し、フロントマターが約束していた palette-index のトピックを本文のセクションと一致させました (166daedb)
+- テスト: scaffold-skill ガードの設計上のギャップを明文化し（DENYLIST は手動保守のパスイディオムガードであり、scaffold-refs 統合ガードを重複ではなく補完する）、パリティの describe ブロックのタイトルをその byte-mirror の仕組みを反映するよう変更しました (c7015fc6)

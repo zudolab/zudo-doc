@@ -4,6 +4,14 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [4.2.1] - 2026-07-19
+
+### Other Changes
+
+- create-zudo-doc: the shipped `zudo-doc-version-bump` skill's changelog guidance is now default-language-aware — its primary/secondary subsections are framed around default-language vs. other-locale and present both EN/JA heading sets, so a `defaultLang: "ja"` scaffold whose primary changelog page seeds `## 未リリース` gets guidance that matches the page in front of the reader (9fda96a6)
+- create-zudo-doc: the shipped `zudo-doc-design-system` skill gained a "Palette index convention" section under Tier 1, reconciling the frontmatter's palette-index promise with an actual body section (166daedb)
+- Tests: documented the scaffold-skill guard's by-design gaps — DENYLIST is a hand-maintained path-idiom guard that complements (not duplicates) the scaffold-refs integration guard — and retitled a stale parity describe block to reflect its byte-mirror mechanism (c7015fc6)
+
 ## [4.2.0] - 2026-07-18
 
 ### Features
