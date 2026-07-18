@@ -64,7 +64,7 @@ const FIXTURE_SRC = resolve(__dirname, "fixtures/route-injection");
  *  to exercise the locale-prefixed injected route (`/[locale]/docs/[[...slug]]`). */
 const FIXTURE_I18N_SRC = resolve(__dirname, "fixtures/route-injection-i18n");
 
-/** The locked 12-file target-manifest fixture (epic zudolab/zudo-doc#2651 Wave
+/** The locked 13-file target-manifest fixture (epic zudolab/zudo-doc#2651 Wave
  *  5, #2659) — see the "Case TM" section near the end of this file. */
 const TARGET_MANIFEST_FIXTURE_SRC = resolve(__dirname, "fixtures/target-manifest");
 
@@ -1177,15 +1177,16 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
 // ---------------------------------------------------------------------------
 // Case TM — target-manifest confirm (epic zudolab/zudo-doc#2651 Wave 5, #2659).
 //
-// The locked 12-file minimal-scaffold manifest (#2653 decision wave):
+// The locked 13-file minimal-scaffold manifest (#2653 decision wave):
 //
 //   zfb.config.ts  package.json  tsconfig.json  CLAUDE.md  .gitignore  .npmrc
+//   pnpm-workspace.yaml
 //   pages/index.tsx                       — 1-line re-export
 //   pages/docs/[[...slug]].tsx            — self-contained doc stub (REQUIRED)
 //   src/content/docs/getting-started/{index,introduction,installation}.mdx
 //   src/styles/global.css                 — ~22 ln
 //
-// committed verbatim at fixtures/target-manifest/ (12 files, guarded by the
+// committed verbatim at fixtures/target-manifest/ (13 files, guarded by the
 // "group 6" file-count test below). Built from the NPM-PACKED package (mirrors
 // Case S1's `packPackage()`/tarball-extraction flow, not the cheap workspace
 // symlink `setupFixture()` used by Cases A–DTP/HOME/B) so the confirm proof
@@ -1390,12 +1391,12 @@ function countFilesRecursive(dir: string): number {
 }
 
 // ---------------------------------------------------------------------------
-// Group 6 — fixture file count == the locked 12-file manifest.
+// Group 6 — fixture file count == the locked 13-file manifest.
 // ---------------------------------------------------------------------------
 
-describe("TM group 6: fixture file count matches the locked 12-file manifest exactly", () => {
-  it("fixtures/target-manifest/ contains exactly 12 files (guards floor creep)", () => {
-    expect(countFilesRecursive(TARGET_MANIFEST_FIXTURE_SRC)).toBe(12);
+describe("TM group 6: fixture file count matches the locked 13-file manifest exactly", () => {
+  it("fixtures/target-manifest/ contains exactly 13 files (guards floor creep)", () => {
+    expect(countFilesRecursive(TARGET_MANIFEST_FIXTURE_SRC)).toBe(13);
   });
 });
 
