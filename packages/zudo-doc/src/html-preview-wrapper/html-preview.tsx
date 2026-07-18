@@ -59,11 +59,63 @@ export interface HtmlPreviewProps {
   componentHead?: string;
   /** Per-component js for code block display (before global merge) */
   componentJs?: string;
+  /**
+   * External stylesheet URLs, emitted as `<link rel="stylesheet" href="...">`
+   * tags in the srcdoc head — injected AFTER the preflight/fullHeight styles
+   * and BEFORE {@link HtmlPreviewProps.head}/{@link HtmlPreviewProps.css}, so
+   * author styles can still override them.
+   *
+   * Per-usage only (v1) — there is no site-wide `globalConfig` equivalent.
+   *
+   * ⚠️ Loaded **client-side at view time** (a network dependency at render),
+   * not build-bundled — the preview may show unstyled content until the
+   * stylesheet(s) finish loading.
+   *
+   * @default undefined
+   */
+  externalStyles?: string[];
+  /**
+   * External script URLs, emitted as `<script src="...">` tags in the
+   * srcdoc head. Presence flips the sandbox/`syncDelay` derivation to
+   * script-allowing exactly like an inline {@link HtmlPreviewProps.js} — see
+   * {@link containsScript} / {@link resolveSandbox}.
+   *
+   * Per-usage only (v1) — there is no site-wide `globalConfig` equivalent.
+   *
+   * ⚠️ Loaded **client-side at view time** (a network dependency at render),
+   * not build-bundled.
+   *
+   * @default undefined
+   */
+  externalScripts?: string[];
+  /**
+   * When false, skips the injected Tailwind-preflight `<style>` reset.
+   * Useful when a framework loaded via {@link HtmlPreviewProps.externalStyles}
+   * or {@link HtmlPreviewProps.externalScripts} ships its own reset and would
+   * otherwise be double-applied.
+   *
+   * @default true
+   */
+  preflight?: boolean;
+  /**
+   * When true, renders {@link HtmlPreviewProps.externalStyles} and
+   * {@link HtmlPreviewProps.externalScripts} as literal `<link>`/`<script
+   * src>` lines at the top of the "HTML" code panel. Excluded by default so
+   * CDN plumbing doesn't clutter the visible lesson code.
+   *
+   * @default false
+   */
+  showResources?: boolean;
 }
 
-export function containsScript(head?: string, js?: string): boolean {
+export function containsScript(
+  head?: string,
+  js?: string,
+  externalScripts?: string[],
+): boolean {
   if (js) return true;
   if (head && /<script/i.test(head)) return true;
+  if (externalScripts && externalScripts.length > 0) return true;
   return false;
 }
 
@@ -96,9 +148,9 @@ export function resolveSandbox(
 }
 
 // Injection order contract (epic-wide): preflight -> fullHeight style ->
-// externalStyles links -> head -> author css / js. Keep the fullHeight
-// style immediately after preflight so later Wave-2 props (externalStyles,
-// etc.) can insert cleanly between it and `head` without reordering this.
+// externalStyles links -> externalScripts tags -> head -> author css / js.
+// Keep the fullHeight style immediately after preflight so `externalStyles`
+// can insert cleanly between it and `head` without reordering this.
 const fullHeightStyle = "<style>html,body{height:100%}</style>";
 
 export function buildSrcdoc(
@@ -107,14 +159,26 @@ export function buildSrcdoc(
   head?: string,
   js?: string,
   fullHeight?: boolean,
+  externalStyles?: string[],
+  externalScripts?: string[],
+  preflight?: boolean,
 ): string {
+  const includePreflight = preflight ?? true;
+  const externalStylesHtml = (externalStyles ?? [])
+    .map((href) => `<link rel="stylesheet" href="${href}">`)
+    .join("\n");
+  const externalScriptsHtml = (externalScripts ?? [])
+    .map((src) => `<script src="${src}"></script>`)
+    .join("\n");
   return `<!doctype html>
 <html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<style>${preflightCss}</style>
+${includePreflight ? `<style>${preflightCss}</style>` : ""}
 ${fullHeight ? fullHeightStyle : ""}
+${externalStylesHtml}
+${externalScriptsHtml}
 ${head ?? ""}
 ${css ? `<style>${css}</style>` : ""}
 </head>
@@ -149,18 +213,45 @@ export function HtmlPreview({
   componentCss,
   componentHead,
   componentJs,
+  externalStyles,
+  externalScripts,
+  preflight,
+  showResources,
 }: HtmlPreviewProps): VNode {
   const srcdoc = useMemo(
-    () => buildSrcdoc(html, css, head, js, fullHeight),
-    [html, css, head, js, fullHeight],
+    () =>
+      buildSrcdoc(
+        html,
+        css,
+        head,
+        js,
+        fullHeight,
+        externalStyles,
+        externalScripts,
+        preflight,
+      ),
+    [html, css, head, js, fullHeight, externalStyles, externalScripts, preflight],
   );
-  const hasScripts = containsScript(head, js);
+  const hasScripts = containsScript(head, js, externalScripts);
   const syncDelay = hasScripts ? 300 : 0;
   const sandboxValue = resolveSandbox(sandbox, hasScripts);
 
-  const codeBlocks = useMemo(
-    () => [
-      { language: "html", title: "HTML", code: dedent(html) },
+  const codeBlocks = useMemo(() => {
+    const resourceLines = showResources
+      ? [
+          ...(externalStyles ?? []).map(
+            (href) => `<link rel="stylesheet" href="${href}">`,
+          ),
+          ...(externalScripts ?? []).map(
+            (src) => `<script src="${src}"></script>`,
+          ),
+        ]
+      : [];
+    const htmlCode = resourceLines.length
+      ? `${resourceLines.join("\n")}\n\n${dedent(html)}`
+      : dedent(html);
+    return [
+      { language: "html", title: "HTML", code: htmlCode },
       ...(componentCss
         ? [{ language: "css", title: "CSS", code: dedent(componentCss) }]
         : []),
@@ -176,9 +267,16 @@ export function HtmlPreview({
             },
           ]
         : []),
-    ],
-    [html, componentCss, componentHead, componentJs],
-  );
+    ];
+  }, [
+    html,
+    componentCss,
+    componentHead,
+    componentJs,
+    showResources,
+    externalStyles,
+    externalScripts,
+  ]);
 
   return (
     <PreviewBase

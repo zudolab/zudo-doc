@@ -75,6 +75,38 @@ export interface HtmlPreviewWrapperProps {
    * `height`. See `HtmlPreviewProps.sandbox` for details.
    */
   sandbox?: string;
+
+  /**
+   * External stylesheet URLs, forwarded to `<HtmlPreview>` as-is. Per-usage
+   * only (v1) — deliberately NOT part of `HtmlPreviewGlobalConfig`, so there
+   * is no site-wide equivalent to merge. Loaded client-side at view time
+   * (a network dependency at render), not build-bundled. See
+   * `HtmlPreviewProps.externalStyles` for details.
+   */
+  externalStyles?: string[];
+  /**
+   * External script URLs, forwarded to `<HtmlPreview>` as-is. Presence
+   * flips the sandbox/`syncDelay` derivation to script-allowing exactly
+   * like `js`. Per-usage only (v1) — deliberately NOT part of
+   * `HtmlPreviewGlobalConfig`. See `HtmlPreviewProps.externalScripts` for
+   * details.
+   */
+  externalScripts?: string[];
+  /**
+   * Forwarded to `<HtmlPreview>`. When false, skips the injected preflight
+   * reset — useful when a framework loaded via `externalStyles`/
+   * `externalScripts` ships its own reset.
+   *
+   * @default true
+   */
+  preflight?: boolean;
+  /**
+   * Forwarded to `<HtmlPreview>`. When true, surfaces `externalStyles`/
+   * `externalScripts` as literal lines at the top of the "HTML" code panel.
+   *
+   * @default false
+   */
+  showResources?: boolean;
 }
 
 /**
@@ -118,6 +150,10 @@ export function HtmlPreviewWrapperInner(
     defaultOpen,
     fullHeight,
     sandbox,
+    externalStyles,
+    externalScripts,
+    preflight,
+    showResources,
   } = props;
 
   const mergedHead =
@@ -141,6 +177,10 @@ export function HtmlPreviewWrapperInner(
       componentCss={css}
       componentHead={head}
       componentJs={js}
+      externalStyles={externalStyles}
+      externalScripts={externalScripts}
+      preflight={preflight}
+      showResources={showResources}
     />
   );
 }
