@@ -40,11 +40,13 @@ beforeEach(() => {
   mocks.getAllFilesFirstLastMetaAsync.mockReset();
   projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), "zdh-prebuild-"));
   delete process.env["SKIP_DOC_HISTORY"];
+  delete process.env["DOC_HISTORY_SKIP_POSTBUILD"];
 });
 
 afterEach(() => {
   fs.rmSync(projectRoot, { recursive: true, force: true });
   delete process.env["SKIP_DOC_HISTORY"];
+  delete process.env["DOC_HISTORY_SKIP_POSTBUILD"];
 });
 
 /** Wire collectContentFiles to return `files` (rel names) under each dir. */
@@ -143,6 +145,43 @@ describe("runDocHistoryMetaStep (#2517)", () => {
     expect(readManifest()).toBe("{}\n"); // byte-exact
     expect(mocks.getAllFilesFirstLastMetaAsync).not.toHaveBeenCalled();
     expect(mocks.collectContentFiles).not.toHaveBeenCalled();
+  });
+
+  // #2927: DOC_HISTORY_SKIP_POSTBUILD only gates the postBuild hook
+  // (see should-generate-postbuild.test.ts) — this preBuild runner must
+  // ignore it entirely and still walk git for real metadata.
+  it("DOC_HISTORY_SKIP_POSTBUILD=1 does NOT short-circuit the preBuild manifest", async () => {
+    process.env["DOC_HISTORY_SKIP_POSTBUILD"] = "1";
+    const docsAbs = path.resolve(projectRoot, DOCS_DIR);
+    stubFiles({ [docsAbs]: ["intro.mdx"] });
+    mocks.getAllFilesFirstLastMetaAsync.mockResolvedValue(
+      new Map([
+        [
+          `${docsAbs}/intro.mdx`,
+          {
+            oldest: { author: "Alice", date: "2024-01-01T00:00:00Z" },
+            newest: { author: "Alice", date: "2024-01-01T00:00:00Z" },
+          },
+        ],
+      ]),
+    );
+
+    const { runDocHistoryMetaStep } = await import("../pre-build.js");
+    await runDocHistoryMetaStep({
+      projectRoot,
+      docsDir: DOCS_DIR,
+      logger: { info() {} },
+    });
+
+    expect(JSON.parse(readManifest())).toEqual({
+      intro: {
+        author: "Alice",
+        createdDate: "2024-01-01T00:00:00Z",
+        updatedDate: "2024-01-01T00:00:00Z",
+        ext: ".mdx",
+      },
+    });
+    expect(mocks.getAllFilesFirstLastMetaAsync).toHaveBeenCalledTimes(1);
   });
 
   it("emits deterministic key order: default-locale bare slugs first, then locale-prefixed", async () => {

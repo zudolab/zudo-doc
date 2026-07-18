@@ -55,7 +55,7 @@ pnpm generate -- \
 
 ## zfb integration
 
-In dev mode, the zfb plugin implemented at `packages/zudo-doc/src/plugins/internal/doc-history/index.ts` proxies `/doc-history/*` requests to this server. In build mode, preBuild produces the current metadata manifest; standard CI deliberately keeps `SKIP_DOC_HISTORY` unset so that metadata comes from the full clone. The separate `build-history` job generates per-page revision JSON in parallel. `SKIP_DOC_HISTORY=1` remains an explicit escape hatch for shallow/custom builds that cannot read Git history.
+In dev mode, the zfb plugin implemented at `packages/zudo-doc/src/plugins/internal/doc-history/index.ts` proxies `/doc-history/*` requests to this server. In build mode, preBuild produces the current metadata manifest; standard CI deliberately keeps `SKIP_DOC_HISTORY` unset so that metadata comes from the full clone. The separate `build-history` job generates per-page revision JSON in parallel by running this package's `generate` CLI directly — that CLI is unaffected by any of the env vars below and always generates when invoked. `SKIP_DOC_HISTORY=1` remains an explicit escape hatch for shallow/custom builds that cannot read Git history (blanks both the preBuild manifest and the zfb plugin's own inline postBuild step); `DOC_HISTORY_SKIP_POSTBUILD=1` skips only that inline postBuild step, leaving the preBuild manifest untouched.
 
 ## Programmatic API
 

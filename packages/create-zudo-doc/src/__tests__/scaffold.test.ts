@@ -1231,6 +1231,31 @@ describe("scaffold — CLAUDE.md generation", () => {
     expect(content).not.toContain("pnpm");
   });
 
+  it("describes the two-process dev command only when docHistory is enabled (#2926)", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-claudemd-doc-history",
+      features: ["docHistory"],
+    });
+    const withDocHistory = await fs.readFile(
+      projectPath("test-claudemd-doc-history", "CLAUDE.md"),
+      "utf-8",
+    );
+    expect(withDocHistory).toContain("doc-history API server (port 4322)");
+    expect(withDocHistory).toContain("run-p");
+    expect(withDocHistory).toContain("pnpm dev:zfb");
+    expect(withDocHistory).toContain("pnpm dev:history");
+
+    await scaffold(baseChoices);
+    const without = await fs.readFile(
+      projectPath("test-doc", "CLAUDE.md"),
+      "utf-8",
+    );
+    expect(without).not.toContain("doc-history API server");
+    expect(without).not.toContain("run-p");
+    expect(without).toContain("zfb dev server (port 4321)");
+  });
+
   it("documents the built-in MDX components the seed content uses (CategoryNav) (#2703)", async () => {
     await scaffold(baseChoices);
     const content = await fs.readFile(
@@ -1340,6 +1365,77 @@ describe("scaffold — generated package.json", () => {
     });
     const pkg = await fs.readJson(projectPath("test-history-dep", "package.json"));
     expect(pkg.dependencies["@takazudo/zudo-doc-history-server"]).toBeDefined();
+  });
+
+  it("wires a two-process dev script + pinned npm-run-all2 when docHistory is enabled (#2926)", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-history-dev-script",
+      features: ["docHistory"],
+    });
+    const pkg = await fs.readJson(
+      projectPath("test-history-dev-script", "package.json"),
+    );
+    expect(pkg.scripts.dev).toBe("run-p dev:zfb dev:history");
+    expect(pkg.scripts["dev:zfb"]).toBe("zfb dev");
+    expect(pkg.scripts["dev:history"]).toBe(
+      "doc-history-server --port 4322 --content-dir src/content/docs",
+    );
+    expect(pkg.devDependencies["npm-run-all2"]).toBe("^7.0.2");
+  });
+
+  it("does NOT add the docHistory dev scripts or npm-run-all2 when docHistory is disabled", async () => {
+    await scaffold(baseChoices);
+    const pkg = await fs.readJson(projectPath("test-doc", "package.json"));
+    expect(pkg.scripts.dev).toBe("zfb dev");
+    expect(pkg.scripts["dev:zfb"]).toBeUndefined();
+    expect(pkg.scripts["dev:history"]).toBeUndefined();
+    expect(pkg.devDependencies["npm-run-all2"]).toBeUndefined();
+  });
+
+  it("appends a derived --locale flag to dev:history when i18n is also enabled", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-history-dev-script-i18n",
+      features: ["docHistory", "i18n"],
+    });
+    const pkg = await fs.readJson(
+      projectPath("test-history-dev-script-i18n", "package.json"),
+    );
+    expect(pkg.scripts["dev:history"]).toBe(
+      "doc-history-server --port 4322 --content-dir src/content/docs --locale ja:src/content/docs-ja",
+    );
+  });
+
+  it("derives the --locale flag from the secondary lang for a ja-default project (secondary is en, never hardcoded ja)", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-history-dev-script-ja-default",
+      defaultLang: "ja",
+      features: ["docHistory", "i18n"],
+    });
+    const pkg = await fs.readJson(
+      projectPath("test-history-dev-script-ja-default", "package.json"),
+    );
+    expect(pkg.scripts["dev:history"]).toBe(
+      "doc-history-server --port 4322 --content-dir src/content/docs --locale en:src/content/docs-en",
+    );
+  });
+
+  it("gives a bodyFootUtil-only project (which auto-enables docHistory) the docHistory dev scripts too", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-body-foot-dev-script",
+      features: ["bodyFootUtil"],
+    });
+    const pkg = await fs.readJson(
+      projectPath("test-body-foot-dev-script", "package.json"),
+    );
+    expect(pkg.scripts.dev).toBe("run-p dev:zfb dev:history");
+    expect(pkg.scripts["dev:history"]).toBe(
+      "doc-history-server --port 4322 --content-dir src/content/docs",
+    );
+    expect(pkg.devDependencies["npm-run-all2"]).toBe("^7.0.2");
   });
 
   it("adds package-owned tags:audit/tags:suggest scripts without project-side tooling deps", async () => {

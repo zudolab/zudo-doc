@@ -134,6 +134,8 @@ GEN_DOC_HISTORY=1 pnpm build
 
 これは、ローカルでビルドした`dist/`をプレビューする場合や、オフラインリーダーをバンドルする場合に役立ちます。詳細は[デプロイガイド](./deployment.mdx)を参照してください。
 
+逆に、作成日・更新日・著者のメタデータは維持しつつ、このpostBuildステップだけを明示的にスキップしたいシャロークローンのCIバリアントでは、`SKIP_DOC_HISTORY=1`の代わりに`DOC_HISTORY_SKIP_POSTBUILD=1`を設定できます — デプロイガイドの決定表を参照してください。
+
 </Note>
 
 出力構造はコンテンツディレクトリをミラーします：
@@ -149,7 +151,7 @@ dist/doc-history/
 
 ### 開発モード
 
-開発モード（`pnpm dev`）では、doc-history-serverがポート4322でスタンドアロンREST APIサーバーとして実行され、`run-p`を使用してzfb開発サーバーと同時に起動されます。doc-historyのzfbプラグインの`devMiddleware`フックがブラウザからの`/doc-history/*`リクエストをこのサーバーにプロキシします。
+開発モードでは、doc-history-serverがポート4322でスタンドアロンREST APIサーバーとして実行され、zfb開発サーバーと同時に起動されます。これは既存プロジェクトで`docHistory: true`を設定するだけで自動的に得られるものではありません — `docHistory`を選択した新規`create-zudo-doc` scaffoldは、`dev`スクリプトとして`run-p dev:zfb dev:history`（`zfb dev`とインストール済みの`doc-history-server`バイナリを同時に実行）を生成します。これは、単純な`zfb dev`だけではポート4322のサーバーが起動しないためです。doc-historyのzfbプラグインの`devMiddleware`フックがブラウザからの`/doc-history/*`リクエストをこのサーバーにプロキシします。
 
 履歴パネルを開くと、その場でgitコマンドが実行されます -- 事前生成は不要です。サーバーのファイルインデックスは10秒ごとにリフレッシュされるため、新しいファイルやリネームされたファイルが自動的に検出されます。これにより、履歴は最新のコミットと常に同期されます。
 
