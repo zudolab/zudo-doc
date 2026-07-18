@@ -272,6 +272,7 @@ describe("Settings public field set snapshot", () => {
         "dynamicPageTransition",
         "frontmatterPreview",
         "docHistory",
+        "docHistoryExclude",
         "bodyFootUtilArea",
         "htmlPreview",
         "versions",
