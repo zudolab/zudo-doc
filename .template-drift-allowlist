@@ -21,19 +21,21 @@
 # The template ships a fixed ~29-line @import chain (Tailwind preflight +
 # utilities, the five @takazudo/zudo-doc/*.css artifacts, three @source scan
 # roots, and an empty @theme token-override slot) — see #2655/#2660. The
-# showcase's own global.css additionally declares ~300 lines of its OWN
-# @theme token block (the full three-tier color/spacing/typography system
-# documented in src/CLAUDE.md) plus extra @source roots for
+# showcase now shares the template's package-theme contract by importing both
+# `@takazudo/zudo-doc/theme.css` and `@takazudo/zudo-doc/safelist.css`. Its
+# remaining intentional differences are extra @source roots for
 # packages/zudo-doc/**, packages/create-zudo-doc/templates/**, src/hooks/**,
-# src/utils/** (paths the minimal template's own scan roots don't need to
-# cover) and several project-specific base-style rules (find-in-page/search
-# highlight colors, version-switcher responsive visibility). Byte parity is
-# neither expected nor desired; the separate, unconditional
-# check_global_css_legacy_tokens() guard in scripts/check-template-drift.sh
+# and src/utils/** (paths the minimal template's own scan roots don't need),
+# an unconditional `@takazudo/zdtp/styles.css` import because the showcase
+# always enables the design token panel, and the single
+# `--color-page-loading-overlay` token in a trailing @theme override block.
+# Byte parity is therefore neither expected nor desired; the separate,
+# unconditional check_global_css_legacy_tokens() guard in
+# scripts/check-template-drift.sh
 # (#2621, rewritten for the minimal form by #2663) still catches the drift
 # classes that matter: a legacy pre-ramp-restructure token reference, or the
-# template losing its `@import "@takazudo/zudo-doc/theme.css"` default
-# token-set import.
+# loss of the `@import "@takazudo/zudo-doc/theme.css"` default token-set
+# import.
 src/styles/global.css
 
 # ── tsconfig.json ───────────────────────────────────────────────────────────
