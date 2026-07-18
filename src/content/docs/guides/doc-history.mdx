@@ -149,7 +149,7 @@ dist/doc-history/
 
 ### Dev Mode
 
-In dev mode (`pnpm dev`), the doc-history-server runs as a standalone REST API server on port 4322, launched concurrently with the zfb dev server via `run-p`. The doc-history zfb plugin's `devMiddleware` hook proxies `/doc-history/*` requests from the browser to this server.
+In dev mode, the doc-history-server runs as a standalone REST API server on port 4322, launched concurrently with the zfb dev server. This is not automatic just from setting `docHistory: true` in an existing project — a fresh `create-zudo-doc` scaffold with `docHistory` selected emits a `dev` script of `run-p dev:zfb dev:history` (running `zfb dev` and the installed `doc-history-server` bin concurrently) specifically because a plain `zfb dev` never starts the :4322 server on its own. The doc-history zfb plugin's `devMiddleware` hook proxies `/doc-history/*` requests from the browser to this server.
 
 When you open the history panel, it runs git commands on the fly -- no pre-generation needed. The server's file index refreshes every 10 seconds, so new or renamed files are picked up automatically. This means history is always up-to-date with your latest commits.
 
