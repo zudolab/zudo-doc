@@ -7,6 +7,7 @@ const ISLAND_SELECTOR = '[data-zfb-island="HtmlPreviewWrapperInner"]';
 const DESKTOP_TOGGLE_SELECTOR =
   'header .ml-auto button[aria-label*="Switch to"]';
 const PANEL_TRIGGER = "#design-token-trigger";
+const PANEL_SHELL = ".tokenpanel-shell";
 
 type PreviewGuard = {
   pre: HTMLPreElement;
@@ -189,7 +190,11 @@ test.describe("HtmlPreview semantic syntax tokens", () => {
       hasText: "Syntax Token Preview",
     });
     await island.scrollIntoViewIfNeeded();
-    const sourceToggle = island.getByRole("button", { name: "Show code" });
+    // The accessible name changes to "Hide code" after the first successful
+    // click. Keep a stable locator while polling through the island hydration
+    // boundary, otherwise the name-based locator stops matching precisely when
+    // the expected state is reached.
+    const sourceToggle = island.locator("button[aria-expanded]");
     await expect
       .poll(
         async () => {
@@ -228,6 +233,8 @@ test.describe("HtmlPreview semantic syntax tokens", () => {
     expect(resourceRequests).toHaveLength(resourceRequestCount);
 
     await page.locator(PANEL_TRIGGER).click();
+    await expect(page.locator(PANEL_SHELL)).toBeVisible();
+    await page.getByRole("tab", { name: "Color", exact: true }).click();
     const keywordSelect = page
       .getByTestId("tokenpanel-semantic-ref-syntaxKeyword")
       .getByLabel("--zd-syntax-keyword tier reference", { exact: true });
