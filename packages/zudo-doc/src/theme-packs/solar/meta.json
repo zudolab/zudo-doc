@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "slug": "solar",
+  "name": "Solar",
+  "description": "Solarized precision — low-eyestrain paper tones, blue/cyan/orange accents, mono labels, technical calm in both modes.",
+  "mode": "light",
+  "version": "1.0.1",
+  "fonts": {
+    "sans": "Source Sans 3",
+    "mono": "Source Code Pro",
+    "loaded": ["Source Sans 3", "Source Code Pro"]
+  },
+  "preview": {
+    "light": {
+      "bg": "#fdf6e3",
+      "fg": "#4f6369",
+      "accent": "#1c6a9f",
+      "syntax": {
+        "keyword": "#606f00",
+        "string": "#12746c",
+        "comment": "#586b72",
+        "callable": "#1d6da3"
+      }
+    },
+    "dark": {
+      "bg": "#002b36",
+      "fg": "#93a1a1",
+      "accent": "#53a6df",
+      "syntax": {
+        "keyword": "#8ea300",
+        "string": "#2caaa0",
+        "comment": "#899da4",
+        "callable": "#49a0dd"
+      }
+    }
+  }
+}

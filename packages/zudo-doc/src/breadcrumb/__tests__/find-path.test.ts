@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { findPath } from "../find-path.js";
-import type { SidebarNode } from "../types.js";
+import type { BreadcrumbNode } from "../types.js";
 
-const tree: SidebarNode[] = [
+const tree: BreadcrumbNode[] = [
   {
     type: "doc",
     id: "intro",

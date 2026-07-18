@@ -6,7 +6,7 @@ import { capitalize, pmRunCommand } from "./utils.js";
  * zudolab/zudo-doc#2651, Wave 6 #2660). Rewritten from scratch — the old
  * generator described a 64-file project (`src/components/admonitions/`,
  * `src/layouts/`, `src/utils/`, per-page `pages/lib/*` wiring) that no
- * longer exists. The scaffolded project is now ~12 files; almost
+ * longer exists. The scaffolded project is now ~13 files; almost
  * everything referenced here lives in `node_modules/@takazudo/zudo-doc`.
  */
 export function generateCLAUDEFile(choices: UserChoices): string {
@@ -30,7 +30,7 @@ export function generateCLAUDEFile(choices: UserChoices): string {
     `- **Preact** — for interactive islands only (with compat mode for React API)`,
   );
   lines.push(
-    `- **syntect** — built-in code highlighting, run by zfb's Rust pipeline at build time (dual light/dark theme, follows the site's color-mode toggle)`,
+    `- **Shiki** — package-owned code highlighting with the configured light/dark theme pair`,
   );
   lines.push(
     `- **@takazudo/zudo-doc** — the package that owns everything: layout, chrome, islands, default \`@theme\` design tokens, and (via \`packageOwnedRoutes\`, on by default) the doc routes themselves`,
@@ -41,7 +41,22 @@ export function generateCLAUDEFile(choices: UserChoices): string {
   lines.push(`## Commands`);
   lines.push(``);
   const pm = choices.packageManager;
-  lines.push(`- \`${pmRunCommand(pm, "dev")}\` — zfb dev server (port 4321)`);
+  if (choices.features.includes("docHistory")) {
+    lines.push(
+      `- \`${pmRunCommand(pm, "dev")}\` — runs the zfb dev server (port 4321) and the doc-history API server (port 4322) concurrently via \`run-p\` (\`${pmRunCommand(pm, "dev:zfb")}\` / \`${pmRunCommand(pm, "dev:history")}\` individually)`,
+    );
+    lines.push(
+      `- \`${pmRunCommand(pm, "dev:network")}\` — same, but zfb binds \`--host 0.0.0.0\` for LAN access (\`${pmRunCommand(pm, "dev:zfb:network")}\` individually); the doc-history server stays loopback-only and LAN clients reach it through zfb's \`/doc-history/*\` dev proxy`,
+    );
+    lines.push(
+      `- **Trusted networks only:** this also serves your git doc-history — including UNPUBLISHED local commits — to anyone on the LAN via the \`/doc-history/*\` proxy`,
+    );
+    lines.push(
+      `- \`run-p\` swallows trailing args, so other zfb flags don't forward through \`${pmRunCommand(pm, "dev")}\` — pass them directly instead: \`${pm} run dev:zfb -- <flags>\``,
+    );
+  } else {
+    lines.push(`- \`${pmRunCommand(pm, "dev")}\` — zfb dev server (port 4321)`);
+  }
   lines.push(`- \`${pmRunCommand(pm, "build")}\` — static HTML export to \`dist/\``);
   lines.push(`- \`${pmRunCommand(pm, "check")}\` — TypeScript type checking`);
   lines.push(`- \`${pmRunCommand(pm, "preview")}\` — serve the built \`dist/\``);
@@ -59,6 +74,7 @@ export function generateCLAUDEFile(choices: UserChoices): string {
     lines.push(`  [locale]/docs/[[...slug]].tsx  # same, for non-default locales`);
   }
   lines.push(`src/`);
+  lines.push(`├── chrome-bindings.tsx   # optional typed primary chrome / named header / MDX bindings`);
   lines.push(`├── content/`);
   lines.push(`│   └── docs/             # MDX content (this project's showcase docs)`);
 
@@ -74,7 +90,7 @@ export function generateCLAUDEFile(choices: UserChoices): string {
   lines.push("```");
   lines.push(``);
   lines.push(
-    `Everything else — layout, header, sidebar, footer, doc chrome, islands, and the default design tokens — lives in \`node_modules/@takazudo/zudo-doc\`. To customize a specific piece, use the eject CLI: \`npx zudo-doc eject <component>\` copies one package component into this project so you can edit it (see \`@takazudo/zudo-doc\`'s eject-contract docs). Settings you didn't set explicitly in \`zfb.config.ts\` use the package's documented defaults — hover \`zudoDoc\`'s \`ZudoDocConfig\` argument in your editor to see every field and its \`@default\`.`,
+    `Everything else — layout, header, sidebar, footer, doc chrome, islands, and the default design tokens — lives in \`node_modules/@takazudo/zudo-doc\`. For supported markup replacement, create \`src/chrome-bindings.tsx\` with \`defineChromeBindings\`, set \`chromeBindingsModule\`, and use the primary \`Header\` / \`Footer\` / \`Sidebar\` / \`Toc\` / \`Breadcrumb\` / \`DocPager\` slots or the named \`headerRightComponents\` registry. The generated default, locale, and doc-history route shapes already consume the same binding object; do not fork a route stub for presentational customization. \`npx zudo-doc eject <component>\` only copies source: heed its primary, nested-chrome, or content-layer remediation before expecting the copy to render. Settings you didn't set explicitly in \`zfb.config.ts\` use the package's documented defaults — hover \`zudoDoc\`'s \`ZudoDocConfig\` argument in your editor to see every field and its \`@default\`.`,
   );
   lines.push(``);
 

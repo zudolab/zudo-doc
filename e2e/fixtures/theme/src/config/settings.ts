@@ -19,9 +19,11 @@ const syntaxVariation = {
     selectionFg: defaultDark.map.selectionFg,
     semantic: {
       ...defaultDark.map.semantic,
-      // No explicit map.syntax: syntaxKeyword must inherit this named
-      // variation's accent reference through the public alias contract.
       accent: { state: "info" },
+    },
+    syntax: {
+      ...defaultDark.map.syntax,
+      syntaxKeyword: { state: "info" },
     },
   },
 } satisfies ColorScheme;
@@ -65,14 +67,50 @@ export const settings = {
   changelogs: false as ChangelogConfig[] | false,
   math: false,
   designTokenPanel: true as boolean,
+  // Enabled so e2e/theme-pack-switcher*.spec.ts and
+  // e2e/theme-pack-zdtp-interplay.spec.ts have the flyout to drive
+  // (epic Theme Core #2812, #2826). themePack stays explicit at its own
+  // default for fixture/showcase drift-diff clarity.
+  themePack: "default" as string,
+  themePackSwitcher: true as boolean,
+  // Pin the switcher's Prev/Next cycle order explicitly (resolveEnabledPacks
+  // treats an explicit themePacks array as authoritative and preserves its
+  // order). This keeps the switcher-mechanics specs deterministic and stable
+  // as batches add packs: "foundry" is held SECOND so the specs' `default →
+  // Next → foundry → Prev → default` assertions never churn. Production leaves
+  // themePacks undefined (default-first, then alphabetical — unit-tested in
+  // load-registry.test.ts); this pin is a fixture-only cycle-order convenience.
+  themePacks: [
+    "default",
+    "foundry",
+    "broadsheet",
+    "ledger",
+    "manuscript",
+    "swissgrid",
+    "futura-editorial",
+    "hearth",
+    "matcha",
+    "sumi",
+    "washi",
+    "drift",
+    "fjord",
+    "hollow",
+    "nocturne",
+    "onyx",
+    "beacon",
+    "brutalist",
+    "observatory",
+    "phosphor",
+    "solar",
+  ] as string[],
   findInPage: false as boolean,
   dynamicPageTransition: true as boolean,
   docHistory: false,
+  docHistoryExclude: [],
   claudeResources: false as { claudeDir: string; projectRoot?: string; scanRoot?: string } | false,
   defaultLocaleOnlyPrefixes: [] as string[],
   tocMinDepth: 2 as number,
   tocMaxDepth: 4 as number,
-  headingIdStrategy: "hierarchical" as "flat" | "hierarchical",
   headerNav: [
     {
       label: "Getting Started",

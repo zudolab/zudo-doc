@@ -51,7 +51,7 @@ export function Footer({ copyright }: Props) {
 
 ### クライアントでハイドレートされるアイランド
 
-インタラクティブなモジュールは `"use client"` で始め、ホストが `@takazudo/zfb` の `Island()` でコンポーネントをラップします。`Island({ when, children })` はハイドレーションを始めるタイミング（`"load"`、`"idle"`、`"visible"`）を選び、必要なら `ssrFallback` でサーバーレンダリング時のマークアップを提供します。パッケージの `packages/zudo-doc/src/header-with-defaults/index.tsx` は、既存の `SidebarToggle` アイランドにこの呼び出し形式を使っています。必須の静的インポート経路と実験的なスキャナーの制約については、完全な[インタラクティブアイランドのレシピ](../guides/custom-components.mdx#インタラクティブアイランド実験的)に従ってください。
+インタラクティブなモジュールは `"use client"` で始め、ホストが `@takazudo/zfb` の `Island()` でコンポーネントをラップします。`Island({ when, children })` はハイドレーションを始めるタイミング（`"load"`、`"idle"`、`"visible"`）を選び、必要なら `ssrFallback` でサーバーレンダリング時のマークアップを提供します。パッケージの `packages/zudo-doc/src/header-with-defaults/index.tsx` は、既存の `SidebarToggle` アイランドにこの呼び出し形式を使っています。必須の静的インポート経路と実験的なスキャナーの制約については、完全な[インタラクティブアイランドのレシピ](../guides/custom-components.mdx#インタラクティブアイランド（実験的）)に従ってください。
 
 ```tsx
 import { Island } from "@takazudo/zfb";

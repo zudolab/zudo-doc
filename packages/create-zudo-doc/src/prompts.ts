@@ -1,5 +1,5 @@
 import * as p from "@clack/prompts";
-import { SINGLE_SCHEMES, FEATURES, SUPPORTED_LANGS } from "./constants.js";
+import { SINGLE_SCHEMES, FEATURES, SUPPORTED_LANGS, THEME_PACKS } from "./constants.js";
 import type { PresetHeaderRightItem, PresetMetaTagsConfig } from "./preset.js";
 import { validateProjectName } from "./utils.js";
 
@@ -14,6 +14,8 @@ export interface UserChoices {
   darkScheme?: string;
   respectPrefersColorScheme?: boolean;
   defaultMode?: "light" | "dark";
+  // Theme pack slug (ADR #2818 Decision 7). "default" = the stock look.
+  themePack?: string;
   // Features
   features: string[];
   // Feature values explicitly disabled via --no-<flag> on the CLI. Used to
@@ -27,17 +29,16 @@ export interface UserChoices {
   // Preset-only for now — no interactive prompt.
   cjkFriendly?: boolean;
   // Minify production HTML output. Preset-only for now; generated projects
-  // default to true and can flip src/config/settings.ts later.
+  // default to true and can override it in zfb.config.ts later.
   minifyHtml?: boolean;
   // Package manager
   packageManager: "pnpm" | "npm" | "yarn" | "bun";
   // Header-right items override. Preset-only — no interactive prompt because
   // the array-of-discriminated-union shape does not fit `--flag` style prompts
-  // or CLI args. When omitted, settings-gen.ts emits the existing hardcoded
-  // fallback.
+  // or CLI args. When omitted, zfb-config-gen.ts keeps the package default.
   headerRightItems?: PresetHeaderRightItem[];
   // Meta tags config. Preset-only — no interactive prompt.
-  // When omitted, settings-gen.ts emits the S4 scaffold defaults.
+  // When omitted, zfb-config-gen.ts keeps the package defaults.
   metaTags?: PresetMetaTagsConfig;
 }
 
@@ -50,6 +51,7 @@ export interface PartialChoices {
   darkScheme?: string;
   respectPrefersColorScheme?: boolean;
   defaultMode?: "light" | "dark";
+  themePack?: string;
   features?: Partial<Record<string, boolean>>;
   // Feature values explicitly disabled via --no-<flag> on the CLI. Threaded
   // through to UserChoices so scaffold.ts can warn on forced auto-enables.
@@ -183,6 +185,25 @@ export async function runPrompts(
     }
   }
 
+  // 3.5 Theme pack (ADR #2818 Decision 7) — placed between the color-scheme
+  // block above and the features multiselect below (locked spec, #2823).
+  let themePack: string;
+  if (prefilled.themePack) {
+    themePack = prefilled.themePack;
+  } else {
+    const result = await p.select({
+      message: "Theme pack:",
+      options: THEME_PACKS.map((t) => ({
+        value: t.slug,
+        label: t.label,
+        hint: t.hint,
+      })),
+      initialValue: "default",
+    });
+    if (p.isCancel(result)) process.exit(0);
+    themePack = result;
+  }
+
   // 4. Features
   let features: string[];
   if (prefilled.features) {
@@ -252,6 +273,7 @@ export async function runPrompts(
     darkScheme,
     respectPrefersColorScheme,
     defaultMode,
+    themePack,
     features,
     explicitlyDisabledFeatures: prefilled.explicitlyDisabledFeatures,
     githubUrl,

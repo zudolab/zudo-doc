@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "slug": "washi",
+  "name": "Washi",
+  "description": "Warm washi paper, sumi ink, and ai-iro indigo seals — quiet Japanese stationery for calm documentation.",
+  "mode": "light",
+  "version": "1.0.1",
+  "fonts": {
+    "sans": "Zen Kaku Gothic New",
+    "mono": "M PLUS 1 Code",
+    "display": "Shippori Mincho",
+    "loaded": ["Zen Kaku Gothic New", "Shippori Mincho", "M PLUS 1 Code"]
+  },
+  "preview": {
+    "light": {
+      "bg": "#f6f1e4",
+      "fg": "#2b2822",
+      "accent": "#274a78",
+      "syntax": {
+        "keyword": "#274a78",
+        "string": "#41653a",
+        "comment": "#6f6654",
+        "callable": "#963f34"
+      }
+    },
+    "dark": {
+      "bg": "#1b212c",
+      "fg": "#eae3d2",
+      "accent": "#8ab0dd",
+      "syntax": {
+        "keyword": "#97b9e6",
+        "string": "#a9cb90",
+        "comment": "#8894a4",
+        "callable": "#e0a49a"
+      }
+    }
+  }
+}

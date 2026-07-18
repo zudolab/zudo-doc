@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "slug": "ledger",
+  "name": "Ledger",
+  "description": "Cream academic serif in the Tufte tradition — warm paper, ink prose, oxblood links, hairline rules, quiet code.",
+  "mode": "light",
+  "version": "1.0.1",
+  "fonts": {
+    "sans": "Crimson Pro",
+    "mono": "IBM Plex Mono",
+    "loaded": ["Crimson Pro", "IBM Plex Mono"]
+  },
+  "preview": {
+    "light": {
+      "bg": "#fffff8",
+      "fg": "#16130e",
+      "accent": "#8b1a1a",
+      "syntax": {
+        "keyword": "#8b1a1a",
+        "string": "#4e6328",
+        "comment": "#766b5c",
+        "callable": "#33586e"
+      }
+    },
+    "dark": {
+      "bg": "#191510",
+      "fg": "#e9e2d0",
+      "accent": "#d68a75",
+      "syntax": {
+        "keyword": "#e2907c",
+        "string": "#a8b47c",
+        "comment": "#948a77",
+        "callable": "#93b4cd"
+      }
+    }
+  }
+}

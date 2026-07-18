@@ -17,8 +17,7 @@
 import type { ComponentChildren, JSX, VNode } from "preact";
 import { Island } from "@takazudo/zfb";
 import { DocLayoutWithDefaults } from "../doclayout/index.js";
-import { Toc, MobileToc, getTocTitle } from "../toc/index.js";
-import { Breadcrumb } from "../breadcrumb/index.js";
+import { MobileToc, getTocTitle } from "../toc/index.js";
 import { NavCardGrid } from "../nav-indexing/index.js";
 import type { VersionBannerLabels } from "../i18n-version/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
@@ -28,12 +27,10 @@ import {
   createSidebarVisibilityPrepaint,
 } from "../sidebar-prepaint/index.js";
 import { createHeadWithDefaults } from "../head-with-defaults/index.js";
-import { createSidebarWithDefaults } from "../sidebar-with-defaults/index.js";
-import { createHeaderWithDefaults } from "../header-with-defaults/index.js";
-import { createFooterWithDefaults } from "../footer-with-defaults/index.js";
+import { resolveThemePackSsrSlug } from "../theme/theme-pack-provider.js";
 import { createDocBodyEnd } from "../doc-body-end/index.js";
-import { createDocPager } from "../doc-pager/index.js";
 import { deriveComposeMetaTitle } from "../chrome/derive.js";
+import { derivePrimaryChromeSlots } from "../chrome/primary-slots.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 
 /** A heading item for the TOC. */
@@ -186,9 +183,15 @@ export function createDocPageShell<S extends Settings = Settings>(
   const settings = ctx.settings as unknown as DocPageShellSettings;
   const composeMetaTitle = deriveComposeMetaTitle(ctx);
   const HeadWithDefaults = createHeadWithDefaults(ctx);
-  const SidebarWithDefaults = createSidebarWithDefaults(ctx);
-  const HeaderWithDefaults = createHeaderWithDefaults(ctx);
-  const FooterWithDefaults = createFooterWithDefaults(ctx);
+  const {
+    Header: HeaderWithDefaults,
+    Footer: FooterWithDefaults,
+    Sidebar: SidebarWithDefaults,
+    Toc,
+    Breadcrumb,
+    DocPager,
+  } = derivePrimaryChromeSlots(ctx);
+  const customTocIsPresent = ctx.hostBindings.Toc !== undefined;
   const sidebarToggleEnabled = Boolean(
     (ctx.settings as { sidebarToggle?: boolean }).sidebarToggle,
   );
@@ -201,8 +204,13 @@ export function createDocPageShell<S extends Settings = Settings>(
     sidebarToggle: sidebarToggleEnabled,
   });
   const DocBodyEnd = createDocBodyEnd(ctx);
-  const DocPager = createDocPager(ctx);
-
+  // SSR `data-theme-pack` html attribute — the CONFIGURED pack slug
+  // (build-static; `undefined` keeps the attribute off when the theme-pack
+  // registry was not threaded). ADR theme-packs.md Decision 3, #2822.
+  const dataThemePack = resolveThemePackSsrSlug(
+    ctx.themePackRegistry,
+    ctx.settings as { themePack?: string },
+  );
   /**
    * Render shell shared by all 4 doc-route page components.
    */
@@ -242,11 +250,17 @@ export function createDocPageShell<S extends Settings = Settings>(
     // falls back to the package default with a different title.
     const tocTitle = getTocTitle(locale);
     const shouldRenderToc = !hideToc && headings.length > 0;
+    // A host Toc delivered through chromeBindingsModule is an
+    // SSR-presentational callable: the virtual module is intentionally outside
+    // zfb's island scanner graph. Only the statically imported package default
+    // receives an Island hydration wrapper.
     const tocOverride = shouldRenderToc
-      ? (Island({
-          when: "load",
-          children: <Toc headings={headings} title={tocTitle} />,
-        }) as unknown as VNode)
+      ? customTocIsPresent
+        ? <Toc headings={headings} title={tocTitle} />
+        : (Island({
+            when: "load",
+            children: <Toc headings={headings} title={tocTitle} />,
+          }) as unknown as VNode)
       : undefined;
     const mobileTocOverride = shouldRenderToc
       ? (Island({
@@ -269,6 +283,7 @@ export function createDocPageShell<S extends Settings = Settings>(
           </>
         }
         lang={locale}
+        dataThemePack={dataThemePack}
         noindex={settings.noindex}
         hideSidebar={hideSidebar}
         hideToc={hideToc}
@@ -320,7 +335,7 @@ export function createDocPageShell<S extends Settings = Settings>(
             {metainfoSlot}
 
             {description && (
-              <p class="mb-vsp-lg text-title text-muted">{description}</p>
+              <p class="mb-vsp-lg text-title text-muted" data-doc-description>{description}</p>
             )}
             <NavCardGrid children={autoIndexChildren ?? []} />
           </>

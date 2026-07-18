@@ -48,7 +48,7 @@ package-side **without `@/`** (all already exist as package factories/pure fns):
 |---|---|
 | `buildNavTree`, `collectAutoIndexNodes`, `groupSatelliteNodes`, `isNavVisible`, `loadCategoryMeta` | `@takazudo/zudo-doc/sidebar-tree` (+ the package `docs` helpers); `buildNavTree` accepts the optional `buildHref` injection |
 | `buildBreadcrumbs` | `@takazudo/zudo-doc/sidebar-tree` |
-| `extractHeadings` | `@takazudo/zudo-doc/extract-headings`, called with `tocMinDepth`/`tocMaxDepth`/`headingIdStrategy` read from the virtual-module `settings` |
+| `extractHeadings` | `@takazudo/zudo-doc/extract-headings`, called with `tocMinDepth`/`tocMaxDepth` read from the virtual-module `settings`; heading IDs are always hierarchical |
 | `toRouteSlug`, `toSlugParams`, `toHistorySlug`, `toTitleCase` | `@takazudo/zudo-doc/slug` (pure) |
 | `collectTags` / `resolveTag` | `@takazudo/zudo-doc/tag-helpers`, parameterized by `settings` + `tagVocabulary` from the virtual module |
 | category-metadata loading | `loadCategoryMeta` from `@takazudo/zudo-doc/sidebar-tree` (memoized per resolved dir) |
@@ -213,10 +213,13 @@ prop-checks the bindings and returns `ChromeHostBindings`, replacing the old
 `as ChromeHostBindings` cast). The routes plugin's `setup(ctx)` registers a
 SECOND virtual module, `virtual:zudo-doc-chrome-bindings`, that **re-exports**
 the host module; the bundler imports the actual callables through that
-re-export. `routes/_chrome.tsx` imports it and spreads the result AFTER the
-`DocHistory` default:
-`createChrome(routeCtx, { ...defineChromeBindings({ DocHistory }), ...chromeBindings })`
-— so a host can override every slot, including DocHistory itself.
+re-export. `routes/_chrome.tsx` imports it and spreads the result BEFORE the
+scanner-reachable `DocHistory` binding:
+`createChrome(routeCtx, { ...chromeBindings, ...defineChromeBindings({ DocHistory }) })`.
+The statically imported real `DocHistory` deliberately wins on package and
+generated routes: its scanner-reachable registration is required for
+hydration, while a callable supplied only through the virtual module is not
+scanner-safe. Every other host slot remains intact.
 
 - **Data-only rule holds.** Only the PATH is serialized into `settings` (and
   thus into the route-context virtual module); the chrome-bindings virtual
@@ -239,6 +242,17 @@ re-export. `routes/_chrome.tsx` imports it and spreads the result AFTER the
   (contrast the #2480 static `DocHistory` import above, which IS on the
   scanner's static-import graph). Hosts needing a hydrating island on injected
   routes still need a statically-imported registration path.
+- **Primary chrome and named header registry.** The same object is the
+  sanctioned markup seam: optional `Header`, `Footer`, `Sidebar`, `Toc`,
+  `Breadcrumb`, and `DocPager` keys replace those package components, while
+  callable `headerRightComponents` resolve the serializable names in
+  `settings.headerRightItems`. Missing keys keep package defaults; unknown or
+  reserved header names fail loudly.
+- **Fresh stubs already consume it.** Both generated default and locale doc
+  stubs import `virtual:zudo-doc-chrome-bindings`. When doc history is enabled,
+  generation preserves the whole object and overlays only the statically
+  reachable `DocHistory` island. Presentational customization therefore does
+  not require a route fork.
 
 Regression coverage: `__tests__/route-injection-build.test.ts` (Case CB — the
 FrontmatterPreview table appears with the setting, stays absent without it, and
@@ -294,8 +308,11 @@ the same `setup(ctx)` hook.
   calls `createChrome(routeCtx)` with no `hostBindings` — silently emitting
   NO panel island under `designTokenPanel: true` (the confirm gate's blocking
   finding on #2658). Defaulting at the seam gives every consumer the
-  settings-gated island with zero explicit wiring, while the slot still
-  accepts a host override. Consequence: `@takazudo/zudo-doc/chrome` now
+  settings-gated island with zero explicit wiring, while the component slot
+  still accepts a host override. If a host supplies a whole `BodyEndIslands`
+  override, the derive seam composes the package-owned panel island alongside
+  it; the host override does not replace or duplicate the panel mount.
+  Consequence: `@takazudo/zudo-doc/chrome` now
   transitively imports `virtual:zudo-doc-design-token-panel-config`, so a
   `packageOwnedRoutes: false` host that bundles chrome must register/alias
   that module itself (the package vitest config aliases it to the package
@@ -324,9 +341,10 @@ the same `setup(ctx)` hook.
   via `designTokenPanelConfigModule` may choose its own prefix if desired.
 
 Regression coverage: `__tests__/route-injection-build.slow.test.ts` (Case DTP
-— the island marker + client-bundle registry match with no host module, the
-host's builder reaching the bundle with the setting, and the missing-file
-error naming the resolved path); `plugins/__tests__/routes.test.ts` (fast,
+— exactly one island marker + a client-bundle registry match with and without
+a host body-end override, the host's builder reaching the bundle with the
+setting, and the missing-file error naming the resolved path);
+`plugins/__tests__/routes.test.ts` (fast,
 isolated `setup()` coverage of all three guard cases without a full build);
 `design-token-panel-config/__tests__/index.test.ts` (the package-default
 builder's tab structure, mode-scoping, and the unchanged `storagePrefix`).

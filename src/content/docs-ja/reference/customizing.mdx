@@ -17,12 +17,13 @@ tags:
 | --- | --- | --- |
 | **1. `buildDocsSchema` の上書き** | カスタムの検証付きフロントマターキーが必要 | 関数を1つ置き換え、スキーマを所有する |
 | **2. 設定フィールド** | 機能のオン/オフや挙動の調整 | なし — ただのフィールド |
-| **3. トークンの上書き** | 色・スペーシング・タイポグラフィの再テーマ | `global.css` の `@theme` ブロック |
-| **4. `zudo-doc eject`** | 再参照するコンテンツ層コンポーネントを変更する必要 | eject したコピーとそのインポートを所有する |
-| **5. `chromeBindingsModule`** | [カスタム MDX コンポーネント](../guides/custom-components.mdx#グローバル登録-mdxextras)を含め、注入ルートにホストのコンテンツ/コーラブルを差し込む | ホストモジュール1つとスタブ配線 |
-| **6. 自前の `pages/*.tsx`** | ルート全体を自分のものにする必要 | そのルートを所有する |
-| **7. デプロイ経路** | 本番公開（特に SSR 機能を伴う場合） | アダプター + `wrangler.toml` + シークレット |
-| **8. pre-push / HTML チェックの復元** | ショーケースの検証ゲートを取り戻したい | スクリプトのコピー + 依存追加 |
+| **3. テーマパック** | 手作業の調整ではなく、完成された見た目一式が欲しい | なし — フィールド1つか CLI コマンド1つ |
+| **4. トークンの上書き** | 色・スペーシング・タイポグラフィの再テーマ | `global.css` の `@theme` ブロック |
+| **5. `zudo-doc eject`** | 再参照するコンテンツ層コンポーネントを変更する必要 | eject したコピーとそのインポートを所有する |
+| **6. `chromeBindingsModule`** | 主要クロームの置換や、[カスタム MDX コンポーネント](../guides/custom-components.mdx#グローバル登録-mdxextras)を含むホストコーラブルの注入 | ホストモジュール1つ |
+| **7. 自前の `pages/*.tsx`** | ルート全体を自分のものにする必要 | そのルートを所有する |
+| **8. デプロイ経路** | 本番公開（特に SSR 機能を伴う場合） | アダプター + `wrangler.toml` + シークレット |
+| **9. pre-push / HTML チェックの復元** | ショーケースの検証ゲートを取り戻したい | スクリプトのコピー + 依存追加 |
 
 ## 第1段 — カスタムフロントマターキー（`buildDocsSchema`）
 
@@ -52,7 +53,7 @@ export default defineConfig(
 );
 ```
 
-これでページは `tier: core` をフロントマターで宣言でき、ビルド時に検証されます。これを [`docContentHeaderExtras`](./host-chrome-bindings.mdx)（第5段）と組み合わせると、そのキーから実際にバッジをレンダリングできます。
+これでページは `tier: core` をフロントマターで宣言でき、ビルド時に検証されます。これを [`docContentHeaderExtras`](./host-chrome-bindings.mdx)（第6段）と組み合わせると、そのキーから実際にバッジをレンダリングできます。
 
 <Note>
 
@@ -81,11 +82,32 @@ export default defineConfig(
 
 **手を伸ばすとき:** 機能をオン/オフにしたり、挙動（TOC の深さ、ナビゲーション、カラーモード、ロケール）を調整するとき。
 
-**限界:** 設定フィールドは*何が存在し、どう振る舞うか*を制御しますが、コンポーネントのピクセルレベルのレンダリングは制御しません。それには第3段や第4段へ登ります。
+**限界:** 設定フィールドは*何が存在し、どう振る舞うか*を制御しますが、コンポーネントのピクセルレベルのレンダリングは制御しません。それには第3段〜第5段へ登ります。
 
 デフォルトを含むフィールドの完全な一覧は [設定](../guides/configuration.mdx) リファレンスで、`ZudoDocConfig` 型自身の JSDoc を反映しています。
 
-## 第3段 — トークンの上書き
+## 第3段 — テーマパック
+
+トークンを手作業で調整し始める前に、同梱の**テーマパック**が求める見た目をすでに実現していないか確認してください。パックはトークン・フォント・コンポーネントのディテールまで揃った完成済みのデザインバンドルで、設定フィールド1つ、または CLI コマンド1つで適用できます:
+
+```ts title="zfb.config.ts"
+zudoDoc({
+  siteName: "My Docs",
+  themePack: "foundry",
+});
+```
+
+```sh
+pnpm exec zudo-doc theme apply foundry
+```
+
+すべてのパックはライト/ダーク両方の値を定義しているため、モードトグルはそのまま機能し続けます。`themePackSwitcher: true` を加えると、読者が右下のフライアウトからパックをライブで切り替えられるようになります。
+
+**手を伸ばすとき:** 全体の見た目を変えたくて、同梱パックがそれに合っているとき。
+
+**限界:** インストール済みパックからそのまま選ぶだけです。パックの上で個々のトークンを調整するのは次の段の仕事です。[テーマパック](./theme-packs.mdx)を参照してください。
+
+## 第4段 — トークンの上書き
 
 スキャフォールドの `src/styles/global.css` は短い `@import` チェーンで、パッケージの `theme.css`（すべての `@theme` デザイントークン）、`content.css`、`features.css` を取り込み、その後にあなた用の空の `@theme { … }` ブロックが続きます。これはパッケージのインポートの**後**に来るため、そこで再定義したものはカスケードで勝ちます:
 
@@ -105,7 +127,7 @@ export default defineConfig(
 
 **限界:** トークンは再スタイルしますが、マークアップは再構成しません。[デザインシステム](./design-system.mdx)、[Color](./color.mdx)、[コンポーネントトークン](./component-tokens.mdx)を参照してください。
 
-## 第4段 — コンポーネントのエジェクト
+## 第5段 — コンポーネントのエジェクト
 
 どのトークンでも変更に届かない — マークアップ自体があなたに合わない — 場合は、プロジェクトが再参照する**コンテンツ層**コンポーネント（たとえば `mdxExtras` 経由）をエジェクトします。エジェクトはそのソースをパッケージからプロジェクトへコピーし、該当するホストインポートをローカルコピーへ書き換えます:
 
@@ -118,10 +140,11 @@ pnpm exec zudo-doc eject details
 pnpm exec zudo-doc --help
 ```
 
-エジェクト可能な18コンポーネントには、2つの異なる範囲があります:
+エジェクト可能な18コンポーネントには、3つの異なる範囲があります:
 
 - **コンテンツ層:** `tab-item`、`content-admonition`、`code-group`、`details`。ローカルコピーをレンダリングする必要があるときは、プロジェクト所有の bindings または MDX コンポーネント登録から再参照します。
-- **クローム描画:** `header`、`footer`、`breadcrumb`、`toc`、`sidebar`、`theme-toggle`、`page-loading`、`doc-pager`、`sidebar-tree-island`、`sidebar-toggle-island`、`desktop-sidebar-toggle-island`、`image-enlarge`、`doc-history`、`site-tree-nav-island`。CLI はこれらのソースをコピーできますが、新しい scaffold にはホストの呼び出し地点がないため、コピーは機能上の no-op です。編集しても描画済みクロームは変わりません。
+- **主要クローム:** `header`、`footer`、`breadcrumb`、`toc`、`sidebar`、`doc-pager`。ローカルコピーを対応する `chromeBindings.Header`、`Footer`、`Breadcrumb`、`Toc`、`Sidebar`、`DocPager` スロットへバインドします。
+- **入れ子クローム:** `theme-toggle`、`page-loading`、`sidebar-tree-island`、`sidebar-toggle-island`、`desktop-sidebar-toggle-island`、`image-enlarge`、`doc-history`、`site-tree-nav-island`。CLI 警告が示す所有者レベルの binding が必要です。入れ子ファイルをコピーするだけでは、パッケージ所有の親は置き換わりません。
 
 コンテンツ層コンポーネントでは、まずそれをレンダリングするホストコードにローカルインポートを配線してから、ローカルコピーを編集します。`mdxExtras` に必要な bindings とルートスタブの設定は[カスタムコンポーネントガイド](../guides/custom-components.mdx#グローバル登録-mdxextras)にあります。
 
@@ -131,9 +154,9 @@ pnpm exec zudo-doc --help
 
 </Note>
 
-**限界:** エジェクトしたコピーは、そのコンポーネントのパッケージ更新をもう受け取りません — メンテナンスを引き受けることになります。[CLI 警告の作業](https://github.com/zudolab/zudo-doc/issues/2717)はクロームコピーへのより明確な案内を追跡し、[クロームマークアップ継ぎ目の議論](https://github.com/zudolab/zudo-doc/issues/2719)は不足しているサポート済みカスタマイズ経路を追跡しています。現在、エジェクトによるクロームマークアップのカスタマイズはサポートされていません。
+**限界:** エジェクトしたコピーは、そのコンポーネントのパッケージ更新をもう受け取りません — メンテナンスを引き受けることになります。CLI は各 eject を静的に分類します。主要／入れ子クロームはサポート済み binding が見つかるまで大きく警告し、コンテンツ層は静かな手動 `mdxExtras` 案内を出します。eject はソースをコピーし、`chromeBindingsModule` が主要または所有者レベルの置換を実際の描画へ接続するサポート済み継ぎ目です。
 
-## 第5段 — `chromeBindingsModule`（ホストコーラブル）
+## 第6段 — `chromeBindingsModule`（ホストコーラブル）
 
 `packageOwnedRoutes: true`（デフォルト）では、ドキュメントのクロームがパッケージ内部で組み立てられるため、プロジェクト固有のコンテンツをレンダリングするホストファイルがありません。`chromeBindingsModule` はそれを取り戻す継ぎ目です。`chromeBindings` オブジェクトをエクスポートするホストモジュールを指すと、注入ルートがあなたのスロットを拾います — コンテンツヘッダーレンダラー、ホームヒーローの追加要素、カスタムフロントマタープレビューレンダラー、フッタータグローダーなど。
 
@@ -155,17 +178,17 @@ export const chromeBindings = defineChromeBindings({
 });
 ```
 
-新しい scaffold では、この例がドキュメントページに影響する前にもう1つ変更が必要です。自己完結型の `pages/docs/[[...slug]].tsx` スタブが注入ルートをシャドーし、bindings なしで `createChrome(routeCtx)` を呼びます。`chromeBindings` をそのスタブへ静的にインポートして `createChrome()` に渡してください。プロジェクトが使うロケールまたはバージョン付きスタブにも同じ変更を適用します。[スタブ配線の修正](https://github.com/zudolab/zudo-doc/issues/2716)後に生成した scaffold には表示用の配線がすでに含まれる場合がありますが、完全で普遍的なレシピは[カスタムコンポーネントガイド](../guides/custom-components.mdx#グローバル登録-mdxextras)です。
+新しい scaffold のドキュメントルートスタブは、ロケール版と doc-history 版を含め、すでに `virtual:zudo-doc-chrome-bindings` をインポートして `createChrome` へ渡します。設定フィールドとモジュールを追加するだけで、ルートスタブを fork する必要はありません。自作ルートでは同じオブジェクトを `createChrome(routeCtx, chromeBindings)` の第2引数へ渡してください。完全なパターンは[カスタムコンポーネントガイド](../guides/custom-components.mdx#グローバル登録-mdxextras)にあります。
 
 Design Token Panel には並行チャネル `designTokenPanelConfigModule` があります。パッケージデフォルトのパネルはゼロコンフィグ（`designTokenPanel: true` だけ）で動作し、完全にカスタマイズするには、その設定を `buildDesignTokenPanelConfig(mode)` をエクスポートするホストモジュールに向けます。両チャネルは — ファイルが無いときの大きな声での失敗挙動も含め — [ホストクロームバインディング](./host-chrome-bindings.mdx)で詳しく説明されています。
 
-## 第6段 — 自前の `pages/*.tsx`
+## 第7段 — 自前の `pages/*.tsx`
 
 ルート全体を自分のものにする必要があるなら、対応するパスの `.tsx` ファイルを `pages/` に追加します。**同じパスに対して、プロジェクト所有のページは常にパッケージ注入ルートに勝ちます** — ホストファイルが注入をシャドウします。これが完全にカスタムなランディングルートの追加、特定の注入ドキュメントパスの引き取りの方法です。
 
 scaffold のスタブは特別です。`pages/index.tsx` は何もシャドーしません。`/` は注入されないため、これはパッケージホームページを提供する1行の再エクスポートです。`pages/docs/[[...slug]].tsx` は注入されたドキュメントルートをシャドーしますが、任意のカスタマイズ例ではなく、動作に必要です。注入された動的ルートは現在 `zfb dev` で404を返すため、このスタブが開発時のドキュメントページを動かし続けます。完全な注入とシャドーイングのモデルは[ルーティング規約](../develop/routing-conventions.mdx#パッケージルートの注入とシャドーイング)を参照してください。
 
-## 第7段 — デプロイ経路（明示的な拡張ステップ）
+## 第8段 — デプロイ経路（明示的な拡張ステップ）
 
 最小スキャフォールドは**純粋な静的サイト**をビルドします — `pnpm build` が `dist/` を出力し、任意の静的ホストに置けます。設計上、**アダプターも `wrangler.toml` も出荷しません**。静的エクスポートを超えることは意図的な拡張ステップです:
 
@@ -182,15 +205,17 @@ scaffold のスタブは特別です。`pages/index.tsx` は何もシャドー�
 
 2. **`wrangler.toml` を追加する。** Worker 名、カスタムドメインルート、各種バインディングを宣言します。このファイルは新しいスキャフォールドには存在しません — デプロイを決めたときに作成します。
 
-3. **AI アシスタントを有効化する場合は配線する。** `aiAssistant: true` は SSR の `/api/ai-chat` ルートをマウントします。デフォルトでは**デモモード**で出荷されます（`aiChatDemoMode` は設定上デフォルト `false` ですが、ライブバックエンドに切り替えるまでスキャフォールドのチャットは静的デモです）。本物の Claude 対応アシスタントには次が必要です:
-   - `aiChatDemoMode: false` に設定する;
+3. **AI アシスタントを有効化する場合は配線する。** `aiAssistant: true` はpackage-ownedな SSR `/api/ai-chat` seamをマウントします。demo modeでは固定応答を返し、host実装なしでlive modeを選ぶとHTTP 501を返します。package/scaffoldはshowcaseのfull handler、`worker-entry.ts`、`AiChatDailySpendCap`を出荷しません。本物のClaude対応アシスタントには、まずshowcaseと同等のhost-owned `/api/ai-chat` handlerとsource Worker entry/Durable Objectを実装し、その後に次を行います:
+   - host handlerを導入した後で`aiChatDemoMode: false`に設定する;
    - `RATE_LIMIT` KV 名前空間を作成し（`wrangler kv namespace create RATE_LIMIT`）、`wrangler.toml` でバインドする;
+   - `AI_CHAT_DAILY_SPEND_CAP`を`AiChatDailySpendCap`へバインドし、migration tag
+     `v1-ai-chat-daily-spend-cap`と`new_sqlite_classes = ["AiChatDailySpendCap"]`を追加する;
    - `ANTHROPIC_API_KEY` シークレットを追加する（`wrangler secret put ANTHROPIC_API_KEY`）;
    - `aiChatAllowedOrigins` をサイトのオリジンに設定する。
 
-完全なランブック（シークレット、KV、CORS、レート制限）は[デプロイガイド](../guides/deployment.mdx)と [AI Assistant API リファレンス](./ai-assistant-api.mdx)を参照してください。
+showcaseの[デプロイガイド](../guides/deployment.mdx)と[AI Assistant APIリファレンス](./ai-assistant-api.mdx)は、host実装の参照として利用してください（シークレット、ソフトなIPごとのKV、UTC日ごとの正確な許可、CORS、プレビュー制約）。class sourceを用意せず名前だけbindingしても動作しません。
 
-## 第8段 — pre-push と HTML バリデーションの復元
+## 第9段 — pre-push と HTML バリデーションの復元
 
 最小スキャフォールドは、ショーケースが実行する**検証ゲートを削除**しています — 小さなドキュメントセットには重荷だったためです。プロジェクトが成長して取り戻したくなったら、明示的に追加します:
 
@@ -199,14 +224,14 @@ scaffold のスタブは特別です。`pages/index.tsx` は何もシャドー�
 
 <Note>
 
-`gen:z-index` / `check:z-index` のコードジェネレーションも同様に生成プロジェクトから削除されました — 13 のデフォルト z-index ティアは `@takazudo/zudo-doc/theme.css` から無条件に出荷されるため、プロジェクトが*カスタム*ティアセットを保守する場合にのみそのコードジェネレーションを再追加します。単一ティアの上書きは 1 行の `@theme` 変更（第3段）であり、コードジェネレーションの問題ではありません。
+`gen:z-index` / `check:z-index` のコードジェネレーションも同様に生成プロジェクトから削除されました — 13 のデフォルト z-index ティアは `@takazudo/zudo-doc/theme.css` から無条件に出荷されるため、プロジェクトが*カスタム*ティアセットを保守する場合にのみそのコードジェネレーションを再追加します。単一ティアの上書きは 1 行の `@theme` 変更（第4段）であり、コードジェネレーションの問題ではありません。
 
 </Note>
 
 ## 関連ページ
 
 - [設定](../guides/configuration.mdx) — すべての `zudoDoc()` フィールドとそのデフォルト
-- [カスタムコンポーネント](../guides/custom-components.mdx) — プロジェクト所有の MDX コンポーネントを登録し、bindings をルートスタブへ配線する
+- [テーマパック](./theme-packs.mdx) — 同梱パック、スイッチャー UI、theme CLI
+- [カスタムコンポーネント](../guides/custom-components.mdx) — 共有 bindings モジュール経由でプロジェクト所有の MDX コンポーネントを登録する
 - [ホストクロームバインディング](./host-chrome-bindings.mdx) — `chromeBindingsModule` と `designTokenPanelConfigModule` の詳細
 - [create-zudo-doc CLI](./create-zudo-doc.mdx) — スキャフォールドが出力するもの
-- [v3 からの移行](../getting-started/migrating-from-v3.mdx) — 既存の生成プロジェクトをこの形状へ移す

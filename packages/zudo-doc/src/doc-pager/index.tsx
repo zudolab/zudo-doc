@@ -50,7 +50,7 @@ export function createDocPager<S extends Settings = Settings>(
    */
   function DocPager({ prev, next, locale }: DocPagerProps): JSX.Element {
     return (
-      <nav class="mt-vsp-2xl grid grid-cols-2 gap-hsp-xl">
+      <nav class="mt-vsp-2xl grid grid-cols-2 gap-hsp-xl" data-doc-pager>
         {prev ? (
           <a
             href={prev.href}

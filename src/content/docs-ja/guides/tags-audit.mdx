@@ -1,6 +1,6 @@
 ---
 title: タグ監査
-description: フロントマターのすべてのタグをプロジェクトのボキャブラリと照合する——unknown、deprecated、エイリアス、ニアデュプリケート、オーファン。
+description: フロントマターのすべてのタグをプロジェクトのボキャブラリと照合する——unknown、ニアデュプリケート、オーファン。
 sidebar_position: 5.2
 tags:
   - content
@@ -9,51 +9,49 @@ tags:
 
 ## 監査が報告する内容
 
-`pnpm tags:audit`は`src/content/docs/**`と設定済みのすべてのロケールディレクトリを走査し、各ページのフロントマターから`tags:`配列を収集して、`src/config/tag-vocabulary.ts`と照合した5種類の指摘を報告します。
+`pnpm tags:audit`はパッケージ所有の監査 CLI を実行します。`src/config/tag-vocabulary.ts`のデフォルト`TagCliConfig`エクスポートで宣言されたコンテンツディレクトリを走査し、各ページのフロントマターから`tags:`配列を収集して、同じモジュールの名前付き`tagVocabulary`エクスポートと照合した3種類の指摘を報告します。
 
-- **Unknown tags** — 正規 id でもエイリアスでもない文字列です。ボキャブラリエントリを追加するか、ページからタグを削除してください。[`tagGovernance: "strict"`](./tag-governance.mdx)では unknown はビルドを失敗させます。
-- **Deprecated tags** — 解決先のエントリが`deprecated`マークされています。エントリに`redirect`があれば読者のトラフィックは代替タグに解決されますが、コンテンツは更新しておくべきです。
-- **Alias usage** — 文字列は既知のエイリアスであり、正規 id ではありません。ページは正しくレンダリングされますが、正規形から離れていきます。`--fix`でその場で修正できます。
-- **Near-duplicates** — 互いに変種のように見える2つの別個の正規タグ(文字列類似度が高い、または同じ単数形を持つ)。通常はボキャブラリ側の問題で、どちらかを選び、もう一方をエイリアスに回します。
-- **Orphan vocabulary entries** — どのページからも参照されていないボキャブラリ id。`deprecated: true`で廃止することを検討してください。
+- **Unknown tags** — 正規 id と完全一致しない文字列です。ボキャブラリエントリを追加するか、意図した id に置き換えるか、ページから削除してください。[`tagGovernance: "strict"`](./tag-governance.mdx)では unknown はビルドを失敗させます。
+- **Near-duplicates** — 互いに変種のように見える2つの別個のタグ(文字列類似度が高い、または同じ単数形を持つ)。正規 id を1つ選び、もう一方を使うコンテンツを更新します。
+- **Orphan vocabulary entries** — どのページからも参照されていない正規 id。参照をすべて更新または削除してからエントリを削除します。
 
 クリーンな実行では`✓ No tag issues found`と表示されます。
+
+## CLI 設定と package script
+
+scaffold は明示的な設定モジュールを`package.json`で指定します。
+
+```json
+{
+  "scripts": {
+    "tags:audit": "tags-audit --config src/config/tag-vocabulary.ts"
+  }
+}
+```
+
+設定パスはプロジェクトルートから解決されます。`--config`がない、読み込めない、または有効な`TagCliConfig`をデフォルトエクスポートしていない場合、CLI は明確なエラーで終了します。名前付き`tagVocabulary`エクスポートも維持してください。生成された`zfb.config.ts`が同じモジュールを参照するため、ランタイムのガバナンスと CLI 監査が単一の情報源を共有します。
+
+package manager の`--`を使えば、pnpm と npm のどちらでもオプションを一貫して転送できます。
 
 ## レポートの読み方
 
 デフォルトの出力はカテゴリ別にグループ化された色付きテキストです。機械処理には`--json`を渡します。
 
 ```sh
-pnpm tags:audit --json > audit.json
+pnpm tags:audit -- --json > audit.json
 ```
 
-JSON のペイロードは`AuditReport`で、`unknowns`、`deprecated`、`aliases`、`nearDuplicates`、`orphans`、`filesScanned`、そして正規 id をキーとする`frequency`マップを含みます。CI ダッシュボードや自動修正ツールはこれを消費するべきです。
-
-## `--fix`: バイト安定なエイリアス書き換え
-
-`pnpm tags:audit --fix`は、エイリアスタグをフロントマター内で正規 id に直接書き換えます(1ファイルずつ)。
-
-```sh
-pnpm tags:audit --fix
-```
-
-知っておくべき挙動:
-
-- **書き換わるのはエイリアスのみ。** unknown・deprecated・ニアデュプリケートは一切触りません——これらは単純な置換ではなく編集判断が必要です。
-- **タグブロックの外はバイト安定。** インデントスタイル、クォート、改行コード(LF と CRLF の両方)を含めて他のバイトはすべて保持されます。
-- **両方の YAML シーケンススタイルに対応。** フロー形式(`tags: [foo, bar]`)とブロック形式(`tags:\n  - foo`)の両方。
-
-`--fix`は作業ツリーがクリーンな状態で実行し、diff を確認してからコミットしてください。
+JSON のペイロードは`AuditReport`で、`unknowns`、`nearDuplicates`、`orphans`、`filesScanned`、そして正確な id をキーとする`frequency`マップを含みます。CI ダッシュボードはこれを利用できます。
 
 ## `b4push`経由での CI 連携
 
 プロジェクトのプリプッシュ検証スクリプト([`pnpm b4push`](./development-workflow.mdx))は`--ci`付きで監査を実行します。
 
 ```sh
-pnpm tags:audit --ci
+pnpm tags:audit -- --ci
 ```
 
-`--ci`は`tagGovernance`の設定値に関わらず、**ハード指摘**(unknown または deprecated)があれば非ゼロ終了を強制します。つまり:
+`--ci`は`tagGovernance`の設定値に関わらず、**ハード指摘**(unknown)があれば非ゼロ終了を強制します。つまり:
 
 - `tagGovernance: "warn"`では——unknown があっても`pnpm build`は通過しますが(マイグレーション中に移行を止めないため意図的)、`pnpm b4push`はプッシュを拒否します。
 - `tagGovernance: "strict"`では——ビルドはすでに unknown で落ちます。`--ci`は将来的に enforcement を緩めても b4push が厳しさを保つための安全網です。

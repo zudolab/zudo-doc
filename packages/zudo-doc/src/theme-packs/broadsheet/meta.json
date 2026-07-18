@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "slug": "broadsheet",
+  "name": "Broadsheet",
+  "description": "Newspaper editorial — Playfair masthead, Oxford ink rules, a red drop cap, and a night-edition dark mode.",
+  "mode": "light",
+  "version": "1.0.1",
+  "fonts": {
+    "sans": "Source Serif 4",
+    "mono": "Courier Prime",
+    "display": "Playfair Display",
+    "loaded": ["Playfair Display", "Source Serif 4", "Courier Prime"]
+  },
+  "preview": {
+    "light": {
+      "bg": "oklch(0.955 0.012 92)",
+      "fg": "oklch(0.205 0.012 80)",
+      "accent": "oklch(0.455 0.155 27)",
+      "syntax": {
+        "keyword": "oklch(0.445 0.155 27)",
+        "string": "oklch(0.45 0.075 60)",
+        "comment": "oklch(0.5 0.016 78)",
+        "callable": "oklch(0.42 0.09 252)"
+      }
+    },
+    "dark": {
+      "bg": "oklch(0.185 0.012 75)",
+      "fg": "oklch(0.935 0.015 90)",
+      "accent": "oklch(0.7 0.145 27)",
+      "syntax": {
+        "keyword": "oklch(0.72 0.14 27)",
+        "string": "oklch(0.79 0.07 70)",
+        "comment": "oklch(0.7 0.02 85)",
+        "callable": "oklch(0.74 0.08 248)"
+      }
+    }
+  }
+}

@@ -21,8 +21,8 @@
 // sibling `doc-history.ts` for the rationale.
 
 import type { ZfbBuildHookContext, ZfbDevMiddlewareContext, ZfbPlugin } from "@takazudo/zfb/plugins";
-import type { LlmsTxtEmitOptions, LlmsTxtDevMiddlewareOptions } from "../integrations/llms-txt/index.js";
-import { emitLlmsTxt, createLlmsTxtDevMiddleware } from "../integrations/llms-txt/index.js";
+import type { LlmsTxtEmitOptions, LlmsTxtDevMiddlewareOptions } from "./internal/llms-txt/index.js";
+import { emitLlmsTxt, createLlmsTxtDevMiddleware } from "./internal/llms-txt/index.js";
 import { connectToZfbHandler } from "./connect-adapter.js";
 import { getBasePrefix } from "./plugin-utils.js";
 

@@ -24,7 +24,6 @@ import type {
 } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
 import { makeUrlHelpers } from "../url-helpers/index.js";
-import { loadCategoryMeta, type CategoryMeta } from "../sidebar-tree/index.js";
 import { extractHeadings as extractHeadingsBase } from "../extract-headings/index.js";
 import { toRouteSlug, toSlugParams } from "../slug/index.js";
 import { resolveTag } from "../tag-helpers/index.js";
@@ -34,7 +33,6 @@ import {
   getNavSectionForSlug as getNavSectionForSlugBase,
   getNavSubtree as getNavSubtreeBase,
 } from "../nav-scope/index.js";
-import { mergeLocaleDocs } from "../locale-merge/index.js";
 import {
   createNavSourceDocs,
   type NavSourceDocsContext,
@@ -46,8 +44,6 @@ import {
 import {
   createRouteEnumerators,
   type RouteEnumeratorsContext,
-  type DocsEntryForTags,
-  type TagInfoForEnum,
 } from "../route-enumerators/index.js";
 import type { DocNavNode, DocPageEntry } from "../doc-page-props/index.js";
 import type { HeadingItem } from "../extract-headings/index.js";
@@ -81,9 +77,6 @@ export interface CreateRouteContextOptions {
   stableDocs?: ContentBridge;
 }
 
-// Local alias so the `mergeLocaleDocs` cast below reads clearly.
-type RouteEnumeratorsAPIDeps = Parameters<typeof createRouteEnumerators>[0];
-
 /**
  * Reconstruct the full runtime route context from the serializable payload.
  * Called ONCE per build (the route entrypoints share the returned singleton via
@@ -100,6 +93,12 @@ export function createRouteContext<S extends Settings = Settings>(
   const translations = payload.translations;
   const tagVocabulary = payload.tagVocabulary;
   const colorSchemes = payload.colorSchemes;
+  // Normalize an omitted registry to null (→ feature inert). The payload field
+  // is optional (added after the shape shipped); a `packageOwnedRoutes: false`
+  // host that predates it would otherwise pass `undefined`, which slips past
+  // head-with-defaults' `!== null` inert-guard and throws
+  // `themePackVersionMap(undefined)` at SSR. ADR Decision 2: omit = inert.
+  const themePackRegistry = payload.themePackRegistry ?? null;
   const stableDocs: ContentBridge = options.stableDocs ?? defaultStableDocs;
 
   // ── i18n ────────────────────────────────────────────────────────────────
@@ -149,12 +148,11 @@ export function createRouteContext<S extends Settings = Settings>(
     return getNavSubtreeBase(tree, categoryMatch, settings.headerNav);
   }
 
-  // ── extract-headings (bound to settings depth window + id strategy) ──────
+  // ── extract-headings (bound to the settings depth window) ────────────────
   function extractHeadings(body: string): HeadingItem[] {
     return extractHeadingsBase(body, {
       tocMinDepth: settings.tocMinDepth,
       tocMaxDepth: settings.tocMaxDepth,
-      strategy: settings.headingIdStrategy,
     });
   }
 
@@ -169,19 +167,18 @@ export function createRouteContext<S extends Settings = Settings>(
 
   function collectTags(
     entries: ReadonlyArray<{
-      id: string;
+      slug: string;
       data: { slug?: string; title?: string; description?: string; tags?: string[] };
     }>,
-    slugFn: (id: string, data: { slug?: string }) => string,
+    slugFn: (entrySlug: string, data: { slug?: string }) => string,
   ): Map<string, TagInfo> {
     const tagMap = new Map<string, TagInfo>();
     for (const entry of entries) {
       const rawTags = entry.data.tags ?? [];
-      const slug = slugFn(entry.id, entry.data);
+      const slug = slugFn(entry.slug, entry.data);
       const seen = new Set<string>();
       for (const raw of rawTags) {
         const resolved = resolveTagBound(raw);
-        if (resolved.deprecated) continue;
         if (seen.has(resolved.canonical)) continue;
         seen.add(resolved.canonical);
         if (!tagMap.has(resolved.canonical)) {
@@ -214,6 +211,7 @@ export function createRouteContext<S extends Settings = Settings>(
   const base = {
     settings,
     colorSchemes,
+    themePackRegistry,
     i18n,
     defaultLocale,
     locales,

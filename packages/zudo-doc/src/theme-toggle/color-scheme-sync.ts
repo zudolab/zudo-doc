@@ -41,10 +41,8 @@ export function readColorSchemeFromDom(
  * `color-scheme-changed` window event.
  *
  * Tweak-state reconciliation is intentionally NOT done here (#2037). The zdtp
- * panel owns its own storage lifecycle: it persists the unified tweak envelope
- * under `zudo-doc-tweak-state-v4` (auto-migrating the legacy
- * `zudo-doc-tweak-state-v3` / `-v2` / `zudo-doc-tweak-state` (v1) keys into
- * it), and its own `color-scheme-changed` listener clears applied inline
+ * panel owns its own storage lifecycle and current persisted-state contract;
+ * its own `color-scheme-changed` listener clears applied inline
  * styles and re-seeds the color slice from the newly active scheme. An
  * earlier version of this function deleted `zudo-doc-tweak-state` + `-v2` on
  * every toggle, which (a) targeted stale keys after zdtp moved to v3 — so it

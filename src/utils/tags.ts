@@ -1,15 +1,14 @@
 // Host thin-stub — see @takazudo/zudo-doc/tag-helpers (epic #2344, S7).
 //
 // `resolveTag` and `resolvePageTags` are now parameterized pure functions in the
-// package; this module remains backward-compatible by wrapping them with the
-// host's `settings.tagVocabulary` / `settings.tagGovernance` + the
+// package; this current host adapter supplies `settings.tagVocabulary` /
+// `settings.tagGovernance` + the
 // `tagVocabulary` entries from `@/config/tag-vocabulary`.
 //
-// `collectTags` stays host-side because it depends on `DocsEntry` from the
-// host's content collections. It calls the local `resolveTag` wrapper which
-// in turn delegates to the package.
+// `collectTags` stays host-side for current zfb entry typing. It accepts current
+// entries and delegates exact-id recognition to the package.
 
-import type { DocsEntry } from "@/types/docs-entry";
+import type { DocPageEntry } from "@takazudo/zudo-doc/doc-page-props";
 import { settings } from "@/config/settings";
 import { tagVocabulary } from "@/config/tag-vocabulary";
 import {
@@ -41,28 +40,26 @@ export function resolveTag(raw: string) {
 }
 
 /**
- * Resolve a list of raw tag strings (e.g. from frontmatter) to canonical ids,
- * dropping deprecated-without-redirect entries and preserving order. Duplicates
- * produced by alias collapse are removed.
+ * Resolve a list of raw tag strings (e.g. from frontmatter), preserving order
+ * and removing exact duplicates.
  */
 export function resolvePageTags(rawTags: readonly string[]): string[] {
   return _resolvePageTags(rawTags, getVocab(), settings.tagGovernance);
 }
 
 export function collectTags(
-  entries: DocsEntry[],
-  slugFn: (id: string, data: { slug?: string }) => string,
+  entries: DocPageEntry[],
+  slugFn: (entrySlug: string, data: { slug?: string }) => string,
 ): Map<string, TagInfo> {
   const tagMap = new Map<string, TagInfo>();
 
   for (const entry of entries) {
     const rawTags = entry.data.tags ?? [];
-    const slug = slugFn(entry.id, entry.data);
+    const slug = slugFn(entry.slug, entry.data);
 
     const seen = new Set<string>();
     for (const raw of rawTags) {
       const resolved = resolveTag(raw);
-      if (resolved.deprecated) continue;
       if (seen.has(resolved.canonical)) continue;
       seen.add(resolved.canonical);
 

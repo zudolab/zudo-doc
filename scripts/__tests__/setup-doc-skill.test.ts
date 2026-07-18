@@ -1,6 +1,15 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { execSync } from "node:child_process";
-import { mkdtempSync, readFileSync, existsSync, rmSync, realpathSync } from "node:fs";
+import {
+  mkdtempSync,
+  mkdirSync,
+  writeFileSync,
+  cpSync,
+  readFileSync,
+  existsSync,
+  rmSync,
+  realpathSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -70,6 +79,23 @@ describe("setup-doc-skill.sh", () => {
     expect(skillMd).toContain("name: test-wisdom");
     expect(skillMd).toContain("user-invocable: true");
     expect(skillMd).toContain("zudo-doc");
+  });
+
+  it("uses the main worktree project path in generated instructions", () => {
+    runScript(TEST_SKILL_NAME, fakeHome);
+
+    const skillMd = readFileSync(
+      join(PROJECT_ROOT, ".claude", "skills", TEST_SKILL_NAME, "SKILL.md"),
+      "utf-8",
+    );
+
+    expect(skillMd).toContain(
+      `Run \`pnpm build\` from \`${MAIN_WORKTREE_ROOT}\``,
+    );
+    expect(skillMd).toContain(
+      `(relative to the project root: \`${MAIN_WORKTREE_ROOT}\`)`,
+    );
+    expect(skillMd).toContain(`${MAIN_WORKTREE_ROOT}/CLAUDE.md`);
   });
 
   it("creates docs symlink pointing to src/content/docs", () => {
@@ -205,5 +231,90 @@ describe("setup-doc-skill.sh", () => {
     expect(
       existsSync(join(fakeHome, ".claude", "skills", TEST_SKILL_NAME)),
     ).toBe(false);
+  });
+
+  describe("nested-subdir project (#2918)", () => {
+    // Builds a throwaway git repo where the "project" lives at <repo>/doc/
+    // instead of at the repo root, then runs the real script against it.
+    // This reproduces the shape a project has when it's a subdirectory of a
+    // larger monorepo checkout.
+    let fixtureRoot: string;
+    let fixtureHome: string;
+    let projectDir: string;
+
+    beforeEach(() => {
+      fixtureRoot = mkdtempSync(join(tmpdir(), "zudo-doc-nested-fixture-"));
+      fixtureHome = mkdtempSync(join(tmpdir(), "zudo-doc-nested-home-"));
+      projectDir = join(fixtureRoot, "doc");
+
+      execSync("git init -q", { cwd: fixtureRoot });
+
+      mkdirSync(join(projectDir, "scripts"), { recursive: true });
+      mkdirSync(
+        join(projectDir, "src", "content", "docs", "getting-started"),
+        { recursive: true },
+      );
+      writeFileSync(
+        join(projectDir, "src", "content", "docs", "getting-started", "index.mdx"),
+        "---\ntitle: Test\n---\n",
+      );
+      cpSync(SCRIPT_PATH, join(projectDir, "scripts", "setup-doc-skill.sh"));
+      writeFileSync(
+        join(projectDir, "package.json"),
+        JSON.stringify({ name: "nested-project", scripts: {} }),
+      );
+    });
+
+    afterEach(() => {
+      rmSync(fixtureRoot, { recursive: true, force: true });
+      rmSync(fixtureHome, { recursive: true, force: true });
+    });
+
+    function runFixtureScript(): string {
+      return execSync(
+        `bash "${join(projectDir, "scripts", "setup-doc-skill.sh")}" "${TEST_SKILL_NAME}"`,
+        {
+          cwd: projectDir,
+          encoding: "utf-8",
+          timeout: 30_000,
+          env: { ...process.env, HOME: fixtureHome },
+        },
+      );
+    }
+
+    it("resolves the docs symlink to an existing dir under <repo>/doc/", () => {
+      runFixtureScript();
+
+      const docsLink = join(projectDir, ".claude", "skills", TEST_SKILL_NAME, "docs");
+      expect(existsSync(docsLink)).toBe(true);
+
+      const resolved = realpathSync(docsLink);
+      expect(resolved).toBe(realpathSync(join(projectDir, "src", "content", "docs")));
+    });
+
+    it("generates a SKILL.md with no absent-script commands and nested-correct paths", () => {
+      runFixtureScript();
+
+      const skillMd = readFileSync(
+        join(projectDir, ".claude", "skills", TEST_SKILL_NAME, "SKILL.md"),
+        "utf-8",
+      );
+
+      // The fixture's package.json has no format script — the step must say
+      // so rather than reference a script that doesn't exist.
+      expect(skillMd).not.toContain("pnpm format:md");
+      expect(skillMd).not.toContain("pnpm format`");
+      expect(skillMd).toContain(
+        "No format script is configured for this project",
+      );
+
+      // Build/verify and doc-base-path instructions must name the nested
+      // project directory explicitly, not just "repo root".
+      expect(skillMd).toContain(`Run \`pnpm build\` from \`${projectDir}\``);
+      expect(skillMd).toContain(
+        `(relative to the project root: \`${projectDir}\`)`,
+      );
+      expect(skillMd).toContain(`${projectDir}/CLAUDE.md`);
+    });
   });
 });

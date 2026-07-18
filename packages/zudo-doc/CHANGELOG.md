@@ -4,6 +4,93 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [4.2.1] - 2026-07-19
+
+### Other Changes
+
+- create-zudo-doc: the shipped `zudo-doc-version-bump` skill's changelog guidance is now default-language-aware — its primary/secondary subsections are framed around default-language vs. other-locale and present both EN/JA heading sets, so a `defaultLang: "ja"` scaffold whose primary changelog page seeds `## 未リリース` gets guidance that matches the page in front of the reader (9fda96a6)
+- create-zudo-doc: the shipped `zudo-doc-design-system` skill gained a "Palette index convention" section under Tier 1, reconciling the frontmatter's palette-index promise with an actual body section (166daedb)
+- Tests: documented the scaffold-skill guard's by-design gaps — DENYLIST is a hand-maintained path-idiom guard that complements (not duplicates) the scaffold-refs integration guard — and retitled a stale parity describe block to reflect its byte-mirror mechanism (c7015fc6)
+
+## [4.2.0] - 2026-07-18
+
+### Features
+
+- HtmlPreview gains a `fullHeight` opt-in prop for full-height embeds (18246fb7)
+- HtmlPreview gains `externalStyles` / `externalScripts` / `preflight` / `showResources` props for embedding and disclosing external resources (20c679ed)
+- New `DOC_HISTORY_SKIP_POSTBUILD` env var skips only the postBuild dropdown JSON step, leaving the preBuild Created/Updated/Author manifest intact (9234443c)
+- Scaffolds with docHistory enabled now emit a `dev:network` script for LAN access (e0c0f9f6)
+- The four preset-only config fields are now mirrored onto `CreateOptions` for scaffolding parity (a97ee2d0)
+
+### Bug Fixes
+
+- create-zudo-doc: the doc-history-server now starts alongside zfb dev when docHistory is enabled (7efda47e)
+- create-zudo-doc: disable pnpm 11's `minimumReleaseAge` gate in scaffolds, and warn about a parent workspace's gate when skipping the nested pnpm-workspace (1b3fe1a0, 27375853)
+- create-zudo-doc: ship claudeSkills content from `templates/`, not the monorepo root (103082e8)
+- setup-doc-skill: resolve nested-subdir symlinks, make SKILL.md commands runtime-conditional, and detect a `format:md` script name (5b4a6416, f58ab17e)
+- generator: add `.zfb-build/` to the generated `.gitignore`, and sync the tauri template CSP with the showcase (474f4f1a, da2f19b3)
+- Docs: corrected the metaTags fragment link to the hierarchical heading id (0728d985)
+- Mermaid: drop the semicolon from stateDiagram statement repair (3390d35d)
+- Tests: strip ANSI codes in eject slow-test output assertions (c2aad778)
+
+### Other Changes
+
+- Skills: authored scaffold variants of design-system, translate, and zudo-doc-version-bump, completing the drift-guard transition (317e3449, 167fe424)
+- Tests: added the generated-scaffold skill-reference integration guard, split the skills drift guard, and exempted scaffold-variant skills from the template-drift shell guard (ef233939, cd37d1c2)
+- Tests: synced the target-manifest exam fixture to the 13-file scaffold and re-baselined route-injection parity hashes (16faafd3, b1eea45b)
+- Docs: documented `dev:network` and zfb flag forwarding (9dbc4f4d)
+
+## [4.1.0] - 2026-07-18
+
+### Features
+
+- Theme-pack fonts now reach the app shell (header, sidebar, TOC, breadcrumb, pager) via a global body font seam, with per-surface chrome font tokens for finer control (f84b2bd2)
+
+### Bug Fixes
+
+- Per-surface chrome font knobs anchor to the seam token instead of relying on inheritance (dbd95365)
+- Docs: corrected the false claim that mobile chrome strips theme-pack font tokens — mobile hooks receive them like desktop (3cbe0d45, 493f76dc)
+- E2E: theme-pack font specs assert the body font-family directly, target the bundled foundry pack, and wait for switcher hydration (d88e4c5a, 218e8844)
+- Reverted a hand-edited generated CHANGELOG.md — it is corpus-generated (ef43274c)
+
+### Other Changes
+
+- Toolchain: @takazudo/zfb family (zfb, zfb-runtime, zfb-adapter-cloudflare, zfb-md-wasm) adopted through 0.1.0-next.89 (02268414)
+- Bilingual docs for the chrome font seam tokens and the mobile reach caveat (58cf6fc2)
+- Durable e2e regression spec for the chrome font seam (69af425e)
+
+## [4.0.0] - 2026-07-17
+
+### Breaking Changes
+
+- Current-only compatibility contract: legacy integration subpaths, the tag alias/deprecation runtime, legacy token storage bridges, legacy Syntect markup support, legacy doc-history contracts, and the legacy link-checker entrypoints are removed (c8b6d3da, 08338a8f, 701b4aea, 16edbe8b, e8ce8929, cc2bb792, f2c9b925)
+- Heading IDs are hierarchical-only; the legacy flat-ID fallback is gone (390064ff)
+- Doc entries use the current zfb entry model exclusively (df048e30)
+
+### Features
+
+- Theme pack system: pack registry with config census and validator, asset delivery pipeline (build, npm tarball, dev), runtime switching engine with FOUC-safe bootstrap, bottom-right switcher flyout, browse-all theme grid dialog, and a `zudo-doc theme list|apply` CLI (aab0014f, 9eddd9ba, f5f83b43, adf81c9a, 07b77eb1, a33f66ef)
+- 20 official theme packs shipped across four batches — foundry, swissgrid, broadsheet, ledger, manuscript, futura-editorial, washi, sumi, matcha, hearth, hollow, fjord, nocturne, drift, onyx, phosphor, observatory, solar, beacon, brutalist — with the full 21-pack catalog (including default) synced into create-zudo-doc and the preset generator (487b1761)
+- Stable DOM hooks for theme packs: `data-footer`, `data-doc-pager`, `data-doc-description`, and `data-theme-pack-switcher` / `data-switcher-card` / `data-switcher-launcher`; all 20 packs retargeted onto the hooks and every changed pack's `meta.json` version bumped for the stylesheet cache buster (c8bb4421, ac654a8a, 2b2a46d5, b5fffb01, d7c67ca7)
+- Restored pack styling that previously lacked hooks: foundry's pager hover wash and broadsheet's classified-ad flyout frame (850a30fb)
+- Semantic syntax-highlight class mode: document fences render `hi-*` token classes with a stable token contract, mapped by `features.css` (c1237dcd, c305fdf8, 920be3d2)
+- AI chat exact daily spend cap enforced via a Durable Object, with paid-call admission control and an operations runbook (0b46e23c, 15e3b891, 491116c5)
+- Chrome customization: typed primary replacement slots (`Header`, `Footer`, `Sidebar`, `Toc`, `Breadcrumb`, `DocPager`), a named header-component registry, binding-aware eject warnings, and end-to-end proof (a3ae76cc, 9d8e7901, 5346b2ef, 0e92dbc2)
+- create-zudo-doc: `footerCopyright` feature defaults to on; theme-pack scaffold prompt and programmatic `themePack` option (51307cd4, acf20690, b287e94d)
+
+### Bug Fixes
+
+- onyx: the decorative gold outline on the switcher card and browse-all dialog no longer masks the keyboard focus-visible ring (11d5cc0f)
+- ledger: DocPager selector no longer over-matches NavCardGrid on auto-index pages (eff8e1b8)
+- Light-mode WCAG contrast corrections across several packs after review (46e1e6b2)
+
+### Other Changes
+
+- Theme pack architecture ADR, hardened Decisions 6.5/6.6 (stable-hook list, h2–h4 gradient carve-out), and a new durable `theme-pack-authoring.md` pack-author reference (4f5cc90c, ed287e1a, 4856c44b)
+- Theme gallery reference docs (EN+JA) covering the full pack catalog (2b73cffa, 3068fbca)
+- Scaffold customization docs overhaul: customization ladder, chrome bindings, custom components guide, route injection, color-token guidance (8a54b3df)
+- Toolchain: zfb family adopted through next.87; zdtp 0.4.8 (151f09bb, efc3afdc)
+
 ## [3.3.0] - 2026-07-12
 
 ### Features

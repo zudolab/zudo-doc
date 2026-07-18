@@ -1,0 +1,375 @@
+/* ============================================================
+   Fjord — zudo-doc theme pack (ADR docs/adr/theme-packs.md)
+
+   Polar-night blue under a faint aurora: frost-cyan accents, icy
+   borders, snow-white text. DARK is the hero (arctic night); LIGHT
+   is the same fjord at daylight — pale glacial ice, deep-water teal
+   accents. Crystalline shape language: zero-radius admonitions and
+   cards, ice-pane code blocks lit along their top edge, a fixed
+   teal-to-violet aurora glow over the page with matching aurora
+   hairlines on the header, h2 rules, and the flyout cap. Inter
+   reading face, JetBrains Mono code.
+
+   Every rule below is scoped under html[data-theme-pack="fjord"] —
+   this is what makes the runtime pack swap atomic (Decision 3) and
+   lets the validator prove a pack can never leak styles while
+   inactive (Decision 6.7). The @font-face blocks are the sole
+   exception (at-rules can't be selector-scoped).
+
+   Prototype-selector adaptations against the REAL DOM (tokens-dump
+   §6 + component sources), noted inline where they matter:
+   - `.sb-group a`      → `#desktop-sidebar` (frost-drift bg) +
+                          `a[data-nav-active]` (glowing active item)
+   - `.toc-active`      → `nav[data-zd-toc] a[aria-current="true"]`
+                          (toc/toc.tsx marks the active entry with
+                          aria-current, not a mock class)
+   - `.doc-pager`       → `.zd-content > nav[data-doc-pager] > a`
+                          (the DocPager nav now carries a stable
+                          data-doc-pager hook, #2876)
+   - `footer[data-footer]` → ships literally now — the real footer
+                          carries the stable data-footer hook (#2876)
+   - `.tp-flyout`       → `div[data-switcher-card]` (the flyout's
+                          stable hook, #2876); the aurora cap rides
+                          its top border via border-image
+   - `.hdr-search` / `.sb-group > p` — prototype-mock markup with no
+     stable hook; their frost styling is NOT ported.
+   - the prototype's `--fjord-*` helper properties (ice-border,
+     aurora ribbon stops, glows, sheen) are not part of the token
+     manifest, so their light-dark() values are inlined at each use
+     site below.
+   - prototype `--zdc-doc-title-weight: 750` / `h2-weight: 680` are
+     pulled down to 700/650 — the shipped Inter subset is a 400–700
+     variable file, so weights past 700 would clamp anyway.
+   - the light-mode comment ink runs one step darker than the
+     prototype (L .545 → .51) to clear WCAG AA (4.67:1) on the
+     glacial code panel; every other pair already passes 4.5:1 in
+     both modes (checked computationally).
+   ============================================================ */
+
+/* ---- Inter — reading face and chrome. Variable 400–700 (weights
+        for prose, nav, and the tight snow-white headings all come
+        from the same files), latin + latin-ext. ---- */
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/Inter-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/Inter-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+/* ---- JetBrains Mono — the ice-pane code face. Variable 400–700,
+        latin + latin-ext. No italic file is shipped; the .hi-com
+        italic renders synthesized-oblique (the ledger/matcha
+        precedent). ---- */
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/JetBrainsMono-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/JetBrainsMono-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+html[data-theme-pack="fjord"] {
+  /* Tier-2 semantic roles — polar-night blue-gray, frost cyan, snow.
+     Both modes always via light-dark(). */
+  --zd-bg: light-dark(oklch(0.971 0.008 230), oklch(0.232 0.024 255));
+  --zd-fg: light-dark(oklch(0.255 0.03 255), oklch(0.93 0.012 235));
+  --zd-selection-bg: light-dark(oklch(0.855 0.062 210), oklch(0.455 0.075 215));
+  --zd-selection-fg: light-dark(oklch(0.215 0.032 255), oklch(0.975 0.008 220));
+  --zd-surface: light-dark(oklch(0.948 0.012 228), oklch(0.262 0.026 253));
+  --zd-muted: light-dark(oklch(0.465 0.038 245), oklch(0.715 0.03 240));
+  --zd-accent: light-dark(oklch(0.455 0.092 205), oklch(0.79 0.095 195));
+  --zd-accent-hover: light-dark(oklch(0.385 0.088 210), oklch(0.855 0.1 188));
+  --zd-code-bg: light-dark(oklch(0.93 0.015 226), oklch(0.196 0.024 258));
+  --zd-code-fg: light-dark(oklch(0.27 0.03 255), oklch(0.912 0.015 235));
+  --zd-success: light-dark(oklch(0.485 0.115 165), oklch(0.8 0.12 160));
+  --zd-danger: light-dark(oklch(0.505 0.15 20), oklch(0.705 0.12 15));
+  --zd-warning: light-dark(oklch(0.508 0.105 80), oklch(0.83 0.095 85));
+  --zd-info: light-dark(oklch(0.475 0.095 240), oklch(0.76 0.085 235));
+
+  /* syntax — all 9 roles, both modes: a cold "frost family" — blue
+     keywords, cyan callables, aurora-green strings, pale-violet
+     numbers, snow identifiers. inserted/deleted reuse the
+     success/danger hues. */
+  --zd-syntax-comment: light-dark(oklch(0.51 0.03 245), oklch(0.63 0.03 245));
+  --zd-syntax-string: light-dark(oklch(0.495 0.105 165), oklch(0.8 0.105 158));
+  --zd-syntax-number: light-dark(oklch(0.5 0.09 300), oklch(0.79 0.075 300));
+  --zd-syntax-keyword: light-dark(oklch(0.455 0.105 250), oklch(0.76 0.095 242));
+  --zd-syntax-callable: light-dark(oklch(0.445 0.098 202), oklch(0.815 0.095 195));
+  --zd-syntax-type: light-dark(oklch(0.43 0.07 228), oklch(0.835 0.065 218));
+  --zd-syntax-name: light-dark(oklch(0.285 0.03 255), oklch(0.92 0.015 235));
+  --zd-syntax-inserted: light-dark(oklch(0.485 0.115 165), oklch(0.8 0.12 160));
+  --zd-syntax-deleted: light-dark(oklch(0.505 0.15 20), oklch(0.705 0.12 15));
+
+  /* fonts — Inter reading face, JetBrains Mono code. */
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Tier-3 component seams — tight snow-white Inter headings;
+     crystalline shape language: ice shards, not pillows. */
+  --zdc-doc-title-weight: 700;
+  --zdc-doc-title-tracking: -0.025em;
+  --zdc-doc-h2-weight: 650;
+  --zdc-doc-h2-tracking: -0.014em;
+  --zdc-admonition-radius: 0;
+  --zdc-admonition-border-width: 3px;
+  --zdc-card-radius: 0;
+  --zdc-nav-active-indicator-color: var(--zd-accent);
+  --zdc-nav-active-weight: 600;
+}
+
+/* ---- Fjord extras ---- */
+
+/* polar sky: a faint fixed aurora above the fold, teal drifting to
+   violet (daylight: high glacial haze) */
+html[data-theme-pack="fjord"] body {
+  background-image:
+    radial-gradient(
+      110% 52% at 72% -12%,
+      light-dark(oklch(0.87 0.048 205 / 0.38), oklch(0.52 0.09 195 / 0.16)),
+      transparent 62%
+    ),
+    radial-gradient(
+      85% 44% at 12% -8%,
+      light-dark(oklch(0.9 0.035 270 / 0.28), oklch(0.48 0.09 285 / 0.13)),
+      transparent 58%
+    );
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+html[data-theme-pack="fjord"] {
+  scrollbar-color: color-mix(in oklch, var(--zd-muted) 45%, transparent) transparent;
+}
+
+/* frosted header with an aurora hairline along its bottom edge (the
+   header is sticky/positioned, so the ::after anchors to it) */
+html[data-theme-pack="fjord"] header[data-header] {
+  background-color: color-mix(in oklch, var(--zd-surface) 82%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-bottom-color: light-dark(oklch(0.79 0.038 220 / 0.9), oklch(0.56 0.055 220 / 0.4));
+}
+html[data-theme-pack="fjord"] header[data-header]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    light-dark(oklch(0.6 0.1 195), oklch(0.78 0.11 185)),
+    light-dark(oklch(0.58 0.09 250), oklch(0.66 0.1 255)) 45%,
+    light-dark(oklch(0.6 0.08 295), oklch(0.61 0.09 300)) 72%,
+    transparent 96%
+  );
+  opacity: 0.55;
+  pointer-events: none;
+}
+html[data-theme-pack="fjord"] [data-header-logo] {
+  letter-spacing: -0.02em;
+}
+html[data-theme-pack="fjord"] [data-header-logo]::before {
+  content: "❄ ";
+  font-size: 0.82em;
+  color: var(--zd-accent);
+}
+
+/* sidebar: frost drift at the top, icy divider, glowing active item
+   (the aurora-teal pill fill itself comes from
+   --zdc-nav-active-indicator-color) */
+html[data-theme-pack="fjord"] #desktop-sidebar {
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklch, var(--zd-accent) 4%, var(--zd-bg)),
+    var(--zd-bg) 36%
+  );
+  border-right-color: light-dark(oklch(0.79 0.038 220 / 0.9), oklch(0.56 0.055 220 / 0.4));
+}
+html[data-theme-pack="fjord"] a[data-nav-active] {
+  box-shadow: 0 0 16px -4px color-mix(in oklch, var(--zd-accent) 55%, transparent);
+}
+
+/* headings: aurora rule over every h2 instead of the default fg
+   fade. The SSR-inlined `style="border-image:linear-gradient(...)"`
+   is defeated with !important (Decision 6.6's sole allowlisted
+   carve-out) — here it is REPLACED by the aurora ribbon, not
+   removed. */
+html[data-theme-pack="fjord"] .zd-content h2 {
+  border-top-width: 2px;
+  border-image: linear-gradient(
+      to right,
+      light-dark(oklch(0.6 0.1 195), oklch(0.78 0.11 185)),
+      light-dark(oklch(0.58 0.09 250), oklch(0.66 0.1 255)) 42%,
+      transparent 88%
+    )
+    1 !important;
+}
+html[data-theme-pack="fjord"] .zd-content h1 {
+  color: color-mix(in oklch, var(--zd-accent) 10%, var(--zd-fg));
+}
+
+/* aurora-teal links: quiet frost underline that solidifies on hover */
+html[data-theme-pack="fjord"] .zd-content a {
+  text-decoration-color: color-mix(in oklch, var(--zd-accent) 42%, transparent);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+html[data-theme-pack="fjord"] .zd-content a:hover {
+  text-decoration-color: currentColor;
+}
+
+/* code: an ice pane — deep water behind glass, lit along the top
+   edge, hard shadow falling away beneath */
+html[data-theme-pack="fjord"] pre.hi-root {
+  border-radius: 2px;
+  border-color: light-dark(oklch(0.79 0.038 220 / 0.9), oklch(0.56 0.055 220 / 0.4));
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklch, var(--zd-accent) 3%, transparent),
+    transparent 38%
+  );
+  box-shadow:
+    inset 0 1px 0 light-dark(oklch(1 0 0 / 0.6), oklch(0.95 0.02 220 / 0.06)),
+    0 10px 28px -20px light-dark(oklch(0.4 0.06 235 / 0.55), oklch(0 0 0 / 0.8));
+}
+html[data-theme-pack="fjord"] .hi-com {
+  font-style: italic;
+}
+
+/* inline code: little frost chips */
+html[data-theme-pack="fjord"] .zd-content code:not(pre code) {
+  border: 1px solid light-dark(oklch(0.79 0.038 220 / 0.9), oklch(0.56 0.055 220 / 0.4));
+  border-radius: 2px;
+}
+
+/* admonitions: glyphs from the fjord — snowflake, aurora spark,
+   peak; the other four variants keep the stock icons. Zero radius
+   comes from the --zdc-admonition-radius seam. */
+html[data-theme-pack="fjord"] [data-admonition] .admonition-title {
+  letter-spacing: 0.01em;
+}
+html[data-theme-pack="fjord"] [data-admonition="note"] .admonition-title::before {
+  content: "❄ ";
+}
+html[data-theme-pack="fjord"] [data-admonition="tip"] .admonition-title::before {
+  content: "✦ ";
+}
+html[data-theme-pack="fjord"] [data-admonition="warning"] .admonition-title::before {
+  content: "▲ ";
+}
+
+html[data-theme-pack="fjord"] .zd-content blockquote {
+  border-left-color: color-mix(in oklch, var(--zd-accent) 55%, transparent);
+}
+
+/* table: teal-tinted header rule, frost hover on rows */
+html[data-theme-pack="fjord"] .zd-content th {
+  border-bottom-color: color-mix(in oklch, var(--zd-accent) 45%, transparent);
+  color: color-mix(in oklch, var(--zd-accent) 28%, var(--zd-fg));
+}
+html[data-theme-pack="fjord"] .zd-content td {
+  border-bottom-color: light-dark(oklch(0.79 0.038 220 / 0.9), oklch(0.56 0.055 220 / 0.4));
+}
+html[data-theme-pack="fjord"] .zd-content tbody tr:hover td {
+  background: color-mix(in oklch, var(--zd-accent) 6%, transparent);
+}
+
+/* TOC: icy spine, frost-cyan active entry with a hard inner edge.
+   The real DOM marks it with aria-current="true" (toc/toc.tsx). The
+   entry pulls back over the ul's hairline so the 2px accent edge
+   sits on the rail (the ul's overflow clips at the padding edge —
+   the foundry/ledger geometry note). */
+html[data-theme-pack="fjord"] nav[data-zd-toc] ul {
+  border-left-color: light-dark(oklch(0.79 0.038 220 / 0.9), oklch(0.56 0.055 220 / 0.4));
+}
+html[data-theme-pack="fjord"] nav[data-zd-toc] a:hover {
+  color: var(--zd-accent);
+}
+html[data-theme-pack="fjord"] nav[data-zd-toc] a[aria-current="true"] {
+  background: color-mix(in oklch, var(--zd-accent) 15%, transparent);
+  color: var(--zd-accent);
+  font-weight: 600;
+  margin-left: calc(-1 * var(--spacing-hsp-lg, 1rem) - 1px);
+  padding-left: var(--spacing-hsp-lg, 1rem);
+  padding-right: 0.4rem;
+  box-shadow: inset 2px 0 0 var(--zd-accent);
+}
+
+/* pager cards: translucent ice, cold glow on hover. The DocPager nav
+   now carries a stable data-doc-pager hook (#2876). */
+html[data-theme-pack="fjord"] .zd-content > nav[data-doc-pager] > a {
+  border-radius: 0;
+  border-color: light-dark(oklch(0.79 0.038 220 / 0.9), oklch(0.56 0.055 220 / 0.4));
+  background: color-mix(in oklch, var(--zd-surface) 55%, transparent);
+}
+html[data-theme-pack="fjord"] .zd-content > nav[data-doc-pager] > a:hover {
+  border-color: color-mix(in oklch, var(--zd-accent) 70%, transparent);
+  box-shadow: 0 0 22px -8px color-mix(in oklch, var(--zd-accent) 50%, transparent);
+}
+
+/* footer: icy top rule, faint frost drift (the real footer now
+   carries the stable data-footer hook, #2876) */
+html[data-theme-pack="fjord"] footer[data-footer] {
+  border-top-color: light-dark(oklch(0.79 0.038 220 / 0.9), oklch(0.56 0.055 220 / 0.4));
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklch, var(--zd-accent) 3%, var(--zd-surface)),
+    var(--zd-surface)
+  );
+}
+
+/* theme-pack flyout: frosted card capped with a 2px aurora ribbon —
+   painted as a top-anchored background gradient (the hearth h2
+   technique) so the icy 1px border keeps its own color on all four
+   sides */
+html[data-theme-pack="fjord"] div[data-switcher-card] {
+  border-color: light-dark(oklch(0.79 0.038 220 / 0.9), oklch(0.56 0.055 220 / 0.4));
+  background-color: color-mix(in oklch, var(--zd-surface) 90%, transparent);
+  background-image: linear-gradient(
+    90deg,
+    light-dark(oklch(0.6 0.1 195), oklch(0.78 0.11 185)),
+    light-dark(oklch(0.58 0.09 250), oklch(0.66 0.1 255)) 50%,
+    light-dark(oklch(0.6 0.08 295), oklch(0.61 0.09 300))
+  );
+  background-size: 100% 2px;
+  background-repeat: no-repeat;
+  background-position: top left;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  /* no inset top sheen here — it would wash over the ribbon's pixels */
+  box-shadow: 0 18px 44px -14px light-dark(oklch(0.35 0.05 245 / 0.35), oklch(0 0 0 / 0.65));
+}

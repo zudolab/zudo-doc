@@ -8,6 +8,10 @@ sidebar_position: 18
 
 zudo-docは完全な静的サイトジェネレーターです。`pnpm build`の出力はHTML、CSS、JavaScriptファイルのディレクトリであり、どこでもデプロイできます。デフォルトのデプロイ先は**Cloudflare Workers**（静的アセット）で、CI/CDの自動化にはGitHub Actionsを使用します。
 
+このguideはzudo-doc **showcase repository**のhost-owned Workerとworkflowを説明します。
+fresh downstream scaffoldには、これらworkflow file、live AI handler、`worker-entry.ts`、
+`AiChatDailySpendCap`は含まれません。host側の部品を追加するときの参照として利用してください。
+
 CIパイプラインは合計ビルド時間を短縮するために並列ジョブに分割されています。サイト生成とドキュメント履歴の抽出は独立したジョブとして実行され、デプロイ前にマージされます。
 
 ## Cloudflare Workers静的アセット
@@ -16,13 +20,23 @@ CIパイプラインは合計ビルド時間を短縮するために並列ジョ
 
 - zfbのビルド出力（`dist/`）
 - 事前生成されたdocヒストリーJSONファイル（`docHistory`が有効な場合）
-- `dist/_worker.js` — CFアダプターが生成する明示的なメインエントリー
+- `worker-entry.ts` — source-ownedのWrangler entry。生成された`dist/_worker.js`をimportし、`dist/_zfb_inner.mjs`を維持します
 
 サイトはWorkers静的アセット層によりルート（`base = "/"`）で配信されます。動的ルート（例：`/api/ai-chat`）は`dist/_worker.js`が処理し、それ以外のGETリクエストは`dist/`から静的アセットとして配信されます。
 
 <Info>
 
-サイトURLは`wrangler.toml`の`[[routes]]`でカスタムドメインバインディングとして設定します。`ANTHROPIC_API_KEY`、`DOCS_SITE_URL`、`RATE_LIMIT` KVなどのバインディングも`wrangler.toml`で宣言します。
+サイトURLは`wrangler.toml`の`[[routes]]`でカスタムドメインバインディングとして設定します。
+ライブAIチャットでは`ANTHROPIC_API_KEY`シークレット、`DOCS_SITE_URL`、ソフトなIPごとの
+`RATE_LIMIT` KV、そしてexport class `AiChatDailySpendCap`へバインドした
+`AI_CHAT_DAILY_SPEND_CAP`名前空間も使います。Worker migrationは
+`v1-ai-chat-daily-spend-cap`と`new_sqlite_classes = ["AiChatDailySpendCap"]`で、
+本番の`wrangler deploy`が適用します。
+
+デプロイentryは生成されたアダプターだけでなく、カスタム`worker-entry.ts`です。Wranglerより前に
+ビルドして`dist/_worker.js`と`dist/_zfb_inner.mjs`を用意し、カスタムentryがアダプターハンドラーと
+Durable Object exportを維持します。PR CIは同じビルドartifactを復元し、Workers-runtime SQLite testと
+Wrangler dry-runをその同一ファイルに対して実行します。
 
 </Info>
 
@@ -44,35 +58,47 @@ CIパイプラインは合計ビルド時間を短縮するために並列ジョ
 
 ### PRチェック（`pr-checks.yml`）
 
-`main`を対象としたプルリクエストでトリガーされます。15のジョブが実行されます：
+`main`を対象としたプルリクエストでトリガーされます。20のジョブが実行されます：
 
 1. **check-template-drift** — ソースファイルとジェネレーターテンプレート間のドリフトを検証
-2. **check-pin-parity** — `@takazudo/zfb`のピンがすべてのパッケージソース間で一致しているか確認
-3. **check-fixture-settings-drift** — `src/config/settings.ts`のすべてのキーがe2eフィクスチャー設定ファイルに存在するか（またはアローリスト済みか）を確認
-4. **check-package-safelist** — `@takazudo/zudo-doc`パッケージ内のすべてのレスポンシブ・任意値ユーティリティクラスを生成済みの`dist/safelist.css`がカバーしているか検証
-5. **check-b4push-ci-parity** — `scripts/run-b4push.sh`の軽量ガードゲートすべてに対応するCIジョブが存在するか確認
-6. **check-e2e-spec-naming** — すべてのe2eスペックファイル名が既知のフィクスチャープレフィックスを使用しているか確認（Playwrightが確実に検出できるよう）
-7. **lint-gates** — `pnpm tags:audit --ci`と`pnpm lint:tokens`（デザイントークンリント）を実行
-8. **typecheck** — `pnpm check`を実行（TypeScript型チェック）
-9. **package-tests** — すべてのパッケージスコープのvitestスイートを実行
-10. **root-tests** — ルートユニットテストスイートを実行
-11. **build-site** — フルクローン（`fetch-depth: 0`）、`pnpm build`、その後`check:links`（`SKIP_DOC_HISTORY`なし — 本番と同じ理由：preBuildにSSGメタ日付のためのフルgit履歴が必要）
-12. **html-validate** — ビルド済み`dist/`のHTMLエレメントエラーを検証
-13. **build-history** — フルクローン、docヒストリーの生成
-14. **e2e** — Playwrightエンドツーエンドテストを実行
-15. **preview** — アーティファクトをマージして`wrangler versions upload --preview-alias`でプレビューをアップロード、PRコメントとしてURLを投稿
+2. **check-no-host-alias-in-package** — package sourceからhost専用import aliasを拒否
+3. **check-pin-parity** — `@takazudo/zfb`のピンがすべてのパッケージソース間で一致しているか確認
+4. **check-fixture-settings-drift** — `src/config/settings.ts`のすべてのキーがe2eフィクスチャー設定ファイルに存在するか（またはアローリスト済みか）を確認
+5. **check-package-safelist** — `@takazudo/zudo-doc`パッケージ内のすべてのレスポンシブ・任意値ユーティリティクラスを生成済みの`dist/safelist.css`がカバーしているか検証
+6. **check-b4push-ci-parity** — `scripts/run-b4push.sh`の軽量ガードゲートすべてに対応するCIジョブが存在するか確認
+7. **check-e2e-spec-naming** — すべてのe2eスペックファイル名が既知のフィクスチャープレフィックスを使用しているか確認（Playwrightが確実に検出できるよう）
+8. **check-flaky-tracking-issue** — flaky/local-only testにtracking issueを必須化
+9. **check-wait-debt** — E2E testの注釈なし固定waitを拒否
+10. **check-component-tokens** — 生成されたcomponent-token CSSが最新か確認
+11. **lint-gates** — tag、compatibility、resolution、design-token guardを実行
+12. **typecheck** — rootとworkspaceのTypeScript checkを実行
+13. **worker-contract** — `build-site` artifactを復元し、Workers-runtime Durable Object testとWrangler dry-runを実行
+14. **package-tests** — すべてのパッケージスコープのvitestスイートを実行
+15. **root-tests** — ルートユニットテストスイートを実行
+16. **build-site** — フルクローン（`fetch-depth: 0`）、`pnpm build`、その後`check:links`（`SKIP_DOC_HISTORY`なし — 本番と同じ理由：preBuildにSSGメタ日付のためのフルgit履歴が必要）
+17. **html-validate** — ビルド済み`dist/`のHTMLエレメントエラーを検証
+18. **build-history** — フルクローン、docヒストリーの生成
+19. **e2e** — Playwrightエンドツーエンドテストを実行
+20. **preview** — アーティファクトをマージして`wrangler versions upload --preview-alias`でプレビューをアップロード、PRコメントとしてURLを投稿
 
 **コンカレンシー:** `group: pr-checks-{pr-number}, cancel-in-progress: true` — 古い実行はCIの消費を節約するためにキャンセルされます。
 
 ### プレビューデプロイ
 
-各PRは`wrangler versions upload --preview-alias <alias>`により**安定したプレビューエイリアス**URLを取得します（`wrangler.toml`の`preview_urls = true`で有効化）。エイリアスはPRチェックでは`pr-<番号>`、ブランチプレビューではブランチスラッグです。URLは`*.workers.dev`上にあり（本番のカスタムドメインではありません）、サブドメインはエイリアスで始まります：
+各PRは`wrangler versions upload --preview-alias <alias>`により**安定したプレビューエイリアス**URLを取得します。生成されるアダプター専用preview configは`preview_urls = true`を維持し、本番と同様にprimary `workers_dev` routeは無効のままにします。エイリアスはPRチェックでは`pr-<番号>`、ブランチプレビューではブランチスラッグです。URLは`*.workers.dev`上にあり（本番のカスタムドメインではありません）、サブドメインはエイリアスで始まります：
 
 ```
-https://<alias>-zudo-doc.<your-subdomain>.workers.dev
+https://<alias>-zudo-doc-preview.<your-subdomain>.workers.dev
 ```
 
 CIはwranglerの出力から正確なホストを解析し、**preview**ジョブによってPRのコメントとして自動的に投稿されます。
+分離されたserviceを初めて作成するときは、CIがCloudflare APIを介してpreview URLのsubdomain設定だけを明示的に有効化し、alias付きuploadを再試行します。
+preview entryはGET/HEADを内部hostnameで`ASSETS`へ直接送り、その他のmethodを生成されたadapterへ委譲します。Cloudflareのasset bindingはpathnameだけでmatchするため、API POST smoke gateを維持しながらpreview aliasがsame-zone Worker fetchとして扱われることを避けられます。本番は生成されたadapterを引き続き直接exportします。
+
+Durable Objectsを実装するversionにはCloudflareがプレビューURLを発行しないため、プレビューworkflowは
+サイトのビルド後に、別のpreview service用のアダプター専用config/entryを生成します。プレビューはSSRと
+assetsを検証しますが、`AI_CHAT_DAILY_SPEND_CAP`をバインドせず、migrationも適用せず、本番の`RATE_LIMIT`
+KVとcustom-domain routeもコピーしません。liveのAI admissionとrate-limit経路は本番専用です。
 
 ## SKIP_DOC_HISTORY
 
@@ -96,7 +122,8 @@ CIはwranglerの出力から正確なホストを解析し、**preview**ジョ�
 
 | コンテキスト | postBuild JSON | 理由 |
 |---|---|---|
-| `SKIP_DOC_HISTORY=1` | スキップ | `GEN_DOC_HISTORY`とCIを上書きする — すべてに優先する |
+| `SKIP_DOC_HISTORY=1` | スキップ | 以下すべてを上書きする — `DOC_HISTORY_SKIP_POSTBUILD`、`GEN_DOC_HISTORY`、CIに優先する |
+| `DOC_HISTORY_SKIP_POSTBUILD=1` | スキップ | `GEN_DOC_HISTORY`とCIを上書きする — `SKIP_DOC_HISTORY`にのみ劣後する |
 | `GEN_DOC_HISTORY=1` | 生成 | 明示的なローカルオプトイン |
 | `CI` / `GITHUB_ACTIONS`が設定 | 生成 | `build-site`アーティファクトを以前とバイト単位で同一に保つ |
 | 通常のローカル`pnpm build` | スキップ | #1986のデフォルト — 下記のTipを参照 |
@@ -107,20 +134,37 @@ postBuildがローカルでデフォルトオフなのは、コンテンツフ�
 
 </Tip>
 
+## DOC_HISTORY_SKIP_POSTBUILD
+
+`DOC_HISTORY_SKIP_POSTBUILD=1`（#2927で導入）は、上の決定表にあるpostBuildのページごとのドロップダウンJSONステップのみをスキップします — `GEN_DOC_HISTORY`がオプトインするのと同じステップです。`SKIP_DOC_HISTORY=1`と異なり、preBuildマニフェストは空にしません。そのため、作成日・更新日・著者ブロックには実際のgit日付が引き続き表示されます。
+
+これはシャロークローンのCIバリアント向けです：軽量なpreBuildの`--name-status`走査には十分なgit履歴があるものの、より重いpostBuildのファイルごとの`git log --follow`チェーンは明示的にオプトアウトしたい場合に使います。ローカルビルドのデフォルト（postBuildをスキップ）に頼るのではなく明示的に指定する必要があるのは、そのバリアントが`CI=true`も設定している場合、CIではデフォルトで生成されるためです。
+
+<Tip>
+
+この名前は意図的に`SKIP_DOC_HISTORY`という部分文字列を含みません。そのため`scripts/check-compatibility-contract.ts`のリテラル文字列によるサバイバースキャンでは別のマーカーとして扱われ、許可リストの変更は不要です。
+
+</Tip>
+
 ## ジョブ間のデータ共有
 
-ビルドアーティファクトは`actions/upload-artifact`ではなく**`actions/cache`**を使用してジョブ間で共有されます。キャッシュキーはクロスラン汚染を防ぐために`github.run_id`にスコープされています：
+build jobは出力をtarにまとめ、**`actions/upload-artifact`**で公開します。consumer jobは
+`actions/download-artifact`を使い、validation/deploy前に`${{ runner.temp }}`から展開します：
 
 ```yaml
-key: dist-${{ github.run_id }}
-key: doc-history-${{ github.run_id }}
+name: site-dist       # contains site-dist.tar
+name: doc-history     # contains doc-history.tar
+retention-days: 1
 ```
 
-**deploy**（または**preview**）ジョブは両方のキャッシュを復元し、`wrangler deploy`（本番）または`wrangler versions upload`（プレビュー）を呼び出す前に`dist/`ディレクトリをマージします。
+**deploy**と**preview** jobは両archiveを復元し、Wranglerの前にdoc historyを`dist/`へmergeします。
+**worker-contract** jobも同じ`site-dist` artifactを復元するため、runtime testとdry-runは後で
+preview/deployが使うものと同じbuildを検証します。
 
 <Note>
 
-ジョブ間のデータ転送に`actions/cache`を使用すること（アーティファクトではなく）は、大きなZIPアーカイブのアップロードとダウンロードのオーバーヘッドを回避します。キャッシュエントリは一時的なイントラランデータに対してより効率的です。
+tarはartifact upload中も任意のroute filenameを維持します。retentionを1日にすることでstorageを
+抑えながらrun単位のpaper trailを残し、このhandoffはmutable cache keyやcross-run cache stateに依存しません。
 
 </Note>
 

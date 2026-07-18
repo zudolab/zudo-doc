@@ -14,15 +14,12 @@ The frontmatter preview block renders custom frontmatter fields as a compact key
 
 This showcase page demonstrates the feature: the `author` and `status` fields rendered above were declared in its own frontmatter and its showcase bindings supply the entry builder.
 
-<Warning title="Requires chrome bindings on a fresh scaffold">
+<Warning title="Requires a preview-data binding">
 
-Setting this config field alone renders nothing in a scaffolded project: the doc-route
-stub calls `createChrome(routeCtx)` without host bindings, so the `buildFrontmatterPreviewEntries` slot stays at
-its no-op default. Thread `chromeBindingsModule` and bind `buildFrontmatterPreviewEntries` — see
-[Custom Components](../guides/custom-components.mdx) and
-[Host Chrome Bindings](./host-chrome-bindings.mdx). Scaffolds generated
-after the [template fix](https://github.com/zudolab/zudo-doc/issues/2716) thread the presentational/data slots automatically;
-your own hydrating islands still need the static-import threading described in the guide.
+`buildFrontmatterPreviewEntries` defaults to a no-op. Point
+`chromeBindingsModule` at a module that binds it. Fresh route stubs already
+consume the module; do not edit them. See [Custom Components](../guides/custom-components.mdx)
+and [Host Chrome Bindings](./host-chrome-bindings.mdx).
 
 </Warning>
 
@@ -151,7 +148,7 @@ By default, frontmatter values render as plain text. To replace a value with a s
 
 ### Component contract
 
-Each renderer is a Preact component that receives `FrontmatterRendererProps`:
+Each renderer is a Preact component that receives `FrontmatterCellRendererProps` from `@takazudo/zudo-doc/metainfo`:
 
 | Prop | Type | Description |
 |------|------|-------------|
@@ -162,7 +159,7 @@ Each renderer is a Preact component that receives `FrontmatterRendererProps`:
 
 ### Registering a renderer
 
-Add a key to your renderer map. Each value is a component function that receives `FrontmatterRendererProps` and returns JSX or `null`:
+Add a key to your renderer map. Each value is a component function that receives `FrontmatterCellRendererProps` and returns JSX or `null`:
 
 ```tsx
 discount: ({ value }) => {

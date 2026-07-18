@@ -35,14 +35,13 @@ function makeEntryProps(
     kind: "entry",
     entry: {
       slug: "test-page",
-      id: "test-page",
-      collection: "docs",
       data: {
         title: "Test Page",
         ...data,
       },
+      body: "",
       module_specifier: "test-page.mdx",
-      Content: () => null,
+      Content: () => ({ type: "div", props: {}, key: null }),
     },
     breadcrumbs: [],
     prev: null,
@@ -86,4 +85,27 @@ describe("createRenderDocPage — standalone chrome suppression", () => {
     expect(vnode.props["hideSidebar"]).toBeFalsy();
     expect(vnode.props["hideToc"]).toBeFalsy();
   });
+
+  it.each([
+    ["page.md", ".md"],
+    ["page.mdx", ".mdx"],
+  ] as const)(
+    "passes the current entry extension from %s to DocHistoryArea",
+    (specifier, ext) => {
+      const props = makeEntryProps();
+      if (props.kind !== "entry") throw new Error("expected entry props");
+      props.entry.module_specifier = specifier;
+
+      const renderDocPage = createRenderDocPage(makeDeps());
+      const vnode = renderDocPage(props, {
+        locale: "en",
+        docHistoryContentDir: "src/content/docs",
+      }) as VNode<Record<string, unknown>>;
+      const historySlot = vnode.props["docHistorySlot"] as VNode<
+        Record<string, unknown>
+      >;
+
+      expect(historySlot.props["sourceFileExt"]).toBe(ext);
+    },
+  );
 });

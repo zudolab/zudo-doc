@@ -9,22 +9,24 @@ set -euo pipefail
 #   3. No-host-alias-in-package guard (#2344) — package must not import the `@/` host alias
 #   4. Pin parity check (root pkg.json ↔ scaffold.ts zfb pins — W4A #1732)
 #   5. Fixture settings drift check
-#   6. Tags audit (--ci)
-#   7. Design token lint
-#   8. Component-tokens codegen drift check (check:component-tokens — #2448)
-#   9. E2E spec naming guard (#2095) — asserts fixture-prefix + no orphan specs
-#  10. @flaky/@local-only tracking-issue guard (#2292) — every quarantined test must link an issue
-#  11. Wait-debt guard (#2538) — zero-tolerance waitForTimeout wait-ok annotation check
-#  12. B4push/CI parity check (guard manifest meta-check — #1967)
-#  13. Type checking (zfb check + workspace package typechecks)
-#  14. Root unit tests (test:unit) — builds @takazudo/zudo-doc as a side-effect
-#  15. Package tests (test:packages) — ~1,535 suite tests across workspace packages (as of 2026-07)
-#  16. Package safelist check (#1994) — requires dist/safelist.css from step 14
-#  17. Build (zfb build)
-#  18. Link check
-#  19. HTML validation (html-validate dist/**/*.html)
-#  20. Automated preview smoke (blocking)
-#  21. Manual interactive smoke (operator-driven)
+#   6. Tags audit (--ci) + canonical authored/template tag guard
+#   7. Current-only compatibility contract
+#   8. Design token lint
+#   9. Component-tokens codegen drift check (check:component-tokens — #2448)
+#  10. E2E spec naming guard (#2095) — asserts fixture-prefix + no orphan specs
+#  11. @flaky/@local-only tracking-issue guard (#2292) — every quarantined test must link an issue
+#  12. Wait-debt guard (#2538) — zero-tolerance waitForTimeout wait-ok annotation check
+#  13. B4push/CI parity check (guard manifest meta-check — #1967)
+#  14. Type checking (zfb check + workspace package typechecks)
+#  15. Worker contract proof (types + Workers runtime + Wrangler dry-run)
+#  16. Root unit tests (test:unit) — builds @takazudo/zudo-doc as a side-effect
+#  17. Package tests (test:packages) — ~1,535 suite tests across workspace packages (as of 2026-07)
+#  18. Package safelist check (#1994) — requires dist/safelist.css from step 16
+#  19. Build (zfb build)
+#  20. Link check
+#  21. HTML validation (html-validate dist/**/*.html)
+#  22. Automated preview smoke (blocking)
+#  23. Manual interactive smoke (operator-driven)
 #
 # The former "Z-index codegen drift check" step was retired in
 # zudolab/zudo-doc#2661: the project-side src/config/z-index-tokens.ts (and
@@ -37,13 +39,13 @@ set -euo pipefail
 # it for time-budget reasons — the bounded fast pass stays fast.
 #
 # Env overrides for non-interactive use:
-#   B4PUSH_SKIP_HTML_VALIDATE=1  — skip HTML validation (step 19)
+#   B4PUSH_SKIP_HTML_VALIDATE=1  — skip HTML validation (step 21)
 #   B4PUSH_SKIP_PREVIEW_SMOKE=1  — skip the automated preview smoke
 #   B4PUSH_SKIP_MANUAL_SMOKE=1   — skip the manual interactive smoke
 
 START_TIME=$(date +%s)
 FAILURES=()
-TOTAL_STEPS=21
+TOTAL_STEPS=23
 CURRENT_STEP=0
 
 # Per-step elapsed timing (#2538) — makes budget creep in any one step
@@ -134,15 +136,23 @@ else
   fail "Fixture settings drift check"
 fi
 
-# ── Step 6: Tags audit ────────────────────────────────
-step "Tags audit (tags:audit --ci)"
-if (cd "$ROOT_DIR" && pnpm tags:audit --ci); then
-  pass "Tags audit passed"
+# ── Step 6: Tags audit + canonical data guard ─────────
+step "Tags audit + canonical tag guard"
+if (cd "$ROOT_DIR" && pnpm tags:audit --ci && pnpm check:canonical-tags); then
+  pass "Tags audit + canonical tag guard passed"
 else
-  fail "Tags audit"
+  fail "Tags audit + canonical tag guard"
 fi
 
-# ── Step 7: Design token lint ────────────────────────
+# ── Step 7: Current-only compatibility contract ─────
+step "Current-only compatibility contract"
+if (cd "$ROOT_DIR" && pnpm check:compatibility-contract); then
+  pass "Current-only compatibility contract passed"
+else
+  fail "Current-only compatibility contract"
+fi
+
+# ── Step 8: Design token lint ────────────────────────
 step "Design token lint"
 if (cd "$ROOT_DIR" && pnpm lint:tokens); then
   pass "Design token lint passed"
@@ -150,7 +160,7 @@ else
   fail "Design token lint"
 fi
 
-# ── Step 8: Component-tokens codegen drift check ─────
+# ── Step 9: Component-tokens codegen drift check ─────
 # pnpm check:component-tokens routes through the @takazudo/zudo-doc
 # `gen-component-tokens` bin (--check mode, #2448) — re-runs the --zdc-*
 # component token codegen into a buffer and fails if
@@ -163,7 +173,7 @@ else
   fail "Component-tokens codegen drift check"
 fi
 
-# ── Step 9: E2E spec naming guard (#2095, hardened #2538) ────────────
+# ── Step 10: E2E spec naming guard (#2095, hardened #2538) ───────────
 # Pure-Node check — asserts (a) every e2e/**/*.spec.ts (recursive, excluding
 # e2e/fixtures/) starts with a known fixture prefix so Playwright's testMatch
 # glob actually picks it up, (b) no *.spec.ts files exist outside e2e/ except
@@ -177,7 +187,7 @@ else
   fail "E2E spec naming guard"
 fi
 
-# ── Step 10: @flaky/@local-only tracking-issue guard ──
+# ── Step 11: @flaky/@local-only tracking-issue guard ──
 # Pure-Node check — asserts every test tagged @flaky or @local-only has a
 # GitHub issue URL in a comment on the line(s) immediately preceding the
 # test() call. Without the URL, quarantine telemetry (report-flaky-lane.mjs)
@@ -189,7 +199,7 @@ else
   fail "@flaky/@local-only tracking-issue guard"
 fi
 
-# ── Step 11: Wait-debt guard (#2538) ──────────────────
+# ── Step 12: Wait-debt guard (#2538) ──────────────────
 # Pure-Node check — zero-tolerance enforcement of TESTING.md's Wait-Pattern
 # Rules: every `waitForTimeout` call under e2e/ (excluding fixtures) must
 # carry a trailing `// wait-ok: <why>` comment on the same line. Closes the
@@ -202,7 +212,7 @@ else
   fail "Wait-debt guard"
 fi
 
-# ── Step 12: B4push/CI parity check ──────────────────
+# ── Step 13: B4push/CI parity check ──────────────────
 # Pure-Node check — verifies every lightweight guard gate in this file also
 # has a corresponding CI job. See scripts/check-b4push-ci-parity.mjs.
 step "B4push/CI parity check (check:b4push-ci-parity)"
@@ -214,7 +224,7 @@ fi
 
 # <<< b4push-ci-parity:guards:end
 
-# ── Step 13: Type checking ─────────────────────────────
+# ── Step 14: Type checking ─────────────────────────────
 # Prefer `zfb check` (the post-cutover entry point). If it fails to
 # start (e.g. binary not yet built), fall back to `tsc --noEmit` so the
 # typecheck still gates pushes.
@@ -247,7 +257,15 @@ else
   fail "Package typechecks"
 fi
 
-# ── Step 14: Root unit tests ──────────────────────────
+# ── Step 15: Worker contract proof ───────────────────
+step "Worker contract proof (types + runtime + dry-run)"
+if (cd "$ROOT_DIR" && pnpm verify:worker-contract); then
+  pass "Worker contract proof passed"
+else
+  fail "Worker contract proof"
+fi
+
+# ── Step 16: Root unit tests ──────────────────────────
 # Root `test:unit` (vitest) guards src/**/__tests__ and scripts/__tests__,
 # which previously ran in no local gate and no CI workflow (#1856). Runs
 # before the expensive site build for fast logic-level feedback.
@@ -266,18 +284,18 @@ else
   fail "Root unit tests"
 fi
 
-# ── Step 15: Package tests ────────────────────────────
+# ── Step 17: Package tests ────────────────────────────
 # Runs all workspace package test suites (~1,535 tests as of 2026-07). Closes the local/CI
 # asymmetry where package tests ran in CI but not in b4push (#1851/#1856).
 # dist/ is already built by step 14 — no extra prep needed.
-step "Package tests (test:packages)"
-if (cd "$ROOT_DIR" && pnpm test:packages); then
-  pass "Package tests passed"
+step "Package tests + subpath resolution"
+if (cd "$ROOT_DIR" && pnpm test:packages && pnpm --filter @takazudo/zudo-doc test:plugin-resolution); then
+  pass "Package tests + subpath resolution passed"
 else
-  fail "Package tests"
+  fail "Package tests + subpath resolution"
 fi
 
-# ── Step 16: Package safelist check ──────────────────
+# ── Step 18: Package safelist check ──────────────────
 # Verifies that the generated dist/safelist.css in packages/zudo-doc/ covers
 # every responsive-variant + arbitrary-value utility class used in
 # packages/zudo-doc/src/**/*.tsx. Catches regressions where gen-safelist.mjs
@@ -290,7 +308,7 @@ else
   fail "Package safelist check"
 fi
 
-# ── Step 17: Build ────────────────────────────────────
+# ── Step 19: Build ────────────────────────────────────
 step "Build (zfb build)"
 if (cd "$ROOT_DIR" && pnpm build); then
   pass "Build passed"
@@ -298,7 +316,7 @@ else
   fail "Build"
 fi
 
-# ── Step 18: Link check ───────────────────────────────
+# ── Step 20: Link check ───────────────────────────────
 #
 # Strict on broken links + absolute MDX-source warnings (real 404s
 # / sub-path bypass). Trailing-slash warnings stay warn-only — they
@@ -318,7 +336,7 @@ else
   fail "Link check"
 fi
 
-# ── Step 19: HTML validation ──────────────────────────
+# ── Step 21: HTML validation ──────────────────────────
 step "HTML validation (html-validate)"
 if [[ "${B4PUSH_SKIP_HTML_VALIDATE:-}" == "1" ]]; then
   skip "HTML validation (B4PUSH_SKIP_HTML_VALIDATE=1)"
@@ -330,7 +348,7 @@ else
   fi
 fi
 
-# ── Step 20: Automated preview smoke (blocking) ──────
+# ── Step 22: Automated preview smoke (blocking) ──────
 step "Preview smoke (automated)"
 if [[ "${B4PUSH_SKIP_PREVIEW_SMOKE:-}" == "1" ]]; then
   skip "Preview smoke (B4PUSH_SKIP_PREVIEW_SMOKE=1)"
@@ -342,7 +360,7 @@ else
   fi
 fi
 
-# ── Step 21: Manual interactive smoke ────────────────
+# ── Step 23: Manual interactive smoke ────────────────
 step "Manual interactive smoke"
 if [[ "${B4PUSH_SKIP_MANUAL_SMOKE:-}" == "1" ]]; then
   skip "Manual smoke (B4PUSH_SKIP_MANUAL_SMOKE=1)"

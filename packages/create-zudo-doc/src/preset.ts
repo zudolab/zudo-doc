@@ -1,5 +1,5 @@
 import fs from "fs";
-import { FEATURES, SINGLE_SCHEMES, SUPPORTED_LANGS } from "./constants.js";
+import { FEATURES, SINGLE_SCHEMES, SUPPORTED_LANGS, THEME_PACKS } from "./constants.js";
 import type { PartialChoices } from "./prompts.js";
 import { validateProjectName } from "./utils.js";
 
@@ -58,6 +58,94 @@ export interface PresetMetaTagsConfig {
   twitterCreator?: string;
 }
 
+/**
+ * Validates a `headerRightItems` value against the v1 preset allowlist.
+ * Shared by `validatePreset()` (JSON preset path) and `createZudoDoc()`
+ * (programmatic API path, #2922) so the two entry points can never drift.
+ */
+export function validateHeaderRightItems(items: unknown): string | null {
+  if (!Array.isArray(items)) {
+    return `"headerRightItems" must be an array`;
+  }
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i] as unknown;
+    if (item === null || typeof item !== "object" || Array.isArray(item)) {
+      return `headerRightItems[${i}] must be an object`;
+    }
+    const t = (item as { type?: unknown }).type;
+    if (t === "link" || t === "html") {
+      return `headerRightItems[${i}] type "${t}" is not supported in presets (v1) — edit zfb.config.ts after scaffold`;
+    }
+    if (t === "component") {
+      const component = (item as { component?: unknown }).component;
+      if (typeof component !== "string") {
+        return `headerRightItems[${i}].component must be a string`;
+      }
+      if (!VALID_HEADER_RIGHT_COMPONENTS.has(
+        component as PresetHeaderRightComponentName,
+      )) {
+        return `headerRightItems[${i}] unknown component "${component}". Allowed: ${[
+          ...VALID_HEADER_RIGHT_COMPONENTS,
+        ].join(", ")}`;
+      }
+    } else if (t === "trigger") {
+      const trigger = (item as { trigger?: unknown }).trigger;
+      if (typeof trigger !== "string") {
+        return `headerRightItems[${i}].trigger must be a string`;
+      }
+      if (!VALID_HEADER_RIGHT_TRIGGERS.has(
+        trigger as PresetHeaderRightTriggerName,
+      )) {
+        return `headerRightItems[${i}] unknown trigger "${trigger}". Allowed: ${[
+          ...VALID_HEADER_RIGHT_TRIGGERS,
+        ].join(", ")}`;
+      }
+    } else {
+      return `headerRightItems[${i}] must have type "component" or "trigger" (got ${JSON.stringify(t)})`;
+    }
+  }
+  return null;
+}
+
+/**
+ * Validates a `metaTags` value's sub-field types. Shared by `validatePreset()`
+ * (JSON preset path) and `createZudoDoc()` (programmatic API path, #2922) so
+ * the two entry points can never drift.
+ */
+export function validateMetaTags(metaTags: unknown): string | null {
+  if (typeof metaTags !== "object" || metaTags === null || Array.isArray(metaTags)) {
+    return `"metaTags" must be an object`;
+  }
+  const mt = metaTags as PresetMetaTagsConfig;
+  if (mt.description !== undefined && typeof mt.description !== "boolean") {
+    return `"metaTags.description" must be a boolean`;
+  }
+  if (mt.keywords !== undefined && mt.keywords !== false && typeof mt.keywords !== "string") {
+    return `"metaTags.keywords" must be a string or false`;
+  }
+  if (mt.ogImage !== undefined && mt.ogImage !== false && typeof mt.ogImage !== "string") {
+    return `"metaTags.ogImage" must be a string or false`;
+  }
+  if (mt.ogSiteName !== undefined && typeof mt.ogSiteName !== "boolean") {
+    return `"metaTags.ogSiteName" must be a boolean`;
+  }
+  if (
+    mt.twitterCard !== undefined &&
+    mt.twitterCard !== false &&
+    mt.twitterCard !== "summary" &&
+    mt.twitterCard !== "summary_large_image"
+  ) {
+    return `"metaTags.twitterCard" must be "summary", "summary_large_image", or false`;
+  }
+  if (mt.twitterSite !== undefined && typeof mt.twitterSite !== "string") {
+    return `"metaTags.twitterSite" must be a string`;
+  }
+  if (mt.twitterCreator !== undefined && typeof mt.twitterCreator !== "string") {
+    return `"metaTags.twitterCreator" must be a string`;
+  }
+  return null;
+}
+
 export interface PresetJson {
   projectName?: string;
   defaultLang?: string;
@@ -67,6 +155,8 @@ export interface PresetJson {
   darkScheme?: string;
   defaultMode?: "light" | "dark";
   respectPrefersColorScheme?: boolean;
+  /** Theme pack slug (ADR #2818 Decision 7), validated against THEME_PACKS. */
+  themePack?: string;
   features?: string[];
   githubUrl?: string;
   cjkFriendly?: boolean;
@@ -95,6 +185,7 @@ export function loadPreset(pathOrStdin: string): PartialChoices {
 const VALID_LANGS = new Set(SUPPORTED_LANGS.map((l) => l.value));
 const VALID_SCHEMES = new Set(SINGLE_SCHEMES);
 const VALID_PMS = new Set(["pnpm", "npm", "yarn", "bun"]);
+const VALID_THEME_PACKS = new Set(THEME_PACKS.map((t) => t.slug));
 
 export function validatePreset(json: unknown): string | null {
   if (json === null || typeof json !== "object" || Array.isArray(json)) {
@@ -131,6 +222,14 @@ export function validatePreset(json: unknown): string | null {
   if (p.defaultMode && !["light", "dark"].includes(p.defaultMode)) {
     return `Invalid defaultMode "${p.defaultMode}" in preset`;
   }
+  if (p.themePack !== undefined) {
+    if (typeof p.themePack !== "string") {
+      return `"themePack" must be a string in preset`;
+    }
+    if (!VALID_THEME_PACKS.has(p.themePack)) {
+      return `Unknown theme pack "${p.themePack}" in preset. Available: ${[...VALID_THEME_PACKS].join(", ")}`;
+    }
+  }
   if (p.packageManager && !VALID_PMS.has(p.packageManager)) {
     return `Invalid packageManager "${p.packageManager}" in preset`;
   }
@@ -141,78 +240,12 @@ export function validatePreset(json: unknown): string | null {
     return `"minifyHtml" must be a boolean in preset`;
   }
   if (p.headerRightItems !== undefined) {
-    if (!Array.isArray(p.headerRightItems)) {
-      return `"headerRightItems" must be an array in preset`;
-    }
-    for (let i = 0; i < p.headerRightItems.length; i++) {
-      const item = p.headerRightItems[i] as unknown;
-      if (item === null || typeof item !== "object" || Array.isArray(item)) {
-        return `headerRightItems[${i}] must be an object`;
-      }
-      const t = (item as { type?: unknown }).type;
-      if (t === "link" || t === "html") {
-        return `headerRightItems[${i}] type "${t}" is not supported in presets (v1) — edit settings.ts after scaffold`;
-      }
-      if (t === "component") {
-        const component = (item as { component?: unknown }).component;
-        if (typeof component !== "string") {
-          return `headerRightItems[${i}].component must be a string`;
-        }
-        if (!VALID_HEADER_RIGHT_COMPONENTS.has(
-          component as PresetHeaderRightComponentName,
-        )) {
-          return `headerRightItems[${i}] unknown component "${component}". Allowed: ${[
-            ...VALID_HEADER_RIGHT_COMPONENTS,
-          ].join(", ")}`;
-        }
-      } else if (t === "trigger") {
-        const trigger = (item as { trigger?: unknown }).trigger;
-        if (typeof trigger !== "string") {
-          return `headerRightItems[${i}].trigger must be a string`;
-        }
-        if (!VALID_HEADER_RIGHT_TRIGGERS.has(
-          trigger as PresetHeaderRightTriggerName,
-        )) {
-          return `headerRightItems[${i}] unknown trigger "${trigger}". Allowed: ${[
-            ...VALID_HEADER_RIGHT_TRIGGERS,
-          ].join(", ")}`;
-        }
-      } else {
-        return `headerRightItems[${i}] must have type "component" or "trigger" (got ${JSON.stringify(t)})`;
-      }
-    }
+    const err = validateHeaderRightItems(p.headerRightItems);
+    if (err) return err;
   }
   if (p.metaTags !== undefined) {
-    if (typeof p.metaTags !== "object" || p.metaTags === null || Array.isArray(p.metaTags)) {
-      return `"metaTags" must be an object in preset`;
-    }
-    const mt = p.metaTags as PresetMetaTagsConfig;
-    if (mt.description !== undefined && typeof mt.description !== "boolean") {
-      return `"metaTags.description" must be a boolean`;
-    }
-    if (mt.keywords !== undefined && mt.keywords !== false && typeof mt.keywords !== "string") {
-      return `"metaTags.keywords" must be a string or false`;
-    }
-    if (mt.ogImage !== undefined && mt.ogImage !== false && typeof mt.ogImage !== "string") {
-      return `"metaTags.ogImage" must be a string or false`;
-    }
-    if (mt.ogSiteName !== undefined && typeof mt.ogSiteName !== "boolean") {
-      return `"metaTags.ogSiteName" must be a boolean`;
-    }
-    if (
-      mt.twitterCard !== undefined &&
-      mt.twitterCard !== false &&
-      mt.twitterCard !== "summary" &&
-      mt.twitterCard !== "summary_large_image"
-    ) {
-      return `"metaTags.twitterCard" must be "summary", "summary_large_image", or false`;
-    }
-    if (mt.twitterSite !== undefined && typeof mt.twitterSite !== "string") {
-      return `"metaTags.twitterSite" must be a string`;
-    }
-    if (mt.twitterCreator !== undefined && typeof mt.twitterCreator !== "string") {
-      return `"metaTags.twitterCreator" must be a string`;
-    }
+    const err = validateMetaTags(p.metaTags);
+    if (err) return err;
   }
   // Cross-field validation
   if (p.colorSchemeMode === "single" && (p.lightScheme || p.darkScheme)) {
@@ -239,6 +272,7 @@ export function presetToChoices(json: PresetJson): PartialChoices {
   if (json.respectPrefersColorScheme !== undefined) {
     choices.respectPrefersColorScheme = json.respectPrefersColorScheme;
   }
+  if (json.themePack) choices.themePack = json.themePack;
   if (json.packageManager) choices.packageManager = json.packageManager;
   if (json.githubUrl !== undefined) choices.githubUrl = json.githubUrl;
   if (json.cjkFriendly !== undefined) choices.cjkFriendly = json.cjkFriendly;

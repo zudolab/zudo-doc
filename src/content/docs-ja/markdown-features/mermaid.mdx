@@ -99,6 +99,6 @@ flowchart TB
 
 ## 仕組み
 
-ビルド時に、Markdown パイプラインは `<pre><code class="language-mermaid">` ブロックを `<div class="mermaid">` ラッパーに置き換え、図のソースをエスケープせずに残すため、レンダラーは生の Mermaid DSL を受け取ります。mermaid パスは構文ハイライトより前に実行されるため、syntect は図のソースに触れません。実行時にはクライアントアイランドがラッパーを検出して図を描画します。
+ビルド時に、Markdown パイプラインは `<pre><code class="language-mermaid">` ブロックを `<div class="mermaid">` ラッパーに置き換え、図のソースをエスケープせずに残すため、レンダラーは生の Mermaid DSL を受け取ります。mermaid パスは構文ハイライトより前に実行されるため、コードハイライターは図のソースに触れません。実行時にはクライアントアイランドがラッパーを検出して図を描画します。
 
 サポートされるすべての図の種類（フローチャート、シーケンス、ステート、クラス、ガントなど）については [Mermaid のドキュメント](https://mermaid.js.org/) を参照してください。

@@ -251,6 +251,7 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
         siteName={settings.siteName}
         headerNav={settings.headerNav}
         headerRightItems={headerRightItems}
+        headerRightComponents={ctx.hostBindings.headerRightComponents}
         colorModeEnabled={Boolean(settings.colorMode)}
         hasLocales={locales.length > 1}
         hasVersions={Boolean(settings.versions)}

@@ -30,20 +30,14 @@ export type TagGovernanceMode = "off" | "warn" | "strict";
  * - `description`— optional short description for tooling / tag index pages.
  * - `group`      — optional grouping key used by the grouped tag footer
  *                  (e.g. `"type"`, `"level"`, `"topic"`).
- * - `aliases`    — alternate strings that content files may use. Alias
- *                  resolution rewrites these to `id` before aggregation.
- * - `deprecated` — `true` marks the tag as deprecated with no redirect: the
- *                  canonical id is dropped from aggregation. Pass
- *                  `{ redirect: "<other-id>" }` to rewrite this tag to another
- *                  canonical id when it appears in content.
+ * Content must use `id` exactly. Retired or misspelled ids are unknown tags;
+ * the vocabulary intentionally has no alias or deprecation migration fields.
  */
 export interface TagVocabularyEntry {
   id: string;
   label?: string;
   description?: string;
   group?: string;
-  aliases?: readonly string[];
-  deprecated?: boolean | { redirect?: string };
 }
 
 export interface HeaderNavChildItem {
@@ -57,12 +51,20 @@ export interface HeaderNavItem extends HeaderNavChildItem {
   children?: HeaderNavChildItem[];
 }
 
-export type HeaderRightComponentName =
+export type HeaderRightBuiltinComponentName =
   | "theme-toggle"
   | "language-switcher"
   | "version-switcher"
   | "github-link"
   | "search";
+
+/**
+ * Serializable component name. Built-ins remain suggested, while host-owned
+ * names resolve through `ChromeHostBindings.headerRightComponents`.
+ */
+export type HeaderRightComponentName =
+  | HeaderRightBuiltinComponentName
+  | (string & {});
 
 export type HeaderRightTriggerName = "design-token-panel" | "ai-chat";
 
@@ -317,7 +319,6 @@ export interface Settings {
   designTokenPanel: boolean;
   tocMinDepth: number;
   tocMaxDepth: number;
-  headingIdStrategy: "flat" | "hierarchical";
   sidebarResizer: boolean;
   sidebarToggle: boolean;
   imageEnlarge: boolean;
@@ -330,6 +331,7 @@ export interface Settings {
   dynamicPageTransition: boolean;
   frontmatterPreview: FrontmatterPreviewConfig | false;
   docHistory: boolean;
+  docHistoryExclude: string[];
   bodyFootUtilArea: BodyFootUtilAreaConfig | false;
   htmlPreview: HtmlPreviewConfig | undefined;
   versions: VersionConfig[] | false;
@@ -420,4 +422,23 @@ export interface Settings {
    * module. Irrelevant when `designTokenPanel` is `false`.
    */
   designTokenPanelConfigModule?: string;
+  /**
+   * Active theme-pack slug (ADR `docs/adr/theme-packs.md`). `"default"` is
+   * the stock zudo-doc look — no pack stylesheet is loaded. Must be a member
+   * of the resolved `themePacks` list; an unknown slug fails the build
+   * loudly at plugin setup (`src/plugins/routes.ts`).
+   */
+  themePack?: string;
+  /**
+   * Mount the bottom-right theme-pack switcher flyout (and its browse-all
+   * dialog) on every page.
+   */
+  themePackSwitcher?: boolean;
+  /**
+   * Enabled theme-pack slugs, in switcher order. `undefined` = every bundled
+   * pack, `"default"` first then the rest in canonical (alphabetical-by-slug)
+   * order. An explicit list is authoritative: may omit `"default"`, reorder
+   * freely; duplicate or unknown slugs fail the build loudly.
+   */
+  themePacks?: string[];
 }

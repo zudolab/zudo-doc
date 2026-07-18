@@ -2,13 +2,13 @@
 
 Standalone package for extracting and serving git history of documentation files. Has two modes: an HTTP server for local development and a CLI generator for CI builds.
 
-The history extraction logic was extracted from the Astro build pipeline so that expensive `git log --follow` calls do not block the main build, enabling a parallel CI strategy.
+History extraction runs independently from the zfb site build so expensive `git log --follow` calls can be generated in a dedicated CI job.
 
 ## Modes
 
 ### Server mode (local development)
 
-Runs an HTTP server that serves history on demand. Used by `pnpm dev` at the repository root, which starts both Astro and this server concurrently via `run-p`.
+Runs an HTTP server that serves history on demand. Used by `pnpm dev` at the repository root, which starts zfb, this server, and the package dev processes concurrently via `run-p`.
 
 ```bash
 pnpm dev -- \
@@ -37,7 +37,7 @@ The file index is refreshed every 10 seconds so newly added or renamed files are
 
 ### CLI mode (CI builds)
 
-Generates static `{slug}.json` files into an output directory. Used by the `build-history` CI job, which runs in parallel with the `build-site` Astro build.
+Generates static `{slug}.json` files into an output directory. Used by the `build-history` CI job, which runs in parallel with the zfb `build-site` job.
 
 ```bash
 pnpm generate -- \
@@ -55,7 +55,11 @@ pnpm generate -- \
 
 ## zfb integration
 
-In dev mode, the zfb integration at `packages/zudo-doc/src/integrations/doc-history/` proxies `/doc-history/*` requests to this server. In build mode, the integration falls back to inline generation unless `SKIP_DOC_HISTORY=1` is set — which is the case in the CI `build-site` job so that the zfb build completes fast while the CLI `build-history` job generates the JSONs in parallel.
+In dev mode, the zfb plugin implemented at `packages/zudo-doc/src/plugins/internal/doc-history/index.ts` proxies `/doc-history/*` requests to this server. In build mode, preBuild produces the current metadata manifest; standard CI deliberately keeps `SKIP_DOC_HISTORY` unset so that metadata comes from the full clone. The separate `build-history` job generates per-page revision JSON in parallel by running this package's `generate` CLI directly — that CLI is unaffected by any of the env vars below and always generates when invoked. `SKIP_DOC_HISTORY=1` remains an explicit escape hatch for shallow/custom builds that cannot read Git history (blanks both the preBuild manifest and the zfb plugin's own inline postBuild step); `DOC_HISTORY_SKIP_POSTBUILD=1` skips only that inline postBuild step, leaving the preBuild manifest untouched.
+
+## Programmatic API
+
+The `@takazudo/zudo-doc-history-server/git-history` subpath exposes the current async history path (`getDocHistoryAsync`), the single-pass manifest walk (`getAllFilesFirstLastMetaAsync`), content-file collection, repository detection, and the pure rename parsers. Server and CLI callers both await `getDocHistoryAsync`.
 
 ## Build
 
@@ -67,7 +71,7 @@ Uses `tsup` to emit ESM output + DTS into `dist/`.
 
 ## Design notes
 
-- **Async git** — all git calls use `execFile` / `spawn` (non-blocking). The CLI batch generator wraps each file in a semaphore-bounded Promise, so the async variant genuinely parallelizes across files (#1986). The server also uses the same async path so the event loop is never blocked.
+- **Async history extraction** — history walks and content reads use `execFile` / `spawn` (non-blocking). The only synchronous git call is the cached one-time repository-root probe. The CLI batch generator wraps each file in a semaphore-bounded Promise, and the server uses the same async extraction path.
 - **Repo-relative paths** — responses use relative file paths to avoid leaking absolute server paths.
 - **`--follow` for renames** — file history is tracked across renames with multiple fallback strategies.
 - **pnpm --filter CWD** — when run via `pnpm --filter`, the CWD is this package dir. pnpm sets `INIT_CWD` to the repo root, so pass repo-root-relative content paths (e.g. `src/content/docs`) without any `../../` prefix.

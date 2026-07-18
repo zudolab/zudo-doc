@@ -10,7 +10,7 @@
  *     NOT the merged categoryMeta `resolveNavSource` returned.
  *  3. An unconfigured locale throws.
  *  4. `tagCount` excludes `category_no_page` docs and uses
- *     `data.slug ?? toRouteSlug(id)`.
+ *     `data.slug ?? toRouteSlug(entry.slug)`.
  *  5. `navSourceOptions` / `categoryMetaDir` overrides are honored.
  */
 
@@ -31,8 +31,11 @@ import { prepareHomeData } from "../prepare-home-data.js";
 
 function makeDoc(overrides: Partial<DocPageEntry> = {}): DocPageEntry {
   return {
-    id: "getting-started",
+    slug: "getting-started",
     data: { title: "Getting Started" },
+    body: "",
+    module_specifier: "mdx://docs/getting-started",
+    Content: () => ({ type: "div", props: {}, key: null }),
     ...overrides,
   } as DocPageEntry;
 }
@@ -158,11 +161,11 @@ describe("prepareHomeData — non-default-locale branch", () => {
 });
 
 describe("prepareHomeData — tagCount", () => {
-  it("excludes category_no_page docs and uses data.slug ?? toRouteSlug(id)", () => {
+  it("excludes category_no_page docs and uses data.slug ?? toRouteSlug(entry.slug)", () => {
     const navDocs: DocPageEntry[] = [
-      makeDoc({ id: "a", data: { title: "A", slug: "custom-a" } }),
-      makeDoc({ id: "b", data: { title: "B", category_no_page: true } }),
-      makeDoc({ id: "c", data: { title: "C" } }),
+      makeDoc({ slug: "a", data: { title: "A", slug: "custom-a" } }),
+      makeDoc({ slug: "b", data: { title: "B", category_no_page: true } }),
+      makeDoc({ slug: "c", data: { title: "C" } }),
     ];
     const { ctx, collectTags, toRouteSlug } = makeStubRouteContext({
       defaultLocale: "en",
@@ -175,9 +178,9 @@ describe("prepareHomeData — tagCount", () => {
     const [filteredDocs, slugFn] = collectTags.mock.calls[0]!;
     expect(filteredDocs).toEqual([navDocs[0]!, navDocs[2]!]);
 
-    slugFn(navDocs[0]!.id, navDocs[0]!.data);
+    slugFn(navDocs[0]!.slug, navDocs[0]!.data);
     expect(toRouteSlug).not.toHaveBeenCalled(); // slug present — no fallback call
-    slugFn(navDocs[2]!.id, navDocs[2]!.data);
+    slugFn(navDocs[2]!.slug, navDocs[2]!.data);
     expect(toRouteSlug).toHaveBeenCalledWith("c");
   });
 

@@ -40,7 +40,7 @@ Tags surface in three places across the built site.
 
 Every page with one or more tags renders a row of tag badges that links each badge to its tag index page. This is powered by the `DocTags` component (`TagNav` with `variant="page"`).
 
-The row can appear in one of two positions, chosen by the [`tagPlacement`](./configuration.mdx#site-settings-tagplacement) setting:
+The row can appear in one of two positions, chosen by the [`tagPlacement`](./configuration.mdx#tags-tagplacement) setting:
 
 - `"after-title"` (default) — the badge row sits directly below the page title, above the main content. Use this when tags describe the page at a glance and should be visible without scrolling.
 - `"before-pager"` — the badge row sits at the bottom of the content, immediately above the previous/next pager. Use this when tags are reference metadata that readers reach for after finishing the page.
@@ -94,7 +94,7 @@ See [Configuration](./configuration.mdx) for the full settings reference.
 Once a doc base has more than a handful of authors, free-form tags drift. zudo-doc ships a vocabulary-aware governance workflow to keep the tag index tidy as the project grows:
 
 - [Tag governance](./tag-governance.mdx) — curate a canonical vocabulary and enforce it via `tagGovernance: "warn" | "strict"`.
-- [Tag audit](./tags-audit.mdx) — `pnpm tags:audit` reports unknowns, deprecations, aliases, near-duplicates, and orphans, with a byte-stable `--fix` for alias rewrites and `--ci` integration for `pnpm b4push`.
+- [Tag audit](./tags-audit.mdx) — `pnpm tags:audit` reports unknowns, near-duplicates, and orphans, with `--ci` integration for `pnpm b4push`.
 - [Tag suggestions](./tags-suggest.mdx) — optional local-LLM helper (`pnpm tags:suggest`) that proposes canonical tags for new pages.
 - [Footer taglist](./footer-taglist.mdx) — opt-in footer column that surfaces the vocabulary to readers.
 

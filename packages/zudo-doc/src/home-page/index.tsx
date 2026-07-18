@@ -39,9 +39,9 @@ import type { DocNavNode } from "../doc-page-props/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
 import { createHeadWithDefaults } from "../head-with-defaults/index.js";
-import { createHeaderWithDefaults } from "../header-with-defaults/index.js";
-import { createFooterWithDefaults } from "../footer-with-defaults/index.js";
+import { resolveThemePackSsrSlug } from "../theme/theme-pack-provider.js";
 import { deriveComposeMetaTitle, deriveBodyEndIslands } from "../chrome/derive.js";
+import { derivePrimaryChromeSlots } from "../chrome/primary-slots.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 
 export { prepareHomeData } from "./prepare-home-data.js";
@@ -71,6 +71,8 @@ export interface HomePageViewProps {
   tree: DocNavNode[];
   /** Ordered category prefixes, passed through to `SiteTreeNav`. */
   categoryOrder: string[];
+  /** Root-category slugs that should start collapsed in `SiteTreeNav`. */
+  initiallyCollapsedCategorySlugs?: string[];
   /** Unique tag count for the current locale — gates the "all tags" section
    *  together with `settings.docTags`. */
   tagCount: number;
@@ -108,10 +110,15 @@ export function createHomePageView<S extends Settings = Settings>(
   const defaultLocale = ctx.defaultLocale;
   const composeMetaTitle = deriveComposeMetaTitle(ctx);
   const HeadWithDefaults = createHeadWithDefaults(ctx);
-  const HeaderWithDefaults = createHeaderWithDefaults(ctx);
-  const FooterWithDefaults = createFooterWithDefaults(ctx);
+  const { Header: HeaderWithDefaults, Footer: FooterWithDefaults } =
+    derivePrimaryChromeSlots(ctx);
   const BodyEndIslands = deriveBodyEndIslands(ctx);
   const homeExtras = ctx.hostBindings.homeExtras;
+  // SSR `data-theme-pack` html attribute (ADR theme-packs.md Decision 3, #2822).
+  const dataThemePack = resolveThemePackSsrSlug(
+    ctx.themePackRegistry,
+    ctx.settings as { themePack?: string },
+  );
 
   /** Site index: hero + `SiteTreeNav` grid + optional tag-count section. */
   function HomePageView({
@@ -119,6 +126,7 @@ export function createHomePageView<S extends Settings = Settings>(
     extras,
     tree,
     categoryOrder,
+    initiallyCollapsedCategorySlugs,
     tagCount,
     wide,
   }: HomePageViewProps): JSX.Element {
@@ -133,6 +141,7 @@ export function createHomePageView<S extends Settings = Settings>(
         title={composeMetaTitle(settings.siteName)}
         head={<HeadWithDefaults title={settings.siteName} />}
         lang={locale}
+        dataThemePack={dataThemePack}
         noindex={settings.noindex}
         hideSidebar={true}
         hideToc={true}
@@ -195,6 +204,7 @@ export function createHomePageView<S extends Settings = Settings>(
               tree={tree as unknown as SidebarNavNode[]}
               categoryOrder={categoryOrder}
               categoryIgnore={["inbox", "develop"]}
+              initiallyCollapsedCategorySlugs={initiallyCollapsedCategorySlugs}
             />
           ),
         }) as unknown as VNode}

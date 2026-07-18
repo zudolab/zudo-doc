@@ -142,6 +142,48 @@ sidebar_position: 9
   `}
 />
 
+## 高さ100%
+
+`fullHeight` プロップを使うと、プレビュードキュメントの `html`/`body` を iframe いっぱいに広げられます。`height: 100%` がビューポートまで届くレイアウト（利用可能なスペースを埋めるフレックスカラムなど）に便利です。
+
+:::warning[明示的な `height` と併用する]
+`fullHeight` は高さ自動調整の仕組みと干渉します — 高さ自動調整は iframe の body を計測して iframe の高さをそれに合わせますが、`fullHeight` は逆に body の高さを iframe 側から導出させます。両方を組み合わせると、安定した解決策のないフィードバックループが発生します。`fullHeight` を使うときは必ず明示的な `height` も指定してください。
+:::
+
+<HtmlPreview
+  title="高さ100%のフレックスカラム"
+  height={200}
+  fullHeight
+  html={`
+    <div class="fill">
+      <header>ヘッダー</header>
+      <main>メイン（残りのスペースを埋める）</main>
+      <footer>フッター</footer>
+    </div>
+  `}
+  css={`
+    .fill {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      font-family: system-ui, sans-serif;
+      color: #fff;
+      text-align: center;
+    }
+    .fill header, .fill footer {
+      padding: 8px;
+      background: #334155;
+    }
+    .fill main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #64748b;
+    }
+  `}
+/>
+
 ## 外部リソース
 
 CSS フレームワーク、Web フォント、スクリプトなどの外部リソースをプレビューに読み込めます。`zfb.config.ts` でグローバルに設定するか、コンポーネントのプロップで個別に指定します。
@@ -202,9 +244,65 @@ export default defineConfig(
 />
 ````
 
+### 外部スタイルシートとスクリプト
+
+`head` と `js` は文字列ベースのプロップで、常に可視の「Head」/「JS」コードブロックとして表示され、プレビューには preflight リセット（すべてのプレビューに注入される Tailwind v4 の CSS リセット）が常に上乗せで適用され、独自リセットを持つフレームワークでもスキップする手段がありません。`externalStyles`・`externalScripts`・`preflight`・`showResources` は、CDN リソース（CSS フレームワーク、Web フォント、`@tailwindcss/browser`・Bootstrap・htmx のようなスクリプト）向けに、コードパネルを意識した構造化された代替手段を提供します。
+
+- **`externalStyles`** — スタイルシート URL の配列。`<link rel="stylesheet" href="...">` タグとして出力されます。author の `css` より**前に**読み込まれるため、`css` でフレームワークを上書きできます。
+- **`externalScripts`** — スクリプト URL の配列。`<script src="...">` タグとして出力されます。インラインの `js` プロップと同じサンドボックス／`syncDelay` の導出ロジックを通るため、プレビューは自動的に `sandbox="allow-scripts allow-same-origin"` と 300ms の高さ再同期ディレイを得ます。
+- **`preflight`** — `false` を指定すると、注入される preflight リセットを完全にスキップします。Tailwind のように独自のベーススタイルを持つフレームワーク向けです。
+- **`showResources`** — 両方の配列は（`head`/`js` と異なり）**デフォルトでは可視のコードパネルから除外されます**。読者に読み込まれているリソースを示したい場合は `true` を指定すると、「HTML」パネルの先頭に `<link>`/`<script src>` の生の行として表示されます。
+
+これら4つのプロップは**コンポーネント単位のみ**です — `head`/`css`/`js` と異なり、`zfb.config.ts` のグローバル `htmlPreview` 設定には含まれません。
+
+:::warning[外部リソースはクライアントサイドで読み込まれ、ビルド時には読み込まれない]
+`externalStyles`/`externalScripts` は、**プレビューの iframe が描画されるときに**ブラウザが行うネットワークリクエストであり、ビルド時にバンドルされるアセットではありません。リソースの読み込み中はプレビューが一瞬スタイル未適用の状態で表示されることがあり、そのURLでリソースが利用可能であり続けることに依存します。
+:::
+
+`@tailwindcss/browser` は独自のリセットを持つため `preflight={false}` を指定する、Tailwind CDN の1行デモ:
+
+<HtmlPreview
+  title="Tailwind CDN"
+  externalScripts={["https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"]}
+  preflight={false}
+  html={`
+    <div class="flex gap-4 p-6 bg-slate-100">
+      <div class="px-4 py-2 bg-blue-500 text-white rounded-lg font-sans">Tailwind</div>
+      <div class="px-4 py-2 bg-emerald-500 text-white rounded-lg font-sans">via CDN</div>
+    </div>
+  `}
+/>
+
+````mdx
+<HtmlPreview
+  title="Tailwind CDN"
+  externalScripts={["https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"]}
+  preflight={false}
+  html={`
+    <div class="flex gap-4 p-6 bg-slate-100">
+      <div class="px-4 py-2 bg-blue-500 text-white rounded-lg font-sans">Tailwind</div>
+      <div class="px-4 py-2 bg-emerald-500 text-white rounded-lg font-sans">via CDN</div>
+    </div>
+  `}
+/>
+````
+
+`showResources` を指定すると、CDN の URL が非表示ではなく「HTML」コードパネルの先頭に生の行として表示されます:
+
+<HtmlPreview
+  title="Tailwind CDN（リソースを表示）"
+  showResources
+  externalScripts={["https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"]}
+  preflight={false}
+  defaultOpen
+  html={`
+    <div class="px-4 py-2 bg-violet-500 text-white rounded-lg font-sans w-fit">コードを開くとCDNの行が見えます</div>
+  `}
+/>
+
 ## セキュリティと `sandbox` プロップ
 
-プレビューは分離された `<iframe srcdoc>` 内に描画されます。その `sandbox` 属性は、プレビューにスクリプトが含まれる場合（`js` プロップまたは `head` 内の `<script>`）は `allow-scripts allow-same-origin`、含まれない場合は `allow-same-origin` を**デフォルト**とします。
+プレビューは分離された `<iframe srcdoc>` 内に描画されます。その `sandbox` 属性は、プレビューにスクリプトが含まれる場合（`js` プロップ、`head` 内の `<script>`、または空でない `externalScripts`）は `allow-scripts allow-same-origin`、含まれない場合は `allow-same-origin` を**デフォルト**とします。
 
 :::danger[信頼の前提]
 `allow-scripts` と `allow-same-origin` を組み合わせると、**iframe のサンドボックスは実質的に無効化されます** — プレビュー内のスクリプトが親ページのオリジンを共有し、親ドキュメントにアクセスできます。zudo-doc がこのデフォルトを採用しているのは、プレビューの内容が**作成者が信頼できる MDX** であるためで、また `allow-same-origin` が高さの自動計測を可能にしているためです。
@@ -233,7 +331,12 @@ export default defineConfig(
 | `title` | string | `undefined` | プレビューヘッダーバーに表示するタイトル |
 | `height` | number | auto | iframe の固定高さ（ピクセル）。省略時はコンテンツに合わせて自動調整 |
 | `defaultOpen` | boolean | `false` | ソースコードパネルをデフォルトで展開表示する |
+| `fullHeight` | boolean | `false` | プレビュードキュメントの `html`/`body` を高さ100%まで広げる。高さ自動調整と干渉するため、必ず明示的な `height` と併用する |
 | `sandbox` | string | auto | iframe の `sandbox` 属性。省略時は計算済みのデフォルト（スクリプトありなら `allow-scripts allow-same-origin`、なしなら `allow-same-origin`）。信頼できないコンテンツにはより厳しい値を指定 — ただし `allow-same-origin` を外すと高さ自動調整が無効になるため `height` も併せて指定する |
+| `externalStyles` | string[] | `undefined` | 外部スタイルシート URL。`head`/`css` より前に `<link rel="stylesheet">` として挿入される。コンポーネント単位のみ — ビルドバンドルされず、表示時にクライアントサイドで読み込まれる |
+| `externalScripts` | string[] | `undefined` | 外部スクリプト URL。`<script src>` として挿入される。`js` と同様にサンドボックス／`syncDelay` の導出を切り替える。コンポーネント単位のみ — ビルドバンドルされず、表示時にクライアントサイドで読み込まれる |
+| `preflight` | boolean | `true` | `false` を指定すると、注入される preflight リセットをスキップする — `externalStyles`/`externalScripts` で読み込む独自リセットを持つフレームワーク向け |
+| `showResources` | boolean | `false` | `externalStyles`/`externalScripts` を「HTML」コードパネルの先頭に生の行として表示する。デフォルトではパネルから除外される |
 
 ## サポートされている言語
 
@@ -252,3 +355,5 @@ export default defineConfig(
 - `htmlPreview` 設定フィールドのグローバルリソースは、コンポーネント単位のプロップの前に挿入されます。
 - `html`、`css`、`js` プロップはインデント付きのテンプレートリテラルに対応しています。先頭の空白はソースコード表示時に自動的に除去されます。
 - クライアントサイドのハイドレーションはコンポーネントラッパーにより自動的に処理されるため、MDX 内で `client:load` ディレクティブを付ける必要はありません。
+- `externalStyles`/`externalScripts` は表示時にクライアントサイドで読み込まれます — プレビュー iframe が描画されるときにブラウザが行うネットワークリクエストであり、ビルド時にバンドルされるアセットではありません。上記の[外部スタイルシートとスクリプト](#外部リソース-外部スタイルシートとスクリプト)を参照。
+- srcdoc への挿入順序: preflight リセット（`preflight={false}` でない限り）→ `fullHeight` スタイル → `externalStyles` → `head` → `css`。

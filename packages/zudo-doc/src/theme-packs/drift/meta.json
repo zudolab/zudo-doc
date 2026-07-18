@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "slug": "drift",
+  "name": "Drift",
+  "description": "Floaty slate-blue comfort dark for long reading — soft glows in place of borders, gentle elevation, relaxed Plex type.",
+  "mode": "dark",
+  "version": "1.0.1",
+  "fonts": {
+    "sans": "IBM Plex Sans",
+    "mono": "IBM Plex Mono",
+    "loaded": ["IBM Plex Sans", "IBM Plex Mono"]
+  },
+  "preview": {
+    "light": {
+      "bg": "#edf2f6",
+      "fg": "#24303d",
+      "accent": "#236799",
+      "syntax": {
+        "keyword": "#49539c",
+        "string": "#2b754f",
+        "comment": "#596673",
+        "callable": "#00688d"
+      }
+    },
+    "dark": {
+      "bg": "#181f26",
+      "fg": "#d6dee4",
+      "accent": "#6cafd9",
+      "syntax": {
+        "keyword": "#9caeee",
+        "string": "#88cba4",
+        "comment": "#8494a4",
+        "callable": "#75c6e1"
+      }
+    }
+  }
+}

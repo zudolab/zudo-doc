@@ -1,0 +1,478 @@
+/* ============================================================
+   Drift — zudo-doc theme pack (ADR docs/adr/theme-packs.md)
+
+   Floaty slate-blue comfort dark for long reading — soft glows in
+   place of borders, gentle elevation, relaxed IBM Plex type. Dark
+   (hero): blue-gray field, desaturated blue accents, soft
+   blue-tinted white text — a low-glare comfort dark. Light
+   (companion): misty-morning slate — pale blue-gray paper with the
+   same desaturated blue accent family, never harsh white. Chrome is
+   ringed by glow rather than drawn by border: hairline rings +
+   layered soft shadows on code, cards, and admonitions; fixed
+   radial light pools drift at opposite page corners; nav/TOC
+   actives are pill-shaped and glowing. Syntax is a hushed pastel
+   palette around the blue axis.
+
+   Every rule below is scoped under html[data-theme-pack="drift"]
+   — this is what makes the runtime pack swap atomic (Decision 3)
+   and lets the validator prove a pack can never leak styles while
+   inactive (Decision 6.7). The @font-face blocks are the sole
+   exception (at-rules can't be selector-scoped).
+
+   Prototype-selector adaptations against the REAL DOM (tokens-dump
+   §6 + component sources), noted inline where they matter:
+   - `.sb-group a`       → `#desktop-sidebar a` (hover wash) +
+                           `a[data-nav-active]` (active pill)
+   - `.toc-active`       → `nav[data-zd-toc] a[aria-current="true"]`
+                           (toc/toc.tsx marks the active entry with
+                           aria-current, not a mock class)
+   - `.doc-pager`        → `.zd-content > nav[data-doc-pager] > a`
+                           (the DocPager nav now carries a stable
+                           data-doc-pager hook, #2876)
+   - `footer[data-footer]` → ships literally now — the real footer
+                           carries the stable data-footer hook (#2876)
+   - `.hdr-search` / `.hdr-icon-btn` — prototype-mock markup with no
+     stable hook; their pill/glow styling is NOT ported.
+   - the theme-switcher flyout + launcher carry stable hooks now
+     ([data-switcher-card] / [data-switcher-launcher]) but their
+     styling is intentionally NOT ported — no visual intent to
+     preserve there.
+   - the prototype's `--drift-hairline` / `--drift-shadow` /
+     `--drift-halo` helper properties are not part of the token
+     manifest, so their light-dark() values are inlined at each use
+     site below:
+       hairline: light-dark(oklch(0.45 0.04 248 / 0.17), oklch(0.78 0.04 240 / 0.13))
+       shadow:   light-dark(oklch(0.38 0.05 250 / 0.17), oklch(0.08 0.02 255 / 0.6))
+       halo:     light-dark(oklch(0.55 0.1 240 / 0.1), oklch(0.725 0.092 238 / 0.1))
+   - the prototype's `--radius` / `--radius-lg` are likewise not in
+     the manifest; the 14–16px "generously soft" radii are applied
+     directly at each component site.
+   ============================================================ */
+
+/* ---- IBM Plex Sans — the reading AND heading face (variable
+        100–700 upright, latin + latin-ext; true italic 400–700,
+        latin only — em/blockquote want a real italic, latin-ext
+        italic was dropped for payload). ---- */
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: swap;
+  src: url("./fonts/IBMPlexSans-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: swap;
+  src: url("./fonts/IBMPlexSans-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: italic;
+  font-weight: 100 700;
+  font-display: swap;
+  src: url("./fonts/IBMPlexSans-italic-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- IBM Plex Mono — the code face (400/500, latin + latin-ext) ---- */
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/IBMPlexMono-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/IBMPlexMono-400-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./fonts/IBMPlexMono-500-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./fonts/IBMPlexMono-500-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+html[data-theme-pack="drift"] {
+  /* Tier-2 semantic roles — misty slate morning / blue-gray comfort
+     dark. Both modes always via light-dark(). */
+  --zd-bg: light-dark(oklch(0.958 0.008 245), oklch(0.235 0.018 252));
+  --zd-fg: light-dark(oklch(0.305 0.028 250), oklch(0.895 0.012 242));
+  --zd-selection-bg: light-dark(oklch(0.85 0.05 240), oklch(0.43 0.065 246));
+  --zd-selection-fg: light-dark(oklch(0.24 0.03 250), oklch(0.965 0.008 240));
+  --zd-surface: light-dark(oklch(0.974 0.006 243), oklch(0.263 0.02 250));
+  --zd-muted: light-dark(oklch(0.495 0.032 248), oklch(0.68 0.028 244));
+  --zd-accent: light-dark(oklch(0.495 0.105 245), oklch(0.725 0.092 238));
+  --zd-accent-hover: light-dark(oklch(0.415 0.11 248), oklch(0.79 0.08 232));
+  --zd-code-bg: light-dark(oklch(0.928 0.013 243), oklch(0.278 0.022 251));
+  --zd-code-fg: light-dark(oklch(0.3 0.028 250), oklch(0.9 0.012 242));
+  --zd-success: light-dark(oklch(0.485 0.095 160), oklch(0.745 0.095 158));
+  --zd-danger: light-dark(oklch(0.51 0.14 22), oklch(0.705 0.115 22));
+  --zd-warning: light-dark(oklch(0.5 0.1 80), oklch(0.795 0.095 84));
+  --zd-info: light-dark(oklch(0.49 0.1 240), oklch(0.735 0.095 234));
+
+  /* syntax — all 9 roles, both modes: hushed pastels drifting around
+     the blue axis — periwinkle keywords, cyan callables, sea-green
+     strings, teal types, one warm amber float for numbers. Comments
+     and light-mode numbers run a step darker than the prototype's ink
+     (comment light L .545 → .505, dark L .600 → .660; number light
+     L .545 → .515) to clear WCAG AA (≥4.5:1) on the code panel.
+     inserted/deleted reuse the success/danger hues. */
+  --zd-syntax-comment: light-dark(oklch(0.505 0.026 248), oklch(0.66 0.03 246));
+  --zd-syntax-string: light-dark(oklch(0.505 0.095 158), oklch(0.785 0.088 158));
+  --zd-syntax-number: light-dark(oklch(0.515 0.105 72), oklch(0.805 0.09 84));
+  --zd-syntax-keyword: light-dark(oklch(0.47 0.118 275), oklch(0.76 0.095 272));
+  --zd-syntax-callable: light-dark(oklch(0.485 0.1 232), oklch(0.785 0.088 222));
+  --zd-syntax-type: light-dark(oklch(0.5 0.085 195), oklch(0.785 0.078 192));
+  --zd-syntax-name: light-dark(oklch(0.305 0.028 250), oklch(0.885 0.014 242));
+  --zd-syntax-inserted: light-dark(oklch(0.49 0.095 160), oklch(0.745 0.095 158));
+  --zd-syntax-deleted: light-dark(oklch(0.52 0.14 22), oklch(0.705 0.115 22));
+
+  /* fonts — relaxed Plex everywhere: one quiet family for prose and
+     headings, Plex Mono for code. */
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Tier-3 component seams — semibold Plex headings with gentle
+     negative tracking, generously soft 12–14px pillows. */
+  --zdc-doc-title-font: var(--font-sans);
+  --zdc-doc-title-weight: 600;
+  --zdc-doc-title-tracking: -0.015em;
+  --zdc-doc-h2-font: var(--font-sans);
+  --zdc-doc-h2-weight: 600;
+  --zdc-doc-h2-tracking: -0.005em;
+  --zdc-doc-link-decoration: underline;
+  --zdc-admonition-radius: 12px;
+  --zdc-admonition-border-width: 3px;
+  --zdc-card-radius: 14px;
+  --zdc-nav-active-indicator-color: light-dark(oklch(0.495 0.105 245), oklch(0.725 0.092 238));
+}
+
+/* ---- Drift extras ---- */
+
+/* relaxed long-read rhythm + floating atmosphere: two faint blue
+   pools of light drift at opposite page corners */
+html[data-theme-pack="drift"] body {
+  line-height: 1.75;
+  background-image:
+    radial-gradient(
+      56rem 38rem at 88% -12%,
+      light-dark(oklch(0.55 0.1 240 / 0.1), oklch(0.725 0.092 238 / 0.1)),
+      transparent 65%
+    ),
+    radial-gradient(
+      48rem 34rem at -12% 104%,
+      light-dark(oklch(0.58 0.08 205 / 0.07), oklch(0.6 0.08 205 / 0.07)),
+      transparent 62%
+    );
+  background-attachment: fixed;
+}
+/* the base stylesheet sets `.zd-content { line-height: var(--leading-relaxed) }`
+   (1.625), which beats the inherited body value — restate the relaxed
+   1.75 rhythm on the prose container itself */
+html[data-theme-pack="drift"] .zd-content {
+  line-height: 1.75;
+}
+
+/* soft focus halo everywhere instead of hard outlines. The light
+   ring runs less transparent than the prototype's 65% (composited
+   ~2.75:1 on the pale page) to clear the 3:1 focus-indicator
+   minimum; dark keeps the softer halo (3.7:1 there). */
+html[data-theme-pack="drift"] :focus-visible {
+  outline: 2px solid light-dark(oklch(0.495 0.105 245 / 0.8), oklch(0.725 0.092 238 / 0.65));
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* slim, quiet scrollbars */
+html[data-theme-pack="drift"],
+html[data-theme-pack="drift"] * {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklch, var(--zd-muted) 38%, transparent) transparent;
+}
+
+/* header floats: hairline + falling glow replaces the border */
+html[data-theme-pack="drift"] header[data-header] {
+  border-bottom-color: transparent;
+  background-color: color-mix(in oklch, var(--zd-surface) 88%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow:
+    0 1px 0 light-dark(oklch(0.45 0.04 248 / 0.17), oklch(0.78 0.04 240 / 0.13)),
+    0 14px 34px -20px light-dark(oklch(0.38 0.05 250 / 0.17), oklch(0.08 0.02 255 / 0.6));
+}
+html[data-theme-pack="drift"] [data-nav-item] {
+  border-radius: 999px;
+  transition:
+    color 0.2s,
+    background-color 0.2s;
+}
+html[data-theme-pack="drift"] [data-nav-item]:hover {
+  text-decoration: none;
+  color: var(--zd-fg);
+  background: color-mix(in oklch, var(--zd-accent) 11%, transparent);
+}
+
+/* sidebar: borderless, dissolving into the page with an inset
+   hairline; links become soft pills */
+html[data-theme-pack="drift"] #desktop-sidebar {
+  border-right-color: transparent;
+  background: linear-gradient(
+    to right,
+    color-mix(in oklch, var(--zd-surface) 55%, var(--zd-bg)),
+    var(--zd-bg)
+  );
+  box-shadow: inset -1px 0 0 light-dark(oklch(0.45 0.04 248 / 0.17), oklch(0.78 0.04 240 / 0.13));
+}
+html[data-theme-pack="drift"] #desktop-sidebar a {
+  border-radius: 999px;
+  transition:
+    color 0.2s,
+    background-color 0.2s,
+    box-shadow 0.25s;
+}
+html[data-theme-pack="drift"] #desktop-sidebar a:hover {
+  text-decoration: none;
+  background: color-mix(in oklch, var(--zd-accent) 10%, transparent);
+}
+/* active item: glowing accent-wash pill — ring + soft halo instead
+   of the stock ink fill */
+html[data-theme-pack="drift"] a[data-nav-active] {
+  background: color-mix(in oklch, var(--zd-accent) 16%, transparent);
+  color: light-dark(oklch(0.36 0.1 246), oklch(0.84 0.07 235));
+  border-radius: 999px;
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--zd-accent) 30%, transparent),
+    0 0 18px -4px color-mix(in oklch, var(--zd-accent) 45%, transparent);
+}
+
+/* headings: quiet luminance instead of heavy rules. The h2 keeps a
+   gradient bar but fades it into the accent glow — !important
+   defeats the SSR-inlined `style="border-image:linear-gradient(...)"`
+   (Decision 6.6's sole allowlisted carve-out). */
+html[data-theme-pack="drift"] .zd-content h1 {
+  text-shadow: 0 0 34px color-mix(in oklch, var(--zd-accent) 32%, transparent);
+}
+html[data-theme-pack="drift"] .zd-content h2 {
+  border-top-width: 1px;
+  border-image: linear-gradient(
+      to right,
+      color-mix(in oklch, var(--zd-accent) 55%, transparent),
+      transparent 72%
+    )
+    1 !important;
+}
+
+/* links: airy underline that brightens on approach */
+html[data-theme-pack="drift"] .zd-content a {
+  text-decoration-color: color-mix(in oklch, var(--zd-accent) 42%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition:
+    color 0.2s,
+    text-decoration-color 0.2s;
+}
+html[data-theme-pack="drift"] .zd-content a:hover {
+  text-decoration-color: currentColor;
+}
+
+/* blockquote: a floating whisper card, no rule */
+html[data-theme-pack="drift"] .zd-content blockquote {
+  border-left: none;
+  padding: 0.85rem 1.2rem;
+  border-radius: 12px;
+  background: color-mix(in oklch, var(--zd-accent) 7%, transparent);
+  box-shadow: inset 0 0 0 1px light-dark(oklch(0.45 0.04 248 / 0.17), oklch(0.78 0.04 240 / 0.13));
+  font-style: italic;
+}
+
+/* inline code: ringed by hairline glow, not border */
+html[data-theme-pack="drift"] .zd-content code:not(pre code) {
+  border-color: transparent;
+  border-radius: 7px;
+  box-shadow: inset 0 0 0 1px light-dark(oklch(0.45 0.04 248 / 0.17), oklch(0.78 0.04 240 / 0.13));
+}
+
+/* code block centerpiece: borderless slab held up by layered glow */
+html[data-theme-pack="drift"] pre.hi-root {
+  border-color: transparent;
+  border-radius: 14px;
+  padding: 1.15rem 1.3rem;
+  box-shadow:
+    0 0 0 1px light-dark(oklch(0.45 0.04 248 / 0.17), oklch(0.78 0.04 240 / 0.13)),
+    0 20px 48px -26px light-dark(oklch(0.38 0.05 250 / 0.17), oklch(0.08 0.02 255 / 0.6)),
+    0 0 40px -12px light-dark(oklch(0.55 0.1 240 / 0.1), oklch(0.725 0.092 238 / 0.1));
+  background-image: linear-gradient(
+    170deg,
+    color-mix(in oklch, var(--zd-accent) 4%, transparent),
+    transparent 45%
+  );
+}
+
+/* admonitions: soft pillows with a tinted glow matching their voice */
+html[data-theme-pack="drift"] [data-admonition] {
+  box-shadow: 0 14px 34px -24px light-dark(oklch(0.38 0.05 250 / 0.17), oklch(0.08 0.02 255 / 0.6));
+}
+html[data-theme-pack="drift"] [data-admonition="note"] {
+  box-shadow:
+    0 14px 34px -24px light-dark(oklch(0.38 0.05 250 / 0.17), oklch(0.08 0.02 255 / 0.6)),
+    0 0 28px -12px color-mix(in oklch, var(--zd-accent) 50%, transparent);
+}
+html[data-theme-pack="drift"] [data-admonition="tip"] {
+  box-shadow:
+    0 14px 34px -24px light-dark(oklch(0.38 0.05 250 / 0.17), oklch(0.08 0.02 255 / 0.6)),
+    0 0 28px -12px color-mix(in oklch, var(--zd-success) 50%, transparent);
+}
+html[data-theme-pack="drift"] [data-admonition="warning"] {
+  box-shadow:
+    0 14px 34px -24px light-dark(oklch(0.38 0.05 250 / 0.17), oklch(0.08 0.02 255 / 0.6)),
+    0 0 28px -12px color-mix(in oklch, var(--zd-warning) 50%, transparent);
+}
+html[data-theme-pack="drift"] [data-admonition="note"] .admonition-title::before {
+  content: "✦ ";
+}
+html[data-theme-pack="drift"] [data-admonition="tip"] .admonition-title::before {
+  content: "❋ ";
+}
+html[data-theme-pack="drift"] [data-admonition="warning"] .admonition-title::before {
+  content: "△ ";
+}
+
+/* tables: hairline rules, breath on hover */
+html[data-theme-pack="drift"] .zd-content td {
+  border-bottom-color: light-dark(oklch(0.45 0.04 248 / 0.17), oklch(0.78 0.04 240 / 0.13));
+}
+html[data-theme-pack="drift"] .zd-content th {
+  border-bottom-color: color-mix(in oklch, var(--zd-muted) 42%, transparent);
+}
+html[data-theme-pack="drift"] .zd-content tbody tr {
+  transition: background-color 0.2s;
+}
+html[data-theme-pack="drift"] .zd-content tbody tr:hover {
+  background: color-mix(in oklch, var(--zd-accent) 5%, transparent);
+}
+
+/* hr: fading mist line */
+html[data-theme-pack="drift"] .zd-content hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    light-dark(oklch(0.45 0.04 248 / 0.17), oklch(0.78 0.04 240 / 0.13)) 20%,
+    light-dark(oklch(0.45 0.04 248 / 0.17), oklch(0.78 0.04 240 / 0.13)) 80%,
+    transparent
+  );
+}
+
+/* pager cards: levitating panels — glow ring, lift on hover. The
+   DocPager nav now carries a stable data-doc-pager hook (#2876). */
+html[data-theme-pack="drift"] .zd-content > nav[data-doc-pager] > a {
+  border-color: transparent;
+  border-radius: 14px;
+  background: color-mix(in oklch, var(--zd-surface) 72%, var(--zd-bg));
+  box-shadow:
+    0 0 0 1px light-dark(oklch(0.45 0.04 248 / 0.17), oklch(0.78 0.04 240 / 0.13)),
+    0 16px 38px -24px light-dark(oklch(0.38 0.05 250 / 0.17), oklch(0.08 0.02 255 / 0.6));
+  transition:
+    box-shadow 0.25s,
+    transform 0.25s;
+}
+html[data-theme-pack="drift"] .zd-content > nav[data-doc-pager] > a:hover {
+  border-color: transparent;
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--zd-accent) 35%, transparent),
+    0 22px 46px -22px light-dark(oklch(0.38 0.05 250 / 0.17), oklch(0.08 0.02 255 / 0.6)),
+    0 0 30px -8px color-mix(in oklch, var(--zd-accent) 40%, transparent);
+}
+
+/* TOC: fading spine, glowing pill for the active line. The real DOM
+   marks the active entry with aria-current="true" (toc/toc.tsx). The
+   pill pulls left within the ul's padding (the rail-side overflow
+   clips at the padding edge — see the foundry note). */
+html[data-theme-pack="drift"] nav[data-zd-toc] ul {
+  border-left-color: transparent;
+  border-image: linear-gradient(
+      to bottom,
+      light-dark(oklch(0.45 0.04 248 / 0.17), oklch(0.78 0.04 240 / 0.13)),
+      transparent
+    )
+    1;
+}
+html[data-theme-pack="drift"] nav[data-zd-toc] a {
+  transition: color 0.2s;
+}
+html[data-theme-pack="drift"] nav[data-zd-toc] a:hover {
+  text-decoration: none;
+  color: var(--zd-fg);
+}
+html[data-theme-pack="drift"] nav[data-zd-toc] a[aria-current="true"] {
+  background: color-mix(in oklch, var(--zd-accent) 15%, transparent);
+  color: light-dark(oklch(0.36 0.1 246), oklch(0.845 0.07 235));
+  border-radius: 999px;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  margin-left: -0.5rem;
+  box-shadow: 0 0 16px -4px color-mix(in oklch, var(--zd-accent) 42%, transparent);
+}
+
+/* breadcrumb: accent on approach, matching the airy content links */
+html[data-theme-pack="drift"] main nav[aria-label="Breadcrumb"] a:hover {
+  color: var(--zd-accent);
+}
+
+/* footer: dissolves upward, hairline + settling gradient (the real
+   footer now carries the stable data-footer hook, #2876) */
+html[data-theme-pack="drift"] footer[data-footer] {
+  border-top-color: transparent;
+  box-shadow: 0 -1px 0 light-dark(oklch(0.45 0.04 248 / 0.17), oklch(0.78 0.04 240 / 0.13));
+  background: linear-gradient(
+    to bottom,
+    var(--zd-bg),
+    color-mix(in oklch, var(--zd-surface) 75%, var(--zd-bg))
+  );
+}

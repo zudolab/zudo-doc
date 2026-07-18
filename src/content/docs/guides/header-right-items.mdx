@@ -169,7 +169,7 @@ Pull the toggle from the dedicated `@takazudo/zudo-doc/theme-toggle` subpath spe
 
 <Note title="Tweak-state is not cleared on scheme change">
 
-The package's `applyColorScheme` (in `theme-toggle/color-scheme-sync.ts`) deliberately does **not** clear the design-token tweak envelope (`zudo-doc-tweak-state-v3`, auto-migrated from the legacy `zudo-doc-tweak-state-v2` / `zudo-doc-tweak-state` keys) when the color scheme changes — zdtp owns its own storage lifecycle. If you use the Design Token Panel and are migrating from a hand-rolled toggle that used to wipe tweak state on toggle, be aware the package toggle preserves it instead: Palette, Spacing, Font, and Size tweaks survive a light/dark toggle untouched, and the Color tab's ref/literal *defaults* re-seed to the new mode while a saved override carries over mode-agnostically until reset. See [Mode-scoped editing model](../reference/design-token-panel.mdx#the-five-tabs-color-mode-scoped-editing-model) for the full semantics.
+The package's `applyColorScheme` (in `theme-toggle/color-scheme-sync.ts`) deliberately does **not** clear design-token panel state when the color scheme changes — `@takazudo/zdtp` owns its storage lifecycle. Palette, Spacing, Font, and Size tweaks survive a light/dark toggle untouched, and the Color tab's ref/literal *defaults* re-seed to the new mode while a saved override carries over mode-agnostically until reset. See [Mode-scoped editing model](../reference/design-token-panel.mdx#the-five-tabs-color-mode-scoped-editing-model) for the full semantics.
 
 </Note>
 

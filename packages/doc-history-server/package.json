@@ -1,6 +1,6 @@
 {
   "name": "@takazudo/zudo-doc-history-server",
-  "version": "3.3.0",
+  "version": "4.2.1",
   "type": "module",
   "description": "Standalone doc git-history service for zudo-doc — HTTP server + CLI batch generator. Decouples expensive `git log --follow` calls from the main build pipeline.",
   "license": "MIT",
@@ -45,6 +45,10 @@
       "types": "./dist/concurrency.d.ts",
       "default": "./dist/concurrency.js"
     },
+    "./exclude": {
+      "types": "./dist/exclude.d.ts",
+      "default": "./dist/exclude.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -52,12 +56,12 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsup src/index.ts src/cli.ts src/git-history.ts src/types.ts src/concurrency.ts --format esm --dts",
+    "build": "tsup src/index.ts src/cli.ts src/git-history.ts src/types.ts src/concurrency.ts src/exclude.ts --format esm --dts",
     "dev": "tsx src/index.ts",
     "generate": "tsx src/cli.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "prepare": "tsup src/index.ts src/cli.ts src/git-history.ts src/types.ts src/concurrency.ts --format esm --dts --silent"
+    "prepare": "tsup src/index.ts src/cli.ts src/git-history.ts src/types.ts src/concurrency.ts src/exclude.ts --format esm --dts --silent"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

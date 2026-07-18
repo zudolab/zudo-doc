@@ -5,11 +5,12 @@ import { describe, expect, it } from "vitest";
 import { render } from "preact-render-to-string";
 import { MermaidInit } from "../mermaid-init.js";
 import {
-  MERMAID_INIT_SCRIPT,
   MERMAID_CDN_MODULE_URL,
   buildMermaidInitScript,
 } from "../mermaid-init-script.js";
 import { AFTER_NAVIGATE_EVENT } from "../../transitions/page-events.js";
+
+const MERMAID_INIT_SCRIPT = buildMermaidInitScript(MERMAID_CDN_MODULE_URL);
 
 describe("<MermaidInit />", () => {
   it("renders a <script> tag", () => {
@@ -255,14 +256,20 @@ describe("MERMAID_INIT_SCRIPT", () => {
   });
 
   it("restores statement boundaries for minified state diagrams", () => {
+    // zudolab/zudo-doc#2909 — unlike flowchart/sequenceDiagram, mermaid
+    // does NOT treat `;` as a separator it strips from a stateDiagram
+    // state id: a trailing `;` glued onto "Draft" makes mermaid parse
+    // "Draft;" as a DISTINCT state, rendering both a spurious "Draft;"
+    // node and a floating ";" node. The repaired output must use
+    // newline-only separation for this branch, with no `;` token.
     const fn = extractNormalizeCollapsedMermaidSource(MERMAID_INIT_SCRIPT);
-    expect(
-      fn(
-        "stateDiagram-v2 [*] --> Draft Draft --> Review : Submit Review --> Published : Approve Review --> Draft : Request Changes Published --> Archived : Archive Archived --> [*]",
-      ),
-    ).toBe(
-      "stateDiagram-v2\n[*] --> Draft;\nDraft --> Review : Submit;\nReview --> Published : Approve;\nReview --> Draft : Request Changes;\nPublished --> Archived : Archive;\nArchived --> [*]",
+    const result = fn(
+      "stateDiagram-v2 [*] --> Draft Draft --> Review : Submit Review --> Published : Approve Review --> Draft : Request Changes Published --> Archived : Archive Archived --> [*]",
     );
+    expect(result).toBe(
+      "stateDiagram-v2\n[*] --> Draft\nDraft --> Review : Submit\nReview --> Published : Approve\nReview --> Draft : Request Changes\nPublished --> Archived : Archive\nArchived --> [*]",
+    );
+    expect(result).not.toContain(";");
   });
 
   it("restores statement boundaries for minified subgraph flowcharts", () => {
@@ -585,7 +592,7 @@ describe("buildMermaidInitScript / cdnUrl override", () => {
     expect(built).not.toContain(JSON.stringify(MERMAID_CDN_MODULE_URL));
   });
 
-  it("the default-URL constant is built via the same builder for parity", () => {
+  it("the default-URL script is built via the public builder for parity", () => {
     expect(MERMAID_INIT_SCRIPT).toBe(
       buildMermaidInitScript(MERMAID_CDN_MODULE_URL),
     );

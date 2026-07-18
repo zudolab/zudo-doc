@@ -9,7 +9,7 @@ tags:
 
 When a project sets `packageOwnedRoutes: true`, `@takazudo/zudo-doc` injects the doc routes itself and the project ships an almost-empty `pages/` directory. That is convenient, but it removes the host files where you would normally hang project-specific rendering. **Host chrome bindings** are the seam that gives it back: a small, typed set of slots (`ChromeHostBindings`) that let the host inject its own content and callables into the package-owned chrome without ejecting anything.
 
-This page covers the two content-injection seams — `docContentHeaderExtras` and `homeExtras` — and the delivery channel that carries every binding into the injected routes, `settings.chromeBindingsModule`.
+This page covers named header-right components, the `docContentHeaderExtras` and `homeExtras` content seams, and the delivery channel that carries every binding into injected and self-contained routes: `settings.chromeBindingsModule`.
 
 <Note>
 
@@ -54,11 +54,54 @@ export const chromeBindings = defineChromeBindings({
 
 At build time the routes plugin registers a virtual module that re-exports your `chromeBindings`, and the injected chrome shim spreads it into the chrome factory. A string path is serializable, so the "route context is data only" rule still holds — only the loader source differs.
 
-<Warning title="Fresh scaffold doc-route stubs need threading">
+<Note title="Scaffold and custom-route threading">
 
-A fresh scaffold includes self-contained document-route stubs. They shadow the injected routes and call `createChrome(routeCtx)` without bindings, so `chromeBindingsModule` does not reach document pages until you edit those stubs. Follow the [global `mdxExtras` registration pattern](../guides/custom-components.mdx#global-registration-mdxextras) to thread the bindings through every relevant stub. The scaffold-template fix is tracked in [#2716](https://github.com/zudolab/zudo-doc/issues/2716).
+Fresh scaffold document-route stubs import `virtual:zudo-doc-chrome-bindings` and pass the result to `createChrome`, so the same module reaches both self-contained and injected routes. If you author a route from scratch, pass `chromeBindings` as the second `createChrome(routeCtx, chromeBindings)` argument too. The [global `mdxExtras` registration pattern](../guides/custom-components.mdx#global-registration-mdxextras) shows that route seam in context.
 
-</Warning>
+</Note>
+
+## Named header-right components
+
+`headerRightItems` stays serializable: a custom component item carries only its string name. The callable renderer lives in `chromeBindings.headerRightComponents` and is resolved during build/SSR. Here is the complete configuration:
+
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "Acme Docs",
+    chromeBindingsModule: "./src/chrome-bindings.tsx",
+    headerRightItems: [
+      { type: "link", href: "/status", label: "Status" },
+      { type: "component", component: "release-badge" },
+      { type: "component", component: "search" },
+    ],
+  }),
+);
+```
+
+```tsx title="src/chrome-bindings.tsx"
+import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
+
+export const chromeBindings = defineChromeBindings({
+  headerRightComponents: {
+    "release-badge": ({ item, index, lang }) => (
+      <a
+        href={`/${lang ?? "en"}/releases`}
+        data-component={item.component}
+        data-position={index}
+      >
+        v4
+      </a>
+    ),
+  },
+});
+```
+
+The renderer receives the exact header-right render context: the serialized `item`, its zero-based `index`, locale, GitHub values, built-in child slots, and the color-mode/locale gates. Registry values must be functions. The built-in names (`theme-toggle`, `language-switcher`, `version-switcher`, `github-link`, and `search`) are reserved and cannot be shadowed. A reserved duplicate or unknown configured name fails with the offending registry/settings location and a remediation message instead of silently omitting markup.
+
+Only the item name travels in the route-context data. `headerRightComponents` remains in the host-callables module and is never serialized. As with other bindings-module components, treat these renderers as SSR-presentational unless they also have a supported static island-registration path.
 
 ### It un-strands the pre-existing slots too
 
@@ -66,7 +109,14 @@ A fresh scaffold includes self-contained document-route stubs. They shadow the i
 
 | Slot | Default when omitted |
 | --- | --- |
+| `Header` | Package `HeaderWithDefaults`; receives `HeaderSlotProps` |
+| `Footer` | Package `FooterWithDefaults`; receives `FooterSlotProps` |
+| `Sidebar` | Package `SidebarWithDefaults`; receives `SidebarSlotProps` |
+| `Toc` | Package desktop `Toc`; receives `TocSlotProps` |
+| `Breadcrumb` | Package `Breadcrumb`; receives `BreadcrumbSlotProps` |
+| `DocPager` | Package `DocPager`; receives `DocPagerSlotProps` |
 | `SearchWidget` | Package search widget, with the site base bound internally |
+| `headerRightComponents` | `{}` — only package built-in header-right names resolve |
 | `docHistoryMeta` | `{}` — no Created/Updated block |
 | `sidebarsConfig` | `{}` — auto-generated tree only |
 | `frontmatterRenderers` | `{}` — no custom [frontmatter preview](./frontmatter-preview.mdx) renderers |
@@ -81,6 +131,13 @@ A fresh scaffold includes self-contained document-route stubs. They shadow the i
 | `homeExtras` | Absent — nothing renders |
 
 So the same module you create for `docContentHeaderExtras` is also where you would, for example, register the custom frontmatter renderers that previously only worked on host-owned routes.
+
+Generated and package-owned document routes are one deliberate exception to
+normal object precedence: when `docHistory` is enabled, their statically
+imported package `DocHistory` is overlaid after the configured object. That
+keeps its client-island registration scanner-reachable while preserving every
+other binding. A `DocHistory` value declared only in the virtual host module
+cannot replace it on those routes.
 
 <Warning>
 
@@ -217,7 +274,7 @@ The same guard rules apply: an explicitly empty string, a missing file, or a dir
 
 ## See also
 
-- [Customizing zudo-doc](./customizing.mdx) — the minimal→extend ladder, of which `chromeBindingsModule` is rung 5
+- [Customizing zudo-doc](./customizing.mdx) — the minimal→extend ladder, of which `chromeBindingsModule` is rung 6
 - [Frontmatter Preview](./frontmatter-preview.mdx) — the `frontmatterRenderers` slot this channel also un-strands
 - [Configuration](../guides/configuration.mdx) — the full `zudoDoc()` field reference
 - [Design Token Panel](./design-token-panel.mdx) — the panel UI this channel configures

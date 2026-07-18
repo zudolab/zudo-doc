@@ -20,6 +20,7 @@
 
 import type { VNode } from "preact";
 import { Island } from "@takazudo/zfb";
+import { compileExclude } from "@takazudo/zudo-doc-history-server/exclude";
 import { BodyFootUtilArea } from "../body-foot-util/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
@@ -33,13 +34,14 @@ export interface DocHistoryMetaEntry {
   author: string;
   createdDate: string;
   updatedDate: string;
-  /** Source file extension (".mdx" | ".md") — optional in older manifests. */
-  ext?: string;
+  /** Source file extension recorded by the current build-time manifest. */
+  ext: ".mdx" | ".md";
 }
 
 /** Settings subset read by the DocHistoryArea factory. */
 export interface DocHistoryAreaSettings {
   docHistory: boolean;
+  docHistoryExclude?: string[];
   bodyFootUtilArea: { viewSourceLink?: boolean } | false | undefined;
   base?: string | null;
 }
@@ -62,12 +64,18 @@ export interface DocHistoryAreaProps {
   /**
    * Raw zfb entry slug (relative path without extension), e.g.
    * "getting-started/intro" or "getting-started/index". Appended with
-   * the source extension from the build-time manifest (".mdx" fallback)
-   * to form the file path passed to buildGitHubSourceUrl.
+   * the source extension from the build-time manifest to form the file path
+   * passed to buildGitHubSourceUrl.
    * Omit for auto-index pages (no underlying MDX file) — sourceUrl
    * will be suppressed automatically.
    */
   entrySlug?: string;
+  /**
+   * Source extension from the current content entry. Used only when the file
+   * has no manifest metadata yet (for example, an untracked file or a build
+   * with `SKIP_DOC_HISTORY=1`). A present manifest owns its required `ext`.
+   */
+  sourceFileExt?: ".mdx" | ".md";
   /**
    * Content directory for the active locale, e.g. "src/content/docs"
    * or "src/content/docs-ja". Combined with entrySlug to build the
@@ -98,6 +106,7 @@ export function createDocHistoryArea<S extends Settings = Settings>(
 ): (props: DocHistoryAreaProps) => VNode | null {
   assertChromeContext(ctx, "createDocHistoryArea");
   const settings = ctx.settings as unknown as DocHistoryAreaSettings;
+  const isHistoryExcluded = compileExclude(settings.docHistoryExclude ?? []);
   const defaultLocale = ctx.defaultLocale;
   const docHistoryMeta = (ctx.hostBindings.docHistoryMeta ?? {}) as Record<
     string,
@@ -121,6 +130,7 @@ export function createDocHistoryArea<S extends Settings = Settings>(
     slug,
     locale,
     entrySlug,
+    sourceFileExt,
     contentDir,
     isFallback,
   }: DocHistoryAreaProps): VNode | null {
@@ -132,9 +142,12 @@ export function createDocHistoryArea<S extends Settings = Settings>(
     // is unroutable — the server regex and the prebuild key composition both
     // reject ""). Apply the sentinel to the slug segment BEFORE locale
     // composition so root pages resolve to e.g. /doc-history/index.json and the
-    // meta key "ja/index". See @/utils/slug `toHistorySlug` and the
+    // meta key "ja/index". See @takazudo/zudo-doc/slug `toHistorySlug` and the
     // collectContentFiles walk in packages/doc-history-server. (#1891)
     const historySlug = toHistorySlug(slug);
+
+    // Suppress the island entirely so excluded pages never request absent JSON.
+    if (isHistoryExcluded(historySlug)) return null;
 
     // On EN-fallback locale pages the history data exists only at the bare
     // (non-locale-prefixed) path — the prebuild/server writes locale-prefixed
@@ -200,12 +213,17 @@ export function createDocHistoryArea<S extends Settings = Settings>(
     // (auto-index pages pass neither). The real source extension comes from the
     // build-time manifest (`ext`, written by pre-build.ts) — the content walkers
     // accept both .mdx and .md, so hardcoding ".mdx" produced broken view-source
-    // URLs for .md pages. ".mdx" remains the fallback for entries without a
-    // manifest record (untracked files, SKIP_DOC_HISTORY=1, stale manifests).
+    // URLs for .md pages. An absent manifest (untracked file or
+    // SKIP_DOC_HISTORY=1) uses the extension supplied explicitly from the
+    // current content entry; it is not treated as an old-manifest fallback.
     const utilSettings = settings.bodyFootUtilArea;
-    const sourceExt = meta?.ext ?? ".mdx";
+    const sourceExt = meta ? meta.ext : sourceFileExt;
     const sourceUrl =
-      utilSettings && utilSettings.viewSourceLink && entrySlug && contentDir
+      utilSettings &&
+      utilSettings.viewSourceLink &&
+      entrySlug &&
+      sourceExt &&
+      contentDir
         ? buildGitHubSourceUrl(contentDir, entrySlug + sourceExt)
         : null;
 

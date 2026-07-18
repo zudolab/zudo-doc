@@ -6,7 +6,12 @@ import { generateZfbConfig } from "./zfb-config-gen.js";
 import { generateCLAUDEFile } from "./claude-md-gen.js";
 import { composeFeatures } from "./compose.js";
 import { featureModules } from "./features/index.js";
-import { capitalize, getSecondaryLang, pmRunCommand } from "./utils.js";
+import {
+  capitalize,
+  getSecondaryLang,
+  hasAncestorPnpmWorkspace,
+  pmRunCommand,
+} from "./utils.js";
 
 export { getSecondaryLang };
 
@@ -27,7 +32,7 @@ export { getSecondaryLang };
  *
  * Bumped in lockstep by scripts/release-create-zudo-doc.sh.
  */
-export const ZUDO_DOC_PIN = "^3.3.0";
+export const ZUDO_DOC_PIN = "^4.2.1";
 
 /**
  * Files in `templates/base/**` that must not be copied by the unconditional
@@ -233,9 +238,6 @@ export async function scaffold(choices: UserChoices): Promise<void> {
   const baseDir = path.join(templatesDir, "base");
   const featuresDir = path.join(templatesDir, "features");
 
-  // Still needed for source-checkout-only assets such as Claude skills.
-  const monorepoRoot = path.resolve(pkgRoot, "../..");
-
   await fs.ensureDir(targetDir);
 
   // 1. Copy base template
@@ -256,18 +258,32 @@ export async function scaffold(choices: UserChoices): Promise<void> {
 
   // 2b. Copy user-facing Claude Code skills when enabled
   // Ships the curated zudo-doc-* skills (design-system, translate, version-bump)
-  // from the monorepo's .claude/skills/ into the user's .claude/skills/.
+  // from the package's own templates/ (npm `files` cannot reach outside the
+  // package dir, so these are committed, scaffold-authored variants of the
+  // monorepo's .claude/skills/, not read from there directly and not
+  // byte-identical to it — each was rewritten to describe the scaffold-real
+  // flow (no monorepo-only paths/scripts) instead of the monorepo's own
+  // flow — see #2921 (original copy step) and epic #2946 (variant
+  // conversion, #2947/#2948).
   if (choices.features.includes("claudeSkills")) {
     const userFacingSkills = [
       "zudo-doc-design-system",
       "zudo-doc-translate",
       "zudo-doc-version-bump",
     ];
+    const skillsTemplateDir = path.join(
+      featuresDir,
+      "claudeSkills/files/.claude/skills",
+    );
     for (const skill of userFacingSkills) {
-      const skillSrc = path.join(monorepoRoot, ".claude/skills", skill);
+      const skillSrc = path.join(skillsTemplateDir, skill);
       const skillDest = path.join(targetDir, ".claude/skills", skill);
       if (await fs.pathExists(skillSrc)) {
         await fs.copy(skillSrc, skillDest);
+      } else {
+        // Defensive only — unreachable in a healthy publish, since the
+        // template files are committed alongside this source.
+        console.warn(`claudeSkills: missing template source for "${skill}", skipping`);
       }
     }
   }
@@ -393,6 +409,7 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     "node_modules",
     "dist",
     ".zfb",
+    ".zfb-build/",
     "",
     "# macOS",
     ".DS_Store",
@@ -463,6 +480,38 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     "trust-policy-exclude[]=undici-types@6.21.0\n",
   );
 
+  // Emit a pnpm-workspace.yaml disabling pnpm 11's minimumReleaseAge gate.
+  // pnpm >= 11 defaults minimumReleaseAge to 1440 (1 day), which blocks
+  // `pnpm install`/CI from resolving a freshly-published @takazudo bump for
+  // a full day; the built-in minimumReleaseAgeExclude matcher can't be
+  // pointed at this project's peer-nested lockfile keys (upstream pnpm
+  // limitation), so the gate is disabled outright rather than excluded
+  // per-package. As of pnpm 11, non-auth/registry settings like this one
+  // live in pnpm-workspace.yaml, not .npmrc (.npmrc is auth/registry only).
+  // Skipped when an ANCESTOR directory already has a pnpm-workspace.yaml
+  // (e.g. scaffolding into `apps/docs/` under an existing pnpm monorepo) —
+  // pnpm resolves the nearest pnpm-workspace.yaml upward from cwd as the
+  // workspace root, so writing a new one here would carve the generated
+  // project out of the parent workspace instead of joining it. Mirrors
+  // `initGitRepo`'s "never nest" precedent (see utils.ts).
+  if (!hasAncestorPnpmWorkspace(targetDir)) {
+    await fs.outputFile(
+      path.join(targetDir, "pnpm-workspace.yaml"),
+      "# pnpm 11 defaults minimumReleaseAge to 1440min; its exclude matcher can't match this project's peer-nested lockfile keys (upstream pnpm bug), so disable the gate outright.\nminimumReleaseAge: 0\n",
+    );
+  } else {
+    // Ancestor already has a pnpm-workspace.yaml: we deliberately do NOT write
+    // our own (it would carve this project out of the parent workspace — see
+    // above). But then pnpm applies the PARENT workspace's minimumReleaseAge
+    // (1440min by default in pnpm 11), so freshly-published @takazudo bumps
+    // still can't install for a day — the exact failure this file guards
+    // against. We can't safely edit the parent's config, so instruct the user
+    // to disable the gate there instead of silently leaving them blocked.
+    console.warn(
+      "pnpm-workspace.yaml exists in an ancestor directory — skipping the generated one to avoid nesting a second workspace. If `pnpm install` blocks freshly-published @takazudo releases, add `minimumReleaseAge: 0` to your parent pnpm-workspace.yaml.",
+    );
+  }
+
   const claudeContent = generateCLAUDEFile(choices);
   await fs.outputFile(path.join(targetDir, "CLAUDE.md"), claudeContent);
 
@@ -525,9 +574,9 @@ function generatePackageJson(choices: UserChoices) {
     // disabled, reproducible CSS-Modules scoped names (project-relative paths),
     // dev-mode git-restore detection, Tailwind temp-file cleanup, and a
     // near-miss `"use client"` directive scanner.
-    // next.33 added the opt-in hierarchical heading-ID strategy
+    // next.33 added hierarchical heading IDs
     // (Takazudo/zudo-front-builder#871): `markdown.features.headingIds.strategy`.
-    // The generated config + TOC builder use it via settings.headingIdStrategy.
+    // zudo-doc now uses that strategy unconditionally in its package preset.
     // next.35 fixes resolve_links rewriting bare same-page `[text](#anchor)` /
     // `[text](?query)` links to `/<parent-dir>/#anchor` (zudolab/zudo-doc#1948,
     // upstream Takazudo/zudo-front-builder#875).
@@ -557,7 +606,7 @@ function generatePackageJson(choices: UserChoices) {
     // extraWatchPaths rebuilds, and TS-config-loader path canonicalization
     // (Takazudo/zudo-front-builder#1036–#1043). next.45: docs-only. next.46:
     // opt-in dev boot-lazy mode (#1057) + client-router timer lifecycle fixes —
-    // dev-server-only. next.47: dual light/dark syntect themes (themeLight/
+    // dev-server-only. Historical dual light/dark theme support (themeLight/
     // themeDark on CodeHighlightConfig, --shiki-light/--shiki-dark, #1067) plus
     // stricter build-start validation that rejects unknown theme names. next.48:
     // re-export @takazudo/zfb/config from the zfb-shim.d.ts type shim — type-only
@@ -622,12 +671,12 @@ function generatePackageJson(choices: UserChoices) {
     // singleton across host-callable wiring (zfb#1652/#1653). The zfb family
     // must stay in lockstep because the WASM browser entry depends on its
     // resource-aware island pipeline.
-    "@takazudo/zfb": "0.1.0-next.85",
-    "@takazudo/zfb-runtime": "0.1.0-next.85",
+    "@takazudo/zfb": "0.1.0-next.89",
+    "@takazudo/zfb-runtime": "0.1.0-next.89",
     // zfb-adapter-cloudflare — required for any route with `prerender = false`.
     // Pinned in lockstep with @takazudo/zfb.
-    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.85",
-    "@takazudo/zfb-md-wasm": "0.1.0-next.85",
+    "@takazudo/zfb-adapter-cloudflare": "0.1.0-next.89",
+    "@takazudo/zfb-md-wasm": "0.1.0-next.89",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
@@ -729,31 +778,25 @@ function generatePackageJson(choices: UserChoices) {
     // required regardless of this feature flag.)
     // @takazudo/zudo-doc has @takazudo/zudo-doc-history-server as an optional
     // peer dep. When docHistory is selected the zfb plugin
-    // (@takazudo/zudo-doc/plugins/doc-history) eagerly imports
-    // @takazudo/zudo-doc/integrations/doc-history which in turn imports
+    // (@takazudo/zudo-doc/plugins/doc-history) eagerly imports its internal
+    // doc-history helpers, which in turn import
     // @takazudo/zudo-doc-history-server/git-history. Without this dep the
     // plugin host fails at init with ERR_MODULE_NOT_FOUND — W8A (#1739).
-    deps["@takazudo/zudo-doc-history-server"] = "^3.3.0";
+    deps["@takazudo/zudo-doc-history-server"] = "^4.2.1";
     // tsx is no longer needed here: the relocated package plugin imports the
     // runner directly (no `tsx -e` spawn) since the package ships compiled
     // dist/ — package-first migration #2321 (#2337).
+    // npm-run-all2 provides `run-p`, used by the docHistory `dev` script
+    // (below) to run the zfb dev server and the doc-history API server
+    // concurrently — otherwise the :4322 proxy target never starts and the
+    // feature silently looks broken (#2926). Same maintained fork/pin this
+    // monorepo's own root package.json uses.
+    devDeps["npm-run-all2"] = "^7.0.2";
   }
 
   // claudeResources: tsx is no longer needed. The relocated package plugin
   // (@takazudo/zudo-doc/plugins/claude-resources) imports the runner directly
   // since the package ships compiled dist/ — package-first migration #2321 (#2337).
-
-  if (choices.features.includes("tagGovernance")) {
-    // gray-matter is already in `deps` unconditionally (base template uses it),
-    // so we only add the tooling deps specific to tags:audit / tags:suggest.
-    devDeps["string-similarity"] = "^4.0.4";
-    devDeps["@types/string-similarity"] = "^4.0.2";
-    devDeps["pluralize"] = "^8.0.0";
-    devDeps["@types/pluralize"] = "^0.0.33";
-    devDeps["picocolors"] = "^1.1.1";
-    devDeps["@inquirer/prompts"] = "^8.4.2";
-    devDeps["tsx"] = "^4.21.0";
-  }
 
   // check:html and gen:z-index/check:z-index are DROPPED from the default
   // scaffold (locked decision, epic #2651 #2660 work item 6):
@@ -770,12 +813,47 @@ function generatePackageJson(choices: UserChoices) {
     check: "zfb check",
   };
 
+  if (choices.features.includes("docHistory")) {
+    // A docHistory-enabled project needs the zfb dev server AND the
+    // doc-history API server (:4322, proxied by the zfb doc-history plugin)
+    // running concurrently — otherwise the Created/Updated/Author block
+    // silently never appears in dev (#2926). `doc-history-server` is the bin
+    // shipped by the @takazudo/zudo-doc-history-server dep added above;
+    // `run-p` (npm-run-all2, added to devDependencies above) runs both.
+    scripts.dev = "run-p dev:zfb dev:history";
+    scripts["dev:zfb"] = "zfb dev";
+    // run-p swallows trailing args and npm-run-all2 v7's `{@}` placeholder
+    // strips flag names, so `pnpm dev -- --host 0.0.0.0` is silently ignored
+    // (verified in issue #2940) — dev:network is a dedicated LAN-bound script
+    // instead. Only zfb binds 0.0.0.0; the history server stays loopback-only
+    // and LAN clients reach it through zfb's `/doc-history/*` dev proxy.
+    scripts["dev:zfb:network"] = "zfb dev --host 0.0.0.0";
+    scripts["dev:network"] = "run-p dev:zfb:network dev:history";
+    // Relative --content-dir/--locale paths are resolved by resolveContentPath
+    // (packages/doc-history-server/src/args.ts) against INIT_CWD (falling back
+    // to process.cwd()) — correct for the supported invocation (`<pm> dev` /
+    // `<pm> run dev` from the project root, which is what run-p's child
+    // processes inherit). It resolves against the WRONG directory only if this
+    // generated project is itself nested inside a larger pnpm/npm workspace
+    // and dev:history is invoked via `<pm> --filter <this-package> ...` from
+    // that outer workspace root — an unsupported, non-generator invocation
+    // path, not the default `<pm> dev`.
+    let devHistoryScript =
+      "doc-history-server --port 4322 --content-dir src/content/docs";
+    if (choices.features.includes("i18n")) {
+      const secondaryLang = getSecondaryLang(choices.defaultLang);
+      devHistoryScript += ` --locale ${secondaryLang}:src/content/docs-${secondaryLang}`;
+    }
+    scripts["dev:history"] = devHistoryScript;
+  }
+
   if (choices.features.includes("tagGovernance")) {
-    // tags-audit bin is provided by @takazudo/zudo-doc (S9b #2334);
-    // tsx is still required as a devDep because the bin's runner imports
-    // the project's TypeScript config files at runtime via tsx.
-    scripts["tags:audit"] = "tags-audit";
-    scripts["tags:suggest"] = "tsx scripts/tags-suggest.ts";
+    // Both package-owned bins load the same explicit project config. `--`
+    // supplied by pnpm/npm is preserved by the runners for forwarded options.
+    scripts["tags:audit"] =
+      "tags-audit --config src/config/tag-vocabulary.ts";
+    scripts["tags:suggest"] =
+      "tags-suggest --config src/config/tag-vocabulary.ts";
   }
 
   if (choices.features.includes("skillSymlinker")) {

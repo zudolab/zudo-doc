@@ -35,42 +35,7 @@ export default defineConfig(
 );
 ```
 
-<Warning title="Requires chrome bindings on a fresh scaffold">
-
-Setting this config field alone renders nothing in a scaffolded project: the doc-route
-stub calls `createChrome(routeCtx)` without host bindings, so the `DocHistory` slot stays at
-its no-op default. Thread `chromeBindingsModule` and bind `DocHistory` — see
-[Custom Components](./custom-components.mdx) and
-[Host Chrome Bindings](../reference/host-chrome-bindings.mdx). Scaffolds generated
-after the [template fix](https://github.com/zudolab/zudo-doc/issues/2716) thread the presentational/data slots automatically;
-your own hydrating islands still need the static-import threading described in the guide.
-
-</Warning>
-
-Bind the real History island in the bindings module:
-
-```tsx title="src/chrome-bindings.tsx"
-import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
-import { DocHistory } from "@takazudo/zudo-doc/doc-history";
-
-export const chromeBindings = defineChromeBindings({
-  DocHistory,
-});
-```
-
-Point the same config at that module:
-
-```ts title="zfb.config.ts"
-export default defineConfig(
-  zudoDoc({
-    // ...
-    docHistory: true,
-    chromeBindingsModule: "./src/chrome-bindings.tsx",
-  }),
-);
-```
-
-When creating a project, the generator patches the document-route stubs for this binding only when the doc-history feature was selected. Add the module and route-stub threading manually to an existing scaffold; use the static-import form in [Custom Components](./custom-components.mdx) for this hydrating island.
+Fresh scaffolds statically wire the real History island into all generated route shapes when `docHistory` is selected. No bindings module or route edit is required for the button. An older existing scaffold must update each document stub to the current generated shape: import `DocHistory` statically and overlay it after `chromeBindings`, so the island remains scanner-reachable without dropping other host slots.
 
 The feature is **disabled by default** to keep builds fast for projects that don't need it.
 
@@ -169,6 +134,8 @@ GEN_DOC_HISTORY=1 pnpm build
 
 This is useful when previewing a locally-built `dist/` or bundling an offline reader. See the [deployment guide](./deployment.mdx) for details.
 
+Conversely, a shallow-clone CI variant that wants to keep the Created/Updated/Author metadata but explicitly skip this same postBuild step can set `DOC_HISTORY_SKIP_POSTBUILD=1` instead of `SKIP_DOC_HISTORY=1` — see the deployment guide's decision table.
+
 </Note>
 
 The output structure mirrors the content directory:
@@ -184,7 +151,9 @@ dist/doc-history/
 
 ### Dev Mode
 
-In dev mode (`pnpm dev`), the doc-history-server runs as a standalone REST API server on port 4322, launched concurrently with the zfb dev server via `run-p`. The doc-history zfb plugin's `devMiddleware` hook proxies `/doc-history/*` requests from the browser to this server.
+In dev mode, the doc-history-server runs as a standalone REST API server on port 4322, launched concurrently with the zfb dev server. This is not automatic just from setting `docHistory: true` in an existing project — a fresh `create-zudo-doc` scaffold with `docHistory` selected emits a `dev` script of `run-p dev:zfb dev:history` (running `zfb dev` and the installed `doc-history-server` bin concurrently) specifically because a plain `zfb dev` never starts the :4322 server on its own. The doc-history zfb plugin's `devMiddleware` hook proxies `/doc-history/*` requests from the browser to this server.
+
+Because `run-p` swallows trailing args, `pnpm dev -- --host 0.0.0.0` is silently ignored on these scaffolds — use the dedicated `pnpm dev:network` script instead, which binds zfb to `0.0.0.0` for LAN access while the doc-history server stays loopback-only (reached via the same `/doc-history/*` proxy). For any other zfb flag, forward it directly to the zfb process with `<pm> run dev:zfb -- <flags>` rather than through `pnpm dev`.
 
 When you open the history panel, it runs git commands on the fly -- no pre-generation needed. The server's file index refreshes every 10 seconds, so new or renamed files are picked up automatically. This means history is always up-to-date with your latest commits.
 

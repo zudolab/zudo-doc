@@ -30,9 +30,7 @@ import { MyBadge } from "@/components/my-badge";
 
 ## グローバル登録: mdxExtras
 
-`mdxExtras` はプロジェクト所有の MDX コンポーネントのグローバルレジストリーです。bindings モジュールを作成し、`zudoDoc()` からそのモジュールを指定して、scaffold のドキュメントルートスタブへ bindings を渡します。
-
-ルートスタブの変更は必須です。新しい scaffold には `pages/docs/[[...slug]].tsx` があり、その素の `createChrome(routeCtx)` 呼び出しがパッケージ注入ルートをシャドーします。bindings を静的にインポートして `createChrome()` に渡す方法は普遍的なレシピです。通常の表示用 `mdxExtras` に加えて、将来のアイランドのインポートも zfb のスキャナーから到達可能に保てます。
+`mdxExtras` はプロジェクト所有の MDX コンポーネントのグローバルレジストリーです。bindings モジュールを作成し、`zudoDoc()` からそのモジュールを指定します。新しい scaffold のルートは設定済みモジュールを `virtual:zudo-doc-chrome-bindings` 経由ですでに消費するため、表示用コンポーネントではルートスタブを編集しません。
 
 まず、次の完全な例から始めます。
 
@@ -69,22 +67,11 @@ export default defineConfig(
 );
 ```
 
-`pages/docs/[[...slug]].tsx` では、既存の `createChrome` インポートの横に静的インポートを追加し、素の呼び出しを次の呼び出しへ置き換えます。
-
-```tsx title="pages/docs/[[...slug]].tsx"
-import { createChrome } from "@takazudo/zudo-doc/chrome";
-import { chromeBindings } from "../../src/chrome-bindings";
-
-const { renderDocPage } = createChrome(routeCtx, chromeBindings);
-```
-
-i18n を使う場合、`pages/[locale]/docs/[[...slug]].tsx` にも同じ境界があります。そこにも同等の静的インポートを適用してください。プロジェクトでバージョンを使う場合、バージョン付きドキュメントスタブにも同じ対応が必要です。
-
-代わりに `virtual:zudo-doc-chrome-bindings` から `chromeBindings` をインポートできます。この仮想モジュールは設定の `chromeBindingsModule` に従い、**表示専用でサーバーレンダリングされる** `mdxExtras` に向いています。bindings にアイランドを含める場合は、上記の静的インポートを使い続けてください。仮想モジュールの経路は、クライアントコンポーネントを見つける静的インポートグラフの外にあります。
+生成された `pages/docs/[[...slug]].tsx` とロケール版は、どちらも `virtual:zudo-doc-chrome-bindings` から `chromeBindings` をインポートし、`createChrome(routeCtx, chromeBindings)` を呼びます。doc history が有効な場合も、generator は同じオブジェクトを置換せず、その上へ `DocHistory` をマージします。これは**表示専用でサーバーレンダリングされる** `mdxExtras` と他のすべてのホスト binding に対する、ルートを fork しないサポート済み経路です。
 
 <Warning title="仮想パスではアイランドをハイドレートできない">
 
-[Issue #2716](https://github.com/zudolab/zudo-doc/issues/2716) は表示用およびデータ用スロットに対して仮想形式を自動で通す予定です。クライアントアイランドをスキャナーから到達可能にはしません。アイランドには静的なルートスタブインポートを使ってください。
+生成された仮想経路は、bindings モジュール内で宣言したコンポーネントをスキャナーから到達可能にはしません。そのため、表示用 binding をハイドレートするクライアントアイランドへ自動変換するものではありません。実験的アイランドがルートレベルの静的到達性を必要とする場合だけ、後述のとおり該当するすべてのルートスタブからプロジェクト bindings モジュールを明示的にインポートします。通常の `mdxExtras` には不要な高度なルートカスタマイズです。
 
 </Warning>
 
@@ -159,7 +146,7 @@ export const chromeBindings = defineChromeBindings({
 });
 ```
 
-グローバル登録のレシピにある `pages/docs/[[...slug]].tsx` の静的 `../../src/chrome-bindings` インポートを残してください。仮想モジュールの代替案は SSR 表示専用であり、このアイランドが検出されることを保証できません。`Counter.displayName` を設定すると、レンダリングパイプラインが関数名を書き換える場合にもアイランドマーカー名を固定できます。
+この実験的アイランドの場合だけ、該当するすべてのドキュメントルートスタブで、生成済みの仮想インポートを静的な `../../src/chrome-bindings` インポートへ置き換えます（ロケールルートでは相対パスを調整します）。デフォルトの仮想モジュール経路は SSR 表示専用であり、このアイランドが検出されることを保証できません。`Counter.displayName` を設定すると、レンダリングパイプラインが関数名を書き換える場合にもアイランドマーカー名を固定できます。
 
 <Warning title="実験的なスキャナー契約">
 

@@ -19,6 +19,7 @@ import type { Settings, TagVocabularyEntry } from "../settings.js";
 // Type-only imports (erased at build — they never enter the runtime/eval graph,
 // so this module stays node-free; the foundation-eval-graph guard covers it).
 import type { ColorScheme } from "../color-scheme-utils.js";
+import type { ThemePackRegistry } from "../theme-packs-registry/index.js";
 import type { UrlHelpers } from "../url-helpers/index.js";
 import type { NavSourceDocsAPI } from "../nav-source-docs/index.js";
 import type { DocRouteEntriesAPI } from "../doc-route-entries/index.js";
@@ -27,6 +28,7 @@ import type { ResolvedTag } from "../tag-helpers/index.js";
 import type { DocNavNode, DocPageEntry } from "../doc-page-props/index.js";
 import type { HeadingItem } from "../extract-headings/index.js";
 import type { CategoryMeta } from "../sidebar-tree/index.js";
+import type { HeaderRightComponentRegistry } from "../header/types.js";
 
 /**
  * The i18n surface a factory may read. Parameterizes what `base.ts` used to read
@@ -145,6 +147,21 @@ export interface RouteContextPayload<S = Settings> {
   /** Host color-scheme palette map; `null` when the host passed none (chrome
    *  then falls back to a neutral default scheme). */
   colorSchemes: Record<string, ColorScheme> | null;
+  /**
+   * Resolved, enabled, ordered theme-pack registry (ADR
+   * `docs/adr/theme-packs.md`, Decision 2 "Registry threading to
+   * SSR/islands") — settings ∩ the bundled `theme-packs/` directories, in
+   * switcher order. `null` (or omitted) renders the whole feature inert (same
+   * accepted coupling class as {@link colorSchemes} for a
+   * `packageOwnedRoutes: false` host that builds its own payload without
+   * threading one).
+   *
+   * OPTIONAL on purpose: this field was added after the payload shape
+   * shipped, so an existing `packageOwnedRoutes: false` host that constructs
+   * its own payload predates it. `createRouteContext` normalizes an omitted
+   * value to `null` (→ inert) so upgrading such a host does not throw at SSR.
+   */
+  themePackRegistry?: ThemePackRegistry | null;
 }
 
 /** Aggregated `tag → docs` index entry built by `collectTags`. */
@@ -178,6 +195,9 @@ export interface RouteContext<S = Settings>
   settings: S;
   /** Host color-scheme palette map (or `null`); threaded to chrome head CSS. */
   colorSchemes: Record<string, ColorScheme> | null;
+  /** Resolved, enabled, ordered theme-pack registry (or `null`) — see
+   *  {@link RouteContextPayload.themePackRegistry}. */
+  themePackRegistry: ThemePackRegistry | null;
   /** The reconstructed i18n surface. */
   i18n: FactoryI18n;
   /** Default locale code (un-prefixed `/docs/...`). */
@@ -205,10 +225,10 @@ export interface RouteContext<S = Settings>
   /** Aggregate a `tag → docs` index from a doc collection. */
   collectTags(
     entries: ReadonlyArray<{
-      id: string;
+      slug: string;
       data: { slug?: string; title?: string; description?: string; tags?: string[] };
     }>,
-    slugFn: (id: string, data: { slug?: string }) => string,
+    slugFn: (entrySlug: string, data: { slug?: string }) => string,
   ): Map<string, TagInfo>;
   /** Build a recursive nav tree from a flat doc collection. */
   buildNavTree(
@@ -230,8 +250,8 @@ export interface RouteContext<S = Settings>
   isNavVisible(doc: DocPageEntry): boolean;
   /** The content-bridge handle: identity-stable, draft-filtered docs loader. */
   stableDocs(collectionName: string): DocPageEntry[];
-  /** Canonical route slug for a doc id. */
-  toRouteSlug(id: string): string;
+  /** Canonical route slug for a zfb content slug. */
+  toRouteSlug(entrySlug: string): string;
   /** Split a route slug into path params. */
   toSlugParams(routeSlug: string): string[];
 }
@@ -245,8 +265,26 @@ export interface RouteContext<S = Settings>
  * (HOSTCOLLAPSE wave) later passes the real bindings.
  */
 export interface ChromeHostBindings {
+  /** Primary header chrome. Default: the package HeaderWithDefaults component. */
+  Header?: FactoryComponent;
+  /** Primary footer chrome. Default: the package FooterWithDefaults component. */
+  Footer?: FactoryComponent;
+  /** Primary doc sidebar chrome. Default: the package SidebarWithDefaults component. */
+  Sidebar?: FactoryComponent;
+  /** Primary desktop table of contents. Default: the package Toc component. */
+  Toc?: FactoryComponent;
+  /** Primary breadcrumb trail. Default: the package Breadcrumb component. */
+  Breadcrumb?: FactoryComponent;
+  /** Primary previous/next document pager. Default: the package DocPager component. */
+  DocPager?: FactoryComponent;
   /** Header search widget. Default: the package SearchWidget bound to the site base. */
   SearchWidget?: FactoryComponent;
+  /**
+   * Project-owned header-right renderers keyed by the serializable component
+   * name in `settings.headerRightItems`. Built-in names are reserved and may
+   * not be shadowed. Default: `{}`.
+   */
+  headerRightComponents?: HeaderRightComponentRegistry;
   /** Per-page git-history meta manifest. Default: `{}` (no Created/Updated block). */
   docHistoryMeta?: Record<string, unknown>;
   /** Sidebar section config. Default: `{}` (auto-generated tree only). */

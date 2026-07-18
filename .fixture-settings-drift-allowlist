@@ -190,6 +190,18 @@ i18n:aiChatGlobalDailyLimit
 theme:aiChatGlobalDailyLimit
 versioning:aiChatGlobalDailyLimit
 
+# ── themePackSwitcher ─────────────────────────────────────────────────────────
+# reason: the theme-pack switcher flyout (+ browse-all dialog) is only
+#         exercised in the theme fixture (e2e/theme-pack-switcher.spec.ts and
+#         e2e/theme-pack-zdtp-interplay.spec.ts, epic Theme Core #2812,
+#         #2826); the remaining fixtures leave it at the default (false) so
+#         an unrelated floating UI element doesn't interfere with specs that
+#         don't test it — mirrors the designTokenPanel allowlist pattern above
+sidebar:themePackSwitcher
+i18n:themePackSwitcher
+smoke:themePackSwitcher
+versioning:themePackSwitcher
+
 # ── githubAutolinksRepo ───────────────────────────────────────────────────────
 # reason: optional showcase-only setting — omitting it disables github issue/SHA
 #         autolinks entirely, which is the correct default for generated projects

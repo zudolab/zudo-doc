@@ -375,9 +375,9 @@ setup_fixture() {
 
   # ----- Copy top-level first-party dirs (pages/, plugins/) -----
   for dir in "${ROOT_COPIED_DIRS[@]}"; do
+    # Clean first: a directory removed from the root must not leave a stale
+    # fixture copy (or dangling symlink) behind on the next setup run.
     rm -rf "$fixture_dir/$dir"
-    # `plugins/` is optional. Removing the fixture destination first keeps
-    # repeated setup runs a true mirror if that optional source disappears.
     [ -e "$REPO_ROOT/$dir" ] || continue
     cp -RL "$REPO_ROOT/$dir" "$fixture_dir/$dir"
   done

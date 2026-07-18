@@ -1,4 +1,5 @@
-import type { DocsEntry } from "@/types/docs-entry";
+import type { DocPageEntry } from "@takazudo/zudo-doc/doc-page-props";
+import { toRouteSlug } from "@takazudo/zudo-doc/slug";
 import { docsUrl, withBase } from "@/utils/base";
 import { defaultLocale, type Locale } from "@/config/i18n";
 import {
@@ -8,7 +9,7 @@ import {
 } from "@takazudo/zudo-doc/sidebar-tree";
 
 /** Filter predicate: true when a doc should appear in navigation (sidebar, index, sitemap). */
-export function isNavVisible(doc: DocsEntry): boolean {
+export function isNavVisible(doc: DocPageEntry): boolean {
   return !doc.data.unlisted && !doc.data.standalone;
 }
 
@@ -79,14 +80,14 @@ function navTreeCacheSet(key: string, value: NavNode[]): void {
 // is preserved because a content edit produces a new snapshot → new stable
 // array identity → fresh entry here AND a different content key downstream.
 const navTreeByIdentity = new WeakMap<
-  DocsEntry[],
+  DocPageEntry[],
   Array<{ lang: Locale; categoryMeta: Map<string, CategoryMeta> | undefined; tree: NavNode[] }>
 >();
 
 /** Build a cache key from docs array + locale + category meta.
  *  Includes nav-affecting frontmatter so HMR picks up changes. */
 function navTreeCacheKey(
-  docs: DocsEntry[],
+  docs: DocPageEntry[],
   lang: Locale,
   categoryMeta?: Map<string, CategoryMeta>,
 ): string {
@@ -107,7 +108,7 @@ function navTreeCacheKey(
         category_sort_order,
       } = d.data;
       return JSON.stringify([
-        d.id,
+        d.data.slug ?? toRouteSlug(d.slug),
         sidebar_position,
         sidebar_label,
         title,
@@ -148,7 +149,7 @@ export interface BuildNavTreeOptions {
  * latest-route `docsUrl` behavior — every existing 3-arg call site is unchanged.
  */
 export function buildNavTree(
-  docs: DocsEntry[],
+  docs: DocPageEntry[],
   lang: Locale = defaultLocale,
   categoryMeta?: Map<string, CategoryMeta>,
   options?: BuildNavTreeOptions,
@@ -184,13 +185,7 @@ export function buildNavTree(
   }
 
   const sidebarTree = buildSidebarTree(
-    // Pass `{ id, data }` only — NOT the whole entry. zfb entries carry the
-    // raw, un-index-stripped engine slug on the top-level `slug` field
-    // (e.g. "getting-started/index"), and the shared builder prefers
-    // `entry.slug` over the id-derived form; forwarding it would mint wrong
-    // node paths. Omitting it reproduces the legacy host derivation
-    // `data.slug ?? toRouteSlug(id)` (ids arrive pre-stripped via _data.ts).
-    docs.map((d) => ({ id: d.id, data: d.data })),
+    docs,
     lang,
     {
       categoryMeta,
@@ -205,9 +200,9 @@ export function buildNavTree(
   );
   const result = sidebarTree.map(toNavNode);
 
-  // Root docs-index entry (derived slug "" — a root index.mdx arrives from
-  // _data.ts bridging as id ""). The shared builder drops empty slugs, but the
-  // legacy host builder minted a top-level node keyed "" (href /docs/) so the
+  // Root docs-index entry (a raw zfb `index` slug derives to ""). The shared
+  // builder drops empty slugs, but the established host behavior includes a
+  // top-level node keyed "" (href /docs/) so the
   // root page stayed present in sidebar/breadcrumb/prev-next data. Re-create
   // that node here with the exact legacy field derivation, then re-sort with
   // the same comparator the builder used (stable sort → idempotent for the
@@ -229,14 +224,13 @@ export function buildNavTree(
   return result;
 }
 
-/** Last entry whose package-derived slug is empty ("") — i.e. the entry the
- *  shared builder skips. Last one wins, mirroring the legacy builder's
- *  `node.doc = doc` overwrite. (A bare id "index" is NOT matched here: both
- *  the legacy and shared builders resolve it to a node keyed "index".) */
-function findRootIndexDoc(docs: DocsEntry[]): DocsEntry | undefined {
-  let found: DocsEntry | undefined;
+/** Last entry whose canonical route slug is empty ("") — i.e. the root index
+ *  entry the shared builder skips. Last one wins, preserving established
+ *  overwrite behavior. */
+function findRootIndexDoc(docs: DocPageEntry[]): DocPageEntry | undefined {
+  let found: DocPageEntry | undefined;
   for (const d of docs) {
-    const slug = d.data.slug ?? d.id.replace(/\/index$/, "");
+    const slug = d.data.slug ?? toRouteSlug(d.slug);
     if (slug === "") found = d;
   }
   return found;
@@ -247,7 +241,7 @@ function findRootIndexDoc(docs: DocsEntry[]): DocsEntry | undefined {
  *  back through the same chain (title is required, so it always resolves),
  *  and href is the locale docs root. */
 function toRootNavNode(
-  doc: DocsEntry,
+  doc: DocPageEntry,
   lang: Locale,
   buildHref: BuildHref,
   categoryMeta?: Map<string, CategoryMeta>,
@@ -287,7 +281,7 @@ function toNavNode(node: SidebarNode): NavNode {
 /** Record a (docs-array identity, lang, categoryMeta) → tree mapping for the
  *  identity fast-path. No-op-safe to call multiple times for the same slot. */
 function rememberIdentity(
-  docs: DocsEntry[],
+  docs: DocPageEntry[],
   lang: Locale,
   categoryMeta: Map<string, CategoryMeta> | undefined,
   tree: NavNode[],

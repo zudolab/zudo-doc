@@ -48,8 +48,23 @@ function makeScheme(): ColorScheme {
       selectionBg: { base: 2 },
       selectionFg: { base: 0 },
       semantic: { ...SEMANTIC_RAMP_DEFAULTS },
+      syntax: {},
     },
   };
+}
+
+// Compile-time contract: a no-syntax ModeMap is no longer accepted. This is
+// intentionally never called; `tsc --noEmit` verifies the negative assertion.
+function assertSyntaxMapIsRequired(): void {
+  // @ts-expect-error ModeMap.syntax is required, even when it has no overrides.
+  const noSyntax: ColorScheme["map"] = {
+    bg: { base: 4 },
+    fg: { base: 0 },
+    selectionBg: { base: 2 },
+    selectionFg: { base: 0 },
+    semantic: { ...SEMANTIC_RAMP_DEFAULTS },
+  };
+  void noSyntax;
 }
 
 describe("resolveRampRef", () => {
@@ -111,16 +126,7 @@ describe("resolveSemanticColors", () => {
   });
 });
 
-describe("resolveSyntaxColors — optional backward-compatible syntax map", () => {
-  it("resolves all nine roles from semantic aliases for an old ModeMap with no syntax property", () => {
-    const scheme = makeScheme();
-    const syntax = resolveSyntaxColors(scheme);
-    expect(Object.keys(syntax)).toEqual([...SYNTAX_SEMANTIC_KEYS]);
-    for (const key of SYNTAX_SEMANTIC_KEYS) {
-      expect(syntax[key]).toBe(resolveSemanticColors(scheme)[SYNTAX_SEMANTIC_ALIASES[key]]);
-    }
-  });
-
+describe("resolveSyntaxColors — required partial syntax map", () => {
   it("lets a partial syntax map override only selected roles", () => {
     const scheme = makeScheme();
     scheme.map.syntax = { syntaxKeyword: { accent: 2 } };
@@ -132,8 +138,11 @@ describe("resolveSyntaxColors — optional backward-compatible syntax map", () =
 
   it("treats an explicit empty syntax map as all inherited aliases", () => {
     const scheme = makeScheme();
-    scheme.map.syntax = {};
-    expect(resolveSyntaxColors(scheme)).toEqual(resolveSyntaxColors(makeScheme()));
+    const syntax = resolveSyntaxColors(scheme);
+    expect(Object.keys(syntax)).toEqual([...SYNTAX_SEMANTIC_KEYS]);
+    for (const key of SYNTAX_SEMANTIC_KEYS) {
+      expect(syntax[key]).toBe(resolveSemanticColors(scheme)[SYNTAX_SEMANTIC_ALIASES[key]]);
+    }
   });
 
   it("falls back safely when runtime-authored syntax refs are invalid", () => {

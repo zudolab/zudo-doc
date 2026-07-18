@@ -76,6 +76,14 @@ export interface DocLayoutHtmlAttrs {
    */
   dataTheme?: string;
   /**
+   * Optional `data-theme-pack` attribute value — the CONFIGURED theme-pack
+   * slug (ADR `docs/adr/theme-packs.md`, Decision 3 DOM contract, #2822).
+   * Unlike `data-theme` (user-preference-only, client-set) the configured
+   * pack is build-static, so SSR can and must emit it for the no-JS path;
+   * the pre-paint bootstrap re-asserts the user's persisted slug on load.
+   */
+  dataThemePack?: string;
+  /**
    * Optional inline `style` value to apply to `<html>` — in practice this
    * is `color-scheme: light` / `color-scheme: dark`.
    */
@@ -224,6 +232,7 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
     noindex,
     lang = "en",
     dataTheme,
+    dataThemePack,
     htmlStyle,
     head,
     header,
@@ -262,6 +271,9 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
   const htmlAttrs: JSX.HTMLAttributes<HTMLHtmlElement> = { lang };
   if (dataTheme !== undefined) {
     (htmlAttrs as Record<string, unknown>)["data-theme"] = dataTheme;
+  }
+  if (dataThemePack !== undefined) {
+    (htmlAttrs as Record<string, unknown>)["data-theme-pack"] = dataThemePack;
   }
   if (htmlStyle !== undefined) {
     htmlAttrs.style = htmlStyle;
@@ -312,9 +324,21 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
           array of structural VNode objects — Preact's JSX typing does not
           directly accept that array shape, but at runtime the elements are
           valid VNode descriptors. */}
+        {/* `data-theme-pack` is preserved for the same reason as `data-theme`:
+            the SSR document carries the CONFIGURED pack slug, but the live
+            root may hold the user's persisted slug (set pre-paint by the
+            theme-pack bootstrap or at runtime by applyThemePack). Without
+            preserving it, every SPA swap would reset the attribute to the
+            configured value and the active pack's attr-scoped CSS would stop
+            applying for a frame (ADR theme-packs.md Decision 3, #2822). */}
         {enableClientRouter !== false
           ? (ClientRouter({
-              preserveHtmlAttrs: ["data-sidebar-hidden", "data-theme", "style"],
+              preserveHtmlAttrs: [
+                "data-sidebar-hidden",
+                "data-theme",
+                "data-theme-pack",
+                "style",
+              ],
             }) as unknown as JSX.Element)
           : null}
         {head}

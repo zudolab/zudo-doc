@@ -61,6 +61,10 @@ describe("theme.css --z-index-* block mirrors defaultZIndexTiers", () => {
     .filter((m): m is RegExpMatchArray => m !== null)
     .map((m) => ({ name: m[1]!, value: Number(m[2]!) }));
 
+  it("marks the z-index theme inline so utilities emit literal values", () => {
+    expect(themeCss).toMatch(/@theme inline\s*\{\s*--z-index-content:/);
+  });
+
   it("parsed a non-trivial number of declarations from theme.css", () => {
     expect(cssTiers.length).toBe(defaultZIndexTiers.length);
   });

@@ -21,6 +21,10 @@
 //   - findInPage            → load (non-skip-ssr*) FindInPageInit — Cmd/Ctrl+F find
 //                             bar, self-gated on `window.__TAURI_INTERNALS__`
 //                             (zudolab/zudo-doc#2689)
+//   - themePackSwitcher     → load (hydrating, SSR'd launcher) ThemePackSwitcher
+//                             flyout — component + registry-derived props are
+//                             injected by `chrome/derive.tsx` (#2821), the
+//                             DesignTokenPanelBootstrap deps pattern
 // It deliberately OMITS the host-owned `ClientRouterBootstrap`: it imports from
 // `@/components/*` and is NOT reconstructable from package settings. The page-
 // loading overlay, by contrast, is a pure PACKAGE component (`../page-loading`)
@@ -81,9 +85,12 @@ import { MermaidEnlarge, MermaidEnlargeSsrFallback } from "../mermaid-enlarge/in
 import { FindInPageInit } from "../find-in-page/index.js";
 // Named export (`page-loading/index.ts` re-exports `{ default as PageLoadingOverlay }`).
 import { PageLoadingOverlay } from "../page-loading/index.js";
+import { createDesignTokenPanelIsland } from "./design-token-panel-island.js";
+import { createThemePackSwitcherIsland } from "./theme-pack-switcher-island.js";
 // Type-only — erased at build, so importing it does not pull `factory-context`'s
 // (node-free, but otherwise unrelated) runtime graph into this module.
 import type { FactoryComponent } from "../factory-context/index.js";
+import type { ThemePackSwitcherProps } from "../theme-pack-switcher/index.js";
 
 /** Default sr-only label rendered as the AiChatModal SSR fallback. Mirrors the
  *  host helper's default verbatim so assistive tech can discover the chat
@@ -91,65 +98,35 @@ import type { FactoryComponent } from "../factory-context/index.js";
  *  `aiChatBodyLabel` to localise. */
 const DEFAULT_AI_CHAT_BODY_LABEL = "Ask a question about the documentation.";
 
-/**
- * SSR-emitted inline script that acts as a pre-hydration shim for the
- * `toggle-design-token-panel` window event (mirrors the host's
- * `pages/lib/_body-end-islands.tsx` verbatim, zudolab/zudo-doc#1627 Part B).
- * Because the `DesignTokenPanelBootstrap` Island hydrates on `when: "load"`
- * (not immediately), zdtp's real `toggle-design-token-panel` listener is not
- * yet installed when the user clicks the header palette button
- * (`header/header.tsx`'s `trigger:design-token-panel` item, already
- * package-owned and gated on this same `settings.designTokenPanel` flag).
- * This shim:
- *
- *  1. Records the first (and only meaningful) click as a boolean flag.
- *  2. Exposes `window.__zdtpReadyClicks` so the bootstrap Island can drain the
- *     queue and re-dispatch a single event once the real listener is live
- *     (`bootstrapDesignTokenPanel` calls this — see `../design-token-panel-bootstrap.tsx`).
- *  3. Guards against double-installation across any re-evaluation path (SPA
- *     body swap, HMR, etc.) via `__zdtpToggleShimInstalled`.
- */
-const ZDTP_TOGGLE_SHIM_SRC = `(function(){
-if(window.__zdtpToggleShimInstalled)return;
-window.__zdtpToggleShimInstalled=true;
-var pending=false;
-function shim(){pending=true;}
-window.addEventListener('toggle-design-token-panel',shim);
-window.__zdtpReadyClicks=function(){
-window.removeEventListener('toggle-design-token-panel',shim);
-delete window.__zdtpReadyClicks;
-if(pending){pending=false;window.dispatchEvent(new CustomEvent('toggle-design-token-panel'));}
-};
-})();`;
-
-/** The `settings` subset this factory reads — the four package-island flags.
+/** The `settings` subset this factory reads — the package feature flags.
  *  A structural subset so the host can pass its full `Settings` object. */
 export interface BodyEndIslandsSettings {
   aiAssistant: boolean;
   imageEnlarge: boolean;
   mermaid: boolean;
   /** Gates the pure-SSR `<PageLoadingOverlay/>` mount (zudolab/zudo-doc#2482),
-   *  mirroring the host gate and `enableClientRouter`'s on package-owned routes.
-   *  Optional so adding it is NOT a breaking change for external callers that
-   *  construct this documented subset — this is an exported package subpath API.
-   *  `undefined` is treated as `false` (no overlay) at the mount site, preserving
-   *  pre-#2482 behavior; internal callers always pass the full `Settings`. */
-  dynamicPageTransition?: boolean;
-  /** Gates the `DesignTokenPanelBootstrap` island mount (#2658). Optional for
-   *  the same external-caller-compat reason as `dynamicPageTransition` above.
-   *  `undefined` is treated as `false` (no panel island). Even when `true`,
-   *  nothing mounts unless `deps.DesignTokenPanelBootstrap` was also supplied
-   *  — see {@link BodyEndIslandsDeps}. */
-  designTokenPanel?: boolean;
+   *  mirroring the host gate and `enableClientRouter` on package-owned routes. */
+  dynamicPageTransition: boolean;
+  /** Gates the `DesignTokenPanelBootstrap` island mount (#2658). Even when
+   *  `true`, nothing mounts unless `deps.DesignTokenPanelBootstrap` was also
+   *  supplied — see {@link BodyEndIslandsDeps}. */
+  designTokenPanel: boolean;
   /**
-   * Gates the `FindInPageInit` island mount (zudolab/zudo-doc#2689). Optional
-   * for the same external-caller-compat reason as `dynamicPageTransition`/
-   * `designTokenPanel` above. `undefined` is treated as `false` (no island).
+   * Gates the `FindInPageInit` island mount (zudolab/zudo-doc#2689).
    * Controls the PACKAGE-DEFAULT `BodyEndIslands` slot only — a host that
    * overrides the `BodyEndIslands` chrome binding must mount `FindInPageInit`
    * itself.
    */
-  findInPage?: boolean;
+  findInPage: boolean;
+  /**
+   * Gates the `ThemePackSwitcher` flyout island mount (ADR
+   * `docs/adr/theme-packs.md` Decision 7; #2821). Optional — the field is
+   * optional on the host `Settings` census too (default `false`). Even when
+   * `true`, nothing mounts unless `deps.themePackSwitcherProps` AND
+   * `deps.ThemePackSwitcher` were also supplied — see
+   * {@link BodyEndIslandsDeps}.
+   */
+  themePackSwitcher?: boolean;
 }
 
 /** Dependencies injected by `_chrome.tsx` (carries the virtual-module settings). */
@@ -168,6 +145,20 @@ export interface BodyEndIslandsDeps {
    * not a crash.
    */
   DesignTokenPanelBootstrap?: FactoryComponent;
+  /**
+   * SSR props for the theme-pack switcher flyout (#2821) — derived from
+   * `ctx.themePackRegistry` by `chrome/derive.tsx` (only the chrome-derive
+   * path knows the registry). `null`/omitted renders the feature inert even
+   * when `settings.themePackSwitcher` is `true`.
+   */
+  themePackSwitcherProps?: ThemePackSwitcherProps | null;
+  /**
+   * The real `ThemePackSwitcher` island component (#2821), injected by
+   * `chrome/derive.tsx` (which statically imports it — the island-scanner
+   * reachability chain, mirroring `DesignTokenPanelBootstrap` above).
+   * Omitted means no switcher island mounts — a safe no-op, not a crash.
+   */
+  ThemePackSwitcher?: FactoryComponent;
 }
 
 /** Props for the produced `BodyEndIslands` component. */
@@ -188,18 +179,19 @@ export interface BodyEndIslandsProps {
  * `createDocBodyEnd` `BodyEndIslands` slot contract
  * (`(props: { basePath: string }) => JSX.Element`).
  */
-/** Concrete zero-prop shape of the real `DesignTokenPanelBootstrap` — narrower
- *  than the structural `FactoryComponent` so it can be used as JSX directly
- *  (mirrors `doc-history-area/index.tsx`'s `DocHistory` cast). */
-type DesignTokenPanelBootstrapComponent = () => JSX.Element | null;
-
 export function createBodyEndIslands(
   deps: BodyEndIslandsDeps,
 ): (props: BodyEndIslandsProps) => JSX.Element {
   const { settings } = deps;
-  const DesignTokenPanelBootstrap = deps.DesignTokenPanelBootstrap as unknown as
-    | DesignTokenPanelBootstrapComponent
-    | undefined;
+  const DesignTokenPanelIsland = createDesignTokenPanelIsland({
+    designTokenPanel: settings.designTokenPanel,
+    DesignTokenPanelBootstrap: deps.DesignTokenPanelBootstrap,
+  });
+  const ThemePackSwitcherIsland = createThemePackSwitcherIsland({
+    themePackSwitcher: settings.themePackSwitcher === true,
+    themePackSwitcherProps: deps.themePackSwitcherProps ?? null,
+    ThemePackSwitcher: deps.ThemePackSwitcher,
+  });
 
   function BodyEndIslands({
     basePath,
@@ -247,37 +239,6 @@ export function createBodyEndIslands(
         }) as unknown as VNode)
       : null;
 
-    // Gated on `settings.designTokenPanel` (#2658) AND on `DesignTokenPanelBootstrap`
-    // having been injected (see `BodyEndIslandsDeps`) — an omitted dep is a safe
-    // no-op, not a crash. Hydrates on `when: "load"` so `configurePanel()` runs
-    // as early as possible and the `toggle-design-token-panel` window listener
-    // is registered before the user can click the header trigger. No
-    // `ssrFallback`: the component renders nothing on either side, so this uses
-    // the plain (non-skip-ssr) `Island` form, matching the host's
-    // `ClientRouterBootstrap` precedent — `data-zfb-island="DesignTokenPanelBootstrap"`
-    // (not the `-skip-ssr` variant AiChatModal/ImageEnlarge/MermaidEnlarge use,
-    // since those DO have real SSR fallback markup).
-    //
-    // The inline <script> emitted alongside the Island is the pre-hydration
-    // toggle shim (zudolab/zudo-doc#1627 Part B, see `ZDTP_TOGGLE_SHIM_SRC`
-    // above). It captures the first click as a boolean flag and exposes
-    // `window.__zdtpReadyClicks` so the bootstrap module can drain and
-    // re-dispatch once the real zdtp listener is registered.
-    const designTokenPanelBootstrap =
-      settings.designTokenPanel && DesignTokenPanelBootstrap
-        ? (
-            <>
-              <script dangerouslySetInnerHTML={{ __html: ZDTP_TOGGLE_SHIM_SRC }} />
-              {
-                Island({
-                  when: "load",
-                  children: <DesignTokenPanelBootstrap />,
-                }) as unknown as VNode
-              }
-            </>
-          )
-        : null;
-
     // Gated on `settings.findInPage` (zudolab/zudo-doc#2689). This gate
     // controls the PACKAGE-DEFAULT `BodyEndIslands` slot ONLY — a host that
     // overrides the `BodyEndIslands` chrome binding must mount
@@ -305,7 +266,13 @@ export function createBodyEndIslands(
             here — package routes already activate <ClientRouter/> through
             `enableClientRouter` on this same flag. */}
         {settings.dynamicPageTransition ? <PageLoadingOverlay /> : null}
-        {designTokenPanelBootstrap}
+        {/* Package-owned, settings-gated load-time island. Its factory keeps
+            this same mount available when deriveBodyEndIslands composes a
+            host BodyEndIslands override instead of using this default. */}
+        <DesignTokenPanelIsland />
+        {/* Package-owned, settings-gated load-time island (#2821) — same
+            composition contract as DesignTokenPanelIsland above. */}
+        <ThemePackSwitcherIsland />
         {findInPageInit}
         {aiAssistant}
         {imageEnlarge}

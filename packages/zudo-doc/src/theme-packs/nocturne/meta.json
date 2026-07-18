@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "slug": "nocturne",
+  "name": "Nocturne",
+  "description": "Purple midnight — velvet aubergine depths, lavender links, and muted gold hairlines. Elegant, never neon.",
+  "mode": "dark",
+  "version": "1.0.1",
+  "fonts": {
+    "sans": "Manrope",
+    "mono": "IBM Plex Mono",
+    "display": "Cormorant Garamond",
+    "loaded": ["Cormorant Garamond", "Manrope", "IBM Plex Mono"]
+  },
+  "preview": {
+    "light": {
+      "bg": "oklch(0.958 0.012 300)",
+      "fg": "oklch(0.245 0.05 312)",
+      "accent": "oklch(0.455 0.15 295)",
+      "syntax": {
+        "keyword": "oklch(0.46 0.16 295)",
+        "string": "oklch(0.5 0.105 85)",
+        "comment": "oklch(0.5 0.042 305)",
+        "callable": "oklch(0.455 0.125 265)"
+      }
+    },
+    "dark": {
+      "bg": "oklch(0.155 0.03 310)",
+      "fg": "oklch(0.922 0.018 300)",
+      "accent": "oklch(0.765 0.105 292)",
+      "syntax": {
+        "keyword": "oklch(0.772 0.128 293)",
+        "string": "oklch(0.8 0.108 88)",
+        "comment": "oklch(0.645 0.045 302)",
+        "callable": "oklch(0.77 0.095 262)"
+      }
+    }
+  }
+}

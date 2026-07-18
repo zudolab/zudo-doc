@@ -21,6 +21,7 @@ const fixtureColorScheme: ColorScheme = {
     selectionBg: { base: 2 },
     selectionFg: { base: 0 },
     semantic: { ...SEMANTIC_RAMP_DEFAULTS },
+    syntax: {},
   },
 };
 
@@ -208,7 +209,6 @@ const fixtureSettings: PresetSettings = {
   minifyHtml: true,
   mermaid: true,
   onBrokenMarkdownLinks: "warn",
-  headingIdStrategy: "hierarchical",
   llmsTxt: true,
   changelogs: [
     {
@@ -218,6 +218,7 @@ const fixtureSettings: PresetSettings = {
     },
   ],
   docHistory: true,
+  docHistoryExclude: ["drafts/**"],
   claudeResources: { claudeDir: ".claude" },
   githubAutolinksRepo: "zudolab/zudo-doc",
   packageOwnedRoutes: true,
@@ -296,6 +297,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       "@takazudo/zudo-doc/plugins/claude-resources",
       "@takazudo/zudo-doc/plugins/doc-history",
       "@takazudo/zudo-doc/plugins/search-index",
+      "@takazudo/zudo-doc/plugins/theme-packs",
       "@takazudo/zudo-doc/plugins/llms-txt",
       "@takazudo/zudo-doc/plugins/changelog",
     ]);
@@ -312,11 +314,17 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       docsDir: "src/content/docs",
       locales: { ja: { dir: "src/content/docs-ja" } },
       base: "/",
+      exclude: ["drafts/**"],
     });
     expect(byName["@takazudo/zudo-doc/plugins/search-index"]).toEqual({
       docsDir: "src/content/docs",
       locales: { ja: { dir: "src/content/docs-ja" } },
       base: "/",
+    });
+    expect(byName["@takazudo/zudo-doc/plugins/theme-packs"]).toEqual({
+      base: "/",
+      themePack: undefined,
+      themePacks: undefined,
     });
     expect(byName["@takazudo/zudo-doc/plugins/llms-txt"]).toEqual({
       siteName: "zudo-doc",
@@ -338,6 +346,33 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
     // copy-public-plugin.mjs was removed in #2358; no project-relative plugin expected.
   });
 
+  it("threads settings.themePack / themePacks into the theme-packs plugin options", () => {
+    const r = zudoDocPreset({
+      settings: { ...fixtureSettings, themePack: "foundry", themePacks: ["default", "foundry"] },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+    const themePacks = r.plugins.find((p) => p.name === "@takazudo/zudo-doc/plugins/theme-packs");
+    expect(themePacks?.options).toEqual({
+      base: "/",
+      themePack: "foundry",
+      themePacks: ["default", "foundry"],
+    });
+  });
+
+  it("defaults doc-history exclude patterns to an empty array", () => {
+    const result = zudoDocPreset({
+      settings: { ...fixtureSettings, docHistoryExclude: undefined },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+    const docHistory = result.plugins.find(
+      (plugin) => plugin.name === "@takazudo/zudo-doc/plugins/doc-history",
+    );
+
+    expect(docHistory?.options?.["exclude"]).toEqual([]);
+  });
+
   it("omits claude-resources / doc-history / llms-txt / changelog when their settings are falsy", () => {
     const r = zudoDocPreset({
       settings: { ...fixtureSettings, claudeResources: false, docHistory: false, llmsTxt: false, changelogs: false, packageOwnedRoutes: false },
@@ -346,6 +381,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
     });
     expect(r.plugins.map((p) => p.name)).toEqual([
       "@takazudo/zudo-doc/plugins/search-index",
+      "@takazudo/zudo-doc/plugins/theme-packs",
     ]);
   });
 
@@ -556,14 +592,14 @@ describe("zudoDocPreset markdown.features", () => {
     expect(r.markdown.features.directives).not.toBe(directives);
   });
 
-  it("threads settings.mermaid and settings.headingIdStrategy", () => {
+  it("threads settings.mermaid while keeping hierarchical heading IDs", () => {
     const r = zudoDocPreset({
-      settings: { ...fixtureSettings, mermaid: false, headingIdStrategy: "flat" },
+      settings: { ...fixtureSettings, mermaid: false },
       buildDocsSchema: buildFixtureSchema,
       directiveVocabulary: fixtureDirectives,
     });
     expect(r.markdown.features.mermaid).toBe(false);
-    expect(r.markdown.features.headingIds).toEqual({ strategy: "flat" });
+    expect(r.markdown.features.headingIds).toEqual({ strategy: "hierarchical" });
   });
 
   it("omits githubAutolinks when githubAutolinksRepo is absent (#2321)", () => {

@@ -157,9 +157,9 @@ export interface ModeMap {
   selectionBg: RampRef;
   selectionFg: RampRef;
   semantic: Record<SemanticKey, RampRef>;
-  /** Optional syntax-specific overrides. Missing roles inherit the aliases in
-   *  `SYNTAX_SEMANTIC_ALIASES`, preserving old complete `ModeMap` objects. */
-  syntax?: Partial<Record<SyntaxSemanticKey, RampRef>>;
+  /** Syntax-specific overrides. The map is required, while omitted roles
+   *  inherit the aliases in `SYNTAX_SEMANTIC_ALIASES`. */
+  syntax: Partial<Record<SyntaxSemanticKey, RampRef>>;
 }
 
 /** A complete color scheme — shared Tier-1 ramps + per-mode Tier-2 wiring. */
@@ -371,7 +371,7 @@ export function resolveSyntaxPalette(scheme: ColorScheme): ResolvedSyntaxPalette
   const emergencyColor = tryResolveRampRef(emergencyRef, ramps) ?? "currentColor";
 
   for (const key of SYNTAX_SEMANTIC_KEYS) {
-    const explicitRef = map.syntax?.[key];
+    const explicitRef = map.syntax[key];
     const explicitColor = tryResolveRampRef(explicitRef, ramps);
     const inheritedRef = map.semantic[SYNTAX_SEMANTIC_ALIASES[key]];
     const inheritedColor = tryResolveRampRef(inheritedRef, ramps);
@@ -392,9 +392,8 @@ export function resolveSyntaxColors(scheme: ColorScheme): Record<SyntaxSemanticK
 }
 
 // Structural copy of @takazudo/zdtp's TierItem — keeps the optional peer out of
-// the emitted public .d.ts (mirrors the TokenDef copy in
-// ./theme/design-token-serde.ts, #2138). Only the fields this module emits are
-// included (id, cssVar, label, default, type); the full upstream interface adds
+// the emitted public .d.ts. Only the fields this module emits are included (id,
+// cssVar, label, default, type); the full upstream interface adds
 // optional `pill`/`readonly` fields this builder never sets. Structurally
 // compatible: every value returned here satisfies zdtp's real `TierItem`, so
 // callers passing these into a real `TierConfig.items` still type-check.

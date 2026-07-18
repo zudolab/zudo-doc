@@ -146,11 +146,12 @@ export const DEFAULT_SETTINGS: Settings = {
   aiAssistant: false,
   aiChatDemoMode: false,
   aiChatAllowedOrigins: [],
+  // Exact UTC-day paid-call admission cap; false disables it. An admission is
+  // consumed before provider fetch and is not provider-confirmed accounting.
   aiChatGlobalDailyLimit: false,
   designTokenPanel: false,
   tocMinDepth: 2,
   tocMaxDepth: 4,
-  headingIdStrategy: "hierarchical",
   sidebarResizer: false,
   sidebarToggle: false,
   imageEnlarge: false,
@@ -158,6 +159,7 @@ export const DEFAULT_SETTINGS: Settings = {
   dynamicPageTransition: false,
   frontmatterPreview: false,
   docHistory: false,
+  docHistoryExclude: [],
   bodyFootUtilArea: false,
   htmlPreview: undefined,
   versions: false,
@@ -167,6 +169,9 @@ export const DEFAULT_SETTINGS: Settings = {
   headerNav: [],
   headerRightItems: [{ type: "component", component: "theme-toggle" }],
   packageOwnedRoutes: true,
+  themePack: "default",
+  themePackSwitcher: false,
+  themePacks: undefined,
 };
 
 // ---------------------------------------------------------------------------
@@ -300,8 +305,8 @@ export interface ZudoDocConfig {
    */
   tagGovernance?: TagGovernanceMode;
   /**
-   * Whether the tag vocabulary is consulted at runtime (alias resolution,
-   * deprecation filtering, grouped footer). Orthogonal to `tagGovernance`.
+   * Whether the canonical tag vocabulary is consulted at runtime (validation
+   * and grouped footer rendering). Orthogonal to `tagGovernance`.
    * The vocabulary ENTRIES are supplied separately via `tagVocabularyEntries`.
    * @default false
    */
@@ -337,8 +342,8 @@ export interface ZudoDocConfig {
    */
   aiAssistant?: boolean;
   /**
-   * Short-circuit `/api/ai-chat` with a fixed "disabled" reply (no API key /
-   * KV / rate limiter touched).
+   * Short-circuit `/api/ai-chat` with a fixed "disabled" reply (no API key,
+   * KV/DO binding, or rate limiter touched).
    * @default false
    */
   aiChatDemoMode?: boolean;
@@ -349,8 +354,9 @@ export interface ZudoDocConfig {
    */
   aiChatAllowedOrigins?: string[];
   /**
-   * Global daily request ceiling across all IPs for `/api/ai-chat`, or `false`
-   * to disable the ceiling.
+   * Exact UTC-day paid-call admission cap across all IPs for `/api/ai-chat`,
+   * or `false` to disable it. Admissions are not refunded after provider
+   * failure and are not provider-confirmed spend accounting.
    * @default false
    */
   aiChatGlobalDailyLimit?: number | false;
@@ -369,12 +375,6 @@ export interface ZudoDocConfig {
    * @default 4
    */
   tocMaxDepth?: number;
-  /**
-   * Heading-ID (anchor) strategy. `"hierarchical"` prefixes each anchor with
-   * its ancestor chain; `"flat"` is zfb's legacy github-slugger scheme.
-   * @default "hierarchical"
-   */
-  headingIdStrategy?: "flat" | "hierarchical";
   /**
    * Enable the draggable sidebar resizer.
    * @default false
@@ -413,6 +413,14 @@ export interface ZudoDocConfig {
    * @default false
    */
   docHistory?: boolean;
+  /**
+   * Glob patterns matched against the doc slug (path minus extension, `/index`
+   * stripped, root = `index`) that exclude matching pages from git-history
+   * capture entirely. Excluded pages have no dropdown JSON or
+   * Created/Updated/Author block; matching is locale/version-independent.
+   * @default []
+   */
+  docHistoryExclude?: string[];
   /**
    * Body-foot utility area (doc-history / view-source), or `false` to disable.
    * @default false
@@ -482,6 +490,27 @@ export interface ZudoDocConfig {
    * @default undefined (package-default builder is used)
    */
   designTokenPanelConfigModule?: string;
+  /**
+   * Active theme pack slug. "default" is the stock zudo-doc look (no pack
+   * stylesheet loaded). Must be a member of the resolved `themePacks` list;
+   * an unknown slug fails the build loudly at plugin setup.
+   * @default "default"
+   */
+  themePack?: string;
+  /**
+   * Mount the bottom-right theme-pack switcher flyout (and its browse-all
+   * dialog) on every page.
+   * @default false
+   */
+  themePackSwitcher?: boolean;
+  /**
+   * Enabled pack slugs, in switcher order. `undefined` = all bundled packs:
+   * "default" first, then the bundled registry in canonical
+   * (alphabetical-by-slug) order. An explicit list is authoritative — may omit
+   * "default", reorder freely; duplicates/unknown slugs fail loudly.
+   * @default undefined
+   */
+  themePacks?: string[];
 
   // ── Escape hatches (non-serializable / data overrides) ───────────────────
 
@@ -559,6 +588,12 @@ export interface ZudoDocConfig {
  *   `defineConfig`.
  */
 export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
+  if ("headingIdStrategy" in user) {
+    throw new TypeError(
+      "headingIdStrategy is no longer supported; heading IDs are always hierarchical",
+    );
+  }
+
   // Peel the non-serializable / data overrides and shell fields off `user`
   // first so they never pollute the merged `settings` object (which is
   // JSON-serialized into the routes plugin's virtual module). `settingsOverrides`

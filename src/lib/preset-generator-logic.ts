@@ -1,5 +1,5 @@
 // Single source of truth: packages/create-zudo-doc/src/constants.ts.
-// These four lists are mirrored here (not runtime-imported) because this file
+// These five lists are mirrored here (not runtime-imported) because this file
 // is bundled by zfb into a client island, and the host cannot reach into the
 // generator package's source across the e2e-fixture symlink boundary (the
 // package is not a host dependency). Parity with constants.ts is enforced by
@@ -14,6 +14,123 @@ export interface SupportedLang {
 export const SINGLE_SCHEMES = ["Default Dark", "Default Light"];
 
 export const LIGHT_SCHEMES = ["Default Light"];
+
+export interface ThemePackOption {
+  slug: string;
+  label: string;
+  hint: string;
+}
+
+/** Mirrors THEME_PACKS from packages/create-zudo-doc/src/constants.ts (ADR
+ *  #2818; full catalog synced by #2855). Order: "default" first, then the
+ *  rest alphabetically by slug (matches resolveEnabledPacks). */
+export const THEME_PACKS: ThemePackOption[] = [
+  {
+    slug: "default",
+    label: "Default",
+    hint: "Stock zudo-doc look — no extra stylesheet loaded",
+  },
+  {
+    slug: "beacon",
+    label: "Beacon",
+    hint: "WCAG-AAA high contrast — 7:1+ ink, 3px focus rings, always-underlined links",
+  },
+  {
+    slug: "broadsheet",
+    label: "Broadsheet",
+    hint: "Newspaper editorial — Playfair masthead, Oxford ink rules, a red drop cap",
+  },
+  {
+    slug: "brutalist",
+    label: "Brutalist",
+    hint: "Raw concrete web — stark black on white, 4px slab borders, hazard-orange tape",
+  },
+  {
+    slug: "drift",
+    label: "Drift",
+    hint: "Floaty slate-blue comfort dark for long reading, relaxed Plex type",
+  },
+  {
+    slug: "fjord",
+    label: "Fjord",
+    hint: "Polar-night blue under a faint aurora — frost-cyan accents, icy borders",
+  },
+  {
+    slug: "foundry",
+    label: "Foundry",
+    hint: "GitHub-neutral baseline — white paper, Primer-blue accents",
+  },
+  {
+    slug: "futura-editorial",
+    label: "Futura Editorial",
+    hint: "Geometric Futura headings over Noto Sans body, one restrained red accent",
+  },
+  {
+    slug: "hearth",
+    label: "Hearth",
+    hint: "Warm cream & brick-red fireside docs — Fraunces headings, ember-glow dark mode",
+  },
+  {
+    slug: "hollow",
+    label: "Hollow",
+    hint: "Dark violet space — neon pink headings, violet links, a quiet starfield",
+  },
+  {
+    slug: "ledger",
+    label: "Ledger",
+    hint: "Cream academic serif in the Tufte tradition — warm paper, oxblood links",
+  },
+  {
+    slug: "manuscript",
+    label: "Manuscript",
+    hint: "A quiet Garamond book page — warm paper, soft ink, sepia rubrication",
+  },
+  {
+    slug: "matcha",
+    label: "Matcha",
+    hint: "Green tea ceremony — deep matcha on warm cream, mincho headings, zen whitespace",
+  },
+  {
+    slug: "nocturne",
+    label: "Nocturne",
+    hint: "Purple midnight — velvet aubergine depths, lavender links, muted gold hairlines",
+  },
+  {
+    slug: "observatory",
+    label: "Observatory",
+    hint: "Night-sky atlas — star-field depth, nebula violet and comet gold over navy",
+  },
+  {
+    slug: "onyx",
+    label: "Onyx",
+    hint: "Luxury noir — jet black, champagne serif headings, a single gold hairline accent",
+  },
+  {
+    slug: "phosphor",
+    label: "Phosphor",
+    hint: "Green CRT terminal — phosphor glow, scanlines, inverse-video nav",
+  },
+  {
+    slug: "solar",
+    label: "Solar",
+    hint: "Solarized precision — low-eyestrain paper tones, blue/cyan/orange accents",
+  },
+  {
+    slug: "sumi",
+    label: "Sumi",
+    hint: "Sumi-e ink on washi — bold mincho brush headings, one vermillion hanko seal accent",
+  },
+  {
+    slug: "swissgrid",
+    label: "Swissgrid",
+    hint: "International Typographic Style — grid discipline, one hot Swiss-red accent",
+  },
+  {
+    slug: "washi",
+    label: "Washi",
+    hint: "Warm washi paper, sumi ink, and ai-iro indigo seals for calm documentation",
+  },
+];
 
 export const SUPPORTED_LANGS: SupportedLang[] = [
   { value: "en", label: "English" },
@@ -97,6 +214,9 @@ export const FEATURES = [
   { value: "claudeResources", label: "Claude Resources", cliFlag: "claude-resources", default: false, docPath: "/docs/guides/claude-resources/" },
   { value: "claudeSkills", label: "Claude skills (user-facing)", cliFlag: "claude-skills", default: false, docPath: "/docs/guides/claude-skills/" },
   { value: "designTokenPanel", label: "Design Token Panel", cliFlag: "design-token-panel", default: false, docPath: "/docs/reference/design-token-panel/" },
+  // No docPath yet — the theme-packs guide page lands with #2827; add it
+  // here once that page exists.
+  { value: "themePackSwitcher", label: "Theme pack switcher", cliFlag: "theme-pack-switcher", default: false },
   { value: "sidebarResizer", label: "Sidebar resizer", cliFlag: "sidebar-resizer", default: false, docPath: "/docs/guides/configuration/#sidebarresizer" },
   { value: "sidebarToggle", label: "Sidebar toggle", cliFlag: "sidebar-toggle", default: false, docPath: "/docs/guides/configuration/#sidebartoggle" },
   { value: "versioning", label: "Versioning", cliFlag: "versioning", default: false, docPath: "/docs/guides/versioning/" },
@@ -165,6 +285,8 @@ export interface FormState {
   darkScheme: string;
   defaultMode: "light" | "dark";
   respectPrefersColorScheme: boolean;
+  /** Theme pack slug (ADR #2818 Decision 7). "default" = the stock look. */
+  themePack: string;
   features: string[];
   cjkFriendly: boolean;
   packageManager: string;
@@ -188,6 +310,13 @@ export function buildJson(state: FormState): Record<string, unknown> {
     base.respectPrefersColorScheme = state.respectPrefersColorScheme;
   }
 
+  // "Omit when default" — mirrors zfb-config-gen.ts's diff-from-defaults
+  // emission rule (ADR #2818 Decision 7 / #2823) so the JSON preset stays
+  // lossless without freezing an inert themePack: "default" into every preset.
+  if (state.themePack && state.themePack !== "default") {
+    base.themePack = state.themePack;
+  }
+
   base.features = state.features;
   base.cjkFriendly = state.cjkFriendly;
   base.packageManager = state.packageManager;
@@ -197,8 +326,10 @@ export function buildJson(state: FormState): Record<string, unknown> {
 
   // Omit metaTags entirely when every value equals the S4 scaffold defaults —
   // keeps the default JSON clean (S2 regression test asserts no metaTags key).
-  // state.metaTags may be absent in tests using makeState() without it.
-  const mt = state.metaTags ?? DEFAULT_META_TAGS;
+  const mt = state.metaTags;
+  if (!mt) {
+    throw new TypeError("state.metaTags is required");
+  }
   const d = DEFAULT_META_TAGS;
   const isDefault =
     mt.description === d.description &&
@@ -253,6 +384,8 @@ export function buildCliCommand(state: FormState): string {
       parts.push("--no-respect-system-preference");
     }
   }
+
+  parts.push(`--theme-pack ${state.themePack}`);
 
   for (const feat of FEATURES) {
     const enabled = state.features.includes(feat.value);

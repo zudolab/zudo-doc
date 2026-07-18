@@ -4,7 +4,7 @@
 import { describe, expect, it } from "vitest";
 import type { ComponentChildren, VNode } from "preact";
 import { Breadcrumb, buildBreadcrumbItems } from "../breadcrumb.js";
-import type { SidebarNode } from "../types.js";
+import type { BreadcrumbNode } from "../types.js";
 
 /**
  * Minimal VNode → HTML serializer. Walks the Preact VNode tree and
@@ -66,7 +66,7 @@ function serialize(node: ComponentChildren): string {
   return `<${type}${attrs}>${serialize(children)}</${type}>`;
 }
 
-const tree: SidebarNode[] = [
+const tree: BreadcrumbNode[] = [
   {
     type: "category",
     id: "guides",

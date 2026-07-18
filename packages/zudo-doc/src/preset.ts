@@ -35,6 +35,7 @@
 
 import { z } from "zod";
 import type { ColorScheme } from "./color-scheme-utils.js";
+import type { TagVocabularyEntry } from "./settings.js";
 
 // ---------------------------------------------------------------------------
 // Input contract — structurally typed so the preset is portable to every
@@ -89,10 +90,10 @@ export interface PresetSettings {
   minifyHtml?: boolean;
   mermaid: boolean;
   onBrokenMarkdownLinks: "warn" | "error" | "ignore";
-  headingIdStrategy: "flat" | "hierarchical";
   llmsTxt?: boolean;
   changelogs?: PresetChangelogConfig[] | false;
   docHistory?: boolean;
+  docHistoryExclude?: string[];
   claudeResources?: PresetClaudeResourcesConfig | false;
   /** "owner/repo" — when set, enables `#123` / SHA autolinks in markdown. Omit to disable entirely. */
   githubAutolinksRepo?: string;
@@ -131,6 +132,20 @@ export interface PresetSettings {
   /** When `false`, disables zfb's CJK-friendly line-break behaviour.
    *  Absent means "use the engine default" (currently `true`). */
   cjkFriendly?: boolean;
+  /**
+   * Active theme pack slug (ADR docs/adr/theme-packs.md, Decision 2/7).
+   * Threaded into the `@takazudo/zudo-doc/plugins/theme-packs` descriptor's
+   * options; the plugin's `setup()` validates it against the resolved
+   * registry and throws loudly on an unknown slug. Omit to use the package
+   * default (`"default"`).
+   */
+  themePack?: string;
+  /**
+   * Enabled pack slugs, in switcher order (ADR Decision 7). `undefined` = all
+   * bundled packs. Threaded into the `@takazudo/zudo-doc/plugins/theme-packs`
+   * descriptor's options alongside `themePack`.
+   */
+  themePacks?: string[];
 }
 
 /**
@@ -156,14 +171,7 @@ export type PresetTranslations = Record<string, Record<string, string>>;
  * data, threaded into the route-context virtual module when
  * `packageOwnedRoutes` is on. Optional — only consumed by the routes plugin.
  */
-export type PresetTagVocabularyEntry = {
-  id: string;
-  label?: string;
-  description?: string;
-  group?: string;
-  aliases?: readonly string[];
-  deprecated?: boolean | { redirect?: string };
-};
+export type PresetTagVocabularyEntry = TagVocabularyEntry;
 
 /** Arguments to `zudoDocPreset`. */
 export interface ZudoDocPresetArgs {
@@ -418,9 +426,9 @@ function buildMarkdownFeatures(
     imageDimensions: {},
     // warn-only: failOnBroken=false never fails the build.
     linkValidation: { failOnBroken: false },
-    // Heading-ID strategy is the single source of truth in settings, mirrored
-    // by the host TOC builder so anchors match the rendered IDs.
-    headingIds: { strategy: settings.headingIdStrategy },
+    // Hierarchical heading IDs are zudo-doc's sole contract. The host TOC
+    // builder mirrors the same allocator so anchors match the rendered IDs.
+    headingIds: { strategy: "hierarchical" },
   };
 }
 
@@ -547,6 +555,7 @@ function buildPlugins(
               docsDir: settings.docsDir,
               locales: localeRecord,
               base: settings.base,
+              exclude: settings.docHistoryExclude ?? [],
             },
           },
         ]
@@ -557,6 +566,22 @@ function buildPlugins(
         docsDir: settings.docsDir,
         locales: localeRecord,
         base: settings.base,
+      },
+    },
+    // Theme packs (ADR docs/adr/theme-packs.md, Decision 2, #2820) — a
+    // bare-specifier descriptor, added UNCONDITIONALLY like search-index
+    // above (never an imported plugin function, keeping this preset's
+    // node-free eval-graph guard green). The plugin internally no-ops
+    // (postBuild/devMiddleware write/serve nothing) when the resolved
+    // enabled set has no CSS-bearing pack (i.e. only "default" is enabled),
+    // so an unconfigured project pays no asset cost beyond the bundled
+    // registry scan at plugin setup.
+    {
+      name: "@takazudo/zudo-doc/plugins/theme-packs",
+      options: {
+        base: settings.base,
+        themePack: settings.themePack,
+        themePacks: settings.themePacks,
       },
     },
     ...(settings.llmsTxt

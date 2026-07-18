@@ -79,6 +79,7 @@ export function makeFakeChromeContext(opts: FakeChromeContextOptions = {}): Chro
   const ctx = {
     settings,
     colorSchemes: null,
+    themePackRegistry: null,
     i18n: { defaultLocale: "en", locales: ["en"], getLocaleLabel: (l: string) => l.toUpperCase() },
     defaultLocale: "en",
     locales: ["en"],
@@ -101,7 +102,7 @@ export function makeFakeChromeContext(opts: FakeChromeContextOptions = {}): Chro
     getNavSectionForSlug: () => undefined,
     getNavSubtree: (tree: unknown) => tree,
     extractHeadings: () => [],
-    resolveTagBound: (raw: string) => ({ canonical: raw, deprecated: false }),
+    resolveTagBound: (raw: string) => ({ canonical: raw, known: false }),
     collectTags: opts.collectTags ?? (() => new Map()),
     // nav-source API
     resolveNavSource: () => EMPTY_NAV_SOURCE,

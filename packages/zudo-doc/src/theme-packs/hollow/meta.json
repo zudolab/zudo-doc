@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "slug": "hollow",
+  "name": "Hollow",
+  "description": "Dark violet space — neon pink headings, violet links, a quiet starfield, and razor-square midnight chrome.",
+  "mode": "dark",
+  "version": "1.0.1",
+  "fonts": {
+    "sans": "Space Grotesk",
+    "mono": "Space Mono",
+    "loaded": ["Space Grotesk", "Space Mono"]
+  },
+  "preview": {
+    "light": {
+      "bg": "oklch(0.962 0.012 300)",
+      "fg": "oklch(0.24 0.045 295)",
+      "accent": "oklch(0.45 0.17 300)",
+      "syntax": {
+        "keyword": "oklch(0.53 0.2 348)",
+        "string": "oklch(0.45 0.1 195)",
+        "comment": "oklch(0.51 0.035 292)",
+        "callable": "oklch(0.46 0.16 300)"
+      }
+    },
+    "dark": {
+      "bg": "oklch(0.155 0.035 295)",
+      "fg": "oklch(0.93 0.015 295)",
+      "accent": "oklch(0.74 0.14 300)",
+      "syntax": {
+        "keyword": "oklch(0.76 0.17 347)",
+        "string": "oklch(0.83 0.1 190)",
+        "comment": "oklch(0.62 0.045 292)",
+        "callable": "oklch(0.76 0.13 300)"
+      }
+    }
+  }
+}

@@ -3,7 +3,7 @@
 
 import type { ComponentChildren, VNode } from "preact";
 import { findPath } from "./find-path.js";
-import type { BreadcrumbItem, SidebarNode } from "./types.js";
+import type { BreadcrumbItem, BreadcrumbNode } from "./types.js";
 import { ChevronRight } from "../icons/index.js";
 
 /**
@@ -18,7 +18,7 @@ import { ChevronRight } from "../icons/index.js";
  * with the original Astro breadcrumb component.
  */
 export function buildBreadcrumbItems(
-  tree: SidebarNode[],
+  tree: BreadcrumbNode[],
   currentId: string,
   homeHref: string,
 ): BreadcrumbItem[] {
@@ -111,8 +111,8 @@ export interface BreadcrumbProps {
   /** Pre-built items, or omit and pass `tree` + `currentId` instead. */
   items?: BreadcrumbItem[];
   /** Sidebar tree to derive the trail from. Required when `items` is omitted. */
-  tree?: SidebarNode[];
-  /** Id of the current page (matches SidebarNode.id). Required when `items` is omitted. */
+  tree?: BreadcrumbNode[];
+  /** Id of the current page (matches BreadcrumbNode.id). Required when `items` is omitted. */
   currentId?: string;
   /** Href for the leading home rung. Defaults to "/". */
   homeHref?: string;

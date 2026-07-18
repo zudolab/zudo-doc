@@ -22,8 +22,8 @@ import { CODE_BLOCK_ENHANCER_SCRIPT } from "./code-block-enhancer-script.js";
  * and emits the code-block enhancer init script via `dangerouslySetInnerHTML`.
  *
  * The script:
- * - Wraps each highlighted `<pre>` (`.hi-root` or legacy `.syntect-*`) and
- *   raw tab-panel fallback in a `.code-block-wrapper` container.
+ * - Wraps each highlighted `<pre>` (`.hi-root`) and raw tab-panel fallback in
+ *   a `.code-block-wrapper` container.
  * - Adds a copy-to-clipboard button and a word-wrap toggle button.
  * - Observes resize events to hide the wrap button when content fits.
  * - Handles before-navigate cleanup and after-navigate re-init for View
@@ -38,5 +38,3 @@ export function CodeBlockEnhancer(): JSX.Element {
     </>
   );
 }
-
-export default CodeBlockEnhancer;

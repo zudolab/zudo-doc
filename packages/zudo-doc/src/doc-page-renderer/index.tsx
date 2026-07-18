@@ -5,7 +5,7 @@
 //
 // The host's `pages/lib/_doc-page-renderer.tsx` previously imported host
 // singletons (`@/config/settings`, `@/config/i18n`, `@/utils/base`,
-// `@/utils/docs`, `@/utils/nav-scope`, `@/utils/slug`). This factory receives
+// `@/utils/docs`, `@/utils/nav-scope`, `@takazudo/zudo-doc/slug`). This factory receives
 // all host-bound dependencies as injected context so the logic lives in the
 // package while the host stub keeps the singleton imports.
 //
@@ -146,6 +146,7 @@ export interface DocPageRendererDeps {
     slug: string;
     locale: string;
     entrySlug?: string;
+    sourceFileExt?: ".mdx" | ".md";
     contentDir?: string;
     isFallback?: boolean;
   }) => VNode | null;
@@ -330,6 +331,13 @@ export function createRenderDocPage<S extends Settings = Settings>(
               slug={slug}
               locale={locale}
               entrySlug={props.entry.slug}
+              sourceFileExt={
+                props.entry.module_specifier.endsWith(".mdx")
+                  ? ".mdx"
+                  : props.entry.module_specifier.endsWith(".md")
+                    ? ".md"
+                    : undefined
+              }
               contentDir={opts.docHistoryContentDir}
               isFallback={isFallback}
             />

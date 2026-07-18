@@ -21,19 +21,21 @@
 # The template ships a fixed ~29-line @import chain (Tailwind preflight +
 # utilities, the five @takazudo/zudo-doc/*.css artifacts, three @source scan
 # roots, and an empty @theme token-override slot) — see #2655/#2660. The
-# showcase's own global.css additionally declares ~300 lines of its OWN
-# @theme token block (the full three-tier color/spacing/typography system
-# documented in src/CLAUDE.md) plus extra @source roots for
+# showcase now shares the template's package-theme contract by importing both
+# `@takazudo/zudo-doc/theme.css` and `@takazudo/zudo-doc/safelist.css`. Its
+# remaining intentional differences are extra @source roots for
 # packages/zudo-doc/**, packages/create-zudo-doc/templates/**, src/hooks/**,
-# src/utils/** (paths the minimal template's own scan roots don't need to
-# cover) and several project-specific base-style rules (find-in-page/search
-# highlight colors, version-switcher responsive visibility). Byte parity is
-# neither expected nor desired; the separate, unconditional
-# check_global_css_legacy_tokens() guard in scripts/check-template-drift.sh
+# and src/utils/** (paths the minimal template's own scan roots don't need),
+# an unconditional `@takazudo/zdtp/styles.css` import because the showcase
+# always enables the design token panel, and the single
+# `--color-page-loading-overlay` token in a trailing @theme override block.
+# Byte parity is therefore neither expected nor desired; the separate,
+# unconditional check_global_css_legacy_tokens() guard in
+# scripts/check-template-drift.sh
 # (#2621, rewritten for the minimal form by #2663) still catches the drift
 # classes that matter: a legacy pre-ramp-restructure token reference, or the
-# template losing its `@import "@takazudo/zudo-doc/theme.css"` default
-# token-set import.
+# loss of the `@import "@takazudo/zudo-doc/theme.css"` default token-set
+# import.
 src/styles/global.css
 
 # ── tsconfig.json ───────────────────────────────────────────────────────────
@@ -71,17 +73,37 @@ pages/index.tsx
 # Both are self-contained doc-route stubs (#2653 Decision 4; locked form
 # #2660) — REQUIRED because the injected DYNAMIC `/docs/[[...slug]]` route
 # 404s in `zfb dev` (see each file's own header comment for the full
-# rationale). The template's copies use only the three sanctioned package
-# entrypoints (virtual:zudo-doc-route-context, @takazudo/zudo-doc/route-context,
-# @takazudo/zudo-doc/routes/_chrome's createChrome) with no fourth argument —
-# `createChrome(routeCtx)`. The showcase's copies additionally import
-# `virtual:zudo-doc-chrome-bindings` and call `createChrome(routeCtx,
-# chromeBindings)`, threading the showcase's real host-bound slots (search,
-# doc history, frontmatter renderers, PresetGenerator, MDX overrides — see
-# src/chrome-bindings.tsx) through the `chromeBindingsModule` host-callables
-# channel (ADR "Host-callables channel", #2501), plus locale-specific extra
-# fallback-tracking props on the [locale] variant. A project that sets its own
-# `chromeBindingsModule` diverges from the template the same way — this is
-# the documented escape hatch, not drift.
+# rationale). The template's copies use only the sanctioned package
+# entrypoints (virtual:zudo-doc-route-context,
+# virtual:zudo-doc-chrome-bindings, @takazudo/zudo-doc/route-context, and
+# @takazudo/zudo-doc/chrome's createChrome). Both template stubs now thread
+# `chromeBindings` unconditionally, matching the showcase's host-callables
+# channel: projects without a `chromeBindingsModule` receive the plugin's `{}`
+# fallback, while configured projects reach their MDX/chrome slots without a
+# manual stub edit (#2774). The whole files remain allowlisted because the
+# showcase carries project-specific typed page props, much fuller rationale
+# comments, and locale-specific fallback-tracking shapes; those differences
+# are intentional and independent of the bindings channel now shared by both.
 pages/docs/[[...slug]].tsx
 pages/[locale]/docs/[[...slug]].tsx
+
+# ── .claude/skills/{zudo-doc-version-bump,zudo-doc-design-system,zudo-doc-translate}/SKILL.md ──
+# The three shipped claudeSkills template SKILL.md files were byte-mirrors of
+# the monorepo's own .claude/skills/ (the old #2921 parity story). Epic
+# zudolab/zudo-doc#2946 deliberately turned them into scaffold-authored
+# VARIANTS: they now describe a scaffold-real flow (no ./scripts/version-bump.sh,
+# no src/config/settings.ts, package-manager-neutral commands, published-doc
+# URLs instead of monorepo reference pages, feature-conditional steps) so the
+# skills work on first use in a generated project. Byte parity with the
+# monorepo source is therefore neither expected nor desired. Correctness is
+# instead guarded IN the generator's own test suite — the reworked
+# packages/create-zudo-doc/src/__tests__/claude-skills-drift.test.ts
+# (a monorepo-only-reference DENYLIST lint over all three) plus the committed
+# claude-skills-scaffold-refs.test.ts (generates real scaffolds and asserts
+# every referenced path exists). The monorepo's own .claude/skills/ sources are
+# untouched by that epic and keep their monorepo-specific flow. So this shell
+# whole-file content check must exempt the three template copies here (the
+# vitest guards, not byte-parity, are their source of truth).
+.claude/skills/zudo-doc-version-bump/SKILL.md
+.claude/skills/zudo-doc-design-system/SKILL.md
+.claude/skills/zudo-doc-translate/SKILL.md

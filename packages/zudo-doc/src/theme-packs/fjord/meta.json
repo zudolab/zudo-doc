@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "slug": "fjord",
+  "name": "Fjord",
+  "description": "Polar-night blue under a faint aurora — frost-cyan accents, icy borders, snow-white text. Cold nordic calm.",
+  "mode": "dark",
+  "version": "1.0.1",
+  "fonts": {
+    "sans": "Inter",
+    "mono": "JetBrains Mono",
+    "loaded": ["Inter", "JetBrains Mono"]
+  },
+  "preview": {
+    "light": {
+      "bg": "oklch(0.971 0.008 230)",
+      "fg": "oklch(0.255 0.03 255)",
+      "accent": "oklch(0.455 0.092 205)",
+      "syntax": {
+        "keyword": "oklch(0.455 0.105 250)",
+        "string": "oklch(0.495 0.105 165)",
+        "comment": "oklch(0.51 0.03 245)",
+        "callable": "oklch(0.445 0.098 202)"
+      }
+    },
+    "dark": {
+      "bg": "oklch(0.232 0.024 255)",
+      "fg": "oklch(0.93 0.012 235)",
+      "accent": "oklch(0.79 0.095 195)",
+      "syntax": {
+        "keyword": "oklch(0.76 0.095 242)",
+        "string": "oklch(0.8 0.105 158)",
+        "comment": "oklch(0.63 0.03 245)",
+        "callable": "oklch(0.815 0.095 195)"
+      }
+    }
+  }
+}

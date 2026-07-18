@@ -35,41 +35,7 @@ export default defineConfig(
 );
 ```
 
-<Warning title="新しいscaffoldではクロームバインディングが必要です">
-
-この設定フィールドだけではscaffoldプロジェクトに何も描画されません。ドキュメントルートの
-スタブはホストバインディングなしで`createChrome(routeCtx)`を呼び出すため、`DocHistory`スロットは
-no-opのデフォルトのままです。`chromeBindingsModule`を通し、`DocHistory`をバインドしてください。詳しくは
-[Custom Components](./custom-components.mdx)と
-[ホストクロームバインディング](../reference/host-chrome-bindings.mdx)を参照してください。[テンプレート修正](https://github.com/zudolab/zudo-doc/issues/2716)後に生成されたscaffoldは
-表示用／データ用スロットを自動で通しますが、独自のハイドレートするアイランドには引き続きガイドで説明する静的インポートの配線が必要です。
-
-</Warning>
-
-実際のHistoryアイランドをbindingsモジュールにバインドします。
-
-```tsx title="src/chrome-bindings.tsx"
-import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
-import { DocHistory } from "@takazudo/zudo-doc/doc-history";
-
-export const chromeBindings = defineChromeBindings({
-  DocHistory,
-});
-```
-
-同じ設定からそのモジュールを指定します。
-
-```ts title="zfb.config.ts"
-export default defineConfig(
-  zudoDoc({
-    // ...
-    docHistory: true,
-    chromeBindingsModule: "./src/chrome-bindings.tsx",
-  }),
-);
-```
-
-プロジェクト作成時、ジェネレーターがこのバインディングのためにドキュメントルートスタブをパッチするのはdoc-history機能を選択した場合だけです。既存のscaffoldではモジュールとルートスタブの配線を手動で追加してください。このハイドレートするアイランドには、[Custom Components](./custom-components.mdx)の静的インポート形式を使います。
+新しい scaffold は `docHistory` を選択したとき、実際の History アイランドを生成されるすべてのルート形状へ静的に配線します。ボタン用の bindings モジュールやルート編集は不要です。古い既存 scaffold では、各ドキュメントスタブを現在の生成形状へ更新します。`DocHistory` を静的にインポートし、`chromeBindings` の後から重ねることで、ほかのホストスロットを落とさずアイランドをスキャナーから到達可能に保ちます。
 
 この機能はビルドを高速に保つため、**デフォルトでは無効**です。
 
@@ -168,6 +134,8 @@ GEN_DOC_HISTORY=1 pnpm build
 
 これは、ローカルでビルドした`dist/`をプレビューする場合や、オフラインリーダーをバンドルする場合に役立ちます。詳細は[デプロイガイド](./deployment.mdx)を参照してください。
 
+逆に、作成日・更新日・著者のメタデータは維持しつつ、このpostBuildステップだけを明示的にスキップしたいシャロークローンのCIバリアントでは、`SKIP_DOC_HISTORY=1`の代わりに`DOC_HISTORY_SKIP_POSTBUILD=1`を設定できます — デプロイガイドの決定表を参照してください。
+
 </Note>
 
 出力構造はコンテンツディレクトリをミラーします：
@@ -183,7 +151,9 @@ dist/doc-history/
 
 ### 開発モード
 
-開発モード（`pnpm dev`）では、doc-history-serverがポート4322でスタンドアロンREST APIサーバーとして実行され、`run-p`を使用してzfb開発サーバーと同時に起動されます。doc-historyのzfbプラグインの`devMiddleware`フックがブラウザからの`/doc-history/*`リクエストをこのサーバーにプロキシします。
+開発モードでは、doc-history-serverがポート4322でスタンドアロンREST APIサーバーとして実行され、zfb開発サーバーと同時に起動されます。これは既存プロジェクトで`docHistory: true`を設定するだけで自動的に得られるものではありません — `docHistory`を選択した新規`create-zudo-doc` scaffoldは、`dev`スクリプトとして`run-p dev:zfb dev:history`（`zfb dev`とインストール済みの`doc-history-server`バイナリを同時に実行）を生成します。これは、単純な`zfb dev`だけではポート4322のサーバーが起動しないためです。doc-historyのzfbプラグインの`devMiddleware`フックがブラウザからの`/doc-history/*`リクエストをこのサーバーにプロキシします。
+
+`run-p`は末尾の引数を飲み込んでしまうため、これらのscaffoldでは`pnpm dev -- --host 0.0.0.0`を渡しても静かに無視されます。LANアクセスが必要な場合は代わりに専用の`pnpm dev:network`スクリプトを使ってください。zfbだけが`0.0.0.0`にバインドされ、doc-history-serverはループバック限定のまま（同じ`/doc-history/*`プロキシ経由でアクセスされます）。それ以外のzfbフラグを渡したい場合は、`pnpm dev`経由ではなく`<pm> run dev:zfb -- <flags>`でzfbプロセスへ直接転送してください。
 
 履歴パネルを開くと、その場でgitコマンドが実行されます -- 事前生成は不要です。サーバーのファイルインデックスは10秒ごとにリフレッシュされるため、新しいファイルやリネームされたファイルが自動的に検出されます。これにより、履歴は最新のコミットと常に同期されます。
 

@@ -49,15 +49,12 @@ footer: {
 
 Each field is optional except `enabled`. Sensible defaults take over for anything you omit.
 
-<Warning title="Requires chrome bindings on a fresh scaffold">
+<Warning title="Requires tag data bindings">
 
-Setting this config field alone renders nothing in a scaffolded project: the doc-route
-stub calls `createChrome(routeCtx)` without host bindings, so the `loadTagsForLocale` and
-`tagVocabulary` slots stay at their no-op defaults. Thread `chromeBindingsModule` and bind
-both slots — see [Custom Components](./custom-components.mdx) and
-[Host Chrome Bindings](../reference/host-chrome-bindings.mdx). Scaffolds generated
-after the [template fix](https://github.com/zudolab/zudo-doc/issues/2716) thread the presentational/data slots automatically;
-your own hydrating islands still need the static-import threading described in the guide.
+`loadTagsForLocale` and `tagVocabulary` default to no-op data. Point
+`chromeBindingsModule` at a module that binds both slots. Fresh route stubs
+already consume it; do not edit them. See [Custom Components](./custom-components.mdx)
+and [Host Chrome Bindings](../reference/host-chrome-bindings.mdx).
 
 </Warning>
 
@@ -135,7 +132,7 @@ Only keys present in the locale object override the default-locale strings; miss
 
 ## What Readers See
 
-Every vocabulary tag that at least one non-draft, non-unlisted page references appears as a link to that tag's index page (`/docs/tags/<id>/` or `/{locale}/docs/tags/<id>/`). Deprecated entries are skipped. Empty groups collapse — you only pay for the columns you fill.
+Every vocabulary tag that at least one non-draft, non-unlisted page references appears as a link to that tag's index page (`/docs/tags/<id>/` or `/{locale}/docs/tags/<id>/`). Empty groups collapse — you only pay for the columns you fill.
 
 ## Related
 

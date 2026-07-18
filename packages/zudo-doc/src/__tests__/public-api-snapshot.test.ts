@@ -99,10 +99,6 @@ describe("package.json exports keyset snapshot", () => {
         "./image-enlarge",
         "./inline-version-switcher",
         "./integrations/changelog",
-        "./integrations/claude-resources",
-        "./integrations/doc-history",
-        "./integrations/llms-txt",
-        "./integrations/search-index",
         "./island-types",
         "./locale-merge",
         "./math-block",
@@ -123,6 +119,7 @@ describe("package.json exports keyset snapshot", () => {
         "./plugins/llms-txt",
         "./plugins/routes",
         "./plugins/search-index",
+        "./plugins/theme-packs",
         "./preset",
         "./render-markdown",
         "./robots",
@@ -144,7 +141,6 @@ describe("package.json exports keyset snapshot", () => {
         "./routes/sitemap.xml",
         "./routes/v-docs-slug",
         "./routes/v-locale-docs-slug",
-        "./safelist",
         "./safelist.css",
         "./search-widget",
         "./search-widget-script",
@@ -169,6 +165,8 @@ describe("package.json exports keyset snapshot", () => {
         "./tag-pages",
         "./tags-audit",
         "./theme",
+        "./theme-cli",
+        "./theme-packs/*",
         "./theme-toggle",
         "./theme.css",
         "./theme/color-scheme-provider",
@@ -267,7 +265,6 @@ describe("Settings public field set snapshot", () => {
         "designTokenPanel",
         "tocMinDepth",
         "tocMaxDepth",
-        "headingIdStrategy",
         "sidebarResizer",
         "sidebarToggle",
         "imageEnlarge",
@@ -275,6 +272,7 @@ describe("Settings public field set snapshot", () => {
         "dynamicPageTransition",
         "frontmatterPreview",
         "docHistory",
+        "docHistoryExclude",
         "bodyFootUtilArea",
         "htmlPreview",
         "versions",
@@ -286,7 +284,141 @@ describe("Settings public field set snapshot", () => {
         "packageOwnedRoutes",
         "chromeBindingsModule",
         "designTokenPanelConfigModule",
+        "themePack",
+        "themePackSwitcher",
+        "themePacks",
       ]
+    `);
+  });
+});
+
+// ── (c) Chrome binding/type surface ─────────────────────────────────────────
+//
+// These interfaces are public customization contracts. Compile assertions
+// prove assignability, but they do not fail when a slot/prop is silently added
+// or removed. Freeze their exact keysets here so changes require an intentional
+// API review and documentation update.
+
+function interfaceFields(source: string, interfaceName: string): string[] {
+  const match = source.match(
+    new RegExp(`export interface ${interfaceName} \\{([\\s\\S]*?)\\n\\}`),
+  );
+  if (!match) throw new Error(`Could not locate interface ${interfaceName}`);
+  return [...match[1]!.matchAll(/^\s{2}(\w+)\??\s*:/gm)].map((item) => item[1]!);
+}
+
+describe("chrome customization public type snapshots", () => {
+  it("freezes ChromeHostBindings and ChromeBindingsInput slot parity", async () => {
+    const fs = await import("node:fs/promises");
+    const factorySource = await fs.readFile(
+      resolve(pkgRoot, "src/factory-context/index.ts"),
+      "utf8",
+    );
+    const bindingsSource = await fs.readFile(
+      resolve(pkgRoot, "src/chrome-bindings.ts"),
+      "utf8",
+    );
+    const hostSlots = interfaceFields(factorySource, "ChromeHostBindings");
+    const inputSlots = interfaceFields(bindingsSource, "ChromeBindingsInput");
+
+    expect([...inputSlots].sort()).toEqual([...hostSlots].sort());
+    expect(inputSlots).toMatchInlineSnapshot(`
+      [
+        "Header",
+        "Footer",
+        "Sidebar",
+        "Toc",
+        "Breadcrumb",
+        "DocPager",
+        "SearchWidget",
+        "headerRightComponents",
+        "BodyEndIslands",
+        "DocHistory",
+        "DesignTokenPanelBootstrap",
+        "docHistoryMeta",
+        "sidebarsConfig",
+        "tagVocabulary",
+        "frontmatterRenderers",
+        "mdxExtras",
+        "buildFrontmatterPreviewEntries",
+        "loadTagsForLocale",
+        "docContentHeaderExtras",
+        "homeExtras",
+      ]
+    `);
+  });
+
+  it("freezes all six primary prop contracts and header registry props", async () => {
+    const fs = await import("node:fs/promises");
+    const bindingsSource = await fs.readFile(
+      resolve(pkgRoot, "src/chrome-bindings.ts"),
+      "utf8",
+    );
+    const headerSource = await fs.readFile(
+      resolve(pkgRoot, "src/header/types.ts"),
+      "utf8",
+    );
+    const snapshot = Object.fromEntries(
+      [
+        "HeaderSlotProps",
+        "FooterSlotProps",
+        "SidebarSlotProps",
+        "TocSlotProps",
+        "BreadcrumbSlotProps",
+        "DocPagerSlotProps",
+      ].map((name) => [name, interfaceFields(bindingsSource, name)]),
+    );
+    snapshot.HeaderRightComponentProps = interfaceFields(
+      headerSource,
+      "HeaderRightComponentProps",
+    );
+
+    expect(snapshot).toMatchInlineSnapshot(`
+      {
+        "BreadcrumbSlotProps": [
+          "items",
+          "rightSlot",
+        ],
+        "DocPagerSlotProps": [
+          "prev",
+          "next",
+          "locale",
+        ],
+        "FooterSlotProps": [
+          "lang",
+        ],
+        "HeaderRightComponentProps": [
+          "item",
+          "index",
+          "lang",
+          "githubRepoUrl",
+          "githubLabel",
+          "themeToggle",
+          "languageSwitcher",
+          "versionSwitcher",
+          "search",
+          "colorModeEnabled",
+          "hasLocales",
+        ],
+        "HeaderSlotProps": [
+          "lang",
+          "currentPath",
+          "currentVersion",
+          "currentSlug",
+          "navSection",
+        ],
+        "SidebarSlotProps": [
+          "currentSlug",
+          "lang",
+          "navSection",
+          "currentVersion",
+          "currentPath",
+        ],
+        "TocSlotProps": [
+          "headings",
+          "title",
+        ],
+      }
     `);
   });
 });

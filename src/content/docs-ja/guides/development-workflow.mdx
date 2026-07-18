@@ -48,7 +48,7 @@ sidebar_position: 17
 |---|---|
 | `pnpm build` | 静的HTMLを`dist/`にエクスポート |
 | `pnpm check` | TypeScript型チェック |
-| `pnpm b4push` | プッシュ前の検証：約22ステップのパイプライン（フォーマットチェック → … → ビルド → リンクチェック → HTML検証 → プレビュースモーク）。正確なステップ数は`scripts/run-b4push.sh`を正とする。E2Eは時間予算の都合でこのパイプラインには含まれず、CI（pr-checks）側で実行される |
+| `pnpm b4push` | プッシュ前の検証：23ステップのパイプライン（フォーマットチェック → … → Worker contract proof → ビルド → リンクチェック → HTML検証 → プレビュースモーク）。正確なステップ数は`scripts/run-b4push.sh`を正とする。E2Eは時間予算の都合でこのパイプラインには含まれず、CI（pr-checks）側で実行される |
 | `pnpm format` | MDXファイルのフォーマット |
 | `pnpm test:unit` | ユニットテストを実行（Vitest） |
 | `pnpm test:e2e` | E2Eテストを実行（Playwright） |
@@ -79,7 +79,7 @@ zudo-docはzfb上で動作するPreact専用プロジェクトです。すべて
 
 目次、モバイルTOC、サイドバーツリーとトグル、テーマトグル、doc-historyを含む標準のクロームアイランドは、`@takazudo/zudo-doc`が実装します。新しいscaffoldはこれらのパッケージコンポーネントを利用するため、ソースファイルのコピーは含まれません。
 
-このショーケースには、`client-router-bootstrap`、`design-token-panel-bootstrap`、`desktop-sidebar-toggle`、`preset-generator`アイランドという、いくつかのプロジェクト固有の統合が残っています。Design Token Panelはアイランドレジストリではなく`configurePanel()`によって自己マウントされ、小さな再エクスポートshimは既存のショーケースのインポートパスを維持します。これらは新しいプロジェクトの開始時に必要な一覧ではなく、ショーケースの実装詳細です。
+このショーケースには、`client-router-bootstrap`、`desktop-sidebar-toggle`、`preset-generator`アイランドという、いくつかのプロジェクト固有の統合が残っています。Design Token Panel のブートストラップはパッケージ所有であり、静的な package route → chrome → derive のインポートチェーンを通じてアイランドスキャナーに到達します。これらは新しいプロジェクトの開始時に必要な一覧ではなく、ショーケースの実装詳細です。
 
 scaffoldにプロジェクト所有の表示用コンポーネントまたはインタラクティブアイランドを追加する場合は、[カスタムコンポーネントガイド](./custom-components.mdx)に従ってください。`mdxExtras`による登録経路と、アイランド検出に必要な静的インポートのルートを説明しています。
 

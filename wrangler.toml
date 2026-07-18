@@ -2,7 +2,7 @@
 # Migrated from Cloudflare Pages — see zudolab/zudo-doc#1691
 
 name = "zudo-doc"
-main = "./dist/_worker.js"
+main = "./worker-entry.ts"
 
 compatibility_date = "2024-12-01"
 # nodejs_compat is required by the CF adapter bundle at dist/_worker.js,
@@ -15,10 +15,32 @@ compatibility_flags = ["nodejs_compat"]
 # warns "Unexpected fields found in assets field" and silently ignores them).
 #
 # preview_urls enables *.workers.dev version-preview URLs for staging/preview
-# deploys (consumed by preview-deploy.yml / pr-checks.yml via
-# `wrangler versions upload --preview-alias`).
+# deploys. Cloudflare does not generate them for versions that implement a
+# Durable Object, so preview workflows generate an adapter-only config for the
+# separate zudo-doc-preview service. Production keeps this complete config.
 preview_urls = true
-workers_dev = false  # prevent serving on *.workers.dev prod route; previews use preview_urls above
+# Neither service exposes its primary workers.dev route. Preview workflows use
+# the Cloudflare subdomain API to enable only version and alias preview URLs on
+# the isolated adapter-only service.
+workers_dev = false
+
+# Retain structured operational events for exact-cap admitted/denied/failed-closed
+# outcomes. Log payloads use a closed, non-sensitive schema.
+[observability]
+enabled = true
+
+# scripts/write-worker-preview-config.mjs removes this marked block and switches
+# to worker-preview-entry.ts for preview uploads. Cloudflare preview URLs cannot
+# be generated for a version that implements a Durable Object.
+# BEGIN AI_CHAT_DAILY_SPEND_CAP_BOOTSTRAP
+[[durable_objects.bindings]]
+name = "AI_CHAT_DAILY_SPEND_CAP"
+class_name = "AiChatDailySpendCap"
+
+[[migrations]]
+tag = "v1-ai-chat-daily-spend-cap"
+new_sqlite_classes = ["AiChatDailySpendCap"]
+# END AI_CHAT_DAILY_SPEND_CAP_BOOTSTRAP
 
 # ---------------------------------------------------------------------------
 # Static asset serving
@@ -45,9 +67,11 @@ run_worker_first = false
 # ---------------------------------------------------------------------------
 # Custom domain routing
 # ---------------------------------------------------------------------------
+# BEGIN PRODUCTION_CUSTOM_DOMAIN
 [[routes]]
 pattern = "zudo-doc.takazudomodular.com"
 custom_domain = true
+# END PRODUCTION_CUSTOM_DOMAIN
 
 # ---------------------------------------------------------------------------
 # AI chat endpoint (pages/api/ai-chat.tsx)
@@ -61,15 +85,21 @@ custom_domain = true
 #   2. Add the Anthropic API key as a secret:
 #        wrangler secret put ANTHROPIC_API_KEY
 #
-#   3. Set DOCS_SITE_URL to your deployed docs site URL.
+#   3. Keep AI_CHAT_DAILY_SPEND_CAP / AiChatDailySpendCap and the
+#      v1-ai-chat-daily-spend-cap new_sqlite_classes migration above. A
+#      production `wrangler deploy` applies it; preview uploads intentionally
+#      use the adapter-only service and do not exercise paid-call admission.
 #
-#   4. (Optional, non-breaking) Salt the IP hash with an HMAC secret:
+#   4. Set DOCS_SITE_URL to your deployed docs site URL.
+#
+#   5. (Optional, non-breaking) Salt per-IP rate-limit keys with an HMAC secret:
 #        wrangler secret put IP_HASH_SECRET
 #      When set, client IPs are keyed with HMAC-SHA-256 instead of unsalted
 #      SHA-256, defeating IPv4-enumeration reversal of stored hashes (#2038).
 #      Absent → falls back to unsalted SHA-256 (identical to prior behaviour).
 #      Setting/rotating it resets in-flight rate-limit buckets (60s) and breaks
-#      audit-hash continuity for the current 7-day window — both acceptable.
+#      per-IP rate-limit buckets — acceptable for these soft guards. Audit
+#      values never store IPs or hashes.
 # ---------------------------------------------------------------------------
 
 [vars]
@@ -80,8 +110,10 @@ DOCS_SITE_URL = "https://zudo-doc.takazudomodular.com"
 RATE_LIMIT_PER_MINUTE = "10"
 RATE_LIMIT_PER_DAY = "100"
 
+# BEGIN PRODUCTION_RATE_LIMIT_KV
 [[kv_namespaces]]
 binding = "RATE_LIMIT"
 # KV namespace id (not a secret — account-scoped identifier). Created via
 # `wrangler kv namespace create RATE_LIMIT` per zudolab/zudo-doc#1691.
 id = "19cd1f19d18d4d50b79db8198b3479b3"
+# END PRODUCTION_RATE_LIMIT_KV

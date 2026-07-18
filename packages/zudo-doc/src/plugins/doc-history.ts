@@ -21,12 +21,12 @@
 // standalone modules and referenced from `zfb.config.ts` by `name`.
 
 import type { ZfbBuildHookContext, ZfbDevMiddlewareContext, ZfbPlugin } from "@takazudo/zfb/plugins";
-import type { DocHistoryOptions } from "../integrations/doc-history/index.js";
+import type { DocHistoryOptions } from "./internal/doc-history/index.js";
 import {
   runDocHistoryMetaStep,
   runDocHistoryPostBuild,
   createDocHistoryDevMiddleware,
-} from "../integrations/doc-history/index.js";
+} from "./internal/doc-history/index.js";
 import { connectToZfbHandler } from "./connect-adapter.js";
 import { getBasePrefix } from "./plugin-utils.js";
 
@@ -34,7 +34,7 @@ const plugin: ZfbPlugin = {
   name: "doc-history",
 
   async preBuild(ctx: ZfbBuildHookContext) {
-    const { docsDir, locales } = ctx.options;
+    const { docsDir, locales, exclude } = ctx.options;
     // Validate each locale entry before passing downstream so a misconfigured
     // locales map surfaces a clear error instead of a confusing runtime crash.
     if (locales != null) {
@@ -51,6 +51,13 @@ const plugin: ZfbPlugin = {
         }
       }
     }
+    if (
+      exclude != null &&
+      (!Array.isArray(exclude) ||
+        exclude.some((pattern) => typeof pattern !== "string"))
+    ) {
+      throw new Error("[doc-history] invalid exclude: expected string[]");
+    }
     await runDocHistoryMetaStep({
       projectRoot: ctx.projectRoot,
       docsDir: typeof docsDir === "string" ? docsDir : "src/content/docs",
@@ -58,6 +65,7 @@ const plugin: ZfbPlugin = {
         locales != null
           ? (locales as Record<string, { dir: string }>)
           : undefined,
+      exclude: exclude as string[] | undefined,
     });
   },
 

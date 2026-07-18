@@ -10,10 +10,28 @@ export interface MinimalKV {
   put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
 }
 
+export interface AiChatDailySpendAdmission {
+  allowed: boolean;
+  count: number;
+}
+
+/** Typed subset of the Durable Object RPC stub used by the route. */
+export interface AiChatDailySpendCapStub {
+  admit(limit: number): Promise<AiChatDailySpendAdmission>;
+}
+
+/** Typed subset of DurableObjectNamespace needed for deterministic routing. */
+export interface AiChatDailySpendCapNamespace {
+  getByName(name: string): AiChatDailySpendCapStub;
+}
+
 export interface AiChatEnv {
   ANTHROPIC_API_KEY: string;
   DOCS_SITE_URL: string;
   RATE_LIMIT: MinimalKV;
+  // Optional so preview Workers without the production DO binding compile;
+  // non-demo requests fail closed when the binding is absent.
+  AI_CHAT_DAILY_SPEND_CAP?: AiChatDailySpendCapNamespace;
   RATE_LIMIT_PER_MINUTE?: string;
   RATE_LIMIT_PER_DAY?: string;
   // Optional HMAC key for IP hashing (#2038). When set, rate-limit/audit KV
@@ -30,10 +48,7 @@ export type BlockReason = "rate_limit" | "invalid_input" | "prompt_injection";
 
 export interface AuditLogEntry {
   timestamp: string;
-  ipHash: string;
-  message: string;
-  responsePreview: string;
-  blocked: boolean;
+  outcome: "completed" | "blocked";
   blockReason?: BlockReason;
 }
 

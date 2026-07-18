@@ -11,8 +11,8 @@
 //
 // The host content bridge (`stableDocs`) is injected so the docs read + nav
 // enumeration match the project's existing `pages/*` paths() exactly (host
-// `bridgeDocsEntries` over the `@takazudo/zfb/content` snapshot), not the
-// package default. `colorSchemes` is the package default
+// current `@takazudo/zfb/content` snapshot), not the package default.
+// `colorSchemes` is the package default
 // (`@takazudo/zudo-doc/color-schemes-defaults`) — the showcase's former
 // `src/config/color-schemes.ts` override was byte-identical to it and was
 // retired in zudolab/zudo-doc#2661.
@@ -31,6 +31,17 @@ export const routeContext = createRouteContext(
     translations,
     tagVocabulary,
     colorSchemes: colorSchemes as unknown as Record<string, ColorScheme>,
+    // `null` here on purpose — the resolved theme-pack registry is produced by
+    // the routes plugin's fs scan and only reachable through
+    // `virtual:zudo-doc-route-context`, which this module must NOT import: it
+    // is the lightweight, test-safe data module (the data shells and their
+    // unit tests import it, and vitest cannot resolve virtual modules).
+    // Nothing rendered from THIS context needs the registry — the head (and
+    // therefore the theme-pack bootstrap) is rendered via `HomePageView` from
+    // `_chrome.ts`, which is build-time-only and threads the real registry
+    // over the top. See ADR docs/adr/theme-packs.md Decision 2 ("a host that
+    // builds its own payload must thread the registry itself").
+    themePackRegistry: null,
   },
   { stableDocs },
 );

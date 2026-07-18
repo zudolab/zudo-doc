@@ -20,11 +20,10 @@ import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-cont
 function makeEntry(data: Record<string, unknown> = {}): DocPageEntry {
   return {
     slug: "test-page",
-    id: "test-page",
-    collection: "docs",
     data: { title: "Test Page", ...data },
+    body: "",
     module_specifier: "test-page.mdx",
-    Content: () => null,
+    Content: () => ({ type: "div", props: {}, key: null }),
   } as unknown as DocPageEntry;
 }
 
@@ -45,7 +44,12 @@ describe("createDocContentHeader — docContentHeaderExtras seam", () => {
       overrides: {
         hostBindings: {
           docHistoryMeta: {
-            "test-page": { author: "A", createdDate: "2024-01-01", updatedDate: "2024-01-02" },
+            "test-page": {
+              author: "A",
+              createdDate: "2024-01-01",
+              updatedDate: "2024-01-02",
+              ext: ".mdx",
+            },
           },
           docContentHeaderExtras: () => <div class="extra">EXTRA</div>,
         },
@@ -70,7 +74,12 @@ describe("createDocContentHeader — docContentHeaderExtras seam", () => {
       overrides: {
         hostBindings: {
           docHistoryMeta: {
-            "test-page": { author: "A", createdDate: "2024-01-01", updatedDate: "2024-01-02" },
+            "test-page": {
+              author: "A",
+              createdDate: "2024-01-01",
+              updatedDate: "2024-01-02",
+              ext: ".mdx",
+            },
           },
           docContentHeaderExtras: (args) => <div class="extra">v={String(args.version)}</div>,
         },
@@ -121,5 +130,31 @@ describe("createDocContentHeader — docContentHeaderExtras seam", () => {
         version: "2.0",
       },
     ]);
+  });
+});
+
+describe("createDocContentHeader — data-doc-description hook (zudolab/zudo-doc#2873)", () => {
+  it("emits data-doc-description on the description <p> when a description is set", () => {
+    const ctx = makeFakeChromeContext({ overrides: { hostBindings: {} } as Partial<ChromeContext> });
+    const DocContentHeader = createDocContentHeader(ctx);
+    const out = render(
+      <DocContentHeader
+        entry={makeEntry({ description: "A test description." })}
+        slug="test-page"
+        locale="en"
+      />,
+    );
+
+    expect(out).toMatch(/<p[^>]*data-doc-description[^>]*>A test description\.<\/p>/);
+  });
+
+  it("omits the <p> entirely when no description is set (no stray hook)", () => {
+    const ctx = makeFakeChromeContext({ overrides: { hostBindings: {} } as Partial<ChromeContext> });
+    const DocContentHeader = createDocContentHeader(ctx);
+    const out = render(
+      <DocContentHeader entry={makeEntry()} slug="test-page" locale="en" />,
+    );
+
+    expect(out).not.toContain("data-doc-description");
   });
 });

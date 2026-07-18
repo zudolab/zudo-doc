@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "slug": "manuscript",
+  "name": "Manuscript",
+  "description": "A quiet Garamond book page — warm paper, soft ink, sepia rubrication, small-caps subheads, fleuron section marks.",
+  "mode": "light",
+  "version": "1.0.1",
+  "fonts": {
+    "sans": "EB Garamond",
+    "mono": "Courier Prime",
+    "loaded": ["EB Garamond", "Courier Prime"]
+  },
+  "preview": {
+    "light": {
+      "bg": "oklch(0.963 0.013 85)",
+      "fg": "oklch(0.245 0.018 60)",
+      "accent": "oklch(0.44 0.095 55)",
+      "syntax": {
+        "keyword": "oklch(0.455 0.13 30)",
+        "string": "oklch(0.44 0.085 150)",
+        "comment": "oklch(0.5 0.03 70)",
+        "callable": "oklch(0.435 0.09 275)"
+      }
+    },
+    "dark": {
+      "bg": "oklch(0.215 0.015 65)",
+      "fg": "oklch(0.885 0.022 80)",
+      "accent": "oklch(0.735 0.095 70)",
+      "syntax": {
+        "keyword": "oklch(0.72 0.115 35)",
+        "string": "oklch(0.745 0.085 150)",
+        "comment": "oklch(0.645 0.03 75)",
+        "callable": "oklch(0.745 0.07 275)"
+      }
+    }
+  }
+}

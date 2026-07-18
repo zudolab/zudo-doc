@@ -64,7 +64,7 @@ const FIXTURE_SRC = resolve(__dirname, "fixtures/route-injection");
  *  to exercise the locale-prefixed injected route (`/[locale]/docs/[[...slug]]`). */
 const FIXTURE_I18N_SRC = resolve(__dirname, "fixtures/route-injection-i18n");
 
-/** The locked 12-file target-manifest fixture (epic zudolab/zudo-doc#2651 Wave
+/** The locked 13-file target-manifest fixture (epic zudolab/zudo-doc#2651 Wave
  *  5, #2659) — see the "Case TM" section near the end of this file. */
 const TARGET_MANIFEST_FIXTURE_SRC = resolve(__dirname, "fixtures/target-manifest");
 
@@ -187,6 +187,11 @@ function expectHtmlAttr(html: string, name: string, value: string): void {
   expect(html).toMatch(htmlAttrPattern(name, value));
 }
 
+function countHtmlAttr(html: string, name: string, value: string): number {
+  const pattern = htmlAttrPattern(name, value);
+  return html.match(new RegExp(pattern.source, "g"))?.length ?? 0;
+}
+
 // ---------------------------------------------------------------------------
 // Cleanup
 // ---------------------------------------------------------------------------
@@ -298,15 +303,29 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   //
   // To update: run `vitest run --update-snapshots`, inspect the diff, and
   // confirm the output delta is intentional before committing.
+  //
+  // 2026-07-18 re-baseline (zudolab/zudo-doc#2911): old-vs-new normalized-HTML
+  // diff confirmed every changed byte traces to already-merged, intentional
+  // output changes since the prior baseline (set at 27d95e578, compat-cleanup) —
+  //   - `<html data-theme-pack=default>` + the inlined FOUC-safe theme-pack
+  //     bootstrap `<script>` in `<head>` (theme-packs runtime switching engine,
+  //     #2822, base/theme-feature-core)
+  //   - `data-footer`, `data-doc-description`, `data-doc-pager` stable data-*
+  //     DOM hooks (#2873, base/theme-pack-hooks)
+  //   - `data-zd-mobile-sidebar` stable DOM hook on the mobile sidebar aside
+  //     (#2887, base/theme-nav-fonts chrome font seam + mobile hooks)
+  //   - the stateDiagram `;`→newline mermaid-init fix + its explanatory
+  //     comment (#2909, this epic's Wave-1 mermaid-semicolon-fix)
+  // No other bytes changed. See sub-issue #2911 for the full diff.
 
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"0fa10d4eee6e3cfb6241cb1ab02275b10b06405f7d7c3ebf2caf698b1f5d4142"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"b2328e098a65b1056ecd8b604dac7baaceed936b61be1caee2b03524119abdb6"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"6dbcfab172d10e786a4fffdece86b8cc61e14c65128314aa53353580115e60da"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"e412483fcbf75cd0db3f71cacfb4b251d0bdb30337c6203a21af3e029ac3b04a"`);
   });
 });
 
@@ -430,7 +449,7 @@ describe("DH doc-history: injected doc route registers the DocHistory island (pa
 // `settings.chromeBindingsModule` points at a host module exporting a named
 // `chromeBindings: ChromeHostBindings`. The routes plugin re-exports it
 // through `virtual:zudo-doc-chrome-bindings`; `routes/_chrome.tsx` spreads it
-// into `createChrome(routeCtx, { DocHistory, ...chromeBindings })`. This
+// into `createChrome(routeCtx, { ...chromeBindings, DocHistory })`. This
 // proves the un-stranding: `buildFrontmatterPreviewEntries` — a
 // `ChromeHostBindings` slot that stays at its package-default `() => []` stub
 // on every other injected-route fixture in this file (see the baseline
@@ -442,10 +461,15 @@ describe("DH doc-history: injected doc route registers the DocHistory island (pa
  *  `src/chrome-bindings.tsx` — flips ON the CB #2501 host-callables channel. */
 function enableChromeBindingsModule(dir: string): void {
   const settingsPath = join(dir, "src/config/settings.ts");
-  const src = readFileSync(settingsPath, "utf-8").replace(
-    /packageOwnedRoutes:\s*true,/,
-    'packageOwnedRoutes: true,\n  chromeBindingsModule: "./src/chrome-bindings.tsx",',
-  );
+  const src = readFileSync(settingsPath, "utf-8")
+    .replace(
+      /packageOwnedRoutes:\s*true,/,
+      'packageOwnedRoutes: true,\n  chromeBindingsModule: "./src/chrome-bindings.tsx",',
+    )
+    .replace(
+      /headerRightItems:\s*\[\],/,
+      'headerRightItems: [{ type: "component", component: "injected-route-badge" }],',
+    );
   writeFileSync(settingsPath, src);
 }
 
@@ -518,6 +542,14 @@ describe("CB chrome-bindings: chromeBindingsModule wires host bindings into crea
     expect(html).toContain("CB-DEMO-VALUE-MARKER");
   });
 
+  it("headerRightComponents: injected route resolves the serialized name through the callable host registry", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    expect(html).toMatch(
+      /data-header-registry=(?:"injected:en:0"|injected:en:0)/,
+    );
+    expect(html).toContain("INJECTED-HEADER-REGISTRY-MARKER");
+  });
+
   // CONFIRM #2505 — end-to-end proof that `ctx.hostBindings.docContentHeaderExtras`
   // reaches `DocContentHeader` on an injected doc route: renders a
   // frontmatter-keyed badge sourced from `entry.data.tier` (the fixture's MDX
@@ -549,7 +581,8 @@ describe("CB chrome-bindings: chromeBindingsModule wires host bindings into crea
   });
 
   // Case DH (DocHistory hydration pairing) regression guard: spreading
-  // `...chromeBindings` AFTER the `DocHistory` default must not disturb the
+  // The scanner-reachable `DocHistory` default AFTER `...chromeBindings` must
+  // not be disturbed by other host slots in the configured object.
   // #2480 island-scanner wiring when the host binding doesn't touch that slot.
   it("regression: DocHistory island registration (#2480) still works with chromeBindingsModule set", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
@@ -695,6 +728,7 @@ describe("DTP design-token-panel: injected doc route registers the DesignTokenPa
   it("marker: injected /docs/getting-started/ HTML carries the DesignTokenPanelBootstrap island marker (non-skip-ssr)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
     expectHtmlAttr(html, "data-zfb-island", "DesignTokenPanelBootstrap");
+    expect(countHtmlAttr(html, "data-zfb-island", "DesignTokenPanelBootstrap")).toBe(1);
   });
 
   it("shim: injected /docs/getting-started/ HTML carries the pre-hydration toggle-shim script", () => {
@@ -712,6 +746,30 @@ describe("DTP design-token-panel: injected doc route registers the DesignTokenPa
 
   it("package-default builder: the bundle carries the unchanged storagePrefix 'zudo-doc-tweak' (HARD GATE #4)", () => {
     expect(readIslandsBundles(fixtureDir)).toContain("zudo-doc-tweak");
+  });
+});
+
+describe("DTP host body-end override: package derive seam retains exactly one DesignTokenPanelBootstrap", () => {
+  let fixtureDir: string;
+  let buildOutput: string;
+
+  it("setup: fixture builds with designTokenPanel + chromeBindingsModule", { timeout: 180_000 }, () => {
+    fixtureDir = setupFixture({ emptyPages: true });
+    enableDesignTokenPanel(fixtureDir);
+    enableChromeBindingsModule(fixtureDir);
+    buildOutput = runZfbBuild(fixtureDir);
+  });
+
+  it("composes the host body-end content with exactly one package-owned marker", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    expect(html).toContain("HOST-BODY-END-MARKER");
+    expect(countHtmlAttr(html, "data-zfb-island", "DesignTokenPanelBootstrap")).toBe(1);
+    expect(html).toContain("__zdtpToggleShimInstalled");
+  });
+
+  it("keeps a matching client registry entry without the duplicate-component warning", () => {
+    expect(readIslandsBundles(fixtureDir)).toContain("DesignTokenPanelBootstrap");
+    expect(buildOutput).not.toMatch(/cannot hydrate both components/i);
   });
 });
 
@@ -1119,15 +1177,16 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
 // ---------------------------------------------------------------------------
 // Case TM — target-manifest confirm (epic zudolab/zudo-doc#2651 Wave 5, #2659).
 //
-// The locked 12-file minimal-scaffold manifest (#2653 decision wave):
+// The locked 13-file minimal-scaffold manifest (#2653 decision wave):
 //
 //   zfb.config.ts  package.json  tsconfig.json  CLAUDE.md  .gitignore  .npmrc
+//   pnpm-workspace.yaml
 //   pages/index.tsx                       — 1-line re-export
 //   pages/docs/[[...slug]].tsx            — self-contained doc stub (REQUIRED)
 //   src/content/docs/getting-started/{index,introduction,installation}.mdx
 //   src/styles/global.css                 — ~22 ln
 //
-// committed verbatim at fixtures/target-manifest/ (12 files, guarded by the
+// committed verbatim at fixtures/target-manifest/ (13 files, guarded by the
 // "group 6" file-count test below). Built from the NPM-PACKED package (mirrors
 // Case S1's `packPackage()`/tarball-extraction flow, not the cheap workspace
 // symlink `setupFixture()` used by Cases A–DTP/HOME/B) so the confirm proof
@@ -1332,12 +1391,12 @@ function countFilesRecursive(dir: string): number {
 }
 
 // ---------------------------------------------------------------------------
-// Group 6 — fixture file count == the locked 12-file manifest.
+// Group 6 — fixture file count == the locked 13-file manifest.
 // ---------------------------------------------------------------------------
 
-describe("TM group 6: fixture file count matches the locked 12-file manifest exactly", () => {
-  it("fixtures/target-manifest/ contains exactly 12 files (guards floor creep)", () => {
-    expect(countFilesRecursive(TARGET_MANIFEST_FIXTURE_SRC)).toBe(12);
+describe("TM group 6: fixture file count matches the locked 13-file manifest exactly", () => {
+  it("fixtures/target-manifest/ contains exactly 13 files (guards floor creep)", () => {
+    expect(countFilesRecursive(TARGET_MANIFEST_FIXTURE_SRC)).toBe(13);
   });
 });
 
@@ -1550,7 +1609,7 @@ describe("TM group 4: zfb dev renders / and /docs/getting-started/ via the locke
   });
 });
 
-describe("TM group 4 negative guard: the locked spec's dev-mode 404 claim, re-verified against the current Wave-3/4 state", () => {
+describe("TM group 4: package-injected dev route works without the doc stub", () => {
   let fixtureDir: string;
   let dev: { port: number; kill: () => void } | undefined;
 
@@ -1564,20 +1623,15 @@ describe("TM group 4 negative guard: the locked spec's dev-mode 404 claim, re-ve
     expect(waitForDevStatus(dev.port, "/", 200)).toBe(200);
   });
 
-  // Confirms the locked spec's (#2653) empirical basis for REQUIRING the doc
-  // stub: without it, the injected DYNAMIC /docs/[[...slug]] route 404s in
-  // `zfb dev` ("✗ lazy render failed … status 404") even though the SAME
-  // route renders fine in `zfb build` (group 1) and in dev via the
-  // self-contained stub (the previous describe block). Reproduced reliably
-  // across repeated isolated runs with a genuinely fresh tarball extraction +
-  // temp dir each time (an earlier manual smoke-test pass that REUSED a
-  // fixture directory across repeated `zfb dev` boots saw 200 — almost
-  // certainly stale-cache contamination from the shared dir, not a real
-  // discrepancy; the automated, isolated run below is the trustworthy one).
-  // This is the proof that the stub is load-bearing, not vacuous.
-  it("dev negative guard: /docs/getting-started/ 404s in zfb dev without the doc stub (proves the stub is load-bearing)", () => {
+  // The package-injected dynamic route is now the current runtime contract.
+  // The scaffold stub remains an authoring convenience, but is not required
+  // for the package route to render in dev mode.
+  it("dev: /docs/getting-started/ renders through the package-injected route without the doc stub", () => {
     expect(dev).toBeDefined();
-    expect(waitForDevStatus(dev!.port, "/docs/getting-started/", 404)).toBe(404);
+    expect(waitForDevStatus(dev!.port, "/docs/getting-started/", 200)).toBe(200);
+    expect(curlBody(dev!.port, "/docs/getting-started/")).toContain(
+      "TM-INDEX-MARKER: target-manifest-render-proof",
+    );
   });
 
   it("teardown: kill the dev server", () => {

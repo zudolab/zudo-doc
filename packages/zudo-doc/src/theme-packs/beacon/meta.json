@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "slug": "beacon",
+  "name": "Beacon",
+  "description": "WCAG-AAA high contrast — 7:1+ ink everywhere, 3px focus rings, always-underlined links. Clarity as beauty.",
+  "mode": "light",
+  "version": "1.0.1",
+  "fonts": {
+    "sans": "Atkinson Hyperlegible",
+    "mono": "Atkinson Hyperlegible Mono",
+    "loaded": ["Atkinson Hyperlegible", "Atkinson Hyperlegible Mono"]
+  },
+  "preview": {
+    "light": {
+      "bg": "#ffffff",
+      "fg": "#000000",
+      "accent": "#0044cc",
+      "syntax": {
+        "keyword": "#0044cc",
+        "string": "#a50000",
+        "comment": "#595959",
+        "callable": "#00287a"
+      }
+    },
+    "dark": {
+      "bg": "#000000",
+      "fg": "#ffffff",
+      "accent": "#6db3ff",
+      "syntax": {
+        "keyword": "#6db3ff",
+        "string": "#ff8f8f",
+        "comment": "#b3b3b3",
+        "callable": "#a8d1ff"
+      }
+    }
+  }
+}

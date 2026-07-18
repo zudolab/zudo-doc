@@ -37,13 +37,16 @@ export const settings = {
   changelogs: false as ChangelogConfig[] | false,
   math: false,
   docHistory: false,
+  docHistoryExclude: [],
+  // Mirrors the showcase default — themePackSwitcher stays off here
+  // (allowlisted, epic Theme Core #2812, #2826).
+  themePack: "default" as string,
   findInPage: false as boolean,
   dynamicPageTransition: true as boolean,
   claudeResources: false as { claudeDir: string; projectRoot?: string; scanRoot?: string } | false,
   defaultLocaleOnlyPrefixes: [] as string[],
   tocMinDepth: 2 as number,
   tocMaxDepth: 4 as number,
-  headingIdStrategy: "hierarchical" as "flat" | "hierarchical",
   headerNav: [
     {
       label: "Getting Started",

@@ -36,6 +36,9 @@ export const DEFAULT_MIRROR: Record<string, unknown> = {
     darkScheme: "Default Dark",
     respectPrefersColorScheme: true,
   },
+  themePack: "default",
+  themePackSwitcher: false,
+  themePacks: undefined,
   siteName: "Docs",
   minifyHtml: true,
   defaultLocale: "en",
@@ -61,6 +64,7 @@ export const DEFAULT_MIRROR: Record<string, unknown> = {
   findInPage: false,
   dynamicPageTransition: false,
   docHistory: false,
+  docHistoryExclude: [],
   bodyFootUtilArea: false,
   versions: false,
   claudeResources: false,
@@ -167,6 +171,13 @@ function buildDesiredConfig(choices: UserChoices): Record<string, unknown> {
     };
   }
 
+  // ── Theme pack (ADR #2818 Decision 7) ────────────────────────────────
+  // themePacks (the enabled-slugs allowlist) is intentionally NOT set here —
+  // it is an advanced, hand-edited-only field with no CLI/prompt surface
+  // (locked spec, #2823).
+  desired.themePack = choices.themePack ?? "default";
+  desired.themePackSwitcher = choices.features.includes("themePackSwitcher");
+
   // ── i18n ──────────────────────────────────────────────────────────────
   desired.defaultLocale = choices.defaultLang ?? "en";
   if (choices.features.includes("i18n")) {
@@ -184,7 +195,8 @@ function buildDesiredConfig(choices: UserChoices): Record<string, unknown> {
   // ── Misc site fields ──────────────────────────────────────────────────
   desired.minifyHtml = choices.minifyHtml ?? true;
   desired.noindex = choices.features.includes("noindex");
-  const rawGithubUrl = (choices.githubUrl ?? "").trim();
+  const rawGithubUrl =
+    typeof choices.githubUrl === "string" ? choices.githubUrl.trim() : "";
   desired.githubUrl = rawGithubUrl ? rawGithubUrl : false;
   desired.cjkFriendly = choices.cjkFriendly ?? false;
 
@@ -211,12 +223,11 @@ function buildDesiredConfig(choices: UserChoices): Record<string, unknown> {
   // ── Tags / docs ───────────────────────────────────────────────────────
   desired.docTags = choices.features.includes("docTags");
   if (choices.features.includes("tagGovernance")) {
-    desired.tagGovernance = "warn";
-    desired.tagVocabulary = true;
-    // Wired to the src/config/tag-vocabulary.ts starter file the
-    // tagGovernance feature module emits (single source of truth shared
-    // with scripts/tags-audit.ts and scripts/tags-suggest.ts).
-    desired.tagVocabularyEntries = raw("tagVocabulary");
+    // The explicit tag CLI config is also the zfb source of truth, so the
+    // package-owned bins and runtime settings cannot drift.
+    desired.tagGovernance = raw("tagCliConfig.governance");
+    desired.tagVocabulary = raw("tagCliConfig.vocabularyActive");
+    desired.tagVocabularyEntries = raw("tagCliConfig.vocabulary");
   } else {
     desired.tagGovernance = "off";
     desired.tagVocabulary = false;
@@ -320,16 +331,8 @@ function buildDesiredConfig(choices: UserChoices): Record<string, unknown> {
   desired.headerNav = headerNav;
 
   if (choices.headerRightItems !== undefined) {
-    // User-supplied override (including empty array) — emit verbatim, minus
-    // a defensive strip of "design-token-panel" when the feature is off.
-    desired.headerRightItems = choices.headerRightItems.filter(
-      (item) =>
-        !(
-          item.type === "trigger" &&
-          item.trigger === "design-token-panel" &&
-          !choices.features.includes("designTokenPanel")
-        ),
-    );
+    // User-supplied override (including empty array) — emit verbatim.
+    desired.headerRightItems = choices.headerRightItems;
   } else {
     const items: Array<Record<string, unknown>> = [];
     if (choices.features.includes("designTokenPanel")) {
@@ -338,7 +341,9 @@ function buildDesiredConfig(choices: UserChoices): Record<string, unknown> {
     if (choices.features.includes("versioning")) {
       items.push({ type: "component", component: "version-switcher" });
     }
-    items.push({ type: "component", component: "github-link" });
+    if (rawGithubUrl) {
+      items.push({ type: "component", component: "github-link" });
+    }
     items.push({ type: "component", component: "theme-toggle" });
     if (choices.features.includes("search")) {
       items.push({ type: "component", component: "search" });
@@ -364,6 +369,9 @@ function buildDesiredConfig(choices: UserChoices): Record<string, unknown> {
 const FIELD_ORDER = [
   "colorScheme",
   "colorMode",
+  "themePack",
+  "themePackSwitcher",
+  "themePacks",
   "siteName",
   "defaultLocale",
   "locales",
@@ -430,7 +438,7 @@ export function generateZfbConfig(choices: UserChoices): string {
   lines.push(`import { defineConfig } from "zfb/config";`);
   lines.push(`import { zudoDoc } from "@takazudo/zudo-doc/config";`);
   if (choices.features.includes("tagGovernance")) {
-    lines.push(`import { tagVocabulary } from "./src/config/tag-vocabulary";`);
+    lines.push(`import tagCliConfig from "./src/config/tag-vocabulary";`);
   }
   lines.push(``);
   lines.push(`export default defineConfig(`);

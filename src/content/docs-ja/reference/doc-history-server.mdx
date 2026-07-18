@@ -20,13 +20,24 @@ Doc History Serverは`packages/doc-history-server/`にあるサブパッケー�
 
 ## サーバーモード（ローカル開発）
 
-サーバーは設定可能なポート（デフォルト4322）で実行され、REST API経由でドキュメント履歴を配信します。標準の`pnpm dev`セットアップでは、zfbとdoc-history-serverが`run-p`を使用して同時に実行されます。
+サーバーは設定可能なポート（デフォルト4322）で実行され、REST API経由でドキュメント履歴を配信します。`docHistory`を有効にしてscaffoldしたプロジェクトでは、これは自動的に配線されます — `create-zudo-doc`は`dev`スクリプトとして`run-p dev:zfb dev:history`を生成するため、zfbとdoc-history-serverが同時に実行されます。
 
 ### サーバーの起動
 
+生成される`dev:history`スクリプト経由で実行してください — `doc-history-server`はプロジェクトの`node_modules/.bin`にのみ存在し、パッケージマネージャーのスクリプト経由では自動的に`PATH`に追加されますが、素のシェルプロンプトでは追加されません。
+
 ```sh
-pnpm dev -- --content-dir src/content/docs --locale ja:src/content/docs-ja --port 4322
+pnpm dev:history
+# または: npm run dev:history
 ```
+
+内部的には、このスクリプトは以下を実行しています。
+
+```sh
+doc-history-server --port 4322 --content-dir src/content/docs
+```
+
+`i18n`も有効な場合、`create-zudo-doc`はセカンダリロケール用の`--locale <lang>:src/content/docs-<lang>`フラグを自動的に追加します。別のフラグでサーバーを手動実行したい場合は、下記の[サーバーオプション](#サーバーオプション)を参照してください。
 
 ### エンドポイント
 
@@ -73,7 +84,7 @@ GET /doc-history/ja/guides/writing-docs.json
 
 開発モードでは、doc-historyのzfbプラグインの`devMiddleware`フックが`/doc-history/*`リクエストをこのサーバーにプロキシします。これにより、ブラウザの履歴パネルはzfb開発サーバーを通じてスタンドアロンサーバーから透過的に取得します。
 
-ルートの`pnpm dev`コマンドは、`run-p`を使用してzfb（ポート4321）とdoc-history-server（ポート4322）を同時に実行します。
+`docHistory`が有効なプロジェクトが生成する`dev`スクリプト（`run-p dev:zfb dev:history`）は、zfb（ポート4321）とdoc-history-server（ポート4322）を同時に実行します。
 
 ## CLIモード（CIビルド）
 
@@ -109,6 +120,12 @@ CIパイプラインはzfbサイトビルドと並行して履歴生成を実行
 `build-history`と`build-site`の両ジョブともフルクローン（`fetch-depth: 0`）が必要です。`build-history`はDocHistoryアイランドのドロップダウン用にリビジョンデータを抽出するため、`build-site`はpreBuildステップがSSGメタブロック（作成日・更新日・著者）に実際のgit日付を埋め込むために完全なコミット履歴が必要です。
 
 </Tip>
+
+<Note>
+
+`DOC_HISTORY_SKIP_POSTBUILD`（[デプロイガイド](../guides/deployment.mdx)を参照）は、`build-site`内で実行されるzfbプラグインのインラインpostBuildフックのみを制御します — `build-history`ジョブが実際に実行するこのスタンドアロンの`generate` CLIには影響しません。このCLIは呼び出されると常に生成します。
+
+</Note>
 
 ## データ形式
 
@@ -163,7 +180,7 @@ dist/doc-history/
 
 ### Git操作
 
-履歴抽出は以下の同期gitコール（`execFileSync`）を使用します：
+履歴抽出は以下のノンブロッキングな`execFile` / `spawn`コールを使用します：
 
 - `git log` -- `--follow`によるリネーム追跡を含むコミットリスト
 - `git show` -- 各リビジョンでのファイル内容
@@ -172,7 +189,7 @@ dist/doc-history/
 
 ### 主要な設計判断
 
-- **同期git** -- `execFileSync`は開発サーバー（同一プロセス、逐次処理）で問題ありません。CI CLIは境界付き並列処理を使用します：`Promise.all`とセマフォで`Math.min(8, Math.max(2, cpus().length))`の同時ワーカー数に制限して実行します
+- **単一の非同期抽出パス** -- 開発サーバーとCI CLIはいずれも`getDocHistoryAsync`をawaitします。CLIはセマフォで`Math.min(8, Math.max(2, cpus().length))`の同時ワーカー数に制限します。同期処理はキャッシュされる初回のリポジトリルート検出だけです
 - **リポジトリ相対パス** -- APIレスポンスは絶対サーバーパスの漏洩を避けるために相対ファイルパスを使用します
 - **スタンドアロンパッケージ** -- 並列CIビルドと独立したバージョニングを可能にするためにzfbから分離されています
 

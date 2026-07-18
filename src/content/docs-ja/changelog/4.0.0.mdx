@@ -1,0 +1,37 @@
+---
+title: 4.0.0
+description: 4.0.0のリリースノート。
+sidebar_position: 1057
+---
+
+リリース日: 2026-07-17
+
+### 破壊的変更
+
+- 現行専用の互換性契約: レガシー統合サブパス、タグエイリアス/非推奨ランタイム、レガシートークンストレージブリッジ、レガシーSyntectマークアップ対応、レガシーdoc-history契約、レガシーリンクチェッカーエントリポイントを削除 (c8b6d3da, 08338a8f, 701b4aea, 16edbe8b, e8ce8929, cc2bb792, f2c9b925)
+- 見出しIDは階層形式のみに変更。レガシーなフラットIDフォールバックは廃止 (390064ff)
+- ドキュメントエントリは現行のzfbエントリモデルのみを使用 (df048e30)
+
+### 機能
+
+- テーマパックシステム: 設定センサスとバリデーターを備えたパックレジストリ、アセット配信パイプライン(ビルド・npm tarball・dev)、FOUCセーフなブートストラップ付きランタイム切り替えエンジン、右下のスイッチャーフライアウト、テーマ一覧ダイアログ、`zudo-doc theme list|apply` CLI (aab0014f, 9eddd9ba, f5f83b43, adf81c9a, 07b77eb1, a33f66ef)
+- 4バッチにわたり公式テーマパック20種を出荷 — foundry, swissgrid, broadsheet, ledger, manuscript, futura-editorial, washi, sumi, matcha, hearth, hollow, fjord, nocturne, drift, onyx, phosphor, observatory, solar, beacon, brutalist — 全21パックカタログ(defaultを含む)をcreate-zudo-docとプリセットジェネレーターに同期 (487b1761)
+- テーマパック向けの安定DOMフック: `data-footer`、`data-doc-pager`、`data-doc-description`、`data-theme-pack-switcher` / `data-switcher-card` / `data-switcher-launcher`。全20パックをフックへ移行し、変更した各パックの`meta.json`バージョンをスタイルシートのキャッシュバスター用にバンプ (c8bb4421, ac654a8a, 2b2a46d5, b5fffb01, d7c67ca7)
+- フック不在のため見送られていたパックスタイルを復元: foundryのページャーホバーウォッシュとbroadsheetのクラシファイド広告風フライアウトフレーム (850a30fb)
+- セマンティックなシンタックスハイライトのクラスモード: ドキュメントのコードフェンスが安定したトークン契約のもと`hi-*`トークンクラスを出力し、`features.css`がマッピング (c1237dcd, c305fdf8, 920be3d2)
+- AIチャットの正確な日次支出上限をDurable Objectで強制。有料呼び出しのアドミッション制御と運用ランブック付き (0b46e23c, 15e3b891, 491116c5)
+- クロームカスタマイズ: 型付きの主要置換スロット(`Header`、`Footer`、`Sidebar`、`Toc`、`Breadcrumb`、`DocPager`)、名前付きヘッダーコンポーネントレジストリ、バインディング対応のejectワーニング、エンドツーエンドの実証 (a3ae76cc, 9d8e7901, 5346b2ef, 0e92dbc2)
+- create-zudo-doc: `footerCopyright`フィーチャーをデフォルトで有効化。テーマパックのスキャフォールドプロンプトとプログラマティックな`themePack`オプション (51307cd4, acf20690, b287e94d)
+
+### バグ修正
+
+- onyx: スイッチャーカードとテーマ一覧ダイアログの装飾用ゴールドアウトラインがキーボードのfocus-visibleリングを隠さないよう修正 (11d5cc0f)
+- ledger: DocPagerセレクターが自動インデックスページのNavCardGridに過剰マッチしないよう修正 (eff8e1b8)
+- レビューを受けた複数パックのライトモードWCAGコントラスト修正 (46e1e6b2)
+
+### その他の変更
+
+- テーマパックアーキテクチャADR、Decision 6.5/6.6の強化(安定フック一覧、h2–h4グラデーションのカーブアウト)、恒久的なパック作者向けリファレンス`theme-pack-authoring.md`を新規追加 (4f5cc90c, ed287e1a, 4856c44b)
+- 全パックカタログを網羅したテーマギャラリーリファレンスドキュメント(EN+JA) (2b73cffa, 3068fbca)
+- スキャフォールドカスタマイズドキュメントの全面改訂: カスタマイズラダー、クロームバインディング、カスタムコンポーネントガイド、ルートインジェクション、カラートークンガイダンス (8a54b3df)
+- ツールチェーン: zfbファミリーをnext.87まで採用、zdtp 0.4.8 (151f09bb, efc3afdc)

@@ -1,4 +1,6 @@
+import type { TagCliConfig } from "@takazudo/zudo-doc/tags-audit";
 import type { TagVocabularyEntry } from "@takazudo/zudo-doc/settings";
+import { settings } from "./settings";
 
 /**
  * Canonical tag vocabulary for this documentation base.
@@ -12,10 +14,8 @@ import type { TagVocabularyEntry } from "@takazudo/zudo-doc/settings";
  * - `type`   — content-type tags (guide, reference, tutorial)
  * - `level`  — reader-level tags (beginner, advanced)
  *
- * To phase out a tag: set `deprecated: { redirect: "<new-id>" }` (content
- * using the old id will resolve to the new one) or `deprecated: true` to
- * drop it from aggregation entirely. Do not silently remove entries — other
- * docs may still reference them.
+ * Content must use these ids exactly. A renamed or removed id becomes unknown,
+ * so update every referencing page in the same change.
  */
 export const tagVocabulary: readonly TagVocabularyEntry[] = [
   // ── topic ─────────────────────────────────────────────────────────
@@ -30,7 +30,6 @@ export const tagVocabulary: readonly TagVocabularyEntry[] = [
     label: "Cloudflare Worker",
     description: "Cloudflare Workers used by zudo-doc features.",
     group: "topic",
-    aliases: ["cf-worker"],
   },
   {
     id: "content",
@@ -72,21 +71,18 @@ export const tagVocabulary: readonly TagVocabularyEntry[] = [
     label: "Guide",
     description: "Task-oriented walkthrough of a feature.",
     group: "type",
-    aliases: ["guide", "guides"],
   },
   {
     id: "type:reference",
     label: "Reference",
     description: "Exhaustive reference material for a subsystem.",
     group: "type",
-    aliases: ["reference"],
   },
   {
     id: "type:tutorial",
     label: "Tutorial",
     description: "Step-by-step learn-by-doing content.",
     group: "type",
-    aliases: ["tutorial", "tutorials"],
   },
 
   // ── level ─────────────────────────────────────────────────────────
@@ -95,13 +91,24 @@ export const tagVocabulary: readonly TagVocabularyEntry[] = [
     label: "Beginner",
     description: "Introductory material; no prior knowledge assumed.",
     group: "level",
-    aliases: ["beginner"],
   },
   {
     id: "level:advanced",
     label: "Advanced",
     description: "Assumes familiarity with the underlying concepts.",
     group: "level",
-    aliases: ["advanced"],
   },
 ];
+
+const tagCliConfig = {
+  contentDirs: [
+    settings.docsDir,
+    ...Object.values(settings.locales).map((locale) => locale.dir),
+  ],
+  vocabulary: tagVocabulary,
+  governance: settings.tagGovernance,
+  vocabularyActive:
+    settings.tagVocabulary && settings.tagGovernance !== "off",
+} satisfies TagCliConfig;
+
+export default tagCliConfig;

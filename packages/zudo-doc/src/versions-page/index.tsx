@@ -15,9 +15,9 @@ import type { VersionPageEntry, VersionsPageLabels } from "../nav-indexing/index
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
 import { createHeadWithDefaults } from "../head-with-defaults/index.js";
-import { createHeaderWithDefaults } from "../header-with-defaults/index.js";
-import { createFooterWithDefaults } from "../footer-with-defaults/index.js";
+import { resolveThemePackSsrSlug } from "../theme/theme-pack-provider.js";
 import { deriveComposeMetaTitle, deriveBodyEndIslands } from "../chrome/derive.js";
+import { derivePrimaryChromeSlots } from "../chrome/primary-slots.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 
 // ---------------------------------------------------------------------------
@@ -42,8 +42,8 @@ export interface VersionsPageSettings {
 /** Host-supplied component bindings injected into the versions page factory. */
 export interface VersionsPageComponents {
   HeadWithDefaults: (props: { title: string }) => JSX.Element;
-  HeaderWithDefaults: (props: { lang?: string; currentPath?: string }) => JSX.Element;
-  FooterWithDefaults: (props: { lang?: string }) => JSX.Element;
+  HeaderWithDefaults: (props: { lang: string; currentPath?: string }) => JSX.Element;
+  FooterWithDefaults: (props: { lang: string }) => JSX.Element;
   BodyEndIslands: (props: { basePath: string }) => JSX.Element;
 }
 
@@ -86,13 +86,14 @@ export function createVersionsPageView<S extends Settings = Settings>(
   const withBase = ctx.withBase;
   const composeMetaTitle = deriveComposeMetaTitle(ctx);
   const HeadWithDefaults = createHeadWithDefaults(ctx) as VersionsPageComponents["HeadWithDefaults"];
-  const HeaderWithDefaults = createHeaderWithDefaults(
-    ctx,
-  ) as VersionsPageComponents["HeaderWithDefaults"];
-  const FooterWithDefaults = createFooterWithDefaults(
-    ctx,
-  ) as VersionsPageComponents["FooterWithDefaults"];
+  const { Header: HeaderWithDefaults, Footer: FooterWithDefaults } =
+    derivePrimaryChromeSlots(ctx);
   const BodyEndIslands = deriveBodyEndIslands(ctx) as VersionsPageComponents["BodyEndIslands"];
+  // SSR `data-theme-pack` html attribute (ADR theme-packs.md Decision 3, #2822).
+  const dataThemePack = resolveThemePackSsrSlug(
+    ctx.themePackRegistry,
+    ctx.settings as { themePack?: string },
+  );
 
   /** Versions index page for one locale. Lists the latest version and any past
    *  versions configured in settings.versions. */
@@ -135,6 +136,7 @@ export function createVersionsPageView<S extends Settings = Settings>(
         title={composeMetaTitle(pageTitle)}
         head={<HeadWithDefaults title={pageTitle} />}
         lang={locale}
+        dataThemePack={dataThemePack}
         noindex={settings.noindex}
         hideSidebar={true}
         hideToc={true}

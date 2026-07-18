@@ -1,23 +1,10 @@
-# @takazudo/zudo-doc — 2.0 Public API Contract
+# @takazudo/zudo-doc — Current Public API Contract
 
 This document enumerates the **stable surface** of `@takazudo/zudo-doc`.
 
-> **BREAKING — MAJOR version bump (B4PUSH wave #2431):** The Collapse Wiring
-> Shells epic (#2420) introduced two breaking changes that require a MAJOR version
-> bump:
->
-> 1. Every public page-chrome factory (`createX`) now takes the unified
->    `ChromeContext` (from `./factory-context`) instead of a per-factory narrow
->    context. Sole consumer is the host's wiring shell; downstream projects that
->    only import UI components or the preset are unaffected.
-> 2. Two new public subpaths (`./route-context`, `./chrome`) are added to the
->    stable surface.
->
-> **Do NOT publish here** — version bumping and publishing are handled in the
-> B4PUSH wave (#2431). Run `/l-make-release` there.
-
-Decision: **freeze** the current surface — do not restructure or curate exports before publishing.
-Post-merge in B4PUSH wave (#2431), run `/l-make-release` to publish the lockstep MAJOR release across the workspace.
+The package exposes one current contract. Removed compatibility aliases and
+descriptor integration wrappers are intentionally absent; consumers use the
+named exports and `./plugins/*` entrypoints listed below.
 
 ## Drift Guards (authoritative)
 
@@ -31,7 +18,7 @@ New snapshot guards (added in `packages/zudo-doc/src/__tests__/public-api-snapsh
 
 ---
 
-## 1. Subpath Exports (137 total)
+## 1. Subpath Exports (142 total)
 
 The full `package.json#exports` keyset is the contract. Any addition or removal requires a deliberate, reviewed change that will fail the snapshot guard.
 
@@ -44,10 +31,11 @@ The full `package.json#exports` keyset is the contract. Any addition or removal 
 | `./preset` | `zudoDocPreset()` — zfb config preset factory (internal fragment builder; `./config` is the documented API) |
 | `./settings` | `Settings` / `PresetSettings` type definitions |
 | `./factory-context` | `FactoryContext` / `ChromeContext` / `RouteContext` / `ChromeHostBindings` — the full shared type surface for package factories and chrome wiring (types only, node-free) |
-| `./chrome-bindings` | `defineChromeBindings(input)` — compile-time-checked widening adapter that builds a host's `ChromeHostBindings` object from the narrower, call-site-precise `ChromeBindingsInput` type; use it instead of a raw object literal or an `as`/`as unknown as` cast on `ChromeHostBindings` (drift detection, #2674) |
+| `./chrome-bindings` | `defineChromeBindings(input)` — compile-time-checked widening adapter that builds a host's `ChromeHostBindings` object from the narrower, call-site-precise `ChromeBindingsInput` type; exports exact props for every component slot, including `HeaderSlotProps`, `FooterSlotProps`, `SidebarSlotProps`, `TocSlotProps`, `BreadcrumbSlotProps`, and `DocPagerSlotProps`; use it instead of a raw object literal or an `as`/`as unknown as` cast on `ChromeHostBindings` (drift detection, #2674) |
 | `./route-context` | `createRouteContext(payload, options?)` — reconstructs the full `RouteContext` callable surface from the serializable `RouteContextPayload`; also re-exports `RouteContext` / `RouteContextPayload` / `TagInfo` / `ContentBridge` types |
 | `./chrome` | `createChrome(context, hostBindings?)` — assembles a `ChromeContext` from a `RouteContext` + `ChromeHostBindings` (stub defaults) and wires all page-chrome factories; returns the `Chrome` surface |
 | `./eject` | `EJECTABLE` map + `eject()` function + `ZudoDocJson` type — ejectable component registry for the `zudo-doc eject` CLI |
+| `./theme-cli` | `listThemePacks()` / `formatThemeList()` / `applyThemePack()` + config-rewrite/provenance types — implementation behind the `zudo-doc theme list\|apply <slug>` CLI (issue #2824) |
 | `./component-tokens` | `COMPONENT_TOKENS` const + `ComponentToken` / `ComponentTokenCategory` / `ComponentTokenName` types — the `--zdc-*` component-level CSS custom property registry. Consumers read this to discover every rebrand knob; redefine the listed `cssVar`s in `:root` to override defaults. **Snapshot-guarded** (`component-tokens-snapshot.test.ts`). |
 
 ### `ChromeHostBindings` Slots (`./factory-context`)
@@ -60,7 +48,14 @@ behaviour byte-for-byte.
 
 | Slot | Default when absent |
 |---|---|
+| `Header` | The package `HeaderWithDefaults`; receives `HeaderSlotProps` |
+| `Footer` | The package `FooterWithDefaults`; receives `FooterSlotProps` |
+| `Sidebar` | The package `SidebarWithDefaults`; receives `SidebarSlotProps` |
+| `Toc` | The package desktop `Toc` island component; receives `TocSlotProps` |
+| `Breadcrumb` | The package `Breadcrumb`; receives `BreadcrumbSlotProps` |
+| `DocPager` | The package `DocPager`; receives `DocPagerSlotProps` |
 | `SearchWidget` | The package `SearchWidget` bound to the site base |
+| `headerRightComponents` | `{}` (only built-in names resolve); maps project-owned string names in `headerRightItems` to exact `HeaderRightComponentProps` renderers. Built-in names are reserved. |
 | `docHistoryMeta` | `{}` (no Created/Updated block) |
 | `sidebarsConfig` | `{}` (auto-generated tree only) |
 | `frontmatterRenderers` | `{}` |
@@ -69,6 +64,7 @@ behaviour byte-for-byte.
 | `tagVocabulary` | `[]` |
 | `BodyEndIslands` | The package-island subset derived from `settings` |
 | `DocHistory` | A no-op stub rendering an empty fragment |
+| `DesignTokenPanelBootstrap` | The settings-gated package bootstrap. Custom panel data belongs in `designTokenPanelConfigModule`; replace this slot only when replacing the island implementation. |
 | `mdxExtras` | Package SSR impls + a `PresetGenerator` stub |
 | `docContentHeaderExtras` | Renders nothing. A renderer (not a component) called as `({ entry, slug, locale, isFallback?, version? }) => unknown` for `kind === "entry"` doc pages on all 4 doc routes (including versioned pages — it receives `version` and decides for itself). Renders between the `<h1>` and the metainfo/tags block in `DocContentHeader`. |
 | `homeExtras` | Renders nothing. A renderer called as `({ locale }) => unknown` for the home hero. The `/` home route is never injected by the routes plugin (zfb rejects `/`), so this fires on injected `/[locale]` homes and on any host that threads it through `createChrome`; a `HomePageView` `extras` prop takes precedence when both are present. |
@@ -212,15 +208,6 @@ row.
 | `./plugins/claude-resources` | Claude resources generation zfb plugin |
 | `./plugins/routes` | Package-owned route injection zfb plugin. Registers `virtual:zudo-doc-route-context` (serializable data only) and `virtual:zudo-doc-chrome-bindings` (re-export of the host module named by `settings.chromeBindingsModule`, or an empty-object fallback), then injects the derived route catalog |
 
-### Integrations (legacy wrappers, still shipped)
-
-| Subpath | Description |
-|---|---|
-| `./integrations/doc-history` | Legacy integration re-export |
-| `./integrations/llms-txt` | Legacy integration re-export |
-| `./integrations/search-index` | Legacy integration re-export |
-| `./integrations/claude-resources` | Legacy integration re-export |
-
 ### Utilities
 
 | Subpath | Description |
@@ -266,7 +253,6 @@ project's `ZudoDocConfig` override over each default before threading it into
 |---|---|
 | `./content.css` | `.zd-content` typography stylesheet (single source of truth) |
 | `./safelist.css` | Generated Tailwind safelist for component classes |
-| `./safelist` | Alias for `./safelist.css` |
 | `./page-loading.css` | Page-loading overlay stylesheet |
 | `./features.css` | Feature CSS (code blocks, dual-theme, KaTeX, etc.) |
 
@@ -315,11 +301,10 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `aiAssistant` | `boolean` | Enable AI chat assistant |
 | `aiChatDemoMode` | `boolean` | Enable AI chat demo mode (no real API calls) |
 | `aiChatAllowedOrigins` | `string[]` | Allowed origins for AI chat CORS |
-| `aiChatGlobalDailyLimit` | `number \| false` | Daily request limit for AI chat |
+| `aiChatGlobalDailyLimit` | `number \| false` | Exact Anthropic fetch-admission cap per UTC day; `false` disables the exact cap |
 | `designTokenPanel` | `boolean` | Enable the design token panel |
 | `tocMinDepth` | `number` | Minimum heading depth for TOC |
 | `tocMaxDepth` | `number` | Maximum heading depth for TOC |
-| `headingIdStrategy` | `"flat" \| "hierarchical"` | Heading ID generation strategy |
 | `sidebarResizer` | `boolean` | Enable sidebar resizer handle |
 | `sidebarToggle` | `boolean` | Enable sidebar mobile toggle |
 | `imageEnlarge` | `boolean` | Enable image enlarge on click |
@@ -336,6 +321,9 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `headerRightItems` | `HeaderRightItem[]` | Header right side items |
 | `packageOwnedRoutes?` | `boolean` | Package-owned route injection seam. Default `true` (#2404). See ADR `docs/adr/route-injection-seam.md`. |
 | `chromeBindingsModule?` | `string` | Project-root-relative path (e.g. `"./src/chrome-bindings.tsx"`) to a host module with a **named export `chromeBindings`**, built with `defineChromeBindings` (from `./chrome-bindings`) and typed `ChromeHostBindings` (type from `./factory-context`). Only consumed under `packageOwnedRoutes`: the routes plugin re-exports the module through `virtual:zudo-doc-chrome-bindings` so the injected chrome shim spreads real host bindings into `createChrome(...)`. Absent → byte-identical stub-defaults behavior; explicitly empty string → the build fails loudly at plugin setup; present but file missing → the build fails at plugin setup, naming the resolved absolute path. SSR-presentational only — client islands inside the module are not guaranteed to register on injected routes. See ADR `docs/adr/route-injection-seam.md` ("Host-callables channel — chromeBindingsModule"). |
+| `themePack?` | `string` | Active theme-pack slug. Default `"default"` (the stock look — no pack stylesheet loaded). Must be a member of the resolved `themePacks` list; an unknown slug fails the build loudly at plugin setup. See ADR `docs/adr/theme-packs.md`. |
+| `themePackSwitcher?` | `boolean` | Mount the bottom-right theme-pack switcher flyout (and its browse-all dialog). Default `false`. |
+| `themePacks?` | `string[]` | Enabled theme-pack slugs, in switcher order. Default `undefined` (every bundled pack, `"default"` first then alphabetical). An explicit list is authoritative — may omit `"default"`, reorder freely; duplicate/unknown slugs fail the build loudly. |
 
 ---
 

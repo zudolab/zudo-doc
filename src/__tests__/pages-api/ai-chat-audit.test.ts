@@ -9,8 +9,8 @@
  *   - HMAC: IP_HASH_SECRET present → HMAC-SHA-256 keyed by the secret
  */
 
-import { describe, it, expect } from "vitest";
-import { hashIp } from "../../../pages/api/_ai-chat-audit";
+import { describe, it, expect, vi } from "vitest";
+import { fireAuditLog, hashIp } from "../../../pages/api/_ai-chat-audit";
 
 // Known SHA-256 vectors — proves the fallback path is plain unsalted SHA-256.
 const SHA256_EMPTY =
@@ -51,5 +51,77 @@ describe("hashIp — HMAC (secret present)", () => {
     const a = await hashIp("203.0.113.7", "secret-v1");
     const b = await hashIp("203.0.113.7", "secret-v2");
     expect(a).not.toBe(b);
+  });
+});
+
+describe("fireAuditLog — privacy-safe persistence", () => {
+  it("persists only timestamp, outcome, and a bounded reason enum", async () => {
+    const writes: Array<{ key: string; value: string; ttl?: number }> = [];
+    let pending: Promise<unknown> | undefined;
+    const kv = {
+      get: vi.fn(async () => null),
+      put: vi.fn(async (key: string, value: string, options?: { expirationTtl?: number }) => {
+        writes.push({ key, value, ttl: options?.expirationTtl });
+      }),
+    };
+
+    fireAuditLog(
+      (promise) => {
+        pending = promise;
+      },
+      kv,
+      {
+        timestamp: "2026-07-16T12:34:56.000Z",
+        outcome: "blocked",
+        blockReason: "prompt_injection",
+      },
+    );
+    await pending;
+
+    expect(writes).toHaveLength(1);
+    expect(JSON.parse(writes[0]!.value)).toEqual({
+      timestamp: "2026-07-16T12:34:56.000Z",
+      outcome: "blocked",
+      blockReason: "prompt_injection",
+    });
+    expect(writes[0]!.ttl).toBe(7 * 24 * 60 * 60);
+    const persisted = writes[0]!.value;
+    for (const sentinel of [
+      "private prompt",
+      "private response",
+      "203.0.113.42",
+      SHA256_EMPTY,
+      "sk-ant-secret",
+    ]) {
+      expect(persisted).not.toContain(sentinel);
+    }
+  });
+
+  it("does not expose a rejected KV error in console output", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    let pending: Promise<unknown> | undefined;
+    const kv = {
+      get: vi.fn(async () => null),
+      put: vi.fn(async () => {
+        throw new Error("private provider response sk-ant-secret");
+      }),
+    };
+
+    fireAuditLog(
+      (promise) => {
+        pending = promise;
+      },
+      kv,
+      { timestamp: "2026-07-16T12:34:56.000Z", outcome: "completed" },
+    );
+    await pending;
+
+    expect(error).toHaveBeenCalledWith({
+      event: "ai_chat_audit_write",
+      outcome: "failed",
+      utc_day: "2026-07-16",
+    });
+    expect(JSON.stringify(error.mock.calls)).not.toContain("private provider response");
+    expect(JSON.stringify(error.mock.calls)).not.toContain("sk-ant-secret");
   });
 });

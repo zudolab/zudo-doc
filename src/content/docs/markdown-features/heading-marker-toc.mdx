@@ -62,7 +62,7 @@ headingMarkerToc: {
 
 ## Output and processing order
 
-The generated list produces `<ul>/<li>` elements with `<a>` tags pointing at fragment identifiers (e.g. `#background-section`). Those IDs are the deduplicated slugs created by the core Heading Links pass, which runs first — so the anchors always match the headings they link to. They follow the configured [heading-ID strategy](./heading-links.mdx#id-strategy); this site uses `hierarchical`, so a nested heading's anchor is ancestor-prefixed (e.g. `#overview-background-section`).
+The generated list produces `<ul>/<li>` elements with `<a>` tags pointing at fragment identifiers (e.g. `#background-section`). Those IDs are the deduplicated slugs created by the core Heading Links pass, which runs first — so the anchors always match the headings they link to. They follow zudo-doc's [hierarchical ID contract](./heading-links.mdx#hierarchical-ids), so a nested heading's anchor is ancestor-prefixed (e.g. `#overview-background-section`).
 
 ## Notes
 

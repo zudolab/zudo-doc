@@ -9,7 +9,7 @@ tags:
 
 ## Opt-in, Not Automatic
 
-`pnpm tags:suggest` is a developer-facing helper, not part of the build. It reads one or more doc files, asks a locally-running LLM to propose up to three tag ids from the project vocabulary, and either shows them in an interactive prompt or appends them to a JSON Lines file for batch review.
+`pnpm tags:suggest` runs the package-owned suggestion CLI; it is a developer-facing helper, not part of the build. The generated package script passes the same explicit `src/config/tag-vocabulary.ts` `TagCliConfig` used by `tags:audit`. The CLI reads one or more doc files, asks a locally-running LLM to propose up to three tag ids from that vocabulary, and either shows them in an interactive prompt or appends them to a JSON Lines file for batch review.
 
 Three deliberate choices about this tool:
 
@@ -35,7 +35,7 @@ The suggester talks to a local [Ollama](https://ollama.com/) daemon over HTTP.
 The default model is `qwen2.5:7b` — a reasonable balance of quality, speed, and disk footprint (~5 GB). Override with `--model`:
 
 ```sh
-pnpm tags:suggest --model llama3.1:8b src/content/docs/guides/i18n.mdx
+pnpm tags:suggest -- --model llama3.1:8b src/content/docs/guides/i18n.mdx
 ```
 
 Lighter models (`qwen2.5:3b`, `llama3.2:3b`) are faster but noisier. The tool will exit non-zero if the daemon is unreachable or returns unusable output.
@@ -45,7 +45,7 @@ Lighter models (`qwen2.5:3b`, `llama3.2:3b`) are faster but noisier. The tool wi
 The default (TTY) flow reviews one file at a time:
 
 ```sh
-pnpm tags:suggest src/content/docs/guides/deployment.mdx
+pnpm tags:suggest -- src/content/docs/guides/deployment.mdx
 ```
 
 The suggester prints the current tags, the LLM's suggested ids, and a y/n prompt to accept. Accepted suggestions are written back to the file's frontmatter; rejected suggestions are discarded. This is the flow for routine authoring.
@@ -55,7 +55,7 @@ The suggester prints the current tags, the LLM's suggested ids, and a y/n prompt
 For larger jobs or non-TTY contexts (CI, editor plugins, piped stdin), pass `--batch`:
 
 ```sh
-pnpm tags:suggest --batch src/content/docs/guides/*.mdx
+pnpm tags:suggest -- --batch src/content/docs/guides/*.mdx
 ```
 
 Suggestions are appended to `.tag-suggestions.jsonl` at the repo root — one JSON object per file containing `file`, `current`, and `suggested`. Nothing is written to the doc files. Review the JSONL, apply what looks good by hand (or script it), and delete the file when done.

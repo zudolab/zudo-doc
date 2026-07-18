@@ -5,7 +5,8 @@
 
 import type { JSX } from "preact";
 import { DocLayoutWithDefaults } from "../doclayout/index.js";
-import { settings, defaultLocale, withBase } from "./_context.js";
+import { resolveThemePackSsrSlug } from "../theme/theme-pack-provider.js";
+import { settings, defaultLocale, withBase, themePackRegistry } from "./_context.js";
 import {
   HeadWithDefaults,
   HeaderWithDefaults,
@@ -25,6 +26,8 @@ export default function NotFoundPage(): JSX.Element {
       title={composeMetaTitle(title)}
       head={<HeadWithDefaults title={title} />}
       lang={locale}
+      // SSR `data-theme-pack` html attribute (ADR theme-packs.md D3, #2822).
+      dataThemePack={resolveThemePackSsrSlug(themePackRegistry, settings)}
       noindex={true}
       hideSidebar={true}
       hideToc={true}

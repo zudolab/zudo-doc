@@ -3,7 +3,7 @@
 // tag-pages — factory for the doc-tags page renderers (epic #2344, S8).
 //
 // The host's `pages/lib/_tag-pages.tsx` previously imported host singletons
-// (`@/utils/tags`, `@/utils/slug`, `@/config/i18n`, `@/config/settings`,
+// (`@/utils/tags`, `@takazudo/zudo-doc/slug`, `@/config/i18n`, `@/config/settings`,
 // `@/utils/base`) directly. This factory receives those as injected
 // dependencies so the logic lives in the package while the host stub keeps
 // the singleton imports.
@@ -28,7 +28,6 @@
 
 import type { ComponentChildren, JSX } from "preact";
 import { DocLayoutWithDefaults } from "../doclayout/index.js";
-import { Breadcrumb } from "../breadcrumb/index.js";
 import type { BreadcrumbItem } from "../breadcrumb/index.js";
 import { DocCardGrid, TagNav } from "../nav-indexing/index.js";
 import type { TagItem, TagNavLabels } from "../nav-indexing/index.js";
@@ -38,30 +37,19 @@ import { toRouteSlug } from "../slug/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
 import { createHeadWithDefaults } from "../head-with-defaults/index.js";
-import { createHeaderWithDefaults } from "../header-with-defaults/index.js";
-import { createFooterWithDefaults } from "../footer-with-defaults/index.js";
+import { resolveThemePackSsrSlug } from "../theme/theme-pack-provider.js";
 import { createDocHistoryArea } from "../doc-history-area/index.js";
 import { deriveComposeMetaTitle, deriveBodyEndIslands } from "../chrome/derive.js";
+import { derivePrimaryChromeSlots } from "../chrome/primary-slots.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
+import type { DocPageEntry } from "../doc-page-props/index.js";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-/** Minimal docs entry shape needed by the tag-pages factory. */
-export interface TagPagesDocsEntry {
-  id: string;
-  data: {
-    slug?: string;
-    draft?: boolean;
-    unlisted?: boolean;
-    category_no_page?: boolean;
-    tags?: string[];
-    title: string;
-    description?: string;
-    [key: string]: unknown;
-  };
-}
+/** Current zfb docs entry used by the tag-pages factory. */
+export type TagPagesDocsEntry = DocPageEntry;
 
 /** Tag info produced and consumed by the tag-pages factory. */
 export interface TagInfo {
@@ -81,8 +69,8 @@ export interface TagPagesSettings {
 /** Host-supplied component bindings injected into the tag-pages factory. */
 export interface TagPagesComponents {
   HeadWithDefaults: (props: { title: string }) => JSX.Element;
-  HeaderWithDefaults: (props: { lang?: string; currentPath?: string }) => JSX.Element;
-  FooterWithDefaults: (props: { lang?: string }) => JSX.Element;
+  HeaderWithDefaults: (props: { lang: string; currentPath?: string }) => JSX.Element;
+  FooterWithDefaults: (props: { lang: string }) => JSX.Element;
   BodyEndIslands: (props: { basePath: string }) => JSX.Element;
   DocHistoryArea: (props: { slug: string; locale: string }) => JSX.Element | null;
 }
@@ -106,7 +94,7 @@ export interface TagPagesDeps {
    */
   collectTags: (
     entries: TagPagesDocsEntry[],
-    slugFn: (id: string, data: { slug?: string }) => string,
+    slugFn: (entrySlug: string, data: { slug?: string }) => string,
   ) => Map<string, TagInfo>;
   /**
    * Identity-stable, draft-filtered docs array for a collection.
@@ -117,7 +105,7 @@ export interface TagPagesDeps {
    * Returns true for paths that are only shown in the default locale.
    * Host passes `isDefaultLocaleOnlyPath` from `@/utils/base`.
    */
-  isDefaultLocaleOnlyPath?: (path: string) => boolean;
+  isDefaultLocaleOnlyPath: (path: string) => boolean;
   components: TagPagesComponents;
 }
 
@@ -149,9 +137,7 @@ export interface TagPagesAPI {
  * Reads `settings`/`defaultLocale`/`t`/`withBase`/`docsUrl`/`collectTags`/
  * `stableDocs` off the context, derives `composeMetaTitle`, and rebuilds the
  * Head / Header / Footer / BodyEndIslands / DocHistoryArea chrome from the SAME
- * context. `isDefaultLocaleOnlyPath` is left `undefined` to reproduce the
- * pre-collapse injected wiring (`routes/_chrome.tsx` passed `undefined`) — the
- * frozen baseline's tag pages are rendered through that path BYTE-FOR-BYTE.
+ * context, including the current default-locale-only path predicate.
  */
 export function createTagPages<S extends Settings = Settings>(
   ctx: ChromeContext<S>,
@@ -163,18 +149,22 @@ export function createTagPages<S extends Settings = Settings>(
   const withBase = ctx.withBase;
   const docsUrl = ctx.docsUrl;
   const composeMetaTitle = deriveComposeMetaTitle(ctx);
-  const collectTags = ctx.collectTags as unknown as TagPagesDeps["collectTags"];
-  const stableDocs = ctx.stableDocs as unknown as TagPagesDeps["stableDocs"];
-  const isDefaultLocaleOnlyPath: ((path: string) => boolean) | undefined = undefined;
+  const collectTags = ctx.collectTags;
+  const stableDocs = ctx.stableDocs;
+  const isDefaultLocaleOnlyPath = ctx.isDefaultLocaleOnlyPath;
   const HeadWithDefaults = createHeadWithDefaults(ctx) as TagPagesComponents["HeadWithDefaults"];
-  const HeaderWithDefaults = createHeaderWithDefaults(
-    ctx,
-  ) as TagPagesComponents["HeaderWithDefaults"];
-  const FooterWithDefaults = createFooterWithDefaults(
-    ctx,
-  ) as TagPagesComponents["FooterWithDefaults"];
+  const {
+    Header: HeaderWithDefaults,
+    Footer: FooterWithDefaults,
+    Breadcrumb,
+  } = derivePrimaryChromeSlots(ctx);
   const BodyEndIslands = deriveBodyEndIslands(ctx) as TagPagesComponents["BodyEndIslands"];
   const DocHistoryArea = createDocHistoryArea(ctx) as TagPagesComponents["DocHistoryArea"];
+  // SSR `data-theme-pack` html attribute (ADR theme-packs.md Decision 3, #2822).
+  const dataThemePack = resolveThemePackSsrSlug(
+    ctx.themePackRegistry,
+    ctx.settings as { themePack?: string },
+  );
 
   // ---------------------------------------------------------------------------
   // Tag collection
@@ -258,6 +248,7 @@ export function createTagPages<S extends Settings = Settings>(
         // The original default-locale page omitted `lang` entirely; passing
         // undefined relies on Preact treating an undefined prop as absent.
         lang={isDefault ? undefined : locale}
+        dataThemePack={dataThemePack}
         noindex={settings.noindex}
         hideSidebar={true}
         hideToc={true}
@@ -317,6 +308,7 @@ export function createTagPages<S extends Settings = Settings>(
         head={<HeadWithDefaults title={pageTitle} />}
         // Same undefined-≡-absent reliance as TagDetailPageView above.
         lang={isDefault ? undefined : locale}
+        dataThemePack={dataThemePack}
         noindex={settings.noindex}
         hideSidebar={true}
         hideToc={true}

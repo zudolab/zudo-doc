@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "slug": "foundry",
+  "name": "Foundry",
+  "description": "GitHub-neutral baseline — white paper, near-black ink, Primer-blue links, quiet gray rules. Restraint, perfected.",
+  "mode": "light",
+  "version": "1.0.1",
+  "fonts": {
+    "sans": "Inter",
+    "mono": "System",
+    "loaded": ["Inter"]
+  },
+  "preview": {
+    "light": {
+      "bg": "#ffffff",
+      "fg": "#1f2328",
+      "accent": "#0969da",
+      "syntax": {
+        "keyword": "#cf222e",
+        "string": "#0a3069",
+        "comment": "#6e7781",
+        "callable": "#8250df"
+      }
+    },
+    "dark": {
+      "bg": "#0d1117",
+      "fg": "#e6edf3",
+      "accent": "#4493f8",
+      "syntax": {
+        "keyword": "#ff7b72",
+        "string": "#a5d6ff",
+        "comment": "#8b949e",
+        "callable": "#d2a8ff"
+      }
+    }
+  }
+}

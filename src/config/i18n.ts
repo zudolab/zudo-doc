@@ -28,10 +28,10 @@ export function getContentDir(locale: Locale | string): string {
 }
 
 /**
- * Get the Astro content collection name for a locale.
+ * Get the zfb content collection name for a locale.
  * Returns a CollectionKey so it can be passed directly to getCollection().
- * The cast is safe because collections are dynamically created in content.config.ts
- * for every locale in settings.locales.
+ * The cast is safe because zudoDoc() registers a collection for every locale
+ * in settings.locales.
  */
 export function getCollectionName(locale: Locale | string): CollectionKey {
   if (locale === defaultLocale) return "docs";

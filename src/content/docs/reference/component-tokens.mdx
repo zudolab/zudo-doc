@@ -48,7 +48,7 @@ zudo-doc's tokens are organized into three tiers, each referencing only the tier
 
 The tables below list every `--zdc-*` token. They are sourced directly from the registry, so they always match what the package ships.
 
-Tokens are split by **rendering surface**. Content tokens target the `.zd-content` prose area (shipped in `@takazudo/zudo-doc/content.css`). Chrome tokens target the app shell — sidebar navigation, TOC, and card grids (shipped in `@takazudo/zudo-doc/features.css`).
+Tokens are split by **rendering surface**. Content tokens target the `.zd-content` prose area (shipped in `@takazudo/zudo-doc/content.css`). Chrome tokens target the app shell — the document body, the header, sidebar navigation, the TOC, and card grids (shipped in `@takazudo/zudo-doc/features.css`).
 
 ### Content tokens
 
@@ -76,6 +76,18 @@ Tokens are split by **rendering surface**. Content tokens target the `.zd-conten
 | `--zdc-toc-width` | `toc` | `280px` | Width of the desktop Table of Contents right rail. |
 | `--zdc-nav-active-indicator-color` | `nav-active` | `var(--color-fg)` | Background color of the active sidebar nav link (the inversion fill that marks the current page). |
 | `--zdc-nav-active-weight` | `nav-active` | `var(--font-weight-medium)` | Font weight of the active sidebar nav link. |
+| `--zdc-chrome-font` | `chrome` | `var(--font-sans)` | Base font family of the document `body` — the seam that lets a theme pack's `--font-sans` reach the whole app shell (header, sidebar, TOC, breadcrumb, footer), not just `.zd-content` prose. Redefine `--font-sans` to restyle chrome and content together, or `--zdc-chrome-font` directly to move the shell independently of prose. |
+| `--zdc-header-font` | `header` | `var(--zdc-chrome-font, var(--font-sans))` | Font family of the site header (`header[data-header]`). A no-op until redefined; set it to give the header its own face (for example a display font for the wordmark and nav) without touching the rest of the chrome. |
+| `--zdc-sidebar-font` | `sidebar` | `var(--zdc-chrome-font, var(--font-sans))` | Font family of the navigation sidebar. The selector names both the desktop rail (`#desktop-sidebar`) and the mobile drawer (`aside[data-zd-mobile-sidebar]`) — both match in the production build (see the note below the table). |
+| `--zdc-toc-font` | `toc` | `var(--zdc-chrome-font, var(--font-sans))` | Font family of the table of contents. The selector names both the desktop rail (`nav[data-zd-toc]`) and the mobile TOC (`div[data-zd-mobile-toc]`) — both match in the production build (see the note below the table). |
+
+<Note>
+
+`--zdc-sidebar-font` and `--zdc-toc-font` are optional per-surface art-direction hooks, not tokens every pack is expected to set — the chrome font seam (`--zdc-chrome-font`, defaulting to `--font-sans`) already delivers a single cohesive typeface across the whole shell, which is what every bundled theme pack wants. Reach for one of these only when a pack deliberately wants the sidebar or TOC to diverge from the rest of the chrome.
+
+Their selectors name a desktop AND a mobile surface, and both are delivered in the production build: the mobile sidebar drawer and mobile TOC are zfb client islands, but Preact hydration preserves the SSR-rendered `data-*` attributes that match the virtual DOM, so `aside[data-zd-mobile-sidebar]` / `div[data-zd-mobile-toc]` are present in the live DOM alongside their desktop counterparts. `--zdc-sidebar-font` / `--zdc-toc-font` therefore reach the mobile drawer and mobile TOC exactly as they reach the desktop rail. The one exception is the zfb **dev server** (`pnpm dev`), which strips island-root `data-*` attributes as a dev-only quirk — these two selectors won't match while running `pnpm dev`, so verify a per-surface mobile font against a build (`pnpm build` + `pnpm preview`), not the dev server. Tracked as [zudolab/zudo-doc#2898](https://github.com/zudolab/zudo-doc/issues/2898). `--zdc-header-font` is unaffected either way — its selector, `header[data-header]`, is not an island.
+
+</Note>
 
 ### The `--zdc-surface-radius` meta-knob
 

@@ -1,0 +1,33 @@
+---
+title: 4.2.0
+description: Release notes for 4.2.0.
+sidebar_position: 1059
+---
+
+Released: 2026-07-18
+
+### Features
+
+- HtmlPreview gains a `fullHeight` opt-in prop for full-height embeds (18246fb7)
+- HtmlPreview gains `externalStyles` / `externalScripts` / `preflight` / `showResources` props for embedding and disclosing external resources (20c679ed)
+- New `DOC_HISTORY_SKIP_POSTBUILD` env var skips only the postBuild dropdown JSON step, leaving the preBuild Created/Updated/Author manifest intact (9234443c)
+- Scaffolds with docHistory enabled now emit a `dev:network` script for LAN access (e0c0f9f6)
+- The four preset-only config fields are now mirrored onto `CreateOptions` for scaffolding parity (a97ee2d0)
+
+### Bug Fixes
+
+- create-zudo-doc: the doc-history-server now starts alongside zfb dev when docHistory is enabled (7efda47e)
+- create-zudo-doc: disable pnpm 11's `minimumReleaseAge` gate in scaffolds, and warn about a parent workspace's gate when skipping the nested pnpm-workspace (1b3fe1a0, 27375853)
+- create-zudo-doc: ship claudeSkills content from `templates/`, not the monorepo root (103082e8)
+- setup-doc-skill: resolve nested-subdir symlinks, make SKILL.md commands runtime-conditional, and detect a `format:md` script name (5b4a6416, f58ab17e)
+- generator: add `.zfb-build/` to the generated `.gitignore`, and sync the tauri template CSP with the showcase (474f4f1a, da2f19b3)
+- Docs: corrected the metaTags fragment link to the hierarchical heading id (0728d985)
+- Mermaid: drop the semicolon from stateDiagram statement repair (3390d35d)
+- Tests: strip ANSI codes in eject slow-test output assertions (c2aad778)
+
+### Other Changes
+
+- Skills: authored scaffold variants of design-system, translate, and zudo-doc-version-bump, completing the drift-guard transition (317e3449, 167fe424)
+- Tests: added the generated-scaffold skill-reference integration guard, split the skills drift guard, and exempted scaffold-variant skills from the template-drift shell guard (ef233939, cd37d1c2)
+- Tests: synced the target-manifest exam fixture to the 13-file scaffold and re-baselined route-injection parity hashes (16faafd3, b1eea45b)
+- Docs: documented `dev:network` and zfb flag forwarding (9dbc4f4d)

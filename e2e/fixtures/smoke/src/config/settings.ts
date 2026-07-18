@@ -43,11 +43,15 @@ export const settings = {
   aiChatAllowedOrigins: [] as string[],
   aiChatGlobalDailyLimit: false as number | false,
   designTokenPanel: true as boolean,
+  // Mirrors the showcase default — themePackSwitcher stays off here
+  // (allowlisted, epic Theme Core #2812, #2826).
+  themePack: "default" as string,
   imageEnlarge: true as boolean,
   findInPage: false as boolean,
   dynamicPageTransition: true as boolean,
   frontmatterPreview: {} satisfies FrontmatterPreviewConfig as FrontmatterPreviewConfig | false,
   docHistory: true,
+  docHistoryExclude: [],
   bodyFootUtilArea: {
     docHistory: true,
     viewSourceLink: true,
@@ -59,7 +63,6 @@ export const settings = {
   defaultLocaleOnlyPrefixes: [] as string[],
   tocMinDepth: 2 as number,
   tocMaxDepth: 4 as number,
-  headingIdStrategy: "hierarchical" as "flat" | "hierarchical",
   headerNav: [
     {
       label: "Getting Started",

@@ -1,0 +1,380 @@
+/* ============================================================
+   Solar — zudo-doc theme pack (ADR docs/adr/theme-packs.md)
+
+   Solarized precision: low-eyestrain paper tones, blue/cyan/orange
+   accents, mono labels, technical calm in both modes. Light is the
+   base3 paper world, dark the base03 deep-teal world, with the
+   canonical Solarized green/cyan/blue/yellow/magenta syntax mapping.
+   Selective-contrast chrome: emphasized base02/base2 headings over
+   calm base01/base1 prose, a blue-tinted square active nav bar, mono
+   uppercase yellow micro-labels, and terminal-glyph admonitions.
+   Solar signatures: a faint sunrise wash atop the page, an orange
+   sun glyph on the logo, a solarized-yellow code-block gutter, and
+   the solarized accent spectrum as a cap strip on the flyout.
+   Source Sans 3 reading face, Source Code Pro code.
+
+   RADIUS DECISION: near-square. Terminal-technical shapes —
+   admonitions fully square, cards/controls a crisp 2–3px.
+
+   Every rule below is scoped under html[data-theme-pack="solar"] —
+   this is what makes the runtime pack swap atomic (Decision 3) and
+   lets the validator prove a pack can never leak styles while
+   inactive (Decision 6.7). The @font-face blocks are the sole
+   exception (at-rules can't be selector-scoped).
+
+   Prototype-selector adaptations against the REAL DOM (tokens-dump
+   §6 + component sources), noted inline where they matter:
+   - `.sb-group a`       → `#desktop-sidebar` (base2 wash) +
+                           `a[data-nav-active]` (blue band + square
+                           2px bar as an inset box-shadow so the
+                           nested tree's own padding never shifts)
+   - `.toc-active`       → `nav[data-zd-toc] a[aria-current="true"]`
+                           (toc/toc.tsx marks the active entry with
+                           aria-current, not a mock class); the
+                           prototype's absolute ::before bar becomes
+                           a border-left snug against the rail
+   - `.doc-pager`        → `.zd-content > nav[data-doc-pager] > a`
+                           (retargeted onto the stable hook,
+                           zudolab/zudo-doc#2879 — was
+                           `.zd-content > nav:last-of-type:not([aria-label])`)
+   - `.crumb-current`    → `main nav[aria-label="Breadcrumb"] li > span`
+                           (the current page is the only bare <span>
+                           in the breadcrumb list)
+   - `footer[data-footer]` → `footer[data-footer]` (retargeted onto the
+                           stable hook, zudolab/zudo-doc#2879 — was
+                           `.zd-sidebar-content-wrapper > footer`)
+   - `.tp-flyout`        → `div[data-switcher-card]` (retargeted onto
+                           the stable hook, zudolab/zudo-doc#2879 — was
+                           `div[role="dialog"][aria-label="Theme pack
+                           switcher"]`); the spectrum cap strip is a
+                           top-anchored background gradient (the
+                           fjord/hearth technique) instead of the
+                           prototype's ::before overlay
+   - `.hdr-search` / `.sb-group > p` / `.toc-title` — prototype-mock
+     markup with no stable hook; NOT ported. The signature mono
+     uppercase yellow micro-labels land on the stable surfaces that
+     speak the same dialect: pager labels and table headers.
+   - CONTRAST TUNING: the prototype's WCAG note covered only fg-on-bg.
+     Checked computationally against the real composited surfaces
+     (code panel, admonition 12% tints, sidebar wash), most inks
+     needed a nudge: light-mode inks run a step darker than canonical
+     Solarized (e.g. body base01 #586e75 → #4f6369, blue #1e70a8 →
+     #1c6a9f, syntax roles re-tuned against the base2 code panel) and
+     dark-mode accents a step brighter (blue #3f9bdb → #53a6df, and
+     the syntax roles against the base02 panel). Every text/background
+     pair below clears 4.5:1 in both modes (including the state hues
+     over their own 12% admonition tints and the accent over the
+     sidebar active band's 8% tint — self-tint pairs tuned to a fixed
+     point, since brightening an ink also brightens its tint).
+   ============================================================ */
+
+/* ---- Source Sans 3 — reading face and chrome. Variable 200–900
+        plus a true italic for the blockquote asides. Latin subsets
+        only (both families): a stray latin-ext or CJK glyph falls
+        through to the stack's system face. ---- */
+
+@font-face {
+  font-family: "Source Sans 3";
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url("./fonts/SourceSans3-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Source Sans 3";
+  font-style: italic;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url("./fonts/SourceSans3-italic-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- Source Code Pro — code, micro-labels, admonition titles.
+        Variable 200–900 plus a true italic for comments. ---- */
+
+@font-face {
+  font-family: "Source Code Pro";
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url("./fonts/SourceCodePro-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Source Code Pro";
+  font-style: italic;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url("./fonts/SourceCodePro-italic-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+html[data-theme-pack="solar"] {
+  /* Tier-2 semantic roles — base3 paper by day, base03 teal by
+     night. Both modes always via light-dark(). */
+  --zd-bg: light-dark(#fdf6e3, #002b36);
+  --zd-fg: light-dark(#4f6369, #93a1a1);
+  --zd-selection-bg: light-dark(#d2e4e0, #14494f);
+  --zd-selection-fg: light-dark(#073642, #eee8d5);
+  --zd-surface: light-dark(#eee8d5, #073642);
+  --zd-muted: light-dark(#586b72, #8c9c9e);
+
+  /* blue is THE accent; hover shifts to cyan — the two cool
+     solarized hues doing the classic blue→cyan interplay */
+  --zd-accent: light-dark(#1c6a9f, #53a6df);
+  --zd-accent-hover: light-dark(#12746c, #2caaa0);
+
+  --zd-code-bg: light-dark(#eee8d5, #073642);
+  --zd-code-fg: light-dark(#4f6369, #93a1a1);
+
+  --zd-success: light-dark(#5d6c00, #91a600);
+  --zd-danger: light-dark(#b52220, #e87872);
+  --zd-warning: light-dark(#b33f0f, #e37e50);
+  --zd-info: light-dark(#1c6a9f, #53a6df);
+
+  /* syntax — the canonical solarized code mapping: green keywords,
+     cyan strings, blue callables, yellow types, magenta numbers —
+     all 9 roles, each side tuned against its base2/base02 code
+     panel. inserted/deleted reuse the green/red state hues. */
+  --zd-syntax-comment: light-dark(#586b72, #899da4);
+  --zd-syntax-string: light-dark(#12746c, #2caaa0);
+  --zd-syntax-number: light-dark(#bb2d72, #e474aa);
+  --zd-syntax-keyword: light-dark(#606f00, #8ea300);
+  --zd-syntax-callable: light-dark(#1d6da3, #49a0dd);
+  --zd-syntax-type: light-dark(#836300, #c19200);
+  --zd-syntax-name: light-dark(#4f6369, #93a1a1);
+  --zd-syntax-inserted: light-dark(#5d6c00, #91a600);
+  --zd-syntax-deleted: light-dark(#b52220, #e87872);
+
+  /* fonts — Source Sans 3 reading face, Source Code Pro code.
+     Headings keep the sans: precision, not display flair. */
+  --font-sans: "Source Sans 3", system-ui, sans-serif;
+  --font-mono: "Source Code Pro", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Tier-3 component seams — semibold slightly-tight headings,
+     square admonitions, crisp 2px cards. The nav-active fill goes
+     transparent; the blue band + bar are painted in the extras. */
+  --zdc-doc-title-weight: 600;
+  --zdc-doc-title-tracking: -0.015em;
+  --zdc-doc-h2-weight: 600;
+  --zdc-doc-h2-tracking: -0.005em;
+  --zdc-admonition-radius: 0;
+  --zdc-admonition-border-width: 3px;
+  --zdc-card-radius: 2px;
+  --zdc-nav-active-indicator-color: transparent;
+  --zdc-nav-active-weight: 600;
+}
+
+/* ---- Solar extras ---- */
+
+/* faint sunrise wash at the top of the page — the "solar" glow,
+   solarized-yellow at whisper opacity */
+html[data-theme-pack="solar"] body {
+  background-image: linear-gradient(
+    180deg,
+    light-dark(rgba(181, 137, 0, 0.09), rgba(181, 137, 0, 0.07)) 0,
+    transparent 260px
+  );
+}
+
+/* logo gets the sun glyph in solarized orange */
+html[data-theme-pack="solar"] [data-header-logo] {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+html[data-theme-pack="solar"] [data-header-logo]::after {
+  content: " ☉";
+  color: light-dark(#b33f0f, #e37e50);
+  font-weight: 400;
+}
+
+/* selective contrast: headings + strong step to the emphasized pole
+   (base02 on light / base2 on dark) while prose stays calm */
+html[data-theme-pack="solar"] .zd-content h1,
+html[data-theme-pack="solar"] .zd-content h2,
+html[data-theme-pack="solar"] .zd-content h3,
+html[data-theme-pack="solar"] .zd-content h4,
+html[data-theme-pack="solar"] .zd-content strong,
+html[data-theme-pack="solar"] main nav[aria-label="Breadcrumb"] li > span {
+  color: light-dark(#073642, #eee8d5);
+}
+
+/* h2 rule: a precise 2px blue→cyan fade instead of the default fg
+   gradient. The SSR-inlined `style="border-image:linear-gradient(...)"`
+   bar is defeated with border-image none !important (Decision 6.6's
+   sole allowlisted carve-out) + a zeroed border-top; the fade is then
+   painted as a 2px top-anchored background gradient. */
+html[data-theme-pack="solar"] .zd-content h2 {
+  border-image: none !important;
+  border-top-width: 0;
+  background-image: linear-gradient(
+    to right,
+    var(--zd-accent),
+    var(--zd-accent-hover) 45%,
+    transparent 88%
+  );
+  background-size: 100% 2px;
+  background-repeat: no-repeat;
+  background-position: top left;
+}
+
+/* prose links: quiet underline that sharpens to cyan on hover */
+html[data-theme-pack="solar"] .zd-content a {
+  text-decoration-color: color-mix(in srgb, var(--zd-accent) 40%, transparent);
+  text-underline-offset: 2px;
+}
+html[data-theme-pack="solar"] .zd-content a:hover {
+  text-decoration-color: var(--zd-accent-hover);
+}
+
+/* sidebar: soft base2 wash, active item = flat blue-tinted band with
+   a square 2px bar. The bar is an inset box-shadow (not a border) so
+   the tree's own indentation never shifts; the fill token above is
+   transparent so this band is the only paint. */
+html[data-theme-pack="solar"] #desktop-sidebar {
+  background-color: color-mix(in srgb, var(--zd-surface) 45%, var(--zd-bg));
+  border-right-color: light-dark(#e5dec8, #0b4354);
+}
+html[data-theme-pack="solar"] #desktop-sidebar a {
+  border-radius: 0;
+}
+/* Exclude the current page: root/branch current nodes carry
+   aria-current="page" without data-nav-active and keep the base
+   inverted `bg-fg text-bg` fill — recoloring their text to the
+   accent on hover would sit accent-on-fg (~1:1). */
+html[data-theme-pack="solar"] #desktop-sidebar a:not([aria-current="page"]):hover {
+  color: var(--zd-accent);
+}
+html[data-theme-pack="solar"] a[data-nav-active] {
+  background: color-mix(in srgb, var(--zd-accent) 8%, transparent);
+  color: var(--zd-accent);
+  border-radius: 0 2px 2px 0;
+  box-shadow: inset 2px 0 0 0 var(--zd-accent);
+}
+
+/* TOC: active entry = accent text + a square bar over the rail
+   instead of the inverted fill. The ul's overflow clips at its
+   padding edge, so the entry pulls back exactly to the padding edge
+   and the 2px bar sits snug against the rail. */
+html[data-theme-pack="solar"] nav[data-zd-toc] a:hover {
+  color: var(--zd-accent);
+}
+html[data-theme-pack="solar"] nav[data-zd-toc] a[aria-current="true"] {
+  background: none;
+  color: var(--zd-accent);
+  font-weight: 600;
+  margin-left: calc(-1 * var(--spacing-hsp-lg, 1rem));
+  padding-left: calc(var(--spacing-hsp-lg, 1rem) - 2px);
+  border-left: 2px solid var(--zd-accent);
+}
+
+/* code block: the centerpiece — base2/base02 panel behind a
+   solarized-yellow left rule, like a terminal gutter */
+html[data-theme-pack="solar"] pre.hi-root {
+  border-radius: 3px;
+  border-color: light-dark(#e3dcc6, #0e4250);
+  border-left: 3px solid color-mix(in srgb, #b58900 55%, transparent);
+}
+html[data-theme-pack="solar"] .hi-com {
+  font-style: italic;
+}
+
+/* inline code: hairline-bordered chips */
+html[data-theme-pack="solar"] .zd-content code:not(pre code) {
+  border: 1px solid light-dark(rgba(88, 107, 114, 0.25), rgba(140, 156, 158, 0.22));
+  border-radius: 3px;
+  padding: 1px 0.35rem;
+}
+
+/* admonitions: terminal-style mono uppercase titles with prompt
+   glyphs instead of emoji (note/tip/warning swap; the other variants
+   keep their stock icons); square corners come from the token */
+html[data-theme-pack="solar"] [data-admonition] .admonition-title {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+html[data-theme-pack="solar"] [data-admonition="note"] .admonition-title::before {
+  content: "❯ ";
+}
+html[data-theme-pack="solar"] [data-admonition="tip"] .admonition-title::before {
+  content: "✓ ";
+}
+html[data-theme-pack="solar"] [data-admonition="warning"] .admonition-title::before {
+  content: "▲ ";
+}
+
+/* blockquote: cyan rule, italic — a quiet aside */
+html[data-theme-pack="solar"] .zd-content blockquote {
+  border-left: 3px solid color-mix(in srgb, var(--zd-accent-hover) 70%, transparent);
+  font-style: italic;
+}
+
+/* table: mono uppercase micro-label headers, blue-tinted header
+   rule, base2-wash row hover */
+html[data-theme-pack="solar"] .zd-content th {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--zd-muted);
+  border-bottom: 2px solid color-mix(in srgb, var(--zd-accent) 45%, transparent);
+}
+html[data-theme-pack="solar"] .zd-content tbody tr:hover td {
+  background: color-mix(in srgb, var(--zd-surface) 55%, transparent);
+}
+
+/* pager: crisp cards, mono uppercase yellow micro-labels (the
+   solarized-yellow terminal dialect), cyan hover wash. The DocPager
+   is the article's LAST unlabelled direct-child nav. */
+html[data-theme-pack="solar"] .zd-content > nav[data-doc-pager] > a div {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: light-dark(#876500, #be9000);
+}
+html[data-theme-pack="solar"] .zd-content > nav[data-doc-pager] > a:hover {
+  border-color: var(--zd-accent-hover);
+  background: color-mix(in srgb, var(--zd-accent-hover) 7%, transparent);
+}
+
+/* header + footer hairlines tuned to the paper/teal worlds */
+html[data-theme-pack="solar"] header[data-header] {
+  border-bottom-color: light-dark(#ddd6c1, #0b4354);
+}
+html[data-theme-pack="solar"] footer[data-footer] {
+  border-top-color: light-dark(#ddd6c1, #0b4354);
+}
+
+/* theme-pack flyout: the solarized accent spectrum as a 3px cap
+   strip — painted as a top-anchored background gradient (the fjord
+   technique) so the hairline border keeps its own color */
+html[data-theme-pack="solar"] div[data-switcher-card] {
+  border-color: light-dark(#ddd6c1, #0e4250);
+  background-color: var(--zd-surface);
+  background-image: linear-gradient(90deg, #268bd2, #2aa198, #b58900, #cb4b16);
+  background-size: 100% 3px;
+  background-repeat: no-repeat;
+  background-position: top left;
+  box-shadow: 0 12px 32px -8px light-dark(rgba(88, 110, 117, 0.35), rgba(0, 0, 0, 0.55));
+}
+html[data-theme-pack="solar"]
+  div[data-switcher-card]
+  p[aria-live="polite"] {
+  color: light-dark(#073642, #eee8d5);
+  font-weight: 600;
+}
