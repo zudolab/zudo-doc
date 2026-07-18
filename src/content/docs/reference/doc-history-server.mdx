@@ -20,13 +20,24 @@ This separation enables a parallel CI strategy where the zfb site build and hist
 
 ## Server Mode (Local Development)
 
-The server runs on a configurable port (default 4322) and serves document history via a REST API. In the standard `pnpm dev` setup, zfb and the doc-history-server run concurrently via `run-p`.
+The server runs on a configurable port (default 4322) and serves document history via a REST API. A project scaffolded with `docHistory` enabled gets this wired automatically: `create-zudo-doc` emits a `dev` script of `run-p dev:zfb dev:history`, so zfb and the doc-history-server run concurrently.
 
 ### Starting the Server
 
+Run it through the generated `dev:history` script — `doc-history-server` lives only in the project's `node_modules/.bin`, which package-manager scripts put on `PATH` automatically but a bare shell prompt does not:
+
 ```sh
-pnpm dev -- --content-dir src/content/docs --locale ja:src/content/docs-ja --port 4322
+pnpm dev:history
+# or: npm run dev:history
 ```
+
+Under the hood, that script resolves to:
+
+```sh
+doc-history-server --port 4322 --content-dir src/content/docs
+```
+
+When `i18n` is also enabled, `create-zudo-doc` appends a `--locale <lang>:src/content/docs-<lang>` flag for the secondary locale automatically. To run the server manually with other flags, see [Server Options](#server-options) below.
 
 ### Endpoints
 
@@ -73,7 +84,7 @@ Health check endpoint.
 
 In dev mode, the doc-history zfb plugin's `devMiddleware` hook proxies `/doc-history/*` requests to this server. This means the history panel in the browser transparently fetches from the standalone server through the zfb dev server.
 
-The root `pnpm dev` command runs both zfb (port 4321) and the doc-history-server (port 4322) concurrently using `run-p`.
+A `docHistory`-enabled project's generated `dev` script (`run-p dev:zfb dev:history`) runs both zfb (port 4321) and the doc-history-server (port 4322) concurrently.
 
 ## CLI Mode (CI Builds)
 

@@ -785,6 +785,12 @@ function generatePackageJson(choices: UserChoices) {
     // tsx is no longer needed here: the relocated package plugin imports the
     // runner directly (no `tsx -e` spawn) since the package ships compiled
     // dist/ — package-first migration #2321 (#2337).
+    // npm-run-all2 provides `run-p`, used by the docHistory `dev` script
+    // (below) to run the zfb dev server and the doc-history API server
+    // concurrently — otherwise the :4322 proxy target never starts and the
+    // feature silently looks broken (#2926). Same maintained fork/pin this
+    // monorepo's own root package.json uses.
+    devDeps["npm-run-all2"] = "^7.0.2";
   }
 
   // claudeResources: tsx is no longer needed. The relocated package plugin
@@ -805,6 +811,33 @@ function generatePackageJson(choices: UserChoices) {
     preview: "zfb preview",
     check: "zfb check",
   };
+
+  if (choices.features.includes("docHistory")) {
+    // A docHistory-enabled project needs the zfb dev server AND the
+    // doc-history API server (:4322, proxied by the zfb doc-history plugin)
+    // running concurrently — otherwise the Created/Updated/Author block
+    // silently never appears in dev (#2926). `doc-history-server` is the bin
+    // shipped by the @takazudo/zudo-doc-history-server dep added above;
+    // `run-p` (npm-run-all2, added to devDependencies above) runs both.
+    scripts.dev = "run-p dev:zfb dev:history";
+    scripts["dev:zfb"] = "zfb dev";
+    // Relative --content-dir/--locale paths are resolved by resolveContentPath
+    // (packages/doc-history-server/src/args.ts) against INIT_CWD (falling back
+    // to process.cwd()) — correct for the supported invocation (`<pm> dev` /
+    // `<pm> run dev` from the project root, which is what run-p's child
+    // processes inherit). It resolves against the WRONG directory only if this
+    // generated project is itself nested inside a larger pnpm/npm workspace
+    // and dev:history is invoked via `<pm> --filter <this-package> ...` from
+    // that outer workspace root — an unsupported, non-generator invocation
+    // path, not the default `<pm> dev`.
+    let devHistoryScript =
+      "doc-history-server --port 4322 --content-dir src/content/docs";
+    if (choices.features.includes("i18n")) {
+      const secondaryLang = getSecondaryLang(choices.defaultLang);
+      devHistoryScript += ` --locale ${secondaryLang}:src/content/docs-${secondaryLang}`;
+    }
+    scripts["dev:history"] = devHistoryScript;
+  }
 
   if (choices.features.includes("tagGovernance")) {
     // Both package-owned bins load the same explicit project config. `--`
