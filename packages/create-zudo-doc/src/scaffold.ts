@@ -259,8 +259,12 @@ export async function scaffold(choices: UserChoices): Promise<void> {
   // 2b. Copy user-facing Claude Code skills when enabled
   // Ships the curated zudo-doc-* skills (design-system, translate, version-bump)
   // from the package's own templates/ (npm `files` cannot reach outside the
-  // package dir, so these are committed mirrors of the monorepo's
-  // .claude/skills/, not read from there directly — see #2921).
+  // package dir, so these are committed, scaffold-authored variants of the
+  // monorepo's .claude/skills/, not read from there directly and not
+  // byte-identical to it — each was rewritten to describe the scaffold-real
+  // flow (no monorepo-only paths/scripts) instead of the monorepo's own
+  // flow — see #2921 (original copy step) and epic #2946 (variant
+  // conversion, #2947/#2948).
   if (choices.features.includes("claudeSkills")) {
     const userFacingSkills = [
       "zudo-doc-design-system",

@@ -11,15 +11,23 @@ argument-hint: "[topic: tokens, colors, component-first, palette]"
 
 ## How to Use
 
-Based on the topic, read the specific reference doc:
+Based on the topic, read the specific reference doc. These pages aren't
+scaffolded into a fresh project — they're the published zudo-doc showcase
+docs, kept up to date at the source:
 
-| Topic | File |
+| Topic | Where to look |
 |-------|------|
-| Spacing, typography, layout tokens | `src/content/docs/reference/design-system.mdx` |
-| Component-first methodology | `src/content/docs/reference/component-first.mdx` |
-| Color tokens, palette, schemes | `src/content/docs/reference/color.mdx` |
+| Spacing, typography, layout tokens | https://zudo-doc.takazudomodular.com/docs/reference/design-system |
+| Component-first methodology | https://zudo-doc.takazudomodular.com/docs/reference/component-first |
+| Color tokens, palette, schemes | https://zudo-doc.takazudomodular.com/docs/reference/color |
 
-Read ONLY the file relevant to your task. Apply its rules strictly.
+For the actual token values in THIS project, the source of truth is local:
+`src/styles/global.css` (the `@theme` override block) plus the shipped
+`@takazudo/zudo-doc/theme.css` and `@takazudo/zudo-doc/content.css` (imported
+by `global.css` — read them via `node_modules/@takazudo/zudo-doc/dist/` for
+the resolved token names/values).
+
+Read ONLY the section relevant to your task. Apply its rules strictly.
 
 ## Quick Rules (always apply)
 
@@ -35,7 +43,7 @@ Read ONLY the file relevant to your task. Apply its rules strictly.
 - **NEVER** use Tailwind default colors (`bg-gray-500`, `text-blue-600`) — they are reset to `initial`
 - **NEVER** use arbitrary values (`text-[0.875rem]`, `p-[1.2rem]`) when a token exists
 - **ALWAYS** use project tokens: `text-fg`, `bg-surface`, `border-muted`, `p-hsp-md`, `text-small`
-- Spacing: `hsp-*` (horizontal), `vsp-*` (vertical) — see design-system.mdx for full list
+- Spacing: `hsp-*` (horizontal), `vsp-*` (vertical) — see the design-system reference doc above for the full list
 - Typography: `text-caption`, `text-small`, `text-body`, `text-heading` etc.
 
 ### Color Tokens (three-tier system)
@@ -43,13 +51,13 @@ Read ONLY the file relevant to your task. Apply its rules strictly.
 - **Tier 1** (ramps): shared `base` (5 stops), `accent` (3 stops), and `state` (`danger`/`success`/`warning`/`info`) OKLCH ramps — no Tailwind utility reaches these directly (no `p0`–`p15`-style classes); they only feed Tier 2
 - **Tier 2** (semantic): `text-fg`, `bg-surface`, `border-muted`, `text-accent` — the only Tailwind-facing color tokens; prefer these always
 - **NEVER** use hardcoded hex values in components
-- Both bundled schemes (`Default Light`, `Default Dark`) share the same ramps; only their per-mode wiring (`map`) differs — see `packages/zudo-doc/src/color-schemes-defaults/index.ts` (package-owned; the former host copy, `src/config/color-schemes.ts`, was deleted as byte-identical dead weight in the minimal-scaffold cutover, epic #2651)
+- Both bundled schemes (`Default Light`, `Default Dark`) share the same ramps; only their per-mode wiring (`map`) differs. This project doesn't own a copy of the ramp/map definitions — they're package-owned, shipped compiled under `node_modules/@takazudo/zudo-doc/dist/color-schemes-defaults/`. Only override the `@theme` tokens you actually need to change, in `src/styles/global.css`
 
 ### Search & highlight tokens (role-split)
 
 Highlight roles are deliberately split across dedicated semantic tokens — do **not** share one token across unrelated highlight UIs.
 
-- `matched-keyword-bg` / `matched-keyword-fg` — background and foreground of the search panel `<mark>` element. Driven by `--color-matched-keyword-bg` / `--color-matched-keyword-fg`; live-editable in the Design Token Panel. This is the single source of truth for "why is this color yellow in the search results" — the panel swatch matches the rendered highlight 1:1.
+- `matched-keyword-bg` / `matched-keyword-fg` — background and foreground of the search panel `<mark>` element. Driven by `--color-matched-keyword-bg` / `--color-matched-keyword-fg`; live-editable in the Design Token Panel, if that feature is enabled. This is the single source of truth for "why is this color yellow in the search results" — the panel swatch matches the rendered highlight 1:1.
 - `warning` — drives admonitions (`:::warning`), find-in-page (`.find-match`, `.find-match-active`), and any UI that is semantically a warning. Do **not** reuse it for new UI-chrome highlights.
 
 **Rule**: when a new highlight role appears (new kind of mark, new pill, new callout), add a dedicated semantic token rather than bolting it onto `--color-warning` or another existing token. Each visible highlight color should map to exactly one panel swatch.
@@ -61,12 +69,30 @@ Any element that navigates (rendered as `<a href>` or behaves as a link) MUST ha
 - **Links (do underline)**: doc content links, sidebar items, header main-nav, header overflow menu items, color-tweak panel unselected tabs, search result rows, footer links, doc history entries, breadcrumb trails, mobile TOC entries.
 - **Controls (do NOT underline)**: buttons, toggles, sidebar resizer, palette selectors, color swatches, close icons. These use border/bg hover instead.
 
-Precedents to copy the pattern from: any current `.tsx` component in `src/components/` (e.g. `site-tree-nav.tsx`).
+Precedent to copy the pattern from: every package-owned interactive
+component already follows it (sidebar tree nav, header nav, breadcrumb
+trail, and more, all shipped from `@takazudo/zudo-doc`) — see the live
+showcase at https://zudo-doc.takazudomodular.com for a working reference.
+Match the same hover/focus pairing in any new component you add under
+`src/components/`, or in a package component you swizzle out via
+`zudo-doc eject <component>`.
 
-See also: `/css-wisdom` for light-mode / dark-mode contrast rules and the broader three-tier token strategy.
+### Light-mode / dark-mode contrast
+
+- Every color token must resolve to a legible foreground/background pairing
+  in BOTH bundled schemes (`Default Light`, `Default Dark`) — never
+  hardcode a value that only works in one mode.
+- Prefer the Tier 2 semantic tokens (`text-fg`, `bg-surface`, `border-muted`,
+  ...) over any raw color — they're the only values guaranteed to be
+  re-mapped per scheme.
+- When adding a new token, define it for both scheme `map`s (or as a
+  scheme-agnostic ramp value) so light/dark parity is never accidental.
 
 ### Server-rendered Preact vs client islands
 
-- Default to **server-rendered Preact `.tsx`** (no `client:*` directive) — emits zero JS. See `src/CLAUDE.md` for the canonical rule: "All components are Preact `.tsx` — there are no `.astro` files."
+- All components in this project are Preact `.tsx` — there are no `.astro`
+  files.
+- Default to **server-rendered Preact `.tsx`** (no `client:*` directive) —
+  emits zero JS.
 - Promote to a **client island** only when interactivity is needed
 - Both follow the same utility-class approach
