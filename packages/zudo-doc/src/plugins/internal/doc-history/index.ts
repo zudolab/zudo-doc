@@ -59,6 +59,8 @@ export interface DocHistoryOptions {
   docsDir: string;
   /** Optional non-default locales, keyed by locale code (e.g. `{ ja: { dir: "src/content/docs-ja" } }`). */
   locales?: Record<string, DocHistoryLocaleConfig>;
+  /** Slug globs excluded from pre-build metadata and post-build history JSON. */
+  exclude?: string[];
   /**
    * Port the standalone `@takazudo/zudo-doc-history-server` listens on.
    * Defaults to `4322` to match the server's CLI default. Only used by
@@ -306,6 +308,12 @@ export function buildGenerateCliArgs(
   if (options.locales) {
     for (const [key, locale] of Object.entries(options.locales)) {
       args.push("--locale", `${key}:${locale.dir}`);
+    }
+  }
+
+  if (options.exclude) {
+    for (const pattern of options.exclude) {
+      args.push("--exclude", pattern);
     }
   }
 

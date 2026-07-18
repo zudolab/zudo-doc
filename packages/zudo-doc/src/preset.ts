@@ -93,6 +93,7 @@ export interface PresetSettings {
   llmsTxt?: boolean;
   changelogs?: PresetChangelogConfig[] | false;
   docHistory?: boolean;
+  docHistoryExclude?: string[];
   claudeResources?: PresetClaudeResourcesConfig | false;
   /** "owner/repo" — when set, enables `#123` / SHA autolinks in markdown. Omit to disable entirely. */
   githubAutolinksRepo?: string;
@@ -554,6 +555,7 @@ function buildPlugins(
               docsDir: settings.docsDir,
               locales: localeRecord,
               base: settings.base,
+              exclude: settings.docHistoryExclude ?? [],
             },
           },
         ]
