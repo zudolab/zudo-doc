@@ -1,0 +1,33 @@
+---
+title: 4.2.0
+description: 4.2.0のリリースノート。
+sidebar_position: 1059
+---
+
+リリース日: 2026-07-18
+
+### 機能
+
+- HtmlPreview に、全高埋め込み用のオプトインプロップ `fullHeight` を追加しました (18246fb7)
+- HtmlPreview に、外部リソースの埋め込みと開示を行う `externalStyles` / `externalScripts` / `preflight` / `showResources` プロップを追加しました (20c679ed)
+- 新しい環境変数 `DOC_HISTORY_SKIP_POSTBUILD` は postBuild のドロップダウン JSON 生成ステップのみをスキップし、preBuild の作成日/更新日/作成者マニフェストはそのまま維持します (9234443c)
+- docHistory を有効にしたスキャフォールドで、LAN アクセス用の `dev:network` スクリプトを出力するようになりました (e0c0f9f6)
+- preset 専用の 4 つの設定フィールドを、スキャフォールドのパリティのため `CreateOptions` にもミラーしました (a97ee2d0)
+
+### バグ修正
+
+- create-zudo-doc: docHistory が有効な場合に、zfb dev とともに doc-history-server を起動するよう修正しました (7efda47e)
+- create-zudo-doc: スキャフォールドで pnpm 11 の `minimumReleaseAge` ゲートを無効化し、ネストした pnpm-workspace をスキップする際に親ワークスペースのゲートについて警告するよう修正しました (1b3fe1a0, 27375853)
+- create-zudo-doc: claudeSkills のコンテンツをモノレポのルートではなく `templates/` から配布するよう修正しました (103082e8)
+- setup-doc-skill: ネストしたサブディレクトリのシンボリックリンクを解決し、SKILL.md のコマンドを実行時条件付きにし、`format:md` というスクリプト名も検出するよう修正しました (5b4a6416, f58ab17e)
+- generator: 生成される `.gitignore` に `.zfb-build/` を追加し、tauri テンプレートの CSP をショーケースと同期しました (474f4f1a, da2f19b3)
+- ドキュメント: metaTags のフラグメントリンクを階層化された見出し id に修正しました (0728d985)
+- Mermaid: stateDiagram のステートメント修復からセミコロンを除去しました (3390d35d)
+- テスト: eject の slow-test 出力アサーションで ANSI コードを除去するよう修正しました (c2aad778)
+
+### その他の変更
+
+- スキル: design-system、translate、zudo-doc-version-bump のスキャフォールドバリアントを作成し、ドリフトガードの移行を完了しました (317e3449, 167fe424)
+- テスト: 生成スキャフォールドのスキル参照統合ガードを追加し、スキルドリフトガードを分割し、スキャフォールドバリアントのスキルをテンプレートドリフトのシェルガードから除外しました (ef233939, cd37d1c2)
+- テスト: target-manifest の exam フィクスチャを 13 ファイルのスキャフォールドに同期し、route-injection のパリティハッシュを再ベースライン化しました (16faafd3, b1eea45b)
+- ドキュメント: `dev:network` と zfb フラグの転送についてドキュメント化しました (9dbc4f4d)
