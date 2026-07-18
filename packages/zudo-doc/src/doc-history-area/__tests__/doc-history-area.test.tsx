@@ -12,11 +12,13 @@ const GITHUB_URL = "https://github.com/example/docs";
 function renderArea(
   docHistoryMeta: Record<string, unknown>,
   sourceFileExt?: ".mdx" | ".md",
+  docHistoryExclude?: string[],
 ): string {
   const ctx = makeFakeChromeContext({
     settings: {
       githubUrl: GITHUB_URL,
       bodyFootUtilArea: { viewSourceLink: true },
+      docHistoryExclude,
     },
     overrides: { hostBindings: { docHistoryMeta } } as Partial<ChromeContext>,
   });
@@ -32,6 +34,21 @@ function renderArea(
     />,
   );
 }
+
+describe("createDocHistoryArea exclusion render state", () => {
+  it("suppresses the DocHistory island for a matched history slug", () => {
+    const html = renderArea({}, ".mdx", ["guide"]);
+
+    expect(html).toBe("");
+    expect(html).not.toContain('data-zfb-island-skip-ssr="DocHistory"');
+  });
+
+  it("renders the DocHistory island for a non-matching history slug", () => {
+    const html = renderArea({}, ".mdx", ["private/**"]);
+
+    expect(html).toContain('data-zfb-island-skip-ssr="DocHistory"');
+  });
+});
 
 describe("createDocHistoryArea source extension contract", () => {
   it.each([

@@ -20,6 +20,7 @@
 
 import type { VNode } from "preact";
 import { Island } from "@takazudo/zfb";
+import { compileExclude } from "@takazudo/zudo-doc-history-server/exclude";
 import { BodyFootUtilArea } from "../body-foot-util/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
@@ -40,6 +41,7 @@ export interface DocHistoryMetaEntry {
 /** Settings subset read by the DocHistoryArea factory. */
 export interface DocHistoryAreaSettings {
   docHistory: boolean;
+  docHistoryExclude?: string[];
   bodyFootUtilArea: { viewSourceLink?: boolean } | false | undefined;
   base?: string | null;
 }
@@ -104,6 +106,7 @@ export function createDocHistoryArea<S extends Settings = Settings>(
 ): (props: DocHistoryAreaProps) => VNode | null {
   assertChromeContext(ctx, "createDocHistoryArea");
   const settings = ctx.settings as unknown as DocHistoryAreaSettings;
+  const isHistoryExcluded = compileExclude(settings.docHistoryExclude ?? []);
   const defaultLocale = ctx.defaultLocale;
   const docHistoryMeta = (ctx.hostBindings.docHistoryMeta ?? {}) as Record<
     string,
@@ -142,6 +145,9 @@ export function createDocHistoryArea<S extends Settings = Settings>(
     // meta key "ja/index". See @takazudo/zudo-doc/slug `toHistorySlug` and the
     // collectContentFiles walk in packages/doc-history-server. (#1891)
     const historySlug = toHistorySlug(slug);
+
+    // Suppress the island entirely so excluded pages never request absent JSON.
+    if (isHistoryExcluded(historySlug)) return null;
 
     // On EN-fallback locale pages the history data exists only at the bare
     // (non-locale-prefixed) path — the prebuild/server writes locale-prefixed
