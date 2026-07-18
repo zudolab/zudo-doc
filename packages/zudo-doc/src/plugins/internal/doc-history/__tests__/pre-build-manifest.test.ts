@@ -133,6 +133,45 @@ describe("runDocHistoryMetaStep (#2517)", () => {
     expect(manifest["untracked"]).toBeUndefined();
   });
 
+  it("omits excluded slugs for every locale while preserving remaining order", async () => {
+    const docsAbs = path.resolve(projectRoot, DOCS_DIR);
+    const jaAbs = path.resolve(projectRoot, JA_DIR);
+    stubFiles({
+      [docsAbs]: ["keep.mdx", "drafts/hidden.mdx", "last.mdx"],
+      [jaAbs]: ["keep.mdx", "drafts/hidden.mdx", "last.mdx"],
+    });
+    const meta = {
+      oldest: { author: "Alice", date: "2024-01-01T00:00:00Z" },
+      newest: { author: "Alice", date: "2024-01-02T00:00:00Z" },
+    };
+    mocks.getAllFilesFirstLastMetaAsync.mockResolvedValue(
+      new Map([
+        [`${docsAbs}/keep.mdx`, meta],
+        [`${docsAbs}/drafts/hidden.mdx`, meta],
+        [`${docsAbs}/last.mdx`, meta],
+        [`${jaAbs}/keep.mdx`, meta],
+        [`${jaAbs}/drafts/hidden.mdx`, meta],
+        [`${jaAbs}/last.mdx`, meta],
+      ]),
+    );
+
+    const { runDocHistoryMetaStep } = await import("../pre-build.js");
+    await runDocHistoryMetaStep({
+      projectRoot,
+      docsDir: DOCS_DIR,
+      locales: { ja: { dir: JA_DIR } },
+      exclude: ["drafts/**"],
+      logger: { info() {} },
+    });
+
+    expect(Object.keys(JSON.parse(readManifest()))).toEqual([
+      "keep",
+      "last",
+      "ja/keep",
+      "ja/last",
+    ]);
+  });
+
   it("short-circuits to literal `{}\\n` under SKIP_DOC_HISTORY=1 without walking git", async () => {
     process.env["SKIP_DOC_HISTORY"] = "1";
     const { runDocHistoryMetaStep } = await import("../pre-build.js");

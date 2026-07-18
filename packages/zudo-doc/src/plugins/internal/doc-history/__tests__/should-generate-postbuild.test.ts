@@ -1,9 +1,24 @@
 import { describe, it, expect } from "vitest";
 import {
+  buildGenerateCliArgs,
   shouldGeneratePostBuild,
   DOC_HISTORY_GEN_ENV,
   DOC_HISTORY_SKIP_POSTBUILD_ENV,
 } from "../index.js";
+
+describe("buildGenerateCliArgs", () => {
+  it("emits one --exclude pair per slug glob", () => {
+    const args = buildGenerateCliArgs(
+      { docsDir: "src/content/docs", exclude: ["a/**", "b"] },
+      "dist",
+    );
+
+    const excludeValues = args.flatMap((arg, index) =>
+      arg === "--exclude" ? [args[index + 1]] : [],
+    );
+    expect(excludeValues).toEqual(["a/**", "b"]);
+  });
+});
 
 // #1986: postBuild per-page JSON generation flipped from opt-out to opt-in for
 // local builds. These cases lock in the decision table so a future refactor
