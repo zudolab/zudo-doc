@@ -1,5 +1,6 @@
 import { execSync, execFileSync } from "child_process";
 import fs from "fs-extra";
+import path from "path";
 
 // Project-name grammar (locked by F4 — S4 #2013):
 // /^[a-z0-9][a-z0-9._-]*$/, max 214 chars, unscoped, used as both directory
@@ -118,6 +119,27 @@ export function initGitRepo(dir: string): GitInitResult {
       status: "failed",
       message: err instanceof Error ? err.message : String(err),
     };
+  }
+}
+
+/**
+ * Whether an ANCESTOR of `dir` (walking up from `dir`'s parent, not `dir`
+ * itself — `dir` is the fresh project root and never has one yet) already
+ * has a `pnpm-workspace.yaml`. Mirrors `initGitRepo`'s "never nest"
+ * precedent above: pnpm resolves the nearest `pnpm-workspace.yaml` upward
+ * from cwd as the workspace root, so writing a new one inside an existing
+ * pnpm monorepo (e.g. scaffolding into `apps/docs/` under a parent
+ * workspace) would carve the generated project out of that parent
+ * workspace's install/lockfile instead of joining it (codex-review finding,
+ * #2923).
+ */
+export function hasAncestorPnpmWorkspace(dir: string): boolean {
+  let current = path.dirname(path.resolve(dir));
+  while (true) {
+    if (fs.existsSync(path.join(current, "pnpm-workspace.yaml"))) return true;
+    const parent = path.dirname(current);
+    if (parent === current) return false; // reached the filesystem root
+    current = parent;
   }
 }
 

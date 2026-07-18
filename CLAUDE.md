@@ -121,7 +121,7 @@ packages/
 ├── search-worker/        # CF Worker for search API
 ├── doc-history-server/   # Doc history REST API + CLI generator
 ├── zudo-doc/             # Shared layout + integration package — owns chrome/routes/islands/plugins/preset (@takazudo/zudo-doc)
-└── create-zudo-doc/      # CLI scaffold tool — emits the locked ~12-file minimal manifest
+└── create-zudo-doc/      # CLI scaffold tool — emits the locked ~13-file minimal manifest
 
 src/
 ├── chrome-bindings.tsx   # Real ChromeHostBindings implementation, wired via zfb.config.ts's chromeBindingsModule

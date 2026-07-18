@@ -84,7 +84,8 @@ const baseChoices: UserChoices = {
 // The locked manifest (#2653 Decision 4 / #2660 completion comment).
 // ---------------------------------------------------------------------------
 
-/** The locked ~12-file barebone (EN-only) manifest. */
+/** The locked ~13-file barebone (EN-only) manifest. Grew from 12 to 13 with
+ *  pnpm-workspace.yaml (#2923 — disables pnpm 11's minimumReleaseAge gate). */
 const BAREBONE_MANIFEST = [
   ".gitignore",
   ".npmrc",
@@ -92,6 +93,7 @@ const BAREBONE_MANIFEST = [
   "package.json",
   "pages/docs/[[...slug]].tsx",
   "pages/index.tsx",
+  "pnpm-workspace.yaml",
   "src/content/docs/getting-started/index.mdx",
   "src/content/docs/getting-started/installation.mdx",
   "src/content/docs/getting-started/introduction.mdx",
@@ -129,7 +131,7 @@ const ALL_FEATURES = [
   "noindex",
 ];
 
-describe("scaffold — barebone manifest (locked 12-file shape, #2653 Decision 4)", () => {
+describe("scaffold — barebone manifest (locked 13-file shape, #2653 Decision 4)", () => {
   let files: string[];
 
   beforeAll(async () => {
@@ -142,7 +144,7 @@ describe("scaffold — barebone manifest (locked 12-file shape, #2653 Decision 4
     await fs.remove(dir);
   });
 
-  it("emits EXACTLY the 12 locked-manifest files — no more, no less", () => {
+  it("emits EXACTLY the 13 locked-manifest files — no more, no less", () => {
     expect(files).toEqual(BAREBONE_MANIFEST);
   });
 });
@@ -709,7 +711,7 @@ describe("scaffold — changelog feature", () => {
 });
 
 describe("scaffold — every-feature manifest is exactly base + the documented per-feature deltas", () => {
-  it("all-on scaffold emits exactly the expected 38-file set", async () => {
+  it("all-on scaffold emits exactly the expected 39-file set", async () => {
     await scaffold({
       ...baseChoices,
       projectName: "test-all-on",
@@ -727,6 +729,7 @@ describe("scaffold — every-feature manifest is exactly base + the documented p
       "pages/[locale]/docs/[[...slug]].tsx",
       "pages/docs/[[...slug]].tsx",
       "pages/index.tsx",
+      "pnpm-workspace.yaml",
       "scripts/setup-doc-skill.sh",
       "src-tauri-dev/.gitignore",
       "src-tauri-dev/Cargo.toml",
@@ -935,6 +938,40 @@ describe("scaffold — .npmrc", () => {
     await scaffold(baseChoices);
     const npmrc = await fs.readFile(projectPath("test-doc", ".npmrc"), "utf-8");
     expect(npmrc).toBe("trust-policy-exclude[]=undici-types@6.21.0\n");
+  });
+});
+
+describe("scaffold — pnpm-workspace.yaml (#2923)", () => {
+  it("disables pnpm 11's minimumReleaseAge gate", async () => {
+    await scaffold(baseChoices);
+    const workspaceYaml = await fs.readFile(
+      projectPath("test-doc", "pnpm-workspace.yaml"),
+      "utf-8",
+    );
+    expect(workspaceYaml).toContain("minimumReleaseAge: 0");
+  });
+
+  it("is emitted regardless of the chosen package manager (matches the .npmrc block's unconditional emission)", async () => {
+    await scaffold({ ...baseChoices, projectName: "test-npm-pm", packageManager: "npm" });
+    const workspaceYaml = await fs.readFile(
+      projectPath("test-npm-pm", "pnpm-workspace.yaml"),
+      "utf-8",
+    );
+    expect(workspaceYaml).toContain("minimumReleaseAge: 0");
+  });
+
+  it("is SKIPPED when scaffolding into an existing pnpm monorepo (never nest a workspace boundary, codex-review finding)", async () => {
+    // tempDir (cwd, set up by the outer beforeEach) stands in for a parent
+    // monorepo root — e.g. scaffolding into `apps/docs/` under a workspace
+    // that already owns a pnpm-workspace.yaml.
+    await fs.outputFile(
+      path.join(tempDir, "pnpm-workspace.yaml"),
+      "packages:\n  - packages/*\n",
+    );
+    await scaffold({ ...baseChoices, projectName: "test-nested-ws" });
+    expect(
+      await fs.pathExists(projectPath("test-nested-ws", "pnpm-workspace.yaml")),
+    ).toBe(false);
   });
 });
 

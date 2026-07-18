@@ -6,7 +6,7 @@ import { capitalize, pmRunCommand } from "./utils.js";
  * zudolab/zudo-doc#2651, Wave 6 #2660). Rewritten from scratch — the old
  * generator described a 64-file project (`src/components/admonitions/`,
  * `src/layouts/`, `src/utils/`, per-page `pages/lib/*` wiring) that no
- * longer exists. The scaffolded project is now ~12 files; almost
+ * longer exists. The scaffolded project is now ~13 files; almost
  * everything referenced here lives in `node_modules/@takazudo/zudo-doc`.
  */
 export function generateCLAUDEFile(choices: UserChoices): string {

@@ -137,6 +137,7 @@ A freshly scaffolded project is deliberately small — around a dozen files:
 my-docs/
 ├── .gitignore              # node_modules, dist, .zfb
 ├── .npmrc                  # trust-policy-exclude[]=undici-types@6.21.0
+├── pnpm-workspace.yaml     # minimumReleaseAge: 0 (disables pnpm 11's release-age gate)
 ├── CLAUDE.md               # project notes for Claude Code
 ├── package.json            # deps + dev/build/preview/check scripts
 ├── tsconfig.json           # 5-line extends of the package base config
