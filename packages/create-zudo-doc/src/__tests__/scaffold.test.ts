@@ -16,6 +16,8 @@ import type { UserChoices } from "../prompts.js";
 import { scaffold } from "../scaffold.js";
 import { validateProjectName } from "../utils.js";
 import { createZudoDoc } from "../api.js";
+import type { PresetHeaderRightItem, PresetMetaTagsConfig } from "../preset.js";
+import { validatePreset } from "../preset.js";
 
 // Minimal-scaffold cutover (epic zudolab/zudo-doc#2651). Rewritten from
 // scratch for Wave 7 (#2662) against the locked ~12-file manifest landed by
@@ -1658,5 +1660,146 @@ describe("scaffold — programmatic API rejects invalid project names (F4 #2013)
     });
     const config = await fs.readFile(path.join(targetDir, "zfb.config.ts"), "utf-8");
     expect(config).toContain('themePack: "foundry"');
+  });
+});
+
+describe("createZudoDoc() — CreateOptions preset parity (#2922)", () => {
+  // UserChoices/PresetJson/zfb-config-gen.ts already supported
+  // headerRightItems, metaTags, cjkFriendly, and minifyHtml end to end —
+  // only the programmatic CreateOptions type was missing them. Shape
+  // validation for headerRightItems/metaTags is shared with the preset
+  // (JSON) path via preset.ts's validateHeaderRightItems()/
+  // validateMetaTags(); the "same rule as validatePreset()" tests below
+  // assert both callers reject the identical input with the identical
+  // message, proving the shared helper (not a duplicated allowlist) is in
+  // effect.
+
+  it("createZudoDoc() throws for an unknown headerRightItems component, same rule as validatePreset()", async () => {
+    const invalidItems = [
+      { type: "component", component: "not-a-real-thing" },
+    ] as unknown as PresetHeaderRightItem[];
+    await expect(
+      createZudoDoc({
+        projectName: "valid-name",
+        colorSchemeMode: "single",
+        singleScheme: "Default Dark",
+        headerRightItems: invalidItems,
+        features: [],
+        packageManager: "pnpm",
+      }),
+    ).rejects.toThrow(/unknown component "not-a-real-thing"/);
+    expect(validatePreset({ headerRightItems: invalidItems })).toMatch(
+      /unknown component "not-a-real-thing"/,
+    );
+  });
+
+  it("createZudoDoc() throws for an unsupported headerRightItems type, same message as validatePreset()", async () => {
+    const invalidItems = [
+      { type: "link", href: "https://example.com", label: "Custom" },
+    ] as unknown as PresetHeaderRightItem[];
+    const expectedMessage =
+      /type "link" is not supported in presets \(v1\) — edit zfb\.config\.ts after scaffold/;
+    await expect(
+      createZudoDoc({
+        projectName: "valid-name",
+        colorSchemeMode: "single",
+        singleScheme: "Default Dark",
+        headerRightItems: invalidItems,
+        features: [],
+        packageManager: "pnpm",
+      }),
+    ).rejects.toThrow(expectedMessage);
+    expect(validatePreset({ headerRightItems: invalidItems })).toMatch(expectedMessage);
+  });
+
+  it("createZudoDoc() accepts a valid headerRightItems array and threads it into zfb.config.ts", async () => {
+    const targetDir = await createZudoDoc({
+      projectName: "valid-header-items-test",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      headerRightItems: [
+        { type: "component", component: "github-link" },
+        { type: "trigger", trigger: "ai-chat" },
+      ],
+      features: [],
+      packageManager: "pnpm",
+    });
+    const config = await fs.readFile(path.join(targetDir, "zfb.config.ts"), "utf-8");
+    expect(config).toContain('component: "github-link"');
+    expect(config).toContain('trigger: "ai-chat"');
+  });
+
+  it("createZudoDoc() throws for a non-object metaTags value, same rule as validatePreset()", async () => {
+    const invalidMetaTags = "yes" as unknown as PresetMetaTagsConfig;
+    await expect(
+      createZudoDoc({
+        projectName: "valid-name",
+        colorSchemeMode: "single",
+        singleScheme: "Default Dark",
+        metaTags: invalidMetaTags,
+        features: [],
+        packageManager: "pnpm",
+      }),
+    ).rejects.toThrow(/"metaTags" must be an object/);
+    expect(validatePreset({ metaTags: invalidMetaTags })).toMatch(
+      /"metaTags" must be an object/,
+    );
+  });
+
+  it("createZudoDoc() throws for an invalid metaTags.twitterCard value, same rule as validatePreset()", async () => {
+    const invalidMetaTags = { twitterCard: "player" } as unknown as PresetMetaTagsConfig;
+    const expectedMessage =
+      /"metaTags\.twitterCard" must be "summary", "summary_large_image", or false/;
+    await expect(
+      createZudoDoc({
+        projectName: "valid-name",
+        colorSchemeMode: "single",
+        singleScheme: "Default Dark",
+        metaTags: invalidMetaTags,
+        features: [],
+        packageManager: "pnpm",
+      }),
+    ).rejects.toThrow(expectedMessage);
+    expect(validatePreset({ metaTags: invalidMetaTags })).toMatch(expectedMessage);
+  });
+
+  it("createZudoDoc() accepts a valid metaTags object and threads it into zfb.config.ts", async () => {
+    const targetDir = await createZudoDoc({
+      projectName: "valid-meta-tags-test",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      metaTags: { ogImage: "/img/og.png" },
+      features: [],
+      packageManager: "pnpm",
+    });
+    const config = await fs.readFile(path.join(targetDir, "zfb.config.ts"), "utf-8");
+    expect(config).toContain("metaTags: {");
+    expect(config).toContain('ogImage: "/img/og.png"');
+  });
+
+  it("createZudoDoc() threads cjkFriendly: true into zfb.config.ts", async () => {
+    const targetDir = await createZudoDoc({
+      projectName: "valid-cjk-friendly-test",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      cjkFriendly: true,
+      features: [],
+      packageManager: "pnpm",
+    });
+    const config = await fs.readFile(path.join(targetDir, "zfb.config.ts"), "utf-8");
+    expect(config).toContain("cjkFriendly: true");
+  });
+
+  it("createZudoDoc() threads minifyHtml: false into zfb.config.ts", async () => {
+    const targetDir = await createZudoDoc({
+      projectName: "valid-minify-html-test",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      minifyHtml: false,
+      features: [],
+      packageManager: "pnpm",
+    });
+    const config = await fs.readFile(path.join(targetDir, "zfb.config.ts"), "utf-8");
+    expect(config).toContain("minifyHtml: false");
   });
 });
