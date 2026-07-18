@@ -6,6 +6,7 @@ import {
   afterEach,
   beforeAll,
   afterAll,
+  vi,
 } from "vitest";
 import fs from "fs-extra";
 import os from "os";
@@ -603,6 +604,67 @@ describe("scaffold — claudeSkills feature", () => {
     ).toBe(false);
     const pkg = await fs.readJson(projectPath("test-doc", "package.json"));
     expect(pkg.scripts.b4push).toBeUndefined();
+  });
+
+  // Unreachable in a healthy checkout — the template sources are committed
+  // alongside scaffold.ts. Simulated by making fs.pathExists lie about one
+  // skill's TEMPLATE SOURCE path specifically, so the other 2 skills still
+  // take the real (non-mocked) code path. The match is scoped to
+  // "templates/features/claudeSkills" so it can never accidentally match the
+  // generated project's destination path (which lives under a tempDir with
+  // no such segment) — a looser substring match would make the destination
+  // assertion below pass vacuously (the mock lying, not scaffold's own
+  // skip-on-missing behavior).
+  it("warns and skips a skill whose template source is missing", async () => {
+    const realPathExists = fs.pathExists;
+    const pathExistsSpy = vi
+      .spyOn(fs, "pathExists")
+      .mockImplementation(async (p: string) => {
+        if (
+          p.includes(path.join("templates/features/claudeSkills")) &&
+          p.includes("zudo-doc-translate")
+        ) {
+          return false;
+        }
+        return realPathExists(p);
+      });
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    try {
+      await scaffold({
+        ...baseChoices,
+        projectName: "test-claude-skills-missing",
+        features: ["claudeSkills"],
+      });
+    } finally {
+      // Restore before the assertions below so the destination-existence
+      // checks hit the real filesystem, not the mock.
+      pathExistsSpy.mockRestore();
+    }
+
+    try {
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'missing template source for "zudo-doc-translate"',
+        ),
+      );
+      const project = projectPath("test-claude-skills-missing");
+      expect(
+        await fs.pathExists(
+          path.join(project, ".claude/skills/zudo-doc-translate/SKILL.md"),
+        ),
+      ).toBe(false);
+      // The other 2 skills are unaffected by the one missing source.
+      for (const skill of ["zudo-doc-design-system", "zudo-doc-version-bump"]) {
+        expect(
+          await fs.pathExists(
+            path.join(project, `.claude/skills/${skill}/SKILL.md`),
+          ),
+        ).toBe(true);
+      }
+    } finally {
+      warnSpy.mockRestore();
+    }
   });
 });
 

@@ -233,9 +233,6 @@ export async function scaffold(choices: UserChoices): Promise<void> {
   const baseDir = path.join(templatesDir, "base");
   const featuresDir = path.join(templatesDir, "features");
 
-  // Still needed for source-checkout-only assets such as Claude skills.
-  const monorepoRoot = path.resolve(pkgRoot, "../..");
-
   await fs.ensureDir(targetDir);
 
   // 1. Copy base template
@@ -256,18 +253,28 @@ export async function scaffold(choices: UserChoices): Promise<void> {
 
   // 2b. Copy user-facing Claude Code skills when enabled
   // Ships the curated zudo-doc-* skills (design-system, translate, version-bump)
-  // from the monorepo's .claude/skills/ into the user's .claude/skills/.
+  // from the package's own templates/ (npm `files` cannot reach outside the
+  // package dir, so these are committed mirrors of the monorepo's
+  // .claude/skills/, not read from there directly — see #2921).
   if (choices.features.includes("claudeSkills")) {
     const userFacingSkills = [
       "zudo-doc-design-system",
       "zudo-doc-translate",
       "zudo-doc-version-bump",
     ];
+    const skillsTemplateDir = path.join(
+      featuresDir,
+      "claudeSkills/files/.claude/skills",
+    );
     for (const skill of userFacingSkills) {
-      const skillSrc = path.join(monorepoRoot, ".claude/skills", skill);
+      const skillSrc = path.join(skillsTemplateDir, skill);
       const skillDest = path.join(targetDir, ".claude/skills", skill);
       if (await fs.pathExists(skillSrc)) {
         await fs.copy(skillSrc, skillDest);
+      } else {
+        // Defensive only — unreachable in a healthy publish, since the
+        // template files are committed alongside this source.
+        console.warn(`claudeSkills: missing template source for "${skill}", skipping`);
       }
     }
   }
