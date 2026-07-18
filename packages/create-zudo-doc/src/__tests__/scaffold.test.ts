@@ -1619,6 +1619,7 @@ describe("scaffold — settings-drift guard: generator-known fields must cover e
       docMetainfo: "no CLI/prompt surface yet — hand-edit post-scaffold",
       tagPlacement: "no CLI/prompt surface yet — package default is correct for all scaffolds",
       changelogs: "no CLI/prompt surface yet — the `changelog` feature only seeds starter content, not this git-log-driven config",
+      docHistoryExclude: "no CLI/prompt surface yet — advanced doc-history storage-scaling glob list, hand-edit zfb.config.ts post-scaffold",
       math: "no CLI/prompt surface yet — hand-edit post-scaffold",
       onBrokenMarkdownLinks: "no CLI/prompt surface yet — package default (warn) is correct for all scaffolds",
       aiAssistant: "no CLI/prompt surface yet — ai-chat is a showcase-only route, requires a Worker/KV binding",
