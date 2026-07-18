@@ -30,7 +30,7 @@ export function generateCLAUDEFile(choices: UserChoices): string {
     `- **Preact** — for interactive islands only (with compat mode for React API)`,
   );
   lines.push(
-    `- **Shiki** — package-owned code highlighting with the configured light/dark theme pair`,
+    "- **zfb semantic highlighting** — native build-time fenced-code rendering plus lazy `@takazudo/zfb-md-wasm` for HtmlPreview; both emit `hi-*` classes resolved through `--zd-syntax-*` design tokens",
   );
   lines.push(
     `- **@takazudo/zudo-doc** — the package that owns everything: layout, chrome, islands, default \`@theme\` design tokens, and (via \`packageOwnedRoutes\`, on by default) the doc routes themselves`,

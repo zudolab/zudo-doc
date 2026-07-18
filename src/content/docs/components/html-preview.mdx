@@ -338,15 +338,19 @@ Removing `allow-same-origin` gives the iframe an opaque origin, which blocks the
 | `preflight` | boolean | `true` | Set to `false` to skip the injected preflight reset — for a framework (loaded via `externalStyles`/`externalScripts`) that ships its own |
 | `showResources` | boolean | `false` | Surfaces `externalStyles`/`externalScripts` as literal lines at the top of the "HTML" code panel. Excluded from the panel by default |
 
-## Supported Languages
+## Syntax highlighting and lazy WASM
 
-The source code panel uses a lightweight Shiki instance with the following languages:
+The source code panel lazily imports the public `@takazudo/zfb-md-wasm` package root and calls its semantic highlighter for:
 
 - `html` — for the HTML and Head panels
 - `css` — for the CSS panel
 - `javascript` — for the JS panel
 
-Unsupported languages fall back to plain text (no highlighting). This is a smaller subset than the [full language list](./basic-components.mdx#code-blocks-supported-languages) available in standard code blocks.
+The renderer emits safely escaped `pre.hi-root` / `hi-*` markup and shares the document-fence `--zd-syntax-*` palette. Opening the panel is the lazy boundary: the emitted JavaScript glue and WASM companion resources are not requested beforehand. A warning for an unknown language uses escaped semantic fallback markup; import, initialization, invalid-option, or current-call failures keep the JSX-escaped plain `<pre><code>` fallback. A later panel render can retry a transient import failure.
+
+If you serve production output through custom infrastructure, preserve the generated `.mjs` and `.wasm` assets and serve them with JavaScript and `application/wasm` MIME types. Do not copy package-internal glue paths manually; the zfb build owns the resource graph.
+
+This browser-time set is smaller than the [full language list](./basic-components.mdx#code-blocks-supported-languages) available to standard build-time code blocks.
 
 ## Notes
 

@@ -146,6 +146,37 @@ type RampRef =
 | `imageOverlayBg` / `imageOverlayFg` | `{ base: 4 }` / `{ base: 0 }` | 画像拡大オーバーレイ — `bg`にマージ |
 | `matchedKeywordBg` / `matchedKeywordFg` | 共有リテラル | 検索結果の`<mark>` — 専用トークン、Design Token Panel でライブ編集可能 |
 
+### シンタックスセマンティクス
+
+`ModeMap.syntax` は、9 つのシンタックス固有ロールを持つ optional な partial map です。map 自体がない場合も、個別ロールを省略した場合も、下表の既存セマンティックロールを継承します。そのため、シンタックストークン導入前に作成されたスキームや v3 トークン JSON も引き続き有効で、名前付き variation や一方の mode では必要なロールだけを上書きできます。
+
+| `ModeMap.syntax` のキー | CSS カスタムプロパティ | 継承元 | zfb レンダラーのロール |
+|---|---|---|---|
+| `syntaxComment` | `--zd-syntax-comment` | `muted` | comment |
+| `syntaxString` | `--zd-syntax-string` | `success` | string, escape |
+| `syntaxNumber` | `--zd-syntax-number` | `warning` | number, constant |
+| `syntaxKeyword` | `--zd-syntax-keyword` | `accent` | keyword, heading |
+| `syntaxCallable` | `--zd-syntax-callable` | `info` | function |
+| `syntaxType` | `--zd-syntax-type` | `warning` | type, namespace |
+| `syntaxName` | `--zd-syntax-name` | `codeFg` | property, variable, tag, attribute |
+| `syntaxInserted` | `--zd-syntax-inserted` | `success` | inserted |
+| `syntaxDeleted` | `--zd-syntax-deleted` | `danger` | deleted |
+
+残る zfb ロール（operator と punctuation）は `codeFg` を使用します。この圧縮により、zfb の 18 レンダラーロールをすべて公開カラー判断にせず、コンポーネントレベルの詳細として保てます。inserted／deleted の背景もコンポーネントトークンです。2 つの公開ロールを追加する代わりに、対応するシンタックス前景色を `color-mix()` で `codeBg` へ 15% 混ぜて生成します。
+
+たとえば、一方の mode で keyword だけを上書きできます：
+
+```ts
+const darkMap: ModeMap = {
+  // ...base と semantic のマッピング...
+  syntax: {
+    syntaxKeyword: { state: "info" },
+  },
+};
+```
+
+Provider は解決済みの 9 つの `--zd-syntax-*` 変数をすべて出力します。ネイティブなコードフェンス出力と HtmlPreview の遅延 WASM 出力は、どちらも zfb の `--zfb-hi-*` コンポーネントブリッジを通してそれらを使用します。ブリッジは `var()` 参照を維持するため、スキーム切り替えや Design Token Panel の編集では、ハイライトを再実行せず既存の `hi-*` DOM が再配色されます。出荷する前景色／背景色の組み合わせは、実際に描画される inserted／deleted の tint を含め、4.6:1 以上のコントラスト比で検証されます。
+
 ## ロールマージの設計思想
 
 パレットは、区別すべきトーンの数を小さく保つために意図的に最小化されています。いくつかのロールは、それぞれ独自のトーンを持つ代わりに、共有ストップにマージされています：
@@ -181,7 +212,7 @@ const darkMap: ModeMap = {
     danger: "oklch(.655 .170 25)",
     // ...
   },
-  // 必須の map。省略した syntax ロールは対応する semantic ロールを継承します。
+  // 任意。すべて継承する場合は syntax 自体を省略できます。
   syntax: {},
 };
 ```
@@ -335,7 +366,7 @@ const myMap: ModeMap = {
     ...SEMANTIC_RAMP_DEFAULTS,
     accent: { accent: 1 }, // only override the roles that need to differ
   },
-  syntax: {}, // 必須。syntax 固有の上書きだけをここへ追加します
+  syntax: {}, // 任意。syntax 固有の上書きだけをここへ追加します
 };
 
 export const colorSchemes: Record<string, ColorScheme> = {

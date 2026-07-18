@@ -134,6 +134,8 @@ async function readHighlightedDomGuard(page: Page, finish: boolean) {
       const semanticColor = getComputedStyle(semanticProbe).color;
       semanticProbe.style.color = "var(--palette-state-info)";
       const namedVariationColor = getComputedStyle(semanticProbe).color;
+      semanticProbe.style.color = "var(--palette-accent-2)";
+      const defaultLightColor = getComputedStyle(semanticProbe).color;
       semanticProbe.remove();
 
       const result = {
@@ -142,6 +144,7 @@ async function readHighlightedDomGuard(page: Page, finish: boolean) {
         tokenColor: getComputedStyle(token).color,
         semanticColor,
         namedVariationColor,
+        defaultLightColor,
         samePreNode: pre === state.pre,
         sameTokenNode: token === state.token,
         sameInnerHTML: pre.innerHTML === state.innerHTML,
@@ -214,6 +217,22 @@ test.describe("Syntax highlighting semantic token bridge", () => {
     );
     await expect(keywordSelect).toBeVisible();
 
+    // Opening the package-default panel must not itself repaint the named
+    // variation. Without this baseline, the later "changed from named" wait
+    // could already be satisfied before selectOption(), producing a false
+    // live-edit proof.
+    const afterPanelOpen = await readHighlightedDomGuard(page, false);
+    expect(afterPanelOpen.tokenColor).toBe(namedVariation.tokenColor);
+    expect(afterPanelOpen.tokenColor).toBe(afterPanelOpen.semanticColor);
+    expect(afterPanelOpen.tokenColor).toBe(
+      afterPanelOpen.namedVariationColor,
+    );
+    expect(afterPanelOpen.samePreNode).toBe(true);
+    expect(afterPanelOpen.sameTokenNode).toBe(true);
+    expect(afterPanelOpen.sameInnerHTML).toBe(true);
+    expect(afterPanelOpen.sameTokenClass).toBe(true);
+    expect(afterPanelOpen.mutationCount).toBe(0);
+
     const currentValue = await keywordSelect.inputValue();
     const nextAccentValue = await keywordSelect
       .locator('optgroup[label="Accent"] option')
@@ -230,9 +249,17 @@ test.describe("Syntax highlighting semantic token bridge", () => {
 
     expect(nextAccentValue).not.toBe(currentValue);
     await keywordSelect.selectOption(nextAccentValue);
-    await expect(keywordSelect.locator("option:checked")).toContainText(
+    const selectedOption = keywordSelect.locator("option:checked");
+    await expect(selectedOption).toContainText(
       "--palette-accent-",
     );
+    const selectedPaletteVar = await selectedOption.evaluate((option) => {
+      const match = option.textContent?.match(/--palette-accent-\d+/);
+      if (!match) {
+        throw new Error("selected syntaxKeyword option has no palette variable");
+      }
+      return match[0];
+    });
 
     await page.waitForFunction(
       ({ tokenSelector, previousColor }) => {
@@ -244,13 +271,24 @@ test.describe("Syntax highlighting semantic token bridge", () => {
       },
       {
         tokenSelector: TOKEN_SELECTOR,
-        previousColor: namedVariation.tokenColor,
+        previousColor: afterPanelOpen.tokenColor,
       },
     );
 
     const edited = await readHighlightedDomGuard(page, false);
-    expect(edited.tokenColor).not.toBe(namedVariation.tokenColor);
+    const selectedPaletteColor = await page.evaluate((cssVar) => {
+      const probe = document.createElement("span");
+      probe.style.position = "fixed";
+      probe.style.visibility = "hidden";
+      probe.style.color = `var(${cssVar})`;
+      document.body.append(probe);
+      const color = getComputedStyle(probe).color;
+      probe.remove();
+      return color;
+    }, selectedPaletteVar);
+    expect(edited.tokenColor).not.toBe(afterPanelOpen.tokenColor);
     expect(edited.tokenColor).toBe(edited.semanticColor);
+    expect(edited.tokenColor).toBe(selectedPaletteColor);
     expect(edited.samePreNode).toBe(true);
     expect(edited.sameTokenNode).toBe(true);
     expect(edited.sameInnerHTML).toBe(true);
@@ -264,6 +302,7 @@ test.describe("Syntax highlighting semantic token bridge", () => {
     expect(lightAfterEdit.theme).toBe("light");
     expect(lightAfterEdit.colorScheme).toBe("light");
     expect(lightAfterEdit.tokenColor).toBe(lightAfterEdit.semanticColor);
+    expect(lightAfterEdit.tokenColor).toBe(lightAfterEdit.defaultLightColor);
     expect(lightAfterEdit.samePreNode).toBe(true);
     expect(lightAfterEdit.sameTokenNode).toBe(true);
     expect(lightAfterEdit.sameInnerHTML).toBe(true);

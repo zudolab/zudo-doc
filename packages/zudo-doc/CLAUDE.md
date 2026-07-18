@@ -241,8 +241,8 @@ onSuccess: "node scripts/copy-theme-css.mjs && node scripts/copy-content-css.mjs
 5. **`dist/features.css`** ← copied verbatim from `src/features.css` by
    `scripts/copy-features-css.mjs`. Exported as `@takazudo/zudo-doc/features.css`.
    Contains **all** feature CSS every project using the package needs,
-   island-coupled or not: code block buttons, Shiki dual-theme token
-   color rule, `.zd-html-preview-code`, KaTeX, desktop sidebar toggle
+   island-coupled or not: code block buttons, the zfb `hi-*` semantic-token
+   bridge, `.zd-html-preview-code`, KaTeX, desktop sidebar toggle
    geometry, view-transition chrome (epic #2331), and — since S4 of epic
    #2344 — the `.ai-chat-md`/`.zd-enlargeable`/`.zd-mermaid-enlargeable`
    island CSS and the docHistory diff-viewer (`.diff-row`/`.diff-line-*`)

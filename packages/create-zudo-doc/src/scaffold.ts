@@ -711,9 +711,6 @@ function generatePackageJson(choices: UserChoices) {
     // compiles. Same pin as host. Caught by W6B (#1735) consumer-build
     // verification.
     "preact-render-to-string": "^6.6.6",
-    // Retained until #2742 atomically moves HTML Preview to zfb-md-wasm.
-    shiki: "^4.0.2",
-    "@shikijs/transformers": "^4.0.0",
     "gray-matter": "^4.0.0",
     mermaid: "^11.12.3",
     "remark-cjk-friendly": "^2.0.1",

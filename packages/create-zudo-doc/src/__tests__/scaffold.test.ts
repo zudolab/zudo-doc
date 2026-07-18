@@ -1177,7 +1177,9 @@ describe("scaffold — CLAUDE.md generation", () => {
     expect(content).toContain("defineChromeBindings");
     expect(content).toContain("headerRightComponents");
     expect(content).toContain("do not fork a route stub");
-    expect(content).toContain("**Shiki**");
+    expect(content).toContain("**zfb semantic highlighting**");
+    expect(content).toContain("@takazudo/zfb-md-wasm");
+    expect(content).not.toContain("**Shiki**");
     expect(content).not.toContain("syntect");
   });
 
@@ -1366,6 +1368,8 @@ describe("scaffold — generated package.json", () => {
     expect(pkg.dependencies["diff"]).toBeDefined();
     expect(pkg.dependencies["@takazudo/zdtp"]).toBeDefined();
     expect(pkg.dependencies["astro"]).toBeUndefined();
+    expect(pkg.dependencies["shiki"]).toBeUndefined();
+    expect(pkg.dependencies["@shikijs/transformers"]).toBeUndefined();
   });
 
   it("includes zod, preact-render-to-string, and katex as always-on runtime deps", async () => {
