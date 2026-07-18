@@ -100,4 +100,4 @@ const x = 1;
 
 ## Syntax-highlight Theme
 
-The build-time highlighter is zfb's class-mode renderer. It emits semantic classes such as `hi-kw` and `hi-str` beneath `pre.hi-root`; zudo-doc maps those roles to its current `--zd-syntax-*` design tokens. Document fences therefore follow the active color scheme without inline palette colors or client-side JavaScript. Shiki is used only by the separate HtmlPreview component.
+The build-time highlighter is zfb's class-mode renderer. It emits semantic classes such as `hi-kw` and `hi-str` beneath `pre.hi-root`; zudo-doc maps those roles to its current `--zd-syntax-*` design tokens. Document fences therefore follow the active color scheme without inline palette colors or client-side JavaScript. HtmlPreview's lazy WASM renderer emits the same class and token contract.

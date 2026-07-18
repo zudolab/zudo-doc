@@ -157,16 +157,11 @@ export const deletionMatrix: readonly DeletionMatrixRow[] = [
   {
     issue: 2761,
     category: "input shape",
-    removed: "ModeMap without the required syntax map",
+    removed: "ModeMap requiring a complete syntax map",
     proof: {
       kind: "text-present",
-      paths: [
-        "packages/zudo-doc/src/color-scheme-utils.ts",
-        "e2e/fixtures/theme/src/config/settings.ts",
-        "src/content/docs/reference/color.mdx",
-        "src/content/docs-ja/reference/color.mdx",
-      ],
-      terms: ["syntax:"],
+      paths: ["packages/zudo-doc/src/color-scheme-utils.ts"],
+      terms: ["syntax?: Partial<Record<SyntaxSemanticKey, RampRef>>"],
     },
   },
   {

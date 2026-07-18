@@ -34,6 +34,23 @@ This tight coupling is the recommended approach because:
 
 While zudo-doc supports advanced configuration for complex cases (custom sidebar labels, sort overrides, nested dropdowns), the default behavior — directories become categories, files become pages — covers most needs. Start simple and only add complexity when the default mapping is not enough.
 
+### Widening the Home Navigation Grid
+
+The home page turns the same content tree into a category grid. It uses the
+standard no-sidebar content width by default. For a larger navigation tree,
+opt into the wider viewport-oriented grid from `zfb.config.ts`:
+
+```ts
+zudoDoc({
+  home: { wide: true },
+});
+```
+
+This widens both the default-locale home page and every locale-prefixed home
+page. You do not need to replace the scaffolded `pages/index.tsx` re-export or
+write a separate locale home route. See [Configuration](../guides/configuration.mdx#home-page-home)
+for the complete setting contract.
+
 ## Header Navigation Rules
 
 The header navigation is the topmost level. It should contain only the broadest categories that define your site's major sections.

@@ -3,35 +3,7 @@
 
 import { useEffect, useState } from "preact/hooks";
 import type { VNode } from "preact";
-
-/**
- * Lazily-loaded Shiki highlighter singleton. The dynamic import is
- * intentional: Shiki is a large library that should not inflate the
- * initial JS bundle. The promise is cached so subsequent calls reuse
- * the same highlighter instance.
- *
- * Ported from src/components/html-preview/highlighted-code.tsx with
- * React → Preact hook imports.
- */
-let highlighterPromise: Promise<import("shiki").HighlighterCore> | null = null;
-
-function getHighlighter(): Promise<import("shiki").HighlighterCore> {
-  if (!highlighterPromise) {
-    highlighterPromise = import("shiki")
-      .then(({ createHighlighter }) =>
-        createHighlighter({
-          themes: ["catppuccin-latte", "vitesse-dark"],
-          langs: ["html", "css", "javascript"],
-        }),
-      )
-      .catch((err) => {
-        // Clear cached rejection so next call retries
-        highlighterPromise = null;
-        throw err;
-      });
-  }
-  return highlighterPromise;
-}
+import { startHighlightRequest } from "./highlight-runtime.js";
 
 export interface HighlightedCodeProps {
   code: string;
@@ -39,8 +11,9 @@ export interface HighlightedCodeProps {
 }
 
 /**
- * Syntax-highlighted code block backed by Shiki. Falls back to a
- * plain `<pre><code>` block while Shiki is loading or if it fails.
+ * Syntax-highlighted code block backed by zfb's semantic-class WASM API.
+ * Falls back to a plain `<pre><code>` block while the runtime is loading or
+ * when the current request cannot produce safe markup.
  *
  * JSX port of src/components/html-preview/highlighted-code.tsx.
  */
@@ -48,29 +21,30 @@ export function HighlightedCode({
   code,
   language,
 }: HighlightedCodeProps): VNode {
-  const [html, setHtml] = useState<string | null>(null);
+  const [highlighted, setHighlighted] = useState<{
+    code: string;
+    language: string;
+    html: string;
+  } | null>(null);
+
+  // A prop change must show the new source's fallback immediately, before its
+  // effect runs. Keeping the source identity beside the markup prevents a
+  // previous request's HTML from flashing for the new code/language pair.
+  const html =
+    highlighted?.code === code && highlighted.language === language
+      ? highlighted.html
+      : null;
 
   useEffect(() => {
-    let cancelled = false;
-    getHighlighter()
-      .then((highlighter) => {
-        if (cancelled) return;
-        const lang = highlighter.getLoadedLanguages().includes(language)
-          ? language
-          : "text";
-        const result = highlighter.codeToHtml(code, {
-          lang,
-          themes: { light: "catppuccin-latte", dark: "vitesse-dark" },
-          defaultColor: false,
-        });
-        setHtml(result);
-      })
-      .catch(() => {
-        // Shiki failed to load — keep showing the plain-text fallback
-      });
-    return () => {
-      cancelled = true;
-    };
+    return startHighlightRequest({
+      code,
+      language,
+      onSettled(nextHtml) {
+        setHighlighted(
+          nextHtml == null ? null : { code, language, html: nextHtml },
+        );
+      },
+    });
   }, [code, language]);
 
   if (!html) {

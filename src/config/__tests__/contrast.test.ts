@@ -34,7 +34,13 @@
 
 import { describe, it, expect } from "vitest";
 import { getAllPresets, evaluateScheme } from "../../../scripts/contrast-pair-matrix";
-import { relativeLuminance, contrastRatio, colorMixSrgb } from "../contrast-utils";
+import {
+  relativeLuminance,
+  contrastRatio,
+  colorMixSrgb,
+  colorMixSrgbPrecise,
+  parseSrgb,
+} from "../contrast-utils";
 
 // ---------------------------------------------------------------------------
 // ALLOWLIST — non-admonition pair failures (see file header)
@@ -90,6 +96,11 @@ describe("luminance math — CSS color parsing", () => {
     const mixed = colorMixSrgb("oklch(1 0 0)", "oklch(0 0 0)", 50);
     // 50% mix of white and black in sRGB → near-mid-grey; luminance ≈ 0.212
     expect(relativeLuminance(mixed)).toBeCloseTo(0.212, 2);
+  });
+
+  it("colorMixSrgbPrecise preserves fractional sRGB channels", () => {
+    const mixed = colorMixSrgbPrecise("#010101", "#000000", 50);
+    expect(parseSrgb(mixed).r).toBeCloseTo(0.5 / 255, 8);
   });
 });
 

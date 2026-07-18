@@ -11,7 +11,7 @@
 // the result to the shared home body factory.
 
 import type { JSX } from "preact";
-import { defaultLocale, routeCtx } from "./_context.js";
+import { defaultLocale, routeCtx, settings } from "./_context.js";
 import { prepareHomeData } from "../home-page/prepare-home-data.js";
 import { HomePageView } from "./_chrome.js";
 
@@ -23,6 +23,12 @@ export default function IndexPage(): JSX.Element {
   const { tree, categoryOrder, tagCount } = prepareHomeData(routeCtx, locale);
 
   return (
-    <HomePageView locale={locale} tree={tree} categoryOrder={categoryOrder} tagCount={tagCount} />
+    <HomePageView
+      locale={locale}
+      tree={tree}
+      categoryOrder={categoryOrder}
+      tagCount={tagCount}
+      wide={settings.home?.wide ?? false}
+    />
   );
 }

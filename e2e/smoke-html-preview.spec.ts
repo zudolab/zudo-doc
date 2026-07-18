@@ -1,6 +1,8 @@
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { test, expect } from "./fixtures";
 import { expectHtmlAttr } from "./html-assertions";
-import { readDistFile } from "./smoke-dist-helper";
+import { DIST_DIR, readDistFile } from "./smoke-dist-helper";
 
 /**
  * Tests for the HtmlPreview component.
@@ -13,6 +15,23 @@ import { readDistFile } from "./smoke-dist-helper";
 
 const PAGE = "/docs/guides/html-preview-test";
 const DIST_PAGE = "docs/guides/html-preview-test/index.html";
+const RESOURCE_PREFIX = "islands-resource-zfb_md_wasm_";
+const RESOURCE_GLUE_PREFIX =
+  "islands-resource-zfb_md_wasm_glue.zfb-resource-";
+const RESOURCE_WASM_PREFIX = "islands-resource-zfb_md_wasm_bg-";
+
+type ResourceKind = "glue" | "wasm";
+
+function resourceKind(rawUrl: string): ResourceKind | null {
+  const pathname = new URL(rawUrl).pathname;
+  if (pathname.includes(RESOURCE_GLUE_PREFIX) && pathname.endsWith(".mjs")) {
+    return "glue";
+  }
+  if (pathname.includes(RESOURCE_WASM_PREFIX) && pathname.endsWith(".wasm")) {
+    return "wasm";
+  }
+  return null;
+}
 
 test.describe("HtmlPreview: SSG shape", () => {
   let html: string;
@@ -33,6 +52,174 @@ test.describe("HtmlPreview: SSG shape", () => {
     expectHtmlAttr(html, "sandbox", "allow-same-origin");
     // Script-bearing preview: allow-scripts allow-same-origin.
     expectHtmlAttr(html, "sandbox", "allow-scripts allow-same-origin");
+  });
+
+  test("production build emits one referenced md-wasm glue and WASM pair", () => {
+    const assetsDir = join(DIST_DIR, "assets");
+    const assets = readdirSync(assetsDir);
+    const glue = assets.filter(
+      (name) => name.startsWith(RESOURCE_GLUE_PREFIX) && name.endsWith(".mjs"),
+    );
+    const wasm = assets.filter(
+      (name) => name.startsWith(RESOURCE_WASM_PREFIX) && name.endsWith(".wasm"),
+    );
+    const allMdWasmResources = assets.filter((name) =>
+      name.startsWith(RESOURCE_PREFIX),
+    );
+
+    expect(glue).toHaveLength(1);
+    expect(wasm).toHaveLength(1);
+    expect([...allMdWasmResources].sort()).toEqual(
+      [...glue, ...wasm].sort(),
+    );
+
+    const emittedJavaScript = assets
+      .filter((name) => name.endsWith(".js"))
+      .map((name) => readFileSync(join(assetsDir, name), "utf8"))
+      .join("\n");
+    for (const resource of [...glue, ...wasm]) {
+      expect(emittedJavaScript).toContain(`./${resource}`);
+    }
+  });
+});
+
+test.describe("HtmlPreview: zfb md-wasm resources and semantic output", () => {
+  test("stays lazy until Show code, then loads one valid resource pair for HTML/CSS/JS", async ({
+    page,
+    assertNoConsoleErrors,
+  }) => {
+    const resourceRequests: Array<{ kind: ResourceKind; url: string }> = [];
+    const resourceResponses: Array<{
+      kind: ResourceKind;
+      url: string;
+      status: number;
+      contentType: string;
+    }> = [];
+
+    page.on("request", (request) => {
+      const kind = resourceKind(request.url());
+      if (kind) resourceRequests.push({ kind, url: request.url() });
+    });
+    page.on("response", (response) => {
+      const kind = resourceKind(response.url());
+      if (!kind) return;
+      resourceResponses.push({
+        kind,
+        url: response.url(),
+        status: response.status(),
+        contentType: response.headers()["content-type"] ?? "",
+      });
+    });
+
+    await page.goto(PAGE, { waitUntil: "networkidle" });
+
+    const island = page
+      .locator('[data-zfb-island="HtmlPreviewWrapperInner"]')
+      .filter({ hasText: "JS Test" });
+    await expect(island).toHaveCount(1);
+    await island.scrollIntoViewIfNeeded();
+
+    // Prove the island has hydrated while its source panel is still closed.
+    // The viewport button is inert in SSR markup, so aria-pressed can only flip
+    // after Preact owns the click. Hydration alone must not fetch md-wasm.
+    const mobileViewport = island.getByRole("button", { name: "Mobile" });
+    await expect
+      .poll(
+        async () => {
+          await mobileViewport.click();
+          return mobileViewport.getAttribute("aria-pressed");
+        },
+        { timeout: 10_000 },
+      )
+      .toBe("true");
+    expect(
+      resourceRequests,
+      "glue/WASM must stay unloaded while the hydrated source panel is closed",
+    ).toEqual([]);
+
+    await island.getByRole("button", { name: "Show code" }).click();
+
+    const highlighted = island.locator(".zd-html-preview-code");
+    await expect(highlighted).toHaveCount(3, { timeout: 10_000 });
+    await expect(highlighted.locator("pre.hi-root")).toHaveCount(3);
+
+    const expected = [
+      {
+        index: 0,
+        role: "hi-tag",
+        source: '<div id="js-target" data-message="a & b">before</div>',
+      },
+      {
+        index: 1,
+        role: "hi-prop",
+        source: "#js-target { color: rgb(1, 2, 3); }",
+      },
+      {
+        index: 2,
+        role: "hi-kw",
+        source: "const target = document.getElementById('js-target');",
+      },
+    ] as const;
+    for (const { index, role, source } of expected) {
+      const output = highlighted.nth(index);
+      await expect(output.locator(`.${role}`).first()).toBeVisible();
+      await expect(output).toContainText(source);
+      const markup = await output.innerHTML();
+      expect(markup).not.toMatch(/style=|--shiki-|shiki-/i);
+    }
+
+    // The trusted upstream markup must still display author source as text;
+    // it must not inject that source as live HTML inside the code panel.
+    await expect(highlighted.nth(0).locator("#js-target")).toHaveCount(0);
+
+    const defaultDarkColors = await highlighted
+      .nth(2)
+      .locator("span.hi-kw")
+      .first()
+      .evaluate((token) => {
+        const resolveColor = (cssVar: string) => {
+          const probe = document.createElement("span");
+          probe.style.color = `var(${cssVar})`;
+          document.body.append(probe);
+          const color = getComputedStyle(probe).color;
+          probe.remove();
+          return color;
+        };
+
+        return {
+          theme: document.documentElement.dataset.theme,
+          token: getComputedStyle(token).color,
+          semantic: resolveColor("--zd-syntax-keyword"),
+          defaultDarkAccent: resolveColor("--palette-accent-1"),
+        };
+      });
+    expect(defaultDarkColors.theme).toBeUndefined();
+    expect(defaultDarkColors.token).toBe(defaultDarkColors.semantic);
+    expect(defaultDarkColors.token).toBe(
+      defaultDarkColors.defaultDarkAccent,
+    );
+
+    const glueRequests = resourceRequests.filter(({ kind }) => kind === "glue");
+    const wasmRequests = resourceRequests.filter(({ kind }) => kind === "wasm");
+    const glueResponses = resourceResponses.filter(({ kind }) => kind === "glue");
+    const wasmResponses = resourceResponses.filter(({ kind }) => kind === "wasm");
+    expect(glueRequests).toHaveLength(1);
+    expect(wasmRequests).toHaveLength(1);
+    expect(glueResponses).toHaveLength(1);
+    expect(wasmResponses).toHaveLength(1);
+    expect(glueResponses[0]?.status).toBe(200);
+    expect(wasmResponses[0]?.status).toBe(200);
+    expect(glueResponses[0]?.contentType).toMatch(
+      /^(?:application|text)\/javascript(?:;|$)/,
+    );
+    expect(wasmResponses[0]?.contentType).toMatch(/^application\/wasm(?:;|$)/);
+    expect(
+      new URL(glueResponses[0]?.url ?? "http://invalid").searchParams.get(
+        "zfbMdWasmGen",
+      ),
+    ).toBe("0");
+
+    assertNoConsoleErrors();
   });
 });
 

@@ -146,6 +146,37 @@ Both schemes wire all 23 roles; the table below shows Default Dark's `map.semant
 | `imageOverlayBg` / `imageOverlayFg` | `{ base: 4 }` / `{ base: 0 }` | Image enlarge overlay — merged onto `bg` |
 | `matchedKeywordBg` / `matchedKeywordFg` | shared literal | Search result `<mark>` — dedicated tokens, live-editable in the Design Token Panel |
 
+### Syntax semantics
+
+`ModeMap.syntax` is an optional partial map of nine syntax-specific roles. If the map is absent, or an individual role is omitted, that role inherits the existing semantic role shown below. Schemes and v3 token JSON authored before syntax tokens existed therefore remain valid, while a named variation or one mode can override only the roles it needs.
+
+| `ModeMap.syntax` key | CSS custom property | Inherits from | zfb renderer roles |
+|---|---|---|---|
+| `syntaxComment` | `--zd-syntax-comment` | `muted` | comment |
+| `syntaxString` | `--zd-syntax-string` | `success` | string, escape |
+| `syntaxNumber` | `--zd-syntax-number` | `warning` | number, constant |
+| `syntaxKeyword` | `--zd-syntax-keyword` | `accent` | keyword, heading |
+| `syntaxCallable` | `--zd-syntax-callable` | `info` | function |
+| `syntaxType` | `--zd-syntax-type` | `warning` | type, namespace |
+| `syntaxName` | `--zd-syntax-name` | `codeFg` | property, variable, tag, attribute |
+| `syntaxInserted` | `--zd-syntax-inserted` | `success` | inserted |
+| `syntaxDeleted` | `--zd-syntax-deleted` | `danger` | deleted |
+
+The remaining zfb roles (operator and punctuation) use `codeFg`. This compression keeps zfb's 18 renderer roles as component-level detail instead of making all 18 public color decisions. Inserted/deleted backgrounds are also component tokens: zudo-doc mixes 15% of the corresponding syntax foreground into `codeBg` with `color-mix()` rather than exposing two more public roles.
+
+For example, override only keywords in one mode:
+
+```ts
+const darkMap: ModeMap = {
+  // ...base and semantic mappings...
+  syntax: {
+    syntaxKeyword: { state: "info" },
+  },
+};
+```
+
+The provider emits all nine resolved `--zd-syntax-*` variables. Both native fenced-code output and HtmlPreview's lazy WASM output consume them through zfb's `--zfb-hi-*` component bridge. Because the bridge retains `var()` references, scheme switches and Design Token Panel edits recolor existing `hi-*` DOM without rerunning highlighting. Shipped foreground/background pairs, including the rendered inserted/deleted tints, are validated at a minimum 4.6:1 contrast ratio.
+
 ## Role-merge philosophy
 
 The palette was deliberately minimized to keep the number of distinct tones small. Several roles are merged onto a shared stop instead of each carrying their own:
@@ -181,7 +212,7 @@ const darkMap: ModeMap = {
     danger: "oklch(.655 .170 25)",
     // ...
   },
-  // Required map; omitted syntax roles inherit their documented semantic role.
+  // Optional; omit it entirely when all syntax roles should inherit.
   syntax: {},
 };
 ```
@@ -335,7 +366,7 @@ const myMap: ModeMap = {
     ...SEMANTIC_RAMP_DEFAULTS,
     accent: { accent: 1 }, // only override the roles that need to differ
   },
-  syntax: {}, // required; add only syntax-specific overrides here
+  syntax: {}, // optional; add only syntax-specific overrides here
 };
 
 export const colorSchemes: Record<string, ColorScheme> = {

@@ -179,31 +179,10 @@ header[data-header] {
   --zfb-hi-hd: var(--zd-syntax-keyword);
 }
 
-/* HTML Preview remains on Shiki until #2742. Its dual-theme variables resolve
- * through color-scheme. These selectors intentionally exclude `.hi-root`,
- * whose colors come from the semantic bridge above. */
-[data-theme] .shiki,
-[data-theme] .shiki span {
-  color: light-dark(var(--shiki-light), var(--shiki-dark));
-  font-style: light-dark(
-    var(--shiki-light-font-style, inherit),
-    var(--shiki-dark-font-style, inherit)
-  );
-}
-
-/* Background only on the <pre> wrapper — deliberately NOT on token spans. The
- * --shiki-*-bg vars are set inline on the <pre> and inherit down to spans;
- * painting them per-span would lay an opaque base background over the
- * translucent line-/word-highlight backgrounds that sit on the enclosing
- * .line span (see .line.highlighted below). */
-[data-theme] .shiki {
-  background-color: light-dark(var(--shiki-light-bg), var(--shiki-dark-bg));
-}
-
-/* HtmlPreview component — Shiki code blocks
- * Token colors inherit from the global [data-theme] .shiki rule above.
- * These rules only adjust layout and background for the preview context. */
-.zd-html-preview-code pre.shiki {
+/* HtmlPreview component — zfb semantic code blocks. Token colors and the root
+ * surface resolve through the shared class-mode bridge above; these rules only
+ * adjust layout for the preview context. */
+.zd-html-preview-code pre.hi-root {
   margin: 0;
   padding: var(--spacing-hsp-md);
   font-size: var(--text-caption);
@@ -211,7 +190,7 @@ header[data-header] {
   overflow-x: auto;
 }
 
-.zd-html-preview-code pre.shiki code {
+.zd-html-preview-code pre.hi-root code {
   font-family: var(--font-mono);
   white-space: pre;
 }
@@ -266,9 +245,9 @@ pre.hi-root .line .highlighted-word {
  * zfb's :::code-group emits <CodeGroup tabs={[...]}> with one
  * <pre data-lang="…">{RAW text}</pre> child per fence. These <pre> elements
  * are NOT syntax-highlighted (the Rust pipeline doesn't highlight inside
- * code-group fences), so they get no `.hi-root` class. Apply explicit
- * code-block visual treatment via tokens to match the highlighted code blocks
- * surrounding them.
+ * code-group fences), so they get no `.hi-root` class.
+ * Apply explicit code-block visual treatment via tokens to match the
+ * highlighted code blocks surrounding them.
  * ======================================== */
 
 .code-group-panel pre[data-lang] {

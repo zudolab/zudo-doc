@@ -53,10 +53,9 @@ function makeScheme(): ColorScheme {
   };
 }
 
-// Compile-time contract: a no-syntax ModeMap is no longer accepted. This is
-// intentionally never called; `tsc --noEmit` verifies the negative assertion.
-function assertSyntaxMapIsRequired(): void {
-  // @ts-expect-error ModeMap.syntax is required, even when it has no overrides.
+// Compile-time contract: schemes authored before syntax tokens existed remain
+// assignable without a migration-only empty object.
+function assertSyntaxMapIsOptional(): void {
   const noSyntax: ColorScheme["map"] = {
     bg: { base: 4 },
     fg: { base: 0 },
@@ -126,7 +125,7 @@ describe("resolveSemanticColors", () => {
   });
 });
 
-describe("resolveSyntaxColors — required partial syntax map", () => {
+describe("resolveSyntaxColors — optional partial syntax map", () => {
   it("lets a partial syntax map override only selected roles", () => {
     const scheme = makeScheme();
     scheme.map.syntax = { syntaxKeyword: { accent: 2 } };
@@ -143,6 +142,37 @@ describe("resolveSyntaxColors — required partial syntax map", () => {
     for (const key of SYNTAX_SEMANTIC_KEYS) {
       expect(syntax[key]).toBe(resolveSemanticColors(scheme)[SYNTAX_SEMANTIC_ALIASES[key]]);
     }
+  });
+
+  it("treats an absent syntax map as all inherited aliases", () => {
+    const scheme = makeScheme();
+    delete scheme.map.syntax;
+    const syntax = resolveSyntaxColors(scheme);
+    expect(Object.keys(syntax)).toEqual([...SYNTAX_SEMANTIC_KEYS]);
+    for (const key of SYNTAX_SEMANTIC_KEYS) {
+      expect(syntax[key]).toBe(
+        resolveSemanticColors(scheme)[SYNTAX_SEMANTIC_ALIASES[key]],
+      );
+    }
+  });
+
+  it("resolves legacy v3-derived JSON scheme data with no syntax field", () => {
+    const legacyScheme = makeScheme();
+    delete legacyScheme.map.syntax;
+    const legacyV3Json = JSON.stringify({
+      schemaId: "zudo-design-tokens/v3",
+      scheme: legacyScheme,
+    });
+    const imported = JSON.parse(legacyV3Json) as {
+      schemaId: string;
+      scheme: ColorScheme;
+    };
+
+    expect(imported.schemaId).toBe("zudo-design-tokens/v3");
+    expect(() => schemeToCssPairs(imported.scheme)).not.toThrow();
+    expect(resolveSyntaxColors(imported.scheme).syntaxKeyword).toBe(
+      resolveSemanticColors(imported.scheme).accent,
+    );
   });
 
   it("falls back safely when runtime-authored syntax refs are invalid", () => {
