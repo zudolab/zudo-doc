@@ -217,8 +217,20 @@ await createZudoDoc({
     "docHistory",
     "footerCopyright",
   ],
+  cjkFriendly: false,
+  minifyHtml: true,
+  headerRightItems: [
+    { type: "component", component: "theme-toggle" },
+    { type: "component", component: "github-link" },
+  ],
+  metaTags: {
+    description: true,
+    ogImage: "/img/ogp.png",
+  },
   packageManager: "pnpm",
   install: true,
   git: true,
 });
 ```
+
+`headerRightItems` (see the [Header Right Items guide](../guides/header-right-items.mdx)) and `metaTags` (see [Configuration](../guides/configuration.mdx#identity-and-urls-metatags)) accept the same shapes as the JSON preset fields of the same name, and are validated with the same rules — an unknown `headerRightItems` component/trigger name or an invalid `metaTags` sub-field type throws before scaffolding starts.

@@ -6,7 +6,7 @@ CLI scaffold tool for creating new zudo-doc documentation sites. Generates a pro
 
 ## Architecture (minimal-scaffold, epic zudolab/zudo-doc#2651 Wave 6 #2660)
 
-The generator emits the **locked ~12-file minimal manifest** — one config file
+The generator emits the **locked ~13-file minimal manifest** — one config file
 (`zfb.config.ts`, `zudoDoc({ ...only fields you chose })`) plus markdown
 content plus a handful of unavoidable root files. Everything else (layout,
 chrome, islands, default `@theme` tokens, even the doc ROUTES themselves via
@@ -51,7 +51,7 @@ left to inject or copy.
 | `src/constants.ts` | Feature definitions, supported langs, header-right labels, and the current Default light/dark scheme pairing |
 | `src/utils.ts` | Shared utilities (patchFile, patchDefaultLang, getSecondaryLang) |
 | `src/cli.ts` | CLI argument parsing (minimist) |
-| `src/api.ts` | Programmatic API (`createZudoDoc()`) |
+| `src/api.ts` | Programmatic API (`createZudoDoc()`). `CreateOptions` must stay in sync with `PresetJson` (`preset.ts`) — a field added to one and not the other is a type-level parity gap (#2922). Shape validation for `headerRightItems`/`metaTags` is shared via `preset.ts`'s exported `validateHeaderRightItems()`/`validateMetaTags()` — extend those, don't re-implement the allowlists here. |
 | `src/prompts.ts` | Interactive prompts (@clack/prompts) |
 | `src/index.ts` | Entry point |
 
@@ -59,7 +59,7 @@ left to inject or copy.
 
 | Directory | Role |
 |-----------|------|
-| `templates/base/` | The locked ~12-file minimal manifest (barebone, EN-only): `pages/index.tsx` (1-line re-export), `pages/docs/[[...slug]].tsx` (self-contained doc stub — see its header comment for why it's required), `src/styles/global.css` (~20-line `@import` chain + token-override slot), `tsconfig.json` (5-line extends form). `zfb.config.ts`/`package.json`/`CLAUDE.md`/`.gitignore`/`.npmrc` are generated programmatically, not copied from here. |
+| `templates/base/` | The locked ~13-file minimal manifest (barebone, EN-only): `pages/index.tsx` (1-line re-export), `pages/docs/[[...slug]].tsx` (self-contained doc stub — see its header comment for why it's required), `src/styles/global.css` (~20-line `@import` chain + token-override slot), `tsconfig.json` (5-line extends form). `zfb.config.ts`/`package.json`/`CLAUDE.md`/`.gitignore`/`.npmrc`/`pnpm-workspace.yaml` are generated programmatically, not copied from here. |
 | `templates/features/*/files/` | Feature-specific files copied when a feature is selected. Only `i18n` (locale doc stub), `tauri`, and `tauriDev` (Rust shells) have template directories. `tagGovernance` writes one explicit tag vocabulary/config module in its `postProcess`; all audit/suggest behavior comes from package-owned bins. |
 
 ### Injection anchors — mostly retired
