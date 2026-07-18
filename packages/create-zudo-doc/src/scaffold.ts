@@ -821,6 +821,13 @@ function generatePackageJson(choices: UserChoices) {
     // `run-p` (npm-run-all2, added to devDependencies above) runs both.
     scripts.dev = "run-p dev:zfb dev:history";
     scripts["dev:zfb"] = "zfb dev";
+    // run-p swallows trailing args and npm-run-all2 v7's `{@}` placeholder
+    // strips flag names, so `pnpm dev -- --host 0.0.0.0` is silently ignored
+    // (verified in issue #2940) — dev:network is a dedicated LAN-bound script
+    // instead. Only zfb binds 0.0.0.0; the history server stays loopback-only
+    // and LAN clients reach it through zfb's `/doc-history/*` dev proxy.
+    scripts["dev:zfb:network"] = "zfb dev --host 0.0.0.0";
+    scripts["dev:network"] = "run-p dev:zfb:network dev:history";
     // Relative --content-dir/--locale paths are resolved by resolveContentPath
     // (packages/doc-history-server/src/args.ts) against INIT_CWD (falling back
     // to process.cwd()) — correct for the supported invocation (`<pm> dev` /

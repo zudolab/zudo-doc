@@ -45,6 +45,12 @@ export function generateCLAUDEFile(choices: UserChoices): string {
     lines.push(
       `- \`${pmRunCommand(pm, "dev")}\` — runs the zfb dev server (port 4321) and the doc-history API server (port 4322) concurrently via \`run-p\` (\`${pmRunCommand(pm, "dev:zfb")}\` / \`${pmRunCommand(pm, "dev:history")}\` individually)`,
     );
+    lines.push(
+      `- \`${pmRunCommand(pm, "dev:network")}\` — same, but zfb binds \`--host 0.0.0.0\` for LAN access (\`${pmRunCommand(pm, "dev:zfb:network")}\` individually); the doc-history server stays loopback-only and LAN clients reach it through zfb's \`/doc-history/*\` dev proxy`,
+    );
+    lines.push(
+      `- \`run-p\` swallows trailing args, so other zfb flags don't forward through \`${pmRunCommand(pm, "dev")}\` — pass them directly instead: \`${pm} run dev:zfb -- <flags>\``,
+    );
   } else {
     lines.push(`- \`${pmRunCommand(pm, "dev")}\` — zfb dev server (port 4321)`);
   }
