@@ -117,7 +117,8 @@ describe("defaultColorSchemes", () => {
 
   it("keeps shipped syntax maps partial: only contrast-tuned diff roles are explicit", () => {
     for (const scheme of Object.values(defaultColorSchemes)) {
-      expect(Object.keys(scheme.map.syntax)).toEqual([
+      expect(scheme.map.syntax).toBeDefined();
+      expect(Object.keys(scheme.map.syntax ?? {})).toEqual([
         "syntaxInserted",
         "syntaxDeleted",
       ]);
