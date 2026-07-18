@@ -51,6 +51,7 @@ export const settings = {
   dynamicPageTransition: false,
   frontmatterPreview: false,
   docHistory: false,
+  docHistoryExclude: [],
   bodyFootUtilArea: false,
   htmlPreview: undefined,
   versions: false,
