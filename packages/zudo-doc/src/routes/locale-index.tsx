@@ -37,6 +37,12 @@ export default function LocaleIndexPage({ params }: PageArgs): JSX.Element {
   const { tree, categoryOrder, tagCount } = prepareHomeData(routeCtx, locale);
 
   return (
-    <HomePageView locale={locale} tree={tree} categoryOrder={categoryOrder} tagCount={tagCount} />
+    <HomePageView
+      locale={locale}
+      tree={tree}
+      categoryOrder={categoryOrder}
+      tagCount={tagCount}
+      wide={settings.home?.wide ?? false}
+    />
   );
 }

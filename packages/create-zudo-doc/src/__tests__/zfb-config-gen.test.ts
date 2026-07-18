@@ -632,6 +632,7 @@ describe("generateZfbConfig — never emits escape-hatch / shell / package-only 
       "docsDir:",
       "base:",
       "trailingSlash:",
+      "home:",
       "siteDescription:",
       "mermaid:",
       "editUrl:",
