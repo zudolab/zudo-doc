@@ -53,6 +53,10 @@ Read ONLY the section relevant to your task. Apply its rules strictly.
 - **NEVER** use hardcoded hex values in components
 - Both bundled schemes (`Default Light`, `Default Dark`) share the same ramps; only their per-mode wiring (`map`) differs. This project doesn't own a copy of the ramp/map definitions — they're package-owned, shipped compiled under `node_modules/@takazudo/zudo-doc/dist/color-schemes-defaults/`. Only override the `@theme` tokens you actually need to change, in `src/styles/global.css`
 
+### Palette index convention
+
+Within Tier 1, the `base` and `accent` ramps are addressed by a plain numeric index — `0` is always the lightest stop, climbing toward the darkest (`base` runs `0`-`4`, `accent` runs `0`-`2`). The `state` ramp breaks this pattern on purpose: its four roles (`danger`, `success`, `warning`, `info`) are addressed by name, never by index, since a numeric position is meaningless for a role that isn't part of a light-to-dark progression. When a new ramp is ever introduced, keep this split — a tonal progression gets an index, a set of standalone semantic roles gets names.
+
 ### Search & highlight tokens (role-split)
 
 Highlight roles are deliberately split across dedicated semantic tokens — do **not** share one token across unrelated highlight UIs.
