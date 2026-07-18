@@ -121,6 +121,12 @@ CIパイプラインはzfbサイトビルドと並行して履歴生成を実行
 
 </Tip>
 
+<Note>
+
+`DOC_HISTORY_SKIP_POSTBUILD`（[デプロイガイド](../guides/deployment.mdx)を参照）は、`build-site`内で実行されるzfbプラグインのインラインpostBuildフックのみを制御します — `build-history`ジョブが実際に実行するこのスタンドアロンの`generate` CLIには影響しません。このCLIは呼び出されると常に生成します。
+
+</Note>
+
 ## データ形式
 
 ### DocHistoryEntry

@@ -121,6 +121,12 @@ Both the `build-history` and `build-site` jobs require a full clone (`fetch-dept
 
 </Tip>
 
+<Note>
+
+`DOC_HISTORY_SKIP_POSTBUILD` (see the [deployment guide](../guides/deployment.mdx)) only gates the zfb plugin's inline postBuild hook running inside `build-site` — it has no effect on this standalone `generate` CLI, which is what the `build-history` job actually runs and always generates when invoked.
+
+</Note>
+
 ## Data Format
 
 ### DocHistoryEntry

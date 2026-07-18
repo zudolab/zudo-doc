@@ -20,7 +20,10 @@
 //      real git dates. The per-page dropdown JSON that actually deploys comes
 //      from the dedicated parallel `build-history` job (the CLI directly),
 //      which is merged into `dist/doc-history/` at deploy time; the build-site
-//      postBuild output is redundant with it.
+//      postBuild output is redundant with it. A shallow-clone CI variant that
+//      wants to skip ONLY this heavy step while keeping the lightweight
+//      preBuild meta step sets `DOC_HISTORY_SKIP_POSTBUILD=1` instead of
+//      `SKIP_DOC_HISTORY=1` (#2927).
 //   3. **Pre-build metadata** — emits the manifest consumed during SSG.
 
 import { spawn } from "node:child_process";
@@ -186,6 +189,17 @@ export interface PostBuildContext {
 export const DOC_HISTORY_GEN_ENV = "GEN_DOC_HISTORY";
 
 /**
+ * Env var that skips ONLY the postBuild per-page JSON step, independent of
+ * the preBuild Created/Updated/Author meta step (#2927). Unlike
+ * `SKIP_DOC_HISTORY=1` — which blanks both steps — this lets a shallow-clone
+ * CI variant keep real preBuild metadata while explicitly opting out of the
+ * heavier postBuild `git log --follow` chain. Deliberately does not contain
+ * the substring `SKIP_DOC_HISTORY`, so it is a distinct marker for
+ * `scripts/check-compatibility-contract.ts`'s literal survivor scan.
+ */
+export const DOC_HISTORY_SKIP_POSTBUILD_ENV = "DOC_HISTORY_SKIP_POSTBUILD";
+
+/**
  * Decide whether the postBuild hook should generate per-page doc-history JSON.
  *
  * The per-page JSON is redundant on the normal paths: dev reads it live from
@@ -195,12 +209,16 @@ export const DOC_HISTORY_GEN_ENV = "GEN_DOC_HISTORY";
  * per content file, which on a large corpus exceeds zfb's 120s postBuild
  * lifecycle-hook budget (#1986). So the default flips to opt-in:
  *
- *   - `SKIP_DOC_HISTORY=1` → never generate (highest priority; back-compat).
- *   - `GEN_DOC_HISTORY=1`  → always generate (explicit local opt-in).
- *   - CI                   → generate (keeps the CI build-site artifact
- *                            byte-identical to before; D1's async generator
- *                            keeps it within budget).
- *   - otherwise (local)    → skip (the #1986 fix).
+ *   - `SKIP_DOC_HISTORY=1`          → never generate (highest priority;
+ *                                     back-compat; also blanks preBuild).
+ *   - `DOC_HISTORY_SKIP_POSTBUILD=1` → never generate (explicit skip that
+ *                                     leaves preBuild untouched; #2927).
+ *   - `GEN_DOC_HISTORY=1`           → always generate (explicit local opt-in).
+ *   - CI                            → generate (keeps the CI build-site
+ *                                     artifact byte-identical to before;
+ *                                     the async generator keeps it within
+ *                                     budget).
+ *   - otherwise (local)             → skip (the #1986 fix).
  *
  * This gates ONLY the postBuild per-page dropdown JSON. The preBuild meta step
  * (the visible Created/Updated/Author block) is unaffected — it keys off
@@ -212,6 +230,12 @@ export function shouldGeneratePostBuild(
 ): { generate: boolean; reason: string } {
   if (env.SKIP_DOC_HISTORY === "1") {
     return { generate: false, reason: "SKIP_DOC_HISTORY=1" };
+  }
+  if (env[DOC_HISTORY_SKIP_POSTBUILD_ENV] === "1") {
+    return {
+      generate: false,
+      reason: `${DOC_HISTORY_SKIP_POSTBUILD_ENV}=1`,
+    };
   }
   if (env[DOC_HISTORY_GEN_ENV] === "1") {
     return { generate: true, reason: `${DOC_HISTORY_GEN_ENV}=1` };
@@ -237,7 +261,8 @@ function isCiEnv(env: NodeJS.ProcessEnv): boolean {
  *
  * Generation is gated by `shouldGeneratePostBuild` (see its docs): skipped by
  * default on local builds (opt in with `GEN_DOC_HISTORY=1`), run in CI and
- * when explicitly opted in, and always suppressed by `SKIP_DOC_HISTORY=1`.
+ * when explicitly opted in, and always suppressed by `SKIP_DOC_HISTORY=1` or
+ * `DOC_HISTORY_SKIP_POSTBUILD=1`.
  *
  * The CLI is spawned as `node <cli> <args>` (shell: false) so option-derived
  * paths are never interpolated into a command line. Output is inherited so
