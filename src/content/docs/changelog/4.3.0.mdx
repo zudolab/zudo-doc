@@ -1,0 +1,25 @@
+---
+title: 4.3.0
+description: Release notes for 4.3.0.
+sidebar_position: 1061
+---
+
+Released: 2026-07-19
+
+### Features
+
+- Syntax highlighting is now driven by semantic design tokens across document code fences and `HtmlPreview`. Browser previews lazily load the public zfb WASM highlighter, existing color schemes inherit compatible semantic aliases, and project-owned Shiki dependencies and theme-name configuration are no longer required (178f23321)
+- Home pages can opt into the wide content layout with `home.wide`; the setting applies consistently to package-owned root and localized home routes (d068ac346)
+- Doc history can exclude selected pages through configuration, with matching behavior threaded through rendering, history generation, package settings, and generated-project configuration (e18c2e528)
+- The Hearth theme now provides complete admonition icon coverage (736c6c5e1)
+
+### Bug Fixes
+
+- Frontmatter status pills now meet WCAG contrast requirements across every shipped theme pack, light/dark mode, and semantic role while preserving their tinted backgrounds (2986d87c4)
+- The showcase now consumes the package-owned theme contract correctly and emits literal semantic z-index utilities (2ca79ca6b, 8fb517df6)
+- Theme-pack font validation is stricter, and the generated setup skill resolves main-worktree paths reliably (f9dd94d53, 4c2a508bb)
+
+### Other Changes
+
+- Expanded English and Japanese documentation for syntax-token migration, wide home layouts, doc-history exclusions, theme development, and network exposure caveats
+- Added browser-level highlighting coverage, exact pill contrast checks, settings parity tests, and compatibility-contract guards
