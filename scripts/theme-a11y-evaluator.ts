@@ -123,10 +123,14 @@ export const LARGE_TEXT_BOLD_MIN_WEIGHT = 700;
 export const MAX_SKIP_RATIO = 0.3;
 /** Alpha at/above which a layer is treated as fully opaque. */
 const OPAQUE_ALPHA = 0.999;
-/** Cap on the candidate-backdrop set carried through the ancestor walk (bounds
- *  a pathological stack of many multi-stop gradients); above it the set is
- *  reduced to its luminance extremes, which are what drive the min/max ratio. */
-const MAX_BACKDROP_CANDIDATES = 16;
+/** Hard cap on the candidate-backdrop set carried through the ancestor walk. A
+ *  real page stays in the single digits even with per-stop interpolation; only a
+ *  pathological deep stack of many multi-stop gradients could exceed this, and
+ *  such a backdrop is treated as indeterminate (SKIP) rather than lossily
+ *  reduced — dropping a candidate before the ink color is known could discard
+ *  the exact backdrop that fails (min contrast is not always at a luminance
+ *  extreme, and luminance is weighted, not a flat RGB mean). */
+const MAX_BACKDROP_CANDIDATES = 64;
 
 // ---------------------------------------------------------------------------
 // Color parsing / compositing
@@ -186,6 +190,15 @@ export const UNREADABLE_IMAGE = "unreadable" as const;
  * `none`/empty → `null` (no image). A `url(...)` bitmap or any unparseable
  * token → {@link UNREADABLE_IMAGE} (caller SKIPs — no guessing). Otherwise the
  * parsed stop colors, alpha kept, in source order.
+ *
+ * NOTE: when one `background-image` property stacks SEVERAL comma-separated
+ * gradients, their stops are pooled into one flat list and (by the caller) each
+ * composited independently over the solid — the stacked layers are not
+ * composited onto each other. For the theme packs this is immaterial: the only
+ * stacks are near-imperceptible grain/aurora washes (≤0.05–0.38 alpha over an
+ * opaque surface) whose combined tint never crosses a contrast threshold that a
+ * single stop wouldn't. A precise per-layer composite would need the layers kept
+ * separate, which the flat computed string doesn't hand back cleanly.
  */
 export function parseImageStops(backgroundImage: string): SrgbA[] | null | typeof UNREADABLE_IMAGE {
   if (!backgroundImage || backgroundImage === "none") return null;
@@ -203,39 +216,49 @@ export function parseImageStops(backgroundImage: string): SrgbA[] | null | typeo
   return stops;
 }
 
-/** Rough relative-luminance proxy (unweighted mean) for reducing an oversized
- *  candidate set to its extremes — only used past {@link MAX_BACKDROP_CANDIDATES}. */
-const lumaProxy = (c: Srgb): number => (c.r + c.g + c.b) / 3;
-
-/** Deduplicate candidate backdrops (8-bit rounding), capping the set at its
- *  luminance extremes when a deep multi-gradient stack would otherwise blow up. */
-function reduceCandidates(candidates: Srgb[]): Srgb[] {
+/** Deduplicate candidate backdrops by 8-bit-rounded value (order-preserving).
+ *  Deliberately lossless — see {@link MAX_BACKDROP_CANDIDATES}. */
+function dedupeCandidates(candidates: Srgb[]): Srgb[] {
   const seen = new Map<string, Srgb>();
   for (const c of candidates) {
     const key = `${Math.round(c.r * 255)},${Math.round(c.g * 255)},${Math.round(c.b * 255)}`;
     if (!seen.has(key)) seen.set(key, c);
   }
-  const unique = [...seen.values()];
-  if (unique.length <= MAX_BACKDROP_CANDIDATES) return unique;
-  let lo = unique[0]!;
-  let hi = unique[0]!;
-  for (const c of unique) {
-    if (lumaProxy(c) < lumaProxy(lo)) lo = c;
-    if (lumaProxy(c) > lumaProxy(hi)) hi = c;
+  return [...seen.values()];
+}
+
+/**
+ * Expand a gradient's declared stops with the midpoint between each ADJACENT
+ * pair. A gradient interpolates continuously, so its worst-contrast point can
+ * fall BETWEEN two stops (black text over red→green fails near the olive
+ * midpoint though it passes at both ends); adding midpoints puts that interior
+ * backdrop in the candidate set so it can't be silently PASSed. One level is
+ * enough to catch the extremum of a monotone segment. Stops in source order.
+ */
+function interpolateStops(stops: SrgbA[]): SrgbA[] {
+  if (stops.length < 2) return stops;
+  const out: SrgbA[] = [];
+  for (let i = 0; i < stops.length; i++) {
+    const s = stops[i]!;
+    out.push(s);
+    const next = stops[i + 1];
+    if (next) {
+      out.push({ r: (s.r + next.r) / 2, g: (s.g + next.g) / 2, b: (s.b + next.b) / 2, a: (s.a + next.a) / 2 });
+    }
   }
-  return [lo, hi];
+  return out;
 }
 
 /**
  * Backdrops a single layer paints, given the opaque color already resolved
  * behind it (`base`): the color alone (revealed wherever the layer's image is
- * transparent) plus that color tinted by each image stop. No image ⇒ just the
- * color.
+ * transparent) plus that color tinted by each image stop (and interpolated
+ * mid-stops). No image ⇒ just the color.
  */
 function candidatesFromLayer(stops: SrgbA[] | null, groupOpacity: number, base: Srgb): Srgb[] {
   if (!stops || stops.length === 0) return [base];
   const out: Srgb[] = [base];
-  for (const s of stops) {
+  for (const s of interpolateStops(stops)) {
     out.push(compositeOver({ r: s.r, g: s.g, b: s.b, a: s.a * groupOpacity }, base));
   }
   return out;
@@ -262,15 +285,19 @@ export type BackgroundResolution = { candidates: Srgb[] } | { skip: string };
  * the backdrop and (via {@link evaluateSample}) fades the text with it.
  *
  * A `background-image` is NOT a blind SKIP: its gradient/overlay stops are
- * resolved into a SET of candidate backdrops (each stop composited over the
- * solid, plus the solid itself where the image is transparent). The caller
- * gates on the worst candidate and SKIPs only a set that straddles the
- * threshold (genuinely position-dependent). This turns a paper-grain wash or an
- * ambient aurora tint over an opaque surface — previously a whole-group SKIP —
- * into a real verdict, while a `url(...)` bitmap (indeterminate art) still SKIPs.
+ * resolved into a SET of candidate backdrops (each stop — and interpolated
+ * mid-stops — composited over the solid, plus the solid itself where the image
+ * is transparent). The caller gates on the worst candidate and SKIPs only a set
+ * that straddles the threshold (genuinely position-dependent). This turns a
+ * paper-grain wash or an ambient aurora tint over an opaque surface — previously
+ * a whole-group SKIP — into a real verdict, while a `url(...)` bitmap
+ * (indeterminate art) still SKIPs.
  *
- * Returns `{ skip }` — never a guessed pass — when an image is unreadable or no
- * opaque layer exists at all.
+ * Images are parsed only for VISIBLE layers (at/in front of the opaque base):
+ * an unreadable bitmap on a layer HIDDEN behind an opaque surface can't affect
+ * the text, so it does not force a SKIP. Returns `{ skip }` — never a guessed
+ * pass — when a visible image is unreadable, no opaque layer exists, or the
+ * candidate set is too large to bound losslessly (a pathological gradient stack).
  */
 export function resolveEffectiveBackground(chain: AncestorLayer[]): BackgroundResolution {
   const n = chain.length;
@@ -284,39 +311,44 @@ export function resolveEffectiveBackground(chain: AncestorLayer[]): BackgroundRe
     groupOpacity[i] = i === n - 1 ? own : own * groupOpacity[i + 1]!;
   }
 
-  // Parse each layer's image up front; a single unreadable image ⇒ SKIP.
-  const stopsPerLayer: (SrgbA[] | null)[] = new Array(n).fill(null);
-  for (let i = 0; i < n; i++) {
-    const parsed = parseImageStops(chain[i]!.backgroundImage);
-    if (parsed === UNREADABLE_IMAGE) {
-      return { skip: `unreadable background-image (ancestor depth ${i}) — backdrop indeterminate` };
-    }
-    stopsPerLayer[i] = parsed;
-  }
-
-  // Front→back: find the base layer and its candidate backdrops.
+  // Front→back: find the base layer and its candidate backdrops. Parse each
+  // layer's image lazily as we reach it — layers behind the base are never
+  // reached, so a hidden bitmap there is irrelevant.
   let baseIndex = -1;
   let candidates: Srgb[] = [];
   for (let i = 0; i < n; i++) {
     const layer = chain[i]!;
     const ga = groupOpacity[i] ?? 1;
+    const stops = parseImageStops(layer.backgroundImage);
+    if (stops === UNREADABLE_IMAGE) {
+      return { skip: `unreadable background-image (ancestor depth ${i}) — backdrop indeterminate` };
+    }
     const c = parseSrgbA(layer.backgroundColor);
     const colorEffAlpha = c.a * ga;
-    const stops = stopsPerLayer[i] ?? null;
     const imageIsOpaqueCover =
       stops !== null && stops.length > 0 && stops.every((s) => s.a * ga >= OPAQUE_ALPHA);
 
     if (colorEffAlpha >= OPAQUE_ALPHA) {
-      // Opaque solid; a see-through image on this layer tints it.
+      // Opaque solid base. An image on this layer — even one whose stops are all
+      // opaque — does NOT necessarily cover it: background-size/background-repeat
+      // (which computed styles here don't expose) can leave the solid visible,
+      // e.g. sumi's 0.55rem no-repeat corner-seal gradient. So the solid stays a
+      // candidate and the image stops are ADDITIONAL candidates over it; the
+      // worst wins. Never drop the solid for a same-layer gradient — assuming
+      // full coverage would manufacture a false FAIL where the text sits on the
+      // uncovered solid.
       baseIndex = i;
       candidates = candidatesFromLayer(stops, ga, { r: c.r, g: c.g, b: c.b });
       break;
     }
     if (imageIsOpaqueCover) {
-      // A fully-opaque gradient/overlay is itself the base; the color and
-      // everything below it are hidden. Its stops are the candidate backdrops.
+      // No opaque background-color here, but a fully-opaque gradient is present.
+      // Treat it as the base (its stops + mid-stops are the backdrops). The one
+      // case this can't see through is a partial (small background-size) opaque
+      // gradient over a TRANSPARENT color — accepted; the packs' opaque
+      // gradients on transparent-bg layers are full-cover surface fills.
       baseIndex = i;
-      candidates = stops!.map((s) => ({ r: s.r, g: s.g, b: s.b }));
+      candidates = interpolateStops(stops).map((s) => ({ r: s.r, g: s.g, b: s.b }));
       break;
     }
     // Otherwise this layer is see-through — composited over the base below.
@@ -328,18 +360,27 @@ export function resolveEffectiveBackground(chain: AncestorLayer[]): BackgroundRe
 
   // Composite the front translucent layers (baseIndex-1 .. 0) over every base
   // candidate: each paints its background-color, then its see-through image.
-  candidates = reduceCandidates(candidates);
+  candidates = dedupeCandidates(candidates);
+  if (candidates.length > MAX_BACKDROP_CANDIDATES) {
+    return { skip: "gradient stack too complex to bound losslessly — backdrop indeterminate" };
+  }
   for (let i = baseIndex - 1; i >= 0; i--) {
     const layer = chain[i]!;
     const ga = groupOpacity[i] ?? 1;
+    const stops = parseImageStops(layer.backgroundImage);
+    if (stops === UNREADABLE_IMAGE) {
+      return { skip: `unreadable background-image (ancestor depth ${i}) — backdrop indeterminate` };
+    }
     const c = parseSrgbA(layer.backgroundColor);
-    const stops = stopsPerLayer[i] ?? null;
     const next: Srgb[] = [];
     for (const cand of candidates) {
       const afterColor = compositeOver({ r: c.r, g: c.g, b: c.b, a: c.a * ga }, cand);
       next.push(...candidatesFromLayer(stops, ga, afterColor));
     }
-    candidates = reduceCandidates(next);
+    candidates = dedupeCandidates(next);
+    if (candidates.length > MAX_BACKDROP_CANDIDATES) {
+      return { skip: "gradient stack too complex to bound losslessly — backdrop indeterminate" };
+    }
   }
   return { candidates };
 }

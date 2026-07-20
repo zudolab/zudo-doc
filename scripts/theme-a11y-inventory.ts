@@ -283,6 +283,13 @@ export function collectSamplesInBrowser(payload: CollectPayload): RawSample[] {
   // compare a color no glyph is painted with (a false fg==bg FAIL). Descend to
   // the first descendant (document order) that directly holds text; fall back
   // to the element itself when it has its own text or none is found.
+  //
+  // LIMITATION: a container with several independently-colored text runs (the
+  // pager holds a muted caption AND a fg title) samples only the FIRST run. The
+  // pager's caption is the muted/weaker of the two and its title is bold `--zd-fg`
+  // (safe), so measuring the caption is the conservative pick; a fully-general
+  // "one sample per distinct text run" pass is deferred (it would also reshape
+  // the per-group coverage counts).
   const inkElementFor = (root: Element): Element => {
     if (hasDirectText(root)) return root;
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
