@@ -144,12 +144,13 @@
 /* ── Links ── */
 
 /* Link reset inside site-nav (component can't detect ancestor context) */
-.zd-content [data-site-nav] a {
+/* Reset must stay specificity-0 (:where()) so island utility classes like hover:text-accent control color */
+:where(.zd-content [data-site-nav] a) {
   color: inherit;
   text-decoration: none;
 }
-.zd-content [data-site-nav] a:hover,
-.zd-content [data-site-nav] a:focus-visible {
+:where(.zd-content [data-site-nav] a):hover,
+:where(.zd-content [data-site-nav] a):focus-visible {
   text-decoration: underline;
 }
 

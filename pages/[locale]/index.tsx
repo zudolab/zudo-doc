@@ -71,22 +71,23 @@ export default function LocaleIndexPage({ params }: PageArgs): JSX.Element {
       // Showcase opts into the wide layout (mirrors pages/index.tsx) so the
       // locale-prefixed home page also fills the viewport.
       wide={true}
+      // Overrides the default overview link (issue #3012) — identical to
+      // pages/index.tsx; the view applies the `/ja`-style prefix internally.
+      heroLink={{ path: "/docs/getting-started/introduction/", labelKey: "nav.introduction" }}
       extras={
         // @Takazudo link — ported from pages/index.tsx (refs #1453).
         // Kept out of the shared hero (package HomePageView), threaded here
-        // through the extras seam instead. HomePageView renders `extras` as a
-        // standalone line AFTER the links row (not inline within it), so
-        // this is its own small line, not a row continuation.
-        <p class="mt-vsp-2xs text-small">
-          <a
-            href="https://x.com/Takazudo"
-            class="text-fg underline hover:text-accent"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            @Takazudo
-          </a>
-        </p>
+        // through the extras seam instead. HomePageView renders `extras`
+        // INLINE at the end of the links row (`/`-separated), not as a
+        // standalone line after it (#3012).
+        <a
+          href="https://x.com/Takazudo"
+          class="text-fg underline hover:text-accent"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          @Takazudo
+        </a>
       }
     />
   );

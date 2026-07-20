@@ -65,6 +65,14 @@ Precedents to copy the pattern from: any current `.tsx` component in `src/compon
 
 See also: `/css-wisdom` for light-mode / dark-mode contrast rules and the broader three-tier token strategy.
 
+### Interactive hover color (accent on hover, not at rest)
+
+- **Rule**: chrome/navigation text (sidebar items, header nav, breadcrumb trails, footer links, the History trigger, CategoryNav card description lines) hovers to `text-accent` (and `border-accent` where the surface has a border — cards, the History trigger). Rest state stays `text-fg`/`text-muted` — accent is the HOVER color, not the resting color. Reference idiom: CategoryNav cards (`hover:border-accent` on the card + `group-hover:text-accent` on the description line).
+- **Not in scope**: MDX prose content links (`ContentLink`) and a CategoryNav card's primary label render `text-accent` at rest by an existing, separate convention — this hover rule does not apply to elements that are already accent-colored at rest.
+- **Active-state exemption**: active/aria-current items using the inverted style (`bg-fg text-bg`) do NOT change color on hover.
+- **Controls exemption**: icon buttons, chevron toggles, the sidebar resizer, and similar controls keep their `hover:text-fg`/border affordances — the accent rule is for navigational text, not controls.
+- **Cascade lesson**: CSS link resets that sit above component markup (e.g. the site-nav reset in `packages/zudo-doc/src/content.css`) must be written with `:where()` (zero specificity) so component-emitted utility hovers like `hover:text-accent` can win. A plain descendant selector at 0-2-1 silently defeats utility hover variants (0-2-0).
+
 ### Server-rendered Preact vs client islands
 
 - Default to **server-rendered Preact `.tsx`** (no `client:*` directive) — emits zero JS. See `src/CLAUDE.md` for the canonical rule: "All components are Preact `.tsx` — there are no `.astro` files."
