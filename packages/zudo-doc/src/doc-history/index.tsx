@@ -558,7 +558,7 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
         <button
           type="button"
           onClick={handleOpen}
-          className="doc-history-trigger flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-accent hover:border-accent transition-colors"
+          className="doc-history-trigger flex items-center gap-hsp-xs px-hsp-md py-vsp-xs rounded-lg bg-surface border border-muted text-muted hover:text-accent hover:border-accent focus-visible:text-accent focus-visible:border-accent transition-colors"
           aria-label="View document history"
         >
           <History className="h-icon-md w-icon-md" />
