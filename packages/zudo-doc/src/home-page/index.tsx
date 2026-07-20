@@ -35,6 +35,9 @@ import type { ComponentChildren, JSX, VNode } from "preact";
 import { Island } from "@takazudo/zfb";
 import { DocLayoutWithDefaults } from "../doclayout/index.js";
 import { SiteTreeNav } from "../site-tree-nav-island/index.js";
+import { TagNav } from "../nav-indexing/tag-nav.js";
+import type { TagItem } from "../nav-indexing/types.js";
+import { CategoryLinkIcon } from "../tree-nav-shared/index.js";
 import type { SidebarNavNode } from "../sidebar/types.js";
 import type { DocNavNode } from "../doc-page-props/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
@@ -83,9 +86,19 @@ export interface HomePageViewProps {
   categoryOrder: string[];
   /** Root-category slugs that should start collapsed in `SiteTreeNav`. */
   initiallyCollapsedCategorySlugs?: string[];
-  /** Unique tag count for the current locale — gates the "all tags" section
-   *  together with `settings.docTags`. */
-  tagCount: number;
+  /**
+   * Alphabetically-sorted tag list (tag + doc count + pre-resolved href) for
+   * the current locale. Gates and populates the home "Tags" section together
+   * with `settings.docTags`; the first {@link HomePageViewProps.tagLimit} are
+   * rendered as chips.
+   */
+  tags: TagItem[];
+  /**
+   * Max number of tag chips rendered in the home "Tags" section before a "…"
+   * overflow indicator is shown. The full set stays reachable via the
+   * "See all tags" link. @default 30
+   */
+  tagLimit?: number;
   /**
    * Opt the home page into the **wide** content layout (full-viewport
    * category grid instead of the standard capped reading column). Threaded to
@@ -138,7 +151,8 @@ export function createHomePageView<S extends Settings = Settings>(
     tree,
     categoryOrder,
     initiallyCollapsedCategorySlugs,
-    tagCount,
+    tags,
+    tagLimit = 30,
     wide,
   }: HomePageViewProps): JSX.Element {
     const prefix = locale === defaultLocale ? "" : `/${locale}`;
@@ -242,15 +256,31 @@ export function createHomePageView<S extends Settings = Settings>(
           ),
         }) as unknown as VNode}
 
-        {settings.docTags && tagCount > 0 && (
+        {settings.docTags && tags.length > 0 && (
           <section class="mt-vsp-xl">
-            <h2 class="text-title font-bold mb-vsp-md">{t("doc.allTags", locale)}</h2>
-            <a
-              href={withBase(`${prefix}/docs/tags`)}
-              class="text-accent underline hover:text-accent-hover"
-            >
-              {t("doc.allTags", locale)}
-            </a>
+            <h2 class="text-title font-bold mb-vsp-md">{t("doc.tags", locale)}</h2>
+            <TagNav
+              variant="all"
+              tags={tags.slice(0, tagLimit)}
+              labels={{
+                tags: t("doc.tags", locale),
+                taggedWith: t("doc.taggedWith", locale),
+              }}
+            />
+            {tags.length > tagLimit && (
+              <div class="mt-vsp-sm text-title text-muted" aria-hidden="true">
+                …
+              </div>
+            )}
+            <div class="mt-vsp-md">
+              <a
+                href={withBase(`${prefix}/docs/tags`)}
+                class="group inline-flex items-center gap-hsp-xs text-accent hover:underline"
+              >
+                <CategoryLinkIcon className="w-icon-sm text-accent" />
+                <span>{t("doc.seeAllTags", locale)}</span>
+              </a>
+            </div>
           </section>
         )}
       </DocLayoutWithDefaults>

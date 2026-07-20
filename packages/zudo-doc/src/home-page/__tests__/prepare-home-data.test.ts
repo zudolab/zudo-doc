@@ -9,8 +9,9 @@
  *     category meta read via `loadCategoryMeta(cfg.dir)` — locale-dir-ONLY,
  *     NOT the merged categoryMeta `resolveNavSource` returned.
  *  3. An unconfigured locale throws.
- *  4. `tagCount` excludes `category_no_page` docs and uses
- *     `data.slug ?? toRouteSlug(entry.slug)`.
+ *  4. `tags` excludes `category_no_page` docs, uses
+ *     `data.slug ?? toRouteSlug(entry.slug)`, and returns an alphabetically
+ *     sorted list with pre-resolved, locale-prefixed hrefs.
  *  5. `navSourceOptions` / `categoryMetaDir` overrides are honored.
  */
 
@@ -66,6 +67,7 @@ function makeStubRouteContext(opts: StubOptions = {}) {
   const collectTags = vi.fn().mockReturnValue(new Map());
   const docsUrl = vi.fn((slug: string, lang?: string) => `/${lang}/docs/${slug}`);
   const toRouteSlug = vi.fn((id: string) => id);
+  const withBase = vi.fn((p: string) => p);
 
   const ctx = {
     defaultLocale: opts.defaultLocale ?? "en",
@@ -77,6 +79,7 @@ function makeStubRouteContext(opts: StubOptions = {}) {
     collectTags,
     docsUrl,
     toRouteSlug,
+    withBase,
   } as unknown as RouteContext;
 
   return {
@@ -88,6 +91,7 @@ function makeStubRouteContext(opts: StubOptions = {}) {
     collectTags,
     docsUrl,
     toRouteSlug,
+    withBase,
   };
 }
 
@@ -160,7 +164,7 @@ describe("prepareHomeData — non-default-locale branch", () => {
   });
 });
 
-describe("prepareHomeData — tagCount", () => {
+describe("prepareHomeData — tags", () => {
   it("excludes category_no_page docs and uses data.slug ?? toRouteSlug(entry.slug)", () => {
     const navDocs: DocPageEntry[] = [
       makeDoc({ slug: "a", data: { title: "A", slug: "custom-a" } }),
@@ -184,13 +188,36 @@ describe("prepareHomeData — tagCount", () => {
     expect(toRouteSlug).toHaveBeenCalledWith("c");
   });
 
-  it("returns the tagCount as collectTags' resolved map size", () => {
+  it("returns tags sorted alphabetically with URL-encoded, base-applied hrefs (default locale)", () => {
     const { ctx, collectTags } = makeStubRouteContext({ defaultLocale: "en" });
-    collectTags.mockReturnValue(new Map([["a", {}], ["b", {}]]));
+    collectTags.mockReturnValue(
+      new Map([
+        ["type:guide", { tag: "type:guide", count: 8, docs: [] }],
+        ["b", { tag: "b", count: 1, docs: [] }],
+        ["a", { tag: "a", count: 2, docs: [] }],
+      ]),
+    );
 
     const data = prepareHomeData(ctx, "en");
 
-    expect(data.tagCount).toBe(2);
+    expect(data.tags).toEqual([
+      { tag: "a", count: 2, href: "/docs/tags/a" },
+      { tag: "b", count: 1, href: "/docs/tags/b" },
+      { tag: "type:guide", count: 8, href: "/docs/tags/type%3Aguide" },
+    ]);
+  });
+
+  it("prefixes tag hrefs with /{locale} for a non-default locale", () => {
+    const cfg = { label: "Japanese", dir: "src/content/docs-ja" };
+    const { ctx, collectTags } = makeStubRouteContext({
+      defaultLocale: "en",
+      getLocaleConfig: () => cfg,
+    });
+    collectTags.mockReturnValue(new Map([["a", { tag: "a", count: 1, docs: [] }]]));
+
+    const data = prepareHomeData(ctx, "ja");
+
+    expect(data.tags).toEqual([{ tag: "a", count: 1, href: "/ja/docs/tags/a" }]);
   });
 });
 

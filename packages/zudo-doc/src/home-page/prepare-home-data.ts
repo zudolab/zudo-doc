@@ -23,6 +23,7 @@
 import type { RouteContext } from "../factory-context/index.js";
 import type { NavSourceOptions } from "../nav-source-docs/index.js";
 import type { DocNavNode, DocPageEntry } from "../doc-page-props/index.js";
+import type { TagItem } from "../nav-indexing/types.js";
 import { loadCategoryMeta, type CategoryMeta } from "../sidebar-tree/index.js";
 
 /** Default nav-source filter for non-default locales (locale-first merge with
@@ -55,7 +56,10 @@ export interface HomeData {
    *  `HomePageViewProps.tree`). */
   tree: DocNavNode[];
   categoryOrder: string[];
-  tagCount: number;
+  /** Alphabetically-sorted tag list (tag + doc count + pre-resolved,
+   *  locale-prefixed href) for the home "Tags" section — spreads onto
+   *  `HomePageViewProps.tags`. Empty when no tags exist for the locale. */
+  tags: TagItem[];
 }
 
 /**
@@ -109,10 +113,23 @@ export function prepareHomeData(
   const categoryOrder = ctx.getCategoryOrder();
   const grouped = ctx.groupSatelliteNodes(tree, categoryOrder);
 
-  const tagCount = ctx.collectTags(
+  const tagMap = ctx.collectTags(
     navDocs.filter((d) => !d.data.category_no_page),
     (entrySlug, data) => data.slug ?? ctx.toRouteSlug(entrySlug),
-  ).size;
+  );
+  // Sorted alphabetically (page-locale collation) with pre-resolved,
+  // locale-prefixed hrefs — mirrors the /docs/tags index page's TagItem[]
+  // construction (tag-pages/index.tsx) so the home chips link to the exact
+  // same targets.
+  const tagPrefix = locale === ctx.defaultLocale ? "" : `/${locale}`;
+  const tags: TagItem[] = [...tagMap.values()]
+    .sort((a, b) => a.tag.localeCompare(b.tag, locale))
+    .map((info) => ({
+      tag: info.tag,
+      count: info.count,
+      // Tag segment URL-encoded — href sites only; route params stay raw.
+      href: ctx.withBase(`${tagPrefix}/docs/tags/${encodeURIComponent(info.tag)}`),
+    }));
 
-  return { tree: grouped, categoryOrder, tagCount };
+  return { tree: grouped, categoryOrder, tags };
 }

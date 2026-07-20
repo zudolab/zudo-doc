@@ -34,14 +34,14 @@ interface PageArgs {
 export default function LocaleIndexPage({ params }: PageArgs): JSX.Element {
   const locale = params.locale;
 
-  const { tree, categoryOrder, tagCount } = prepareHomeData(routeCtx, locale);
+  const { tree, categoryOrder, tags } = prepareHomeData(routeCtx, locale);
 
   return (
     <HomePageView
       locale={locale}
       tree={tree}
       categoryOrder={categoryOrder}
-      tagCount={tagCount}
+      tags={tags}
       wide={settings.home?.wide ?? false}
     />
   );

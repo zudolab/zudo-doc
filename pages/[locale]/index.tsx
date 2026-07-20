@@ -60,14 +60,14 @@ interface PageArgs {
 export default function LocaleIndexPage({ params }: PageArgs): JSX.Element {
   const locale = params.locale;
 
-  const { tree, categoryOrder, tagCount } = prepareHomeData(routeContext, locale);
+  const { tree, categoryOrder, tags } = prepareHomeData(routeContext, locale);
 
   return (
     <HomePageView
       locale={locale}
       tree={tree}
       categoryOrder={categoryOrder}
-      tagCount={tagCount}
+      tags={tags}
       // Showcase opts into the wide layout (mirrors pages/index.tsx) so the
       // locale-prefixed home page also fills the viewport.
       wide={true}
