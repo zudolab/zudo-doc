@@ -128,7 +128,13 @@ export function createDocContentHeader<S extends Settings = Settings>(
   }: DocContentHeaderProps): JSX.Element {
     return (
       <>
-        <h1 class="text-heading font-bold mb-vsp-xs">{entry.data.title}</h1>
+        {/* Bottom border reads as the title's rule (#3025). Kept on the h1 —
+            not the doc-metainfo block below — so it stays visible on pages with
+            no Created/Updated/Author meta (the meta block returns null and would
+            otherwise take its old top border with it). */}
+        <h1 class="text-heading font-bold border-b border-fg pb-vsp-xs mb-vsp-xs">
+          {entry.data.title}
+        </h1>
 
         {/* Host-bound extras slot (ctx.hostBindings.docContentHeaderExtras).
             Default absent → renders nothing. Fires on versioned pages too —

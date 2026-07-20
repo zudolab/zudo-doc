@@ -124,7 +124,9 @@ export function DocMetainfo(props: DocMetainfoProps): VNode | null {
   if (!hasInfo) return null;
 
   return (
-    <div class="flex flex-wrap items-center gap-x-hsp-md gap-y-vsp-2xs text-caption text-fg mb-vsp-md border-t border-fg pt-vsp-xs">
+    // The horizontal rule that used to sit here (border-t) moved to the h1's
+    // bottom border (#3025) so it stays visible when this block is absent.
+    <div class="flex flex-wrap items-center gap-x-hsp-md gap-y-vsp-2xs text-caption text-fg mb-vsp-md">
       {createdAt && (
         <span class="inline-flex items-center gap-hsp-2xs">
           <ClockIcon />
