@@ -53,13 +53,26 @@ export const INVENTORY: readonly InventoryItem[] = [
     hover: true,
     state: "active",
   },
+  // A dropdown nav item puts `data-nav-item`+`data-nav-item-dropdown` on a
+  // wrapper <div>; the aria-current + the actual ink live on its child
+  // `> a` (header.tsx). Sample that anchor (inactive + active), NOT the wrapper
+  // — the wrapper only shows inherited styles, and its active anchor would
+  // otherwise never gate.
   {
     key: "header-nav-dropdown",
-    selector: "header[data-header] [data-nav-item-dropdown]",
+    selector: 'header[data-header] [data-nav-item-dropdown] > a:not([aria-current="page"])',
     kind: "text",
     cap: 4,
     hover: true,
     state: "static",
+  },
+  {
+    key: "header-nav-dropdown-active",
+    selector: 'header[data-header] [data-nav-item-dropdown] > a[aria-current="page"]',
+    kind: "text",
+    cap: 2,
+    hover: true,
+    state: "active",
   },
   {
     key: "header-nav-chevron",
@@ -85,9 +98,22 @@ export const INVENTORY: readonly InventoryItem[] = [
     hover: false,
     state: "static",
   },
+  // A header-right control may bear TEXT (e.g. the version-switcher label) as
+  // well as an icon. Measure the button's label as text (4.5:1) AND its icon
+  // ink as a UI indicator (3.0:1) — a single `ui` sample would ignore the
+  // label and under-gate it. Icon-only buttons carry no text, so the text
+  // sample self-drops (empty textContent) and only the icon sample remains.
   {
     key: "header-right",
     selector: "header[data-header] [data-header-right] button",
+    kind: "text",
+    cap: 6,
+    hover: false,
+    state: "static",
+  },
+  {
+    key: "header-right-icon",
+    selector: "header[data-header] [data-header-right] button svg",
     kind: "ui",
     cap: 6,
     hover: false,

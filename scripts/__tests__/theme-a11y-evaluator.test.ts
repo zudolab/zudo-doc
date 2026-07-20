@@ -287,6 +287,16 @@ describe("evaluateSample", () => {
     expect(ev.verdict).toBe("SKIP");
     expect(ev.skipReason).toMatch(/transparent/);
   });
+
+  it("SKIPs an element inside an opacity group instead of guessing a faded ratio", () => {
+    // black text on a white opacity:0.5 box over black — renders ~5.3:1 in the
+    // browser; must NOT be reported as a low-contrast FAIL.
+    const ev = evaluateSample(
+      mkSample({ color: "rgb(0 0 0)", chain: [layer(WHITE, 0.5), layer("rgb(0 0 0)", 1)] }),
+    );
+    expect(ev.verdict).toBe("SKIP");
+    expect(ev.skipReason).toMatch(/opacity group/);
+  });
 });
 
 // ---------------------------------------------------------------------------

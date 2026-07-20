@@ -308,6 +308,18 @@ export function evaluateSample(s: RawSample): SampleEvaluation {
   const pseudoSkip = detectPseudoOverlay(s.pseudos);
   if (pseudoSkip) return skip(pseudoSkip);
 
+  // CSS `opacity` < 1 composites an element's text AND its background as one
+  // group, then fades the group over the backdrop BEHIND it — the ink ends up
+  // faded toward that backdrop, not toward its own background. Modelling that
+  // correctly needs the pre-group backdrop; rather than approximate it (and
+  // risk a false FAIL — e.g. black text on a white opacity:.5 box over black
+  // renders ~5.3:1, not the ~2.6:1 a naive per-layer fade would report), SKIP
+  // any element inside an opacity group. `product === 1` ⇔ every opacity is 1.
+  const groupOpacity = s.chain.reduce((p, l) => p * l.opacity, 1);
+  if (groupOpacity < 1 - 1e-6) {
+    return skip("inside an opacity group (opacity<1 in ancestor chain) — rendered contrast indeterminate");
+  }
+
   const bgRes = resolveEffectiveBackground(s.chain);
   if ("skip" in bgRes) return skip(bgRes.skip);
   const bg = bgRes.bg;
@@ -324,12 +336,11 @@ export function evaluateSample(s: RawSample): SampleEvaluation {
   }
 
   const ink = parseSrgbA(inkColor);
-  // Group opacity fades the ink together with the backdrop it was folded into.
-  const groupOpacity = s.chain.reduce((p, l) => p * l.opacity, 1);
-  const inkAlpha = ink.a * groupOpacity;
-  if (inkAlpha <= 0.001) return skip("ink is fully transparent");
+  // Group opacity is guaranteed 1 here (opacity groups SKIP above), so only the
+  // ink's OWN color-alpha fades it — composite that translucent ink over bg.
+  if (ink.a <= 0.001) return skip("ink is fully transparent");
 
-  const fgComposited = compositeOver({ r: ink.r, g: ink.g, b: ink.b, a: inkAlpha }, bg);
+  const fgComposited = compositeOver(ink, bg);
   const fgCss = srgbToCss(fgComposited);
 
   const ratio = contrastRatio(fgCss, bgCss);

@@ -120,11 +120,18 @@ function parseCliArgs(argv: string[]): CliOptions {
   });
 
   const modeList = parseList(values.modes);
-  const modes: Mode[] = modeList
-    ? modeList.filter((m): m is Mode => m === "light" || m === "dark")
-    : [...ALL_MODES];
-  if (modes.length === 0) {
-    throw new Error(`--modes must be one or both of: ${ALL_MODES.join(", ")}`);
+  let modes: Mode[];
+  if (modeList) {
+    // Reject EVERY unsupported token — silently dropping a typo (e.g.
+    // `--modes light,drak`) would audit only light and report a misleading
+    // green while dark went unchecked.
+    const invalid = modeList.filter((m) => m !== "light" && m !== "dark");
+    if (invalid.length > 0) {
+      throw new Error(`--modes: unsupported value(s): ${invalid.join(", ")}. Valid: ${ALL_MODES.join(", ")}`);
+    }
+    modes = modeList as Mode[];
+  } else {
+    modes = [...ALL_MODES];
   }
 
   return {
