@@ -9,8 +9,9 @@
  *     (instead of the old package plain-text link).
  *  2. `SiteTreeNav` still renders through the real `Island(when: "idle")`
  *     wrapper — same marker as before the extraction.
- *  3. `docTags` + `tags` gates the "tags" section (chips + see-all link),
- *     with a `tagLimit` overflow indicator.
+ *  3. `docTags` + `tagCount` gate the tags section; a provided `tags` list
+ *     renders chips + see-all nav (with a `tagLimit` overflow indicator),
+ *     while omitting `tags` falls back to the legacy single "All Tags" link.
  *  4. The `homeExtras` seam: `extras` prop wins over
  *     `ctx.hostBindings.homeExtras`; the renderer receives `{ locale }`; the
  *     resolved result renders inside the hero text column, after the links
@@ -55,7 +56,7 @@ function makeProps(overrides: Partial<HomePageViewProps> = {}): HomePageViewProp
     locale: "en",
     tree: EMPTY_TREE,
     categoryOrder: [],
-    tags: [],
+    tagCount: 0,
     ...overrides,
   };
 }
@@ -176,10 +177,10 @@ describe("createHomePageView — SiteTreeNav island", () => {
 });
 
 describe("createHomePageView — docTags gating", () => {
-  it("renders the tags section (chips + heading + see-all link) when docTags is on and tags are non-empty", () => {
+  it("renders the tags section (chips + heading + see-all link) when docTags is on and a tag list is provided", () => {
     const ctx = makeFakeChromeContext({ settings: { docTags: true } });
     const HomePageView = createHomePageView(ctx);
-    const html = render(<HomePageView {...makeProps({ tags: TAG_ITEMS() })} />);
+    const html = render(<HomePageView {...makeProps({ tagCount: 1, tags: TAG_ITEMS() })} />);
 
     // Heading uses doc.tags, the see-all nav uses doc.seeAllTags, and the
     // chip renders the tag with its count.
@@ -189,20 +190,34 @@ describe("createHomePageView — docTags gating", () => {
     expect(html).toContain('href="/docs/tags"');
   });
 
-  it("omits the tags section when tags is empty", () => {
+  it("falls back to the legacy single All Tags link when only tagCount is provided (no tag list)", () => {
     const ctx = makeFakeChromeContext({ settings: { docTags: true } });
     const HomePageView = createHomePageView(ctx);
-    const html = render(<HomePageView {...makeProps({ tags: [] })} />);
+    const html = render(<HomePageView {...makeProps({ tagCount: 3 })} />);
 
+    // Pre-#3027 behaviour preserved: the "All Tags" heading + link, and NO
+    // chip / see-all nav.
+    expect(html).toContain("doc.allTags");
     expect(html).not.toContain("doc.seeAllTags");
+    expect(html).toContain('href="/docs/tags"');
   });
 
-  it("omits the tags section when docTags is off, even with non-empty tags", () => {
-    const ctx = makeFakeChromeContext({ settings: { docTags: false } });
+  it("omits the tags section when tagCount is 0", () => {
+    const ctx = makeFakeChromeContext({ settings: { docTags: true } });
     const HomePageView = createHomePageView(ctx);
-    const html = render(<HomePageView {...makeProps({ tags: TAG_ITEMS() })} />);
+    const html = render(<HomePageView {...makeProps({ tagCount: 0, tags: TAG_ITEMS() })} />);
 
     expect(html).not.toContain("doc.seeAllTags");
+    expect(html).not.toContain("doc.allTags");
+  });
+
+  it("omits the tags section when docTags is off, even with tagCount > 0", () => {
+    const ctx = makeFakeChromeContext({ settings: { docTags: false } });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps({ tagCount: 3, tags: TAG_ITEMS() })} />);
+
+    expect(html).not.toContain("doc.seeAllTags");
+    expect(html).not.toContain("doc.allTags");
   });
 
   it("renders a … overflow indicator when tags exceed tagLimit", () => {
@@ -213,7 +228,9 @@ describe("createHomePageView — docTags gating", () => {
     }));
     const ctx = makeFakeChromeContext({ settings: { docTags: true } });
     const HomePageView = createHomePageView(ctx);
-    const html = render(<HomePageView {...makeProps({ tags: manyTags, tagLimit: 2 })} />);
+    const html = render(
+      <HomePageView {...makeProps({ tagCount: manyTags.length, tags: manyTags, tagLimit: 2 })} />,
+    );
 
     // Only the first 2 chips render; the rest are elided behind "…".
     expect(html).toContain("#t0");
@@ -234,7 +251,7 @@ describe("createHomePageView — locale-URL prefixing", () => {
       overrides: { defaultLocale: "en" } as Partial<ChromeContext>,
     });
     const HomePageView = createHomePageView(ctx);
-    const html = render(<HomePageView {...makeProps({ locale: "en", tags: TAG_ITEMS("en") })} />);
+    const html = render(<HomePageView {...makeProps({ locale: "en", tagCount: 1, tags: TAG_ITEMS("en") })} />);
 
     expect(html).toContain('href="/docs/getting-started"');
     expect(html).toContain('href="/docs/tags"');
@@ -250,7 +267,7 @@ describe("createHomePageView — locale-URL prefixing", () => {
       overrides: { defaultLocale: "en" } as Partial<ChromeContext>,
     });
     const HomePageView = createHomePageView(ctx);
-    const html = render(<HomePageView {...makeProps({ locale: "ja", tags: TAG_ITEMS("ja") })} />);
+    const html = render(<HomePageView {...makeProps({ locale: "ja", tagCount: 1, tags: TAG_ITEMS("ja") })} />);
 
     expect(html).toContain('href="/ja/docs/getting-started"');
     expect(html).toContain('href="/ja/docs/tags"');

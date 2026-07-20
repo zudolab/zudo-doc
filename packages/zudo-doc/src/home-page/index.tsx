@@ -86,17 +86,23 @@ export interface HomePageViewProps {
   categoryOrder: string[];
   /** Root-category slugs that should start collapsed in `SiteTreeNav`. */
   initiallyCollapsedCategorySlugs?: string[];
+  /** Unique tag count for the current locale — gates the "Tags" section
+   *  together with `settings.docTags`. Part of the documented public
+   *  `@takazudo/zudo-doc/home-page` props shape (kept for back-compat). */
+  tagCount: number;
   /**
    * Alphabetically-sorted tag list (tag + doc count + pre-resolved href) for
-   * the current locale. Gates and populates the home "Tags" section together
-   * with `settings.docTags`; the first {@link HomePageViewProps.tagLimit} are
-   * rendered as chips.
+   * the current locale. When provided (and non-empty) the section renders the
+   * tag chips (first {@link HomePageViewProps.tagLimit}) plus a "see all tags"
+   * nav. When omitted — legacy callers that pass only `tagCount` — the section
+   * falls back to the pre-#3027 single "All Tags" link, so existing
+   * `@takazudo/zudo-doc/home-page` consumers are not broken.
    */
-  tags: TagItem[];
+  tags?: TagItem[];
   /**
    * Max number of tag chips rendered in the home "Tags" section before a "…"
    * overflow indicator is shown. The full set stays reachable via the
-   * "See all tags" link. @default 30
+   * "see all tags" link. @default 30
    */
   tagLimit?: number;
   /**
@@ -151,6 +157,7 @@ export function createHomePageView<S extends Settings = Settings>(
     tree,
     categoryOrder,
     initiallyCollapsedCategorySlugs,
+    tagCount,
     tags,
     tagLimit = 30,
     wide,
@@ -256,31 +263,48 @@ export function createHomePageView<S extends Settings = Settings>(
           ),
         }) as unknown as VNode}
 
-        {settings.docTags && tags.length > 0 && (
+        {settings.docTags && tagCount > 0 && (
           <section class="mt-vsp-xl">
-            <h2 class="text-title font-bold mb-vsp-md">{t("doc.tags", locale)}</h2>
-            <TagNav
-              variant="all"
-              tags={tags.slice(0, tagLimit)}
-              labels={{
-                tags: t("doc.tags", locale),
-                taggedWith: t("doc.taggedWith", locale),
-              }}
-            />
-            {tags.length > tagLimit && (
-              <div class="mt-vsp-sm text-title text-muted" aria-hidden="true">
-                …
-              </div>
+            {tags && tags.length > 0 ? (
+              <>
+                <h2 class="text-title font-bold mb-vsp-md">{t("doc.tags", locale)}</h2>
+                <TagNav
+                  variant="all"
+                  tags={tags.slice(0, tagLimit)}
+                  labels={{
+                    tags: t("doc.tags", locale),
+                    taggedWith: t("doc.taggedWith", locale),
+                  }}
+                />
+                {tags.length > tagLimit && (
+                  <div class="mt-vsp-sm text-title text-muted" aria-hidden="true">
+                    …
+                  </div>
+                )}
+                <div class="mt-vsp-md">
+                  <a
+                    href={withBase(`${prefix}/docs/tags`)}
+                    class="group inline-flex items-center gap-hsp-xs text-accent hover:underline"
+                  >
+                    <CategoryLinkIcon className="w-icon-sm text-accent" />
+                    <span>{t("doc.seeAllTags", locale)}</span>
+                  </a>
+                </div>
+              </>
+            ) : (
+              // Legacy fallback: caller passed only `tagCount` (no tag list) —
+              // reproduce the pre-#3027 single "All Tags" link so existing
+              // `@takazudo/zudo-doc/home-page` consumers are unaffected.
+              <>
+                <h2 class="text-title font-bold mb-vsp-md">{t("doc.allTags", locale)}</h2>
+                <a
+                  href={withBase(`${prefix}/docs/tags`)}
+                  class="text-accent underline hover:text-accent-hover"
+                >
+                  {t("doc.allTags", locale)}
+                </a>
+              </>
             )}
-            <div class="mt-vsp-md">
-              <a
-                href={withBase(`${prefix}/docs/tags`)}
-                class="group inline-flex items-center gap-hsp-xs text-accent hover:underline"
-              >
-                <CategoryLinkIcon className="w-icon-sm text-accent" />
-                <span>{t("doc.seeAllTags", locale)}</span>
-              </a>
-            </div>
           </section>
         )}
       </DocLayoutWithDefaults>

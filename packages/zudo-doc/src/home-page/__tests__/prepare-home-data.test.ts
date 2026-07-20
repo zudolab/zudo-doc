@@ -200,6 +200,7 @@ describe("prepareHomeData — tags", () => {
 
     const data = prepareHomeData(ctx, "en");
 
+    expect(data.tagCount).toBe(3);
     expect(data.tags).toEqual([
       { tag: "a", count: 2, href: "/docs/tags/a" },
       { tag: "b", count: 1, href: "/docs/tags/b" },
@@ -217,6 +218,7 @@ describe("prepareHomeData — tags", () => {
 
     const data = prepareHomeData(ctx, "ja");
 
+    expect(data.tagCount).toBe(1);
     expect(data.tags).toEqual([{ tag: "a", count: 1, href: "/ja/docs/tags/a" }]);
   });
 });

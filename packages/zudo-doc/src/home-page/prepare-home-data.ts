@@ -56,6 +56,11 @@ export interface HomeData {
    *  `HomePageViewProps.tree`). */
   tree: DocNavNode[];
   categoryOrder: string[];
+  /** Unique tag count for the current locale — gates the home "Tags" section
+   *  together with `settings.docTags`. Retained (equals `tags.length`) as the
+   *  documented `HomePageViewProps.tagCount` gate stays part of the public
+   *  `@takazudo/zudo-doc/home-page` API. */
+  tagCount: number;
   /** Alphabetically-sorted tag list (tag + doc count + pre-resolved,
    *  locale-prefixed href) for the home "Tags" section — spreads onto
    *  `HomePageViewProps.tags`. Empty when no tags exist for the locale. */
@@ -131,5 +136,5 @@ export function prepareHomeData(
       href: ctx.withBase(`${tagPrefix}/docs/tags/${encodeURIComponent(info.tag)}`),
     }));
 
-  return { tree: grouped, categoryOrder, tags };
+  return { tree: grouped, categoryOrder, tagCount: tagMap.size, tags };
 }
