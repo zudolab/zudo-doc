@@ -177,7 +177,7 @@ html[data-theme-pack="sumi"] {
   --zd-code-fg: light-dark(#f3efe6, #e9e4d8);
   --zd-success: light-dark(#2e6b45, #82c197); /* matsu pine */
   --zd-danger: light-dark(#b8232e, #ea6a72); /* shu vermillion */
-  --zd-warning: light-dark(#8a6414, #d9a84e); /* ochre / aged paper */
+  --zd-warning: light-dark(#815b03, #d9a84e); /* ochre / aged paper */
   --zd-info: light-dark(#2c5977, #82abc9); /* ai indigo wash */
 
   /* syntax — all 9 roles, both modes: monochrome ink washes on the

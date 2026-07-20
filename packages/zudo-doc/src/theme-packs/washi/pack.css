@@ -177,7 +177,7 @@ html[data-theme-pack="washi"] {
   --zd-code-fg: light-dark(#2b2822, #ece5d5);
   --zd-success: light-dark(#3f6237, #a3c98e);
   --zd-danger: light-dark(#a03a2e, #e0968a);
-  --zd-warning: light-dark(#875c12, #d9ac60);
+  --zd-warning: light-dark(#835809, #d9ac60);
   --zd-info: light-dark(#31608f, #8ab0dd);
 
   /* syntax — all 9 roles, both modes: sumi ink annotated with mineral
