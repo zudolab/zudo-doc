@@ -269,6 +269,29 @@ export function collectSamplesInBrowser(payload: CollectPayload): RawSample[] {
     return rect.width > 0 && rect.height > 0;
   };
 
+  const hasDirectText = (node: Element): boolean =>
+    Array.prototype.some.call(
+      node.childNodes,
+      (n: ChildNode) => n.nodeType === 3 && (n.textContent ?? "").trim().length > 0,
+    );
+
+  // The element whose OWN computed `color` actually paints the visible text.
+  // A container link — the pager card, a nav item wrapping its label in a
+  // <span> — holds its text in child <div>/<p>/<span> that can override `color`
+  // (e.g. brutalist's pager inverts the child text to `--zd-bg` on hover while
+  // the anchor's own color stays `--zd-fg`). Measuring the container would
+  // compare a color no glyph is painted with (a false fg==bg FAIL). Descend to
+  // the first descendant (document order) that directly holds text; fall back
+  // to the element itself when it has its own text or none is found.
+  const inkElementFor = (root: Element): Element => {
+    if (hasDirectText(root)) return root;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (node instanceof Element && hasDirectText(node)) return node;
+    }
+    return root;
+  };
+
   const collect = (el: Element, item: InventoryItem): RawSample | null => {
     const cs = getComputedStyle(el);
     if (!isVisible(el, cs)) return null;
@@ -278,8 +301,13 @@ export function collectSamplesInBrowser(payload: CollectPayload): RawSample[] {
     // text-contrast subjects — drop them rather than SKIP.
     if (item.kind === "text" && text.length === 0) return null;
 
+    // For text, measure color/size/background from where the ink actually is;
+    // for ui/decorative the matched element itself is the subject.
+    const inkEl = item.kind === "text" ? inkElementFor(el) : el;
+    const inkCs = inkEl === el ? cs : getComputedStyle(inkEl);
+
     const chain: RawSample["chain"] = [];
-    let node: Element | null = el;
+    let node: Element | null = inkEl;
     while (node) {
       const s = getComputedStyle(node);
       const op = parseFloat(s.opacity);
@@ -311,9 +339,9 @@ export function collectSamplesInBrowser(payload: CollectPayload): RawSample[] {
       selector: item.selector,
       state: stateOverride ?? item.state,
       kind: item.kind,
-      color: cs.color,
-      fontSizePx: parseFloat(cs.fontSize) || 16,
-      fontWeight: toWeight(cs.fontWeight),
+      color: inkCs.color,
+      fontSizePx: parseFloat(inkCs.fontSize) || 16,
+      fontWeight: toWeight(inkCs.fontWeight),
       chain,
       pseudos,
       svg,

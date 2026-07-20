@@ -95,6 +95,11 @@ export interface SampleEvaluation {
   threshold: number | null;
   isLargeText: boolean;
   skipReason?: string;
+  /** Distinguishes a `SKIP` that is a determinate "the gradient crosses the
+   *  threshold" result (`"straddle"`) from an indeterminate "couldn't measure the
+   *  backdrop" one (absent). Only the latter counts toward the coverage
+   *  MAX_SKIP_RATIO ceiling — a straddle IS a measurement, not a checker gap. */
+  skipKind?: "straddle";
 }
 
 // ---------------------------------------------------------------------------
@@ -118,6 +123,10 @@ export const LARGE_TEXT_BOLD_MIN_WEIGHT = 700;
 export const MAX_SKIP_RATIO = 0.3;
 /** Alpha at/above which a layer is treated as fully opaque. */
 const OPAQUE_ALPHA = 0.999;
+/** Cap on the candidate-backdrop set carried through the ancestor walk (bounds
+ *  a pathological stack of many multi-stop gradients); above it the set is
+ *  reduced to its luminance extremes, which are what drive the min/max ratio. */
+const MAX_BACKDROP_CANDIDATES = 16;
 
 // ---------------------------------------------------------------------------
 // Color parsing / compositing
@@ -159,28 +168,109 @@ export function srgbToCss(c: Srgb): string {
 }
 
 // ---------------------------------------------------------------------------
+// Background-image (gradient/overlay) stop parsing
+// ---------------------------------------------------------------------------
+
+/** Color-function / hex tokens inside a computed `background-image` value. The
+ *  browser serializes gradient stops to concrete colors (no `color-mix`, no
+ *  `light-dark`), so a non-nesting `\([^)]*\)` match is sufficient. */
+const IMAGE_COLOR_TOKEN =
+  /#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\([^)]*\)/g;
+
+/** Sentinel: an image whose paint can't be reduced to color stops (a `url(...)`
+ *  bitmap could be any opaque art). Its layer's backdrop is indeterminate. */
+export const UNREADABLE_IMAGE = "unreadable" as const;
+
+/**
+ * Parse a computed `background-image` into its gradient/overlay color stops.
+ * `none`/empty → `null` (no image). A `url(...)` bitmap or any unparseable
+ * token → {@link UNREADABLE_IMAGE} (caller SKIPs — no guessing). Otherwise the
+ * parsed stop colors, alpha kept, in source order.
+ */
+export function parseImageStops(backgroundImage: string): SrgbA[] | null | typeof UNREADABLE_IMAGE {
+  if (!backgroundImage || backgroundImage === "none") return null;
+  if (/\burl\(/i.test(backgroundImage)) return UNREADABLE_IMAGE;
+  const tokens = backgroundImage.match(IMAGE_COLOR_TOKEN);
+  if (!tokens || tokens.length === 0) return UNREADABLE_IMAGE;
+  const stops: SrgbA[] = [];
+  for (const token of tokens) {
+    try {
+      stops.push(parseSrgbA(token));
+    } catch {
+      return UNREADABLE_IMAGE;
+    }
+  }
+  return stops;
+}
+
+/** Rough relative-luminance proxy (unweighted mean) for reducing an oversized
+ *  candidate set to its extremes — only used past {@link MAX_BACKDROP_CANDIDATES}. */
+const lumaProxy = (c: Srgb): number => (c.r + c.g + c.b) / 3;
+
+/** Deduplicate candidate backdrops (8-bit rounding), capping the set at its
+ *  luminance extremes when a deep multi-gradient stack would otherwise blow up. */
+function reduceCandidates(candidates: Srgb[]): Srgb[] {
+  const seen = new Map<string, Srgb>();
+  for (const c of candidates) {
+    const key = `${Math.round(c.r * 255)},${Math.round(c.g * 255)},${Math.round(c.b * 255)}`;
+    if (!seen.has(key)) seen.set(key, c);
+  }
+  const unique = [...seen.values()];
+  if (unique.length <= MAX_BACKDROP_CANDIDATES) return unique;
+  let lo = unique[0]!;
+  let hi = unique[0]!;
+  for (const c of unique) {
+    if (lumaProxy(c) < lumaProxy(lo)) lo = c;
+    if (lumaProxy(c) > lumaProxy(hi)) hi = c;
+  }
+  return [lo, hi];
+}
+
+/**
+ * Backdrops a single layer paints, given the opaque color already resolved
+ * behind it (`base`): the color alone (revealed wherever the layer's image is
+ * transparent) plus that color tinted by each image stop. No image ⇒ just the
+ * color.
+ */
+function candidatesFromLayer(stops: SrgbA[] | null, groupOpacity: number, base: Srgb): Srgb[] {
+  if (!stops || stops.length === 0) return [base];
+  const out: Srgb[] = [base];
+  for (const s of stops) {
+    out.push(compositeOver({ r: s.r, g: s.g, b: s.b, a: s.a * groupOpacity }, base));
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
 // Effective background resolution
 // ---------------------------------------------------------------------------
 
-export type BackgroundResolution = { bg: Srgb } | { skip: string };
+/** The set of opaque backdrops that can paint behind the text. A solid resolves
+ *  to one; a gradient/overlay resolves to several (its stops over the solid) so
+ *  the caller can gate on the worst case. `skip` when truly indeterminate. */
+export type BackgroundResolution = { candidates: Srgb[] } | { skip: string };
 
 /**
- * Resolve the opaque color painted directly behind the measured element's text.
+ * Resolve the opaque backdrop(s) painted behind the measured element's text.
  *
- * Walks the element-first ancestor chain compositing each layer's
- * `background-color` (alpha-aware) until the accumulated backdrop is opaque.
- * `opacity` is folded in physically: a node's own group opacity (the product
- * of its opacity and every ANCESTOR'S opacity — opacity fades a subtree, not
- * its parents) scales that layer's effective alpha, so a semi-transparent
- * group both lightens the backdrop and (via {@link evaluateSample}) fades the
- * text with it.
+ * Walks the element-first ancestor chain to the first layer opaque ON ITS OWN
+ * (an opaque `background-color`, or a fully-opaque covering `background-image`),
+ * then composites the translucent layers in front of it over that base.
+ * `opacity` is folded in physically: a node's group opacity (the product of its
+ * own and every ANCESTOR'S opacity — opacity fades a subtree, not its parents)
+ * scales that layer's effective alpha, so a semi-transparent group both lightens
+ * the backdrop and (via {@link evaluateSample}) fades the text with it.
  *
- * Returns `{ skip }` — never a guess — when the true backdrop is
- * indeterminate: a `background-image`/gradient paints beneath the element
- * before any opaque solid is reached (this is the refined rule the epic asks
- * for — a gradient on `<body>` covered by an opaque content surface is NEVER
- * reached, so fjord/drift/phosphor content still evaluates), or no opaque
- * layer exists at all.
+ * A `background-image` is NOT a blind SKIP: its gradient/overlay stops are
+ * resolved into a SET of candidate backdrops (each stop composited over the
+ * solid, plus the solid itself where the image is transparent). The caller
+ * gates on the worst candidate and SKIPs only a set that straddles the
+ * threshold (genuinely position-dependent). This turns a paper-grain wash or an
+ * ambient aurora tint over an opaque surface — previously a whole-group SKIP —
+ * into a real verdict, while a `url(...)` bitmap (indeterminate art) still SKIPs.
+ *
+ * Returns `{ skip }` — never a guessed pass — when an image is unreadable or no
+ * opaque layer exists at all.
  */
 export function resolveEffectiveBackground(chain: AncestorLayer[]): BackgroundResolution {
   const n = chain.length;
@@ -194,35 +284,64 @@ export function resolveEffectiveBackground(chain: AncestorLayer[]): BackgroundRe
     groupOpacity[i] = i === n - 1 ? own : own * groupOpacity[i + 1]!;
   }
 
-  const layers: SrgbA[] = [];
+  // Parse each layer's image up front; a single unreadable image ⇒ SKIP.
+  const stopsPerLayer: (SrgbA[] | null)[] = new Array(n).fill(null);
+  for (let i = 0; i < n; i++) {
+    const parsed = parseImageStops(chain[i]!.backgroundImage);
+    if (parsed === UNREADABLE_IMAGE) {
+      return { skip: `unreadable background-image (ancestor depth ${i}) — backdrop indeterminate` };
+    }
+    stopsPerLayer[i] = parsed;
+  }
+
+  // Front→back: find the base layer and its candidate backdrops.
   let baseIndex = -1;
+  let candidates: Srgb[] = [];
   for (let i = 0; i < n; i++) {
     const layer = chain[i]!;
-    if (layer.backgroundImage && layer.backgroundImage !== "none") {
-      return {
-        skip: `background-image/gradient paints beneath element (ancestor depth ${i}) — backdrop indeterminate`,
-      };
-    }
+    const ga = groupOpacity[i] ?? 1;
     const c = parseSrgbA(layer.backgroundColor);
-    const effAlpha = c.a * (groupOpacity[i] ?? 1);
-    layers.push({ r: c.r, g: c.g, b: c.b, a: effAlpha });
-    if (effAlpha >= OPAQUE_ALPHA) {
+    const colorEffAlpha = c.a * ga;
+    const stops = stopsPerLayer[i] ?? null;
+    const imageIsOpaqueCover =
+      stops !== null && stops.length > 0 && stops.every((s) => s.a * ga >= OPAQUE_ALPHA);
+
+    if (colorEffAlpha >= OPAQUE_ALPHA) {
+      // Opaque solid; a see-through image on this layer tints it.
       baseIndex = i;
+      candidates = candidatesFromLayer(stops, ga, { r: c.r, g: c.g, b: c.b });
       break;
     }
+    if (imageIsOpaqueCover) {
+      // A fully-opaque gradient/overlay is itself the base; the color and
+      // everything below it are hidden. Its stops are the candidate backdrops.
+      baseIndex = i;
+      candidates = stops!.map((s) => ({ r: s.r, g: s.g, b: s.b }));
+      break;
+    }
+    // Otherwise this layer is see-through — composited over the base below.
   }
 
   if (baseIndex === -1) {
     return { skip: "no opaque background resolved in ancestor chain" };
   }
 
-  // Composite front (0) over ... over the opaque base.
-  const base = layers[baseIndex]!;
-  let acc: Srgb = { r: base.r, g: base.g, b: base.b };
+  // Composite the front translucent layers (baseIndex-1 .. 0) over every base
+  // candidate: each paints its background-color, then its see-through image.
+  candidates = reduceCandidates(candidates);
   for (let i = baseIndex - 1; i >= 0; i--) {
-    acc = compositeOver(layers[i]!, acc);
+    const layer = chain[i]!;
+    const ga = groupOpacity[i] ?? 1;
+    const c = parseSrgbA(layer.backgroundColor);
+    const stops = stopsPerLayer[i] ?? null;
+    const next: Srgb[] = [];
+    for (const cand of candidates) {
+      const afterColor = compositeOver({ r: c.r, g: c.g, b: c.b, a: c.a * ga }, cand);
+      next.push(...candidatesFromLayer(stops, ga, afterColor));
+    }
+    candidates = reduceCandidates(next);
   }
-  return { bg: acc };
+  return { candidates };
 }
 
 // ---------------------------------------------------------------------------
@@ -322,8 +441,7 @@ export function evaluateSample(s: RawSample): SampleEvaluation {
 
   const bgRes = resolveEffectiveBackground(s.chain);
   if ("skip" in bgRes) return skip(bgRes.skip);
-  const bg = bgRes.bg;
-  const bgCss = srgbToCss(bg);
+  const candidates = bgRes.candidates;
 
   // Ink source: SVG fill/stroke for UI indicators, `color` for text.
   let inkColor: string;
@@ -337,22 +455,55 @@ export function evaluateSample(s: RawSample): SampleEvaluation {
 
   const ink = parseSrgbA(inkColor);
   // Group opacity is guaranteed 1 here (opacity groups SKIP above), so only the
-  // ink's OWN color-alpha fades it — composite that translucent ink over bg.
+  // ink's OWN color-alpha fades it — composite that translucent ink over each bg.
   if (ink.a <= 0.001) return skip("ink is fully transparent");
 
-  const fgComposited = compositeOver(ink, bg);
-  const fgCss = srgbToCss(fgComposited);
-
-  const ratio = contrastRatio(fgCss, bgCss);
   const isLargeText = s.kind === "text" && classifyLargeText(s.fontSizePx, s.fontWeight);
   const threshold = thresholdFor(s.kind, isLargeText);
 
-  let verdict: SampleEvaluation["verdict"];
-  if (ratio >= threshold + WARN_BAND) verdict = "PASS";
-  else if (ratio >= threshold) verdict = "WARN";
-  else verdict = "FAIL";
+  // Contrast against every candidate backdrop. A single solid ⇒ one candidate
+  // (unchanged behaviour). A gradient ⇒ several: gate on unanimity so no false
+  // positives — all clear ⇒ PASS/WARN by the worst; all fail ⇒ FAIL; a set that
+  // straddles the threshold is genuinely position-dependent ⇒ SKIP. Report the
+  // worst (min-ratio) candidate.
+  let minRatio = Infinity;
+  let maxRatio = -Infinity;
+  let worstFg = "";
+  let worstBg = "";
+  for (const bg of candidates) {
+    const bgCss = srgbToCss(bg);
+    const fgCss = srgbToCss(compositeOver(ink, bg));
+    const ratio = contrastRatio(fgCss, bgCss);
+    if (ratio < minRatio) {
+      minRatio = ratio;
+      worstFg = fgCss;
+      worstBg = bgCss;
+    }
+    if (ratio > maxRatio) maxRatio = ratio;
+  }
 
-  return { verdict, ratio, fg: fgCss, bg: bgCss, threshold, isLargeText };
+  let verdict: SampleEvaluation["verdict"];
+  if (minRatio >= threshold + WARN_BAND) verdict = "PASS";
+  else if (minRatio >= threshold) verdict = "WARN";
+  else if (maxRatio < threshold) verdict = "FAIL";
+  else {
+    // The gradient is readable on some positions and sub-threshold on others.
+    // We measured it fully — this is NOT an indeterminate backdrop — so it is a
+    // determinate `straddle` SKIP that stays out of the coverage ceiling, while
+    // still surfacing (never guessed into a whole-audit FAIL — no false positives).
+    return {
+      verdict: "SKIP",
+      ratio: minRatio,
+      fg: worstFg,
+      bg: worstBg,
+      threshold,
+      isLargeText,
+      skipReason: `gradient backdrop straddles the ${threshold}:1 threshold (worst ${minRatio.toFixed(2)}, best ${maxRatio.toFixed(2)}) — position-dependent`,
+      skipKind: "straddle",
+    };
+  }
+
+  return { verdict, ratio: minRatio, fg: worstFg, bg: worstBg, threshold, isLargeText };
 }
 
 // ---------------------------------------------------------------------------
