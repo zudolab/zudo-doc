@@ -15,6 +15,7 @@ import {
   MAX_SKIP_RATIO,
   THRESHOLD_NORMAL,
   THRESHOLD_UI,
+  UNREADABLE_IMAGE,
   allowlistKey,
   classifyLargeText,
   compositeOver,
@@ -23,6 +24,7 @@ import {
   evaluateCoverage,
   evaluateSample,
   findAllowlistEntry,
+  parseImageStops,
   parseSrgbA,
   resolveEffectiveBackground,
   resolveSvgInk,
@@ -99,22 +101,32 @@ describe("compositeOver / srgbToCss", () => {
 // effective background walk
 // ---------------------------------------------------------------------------
 
+/** Candidate backdrops of a resolution, as `rgb(...)` strings (sorted for
+ *  order-independent assertions). Fails the test if the resolution SKIPped. */
+function candidateCss(res: ReturnType<typeof resolveEffectiveBackground>): string[] {
+  if ("skip" in res) throw new Error(`expected candidates, got skip: ${res.skip}`);
+  return res.candidates.map(srgbToCss).sort();
+}
+
 describe("resolveEffectiveBackground", () => {
   it("returns the element's own opaque background", () => {
-    const res = resolveEffectiveBackground([layer(WHITE)]);
-    expect("bg" in res && srgbToCss(res.bg)).toBe("rgb(255 255 255)");
+    expect(candidateCss(resolveEffectiveBackground([layer(WHITE)]))).toEqual(["rgb(255 255 255)"]);
   });
 
   it("walks past a transparent element to an opaque ancestor", () => {
-    const res = resolveEffectiveBackground([layer("rgba(0,0,0,0)"), layer("rgb(20 40 60)")]);
-    expect("bg" in res && srgbToCss(res.bg)).toBe("rgb(20 40 60)");
+    expect(candidateCss(resolveEffectiveBackground([layer("rgba(0,0,0,0)"), layer("rgb(20 40 60)")]))).toEqual([
+      "rgb(20 40 60)",
+    ]);
   });
 
   it("composites a translucent element over its opaque parent", () => {
     // 50% white over black → mid grey.
     const res = resolveEffectiveBackground([layer("rgba(255,255,255,0.5)"), layer("rgb(0 0 0)")]);
-    expect("bg" in res).toBe(true);
-    if ("bg" in res) expect(res.bg.r).toBeCloseTo(0.5, 5);
+    expect("candidates" in res).toBe(true);
+    if ("candidates" in res) {
+      expect(res.candidates).toHaveLength(1);
+      expect(res.candidates[0]!.r).toBeCloseTo(0.5, 5);
+    }
   });
 
   it("folds ancestor opacity into the base layer (a faded 'opaque' bg is not opaque)", () => {
@@ -124,29 +136,116 @@ describe("resolveEffectiveBackground", () => {
       layer(WHITE, 0.5),
       layer("rgb(0 0 0)", 1),
     ]);
-    expect("bg" in res).toBe(true);
-    if ("bg" in res) expect(res.bg.r).toBeCloseTo(0.5, 5);
+    expect("candidates" in res).toBe(true);
+    if ("candidates" in res) expect(res.candidates[0]!.r).toBeCloseTo(0.5, 5);
   });
 
-  it("SKIPs when a gradient paints beneath the element before any opaque solid", () => {
-    const res = resolveEffectiveBackground([
-      layer("rgba(0,0,0,0)"),
-      layer(WHITE, 1, "linear-gradient(#fff, #000)"),
-    ]);
-    expect("skip" in res && res.skip).toMatch(/gradient/i);
+  it("resolves an opaque gradient to candidates spanning its stops + interpolated mid-stops", () => {
+    // white→black gradient ⇒ backdrops range white..black, plus the mid-stop so
+    // an interior worst-contrast point can't be missed.
+    const css = candidateCss(resolveEffectiveBackground([layer(WHITE, 1, "linear-gradient(#fff, #000)")]));
+    expect(css).toContain("rgb(0 0 0)");
+    expect(css).toContain("rgb(255 255 255)");
+    expect(css).toContain("rgb(127.5 127.5 127.5)"); // interpolated midpoint
   });
 
-  it("does NOT skip when the element's own opaque bg covers a deeper gradient", () => {
+  it("keeps the opaque solid as a candidate under a same-layer gradient (coverage not assumable)", () => {
+    // An opaque bg-color + an all-opaque gradient on the SAME layer: the gradient
+    // may only paint a corner (background-size/no-repeat, not visible to us —
+    // e.g. sumi's code-block seal), so the solid MUST stay a candidate alongside
+    // the gradient stops. Dropping it would fabricate a false FAIL for text
+    // sitting on the uncovered solid.
+    const css = candidateCss(
+      resolveEffectiveBackground([layer("rgb(255 0 0)", 1, "linear-gradient(rgb(0 0 0), rgb(255 255 255))")]),
+    );
+    expect(css).toContain("rgb(255 0 0)"); // the solid is retained
+    expect(css).toContain("rgb(0 0 0)");
+    expect(css).toContain("rgb(255 255 255)");
+  });
+
+  it("does NOT reach a deeper gradient once an opaque solid is found in front", () => {
     const res = resolveEffectiveBackground([
       layer("rgb(10 10 10)"), // element opaque
       layer(WHITE, 1, "linear-gradient(#fff, #000)"), // gradient behind it — never reached
     ]);
-    expect("bg" in res && srgbToCss(res.bg)).toBe("rgb(10 10 10)");
+    expect(candidateCss(res)).toEqual(["rgb(10 10 10)"]);
+  });
+
+  it("does NOT SKIP a url() bitmap hidden behind a nearer opaque layer", () => {
+    // the opaque element covers the deeper bitmap, so the bitmap can't affect
+    // the text — no indeterminate SKIP.
+    const res = resolveEffectiveBackground([
+      layer("rgb(10 10 10)"),
+      layer(WHITE, 1, 'url("/paper.png")'),
+    ]);
+    expect(candidateCss(res)).toEqual(["rgb(10 10 10)"]);
   });
 
   it("SKIPs when no opaque background exists in the chain", () => {
     const res = resolveEffectiveBackground([layer("rgba(0,0,0,0)"), layer("rgba(0,0,0,0)")]);
     expect("skip" in res && res.skip).toMatch(/no opaque/i);
+  });
+
+  it("resolves a near-imperceptible texture image over its opaque solid (washi paper grain)", () => {
+    // washi paints a ≤0.05-alpha fleck/fiber grain over an opaque paper color —
+    // every candidate is essentially the paper, so it evaluates instead of SKIPping.
+    const grain =
+      "radial-gradient(rgba(101, 78, 42, 0.05) 1px, rgba(0, 0, 0, 0) 1.2px), " +
+      "repeating-linear-gradient(0deg, rgba(0, 0, 0, 0) 0px, rgba(80, 60, 30, 0.014) 4px)";
+    const res = resolveEffectiveBackground([layer("rgb(242 236 220)", 1, grain)]);
+    expect("candidates" in res).toBe(true);
+    if ("candidates" in res) {
+      // the paper itself is a candidate; the faint fleck barely shifts it
+      expect(res.candidates.some((c) => srgbToCss(c) === "rgb(242 236 220)")).toBe(true);
+      for (const c of res.candidates) {
+        expect(c.r).toBeGreaterThan(0.9);
+        expect(c.g).toBeGreaterThan(0.8);
+      }
+    }
+  });
+
+  it("SKIPs a see-through gradient when no opaque solid sits under it", () => {
+    const grain = "radial-gradient(rgba(101, 78, 42, 0.05) 1px, rgba(0, 0, 0, 0) 1.2px)";
+    const res = resolveEffectiveBackground([layer("rgba(0,0,0,0)", 1, grain), layer("rgba(0,0,0,0)")]);
+    expect("skip" in res && res.skip).toMatch(/no opaque/i);
+  });
+
+  it("treats a fully-opaque covering gradient as the base (deeper layers hidden)", () => {
+    // opaque black→white gradient over an unreached red — candidates are the
+    // stops (+ mid-stop); the red below is hidden and excluded.
+    const css = candidateCss(
+      resolveEffectiveBackground([
+        layer("rgba(0,0,0,0)", 1, "linear-gradient(rgb(0 0 0), rgb(255 255 255))"),
+        layer("rgb(255 0 0)"),
+      ]),
+    );
+    expect(css).toContain("rgb(0 0 0)");
+    expect(css).toContain("rgb(255 255 255)");
+    expect(css).not.toContain("rgb(255 0 0)");
+  });
+
+  it("SKIPs when a VISIBLE url() bitmap makes the backdrop indeterminate", () => {
+    const res = resolveEffectiveBackground([layer(WHITE, 1, 'url("/paper.png")')]);
+    expect("skip" in res && res.skip).toMatch(/unreadable|indeterminate/i);
+  });
+});
+
+describe("parseImageStops", () => {
+  it("returns null for none/empty", () => {
+    expect(parseImageStops("none")).toBeNull();
+    expect(parseImageStops("")).toBeNull();
+  });
+  it("parses gradient stops keeping alpha, in order", () => {
+    const stops = parseImageStops("linear-gradient(rgba(101, 78, 42, 0.05) 1px, rgb(0 0 0) 4px)");
+    expect(Array.isArray(stops)).toBe(true);
+    if (Array.isArray(stops)) {
+      expect(stops).toHaveLength(2);
+      expect(stops[0]!.a).toBeCloseTo(0.05, 5);
+      expect(stops[1]!.a).toBe(1);
+    }
+  });
+  it("flags url() bitmaps as unreadable (conservative)", () => {
+    expect(parseImageStops('url("/paper.png")')).toBe(UNREADABLE_IMAGE);
   });
 });
 
@@ -275,11 +374,66 @@ describe("evaluateSample", () => {
     expect(faded.verdict).not.toBe("SKIP");
   });
 
-  it("SKIPs when the backdrop is a gradient", () => {
+  it("PASSes a gradient backdrop when the text clears contrast on EVERY stop", () => {
+    // black text over a light-grey→white gradient: worst stop still ~high contrast.
     const ev = evaluateSample(
-      mkSample({ chain: [layer("rgba(0,0,0,0)"), layer(WHITE, 1, "linear-gradient(#fff,#000)")] }),
+      mkSample({
+        color: "rgb(0 0 0)",
+        chain: [layer(WHITE, 1, "linear-gradient(rgb(220 220 220), rgb(255 255 255))")],
+      }),
+    );
+    expect(ev.verdict).toBe("PASS");
+  });
+
+  it("FAILs a gradient backdrop when the text fails contrast on EVERY stop", () => {
+    // mid-grey text over a similar grey→grey gradient: unreadable throughout.
+    const ev = evaluateSample(
+      mkSample({
+        color: "rgb(150 150 150)",
+        chain: [layer("rgb(140 140 140)", 1, "linear-gradient(rgb(130 130 130), rgb(160 160 160))")],
+      }),
+    );
+    expect(ev.verdict).toBe("FAIL");
+  });
+
+  it("SKIPs a gradient backdrop that straddles the threshold (position-dependent)", () => {
+    // black text over a black→white gradient: fails on the dark end, passes on the
+    // light end — genuinely position-dependent, so no guessed verdict.
+    const ev = evaluateSample(
+      mkSample({ color: "rgb(0 0 0)", chain: [layer(WHITE, 1, "linear-gradient(#000, #fff)")] }),
     );
     expect(ev.verdict).toBe("SKIP");
+    expect(ev.skipReason).toMatch(/straddles|position-dependent/);
+    // Tagged so the driver keeps it OUT of the coverage skip-ceiling.
+    expect(ev.skipKind).toBe("straddle");
+  });
+
+  it("STRADDLEs (not FAILs) text over a solid bg carrying an opaque corner-seal gradient", () => {
+    // sumi regression: light text on an opaque dark code bg with a tiny opaque
+    // red corner-seal gradient. Readable on the bg, sub-AA only on the seal — the
+    // solid stays a candidate, so this is position-dependent, never a false FAIL.
+    const ev = evaluateSample(
+      mkSample({
+        color: "rgb(233 228 216)",
+        chain: [layer("rgb(30 34 44)", 1, "linear-gradient(rgb(217 51 63), rgb(217 51 63))")],
+      }),
+    );
+    expect(ev.verdict).toBe("SKIP");
+    expect(ev.skipKind).toBe("straddle");
+  });
+
+  it("does NOT silently PASS a gradient that fails only BETWEEN its stops", () => {
+    // black text over red→green passes at both endpoints but the dark olive
+    // midpoint fails — the interpolated mid-stop candidate must surface it
+    // (else a false PASS). Ends up straddle/FAIL, never PASS.
+    const ev = evaluateSample(
+      mkSample({
+        color: "rgb(0 0 0)",
+        chain: [layer("rgb(255 0 0)", 1, "linear-gradient(rgb(255 0 0), rgb(0 142 0))")],
+      }),
+    );
+    expect(ev.verdict).not.toBe("PASS");
+    expect(ev.verdict).not.toBe("WARN");
   });
 
   it("SKIPs fully-transparent ink", () => {

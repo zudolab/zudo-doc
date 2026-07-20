@@ -362,6 +362,60 @@ async function collectHoverSamples(page: Page): Promise<RawSample[]> {
   return samples;
 }
 
+/**
+ * The active TOC entry (`toc-active`, `nav[data-zd-toc] a[aria-current="true"]`)
+ * is NOT server-rendered: the scroll-spy island (`toc/use-active-heading.ts`)
+ * sets `aria-current="true"` on the client, from scroll position, only after it
+ * hydrates. Collecting the static pass at scroll-top therefore measures ZERO
+ * `toc-active` elements, so a pack's active-TOC rule (e.g. phosphor `:449` /
+ * washi — the epic's pre-identified suspects) would be silently un-adjudicated.
+ *
+ * Drive the state the same way `e2e/smoke-toc.spec.ts` does — scroll a heading
+ * to the top and let the spy mark an entry active. Scroll position survives
+ * hydration (the island's mount-time `update()` reads the current position), so
+ * this is timing-robust without guessing at a hydration signal. Run LAST, after
+ * the static + hover passes, so its scroll never perturbs their measurements.
+ * Returns [] (no wasted wait) when there is no Toc island to hydrate — e.g. the
+ * static rendered-fixture test page.
+ */
+async function collectTocActiveSamples(page: Page): Promise<RawSample[]> {
+  const tocItem = INVENTORY.find((i) => i.key === "toc-active");
+  if (!tocItem) return [];
+
+  const primed = await page.evaluate(() => {
+    if (!document.querySelector('[data-zfb-island="Toc"]')) return false;
+    const anchors = Array.from(
+      document.querySelectorAll('nav[data-zd-toc] a[href^="#"]'),
+    ) as HTMLAnchorElement[];
+    if (anchors.length === 0) return false;
+    // A mid-list heading guarantees a neighbour on each side, so the spy's
+    // "first heading below the fold, activate its predecessor" rule always
+    // resolves to a real entry regardless of the page's intro length.
+    const pick = anchors[Math.floor(anchors.length / 2)]!;
+    const id = decodeURIComponent((pick.getAttribute("href") ?? "#").slice(1));
+    const target = id ? document.getElementById(id) : null;
+    if (!target) return false;
+    target.scrollIntoView({ behavior: "instant", block: "start" });
+    return true;
+  });
+  if (!primed) return [];
+
+  try {
+    await page.waitForFunction(
+      () => document.querySelector('nav[data-zd-toc] a[aria-current="true"]') !== null,
+      undefined,
+      { timeout: 8_000 },
+    );
+  } catch {
+    // Island never marked an entry active (no hydration, empty TOC) — the
+    // static pass already recorded zero toc-active rows; nothing to add.
+    return [];
+  }
+
+  const payload: CollectPayload = { items: [tocItem], firstOnly: true };
+  return page.evaluate(collectSamplesInBrowser, payload);
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
@@ -430,94 +484,107 @@ async function main(): Promise<void> {
     ),
   );
 
-  let browser: Browser | null = null;
   try {
-    browser = await chromium.launch();
-
+    // A fresh browser PER PACK, not one shared across all ~42 states. A single
+    // long-lived Chromium accumulates renderer memory context-by-context and, on
+    // a constrained host (WSL/CI), dies mid-run — after which every subsequent
+    // `newContext()` throws "Target page, context or browser has been closed"
+    // and the whole audit crashes with a partial report. Per-pack relaunch
+    // bounds memory to two states and isolates a crash to at most one pack.
     for (const pack of packs) {
-      for (const mode of opts.modes) {
-        const context = await browser.newContext({ viewport: { ...VIEWPORT } });
-        // Watch for pack-stylesheet load failures before navigating.
-        context.on("requestfailed", (req) => {
-          const url = req.url();
-          if (url.includes(`/theme-packs/${pack}/pack.css`)) {
-            stylesheetErrors.push({ pack, mode, message: `requestfailed: ${url}` });
-          }
-        });
-        context.on("response", (res) => {
-          const url = res.url();
-          if (url.includes(`/theme-packs/${pack}/pack.css`) && res.status() >= 400) {
-            stylesheetErrors.push({ pack, mode, message: `HTTP ${res.status()} for ${url}` });
-          }
-        });
-
-        try {
-          const page = await seedAndGoto(context, pack, mode, pageUrl);
-          await waitForPackApplied(page, pack, mode);
-          // Freeze transitions/animations so computed styles are stable.
-          await page.addStyleTag({
-            content: "*,*::before,*::after{transition:none!important;animation:none!important}",
-          });
-
-          const staticSamples = await collectStaticSamples(page);
-          const hoverSamples = await collectHoverSamples(page);
-          const samples = [...staticSamples, ...hoverSamples];
-
-          // Evaluate + accumulate coverage stats for this state.
-          const groupCounts: Record<string, number> = {};
-          let matched = 0;
-          let skipped = 0;
-
-          for (const sample of samples) {
-            const ev = evaluateSample(sample);
-            let verdict: Verdict = ev.verdict;
-            if (verdict === "FAIL") {
-              const entry = findAllowlistEntry(THEME_A11Y_ALLOWLIST, pack, mode, sample.elementKey, sample.state);
-              if (entry) {
-                verdict = "ALLOW";
-                consumedKeys.add(allowlistKey(pack, mode, sample.elementKey, sample.state));
+      const browser: Browser = await chromium.launch();
+      try {
+        for (const mode of opts.modes) {
+          let context: BrowserContext | null = null;
+          try {
+            context = await browser.newContext({ viewport: { ...VIEWPORT } });
+            // Watch for pack-stylesheet load failures before navigating.
+            context.on("requestfailed", (req) => {
+              const url = req.url();
+              if (url.includes(`/theme-packs/${pack}/pack.css`)) {
+                stylesheetErrors.push({ pack, mode, message: `requestfailed: ${url}` });
               }
-            }
-
-            const isDecorative = sample.kind === "decorative";
-            if (!isDecorative) {
-              matched++;
-              if (ev.verdict === "SKIP") skipped++;
-              if (sample.state !== "hover") {
-                groupCounts[sample.elementKey] = (groupCounts[sample.elementKey] ?? 0) + 1;
-              }
-            }
-
-            results.push({
-              pack,
-              mode,
-              elementKey: sample.elementKey,
-              selector: sample.selector,
-              state: sample.state,
-              fg: ev.fg,
-              bg: ev.bg,
-              ratio: ev.ratio,
-              threshold: ev.threshold,
-              verdict,
-              ...(ev.skipReason ? { skipReason: ev.skipReason } : {}),
-              ...(sample.text ? { text: sample.text } : {}),
             });
+            context.on("response", (res) => {
+              const url = res.url();
+              if (url.includes(`/theme-packs/${pack}/pack.css`) && res.status() >= 400) {
+                stylesheetErrors.push({ pack, mode, message: `HTTP ${res.status()} for ${url}` });
+              }
+            });
+
+            const page = await seedAndGoto(context, pack, mode, pageUrl);
+            await waitForPackApplied(page, pack, mode);
+            // Freeze transitions/animations so computed styles are stable.
+            await page.addStyleTag({
+              content: "*,*::before,*::after{transition:none!important;animation:none!important}",
+            });
+
+            const staticSamples = await collectStaticSamples(page);
+            const hoverSamples = await collectHoverSamples(page);
+            const tocActiveSamples = await collectTocActiveSamples(page);
+            const samples = [...staticSamples, ...hoverSamples, ...tocActiveSamples];
+
+            // Evaluate + accumulate coverage stats for this state.
+            const groupCounts: Record<string, number> = {};
+            let matched = 0;
+            let skipped = 0;
+
+            for (const sample of samples) {
+              const ev = evaluateSample(sample);
+              let verdict: Verdict = ev.verdict;
+              if (verdict === "FAIL") {
+                const entry = findAllowlistEntry(THEME_A11Y_ALLOWLIST, pack, mode, sample.elementKey, sample.state);
+                if (entry) {
+                  verdict = "ALLOW";
+                  consumedKeys.add(allowlistKey(pack, mode, sample.elementKey, sample.state));
+                }
+              }
+
+              const isDecorative = sample.kind === "decorative";
+              if (!isDecorative) {
+                matched++;
+                // Only INDETERMINATE skips (couldn't measure the backdrop) count
+                // toward the coverage MAX_SKIP_RATIO ceiling. A `straddle` skip is
+                // a determinate "gradient crosses the threshold" result, not a
+                // checker gap, so it must not trip the "evaluator mis-measuring" guard.
+                if (ev.verdict === "SKIP" && ev.skipKind !== "straddle") skipped++;
+                if (sample.state !== "hover") {
+                  groupCounts[sample.elementKey] = (groupCounts[sample.elementKey] ?? 0) + 1;
+                }
+              }
+
+              results.push({
+                pack,
+                mode,
+                elementKey: sample.elementKey,
+                selector: sample.selector,
+                state: sample.state,
+                fg: ev.fg,
+                bg: ev.bg,
+                ratio: ev.ratio,
+                threshold: ev.threshold,
+                verdict,
+                ...(ev.skipReason ? { skipReason: ev.skipReason } : {}),
+                ...(sample.text ? { text: sample.text } : {}),
+              });
+            }
+
+            const stats: CoverageStats = { groupCounts, matched, skipped };
+            const covErrors = evaluateCoverage(`${pack}/${mode}`, stats);
+            coverage.push({ pack, mode, ...stats, errors: covErrors });
+
+            await page.close();
+          } catch (err) {
+            stateErrors.push({ pack, mode, message: err instanceof Error ? err.message : String(err) });
+          } finally {
+            if (context) await context.close().catch(() => {});
           }
-
-          const stats: CoverageStats = { groupCounts, matched, skipped };
-          const covErrors = evaluateCoverage(`${pack}/${mode}`, stats);
-          coverage.push({ pack, mode, ...stats, errors: covErrors });
-
-          await page.close();
-        } catch (err) {
-          stateErrors.push({ pack, mode, message: err instanceof Error ? err.message : String(err) });
-        } finally {
-          await context.close();
         }
+      } finally {
+        await browser.close().catch(() => {});
       }
     }
   } finally {
-    if (browser) await browser.close();
     if (server) server.close();
   }
 
