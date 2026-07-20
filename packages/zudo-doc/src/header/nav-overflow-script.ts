@@ -221,7 +221,7 @@ export const NAV_OVERFLOW_SCRIPT = `(function () {
             var isChildActive = child.hasAttribute("data-active");
             a.className = isChildActive
               ? "block pl-hsp-xl pr-hsp-md py-vsp-2xs text-small font-bold text-accent hover:bg-accent/10 hover:underline focus-visible:underline"
-              : "block pl-hsp-xl pr-hsp-md py-vsp-2xs text-small text-muted hover:bg-accent/10 hover:text-fg hover:underline focus-visible:underline";
+              : "block pl-hsp-xl pr-hsp-md py-vsp-2xs text-small text-muted hover:bg-accent/10 hover:text-accent hover:underline focus-visible:underline";
             li.appendChild(a);
             moreMenu.appendChild(li);
           });
