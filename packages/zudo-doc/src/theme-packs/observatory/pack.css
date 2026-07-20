@@ -340,6 +340,9 @@ html[data-theme-pack="observatory"] main nav[aria-label="Breadcrumb"] a:hover {
 html[data-theme-pack="observatory"] .zd-content h1 {
   position: relative;
   padding-bottom: 0.8rem;
+  /* the constellation ::after is this pack's title rule — drop the default
+     h1 border-b (#3025) so it doesn't double up */
+  border-bottom: 0;
 }
 html[data-theme-pack="observatory"] .zd-content h1::after {
   content: "";

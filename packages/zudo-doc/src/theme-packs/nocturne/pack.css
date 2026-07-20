@@ -285,6 +285,10 @@ html[data-theme-pack="nocturne"] main nav[aria-label="Breadcrumb"] a:hover {
 html[data-theme-pack="nocturne"] .zd-content h1 {
   font-size: 2.9rem;
   line-height: 1.12;
+  /* the gold-hairline ::after is this pack's title rule — drop the default
+     h1 border-b and its padding (#3025) so it doesn't double up */
+  border-bottom: 0;
+  padding-bottom: 0;
 }
 html[data-theme-pack="nocturne"] .zd-content h1::after {
   content: "";

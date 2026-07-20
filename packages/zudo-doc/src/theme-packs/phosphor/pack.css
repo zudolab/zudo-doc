@@ -279,6 +279,10 @@ html[data-theme-pack="phosphor"] .zd-content h1 {
   color: var(--zd-accent);
   font-size: 2.9rem;
   line-height: 1.1;
+  /* the CRT prompt/cursor pseudo-elements are this pack's title treatment —
+     drop the default h1 border-b and its padding (#3025) */
+  border-bottom: 0;
+  padding-bottom: 0;
 }
 html[data-theme-pack="phosphor"] .zd-content h1::before {
   content: "> ";

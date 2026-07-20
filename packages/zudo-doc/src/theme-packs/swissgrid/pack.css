@@ -264,6 +264,10 @@ html[data-theme-pack="swissgrid"] .zd-content {
 html[data-theme-pack="swissgrid"] .zd-content h1 {
   font-size: clamp(2.3rem, 5vw + 1rem, 3.1rem);
   line-height: 1.02;
+  /* the red-bar ::after is this pack's title rule — drop the default h1
+     border-b and its padding (#3025) so it doesn't double up */
+  border-bottom: 0;
+  padding-bottom: 0;
 }
 html[data-theme-pack="swissgrid"] .zd-content h1::after {
   content: "";
