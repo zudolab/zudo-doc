@@ -349,7 +349,7 @@ export function Header(props: HeaderProps): JSX.Element {
         <div class="relative shrink-0" data-nav-more style="display:none">
           <button
             type="button"
-            class="px-hsp-md py-vsp-2xs text-small font-medium text-muted hover:text-accent hover:underline cursor-pointer"
+            class="px-hsp-md py-vsp-2xs text-small font-medium text-muted hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline cursor-pointer"
             data-nav-more-toggle
             aria-expanded="false"
           >
@@ -455,7 +455,7 @@ function renderNavItem(
             "flex items-center gap-x-hsp-xs px-hsp-md py-vsp-2xs text-small font-medium transition-colors",
             isActive
               ? "bg-fg text-bg"
-              : "text-muted hover:text-accent hover:underline focus:underline",
+              : "text-muted hover:text-accent hover:underline focus:underline focus:text-accent",
           ].join(" ")}
         >
           {label}
@@ -492,8 +492,8 @@ function renderNavItem(
                   href={childHref}
                   data-active={childActive ? "" : undefined}
                   class={[
-                    "block px-hsp-md py-vsp-2xs text-small hover:bg-accent/10 hover:underline",
-                    childActive ? "font-bold text-accent" : "text-fg hover:text-accent",
+                    "block px-hsp-md py-vsp-2xs text-small hover:bg-accent/10 hover:underline focus-visible:underline",
+                    childActive ? "font-bold text-accent" : "text-fg hover:text-accent focus-visible:text-accent",
                   ].join(" ")}
                 >
                   {childLabel}
@@ -515,7 +515,7 @@ function renderNavItem(
         "px-hsp-md py-vsp-2xs text-small font-medium transition-colors shrink-0",
         isActive
           ? "bg-fg text-bg"
-          : "text-muted hover:text-accent hover:underline focus:underline",
+          : "text-muted hover:text-accent hover:underline focus:underline focus:text-accent",
       ].join(" ")}
     >
       {label}

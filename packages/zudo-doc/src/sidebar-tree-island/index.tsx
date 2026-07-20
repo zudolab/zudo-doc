@@ -447,7 +447,7 @@ const CategoryNode = memo(function CategoryNode({
             <a
               href={node.href}
               aria-current={isActive ? "page" : undefined}
-              className={`flex-1 flex items-start gap-hsp-xs py-vsp-xs hover:underline focus:underline break-words ${isActive ? "text-bg" : "text-fg hover:text-accent"}`}
+              className={`flex-1 flex items-start gap-hsp-xs py-vsp-xs hover:underline focus:underline break-words ${isActive ? "text-bg" : "text-fg hover:text-accent focus:text-accent"}`}
               style={{ paddingLeft }}
             >
               {depth === 0 && (
@@ -471,7 +471,7 @@ const CategoryNode = memo(function CategoryNode({
           <button
             type="button"
             onClick={toggle}
-            className={`flex w-full items-center gap-hsp-md text-left text-small font-semibold py-vsp-xs text-fg hover:text-accent hover:underline focus:underline break-words`}
+            className={`flex w-full items-center gap-hsp-md text-left text-small font-semibold py-vsp-xs text-fg hover:text-accent hover:underline focus:underline focus:text-accent break-words`}
             style={{ paddingLeft }}
             aria-expanded={isExpanded}
             aria-label={isExpanded ? `Collapse ${node.label}` : `Expand ${node.label}`}
@@ -536,12 +536,12 @@ const LeafNode = memo(function LeafNode({
           data-nav-active={!isRoot && isActive ? "" : undefined}
           className={isRoot
             ? `flex items-start gap-hsp-xs py-[calc(var(--spacing-vsp-xs)+0.15rem)] pr-[4px] text-small font-semibold break-words ${
-                isActive ? "bg-fg text-bg" : "text-fg hover:text-accent hover:underline focus:underline"
+                isActive ? "bg-fg text-bg" : "text-fg hover:text-accent hover:underline focus:underline focus:text-accent"
               }`
             : `block py-vsp-2xs pr-[4px] text-small break-words ${
                 isActive
                   ? "bg-fg font-medium text-bg"
-                  : "text-muted hover:text-accent hover:underline focus:underline"
+                  : "text-muted hover:text-accent hover:underline focus:underline focus:text-accent"
               }`
           }
           style={{ paddingLeft }}
