@@ -20,7 +20,7 @@ export const frontmatter = { title: "Home" };
 export default function IndexPage(): JSX.Element {
   const locale = defaultLocale;
 
-  const { tree, categoryOrder, tagCount } = prepareHomeData(routeCtx, locale);
+  const { tree, categoryOrder, tagCount, tags } = prepareHomeData(routeCtx, locale);
 
   return (
     <HomePageView
@@ -28,6 +28,7 @@ export default function IndexPage(): JSX.Element {
       tree={tree}
       categoryOrder={categoryOrder}
       tagCount={tagCount}
+      tags={tags}
       wide={settings.home?.wide ?? false}
     />
   );

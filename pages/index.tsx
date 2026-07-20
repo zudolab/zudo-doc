@@ -29,7 +29,7 @@ export const frontmatter = { title: "Home" };
 export default function IndexPage(): JSX.Element {
   const locale = routeContext.defaultLocale;
 
-  const { tree, categoryOrder, tagCount } = prepareHomeData(routeContext, locale);
+  const { tree, categoryOrder, tagCount, tags } = prepareHomeData(routeContext, locale);
 
   return (
     <HomePageView
@@ -38,6 +38,7 @@ export default function IndexPage(): JSX.Element {
       categoryOrder={categoryOrder}
       initiallyCollapsedCategorySlugs={["changelog"]}
       tagCount={tagCount}
+      tags={tags}
       // Showcase opts into the wide layout so the category grid fills the
       // viewport (better readability for the multi-column sitemap). Downstream
       // projects keep the narrower default unless they pass `wide` too.

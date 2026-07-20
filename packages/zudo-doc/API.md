@@ -75,7 +75,14 @@ Factory for the shared home-page (site index) body: hero (logo mask block,
 `<h1>` siteName, description, primary link + GitHub + extras links row), the
 `SiteTreeNav` idle Island, and the optional docTags section. Returns a
 `HomePageView` component with props
-`{ locale, extras?, heroLink?, tree, categoryOrder, tagCount }`.
+`{ locale, extras?, heroLink?, tree, categoryOrder, tagCount, tags?, tagLimit? }`.
+
+`tagCount` (together with `settings.docTags`) gates the tags section. When
+`tags` (the pre-resolved `TagItem[]` list `prepareHomeData` now also returns) is
+provided and non-empty, the section renders the tag chips — capped at `tagLimit`
+(default 30) with a "…" overflow indicator — plus a "see all tags" nav. When
+`tags` is omitted, the section falls back to a single "All Tags" link (the
+pre-tag-chips behaviour), so callers that pass only `tagCount` are unaffected.
 
 `/` is never injected by the routes plugin (zfb rejects `/`), so this factory
 exists so BOTH the package's `routes/index.tsx` / `routes/locale-index.tsx`
