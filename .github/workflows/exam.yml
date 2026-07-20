@@ -9,6 +9,8 @@
 #   slow-create     — create-zudo-doc slow integration tests (real npm install + zfb build)
 #   slow-zudo-doc   — @takazudo/zudo-doc slow route-injection-build test (real zfb builds +
 #                     npm pack; #2530 — moved out of pnpm test/pr-checks package-tests)
+#   theme-a11y      — rendered per-theme-pack WCAG contrast audit (scripts/theme-a11y-audit.ts);
+#                     too slow/still-maturing for pr-checks, so it's T3-only (#3036)
 #
 # Failure reporting:
 #   scripts/file-exam-issue.sh  — deduped failure issue, scoped per-workflow-job-identity
@@ -265,3 +267,88 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
+
+  # ---------------------------------------------------------------------------
+  # Job 4: Theme A11y Audit — rendered per-theme-pack WCAG contrast audit
+  # ---------------------------------------------------------------------------
+  # scripts/theme-a11y-audit.ts renders the BUILT showcase once per (theme pack
+  # × light/dark mode) via a real browser and reads computed styles — distinct
+  # from the static `pnpm contrast:audit` guard (color schemes only, gated
+  # elsewhere), which is structurally blind to theme-pack CSS. Needs a real
+  # browser + a full site build, so it's T3-only (too slow for pr-checks'
+  # e2e budget) rather than part of b4push/pr-checks (#3036). Requires a
+  # prebuilt dist/ — see scripts/theme-a11y-audit.ts's usage header.
+  theme-a11y:
+    name: Theme A11y Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container:
+      # renovate: datasource=docker depName=mcr.microsoft.com/playwright versioning=docker
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      options: --user 1001 --ipc=host
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+        with:
+          dest: ~/setup-pnpm-${{ github.job }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Clean-runner parity: the showcase build resolves @takazudo/zudo-doc
+      # through its dist/, which does not exist on a fresh runner (mirrors
+      # the slow-zudo-doc job above).
+      - name: Build @takazudo/zudo-doc
+        run: pnpm --filter @takazudo/zudo-doc build
+
+      - name: Build site
+        run: pnpm build
+
+      - name: Run theme a11y audit
+        run: pnpm theme-a11y:audit
+
+      - name: File failure issue
+        if: failure()
+        run: |
+          bash scripts/file-exam-issue.sh \
+            --run-url "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --workflow "Nightly Exam / Theme A11y Audit"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+
+      - name: Close exam issue on green run
+        if: success()
+        run: |
+          bash scripts/file-exam-issue.sh \
+            --green \
+            --run-url "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --workflow "Nightly Exam / Theme A11y Audit"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+
+      # if: always() — the report matters most on failure (that's the whole
+      # point of the artifact), but a WARN-only green run's report is also
+      # worth keeping for trend-watching.
+      - name: Upload theme a11y audit report
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: theme-a11y-audit-report
+          path: theme-a11y-audit-out/
+          retention-days: 14
