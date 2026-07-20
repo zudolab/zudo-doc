@@ -71,6 +71,8 @@
     "tags:suggest": "tags-suggest --config src/config/tag-vocabulary.ts",
     "// ── Color / Contrast ─────────────────────────────": "",
     "contrast:audit": "tsx scripts/contrast-audit.ts",
+    "theme-a11y:audit": "tsx scripts/theme-a11y-audit.ts",
+    "theme-a11y:test:fixture": "THEME_A11Y_FIXTURE_TEST=1 vitest run scripts/__tests__/theme-a11y-audit-fixture.test.ts",
     "// ── Lifecycle (auto-run by pnpm install) ─────────": "",
     "prepare": "lefthook install --reset-hooks-path && bash scripts/install-git-hooks.sh",
     "init-worktree": "bash scripts/install-git-hooks.sh"

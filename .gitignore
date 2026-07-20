@@ -46,6 +46,9 @@ test-results/
 # contrast:audit output (JSON report + optional HTML preview, not committed)
 contrast-audit-out/
 
+# theme-a11y:audit output (per-pack rendered contrast report, not committed)
+theme-a11y-audit-out/
+
 # Generated zudo-doc-wisdom skill (machine-specific symlinks)
 .claude/skills/zudo-doc-wisdom/SKILL.md
 .claude/skills/zudo-doc-wisdom/docs
