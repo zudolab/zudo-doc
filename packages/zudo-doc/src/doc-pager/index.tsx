@@ -56,7 +56,7 @@ export function createDocPager<S extends Settings = Settings>(
             href={prev.href}
             class="group border border-muted rounded-lg p-hsp-lg hover:border-accent"
           >
-            <div class="flex items-center gap-hsp-xs text-caption text-muted mb-vsp-2xs">
+            <div class="flex items-center gap-hsp-xs text-caption text-muted mb-vsp-2xs group-hover:text-accent group-focus-visible:text-accent">
               <ChevronLeft className="h-[1.125rem] w-[1.125rem]" />
               <span class="no-underline">{t("nav.previous", locale)}</span>
             </div>
@@ -72,7 +72,7 @@ export function createDocPager<S extends Settings = Settings>(
             href={next.href}
             class="group border border-muted rounded-lg p-hsp-lg hover:border-accent text-right"
           >
-            <div class="flex items-center justify-end gap-hsp-xs text-caption text-muted mb-vsp-2xs">
+            <div class="flex items-center justify-end gap-hsp-xs text-caption text-muted mb-vsp-2xs group-hover:text-accent group-focus-visible:text-accent">
               <span class="no-underline">{t("nav.next", locale)}</span>
               <ChevronRight className="h-[1.125rem] w-[1.125rem]" />
             </div>
