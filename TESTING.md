@@ -156,20 +156,50 @@ gh workflow run exam.yml --ref <branch>
 ```
 
 Use the `--ref` dispatch to validate a branch before merging when you suspect
-environment-sensitive failures that don't appear locally. Exam runs three jobs:
+environment-sensitive failures that don't appear locally. Exam runs four jobs:
 
 - **e2e-full** — CI-safe lane + `@flaky` quarantine lane (allowed to fail)
 - **slow-create** — `create-zudo-doc` slow integration tests (real `pnpm install` + `zfb build`)
 - **slow-zudo-doc** — `@takazudo/zudo-doc` slow route-injection-build test (real `zfb build`s
   + `npm pack`; moved out of the default `pnpm test` / pr-checks package-tests lane, #2530)
+- **theme-a11y** — rendered per-theme-pack WCAG contrast audit (`pnpm theme-a11y:audit`);
+  see "Theme A11y Audit" below for its scope and wait-discipline notes (#3036)
 
 Exam failures open a deduped GitHub issue via `scripts/file-exam-issue.sh`, scoped
-per exam job (e2e-full / slow-create / slow-zudo-doc) — dedup matches both the shared
-`exam-failure` label AND the issue title, which embeds the job identity, so a failure
-in one job never appends onto another job's open issue. Repeated failures for the same
-job append comments to the same open issue; each job's next green run closes it via
+per exam job (e2e-full / slow-create / slow-zudo-doc / theme-a11y) — dedup matches both
+the shared `exam-failure` label AND the issue title, which embeds the job identity, so a
+failure in one job never appends onto another job's open issue. Repeated failures for the
+same job append comments to the same open issue; each job's next green run closes it via
 `--green` (`if: success()` step, added right after the `if: failure()` step in each job)
 with a closing comment, so the issue list doesn't accumulate stale entries (#2535).
+
+### Theme A11y Audit (`theme-a11y` job — T3 nightly + on-demand dev tool)
+
+`scripts/theme-a11y-audit.ts` (`pnpm theme-a11y:audit`) renders the **built** showcase
+once per (theme pack × light/dark mode) in a real Playwright browser and reads computed
+styles to check WCAG contrast on a fixed chrome + content element inventory. It requires
+a prebuilt `dist/` and a browser, so — like `e2e-full` — it's too slow for pr-checks'
+budget and lives here as a T3 nightly + on-demand job (`theme-a11y`), plus a local dev
+tool for partial runs while iterating on a theme pack (`pnpm theme-a11y:audit --packs
+<name> --modes light`).
+
+**Scope split vs `pnpm contrast:audit`.** These two checks are not redundant:
+
+- `pnpm contrast:audit` checks the 2 built-in **color schemes** (Default Light/Dark) by
+  resolving their OKLCH values through the package resolvers — no browser, no theme-pack
+  CSS. It's gated by `src/config/__tests__/contrast.test.ts` in `pnpm test:unit`
+  (T0/T1). See the `color-scheme-a11y` skill.
+- `pnpm theme-a11y:audit` checks every **theme pack**'s rendered CSS in a real browser —
+  the only check that can catch pure-cascade theme-pack bugs (e.g. an active-nav chip
+  losing contrast under one pack's stylesheet) that are structurally invisible to the
+  static color-scheme check. This is what the `theme-a11y` exam job gates on.
+
+**Wait-discipline note (self-imposed, not mechanically enforced).**
+`scripts/theme-a11y-audit.ts` is the first standalone Playwright-browser script outside
+`e2e/`. `scripts/check-wait-debt.mjs` (see "Mechanical enforcement" below) only scans
+`e2e/` (excluding `e2e/fixtures/`), so this script's waits are **not** covered by that
+guard. Hold it to the same standard anyway: no bare `waitForTimeout` — any wait added
+here must carry a same-line `// wait-ok: <why>` comment, same convention as `e2e/`.
 
 ---
 
