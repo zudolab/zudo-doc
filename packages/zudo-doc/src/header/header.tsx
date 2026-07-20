@@ -45,6 +45,14 @@ import {
   pathForMatch,
 } from "./nav-active.js";
 import { NAV_OVERFLOW_SCRIPT } from "./nav-overflow-script.js";
+import {
+  NAV_CHEVRON_ACTIVE,
+  NAV_CHEVRON_INACTIVE,
+  NAV_CHILD_ACTIVE,
+  NAV_CHILD_INACTIVE,
+  NAV_TOP_ACTIVE,
+  NAV_TOP_INACTIVE,
+} from "./nav-class-tokens.js";
 import { LANGUAGE_SWITCHER_INIT_SCRIPT } from "../i18n-version/language-switcher.js";
 import { VERSION_SWITCHER_REWIRE_SCRIPT } from "../i18n-version/version-switcher.js";
 import type {
@@ -454,15 +462,15 @@ function renderNavItem(
           class={[
             "flex items-center gap-x-hsp-xs px-hsp-md py-vsp-2xs text-small font-medium transition-colors",
             isActive
-              ? "bg-fg text-bg"
-              : "text-muted hover:text-accent hover:underline focus:underline focus:text-accent",
+              ? NAV_TOP_ACTIVE.join(" ")
+              : NAV_TOP_INACTIVE.join(" "),
           ].join(" ")}
         >
           {label}
           <svg
             class={[
               "h-[0.5rem] w-[0.5rem] shrink-0",
-              isActive ? "text-bg" : "text-muted",
+              isActive ? NAV_CHEVRON_ACTIVE.join(" ") : NAV_CHEVRON_INACTIVE.join(" "),
             ].join(" ")}
             fill="none"
             viewBox="0 0 24 24"
@@ -493,7 +501,7 @@ function renderNavItem(
                   data-active={childActive ? "" : undefined}
                   class={[
                     "block px-hsp-md py-vsp-2xs text-small hover:bg-accent/10 hover:underline focus-visible:underline",
-                    childActive ? "font-bold text-accent" : "text-fg hover:text-accent focus-visible:text-accent",
+                    childActive ? NAV_CHILD_ACTIVE.join(" ") : NAV_CHILD_INACTIVE.join(" "),
                   ].join(" ")}
                 >
                   {childLabel}
@@ -514,8 +522,8 @@ function renderNavItem(
       class={[
         "px-hsp-md py-vsp-2xs text-small font-medium transition-colors shrink-0",
         isActive
-          ? "bg-fg text-bg"
-          : "text-muted hover:text-accent hover:underline focus:underline focus:text-accent",
+          ? NAV_TOP_ACTIVE.join(" ")
+          : NAV_TOP_INACTIVE.join(" "),
       ].join(" ")}
     >
       {label}
