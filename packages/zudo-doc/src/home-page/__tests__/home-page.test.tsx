@@ -321,6 +321,32 @@ describe("createHomePageView — homeExtras seam", () => {
     expect(html).not.toContain('<span class="text-muted">/</span>');
   });
 
+  it("primary link present, no GitHub, extras present: renders exactly ONE separator (not a dangling/double '/')", () => {
+    const ctx = makeFakeChromeContext({
+      settings: { headerNav: [{ path: "/docs/getting-started", label: "Docs" }], githubUrl: false },
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(
+      <HomePageView {...makeProps()} extras={<div class="home-extra">ONLY-EXTRA</div>} />,
+    );
+
+    const separatorCount = html.split('<span class="text-muted">/</span>').length - 1;
+    expect(separatorCount).toBe(1);
+    expect(html).toContain(
+      '<span class="text-muted">/</span><div class="home-extra">ONLY-EXTRA</div>',
+    );
+  });
+
+  it("a falsy conditional extras value (extras={false}) renders no separator and no content", () => {
+    const ctx = makeFakeChromeContext({
+      settings: { headerNav: [{ path: "/docs/getting-started", label: "Docs" }] },
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps()} extras={false} />);
+
+    expect(html).not.toContain('<span class="text-muted">/</span>');
+  });
+
   it("extras prop takes precedence over ctx.hostBindings.homeExtras", () => {
     const bindingCalls: unknown[] = [];
     const ctx = makeFakeChromeContext({
