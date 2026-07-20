@@ -312,6 +312,12 @@ html[data-theme-pack="washi"] .zd-content > p[data-doc-description] {
 /* signature move #2 — the h1 carries a small tilted 藍 seal, like a
    maker's hanko stamp on the sheet (platform CJK font renders the
    glyph — decorative content character, Decision 5 CJK rule) */
+html[data-theme-pack="washi"] .zd-content h1 {
+  /* washi's title treatment is the tilted 藍 seal (::after), not an
+     underline — drop the default h1 border-b and its padding (#3025) */
+  border-bottom: 0;
+  padding-bottom: 0;
+}
 html[data-theme-pack="washi"] .zd-content h1::after {
   content: "藍";
   display: inline-block;

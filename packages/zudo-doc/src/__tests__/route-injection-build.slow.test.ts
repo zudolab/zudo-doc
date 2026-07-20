@@ -561,8 +561,8 @@ describe("CB chrome-bindings: chromeBindingsModule wires host bindings into crea
   });
 
   // Positional proof: the badge renders AFTER </h1> and BEFORE the metainfo
-  // block (`DocMetainfoArea` → `DocMetainfo`, identified by its distinctive
-  // wrapper class — see metainfo/doc-metainfo.tsx), matching the documented
+  // block (`DocMetainfoArea` → `DocMetainfo`, identified by its stable
+  // `data-doc-metainfo` hook — see metainfo/doc-metainfo.tsx), matching the documented
   // placement in doc-content-header/index.tsx. The CB setup flips
   // `docMetainfo: true` + supplies a `docHistoryMeta` entry (via
   // chrome-bindings.tsx) so a REAL metainfo block renders here, rather than
@@ -571,7 +571,7 @@ describe("CB chrome-bindings: chromeBindingsModule wires host bindings into crea
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
     const h1CloseIdx = html.indexOf("</h1>");
     const badgeIdx = html.indexOf("doc-content-header-extra-marker");
-    const metainfoIdx = html.indexOf("border-t border-fg pt-vsp-xs");
+    const metainfoIdx = html.indexOf("data-doc-metainfo");
     expect(h1CloseIdx).toBeGreaterThan(-1);
     expect(badgeIdx).toBeGreaterThan(h1CloseIdx);
     expect(metainfoIdx).toBeGreaterThan(badgeIdx);

@@ -274,6 +274,9 @@ html[data-theme-pack="sumi"] .zd-content h1 {
   position: relative;
   padding-bottom: 0.95rem;
   margin-bottom: 0.9rem;
+  /* the brush-stroke ::after is this pack's title rule — drop the default
+     h1 border-b (#3025) so it doesn't double up */
+  border-bottom: 0;
 }
 html[data-theme-pack="sumi"] .zd-content h1::after {
   content: "";

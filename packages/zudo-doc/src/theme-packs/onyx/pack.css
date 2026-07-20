@@ -253,6 +253,12 @@ html[data-theme-pack="onyx"] a[data-nav-active] {
 }
 
 /* h1: serif display over a short gold rule */
+html[data-theme-pack="onyx"] .zd-content h1 {
+  /* the short gold ::after rule is this pack's title rule — drop the default
+     h1 border-b and its padding (#3025) so it doesn't double up */
+  border-bottom: 0;
+  padding-bottom: 0;
+}
 html[data-theme-pack="onyx"] .zd-content h1::after {
   content: "";
   display: block;
