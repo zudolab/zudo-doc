@@ -90,11 +90,11 @@ export const NAV_OVERFLOW_SCRIPT = `(function () {
       if (!a) return;
       if (active) {
         a.classList.add("bg-fg", "text-bg");
-        a.classList.remove("text-muted", "hover:underline", "focus:underline");
+        a.classList.remove("text-muted", "hover:text-accent", "hover:underline", "focus:underline");
         a.setAttribute("aria-current", "page");
       } else {
         a.classList.remove("bg-fg", "text-bg");
-        a.classList.add("text-muted", "hover:underline", "focus:underline");
+        a.classList.add("text-muted", "hover:text-accent", "hover:underline", "focus:underline");
         a.removeAttribute("aria-current");
       }
     }
@@ -113,11 +113,11 @@ export const NAV_OVERFLOW_SCRIPT = `(function () {
             anyChild = true;
             c.setAttribute("data-active", "");
             c.classList.add("font-bold", "text-accent");
-            c.classList.remove("text-fg");
+            c.classList.remove("text-fg", "hover:text-accent");
           } else {
             c.removeAttribute("data-active");
             c.classList.remove("font-bold", "text-accent");
-            c.classList.add("text-fg");
+            c.classList.add("text-fg", "hover:text-accent");
           }
         });
         topActive = parentMatch || anyChild;
@@ -206,7 +206,7 @@ export const NAV_OVERFLOW_SCRIPT = `(function () {
             a.href = parentLink.href;
             var parentText = parentLink.textContent ? parentLink.textContent.trim().replace(/\\s+/g, " ") : "";
             a.textContent = parentText;
-            a.className = "block px-hsp-md py-vsp-2xs text-small font-bold hover:bg-accent/10 hover:underline focus-visible:underline text-fg";
+            a.className = "block px-hsp-md py-vsp-2xs text-small font-bold hover:bg-accent/10 hover:underline focus-visible:underline text-fg hover:text-accent";
             if (parentLink.getAttribute("aria-current") === "page") {
               a.className += " text-accent";
             }
@@ -231,7 +231,7 @@ export const NAV_OVERFLOW_SCRIPT = `(function () {
           var a2 = document.createElement("a");
           a2.href = anchor.href;
           a2.textContent = anchor.textContent ? anchor.textContent.trim() : "";
-          a2.className = "block px-hsp-md py-vsp-2xs text-small hover:bg-accent/10 hover:underline focus-visible:underline text-fg";
+          a2.className = "block px-hsp-md py-vsp-2xs text-small hover:bg-accent/10 hover:underline focus-visible:underline text-fg hover:text-accent";
           if (anchor.getAttribute("aria-current") === "page") {
             a2.className += " font-bold text-accent";
           }
