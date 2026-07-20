@@ -31,6 +31,39 @@
 // script can be reviewed in isolation.
 
 import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
+import {
+  NAV_CHEVRON_ACTIVE,
+  NAV_CHEVRON_INACTIVE,
+  NAV_CHILD_ACTIVE,
+  NAV_CHILD_INACTIVE,
+  NAV_MENU_CHILD_ACTIVE,
+  NAV_MENU_CHILD_INACTIVE,
+  NAV_MENU_PARENT,
+  NAV_MENU_PARENT_ACTIVE_SUFFIX,
+  NAV_MENU_PLAIN,
+  NAV_MENU_PLAIN_ACTIVE_SUFFIX,
+  NAV_TOP_ACTIVE,
+  NAV_TOP_INACTIVE,
+} from "./nav-class-tokens.js";
+
+// The class lists spliced into the script below are the SSR ↔ runtime
+// lockstep: they must match the strings header.tsx renders. Both files import
+// them from ./nav-class-tokens so they cannot drift (zudolab/zudo-doc#3023).
+// The script ships as plain text via dangerouslySetInnerHTML and cannot import
+// the arrays at runtime, so these helpers splice the token lists into the
+// script string at module-eval (build) time instead.
+
+// -> `"bg-fg", "text-bg"` — argument list for a classList.add/remove(...) call.
+const clsArgs = (tokens: readonly string[]): string =>
+  tokens.map((token) => JSON.stringify(token)).join(", ");
+
+// -> `"bg-fg text-bg"` — a single class-string literal for `className = ...`.
+const clsLiteral = (tokens: readonly string[]): string =>
+  JSON.stringify(tokens.join(" "));
+
+// -> `" font-bold text-accent"` — leading-space append for `className += ...`.
+const clsAppend = (tokens: readonly string[]): string =>
+  JSON.stringify(" " + tokens.join(" "));
 
 export const NAV_OVERFLOW_SCRIPT = `(function () {
   var cleanupNavOverflow = null;
@@ -89,12 +122,12 @@ export const NAV_OVERFLOW_SCRIPT = `(function () {
     function setTopActive(a, active) {
       if (!a) return;
       if (active) {
-        a.classList.add("bg-fg", "text-bg");
-        a.classList.remove("text-muted", "hover:text-accent", "hover:underline", "focus:underline", "focus:text-accent");
+        a.classList.add(${clsArgs(NAV_TOP_ACTIVE)});
+        a.classList.remove(${clsArgs(NAV_TOP_INACTIVE)});
         a.setAttribute("aria-current", "page");
       } else {
-        a.classList.remove("bg-fg", "text-bg");
-        a.classList.add("text-muted", "hover:text-accent", "hover:underline", "focus:underline", "focus:text-accent");
+        a.classList.remove(${clsArgs(NAV_TOP_ACTIVE)});
+        a.classList.add(${clsArgs(NAV_TOP_INACTIVE)});
         a.removeAttribute("aria-current");
       }
     }
@@ -112,19 +145,19 @@ export const NAV_OVERFLOW_SCRIPT = `(function () {
           if (childActive) {
             anyChild = true;
             c.setAttribute("data-active", "");
-            c.classList.add("font-bold", "text-accent");
-            c.classList.remove("text-fg", "hover:text-accent", "focus-visible:text-accent");
+            c.classList.add(${clsArgs(NAV_CHILD_ACTIVE)});
+            c.classList.remove(${clsArgs(NAV_CHILD_INACTIVE)});
           } else {
             c.removeAttribute("data-active");
-            c.classList.remove("font-bold", "text-accent");
-            c.classList.add("text-fg", "hover:text-accent", "focus-visible:text-accent");
+            c.classList.remove(${clsArgs(NAV_CHILD_ACTIVE)});
+            c.classList.add(${clsArgs(NAV_CHILD_INACTIVE)});
           }
         });
         topActive = parentMatch || anyChild;
         var svg = topA ? topA.querySelector("svg") : null;
         if (svg) {
-          if (topActive) { svg.classList.add("text-bg"); svg.classList.remove("text-muted"); }
-          else { svg.classList.add("text-muted"); svg.classList.remove("text-bg"); }
+          if (topActive) { svg.classList.add(${clsArgs(NAV_CHEVRON_ACTIVE)}); svg.classList.remove(${clsArgs(NAV_CHEVRON_INACTIVE)}); }
+          else { svg.classList.add(${clsArgs(NAV_CHEVRON_INACTIVE)}); svg.classList.remove(${clsArgs(NAV_CHEVRON_ACTIVE)}); }
         }
       } else {
         topActive = activePath !== "" && navPathname(topA) === activePath;
@@ -206,9 +239,9 @@ export const NAV_OVERFLOW_SCRIPT = `(function () {
             a.href = parentLink.href;
             var parentText = parentLink.textContent ? parentLink.textContent.trim().replace(/\\s+/g, " ") : "";
             a.textContent = parentText;
-            a.className = "block px-hsp-md py-vsp-2xs text-small font-bold hover:bg-accent/10 hover:underline focus-visible:underline focus-visible:text-accent text-fg hover:text-accent";
+            a.className = ${clsLiteral(NAV_MENU_PARENT)};
             if (parentLink.getAttribute("aria-current") === "page") {
-              a.className += " text-accent";
+              a.className += ${clsAppend(NAV_MENU_PARENT_ACTIVE_SUFFIX)};
             }
             li.appendChild(a);
             moreMenu.appendChild(li);
@@ -220,8 +253,8 @@ export const NAV_OVERFLOW_SCRIPT = `(function () {
             a.textContent = child.textContent ? child.textContent.trim() : "";
             var isChildActive = child.hasAttribute("data-active");
             a.className = isChildActive
-              ? "block pl-hsp-xl pr-hsp-md py-vsp-2xs text-small font-bold text-accent hover:bg-accent/10 hover:underline focus-visible:underline"
-              : "block pl-hsp-xl pr-hsp-md py-vsp-2xs text-small text-fg hover:bg-accent/10 hover:text-accent hover:underline focus-visible:underline focus-visible:text-accent";
+              ? ${clsLiteral(NAV_MENU_CHILD_ACTIVE)}
+              : ${clsLiteral(NAV_MENU_CHILD_INACTIVE)};
             li.appendChild(a);
             moreMenu.appendChild(li);
           });
@@ -231,9 +264,9 @@ export const NAV_OVERFLOW_SCRIPT = `(function () {
           var a2 = document.createElement("a");
           a2.href = anchor.href;
           a2.textContent = anchor.textContent ? anchor.textContent.trim() : "";
-          a2.className = "block px-hsp-md py-vsp-2xs text-small hover:bg-accent/10 hover:underline focus-visible:underline focus-visible:text-accent text-fg hover:text-accent";
+          a2.className = ${clsLiteral(NAV_MENU_PLAIN)};
           if (anchor.getAttribute("aria-current") === "page") {
-            a2.className += " font-bold text-accent";
+            a2.className += ${clsAppend(NAV_MENU_PLAIN_ACTIVE_SUFFIX)};
           }
           li2.appendChild(a2);
           moreMenu.appendChild(li2);
