@@ -186,7 +186,7 @@ export const chromeBindings = defineChromeBindings({
 
 ## `homeExtras` と `HomePageView` — ホームヒーローへの注入
 
-`homeExtras` は、ホームヒーロー内、overview/GitHub のリンク行の後、ヒーローのテキストカラム内に追加コンテンツを描画します — 例えばサイト説明の下にブランドやソーシャルのリンクを置く用途です。
+`homeExtras` は、ホームヒーローのリンク行の末尾に、直前の要素（プライマリリンクや GitHub リンク）と `/` 区切りで、追加コンテンツをインラインで描画します — 例えば overview/GitHub のリンクと並べてブランドやソーシャルのリンクを置く用途です。
 
 ```ts
 homeExtras?: (args: { locale: string }) => unknown;
@@ -195,14 +195,12 @@ homeExtras?: (args: { locale: string }) => unknown;
 ```tsx title="src/chrome-bindings.tsx"
 export const chromeBindings = defineChromeBindings({
   homeExtras: ({ locale }) => (
-    <p class="mt-vsp-sm text-small">
-      <a
-        href="https://example.com/blog"
-        class="text-fg underline hover:text-accent"
-      >
-        Read the blog
-      </a>
-    </p>
+    <a
+      href="https://example.com/blog"
+      class="text-fg underline hover:text-accent"
+    >
+      Read the blog
+    </a>
   ),
 });
 ```

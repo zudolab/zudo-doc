@@ -30,6 +30,7 @@
 //
 // NOT an eject target — no `ejectable-snapshot` registration.
 
+import { Fragment } from "preact";
 import type { ComponentChildren, JSX, VNode } from "preact";
 import { Island } from "@takazudo/zfb";
 import { DocLayoutWithDefaults } from "../doclayout/index.js";
@@ -53,9 +54,10 @@ export interface HomePageViewProps {
    *  `hostBindings.homeExtras({ locale })` call when `extras` is absent. */
   locale: string;
   /**
-   * Extra content rendered after the links row, inside the hero text column.
-   * A VALUE (already-rendered children) — the host-PAGE path. Takes
-   * precedence over `ctx.hostBindings.homeExtras` when both are present.
+   * Extra content rendered INLINE at the end of the links row, `/`-separated
+   * from whatever precedes it (the primary link and/or the GitHub link). A
+   * VALUE (already-rendered children) — the host-PAGE path. Takes precedence
+   * over `ctx.hostBindings.homeExtras` when both are present.
    *
    * This value-vs-renderer asymmetry (prop = value, `hostBindings.homeExtras`
    * = renderer) is INTENTIONAL, not an oversight to "unify": a host page
@@ -65,6 +67,14 @@ export interface HomePageViewProps {
    * locale })`.
    */
   extras?: ComponentChildren;
+  /**
+   * Overrides the default first hero link, which is otherwise
+   * `settings.headerNav[0]` + `t("nav.overview", locale)`. `path` is
+   * locale-relative (the view prefixes it with the locale-URL prefix and
+   * resolves it through `withBase`, same as the default); `labelKey`
+   * resolves through `t(labelKey, locale)`.
+   */
+  heroLink?: { path: string; labelKey: string };
   /** Prepared nav tree for the `SiteTreeNav` grid (already grouped via
    *  `groupSatelliteNodes` by the caller — the two routes group their own
    *  locale-specific tree before handing it here). */
@@ -124,6 +134,7 @@ export function createHomePageView<S extends Settings = Settings>(
   function HomePageView({
     locale,
     extras,
+    heroLink,
     tree,
     categoryOrder,
     initiallyCollapsedCategorySlugs,
@@ -132,9 +143,51 @@ export function createHomePageView<S extends Settings = Settings>(
   }: HomePageViewProps): JSX.Element {
     const prefix = locale === defaultLocale ? "" : `/${locale}`;
     const ctaNav = settings.headerNav[0] ?? null;
-    const overview = ctaNav ? withBase(`${prefix}${ctaNav.path}`) : null;
+    const primary = heroLink
+      ? { href: withBase(`${prefix}${heroLink.path}`), label: t(heroLink.labelKey, locale) }
+      : ctaNav
+        ? { href: withBase(`${prefix}${ctaNav.path}`), label: t("nav.overview", locale) }
+        : null;
     const logoUrl = withBase("/img/logo.svg");
     const resolvedExtras = extras ?? homeExtras?.({ locale });
+    // `false`/`true`/`null`/`undefined` all render nothing in Preact (a
+    // caller may pass a conditional like `extras={cond && <Link />}`), so
+    // exclude them here — otherwise a "/" separator would render for content
+    // that never actually appears in the row.
+    const hasExtras = resolvedExtras != null && typeof resolvedExtras !== "boolean";
+    // Row items rendered `/`-separated — building an explicit list (instead
+    // of each item hard-coding its own trailing/leading separator) is what
+    // keeps the separator count correct regardless of which combination of
+    // primary/GitHub/extras is present.
+    const rowItems: ComponentChildren[] = [];
+    if (primary) {
+      rowItems.push(
+        <a href={primary.href} class="text-fg underline hover:text-accent">
+          {primary.label}
+        </a>,
+      );
+    }
+    if (settings.githubUrl) {
+      rowItems.push(
+        <a
+          href={settings.githubUrl as string}
+          class="inline-flex items-center gap-[0.3em] text-fg underline hover:text-accent"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <svg viewBox="0 0 16 16" aria-hidden="true" class="w-[1em] h-[1em] shrink-0">
+            <path
+              fill="currentColor"
+              d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+            />
+          </svg>
+          GitHub
+        </a>,
+      );
+    }
+    if (hasExtras) {
+      rowItems.push(resolvedExtras as ComponentChildren);
+    }
 
     return (
       <DocLayoutWithDefaults
@@ -166,33 +219,13 @@ export function createHomePageView<S extends Settings = Settings>(
               <h1 class="text-heading font-bold mb-vsp-2xs">{settings.siteName}</h1>
               <p class="text-muted text-small mb-vsp-sm">{settings.siteDescription}</p>
               <div class="flex items-center justify-center lg:justify-start gap-hsp-md text-small">
-                {overview && (
-                  <>
-                    <a href={overview} class="text-fg underline hover:text-accent">
-                      {t("nav.overview", locale)}
-                    </a>
-                    <span class="text-muted">/</span>
-                  </>
-                )}
-                {settings.githubUrl && (
-                  <a
-                    href={settings.githubUrl as string}
-                    class="inline-flex items-center gap-[0.3em] text-fg underline hover:text-accent"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <svg viewBox="0 0 16 16" aria-hidden="true" class="w-[1em] h-[1em] shrink-0">
-                      <path
-                        fill="currentColor"
-                        d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
-                      />
-                    </svg>
-                    GitHub
-                  </a>
-                )}
+                {rowItems.map((item, index) => (
+                  <Fragment key={index}>
+                    {index > 0 && <span class="text-muted">/</span>}
+                    {item}
+                  </Fragment>
+                ))}
               </div>
-
-              {resolvedExtras as ComponentChildren}
             </div>
           </div>
         </div>

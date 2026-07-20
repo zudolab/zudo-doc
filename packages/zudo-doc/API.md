@@ -67,14 +67,15 @@ behaviour byte-for-byte.
 | `DesignTokenPanelBootstrap` | The settings-gated package bootstrap. Custom panel data belongs in `designTokenPanelConfigModule`; replace this slot only when replacing the island implementation. |
 | `mdxExtras` | Package SSR impls + a `PresetGenerator` stub |
 | `docContentHeaderExtras` | Renders nothing. A renderer (not a component) called as `({ entry, slug, locale, isFallback?, version? }) => unknown` for `kind === "entry"` doc pages on all 4 doc routes (including versioned pages — it receives `version` and decides for itself). Renders between the `<h1>` and the metainfo/tags block in `DocContentHeader`. |
-| `homeExtras` | Renders nothing. A renderer called as `({ locale }) => unknown` for the home hero. The `/` home route is never injected by the routes plugin (zfb rejects `/`), so this fires on injected `/[locale]` homes and on any host that threads it through `createChrome`; a `HomePageView` `extras` prop takes precedence when both are present. |
+| `homeExtras` | Renders nothing. A renderer called as `({ locale }) => unknown` for the home hero. The `/` home route is never injected by the routes plugin (zfb rejects `/`), so this fires on injected `/[locale]` homes and on any host that threads it through `createChrome`; a `HomePageView` `extras` prop takes precedence when both are present. Rendered INLINE at the end of the links row, `/`-separated (#3012). |
 
 ### `createHomePageView(ctx)` (`./home-page`)
 
 Factory for the shared home-page (site index) body: hero (logo mask block,
-`<h1>` siteName, description, overview + GitHub links row), the `SiteTreeNav`
-idle Island, and the optional docTags section. Returns a `HomePageView`
-component with props `{ locale, extras?, tree, categoryOrder, tagCount }`.
+`<h1>` siteName, description, primary link + GitHub + extras links row), the
+`SiteTreeNav` idle Island, and the optional docTags section. Returns a
+`HomePageView` component with props
+`{ locale, extras?, heroLink?, tree, categoryOrder, tagCount }`.
 
 `/` is never injected by the routes plugin (zfb rejects `/`), so this factory
 exists so BOTH the package's `routes/index.tsx` / `routes/locale-index.tsx`
@@ -83,14 +84,23 @@ data calls, then hand them to `HomePageView`) and host pages can render the
 same body. **Not an eject target** — it is not registered in the `EJECTABLE`
 map and has no `zudo-doc eject` CLI name.
 
+**`heroLink` (optional):** `{ path: string; labelKey: string }` overrides the
+default first hero link, which is otherwise `settings.headerNav[0]` +
+`t("nav.overview", locale)`. `path` is locale-relative — the view prefixes it
+with the locale-URL prefix and resolves it through `withBase`, same as the
+default; `labelKey` resolves through `t(labelKey, locale)`.
+
 **Extras precedence:** the resolved extra content is `extras ?? ctx.hostBindings.homeExtras?.({ locale })` —
 the `extras` **prop** (an already-rendered value, the host-page path) wins over
 the `hostBindings.homeExtras` **renderer** (the injected/bindings path) when
 both are supplied. This value-vs-renderer split is intentional, not something
 to unify: a host page already has its JSX in hand, while the injected path
 only has a locale string at render time and must derive its own content from
-it. The resolved result renders inside the hero text column, after the links
-row.
+it. **The resolved result renders INLINE at the end of the links row**
+(`/`-separated from the primary link and/or the GitHub link — SEMVER-relevant
+behavior change from the previous standalone-line-below-the-row placement,
+#3012). A falsy value (`false`/`true`/`null`/`undefined` — e.g. a caller's own
+`extras={cond && <Link />}`) renders no content and no separator.
 
 ### UI Components
 
