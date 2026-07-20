@@ -53,9 +53,10 @@ export interface HomePageViewProps {
    *  `hostBindings.homeExtras({ locale })` call when `extras` is absent. */
   locale: string;
   /**
-   * Extra content rendered after the links row, inside the hero text column.
-   * A VALUE (already-rendered children) — the host-PAGE path. Takes
-   * precedence over `ctx.hostBindings.homeExtras` when both are present.
+   * Extra content rendered INLINE at the end of the links row, `/`-separated
+   * from whatever precedes it (the primary link and/or the GitHub link). A
+   * VALUE (already-rendered children) — the host-PAGE path. Takes precedence
+   * over `ctx.hostBindings.homeExtras` when both are present.
    *
    * This value-vs-renderer asymmetry (prop = value, `hostBindings.homeExtras`
    * = renderer) is INTENTIONAL, not an oversight to "unify": a host page
@@ -65,6 +66,14 @@ export interface HomePageViewProps {
    * locale })`.
    */
   extras?: ComponentChildren;
+  /**
+   * Overrides the default first hero link, which is otherwise
+   * `settings.headerNav[0]` + `t("nav.overview", locale)`. `path` is
+   * locale-relative (the view prefixes it with the locale-URL prefix and
+   * resolves it through `withBase`, same as the default); `labelKey`
+   * resolves through `t(labelKey, locale)`.
+   */
+  heroLink?: { path: string; labelKey: string };
   /** Prepared nav tree for the `SiteTreeNav` grid (already grouped via
    *  `groupSatelliteNodes` by the caller — the two routes group their own
    *  locale-specific tree before handing it here). */
@@ -124,6 +133,7 @@ export function createHomePageView<S extends Settings = Settings>(
   function HomePageView({
     locale,
     extras,
+    heroLink,
     tree,
     categoryOrder,
     initiallyCollapsedCategorySlugs,
@@ -132,7 +142,11 @@ export function createHomePageView<S extends Settings = Settings>(
   }: HomePageViewProps): JSX.Element {
     const prefix = locale === defaultLocale ? "" : `/${locale}`;
     const ctaNav = settings.headerNav[0] ?? null;
-    const overview = ctaNav ? withBase(`${prefix}${ctaNav.path}`) : null;
+    const primary = heroLink
+      ? { href: withBase(`${prefix}${heroLink.path}`), label: t(heroLink.labelKey, locale) }
+      : ctaNav
+        ? { href: withBase(`${prefix}${ctaNav.path}`), label: t("nav.overview", locale) }
+        : null;
     const logoUrl = withBase("/img/logo.svg");
     const resolvedExtras = extras ?? homeExtras?.({ locale });
 
@@ -166,10 +180,10 @@ export function createHomePageView<S extends Settings = Settings>(
               <h1 class="text-heading font-bold mb-vsp-2xs">{settings.siteName}</h1>
               <p class="text-muted text-small mb-vsp-sm">{settings.siteDescription}</p>
               <div class="flex items-center justify-center lg:justify-start gap-hsp-md text-small">
-                {overview && (
+                {primary && (
                   <>
-                    <a href={overview} class="text-fg underline hover:text-accent">
-                      {t("nav.overview", locale)}
+                    <a href={primary.href} class="text-fg underline hover:text-accent">
+                      {primary.label}
                     </a>
                     <span class="text-muted">/</span>
                   </>
@@ -190,9 +204,13 @@ export function createHomePageView<S extends Settings = Settings>(
                     GitHub
                   </a>
                 )}
+                {resolvedExtras != null && (
+                  <>
+                    {(primary || settings.githubUrl) && <span class="text-muted">/</span>}
+                    {resolvedExtras as ComponentChildren}
+                  </>
+                )}
               </div>
-
-              {resolvedExtras as ComponentChildren}
             </div>
           </div>
         </div>

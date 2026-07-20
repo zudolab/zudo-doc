@@ -197,7 +197,7 @@ The renderer is called for `entry` doc pages on all four doc routes, **including
 
 ## `homeExtras` and `HomePageView` — home hero injection
 
-`homeExtras` renders extra content in the home hero, after the overview/GitHub links row and inside the hero text column — for example, a brand or social link under the site description:
+`homeExtras` renders extra content INLINE at the end of the home hero's links row, `/`-separated from whatever precedes it (the primary link and/or the GitHub link) — for example, a brand or social link alongside the overview/GitHub links:
 
 ```ts
 homeExtras?: (args: { locale: string }) => unknown;
@@ -206,14 +206,12 @@ homeExtras?: (args: { locale: string }) => unknown;
 ```tsx title="src/chrome-bindings.tsx"
 export const chromeBindings = defineChromeBindings({
   homeExtras: ({ locale }) => (
-    <p class="mt-vsp-sm text-small">
-      <a
-        href="https://example.com/blog"
-        class="text-fg underline hover:text-accent"
-      >
-        Read the blog
-      </a>
-    </p>
+    <a
+      href="https://example.com/blog"
+      class="text-fg underline hover:text-accent"
+    >
+      Read the blog
+    </a>
   ),
 });
 ```

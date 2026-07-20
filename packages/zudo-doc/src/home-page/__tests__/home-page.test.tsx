@@ -239,9 +239,13 @@ describe("createHomePageView — homeExtras seam", () => {
     expect(html).not.toContain("HOME-EXTRA");
   });
 
-  it("hostBindings.homeExtras renderer: renders after the links row, receives { locale }", () => {
+  it("hostBindings.homeExtras renderer: renders INLINE at the end of the links row, `/`-separated, receives { locale }", () => {
     const calls: unknown[] = [];
     const ctx = makeFakeChromeContext({
+      settings: {
+        headerNav: [{ path: "/docs/getting-started", label: "Docs" }],
+        githubUrl: "https://github.com/example/example",
+      },
       overrides: {
         hostBindings: {
           homeExtras: (args) => {
@@ -256,10 +260,65 @@ describe("createHomePageView — homeExtras seam", () => {
 
     expect(calls).toEqual([{ locale: "ja" }]);
 
-    const linksRowEnd = html.indexOf("</div></div>", html.indexOf('class="flex items-center'));
-    const extraIdx = html.indexOf('<div class="home-extra">HOME-EXTRA-FROM-BINDING</div>');
-    expect(extraIdx).toBeGreaterThan(-1);
-    expect(extraIdx).toBeGreaterThan(html.indexOf('class="flex items-center'));
+    // Inline within the links row: right after the GitHub link, a single "/"
+    // separator (a preceding row item exists) immediately followed by the
+    // extra markup, then the row's own closing </div> — i.e. a row
+    // continuation, not a standalone line after the row.
+    expect(html).toContain(
+      '>GitHub</a><span class="text-muted">/</span><div class="home-extra">HOME-EXTRA-FROM-BINDING</div></div>',
+    );
+  });
+
+  it("heroLink override: resolves href with locale prefix and label from labelKey (default locale)", () => {
+    const ctx = makeFakeChromeContext({
+      settings: { defaultLocale: "en", headerNav: [{ path: "/docs/getting-started", label: "Docs" }] },
+      overrides: { defaultLocale: "en" } as Partial<ChromeContext>,
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(
+      <HomePageView
+        {...makeProps({
+          locale: "en",
+          heroLink: { path: "/docs/getting-started/introduction/", labelKey: "nav.introduction" },
+        })}
+      />,
+    );
+
+    expect(html).toContain('href="/docs/getting-started/introduction/"');
+    expect(html).toContain(">nav.introduction<");
+    expect(html).not.toContain(">nav.overview<");
+  });
+
+  it("heroLink override: resolves href with locale prefix and label from labelKey (non-default locale)", () => {
+    const ctx = makeFakeChromeContext({
+      settings: { defaultLocale: "en", headerNav: [{ path: "/docs/getting-started", label: "Docs" }] },
+      overrides: { defaultLocale: "en" } as Partial<ChromeContext>,
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(
+      <HomePageView
+        {...makeProps({
+          locale: "ja",
+          heroLink: { path: "/docs/getting-started/introduction/", labelKey: "nav.introduction" },
+        })}
+      />,
+    );
+
+    expect(html).toContain('href="/ja/docs/getting-started/introduction/"');
+    expect(html).toContain(">nav.introduction<");
+  });
+
+  it("minimal config: no headerNav item, no githubUrl — extras render with NO leading separator", () => {
+    const ctx = makeFakeChromeContext({
+      settings: { headerNav: [], githubUrl: false },
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(
+      <HomePageView {...makeProps()} extras={<div class="home-extra">ONLY-EXTRA</div>} />,
+    );
+
+    expect(html).toContain('<div class="home-extra">ONLY-EXTRA</div>');
+    expect(html).not.toContain('<span class="text-muted">/</span>');
   });
 
   it("extras prop takes precedence over ctx.hostBindings.homeExtras", () => {

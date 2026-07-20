@@ -42,22 +42,23 @@ export default function IndexPage(): JSX.Element {
       // viewport (better readability for the multi-column sitemap). Downstream
       // projects keep the narrower default unless they pass `wide` too.
       wide={true}
+      // Overrides the default overview link (issue #3012) so the hero reads
+      // "Introduction / GitHub / @Takazudo" instead of "Overview / GitHub".
+      heroLink={{ path: "/docs/getting-started/introduction/", labelKey: "nav.introduction" }}
       extras={
         // @Takazudo link — established in #1453 (project-specific brand
         // link). Kept out of the shared hero (package HomePageView), threaded
         // here through the extras seam instead. HomePageView renders `extras`
-        // as a standalone line AFTER the links row (not inline within it), so
-        // this is its own small line, not a row continuation.
-        <p class="mt-vsp-2xs text-small">
-          <a
-            href="https://x.com/Takazudo"
-            class="text-fg underline hover:text-accent"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            @Takazudo
-          </a>
-        </p>
+        // INLINE at the end of the links row (`/`-separated), not as a
+        // standalone line after it (#3012).
+        <a
+          href="https://x.com/Takazudo"
+          class="text-fg underline hover:text-accent"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          @Takazudo
+        </a>
       }
     />
   );
