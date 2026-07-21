@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "slug": "eink",
+  "name": "E-Ink",
+  "description": "E-reader grayscale — warm paper, near-black ink, shadowless hairline chrome, zero radius. Code is told by weight, slant, and gray value; only diffs keep a trace of ink-blue and ink-red.",
+  "mode": "light",
+  "version": "1.0.0",
+  "fonts": {
+    "sans": "EB Garamond",
+    "mono": "Courier Prime",
+    "loaded": ["EB Garamond", "Courier Prime"]
+  },
+  "preview": {
+    "light": {
+      "bg": "oklch(0.956 0.007 90)",
+      "fg": "oklch(0.24 0.012 85)",
+      "accent": "oklch(0.155 0.01 85)",
+      "syntax": {
+        "keyword": "oklch(0.18 0.01 85)",
+        "string": "oklch(0.46 0.012 85)",
+        "comment": "oklch(0.505 0.01 85)",
+        "callable": "oklch(0.31 0.012 85)"
+      }
+    },
+    "dark": {
+      "bg": "oklch(0.215 0.008 80)",
+      "fg": "oklch(0.885 0.012 85)",
+      "accent": "oklch(0.955 0.008 85)",
+      "syntax": {
+        "keyword": "oklch(0.96 0.008 85)",
+        "string": "oklch(0.715 0.012 85)",
+        "comment": "oklch(0.645 0.01 85)",
+        "callable": "oklch(0.82 0.01 85)"
+      }
+    }
+  }
+}
