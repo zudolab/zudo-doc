@@ -1,0 +1,614 @@
+/* ============================================================
+   Bauhaus — primary triad as structure
+   (ADR docs/adr/theme-packs.md; epic #3055, sub-issue #3057)
+
+   Gallery white, near-black ink, and red / yellow / blue used
+   STRUCTURALLY, never decoratively: red is the accent (links,
+   keywords, emphasis, list markers), yellow is the highlight band
+   (selection, sidebar/TOC current location, search matches, hover
+   washes — always carrying dark ink, never used as text ink on
+   white), blue is information (info admonitions, callables, focus
+   ring, pager hover). Circle / triangle / square admonition
+   markers pair each geometric shape with a triad family; thick
+   geometric rules (tri-color masthead/footer stripes, 4px h2 bars
+   with a red lead segment, 3px table head rules); zero radius on
+   every seam. Dark mode is exhibition night: charcoal walls, the
+   same triad brightened a step.
+
+   Jost (variable 400-600) carries body AND chrome — the OFL
+   geometric-sans homage mandated by ADR Decision 5; the commercial
+   face it nods to is never named here. Archivo Black is the
+   poster face for the h1 and the logotype only; Space Mono
+   (400 + 700) sets code with true-bold keywords.
+
+   Differentiation notes: swissgrid is ONE-red Swiss discipline —
+   this pack's identity is the three-color triad with shape-coded
+   roles; futura-editorial shares Jost but stays monochrome+red
+   with normal-weight headings — this pack goes poster-black h1,
+   color-blocked admonition bands, and yellow location bands;
+   brutalist is slab borders + Archivo Black everywhere — here the
+   poster face appears exactly twice and structure comes from
+   color geometry, not border weight.
+
+   Every rule below is scoped under html[data-theme-pack="bauhaus"]
+   — this is what makes the runtime pack swap atomic (Decision 3)
+   and lets the validator prove a pack can never leak styles while
+   inactive (Decision 6.7). The @font-face blocks are the sole
+   exception (at-rules can't be selector-scoped).
+
+   Adaptations against the REAL DOM (theme-pack-authoring.md (a)/(b));
+   the 27-bauhaus prototype was inspiration only, no selector copied:
+   - the prototype's .sb-group shape markers don't exist in the real
+     SidebarTree island — the shape system lives on the admonition
+     hooks instead (the stable .admonition-title::before seam);
+   - .toc-active → nav[data-zd-toc] a[aria-current="true"] (the
+     aria-current state IS the contract; mobile twin selector kept);
+   - .doc-pager → .zd-content > nav[data-doc-pager] (stable hook);
+   - .lead → p[data-doc-description];
+   - the prototype's lowercase heading transform is intentionally
+     NOT ported (proper nouns in real docs must keep their case).
+
+   Contrast: every text pair below clears WCAG 4.5:1 with headroom
+   in both modes, including composited surfaces (band inks, 12%
+   admonition tints, 16% yellow hover washes, diff-line washes) —
+   verified computationally with culori before commit (#3057).
+   ============================================================ */
+
+/* ---- Jost — body + chrome face. Variable file covering 400-600:
+        400 body text, 500 labels, 600 h2/h3/h4 and active items. ---- */
+
+@font-face {
+  font-family: "Jost";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("./fonts/Jost-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- Archivo Black — the poster face. Single black weight, used
+        only for the h1 headline and the header logotype. ---- */
+
+@font-face {
+  font-family: "Archivo Black";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/ArchivoBlack-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- Space Mono — code face (static 400 + 700; the 700 keeps
+        keywords genuinely bold, not smeared). ---- */
+
+@font-face {
+  font-family: "Space Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/SpaceMono-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Space Mono";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/SpaceMono-700-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+html[data-theme-pack="bauhaus"] {
+  /* Tier-2 semantic roles — both modes always via light-dark().
+     Gallery white / charcoal night; warm near-black ink / warm paper.
+     Structural triad: red = accent, yellow = highlight band (never
+     text ink on white — the text-safe yellow is the ochre in
+     --zd-warning), blue = information. Success carries no green of
+     its own (triad discipline; semantics by shape + label, and the
+     tip admonition below says it with a yellow band + triangle). */
+  --zd-bg: light-dark(#ffffff, #18181b);
+  --zd-fg: light-dark(#141414, #f0efe9);
+  --zd-selection-bg: light-dark(#f2c400, #f2c400);
+  --zd-selection-fg: light-dark(#141414, #141414);
+  --zd-surface: light-dark(#ffffff, #1f1f23);
+  --zd-muted: light-dark(#565656, #a8a69e);
+  --zd-accent: light-dark(#b3231b, #ff7d70);
+  --zd-accent-hover: light-dark(#8a1510, #ffa79d);
+  --zd-code-bg: light-dark(#f2f1ec, #101014);
+  --zd-code-fg: light-dark(#141414, #ecebe4);
+  --zd-success: light-dark(#141414, #f0efe9);
+  --zd-danger: light-dark(#a91910, #ff8a80);
+  --zd-warning: light-dark(#6d5500, #f5c51c);
+  --zd-info: light-dark(#1e42ad, #8fb0ff);
+
+  /* find-in-page / search match = the yellow location band, same as
+     selection and the sidebar/TOC current markers. */
+  --zd-matched-keyword-bg: light-dark(#f2c400, #f5cb1a);
+  --zd-matched-keyword-fg: light-dark(#141414, #141414);
+
+  /* syntax — all 9 roles, both modes. The triad works the code too:
+     red = keywords/deleted (control), yellow-ochre = strings/numbers
+     (literals; ochre because yellow is never text ink on a light
+     panel), blue = callables/types (structure), ink = names/inserted,
+     gray = comments. */
+  --zd-syntax-comment: light-dark(#63615a, #999689);
+  --zd-syntax-string: light-dark(#6d5800, #e9ce6a);
+  --zd-syntax-number: light-dark(#815100, #f6bd3c);
+  --zd-syntax-keyword: light-dark(#b3231b, #ff7d70);
+  --zd-syntax-callable: light-dark(#1c4bbe, #8fb0ff);
+  --zd-syntax-type: light-dark(#414f9b, #b8c6f2);
+  --zd-syntax-name: light-dark(#1f1f1f, #e9e8e2);
+  --zd-syntax-inserted: light-dark(#141414, #f0efe9);
+  --zd-syntax-deleted: light-dark(#a01313, #ff8a80);
+
+  /* fonts — Jost carries body and chrome; Archivo Black is the
+     poster display face (h1 + logotype); Space Mono sets code. */
+  --font-sans: "Jost", system-ui, sans-serif;
+  --font-mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-display: "Archivo Black", "Jost", system-ui, sans-serif;
+
+  /* Tier-3 component seams — poster-black single-weight h1, Jost 600
+     section heads, zero radius everywhere, band-style admonitions
+     (the colored spine is replaced by the color-blocked title band
+     below, so the tokenized left border goes to 0). */
+  --zdc-doc-title-font: var(--font-display);
+  --zdc-doc-title-weight: 400;
+  --zdc-doc-title-tracking: 0.01em;
+  --zdc-doc-h2-font: var(--font-sans);
+  --zdc-doc-h2-weight: 600;
+  --zdc-doc-h2-tracking: 0.01em;
+  --zdc-doc-h3-weight: 600;
+  --zdc-doc-h4-weight: 600;
+  --zdc-doc-link-decoration: underline;
+  --zdc-admonition-radius: 0;
+  --zdc-admonition-border-width: 0px;
+  --zdc-card-radius: 0;
+}
+
+/* ---- focus: the information blue, hard offset, square ---- */
+
+html[data-theme-pack="bauhaus"] :focus-visible {
+  outline: 2px solid light-dark(#1e42ad, #8fb0ff);
+  outline-offset: 2px;
+}
+
+/* ---- emphasis the Bauhaus way: RED — the accent doing structural
+       work — layered ON TOP of italics, not replacing them. Jost ships
+       upright-only here, so the slant is browser-synthesized oblique;
+       acceptable for a geometric sans, and keeping it means emphasis
+       never relies on color alone (WCAG 1.4.1). Links stay
+       distinguishable by their underline. ---- */
+
+html[data-theme-pack="bauhaus"] .zd-content em {
+  color: var(--zd-accent);
+}
+
+/* ---- masthead: gallery bar over the tri-color stripe ---- */
+
+html[data-theme-pack="bauhaus"] header[data-header] {
+  border-bottom: none;
+  background-image: linear-gradient(
+    to right,
+    light-dark(#c2201a, #cc2a1f) 0 33.34%,
+    light-dark(#f2c400, #f5cb1a) 33.34% 66.67%,
+    light-dark(#2143b8, #2c50cf) 66.67% 100%
+  );
+  background-size: 100% 0.3rem;
+  background-position: bottom;
+  background-repeat: no-repeat;
+}
+html[data-theme-pack="bauhaus"] [data-header-logo] {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+html[data-theme-pack="bauhaus"] [data-header-logo]::before {
+  content: "";
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 50%;
+  background: light-dark(#c2201a, #e8564a);
+  margin-right: 0.45em;
+  vertical-align: 0.03em;
+}
+html[data-theme-pack="bauhaus"] [data-nav-item] {
+  font-weight: 500;
+}
+html[data-theme-pack="bauhaus"] [data-nav-item]:hover {
+  text-decoration: none;
+  color: var(--zd-fg);
+  background: color-mix(in srgb, light-dark(#f2c400, #f5cb1a) 16%, var(--zd-bg));
+}
+
+/* ---- sidebar: hard ink spine; yellow marks where you are ----
+       (Hover and active force fg/ink text — the 16% wash and full
+       band were contrast-checked against both inks.) ---- */
+
+html[data-theme-pack="bauhaus"] #desktop-sidebar {
+  border-right: 2px solid light-dark(#141414, #3a3a40);
+}
+html[data-theme-pack="bauhaus"] aside[data-zd-mobile-sidebar] {
+  border-right: 2px solid light-dark(#141414, #3a3a40);
+}
+html[data-theme-pack="bauhaus"] #desktop-sidebar a:hover:not([data-nav-active]):not([aria-current="page"]),
+html[data-theme-pack="bauhaus"] aside[data-zd-mobile-sidebar] a:hover:not([data-nav-active]):not([aria-current="page"]) {
+  text-decoration: none;
+  color: var(--zd-fg);
+  background: color-mix(in srgb, light-dark(#f2c400, #f5cb1a) 16%, var(--zd-bg));
+}
+html[data-theme-pack="bauhaus"] a[data-nav-active] {
+  background: light-dark(#f2c400, #f5cb1a);
+  color: light-dark(#141414, #141414);
+  font-weight: 600;
+  border-radius: 0;
+}
+
+/* ---- title block: poster h1 over a tri-color bar ----
+       (The bar replaces the stock h1 border-b — zeroed so the two
+       rules don't double up.) ---- */
+
+html[data-theme-pack="bauhaus"] .zd-content h1 {
+  border-bottom: 0;
+  padding-bottom: 0;
+  line-height: 1.12;
+}
+html[data-theme-pack="bauhaus"] .zd-content h1::after {
+  content: "";
+  display: block;
+  width: 9rem;
+  height: 0.5rem;
+  margin-top: 0.9rem;
+  background: linear-gradient(
+    to right,
+    light-dark(#c2201a, #cc2a1f) 0 3rem,
+    light-dark(#f2c400, #f5cb1a) 3rem 6rem,
+    light-dark(#2143b8, #2c50cf) 6rem 100%
+  );
+}
+
+/* ---- section heads: thick geometric rules ----
+       h2 — 4px bar with a red lead segment, drawn with the same
+       border-image mechanism the stock gradient uses (!important is
+       Decision 6.6's sole carve-out, and border-image is its one
+       allowlisted property).
+       h3 — blue circle; h4 — red square (the marker set continues
+       through the heading hierarchy). ---- */
+
+html[data-theme-pack="bauhaus"] .zd-content h2 {
+  border-top-width: 4px;
+  border-image: linear-gradient(
+      to right,
+      light-dark(#c2201a, #e8564a) 0 3.25rem,
+      var(--zd-fg) 3.25rem 100%
+    )
+    1 !important;
+  padding-top: 0.8rem;
+}
+html[data-theme-pack="bauhaus"] .zd-content h3 {
+  border-image: none !important;
+  border-top-width: 0;
+}
+html[data-theme-pack="bauhaus"] .zd-content h3::before {
+  content: "";
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 50%;
+  background: light-dark(#1e42ad, #8fb0ff);
+  margin-right: 0.5rem;
+  vertical-align: 0.04em;
+}
+html[data-theme-pack="bauhaus"] .zd-content h4 {
+  border-image: none !important;
+  border-top-width: 0;
+}
+html[data-theme-pack="bauhaus"] .zd-content h4::before {
+  content: "";
+  display: inline-block;
+  width: 0.45em;
+  height: 0.45em;
+  background: light-dark(#b3231b, #ff7d70);
+  margin-right: 0.5rem;
+  vertical-align: 0.06em;
+}
+
+/* ---- prose details ---- */
+
+html[data-theme-pack="bauhaus"] .zd-content a {
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.18em;
+}
+html[data-theme-pack="bauhaus"] .zd-content blockquote {
+  border-left: 0.5rem solid light-dark(#f2c400, #f5cb1a);
+  color: var(--zd-fg);
+  padding-left: 1.15rem;
+  font-style: normal;
+}
+html[data-theme-pack="bauhaus"] .zd-content hr {
+  border: none;
+  height: 0.3rem;
+  background: linear-gradient(
+    to right,
+    light-dark(#c2201a, #cc2a1f) 0 33.34%,
+    light-dark(#f2c400, #f5cb1a) 33.34% 66.67%,
+    light-dark(#2143b8, #2c50cf) 66.67% 100%
+  );
+}
+
+/* lists: red markers — the accent doing structural work in the
+   margins. Marker COLOR only, deliberately: the prose ul/ol set
+   their list-style-type via inline style (content-ul.tsx), so a
+   stylesheet type override could never reach them — it would only
+   leak markers onto classless non-prose lists inside .zd-content
+   (the mobile TOC's <ul> relies on preflight list-style: none).
+   ::marker color is inert wherever no marker box exists. */
+html[data-theme-pack="bauhaus"] .zd-content ul > li::marker {
+  color: light-dark(#b3231b, #ff7d70);
+}
+html[data-theme-pack="bauhaus"] .zd-content ol > li::marker {
+  color: light-dark(#b3231b, #ff7d70);
+  font-weight: 600;
+}
+
+/* ---- code: squared print panel with a hard yellow offset ----
+       (Space Mono 400/700 — keywords use the true 700.) ---- */
+
+html[data-theme-pack="bauhaus"] pre.hi-root {
+  border: 2px solid light-dark(#141414, #3a3a40);
+  border-radius: 0;
+  box-shadow: 0.35rem 0.35rem 0 0 light-dark(#f2c400, #f5cb1a);
+}
+html[data-theme-pack="bauhaus"] .hi-kw {
+  font-weight: 700;
+}
+html[data-theme-pack="bauhaus"] .zd-content code:not(pre code) {
+  border: 1px solid light-dark(rgb(0 0 0 / 0.28), rgb(255 255 255 / 0.24));
+  border-radius: 0;
+}
+
+/* ---- admonitions: color-blocked title bands, circle / triangle /
+       square markers — the signature move. Shape encodes family
+       (circle = information, triangle = attention, square = stop);
+       band color says it in triad; the inverted ink-band variants
+       (info / warning / caution) carry their family color in the
+       marker itself. Every band/ink pair and every 12% body tint is
+       contrast-checked in both modes. ---- */
+
+html[data-theme-pack="bauhaus"] [data-admonition] {
+  padding: 0;
+  overflow: hidden;
+}
+html[data-theme-pack="bauhaus"] [data-admonition] .admonition-title {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+html[data-theme-pack="bauhaus"] [data-admonition] .admonition-title::before {
+  content: "";
+  flex: none;
+  width: 0.7em;
+  height: 0.7em;
+  margin-right: 0;
+}
+html[data-theme-pack="bauhaus"] [data-admonition] .admonition-body {
+  padding: 0.85rem 1rem 0.95rem;
+}
+
+/* note — blue band, white circle */
+html[data-theme-pack="bauhaus"] [data-admonition="note"] {
+  background-color: color-mix(in srgb, light-dark(#2143b8, #2c50cf) 12%, var(--zd-bg));
+}
+html[data-theme-pack="bauhaus"] [data-admonition="note"] .admonition-title {
+  background: light-dark(#2143b8, #2c50cf);
+  color: light-dark(#ffffff, #ffffff);
+}
+html[data-theme-pack="bauhaus"] [data-admonition="note"] .admonition-title::before {
+  background: light-dark(#ffffff, #ffffff);
+  border-radius: 50%;
+}
+
+/* info — ink band, blue circle (inverted poster of note) */
+html[data-theme-pack="bauhaus"] [data-admonition="info"] {
+  background-color: color-mix(in srgb, light-dark(#2143b8, #2c50cf) 12%, var(--zd-bg));
+}
+html[data-theme-pack="bauhaus"] [data-admonition="info"] .admonition-title {
+  background: light-dark(#141414, #0c0c0e);
+  color: light-dark(#ffffff, #ffffff);
+}
+html[data-theme-pack="bauhaus"] [data-admonition="info"] .admonition-title::before {
+  background: light-dark(#6c8ae5, #7d9bf0);
+  border-radius: 50%;
+}
+
+/* tip — yellow band, ink triangle (the bright idea) */
+html[data-theme-pack="bauhaus"] [data-admonition="tip"] {
+  background-color: color-mix(in srgb, light-dark(#f2c400, #f5cb1a) 12%, var(--zd-bg));
+}
+html[data-theme-pack="bauhaus"] [data-admonition="tip"] .admonition-title {
+  background: light-dark(#f2c400, #f5cb1a);
+  color: light-dark(#141414, #141414);
+}
+html[data-theme-pack="bauhaus"] [data-admonition="tip"] .admonition-title::before {
+  background: light-dark(#141414, #141414);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+/* warning — ink band, yellow triangle (inverted poster of tip) */
+html[data-theme-pack="bauhaus"] [data-admonition="warning"] {
+  background-color: color-mix(in srgb, light-dark(#f2c400, #f5cb1a) 12%, var(--zd-bg));
+}
+html[data-theme-pack="bauhaus"] [data-admonition="warning"] .admonition-title {
+  background: light-dark(#141414, #0c0c0e);
+  color: light-dark(#ffffff, #ffffff);
+}
+html[data-theme-pack="bauhaus"] [data-admonition="warning"] .admonition-title::before {
+  background: light-dark(#f2c400, #f5cb1a);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+/* danger — red band, white square (the hard stop) */
+html[data-theme-pack="bauhaus"] [data-admonition="danger"] {
+  background-color: color-mix(in srgb, light-dark(#c2201a, #cc2a1f) 12%, var(--zd-bg));
+}
+html[data-theme-pack="bauhaus"] [data-admonition="danger"] .admonition-title {
+  background: light-dark(#c2201a, #cc2a1f);
+  color: light-dark(#ffffff, #ffffff);
+}
+html[data-theme-pack="bauhaus"] [data-admonition="danger"] .admonition-title::before {
+  background: light-dark(#ffffff, #ffffff);
+}
+
+/* caution — ink band, red square (inverted poster of danger) */
+html[data-theme-pack="bauhaus"] [data-admonition="caution"] {
+  background-color: color-mix(in srgb, light-dark(#c2201a, #cc2a1f) 12%, var(--zd-bg));
+}
+html[data-theme-pack="bauhaus"] [data-admonition="caution"] .admonition-title {
+  background: light-dark(#141414, #0c0c0e);
+  color: light-dark(#ffffff, #ffffff);
+}
+html[data-theme-pack="bauhaus"] [data-admonition="caution"] .admonition-title::before {
+  background: light-dark(#e8564a, #ff7d70);
+}
+
+/* important — red band, white circle (urgent, not destructive) */
+html[data-theme-pack="bauhaus"] [data-admonition="important"] {
+  background-color: color-mix(in srgb, light-dark(#c2201a, #cc2a1f) 12%, var(--zd-bg));
+}
+html[data-theme-pack="bauhaus"] [data-admonition="important"] .admonition-title {
+  background: light-dark(#c2201a, #cc2a1f);
+  color: light-dark(#ffffff, #ffffff);
+}
+html[data-theme-pack="bauhaus"] [data-admonition="important"] .admonition-title::before {
+  background: light-dark(#ffffff, #ffffff);
+  border-radius: 50%;
+}
+
+/* ---- table: 3px ink head rule ---- */
+
+html[data-theme-pack="bauhaus"] .zd-content th {
+  border-bottom: 3px solid var(--zd-fg);
+}
+
+/* ---- pager: square cards, information-blue hard offset on hover ---- */
+
+html[data-theme-pack="bauhaus"] .zd-content > nav[data-doc-pager] a {
+  border: 2px solid light-dark(#141414, #3a3a40);
+  border-radius: 0;
+}
+html[data-theme-pack="bauhaus"] .zd-content > nav[data-doc-pager] a:hover {
+  border-color: light-dark(#2143b8, #7d9bf0);
+  box-shadow: 0.3rem 0.3rem 0 0 light-dark(#2143b8, #2c50cf);
+}
+html[data-theme-pack="bauhaus"] .zd-content > nav[data-doc-pager] a div {
+  letter-spacing: 0.14em;
+  font-weight: 500;
+}
+html[data-theme-pack="bauhaus"] .zd-content > nav[data-doc-pager] a p {
+  font-weight: 600;
+}
+
+/* ---- TOC: ink spine; yellow marks where you are (desktop and the
+       mobile emitter — separate hooks, zudolab/zudo-doc#2887) ---- */
+
+html[data-theme-pack="bauhaus"] nav[data-zd-toc] ul {
+  border-left: 2px solid light-dark(#141414, #3a3a40);
+}
+html[data-theme-pack="bauhaus"] nav[data-zd-toc] a:hover,
+html[data-theme-pack="bauhaus"] div[data-zd-mobile-toc] a:hover {
+  text-decoration: none;
+  color: var(--zd-fg);
+  background: color-mix(in srgb, light-dark(#f2c400, #f5cb1a) 16%, var(--zd-bg));
+}
+html[data-theme-pack="bauhaus"] nav[data-zd-toc] a[aria-current="true"],
+html[data-theme-pack="bauhaus"] div[data-zd-mobile-toc] a[aria-current="true"] {
+  background: light-dark(#f2c400, #f5cb1a);
+  color: light-dark(#141414, #141414);
+  font-weight: 600;
+}
+html[data-theme-pack="bauhaus"] div[data-zd-mobile-toc] {
+  border: 2px solid light-dark(#141414, #3a3a40);
+  border-radius: 0;
+}
+
+/* ---- footer: the stripe returns, mirrored from the masthead ---- */
+
+html[data-theme-pack="bauhaus"] footer[data-footer] {
+  border-top: none;
+  background-image: linear-gradient(
+    to right,
+    light-dark(#c2201a, #cc2a1f) 0 33.34%,
+    light-dark(#f2c400, #f5cb1a) 33.34% 66.67%,
+    light-dark(#2143b8, #2c50cf) 66.67% 100%
+  );
+  background-size: 100% 0.3rem;
+  background-position: top;
+  background-repeat: no-repeat;
+}
+html[data-theme-pack="bauhaus"] footer[data-footer] a:hover {
+  color: var(--zd-accent);
+}
+
+/* ---- theme-pack switcher: square print objects. The launcher
+       trades the stock pill for a square with a red offset; the
+       card wears the tri-color stripe and a hard ink shadow. ---- */
+
+html[data-theme-pack="bauhaus"] div[data-switcher-card] {
+  border: 2px solid var(--zd-fg);
+  border-radius: 0;
+  box-shadow: 0.5rem 0.5rem 0 0 light-dark(rgb(20 20 20 / 0.16), rgb(0 0 0 / 0.55));
+  background-image: linear-gradient(
+    to right,
+    light-dark(#c2201a, #cc2a1f) 0 33.34%,
+    light-dark(#f2c400, #f5cb1a) 33.34% 66.67%,
+    light-dark(#2143b8, #2c50cf) 66.67% 100%
+  );
+  background-size: 100% 0.3rem;
+  background-position: top;
+  background-repeat: no-repeat;
+}
+html[data-theme-pack="bauhaus"] div[data-switcher-card] span {
+  border-radius: 0;
+}
+html[data-theme-pack="bauhaus"] div[data-switcher-card] button {
+  border-radius: 0;
+  border-color: var(--zd-fg);
+}
+html[data-theme-pack="bauhaus"] div[data-switcher-card] button:hover {
+  background-color: light-dark(#f2c400, #f5cb1a);
+  border-color: light-dark(#141414, #f5cb1a);
+  color: light-dark(#141414, #141414);
+}
+html[data-theme-pack="bauhaus"] button[data-switcher-launcher] {
+  border-radius: 0;
+  border: 2px solid var(--zd-fg);
+  box-shadow: 0.25rem 0.25rem 0 0 light-dark(#c2201a, #cc2a1f);
+}
+html[data-theme-pack="bauhaus"] button[data-switcher-launcher]:hover {
+  color: var(--zd-accent);
+  border-color: var(--zd-accent);
+}
+
+/* browse-all dialog: same square black-frame treatment (the
+   aria-labelledby id is the same anchor swissgrid ships against) */
+html[data-theme-pack="bauhaus"] dialog[aria-labelledby="zd-theme-pack-dialog-title"] {
+  border: 2px solid var(--zd-fg);
+  border-radius: 0;
+  box-shadow: 0.5rem 0.5rem 0 0 light-dark(rgb(20 20 20 / 0.16), rgb(0 0 0 / 0.55));
+}
+html[data-theme-pack="bauhaus"] dialog[aria-labelledby="zd-theme-pack-dialog-title"] button {
+  border-radius: 0;
+}

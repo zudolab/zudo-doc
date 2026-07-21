@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "slug": "botanica",
+  "name": "Botanica",
+  "description": "A vintage botanical plate — herbarium cream, deep green ink, engraved double rules, Latin small-caps plate labels.",
+  "mode": "light",
+  "version": "1.0.0",
+  "fonts": {
+    "sans": "Crimson Pro",
+    "mono": "Courier Prime",
+    "display": "Cormorant Garamond",
+    "loaded": ["Cormorant Garamond", "Crimson Pro", "Courier Prime"]
+  },
+  "preview": {
+    "light": {
+      "bg": "oklch(0.956 0.02 92)",
+      "fg": "oklch(0.29 0.03 95)",
+      "accent": "oklch(0.42 0.09 152)",
+      "syntax": {
+        "keyword": "oklch(0.4 0.075 60)",
+        "string": "oklch(0.43 0.095 150)",
+        "comment": "oklch(0.48 0.04 95)",
+        "callable": "oklch(0.43 0.075 205)"
+      }
+    },
+    "dark": {
+      "bg": "oklch(0.215 0.022 160)",
+      "fg": "oklch(0.92 0.02 95)",
+      "accent": "oklch(0.78 0.09 148)",
+      "syntax": {
+        "keyword": "oklch(0.82 0.085 80)",
+        "string": "oklch(0.8 0.095 145)",
+        "comment": "oklch(0.7 0.03 110)",
+        "callable": "oklch(0.78 0.075 200)"
+      }
+    }
+  }
+}

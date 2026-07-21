@@ -7,7 +7,7 @@ tags:
   - customization
 ---
 
-`@takazudo/zudo-doc` には 21 のテーマパックが同梱されています。予約された `default` に、デザインされた 20 の見た目を加えたコレクションです。このページはその全カタログです。パックの仕組み — 設定フィールド、スイッチャー UI、CLI、オーサリング契約 — については[テーマパック](./theme-packs.mdx)を参照してください。
+`@takazudo/zudo-doc` には 31 のテーマパックが同梱されています。予約された `default` に、デザインされた 30 の見た目を加えたコレクションです。このページはその全カタログです。パックの仕組み — 設定フィールド、スイッチャー UI、CLI、オーサリング契約 — については[テーマパック](./theme-packs.mdx)を参照してください。
 
 各パックのフォントは、記事本文だけでなくクローム全体 — ヘッダー、サイドバー、目次を含む — をスタイルするようになりました。
 
@@ -44,6 +44,28 @@ zudo-doc 標準の見た目。パックのスタイルシートは読み込ま�
 pnpm exec zudo-doc theme apply default
 ```
 
+## Academia
+
+Web に載せた LaTeX 論文 — 白いページ、Computer Modern を思わせる黒インク、hyperref のネイビーリンク、番号付きの定理スタイルのアドモニション、booktabs のテーブル。ダークモードは学究的なスレート。
+
+- **バッジ:** Light
+- **フォント:** Source Serif 4（本文）· Courier Prime（mono）
+
+```sh
+pnpm exec zudo-doc theme apply academia
+```
+
+## Bauhaus
+
+三原色が構造になる — ギャラリーの白、ほぼ黒のインク、そして構造の仕事を担う赤・黄・青。丸・三角・四角のマーカー、太い幾何学的な罫線、角丸ゼロ。
+
+- **バッジ:** Light
+- **フォント:** Archivo Black（display）· Jost（sans）· Space Mono（mono）
+
+```sh
+pnpm exec zudo-doc theme apply bauhaus
+```
+
 ## Beacon
 
 WCAG AAA の高コントラスト — 全域 7:1 以上のインク、3px のフォーカスリング、常に下線の付いたリンク。明瞭さこそ美しさ。
@@ -53,6 +75,28 @@ WCAG AAA の高コントラスト — 全域 7:1 以上のインク、3px のフ
 
 ```sh
 pnpm exec zudo-doc theme apply beacon
+```
+
+## Blueprint
+
+青焼きの製図シート — プルシアンブルーの方眼紙に淡いシアンの線画、図面タイトル欄のキャップス、破線の罫、モノスペース大文字のラベル。ライトモードはベラム紙の原図。
+
+- **バッジ:** Dark
+- **フォント:** Josefin Sans（display）· Inter（sans）· IBM Plex Mono（mono）
+
+```sh
+pnpm exec zudo-doc theme apply blueprint
+```
+
+## Botanica
+
+ヴィンテージの植物図譜 — 標本室のクリーム、深い緑のインク、銅版画風の二重罫、ラテン語スモールキャップスの図版ラベル。
+
+- **バッジ:** Light
+- **フォント:** Cormorant Garamond（display）· Crimson Pro（本文）· Courier Prime（mono）
+
+```sh
+pnpm exec zudo-doc theme apply botanica
 ```
 
 ## Broadsheet
@@ -86,6 +130,17 @@ pnpm exec zudo-doc theme apply brutalist
 
 ```sh
 pnpm exec zudo-doc theme apply drift
+```
+
+## E-Ink
+
+電子ペーパーのグレースケール — 温かな紙、ほぼ黒のインク、影を落とさないヘアラインのクローム、角丸ゼロ。コードは太さ・斜体・グレーの濃淡で読み分け、diff にだけインクブルーとインクレッドの痕跡を残しています。
+
+- **バッジ:** Light
+- **フォント:** EB Garamond（本文）· Courier Prime（mono）
+
+```sh
+pnpm exec zudo-doc theme apply eink
 ```
 
 ## Fjord
@@ -220,6 +275,39 @@ pnpm exec zudo-doc theme apply onyx
 pnpm exec zudo-doc theme apply phosphor
 ```
 
+## Riso
+
+リソグラフの 2 色刷り — 温かな紙に 2 色のインク（リソブルー + 蛍光コーラル）、版ずれしたオフセットの影、そして柔らかな紙目の質感。
+
+- **バッジ:** Light
+- **フォント:** Archivo Black（display）· Space Grotesk（sans）· Space Mono（mono）
+
+```sh
+pnpm exec zudo-doc theme apply riso
+```
+
+## Sakura
+
+桜色のパステル — 薄紅がかった白い紙、梅色のインク、花びらのように柔らかな角に効かせたローズのアクセント。ダークモードは夜桜 — 提灯のピンクに照らされた、夜に咲く花。
+
+- **バッジ:** Light
+- **フォント:** しっぽり明朝（display）· Nunito（sans）· M PLUS 1 Code（mono）
+
+```sh
+pnpm exec zudo-doc theme apply sakura
+```
+
+## Scandi
+
+ヒュッゲなミニマリズム — オーツ麦色のリネン、セージとクレイ、ピル型のアクティブなナビと 8px の角丸。ナイトモードはキャンドルのアンバーが灯る、温かなチャコール。
+
+- **バッジ:** Light
+- **フォント:** Manrope（sans）· Spline Sans Mono（mono）
+
+```sh
+pnpm exec zudo-doc theme apply scandi
+```
+
 ## Solar
 
 Solarized の精密さ — 目に優しい紙のトーン、ブルー/シアン/オレンジのアクセント、モノスペースのラベル、両モードに通じる技術的な静けさ。
@@ -251,6 +339,28 @@ pnpm exec zudo-doc theme apply sumi
 
 ```sh
 pnpm exec zudo-doc theme apply swissgrid
+```
+
+## Tidepool
+
+海のティールを湛えたダーク — 深海のティールのサーフェス、波の泡のようなシーフォームのテキスト、生物発光を思わせるアクアのアクセント、ケルプグリーンの成功色、コーラルの危険色。ライトモードは、同じ潮だまりの引き潮どき。
+
+- **バッジ:** Dark
+- **フォント:** Space Grotesk（sans）· JetBrains Mono（mono）
+
+```sh
+pnpm exec zudo-doc theme apply tidepool
+```
+
+## Timberline
+
+日が落ちたあとの森のキャビン — パインと焦茶の板張り、クリーム色の本文、マットなランタンアンバーのアクセント。ライトモードは、同じロッジの朝の顔。
+
+- **バッジ:** Dark
+- **フォント:** Fraunces（display）· Source Sans 3（sans）· JetBrains Mono（mono）
+
+```sh
+pnpm exec zudo-doc theme apply timberline
 ```
 
 ## Washi

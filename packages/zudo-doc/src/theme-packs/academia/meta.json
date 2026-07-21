@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "slug": "academia",
+  "name": "Academia",
+  "description": "A LaTeX paper for the web — white page, Computer-Modern-black ink, hyperref navy links, numbered theorem admonitions, booktabs tables. Dark mode is a scholarly slate.",
+  "mode": "light",
+  "version": "1.0.0",
+  "fonts": {
+    "sans": "Source Serif 4",
+    "mono": "Courier Prime",
+    "loaded": ["Source Serif 4", "Courier Prime"]
+  },
+  "preview": {
+    "light": {
+      "bg": "#ffffff",
+      "fg": "#141414",
+      "accent": "#1c3d8f",
+      "syntax": {
+        "keyword": "#1c3d8f",
+        "string": "#93262a",
+        "comment": "#2e6b2e",
+        "callable": "#295e80"
+      }
+    },
+    "dark": {
+      "bg": "#1d222b",
+      "fg": "#e7eaf0",
+      "accent": "#97b8ee",
+      "syntax": {
+        "keyword": "#a3c0f2",
+        "string": "#e0a09a",
+        "comment": "#8cbc8c",
+        "callable": "#85c2da"
+      }
+    }
+  }
+}

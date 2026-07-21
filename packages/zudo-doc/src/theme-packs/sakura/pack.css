@@ -1,0 +1,473 @@
+/* ============================================================
+   Sakura — zudo-doc theme pack (ADR docs/adr/theme-packs.md)
+
+   Cherry-blossom pastels: blush-white paper, plum ink, rose
+   accents, petal-soft corners everywhere. Nunito prose under
+   Shippori Mincho display headings, M PLUS 1 Code code. Light =
+   hanami noon — warm white washed with blossom pink; dark =
+   yozakura, night blossom viewing — deep plum-charcoal lit by
+   lantern-pink accents (the same rose hues, now glowing).
+
+   The contrast contract of this concept: pink is NEVER a text
+   ink on white. Text and UI inks stay dark plum/charcoal; pink
+   lives in surfaces, washes, borders, and accent MARKS. The one
+   pink that touches type — the link/accent rose — is darkened to
+   oklch(0.5 0.168 358) (6.15:1 on the light bg); every pastel
+   wash carrying text passed a composited culori check at
+   >= 4.6:1 in both modes.
+
+   Every rule below is scoped under html[data-theme-pack="sakura"]
+   — this is what makes the runtime pack swap atomic (Decision 3)
+   and lets the validator prove a pack can never leak styles while
+   inactive (Decision 6.7). The @font-face blocks are the sole
+   exception (at-rules can't be selector-scoped).
+
+   CJK font rule (Decision 5): no CJK subsets ship. All three
+   families load latin only; every stack ends in a bare generic so
+   the platform's own Japanese fonts carry CJK glyphs.
+
+   Prototype-selector adaptations against the REAL DOM (the
+   16-sakura.html prototype was inspiration only; every selector
+   below targets the stable hook table in
+   docs/theme-pack-authoring.md (b)):
+   - `.sb-group a`  → `#desktop-sidebar a` + the separate mobile
+                      drawer hook `aside[data-zd-mobile-sidebar] a`
+   - `.toc-active`  → `nav[data-zd-toc] a[aria-current="true"]`
+   - `.doc-pager`   → `.zd-content > nav[data-doc-pager]`
+   - `.lead`        → `.zd-content > p[data-doc-description]`
+   - prototype fonts (M PLUS Rounded 1c / Quicksand via Google CDN)
+     → self-hosted Nunito + Shippori Mincho + M PLUS 1 Code
+     (Decision 5: no CDN imports; rounded-humanist warmth comes
+     from Nunito, the display voice from Shippori Mincho)
+   ============================================================ */
+
+/* ---- Nunito — rounded humanist sans for prose and chrome.
+        Variable 400–800 (bold prose emphasis and the 700 pill
+        weights come from the same file). Latin subset only. ---- */
+
+@font-face {
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("./fonts/Nunito-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- Shippori Mincho — display serif for the title, h2 and the
+        wordmark (static 600 heading weight + 700 logo weight).
+        Latin subsets only; the bare serif generic supplies CJK. ---- */
+
+@font-face {
+  font-family: "Shippori Mincho";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("./fonts/ShipporiMincho-600-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Shippori Mincho";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/ShipporiMincho-700-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- M PLUS 1 Code — code face (static 400 + 500; 500 keeps the
+        inline-code medium weight true). ---- */
+
+@font-face {
+  font-family: "M PLUS 1 Code";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/MPlus1Code-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "M PLUS 1 Code";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./fonts/MPlus1Code-500-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+html[data-theme-pack="sakura"] {
+  /* Tier-2 semantic roles — hanami noon / yozakura night. Both modes
+     always via light-dark(). Inks are dark plum; the accent is the one
+     AA-passing rose (6.15:1 light, 8.38:1 dark). */
+  --zd-bg: light-dark(oklch(0.977 0.009 350), oklch(0.215 0.03 330));
+  --zd-fg: light-dark(oklch(0.29 0.055 340), oklch(0.935 0.014 350));
+  --zd-selection-bg: light-dark(oklch(0.865 0.06 352), oklch(0.45 0.1 350));
+  --zd-selection-fg: light-dark(oklch(0.28 0.06 340), oklch(0.975 0.008 350));
+  --zd-surface: light-dark(oklch(0.988 0.006 350), oklch(0.245 0.032 330));
+  --zd-muted: light-dark(oklch(0.45 0.045 340), oklch(0.735 0.04 345));
+  --zd-accent: light-dark(oklch(0.5 0.168 358), oklch(0.78 0.115 355));
+  --zd-accent-hover: light-dark(oklch(0.44 0.15 358), oklch(0.845 0.09 355));
+  --zd-code-bg: light-dark(oklch(0.952 0.019 352), oklch(0.262 0.036 332));
+  --zd-code-fg: light-dark(oklch(0.295 0.055 340), oklch(0.93 0.016 350));
+  /* success/warning light inks sit as admonition-title text over their own
+     12%-tint paper (title ink == tint source, content.css) — at L 0.49/0.51
+     the rendered composite landed in the audit WARN band (4.69:1 / 4.66:1).
+     L −0.02 each (hue/chroma untouched) lifts the composite to 5.07:1 /
+     5.04:1 with the tint-darkening feedback included. */
+  --zd-success: light-dark(oklch(0.47 0.115 150), oklch(0.77 0.115 150));
+  --zd-danger: light-dark(oklch(0.5 0.16 22), oklch(0.72 0.135 22));
+  --zd-warning: light-dark(oklch(0.49 0.105 70), oklch(0.8 0.105 75));
+  --zd-info: light-dark(oklch(0.49 0.115 280), oklch(0.76 0.095 280));
+
+  /* syntax — all 9 roles, both modes: a hanami still life. Rose
+     keywords, fresh-leaf strings, apricot numbers, wisteria callables,
+     spring-sky types, plum names; inserted/deleted reuse the leaf and
+     rose-red state hues. Every color >= 4.6:1 on the blossom code
+     sheet (culori-checked). */
+  --zd-syntax-comment: light-dark(oklch(0.5 0.04 340), oklch(0.71 0.038 345));
+  --zd-syntax-string: light-dark(oklch(0.49 0.115 150), oklch(0.78 0.115 150));
+  --zd-syntax-number: light-dark(oklch(0.51 0.115 55), oklch(0.8 0.105 60));
+  --zd-syntax-keyword: light-dark(oklch(0.5 0.168 358), oklch(0.79 0.125 355));
+  --zd-syntax-callable: light-dark(oklch(0.49 0.135 300), oklch(0.78 0.105 300));
+  --zd-syntax-type: light-dark(oklch(0.49 0.105 245), oklch(0.78 0.095 235));
+  --zd-syntax-name: light-dark(oklch(0.295 0.055 340), oklch(0.93 0.016 350));
+  --zd-syntax-inserted: light-dark(oklch(0.49 0.115 150), oklch(0.77 0.115 150));
+  --zd-syntax-deleted: light-dark(oklch(0.5 0.16 22), oklch(0.72 0.135 22));
+
+  /* fonts — Nunito reading face, M PLUS 1 Code code, Shippori Mincho
+     display voice. Latin subsets loaded; each stack ends in its bare
+     generic so platform CJK fonts carry Japanese glyphs (Decision 5). */
+  --font-sans: "Nunito", system-ui, sans-serif;
+  --font-mono: "M PLUS 1 Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-display: "Shippori Mincho", serif;
+
+  /* Tier-3 component seams — mincho display headings at 600 with
+     gently opened tracking; petal-soft radii (the 8–10px signature):
+     10px cards, petal-asymmetric admonitions, rose active-nav pill. */
+  --zdc-doc-title-font: var(--font-display);
+  --zdc-doc-title-weight: 600;
+  --zdc-doc-title-tracking: 0.01em;
+  --zdc-doc-h2-font: var(--font-display);
+  --zdc-doc-h2-weight: 600;
+  --zdc-doc-h2-tracking: 0.01em;
+  --zdc-admonition-radius: 6px 12px 12px 6px;
+  --zdc-admonition-border-width: 3px;
+  --zdc-card-radius: 10px;
+  --zdc-nav-active-indicator-color: var(--zd-accent);
+  --zdc-nav-active-weight: 700;
+}
+
+/* ---- Sakura extras ---- */
+
+/* signature move #1 — blossom washes drifting in from the page
+   corners; in dark mode the same mixes read as lantern glow behind
+   night blossoms (the tokens are light-dark, so the washes are too) */
+html[data-theme-pack="sakura"] body {
+  background-image:
+    radial-gradient(
+      50rem 26rem at 88% -6%,
+      color-mix(in srgb, var(--zd-accent) 9%, transparent),
+      transparent 62%
+    ),
+    radial-gradient(
+      34rem 22rem at 4% 8%,
+      color-mix(in srgb, var(--zd-accent) 6%, transparent),
+      transparent 66%
+    ),
+    radial-gradient(
+      28rem 18rem at 55% 105%,
+      color-mix(in srgb, var(--zd-accent) 5%, transparent),
+      transparent 70%
+    );
+  background-attachment: fixed;
+}
+
+/* header — a blush veil fading toward the right, petal hairline */
+html[data-theme-pack="sakura"] header[data-header] {
+  background-image: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--zd-accent) 7%, var(--zd-surface)),
+    var(--zd-surface) 60%
+  );
+  border-bottom-color: color-mix(in srgb, var(--zd-accent) 26%, transparent);
+}
+
+/* wordmark — mincho voice with a single blossom */
+html[data-theme-pack="sakura"] [data-header-logo] {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.015em;
+}
+html[data-theme-pack="sakura"] [data-header-logo]::after {
+  content: " ❀";
+  color: var(--zd-accent);
+  font-size: 0.8em;
+}
+
+/* header nav — petal pills, rose ink on hover */
+html[data-theme-pack="sakura"] [data-nav-item] {
+  border-radius: 9999px;
+}
+html[data-theme-pack="sakura"] [data-nav-item]:hover {
+  text-decoration: none;
+  color: var(--zd-accent);
+  background: color-mix(in srgb, var(--zd-accent) 10%, transparent);
+}
+
+/* sidebar — a blush sheet one wash pinker than the page; the mobile
+   drawer is a separate stable hook and gets the same sheet */
+html[data-theme-pack="sakura"] #desktop-sidebar,
+html[data-theme-pack="sakura"] aside[data-zd-mobile-sidebar] {
+  background-color: light-dark(oklch(0.966 0.013 350), oklch(0.2 0.027 330));
+  border-right-color: color-mix(in srgb, var(--zd-accent) 18%, transparent);
+}
+
+/* sidebar links — petal pills; rose ink + blossom wash on hover.
+   Active links keep their rose seal (hover must never paint
+   accent-on-accent), so the recolor excludes [data-nav-active]. */
+html[data-theme-pack="sakura"] #desktop-sidebar a,
+html[data-theme-pack="sakura"] aside[data-zd-mobile-sidebar] a {
+  border-radius: 9999px;
+}
+html[data-theme-pack="sakura"] #desktop-sidebar a:not([data-nav-active]):hover,
+html[data-theme-pack="sakura"] aside[data-zd-mobile-sidebar] a:not([data-nav-active]):hover {
+  text-decoration: none;
+  color: var(--zd-accent);
+  background: color-mix(in srgb, var(--zd-accent) 10%, transparent);
+}
+
+/* active item — rose petal pill (fill via
+   --zdc-nav-active-indicator-color; its text-bg utility keeps
+   blush-paper text on the rose, 6.15:1 light / 8.38:1 dark) with a
+   soft petal shadow that turns lantern-glow after dark */
+html[data-theme-pack="sakura"] a[data-nav-active] {
+  border-radius: 9999px;
+  box-shadow: 0 3px 10px -4px
+    light-dark(
+      color-mix(in srgb, var(--zd-accent) 55%, transparent),
+      color-mix(in srgb, var(--zd-accent) 70%, transparent)
+    );
+}
+
+/* signature move #2 — the h2 petal rule: a rose stroke that loosens
+   into drifting transparency. Re-points the SSR-inlined
+   `style="border-image:linear-gradient(...)"` gradient — the
+   border-image !important carve-out (Decision 6.6). */
+html[data-theme-pack="sakura"] .zd-content h2 {
+  border-top-width: 2px;
+  border-image: linear-gradient(
+      to right,
+      var(--zd-accent) 0 2.5rem,
+      color-mix(in srgb, var(--zd-accent) 30%, transparent) 55%,
+      transparent
+    )
+    1 !important;
+}
+
+/* h3 — a round blossom bud before the heading */
+html[data-theme-pack="sakura"] .zd-content h3::before {
+  content: "";
+  display: inline-block;
+  width: 0.42em;
+  height: 0.42em;
+  border-radius: 9999px;
+  background: var(--zd-accent);
+  margin-right: 0.5em;
+  vertical-align: 0.12em;
+}
+
+/* the lead — airy, one breath rosier than body ink (10.9:1+) */
+html[data-theme-pack="sakura"] .zd-content > p[data-doc-description] {
+  font-size: 1.18rem;
+  line-height: 1.75;
+  color: color-mix(in srgb, var(--zd-fg) 80%, var(--zd-accent));
+}
+
+/* links — rose ink (the AA-darkened pink), soft petal underline that
+   deepens on hover */
+html[data-theme-pack="sakura"] .zd-content a {
+  text-decoration-color: color-mix(in srgb, var(--zd-accent) 40%, transparent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+}
+html[data-theme-pack="sakura"] .zd-content a:hover {
+  text-decoration-color: var(--zd-accent-hover);
+}
+
+/* blockquote — a petal-edged aside on the faintest blossom wash */
+html[data-theme-pack="sakura"] .zd-content blockquote {
+  border-left: 3px solid color-mix(in srgb, var(--zd-accent) 55%, transparent);
+  border-radius: 0 12px 12px 0;
+  background: color-mix(in srgb, var(--zd-accent) 6%, transparent);
+  padding: 0.6rem 1.15rem 0.6rem 1.2rem;
+  color: color-mix(in srgb, var(--zd-fg) 82%, var(--zd-accent));
+}
+
+/* hr — three drifting petals instead of a rule */
+html[data-theme-pack="sakura"] .zd-content hr {
+  border: none;
+}
+html[data-theme-pack="sakura"] .zd-content hr::after {
+  content: "❀\2002\2002❀\2002\2002❀";
+  display: block;
+  text-align: center;
+  font-size: 0.8rem;
+  color: color-mix(in srgb, var(--zd-accent) 55%, transparent);
+}
+
+/* signature move #3 — code blocks: blossom-tinted sheets with
+   petal-soft 12px corners; the shadow is a quiet petal drop in
+   daylight and a lantern-pink glow at yozakura */
+html[data-theme-pack="sakura"] pre.hi-root {
+  border-radius: 12px;
+  border-color: color-mix(in srgb, var(--zd-accent) 22%, transparent);
+  box-shadow:
+    inset 0 1px 0 light-dark(rgb(255 255 255 / 0.6), rgb(255 255 255 / 0.04)),
+    0 6px 18px -12px
+      light-dark(
+        color-mix(in srgb, var(--zd-accent) 45%, transparent),
+        color-mix(in srgb, var(--zd-accent) 60%, transparent)
+      );
+}
+html[data-theme-pack="sakura"] .hi-com {
+  font-style: italic;
+}
+
+/* inline code — petal chips: blossom wash, rose-deepened plum ink
+   (8.97:1 light / 10.16:1 dark, composited-checked) */
+html[data-theme-pack="sakura"] .zd-content code:not(pre code) {
+  border-radius: 8px;
+  background-color: color-mix(in srgb, var(--zd-accent) 8%, var(--zd-bg));
+  color: color-mix(in srgb, var(--zd-accent) 40%, var(--zd-fg));
+  padding: 1px 0.38rem;
+}
+
+/* admonitions — a spring-garden icon for each of the seven variants;
+   the default 12% state-tint washes all pass composited AA against
+   their state-colored titles and plum body ink */
+html[data-theme-pack="sakura"] [data-admonition="note"] .admonition-title::before {
+  content: "🌸";
+}
+html[data-theme-pack="sakura"] [data-admonition="tip"] .admonition-title::before {
+  content: "🌱";
+}
+html[data-theme-pack="sakura"] [data-admonition="info"] .admonition-title::before {
+  content: "🎐";
+}
+html[data-theme-pack="sakura"] [data-admonition="warning"] .admonition-title::before {
+  content: "🐝";
+}
+html[data-theme-pack="sakura"] [data-admonition="important"] .admonition-title::before {
+  content: "🎀";
+}
+html[data-theme-pack="sakura"] [data-admonition="danger"] .admonition-title::before {
+  content: "🥀";
+}
+html[data-theme-pack="sakura"] [data-admonition="caution"] .admonition-title::before {
+  content: "🍂";
+}
+
+/* table — blush header band under petal rules */
+html[data-theme-pack="sakura"] .zd-content th {
+  background: color-mix(in srgb, var(--zd-accent) 7%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--zd-accent) 45%, transparent);
+  color: color-mix(in srgb, var(--zd-accent) 30%, var(--zd-fg));
+}
+html[data-theme-pack="sakura"] .zd-content td {
+  border-bottom-color: color-mix(in srgb, var(--zd-accent) 16%, transparent);
+}
+
+/* TOC — petal rail; rose hover ink; the active entry is a rose petal
+   pill (aria-current IS the contract — its text-bg utility keeps
+   blush-paper text on the rose fill). The pill pulls left within the
+   ul's padding (the rail-side overflow clips at the padding edge —
+   the foundry note), and glows lantern-pink after dark. The mobile
+   TOC is its own hook and gets a petal card frame below. */
+html[data-theme-pack="sakura"] nav[data-zd-toc] ul {
+  border-left-color: color-mix(in srgb, var(--zd-accent) 28%, transparent);
+}
+html[data-theme-pack="sakura"] nav[data-zd-toc] a:not([aria-current="true"]):hover {
+  text-decoration: none;
+  color: var(--zd-accent);
+}
+html[data-theme-pack="sakura"] nav[data-zd-toc] a[aria-current="true"] {
+  background: var(--zd-accent);
+  border-radius: 9999px;
+  padding-left: 0.5rem;
+  margin-left: -0.5rem;
+  padding-right: 0.5rem;
+  box-shadow: 0 3px 10px -4px
+    light-dark(
+      color-mix(in srgb, var(--zd-accent) 55%, transparent),
+      color-mix(in srgb, var(--zd-accent) 70%, transparent)
+    );
+}
+html[data-theme-pack="sakura"] div[data-zd-mobile-toc] {
+  border: 1px solid color-mix(in srgb, var(--zd-accent) 22%, transparent);
+  border-radius: 12px;
+  background-color: color-mix(in srgb, var(--zd-accent) 4%, var(--zd-bg));
+}
+
+/* breadcrumb — rose on hover */
+html[data-theme-pack="sakura"] main nav[aria-label="Breadcrumb"] a:hover {
+  color: var(--zd-accent);
+}
+
+/* pager — petal cards that blush on hover and lift on a soft glow */
+html[data-theme-pack="sakura"] .zd-content > nav[data-doc-pager] > a {
+  border-radius: 10px;
+  border-color: color-mix(in srgb, var(--zd-accent) 22%, transparent);
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+html[data-theme-pack="sakura"] .zd-content > nav[data-doc-pager] > a:hover {
+  background: color-mix(in srgb, var(--zd-accent) 7%, var(--zd-bg));
+  border-color: color-mix(in srgb, var(--zd-accent) 45%, transparent);
+  box-shadow: 0 8px 20px -12px
+    light-dark(
+      color-mix(in srgb, var(--zd-accent) 55%, transparent),
+      color-mix(in srgb, var(--zd-accent) 70%, transparent)
+    );
+}
+
+/* footer — one last petal on the hairline */
+html[data-theme-pack="sakura"] footer[data-footer] {
+  border-top-color: color-mix(in srgb, var(--zd-accent) 24%, transparent);
+}
+html[data-theme-pack="sakura"] footer[data-footer] a:hover {
+  color: var(--zd-accent);
+}
+
+/* theme-pack switcher — the pack's calling card gets petal corners
+   and the lantern glow; text colors are left to the tokens */
+html[data-theme-pack="sakura"] [data-switcher-card] {
+  border-radius: 16px;
+  border-color: color-mix(in srgb, var(--zd-accent) 30%, transparent);
+  box-shadow: 0 16px 40px -14px
+    light-dark(
+      color-mix(in srgb, var(--zd-accent) 50%, transparent),
+      color-mix(in srgb, var(--zd-accent) 65%, transparent)
+    );
+}
+html[data-theme-pack="sakura"] [data-switcher-launcher] {
+  border-color: color-mix(in srgb, var(--zd-accent) 40%, transparent);
+  box-shadow: 0 5px 16px -6px
+    light-dark(
+      color-mix(in srgb, var(--zd-accent) 55%, transparent),
+      color-mix(in srgb, var(--zd-accent) 70%, transparent)
+    );
+}

@@ -1,0 +1,505 @@
+/* ============================================================
+   Academia — zudo-doc theme pack (ADR docs/adr/theme-packs.md)
+
+   A LaTeX paper for the web. Light (hero): pure white page,
+   Computer-Modern-black ink, hyperref-navy links (colorlinks —
+   ink only, underline on hover), a centered small-caps title over
+   a justified, hyphenated measure. Admonitions are amsthm theorem
+   environments: a shared CSS counter numbers every box and the
+   small-caps head reads "Theorem 1 (Note)." Tables are booktabs —
+   heavy top/bottom rules, a midrule under the header, no verticals
+   and no rules between body rows. Dark mode is a scholarly slate:
+   cool near-black, soft white ink, steel-navy citations. Print is
+   square — no border-radius anywhere on a paper.
+
+   Distinct from its academic neighbors by construction: `ledger`
+   is Tufte (cream paper, oxblood hairlines, Crimson Pro);
+   `manuscript` is a Garamond book page (sepia rubrication,
+   fleurons). Academia is amsthm + booktabs on white — Source
+   Serif 4 body over Courier Prime verbatim listings with bold
+   navy keywords.
+
+   Every rule below is scoped under html[data-theme-pack="academia"]
+   — this is what makes the runtime pack swap atomic (Decision 3)
+   and lets the validator prove a pack can never leak styles while
+   inactive (Decision 6.7). The @font-face blocks are the sole
+   exception (at-rules can't be selector-scoped).
+
+   Fonts: Source Serif 4 (variable 400–700, roman + italic,
+   byte-copied from broadsheet/) and Courier Prime (static 400 +
+   700, byte-copied from manuscript/ — the 700 keeps listing
+   keywords genuinely bold). Latin subsets only, matching the
+   broadsheet payload precedent — a stray latin-ext glyph falls
+   back to the stack's system serif.
+   ============================================================ */
+
+@font-face {
+  font-family: "Source Serif 4";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/SourceSerif4-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Source Serif 4";
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/SourceSerif4-italic-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Courier Prime";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/CourierPrime-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Courier Prime";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/CourierPrime-700-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+html[data-theme-pack="academia"] {
+  /* Tier-2 semantic roles — white paper, CM-black ink, hyperref navy.
+     Both modes always via light-dark(); dark is a scholarly slate. */
+  --zd-bg: light-dark(#ffffff, #1d222b);
+  --zd-fg: light-dark(#141414, #e7eaf0);
+  --zd-selection-bg: light-dark(#cdd9f0, #33507e);
+  --zd-selection-fg: light-dark(#0f2350, #edf2fb);
+  --zd-surface: light-dark(#ffffff, #222834);
+  --zd-muted: light-dark(#575757, #a0aabb);
+  --zd-accent: light-dark(#1c3d8f, #97b8ee);
+  --zd-accent-hover: light-dark(#142c6d, #b3ccf6);
+  --zd-code-bg: light-dark(#f7f7f4, #252b37);
+  --zd-code-fg: light-dark(#1a1a1a, #e2e7f0);
+  --zd-success: light-dark(#2e6b2e, #90c890);
+  --zd-danger: light-dark(#a3231f, #e59d97);
+  --zd-warning: light-dark(#7d5300, #d9b36e);
+  --zd-info: light-dark(#22597c, #8dbede);
+
+  /* syntax — all 9 roles restyled, both modes: the `listings` package
+     palette. Bold navy keywords (weight rule below), green italic
+     comments, maroon strings, gray numbers, steel callables, violet
+     types. inserted/deleted reuse the success/danger inks. */
+  --zd-syntax-comment: light-dark(#2e6b2e, #8cbc8c);
+  --zd-syntax-string: light-dark(#93262a, #e0a09a);
+  --zd-syntax-number: light-dark(#55555a, #a8b2c2);
+  --zd-syntax-keyword: light-dark(#1c3d8f, #a3c0f2);
+  --zd-syntax-callable: light-dark(#295e80, #85c2da);
+  --zd-syntax-type: light-dark(#61399b, #c3a8ec);
+  --zd-syntax-name: light-dark(#232323, #dfe4ee);
+  --zd-syntax-inserted: light-dark(#2e6b2e, #90c890);
+  --zd-syntax-deleted: light-dark(#a3231f, #e59d97);
+
+  /* fonts — Source Serif 4 for everything set in type, Courier Prime
+     for verbatim. Loaded face first, generic last (Decision 5). */
+  --font-sans: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-mono: "Courier Prime", "Courier New", ui-monospace, monospace;
+
+  /* Tier-3 component seams — book-weight roman headings, hyperref
+     colorlinks (ink only), square print shapes everywhere. */
+  --zdc-doc-title-font: var(--font-sans);
+  --zdc-doc-title-weight: 600;
+  --zdc-doc-title-tracking: 0.02em;
+  --zdc-doc-h2-font: var(--font-sans);
+  --zdc-doc-h2-weight: 700;
+  --zdc-doc-h2-tracking: 0;
+  --zdc-doc-h3-weight: 700;
+  --zdc-doc-h4-weight: 600;
+  --zdc-doc-prose-font: var(--font-sans);
+  --zdc-doc-link-decoration: none;
+  --zdc-admonition-radius: 0;
+  --zdc-admonition-border-width: 1px;
+  --zdc-card-radius: 0;
+  /* Band cap = 46rem paper measure + TOC rail + gaps, keeping the
+     contents column within reading distance of the centered page. */
+  --zdc-content-max-width: 72rem;
+  /* transparent in both modes — clears the default solid active block;
+     the navy citation-style active treatment is the scoped rules below. */
+  --zdc-nav-active-indicator-color: transparent;
+  --zdc-nav-active-weight: 600;
+}
+
+/* ---- Academia extras: theorem counters, booktabs rules, hyperref ink ---- */
+
+/* the shared theorem counter (amsthm's default: one sequence across all
+   environments) plus the section counters, reset per article. */
+html[data-theme-pack="academia"] .zd-content {
+  counter-reset: zd-acad-sec zd-acad-thm;
+}
+
+/* ---- justified, hyphenated paragraphs — the TeX measure ---- */
+html[data-theme-pack="academia"] .zd-content p {
+  text-align: justify;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+}
+
+/* ---- the paper page: a centered ~46rem measure. Wide pages
+        (`data-zd-wide` — e.g. the site home) keep their full band. ---- */
+html[data-theme-pack="academia"] .zd-doc-content-band:not([data-zd-wide]) .zd-content {
+  max-width: 46rem;
+  margin-inline: auto;
+}
+html[data-theme-pack="academia"] .zd-doc-content-band:not([data-zd-wide]) main nav[aria-label="Breadcrumb"],
+html[data-theme-pack="academia"] .zd-doc-content-band:not([data-zd-wide]) div[data-zd-mobile-toc] {
+  max-width: 46rem;
+  margin-inline: auto;
+}
+
+/* ---- centered small-caps paper title ---- */
+html[data-theme-pack="academia"] .zd-content h1 {
+  text-align: center;
+  font-variant-caps: small-caps;
+}
+
+/* ---- the description becomes the abstract: a narrow centered block
+        under a small-caps "Abstract" head (both emitters carry the
+        stable data-doc-description hook). ---- */
+html[data-theme-pack="academia"] .zd-content p[data-doc-description] {
+  max-width: 34rem;
+  margin-inline: auto;
+  font-size: 0.95em;
+  line-height: 1.6;
+}
+html[data-theme-pack="academia"] .zd-content p[data-doc-description]::before {
+  content: "Abstract";
+  display: block;
+  text-align: center;
+  font-variant-caps: small-caps;
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--zd-fg);
+  margin-bottom: 0.4rem;
+}
+
+/* ---- numbered sections: "1&emsp;How themes work", "1.1&emsp;Syntax".
+        The h2/h3/h4 border-image !important is Decision 6.6's sole
+        allowlisted carve-out (defeats the SSR-inlined gradient rule) —
+        LaTeX sections carry no rules at all, just bold numbered type. ---- */
+html[data-theme-pack="academia"] .zd-content h2 {
+  border-image: none !important;
+  border-top: 0;
+  padding-top: 0.35rem;
+  counter-increment: zd-acad-sec;
+  counter-reset: zd-acad-sub;
+}
+html[data-theme-pack="academia"] .zd-content h2::before {
+  content: counter(zd-acad-sec) "\2003";
+}
+html[data-theme-pack="academia"] .zd-content h3 {
+  border-image: none !important;
+  border-top: 0;
+  counter-increment: zd-acad-sub;
+}
+html[data-theme-pack="academia"] .zd-content h3::before {
+  content: counter(zd-acad-sec) "." counter(zd-acad-sub) "\2003";
+}
+html[data-theme-pack="academia"] .zd-content h4 {
+  border-image: none !important;
+  border-top: 0;
+}
+
+/* ---- links: hyperref colorlinks — navy ink, underline only on hover ---- */
+html[data-theme-pack="academia"] .zd-content a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  text-decoration-thickness: 1px;
+}
+
+/* ---- admonitions: amsthm theorem environments in a hairline mdframed
+        box. One shared counter; the head reads "Theorem 1 (Note)." in
+        small caps; theorem/lemma bodies are italic (amsthm plain style),
+        the rest stay upright. Tints are a whisper (6%) of the variant
+        ink over the page — paper, not chips. ---- */
+html[data-theme-pack="academia"] [data-admonition] {
+  counter-increment: zd-acad-thm;
+  border-top: 1px solid color-mix(in srgb, var(--zd-fg) 35%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--zd-fg) 35%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--zd-fg) 35%, transparent);
+  padding: 0.9rem 1.15rem 0.75rem;
+}
+html[data-theme-pack="academia"] [data-admonition] .admonition-title {
+  font-variant-caps: small-caps;
+  font-weight: 600;
+  font-size: 1em;
+  letter-spacing: 0.02em;
+  margin-bottom: 0.2rem;
+}
+html[data-theme-pack="academia"] [data-admonition] .admonition-title::before {
+  margin-right: 0;
+}
+html[data-theme-pack="academia"] [data-admonition] .admonition-title::after {
+  content: ").";
+}
+html[data-theme-pack="academia"] [data-admonition="note"] {
+  background-color: color-mix(in srgb, var(--zd-accent) 6%, var(--zd-bg));
+}
+html[data-theme-pack="academia"] [data-admonition="note"] .admonition-title::before {
+  content: "Theorem " counter(zd-acad-thm) "\2002(";
+}
+html[data-theme-pack="academia"] [data-admonition="tip"] {
+  background-color: color-mix(in srgb, var(--zd-success) 6%, var(--zd-bg));
+}
+html[data-theme-pack="academia"] [data-admonition="tip"] .admonition-title::before {
+  content: "Lemma " counter(zd-acad-thm) "\2002(";
+}
+html[data-theme-pack="academia"] [data-admonition="info"] {
+  background-color: color-mix(in srgb, var(--zd-info) 6%, var(--zd-bg));
+}
+html[data-theme-pack="academia"] [data-admonition="info"] .admonition-title::before {
+  content: "Definition " counter(zd-acad-thm) "\2002(";
+}
+html[data-theme-pack="academia"] [data-admonition="warning"] {
+  background-color: color-mix(in srgb, var(--zd-warning) 6%, var(--zd-bg));
+}
+html[data-theme-pack="academia"] [data-admonition="warning"] .admonition-title::before {
+  content: "Remark " counter(zd-acad-thm) "\2002(";
+}
+html[data-theme-pack="academia"] [data-admonition="danger"] {
+  background-color: color-mix(in srgb, var(--zd-danger) 6%, var(--zd-bg));
+}
+html[data-theme-pack="academia"] [data-admonition="danger"] .admonition-title::before {
+  content: "Warning " counter(zd-acad-thm) "\2002(";
+}
+html[data-theme-pack="academia"] [data-admonition="important"] {
+  background-color: color-mix(in srgb, var(--zd-accent) 6%, var(--zd-bg));
+}
+html[data-theme-pack="academia"] [data-admonition="important"] .admonition-title::before {
+  content: "Proposition " counter(zd-acad-thm) "\2002(";
+}
+html[data-theme-pack="academia"] [data-admonition="caution"] {
+  background-color: color-mix(in srgb, var(--zd-danger) 6%, var(--zd-bg));
+}
+html[data-theme-pack="academia"] [data-admonition="caution"] .admonition-title::before {
+  content: "Claim " counter(zd-acad-thm) "\2002(";
+}
+/* theorem & lemma statements are italic (amsthm plain style); verbatim
+   inside a statement stays upright. */
+html[data-theme-pack="academia"] [data-admonition="note"] .admonition-body,
+html[data-theme-pack="academia"] [data-admonition="tip"] .admonition-body {
+  font-style: italic;
+}
+html[data-theme-pack="academia"] [data-admonition] .admonition-body code,
+html[data-theme-pack="academia"] [data-admonition] .admonition-body pre,
+html[data-theme-pack="academia"] [data-admonition] .admonition-body kbd,
+html[data-theme-pack="academia"] [data-admonition] .admonition-body samp {
+  font-style: normal;
+}
+
+/* ---- tables: booktabs — toprule, midrule, bottomrule; no verticals,
+        no rules between body rows; small-caps column heads ---- */
+html[data-theme-pack="academia"] .zd-content table {
+  border-top: 2px solid color-mix(in srgb, var(--zd-fg) 85%, transparent);
+  border-bottom: 2px solid color-mix(in srgb, var(--zd-fg) 85%, transparent);
+}
+html[data-theme-pack="academia"] .zd-content th {
+  font-variant-caps: small-caps;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid color-mix(in srgb, var(--zd-fg) 85%, transparent);
+}
+html[data-theme-pack="academia"] .zd-content td {
+  border-bottom: none;
+}
+
+/* ---- inline code is pure \texttt{}: no pill, just the typewriter ---- */
+html[data-theme-pack="academia"] .zd-content code:not(pre code) {
+  background-color: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0 0.08em;
+  font-size: 0.88em;
+  /* true \texttt{} — Courier Prime ships 400/700 only; the default
+     medium (500) would silently resolve to 400 anyway. */
+  font-weight: 400;
+}
+
+/* ---- code blocks: a framed verbatim listing — hairline ink box, bold
+        keywords (the loaded Courier Prime 700), italic comments ---- */
+html[data-theme-pack="academia"] pre.hi-root {
+  font-size: 0.85rem;
+  line-height: 1.65;
+  border: 1px solid color-mix(in srgb, var(--zd-fg) 40%, transparent);
+  border-radius: 0;
+  padding: 1rem 1.15rem;
+}
+html[data-theme-pack="academia"] .hi-kw {
+  font-weight: 700;
+}
+html[data-theme-pack="academia"] .hi-com {
+  font-style: italic;
+}
+
+/* ---- blockquote: the LaTeX quote environment — indented both sides,
+        italic, no bar ---- */
+html[data-theme-pack="academia"] .zd-content blockquote {
+  border-left: none;
+  padding: 0.2rem 1.6rem;
+  font-style: italic;
+  font-size: 0.97em;
+  color: color-mix(in srgb, var(--zd-fg) 82%, var(--zd-bg));
+}
+
+/* ---- hr: the footnote rule — short, thin, left-set ---- */
+html[data-theme-pack="academia"] .zd-content hr {
+  width: 33%;
+  max-width: 11rem;
+  margin: 2.4rem auto 1.2rem 0;
+  border-top: 1px solid color-mix(in srgb, var(--zd-fg) 55%, transparent);
+}
+
+/* ---- header: a running head over a hairline rule ---- */
+html[data-theme-pack="academia"] header[data-header] {
+  background-color: var(--zd-bg);
+  border-bottom-color: color-mix(in srgb, var(--zd-fg) 35%, transparent);
+}
+html[data-theme-pack="academia"] [data-header-logo] {
+  font-variant-caps: small-caps;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  font-size: 1.3rem;
+}
+html[data-theme-pack="academia"] [data-nav-item] {
+  font-variant-caps: all-small-caps;
+  font-weight: 500;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+}
+html[data-theme-pack="academia"] [data-nav-item]:hover {
+  color: var(--zd-accent);
+  text-decoration: none;
+}
+
+/* ---- sidebar: the contents page — hairline spine; the current entry
+        is a navy citation (ink + thin marginal bar), never a solid
+        block. `aside` covers both the desktop rail and the mobile
+        drawer; the aria-current state is restyled, not swallowed. ---- */
+html[data-theme-pack="academia"] #desktop-sidebar {
+  border-right-color: color-mix(in srgb, var(--zd-fg) 25%, transparent);
+}
+html[data-theme-pack="academia"] aside[data-zd-mobile-sidebar] {
+  background-color: var(--zd-bg);
+  border-right-color: color-mix(in srgb, var(--zd-fg) 25%, transparent);
+}
+html[data-theme-pack="academia"] #desktop-sidebar a:hover {
+  color: var(--zd-accent);
+  text-decoration: none;
+}
+html[data-theme-pack="academia"] aside a[aria-current="page"],
+html[data-theme-pack="academia"] aside div:has(> a[aria-current="page"]) {
+  background-color: transparent;
+  color: var(--zd-accent);
+  font-weight: 600;
+}
+html[data-theme-pack="academia"] aside a[aria-current="page"] {
+  box-shadow: inset 2px 0 0 0 var(--zd-accent);
+}
+/* the default active row paints its icons/borders in bg-on-fg colors; with
+   the block cleared those would vanish — re-ink them. */
+html[data-theme-pack="academia"] aside a[aria-current="page"] svg {
+  color: currentcolor;
+}
+html[data-theme-pack="academia"] aside div:has(> a[aria-current="page"]) > button {
+  border-color: color-mix(in srgb, var(--zd-fg) 25%, transparent);
+}
+html[data-theme-pack="academia"] aside div:has(> a[aria-current="page"]) > button svg {
+  color: var(--zd-muted);
+}
+
+/* ---- breadcrumb: a margin note in italic ---- */
+html[data-theme-pack="academia"] main nav[aria-label="Breadcrumb"] {
+  font-style: italic;
+}
+
+/* ---- TOC: the contents column — hairline spine, navy citation for
+        the active entry (aria-current IS the contract) ---- */
+html[data-theme-pack="academia"] nav[data-zd-toc] {
+  font-size: 0.9rem;
+}
+html[data-theme-pack="academia"] nav[data-zd-toc] ul {
+  border-left-color: color-mix(in srgb, var(--zd-fg) 25%, transparent);
+}
+html[data-theme-pack="academia"] nav[data-zd-toc] a:hover {
+  color: var(--zd-accent);
+  text-decoration: none;
+}
+html[data-theme-pack="academia"] nav[data-zd-toc] a[aria-current="true"] {
+  background: transparent;
+  color: var(--zd-accent);
+  font-weight: 600;
+  /* pull the entry back over the list's hairline so the navy spine sits
+     on it (compensates the ul's pl-hsp-lg padding + 1px border). */
+  margin-left: calc(-1 * var(--spacing-hsp-lg) - 1px);
+  padding-left: var(--spacing-hsp-lg);
+  box-shadow: inset 2px 0 0 0 var(--zd-accent);
+}
+
+/* ---- mobile TOC: same contents-page manners at narrow widths ---- */
+html[data-theme-pack="academia"] div[data-zd-mobile-toc] {
+  border-color: color-mix(in srgb, var(--zd-fg) 30%, transparent);
+}
+html[data-theme-pack="academia"] div[data-zd-mobile-toc] > button {
+  font-variant-caps: small-caps;
+  letter-spacing: 0.04em;
+}
+
+/* ---- pager: cited works — square hairline cards, small-caps labels,
+        italic titles, a breath of navy on hover ---- */
+html[data-theme-pack="academia"] .zd-content > nav[data-doc-pager] > a {
+  border-color: color-mix(in srgb, var(--zd-fg) 35%, transparent);
+  border-radius: 0;
+  background: transparent;
+}
+html[data-theme-pack="academia"] .zd-content > nav[data-doc-pager] > a:hover {
+  background: color-mix(in srgb, var(--zd-accent) 5%, transparent);
+  border-color: var(--zd-accent);
+}
+html[data-theme-pack="academia"] .zd-content > nav[data-doc-pager] > a div {
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.1em;
+}
+html[data-theme-pack="academia"] .zd-content > nav[data-doc-pager] > a p {
+  font-style: italic;
+}
+
+/* ---- footer: the end of the paper — a single hairline rule ---- */
+html[data-theme-pack="academia"] footer[data-footer] {
+  border-top: 1px solid color-mix(in srgb, var(--zd-fg) 35%, transparent);
+}
+
+/* ---- theme-pack flyout: an offprint — hairline frame, square corners,
+        a flat stacked-page shadow, small-caps title ---- */
+html[data-theme-pack="academia"] div[data-switcher-card] {
+  border: 1px solid color-mix(in srgb, var(--zd-fg) 45%, transparent);
+  border-radius: 0;
+  box-shadow: 6px 6px 0 color-mix(in srgb, var(--zd-fg) 12%, transparent);
+}
+html[data-theme-pack="academia"] div[data-switcher-card] p[aria-live="polite"] {
+  font-variant-caps: small-caps;
+  font-weight: 600;
+  font-size: 1.15rem;
+}
+html[data-theme-pack="academia"] button[data-switcher-launcher] {
+  border-radius: 0;
+  box-shadow: 4px 4px 0 color-mix(in srgb, var(--zd-fg) 12%, transparent);
+}

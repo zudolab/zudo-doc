@@ -4,7 +4,7 @@
 // build`) — mirrors `routes.test.ts`'s style.
 //
 // Exercised against the REAL bundled
-// `src/theme-packs/{beacon,broadsheet,brutalist,default,drift,fjord,foundry,futura-editorial,hearth,hollow,ledger,manuscript,matcha,nocturne,observatory,onyx,phosphor,solar,sumi,swissgrid,washi}/`
+// `src/theme-packs/{academia,bauhaus,beacon,blueprint,botanica,broadsheet,brutalist,default,drift,eink,fjord,foundry,futura-editorial,hearth,hollow,ledger,manuscript,matcha,nocturne,observatory,onyx,phosphor,riso,sakura,scandi,solar,sumi,swissgrid,tidepool,timberline,washi}/`
 // directories (resolved via the plugin's own `new URL("../theme-packs/",
 // import.meta.url)`, which — under vitest, running the source directly —
 // resolves to `src/theme-packs/`): no fixture directory needed, and this
@@ -62,7 +62,7 @@ describe("theme-packs plugin — setup()", () => {
 });
 
 describe("theme-packs plugin — postBuild()", () => {
-  it("copies the full bundled set (11 packs) when themePacks is omitted", async () => {
+  it("copies the full bundled set (31 packs) when themePacks is omitted", async () => {
     const outDir = makeOutDir();
     await themePacksPlugin.postBuild!({
       outDir,
@@ -88,10 +88,15 @@ describe("theme-packs plugin — postBuild()", () => {
     expect(manifest.schemaVersion).toBe(1);
     expect(manifest.packs.map((p) => p.slug)).toEqual([
       "default",
+      "academia",
+      "bauhaus",
       "beacon",
+      "blueprint",
+      "botanica",
       "broadsheet",
       "brutalist",
       "drift",
+      "eink",
       "fjord",
       "foundry",
       "futura-editorial",
@@ -104,9 +109,14 @@ describe("theme-packs plugin — postBuild()", () => {
       "observatory",
       "onyx",
       "phosphor",
+      "riso",
+      "sakura",
+      "scandi",
       "solar",
       "sumi",
       "swissgrid",
+      "tidepool",
+      "timberline",
       "washi",
     ]);
   });
@@ -163,10 +173,15 @@ describe("theme-packs plugin — devMiddleware()", () => {
     const manifest = JSON.parse(res!.body!) as { packs: Array<{ slug: string }> };
     expect(manifest.packs.map((p) => p.slug)).toEqual([
       "default",
+      "academia",
+      "bauhaus",
       "beacon",
+      "blueprint",
+      "botanica",
       "broadsheet",
       "brutalist",
       "drift",
+      "eink",
       "fjord",
       "foundry",
       "futura-editorial",
@@ -179,9 +194,14 @@ describe("theme-packs plugin — devMiddleware()", () => {
       "observatory",
       "onyx",
       "phosphor",
+      "riso",
+      "sakura",
+      "scandi",
       "solar",
       "sumi",
       "swissgrid",
+      "tidepool",
+      "timberline",
       "washi",
     ]);
   });
