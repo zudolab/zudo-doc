@@ -343,15 +343,34 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // no lost chrome. Only /docs/getting-started/ carries the `<h1>` delta; the
   // header-nav deltas hit both pages. Note the sidebar-hover PR (#3010) is NOT
   // in this list — its markup does not reach either fixture page.
+  //
+  // 2026-07-22 re-baseline (zudolab/zudo-doc#3074, nightly exam failure): the
+  // prior baseline (5e46831d4) was rebuilt in a worktree and its normalized
+  // HTML diffed byte-for-byte against HEAD. That old build still reproduced
+  // the old hashes exactly, so the delta below is the complete and only
+  // change — a single line in both pages' inlined FOUC theme-pack bootstrap
+  // `<script>`, the `packs` object literal built from each pack's
+  // `meta.json` `{slug: version}` (`src/theme/theme-pack-provider.tsx:64`):
+  //   - 10 new Theme Batch 5 packs added to the object — academia, bauhaus,
+  //     blueprint, botanica, eink, riso, sakura, scandi, tidepool, timberline,
+  //     each at `1.0.0` (#3072)
+  //   - existing-pack version bumps (cache-busting `?v=` contract; content
+  //     unchanged for these pages, only the version string moves):
+  //       * `brutalist` 1.0.1 → 1.0.2 (#3038) → 1.0.3 (#3046)
+  //       * `foundry`, `hearth`, `observatory`, `sumi` 1.0.1 → 1.0.2 (#3038)
+  //       * `washi` 1.0.1 → 1.0.2 (#3038) → 1.0.3 (part of the same #3038
+  //         merge that also bumped washi 1.0.1→1.0.2 for the h1-seal fix)
+  // All of it traces to already-merged, intentional PRs; no unattributed
+  // bytes. See sub-issue #3074 for the full diff.
 
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"d7549af919fc7bde43ff26ec6cc11ea7538b4acad02a37cb02c847828a2f7672"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"3541c0edec1bfefe0f71c057310f3943d0d12e718beaae3183c27afa4649e50e"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"4195ab62afc33f89e09d210c7b494b72f8e7e0eaab683982b6b983b36e3f43f9"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"676562943baba3036d994c71c2f06d06edbe22ed1d6e46790705331c3daba5f5"`);
   });
 });
 
@@ -934,16 +953,19 @@ describe("FIP off: findInPage false (fixture default) emits no island marker on 
 // configured; the plain `route-injection` fixture has `locales: {}`.
 //
 // Proves:
-//   1. The ONLY intentional output diff from the pre-#2502 `locale-index.tsx`
-//      is the richer GitHub link (inline SVG icon instead of plain text) —
-//      every other element (hero copy, overview link, SiteTreeNav grid) is
-//      unchanged. Reasoning: `locale-index.tsx` before this extraction never
-//      rendered a trailing separator after the GitHub link (unlike the
-//      default-locale `routes/index.tsx`, which had a stray dangling
-//      `<span>/</span>` — an inconsistency this extraction incidentally fixed
-//      on the `/` route, which is never injected/tested), so the shared
-//      `HomePageView` body reproduces the `/[locale]` markup exactly aside
-//      from the SVG.
+//   1. Two intentional output diffs from the pre-#2502 `locale-index.tsx`:
+//      the richer GitHub link (inline SVG icon instead of plain text), and
+//      (added 2026-07-22, #3074) the `logo:"auto"` default (commit
+//      a2ba5188a) rendering the generated `AutoLogo` SVG instead of the
+//      masked `bg-fg` div the pre-#2502 markup used. Every other element
+//      (hero copy, overview link, SiteTreeNav grid) is unchanged. Reasoning:
+//      `locale-index.tsx` before this extraction never rendered a trailing
+//      separator after the GitHub link (unlike the default-locale
+//      `routes/index.tsx`, which had a stray dangling `<span>/</span>` — an
+//      inconsistency this extraction incidentally fixed on the `/` route,
+//      which is never injected/tested), so the shared `HomePageView` body
+//      reproduces the `/[locale]` markup exactly aside from the SVG and the
+//      logo branch.
 //   2. `ctx.hostBindings.homeExtras` (wired via `chromeBindingsModule`, same
 //      channel as CB #2501) renders inside the hero text column, after the
 //      links row.
@@ -993,10 +1015,16 @@ describe("HOME home-page: createHomePageView adoption on the injected /[locale] 
     expect(html).toContain(">GitHub</a>");
   });
 
-  it("unchanged: hero <h1>/description and hero structure still render for the locale home", () => {
+  it("hero <h1>/description unchanged; hero logo renders the logo:\"auto\" AutoLogo default (#3074)", () => {
     const html = readBuiltHtml(fixtureDir, "ja/index.html");
     expect(html).toContain('<h1 class="text-heading font-bold mb-vsp-2xs">Route Injection i18n Proof</h1>');
-    expect(html).toContain("aspect-[1200/630] bg-fg");
+    // logo:"auto" (default, commit a2ba5188a) renders the generated AutoLogo
+    // SVG branch, not the masked bg-fg div — mirrors the assertion
+    // convention in home-page.test.tsx:69 (semantic data-auto-logo= marker
+    // + the sizing class, since `text-fg` alone is too broad — it appears
+    // elsewhere in this HTML).
+    expect(html).toContain("data-auto-logo=");
+    expect(html).toContain("aspect-[1200/630] text-fg");
   });
 
   it("island: SiteTreeNav still hydrates via the real Island(when: idle) wrapper", () => {
