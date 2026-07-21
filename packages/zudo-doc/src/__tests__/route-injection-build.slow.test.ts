@@ -317,15 +317,33 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   //   - the stateDiagram `;`→newline mermaid-init fix + its explanatory
   //     comment (#2909, this epic's Wave-1 mermaid-semicolon-fix)
   // No other bytes changed. See sub-issue #2911 for the full diff.
+  //
+  // 2026-07-21 re-baseline (zudolab/zudo-doc#3039, nightly exam failure): the
+  // prior baseline (b1eea45) was rebuilt in a worktree and its normalized HTML
+  // diffed byte-for-byte against HEAD. That old build still reproduced the old
+  // hashes exactly, so the delta below is the complete and only change —
+  //   - the accent hover/focus pass over non-active nav: `hover:text-accent` /
+  //     `focus:text-accent` / `focus-visible:text-accent` added to the header
+  //     overflow ("···") toggle, the header nav classList swap script, the
+  //     overflow dropdown children, and the sidebar nav node class strings
+  //     (#3010, #3011, #3020, #3023)
+  //   - the sidebar non-active child's resting colour moving `text-muted` →
+  //     `text-fg` in the same pass (#3020)
+  //   - `border-b border-fg pb-vsp-xs` on the doc-title `<h1>` — the title rule
+  //     is now kept when meta is absent, which is exactly this fixture's shape
+  //     (SKIP_DOC_HISTORY=1, no meta), so it newly renders here (#3025)
+  // All of it traces to already-merged, intentional PRs; no unattributed bytes,
+  // no lost chrome. Only /docs/getting-started/ carries the `<h1>` delta; the
+  // nav deltas hit both pages.
 
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"b2328e098a65b1056ecd8b604dac7baaceed936b61be1caee2b03524119abdb6"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"d7549af919fc7bde43ff26ec6cc11ea7538b4acad02a37cb02c847828a2f7672"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"e412483fcbf75cd0db3f71cacfb4b251d0bdb30337c6203a21af3e029ac3b04a"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"4195ab62afc33f89e09d210c7b494b72f8e7e0eaab683982b6b983b36e3f43f9"`);
   });
 });
 
