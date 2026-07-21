@@ -322,7 +322,7 @@ html[data-theme-pack="observatory"] #desktop-sidebar {
 html[data-theme-pack="observatory"] #desktop-sidebar a {
   border-radius: 0;
 }
-html[data-theme-pack="observatory"] #desktop-sidebar a:hover {
+html[data-theme-pack="observatory"] #desktop-sidebar a:not([data-nav-active]):hover {
   color: var(--zd-accent);
 }
 /* active item: the gold indicator token fills it; square plate */

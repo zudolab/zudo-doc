@@ -4,7 +4,7 @@
   "name": "Washi",
   "description": "Warm washi paper, sumi ink, and ai-iro indigo seals — quiet Japanese stationery for calm documentation.",
   "mode": "light",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "fonts": {
     "sans": "Zen Kaku Gothic New",
     "mono": "M PLUS 1 Code",

@@ -129,13 +129,13 @@ html[data-theme-pack="foundry"] [data-nav-item] {
 }
 html[data-theme-pack="foundry"] [data-nav-item]:hover {
   text-decoration: none;
-  background: color-mix(in srgb, var(--zd-muted) 14%, transparent);
+  background: color-mix(in srgb, var(--zd-muted) 8%, transparent);
 }
 
 /* sidebar: gray hover wash; active item = subtle fill + Primer-blue bar */
 html[data-theme-pack="foundry"] #desktop-sidebar a:hover {
   text-decoration: none;
-  background: color-mix(in srgb, var(--zd-muted) 14%, transparent);
+  background: color-mix(in srgb, var(--zd-muted) 8%, transparent);
 }
 html[data-theme-pack="foundry"] a[data-nav-active] {
   background: color-mix(in srgb, var(--zd-muted) 16%, transparent);

@@ -114,7 +114,7 @@ html[data-theme-pack="hearth"] {
   --zd-code-fg: light-dark(oklch(0.29 0.048 45), oklch(0.908 0.028 80));
   --zd-success: light-dark(oklch(0.455 0.1 140), oklch(0.765 0.105 135));
   --zd-danger: light-dark(oklch(0.5 0.17 28), oklch(0.705 0.15 30));
-  --zd-warning: light-dark(oklch(0.51 0.105 72), oklch(0.805 0.115 78));
+  --zd-warning: light-dark(oklch(0.495 0.105 72), oklch(0.805 0.115 78));
   --zd-info: light-dark(oklch(0.465 0.085 240), oklch(0.745 0.08 235));
 
   /* syntax — all 9 roles, both modes: brick keywords, olive strings,
