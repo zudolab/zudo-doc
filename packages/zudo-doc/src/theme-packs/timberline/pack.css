@@ -432,6 +432,10 @@ html[data-theme-pack="timberline"] .zd-content > nav[data-doc-pager] a {
     transform 0.18s ease;
 }
 html[data-theme-pack="timberline"] .zd-content > nav[data-doc-pager] a:hover {
+  /* the card's glow lives on its frame (box-shadow below) — suppress the
+     prose-link text halo this <a> would otherwise inherit from the
+     `.zd-content a:hover` rule above */
+  text-shadow: none;
   border-color: color-mix(in oklch, var(--zd-accent) 55%, transparent);
   box-shadow:
     inset 0 1px 0 light-dark(oklch(0.988 0.008 95 / 0.85), oklch(0.87 0.07 80 / 0.08)),
