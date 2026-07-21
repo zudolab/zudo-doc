@@ -234,7 +234,7 @@ html[data-theme-pack="timberline"] #desktop-sidebar a {
     background-color 0.15s ease,
     color 0.15s ease;
 }
-html[data-theme-pack="timberline"] #desktop-sidebar a:hover {
+html[data-theme-pack="timberline"] #desktop-sidebar a:hover:not([data-nav-active]):not([aria-current="page"]) {
   color: var(--zd-accent);
   text-decoration: none;
   background: color-mix(in srgb, var(--zd-accent) 10%, transparent);

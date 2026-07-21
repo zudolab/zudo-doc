@@ -322,15 +322,15 @@ html[data-theme-pack="botanica"] .zd-content a {
 html[data-theme-pack="botanica"] .zd-content a:hover {
   text-decoration-color: currentColor;
 }
-/* hedera leaf markers on unordered lists; roman-numeral figure
+/* hedera leaf markers on unordered lists; italic muted figure
    numbering on ordered lists. (::marker content is a progressive
-   enhancement — engines without it keep a green default marker.) */
+   enhancement — engines without it keep a green default marker.
+   No list-style-type override on ol: the ContentOl component
+   SSR-inlines listStyleType, which beats any stylesheet rule, so a
+   pack-level list-style-type would be dead CSS.) */
 html[data-theme-pack="botanica"] .zd-content ul > li::marker {
   content: "❧  ";
   color: var(--zd-accent);
-}
-html[data-theme-pack="botanica"] .zd-content ol {
-  list-style-type: lower-roman;
 }
 html[data-theme-pack="botanica"] .zd-content ol > li::marker {
   font-style: italic;

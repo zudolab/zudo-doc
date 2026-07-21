@@ -181,16 +181,15 @@ html[data-theme-pack="bauhaus"] :focus-visible {
   outline-offset: 2px;
 }
 
-/* ---- emphasis the Bauhaus way: no oblique (Jost ships upright
-       only), emphasis is RED — the accent doing structural work.
-       Links stay distinguishable by their underline. ---- */
+/* ---- emphasis the Bauhaus way: RED — the accent doing structural
+       work — layered ON TOP of italics, not replacing them. Jost ships
+       upright-only here, so the slant is browser-synthesized oblique;
+       acceptable for a geometric sans, and keeping it means emphasis
+       never relies on color alone (WCAG 1.4.1). Links stay
+       distinguishable by their underline. ---- */
 
 html[data-theme-pack="bauhaus"] .zd-content em {
-  font-style: normal;
   color: var(--zd-accent);
-}
-html[data-theme-pack="bauhaus"] .zd-content i {
-  font-style: normal;
 }
 
 /* ---- masthead: gallery bar over the tri-color stripe ---- */
@@ -241,8 +240,8 @@ html[data-theme-pack="bauhaus"] #desktop-sidebar {
 html[data-theme-pack="bauhaus"] aside[data-zd-mobile-sidebar] {
   border-right: 2px solid light-dark(#141414, #3a3a40);
 }
-html[data-theme-pack="bauhaus"] #desktop-sidebar a:hover,
-html[data-theme-pack="bauhaus"] aside[data-zd-mobile-sidebar] a:hover {
+html[data-theme-pack="bauhaus"] #desktop-sidebar a:hover:not([data-nav-active]):not([aria-current="page"]),
+html[data-theme-pack="bauhaus"] aside[data-zd-mobile-sidebar] a:hover:not([data-nav-active]):not([aria-current="page"]) {
   text-decoration: none;
   color: var(--zd-fg);
   background: color-mix(in srgb, light-dark(#f2c400, #f5cb1a) 16%, var(--zd-bg));
