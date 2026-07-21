@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "slug": "scandi",
+  "name": "Scandi",
+  "description": "Hygge minimalism — oat linen, sage & clay, pill nav actives and 8px corners; night mode is warm charcoal lit by candle amber.",
+  "mode": "light",
+  "version": "1.0.0",
+  "fonts": {
+    "sans": "Manrope",
+    "mono": "Spline Sans Mono",
+    "loaded": ["Manrope", "Spline Sans Mono"]
+  },
+  "preview": {
+    "light": {
+      "bg": "oklch(0.963 0.012 83)",
+      "fg": "oklch(0.28 0.02 55)",
+      "accent": "oklch(0.44 0.08 152)",
+      "syntax": {
+        "keyword": "oklch(0.47 0.105 40)",
+        "string": "oklch(0.45 0.09 150)",
+        "comment": "oklch(0.5 0.02 70)",
+        "callable": "oklch(0.45 0.08 240)"
+      }
+    },
+    "dark": {
+      "bg": "oklch(0.235 0.015 55)",
+      "fg": "oklch(0.92 0.012 85)",
+      "accent": "oklch(0.82 0.105 75)",
+      "syntax": {
+        "keyword": "oklch(0.76 0.1 45)",
+        "string": "oklch(0.78 0.09 150)",
+        "comment": "oklch(0.66 0.02 75)",
+        "callable": "oklch(0.75 0.075 238)"
+      }
+    }
+  }
+}
