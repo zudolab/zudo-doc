@@ -188,3 +188,44 @@ describe("applyLogoFieldToConfigSource — refusals (never corrupt)", () => {
     expect(result.reason).toMatch(/no zudoDoc\(\.\.\.\) call found/);
   });
 });
+
+describe("applyLogoFieldToConfigSource — escaped keys (#3054)", () => {
+  // JS reads `"lo\u0067o"` as the key `logo`. Before the scanner decoded
+  // escapes, that member was invisible: the rewriter saw no logo field, INSERTED
+  // one, and reported success — leaving a config with two logo members whose
+  // effective value was not the one it just wrote.
+  const ESCAPED_KEY = `import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default zudoDoc({
+  siteName: "Docs",
+  "lo\\u0067o": "/img/other.svg",
+});
+`;
+
+  it("replaces an escaped logo key instead of inserting a second member", () => {
+    const result = applyLogoFieldToConfigSource(ESCAPED_KEY);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.source).toContain("/img/logo.svg");
+    expect(result.source).not.toContain("/img/other.svg");
+    // The load-bearing assertion: exactly one logo member survives.
+    expect(result.source.match(/lo(?:\\u0067|g)o"?\s*:/g)).toHaveLength(1);
+  });
+
+  // Two logo members, one written with an escape — a genuine duplicate that
+  // must be refused rather than guessed at.
+  const ESCAPED_DUPLICATE = `import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default zudoDoc({
+  logo: "/img/a.svg",
+  "lo\\u0067o": "/img/b.svg",
+});
+`;
+
+  it("refuses when an escaped key duplicates a plain logo member", () => {
+    const result = applyLogoFieldToConfigSource(ESCAPED_DUPLICATE);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.reason).toMatch(/more than once/);
+  });
+});
