@@ -1611,6 +1611,7 @@ describe("scaffold — settings-drift guard: generator-known fields must cover e
       // Fields with no CLI/prompt surface (yet) — hand-edit zfb.config.ts
       // after scaffold, or covered by a future sub-issue.
       siteDescription: "no CLI/prompt surface yet — hand-edit post-scaffold",
+      logo: "no CLI/prompt surface — the \"auto\" default (generated deterministic SVG) is correct for all scaffolds; hand-edit post-scaffold to point at a real asset",
       base: "no CLI/prompt surface yet — hand-edit post-scaffold (sub-path deploys)",
       trailingSlash: "no CLI/prompt surface yet — hand-edit post-scaffold",
       home: "no CLI/prompt surface yet — hand-edit post-scaffold to opt into the wide package-owned home layout",

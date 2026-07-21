@@ -77,6 +77,12 @@ Site description used in metadata (`<meta name="description">`, llms.txt).
 
 Default: `""`
 
+### logo
+
+Home-hero logo. `"auto"` (the default) renders a generated deterministic SVG seeded by `siteName` — a framed "decorated plate" mark that adapts to light/dark automatically, so a fresh project gets a presentable hero with no asset work. Set a path string (e.g. `"/img/logo.svg"`) to render your own asset as a theme-adaptive CSS mask, or `false` to hide the logo block entirely.
+
+Default: `"auto"`
+
 ### siteUrl
 
 Canonical site origin (e.g. `"https://example.com"`) for sitemap / canonical / `og:url`. Empty = not set.

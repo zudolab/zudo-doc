@@ -41,6 +41,7 @@ describe("package.json exports keyset snapshot", () => {
       [
         ".",
         "./ai-chat-modal",
+        "./auto-logo",
         "./body-foot-util",
         "./breadcrumb",
         "./category-nav",
@@ -233,6 +234,7 @@ describe("Settings public field set snapshot", () => {
         "colorMode",
         "siteName",
         "siteDescription",
+        "logo",
         "base",
         "trailingSlash",
         "home",

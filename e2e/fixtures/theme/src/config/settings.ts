@@ -45,6 +45,7 @@ export const settings = {
   },
   siteName: "Theme Test",
   siteDescription: "Test fixture for theme toggle E2E tests" as string,
+  logo: "auto" as string | false,
   base: "/",
   minifyHtml: true as boolean,
   docsDir: "src/content/docs",

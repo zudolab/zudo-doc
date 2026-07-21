@@ -11,6 +11,7 @@ export const settings = {
   colorMode: false as ColorModeConfig | false,
   siteName: "Sidebar Test",
   siteDescription: "Test fixture for sidebar E2E tests" as string,
+  logo: "auto" as string | false,
   base: "/",
   minifyHtml: true as boolean,
   docsDir: "src/content/docs",

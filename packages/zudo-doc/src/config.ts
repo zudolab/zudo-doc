@@ -115,6 +115,7 @@ export const DEFAULT_SETTINGS: Settings = {
   },
   siteName: "Docs",
   siteDescription: "",
+  logo: "auto",
   base: "/",
   trailingSlash: false,
   home: { wide: false },
@@ -207,6 +208,14 @@ export interface ZudoDocConfig {
    * @default ""
    */
   siteDescription?: string;
+  /**
+   * Home-hero logo. `"auto"` renders a generated deterministic SVG seeded by
+   * `siteName` (no asset needed); a path string (e.g. `"/img/logo.svg"`)
+   * renders that asset as a theme-adaptive CSS mask; `false` hides the logo
+   * block entirely.
+   * @default "auto"
+   */
+  logo?: string | false;
   /**
    * Public URL sub-path prefix mounted in front of every absolute asset URL
    * (e.g. `"/pj/my-site/"`). `"/"` = root-mounted.

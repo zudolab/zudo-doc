@@ -151,6 +151,10 @@
       "types": "./dist/preset.d.ts",
       "default": "./dist/preset.js"
     },
+    "./auto-logo": {
+      "types": "./dist/auto-logo/index.d.ts",
+      "default": "./dist/auto-logo/index.js"
+    },
     "./component-tokens": {
       "types": "./dist/config/component-tokens.d.ts",
       "default": "./dist/config/component-tokens.js"

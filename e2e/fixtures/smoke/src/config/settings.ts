@@ -15,6 +15,7 @@ export const settings = {
   colorMode: false as ColorModeConfig | false,
   siteName: "Smoke Test",
   siteDescription: "Test fixture for smoke E2E tests" as string,
+  logo: "auto" as string | false,
   base: "/",
   minifyHtml: true as boolean,
   docsDir: "src/content/docs",

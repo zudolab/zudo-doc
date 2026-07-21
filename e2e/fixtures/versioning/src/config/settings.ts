@@ -13,6 +13,7 @@ export const settings = {
   colorMode: false as ColorModeConfig | false,
   siteName: "Versioning Test",
   siteDescription: "Test fixture for versioning E2E tests" as string,
+  logo: "auto" as string | false,
   base: "/",
   minifyHtml: true as boolean,
   docsDir: "src/content/docs",
