@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "slug": "bauhaus",
+  "name": "Bauhaus",
+  "description": "Primary triad as structure — gallery white, near-black ink, and red, yellow, blue doing structural work: circle, triangle, square markers, thick geometric rules, zero radius.",
+  "mode": "light",
+  "version": "1.0.0",
+  "fonts": {
+    "sans": "Jost",
+    "mono": "Space Mono",
+    "display": "Archivo Black",
+    "loaded": ["Jost", "Archivo Black", "Space Mono"]
+  },
+  "preview": {
+    "light": {
+      "bg": "#ffffff",
+      "fg": "#141414",
+      "accent": "#b3231b",
+      "syntax": {
+        "keyword": "#b3231b",
+        "string": "#6d5800",
+        "comment": "#63615a",
+        "callable": "#1c4bbe"
+      }
+    },
+    "dark": {
+      "bg": "#18181b",
+      "fg": "#f0efe9",
+      "accent": "#ff7d70",
+      "syntax": {
+        "keyword": "#ff7d70",
+        "string": "#e9ce6a",
+        "comment": "#999689",
+        "callable": "#8fb0ff"
+      }
+    }
+  }
+}
