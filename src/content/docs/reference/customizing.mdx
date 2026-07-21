@@ -156,6 +156,17 @@ Eject writes provenance into a `.zudo-doc.json` file recording which components 
 
 **Limit:** an ejected copy no longer receives package updates for that component — you take on its maintenance. The CLI classifies each eject statically: primary and nested chrome copies warn loudly until a supported binding is present, while content-layer copies keep quiet manual `mdxExtras` guidance. Ejection copies source; `chromeBindingsModule` is the supported seam that makes a primary or owner-level replacement render.
 
+**A different kind of eject — `zudo-doc eject logo`.** This subcommand shares the `eject` name but is not a component-source copy like the targets above: it never touches `.zudo-doc.json` provenance or a component directory. It is an **asset materialization** — it renders the generated auto-logo to a real SVG file and rewires the [`logo`](../guides/configuration.mdx#logo) config field to point at it, so you end up owning an editable file instead of the request-time generated default.
+
+```sh
+pnpm exec zudo-doc eject logo
+```
+
+This writes `public/img/logo.svg` — the mark is expressed as an internal SVG luminance mask, so it stays theme-adaptive through the same CSS-mask hero path as any custom `logo` asset — and rewrites `logo` to `"/img/logo.svg"` in `zfb.config.ts`.
+
+- `--seed <name>` — override the `siteName` seed used to render the mark. Required when `zfb.config.ts` is not in the canonical scaffold shape (for example `zudoDoc({ ...settings })`), since the seed cannot be read statically in that case.
+- `--force` — overwrite an existing `public/img/logo.svg`. Without it, re-running the command **refuses cleanly** rather than silently overwriting a file you may have hand-edited.
+
 ## Rung 6 — `chromeBindingsModule` (host-callables)
 
 Under `packageOwnedRoutes: true` (the default) the doc chrome is wired inside the package, so there is no host file to render project-specific content into. `chromeBindingsModule` is the seam that gives it back: point it at a host module that exports a `chromeBindings` object, and the injected routes pick up your slots — a content-header renderer, home-hero extras, custom frontmatter-preview renderers, a footer tag loader, and more.
