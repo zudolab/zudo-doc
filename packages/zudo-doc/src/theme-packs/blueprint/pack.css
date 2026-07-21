@@ -306,9 +306,16 @@ html[data-theme-pack="blueprint"] aside[data-zd-mobile-sidebar] {
   background-color: var(--zd-bg);
   border-right: 1px solid color-mix(in oklch, var(--zd-fg) 55%, transparent);
 }
-html[data-theme-pack="blueprint"] #desktop-sidebar a:hover,
-html[data-theme-pack="blueprint"] aside[data-zd-mobile-sidebar] a:hover {
+/* Hover wash EXCLUDES the active pill (the scandi/washi guard pattern):
+   without the :not() guards this wash replaced the cyan pill behind its
+   inverted --zd-bg ink (1.15:1 light / 1.22:1 dark — rendered-audit FAIL).
+   Hover ink is the pack's own accent-hover (deeper print blue light /
+   brighter linework cyan dark): 5.90:1 on the light wash+grid worst case,
+   7.48:1 dark — the plain accent sat at 4.54:1 there (WARN band). */
+html[data-theme-pack="blueprint"] #desktop-sidebar a:hover:not([data-nav-active]):not([aria-current="page"]),
+html[data-theme-pack="blueprint"] aside[data-zd-mobile-sidebar] a:hover:not([data-nav-active]):not([aria-current="page"]) {
   background: color-mix(in oklch, var(--zd-muted) 10%, transparent);
+  color: var(--zd-accent-hover);
   text-decoration: none;
 }
 /* active item: the cyan pill comes from --zdc-nav-active-indicator-

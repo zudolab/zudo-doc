@@ -215,9 +215,14 @@ html[data-theme-pack="tidepool"] .zd-content h1 {
 html[data-theme-pack="tidepool"] .zd-content h2 {
   border-image: none !important;
   border-top-width: 0;
+  /* Crest dots at 50% (not the hr's 60%): the rendered audit treats the
+     scallop as a worst-case text backdrop, and at 60% the light-mode h2
+     ink sat in the WARN band over a dot (4.63:1); 50% lifts that to
+     5.68:1 while the waterline stays clearly teal. The hr keeps the full
+     60% ink — no text can ever sit on it. */
   background-image: radial-gradient(
     circle 7px at 6px 8px,
-    color-mix(in srgb, var(--zd-accent) 60%, transparent) 6.5px,
+    color-mix(in srgb, var(--zd-accent) 50%, transparent) 6.5px,
     transparent 7px
   );
   background-size: 12px 5px;
