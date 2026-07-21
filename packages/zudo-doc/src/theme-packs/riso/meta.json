@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "slug": "riso",
+  "name": "Riso",
+  "description": "Risograph duotone print — warm paper, two inks (riso blue + fluorescent coral), misregistered offset shadows, and a soft linear paper grain.",
+  "mode": "light",
+  "version": "1.0.0",
+  "fonts": {
+    "sans": "Space Grotesk",
+    "mono": "Space Mono",
+    "display": "Archivo Black",
+    "loaded": ["Space Grotesk", "Archivo Black", "Space Mono"]
+  },
+  "preview": {
+    "light": {
+      "bg": "#f9f3e5",
+      "fg": "#1d3345",
+      "accent": "#0d5c94",
+      "syntax": {
+        "keyword": "#a02310",
+        "string": "#0d5e6e",
+        "comment": "#4d5c66",
+        "callable": "#0b5b9b"
+      }
+    },
+    "dark": {
+      "bg": "#101d28",
+      "fg": "#f1e9d8",
+      "accent": "#58b8e8",
+      "syntax": {
+        "keyword": "#ff8d72",
+        "string": "#66d4cf",
+        "comment": "#93a4ad",
+        "callable": "#5aaef5"
+      }
+    }
+  }
+}
