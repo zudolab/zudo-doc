@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "slug": "blueprint",
+  "name": "Blueprint",
+  "description": "Cyanotype drafting sheet — pale-cyan linework on prussian grid paper, title-block caps, dashed rules, mono-caps labels. Light mode is the vellum original.",
+  "mode": "dark",
+  "version": "1.0.0",
+  "fonts": {
+    "sans": "Inter",
+    "mono": "IBM Plex Mono",
+    "display": "Josefin Sans",
+    "loaded": ["Inter", "Josefin Sans", "IBM Plex Mono"]
+  },
+  "preview": {
+    "light": {
+      "bg": "oklch(0.965 0.012 235)",
+      "fg": "oklch(0.28 0.05 253)",
+      "accent": "oklch(0.44 0.095 235)",
+      "syntax": {
+        "keyword": "oklch(0.46 0.1 80)",
+        "string": "oklch(0.43 0.085 195)",
+        "comment": "oklch(0.5 0.03 248)",
+        "callable": "oklch(0.44 0.09 235)"
+      }
+    },
+    "dark": {
+      "bg": "oklch(0.27 0.055 252)",
+      "fg": "oklch(0.965 0.01 220)",
+      "accent": "oklch(0.86 0.09 205)",
+      "syntax": {
+        "keyword": "oklch(0.87 0.12 95)",
+        "string": "oklch(0.83 0.1 185)",
+        "comment": "oklch(0.72 0.032 235)",
+        "callable": "oklch(0.83 0.085 215)"
+      }
+    }
+  }
+}
