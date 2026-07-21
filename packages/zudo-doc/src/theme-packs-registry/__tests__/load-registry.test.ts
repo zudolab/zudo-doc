@@ -11,14 +11,19 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const THEME_PACKS_DIR = resolve(__dirname, "../../theme-packs");
 
 describe("loadThemePackRegistry (real bundled packs)", () => {
-  it("aggregates the 21 shipped packs, in canonical alphabetical order", () => {
+  it("aggregates the 31 shipped packs, in canonical alphabetical order", () => {
     const registry = loadThemePackRegistry(THEME_PACKS_DIR);
     expect(registry.map((e) => e.slug)).toEqual([
+      "academia",
+      "bauhaus",
       "beacon",
+      "blueprint",
+      "botanica",
       "broadsheet",
       "brutalist",
       "default",
       "drift",
+      "eink",
       "fjord",
       "foundry",
       "futura-editorial",
@@ -31,9 +36,14 @@ describe("loadThemePackRegistry (real bundled packs)", () => {
       "observatory",
       "onyx",
       "phosphor",
+      "riso",
+      "sakura",
+      "scandi",
       "solar",
       "sumi",
       "swissgrid",
+      "tidepool",
+      "timberline",
       "washi",
     ]);
   });
@@ -57,10 +67,15 @@ describe("loadThemePackRegistry (real bundled packs)", () => {
     // alphabetical order above).
     expect(enabled.map((e) => e.slug)).toEqual([
       "default",
+      "academia",
+      "bauhaus",
       "beacon",
+      "blueprint",
+      "botanica",
       "broadsheet",
       "brutalist",
       "drift",
+      "eink",
       "fjord",
       "foundry",
       "futura-editorial",
@@ -73,9 +88,14 @@ describe("loadThemePackRegistry (real bundled packs)", () => {
       "observatory",
       "onyx",
       "phosphor",
+      "riso",
+      "sakura",
+      "scandi",
       "solar",
       "sumi",
       "swissgrid",
+      "tidepool",
+      "timberline",
       "washi",
     ]);
   });

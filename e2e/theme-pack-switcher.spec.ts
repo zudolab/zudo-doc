@@ -78,6 +78,16 @@ const FULL_PACK_CYCLE = [
   "observatory",
   "phosphor",
   "solar",
+  "academia",
+  "bauhaus",
+  "blueprint",
+  "botanica",
+  "eink",
+  "riso",
+  "sakura",
+  "scandi",
+  "tidepool",
+  "timberline",
 ];
 
 async function preseedTheme(page: Page, mode: "light" | "dark") {
@@ -158,11 +168,16 @@ test.describe("Theme pack switcher", () => {
     expect(runtime.base).toBe("/");
     expect(runtime.configured).toBe("default");
     expect(Object.keys(runtime.packs).sort()).toEqual([
+      "academia",
+      "bauhaus",
       "beacon",
+      "blueprint",
+      "botanica",
       "broadsheet",
       "brutalist",
       "default",
       "drift",
+      "eink",
       "fjord",
       "foundry",
       "futura-editorial",
@@ -175,9 +190,14 @@ test.describe("Theme pack switcher", () => {
       "observatory",
       "onyx",
       "phosphor",
+      "riso",
+      "sakura",
+      "scandi",
       "solar",
       "sumi",
       "swissgrid",
+      "tidepool",
+      "timberline",
       "washi",
     ]);
   });
