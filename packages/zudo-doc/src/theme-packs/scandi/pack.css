@@ -171,16 +171,29 @@ html[data-theme-pack="scandi"] aside[data-zd-mobile-sidebar] a {
     background-color 0.15s ease,
     color 0.15s ease;
 }
-html[data-theme-pack="scandi"] #desktop-sidebar a:hover,
-html[data-theme-pack="scandi"] aside[data-zd-mobile-sidebar] a:hover {
+/* hover wash — EXCLUDES active items so the wash never swallows
+   the aria-current/data-nav-active fill (hovering the current page
+   must keep its pill, not fade to a 10% wash). */
+html[data-theme-pack="scandi"] #desktop-sidebar a:hover:not([data-nav-active]):not([aria-current="page"]),
+html[data-theme-pack="scandi"] aside[data-zd-mobile-sidebar] a:hover:not([data-nav-active]):not([aria-current="page"]) {
   text-decoration: none;
   background: color-mix(in srgb, var(--zd-accent) 10%, transparent);
   color: var(--zd-accent-hover);
 }
-/* active item: THE signature — a full pill in deep sage (candle
-   amber at night), oat text, flat as painted wood. Fill comes from
-   --zdc-nav-active-indicator-color; no glow, no shadow (that's
-   drift's move, not ours). */
+/* root-level actives carry aria-current="page" but not
+   data-nav-active — round their default ink fill to the 8px
+   discipline so no squared default remnant survives. */
+html[data-theme-pack="scandi"] #desktop-sidebar a[aria-current="page"],
+html[data-theme-pack="scandi"] aside[data-zd-mobile-sidebar] a[aria-current="page"] {
+  border-radius: 8px;
+}
+/* active leaf item: THE signature — a full pill in deep sage
+   (candle amber at night), oat text, flat as painted wood. Fill
+   comes from --zdc-nav-active-indicator-color; no glow, no shadow
+   (that's drift's move, not ours). Declared after the
+   aria-current radius rule so the pill wins at equal specificity. */
+html[data-theme-pack="scandi"] #desktop-sidebar a[data-nav-active],
+html[data-theme-pack="scandi"] aside[data-zd-mobile-sidebar] a[data-nav-active],
 html[data-theme-pack="scandi"] a[data-nav-active] {
   color: var(--zd-bg);
   border-radius: 999px;
@@ -230,12 +243,17 @@ html[data-theme-pack="scandi"] .zd-content code:not(pre code) {
   padding: 1px 0.35rem;
 }
 
-/* code blocks: birch panel, 8px corners, hairline border — solid
-   and calm, no grain, no glow. */
+/* code blocks: birch panel, 8px corners, hairline border, a 1px
+   planed-wood sheen along the top edge — solid and calm, no grain,
+   no glow. Comments lean into a soft oblique. */
 html[data-theme-pack="scandi"] pre.hi-root {
   border-radius: 8px;
   border-color: color-mix(in srgb, var(--zd-muted) 26%, transparent);
+  box-shadow: inset 0 1px 0 light-dark(oklch(1 0 0 / 0.6), oklch(1 0 0 / 0.04));
   padding: 1rem 1.15rem;
+}
+html[data-theme-pack="scandi"] .hi-com {
+  font-style: italic;
 }
 
 /* blockquote: a clay-cushioned aside — the secondary hue's one
