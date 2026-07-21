@@ -33,7 +33,7 @@ const expectedHighlights = [
   },
 ] as const;
 
-describe("@takazudo/zfb-md-wasm next.89 release contract", () => {
+describe("@takazudo/zfb-md-wasm next.90 release contract", () => {
   it.each(expectedHighlights)(
     "emits semantic class-only $language markup",
     async ({ language, code, roles, html: expectedHtml }) => {
