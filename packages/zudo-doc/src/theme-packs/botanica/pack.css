@@ -1,0 +1,546 @@
+/* ============================================================
+   Botanica — zudo-doc theme pack (ADR docs/adr/theme-packs.md)
+
+   A vintage botanical plate: herbarium cream stock, deep
+   botanical-green ink, engraved double rules (thick over thin),
+   Latin small-caps plate labels ("Tab. II" on sections, "nota
+   bene" glosses on admonitions), and pressed-leaf tints on the
+   chrome surfaces. The pressed-flower rose appears only as the
+   bloom: link hover, numbers, danger. Dark mode is the
+   conservatory at night — green-charcoal glass, fern ink, the
+   same engraved rules by moonlight.
+
+   Not manuscript (rubrication sepia, medieval book), not matcha
+   (JP yellow-green paper), not ledger (Tufte academic): botanica
+   is the Western engraved-plate green — cooler cream, inkier
+   green, plate-caption typography.
+
+   Faces: Cormorant Garamond (display — plate captions, headings),
+   Crimson Pro (body, roman + italic), Courier Prime (specimen-
+   label mono, latin + latin-ext for Latin diacritics).
+
+   Every rule below is scoped under html[data-theme-pack="botanica"]
+   — this is what makes the runtime pack swap atomic (Decision 3)
+   and lets the validator prove a pack can never leak styles while
+   inactive (Decision 6.7). The @font-face blocks are the sole
+   exception (at-rules can't be selector-scoped).
+   ============================================================ */
+
+/* Cormorant Garamond — variable 300-700, roman. The engraver's
+   display face: title, section headings, plate labels, masthead.
+   Latin subset only (no italic file ships — the pack never sets
+   italic on the display face, so nothing synthesizes). */
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("./fonts/CormorantGaramond-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Crimson Pro — variable 300-700, roman. The reading face. */
+@font-face {
+  font-family: "Crimson Pro";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("./fonts/CrimsonPro-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Crimson Pro — italic. Specimen descriptions, blockquotes,
+   admonition glosses, emphasis. */
+@font-face {
+  font-family: "Crimson Pro";
+  font-style: italic;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("./fonts/CrimsonPro-latin-italic.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Courier Prime — the typed specimen label. Latin + latin-ext
+   (the ext subset carries the diacritics Latin binomials use). */
+@font-face {
+  font-family: "Courier Prime";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/CourierPrime-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Courier Prime";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/CourierPrime-400-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Courier Prime";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/CourierPrime-700-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Courier Prime";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/CourierPrime-700-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+html[data-theme-pack="botanica"] {
+  /* Tier-2 semantic roles — herbarium cream + green-sepia ink (light
+     hero); dark is the conservatory at night. Both modes always via
+     light-dark(). Green-on-cream is a known AA squeeze: the accent
+     green sits at L 0.42 (7.1:1 on the cream) — do not lighten it. */
+  --zd-bg: light-dark(oklch(0.956 0.02 92), oklch(0.215 0.022 160));
+  --zd-fg: light-dark(oklch(0.29 0.03 95), oklch(0.92 0.02 95));
+  --zd-selection-bg: light-dark(oklch(0.87 0.06 130), oklch(0.42 0.06 150));
+  --zd-selection-fg: light-dark(oklch(0.25 0.03 120), oklch(0.95 0.02 95));
+  --zd-surface: light-dark(oklch(0.935 0.025 105), oklch(0.245 0.024 160));
+  --zd-muted: light-dark(oklch(0.44 0.045 110), oklch(0.72 0.03 130));
+  --zd-accent: light-dark(oklch(0.42 0.09 152), oklch(0.78 0.09 148));
+  --zd-accent-hover: light-dark(oklch(0.44 0.13 20), oklch(0.8 0.09 18));
+  --zd-code-bg: light-dark(oklch(0.925 0.022 98), oklch(0.25 0.026 160));
+  --zd-code-fg: light-dark(oklch(0.28 0.03 95), oklch(0.91 0.022 95));
+  --zd-success: light-dark(oklch(0.43 0.105 148), oklch(0.76 0.1 148));
+  --zd-danger: light-dark(oklch(0.45 0.13 25), oklch(0.77 0.1 20));
+  --zd-warning: light-dark(oklch(0.47 0.09 80), oklch(0.8 0.1 85));
+  --zd-info: light-dark(oklch(0.44 0.075 200), oklch(0.75 0.08 200));
+
+  /* syntax — all 9 roles restyled, both modes. Engraved-plate inks:
+     pencil-olive comments, bottle-green strings (the specimen),
+     madder-rose numbers (the bloom), umber keywords (the engraver's
+     hand), eucalyptus callables, moss-gold types; inserted/deleted
+     reuse the bottle-green / madder hues. */
+  --zd-syntax-comment: light-dark(oklch(0.48 0.04 95), oklch(0.7 0.03 110));
+  --zd-syntax-string: light-dark(oklch(0.43 0.095 150), oklch(0.8 0.095 145));
+  --zd-syntax-number: light-dark(oklch(0.46 0.12 25), oklch(0.79 0.095 20));
+  --zd-syntax-keyword: light-dark(oklch(0.4 0.075 60), oklch(0.82 0.085 80));
+  --zd-syntax-callable: light-dark(oklch(0.43 0.075 205), oklch(0.78 0.075 200));
+  --zd-syntax-type: light-dark(oklch(0.45 0.085 95), oklch(0.84 0.09 95));
+  --zd-syntax-name: light-dark(oklch(0.3 0.03 95), oklch(0.91 0.022 95));
+  --zd-syntax-inserted: light-dark(oklch(0.43 0.105 148), oklch(0.76 0.1 148));
+  --zd-syntax-deleted: light-dark(oklch(0.45 0.13 25), oklch(0.77 0.1 20));
+
+  /* fonts — Cormorant Garamond display over a Crimson Pro text page,
+     Courier Prime specimen labels for code. Generic tails keep CJK
+     on platform serifs. */
+  --font-display: "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
+  --font-sans: "Crimson Pro", "Iowan Old Style", Georgia, serif;
+  --font-mono: "Courier Prime", "Courier New", Courier, monospace;
+
+  /* Tier-3 component seams — Cormorant headings at moderate weight
+     (its 700 fills in at text sizes); an engraved plate is square,
+     so every radius zeroes out. */
+  --zdc-doc-title-font: var(--font-display);
+  --zdc-doc-title-weight: 600;
+  --zdc-doc-title-tracking: 0.01em;
+  --zdc-doc-h2-font: var(--font-display);
+  --zdc-doc-h2-weight: 600;
+  --zdc-doc-h2-tracking: 0.015em;
+  --zdc-doc-h3-weight: 600;
+  --zdc-doc-h4-weight: 600;
+  --zdc-admonition-radius: 0;
+  --zdc-admonition-border-width: 3px;
+  --zdc-card-radius: 0;
+  --zdc-nav-active-indicator-color: light-dark(
+    oklch(0.42 0.09 152),
+    oklch(0.78 0.09 148)
+  );
+  --zdc-nav-active-weight: 600;
+}
+
+/* ---- Botanica extras ---- */
+
+/* the plate stock: Crimson Pro reads small, so the page steps up a
+   size; the faintest laid-paper tooth rides the background. Crimson's
+   old-style figures suit specimen tables (explicit, so a fallback
+   face keeps the intent). */
+html[data-theme-pack="botanica"] body {
+  font-size: 1.15rem;
+  line-height: 1.7;
+  font-variant-numeric: oldstyle-nums;
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent 0 3px,
+    color-mix(in oklch, var(--zd-fg) 1.5%, transparent) 3px 4px
+  );
+}
+/* content.css pins `.zd-content { font-size: var(--text-body) }`, so a
+   body-level size never reaches the prose — restate the plate measure
+   on the content root. The counter feeds the h2 "Tab. N" labels. */
+html[data-theme-pack="botanica"] .zd-content {
+  font-size: 1.15rem;
+  line-height: 1.7;
+  counter-reset: botanica-tabula;
+}
+
+/* masthead: engraved double rule, Cormorant wordmark with a hedera,
+   small-caps plate-label nav. */
+html[data-theme-pack="botanica"] header[data-header] {
+  border-bottom: 3px double color-mix(in oklch, var(--zd-fg) 50%, transparent);
+}
+html[data-theme-pack="botanica"] [data-header-logo] {
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+html[data-theme-pack="botanica"] [data-header-logo]::before {
+  content: "❧ ";
+  color: var(--zd-accent);
+  font-size: 0.8em;
+}
+html[data-theme-pack="botanica"] [data-nav-item] {
+  font-variant-caps: small-caps;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+  font-size: 1.05rem;
+}
+
+/* sidebar: the herbarium index — pressed-leaf tint, hairline spine.
+   The mobile drawer is a separate hook (#2887) and gets the same
+   pressing. Crimson runs small at the chrome's fixed text-small, so
+   links/buttons step up. */
+html[data-theme-pack="botanica"] #desktop-sidebar,
+html[data-theme-pack="botanica"] aside[data-zd-mobile-sidebar] {
+  background-color: color-mix(in srgb, var(--zd-accent) 5%, var(--zd-bg));
+}
+html[data-theme-pack="botanica"] #desktop-sidebar {
+  border-right: 1px solid color-mix(in oklch, var(--zd-fg) 25%, transparent);
+}
+html[data-theme-pack="botanica"] #desktop-sidebar a,
+html[data-theme-pack="botanica"] #desktop-sidebar button,
+html[data-theme-pack="botanica"] aside[data-zd-mobile-sidebar] a,
+html[data-theme-pack="botanica"] aside[data-zd-mobile-sidebar] button {
+  font-size: 1rem;
+}
+
+/* the title plate: thick-over-thin engraved rule under the h1, and an
+   italic specimen description beneath it. */
+html[data-theme-pack="botanica"] .zd-content h1 {
+  position: relative;
+  padding-bottom: 0.45rem;
+  border-bottom: 2px solid color-mix(in oklch, var(--zd-fg) 70%, transparent);
+}
+html[data-theme-pack="botanica"] .zd-content h1::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -5px;
+  border-bottom: 1px solid color-mix(in oklch, var(--zd-fg) 30%, transparent);
+}
+html[data-theme-pack="botanica"] p[data-doc-description] {
+  font-style: italic;
+  font-size: 1.3rem;
+  line-height: 1.5;
+}
+
+/* the signature: each h2 is a numbered plate. Thick-over-thin double
+   rule (the SSR-inlined border-image gradient is replaced via the
+   Decision 6.6 border-image carve-out; the thin line is a ::before
+   hairline 3px below the 2px border), with a small-caps "Tab. N"
+   label seated on the rule, plate-caption style. Cormorant needs a
+   size step over the default text-title. */
+html[data-theme-pack="botanica"] .zd-content h2 {
+  border-image: none !important;
+  border-top-width: 2px;
+  border-top-color: color-mix(in oklch, var(--zd-fg) 55%, transparent);
+  position: relative;
+  padding-top: 1.15rem;
+  font-size: 1.75rem;
+  counter-increment: botanica-tabula;
+}
+html[data-theme-pack="botanica"] .zd-content h2::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 0;
+  right: 0;
+  border-top: 1px solid color-mix(in oklch, var(--zd-fg) 25%, transparent);
+}
+html[data-theme-pack="botanica"] .zd-content h2::after {
+  content: "Tab. " counter(botanica-tabula, upper-roman);
+  position: absolute;
+  top: -0.72em;
+  right: 0;
+  font-family: var(--font-display);
+  font-variant-caps: small-caps;
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.14em;
+  line-height: 1.4;
+  color: var(--zd-muted);
+  background-color: var(--zd-bg);
+  padding: 0 0.5em;
+}
+/* h3 = the plate's small-caps sub-caption; zeroing the class-level
+   border-top-width leaves the inline border-image nothing to paint
+   on (no !important needed — the manuscript precedent). */
+html[data-theme-pack="botanica"] .zd-content h3 {
+  border-top-width: 0;
+  font-family: var(--font-display);
+  font-variant-caps: small-caps;
+  letter-spacing: 0.05em;
+  font-size: 1.35rem;
+}
+
+/* engraved literary details */
+html[data-theme-pack="botanica"] .zd-content a {
+  text-underline-offset: 0.16em;
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in oklch, var(--zd-accent) 55%, transparent);
+}
+html[data-theme-pack="botanica"] .zd-content a:hover {
+  text-decoration-color: currentColor;
+}
+/* hedera leaf markers on unordered lists; roman-numeral figure
+   numbering on ordered lists. (::marker content is a progressive
+   enhancement — engines without it keep a green default marker.) */
+html[data-theme-pack="botanica"] .zd-content ul > li::marker {
+  content: "❧  ";
+  color: var(--zd-accent);
+}
+html[data-theme-pack="botanica"] .zd-content ol {
+  list-style-type: lower-roman;
+}
+html[data-theme-pack="botanica"] .zd-content ol > li::marker {
+  font-style: italic;
+  color: var(--zd-muted);
+}
+/* blockquote = the collector's field note, behind a double rule */
+html[data-theme-pack="botanica"] .zd-content blockquote {
+  font-style: italic;
+  font-size: 1.05em;
+  border-left: 6px double color-mix(in oklch, var(--zd-accent) 65%, transparent);
+}
+/* hr = a bare engraved double rule */
+html[data-theme-pack="botanica"] .zd-content hr {
+  border: none;
+  border-top: 4px double color-mix(in oklch, var(--zd-fg) 40%, transparent);
+  margin: 2.5rem 0;
+}
+
+/* inline code: a tied-on specimen tag */
+html[data-theme-pack="botanica"] .zd-content code:not(pre code) {
+  font-size: 0.92em;
+  border-radius: 0;
+  border: 1px solid color-mix(in oklch, var(--zd-fg) 22%, transparent);
+}
+
+/* code blocks: the framed plate — square, hairline-ruled, with a
+   second engraved ring floated off the frame. */
+html[data-theme-pack="botanica"] pre.hi-root {
+  font-size: 0.95rem;
+  line-height: 1.65;
+  padding: 1.1rem 1.25rem;
+  border-radius: 0;
+  border: 1px solid color-mix(in oklch, var(--zd-fg) 40%, transparent);
+  box-shadow:
+    0 0 0 3px var(--zd-bg),
+    0 0 0 4px color-mix(in oklch, var(--zd-fg) 22%, transparent);
+}
+
+/* admonitions: labelled specimen boxes — small-caps Cormorant titles
+   with an italic Latin gloss, hairline frame closing the tinted box,
+   engraved marks instead of emoji across all 7 variants. */
+html[data-theme-pack="botanica"] [data-admonition] {
+  border-top: 1px solid color-mix(in oklch, var(--zd-fg) 20%, transparent);
+  border-right: 1px solid color-mix(in oklch, var(--zd-fg) 20%, transparent);
+  border-bottom: 1px solid color-mix(in oklch, var(--zd-fg) 20%, transparent);
+}
+html[data-theme-pack="botanica"] [data-admonition] .admonition-title {
+  font-family: var(--font-display);
+  font-variant-caps: small-caps;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  font-size: 1.1em;
+}
+html[data-theme-pack="botanica"] [data-admonition] .admonition-title::after {
+  font-family: var(--font-sans);
+  font-variant-caps: normal;
+  font-style: italic;
+  font-weight: 500;
+  font-size: 0.85em;
+  letter-spacing: 0.02em;
+  color: var(--zd-muted);
+}
+html[data-theme-pack="botanica"]
+  [data-admonition="note"]
+  .admonition-title::before {
+  content: "❧ ";
+}
+html[data-theme-pack="botanica"]
+  [data-admonition="note"]
+  .admonition-title::after {
+  content: " · nota bene";
+}
+html[data-theme-pack="botanica"]
+  [data-admonition="tip"]
+  .admonition-title::before {
+  content: "✿ ";
+}
+html[data-theme-pack="botanica"]
+  [data-admonition="tip"]
+  .admonition-title::after {
+  content: " · observatio";
+}
+html[data-theme-pack="botanica"]
+  [data-admonition="info"]
+  .admonition-title::before {
+  content: "❃ ";
+}
+html[data-theme-pack="botanica"]
+  [data-admonition="info"]
+  .admonition-title::after {
+  content: " · indicium";
+}
+html[data-theme-pack="botanica"]
+  [data-admonition="important"]
+  .admonition-title::before {
+  content: "❊ ";
+}
+html[data-theme-pack="botanica"]
+  [data-admonition="important"]
+  .admonition-title::after {
+  content: " · momenti";
+}
+html[data-theme-pack="botanica"]
+  [data-admonition="warning"]
+  .admonition-title::before {
+  content: "† ";
+}
+html[data-theme-pack="botanica"]
+  [data-admonition="warning"]
+  .admonition-title::after {
+  content: " · cave";
+}
+html[data-theme-pack="botanica"]
+  [data-admonition="caution"]
+  .admonition-title::before {
+  content: "‡ ";
+}
+html[data-theme-pack="botanica"]
+  [data-admonition="caution"]
+  .admonition-title::after {
+  content: " · cautio";
+}
+html[data-theme-pack="botanica"]
+  [data-admonition="danger"]
+  .admonition-title::before {
+  content: "✠ ";
+}
+html[data-theme-pack="botanica"]
+  [data-admonition="danger"]
+  .admonition-title::after {
+  content: " · periculum";
+}
+
+/* tables: the engraved index — double rule under small-caps column
+   heads, pressed-leaf row hover. */
+html[data-theme-pack="botanica"] .zd-content th {
+  font-family: var(--font-display);
+  font-variant-caps: small-caps;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  font-size: 1.05em;
+  border-bottom: 3px double color-mix(in oklch, var(--zd-fg) 50%, transparent);
+}
+html[data-theme-pack="botanica"] .zd-content td {
+  border-bottom-color: color-mix(in oklch, var(--zd-fg) 18%, transparent);
+}
+html[data-theme-pack="botanica"] .zd-content tbody tr:hover td {
+  background-color: color-mix(in srgb, var(--zd-accent) 6%, var(--zd-bg));
+}
+
+/* TOC: the plate legend — active heading pressed in botanical green
+   (mirroring the sidebar's active-indicator token). The mobile TOC
+   is its own emitter (#2887): tinted, hairline-framed. */
+html[data-theme-pack="botanica"] nav[data-zd-toc] a {
+  font-size: 0.98rem;
+}
+html[data-theme-pack="botanica"] nav[data-zd-toc] a[aria-current="true"],
+html[data-theme-pack="botanica"] div[data-zd-mobile-toc] a[aria-current="true"] {
+  background-color: var(--zd-accent);
+  color: var(--zd-bg);
+}
+html[data-theme-pack="botanica"] div[data-zd-mobile-toc] {
+  background-color: color-mix(in srgb, var(--zd-accent) 4%, var(--zd-bg));
+  border: 1px solid color-mix(in oklch, var(--zd-fg) 20%, transparent);
+  border-radius: 0;
+}
+
+/* pager: plate cross-references — square cards, small-caps labels,
+   the engraved ring appearing on hover. Scoped to the data-doc-pager
+   hook so NavCardGrid never inherits it. */
+html[data-theme-pack="botanica"] .zd-content > nav[data-doc-pager] a {
+  border-radius: 0;
+  border-color: color-mix(in oklch, var(--zd-fg) 25%, transparent);
+}
+html[data-theme-pack="botanica"] .zd-content > nav[data-doc-pager] a:hover {
+  border-color: var(--zd-accent);
+  box-shadow:
+    0 0 0 3px var(--zd-bg),
+    0 0 0 4px color-mix(in oklch, var(--zd-accent) 45%, transparent);
+}
+html[data-theme-pack="botanica"] .zd-content > nav[data-doc-pager] a > div {
+  font-family: var(--font-display);
+  font-variant-caps: small-caps;
+  letter-spacing: 0.08em;
+}
+html[data-theme-pack="botanica"] .zd-content > nav[data-doc-pager] a > p {
+  font-style: italic;
+}
+
+/* footer: the colophon — closing engraved double rule over a
+   pressed-leaf band. */
+html[data-theme-pack="botanica"] footer[data-footer] {
+  border-top: 3px double color-mix(in oklch, var(--zd-fg) 50%, transparent);
+  background-color: color-mix(in srgb, var(--zd-accent) 4%, var(--zd-bg));
+}
+
+/* theme-pack switcher: the plate's cartouche — square card with the
+   engraved double ring; the round launcher keeps its ring too. */
+html[data-theme-pack="botanica"] [data-switcher-card] {
+  border-radius: 0;
+  border: 1px solid color-mix(in oklch, var(--zd-fg) 40%, transparent);
+  box-shadow:
+    0 0 0 3px var(--zd-surface),
+    0 0 0 4px color-mix(in oklch, var(--zd-fg) 22%, transparent),
+    0 10px 30px -6px light-dark(oklch(0.35 0.05 110 / 0.25), oklch(0 0 0 / 0.55));
+}
+html[data-theme-pack="botanica"] [data-switcher-launcher] {
+  border: 1px solid color-mix(in oklch, var(--zd-fg) 40%, transparent);
+  box-shadow:
+    0 0 0 2px var(--zd-bg),
+    0 0 0 3px color-mix(in oklch, var(--zd-fg) 22%, transparent),
+    0 4px 14px -4px light-dark(oklch(0.35 0.05 110 / 0.3), oklch(0 0 0 / 0.6));
+}
