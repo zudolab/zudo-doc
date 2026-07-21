@@ -1,0 +1,602 @@
+/* ============================================================
+   Riso — zudo-doc theme pack (ADR docs/adr/theme-packs.md;
+   epic Theme Batch 5, sub-issue #3061)
+
+   Risograph duotone print: warm off-white paper and exactly TWO
+   inks — classic riso ink-blue and fluorescent coral. Duotone
+   surface tints (every panel is one ink screened over the paper),
+   solid misregistration offset shadows on cards, headings and the
+   switcher (print-craft, never a blur), and a subtle paper grain
+   laid down with repeating-linear-gradients (text backdrops stay
+   effectively solid). Dark mode is the negative plate: deep
+   blue-black paper, both inks brightened, prose printed in the
+   paper cream. Space Grotesk carries prose and chrome, Archivo
+   Black is the poster-punch display face (h1 + logo), Space Mono
+   sets the code.
+
+   Two-ink discipline: every accent in this file resolves to the
+   blue ink, the coral ink, or a paper neutral. Dense coral reads
+   as print-red/plum; blue over cream paper drifts teal; blue+coral
+   overprint gives the amber/brown utility tones — all standard
+   riso press behavior, so the syntax ladder and the state colors
+   stay inside the two-ink story. Fluorescent coral is an AA trap
+   as TEXT ink, so it appears only in surfaces/marks/offsets
+   (shadows, underline decorations, slabs, selection flag); every
+   text-adjacent or functional coral (focus ring, state bars,
+   danger/caution titles) is darkened to the AA print-red.
+
+   NO dot rasters anywhere — the dropped `halftone` concept owns
+   ben-day dots; riso's ground is linear grain only.
+
+   Every rule below is scoped under html[data-theme-pack="riso"] —
+   this is what makes the runtime pack swap atomic (Decision 3) and
+   lets the validator prove a pack can never leak styles while
+   inactive (Decision 6.7). The @font-face blocks are the sole
+   exception (at-rules can't be selector-scoped).
+
+   Helper values (the closed token manifest has no pack-local
+   custom properties, so these are inlined at each use site):
+     coral fluoro (marks only)  light-dark(#ff5b41, #ff7a5f)
+     print-red (AA coral text)  light-dark(#a8250f, #ff7a5f)
+     blue 2nd-pass shadow       light-dark(#c5d2d3, #264c62)
+     ink hairline               light-dark(rgb(29 51 69 / 0.18),
+                                           rgb(241 233 216 / 0.2))
+     grain ink fleck            light-dark(rgb(29 51 69 / 0.03),
+                                           rgb(241 233 216 / 0.03))
+     grain coral fleck          light-dark(rgb(255 91 65 / 0.02),
+                                           rgb(255 122 95 / 0.025))
+   Composite tints below are pre-resolved srgb mixes of the two
+   inks over the paper (culori pre-check, all pairs >= 4.6:1 —
+   see the #3061 work log for the full table).
+
+   Real-DOM notes: pager = `.zd-content > nav[data-doc-pager]`
+   (never bare `.zd-content > nav` — NavCardGrid also renders one);
+   TOC active = `nav[data-zd-toc] a[aria-current="true"]`; mobile
+   drawer/TOC are separate hooks (`aside[data-zd-mobile-sidebar]`,
+   `div[data-zd-mobile-toc]`), styled below.
+   ============================================================ */
+
+/* ---- Space Grotesk — geometric grotesque for prose + chrome.
+        Variable 300-700, latin subset (stray latin-ext glyphs fall
+        back to the system stack). ---- */
+
+@font-face {
+  font-family: "Space Grotesk";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("./fonts/SpaceGrotesk-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- Archivo Black — single-weight poster grotesque for the
+        display voice (h1, logo). 400 only; --zdc-doc-title-weight
+        stays 400 so no synthetic bold distorts it. ---- */
+
+@font-face {
+  font-family: "Archivo Black";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/ArchivoBlack-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- Space Mono — the code face. Static 400 + real 700 (bold
+        keywords/callables) + true italic 400 (comments and types
+        read italic in this pack). ---- */
+
+@font-face {
+  font-family: "Space Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/SpaceMono-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Space Mono";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/SpaceMono-400-italic-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Space Mono";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/SpaceMono-700-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+html[data-theme-pack="riso"] {
+  /* Tier-2 semantic roles — both modes always via light-dark().
+     Light: warm riso paper + deep two-ink overprint text. Dark:
+     the negative plate — blue-black paper, cream "paper ink". */
+  --zd-bg: light-dark(#f9f3e5, #101d28);
+  --zd-fg: light-dark(#1d3345, #f1e9d8);
+  /* selection: the fluorescent coral flag with deep overprint text —
+     the one place fluoro carries text, because the pair itself is the
+     checked contrast (5.75:1 / 6.99:1). */
+  --zd-selection-bg: light-dark(#ff5b41, #ff7a5f);
+  --zd-selection-fg: light-dark(#2a1206, #26120a);
+  --zd-surface: light-dark(#f1e8d4, #16242f);
+  --zd-muted: light-dark(#54646e, #9cadb7);
+  --zd-accent: light-dark(#0d5c94, #58b8e8);
+  --zd-accent-hover: light-dark(#094672, #8ad0f2);
+  /* code panel: blue ink screened 9% over the paper (pre-resolved) */
+  --zd-code-bg: light-dark(#e4e5de, #152531);
+  --zd-code-fg: light-dark(#1d3345, #eee6d4);
+  /* states, two-ink logic: success = dense blue drifting teal on
+     cream; danger = print-red (dense coral); warning = blue+coral
+     overprint amber; info = thinned blue ink. */
+  --zd-success: light-dark(#0e5f5a, #5ec4c4);
+  --zd-danger: light-dark(#a8250f, #ff7a5f);
+  --zd-warning: light-dark(#7e4a06, #e8ab62);
+  --zd-info: light-dark(#3a657b, #93c3da);
+
+  /* syntax — all 9 roles, both modes, built from the two inks +
+     paper neutrals: blue ladder (keyword-adjacent structure inks),
+     coral ladder (dense coral = red, denser = plum), overprint
+     brown for types, faded ink for comments. Weight/italic on the
+     .hi-* bridge classes below adds a second axis of distinction. */
+  --zd-syntax-comment: light-dark(#4d5c66, #93a4ad);
+  --zd-syntax-string: light-dark(#0d5e6e, #66d4cf);
+  --zd-syntax-number: light-dark(#93264d, #f298bd);
+  --zd-syntax-keyword: light-dark(#a02310, #ff8d72);
+  --zd-syntax-callable: light-dark(#0b5b9b, #5aaef5);
+  --zd-syntax-type: light-dark(#7c4a12, #e2ae7a);
+  --zd-syntax-name: light-dark(#22384a, #ece4d2);
+  --zd-syntax-inserted: light-dark(#175070, #9bd3ef);
+  --zd-syntax-deleted: light-dark(#7e1c0a, #ff9d8a);
+
+  /* mermaid + chat + overlay + search-match — kept on the two inks */
+  --zd-mermaid-node-bg: light-dark(#e6e7df, #1a3343);
+  --zd-mermaid-text: light-dark(#1d3345, #f1e9d8);
+  --zd-mermaid-line: light-dark(#0d5c94, #58b8e8);
+  --zd-mermaid-label-bg: light-dark(#f9f3e5, #101d28);
+  --zd-mermaid-note-bg: light-dark(#f9e7d8, #2d282f);
+  --zd-chat-user-bg: light-dark(#0d5c94, #58b8e8);
+  --zd-chat-user-text: light-dark(#f9f3e5, #101d28);
+  --zd-chat-assistant-bg: light-dark(#f1e8d4, #16242f);
+  --zd-chat-assistant-text: light-dark(#1d3345, #f1e9d8);
+  --zd-image-overlay-bg: light-dark(rgb(20 34 48 / 0.85), rgb(6 14 20 / 0.85));
+  --zd-image-overlay-fg: light-dark(#f7f1e4, #f7f1e4);
+  --zd-matched-keyword-bg: light-dark(#ff5b41, #ff7a5f);
+  --zd-matched-keyword-fg: light-dark(#2a1206, #26120a);
+
+  /* fonts — self-hosted OFL trio (Decision 5) */
+  --font-sans: "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "Space Mono", ui-monospace, monospace;
+  --font-display: "Archivo Black", "Space Grotesk", system-ui, sans-serif;
+
+  /* Tier-3 component seams — poster display title (Archivo Black is
+     400-only), Space Grotesk headings, near-square print corners. */
+  --zdc-doc-title-font: var(--font-display);
+  --zdc-doc-title-weight: 400;
+  --zdc-doc-title-tracking: 0.01em;
+  --zdc-doc-h2-weight: 700;
+  --zdc-doc-h2-tracking: -0.01em;
+  --zdc-doc-h3-weight: 700;
+  --zdc-doc-h4-weight: 600;
+  --zdc-doc-prose-font: var(--font-sans);
+  --zdc-doc-link-decoration: underline;
+  --zdc-admonition-radius: 0 2px 2px 0;
+  --zdc-admonition-border-width: 4px;
+  --zdc-card-radius: 2px;
+  --zdc-nav-active-indicator-color: var(--zd-accent);
+  --zdc-nav-active-weight: 700;
+}
+
+/* ---- paper grain: two low-alpha linear fleck passes (one per
+        ink) at odd angles. Alphas are grain-worst-case checked —
+        both layers stacked still leave every text pair >= 4.6:1.
+        Linear only: no dot rasters in riso. ---- */
+
+html[data-theme-pack="riso"] body {
+  background-image:
+    repeating-linear-gradient(
+      63deg,
+      light-dark(rgb(29 51 69 / 0.03), rgb(241 233 216 / 0.03)) 0 1px,
+      transparent 1px 7px
+    ),
+    repeating-linear-gradient(
+      -37deg,
+      light-dark(rgb(255 91 65 / 0.02), rgb(255 122 95 / 0.025)) 0 1px,
+      transparent 1px 11px
+    );
+}
+
+/* focus ring: functional mark, so AA print-red, not fluoro (the
+   fluoro coral sits under 3:1 against the light paper) */
+html[data-theme-pack="riso"] :focus-visible {
+  outline: 2px solid light-dark(#a8250f, #ff7a5f);
+  outline-offset: 2px;
+}
+
+/* ---- header: heavy blue rule; logo becomes two misregistered
+        ink squares + the display face ---- */
+
+html[data-theme-pack="riso"] header[data-header] {
+  border-bottom: 3px solid var(--zd-accent);
+}
+html[data-theme-pack="riso"] [data-header-logo] {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+html[data-theme-pack="riso"] [data-header-logo]::before {
+  content: "";
+  width: 0.7em;
+  height: 0.7em;
+  flex-shrink: 0;
+  background: var(--zd-accent);
+  box-shadow: 0.16em 0.16em 0 0 light-dark(#ff5b41, #ff7a5f);
+}
+html[data-theme-pack="riso"] [data-nav-item]:hover {
+  text-decoration-line: underline;
+  text-decoration-color: light-dark(#ff5b41, #ff7a5f);
+  text-decoration-thickness: 3px;
+  text-underline-offset: 5px;
+}
+
+/* ---- sidebar: blue hairline rail, blue-wash hover, two-ink
+        active chip (blue fill, paper text, coral registration bar).
+        a[data-nav-active] intentionally matches the mobile drawer
+        links too — the hook is not #desktop-sidebar-scoped. ---- */
+
+html[data-theme-pack="riso"] #desktop-sidebar {
+  border-right: 2px solid light-dark(rgb(13 92 148 / 0.35), rgb(88 184 232 / 0.35));
+}
+/* :not([data-nav-active]) is load-bearing, not cosmetic: the bare ID
+   selector would out-rank the active chip below and repaint its blue
+   fill with the pale wash on hover — leaving paper-colored text on a
+   paper-colored wash (invisible). Narrow, single-hook :not — not a
+   broad recolor chain. */
+html[data-theme-pack="riso"] #desktop-sidebar a:hover:not([data-nav-active]) {
+  text-decoration: none;
+  background: light-dark(#e6e7df, #1a3343);
+}
+html[data-theme-pack="riso"] a[data-nav-active] {
+  background: var(--zd-accent);
+  color: var(--zd-bg);
+  font-weight: 700;
+  box-shadow: inset 4px 0 0 0 light-dark(#ff5b41, #ff7a5f);
+  border-radius: 2px;
+}
+
+/* mobile drawer: solid paper panel behind the tree (keeps the
+   grain out of the overlay), blue plate edge */
+html[data-theme-pack="riso"] aside[data-zd-mobile-sidebar] {
+  background-color: var(--zd-bg);
+  border-right: 2px solid var(--zd-accent);
+}
+
+/* ---- content: misregistered two-ink headings ---- */
+
+/* h1: poster face (via --zdc-doc-title-font) with the classic riso
+   misregistration — a solid fluoro-coral pass offset behind the ink */
+html[data-theme-pack="riso"] .zd-content h1 {
+  text-shadow: 0.045em 0.045em 0 light-dark(#ff5b41, #ff7a5f);
+  border-bottom: 3px solid var(--zd-accent);
+  padding-bottom: 0.5rem;
+}
+
+/* h2: blue plate rule with a coral slab printed 2px off-register.
+   border-image none !important defeats the SSR-inlined gradient bar
+   (Decision 6.6's sole allowlisted carve-out). The ::before margins
+   pull the slab up over the border, then restore the text position
+   (-(0.75rem + 2px) up, slab is 4px tall, +(0.75rem - 2px) down). */
+html[data-theme-pack="riso"] .zd-content h2 {
+  border-image: none !important;
+  border-top-width: 4px;
+  border-top-style: solid;
+  border-top-color: var(--zd-accent);
+  padding-top: 0.75rem;
+}
+html[data-theme-pack="riso"] .zd-content h2::before {
+  content: "";
+  display: block;
+  width: 4.5rem;
+  height: 4px;
+  background: light-dark(#ff5b41, #ff7a5f);
+  margin-top: calc(-0.75rem - 2px);
+  margin-bottom: calc(0.75rem - 2px);
+}
+
+/* h3: two misregistered ink squares as the marker (blue pass +
+   coral pass), no rule above */
+html[data-theme-pack="riso"] .zd-content h3 {
+  border-image: none !important;
+  border-top-width: 0;
+}
+html[data-theme-pack="riso"] .zd-content h3::before {
+  content: "";
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  background: var(--zd-accent);
+  box-shadow: 0.16em 0.16em 0 0 light-dark(#ff5b41, #ff7a5f);
+  margin-right: 0.55em;
+}
+
+/* h4: quiet blue-ink subhead, no bar */
+html[data-theme-pack="riso"] .zd-content h4 {
+  border-image: none !important;
+  border-top-width: 0;
+  color: var(--zd-accent);
+}
+
+/* links: blue ink text (token) under a fluoro-coral underline —
+   the two inks touching is the pack's smallest signature */
+html[data-theme-pack="riso"] .zd-content a {
+  text-decoration-color: light-dark(#ff5b41, #ff7a5f);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+html[data-theme-pack="riso"] .zd-content a:hover {
+  color: var(--zd-accent-hover);
+}
+
+/* blockquote: coral plate edge over a thin coral screen */
+html[data-theme-pack="riso"] .zd-content blockquote {
+  border-left: 4px solid light-dark(#ff5b41, #ff7a5f);
+  background-color: light-dark(#f9eadb, #26252d);
+  border-radius: 0 2px 2px 0;
+}
+html[data-theme-pack="riso"] .zd-content hr {
+  border-top: 2px solid var(--zd-accent);
+}
+
+/* ---- code: blue-plate panel with a solid second-pass blue shadow
+        (offset, never blurred); real Space Mono 700/italic carry
+        the weight/style axis of the syntax ladder ---- */
+
+html[data-theme-pack="riso"] pre.hi-root {
+  border: 2px solid var(--zd-accent);
+  border-radius: 2px;
+  box-shadow: 6px 6px 0 0 light-dark(#c5d2d3, #264c62);
+}
+html[data-theme-pack="riso"] .hi-kw {
+  font-weight: 700;
+}
+html[data-theme-pack="riso"] .hi-fn {
+  font-weight: 700;
+}
+html[data-theme-pack="riso"] .hi-com {
+  font-style: italic;
+}
+html[data-theme-pack="riso"] .hi-ty {
+  font-style: italic;
+}
+html[data-theme-pack="riso"] .zd-content code:not(pre code) {
+  background-color: var(--zd-code-bg);
+  border: 1px solid light-dark(rgb(13 92 148 / 0.28), rgb(88 184 232 / 0.3));
+  border-radius: 2px;
+}
+
+/* ---- tables: blue plate rule under heads, paper hairlines,
+        thin blue screen on even rows ---- */
+
+html[data-theme-pack="riso"] .zd-content th {
+  border-bottom: 3px solid var(--zd-accent);
+}
+html[data-theme-pack="riso"] .zd-content td {
+  border-bottom: 1px solid light-dark(rgb(29 51 69 / 0.18), rgb(241 233 216 / 0.2));
+}
+html[data-theme-pack="riso"] .zd-content tbody tr:nth-child(even) {
+  background-color: light-dark(#edebe1, #162937);
+}
+
+/* ---- admonitions: 7 variants from two inks + paper neutrals.
+        Distinction = ink x screen density x border style x icon:
+        note/tip = blue (solid vs double), info = neutral,
+        warning/danger/caution/important = coral family (fluoro
+        border / red + offset shadow / red double / blue-on-coral).
+        Backgrounds are pre-resolved ink-over-paper mixes; titles
+        are AA print inks (fluoro never carries title text). ---- */
+
+html[data-theme-pack="riso"] [data-admonition] .admonition-title {
+  text-transform: uppercase;
+  font-size: 0.74rem;
+  letter-spacing: 0.12em;
+}
+
+html[data-theme-pack="riso"] [data-admonition="note"] {
+  border-left-color: var(--zd-accent);
+  background-color: light-dark(#e1e4dd, #1c3647);
+}
+html[data-theme-pack="riso"] [data-admonition="note"] .admonition-title {
+  color: light-dark(#0a4a78, #7cc6ee);
+}
+html[data-theme-pack="riso"] [data-admonition="note"] .admonition-title::before {
+  content: "✎ ";
+}
+
+html[data-theme-pack="riso"] [data-admonition="tip"] {
+  /* 6px double = two clean 2px ink passes; 4px would collapse the
+     double-line read into a smudge */
+  border-left-width: 6px;
+  border-left-style: double;
+  border-left-color: var(--zd-accent);
+  background-color: light-dark(#edebe1, #162937);
+}
+html[data-theme-pack="riso"] [data-admonition="tip"] .admonition-title {
+  color: light-dark(#0d5c94, #58b8e8);
+}
+html[data-theme-pack="riso"] [data-admonition="tip"] .admonition-title::before {
+  content: "◉ ";
+}
+
+html[data-theme-pack="riso"] [data-admonition="info"] {
+  border-left-color: var(--zd-muted);
+  background-color: light-dark(#ece8db, #212e39);
+}
+html[data-theme-pack="riso"] [data-admonition="info"] .admonition-title {
+  color: light-dark(#43535c, #b3c5cf);
+}
+html[data-theme-pack="riso"] [data-admonition="info"] .admonition-title::before {
+  content: "○ ";
+}
+
+html[data-theme-pack="riso"] [data-admonition="warning"] {
+  border-left-color: light-dark(#ff5b41, #ff7a5f);
+  background-color: light-dark(#ede0ca, #2e3130);
+}
+html[data-theme-pack="riso"] [data-admonition="warning"] .admonition-title {
+  color: light-dark(#7e4a06, #f0b878);
+}
+html[data-theme-pack="riso"] [data-admonition="warning"] .admonition-title::before {
+  content: "▲ ";
+}
+
+html[data-theme-pack="riso"] [data-admonition="danger"] {
+  border-left-color: light-dark(#a8250f, #ff7a5f);
+  background-color: light-dark(#fadbcb, #403033);
+  box-shadow: 5px 5px 0 0 light-dark(#ff5b41, #ff7a5f);
+}
+html[data-theme-pack="riso"] [data-admonition="danger"] .admonition-title {
+  color: light-dark(#991d0a, #ff9781);
+}
+html[data-theme-pack="riso"] [data-admonition="danger"] .admonition-title::before {
+  content: "✖ ";
+}
+
+html[data-theme-pack="riso"] [data-admonition="important"] {
+  border-left-color: var(--zd-accent);
+  background-color: light-dark(#f9e7d8, #2d282f);
+}
+html[data-theme-pack="riso"] [data-admonition="important"] .admonition-title {
+  color: light-dark(#0a4a78, #8fd0f5);
+}
+html[data-theme-pack="riso"] [data-admonition="important"] .admonition-title::before {
+  content: "※ ";
+}
+
+html[data-theme-pack="riso"] [data-admonition="caution"] {
+  border-left-width: 6px;
+  border-left-style: double;
+  border-left-color: light-dark(#a8250f, #ff7a5f);
+  background-color: light-dark(#fae1d1, #362c31);
+}
+html[data-theme-pack="riso"] [data-admonition="caution"] .admonition-title {
+  color: light-dark(#a8250f, #ffa48f);
+}
+html[data-theme-pack="riso"] [data-admonition="caution"] .admonition-title::before {
+  content: "⚠︎ ";
+}
+
+/* ---- pager: print cards with the coral pass sitting off-register
+        at rest (the misregistration signature lives here, not just
+        on hover). Solid paper fill keeps the grain out. ---- */
+
+html[data-theme-pack="riso"] .zd-content > nav[data-doc-pager] > a {
+  border: 2px solid var(--zd-accent);
+  background-color: var(--zd-bg);
+  box-shadow: 5px 5px 0 0 light-dark(#ff5b41, #ff7a5f);
+}
+html[data-theme-pack="riso"] .zd-content > nav[data-doc-pager] > a:hover {
+  border-color: var(--zd-accent-hover);
+  box-shadow: 7px 7px 0 0 light-dark(#ff5b41, #ff7a5f);
+}
+html[data-theme-pack="riso"] .zd-content > nav[data-doc-pager] > a div {
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+}
+html[data-theme-pack="riso"] .zd-content > nav[data-doc-pager] > a p {
+  font-weight: 700;
+}
+
+/* ---- TOC: hairline ink rail; active entry = AA print-red bar laid
+        back against the rail (foundry's pull-back trick keeps text
+        position stable: -pad + 3px border + (pad - 3px) = 0),
+        state doubled by weight so the bar is never the sole cue ---- */
+
+html[data-theme-pack="riso"] nav[data-zd-toc] ul {
+  border-left: 1px solid light-dark(rgb(29 51 69 / 0.22), rgb(241 233 216 / 0.22));
+}
+html[data-theme-pack="riso"] nav[data-zd-toc] a:hover {
+  color: var(--zd-fg);
+  text-decoration-line: underline;
+  text-decoration-color: light-dark(#ff5b41, #ff7a5f);
+  text-decoration-thickness: 2px;
+}
+html[data-theme-pack="riso"] nav[data-zd-toc] a[aria-current="true"] {
+  background: none;
+  color: var(--zd-fg);
+  font-weight: 700;
+  margin-left: calc(-1 * var(--spacing-hsp-lg, 1rem));
+  padding-left: calc(var(--spacing-hsp-lg, 1rem) - 3px);
+  border-left: 3px solid light-dark(#a8250f, #ff7a5f);
+}
+
+/* mobile TOC: framed print chip on a solid surface */
+html[data-theme-pack="riso"] div[data-zd-mobile-toc] {
+  border: 2px solid var(--zd-accent);
+  border-radius: 2px;
+  background-color: var(--zd-surface);
+}
+
+/* ---- footer: blue plate rule; ink links, coral underlines ---- */
+
+html[data-theme-pack="riso"] footer[data-footer] {
+  border-top: 3px solid var(--zd-accent);
+}
+html[data-theme-pack="riso"] footer[data-footer] a {
+  color: var(--zd-fg);
+  text-decoration-color: light-dark(#ff5b41, #ff7a5f);
+}
+html[data-theme-pack="riso"] footer[data-footer] a:hover {
+  color: var(--zd-accent);
+}
+
+/* ---- theme-pack switcher: framed print chips, coral pass
+        off-register behind card and launcher ---- */
+
+html[data-theme-pack="riso"] div[data-switcher-card] {
+  border: 2px solid var(--zd-accent);
+  border-radius: 2px;
+  background-color: var(--zd-surface);
+  box-shadow: 8px 8px 0 0 light-dark(#ff5b41, #ff7a5f);
+}
+html[data-theme-pack="riso"] div[data-switcher-card] button {
+  border-radius: 2px;
+}
+html[data-theme-pack="riso"] button[data-switcher-launcher] {
+  border: 2px solid var(--zd-accent);
+  border-radius: 2px;
+  background-color: var(--zd-bg);
+  box-shadow: 4px 4px 0 0 light-dark(#ff5b41, #ff7a5f);
+}
+html[data-theme-pack="riso"] button[data-switcher-launcher]:hover {
+  color: var(--zd-accent);
+  border-color: var(--zd-accent-hover);
+}
+
+/* browse-all dialog: same framed-chip treatment */
+html[data-theme-pack="riso"] dialog[aria-labelledby="zd-theme-pack-dialog-title"] {
+  border: 2px solid var(--zd-accent);
+  border-radius: 2px;
+  box-shadow: 10px 10px 0 0 light-dark(#ff5b41, #ff7a5f);
+}
+html[data-theme-pack="riso"] dialog[aria-labelledby="zd-theme-pack-dialog-title"] button {
+  border-radius: 2px;
+}
