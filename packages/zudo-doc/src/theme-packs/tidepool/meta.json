@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "slug": "tidepool",
+  "name": "Tidepool",
+  "description": "Marine teal dark — deep-sea teal surfaces, seafoam text, bioluminescent aqua accents, kelp-green success, coral danger. Light mode is the same pool at low tide.",
+  "mode": "dark",
+  "version": "1.0.0",
+  "fonts": {
+    "sans": "Space Grotesk",
+    "mono": "JetBrains Mono",
+    "loaded": ["Space Grotesk", "JetBrains Mono"]
+  },
+  "preview": {
+    "light": {
+      "bg": "oklch(0.966 0.013 165)",
+      "fg": "oklch(0.27 0.045 200)",
+      "accent": "oklch(0.43 0.073 195)",
+      "syntax": {
+        "keyword": "oklch(0.42 0.071 193)",
+        "string": "oklch(0.42 0.11 150)",
+        "comment": "oklch(0.44 0.03 200)",
+        "callable": "oklch(0.44 0.089 232)"
+      }
+    },
+    "dark": {
+      "bg": "oklch(0.235 0.032 205)",
+      "fg": "oklch(0.92 0.028 180)",
+      "accent": "oklch(0.82 0.13 185)",
+      "syntax": {
+        "keyword": "oklch(0.84 0.14 183)",
+        "string": "oklch(0.83 0.14 152)",
+        "comment": "oklch(0.69 0.035 195)",
+        "callable": "oklch(0.8 0.1 228)"
+      }
+    }
+  }
+}

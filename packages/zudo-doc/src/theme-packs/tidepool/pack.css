@@ -1,0 +1,420 @@
+/* ============================================================
+   Tidepool — zudo-doc theme pack (ADR docs/adr/theme-packs.md)
+
+   Marine teal dark. DARK is the hero: a deep-sea teal field,
+   seafoam text, and a bioluminescent aqua accent that glows only
+   where it should — active nav, code-panel edges, the launcher.
+   Kelp-green success, coral danger, sun-through-water amber
+   warnings. LIGHT is the same pool at low tide, designed on its
+   own terms: pale seafoam/sand paper with deep teal inks, never a
+   naive inversion. Shape language: gentle 6px radii and wave-curve
+   accents — scalloped crest lines on the h2 rule, horizontal
+   rules, the footer shoreline, and the switcher cap. Layered
+   teal-family surfaces (bg → sidebar drift → surface → code deep)
+   step by small, deliberate deltas. Space Grotesk prose/display,
+   JetBrains Mono code.
+
+   Differentiation notes: NOT fjord (polar BLUE, aurora gradient
+   ribbons), NOT drift (slate-blue glow pills, borderless), NOT
+   hollow (violet neon — shares Space Grotesk, palette fully
+   separates), NOT phosphor (CRT green terminal). Tidepool is
+   teal-GREEN, organic, water-worn.
+
+   Every rule below is scoped under html[data-theme-pack="tidepool"]
+   — this is what makes the runtime pack swap atomic (Decision 3)
+   and lets the validator prove a pack can never leak styles while
+   inactive (Decision 6.7). The @font-face blocks are the sole
+   exception (at-rules can't be selector-scoped).
+
+   Readability rules honored here:
+   - every text backdrop is SOLID (opaque color-mix into bg/surface);
+     no backdrop-filter is load-bearing anywhere.
+   - glow is decorative only (box-shadows on edges, never under text).
+
+   The wave-crest ornament is a repeat-x row of overlapping circle
+   scallops (12px tile, 5px strip; circle r7 centered 3px past the
+   strip edge so adjacent crests fuse into a continuous waterline):
+     crest-up:   radial-gradient(circle 7px at 6px 8px,  W 6.5px, transparent 7px)
+     crest-down: radial-gradient(circle 7px at 6px -3px, W 6.5px, transparent 7px)
+   W = color-mix(in srgb, var(--zd-accent) 60%, transparent) — a
+   decorative line, not a text backdrop, so alpha is fine there.
+
+   Composited-surface contrast (culori, WCAG 2.x, both modes) was
+   checked computationally for: fg/bg, code-fg/code-bg, all 9
+   syntax roles vs code-bg, accent-as-link vs bg, muted vs bg,
+   selection pair, states-as-text vs bg, fg+muted vs surface, the
+   header/sidebar/footer washes, the 10% admonition tints vs their
+   variant ink AND vs fg, sidebar/TOC actives vs their ink, and the
+   diff inserted/deleted line backgrounds vs code-fg. All ≥ 4.6:1.
+   ============================================================ */
+
+/* ---- Space Grotesk — the single geometric voice for prose,
+        headings, and chrome (variable 300–700, latin). ---- */
+
+@font-face {
+  font-family: "Space Grotesk";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("./fonts/SpaceGrotesk-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- JetBrains Mono — the deep-water code face. Variable
+        400–700, latin + latin-ext. No italic file is shipped; the
+        .hi-com italic renders synthesized-oblique (the
+        ledger/matcha/fjord precedent). ---- */
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/JetBrainsMono-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/JetBrainsMono-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+html[data-theme-pack="tidepool"] {
+  /* Tier-2 semantic roles — deep-sea teal / low-tide seafoam.
+     Both modes always via light-dark(). */
+  --zd-bg: light-dark(oklch(0.966 0.013 165), oklch(0.235 0.032 205));
+  --zd-fg: light-dark(oklch(0.27 0.045 200), oklch(0.92 0.028 180));
+  --zd-selection-bg: light-dark(oklch(0.85 0.07 180), oklch(0.46 0.078 195));
+  --zd-selection-fg: light-dark(oklch(0.22 0.037 210), oklch(0.97 0.012 180));
+  --zd-surface: light-dark(oklch(0.935 0.02 170), oklch(0.275 0.034 203));
+  --zd-muted: light-dark(oklch(0.45 0.05 200), oklch(0.73 0.045 190));
+  --zd-accent: light-dark(oklch(0.43 0.073 195), oklch(0.82 0.13 185));
+  --zd-accent-hover: light-dark(oklch(0.37 0.062 200), oklch(0.87 0.135 182));
+  --zd-code-bg: light-dark(oklch(0.925 0.022 180), oklch(0.195 0.028 210));
+  --zd-code-fg: light-dark(oklch(0.27 0.04 200), oklch(0.915 0.028 182));
+  --zd-success: light-dark(oklch(0.42 0.11 150), oklch(0.8 0.14 150));
+  --zd-danger: light-dark(oklch(0.47 0.14 25), oklch(0.78 0.115 28));
+  --zd-warning: light-dark(oklch(0.5 0.105 75), oklch(0.85 0.1 85));
+  --zd-info: light-dark(oklch(0.45 0.089 230), oklch(0.79 0.09 220));
+
+  /* syntax — all 9 roles, both modes. Dark is the showcase:
+     bioluminescence on deep water — aqua keywords, kelp-green
+     strings, lagoon-blue callables, anemone-salmon types,
+     sun-shaft amber numbers, seafoam identifiers. Light keeps the
+     same organisms as deep low-tide inks. inserted/deleted reuse
+     the kelp/coral state hues. */
+  --zd-syntax-comment: light-dark(oklch(0.44 0.03 200), oklch(0.69 0.035 195));
+  --zd-syntax-string: light-dark(oklch(0.42 0.11 150), oklch(0.83 0.14 152));
+  --zd-syntax-number: light-dark(oklch(0.46 0.095 80), oklch(0.86 0.11 88));
+  --zd-syntax-keyword: light-dark(oklch(0.42 0.071 193), oklch(0.84 0.14 183));
+  --zd-syntax-callable: light-dark(oklch(0.44 0.089 232), oklch(0.8 0.1 228));
+  --zd-syntax-type: light-dark(oklch(0.47 0.12 40), oklch(0.82 0.1 45));
+  --zd-syntax-name: light-dark(oklch(0.28 0.045 200), oklch(0.9 0.03 180));
+  --zd-syntax-inserted: light-dark(oklch(0.42 0.11 150), oklch(0.8 0.14 150));
+  --zd-syntax-deleted: light-dark(oklch(0.45 0.14 27), oklch(0.78 0.115 28));
+
+  /* fonts — Space Grotesk everywhere prose and chrome speak,
+     JetBrains Mono for code. */
+  --font-sans: "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Tier-3 component seams — gentle 6px water-worn radii, snug
+     geometric headings (Space Grotesk wants a little tightening). */
+  --zdc-doc-title-weight: 600;
+  --zdc-doc-title-tracking: -0.02em;
+  --zdc-doc-h2-weight: 600;
+  --zdc-doc-h2-tracking: -0.012em;
+  --zdc-admonition-radius: 0 6px 6px 0;
+  --zdc-admonition-border-width: 4px;
+  --zdc-card-radius: 6px;
+  --zdc-nav-active-weight: 600;
+}
+
+/* ---- Tidepool extras ---- */
+
+html[data-theme-pack="tidepool"] {
+  scrollbar-color: color-mix(in srgb, var(--zd-muted) 45%, transparent) transparent;
+}
+
+/* header: a solid shallow-water wash (opaque — readability never
+   leans on backdrop-filter) over a teal hairline */
+html[data-theme-pack="tidepool"] header[data-header] {
+  background-color: color-mix(in srgb, var(--zd-accent) 5%, var(--zd-bg));
+  border-bottom-color: color-mix(in srgb, var(--zd-accent) 30%, transparent);
+}
+html[data-theme-pack="tidepool"] [data-header-logo] {
+  letter-spacing: -0.02em;
+}
+html[data-theme-pack="tidepool"] [data-header-logo]::before {
+  content: "≈ ";
+  color: var(--zd-accent);
+}
+
+/* header nav: soft pill wash on hover, 6px water-worn corners */
+html[data-theme-pack="tidepool"] [data-nav-item] {
+  border-radius: 6px;
+}
+html[data-theme-pack="tidepool"] [data-nav-item]:hover {
+  text-decoration: none;
+  background: color-mix(in srgb, var(--zd-muted) 10%, transparent);
+}
+
+/* sidebar: a slightly lifted teal layer drifting back down to the
+   page field — the first of the layered teal surfaces. The mobile
+   drawer (a separate hook, #2887) gets the same water column. */
+html[data-theme-pack="tidepool"] #desktop-sidebar {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--zd-surface) 70%, var(--zd-bg)),
+    var(--zd-bg) 55%
+  );
+  border-right-color: color-mix(in srgb, var(--zd-accent) 18%, transparent);
+}
+html[data-theme-pack="tidepool"] aside[data-zd-mobile-sidebar] {
+  background-color: color-mix(in srgb, var(--zd-surface) 70%, var(--zd-bg));
+  border-right: 1px solid color-mix(in srgb, var(--zd-accent) 18%, transparent);
+}
+html[data-theme-pack="tidepool"] #desktop-sidebar a:hover,
+html[data-theme-pack="tidepool"] aside[data-zd-mobile-sidebar] a:hover {
+  text-decoration: none;
+}
+
+/* active sidebar item: a solid rock-pool fill, seafoam ink, aqua
+   edge — with one restrained bioluminescent halo. The default
+   inverted pill sets `text-bg` on the anchor, so the ink must be
+   re-asserted alongside the background (the foundry precedent). */
+html[data-theme-pack="tidepool"] a[data-nav-active] {
+  background: color-mix(in srgb, var(--zd-accent) 14%, var(--zd-bg));
+  color: var(--zd-fg);
+  border-radius: 0 6px 6px 0;
+  box-shadow:
+    inset 3px 0 0 var(--zd-accent),
+    0 0 14px -4px color-mix(in srgb, var(--zd-accent) 45%, transparent);
+}
+
+/* headings: h1 carries a whisper of sea tint; the h2 rule is the
+   signature wave crest — the SSR-inlined border-image gradient is
+   defeated with !important (Decision 6.6's sole carve-out) and
+   replaced by a scalloped waterline painted at the top edge (the
+   hearth top-anchored-background technique). h3/h4 settle for
+   quiet teal hairlines. */
+html[data-theme-pack="tidepool"] .zd-content h1 {
+  color: color-mix(in srgb, var(--zd-accent) 12%, var(--zd-fg));
+}
+html[data-theme-pack="tidepool"] .zd-content h2 {
+  border-image: none !important;
+  border-top-width: 0;
+  background-image: radial-gradient(
+    circle 7px at 6px 8px,
+    color-mix(in srgb, var(--zd-accent) 60%, transparent) 6.5px,
+    transparent 7px
+  );
+  background-size: 12px 5px;
+  background-repeat: repeat-x;
+  background-position: left top;
+}
+html[data-theme-pack="tidepool"] .zd-content h3 {
+  border-image: none !important;
+  border-top-color: color-mix(in srgb, var(--zd-accent) 32%, transparent);
+}
+html[data-theme-pack="tidepool"] .zd-content h4 {
+  border-image: none !important;
+  border-top-color: color-mix(in srgb, var(--zd-muted) 28%, transparent);
+}
+
+/* horizontal rules: a full waterline instead of a flat hairline */
+html[data-theme-pack="tidepool"] .zd-content hr {
+  border: none;
+  height: 5px;
+  background-image: radial-gradient(
+    circle 7px at 6px 8px,
+    color-mix(in srgb, var(--zd-accent) 60%, transparent) 6.5px,
+    transparent 7px
+  );
+  background-size: 12px 5px;
+  background-repeat: repeat-x;
+  background-position: left bottom;
+}
+
+/* links: seafoam-quiet underline that solidifies on hover */
+html[data-theme-pack="tidepool"] .zd-content a {
+  text-decoration-color: color-mix(in srgb, var(--zd-accent) 45%, transparent);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+html[data-theme-pack="tidepool"] .zd-content a:hover {
+  text-decoration-color: currentColor;
+}
+
+/* code: the deep-water pane — the darkest layer of the teal stack.
+   The bioluminescent edge is a 1px inset hairline plus a soft
+   outer falloff; the panel color itself stays solid so the syntax
+   contrast is exactly the token math. */
+html[data-theme-pack="tidepool"] pre.hi-root {
+  border-radius: 6px;
+  border-color: color-mix(in srgb, var(--zd-accent) 22%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--zd-accent) 30%, transparent),
+    0 10px 26px -18px color-mix(in srgb, var(--zd-accent) 35%, transparent);
+}
+html[data-theme-pack="tidepool"] .hi-com {
+  font-style: italic;
+}
+
+/* inline code: small sea-glass chips */
+html[data-theme-pack="tidepool"] .zd-content code:not(pre code) {
+  border: 1px solid color-mix(in srgb, var(--zd-muted) 35%, transparent);
+  border-radius: 4px;
+}
+
+/* blockquote: a kelp-stem edge */
+html[data-theme-pack="tidepool"] .zd-content blockquote {
+  border-left-color: color-mix(in srgb, var(--zd-accent) 50%, transparent);
+}
+
+/* tables: teal header rule, tide-wash row hover */
+html[data-theme-pack="tidepool"] .zd-content th {
+  border-bottom-color: color-mix(in srgb, var(--zd-accent) 45%, transparent);
+  color: color-mix(in srgb, var(--zd-accent) 25%, var(--zd-fg));
+}
+html[data-theme-pack="tidepool"] .zd-content td {
+  border-bottom-color: color-mix(in srgb, var(--zd-muted) 25%, transparent);
+}
+html[data-theme-pack="tidepool"] .zd-content tbody tr:hover td {
+  background: color-mix(in srgb, var(--zd-accent) 5%, transparent);
+}
+
+/* admonitions: all 7 variants re-tinted as SOLID layered pools —
+   10% variant color into the page field (one notch milder than the
+   stock 12% so every variant title ink clears 4.6:1 on its own
+   tint in dark mode; checked computationally). Marine icons for
+   note and tip; the severity variants keep their stock, instantly
+   recognizable glyphs. */
+html[data-theme-pack="tidepool"] [data-admonition] {
+  background-color: color-mix(in srgb, var(--zd-muted) 10%, var(--zd-bg));
+}
+html[data-theme-pack="tidepool"] [data-admonition="note"] {
+  background-color: color-mix(in srgb, var(--zd-accent) 10%, var(--zd-bg));
+}
+html[data-theme-pack="tidepool"] [data-admonition="note"] .admonition-title::before {
+  content: "🌊";
+}
+html[data-theme-pack="tidepool"] [data-admonition="tip"] {
+  background-color: color-mix(in srgb, var(--zd-success) 10%, var(--zd-bg));
+}
+html[data-theme-pack="tidepool"] [data-admonition="tip"] .admonition-title::before {
+  content: "✨";
+}
+html[data-theme-pack="tidepool"] [data-admonition="info"] {
+  background-color: color-mix(in srgb, var(--zd-info) 10%, var(--zd-bg));
+}
+html[data-theme-pack="tidepool"] [data-admonition="warning"] {
+  background-color: color-mix(in srgb, var(--zd-warning) 10%, var(--zd-bg));
+}
+html[data-theme-pack="tidepool"] [data-admonition="danger"] {
+  background-color: color-mix(in srgb, var(--zd-danger) 10%, var(--zd-bg));
+}
+html[data-theme-pack="tidepool"] [data-admonition="important"] {
+  background-color: color-mix(in srgb, var(--zd-accent) 10%, var(--zd-bg));
+}
+html[data-theme-pack="tidepool"] [data-admonition="caution"] {
+  background-color: color-mix(in srgb, var(--zd-danger) 10%, var(--zd-bg));
+}
+
+/* TOC: teal rail; the active entry pools aqua behind itself and
+   pulls back over the ul's hairline so its 2px accent edge sits on
+   the rail (the foundry/fjord overflow-clip geometry note). */
+html[data-theme-pack="tidepool"] nav[data-zd-toc] ul {
+  border-left-color: color-mix(in srgb, var(--zd-accent) 22%, transparent);
+}
+html[data-theme-pack="tidepool"] nav[data-zd-toc] a:hover {
+  color: var(--zd-accent);
+}
+html[data-theme-pack="tidepool"] nav[data-zd-toc] a[aria-current="true"] {
+  background: color-mix(in srgb, var(--zd-accent) 10%, transparent);
+  color: var(--zd-accent);
+  font-weight: 600;
+  margin-left: calc(-1 * var(--spacing-hsp-lg, 1rem) - 1px);
+  padding-left: var(--spacing-hsp-lg, 1rem);
+  padding-right: 0.4rem;
+  border-radius: 0 6px 6px 0;
+  box-shadow: inset 2px 0 0 var(--zd-accent);
+}
+
+/* mobile TOC: the same pool as a small collapsible panel */
+html[data-theme-pack="tidepool"] div[data-zd-mobile-toc] {
+  border: 1px solid color-mix(in srgb, var(--zd-accent) 22%, transparent);
+  border-radius: 6px;
+  background-color: color-mix(in srgb, var(--zd-surface) 70%, var(--zd-bg));
+}
+
+/* pager cards: surface layer, water-worn corners, a quiet wave
+   crest along the top edge (the "wave-curve accents on cards"
+   signature; p-hsp-lg padding keeps text clear of the 5px strip),
+   restrained aqua glow on hover (the stable data-doc-pager hook,
+   #2876) */
+html[data-theme-pack="tidepool"] .zd-content > nav[data-doc-pager] > a {
+  border-radius: 6px;
+  border-color: color-mix(in srgb, var(--zd-accent) 22%, transparent);
+  background-color: var(--zd-surface);
+  background-image: radial-gradient(
+    circle 7px at 6px -3px,
+    color-mix(in srgb, var(--zd-accent) 35%, transparent) 6.5px,
+    transparent 7px
+  );
+  background-size: 12px 5px;
+  background-repeat: repeat-x;
+  background-position: left top;
+}
+html[data-theme-pack="tidepool"] .zd-content > nav[data-doc-pager] > a:hover {
+  border-color: color-mix(in srgb, var(--zd-accent) 60%, transparent);
+  box-shadow: 0 0 20px -8px color-mix(in srgb, var(--zd-accent) 50%, transparent);
+}
+
+/* footer: the shoreline — a wave crest lapping along its top edge
+   over a solid shallow wash */
+html[data-theme-pack="tidepool"] footer[data-footer] {
+  border-top-color: color-mix(in srgb, var(--zd-accent) 30%, transparent);
+  background-color: color-mix(in srgb, var(--zd-accent) 3%, var(--zd-surface));
+  background-image: radial-gradient(
+    circle 7px at 6px -3px,
+    color-mix(in srgb, var(--zd-accent) 45%, transparent) 6.5px,
+    transparent 7px
+  );
+  background-size: 12px 5px;
+  background-repeat: repeat-x;
+  background-position: left top;
+}
+
+/* theme-pack switcher: solid surface card capped with a wave crest
+   (readability does not depend on blur — the card color is fully
+   opaque); the launcher wears the one free-floating bioluminescent
+   halo. */
+html[data-theme-pack="tidepool"] div[data-switcher-card] {
+  border-color: color-mix(in srgb, var(--zd-accent) 28%, transparent);
+  background-color: var(--zd-surface);
+  background-image: radial-gradient(
+    circle 7px at 6px -3px,
+    color-mix(in srgb, var(--zd-accent) 55%, transparent) 6.5px,
+    transparent 7px
+  );
+  background-size: 12px 5px;
+  background-repeat: repeat-x;
+  background-position: left top;
+  box-shadow: 0 18px 40px -14px color-mix(in srgb, var(--zd-accent) 30%, transparent);
+}
+html[data-theme-pack="tidepool"] [data-switcher-launcher] {
+  border: 1px solid color-mix(in srgb, var(--zd-accent) 35%, transparent);
+  box-shadow: 0 0 18px -6px color-mix(in srgb, var(--zd-accent) 55%, transparent);
+}
