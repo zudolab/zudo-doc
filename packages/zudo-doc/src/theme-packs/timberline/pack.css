@@ -1,0 +1,509 @@
+/* ============================================================
+   Timberline — zudo-doc theme pack (ADR docs/adr/theme-packs.md)
+
+   Forest cabin after dark: deep pine/umber plank surfaces, cream
+   prose, and a lantern-amber accent with a restrained MATTE glow —
+   warm wood, never gold luxury (that territory is nocturne/onyx).
+   The signature moves are wood-plank hairline SEAMS (a dark groove
+   hairline paired with a soft chamfer-highlight hairline — border
+   and box-shadow treatments only, no image textures), pine/umber
+   LAYERED surfaces (umber page, pine sidebar/footer panels, the
+   deepest umber for the code "window at night"), and ember-orange
+   warnings. Light mode is designed deliberately as the same lodge
+   at morning: warm cream paper, pine ink, and a deep lantern-amber
+   link ink that clears AA on every cream surface.
+
+   Fraunces carries the display layer (title, h2, lead, blockquote,
+   table heads, pager titles) over a Source Sans 3 reading face and
+   JetBrains Mono code. Shape language: sawn lumber with a chamfer —
+   square-ish 4px edges (between hearth's cozy 12px and nocturne's
+   hard 0).
+
+   Every rule below is scoped under html[data-theme-pack="timberline"]
+   — this is what makes the runtime pack swap atomic (Decision 3)
+   and lets the validator prove a pack can never leak styles while
+   inactive (Decision 6.7). The @font-face blocks are the sole
+   exception (at-rules can't be selector-scoped).
+
+   Authored directly against the stable hook table
+   (docs/theme-pack-authoring.md (b)) — no prototype selectors were
+   carried over. Notes where the real DOM shaped a decision:
+   - the active TOC entry is `nav[data-zd-toc] a[aria-current="true"]`
+     (toc/toc.tsx marks it with aria-current; there is no .toc-active)
+   - the header nav hover excludes `[aria-current="page"]` — that item
+     carries the base inverted `bg-fg text-bg` fill, so an accent
+     recolor would sit amber-on-fg below AA (the nocturne lesson)
+   - the mobile drawer (`aside[data-zd-mobile-sidebar]`) and mobile
+     TOC (`div[data-zd-mobile-toc]`) are separate hooks from their
+     desktop counterparts and are themed alongside them
+   - the plank-seam helper values (groove + chamfer highlight) are
+     not part of the token manifest, so their light-dark() pairs are
+     inlined at each use site:
+       groove    light-dark(oklch(0.83 0.032 85), oklch(0.142 0.016 55))
+       highlight light-dark(oklch(0.988 0.008 95 / 0.85), oklch(0.87 0.07 80 / 0.13))
+   ============================================================ */
+
+/* ---- Fraunces — display serif for the title layer: h1/h2, logo,
+        lead, blockquote, table heads, pager titles. Weight-only
+        variable files (400–700), both styles — the lead and
+        blockquote want a TRUE italic. Latin subsets only (all three
+        families): a stray latin-ext glyph falls back to the stack's
+        system face. ---- */
+
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/Fraunces-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Fraunces";
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/Fraunces-italic-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- Source Sans 3 — the reading face. Variable 200–900, both
+        styles (true italic for prose emphasis). ---- */
+
+@font-face {
+  font-family: "Source Sans 3";
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url("./fonts/SourceSans3-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Source Sans 3";
+  font-style: italic;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url("./fonts/SourceSans3-italic-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- JetBrains Mono — the workshop code face. Variable 400–700.
+        No italic file is shipped; the .hi-com italic renders
+        synthesized-oblique (the fjord/ledger/matcha precedent). ---- */
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/JetBrainsMono-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+html[data-theme-pack="timberline"] {
+  /* Tier-2 semantic roles — morning lodge / cabin after dark.
+     Both modes always via light-dark(). */
+  --zd-bg: light-dark(oklch(0.962 0.016 90), oklch(0.207 0.02 60));
+  --zd-fg: light-dark(oklch(0.27 0.032 155), oklch(0.928 0.02 88));
+  --zd-selection-bg: light-dark(oklch(0.86 0.07 80), oklch(0.5 0.09 65));
+  --zd-selection-fg: light-dark(oklch(0.25 0.03 150), oklch(0.97 0.012 90));
+  --zd-surface: light-dark(oklch(0.934 0.02 88), oklch(0.243 0.023 58));
+  --zd-muted: light-dark(oklch(0.44 0.03 140), oklch(0.735 0.03 85));
+  --zd-accent: light-dark(oklch(0.465 0.11 62), oklch(0.78 0.125 72));
+  --zd-accent-hover: light-dark(oklch(0.4 0.1 55), oklch(0.84 0.115 78));
+  --zd-code-bg: light-dark(oklch(0.925 0.024 87), oklch(0.168 0.018 55));
+  --zd-code-fg: light-dark(oklch(0.27 0.032 155), oklch(0.915 0.022 88));
+  --zd-success: light-dark(oklch(0.44 0.1 145), oklch(0.76 0.11 140));
+  --zd-danger: light-dark(oklch(0.47 0.15 30), oklch(0.71 0.14 30));
+  --zd-warning: light-dark(oklch(0.45 0.11 60), oklch(0.75 0.13 55));
+  --zd-info: light-dark(oklch(0.42 0.08 230), oklch(0.76 0.08 220));
+
+  /* syntax — lantern-lit code, all 9 roles in both modes: amber
+     keywords, moss strings, ember numbers, moonlit-blue callables,
+     birch-gold types, mossy-ash comments. Every light value clears
+     WCAG AA (>=4.6:1 with headroom) on the toasted cream code panel;
+     inserted/deleted reuse the success/danger hues. */
+  --zd-syntax-comment: light-dark(oklch(0.49 0.035 140), oklch(0.66 0.035 110));
+  --zd-syntax-string: light-dark(oklch(0.46 0.09 145), oklch(0.79 0.1 135));
+  --zd-syntax-number: light-dark(oklch(0.49 0.12 50), oklch(0.77 0.125 55));
+  --zd-syntax-keyword: light-dark(oklch(0.475 0.11 70), oklch(0.8 0.125 80));
+  --zd-syntax-callable: light-dark(oklch(0.45 0.085 235), oklch(0.78 0.075 220));
+  --zd-syntax-type: light-dark(oklch(0.46 0.075 95), oklch(0.85 0.085 95));
+  --zd-syntax-name: light-dark(oklch(0.27 0.032 155), oklch(0.915 0.022 88));
+  --zd-syntax-inserted: light-dark(oklch(0.44 0.1 145), oklch(0.76 0.11 140));
+  --zd-syntax-deleted: light-dark(oklch(0.47 0.15 30), oklch(0.71 0.14 30));
+
+  /* fonts — Source Sans 3 reading face, JetBrains Mono code,
+     Fraunces display serif for the title layer. */
+  --font-sans: "Source Sans 3", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-display: "Fraunces", Georgia, serif;
+
+  /* Tier-3 component seams — Fraunces titles (weights ride the
+     variable wght axis), chamfered 4px edges, and a plank-fill
+     active nav: deep pine board by morning, lantern amber by night
+     (ink comes from --zd-bg in the extras below — cream on pine,
+     dark-umber on amber). */
+  --zdc-doc-title-font: var(--font-display);
+  --zdc-doc-title-weight: 620;
+  --zdc-doc-title-tracking: -0.01em;
+  --zdc-doc-h2-font: var(--font-display);
+  --zdc-doc-h2-weight: 600;
+  --zdc-doc-h2-tracking: -0.005em;
+  --zdc-doc-h3-weight: 650;
+  --zdc-admonition-radius: 0 4px 4px 0;
+  --zdc-card-radius: 4px;
+  --zdc-nav-active-indicator-color: light-dark(oklch(0.34 0.05 155), oklch(0.78 0.125 72));
+  --zdc-nav-active-weight: 600;
+}
+
+/* ---- Timberline extras ---- */
+
+/* cabin atmosphere: by night a lantern pool rises from the lower
+   right (matte, low alpha — a warm room, not a spotlight) under
+   cool pine depth up top; by morning, soft daylight from above and
+   the faintest hearth-warmth in the corner. Fixed, so the depth
+   holds while scrolling. */
+html[data-theme-pack="timberline"] body {
+  background-image:
+    radial-gradient(
+      72rem 46rem at 92% 104%,
+      light-dark(oklch(0.93 0.045 80 / 0.35), oklch(0.35 0.07 65 / 0.32)) 0%,
+      transparent 62%
+    ),
+    radial-gradient(
+      100% 55% at 40% -8%,
+      light-dark(oklch(0.978 0.014 95 / 0.8), oklch(0.235 0.03 150 / 0.5)) 0%,
+      transparent 68%
+    );
+  background-attachment: fixed;
+}
+
+/* header: the lintel beam — umber board over a plank seam (dark
+   groove hairline + chamfer highlight catching on the board below) */
+html[data-theme-pack="timberline"] header[data-header] {
+  background-image: linear-gradient(
+    180deg,
+    light-dark(oklch(0.945 0.019 89), oklch(0.25 0.024 58)) 0%,
+    light-dark(oklch(0.93 0.02 88), oklch(0.232 0.022 58)) 100%
+  );
+  border-bottom-color: light-dark(oklch(0.83 0.032 85), oklch(0.142 0.016 55));
+  box-shadow: 0 1px 0 0 light-dark(oklch(0.988 0.008 95 / 0.85), oklch(0.87 0.07 80 / 0.13));
+}
+html[data-theme-pack="timberline"] [data-header-logo] {
+  font-family: var(--font-display);
+  font-weight: 620;
+  letter-spacing: -0.005em;
+  color: var(--zd-accent);
+}
+/* Exclude the current page: it carries the base `bg-fg text-bg`
+   inverted fill, so an accent recolor would sit amber-on-fg below AA. */
+html[data-theme-pack="timberline"] [data-nav-item]:not([aria-current="page"]):hover {
+  color: var(--zd-accent);
+  text-decoration-color: color-mix(in oklch, var(--zd-accent) 55%, transparent);
+  text-underline-offset: 4px;
+}
+
+/* sidebar: the pine layer — a board of deep pine against the umber
+   page (the layered-surfaces signature), sealed by a vertical plank
+   seam on its right edge. The mobile drawer is the same board. */
+html[data-theme-pack="timberline"] #desktop-sidebar {
+  background-color: light-dark(oklch(0.936 0.018 120), oklch(0.19 0.022 150));
+  border-right-color: light-dark(oklch(0.83 0.032 85), oklch(0.142 0.016 55));
+  box-shadow: 1px 0 0 0 light-dark(oklch(0.988 0.008 95 / 0.85), oklch(0.87 0.07 80 / 0.13));
+}
+html[data-theme-pack="timberline"] aside[data-zd-mobile-sidebar] {
+  background-color: light-dark(oklch(0.936 0.018 120), oklch(0.19 0.022 150));
+  border-right-color: light-dark(oklch(0.83 0.032 85), oklch(0.142 0.016 55));
+}
+html[data-theme-pack="timberline"] #desktop-sidebar a {
+  border-radius: 4px;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+html[data-theme-pack="timberline"] #desktop-sidebar a:hover {
+  color: var(--zd-accent);
+  text-decoration: none;
+  background: color-mix(in srgb, var(--zd-accent) 10%, transparent);
+}
+/* active item: the lantern plank — amber board by night, deep pine
+   by morning (fill from --zdc-nav-active-indicator-color); ink via
+   the bg token reads dark-umber-on-amber / cream-on-pine. The glow
+   underneath stays matte: tight radius, low alpha. */
+html[data-theme-pack="timberline"] a[data-nav-active] {
+  color: var(--zd-bg);
+  border-radius: 4px;
+  box-shadow: 0 2px 10px -4px light-dark(oklch(0.35 0.05 120 / 0.3), oklch(0.72 0.12 70 / 0.3));
+}
+
+/* breadcrumb: quiet trail markers */
+html[data-theme-pack="timberline"] main nav[aria-label="Breadcrumb"] a:hover {
+  color: var(--zd-accent);
+}
+
+/* h1: hewn beam — the default fg rule is dropped for a short lantern
+   bar glowing along the beam's end */
+html[data-theme-pack="timberline"] .zd-content h1 {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+html[data-theme-pack="timberline"] .zd-content h1::after {
+  content: "";
+  display: block;
+  width: 4.5rem;
+  height: 3px;
+  border-radius: 2px;
+  margin-top: 0.55rem;
+  background: linear-gradient(
+    to right,
+    var(--zd-accent),
+    color-mix(in oklch, var(--zd-accent) 40%, transparent) 70%,
+    transparent
+  );
+}
+
+/* the lead: a Fraunces italic whisper under the title */
+html[data-theme-pack="timberline"] p[data-doc-description] {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.3rem;
+  line-height: 1.45;
+  color: color-mix(in oklch, var(--zd-fg) 70%, var(--zd-muted));
+}
+
+/* h2: lantern light along the top of each beam. The SSR-inlined
+   `style="border-image:linear-gradient(...)"` bar is defeated with
+   border-image none !important (Decision 6.6's sole allowlisted
+   carve-out) + a zeroed border-top; the fading amber rule is then
+   painted as a 2px top-anchored background gradient instead. */
+html[data-theme-pack="timberline"] .zd-content h2 {
+  border-image: none !important;
+  border-top-width: 0;
+  background-image: linear-gradient(
+    to right,
+    var(--zd-accent),
+    color-mix(in oklch, var(--zd-accent) 35%, transparent) 55%,
+    transparent
+  );
+  background-size: 100% 2px;
+  background-repeat: no-repeat;
+  background-position: top left;
+}
+
+/* links: lantern-amber ink under a warm underline; the halo appears
+   only on hover, only after dark, and stays matte (small radius,
+   low alpha — never neon) */
+html[data-theme-pack="timberline"] .zd-content a {
+  text-decoration-color: color-mix(in oklch, var(--zd-accent) 45%, transparent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+  transition:
+    color 0.15s ease,
+    text-decoration-color 0.15s ease,
+    text-shadow 0.25s ease;
+}
+html[data-theme-pack="timberline"] .zd-content a:hover {
+  text-decoration-color: var(--zd-accent-hover);
+  text-shadow: 0 0 10px light-dark(oklch(0.78 0.125 72 / 0), oklch(0.8 0.13 75 / 0.28));
+}
+
+/* code block: the cabin window at night — the deepest umber pane,
+   set into a plank frame with a lantern-warmed sill along the top
+   edge; by morning, a toasted cream pane. */
+html[data-theme-pack="timberline"] pre.hi-root {
+  border-radius: 4px;
+  border-color: light-dark(oklch(0.83 0.032 85), oklch(0.142 0.016 55));
+  border-top-color: light-dark(
+    oklch(0.79 0.06 78),
+    oklch(0.42 0.07 68)
+  );
+  background-image: linear-gradient(
+    180deg,
+    light-dark(oklch(0.937 0.026 88), oklch(0.192 0.022 58)) 0%,
+    var(--zd-code-bg) 3.5rem
+  );
+  box-shadow:
+    inset 0 1px 0 light-dark(oklch(0.988 0.008 95 / 0.85), oklch(0.87 0.07 80 / 0.1)),
+    0 10px 24px -18px light-dark(oklch(0.4 0.05 90 / 0.35), oklch(0.05 0.01 55 / 0.7));
+  padding: 1.05rem 1.2rem;
+}
+html[data-theme-pack="timberline"] .hi-com {
+  font-style: italic;
+}
+
+/* inline code: small chips sawn from the same board */
+html[data-theme-pack="timberline"] .zd-content code:not(pre code) {
+  border-radius: 4px;
+  border: 1px solid light-dark(oklch(0.855 0.03 86), oklch(0.32 0.03 60));
+  padding: 1px 0.35rem;
+}
+
+/* blockquote: carved into the wall — Fraunces italic behind an
+   amber-tinged edge */
+html[data-theme-pack="timberline"] .zd-content blockquote {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.15rem;
+  line-height: 1.55;
+  border-left: 3px solid color-mix(in oklch, var(--zd-accent) 55%, transparent);
+  border-radius: 0 4px 4px 0;
+  background: color-mix(in srgb, var(--zd-accent) 6%, transparent);
+  padding: 0.75rem 1.15rem 0.75rem 1.2rem;
+  color: color-mix(in oklch, var(--zd-fg) 80%, var(--zd-muted));
+}
+
+/* admonitions: trail markers on the cabin wall — matte umber shadow,
+   a distinct forest-cabin icon for every one of the 7 variants */
+html[data-theme-pack="timberline"] [data-admonition] {
+  box-shadow: 0 6px 16px -14px light-dark(oklch(0.4 0.05 90 / 0.4), oklch(0.05 0.01 55 / 0.65));
+}
+html[data-theme-pack="timberline"] [data-admonition="note"] .admonition-title::before {
+  content: "🌲 ";
+}
+html[data-theme-pack="timberline"] [data-admonition="tip"] .admonition-title::before {
+  content: "🏮 ";
+}
+html[data-theme-pack="timberline"] [data-admonition="info"] .admonition-title::before {
+  content: "🧭 ";
+}
+html[data-theme-pack="timberline"] [data-admonition="warning"] .admonition-title::before {
+  content: "🔥 ";
+}
+html[data-theme-pack="timberline"] [data-admonition="important"] .admonition-title::before {
+  content: "📌 ";
+}
+html[data-theme-pack="timberline"] [data-admonition="danger"] .admonition-title::before {
+  content: "🐻 ";
+}
+html[data-theme-pack="timberline"] [data-admonition="caution"] .admonition-title::before {
+  content: "🪓 ";
+}
+
+/* table: Fraunces heads over a lantern-warmed sill, plank hairlines
+   between rows, a faint warm wash on row hover */
+html[data-theme-pack="timberline"] .zd-content th {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--zd-accent);
+  border-bottom-color: color-mix(in oklch, var(--zd-accent) 60%, transparent);
+}
+html[data-theme-pack="timberline"] .zd-content td {
+  border-bottom-color: light-dark(oklch(0.855 0.028 88), oklch(0.3 0.026 58));
+}
+html[data-theme-pack="timberline"] .zd-content tbody tr:hover {
+  background: color-mix(in srgb, var(--zd-accent) 7%, transparent);
+}
+
+/* hr: a literal plank seam — dark groove hairline over a chamfer
+   highlight hairline, edge to edge */
+html[data-theme-pack="timberline"] .zd-content hr {
+  border: none;
+  height: 2px;
+  background: linear-gradient(
+    to bottom,
+    light-dark(oklch(0.83 0.032 85), oklch(0.142 0.016 55)) 0 1px,
+    light-dark(oklch(0.988 0.008 95 / 0.85), oklch(0.87 0.07 80 / 0.13)) 1px 2px
+  );
+}
+
+/* pager: cabin doors — umber boards in plank frames that warm under
+   the lantern when you reach for them (matte glow, restrained) */
+html[data-theme-pack="timberline"] .zd-content > nav[data-doc-pager] a {
+  background: var(--zd-surface);
+  border-radius: 4px;
+  border-color: light-dark(oklch(0.83 0.032 85), oklch(0.142 0.016 55));
+  box-shadow: inset 0 1px 0 light-dark(oklch(0.988 0.008 95 / 0.85), oklch(0.87 0.07 80 / 0.08));
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+html[data-theme-pack="timberline"] .zd-content > nav[data-doc-pager] a:hover {
+  /* the card's glow lives on its frame (box-shadow below) — suppress the
+     prose-link text halo this <a> would otherwise inherit from the
+     `.zd-content a:hover` rule above */
+  text-shadow: none;
+  border-color: color-mix(in oklch, var(--zd-accent) 55%, transparent);
+  box-shadow:
+    inset 0 1px 0 light-dark(oklch(0.988 0.008 95 / 0.85), oklch(0.87 0.07 80 / 0.08)),
+    0 8px 22px -14px light-dark(oklch(0.45 0.06 70 / 0.35), oklch(0.72 0.12 70 / 0.3));
+  transform: translateY(-1px);
+}
+html[data-theme-pack="timberline"] .zd-content > nav[data-doc-pager] a p {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+/* TOC: the trail — plank-seam spine, lantern plank on the current
+   waypoint. The real DOM marks it with aria-current="true"
+   (toc/toc.tsx); the plank pulls left within the ul's padding and
+   its ink rides the bg token (dark-umber-on-amber by night,
+   cream-on-deep-amber by morning). */
+html[data-theme-pack="timberline"] nav[data-zd-toc] ul {
+  border-left-color: light-dark(oklch(0.83 0.032 85), oklch(0.142 0.016 55));
+}
+html[data-theme-pack="timberline"] nav[data-zd-toc] a:hover {
+  color: var(--zd-accent);
+}
+html[data-theme-pack="timberline"] nav[data-zd-toc] a[aria-current="true"] {
+  background: var(--zd-accent);
+  color: var(--zd-bg);
+  font-weight: 600;
+  border-radius: 4px;
+  padding-left: 0.4rem;
+  margin-left: -0.4rem;
+  padding-right: 0.4rem;
+  box-shadow: 0 2px 10px -4px light-dark(oklch(0.45 0.06 70 / 0.3), oklch(0.72 0.12 70 / 0.3));
+}
+
+/* mobile TOC: the same board, plank frame and chamfered edge */
+html[data-theme-pack="timberline"] div[data-zd-mobile-toc] {
+  background-color: var(--zd-surface);
+  border-color: light-dark(oklch(0.83 0.032 85), oklch(0.142 0.016 55));
+  border-radius: 4px;
+}
+
+/* footer: the pine floor — same layer as the sidebar, sealed by a
+   plank seam along its top edge */
+html[data-theme-pack="timberline"] footer[data-footer] {
+  background-color: light-dark(oklch(0.936 0.018 120), oklch(0.19 0.022 150));
+  border-top-color: light-dark(oklch(0.83 0.032 85), oklch(0.142 0.016 55));
+  box-shadow: inset 0 1px 0 light-dark(oklch(0.988 0.008 95 / 0.85), oklch(0.87 0.07 80 / 0.13));
+}
+
+/* theme-pack flyout: lantern glass — a warm pane in a plank frame,
+   glowing softly (matte, restrained) with a Fraunces nameplate */
+html[data-theme-pack="timberline"] div[data-switcher-card] {
+  border: 1px solid color-mix(in oklch, var(--zd-accent) 40%, transparent);
+  border-radius: 4px;
+  background:
+    radial-gradient(
+      120% 90% at 82% 100%,
+      color-mix(in srgb, var(--zd-accent) 10%, transparent),
+      transparent 60%
+    ),
+    var(--zd-surface);
+  box-shadow:
+    inset 0 1px 0 light-dark(oklch(0.988 0.008 95 / 0.85), oklch(0.87 0.07 80 / 0.12)),
+    0 14px 34px -14px light-dark(oklch(0.4 0.05 90 / 0.4), oklch(0.05 0.01 55 / 0.7)),
+    0 0 18px -6px light-dark(oklch(0.78 0.125 72 / 0), oklch(0.72 0.12 70 / 0.25));
+}
+html[data-theme-pack="timberline"] div[data-switcher-card] p[aria-live="polite"] {
+  font-family: var(--font-display);
+  font-weight: 620;
+  font-size: 1.35rem;
+  letter-spacing: -0.005em;
+}
