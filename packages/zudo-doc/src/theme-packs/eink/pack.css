@@ -1,0 +1,485 @@
+/* ============================================================
+   E-Ink — zudo-doc theme pack (ADR docs/adr/theme-packs.md)
+
+   E-reader grayscale: warm paper-gray white, near-black ink,
+   shadowless 1px hairline chrome, zero radius, hue-free UI.
+   The syntax palette works by grayscale VALUE plus typographic
+   style — bold keywords, italic comments and types, mid-gray
+   strings — never hue; only inserted/deleted carry a trace of
+   ultra-desaturated ink-blue/ink-red (diff semantics need it).
+   Dark mode is e-ink night: deep warm gray, pale ink, same
+   device with the backlight inverted. EB Garamond (variable
+   400–800, roman + italic) is both the reading and display
+   face; Courier Prime (400/700) is the typewriter code face.
+   Links keep a permanent underline — with hue off the table,
+   the underline IS the affordance (hover thickens it).
+
+   Differentiation from `beacon` (the other hue-minimal pack):
+   beacon is AAA-loud pure white/black with blue+red accents and
+   thick 3px rules; eink is QUIET warm paper — no accent hue at
+   all, and every rule is a 1px hairline.
+
+   Contrast pre-check (culori, WCAG relative luminance), BOTH
+   modes, every pair >= 4.5:1 with headroom (all >= 4.69:1):
+     light — fg 14.5:1, muted 6.6:1, accent-as-link 17.2:1,
+     code-fg 13.2:1; syntax grays vs code-bg: keyword 15.0,
+     name 12.8, callable 10.5, number 8.3, type 6.8, string 5.7,
+     comment 4.69; inserted 8.3, deleted 8.2; selection 12.3:1
+     dark — fg 12.4:1, muted 6.6:1, accent-as-link 15.4:1,
+     code-fg 11.5:1; syntax grays: keyword 14.5, name 11.7,
+     callable 9.3, number 7.6, string 6.4, type 5.7, comment
+     4.92; inserted 8.2, deleted 7.7; selection 11.3:1
+   Composited surfaces verified too: flattened admonition paper,
+   header/pager surface, find-in-page washes, diff-line
+   backgrounds (8% mix override keeps 6.7:1+ in both modes),
+   chat bubbles, matched-keyword inversion, aria-current
+   inversion. Adjacent gray-ladder steps run 1.12x–1.26x in
+   relative luminance, on top of the weight/slant distinction.
+
+   Every rule below is scoped under html[data-theme-pack="eink"]
+   — this is what makes the runtime pack swap atomic (Decision 3)
+   and lets the validator prove a pack can never leak styles
+   while inactive (Decision 6.7). The @font-face blocks are the
+   sole exception (at-rules can't be selector-scoped).
+
+   Prototype 12-eink.html (git b185ee6) was inspiration only —
+   no prototype selectors ship here; extras target the stable
+   hook table in docs/theme-pack-authoring.md (b). Where the
+   prototype kept a teal accent, this pack goes stricter:
+   fully hue-free, as the Batch-5 brief demands.
+   ============================================================ */
+
+/* EB Garamond — variable weight 400-800, roman. Body, headings, chrome.
+   Latin subset only (latin-ext trimmed for the payload budget — rare
+   extended-Latin glyphs fall back to the generic serif tail). */
+@font-face {
+  font-family: "EB Garamond";
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("./fonts/EBGaramond-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* EB Garamond — italic. Blockquotes, emphasis, descriptions, pager titles. */
+@font-face {
+  font-family: "EB Garamond";
+  font-style: italic;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("./fonts/EBGaramond-latin-italic.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Courier Prime — the e-reader's typewriter code face. Comments and types
+   render italic via synthesized oblique (no italic file shipped — the slant
+   cue survives; the grayscale VALUE carries the primary distinction). */
+@font-face {
+  font-family: "Courier Prime";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/CourierPrime-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Courier Prime";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/CourierPrime-400-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Courier Prime";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/CourierPrime-700-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Courier Prime";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/CourierPrime-700-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+html[data-theme-pack="eink"] {
+  /* Tier-2 semantic roles — warm paper & near-black ink; dark mode is the
+     same panel at night. Both modes always via light-dark(). The whole UI
+     is hue-free: accent IS ink (a shade blacker than body text), and the
+     underline — not color — is the link affordance. */
+  --zd-bg: light-dark(oklch(0.956 0.007 90), oklch(0.215 0.008 80));
+  --zd-fg: light-dark(oklch(0.24 0.012 85), oklch(0.885 0.012 85));
+  /* selection = the e-ink refresh inversion */
+  --zd-selection-bg: light-dark(oklch(0.3 0.012 85), oklch(0.84 0.01 85));
+  --zd-selection-fg: light-dark(oklch(0.965 0.006 90), oklch(0.19 0.008 80));
+  --zd-surface: light-dark(oklch(0.936 0.008 90), oklch(0.245 0.008 80));
+  --zd-muted: light-dark(oklch(0.45 0.014 85), oklch(0.7 0.012 85));
+  --zd-accent: light-dark(oklch(0.155 0.01 85), oklch(0.955 0.008 85));
+  --zd-accent-hover: light-dark(oklch(0.08 0.005 85), oklch(0.995 0.004 85));
+  --zd-code-bg: light-dark(oklch(0.924 0.008 90), oklch(0.245 0.008 80));
+  --zd-code-fg: light-dark(oklch(0.24 0.012 85), oklch(0.885 0.012 85));
+  /* state roles stay grayscale — admonitions differentiate by VALUE,
+     border treatment, and glyph, never hue (danger darkest/loudest,
+     info lightest/quietest) */
+  --zd-success: light-dark(oklch(0.4 0.014 85), oklch(0.75 0.012 85));
+  --zd-danger: light-dark(oklch(0.2 0.012 85), oklch(0.93 0.01 85));
+  --zd-warning: light-dark(oklch(0.33 0.014 85), oklch(0.8 0.012 85));
+  --zd-info: light-dark(oklch(0.46 0.012 85), oklch(0.72 0.012 85));
+
+  /* an e-ink panel cannot show color anywhere — mermaid diagrams, chat
+     bubbles, search marks and image overlays all fold onto the gray ramp
+     (the bundled defaults would otherwise leak amber/accent hues) */
+  --zd-mermaid-node-bg: light-dark(oklch(0.924 0.008 90), oklch(0.265 0.008 80));
+  --zd-mermaid-text: light-dark(oklch(0.24 0.012 85), oklch(0.885 0.012 85));
+  --zd-mermaid-line: light-dark(oklch(0.45 0.014 85), oklch(0.62 0.012 85));
+  --zd-mermaid-label-bg: light-dark(oklch(0.956 0.007 90), oklch(0.215 0.008 80));
+  --zd-mermaid-note-bg: light-dark(oklch(0.9 0.008 90), oklch(0.3 0.008 80));
+  --zd-chat-user-bg: light-dark(oklch(0.3 0.012 85), oklch(0.84 0.01 85));
+  --zd-chat-user-text: light-dark(oklch(0.965 0.006 90), oklch(0.19 0.008 80));
+  --zd-chat-assistant-bg: light-dark(oklch(0.936 0.008 90), oklch(0.265 0.008 80));
+  --zd-chat-assistant-text: light-dark(oklch(0.24 0.012 85), oklch(0.885 0.012 85));
+  --zd-image-overlay-bg: light-dark(oklch(0.945 0.008 90), oklch(0.19 0.006 80));
+  --zd-image-overlay-fg: light-dark(oklch(0.24 0.012 85), oklch(0.885 0.012 85));
+  /* search mark = the same refresh inversion as the selection */
+  --zd-matched-keyword-bg: light-dark(oklch(0.3 0.012 85), oklch(0.84 0.01 85));
+  --zd-matched-keyword-fg: light-dark(oklch(0.965 0.006 90), oklch(0.19 0.008 80));
+
+  /* syntax — all 9 roles, both modes, told by grayscale VALUE + style:
+     the ladder runs keyword (blackest, bold) -> name -> callable (bold) ->
+     number -> type (italic) -> string (mid-gray) -> comment (lightest legal
+     gray, italic). Only the diff pair keeps a trace of hue: ultra-
+     desaturated ink-blue inserted / ink-red deleted. */
+  --zd-syntax-keyword: light-dark(oklch(0.18 0.01 85), oklch(0.96 0.008 85));
+  --zd-syntax-name: light-dark(oklch(0.25 0.012 85), oklch(0.89 0.01 85));
+  --zd-syntax-callable: light-dark(oklch(0.31 0.012 85), oklch(0.82 0.01 85));
+  --zd-syntax-number: light-dark(oklch(0.37 0.012 85), oklch(0.76 0.012 85));
+  --zd-syntax-type: light-dark(oklch(0.42 0.012 85), oklch(0.685 0.012 85));
+  --zd-syntax-string: light-dark(oklch(0.46 0.012 85), oklch(0.715 0.012 85));
+  --zd-syntax-comment: light-dark(oklch(0.505 0.01 85), oklch(0.645 0.01 85));
+  --zd-syntax-inserted: light-dark(oklch(0.37 0.05 255), oklch(0.78 0.06 250));
+  --zd-syntax-deleted: light-dark(oklch(0.38 0.055 25), oklch(0.775 0.075 25));
+  /* features.css derives diff-line backgrounds as a 15% mix of the diff ink
+     into code-bg; an 8% mix keeps the cue, stays paper-quiet, and holds
+     6.7:1+ for the diff inks in both modes (verified composited). */
+  --zfb-hi-ins-bg: color-mix(in srgb, var(--zd-syntax-inserted) 8%, var(--zd-code-bg));
+  --zfb-hi-del-bg: color-mix(in srgb, var(--zd-syntax-deleted) 8%, var(--zd-code-bg));
+
+  /* fonts — EB Garamond reads AND displays (one face, the book way);
+     Courier Prime for code. Generic tails keep CJK on platform faces. */
+  --font-sans: "EB Garamond", "Iowan Old Style", "Palatino Linotype", Georgia,
+    serif;
+  --font-mono: "Courier Prime", "Courier New", Courier, monospace;
+
+  /* Tier-3 component seams — a paper device has no rounded corners and no
+     heavy display weights; hierarchy comes from size and hairlines. */
+  --zdc-doc-title-font: var(--font-sans);
+  --zdc-doc-title-weight: 600;
+  --zdc-doc-title-tracking: 0.005em;
+  --zdc-doc-h2-font: var(--font-sans);
+  --zdc-doc-h2-weight: 600;
+  --zdc-doc-h2-tracking: 0.01em;
+  --zdc-doc-h3-weight: 600;
+  --zdc-doc-h4-weight: 600;
+  --zdc-doc-link-decoration: underline;
+  --zdc-admonition-radius: 0;
+  --zdc-admonition-border-width: 4px;
+  --zdc-card-radius: 0;
+  --zdc-nav-active-indicator-color: var(--zd-fg);
+  --zdc-nav-active-weight: 600;
+}
+
+/* ---- E-Ink extras: device stillness — everything drawn with crisp 1px
+        warm-gray hairlines; no shadows, no gradients, no corners ---- */
+
+/* the page: a book measure for Garamond's small x-height */
+html[data-theme-pack="eink"] body {
+  font-size: 1.12rem;
+  line-height: 1.7;
+}
+/* .zd-content re-declares font-size/line-height on itself (content.css),
+   so the body values above never reach the prose — restate the measure on
+   the content root. */
+html[data-theme-pack="eink"] .zd-content {
+  font-size: 1.12rem;
+  line-height: 1.7;
+}
+
+/* chrome hairlines: the only "shading" this pack allows */
+html[data-theme-pack="eink"] header[data-header] {
+  border-bottom: 1px solid color-mix(in oklch, var(--zd-fg) 28%, transparent);
+  box-shadow: none;
+}
+html[data-theme-pack="eink"] #desktop-sidebar {
+  border-right: 1px solid color-mix(in oklch, var(--zd-fg) 28%, transparent);
+}
+html[data-theme-pack="eink"] aside[data-zd-mobile-sidebar] {
+  border-right: 1px solid color-mix(in oklch, var(--zd-fg) 28%, transparent);
+  box-shadow: none;
+}
+html[data-theme-pack="eink"] nav[data-zd-toc] ul {
+  border-left: 1px solid color-mix(in oklch, var(--zd-fg) 28%, transparent);
+}
+html[data-theme-pack="eink"] div[data-zd-mobile-toc] {
+  border: 1px solid color-mix(in oklch, var(--zd-fg) 28%, transparent);
+  border-radius: 0;
+  box-shadow: none;
+}
+html[data-theme-pack="eink"] footer[data-footer] {
+  border-top: 1px solid color-mix(in oklch, var(--zd-fg) 28%, transparent);
+}
+html[data-theme-pack="eink"] .zd-content hr {
+  border-top: 1px solid color-mix(in oklch, var(--zd-fg) 28%, transparent);
+}
+
+/* device-menu chrome labels: small, letterspaced, even in Garamond */
+html[data-theme-pack="eink"] [data-header-logo] {
+  font-weight: 600;
+  font-size: 1.3rem;
+  letter-spacing: 0.01em;
+}
+html[data-theme-pack="eink"] [data-nav-item] {
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+/* chapter-title plate: a double book rule under the h1 */
+html[data-theme-pack="eink"] .zd-content h1 {
+  padding-bottom: 0.4rem;
+  border-bottom: 3px double color-mix(in oklch, var(--zd-fg) 55%, transparent);
+}
+html[data-theme-pack="eink"] .zd-content > p[data-doc-description] {
+  font-style: italic;
+  font-size: 1.16rem;
+}
+
+/* h2: the SSR-inlined `style="border-image:linear-gradient(...)"` bar is
+   defeated with border-image none !important (Decision 6.6's sole
+   allowlisted carve-out); a crisp 1px hairline replaces the fade. h3/h4
+   want NO bar at all, which zeroing the class-level border-top-width
+   achieves without !important (a zero-width border area leaves the inline
+   border-image nothing to paint on). */
+html[data-theme-pack="eink"] .zd-content h2 {
+  border-image: none !important;
+  border-top-width: 1px;
+  border-top-color: color-mix(in oklch, var(--zd-fg) 28%, transparent);
+  padding-top: 1.2rem;
+}
+html[data-theme-pack="eink"] .zd-content h3 {
+  border-top-width: 0;
+}
+html[data-theme-pack="eink"] .zd-content h4 {
+  border-top-width: 0;
+}
+
+/* links: with hue gone, the underline is the affordance — hairline at
+   rest, thicker on hover (a non-color hover cue) */
+html[data-theme-pack="eink"] .zd-content a {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.16em;
+}
+html[data-theme-pack="eink"] .zd-content a:hover {
+  text-decoration-thickness: 2px;
+}
+/* breadcrumb and footer links sit in text-like contexts — underline them
+   too, so no link anywhere relies on color alone */
+html[data-theme-pack="eink"] main nav[aria-label="Breadcrumb"] a,
+html[data-theme-pack="eink"] footer[data-footer] a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.16em;
+}
+
+/* literary prose details */
+html[data-theme-pack="eink"] .zd-content blockquote {
+  font-style: italic;
+  border-left: 1px solid color-mix(in oklch, var(--zd-fg) 55%, transparent);
+}
+
+/* inline code: an outlined chip, paper-flat — no fill, no corner */
+html[data-theme-pack="eink"] .zd-content code:not(pre code) {
+  background: transparent;
+  border: 1px solid color-mix(in oklch, var(--zd-fg) 28%, transparent);
+  border-radius: 0;
+  font-size: 0.9em;
+  padding: 0 0.3rem;
+}
+
+/* code block: a flat e-ink panel behind one hairline; roles read by
+   weight, slant, and gray value — never hue */
+html[data-theme-pack="eink"] pre.hi-root {
+  border: 1px solid color-mix(in oklch, var(--zd-fg) 28%, transparent);
+  border-radius: 0;
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+html[data-theme-pack="eink"] .hi-kw {
+  font-weight: 700;
+}
+html[data-theme-pack="eink"] .hi-fn {
+  font-weight: 700;
+}
+html[data-theme-pack="eink"] .hi-com {
+  font-style: italic;
+}
+html[data-theme-pack="eink"] .hi-ty {
+  font-style: italic;
+}
+
+/* find-in-page: the stock warning-tinted washes go gray here — a quiet
+   ink wash for matches, the full refresh inversion for the active one */
+html[data-theme-pack="eink"] .find-match {
+  background-color: color-mix(in srgb, var(--zd-fg) 12%, transparent);
+  border-radius: 0;
+}
+html[data-theme-pack="eink"] .find-match-active {
+  background-color: var(--zd-fg);
+  color: var(--zd-bg);
+  border-radius: 0;
+  outline: 1px solid var(--zd-fg);
+}
+
+/* admonitions: flat paper cards in a hairline frame — no tint washes.
+   With hue off the table, the variants are told apart by VALUE (each
+   title reads its state role's gray), by the LEFT-EDGE treatment
+   (solid/double, 4px/6px), and by a monochrome text glyph. The flattened
+   background also restores each title gray's full contrast ratio. */
+html[data-theme-pack="eink"] [data-admonition] {
+  background-color: var(--zd-bg);
+  border: 1px solid color-mix(in oklch, var(--zd-fg) 28%, transparent);
+  border-left-width: var(--zdc-admonition-border-width);
+  border-left-style: solid;
+  border-left-color: var(--zd-muted);
+}
+html[data-theme-pack="eink"] [data-admonition] .admonition-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+html[data-theme-pack="eink"] [data-admonition="note"] {
+  border-left-color: var(--zd-accent);
+}
+html[data-theme-pack="eink"] [data-admonition="note"] .admonition-title::before {
+  content: "✎ ";
+}
+html[data-theme-pack="eink"] [data-admonition="tip"] {
+  border-left-color: var(--zd-success);
+}
+html[data-theme-pack="eink"] [data-admonition="tip"] .admonition-title::before {
+  content: "✳ ";
+}
+html[data-theme-pack="eink"] [data-admonition="info"] {
+  border-left-color: var(--zd-info);
+}
+html[data-theme-pack="eink"] [data-admonition="info"] .admonition-title::before {
+  content: "¶ ";
+}
+html[data-theme-pack="eink"] [data-admonition="important"] {
+  border-left-width: 6px;
+  border-left-color: var(--zd-accent);
+}
+html[data-theme-pack="eink"] [data-admonition="important"] .admonition-title::before {
+  content: "‼ ";
+}
+html[data-theme-pack="eink"] [data-admonition="warning"] {
+  border-left-width: 6px;
+  border-left-style: double;
+  border-left-color: var(--zd-warning);
+}
+html[data-theme-pack="eink"] [data-admonition="warning"] .admonition-title::before {
+  content: "▲ ";
+}
+html[data-theme-pack="eink"] [data-admonition="caution"] {
+  border-left-width: 6px;
+  border-left-style: double;
+  border-left-color: var(--zd-danger);
+}
+html[data-theme-pack="eink"] [data-admonition="caution"] .admonition-title::before {
+  content: "△ ";
+}
+html[data-theme-pack="eink"] [data-admonition="danger"] {
+  border-color: var(--zd-danger);
+  border-left-width: 6px;
+  border-left-style: solid;
+}
+html[data-theme-pack="eink"] [data-admonition="danger"] .admonition-title::before {
+  content: "⊗ ";
+}
+
+/* table: a device data-grid — strong hairline under the header row,
+   plain hairlines between rows, letterspaced column labels */
+html[data-theme-pack="eink"] .zd-content th {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  border-bottom: 1px solid color-mix(in oklch, var(--zd-fg) 55%, transparent);
+}
+html[data-theme-pack="eink"] .zd-content td {
+  border-bottom: 1px solid color-mix(in oklch, var(--zd-fg) 28%, transparent);
+}
+
+/* pager: page-turn cards — hairline frames, no fill; hover answers with
+   a stronger rule and the surface gray, never a color */
+html[data-theme-pack="eink"] .zd-content > nav[data-doc-pager] a {
+  border-radius: 0;
+  border-color: color-mix(in oklch, var(--zd-fg) 28%, transparent);
+  box-shadow: none;
+}
+html[data-theme-pack="eink"] .zd-content > nav[data-doc-pager] a:hover {
+  border-color: color-mix(in oklch, var(--zd-fg) 55%, transparent);
+  background-color: var(--zd-surface);
+}
+html[data-theme-pack="eink"] .zd-content > nav[data-doc-pager] a > div {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+html[data-theme-pack="eink"] .zd-content > nav[data-doc-pager] a > p {
+  font-style: italic;
+}
+
+/* theme-pack flyout: an e-reader settings dialog — double hairline frame,
+   square, shadowless; the launcher squares off and "presses" with the
+   refresh inversion instead of a glow */
+html[data-theme-pack="eink"] [data-switcher-card] {
+  background-color: var(--zd-bg);
+  border: 1px solid color-mix(in oklch, var(--zd-fg) 55%, transparent);
+  border-radius: 0;
+  box-shadow: none;
+  outline: 1px solid color-mix(in oklch, var(--zd-fg) 55%, transparent);
+  outline-offset: 3px;
+}
+html[data-theme-pack="eink"] [data-switcher-launcher] {
+  background-color: var(--zd-bg);
+  border: 1px solid color-mix(in oklch, var(--zd-fg) 55%, transparent);
+  border-radius: 0;
+  box-shadow: none;
+}
+html[data-theme-pack="eink"] [data-switcher-launcher]:hover {
+  background-color: var(--zd-fg);
+  color: var(--zd-bg);
+}
