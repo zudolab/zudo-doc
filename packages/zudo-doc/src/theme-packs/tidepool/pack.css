@@ -359,12 +359,23 @@ html[data-theme-pack="tidepool"] div[data-zd-mobile-toc] {
   background-color: color-mix(in srgb, var(--zd-surface) 70%, var(--zd-bg));
 }
 
-/* pager cards: surface layer, water-worn corners, restrained aqua
-   glow on hover (the stable data-doc-pager hook, #2876) */
+/* pager cards: surface layer, water-worn corners, a quiet wave
+   crest along the top edge (the "wave-curve accents on cards"
+   signature; p-hsp-lg padding keeps text clear of the 5px strip),
+   restrained aqua glow on hover (the stable data-doc-pager hook,
+   #2876) */
 html[data-theme-pack="tidepool"] .zd-content > nav[data-doc-pager] > a {
   border-radius: 6px;
   border-color: color-mix(in srgb, var(--zd-accent) 22%, transparent);
-  background: var(--zd-surface);
+  background-color: var(--zd-surface);
+  background-image: radial-gradient(
+    circle 7px at 6px -3px,
+    color-mix(in srgb, var(--zd-accent) 35%, transparent) 6.5px,
+    transparent 7px
+  );
+  background-size: 12px 5px;
+  background-repeat: repeat-x;
+  background-position: left top;
 }
 html[data-theme-pack="tidepool"] .zd-content > nav[data-doc-pager] > a:hover {
   border-color: color-mix(in srgb, var(--zd-accent) 60%, transparent);
@@ -387,12 +398,12 @@ html[data-theme-pack="tidepool"] footer[data-footer] {
 }
 
 /* theme-pack switcher: solid surface card capped with a wave crest
-   (readability does not depend on blur — the card color is
-   effectively opaque); the launcher wears the one free-floating
-   bioluminescent halo. */
+   (readability does not depend on blur — the card color is fully
+   opaque); the launcher wears the one free-floating bioluminescent
+   halo. */
 html[data-theme-pack="tidepool"] div[data-switcher-card] {
   border-color: color-mix(in srgb, var(--zd-accent) 28%, transparent);
-  background-color: color-mix(in srgb, var(--zd-surface) 97%, transparent);
+  background-color: var(--zd-surface);
   background-image: radial-gradient(
     circle 7px at 6px -3px,
     color-mix(in srgb, var(--zd-accent) 55%, transparent) 6.5px,
