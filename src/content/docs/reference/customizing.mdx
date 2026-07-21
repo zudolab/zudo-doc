@@ -156,7 +156,7 @@ Eject writes provenance into a `.zudo-doc.json` file recording which components 
 
 **Limit:** an ejected copy no longer receives package updates for that component — you take on its maintenance. The CLI classifies each eject statically: primary and nested chrome copies warn loudly until a supported binding is present, while content-layer copies keep quiet manual `mdxExtras` guidance. Ejection copies source; `chromeBindingsModule` is the supported seam that makes a primary or owner-level replacement render.
 
-**A different kind of eject — `zudo-doc eject logo`.** This subcommand shares the `eject` name but is not a component-source copy like the targets above: it never touches `.zudo-doc.json` provenance or a component directory. It is an **asset materialization** — it renders the generated auto-logo to a real SVG file and rewires the [`logo`](../guides/configuration.mdx#logo) config field to point at it, so you end up owning an editable file instead of the request-time generated default.
+**A different kind of eject — `zudo-doc eject logo`.** This subcommand shares the `eject` name but is not a component-source copy like the targets above: it never touches `.zudo-doc.json` provenance or a component directory. It is an **asset materialization** — it renders the generated auto-logo to a real SVG file and rewires the [`logo`](../guides/configuration.mdx#identity-and-urls-logo) config field to point at it, so you end up owning an editable file instead of the request-time generated default.
 
 ```sh
 pnpm exec zudo-doc eject logo
