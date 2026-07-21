@@ -346,10 +346,13 @@ html[data-theme-pack="bauhaus"] .zd-content hr {
   );
 }
 
-/* lists: square red markers — geometry in the margins */
-html[data-theme-pack="bauhaus"] .zd-content ul {
-  list-style-type: square;
-}
+/* lists: red markers — the accent doing structural work in the
+   margins. Marker COLOR only, deliberately: the prose ul/ol set
+   their list-style-type via inline style (content-ul.tsx), so a
+   stylesheet type override could never reach them — it would only
+   leak markers onto classless non-prose lists inside .zd-content
+   (the mobile TOC's <ul> relies on preflight list-style: none).
+   ::marker color is inert wherever no marker box exists. */
 html[data-theme-pack="bauhaus"] .zd-content ul > li::marker {
   color: light-dark(#b3231b, #ff7d70);
 }
