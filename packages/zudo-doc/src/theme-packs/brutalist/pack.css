@@ -230,17 +230,18 @@ html[data-theme-pack="brutalist"] header[data-header]::after {
    ink. The :not() exclusion skips the popover surfaces nested
    inside the header (nav-more menu, nav dropdown panels, the
    version-switcher menu, the search <dialog>) — those keep their
-   default ink-on-surface colors. */
-html[data-theme-pack="brutalist"] header[data-header] a:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *):not([aria-current="page"]):not([aria-current="page"] *),
-html[data-theme-pack="brutalist"] header[data-header] button:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *):not([aria-current="page"]):not([aria-current="page"] *),
-html[data-theme-pack="brutalist"] header[data-header] span:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *):not([aria-current="page"]):not([aria-current="page"] *),
-html[data-theme-pack="brutalist"] header[data-header] svg:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *):not([aria-current="page"]):not([aria-current="page"] *) {
+   default ink-on-surface colors — plus the active nav chip and the
+   logo, whose dedicated full-ink rules below must win. */
+html[data-theme-pack="brutalist"] header[data-header] a:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *):not([aria-current="page"]):not([aria-current="page"] *):not([data-header-logo]):not([data-header-logo] *),
+html[data-theme-pack="brutalist"] header[data-header] button:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *):not([aria-current="page"]):not([aria-current="page"] *):not([data-header-logo]):not([data-header-logo] *),
+html[data-theme-pack="brutalist"] header[data-header] span:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *):not([aria-current="page"]):not([aria-current="page"] *):not([data-header-logo]):not([data-header-logo] *),
+html[data-theme-pack="brutalist"] header[data-header] svg:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *):not([aria-current="page"]):not([aria-current="page"] *):not([data-header-logo]):not([data-header-logo] *) {
   color: color-mix(in srgb, var(--zd-bg) 80%, var(--zd-fg));
 }
-html[data-theme-pack="brutalist"] header[data-header] a:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *):not([aria-current="page"]):not([aria-current="page"] *):hover,
-html[data-theme-pack="brutalist"] header[data-header] button:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *):not([aria-current="page"]):not([aria-current="page"] *):hover,
-html[data-theme-pack="brutalist"] header[data-header] a:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *):not([aria-current="page"]):not([aria-current="page"] *):hover svg,
-html[data-theme-pack="brutalist"] header[data-header] button:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *):not([aria-current="page"]):not([aria-current="page"] *):hover svg {
+html[data-theme-pack="brutalist"] header[data-header] a:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *):not([aria-current="page"]):not([aria-current="page"] *):not([data-header-logo]):not([data-header-logo] *):hover,
+html[data-theme-pack="brutalist"] header[data-header] button:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *):not([aria-current="page"]):not([aria-current="page"] *):not([data-header-logo]):not([data-header-logo] *):hover,
+html[data-theme-pack="brutalist"] header[data-header] a:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *):not([aria-current="page"]):not([aria-current="page"] *):not([data-header-logo]):not([data-header-logo] *):hover svg,
+html[data-theme-pack="brutalist"] header[data-header] button:not([data-nav-more-menu] *):not([data-nav-item-dropdown] div *):not([data-version-switcher] ul *):not(dialog *):not([aria-current="page"]):not([aria-current="page"] *):not([data-header-logo]):not([data-header-logo] *):hover svg {
   color: var(--zd-bg);
 }
 
