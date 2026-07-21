@@ -26,8 +26,8 @@ describe("frontmatter status pill contrast", () => {
   it("clears WCAG AA with headroom across every shipped pack, mode, and role", () => {
     const packs = getShippedPillPacks();
     const results = evaluateFrontmatterPillContrast();
-    expect(packs).toHaveLength(21);
-    expect(results).toHaveLength(210);
+    expect(packs).toHaveLength(31);
+    expect(results).toHaveLength(310);
     expect(results).toHaveLength(packs.length * 2 * PILL_ROLES.length);
 
     const failures = results.filter((result) => !result.pass);
