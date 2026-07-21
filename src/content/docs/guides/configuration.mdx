@@ -77,6 +77,14 @@ Site description used in metadata (`<meta name="description">`, llms.txt).
 
 Default: `""`
 
+### logo
+
+Home-hero logo. `"auto"` (the default) renders a generated deterministic SVG seeded by `siteName` — a framed "decorated plate" mark that adapts to light/dark automatically, so a fresh project gets a presentable hero with no asset work. Set a path string (e.g. `"/img/logo.svg"`) to render your own asset as a theme-adaptive CSS mask, or `false` to hide the logo block entirely.
+
+Run `npx zudo-doc eject logo` to materialize the generated mark as a real file: it writes `public/img/logo.svg` and flips this field to `"/img/logo.svg"`, so you own an editable asset — tweak it, replace it, or reuse it elsewhere (e.g. for OGP) — instead of the request-time generated default. See [Customizing → Rung 5](../reference/customizing.mdx#rung-5-—-ejecting-a-component) for the CLI flags.
+
+Default: `"auto"`
+
 ### siteUrl
 
 Canonical site origin (e.g. `"https://example.com"`) for sitemap / canonical / `og:url`. Empty = not set.

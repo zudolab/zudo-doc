@@ -33,6 +33,7 @@
 import { Fragment } from "preact";
 import type { ComponentChildren, JSX, VNode } from "preact";
 import { Island } from "@takazudo/zfb";
+import { AutoLogo } from "../auto-logo/index.js";
 import { DocLayoutWithDefaults } from "../doclayout/index.js";
 import { SiteTreeNav } from "../site-tree-nav-island/index.js";
 import { TagNav } from "../nav-indexing/tag-nav.js";
@@ -50,6 +51,17 @@ import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 
 export { prepareHomeData } from "./prepare-home-data.js";
 export type { PrepareHomeDataOptions, HomeData } from "./prepare-home-data.js";
+
+/**
+ * Serialize a URL as a quoted CSS `url()` token. The `logo` setting accepts an
+ * arbitrary user-supplied path, and an unquoted `url()` breaks on characters
+ * that are legal in a filename but not in a CSS url-token — whitespace and
+ * parentheses, e.g. `/img/logo (1).svg` — which makes the browser drop the
+ * whole mask declaration and render nothing.
+ */
+function cssUrl(url: string): string {
+  return `url("${url.replace(/[\\"]/g, "\\$&")}")`;
+}
 
 /** Props for the `HomePageView` component built by {@link createHomePageView}. */
 export interface HomePageViewProps {
@@ -169,7 +181,11 @@ export function createHomePageView<S extends Settings = Settings>(
       : ctaNav
         ? { href: withBase(`${prefix}${ctaNav.path}`), label: t("nav.overview", locale) }
         : null;
-    const logoUrl = withBase("/img/logo.svg");
+    // `"auto"` (default) = generated deterministic SVG seeded by siteName;
+    // a path string = theme-adaptive CSS-mask of that asset; `false` = no
+    // logo block. `"auto"` is what makes a fresh scaffold's hero render
+    // something without shipping any `/img/logo.svg`.
+    const logoSetting = settings.logo ?? "auto";
     const resolvedExtras = extras ?? homeExtras?.({ locale });
     // `false`/`true`/`null`/`undefined` all render nothing in Preact (a
     // caller may pass a conditional like `extras={cond && <Link />}`), so
@@ -228,14 +244,21 @@ export function createHomePageView<S extends Settings = Settings>(
       >
         <div class="flex justify-center mb-vsp-xl">
           <div class="flex flex-col items-center text-center gap-hsp-md lg:flex-row lg:text-left lg:gap-hsp-xl">
-            <div
-              class="w-[320px] max-w-full aspect-[1200/630] bg-fg shrink-0"
-              style={{
-                WebkitMask: `url(${logoUrl}) center/contain no-repeat`,
-                mask: `url(${logoUrl}) center/contain no-repeat`,
-              }}
-              aria-hidden="true"
-            />
+            {logoSetting === "auto" ? (
+              <AutoLogo
+                seed={settings.siteName}
+                class="w-[320px] max-w-full aspect-[1200/630] text-fg shrink-0"
+              />
+            ) : logoSetting !== false ? (
+              <div
+                class="w-[320px] max-w-full aspect-[1200/630] bg-fg shrink-0"
+                style={{
+                  WebkitMask: `${cssUrl(withBase(logoSetting))} center/contain no-repeat`,
+                  mask: `${cssUrl(withBase(logoSetting))} center/contain no-repeat`,
+                }}
+                aria-hidden="true"
+              />
+            ) : null}
             <div>
               <h1 class="text-heading font-bold mb-vsp-2xs">{settings.siteName}</h1>
               <p class="text-muted text-small mb-vsp-sm">{settings.siteDescription}</p>

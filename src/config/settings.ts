@@ -40,6 +40,8 @@ export const settings = {
   } satisfies ColorModeConfig as ColorModeConfig | false,
   siteName: "zudo-doc",
   siteDescription: "Documentation base framework built with zfb, MDX, and Tailwind CSS v4." as string,
+  // Showcase keeps its hand-drawn asset; downstream default is "auto" (generated SVG).
+  logo: "/img/logo.svg" as string | false,
   base: "/",
   trailingSlash: true as boolean,
   minifyHtml: true as boolean,

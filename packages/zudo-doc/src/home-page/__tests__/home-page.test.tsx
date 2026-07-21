@@ -66,7 +66,7 @@ const TAG_ITEMS = (locale = "en") => [
 ];
 
 describe("createHomePageView — hero markup", () => {
-  it("renders the logo mask block, <h1> siteName, and description", () => {
+  it("renders the generated auto logo by default, <h1> siteName, and description", () => {
     const ctx = makeFakeChromeContext({
       settings: { siteName: "Test Site", siteDescription: "A test description" },
     });
@@ -77,9 +77,55 @@ describe("createHomePageView — hero markup", () => {
     expect(html).toContain(
       '<p class="text-muted text-small mb-vsp-sm">A test description</p>',
     );
+    // Default logo ("auto"): generated deterministic SVG, no asset URL.
+    expect(html).toContain("data-auto-logo=");
+    expect(html).not.toContain("url(/img/logo.svg)");
+  });
+
+  it("renders the theme-adaptive mask block when settings.logo is a path", () => {
+    const ctx = makeFakeChromeContext({
+      settings: { logo: "/img/logo.svg" },
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps()} />);
+
     // Logo mask block: theme-adaptive <div> with a CSS mask, not an <img>.
     expect(html).toContain("aspect-[1200/630] bg-fg");
-    expect(html).toContain("url(/img/logo.svg)");
+    expect(html).toContain(`url(&quot;/img/logo.svg&quot;)`);
+    expect(html).not.toContain("data-auto-logo=");
+  });
+
+  it("quotes the logo url so paths with spaces or parens stay valid CSS", () => {
+    const ctx = makeFakeChromeContext({
+      settings: { logo: "/img/logo (1).svg" },
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps()} />);
+
+    // Unquoted, `url(/img/logo (1).svg)` is an invalid CSS token and the
+    // browser drops the whole mask declaration — the logo silently vanishes.
+    expect(html).toContain(`url(&quot;/img/logo (1).svg&quot;)`);
+  });
+
+  it("escapes quotes and backslashes in the logo url", () => {
+    const ctx = makeFakeChromeContext({
+      settings: { logo: '/img/a"b\\c.svg' },
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps()} />);
+
+    // Both metacharacters must be backslash-escaped inside the quoted token,
+    // otherwise the `"` terminates the CSS string early.
+    expect(html).toContain(`url(&quot;/img/a\\&quot;b\\\\c.svg&quot;)`);
+  });
+
+  it("renders no logo block when settings.logo is false", () => {
+    const ctx = makeFakeChromeContext({ settings: { logo: false } });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps()} />);
+
+    expect(html).not.toContain("data-auto-logo=");
+    expect(html).not.toContain("aspect-[1200/630] bg-fg");
   });
 
   it("renders the overview link from settings.headerNav[0] when present", () => {

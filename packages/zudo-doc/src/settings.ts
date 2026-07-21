@@ -281,6 +281,13 @@ export interface Settings {
   colorMode: ColorModeConfig | false;
   siteName: string;
   siteDescription: string;
+  /**
+   * Home-hero logo. `"auto"` (the default when omitted) renders a generated
+   * deterministic SVG seeded by `siteName`; a path string (e.g.
+   * `"/img/logo.svg"`) renders that asset as a theme-adaptive CSS mask;
+   * `false` hides the logo block entirely.
+   */
+  logo?: string | false;
   base: string;
   trailingSlash: boolean;
   /** Package-owned home-page layout. Narrow when omitted. */

@@ -41,6 +41,7 @@ describe("package.json exports keyset snapshot", () => {
       [
         ".",
         "./ai-chat-modal",
+        "./auto-logo",
         "./body-foot-util",
         "./breadcrumb",
         "./category-nav",
@@ -78,6 +79,7 @@ describe("package.json exports keyset snapshot", () => {
         "./doclayout",
         "./docs-schema",
         "./eject",
+        "./eject-logo",
         "./extract-headings",
         "./factory-context",
         "./features.css",
@@ -233,6 +235,7 @@ describe("Settings public field set snapshot", () => {
         "colorMode",
         "siteName",
         "siteDescription",
+        "logo",
         "base",
         "trailingSlash",
         "home",
