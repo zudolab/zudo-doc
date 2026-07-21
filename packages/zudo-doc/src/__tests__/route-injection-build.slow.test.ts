@@ -322,19 +322,22 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // prior baseline (b1eea45) was rebuilt in a worktree and its normalized HTML
   // diffed byte-for-byte against HEAD. That old build still reproduced the old
   // hashes exactly, so the delta below is the complete and only change —
-  //   - the accent hover/focus pass over non-active nav: `hover:text-accent` /
-  //     `focus:text-accent` / `focus-visible:text-accent` added to the header
-  //     overflow ("···") toggle, the header nav classList swap script, the
-  //     overflow dropdown children, and the sidebar nav node class strings
-  //     (#3010, #3011, #3020, #3023)
-  //   - the sidebar non-active child's resting colour moving `text-muted` →
-  //     `text-fg` in the same pass (#3020)
-  //   - `border-b border-fg pb-vsp-xs` on the doc-title `<h1>` — the title rule
-  //     is now kept when meta is absent, which is exactly this fixture's shape
+  //   - the accent hover/focus pass over non-active header nav, all of it from
+  //     `src/header/nav-overflow-script.ts`: `hover:text-accent` /
+  //     `focus:text-accent` / `focus-visible:text-accent` added to the
+  //     top-level nav link classList swap, the overflow ("···") toggle, and
+  //     the overflow dropdown children (#3011, #3020, #3023)
+  //   - in that same script, the overflow dropdown child's resting colour
+  //     moving `text-muted` → `text-fg` (and its `hover:text-fg` →
+  //     `hover:text-accent`) (#3020)
+  //   - `border-b border-fg pb-vsp-xs` on the doc-title `<h1>`
+  //     (`src/doc-content-header/index.tsx`) — the title rule is now kept when
+  //     meta is absent, which is exactly this fixture's shape
   //     (SKIP_DOC_HISTORY=1, no meta), so it newly renders here (#3025)
   // All of it traces to already-merged, intentional PRs; no unattributed bytes,
   // no lost chrome. Only /docs/getting-started/ carries the `<h1>` delta; the
-  // nav deltas hit both pages.
+  // header-nav deltas hit both pages. Note the sidebar-hover PR (#3010) is NOT
+  // in this list — its markup does not reach either fixture page.
 
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
