@@ -539,12 +539,21 @@ html[data-theme-pack="blueprint"] footer[data-footer] {
 
 /* ---- theme-pack switcher: a double-framed title block riding its
         own patch of grid paper; the launcher is a square drafting
-        stamp ---- */
+        stamp. The offset outer rule is drawn as box-shadow rings, NOT
+        `outline`, so the card's keyboard focus-visible accent outline
+        keeps working (an unlayered pack `outline` would silently
+        override that utility — the broadsheet/onyx precedent, #2883
+        class). ---- */
 html[data-theme-pack="blueprint"] div[data-switcher-card] {
   border: 1px solid color-mix(in oklch, var(--zd-fg) 55%, transparent);
   border-radius: 0;
-  outline: 1px solid color-mix(in oklch, var(--zd-fg) 26%, transparent);
-  outline-offset: 4px;
+  /* trailing pair replicates the card's default shadow-lg elevation,
+     which this unlayered box-shadow would otherwise cancel */
+  box-shadow:
+    0 0 0 4px var(--zd-surface),
+    0 0 0 5px color-mix(in oklch, var(--zd-fg) 26%, transparent),
+    0 10px 15px -3px rgb(0 0 0 / 0.1),
+    0 4px 6px -4px rgb(0 0 0 / 0.1);
   background-color: var(--zd-surface);
   background-image:
     linear-gradient(

@@ -464,14 +464,19 @@ html[data-theme-pack="eink"] .zd-content > nav[data-doc-pager] a > p {
 
 /* theme-pack flyout: an e-reader settings dialog — double hairline frame,
    square, shadowless; the launcher squares off and "presses" with the
-   refresh inversion instead of a glow */
+   refresh inversion instead of a glow. The offset outer hairline is drawn
+   as box-shadow rings, NOT `outline`, so the card's keyboard focus-visible
+   accent outline keeps working (an unlayered pack `outline` would silently
+   override that utility — the broadsheet/onyx precedent, #2883 class); the
+   flat rings also replace the default elevation shadow, keeping the
+   e-paper shadowless. */
 html[data-theme-pack="eink"] [data-switcher-card] {
   background-color: var(--zd-bg);
   border: 1px solid color-mix(in oklch, var(--zd-fg) 55%, transparent);
   border-radius: 0;
-  box-shadow: none;
-  outline: 1px solid color-mix(in oklch, var(--zd-fg) 55%, transparent);
-  outline-offset: 3px;
+  box-shadow:
+    0 0 0 3px var(--zd-bg),
+    0 0 0 4px color-mix(in oklch, var(--zd-fg) 55%, transparent);
 }
 html[data-theme-pack="eink"] [data-switcher-launcher] {
   background-color: var(--zd-bg);
