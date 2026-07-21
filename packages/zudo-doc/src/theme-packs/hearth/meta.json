@@ -4,7 +4,7 @@
   "name": "Hearth",
   "description": "Warm cream & brick-red fireside docs — Fraunces headings, amber code blocks, ember-glow dark mode.",
   "mode": "light",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "fonts": {
     "sans": "Nunito",
     "mono": "Spline Sans Mono",

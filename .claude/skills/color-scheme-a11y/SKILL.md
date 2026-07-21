@@ -325,3 +325,11 @@ Before adding a new entry to `colorSchemes` in
 - **`shikiTheme` is vestigial** — no CSS consumes it; excluded from the matrix. `cursor` is
   not vestigial-but-present — it was deleted outright in the ramp restructure (no
   `--zd-cursor` exists to audit).
+- **Theme packs are a different surface — see `pnpm theme-a11y:audit` instead.** This
+  skill and `pnpm contrast:audit` cover only the 2 built-in **color schemes** (Default
+  Light/Dark), checked statically via the package resolvers — no browser, no theme-pack
+  CSS. For rendered, per-**theme-pack** contrast (the CSS a pack layers on top of a
+  scheme — e.g. an active-nav chip losing contrast under one pack's stylesheet, invisible
+  to a static check), use `pnpm theme-a11y:audit` (`scripts/theme-a11y-audit.ts`) — a
+  real-browser audit wired into the `theme-a11y` T3 nightly exam job. See TESTING.md's
+  "Theme A11y Audit" section (#3036).

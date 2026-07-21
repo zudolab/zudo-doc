@@ -4,8 +4,8 @@
    Warm washi paper, sumi ink, and ai-iro indigo seals — quiet
    Japanese stationery for calm documentation. Zen Kaku Gothic New
    prose over a CSS-only paper grain, Shippori Mincho headings, an
-   indigo hanko (判子) stamp language: a tilted 藍 seal on the h1,
-   kanji seal chips on admonitions, an asymmetric two-tone h2 rule.
+   indigo hanko (判子) stamp language: kanji seal chips on
+   admonitions, an asymmetric two-tone h2 rule.
    Everything is cut square (washi is cut straight — no rounding),
    with a generous 1.95 prose leading. Light = raw warm paper;
    dark = aizome night — the same sheet dyed indigo-charcoal, warm
@@ -20,9 +20,9 @@
    CJK font rule (Decision 5): packs do NOT ship CJK subsets. All
    three families load their latin subset only; every family stack
    ends in the correct bare generic (sans-serif / serif / monospace)
-   so the platform's own Japanese fonts carry CJK glyphs. The 藍 and
-   kanji chip glyphs below are decorative CSS content characters
-   rendered by that platform CJK fallback — intentional.
+   so the platform's own Japanese fonts carry CJK glyphs. The kanji
+   chip glyphs below are decorative CSS content characters rendered
+   by that platform CJK fallback — intentional.
 
    Prototype-selector adaptations against the REAL DOM (tokens-dump
    §6 + component sources), noted inline where they matter:
@@ -177,7 +177,7 @@ html[data-theme-pack="washi"] {
   --zd-code-fg: light-dark(#2b2822, #ece5d5);
   --zd-success: light-dark(#3f6237, #a3c98e);
   --zd-danger: light-dark(#a03a2e, #e0968a);
-  --zd-warning: light-dark(#875c12, #d9ac60);
+  --zd-warning: light-dark(#835809, #d9ac60);
   --zd-info: light-dark(#31608f, #8ab0dd);
 
   /* syntax — all 9 roles, both modes: sumi ink annotated with mineral
@@ -307,32 +307,6 @@ html[data-theme-pack="washi"] .zd-content > p[data-doc-description] {
   font-size: 1.2rem;
   line-height: 1.8;
   color: color-mix(in srgb, var(--zd-fg) 72%, var(--zd-bg));
-}
-
-/* signature move #2 — the h1 carries a small tilted 藍 seal, like a
-   maker's hanko stamp on the sheet (platform CJK font renders the
-   glyph — decorative content character, Decision 5 CJK rule) */
-html[data-theme-pack="washi"] .zd-content h1 {
-  /* washi's title treatment is the tilted 藍 seal (::after), not an
-     underline — drop the default h1 border-b and its padding (#3025) */
-  border-bottom: 0;
-  padding-bottom: 0;
-}
-html[data-theme-pack="washi"] .zd-content h1::after {
-  content: "藍";
-  display: inline-block;
-  font-family: var(--font-display);
-  font-size: 1rem;
-  font-weight: 600;
-  line-height: 1;
-  color: light-dark(#f6f1e4, #161b24);
-  background: var(--zd-accent);
-  padding: 0.3em 0.32em 0.24em;
-  margin-left: 0.8rem;
-  vertical-align: 0.5em;
-  border-radius: 2px;
-  transform: rotate(-4deg);
-  box-shadow: 0 1px 2px light-dark(rgb(43 40 34 / 0.25), rgb(0 0 0 / 0.5));
 }
 
 /* signature move #3 — quiet asymmetry: the h2 rule is two-tone, a
