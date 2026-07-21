@@ -1,0 +1,28 @@
+---
+title: 4.4.0
+description: Release notes for 4.4.0.
+sidebar_position: 1062
+---
+
+Released: 2026-07-22
+
+### Features
+
+- Theme Batch 5 adds 10 new theme packs — academia, bauhaus, blueprint, botanica, eink, riso, sakura, scandi, tidepool, and timberline — bringing the catalog to 31 packs, each with full admonition/code/sidebar coverage and a rendered WCAG contrast audit (29bb3497f, 12665cdf1)
+- A new `logo` setting renders a generated "auto" home-hero logo by default, alongside a `zudo-doc eject logo` CLI subcommand for taking full ownership of the logo markup (a2ba5188a, 3cedbee04)
+- `scripts/theme-a11y-audit.ts` adds a rendered per-pack contrast audit tool, now wired into the nightly exam and documented for theme authors (4c969cd4a, 8ed913f9d)
+- The top-page Tags section now renders tag chips, and the home hero gained a `heroLink` prop with an inline extras row (55be502c2, fc865e6be)
+- Header, sidebar, overflow-dropdown, and doc-pager non-active nav elements now consistently turn accent color on hover/focus, with a shared class-token source of truth for the header nav (fafecc154, 274a8641f)
+
+### Bug Fixes
+
+- Resolved 10 rendered-a11y audit findings across 5 existing theme packs, plus follow-up contrast fixes for blueprint/sakura/tidepool and five additional deep-review findings (b694708dc, 2c2dcc858, 12f7964f9)
+- Theme-CLI config scanning now correctly decodes `\uXXXX`, `\u{...}`, and `\xXX` escapes (2e58e3dc0)
+- The default title-rule border is reset only where a theme pack owns its own title styling, keeping custom pack titles from double-bordering (9043b9439)
+- Doc-history anchors now point at the actual generated heading slugs (9e3e62655)
+
+### Other Changes
+
+- Re-baselined the route-injection parity test's normalized-HTML sha256 snapshots twice this cycle, attributing every changed byte to its originating merged PR (5e46831d4, 4fd642c3b)
+- Bumped the `@takazudo/zfb` family to `0.1.0-next.90`
+- Expanded English and Japanese documentation for the logo/eject-logo feature, the Theme Gallery (31 packs), and the hover-accent interactive color rule

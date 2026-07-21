@@ -32,7 +32,7 @@ export { getSecondaryLang };
  *
  * Bumped in lockstep by scripts/release-create-zudo-doc.sh.
  */
-export const ZUDO_DOC_PIN = "^4.3.0";
+export const ZUDO_DOC_PIN = "^4.4.0";
 
 /**
  * Files in `templates/base/**` that must not be copied by the unconditional
@@ -782,7 +782,7 @@ function generatePackageJson(choices: UserChoices) {
     // doc-history helpers, which in turn import
     // @takazudo/zudo-doc-history-server/git-history. Without this dep the
     // plugin host fails at init with ERR_MODULE_NOT_FOUND — W8A (#1739).
-    deps["@takazudo/zudo-doc-history-server"] = "^4.3.0";
+    deps["@takazudo/zudo-doc-history-server"] = "^4.4.0";
     // tsx is no longer needed here: the relocated package plugin imports the
     // runner directly (no `tsx -e` spawn) since the package ships compiled
     // dist/ — package-first migration #2321 (#2337).
