@@ -95,3 +95,58 @@ describe("resolveSiteNameFromConfigSource", () => {
     expect(result.reason).toMatch(/no zudoDoc\(\.\.\.\) call found/);
   });
 });
+
+describe("resolveSiteNameFromConfigSource — string escapes (#3054)", () => {
+  const withSiteName = (literal: string) =>
+    `import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default zudoDoc({
+  siteName: ${literal},
+});
+`;
+
+  const expectName = (literal: string, expected: string) => {
+    const result = resolveSiteNameFromConfigSource(withSiteName(literal));
+    expect(result.kind).toBe("literal");
+    if (result.kind !== "literal") return;
+    expect(result.value).toBe(expected);
+  };
+
+  // JS evaluates these to the same string, so the derived logo seed — and
+  // therefore the glyph an ejected SVG shows — must match `logo: "auto"`.
+  it("decodes \\uXXXX escapes", () => {
+    expectName('"A\\u0042"', "AB");
+  });
+
+  it("decodes \\u{...} code-point escapes", () => {
+    expectName('"A\\u{42}"', "AB");
+  });
+
+  it("decodes surrogate pairs written as two \\uXXXX escapes", () => {
+    expectName('"\\uD83D\\uDE00"', "\u{1f600}");
+  });
+
+  it("decodes \\xXX escapes", () => {
+    expectName('"A\\x42"', "AB");
+  });
+
+  it("decodes the remaining single-character escapes", () => {
+    expectName('"a\\bb"', "a\bb");
+    expectName('"a\\fb"', "a\fb");
+    expectName('"a\\vb"', "a\vb");
+    expectName('"a\\0b"', "a\0b");
+  });
+
+  it("leaves a malformed escape as its literal character", () => {
+    expectName('"A\\uZZZZ"', "AuZZZZ");
+    expectName('"A\\xZZ"', "AxZZ");
+  });
+
+  it("still decodes the escapes it already handled", () => {
+    expectName('"a\\nb"', "a\nb");
+    expectName('"a\\tb"', "a\tb");
+    expectName('"a\\rb"', "a\rb");
+    expectName('"a\\"b"', 'a"b');
+    expectName('"a\\\\b"', "a\\b");
+  });
+});

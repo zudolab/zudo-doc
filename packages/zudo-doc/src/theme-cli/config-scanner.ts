@@ -244,6 +244,57 @@ function unquoteSimple(literal: string): string {
         case "r":
           out += "\r";
           break;
+        case "b":
+          out += "\b";
+          break;
+        case "f":
+          out += "\f";
+          break;
+        case "v":
+          out += "\v";
+          break;
+        case "0":
+          // Only the standalone NUL escape; \0 followed by a digit is a legacy
+          // octal escape, which is illegal in the strict-mode modules we scan.
+          if (!/[0-9]/.test(inner[i + 2] ?? "")) {
+            out += "\0";
+            break;
+          }
+          out += next;
+          break;
+        case "x": {
+          const hex = inner.slice(i + 2, i + 4);
+          if (/^[0-9a-fA-F]{2}$/.test(hex)) {
+            out += String.fromCharCode(parseInt(hex, 16));
+            i += 2;
+            break;
+          }
+          out += next;
+          break;
+        }
+        case "u": {
+          if (inner[i + 2] === "{") {
+            const close = inner.indexOf("}", i + 3);
+            const hex = close === -1 ? "" : inner.slice(i + 3, close);
+            // \u{XXXXX} — code points above 0x10FFFF are a syntax error in JS,
+            // so treat them as un-decodable rather than throwing.
+            if (/^[0-9a-fA-F]{1,6}$/.test(hex) && parseInt(hex, 16) <= 0x10ffff) {
+              out += String.fromCodePoint(parseInt(hex, 16));
+              i = close - 1;
+              break;
+            }
+            out += next;
+            break;
+          }
+          const hex = inner.slice(i + 2, i + 6);
+          if (/^[0-9a-fA-F]{4}$/.test(hex)) {
+            out += String.fromCharCode(parseInt(hex, 16));
+            i += 4;
+            break;
+          }
+          out += next;
+          break;
+        }
         default:
           out += next ?? "";
       }
