@@ -436,6 +436,30 @@ describe("evaluateSample", () => {
     expect(ev.verdict).not.toBe("WARN");
   });
 
+  it("catches a luminance dip at an INTERIOR extremum a single midpoint misses", () => {
+    // Codex counter-example (#3044): rgb(25 14 211) text over an opaque
+    // rgb(235 148 160)→rgb(3 236 106) gradient reads 4.54 / 4.73 / 6.46 at
+    // start / midpoint / end — a midpoint-only sampler would call it a PASS —
+    // yet the relative-luminance minimum is INTERIOR (channels move opposite
+    // ways), dipping to ~4.41:1 near t=0.19, a real sub-4.5 failure. Dense
+    // per-segment sampling must surface that dip as the reported worst ratio.
+    const ev = evaluateSample(
+      mkSample({
+        color: "rgb(25 14 211)",
+        chain: [layer("rgba(0,0,0,0)", 1, "linear-gradient(rgb(235 148 160), rgb(3 236 106))")],
+      }),
+    );
+    expect(ev.verdict).not.toBe("PASS");
+    expect(ev.verdict).not.toBe("WARN");
+    // The reported worst ratio is the interior dip, below the 4.5 floor — the
+    // whole point the midpoint (4.73) hid.
+    expect(ev.ratio!).toBeLessThan(THRESHOLD_NORMAL);
+    expect(ev.ratio!).toBeGreaterThan(4.3);
+    // Readable at the start (4.54) but sub-AA at the dip ⇒ position-dependent.
+    expect(ev.verdict).toBe("SKIP");
+    expect(ev.skipKind).toBe("straddle");
+  });
+
   it("SKIPs fully-transparent ink", () => {
     const ev = evaluateSample(mkSample({ color: "rgba(0,0,0,0)" }));
     expect(ev.verdict).toBe("SKIP");

@@ -123,14 +123,17 @@ export const LARGE_TEXT_BOLD_MIN_WEIGHT = 700;
 export const MAX_SKIP_RATIO = 0.3;
 /** Alpha at/above which a layer is treated as fully opaque. */
 const OPAQUE_ALPHA = 0.999;
-/** Hard cap on the candidate-backdrop set carried through the ancestor walk. A
- *  real page stays in the single digits even with per-stop interpolation; only a
- *  pathological deep stack of many multi-stop gradients could exceed this, and
- *  such a backdrop is treated as indeterminate (SKIP) rather than lossily
- *  reduced — dropping a candidate before the ink color is known could discard
- *  the exact backdrop that fails (min contrast is not always at a luminance
- *  extreme, and luminance is weighted, not a flat RGB mean). */
-const MAX_BACKDROP_CANDIDATES = 64;
+/** Hard cap on the candidate-backdrop set carried through the ancestor walk.
+ *  Dense per-segment sampling ({@link GRADIENT_SEGMENT_SAMPLES}) puts a single
+ *  gradient in the low dozens (a 2-stop = 21, a 3-stop = 41), and the deduped
+ *  set stays well under this on a real page — translucent washes composited over
+ *  an opaque base collapse to a handful. Only a pathological deep stack of many
+ *  multi-stop gradients could exceed this, and such a backdrop is treated as
+ *  indeterminate (SKIP) rather than lossily reduced — dropping a candidate before
+ *  the ink color is known could discard the exact backdrop that fails (min
+ *  contrast is not always at a luminance extreme, and luminance is weighted, not
+ *  a flat RGB mean). */
+const MAX_BACKDROP_CANDIDATES = 256;
 
 // ---------------------------------------------------------------------------
 // Color parsing / compositing
@@ -227,23 +230,38 @@ function dedupeCandidates(candidates: Srgb[]): Srgb[] {
   return [...seen.values()];
 }
 
+/** Interior sample steps per gradient segment (between each ADJACENT stop
+ *  pair). 20 steps ⇒ samples at every 5% plus both endpoints (21 points per
+ *  segment) — see {@link interpolateStops} for why one midpoint is insufficient. */
+const GRADIENT_SEGMENT_SAMPLES = 20;
+
 /**
- * Expand a gradient's declared stops with the midpoint between each ADJACENT
- * pair. A gradient interpolates continuously, so its worst-contrast point can
- * fall BETWEEN two stops (black text over red→green fails near the olive
- * midpoint though it passes at both ends); adding midpoints puts that interior
- * backdrop in the candidate set so it can't be silently PASSed. One level is
- * enough to catch the extremum of a monotone segment. Stops in source order.
+ * Densely sample a gradient's ADJACENT-stop segments so the worst-contrast
+ * point BETWEEN two stops is in the candidate set. A single interior midpoint
+ * is NOT enough: relative luminance is convex in the linear interpolation
+ * parameter (each channel is linear in t, the sRGB→linear transform is convex,
+ * and a sum of convex functions is convex), so the minimum-luminance point — and
+ * thus the worst contrast against a fixed ink — can sit at an interior extremum
+ * that the arithmetic midpoint misses when the channels move in opposite
+ * directions (counter-example: rgb(25 14 211) over rgb(235 148 160)→rgb(3 236
+ * 106) dips to ~4.41:1 near 19% though start/mid/end read 4.54/4.73/6.46). The
+ * piecewise transform makes an exact closed-form extremum fiddly, so we sample
+ * each segment at {@link GRADIENT_SEGMENT_SAMPLES} even steps (endpoints
+ * included) and let the caller keep the worst. Stops in source order; shared
+ * segment endpoints are emitted once.
  */
 function interpolateStops(stops: SrgbA[]): SrgbA[] {
   if (stops.length < 2) return stops;
-  const out: SrgbA[] = [];
-  for (let i = 0; i < stops.length; i++) {
+  const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
+  const out: SrgbA[] = [stops[0]!];
+  for (let i = 0; i < stops.length - 1; i++) {
     const s = stops[i]!;
-    out.push(s);
-    const next = stops[i + 1];
-    if (next) {
-      out.push({ r: (s.r + next.r) / 2, g: (s.g + next.g) / 2, b: (s.b + next.b) / 2, a: (s.a + next.a) / 2 });
+    const next = stops[i + 1]!;
+    // k starts at 1 so the shared start stop (already pushed) isn't duplicated;
+    // k === GRADIENT_SEGMENT_SAMPLES emits this segment's end stop.
+    for (let k = 1; k <= GRADIENT_SEGMENT_SAMPLES; k++) {
+      const t = k / GRADIENT_SEGMENT_SAMPLES;
+      out.push({ r: lerp(s.r, next.r, t), g: lerp(s.g, next.g, t), b: lerp(s.b, next.b, t), a: lerp(s.a, next.a, t) });
     }
   }
   return out;

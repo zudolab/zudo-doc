@@ -119,6 +119,28 @@ export const INVENTORY: readonly InventoryItem[] = [
     hover: false,
     state: "static",
   },
+  // Header-right controls that navigate (the GitHub link, configured
+  // `type:"link"` items) render as `<a>`, not `<button>` — so they need the
+  // same text (4.5:1) + icon (3.0:1) split as the buttons above, or they'd
+  // produce no audit row at all. An icon-only anchor carries no visible text,
+  // so its text sample self-drops (empty textContent) and only the icon
+  // sample remains, mirroring the button behaviour.
+  {
+    key: "header-right-link",
+    selector: "header[data-header] [data-header-right] a",
+    kind: "text",
+    cap: 6,
+    hover: false,
+    state: "static",
+  },
+  {
+    key: "header-right-link-icon",
+    selector: "header[data-header] [data-header-right] a svg",
+    kind: "ui",
+    cap: 6,
+    hover: false,
+    state: "static",
+  },
   // ── Sidebar ─────────────────────────────────────────────
   {
     key: "sidebar-link",
