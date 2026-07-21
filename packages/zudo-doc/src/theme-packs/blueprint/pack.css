@@ -436,7 +436,9 @@ html[data-theme-pack="blueprint"] [data-admonition="important"] .admonition-titl
   content: "◆ ";
 }
 html[data-theme-pack="blueprint"] [data-admonition="caution"] .admonition-title::before {
-  content: "⦸ ";
+  /* filled triangle escalates warning's outline "△" — and unlike
+     U+29B8, it renders everywhere */
+  content: "▲ ";
 }
 
 /* blockquote: a dashed reference line */
@@ -499,6 +501,10 @@ html[data-theme-pack="blueprint"] div[data-zd-mobile-toc] {
 /* ---- pager: detail-callout cards — dashed until hover, then the
         line solidifies and the card lifts off the sheet ---- */
 html[data-theme-pack="blueprint"] .zd-content > nav[data-doc-pager] > a {
+  /* the pager's rounded-lg utility is NOT covered by --zdc-card-radius
+     (features.css only maps that token onto a.group.block.rounded), so
+     the square corner is set here explicitly — the fjord precedent. */
+  border-radius: 0;
   border-style: dashed;
   border-color: color-mix(in oklch, var(--zd-fg) 45%, transparent);
   background-color: var(--zd-bg);
