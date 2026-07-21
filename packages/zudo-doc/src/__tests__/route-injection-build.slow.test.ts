@@ -322,13 +322,18 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // prior baseline (b1eea45) was rebuilt in a worktree and its normalized HTML
   // diffed byte-for-byte against HEAD. That old build still reproduced the old
   // hashes exactly, so the delta below is the complete and only change —
-  //   - the accent hover/focus pass over non-active header nav, all of it from
-  //     `src/header/nav-overflow-script.ts`: `hover:text-accent` /
-  //     `focus:text-accent` / `focus-visible:text-accent` added to the
-  //     top-level nav link classList swap, the overflow ("···") toggle, and
-  //     the overflow dropdown children (#3011, #3020, #3023)
-  //   - in that same script, the overflow dropdown child's resting colour
-  //     moving `text-muted` → `text-fg` (and its `hover:text-fg` →
+  //   - the accent hover/focus pass over non-active header nav —
+  //     `hover:text-accent` / `focus:text-accent` / `focus-visible:text-accent`
+  //     (#3011, #3020, #3023) — reaching this HTML from two distinct sources:
+  //       * `src/header/header.tsx`, which SSR-renders the overflow ("···")
+  //         toggle unconditionally (this fixture has `headerNav: []`, so the
+  //         button is present-but-hidden rather than absent) — its class
+  //         string is static markup here, not script output
+  //       * `src/header/nav-overflow-script.ts`, whose inlined source carries
+  //         the top-level nav link classList swap and the dropdown-child
+  //         `className` strings
+  //   - in that script, the overflow dropdown child's resting colour moving
+  //     `text-muted` → `text-fg` (and its `hover:text-fg` →
   //     `hover:text-accent`) (#3020)
   //   - `border-b border-fg pb-vsp-xs` on the doc-title `<h1>`
   //     (`src/doc-content-header/index.tsx`) — the title rule is now kept when
