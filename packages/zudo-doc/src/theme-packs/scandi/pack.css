@@ -1,0 +1,352 @@
+/* ============================================================
+   Scandi — zudo-doc theme pack (ADR docs/adr/theme-packs.md)
+
+   Hygge minimalism: an oat/ecru room with sage and clay accents,
+   pill-shaped nav actives, an even 8px radius discipline, and a
+   linen-subtle weave on the page body (two cheap repeating
+   gradients at ~2% ink — text backdrops stay effectively solid).
+   Light = a Scandinavian interior at midday; dark = hygge night —
+   warm smoked charcoal lit by candle amber (the accent itself
+   shifts from daylight sage to candlelight at night). Manrope
+   carries everything sans; Spline Sans Mono keeps code soft.
+
+   Deliberately COOL restraint next to its neighbors: hearth is
+   cream/brick/firelight (radial glows, serif chrome); washi is
+   JP paper; drift is dark slate with glowing pills. Scandi keeps
+   flat quiet pills, no halos, no serif, no fire.
+
+   Watch-out honored: sage/clay appear as DEEP inks (L ≈ 0.44)
+   when they carry text on oat, and as airy pastels only on
+   surfaces and marks. Dark-mode state hues run bright (L ≈ 0.82)
+   so admonition titles clear AA on their own 12% tints.
+
+   Every rule below is scoped under html[data-theme-pack="scandi"]
+   — this is what makes the runtime pack swap atomic (Decision 3)
+   and lets the validator prove a pack can never leak styles while
+   inactive (Decision 6.7). The @font-face blocks are the sole
+   exception (at-rules can't be selector-scoped).
+
+   Prototype-selector adaptation against the REAL DOM:
+   - `.sb-group a`  → `#desktop-sidebar a` + `a[data-nav-active]`
+   - `.toc-active`  → `nav[data-zd-toc] a[aria-current="true"]`
+   - `.doc-pager`   → `.zd-content > nav[data-doc-pager]`
+   - mobile counterparts styled via their own stable hooks
+     (`aside[data-zd-mobile-sidebar]`, `div[data-zd-mobile-toc]`).
+   ============================================================ */
+
+/* ---- Manrope — the whole sans voice (body, chrome, headings).
+        Variable 200–800 in one file; the airy 500s and the firm
+        750 headline weight ride the same wght axis. Latin subset
+        only (payload budget) — stray glyphs fall to system-ui. ---- */
+
+@font-face {
+  font-family: "Manrope";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("./fonts/Manrope-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---- Spline Sans Mono — soft grotesque mono for the birch code
+        panels. Variable 400–600. ---- */
+
+@font-face {
+  font-family: "Spline Sans Mono";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("./fonts/SplineSansMono-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+html[data-theme-pack="scandi"] {
+  /* Tier-2 semantic roles — oat daylight / candle-lit charcoal night.
+     Both modes always via light-dark(). No hard black anywhere. */
+  --zd-bg: light-dark(oklch(0.963 0.012 83), oklch(0.235 0.015 55));
+  --zd-fg: light-dark(oklch(0.28 0.02 55), oklch(0.92 0.012 85));
+  --zd-selection-bg: light-dark(oklch(0.86 0.06 150), oklch(0.43 0.06 65));
+  --zd-selection-fg: light-dark(oklch(0.25 0.02 55), oklch(0.95 0.008 85));
+  --zd-surface: light-dark(oklch(0.975 0.008 88), oklch(0.27 0.016 55));
+  --zd-muted: light-dark(oklch(0.46 0.025 70), oklch(0.72 0.02 75));
+  --zd-accent: light-dark(oklch(0.44 0.08 152), oklch(0.82 0.105 75));
+  --zd-accent-hover: light-dark(oklch(0.37 0.075 155), oklch(0.87 0.09 80));
+  --zd-code-bg: light-dark(oklch(0.935 0.014 87), oklch(0.275 0.018 58));
+  --zd-code-fg: light-dark(oklch(0.28 0.02 55), oklch(0.92 0.012 85));
+  --zd-success: light-dark(oklch(0.44 0.095 150), oklch(0.82 0.1 150));
+  --zd-danger: light-dark(oklch(0.46 0.13 30), oklch(0.82 0.1 32));
+  --zd-warning: light-dark(oklch(0.46 0.1 70), oklch(0.83 0.1 80));
+  --zd-info: light-dark(oklch(0.46 0.075 235), oklch(0.82 0.07 235));
+
+  /* syntax — all 9 roles, both modes, one interior palette: clay
+     keywords, sage strings, amber numbers, dusty-blue callables,
+     moss types, flax comments. Night runs candle-bright (L ≈ .76+)
+     so every role clears AA on the charcoal panel. inserted/deleted
+     reuse the success/danger hues. */
+  --zd-syntax-comment: light-dark(oklch(0.5 0.02 70), oklch(0.66 0.02 75));
+  --zd-syntax-string: light-dark(oklch(0.45 0.09 150), oklch(0.78 0.09 150));
+  --zd-syntax-number: light-dark(oklch(0.49 0.1 65), oklch(0.8 0.1 70));
+  --zd-syntax-keyword: light-dark(oklch(0.47 0.105 40), oklch(0.76 0.1 45));
+  --zd-syntax-callable: light-dark(oklch(0.45 0.08 240), oklch(0.75 0.075 238));
+  --zd-syntax-type: light-dark(oklch(0.47 0.08 110), oklch(0.77 0.085 115));
+  --zd-syntax-name: light-dark(oklch(0.28 0.02 55), oklch(0.92 0.012 85));
+  --zd-syntax-inserted: light-dark(oklch(0.44 0.095 150), oklch(0.82 0.1 150));
+  --zd-syntax-deleted: light-dark(oklch(0.46 0.13 30), oklch(0.82 0.1 32));
+
+  /* fonts — Manrope everywhere sans, Spline Sans Mono for code. */
+  --font-sans: "Manrope", system-ui, sans-serif;
+  --font-mono: "Spline Sans Mono", ui-monospace, monospace;
+
+  /* Tier-3 component seams — firm Manrope headings over airy body,
+     the 8px radius discipline, deep-sage pill fill for the active
+     nav item (candle amber at night). */
+  --zdc-doc-title-weight: 750;
+  --zdc-doc-title-tracking: -0.02em;
+  --zdc-doc-h2-weight: 700;
+  --zdc-doc-h2-tracking: -0.012em;
+  --zdc-doc-h3-weight: 650;
+  --zdc-admonition-radius: 8px;
+  --zdc-admonition-border-width: 3px;
+  --zdc-card-radius: 8px;
+  --zdc-nav-active-weight: 600;
+  --zdc-nav-active-indicator-color: light-dark(oklch(0.44 0.08 152), oklch(0.82 0.105 75));
+}
+
+/* ---- Scandi extras — quiet moves only ---- */
+
+/* linen weave: a whisper of warp/weft at ~2% ink. Cheap (two
+   repeating gradients), mode-aware for free (the mixed ink is
+   --zd-fg, which flips), and effectively solid behind text —
+   the composited worst case is checked in the contrast table. */
+html[data-theme-pack="scandi"] body {
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--zd-fg) 2%, transparent) 0 1px,
+      transparent 1px 4px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--zd-fg) 1.4%, transparent) 0 1px,
+      transparent 1px 4px
+    );
+}
+
+/* header: a birch shelf — flat surface, hairline underline, pill
+   nav hovers. No shadow; scandi light comes from the window, not
+   a lamp over the header. */
+html[data-theme-pack="scandi"] header[data-header] {
+  background-color: var(--zd-surface);
+  border-bottom-color: color-mix(in srgb, var(--zd-muted) 26%, transparent);
+}
+html[data-theme-pack="scandi"] [data-header-logo] {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+html[data-theme-pack="scandi"] [data-nav-item] {
+  border-radius: 999px;
+}
+html[data-theme-pack="scandi"] [data-nav-item]:hover {
+  text-decoration: none;
+  background: color-mix(in srgb, var(--zd-accent) 10%, transparent);
+  color: var(--zd-accent-hover);
+}
+
+/* sidebar: same room, one shade of birch away; every link is a
+   quiet pill. The drawer (mobile) is a separate stable hook and
+   gets the same treatment. */
+html[data-theme-pack="scandi"] #desktop-sidebar,
+html[data-theme-pack="scandi"] aside[data-zd-mobile-sidebar] {
+  background-color: light-dark(oklch(0.948 0.013 85), oklch(0.218 0.014 55));
+  border-right-color: color-mix(in srgb, var(--zd-muted) 22%, transparent);
+}
+html[data-theme-pack="scandi"] #desktop-sidebar a,
+html[data-theme-pack="scandi"] aside[data-zd-mobile-sidebar] a {
+  border-radius: 999px;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+html[data-theme-pack="scandi"] #desktop-sidebar a:hover,
+html[data-theme-pack="scandi"] aside[data-zd-mobile-sidebar] a:hover {
+  text-decoration: none;
+  background: color-mix(in srgb, var(--zd-accent) 10%, transparent);
+  color: var(--zd-accent-hover);
+}
+/* active item: THE signature — a full pill in deep sage (candle
+   amber at night), oat text, flat as painted wood. Fill comes from
+   --zdc-nav-active-indicator-color; no glow, no shadow (that's
+   drift's move, not ours). */
+html[data-theme-pack="scandi"] a[data-nav-active] {
+  color: var(--zd-bg);
+  border-radius: 999px;
+}
+html[data-theme-pack="scandi"] a[data-nav-active]:hover {
+  color: var(--zd-bg);
+}
+
+/* headings: firm Manrope. h1 gets the painted-wood bar — sage into
+   clay, the two-hue signature in one 3.25rem stroke. */
+html[data-theme-pack="scandi"] .zd-content h1::after {
+  content: "";
+  display: block;
+  width: 3.25rem;
+  height: 0.3rem;
+  border-radius: 999px;
+  margin-top: 0.85rem;
+  background: linear-gradient(
+    to right,
+    var(--zd-accent) 0 58%,
+    light-dark(oklch(0.62 0.1 45), oklch(0.74 0.09 50)) 58%
+  );
+}
+/* h2: the default gradient bar is SSR-inlined via border-image —
+   defeated with the Decision 6.6 carve-out, replaced by a sage-mist
+   hairline. */
+html[data-theme-pack="scandi"] .zd-content h2 {
+  border-image: none !important;
+  border-top-width: 1px;
+  border-top-color: color-mix(in srgb, var(--zd-accent) 38%, transparent);
+}
+
+/* links: sage ink with a soft sage underline that firms on hover */
+html[data-theme-pack="scandi"] .zd-content a {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--zd-accent) 45%, transparent);
+}
+html[data-theme-pack="scandi"] .zd-content a:hover {
+  text-decoration-color: var(--zd-accent-hover);
+}
+
+/* inline code: a small birch chip */
+html[data-theme-pack="scandi"] .zd-content code:not(pre code) {
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--zd-muted) 20%, transparent);
+  padding: 1px 0.35rem;
+}
+
+/* code blocks: birch panel, 8px corners, hairline border — solid
+   and calm, no grain, no glow. */
+html[data-theme-pack="scandi"] pre.hi-root {
+  border-radius: 8px;
+  border-color: color-mix(in srgb, var(--zd-muted) 26%, transparent);
+  padding: 1rem 1.15rem;
+}
+
+/* blockquote: a clay-cushioned aside — the secondary hue's one
+   large moment. */
+html[data-theme-pack="scandi"] .zd-content blockquote {
+  border-left: 3px solid light-dark(oklch(0.62 0.1 45), oklch(0.74 0.09 50));
+  border-radius: 0 8px 8px 0;
+  background: light-dark(oklch(0.62 0.1 45 / 0.07), oklch(0.74 0.09 50 / 0.1));
+  padding: 0.7rem 1.1rem;
+}
+
+/* hr: a stitched seam — running dots, like thread through linen */
+html[data-theme-pack="scandi"] .zd-content hr {
+  border: none;
+  height: 3px;
+  background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--zd-muted) 55%, transparent) 1.5px,
+      transparent 1.6px
+    )
+    left center / 13px 3px repeat-x;
+}
+
+/* admonitions: rounded cards with quiet line icons — no emoji
+   colour noise in a scandi room. */
+html[data-theme-pack="scandi"] [data-admonition="note"] .admonition-title::before {
+  content: "✎ ";
+}
+html[data-theme-pack="scandi"] [data-admonition="tip"] .admonition-title::before {
+  content: "✦ ";
+}
+html[data-theme-pack="scandi"] [data-admonition="info"] .admonition-title::before {
+  content: "❄ ";
+}
+html[data-theme-pack="scandi"] [data-admonition="warning"] .admonition-title::before {
+  content: "△ ";
+}
+html[data-theme-pack="scandi"] [data-admonition="important"] .admonition-title::before {
+  content: "❋ ";
+}
+html[data-theme-pack="scandi"] [data-admonition="danger"] .admonition-title::before {
+  content: "✕ ";
+}
+html[data-theme-pack="scandi"] [data-admonition="caution"] .admonition-title::before {
+  content: "▲ ";
+}
+
+/* tables: sage-tinted header band under a firm sage rule */
+html[data-theme-pack="scandi"] .zd-content th {
+  background: color-mix(in srgb, var(--zd-accent) 8%, transparent);
+  border-bottom-width: 2px;
+  border-bottom-color: color-mix(in srgb, var(--zd-accent) 40%, transparent);
+}
+html[data-theme-pack="scandi"] .zd-content td {
+  border-bottom-color: color-mix(in srgb, var(--zd-muted) 22%, transparent);
+}
+html[data-theme-pack="scandi"] .zd-content tbody tr:hover {
+  background: color-mix(in srgb, var(--zd-muted) 7%, transparent);
+}
+
+/* TOC: the active heading is a sage-wash pill (aria-current IS the
+   contract — there is no .toc-active class). The pill pulls left
+   within the ul's padding; the rail-side overflow clips at the
+   padding edge, so stay inside it (see the foundry note). */
+html[data-theme-pack="scandi"] nav[data-zd-toc] ul {
+  border-left-color: color-mix(in srgb, var(--zd-muted) 24%, transparent);
+}
+html[data-theme-pack="scandi"] nav[data-zd-toc] a:hover {
+  text-decoration: none;
+  color: var(--zd-accent-hover);
+}
+html[data-theme-pack="scandi"] nav[data-zd-toc] a[aria-current="true"] {
+  background: color-mix(in srgb, var(--zd-accent) 14%, transparent);
+  color: var(--zd-accent-hover);
+  font-weight: 600;
+  border-radius: 999px;
+  padding-left: 0.55rem;
+  padding-right: 0.55rem;
+  margin-left: -0.55rem;
+}
+
+/* mobile TOC: the collapsible panel emits its own markup — give it
+   the same birch card language as everything else. */
+html[data-theme-pack="scandi"] div[data-zd-mobile-toc] {
+  background-color: var(--zd-surface);
+  border-color: color-mix(in srgb, var(--zd-muted) 26%, transparent);
+  border-radius: 8px;
+}
+
+/* pager: birch cards that lift a breath on hover — soft warm-gray
+   shadow, never a glow. */
+html[data-theme-pack="scandi"] .zd-content > nav[data-doc-pager] a {
+  background: var(--zd-surface);
+  border-radius: 8px;
+  border-color: color-mix(in srgb, var(--zd-muted) 26%, transparent);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+html[data-theme-pack="scandi"] .zd-content > nav[data-doc-pager] a:hover {
+  border-color: color-mix(in srgb, var(--zd-accent) 55%, transparent);
+  box-shadow: 0 8px 22px -12px light-dark(oklch(0.35 0.03 60 / 0.35), oklch(0.05 0.01 60 / 0.6));
+  transform: translateY(-1px);
+}
+
+/* breadcrumb + footer: quiet and warm */
+html[data-theme-pack="scandi"] main nav[aria-label="Breadcrumb"] a:hover {
+  color: var(--zd-accent-hover);
+}
+html[data-theme-pack="scandi"] footer[data-footer] {
+  background-color: var(--zd-surface);
+  border-top-color: color-mix(in srgb, var(--zd-muted) 24%, transparent);
+}
