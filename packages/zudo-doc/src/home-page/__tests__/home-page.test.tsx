@@ -91,8 +91,32 @@ describe("createHomePageView — hero markup", () => {
 
     // Logo mask block: theme-adaptive <div> with a CSS mask, not an <img>.
     expect(html).toContain("aspect-[1200/630] bg-fg");
-    expect(html).toContain("url(/img/logo.svg)");
+    expect(html).toContain(`url(&quot;/img/logo.svg&quot;)`);
     expect(html).not.toContain("data-auto-logo=");
+  });
+
+  it("quotes the logo url so paths with spaces or parens stay valid CSS", () => {
+    const ctx = makeFakeChromeContext({
+      settings: { logo: "/img/logo (1).svg" },
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps()} />);
+
+    // Unquoted, `url(/img/logo (1).svg)` is an invalid CSS token and the
+    // browser drops the whole mask declaration — the logo silently vanishes.
+    expect(html).toContain(`url(&quot;/img/logo (1).svg&quot;)`);
+  });
+
+  it("escapes quotes and backslashes in the logo url", () => {
+    const ctx = makeFakeChromeContext({
+      settings: { logo: '/img/a"b\\c.svg' },
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps()} />);
+
+    // Both metacharacters must be backslash-escaped inside the quoted token,
+    // otherwise the `"` terminates the CSS string early.
+    expect(html).toContain(`url(&quot;/img/a\\&quot;b\\\\c.svg&quot;)`);
   });
 
   it("renders no logo block when settings.logo is false", () => {

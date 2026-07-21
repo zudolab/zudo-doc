@@ -167,6 +167,21 @@ This writes `public/img/logo.svg` — the mark is expressed as an internal SVG l
 - `--seed <name>` — override the `siteName` seed used to render the mark. Required when `zfb.config.ts` is not in the canonical scaffold shape (for example `zudoDoc({ ...settings })`), since the seed cannot be read statically in that case.
 - `--force` — overwrite an existing `public/img/logo.svg`. Without it, re-running the command **refuses cleanly** rather than silently overwriting a file you may have hand-edited.
 
+<Note>
+
+`--seed` only supplies the seed — it does not make the config rewrite possible. On a non-canonical config the command still writes the SVG, then reports that it could not update `zfb.config.ts`, prints the line to add, and **exits nonzero**. Finish it by hand:
+
+```ts title="zfb.config.ts"
+export default zudoDoc({
+  ...settings,
+  logo: "/img/logo.svg",
+});
+```
+
+The CLI only rewrites a literal, hand-editable field list, so it refuses rather than guess where the field belongs in a spread-controlled object.
+
+</Note>
+
 ## Rung 6 — `chromeBindingsModule` (host-callables)
 
 Under `packageOwnedRoutes: true` (the default) the doc chrome is wired inside the package, so there is no host file to render project-specific content into. `chromeBindingsModule` is the seam that gives it back: point it at a host module that exports a `chromeBindings` object, and the injected routes pick up your slots — a content-header renderer, home-hero extras, custom frontmatter-preview renderers, a footer tag loader, and more.

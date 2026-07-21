@@ -52,6 +52,17 @@ import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 export { prepareHomeData } from "./prepare-home-data.js";
 export type { PrepareHomeDataOptions, HomeData } from "./prepare-home-data.js";
 
+/**
+ * Serialize a URL as a quoted CSS `url()` token. The `logo` setting accepts an
+ * arbitrary user-supplied path, and an unquoted `url()` breaks on characters
+ * that are legal in a filename but not in a CSS url-token — whitespace and
+ * parentheses, e.g. `/img/logo (1).svg` — which makes the browser drop the
+ * whole mask declaration and render nothing.
+ */
+function cssUrl(url: string): string {
+  return `url("${url.replace(/[\\"]/g, "\\$&")}")`;
+}
+
 /** Props for the `HomePageView` component built by {@link createHomePageView}. */
 export interface HomePageViewProps {
   /** Active locale — drives hero copy, link locale-prefixing, and the
@@ -242,8 +253,8 @@ export function createHomePageView<S extends Settings = Settings>(
               <div
                 class="w-[320px] max-w-full aspect-[1200/630] bg-fg shrink-0"
                 style={{
-                  WebkitMask: `url(${withBase(logoSetting)}) center/contain no-repeat`,
-                  mask: `url(${withBase(logoSetting)}) center/contain no-repeat`,
+                  WebkitMask: `${cssUrl(withBase(logoSetting))} center/contain no-repeat`,
+                  mask: `${cssUrl(withBase(logoSetting))} center/contain no-repeat`,
                 }}
                 aria-hidden="true"
               />
