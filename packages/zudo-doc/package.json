@@ -571,6 +571,10 @@
     "./theme-cli": {
       "types": "./dist/theme-cli/index.d.ts",
       "default": "./dist/theme-cli/index.js"
+    },
+    "./eject-logo": {
+      "types": "./dist/eject-logo/index.d.ts",
+      "default": "./dist/eject-logo/index.js"
     }
   },
   "bin": {
