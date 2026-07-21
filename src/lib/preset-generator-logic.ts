@@ -31,9 +31,29 @@ export const THEME_PACKS: ThemePackOption[] = [
     hint: "Stock zudo-doc look — no extra stylesheet loaded",
   },
   {
+    slug: "academia",
+    label: "Academia",
+    hint: "A LaTeX paper for the web — white page, Computer-Modern-black ink, hyperref navy links, numbered theorem admonitions, booktabs tables",
+  },
+  {
+    slug: "bauhaus",
+    label: "Bauhaus",
+    hint: "Primary triad as structure — gallery white, near-black ink, and red, yellow, blue doing structural work: circle, triangle, square markers, thick geometric rules",
+  },
+  {
     slug: "beacon",
     label: "Beacon",
     hint: "WCAG-AAA high contrast — 7:1+ ink, 3px focus rings, always-underlined links",
+  },
+  {
+    slug: "blueprint",
+    label: "Blueprint",
+    hint: "Cyanotype drafting sheet — pale-cyan linework on prussian grid paper, title-block caps, dashed rules, mono-caps labels",
+  },
+  {
+    slug: "botanica",
+    label: "Botanica",
+    hint: "A vintage botanical plate — herbarium cream, deep green ink, engraved double rules, Latin small-caps plate labels",
   },
   {
     slug: "broadsheet",
@@ -49,6 +69,11 @@ export const THEME_PACKS: ThemePackOption[] = [
     slug: "drift",
     label: "Drift",
     hint: "Floaty slate-blue comfort dark for long reading, relaxed Plex type",
+  },
+  {
+    slug: "eink",
+    label: "E-Ink",
+    hint: "E-reader grayscale — warm paper, near-black ink, shadowless hairline chrome, zero radius",
   },
   {
     slug: "fjord",
@@ -111,6 +136,21 @@ export const THEME_PACKS: ThemePackOption[] = [
     hint: "Green CRT terminal — phosphor glow, scanlines, inverse-video nav",
   },
   {
+    slug: "riso",
+    label: "Riso",
+    hint: "Risograph duotone print — warm paper, two inks (riso blue + fluorescent coral), misregistered offset shadows, soft linear paper grain",
+  },
+  {
+    slug: "sakura",
+    label: "Sakura",
+    hint: "Cherry-blossom pastels — blush-white paper, plum ink, and rose accents on petal-soft corners",
+  },
+  {
+    slug: "scandi",
+    label: "Scandi",
+    hint: "Hygge minimalism — oat linen, sage & clay, pill nav actives and 8px corners",
+  },
+  {
     slug: "solar",
     label: "Solar",
     hint: "Solarized precision — low-eyestrain paper tones, blue/cyan/orange accents",
@@ -124,6 +164,16 @@ export const THEME_PACKS: ThemePackOption[] = [
     slug: "swissgrid",
     label: "Swissgrid",
     hint: "International Typographic Style — grid discipline, one hot Swiss-red accent",
+  },
+  {
+    slug: "tidepool",
+    label: "Tidepool",
+    hint: "Marine teal dark — deep-sea teal surfaces, seafoam text, bioluminescent aqua accents, kelp-green success, coral danger",
+  },
+  {
+    slug: "timberline",
+    label: "Timberline",
+    hint: "Forest cabin after dark — pine & umber planks, cream prose, and matte lantern-amber accents",
   },
   {
     slug: "washi",

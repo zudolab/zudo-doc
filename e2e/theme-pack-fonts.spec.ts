@@ -41,11 +41,10 @@ import {
  * Pack: "foundry" (packages/zudo-doc/src/theme-packs/foundry/pack.css) sets
  * `--font-sans: "Inter", …` — unambiguously distinct from the default chrome
  * font (`system-ui, sans-serif`), so a substring match on "Inter" is a clear
- * signal that the pack's font actually reached the surface. Foundry is the
- * one non-default pack the `theme` fixture actually bundles (its built
- * `dist/theme-packs/index.json` ships only `default` + `foundry`; the
- * fixture's `settings.ts` themePacks array is a pin-ORDER, not the bundled
- * set), which is why the sibling `theme-pack-switcher.spec.ts` uses it too.
+ * signal that the pack's font actually reached the surface. Foundry is held
+ * SECOND in the `theme` fixture's pinned `themePacks` cycle order (see this
+ * fixture's `settings.ts`), so a single Next click reaches it — which is why
+ * the sibling `theme-pack-switcher.spec.ts` uses it too.
  */
 
 const PAGE = "/docs/getting-started/";
