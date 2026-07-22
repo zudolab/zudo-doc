@@ -1,0 +1,15 @@
+---
+title: 4.4.1
+description: Release notes for 4.4.1.
+sidebar_position: 1063
+---
+
+Released: 2026-07-22
+
+### Bug Fixes
+
+- create-zudo-doc: removed the unused `@takazudo/zfb-adapter-cloudflare` dependency from the generated scaffold — fresh projects no longer install an adapter they never reference (eabda6fc2)
+
+### Other Changes
+
+- Bumped first-party `^4.0.0` dependency floors to `^4.4.0`: the `@takazudo/zudo-doc-history-server` peer floor in `@takazudo/zudo-doc`, and the target-manifest test fixture's `@takazudo/zudo-doc` pin (84d592cea)

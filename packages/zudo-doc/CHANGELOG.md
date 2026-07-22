@@ -4,6 +4,16 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [4.4.1] - 2026-07-22
+
+### Bug Fixes
+
+- create-zudo-doc: removed the unused `@takazudo/zfb-adapter-cloudflare` dependency from the generated scaffold — fresh projects no longer install an adapter they never reference (eabda6fc2)
+
+### Other Changes
+
+- Bumped first-party `^4.0.0` dependency floors to `^4.4.0`: the `@takazudo/zudo-doc-history-server` peer floor in `@takazudo/zudo-doc`, and the target-manifest test fixture's `@takazudo/zudo-doc` pin (84d592cea)
+
 ## [4.4.0] - 2026-07-22
 
 ### Features
