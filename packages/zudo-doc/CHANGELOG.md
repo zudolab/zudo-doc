@@ -4,6 +4,12 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [4.4.3] - 2026-07-23
+
+### Other Changes
+
+- Bumped the zfb family (`@takazudo/zfb`, `@takazudo/zfb-runtime`, `@takazudo/zfb-adapter-cloudflare`, `@takazudo/zfb-md-wasm`) to `0.1.0-next.92` and first-party floors to `^4.4.2` (edcd4ab2f)
+
 ## [4.4.2] - 2026-07-22
 
 ### Other Changes
