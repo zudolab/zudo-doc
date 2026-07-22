@@ -32,7 +32,7 @@ export { getSecondaryLang };
  *
  * Bumped in lockstep by scripts/release-create-zudo-doc.sh.
  */
-export const ZUDO_DOC_PIN = "^4.4.1";
+export const ZUDO_DOC_PIN = "^4.4.2";
 
 /**
  * Files in `templates/base/**` that must not be copied by the unconditional
@@ -671,9 +671,9 @@ function generatePackageJson(choices: UserChoices) {
     // singleton across host-callable wiring (zfb#1652/#1653). The zfb family
     // must stay in lockstep because the WASM browser entry depends on its
     // resource-aware island pipeline.
-    "@takazudo/zfb": "0.1.0-next.90",
-    "@takazudo/zfb-runtime": "0.1.0-next.90",
-    "@takazudo/zfb-md-wasm": "0.1.0-next.90",
+    "@takazudo/zfb": "0.1.0-next.91",
+    "@takazudo/zfb-runtime": "0.1.0-next.91",
+    "@takazudo/zfb-md-wasm": "0.1.0-next.91",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
@@ -779,7 +779,7 @@ function generatePackageJson(choices: UserChoices) {
     // doc-history helpers, which in turn import
     // @takazudo/zudo-doc-history-server/git-history. Without this dep the
     // plugin host fails at init with ERR_MODULE_NOT_FOUND — W8A (#1739).
-    deps["@takazudo/zudo-doc-history-server"] = "^4.4.1";
+    deps["@takazudo/zudo-doc-history-server"] = "^4.4.2";
     // tsx is no longer needed here: the relocated package plugin imports the
     // runner directly (no `tsx -e` spawn) since the package ships compiled
     // dist/ — package-first migration #2321 (#2337).
