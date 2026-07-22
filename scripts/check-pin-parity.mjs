@@ -4,11 +4,11 @@
 // Pin-parity gate (W4A — #1732). Failure mode:
 //   "W1A §5#4 — pin sources out of lockstep"
 //
-// The same upstream zfb-family release is represented across five surfaces
-// that must stay in lockstep:
+// The upstream zfb-family packages used by generated projects are represented
+// across five surfaces that must stay in lockstep:
 //
 //   1. Root package.json `@takazudo/zfb` engine pin.
-//   2. Root package.json companion pins (runtime, adapter, and md-wasm).
+//   2. Root package.json companion pins (runtime and md-wasm).
 //   3. packages/create-zudo-doc/src/scaffold.ts — the literal versions emitted
 //      into generated downstream package.json files by `generatePackageJson()`.
 //      A fresh scaffold gets EXACTLY these versions.
@@ -43,13 +43,14 @@ const SCAFFOLD_TS_PATH = resolve(
 );
 const ZUDO_DOC_PKG_PATH = resolve(ROOT_DIR, "packages/zudo-doc/package.json");
 
-// External upstream packages: scaffold pin must equal root dependencies[pkg].
+// External upstream packages emitted by the scaffold: each pin must equal
+// root dependencies[pkg]. The Cloudflare adapter is intentionally absent: the
+// default scaffold is pure static and consumers choose their deploy adapter.
 // @takazudo/zdtp is included here so the scaffold's emitted zdtp pin is
 // parity-checked against root dependencies — same staleness class as #2381 / #2445.
 const PINNED_PACKAGES = [
   "@takazudo/zfb",
   "@takazudo/zfb-runtime",
-  "@takazudo/zfb-adapter-cloudflare",
   "@takazudo/zfb-md-wasm",
   "@takazudo/zdtp",
 ];
