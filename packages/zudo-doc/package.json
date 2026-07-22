@@ -610,7 +610,7 @@
     "@takazudo/zfb": "^0.1.0-next.90",
     "@takazudo/zfb-md-wasm": "^0.1.0-next.90",
     "@takazudo/zfb-runtime": "^0.1.0-next.90",
-    "@takazudo/zudo-doc-history-server": "^4.0.0",
+    "@takazudo/zudo-doc-history-server": "^4.4.0",
     "diff": "^8.0.0",
     "katex": "^0.16.0",
     "preact": "^10.29.1",
