@@ -1358,12 +1358,12 @@ describe("scaffold — generated package.json", () => {
     // and the chrome-derive seam always imports DesignTokenPanelBootstrap.
     await scaffold(baseChoices);
     const pkg = await fs.readJson(projectPath("test-doc", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.93");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.93");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.94");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.94");
     // The default scaffold is pure static and emits no Worker-only routes or
     // adapter config. Consumers add a deploy-target adapter when they opt in.
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBeUndefined();
-    expect(pkg.dependencies["@takazudo/zfb-md-wasm"]).toBe("0.1.0-next.93");
+    expect(pkg.dependencies["@takazudo/zfb-md-wasm"]).toBe("0.1.0-next.94");
     expect(pkg.dependencies["@takazudo/zudo-doc"]).toMatch(/^\^\d+\.\d+\.\d+/);
     expect(pkg.dependencies["diff"]).toBeDefined();
     expect(pkg.dependencies["@takazudo/zdtp"]).toBeDefined();
