@@ -33,7 +33,7 @@ const expectedHighlights = [
   },
 ] as const;
 
-describe("@takazudo/zfb-md-wasm next.92 release contract", () => {
+describe("@takazudo/zfb-md-wasm next.93 release contract", () => {
   it.each(expectedHighlights)(
     "emits semantic class-only $language markup",
     async ({ language, code, roles, html: expectedHtml }) => {
@@ -88,7 +88,7 @@ describe("@takazudo/zfb-md-wasm next.92 release contract", () => {
     );
     const wasmPath = resolve(packageRoot, "dist/wasm/zfb_md_wasm_bg.wasm");
 
-    expect(packageJson.version).toBe("0.1.0-next.92");
+    expect(packageJson.version).toBe("0.1.0-next.93");
     expect(packageJson.exports["."]).toEqual({
       types: "./dist/index.d.ts",
       browser: "./dist/browser.js",
