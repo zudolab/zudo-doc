@@ -6,36 +6,44 @@ sidebar_position: 22
 
 `linkValidation` 機能は、デプロイ前に壊れた参照を検出するため、ビルド時に内部リンクとアンカーフラグメントを検査します。`<a href>` と `<img src>` 要素を調べ、内部リンクとアンカーフラグメントが正しく解決されることを検証します。
 
-:::note[オプトイン機能 — warn モードで有効]
+:::note[標準プリセットに含まれます — warn モード]
 
-この機能は zudo-doc の `zfb.config.ts` で `linkValidation: { failOnBroken: false }` として有効化されています — **warn モード**です。オブジェクト型の機能であるため、オプションオブジェクトを渡す必要があります。warn モードではビルドを失敗させることはなく、壊れた参照はビルド診断としてのみ報告されます。
+`zudoDoc()` は `linkValidation: { failOnBroken: false }` として Link Validation を有効にします — **warn モード**です。このデフォルトに個別の設定フィールドは不要です。warn モードではビルドを失敗させることはなく、壊れた参照はビルド診断としてのみ報告されます。
 
 :::
 
 ## 設定
 
-デフォルト（warn のみ、外部 URL はスキップ）で有効化します。
+このデフォルトを得るのに設定は不要です。
 
 ```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+  }),
+);
+```
+
+代わりに壊れたリンクでビルドを失敗させる場合（zudo-doc では未使用 — CI を壊すため）は、プリセットの `markdown.features` をスプレッドして `linkValidation` を上書きします — 素の `defineConfig({ markdown: { features } })` はプリセットの残りの部分を破棄してしまいます。
+
+```ts title="zfb.config.ts"
+const base = zudoDoc({
+  // ...your project settings
+});
+
 export default defineConfig({
+  ...base,
   markdown: {
+    ...base.markdown,
     features: {
-      linkValidation: {},
+      ...base.markdown.features,
+      linkValidation: { failOnBroken: true },
     },
   },
 });
-```
-
-zudo-doc では warn のみであることを明示するため、`failOnBroken: false` を明示的に設定しています。
-
-```ts title="zfb.config.ts"
-linkValidation: { failOnBroken: false },
-```
-
-代わりに壊れたリンクでビルドを失敗させる場合（zudo-doc では未使用 — CI を壊すため）:
-
-```ts title="zfb.config.ts"
-linkValidation: { failOnBroken: true },
 ```
 
 ## オプション
