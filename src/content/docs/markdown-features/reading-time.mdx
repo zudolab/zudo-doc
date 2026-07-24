@@ -29,10 +29,10 @@ Unlike the other features in this category, Reading Time renders **nothing** on 
 
 ## How the value surfaces
 
-The feature exports the estimate as `readingTimeMinutes` from the compiled MDX. In a TSX page that renders a collection entry, read it from the rendered entry:
+The feature injects `export const readingTimeMinutes = N;` into the compiled MDX module as a named export. Import it directly from the MDX file in the TSX page that renders it:
 
 ```tsx
-const { readingTimeMinutes, ...rest } = await entry.render();
+import { readingTimeMinutes } from "./my-page.mdx";
 
 <p>{readingTimeMinutes} min read</p>;
 ```

@@ -11,7 +11,7 @@ sidebar_position: 3
 Every heading at `h2` and below automatically receives:
 
 1. A slug-based `id` attribute derived from the heading text using zfb's own `slugify` (github-slugger-like, but it collapses punctuation such as `.` and `/` to `-` rather than stripping it).
-2. A self-referencing anchor element wrapping the heading text, so readers can copy a direct deep-link.
+2. An empty self-referencing anchor element appended after the heading text, so readers can copy a direct deep-link.
 3. Deduplication: when the same slug would appear more than once in a document, a counter suffix is appended (`overview`, `overview-1`, `overview-2`, …).
 
 `h1` is never assigned an `id` — the page title (from frontmatter) is the document's only `h1`.

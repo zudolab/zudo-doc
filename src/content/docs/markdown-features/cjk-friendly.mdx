@@ -8,9 +8,10 @@ sidebar_position: 2
 
 ## What it does
 
-CommonMark's emphasis-flanking rules treat CJK ideographs and kana as neither whitespace nor punctuation. As a result, `**bold**` or `_italic_` markers placed immediately next to Chinese, Japanese, or Korean characters are parsed as literal asterisks and underscores rather than formatting delimiters.
+CJK Friendly governs two post-parse fixups that adapt CommonMark/GFM rules to CJK text:
 
-The CJK Friendly feature post-processes the markdown AST and re-tokenizes emphasis rules to account for CJK content, so bold and italic work correctly around ideographs and kana.
+1. **Emphasis/strong flanking.** CommonMark's emphasis-flanking rules treat CJK ideographs and kana as neither whitespace nor punctuation. As a result, `**bold**` or `_italic_` markers placed immediately next to Chinese, Japanese, or Korean characters are parsed as literal asterisks and underscores rather than formatting delimiters. This fixup post-processes the markdown AST and re-tokenizes emphasis rules to account for CJK content, so bold and italic work correctly around ideographs and kana.
+2. **Bare-URL autolink boundary.** GFM's autolink-literal grammar terminates a bare URL only on ASCII whitespace, so a URL flush against CJK text (`詳細はhttps://example.com参照`) swallows the trailing CJK run into the `href`. This fixup terminates the link at the first CJK character instead. It only applies when `gfm.autolinkLiteral` is also enabled.
 
 ## Example
 
@@ -20,6 +21,14 @@ The following renders correctly with emphasis markers adjacent to Japanese text:
 これは **重要な** テキストです。
 _イタリック_ も正しく機能します。
 ```
+
+A bare URL flush against CJK text also terminates at the right boundary (with `gfm.autolinkLiteral` enabled):
+
+```md
+詳細はhttps://example.com参照してください。
+```
+
+Without this fixup, the trailing `参照してください。` would be swallowed into the link's `href`.
 
 ## Disabling
 
