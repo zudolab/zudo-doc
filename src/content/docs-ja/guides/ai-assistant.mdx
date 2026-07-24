@@ -141,7 +141,7 @@ Durable Objectsを実装するversionにはプレビューURLが生成されな�
 
 ## チャットダイアログ
 
-ダイアログはネイティブの`<dialog>`要素を使ったPreactアイランド（`src/components/ai-chat-modal.tsx`）です。
+ダイアログはネイティブの`<dialog>`要素を使ったpackage-ownedのPreactアイランド（`@takazudo/zudo-doc/ai-chat-modal`）です。このshowcaseでは`pages/lib/_body-end-islands.tsx`（`BodyEndIslands`のchrome-bindings slot）経由でマウントしています。
 
 ### レイアウト
 
@@ -157,34 +157,6 @@ Durable Objectsを実装するversionにはプレビューURLが生成されな�
 - 背景クリックまたはEscapeキーで閉じる
 - ダイアログを閉じると会話はリセットされる
 
-## MSWモック（開発時のみ）
-
-実際のバックエンドなしでUI開発を行うには、MSW（Mock Service Worker）を有効にします。MSWは**開発環境専用**で、本番ビルドでは決して動作しません。
-
-**セットアップ：**
-
-1. サービスワーカーファイルを生成（初回のみ）：
-
-   ```bash
-   npx msw init public/ --save
-   ```
-
-2. 環境変数を設定：
-
-   ```env title=".env"
-   PUBLIC_ENABLE_MOCKS=true
-   ```
-
-3. 開発サーバーを起動（`pnpm dev`）。
-
-モックハンドラ（`src/mocks/handlers.ts`）は、シミュレートされた遅延付きで定義済みのレスポンスを返します。APIクレジットを消費せずにチャットUIのスタイリングや動作確認を行うのに便利です。
-
-<Note>
-
-MSWを使うには`zfb.config.ts`で`aiAssistant: true`である必要があります。生成される`public/mockServiceWorker.js`ファイルはgitignore対象です — 各開発者がローカルで生成します。
-
-</Note>
-
 ## APIリファレンス
 
 エンドポイントの詳細仕様（リクエスト／レスポンスの型、エラーコード、環境変数）は[AI Assistant APIリファレンス](../reference/ai-assistant-api.mdx)を参照してください。
@@ -192,20 +164,24 @@ MSWを使うには`zfb.config.ts`で`aiAssistant: true`である必要があり�
 ## ファイル構成
 
 ```
-src/
-├── components/
-│   ├── ai-chat-modal.tsx       # Preact island — chat dialog UI
-│   └── mock-init.tsx           # MSW initializer (dev only)
-├── mocks/
-│   ├── handlers.ts             # MSW mock response handlers
-│   ├── browser.ts              # MSW browser worker setup
-│   ├── server.ts               # MSW node server setup
-│   └── init.ts                 # Conditional MSW initialization
-├── types/
-│   └── ai-chat.ts              # ChatMessage, AiChatRequest/Response types
-└── utils/
-    └── render-markdown.ts      # Lightweight markdown-to-HTML renderer
 pages/
 └── api/
-    └── ai-chat.tsx             # CF Workers SSR endpoint (prerender = false)
+    ├── ai-chat.tsx               # CF Workers SSR endpoint (prerender = false)
+    ├── _ai-chat-admission.ts     # Exact UTC-day paid-call admission cap
+    ├── _ai-chat-audit.ts         # Privacy-safe outcome audit logging
+    ├── _ai-chat-client.ts        # Claude API client (raw fetch)
+    ├── _ai-chat-cors.ts          # CORS origin allowlist
+    ├── _ai-chat-observability.ts # Structured operational logging
+    ├── _ai-chat-payload.ts       # Request/response payload builders
+    ├── _ai-chat-rate-limit.ts    # Per-IP KV rate limiting
+    ├── _ai-chat-screening.ts     # Prompt-injection screening
+    └── _ai-chat-types.ts         # Shared route types
+src/
+└── types/
+    └── ai-chat.ts                # ChatMessage, AiChatRequest/Response types
+worker-entry.ts                   # Production Worker entry (wraps dist/_worker.js)
 ```
+
+チャットダイアログのアイランド（`@takazudo/zudo-doc/ai-chat-modal`）と、チャットメッセージ用の
+マークダウンレンダラー（`@takazudo/zudo-doc/render-markdown`）はpackage-ownedであり、
+このリポジトリのファイルツリーには含まれません。

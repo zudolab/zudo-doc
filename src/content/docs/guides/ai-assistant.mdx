@@ -141,7 +141,7 @@ Uses `claude-haiku-4-5-20251001` for fast, low-cost responses.
 
 ## Chat Dialog
 
-The dialog is a Preact island (`src/components/ai-chat-modal.tsx`) using the native `<dialog>` element.
+The dialog is a package-owned Preact island (`@takazudo/zudo-doc/ai-chat-modal`) using the native `<dialog>` element. This showcase mounts it via `pages/lib/_body-end-islands.tsx` (the `BodyEndIslands` chrome-bindings slot).
 
 ### Layout
 
@@ -157,34 +157,6 @@ The dialog is a Preact island (`src/components/ai-chat-modal.tsx`) using the nat
 - Backdrop click or Escape to close
 - Conversation resets on close
 
-## MSW Mock (Development Only)
-
-For UI development without a real backend, enable MSW (Mock Service Worker). MSW is **dev-only** — it never runs in production builds.
-
-**Setup:**
-
-1. Generate the service worker file (one-time):
-
-   ```bash
-   npx msw init public/ --save
-   ```
-
-2. Set the environment variable:
-
-   ```env title=".env"
-   PUBLIC_ENABLE_MOCKS=true
-   ```
-
-3. Run the dev server (`pnpm dev`).
-
-The mock handler (`src/mocks/handlers.ts`) returns a predefined response with a simulated delay. This is useful for styling and testing the chat UI without consuming API credits.
-
-<Note>
-
-MSW requires `aiAssistant: true` in `zfb.config.ts`. The generated `public/mockServiceWorker.js` file is gitignored — each developer generates it locally.
-
-</Note>
-
 ## API Reference
 
 For the full endpoint specification (request/response types, error codes, environment variables), see the [AI Assistant API reference](../reference/ai-assistant-api.mdx).
@@ -192,20 +164,24 @@ For the full endpoint specification (request/response types, error codes, enviro
 ## File Structure
 
 ```
-src/
-├── components/
-│   ├── ai-chat-modal.tsx       # Preact island — chat dialog UI
-│   └── mock-init.tsx           # MSW initializer (dev only)
-├── mocks/
-│   ├── handlers.ts             # MSW mock response handlers
-│   ├── browser.ts              # MSW browser worker setup
-│   ├── server.ts               # MSW node server setup
-│   └── init.ts                 # Conditional MSW initialization
-├── types/
-│   └── ai-chat.ts              # ChatMessage, AiChatRequest/Response types
-└── utils/
-    └── render-markdown.ts      # Lightweight markdown-to-HTML renderer
 pages/
 └── api/
-    └── ai-chat.tsx             # CF Workers SSR endpoint (prerender = false)
+    ├── ai-chat.tsx               # CF Workers SSR endpoint (prerender = false)
+    ├── _ai-chat-admission.ts     # Exact UTC-day paid-call admission cap
+    ├── _ai-chat-audit.ts         # Privacy-safe outcome audit logging
+    ├── _ai-chat-client.ts        # Claude API client (raw fetch)
+    ├── _ai-chat-cors.ts          # CORS origin allowlist
+    ├── _ai-chat-observability.ts # Structured operational logging
+    ├── _ai-chat-payload.ts       # Request/response payload builders
+    ├── _ai-chat-rate-limit.ts    # Per-IP KV rate limiting
+    ├── _ai-chat-screening.ts     # Prompt-injection screening
+    └── _ai-chat-types.ts         # Shared route types
+src/
+└── types/
+    └── ai-chat.ts                # ChatMessage, AiChatRequest/Response types
+worker-entry.ts                   # Production Worker entry (wraps dist/_worker.js)
 ```
+
+The chat dialog island (`@takazudo/zudo-doc/ai-chat-modal`) and the chat-message
+markdown renderer (`@takazudo/zudo-doc/render-markdown`) are package-owned —
+not part of this repository's file tree.
