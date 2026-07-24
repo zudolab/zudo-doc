@@ -9,14 +9,13 @@ zfb の Markdown パイプラインは、常に有効な **Core（組み込み�
 
 ## Core 機能
 
-以下の 8 機能は常に有効です。設定は不要です。
+以下の 7 機能は常に有効です。設定は不要です。
 
 | 機能 | 説明 |
 | --- | --- |
 | [CJK Friendly](./cjk-friendly.mdx) | 中国語・日本語・韓国語（CJK）の文章に対して、スペーシングと改行処理を改善します。 |
 | [Heading Links](./heading-links.mdx) | h2 以上の見出しにアンカーリンクを追加し、ページ内の直接リンクを可能にします。 |
 | [Code Title](./code-title.mdx) | コードブロックに `title="…"` を設定すると、ファイル名や見出しバーを表示します。 |
-| [External Links](./external-links.mdx) | 外部リンクに視覚的なインジケーターを自動付与します。 |
 | [Resolve Links](./resolve-links.mdx) | 相対パスの `.mdx`/`.md` リンクをクリーンなドキュメント URL に解決します。 |
 | [Strip .md Extension](./strip-md-ext.mdx) | 出力される内部リンクの href から `.md`/`.mdx` 拡張子を除去します。 |
 | [Syntax Highlighting](./syntax-highlighting.mdx) | アクティブなカラースキームに対応するビルド時セマンティッククラスハイライト。 |
@@ -24,10 +23,11 @@ zfb の Markdown パイプラインは、常に有効な **Core（組み込み�
 
 ## Opt-in 機能
 
-以下の 14 機能はデフォルトで無効です。`zfb.config.ts` の対応する `markdown.features.*` キーで個別に有効化してください。
+以下の 15 機能は zfb エンジンレベルでは opt-in（オプトイン）です — 明示的に設定しない限り無効で、多くは `markdown.features.*` 配下のキーで設定します（External Links と Image Enlarge は別の形のキーを使います）。ただし、このショーケース自体は `markdown` を直接設定していません。`zudoDoc({...})` プリセットが下表の `markdown.features.*` エントリの大半をあらかじめ有効化しています — プリセットの正確なデフォルト値は各機能のページを参照してください。素の `defineConfig({ markdown: { features: {...} } })` は `zudoDoc()` を完全にバイパスし、プリセットが配線する残りすべて（コレクション、Chrome、コードハイライトなど）を失わせるため、常に `zudoDoc({...})` から始めてその `markdown` ブロックを拡張してください。
 
 | 機能 | 設定キー | 説明 |
 | --- | --- | --- |
+| [External Links](./external-links.mdx) | `markdown.externalLinks` | 有効化すると外部リンクに `target`/`rel` を付与します。デフォルトでは無効 — 有効/無効にかかわらず、本文中のリンクに自動的な視覚インジケーターは付与されません。 |
 | [Admonitions Preset](./admonitions-preset.mdx) | `directives` | `directives` マップでアドモニションのボキャブラリ（note/tip/warning/danger/info/caution/details）を登録します。 |
 | [Mermaid](./mermaid.mdx) | `mermaid` | ` ```mermaid ` フェンスをクライアントサイドの Mermaid ライブラリで図として描画します。 |
 | [Image Enlarge](./image-enlarge.mdx) | `settings.imageEnlarge` | クリックで拡大できる `<figure>` に画像をラップします。ユーザーランド設定 — 組み込みの `markdown.features` キーは next.18 で削除されました。 |
@@ -35,10 +35,16 @@ zfb の Markdown パイプラインは、常に有効な **Core（組み込み�
 | [GitHub Alerts](./github-alerts.mdx) | `githubAlerts` | `> [!NOTE]`/`[!TIP]`/`[!WARNING]`/`[!IMPORTANT]`/`[!CAUTION]` ブロック引用をアドモニションマークアップに変換します。 |
 | [Reading Time](./reading-time.mdx) | `readingTime` | 推定読了時間を計算し、ページレベルのメタデータとして公開します。 |
 | [GitHub Autolinks](./github-autolinks.mdx) | `githubAutolinks` | Issue 番号、クロスリポジトリ参照、コミット SHA を GitHub へ自動リンクします。 |
-| [Code Enrichment](./code-enrichment.mdx) | `codeEnrichment` | コードブロックにタイトルバー、コピーボタン、diff/行ハイライト装飾を追加します。 |
+| [Code Enrichment](./code-enrichment.mdx) | `codeEnrichment` | ハイライト済みのコードブロックに diff/行/単語ハイライト装飾を追加します。タイトルバーは別の常時有効な Core 機能です（[Code Title](./code-title.mdx) 参照）。コピー/折り返しボタンは、この機能の有効・無効にかかわらず、すべてのコードブロックに追加されます。 |
 | [Code Tabs](./code-tabs.mdx) | `codeTabs` | `:::code-group` ディレクティブを `<CodeGroup>` 経由でタブ付きコードパネルとして描画します。 |
 | [Ruby](./ruby.mdx) | `ruby` | ルビ注釈サポートを追加します（`{base}^{ruby}` 構文）。 |
 | [TOC Export](./toc-export.mdx) | `tocExport` | ページの目次を `export const toc` 名前付きエクスポートとして出力します。 |
 | [Image Dimensions](./image-dimensions.mdx) | `imageDimensions` | ビルド時にディスクのメタデータから画像に `width`/`height` 属性を付与します。 |
 | [Link Validation](./link-validation.mdx) | `linkValidation` | ビルド時に内部リンクを検証し、壊れた参照に警告（またはエラー）を出します。 |
-| [Transclude](./transclude.mdx) | `transclude` | `:::include{file="…"}` または `![[path]]` で別ファイルの内容を埋め込みます。zudo-doc では無効（transclude レンダラー未配線）。 |
+| [Transclude](./transclude.mdx) | `transclude` | `:::include{file="…"}` で別ファイルの内容を埋め込みます。zudo-doc では無効（transclude レンダラー未配線）。 |
+
+:::note[その他のパイプライン設定]
+
+zfb にはトップレベルの `markdown` 設定として `markdown.gfm`（GitHub Flavored Markdown の各構文をきめ細かく切り替える）と `markdown.hardBreaks`（ソフト改行をすべて `<br>` に変換する）も存在します。どちらも上記の Core/Opt-in の一覧には含まれておらず、このプロジェクトの `zfb.config.ts` でも設定されていません。
+
+:::

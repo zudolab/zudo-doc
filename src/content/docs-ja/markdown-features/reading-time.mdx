@@ -29,10 +29,10 @@ export default defineConfig({
 
 ## 値の現れ方
 
-この機能は推定値をコンパイル済み MDX から `readingTimeMinutes` としてエクスポートします。コレクションエントリを描画する TSX ページでは、描画済みエントリから読み取ります。
+この機能は、コンパイル済みの MDX モジュールに `export const readingTimeMinutes = N;` を名前付きエクスポートとして注入します。TSX ページでは、MDX ファイルから直接インポートして読み取ります。
 
 ```tsx
-const { readingTimeMinutes, ...rest } = await entry.render();
+import { readingTimeMinutes } from "./my-page.mdx";
 
 <p>{readingTimeMinutes} min read</p>;
 ```

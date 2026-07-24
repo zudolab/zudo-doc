@@ -61,30 +61,26 @@ pnpm build && pnpm check:links
 By default, the checker exits with code 0 even when issues are found. Select the categories that should fail the command with the explicit `--strict-broken`, `--strict-absolute`, and `--strict-trailing` flags. The b4push and CI workflows fail on broken links and absolute MDX links while leaving trailing-slash findings informational:
 
 ```bash
-pnpm check:links -- --strict-broken --strict-absolute
+pnpm check:links -- --strict-broken --strict-absolute --allowlist=.check-links-allowlist
 ```
 
 Run `pnpm check:links -- --help` to see the current CLI options.
 
+### Allowlist
+
+`--allowlist=PATH` excludes exact `<file>:<line>:<href>` entries from the strict-mode failure counts — for issues that cannot be fixed at the source, such as a JA page that intentionally links to an EN-only sibling, or an absolute href that resolves to a runtime-generated route with no MDX file. The repo ships a real allowlist at `.check-links-allowlist`: one `<file>:<line>:<href>` entry per line, with `#` comments and blank lines ignored. Each entry must match the printed report verbatim — file path relative to the repo root, 1-based line number, and href as it appeared in the source or built HTML. Delete an entry once its underlying issue is fixed, so the strict gate catches future regressions of the same shape.
+
 ### As part of b4push
 
-The link checker runs as step 10 of 13 in the pre-push validation (`pnpm b4push`):
+The link checker runs as step 20 of 23 in the pre-push validation (`pnpm b4push`), right after the build step:
 
-1. Format check (mdx)
-2. Template drift check
-3. Pin parity check
-4. Fixture settings drift check
-5. Tags audit (--ci)
-6. Design token lint
-7. Type checking
-8. Root unit tests
-9. Build
-10. **Link check**
-11. HTML validation
-12. Automated preview smoke (blocking)
-13. Manual interactive smoke (operator-driven)
+```
+19. Build
+20. **Link check**
+21. HTML validation
+```
 
-The canonical, authoritative b4push step list lives in the header comment of `scripts/run-b4push.sh` — treat that script as the single source of truth. The list above is a summary; if it ever drifts, the script wins.
+The canonical, authoritative b4push step list lives in the header comment of `scripts/run-b4push.sh` — treat that script as the single source of truth for the full 23-step sequence.
 
 ### In CI
 

@@ -1,10 +1,10 @@
 ---
 title: Admonitions
-description: Callout blocks for highlighting important information with five distinct types.
+description: Callout blocks for highlighting important information with seven distinct types.
 sidebar_position: 2
 ---
 
-Admonitions are callout blocks for highlighting important information. All five types are globally available — no imports needed.
+Admonitions are callout blocks for highlighting important information. All seven types are globally available — no imports needed.
 
 ## Note
 
@@ -126,6 +126,56 @@ Running this command will permanently delete all data. This action cannot be und
 :::
 ```
 
+## Caution
+
+:::caution
+
+This is a caution — use it for risky steps that need extra care before proceeding.
+
+:::
+
+:::caution[Proceed Carefully]
+
+Back up your data before running this migration.
+
+:::
+
+```mdx
+:::caution
+This is a caution — use it for risky steps that need extra care before proceeding.
+:::
+
+:::caution[Proceed Carefully]
+Back up your data before running this migration.
+:::
+```
+
+## Important
+
+`Important` has no `:::important` directive — use the JSX component syntax below, or the [GitHub Alerts](../markdown-features/github-alerts.mdx) `> [!IMPORTANT]` syntax.
+
+<Important>
+
+This is important — use it for key information readers need to achieve their goal.
+
+</Important>
+
+<Important title="Read First">
+
+Review the migration guide before upgrading.
+
+</Important>
+
+```mdx
+<Important>
+This is important — use it for key information readers need to achieve their goal.
+</Important>
+
+<Important title="Read First">
+Review the migration guide before upgrading.
+</Important>
+```
+
 ## Component Syntax
 
 In addition to the directive syntax shown above, you can use JSX component syntax. This is useful when you need more control or are building custom layouts.
@@ -140,7 +190,7 @@ Warning with a custom title.
 </Warning>
 ```
 
-The component syntax supports the same five types (`Note`, `Tip`, `Info`, `Warning`, `Danger`) and an optional `title` prop.
+The component syntax supports all seven types (`Note`, `Tip`, `Info`, `Warning`, `Danger`, `Caution`, `Important`) and an optional `title` prop.
 
 ## Props
 
@@ -159,3 +209,5 @@ Each admonition type uses a semantic color token for its border and title color:
 | Info | info | Blue |
 | Warning | warning | Yellow |
 | Danger | danger | Red |
+| Caution | danger | Red |
+| Important | accent | Orange |

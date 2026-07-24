@@ -14,22 +14,36 @@ sidebar_position: 20
 
 ## 設定
 
-オブジェクト型の機能であるため、オプションオブジェクトを渡す必要があります（`true` のショートハンドは受け付けません）。デフォルト（`maxDepth: 3`）で有効化します。
+`zudoDoc()` は標準プリセットに `tocExport: {}` を含んでいます — デフォルトの `maxDepth: 3` に個別の設定フィールドは不要です。（オブジェクト型の機能であり `true` のショートハンドは受け付けないため、プリセットは常に `{}` を渡し、`true` は渡しません。）
 
 ```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+  }),
+);
+```
+
+見出しの深さを制限する場合は、プリセットの `markdown.features` をスプレッドして `tocExport` を上書きします — 素の `defineConfig({ markdown: { features } })` はプリセットの残りの部分を破棄してしまいます。
+
+```ts title="zfb.config.ts"
+const base = zudoDoc({
+  // ...your project settings
+});
+
 export default defineConfig({
+  ...base,
   markdown: {
+    ...base.markdown,
     features: {
-      tocExport: {},
+      ...base.markdown.features,
+      tocExport: { maxDepth: 2 },
     },
   },
 });
-```
-
-見出しの深さを制限する場合:
-
-```ts title="zfb.config.ts"
-tocExport: { maxDepth: 2 },
 ```
 
 ## オプション

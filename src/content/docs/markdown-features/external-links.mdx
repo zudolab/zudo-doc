@@ -1,36 +1,67 @@
 ---
 title: External Links
-description: Marks outbound links with a visual indicator automatically.
+description: Opt-in rewriter that adds target and rel attributes to outbound links.
 sidebar_position: 5
 ---
 
-**Core feature** — always active, no configuration required.
-
 ## What it does
 
-Links pointing to an external origin receive a visual affordance automatically. The affordance is applied by the project's link-override component, which adds an external-link icon to any anchor whose `href` is an absolute `http:` or `https:` URL pointing outside the current site.
+zfb ships an opt-in external-link rewriter, configured through the top-level `markdown.externalLinks` option. When enabled, every `<a>` whose `href` is classified as external receives the `target` and `rel` attributes you configure. It is a build-time port of `rehype-external-links` and runs inside zfb's markdown pipeline.
+
+The rewriter is **off by default**. Neither zfb nor the zudo-doc preset enables it, so omitting the option leaves the rendered HTML byte-for-byte unchanged.
+
+<Note title="No automatic icon">
+
+  Content-body external links receive **no visual affordance** today. zudo-doc's content-link component (`content-link.tsx`) applies only accent color and underline — it adds no external-link icon, and it does not set `target` or `rel`. The `markdown.externalLinks` rewriter described here adds attributes only; it does not inject an icon or any other marker.
+
+</Note>
 
 ## What counts as external
 
-A link is treated as external when:
+An `href` is treated as external when:
 
-- Its `href` is an absolute `http:` or `https:` URL.
-- The origin differs from the current site's origin.
+- It is an absolute `http:` or `https:` URL.
+- Its origin differs from the top-level `site` URL (when `site` is configured). When `site` is absent, any absolute `http:` / `https:` URL is treated as external.
 
-Relative paths and non-HTTP schemes (`mailto:`, `tel:`) are always treated as internal and receive no affordance.
+Non-HTTP(S) schemes (`mailto:`, `tel:`, …) are always left unchanged, and relative URLs (`/internal/`, `./page.mdx`, `#anchor`) are always internal.
+
+## Enabling it
+
+The zudo-doc preset owns the `markdown` config, and `zudoDoc()` returns a complete zfb config. To opt in, spread that config and extend its `markdown` block with an `externalLinks` entry — spread `base.markdown` so the preset's existing `markdown.features` are preserved:
+
+```ts
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+const base = zudoDoc({
+  // ...your project settings
+});
+
+export default defineConfig({
+  ...base,
+  markdown: {
+    ...base.markdown,
+    externalLinks: {
+      target: "_blank",
+      rel: ["noopener", "noreferrer"],
+    },
+  },
+});
+```
+
+Both fields are optional. `target` defaults to `"_blank"` and `rel` defaults to `["noopener", "noreferrer"]`, so `externalLinks: {}` opts in with those defaults. Supplied `rel` tokens are merged (case-insensitively deduplicated) with any `rel` already present on the link.
 
 ## Example
 
-Writing a standard markdown link to an external site:
+With the rewriter enabled, a standard markdown link to an external site:
 
 ```md
 See the [zfb repository](https://github.com/takazudo/zfb) for source.
 ```
 
-Renders with an external-link icon after the link text: [zfb repository](https://github.com/takazudo/zfb).
+renders as `<a href="https://github.com/takazudo/zfb" target="_blank" rel="noopener noreferrer">`. The link text and its accent styling are unchanged — only the `target` and `rel` attributes are added.
 
 ## Notes
 
-- The visual affordance (icon, color) is defined in the project's link component, not by a configurable `externalLinks` key. The appearance is controlled by the project's design tokens.
-- Attribute merging (e.g. `target="_blank"`, `rel="noopener noreferrer"`) is handled by the link-override component, not in the markdown pipeline.
-- See [Resolve Links](./resolve-links.mdx) for the companion feature that normalizes internal link targets.
+- The rewriter sets attributes only; it renders no icon. To show a visual external-link indicator once the rewriter is enabled, add your own CSS — for example a rule keyed on the `a[target="_blank"]` attribute it adds.
+- See [Resolve Links](./resolve-links.mdx) for the companion feature that normalizes internal `.mdx` / `.md` link targets.

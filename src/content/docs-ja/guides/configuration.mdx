@@ -171,6 +171,8 @@ MDX 内のインラインマークダウンリンク（例 `[text](/docs/some-pa
 
 デフォルト: `false`
 
+`metaTags` と `sitemap` を組み合わせたソーシャル共有・検索インデックス設定の全体像は [SEO ガイド](./seo.mdx) も参照してください。
+
 ### onBrokenMarkdownLinks
 
 `.md`/`.mdx` リンクが解決できないときの挙動: `"warn"` はログして続行、`"error"` はビルドを失敗、`"ignore"` は無音。
@@ -434,7 +436,7 @@ body-foot ユーティリティエリア（doc-history / view-source）、また
 | プロパティ | 型 | 説明 |
 |----------|------|-------------|
 | `docHistory` | `boolean`（任意） | History ボタンを表示（`docHistory: true` が必要） |
-| `viewSourceLink` | `boolean`（任意） | 生ソースリンクを表示（`editUrl` が必要） |
+| `viewSourceLink` | `boolean`（任意） | 生ソースリンクを表示（`githubUrl` が必要） |
 
 ### htmlPreview
 

@@ -1,14 +1,20 @@
 ---
 title: Code Enrichment
-description: Adds a title bar, copy button, and diff/line-highlight decorations to fenced code blocks.
+description: Adds diff/line/word-highlight decorations to fenced code blocks after syntax highlighting.
 sidebar_position: 17
 ---
 
-The `codeEnrichment` feature decorates fenced code blocks with a title bar, a copy button, and per-line annotations — diff markers and line highlighting. It runs as a hast-phase visitor after syntax highlighting, so it operates on the already-tokenized `<span class="line">` output.
+The `codeEnrichment` feature decorates fenced code blocks with per-line/per-word annotations — diff markers, line highlighting, and word highlighting. It runs as a hast-phase visitor after syntax highlighting, so it operates on the already-tokenized `<span class="line">` output.
 
 :::note[Opt-in feature]
 
 This feature is disabled by default. Enable it with the `codeEnrichment` key in `zfb.config.ts`. It is an object-typed feature, so it must be given an options object (`{}` or fields) — the `true` shorthand is rejected.
+
+:::
+
+:::note[Title bar is a separate, always-on feature]
+
+The filename/title bar shown above a titled fence (`.code-block-container` / `.code-block-title`) comes from a separate, always-on core mechanism — not from `codeEnrichment`. It renders whether or not `codeEnrichment` is enabled. See [Code Title](./code-title.mdx).
 
 :::
 
@@ -24,32 +30,14 @@ export default defineConfig({
 });
 ```
 
-Both enhancements (diff markers and line highlighting) are active by default. Disable either individually:
+All three enhancements (diff markers, line highlighting, and word highlighting) are active by default. Disable any individually:
 
 ```ts title="zfb.config.ts"
 codeEnrichment: {
   diffMarkers: false,
   lineHighlight: true,
+  wordHighlight: true,
 }
-```
-
-## Title bar
-
-When a fence carries a `title="…"` attribute, the block is wrapped in a container with a title bar:
-
-````md
-```ts title="example.ts"
-const greeting = "hello";
-```
-````
-
-The emitted markup is `<div class="code-block-container"><div class="code-block-title">example.ts</div><pre class="hi-root"><code>…</code></pre></div>`. A fence without a title emits a bare `<pre class="hi-root"><code>…</code></pre>` — no container, no title bar.
-
-Live example with a title:
-
-```ts title="example.ts"
-const greeting = "hello";
-console.log(greeting);
 ```
 
 ## Diff markers
@@ -90,15 +78,34 @@ const e = 5;
 
 Supported range syntax: single numbers (`{3}`), inclusive ranges (`{3-5}`), and combinations (`{1,3-5,8}`).
 
-## Copy button
+## Word highlighting
 
-The copy button is added by client-side JavaScript at runtime; it is not present in the server-rendered HTML. When hydrated, the button markup is `button.code-btn.code-btn-copy` containing `svg.code-icon.code-icon-copy`.
+Add whitespace-delimited `/phrase/` expressions to the fence info-string. Every visible occurrence of the phrase in the block is wrapped in a `.highlighted-word` span, preserving syntax-highlighting markup at the match boundaries:
+
+```js title="word-demo.js" /answer/
+const answer = 42;
+console.log(answer);
+```
+
+The fence above was authored as:
+
+````md
+```js title="word-demo.js" /answer/
+const answer = 42;
+console.log(answer);
+```
+````
+
+Multiple expressions are space-separated (`/first/ /second phrase/`); a literal slash inside a phrase is escaped as `\/` (`/path\/name/`). Malformed or unterminated expressions are silently ignored.
+
+## Copy and wrap buttons
+
+The copy and word-wrap toggle buttons are added by client-side JavaScript at runtime; they are not present in the server-rendered HTML. This runs unconditionally on every highlighted code block — independent of whether `codeEnrichment` is configured. When hydrated, the copy button markup is `button.code-btn.code-btn-copy` containing `svg.code-icon.code-icon-copy`.
 
 ## Emitted DOM
 
 | Trigger | Emitted element(s) | Class names |
 | --- | --- | --- |
-| Fence with `title="x"` | `<div><div>title</div><pre><code></code></pre></div>` | `.code-block-container` > `.code-block-title` + `pre.hi-root` |
-| Fence without title | bare `<pre><code></code></pre>` | `pre.hi-root` |
 | Diff marker line | `<span class="line" data-line-diff="added\|removed">` | `span.line[data-line-diff]` |
 | Highlighted line | `<span class="line" data-line-highlight="true">` | `span.line[data-line-highlight]` |
+| Word match | wraps the matched visible text | `.highlighted-word` |

@@ -10,7 +10,9 @@ sidebar_position: 7
 
 <Info>
 
-This component is **not** directly available in MDX content. It requires server-side data fetching, so it must be imported in a zfb page module. The live demo below uses `SiteTreeNavDemo`, a wrapper registered as a global MDX component.
+`SiteTreeNav` **is** directly available in MDX content — it's registered as a global MDX tag, so `<SiteTreeNav />` works with no import. The `SiteTreeNavDemo` tag used in the live example below resolves to the exact same self-fetching wrapper; the two names are interchangeable in MDX.
+
+This is a different component from the raw, tree-prop-driven `SiteTreeNav` shipped at `@takazudo/zudo-doc/site-tree-nav-island` — that one takes no data by itself and is meant for a page module that already has a nav `tree` to pass in. See [Usage](#usage) below for both.
 
 </Info>
 
@@ -22,26 +24,27 @@ Below is `SiteTreeNav` rendered with the full documentation tree (same as the [h
 
 ## Usage
 
-`SiteTreeNav` is used in `pages/index.tsx` to display the home page sitemap:
+### In MDX content
+
+Use the global MDX tag directly in any `.mdx` file — no import needed:
+
+```mdx
+<SiteTreeNav />
+```
+
+No props are required. It self-fetches the current locale's docs collection, builds the nav tree, and renders the interactive island — the same wrapper used by `SiteTreeNavDemo` above.
+
+### In a page module
+
+A page module that already has a `tree` in hand (e.g. built via `buildNavTree` + `groupSatelliteNodes`) can import the raw, tree-prop-driven component instead:
 
 ```tsx
-// pages/index.tsx
-import { buildNavTree, groupSatelliteNodes } from "@/utils/docs";
-import { getCategoryOrder } from "@/utils/nav-scope";
 import { SiteTreeNav } from "@takazudo/zudo-doc/site-tree-nav-island";
-import { resolveNavSource } from "./lib/_nav-source-docs";
-import { defaultLocale } from "@/config/i18n";
 
 export default function IndexPage() {
-  const locale = defaultLocale;
-  const { navDocs, categoryMeta } = resolveNavSource(locale, undefined);
-  const tree = buildNavTree(navDocs, locale, categoryMeta);
-  const categoryOrder = getCategoryOrder();
-  const groupedTree = groupSatelliteNodes(tree, categoryOrder);
-
   return (
     <SiteTreeNav
-      tree={groupedTree}
+      tree={tree}
       categoryOrder={categoryOrder}
       categoryIgnore={["inbox", "develop"]}
     />
@@ -49,15 +52,20 @@ export default function IndexPage() {
 }
 ```
 
+This repository's own home page (`pages/index.tsx`) doesn't call this island directly — it hands the resolved locale to `prepareHomeData()` and passes the result to `HomePageView`, both from `@takazudo/zudo-doc/home-page`, which renders `SiteTreeNav` internally alongside the hero and tag section.
+
 The component uses Preact state for expand/collapse interactivity, so it hydrates on the client through zfb's island runtime.
 
 ## Props
+
+Props below apply to the raw `SiteTreeNav` island (`@takazudo/zudo-doc/site-tree-nav-island`). The MDX tag takes no data props — it resolves `tree`/`categoryOrder` itself for the current locale, and only forwards an optional `ariaLabel`.
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
 | `tree` | `NavNode[]` | (required) | The navigation tree built from content collection |
 | `categoryOrder` | `string[]` | — | Custom ordering of top-level categories |
 | `categoryIgnore` | `string[]` | — | Category slugs to hide from the tree |
+| `initiallyCollapsedCategorySlugs` | `string[]` | — | Root-category slugs that should start collapsed |
 | `ariaLabel` | `string` | `"Site index"` | Accessibility label for the nav element |
 
 ## Features
@@ -70,4 +78,4 @@ The component uses Preact state for expand/collapse interactivity, so it hydrate
 
 ## Source
 
-`SiteTreeNav` ships from the `@takazudo/zudo-doc` package — import it from `@takazudo/zudo-doc/site-tree-nav-island`. (Within this repository the island source lives at `packages/zudo-doc/src/site-tree-nav-island/`.)
+`SiteTreeNav` ships from the `@takazudo/zudo-doc` package — import the raw island from `@takazudo/zudo-doc/site-tree-nav-island` for page-module usage. (Within this repository the island source lives at `packages/zudo-doc/src/site-tree-nav-island/`.) The `<SiteTreeNav />` / `<SiteTreeNavDemo />` MDX tags are wired automatically via the package-owned routes (`packageOwnedRoutes`, on by default) — there is no project file to maintain for them.

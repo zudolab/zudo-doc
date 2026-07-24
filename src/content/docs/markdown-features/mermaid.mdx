@@ -102,3 +102,7 @@ flowchart TB
 At build time the markdown pipeline replaces the `<pre><code class="language-mermaid">` block with a `<div class="mermaid">` wrapper, leaving the diagram source unescaped so the renderer receives the raw Mermaid DSL. The mermaid pass runs before syntax highlighting, so the code highlighter never touches the diagram source. At runtime a client island detects the wrapper and renders the diagram.
 
 See the [Mermaid documentation](https://mermaid.js.org/) for every supported diagram type (flowcharts, sequence, state, class, gantt, and more).
+
+## See also
+
+- [Mermaid Diagrams component](../components/mermaid-diagrams.mdx) — the visual/interaction showcase for the enlarge and zoom/pan dialog

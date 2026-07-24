@@ -173,10 +173,13 @@ interface FooterLinkColumn {
 interface FooterConfig {
   links: FooterLinkColumn[];
   copyright?: string;
+  taglist?: FooterTaglistConfig;
 }
 ```
 
 `ZudoDocConfig`の`footer`フィールドは`FooterConfig | false`として型付けされており、設定オブジェクトまたは無効化のための`false`のいずれかを指定できます。
+
+`taglist`はオプトインのフッタータグインデックスで、デフォルトでは無効です。詳しくは[フッタータグリストガイド](./footer-taglist.mdx)を参照してください。
 
 ## スタイリング
 

@@ -173,10 +173,13 @@ interface FooterLinkColumn {
 interface FooterConfig {
   links: FooterLinkColumn[];
   copyright?: string;
+  taglist?: FooterTaglistConfig;
 }
 ```
 
 The `footer` field on `ZudoDocConfig` is typed as `FooterConfig | false`, allowing it to be either a configuration object or `false` to disable.
+
+`taglist` is an opt-in footer tag index — off by default, and documented separately in the [Footer Taglist guide](./footer-taglist.mdx).
 
 ## Styling
 

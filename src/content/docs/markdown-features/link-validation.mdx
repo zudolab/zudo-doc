@@ -6,36 +6,44 @@ sidebar_position: 22
 
 The `linkValidation` feature checks internal links and anchor fragments during the build to catch broken references before deployment. It inspects `<a href>` and `<img src>` elements, verifying that internal links and anchor fragments resolve correctly.
 
-:::note[Opt-in feature — enabled in warn mode]
+:::note[Included in the standard preset — warn mode]
 
-This feature is enabled in zudo-doc's `zfb.config.ts` as `linkValidation: { failOnBroken: false }` — **warn mode**. It is an object-typed feature, so it must be given an options object. In warn mode it never fails the build; broken references are reported as build diagnostics only.
+`zudoDoc()` enables Link Validation as `linkValidation: { failOnBroken: false }` — **warn mode**. No separate configuration field is necessary for this default. In warn mode it never fails the build; broken references are reported as build diagnostics only.
 
 :::
 
 ## Configuration
 
-Enable with defaults (warn-only, external URLs skipped):
+No configuration is required to get this default:
 
 ```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+  }),
+);
+```
+
+To fail the build on broken links instead (not used in zudo-doc — it would break CI), spread the preset's `markdown.features` and override `linkValidation` — a bare `defineConfig({ markdown: { features } })` would discard the rest of the preset:
+
+```ts title="zfb.config.ts"
+const base = zudoDoc({
+  // ...your project settings
+});
+
 export default defineConfig({
+  ...base,
   markdown: {
+    ...base.markdown,
     features: {
-      linkValidation: {},
+      ...base.markdown.features,
+      linkValidation: { failOnBroken: true },
     },
   },
 });
-```
-
-zudo-doc sets `failOnBroken: false` explicitly to make the warn-only intent clear:
-
-```ts title="zfb.config.ts"
-linkValidation: { failOnBroken: false },
-```
-
-To fail the build on broken links instead (not used in zudo-doc — it would break CI):
-
-```ts title="zfb.config.ts"
-linkValidation: { failOnBroken: true },
 ```
 
 ## Options

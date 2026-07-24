@@ -85,9 +85,11 @@ export async function paths() {
 コンテンツレイヤーはまさにこれを避けるために存在します。
 一度フェッチしてビルド時にスナップショットし、そのスナップショットから同期的にクエリします。
 
-## コレクションベースのpaths()：完全なdocsパターン
+## コレクションベースのpaths()：最小限の例
 
-zudo-docで最も一般的な`paths()`の使い方は、docsキャッチオールルートです。
+以下のスニペットは、このパターンの最小限の例です — `getCollection`/`getEntry`から直接組み立てた
+手書きの`paths()`です。これはzudo-doc自身のdocsキャッチオールルートが実際に行っていることでは
+ありません。実際の実装は下記の[パッケージルートの注入とシャドーイング](#パッケージルートの注入とシャドーイング)を参照してください。
 各エントリのスラグはURLセグメントの`string[]`にマッピングされます：
 
 ```tsx
@@ -115,6 +117,10 @@ export default function DocsPage({ params }: { params: { slug: string[] } }) {
 `slug.join("/")`で再結合して`getEntry`のルックアップキーを再構築します。
 
 ## パッケージルートの注入とシャドーイング
+
+実際の`pages/docs/[[...slug]].tsx`ドキュメントルートスタブは、上記の最小限の例のように
+`getCollection`/`getEntry`を手書きしません。`routeCtx.buildDocRouteEntries()`と`createChrome()`
+でルートを再構築しており、生成されたプロジェクトは通常このファイル自体を持ちません — 詳細は以下を参照してください。
 
 `packageOwnedRoutes`（デフォルトで`true`）が有効な場合、
 `@takazudo/zudo-doc`のroutesプラグインはビルド時にドキュメントルートを注入します。
