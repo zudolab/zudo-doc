@@ -1,0 +1,121 @@
+---
+title: SEO & Social Cards
+description: Set up Open Graph / Twitter share cards, canonical URLs, and a sitemap so your docs surface well in search and on social.
+sidebar_position: 8.4
+tags:
+  - seo
+  - type:guide
+---
+
+When someone drops a link to one of your doc pages into Slack, X, or LinkedIn, you want a rich preview card — a title, a description, and an image — instead of a bare URL. And you want search engines to discover every page you publish. zudo-doc covers both with two settings you configure once in `zfb.config.ts`:
+
+- **`metaTags`** — the per-page Open Graph / Twitter / description `<meta>` tags that power social share cards and search snippets.
+- **`sitemap`** — a machine-readable `/sitemap.xml` listing every page, so crawlers can find your whole site.
+
+This guide is the task-oriented tour of setting both up. For the exhaustive field-by-field contract, see the [Configuration reference](./configuration.mdx#identity-and-urls-metatags) — this page links there rather than repeating the tables.
+
+## Prerequisite: set `siteUrl`
+
+Everything below hangs off one field: **`siteUrl`**, your site's canonical origin. It is the base that og:image, og:url, the canonical link, and every `<loc>` in the sitemap are built from — all of which must be **absolute** URLs.
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // ...
+    siteUrl: "https://docs.example.com",
+  }),
+);
+```
+
+If `siteUrl` is left empty:
+
+- **og:image / twitter:image are dropped entirely** — crawlers silently ignore relative image URLs, so zudo-doc omits the tag rather than ship a broken one.
+- **No canonical link or og:url is emitted.**
+- Sitemap `<loc>` values fall back to relative paths, which most search consoles reject.
+
+So set `siteUrl` first. See the [`siteUrl` reference](./configuration.mdx#identity-and-urls-siteurl) for details.
+
+## Social share cards (`metaTags`)
+
+The `metaTags` block toggles the social and SEO `<meta>` tags. Here is a typical setup that turns on rich share cards:
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    siteUrl: "https://docs.example.com",
+    metaTags: {
+      description: true,
+      keywords: false,
+      ogImage: "/img/ogp.png",
+      ogSiteName: true,
+      twitterCard: "summary_large_image",
+    },
+  }),
+);
+```
+
+With this in place, every page's `<head>` gains `og:title`, `og:description`, `og:type`, `og:url`, `og:image` (plus `og:image:width` / `og:image:height` / `og:image:alt`), `og:site_name`, the `twitter:*` card tags, and a `<link rel="canonical">`.
+
+### The share image (`ogImage`)
+
+`ogImage` is a path relative to your site root (a file under `public/`). At build time it is joined with `siteUrl` into the absolute URL that crawlers require, and the **same** image is reused for `twitter:image`.
+
+<Tip title="Use a 1200×630 image">
+
+zudo-doc automatically emits `og:image:width="1200"` and `og:image:height="630"` alongside your `ogImage`, matching the standard social-preview aspect ratio. Export your share image at **1200×630** so the dimensions the crawler reads match the pixels you ship.
+
+</Tip>
+
+### Twitter card type (`twitterCard`)
+
+- `"summary_large_image"` — a full-width banner card (recommended when you have a good `ogImage`).
+- `"summary"` — a small square thumbnail card.
+- `false` — omit the `twitter:*` block entirely.
+
+The optional `twitterSite` / `twitterCreator` handle fields are also available; see the [`metaTags` table](./configuration.mdx#identity-and-urls-metatags) for the full field list.
+
+### Description and keywords
+
+- **`description: true`** reuses each page's frontmatter `description` for the meta description and `og:description`. Write a good `description` in your [frontmatter](./frontmatter.mdx) and it does double duty as the search snippet and the social-card subtitle.
+- **`keywords`** takes a fixed string or `false`. Modern search engines largely ignore the keywords meta tag, so it defaults to `false`; set a string only if a specific consumer needs it.
+
+### Site name (`ogSiteName`)
+
+When `true`, emits `og:site_name` set to your `siteName`, so share cards show your site's name above the page title.
+
+## Canonical URLs
+
+Once `siteUrl` is set, every page automatically receives a `<link rel="canonical">` and an `og:url` built from `siteUrl` plus the page path. Canonical URLs tell search engines which URL is authoritative when the same content is reachable through multiple variants — for example a trailing-slash difference or a preview-deploy host. No per-page configuration is needed.
+
+## Sitemap
+
+Set `sitemap: true` to emit a `/sitemap.xml` route that lists every page on the site:
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    siteUrl: "https://docs.example.com",
+    sitemap: true,
+  }),
+);
+```
+
+Each entry carries an absolute `<loc>` (built from `siteUrl`) and a `<lastmod>` date, sorted for stable output. The route is served by the package-owned entrypoint `@takazudo/zudo-doc/routes/sitemap.xml`. When `siteUrl` and `sitemap` are both set (and the site is not marked noindex), the generated `robots.txt` automatically advertises the sitemap with a `Sitemap:` line, so crawlers discover it without extra wiring. See the [`sitemap` reference](./configuration.mdx#identity-and-urls-sitemap).
+
+## Verifying the output
+
+After a build, spot-check the results:
+
+- Open a page's `View Source` and confirm the `og:*`, `twitter:*`, and `<link rel="canonical">` tags are present with absolute URLs.
+- Fetch `/sitemap.xml` and confirm it lists your pages with absolute `<loc>` values.
+- Paste a page URL into a social platform's card debugger (X, LinkedIn, Facebook) to preview the rendered share card before you announce the link.
+
+## Keeping crawlers out instead
+
+If your goal is the opposite — a staging site or an internal portal that should **not** be indexed — do not rely on omitting these settings. Use the dedicated [`noindex` switch](./avoid-robots-indexing.mdx), which adds `noindex,nofollow` to every page and disallows all crawlers in `robots.txt`. When `noindex` is on, the `Sitemap:` line is intentionally dropped, since advertising a sitemap while blocking all crawling sends contradictory signals.
+
+## See also
+
+- [Configuration — `metaTags`](./configuration.mdx#identity-and-urls-metatags), [`sitemap`](./configuration.mdx#identity-and-urls-sitemap), and [`siteUrl`](./configuration.mdx#identity-and-urls-siteurl) — the full field reference.
+- [Frontmatter](./frontmatter.mdx) — where each page's `description` (and thus its search snippet) comes from.
+- [Avoid Robots Indexing](./avoid-robots-indexing.mdx) — block indexing entirely for private or staging sites.
