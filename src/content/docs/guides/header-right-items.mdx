@@ -27,19 +27,18 @@ export default defineConfig(
       { type: "component", component: "version-switcher" },
       { type: "component", component: "github-link" },
       { type: "component", component: "theme-toggle" },
+      { type: "component", component: "search" },
       { type: "component", component: "language-switcher" },
     ],
   }),
 );
 ```
 
-The built-in `Search` component is always rendered at the end of the cluster and is not configured through this array.
-
 ## Item types
 
 ### `component`
 
-References a built-in UI piece that is gated by its own feature flag.
+References a built-in UI piece. Most are gated by their own feature flag; `search` is ungated.
 
 | Component | Feature flag |
 |---|---|
@@ -47,12 +46,13 @@ References a built-in UI piece that is gated by its own feature flag.
 | `language-switcher` | `locales` (needs at least one non-default locale) |
 | `version-switcher` | `versions` |
 | `github-link` | `githubUrl` |
+| `search` | none — always available |
 
 ```ts
 { type: "component", component: "github-link" }
 ```
 
-When the associated feature is disabled the entry is skipped — you can leave it in the array unconditionally.
+When the associated feature is disabled the entry is skipped — you can leave it in the array unconditionally. `search` has no dedicated feature flag: the renderer is always available, and its presence and position are controlled purely by where (or whether) it appears in the array.
 
 ### `trigger`
 
