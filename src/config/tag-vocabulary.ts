@@ -64,6 +64,12 @@ export const tagVocabulary: readonly TagVocabularyEntry[] = [
     description: "Search UI, indexing, and worker API.",
     group: "topic",
   },
+  {
+    id: "seo",
+    label: "SEO",
+    description: "Search engine optimization, social share cards, and sitemaps.",
+    group: "topic",
+  },
 
   // ── type ──────────────────────────────────────────────────────────
   {

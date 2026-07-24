@@ -1,0 +1,121 @@
+---
+title: SEO とソーシャルカード
+description: Open Graph / Twitter のシェアカード、canonical URL、サイトマップを設定し、ドキュメントを検索やソーシャルで見つけやすくする。
+sidebar_position: 8.4
+tags:
+  - seo
+  - type:guide
+---
+
+誰かがあなたのドキュメントページへのリンクを Slack や X、LinkedIn に貼ったとき、素っ気ない URL ではなく、タイトル・説明・画像を備えたリッチなプレビューカードを表示したいはずです。また、公開したすべてのページを検索エンジンに発見してほしいでしょう。zudo-doc は、`zfb.config.ts` で一度設定するだけの 2 つの項目でその両方をカバーします。
+
+- **`metaTags`** — ソーシャルシェアカードや検索スニペットを支える、ページごとの Open Graph / Twitter / description の `<meta>` タグ。
+- **`sitemap`** — すべてのページを列挙する機械可読な `/sitemap.xml`。クローラーがサイト全体を辿れるようにします。
+
+このガイドは、その両方をセットアップするためのタスク指向のツアーです。フィールドごとの網羅的な仕様については、[設定リファレンス](./configuration.mdx#アイデンティティと-url-metatags)を参照してください — このページは表を繰り返す代わりにそちらへリンクします。
+
+## 前提: `siteUrl` を設定する
+
+以下のすべては 1 つのフィールド、すなわちサイトの canonical なオリジンである **`siteUrl`** に依存します。これは og:image、og:url、canonical リンク、そしてサイトマップ内のすべての `<loc>` を組み立てるベースであり、これらはいずれも**絶対** URL でなければなりません。
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // ...
+    siteUrl: "https://docs.example.com",
+  }),
+);
+```
+
+`siteUrl` が空のままだと、次のようになります。
+
+- **og:image / twitter:image は完全に省略されます** — クローラーは相対 URL の画像を黙って無視するため、zudo-doc は壊れたタグを出力する代わりにタグ自体を省きます。
+- **canonical リンクも og:url も出力されません。**
+- サイトマップの `<loc>` の値は相対パスにフォールバックし、多くのサーチコンソールはこれを拒否します。
+
+したがって、まず `siteUrl` を設定してください。詳細は [`siteUrl` リファレンス](./configuration.mdx#アイデンティティと-url-siteurl)を参照してください。
+
+## ソーシャルシェアカード（`metaTags`）
+
+`metaTags` ブロックは、ソーシャルおよび SEO の `<meta>` タグを切り替えます。以下はリッチなシェアカードを有効にする典型的な設定です。
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    siteUrl: "https://docs.example.com",
+    metaTags: {
+      description: true,
+      keywords: false,
+      ogImage: "/img/ogp.png",
+      ogSiteName: true,
+      twitterCard: "summary_large_image",
+    },
+  }),
+);
+```
+
+これを設定すると、各ページの `<head>` に `og:title`、`og:description`、`og:type`、`og:url`、`og:image`（加えて `og:image:width` / `og:image:height` / `og:image:alt`）、`og:site_name`、`twitter:*` のカードタグ、そして `<link rel="canonical">` が追加されます。
+
+### シェア画像（`ogImage`）
+
+`ogImage` はサイトルートからの相対パス（`public/` 配下のファイル）です。ビルド時に `siteUrl` と結合されてクローラーが要求する絶対 URL になり、**同じ**画像が `twitter:image` にも再利用されます。
+
+<Tip title="1200×630 の画像を使う">
+
+zudo-doc は `ogImage` とあわせて `og:image:width="1200"` と `og:image:height="630"` を自動的に出力し、標準的なソーシャルプレビューのアスペクト比に合わせます。クローラーが読み取る寸法と実際に配信するピクセルが一致するよう、シェア画像は **1200×630** で書き出してください。
+
+</Tip>
+
+### Twitter カードの種類（`twitterCard`）
+
+- `"summary_large_image"` — 横幅いっぱいのバナーカード（良い `ogImage` がある場合に推奨）。
+- `"summary"` — 小さな正方形のサムネイルカード。
+- `false` — `twitter:*` ブロックを完全に省略します。
+
+任意の `twitterSite` / `twitterCreator` ハンドルフィールドも利用できます。フィールドの完全な一覧は [`metaTags` の表](./configuration.mdx#アイデンティティと-url-metatags)を参照してください。
+
+### 説明とキーワード
+
+- **`description: true`** は、各ページのフロントマターの `description` をメタディスクリプションと `og:description` に再利用します。[フロントマター](./frontmatter.mdx)に良い `description` を書けば、それが検索スニペットとソーシャルカードのサブタイトルの両方を兼ねます。
+- **`keywords`** は固定の文字列または `false` を取ります。現代の検索エンジンは keywords メタタグをほとんど無視するためデフォルトは `false` です。特定の利用者が必要とする場合にのみ文字列を設定してください。
+
+### サイト名（`ogSiteName`）
+
+`true` のとき、`og:site_name` を `siteName` の値で出力します。これにより、シェアカードにページタイトルの上にサイト名が表示されます。
+
+## Canonical URL
+
+`siteUrl` を設定すると、各ページには `siteUrl` とページパスから組み立てられた `<link rel="canonical">` と `og:url` が自動的に付与されます。canonical URL は、同じコンテンツが複数のバリアント（たとえば末尾スラッシュの違いやプレビューデプロイのホスト）で到達可能なときに、どの URL が正規であるかを検索エンジンに伝えます。ページごとの設定は不要です。
+
+## サイトマップ
+
+`sitemap: true` を設定すると、サイト上のすべてのページを列挙する `/sitemap.xml` ルートが出力されます。
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    siteUrl: "https://docs.example.com",
+    sitemap: true,
+  }),
+);
+```
+
+各エントリは（`siteUrl` から組み立てられた）絶対的な `<loc>` と `<lastmod>` の日付を持ち、安定した出力になるようソートされます。このルートはパッケージ所有のエントリポイント `@takazudo/zudo-doc/routes/sitemap.xml` によって配信されます。`siteUrl` と `sitemap` の両方が設定され（かつサイトが noindex になっていない）場合、生成される `robots.txt` は `Sitemap:` 行でサイトマップを自動的に通知するため、追加の設定なしにクローラーがそれを発見できます。[`sitemap` リファレンス](./configuration.mdx#アイデンティティと-url-sitemap)を参照してください。
+
+## 出力の確認
+
+ビルド後、結果を確認しましょう。
+
+- ページの `View Source`（ソースを表示）を開き、`og:*`、`twitter:*`、`<link rel="canonical">` のタグが絶対 URL を伴って存在することを確認します。
+- `/sitemap.xml` を取得し、絶対的な `<loc>` の値でページが列挙されていることを確認します。
+- ページの URL をソーシャルプラットフォームのカードデバッガー（X、LinkedIn、Facebook）に貼り付け、リンクを告知する前にレンダリングされるシェアカードをプレビューします。
+
+## 逆にクローラーを遠ざけたい場合
+
+目的がその逆 — インデックスされたく**ない**ステージングサイトや社内ポータル — であれば、これらの設定を省くことに頼ってはいけません。専用の [`noindex` スイッチ](./avoid-robots-indexing.mdx)を使ってください。これはすべてのページに `noindex,nofollow` を追加し、`robots.txt` ですべてのクローラーを禁止します。`noindex` が有効なときは `Sitemap:` 行が意図的に省略されます。すべてのクロールをブロックしながらサイトマップを通知するのは矛盾するシグナルだからです。
+
+## 関連項目
+
+- [設定 — `metaTags`](./configuration.mdx#アイデンティティと-url-metatags)、[`sitemap`](./configuration.mdx#アイデンティティと-url-sitemap)、[`siteUrl`](./configuration.mdx#アイデンティティと-url-siteurl) — フィールドの完全なリファレンス。
+- [フロントマター](./frontmatter.mdx) — 各ページの `description`（つまり検索スニペット）の出どころ。
+- [ロボットインデックス回避](./avoid-robots-indexing.mdx) — プライベートまたはステージングサイトでインデックスを完全にブロックする。
