@@ -6,21 +6,21 @@ sidebar_position: 16
 
 The **GitHub Autolinks** feature turns bare references to GitHub issues, pull requests, and commits into real hyperlinks pointing at a configured repository. Write `#123` in prose and it becomes a link to that issue — no manual URL needed.
 
-:::note Opt-in feature
+:::note[Included in the standard preset]
 
-Enable it with the `githubAutolinks` key in `zfb.config.ts`. The `repo` field is **mandatory** — the feature stays inactive without it:
+`zudoDoc()` wires this feature through the `githubAutolinksRepo` setting. Set it to your `"owner/repo"` string and the preset enables `githubAutolinks` for you — omit it and the feature stays inactive. A bare `defineConfig({ markdown: { features } })` bypasses this setting and discards the rest of the preset:
 
 ```ts
 // zfb.config.ts
-export default defineConfig({
-  markdown: {
-    features: {
-      githubAutolinks: {
-        repo: "zudolab/zudo-doc",
-      },
-    },
-  },
-});
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    githubAutolinksRepo: "zudolab/zudo-doc",
+  }),
+);
 ```
 
 :::

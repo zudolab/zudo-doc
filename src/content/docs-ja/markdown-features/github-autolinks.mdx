@@ -6,21 +6,21 @@ sidebar_position: 16
 
 **GitHub Autolinks** 機能は、GitHub の Issue・プルリクエスト・コミットへの裸の参照を、設定したリポジトリを指す実際のハイパーリンクに変換します。本文に `#123` と書くだけで、その Issue へのリンクになります。手動で URL を書く必要はありません。
 
-:::note Opt-in 機能
+:::note[標準プリセットに含まれます]
 
-`zfb.config.ts` の `githubAutolinks` キーで有効化します。`repo` フィールドは**必須**です。指定がないと機能は有効になりません。
+`zudoDoc()` は `githubAutolinksRepo` 設定を通じてこの機能を配線します。`"owner/repo"` 形式の文字列を設定すると、プリセットが `githubAutolinks` を有効にします — 省略すると機能は無効のままです。素の `defineConfig({ markdown: { features } })` はこの設定を経由しないため、プリセットの残りの部分も破棄してしまいます。
 
 ```ts
 // zfb.config.ts
-export default defineConfig({
-  markdown: {
-    features: {
-      githubAutolinks: {
-        repo: "zudolab/zudo-doc",
-      },
-    },
-  },
-});
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    githubAutolinksRepo: "zudolab/zudo-doc",
+  }),
+);
 ```
 
 :::
