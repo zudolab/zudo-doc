@@ -6,28 +6,22 @@ sidebar_position: 10
 
 zfb は汎用的なメカニズム（エンジン）として `directives` レジストリを提供します。このプロジェクトはアドモニションのボキャブラリ — `note`、`tip`、`warning`、`danger`、`info`、`caution`、`details` — をレシピとして登録し、コールアウトブロックに CommonMark Directives の `:::` フェンス構文を使えるようにします。
 
-:::note[Opt-in 機能]
+:::note[標準プリセットに含まれます]
 
-`zfb.config.ts` に `directives` マップを追加してアドモニションを有効化します。
+`zudoDoc()` はこのアドモニションボキャブラリをデフォルトで有効にします — `directives` フィールドは標準の 7 種類（`@takazudo/zudo-doc/directive-vocabulary-defaults`）をデフォルト値として持ちます。個別の設定は不要です。
 
-```ts
-// zfb.config.ts
-export default defineConfig({
-  markdown: {
-    features: {
-      directives: {
-        note: "Note",
-        tip: "Tip",
-        info: "Info",
-        warning: "Warning",
-        danger: "Danger",
-        caution: "Caution",
-        details: "Details",
-      },
-    },
-  },
-});
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+  }),
+);
 ```
+
+`defineConfig({ markdown: { features: { directives: {...} } } })` を直接書くと、プリセットの残り（githubAlerts、codeTabs、ruby など）が失われます。`directives` マップを上書きする場合でも `zudoDoc({...})` を使ってください。エントリの追加・上書き方法は [Directives Registry](./directives-registry.mdx#カスタムディレクティブ) を参照してください。
 
 :::
 
@@ -117,5 +111,5 @@ export default defineConfig({
 - `:::details` タイプはレガシーな `:::details title="Click me"` 属性形式も受け付けます。
 - `:::caution` はこのプロジェクトが登録するボキャブラリの一部です。`:::warning` が `<Warning>` を出力するのと同様に、`<Caution>`（`data-admonition="caution"`）を出力します。また `caution` は [GitHub Alerts](./github-alerts.mdx) の `> [!CAUTION]` からも使用できるため、両方のパスで利用可能です。
 - `important` は `directives` マップに含まれておらず、`:::important` としては使用できません。[GitHub Alerts](./github-alerts.mdx) の `> [!IMPORTANT]` を通じてのみ利用でき、`<Important>` コンポーネント（`data-admonition="important"`）にマッピングされます。
-- ディレクティブを追加・上書きするには、`zfb.config.ts` の `directives` マップに名前 → タイトルのペアを追加します。
+- ディレクティブを追加・上書きするには、`zfb.config.ts` の `zudoDoc({...})` に `directives` マップを渡します。完全なパターンは [Directives Registry](./directives-registry.mdx#カスタムディレクティブ) を参照してください。
 - [GitHub Alerts](./github-alerts.mdx) は `> [!NOTE]` 形式のブロック引用から同じアドモニションマークアップを出力します。両機能はクリーンに共存します。

@@ -6,28 +6,22 @@ sidebar_position: 10
 
 zfb provides the `directives` registry as a generic mechanism (the engine). This project registers the admonition vocabulary — `note`, `tip`, `warning`, `danger`, `info`, `caution`, and `details` — as the recipe, enabling the CommonMark Directives `:::` fence syntax for callout blocks.
 
-:::note[Opt-in feature]
+:::note[Included in the standard preset]
 
-Enable admonitions by adding the `directives` map to `zfb.config.ts`:
+`zudoDoc()` enables this admonition vocabulary by default — the `directives` field defaults to the canonical seven (`@takazudo/zudo-doc/directive-vocabulary-defaults`). No separate configuration is necessary:
 
-```ts
-// zfb.config.ts
-export default defineConfig({
-  markdown: {
-    features: {
-      directives: {
-        note: "Note",
-        tip: "Tip",
-        info: "Info",
-        warning: "Warning",
-        danger: "Danger",
-        caution: "Caution",
-        details: "Details",
-      },
-    },
-  },
-});
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+  }),
+);
 ```
+
+A bare `defineConfig({ markdown: { features: { directives: {...} } } })` discards the rest of the preset (githubAlerts, codeTabs, ruby, and more) — use `zudoDoc({...})` even when overriding the `directives` map. See [Directives Registry](./directives-registry.mdx#custom-directives) for how to add or override entries.
 
 :::
 
@@ -117,5 +111,5 @@ The type class (`admonition-note`, `admonition-tip`, `admonition-warning`, `admo
 - The `:::details` type also accepts the legacy `:::details title="Click me"` attribute form.
 - `:::caution` is part of the vocabulary this project registers; it emits `<Caution>` (`data-admonition="caution"`), mirroring how `:::warning` emits `<Warning>`. `caution` is also reachable via [GitHub Alerts](./github-alerts.mdx) as `> [!CAUTION]`, so it is available through both paths.
 - `important` is **not** in the `directives` map and cannot be used as `:::important`. It is only available via [GitHub Alerts](./github-alerts.mdx) as `> [!IMPORTANT]`, which maps to the `<Important>` component (`data-admonition="important"`).
-- To add or override directives, extend the `directives` map in `zfb.config.ts` with additional name → title pairs.
+- To add or override directives, pass a `directives` map to `zudoDoc({...})` in `zfb.config.ts` — see [Directives Registry](./directives-registry.mdx#custom-directives) for the full pattern.
 - [GitHub Alerts](./github-alerts.mdx) emits the same admonition markup from `> [!NOTE]`-style blockquotes; the two features coexist cleanly.
