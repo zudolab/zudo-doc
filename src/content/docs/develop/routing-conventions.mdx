@@ -91,10 +91,14 @@ This pattern causes several problems:
 The content layer exists precisely to avoid this: fetch once, snapshot at build time,
 query synchronously from that snapshot.
 
-## Collection-backed paths: the full docs pattern
+## Collection-backed paths: a minimal example
 
-The most common `paths()` usage in zudo-doc is the docs catchall route.
-Each entry's slug maps to a `string[]` of URL segments:
+The snippet below is a minimal example of the pattern — a hand-rolled
+`paths()` built directly from `getCollection`/`getEntry`. It is not what
+zudo-doc's own docs catchall route does; see
+[Package route injection and shadowing](#package-route-injection-and-shadowing)
+below for the real implementation. Each entry's slug maps to a `string[]`
+of URL segments:
 
 ```tsx
 // pages/docs/[[...slug]].tsx
@@ -121,6 +125,11 @@ export default function DocsPage({ params }: { params: { slug: string[] } }) {
 Rejoin with `slug.join("/")` to reconstruct the lookup key for `getEntry`.
 
 ## Package route injection and shadowing
+
+The real `pages/docs/[[...slug]].tsx` doc-route stub does not hand-roll
+`getCollection`/`getEntry` like the minimal example above. It reconstructs
+the route via `routeCtx.buildDocRouteEntries()` and `createChrome()`, and a
+generated project normally doesn't author this file at all — see below.
 
 With `packageOwnedRoutes` (the default) set to `true`, the
 `@takazudo/zudo-doc` routes plugin injects the documentation routes at build
