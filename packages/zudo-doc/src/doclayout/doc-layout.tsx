@@ -389,15 +389,16 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
         >
           <div class="flex min-h-[calc(100vh-3.5rem)] justify-center">
             {/*
-              Gap is xl-only: below xl the desktop TOC (`hidden xl:flex`) is
-              display:none but its wrapper still renders as a zero-width block
-              flex child, so an unconditional `gap` would reserve phantom space
-              on the right of <main> — the content would sit with a larger right
-              inset than left at mobile widths. Gate the gap to xl so it applies
-              exactly when the TOC column is a real second column. (#3082)
+              The inter-column `gap` is unconditional so ANY visible `toc` slot
+              (including a custom always-visible override) is separated from
+              <main>. The package default TOC instead hides its own flex child
+              below xl (see doc-page-shell's `hidden xl:block` wrapper) so it
+              contributes no phantom gap on mobile — where an in-flow but
+              zero-width TOC wrapper would otherwise push a larger right inset
+              than left onto the content. (#3082)
             */}
             <div
-              class="zd-doc-content-band flex w-full xl:gap-[clamp(1.5rem,3vw,4rem)]"
+              class="zd-doc-content-band flex w-full gap-[clamp(1.5rem,3vw,4rem)]"
               {...(!showSidebar ? { "data-zd-nosidebar": "" } : {})}
               {...(contentWide ? { "data-zd-wide": "" } : {})}
             >
