@@ -257,10 +257,21 @@ export function createDocPageShell<S extends Settings = Settings>(
     const tocOverride = shouldRenderToc
       ? customTocIsPresent
         ? <Toc headings={headings} title={tocTitle} />
-        : (Island({
-            when: "load",
-            children: <Toc headings={headings} title={tocTitle} />,
-          }) as unknown as VNode)
+        : // The zfb <Island> wrapper renders a bare <div> with no class, so
+          // below xl (where <Toc> itself is `hidden xl:flex`) it would remain
+          // an in-flow, zero-width flex child of the content band and reserve a
+          // phantom `gap` on the right of <main> — a larger right inset than
+          // left at mobile widths. Hide the flex child itself below xl so it
+          // contributes no gap; the bare-nav override branch above is already
+          // self-hiding via <Toc>'s own `hidden xl:flex`. (#3082)
+          (
+            <div class="hidden xl:block">
+              {Island({
+                when: "load",
+                children: <Toc headings={headings} title={tocTitle} />,
+              }) as unknown as VNode}
+            </div>
+          )
       : undefined;
     const mobileTocOverride = shouldRenderToc
       ? (Island({
