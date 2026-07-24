@@ -286,16 +286,23 @@ node -e "
 echo "  ✓ $SCAFFOLD_TS @takazudo/zudo-doc → ^$NEW_VERSION"
 
 # ── Step 2d: Align @takazudo/zudo-doc-history-server pin in scaffold.ts ───────
-# The docHistory feature adds a direct @takazudo/zudo-doc-history-server dep to
-# the generated package.json (different syntax — a deps[...] = "..." assignment,
-# not an object-literal key). It must move in lockstep too, otherwise the direct
-# pin (^0.1.0) conflicts with the transitive range @takazudo/zudo-doc carries.
+# The generated package.json carries a direct @takazudo/zudo-doc-history-server
+# dep (unconditional since #3080 — the doc-history-area chrome imports it at
+# module scope regardless of the docHistory setting). It lives as an
+# object-literal key in the base `deps` block: `"@takazudo/zudo-doc-history-server": "^X.Y.Z"`.
+# It must move in lockstep too, otherwise the direct pin conflicts with the
+# transitive range @takazudo/zudo-doc carries.
+# NOTE: this regex matches the object-literal-key (colon) form. It was rewritten
+# from the pre-#3080 `deps[...] = "..."` bracket-assignment form when the pin
+# was promoted to an unconditional dep — keep it in sync if the pin's syntax
+# ever changes again (check-pin-parity.mjs's readScaffoldPin already tolerates
+# both forms, but this WRITE-side regex is form-specific and must be updated).
 echo ""
 echo "▶ Aligning @takazudo/zudo-doc-history-server pin in scaffold.ts..."
 node -e "
   const fs = require('fs');
   const src = fs.readFileSync('$SCAFFOLD_TS', 'utf-8');
-  const re = /(deps\[\"@takazudo\/zudo-doc-history-server\"\]\s*=\s*\")\^?[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?(\")/;
+  const re = /(\"@takazudo\/zudo-doc-history-server\"\s*:\s*\")\^?[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?(\")/;
   if (!re.test(src)) {
     console.error('Error: could not locate @takazudo/zudo-doc-history-server pin in $SCAFFOLD_TS');
     process.exit(1);
