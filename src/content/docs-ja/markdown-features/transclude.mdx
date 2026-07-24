@@ -1,14 +1,14 @@
 ---
 title: Transclude
-description: ":::include{file=\"…\"} または ![[path]] で別ファイルの内容を埋め込みます。zudo-doc では無効（transclude レンダラー未配線）。"
+description: ":::include{file=\"…\"} で別ファイルの内容を埋め込みます。zudo-doc では無効（transclude レンダラー未配線）。"
 sidebar_position: 23
 ---
 
-`transclude` 機能は、別ファイルの内容を Markdown ドキュメントに埋め込みます。インクルードされたファイルは Markdown として解析され、その AST がパイプラインの残りが実行される前にマージされます。
+`transclude` 機能は、`:::include{file="./path.md"}` ディレクティブを介して別ファイルの内容を Markdown ドキュメントに埋め込みます — Obsidian の `![[path]]` ウィキリンク構文ではありません。インクルードされたファイルは Markdown として解析され、その AST がパイプラインの残りが実行される前にマージされます。
 
 :::danger[zudo-doc では無効 — transclude レンダラー未配線]
 
-`transclude` は zudo-doc の `zfb.config.ts` から省略され**無効化**されています。根本的な理由は、**transclude レンダラーがまだ配線されていない**ことです。ディレクティブを出力に変換する `<include>` コンポーネントが登録されていません。その結果、`:::include{file="…"}` ディレクティブは **SSR レンダリングが 500 を返し**、`![[path]]` ウィキリンク形式は zfb `0.1.0-next.13` で **no-op** になります（リテラルテキスト `![[path]]` として描画されます）。以下の構文はフェンスコードブロック内にのみ記載されており、このページでライブの `:::include` ディレクティブは記述していません。`zfb.config.ts` の 1 行コメントが、transclude レンダラーが配線され次第の再有効化を示しています。
+`transclude` は zudo-doc の `zfb.config.ts` から省略され**無効化**されています。根本的な理由は、**transclude レンダラーがまだ配線されていない**ことです。ディレクティブを出力に変換する `<include>` コンポーネントが登録されていません。その結果、`:::include{file="…"}` ディレクティブは **SSR レンダリングが 500 を返します**。以下の構文はフェンスコードブロック内にのみ記載されており、このページでライブの `:::include` ディレクティブは記述していません。`zfb.config.ts` の 1 行コメントが、transclude レンダラーが配線され次第の再有効化を示しています。
 
 :::
 
@@ -51,16 +51,6 @@ transclude: { maxDepth: 5 },
 ```md
 :::include{file="./src/lib.rs" code=true lang="rust" lines="10-30"}
 ```
-
-## ウィキリンク形式
-
-`![[path]]` ウィキリンクは代替のインクルード構文です。
-
-```md
-![[snippets/intro.md]]
-```
-
-next.13 ではこの形式は no-op で、リテラルテキストとして描画されます。
 
 ## オプション
 

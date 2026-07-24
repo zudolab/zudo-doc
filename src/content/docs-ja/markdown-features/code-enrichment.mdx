@@ -1,14 +1,20 @@
 ---
 title: Code Enrichment
-description: フェンスコードブロックにタイトルバー、コピーボタン、diff/行ハイライト装飾を追加します。
+description: フェンスコードブロックにコピーボタンと diff/行/単語ハイライト装飾を追加します。
 sidebar_position: 17
 ---
 
-`codeEnrichment` 機能は、フェンスコードブロックにタイトルバー、コピーボタン、そして行単位の注釈（diff マーカーと行ハイライト）を付与します。シンタックスハイライトの後に hast フェーズのビジターとして動作するため、すでにトークン化された `<span class="line">` の出力を処理します。
+`codeEnrichment` 機能は、フェンスコードブロックにコピーボタンと、行・単語単位の注釈（diff マーカー、行ハイライト、単語ハイライト）を付与します。シンタックスハイライトの後に hast フェーズのビジターとして動作するため、すでにトークン化された `<span class="line">` の出力を処理します。
 
 :::note[オプトイン機能]
 
 この機能はデフォルトで無効です。`zfb.config.ts` の `codeEnrichment` キーで有効化します。オブジェクト型の機能であるため、オプションオブジェクト（`{}` またはフィールド）を渡す必要があります — `true` のショートハンドは受け付けません。
+
+:::
+
+:::note[タイトルバーは別の常時有効な機能です]
+
+タイトル付きフェンスの上に表示されるファイル名/タイトルバー（`.code-block-container` / `.code-block-title`）は、`codeEnrichment` とは別の、常時有効なコア機構によるものです。`codeEnrichment` を有効にしているかどうかに関わらずレンダリングされます。[Code Title](./code-title.mdx) を参照してください。
 
 :::
 
@@ -24,32 +30,14 @@ export default defineConfig({
 });
 ```
 
-2 つの拡張機能（diff マーカーと行ハイライト）はデフォルトで有効です。それぞれ個別に無効化できます。
+3 つの拡張機能（diff マーカー、行ハイライト、単語ハイライト）はすべてデフォルトで有効です。それぞれ個別に無効化できます。
 
 ```ts title="zfb.config.ts"
 codeEnrichment: {
   diffMarkers: false,
   lineHighlight: true,
+  wordHighlight: true,
 }
-```
-
-## タイトルバー
-
-フェンスに `title="…"` 属性を付けると、ブロックがタイトルバー付きのコンテナでラップされます。
-
-````md
-```ts title="example.ts"
-const greeting = "hello";
-```
-````
-
-出力されるマークアップは `<div class="code-block-container"><div class="code-block-title">example.ts</div><pre class="hi-root"><code>…</code></pre></div>` です。タイトルのないフェンスは、コンテナもタイトルバーもない素の `<pre class="hi-root"><code>…</code></pre>` を出力します。
-
-タイトル付きの実例:
-
-```ts title="example.ts"
-const greeting = "hello";
-console.log(greeting);
 ```
 
 ## Diff マーカー
@@ -90,6 +78,26 @@ const e = 5;
 
 対応する範囲構文: 単一の数値（`{3}`）、両端を含む範囲（`{3-5}`）、それらの組み合わせ（`{1,3-5,8}`）。
 
+## 単語ハイライト
+
+フェンスの情報文字列に、空白区切りの `/フレーズ/` 式を追加します。ブロック内でそのフレーズが可視テキストとして出現するすべての箇所が `.highlighted-word` スパンでラップされ、一致範囲の境界でもシンタックスハイライトのマークアップは保持されます。
+
+```js title="word-demo.js" /answer/
+const answer = 42;
+console.log(answer);
+```
+
+上のフェンスは次のように記述されています。
+
+````md
+```js title="word-demo.js" /answer/
+const answer = 42;
+console.log(answer);
+```
+````
+
+複数の式はスペース区切りで指定します（`/first/ /second phrase/`）。フレーズ内のリテラルなスラッシュは `\/` でエスケープします（`/path\/name/`）。不正な形式や閉じられていない式は黙って無視されます。
+
 ## コピーボタン
 
 コピーボタンは実行時にクライアントサイド JavaScript で追加されるため、サーバーレンダリングされた HTML には含まれません。ハイドレーション後のボタンマークアップは `button.code-btn.code-btn-copy` で、その中に `svg.code-icon.code-icon-copy` を含みます。
@@ -98,7 +106,6 @@ const e = 5;
 
 | トリガー | 出力される要素 | クラス名 |
 | --- | --- | --- |
-| `title="x"` 付きフェンス | `<div><div>title</div><pre><code></code></pre></div>` | `.code-block-container` > `.code-block-title` + `pre.hi-root` |
-| タイトルなしフェンス | 素の `<pre><code></code></pre>` | `pre.hi-root` |
 | Diff マーカー行 | `<span class="line" data-line-diff="added\|removed">` | `span.line[data-line-diff]` |
 | ハイライト行 | `<span class="line" data-line-highlight="true">` | `span.line[data-line-highlight]` |
+| 単語の一致 | 一致した可視テキストをラップ | `.highlighted-word` |
