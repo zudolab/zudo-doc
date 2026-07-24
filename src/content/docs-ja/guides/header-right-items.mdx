@@ -27,19 +27,18 @@ export default defineConfig(
       { type: "component", component: "version-switcher" },
       { type: "component", component: "github-link" },
       { type: "component", component: "theme-toggle" },
+      { type: "component", component: "search" },
       { type: "component", component: "language-switcher" },
     ],
   }),
 );
 ```
 
-組込みの `Search` コンポーネントは常にクラスタ末尾に描画され、この配列では構成しません。
-
 ## アイテム種別
 
 ### `component`
 
-組み込みの UI 要素を参照します。対応する機能フラグが無効なら自動的にスキップされます。
+組み込みの UI 要素を参照します。多くは対応する機能フラグが無効だと自動的にスキップされますが、`search` にはフラグによる制御がありません。
 
 | コンポーネント | 機能フラグ |
 |---|---|
@@ -47,12 +46,13 @@ export default defineConfig(
 | `language-switcher` | `locales`(少なくとも 1 つの非デフォルトロケールが必要) |
 | `version-switcher` | `versions` |
 | `github-link` | `githubUrl` |
+| `search` | なし — 常に利用可能 |
 
 ```ts
 { type: "component", component: "github-link" }
 ```
 
-機能を無効化すればエントリは黙って除外されるので、配列に残したままでも問題ありません。
+機能を無効化すればエントリは黙って除外されるので、配列に残したままでも問題ありません。`search` には専用の機能フラグがありません — レンダラーは常に利用可能で、表示するかどうか・どの位置に表示するかは配列内の記述だけで決まります。
 
 ### `trigger`
 
