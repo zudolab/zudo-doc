@@ -1,36 +1,67 @@
 ---
 title: External Links
-description: 外部リンクに視覚的なインジケーターを自動付与します。
+description: 外部リンクに target と rel 属性を付与するオプトイン方式のリライターです。
 sidebar_position: 5
 ---
 
-**Core 機能** — 常に有効です。設定は不要です。
-
 ## 概要
 
-外部オリジンを指すリンクには、視覚的なアフォーダンスが自動的に付与されます。このアフォーダンスはプロジェクトのリンクオーバーライドコンポーネントによって適用され、`href` が現在のサイト外の絶対 `http:` または `https:` URL であるアンカーに外部リンクアイコンを追加します。
+zfb には、トップレベルの `markdown.externalLinks` オプションで設定するオプトイン方式の外部リンクリライターが用意されています。有効にすると、`href` が外部と判定されたすべての `<a>` に、設定した `target` と `rel` 属性が付与されます。これは `rehype-external-links` をビルド時に移植したもので、zfb の markdown パイプライン内で動作します。
+
+このリライターは**デフォルトでは無効**です。zfb も zudo-doc プリセットも有効化しないため、オプションを省略すればレンダリング後の HTML はバイト単位で変化しません。
+
+<Note title="アイコンの自動付与はありません">
+
+  コンテンツ本文の外部リンクには、現時点で視覚的なアフォーダンスは付与されません。zudo-doc のコンテンツリンクコンポーネント（`content-link.tsx`）はアクセントカラーと下線のみを適用し、外部リンクアイコンを追加することも `target` / `rel` を設定することもありません。ここで説明する `markdown.externalLinks` リライターが付与するのは属性だけであり、アイコンやその他のマーカーは挿入しません。
+
+</Note>
 
 ## 外部リンクの判定基準
 
-以下の条件に当てはまるリンクが外部として扱われます。
+以下の場合、`href` は外部として扱われます。
 
-- `href` が絶対 `http:` または `https:` URL である。
-- オリジンが現在のサイトのオリジンと異なる。
+- 絶対 `http:` または `https:` URL である。
+- オリジンがトップレベルの `site` URL（`site` を設定している場合）と異なる。`site` が未設定の場合、絶対 `http:` / `https:` URL はすべて外部として扱われます。
 
-相対パスと非 HTTP スキーム（`mailto:`、`tel:`）は常に内部として扱われ、アフォーダンスは付与されません。
+非 HTTP(S) スキーム（`mailto:`、`tel:` など）は常に変更されず、相対 URL（`/internal/`、`./page.mdx`、`#anchor`）は常に内部として扱われます。
+
+## 有効化する方法
+
+`markdown` の設定は zudo-doc プリセットが所有しており、`zudoDoc()` は完成した zfb 設定を返します。オプトインするには、その設定をスプレッドして `markdown` ブロックに `externalLinks` エントリを追加します。プリセットが持つ既存の `markdown.features` を保持するため、`base.markdown` をスプレッドしてください。
+
+```ts
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+const base = zudoDoc({
+  // ...your project settings
+});
+
+export default defineConfig({
+  ...base,
+  markdown: {
+    ...base.markdown,
+    externalLinks: {
+      target: "_blank",
+      rel: ["noopener", "noreferrer"],
+    },
+  },
+});
+```
+
+どちらのフィールドも省略可能です。`target` のデフォルトは `"_blank"`、`rel` のデフォルトは `["noopener", "noreferrer"]` なので、`externalLinks: {}` と書くだけでこれらのデフォルト値でオプトインできます。指定した `rel` トークンは、リンクに既存の `rel` があれば（大文字小文字を区別せず重複排除して）マージされます。
 
 ## 例
 
-外部サイトへの通常の markdown リンクを記述します。
+リライターを有効にした状態で、外部サイトへの通常の markdown リンクを記述します。
 
 ```md
-詳細は [zfb リポジトリ](https://github.com/takazudo/zfb) を参照してください。
+See the [zfb repository](https://github.com/takazudo/zfb) for source.
 ```
 
-リンクテキストの後に外部リンクアイコンが表示されます: [zfb リポジトリ](https://github.com/takazudo/zfb)。
+これは `<a href="https://github.com/takazudo/zfb" target="_blank" rel="noopener noreferrer">` としてレンダリングされます。リンクテキストとそのアクセントスタイルは変わらず、付与されるのは `target` と `rel` 属性だけです。
 
 ## 補足
 
-- 視覚的なアフォーダンス（アイコン、色）は、設定可能な `externalLinks` キーではなくプロジェクトのリンクコンポーネントで定義されています。外観はプロジェクトのデザイントークンで制御します。
-- 属性マージ（`target="_blank"`、`rel="noopener noreferrer"` など）はリンクオーバーライドコンポーネントが担い、markdown パイプラインでは行いません。
-- 内部リンクのターゲットを正規化するコンパニオン機能については [Resolve Links](./resolve-links.mdx) を参照してください。
+- リライターは属性を付与するだけで、アイコンはレンダリングしません。リライターを有効にしたうえで外部リンクの視覚的なインジケーターを表示したい場合は、独自の CSS を追加してください。たとえば、付与される `a[target="_blank"]` 属性を対象にしたルールを使います。
+- 内部の `.mdx` / `.md` リンクターゲットを正規化するコンパニオン機能については [Resolve Links](./resolve-links.mdx) を参照してください。
