@@ -103,7 +103,6 @@ interface AiChatErrorResponse {
 | `AI_CHAT_DAILY_SPEND_CAP` | Durable Object namespace | `aiChatGlobalDailyLimit`が数値の場合 | 正確な有料呼び出し許可。クラス`AiChatDailySpendCap`、SQLite migration `v1-ai-chat-daily-spend-cap` |
 | `RATE_LIMIT_PER_MINUTE` | var           | いいえ | IPあたりの1分間の最大リクエスト数（デフォルト`10`）                        |
 | `RATE_LIMIT_PER_DAY`    | var           | いいえ | IPあたりの1日の最大リクエスト数（デフォルト`100`）                         |
-| `PUBLIC_ENABLE_MOCKS`   | var           | いいえ | `"true"`に設定するとMSWのモックレスポンスが有効になる（開発モードのみ）    |
 
 ## 設定
 
