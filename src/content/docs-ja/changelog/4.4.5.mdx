@@ -1,0 +1,27 @@
+---
+title: 4.4.5
+description: 4.4.5のリリースノート。
+sidebar_position: 1067
+---
+
+リリース日: 2026-07-25
+
+### バグ修正
+
+- `create-zudo-doc` が `@takazudo/zudo-doc-history-server` を無条件の依存として生成するように変更。どの機能を選択した場合でも、生成されたプロジェクトが問題なくインストールできるようになった（7ace05fdb、ed8d16f0c）
+- コンテンツバンドの flex gap を `xl` ブレークポイントに限定し、モバイルでのコンテンツ余白を左右対称に修正。修正はデフォルトの TOC ラッパーにスコープし、それ以外のバンドの gap は無条件のまま維持（f4a316d79、be9174a1f）
+
+### ドキュメント
+
+- SEO/OGP とサイトマップのガイド、および対応する `seo` タグを追加（ae249ab51）
+- markdown 機能の設定ドキュメントを、手書きのプラグイン設定ではなく `zudoDoc()` プリセットを軸にした説明へ変更。対象は `admonitions-preset`、`ruby`、`github-autolinks`、`link-validation`、`toc-export`、およびグループ B の各ページ（bd4583827、c03f0f615、537237797）
+- external-links ページを実際の `markdown.externalLinks` 設定に沿って書き直し（3efde3f8f）
+- code-enrichment、code-title、transclude のエンジン契約に関する記述を修正。`wordHighlight`、タイトルバーの重複解消（code-title はコア機能）、wikilink に関する誤記の削除（ac8d3bc21）
+- `heading-links`、`cjk-friendly`、`image-dimensions`、`reading-time` の記述のずれを修正（d19bed14a）
+- markdown-features のインデックス表を Wave-1 の結果に合わせて整合（1b1a2d7af）
+- `configuration`、`footer`、`custom-components`、`i18n`、`tags` の各ガイドの記述のずれを修正（a295c0c93）
+- AI アシスタントガイドから古い MSW モックのセクションを削除し、ファイル参照を修正。ai-assistant-api リファレンスからは使われていない `PUBLIC_ENABLE_MOCKS` 環境変数の行を削除（9a0368a93、94000db09）
+- コンポーネントドキュメントを修正: アドモニションの数、`maxDepth` の記述、`sidebar_position` の重複、および SiteTreeNav の MDX 対応状況・古いサンプル・不足していた prop（c1d5664f0、ac0fab3f3）
+- ヘッダー検索が配列で設定できることを明記し、検索エンジンの名称を修正、プリセットジェネレーターの見出しと getting-started ページの古い記述を更新（f34db2ef7、91f86b293）
+- develop ドキュメントの b4push のステップ数と `paths()` の誇張表現を修正。リンクチェッカーの 23 ステップと許可リストの記述を含む（278d96c47、58ca16de8）
+- image-enlarge と mermaid の対応ページ間に相互の関連リンクを追加（1f55b165f）

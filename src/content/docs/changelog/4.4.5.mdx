@@ -1,0 +1,27 @@
+---
+title: 4.4.5
+description: Release notes for 4.4.5.
+sidebar_position: 1067
+---
+
+Released: 2026-07-25
+
+### Bug Fixes
+
+- `create-zudo-doc` now scaffolds `@takazudo/zudo-doc-history-server` as an unconditional dependency, so a generated project installs cleanly regardless of which features were selected (7ace05fdb, ed8d16f0c)
+- Gated the content-band flex gap to the `xl` breakpoint so mobile content spacing is symmetric; the fix is scoped to the default TOC wrapper and leaves the band gap unconditional elsewhere (f4a316d79, be9174a1f)
+
+### Documentation
+
+- Added an SEO/OGP + sitemap guide and a matching `seo` tag (ae249ab51)
+- Reframed markdown-feature config documentation around the `zudoDoc()` preset instead of hand-wired plugin config, across `admonitions-preset`, `ruby`, `github-autolinks`, `link-validation`, `toc-export`, and the group-B pages (bd4583827, c03f0f615, 537237797)
+- Rewrote the external-links page around the real `markdown.externalLinks` config (3efde3f8f)
+- Corrected engine-contract accuracy for code-enrichment, code-title, and transclude — `wordHighlight`, title-bar dedup (code-title is core), and dropped the wikilink claim (ac8d3bc21)
+- Fixed accuracy drift on `heading-links`, `cjk-friendly`, `image-dimensions`, and `reading-time` (d19bed14a)
+- Reconciled the markdown-features index table with the Wave-1 outcomes (1b1a2d7af)
+- Fixed guide accuracy drift across `configuration`, `footer`, `custom-components`, `i18n`, and `tags` (a295c0c93)
+- Removed the stale MSW mock section and fixed file references in the AI assistant guide; dropped the dead `PUBLIC_ENABLE_MOCKS` env-var row from the ai-assistant-api reference (9a0368a93, 94000db09)
+- Fixed component docs: admonition count, `maxDepth` claim, `sidebar_position` collision, and SiteTreeNav's MDX availability, stale example, and missing prop (c1d5664f0, ac0fab3f3)
+- Documented that header search is array-configurable, corrected search-engine naming, and de-staled the preset-generator heading and getting-started page (f34db2ef7, 91f86b293)
+- Corrected the b4push step count and a `paths()` overclaim in the develop docs, including the link-checker's 23 steps and allowlist (278d96c47, 58ca16de8)
+- Added reciprocal See-also links between the image-enlarge and mermaid page pairs (1f55b165f)
