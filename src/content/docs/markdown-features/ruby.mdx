@@ -14,17 +14,24 @@ The `{base}^{ruby}` syntax 500'd the SSR render at zfb `0.1.0-next.13` ([#1815](
 
 ## Configuration
 
-Enable the feature with the `ruby` key. It accepts the `true` shorthand:
+:::note[Included in the standard preset]
+
+`zudoDoc()` enables Ruby. No separate configuration field is necessary:
 
 ```ts title="zfb.config.ts"
-export default defineConfig({
-  markdown: {
-    features: {
-      ruby: true,
-    },
-  },
-});
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+  }),
+);
 ```
+
+A bare `defineConfig({ markdown: { features: { ruby: true } } })` discards the rest of the preset (githubAlerts, codeTabs, tocExport, and more) — use `zudoDoc({...})` instead.
+
+:::
 
 ## Syntax
 

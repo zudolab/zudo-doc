@@ -14,17 +14,24 @@ sidebar_position: 19
 
 ## 設定
 
-`ruby` キーで機能を有効化します。`true` のショートハンドを受け付けます。
+:::note[標準プリセットに含まれます]
+
+`zudoDoc()` は Ruby を有効にします。個別の設定フィールドは不要です。
 
 ```ts title="zfb.config.ts"
-export default defineConfig({
-  markdown: {
-    features: {
-      ruby: true,
-    },
-  },
-});
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+  }),
+);
 ```
+
+`defineConfig({ markdown: { features: { ruby: true } } })` を直接書くと、プリセットの残り（githubAlerts、codeTabs、tocExport など）が失われます。代わりに `zudoDoc({...})` を使ってください。
+
+:::
 
 ## 構文
 
