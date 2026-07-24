@@ -55,5 +55,5 @@ A code block without a title renders as a bare `<pre>` with no wrapper:
 
 ## Notes
 
-- The Code Title plugin runs **before** the syntax highlighter in the build pipeline, so the `title` metadata is captured before the `<pre>` element is replaced with highlighted HTML.
-- The copy button visible in the UI is injected by client-side JavaScript and is not part of the SSR output. See [Code Enrichment](./code-enrichment.mdx) for the opt-in feature that adds the copy button and diff/line-highlight decorations.
+- This runs **before** the syntax highlighter in the build pipeline, so the `title` metadata is captured before the `<pre>` element is replaced with highlighted HTML. It is independent of the opt-in [Code Enrichment](./code-enrichment.mdx) feature (`codeEnrichment`): that feature runs *after* syntax highlighting and adds diff-marker, line-highlight, and word-highlight decorations to the already-highlighted output — it does not add the title bar, and neither feature depends on the other.
+- The copy button visible in the UI is injected by client-side JavaScript and is not part of the SSR output. See [Code Enrichment](./code-enrichment.mdx) for the opt-in feature that adds the copy button and diff/line/word-highlight decorations.
