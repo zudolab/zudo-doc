@@ -9,14 +9,13 @@ zfb's markdown pipeline provides a set of **Core** features that are always acti
 
 ## Core features
 
-These 8 features are always active — no configuration required.
+These 7 features are always active — no configuration required.
 
 | Feature | Description |
 | --- | --- |
 | [CJK Friendly](./cjk-friendly.mdx) | Improves spacing and line-breaking for CJK (Chinese, Japanese, Korean) prose. |
 | [Heading Links](./heading-links.mdx) | Adds anchor links to h2+ headings for direct deep-linking. |
 | [Code Title](./code-title.mdx) | Renders a filename/title bar above fenced code blocks when `title="…"` is set. |
-| [External Links](./external-links.mdx) | Marks outbound links with a visual indicator automatically. |
 | [Resolve Links](./resolve-links.mdx) | Resolves relative `.mdx`/`.md` links to clean doc URLs. |
 | [Strip .md Extension](./strip-md-ext.mdx) | Strips `.md`/`.mdx` from internal link hrefs in the final output. |
 | [Syntax Highlighting](./syntax-highlighting.mdx) | Build-time semantic class highlighting mapped to the active color scheme. |
@@ -24,10 +23,11 @@ These 8 features are always active — no configuration required.
 
 ## Opt-in features
 
-These 14 features are disabled by default. Enable each one with the corresponding `markdown.features.*` key in `zfb.config.ts`.
+These 15 features are opt-in at the zfb engine level — each is disabled unless explicitly configured, mostly under `markdown.features.*` (External Links and Image Enlarge use a differently-shaped key instead). This showcase doesn't hand-configure `markdown` itself, though: the `zudoDoc({...})` preset pre-enables most of the `markdown.features.*` entries below out of the box — see each feature's own page for its exact preset default. A bare `defineConfig({ markdown: { features: {...} } })` bypasses `zudoDoc()` entirely and discards everything else the preset wires (collections, chrome, code highlighting, and more), so always start from `zudoDoc({...})` and extend its `markdown` block instead.
 
 | Feature | Config key | Description |
 | --- | --- | --- |
+| [External Links](./external-links.mdx) | `markdown.externalLinks` | Adds `target`/`rel` to outbound links when enabled. Off by default — content-body links get no automatic visual indicator either way. |
 | [Admonitions Preset](./admonitions-preset.mdx) | `directives` | Registers the admonition vocabulary (note/tip/warning/danger/info/caution/details) via the `directives` map. |
 | [Mermaid](./mermaid.mdx) | `mermaid` | Renders ` ```mermaid ` fences as diagrams via the client-side Mermaid library. |
 | [Image Enlarge](./image-enlarge.mdx) | `settings.imageEnlarge` | Wraps images in a `<figure>` that expands them on click. Userland setting — the built-in `markdown.features` key was removed at next.18. |
@@ -35,10 +35,16 @@ These 14 features are disabled by default. Enable each one with the correspondin
 | [GitHub Alerts](./github-alerts.mdx) | `githubAlerts` | Converts `> [!NOTE]`/`[!TIP]`/`[!WARNING]`/`[!IMPORTANT]`/`[!CAUTION]` blockquotes to admonition markup. |
 | [Reading Time](./reading-time.mdx) | `readingTime` | Computes estimated reading time and exposes it as page-level metadata. |
 | [GitHub Autolinks](./github-autolinks.mdx) | `githubAutolinks` | Auto-links issue numbers, cross-repo references, and commit SHAs to GitHub. |
-| [Code Enrichment](./code-enrichment.mdx) | `codeEnrichment` | Adds a title bar, copy button, and diff/line-highlight decorations to code blocks. |
+| [Code Enrichment](./code-enrichment.mdx) | `codeEnrichment` | Adds diff/line/word-highlight decorations to already-highlighted code blocks. The title bar is a separate, always-on core feature (see [Code Title](./code-title.mdx)), and the copy/wrap buttons are added to every code block regardless of whether this feature is enabled. |
 | [Code Tabs](./code-tabs.mdx) | `codeTabs` | Renders `:::code-group` directives as tabbed code panels via `<CodeGroup>`. |
 | [Ruby](./ruby.mdx) | `ruby` | Adds ruby annotation support (`{base}^{ruby}` syntax). |
 | [TOC Export](./toc-export.mdx) | `tocExport` | Exports the page table-of-contents as an `export const toc` named export. |
 | [Image Dimensions](./image-dimensions.mdx) | `imageDimensions` | Injects `width`/`height` attributes on images from disk metadata at build time. |
 | [Link Validation](./link-validation.mdx) | `linkValidation` | Validates internal links at build time and warns (or errors) on broken references. |
-| [Transclude](./transclude.mdx) | `transclude` | Embeds the content of another file via `:::include{file="…"}` or `![[path]]`. Disabled in zudo-doc (transclude renderer not yet wired). |
+| [Transclude](./transclude.mdx) | `transclude` | Embeds the content of another file via `:::include{file="…"}`. Disabled in zudo-doc (transclude renderer not yet wired). |
+
+:::note[Other pipeline knobs]
+
+zfb also exposes `markdown.gfm` (fine-grained GitHub-Flavored-Markdown construct toggles) and `markdown.hardBreaks` (converts every soft line break to `<br>`) as top-level `markdown` config keys. Neither is part of the Core/Opt-in census above, and neither is configured in this project's `zfb.config.ts`.
+
+:::

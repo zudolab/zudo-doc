@@ -1,10 +1,10 @@
 ---
 title: Code Enrichment
-description: Adds a copy button and diff/line/word-highlight decorations to fenced code blocks.
+description: Adds diff/line/word-highlight decorations to fenced code blocks after syntax highlighting.
 sidebar_position: 17
 ---
 
-The `codeEnrichment` feature decorates fenced code blocks with a copy button and per-line/per-word annotations — diff markers, line highlighting, and word highlighting. It runs as a hast-phase visitor after syntax highlighting, so it operates on the already-tokenized `<span class="line">` output.
+The `codeEnrichment` feature decorates fenced code blocks with per-line/per-word annotations — diff markers, line highlighting, and word highlighting. It runs as a hast-phase visitor after syntax highlighting, so it operates on the already-tokenized `<span class="line">` output.
 
 :::note[Opt-in feature]
 
@@ -98,9 +98,9 @@ console.log(answer);
 
 Multiple expressions are space-separated (`/first/ /second phrase/`); a literal slash inside a phrase is escaped as `\/` (`/path\/name/`). Malformed or unterminated expressions are silently ignored.
 
-## Copy button
+## Copy and wrap buttons
 
-The copy button is added by client-side JavaScript at runtime; it is not present in the server-rendered HTML. When hydrated, the button markup is `button.code-btn.code-btn-copy` containing `svg.code-icon.code-icon-copy`.
+The copy and word-wrap toggle buttons are added by client-side JavaScript at runtime; they are not present in the server-rendered HTML. This runs unconditionally on every highlighted code block — independent of whether `codeEnrichment` is configured. When hydrated, the copy button markup is `button.code-btn.code-btn-copy` containing `svg.code-icon.code-icon-copy`.
 
 ## Emitted DOM
 
