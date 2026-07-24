@@ -10,7 +10,7 @@ tags:
 
 ## 概要
 
-Search Workerは`packages/search-worker/`にあるサブパッケージで、Cloudflare Workerとしてデプロイされます。組み込みのクライアントサイド検索と同じ[MiniSearch](https://lucaong.github.io/minisearch/)エンジンと検索インデックスを使用しますが、Cloudflare Workersランタイム上でサーバーサイドで実行されます。
+Search Workerは`packages/search-worker/`にあるサブパッケージで、Cloudflare Workerとしてデプロイされます。組み込みのクライアントサイド検索と同じ`search-index.json`検索インデックスを使用し、検索には[MiniSearch](https://lucaong.github.io/minisearch/)エンジンを使いますが、Cloudflare Workersランタイム上でサーバーサイドで実行されます。両者が共有しているのはインデックスであり、検索エンジンではありません — 組み込みのクライアントサイド検索はMiniSearchではなく、独自のワードマッチスコアラーです。
 
 これは以下の場合に便利です：
 
@@ -22,7 +22,7 @@ Workerはデプロイ済みのドキュメントサイトから`search-index.jso
 
 <Note>
 
-Search Workerは既存の検索の**追加オプション**であり、置き換えではありません。主要な検索体験は検索ダイアログ（`Ctrl+K` / `Cmd+K`）を通じたクライアントサイドMiniSearchのままです。使い分けについては[使い分けガイド](#使い分けガイド)を参照してください。
+Search Workerは既存の検索の**追加オプション**であり、置き換えではありません。主要な検索体験は検索ダイアログ（`Ctrl+K` / `Cmd+K`）を通じた組み込みのクライアントサイド検索（独自のワードマッチスコアラー）のままです。使い分けについては[使い分けガイド](#使い分けガイド)を参照してください。
 
 </Note>
 
@@ -177,9 +177,10 @@ AI Chat Workerのデプロイと同様のGitHub Actionsワークフローを追�
 | 最適な用途               | 小〜中規模のドキュメント           | 大規模なドキュメント、APIコンシューマー |
 | セットアップ             | 不要（デフォルトで有効）           | Cloudflareアカウント + KV  |
 | レイテンシ               | 即時（ローカル）                   | ネットワークラウンドトリップ |
-| 検索設定                 | `prefix: true, fuzzy: 0.2, boost: { title: 3, description: 2 }` | 同一 |
+| 検索エンジン             | 独自のワードマッチスコアラー       | MiniSearch                 |
+| 検索設定                 | 重み付き部分一致（title 3 / description 2 / body 1） | `prefix: true, fuzzy: 0.2, boost: { title: 3, description: 2 }` |
 
-両方とも同じ検索インデックス（`search-index.json`）と同じMiniSearch設定を使用するため、結果は一貫しています。
+両方とも同じ検索インデックス（`search-index.json`）を読み込みますが、検索エンジンは共有していません — 組み込みのクライアントサイド検索は単純な部分一致でスコアリングし、Search WorkerはMiniSearchのprefix/fuzzyマッチングでインデックスを検索します。
 
 ## リクエストフロー
 

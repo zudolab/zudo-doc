@@ -10,7 +10,7 @@ Standalone Cloudflare Worker that provides a server-side search API for zudo-doc
 
 ## Overview
 
-The Search Worker is a sub-package at `packages/search-worker/` that deploys as a Cloudflare Worker. It uses the same [MiniSearch](https://lucaong.github.io/minisearch/) engine and search index as the built-in client-side search, but runs server-side on Cloudflare Workers runtime.
+The Search Worker is a sub-package at `packages/search-worker/` that deploys as a Cloudflare Worker. It uses the [MiniSearch](https://lucaong.github.io/minisearch/) engine and consumes the same `search-index.json` search index as the built-in client-side search, but runs server-side on Cloudflare Workers runtime. The two share the index, not the search engine — the built-in client-side search is a custom word-match scorer, not MiniSearch.
 
 This is useful when:
 
@@ -22,7 +22,7 @@ The Worker fetches `search-index.json` from your deployed documentation site and
 
 <Note>
 
-The Search Worker is an **additive option**, not a replacement. The primary search experience remains client-side MiniSearch via the search dialog (`Ctrl+K` / `Cmd+K`). See [When to Use Each](#when-to-use-each) for guidance.
+The Search Worker is an **additive option**, not a replacement. The primary search experience remains the built-in client-side search (a custom word-match scorer) via the search dialog (`Ctrl+K` / `Cmd+K`). See [When to Use Each](#when-to-use-each) for guidance.
 
 </Note>
 
@@ -177,9 +177,10 @@ Required GitHub secrets:
 | Best for                   | Small-to-medium doc bases     | Large doc bases, API consumers |
 | Setup required             | None (enabled by default)     | Cloudflare account + KV    |
 | Latency                    | Instant (local)               | Network round-trip         |
-| Search config              | `prefix: true, fuzzy: 0.2, boost: { title: 3, description: 2 }` | Same |
+| Search engine              | Custom word-match scorer      | MiniSearch                 |
+| Search config              | Weighted substring match (title 3 / description 2 / body 1) | `prefix: true, fuzzy: 0.2, boost: { title: 3, description: 2 }` |
 
-Both use the same search index (`search-index.json`) and the same MiniSearch configuration, so results are consistent.
+Both read the same search index (`search-index.json`), but they do not share a search engine — the built-in client-side search scores plain substring matches, while the Search Worker queries the index with MiniSearch's prefix/fuzzy matching.
 
 ## Request Flow
 
