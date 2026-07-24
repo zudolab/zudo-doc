@@ -10,7 +10,9 @@ sidebar_position: 7
 
 <Info>
 
-このコンポーネントはMDXコンテンツで直接利用することは**できません**。サーバーサイドのデータ取得が必要なため、zfbのページモジュールでインポートする必要があります。以下のライブデモは、グローバルMDXコンポーネントとして登録された`SiteTreeNavDemo`ラッパーを使用しています。
+`SiteTreeNav`はMDXコンテンツで直接利用**できます**。グローバルMDXタグとして登録されているため、インポートなしで`<SiteTreeNav />`と書くだけで動作します。以下のライブデモで使用している`SiteTreeNavDemo`タグは、まったく同じ自己データ取得型のラッパーに解決されます。MDX内ではこの2つのタグ名は同じものとして使えます。
+
+これは、`@takazudo/zudo-doc/site-tree-nav-island`から提供される、`tree`プロップを直接受け取る生の`SiteTreeNav`とは別のコンポーネントです。そちらは自身でデータを取得せず、すでに`tree`を持っているページモジュール向けです。両方の使い方は下記の[使い方](#使い方)を参照してください。
 
 </Info>
 
@@ -22,26 +24,27 @@ sidebar_position: 7
 
 ## 使い方
 
-`SiteTreeNav`は`pages/index.tsx`でホームページのサイトマップを表示するために使用されています：
+### MDXコンテンツでの利用
+
+`.mdx`ファイル内でグローバルMDXタグを直接使用します。インポートは不要です：
+
+```mdx
+<SiteTreeNav />
+```
+
+プロップは不要です。現在のロケールのドキュメントコレクションを自身で取得し、ナビゲーションツリーを構築して、インタラクティブなアイランドをレンダリングします — 上記の`SiteTreeNavDemo`と同じラッパーが使用されます。
+
+### ページモジュールでの利用
+
+すでに`tree`を持っているページモジュール（例：`buildNavTree` + `groupSatelliteNodes`で構築済み）では、代わりに`tree`プロップを直接受け取る生のコンポーネントをインポートできます：
 
 ```tsx
-// pages/index.tsx
-import { buildNavTree, groupSatelliteNodes } from "@/utils/docs";
-import { getCategoryOrder } from "@/utils/nav-scope";
 import { SiteTreeNav } from "@takazudo/zudo-doc/site-tree-nav-island";
-import { resolveNavSource } from "./lib/_nav-source-docs";
-import { defaultLocale } from "@/config/i18n";
 
 export default function IndexPage() {
-  const locale = defaultLocale;
-  const { navDocs, categoryMeta } = resolveNavSource(locale, undefined);
-  const tree = buildNavTree(navDocs, locale, categoryMeta);
-  const categoryOrder = getCategoryOrder();
-  const groupedTree = groupSatelliteNodes(tree, categoryOrder);
-
   return (
     <SiteTreeNav
-      tree={groupedTree}
+      tree={tree}
       categoryOrder={categoryOrder}
       categoryIgnore={["inbox", "develop"]}
     />
@@ -49,15 +52,20 @@ export default function IndexPage() {
 }
 ```
 
+このリポジトリ自体のホームページ（`pages/index.tsx`）は、このアイランドを直接呼び出していません。解決済みのロケールを`prepareHomeData()`に渡し、その結果を`HomePageView`（どちらも`@takazudo/zudo-doc/home-page`から提供）に渡しています。`HomePageView`はヒーローセクションやタグセクションと一緒に、内部で`SiteTreeNav`をレンダリングします。
+
 このコンポーネントは展開・折りたたみのインタラクティブ機能にPreactステートを使用するため、zfbのアイランドランタイムを介してクライアントでハイドレートされます。
 
 ## プロップ
+
+以下のプロップは、生の`SiteTreeNav`アイランド（`@takazudo/zudo-doc/site-tree-nav-island`）に対するものです。MDXタグはデータプロップを一切受け取らず、現在のロケールに対して`tree`/`categoryOrder`を自身で解決し、任意の`ariaLabel`のみを転送します。
 
 | プロップ | 型 | デフォルト | 説明 |
 |------|------|---------|-------------|
 | `tree` | `NavNode[]` | （必須） | コンテンツコレクションから構築されたナビゲーションツリー |
 | `categoryOrder` | `string[]` | — | トップレベルカテゴリのカスタム並び順 |
 | `categoryIgnore` | `string[]` | — | ツリーから非表示にするカテゴリスラッグ |
+| `initiallyCollapsedCategorySlugs` | `string[]` | — | 初期状態で折りたたんでおくルートカテゴリのスラッグ |
 | `ariaLabel` | `string` | `"Site index"` | nav要素のアクセシビリティラベル |
 
 ## 特徴
@@ -70,4 +78,4 @@ export default function IndexPage() {
 
 ## ソース
 
-`SiteTreeNav`は`@takazudo/zudo-doc`パッケージから提供されています。`@takazudo/zudo-doc/site-tree-nav-island`からインポートしてください。（このリポジトリ内では、アイランドのソースは`packages/zudo-doc/src/site-tree-nav-island/`にあります。）
+`SiteTreeNav`は`@takazudo/zudo-doc`パッケージから提供されています。ページモジュールで使う場合は、生のアイランドを`@takazudo/zudo-doc/site-tree-nav-island`からインポートしてください。（このリポジトリ内では、アイランドのソースは`packages/zudo-doc/src/site-tree-nav-island/`にあります。）`<SiteTreeNav />` / `<SiteTreeNavDemo />`のMDXタグは、パッケージ所有のルート（`packageOwnedRoutes`、デフォルトで有効）によって自動的に組み込まれており、プロジェクト側で管理するファイルはありません。
