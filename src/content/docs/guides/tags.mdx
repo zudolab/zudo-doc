@@ -40,12 +40,10 @@ Tags surface in three places across the built site.
 
 Every page with one or more tags renders a row of tag badges that links each badge to its tag index page. This is powered by the `DocTags` component (`TagNav` with `variant="page"`).
 
-The row can appear in one of two positions, chosen by the [`tagPlacement`](./configuration.mdx#tags-tagplacement) setting:
+The [`tagPlacement`](./configuration.mdx#tags-tagplacement) setting accepts two values, but only one is actually wired up:
 
-- `"after-title"` (default) — the badge row sits directly below the page title, above the main content. Use this when tags describe the page at a glance and should be visible without scrolling.
-- `"before-pager"` — the badge row sits at the bottom of the content, immediately above the previous/next pager. Use this when tags are reference metadata that readers reach for after finishing the page.
-
-Only one placement is active at a time; the setting is global.
+- `"after-title"` (default) — the badge row sits directly below the page title, above the main content. This is the only placement the renderer implements today.
+- `"before-pager"` — **not yet wired** ([#2140](https://github.com/zudolab/zudo-doc/issues/2140)). Setting this value has no effect; the badge row still renders `after-title`.
 
 ### Homepage "All Tags" Section
 

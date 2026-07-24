@@ -77,7 +77,7 @@ These keys allow the entire UI (not just content) to be localized across all con
 
 ## zfb Configuration
 
-The locale list flows through `zfb.config.ts`. Each entry in the `locales` field you pass to `zudoDoc({...})` becomes a `docs-{code}` content collection automatically — there is no separate `i18n` block to maintain. Page routes under `pages/[locale]/docs/[...slug].tsx` enumerate locales via their `paths()` export, so English pages are served without a language prefix (`/docs/...`) while non-default locales use their code as the prefix (`/ja/docs/...`).
+The locale list flows through `zfb.config.ts`. Each entry in the `locales` field you pass to `zudoDoc({...})` becomes a `docs-{code}` content collection automatically — there is no separate `i18n` block to maintain. Page routes under `pages/[locale]/docs/[[...slug]].tsx` enumerate locales via their `paths()` export, so English pages are served without a language prefix (`/docs/...`) while non-default locales use their code as the prefix (`/ja/docs/...`).
 
 <Note>
 
