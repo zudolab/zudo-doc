@@ -4,6 +4,13 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [4.4.6] - 2026-07-25
+
+### Other Changes
+
+- Bumped the zfb family (`@takazudo/zfb`, `@takazudo/zfb-runtime`, `@takazudo/zfb-adapter-cloudflare`, `@takazudo/zfb-md-wasm`) to `0.1.0-next.96`, including the generator's scaffold pins and the zfb-md-wasm release-contract test version; the `?url` resource-import shape introduced in next.94 is unchanged (a63735de3)
+- Adopted the published `4.4.5` lockstep floor for the `@takazudo/zudo-doc-history-server` peer and the target-manifest test fixture's `@takazudo/zudo-doc` pin (a63735de3)
+
 ## [4.4.5] - 2026-07-25
 
 ### Bug Fixes
