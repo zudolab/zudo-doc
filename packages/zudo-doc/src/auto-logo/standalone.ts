@@ -11,10 +11,16 @@
 // with `var(--color-bg)` — neither resolves inside an external CSS-mask
 // image, where only the alpha channel matters. This builder instead
 // expresses the design via an internal SVG **luminance** `<mask>`: white =
-// visible in the final alpha, black = cut away. `currentColor` (ink: plate +
-// glyph) maps to white; `var(--color-bg)` (knockouts: frame, rays, disc)
+// visible in the final alpha, black = cut away. `currentColor` (ink: frame,
+// rays, disc) maps to white; `var(--color-bg)` (knockouts: plate + glyph)
 // maps to black — so the two tokens both disappear from the output and the
 // design survives purely as alpha.
+//
+// Consequence of the #3108 role swap, and an accepted limitation of this
+// one-color CSS-mask path: the ejected silhouette is frame + rays + a disc
+// with the glyph punched out of it. The plate now maps to black, a no-op
+// against the mask's black default, so the ejected variant's tile interior
+// is transparent where the live component paints an opaque page background.
 
 import {
   W,
@@ -31,10 +37,12 @@ import {
 
 const MASK_ID = "auto-logo-mask";
 
-// currentColor (ink) -> visible in the mask (white); var(--color-bg)
-// (knockout) -> cut away (black). These are the only two color tokens any
-// shape in shapes.ts ever carries, so substituting both guarantees the
-// output contains neither `var(` nor `currentColor`.
+// currentColor (ink: frame, rays, disc) -> visible in the mask (white);
+// var(--color-bg) (knockout: plate + glyph) -> cut away (black). These are
+// the only two color tokens any shape in shapes.ts ever carries, so
+// substituting both guarantees the output contains neither `var(` nor
+// `currentColor`. The map itself is role-agnostic — it keys on the tokens,
+// so the #3108 role swap flowed through it without an edit here.
 const MASK_COLORS: Record<string, string> = {
   currentColor: "#fff",
   "var(--color-bg)": "#000",
@@ -64,8 +72,8 @@ export function renderAutoLogoStandaloneSvg(seed: string): string {
   const glyphName = pickGlyphName(seed);
   const glyphShapes = GLYPH_SHAPES[glyphName]!;
 
-  // Mask content order: white full-plate rect -> black knockouts (inner
-  // frame stroke, 4 rays, disc) -> white glyph shapes on the disc.
+  // Mask content order: black full-plate rect -> white ink (inner frame
+  // stroke, 4 rays, disc) -> black glyph shapes punched back out of the disc.
   const maskContent =
     renderShape(PLATE_SHAPE) +
     renderShape(INNER_FRAME_SHAPE) +
