@@ -4,6 +4,13 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [4.4.8] - 2026-07-27
+
+### Bug Fixes
+
+- Corrected the color roles of the generated hero logo (`AutoLogo`, rendered when `logo: "auto"` — the default for every fresh scaffold), which were inverted relative to the intended design. In dark mode the tile rendered a foreground-filled interior with a dark center disc and a light glyph; it now renders a page-background interior with thin light frame lines, light corner rays, a light disc, and the glyph knocked out of that disc. Light mode is the exact inverse. Both roles are theme-driven tokens, so the fix applies to every color scheme and theme pack at once (31535b6f8)
+- Fixed the same inversion in the SVG produced by `zudo-doc eject logo`, which serializes the identical shape data through a luminance mask and so baked the wrong silhouette into the ejected asset. Note that the ejected variant's tile interior is transparent where the live component paints an opaque page background — an inherent limitation of the one-color CSS-mask path, and visually identical over a flat page background (31535b6f8)
+
 ## [4.4.7] - 2026-07-27
 
 ### Bug Fixes

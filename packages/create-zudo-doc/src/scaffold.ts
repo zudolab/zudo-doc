@@ -32,7 +32,7 @@ export { getSecondaryLang };
  *
  * Bumped in lockstep by scripts/release-create-zudo-doc.sh.
  */
-export const ZUDO_DOC_PIN = "^4.4.7";
+export const ZUDO_DOC_PIN = "^4.4.8";
 
 /**
  * Files in `templates/base/**` that must not be copied by the unconditional
@@ -767,7 +767,7 @@ function generatePackageJson(choices: UserChoices) {
     // version (parity-guarded — INTERNAL_PINNED_PACKAGES in
     // scripts/check-pin-parity.mjs). docHistory-ON projects additionally need
     // npm-run-all2 for the two-process dev script — see the docHistory block below.
-    "@takazudo/zudo-doc-history-server": "^4.4.7",
+    "@takazudo/zudo-doc-history-server": "^4.4.8",
   };
 
   const devDeps: Record<string, string> = {
