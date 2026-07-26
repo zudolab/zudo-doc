@@ -9,11 +9,14 @@
 // centered disc + a line-art glyph — generated purely from the site name.
 // Same seed always produces the same logo; no stored asset, no client JS.
 //
-// Color contract: the plate fills `currentColor` (give the element `text-fg`)
-// and every frame line / disc knockout uses `var(--color-bg)` so the logo
-// sits visually "knocked out" against the page background and adapts to
-// light/dark automatically. The visual recipe is the `plate-rays-icon`
-// variant picked from the design prototype (cclogs `auto-logo-gen`).
+// Color contract: the plate fills `var(--color-bg)` so the tile interior is
+// the page background, and the frame lines, corner rays, and center disc are
+// drawn in `currentColor` (give the element `text-fg`); the glyph is then
+// knocked back out of the disc with `var(--color-bg)`. Both tokens are
+// theme-driven, so the logo adapts to light/dark automatically and light
+// mode is the exact inverse of dark. The visual recipe is the
+// `plate-rays-icon` variant picked from the design prototype (cclogs
+// `auto-logo-gen`).
 //
 // Glyph shapes + plate geometry live in ./shapes.ts as plain data, shared
 // with the dependency-free standalone SVG builder (./standalone.ts, epic
