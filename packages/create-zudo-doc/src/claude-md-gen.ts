@@ -108,7 +108,17 @@ export function generateCLAUDEFile(choices: UserChoices): string {
   lines.push(`### Admonitions`);
   lines.push(``);
   lines.push(
-    `Available in all MDX files without imports, via directive syntax: \`:::note\`, \`:::tip\`, \`:::info\`, \`:::warning\`, \`:::danger\`, \`:::caution\`, \`:::details\`. Each accepts an optional \`{title="..."}\` attribute.`,
+    `Available in all MDX files without imports, via directive syntax: \`:::note\`, \`:::tip\`, \`:::info\`, \`:::warning\`, \`:::danger\`, \`:::caution\`, \`:::details\`. Each accepts an optional **bracketed** title: \`:::note[Custom Title]\`.`,
+  );
+  lines.push(``);
+  // Agents trained on Docusaurus reach for `{title="..."}` by default, and that
+  // form fails in a way the error message does not point back at: MDX parses the
+  // braces as a JS expression, so the build dies with `ReferenceError: title is
+  // not defined` (or, when the fence has blank lines around it, the title is
+  // silently dropped). Stating the negative explicitly is the whole point of this
+  // paragraph — see zudolab/zudo-doc#3104.
+  lines.push(
+    `Docusaurus-style \`{title="..."}\` is **NOT supported**. MDX parses the braces as a JS expression, so it either fails the build with \`ReferenceError: title is not defined\` or is silently ignored. Always use the bracketed form.`,
   );
   lines.push(``);
   lines.push(`### Headings`);
