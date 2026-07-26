@@ -1,0 +1,11 @@
+---
+title: 4.4.7
+description: 4.4.7のリリースノート。
+sidebar_position: 1069
+---
+
+リリース日: 2026-07-27
+
+### バグ修正
+
+- 生成されるプロジェクトの `CLAUDE.md` に記載していた admonition のタイトル記法を修正。サポートされているブラケット形式（`:::note[Custom Title]`）を示し、Docusaurus 形式の `{title="..."}` 属性はサポート外であることを明記した。属性形式は `ReferenceError: title is not defined` でビルドが失敗するか、タイトルが黙って消えるかのいずれかで、しかもランタイムエラーは原因となったディレクティブを指し示さない（a1dfc8460）

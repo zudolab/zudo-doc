@@ -4,6 +4,12 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [4.4.7] - 2026-07-27
+
+### Bug Fixes
+
+- Corrected the admonition-title syntax documented in the generated project's `CLAUDE.md`: it now shows the supported bracketed form (`:::note[Custom Title]`) and explicitly names the Docusaurus-style `{title="..."}` attribute as unsupported. The attribute form either fails the build with `ReferenceError: title is not defined` or silently drops the title, and the runtime error never points back at the directive that caused it (a1dfc8460)
+
 ## [4.4.6] - 2026-07-25
 
 ### Other Changes
