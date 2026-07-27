@@ -4,6 +4,21 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [4.4.10] - 2026-07-28
+
+### Bug Fixes
+
+- Widen the sidebar resizer hit area so the handle straddles the scrollbar instead of hiding behind it (d68656b38, #3117)
+- Report the sidebar's rendered width in `aria-valuenow` instead of the unresolved `--zd-sidebar-w` custom property, which reported the minimum width until the first interaction (c8393179e, #3120)
+- Compensate for the pointer grab offset when dragging the sidebar resizer, so the edge no longer snaps to the cursor on the first pointer move (c8393179e, #3121)
+- Replace inert numeric spacing utilities with arbitrary values (f0b50a987)
+- Narrow the regex captures in the resizer geometry parity test so it type-checks under `noUncheckedIndexedAccess` (e3a6c608e)
+
+### Other Changes
+
+- Add e2e regressions covering the theme card width clamp and the resizer straddle geometry (3f09ff5b6)
+- Tighten the narrow-viewport clamp tolerance so the test can actually fail on a regression (d5f0888b0)
+
 ## [4.4.9] - 2026-07-27
 
 ### Bug Fixes
