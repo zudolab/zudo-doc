@@ -26,7 +26,42 @@ The current repository contract targets zfb exclusively.
 - `pnpm preview` — serve the built `dist/` (runs `zfb preview`)
 - `pnpm check` — type checking (runs `zfb check`, which delegates to `tsc --noEmit`)
 - `pnpm b4push` — pre-push validation: 23-step suite (format check → template drift → no-host-alias guard → pin parity → fixture drift → tags audit → current-only compatibility contract → token lint → component-tokens drift → e2e spec naming guard → @flaky tracking-issue guard → wait-debt guard → b4push/CI parity → typecheck → Worker contract proof → root unit tests → package tests → safelist check → build → link check → html validation → preview smoke → manual smoke); each step's elapsed time is recorded and printed as a breakdown in the final summary. Playwright E2E runs in CI (pr-checks e2e job) and is intentionally excluded from b4push for time-budget reasons — see `TESTING.md` for the full tier rationale
-- `pnpm test` — unified test entry point: builds `@takazudo/zudo-doc` dist/ then runs root unit tests (`test:unit`) and workspace package tests (`test:packages`); does not include e2e
+- `pnpm test` — unified test entry point: runs `build:workspace` (a full rebuild of both workspace packages) then root unit tests (`test:unit`) and workspace package tests (`test:packages`); does not include e2e
+- `pnpm build:workspace` — force-rebuild the workspace packages consumers compile against, in dependency order: `@takazudo/zudo-doc-history-server` then `@takazudo/zudo-doc`
+- `pnpm ensure:workspace-build` — the same list, but builds only what is *missing*; a no-op on a warm tree
+
+### Workspace build prerequisite (#3053)
+
+`dev`, `build`, `check`, `check:pages`, `test:unit`, and `test:packages` each run
+`ensure:workspace-build` first, and `pnpm b4push` runs it as a preflight. This makes a
+cold checkout self-healing: a tree installed with `pnpm install --ignore-scripts` (or one
+whose `dist/` was cleaned) has no compiled output for the workspace packages, and without
+it `zfb check` / `zfb build` cannot even load `zfb.config.ts` — it imports
+`@takazudo/zudo-doc/config`, which resolves through `dist/config.js`. A **plain**
+`pnpm install` runs both packages' `prepare` builds, so this only bites `--ignore-scripts`
+installs.
+
+Two details worth knowing:
+
+- **Order is mandatory.** `@takazudo/zudo-doc`'s `tsc` pass needs
+  `@takazudo/zudo-doc-history-server`'s declarations (`pre-build.ts` imports its
+  `git-history` subpath), so building `zudo-doc` alone on a cold tree fails with TS2307.
+  `scripts/ensure-workspace-build.mjs` owns that order for both the guarded and the
+  `--force` path.
+- **The guard checks existence, not freshness** — it never rebuilds a stale `dist/`, which
+  keeps `pnpm check` at ~8s instead of ~27s. Commands that must not run against stale
+  output (`pnpm test`, b4push's unit-test step) call `build:workspace` for an unconditional
+  rebuild instead. "Built" means *every literal `./dist/**` target in the package's `exports`
+  map exists* — derived from the manifest, so it needs no maintenance and catches a
+  declaration pass that died partway (a single sentinel file would not).
+
+**After a `pnpm dev` session, the first `pnpm check` does one full rebuild.**
+`packages/zudo-doc`'s tsup runs with `clean: true, dts: false` (declarations come from a
+separate `tsc` pass), so `tsup --watch` wipes `dist/` and regenerates no `.d.ts` at all.
+The rebuild is necessary, not incidental — before this guard existed, that same
+`pnpm check` failed outright with a cascade of `TS2306`/`TS2724` errors. For the same
+reason, **don't run `pnpm check` while `pnpm dev` is live**: the rebuild and the watcher
+would both be writing `dist/`.
 
 ## First-time setup on a new machine
 

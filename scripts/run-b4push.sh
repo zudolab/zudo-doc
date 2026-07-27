@@ -84,6 +84,22 @@ skip() { echo "⏭  $1 (skipped)"; }
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
+# ── Preflight: workspace package dist/ ────────────────
+# Not a numbered step — it builds nothing on a warm tree and must not distort
+# the step breakdown. On a cold tree (a fresh worktree, or one installed with
+# `pnpm install --ignore-scripts`) it builds the workspace packages in the one
+# order that works, so the guard gates below can run at all.
+#
+# This has to happen BEFORE the guard region, not just before the typecheck:
+# step 6's `pnpm tags:audit` runs the `tags-audit` bin shipped by
+# @takazudo/zudo-doc, so it needs that package's compiled dist/ as much as the
+# later steps do (zudolab/zudo-doc#3053). Deliberately placed outside the
+# parity markers so check-b4push-ci-parity.mjs never sees it as a guard gate.
+if ! (cd "$ROOT_DIR" && pnpm ensure:workspace-build); then
+  echo "❌ Workspace package build failed — cannot run b4push"
+  exit 1
+fi
+
 # >>> b4push-ci-parity:guards:begin
 # Steps 1–12 are lightweight guard gates. They are delimited by the markers
 # above/below so check-b4push-ci-parity.mjs can cross-check them against the
@@ -270,15 +286,20 @@ fi
 # which previously ran in no local gate and no CI workflow (#1856). Runs
 # before the expensive site build for fast logic-level feedback.
 #
-# Build @takazudo/zudo-doc first: several root suites import
-# @takazudo/zudo-doc/theme, whose compiled dist/ does not exist on a fresh
-# clone (`pnpm install` does not run the package's tsup build). CI's package
-# and root test jobs build it for the same reason. Building here also leaves
-# dist/safelist.css ready for the safelist check in step 16.
+# Rebuild the workspace packages first: several root suites import
+# @takazudo/zudo-doc/theme, and this guarantees they exercise current source
+# rather than whatever dist/ happened to be lying around (the preflight above
+# only repairs a MISSING dist/, it never refreshes a stale one). CI's package
+# and root test jobs build for the same reason. Building here also leaves
+# dist/safelist.css ready for the safelist check in step 18.
+#
+# `build:workspace` — not `pnpm --filter @takazudo/zudo-doc build` — because
+# that package's own tsc pass needs @takazudo/zudo-doc-history-server's
+# declarations, so building it alone fails on a cold tree (zudolab/zudo-doc#3053).
 step "Root unit tests (test:unit)"
 # --maxWorkers=4 caps vitest parallelism for reliability under host CPU
 # contention over wall-clock, not speed (issue #2563).
-if (cd "$ROOT_DIR" && pnpm --filter @takazudo/zudo-doc build && pnpm test:unit --maxWorkers=4); then
+if (cd "$ROOT_DIR" && pnpm build:workspace && pnpm test:unit --maxWorkers=4); then
   pass "Root unit tests passed"
 else
   fail "Root unit tests"
@@ -287,7 +308,7 @@ fi
 # ── Step 17: Package tests ────────────────────────────
 # Runs all workspace package test suites (~1,535 tests as of 2026-07). Closes the local/CI
 # asymmetry where package tests ran in CI but not in b4push (#1851/#1856).
-# dist/ is already built by step 14 — no extra prep needed.
+# dist/ is already built by step 16 — no extra prep needed.
 step "Package tests + subpath resolution"
 if (cd "$ROOT_DIR" && pnpm test:packages && pnpm --filter @takazudo/zudo-doc test:plugin-resolution); then
   pass "Package tests + subpath resolution passed"
@@ -300,7 +321,7 @@ fi
 # every responsive-variant + arbitrary-value utility class used in
 # packages/zudo-doc/src/**/*.tsx. Catches regressions where gen-safelist.mjs
 # misses a new utility class before it reaches consumers (#1994).
-# Requires dist/safelist.css — produced by the package build in step 14.
+# Requires dist/safelist.css — produced by the package build in step 16.
 step "Package safelist check (check:package-safelist)"
 if (cd "$ROOT_DIR" && pnpm check:package-safelist); then
   pass "Package safelist check passed"
