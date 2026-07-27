@@ -751,23 +751,14 @@ function generatePackageJson(choices: UserChoices) {
     // the "@takazudo/zdtp dep implication" note in
     // packages/zudo-doc/docs/adr/route-injection-seam.md.
     "@takazudo/zdtp": "0.4.9",
-    // @takazudo/zudo-doc-history-server — SAME "unconditional at build time
-    // despite being an optional peer" class as `diff` (#2342) and
-    // `@takazudo/zdtp` (#2668) above. `@takazudo/zudo-doc/dist/doc-history-area/
-    // index.js` imports `@takazudo/zudo-doc-history-server/exclude`
-    // (compileExclude) at MODULE scope, and packageOwnedRoutes always bundles
-    // the doc-history-area path — so every project pulls this import into the
-    // esbuild graph, `docHistory` setting or not; only history RENDERING is
-    // gated on the setting, not the import. Without this dep a docHistory-OFF
-    // scaffold fails `zfb build` with "Could not resolve
-    // '@takazudo/zudo-doc-history-server/exclude'" (#3080). It IS an optional
-    // peerDependency of @takazudo/zudo-doc (^4.4.3), but pnpm does not
-    // auto-install peers, so a missing copy produces no install warning and
-    // shipped silently until build time. The pin stays lockstep with the root
-    // version (parity-guarded — INTERNAL_PINNED_PACKAGES in
-    // scripts/check-pin-parity.mjs). docHistory-ON projects additionally need
-    // npm-run-all2 for the two-process dev script — see the docHistory block below.
-    "@takazudo/zudo-doc-history-server": "^4.4.8",
+    // (@takazudo/zudo-doc-history-server is NOT here — it is gated on the
+    // docHistory feature, see the block below. It was briefly unconditional
+    // (#3080) to work around doc-history-area importing its `/exclude` subpath
+    // at module scope; that root cause was fixed in #3110 by moving
+    // compileExclude into @takazudo/zudo-doc itself, so the workaround is gone
+    // and a docHistory-OFF project no longer carries the dep. A package-side
+    // reachability guard now prevents the class from returning — see
+    // packages/zudo-doc/src/__tests__/optional-peer-reachability.test.ts.)
   };
 
   const devDeps: Record<string, string> = {
@@ -787,15 +778,26 @@ function generatePackageJson(choices: UserChoices) {
   }
 
   if (choices.features.includes("docHistory")) {
-    // (Both `diff` AND `@takazudo/zudo-doc-history-server` are now unconditional
-    // base deps — see the `deps` block above: packageOwnedRoutes always bundles
-    // the doc-history-area path, whose module-scope imports pull both in
-    // regardless of this feature flag. #2342 / #3080.)
-    // When docHistory is selected the zfb plugin
-    // (@takazudo/zudo-doc/plugins/doc-history) additionally, at plugin-init time,
-    // eagerly imports @takazudo/zudo-doc-history-server/git-history — the same
-    // dep, so it is already satisfied by the unconditional entry (was W8A #1739,
-    // when the dep was still gated here).
+    // (`diff` remains an unconditional base dep — see the `deps` block above:
+    // packageOwnedRoutes always bundles the doc-history-area path, whose
+    // module-scope `diff` import is pulled in regardless of this flag. #2342.)
+    //
+    // @takazudo/zudo-doc-history-server is gated HERE, on the feature, because
+    // that is the only graph that actually reaches it: the zfb plugin
+    // (@takazudo/zudo-doc/plugins/doc-history) eagerly imports
+    // @takazudo/zudo-doc-history-server/git-history at plugin-init time, and the
+    // plugin is only wired when docHistory is on (W8A #1739). It is an optional
+    // peerDependency of @takazudo/zudo-doc and pnpm does not auto-install peers,
+    // so a docHistory-ON project must declare it directly. The pin stays lockstep
+    // with the root version (parity-guarded — INTERNAL_PINNED_PACKAGES in
+    // scripts/check-pin-parity.mjs, and rewritten at release time by
+    // scripts/release-create-zudo-doc.sh step 2d).
+    //
+    // It was briefly unconditional (#3080) because doc-history-area imported
+    // `/exclude` at module scope from the always-bundled chrome graph; #3110
+    // moved compileExclude into @takazudo/zudo-doc, so docHistory-OFF projects
+    // no longer need the package at all.
+    deps["@takazudo/zudo-doc-history-server"] = "^4.4.8";
     // tsx is no longer needed here: the relocated package plugin imports the
     // runner directly (no `tsx -e` spawn) since the package ships compiled
     // dist/ — package-first migration #2321 (#2337).
