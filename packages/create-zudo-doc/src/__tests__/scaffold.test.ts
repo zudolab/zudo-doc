@@ -1351,13 +1351,14 @@ describe("scaffold — generated package.json", () => {
     expect(pkg.devDependencies["html-validate"]).toBeUndefined();
   });
 
-  it("includes the required zfb packages, @takazudo/zudo-doc, @takazudo/zdtp, and @takazudo/zudo-doc-history-server unconditionally", async () => {
-    // diff, @takazudo/zdtp, and @takazudo/zudo-doc-history-server are
-    // unconditional dependencies regardless of docHistory/designTokenPanel
-    // selection — packageOwnedRoutes always bundles the doc-history-area path
-    // (which imports both `diff` and `@takazudo/zudo-doc-history-server/exclude`
-    // at module scope, #2342 / #3080) and the chrome-derive seam always imports
-    // DesignTokenPanelBootstrap (which imports @takazudo/zdtp, #2668).
+  it("includes the required zfb packages, @takazudo/zudo-doc, and @takazudo/zdtp unconditionally", async () => {
+    // diff and @takazudo/zdtp are unconditional dependencies regardless of
+    // docHistory/designTokenPanel selection — packageOwnedRoutes always bundles
+    // the doc-history-area path (which imports `diff` at module scope, #2342)
+    // and the chrome-derive seam always imports DesignTokenPanelBootstrap
+    // (which imports @takazudo/zdtp, #2668).
+    // @takazudo/zudo-doc-history-server is NOT in this set — see the
+    // docHistory-gating test below (#3110).
     await scaffold(baseChoices);
     const pkg = await fs.readJson(projectPath("test-doc", "package.json"));
     expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.96");
@@ -1369,9 +1370,6 @@ describe("scaffold — generated package.json", () => {
     expect(pkg.dependencies["@takazudo/zudo-doc"]).toMatch(/^\^\d+\.\d+\.\d+/);
     expect(pkg.dependencies["diff"]).toBeDefined();
     expect(pkg.dependencies["@takazudo/zdtp"]).toBeDefined();
-    // #3080: docHistory-OFF barebone must still carry this — the module-scope
-    // `/exclude` import bundles it regardless of the setting.
-    expect(pkg.dependencies["@takazudo/zudo-doc-history-server"]).toBeDefined();
     expect(pkg.dependencies["astro"]).toBeUndefined();
     expect(pkg.dependencies["shiki"]).toBeUndefined();
     expect(pkg.dependencies["@shikijs/transformers"]).toBeUndefined();
@@ -1397,12 +1395,20 @@ describe("scaffold — generated package.json", () => {
     expect(without.devDependencies["pagefind"]).toBeUndefined();
   });
 
-  it("adds @takazudo/zudo-doc-history-server unconditionally — docHistory off AND on (#3080)", async () => {
-    // Regression guard for #3080: the dep used to be gated behind docHistory,
-    // but @takazudo/zudo-doc/dist/doc-history-area/index.js imports
-    // @takazudo/zudo-doc-history-server/exclude at module scope, so a
-    // docHistory-OFF scaffold still bundles it and must declare it or `zfb
-    // build` fails at esbuild "Could not resolve".
+  it("adds @takazudo/zudo-doc-history-server only when docHistory is on (#3110)", async () => {
+    // The dep was briefly unconditional (#3080) because
+    // @takazudo/zudo-doc/dist/doc-history-area/index.js imported
+    // @takazudo/zudo-doc-history-server/exclude at MODULE scope, and
+    // packageOwnedRoutes always bundles that path — so even a docHistory-OFF
+    // project had to declare the package or `zfb build` died at esbuild with
+    // "Could not resolve".
+    //
+    // #3110 fixed the root cause: compileExclude moved into @takazudo/zudo-doc
+    // itself, so the always-bundled graph no longer references this optional
+    // peer at all. The dep is therefore gated on the feature again — a
+    // docHistory-OFF project must NOT carry it (that is the whole point of the
+    // fix; asserting `toBeUndefined` here is what stops the workaround
+    // silently creeping back).
     await scaffold({
       ...baseChoices,
       projectName: "test-history-dep-off",
@@ -1411,8 +1417,10 @@ describe("scaffold — generated package.json", () => {
     const off = await fs.readJson(
       projectPath("test-history-dep-off", "package.json"),
     );
-    expect(off.dependencies["@takazudo/zudo-doc-history-server"]).toBeDefined();
+    expect(off.dependencies["@takazudo/zudo-doc-history-server"]).toBeUndefined();
 
+    // docHistory ON still needs it: the zfb doc-history plugin eagerly imports
+    // @takazudo/zudo-doc-history-server/git-history at plugin-init time.
     await scaffold({
       ...baseChoices,
       projectName: "test-history-dep",

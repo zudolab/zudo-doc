@@ -53,7 +53,13 @@ import {
   collectContentFiles,
   getAllFilesFirstLastMetaAsync,
 } from "@takazudo/zudo-doc-history-server/git-history";
-import { compileExclude } from "@takazudo/zudo-doc-history-server/exclude";
+// Relative, NOT `@takazudo/zudo-doc-history-server/exclude` (#3110). The
+// `/git-history` import above legitimately stays cross-package — this plugin
+// only loads when `docHistory` is on, so the optional peer is guaranteed
+// present here. `compileExclude` moved into this package because its OTHER
+// consumer (`doc-history-area`) is in the always-bundled chrome graph; both
+// consumers now read the single canonical copy.
+import { compileExclude } from "../../../doc-history-exclude/index.js";
 
 /** A single non-default locale entry; mirrors `settings.locales[*]`. */
 export interface DocHistoryMetaLocaleConfig {

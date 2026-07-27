@@ -286,23 +286,23 @@ node -e "
 echo "  ✓ $SCAFFOLD_TS @takazudo/zudo-doc → ^$NEW_VERSION"
 
 # ── Step 2d: Align @takazudo/zudo-doc-history-server pin in scaffold.ts ───────
-# The generated package.json carries a direct @takazudo/zudo-doc-history-server
-# dep (unconditional since #3080 — the doc-history-area chrome imports it at
-# module scope regardless of the docHistory setting). It lives as an
-# object-literal key in the base `deps` block: `"@takazudo/zudo-doc-history-server": "^X.Y.Z"`.
+# A docHistory-enabled generated package.json carries a direct
+# @takazudo/zudo-doc-history-server dep (gated on the feature — it was briefly
+# unconditional under #3080, until #3110 fixed the root cause and moved the pin
+# back into the docHistory block as `deps[...] = "^X.Y.Z"`).
 # It must move in lockstep too, otherwise the direct pin conflicts with the
 # transitive range @takazudo/zudo-doc carries.
-# NOTE: this regex matches the object-literal-key (colon) form. It was rewritten
-# from the pre-#3080 `deps[...] = "..."` bracket-assignment form when the pin
-# was promoted to an unconditional dep — keep it in sync if the pin's syntax
-# ever changes again (check-pin-parity.mjs's readScaffoldPin already tolerates
-# both forms, but this WRITE-side regex is form-specific and must be updated).
+# NOTE: this WRITE-side regex accepts BOTH spellings the pin has used — the
+# bracket-assignment form (`deps["…"] = "^X.Y.Z"`, current) and the
+# object-literal-key form (`"…": "^X.Y.Z"`, #3080-era) — so it no longer breaks
+# when the pin moves between a conditional block and the base `deps` literal.
+# check-pin-parity.mjs's READ-side readScaffoldPin already tolerates both.
 echo ""
 echo "▶ Aligning @takazudo/zudo-doc-history-server pin in scaffold.ts..."
 node -e "
   const fs = require('fs');
   const src = fs.readFileSync('$SCAFFOLD_TS', 'utf-8');
-  const re = /(\"@takazudo\/zudo-doc-history-server\"\s*:\s*\")\^?[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?(\")/;
+  const re = /(\"@takazudo\/zudo-doc-history-server\"\s*(?::|\]\s*=)\s*\")\^?[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?(\")/;
   if (!re.test(src)) {
     console.error('Error: could not locate @takazudo/zudo-doc-history-server pin in $SCAFFOLD_TS');
     process.exit(1);

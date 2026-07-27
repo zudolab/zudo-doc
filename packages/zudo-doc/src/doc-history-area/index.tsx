@@ -20,7 +20,10 @@
 
 import type { VNode } from "preact";
 import { Island } from "@takazudo/zfb";
-import { compileExclude } from "@takazudo/zudo-doc-history-server/exclude";
+// Relative, NOT `@takazudo/zudo-doc-history-server/exclude` — that package is an
+// OPTIONAL peer and this module is in the always-bundled chrome graph, so the
+// cross-package import broke `docHistory: false` builds at esbuild (#3110).
+import { compileExclude } from "../doc-history-exclude/index.js";
 import { BodyFootUtilArea } from "../body-foot-util/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
