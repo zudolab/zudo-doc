@@ -222,7 +222,7 @@ export function ThemePackSwitcher({ active, order, base }: ThemePackSwitcherProp
           role="dialog"
           aria-label="Theme pack switcher"
           data-switcher-card
-          class="flex w-72 max-w-[calc(100vw-2rem)] flex-col gap-vsp-2xs rounded-lg border border-muted bg-surface p-hsp-lg shadow-lg focus-visible:outline-2 focus-visible:outline-accent"
+          class="flex w-[360px] max-w-[calc(100vw-2rem)] flex-col gap-vsp-2xs rounded-lg border border-muted bg-surface p-hsp-lg shadow-lg focus-visible:outline-2 focus-visible:outline-accent"
         >
           <div class="flex items-start justify-between gap-hsp-sm">
             {/* min-w-0 + break-words: a flex child's min-width:auto would let a
@@ -258,7 +258,7 @@ export function ThemePackSwitcher({ active, order, base }: ThemePackSwitcherProp
             </span>
           )}
           {entry !== null && entry.description !== "" && (
-            <p class="text-caption text-muted">{entry.description}</p>
+            <p class="break-words text-caption text-muted">{entry.description}</p>
           )}
           <div class="flex items-center justify-between gap-hsp-sm">
             <button
@@ -293,7 +293,7 @@ export function ThemePackSwitcher({ active, order, base }: ThemePackSwitcherProp
         title="Theme packs"
         data-switcher-launcher
         onClick={() => setOpen(!open)}
-        class="flex h-10 w-10 items-center justify-center rounded-full border border-muted bg-surface text-fg shadow-lg transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
+        class="flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-full border border-muted bg-surface text-fg shadow-lg transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
       >
         <PaletteIcon className="h-icon-md w-icon-md" />
       </button>
