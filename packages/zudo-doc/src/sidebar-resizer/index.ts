@@ -14,8 +14,9 @@
 //
 // What the resizer does
 // ---------------------
-// Finds `#desktop-sidebar` and grafts a 20px-wide drag handle onto its
-// right edge. The handle:
+// Finds `#desktop-sidebar` and grafts a 16px-wide drag handle straddling its
+// right edge (4px inside, 12px outside — see the geometry comment below for
+// why). The handle:
 //
 //   * is keyboard-accessible (tab into it, then Arrow keys / Home / End
 //     to step the width by `STEP` pixels, clamped to MIN_W…MAX_W),
@@ -112,16 +113,23 @@ export function initSidebarResizer(): void {
   //
   // top:3.5rem + left:calc mirror the doc-layout #desktop-sidebar geometry
   // (top-[3.5rem], left:0, width:var(--zd-sidebar-w)) — those layout constants
-  // live in the same package's doc-layout.tsx. 20px is wider than every common
-  // native y-scrollbar (~12-17px on Win/Linux classic; 0 on macOS overlay) so a
-  // draggable strip always remains visible to the LEFT of the scrollbar when
-  // sidebar content overflows. zudolab/zudo-doc#1660
+  // live in the same package's doc-layout.tsx. The strip STRADDLES the
+  // sidebar's right edge: 4px inside (still useful when the sidebar doesn't
+  // overflow) + 12px outside, over the main content column's left padding
+  // (main offsets by exactly lg:ml-[var(--zd-sidebar-w)] — see doc-layout.tsx).
+  // A wider-than-scrollbar inside-only strip (the former 20px/#1660 rationale)
+  // does NOT keep the handle draggable: the native y-scrollbar renders on top
+  // of it and captures the pointer regardless of strip width. Straddling puts
+  // most of the grab area BESIDE the scrollbar, where no native control can
+  // intercept the pointer, while deliberately leaving the scrollbar column
+  // itself non-draggable so native scrolling still works there.
+  // zudolab/zudo-doc#3117
   Object.assign(handle.style, {
     position: "fixed",
     top: "3.5rem",
     bottom: "0",
-    left: "calc(var(--zd-sidebar-w) - 20px)",
-    width: "20px",
+    left: "calc(var(--zd-sidebar-w) - 4px)",
+    width: "16px",
     cursor: "col-resize",
     zIndex: "var(--z-index-sidebar)",
     transition: "background 0.15s",
