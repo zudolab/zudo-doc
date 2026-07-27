@@ -136,6 +136,34 @@ async function isFontFaceLoaded(page: Page, family: string): Promise<boolean> {
   }, family);
 }
 
+/** The open card's rendered width in px (`data-switcher-card`'s
+ *  `w-[360px] max-w-[calc(100vw-2rem)]` — #3116). */
+async function cardWidthPx(page: Page): Promise<number> {
+  const box = await flyoutCard(page).boundingBox();
+  expect(box).not.toBeNull();
+  return (box as { x: number; y: number; width: number; height: number }).width;
+}
+
+/**
+ * How many line fragments the card's description paragraph wraps across.
+ * `Element.getClientRects()` reports a single border-box rect for a
+ * block-level element regardless of internal wrapping, so this instead wraps
+ * a `Range` around the element's inline content — the standard technique for
+ * counting rendered text lines, since a Range's `getClientRects()` yields one
+ * rect per line fragment of the text it spans.
+ */
+async function descriptionLineCount(page: Page): Promise<number> {
+  return page.evaluate(() => {
+    const description = document.querySelector(
+      "[data-switcher-card] p.text-caption.text-muted",
+    );
+    if (description === null) return 0;
+    const range = document.createRange();
+    range.selectNodeContents(description);
+    return range.getClientRects().length;
+  });
+}
+
 /** (c)-adjacent: the mode toggle must never move the active pack or its
  *  storage key, in either direction, on whichever pack is currently active. */
 async function assertToggleIndependentOfPack(page: Page, expectedPack: string) {
@@ -363,5 +391,69 @@ test.describe("Theme pack switcher", () => {
 
     await assertToggleIndependentOfPack(page, "foundry");
     expect(await readStoredPack(page)).toBe("foundry");
+  });
+
+  test("a long-description pack (Tidepool) keeps the open card at the fixed 360px width and wraps its description across multiple lines (#3116)", async ({
+    page,
+  }) => {
+    await page.goto(HOME, { waitUntil: "load" });
+    await openFlyout(page);
+
+    // Apply via the browse-all dialog rather than cycling Prev/Next all the
+    // way around — Tidepool sits last in this fixture's pinned cycle order
+    // (see FULL_PACK_CYCLE above).
+    await browseAllButton(page).click();
+    await expect(dialogLocator(page)).toBeVisible();
+    // The dialog replaces the flyout card on screen (ADR Decision 7).
+    await expect(flyoutCard(page)).toBeHidden();
+
+    const tidepoolCard = packCard(page, "Tidepool");
+    await expect(tidepoolCard).toBeVisible({ timeout: 10000 });
+    await tidepoolCard.click();
+    await waitForActivePack(page, "tidepool");
+
+    await page.keyboard.press("Escape");
+    await expect(dialogLocator(page)).toBeHidden();
+
+    // Reopen the flyout to measure the card holding the now-applied pack.
+    await openFlyout(page);
+    await expect(flyoutCard(page)).toContainText("Tidepool");
+
+    const width = await cardWidthPx(page);
+    expect(Math.abs(width - 360)).toBeLessThanOrEqual(2);
+
+    // Tidepool's meta.json description (packages/zudo-doc/src/theme-packs/
+    // tidepool/meta.json) is a 200+ character sentence — comfortably wider
+    // than the card's ~328px text column (360px card minus 2 * 16px
+    // p-hsp-lg padding) at the 14px text-caption size, so it reliably wraps
+    // without needing to extend this fixture's data.
+    expect(await descriptionLineCount(page)).toBeGreaterThan(1);
+  });
+
+  test("at a narrow viewport, the open card is clamped by max-w-[calc(100vw-2rem)] instead of holding the fixed 360px width (#3116)", async ({
+    page,
+  }) => {
+    const NARROW_VIEWPORT_WIDTH = 320;
+    await page.setViewportSize({ width: NARROW_VIEWPORT_WIDTH, height: 700 });
+    await page.goto(HOME, { waitUntil: "load" });
+    await openFlyout(page);
+
+    const width = await cardWidthPx(page);
+
+    // Well under the fixed 360px width — the clamp is active (the epic's
+    // acceptance line: below ~392px viewport, i.e. 360 + 32, the card can no
+    // longer hold 360px without exceeding calc(100vw - 2rem)).
+    expect(width).toBeLessThan(340);
+    // Matches the calc(100vw - 2rem) formula (2rem = 32px at the unmodified
+    // "default" pack's root font-size — no pack sets a root font-size override
+    // on this fixture's HOME hard-load state).
+    //
+    // The tolerance MUST stay below 16px: a regression from
+    // calc(100vw - 2rem) to calc(100vw - 1rem) yields 304px here, only 16px
+    // from the expected 288px, so a looser bound would let exactly the
+    // regression this test exists to catch pass. 100vw includes the scrollbar
+    // gutter per spec, so there is no scrollbar effect to absorb.
+    const expectedClampedWidth = NARROW_VIEWPORT_WIDTH - 32;
+    expect(Math.abs(width - expectedClampedWidth)).toBeLessThanOrEqual(2);
   });
 });

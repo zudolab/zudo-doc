@@ -219,7 +219,7 @@ export function ThemePackDialog({ open, onClose, order, active, base }: ThemePac
                     {order.map((entry) => (
                       <div
                         key={entry.slug}
-                        className="h-40 animate-pulse rounded-lg border border-muted bg-surface/50"
+                        className="h-[10rem] animate-pulse rounded-lg border border-muted bg-surface/50"
                       />
                     ))}
                   </div>

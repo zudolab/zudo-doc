@@ -84,7 +84,7 @@ export function FindBar({ visible, onClose, findInPage, containerSelector }: Fin
     <div className="fixed top-[3.5rem] right-0 z-dropdown flex items-center gap-hsp-sm py-hsp-xs px-hsp-md bg-surface border-b border-l border-muted rounded-bl-lg shadow-md">
       <input
         ref={inputRef}
-        className="w-48 py-[4px] px-hsp-sm rounded text-small bg-bg border border-muted text-fg outline-none focus:border-accent"
+        className="w-[12rem] py-[4px] px-hsp-sm rounded text-small bg-bg border border-muted text-fg outline-none focus:border-accent"
         type="text"
         value={query}
         placeholder="Find in page..."
