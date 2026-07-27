@@ -54,13 +54,16 @@ function extractHandleGeometry(file: string): HandleGeometry {
   }
   const block = src.slice(start, end);
 
-  const leftMatch = block.match(/left:\s*"([^"]+)"/);
-  const widthMatch = block.match(/width:\s*"([^"]+)"/);
-  if (!leftMatch || !widthMatch) {
+  // Narrow the captures themselves, not just the match arrays: under
+  // noUncheckedIndexedAccess a non-null match still types `[1]` as
+  // `string | undefined`, so checking the arrays alone fails to typecheck.
+  const left = block.match(/left:\s*"([^"]+)"/)?.[1];
+  const width = block.match(/width:\s*"([^"]+)"/)?.[1];
+  if (left === undefined || width === undefined) {
     throw new Error(`Could not find both 'left' and 'width' in the handle.style Object.assign in ${file}`);
   }
 
-  return { left: leftMatch[1], width: widthMatch[1] };
+  return { left, width };
 }
 
 describe("sidebar resizer handle geometry parity", () => {
