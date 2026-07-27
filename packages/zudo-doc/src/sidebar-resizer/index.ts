@@ -87,7 +87,22 @@ export function initSidebarResizer(): void {
   // (below lg the panel is display:none but still fixed — handle appended, not rendered). zudolab/zudo-doc#1821
   if (getComputedStyle(sidebar).position !== "fixed") return;
 
+  // Read the RENDERED width, not the custom property. getPropertyValue() on a
+  // custom property returns its unresolved substitution value, and the default
+  // declaration is `clamp(14rem, 20vw, 22rem)` — parseFloat on that is NaN, so
+  // the old property-parsing version silently reported MIN_W until the first
+  // drag wrote an explicit px value. That fed a wrong initial aria-valuenow
+  // (192 while the sidebar was at 256) and a wrong first keyboard step.
+  // zudolab/zudo-doc#3120
+  // Captured after the null guard above: `readCurrentWidth` is a hoisted
+  // function declaration, so TS does not carry the narrowing into its body.
+  const sidebarEl: HTMLElement = sidebar;
+
   function readCurrentWidth(): number {
+    const rendered = sidebarEl.getBoundingClientRect().width;
+    if (rendered > 0) return rendered;
+    // Fallback for a not-yet-laid-out sidebar (e.g. display:none at init):
+    // an explicit px value in the custom property still parses.
     const raw = getComputedStyle(document.documentElement).getPropertyValue(
       CSS_PROP,
     );
@@ -226,10 +241,19 @@ export function initSidebarResizer(): void {
     let targetWidth = 0;
     let cleaned = false;
 
+    // Distance from the pointer to the sidebar's right edge at grab time.
+    // Subtracting it keeps the edge under the same point of the handle for the
+    // whole drag; without it the edge snaps to the cursor on the first move
+    // (grab 6px outside, drag +80, get +86). This matters more since the handle
+    // straddles the edge (#3117) — the natural grab point is now ~6px OUTSIDE
+    // it, because a native scrollbar covers most of the inside portion.
+    // zudolab/zudo-doc#3121
+    const grabOffset = e.clientX - sidebarRect.right;
+
     const onMove = (ev: PointerEvent) => {
       targetWidth = Math.max(
         MIN_W,
-        Math.min(MAX_W, ev.clientX - sidebarLeft),
+        Math.min(MAX_W, ev.clientX - grabOffset - sidebarLeft),
       );
       ghost.style.left = sidebarLeft + targetWidth + "px";
     };

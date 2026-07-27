@@ -68,7 +68,14 @@ export const SIDEBAR_RESIZER_INIT_SCRIPT = `(function(){
     // (below lg the panel is display:none but still fixed — handle appended, not rendered). zudolab/zudo-doc#1821
     if(getComputedStyle(sidebar).position!=="fixed")return;
 
+    // Read the RENDERED width, not the custom property: getPropertyValue() on a
+    // custom property returns the unresolved substitution value, and the default
+    // declaration is clamp(14rem, 20vw, 22rem) — parseFloat on that is NaN, so
+    // this used to report MIN_W until the first drag wrote an explicit px value
+    // (wrong initial aria-valuenow, wrong first keyboard step). zudolab/zudo-doc#3120
     function readCurrentWidth(){
+      var rendered=sidebar.getBoundingClientRect().width;
+      if(rendered>0)return rendered;
       var raw=getComputedStyle(document.documentElement).getPropertyValue(CSS_PROP);
       return raw?parseFloat(raw)||MIN_W:MIN_W;
     }
@@ -141,7 +148,13 @@ export const SIDEBAR_RESIZER_INIT_SCRIPT = `(function(){
       document.body.appendChild(ghost);
       var targetWidth=0;
       var cleaned=false;
-      function onMove(ev){targetWidth=Math.max(MIN_W,Math.min(MAX_W,ev.clientX-sidebarLeft));ghost.style.left=sidebarLeft+targetWidth+"px";}
+      // Pointer-to-right-edge distance at grab time; subtracting it stops the
+      // edge snapping to the cursor on the first move (grab 6px outside, drag
+      // +80, get +86). Matters more since the handle straddles the edge (#3117)
+      // — the natural grab point is now ~6px OUTSIDE it, because a native
+      // scrollbar covers most of the inside portion. zudolab/zudo-doc#3121
+      var grabOffset=e.clientX-sidebarRect.right;
+      function onMove(ev){targetWidth=Math.max(MIN_W,Math.min(MAX_W,ev.clientX-grabOffset-sidebarLeft));ghost.style.left=sidebarLeft+targetWidth+"px";}
       function cleanup(){
         if(cleaned)return;cleaned=true;
         dragging=false;updateHandleVisual();
