@@ -88,10 +88,18 @@ export const SIDEBAR_RESIZER_INIT_SCRIPT = `(function(){
     // absolute child of the overflow-y:auto sidebar it scrolled away with the
     // content and height:100% only covered the visible padding box. zudolab/zudo-doc#1821
     // top:3.5rem + left:calc mirror the layout's #desktop-sidebar geometry
-    // (top-[3.5rem], left:0, width:var(--zd-sidebar-w)). 20px hit area > native
-    // y-scrollbar (~12-17px) keeps a draggable strip left of the scrollbar when
-    // the sidebar overflows. zudolab/zudo-doc#1660
-    Object.assign(handle.style,{position:"fixed",top:"3.5rem",bottom:"0",left:"calc(var(--zd-sidebar-w) - 20px)",width:"20px",cursor:"col-resize",zIndex:"var(--z-index-sidebar)",transition:"background 0.15s"});
+    // (top-[3.5rem], left:0, width:var(--zd-sidebar-w)). The strip STRADDLES
+    // the sidebar's right edge: 4px inside (still useful when the sidebar
+    // doesn't overflow) + 12px outside, over the main content column's left
+    // padding (main offsets by exactly lg:ml-[var(--zd-sidebar-w)] — see
+    // doc-layout.tsx). A wider-than-scrollbar inside-only strip (the former
+    // 20px/#1660 rationale) does NOT keep the handle draggable: the native
+    // y-scrollbar renders on top of it and captures the pointer regardless of
+    // strip width. Straddling puts most of the grab area BESIDE the
+    // scrollbar, where no native control can intercept the pointer, while
+    // deliberately leaving the scrollbar column itself non-draggable so
+    // native scrolling still works there. zudolab/zudo-doc#3117
+    Object.assign(handle.style,{position:"fixed",top:"3.5rem",bottom:"0",left:"calc(var(--zd-sidebar-w) - 4px)",width:"16px",cursor:"col-resize",zIndex:"var(--z-index-sidebar)",transition:"background 0.15s"});
 
     var dragging=false,focused=false;
 
