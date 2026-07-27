@@ -1,0 +1,19 @@
+---
+title: 4.4.9
+description: Release notes for 4.4.9.
+sidebar_position: 1071
+---
+
+Released: 2026-07-27
+
+### Bug Fixes
+
+- Fixed a build failure that made every `docHistory: false` project unbuildable with `Could not resolve "@takazudo/zudo-doc-history-server/exclude"`. The chrome graph's `doc-history-area` imported that subpath at module top level, and because the chrome graph is always bundled, esbuild had to resolve it on every build — even though `@takazudo/zudo-doc-history-server` is an *optional* peer that a doc-history-off project never installs. A regression introduced in 4.3.0 by the exclude-filtering work. The canonical matcher now lives inside `@takazudo/zudo-doc` and both consumers import it relatively; `doc-history-server` keeps its own copy and its published `./exclude` export (it is a standalone dependency-free Node server/CLI and cannot depend back on the framework package), with a source-identity parity test pinning the two copies together (5dc2a2bec)
+- Restored `@takazudo/zudo-doc-history-server` to the `docHistory` feature block in the generated scaffold's `package.json`. It had been promoted to an unconditional base dependency purely to work around the resolution bug above; with that root cause fixed, a doc-history-off scaffold no longer needs the package at all. The scaffold test now asserts docHistory-OFF ⇒ absent so the workaround cannot silently creep back (5d5d0ad1a)
+- Widened the release script's pin-rewrite regex to accept both pin spellings (bracket-assignment and object-literal-key). It previously matched only the colon form, so moving the pin into a conditional block would have failed the following release with `could not locate ... pin` (5d5d0ad1a)
+
+### Other Changes
+
+- Added an optional-peer reachability guard that walks the real injected doc routes and reports any optional peer reachable from the always-bundled graph. This bug class has now shipped three times and nothing else catches it — unit tests import from source, and this repo's own build installs every optional peer. The guard also resolves package self-imports back to source through the exports map rather than treating them as external, so the walk crosses the `@takazudo/zudo-doc/*` boundary instead of stopping at it (5dc2a2bec, cd6bd9516)
+- Made cold checkouts self-healing. A tree installed with `pnpm install --ignore-scripts` has no `dist/` for the workspace packages, so `zfb` could not even load `zfb.config.ts` (it imports `@takazudo/zudo-doc/config`, which resolves through `dist/config.js`) and `check` / `build` / `check:pages` / `test:packages` all failed before a single line was edited. A new `ensure:workspace-build` prerequisite now runs ahead of those commands and as a `b4push` preflight, building the two workspace packages in their mandatory order (c63615d90)
+- Made that build guard check every literal `./dist/**` target declared in each package's `exports` map instead of a single sentinel file. A `tsc` declaration pass killed partway leaves some `.d.ts` written and others missing — a state the sentinel pair accepted, so the next command failed on a missing subpath instead of self-healing. Deriving completeness from the manifest keeps the check correct as exports change and leaves no hand-maintained list to drift (833b9110e)
