@@ -30,6 +30,7 @@
 
 import { describe, it, expect } from "vitest";
 import { createRequire } from "node:module";
+import { existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -96,6 +97,55 @@ function packageNameOf(specifier: string): string {
   return specifier.startsWith("@") ? parts.slice(0, 2).join("/") : (parts[0] ?? specifier);
 }
 
+const SELF = "@takazudo/zudo-doc";
+
+/**
+ * Map a package SELF-import (`@takazudo/zudo-doc/chrome-bindings`) back to its
+ * source file, so the walk keeps traversing instead of stopping at the boundary.
+ *
+ * The route sources genuinely contain these — `routes/_chrome.tsx` imports
+ * `@takazudo/zudo-doc/chrome-bindings`, and `copy-routes-src.mjs` rewrites more
+ * relative specifiers into this form for the published copy. Treating them as
+ * external would silently truncate the graph, so an optional peer imported
+ * beneath one of those boundaries would go undetected — the guard would report
+ * "clean" while the consumer's build still broke.
+ *
+ * Resolution goes through the real `exports` map (`./dist/x.js` → `src/x.ts|tsx`)
+ * rather than guessing, and THROWS on an unmappable subpath: a silent skip here
+ * would reintroduce exactly the blind spot this function exists to close.
+ */
+function resolveSelfImport(specifier: string): string | null {
+  const require = createRequire(import.meta.url);
+  const pkg = require(resolve(pkgRoot, "package.json")) as {
+    exports: Record<string, { default?: string } | string>;
+  };
+
+  const subpath = specifier === SELF ? "." : `.${specifier.slice(SELF.length)}`;
+  const entry = pkg.exports[subpath];
+  const distPath = typeof entry === "string" ? entry : entry?.default;
+
+  if (!distPath) {
+    throw new Error(
+      `Self-import "${specifier}" has no package.json#exports entry — the ` +
+        `reachability guard cannot traverse it. Add the export, or update this test.`,
+    );
+  }
+  // Non-JS assets (./theme.css etc.) legitimately end the walk.
+  if (!distPath.endsWith(".js")) return null;
+
+  const base = distPath.replace(/^\.\/dist\//, "").replace(/\.js$/, "");
+  for (const ext of [".ts", ".tsx"]) {
+    const candidate = resolve(pkgRoot, "src", base + ext);
+    if (existsSync(candidate)) return candidate;
+  }
+
+  throw new Error(
+    `Self-import "${specifier}" maps to "${distPath}", but no matching source ` +
+      `file was found at src/${base}.ts(x). The reachability guard would ` +
+      `silently stop traversing here.`,
+  );
+}
+
 /** Bare (non-relative, non-absolute) specifiers reachable from the entrypoints. */
 async function collectBareSpecifiers(entryPoints: string[]): Promise<Set<string>> {
   const esbuild = loadEsbuild();
@@ -125,6 +175,15 @@ async function collectBareSpecifiers(entryPoints: string[]): Promise<Set<string>
           build.onResolve({ filter: /.*/ }, (args) => {
             if (args.kind === "entry-point") return null;
             if (args.path.startsWith(".") || args.path.startsWith("/")) return null;
+
+            // Keep walking THROUGH package self-imports — they are internal
+            // boundaries, not dependencies. Stopping here would hide any
+            // optional peer imported beneath them.
+            if (args.path === SELF || args.path.startsWith(`${SELF}/`)) {
+              const source = resolveSelfImport(args.path);
+              return source ? { path: source } : { path: args.path, external: true };
+            }
+
             seen.add(args.path);
             // External: never touch disk, so the result reflects the graph
             // rather than whatever happens to be installed.
@@ -196,5 +255,13 @@ describe("always-bundled route graph does not reach un-allowlisted optional peer
     // stops holding, the collector is under-reporting rather than the graph
     // having genuinely cleaned up.
     expect(names.has("diff")).toBe(true);
+
+    // Package self-imports must be TRAVERSED, never collected as dependencies.
+    // `routes/_chrome.tsx` imports `@takazudo/zudo-doc/chrome-bindings`, and
+    // copy-routes-src.mjs rewrites more relative specifiers into this form for
+    // the published copy. A self-import showing up here means the walk stopped
+    // at that boundary, so anything importing an optional peer beneath it would
+    // go unreported — the guard would pass while a consumer's build broke.
+    expect([...specifiers].filter((s) => s === SELF || s.startsWith(`${SELF}/`))).toEqual([]);
   });
 });
