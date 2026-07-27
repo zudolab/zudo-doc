@@ -389,8 +389,12 @@ jobs:
   # Build step precedes the test run for clean-runner parity: @takazudo/zudo-doc
   # ships compiled dist/ (built by tsup). The publish workflow runs
   # `pnpm --filter @takazudo/zudo-doc build` before its test step for the same
-  # reason — a fresh CI runner has no pre-existing dist/ and the suite may
-  # import it.
+  # reason — the suite imports that compiled output, and building explicitly
+  # guarantees it reflects current source. (The plain `pnpm install` below does
+  # run the package's `prepare` build, so dist/ is not actually absent here —
+  # this step is about freshness, not existence. A tree installed with
+  # `--ignore-scripts` is the case where it would be missing outright; see
+  # scripts/ensure-workspace-build.mjs and zudolab/zudo-doc#3053.)
   package-tests:
     name: Package Unit Tests
     runs-on: ubuntu-latest
