@@ -51,7 +51,17 @@ Two details worth knowing:
 - **The guard checks existence, not freshness** — it never rebuilds a stale `dist/`, which
   keeps `pnpm check` at ~8s instead of ~27s. Commands that must not run against stale
   output (`pnpm test`, b4push's unit-test step) call `build:workspace` for an unconditional
-  rebuild instead.
+  rebuild instead. "Built" means *every literal `./dist/**` target in the package's `exports`
+  map exists* — derived from the manifest, so it needs no maintenance and catches a
+  declaration pass that died partway (a single sentinel file would not).
+
+**After a `pnpm dev` session, the first `pnpm check` does one full rebuild.**
+`packages/zudo-doc`'s tsup runs with `clean: true, dts: false` (declarations come from a
+separate `tsc` pass), so `tsup --watch` wipes `dist/` and regenerates no `.d.ts` at all.
+The rebuild is necessary, not incidental — before this guard existed, that same
+`pnpm check` failed outright with a cascade of `TS2306`/`TS2724` errors. For the same
+reason, **don't run `pnpm check` while `pnpm dev` is live**: the rebuild and the watcher
+would both be writing `dist/`.
 
 ## First-time setup on a new machine
 
