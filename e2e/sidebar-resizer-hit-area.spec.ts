@@ -94,11 +94,11 @@ test.describe("Sidebar resizer hit area (#3117 straddle geometry)", () => {
     // Inside the new 12px OUTSIDE strip: [sidebarRight, sidebarRight + 12].
     const startX = sidebarRight + 6;
     const startY = y + height / 2;
-    // "drag ±80px" per the epic's live-check item (#3118 item 4). The
-    // resizer computes the committed width from the pointer's absolute
-    // clientX at drag-end (sidebarLeft is 0), not from the drag delta, so
-    // dragging further right from a start point past the edge still yields a
-    // clear, well-clamped width increase.
+    // "drag ±80px" per the epic's live-check item (#3118 item 4). Since #3121
+    // the committed width is the pointer's clientX minus the grab offset
+    // recorded at pointerdown, so an 80px drag moves the edge by 80px
+    // regardless of where inside the handle it was grabbed. (The exact-delta
+    // guarantee has its own test below; this one only needs a clear increase.)
     const endX = startX + 80;
 
     await page.mouse.move(startX, startY);
@@ -149,5 +149,62 @@ test.describe("Sidebar resizer hit area (#3117 straddle geometry)", () => {
       .toBe(true);
     const stored = await page.evaluate((key) => localStorage.getItem(key), SIDEBAR_VISIBLE_KEY);
     expect(stored).toBe("false");
+  });
+
+  test("the handle reports the rendered sidebar width in aria-valuenow before any interaction (#3120)", async ({
+    page,
+  }) => {
+    await page.goto(START_PAGE, { waitUntil: "load" });
+    await waitForSidebarHydration(page);
+    await page.locator(HANDLE_SELECTOR).waitFor({ state: "attached" });
+
+    // Deliberately BEFORE any drag or key press. The default width is declared
+    // as `clamp(14rem, 20vw, 22rem)`, and getComputedStyle().getPropertyValue()
+    // on a CUSTOM PROPERTY hands back that unresolved substitution value — so
+    // the pre-#3120 `parseFloat(...) || MIN_W` read NaN and reported MIN_W
+    // (192) while the sidebar was actually ~256-320px wide. It self-corrected
+    // after the first interaction, which is exactly why this assertion has to
+    // run first: a test that drags before reading would never have caught it.
+    const { width } = await requireSidebarBox(page);
+    const valuenow = await page.locator(HANDLE_SELECTOR).getAttribute("aria-valuenow");
+
+    expect(valuenow).not.toBeNull();
+    expect(Math.abs(Number(valuenow) - width)).toBeLessThanOrEqual(1);
+  });
+
+  test("an 80px drag moves the sidebar edge by exactly 80px regardless of where in the handle it was grabbed (#3121)", async ({
+    page,
+  }) => {
+    await page.goto(START_PAGE, { waitUntil: "load" });
+    await waitForSidebarHydration(page);
+    await forceSidebarOverflow(page);
+    await page.locator(HANDLE_SELECTOR).waitFor({ state: "attached" });
+
+    const { x, y, width, height } = await requireSidebarBox(page);
+    const sidebarRight = x + width;
+    // 6px OUTSIDE the edge — the realistic grab point once a scrollbar covers
+    // the handle's 4px inside portion.
+    const GRAB_OFFSET = 6;
+    const DRAG_DELTA = 80;
+    const startY = y + height / 2;
+
+    await page.mouse.move(sidebarRight + GRAB_OFFSET, startY);
+    await page.mouse.down();
+    await page.mouse.move(sidebarRight + GRAB_OFFSET + DRAG_DELTA, startY, { steps: 10 });
+    await page.mouse.up();
+
+    await expect
+      .poll(() => desktopSidebar(page).evaluate((el) => el.getBoundingClientRect().width))
+      .toBeGreaterThan(width);
+
+    const widthAfter = await desktopSidebar(page).evaluate(
+      (el) => el.getBoundingClientRect().width,
+    );
+
+    // Pre-#3121 the committed width was `clientX - sidebarLeft` with no grab
+    // compensation, so the edge snapped to the cursor on the first move and
+    // this drag produced width + 86 (the 6px grab offset leaked in). The
+    // tolerance MUST stay below that 6px error or the regression slips through.
+    expect(Math.abs(widthAfter - (width + DRAG_DELTA))).toBeLessThanOrEqual(2);
   });
 });
