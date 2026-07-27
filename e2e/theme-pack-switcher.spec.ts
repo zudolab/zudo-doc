@@ -444,12 +444,16 @@ test.describe("Theme pack switcher", () => {
     // acceptance line: below ~392px viewport, i.e. 360 + 32, the card can no
     // longer hold 360px without exceeding calc(100vw - 2rem)).
     expect(width).toBeLessThan(340);
-    // Roughly matches the calc(100vw - 2rem) formula (2rem = 32px at the
-    // unmodified "default" pack's root font-size — no pack sets a root
-    // font-size override on this fixture's HOME hard-load state). A generous
-    // tolerance absorbs any scrollbar-gutter effect on 100vw rather than
-    // pinning to exact arithmetic.
+    // Matches the calc(100vw - 2rem) formula (2rem = 32px at the unmodified
+    // "default" pack's root font-size — no pack sets a root font-size override
+    // on this fixture's HOME hard-load state).
+    //
+    // The tolerance MUST stay below 16px: a regression from
+    // calc(100vw - 2rem) to calc(100vw - 1rem) yields 304px here, only 16px
+    // from the expected 288px, so a looser bound would let exactly the
+    // regression this test exists to catch pass. 100vw includes the scrollbar
+    // gutter per spec, so there is no scrollbar effect to absorb.
     const expectedClampedWidth = NARROW_VIEWPORT_WIDTH - 32;
-    expect(Math.abs(width - expectedClampedWidth)).toBeLessThanOrEqual(20);
+    expect(Math.abs(width - expectedClampedWidth)).toBeLessThanOrEqual(2);
   });
 });
