@@ -68,6 +68,6 @@ The fix is to import the package's build-generated safelist into your Tailwind C
 
 ## Dev workflow (in this repo)
 
-This package is published to npm as `@takazudo/zudo-doc` (since `0.2.0`, `latest` tracks the current line). Inside this repo the host site consumes it as a workspace package through its compiled `dist/` — `pnpm dev` at the repo root runs `tsup --watch` so edits under `src/` rebuild automatically; for a one-off rebuild use `pnpm --filter @takazudo/zudo-doc build`.
+This package is published to npm as `@takazudo/zudo-doc` (since `0.2.0`, `latest` tracks the current line). Inside this repo the host site consumes it as a workspace package through its compiled `dist/` — `pnpm dev` at the repo root runs two watchers in parallel, `tsup --watch` for the JS and `tsc -p tsconfig.build.json --watch` for the `.d.ts`, so edits under `src/` rebuild both halves automatically; for a one-off rebuild use `pnpm --filter @takazudo/zudo-doc build`.
 
 zfb itself comes from npm (versions pinned in the root `package.json`). To develop against a local zfb checkout, use the temporary `pnpm.overrides` link escape hatch documented in the root `CLAUDE.md` — do not commit the override.

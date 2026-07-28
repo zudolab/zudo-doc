@@ -47,14 +47,22 @@
 // paths can be checked by existence.
 //
 // ── Interaction with `pnpm dev` ───────────────────────────────────────────
-// packages/zudo-doc's tsup config runs with `clean: true, dts: false` (its
-// declarations come from the separate `tsc -p tsconfig.build.json` pass), so a
-// `tsup --watch` dev session wipes dist/ and never regenerates ANY .d.ts. That
-// means the first `pnpm check` after a dev session does one full rebuild. This
-// is necessary, not incidental: without it that same command fails outright
-// with a cascade of TS2306/TS2724 errors, which is what it did before this
-// guard existed. Corollary: don't run `pnpm check` while `pnpm dev` is live —
-// the rebuild and the watcher would both be writing dist/.
+// The dev loop now keeps dist/ complete (zudolab/zudo-doc#3113):
+// packages/zudo-doc's tsup config sets `clean: !options.watch`, so a watch
+// session no longer wipes dist/, and its `dev` script pairs `tsup --watch`
+// (JS) with `tsc -p tsconfig.build.json --watch` (declarations). Both halves
+// of the compiled output stay present and current while dev runs, so this
+// guard is a no-op after a dev session and `pnpm check` no longer starts a
+// competing builder. Historically it did: `tsup --watch` alone wiped dist/ and
+// regenerated no .d.ts, so the next `pnpm check` triggered a full rebuild here
+// — necessary, since without this guard that command failed outright with a
+// cascade of TS2306/TS2724 errors.
+//
+// This removes the `pnpm check` collision ONLY. The commands that rebuild
+// unconditionally — `pnpm test`, `pnpm build:workspace`, and `pnpm b4push`
+// (whose scripts/run-b4push.sh force-rebuilds the workspace) — still write
+// dist/ while a watcher is writing it too. Don't run those against a live
+// `pnpm dev`.
 //
 // Usage:
 //   node scripts/ensure-workspace-build.mjs            # build only what's missing

@@ -22,7 +22,7 @@ import { defineConfig } from "tsup";
 // those work mechanically but assume current tsup/esbuild internals.
 // bundle:false uses the published feature for its documented purpose
 // (publish-as-individually-compiled-files) — stable across releases.
-export default defineConfig({
+export default defineConfig((options) => ({
   // Compile every .ts / .tsx under src/, except test fixtures and
   // vitest configs. The exports map filters what consumers can
   // import; this list is just what gets compiled.
@@ -57,7 +57,18 @@ export default defineConfig({
   // under the default ~2GB heap, so CI stays safe. See package.json
   // `build`/`prepare` scripts (tsup THEN tsc) and zudolab/zudo-doc epic #2344.
   dts: false,
-  clean: true,
+  // Clean on a one-shot build (`build` / `prepare`), NEVER under --watch.
+  // Because dts:false, tsup cannot regenerate the .d.ts files it would wipe —
+  // a watch session that cleaned dist/ would leave the package with zero
+  // declarations until the next full build (zudolab/zudo-doc#3113). The
+  // paired `dev:dts` tsc watcher owns declarations; tsup owns the JS.
+  // `options.watch` is undefined for a plain `tsup` invocation and truthy
+  // under `--watch`, so the published tarball always builds clean.
+  // Caveat of clean:false — deleting or renaming a source file leaves its
+  // stale .js/.d.ts in dist/, and scripts/ensure-workspace-build.mjs checks
+  // existence, not freshness, so it will accept that stale artifact. After a
+  // delete/rename (or an exports-map removal), run `pnpm build:workspace`.
+  clean: !options.watch,
   bundle: false,
   sourcemap: false,
   // splitting + external are irrelevant when bundle:false — imports
@@ -65,8 +76,8 @@ export default defineConfig({
   // at runtime.
   // After every compilation (build, prepare, and --watch): copy the static
   // content stylesheet into dist/ (shipped as `@takazudo/zudo-doc/content.css`),
-  // then regenerate dist/safelist.css. Both must run AFTER tsup because
-  // clean:true wipes dist/ first; gen-safelist only scans dist/*.js so the
-  // copied .css does not affect it.
+  // then regenerate dist/safelist.css. Both must run AFTER tsup because a
+  // one-shot build's clean wipes dist/ first; gen-safelist only scans
+  // dist/*.js so the copied .css does not affect it.
   onSuccess: "node scripts/copy-theme-css.mjs && node scripts/copy-content-css.mjs && node scripts/copy-page-loading-css.mjs && node scripts/copy-features-css.mjs && node scripts/gen-safelist.mjs && node scripts/copy-eject-sources.mjs && node scripts/copy-routes-src.mjs && node scripts/copy-virtual-modules.mjs && node scripts/copy-theme-packs.mjs",
-});
+}));
