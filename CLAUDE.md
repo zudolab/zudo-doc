@@ -16,10 +16,10 @@ The current repository contract targets zfb exclusively.
 
 ## Commands
 
-- `pnpm dev` — runs zfb dev (port 4321), doc-history-server (port 4322), a `.claude/` watcher, and tsup `--watch` for `@takazudo/zudo-doc` concurrently via `run-p`; edits to `.claude/` files regenerate the corresponding MDX live, and edits to `packages/zudo-doc/src/**` auto-rebuild `dist/` so zfb HMR picks them up. If a previous dev process is still bound to 4321 / 4322, the new launch fails fast with `EADDRINUSE` — kill it manually before retrying (e.g. `lsof -ti :4321 -ti :4322 | xargs -r kill`, after confirming the matched PIDs are actually yours). The hook used to do this automatically, but matching by port alone meant `pnpm dev` would silently kill unrelated apps on the same port (4321 is the Vite default), which is the bug we're trading away.
+- `pnpm dev` — runs zfb dev (port 4321), doc-history-server (port 4322), a `.claude/` watcher, and `@takazudo/zudo-doc`'s own paired JS + declarations watchers concurrently via `run-p`; edits to `.claude/` files regenerate the corresponding MDX live, and edits to `packages/zudo-doc/src/**` auto-rebuild `dist/` so zfb HMR picks them up. If a previous dev process is still bound to 4321 / 4322, the new launch fails fast with `EADDRINUSE` — kill it manually before retrying (e.g. `lsof -ti :4321 -ti :4322 | xargs -r kill`, after confirming the matched PIDs are actually yours). The hook used to do this automatically, but matching by port alone meant `pnpm dev` would silently kill unrelated apps on the same port (4321 is the Vite default), which is the bug we're trading away.
 - `pnpm dev:zfb` — zfb dev server only (port 4321)
 - `pnpm dev:history` — doc history API server only (port 4322)
-- `pnpm dev:zudo-doc` — tsup `--watch` for `@takazudo/zudo-doc` only; host imports resolve through `dist/` because the package now ships compiled JS (W8 Blocker-2 fix — Node 24 rejects raw `.ts` in `node_modules`, so the package's source is private and dist is the API surface)
+- `pnpm dev:zudo-doc` — `@takazudo/zudo-doc`'s watchers only: tsup `--watch` for the JS plus `tsc -p tsconfig.build.json --watch` for the `.d.ts`, run in parallel (#3113); host imports resolve through `dist/` because the package now ships compiled JS (W8 Blocker-2 fix — Node 24 rejects raw `.ts` in `node_modules`, so the package's source is private and dist is the API surface)
 - `pnpm dev:stable` — alternative build-then-serve dev mode (avoids HMR crashes on content file add/remove)
 - `pnpm dev:network` — zfb dev with `--host 0.0.0.0` for LAN access
 - `pnpm build` — static HTML export to `dist/` (runs `zfb build`)
@@ -55,13 +55,26 @@ Two details worth knowing:
   map exists* — derived from the manifest, so it needs no maintenance and catches a
   declaration pass that died partway (a single sentinel file would not).
 
-**After a `pnpm dev` session, the first `pnpm check` does one full rebuild.**
-`packages/zudo-doc`'s tsup runs with `clean: true, dts: false` (declarations come from a
-separate `tsc` pass), so `tsup --watch` wipes `dist/` and regenerates no `.d.ts` at all.
-The rebuild is necessary, not incidental — before this guard existed, that same
-`pnpm check` failed outright with a cascade of `TS2306`/`TS2724` errors. For the same
-reason, **don't run `pnpm check` while `pnpm dev` is live**: the rebuild and the watcher
-would both be writing `dist/`.
+**A `pnpm dev` session now leaves `dist/` complete, so the next `pnpm check` is fast (#3113).**
+`packages/zudo-doc`'s tsup runs with `clean: !options.watch` — a watch session does not
+wipe `dist/` — and its `dev` script pairs `tsup --watch` (JS) with
+`tsc -p tsconfig.build.json --watch` (declarations, since tsup runs `dts: false`).
+Historically `tsup --watch` alone wiped `dist/` and regenerated no `.d.ts`, so the first
+`pnpm check` afterwards paid a full rebuild — necessary, not incidental, because before
+the #3053 guard existed that same command failed outright with a cascade of
+`TS2306`/`TS2724` errors.
+
+Two things this does **not** fix:
+
+- **Force-rebuilding commands still collide with a live watcher.** `pnpm check` is now
+  safe to run alongside `pnpm dev`, but **don't run `pnpm test`, `pnpm build:workspace`,
+  or `pnpm b4push` while `pnpm dev` is live** — those rebuild unconditionally
+  (`scripts/run-b4push.sh` force-rebuilds the workspace) and would write `dist/` while
+  the watchers are writing it too.
+- **Deleting or renaming a source file leaves a stale artifact.** With `clean: false`
+  under watch, the old `.js`/`.d.ts` stays in `dist/`, and the workspace guard checks
+  existence rather than freshness — so it will happily accept it. After a delete, a
+  rename, or an `exports`-map removal mid-session, run `pnpm build:workspace`.
 
 ## First-time setup on a new machine
 

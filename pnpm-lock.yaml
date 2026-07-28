@@ -284,6 +284,9 @@ importers:
       happy-dom:
         specifier: ^20.10.6
         version: 20.10.6
+      npm-run-all2:
+        specifier: ^7.0.2
+        version: 7.0.2
       preact:
         specifier: ^10.29.1
         version: 10.29.2

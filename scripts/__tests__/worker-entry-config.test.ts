@@ -90,13 +90,55 @@ describe("custom Worker deployment contract", () => {
       expect(source).toContain("wrangler@4.85.0 deploy");
       expect(source).toContain('Preview service bootstrap @ ${GITHUB_SHA:0:7}');
       expect(source).toContain('--config "$PREVIEW_CONFIG"');
-      expect(source).toContain("--retry 6 --retry-all-errors --retry-delay 2 --retry-max-time 30");
       expect(source).toContain("/workers/scripts/zudo-doc-preview/subdomain");
       expect(source).toContain("previews_enabled");
       expect(source).toContain(`--data '{"enabled":false,"previews_enabled":true}'`);
       expect(source).toContain("upload_preview");
       expect(source).not.toContain('$RUNNER_TEMP/wrangler-preview-bootstrap.toml');
       expect(source).not.toContain("UPLOAD_STATUS");
+    }
+  });
+
+  it("arms every post-deploy gate with the current propagation retry policy", () => {
+    // #3125: after a deploy the edge can 404 a just-published URL for tens of
+    // seconds. Every gate that fetches the deployed site must carry the same
+    // retry policy, or it goes red on propagation rather than on a real defect.
+    for (const [path, expected] of [
+      // Two retrying curls: the homepage HTML, then the hashed stylesheet.
+      [".github/actions/css-shape-smoke-gate/action.yml", 2],
+      // Two per workflow: the root-asset-URL gate and the public-asset gate.
+      // The third post-deploy curl (POST /api/ai-chat) deliberately omits both
+      // -f and the retry flags — a JSON validation 4xx is a valid response.
+      [".github/workflows/main-deploy.yml", 2],
+      [".github/workflows/preview-deploy.yml", 2],
+      [".github/workflows/pr-checks.yml", 2],
+    ] as const) {
+      const source = read(path);
+      // Count by flag membership, not by one long literal: flag ORDER carries no
+      // safety payoff (and already differs between main-deploy and the preview
+      // workflows), so pinning it would fail on a harmless reordering while a
+      // dropped flag is what actually breaks the gate.
+      const armed = source
+        .split("\n")
+        .filter((line) =>
+          ["--retry 10", "--retry-delay 6", "--retry-max-time 90", "--retry-all-errors"].every(
+            (flag) => line.includes(flag),
+          ),
+        );
+      expect(armed, `${path} retry-armed curls`).toHaveLength(expected);
+      // The two retired policies this replaced (#2236 → #3125). --retry 5/6 was
+      // too short for observed propagation windows.
+      expect(source).not.toMatch(/--retry [56]\b/);
+      expect(source).not.toContain("--retry-delay 3");
+      expect(source).not.toContain("--retry-delay 2");
+    }
+
+    for (const workflow of [
+      ".github/workflows/main-deploy.yml",
+      ".github/workflows/preview-deploy.yml",
+      ".github/workflows/pr-checks.yml",
+    ]) {
+      expect(read(workflow)).toContain("uses: ./.github/actions/css-shape-smoke-gate");
     }
   });
 

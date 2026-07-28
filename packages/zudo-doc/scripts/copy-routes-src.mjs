@@ -30,9 +30,11 @@
 //   - the `virtual:zudo-doc-route-context` module (provided by the plugin).
 //   - existing bare specifiers (`@takazudo/zfb/content`, `@takazudo/*`, etc.).
 //
-// Runs in the tsup `onSuccess` chain AFTER copy-eject-sources.mjs. `clean:true`
-// wipes `dist/` only — `routes-src/` is not under `dist/`, so we wipe+recreate
-// it here for deterministic output (no stale files from renamed/removed routes).
+// Runs in the tsup `onSuccess` chain AFTER copy-eject-sources.mjs. A one-shot
+// build's clean (`clean: !options.watch`) wipes `dist/` only — `routes-src/` is
+// not under `dist/`, so it is NEVER automatically cleaned, under watch or
+// otherwise. We wipe+recreate it here for deterministic output (no stale files
+// from renamed/removed routes).
 
 import { cpSync, rmSync, mkdirSync, statSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";

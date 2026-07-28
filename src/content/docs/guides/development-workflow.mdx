@@ -32,7 +32,7 @@ This repository is also zudo-doc's showcase. Its commands include package develo
 | `pnpm dev` | Runs the zfb dev server (port 4321), doc-history-server (port 4322), package watch, and showcase development helpers concurrently |
 | `pnpm dev:zfb` | zfb dev server only (port 4321) |
 | `pnpm dev:history` | doc-history API server only (port 4322) |
-| `pnpm dev:zudo-doc` | tsup `--watch` for the `@takazudo/zudo-doc` package |
+| `pnpm dev:zudo-doc` | Watches the `@takazudo/zudo-doc` package — tsup `--watch` for the JS and `tsc --watch` for the type declarations, in parallel |
 | `pnpm dev:stable` | Alternative build-then-serve mode (avoids HMR crashes on content file add/remove) |
 | `pnpm dev:network` | zfb dev server with `--host 0.0.0.0` for LAN access |
 

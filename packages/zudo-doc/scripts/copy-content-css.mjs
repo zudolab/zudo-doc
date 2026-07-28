@@ -4,8 +4,9 @@
 // Copy the static content stylesheet src/content.css → dist/content.css so the
 // package can ship it as `@takazudo/zudo-doc/content.css`. tsup (bundle:false)
 // only compiles .ts/.tsx, so CSS assets need an explicit copy step; this runs
-// from the tsup `onSuccess` hook AFTER compilation (clean:true wipes dist/
-// first, so dist/ exists by the time this runs but the file must be re-copied
+// from the tsup `onSuccess` hook AFTER compilation (a one-shot build's clean
+// wipes dist/ first — `clean: !options.watch`, so a watch build does not — and
+// either way dist/ exists by the time this runs but the file must be re-copied
 // every build). Cross-platform (node fs, no shell `cp`).
 
 import { copyFileSync, mkdirSync, statSync } from "node:fs";

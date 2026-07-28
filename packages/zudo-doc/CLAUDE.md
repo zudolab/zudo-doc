@@ -21,9 +21,25 @@ at an 8GB Node heap (the JS pass alone finishes in ~150ms). `tsc
 JS), is **linear in file count**, and completes under the default ~2GB heap, so
 CI no longer needs (and the scripts no longer set) a raised `NODE_OPTIONS` heap.
 `tsconfig.build.json` extends `tsconfig.json` with `emitDeclarationOnly`/`outDir:dist`/
-`rootDir:src` and excludes test globs so test files don't emit. `dev` stays
-`tsup --watch` (JS only — types lag during package dev; `pnpm check` is the type
-gate). See zudolab/zudo-doc epic #2344.
+`rootDir:src` and excludes test globs so test files don't emit. See zudolab/zudo-doc
+epic #2344.
+
+`dev` mirrors that same two-pass split as two parallel watchers (#3113):
+`dev:js` (`tsup --watch`) and `dev:dts`
+(`tsc -p tsconfig.build.json --watch --preserveWatchOutput`), joined by `run-p`.
+Declarations therefore stay current during package dev — they no longer lag behind
+the JS. The two do not fight over `dist/`: they write disjoint extensions, and tsup's
+watcher already ignores `dist/`, so the `.d.ts` writes cannot retrigger a JS rebuild.
+Three consequences of pairing them:
+
+- tsup runs `clean: !options.watch`, so a watch session does not wipe `dist/` (it could
+  not regenerate the `.d.ts` it destroyed). `build`/`prepare` still clean.
+- Because nothing cleans under watch, a deleted or renamed source file leaves a stale
+  `.js`/`.d.ts` behind — run `pnpm build:workspace` after one.
+- `predev` runs `scripts/ensure-workspace-build.mjs` because `dev:dts` typechecks
+  `pre-build.ts`, which imports the sibling `@takazudo/zudo-doc-history-server`'s
+  `git-history` declarations — on a cold tree that watcher dies immediately with TS2307.
+  No-op when warm.
 
 ## Shared-surface (exports / tsup) append convention — package-first migration
 
@@ -158,7 +174,8 @@ spreads it into `defineConfig` and keeps only the shell fields it still owns
 ## Shipped CSS artifacts (five)
 
 tsup only compiles `.ts/.tsx`. CSS is produced by the tsup `onSuccess` hook
-(runs after every build/`--watch`, because `clean:true` wipes `dist/` first):
+(runs after every build/`--watch`, so a one-shot build's `clean` cannot leave
+`dist/` without them):
 
 ```
 onSuccess: "node scripts/copy-theme-css.mjs && node scripts/copy-content-css.mjs && node scripts/copy-page-loading-css.mjs && node scripts/copy-features-css.mjs && node scripts/gen-safelist.mjs"
