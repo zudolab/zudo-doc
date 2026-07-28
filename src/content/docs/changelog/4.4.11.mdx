@@ -1,0 +1,19 @@
+---
+title: 4.4.11
+description: Release notes for 4.4.11.
+sidebar_position: 1073
+---
+
+Released: 2026-07-28
+
+A maintenance release: CI post-deploy gate reliability, the `packages/zudo-doc` dev loop, and documentation. The published package artifacts are unchanged — the build path still cleans exactly as before.
+
+### Bug Fixes
+
+- Keep `packages/zudo-doc` declarations alive during dev. `tsup --watch` ran with `clean: true` and `dts: false`, so a dev session wiped `dist/` and regenerated no `.d.ts` at all (285 → 0). `dev` now pairs `tsup --watch` with a `tsc --watch` declarations pass, and only non-watch builds clean (a705fca1f, #3126)
+- Widen the post-deploy smoke-gate retry window so slow asset propagation no longer turns a green deploy red, and split the CSS-shape action's HTML fetch from its link grep so a failure names the URL that died instead of surfacing a bare curl exit code (960ff3e3f, #3123)
+- Give the six post-deploy gate steps a failure branch naming the URL and curl's exit status. Under `set -euo pipefail` a persistent 404 aborted at the assignment, so the `::error::` annotation was unreachable — the exact diagnosability gap the gate was meant to close. Gate-carrying jobs raised to `timeout-minutes: 15` so a job timeout cannot pre-empt the annotation (5f2266eaf, #3124)
+
+### Other Changes
+
+- Document the `run-p` dev-session cascade as accepted behaviour. One watcher exiting non-zero tears down all of `pnpm dev`, because `run-p` aborts its siblings and the zudo-doc watchers are themselves a nested `run-p`. Records the trigger set (including that `tsup --watch` exits on a failed *first* build while `tsc --watch` does not), the `EMFILE` vs `ENOSPC` inotify limit distinction, and why `--continue-on-error` is the wrong remedy (b9d7d5a29, 23f0deac1, #3129)
