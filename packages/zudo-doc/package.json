@@ -587,6 +587,7 @@
   "scripts": {
     "build": "tsup && tsc -p tsconfig.build.json",
     "predev": "node ../../scripts/ensure-workspace-build.mjs",
+    "// dev": "Do NOT add `--continue-on-error` here. It stops a fatal watcher exit from cascading, but the dead watcher then fails silently — a dead dev:dts leaves dist/*.d.ts frozen while the JS keeps updating, which typechecks cleanly against stale types instead of failing loudly like #3113's absent declarations did. See the #3129 section in CLAUDE.md.",
     "dev": "run-p dev:js dev:dts",
     "dev:js": "tsup --watch",
     "dev:dts": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",

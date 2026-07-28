@@ -41,6 +41,62 @@ Three consequences of pairing them:
   `git-history` declarations — on a cold tree that watcher dies immediately with TS2307.
   No-op when warm.
 
+### A watcher exit tears down the whole dev session (accepted, #3129)
+
+`run-p` **aborts its sibling** when one task exits non-zero, and root `pnpm dev` nests
+this `run-p` inside another one (`run-p dev:zfb dev:history dev:claude-watch dev:zudo-doc`).
+So a fatal `dev:dts` exit kills `dev:js`, which fails `dev:zudo-doc`, which takes down
+`zfb dev` and the doc-history server with it. Two hops, verified against
+`npm-run-all2@7.0.2` — not assumed.
+
+**This is accepted behaviour, not an open bug.** It is loud and self-announcing:
+
+```
+ERROR: "dev:dts" exited with 1.
+ERROR: "dev:zudo-doc" exited with 1.
+```
+
+and `pnpm dev` returns to the shell prompt. Re-running `pnpm dev` is usually all it takes —
+the two exceptions (a startup build error, and inotify exhaustion) are called out below.
+
+**Mid-session, exposure is narrow.** Once a session is up both watchers survive ordinary
+work: `tsc --watch` reports type errors and keeps watching, and `tsup --watch` logs a
+failed rebuild and keeps watching. So only *fatal* exits cascade — a missing or unreadable
+`tsconfig.build.json`, an OOM, or inotify exhaustion.
+
+inotify is a real hazard on WSL2 here, and its two limits surface as **different errno
+values**. Match the errno to the limit before tuning, or you will raise a ceiling that was
+never the problem:
+
+- **`EMFILE`** → `fs.inotify.max_user_instances` (128 here). This is the one that actually
+  bites: orphaned watchers and codex brokers accumulate until `inotify_init` fails.
+- **`ENOSPC`** → `fs.inotify.max_user_watches` (524288 here). Much rarer.
+
+Re-running `pnpm dev` fixes neither — free instances or raise the ceiling the errno
+actually points at (see the `/codex-sweep` and `/dev-clean-wsl` skills).
+
+**Startup is stricter, and the two watchers differ there.** `tsup --watch` exits non-zero
+when its *first* build fails, so launching `pnpm dev` with a syntax error already sitting
+in `packages/zudo-doc/src/**` tears the whole session down immediately. `tsc --watch` does
+not — it prints the errors and watches anyway. Both verified against the installed
+tsup 8.5.1 / TypeScript. This case is instant and self-evident rather than insidious: fix
+the syntax error and relaunch. Before #3126 there was a single watcher, so neither shape
+of this cascade existed.
+
+**Do NOT "fix" this with `run-p --continue-on-error`.** It keeps the surviving watcher
+alive, but the dead one then fails *silently*: a dead `dev:dts` leaves `dist/*.d.ts`
+frozen at its last-emitted state while the JS keeps updating around it. That is the same
+class of `dist`-out-of-sync-with-source problem the paired-watcher split (#3126) was added
+to end — and a nastier variant of it. #3113's declarations were *absent* (tsup's
+`clean: true` wiped all 285 of them and nothing regenerated them), which fails loudly with
+`TS2306`/`TS2724`; frozen declarations instead typecheck cleanly against stale types. A
+loud crash you re-run beats a quiet lie.
+
+If the inotify case starts happening for real, the remedy is to supervise the watchers
+(restart with capped backoff, **indefinitely**) rather than to continue-on-error. Note
+that a supervisor which gives up after N retries but stays alive is the same trap: it
+leaves a dev session that looks healthy while its output is knowingly stale.
+
 ## Shared-surface (exports / tsup) append convention — package-first migration
 
 The `package.json#exports` map and `tsup.config.ts` are a **shared surface** that
