@@ -35,7 +35,10 @@ runs:
         # upstream echo and flip pipefail. grep exits 1 on no match, which would abort
         # under set -e before the friendlier message below fires — `|| true` guards that.
         CSS_PATH=$(grep -oE "href=[\"']?[^\"' >]*assets/styles-[^\"' >]*\.css" <<<"$HTML" | head -1 | sed -E "s/^href=[\"']?//") || true
-        [ -n "$CSS_PATH" ] || { echo "::error::no CSS link found in $DEPLOY_URL/ (fetched ${#HTML} bytes)"; exit 1; }
+        # ${#HTML} is a character count, not a byte count — it is a diagnostic
+        # ("did we get an empty/short body?"), so say chars rather than pay for
+        # an extra `printf | wc -c` subshell.
+        [ -n "$CSS_PATH" ] || { echo "::error::no CSS link found in $DEPLOY_URL/ (fetched ${#HTML} chars)"; exit 1; }
         curl -fsSL --retry 10 --retry-delay 6 --retry-max-time 90 --retry-all-errors "${DEPLOY_URL}${CSS_PATH}" -o /tmp/deployed-css.css \
           || { echo "::error::failed to fetch ${DEPLOY_URL}${CSS_PATH} (curl exit $?)"; exit 1; }
 

@@ -6,7 +6,8 @@
 // containing every Tailwind candidate token found in the compiled JS.
 //
 // Run after tsup (tsup `onSuccess` hook, and chained in build/prepare).
-// Must run AFTER tsup because `clean: true` wipes dist/ before compiling.
+// Must run AFTER tsup because a one-shot build's clean wipes dist/ before
+// compiling (`clean: !options.watch` — a watch build does not clean).
 //
 // Why dist/ rather than src/:
 //   Consumers of the npm package have dist/ via node_modules; they do NOT

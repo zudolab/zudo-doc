@@ -221,7 +221,12 @@ jobs:
     name: Deploy to Cloudflare Workers
     needs: [build-site, build-history]
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # 15 (not 10): the four retrying post-deploy fetches (root-asset gate,
+    # public-asset gate, and the CSS-shape action's two) each sleep for up to 90s
+    # while the edge propagates (#3125), so worst case is several minutes. A job
+    # timeout would kill the step before its ::error:: annotation fires, which is
+    # exactly the opaque failure those annotations exist to prevent.
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
@@ -290,7 +295,8 @@ jobs:
           set -euo pipefail
           PROD_URL="https://zudo-doc.takazudomodular.com/"
           echo "Checking root asset URLs at: $PROD_URL"
-          HTML=$(curl -fsSL --retry 10 --retry-delay 6 --retry-max-time 90 --retry-all-errors "$PROD_URL")
+          HTML=$(curl -fsSL --retry 10 --retry-delay 6 --retry-max-time 90 --retry-all-errors "$PROD_URL") \
+            || { echo "::error::failed to fetch $PROD_URL after retries (curl exit $?)"; exit 1; }
           # Use here-strings (not echo|grep) so grep -q exiting early on a
           # match cannot SIGPIPE upstream echo + flip pipefail.
           grep -qE "href=[\"']?/assets/" <<<"$HTML" \
@@ -305,7 +311,8 @@ jobs:
         run: |
           set -euo pipefail
           PROD_URL="https://zudo-doc.takazudomodular.com"
-          STATUS=$(curl -fsSL --retry 10 --retry-delay 6 --retry-max-time 90 --retry-all-errors -o /dev/null -w '%{http_code}' "$PROD_URL/img/logo.svg")
+          STATUS=$(curl -fsSL --retry 10 --retry-delay 6 --retry-max-time 90 --retry-all-errors -o /dev/null -w '%{http_code}' "$PROD_URL/img/logo.svg") \
+            || { echo "::error::failed to fetch $PROD_URL/img/logo.svg after retries (curl exit $?)"; exit 1; }
           [ "$STATUS" = "200" ] || { echo "::error::$PROD_URL/img/logo.svg returned HTTP $STATUS, expected 200"; exit 1; }
           echo "OK: $PROD_URL/img/logo.svg returned HTTP 200"
 

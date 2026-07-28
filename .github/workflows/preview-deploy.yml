@@ -205,7 +205,12 @@ jobs:
     name: Deploy Preview
     needs: [build-site, build-history]
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # 15 (not 10): the four retrying post-deploy fetches (root-asset gate,
+    # public-asset gate, and the CSS-shape action's two) each sleep for up to 90s
+    # while the edge propagates (#3125), so worst case is several minutes. A job
+    # timeout would kill the step before its ::error:: annotation fires, which is
+    # exactly the opaque failure those annotations exist to prevent.
+    timeout-minutes: 15
 
     steps:
       # wrangler reads wrangler.toml (Workers config) from the repo root at
@@ -356,7 +361,8 @@ jobs:
           # A newly assigned workers.dev alias can briefly return 404 while it
           # propagates to the edge. Retry that bounded transient window before
           # evaluating the deployed HTML contract.
-          HTML=$(curl --retry 10 --retry-delay 6 --retry-max-time 90 --retry-all-errors -fsSL "$PREVIEW_URL")
+          HTML=$(curl --retry 10 --retry-delay 6 --retry-max-time 90 --retry-all-errors -fsSL "$PREVIEW_URL") \
+            || { echo "::error::failed to fetch $PREVIEW_URL after retries (curl exit $?)"; exit 1; }
           # Use here-strings (not echo|grep) so grep -q exiting early on a
           # match cannot SIGPIPE upstream echo + flip pipefail.
           grep -qE "href=[\"']?/assets/" <<<"$HTML" \
@@ -372,7 +378,8 @@ jobs:
           DEPLOY_URL: ${{ steps.deploy.outputs.deploy_url }}
         run: |
           set -euo pipefail
-          STATUS=$(curl -fsSL --retry 10 --retry-delay 6 --retry-max-time 90 --retry-all-errors -o /dev/null -w '%{http_code}' "$DEPLOY_URL/img/logo.svg")
+          STATUS=$(curl -fsSL --retry 10 --retry-delay 6 --retry-max-time 90 --retry-all-errors -o /dev/null -w '%{http_code}' "$DEPLOY_URL/img/logo.svg") \
+            || { echo "::error::failed to fetch $DEPLOY_URL/img/logo.svg after retries (curl exit $?)"; exit 1; }
           [ "$STATUS" = "200" ] || { echo "::error::$DEPLOY_URL/img/logo.svg returned HTTP $STATUS, expected 200"; exit 1; }
           echo "OK: $DEPLOY_URL/img/logo.svg returned HTTP 200"
 

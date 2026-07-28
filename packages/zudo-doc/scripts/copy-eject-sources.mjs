@@ -11,8 +11,9 @@
 //   - vitest.config.ts files
 //
 // Runs as part of the tsup `onSuccess` chain AFTER the JS/DTS compilation pass.
-// `clean: true` wipes `dist/` only — `eject/` is not under `dist/`, so it is
-// NOT automatically cleaned. We wipe and recreate `eject/` here to keep the
+// A one-shot build's clean (`clean: !options.watch`) wipes `dist/` only —
+// `eject/` is not under `dist/`, so it is NEVER automatically cleaned, under
+// watch or otherwise. We wipe and recreate `eject/` here to keep the
 // output deterministic (no stale files from renamed or removed components).
 
 import { cpSync, rmSync, mkdirSync, statSync, readdirSync } from "node:fs";
