@@ -32,7 +32,7 @@ sidebar_position: 17
 | `pnpm dev` | zfb開発サーバー（ポート4321）、doc-history-server（ポート4322）、パッケージwatch、ショーケース開発用ヘルパーを同時に起動 |
 | `pnpm dev:zfb` | zfb開発サーバーのみ（ポート4321） |
 | `pnpm dev:history` | docヒストリーAPIサーバーのみ（ポート4322） |
-| `pnpm dev:zudo-doc` | `@takazudo/zudo-doc`パッケージのtsup `--watch` |
+| `pnpm dev:zudo-doc` | `@takazudo/zudo-doc`パッケージのwatch。JSのtsup `--watch`と型定義のtsc `--watch`を並列実行 |
 | `pnpm dev:stable` | ビルドしてからサーブする代替モード（コンテンツファイルの追加・削除時のHMRクラッシュを回避） |
 | `pnpm dev:network` | `--host 0.0.0.0`でzfb開発サーバーを起動（LAN経由アクセス用） |
 
