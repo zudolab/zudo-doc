@@ -36,6 +36,21 @@ pnpm dev       # zfb dev server on http://localhost:4321
 | `pnpm format` | Format MDX/Markdown content |
 | `pnpm b4push` | Pre-push validation (format, drift, tags, tokens, typecheck, build, links, smoke) |
 
+### If `pnpm dev` exits back to the prompt
+
+`pnpm dev` runs several processes in parallel via `run-p`, which **aborts the others when
+one exits non-zero**. So a fatal crash in any single one ends the whole session, with:
+
+```
+ERROR: "<task-name>" exited with 1.
+```
+
+Usually you can just re-run `pnpm dev`. The exception is `ENOSPC` / inotify-watch
+exhaustion (a WSL2 hazard — the default `fs.inotify.max_user_instances` is 128): retrying
+will not help until you free watch instances or raise the ceiling. This is accepted
+behaviour rather than an open bug; `packages/zudo-doc/CLAUDE.md` explains why, and why
+`run-p --continue-on-error` is deliberately *not* the fix.
+
 ## Internationalization
 
 - English (default): `/docs/...` — content in `src/content/docs/`

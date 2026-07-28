@@ -41,6 +41,42 @@ Three consequences of pairing them:
   `git-history` declarations — on a cold tree that watcher dies immediately with TS2307.
   No-op when warm.
 
+### A fatal watcher exit tears down the whole dev session (accepted, #3129)
+
+`run-p` **aborts its sibling** when one task exits non-zero, and root `pnpm dev` nests
+this `run-p` inside another one (`run-p dev:zfb dev:history dev:claude-watch dev:zudo-doc`).
+So a fatal `dev:dts` exit kills `dev:js`, which fails `dev:zudo-doc`, which takes down
+`zfb dev` and the doc-history server with it. Two hops, verified against
+`npm-run-all2@7.0.2` — not assumed.
+
+**This is accepted behaviour, not an open bug.** It is loud and self-announcing:
+
+```
+ERROR: "dev:dts" exited with 1.
+ERROR: "dev:zudo-doc" exited with 1.
+```
+
+and `pnpm dev` returns to the shell prompt. Re-run `pnpm dev`.
+
+**Exposure is narrow.** Both watchers survive ordinary work — `tsc --watch` reports type
+errors and keeps watching, `tsup --watch` the same for build errors. Only *fatal* exits
+cascade: a missing or unreadable `tsconfig.build.json`, an OOM, or `ENOSPC` inotify-watch
+exhaustion. That last one is a real hazard on WSL2 here, where
+`fs.inotify.max_user_instances` defaults to 128 and orphaned watchers accumulate — if
+that is the trigger, re-running `pnpm dev` will not help; free the instances or raise the
+ceiling (see the `/codex-sweep` and `/dev-clean-wsl` skills). Before #3126 there was a
+single watcher, so this cascade did not exist.
+
+**Do NOT "fix" this with `run-p --continue-on-error`.** It keeps the surviving watcher
+alive, but the dead one then fails *silently* and `dist/*.d.ts` quietly drifts stale —
+which is precisely the #3113 symptom the paired-watcher split was introduced to remove,
+now without #3113's obvious trigger. A loud crash you re-run beats a quiet lie.
+
+If the inotify case starts happening for real, the remedy is to supervise the watchers
+(restart with capped backoff, **indefinitely**) rather than to continue-on-error. Note
+that a supervisor which gives up after N retries but stays alive is the same trap: it
+leaves a dev session that looks healthy while its output is knowingly stale.
+
 ## Shared-surface (exports / tsup) append convention — package-first migration
 
 The `package.json#exports` map and `tsup.config.ts` are a **shared surface** that
