@@ -11,8 +11,9 @@
 // "theme-packs directory not found" on a real build — this script is what
 // closes that gap.
 //
-// Runs from the tsup `onSuccess` chain AFTER compilation (clean:true wipes
-// dist/ first) — mirrors copy-theme-css.mjs's shape. Before copying, this
+// Runs from the tsup `onSuccess` chain AFTER compilation (a one-shot build's
+// clean wipes dist/ first — `clean: !options.watch`, so a watch build does
+// not) — mirrors copy-theme-css.mjs's shape. Before copying, this
 // imports the ALREADY-COMPILED `dist/theme-packs-registry/index.js` (tsup
 // just finished compiling it) and calls `loadThemePackRegistry` against the
 // SOURCE directory — which validates every bundled pack (ADR Decision 6.7)

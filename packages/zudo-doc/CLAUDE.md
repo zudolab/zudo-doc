@@ -36,8 +36,10 @@ Three consequences of pairing them:
   not regenerate the `.d.ts` it destroyed). `build`/`prepare` still clean.
 - Because nothing cleans under watch, a deleted or renamed source file leaves a stale
   `.js`/`.d.ts` behind — run `pnpm build:workspace` after one.
-- `predev` runs `scripts/ensure-workspace-build.mjs` so a dev session started on a cold
-  tree begins from a complete `dist/` instead of watching a partial one. No-op when warm.
+- `predev` runs `scripts/ensure-workspace-build.mjs` because `dev:dts` typechecks
+  `pre-build.ts`, which imports the sibling `@takazudo/zudo-doc-history-server`'s
+  `git-history` declarations — on a cold tree that watcher dies immediately with TS2307.
+  No-op when warm.
 
 ## Shared-surface (exports / tsup) append convention — package-first migration
 
