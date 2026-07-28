@@ -283,12 +283,14 @@ jobs:
       # (stylesheet href and islands script src, quoted or minified-unquoted).
       # If zfb silently drops the `base` threading in a future version this
       # step goes red before the broken production site reaches users.
+      # Retry: the custom domain can briefly 404 while the deploy propagates
+      # to the edge (#3125) — same race the CSS-shape gate guards against.
       - name: Verify production site has root asset URLs
         run: |
           set -euo pipefail
           PROD_URL="https://zudo-doc.takazudomodular.com/"
           echo "Checking root asset URLs at: $PROD_URL"
-          HTML=$(curl -fsSL "$PROD_URL")
+          HTML=$(curl -fsSL --retry 10 --retry-delay 6 --retry-max-time 90 --retry-all-errors "$PROD_URL")
           # Use here-strings (not echo|grep) so grep -q exiting early on a
           # match cannot SIGPIPE upstream echo + flip pipefail.
           grep -qE "href=[\"']?/assets/" <<<"$HTML" \
@@ -298,11 +300,12 @@ jobs:
           echo "OK: production site has root asset URLs"
 
       # Public-asset HTTP 200 gate — defends against broken public/ asset serving.
+      # Retry: same post-deploy propagation race as above (#3125).
       - name: Public-asset smoke gate
         run: |
           set -euo pipefail
           PROD_URL="https://zudo-doc.takazudomodular.com"
-          STATUS=$(curl -fsSL -o /dev/null -w '%{http_code}' "$PROD_URL/img/logo.svg")
+          STATUS=$(curl -fsSL --retry 10 --retry-delay 6 --retry-max-time 90 --retry-all-errors -o /dev/null -w '%{http_code}' "$PROD_URL/img/logo.svg")
           [ "$STATUS" = "200" ] || { echo "::error::$PROD_URL/img/logo.svg returned HTTP $STATUS, expected 200"; exit 1; }
           echo "OK: $PROD_URL/img/logo.svg returned HTTP 200"
 

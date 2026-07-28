@@ -822,7 +822,7 @@ jobs:
           # A newly assigned workers.dev alias can briefly return 404 while it
           # propagates to the edge. Retry that bounded transient window before
           # evaluating the deployed HTML contract.
-          HTML=$(curl --retry 6 --retry-all-errors --retry-delay 2 --retry-max-time 30 -fsSL "$PREVIEW_URL")
+          HTML=$(curl --retry 10 --retry-delay 6 --retry-max-time 90 --retry-all-errors -fsSL "$PREVIEW_URL")
           # Use here-strings (not echo|grep) so grep -q exiting early on a
           # match cannot SIGPIPE upstream echo + flip pipefail.
           grep -qE "href=[\"']?/assets/" <<<"$HTML" \
@@ -839,7 +839,7 @@ jobs:
           DEPLOY_URL: ${{ steps.cf-deploy.outputs.deploy_url }}
         run: |
           set -euo pipefail
-          STATUS=$(curl -fsSL -o /dev/null -w '%{http_code}' "$DEPLOY_URL/img/logo.svg")
+          STATUS=$(curl -fsSL --retry 10 --retry-delay 6 --retry-max-time 90 --retry-all-errors -o /dev/null -w '%{http_code}' "$DEPLOY_URL/img/logo.svg")
           [ "$STATUS" = "200" ] || { echo "::error::$DEPLOY_URL/img/logo.svg returned HTTP $STATUS, expected 200"; exit 1; }
           echo "OK: $DEPLOY_URL/img/logo.svg returned HTTP 200"
 
