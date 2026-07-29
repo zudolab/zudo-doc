@@ -127,6 +127,7 @@ describe("package.json exports keyset snapshot", () => {
         "./robots",
         "./route-context",
         "./route-enumerators",
+        "./routes-src/*",
         "./routes/404",
         "./routes/api-ai-chat",
         "./routes/docs-slug",

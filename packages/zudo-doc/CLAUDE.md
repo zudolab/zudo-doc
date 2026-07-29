@@ -119,6 +119,18 @@ by S2 (#2325) is:
   plugin wrappers) append at the marked `ENTRY APPEND POINT` in
   `tsup.config.ts#entry`, or copy via the `onSuccess` chain.
 
+### `"./routes-src/*"` must stay in the map (zfb ≥ 0.1.0-next.97)
+
+`exports` carries `"./routes-src/*": "./routes-src/*"` even though nothing
+imports that subpath by name. zfb next.97 added a bundler **stage-escape audit**
+that rejects any metafile input reached inside a workspace package at a location
+the package does not declare — and the routes plugin injects the raw
+`routes-src/*.tsx` entrypoints by absolute path (it must: zfb extracts `paths()`
+by AST from the `.tsx` source, never from compiled `.js`). Without the wildcard
+entry, `zfb build` fails with `SSR work-mirror stage-escape audit failed` naming
+every `routes-src/*.tsx` and `_context.ts`. Shipping them via `files[]` alone is
+not enough — the audit reads `exports`.
+
 ## Factory context type + foundation primitives (epic #2344, S1a)
 
 The package-first Wave 3 migration relocates the `pages/lib/*` rendering/data
