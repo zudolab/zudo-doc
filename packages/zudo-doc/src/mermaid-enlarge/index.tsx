@@ -22,6 +22,7 @@ import {
 
 const CONTENT_SCOPE_SELECTOR = "main .zd-content";
 const DIAGRAM_SVG_SELECTOR = ":scope > svg";
+const INJECTED_BTN_SELECTOR = ":scope > .zd-enlarge-btn";
 const BTN_INJECTED_ATTR = "data-mermaid-enlarge-ready";
 
 const ZOOM_STEP = 1.25;
@@ -82,7 +83,16 @@ export function MermaidEnlarge() {
     let mutationObserver: MutationObserver | null = null;
 
     function injectButton(container: HTMLElement) {
-      if (container.hasAttribute(BTN_INJECTED_ATTR)) return;
+      // Gate on the button actually being in the DOM, not on the ready
+      // attribute alone (zudolab/zudo-doc#3132). The mermaid init script's
+      // re-render path restores each diagram from its cached source with
+      // `el.textContent = src`, which deletes every child of the container —
+      // including this injected button — while leaving the attribute and the
+      // `.zd-mermaid-enlargeable` class untouched. An attribute-only guard
+      // therefore made the button unrecoverable after the first theme/token
+      // re-render (which fires on a full page load as soon as the design-token
+      // panel re-applies persisted overrides to `:root`).
+      if (container.querySelector(INJECTED_BTN_SELECTOR) !== null) return;
       const rendered =
         container.hasAttribute("data-mermaid-rendered") ||
         container.querySelector(DIAGRAM_SVG_SELECTOR) !== null;
