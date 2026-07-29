@@ -17,6 +17,8 @@
 // accumulated document shape, so an unrelated edit to an already-fine page
 // can flip it. That is exactly why this needs a build-output gate rather
 // than author-side discipline: the failure is invisible in the source.
+// Tracked upstream as Takazudo/zudo-front-builder#2186; retire this guard
+// only once that lands AND zfb fails the build itself.
 //
 // Known-exempt routes live in `.content-fallback-allowlist` (substring match
 // on the dist-relative path, each entry justified by a `# reason:` comment).
