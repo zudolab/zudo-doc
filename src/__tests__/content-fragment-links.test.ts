@@ -108,7 +108,11 @@ describe("repository content fragment links", () => {
     for (const source of files) {
       const body = readFileSync(source, "utf8");
       const withoutCode = withoutFencedCode(body);
-      const links = withoutCode.matchAll(/\]\(([^)\s]+#[^)\s]+)(?:\s+[^)]*)?\)/g);
+      // The path part is `*`, not `+`: a bare same-page fragment (`](#anchor)`)
+      // has nothing before the `#`, and `resolveContentTarget` maps that empty
+      // path back to the source file. Requiring a path here silently exempted
+      // every same-page anchor from this guard (zudolab/zudo-doc#3131).
+      const links = withoutCode.matchAll(/\]\(([^)\s]*#[^)\s]+)(?:\s+[^)]*)?\)/g);
 
       for (const match of links) {
         const href = match[1]!;
