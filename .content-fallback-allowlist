@@ -1,0 +1,24 @@
+# Allowlist for scripts/check-content-fallback.mjs (#3134).
+#
+# One entry per line. An entry is matched as a plain substring against each
+# offending page's dist-relative path, so a single entry covers every locale
+# (`docs/foo/` also matches `ja/docs/foo/`). Blank lines and `#` comments are
+# ignored.
+#
+# Only add a route here when the fallback is genuinely not shipped or not
+# fixable from this repo, and say which in the `# reason:` line. A page that
+# real users can load does NOT belong here — fix it instead.
+#
+# Stale entries are deliberately NOT reported: most exclusions here cover
+# locally-generated routes that do not exist in a clean CI checkout, so an
+# "unused entry" warning would fire on every CI run.
+
+docs/claude-skills/
+# reason: generated locally by the .claude watcher / `pnpm setup:doc-skill` and
+# gitignored (.gitignore:38), so these routes exist only in a developer's tree
+# and never in a CI build or the deployed site. The generated skill pages are
+# single concatenated dumps (l-lessons-zfb-migration-parity is ~150 KB), which
+# makes them the routes most exposed to the shape-sensitive upstream trigger —
+# and a genuine fallback on a never-shipped local-only route must not fail
+# b4push. (They currently render fine; the pre-review text scan flagged them
+# only because they *mention* the marker inside escaped <code> spans.)

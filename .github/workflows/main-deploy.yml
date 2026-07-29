@@ -112,6 +112,13 @@ jobs:
       - name: Build site
         run: pnpm build
 
+      - name: Check content fallback
+        # This job builds the dist that actually deploys, so it needs the same
+        # gate as pr-checks.yml: zfb only warns when a page's compiled MDX
+        # misses the content bridge and its whole body ships as
+        # <pre data-zfb-content-fallback> (zudolab/zudo-doc#3134).
+        run: pnpm run check:content-fallback
+
       - name: Check links
         # Strict mode to match pr-checks.yml and scripts/run-b4push.sh — bare
         # check:links is non-strict (exit 0 on findings), which previously

@@ -39,6 +39,7 @@
     "test:e2e:ci:json": "bash e2e/setup-fixtures.sh && playwright test --grep-invert \"@flaky|@local-only|@verification\" --reporter=list,json",
     "check:links": "node scripts/check-links.js",
     "check:html": "html-validate \"dist/**/*.html\"",
+    "check:content-fallback": "node scripts/check-content-fallback.mjs",
     "smoke:preview": "node scripts/smoke-preview.mjs",
     "b4push": "./scripts/run-b4push.sh",
     "gen:changelog": "tsx scripts/generate-changelog.ts",

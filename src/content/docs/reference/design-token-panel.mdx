@@ -132,7 +132,7 @@ Tabs use automatic activation — moving focus with the arrow keys also switches
 
 ## JSON Export — diff-only by default
 
-Click **Export** in the panel header to open the export modal. The modal shows a single JSON document describing every tab's current state, wrapped in a `tabs` object keyed by tab id.
+Click **Export** in the panel header to open the export modal. The modal shows a single JSON document describing the current state of every tab, wrapped in a `tabs` object keyed by tab id.
 
 By default the export is a **diff against the defaults** — only tokens you have actually changed are included. Untouched tabs are omitted entirely, and within a changed tab only the individual tokens you edited are kept. The result is small, easy to diff, and stable enough to paste into a commit.
 

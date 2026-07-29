@@ -102,6 +102,13 @@ jobs:
       - name: Build site
         run: pnpm build
 
+      - name: Check content fallback
+        # This job builds the dist that actually deploys, so it needs the same
+        # gate as pr-checks.yml: zfb only warns when a page's compiled MDX
+        # misses the content bridge and its whole body ships as
+        # <pre data-zfb-content-fallback> (zudolab/zudo-doc#3134).
+        run: pnpm run check:content-fallback
+
       - name: Archive site build output
         # tar preserves arbitrary route paths (upload-artifact rejects ':' in
         # paths, e.g. dist/docs/tags/type:guide/) and includes dotfiles.
