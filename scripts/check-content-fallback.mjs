@@ -31,6 +31,8 @@
 // Wired into:
 //   - scripts/run-b4push.sh (after the build step)
 //   - .github/workflows/pr-checks.yml (build-site job, after pnpm build)
+//   - .github/workflows/main-deploy.yml (build-site job, after pnpm build)
+//   - .github/workflows/preview-deploy.yml (build-site job, after pnpm build)
 
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { resolve, join, relative, dirname } from "node:path";
@@ -39,10 +41,19 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
 
-// The attribute zfb stamps on the fallback wrapper. Kept as one literal so a
-// rename upstream surfaces here as "0 pages scanned positive" rather than a
-// silently weakened check — see the emptiness assertion in main().
-const FALLBACK_MARKER = "data-zfb-content-fallback";
+// The attribute zfb stamps on the fallback wrapper element
+// (`<pre data-zfb-content-fallback="">`, see zfb's renderFallback()).
+const FALLBACK_ATTR = "data-zfb-content-fallback";
+
+// Match the actual fallback element, not the attribute name as text: pages
+// that *document* the attribute carry it HTML-escaped inside <code> spans
+// (`&lt;pre data-zfb-content-fallback>`), which must not count as a fallback.
+const FALLBACK_ELEMENT_RE = new RegExp(`<pre\\b[^>]*\\b${FALLBACK_ATTR}\\b`);
+
+/** True when the built HTML contains a real zfb fallback wrapper element. */
+export function hasFallbackElement(html) {
+  return FALLBACK_ELEMENT_RE.test(html);
+}
 
 const ALLOWLIST_FILE = resolve(ROOT, ".content-fallback-allowlist");
 
@@ -102,7 +113,7 @@ function main() {
   }
 
   const allFallbacks = htmlFiles
-    .filter((f) => readFileSync(f, "utf8").includes(FALLBACK_MARKER))
+    .filter((f) => hasFallbackElement(readFileSync(f, "utf8")))
     .map((f) => relative(distDir, f));
 
   const { exempt, offenders } = partitionFallbacks(allFallbacks, readAllowlist());
@@ -120,7 +131,7 @@ function main() {
 
   console.error(
     `✗ Content-fallback check: ${offenders.length} of ${htmlFiles.length} built pages ` +
-      `shipped their body as a <pre ${FALLBACK_MARKER}> blob:`,
+      `shipped their body as a <pre ${FALLBACK_ATTR}> blob:`,
   );
   console.error("");
   for (const p of offenders) console.error(`  ${relative(ROOT, join(distDir, p))}`);

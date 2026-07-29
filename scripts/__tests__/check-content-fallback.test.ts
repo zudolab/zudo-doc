@@ -4,6 +4,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  hasFallbackElement,
   parseAllowlist,
   partitionFallbacks,
 } from "../check-content-fallback.mjs";
@@ -23,6 +24,44 @@ describe("parseAllowlist", () => {
 
   it("returns nothing for a comment-only file", () => {
     expect(parseAllowlist("# only\n# comments\n")).toEqual([]);
+  });
+});
+
+describe("hasFallbackElement", () => {
+  it("matches the real zfb fallback wrapper element", () => {
+    expect(
+      hasFallbackElement(
+        '<main><pre data-zfb-content-fallback="">[zfb fallback render]\n# body</pre></main>',
+      ),
+    ).toBe(true);
+    expect(
+      hasFallbackElement("<pre data-zfb-content-fallback>raw</pre>"),
+    ).toBe(true);
+    expect(
+      hasFallbackElement(
+        '<pre class="x" data-zfb-content-fallback="">raw</pre>',
+      ),
+    ).toBe(true);
+  });
+
+  it("ignores pages that merely mention the attribute as text", () => {
+    // A doc page documenting the guard renders the marker HTML-escaped
+    // inside <code> spans — that is content, not a fallback (review P2).
+    expect(
+      hasFallbackElement(
+        "<code>&lt;pre data-zfb-content-fallback></code> markers anywhere",
+      ),
+    ).toBe(false);
+    expect(
+      hasFallbackElement("<code>data-zfb-content-fallback</code> widespread"),
+    ).toBe(false);
+    expect(hasFallbackElement("<p>no marker at all</p>")).toBe(false);
+  });
+
+  it("does not match the attribute on a non-pre element", () => {
+    expect(
+      hasFallbackElement('<div data-zfb-content-fallback="">x</div>'),
+    ).toBe(false);
   });
 });
 

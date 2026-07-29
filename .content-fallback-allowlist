@@ -17,7 +17,8 @@ docs/claude-skills/
 # reason: generated locally by the .claude watcher / `pnpm setup:doc-skill` and
 # gitignored (.gitignore:38), so these routes exist only in a developer's tree
 # and never in a CI build or the deployed site. The generated skill pages are
-# single concatenated dumps (l-lessons-zfb-migration-parity is ~150 KB) and
-# fall back with no zfb warning at all, unlike #3134's warned case. Fixing
-# them would mean changing scripts/setup-doc-skill.sh's output shape, which is
-# out of scope for a guard that exists to protect shipped pages.
+# single concatenated dumps (l-lessons-zfb-migration-parity is ~150 KB), which
+# makes them the routes most exposed to the shape-sensitive upstream trigger —
+# and a genuine fallback on a never-shipped local-only route must not fail
+# b4push. (They currently render fine; the pre-review text scan flagged them
+# only because they *mention* the marker inside escaped <code> spans.)
