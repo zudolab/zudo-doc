@@ -518,6 +518,13 @@ jobs:
       - name: Build site
         run: pnpm build
 
+      - name: Check content fallback
+        # zfb only warns when a page's compiled MDX misses the content bridge
+        # and its whole body ships as <pre data-zfb-content-fallback>, so
+        # `pnpm build` above stays green on a genuinely broken page
+        # (zudolab/zudo-doc#3134). Gate on the built HTML instead.
+        run: pnpm run check:content-fallback
+
       - name: Check links
         # Strict mode to match scripts/run-b4push.sh — bare check:links is
         # non-strict (exit 0 on findings), which previously false-greened real

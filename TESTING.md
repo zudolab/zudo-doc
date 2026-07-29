@@ -113,11 +113,11 @@ its Playwright webServer. Repeated runs skip the build when inputs are unchanged
 
 **b4push** (`pnpm b4push`) is the bounded local convenience pass — wisdom-tier **T4**, not
 T1 (see the note above the tiers table); it's covered here for workflow ergonomics only. It
-runs a 23-step suite
+runs a 24-step suite
 (format → template drift → no-host-alias guard → pin parity → fixture drift → tags/canonical audit →
 current-only compatibility → token lint → component-tokens drift → e2e spec naming guard →
 @flaky tracking-issue guard → wait-debt guard → b4push/CI parity → typecheck → Worker contract proof → unit tests →
-package tests → safelist check → build → link check → HTML validation → preview smoke →
+package tests → safelist check → build → content-fallback check → link check → HTML validation → preview smoke →
 manual smoke). Each step's elapsed time is recorded and printed as a breakdown in the final
 SUMMARY block, so budget creep in any one step is visible instead of only the aggregate run
 duration.

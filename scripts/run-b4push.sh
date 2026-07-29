@@ -23,10 +23,11 @@ set -euo pipefail
 #  17. Package tests (test:packages) — ~1,535 suite tests across workspace packages (as of 2026-07)
 #  18. Package safelist check (#1994) — requires dist/safelist.css from step 16
 #  19. Build (zfb build)
-#  20. Link check
-#  21. HTML validation (html-validate dist/**/*.html)
-#  22. Automated preview smoke (blocking)
-#  23. Manual interactive smoke (operator-driven)
+#  20. Content-fallback check (#3134) — no page may ship a <pre data-zfb-content-fallback> body
+#  21. Link check
+#  22. HTML validation (html-validate dist/**/*.html)
+#  23. Automated preview smoke (blocking)
+#  24. Manual interactive smoke (operator-driven)
 #
 # The former "Z-index codegen drift check" step was retired in
 # zudolab/zudo-doc#2661: the project-side src/config/z-index-tokens.ts (and
@@ -39,13 +40,13 @@ set -euo pipefail
 # it for time-budget reasons — the bounded fast pass stays fast.
 #
 # Env overrides for non-interactive use:
-#   B4PUSH_SKIP_HTML_VALIDATE=1  — skip HTML validation (step 21)
+#   B4PUSH_SKIP_HTML_VALIDATE=1  — skip HTML validation (step 22)
 #   B4PUSH_SKIP_PREVIEW_SMOKE=1  — skip the automated preview smoke
 #   B4PUSH_SKIP_MANUAL_SMOKE=1   — skip the manual interactive smoke
 
 START_TIME=$(date +%s)
 FAILURES=()
-TOTAL_STEPS=23
+TOTAL_STEPS=24
 CURRENT_STEP=0
 
 # Per-step elapsed timing (#2538) — makes budget creep in any one step
@@ -337,7 +338,25 @@ else
   fail "Build"
 fi
 
-# ── Step 20: Link check ───────────────────────────────
+# ── Step 20: Content-fallback check ───────────────────
+#
+# zfb only *warns* when it declines to wire a page's compiled MDX through
+# the content bridge, then ships that page's whole body as a single
+# `<pre data-zfb-content-fallback>` blob — no headings, no anchors, no
+# components — while `zfb build` still exits 0. #3134 shipped exactly that
+# on /docs/reference/design-token-panel and went unnoticed until someone
+# read the build log. The trigger is an upstream bundler bug driven by
+# accumulated document shape rather than by any single construct, so an
+# edit to an unrelated part of an already-fine page can flip it. Gate on
+# the build output, since the source gives no signal.
+step "Content-fallback check (check:content-fallback)"
+if (cd "$ROOT_DIR" && pnpm run check:content-fallback); then
+  pass "Content-fallback check passed"
+else
+  fail "Content-fallback check"
+fi
+
+# ── Step 21: Link check ───────────────────────────────
 #
 # Strict on broken links + absolute MDX-source warnings (real 404s
 # / sub-path bypass). Trailing-slash warnings stay warn-only — they
@@ -357,7 +376,7 @@ else
   fail "Link check"
 fi
 
-# ── Step 21: HTML validation ──────────────────────────
+# ── Step 22: HTML validation ──────────────────────────
 step "HTML validation (html-validate)"
 if [[ "${B4PUSH_SKIP_HTML_VALIDATE:-}" == "1" ]]; then
   skip "HTML validation (B4PUSH_SKIP_HTML_VALIDATE=1)"
@@ -369,7 +388,7 @@ else
   fi
 fi
 
-# ── Step 22: Automated preview smoke (blocking) ──────
+# ── Step 23: Automated preview smoke (blocking) ──────
 step "Preview smoke (automated)"
 if [[ "${B4PUSH_SKIP_PREVIEW_SMOKE:-}" == "1" ]]; then
   skip "Preview smoke (B4PUSH_SKIP_PREVIEW_SMOKE=1)"
@@ -381,7 +400,7 @@ else
   fi
 fi
 
-# ── Step 23: Manual interactive smoke ────────────────
+# ── Step 24: Manual interactive smoke ────────────────
 step "Manual interactive smoke"
 if [[ "${B4PUSH_SKIP_MANUAL_SMOKE:-}" == "1" ]]; then
   skip "Manual smoke (B4PUSH_SKIP_MANUAL_SMOKE=1)"
