@@ -222,7 +222,8 @@ IMMEDIATELY AFTER `<ColorSchemeProvider …/>`, and emits in order:
        document.write('<link rel="stylesheet" data-zd-theme-pack-css href="'
          + base + 'theme-packs/' + slug + '/pack.css?v=' + packs[slug] + '">');
      }
-     document.addEventListener(AFTER_NAVIGATE_EVENT, /* re-apply, see SPA below */);
+     document.addEventListener(BEFORE_SWAP_EVENT, /* pre-swap injection, PRIMARY — see SPA below */);
+     document.addEventListener(AFTER_NAVIGATE_EVENT, /* re-apply, FALLBACK/cleanup — see SPA below */);
    })();
    ```
 
@@ -292,11 +293,32 @@ fallback `"default"`), `subscribeThemePackChanged(listener): () => void` —
 mirroring `color-scheme-sync.ts`'s shapes so two mounted switcher surfaces
 stay in sync.
 
-**SPA navigation:** the bootstrap's `AFTER_NAVIGATE_EVENT` handler
-(`src/transitions/page-events.ts` constant, same as the color-mode
-bootstrap) re-resolves the slug from localStorage (validated) and re-asserts
-both the html attribute and — if the link is missing after a head swap —
-re-inserts it via `appendChild`. Idempotent when nothing changed.
+**SPA navigation (fix for zudolab/zudo-doc#3136, sub-issue #3137):** the
+PRIMARY persistence mechanism is a `BEFORE_SWAP_EVENT` (`"zfb:before-swap"`,
+`src/transitions/page-events.ts` constant) listener. zfb's client-router
+dispatches this event with a mutable `event.newDocument` BEFORE running
+`swapHeadElements`, whose persistence rule keeps a live head
+`link[rel=stylesheet]` in place only when the INCOMING document's head
+already contains a stylesheet link with the exact same `href` — otherwise the
+live link is removed. Because the incoming SSR head never carries the runtime
+pack link, without this handler every soft navigation on a non-default pack
+dropped the link, and the subsequent `appendChild` re-insertion (below)
+applied the stylesheet non-blocking and asynchronously — a real, visible
+flash of the default look before it applied. The before-swap handler closes
+that gap: it re-resolves the active slug and, for a non-default pack whose
+href is not already present in `event.newDocument.head`, injects a matching
+`<link data-zd-theme-pack-css>` into `event.newDocument.head` (via
+`createElement`/`appendChild` on `newDocument`, never on `document`). zfb's
+href-match then treats the LIVE link as persisted — it never leaves the head,
+so there is no removal, no refetch, and no unstyled frame.
+
+The `AFTER_NAVIGATE_EVENT` handler is now FALLBACK/cleanup: it re-resolves the
+slug from localStorage (validated) and re-asserts both the html attribute
+and — if the link is somehow still missing after the swap — re-inserts it via
+`appendChild`; it also removes stale/wrong-slug links and handles the
+`default`-slug case (which the before-swap handler intentionally skips, since
+there is nothing to persist for the stock look). Idempotent when nothing
+changed.
 
 **Ordering note (MUST-verify in #2822):** the runtime-inserted link is
 appended to head end, hence after the main bundle stylesheet; the

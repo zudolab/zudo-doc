@@ -1,6 +1,7 @@
 // ThemePackProvider — the FOUC-safe theme-pack bootstrap, sibling of
 // `color-scheme-provider.tsx` (ADR `docs/adr/theme-packs.md`, Decision 3
-// "Hard-load bootstrap"; epic Theme Core #2812, sub-issue #2822).
+// "Hard-load bootstrap"; epic Theme Core #2812, sub-issue #2822; soft-nav FOUC
+// fix zudolab/zudo-doc#3136, sub-issue #3137).
 //
 // Rendered by `head-with-defaults` IMMEDIATELY AFTER `<ColorSchemeProvider/>`.
 // Emits, in order:
@@ -21,22 +22,42 @@
 //      configured pack is `default`) so a no-JS visitor gets the configured
 //      look, matching the SSR `data-theme-pack` html attribute.
 //
-// The script also registers the AFTER_NAVIGATE re-apply handler: zfb's
-// Strategy B head swap drops the runtime pack link on every soft navigation
-// (the incoming SSR head never carries one), so the handler re-resolves the
-// slug, re-asserts the html attribute, and re-inserts the link via
-// `createElement`/`appendChild` — NEVER `document.write`, which after load
-// would clobber the document. Slug resolution is stored-first (validated) per
-// the ADR, with a validated LIVE `<html data-theme-pack>` fallback before the
-// configured default: `data-theme-pack` rides `preserveHtmlAttrs`, so when
-// persistence failed during a runtime switch (private mode / disabled
-// storage) the user's in-session pack survives soft navigations instead of
-// silently reverting (review finding). On hard load the live attribute is the
-// SSR-rendered configured slug, so the fallback is behavior-identical there.
+// SPA soft navigation (zfb Strategy B) — PRIMARY mechanism is a
+// `BEFORE_SWAP_EVENT` ("zfb:before-swap") listener. zfb dispatches this event
+// with a mutable `event.newDocument` BEFORE it runs `swapHeadElements`, whose
+// persistence rule keeps a live head `<link rel=stylesheet>` in place only
+// when the INCOMING document's head already contains a stylesheet link with
+// the exact same `href`. The incoming SSR head never carries the runtime pack
+// link, so without this handler the swap always removes it. The handler
+// re-resolves the active slug and, for a non-default pack whose href is not
+// already present in `event.newDocument.head`, injects a matching
+// `<link data-zd-theme-pack-css>` into `event.newDocument.head` via
+// `createElement`/`appendChild` (mutating `newDocument`, never `document` —
+// at this point `newDocument` is a separate, not-yet-live document). zfb's
+// href-match then treats the LIVE link as persisted: it is spliced out of the
+// swap and simply stays in the (already loaded, already applied) live head —
+// zero removal, zero refetch, zero unstyled frame.
+//
+// The AFTER_NAVIGATE re-apply handler remains as FALLBACK / cleanup: it
+// re-resolves the slug, re-asserts the html attribute, and — only if the pack
+// link is somehow still missing after the swap (e.g. the before-swap handler
+// didn't run, or a mismatch needs correcting) — re-inserts it via
+// `createElement`/`appendChild`, and removes stale/wrong-slug links (including
+// dropping the link entirely when the resolved slug is `default`). It also
+// covers the default-pack case, which the before-swap handler intentionally
+// skips (there is nothing to persist for `default`). Neither handler EVER
+// uses `document.write` after load — that would clobber the live document.
+// Slug resolution is stored-first (validated) per the ADR, with a validated
+// LIVE `<html data-theme-pack>` fallback before the configured default:
+// `data-theme-pack` rides `preserveHtmlAttrs`, so when persistence failed
+// during a runtime switch (private mode / disabled storage) the user's
+// in-session pack survives soft navigations instead of silently reverting
+// (review finding). On hard load the live attribute is the SSR-rendered
+// configured slug, so the fallback is behavior-identical there.
 // The script's text is build-static and identical
 // on every page, so zfb's already-executed-script dedupe
 // (`scriptsAlreadyRan`, keyed on textContent) guarantees it runs exactly once
-// per hard load — the handler is never double-registered.
+// per hard load — neither handler is ever double-registered.
 //
 // Values are inlined as JSON literals (mirroring `buildColorModeBootstrap`)
 // so the script body is fully self-contained. It additionally publishes the
@@ -46,7 +67,10 @@
 // pack URLs from.
 
 import type { JSX } from "preact";
-import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
+import {
+  AFTER_NAVIGATE_EVENT,
+  BEFORE_SWAP_EVENT,
+} from "../transitions/page-events.js";
 import {
   DEFAULT_THEME_PACK_SLUG,
   THEME_PACK_ATTR,
@@ -119,6 +143,7 @@ export function buildThemePackBootstrap(
   const defaultSlug = JSON.stringify(DEFAULT_THEME_PACK_SLUG);
   const runtimeGlobal = JSON.stringify(THEME_PACK_RUNTIME_GLOBAL);
   const afterNav = JSON.stringify(AFTER_NAVIGATE_EVENT);
+  const beforeSwap = JSON.stringify(BEFORE_SWAP_EVENT);
   return `(function(){
 var configured=${configured};
 var packs=${packs};
@@ -133,6 +158,20 @@ var slug=resolveSlug();
 document.documentElement.setAttribute(ATTR,slug);
 if(slug!==DEFAULT_SLUG){document.write('<link rel="stylesheet" '+LINK_ATTR+' href="'+packHref(slug)+'">');}
 window[${runtimeGlobal}]={base:base,packs:packs,configured:configured};
+document.addEventListener(${beforeSwap},function(e){
+var s=resolveSlug();
+if(s===DEFAULT_SLUG)return;
+var nd=e.newDocument;
+if(!nd||nd===document)return;
+var want=packHref(s);
+var links=nd.head.querySelectorAll("link");
+for(var i=0;i<links.length;i++){var l=links[i];if(l.getAttribute("rel")==="stylesheet"&&l.getAttribute("href")===want)return;}
+var nl=nd.createElement("link");
+nl.setAttribute("rel","stylesheet");
+nl.setAttribute(LINK_ATTR,"");
+nl.setAttribute("href",want);
+nd.head.appendChild(nl);
+});
 document.addEventListener(${afterNav},function(){
 var s=resolveSlug();
 document.documentElement.setAttribute(ATTR,s);

@@ -22,7 +22,7 @@ import ThemePackProvider, {
   resolveThemePackSsrSlug,
   themePackVersionMap,
 } from "../theme-pack-provider.js";
-import { AFTER_NAVIGATE_EVENT } from "../../transitions/page-events.js";
+import { AFTER_NAVIGATE_EVENT, BEFORE_SWAP_EVENT } from "../../transitions/page-events.js";
 import {
   THEME_PACK_ATTR,
   THEME_PACK_LINK_ATTR,
@@ -61,13 +61,39 @@ class FakeBootstrapHead {
     if (idx >= 0) this.children.splice(idx, 1);
     el.parentNode = null;
   }
+  // Only "link" is exercised by the before-swap handler — it queries all
+  // links then filters by rel/href itself (see production code comment on
+  // NOT interpolating href into a selector).
+  querySelectorAll(selector: string): FakeBootstrapLink[] {
+    if (selector === "link") return [...this.children];
+    throw new Error(`unexpected selector "${selector}"`);
+  }
 }
+
+// Stand-in for the `newDocument` zfb's `zfb:before-swap` event carries — a
+// SEPARATE (not-yet-live) document-like object with its own `head` and
+// `createElement`, distinct from the live `document` fake above.
+class FakeNewDocument {
+  head: FakeBootstrapHead;
+  constructor(initialLinks: FakeBootstrapLink[] = []) {
+    this.head = new FakeBootstrapHead();
+    for (const link of initialLinks) this.head.appendChild(link);
+  }
+  createElement(_tag: string): FakeBootstrapLink {
+    return new FakeBootstrapLink();
+  }
+}
+
+// The before-swap handler receives a real event with a `newDocument` field;
+// every other handler in this file (after-navigate) is fired with no
+// argument, so the shared listener signature makes it optional.
+type BootstrapEventHandler = (event?: { newDocument?: unknown }) => void;
 
 interface BootstrapEnv {
   document: {
     documentElement: { getAttribute(n: string): string | null };
     write: ReturnType<typeof vi.fn>;
-    addEventListener: (type: string, handler: () => void) => void;
+    addEventListener: (type: string, handler: BootstrapEventHandler) => void;
     createElement: (tag: string) => FakeBootstrapLink;
     querySelectorAll: (selector: string) => FakeBootstrapLink[];
     head: FakeBootstrapHead;
@@ -75,14 +101,15 @@ interface BootstrapEnv {
   window: Record<string, unknown>;
   attr: (name: string) => string | null;
   head: FakeBootstrapHead;
-  listeners: Map<string, Array<() => void>>;
+  listeners: Map<string, BootstrapEventHandler[]>;
   fireAfterNavigate: () => void;
+  fireBeforeSwap: (newDocument: unknown) => void;
 }
 
 function makeBootstrapEnv(stored: string | null, storageThrows = false): BootstrapEnv {
   const attrs = new Map<string, string>();
   const head = new FakeBootstrapHead();
-  const listeners = new Map<string, Array<() => void>>();
+  const listeners = new Map<string, BootstrapEventHandler[]>();
   const doc: BootstrapEnv["document"] = {
     documentElement: {
       getAttribute: (n: string) => attrs.get(n) ?? null,
@@ -121,6 +148,11 @@ function makeBootstrapEnv(stored: string | null, storageThrows = false): Bootstr
     listeners,
     fireAfterNavigate: () => {
       for (const handler of listeners.get(AFTER_NAVIGATE_EVENT) ?? []) handler();
+    },
+    fireBeforeSwap: (newDocument: unknown) => {
+      for (const handler of listeners.get(BEFORE_SWAP_EVENT) ?? []) {
+        handler({ newDocument });
+      }
     },
     // Stashed so runBootstrap can reach it.
     ...({ __storage: localStorageFake } as object),
@@ -284,6 +316,97 @@ describe("buildThemePackBootstrap (executed)", () => {
       expect(env.head.children).toHaveLength(0);
       expect(env.attr(THEME_PACK_ATTR)).toBe("default");
     });
+  });
+
+  describe("BEFORE_SWAP injection handler (primary SPA soft-nav persistence, #3137)", () => {
+    it("registers exactly one listener on the zfb before-swap event, alongside the after-swap one", () => {
+      const env = makeBootstrapEnv(null);
+      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+      expect(env.listeners.get(BEFORE_SWAP_EVENT)).toHaveLength(1);
+      expect(env.listeners.get(AFTER_NAVIGATE_EVENT)).toHaveLength(1);
+    });
+
+    it("injects a matching link into newDocument.head for a CONFIGURED pack with EMPTY localStorage", () => {
+      // The scaffolded fixed-theme-site path the bug report is about: no
+      // switcher, no stored preference — just settings.themePack != "default".
+      const env = makeBootstrapEnv(null);
+      runBootstrap(buildThemePackBootstrap("foundry", ENABLED, "/"), env);
+      expect(env.document.write).toHaveBeenCalledTimes(1);
+
+      const newDoc = new FakeNewDocument();
+      env.fireBeforeSwap(newDoc);
+
+      expect(newDoc.head.children).toHaveLength(1);
+      const link = newDoc.head.children[0]!;
+      expect(link.getAttribute("rel")).toBe("stylesheet");
+      expect(link.hasAttribute(THEME_PACK_LINK_ATTR)).toBe(true);
+      expect(link.getAttribute("href")).toBe("/theme-packs/foundry/pack.css?v=1.2.3");
+    });
+
+    it("does nothing when the resolved slug is default (stock look has no pack.css)", () => {
+      const env = makeBootstrapEnv(null);
+      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+
+      const newDoc = new FakeNewDocument();
+      env.fireBeforeSwap(newDoc);
+
+      expect(newDoc.head.children).toHaveLength(0);
+    });
+
+    it("does nothing when newDocument is the live document (defensive no-op)", () => {
+      const env = makeBootstrapEnv("foundry");
+      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+      expect(env.head.children).toHaveLength(0);
+
+      // Fire with the SAME reference used as the shadowed `document` global.
+      // Without the `newDocument === document` guard this would append a
+      // second link straight into the LIVE head via env.document.createElement
+      // / env.head.appendChild — corrupting the live document.
+      env.fireBeforeSwap(env.document);
+
+      expect(env.head.children).toHaveLength(0);
+    });
+
+    it("does nothing when newDocument.head already has a stylesheet link with the exact href", () => {
+      const env = makeBootstrapEnv("foundry");
+      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+
+      const existing = new FakeBootstrapLink();
+      existing.setAttribute("rel", "stylesheet");
+      existing.setAttribute("href", "/theme-packs/foundry/pack.css?v=1.2.3");
+      const newDoc = new FakeNewDocument([existing]);
+
+      env.fireBeforeSwap(newDoc);
+
+      expect(newDoc.head.children).toEqual([existing]);
+    });
+
+    it("does NOT count a rel=preload link with the same href as present — a stylesheet link is still injected", () => {
+      const env = makeBootstrapEnv("foundry");
+      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+
+      const preload = new FakeBootstrapLink();
+      preload.setAttribute("rel", "preload");
+      preload.setAttribute("href", "/theme-packs/foundry/pack.css?v=1.2.3");
+      const newDoc = new FakeNewDocument([preload]);
+
+      env.fireBeforeSwap(newDoc);
+
+      expect(newDoc.head.children).toHaveLength(2);
+      const injected = newDoc.head.children.find((l) => l !== preload)!;
+      expect(injected.getAttribute("rel")).toBe("stylesheet");
+      expect(injected.hasAttribute(THEME_PACK_LINK_ATTR)).toBe(true);
+      expect(injected.getAttribute("href")).toBe("/theme-packs/foundry/pack.css?v=1.2.3");
+    });
+  });
+
+  it("emits identical script text across repeated calls with the same arguments (build-static contract)", () => {
+    // zfb's scriptsAlreadyRan dedupe is keyed on textContent — the bootstrap
+    // must be a pure function of its inputs so every page's inline script is
+    // byte-identical and the handlers are never double-registered.
+    expect(buildThemePackBootstrap("foundry", ENABLED, "/")).toBe(
+      buildThemePackBootstrap("foundry", ENABLED, "/"),
+    );
   });
 });
 
