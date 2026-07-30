@@ -1,0 +1,19 @@
+---
+title: 4.4.12
+description: 4.4.12のリリースノート。
+sidebar_position: 1074
+---
+
+リリース日: 2026-07-30
+
+### バグ修正
+
+- EN `/docs/reference/design-token-panel` のレンダリングを復旧 — バイトオフセットに依存する上流 zfb バンドラーのバグにより、ページ本文全体が単一の `<pre data-zfb-content-fallback>` ブロックとして出力されていた問題を、意味の等価な文言変更で回避 (c3d9c78)
+- テーマ再レンダリング後に mermaid 拡大ボタンを再注入するよう修正 (5b9a655)
+- リンクチェッカーの同一ページ内素のフラグメントに対するガード漏れを修正 (ab2fea6)
+
+### その他の変更
+
+- 新しい `check:content-fallback` ビルドゲートを追加: ビルド済みページが content-fallback ブロックを含む場合にビルドを失敗させる。b4push と 3 つの CI ワークフローすべての build-site ジョブに組み込み (a0e4361, 945c392)
+- content-fallback ガードの上流トラッキング issue と廃止条件として Takazudo/zudo-front-builder#2186 を記録 (6cee4ca)
+- zfb ファミリーを 0.1.0-next.98 に更新し、routes-src エクスポートを追加 (8143de0)

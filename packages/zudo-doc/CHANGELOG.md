@@ -4,6 +4,20 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [4.4.12] - 2026-07-30
+
+### Bug Fixes
+
+- Restore EN `/docs/reference/design-token-panel` rendering — the page shipped its whole body as a single `<pre data-zfb-content-fallback>` blob due to a byte-offset-sensitive upstream zfb bundler bug, worked around with an exact-equivalent rewording (c3d9c78)
+- Re-inject the mermaid enlarge button after a theme re-render (5b9a655)
+- Close the bare same-page fragment guard hole in the link checker (ab2fea6)
+
+### Other Changes
+
+- New `check:content-fallback` build gate: fail the build when any built page ships a content-fallback blob, wired into b4push and the build-site jobs of all three CI workflows (a0e4361, 945c392)
+- Record Takazudo/zudo-front-builder#2186 as the content-fallback guard's upstream tracking issue and retirement condition (6cee4ca)
+- Bump the zfb family to 0.1.0-next.98 and add routes-src exports (8143de0)
+
 ## [4.4.11] - 2026-07-28
 
 A maintenance release: CI post-deploy gate reliability, the `packages/zudo-doc` dev loop, and documentation. The published package artifacts are unchanged — the build path still cleans exactly as before.
