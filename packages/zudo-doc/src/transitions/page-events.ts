@@ -62,6 +62,24 @@ export const BEFORE_NAVIGATE_EVENT = "zfb:before-preparation";
 export const AFTER_NAVIGATE_EVENT = "zfb:after-swap";
 
 /**
+ * Event name fired just BEFORE the new page's `<body>` (and `<head>`) are
+ * swapped into the live document. Today resolves to `"zfb:before-swap"` —
+ * dispatched by zfb's client-router with a mutable `event.newDocument`
+ * carrying the incoming document that is about to replace the live one
+ * (zudolab/zudo-doc#3136 / #3137). Consumers that need to influence the
+ * incoming document BEFORE zfb's head-swap persistence logic runs (e.g.
+ * injecting a `<link>` so an href-matching stylesheet survives the swap
+ * instead of being removed and re-fetched) must mutate `event.newDocument`
+ * synchronously from a handler registered on this event — by the time
+ * `AFTER_NAVIGATE_EVENT` fires the swap has already completed. This module
+ * does not export a subscribe helper for it (unlike `onBeforeNavigate` /
+ * `onAfterNavigate`) because the one current consumer
+ * (`theme-pack-provider.tsx`) needs the raw event object's `newDocument`,
+ * not just a bare notification.
+ */
+export const BEFORE_SWAP_EVENT = "zfb:before-swap";
+
+/**
  * Subscribe to "navigation start" — runs `handler` each time the user
  * navigates away from the current page. zfb's `<ClientRouter />`
  * intercepts same-origin link clicks and dispatches
