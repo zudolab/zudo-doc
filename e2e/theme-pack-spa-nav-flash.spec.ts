@@ -44,9 +44,14 @@ import {
  *      (not just one swap) — a remove-then-reinsert is caught even if both
  *      happen inside the same task/frame, which rAF sampling could miss.
  *   3. Install a second `MutationObserver` on `<html>` watching the
- *      `data-theme-pack` attribute, recording any observed value other than
- *      the active slug — proves the attribute is held continuously, not just
- *      before/after.
+ *      `data-theme-pack` attribute with `attributeOldValue: true`. Consecutive
+ *      synchronous mutations of the same attribute (e.g. a preserve-then-
+ *      reapply pair) are delivered as multiple records in the SAME callback
+ *      invocation, so reading only the live attribute value at callback time
+ *      would see nothing but the already-settled final value — the callback
+ *      instead reconstructs the value that held immediately after EACH
+ *      record (the next record's `oldValue`, or the live value for the last
+ *      record) and flags any of them that isn't the active slug.
  * Both observers are installed ONCE, before the first navigation, and stay
  * attached across the swap (a soft nav keeps the same `window`/`document`
  * realm — that continuity is exactly what the bug exploited) — so the same
@@ -121,15 +126,21 @@ test.describe("Theme-pack SPA-nav flash (#3136 / #3138)", () => {
       });
       headObserver.observe(document.head, { childList: true });
 
-      const attrObserver = new MutationObserver(() => {
-        const value = document.documentElement.getAttribute("data-theme-pack");
-        if (value !== "foundry") {
-          w.__packLinkProbe__.badAttrSightings.push(String(value));
+      const attrObserver = new MutationObserver((mutations) => {
+        for (let i = 0; i < mutations.length; i++) {
+          const after =
+            i + 1 < mutations.length
+              ? (mutations[i + 1] as MutationRecord).oldValue
+              : document.documentElement.getAttribute("data-theme-pack");
+          if (after !== "foundry") {
+            w.__packLinkProbe__.badAttrSightings.push(String(after));
+          }
         }
       });
       attrObserver.observe(document.documentElement, {
         attributes: true,
         attributeFilter: ["data-theme-pack"],
+        attributeOldValue: true,
       });
 
       return true;
@@ -146,13 +157,47 @@ test.describe("Theme-pack SPA-nav flash (#3136 / #3138)", () => {
     // History traversal (browser back) shares the exact same swap path
     // (zfb's popstate handler runs the identical zfb:before-swap /
     // zfb:after-swap sequence) — re-assert the same invariants without
-    // re-arming the observers, since they are still attached.
-    await page.goBack();
+    // re-arming the head/attribute observers, since they are still attached.
+    // `page.goBack()` resolves once the history URL commits, which can be
+    // BEFORE zfb's swap has even started — and since data-theme-pack is
+    // already "foundry" here, a plain waitForActivePack would pass
+    // immediately without the swap ever running. Arm a zfb:after-swap wait
+    // first (mirrors spaClick's technique) so the assertions genuinely
+    // observe a completed back-navigation swap.
+    await waitForAfterSwap(page, () => page.goBack());
     await waitForActivePack(page, "foundry");
 
     await assertPackLinkNeverRemoved(page);
   });
 });
+
+/**
+ * Arm a one-shot `zfb:after-swap` listener, run `action` (e.g.
+ * `page.goBack()`), then wait for the swap to actually complete. Mirrors
+ * `spaClick`'s listener-then-wait shape in `nav-helpers.ts`; unlike
+ * `spaClick`, `action` is a Playwright API call rather than an in-page click,
+ * so there is no click-vs-listener race to guard against — the arm step is
+ * awaited to completion before `action` runs.
+ */
+async function waitForAfterSwap(page: Page, action: () => Promise<unknown>): Promise<void> {
+  await page.evaluate(() => {
+    (window as unknown as { __zfbBackSwapFired__?: boolean }).__zfbBackSwapFired__ = false;
+    document.addEventListener(
+      "zfb:after-swap",
+      () => {
+        (window as unknown as { __zfbBackSwapFired__?: boolean }).__zfbBackSwapFired__ = true;
+      },
+      { once: true },
+    );
+  });
+  await action();
+  await page.waitForFunction(
+    () =>
+      (window as unknown as { __zfbBackSwapFired__?: boolean }).__zfbBackSwapFired__ === true,
+    undefined,
+    { timeout: 10000 },
+  );
+}
 
 /**
  * Read the cumulative probe state and assert the non-removal / identity /
