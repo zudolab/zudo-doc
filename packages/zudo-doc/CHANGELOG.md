@@ -4,6 +4,17 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [4.4.13] - 2026-07-30
+
+### Bug Fixes
+
+- Kill the flash of the default look on soft navigation with theme packs — the matching pack stylesheet link is now injected into the incoming document before zfb's SPA head swap, so the already-loaded link persists instead of being removed and refetched (da3c9d9)
+
+### Other Changes
+
+- Lock in theme-pack link non-removal across SPA navigation and history traversal with e2e coverage (a6dbcfd, 1cee0df, 8615097)
+- Bump the zfb family to 0.1.0-next.99 (d48d2e1)
+
 ## [4.4.12] - 2026-07-30
 
 ### Bug Fixes
