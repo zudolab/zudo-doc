@@ -1361,12 +1361,12 @@ describe("scaffold — generated package.json", () => {
     // docHistory-gating test below (#3110).
     await scaffold(baseChoices);
     const pkg = await fs.readJson(projectPath("test-doc", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.98");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.98");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe("0.1.0-next.99");
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("0.1.0-next.99");
     // The default scaffold is pure static and emits no Worker-only routes or
     // adapter config. Consumers add a deploy-target adapter when they opt in.
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBeUndefined();
-    expect(pkg.dependencies["@takazudo/zfb-md-wasm"]).toBe("0.1.0-next.98");
+    expect(pkg.dependencies["@takazudo/zfb-md-wasm"]).toBe("0.1.0-next.99");
     expect(pkg.dependencies["@takazudo/zudo-doc"]).toMatch(/^\^\d+\.\d+\.\d+/);
     expect(pkg.dependencies["diff"]).toBeDefined();
     expect(pkg.dependencies["@takazudo/zdtp"]).toBeDefined();
