@@ -43,15 +43,29 @@ import {
  *      removal of a `link[data-zd-theme-pack-css]` node, for the whole test
  *      (not just one swap) — a remove-then-reinsert is caught even if both
  *      happen inside the same task/frame, which rAF sampling could miss.
- *   3. Install a second `MutationObserver` on `<html>` watching the
- *      `data-theme-pack` attribute with `attributeOldValue: true`. Consecutive
- *      synchronous mutations of the same attribute (e.g. a preserve-then-
- *      reapply pair) are delivered as multiple records in the SAME callback
- *      invocation, so reading only the live attribute value at callback time
- *      would see nothing but the already-settled final value — the callback
- *      instead reconstructs the value that held immediately after EACH
- *      record (the next record's `oldValue`, or the live value for the last
- *      record) and flags any of them that isn't the active slug.
+ *   3. Watch `<html data-theme-pack>` for any PAINT-VISIBLE wrong value, two
+ *      ways: a `MutationObserver` that checks the settled value at each
+ *      callback, plus a `requestAnimationFrame` sampler.
+ *
+ *      Deliberately NOT asserted here: the intermediate values a single
+ *      mutation batch passes through. zfb's `swapRootAttributes`
+ *      (`@takazudo/zfb-runtime/dist/client-router/swap-functions.js`) strips
+ *      EVERY `<html>` attribute, applies the incoming document's, then
+ *      re-applies the `preserveHtmlAttrs` set last — all in one synchronous
+ *      function. So `data-theme-pack` provably transits
+ *      `null` -> "default" -> "foundry" on every swap (measured: all three
+ *      land in ONE observer callback, which is delivered at the microtask
+ *      checkpoint AFTER the task completes). The browser cannot paint
+ *      mid-task, so those intermediates are unobservable to a user — a
+ *      per-record reconstruction would fail on correct code.
+ *
+ *      This is why the link and the attribute need DIFFERENT techniques. A
+ *      same-task remove-then-reinsert of the `<link>` is a real flash: the
+ *      reinserted stylesheet is non-blocking and applies asynchronously, so
+ *      a frame paints unstyled. A same-task attribute churn is not: style
+ *      resolution at paint time reads only the final value. Hence removal
+ *      counting + identity for the link (step 2), settled/frame sampling for
+ *      the attribute.
  * Both observers are installed ONCE, before the first navigation, and stay
  * attached across the swap (a soft nav keeps the same `window`/`document`
  * realm — that continuity is exactly what the bug exploited) — so the same
@@ -102,14 +116,18 @@ test.describe("Theme-pack SPA-nav flash (#3136 / #3138)", () => {
         __packLinkProbe__: {
           originalHref: string | null;
           linkRemovals: number;
-          badAttrSightings: string[];
+          badSettledAttrs: string[];
+          badFrameAttrs: string[];
+          framesSampled: number;
         };
       };
       (link as unknown as Record<string, unknown>).__zdPackLinkMarker__ = true;
       w.__packLinkProbe__ = {
         originalHref: link.getAttribute("href"),
         linkRemovals: 0,
-        badAttrSightings: [],
+        badSettledAttrs: [],
+        badFrameAttrs: [],
+        framesSampled: 0,
       };
 
       const headObserver = new MutationObserver((mutations) => {
@@ -126,22 +144,33 @@ test.describe("Theme-pack SPA-nav flash (#3136 / #3138)", () => {
       });
       headObserver.observe(document.head, { childList: true });
 
-      const attrObserver = new MutationObserver((mutations) => {
-        for (let i = 0; i < mutations.length; i++) {
-          const after =
-            i + 1 < mutations.length
-              ? (mutations[i + 1] as MutationRecord).oldValue
-              : document.documentElement.getAttribute("data-theme-pack");
-          if (after !== "foundry") {
-            w.__packLinkProbe__.badAttrSightings.push(String(after));
-          }
+      // Callbacks fire at the microtask checkpoint, after the mutating task
+      // has run to completion — so the value read here is the one the next
+      // paint will use. A batch that SETTLES on the wrong value is a real
+      // flash and is caught; intermediates within a batch are not (see the
+      // header comment).
+      const attrObserver = new MutationObserver(() => {
+        const settled = document.documentElement.getAttribute("data-theme-pack");
+        if (settled !== "foundry") {
+          w.__packLinkProbe__.badSettledAttrs.push(String(settled));
         }
       });
       attrObserver.observe(document.documentElement, {
         attributes: true,
         attributeFilter: ["data-theme-pack"],
-        attributeOldValue: true,
       });
+
+      // Direct paint-level evidence: sample at every rendering opportunity
+      // for the rest of the test. Runs across both navigations.
+      const sampleFrame = () => {
+        w.__packLinkProbe__.framesSampled += 1;
+        const value = document.documentElement.getAttribute("data-theme-pack");
+        if (value !== "foundry") {
+          w.__packLinkProbe__.badFrameAttrs.push(String(value));
+        }
+        requestAnimationFrame(sampleFrame);
+      };
+      requestAnimationFrame(sampleFrame);
 
       return true;
     });
@@ -210,7 +239,9 @@ async function assertPackLinkNeverRemoved(page: Page) {
       __packLinkProbe__: {
         originalHref: string | null;
         linkRemovals: number;
-        badAttrSightings: string[];
+        badSettledAttrs: string[];
+        badFrameAttrs: string[];
+        framesSampled: number;
       };
     };
     const links = Array.from(
@@ -240,9 +271,13 @@ async function assertPackLinkNeverRemoved(page: Page) {
   expect(probe.markedConnected).toBe(true);
   expect(probe.markedHref).toBe(probe.originalHref);
 
-  // The <html data-theme-pack> attribute was never observed at any value
-  // other than the active slug across the whole swap window.
-  expect(probe.badAttrSightings).toEqual([]);
+  // The <html data-theme-pack> attribute never SETTLED on, nor was ever
+  // painted at, any value other than the active slug across the whole swap
+  // window. The frame count guards against a vacuous pass (an rAF sampler
+  // that never ran would report no bad frames either).
+  expect(probe.badSettledAttrs).toEqual([]);
+  expect(probe.badFrameAttrs).toEqual([]);
+  expect(probe.framesSampled).toBeGreaterThan(0);
 
   // No loading-variant link left dangling either.
   await expect(page.locator(THEME_PACK_LINK_LOADING_SELECTOR)).toHaveCount(0);
