@@ -88,7 +88,7 @@ describe("@takazudo/zfb-md-wasm next.99 release contract", () => {
     );
     const wasmPath = resolve(packageRoot, "dist/wasm/zfb_md_wasm_bg.wasm");
 
-    expect(packageJson.version).toBe("0.1.0-next.99");
+    expect(packageJson.version).toBe("1.0.0");
     expect(packageJson.exports["."]).toEqual({
       types: "./dist/index.d.ts",
       browser: "./dist/browser.js",
