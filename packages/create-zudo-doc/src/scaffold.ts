@@ -671,9 +671,12 @@ function generatePackageJson(choices: UserChoices) {
     // singleton across host-callable wiring (zfb#1652/#1653). The zfb family
     // must stay in lockstep because the WASM browser entry depends on its
     // resource-aware island pipeline.
-    "@takazudo/zfb": "1.0.0",
-    "@takazudo/zfb-runtime": "1.0.0",
-    "@takazudo/zfb-md-wasm": "1.0.0",
+    // 1.1.0: container-directive fixes (multi-block bodies, unclosed-opener
+    // diagnostics) plus highlighting for fences nested in MDX JSX bodies and
+    // directives. Content-rendering fixes, additive.
+    "@takazudo/zfb": "1.1.0",
+    "@takazudo/zfb-runtime": "1.1.0",
+    "@takazudo/zfb-md-wasm": "1.1.0",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
