@@ -362,15 +362,49 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   //         merge that also bumped washi 1.0.1→1.0.2 for the h1-seal fix)
   // All of it traces to already-merged, intentional PRs; no unattributed
   // bytes. See sub-issue #3074 for the full diff.
+  //
+  // 2026-07-31 re-baseline (zudolab/zudo-doc#3140, nightly exam failure): the
+  // prior baseline (4fd642c3b) was rebuilt in a worktree and its normalized
+  // HTML diffed byte-for-byte against HEAD (512efe094). That old build still
+  // reproduced the old hashes exactly, so the delta below is the complete and
+  // only change — a single purely-additive 14-line insertion, byte-identical
+  // on both pages, in the inlined FOUC theme-pack bootstrap `<script>`, with
+  // zero removals anywhere:
+  //   - a new `zfb:before-swap` listener that pre-injects a matching pack
+  //     `<link>` into the incoming document's `<head>`, so zfb's href-match
+  //     persistence keeps the live, already-loaded stylesheet instead of
+  //     dropping it — killing the flash of the default look on SPA soft
+  //     navigation (`src/theme/theme-pack-provider.tsx`,
+  //     `buildThemePackBootstrap`)
+  //   - the interpolated event-name literal `"zfb:before-swap"` in that
+  //     listener's first line, from the new `BEFORE_SWAP_EVENT` symbol
+  //     (`src/transitions/page-events.ts`)
+  // Both spans come from one commit, `da3c9d9a5` (#3139, refs #3136/#3137).
+  // The existing `zfb:after-swap` handler is unchanged and remains as
+  // fallback/cleanup; that commit's only other edits to the provider are
+  // comment blocks and an import, neither of which is emitted — which is why
+  // the rendered diff shows additions and no removals.
+  //
+  // Notable negative: the engine moved `@takazudo/zfb` 0.1.0-next.90 → 1.0.0
+  // across this range (9 published releases) and contributed ZERO bytes.
+  // Every shipped JS file in `@takazudo/zfb` and `@takazudo/zfb-runtime` is
+  // byte-identical across the bump — only `.d.ts` files and the Rust binary
+  // moved — and `zfb:before-swap`, `event.newDocument`, and the head-swap
+  // href-match persistence rule all already existed at the baseline pin, so
+  // the fix above used a capability that was already there rather than one
+  // that arrived with 1.0.0. `1.0.0` itself was a version-number event:
+  // three docs/chore commits, no engine behaviour change.
+  //
+  // All of it traces to already-merged, intentional PRs; no unattributed bytes.
 
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"3541c0edec1bfefe0f71c057310f3943d0d12e718beaae3183c27afa4649e50e"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"fc9f255bcbe396b00b1ab91fbfaac927800414d218ef7632b3ae7422beaacb5d"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"676562943baba3036d994c71c2f06d06edbe22ed1d6e46790705331c3daba5f5"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"f13ba12116041fa694aadf7c0755d7b8fffee15e7cac813ebb10ef773f35a205"`);
   });
 });
 
