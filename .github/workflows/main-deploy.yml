@@ -38,8 +38,8 @@
 #
 #   (a) dist/index.html and per-route dist/**/index.html           (HTML pages)
 #   (b) dist/404.html at root                                      (zfb #100)
-#   (d) dist/sitemap.xml                                           (page route
-#       pages/sitemap.xml.tsx, ADR-005)
+#   (d) dist/sitemap.xml                                           (package-owned
+#       route, ADR-005)
 #   (e) dist/search-index.json                                     (search-index
 #       plugin, postBuild hook)
 #   (f) dist/llms.txt + dist/llms-full.txt + per-locale variants   (llms-txt
