@@ -10,13 +10,13 @@ This repository is both the framework's source and its own showcase: the content
 
 - **[zfb](https://www.npmjs.com/package/@takazudo/zfb)** (`@takazudo/zfb`) — static site generator with MDX content collections, file-routed `pages/`, and a built-in dev/build/preview/check CLI
 - **MDX** — content authored under `src/content/`; pipeline configured in `zfb.config.ts`
-- **Tailwind CSS v4** — via `@tailwindcss/vite`, with a three-tier design token system
+- **Tailwind CSS v4** — compiled by zfb's built-in engine (a Rust binary + esbuild embedding tailwindcss-oxide), with a three-tier design token system
 - **Preact** — interactive islands (TOC scroll spy, sidebar toggle, theme switch, search) and server-rendered typography components
 - **TypeScript** — strict mode throughout
 
 ## Quick Start
 
-zfb and the shared layout package (`@takazudo/zdtp`) are consumed as published npm packages — a plain install pulls everything, including zfb's prebuilt platform binary:
+zfb and the Design Token Panel package (`@takazudo/zdtp`) are consumed as published npm packages — a plain install pulls everything, including zfb's prebuilt platform binary. The shared layout package (`@takazudo/zudo-doc`) is a workspace package built locally, not npm-consumed:
 
 ```sh
 pnpm install   # requires pnpm (see packageManager in package.json)
@@ -68,12 +68,11 @@ When creating or updating any doc page, update both the English and Japanese ver
 
 ```
 zfb.config.ts          # zfb engine config (content collections, MDX pipeline, plugins)
-plugins/               # zfb engine plugins (doc-history, llms-txt, search-index, ...)
 pages/                 # File-routed pages (.tsx)
-packages/              # Workspace packages (layout, workers, generator, doc-history-server)
+packages/              # Workspace packages (layout + engine plugins, workers, generator, doc-history-server)
 src/
 ├── components/        # Preact components (islands and server-rendered overrides)
-├── config/            # Settings, color schemes, tag vocabulary
+├── config/            # Settings, sidebars, i18n, tag vocabulary, contrast utils
 ├── content/           # MDX content — docs/ (EN) and docs-ja/ (JA)
 └── styles/            # Design tokens (@theme) & Tailwind config
 ```

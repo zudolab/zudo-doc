@@ -28,9 +28,6 @@ __inbox/
 .env.local
 .env.production
 
-# MSW service worker (auto-generated, dev-only)
-public/mockServiceWorker.js
-
 # Generated Claude Code resource docs
 src/content/docs/claude/
 src/content/docs/claude-md/
@@ -102,7 +99,6 @@ e2e/fixtures/*/public/favicon.ico
 e2e/fixtures/*/public/favicon.svg
 e2e/fixtures/*/public/favicon-16x16.png
 e2e/fixtures/*/public/favicon-32x32.png
-e2e/fixtures/*/public/mockServiceWorker.js
 
 # migration-check harness workspace (throwaway build artifacts)
 .l-zfb-migration-check/
