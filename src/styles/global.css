@@ -54,15 +54,15 @@
  * wave-13 topic-2.
  *
  * pages/ and packages/create-zudo-doc/templates/ added in #1444
- * (epic #1443): pages/_mdx-components.ts emits admonition wrapper classes
- * and other utility references; the create-zudo-doc templates hold classes
- * used in downstream scaffolded projects. Both are required so fixture
- * builds (non-git trees) and the main build emit the full utility set.
+ * (epic #1443): pages/lib/* components (search widget, preset generator,
+ * body-end islands, etc.) emit utility classes; the create-zudo-doc
+ * templates hold classes used in downstream scaffolded projects. Both are
+ * required so fixture builds (non-git trees) and the main build emit the
+ * full utility set.
  * ======================================== */
 
 @source "src/components/**/*.{tsx,ts,jsx,js,mdx,md}";
 @source "src/content/**/*.{mdx,md}";
-@source "src/hooks/**/*.{tsx,ts,jsx,js}";
 @source "src/utils/**/*.{tsx,ts,jsx,js}";
 @source "packages/zudo-doc/src/**/*.{tsx,ts,jsx,js}";
 @source "packages/create-zudo-doc/templates/**/*.{tsx,ts,jsx,js,mdx,md}";

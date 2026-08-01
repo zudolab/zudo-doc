@@ -16,10 +16,11 @@ import { test, expect } from "./fixtures";
  *
  * This is a pure CSS contract: the toggle island's only layout-affecting
  * action is setting `data-sidebar-hidden` on <html> (see
- * src/components/desktop-sidebar-toggle.tsx). We set that attribute directly
- * rather than clicking the toggle button because the `sidebarToggle` feature
- * is not enabled in this fixture — but the attribute-driven CSS is
- * feature-independent and is exactly what was broken.
+ * packages/zudo-doc/src/desktop-sidebar-toggle-island/). We set that
+ * attribute directly rather than clicking the toggle button because the
+ * `sidebarToggle` feature is not enabled in this fixture — but the
+ * attribute-driven CSS is feature-independent and is exactly what was
+ * broken.
  */
 
 // A sidebar-fixture doc page that renders the desktop sidebar.
