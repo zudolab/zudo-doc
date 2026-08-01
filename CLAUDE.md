@@ -8,7 +8,7 @@ The current repository contract targets zfb exclusively.
 
 - **zfb** (`@takazudo/zfb`) — static site generator with MDX content collections, file-routed `pages/`, and a built-in dev/build/preview/check CLI
 - **MDX** — authored under `src/content/`, content directory configurable via `docsDir` setting; pipeline configured in `zfb.config.ts`
-- **Tailwind CSS v4** — via `@tailwindcss/vite`
+- **Tailwind CSS v4** — compiled by zfb's embedded Tailwind engine; `@import "tailwindcss/preflight"` / `"tailwindcss/utilities"` in `src/styles/global.css` are intercepted by zfb's internal resolver and never reach `node_modules`, so neither `tailwindcss` nor `@tailwindcss/vite` is a dependency of this project
 - **Preact** — for interactive islands (TOC scroll spy, sidebar toggle, collapsible categories) and server-rendered content typography components; runs in compat mode for React API compatibility
 - **zfb semantic highlighting** — document fences use zfb's native build-time renderer; HtmlPreview lazily imports the public `@takazudo/zfb-md-wasm` root for browser-time HTML/CSS/JavaScript. Both emit `pre.hi-root` / `hi-*` classes and resolve through `--zd-syntax-*` design tokens. Do not add Shiki, theme-name config, inline token colors, or package-internal WASM paths.
 - **@takazudo/zdtp (zdtp)** — external npm package that owns the Design Token Panel UI; the package-owned `DesignTokenPanelBootstrap` island configures it from a mode-scoped builder and self-mounts it as a side effect
