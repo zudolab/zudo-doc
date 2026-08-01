@@ -25,7 +25,9 @@ export function generateCLAUDEFile(choices: UserChoices): string {
   lines.push(``);
   lines.push(`- **zfb** — documentation build framework`);
   lines.push(`- **MDX** — content format, authored under \`src/content/\``);
-  lines.push(`- **Tailwind CSS v4** — via \`@tailwindcss/vite\``);
+  lines.push(
+    `- **Tailwind CSS v4** — compiled by zfb's embedded Tailwind engine (no \`@tailwindcss/vite\` plugin, no \`tailwindcss\` dependency); \`src/styles/global.css\` imports \`tailwindcss/preflight\` + \`tailwindcss/utilities\` and zfb's internal resolver serves both`,
+  );
   lines.push(
     `- **Preact** — for interactive islands only (with compat mode for React API)`,
   );
