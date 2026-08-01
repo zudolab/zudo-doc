@@ -582,6 +582,39 @@ describe("suffix-aware skill-name derivation (#3154)", () => {
     expect(output).toContain(legacyGlobalLink);
     expect(output).toContain("rm -f");
   });
+
+  it("warns about a stale global symlink even with no legacy directory", () => {
+    makeFixture("zudo-test-wisdom");
+    // Dangling on purpose: the legacy project directory is already gone, so
+    // only the global link is left. `-L` still sees it.
+    const legacyGlobalLink = join(fixtureHome, ".claude", "skills", "zudo-test-wisdom-wisdom");
+    mkdirSync(join(fixtureHome, ".claude", "skills"), { recursive: true });
+    execSync(
+      `ln -s "${join(projectDir, ".claude", "skills", "zudo-test-wisdom-wisdom")}" "${legacyGlobalLink}"`,
+    );
+
+    const output = runFixtureScript();
+
+    expect(output).toContain("WARNING");
+    expect(output).toContain(`stale global symlink: ${legacyGlobalLink}`);
+    expect(output).toContain("rm -f");
+    expect(output).not.toContain("rm -rf");
+  });
+
+  it("ignores a real directory sitting at the legacy global skill path", () => {
+    // This script only ever creates symlinks in the global skills dir, so a
+    // real directory there is user-owned. Reporting it as a "stale global
+    // symlink" would advise `rm -f` against someone else's files.
+    makeFixture("zudo-test-wisdom");
+    const userOwned = join(fixtureHome, ".claude", "skills", "zudo-test-wisdom-wisdom");
+    mkdirSync(userOwned, { recursive: true });
+    writeFileSync(join(userOwned, "SKILL.md"), "user-owned");
+
+    const output = runFixtureScript();
+
+    expect(output).not.toContain("WARNING");
+    expect(existsSync(join(userOwned, "SKILL.md"))).toBe(true);
+  });
 });
 
 describe("tracked-skill linking (#3156)", () => {

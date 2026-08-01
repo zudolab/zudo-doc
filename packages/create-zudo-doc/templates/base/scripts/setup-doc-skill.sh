@@ -124,8 +124,13 @@ if [ "$SKILL_NAME" = "$DEFAULT_SKILL_NAME" ] && [ "$DEFAULT_SKILL_NAME" != "$LEG
     if [ -d "$legacy_dir" ]; then
       legacy_dirs+=("$legacy_dir")
     fi
+    # -L only (which also catches a dangling link): this script only ever
+    # creates SYMLINKS in the global skills dir, so a real file or directory
+    # sitting at that path is user-owned and none of our business -- calling it
+    # a "stale global symlink" and suggesting `rm -f` would advise deleting
+    # someone else's file (and would simply fail for a directory).
     legacy_global_link="$HOME/.$target/skills/$LEGACY_DEFAULT_SKILL_NAME"
-    if [ -L "$legacy_global_link" ] || [ -e "$legacy_global_link" ]; then
+    if [ -L "$legacy_global_link" ]; then
       legacy_links+=("$legacy_global_link")
     fi
   done
