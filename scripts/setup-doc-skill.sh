@@ -10,6 +10,13 @@ set -euo pipefail
 
 TARGET_MODE="auto"
 
+# Tracked-skill linking (zudolab/zudo-doc#3156) is default-ON: #3152 asked for
+# automatic linking of a site's own hand-written skills, not just the
+# generated one. --no-link-tracked-skills opts out (e.g. this monorepo's own
+# npm scripts, which would otherwise export ~20 project-specific skills into
+# the user's global skills dir -- see zudolab/zudo-doc#3157).
+LINK_TRACKED_SKILLS="true"
+
 # Accept --silent (alias -y) for parity with the consuming-site convention:
 # scaffolded sites expose `setup:doc-skill-silent` = `bash scripts/setup-doc-skill.sh
 # --silent`. This script is already non-interactive (the skill name is deterministic
@@ -31,6 +38,7 @@ while [ $# -gt 0 ]; do
       TARGET_MODE="${1#--target=}"
       shift
       ;;
+    --no-link-tracked-skills) LINK_TRACKED_SKILLS="false"; shift ;;
     --) shift; break ;;
     -*) echo "Error: unknown flag '$1'" >&2; exit 1 ;;
     *) break ;;
@@ -49,16 +57,29 @@ ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 # Read project name from package.json
 PROJECT_NAME=$(node -e "console.log(require('$ROOT_DIR/package.json').name || 'my-project')")
-DEFAULT_SKILL_NAME="${PROJECT_NAME}-wisdom"
+
+# Pre-#3154 default: always `<projectName>-wisdom`, which doubles the suffix
+# when PROJECT_NAME already ends in "-wisdom" (e.g. "zudo-test-wisdom" ->
+# "zudo-test-wisdom-wisdom"). Kept around only to detect leftover legacy
+# directories from that behavior -- see the migration-warning block below.
+LEGACY_DEFAULT_SKILL_NAME="${PROJECT_NAME}-wisdom"
+if [[ "$PROJECT_NAME" == *-wisdom ]] || [[ "$PROJECT_NAME" == "wisdom" ]]; then
+  DEFAULT_SKILL_NAME="$PROJECT_NAME"
+else
+  DEFAULT_SKILL_NAME="$LEGACY_DEFAULT_SKILL_NAME"
+fi
 
 echo ""
 echo "=== zudo-doc Skill Setup ==="
 echo ""
 
-# Skill name is DETERMINISTIC: always `<projectName>-wisdom`. The scaffolded
-# .gitignore (emitted by create-zudo-doc) hard-codes this exact name, so the
-# generated skill directory must match it — an interactive prompt would let the
-# name drift from the gitignore entry and leave the skill showing as untracked
+# Skill name is DETERMINISTIC and suffix-aware: verbatim when PROJECT_NAME
+# already ends in "-wisdom" (or is exactly "wisdom"), otherwise
+# "<projectName>-wisdom" (zudolab/zudo-doc#3154). The scaffolded .gitignore
+# (emitted by create-zudo-doc's packages/create-zudo-doc/src/scaffold.ts,
+# which computes the same name) hard-codes this exact rule, so the generated
+# skill directory must match it — an interactive prompt would let the name
+# drift from the gitignore entry and leave the skill showing as untracked
 # (zudolab/zudo-doc#2173). An explicit override is still allowed via the first
 # CLI arg or the SKILL_NAME env var (consumers who override must also update
 # their .gitignore), but never via an interactive prompt.
@@ -68,6 +89,92 @@ SKILL_NAME="${1:-${SKILL_NAME:-$DEFAULT_SKILL_NAME}}"
 if [[ ! "$SKILL_NAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
   echo "Error: Skill name may only contain letters, numbers, hyphens, and underscores."
   exit 1
+fi
+
+# Migration warning (zudolab/zudo-doc#3154, D3): the suffix-aware rule above is
+# a BREAKING change for existing "*-wisdom" projects. Their .gitignore pins the
+# old, doubled name, so after picking up this fix they get a NEW, unignored
+# skill directory while the stale doubled one remains on disk -- the symptom
+# moves rather than disappears. Detect that and tell the user what to do by
+# hand; never delete anything automatically, it is the user's tree.
+# Three independent symptoms are checked, and ANY one of them fires the
+# warning: stale ignore rules (the .gitignore still names the doubled skill --
+# on its own that already means the NEW directory is unignored, which is the
+# whole problem, even when the legacy directory was never generated or has
+# already been deleted), a leftover legacy directory, and a leftover global
+# symlink. Only the steps for the symptoms actually found are printed.
+# Only fires when SKILL_NAME still equals DEFAULT_SKILL_NAME -- an explicit
+# $1/SKILL_NAME override means the derived name (and this guidance about it)
+# doesn't apply to what the script is actually about to create.
+if [ "$SKILL_NAME" = "$DEFAULT_SKILL_NAME" ] && [ "$DEFAULT_SKILL_NAME" != "$LEGACY_DEFAULT_SKILL_NAME" ]; then
+  # The ignore rules are repo-level, so this is checked once rather than per
+  # target -- both ".claude/skills/<name>/" and ".codex/skills/<name>/" entries
+  # live in the same file (create-zudo-doc emits it at the project root).
+  # -F: PROJECT_NAME comes from package.json and may contain regex characters.
+  legacy_gitignore=""
+  if [ -f "$ROOT_DIR/.gitignore" ] &&
+    grep -qF "skills/$LEGACY_DEFAULT_SKILL_NAME/" "$ROOT_DIR/.gitignore"; then
+    legacy_gitignore="$ROOT_DIR/.gitignore"
+  fi
+
+  legacy_dirs=()
+  legacy_links=()
+  for target in claude codex; do
+    legacy_dir="$ROOT_DIR/.$target/skills/$LEGACY_DEFAULT_SKILL_NAME"
+    if [ -d "$legacy_dir" ]; then
+      legacy_dirs+=("$legacy_dir")
+    fi
+    # -L only (which also catches a dangling link): this script only ever
+    # creates SYMLINKS in the global skills dir, so a real file or directory
+    # sitting at that path is user-owned and none of our business -- calling it
+    # a "stale global symlink" and suggesting `rm -f` would advise deleting
+    # someone else's file (and would simply fail for a directory).
+    legacy_global_link="$HOME/.$target/skills/$LEGACY_DEFAULT_SKILL_NAME"
+    if [ -L "$legacy_global_link" ]; then
+      legacy_links+=("$legacy_global_link")
+    fi
+  done
+
+  if [ -n "$legacy_gitignore" ] ||
+    [ "${#legacy_dirs[@]}" -gt 0 ] ||
+    [ "${#legacy_links[@]}" -gt 0 ]; then
+    echo "WARNING: stale references to the legacy skill name '$LEGACY_DEFAULT_SKILL_NAME' detected."
+    echo "  The skill-name derivation rule changed; this project's skill now resolves to:"
+    echo "  $DEFAULT_SKILL_NAME"
+    echo "  Found:"
+    if [ -n "$legacy_gitignore" ]; then
+      echo "  - stale ignore rules in $legacy_gitignore"
+    fi
+    if [ "${#legacy_dirs[@]}" -gt 0 ]; then
+      for legacy_dir in "${legacy_dirs[@]}"; do
+        echo "  - legacy skill directory: $legacy_dir"
+      done
+    fi
+    if [ "${#legacy_links[@]}" -gt 0 ]; then
+      for legacy_global_link in "${legacy_links[@]}"; do
+        echo "  - stale global symlink: $legacy_global_link"
+      done
+    fi
+    echo "  Manual steps:"
+    step=1
+    if [ -n "$legacy_gitignore" ]; then
+      echo "  $step. Update the ignore rules for '$LEGACY_DEFAULT_SKILL_NAME' to '$DEFAULT_SKILL_NAME' in $legacy_gitignore."
+      step=$((step + 1))
+    fi
+    if [ "${#legacy_dirs[@]}" -gt 0 ]; then
+      for legacy_dir in "${legacy_dirs[@]}"; do
+        echo "  $step. Delete the stale directory once migrated: rm -rf \"$legacy_dir\""
+        step=$((step + 1))
+      done
+    fi
+    if [ "${#legacy_links[@]}" -gt 0 ]; then
+      for legacy_global_link in "${legacy_links[@]}"; do
+        echo "  $step. Remove the stale global symlink: rm -f \"$legacy_global_link\""
+        step=$((step + 1))
+      done
+    fi
+    echo ""
+  fi
 fi
 
 # Resolve the main repo root (handles git worktrees correctly)
@@ -102,6 +209,46 @@ ensure_symlink() {
     rm -rf "$link_path"
   fi
   ln -s "$target" "$link_path"
+}
+
+# Helper: link a single tracked (hand-written) skill into the global skills
+# dir WITHOUT ever deleting something this script doesn't own
+# (zudolab/zudo-doc#3156, D4). Unlike ensure_symlink (rm -rf-based -- safe
+# only for the generated skill, whose global name this project owns),
+# tracked-skill names are arbitrary and could collide with a user-owned
+# global skill or a name already claimed by another project, so an existing
+# entry that isn't already our own correct link is left untouched, with a
+# warning.
+safe_link_tracked_skill() {
+  local link_path="$1"
+  local link_target="$2"
+  local skill_name="$3"
+  local target="$4"
+
+  if [ -L "$link_path" ]; then
+    local current_target
+    current_target="$(readlink "$link_path")"
+    if [ "$current_target" = "$link_target" ]; then
+      return 0 # already correct -> no-op
+    fi
+    if [ -e "$link_path" ]; then
+      echo "WARNING: [$target] skipping tracked skill '$skill_name': $link_path already links to $current_target"
+      return 0
+    fi
+    # Dangling symlink (broken target) -> safe to replace.
+    rm -f "$link_path"
+    ln -s "$link_target" "$link_path"
+    echo "  [$target] Linked tracked skill '$skill_name' -> $link_target"
+    return 0
+  fi
+
+  if [ -e "$link_path" ]; then
+    echo "WARNING: [$target] skipping tracked skill '$skill_name': $link_path is a real file/directory, not a symlink"
+    return 0
+  fi
+
+  ln -s "$link_target" "$link_path"
+  echo "  [$target] Linked tracked skill '$skill_name' -> $link_target"
 }
 
 DOCS_JA_DIR="$ROOT_DIR/src/content/docs-ja"
@@ -283,18 +430,60 @@ JAEOF
   echo "  [$target] Global symlink: $global_skills_dir/$SKILL_NAME"
 }
 
+# Symlink the site's OWN hand-written skills into the global skills dir
+# (zudolab/zudo-doc#3156). Discovery walks the target's own project skills
+# directory dynamically -- not a hard-coded list, so it stays correct as
+# sites add skills. Sources resolve through MAIN_PROJECT_DIR, not ROOT_DIR,
+# the same way the generated skill's docs/docs-ja symlinks do (see the
+# REPO_ROOT/MAIN_PROJECT_DIR comment above) so the links survive worktree
+# removal. Target-local only: each target walks only its own
+# ".$target/skills/" -- a missing directory is a silent no-op, and there is
+# no ".claude" -> ".codex" fallback.
+link_tracked_skills() {
+  local target="$1"
+  local skills_root="$MAIN_PROJECT_DIR/.$target/skills"
+  local global_skills_dir="$HOME/.$target/skills"
+
+  [ -d "$skills_root" ] || return 0
+
+  mkdir -p "$global_skills_dir"
+
+  local dir name
+  for dir in "$skills_root"/*/; do
+    [ -d "$dir" ] || continue
+    name="$(basename "$dir")"
+
+    # Skip the just-generated skill (already linked above via ensure_symlink)
+    # and the legacy doubled-suffix name (zudolab/zudo-doc#3154) -- otherwise
+    # a stale leftover directory left by that rename gets misread as a
+    # hand-written skill and exported globally, compounding both bugs.
+    [ "$name" = "$SKILL_NAME" ] && continue
+    [ "$name" = "$LEGACY_DEFAULT_SKILL_NAME" ] && continue
+
+    # A candidate qualifies only if it contains SKILL.md -- iterating every
+    # directory does not prove it is a skill.
+    [ -f "${dir}SKILL.md" ] || continue
+
+    safe_link_tracked_skill "$global_skills_dir/$name" "${dir%/}" "$name" "$target"
+  done
+}
+
 read -r -a TARGETS <<< "$(resolve_targets)"
 echo "Target: $TARGET_MODE -> ${TARGETS[*]}"
 echo ""
 
 for target in "${TARGETS[@]}"; do
   generate_skill "$target"
+  if [ "$LINK_TRACKED_SKILLS" = "true" ]; then
+    link_tracked_skills "$target"
+  fi
 done
 
 echo ""
 echo "Done! Skill '$SKILL_NAME' is ready."
 echo ""
 echo "Use --target claude, --target codex, or --target both to override auto-detection."
+echo "Use --no-link-tracked-skills to skip linking this project's own hand-written skills."
 echo "In Claude Code, use: /$SKILL_NAME <topic>"
 echo "In Codex, mention the skill by name when asking about this documentation."
 echo ""

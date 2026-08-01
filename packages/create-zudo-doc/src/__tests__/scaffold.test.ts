@@ -13,7 +13,7 @@ import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
 import type { UserChoices } from "../prompts.js";
-import { scaffold } from "../scaffold.js";
+import { deriveDocSkillName, scaffold } from "../scaffold.js";
 import { validateProjectName } from "../utils.js";
 import { createZudoDoc } from "../api.js";
 import type { PresetHeaderRightItem, PresetMetaTagsConfig } from "../preset.js";
@@ -503,6 +503,20 @@ describe("scaffold — tagGovernance explicit CLI config", () => {
   });
 });
 
+describe("deriveDocSkillName — suffix-aware skill-name derivation (#3155, mirrors DEFAULT_SKILL_NAME in scripts/setup-doc-skill.sh)", () => {
+  it("leaves an already-suffixed name verbatim (no doubled suffix)", () => {
+    expect(deriveDocSkillName("foo-wisdom")).toBe("foo-wisdom");
+  });
+
+  it("appends -wisdom to a name without the suffix", () => {
+    expect(deriveDocSkillName("my-docs")).toBe("my-docs-wisdom");
+  });
+
+  it("leaves the bare name 'wisdom' verbatim", () => {
+    expect(deriveDocSkillName("wisdom")).toBe("wisdom");
+  });
+});
+
 describe("scaffold — skillSymlinker feature", () => {
   it("copies scripts/setup-doc-skill.sh and emits the .gitignore skill block", async () => {
     await scaffold({
@@ -536,6 +550,42 @@ describe("scaffold — skillSymlinker feature", () => {
     expect(gitignore).toContain(".claude/skills/test-skill-sym-i18n-wisdom/docs-ja");
   });
 
+  it("does NOT double the suffix when the project name already ends in -wisdom (#3155)", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-skill-sym-wisdom",
+      features: ["skillSymlinker"],
+    });
+    const gitignore = await fs.readFile(
+      projectPath("test-skill-sym-wisdom", ".gitignore"),
+      "utf-8",
+    );
+    expect(gitignore).toContain(".claude/skills/test-skill-sym-wisdom/SKILL.md");
+    expect(gitignore).toContain(".claude/skills/test-skill-sym-wisdom/docs");
+    expect(gitignore).toContain(".codex/skills/test-skill-sym-wisdom/SKILL.md");
+    expect(gitignore).toContain(".codex/skills/test-skill-sym-wisdom/docs");
+    expect(gitignore).not.toContain("test-skill-sym-wisdom-wisdom");
+  });
+
+  it("uses the same non-doubled name for the i18n-gated docs-ja entries (#3155)", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-skill-sym-i18n-wisdom",
+      features: ["skillSymlinker", "i18n"],
+    });
+    const gitignore = await fs.readFile(
+      projectPath("test-skill-sym-i18n-wisdom", ".gitignore"),
+      "utf-8",
+    );
+    expect(gitignore).toContain(
+      ".claude/skills/test-skill-sym-i18n-wisdom/docs-ja",
+    );
+    expect(gitignore).toContain(
+      ".codex/skills/test-skill-sym-i18n-wisdom/docs-ja",
+    );
+    expect(gitignore).not.toContain("test-skill-sym-i18n-wisdom-wisdom");
+  });
+
   it("emits no skill block and no script when skillSymlinker is off", async () => {
     await scaffold(baseChoices);
     const gitignore = await fs.readFile(projectPath("test-doc", ".gitignore"), "utf-8");
@@ -562,6 +612,32 @@ describe("scaffold — skillSymlinker feature", () => {
       projectPath("test-skill-sym-off", "package.json"),
     );
     expect(off.scripts["setup:doc-skill"]).toBeUndefined();
+  });
+
+  // #3157: generated projects deliberately omit --no-link-tracked-skills —
+  // automatic tracked-skill linking (#3152) is the intended default there.
+  // Only the zudo-doc monorepo's own root package.json passes the opt-out
+  // (asserted separately by a test that reads this repo's own package.json).
+  it("never emits --no-link-tracked-skills in a generated project's setup:doc-skill* scripts", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-skill-sym-no-optout",
+      features: ["skillSymlinker"],
+    });
+    const pkg = await fs.readJson(
+      projectPath("test-skill-sym-no-optout", "package.json"),
+    );
+    const skillScripts = [
+      "setup:doc-skill",
+      "setup:doc-skill-silent",
+      "setup:doc-skill:claude",
+      "setup:doc-skill:codex",
+      "setup:doc-skill:both",
+    ];
+    for (const name of skillScripts) {
+      expect(pkg.scripts[name]).toBeDefined();
+      expect(pkg.scripts[name]).not.toContain("--no-link-tracked-skills");
+    }
   });
 });
 
@@ -2019,5 +2095,33 @@ describe("createZudoDoc() — CreateOptions preset parity (#2922)", () => {
     });
     const config = await fs.readFile(path.join(targetDir, "zfb.config.ts"), "utf-8");
     expect(config).toContain("minifyHtml: false");
+  });
+});
+
+// #3157: the zudo-doc monorepo's own root package.json must opt out of
+// #3156's default-on tracked-skill linking. Without `--no-link-tracked-skills`,
+// `pnpm setup:doc-skill` here would export all ~20 project-specific skills
+// under this repo's `.claude/skills/` (l-lessons-*, l-make-release,
+// check-docs, zudo-doc-*, ...) into the maintainer's global skills dir,
+// loading them in every unrelated project. Mirror image of the "generated
+// projects never emit the flag" assertion in the skillSymlinker describe
+// block above. Reads the real repo-root package.json rather than invoking
+// the script, per the sub-issue's acceptance criteria.
+describe("monorepo root package.json — doc-skill opt-out (#3157)", () => {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const MONOREPO_ROOT = path.resolve(__dirname, "../../../..");
+
+  it("passes --no-link-tracked-skills on all four setup:doc-skill* scripts", async () => {
+    const pkg = await fs.readJson(path.join(MONOREPO_ROOT, "package.json"));
+    const skillScripts = [
+      "setup:doc-skill",
+      "setup:doc-skill:claude",
+      "setup:doc-skill:codex",
+      "setup:doc-skill:both",
+    ];
+    for (const name of skillScripts) {
+      expect(pkg.scripts[name]).toBeDefined();
+      expect(pkg.scripts[name]).toContain("--no-link-tracked-skills");
+    }
   });
 });
