@@ -318,3 +318,183 @@ describe("setup-doc-skill.sh", () => {
     });
   });
 });
+
+describe("suffix-aware skill-name derivation (#3154)", () => {
+  // Builds a throwaway fixture project (same shape as the nested-subdir
+  // fixture above) with a caller-chosen package.json `name`, so the
+  // no-`$1` derivation path can be exercised. runScript()/runFixtureScript()
+  // above always pass the skill name explicitly as `$1`, which never invokes
+  // DEFAULT_SKILL_NAME at all.
+  let fixtureRoot: string;
+  let fixtureHome: string;
+  let projectDir: string;
+
+  function makeFixture(projectName: string): void {
+    fixtureRoot = mkdtempSync(join(tmpdir(), "zudo-doc-suffix-fixture-"));
+    fixtureHome = mkdtempSync(join(tmpdir(), "zudo-doc-suffix-home-"));
+    projectDir = join(fixtureRoot, "doc");
+
+    execSync("git init -q", { cwd: fixtureRoot });
+
+    mkdirSync(join(projectDir, "scripts"), { recursive: true });
+    mkdirSync(join(projectDir, "src", "content", "docs", "getting-started"), {
+      recursive: true,
+    });
+    writeFileSync(
+      join(projectDir, "src", "content", "docs", "getting-started", "index.mdx"),
+      "---\ntitle: Test\n---\n",
+    );
+    cpSync(SCRIPT_PATH, join(projectDir, "scripts", "setup-doc-skill.sh"));
+    writeFileSync(
+      join(projectDir, "package.json"),
+      JSON.stringify({ name: projectName, scripts: {} }),
+    );
+  }
+
+  afterEach(() => {
+    if (fixtureRoot && existsSync(fixtureRoot)) {
+      rmSync(fixtureRoot, { recursive: true, force: true });
+    }
+    if (fixtureHome && existsSync(fixtureHome)) {
+      rmSync(fixtureHome, { recursive: true, force: true });
+    }
+  });
+
+  function runFixtureScript(
+    opts: { args?: string[]; skillNameArg?: string; env?: Record<string, string> } = {},
+  ): string {
+    const { args = [], skillNameArg, env = {} } = opts;
+    const quotedFlags = args.map((arg) => `"${arg}"`).join(" ");
+    const posArg = skillNameArg !== undefined ? `"${skillNameArg}"` : "";
+    const cmd = `bash "${join(projectDir, "scripts", "setup-doc-skill.sh")}" ${quotedFlags} ${posArg}`.trim();
+    return execSync(cmd, {
+      cwd: projectDir,
+      encoding: "utf-8",
+      timeout: 30_000,
+      env: { ...process.env, HOME: fixtureHome, ...env },
+    });
+  }
+
+  it("uses PROJECT_NAME verbatim when it already ends in -wisdom (no doubling)", () => {
+    makeFixture("zudo-test-wisdom");
+    runFixtureScript();
+
+    expect(
+      existsSync(join(projectDir, ".claude", "skills", "zudo-test-wisdom", "SKILL.md")),
+    ).toBe(true);
+    expect(
+      existsSync(join(projectDir, ".claude", "skills", "zudo-test-wisdom-wisdom")),
+    ).toBe(false);
+  });
+
+  it("appends -wisdom when PROJECT_NAME does not already end in -wisdom", () => {
+    makeFixture("my-docs");
+    runFixtureScript();
+
+    expect(
+      existsSync(join(projectDir, ".claude", "skills", "my-docs-wisdom", "SKILL.md")),
+    ).toBe(true);
+  });
+
+  it("uses 'wisdom' verbatim when PROJECT_NAME is exactly 'wisdom'", () => {
+    makeFixture("wisdom");
+    runFixtureScript();
+
+    expect(existsSync(join(projectDir, ".claude", "skills", "wisdom", "SKILL.md"))).toBe(
+      true,
+    );
+    expect(existsSync(join(projectDir, ".claude", "skills", "wisdom-wisdom"))).toBe(false);
+  });
+
+  it("an explicit $1 still overrides the derived name", () => {
+    makeFixture("zudo-test-wisdom");
+    runFixtureScript({ skillNameArg: "custom-override" });
+
+    expect(
+      existsSync(join(projectDir, ".claude", "skills", "custom-override", "SKILL.md")),
+    ).toBe(true);
+    expect(existsSync(join(projectDir, ".claude", "skills", "zudo-test-wisdom"))).toBe(
+      false,
+    );
+  });
+
+  it("the SKILL_NAME env var still overrides the derived name", () => {
+    makeFixture("zudo-test-wisdom");
+    runFixtureScript({ env: { SKILL_NAME: "env-override" } });
+
+    expect(
+      existsSync(join(projectDir, ".claude", "skills", "env-override", "SKILL.md")),
+    ).toBe(true);
+    expect(existsSync(join(projectDir, ".claude", "skills", "zudo-test-wisdom"))).toBe(
+      false,
+    );
+  });
+
+  it("warns about a legacy doubled-suffix directory and does not delete it", () => {
+    makeFixture("zudo-test-wisdom");
+    const legacyDir = join(projectDir, ".claude", "skills", "zudo-test-wisdom-wisdom");
+    mkdirSync(legacyDir, { recursive: true });
+    writeFileSync(join(legacyDir, "SKILL.md"), "stale");
+
+    const output = runFixtureScript();
+
+    expect(output).toContain("WARNING");
+    expect(output).toContain(legacyDir);
+    expect(output).toContain(join(projectDir, ".claude", "skills", "zudo-test-wisdom"));
+    expect(output).toContain(".gitignore");
+    expect(output).toContain("rm -rf");
+    // Never auto-deletes the stale legacy directory.
+    expect(existsSync(legacyDir)).toBe(true);
+    expect(readFileSync(join(legacyDir, "SKILL.md"), "utf-8")).toBe("stale");
+  });
+
+  it("does not warn when no legacy directory is present", () => {
+    makeFixture("zudo-test-wisdom");
+    const output = runFixtureScript();
+
+    expect(output).not.toContain("WARNING");
+  });
+
+  it("does not warn for a project name unaffected by the suffix-aware rule", () => {
+    makeFixture("my-docs");
+    // Even with a pre-existing directory at the (never-produced-by-the-old-
+    // bug) doubled name, the rule doesn't change for "my-docs" -- so there is
+    // no derivation-rule change to warn about.
+    const unrelatedDir = join(projectDir, ".claude", "skills", "my-docs-wisdom-wisdom");
+    mkdirSync(unrelatedDir, { recursive: true });
+
+    const output = runFixtureScript();
+
+    expect(output).not.toContain("WARNING");
+  });
+
+  it("does not print the migration warning when the name is explicitly overridden", () => {
+    // An explicit $1/SKILL_NAME override means the script isn't about to
+    // create DEFAULT_SKILL_NAME at all, so the "resolves to <new_dir>,
+    // update .gitignore to <DEFAULT_SKILL_NAME>" guidance would be actively
+    // wrong -- the override wins, and the warning must not fire.
+    makeFixture("zudo-test-wisdom");
+    const legacyDir = join(projectDir, ".claude", "skills", "zudo-test-wisdom-wisdom");
+    mkdirSync(legacyDir, { recursive: true });
+
+    const output = runFixtureScript({ skillNameArg: "custom-override" });
+
+    expect(output).not.toContain("WARNING");
+    // Legacy directory is left untouched either way.
+    expect(existsSync(legacyDir)).toBe(true);
+  });
+
+  it("mentions removing the stale global symlink in the migration steps", () => {
+    makeFixture("zudo-test-wisdom");
+    const legacyDir = join(projectDir, ".claude", "skills", "zudo-test-wisdom-wisdom");
+    mkdirSync(legacyDir, { recursive: true });
+    const legacyGlobalLink = join(fixtureHome, ".claude", "skills", "zudo-test-wisdom-wisdom");
+    mkdirSync(join(fixtureHome, ".claude", "skills"), { recursive: true });
+    execSync(`ln -s "${legacyDir}" "${legacyGlobalLink}"`);
+
+    const output = runFixtureScript();
+
+    expect(output).toContain(legacyGlobalLink);
+    expect(output).toContain("rm -f");
+  });
+});

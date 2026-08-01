@@ -49,16 +49,29 @@ ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 # Read project name from package.json
 PROJECT_NAME=$(node -e "console.log(require('$ROOT_DIR/package.json').name || 'my-project')")
-DEFAULT_SKILL_NAME="${PROJECT_NAME}-wisdom"
+
+# Pre-#3154 default: always `<projectName>-wisdom`, which doubles the suffix
+# when PROJECT_NAME already ends in "-wisdom" (e.g. "zudo-test-wisdom" ->
+# "zudo-test-wisdom-wisdom"). Kept around only to detect leftover legacy
+# directories from that behavior -- see the migration-warning block below.
+LEGACY_DEFAULT_SKILL_NAME="${PROJECT_NAME}-wisdom"
+if [[ "$PROJECT_NAME" == *-wisdom ]] || [[ "$PROJECT_NAME" == "wisdom" ]]; then
+  DEFAULT_SKILL_NAME="$PROJECT_NAME"
+else
+  DEFAULT_SKILL_NAME="$LEGACY_DEFAULT_SKILL_NAME"
+fi
 
 echo ""
 echo "=== zudo-doc Skill Setup ==="
 echo ""
 
-# Skill name is DETERMINISTIC: always `<projectName>-wisdom`. The scaffolded
-# .gitignore (emitted by create-zudo-doc) hard-codes this exact name, so the
-# generated skill directory must match it — an interactive prompt would let the
-# name drift from the gitignore entry and leave the skill showing as untracked
+# Skill name is DETERMINISTIC and suffix-aware: verbatim when PROJECT_NAME
+# already ends in "-wisdom" (or is exactly "wisdom"), otherwise
+# "<projectName>-wisdom" (zudolab/zudo-doc#3154). The scaffolded .gitignore
+# (emitted by create-zudo-doc's packages/create-zudo-doc/src/scaffold.ts,
+# which computes the same name) hard-codes this exact rule, so the generated
+# skill directory must match it — an interactive prompt would let the name
+# drift from the gitignore entry and leave the skill showing as untracked
 # (zudolab/zudo-doc#2173). An explicit override is still allowed via the first
 # CLI arg or the SKILL_NAME env var (consumers who override must also update
 # their .gitignore), but never via an interactive prompt.
@@ -68,6 +81,33 @@ SKILL_NAME="${1:-${SKILL_NAME:-$DEFAULT_SKILL_NAME}}"
 if [[ ! "$SKILL_NAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
   echo "Error: Skill name may only contain letters, numbers, hyphens, and underscores."
   exit 1
+fi
+
+# Migration warning (zudolab/zudo-doc#3154, D3): the suffix-aware rule above is
+# a BREAKING change for existing "*-wisdom" projects. Their .gitignore pins the
+# old, doubled name, so after picking up this fix they get a NEW, unignored
+# skill directory while the stale doubled one remains on disk -- the symptom
+# moves rather than disappears. Detect that and tell the user what to do by
+# hand; never delete anything automatically, it is the user's tree.
+# Only fires when SKILL_NAME still equals DEFAULT_SKILL_NAME -- an explicit
+# $1/SKILL_NAME override means the derived name (and this guidance about it)
+# doesn't apply to what the script is actually about to create.
+if [ "$SKILL_NAME" = "$DEFAULT_SKILL_NAME" ] && [ "$DEFAULT_SKILL_NAME" != "$LEGACY_DEFAULT_SKILL_NAME" ]; then
+  for target in claude codex; do
+    legacy_dir="$ROOT_DIR/.$target/skills/$LEGACY_DEFAULT_SKILL_NAME"
+    if [ -d "$legacy_dir" ]; then
+      new_dir="$ROOT_DIR/.$target/skills/$DEFAULT_SKILL_NAME"
+      legacy_global_link="$HOME/.$target/skills/$LEGACY_DEFAULT_SKILL_NAME"
+      echo "WARNING: legacy skill directory detected: $legacy_dir"
+      echo "  The skill-name derivation rule changed; this project's skill now resolves to:"
+      echo "  $new_dir"
+      echo "  Manual steps:"
+      echo "  1. Update the .gitignore entries for '$LEGACY_DEFAULT_SKILL_NAME' to '$DEFAULT_SKILL_NAME'."
+      echo "  2. Delete the stale directory once migrated: rm -rf \"$legacy_dir\""
+      echo "  3. Also remove the stale global symlink, if present: rm -f \"$legacy_global_link\""
+      echo ""
+    fi
+  done
 fi
 
 # Resolve the main repo root (handles git worktrees correctly)
