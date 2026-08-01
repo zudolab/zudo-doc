@@ -896,6 +896,11 @@ function generatePackageJson(choices: UserChoices) {
   }
 
   if (choices.features.includes("skillSymlinker")) {
+    // Deliberately omit --no-link-tracked-skills here: automatic tracked-skill
+    // linking (#3152) is the intended default for generated projects. Only the
+    // zudo-doc monorepo's own root package.json passes the opt-out, because it
+    // has 20 directories under `.claude/skills/` and a blanket loop would export
+    // 19 project-specific skills into the maintainer's global skills dir (#3157).
     scripts["setup:doc-skill"] = "bash scripts/setup-doc-skill.sh";
     scripts["setup:doc-skill-silent"] =
       "bash scripts/setup-doc-skill.sh --silent";
