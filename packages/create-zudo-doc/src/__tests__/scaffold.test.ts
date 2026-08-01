@@ -13,7 +13,7 @@ import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
 import type { UserChoices } from "../prompts.js";
-import { scaffold } from "../scaffold.js";
+import { deriveDocSkillName, scaffold } from "../scaffold.js";
 import { validateProjectName } from "../utils.js";
 import { createZudoDoc } from "../api.js";
 import type { PresetHeaderRightItem, PresetMetaTagsConfig } from "../preset.js";
@@ -503,6 +503,20 @@ describe("scaffold — tagGovernance explicit CLI config", () => {
   });
 });
 
+describe("deriveDocSkillName — suffix-aware skill-name derivation (#3155, mirrors DEFAULT_SKILL_NAME in scripts/setup-doc-skill.sh)", () => {
+  it("leaves an already-suffixed name verbatim (no doubled suffix)", () => {
+    expect(deriveDocSkillName("foo-wisdom")).toBe("foo-wisdom");
+  });
+
+  it("appends -wisdom to a name without the suffix", () => {
+    expect(deriveDocSkillName("my-docs")).toBe("my-docs-wisdom");
+  });
+
+  it("leaves the bare name 'wisdom' verbatim", () => {
+    expect(deriveDocSkillName("wisdom")).toBe("wisdom");
+  });
+});
+
 describe("scaffold — skillSymlinker feature", () => {
   it("copies scripts/setup-doc-skill.sh and emits the .gitignore skill block", async () => {
     await scaffold({
@@ -534,6 +548,42 @@ describe("scaffold — skillSymlinker feature", () => {
       "utf-8",
     );
     expect(gitignore).toContain(".claude/skills/test-skill-sym-i18n-wisdom/docs-ja");
+  });
+
+  it("does NOT double the suffix when the project name already ends in -wisdom (#3155)", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-skill-sym-wisdom",
+      features: ["skillSymlinker"],
+    });
+    const gitignore = await fs.readFile(
+      projectPath("test-skill-sym-wisdom", ".gitignore"),
+      "utf-8",
+    );
+    expect(gitignore).toContain(".claude/skills/test-skill-sym-wisdom/SKILL.md");
+    expect(gitignore).toContain(".claude/skills/test-skill-sym-wisdom/docs");
+    expect(gitignore).toContain(".codex/skills/test-skill-sym-wisdom/SKILL.md");
+    expect(gitignore).toContain(".codex/skills/test-skill-sym-wisdom/docs");
+    expect(gitignore).not.toContain("test-skill-sym-wisdom-wisdom");
+  });
+
+  it("uses the same non-doubled name for the i18n-gated docs-ja entries (#3155)", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-skill-sym-i18n-wisdom",
+      features: ["skillSymlinker", "i18n"],
+    });
+    const gitignore = await fs.readFile(
+      projectPath("test-skill-sym-i18n-wisdom", ".gitignore"),
+      "utf-8",
+    );
+    expect(gitignore).toContain(
+      ".claude/skills/test-skill-sym-i18n-wisdom/docs-ja",
+    );
+    expect(gitignore).toContain(
+      ".codex/skills/test-skill-sym-i18n-wisdom/docs-ja",
+    );
+    expect(gitignore).not.toContain("test-skill-sym-i18n-wisdom-wisdom");
   });
 
   it("emits no skill block and no script when skillSymlinker is off", async () => {
