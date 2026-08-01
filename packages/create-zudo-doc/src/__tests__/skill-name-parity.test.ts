@@ -79,9 +79,16 @@ async function scaffoldAndRunSetupScript(projectName: string): Promise<string> {
   const gitResult = initGitRepo(projectDir);
   expect(gitResult.status).toBe("ok");
 
+  // Strip any inherited SKILL_NAME (the script's env-var override, see
+  // `SKILL_NAME="${1:-${SKILL_NAME:-$DEFAULT_SKILL_NAME}}"`) so a value
+  // leaked from a developer shell or CI can't silently bypass the
+  // derivation this test exercises.
+  const scriptEnv: NodeJS.ProcessEnv = { ...process.env, HOME: fakeHome };
+  delete scriptEnv.SKILL_NAME;
+
   execFileSync("bash", ["scripts/setup-doc-skill.sh"], {
     cwd: projectDir,
-    env: { ...process.env, HOME: fakeHome },
+    env: scriptEnv,
     stdio: "pipe",
     timeout: 30_000,
   });
