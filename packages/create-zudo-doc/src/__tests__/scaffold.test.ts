@@ -613,6 +613,32 @@ describe("scaffold — skillSymlinker feature", () => {
     );
     expect(off.scripts["setup:doc-skill"]).toBeUndefined();
   });
+
+  // #3157: generated projects deliberately omit --no-link-tracked-skills —
+  // automatic tracked-skill linking (#3152) is the intended default there.
+  // Only the zudo-doc monorepo's own root package.json passes the opt-out
+  // (asserted separately by a test that reads this repo's own package.json).
+  it("never emits --no-link-tracked-skills in a generated project's setup:doc-skill* scripts", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-skill-sym-no-optout",
+      features: ["skillSymlinker"],
+    });
+    const pkg = await fs.readJson(
+      projectPath("test-skill-sym-no-optout", "package.json"),
+    );
+    const skillScripts = [
+      "setup:doc-skill",
+      "setup:doc-skill-silent",
+      "setup:doc-skill:claude",
+      "setup:doc-skill:codex",
+      "setup:doc-skill:both",
+    ];
+    for (const name of skillScripts) {
+      expect(pkg.scripts[name]).toBeDefined();
+      expect(pkg.scripts[name]).not.toContain("--no-link-tracked-skills");
+    }
+  });
 });
 
 describe("scaffold — claudeSkills feature", () => {
@@ -2069,5 +2095,33 @@ describe("createZudoDoc() — CreateOptions preset parity (#2922)", () => {
     });
     const config = await fs.readFile(path.join(targetDir, "zfb.config.ts"), "utf-8");
     expect(config).toContain("minifyHtml: false");
+  });
+});
+
+// #3157: the zudo-doc monorepo's own root package.json must opt out of
+// #3156's default-on tracked-skill linking. Without `--no-link-tracked-skills`,
+// `pnpm setup:doc-skill` here would export all ~20 project-specific skills
+// under this repo's `.claude/skills/` (l-lessons-*, l-make-release,
+// check-docs, zudo-doc-*, ...) into the maintainer's global skills dir,
+// loading them in every unrelated project. Mirror image of the "generated
+// projects never emit the flag" assertion in the skillSymlinker describe
+// block above. Reads the real repo-root package.json rather than invoking
+// the script, per the sub-issue's acceptance criteria.
+describe("monorepo root package.json — doc-skill opt-out (#3157)", () => {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const MONOREPO_ROOT = path.resolve(__dirname, "../../../..");
+
+  it("passes --no-link-tracked-skills on all four setup:doc-skill* scripts", async () => {
+    const pkg = await fs.readJson(path.join(MONOREPO_ROOT, "package.json"));
+    const skillScripts = [
+      "setup:doc-skill",
+      "setup:doc-skill:claude",
+      "setup:doc-skill:codex",
+      "setup:doc-skill:both",
+    ];
+    for (const name of skillScripts) {
+      expect(pkg.scripts[name]).toBeDefined();
+      expect(pkg.scripts[name]).toContain("--no-link-tracked-skills");
+    }
   });
 });
