@@ -28,6 +28,26 @@ const MAIN_WORKTREE_ROOT = execSync(
 ).trim();
 
 /**
+ * Build the child env for a script run: the caller's environment with HOME
+ * redirected to a fake home, and any inherited SKILL_NAME stripped.
+ *
+ * SKILL_NAME is the script's env-var override (see
+ * `SKILL_NAME="${1:-${SKILL_NAME:-$DEFAULT_SKILL_NAME}}"`), so a value exported
+ * by a developer shell or CI would silently rename the directory every
+ * assertion here looks for — and would defeat the derivation the no-`$1` suites
+ * exist to exercise. Tests that WANT the override pass it explicitly via
+ * `extra`.
+ */
+function scriptEnv(
+  fakeHome: string,
+  extra: Record<string, string> = {},
+): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = { ...process.env, HOME: fakeHome };
+  delete env.SKILL_NAME;
+  return { ...env, ...extra };
+}
+
+/**
  * Run setup-doc-skill.sh in the real project directory with a custom
  * HOME so the global symlink goes to a temp directory instead of ~/.claude/skills/.
  * The skill name is passed as the first CLI arg — the script is non-interactive
@@ -41,10 +61,7 @@ function runScript(skillName: string, fakeHome: string, args: string[] = []): st
       cwd: PROJECT_ROOT,
       encoding: "utf-8",
       timeout: 30_000,
-      env: {
-        ...process.env,
-        HOME: fakeHome,
-      },
+      env: scriptEnv(fakeHome),
     },
   );
 }
@@ -210,7 +227,7 @@ describe("setup-doc-skill.sh", () => {
       cwd: PROJECT_ROOT,
       encoding: "utf-8",
       timeout: 30_000,
-      env: { ...process.env, HOME: fakeHome },
+      env: scriptEnv(fakeHome),
     });
 
     // Skill is created under the real name, not a skill literally named "--silent".
@@ -277,7 +294,7 @@ describe("setup-doc-skill.sh", () => {
           cwd: projectDir,
           encoding: "utf-8",
           timeout: 30_000,
-          env: { ...process.env, HOME: fixtureHome },
+          env: scriptEnv(fixtureHome),
         },
       );
     }
@@ -351,6 +368,28 @@ describe("suffix-aware skill-name derivation (#3154)", () => {
     );
   }
 
+  /**
+   * Write the project's `.gitignore` with the same per-file entry shape
+   * create-zudo-doc's scaffold emits (`.claude/skills/<name>/SKILL.md` etc.),
+   * so the stale-ignore-rule detection is exercised against real output rather
+   * than an invented format.
+   */
+  function writeGitignore(skillName: string): string {
+    const path = join(projectDir, ".gitignore");
+    writeFileSync(
+      path,
+      [
+        "node_modules/",
+        `.claude/skills/${skillName}/SKILL.md`,
+        `.claude/skills/${skillName}/docs`,
+        `.codex/skills/${skillName}/SKILL.md`,
+        `.codex/skills/${skillName}/docs`,
+        "",
+      ].join("\n"),
+    );
+    return path;
+  }
+
   afterEach(() => {
     if (fixtureRoot && existsSync(fixtureRoot)) {
       rmSync(fixtureRoot, { recursive: true, force: true });
@@ -371,7 +410,7 @@ describe("suffix-aware skill-name derivation (#3154)", () => {
       cwd: projectDir,
       encoding: "utf-8",
       timeout: 30_000,
-      env: { ...process.env, HOME: fixtureHome, ...env },
+      env: scriptEnv(fixtureHome, env),
     });
   }
 
@@ -439,17 +478,60 @@ describe("suffix-aware skill-name derivation (#3154)", () => {
     const output = runFixtureScript();
 
     expect(output).toContain("WARNING");
-    expect(output).toContain(legacyDir);
-    expect(output).toContain(join(projectDir, ".claude", "skills", "zudo-test-wisdom"));
-    expect(output).toContain(".gitignore");
+    expect(output).toContain(`legacy skill directory: ${legacyDir}`);
+    expect(output).toContain("zudo-test-wisdom-wisdom");
     expect(output).toContain("rm -rf");
+    // This fixture has no .gitignore at all, so the ignore-rule step does not
+    // apply and must not be printed.
+    expect(output).not.toContain("stale ignore rules");
+    expect(output).not.toContain("Update the ignore rules");
     // Never auto-deletes the stale legacy directory.
     expect(existsSync(legacyDir)).toBe(true);
     expect(readFileSync(join(legacyDir, "SKILL.md"), "utf-8")).toBe("stale");
   });
 
-  it("does not warn when no legacy directory is present", () => {
+  it("warns when only the .gitignore still names the legacy skill", () => {
+    // The symptom the warning exists to prevent -- an unignored new skill
+    // directory -- is caused by the stale ignore rules alone. A project whose
+    // legacy directory was never generated (or has already been deleted) must
+    // still be told, so the trigger cannot depend on the directory.
     makeFixture("zudo-test-wisdom");
+    const gitignore = writeGitignore("zudo-test-wisdom-wisdom");
+    const before = readFileSync(gitignore, "utf-8");
+
+    const output = runFixtureScript();
+
+    expect(output).toContain("WARNING");
+    expect(output).toContain(`stale ignore rules in ${gitignore}`);
+    expect(output).toContain("Update the ignore rules");
+    // No legacy directory and no stale global symlink exist here, so neither
+    // deletion step applies.
+    expect(output).not.toContain("rm -rf");
+    expect(output).not.toContain("rm -f");
+    // Advisory only -- the .gitignore is never rewritten.
+    expect(readFileSync(gitignore, "utf-8")).toBe(before);
+  });
+
+  it("lists both symptoms when the stale .gitignore and the legacy directory coexist", () => {
+    makeFixture("zudo-test-wisdom");
+    const gitignore = writeGitignore("zudo-test-wisdom-wisdom");
+    const legacyDir = join(projectDir, ".claude", "skills", "zudo-test-wisdom-wisdom");
+    mkdirSync(legacyDir, { recursive: true });
+
+    const output = runFixtureScript();
+
+    expect(output).toContain(`stale ignore rules in ${gitignore}`);
+    expect(output).toContain(`legacy skill directory: ${legacyDir}`);
+    expect(output).toContain("Update the ignore rules");
+    expect(output).toContain("rm -rf");
+  });
+
+  it("does not warn when no stale reference to the legacy name is present", () => {
+    makeFixture("zudo-test-wisdom");
+    // A .gitignore already naming the CURRENT skill must not be misread as a
+    // stale one.
+    writeGitignore("zudo-test-wisdom");
+
     const output = runFixtureScript();
 
     expect(output).not.toContain("WARNING");
@@ -457,11 +539,12 @@ describe("suffix-aware skill-name derivation (#3154)", () => {
 
   it("does not warn for a project name unaffected by the suffix-aware rule", () => {
     makeFixture("my-docs");
-    // Even with a pre-existing directory at the (never-produced-by-the-old-
-    // bug) doubled name, the rule doesn't change for "my-docs" -- so there is
-    // no derivation-rule change to warn about.
+    // Even with a pre-existing directory and ignore rules at the
+    // (never-produced-by-the-old-bug) doubled name, the rule doesn't change
+    // for "my-docs" -- so there is no derivation-rule change to warn about.
     const unrelatedDir = join(projectDir, ".claude", "skills", "my-docs-wisdom-wisdom");
     mkdirSync(unrelatedDir, { recursive: true });
+    writeGitignore("my-docs-wisdom-wisdom");
 
     const output = runFixtureScript();
 
@@ -470,12 +553,14 @@ describe("suffix-aware skill-name derivation (#3154)", () => {
 
   it("does not print the migration warning when the name is explicitly overridden", () => {
     // An explicit $1/SKILL_NAME override means the script isn't about to
-    // create DEFAULT_SKILL_NAME at all, so the "resolves to <new_dir>,
-    // update .gitignore to <DEFAULT_SKILL_NAME>" guidance would be actively
-    // wrong -- the override wins, and the warning must not fire.
+    // create DEFAULT_SKILL_NAME at all, so the "resolves to <new name>,
+    // update the ignore rules to <DEFAULT_SKILL_NAME>" guidance would be
+    // actively wrong -- the override wins, and the warning must not fire for
+    // ANY of the symptoms.
     makeFixture("zudo-test-wisdom");
     const legacyDir = join(projectDir, ".claude", "skills", "zudo-test-wisdom-wisdom");
     mkdirSync(legacyDir, { recursive: true });
+    writeGitignore("zudo-test-wisdom-wisdom");
 
     const output = runFixtureScript({ skillNameArg: "custom-override" });
 
@@ -568,7 +653,7 @@ describe("tracked-skill linking (#3156)", () => {
       cwd,
       encoding: "utf-8",
       timeout: 30_000,
-      env: { ...process.env, HOME: fixtureHome },
+      env: scriptEnv(fixtureHome),
     });
   }
 
@@ -796,7 +881,7 @@ describe("tracked-skill linking (#3156)", () => {
         cwd: worktreeProjectDir,
         encoding: "utf-8",
         timeout: 30_000,
-        env: { ...process.env, HOME: fixtureHome },
+        env: scriptEnv(fixtureHome),
       });
 
       const link = join(fixtureHome, ".claude", "skills", "check-docs");

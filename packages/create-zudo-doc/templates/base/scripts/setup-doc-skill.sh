@@ -97,25 +97,79 @@ fi
 # skill directory while the stale doubled one remains on disk -- the symptom
 # moves rather than disappears. Detect that and tell the user what to do by
 # hand; never delete anything automatically, it is the user's tree.
+# Three independent symptoms are checked, and ANY one of them fires the
+# warning: stale ignore rules (the .gitignore still names the doubled skill --
+# on its own that already means the NEW directory is unignored, which is the
+# whole problem, even when the legacy directory was never generated or has
+# already been deleted), a leftover legacy directory, and a leftover global
+# symlink. Only the steps for the symptoms actually found are printed.
 # Only fires when SKILL_NAME still equals DEFAULT_SKILL_NAME -- an explicit
 # $1/SKILL_NAME override means the derived name (and this guidance about it)
 # doesn't apply to what the script is actually about to create.
 if [ "$SKILL_NAME" = "$DEFAULT_SKILL_NAME" ] && [ "$DEFAULT_SKILL_NAME" != "$LEGACY_DEFAULT_SKILL_NAME" ]; then
+  # The ignore rules are repo-level, so this is checked once rather than per
+  # target -- both ".claude/skills/<name>/" and ".codex/skills/<name>/" entries
+  # live in the same file (create-zudo-doc emits it at the project root).
+  # -F: PROJECT_NAME comes from package.json and may contain regex characters.
+  legacy_gitignore=""
+  if [ -f "$ROOT_DIR/.gitignore" ] &&
+    grep -qF "skills/$LEGACY_DEFAULT_SKILL_NAME/" "$ROOT_DIR/.gitignore"; then
+    legacy_gitignore="$ROOT_DIR/.gitignore"
+  fi
+
+  legacy_dirs=()
+  legacy_links=()
   for target in claude codex; do
     legacy_dir="$ROOT_DIR/.$target/skills/$LEGACY_DEFAULT_SKILL_NAME"
     if [ -d "$legacy_dir" ]; then
-      new_dir="$ROOT_DIR/.$target/skills/$DEFAULT_SKILL_NAME"
-      legacy_global_link="$HOME/.$target/skills/$LEGACY_DEFAULT_SKILL_NAME"
-      echo "WARNING: legacy skill directory detected: $legacy_dir"
-      echo "  The skill-name derivation rule changed; this project's skill now resolves to:"
-      echo "  $new_dir"
-      echo "  Manual steps:"
-      echo "  1. Update the .gitignore entries for '$LEGACY_DEFAULT_SKILL_NAME' to '$DEFAULT_SKILL_NAME'."
-      echo "  2. Delete the stale directory once migrated: rm -rf \"$legacy_dir\""
-      echo "  3. Also remove the stale global symlink, if present: rm -f \"$legacy_global_link\""
-      echo ""
+      legacy_dirs+=("$legacy_dir")
+    fi
+    legacy_global_link="$HOME/.$target/skills/$LEGACY_DEFAULT_SKILL_NAME"
+    if [ -L "$legacy_global_link" ] || [ -e "$legacy_global_link" ]; then
+      legacy_links+=("$legacy_global_link")
     fi
   done
+
+  if [ -n "$legacy_gitignore" ] ||
+    [ "${#legacy_dirs[@]}" -gt 0 ] ||
+    [ "${#legacy_links[@]}" -gt 0 ]; then
+    echo "WARNING: stale references to the legacy skill name '$LEGACY_DEFAULT_SKILL_NAME' detected."
+    echo "  The skill-name derivation rule changed; this project's skill now resolves to:"
+    echo "  $DEFAULT_SKILL_NAME"
+    echo "  Found:"
+    if [ -n "$legacy_gitignore" ]; then
+      echo "  - stale ignore rules in $legacy_gitignore"
+    fi
+    if [ "${#legacy_dirs[@]}" -gt 0 ]; then
+      for legacy_dir in "${legacy_dirs[@]}"; do
+        echo "  - legacy skill directory: $legacy_dir"
+      done
+    fi
+    if [ "${#legacy_links[@]}" -gt 0 ]; then
+      for legacy_global_link in "${legacy_links[@]}"; do
+        echo "  - stale global symlink: $legacy_global_link"
+      done
+    fi
+    echo "  Manual steps:"
+    step=1
+    if [ -n "$legacy_gitignore" ]; then
+      echo "  $step. Update the ignore rules for '$LEGACY_DEFAULT_SKILL_NAME' to '$DEFAULT_SKILL_NAME' in $legacy_gitignore."
+      step=$((step + 1))
+    fi
+    if [ "${#legacy_dirs[@]}" -gt 0 ]; then
+      for legacy_dir in "${legacy_dirs[@]}"; do
+        echo "  $step. Delete the stale directory once migrated: rm -rf \"$legacy_dir\""
+        step=$((step + 1))
+      done
+    fi
+    if [ "${#legacy_links[@]}" -gt 0 ]; then
+      for legacy_global_link in "${legacy_links[@]}"; do
+        echo "  $step. Remove the stale global symlink: rm -f \"$legacy_global_link\""
+        step=$((step + 1))
+      done
+    fi
+    echo ""
+  fi
 fi
 
 # Resolve the main repo root (handles git worktrees correctly)
