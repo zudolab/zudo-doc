@@ -10,6 +10,13 @@ set -euo pipefail
 
 TARGET_MODE="auto"
 
+# Tracked-skill linking (zudolab/zudo-doc#3156) is default-ON: #3152 asked for
+# automatic linking of a site's own hand-written skills, not just the
+# generated one. --no-link-tracked-skills opts out (e.g. this monorepo's own
+# npm scripts, which would otherwise export ~20 project-specific skills into
+# the user's global skills dir -- see zudolab/zudo-doc#3157).
+LINK_TRACKED_SKILLS="true"
+
 # Accept --silent (alias -y) for parity with the consuming-site convention:
 # scaffolded sites expose `setup:doc-skill-silent` = `bash scripts/setup-doc-skill.sh
 # --silent`. This script is already non-interactive (the skill name is deterministic
@@ -31,6 +38,7 @@ while [ $# -gt 0 ]; do
       TARGET_MODE="${1#--target=}"
       shift
       ;;
+    --no-link-tracked-skills) LINK_TRACKED_SKILLS="false"; shift ;;
     --) shift; break ;;
     -*) echo "Error: unknown flag '$1'" >&2; exit 1 ;;
     *) break ;;
@@ -142,6 +150,46 @@ ensure_symlink() {
     rm -rf "$link_path"
   fi
   ln -s "$target" "$link_path"
+}
+
+# Helper: link a single tracked (hand-written) skill into the global skills
+# dir WITHOUT ever deleting something this script doesn't own
+# (zudolab/zudo-doc#3156, D4). Unlike ensure_symlink (rm -rf-based -- safe
+# only for the generated skill, whose global name this project owns),
+# tracked-skill names are arbitrary and could collide with a user-owned
+# global skill or a name already claimed by another project, so an existing
+# entry that isn't already our own correct link is left untouched, with a
+# warning.
+safe_link_tracked_skill() {
+  local link_path="$1"
+  local link_target="$2"
+  local skill_name="$3"
+  local target="$4"
+
+  if [ -L "$link_path" ]; then
+    local current_target
+    current_target="$(readlink "$link_path")"
+    if [ "$current_target" = "$link_target" ]; then
+      return 0 # already correct -> no-op
+    fi
+    if [ -e "$link_path" ]; then
+      echo "WARNING: [$target] skipping tracked skill '$skill_name': $link_path already links to $current_target"
+      return 0
+    fi
+    # Dangling symlink (broken target) -> safe to replace.
+    rm -f "$link_path"
+    ln -s "$link_target" "$link_path"
+    echo "  [$target] Linked tracked skill '$skill_name' -> $link_target"
+    return 0
+  fi
+
+  if [ -e "$link_path" ]; then
+    echo "WARNING: [$target] skipping tracked skill '$skill_name': $link_path is a real file/directory, not a symlink"
+    return 0
+  fi
+
+  ln -s "$link_target" "$link_path"
+  echo "  [$target] Linked tracked skill '$skill_name' -> $link_target"
 }
 
 DOCS_JA_DIR="$ROOT_DIR/src/content/docs-ja"
@@ -323,18 +371,60 @@ JAEOF
   echo "  [$target] Global symlink: $global_skills_dir/$SKILL_NAME"
 }
 
+# Symlink the site's OWN hand-written skills into the global skills dir
+# (zudolab/zudo-doc#3156). Discovery walks the target's own project skills
+# directory dynamically -- not a hard-coded list, so it stays correct as
+# sites add skills. Sources resolve through MAIN_PROJECT_DIR, not ROOT_DIR,
+# the same way the generated skill's docs/docs-ja symlinks do (see the
+# REPO_ROOT/MAIN_PROJECT_DIR comment above) so the links survive worktree
+# removal. Target-local only: each target walks only its own
+# ".$target/skills/" -- a missing directory is a silent no-op, and there is
+# no ".claude" -> ".codex" fallback.
+link_tracked_skills() {
+  local target="$1"
+  local skills_root="$MAIN_PROJECT_DIR/.$target/skills"
+  local global_skills_dir="$HOME/.$target/skills"
+
+  [ -d "$skills_root" ] || return 0
+
+  mkdir -p "$global_skills_dir"
+
+  local dir name
+  for dir in "$skills_root"/*/; do
+    [ -d "$dir" ] || continue
+    name="$(basename "$dir")"
+
+    # Skip the just-generated skill (already linked above via ensure_symlink)
+    # and the legacy doubled-suffix name (zudolab/zudo-doc#3154) -- otherwise
+    # a stale leftover directory left by that rename gets misread as a
+    # hand-written skill and exported globally, compounding both bugs.
+    [ "$name" = "$SKILL_NAME" ] && continue
+    [ "$name" = "$LEGACY_DEFAULT_SKILL_NAME" ] && continue
+
+    # A candidate qualifies only if it contains SKILL.md -- iterating every
+    # directory does not prove it is a skill.
+    [ -f "${dir}SKILL.md" ] || continue
+
+    safe_link_tracked_skill "$global_skills_dir/$name" "${dir%/}" "$name" "$target"
+  done
+}
+
 read -r -a TARGETS <<< "$(resolve_targets)"
 echo "Target: $TARGET_MODE -> ${TARGETS[*]}"
 echo ""
 
 for target in "${TARGETS[@]}"; do
   generate_skill "$target"
+  if [ "$LINK_TRACKED_SKILLS" = "true" ]; then
+    link_tracked_skills "$target"
+  fi
 done
 
 echo ""
 echo "Done! Skill '$SKILL_NAME' is ready."
 echo ""
 echo "Use --target claude, --target codex, or --target both to override auto-detection."
+echo "Use --no-link-tracked-skills to skip linking this project's own hand-written skills."
 echo "In Claude Code, use: /$SKILL_NAME <topic>"
 echo "In Codex, mention the skill by name when asking about this documentation."
 echo ""
