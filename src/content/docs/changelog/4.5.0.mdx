@@ -1,0 +1,27 @@
+---
+title: 4.5.0
+description: Release notes for 4.5.0.
+sidebar_position: 1076
+---
+
+Released: 2026-08-02
+
+### Features
+
+- `setup-doc-skill.sh` now links a site's own tracked skills into the global skills directory — after generating the doc-lookup skill it discovers every `.<target>/skills/*` directory containing a `SKILL.md` and symlinks it too, resolving sources through `MAIN_PROJECT_DIR` so the links survive worktree removal. Linking is non-destructive: it no-ops when already correct, replaces a dangling symlink, and warns and skips a real file, directory, or a symlink owned by something else. Pass `--no-link-tracked-skills` to opt out (#3156, c8d9b44)
+
+### Bug Fixes
+
+- Stop doubling the `-wisdom` suffix when deriving the doc skill name — a project already named `*-wisdom` (or exactly `wisdom`) now derives its skill name verbatim instead of producing e.g. `zudo-test-wisdom-wisdom`. When the corrected rule shortens the name, the script prints a migration warning naming both directories, the `.gitignore` update, and the cleanup commands; it never deletes anything automatically (#3154, 7edc219)
+- Align `create-zudo-doc`'s `.gitignore` emission with the same suffix-aware rule, so a `-wisdom`-suffixed project no longer gets a doubled ignore entry that matches nothing (#3155, a5ccb5f)
+- Widen the migration warning's trigger — it previously fired only when a legacy doubled-name directory was on disk, silently missing a project whose `.gitignore` still named the doubled skill but whose legacy directory was never generated. It now also detects stale ignore rules and a leftover global symlink, fires on any of the three symptoms, and prints only the steps that apply (dbbcb99)
+- Treat only an actual symlink as the stale global link — a real file or directory at that path is no longer labelled a stale symlink, and no longer draws an `rm -f` suggestion against a user-owned path (7671374)
+
+### Other Changes
+
+- Pass `--no-link-tracked-skills` on this repo's own `setup:doc-skill*` scripts, since the monorepo's skill directories would otherwise leak into the maintainer's global skills directory. Generated projects deliberately keep auto-linking on (#3157, 7b93206)
+- Add a cross-artifact skill-name-parity regression test that scaffolds a project, runs its `setup-doc-skill.sh`, and asserts the directory the bash-side derivation creates matches the `.gitignore` entries the TypeScript-side `deriveDocSkillName()` emits — closing the gap where the two hand-mirrored derivations could drift undetected (#3158, 533769b)
+- Strip an inherited `SKILL_NAME` from the setup-doc-skill test environment, so a developer or CI shell export can no longer rename the directory the assertions look for (d89e7e6)
+- Re-baseline the route-injection parity hashes (#3140, 5be6685)
+- Adopt zfb v1.0.0 stable across every pin site, then bump the zfb family to 1.1.0 (0034871, cab6636)
+- Retarget the `l-bump-deps` skill at the stable zfb 1.x line (f60d5d6)
