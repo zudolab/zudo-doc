@@ -113,9 +113,7 @@
     "@takazudo/zfb-runtime": "1.1.0",
     "@takazudo/zudo-doc": "workspace:*",
     "diff": "^8.0.3",
-    "gray-matter": "^4.0.3",
     "katex": "^0.16.38",
-    "mermaid": "^11.15.0",
     "preact": "^10.29.1",
     "preact-render-to-string": "^6.6.6",
     "zod": "^4.3.6"
@@ -123,9 +121,7 @@
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "0.18.5",
     "@cloudflare/workers-types": "4.20260608.1",
-    "@inquirer/prompts": "^8.4.2",
     "@playwright/test": "1.58.2",
-    "@tailwindcss/vite": "^4.2.1",
     "@takazudo/zudo-design-token-lint": "^1.0.0",
     "@types/culori": "^4.0.1",
     "@types/node": "^25.3.5",
