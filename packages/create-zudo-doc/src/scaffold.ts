@@ -16,6 +16,26 @@ import {
 export { getSecondaryLang };
 
 /**
+ * TypeScript mirror of `DEFAULT_SKILL_NAME` in `scripts/setup-doc-skill.sh`
+ * (`DEFAULT_SKILL_NAME="${PROJECT_NAME}-wisdom"`, suffix-aware since #3154).
+ * The generator cannot import the shell script, so this rule is duplicated
+ * here; the two are kept from drifting apart by the committed cross-artifact
+ * parity test (#3158).
+ *
+ * If `projectName` already ends in `-wisdom` (or is exactly `wisdom`), it is
+ * used verbatim — appending `-wisdom` again would double the suffix (e.g.
+ * `zudo-test-wisdom` → `zudo-test-wisdom-wisdom`), which matches no
+ * `.gitignore` entry and leaves the generated skill directory untracked.
+ * Otherwise `-wisdom` is appended.
+ */
+export function deriveDocSkillName(projectName: string): string {
+  if (projectName === "wisdom" || projectName.endsWith("-wisdom")) {
+    return projectName;
+  }
+  return `${projectName}-wisdom`;
+}
+
+/**
  * Pinned `@takazudo/zudo-doc` version used by `generatePackageJson()`.
  * Hoisted as a shared constant (kept even though it now has a single
  * call site) because `scripts/check-pin-parity.mjs` resolves this exact
@@ -438,24 +458,25 @@ export async function scaffold(choices: UserChoices): Promise<void> {
   // on the same feature above), so only emit its ignore entries then —
   // otherwise they would be dead rules that could silently hide an unrelated
   // skill a user later installs under a matching name. The skill name is
-  // deterministic (always `<projectName>-wisdom`, matching DEFAULT_SKILL_NAME
-  // in scripts/setup-doc-skill.sh and the package name), so these entries match
-  // the directory the script creates. The setup script can target either
-  // .claude or .codex, so ignore both possible generated directories. The
-  // docs-ja symlink only exists for i18n projects (the script creates it
-  // conditionally), so gate those lines on i18n.
+  // deterministic (deriveDocSkillName(), matching DEFAULT_SKILL_NAME in
+  // scripts/setup-doc-skill.sh), so these entries match the directory the
+  // script creates. The setup script can target either .claude or .codex, so
+  // ignore both possible generated directories. The docs-ja symlink only
+  // exists for i18n projects (the script creates it conditionally), so gate
+  // those lines on i18n.
   if (choices.features.includes("skillSymlinker")) {
+    const skillName = deriveDocSkillName(choices.projectName);
     gitignoreLines.push(
       "# Generated doc-lookup skill",
-      `.claude/skills/${choices.projectName}-wisdom/SKILL.md`,
-      `.claude/skills/${choices.projectName}-wisdom/docs`,
-      `.codex/skills/${choices.projectName}-wisdom/SKILL.md`,
-      `.codex/skills/${choices.projectName}-wisdom/docs`,
+      `.claude/skills/${skillName}/SKILL.md`,
+      `.claude/skills/${skillName}/docs`,
+      `.codex/skills/${skillName}/SKILL.md`,
+      `.codex/skills/${skillName}/docs`,
     );
     if (choices.features.includes("i18n")) {
       gitignoreLines.push(
-        `.claude/skills/${choices.projectName}-wisdom/docs-ja`,
-        `.codex/skills/${choices.projectName}-wisdom/docs-ja`,
+        `.claude/skills/${skillName}/docs-ja`,
+        `.codex/skills/${skillName}/docs-ja`,
       );
     }
     gitignoreLines.push("");
