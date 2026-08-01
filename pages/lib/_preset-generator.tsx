@@ -4,7 +4,7 @@
 //
 // The real component (src/components/preset-generator.tsx) is a large
 // client-only island. This file is imported transitively from page modules
-// (pages/docs/[...slug].tsx → _mdx-components.ts → here), so zfb's island
+// (pages/docs/[[...slug]].tsx → mdxExtras → here), so zfb's island
 // scanner walks the static import chain and registers PresetGenerator in the
 // manifest. Without this import, the scanner never finds the component and
 // client-side hydration never fires (orphan-component problem; same root

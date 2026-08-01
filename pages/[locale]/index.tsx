@@ -4,7 +4,7 @@
 //
 // Non-default-locale site index. paths() emits one route per locale defined
 // in settings.locales (never the default locale — that is handled by
-// pages/index.tsx since prefixDefaultLocale is false).
+// pages/index.tsx, because the default locale is served unprefixed).
 //
 // paths() contract (zfb ADR-004 — synchronous):
 //   params: { locale: string }   — e.g. "ja"

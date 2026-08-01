@@ -70,7 +70,7 @@ Any element that navigates (rendered as `<a href>` or behaves as a link) MUST ha
 - **Links (do underline)**: doc content links, sidebar items, header main-nav, header overflow menu items, color-tweak panel unselected tabs, search result rows, footer links, doc history entries, breadcrumb trails, mobile TOC entries.
 - **Controls (do NOT underline)**: buttons, toggles, sidebar resizer, palette selectors, color swatches, close icons. These use border/bg hover instead.
 
-Precedents to copy the pattern from: any current `.tsx` component in `src/components/` (e.g. `site-tree-nav.tsx`).
+Precedents to copy the pattern from: the package-owned islands under `packages/zudo-doc/src/` (e.g. `site-tree-nav-island/`). `src/components/` now holds only this showcase's two local islands.
 
 See also: `/css-wisdom` for light-mode / dark-mode contrast rules and the broader three-tier token strategy.
 

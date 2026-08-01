@@ -124,7 +124,7 @@ export default defineConfig(
 );
 ```
 
-With `prefixDefaultLocale: false` (configured in `zfb.config.ts`), the default locale is served at `/docs/...` with no language code in the path, while every other locale uses its key as a prefix — `/ja/docs/...` for Japanese. Changing `defaultLocale` requires updating the corresponding routing and collection wiring in `zfb.config.ts`.
+The default locale is served at `/docs/...` with no language code in the path, while every other locale uses its key as a prefix — `/ja/docs/...` for Japanese. This falls out of `defaultLocale` plus the route split in `pages/` (`pages/docs/[[...slug]].tsx` vs `pages/[locale]/docs/[[...slug]].tsx`); there is no `prefixDefaultLocale` option to set. Changing `defaultLocale` requires updating the corresponding routing and collection wiring in `zfb.config.ts`.
 
 ## Default-locale-only prefixes
 

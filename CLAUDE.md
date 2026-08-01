@@ -14,7 +14,7 @@ Setup on a new machine and the local-zfb/zdtp escape hatch live in `CONTRIBUTING
 - **Preact** — for interactive islands (TOC scroll spy, sidebar toggle, collapsible categories) and server-rendered content typography components; runs in compat mode for React API compatibility
 - **zfb semantic highlighting** — document fences use zfb's native build-time renderer; HtmlPreview lazily imports the public `@takazudo/zfb-md-wasm` root for browser-time HTML/CSS/JavaScript. Both emit `pre.hi-root` / `hi-*` classes and resolve through `--zd-syntax-*` design tokens. Do not add Shiki, theme-name config, inline token colors, or package-internal WASM paths.
 - **@takazudo/zdtp (zdtp)** — external npm package that owns the Design Token Panel UI; the package-owned `DesignTokenPanelBootstrap` island configures it from a mode-scoped builder and self-mounts it as a side effect
-- **TypeScript** — strict mode via `@takazudo/zudo-doc/tsconfig.base.json`, which the project `tsconfig.json` extends. The project file adds exactly one extra compiler flag of its own, `noUncheckedIndexedAccess`, plus `include`/`baseUrl`/`paths` (the `paths` block is required, not cosmetic — see the GOTCHA in `packages/zudo-doc/CLAUDE.md`).
+- **TypeScript** — strict mode via `@takazudo/zudo-doc/tsconfig.base.json`, which the project `tsconfig.json` extends. The project file adds exactly one extra compiler flag of its own, `noUncheckedIndexedAccess`, plus `include`/`exclude`/`baseUrl`/`paths` (`exclude` drops `src/**/__tests__`; the `paths` block is required, not cosmetic — see the GOTCHA in `packages/zudo-doc/CLAUDE.md`).
 
 ## Commands
 
@@ -39,7 +39,7 @@ Setup on a new machine and the local-zfb/zdtp escape hatch live in `CONTRIBUTING
 - **Order is mandatory.** `@takazudo/zudo-doc`'s `tsc` pass needs `@takazudo/zudo-doc-history-server`'s declarations (`pre-build.ts` imports its `git-history` subpath), so building `zudo-doc` alone on a cold tree fails with TS2307. `scripts/ensure-workspace-build.mjs` owns that order.
 - **The guard checks existence, not freshness** — it never rebuilds a stale `dist/`, so a deleted or renamed source file leaves a stale artifact it happily accepts. Run `pnpm build:workspace` after a delete, rename, or `exports`-map removal.
 
-**Don't run `pnpm test`, `pnpm build:workspace`, or `pnpm b4push` while `pnpm dev` is live** — those rebuild unconditionally and would write `dist/` under the watchers. `pnpm check` is safe alongside `pnpm dev`. Full rationale (and the #3113 `clean: !options.watch` history) is in `packages/zudo-doc/CLAUDE.md`.
+**Don't run `pnpm test`, `pnpm build:workspace`, or `pnpm b4push` while `pnpm dev` is live** — those rebuild unconditionally and would write `dist/` under the watchers. `pnpm check` is safe alongside `pnpm dev`. The #3113 `clean: !options.watch` history is in `packages/zudo-doc/CLAUDE.md`.
 
 ## Automation
 
