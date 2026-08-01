@@ -17,13 +17,13 @@ chrome, islands, default `@theme` tokens, even the doc ROUTES themselves via
    patched by exactly one feature's `postProcess` hook.
 2. **Generate** the ONE `zfb.config.ts` programmatically (`zfb-config-gen.ts`)
    — diff-from-defaults: only fields the user actually chose are emitted.
-3. **Compose** selected features — copy feature files (only a few features
-   still have any: `i18n`, `tagGovernance`, `tauri`, `tauriDev`,
-   `skillSymlinker`) and run `postProcess` hooks for the handful of cases
+3. **Compose** selected features — copy feature files (only four features have
+   a `templates/features/<name>/files/` directory: `claudeSkills`, `i18n`,
+   `tauri`, `tauriDev`) and run `postProcess` hooks for the handful of cases
    that need a small source patch (`docHistory` threads itself into the doc
    stub(s); `designTokenPanel` inserts the one conditional zdtp CSS import
-   line; `tagGovernance` writes a tiny `src/config/` pair — see each
-   module's header comment for why).
+   line; `tagGovernance` writes a tiny `src/config/` pair *inline* — it has no
+   template directory — see each module's header comment for why).
 
 Both base and i18n document stubs unconditionally consume
 `virtual:zudo-doc-chrome-bindings`. The doc-history post-processor spreads the
@@ -44,7 +44,7 @@ left to inject or copy.
 |------|------|
 | `src/scaffold.ts` | Orchestrates the scaffold pipeline: copy base, seed content, generate `zfb.config.ts` + `package.json`, compose features |
 | `src/compose.ts` | Composition engine: injection system (mostly unused now — see below), feature resolution |
-| `src/features/*.ts` | Feature modules — settings-field emission via `zfb-config-gen.ts` + a handful of genuine file copies / `postProcess` patches (18 modules) |
+| `src/features/*.ts` | Feature modules — settings-field emission via `zfb-config-gen.ts` + a handful of genuine file copies / `postProcess` patches. 19 module files, 19 `featureModules` keys in `index.ts` — one of which (`footer`) is a pseudo-feature triggered by `footerNavGroup`/`footerCopyright`/`footerTaglist`. `sidebarFilter` has no module (built into the package's sidebar tree); `skillSymlinker`, `claudeSkills`, and `changelog` are handled directly in `scaffold.ts` |
 | `src/zfb-config-gen.ts` | The SINGLE config generator — emits the one `zfb.config.ts` (`defineConfig(zudoDoc({...}))`), diff-from-defaults against a local mirror of `packages/zudo-doc/src/config.ts`'s `DEFAULT_SETTINGS`. Replaces the former `settings-gen.ts` + `zfb-config-gen.ts` two-file split — there is no more `src/config/settings.ts` in a fresh scaffold |
 | `src/claude-md-gen.ts` | Generates the per-project `CLAUDE.md` for the scaffolded site, including the current zfb semantic-highlighting contract, chrome bindings, and binding-aware eject guidance |
 | `src/preset.ts` | Resolves a JSON `--preset` file (or CLI flags) into `UserChoices` — unrelated to the package's own `@takazudo/zudo-doc/preset`, despite the similar name |
@@ -60,7 +60,7 @@ left to inject or copy.
 | Directory | Role |
 |-----------|------|
 | `templates/base/` | The locked ~13-file minimal manifest (barebone, EN-only): `pages/index.tsx` (1-line re-export), `pages/docs/[[...slug]].tsx` (self-contained doc stub — see its header comment for why it's required), `src/styles/global.css` (~20-line `@import` chain + token-override slot), `tsconfig.json` (5-line extends form). `zfb.config.ts`/`package.json`/`CLAUDE.md`/`.gitignore`/`.npmrc`/`pnpm-workspace.yaml` are generated programmatically, not copied from here. |
-| `templates/features/*/files/` | Feature-specific files copied when a feature is selected. Only `i18n` (locale doc stub), `tauri`, and `tauriDev` (Rust shells) have template directories. `tagGovernance` writes one explicit tag vocabulary/config module in its `postProcess`; all audit/suggest behavior comes from package-owned bins. |
+| `templates/features/*/files/` | Feature-specific files copied when a feature is selected. Exactly four have a template directory: `claudeSkills` (skill copies, driven from `scaffold.ts`), `i18n` (locale doc stub), `tauri` and `tauriDev` (Rust shells). `tagGovernance` has **no** template directory — it writes one explicit tag vocabulary/config module inline in its `postProcess`; all audit/suggest behavior comes from package-owned bins. |
 
 ### Injection anchors — mostly retired
 
@@ -115,16 +115,15 @@ pnpm build
 
 ## Adding a New Feature
 
-When adding a feature to the main zudo-doc project that the generator should support:
+**Follow the "Feature Change Checklist" in the repo-root `CLAUDE.md`** — that is the single
+canonical ordering, and it starts at `packages/zudo-doc/src/config.ts` (the ONE field census)
+rather than at this package. This file deliberately keeps no second copy: the two orderings
+used to be hand-maintained side by side and drifted (they disagreed about which features have
+a `templates/features/` directory).
 
-1. **`src/constants.ts`** — Add feature to `FEATURES` array if it needs a CLI flag
-2. **`src/features/<name>.ts`** — Create a feature module. Most new features need ONLY a settings field (see step 6) — leave `injections: []` and no `postProcess` unless the feature genuinely needs a file copy or a small source patch (rare; see `docHistory`/`designTokenPanel`/`tagGovernance`/`tauri` for the current examples and why each one needs it)
-3. **`src/features/index.ts`** — Register the feature module
-4. **`templates/features/<name>/files/`** — Only add files here if the feature has no package-owned equivalent (a genuine gap — check whether `@takazudo/zudo-doc` already ships the component/logic before adding a host copy)
-5. **`src/scaffold.ts`** — Add dependencies in `generatePackageJson()` if needed
-6. **`packages/zudo-doc/src/preset.ts`** — If the feature introduces a new plugin or collection, add the settings-driven logic to `zudoDocPreset()`.
-7. **`packages/zudo-doc/src/config.ts`** — Add the field to `ZudoDocConfig` (with a `@default` JSDoc — enforced by `config-jsdoc.test.ts`) and to `DEFAULT_SETTINGS`. This is the field census `zfb-config-gen.ts`'s diff-from-defaults logic reads against.
-8. **`src/zfb-config-gen.ts`** — Add the field to `DEFAULT_MIRROR` (hand-kept copy of the package's `DEFAULT_SETTINGS` — see the file header comment for why it's a local mirror, not an import) and wire the user choice → field mapping in `buildDesiredConfig()` + `FIELD_ORDER`
-9. **`src/__tests__/scaffold.test.ts`** — Update tests
+Generator-side touchpoints, for orientation only — the root checklist has the authoritative
+order and the reasons: `src/constants.ts` (CLI flag), `src/features/<name>.ts` +
+`src/features/index.ts` (module + registration), `src/zfb-config-gen.ts` (`DEFAULT_MIRROR` +
+`buildDesiredConfig()` + `FIELD_ORDER`), `src/scaffold.ts` (deps), `src/__tests__/scaffold.test.ts`.
 
 After changes, run `/l-update-generator` to verify no drift remains between the main project and the generator.

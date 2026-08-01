@@ -402,13 +402,11 @@ specifier end-to-end.
    (see Takazudo/zudo-front-builder#678 / zudolab/zudo-doc#1834, where
    `bundle` was missing here and blocked next.22's `bundle.exclude`). When
    bumping the pinned `@takazudo/zfb` version, diff its `dist/config.d.ts`
-   against this file. The pre-#2656 per-project copy (root `zfb-shim.d.ts`,
-   `packages/create-zudo-doc/templates/base/zfb-shim.d.ts`) is untouched by
-   this wave — those cut over to the package-shipped copy in a later wave
-   (showcase migrates in Wave 6 of epic #2651); until then, edits to the
-   `declare module "zfb/config"` body must land in BOTH the old per-project
-   copies and this file, or `zfb check` drifts between consumers on the old
-   vs. new path.
+   against this file. This is now the ONLY copy — the pre-#2656 per-project
+   `zfb-shim.d.ts` files (root and `templates/base/`) were deleted when the
+   cutover completed (epic #2651 Wave 7 #2663; see `e2e/CLAUDE.md`), so there
+   is no dual-copy sync duty left. Consumers reach the shim transitively via
+   `tsconfig.base.json`'s `files`.
 
 3. **`virtual-modules.d.ts`** — exported as `@takazudo/zudo-doc/virtual-modules.d.ts`.
    Ambient declarations for `virtual:zudo-doc-route-context` and

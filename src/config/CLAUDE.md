@@ -1,6 +1,6 @@
 # src/config
 
-Project-level configuration: `settings.ts`, color schemes, tag vocabulary, sidebars, and i18n.
+Project-level configuration: `settings.ts`, tag vocabulary, sidebars, i18n, contrast utils, and frontmatter preview renderers. Color schemes are NOT here — the host copy was deleted in #2661 and they ship from `packages/zudo-doc/src/color-schemes-defaults/`.
 
 ## Tag Vocabulary
 
