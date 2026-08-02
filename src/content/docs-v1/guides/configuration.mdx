@@ -1,0 +1,24 @@
+---
+title: Configuration
+description: Configuring zudo-doc v1.0
+sidebar_position: 1
+---
+
+## Site Settings
+
+zudo-doc v1.0 is configured through `astro.config.mjs`, using the `zudoDoc()` integration.
+
+```js
+export default defineConfig({
+  integrations: [
+    zudoDoc({
+      siteName: "My Docs",
+      docsDir: "src/content/docs",
+    }),
+  ],
+});
+```
+
+## Color Schemes
+
+Choose from the bundled 16-color terminal palette by setting `colorScheme` in the integration options.
