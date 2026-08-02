@@ -1427,6 +1427,14 @@ describe("scaffold — generated package.json", () => {
     expect(pkg.devDependencies["html-validate"]).toBeUndefined();
   });
 
+  it("does NOT include @types/react in devDependencies", async () => {
+    // tsconfig.base.json's react-jsx + jsxImportSource: preact flip (#3182)
+    // makes @types/react unnecessary even after ejecting components (#3181/#3183).
+    await scaffold(baseChoices);
+    const pkg = await fs.readJson(projectPath("test-doc", "package.json"));
+    expect(pkg.devDependencies["@types/react"]).toBeUndefined();
+  });
+
   it("includes the required zfb packages, @takazudo/zudo-doc, and @takazudo/zdtp unconditionally", async () => {
     // diff and @takazudo/zdtp are unconditional dependencies regardless of
     // docHistory/designTokenPanel selection — packageOwnedRoutes always bundles
