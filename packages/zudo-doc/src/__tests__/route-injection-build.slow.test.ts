@@ -64,8 +64,9 @@ const FIXTURE_SRC = resolve(__dirname, "fixtures/route-injection");
  *  to exercise the locale-prefixed injected route (`/[locale]/docs/[[...slug]]`). */
 const FIXTURE_I18N_SRC = resolve(__dirname, "fixtures/route-injection-i18n");
 
-/** The locked 13-file target-manifest fixture (epic zudolab/zudo-doc#2651 Wave
- *  5, #2659) — see the "Case TM" section near the end of this file. */
+/** The locked 17-file target-manifest fixture (epic zudolab/zudo-doc#2651 Wave
+ *  5, #2659; grew 13 → 17 for the default favicon set, epic #3184 / #3186) —
+ *  see the "Case TM" section near the end of this file. */
 const TARGET_MANIFEST_FIXTURE_SRC = resolve(__dirname, "fixtures/target-manifest");
 
 /** The `@takazudo/zudo-doc` package root (…/packages/zudo-doc). */
@@ -1449,7 +1450,8 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
 // ---------------------------------------------------------------------------
 // Case TM — target-manifest confirm (epic zudolab/zudo-doc#2651 Wave 5, #2659).
 //
-// The locked 13-file minimal-scaffold manifest (#2653 decision wave):
+// The locked 17-file minimal-scaffold manifest (#2653 decision wave; grew
+// 13 → 17 when the default favicon set shipped, epic #3184 / #3186):
 //
 //   zfb.config.ts  package.json  tsconfig.json  CLAUDE.md  .gitignore  .npmrc
 //   pnpm-workspace.yaml
@@ -1457,8 +1459,9 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
 //   pages/docs/[[...slug]].tsx            — self-contained doc stub (REQUIRED)
 //   src/content/docs/getting-started/{index,introduction,installation}.mdx
 //   src/styles/global.css                 — ~22 ln
+//   public/{favicon.svg,favicon.ico,favicon-16x16.png,favicon-32x32.png}
 //
-// committed verbatim at fixtures/target-manifest/ (13 files, guarded by the
+// committed verbatim at fixtures/target-manifest/ (17 files, guarded by the
 // "group 6" file-count test below). Built from the NPM-PACKED package (mirrors
 // Case S1's `packPackage()`/tarball-extraction flow, not the cheap workspace
 // symlink `setupFixture()` used by Cases A–DTP/HOME/B) so the confirm proof
@@ -1480,7 +1483,7 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
 //   3. `zfb check` (tsc) passes with the 5-line tsconfig + pages/ included.
 //   4. `zfb dev` renders / and /docs/getting-started/ (200 + content marker).
 //   5. Computed-token smoke on built CSS (theme.css contract).
-//   6. Fixture file count == 12 (guards floor creep).
+//   6. Fixture file count == 17 (guards floor creep).
 // ---------------------------------------------------------------------------
 
 /** Set up a target-manifest fixture instance: copy the locked-manifest fixture
@@ -1658,12 +1661,12 @@ function countFilesRecursive(dir: string): number {
 }
 
 // ---------------------------------------------------------------------------
-// Group 6 — fixture file count == the locked 13-file manifest.
+// Group 6 — fixture file count == the locked 17-file manifest.
 // ---------------------------------------------------------------------------
 
-describe("TM group 6: fixture file count matches the locked 13-file manifest exactly", () => {
-  it("fixtures/target-manifest/ contains exactly 13 files (guards floor creep)", () => {
-    expect(countFilesRecursive(TARGET_MANIFEST_FIXTURE_SRC)).toBe(13);
+describe("TM group 6: fixture file count matches the locked 17-file manifest exactly", () => {
+  it("fixtures/target-manifest/ contains exactly 17 files (guards floor creep)", () => {
+    expect(countFilesRecursive(TARGET_MANIFEST_FIXTURE_SRC)).toBe(17);
   });
 });
 
