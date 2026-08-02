@@ -215,6 +215,15 @@ html[data-theme-pack="onyx"] body {
   letter-spacing: 0.005em;
 }
 
+/* Touch devices: background-attachment:fixed is unsupported (iOS Safari) or
+   repaint-heavy on scroll — fall back to scroll attachment. Catalog-wide
+   convention from issue #3070. */
+@media (pointer: coarse) {
+  html[data-theme-pack="onyx"] body {
+    background-attachment: scroll;
+  }
+}
+
 /* header: engraved nameplate over a gold hairline */
 html[data-theme-pack="onyx"] header[data-header] {
   border-bottom: 1px solid color-mix(in oklch, var(--zd-accent) 38%, transparent);

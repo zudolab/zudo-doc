@@ -245,6 +245,15 @@ html[data-theme-pack="blueprint"] body {
   background-attachment: fixed;
 }
 
+/* Touch devices: background-attachment:fixed is unsupported (iOS Safari) or
+   repaint-heavy on scroll — fall back to scroll attachment. Catalog-wide
+   convention from issue #3070. */
+@media (pointer: coarse) {
+  html[data-theme-pack="blueprint"] body {
+    background-attachment: scroll;
+  }
+}
+
 /* ---- title-block header: solid strip over the sheet, heavy rule
         with a second offset hairline (the double border of a
         drawing's title block) ---- */

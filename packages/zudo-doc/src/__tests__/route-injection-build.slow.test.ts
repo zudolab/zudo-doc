@@ -64,8 +64,9 @@ const FIXTURE_SRC = resolve(__dirname, "fixtures/route-injection");
  *  to exercise the locale-prefixed injected route (`/[locale]/docs/[[...slug]]`). */
 const FIXTURE_I18N_SRC = resolve(__dirname, "fixtures/route-injection-i18n");
 
-/** The locked 13-file target-manifest fixture (epic zudolab/zudo-doc#2651 Wave
- *  5, #2659) — see the "Case TM" section near the end of this file. */
+/** The locked 17-file target-manifest fixture (epic zudolab/zudo-doc#2651 Wave
+ *  5, #2659; grew 13 → 17 for the default favicon set, epic #3184 / #3186) —
+ *  see the "Case TM" section near the end of this file. */
 const TARGET_MANIFEST_FIXTURE_SRC = resolve(__dirname, "fixtures/target-manifest");
 
 /** The `@takazudo/zudo-doc` package root (…/packages/zudo-doc). */
@@ -90,6 +91,45 @@ const devServers: ChildProcess[] = [];
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/** Populate a packed-tarball fixture's `node_modules` with everything the build
+ *  needs EXCEPT `@takazudo/zudo-doc` itself (the caller extracts that from the
+ *  tarball).
+ *
+ *  Two source directories, in this order:
+ *
+ *  1. the workspace-root `node_modules` — the root package's own deps, plus
+ *     whatever pnpm happened to hoist there;
+ *  2. **this package's** `node_modules` — under pnpm's strict (non-hoisting)
+ *     layout a dependency declared only by `packages/zudo-doc/package.json`
+ *     lives HERE and is absent from the root entirely. `gray-matter` is the
+ *     load-bearing case: `dist/md-utils/index.js` imports it at build time, so
+ *     a root-only sweep produces `Cannot find package 'gray-matter' imported
+ *     from …/dist/md-utils/index.js` and every packed-tarball group fails
+ *     (zudolab/zudo-doc#3189).
+ *
+ *  Root wins on collision — pass 2 only fills gaps — so the resolution order a
+ *  real consumer sees is preserved. `@takazudo` is skipped in both passes; the
+ *  caller links that scope itself. */
+function linkFixtureNodeModules(nm: string): void {
+  const wsNm = join(WORKSPACE_ROOT, "node_modules");
+  const pkgNm = join(PKG_ROOT, "node_modules");
+
+  // readdirSync includes dotfiles (e.g. `.bin`) by default — unlike a bare
+  // shell glob, no `dotglob` equivalent needed here.
+  for (const entry of readdirSync(wsNm)) {
+    if (entry === "@takazudo") continue;
+    symlinkSync(join(wsNm, entry), join(nm, entry));
+  }
+
+  if (!existsSync(pkgNm)) return;
+  for (const entry of readdirSync(pkgNm)) {
+    if (entry === "@takazudo") continue;
+    // Root already provided it — keep the root copy (see "root wins" above).
+    if (existsSync(join(nm, entry))) continue;
+    symlinkSync(join(pkgNm, entry), join(nm, entry));
+  }
+}
 
 /** Create a temporary copy of the fixture, set up node_modules + pages symlinks,
  *  and write an empty `.zfb/doc-history-meta.json` seed so zfb can resolve the
@@ -265,6 +305,66 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
     expect(highlightedBlock).not.toMatch(/\bstyle=/);
   });
 
+  // #3179 — Case A2 fixture growth: `getting-started/coverage.mdx` is a
+  // second content file in the same fixture, exercising constructs
+  // `getting-started/index.mdx` never touched — hierarchical heading-ID
+  // collisions, a GFM task list, a GFM footnote, and both directive shapes
+  // (container + text). Standing coverage so a future zfb bump can't
+  // silently regress any of these. All four tests read the same
+  // `fixtureDir` built by the "setup" test above — no extra build needed.
+  it("coverage: /docs/getting-started/coverage/ HTML gives colliding heading texts distinct hierarchical ids", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
+    // "Overview" appears three times (h2, h4, h3) and "Details" twice (h3, h2)
+    // at different nesting depths; headingIds: { strategy: "hierarchical" }
+    // (pinned in the preset) must still give every one of them a distinct,
+    // ancestor-prefixed id rather than falling back to a `-1`/`-2` dedup
+    // counter (which would mean the allocator treated them as flat collisions).
+    const ids = [
+      "overview",
+      "overview-details",
+      "overview-details-overview",
+      "overview-configuration",
+      "details",
+      "details-overview",
+    ];
+    for (const id of ids) {
+      expectHtmlAttr(html, "id", id);
+    }
+    expect(html).not.toContain("id=overview-1");
+    expect(html).not.toContain("id=details-1");
+  });
+
+  it("coverage: /docs/getting-started/coverage/ HTML renders a GFM task list with checked + unchecked checkboxes", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
+    const checkboxes =
+      html
+        .match(/<input\b[^>]*>/g)
+        ?.filter((tag) => /\btype=(?:"checkbox"|'checkbox'|checkbox)(?=[\s>/])/.test(tag)) ?? [];
+    expect(checkboxes).toHaveLength(2);
+    expect(checkboxes.some((tag) => /\bchecked\b/.test(tag))).toBe(true);
+    expect(checkboxes.some((tag) => !/\bchecked\b/.test(tag))).toBe(true);
+  });
+
+  it("coverage: /docs/getting-started/coverage/ HTML renders a GFM footnote (reference + definition)", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
+    expect(html).toContain("data-footnote-ref");
+    expectHtmlAttr(html, "href", "#user-content-fn-coverage-note");
+    expectHtmlAttr(html, "id", "user-content-fn-coverage-note");
+    expect(html).toContain("data-footnote-backref");
+  });
+
+  it("coverage: /docs/getting-started/coverage/ HTML renders both directive shapes (container admonition + inline text directive)", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
+    // Container: `:::note` resolves through the canonical seven
+    // (`defaultDirectiveVocabulary`) to the real Admonition component.
+    expectHtmlAttr(html, "data-admonition", "note");
+    expect(html).toContain("<p class=admonition-title>Note</p>");
+    // Text: `:hl[…]` resolves to a plain `<mark>` intrinsic element
+    // (directiveVocabulary's `hl: { component: "mark", kind: "text" }`) —
+    // no component wiring needed, and it renders inline (not a block).
+    expect(html).toContain("<mark>highlighted inline text</mark>");
+  });
+
   // CB #2501 baseline: `settings.chromeBindingsModule` is unset in this
   // fixture, so `buildFrontmatterPreviewEntries` stays at its package-default
   // `() => []` stub and the FrontmatterPreview table stays absent — the
@@ -396,15 +496,102 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // three docs/chore commits, no engine behaviour change.
   //
   // All of it traces to already-merged, intentional PRs; no unattributed bytes.
+  //
+  // 2026-08-02 re-baseline (zudolab/zudo-doc#3188, epic #3174 "Theme Pack
+  // Polish"): the prior baseline (00873483a) was rebuilt in a worktree and its
+  // normalized HTML diffed byte-for-byte against HEAD. Both pages are
+  // byte-identical to the old build except for 14 pack version strings in the
+  // `packs` object literal of the inlined FOUC theme-pack bootstrap `<script>`
+  // (`src/theme/theme-pack-provider.tsx`, `{slug: version}` from each pack's
+  // `meta.json`) — the cache-busting `?v=` contract. Pure digit swaps: both
+  // files are the same byte length before and after, with zero additions and
+  // zero removals anywhere else in either page.
+  //   - `academia` 1.0.0 → 1.0.1 (#3175 — low-opacity rest-state link
+  //     underline + `pre.hi-root` 0.85rem → 0.9rem)
+  //   - the 13 packs carrying `background-attachment: fixed` decorative
+  //     layers, each bumped one patch for the catalog-wide
+  //     `@media (pointer: coarse) { … background-attachment: scroll }`
+  //     fallback (#3177, refs #3070): `blueprint` 1.0.0→1.0.1,
+  //     `broadsheet` 1.0.1→1.0.2, `drift` 1.0.1→1.0.2, `fjord` 1.0.1→1.0.2,
+  //     `hearth` 1.0.2→1.0.3, `hollow` 1.0.1→1.0.2, `matcha` 1.0.1→1.0.2,
+  //     `nocturne` 1.0.1→1.0.2, `observatory` 1.0.2→1.0.3, `onyx` 1.0.2→1.0.3,
+  //     `sakura` 1.0.0→1.0.1, `sumi` 1.0.2→1.0.3, `timberline` 1.0.0→1.0.1
+  // Neither pack's CSS *content* reaches these two fixture pages — only the
+  // version string does — so the whole delta is the version literal itself.
+  //
+  // Notable negative: this epic also extended the theme-pack validator to
+  // accept top-level `@media` blocks (#3176). That is build-time validation
+  // only and contributes ZERO bytes to either page.
+  //
+  // Caveat for the next re-baseliner: `dist/` is gitignored here, so a
+  // `git stash`-based "does the clean tree still fail?" check is NOT a valid
+  // baseline — the stash leaves the rebuilt `dist/theme-packs/` in place and
+  // the old source reads the NEW pack versions, producing a third hash that
+  // matches neither baseline. Rebuild the prior pin in a separate worktree
+  // (as this entry and the three above did) instead.
+  //
+  // All of it traces to already-merged, intentional PRs; no unattributed bytes.
+  //
+  // 2026-08-02 re-baseline (zudolab/zudo-doc#3179, A2 fixture-coverage growth):
+  // a second content file, `src/content/docs/getting-started/coverage.mdx`,
+  // was added to the fixture (see the "coverage:" tests above) to give the
+  // hierarchical heading-ID allocator, GFM task lists, GFM footnotes, and
+  // both directive shapes standing build coverage. Two of the three parity
+  // hashes below move as a direct, fully-accounted-for consequence:
+  //
+  //   - `/404.html` is UNCHANGED — confirmed byte-for-byte against a clean
+  //     rebuild of the prior fixture state (pre-#3179 zfb.config.ts, no
+  //     coverage.mdx) in a separate scratch directory, per the
+  //     `dist/`-is-gitignored caveat below (NOT a `git stash` check). 404 is
+  //     nav-isolated (`routes/404.tsx` sets `hideSidebar`/`sidebarOverride`),
+  //     so a new sibling doc page cannot reach it, and doesn't.
+  //   - `/docs/getting-started/index.html` MOVES, purely from the sidebar/
+  //     pager now having a second page in the "Getting Started" category:
+  //       * the `SidebarTree` island's `data-props` JSON gains a `children`
+  //         array entry for `getting-started/coverage`
+  //       * the "Getting Started" sidebar row, previously a childless leaf
+  //         link, gains the collapse/expand toggle button + a nested
+  //         one-item children list (category-with-children markup instead
+  //         of category-without-children markup)
+  //       * the doc-pager's `nav.next` slot, previously an empty `<div></div>`,
+  //         now renders a real link to the new Coverage page
+  //     No other bytes changed — confirmed by diffing this file's HTML
+  //     against the same clean rebuild used for the `/404.html` check above.
+  //   - A brand-new third hash, `/docs/getting-started/coverage/index.html`,
+  //     is added below (see the next `it`) for the new page itself.
+  //
+  // All of it traces to this one intentional, self-contained change; no
+  // unattributed bytes.
+  //
+  // 2026-08-02 re-baseline (zudolab/zudo-doc#3185, PR #3199, epic #3184
+  // "Favicon Set"): the prior baseline (a rebuild of the pre-#3185 source
+  // tree in a separate worktree) reproduced the old hashes exactly, so the
+  // delta below is the complete and only change — a single purely-additive
+  // one-line `<link rel="icon" type="image/svg+xml" href="...">` insertion,
+  // placed FIRST in the favicon set ahead of the existing `.ico`/`.png`
+  // entries, byte-identical across all three fixture pages, with zero
+  // removals anywhere (`packages/zudo-doc/src/head-with-defaults/index.tsx`).
+  // Confirmed against a `pnpm build` of the showcase: exactly four
+  // `rel="icon"` links per page, the new svg entry first with a
+  // base-prefixed href. Direct precedent: the #3140 entry above was itself a
+  // purely-additive head-`<link>` insertion.
+  //
+  // All of it traces to this one intentional, self-contained change; no
+  // unattributed bytes.
 
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"fc9f255bcbe396b00b1ab91fbfaac927800414d218ef7632b3ae7422beaacb5d"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"2579d75bf9dd6345c7fca83bdebfc6614d234002a549a713270b261e71eb71d9"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"f13ba12116041fa694aadf7c0755d7b8fffee15e7cac813ebb10ef773f35a205"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"dbd09e697b71f41f688eb9b23cce5f8d89a420a57a4ae2c2ab748931aede0b22"`);
+  });
+
+  it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"91eed9aa1e825d4ffb176e32d553102ec9af6667ae89dd0c7120757d4bdbd266"`);
   });
 });
 
@@ -1149,12 +1336,10 @@ function setupNoSrcFixture(fixtureSrc: string, tarballPath: string): string {
   const wsNm = join(WORKSPACE_ROOT, "node_modules");
   const nm = join(dir, "node_modules");
   mkdirSync(nm);
-  // Symlink every top-level workspace node_modules entry EXCEPT @takazudo
-  // (`.bin`, `.pnpm`, preact, zod, gray-matter, … all needed at build time).
-  for (const entry of readdirSync(wsNm)) {
-    if (entry === "@takazudo") continue;
-    symlinkSync(join(wsNm, entry), join(nm, entry));
-  }
+  // `.bin`, `.pnpm`, preact, zod, gray-matter, … all needed at build time.
+  // gray-matter comes from the PACKAGE's node_modules under pnpm, not the
+  // root — see linkFixtureNodeModules (#3189).
+  linkFixtureNodeModules(nm);
   // @takazudo: real dir; symlink every @takazudo/* EXCEPT zudo-doc.
   const scopeDir = join(nm, "@takazudo");
   mkdirSync(scopeDir);
@@ -1265,7 +1450,8 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
 // ---------------------------------------------------------------------------
 // Case TM — target-manifest confirm (epic zudolab/zudo-doc#2651 Wave 5, #2659).
 //
-// The locked 13-file minimal-scaffold manifest (#2653 decision wave):
+// The locked 17-file minimal-scaffold manifest (#2653 decision wave; grew
+// 13 → 17 when the default favicon set shipped, epic #3184 / #3186):
 //
 //   zfb.config.ts  package.json  tsconfig.json  CLAUDE.md  .gitignore  .npmrc
 //   pnpm-workspace.yaml
@@ -1273,8 +1459,9 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
 //   pages/docs/[[...slug]].tsx            — self-contained doc stub (REQUIRED)
 //   src/content/docs/getting-started/{index,introduction,installation}.mdx
 //   src/styles/global.css                 — ~22 ln
+//   public/{favicon.svg,favicon.ico,favicon-16x16.png,favicon-32x32.png}
 //
-// committed verbatim at fixtures/target-manifest/ (13 files, guarded by the
+// committed verbatim at fixtures/target-manifest/ (17 files, guarded by the
 // "group 6" file-count test below). Built from the NPM-PACKED package (mirrors
 // Case S1's `packPackage()`/tarball-extraction flow, not the cheap workspace
 // symlink `setupFixture()` used by Cases A–DTP/HOME/B) so the confirm proof
@@ -1296,7 +1483,7 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
 //   3. `zfb check` (tsc) passes with the 5-line tsconfig + pages/ included.
 //   4. `zfb dev` renders / and /docs/getting-started/ (200 + content marker).
 //   5. Computed-token smoke on built CSS (theme.css contract).
-//   6. Fixture file count == 12 (guards floor creep).
+//   6. Fixture file count == 17 (guards floor creep).
 // ---------------------------------------------------------------------------
 
 /** Set up a target-manifest fixture instance: copy the locked-manifest fixture
@@ -1320,12 +1507,7 @@ function setupTargetManifestFixture(
   const wsNm = join(WORKSPACE_ROOT, "node_modules");
   const nm = join(dir, "node_modules");
   mkdirSync(nm);
-  // readdirSync includes dotfiles (e.g. `.bin`) by default — unlike a bare
-  // shell glob, no `dotglob` equivalent needed here.
-  for (const entry of readdirSync(wsNm)) {
-    if (entry === "@takazudo") continue;
-    symlinkSync(join(wsNm, entry), join(nm, entry));
-  }
+  linkFixtureNodeModules(nm);
   const scopeDir = join(nm, "@takazudo");
   mkdirSync(scopeDir);
   for (const entry of readdirSync(join(wsNm, "@takazudo"))) {
@@ -1479,12 +1661,12 @@ function countFilesRecursive(dir: string): number {
 }
 
 // ---------------------------------------------------------------------------
-// Group 6 — fixture file count == the locked 13-file manifest.
+// Group 6 — fixture file count == the locked 17-file manifest.
 // ---------------------------------------------------------------------------
 
-describe("TM group 6: fixture file count matches the locked 13-file manifest exactly", () => {
-  it("fixtures/target-manifest/ contains exactly 13 files (guards floor creep)", () => {
-    expect(countFilesRecursive(TARGET_MANIFEST_FIXTURE_SRC)).toBe(13);
+describe("TM group 6: fixture file count matches the locked 17-file manifest exactly", () => {
+  it("fixtures/target-manifest/ contains exactly 17 files (guards floor creep)", () => {
+    expect(countFilesRecursive(TARGET_MANIFEST_FIXTURE_SRC)).toBe(17);
   });
 });
 

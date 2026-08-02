@@ -194,6 +194,15 @@ html[data-theme-pack="sakura"] body {
   background-attachment: fixed;
 }
 
+/* Touch devices: background-attachment:fixed is unsupported (iOS Safari) or
+   repaint-heavy on scroll — fall back to scroll attachment. Catalog-wide
+   convention from issue #3070. */
+@media (pointer: coarse) {
+  html[data-theme-pack="sakura"] body {
+    background-attachment: scroll;
+  }
+}
+
 /* header — a blush veil fading toward the right, petal hairline */
 html[data-theme-pack="sakura"] header[data-header] {
   background-image: linear-gradient(

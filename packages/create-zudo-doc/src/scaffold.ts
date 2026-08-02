@@ -784,16 +784,15 @@ function generatePackageJson(choices: UserChoices) {
   const devDeps: Record<string, string> = {
     typescript: "^5.9.0",
     "@types/node": "^22.0.0",
-    // REQUIRED — do not remove (verified by experiment, #3165/#3160).
-    // tsconfig.base.json sets `jsx: "preserve"`, under which TypeScript ignores
-    // the `/** @jsxImportSource preact */` pragma that ejected components carry
-    // and falls back to the GLOBAL `JSX` namespace — supplied only by
-    // @types/react's global.d.ts. Without it, any project that ejects a component
-    // (e.g. `src/components/zudo-doc/theme-toggle/`) fails `zfb check` with
-    // TS7026 "no interface 'JSX.IntrinsicElements' exists".
-    // (The repo-root copy of this dep IS removable — root .tsx files import
-    // `JSX` from preact locally. Do not "unify" the two.)
-    "@types/react": "^19.2.0",
+    // @types/react is intentionally ABSENT (#3181/#3183). tsconfig.base.json
+    // now sets `jsx: "react-jsx"` + `jsxImportSource: "preact"`, so TypeScript
+    // resolves `JSX.IntrinsicElements` from preact/jsx-runtime's own types —
+    // not from a global @types/react namespace. Ejected components (e.g.
+    // `src/components/zudo-doc/theme-toggle/`) typecheck cleanly under
+    // `zfb check` without it; verified by the create-zudo-doc `test:slow`
+    // post-eject build. Do not re-add this dep to work around a typecheck
+    // failure — that would mean the react-jsx flip regressed, which is worth
+    // reporting against #3181, not papering over here.
     // html-validate dropped — check:html is no longer a default script
     // (see the scripts block below; `.htmlvalidate.json` no longer ships).
   };

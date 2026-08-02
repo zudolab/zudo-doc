@@ -4,7 +4,7 @@
   "name": "Sakura",
   "description": "Cherry-blossom pastels — blush-white paper, plum ink, and rose accents on petal-soft corners; dark mode is yozakura, night blossoms under lantern-pink light.",
   "mode": "light",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "fonts": {
     "sans": "Nunito",
     "mono": "M PLUS 1 Code",

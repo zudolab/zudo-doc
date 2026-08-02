@@ -58,7 +58,8 @@ describe("tsconfig.base.json (#2656)", () => {
     expect(base.compilerOptions.target).toBe("ESNext");
     expect(base.compilerOptions.module).toBe("ESNext");
     expect(base.compilerOptions.moduleResolution).toBe("Bundler");
-    expect(base.compilerOptions.jsx).toBe("preserve");
+    expect(base.compilerOptions.jsx).toBe("react-jsx");
+    expect(base.compilerOptions.jsxImportSource).toBe("preact");
     expect(base.compilerOptions.baseUrl).toBe(".");
   });
 

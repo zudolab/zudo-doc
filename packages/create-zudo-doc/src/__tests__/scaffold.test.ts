@@ -84,8 +84,9 @@ const baseChoices: UserChoices = {
 // The locked manifest (#2653 Decision 4 / #2660 completion comment).
 // ---------------------------------------------------------------------------
 
-/** The locked ~13-file barebone (EN-only) manifest. Grew from 12 to 13 with
- *  pnpm-workspace.yaml (#2923 — disables pnpm 11's minimumReleaseAge gate). */
+/** The locked ~17-file barebone (EN-only) manifest. Grew from 12 to 13 with
+ *  pnpm-workspace.yaml (#2923 — disables pnpm 11's minimumReleaseAge gate),
+ *  then from 13 to 17 with the default public/ favicon set (#3186). */
 const BAREBONE_MANIFEST = [
   ".gitignore",
   ".npmrc",
@@ -94,6 +95,10 @@ const BAREBONE_MANIFEST = [
   "pages/docs/[[...slug]].tsx",
   "pages/index.tsx",
   "pnpm-workspace.yaml",
+  "public/favicon-16x16.png",
+  "public/favicon-32x32.png",
+  "public/favicon.ico",
+  "public/favicon.svg",
   "src/content/docs/getting-started/index.mdx",
   "src/content/docs/getting-started/installation.mdx",
   "src/content/docs/getting-started/introduction.mdx",
@@ -131,7 +136,7 @@ const ALL_FEATURES = [
   "noindex",
 ];
 
-describe("scaffold — barebone manifest (locked 13-file shape, #2653 Decision 4)", () => {
+describe("scaffold — barebone manifest (locked 17-file shape, #2653 Decision 4)", () => {
   let files: string[];
 
   beforeAll(async () => {
@@ -144,7 +149,7 @@ describe("scaffold — barebone manifest (locked 13-file shape, #2653 Decision 4
     await fs.remove(dir);
   });
 
-  it("emits EXACTLY the 13 locked-manifest files — no more, no less", () => {
+  it("emits EXACTLY the 17 locked-manifest files — no more, no less", () => {
     expect(files).toEqual(BAREBONE_MANIFEST);
   });
 });
@@ -803,7 +808,7 @@ describe("scaffold — changelog feature", () => {
 });
 
 describe("scaffold — every-feature manifest is exactly base + the documented per-feature deltas", () => {
-  it("all-on scaffold emits exactly the expected 39-file set", async () => {
+  it("all-on scaffold emits exactly the expected 43-file set", async () => {
     await scaffold({
       ...baseChoices,
       projectName: "test-all-on",
@@ -822,6 +827,10 @@ describe("scaffold — every-feature manifest is exactly base + the documented p
       "pages/docs/[[...slug]].tsx",
       "pages/index.tsx",
       "pnpm-workspace.yaml",
+      "public/favicon-16x16.png",
+      "public/favicon-32x32.png",
+      "public/favicon.ico",
+      "public/favicon.svg",
       "scripts/setup-doc-skill.sh",
       "src-tauri-dev/.gitignore",
       "src-tauri-dev/Cargo.toml",
@@ -1425,6 +1434,14 @@ describe("scaffold — generated package.json", () => {
     await scaffold(baseChoices);
     const pkg = await fs.readJson(projectPath("test-doc", "package.json"));
     expect(pkg.devDependencies["html-validate"]).toBeUndefined();
+  });
+
+  it("does NOT include @types/react in devDependencies", async () => {
+    // tsconfig.base.json's react-jsx + jsxImportSource: preact flip (#3182)
+    // makes @types/react unnecessary even after ejecting components (#3181/#3183).
+    await scaffold(baseChoices);
+    const pkg = await fs.readJson(projectPath("test-doc", "package.json"));
+    expect(pkg.devDependencies["@types/react"]).toBeUndefined();
   });
 
   it("includes the required zfb packages, @takazudo/zudo-doc, and @takazudo/zdtp unconditionally", async () => {

@@ -183,6 +183,15 @@ html[data-theme-pack="matcha"] body {
   background-attachment: fixed;
 }
 
+/* Touch devices: background-attachment:fixed is unsupported (iOS Safari) or
+   repaint-heavy on scroll — fall back to scroll attachment. Catalog-wide
+   convention from issue #3070. */
+@media (pointer: coarse) {
+  html[data-theme-pack="matcha"] body {
+    background-attachment: scroll;
+  }
+}
+
 /* zen prose: let the reading column breathe. The package flow-space
    rhythm (vsp-2xl h2 / vsp-xl h3) already sits within 0.1rem of the
    prototype's spacing, so only the line-height lever is ported. */

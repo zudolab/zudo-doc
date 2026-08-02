@@ -4,7 +4,7 @@
   "name": "Academia",
   "description": "A LaTeX paper for the web — white page, Computer-Modern-black ink, hyperref navy links, numbered theorem admonitions, booktabs tables. Dark mode is a scholarly slate.",
   "mode": "light",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "fonts": {
     "sans": "Source Serif 4",
     "mono": "Courier Prime",

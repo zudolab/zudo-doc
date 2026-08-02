@@ -367,7 +367,7 @@ specifier end-to-end.
    Carries every `compilerOptions` flag the pre-package-first project template
    (`packages/create-zudo-doc/templates/base/tsconfig.json`) hand-rolled
    (strict + `noImplicit*` set, `target`/`module`/`moduleResolution`, `jsx:
-   "preserve"`, …), **plus** a top-level `files: ["./zfb-config-shim.d.ts",
+   "react-jsx"` + `jsxImportSource: "preact"`, …), **plus** a top-level `files: ["./zfb-config-shim.d.ts",
    "./virtual-modules.d.ts"]` to pull in the two ambient shims below.
    - **MUST ship the shims via `files`, never `include`.** `files`/`include`/
      `exclude` are all **override-only across `extends`** (the inheriting
@@ -450,11 +450,15 @@ that (transitively) extends it. So if that `paths` block lived in
 `tsconfig.base.json`, `./node_modules/preact/compat/` would resolve inside
 `node_modules/@takazudo/zudo-doc/node_modules/…` — wrong, and generally
 absent (preact is hoisted to the consumer's own top-level `node_modules`).
-This matters because the project template's `jsx: "preserve"` mode still
-needs JSX-namespace types resolved through the `"react"` specifier for every
-`.tsx` file — without a correct mapping, `zfb check` fails to resolve
-`"react"` on ANY JSX file (there's no real `react` package installed; this is
-a preact-only project).
+This still matters under `jsx: "react-jsx"` + `jsxImportSource: "preact"`
+(flipped from `"preserve"` in #3182): the jsx-typing motivation for the
+mapping is gone — the automatic runtime resolves JSX-namespace types through
+`jsxImportSource`, not through the `"react"` specifier — but the mapping
+itself is still load-bearing for plain type-only imports. Some files
+genuinely `import type { ReactNode } from "react"` (e.g.
+`src/config/frontmatter-preview-renderers.tsx`), and without this mapping
+`zfb check` fails to resolve `"react"` on those files (there's no real
+`react` package installed; this is a preact-only project).
 
 **Resolution (locked, verified empirically against the base tsconfig in a
 scratch fixture): keep the `react*`/`@/*` `paths` block in the PROJECT's own
