@@ -66,8 +66,9 @@ export interface ThemePackValidationResult {
 // ---------------------------------------------------------------------------
 // CSS scanning helpers — intentionally simple (regex / brace-depth), NOT a
 // full CSS parser. Sufficient for the flat, hand-authored pack.css shape the
-// authoring conventions (Decision 6) mandate (no nested at-rules besides
-// `@font-face`, no CSS nesting).
+// authoring conventions (Decision 6) mandate: no nested at-rules besides
+// `@font-face` (top-level only) and a single level of top-level `@media`
+// wrapping pack-scoped rules; no CSS nesting.
 // ---------------------------------------------------------------------------
 
 function stripComments(css: string): string {
@@ -83,16 +84,39 @@ interface CssRule {
 
 /** Split a CSS source into its top-level `prelude { body }` rules. Any stray
  *  `;`-terminated at-statement preceding a rule (e.g. an errant `@import`) is
- *  stripped out of the captured prelude rather than misattributed to it. */
-function parseTopLevelRules(css: string): CssRule[] {
+ *  stripped out of the captured prelude rather than misattributed to it — by
+ *  default this is a silent discard (the pre-existing, intentional top-level
+ *  behavior). Pass `onBareStatement` to observe every discarded statement
+ *  instead, including one trailing after the last rule with no `{` left to
+ *  attach to (otherwise never scanned at all); `checkScoping` uses this to
+ *  reject a rogue `@layer foo;`/`@import …;`-shaped statement hiding inside
+ *  an unwrapped `@media` body rather than letting it silently bypass the
+ *  scoping requirement. */
+function parseTopLevelRules(
+  css: string,
+  onBareStatement?: (statement: string) => void,
+): CssRule[] {
   const text = stripComments(css);
   const rules: CssRule[] = [];
   const n = text.length;
   let i = 0;
+  const reportBareStatements = (segment: string): void => {
+    if (!onBareStatement) return;
+    const re = /@[a-zA-Z-]+[^{;]*;/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(segment)) !== null) {
+      onBareStatement(m[0].trim());
+    }
+  };
   while (i < n) {
     const braceIdx = text.indexOf("{", i);
-    if (braceIdx === -1) break;
-    const preludeRaw = text.slice(i, braceIdx).replace(/@[a-zA-Z-]+[^{;]*;/g, "");
+    if (braceIdx === -1) {
+      reportBareStatements(text.slice(i));
+      break;
+    }
+    const preludeSegment = text.slice(i, braceIdx);
+    reportBareStatements(preludeSegment);
+    const preludeRaw = preludeSegment.replace(/@[a-zA-Z-]+[^{;]*;/g, "");
     const prelude = preludeRaw.trim();
     let depth = 1;
     let j = braceIdx + 1;
@@ -111,6 +135,10 @@ function parseTopLevelRules(css: string): CssRule[] {
 
 function isFontFaceRule(rule: CssRule): boolean {
   return /^@font-face\b/i.test(rule.prelude);
+}
+
+function isMediaRule(rule: CssRule): boolean {
+  return /^@media\b/i.test(rule.prelude);
 }
 
 function extractFontFaceFamilies(cssContent: string): string[] {
@@ -180,9 +208,8 @@ function checkScoping(
   issues: ThemePackValidationIssue[],
 ): void {
   const prefix = `html[data-theme-pack="${slug}"]`;
-  for (const rule of parseTopLevelRules(cssContent)) {
-    if (isFontFaceRule(rule)) continue; // allowed exception — @font-face can't be selector-scoped
-    for (const rawBranch of rule.prelude.split(",")) {
+  const checkPrelude = (prelude: string): void => {
+    for (const rawBranch of prelude.split(",")) {
       const branch = rawBranch.trim();
       if (branch.length === 0) continue;
       if (!branch.startsWith(prefix)) {
@@ -193,6 +220,34 @@ function checkScoping(
         });
       }
     }
+  };
+  for (const rule of parseTopLevelRules(cssContent)) {
+    if (isFontFaceRule(rule)) continue; // allowed exception — @font-face can't be selector-scoped
+    if (isMediaRule(rule)) {
+      // Unwrap ONE level: every rule inside a top-level @media block must
+      // still satisfy the same scoping requirement. @font-face loses its
+      // top-level exemption here (no pack needs conditional font loading —
+      // keeping @font-face top-level-only also preserves font-face-parity's
+      // simple whole-file scan), and any at-rule nested a second level (e.g.
+      // @supports inside @media) is rejected on the same path: its prelude
+      // is never a pack-scoped selector, so checkPrelude flags it below. A
+      // semicolon-form at-rule statement (e.g. a rogue `@layer foo;`) has no
+      // prelude/body shape for checkPrelude to see at all — parseTopLevelRules
+      // would otherwise silently discard it, so it's reported explicitly here
+      // instead of being allowed to bypass scoping.
+      const innerRules = parseTopLevelRules(rule.body, (statement) => {
+        issues.push({
+          rule: "scoping",
+          severity: "error",
+          message: `at-rule statement "${statement}" inside @media is not a pack-scoped rule and is not allowed`,
+        });
+      });
+      for (const innerRule of innerRules) {
+        checkPrelude(innerRule.prelude);
+      }
+      continue;
+    }
+    checkPrelude(rule.prelude);
   }
 }
 

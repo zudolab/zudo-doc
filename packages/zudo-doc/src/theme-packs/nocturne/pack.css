@@ -216,6 +216,15 @@ html[data-theme-pack="nocturne"] body {
   background-attachment: fixed;
 }
 
+/* Touch devices: background-attachment:fixed is unsupported (iOS Safari) or
+   repaint-heavy on scroll — fall back to scroll attachment. Catalog-wide
+   convention from issue #3070. */
+@media (pointer: coarse) {
+  html[data-theme-pack="nocturne"] body {
+    background-attachment: scroll;
+  }
+}
+
 /* header: velvet band under a gold hairline */
 html[data-theme-pack="nocturne"] header[data-header] {
   border-bottom-color: light-dark(oklch(0.53 0.105 85 / 0.45), oklch(0.78 0.105 87 / 0.45));
