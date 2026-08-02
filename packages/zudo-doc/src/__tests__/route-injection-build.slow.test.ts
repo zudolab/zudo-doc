@@ -91,6 +91,45 @@ const devServers: ChildProcess[] = [];
 // Helpers
 // ---------------------------------------------------------------------------
 
+/** Populate a packed-tarball fixture's `node_modules` with everything the build
+ *  needs EXCEPT `@takazudo/zudo-doc` itself (the caller extracts that from the
+ *  tarball).
+ *
+ *  Two source directories, in this order:
+ *
+ *  1. the workspace-root `node_modules` — the root package's own deps, plus
+ *     whatever pnpm happened to hoist there;
+ *  2. **this package's** `node_modules` — under pnpm's strict (non-hoisting)
+ *     layout a dependency declared only by `packages/zudo-doc/package.json`
+ *     lives HERE and is absent from the root entirely. `gray-matter` is the
+ *     load-bearing case: `dist/md-utils/index.js` imports it at build time, so
+ *     a root-only sweep produces `Cannot find package 'gray-matter' imported
+ *     from …/dist/md-utils/index.js` and every packed-tarball group fails
+ *     (zudolab/zudo-doc#3189).
+ *
+ *  Root wins on collision — pass 2 only fills gaps — so the resolution order a
+ *  real consumer sees is preserved. `@takazudo` is skipped in both passes; the
+ *  caller links that scope itself. */
+function linkFixtureNodeModules(nm: string): void {
+  const wsNm = join(WORKSPACE_ROOT, "node_modules");
+  const pkgNm = join(PKG_ROOT, "node_modules");
+
+  // readdirSync includes dotfiles (e.g. `.bin`) by default — unlike a bare
+  // shell glob, no `dotglob` equivalent needed here.
+  for (const entry of readdirSync(wsNm)) {
+    if (entry === "@takazudo") continue;
+    symlinkSync(join(wsNm, entry), join(nm, entry));
+  }
+
+  if (!existsSync(pkgNm)) return;
+  for (const entry of readdirSync(pkgNm)) {
+    if (entry === "@takazudo") continue;
+    // Root already provided it — keep the root copy (see "root wins" above).
+    if (existsSync(join(nm, entry))) continue;
+    symlinkSync(join(pkgNm, entry), join(nm, entry));
+  }
+}
+
 /** Create a temporary copy of the fixture, set up node_modules + pages symlinks,
  *  and write an empty `.zfb/doc-history-meta.json` seed so zfb can resolve the
  *  `#doc-history-meta` import on the first run. Returns the temp dir path.
@@ -1184,12 +1223,10 @@ function setupNoSrcFixture(fixtureSrc: string, tarballPath: string): string {
   const wsNm = join(WORKSPACE_ROOT, "node_modules");
   const nm = join(dir, "node_modules");
   mkdirSync(nm);
-  // Symlink every top-level workspace node_modules entry EXCEPT @takazudo
-  // (`.bin`, `.pnpm`, preact, zod, gray-matter, … all needed at build time).
-  for (const entry of readdirSync(wsNm)) {
-    if (entry === "@takazudo") continue;
-    symlinkSync(join(wsNm, entry), join(nm, entry));
-  }
+  // `.bin`, `.pnpm`, preact, zod, gray-matter, … all needed at build time.
+  // gray-matter comes from the PACKAGE's node_modules under pnpm, not the
+  // root — see linkFixtureNodeModules (#3189).
+  linkFixtureNodeModules(nm);
   // @takazudo: real dir; symlink every @takazudo/* EXCEPT zudo-doc.
   const scopeDir = join(nm, "@takazudo");
   mkdirSync(scopeDir);
@@ -1355,12 +1392,7 @@ function setupTargetManifestFixture(
   const wsNm = join(WORKSPACE_ROOT, "node_modules");
   const nm = join(dir, "node_modules");
   mkdirSync(nm);
-  // readdirSync includes dotfiles (e.g. `.bin`) by default — unlike a bare
-  // shell glob, no `dotglob` equivalent needed here.
-  for (const entry of readdirSync(wsNm)) {
-    if (entry === "@takazudo") continue;
-    symlinkSync(join(wsNm, entry), join(nm, entry));
-  }
+  linkFixtureNodeModules(nm);
   const scopeDir = join(nm, "@takazudo");
   mkdirSync(scopeDir);
   for (const entry of readdirSync(join(wsNm, "@takazudo"))) {
