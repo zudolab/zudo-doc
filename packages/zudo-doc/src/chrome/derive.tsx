@@ -223,7 +223,7 @@ export function deriveNavDataPrep(ctx: ChromeContext) {
       currentVersion,
       ctx.settings.headerNav,
       (key, l) => ctx.t(key, l),
-      (path, l, v) => ctx.navHref(path, l, v),
+      (path, l, v, versioned) => ctx.navHref(path, l, v, versioned),
     );
   }
 

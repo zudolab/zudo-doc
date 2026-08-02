@@ -78,7 +78,9 @@ describe("buildRootMenuItems", () => {
     path: string,
     lang: string | undefined,
     version: string | undefined,
-  ) => `${version ? `/v/${version}` : ""}${lang && lang !== "en" ? `/${lang}` : ""}${path}`;
+    versioned = true,
+  ) =>
+    `${versioned && version ? `/v/${version}` : ""}${lang && lang !== "en" ? `/${lang}` : ""}${path}`;
 
   it("uses labelKey via t() when present", () => {
     const items = buildRootMenuItems(
@@ -136,6 +138,49 @@ describe("buildRootMenuItems", () => {
       navHref,
     );
     expect(items[0]?.children).toBeUndefined();
+  });
+
+  // Reach-assertion (3/4, mobile/root-menu output) for headerNav's `versioned`
+  // flag (#3216/#3190) — buildRootMenuItems is the builder behind the mobile
+  // "back to menu" list rendered by SidebarToggle.
+  it("suppresses the version prefix for a top-level item with versioned: false", () => {
+    const items = buildRootMenuItems(
+      "en",
+      "1.0",
+      [{ label: "Claude", path: "/docs/claude/", versioned: false }],
+      t,
+      navHref,
+    );
+    expect(items[0]?.href).toBe("/docs/claude/");
+  });
+
+  it("suppresses the version prefix for a child item with versioned: false", () => {
+    const headerNav: NavDataPrepHeaderNavItem[] = [
+      {
+        label: "Guides",
+        path: "/docs/guides/",
+        children: [
+          { label: "Intro", path: "/docs/guides/intro/", versioned: false },
+          { label: "Advanced", path: "/docs/guides/advanced/" },
+        ],
+      },
+    ];
+    const items = buildRootMenuItems("en", "1.0", headerNav, t, navHref);
+    expect(items[0]?.children).toEqual([
+      { label: "Intro", href: "/docs/guides/intro/" },
+      { label: "Advanced", href: "/v/1.0/docs/guides/advanced/" },
+    ]);
+  });
+
+  it("keeps the version prefix when versioned is omitted (default true)", () => {
+    const items = buildRootMenuItems(
+      "en",
+      "1.0",
+      [{ label: "Guides", path: "/docs/guides/" }],
+      t,
+      navHref,
+    );
+    expect(items[0]?.href).toBe("/v/1.0/docs/guides/");
   });
 });
 

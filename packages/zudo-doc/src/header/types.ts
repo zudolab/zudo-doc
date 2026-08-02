@@ -26,6 +26,13 @@ export interface HeaderNavChildItem {
   labelKey?: string;
   path: string;
   categoryMatch?: string;
+  /**
+   * Whether links built from this item's `path` carry the active `/v/{version}`
+   * prefix. `false` targets a route that has no versioned counterpart, so its
+   * href must stay unversioned even when rendered under an active version.
+   * Default `true`.
+   */
+  versioned?: boolean;
 }
 
 export interface HeaderNavItem extends HeaderNavChildItem {

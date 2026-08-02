@@ -24,10 +24,14 @@ export interface NavDataPrepHeaderNavItem {
   label: string;
   labelKey?: string;
   path: string;
+  /** Suppress the `/v/{version}` prefix on this item's href when `false`. Default `true`. */
+  versioned?: boolean;
   children?: Array<{
     label: string;
     labelKey?: string;
     path: string;
+    /** Suppress the `/v/{version}` prefix on this child's href when `false`. Default `true`. */
+    versioned?: boolean;
   }>;
 }
 
@@ -93,18 +97,23 @@ export function buildRootMenuItems(
   currentVersion: string | undefined,
   headerNav: NavDataPrepHeaderNavItem[],
   t: (key: string, lang: string) => string,
-  navHref: (path: string, lang: string | undefined, version: string | undefined) => string,
+  navHref: (
+    path: string,
+    lang: string | undefined,
+    version: string | undefined,
+    versioned?: boolean,
+  ) => string,
 ): RootMenuItem[] {
   return headerNav.map((item) => ({
     label: item.labelKey
       ? t(item.labelKey, lang)
       : item.label,
-    href: navHref(item.path, lang, currentVersion),
+    href: navHref(item.path, lang, currentVersion, item.versioned),
     children: item.children?.map((child) => ({
       label: child.labelKey
         ? t(child.labelKey, lang)
         : child.label,
-      href: navHref(child.path, lang, currentVersion),
+      href: navHref(child.path, lang, currentVersion, child.versioned),
     })),
   }));
 }

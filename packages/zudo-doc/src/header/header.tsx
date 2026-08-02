@@ -76,6 +76,7 @@ export interface HeaderUrlHelpers {
     path: string,
     lang?: Locale,
     currentVersion?: string,
+    versioned?: boolean,
   ): string;
 }
 
@@ -444,7 +445,7 @@ function renderNavItem(
   const isActive =
     isNavItemActiveByCategory(item, activeCategory) ||
     isNavItemActive(item, activeNavPath);
-  const href = urlHelpers.navHref(item.path, lang, currentVersion);
+  const href = urlHelpers.navHref(item.path, lang, currentVersion, item.versioned);
   const label = item.labelKey ? i18n.t(item.labelKey, lang) : item.label;
 
   if (item.children && item.children.length > 0) {
@@ -488,7 +489,7 @@ function renderNavItem(
         <div class="absolute left-0 top-full z-dropdown hidden group-hover:block group-focus-within:block pt-vsp-3xs">
           <div class="min-w-[10rem] border border-muted rounded bg-surface shadow-lg py-vsp-3xs">
             {item.children.map((child) => {
-              const childHref = urlHelpers.navHref(child.path, lang, currentVersion);
+              const childHref = urlHelpers.navHref(child.path, lang, currentVersion, child.versioned);
               const childLabel = child.labelKey
                 ? i18n.t(child.labelKey, lang)
                 : child.label;

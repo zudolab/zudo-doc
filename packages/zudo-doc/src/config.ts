@@ -121,6 +121,7 @@ export const DEFAULT_SETTINGS: Settings = {
   home: { wide: false },
   minifyHtml: true,
   docsDir: "src/content/docs",
+  entryDocSlug: "getting-started",
   defaultLocale: "en",
   locales: {},
   mermaid: true,
@@ -243,6 +244,15 @@ export interface ZudoDocConfig {
    * @default "src/content/docs"
    */
   docsDir?: string;
+  /**
+   * Route slug of the doc page the versions page links to as the "latest
+   * docs" entry point (and as each past version's docs link). Convention: no
+   * leading/trailing slashes, e.g. `"getting-started"` or
+   * `"overview/getting-started"`. Not validated at runtime — an invalid slug
+   * simply 404s.
+   * @default "getting-started"
+   */
+  entryDocSlug?: string;
   /**
    * Default locale code (unprefixed routes).
    * @default "en"
