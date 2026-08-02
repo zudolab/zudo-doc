@@ -79,6 +79,7 @@ import {
   type HtmlPreviewWrapperProps,
 } from "../html-preview-wrapper/index.js";
 import { createInlineVersionSwitcher } from "../inline-version-switcher/index.js";
+import { createGetUnavailableVersions } from "../version-availability/index.js";
 import {
   buildRootMenuItems as buildRootMenuItemsBase,
   buildLocaleLinksForNav as buildLocaleLinksForNavBase,
@@ -397,6 +398,27 @@ export function deriveDocHistorySlot(ctx: ChromeContext) {
 }
 
 // ---------------------------------------------------------------------------
+// unavailableVersions (inline + header version switchers)
+// ---------------------------------------------------------------------------
+
+/**
+ * Derive `getUnavailableVersions(slug, locale)`, shared by the inline
+ * breadcrumb switcher (`deriveInlineVersionSwitcher` below) and the header
+ * dropdown switcher (`createHeaderWithDefaults`) — the genuinely
+ * multi-factory piece of #3215's availability computation, so both callers
+ * wire the SAME implementation instead of re-deriving the recipe.
+ */
+export function deriveGetUnavailableVersions(
+  ctx: ChromeContext,
+): (slug: string | undefined, locale: string) => ReadonlySet<string> | undefined {
+  return createGetUnavailableVersions({
+    versions: (ctx.settings as { versions: Array<{ slug: string }> | false }).versions,
+    resolveNavSource: ctx.resolveNavSource,
+    toRouteSlug: ctx.toRouteSlug,
+  });
+}
+
+// ---------------------------------------------------------------------------
 // inline version switcher (renderDocPage)
 // ---------------------------------------------------------------------------
 
@@ -409,6 +431,7 @@ export function deriveInlineVersionSwitcher(ctx: ChromeContext) {
     docsUrl: ctx.docsUrl,
     versionedDocsUrl: ctx.versionedDocsUrl,
     withBase: ctx.withBase,
+    getUnavailableVersions: deriveGetUnavailableVersions(ctx),
   });
 }
 

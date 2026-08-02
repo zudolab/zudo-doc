@@ -42,6 +42,18 @@ export interface InlineVersionSwitcherDeps {
   versionedDocsUrl: (slug: string, versionSlug: string, lang?: string) => string;
   /** Prefix a path with the configured base directory. */
   withBase: (path: string) => string;
+  /**
+   * Slugs of configured versions where the given (slug, locale) is NOT
+   * available — passed straight through as `<VersionSwitcher
+   * unavailableVersions>` so absent pages render disabled instead of 404
+   * links (#3215). Returns `undefined` when there is no availability data to
+   * compute (the shared helper already handles the no-slug/no-versions
+   * gates — see `version-availability`).
+   */
+  getUnavailableVersions: (
+    slug: string | undefined,
+    locale: string,
+  ) => ReadonlySet<string> | undefined;
 }
 
 /**
@@ -53,7 +65,8 @@ export function createInlineVersionSwitcher(deps: InlineVersionSwitcherDeps): (
   locale: string,
   currentVersion?: string,
 ) => JSX.Element | undefined {
-  const { settings, defaultLocale, t, docsUrl, versionedDocsUrl, withBase } = deps;
+  const { settings, defaultLocale, t, docsUrl, versionedDocsUrl, withBase, getUnavailableVersions } =
+    deps;
 
   /**
    * Build an inline VersionSwitcher element for the `<Breadcrumb rightSlot>` prop.
@@ -95,6 +108,8 @@ export function createInlineVersionSwitcher(deps: InlineVersionSwitcherDeps): (
       allVersions: t("version.switcher.allVersions", locale),
     };
 
+    const unavailableVersions = getUnavailableVersions(slug, locale);
+
     return (
       <VersionSwitcher
         versions={settings.versions.map((v) => ({
@@ -105,6 +120,7 @@ export function createInlineVersionSwitcher(deps: InlineVersionSwitcherDeps): (
         latestUrl={latestUrl}
         versionsPageUrl={versionsPageUrl}
         versionUrls={versionUrls}
+        unavailableVersions={unavailableVersions}
         labels={labels}
         idSuffix="inline"
       />
