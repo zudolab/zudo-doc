@@ -275,11 +275,6 @@ export interface ZudoDocConfig {
    */
   githubUrl?: string | false;
   /**
-   * "owner/repo" — enables `#123` / SHA autolinks in markdown. Omit to disable.
-   * @default undefined
-   */
-  githubAutolinksRepo?: string;
-  /**
    * Canonical site origin (e.g. `"https://example.com"`) for sitemap /
    * canonical / og:url. Empty = not set.
    * @default ""

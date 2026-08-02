@@ -636,7 +636,6 @@ describe("generateZfbConfig — never emits escape-hatch / shell / package-only 
       "siteDescription:",
       "mermaid:",
       "editUrl:",
-      "githubAutolinksRepo",
       "siteUrl:",
       "head:",
       "sitemap:",
