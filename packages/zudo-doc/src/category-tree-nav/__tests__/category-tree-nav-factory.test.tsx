@@ -118,3 +118,46 @@ describe("createCategoryTreeNavWrapper — version threading (#3218)", () => {
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// Back-compat: the pre-#3218 slug-less node shape
+// ---------------------------------------------------------------------------
+
+describe("createCategoryTreeNavWrapper — back-compat: pre-#3218 slug-less node shape", () => {
+  // `CategoryTreeNavNode.slug` is optional (frozen public subpath back-compat
+  // — see the field's doc comment in ../index.js). These literals are the exact
+  // nodes a pre-#3218 consumer's `buildNavTree` emits; the explicit
+  // `CategoryTreeNavNode[]` annotation is the compile-time half of the guard —
+  // the package typecheck (`pnpm --filter @takazudo/zudo-doc typecheck`, gated
+  // in b4push and CI) fails here if `slug` is ever made required again.
+  const legacyTree: CategoryTreeNavNode[] = [
+    {
+      label: "guides",
+      hasPage: true,
+      href: "/docs/guides",
+      children: [
+        { label: "layout", hasPage: true, href: "/docs/guides/layout", children: [] },
+      ],
+    },
+  ];
+
+  const legacyDeps = (): CategoryTreeNavDeps =>
+    makeDeps({
+      buildNavTree: () => legacyTree,
+      // A pre-#3218 consumer's findNode matched on its own key, not on `slug`.
+      findNode: (tree, key) => tree.find((n) => n.label === key),
+    });
+
+  it("renders unversioned children, unchanged from the pre-#3218 behavior", () => {
+    const result = createCategoryTreeNavWrapper(legacyDeps())({ category: "guides" });
+    expect(childHrefsOf(result)).toEqual(["/docs/guides/layout"]);
+  });
+
+  it("with a version requested: hrefs stay verbatim (nothing to rebuild them from) and nothing throws", () => {
+    const result = createCategoryTreeNavWrapper(legacyDeps())({
+      category: "guides",
+      currentVersion: "1.0",
+    });
+    expect(childHrefsOf(result)).toEqual(["/docs/guides/layout"]);
+  });
+});

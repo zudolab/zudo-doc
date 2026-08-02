@@ -49,8 +49,17 @@ export interface InlineVersionSwitcherDeps {
    * links (#3215). Returns `undefined` when there is no availability data to
    * compute (the shared helper already handles the no-slug/no-versions
    * gates — see `version-availability`).
+   *
+   * Optional — `./inline-version-switcher` is a documented frozen-1.0 public
+   * subpath (`packages/zudo-doc/CLAUDE.md`/`API.md`), so a pre-#3215 caller
+   * that hand-constructs `InlineVersionSwitcherDeps` without this field must
+   * keep compiling. Omitting it reports no version as unavailable — byte-for-
+   * byte the pre-#3215 rendering — so unlike the nav wrappers' optional
+   * `versionedDocsUrl` (whose absence yields hrefs that escape the version
+   * silo) there is nothing degraded to warn about, and this builder runs on
+   * every versioned doc page so a warning would be pure per-page noise.
    */
-  getUnavailableVersions: (
+  getUnavailableVersions?: (
     slug: string | undefined,
     locale: string,
   ) => ReadonlySet<string> | undefined;
@@ -108,7 +117,9 @@ export function createInlineVersionSwitcher(deps: InlineVersionSwitcherDeps): (
       allVersions: t("version.switcher.allVersions", locale),
     };
 
-    const unavailableVersions = getUnavailableVersions(slug, locale);
+    // Omitted dep → undefined, which `<VersionSwitcher>` reads as "nothing is
+    // unavailable" (the pre-#3215 default).
+    const unavailableVersions = getUnavailableVersions?.(slug, locale);
 
     return (
       <VersionSwitcher

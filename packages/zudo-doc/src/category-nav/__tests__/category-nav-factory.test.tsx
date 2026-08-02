@@ -144,3 +144,52 @@ describe("createCategoryNavWrapper — version threading (#3218), categories mod
     ]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Back-compat: the pre-#3218 slug-less node shape
+// ---------------------------------------------------------------------------
+
+describe("createCategoryNavWrapper — back-compat: pre-#3218 slug-less node shape", () => {
+  // `CategoryNavNode.slug` is optional (frozen public subpath back-compat —
+  // see the field's doc comment in ../index.js). These literals are the exact
+  // nodes a pre-#3218 consumer's `buildNavTree` emits; the explicit
+  // `CategoryNavNode[]` annotation is the compile-time half of the guard — the
+  // package typecheck (`pnpm --filter @takazudo/zudo-doc typecheck`, gated in
+  // b4push and CI) fails here if `slug` is ever made required again.
+  const legacyTree: CategoryNavNode[] = [
+    {
+      label: "getting-started",
+      hasPage: true,
+      href: "/docs/getting-started",
+      children: [
+        { label: "install", hasPage: true, href: "/docs/getting-started/install", children: [] },
+      ],
+    },
+  ];
+
+  /** A pre-#3218 consumer's findNode matched on its own key, not on `slug`. */
+  function findByLabel(tree: CategoryNavNode[], key: string): CategoryNavNode | undefined {
+    for (const node of tree) {
+      if (node.label === key) return node;
+      const found = findByLabel(node.children, key);
+      if (found) return found;
+    }
+    return undefined;
+  }
+
+  const legacyDeps = (): CategoryNavDeps =>
+    makeDeps({ buildNavTree: () => legacyTree, findNode: findByLabel });
+
+  it("renders unversioned cards, unchanged from the pre-#3218 behavior", () => {
+    const result = createCategoryNavWrapper(legacyDeps())({ category: "getting-started" });
+    expect(cardsOf(result).map((c) => c.href)).toEqual(["/docs/getting-started/install"]);
+  });
+
+  it("with a version requested: hrefs stay verbatim (nothing to rebuild them from) and nothing throws", () => {
+    const result = createCategoryNavWrapper(legacyDeps())({
+      category: "getting-started",
+      currentVersion: "1.0",
+    });
+    expect(cardsOf(result).map((c) => c.href)).toEqual(["/docs/getting-started/install"]);
+  });
+});

@@ -30,8 +30,17 @@ import { remapVersionedHrefs } from "../nav-data-prep/index.js";
 
 /** Minimal nav node shape required by the category-tree-nav factory. */
 export interface CategoryTreeNavNode {
-  /** Content slug — required by remapVersionedHrefs to rebuild a versioned href. */
-  slug: string;
+  /**
+   * Content slug — used by remapVersionedHrefs to rebuild a versioned href.
+   *
+   * Optional — `./category-tree-nav` is a documented frozen-1.0 public
+   * subpath (`packages/zudo-doc/CLAUDE.md`/`API.md`), so a pre-#3218 caller
+   * whose `buildNavTree`/`findNode` implementations emit the older slug-less
+   * node shape must keep compiling. A node without a slug cannot be rebuilt
+   * into its versioned form, so `remapVersionedHrefs` leaves its href
+   * untouched.
+   */
+  slug?: string;
   label: string;
   description?: string;
   href?: string;
