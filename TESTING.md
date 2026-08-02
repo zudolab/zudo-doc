@@ -96,12 +96,15 @@ pnpm check:worker  # generated binding + custom Worker typecheck
 pnpm test:worker   # builds first, then runs Workers-runtime/SQLite DO tests
 pnpm verify:worker-dry-run # builds first, then verifies the Wrangler production bundle
 
-# Single-fixture E2E fast path (builds only the named fixture, then runs only its tests):
-E2E_FIXTURES=smoke npx playwright test --project smoke
-E2E_FIXTURES=sidebar npx playwright test --project sidebar
+# Single-fixture E2E fast path. Run setup-fixtures.sh yourself: playwright.config.ts
+# has no globalSetup, so a bare `npx playwright test` builds nothing and would run
+# against a stale fixture dist/ (cheap no-op when already warm).
+export E2E_FIXTURES=smoke
+bash e2e/setup-fixtures.sh && npx playwright test --project smoke
 ```
 
-The `E2E_FIXTURES=<name>` fast path builds only the named fixture (caches via
+`E2E_FIXTURES=<name>` scopes both halves — `setup-fixtures.sh` builds only that
+fixture and the runner boots only its webServer. It builds only the named fixture (caches via
 `.build-marker.sha256`; force-rebuild with `E2E_FORCE_REBUILD=1`) and boots only
 its Playwright webServer. Repeated runs skip the build when inputs are unchanged.
 
