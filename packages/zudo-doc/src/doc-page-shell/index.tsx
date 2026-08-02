@@ -265,15 +265,15 @@ export function createDocPageShell<S extends Settings = Settings>(
           // contributes no gap; the bare-nav override branch above is already
           // self-hiding via <Toc>'s own `hidden xl:flex`. (#3082)
           //
-          // Making this wrapper a FLEX container (rather than a plain block
-          // one) is load-bearing for the TOC's sticky scroll-follow: a sticky
-          // box can only travel within its parent's box, and the classless
-          // <Island> div sits between this wrapper and <Toc>'s sticky <nav>.
-          // As a block container the Island div is auto-height, so it
-          // collapses to exactly the nav's height and the nav has zero travel
-          // — it scrolls away with the page instead of pinning. Flex stretches
-          // the Island div to the full content-band height (default
-          // `align-items: stretch`), restoring the travel range. (#3202)
+          // `xl:flex` (NOT `xl:block`) is load-bearing for the TOC's sticky safelist-ok: prose contrast — `xl:flex` is the live class on this div below
+          // scroll-follow: a sticky box can only travel within its parent's
+          // box, and the classless <Island> div sits between this wrapper and
+          // <Toc>'s sticky <nav>. Under `xl:block` that div is auto-height, so safelist-ok: prose contrast only, `xl:block` is never emitted
+          // it collapses to exactly the nav's height and the nav has zero
+          // travel — it scrolls away with the page instead of pinning. As a
+          // flex container this wrapper stretches the Island div to full
+          // content-band height (default `align-items: stretch`), restoring
+          // the travel range. (#3202)
           (
             <div class="hidden xl:flex">
               {Island({
