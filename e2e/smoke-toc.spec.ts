@@ -48,6 +48,48 @@ test.describe("TOC: desktop table of contents", () => {
     await expect(activeLink).toHaveCount(1, { timeout: 5000 });
   });
 
+  // Regression guard for the sticky scroll-follow break (PR #3202). <Toc>'s nav
+  // is `sticky top-[3.5rem]`, but a sticky box can only travel within its
+  // PARENT's box — and zfb's classless <Island> div sits between the nav and
+  // the layout wrapper doc-page-shell controls. When that wrapper was
+  // `hidden xl:block` (#3082), the Island div was auto-height, collapsed to
+  // exactly the nav's height, and the nav lost its entire travel range: it
+  // scrolled off the top with the page instead of pinning. Asserting the nav's
+  // viewport y at several offsets is what catches that — CSS-level checks on
+  // the nav pass either way, since `position: sticky` / `top: 56px` were never
+  // the thing that broke.
+  test("TOC stays pinned to the viewport while the page scrolls", async ({ page }) => {
+    await page.goto(PAGE, { waitUntil: "load" });
+
+    const tocNav = page.locator('[aria-label="Table of contents"]');
+    await expect(tocNav).toBeVisible({ timeout: 5000 });
+
+    // Matches `sticky top-[3.5rem]` on <Toc>'s nav — it clears the 3.5rem header.
+    const STICKY_TOP = 56;
+
+    const maxScroll = await page.evaluate(
+      () => document.documentElement.scrollHeight - window.innerHeight,
+    );
+    // Guard the guard: if the fixture page ever gets short enough that it
+    // barely scrolls, pinning becomes unfalsifiable and this test would pass
+    // vacuously.
+    expect(maxScroll).toBeGreaterThan(600);
+
+    const navY = async () => {
+      const box = await tocNav.boundingBox();
+      return box === null ? null : Math.round(box.y);
+    };
+
+    await expect.poll(navY).toBe(STICKY_TOP);
+
+    // Stay clear of the very bottom, where the content band's own end legitimately
+    // starts pushing the sticky box back up.
+    for (const fraction of [0.3, 0.6]) {
+      await page.evaluate((y) => window.scrollTo(0, y), Math.round(maxScroll * fraction));
+      await expect.poll(navY).toBe(STICKY_TOP);
+    }
+  });
+
   test("scroll spy updates aria-current when scrolling to a different section", async ({
     page,
   }) => {

@@ -392,7 +392,7 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
               The inter-column `gap` is unconditional so ANY visible `toc` slot
               (including a custom always-visible override) is separated from
               <main>. The package default TOC instead hides its own flex child
-              below xl (see doc-page-shell's `hidden xl:block` wrapper) so it
+              below xl (see doc-page-shell's `hidden xl:flex` wrapper) so it
               contributes no phantom gap on mobile — where an in-flow but
               zero-width TOC wrapper would otherwise push a larger right inset
               than left onto the content. (#3082)
