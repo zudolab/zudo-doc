@@ -388,3 +388,27 @@ await page.waitForTimeout(RESIZE_DEBOUNCE_BUFFER_MS); // wait-ok: settle window 
 If a test needs `waitForTimeout`, that is usually a sign the code under test lacks a
 testable event or state signal. Consider adding one to the production code rather than
 sleeping in the test.
+
+## Package Safelist Check
+
+`scripts/check-package-safelist.mjs` (`pnpm check:package-safelist`) scans
+`packages/zudo-doc/src/**/*.tsx` as raw text for responsive-variant and
+arbitrary-value Tailwind classes, and fails if any of them are missing from
+the generated `packages/zudo-doc/dist/safelist.css`. Because it scans raw
+text rather than parsed JSX, a class name written in PROSE — e.g. a comment
+contrasting one class with another — reads exactly like a live class
+attribute and gets demanded of the generated safelist even though nothing
+emits it.
+
+A line carrying a trailing `// safelist-ok: <reason>` comment is excluded
+from extraction, mirroring the `// wait-ok:` convention above — a plain,
+shell-greppable substring with no reason-text validation. This is the ONLY
+line-aware step: comment lines WITHOUT the marker are still scanned exactly
+like any other source line (general comment-stripping was considered and
+rejected — it would also blind the guard to real class usage sitting inside
+a commented-out block). Example, from the TOC wrapper comment in
+`packages/zudo-doc/src/doc-page-shell/index.tsx`:
+
+```typescript
+// `xl:flex` (NOT `xl:block`) is load-bearing for the TOC's sticky safelist-ok: prose contrast — `xl:flex` is the live class on this div below
+```
