@@ -37,6 +37,8 @@ export interface VersionsPageSettings {
   dynamicPageTransition?: boolean;
   versions: VersionsPageVersionEntry[] | false;
   base: string;
+  /** Route slug of the doc page linked as "latest docs" / each version's docs entry point. */
+  entryDocSlug: string;
 }
 
 /** Host-supplied component bindings injected into the versions page factory. */
@@ -47,7 +49,10 @@ export interface VersionsPageComponents {
   BodyEndIslands: (props: { basePath: string }) => JSX.Element;
 }
 
-/** Injected dependencies for {@link createVersionsPageView}. */
+/**
+ * Legacy shape, unused by createVersionsPageView — reads ChromeContext
+ * directly; do not extend.
+ */
 export interface VersionsPageDeps {
   settings: VersionsPageSettings;
   /** Default locale code (e.g. `"en"`). */
@@ -116,8 +121,9 @@ export function createVersionsPageView<S extends Settings = Settings>(
       docsCol: t("version.page.docs", locale),
     };
 
-    // Latest docs href — points to the default docs entry point
-    const latestHref = withBase(`${prefix}/docs/getting-started`);
+    // Latest docs href — points to the configured entry-doc slug (default
+    // "getting-started", settings.entryDocSlug, #3216).
+    const latestHref = withBase(`${prefix}/docs/${settings.entryDocSlug}`);
 
     // Past version entries from settings
     const versions: VersionPageEntry[] = settings.versions
@@ -126,7 +132,7 @@ export function createVersionsPageView<S extends Settings = Settings>(
           label: v.label ?? v.slug,
           // Version prefix comes BEFORE the locale — the only routed shape is
           // pages/v/[version]/{locale}/docs/...; /{locale}/v/... has no route.
-          docsHref: withBase(`/v/${v.slug}${prefix}/docs/getting-started/`),
+          docsHref: withBase(`/v/${v.slug}${prefix}/docs/${settings.entryDocSlug}/`),
           banner: v.banner as "unmaintained" | "unreleased" | undefined,
         }))
       : [];

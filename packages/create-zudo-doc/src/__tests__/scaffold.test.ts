@@ -1737,6 +1737,7 @@ describe("scaffold — settings-drift guard: generator-known fields must cover e
       trailingSlash: "no CLI/prompt surface yet — hand-edit post-scaffold",
       home: "no CLI/prompt surface yet — hand-edit post-scaffold to opt into the wide package-owned home layout",
       docsDir: "no CLI/prompt surface yet — generator always uses the default",
+      entryDocSlug: "no CLI/prompt surface yet — hand-edit post-scaffold",
       mermaid: "no CLI/prompt surface yet — package default (on) is correct for all scaffolds",
       editUrl: "no CLI/prompt surface yet — hand-edit post-scaffold",
       siteUrl: "no CLI/prompt surface yet — hand-edit post-scaffold",

@@ -57,10 +57,12 @@ export interface HeaderWithDefaultsSettings {
     labelKey?: string;
     path: string;
     categoryMatch?: string;
+    versioned?: boolean;
     children?: Array<{
       label: string;
       labelKey?: string;
       path: string;
+      versioned?: boolean;
     }>;
   }>;
   headerRightItems?: unknown[];
@@ -260,7 +262,7 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
         urlHelpers={{
           withBase,
           stripBase,
-          navHref: (path, l, v) => navHref(path, l, v),
+          navHref: (path, l, v, versioned) => navHref(path, l, v, versioned),
         }}
         i18n={{
           defaultLocale,

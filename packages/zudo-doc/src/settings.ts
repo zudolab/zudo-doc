@@ -45,6 +45,13 @@ export interface HeaderNavChildItem {
   labelKey?: string;
   path: string;
   categoryMatch?: string;
+  /**
+   * Whether links built from this item's `path` carry the active `/v/{version}`
+   * prefix. `false` targets a route that has no versioned counterpart (e.g. an
+   * external-style resources page) so its href must stay unversioned even when
+   * rendered under an active version. Default `true`.
+   */
+  versioned?: boolean;
 }
 
 export interface HeaderNavItem extends HeaderNavChildItem {
@@ -295,6 +302,13 @@ export interface Settings {
   /** Minify production HTML output from `zfb build`. Defaults to `true` when omitted. */
   minifyHtml?: boolean;
   docsDir: string;
+  /**
+   * Route slug (no leading/trailing slashes, e.g. `"getting-started"` or
+   * `"overview/getting-started"`) of the doc page the versions page links to
+   * as "latest docs" / each past version's docs entry point. Not validated at
+   * runtime — an invalid slug simply 404s.
+   */
+  entryDocSlug: string;
   defaultLocale: string;
   locales: Record<string, LocaleConfig>;
   mermaid: boolean;

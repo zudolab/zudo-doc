@@ -61,6 +61,15 @@ describe("navHref", () => {
   it("versioned defaultLocaleOnly path preserves the version and drops the locale (#2569)", () => {
     expect(h.navHref("/docs/claude-md/setup", "ja", "1.0")).toBe("/v/1.0/docs/claude-md/setup/");
   });
+  it("versioned: false suppresses the /v/{version} prefix (#3216/#3190)", () => {
+    expect(h.navHref("/docs/claude", "en", "1.0", false)).toBe("/docs/claude/");
+  });
+  it("versioned: false is a no-op without a currentVersion", () => {
+    expect(h.navHref("/docs/claude", "en", undefined, false)).toBe("/docs/claude/");
+  });
+  it("versioned omitted (default) keeps the /v/{version} prefix", () => {
+    expect(h.navHref("/docs/guides", "en", "1.0")).toBe("/v/1.0/docs/guides/");
+  });
 });
 
 describe("getPathForLocale", () => {
