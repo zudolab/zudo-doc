@@ -13,6 +13,12 @@ const invalidHeadingIdConfig: Parameters<typeof zudoDoc>[0] = {
 };
 void invalidHeadingIdConfig;
 
+const invalidGithubAutolinksConfig: Parameters<typeof zudoDoc>[0] = {
+  // @ts-expect-error The removed githubAutolinksRepo setting is rejected by the config type.
+  githubAutolinksRepo: "owner/repo",
+};
+void invalidGithubAutolinksConfig;
+
 // The routes plugin descriptor's options carry the serializable virtual-module
 // payload. Helper to pull it out of a built config.
 function routesOptions(config: ReturnType<typeof zudoDoc>) {
@@ -94,6 +100,14 @@ describe("zudoDoc() default-merge semantics", () => {
         headingIdStrategy: "flat",
       } as unknown as Parameters<typeof zudoDoc>[0]),
     ).toThrow(/headingIdStrategy is no longer supported/);
+  });
+
+  it("rejects the removed githubAutolinksRepo setting", () => {
+    expect(() =>
+      zudoDoc({
+        githubAutolinksRepo: "owner/repo",
+      } as unknown as Parameters<typeof zudoDoc>[0]),
+    ).toThrow(/githubAutolinksRepo is no longer supported/);
   });
 
   it("omitted field falls back to DEFAULT_SETTINGS (mermaid defaults true)", () => {

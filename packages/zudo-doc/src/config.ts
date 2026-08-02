@@ -606,6 +606,12 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
     );
   }
 
+  if ("githubAutolinksRepo" in user) {
+    throw new TypeError(
+      "githubAutolinksRepo is no longer supported; the githubAutolinks markdown feature was removed",
+    );
+  }
+
   // Peel the non-serializable / data overrides and shell fields off `user`
   // first so they never pollute the merged `settings` object (which is
   // JSON-serialized into the routes plugin's virtual module). `settingsOverrides`
