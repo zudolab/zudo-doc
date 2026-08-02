@@ -20,6 +20,8 @@ const INLINE_CODE =
   "https://example.com/very/long/path/to/some/resource/that-should-wrap-on-narrow.html";
 const LINK_URL =
   "https://example.com/very/long/path/to/some/documentation/page-about-everything.html";
+const NO_DELIM_INLINE_CODE =
+  "bootstrapDesignTokenPanelConfigurationBuilderWithoutAnyDelimitersWhatsoeverForOverflowWrapTesting";
 
 /**
  * Assign a data-test-id to a DOM element chosen by a predicate and
@@ -140,6 +142,42 @@ test.describe("smart-break: visual wrapping on narrow viewports", () => {
     }, sel);
     // No horizontal overflow inside the inline code box.
     expect(scrollWidth).toBeLessThanOrEqual(Math.ceil(width) + 1);
+  });
+
+  test("delimiter-free inline code identifier wraps via overflow-wrap without page-level horizontal scroll (#3212)", async ({
+    page,
+  }) => {
+    await page.setViewportSize(NARROW);
+    await page.goto(TEST_PAGE, { waitUntil: "load" });
+
+    await tagFirst(
+      page,
+      "main code",
+      `return el.textContent === ${JSON.stringify(NO_DELIM_INLINE_CODE)};`,
+      "sb-no-delim-inline-code",
+    );
+    const sel = '[data-test-id="sb-no-delim-inline-code"]';
+
+    // isPathLike() is false for a delimiter-free identifier, so SmartBreak
+    // injects no <wbr> here — this case must wrap on overflow-wrap alone.
+    expect(await wbrCount(page, sel)).toBe(0);
+
+    // Element-level: the inline code box itself does not overflow.
+    const { width, scrollWidth } = await page.evaluate((s) => {
+      const el = document.querySelector(s) as HTMLElement;
+      return {
+        width: el.getBoundingClientRect().width,
+        scrollWidth: el.scrollWidth,
+      };
+    }, sel);
+    expect(scrollWidth).toBeLessThanOrEqual(Math.ceil(width) + 1);
+
+    // Page-level: the document itself must not scroll horizontally either.
+    const { docScrollWidth, clientWidth } = await page.evaluate(() => ({
+      docScrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    }));
+    expect(docScrollWidth).toBeLessThanOrEqual(clientWidth + 1);
   });
 
   test("table cell with long URL wraps within its cell (#375)", async ({
