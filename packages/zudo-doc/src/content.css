@@ -187,6 +187,7 @@
   color: var(--color-code-fg);
   border-radius: var(--radius-DEFAULT);
   padding: 2px var(--spacing-hsp-xs);
+  overflow-wrap: anywhere;
 }
 
 /* ── Code blocks (pre) ── */

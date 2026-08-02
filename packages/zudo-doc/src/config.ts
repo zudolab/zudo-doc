@@ -275,11 +275,6 @@ export interface ZudoDocConfig {
    */
   githubUrl?: string | false;
   /**
-   * "owner/repo" — enables `#123` / SHA autolinks in markdown. Omit to disable.
-   * @default undefined
-   */
-  githubAutolinksRepo?: string;
-  /**
    * Canonical site origin (e.g. `"https://example.com"`) for sitemap /
    * canonical / og:url. Empty = not set.
    * @default ""
@@ -608,6 +603,12 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
   if ("headingIdStrategy" in user) {
     throw new TypeError(
       "headingIdStrategy is no longer supported; heading IDs are always hierarchical",
+    );
+  }
+
+  if ("githubAutolinksRepo" in user) {
+    throw new TypeError(
+      "githubAutolinksRepo is no longer supported; the githubAutolinks markdown feature was removed",
     );
   }
 

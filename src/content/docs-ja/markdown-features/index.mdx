@@ -23,7 +23,7 @@ zfb の Markdown パイプラインは、常に有効な **Core（組み込み�
 
 ## Opt-in 機能
 
-以下の 15 機能は zfb エンジンレベルでは opt-in（オプトイン）です — 明示的に設定しない限り無効で、多くは `markdown.features.*` 配下のキーで設定します（External Links と Image Enlarge は別の形のキーを使います）。ただし、このショーケース自体は `markdown` を直接設定していません。`zudoDoc({...})` プリセットが下表の `markdown.features.*` エントリの大半をあらかじめ有効化しています — プリセットの正確なデフォルト値は各機能のページを参照してください。素の `defineConfig({ markdown: { features: {...} } })` は `zudoDoc()` を完全にバイパスし、プリセットが配線する残りすべて（コレクション、Chrome、コードハイライトなど）を失わせるため、常に `zudoDoc({...})` から始めてその `markdown` ブロックを拡張してください。
+以下の 14 機能は zfb エンジンレベルでは opt-in（オプトイン）です — 明示的に設定しない限り無効で、多くは `markdown.features.*` 配下のキーで設定します（External Links と Image Enlarge は別の形のキーを使います）。ただし、このショーケース自体は `markdown` を直接設定していません。`zudoDoc({...})` プリセットが下表の `markdown.features.*` エントリの大半をあらかじめ有効化しています — プリセットの正確なデフォルト値は各機能のページを参照してください。素の `defineConfig({ markdown: { features: {...} } })` は `zudoDoc()` を完全にバイパスし、プリセットが配線する残りすべて（コレクション、Chrome、コードハイライトなど）を失わせるため、常に `zudoDoc({...})` から始めてその `markdown` ブロックを拡張してください。
 
 | 機能 | 設定キー | 説明 |
 | --- | --- | --- |
@@ -34,7 +34,6 @@ zfb の Markdown パイプラインは、常に有効な **Core（組み込み�
 | [Heading Marker TOC](./heading-marker-toc.mdx) | `headingMarkerToc` | 各見出しにアンカーマーカーを付与し、TOC アイランドにデータを提供します。 |
 | [GitHub Alerts](./github-alerts.mdx) | `githubAlerts` | `> [!NOTE]`/`[!TIP]`/`[!WARNING]`/`[!IMPORTANT]`/`[!CAUTION]` ブロック引用をアドモニションマークアップに変換します。 |
 | [Reading Time](./reading-time.mdx) | `readingTime` | 推定読了時間を計算し、ページレベルのメタデータとして公開します。 |
-| [GitHub Autolinks](./github-autolinks.mdx) | `githubAutolinks` | Issue 番号、クロスリポジトリ参照、コミット SHA を GitHub へ自動リンクします。 |
 | [Code Enrichment](./code-enrichment.mdx) | `codeEnrichment` | ハイライト済みのコードブロックに diff/行/単語ハイライト装飾を追加します。タイトルバーは別の常時有効な Core 機能です（[Code Title](./code-title.mdx) 参照）。コピー/折り返しボタンは、この機能の有効・無効にかかわらず、すべてのコードブロックに追加されます。 |
 | [Code Tabs](./code-tabs.mdx) | `codeTabs` | `:::code-group` ディレクティブを `<CodeGroup>` 経由でタブ付きコードパネルとして描画します。 |
 | [Ruby](./ruby.mdx) | `ruby` | ルビ注釈サポートを追加します（`{base}^{ruby}` 構文）。 |
@@ -45,6 +44,6 @@ zfb の Markdown パイプラインは、常に有効な **Core（組み込み�
 
 :::note[その他のパイプライン設定]
 
-zfb にはトップレベルの `markdown` 設定として `markdown.gfm`（GitHub Flavored Markdown の各構文をきめ細かく切り替える）と `markdown.hardBreaks`（ソフト改行をすべて `<br>` に変換する）も存在します。どちらも上記の Core/Opt-in の一覧には含まれておらず、このプロジェクトの `zfb.config.ts` でも設定されていません。
+zfb にはトップレベルの `markdown` 設定として `markdown.gfm`（GitHub Flavored Markdown の各構文をきめ細かく切り替える）と `markdown.hardBreaks`（ソフト改行をすべて `<br>` に変換する）も存在します。どちらも上記の Core/Opt-in の一覧には含まれていません。`markdown.hardBreaks` はこのプロジェクトの `zfb.config.ts` で設定されていませんが、`zudoDoc({...})` プリセットはデフォルトで `markdown.gfm: { taskListItem: true, footnoteDefinition: true }` を設定しているため、GFM のタスクリストとフットノートは `[ ]` / `[^1]` というリテラルなテキストではなく実際にレンダリングされます。
 
 :::

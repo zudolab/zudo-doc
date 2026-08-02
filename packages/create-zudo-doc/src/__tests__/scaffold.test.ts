@@ -1739,7 +1739,6 @@ describe("scaffold — settings-drift guard: generator-known fields must cover e
       docsDir: "no CLI/prompt surface yet — generator always uses the default",
       mermaid: "no CLI/prompt surface yet — package default (on) is correct for all scaffolds",
       editUrl: "no CLI/prompt surface yet — hand-edit post-scaffold",
-      githubAutolinksRepo: "showcase-only opt-in (zudo-doc#2321 Wave-0) — generated projects must opt in explicitly",
       siteUrl: "no CLI/prompt surface yet — hand-edit post-scaffold",
       head: "no CLI/prompt surface yet — hand-edit post-scaffold",
       sitemap: "no CLI/prompt surface yet — hand-edit post-scaffold",

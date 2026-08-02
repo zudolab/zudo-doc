@@ -98,8 +98,6 @@ export interface PresetSettings {
   docHistory?: boolean;
   docHistoryExclude?: string[];
   claudeResources?: PresetClaudeResourcesConfig | false;
-  /** "owner/repo" — when set, enables `#123` / SHA autolinks in markdown. Omit to disable entirely. */
-  githubAutolinksRepo?: string;
   /**
    * When `true` (the **default** when omitted — #2404), the preset adds the
    * package-owned route-injection plugin (`@takazudo/zudo-doc/plugins/routes`).
@@ -251,6 +249,7 @@ export interface PresetResolveMarkdownLinks {
 export interface PresetMarkdown {
   features: Record<string, boolean | Record<string, unknown>>;
   cjkFriendly?: boolean;
+  gfm: { taskListItem: boolean; footnoteDefinition: boolean };
 }
 
 export interface PresetCodeHighlight {
@@ -310,6 +309,11 @@ export function zudoDocPreset({
     markdown: {
       features: buildMarkdownFeatures(settings, directiveVocabulary),
       ...(settings.cjkFriendly !== undefined ? { cjkFriendly: settings.cjkFriendly } : {}),
+      // zfb's gfm default is conservative (strikethrough + table only); the
+      // preset turns on the other two GFM constructs so task lists and
+      // footnotes render for real instead of as literal `[ ]` / `[^1]` text
+      // (#3197, #3208).
+      gfm: { taskListItem: true, footnoteDefinition: true },
     },
     // zfb class mode keeps renderer output semantic and delegates color to
     // the package's --zfb-hi-* → --zd-syntax-* CSS adapter. Keep the upstream
@@ -417,13 +421,6 @@ function buildMarkdownFeatures(
     // Remaining opt-in features (#1804).
     githubAlerts: true,
     readingTime: true,
-    // owner/repo used to build `owner/repo#123`, `#123`, and SHA autolinks.
-    // Included only when settings.githubAutolinksRepo is set; omitted entirely
-    // for projects that don't configure a repo (restores old generated-project
-    // behaviour — zudo-doc#2321 Wave-0 correctness fix).
-    ...(settings.githubAutolinksRepo
-      ? { githubAutolinks: { repo: settings.githubAutolinksRepo } }
-      : {}),
     codeEnrichment: {},
     // codeTabs accepts the `true` shorthand; <CodeGroup> is registered host-side.
     codeTabs: true,
