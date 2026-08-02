@@ -9,6 +9,16 @@ const require = createRequire(import.meta.url);
 const nodeEntry = require.resolve("@takazudo/zfb-md-wasm");
 const packageRoot = resolve(dirname(nodeEntry), "..");
 
+// The expected version is read from the root pin rather than hardcoded: a
+// literal here has to be hand-bumped on every zfb-family bump, and going stale
+// makes this contract test fail for a reason unrelated to what it guards (that
+// the version actually installed is the one the project pinned).
+const rootPin = (
+  JSON.parse(
+    readFileSync(resolve(import.meta.dirname, "../../package.json"), "utf8"),
+  ) as { dependencies: Record<string, string> }
+).dependencies["@takazudo/zfb-md-wasm"];
+
 const expectedHighlights = [
   {
     language: "html",
@@ -33,7 +43,7 @@ const expectedHighlights = [
   },
 ] as const;
 
-describe("@takazudo/zfb-md-wasm next.99 release contract", () => {
+describe("@takazudo/zfb-md-wasm release contract", () => {
   it.each(expectedHighlights)(
     "emits semantic class-only $language markup",
     async ({ language, code, roles, html: expectedHtml }) => {
@@ -88,7 +98,7 @@ describe("@takazudo/zfb-md-wasm next.99 release contract", () => {
     );
     const wasmPath = resolve(packageRoot, "dist/wasm/zfb_md_wasm_bg.wasm");
 
-    expect(packageJson.version).toBe("1.1.0");
+    expect(packageJson.version).toBe(rootPin);
     expect(packageJson.exports["."]).toEqual({
       types: "./dist/index.d.ts",
       browser: "./dist/browser.js",

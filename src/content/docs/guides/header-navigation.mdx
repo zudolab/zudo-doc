@@ -58,6 +58,7 @@ export default defineConfig(
 | `labelKey` | string (optional) | i18n translation key that overrides `label` when a translation is available |
 | `path` | string | URL path the link navigates to |
 | `categoryMatch` | string (optional) | Links this header tab to a sidebar category |
+| `versioned` | boolean (optional) | Whether this item's link carries the active `/v/{version}` prefix. Default `true` |
 | `children` | `HeaderNavChildItem[]` (optional) | Child nav items displayed as a dropdown menu (one level only) |
 
 ### `HeaderNavChildItem`
@@ -70,6 +71,7 @@ Child items use the same properties as `HeaderNavItem` except they cannot have t
 | `labelKey` | string (optional) | i18n translation key |
 | `path` | string | URL path the link navigates to |
 | `categoryMatch` | string (optional) | Links this child to a sidebar category |
+| `versioned` | boolean (optional) | Whether this item's link carries the active `/v/{version}` prefix. Default `true` |
 
 ### `labelKey`
 
@@ -84,6 +86,18 @@ The `categoryMatch` property connects a header tab to a specific sidebar categor
 For example, `categoryMatch: "guides"` links the tab to the `guides/` content directory. When a user navigates to any page under `/docs/guides/`, the "Guides" tab becomes active and the sidebar shows only the guides category.
 
 Children can also have `categoryMatch`. For example, placing `categoryMatch: "components"` on a child ensures that visiting `/docs/components/` activates the parent dropdown and filters the sidebar to the components section.
+
+### `versioned`
+
+The `versioned` property controls whether an item's link carries the active `/v/{version}` prefix when a version other than the latest is active. It defaults to `true` — most header items point at doc content that has a matching page in every archived version, so their link should switch versions along with the reader.
+
+Set `versioned: false` on any item that points at content with no versioned counterpart — a page that exists only for the latest doc set and is never regenerated inside an archived version directory. Without `versioned: false`, that item's link would 404 whenever an older version is active.
+
+<Warning>
+
+If your project enables [versioning](./versioning.mdx), audit every `headerNav` item that links to unversioned content and set `versioned: false` on it. The showcase's own "Claude" header item (from the `claudeResources` feature) is the textbook case: those routes are generated only for the default `docsDir` and never exist inside an archived version directory, so it sets `versioned: false`.
+
+</Warning>
 
 ## Dropdown Behavior
 

@@ -8,6 +8,13 @@
  *  2. Returns undefined when versions is an empty array.
  *  3. Returns a JSX element when versions is configured.
  *  4. URL helpers are called with correct args for default vs non-default locale.
+ *  5. #3215 — `getUnavailableVersions` drives the `unavailableVersions` prop
+ *     passed to `<VersionSwitcher>`: called with the current (slug, locale),
+ *     its returned set is passed straight through, and an "undefined" result
+ *     (no availability data) passes through as undefined rather than an
+ *     empty set.
+ *  6. Back-compat — `getUnavailableVersions` is optional: a pre-#3215 deps
+ *     object still compiles and renders, with nothing marked unavailable.
  */
 
 import { describe, expect, it, vi } from "vitest";
@@ -25,6 +32,7 @@ function makeDeps(overrides: Partial<InlineVersionSwitcherDeps> = {}): InlineVer
     versionedDocsUrl: (slug: string, versionSlug: string, lang?: string) =>
       `/${lang ?? "en"}/v/${versionSlug}/docs/${slug}`,
     withBase: (path: string) => path,
+    getUnavailableVersions: () => undefined,
     ...overrides,
   };
 }
@@ -94,5 +102,59 @@ describe("createInlineVersionSwitcher — returns element when versioning is ena
     buildInlineVersionSwitcher("my-page", "en");
     expect(versionedDocsUrl).toHaveBeenCalledWith("my-page", "v1", "en");
     expect(versionedDocsUrl).toHaveBeenCalledWith("my-page", "v2", "en");
+  });
+});
+
+describe("createInlineVersionSwitcher — #3215 unavailableVersions wiring", () => {
+  it("calls getUnavailableVersions with the current slug and locale, and drives unavailableVersions with the result — a latest-only slug yields that version in the set", () => {
+    const getUnavailableVersions = vi.fn(() => new Set(["v1"]));
+    const buildInlineVersionSwitcher = createInlineVersionSwitcher(
+      makeDeps({ getUnavailableVersions }),
+    );
+    const result = buildInlineVersionSwitcher("latest-only-page", "en");
+    expect(getUnavailableVersions).toHaveBeenCalledWith("latest-only-page", "en");
+    expect(result?.props.unavailableVersions).toEqual(new Set(["v1"]));
+  });
+
+  it("passes unavailableVersions through as undefined when there is no availability data", () => {
+    const getUnavailableVersions = vi.fn(() => undefined);
+    const buildInlineVersionSwitcher = createInlineVersionSwitcher(
+      makeDeps({ getUnavailableVersions }),
+    );
+    const result = buildInlineVersionSwitcher("getting-started", "en");
+    expect(result?.props.unavailableVersions).toBeUndefined();
+  });
+});
+
+describe("createInlineVersionSwitcher — back-compat: getUnavailableVersions omitted", () => {
+  // `getUnavailableVersions` is optional (frozen public subpath back-compat —
+  // see the field's doc comment in ../index.js). This literal is the exact
+  // deps object a pre-#3215 consumer hand-constructs; the explicit
+  // `InlineVersionSwitcherDeps` annotation is the compile-time half of the
+  // guard — the package typecheck (`pnpm --filter @takazudo/zudo-doc
+  // typecheck`, gated in b4push and CI) fails here if the field is ever made
+  // required again.
+  const preEpicDeps: InlineVersionSwitcherDeps = {
+    settings: { versions: [{ slug: "v1", label: "v1.0" }] },
+    defaultLocale: "en",
+    t: (key: string) => key,
+    docsUrl: (slug, lang) => `/${lang ?? "en"}/docs/${slug}`,
+    versionedDocsUrl: (slug, versionSlug, lang) =>
+      `/${lang ?? "en"}/v/${versionSlug}/docs/${slug}`,
+    withBase: (path) => path,
+  };
+
+  it("still renders the switcher, with unavailableVersions undefined (the pre-#3215 rendering) and no throw", () => {
+    const result = createInlineVersionSwitcher(preEpicDeps)("getting-started", "en");
+    expect(result).toBeDefined();
+    expect(result?.props.unavailableVersions).toBeUndefined();
+    expect(result?.props.versionUrls).toEqual({ v1: "/en/v/v1/docs/getting-started" });
+  });
+
+  it("emits no warning — omitting it reproduces prior behavior rather than degrading it", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    createInlineVersionSwitcher(preEpicDeps)("getting-started", "en");
+    expect(warnSpy).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
   });
 });

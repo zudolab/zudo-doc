@@ -42,6 +42,27 @@ export interface InlineVersionSwitcherDeps {
   versionedDocsUrl: (slug: string, versionSlug: string, lang?: string) => string;
   /** Prefix a path with the configured base directory. */
   withBase: (path: string) => string;
+  /**
+   * Slugs of configured versions where the given (slug, locale) is NOT
+   * available — passed straight through as `<VersionSwitcher
+   * unavailableVersions>` so absent pages render disabled instead of 404
+   * links (#3215). Returns `undefined` when there is no availability data to
+   * compute (the shared helper already handles the no-slug/no-versions
+   * gates — see `version-availability`).
+   *
+   * Optional — `./inline-version-switcher` is a documented frozen-1.0 public
+   * subpath (`packages/zudo-doc/CLAUDE.md`/`API.md`), so a pre-#3215 caller
+   * that hand-constructs `InlineVersionSwitcherDeps` without this field must
+   * keep compiling. Omitting it reports no version as unavailable — byte-for-
+   * byte the pre-#3215 rendering — so unlike the nav wrappers' optional
+   * `versionedDocsUrl` (whose absence yields hrefs that escape the version
+   * silo) there is nothing degraded to warn about, and this builder runs on
+   * every versioned doc page so a warning would be pure per-page noise.
+   */
+  getUnavailableVersions?: (
+    slug: string | undefined,
+    locale: string,
+  ) => ReadonlySet<string> | undefined;
 }
 
 /**
@@ -53,7 +74,8 @@ export function createInlineVersionSwitcher(deps: InlineVersionSwitcherDeps): (
   locale: string,
   currentVersion?: string,
 ) => JSX.Element | undefined {
-  const { settings, defaultLocale, t, docsUrl, versionedDocsUrl, withBase } = deps;
+  const { settings, defaultLocale, t, docsUrl, versionedDocsUrl, withBase, getUnavailableVersions } =
+    deps;
 
   /**
    * Build an inline VersionSwitcher element for the `<Breadcrumb rightSlot>` prop.
@@ -95,6 +117,10 @@ export function createInlineVersionSwitcher(deps: InlineVersionSwitcherDeps): (
       allVersions: t("version.switcher.allVersions", locale),
     };
 
+    // Omitted dep → undefined, which `<VersionSwitcher>` reads as "nothing is
+    // unavailable" (the pre-#3215 default).
+    const unavailableVersions = getUnavailableVersions?.(slug, locale);
+
     return (
       <VersionSwitcher
         versions={settings.versions.map((v) => ({
@@ -105,6 +131,7 @@ export function createInlineVersionSwitcher(deps: InlineVersionSwitcherDeps): (
         latestUrl={latestUrl}
         versionsPageUrl={versionsPageUrl}
         versionUrls={versionUrls}
+        unavailableVersions={unavailableVersions}
         labels={labels}
         idSuffix="inline"
       />

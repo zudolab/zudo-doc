@@ -105,6 +105,19 @@ A dedicated versions page is automatically generated at `/docs/versions/` (and `
 
 The page is auto-generated from the `versions` array you pass to `zudoDoc({...})`. No manual maintenance is needed — adding or removing versions in the configuration automatically updates the listing page.
 
+Each version's documentation link (and the "latest docs" link) points at the route slug configured by `entryDocSlug`:
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // ...
+    entryDocSlug: "getting-started",
+  }),
+);
+```
+
+`entryDocSlug` is a route slug with no leading or trailing slashes — e.g. `"getting-started"` or `"overview/getting-started"`. It defaults to `"getting-started"` when omitted, and is not validated at runtime: pointing it at a slug that doesn't exist simply produces a 404 link rather than failing the build.
+
 ## Version Banners
 
 Each version can display a banner at the top of every page to inform users about the version's status. Two banner types are available:

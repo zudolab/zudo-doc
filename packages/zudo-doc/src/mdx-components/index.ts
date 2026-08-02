@@ -72,6 +72,17 @@ export interface CreateMdxComponentsOptions {
    * drop it.
    */
   locale: string;
+  /**
+   * Active version slug for a `/v/{version}` route render, or `undefined` for
+   * latest/unversioned pages. Injected into each `navData` wrapper as the
+   * `currentVersion` prop alongside `lang` (#3218) so CategoryNav /
+   * CategoryTreeNav / SiteTreeNav resolve the version's doc collection and
+   * remap emitted hrefs into their versioned form — mirroring the sidebar's
+   * `buildSidebarNodes` two-step. Applies equally to a host-supplied
+   * `ctx.components` override, since the prop is injected here regardless of
+   * which wrapper `navData` holds.
+   */
+  currentVersion?: string;
   /** Host-supplied locale-aware nav wrappers. */
   navData: MdxNavData;
   /**
@@ -274,7 +285,7 @@ function makeEnlargeableParagraph(
 export function createMdxComponents(
   options: CreateMdxComponentsOptions,
 ): Record<string, unknown> {
-  const { settings, locale, navData, extras } = options;
+  const { settings, locale, currentVersion, navData, extras } = options;
 
   const ContentImg = makeContentImg(settings.base);
   const EnlargeableParagraph = makeEnlargeableParagraph(
@@ -283,13 +294,14 @@ export function createMdxComponents(
   );
 
   // Locale-bound nav wrappers — inject `lang: locale` so `/ja` resolves the JA
-  // collection. This is the load-bearing locale thread.
+  // collection, and `currentVersion` (#3218) so `/v/{version}` pages resolve
+  // the version's collection and remap hrefs. Both are load-bearing.
   const CategoryNavBound = (props: Record<string, unknown>) =>
-    navData.CategoryNav({ ...props, lang: locale });
+    navData.CategoryNav({ ...props, lang: locale, currentVersion });
   const CategoryTreeNavBound = (props: Record<string, unknown>) =>
-    navData.CategoryTreeNav({ ...props, lang: locale });
+    navData.CategoryTreeNav({ ...props, lang: locale, currentVersion });
   const SiteTreeNavBound = (props: Record<string, unknown>) =>
-    navData.SiteTreeNav({ ...props, lang: locale });
+    navData.SiteTreeNav({ ...props, lang: locale, currentVersion });
 
   return {
     ...defaultComponents,

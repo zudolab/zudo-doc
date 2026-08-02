@@ -242,6 +242,7 @@ describe("Settings public field set snapshot", () => {
         "home",
         "minifyHtml",
         "docsDir",
+        "entryDocSlug",
         "defaultLocale",
         "locales",
         "mermaid",

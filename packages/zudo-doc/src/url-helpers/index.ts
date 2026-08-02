@@ -41,6 +41,7 @@ export interface UrlHelpers {
     path: string,
     lang: string | undefined,
     currentVersion: string | undefined,
+    versioned?: boolean,
   ): string;
   getPathForLocale(path: string, currentLang: string, targetLang: string): string;
   buildLocaleLinks(currentPath: string, currentLang: string): LocaleLink[];
@@ -142,11 +143,17 @@ export function makeUrlHelpers(
    * Uses /v/{version}/{lang}/... ordering — the only shape the routing layer
    * serves (pages/v/[version]/ja/docs/...), matching versionedDocsUrl().
    * The /{lang}/v/{version}/... ordering has no route and 404s.
+   *
+   * `versioned` (default `true`) opts a nav target OUT of version prefixing
+   * (headerNav item `versioned: false`, #3216) — for a target that has no
+   * versioned counterpart, so the plain unversioned href is the only one that
+   * resolves even when rendered under an active version.
    */
   function navHref(
     path: string,
     lang: string | undefined,
     currentVersion: string | undefined,
+    versioned = true,
   ): string {
     // A defaultLocaleOnly path (settings.defaultLocaleOnlyPrefixes, #1592/#2569)
     // has no non-default-locale route, so keep it in the default-locale URL space
@@ -155,7 +162,7 @@ export function makeUrlHelpers(
     // (isDefaultLocaleOnlyPath matches the plain `/docs/` shape only).
     const isNonDefaultLocale =
       lang != null && lang !== defaultLocale && !isDefaultLocaleOnlyPath(path);
-    const versionPrefix = currentVersion ? `/v/${currentVersion}` : "";
+    const versionPrefix = versioned && currentVersion ? `/v/${currentVersion}` : "";
     return withBase(
       isNonDefaultLocale
         ? `${versionPrefix}/${lang}${path}`
