@@ -454,6 +454,15 @@ export function deriveInlineVersionSwitcher(ctx: ChromeContext) {
  * for the injected package path. The content overrides (Details / HtmlPreview /
  * Island / PresetGenerator + any host extras) come from `ctx.hostBindings.mdxExtras`
  * merged over the package defaults.
+ *
+ * `createMdxComponentsBound(lang, currentVersion?)` (#3218) threads the active
+ * version through to the nav wrappers as a `currentVersion` prop — see
+ * `createMdxComponents()`'s `CategoryNavBound`/etc — so `resolveNavSource`
+ * resolves the version's doc collection and emitted hrefs get remapped via
+ * `versionedDocsUrl`, mirroring `buildSidebarNodes`' two-step above. This works
+ * for BOTH the package-default wrapper (built from `versionedDocsUrl` below)
+ * and a host-supplied `ctx.components` override, since the prop injection
+ * happens one layer up in `createMdxComponents()`, after the wrapper choice.
  */
 export function deriveMdxComponents(ctx: ChromeContext) {
   const CategoryNavWrapper =
@@ -470,6 +479,7 @@ export function deriveMdxComponents(ctx: ChromeContext) {
         )) as never,
       findNode: ctx.findNode as never,
       firstRoutedHref: ctx.firstRoutedHref as never,
+      versionedDocsUrl: ctx.versionedDocsUrl,
     }) as unknown as FactoryComponent);
 
   const CategoryTreeNavWrapper =
@@ -486,6 +496,7 @@ export function deriveMdxComponents(ctx: ChromeContext) {
         )) as never,
       groupSatelliteNodes: ctx.groupSatelliteNodes as never,
       findNode: ctx.findNode as never,
+      versionedDocsUrl: ctx.versionedDocsUrl,
     }) as unknown as FactoryComponent);
 
   const SiteTreeNavWrapper =
@@ -502,6 +513,7 @@ export function deriveMdxComponents(ctx: ChromeContext) {
         )) as never,
       groupSatelliteNodes: ctx.groupSatelliteNodes as never,
       getCategoryOrder: ctx.getCategoryOrder,
+      versionedDocsUrl: ctx.versionedDocsUrl,
     }) as unknown as FactoryComponent);
 
   /** HtmlPreview MDX binding (package default) — `settings.htmlPreview` is a
@@ -524,10 +536,11 @@ export function deriveMdxComponents(ctx: ChromeContext) {
   };
   const mdxExtras = { ...mdxExtrasDefault, ...(ctx.hostBindings.mdxExtras ?? {}) };
 
-  function createMdxComponentsBound(lang: string = ctx.defaultLocale) {
+  function createMdxComponentsBound(lang: string = ctx.defaultLocale, currentVersion?: string) {
     return createMdxComponents({
       settings: ctx.settings,
       locale: lang,
+      currentVersion,
       navData: {
         CategoryNav: CategoryNavWrapper as never,
         CategoryTreeNav: CategoryTreeNavWrapper as never,
