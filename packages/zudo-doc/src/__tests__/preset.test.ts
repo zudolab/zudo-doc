@@ -600,6 +600,14 @@ describe("zudoDocPreset markdown.features", () => {
     expect(r.markdown.features.headingIds).toEqual({ strategy: "hierarchical" });
   });
 
+  // #3210 — zfb's markdown.gfm default is conservative (strikethrough +
+  // table only); the preset turns on task lists + footnotes by default so
+  // this is a real product default, not a config nobody ships.
+  it("enables GFM task lists + footnotes by default", () => {
+    const { markdown } = preset();
+    expect(markdown.gfm).toEqual({ taskListItem: true, footnoteDefinition: true });
+  });
+
 });
 
 describe("zudoDocPreset top-level pipeline fields", () => {

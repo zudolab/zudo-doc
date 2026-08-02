@@ -44,6 +44,6 @@ These 14 features are opt-in at the zfb engine level — each is disabled unless
 
 :::note[Other pipeline knobs]
 
-zfb also exposes `markdown.gfm` (fine-grained GitHub-Flavored-Markdown construct toggles) and `markdown.hardBreaks` (converts every soft line break to `<br>`) as top-level `markdown` config keys. Neither is part of the Core/Opt-in census above, and neither is configured in this project's `zfb.config.ts`.
+zfb also exposes `markdown.gfm` (fine-grained GitHub-Flavored-Markdown construct toggles) and `markdown.hardBreaks` (converts every soft line break to `<br>`) as top-level `markdown` config keys. Neither is part of the Core/Opt-in census above. `markdown.hardBreaks` isn't configured in this project's `zfb.config.ts`, but the `zudoDoc({...})` preset does set `markdown.gfm: { taskListItem: true, footnoteDefinition: true }` by default, so GFM task lists and footnotes render for real instead of as literal `[ ]` / `[^1]` text.
 
 :::
