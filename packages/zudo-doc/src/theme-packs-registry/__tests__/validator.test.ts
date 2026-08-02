@@ -155,6 +155,125 @@ describe("validateThemePack", () => {
     expect(result.issues.filter((i) => i.rule === "scoping")).toEqual([]);
   });
 
+  it("accepts a top-level @media block whose inner rules are pack-scoped", () => {
+    const result = validateThemePack(
+      baseInput({
+        cssContent: `${VALID_FOUNDRY_CSS}
+@media (pointer: coarse) {
+  html[data-theme-pack="foundry"] body {
+    background-attachment: scroll;
+  }
+}`,
+      }),
+    );
+    expect(result.issues.filter((i) => i.rule === "scoping")).toEqual([]);
+    expect(result.valid).toBe(true);
+  });
+
+  it("rejects an unscoped rule inside a top-level @media block", () => {
+    const result = validateThemePack(
+      baseInput({
+        cssContent: `${VALID_FOUNDRY_CSS}
+@media (pointer: coarse) {
+  .zd-content h2 {
+    color: red;
+  }
+}`,
+      }),
+    );
+    expect(result.issues.some((i) => i.rule === "scoping")).toBe(true);
+  });
+
+  it("accepts an empty top-level @media block", () => {
+    const result = validateThemePack(
+      baseInput({
+        cssContent: `${VALID_FOUNDRY_CSS}
+@media (pointer: coarse) {
+}`,
+      }),
+    );
+    expect(result.issues.filter((i) => i.rule === "scoping")).toEqual([]);
+    expect(result.valid).toBe(true);
+  });
+
+  it("rejects @font-face inside a top-level @media block (top-level only)", () => {
+    const result = validateThemePack(
+      baseInput({
+        cssContent: `${VALID_FOUNDRY_CSS}
+@media (pointer: coarse) {
+  @font-face {
+    font-family: "Inter";
+    src: url("./fonts/Inter-latin.woff2") format("woff2");
+  }
+}`,
+      }),
+    );
+    expect(result.issues.some((i) => i.rule === "scoping")).toBe(true);
+  });
+
+  it("rejects an at-rule nested two levels deep (@supports inside @media)", () => {
+    const result = validateThemePack(
+      baseInput({
+        cssContent: `${VALID_FOUNDRY_CSS}
+@media (pointer: coarse) {
+  @supports (display: grid) {
+    html[data-theme-pack="foundry"] body {
+      background-attachment: scroll;
+    }
+  }
+}`,
+      }),
+    );
+    expect(result.issues.some((i) => i.rule === "scoping")).toBe(true);
+  });
+
+  it("rejects a semicolon-form at-rule statement preceding a rule inside @media (e.g. a rogue @layer)", () => {
+    const result = validateThemePack(
+      baseInput({
+        cssContent: `${VALID_FOUNDRY_CSS}
+@media (pointer: coarse) {
+  @layer rogue;
+  html[data-theme-pack="foundry"] body {
+    background-attachment: scroll;
+  }
+}`,
+      }),
+    );
+    expect(result.issues.some((i) => i.rule === "scoping")).toBe(true);
+  });
+
+  it("rejects a semicolon-form at-rule statement trailing after the last rule inside @media", () => {
+    const result = validateThemePack(
+      baseInput({
+        cssContent: `${VALID_FOUNDRY_CSS}
+@media (pointer: coarse) {
+  html[data-theme-pack="foundry"] body {
+    background-attachment: scroll;
+  }
+  @layer rogue;
+}`,
+      }),
+    );
+    expect(result.issues.some((i) => i.rule === "scoping")).toBe(true);
+  });
+
+  it("still scans known-token-names and important-allowlist inside a top-level @media block", () => {
+    const result = validateThemePack(
+      baseInput({
+        cssContent: `${VALID_FOUNDRY_CSS}
+@media (pointer: coarse) {
+  html[data-theme-pack="foundry"] body {
+    --zd-bogus-token: red;
+    color: red !important;
+  }
+}`,
+      }),
+    );
+    expect(result.issues.some((i) => i.rule === "known-token-names")).toBe(true);
+    const importantIssues = result.issues.filter((i) => i.rule === "important-allowlist");
+    expect(importantIssues).toHaveLength(1);
+  });
+
   it("rejects an unknown custom-property name (typo catch)", () => {
     const result = validateThemePack(
       baseInput({
