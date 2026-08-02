@@ -5,7 +5,8 @@
 // seam by building and asserting rendered HTML from injected routes.
 
 import { defineConfig } from "zfb/config";
-import { zudoDocPreset } from "@takazudo/zudo-doc/preset";
+import { zudoDocPreset, type DirectiveVocabulary } from "@takazudo/zudo-doc/preset";
+import { defaultDirectiveVocabulary } from "@takazudo/zudo-doc/directive-vocabulary-defaults";
 import { settings } from "./src/config/settings";
 import { z } from "zod";
 
@@ -24,7 +25,18 @@ function buildDocsSchema() {
   });
 }
 
-const directiveVocabulary = {};
+// A2 #3179 — the canonical seven container admonitions (note/tip/info/
+// warning/danger/caution/details), plus one TEXT-shape directive (`:hl[…]`)
+// that `getting-started/coverage.mdx` exercises for directive-shape
+// coverage. `mark` is a plain HTML intrinsic element — it needs no
+// component wiring (unlike the admonition names, which resolve through
+// createMdxComponents' Note/Tip/… map).
+const directiveVocabulary: DirectiveVocabulary = {
+  ...defaultDirectiveVocabulary,
+  hl: { component: "mark", kind: "text", titleFromLabel: false },
+};
+
+const preset = zudoDocPreset({ settings, buildDocsSchema, directiveVocabulary });
 
 export default defineConfig({
   framework: "preact",
@@ -32,5 +44,12 @@ export default defineConfig({
   tailwind: { enabled: true },
   base: settings.base,
   // No adapter — static output only (no SSR routes needed for this proof).
-  ...zudoDocPreset({ settings, buildDocsSchema, directiveVocabulary }),
+  ...preset,
+  markdown: {
+    ...preset.markdown,
+    // A2 #3179 — zfb's `gfm` default is conservative (strikethrough + table
+    // only); coverage.mdx's task list and footnote need the other two GFM
+    // constructs turned on explicitly.
+    gfm: { taskListItem: true, footnoteDefinition: true },
+  },
 });

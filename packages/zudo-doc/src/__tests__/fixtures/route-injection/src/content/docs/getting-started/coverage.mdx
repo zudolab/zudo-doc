@@ -1,0 +1,64 @@
+---
+title: Coverage
+description: Second fixture page exercising hierarchical heading-ID collisions, GFM task lists, GFM footnotes, and directive shapes
+tier: gold
+---
+
+COVERAGE-UNIQUE-MARKER: second-content-file-render-proof
+
+This page exists to give the A2 byte-parity fixture standing coverage of
+constructs `getting-started/index.mdx` does not exercise: colliding
+hierarchical heading IDs, a GFM task list, a GFM footnote, and both a
+container and a text directive (see zudolab/zudo-doc#3179).
+
+## Overview
+
+The top-level overview section.
+
+### Details
+
+A nested section under the top-level overview, reusing the word "Details" —
+also used by the second top-level section below.
+
+#### Overview
+
+A third heading reusing the word "Overview", nested three levels deep. The
+hierarchical heading-ID allocator must still give this a distinct id from
+the top-level "Overview" heading above.
+
+### Configuration
+
+A sibling nested section under the top-level overview.
+
+## Details
+
+A second top-level section reusing the word "Details" used by the nested
+section above, at a different depth.
+
+### Overview
+
+A fourth heading reusing the word "Overview", nested one level under this
+second "Details" section.
+
+## Task List
+
+- [x] Completed fixture task
+- [ ] Pending fixture task
+
+## Footnote
+
+This sentence carries a footnote reference[^coverage-note].
+
+[^coverage-note]: This is the footnote definition, rendered at the bottom of the page.
+
+## Directives
+
+A container directive:
+
+:::note
+
+A `:::note` container directive rendered as an admonition.
+
+:::
+
+A text (inline) directive, mixed into prose: :hl[highlighted inline text] sits inline with the surrounding sentence.
