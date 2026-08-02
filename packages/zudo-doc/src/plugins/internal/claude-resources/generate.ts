@@ -5,7 +5,18 @@ import { escapeForMdx } from "./escape-for-mdx.js";
 
 export interface ClaudeResourcesConfig {
   claudeDir: string;
+  /**
+   * The doc site's own root. Anchors project-specific excludes and defaults
+   * `scanRoot`. Note this does NOT itself decide where the `CLAUDE.md` walk
+   * runs — that is `scanRoot`.
+   */
   projectRoot?: string;
+  /**
+   * Root of the `CLAUDE.md` walk and the base for the generated pages'
+   * relative paths, titles, and slugs. Defaults to `projectRoot`, so a caller
+   * that sets only `projectRoot` gets the pre-`scanRoot` behaviour.
+   */
+  scanRoot?: string;
   docsDir: string;
 }
 
@@ -13,6 +24,7 @@ interface ClaudeMdItem {
   displayPath: string;
   slug: string;
   relPath: string;
+  absPath: string;
 }
 
 interface CommandItem {
@@ -210,6 +222,29 @@ function downgradeRepoRelativeLinks(content: string): string {
 // CLAUDE.md discovery
 // ---------------------------------------------------------------------------
 
+/**
+ * Directory names skipped by basename at ANY depth of the walk.
+ *
+ * These are build output, vendored trees, and tooling scratch dirs that can
+ * belong to *any* project under the scan root, not just the one at its top
+ * level. Anchoring them to the scan root (the pre-#3200 behaviour) meant a
+ * doc site in a repo subdirectory with `scanRoot` widened to the repo root
+ * still walked its own `dist/`, `public/`, `out/`, and `test-results/` on
+ * every build — the exact nested layout `scanRoot` exists for.
+ *
+ * `.git` needs no entry here: dot-prefixed entries are already skipped at any
+ * depth by the loop below.
+ */
+const EXCLUDED_DIR_NAMES = new Set([
+  "node_modules",
+  "worktrees",
+  "dist",
+  "out",
+  "public",
+  "__inbox",
+  "test-results",
+]);
+
 function findClaudeMdFiles(dir: string, excludeDirs: string[]): string[] {
   const results: string[] = [];
   if (!fs.existsSync(dir)) return results;
@@ -221,7 +256,7 @@ function findClaudeMdFiles(dir: string, excludeDirs: string[]): string[] {
   );
 
   for (const item of fs.readdirSync(dir)) {
-    if (item === "node_modules") continue;
+    if (EXCLUDED_DIR_NAMES.has(item)) continue;
     if (item.startsWith(".")) continue;
     const itemPath = path.join(dir, item);
     // Path-segment-boundary-aware: a raw startsWith(d) would also match a
@@ -255,35 +290,33 @@ function generateClaudemdDocs(
   config: ClaudeResourcesConfig,
 ): ClaudeMdItem[] {
   const projectRoot = config.projectRoot ?? config.claudeDir;
+  const scanRoot = config.scanRoot ?? projectRoot;
   const outputDir = path.join(config.docsDir, "claude-md");
 
   cleanDir(outputDir);
 
+  // Only genuinely location-specific excludes belong here — everything that is
+  // really a *name* lives in EXCLUDED_DIR_NAMES and is skipped at any depth.
+  // `e2e/fixtures` is anchored at both roots because when `scanRoot` sits above
+  // the doc site, the site's own `e2e/fixtures` is not under the scan root's.
   const excludeDirs = [
-    path.join(projectRoot, ".git"),
-    path.join(projectRoot, "node_modules"),
-    path.join(projectRoot, "worktrees"),
-    path.join(projectRoot, "dist"),
-    path.join(projectRoot, "out"),
-    path.join(projectRoot, "public"),
-    path.join(projectRoot, "__inbox"),
-    path.join(projectRoot, "test-results"),
+    path.join(scanRoot, "e2e", "fixtures"),
     path.join(projectRoot, "e2e", "fixtures"),
     path.join(config.docsDir),
   ];
 
-  const files = findClaudeMdFiles(projectRoot, excludeDirs);
+  const files = findClaudeMdFiles(scanRoot, excludeDirs);
   if (files.length === 0) return [];
 
   ensureDir(outputDir);
   const items: ClaudeMdItem[] = [];
 
   for (const filePath of files) {
-    const relPath = path.relative(projectRoot, filePath);
+    const relPath = path.relative(scanRoot, filePath);
     const displayPath = `/${relPath}`;
     const dirPart = path.dirname(relPath);
     const slug = dirPart === "." ? "root" : dirPart.replace(/\//g, "--");
-    items.push({ displayPath, slug, relPath });
+    items.push({ displayPath, slug, relPath, absPath: filePath });
   }
 
   // Sort BEFORE writing: sidebar_position is baked into each generated .mdx,
@@ -308,7 +341,7 @@ function generateClaudemdDocs(
       );
     }
     emittedSlugs.set(item.slug, item.relPath);
-    const content = fs.readFileSync(path.join(projectRoot, item.relPath), "utf8");
+    const content = fs.readFileSync(item.absPath, "utf8");
     const mdx = `---
 title: "${escapeTitle(item.displayPath)}"
 description: "CLAUDE.md at ${escapeTitle(item.displayPath)}"

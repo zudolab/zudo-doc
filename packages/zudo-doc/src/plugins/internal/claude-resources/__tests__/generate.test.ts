@@ -678,6 +678,164 @@ describe("generateClaudeResourcesDocs", () => {
   });
 
   // ---------------------------------------------------------------------------
+  // Depth-independent directory-name exclusions (#3200)
+  // ---------------------------------------------------------------------------
+
+  describe("depth-independent directory-name exclusions", () => {
+    const excludedNames = [
+      "node_modules",
+      "worktrees",
+      "dist",
+      "out",
+      "public",
+      "__inbox",
+      "test-results",
+    ];
+
+    it.each(excludedNames)(
+      "excludes a nested %s/ directory, not just one at the scan root",
+      (name) => {
+        fs.mkdirSync(path.join(tmpDir, "sub", name), { recursive: true });
+        fs.writeFileSync(
+          path.join(tmpDir, "sub", name, "CLAUDE.md"),
+          `# nested ${name} instructions — should be excluded`,
+        );
+
+        const result = generateClaudeResourcesDocs({
+          claudeDir,
+          projectRoot: tmpDir,
+          docsDir,
+        });
+
+        // Only root/CLAUDE.md (from the fixture).
+        expect(result.claudemd).toBe(1);
+        expect(
+          fs.existsSync(path.join(docsDir, "claude-md", `sub--${name}.mdx`)),
+        ).toBe(false);
+      },
+    );
+
+    it("still discovers a nested prefix-colliding sibling (sub/dist-extra)", () => {
+      // Name-based exclusion must be an exact basename match, not a prefix —
+      // the depth-independent form of the #2561 boundary guarantee.
+      fs.mkdirSync(path.join(tmpDir, "sub", "dist-extra"), { recursive: true });
+      fs.writeFileSync(
+        path.join(tmpDir, "sub", "dist-extra", "CLAUDE.md"),
+        "# nested dist-extra instructions",
+      );
+
+      const result = generateClaudeResourcesDocs({
+        claudeDir,
+        projectRoot: tmpDir,
+        docsDir,
+      });
+
+      expect(result.claudemd).toBe(2);
+      const page = path.join(docsDir, "claude-md", "sub--dist-extra.mdx");
+      expect(fs.existsSync(page)).toBe(true);
+      expect(fs.readFileSync(page, "utf8")).toContain(
+        "nested dist-extra instructions",
+      );
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // scanRoot / projectRoot split (#3200)
+  // ---------------------------------------------------------------------------
+
+  describe("scanRoot / projectRoot split", () => {
+    // Layout: tmpDir is the repo root (scanRoot); siteDir is a doc site living
+    // in a repo subdirectory (the real projectRoot).
+    let siteDir: string;
+
+    beforeEach(() => {
+      siteDir = path.join(tmpDir, "site");
+      fs.mkdirSync(siteDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(siteDir, "CLAUDE.md"),
+        "# site instructions",
+      );
+    });
+
+    it("walks from scanRoot and derives relPath/slug against it", () => {
+      const result = generateClaudeResourcesDocs({
+        claudeDir,
+        projectRoot: siteDir,
+        scanRoot: tmpDir,
+        docsDir,
+      });
+
+      // tmpDir/CLAUDE.md (fixture) + site/CLAUDE.md
+      expect(result.claudemd).toBe(2);
+      const sitePage = path.join(docsDir, "claude-md", "site.mdx");
+      expect(fs.existsSync(sitePage)).toBe(true);
+      const parsed = matter(fs.readFileSync(sitePage, "utf8"));
+      expect(parsed.data.title).toBe("/site/CLAUDE.md");
+      expect(parsed.data.sidebar_label).toBe("site/CLAUDE.md");
+      expect(parsed.content).toContain("site instructions");
+    });
+
+    it("excludes the nested project's own build output", () => {
+      for (const name of ["dist", "public", "out", "test-results"]) {
+        fs.mkdirSync(path.join(siteDir, name), { recursive: true });
+        fs.writeFileSync(
+          path.join(siteDir, name, "CLAUDE.md"),
+          `# site/${name} decoy — should be excluded`,
+        );
+      }
+
+      const result = generateClaudeResourcesDocs({
+        claudeDir,
+        projectRoot: siteDir,
+        scanRoot: tmpDir,
+        docsDir,
+      });
+
+      // Root + site only — all four decoys under site/ are excluded even though
+      // they sit one level below the scan root.
+      expect(result.claudemd).toBe(2);
+    });
+
+    it("excludes e2e/fixtures under the nested project root as well as the scan root", () => {
+      for (const root of [tmpDir, siteDir]) {
+        fs.mkdirSync(path.join(root, "e2e", "fixtures"), { recursive: true });
+        fs.writeFileSync(
+          path.join(root, "e2e", "fixtures", "CLAUDE.md"),
+          "# fixture decoy — should be excluded",
+        );
+      }
+
+      const result = generateClaudeResourcesDocs({
+        claudeDir,
+        projectRoot: siteDir,
+        scanRoot: tmpDir,
+        docsDir,
+      });
+
+      expect(result.claudemd).toBe(2);
+      expect(
+        fs.existsSync(path.join(docsDir, "claude-md", "e2e--fixtures.mdx")),
+      ).toBe(false);
+      expect(
+        fs.existsSync(path.join(docsDir, "claude-md", "site--e2e--fixtures.mdx")),
+      ).toBe(false);
+    });
+
+    it("defaults scanRoot to projectRoot", () => {
+      const result = generateClaudeResourcesDocs({
+        claudeDir,
+        projectRoot: siteDir,
+        docsDir,
+      });
+
+      // Walk confined to site/ — the repo-root CLAUDE.md is never reached.
+      expect(result.claudemd).toBe(1);
+      const rootPage = path.join(docsDir, "claude-md", "root.mdx");
+      expect(fs.readFileSync(rootPage, "utf8")).toContain("site instructions");
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // CLAUDE.md repo-relative link downgrade (#2411, Class B)
   // ---------------------------------------------------------------------------
 
