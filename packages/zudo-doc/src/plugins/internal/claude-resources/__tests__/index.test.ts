@@ -158,4 +158,37 @@ describe("runClaudeResourcesPreStep — scanRoot decoupling", () => {
       "/docs-site/CLAUDE.md",
     ]);
   });
+
+  it("(f) excludes build output of nested projects anywhere under scanRoot (#3200)", () => {
+    // The doc site's own build output. Before #3200 the exclude list was
+    // anchored at scanRoot only, so every one of these was still walked once
+    // scanRoot moved above the doc site.
+    for (const name of ["dist", "public", "out", "test-results"]) {
+      fs.mkdirSync(path.join(docsSite, name), { recursive: true });
+      fs.writeFileSync(
+        path.join(docsSite, name, "CLAUDE.md"),
+        `# docs-site/${name} decoy — should be excluded`,
+      );
+    }
+    // A sibling package's build output, two levels below the scan root.
+    fs.mkdirSync(path.join(repoRoot, "app", "dist"), { recursive: true });
+    fs.writeFileSync(
+      path.join(repoRoot, "app", "dist", "CLAUDE.md"),
+      "# app/dist decoy — should be excluded",
+    );
+
+    const counts = runClaudeResourcesPreStep({
+      claudeDir,
+      projectRoot: docsSite,
+      scanRoot: repoRoot,
+    });
+
+    // Still the same three real files — none of the five decoys leak in.
+    expect(counts.claudemd).toBe(3);
+    expect(claudeMdTitles()).toEqual([
+      "/CLAUDE.md",
+      "/app/CLAUDE.md",
+      "/docs-site/CLAUDE.md",
+    ]);
+  });
 });

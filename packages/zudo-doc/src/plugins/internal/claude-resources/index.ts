@@ -71,10 +71,15 @@ export function runClaudeResourcesPreStep(
     ? docsDirInput
     : path.resolve(projectRoot, docsDirInput);
 
-  // The generator's `projectRoot` param IS the CLAUDE.md scan root + relPath
-  // base (it never touches output — output is always `docsDir`), so pass the
-  // resolved scanRoot there while docsDir stays anchored to the real projectRoot.
-  return generateClaudeResourcesDocs({ claudeDir, projectRoot: scanRoot, docsDir });
+  // The generator takes both roots: `scanRoot` is the CLAUDE.md walk root +
+  // relPath base, `projectRoot` anchors the project-specific excludes (neither
+  // touches output — output is always `docsDir`).
+  return generateClaudeResourcesDocs({
+    claudeDir,
+    projectRoot,
+    scanRoot,
+    docsDir,
+  });
 }
 
 export {
