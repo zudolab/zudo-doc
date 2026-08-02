@@ -298,3 +298,46 @@ describe("HeadWithDefaults — SiteHeadConfig head extras", () => {
     expect(i2).toBeGreaterThan(i1);
   });
 });
+
+describe("HeadWithDefaults — favicon set", () => {
+  it("emits all four favicon links, svg first, with root-base hrefs", () => {
+    const ctx = makeFakeChromeContext({});
+    const HeadWithDefaults = createHeadWithDefaults(ctx);
+    const out = render(<HeadWithDefaults title="Test" />);
+    expect(out).toContain('<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>');
+    expect(out).toContain('<link rel="icon" href="/favicon.ico" sizes="any"/>');
+    expect(out).toContain(
+      '<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"/>',
+    );
+    expect(out).toContain(
+      '<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"/>',
+    );
+    // svg entry must be first in the favicon set.
+    const svgIdx = out.indexOf('type="image/svg+xml"');
+    const icoIdx = out.indexOf('href="/favicon.ico"');
+    const png32Idx = out.indexOf('href="/favicon-32x32.png"');
+    const png16Idx = out.indexOf('href="/favicon-16x16.png"');
+    expect(svgIdx).toBeGreaterThan(-1);
+    expect(icoIdx).toBeGreaterThan(svgIdx);
+    expect(png32Idx).toBeGreaterThan(icoIdx);
+    expect(png16Idx).toBeGreaterThan(png32Idx);
+  });
+
+  it("prefixes every favicon href with a non-root base", () => {
+    const ctx = makeFakeChromeContext({
+      overrides: {
+        withBase: (p: string) => `/sub${p}`,
+      },
+    });
+    const HeadWithDefaults = createHeadWithDefaults(ctx);
+    const out = render(<HeadWithDefaults title="Test" />);
+    expect(out).toContain('<link rel="icon" type="image/svg+xml" href="/sub/favicon.svg"/>');
+    expect(out).toContain('<link rel="icon" href="/sub/favicon.ico" sizes="any"/>');
+    expect(out).toContain(
+      '<link rel="icon" type="image/png" sizes="32x32" href="/sub/favicon-32x32.png"/>',
+    );
+    expect(out).toContain(
+      '<link rel="icon" type="image/png" sizes="16x16" href="/sub/favicon-16x16.png"/>',
+    );
+  });
+});
