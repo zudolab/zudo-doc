@@ -98,8 +98,6 @@ export interface PresetSettings {
   docHistory?: boolean;
   docHistoryExclude?: string[];
   claudeResources?: PresetClaudeResourcesConfig | false;
-  /** "owner/repo" — when set, enables `#123` / SHA autolinks in markdown. Omit to disable entirely. */
-  githubAutolinksRepo?: string;
   /**
    * When `true` (the **default** when omitted — #2404), the preset adds the
    * package-owned route-injection plugin (`@takazudo/zudo-doc/plugins/routes`).
@@ -417,13 +415,6 @@ function buildMarkdownFeatures(
     // Remaining opt-in features (#1804).
     githubAlerts: true,
     readingTime: true,
-    // owner/repo used to build `owner/repo#123`, `#123`, and SHA autolinks.
-    // Included only when settings.githubAutolinksRepo is set; omitted entirely
-    // for projects that don't configure a repo (restores old generated-project
-    // behaviour — zudo-doc#2321 Wave-0 correctness fix).
-    ...(settings.githubAutolinksRepo
-      ? { githubAutolinks: { repo: settings.githubAutolinksRepo } }
-      : {}),
     codeEnrichment: {},
     // codeTabs accepts the `true` shorthand; <CodeGroup> is registered host-side.
     codeTabs: true,

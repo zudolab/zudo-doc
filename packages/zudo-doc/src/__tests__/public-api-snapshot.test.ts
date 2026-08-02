@@ -248,7 +248,6 @@ describe("Settings public field set snapshot", () => {
         "noindex",
         "editUrl",
         "githubUrl",
-        "githubAutolinksRepo",
         "siteUrl",
         "metaTags",
         "head",
