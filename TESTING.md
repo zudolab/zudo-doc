@@ -410,5 +410,10 @@ a commented-out block). Example, from the TOC wrapper comment in
 `packages/zudo-doc/src/doc-page-shell/index.tsx`:
 
 ```typescript
-// `xl:flex` (NOT `xl:block`) is load-bearing for the TOC's sticky safelist-ok: prose contrast — `xl:flex` is the live class on this div below
+// Load-bearing for the TOC's sticky scroll-follow: this wrapper must
+// be `xl:flex`, never `xl:block`.  safelist-ok: `xl:block` names the rejected alternative in prose; only `xl:flex` below is emitted
 ```
+
+The marker is a **trailing** annotation, so put the class name it exempts on a
+line that ends at a natural clause boundary. Appending it to a line that breaks
+mid-sentence technically satisfies the guard but leaves the prose unreadable.
