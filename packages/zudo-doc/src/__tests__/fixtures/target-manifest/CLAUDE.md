@@ -1,7 +1,8 @@
 # target-manifest-confirm
 
 Confirm-gate fixture (epic zudolab/zudo-doc#2651, #2659) proving the locked
-13-file minimal-scaffold manifest builds, dev-serves, hydrates, and
+17-file minimal-scaffold manifest (grew from 13 files when the default
+favicon set shipped — epic #3184 / #3186) builds, dev-serves, hydrates, and
 typechecks from the npm-packed `@takazudo/zudo-doc` package. Not a real
 project — do not scaffold from this directory.
 

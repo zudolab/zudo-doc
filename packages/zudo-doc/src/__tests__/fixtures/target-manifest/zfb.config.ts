@@ -1,5 +1,5 @@
 // Target-manifest confirm fixture (Wave 5, epic zudolab/zudo-doc#2651, #2659).
-// This IS the whole config surface under test — the locked 13-file manifest's
+// This IS the whole config surface under test — the locked 17-file manifest's
 // central claim ("one config file") lives or dies on this file typechecking
 // and building cleanly through `zudoDoc()` (#2657), with NO local shim and a
 // tsconfig that `include`s `pages/` (so the doc stub below is really
