@@ -234,6 +234,12 @@ themePacks: ["default", "foundry"],
 
 デフォルト: `"src/content/docs"`
 
+### entryDocSlug
+
+[バージョン一覧ページ](./versioning.mdx#バージョン一覧ページ)が「最新ドキュメント」へのエントリーポイント（および過去の各バージョンのドキュメントリンク）として使用するドキュメントページのルートスラッグ。先頭・末尾にスラッシュを含まない（例：`"getting-started"`、`"overview/getting-started"`）。実行時のバリデーションは行われず、無効なスラッグは単に404になる。
+
+デフォルト: `"getting-started"`
+
 ### defaultLocale
 
 デフォルトロケールコード（プレフィックスなしのルート）。
@@ -469,6 +475,7 @@ body-foot ユーティリティエリア（doc-history / view-source）、また
 | `labelKey` | `string`（任意） | i18n 翻訳キー（`label` を上書き） |
 | `path` | `string` | 遷移先パス |
 | `categoryMatch` | `string`（任意） | このタブをサイドバーカテゴリにリンク |
+| `versioned` | `boolean`（任意） | このアイテムのリンクがアクティブな `/v/{version}` プレフィックスを持つかどうか。デフォルトは `true` — [ヘッダーナビゲーション](./header-navigation.mdx#プロパティ-versioned)を参照 |
 
 ```ts
 headerNav: [
