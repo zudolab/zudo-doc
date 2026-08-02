@@ -306,9 +306,11 @@ export interface Settings {
    * Route slug (no leading/trailing slashes, e.g. `"getting-started"` or
    * `"overview/getting-started"`) of the doc page the versions page links to
    * as "latest docs" / each past version's docs entry point. Not validated at
-   * runtime — an invalid slug simply 404s.
+   * runtime — an invalid slug simply 404s. Optional (recently-added field) so
+   * existing complete `Settings` literals built outside `zudoDoc()` keep
+   * compiling unchanged; defaults to `"getting-started"` when omitted.
    */
-  entryDocSlug: string;
+  entryDocSlug?: string;
   defaultLocale: string;
   locales: Record<string, LocaleConfig>;
   mermaid: boolean;
