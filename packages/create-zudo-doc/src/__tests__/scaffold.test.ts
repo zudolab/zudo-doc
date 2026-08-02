@@ -33,6 +33,20 @@ import { validatePreset } from "../preset.js";
 
 const TEMP_PREFIX = "create-zudo-doc-test-";
 
+// zfb-family pins the scaffold is expected to emit. Read from the monorepo
+// root rather than hardcoded: check-pin-parity.mjs already proves scaffold.ts
+// agrees with the root pin, so a literal here adds no coverage — it only has
+// to be hand-bumped on every zfb bump, and going stale fails this test for a
+// reason unrelated to what it asserts (that the deps are emitted at all).
+const ROOT_ZFB_PINS: Record<string, string> = (
+  fs.readJsonSync(
+    path.resolve(
+      path.dirname(fileURLToPath(import.meta.url)),
+      "../../../../package.json",
+    ),
+  ) as { dependencies: Record<string, string> }
+).dependencies;
+
 let tempDir: string;
 let originalCwd: string;
 
@@ -1454,12 +1468,16 @@ describe("scaffold — generated package.json", () => {
     // docHistory-gating test below (#3110).
     await scaffold(baseChoices);
     const pkg = await fs.readJson(projectPath("test-doc", "package.json"));
-    expect(pkg.dependencies["@takazudo/zfb"]).toBe("1.1.0");
-    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe("1.1.0");
+    expect(pkg.dependencies["@takazudo/zfb"]).toBe(ROOT_ZFB_PINS["@takazudo/zfb"]);
+    expect(pkg.dependencies["@takazudo/zfb-runtime"]).toBe(
+      ROOT_ZFB_PINS["@takazudo/zfb-runtime"],
+    );
     // The default scaffold is pure static and emits no Worker-only routes or
     // adapter config. Consumers add a deploy-target adapter when they opt in.
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBeUndefined();
-    expect(pkg.dependencies["@takazudo/zfb-md-wasm"]).toBe("1.1.0");
+    expect(pkg.dependencies["@takazudo/zfb-md-wasm"]).toBe(
+      ROOT_ZFB_PINS["@takazudo/zfb-md-wasm"],
+    );
     expect(pkg.dependencies["@takazudo/zudo-doc"]).toMatch(/^\^\d+\.\d+\.\d+/);
     expect(pkg.dependencies["diff"]).toBeDefined();
     expect(pkg.dependencies["@takazudo/zdtp"]).toBeDefined();

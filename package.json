@@ -100,17 +100,14 @@
       "yaml@2": ">=2.8.3 <3",
       "brace-expansion@2": ">=2.0.3 <3",
       "brace-expansion@5": ">=5.0.6 <6"
-    },
-    "patchedDependencies": {
-      "@takazudo/zudo-design-token-lint@1.0.0": "patches/@takazudo__zudo-design-token-lint@1.0.0.patch"
     }
   },
   "dependencies": {
     "@takazudo/zdtp": "0.4.9",
-    "@takazudo/zfb": "1.1.0",
-    "@takazudo/zfb-adapter-cloudflare": "1.1.0",
-    "@takazudo/zfb-md-wasm": "1.1.0",
-    "@takazudo/zfb-runtime": "1.1.0",
+    "@takazudo/zfb": "2.0.0",
+    "@takazudo/zfb-adapter-cloudflare": "2.0.0",
+    "@takazudo/zfb-md-wasm": "2.0.0",
+    "@takazudo/zfb-runtime": "2.0.0",
     "@takazudo/zudo-doc": "workspace:*",
     "diff": "^8.0.3",
     "katex": "^0.16.38",
@@ -122,7 +119,7 @@
     "@cloudflare/vitest-pool-workers": "0.18.5",
     "@cloudflare/workers-types": "4.20260608.1",
     "@playwright/test": "1.58.2",
-    "@takazudo/zudo-design-token-lint": "^1.0.0",
+    "@takazudo/zudo-design-token-lint": "^2.0.0",
     "@types/culori": "^4.0.1",
     "@types/node": "^25.3.5",
     "@types/pluralize": "^0.0.33",
