@@ -591,7 +591,7 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"91eed9aa1e825d4ffb176e32d553102ec9af6667ae89dd0c7120757d4bdbd266"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"aa31495915d447d5ecac35a260fe9af5f953e8380c667dfc8ac34cc96d47730d"`);
   });
 });
 

@@ -13,7 +13,14 @@ export type { LocaleLink };
 
 /** Minimal nav node shape required by nav-data-prep functions. */
 export interface NavDataPrepNode {
-  slug: string;
+  /**
+   * Content slug, used to rebuild a versioned href. Optional so the public
+   * nav-wrapper node shapes (`CategoryNavNode` / `CategoryTreeNavNode`),
+   * which predate #3218 and never carried a slug, still satisfy this
+   * constraint — a node without one keeps its href verbatim through
+   * {@link remapVersionedHrefs}.
+   */
+  slug?: string;
   href?: string;
   label: string;
   children: NavDataPrepNode[];
@@ -24,10 +31,14 @@ export interface NavDataPrepHeaderNavItem {
   label: string;
   labelKey?: string;
   path: string;
+  /** Suppress the `/v/{version}` prefix on this item's href when `false`. Default `true`. */
+  versioned?: boolean;
   children?: Array<{
     label: string;
     labelKey?: string;
     path: string;
+    /** Suppress the `/v/{version}` prefix on this child's href when `false`. Default `true`. */
+    versioned?: boolean;
   }>;
 }
 
@@ -52,7 +63,11 @@ export interface RootMenuItem {
  * `buildNavTree` always emits hrefs via `docsUrl()`; when the active route
  * lives under `/v/{version}/...` we need the same nodes pointing at the
  * versioned URL so internal nav clicks stay inside the version. Skips
- * nodes without an href (link-only or category placeholders).
+ * nodes without an href (link-only or category placeholders) and nodes
+ * carrying no slug at all (the pre-#3218 public node shape — there is nothing
+ * to rebuild a versioned URL from, so the href is left verbatim). An empty
+ * slug is NOT skipped: `""` is the canonical docs-root slug (#1891) and
+ * `versionedDocsUrl("")` resolves to the per-version docs root.
  *
  * Parameterized version of `remapVersionedHrefs` from `_nav-data-prep.ts` —
  * receives `versionedDocsUrl` as an argument instead of importing from `@/utils/base`.
@@ -72,7 +87,7 @@ export function remapVersionedHrefs<T extends NavDataPrepNode>(
         ? remapVersionedHrefs(node.children as T[], version, nodeLang, versionedDocsUrl)
         : node.children;
 
-    if (!node.href || node.slug.startsWith("__link__")) {
+    if (!node.href || node.slug === undefined || node.slug.startsWith("__link__")) {
       return children !== node.children ? { ...node, children } : node;
     }
 
@@ -93,18 +108,23 @@ export function buildRootMenuItems(
   currentVersion: string | undefined,
   headerNav: NavDataPrepHeaderNavItem[],
   t: (key: string, lang: string) => string,
-  navHref: (path: string, lang: string | undefined, version: string | undefined) => string,
+  navHref: (
+    path: string,
+    lang: string | undefined,
+    version: string | undefined,
+    versioned?: boolean,
+  ) => string,
 ): RootMenuItem[] {
   return headerNav.map((item) => ({
     label: item.labelKey
       ? t(item.labelKey, lang)
       : item.label,
-    href: navHref(item.path, lang, currentVersion),
+    href: navHref(item.path, lang, currentVersion, item.versioned),
     children: item.children?.map((child) => ({
       label: child.labelKey
         ? t(child.labelKey, lang)
         : child.label,
-      href: navHref(child.path, lang, currentVersion),
+      href: navHref(child.path, lang, currentVersion, child.versioned),
     })),
   }));
 }

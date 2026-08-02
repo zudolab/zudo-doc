@@ -22,6 +22,7 @@
 import type { JSX } from "preact";
 import { CategoryNav as CategoryNavV2 } from "../nav-indexing/index.js";
 import type { NavNode as V2NavNode } from "../nav-indexing/types.js";
+import { remapVersionedHrefs } from "../nav-data-prep/index.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -29,6 +30,16 @@ import type { NavNode as V2NavNode } from "../nav-indexing/types.js";
 
 /** Minimal nav node shape required by the category-nav factory. */
 export interface CategoryNavNode {
+  /**
+   * Content slug — used by remapVersionedHrefs to rebuild a versioned href.
+   *
+   * Optional — `./category-nav` is a documented frozen-1.0 public subpath
+   * (`packages/zudo-doc/CLAUDE.md`/`API.md`), so a pre-#3218 caller whose
+   * `buildNavTree`/`findNode` implementations emit the older slug-less node
+   * shape must keep compiling. A node without a slug cannot be rebuilt into
+   * its versioned form, so `remapVersionedHrefs` leaves its href untouched.
+   */
+  slug?: string;
   label: string;
   description?: string;
   href?: string;
@@ -66,6 +77,14 @@ export interface CategoryNavWrapperProps {
    * Defaults to defaultLocale when not provided.
    */
   lang?: string;
+  /**
+   * Active version slug for a `/v/{version}` route. Injected via
+   * createMdxComponents() closure alongside `lang` (#3218). When set, the nav
+   * source resolves the version's doc collection and emitted hrefs are
+   * remapped to their versioned form; omitted (latest/unversioned pages)
+   * leaves behavior unchanged.
+   */
+  currentVersion?: string;
   /** Optional extra CSS classes forwarded to the <nav> element. */
   class?: string;
 }
@@ -102,6 +121,19 @@ export interface CategoryNavDeps {
    * Host passes `firstRoutedHref` from `@/utils/docs`.
    */
   firstRoutedHref: (node: CategoryNavNode) => string | undefined;
+  /**
+   * Build a versioned docs URL: `versionedDocsUrl(slug, versionSlug, lang)`.
+   * Host passes `ctx.versionedDocsUrl`. Used to remap the resolved tree's
+   * hrefs into their versioned form when `currentVersion` is set (#3218) —
+   * mirrors the sidebar's `buildSidebarNodes` two-step in `chrome/derive.tsx`.
+   *
+   * Optional — `./category-nav` is a documented frozen-1.0 public subpath
+   * (`packages/zudo-doc/CLAUDE.md`/`API.md`), so a pre-#3218 caller that hand-
+   * constructs `CategoryNavDeps` without this field must keep compiling.
+   * Omitting it while passing `currentVersion` leaves hrefs unversioned (a
+   * loud dev warning is emitted) rather than throwing.
+   */
+  versionedDocsUrl?: (slug: string, versionSlug: string, lang: string) => string;
 }
 
 /**
@@ -121,12 +153,14 @@ export interface CategoryNavDeps {
 export function createCategoryNavWrapper(
   deps: CategoryNavDeps,
 ): (props: CategoryNavWrapperProps) => JSX.Element | null {
-  const { defaultLocale, resolveNavSource, buildNavTree, findNode, firstRoutedHref } = deps;
+  const { defaultLocale, resolveNavSource, buildNavTree, findNode, firstRoutedHref, versionedDocsUrl } =
+    deps;
 
   function CategoryNavWrapper({
     category,
     categories,
     lang = defaultLocale,
+    currentVersion,
     class: className,
   }: CategoryNavWrapperProps): JSX.Element | null {
     const locale = lang;
@@ -134,10 +168,27 @@ export function createCategoryNavWrapper(
     // No defaultLocaleOnly filter — category cards intentionally show all EN
     // pages even if they match defaultLocaleOnlyPrefixes (the option signature in
     // resolveNavSource keeps this variant from colliding with the sidebar's).
-    const { navDocs, categoryMeta } = resolveNavSource(locale, undefined, {
+    const { navDocs, categoryMeta } = resolveNavSource(locale, currentVersion, {
       keepUnlisted: true,
     });
-    const tree = buildNavTree(navDocs, locale, categoryMeta);
+    const rawTree = buildNavTree(navDocs, locale, categoryMeta);
+    // Two-step version threading mirroring buildSidebarNodes (chrome/derive.tsx):
+    // version-scoped data source above, then remap the resolved hrefs into
+    // their versioned form (#3218). Unversioned pages: tree === rawTree.
+    let tree = rawTree;
+    if (currentVersion) {
+      if (versionedDocsUrl) {
+        tree = remapVersionedHrefs(rawTree, currentVersion, locale, versionedDocsUrl);
+      } else {
+        // versionedDocsUrl is optional (back-compat for pre-#3218 CategoryNavDeps
+        // callers, see the field's doc comment) — silently leaving hrefs
+        // unversioned would hide the misconfiguration, so warn loudly.
+        console.warn(
+          "[zudo-doc] CategoryNavWrapper: currentVersion is set but CategoryNavDeps.versionedDocsUrl " +
+            "was not provided — nav card hrefs will NOT be remapped into the version.",
+        );
+      }
+    }
 
     let children: V2NavNode[];
 

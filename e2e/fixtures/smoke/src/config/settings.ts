@@ -19,6 +19,7 @@ export const settings = {
   base: "/",
   minifyHtml: true as boolean,
   docsDir: "src/content/docs",
+  entryDocSlug: "getting-started",
   defaultLocale: "en" as const,
   locales: {} satisfies Record<string, LocaleConfig>,
   mermaid: true,

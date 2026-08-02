@@ -296,13 +296,13 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `trailingSlash` | `boolean` | Whether to add trailing slashes to URLs |
 | `minifyHtml?` | `boolean` | Minify production HTML output from `zfb build`; defaults to `true` when omitted |
 | `docsDir` | `string` | Path to English docs content directory |
+| `entryDocSlug` | `string` | Route slug (no leading/trailing slashes, e.g. `"getting-started"` or `"overview/getting-started"`) of the doc page the versions page links to as "latest docs" / each past version's docs entry point. Not validated at runtime. |
 | `defaultLocale` | `string` | Default locale code (e.g. `"en"`) |
 | `locales` | `Record<string, LocaleConfig>` | Locale configuration map |
 | `mermaid` | `boolean` | Enable Mermaid diagram rendering |
 | `noindex` | `boolean` | Set `noindex` on all pages |
 | `editUrl` | `string \| false` | Base URL for "Edit this page" links |
 | `githubUrl` | `string \| false` | GitHub repo URL for the GitHub link |
-| `githubAutolinksRepo?` | `string` | `"owner/repo"` for `#123` / SHA autolinks |
 | `siteUrl` | `string` | Canonical site URL (for sitemap, OG) |
 | `metaTags` | `MetaTagsConfig` | `<meta>` tag configuration |
 | `head?` | `SiteHeadConfig` | Site-wide `<head>` extras injected into every page. Supports `preconnect`, `preload`, `stylesheets`, `alternateLinks`, and `meta` descriptors. Stylesheet entries accept `async: true` for non-render-blocking loading via the `media="print" + onload` pattern with a `<noscript>` fallback. Absent (the default) emits nothing — byte-identical to the pre-2.0.1 baseline. |
@@ -335,7 +335,7 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `claudeResources` | `{ claudeDir: string; projectRoot?: string; scanRoot?: string } \| false` | Claude resources generation config (`scanRoot` — CLAUDE.md discovery root, defaults to `projectRoot`; #2558) |
 | `defaultLocaleOnlyPrefixes` | `string[]` | URL prefixes that only render for the default locale |
 | `footer` | `FooterConfig \| false` | Footer config |
-| `headerNav` | `HeaderNavItem[]` | Header navigation items |
+| `headerNav` | `HeaderNavItem[]` | Header navigation items. Each item (and child) accepts `versioned?: boolean` (default `true`) — set `false` to suppress the `/v/{version}` prefix for a target that has no versioned counterpart. |
 | `headerRightItems` | `HeaderRightItem[]` | Header right side items |
 | `packageOwnedRoutes?` | `boolean` | Package-owned route injection seam. Default `true` (#2404). See ADR `docs/adr/route-injection-seam.md`. |
 | `chromeBindingsModule?` | `string` | Project-root-relative path (e.g. `"./src/chrome-bindings.tsx"`) to a host module with a **named export `chromeBindings`**, built with `defineChromeBindings` (from `./chrome-bindings`) and typed `ChromeHostBindings` (type from `./factory-context`). Only consumed under `packageOwnedRoutes`: the routes plugin re-exports the module through `virtual:zudo-doc-chrome-bindings` so the injected chrome shim spreads real host bindings into `createChrome(...)`. Absent → byte-identical stub-defaults behavior; explicitly empty string → the build fails loudly at plugin setup; present but file missing → the build fails at plugin setup, naming the resolved absolute path. SSR-presentational only — client islands inside the module are not guaranteed to register on injected routes. See ADR `docs/adr/route-injection-seam.md` ("Host-callables channel — chromeBindingsModule"). |

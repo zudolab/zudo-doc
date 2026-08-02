@@ -90,10 +90,23 @@ All fixtures are pre-built sequentially with `zfb build` (with `SKIP_DOC_HISTORY
 ```bash
 pnpm test:e2e                                           # Full suite (setup + all tests)
 pnpm test:e2e:ci                                        # CI suite (excludes @flaky + @local-only tests)
-npx playwright test e2e/smoke-search.spec.ts --project smoke  # Single test file
-npx playwright test --project smoke                      # All tests for one fixture
-E2E_FIXTURES=smoke npx playwright test --project smoke  # Fast path: build + boot only smoke
 ```
+
+**A bare `npx playwright test` does NOT build fixtures.** `playwright.config.ts` has
+no `globalSetup`, and `setup-fixtures.sh` runs only as the first half of the
+`test:e2e*` scripts above. Invoking Playwright directly therefore tests whatever
+`e2e/fixtures/<name>/dist/` happens to be on disk — which silently means stale HTML
+after any fixture-content edit. Run setup yourself first:
+
+```bash
+export E2E_FIXTURES=smoke                               # scopes BOTH setup and the runner
+bash e2e/setup-fixtures.sh                              # REQUIRED — cheap no-op when warm
+npx playwright test --project smoke                     # all tests for that fixture
+npx playwright test e2e/smoke-search.spec.ts --project smoke   # or a single file
+```
+
+The staleness itself is guarded — `compute_build_hash()` covers each fixture's
+`src/content/` — but the marker is only consulted when the script actually runs.
 
 **Fast path**: `E2E_FIXTURES=<name>` scopes both `setup-fixtures.sh` (builds only that fixture) and `playwright.config.ts` (boots only its webServer, zero stagger); repeated runs skip the build when inputs are unchanged (`e2e/fixtures/<name>/.build-marker.sha256` tracks the hash); `E2E_FORCE_REBUILD=1` forces a full rebuild.
 

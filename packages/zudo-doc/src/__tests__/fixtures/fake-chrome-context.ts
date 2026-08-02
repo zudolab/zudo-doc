@@ -19,6 +19,7 @@ function makeFakeSettings(overrides: Record<string, unknown> = {}): Record<strin
     siteName: "Test Site",
     base: "/",
     docsDir: "src/content/docs",
+    entryDocSlug: "getting-started",
     defaultLocale: "en",
     locales: {},
     versions: false,

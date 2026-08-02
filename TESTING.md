@@ -96,12 +96,15 @@ pnpm check:worker  # generated binding + custom Worker typecheck
 pnpm test:worker   # builds first, then runs Workers-runtime/SQLite DO tests
 pnpm verify:worker-dry-run # builds first, then verifies the Wrangler production bundle
 
-# Single-fixture E2E fast path (builds only the named fixture, then runs only its tests):
-E2E_FIXTURES=smoke npx playwright test --project smoke
-E2E_FIXTURES=sidebar npx playwright test --project sidebar
+# Single-fixture E2E fast path. Run setup-fixtures.sh yourself: playwright.config.ts
+# has no globalSetup, so a bare `npx playwright test` builds nothing and would run
+# against a stale fixture dist/ (cheap no-op when already warm).
+export E2E_FIXTURES=smoke
+bash e2e/setup-fixtures.sh && npx playwright test --project smoke
 ```
 
-The `E2E_FIXTURES=<name>` fast path builds only the named fixture (caches via
+`E2E_FIXTURES=<name>` scopes both halves — `setup-fixtures.sh` builds only that
+fixture and the runner boots only its webServer. It builds only the named fixture (caches via
 `.build-marker.sha256`; force-rebuild with `E2E_FORCE_REBUILD=1`) and boots only
 its Playwright webServer. Repeated runs skip the build when inputs are unchanged.
 
@@ -388,3 +391,32 @@ await page.waitForTimeout(RESIZE_DEBOUNCE_BUFFER_MS); // wait-ok: settle window 
 If a test needs `waitForTimeout`, that is usually a sign the code under test lacks a
 testable event or state signal. Consider adding one to the production code rather than
 sleeping in the test.
+
+## Package Safelist Check
+
+`scripts/check-package-safelist.mjs` (`pnpm check:package-safelist`) scans
+`packages/zudo-doc/src/**/*.tsx` as raw text for responsive-variant and
+arbitrary-value Tailwind classes, and fails if any of them are missing from
+the generated `packages/zudo-doc/dist/safelist.css`. Because it scans raw
+text rather than parsed JSX, a class name written in PROSE — e.g. a comment
+contrasting one class with another — reads exactly like a live class
+attribute and gets demanded of the generated safelist even though nothing
+emits it.
+
+A line carrying a trailing `// safelist-ok: <reason>` comment is excluded
+from extraction, mirroring the `// wait-ok:` convention above — a plain,
+shell-greppable substring with no reason-text validation. This is the ONLY
+line-aware step: comment lines WITHOUT the marker are still scanned exactly
+like any other source line (general comment-stripping was considered and
+rejected — it would also blind the guard to real class usage sitting inside
+a commented-out block). Example, from the TOC wrapper comment in
+`packages/zudo-doc/src/doc-page-shell/index.tsx`:
+
+```typescript
+// Load-bearing for the TOC's sticky scroll-follow: this wrapper must
+// be `xl:flex`, never `xl:block`.  safelist-ok: `xl:block` names the rejected alternative in prose; only `xl:flex` below is emitted
+```
+
+The marker is a **trailing** annotation, so put the class name it exempts on a
+line that ends at a natural clause boundary. Appending it to a line that breaks
+mid-sentence technically satisfies the guard but leaves the prose unreadable.

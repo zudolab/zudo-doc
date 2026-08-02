@@ -105,6 +105,19 @@ src/content/
 
 このページは`zudoDoc({...})`に渡す`versions`配列から自動生成されます。手動でのメンテナンスは不要で、設定でバージョンを追加・削除すると一覧ページも自動的に更新されます。
 
+各バージョンのドキュメントリンク（および「最新ドキュメント」リンク）は、`entryDocSlug`で設定されたルートスラッグを指します：
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    // ...
+    entryDocSlug: "getting-started",
+  }),
+);
+```
+
+`entryDocSlug`は先頭・末尾にスラッシュを含まないルートスラッグです（例：`"getting-started"`、`"overview/getting-started"`）。省略した場合のデフォルトは`"getting-started"`で、実行時のバリデーションは行われません。存在しないスラッグを指定した場合、ビルドは失敗せず単に404リンクになります。
+
 ## バージョンバナー
 
 各バージョンは、バージョンの状態をユーザーに知らせるバナーをすべてのページの上部に表示できます。2種類のバナーが利用可能です：

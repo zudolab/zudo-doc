@@ -79,6 +79,7 @@ import {
   type HtmlPreviewWrapperProps,
 } from "../html-preview-wrapper/index.js";
 import { createInlineVersionSwitcher } from "../inline-version-switcher/index.js";
+import { createGetUnavailableVersions } from "../version-availability/index.js";
 import {
   buildRootMenuItems as buildRootMenuItemsBase,
   buildLocaleLinksForNav as buildLocaleLinksForNavBase,
@@ -223,7 +224,7 @@ export function deriveNavDataPrep(ctx: ChromeContext) {
       currentVersion,
       ctx.settings.headerNav,
       (key, l) => ctx.t(key, l),
-      (path, l, v) => ctx.navHref(path, l, v),
+      (path, l, v, versioned) => ctx.navHref(path, l, v, versioned),
     );
   }
 
@@ -397,6 +398,33 @@ export function deriveDocHistorySlot(ctx: ChromeContext) {
 }
 
 // ---------------------------------------------------------------------------
+// unavailableVersions (inline + header version switchers)
+// ---------------------------------------------------------------------------
+
+/**
+ * Derive `getUnavailableVersions(slug, locale)`, shared by the inline
+ * breadcrumb switcher (`deriveInlineVersionSwitcher` below) and the header
+ * dropdown switcher (`createHeaderWithDefaults`) — the genuinely
+ * multi-factory piece of #3215's availability computation, so both callers
+ * wire the SAME implementation instead of re-deriving the recipe.
+ */
+export function deriveGetUnavailableVersions(
+  ctx: ChromeContext,
+): (slug: string | undefined, locale: string) => ReadonlySet<string> | undefined {
+  return createGetUnavailableVersions({
+    versions: (ctx.settings as { versions: Array<{ slug: string }> | false }).versions,
+    resolveNavSource: ctx.resolveNavSource,
+    toRouteSlug: ctx.toRouteSlug,
+    // Hrefs are irrelevant to availability — bound to docsUrl only because
+    // ctx.buildNavTree's buildHref param is required, mirroring the same
+    // throwaway binding route-enumerators/doc-route-entries use.
+    buildNavTree: (docs, locale, categoryMeta) =>
+      ctx.buildNavTree(docs, locale, categoryMeta, (slug, loc) => ctx.docsUrl(slug, loc)),
+    collectAutoIndexNodes: ctx.collectAutoIndexNodes,
+  });
+}
+
+// ---------------------------------------------------------------------------
 // inline version switcher (renderDocPage)
 // ---------------------------------------------------------------------------
 
@@ -409,6 +437,7 @@ export function deriveInlineVersionSwitcher(ctx: ChromeContext) {
     docsUrl: ctx.docsUrl,
     versionedDocsUrl: ctx.versionedDocsUrl,
     withBase: ctx.withBase,
+    getUnavailableVersions: deriveGetUnavailableVersions(ctx),
   });
 }
 
@@ -425,6 +454,15 @@ export function deriveInlineVersionSwitcher(ctx: ChromeContext) {
  * for the injected package path. The content overrides (Details / HtmlPreview /
  * Island / PresetGenerator + any host extras) come from `ctx.hostBindings.mdxExtras`
  * merged over the package defaults.
+ *
+ * `createMdxComponentsBound(lang, currentVersion?)` (#3218) threads the active
+ * version through to the nav wrappers as a `currentVersion` prop — see
+ * `createMdxComponents()`'s `CategoryNavBound`/etc — so `resolveNavSource`
+ * resolves the version's doc collection and emitted hrefs get remapped via
+ * `versionedDocsUrl`, mirroring `buildSidebarNodes`' two-step above. This works
+ * for BOTH the package-default wrapper (built from `versionedDocsUrl` below)
+ * and a host-supplied `ctx.components` override, since the prop injection
+ * happens one layer up in `createMdxComponents()`, after the wrapper choice.
  */
 export function deriveMdxComponents(ctx: ChromeContext) {
   const CategoryNavWrapper =
@@ -441,6 +479,7 @@ export function deriveMdxComponents(ctx: ChromeContext) {
         )) as never,
       findNode: ctx.findNode as never,
       firstRoutedHref: ctx.firstRoutedHref as never,
+      versionedDocsUrl: ctx.versionedDocsUrl,
     }) as unknown as FactoryComponent);
 
   const CategoryTreeNavWrapper =
@@ -457,6 +496,7 @@ export function deriveMdxComponents(ctx: ChromeContext) {
         )) as never,
       groupSatelliteNodes: ctx.groupSatelliteNodes as never,
       findNode: ctx.findNode as never,
+      versionedDocsUrl: ctx.versionedDocsUrl,
     }) as unknown as FactoryComponent);
 
   const SiteTreeNavWrapper =
@@ -473,6 +513,7 @@ export function deriveMdxComponents(ctx: ChromeContext) {
         )) as never,
       groupSatelliteNodes: ctx.groupSatelliteNodes as never,
       getCategoryOrder: ctx.getCategoryOrder,
+      versionedDocsUrl: ctx.versionedDocsUrl,
     }) as unknown as FactoryComponent);
 
   /** HtmlPreview MDX binding (package default) — `settings.htmlPreview` is a
@@ -495,10 +536,11 @@ export function deriveMdxComponents(ctx: ChromeContext) {
   };
   const mdxExtras = { ...mdxExtrasDefault, ...(ctx.hostBindings.mdxExtras ?? {}) };
 
-  function createMdxComponentsBound(lang: string = ctx.defaultLocale) {
+  function createMdxComponentsBound(lang: string = ctx.defaultLocale, currentVersion?: string) {
     return createMdxComponents({
       settings: ctx.settings,
       locale: lang,
+      currentVersion,
       navData: {
         CategoryNav: CategoryNavWrapper as never,
         CategoryTreeNav: CategoryTreeNavWrapper as never,

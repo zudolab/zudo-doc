@@ -46,6 +46,7 @@ export const settings = {
   trailingSlash: true as boolean,
   minifyHtml: true as boolean,
   docsDir: "src/content/docs",
+  entryDocSlug: "getting-started",
   defaultLocale: "en" as const,
   locales: {
     ja: { label: "JA", dir: "src/content/docs-ja" },
@@ -55,7 +56,6 @@ export const settings = {
   // Not yet wired: wiring requires adding an editLink slot to BodyFootUtilArea (v2 package API change, #2140).
   editUrl: false as string | false,
   githubUrl: "https://github.com/zudolab/zudo-doc" as string | false,
-  githubAutolinksRepo: "zudolab/zudo-doc",
   siteUrl: "https://zudo-doc.takazudomodular.com" as string, // canonical prod host; sitemap/canonical links use this regardless of deploy URL
   metaTags: {
     description: true,
@@ -290,7 +290,10 @@ export const settings = {
       ],
     },
     { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
-    { label: "Claude", labelKey: "nav.claude", path: "/docs/claude", categoryMatch: "claude" },
+    // Claude-resources routes are generated only for the default docsDir and never
+    // exist in an archived version directory, so this item must opt out of version
+    // prefixing (#3216/#3217) — otherwise it 404s under an active `/v/{version}`.
+    { label: "Claude", labelKey: "nav.claude", path: "/docs/claude", categoryMatch: "claude", versioned: false },
     { label: "Changelog", labelKey: "nav.changelog", path: "/docs/changelog", categoryMatch: "changelog" },
     { label: "Develop", labelKey: "nav.develop", path: "/docs/develop", categoryMatch: "develop" },
   ] satisfies HeaderNavItem[] as HeaderNavItem[],

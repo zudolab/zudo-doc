@@ -220,7 +220,6 @@ const fixtureSettings: PresetSettings = {
   docHistory: true,
   docHistoryExclude: ["drafts/**"],
   claudeResources: { claudeDir: ".claude" },
-  githubAutolinksRepo: "zudolab/zudo-doc",
   packageOwnedRoutes: true,
 };
 
@@ -570,7 +569,6 @@ describe("zudoDocPreset markdown.features", () => {
       headingMarkerToc: true,
       githubAlerts: true,
       readingTime: true,
-      githubAutolinks: { repo: "zudolab/zudo-doc" },
       codeEnrichment: {},
       codeTabs: true,
       ruby: true,
@@ -602,23 +600,14 @@ describe("zudoDocPreset markdown.features", () => {
     expect(r.markdown.features.headingIds).toEqual({ strategy: "hierarchical" });
   });
 
-  it("omits githubAutolinks when githubAutolinksRepo is absent (#2321)", () => {
-    const r = zudoDocPreset({
-      settings: { ...fixtureSettings, githubAutolinksRepo: undefined },
-      buildDocsSchema: buildFixtureSchema,
-      directiveVocabulary: fixtureDirectives,
-    });
-    expect(r.markdown.features).not.toHaveProperty("githubAutolinks");
+  // #3210 — zfb's markdown.gfm default is conservative (strikethrough +
+  // table only); the preset turns on task lists + footnotes by default so
+  // this is a real product default, not a config nobody ships.
+  it("enables GFM task lists + footnotes by default", () => {
+    const { markdown } = preset();
+    expect(markdown.gfm).toEqual({ taskListItem: true, footnoteDefinition: true });
   });
 
-  it("includes githubAutolinks when githubAutolinksRepo is set (#2321)", () => {
-    const r = zudoDocPreset({
-      settings: { ...fixtureSettings, githubAutolinksRepo: "owner/repo" },
-      buildDocsSchema: buildFixtureSchema,
-      directiveVocabulary: fixtureDirectives,
-    });
-    expect(r.markdown.features.githubAutolinks).toEqual({ repo: "owner/repo" });
-  });
 });
 
 describe("zudoDocPreset top-level pipeline fields", () => {

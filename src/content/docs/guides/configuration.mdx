@@ -123,12 +123,6 @@ GitHub repository URL shown in the header (via the `github-link` header item), o
 
 Type: `string | false` · Default: `false`
 
-### githubAutolinksRepo
-
-`"owner/repo"` — enables `#123` / SHA autolinks in markdown. Omit to disable.
-
-Default: `undefined`
-
 ### editUrl
 
 "Edit this page" link base, or `false` to omit. The full URL is `editUrl + contentDir + "/" + entryId`.
@@ -239,6 +233,12 @@ themePacks: ["default", "foundry"],
 Directory (project-root-relative) holding the default-locale docs.
 
 Default: `"src/content/docs"`
+
+### entryDocSlug
+
+Route slug of the doc page the [versions page](./versioning.mdx#versions-listing-page) links to as the "latest docs" entry point (and each past version's docs link). No leading or trailing slashes — e.g. `"getting-started"` or `"overview/getting-started"`. Not validated at runtime; an invalid slug simply 404s.
+
+Default: `"getting-started"`
 
 ### defaultLocale
 
@@ -475,6 +475,7 @@ Default: `[]`
 | `labelKey` | `string` (optional) | i18n translation key (overrides `label`) |
 | `path` | `string` | Target path |
 | `categoryMatch` | `string` (optional) | Links this tab to a sidebar category |
+| `versioned` | `boolean` (optional) | Whether this item's link carries the active `/v/{version}` prefix. Default `true` — see [Header Navigation](./header-navigation.mdx#properties-versioned) |
 
 ```ts
 headerNav: [

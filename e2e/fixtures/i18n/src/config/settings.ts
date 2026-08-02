@@ -16,6 +16,7 @@ export const settings = {
   base: "/",
   minifyHtml: true as boolean,
   docsDir: "src/content/docs",
+  entryDocSlug: "getting-started",
   defaultLocale: "en" as const,
   locales: {
     ja: { label: "JA", dir: "src/content/docs-ja" },

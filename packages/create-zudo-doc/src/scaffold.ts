@@ -695,9 +695,15 @@ function generatePackageJson(choices: UserChoices) {
     // 1.1.0: container-directive fixes (multi-block bodies, unclosed-opener
     // diagnostics) plus highlighting for fences nested in MDX JSX bodies and
     // directives. Content-rendering fixes, additive.
-    "@takazudo/zfb": "1.1.0",
-    "@takazudo/zfb-runtime": "1.1.0",
-    "@takazudo/zfb-md-wasm": "1.1.0",
+    // 2.0.0: BREAKING — the `githubAutolinks` markdown feature was removed
+    // (`GithubAutolinksConfig` is gone from `zfb/config`, and a config still
+    // setting it hard-errors at load). A fresh scaffold never emitted it, so
+    // there is no generator-side migration. Additive alongside it:
+    // `strictContentBridge`, a build-only gate that fails `zfb build` when a
+    // collection entry falls back to `<pre data-zfb-content-fallback>`.
+    "@takazudo/zfb": "2.0.0",
+    "@takazudo/zfb-runtime": "2.0.0",
+    "@takazudo/zfb-md-wasm": "2.0.0",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's

@@ -70,6 +70,28 @@ describe("remapVersionedHrefs", () => {
     const [result] = remapVersionedHrefs([leaf], "1.0", "en", versionedDocsUrl);
     expect(result).toBe(leaf);
   });
+
+  it("leaves a slug-less node's href verbatim but still recurses into its children", () => {
+    // `NavDataPrepNode.slug` is optional so the pre-#3218 public node shapes
+    // (CategoryNavNode / CategoryTreeNavNode) still satisfy the constraint.
+    // There is nothing to rebuild a versioned URL from, so the href is kept —
+    // and reading `.startsWith` off an absent slug must not throw.
+    const tree: NavDataPrepNode[] = [
+      {
+        label: "legacy",
+        href: "/docs/legacy/",
+        children: [navNode("legacy/a")],
+      },
+    ];
+    const [result] = remapVersionedHrefs(tree, "1.0", "en", versionedDocsUrl);
+    expect(result?.href).toBe("/docs/legacy/");
+    expect(result?.children[0]?.href).toBe("/v/1.0/docs/legacy/a/");
+  });
+
+  it("still rewrites the empty docs-root slug (#1891) — `\"\"` is a real slug, not an absent one", () => {
+    const [result] = remapVersionedHrefs([navNode("")], "1.0", "en", versionedDocsUrl);
+    expect(result?.href).toBe("/v/1.0/docs//");
+  });
 });
 
 describe("buildRootMenuItems", () => {
@@ -78,7 +100,9 @@ describe("buildRootMenuItems", () => {
     path: string,
     lang: string | undefined,
     version: string | undefined,
-  ) => `${version ? `/v/${version}` : ""}${lang && lang !== "en" ? `/${lang}` : ""}${path}`;
+    versioned = true,
+  ) =>
+    `${versioned && version ? `/v/${version}` : ""}${lang && lang !== "en" ? `/${lang}` : ""}${path}`;
 
   it("uses labelKey via t() when present", () => {
     const items = buildRootMenuItems(
@@ -136,6 +160,49 @@ describe("buildRootMenuItems", () => {
       navHref,
     );
     expect(items[0]?.children).toBeUndefined();
+  });
+
+  // Reach-assertion (3/4, mobile/root-menu output) for headerNav's `versioned`
+  // flag (#3216/#3190) — buildRootMenuItems is the builder behind the mobile
+  // "back to menu" list rendered by SidebarToggle.
+  it("suppresses the version prefix for a top-level item with versioned: false", () => {
+    const items = buildRootMenuItems(
+      "en",
+      "1.0",
+      [{ label: "Claude", path: "/docs/claude/", versioned: false }],
+      t,
+      navHref,
+    );
+    expect(items[0]?.href).toBe("/docs/claude/");
+  });
+
+  it("suppresses the version prefix for a child item with versioned: false", () => {
+    const headerNav: NavDataPrepHeaderNavItem[] = [
+      {
+        label: "Guides",
+        path: "/docs/guides/",
+        children: [
+          { label: "Intro", path: "/docs/guides/intro/", versioned: false },
+          { label: "Advanced", path: "/docs/guides/advanced/" },
+        ],
+      },
+    ];
+    const items = buildRootMenuItems("en", "1.0", headerNav, t, navHref);
+    expect(items[0]?.children).toEqual([
+      { label: "Intro", href: "/docs/guides/intro/" },
+      { label: "Advanced", href: "/v/1.0/docs/guides/advanced/" },
+    ]);
+  });
+
+  it("keeps the version prefix when versioned is omitted (default true)", () => {
+    const items = buildRootMenuItems(
+      "en",
+      "1.0",
+      [{ label: "Guides", path: "/docs/guides/" }],
+      t,
+      navHref,
+    );
+    expect(items[0]?.href).toBe("/v/1.0/docs/guides/");
   });
 });
 
