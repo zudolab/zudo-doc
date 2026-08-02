@@ -396,15 +396,50 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // three docs/chore commits, no engine behaviour change.
   //
   // All of it traces to already-merged, intentional PRs; no unattributed bytes.
+  //
+  // 2026-08-02 re-baseline (zudolab/zudo-doc#3188, epic #3174 "Theme Pack
+  // Polish"): the prior baseline (00873483a) was rebuilt in a worktree and its
+  // normalized HTML diffed byte-for-byte against HEAD. Both pages are
+  // byte-identical to the old build except for 14 pack version strings in the
+  // `packs` object literal of the inlined FOUC theme-pack bootstrap `<script>`
+  // (`src/theme/theme-pack-provider.tsx`, `{slug: version}` from each pack's
+  // `meta.json`) — the cache-busting `?v=` contract. Pure digit swaps: both
+  // files are the same byte length before and after, with zero additions and
+  // zero removals anywhere else in either page.
+  //   - `academia` 1.0.0 → 1.0.1 (#3175 — low-opacity rest-state link
+  //     underline + `pre.hi-root` 0.85rem → 0.9rem)
+  //   - the 13 packs carrying `background-attachment: fixed` decorative
+  //     layers, each bumped one patch for the catalog-wide
+  //     `@media (pointer: coarse) { … background-attachment: scroll }`
+  //     fallback (#3177, refs #3070): `blueprint` 1.0.0→1.0.1,
+  //     `broadsheet` 1.0.1→1.0.2, `drift` 1.0.1→1.0.2, `fjord` 1.0.1→1.0.2,
+  //     `hearth` 1.0.2→1.0.3, `hollow` 1.0.1→1.0.2, `matcha` 1.0.1→1.0.2,
+  //     `nocturne` 1.0.1→1.0.2, `observatory` 1.0.2→1.0.3, `onyx` 1.0.2→1.0.3,
+  //     `sakura` 1.0.0→1.0.1, `sumi` 1.0.2→1.0.3, `timberline` 1.0.0→1.0.1
+  // Neither pack's CSS *content* reaches these two fixture pages — only the
+  // version string does — so the whole delta is the version literal itself.
+  //
+  // Notable negative: this epic also extended the theme-pack validator to
+  // accept top-level `@media` blocks (#3176). That is build-time validation
+  // only and contributes ZERO bytes to either page.
+  //
+  // Caveat for the next re-baseliner: `dist/` is gitignored here, so a
+  // `git stash`-based "does the clean tree still fail?" check is NOT a valid
+  // baseline — the stash leaves the rebuilt `dist/theme-packs/` in place and
+  // the old source reads the NEW pack versions, producing a third hash that
+  // matches neither baseline. Rebuild the prior pin in a separate worktree
+  // (as this entry and the three above did) instead.
+  //
+  // All of it traces to already-merged, intentional PRs; no unattributed bytes.
 
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"fc9f255bcbe396b00b1ab91fbfaac927800414d218ef7632b3ae7422beaacb5d"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"b79675460ca89a23ff2fe16cd052eba20fde841351a8ca4380b5c627e2afc3ac"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"f13ba12116041fa694aadf7c0755d7b8fffee15e7cac813ebb10ef773f35a205"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"62e37d7a7ce1e72fca33e8b79749c2b39b99c9d30c2796602dff05cee49a338a"`);
   });
 });
 
