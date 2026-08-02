@@ -266,7 +266,22 @@ declare module "zfb/config" {
       externalLinks?: Record<string, unknown>;
       cjkFriendly?: boolean;
       hardBreaks?: boolean;
-      features?: Record<string, boolean | Record<string, unknown>>;
+      /**
+       * `features` stays an OPEN record on purpose: closing it to zfb's
+       * published feature union would make this shim reject every feature
+       * added upstream until someone hand-syncs it — the same TS2353 trap
+       * the sync duty exists to avoid, just inverted. Keys zfb has REMOVED
+       * are pinned to `never` below so the open record can't quietly accept
+       * a config that hard-errors at zfb load.
+       */
+      features?: Record<string, boolean | Record<string, unknown>> & {
+        /**
+         * Removed in zfb 2.0.0 (`GithubAutolinksConfig` deleted from
+         * `dist/config.d.ts`). A config still setting it hard-errors at
+         * config load, so reject it here rather than at build time.
+         */
+        githubAutolinks?: never;
+      };
     };
     /**
      * Extra paths (outside the project root) the dev watcher also watches,
