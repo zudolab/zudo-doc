@@ -22,6 +22,15 @@
 // zudolab/zudo-doc#1834 — `bundle` was missing here, blocking next.22's
 // `bundle.exclude`). See `packages/zudo-doc/CLAUDE.md` ("Shipped ambient
 // type shims") for the hand-sync duty this file carries.
+//
+// Last synced against: @takazudo/zfb 2.0.0 (`dist/config.d.ts`). The `zfb`
+// 2.0.0 major removed the `githubAutolinks` markdown feature — it was never
+// named here (the `markdown.features` map is modelled as an open record), so
+// the removal needed no edit; the paired addition `strictContentBridge` is
+// below. That same sync closed a 14-field lag this file had accumulated
+// (`allowedHosts`, `prefetch`, `site`, `output`, `presets`, the watch/plugin
+// knobs, `markdown.hardBreaks`, and four `CollectionDef` fields): every one
+// of them was a latent TS2353 waiting for the first project to use it.
 
 declare module "zfb/config" {
   /** JSX framework runtime. */
@@ -34,17 +43,51 @@ declare module "zfb/config" {
     /** Directory (relative to the project root) holding the entries. */
     path: string;
     /**
-     * Optional schema. Reserved for v1.1 — accepted but not enforced
-     * today. Authored as zod and converted to JSON Schema via
-     * `z.toJSONSchema()` at the boundary.
+     * Optional schema, enforced by `zfb check`. Authored as zod and
+     * converted to JSON Schema via `z.toJSONSchema()` at the boundary.
      */
     schema?: Record<string, unknown>;
+    /**
+     * Include globs (Astro-style, relative to `path`, `globset` dialect).
+     * When set and non-empty, an entry is kept only if a pattern matches.
+     */
+    include?: string[];
+    /** Exclude globs, evaluated AFTER `include`. */
+    exclude?: string[];
+    /**
+     * Suffix stripped from each kept entry's slug + module specifier —
+     * e.g. `".en"` so `foo.en.mdx` round-trips as slug `foo` in a
+     * multi-locale single-directory layout.
+     */
+    idStripSuffix?: string;
+    /**
+     * Opt-in to a `path` that escapes the project root via `..`. Absolute
+     * and Windows drive-relative paths stay rejected regardless.
+     */
+    allowOutsideRoot?: boolean;
   }
 
   /** Tailwind options; absent = defaults. */
   export interface TailwindConfig {
     enabled?: boolean;
   }
+
+  /** Prefetch options. Mirrors `PrefetchConfig` in crates/zfb/src/config.rs. */
+  export interface PrefetchConfig {
+    /**
+     * Disable prefetch entirely — the build emits a meta tag the runtime's
+     * prefetch-core reads at init to skip all prefetch wiring. Site-wide
+     * and static (decided at bundle-emit time). Default: `false`.
+     */
+    disabled?: boolean;
+  }
+
+  /**
+   * Project output mode. `"static"` errors at build start if any route
+   * exports `prerender = false`; `"hybrid"` forces V8 on; `"auto"`
+   * (default) decides from the detected SSR-route set.
+   */
+  export type OutputMode = "static" | "hybrid" | "auto";
 
   /** User-supplied plugin configuration entry. */
   export interface PluginConfig {
@@ -121,9 +164,33 @@ declare module "zfb/config" {
     publicDir?: string;
     host?: string;
     port?: number;
+    /**
+     * Dev-server Host-header allowlist (DNS-rebinding guard, Vite parity).
+     * A leading dot (`".example.com"`) also matches subdomains; IPv6 may be
+     * written with or without brackets. Mirrors `Config::allowed_hosts`.
+     */
+    allowedHosts?: string[];
     framework?: Framework;
     collections?: CollectionDef[];
     tailwind?: TailwindConfig;
+    /** Prefetch options. Mirrors `Config::prefetch`. */
+    prefetch?: PrefetchConfig;
+    /**
+     * Fail `zfb build` on a broken link found by the `linkValidation`
+     * mechanism. Build-only — `zfb dev` still warns and serves. Does NOT
+     * cover `resolveMarkdownLinks.onBrokenLinks`, which has its own knob.
+     * Mirrors `Config::strict_broken_links`. Default: `false`.
+     */
+    strictBrokenLinks?: boolean;
+    /**
+     * Fail `zfb build` when a collection `.md`/`.mdx` entry falls back to
+     * `<pre data-zfb-content-fallback>` because its compiled JSX does not
+     * parse. The CLI's `--strict-content-bridge` /
+     * `--no-strict-content-bridge` tri-state overrides this field.
+     * Build-only. Mirrors `Config::strict_content_bridge` (zfb 2.0.0).
+     * Default: `false`.
+     */
+    strictContentBridge?: boolean;
     /**
      * Bundler options. `bundle.exclude` keeps project-relative globs out of
      * the esbuild graph — used e.g. to skip `e2e/fixtures/**` so the MDX link
@@ -198,8 +265,83 @@ declare module "zfb/config" {
       toc?: Record<string, unknown>;
       externalLinks?: Record<string, unknown>;
       cjkFriendly?: boolean;
-      features?: Record<string, boolean | Record<string, unknown>>;
+      hardBreaks?: boolean;
+      /**
+       * `features` stays an OPEN record on purpose: closing it to zfb's
+       * published feature union would make this shim reject every feature
+       * added upstream until someone hand-syncs it — the same TS2353 trap
+       * the sync duty exists to avoid, just inverted. Keys zfb has REMOVED
+       * are pinned to `never` below so the open record can't quietly accept
+       * a config that hard-errors at zfb load.
+       */
+      features?: Record<string, boolean | Record<string, unknown>> & {
+        /**
+         * Removed in zfb 2.0.0 (`GithubAutolinksConfig` deleted from
+         * `dist/config.d.ts`). A config still setting it hard-errors at
+         * config load, so reject it here rather than at build time.
+         */
+        githubAutolinks?: never;
+      };
     };
+    /**
+     * Extra paths (outside the project root) the dev watcher also watches,
+     * recursively. Must exist at startup — a path created later is not
+     * picked up. Opt-in only: a huge tree can exhaust the inotify
+     * `max_user_watches` ceiling on Linux. Mirrors `Config::extra_watch_paths`.
+     */
+    extraWatchPaths?: string[];
+    /**
+     * Whether `zfb build` writes the post-build route manifest to
+     * `<outDir>/__zfb/routes.json` — the same shape plugins receive as
+     * `ctx.routes`, so a plain build script can read it without writing a
+     * plugin. Mirrors `Config::emit_routes_manifest`. Default: emit.
+     */
+    emitRoutesManifest?: boolean;
+    /**
+     * Canonical absolute site URL, emitted as `globalThis.__zfb.site`.
+     * Rejected at config-load time if relative, non-HTTP(S), or empty;
+     * trailing-slash normalisation is the consumer's job. Mirrors
+     * `Config::site`.
+     */
+    site?: string;
+    /**
+     * Seconds a single plugin lifecycle hook may run before the build fails
+     * and the plugin host is killed. Absent falls through to the
+     * `ZFB_PLUGIN_HOOK_TIMEOUT` env var, then a 120s default. Mirrors
+     * `Config::plugin_hook_timeout_secs`.
+     */
+    pluginHookTimeoutSecs?: number;
+    /**
+     * Whether `public/` is copied under the `base` sub-path (`true`,
+     * default) or flat to the `dist/` root (`false`, for deploy pipelines
+     * that relocate `dist/` into the base segment themselves — note that
+     * base-prefixed asset URLs then 404 under `zfb preview`). Mirrors
+     * `Config::copy_public_with_base`.
+     */
+    copyPublicWithBase?: boolean;
+    /**
+     * Use `notify`'s poll-based watch backend instead of the native one —
+     * for hosts where FS notifications are unreliable (network mounts, some
+     * containers). Mirrors `Config::watch_poll_fallback`. Default: `false`.
+     */
+    watchPollFallback?: boolean;
+    /**
+     * Poll-backend re-scan interval in ms; only live when
+     * `watchPollFallback` is `true` (set alone it is dormant + warns).
+     * Validated at load time to 50–10000. Absent = 500ms. Mirrors
+     * `Config::watch_poll_interval_ms`.
+     */
+    watchPollIntervalMs?: number;
+    /** Project output mode. Mirrors `Config::output`. Default: `"auto"`. */
+    output?: OutputMode;
+    /**
+     * Config presets merged BEFORE validation. Array fields (`plugins`,
+     * `collections`, `extraWatchPaths`, `allowedHosts`) are prepended;
+     * scalars fill in only where the main config left the default, so the
+     * main config always wins. Nested `presets` are not expanded. Mirrors
+     * `Config::presets`.
+     */
+    presets?: Partial<ZfbConfig>[];
   }
 
   /**
