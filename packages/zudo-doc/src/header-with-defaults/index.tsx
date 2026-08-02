@@ -22,7 +22,11 @@ import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
 import { buildGitHubRepoUrl as buildGitHubRepoUrlBase } from "../github-helpers/index.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
-import { deriveNavDataPrep, deriveSearchWidgetSlot } from "../chrome/derive.js";
+import {
+  deriveGetUnavailableVersions,
+  deriveNavDataPrep,
+  deriveSearchWidgetSlot,
+} from "../chrome/derive.js";
 import type { SidebarNavNode, SidebarRootMenuItem } from "../sidebar/types.js";
 import type { LocaleLink } from "../url-helpers/index.js";
 
@@ -101,6 +105,7 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
   const buildGitHubRepoUrl = (): string | null =>
     buildGitHubRepoUrlBase((ctx.settings as { githubUrl?: string | false }).githubUrl);
   const SearchWidget = deriveSearchWidgetSlot(ctx);
+  const getUnavailableVersions = deriveGetUnavailableVersions(ctx);
 
   /**
    * Default-bearing host wrapper around v2's `<Header>` shell.
@@ -183,6 +188,11 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
         allVersions: t("version.switcher.allVersions", lang),
       };
 
+      // #3215: undefined currentSlug (e.g. the home page header) must pass
+      // undefined straight through — never mark every archive unavailable
+      // just because there is no page to test.
+      const unavailableVersions = getUnavailableVersions(currentSlug, lang);
+
       versionSwitcher = (
         <VersionSwitcher
           versions={settings.versions.map((v) => ({
@@ -193,6 +203,7 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
           latestUrl={latestUrl}
           versionsPageUrl={versionsPageUrl}
           versionUrls={versionUrls}
+          unavailableVersions={unavailableVersions}
           labels={labels}
           idSuffix="header"
           // Persisted-header re-wire (#2553): the menu's per-page hrefs / active

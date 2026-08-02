@@ -8,6 +8,11 @@
  *  2. Returns undefined when versions is an empty array.
  *  3. Returns a JSX element when versions is configured.
  *  4. URL helpers are called with correct args for default vs non-default locale.
+ *  5. #3215 — `getUnavailableVersions` drives the `unavailableVersions` prop
+ *     passed to `<VersionSwitcher>`: called with the current (slug, locale),
+ *     its returned set is passed straight through, and an "undefined" result
+ *     (no availability data) passes through as undefined rather than an
+ *     empty set.
  */
 
 import { describe, expect, it, vi } from "vitest";
@@ -25,6 +30,7 @@ function makeDeps(overrides: Partial<InlineVersionSwitcherDeps> = {}): InlineVer
     versionedDocsUrl: (slug: string, versionSlug: string, lang?: string) =>
       `/${lang ?? "en"}/v/${versionSlug}/docs/${slug}`,
     withBase: (path: string) => path,
+    getUnavailableVersions: () => undefined,
     ...overrides,
   };
 }
@@ -94,5 +100,26 @@ describe("createInlineVersionSwitcher — returns element when versioning is ena
     buildInlineVersionSwitcher("my-page", "en");
     expect(versionedDocsUrl).toHaveBeenCalledWith("my-page", "v1", "en");
     expect(versionedDocsUrl).toHaveBeenCalledWith("my-page", "v2", "en");
+  });
+});
+
+describe("createInlineVersionSwitcher — #3215 unavailableVersions wiring", () => {
+  it("calls getUnavailableVersions with the current slug and locale, and drives unavailableVersions with the result — a latest-only slug yields that version in the set", () => {
+    const getUnavailableVersions = vi.fn(() => new Set(["v1"]));
+    const buildInlineVersionSwitcher = createInlineVersionSwitcher(
+      makeDeps({ getUnavailableVersions }),
+    );
+    const result = buildInlineVersionSwitcher("latest-only-page", "en");
+    expect(getUnavailableVersions).toHaveBeenCalledWith("latest-only-page", "en");
+    expect(result?.props.unavailableVersions).toEqual(new Set(["v1"]));
+  });
+
+  it("passes unavailableVersions through as undefined when there is no availability data", () => {
+    const getUnavailableVersions = vi.fn(() => undefined);
+    const buildInlineVersionSwitcher = createInlineVersionSwitcher(
+      makeDeps({ getUnavailableVersions }),
+    );
+    const result = buildInlineVersionSwitcher("getting-started", "en");
+    expect(result?.props.unavailableVersions).toBeUndefined();
   });
 });
