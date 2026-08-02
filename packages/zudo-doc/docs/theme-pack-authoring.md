@@ -198,11 +198,43 @@ export function buildPackCssUrl(base: string, slug: string, version: string): st
 
 Both the pre-paint bootstrap script and the runtime switch engine read the version from the inlined pack registry, not from a live fetch. A `pack.css` edit shipped **without** bumping `meta.json`'s `version` field can serve a stale cached copy of the stylesheet to a returning visitor whose browser already cached the old `?v=` URL. Bump the version on every content change to `pack.css`, however small.
 
-## (e) Custom-chrome caveat
+## (e) Fixed-attachment decorative layers — mobile fallback
+
+Any rule setting `background-attachment: fixed` (a common decorative-layer
+technique — starfields, grain washes, textured fibers) MUST ship a paired
+`(pointer: coarse)` scroll fallback in the same `pack.css`. `fixed` attachment
+is unsupported on iOS Safari and repaint-heavy on scroll on touch devices in
+general — the catalog-wide convention adopted in issue #3070. Use the exact
+shape below (same media condition across every pack — uniformity is the
+point), placed immediately after the rule it corresponds to:
+
+```css
+html[data-theme-pack="<slug>"] body {
+  /* … other declarations … */
+  background-attachment: fixed;
+}
+
+/* Touch devices: background-attachment:fixed is unsupported (iOS Safari) or
+   repaint-heavy on scroll — fall back to scroll attachment. Catalog-wide
+   convention from issue #3070. */
+@media (pointer: coarse) {
+  html[data-theme-pack="<slug>"] body {
+    background-attachment: scroll;
+  }
+}
+```
+
+This relies on the top-level `@media` scoping allowance described in (g)
+below — the validator unwraps one level of `@media` and checks each inner
+rule's selector is still pack-scoped. If a pack sets `fixed` attachment on a
+selector other than `body` (e.g. a sidebar), the fallback's inner selector
+must match that same selector, not `body`.
+
+## (f) Custom-chrome caveat
 
 Packs select on the **stable hooks** (table (b)), not on any particular component's internal markup structure. If a downstream project replaces `Footer` or `DocPager` via `defineChromeBindings` (or any other primary chrome slot — `Header`, `Sidebar`, `Toc`, `Breadcrumb`), the **replacement component must emit the same hooks** (`footer[data-footer]`, `nav[data-doc-pager]`, etc.) to keep the shipped pack's styling working. A custom `Footer` that drops `data-footer` silently loses every pack rule scoped to `footer[data-footer]` — there is no fallback or warning; the pack rule simply never matches.
 
-## (f) Authoring workflow notes
+## (g) Authoring workflow notes
 
 - **Verify selectors against real rendered output — never against prototypes or memory.** The old `_temp-resource/2812-theme-prototypes/` bundle (deleted, zudolab/zudo-doc#2856) was a static HTML reference that drifted from the real components and got the pager placement wrong (#2858). This document's skeleton in (a) was produced by SSR-rendering the actual `createDocPageShell` factory through `preact-render-to-string`, the same harness the package's own regression tests use — not hand-written or copied from a mockup. If you're unsure whether a hook still matches reality, render the real component the same way (see any `__tests__/*.test.tsx` file next to the component you care about for the pattern) or run a full `pnpm build` and inspect `dist/`.
 - **Every rule must be scoped** under `html[data-theme-pack="<slug>"]` (ADR Decision 6, rule 3) — this is what makes the pack swap atomic and lets the validator prove an inactive pack never leaks styles. A top-level `@media <condition> { ... }` block is allowed as long as every rule *inside* it is still pack-scoped the same way — the validator unwraps one level of `@media` and checks each inner rule's selector. Nesting stops there: an at-rule nested a second level (e.g. `@supports` inside `@media`) is rejected, and `@font-face` loses its usual scoping exemption once it's inside a `@media` block — `@font-face` stays top-level-only.

@@ -4,7 +4,7 @@
   "name": "Timberline",
   "description": "Forest cabin after dark — pine & umber planks, cream prose, and matte lantern-amber accents; light mode is the same lodge at morning.",
   "mode": "dark",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "fonts": {
     "sans": "Source Sans 3",
     "mono": "JetBrains Mono",

@@ -187,6 +187,15 @@ html[data-theme-pack="broadsheet"] body {
   background-attachment: fixed;
 }
 
+/* Touch devices: background-attachment:fixed is unsupported (iOS Safari) or
+   repaint-heavy on scroll — fall back to scroll attachment. Catalog-wide
+   convention from issue #3070. */
+@media (pointer: coarse) {
+  html[data-theme-pack="broadsheet"] body {
+    background-attachment: scroll;
+  }
+}
+
 /* masthead: Playfair black wordmark over a thick-thin Oxford rule */
 html[data-theme-pack="broadsheet"] header[data-header] {
   border-bottom: 3px solid var(--zd-fg);

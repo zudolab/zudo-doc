@@ -258,6 +258,15 @@ html[data-theme-pack="observatory"] body {
   letter-spacing: 0.005em;
 }
 
+/* Touch devices: background-attachment:fixed is unsupported (iOS Safari) or
+   repaint-heavy on scroll — fall back to scroll attachment. Catalog-wide
+   convention from issue #3070. */
+@media (pointer: coarse) {
+  html[data-theme-pack="observatory"] body {
+    background-attachment: scroll;
+  }
+}
+
 /* header — observatory signage over a gold→violet ecliptic rule */
 html[data-theme-pack="observatory"] header[data-header] {
   border-image: linear-gradient(
@@ -318,6 +327,15 @@ html[data-theme-pack="observatory"] #desktop-sidebar {
     260px 260px,
     320px 320px;
   background-attachment: fixed;
+}
+
+/* Touch devices: background-attachment:fixed is unsupported (iOS Safari) or
+   repaint-heavy on scroll — fall back to scroll attachment. Catalog-wide
+   convention from issue #3070. */
+@media (pointer: coarse) {
+  html[data-theme-pack="observatory"] #desktop-sidebar {
+    background-attachment: scroll;
+  }
 }
 html[data-theme-pack="observatory"] #desktop-sidebar a {
   border-radius: 0;

@@ -239,6 +239,15 @@ html[data-theme-pack="sumi"] body {
   background-attachment: fixed;
 }
 
+/* Touch devices: background-attachment:fixed is unsupported (iOS Safari) or
+   repaint-heavy on scroll — fall back to scroll attachment. Catalog-wide
+   convention from issue #3070. */
+@media (pointer: coarse) {
+  html[data-theme-pack="sumi"] body {
+    background-attachment: scroll;
+  }
+}
+
 /* header: one decisive ink rule; mincho logo signed with a seal */
 html[data-theme-pack="sumi"] header[data-header] {
   border-bottom: 3px solid var(--zd-fg);
