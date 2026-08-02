@@ -43,6 +43,16 @@ function extractVersionToggleHtml(headerHtml: string): string {
   return headerHtml.slice(start, end);
 }
 
+/** The dropdown `<ul data-version-menu>` list (as opposed to the toggle
+ * button extracted above) — needed to inspect the per-version `<a>` entries,
+ * e.g. the `aria-disabled` marker on an unavailable archive entry. */
+function extractVersionMenuHtml(headerHtml: string): string {
+  const start = headerHtml.indexOf("data-version-menu");
+  const ulStart = headerHtml.lastIndexOf("<ul", start);
+  const ulEnd = headerHtml.indexOf("</ul>", start);
+  return headerHtml.slice(ulStart, ulEnd);
+}
+
 function extractVersionBanner(html: string): string | null {
   const attrStart = html.indexOf("data-version-banner");
   if (attrStart === -1) return null;
@@ -236,5 +246,20 @@ test.describe("Versioning: version switcher interaction", () => {
     // assertion to wait for the swapped content instead of reading textContent
     // once (which races the swap and reads the stale source page).
     await expect(page.locator("body")).toContainText("version 1.0");
+  });
+});
+
+test.describe("Versioning: latest-only page has no archive counterpart", () => {
+  test("version switcher marks the 1.0 entry unavailable (#3196 regression guard)", () => {
+    // "what's new" (docs/whats-new/) exists only in the latest docs tree —
+    // there is no docs-v1/whats-new counterpart. Before #3215 this slug
+    // asymmetry produced a dead link into the archive; the switcher must
+    // instead render the 1.0 entry disabled.
+    const html = readDistFile("docs/whats-new/index.html");
+    const menu = extractVersionMenuHtml(extractHeaderRegion(html));
+    // expectHtmlAttr tolerates the fixture's minifyHtml:true output, which
+    // drops quotes from simple attribute values (`aria-disabled=true` rather
+    // than `aria-disabled="true"`).
+    expectHtmlAttr(menu, "aria-disabled", "true");
   });
 });
