@@ -95,7 +95,7 @@ packages/
 ├── search-worker/        # CF Worker search API (opt-in; the showcase does not deploy it)
 ├── doc-history-server/   # Doc history REST API + CLI generator
 ├── zudo-doc/             # Shared layout + integration package — owns chrome/routes/islands/plugins/preset
-└── create-zudo-doc/      # CLI scaffold tool — emits the locked ~13-file minimal manifest
+└── create-zudo-doc/      # CLI scaffold tool — emits the locked ~17-file minimal manifest
 src/
 ├── chrome-bindings.tsx   # SHOWCASE ChromeHostBindings impl, wired via chromeBindingsModule
 ├── components/           # SHOWCASE client islands: client-router-bootstrap, preset-generator
