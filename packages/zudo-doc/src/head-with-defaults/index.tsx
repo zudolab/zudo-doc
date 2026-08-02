@@ -178,6 +178,7 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
             zudolab/zudo-doc#2571). */}
         {settings.sidebarResizer && <script dangerouslySetInnerHTML={{ __html: SIDEBAR_RESIZER_RESTORE_SCRIPT }} />}
         {/* favicon set — withBase() handles the configured base path prefix */}
+        <link rel="icon" type="image/svg+xml" href={withBase("/favicon.svg")} />
         <link rel="icon" href={withBase("/favicon.ico")} sizes="any" />
         <link rel="icon" type="image/png" sizes="32x32" href={withBase("/favicon-32x32.png")} />
         <link rel="icon" type="image/png" sizes="16x16" href={withBase("/favicon-16x16.png")} />

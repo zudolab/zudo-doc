@@ -561,20 +561,36 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   //
   // All of it traces to this one intentional, self-contained change; no
   // unattributed bytes.
+  //
+  // 2026-08-02 re-baseline (zudolab/zudo-doc#3185, PR #3199, epic #3184
+  // "Favicon Set"): the prior baseline (a rebuild of the pre-#3185 source
+  // tree in a separate worktree) reproduced the old hashes exactly, so the
+  // delta below is the complete and only change — a single purely-additive
+  // one-line `<link rel="icon" type="image/svg+xml" href="...">` insertion,
+  // placed FIRST in the favicon set ahead of the existing `.ico`/`.png`
+  // entries, byte-identical across all three fixture pages, with zero
+  // removals anywhere (`packages/zudo-doc/src/head-with-defaults/index.tsx`).
+  // Confirmed against a `pnpm build` of the showcase: exactly four
+  // `rel="icon"` links per page, the new svg entry first with a
+  // base-prefixed href. Direct precedent: the #3140 entry above was itself a
+  // purely-additive head-`<link>` insertion.
+  //
+  // All of it traces to this one intentional, self-contained change; no
+  // unattributed bytes.
 
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"b79675460ca89a23ff2fe16cd052eba20fde841351a8ca4380b5c627e2afc3ac"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"2579d75bf9dd6345c7fca83bdebfc6614d234002a549a713270b261e71eb71d9"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"b2977dd1dfcc36d0fc2b2c8714fc3a10448447dea53d23effe071a22cf8235ad"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"dbd09e697b71f41f688eb9b23cce5f8d89a420a57a4ae2c2ab748931aede0b22"`);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"a679efa6beaf718e773cefc3b60006aabca4a6bd7f5628b88ae411973154ffe0"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"91eed9aa1e825d4ffb176e32d553102ec9af6667ae89dd0c7120757d4bdbd266"`);
   });
 });
 
