@@ -732,10 +732,6 @@ function generatePackageJson(choices: UserChoices) {
     // compiles. Same pin as host. Caught by W6B (#1735) consumer-build
     // verification.
     "preact-render-to-string": "^6.6.6",
-    "gray-matter": "^4.0.0",
-    mermaid: "^11.12.3",
-    "remark-cjk-friendly": "^2.0.1",
-    "remark-directive": "^3.0.0",
     // katex — server-side LaTeX renderer used by the always-on
     // pages/lib/_math-block.tsx (called from pages/_mdx-components.ts
     // for `$…$` and `$$…$$` math nodes). Caught by W6B (#1735)
@@ -786,12 +782,18 @@ function generatePackageJson(choices: UserChoices) {
   };
 
   const devDeps: Record<string, string> = {
-    "@tailwindcss/vite": "^4.2.0",
-    tailwindcss: "^4.2.0",
-
     typescript: "^5.9.0",
     "@types/node": "^22.0.0",
-    "@types/react": "^19.2.0", // needed for preact/compat type resolution
+    // REQUIRED — do not remove (verified by experiment, #3165/#3160).
+    // tsconfig.base.json sets `jsx: "preserve"`, under which TypeScript ignores
+    // the `/** @jsxImportSource preact */` pragma that ejected components carry
+    // and falls back to the GLOBAL `JSX` namespace — supplied only by
+    // @types/react's global.d.ts. Without it, any project that ejects a component
+    // (e.g. `src/components/zudo-doc/theme-toggle/`) fails `zfb check` with
+    // TS7026 "no interface 'JSX.IntrinsicElements' exists".
+    // (The repo-root copy of this dep IS removable — root .tsx files import
+    // `JSX` from preact locally. Do not "unify" the two.)
+    "@types/react": "^19.2.0",
     // html-validate dropped — check:html is no longer a default script
     // (see the scripts block below; `.htmlvalidate.json` no longer ships).
   };

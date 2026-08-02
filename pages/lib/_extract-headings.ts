@@ -1,8 +1,12 @@
 // Thin showcase wrapper around @takazudo/zudo-doc/extract-headings.
 // The package-side extractHeadings takes settings as explicit params (no
 // project singleton import). This wrapper re-reads the project settings and
-// passes them through so call sites in _doc-route-entries.ts continue to
-// call extractHeadings(body) without change.
+// passes them through, preserving the pre-#2653 extractHeadings(body) call
+// shape for the unit tests that import it directly. Real route building no
+// longer goes through this wrapper: since the #2653 self-contained-stub
+// rewrite, `createRouteContext` (@takazudo/zudo-doc/route-context) builds
+// its own settings-scoped `extractHeadings` and exposes it as
+// `routeCtx.extractHeadings`, consumed internally by `buildDocRouteEntries`.
 //
 // Moved to the package as part of the package-first migration (#2321, S4 #2327).
 

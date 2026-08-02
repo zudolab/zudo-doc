@@ -135,4 +135,4 @@ All five components accept an optional `title` prop.
 3. Write content starting with `## h2` headings only.
 4. Use `./` relative links with `.mdx` extension for cross-refs.
 5. Create the matching JA file under `src/content/docs-ja/<category>/<page>.mdx` — same code blocks, translated prose.
-6. Run `pnpm format:md` then `pnpm build` to verify — the build will catch missing required fields, broken links, and unknown frontmatter.
+6. Run `pnpm format` then `pnpm build` to verify — the build will catch missing required fields, broken links, and unknown frontmatter.

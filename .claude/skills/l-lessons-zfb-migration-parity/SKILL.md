@@ -813,7 +813,7 @@ Collapse the six host chrome/nav/route shell modules (`_chrome.ts`, `_nav.tsx`, 
 
 The dev machine has gitignored, locally-generated content that the build consumes: `.claude/skills/<local-skill>/` symlinks (wired via the `claudeResources` feature) and `src/content/docs/claude*/` MDX files produced by the `.claude/` watcher. Both are picked up by zfb's content collection scan and inject extra routes plus a sidebar entry on EVERY page, diverging the HTML byte-for-byte from CI.
 
-`scripts/parity-build.sh` handles this by temporarily relocating the four gitignored `src/content/docs/claude*` directories out of the content tree before calling `pnpm build`, then trap-restoring them on exit. Never run a parity check with a bare `pnpm build` — the extra routes make every HTML file differ.
+`scripts/parity-build.sh` handles this by temporarily relocating the four gitignored `src/content/docs/claude*` directories out of the content tree before calling `pnpm build`, then trap-restoring them on exit. Never run a parity check with a bare `pnpm build` — the extra routes make every HTML file differ. The frozen #2420 baseline snapshot was deleted in #3160 once it went stale; run `scripts/parity-build.sh --generate` to re-seal a fresh one before your first `--verify`.
 
 **Keep the base branch green every wave — parity must stay verifiable at each merge.**
 

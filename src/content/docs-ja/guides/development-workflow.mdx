@@ -79,7 +79,7 @@ zudo-docはzfb上で動作するPreact専用プロジェクトです。すべて
 
 目次、モバイルTOC、サイドバーツリーとトグル、テーマトグル、doc-historyを含む標準のクロームアイランドは、`@takazudo/zudo-doc`が実装します。新しいscaffoldはこれらのパッケージコンポーネントを利用するため、ソースファイルのコピーは含まれません。
 
-このショーケースには、`client-router-bootstrap`、`desktop-sidebar-toggle`、`preset-generator`アイランドという、いくつかのプロジェクト固有の統合が残っています。Design Token Panel のブートストラップはパッケージ所有であり、静的な package route → chrome → derive のインポートチェーンを通じてアイランドスキャナーに到達します。これらは新しいプロジェクトの開始時に必要な一覧ではなく、ショーケースの実装詳細です。
+このショーケースには、`client-router-bootstrap`と`preset-generator`アイランドという、2つのプロジェクト固有の統合が残っています。Design Token Panel のブートストラップはパッケージ所有であり、静的な package route → chrome → derive のインポートチェーンを通じてアイランドスキャナーに到達します。これらは新しいプロジェクトの開始時に必要な一覧ではなく、ショーケースの実装詳細です。
 
 scaffoldにプロジェクト所有の表示用コンポーネントまたはインタラクティブアイランドを追加する場合は、[カスタムコンポーネントガイド](./custom-components.mdx)に従ってください。`mdxExtras`による登録経路と、アイランド検出に必要な静的インポートのルートを説明しています。
 

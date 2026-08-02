@@ -24,6 +24,11 @@ src/
 ├── args.ts         # Shared argument parsing with bounds checking
 ├── server.ts       # HTTP server (GET /doc-history/{slug}.json, /health)
 ├── git-history.ts  # Core git logic (log, show, follow, rename tracking)
+├── concurrency.ts  # Tiny semaphore (no p-limit dep) bounding the CLI's parallel walks
+├── exclude.ts      # Exclude-glob → slug predicate. DUPLICATED BY DESIGN with
+│                   # packages/zudo-doc/src/doc-history-exclude/ (#3110 — that graph
+│                   # is always bundled, this package is an optional peer); the two
+│                   # are pinned by that package's parity.test.ts
 ├── shared.ts       # Shared helpers (getContentDirEntries)
 └── types.ts        # DocHistoryEntry, DocHistoryData types
 ```

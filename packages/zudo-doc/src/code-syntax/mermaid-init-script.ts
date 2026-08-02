@@ -42,9 +42,8 @@
 //     bundler.
 //
 // The version pin is a specific `@11.x.y` — see the constant below for
-// the rationale and bump policy. Floating on `@11` invited silent
-// upstream behaviour drift between SSR-time mermaid (in package.json)
-// and runtime mermaid (loaded from esm.sh by this script).
+// the rationale and bump policy. Floating on `@11` would silently pull
+// in upstream theme-API or behaviour changes between deploys.
 import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
 
 /**
@@ -53,13 +52,12 @@ import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
  *
  * Pinned to a specific minor.patch (not the bare `@11` major) so the
  * runtime version is byte-stable across deploys; floating on the major
- * would silently pull in upstream theme-API or behaviour changes the
- * SSR-time mermaid in package.json hasn't been pinned to. Bump policy:
- * raise this string in the same PR that bumps `mermaid` in
- * package.json so the SSR-time and runtime mermaid versions stay
- * matched. Cross-major jumps need an extra parity smoke (`pnpm build`
- * and a manual diagram render) since esm.sh's exports drift between
- * majors.
+ * would silently pull in upstream theme-API or behaviour changes. Bump
+ * policy: there is no `mermaid` package.json dependency to keep in sync
+ * with — this constant is the sole source of truth for the mermaid
+ * version this project ships. Cross-major jumps need an extra parity
+ * smoke (`pnpm build` and a manual diagram render) since esm.sh's
+ * exports drift between majors.
  *
  * Exported (rather than baked into the template) so consumers and
  * tests can override the URL — e.g. self-hosted mirrors, version-

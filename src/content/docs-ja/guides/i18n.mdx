@@ -124,7 +124,7 @@ export default defineConfig(
 );
 ```
 
-`zfb.config.ts`で設定された`prefixDefaultLocale: false`により、デフォルトロケールはパスに言語コードを含まない`/docs/...`で配信され、他のすべてのロケールはキーをプレフィックスとして使用します（日本語の場合は`/ja/docs/...`）。`defaultLocale`を変更する場合は、`zfb.config.ts`内の対応するルーティングとコレクションの設定も更新する必要があります。
+デフォルトロケールはパスに言語コードを含まない`/docs/...`で配信され、他のすべてのロケールはキーをプレフィックスとして使用します（日本語の場合は`/ja/docs/...`）。これは`defaultLocale`と`pages/`のルート分割（`pages/docs/[[...slug]].tsx`と`pages/[locale]/docs/[[...slug]].tsx`）から導かれる挙動であり、`prefixDefaultLocale`のような設定オプションは存在しません。`defaultLocale`を変更する場合は、`zfb.config.ts`内の対応するルーティングとコレクションの設定も更新する必要があります。
 
 ## Default-locale-only prefixes
 

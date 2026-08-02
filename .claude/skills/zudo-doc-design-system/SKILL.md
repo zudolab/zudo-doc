@@ -45,6 +45,15 @@ Read ONLY the file relevant to your task. Apply its rules strictly.
 - **NEVER** use hardcoded hex values in components
 - Both bundled schemes (`Default Light`, `Default Dark`) share the same ramps; only their per-mode wiring (`map`) differs — see `packages/zudo-doc/src/color-schemes-defaults/index.ts` (package-owned; the former host copy, `src/config/color-schemes.ts`, was deleted as byte-identical dead weight in the minimal-scaffold cutover, epic #2651)
 
+#### Raw ramp stops, overlays, and the acceptable exceptions
+
+- There is no Tailwind utility for a raw ramp stop. A one-off style that genuinely needs one references `var(--palette-*)` directly — rare; see `src/content/docs/reference/color.mdx`.
+- **Overlays / backdrops**: use `bg-overlay/{opacity}` (e.g. `bg-overlay/50`) in markup, or `color-mix(in oklch, var(--color-overlay) 50%, transparent)` in CSS.
+- **Acceptable exceptions to the no-hardcoded-color rule** (these are the whole list — anything else is a bug):
+  - CSS fallback values, e.g. `var(--color-fg, #fff)`
+  - color-manipulation code that computes on literals (e.g. the color-tweak panel)
+  - intentionally theme-independent colors (e.g. a white iframe canvas), which must carry a comment explaining why
+
 ### Search & highlight tokens (role-split)
 
 Highlight roles are deliberately split across dedicated semantic tokens — do **not** share one token across unrelated highlight UIs.
@@ -61,7 +70,7 @@ Any element that navigates (rendered as `<a href>` or behaves as a link) MUST ha
 - **Links (do underline)**: doc content links, sidebar items, header main-nav, header overflow menu items, color-tweak panel unselected tabs, search result rows, footer links, doc history entries, breadcrumb trails, mobile TOC entries.
 - **Controls (do NOT underline)**: buttons, toggles, sidebar resizer, palette selectors, color swatches, close icons. These use border/bg hover instead.
 
-Precedents to copy the pattern from: any current `.tsx` component in `src/components/` (e.g. `site-tree-nav.tsx`).
+Precedents to copy the pattern from: the package-owned islands under `packages/zudo-doc/src/` (e.g. `site-tree-nav-island/`). `src/components/` now holds only this showcase's two local islands.
 
 See also: `/css-wisdom` for light-mode / dark-mode contrast rules and the broader three-tier token strategy.
 
