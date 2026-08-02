@@ -304,6 +304,66 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
     expect(highlightedBlock).not.toMatch(/\bstyle=/);
   });
 
+  // #3179 — Case A2 fixture growth: `getting-started/coverage.mdx` is a
+  // second content file in the same fixture, exercising constructs
+  // `getting-started/index.mdx` never touched — hierarchical heading-ID
+  // collisions, a GFM task list, a GFM footnote, and both directive shapes
+  // (container + text). Standing coverage so a future zfb bump can't
+  // silently regress any of these. All four tests read the same
+  // `fixtureDir` built by the "setup" test above — no extra build needed.
+  it("coverage: /docs/getting-started/coverage/ HTML gives colliding heading texts distinct hierarchical ids", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
+    // "Overview" appears three times (h2, h4, h3) and "Details" twice (h3, h2)
+    // at different nesting depths; headingIds: { strategy: "hierarchical" }
+    // (pinned in the preset) must still give every one of them a distinct,
+    // ancestor-prefixed id rather than falling back to a `-1`/`-2` dedup
+    // counter (which would mean the allocator treated them as flat collisions).
+    const ids = [
+      "overview",
+      "overview-details",
+      "overview-details-overview",
+      "overview-configuration",
+      "details",
+      "details-overview",
+    ];
+    for (const id of ids) {
+      expectHtmlAttr(html, "id", id);
+    }
+    expect(html).not.toContain("id=overview-1");
+    expect(html).not.toContain("id=details-1");
+  });
+
+  it("coverage: /docs/getting-started/coverage/ HTML renders a GFM task list with checked + unchecked checkboxes", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
+    const checkboxes =
+      html
+        .match(/<input\b[^>]*>/g)
+        ?.filter((tag) => /\btype=(?:"checkbox"|'checkbox'|checkbox)(?=[\s>/])/.test(tag)) ?? [];
+    expect(checkboxes).toHaveLength(2);
+    expect(checkboxes.some((tag) => /\bchecked\b/.test(tag))).toBe(true);
+    expect(checkboxes.some((tag) => !/\bchecked\b/.test(tag))).toBe(true);
+  });
+
+  it("coverage: /docs/getting-started/coverage/ HTML renders a GFM footnote (reference + definition)", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
+    expect(html).toContain("data-footnote-ref");
+    expectHtmlAttr(html, "href", "#user-content-fn-coverage-note");
+    expectHtmlAttr(html, "id", "user-content-fn-coverage-note");
+    expect(html).toContain("data-footnote-backref");
+  });
+
+  it("coverage: /docs/getting-started/coverage/ HTML renders both directive shapes (container admonition + inline text directive)", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
+    // Container: `:::note` resolves through the canonical seven
+    // (`defaultDirectiveVocabulary`) to the real Admonition component.
+    expectHtmlAttr(html, "data-admonition", "note");
+    expect(html).toContain("<p class=admonition-title>Note</p>");
+    // Text: `:hl[…]` resolves to a plain `<mark>` intrinsic element
+    // (directiveVocabulary's `hl: { component: "mark", kind: "text" }`) —
+    // no component wiring needed, and it renders inline (not a block).
+    expect(html).toContain("<mark>highlighted inline text</mark>");
+  });
+
   // CB #2501 baseline: `settings.chromeBindingsModule` is unset in this
   // fixture, so `buildFrontmatterPreviewEntries` stays at its package-default
   // `() => []` stub and the FrontmatterPreview table stays absent — the
@@ -470,6 +530,37 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // (as this entry and the three above did) instead.
   //
   // All of it traces to already-merged, intentional PRs; no unattributed bytes.
+  //
+  // 2026-08-02 re-baseline (zudolab/zudo-doc#3179, A2 fixture-coverage growth):
+  // a second content file, `src/content/docs/getting-started/coverage.mdx`,
+  // was added to the fixture (see the "coverage:" tests above) to give the
+  // hierarchical heading-ID allocator, GFM task lists, GFM footnotes, and
+  // both directive shapes standing build coverage. Two of the three parity
+  // hashes below move as a direct, fully-accounted-for consequence:
+  //
+  //   - `/404.html` is UNCHANGED — confirmed byte-for-byte against a clean
+  //     rebuild of the prior fixture state (pre-#3179 zfb.config.ts, no
+  //     coverage.mdx) in a separate scratch directory, per the
+  //     `dist/`-is-gitignored caveat below (NOT a `git stash` check). 404 is
+  //     nav-isolated (`routes/404.tsx` sets `hideSidebar`/`sidebarOverride`),
+  //     so a new sibling doc page cannot reach it, and doesn't.
+  //   - `/docs/getting-started/index.html` MOVES, purely from the sidebar/
+  //     pager now having a second page in the "Getting Started" category:
+  //       * the `SidebarTree` island's `data-props` JSON gains a `children`
+  //         array entry for `getting-started/coverage`
+  //       * the "Getting Started" sidebar row, previously a childless leaf
+  //         link, gains the collapse/expand toggle button + a nested
+  //         one-item children list (category-with-children markup instead
+  //         of category-without-children markup)
+  //       * the doc-pager's `nav.next` slot, previously an empty `<div></div>`,
+  //         now renders a real link to the new Coverage page
+  //     No other bytes changed — confirmed by diffing this file's HTML
+  //     against the same clean rebuild used for the `/404.html` check above.
+  //   - A brand-new third hash, `/docs/getting-started/coverage/index.html`,
+  //     is added below (see the next `it`) for the new page itself.
+  //
+  // All of it traces to this one intentional, self-contained change; no
+  // unattributed bytes.
 
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
@@ -478,7 +569,12 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"62e37d7a7ce1e72fca33e8b79749c2b39b99c9d30c2796602dff05cee49a338a"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"b2977dd1dfcc36d0fc2b2c8714fc3a10448447dea53d23effe071a22cf8235ad"`);
+  });
+
+  it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"a679efa6beaf718e773cefc3b60006aabca4a6bd7f5628b88ae411973154ffe0"`);
   });
 });
 

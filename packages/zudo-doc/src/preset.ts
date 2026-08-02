@@ -36,6 +36,9 @@
 import { z } from "zod";
 import type { ColorScheme } from "./color-scheme-utils.js";
 import type { TagVocabularyEntry } from "./settings.js";
+// Type-only — erased by esbuild before the node-builtin-free eval-graph
+// bundle runs (mirrors config.ts's `@takazudo/zfb/config` type-only import).
+import type { DirectiveSpec } from "@takazudo/zfb/config";
 
 // ---------------------------------------------------------------------------
 // Input contract — structurally typed so the preset is portable to every
@@ -150,12 +153,18 @@ export interface PresetSettings {
 
 /**
  * The directives recipe map (`markdown.features.directives`): directive name →
- * the JSX component name it resolves to (registered in the host's
- * `pages/_mdx-components.ts`). Passed in rather than hardcoded so a project can
- * register its own directives without editing the preset; the showcase passes
- * the canonical seven (note/tip/info/warning/danger/caution/details).
+ * either a bare JSX component name string (registered in the host's
+ * `pages/_mdx-components.ts`), or a full {@link DirectiveSpec} object when a
+ * project needs a non-default shape (`kind: "leaf" | "text"`) or wants to
+ * suppress `titleFromLabel`. Mirrors zfb's own `markdown.features.directives`
+ * value type 1:1 (widened from a bare-string-only map — zfb 1.1.0's
+ * `DirectiveSpec` union was already accepted by the underlying `directives`
+ * feature; this alias had just not caught up). Passed in rather than
+ * hardcoded so a project can register its own directives without editing the
+ * preset; the showcase passes the canonical seven
+ * (note/tip/info/warning/danger/caution/details), all in short form.
  */
-export type DirectiveVocabulary = Record<string, string>;
+export type DirectiveVocabulary = Record<string, DirectiveSpec>;
 
 /**
  * The UI-string translation table (`src/config/i18n.ts` `translations`).
