@@ -28,6 +28,7 @@ import type { JSX } from "preact";
 import { Island } from "@takazudo/zfb";
 import { SiteTreeNav } from "../site-tree-nav-island/index.js";
 import type { SidebarNavNode } from "../sidebar/types.js";
+import { remapVersionedHrefs } from "../nav-data-prep/index.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -55,6 +56,14 @@ export interface SiteTreeNavWrapperProps {
    * Forwarded to the v2 SiteTreeNavDemo component.
    */
   ariaLabel?: string;
+  /**
+   * Active version slug for a `/v/{version}` route. Injected via
+   * createMdxComponents() closure alongside `lang` (#3218). When set, the nav
+   * source resolves the version's doc collection and emitted hrefs are
+   * remapped to their versioned form; omitted (latest/unversioned pages)
+   * leaves behavior unchanged.
+   */
+  currentVersion?: string;
 }
 
 /** Injected dependencies for {@link createSiteTreeNavWrapper}. */
@@ -92,6 +101,19 @@ export interface SiteTreeNavDeps {
    * from `@/utils/nav-scope`.
    */
   getCategoryOrder: () => string[];
+  /**
+   * Build a versioned docs URL: `versionedDocsUrl(slug, versionSlug, lang)`.
+   * Host passes `ctx.versionedDocsUrl`. Used to remap the resolved tree's
+   * hrefs into their versioned form when `currentVersion` is set (#3218) —
+   * mirrors the sidebar's `buildSidebarNodes` two-step in `chrome/derive.tsx`.
+   *
+   * Optional — `./site-tree-nav` is a documented frozen-1.0 public subpath
+   * (`packages/zudo-doc/CLAUDE.md`/`API.md`), so a pre-#3218 caller that
+   * hand-constructs `SiteTreeNavDeps` without this field must keep compiling.
+   * Omitting it while passing `currentVersion` leaves hrefs unversioned (a
+   * loud dev warning is emitted) rather than throwing.
+   */
+  versionedDocsUrl?: (slug: string, versionSlug: string, lang: string) => string;
 }
 
 /**
@@ -110,25 +132,51 @@ export interface SiteTreeNavDeps {
 export function createSiteTreeNavWrapper(
   deps: SiteTreeNavDeps,
 ): (props: SiteTreeNavWrapperProps) => JSX.Element | null {
-  const { defaultLocale, resolveNavSource, buildNavTree, groupSatelliteNodes, getCategoryOrder } = deps;
+  const {
+    defaultLocale,
+    resolveNavSource,
+    buildNavTree,
+    groupSatelliteNodes,
+    getCategoryOrder,
+    versionedDocsUrl,
+  } = deps;
 
   function SiteTreeNavWrapper({
     lang = defaultLocale,
     ariaLabel,
+    currentVersion,
   }: SiteTreeNavWrapperProps): JSX.Element | null {
     const locale = lang;
 
     // SiteTreeNav mirrors the route nav: applies the defaultLocaleOnly filter for
     // non-default locales (same options the sidebar/route enumeration use).
-    const { navDocs, categoryMeta } = resolveNavSource(locale, undefined, {
+    const { navDocs, categoryMeta } = resolveNavSource(locale, currentVersion, {
       applyDefaultLocaleOnlyFilter: true,
       keepUnlisted: true,
     });
-    const tree = buildNavTree(navDocs, locale, categoryMeta);
+    const rawTree = buildNavTree(navDocs, locale, categoryMeta);
     const categoryOrder = getCategoryOrder();
-    const groupedTree = groupSatelliteNodes(tree, categoryOrder);
+    const groupedTree = groupSatelliteNodes(rawTree, categoryOrder);
+    // Two-step version threading mirroring buildSidebarNodes (chrome/derive.tsx):
+    // version-scoped data source above, then remap the resolved hrefs into
+    // their versioned form (#3218). Unversioned pages: tree === groupedTree.
+    let tree = groupedTree;
+    if (currentVersion) {
+      if (versionedDocsUrl) {
+        tree = remapVersionedHrefs(groupedTree, currentVersion, locale, versionedDocsUrl);
+      } else {
+        // versionedDocsUrl is optional (back-compat for pre-#3218
+        // SiteTreeNavDeps callers, see the field's doc comment) — silently
+        // leaving hrefs unversioned would hide the misconfiguration, so warn
+        // loudly.
+        console.warn(
+          "[zudo-doc] SiteTreeNavWrapper: currentVersion is set but SiteTreeNavDeps.versionedDocsUrl " +
+            "was not provided — nav card hrefs will NOT be remapped into the version.",
+        );
+      }
+    }
 
-    if (groupedTree.length === 0) return null;
+    if (tree.length === 0) return null;
 
     // IMPORTANT: Island({when:"idle"}) is preserved — not "load". This ensures
     // the SiteTreeNav mounts after the page is idle for performance (refs #1453).
@@ -136,7 +184,7 @@ export function createSiteTreeNavWrapper(
       when: "idle",
       children: (
         <SiteTreeNav
-          tree={groupedTree}
+          tree={tree}
           categoryOrder={categoryOrder}
           categoryIgnore={["inbox", "develop"]}
           ariaLabel={ariaLabel}
