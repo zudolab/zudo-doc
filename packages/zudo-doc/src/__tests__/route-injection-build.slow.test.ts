@@ -64,8 +64,9 @@ const FIXTURE_SRC = resolve(__dirname, "fixtures/route-injection");
  *  to exercise the locale-prefixed injected route (`/[locale]/docs/[[...slug]]`). */
 const FIXTURE_I18N_SRC = resolve(__dirname, "fixtures/route-injection-i18n");
 
-/** The locked 13-file target-manifest fixture (epic zudolab/zudo-doc#2651 Wave
- *  5, #2659) — see the "Case TM" section near the end of this file. */
+/** The locked 17-file target-manifest fixture (epic zudolab/zudo-doc#2651 Wave
+ *  5, #2659; grew 13 → 17 for the default favicon set, epic #3184 / #3186) —
+ *  see the "Case TM" section near the end of this file. */
 const TARGET_MANIFEST_FIXTURE_SRC = resolve(__dirname, "fixtures/target-manifest");
 
 /** The `@takazudo/zudo-doc` package root (…/packages/zudo-doc). */
@@ -561,20 +562,36 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   //
   // All of it traces to this one intentional, self-contained change; no
   // unattributed bytes.
+  //
+  // 2026-08-02 re-baseline (zudolab/zudo-doc#3185, PR #3199, epic #3184
+  // "Favicon Set"): the prior baseline (a rebuild of the pre-#3185 source
+  // tree in a separate worktree) reproduced the old hashes exactly, so the
+  // delta below is the complete and only change — a single purely-additive
+  // one-line `<link rel="icon" type="image/svg+xml" href="...">` insertion,
+  // placed FIRST in the favicon set ahead of the existing `.ico`/`.png`
+  // entries, byte-identical across all three fixture pages, with zero
+  // removals anywhere (`packages/zudo-doc/src/head-with-defaults/index.tsx`).
+  // Confirmed against a `pnpm build` of the showcase: exactly four
+  // `rel="icon"` links per page, the new svg entry first with a
+  // base-prefixed href. Direct precedent: the #3140 entry above was itself a
+  // purely-additive head-`<link>` insertion.
+  //
+  // All of it traces to this one intentional, self-contained change; no
+  // unattributed bytes.
 
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"b79675460ca89a23ff2fe16cd052eba20fde841351a8ca4380b5c627e2afc3ac"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"2579d75bf9dd6345c7fca83bdebfc6614d234002a549a713270b261e71eb71d9"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"b2977dd1dfcc36d0fc2b2c8714fc3a10448447dea53d23effe071a22cf8235ad"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"dbd09e697b71f41f688eb9b23cce5f8d89a420a57a4ae2c2ab748931aede0b22"`);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"a679efa6beaf718e773cefc3b60006aabca4a6bd7f5628b88ae411973154ffe0"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"91eed9aa1e825d4ffb176e32d553102ec9af6667ae89dd0c7120757d4bdbd266"`);
   });
 });
 
@@ -1433,7 +1450,8 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
 // ---------------------------------------------------------------------------
 // Case TM — target-manifest confirm (epic zudolab/zudo-doc#2651 Wave 5, #2659).
 //
-// The locked 13-file minimal-scaffold manifest (#2653 decision wave):
+// The locked 17-file minimal-scaffold manifest (#2653 decision wave; grew
+// 13 → 17 when the default favicon set shipped, epic #3184 / #3186):
 //
 //   zfb.config.ts  package.json  tsconfig.json  CLAUDE.md  .gitignore  .npmrc
 //   pnpm-workspace.yaml
@@ -1441,8 +1459,9 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
 //   pages/docs/[[...slug]].tsx            — self-contained doc stub (REQUIRED)
 //   src/content/docs/getting-started/{index,introduction,installation}.mdx
 //   src/styles/global.css                 — ~22 ln
+//   public/{favicon.svg,favicon.ico,favicon-16x16.png,favicon-32x32.png}
 //
-// committed verbatim at fixtures/target-manifest/ (13 files, guarded by the
+// committed verbatim at fixtures/target-manifest/ (17 files, guarded by the
 // "group 6" file-count test below). Built from the NPM-PACKED package (mirrors
 // Case S1's `packPackage()`/tarball-extraction flow, not the cheap workspace
 // symlink `setupFixture()` used by Cases A–DTP/HOME/B) so the confirm proof
@@ -1464,7 +1483,7 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
 //   3. `zfb check` (tsc) passes with the 5-line tsconfig + pages/ included.
 //   4. `zfb dev` renders / and /docs/getting-started/ (200 + content marker).
 //   5. Computed-token smoke on built CSS (theme.css contract).
-//   6. Fixture file count == 12 (guards floor creep).
+//   6. Fixture file count == 17 (guards floor creep).
 // ---------------------------------------------------------------------------
 
 /** Set up a target-manifest fixture instance: copy the locked-manifest fixture
@@ -1642,12 +1661,12 @@ function countFilesRecursive(dir: string): number {
 }
 
 // ---------------------------------------------------------------------------
-// Group 6 — fixture file count == the locked 13-file manifest.
+// Group 6 — fixture file count == the locked 17-file manifest.
 // ---------------------------------------------------------------------------
 
-describe("TM group 6: fixture file count matches the locked 13-file manifest exactly", () => {
-  it("fixtures/target-manifest/ contains exactly 13 files (guards floor creep)", () => {
-    expect(countFilesRecursive(TARGET_MANIFEST_FIXTURE_SRC)).toBe(13);
+describe("TM group 6: fixture file count matches the locked 17-file manifest exactly", () => {
+  it("fixtures/target-manifest/ contains exactly 17 files (guards floor creep)", () => {
+    expect(countFilesRecursive(TARGET_MANIFEST_FIXTURE_SRC)).toBe(17);
   });
 });
 

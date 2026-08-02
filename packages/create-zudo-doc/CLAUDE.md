@@ -6,7 +6,7 @@ CLI scaffold tool for creating new zudo-doc documentation sites. Generates a pro
 
 ## Architecture (minimal-scaffold, epic zudolab/zudo-doc#2651 Wave 6 #2660)
 
-The generator emits the **locked ~13-file minimal manifest** — one config file
+The generator emits the **locked ~17-file minimal manifest** — one config file
 (`zfb.config.ts`, `zudoDoc({ ...only fields you chose })`) plus markdown
 content plus a handful of unavoidable root files. Everything else (layout,
 chrome, islands, default `@theme` tokens, even the doc ROUTES themselves via
@@ -59,7 +59,7 @@ left to inject or copy.
 
 | Directory | Role |
 |-----------|------|
-| `templates/base/` | The locked ~13-file minimal manifest (barebone, EN-only): `pages/index.tsx` (1-line re-export), `pages/docs/[[...slug]].tsx` (self-contained doc stub — see its header comment for why it's required), `src/styles/global.css` (~20-line `@import` chain + token-override slot), `tsconfig.json` (5-line extends form). `zfb.config.ts`/`package.json`/`CLAUDE.md`/`.gitignore`/`.npmrc`/`pnpm-workspace.yaml` are generated programmatically, not copied from here. |
+| `templates/base/` | The locked ~17-file minimal manifest (barebone, EN-only): `pages/index.tsx` (1-line re-export), `pages/docs/[[...slug]].tsx` (self-contained doc stub — see its header comment for why it's required), `src/styles/global.css` (~20-line `@import` chain + token-override slot), `tsconfig.json` (5-line extends form), `public/favicon.svg`/`favicon.ico`/`favicon-32x32.png`/`favicon-16x16.png` (byte-identical copies of the repo-root `public/` files — #3186). `zfb.config.ts`/`package.json`/`CLAUDE.md`/`.gitignore`/`.npmrc`/`pnpm-workspace.yaml` are generated programmatically, not copied from here. |
 | `templates/features/*/files/` | Feature-specific files copied when a feature is selected. Exactly four have a template directory: `claudeSkills` (skill copies, driven from `scaffold.ts`), `i18n` (locale doc stub), `tauri` and `tauriDev` (Rust shells). `tagGovernance` has **no** template directory — it writes one explicit tag vocabulary/config module inline in its `postProcess`; all audit/suggest behavior comes from package-owned bins. |
 
 ### Injection anchors — mostly retired
