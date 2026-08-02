@@ -7,13 +7,36 @@
 // for the current slug, which of `settings.versions` DON'T contain that slug
 // in their per-(locale, version) nav source. Factored out once — wired at
 // both derive sites from `chrome/derive.tsx` — so neither caller re-derives
-// the recipe and the locale+version cache-key trap below is fixed in exactly
-// one place.
+// the recipe and the traps below are fixed in exactly one place.
+//
+// The available-slug set for a (locale, version) pair MUST match the routes
+// that pageroute generation actually emits (`route-enumerators`'
+// `enumerateVersionedRoutes` / `doc-route-entries`' `buildDocRouteEntries`
+// use the identical recipe), or availability drifts from reality in two
+// directions:
+//   - A `category_no_page` doc entry carries category metadata only —
+//     `buildDocRouteEntries` deliberately emits NO route for it, so it must
+//     be excluded here too (otherwise a real 404 could be reported
+//     "available").
+//   - An auto-generated category-index page (a directory with children but
+//     no `index.mdx` of its own) IS a real, paths()-enumerated route with NO
+//     corresponding docs entry — omitting it would mark every archive
+//     unavailable for a category-index slug that genuinely exists in all of
+//     them.
+// `applyDefaultLocaleOnlyFilter: true` is likewise required for non-default
+// locales — the same option `resolveVersionedLocaleSource` callers pass at
+// the real versioned-locale route (`v-locale-docs-slug.tsx`) — otherwise a
+// default-locale-only path can be reported available in a locale whose
+// archived route was never generated.
 
-/** Structural subset of a `NavSourceDocs` entry this module reads. */
-export interface VersionAvailabilityDocEntry {
-  slug: string;
-  data: { slug?: string };
+import type { DocPageEntry, DocNavNode } from "../doc-page-props/index.js";
+import type { CategoryMeta } from "../sidebar-tree/index.js";
+
+/** Structural subset of `NavSourceDocs` this module reads. */
+export interface VersionAvailabilityNavSource {
+  docs: DocPageEntry[];
+  navDocs: DocPageEntry[];
+  categoryMeta: Map<string, CategoryMeta>;
 }
 
 /** Injected dependencies for {@link createGetUnavailableVersions}. */
@@ -28,10 +51,23 @@ export interface VersionAvailabilityDeps {
   resolveNavSource: (
     locale: string,
     versionSlug: string,
-    options?: { keepUnlisted?: boolean },
-  ) => { docs: VersionAvailabilityDocEntry[] };
+    options?: { applyDefaultLocaleOnlyFilter?: boolean; keepUnlisted?: boolean },
+  ) => VersionAvailabilityNavSource;
   /** Canonical route slug for a zfb content slug — injected, not ambient. */
   toRouteSlug: (entrySlug: string) => string;
+  /**
+   * Nav-tree builder, already bound to a href builder by the caller (hrefs
+   * are irrelevant here — the tree is only walked to discover auto-index
+   * nodes via {@link VersionAvailabilityDeps.collectAutoIndexNodes}).
+   */
+  buildNavTree: (
+    docs: DocPageEntry[],
+    locale: string,
+    categoryMeta: Map<string, CategoryMeta>,
+  ) => DocNavNode[];
+  /** Category nodes with children but no page of their own — real routes
+   *  with no corresponding docs entry (see module header). */
+  collectAutoIndexNodes: (tree: DocNavNode[]) => DocNavNode[];
 }
 
 /**
@@ -55,8 +91,25 @@ export function createGetUnavailableVersions(
     const key = `${locale}\n${versionSlug}`;
     const cached = availableSlugCache.get(key);
     if (cached) return cached;
-    const { docs } = deps.resolveNavSource(locale, versionSlug, { keepUnlisted: true });
-    const slugs = new Set(docs.map((d) => d.data.slug ?? deps.toRouteSlug(d.slug)));
+
+    const { docs, navDocs, categoryMeta } = deps.resolveNavSource(locale, versionSlug, {
+      applyDefaultLocaleOnlyFilter: true,
+      keepUnlisted: true,
+    });
+
+    const slugs = new Set<string>();
+    for (const d of docs) {
+      // A `category_no_page` entry carries category metadata only —
+      // buildDocRouteEntries emits no route for it (mirrored here).
+      if (d.data.category_no_page === true) continue;
+      slugs.add(d.data.slug ?? deps.toRouteSlug(d.slug));
+    }
+    // Auto-generated category-index routes have no docs entry of their own.
+    const tree = deps.buildNavTree(navDocs, locale, categoryMeta);
+    for (const node of deps.collectAutoIndexNodes(tree)) {
+      slugs.add(node.slug);
+    }
+
     availableSlugCache.set(key, slugs);
     return slugs;
   }

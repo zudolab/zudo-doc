@@ -415,6 +415,12 @@ export function deriveGetUnavailableVersions(
     versions: (ctx.settings as { versions: Array<{ slug: string }> | false }).versions,
     resolveNavSource: ctx.resolveNavSource,
     toRouteSlug: ctx.toRouteSlug,
+    // Hrefs are irrelevant to availability — bound to docsUrl only because
+    // ctx.buildNavTree's buildHref param is required, mirroring the same
+    // throwaway binding route-enumerators/doc-route-entries use.
+    buildNavTree: (docs, locale, categoryMeta) =>
+      ctx.buildNavTree(docs, locale, categoryMeta, (slug, loc) => ctx.docsUrl(slug, loc)),
+    collectAutoIndexNodes: ctx.collectAutoIndexNodes,
   });
 }
 
