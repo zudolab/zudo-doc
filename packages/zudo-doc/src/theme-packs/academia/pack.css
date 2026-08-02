@@ -125,7 +125,7 @@ html[data-theme-pack="academia"] {
   --zdc-doc-h3-weight: 700;
   --zdc-doc-h4-weight: 600;
   --zdc-doc-prose-font: var(--font-sans);
-  --zdc-doc-link-decoration: none;
+  --zdc-doc-link-decoration: underline;
   --zdc-admonition-radius: 0;
   --zdc-admonition-border-width: 1px;
   --zdc-card-radius: 0;
@@ -219,11 +219,21 @@ html[data-theme-pack="academia"] .zd-content h4 {
   border-top: 0;
 }
 
-/* ---- links: hyperref colorlinks — navy ink, underline only on hover ---- */
+/* ---- links: hyperref colorlinks — navy ink is the dominant cue; the
+        rest-state underline (a.text-accent.underline is the exact
+        selector consuming --zdc-doc-link-decoration, content.css:513) is
+        kept low-opacity so it reads as a subtle non-color affordance
+        rather than competing with the ink. Hover restores full opacity. ---- */
+html[data-theme-pack="academia"] a.text-accent.underline {
+  text-decoration-color: color-mix(in srgb, currentColor 30%, transparent);
+  text-underline-offset: 0.15em;
+}
+html[data-theme-pack="academia"] a.text-accent.underline:hover,
 html[data-theme-pack="academia"] .zd-content a:hover {
   text-decoration: underline;
   text-underline-offset: 0.15em;
   text-decoration-thickness: 1px;
+  text-decoration-color: currentColor;
 }
 
 /* ---- admonitions: amsthm theorem environments in a hairline mdframed
@@ -337,7 +347,7 @@ html[data-theme-pack="academia"] .zd-content code:not(pre code) {
 /* ---- code blocks: a framed verbatim listing — hairline ink box, bold
         keywords (the loaded Courier Prime 700), italic comments ---- */
 html[data-theme-pack="academia"] pre.hi-root {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   line-height: 1.65;
   border: 1px solid color-mix(in srgb, var(--zd-fg) 40%, transparent);
   border-radius: 0;
