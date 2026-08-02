@@ -249,6 +249,7 @@ export interface PresetResolveMarkdownLinks {
 export interface PresetMarkdown {
   features: Record<string, boolean | Record<string, unknown>>;
   cjkFriendly?: boolean;
+  gfm: { taskListItem: boolean; footnoteDefinition: boolean };
 }
 
 export interface PresetCodeHighlight {
@@ -308,6 +309,11 @@ export function zudoDocPreset({
     markdown: {
       features: buildMarkdownFeatures(settings, directiveVocabulary),
       ...(settings.cjkFriendly !== undefined ? { cjkFriendly: settings.cjkFriendly } : {}),
+      // zfb's gfm default is conservative (strikethrough + table only); the
+      // preset turns on the other two GFM constructs so task lists and
+      // footnotes render for real instead of as literal `[ ]` / `[^1]` text
+      // (#3197, #3208).
+      gfm: { taskListItem: true, footnoteDefinition: true },
     },
     // zfb class mode keeps renderer output semantic and delegates color to
     // the package's --zfb-hi-* → --zd-syntax-* CSS adapter. Keep the upstream

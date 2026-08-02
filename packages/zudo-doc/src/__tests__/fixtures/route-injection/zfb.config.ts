@@ -44,12 +44,7 @@ export default defineConfig({
   tailwind: { enabled: true },
   base: settings.base,
   // No adapter — static output only (no SSR routes needed for this proof).
+  // A2 #3179 — coverage.mdx's task list and footnote exercise the preset's
+  // own `markdown.gfm` default (#3210); no hand-splice needed here anymore.
   ...preset,
-  markdown: {
-    ...preset.markdown,
-    // A2 #3179 — zfb's `gfm` default is conservative (strikethrough + table
-    // only); coverage.mdx's task list and footnote need the other two GFM
-    // constructs turned on explicitly.
-    gfm: { taskListItem: true, footnoteDefinition: true },
-  },
 });

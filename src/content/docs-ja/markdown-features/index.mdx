@@ -44,6 +44,6 @@ zfb の Markdown パイプラインは、常に有効な **Core（組み込み�
 
 :::note[その他のパイプライン設定]
 
-zfb にはトップレベルの `markdown` 設定として `markdown.gfm`（GitHub Flavored Markdown の各構文をきめ細かく切り替える）と `markdown.hardBreaks`（ソフト改行をすべて `<br>` に変換する）も存在します。どちらも上記の Core/Opt-in の一覧には含まれておらず、このプロジェクトの `zfb.config.ts` でも設定されていません。
+zfb にはトップレベルの `markdown` 設定として `markdown.gfm`（GitHub Flavored Markdown の各構文をきめ細かく切り替える）と `markdown.hardBreaks`（ソフト改行をすべて `<br>` に変換する）も存在します。どちらも上記の Core/Opt-in の一覧には含まれていません。`markdown.hardBreaks` はこのプロジェクトの `zfb.config.ts` で設定されていませんが、`zudoDoc({...})` プリセットはデフォルトで `markdown.gfm: { taskListItem: true, footnoteDefinition: true }` を設定しているため、GFM のタスクリストとフットノートは `[ ]` / `[^1]` というリテラルなテキストではなく実際にレンダリングされます。
 
 :::
