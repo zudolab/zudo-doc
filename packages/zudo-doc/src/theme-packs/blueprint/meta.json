@@ -4,7 +4,7 @@
   "name": "Blueprint",
   "description": "Cyanotype drafting sheet — pale-cyan linework on prussian grid paper, title-block caps, dashed rules, mono-caps labels. Light mode is the vellum original.",
   "mode": "dark",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "fonts": {
     "sans": "Inter",
     "mono": "IBM Plex Mono",

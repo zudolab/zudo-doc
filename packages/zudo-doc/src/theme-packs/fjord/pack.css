@@ -170,6 +170,15 @@ html[data-theme-pack="fjord"] body {
   background-attachment: fixed;
 }
 
+/* Touch devices: background-attachment:fixed is unsupported (iOS Safari) or
+   repaint-heavy on scroll — fall back to scroll attachment. Catalog-wide
+   convention from issue #3070. */
+@media (pointer: coarse) {
+  html[data-theme-pack="fjord"] body {
+    background-attachment: scroll;
+  }
+}
+
 html[data-theme-pack="fjord"] {
   scrollbar-color: color-mix(in oklch, var(--zd-muted) 45%, transparent) transparent;
 }

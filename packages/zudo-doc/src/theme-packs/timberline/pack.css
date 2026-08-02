@@ -191,6 +191,15 @@ html[data-theme-pack="timberline"] body {
   background-attachment: fixed;
 }
 
+/* Touch devices: background-attachment:fixed is unsupported (iOS Safari) or
+   repaint-heavy on scroll — fall back to scroll attachment. Catalog-wide
+   convention from issue #3070. */
+@media (pointer: coarse) {
+  html[data-theme-pack="timberline"] body {
+    background-attachment: scroll;
+  }
+}
+
 /* header: the lintel beam — umber board over a plank seam (dark
    groove hairline + chamfer highlight catching on the board below) */
 html[data-theme-pack="timberline"] header[data-header] {

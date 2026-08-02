@@ -210,6 +210,15 @@ html[data-theme-pack="drift"] body {
     );
   background-attachment: fixed;
 }
+
+/* Touch devices: background-attachment:fixed is unsupported (iOS Safari) or
+   repaint-heavy on scroll — fall back to scroll attachment. Catalog-wide
+   convention from issue #3070. */
+@media (pointer: coarse) {
+  html[data-theme-pack="drift"] body {
+    background-attachment: scroll;
+  }
+}
 /* the base stylesheet sets `.zd-content { line-height: var(--leading-relaxed) }`
    (1.625), which beats the inherited body value — restate the relaxed
    1.75 rhythm on the prose container itself */
