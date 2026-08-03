@@ -373,6 +373,66 @@ html[data-sidebar-hidden] .zd-doc-content-band[data-zd-wide] {
  * transition fires mid-swap. Retires the #2198 workaround (zudolab/zudo-doc#2200). */
 
 /* ========================================
+ * Desktop TOC toggle — 1:1 mirror of "Desktop sidebar toggle" above (epic
+ * #3252, #3254). Breakpoint is xl/1280px, NOT the sidebar's lg/1024px.
+ *
+ * `data-toc-hidden` persists across SPA navigation (doc-layout.tsx
+ * preserveHtmlAttrs), so EVERY hidden-state rule below is scoped to the
+ * default-TOC path (`.zd-toc-col` descendants / `:has(> .zd-toc-col)`) — an
+ * unscoped rule would collapse/squish a *custom* Toc reached after hiding the
+ * default TOC on another page.
+ * ======================================== */
+
+@media (min-width: 1280px) {
+  .zd-toc-col {
+    width: var(--zdc-toc-width, 280px); /* explicit — auto→0 does not interpolate */
+    overflow: clip; /* NOT hidden: hidden creates a scroll container and breaks the nav's sticky */
+    transition: width var(--zd-transition-slow) ease-in-out;
+  }
+
+  html[data-toc-hidden] .zd-toc-col {
+    width: 0;
+  }
+
+  /* :has guard keeps the gap intact on custom-Toc pages (wrapper is a direct
+   * band child). Without :has support the gap simply stays — cosmetic
+   * degradation only. Alternative if :has ever becomes a concern: a band
+   * marker attribute. */
+  html[data-toc-hidden] .zd-doc-content-band:has(> .zd-toc-col) {
+    gap: 0;
+  }
+
+  /* COMBINED list — a bare `transition: gap` here would override and drop the
+   * max-width transition declared in the sidebar's 1024px block (last wins at
+   * xl, same property on the same selector). No band max-width rule is added
+   * here (expand-main policy): `main` is already `flex-1 min-w-0` and absorbs
+   * the freed width by itself; both-hidden composes with the existing
+   * `html[data-sidebar-hidden] .zd-doc-content-band { max-width: 80rem }` cap. */
+  .zd-doc-content-band {
+    transition:
+      max-width var(--zd-transition-slow) ease-in-out,
+      gap var(--zd-transition-slow) ease-in-out;
+  }
+
+  .zd-toc-col nav[data-zd-toc] {
+    transition:
+      opacity var(--zd-transition-slow) ease-in-out,
+      transform var(--zd-transition-slow) ease-in-out,
+      visibility var(--zd-transition-slow);
+  }
+
+  html[data-toc-hidden] .zd-toc-col nav[data-zd-toc] {
+    opacity: 0;
+    transform: translateX(1.5rem);
+    visibility: hidden; /* a11y: clipped links must not be focusable */
+  }
+
+  .zd-desktop-toc-toggle {
+    right: 0; /* constant — pins to the viewport edge; no tracking var needed */
+  }
+}
+
+/* ========================================
  * Page transition animations (view-transition chrome)
  * ======================================== */
 
@@ -403,19 +463,21 @@ html[data-sidebar-hidden] .zd-doc-content-band[data-zd-wide] {
  * transitions via document.startViewTransition on each navigation.
  *
  * Chrome extraction via view-transition-name (Strategy B+, zudolab/zudo-doc#1558):
- * <header>, <aside id="desktop-sidebar">, <footer>, and the desktop-sidebar-toggle
- * button each carry a data-zfb-transition-persist attribute whose value is keyed
- * by locale and nav-section. The four attribute selectors below assign a stable
+ * <header>, <aside id="desktop-sidebar">, <footer>, the desktop-sidebar-toggle
+ * button, and (since #3254) the desktop-toc-toggle button each carry a
+ * data-zfb-transition-persist attribute whose value is keyed by locale and
+ * nav-section. The five attribute selectors below assign a stable
  * view-transition-name based on the attribute value prefix, extracting those
  * elements from the root snapshot into their own named layers:
  *   - header-{lang}          → zfb-header
  *   - sidebar-{locale}-…     → zfb-sidebar
  *   - footer-{lang}          → zfb-footer
  *   - desktop-sidebar-toggle → zfb-sidebar-toggle
+ *   - desktop-toc-toggle     → zfb-toc-toggle
  *
  * Once extracted, the root cross-fade animates only non-chrome content (main,
- * article, TOC, etc.). The twelve ::view-transition-{old,new,group}(<name>)
- * rules disable animation for all four chrome layers. The group pseudo must be
+ * article, TOC, etc.). The ::view-transition-{old,new,group}(<name>) rules
+ * disable animation for all five chrome layers. The group pseudo must be
  * neutralised too — even when old/new are static the group container can still
  * produce a geometry-morph animation when snapshot size/position differs.
  *
@@ -434,8 +496,11 @@ html[data-sidebar-hidden] .zd-doc-content-band[data-zd-wide] {
 [data-zfb-transition-persist^="sidebar-"]              { view-transition-name: zfb-sidebar; }
 [data-zfb-transition-persist^="footer-"]               { view-transition-name: zfb-footer; }
 [data-zfb-transition-persist="desktop-sidebar-toggle"] { view-transition-name: zfb-sidebar-toggle; }
+[data-zfb-transition-persist="desktop-toc-toggle"]     { view-transition-name: zfb-toc-toggle; }
 
-/* Disable animation for all four chrome layers (old, new, and group) */
+/* Disable animation for all four chrome layers (old, new, and group), plus
+ * the desktop-toc-toggle button (#3254 — mirrors desktop-sidebar-toggle so
+ * it doesn't animate on SPA swaps). */
 ::view-transition-old(zfb-header),
 ::view-transition-new(zfb-header),
 ::view-transition-group(zfb-header),
@@ -447,21 +512,26 @@ html[data-sidebar-hidden] .zd-doc-content-band[data-zd-wide] {
 ::view-transition-group(zfb-footer),
 ::view-transition-old(zfb-sidebar-toggle),
 ::view-transition-new(zfb-sidebar-toggle),
-::view-transition-group(zfb-sidebar-toggle) { animation: none; }
+::view-transition-group(zfb-sidebar-toggle),
+::view-transition-old(zfb-toc-toggle),
+::view-transition-new(zfb-toc-toggle),
+::view-transition-group(zfb-toc-toggle) { animation: none; }
 
 /* Entry/exit: chrome element present on one side only (#2072).
  * Exit — lone old snapshot fades out with the content cross-fade. */
 ::view-transition-old(zfb-header):only-child,
 ::view-transition-old(zfb-sidebar):only-child,
 ::view-transition-old(zfb-footer):only-child,
-::view-transition-old(zfb-sidebar-toggle):only-child {
+::view-transition-old(zfb-sidebar-toggle):only-child,
+::view-transition-old(zfb-toc-toggle):only-child {
   animation: var(--default-transition-duration) ease-in both contentFadeOut;
 }
 /* Entry — lone new snapshot fades in with the content cross-fade. */
 ::view-transition-new(zfb-header):only-child,
 ::view-transition-new(zfb-sidebar):only-child,
 ::view-transition-new(zfb-footer):only-child,
-::view-transition-new(zfb-sidebar-toggle):only-child {
+::view-transition-new(zfb-sidebar-toggle):only-child,
+::view-transition-new(zfb-toc-toggle):only-child {
   animation: var(--zd-transition-slower) ease-out both contentFadeIn;
 }
 
@@ -492,10 +562,12 @@ html[data-sidebar-hidden] .zd-doc-content-band[data-zd-wide] {
   ::view-transition-old(zfb-sidebar):only-child,
   ::view-transition-old(zfb-footer):only-child,
   ::view-transition-old(zfb-sidebar-toggle):only-child,
+  ::view-transition-old(zfb-toc-toggle):only-child,
   ::view-transition-new(zfb-header):only-child,
   ::view-transition-new(zfb-sidebar):only-child,
   ::view-transition-new(zfb-footer):only-child,
-  ::view-transition-new(zfb-sidebar-toggle):only-child {
+  ::view-transition-new(zfb-sidebar-toggle):only-child,
+  ::view-transition-new(zfb-toc-toggle):only-child {
     animation: none;
   }
 }

@@ -278,6 +278,13 @@ export const FEATURES: Feature[] = [
     cliFlag: "sidebar-toggle",
   },
   {
+    value: "tocToggle",
+    label: "TOC toggle",
+    hint: "Show/hide the desktop table of contents",
+    default: false,
+    cliFlag: "toc-toggle",
+  },
+  {
     value: "versioning",
     label: "Versioning",
     hint: "Multi-version documentation support",

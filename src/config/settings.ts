@@ -191,6 +191,7 @@ export const settings = {
   tocMaxDepth: 4 as number,
   sidebarResizer: true as boolean,
   sidebarToggle: true as boolean,
+  tocToggle: true as boolean,
   imageEnlarge: true as boolean,
   // Tauri-desktop-only (mounts the package's Cmd/Ctrl+F find-in-page island).
   // Inert for this showcase: `BodyEndIslands` below (this repo's own

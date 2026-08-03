@@ -227,6 +227,14 @@
       "types": "./dist/home-page/index.d.ts",
       "default": "./dist/home-page/index.js"
     },
+    "./desktop-toc-toggle-island": {
+      "types": "./dist/desktop-toc-toggle-island/index.d.ts",
+      "default": "./dist/desktop-toc-toggle-island/index.js"
+    },
+    "./toc-prepaint": {
+      "types": "./dist/toc-prepaint/index.d.ts",
+      "default": "./dist/toc-prepaint/index.js"
+    },
     "./theme.css": "./dist/theme.css",
     "./safelist.css": "./dist/safelist.css",
     "./content.css": "./dist/content.css",

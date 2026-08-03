@@ -85,6 +85,7 @@ zudo-doc が同梱するカラースキームは `Default Light` と `Default Da
 | `--[no-]theme-pack-switcher` | インストール済みテーマパックを切り替える右下のフライアウト（と一覧ダイアログ） | オフ |
 | `--[no-]sidebar-resizer` | ドラッグでサイドバー幅を変更 | オフ |
 | `--[no-]sidebar-toggle` | デスクトップサイドバーの表示/非表示 | オフ |
+| `--[no-]toc-toggle` | デスクトップ目次の表示/非表示（xl 画面の端のシェブロン） | オフ |
 | `--[no-]versioning` | 複数バージョンのドキュメント対応 | オフ |
 | `--[no-]doc-history` | ドキュメント編集履歴 | オフ |
 | `--[no-]body-foot-util` | ドキュメント下部の右寄せストリップ: ドキュメント履歴トリガー + GitHub でソースを表示リンク | オフ |
@@ -214,6 +215,7 @@ await createZudoDoc({
     "sidebarFilter",
     "sidebarResizer",
     "sidebarToggle",
+    "tocToggle",
     "docHistory",
     "footerCopyright",
   ],

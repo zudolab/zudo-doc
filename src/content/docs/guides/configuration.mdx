@@ -366,6 +366,22 @@ Enable the desktop sidebar collapse toggle.
 
 Default: `false`
 
+### tocToggle
+
+Enable the desktop table-of-contents collapse toggle — a chevron button pinned to the right edge of the viewport on xl screens (1280px and up).
+
+Default: `false`
+
+Collapsing the TOC hands its width to the content column, so the same page can be read at a wider measure. That is the point of the feature: wide tables and long code lines stop wrapping or scrolling sideways once the TOC is out of the way. The reader's choice is remembered, so it holds across pages and across visits.
+
+The toggle drives the **package default TOC** only. If you replace the `Toc` slot through `chromeBindingsModule`, your own component renders unchanged and no toggle appears — see [Host Chrome Bindings](../reference/host-chrome-bindings.mdx).
+
+<Note title="tocToggle vs. hide_toc">
+
+They solve different problems and can be used together. The [`hide_toc`](./frontmatter.mdx#fields-hide_toc) frontmatter is an **author** decision baked in at build time: the page ships without a TOC, and no reader can bring it back. `tocToggle` is a **reader** control: wherever the default TOC is rendered, the reader decides whether to see it right now. It changes nothing on a page that already opted out with `hide_toc`.
+
+</Note>
+
 ### imageEnlarge
 
 Enable click-to-enlarge for content images.

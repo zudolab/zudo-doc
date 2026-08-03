@@ -18,7 +18,7 @@ New snapshot guards (added in `packages/zudo-doc/src/__tests__/public-api-snapsh
 
 ---
 
-## 1. Subpath Exports (142 total)
+## 1. Subpath Exports (147 total)
 
 The full `package.json#exports` keyset is the contract. Any addition or removal requires a deliberate, reviewed change that will fail the snapshot guard.
 
@@ -127,6 +127,8 @@ behavior change from the previous standalone-line-below-the-row placement,
 | `./sidebar-utils` | Sidebar utility helpers |
 | `./sidebar-with-defaults` | Sidebar with preset defaults wired |
 | `./toc` | Table of contents component |
+| `./desktop-toc-toggle-island` | Desktop TOC toggle client island |
+| `./toc-prepaint` | TOC prepaint (flash-of-wrong-state prevention) |
 | `./breadcrumb` | Breadcrumb component |
 | `./theme` | Theme components |
 | `./theme/color-scheme-provider` | Color scheme provider component |
@@ -325,6 +327,7 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `tocMaxDepth` | `number` | Maximum heading depth for TOC |
 | `sidebarResizer` | `boolean` | Enable sidebar resizer handle |
 | `sidebarToggle` | `boolean` | Enable sidebar mobile toggle |
+| `tocToggle` | `boolean` | Enable the desktop TOC collapse toggle |
 | `imageEnlarge` | `boolean` | Enable image enlarge on click |
 | `dynamicPageTransition` | `boolean` | Enable View Transitions API |
 | `frontmatterPreview` | `FrontmatterPreviewConfig \| false` | Frontmatter preview panel config |
