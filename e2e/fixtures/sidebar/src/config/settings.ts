@@ -27,6 +27,11 @@ export const settings = {
   // mount in this fixture — required to exercise the SPA-nav flash regression
   // (#2198), which only reproduces with the toggle island present.
   sidebarToggle: true as boolean,
+  // Enabled so the persisted DesktopTocToggle island + pre-paint script mount
+  // in this fixture — required to exercise the toggle/persistence/SPA-nav
+  // regressions (epic #3252), which only reproduce with the toggle island
+  // present.
+  tocToggle: true as boolean,
   // Mirrors the showcase default — themePackSwitcher stays off here
   // (allowlisted, epic Theme Core #2812, #2826).
   themePack: "default" as string,

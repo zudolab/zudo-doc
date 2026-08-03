@@ -124,6 +124,14 @@ theme:sidebarToggle
 smoke:sidebarToggle
 versioning:sidebarToggle
 
+# ── tocToggle ─────────────────────────────────────────────────────────────────
+# reason: the toggle island + pre-paint script are exercised in the sidebar
+#         fixture; the remaining fixtures do not enable it
+i18n:tocToggle
+theme:tocToggle
+smoke:tocToggle
+versioning:tocToggle
+
 # ── imageEnlarge ──────────────────────────────────────────────────────────────
 # reason: image enlarge feature is only tested in the smoke fixture
 sidebar:imageEnlarge
