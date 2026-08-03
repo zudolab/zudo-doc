@@ -399,7 +399,6 @@ const FIELD_ORDER = [
   "headerNav",
   "headerRightItems",
   "minifyHtml",
-  "strictContentBridge",
 ];
 
 /**
