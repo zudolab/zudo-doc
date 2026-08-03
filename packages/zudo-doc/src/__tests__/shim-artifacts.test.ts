@@ -18,6 +18,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { validateShimShape } from "../../scripts/shim-shape.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(__dirname, "../..");
@@ -110,6 +111,44 @@ describe("zfb-config-shim.d.ts (#2656, shape-free re-export since #3237)", () =>
       expect(outsideBlock).not.toMatch(/^\s*(import|export)\b/m);
       expect(fixtureShim).not.toMatch(/export (interface|type) /);
     }
+  });
+});
+
+describe("check-shim-artifacts.mjs: validateShimShape prepack guard (#3241)", () => {
+  it("passes on the real, current shim", () => {
+    expect(validateShimShape(read("zfb-config-shim.d.ts"))).toEqual({ ok: true });
+  });
+
+  it("fails when the ambient module declaration is dropped", () => {
+    const broken = `export * from "@takazudo/zfb/config";\n`;
+    const result = validateShimShape(broken);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain('declare module "zfb/config"');
+  });
+
+  it("fails when the re-export is replaced with a hand-copied shape (the #3237 drift class)", () => {
+    const broken = `declare module "zfb/config" {
+  export interface ZfbConfig {
+    bundle?: boolean;
+  }
+  export function defineConfig(config: ZfbConfig): ZfbConfig;
+}
+`;
+    const result = validateShimShape(broken);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("hand-copied shape");
+  });
+
+  it("fails when a top-level import/export sits outside the declare-module block (stops being ambient)", () => {
+    const broken = `import type { Foo } from "somewhere";
+
+declare module "zfb/config" {
+  export * from "@takazudo/zfb/config";
+}
+`;
+    const result = validateShimShape(broken);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("no longer merges into global scope");
   });
 });
 
