@@ -51,6 +51,7 @@ export const settings = {
   tocMaxDepth: 4,
   sidebarResizer: false,
   sidebarToggle: false,
+  tocToggle: false,
   imageEnlarge: false,
   findInPage: false,
   dynamicPageTransition: false,
