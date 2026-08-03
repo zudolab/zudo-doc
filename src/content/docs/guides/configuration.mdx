@@ -378,7 +378,7 @@ The toggle drives the **package default TOC** only. If you replace the `Toc` slo
 
 <Note title="tocToggle vs. hide_toc">
 
-  They solve different problems and can be used together. The [`hide_toc`](./frontmatter.mdx#fields-hide_toc) frontmatter is an **author** decision baked in at build time: the page ships without a TOC, and no reader can bring it back. `tocToggle` is a **reader** control: every page keeps its TOC, and the reader decides whether to see it right now.
+They solve different problems and can be used together. The [`hide_toc`](./frontmatter.mdx#fields-hide_toc) frontmatter is an **author** decision baked in at build time: the page ships without a TOC, and no reader can bring it back. `tocToggle` is a **reader** control: wherever the default TOC is rendered, the reader decides whether to see it right now. It changes nothing on a page that already opted out with `hide_toc`.
 
 </Note>
 
