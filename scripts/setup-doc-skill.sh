@@ -201,6 +201,19 @@ if [ ! -d "$DOCS_DIR" ]; then
   exit 1
 fi
 
+# Helper: physical (symlink-resolved) form of a directory path; echoes the
+# input unchanged when it is not a directory. Stock macOS ships no realpath(1)
+# and BSD readlink has no -f, so `cd` + `pwd -P` is the only resolver available
+# on every platform this script targets (it is also copied verbatim into
+# downstream projects by create-zudo-doc, so it must stay portable).
+physical_dir() {
+  if [ -d "$1" ]; then
+    (cd "$1" && pwd -P)
+  else
+    printf '%s\n' "$1"
+  fi
+}
+
 # Helper: replace a symlink or file at the given path
 ensure_symlink() {
   local link_path="$1"
@@ -228,7 +241,17 @@ safe_link_tracked_skill() {
   if [ -L "$link_path" ]; then
     local current_target
     current_target="$(readlink "$link_path")"
-    if [ "$current_target" = "$link_target" ]; then
+    # Compare where the link actually LANDS, not the literal string it stores.
+    # link_target is built from MAIN_PROJECT_DIR, which comes from
+    # `git worktree list` and is therefore always PHYSICAL, while an existing
+    # link may hold an unresolved path for the same directory. A raw string
+    # compare then mis-reports our own correct link as foreign whenever the
+    # project or its parents sit behind a symlink (macOS $TMPDIR: /var ->
+    # /private/var; also a symlinked $HOME or repo checkout), so the link was
+    # skipped with a spurious "already links to ..." warning instead of
+    # no-opping (zudolab/zudo-doc#3156 D4).
+    if [ "$current_target" = "$link_target" ] ||
+      [ "$(physical_dir "$link_path")" = "$(physical_dir "$link_target")" ]; then
       return 0 # already correct -> no-op
     fi
     if [ -e "$link_path" ]; then
