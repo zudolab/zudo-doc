@@ -45,7 +45,6 @@ const rewireConfig: VersionSwitcherRewireConfig = {
   defaultLocale: "en",
   trailingSlash: false,
   currentLocale: "en",
-  unavailableLabel: labels.unavailable,
 };
 
 interface PageState {

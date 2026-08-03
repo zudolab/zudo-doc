@@ -248,7 +248,6 @@ describe("VersionSwitcher", () => {
           defaultLocale: "en",
           trailingSlash: true,
           currentLocale: "en",
-          unavailableLabel: "Not available",
         }}
       />,
     );

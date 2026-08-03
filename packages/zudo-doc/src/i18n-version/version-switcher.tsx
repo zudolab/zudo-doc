@@ -145,14 +145,6 @@ export interface VersionSwitcherRewireConfig {
    * so it can be read once from the SSR container rather than re-derived.
    */
   currentLocale: string;
-  /**
-   * `title` attribute the SSR render puts on a disabled entry
-   * (`VersionSwitcherLabels.unavailable`). Delivered via the container's
-   * `data-*` config bag — like the rest of this interface — rather than
-   * hardcoded in the script, since it's a translated string the client-side
-   * re-wire has no other way to reach (epic #3242, #3244).
-   */
-  unavailableLabel: string;
 }
 
 /** The re-computed per-page menu state {@link computeVersionSwitcherState} returns. */
@@ -355,6 +347,12 @@ export function VersionSwitcher(props: VersionSwitcherProps): VNode {
   // when no config is supplied so static / inline callers render exactly as
   // before (zudolab/zudo-doc#2553).
   const rewire = rewireConfig != null;
+  // `labels.unavailable` rides on the container alongside the rest of the
+  // rewire config rather than as a `VersionSwitcherRewireConfig` field —
+  // `labels` is already a required prop the component always has in hand,
+  // so this avoids widening the frozen public `VersionSwitcherRewireConfig`
+  // shape with a field every existing caller would need to add (#3244
+  // codex review finding).
   const rewireAttrs = rewireConfig
     ? {
         "data-version-rewire": true,
@@ -362,7 +360,7 @@ export function VersionSwitcher(props: VersionSwitcherProps): VNode {
         "data-default-locale": rewireConfig.defaultLocale,
         "data-trailing-slash": String(rewireConfig.trailingSlash),
         "data-current-locale": rewireConfig.currentLocale,
-        "data-unavailable-label": rewireConfig.unavailableLabel,
+        "data-unavailable-label": labels.unavailable,
       }
     : {};
 
