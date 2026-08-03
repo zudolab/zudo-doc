@@ -1,0 +1,48 @@
+---
+title: 5.0.0
+description: Release notes for 5.0.0.
+sidebar_position: 1077
+---
+
+Released: 2026-08-04
+
+### Breaking Changes
+
+- The `@takazudo/zfb` family peer range moves from `^1.1.0` to `^2.1.0`. Consumers must upgrade `@takazudo/zfb`, `@takazudo/zfb-md-wasm`, and `@takazudo/zfb-runtime` in lockstep; `@takazudo/design-token-lint` also moves from 1.x to 2.x (d23e47a8, fb91919f)
+- The `githubAutolinks` feature and its `githubAutolinksRepo` setting are removed. A project still passing `githubAutolinksRepo` now fails at runtime with an explicit rejection rather than silently ignoring it, and the config shim likewise rejects zfb 2.0.0's removed `githubAutolinks` key (3d4a8ca7, 4c03befc, 255676da)
+- `strictContentBridge` is enabled by default in this repo's config and re-points the b4push/CI wiring — a content-bridge fallback now fails a plain `pnpm build` instead of only tripping the allowlist-gated b4push step (#3234, d3035f68)
+- The shared base `tsconfig` flips its JSX mode to `react-jsx` with `jsxImportSource: preact`, and `@types/react` is dropped from the scaffolded devDependencies. Projects that relied on the React typings being present must add them back explicitly (#3182, 705c3957, be91c050)
+
+### Features
+
+- Desktop TOC visibility toggle — a new `tocToggle` setting adds a prepaint-backed show/hide control for the desktop table of contents, wired through the generator, the showcase, and the sidebar fixture, with e2e coverage. The claim is scoped to default-TOC pages (c5a26102, 3f851196, ed1f6887, 304ce68d, 409b0bfe, 5301b011)
+- New `entryDocSlug` and `headerNav` versioned config fields, letting a versioned site name its entry document and carry version context through header navigation (#3217, 0d42ffbd, e56c4dee)
+- Version switcher now recomputes its disabled state across SPA navigation — each page emits an unavailable-version payload into the swapped content and the switcher rewires on `after-swap` (faa0e8aa, d2a3fccf)
+- GFM task lists and footnotes are now enabled as a preset default (31c1f253)
+- `strictContentBridge` added as a shell passthrough field so downstream projects can opt into the strict content bridge from their own config (725febec, c1432ffa)
+- Theme packs gain a catalog-wide `(pointer: coarse)` scroll fallback for fixed-attachment layers, and the pack validator now accepts top-level `@media`-wrapped pack-scoped rules (ee973b27, 594b0486)
+- `create-zudo-doc` ships a default `public/` favicon set in the base template, with an SVG favicon link emitted ahead of the `.ico`/`.png` entries (a9d100bc, 19d11f8d)
+- The safelist checker gains a `safelist-ok` marker escape hatch plus honest remediation text (150925a4)
+
+### Bug Fixes
+
+- Restore desktop TOC sticky scroll-follow, with an e2e regression guard (ab25912a, ac7d3fc0)
+- Version availability is now computed from real route generation rather than an approximation, and `unavailableVersions` is computed for both version switchers (01409a94, a820304b)
+- An absent version-availability payload now leaves the disabled state untouched instead of clearing it, and the switcher rewire is deferred to `DOMContentLoaded` (6593e0c0, d5d6b586)
+- Thread `currentVersion` into the `CategoryNav` / `CategoryTreeNav` / `SiteTreeNav` wrappers so versioned sites link correctly from nav cards (ddeaa6da)
+- `entryDocSlug` is optional and locale-aware in the versions page (20890f21)
+- The zfb config shim re-exports `zfb/config` instead of hand-copying its shape, and shim-shape validation is now AST-based rather than substring matching, closing three false-negative paths (#3239, #3241, 213f4e5a, ea109c66, 70ad667c)
+- Restore public API back-compat on the versioning deps/node shapes (416baef2)
+- `claude-resources` excludes build directories by basename at any depth rather than only at the top level (6e830dc4)
+- Long delimiter-free inline code identifiers now wrap instead of overflowing (62679947)
+- Rename the TOC island helpers to avoid an island marker-name collision (7c29a6ca)
+- Resolve package-only dependencies in the packed-tarball slow fixtures (df23d982)
+
+### Other Changes
+
+- Academia theme pack readability pass: low-opacity rest-state link underline and 0.9rem code blocks (8dbb8f46)
+- Restructure the `CLAUDE.md` hierarchy and fix seven accuracy defects surfaced by the refactor self-review (#3167, fd2124ba, ed8917a4)
+- Repository cleanup — remove six unused dependencies and two dead files, delete host-side source superseded by package-owned equivalents, drop finished-epic scratch/report directories, and correct stale references in the README, config, and b4push skill (332c8406, 6d2f90dd, a40bc5fd, c035c76d, 7869d45b)
+- Record the Tauri Mode 1 CSP verification result and put the icon prerequisite before the build command in the Tauri docs (4a45c00f, 532eb81e, 8a93286e)
+- Test coverage: dogfood snapshot plus e2e fixture/spec coverage for the version-link family, an SPA-navigation guard for the version-switcher disabled state, a wider A2 fixture covering headings/task lists/footnotes/directives, and the locked favicon set mirrored in the target manifest fixture (#3219, #3245, 1a73989b, fab8568d, 0310c8fb, 94e09ceb)
+- Documentation corrections for the content-fallback guard wiring, the e2e fixture-setup fast path, and the safelist-ok example (9047c389, 2bb9a1e1, 70d69842, 66ad3101, 100761b3)
