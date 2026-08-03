@@ -90,6 +90,14 @@ describe("zudoDoc() returns a complete ZfbConfig", () => {
     expect(full.adapter).toBe("@takazudo/zfb-adapter-cloudflare");
     expect(full.bundle).toEqual({ exclude: ["components/*.stories.tsx"] });
   });
+
+  it("passes `strictContentBridge` through only when given", () => {
+    const bare = zudoDoc({ siteName: "X" });
+    expect(bare).not.toHaveProperty("strictContentBridge");
+
+    const full = zudoDoc({ strictContentBridge: true });
+    expect(full.strictContentBridge).toBe(true);
+  });
 });
 
 // ── Default-merge semantics (omitted vs explicit-false vs override) ───────────
