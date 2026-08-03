@@ -350,6 +350,7 @@ export interface Settings {
   tocMaxDepth: number;
   sidebarResizer: boolean;
   sidebarToggle: boolean;
+  tocToggle: boolean;
   imageEnlarge: boolean;
   /**
    * Mount the `FindInPageInit` island (Cmd/Ctrl+F find bar). Self-gates on

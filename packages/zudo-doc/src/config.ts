@@ -159,6 +159,7 @@ export const DEFAULT_SETTINGS: Settings = {
   tocMaxDepth: 4,
   sidebarResizer: false,
   sidebarToggle: false,
+  tocToggle: false,
   imageEnlarge: false,
   findInPage: false,
   dynamicPageTransition: false,
@@ -408,6 +409,11 @@ export interface ZudoDocConfig {
    * @default false
    */
   sidebarToggle?: boolean;
+  /**
+   * Enable the desktop TOC collapse toggle.
+   * @default false
+   */
+  tocToggle?: boolean;
   /**
    * Enable click-to-enlarge for content images.
    * @default false

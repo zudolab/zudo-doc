@@ -325,6 +325,7 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `tocMaxDepth` | `number` | Maximum heading depth for TOC |
 | `sidebarResizer` | `boolean` | Enable sidebar resizer handle |
 | `sidebarToggle` | `boolean` | Enable sidebar mobile toggle |
+| `tocToggle` | `boolean` | Enable the desktop TOC collapse toggle |
 | `imageEnlarge` | `boolean` | Enable image enlarge on click |
 | `dynamicPageTransition` | `boolean` | Enable View Transitions API |
 | `frontmatterPreview` | `FrontmatterPreviewConfig \| false` | Frontmatter preview panel config |
