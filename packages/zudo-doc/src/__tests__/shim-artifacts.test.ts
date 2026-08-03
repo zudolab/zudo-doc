@@ -1,7 +1,8 @@
 // Structural tests for the three package-root artifacts shipped for
 // downstream project tsconfigs (#2656): `tsconfig.base.json` and
-// `zfb-config-shim.d.ts` (hand-authored, checked into git) plus
-// `virtual-modules.d.ts` (GENERATED from `src/routes/_virtual.d.ts` by
+// `zfb-config-shim.d.ts` (hand-authored, checked into git, but SHAPE-FREE
+// since #3237 — it re-exports `@takazudo/zfb/config` rather than restating
+// its fields) plus `virtual-modules.d.ts` (GENERATED from `src/routes/_virtual.d.ts` by
 // `scripts/copy-virtual-modules.mjs` in the tsup onSuccess chain — requires
 // a package build first, which the root `pnpm test` runs; same dependency
 // the route-injection tests have on `dist/`). This suite pins their SHAPE —
@@ -73,73 +74,41 @@ describe("tsconfig.base.json (#2656)", () => {
   });
 });
 
-describe("zfb-config-shim.d.ts (#2656)", () => {
+describe("zfb-config-shim.d.ts (#2656, shape-free re-export since #3237)", () => {
   const shim = read("zfb-config-shim.d.ts");
 
   it("declares the bare `zfb/config` module", () => {
     expect(shim).toContain('declare module "zfb/config"');
   });
 
-  it("exports ZfbConfig and defineConfig", () => {
-    expect(shim).toContain("export interface ZfbConfig");
-    expect(shim).toContain("export function defineConfig(config: ZfbConfig): ZfbConfig;");
+  it("re-exports the real @takazudo/zfb/config instead of restating its shape", () => {
+    expect(shim).toContain('export * from "@takazudo/zfb/config";');
   });
 
-  it("documents the hand-sync duty against the published @takazudo/zfb/config", () => {
-    expect(shim).toMatch(/kept in sync BY HAND/);
+  it("has no top-level import/export outside the declare module block (would stop being ambient)", () => {
+    const outsideBlock = shim
+      .slice(0, shim.indexOf('declare module "zfb/config"'))
+      .concat(shim.slice(shim.lastIndexOf("}") + 1));
+    expect(outsideBlock).not.toMatch(/^\s*(import|export)\b/m);
   });
 
-  it("types the complete class-mode surface and all 18 fixed roles", () => {
-    expect(shim).toContain('export type CodeHighlightMode = "inline" | "class";');
-    expect(shim).toContain("codeHighlight?: CodeHighlightConfig;");
-    expect(shim).toContain("mode?: CodeHighlightMode;");
-    expect(shim).toContain("classPrefix?: string;");
-    expect(shim).toContain(
-      "roleClasses?: Partial<Record<CodeHighlightRole, string>>;",
-    );
-    expect(shim).toContain("defaultStylesheet?: boolean;");
-
-    const roleType = shim.slice(
-      shim.indexOf("export type CodeHighlightRole"),
-      shim.indexOf(";", shim.indexOf("export type CodeHighlightRole")),
-    );
-    const roles = [
-      "escape",
-      "operator",
-      "comment",
-      "string",
-      "number",
-      "constant",
-      "keyword",
-      "function",
-      "type",
-      "namespace",
-      "property",
-      "variable",
-      "tag",
-      "attribute",
-      "punctuation",
-      "inserted",
-      "deleted",
-      "heading",
-    ] as const;
-    expect(roleType.match(/"[^"]+"/g)).toEqual(
-      roles.map((role) => `"${role}"`),
-    );
+  it("declares no interface/type of its own (anti-recurrence guard for hand-copy drift)", () => {
+    expect(shim).not.toMatch(/export (interface|type) /);
   });
 
-  it("keeps the active route-injection fixture shims on the same class-mode surface", () => {
+  it("both route-injection fixture shims satisfy the same three invariants", () => {
     for (const fixture of [
       "src/__tests__/fixtures/route-injection/zfb-shim.d.ts",
       "src/__tests__/fixtures/route-injection-i18n/zfb-shim.d.ts",
     ]) {
       const fixtureShim = read(fixture);
-      expect(fixtureShim).toContain("codeHighlight?: CodeHighlightConfig;");
-      expect(fixtureShim).toContain("mode?: CodeHighlightMode;");
-      expect(fixtureShim).toContain(
-        "roleClasses?: Partial<Record<CodeHighlightRole, string>>;",
-      );
-      expect(fixtureShim).toContain("defaultStylesheet?: boolean;");
+      expect(fixtureShim).toContain('declare module "zfb/config"');
+      expect(fixtureShim).toContain('export * from "@takazudo/zfb/config";');
+      const outsideBlock = fixtureShim
+        .slice(0, fixtureShim.indexOf('declare module "zfb/config"'))
+        .concat(fixtureShim.slice(fixtureShim.lastIndexOf("}") + 1));
+      expect(outsideBlock).not.toMatch(/^\s*(import|export)\b/m);
+      expect(fixtureShim).not.toMatch(/export (interface|type) /);
     }
   });
 });
