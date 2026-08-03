@@ -251,18 +251,28 @@ describe("VERSION_SWITCHER_REWIRE_SCRIPT recomputes disabled state on zfb:after-
     expect(actual.ariaDisabled).toBeNull();
   });
 
-  it('absent payload leaves every entry enabled ("no availability info" fallback)', () => {
+  it("absent payload leaves the SSR-rendered disabled state UNTOUCHED (#3244 codex review finding 1)", () => {
+    // CORRECTED per the #3244 codex review: an ABSENT payload must NOT be
+    // read as "everything available" — that fallback belongs to the EMPTY
+    // (`""`) case only (see the next test). Absent means "no availability
+    // data for this page at all" (`version-availability/index.ts`'s
+    // three-state contract), and a consumer MUST treat that as "nothing to
+    // rewire", leaving whatever the header already shows in place. This
+    // test previously asserted the OPPOSITE (every entry regains full
+    // interactivity on an absent payload) — that assertion encoded the bug:
+    // a page rendered via the public `createDocPageShell` API without an
+    // `unavailableVersions` prop would silently re-enable entries the SSR
+    // correctly disabled, turning them into live 404 links.
     const before: PageState = {
       pathname: "/docs/intro",
       currentVersion: undefined,
       currentSlug: "intro",
       unavailable: new Set(["v1"]),
     };
-    // The destination page carries NO availability data at all (e.g. a
-    // non-doc page) — must NOT be read as "everything unavailable"; per the
-    // component's own SSR fallback (`!unavailableVersions || …`), it must
-    // render every entry available, matching `expectedProps` built from
-    // `unavailable: undefined`.
+    // The destination page carries NO availability data at all (e.g. a page
+    // rendered without an `unavailableVersions` prop) — v1 must STAY
+    // disabled, exactly as the header already rendered it, not flip to
+    // available.
     const after: PageState = {
       pathname: "/docs/other",
       currentVersion: undefined,
@@ -271,32 +281,64 @@ describe("VERSION_SWITCHER_REWIRE_SCRIPT recomputes disabled state on zfb:after-
     };
     simulateSwap(before, after);
 
-    expect(anchorProps(header, "v1")).toEqual(expectedProps(after, "v1"));
-    expect(anchorProps(header, "v1").ariaDisabled).toBeNull();
+    const result = anchorProps(header, "v1");
+    // Disabled-ness (and everything setDisabled owns) is carried over
+    // unchanged from `before`, NOT recomputed from `after`.
+    expect(result.ariaDisabled).toBe("true");
+    expect(result.tabIndex).toBe("-1");
+    expect(result.title).toBe(labels.unavailable);
+    expect(result.className).toContain("text-muted/50");
+    expect(result.className).toContain("cursor-not-allowed");
+    expect(result.className).toContain("pointer-events-none");
+    expect(result.ariaCurrent).toBeNull();
+    // The href IS path-derived and safe to recompute even while disabled.
+    const a = header.querySelector('a[data-version-slug="v1"]');
+    expect(a?.getAttribute("href")).toBe("/v/v1/docs/other");
   });
 
-  it("absent and empty-string payloads produce the identical enabled DOM state", () => {
-    // Pins the three-state contract's documented equivalence for THIS
-    // consumer: `version-availability/index.ts` treats "absent" and
-    // "present, empty" as distinct concepts at the derivation layer, but
-    // once they reach this script both must resolve to "no slug is
-    // unavailable" — the same outcome the SSR component's own
-    // no-unavailableVersions-prop fallback produces.
+  it("absent payload still re-derives href + active state for entries NOT currently disabled", () => {
+    // v2 is enabled on `before` — an absent payload on `after` must still
+    // recompute its path-derived properties (href, active state), since
+    // those are safe regardless of availability data.
     const before: PageState = {
       pathname: "/docs/intro",
       currentVersion: undefined,
       currentSlug: "intro",
       unavailable: new Set(["v1"]),
     };
-    const afterAbsent: PageState = { ...before, unavailable: undefined };
-    const afterEmpty: PageState = { ...before, unavailable: new Set() };
+    const after: PageState = {
+      pathname: "/docs/other",
+      currentVersion: undefined,
+      currentSlug: "other",
+      unavailable: undefined,
+    };
+    simulateSwap(before, after);
 
-    simulateSwap(before, afterAbsent);
-    const absentResult = anchorProps(header, "v1");
+    const a = header.querySelector('a[data-version-slug="v2"]');
+    expect(a?.getAttribute("href")).toBe("/v/v2/docs/other");
+    expect(a?.getAttribute("aria-disabled")).toBeNull();
+  });
 
-    simulateSwap(before, afterEmpty);
-    const emptyResult = anchorProps(header, "v1");
+  it('empty-string payload DOES re-enable every entry ("everything available")', () => {
+    // The EMPTY case (attribute present, value "") is the one the SSR
+    // component's own `!unavailableVersions || …` fallback mirrors — this
+    // is the only case that means "everything available", and it must keep
+    // working exactly as before.
+    const before: PageState = {
+      pathname: "/docs/intro",
+      currentVersion: undefined,
+      currentSlug: "intro",
+      unavailable: new Set(["v1"]),
+    };
+    const after: PageState = {
+      pathname: "/docs/other",
+      currentVersion: undefined,
+      currentSlug: "other",
+      unavailable: new Set(),
+    };
+    simulateSwap(before, after);
 
-    expect(absentResult).toEqual(emptyResult);
+    expect(anchorProps(header, "v1")).toEqual(expectedProps(after, "v1"));
+    expect(anchorProps(header, "v1").ariaDisabled).toBeNull();
   });
 });

@@ -519,14 +519,23 @@ document.addEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)},initVersionSwi
  * as `ATTR` — see `version-availability/index.ts` for the three-state
  * contract). The persisted header would otherwise keep showing whichever
  * entries were disabled/enabled on the PREVIOUS page after a same-locale SPA
- * navigation — the exact bug epic #3242 exists to fix. Reading the article's
- * attribute (rather than diffing the header's own prior state) means an
- * ABSENT attribute and an EMPTY (`""`) one both resolve to "no slug is
- * unavailable" here, which is intentional: they are indistinguishable at the
- * point this script decides per-slug availability, and both must produce the
- * same "everything available" rendering the SSR component's own
- * `!unavailableVersions || !unavailableVersions.has(slug)` fallback would
- * produce for the same page (`version-switcher.tsx`'s `isAvailable` check).
+ * navigation — the exact bug epic #3242 exists to fix.
+ *
+ * The three-state contract is preserved faithfully here (fixed after a P2
+ * codex review finding on the original #3244 landing, which collapsed ABSENT
+ * into EMPTY and re-enabled every entry — turning SSR-correct disabled links
+ * into live 404s whenever a page renders through `createDocPageShell` without
+ * an availability payload):
+ *   - attribute ABSENT (`hasAvailabilityData` false) → no availability data
+ *     for the destination page. `setDisabled` is never called for any entry;
+ *     the SSR-rendered disabled/enabled state is left exactly as-is. Only the
+ *     genuinely path-derived bits (href, active state on entries that are
+ *     NOT currently disabled) are recomputed.
+ *   - attribute present, value `""` → empty unavailable set, i.e. "everything
+ *     available" — `setDisabled(a, false, …)` runs for every entry, matching
+ *     the SSR component's own `!unavailableVersions || !unavailableVersions.has(slug)`
+ *     fallback (`version-switcher.tsx`'s `isAvailable` check).
+ *   - attribute present, `"a,b"` → those slugs disabled, the rest enabled.
  *
  * `setDisabled` and the `setActive` guard together transition ALL FIVE
  * SSR-divergent properties in both directions (`aria-disabled`, `tabindex`,
@@ -534,7 +543,11 @@ document.addEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)},initVersionSwi
  * `__tests__/version-switcher.test.tsx` that pins this against the real SSR
  * branches. `setActive` runs strictly AFTER `setDisabled` re-enables an
  * entry, so a newly-available active entry gets `aria-current="page"`
- * restored instead of silently staying without it.
+ * restored instead of silently staying without it. In the ABSENT branch,
+ * where `setDisabled` never runs, `setActive` instead reads the anchor's
+ * OWN current `aria-disabled` attribute directly (the only source of truth
+ * left, since availability isn't being recomputed) and skips already-disabled
+ * entries the same way.
  *
  * `window[FLAG]` makes it idempotent: the tag may re-execute on a hard reload or
  * a cross-locale header repaint, but the listener registers exactly once per
@@ -573,7 +586,8 @@ a.removeAttribute("title");
 }
 function rewire(){
 var articleEl=document.querySelector("["+ATTR+"]");
-var unavailableSlugs=articleEl?(articleEl.getAttribute(ATTR)||"").split(",").filter(Boolean):[];
+var hasAvailabilityData=articleEl!==null;
+var unavailableSlugs=hasAvailabilityData?(articleEl.getAttribute(ATTR)||"").split(",").filter(Boolean):[];
 var containers=document.querySelectorAll("[data-version-rewire]");
 for(var i=0;i<containers.length;i++){
 var c=containers[i];
@@ -597,9 +611,14 @@ var slug=a.getAttribute("data-version-slug");
 if(!slug)continue;
 var href=state.versionHrefs[slug];
 if(href!=null)a.setAttribute("href",href);
+if(hasAvailabilityData){
 var disabled=unavailableSlugs.indexOf(slug)!==-1;
 setDisabled(a,disabled,unavailableLabel);
 if(!disabled)setActive(a,state.activeVersion===slug);
+}else{
+var alreadyDisabled=a.getAttribute("aria-disabled")==="true";
+if(!alreadyDisabled)setActive(a,state.activeVersion===slug);
+}
 }
 var label=c.querySelector("[data-version-trigger-label]");
 if(label){
