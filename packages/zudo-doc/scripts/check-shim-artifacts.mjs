@@ -15,13 +15,16 @@
 //
 // Exit 0 → both files exist, are non-empty, `tsconfig.base.json` is valid
 //          JSON, ships the shims via a TOP-LEVEL `files` (not nested in
-//          compilerOptions, not via `include`), and that `files` array names
-//          exactly the two shipped shim files.
+//          compilerOptions, not via `include`), that `files` array names
+//          exactly the two shipped shim files, and `zfb-config-shim.d.ts`
+//          is still a shape-free re-export (#3237/#3239) rather than a
+//          hand-copied shape or a broken (non-ambient) module.
 // Exit 1 → any check fails (with a clear diagnostic message).
 
 import { readFileSync, statSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { validateShimShape } from "./shim-shape.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(__dirname, "..");
@@ -111,3 +114,18 @@ if (!filesMatch) {
 }
 
 process.stdout.write(`[check-shim-artifacts] tsconfig.base.json shape OK\n`);
+
+// ── zfb-config-shim.d.ts shape (#3237, #3239, #3241) ────────────────────────
+//
+// The actual check lives in ./shim-shape.mjs (validateShimShape), imported
+// above, so a test can exercise it in-process without triggering this
+// script's other file-system checks / process.exit() calls as an import
+// side effect.
+
+const shimSource = readFileSync(resolve(PKG_ROOT, "zfb-config-shim.d.ts"), "utf-8");
+const shimShape = validateShimShape(shimSource);
+if (!shimShape.ok) {
+  process.stderr.write(`\n[check-shim-artifacts] ERROR: ${shimShape.error}\n\n`);
+  process.exit(1);
+}
+process.stdout.write(`[check-shim-artifacts] zfb-config-shim.d.ts shape OK\n`);
