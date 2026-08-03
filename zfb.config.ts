@@ -44,5 +44,10 @@ export default defineConfig(
     bundle: {
       exclude: ["e2e/fixtures/**", "_temp-resource/**"],
     },
+    // Fail the build on a content-bridge fallback (#3229). b4push builds with
+    // --no-strict-content-bridge and runs check:content-fallback instead, so the
+    // gitignored docs/claude-skills/ routes stay allowlistable — the two guards
+    // cannot run on the same build.
+    strictContentBridge: true,
   }),
 );
