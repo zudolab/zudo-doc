@@ -395,14 +395,18 @@ specifier end-to-end.
 
 2. **`zfb-config-shim.d.ts`** — exported as `@takazudo/zudo-doc/zfb-config-shim.d.ts`.
    The ambient `declare module "zfb/config"` a project previously had to
-   copy-paste as a local `zfb-shim.d.ts` (183 lines). **Hand-sync duty**: this
-   is the type source of truth `zfb check` binds `zfb.config.ts` against, and
-   it must be kept in sync BY HAND with the published `@takazudo/zfb/config`
-   (`dist/config.d.ts`) — a lagging shim fails valid config fields with TS2353
-   (see Takazudo/zudo-front-builder#678 / zudolab/zudo-doc#1834, where
-   `bundle` was missing here and blocked next.22's `bundle.exclude`). When
-   bumping the pinned `@takazudo/zfb` version, diff its `dist/config.d.ts`
-   against this file. This is now the ONLY copy — the pre-#2656 per-project
+   copy-paste as a local `zfb-shim.d.ts` (183 lines). **No hand-sync duty
+   (since #3237)**: the shim re-exports `@takazudo/zfb/config` (`export *`)
+   rather than restating its shape, so it carries no fields of its own and
+   tracks whatever `@takazudo/zfb` version the consumer has installed
+   automatically. It previously WAS a hand-copied subset and drifted twice —
+   `bundle` (Takazudo/zudo-front-builder#678 / zudolab/zudo-doc#1834) and
+   then 12 top-level fields including `copyPublicWithBase` (#3237) — each
+   drift failing a valid config field with TS2353. That class of bug is now
+   structurally impossible: there is nothing left to lag. Do NOT add a
+   top-level `import`/`export` to this file (outside the `declare module`
+   block) — that would turn it into a module and the block would stop being
+   ambient. This is the ONLY copy — the pre-#2656 per-project
    `zfb-shim.d.ts` files (root and `templates/base/`) were deleted when the
    cutover completed (epic #2651 Wave 7 #2663; see `e2e/CLAUDE.md`), so there
    is no dual-copy sync duty left. Consumers reach the shim transitively via

@@ -1,7 +1,8 @@
 // Structural tests for the three package-root artifacts shipped for
 // downstream project tsconfigs (#2656): `tsconfig.base.json` and
-// `zfb-config-shim.d.ts` (hand-authored, checked into git) plus
-// `virtual-modules.d.ts` (GENERATED from `src/routes/_virtual.d.ts` by
+// `zfb-config-shim.d.ts` (hand-authored, checked into git, but SHAPE-FREE
+// since #3237 — it re-exports `@takazudo/zfb/config` rather than restating
+// its fields) plus `virtual-modules.d.ts` (GENERATED from `src/routes/_virtual.d.ts` by
 // `scripts/copy-virtual-modules.mjs` in the tsup onSuccess chain — requires
 // a package build first, which the root `pnpm test` runs; same dependency
 // the route-injection tests have on `dist/`). This suite pins their SHAPE —
@@ -17,6 +18,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { validateShimShape } from "../../scripts/shim-shape.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(__dirname, "../..");
@@ -73,74 +75,184 @@ describe("tsconfig.base.json (#2656)", () => {
   });
 });
 
-describe("zfb-config-shim.d.ts (#2656)", () => {
+describe("zfb-config-shim.d.ts (#2656, shape-free re-export since #3237)", () => {
   const shim = read("zfb-config-shim.d.ts");
 
   it("declares the bare `zfb/config` module", () => {
     expect(shim).toContain('declare module "zfb/config"');
   });
 
-  it("exports ZfbConfig and defineConfig", () => {
-    expect(shim).toContain("export interface ZfbConfig");
-    expect(shim).toContain("export function defineConfig(config: ZfbConfig): ZfbConfig;");
+  it("re-exports the real @takazudo/zfb/config instead of restating its shape", () => {
+    expect(shim).toContain('export * from "@takazudo/zfb/config";');
   });
 
-  it("documents the hand-sync duty against the published @takazudo/zfb/config", () => {
-    expect(shim).toMatch(/kept in sync BY HAND/);
+  it("has no top-level import/export outside the declare module block (would stop being ambient)", () => {
+    const outsideBlock = shim
+      .slice(0, shim.indexOf('declare module "zfb/config"'))
+      .concat(shim.slice(shim.lastIndexOf("}") + 1));
+    expect(outsideBlock).not.toMatch(/^\s*(import|export)\b/m);
   });
 
-  it("types the complete class-mode surface and all 18 fixed roles", () => {
-    expect(shim).toContain('export type CodeHighlightMode = "inline" | "class";');
-    expect(shim).toContain("codeHighlight?: CodeHighlightConfig;");
-    expect(shim).toContain("mode?: CodeHighlightMode;");
-    expect(shim).toContain("classPrefix?: string;");
-    expect(shim).toContain(
-      "roleClasses?: Partial<Record<CodeHighlightRole, string>>;",
-    );
-    expect(shim).toContain("defaultStylesheet?: boolean;");
-
-    const roleType = shim.slice(
-      shim.indexOf("export type CodeHighlightRole"),
-      shim.indexOf(";", shim.indexOf("export type CodeHighlightRole")),
-    );
-    const roles = [
-      "escape",
-      "operator",
-      "comment",
-      "string",
-      "number",
-      "constant",
-      "keyword",
-      "function",
-      "type",
-      "namespace",
-      "property",
-      "variable",
-      "tag",
-      "attribute",
-      "punctuation",
-      "inserted",
-      "deleted",
-      "heading",
-    ] as const;
-    expect(roleType.match(/"[^"]+"/g)).toEqual(
-      roles.map((role) => `"${role}"`),
-    );
+  it("declares no interface/type of its own (anti-recurrence guard for hand-copy drift)", () => {
+    expect(shim).not.toMatch(/export (interface|type) /);
   });
 
-  it("keeps the active route-injection fixture shims on the same class-mode surface", () => {
+  it("both route-injection fixture shims satisfy the same three invariants", () => {
     for (const fixture of [
       "src/__tests__/fixtures/route-injection/zfb-shim.d.ts",
       "src/__tests__/fixtures/route-injection-i18n/zfb-shim.d.ts",
     ]) {
       const fixtureShim = read(fixture);
-      expect(fixtureShim).toContain("codeHighlight?: CodeHighlightConfig;");
-      expect(fixtureShim).toContain("mode?: CodeHighlightMode;");
-      expect(fixtureShim).toContain(
-        "roleClasses?: Partial<Record<CodeHighlightRole, string>>;",
-      );
-      expect(fixtureShim).toContain("defaultStylesheet?: boolean;");
+      expect(fixtureShim).toContain('declare module "zfb/config"');
+      expect(fixtureShim).toContain('export * from "@takazudo/zfb/config";');
+      const outsideBlock = fixtureShim
+        .slice(0, fixtureShim.indexOf('declare module "zfb/config"'))
+        .concat(fixtureShim.slice(fixtureShim.lastIndexOf("}") + 1));
+      expect(outsideBlock).not.toMatch(/^\s*(import|export)\b/m);
+      expect(fixtureShim).not.toMatch(/export (interface|type) /);
     }
+  });
+});
+
+describe("check-shim-artifacts.mjs: validateShimShape prepack guard (#3241)", () => {
+  // Narrows the guard's result union so `.error` is reachable. `expect(result.ok).toBe(false)`
+  // is a runtime assertion only — tsc still sees the `{ ok: true }` arm, and the package's own
+  // `tsc --noEmit` typechecks this file (the host tsconfig excludes `src/**/__tests__`, so
+  // `pnpm check` does not catch it).
+  const expectFailure = (
+    result: ReturnType<typeof validateShimShape>,
+  ): { ok: false; error: string } => {
+    if (result.ok) throw new Error("expected validateShimShape to reject this input, but it passed");
+    return result;
+  };
+
+  it("passes on the real, current shim", () => {
+    expect(validateShimShape(read("zfb-config-shim.d.ts"))).toEqual({ ok: true });
+  });
+
+  it("fails when the ambient module declaration is dropped", () => {
+    const broken = `export * from "@takazudo/zfb/config";\n`;
+    const result = validateShimShape(broken);
+    expect(result.ok).toBe(false);
+    expect(expectFailure(result).error).toContain('declare module "zfb/config"');
+  });
+
+  it("fails when the re-export is replaced with a hand-copied shape (the #3237 drift class)", () => {
+    const broken = `declare module "zfb/config" {
+  export interface ZfbConfig {
+    bundle?: boolean;
+  }
+  export function defineConfig(config: ZfbConfig): ZfbConfig;
+}
+`;
+    const result = validateShimShape(broken);
+    expect(result.ok).toBe(false);
+    expect(expectFailure(result).error).toContain("hand-copied shape");
+  });
+
+  it("fails when a top-level import/export sits outside the declare-module block (stops being ambient)", () => {
+    const broken = `import type { Foo } from "somewhere";
+
+declare module "zfb/config" {
+  export * from "@takazudo/zfb/config";
+}
+`;
+    const result = validateShimShape(broken);
+    expect(result.ok).toBe(false);
+    expect(expectFailure(result).error).toContain("no longer merges into global scope");
+  });
+
+  // The three cases below are the AST-vs-substring gap a codex review found
+  // in the first version of this check — each would have silently passed a
+  // plain substring/regex scan while the ambient declaration was actually
+  // gone or shadowed.
+
+  it("fails when the whole declaration is only present as a comment (substring scan would falsely pass)", () => {
+    const broken = `// declare module "zfb/config" {
+//   export * from "@takazudo/zfb/config";
+// }
+`;
+    const result = validateShimShape(broken);
+    expect(result.ok).toBe(false);
+    expect(expectFailure(result).error).toContain('declare module "zfb/config"');
+  });
+
+  it("fails when a trailing top-level statement's brace would confuse a lastIndexOf('}') brace match", () => {
+    const broken = `declare module "zfb/config" {
+  export * from "@takazudo/zfb/config";
+}
+
+export {};
+`;
+    const result = validateShimShape(broken);
+    expect(result.ok).toBe(false);
+    expect(expectFailure(result).error).toContain("top-level import/export");
+  });
+
+  it("fails on a differently-formatted local interface (tab/newline between export and interface)", () => {
+    const broken = `declare module "zfb/config" {
+  export * from "@takazudo/zfb/config";
+  export\tinterface ZfbConfig {
+    bundle?: boolean;
+  }
+}
+`;
+    const result = validateShimShape(broken);
+    expect(result.ok).toBe(false);
+    expect(expectFailure(result).error).toContain("hand-copied-shape");
+  });
+
+  // The three cases below are false-negative paths a later codex review
+  // found in the AST-based check itself — each was silently accepted
+  // despite being exactly the class of drift the guard exists to catch.
+
+  it("fails on a syntax error the parser only recovers from (missing closing brace)", () => {
+    // `ts.createSourceFile` never throws — a syntax error just leaves
+    // entries on the internal `parseDiagnostics` array and returns a
+    // best-effort AST. Without this check the shape inspection below would
+    // run against that reconstructed AST and could pass a shim tsc itself
+    // rejects.
+    const broken = `declare module "zfb/config" {
+  export * from "@takazudo/zfb/config";
+`;
+    const result = validateShimShape(broken);
+    expect(result.ok).toBe(false);
+    expect(expectFailure(result).error).toContain("syntax error");
+  });
+
+  it("fails on a top-level EXPORTED DECLARATION (not an ExportDeclaration node) outside the block", () => {
+    // `export interface Extra {}` is an InterfaceDeclaration carrying an
+    // `export` modifier, not an ExportDeclaration/ImportDeclaration node —
+    // the original statement-kind allowlist missed this, even though it
+    // turns the file into an external module exactly like a top-level
+    // `export * from "...";` does, which makes the nested `declare module`
+    // a non-ambient augmentation.
+    const broken = `export interface Extra {
+  foo: string;
+}
+
+declare module "zfb/config" {
+  export * from "@takazudo/zfb/config";
+}
+`;
+    const result = validateShimShape(broken);
+    expect(result.ok).toBe(false);
+    expect(expectFailure(result).error).toContain("top-level exported declaration");
+  });
+
+  it("fails when the module block hides a copied shape behind a non-interface/type declaration", () => {
+    // A copied `export function defineConfig(...)` (or a class/enum/const)
+    // sitting alongside the expected `export *` used to pass, because the
+    // block-body check only looked for InterfaceDeclaration/TypeAliasDeclaration.
+    // The invariant is that the block contains NOTHING but the one re-export.
+    const broken = `declare module "zfb/config" {
+  export * from "@takazudo/zfb/config";
+  export function defineConfig(config: unknown): unknown;
+}
+`;
+    const result = validateShimShape(broken);
+    expect(result.ok).toBe(false);
+    expect(expectFailure(result).error).toContain("extra statements");
   });
 });
 

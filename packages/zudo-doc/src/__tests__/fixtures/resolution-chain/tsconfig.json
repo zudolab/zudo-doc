@@ -1,0 +1,4 @@
+{
+  "extends": "@takazudo/zudo-doc/tsconfig.base.json",
+  "include": ["zfb.config.ts"]
+}
