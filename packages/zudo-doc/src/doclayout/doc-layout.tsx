@@ -347,6 +347,12 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
             preserving it, every SPA swap would reset the attribute to the
             configured value and the active pack's attr-scoped CSS would stop
             applying for a frame (ADR theme-packs.md Decision 3, #2822). */}
+        {/* `data-toc-hidden` is preserved for the same reason as
+            `data-sidebar-hidden`: the desktop TOC-toggle island writes it from
+            localStorage (toc-prepaint/desktop-toc-toggle-island, #3254). Kept
+            unconditional (same list on every page, per the preserveHtmlAttrs
+            contract above) — a no-op when the tocToggle feature is off since
+            the attribute is then never set. */}
         {enableClientRouter !== false
           ? (ClientRouter({
               preserveHtmlAttrs: [
@@ -354,6 +360,7 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
                 "data-theme",
                 "data-theme-pack",
                 "style",
+                "data-toc-hidden",
               ],
             }) as unknown as JSX.Element)
           : null}

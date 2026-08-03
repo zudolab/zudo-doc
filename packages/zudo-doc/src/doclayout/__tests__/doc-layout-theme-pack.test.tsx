@@ -37,7 +37,7 @@ describe("DocLayout — theme-pack DOM contract", () => {
       <DocLayout title="T" header={<header />} main={<p>body</p>} />,
     );
     expect(html).toContain(
-      '<meta name="zfb-preserve-html-attrs" content="data-sidebar-hidden data-theme data-theme-pack style"/>',
+      '<meta name="zfb-preserve-html-attrs" content="data-sidebar-hidden data-theme data-theme-pack style data-toc-hidden"/>',
     );
   });
 
