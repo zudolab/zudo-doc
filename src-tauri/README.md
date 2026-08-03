@@ -94,14 +94,56 @@ the two CDNs the content genuinely uses, `object-src 'none'`,
   **server-side** (`pages/api/_ai-chat-client.ts`), never from the browser, and
   the offline reader has no server anyway.
 
-> **On-device verification still required (mac).** This CSP was reasoned from the
-> site's measured resource use but has **not** been verified inside a built Tauri
-> webview. In particular, when a CSP is set Tauri injects a nonce for its own IPC
-> script, which can cause the browser to ignore `'unsafe-inline'` and block the
-> site's inline pre-paint scripts. Run `cargo tauri build` (or `cargo tauri dev`)
-> and confirm the reader still renders — Mermaid diagrams, KaTeX math, code
-> highlighting, sidebar/theme pre-paint — before relying on the bundled app.
-> `bundle.active` is `false`, so nothing ships this CSP until a deliberate bundle.
+> **Verified working inside a built Tauri webview (2026-08-03, tauri-cli 2.10.1,
+> macOS).** All four at-risk surfaces pass — see "CSP verification
+> (zudolab/zudo-doc#3246)" below for the reproduce recipe, the one real (but
+> harmless) violation found, and per-surface verdicts. `bundle.active` is
+> `false`, so nothing ships this CSP until a deliberate bundle.
+
+## CSP verification (zudolab/zudo-doc#3246)
+
+**Verified:** 2026-08-03, tauri-cli 2.10.1, macOS.
+
+### How to reproduce it
+
+```sh
+GEN_DOC_HISTORY=1 pnpm build
+cd src-tauri && cargo tauri build --no-bundle
+# launch the binary directly — do NOT go through `cargo tauri dev` or
+# `cargo tauri build --debug` (see below for why), and do NOT launch it via
+# `cargo run` / `cargo tauri`
+open target/release/zudo-doc          # or run the binary path directly
+```
+
+**`cargo tauri dev` and `cargo tauri build --debug` do not verify this.**
+`src-tauri/src/main.rs` sets `const IS_DEV: bool = cfg!(debug_assertions)` and
+branches on it: any debug build (`dev`, or `build --debug`) opens
+`WebviewUrl::External("http://localhost:4321/")` — the zfb dev server over
+plain `http://` — never the embedded `frontendDist`. Only a **release** build
+(`cargo tauri build`, no `--debug`) uses `WebviewUrl::default()`, which serves
+the bundled `../dist` over the `tauri://` app protocol where the shipped CSP
+and Tauri's nonce injection actually apply. This is the trap that made the
+whole verification epic necessary — a dev run "working" proves nothing about
+the CSP.
+
+Building a Mode 1 release binary for the first time also requires a workaround
+for #3264: `src-tauri/` has no `icons/` directory in git, but
+`tauri::generate_context!()` panics without `icons/icon.png` even with
+`bundle.icon: []` and `bundle.active: false`. Copy any PNG to
+`src-tauri/icons/icon.png` before building, then delete it — this file must
+never be committed.
+
+### Surfaces checked and verdicts
+
+| Surface | Verdict |
+|---|---|
+| Code highlighting | PASS — computed styles on `hi-*` classes return real distinct `oklch(...)` colors, so the `--zd-syntax-*` token CSS survives `style-src`. |
+| KaTeX | PASS — and the epic's premise was wrong: `MathBlock` renders KaTeX **server-side at build time** (`packages/zudo-doc/src/math-block/index.tsx`); the site never loads `katex.min.css` or its webfonts from jsdelivr. Identical behavior confirmed in a plain Chromium browser against the same `dist/`, so this was never a CSP/Tauri-specific concern (see zudolab/zudo-doc#3265, not acted on here). |
+| Mermaid | PASS, with one real violation on record: `style-src-attr`/`style-src-elem` block inline `style=""` writes from `esm.sh/d3-selection` and `esm.sh/mermaid` — Tauri's nonce injection neutralizes `'unsafe-inline'` for those sub-directives. This is the epic's predicted failure, landing on **style** rather than **script**. It causes no visible defect: colored-shape ratio and diagram geometry match a plain-browser rendering of the same `dist/` exactly. |
+| Sidebar + theme pre-paint | PASS — no `script-src` violations anywhere. Verified with a seeded non-default state (light theme against a dark OS, sidebar collapsed): a full app quit + relaunch showed the correct state already applied in the DOM at `PageLoadEvent::Finished`, before the window is shown, and an 8-frame rapid capture showed no flash. |
+
+No CSP change was made — #3249 (fix-forward) closed as a no-op because every
+surface passed. The policy stands exactly as written in #2240/#2312.
 
 ### Capabilities — `remote.urls`
 
