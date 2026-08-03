@@ -272,6 +272,7 @@ describe("Settings public field set snapshot", () => {
         "tocMaxDepth",
         "sidebarResizer",
         "sidebarToggle",
+        "tocToggle",
         "imageEnlarge",
         "findInPage",
         "dynamicPageTransition",
