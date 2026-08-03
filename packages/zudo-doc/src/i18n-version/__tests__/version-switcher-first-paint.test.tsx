@@ -164,10 +164,15 @@ describe("VERSION_SWITCHER_REWIRE_SCRIPT survives first paint before <article> e
 
     new Function(VERSION_SWITCHER_REWIRE_SCRIPT)();
 
-    // Swap to a page where v1 is available again.
+    // Swap to a page where v1 is available again. Must carry the EMPTY
+    // (`""`) payload — not an absent attribute — to mean "available in every
+    // version" (see `version-availability/index.ts`'s three-state contract,
+    // and the #3244 codex review fix in `version-switcher.tsx`'s `rewire()`:
+    // an ABSENT attribute now means "leave disabled state untouched", so an
+    // omitted attribute here would no longer re-enable v1).
     document.body.querySelectorAll("article").forEach((el) => el.remove());
     const freshWrapper = document.createElement("div");
-    freshWrapper.innerHTML = `<article class="zd-content max-w-none"></article>`;
+    freshWrapper.innerHTML = `<article class="zd-content max-w-none" ${UNAVAILABLE_VERSIONS_ATTR}=""></article>`;
     const freshArticle = freshWrapper.firstElementChild;
     if (!freshArticle) throw new Error("fresh article missing");
     document.body.appendChild(freshArticle);

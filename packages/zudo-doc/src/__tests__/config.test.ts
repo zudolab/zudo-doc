@@ -118,6 +118,26 @@ describe("zudoDoc() default-merge semantics", () => {
     ).toThrow(/githubAutolinksRepo is no longer supported/);
   });
 
+  // #3244 codex review finding 2: a comma in a version slug would desync the
+  // comma-joined `data-doc-unavailable-versions` client payload
+  // (`version-availability/index.ts`) from the real `data-version-slug` DOM
+  // value, silently leaving a genuinely-unavailable version's link enabled.
+  it("rejects a version slug containing a comma", () => {
+    expect(() =>
+      zudoDoc({
+        versions: [{ slug: "1,0", label: "1,0", docsDir: "content/v1" }],
+      }),
+    ).toThrow(/Invalid version slug "1,0"/);
+  });
+
+  it("accepts comma-free version slugs", () => {
+    expect(() =>
+      zudoDoc({
+        versions: [{ slug: "1.0", label: "1.0", docsDir: "content/v1" }],
+      }),
+    ).not.toThrow();
+  });
+
   it("omitted field falls back to DEFAULT_SETTINGS (mermaid defaults true)", () => {
     expect(zudoDoc({}).markdown?.features?.mermaid).toBe(true);
   });
