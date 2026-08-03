@@ -111,11 +111,18 @@ the two CDNs the content genuinely uses, `object-src 'none'`,
 
 ```sh
 GEN_DOC_HISTORY=1 pnpm build
+
+# Prerequisite (#3264): src-tauri/ ships no icons/ directory, but
+# tauri::generate_context!() panics without icons/icon.png — see below.
+mkdir -p src-tauri/icons && cp src-tauri-dev/icons/icon.png src-tauri/icons/icon.png
+
 cd src-tauri && cargo tauri build --no-bundle
 # launch the binary directly — do NOT go through `cargo tauri dev` or
 # `cargo tauri build --debug` (see below for why), and do NOT launch it via
 # `cargo run` / `cargo tauri`
 open target/release/zudo-doc          # or run the binary path directly
+
+rm -rf icons                          # never commit this
 ```
 
 **`cargo tauri dev` and `cargo tauri build --debug` do not verify this.**
@@ -129,13 +136,13 @@ and Tauri's nonce injection actually apply. This is the trap that made the
 whole verification epic necessary — a dev run "working" proves nothing about
 the CSP.
 
-Building a Mode 1 release binary for the first time also requires a workaround
-for #3264: `src-tauri/` has no `icons/` directory in git, but
-`tauri::generate_context!()` panics without `icons/icon.png` even with
-`bundle.icon: []` and `bundle.active: false`. Copy an **RGBA PNG** (Tauri's
-icon decoder panics on RGB/grayscale/indexed color types — e.g.
-`src-tauri-dev/icons/icon.png` already is one) to `src-tauri/icons/icon.png`
-before building, then delete it — this file must never be committed.
+**Why the icon step above is needed (#3264).** `src-tauri/` has no `icons/`
+directory in git, but `tauri::generate_context!()` panics without
+`icons/icon.png` even with `bundle.icon: []` and `bundle.active: false` — the
+empty `icon` array does not exempt it. It must be an **RGBA PNG**: Tauri's icon
+decoder panics on RGB/grayscale/indexed color types (`src-tauri-dev/icons/icon.png`
+already is one, which is why the recipe copies that). Delete it after building —
+this file must never be committed.
 
 ### Surfaces checked and verdicts
 
