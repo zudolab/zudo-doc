@@ -615,7 +615,14 @@ label.textContent=activeLabel!=null?activeLabel:state.activeVersion;
 }
 }
 }
-rewire();
+// The initial call is deferred to DOMContentLoaded when the script (inline in
+// <header>, which parses before <article>) would otherwise run before the
+// article element exists. Running early would read a missing ATTR as "no
+// unavailable slugs" and clobber the SSR-correct disabled state with
+// everything-enabled — a first-paint variant of the bug this rewire exists
+// to fix (see the doc comment above; SSR already rendered the right state for
+// this page, so a brief deferral loses nothing).
+if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",rewire);}else{rewire();}
 document.addEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)},rewire);
 })();`;
 
