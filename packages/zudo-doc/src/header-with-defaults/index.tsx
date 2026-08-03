@@ -214,6 +214,7 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
             defaultLocale,
             trailingSlash: settings.trailingSlash,
             currentLocale: lang,
+            unavailableLabel: labels.unavailable,
           }}
         />
       ) as unknown as VNode;

@@ -66,6 +66,7 @@
 import type { VNode } from "preact";
 import type { VersionEntry, VersionSwitcherLabels } from "./types.js";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
+import { UNAVAILABLE_VERSIONS_ATTR } from "../version-availability/index.js";
 
 export interface VersionSwitcherProps {
   /**
@@ -144,6 +145,14 @@ export interface VersionSwitcherRewireConfig {
    * so it can be read once from the SSR container rather than re-derived.
    */
   currentLocale: string;
+  /**
+   * `title` attribute the SSR render puts on a disabled entry
+   * (`VersionSwitcherLabels.unavailable`). Delivered via the container's
+   * `data-*` config bag — like the rest of this interface — rather than
+   * hardcoded in the script, since it's a translated string the client-side
+   * re-wire has no other way to reach (epic #3242, #3244).
+   */
+  unavailableLabel: string;
 }
 
 /** The re-computed per-page menu state {@link computeVersionSwitcherState} returns. */
@@ -353,6 +362,7 @@ export function VersionSwitcher(props: VersionSwitcherProps): VNode {
         "data-default-locale": rewireConfig.defaultLocale,
         "data-trailing-slash": String(rewireConfig.trailingSlash),
         "data-current-locale": rewireConfig.currentLocale,
+        "data-unavailable-label": rewireConfig.unavailableLabel,
       }
     : {};
 
@@ -505,6 +515,29 @@ document.addEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)},initVersionSwi
  * {@link VersionSwitcherRewireConfig} is passed), so the inline breadcrumb
  * switcher — re-rendered fresh on every swap — is left alone.
  *
+ * Since #3244, `rewire()` also recomputes each version entry's
+ * enabled/disabled state from the per-page availability payload #3243 emits
+ * onto the swapped `<article>` (`UNAVAILABLE_VERSIONS_ATTR`, imported here
+ * as `ATTR` — see `version-availability/index.ts` for the three-state
+ * contract). The persisted header would otherwise keep showing whichever
+ * entries were disabled/enabled on the PREVIOUS page after a same-locale SPA
+ * navigation — the exact bug epic #3242 exists to fix. Reading the article's
+ * attribute (rather than diffing the header's own prior state) means an
+ * ABSENT attribute and an EMPTY (`""`) one both resolve to "no slug is
+ * unavailable" here, which is intentional: they are indistinguishable at the
+ * point this script decides per-slug availability, and both must produce the
+ * same "everything available" rendering the SSR component's own
+ * `!unavailableVersions || !unavailableVersions.has(slug)` fallback would
+ * produce for the same page (`version-switcher.tsx`'s `isAvailable` check).
+ *
+ * `setDisabled` and the `setActive` guard together transition ALL FIVE
+ * SSR-divergent properties in both directions (`aria-disabled`, `tabindex`,
+ * `title`, the disjoint class sets, `aria-current`) — see the case table in
+ * `__tests__/version-switcher.test.tsx` that pins this against the real SSR
+ * branches. `setActive` runs strictly AFTER `setDisabled` re-enables an
+ * entry, so a newly-available active entry gets `aria-current="page"`
+ * restored instead of silently staying without it.
+ *
  * `window[FLAG]` makes it idempotent: the tag may re-execute on a hard reload or
  * a cross-locale header repaint, but the listener registers exactly once per
  * page lifetime.
@@ -513,6 +546,7 @@ export const VERSION_SWITCHER_REWIRE_SCRIPT = `(function(){
 var FLAG="__zdVersionSwitcherRewire";
 if(window[FLAG])return;
 window[FLAG]=true;
+var ATTR=${JSON.stringify(UNAVAILABLE_VERSIONS_ATTR)};
 var computeVersionSwitcherState=${computeVersionSwitcherState.toString()};
 function setActive(a,active){
 a.classList.toggle("font-bold",active);
@@ -520,11 +554,33 @@ a.classList.toggle("text-accent",active);
 a.classList.toggle("text-fg",!active);
 if(active){a.setAttribute("aria-current","page");}else{a.removeAttribute("aria-current");}
 }
+function setDisabled(a,disabled,unavailableLabel){
+a.classList.toggle("hover:bg-accent/10",!disabled);
+a.classList.toggle("hover:underline",!disabled);
+a.classList.toggle("focus-visible:underline",!disabled);
+a.classList.toggle("text-muted/50",disabled);
+a.classList.toggle("cursor-not-allowed",disabled);
+a.classList.toggle("pointer-events-none",disabled);
+if(disabled){
+a.setAttribute("aria-disabled","true");
+a.setAttribute("tabindex","-1");
+a.setAttribute("title",unavailableLabel);
+a.classList.remove("font-bold","text-accent","text-fg");
+a.removeAttribute("aria-current");
+}else{
+a.removeAttribute("aria-disabled");
+a.removeAttribute("tabindex");
+a.removeAttribute("title");
+}
+}
 function rewire(){
+var articleEl=document.querySelector("["+ATTR+"]");
+var unavailableSlugs=articleEl?(articleEl.getAttribute(ATTR)||"").split(",").filter(Boolean):[];
 var containers=document.querySelectorAll("[data-version-rewire]");
 for(var i=0;i<containers.length;i++){
 var c=containers[i];
 var config={base:c.getAttribute("data-base")||"",defaultLocale:c.getAttribute("data-default-locale")||"",trailingSlash:c.getAttribute("data-trailing-slash")==="true",currentLocale:c.getAttribute("data-current-locale")||""};
+var unavailableLabel=c.getAttribute("data-unavailable-label")||"";
 var versionAnchors=c.querySelectorAll("[data-version-slug]");
 var slugs=[];
 for(var j=0;j<versionAnchors.length;j++){
@@ -543,7 +599,9 @@ var slug=a.getAttribute("data-version-slug");
 if(!slug)continue;
 var href=state.versionHrefs[slug];
 if(href!=null)a.setAttribute("href",href);
-if(!a.hasAttribute("aria-disabled"))setActive(a,state.activeVersion===slug);
+var disabled=unavailableSlugs.indexOf(slug)!==-1;
+setDisabled(a,disabled,unavailableLabel);
+if(!disabled)setActive(a,state.activeVersion===slug);
 }
 var label=c.querySelector("[data-version-trigger-label]");
 if(label){

@@ -248,6 +248,7 @@ describe("VersionSwitcher", () => {
           defaultLocale: "en",
           trailingSlash: true,
           currentLocale: "en",
+          unavailableLabel: "Not available",
         }}
       />,
     );
@@ -255,6 +256,7 @@ describe("VersionSwitcher", () => {
     expect(html).toContain('data-default-locale="en"');
     expect(html).toContain('data-trailing-slash="true"');
     expect(html).toContain('data-current-locale="en"');
+    expect(html).toContain('data-unavailable-label="Not available"');
     expect(html).toContain("data-version-latest");
     expect(html).toContain("data-version-trigger-label");
     expect(html).toContain('data-version-slug="v1"');
