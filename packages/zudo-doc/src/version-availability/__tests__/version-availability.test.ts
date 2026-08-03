@@ -19,7 +19,11 @@
  */
 
 import { describe, expect, it, vi } from "vitest";
-import { createGetUnavailableVersions } from "../index.js";
+import {
+  createGetUnavailableVersions,
+  serializeUnavailableVersions,
+  UNAVAILABLE_VERSIONS_ATTR,
+} from "../index.js";
 import type { VersionAvailabilityDeps, VersionAvailabilityNavSource } from "../index.js";
 import type { DocPageEntry } from "../../doc-page-props/index.js";
 
@@ -211,6 +215,41 @@ describe("createGetUnavailableVersions — cache keyed by BOTH locale and versio
     expect(resolveNavSource).toHaveBeenCalledWith("ja", "v1", {
       applyDefaultLocaleOnlyFilter: true,
       keepUnlisted: true,
+    });
+  });
+});
+
+describe("serializeUnavailableVersions — client payload contract (#3243)", () => {
+  it("returns no attribute at all for undefined (no availability data)", () => {
+    const attrs = serializeUnavailableVersions(undefined);
+    expect(attrs).toEqual({});
+    expect(UNAVAILABLE_VERSIONS_ATTR in attrs).toBe(false);
+  });
+
+  it("returns an empty-string attribute for an empty set (nothing unavailable)", () => {
+    const attrs = serializeUnavailableVersions(new Set());
+    expect(attrs).toEqual({ [UNAVAILABLE_VERSIONS_ATTR]: "" });
+  });
+
+  it("returns a sorted comma-joined attribute for a populated set", () => {
+    const attrs = serializeUnavailableVersions(new Set(["2.0", "1.0"]));
+    expect(attrs).toEqual({ [UNAVAILABLE_VERSIONS_ATTR]: "1.0,2.0" });
+  });
+
+  it("is byte-equal to the real createGetUnavailableVersions output for the same call", () => {
+    const resolveNavSource = (locale: string, versionSlug: string) =>
+      makeNavSource({
+        docs:
+          versionSlug === "v1"
+            ? [makeDoc("getting-started")]
+            : [makeDoc("other-page")],
+      });
+    const getUnavailableVersions = createGetUnavailableVersions(
+      makeDeps({ resolveNavSource }),
+    );
+    const real = getUnavailableVersions("getting-started", "en");
+    expect(serializeUnavailableVersions(real)).toEqual({
+      [UNAVAILABLE_VERSIONS_ATTR]: "v2",
     });
   });
 });

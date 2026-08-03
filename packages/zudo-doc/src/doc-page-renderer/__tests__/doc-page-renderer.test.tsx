@@ -14,6 +14,7 @@ import type { RenderDocPageOptions } from "../index.js";
 import type { DocPageBaseProps } from "../../doc-page-props/index.js";
 import type { ChromeContext } from "../../factory-context/index.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
+import { deriveGetUnavailableVersions } from "../../chrome/derive.js";
 
 // ---------------------------------------------------------------------------
 // Minimal fakes factory
@@ -108,4 +109,76 @@ describe("createRenderDocPage — standalone chrome suppression", () => {
       expect(historySlot.props["sourceFileExt"]).toBe(ext);
     },
   );
+});
+
+// ---------------------------------------------------------------------------
+// unavailableVersions client payload (epic #3242, #3243)
+// ---------------------------------------------------------------------------
+
+describe("createRenderDocPage — unavailableVersions payload", () => {
+  it("passes a non-empty unavailable set for a latest-only slug", () => {
+    const resolveNavSource = (_locale: string, versionSlug: string) =>
+      versionSlug === "v1"
+        ? { docs: [{ slug: "test-page", data: {} }], navDocs: [], categoryMeta: new Map() }
+        : { docs: [], navDocs: [], categoryMeta: new Map() };
+    const ctx = makeFakeChromeContext({
+      settings: { versions: [{ slug: "v1" }, { slug: "v2" }] },
+      overrides: { resolveNavSource: resolveNavSource as never },
+    });
+    const renderDocPage = createRenderDocPage(ctx);
+    const vnode = renderDocPage(makeEntryProps(), opts) as VNode<Record<string, unknown>>;
+
+    const real = deriveGetUnavailableVersions(ctx)("test-page", "en");
+    expect(real).toEqual(new Set(["v2"]));
+    expect(vnode.props["unavailableVersions"]).toEqual(real);
+  });
+
+  it("passes an empty unavailable set for a slug shared by every version", () => {
+    const resolveNavSource = () => ({
+      docs: [{ slug: "test-page", data: {} }],
+      navDocs: [],
+      categoryMeta: new Map(),
+    });
+    const ctx = makeFakeChromeContext({
+      settings: { versions: [{ slug: "v1" }, { slug: "v2" }] },
+      overrides: { resolveNavSource: resolveNavSource as never },
+    });
+    const renderDocPage = createRenderDocPage(ctx);
+    const vnode = renderDocPage(makeEntryProps(), opts) as VNode<Record<string, unknown>>;
+
+    const real = deriveGetUnavailableVersions(ctx)("test-page", "en");
+    expect(real).toEqual(new Set());
+    expect(vnode.props["unavailableVersions"]).toEqual(real);
+  });
+
+  it("passes undefined (no attribute) when versioning is not configured", () => {
+    // makeDeps() fixture default already sets settings.versions: false.
+    const ctx = makeDeps();
+    const renderDocPage = createRenderDocPage(ctx);
+    const vnode = renderDocPage(makeEntryProps(), opts) as VNode<Record<string, unknown>>;
+
+    expect(deriveGetUnavailableVersions(ctx)("test-page", "en")).toBeUndefined();
+    expect(vnode.props["unavailableVersions"]).toBeUndefined();
+  });
+
+  it("computes a different (correct) answer for a non-default locale", () => {
+    // applyDefaultLocaleOnlyFilter changes the answer for non-default
+    // locales — the slug exists per-locale in "en" only.
+    const resolveNavSource = (locale: string) =>
+      locale === "en"
+        ? { docs: [{ slug: "test-page", data: {} }], navDocs: [], categoryMeta: new Map() }
+        : { docs: [], navDocs: [], categoryMeta: new Map() };
+    const ctx = makeFakeChromeContext({
+      settings: { versions: [{ slug: "v1" }] },
+      overrides: { resolveNavSource: resolveNavSource as never },
+    });
+    const renderDocPage = createRenderDocPage(ctx);
+    const vnode = renderDocPage(makeEntryProps(), {
+      locale: "ja",
+    }) as VNode<Record<string, unknown>>;
+
+    const real = deriveGetUnavailableVersions(ctx)("test-page", "ja");
+    expect(real).toEqual(new Set(["v1"]));
+    expect(vnode.props["unavailableVersions"]).toEqual(real);
+  });
 });
