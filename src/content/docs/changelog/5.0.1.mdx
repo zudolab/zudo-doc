@@ -1,0 +1,16 @@
+---
+title: 5.0.1
+description: Release notes for 5.0.1.
+sidebar_position: 1078
+---
+
+Released: 2026-08-04
+
+### Bug Fixes
+
+- `setup-doc-skill.sh` no longer skips a tracked skill whose global symlink is already correct. The idempotency check compared the literal string stored in the existing symlink against a target built from `MAIN_PROJECT_DIR`, which is derived from `git worktree list` and is therefore always the **physical** path. When the project or any parent directory sits behind a symlink — a symlinked `$HOME`, a symlinked checkout, or macOS's `$TMPDIR` (`/var` → `/private/var`) — the two forms name the same directory but differ as strings, so the script mis-read its own correct link as foreign and printed a spurious `already links to ...` warning instead of no-opping. It now compares where the link actually lands, via a portable `physical_dir` helper (`cd` + `pwd -P`, since stock macOS ships no `realpath(1)` and BSD `readlink` has no `-f`). The dangling-symlink replacement path and the D4 safe-link policy are unchanged — nothing the script does not own is ever claimed or deleted (b6a226c, 76a39c0)
+- Harden that same helper against unresolvable directories: it now falls back to its raw input on any resolution failure. An unreadable directory made `cd` fail and the subshell yield an empty string, so two different unreadable paths both collapsed to `""` and compared equal, which would have silently skipped a link that should have been created. `cd`'s permission-denied output is suppressed (76a39c0)
+
+### Other Changes
+
+- Add a regression test that reaches the skill directory through a deliberate symlinked alias, so the defect above reproduces on Linux as well. The original bug was invisible to CI because only macOS symlinks `$TMPDIR`; the test was verified to fail against the pre-fix script (b6a226c)
