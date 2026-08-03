@@ -428,8 +428,26 @@ export function deriveGetUnavailableVersions(
 // inline version switcher (renderDocPage)
 // ---------------------------------------------------------------------------
 
-/** Derive the inline version-switcher builder bound to the context. */
-export function deriveInlineVersionSwitcher(ctx: ChromeContext) {
+/**
+ * Derive the inline version-switcher builder bound to the context.
+ *
+ * `getUnavailableVersions` is optional so a caller that already built one
+ * (e.g. `createRenderDocPage`, which also emits it as the SPA-rewire client
+ * payload — #3243) can pass that SAME instance instead of a second one being
+ * derived here. `createGetUnavailableVersions` owns a per-(locale, version)
+ * nav-source cache, so two independently-derived instances would each
+ * resolve the nav source and rebuild the auto-index tree from scratch on
+ * their first call per (locale, version) — doubling that work on every
+ * versioned route. Defaults to deriving its own when omitted, so this stays
+ * backward-compatible with a bare `deriveInlineVersionSwitcher(ctx)` call.
+ */
+export function deriveInlineVersionSwitcher(
+  ctx: ChromeContext,
+  getUnavailableVersions: (
+    slug: string | undefined,
+    locale: string,
+  ) => ReadonlySet<string> | undefined = deriveGetUnavailableVersions(ctx),
+) {
   return createInlineVersionSwitcher({
     settings: ctx.settings,
     defaultLocale: ctx.defaultLocale,
@@ -437,7 +455,7 @@ export function deriveInlineVersionSwitcher(ctx: ChromeContext) {
     docsUrl: ctx.docsUrl,
     versionedDocsUrl: ctx.versionedDocsUrl,
     withBase: ctx.withBase,
-    getUnavailableVersions: deriveGetUnavailableVersions(ctx),
+    getUnavailableVersions,
   });
 }
 

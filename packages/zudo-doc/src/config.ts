@@ -91,6 +91,7 @@ import { buildDocsSchema as defaultBuildDocsSchema } from "./docs-schema/index.j
 import { defaultDirectiveVocabulary } from "./directive-vocabulary-defaults/index.js";
 import { defaultTranslations } from "./i18n-defaults/index.js";
 import { defaultColorSchemes } from "./color-schemes-defaults/index.js";
+import { assertNoCommaInVersionSlugs } from "./version-availability/index.js";
 
 /** The `settings.claudeResources` block (or `false` when disabled). */
 type ClaudeResourcesConfig =
@@ -652,6 +653,16 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
   // Safe because nested config types are all-required-field. `settingsOverrides`
   // is a Partial<Settings>.
   const settings: Settings = { ...DEFAULT_SETTINGS, ...settingsOverrides };
+
+  // A version slug rides through `version-availability/index.ts`'s
+  // comma-joined `data-doc-unavailable-versions` client payload unescaped
+  // (issue #3243 locked a flat list over JSON-in-attribute). A slug
+  // containing a comma would serialize ambiguously and desync from the real
+  // `data-version-slug` DOM value on the client (#3244 codex review finding
+  // 2) — reject it here, rather than re-encoding the wire format. Also
+  // enforced inside `zudoDocPreset()` itself (see that call below) since the
+  // preset is separately callable as documented public API.
+  assertNoCommaInVersionSlugs(settings.versions);
 
   const fragment = zudoDocPreset({
     settings,

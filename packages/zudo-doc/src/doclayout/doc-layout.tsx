@@ -166,6 +166,21 @@ export interface DocLayoutProps extends DocLayoutHtmlAttrs {
    */
   afterContent?: ComponentChildren;
 
+  /**
+   * Raw `data-*` attributes spread onto the `<article>` element. This shell
+   * stays version/i18n-agnostic on purpose (see the module header), so it
+   * has no idea what any given key means — it is a generic passthrough, not
+   * a versioning-aware prop. `<DocPageShell>` (one level up) is the actual
+   * owner of the one entry currently threaded through here: the per-page
+   * version-availability payload documented in
+   * `../version-availability/index.ts` (`UNAVAILABLE_VERSIONS_ATTR`). Placed
+   * on `<article>` rather than a new wrapper element because `<article>` is
+   * always present, sits inside `<main>` (swapped content — see the SPA
+   * persist note on the sidebar `<aside>` above), and needs no DOM node of
+   * its own that could shift the `.zd-content` flow-space rhythm.
+   */
+  articleAttrs?: Record<string, string>;
+
   /** Optional desktop TOC rendered alongside `<main>` on wide screens. */
   toc?: ComponentChildren;
 
@@ -245,6 +260,7 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
     mobileToc,
     main,
     afterContent,
+    articleAttrs,
     toc,
     hideToc = false,
     contentWide = false,
@@ -406,7 +422,7 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
                 {breadcrumb}
                 {afterBreadcrumb}
                 {!hideToc && mobileToc}
-                <article class="zd-content max-w-none">{main}</article>
+                <article class="zd-content max-w-none" {...articleAttrs}>{main}</article>
                 {afterContent}
               </main>
               {showToc && toc}

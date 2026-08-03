@@ -36,6 +36,7 @@
 import { z } from "zod";
 import type { ColorScheme } from "./color-scheme-utils.js";
 import type { TagVocabularyEntry } from "./settings.js";
+import { assertNoCommaInVersionSlugs } from "./version-availability/index.js";
 // Type-only — erased by esbuild before the node-builtin-free eval-graph
 // bundle runs (mirrors config.ts's `@takazudo/zfb/config` type-only import).
 import type { DirectiveSpec } from "@takazudo/zfb/config";
@@ -298,6 +299,13 @@ export function zudoDocPreset({
   tagVocabulary,
   colorSchemes,
 }: ZudoDocPresetArgs): ZudoDocPresetResult {
+  // `zudoDoc()` (`../config.ts`) already runs this same check, but the
+  // preset is itself a documented, directly-spreadable public entry point —
+  // a consumer calling `zudoDocPreset()` straight (bypassing `zudoDoc()`)
+  // must hit the same comma-free version-slug guard (#3244 codex review
+  // finding 2 follow-up; see `version-availability/index.ts`).
+  assertNoCommaInVersionSlugs(settings.versions);
+
   // `z.toJSONSchema` is a runtime call but the result is a stable JSON
   // document. Compute it once and reuse the same object across every
   // collection definition.
