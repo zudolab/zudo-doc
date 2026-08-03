@@ -28,6 +28,41 @@
 // the real versioned-locale route (`v-locale-docs-slug.tsx`) — otherwise a
 // default-locale-only path can be reported available in a locale whose
 // archived route was never generated.
+//
+// --- Client payload contract (epic #3242, #3243) ----------------------
+//
+// `serializeUnavailableVersions` below encodes a `getUnavailableVersions()`
+// result as a `data-*` attribute so the value survives into the swapped
+// document and a later SPA-navigation rewire script (#3244) can read it
+// without re-deriving availability client-side. Emitted by
+// `doc-page-shell/index.tsx` onto the `<article>` element (swapped content —
+// NOT the persisted header, whose whole problem is that a swap leaves it
+// untouched). Cross-file contract — do not rename `UNAVAILABLE_VERSIONS_ATTR`
+// or change the format without updating every consumer.
+//
+//   attribute name:  data-doc-unavailable-versions
+//   absent           → no availability data for this page (mirrors
+//                      `getUnavailableVersions` returning `undefined`: no
+//                      current slug, or versioning not configured). A
+//                      consumer MUST treat this as "nothing to rewire" —
+//                      never as "everything available" — since defaulting
+//                      an unknown page to "everything available" is exactly
+//                      the silent-404 failure mode #3215/#3242 exist to fix.
+//   value === ""     → the set is empty: this slug is available in every
+//                      configured version.
+//   value === "a,b"  → comma-joined, alphabetically SORTED version slugs
+//                      (sorted so the serialization is deterministic
+//                      regardless of `Set` iteration / `settings.versions`
+//                      order — needed for the byte-equal assertions in
+//                      `__tests__/version-availability.test.ts`).
+//
+// ASSUMPTION: a configured version slug never itself contains a comma. This
+// is not separately enforced here — it holds transitively because version
+// slugs already double as URL path segments (`/v/{slug}/...`, `versionUrls`
+// keys in `inline-version-switcher`), so a comma in one would already break
+// routing before this payload exists. A flat comma-joined list was chosen
+// over JSON-in-attribute per the epic's locked decision (simplicity over a
+// theoretical slug shape nothing else in the codebase supports).
 
 import type { DocPageEntry, DocNavNode } from "../doc-page-props/index.js";
 import type { CategoryMeta } from "../sidebar-tree/index.js";
@@ -129,4 +164,26 @@ export function createGetUnavailableVersions(
     }
     return unavailable;
   };
+}
+
+/**
+ * `data-*` attribute name the client payload rides on — see the module
+ * header's "Client payload contract" section for the full spelling/format
+ * contract. Exported so a future consumer (#3244) reads the same literal
+ * instead of hand-copying the string.
+ */
+export const UNAVAILABLE_VERSIONS_ATTR = "data-doc-unavailable-versions";
+
+/**
+ * Serialize a `getUnavailableVersions()` result into the `data-*` attribute
+ * bag `<DocPageShell>` spreads onto `<article>`. Returns `{}` (no key at
+ * all) for `undefined` input so the attribute is genuinely ABSENT from the
+ * rendered element, preserving the three-state contract documented above —
+ * an empty object here must not be confused with `{ [ATTR]: "" }`.
+ */
+export function serializeUnavailableVersions(
+  unavailableVersions: ReadonlySet<string> | undefined,
+): Record<string, string> {
+  if (unavailableVersions === undefined) return {};
+  return { [UNAVAILABLE_VERSIONS_ATTR]: Array.from(unavailableVersions).sort().join(",") };
 }

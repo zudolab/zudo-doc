@@ -26,6 +26,7 @@ import {
   createSidebarPrepaint,
   createSidebarVisibilityPrepaint,
 } from "../sidebar-prepaint/index.js";
+import { serializeUnavailableVersions } from "../version-availability/index.js";
 import { createHeadWithDefaults } from "../head-with-defaults/index.js";
 import { resolveThemePackSsrSlug } from "../theme/theme-pack-provider.js";
 import { createDocBodyEnd } from "../doc-body-end/index.js";
@@ -94,6 +95,20 @@ export interface DocPageShellProps {
   currentVersion?: string;
   /** Inline version switcher VNode for the breadcrumb right-slot. */
   versionSwitcher: ComponentChildren;
+
+  /**
+   * This page's unavailable-version slugs, straight from
+   * `getUnavailableVersions(slug, locale)` (`../version-availability`) —
+   * NOT re-derived here. Serialized onto `<article>` via
+   * `serializeUnavailableVersions` so a same-locale SPA navigation rewire
+   * script (#3244) can read the per-page availability set after the
+   * persisted header's own SSR attributes go stale. `undefined` (no
+   * availability data — e.g. versioning not configured) renders NO
+   * attribute at all; an empty set renders the attribute with an empty
+   * value. See `../version-availability/index.ts` for the full
+   * absent/empty/populated contract.
+   */
+  unavailableVersions?: ReadonlySet<string>;
 
   /** Version banner type ("unmaintained" | "unreleased") or undefined on latest. */
   versionBanner?: "unmaintained" | "unreleased";
@@ -233,6 +248,7 @@ export function createDocPageShell<S extends Settings = Settings>(
       currentPath,
       currentVersion,
       versionSwitcher,
+      unavailableVersions,
       versionBanner,
       versionBannerLatestUrl,
       versionBannerLabels,
@@ -344,6 +360,12 @@ export function createDocPageShell<S extends Settings = Settings>(
         footerOverride={<FooterWithDefaults lang={locale} />}
         bodyEndComponents={<DocBodyEnd />}
         enableClientRouter={settings.dynamicPageTransition}
+        // See the `unavailableVersions` prop doc above and
+        // `../version-availability/index.ts`'s "Client payload contract" for
+        // the attribute name/format. `serializeUnavailableVersions` returns
+        // `{}` (no key) for `undefined`, so an absent attribute really means
+        // "no data" — not "nothing unavailable".
+        articleAttrs={serializeUnavailableVersions(unavailableVersions)}
       >
         {kind === "autoIndex" ? (
           /* Auto-index page: category without an index.mdx.
