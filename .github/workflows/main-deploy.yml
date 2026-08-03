@@ -110,14 +110,11 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build site
+        # strictContentBridge is enabled in zfb.config.ts (#3229/#3234) — this
+        # build now fails fast on a content-bridge fallback, so the separate
+        # post-build check:content-fallback step (which used to catch what
+        # `pnpm build` missed) is redundant here and was removed.
         run: pnpm build
-
-      - name: Check content fallback
-        # This job builds the dist that actually deploys, so it needs the same
-        # gate as pr-checks.yml: zfb only warns when a page's compiled MDX
-        # misses the content bridge and its whole body ships as
-        # <pre data-zfb-content-fallback> (zudolab/zudo-doc#3134).
-        run: pnpm run check:content-fallback
 
       - name: Check links
         # Strict mode to match pr-checks.yml and scripts/run-b4push.sh — bare

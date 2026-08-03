@@ -331,8 +331,11 @@ else
 fi
 
 # ── Step 19: Build ────────────────────────────────────
+# --no-strict-content-bridge overrides the zfb.config.ts strictContentBridge
+# gate (#3234) so this build still produces a dist/ for step 20's
+# content-fallback check to scan — the two guards can't run on the same build.
 step "Build (zfb build)"
-if (cd "$ROOT_DIR" && pnpm build); then
+if (cd "$ROOT_DIR" && pnpm build --no-strict-content-bridge); then
   pass "Build passed"
 else
   fail "Build"
