@@ -31,9 +31,9 @@
 // checkout) that are the routes most exposed to the shape-sensitive
 // upstream trigger due to their size (~150 KB concatenated dumps). Do NOT
 // retire this script just because zfb now fails the build itself — the two
-// guards are deliberately redundant on any build that has no local-only
-// routes (e.g. CI) and each other's only option on a build that does (e.g.
-// b4push); see `.content-fallback-allowlist` for the allowlist itself.
+// guards never run on the same build and neither covers the other's case:
+// the native gate is the only one CI runs, and this scan is the only one
+// b4push can run; see `.content-fallback-allowlist` for the allowlist itself.
 //
 // Known-exempt routes live in `.content-fallback-allowlist` (substring match
 // on the dist-relative path, each entry justified by a `# reason:` comment).
@@ -44,10 +44,10 @@
 // Requires a completed `pnpm build`.
 //
 // Wired into:
-//   - scripts/run-b4push.sh (after the build step)
-//   - .github/workflows/pr-checks.yml (build-site job, after pnpm build)
-//   - .github/workflows/main-deploy.yml (build-site job, after pnpm build)
-//   - .github/workflows/preview-deploy.yml (build-site job, after pnpm build)
+//   - scripts/run-b4push.sh (step 20, after the --no-strict-content-bridge build)
+//
+// NOT wired into CI (#3234): the three workflows build with the native
+// `strictContentBridge` gate on, which fails them directly.
 
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { resolve, join, relative, dirname } from "node:path";
