@@ -591,6 +591,14 @@ export interface ZudoDocConfig {
    * @default undefined
    */
   bundle?: BundleConfig;
+  /**
+   * Build-only gate that fails `zfb build` when a collection entry falls
+   * back to `<pre data-zfb-content-fallback>` (mirrors zfb's
+   * `Config::strict_content_bridge`, zfb 2.0.0). Omit to leave zfb's own
+   * default (`false`) in effect.
+   * @default undefined (zfb's own default, `false`, applies)
+   */
+  strictContentBridge?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -630,6 +638,7 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
     port,
     adapter,
     bundle,
+    strictContentBridge,
     buildDocsSchema: userBuildDocsSchema,
     colorSchemes: userColorSchemes,
     translations: userTranslations,
@@ -667,6 +676,7 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
     base: settings.base,
     ...(adapter ? { adapter } : {}),
     ...(bundle ? { bundle } : {}),
+    ...(strictContentBridge !== undefined ? { strictContentBridge } : {}),
 
     // ── Preset-owned fields (collections, plugins, markdown, …) ──────────
     ...fragment,
