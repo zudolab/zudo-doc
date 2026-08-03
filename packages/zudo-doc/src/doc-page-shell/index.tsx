@@ -26,6 +26,10 @@ import {
   createSidebarPrepaint,
   createSidebarVisibilityPrepaint,
 } from "../sidebar-prepaint/index.js";
+import {
+  createTocPrepaint,
+  createTocVisibilityPrepaint,
+} from "../toc-prepaint/index.js";
 import { serializeUnavailableVersions } from "../version-availability/index.js";
 import { createHeadWithDefaults } from "../head-with-defaults/index.js";
 import { resolveThemePackSsrSlug } from "../theme/theme-pack-provider.js";
@@ -218,6 +222,15 @@ export function createDocPageShell<S extends Settings = Settings>(
   const SidebarVisibilityPrepaint = createSidebarVisibilityPrepaint({
     sidebarToggle: sidebarToggleEnabled,
   });
+  const tocToggleEnabled = Boolean(
+    (ctx.settings as { tocToggle?: boolean }).tocToggle,
+  );
+  const TocPrepaint = createTocPrepaint({ tocToggle: tocToggleEnabled });
+  // Pre-paint visibility script — emitted into the page <head> (below) so it
+  // runs before the TOC column paints, mirroring the sidebar's #2571 fix.
+  const TocVisibilityPrepaint = createTocVisibilityPrepaint({
+    tocToggle: tocToggleEnabled,
+  });
   const DocBodyEnd = createDocBodyEnd(ctx);
   // SSR `data-theme-pack` html attribute — the CONFIGURED pack slug
   // (build-static; `undefined` keeps the attribute off when the theme-pack
@@ -266,6 +279,10 @@ export function createDocPageShell<S extends Settings = Settings>(
     // falls back to the package default with a different title.
     const tocTitle = getTocTitle(locale);
     const shouldRenderToc = !hideToc && headings.length > 0;
+    // Gate shared with the toc-prepaint factories (head script + afterSidebar
+    // toggle island): true only when the page renders the package's OWN
+    // default TOC, never a custom hostBindings.Toc override.
+    const shouldRenderDefaultToc = shouldRenderToc && !customTocIsPresent;
     // A host Toc delivered through chromeBindingsModule is an
     // SSR-presentational callable: the virtual module is intentionally outside
     // zfb's island scanner graph. Only the statically imported package default
@@ -290,8 +307,13 @@ export function createDocPageShell<S extends Settings = Settings>(
           // — it scrolls away with the page instead of pinning. Flex stretches
           // the Island div to full content-band height (default
           // `align-items: stretch`), restoring the travel range. (#3202)
+          //
+          // `zd-toc-col` is the stable hook class for the desktop TOC-toggle
+          // CSS (features.css "Desktop TOC toggle" block, #3254) — only the
+          // default-TOC wrapper carries it; the custom-Toc branch above stays
+          // bare and unaffected by the toggle feature.
           (
-            <div class="hidden xl:flex">
+            <div class="zd-toc-col hidden xl:flex">
               {Island({
                 when: "load",
                 children: <Toc headings={headings} title={tocTitle} />,
@@ -317,6 +339,11 @@ export function createDocPageShell<S extends Settings = Settings>(
                 runs before the <aside> desktop sidebar is painted (#2571).
                 Gated identically to the afterSidebar toggle Island below. */}
             <SidebarVisibilityPrepaint hideSidebar={hideSidebar} />
+            {/* Pre-paint TOC-visibility restore — must sit in <head> so it
+                runs before the .zd-toc-col TOC column is painted, mirroring
+                the sidebar's #2571 fix. Gated identically to the afterSidebar
+                toggle Island below via shouldRenderDefaultToc. */}
+            <TocVisibilityPrepaint shouldRenderDefaultToc={shouldRenderDefaultToc} />
           </>
         }
         lang={locale}
@@ -356,7 +383,12 @@ export function createDocPageShell<S extends Settings = Settings>(
         }
         tocOverride={tocOverride}
         mobileTocOverride={mobileTocOverride}
-        afterSidebar={<SidebarPrepaint hideSidebar={hideSidebar} />}
+        afterSidebar={
+          <>
+            <SidebarPrepaint hideSidebar={hideSidebar} />
+            <TocPrepaint shouldRenderDefaultToc={shouldRenderDefaultToc} />
+          </>
+        }
         footerOverride={<FooterWithDefaults lang={locale} />}
         bodyEndComponents={<DocBodyEnd />}
         enableClientRouter={settings.dynamicPageTransition}
