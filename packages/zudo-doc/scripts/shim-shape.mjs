@@ -45,22 +45,61 @@ export function validateShimShape(source) {
     ts.ScriptKind.TS,
   );
 
-  const topLevelImportExport = sourceFile.statements.find(
-    (s) =>
-      ts.isImportDeclaration(s) ||
-      ts.isExportDeclaration(s) ||
-      ts.isExportAssignment(s) ||
-      (ts.isImportEqualsDeclaration(s) && s.moduleReference !== undefined),
-  );
-  if (topLevelImportExport) {
+  // `ts.createSourceFile` is error-recovering: a syntax error (e.g. a
+  // mismatched brace) does not throw, it just leaves entries on the
+  // internal `parseDiagnostics` array and returns an AST reconstructed as
+  // best-effort. Reject those up front — inspecting shape on a source the
+  // parser itself couldn't make sense of is meaningless, and an invalid
+  // .d.ts fails every consumer's tsc anyway.
+  const parseDiagnostics = sourceFile.parseDiagnostics ?? [];
+  if (parseDiagnostics.length > 0) {
+    const messages = parseDiagnostics
+      .map((d) => ts.flattenDiagnosticMessageText(d.messageText, "\n"))
+      .join("; ");
+    return {
+      ok: false,
+      error: `zfb-config-shim.d.ts has a syntax error and could not be parsed: ${messages}`,
+    };
+  }
+
+  // An external module indicator means the file contains a top-level
+  // import/export (declaration or statement) — the same condition that
+  // stops the nested `declare module "zfb/config"` from being ambient.
+  // `ts.isExternalModule` is TypeScript's own check for this and covers
+  // every form: `ExportDeclaration`/`ImportDeclaration` nodes (already
+  // caught below for message-specificity) AND exported top-level
+  // *declarations* (`export interface Extra {}`, `export function foo()
+  // {}`, …), which carry an `export` modifier rather than being their own
+  // statement kind — the previous statement-kind allowlist missed those.
+  if (ts.isExternalModule(sourceFile)) {
+    const topLevelImportExport = sourceFile.statements.find(
+      (s) =>
+        ts.isImportDeclaration(s) ||
+        ts.isExportDeclaration(s) ||
+        ts.isExportAssignment(s) ||
+        (ts.isImportEqualsDeclaration(s) && s.moduleReference !== undefined),
+    );
+    if (topLevelImportExport) {
+      return {
+        ok: false,
+        error:
+          "zfb-config-shim.d.ts has a top-level import/export outside the " +
+          '`declare module "zfb/config"` block — this turns the file into a ' +
+          "real ES module, and an ambient declare-module inside a module body " +
+          "no longer merges into global scope, so `zfb/config` stops resolving " +
+          "for every consumer. Keep all imports/exports INSIDE the block.",
+      };
+    }
     return {
       ok: false,
       error:
-        "zfb-config-shim.d.ts has a top-level import/export outside the " +
-        '`declare module "zfb/config"` block — this turns the file into a ' +
+        "zfb-config-shim.d.ts has a top-level exported declaration (e.g. " +
+        '`export interface`/`export function`) outside the `declare module ' +
+        '"zfb/config"` block — an exported declaration turns the file into a ' +
         "real ES module, and an ambient declare-module inside a module body " +
         "no longer merges into global scope, so `zfb/config` stops resolving " +
-        "for every consumer. Keep all imports/exports INSIDE the block.",
+        "for every consumer. Keep all exports INSIDE the block, and don't " +
+        "export top-level declarations from this file at all.",
     };
   }
 
@@ -83,7 +122,7 @@ export function validateShimShape(source) {
   }
 
   const blockStatements = moduleDecl.body.statements;
-  const hasReExportStar = blockStatements.some(
+  const reExportStar = blockStatements.find(
     (s) =>
       ts.isExportDeclaration(s) &&
       !s.exportClause && // `export *`, not `export { X }`
@@ -91,7 +130,7 @@ export function validateShimShape(source) {
       ts.isStringLiteral(s.moduleSpecifier) &&
       s.moduleSpecifier.text === "@takazudo/zfb/config",
   );
-  if (!hasReExportStar) {
+  if (!reExportStar) {
     return {
       ok: false,
       error:
@@ -102,17 +141,36 @@ export function validateShimShape(source) {
     };
   }
 
-  const localDecl = blockStatements.find(
-    (s) => ts.isInterfaceDeclaration(s) || ts.isTypeAliasDeclaration(s),
-  );
-  if (localDecl) {
+  // The block must contain ONLY the single re-export statement — nothing
+  // else, of any declaration kind. Interface/type get a message pointing at
+  // the specific #3237 drift class (a copied field shape); every other kind
+  // (function, class, enum, variable, nested namespace, an extra import/
+  // export) still means the shim carries a shape of its own and gets a
+  // generic message, but is rejected the same way.
+  const extraStatements = blockStatements.filter((s) => s !== reExportStar);
+  if (extraStatements.length > 0) {
+    const localDecl = extraStatements.find(
+      (s) => ts.isInterfaceDeclaration(s) || ts.isTypeAliasDeclaration(s),
+    );
+    if (localDecl) {
+      return {
+        ok: false,
+        error:
+          "zfb-config-shim.d.ts declares its own interface/type inside the " +
+          '`declare module "zfb/config"` block — this is the hand-copied-shape ' +
+          "drift class #3237 removed. The shim must carry no shape of its own; " +
+          "re-export from @takazudo/zfb/config instead.",
+      };
+    }
     return {
       ok: false,
       error:
-        "zfb-config-shim.d.ts declares its own interface/type inside the " +
-        '`declare module "zfb/config"` block — this is the hand-copied-shape ' +
-        "drift class #3237 removed. The shim must carry no shape of its own; " +
-        "re-export from @takazudo/zfb/config instead.",
+        "zfb-config-shim.d.ts declares extra statements inside the " +
+        '`declare module "zfb/config"` block beyond the single ' +
+        '`export * from "@takazudo/zfb/config";` re-export (a function, ' +
+        "class, enum, variable, or nested namespace declaration) — the block " +
+        "must contain nothing but that one re-export; move or delete the " +
+        "extra declaration.",
     };
   }
 
