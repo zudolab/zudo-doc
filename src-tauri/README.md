@@ -81,9 +81,12 @@ the two CDNs the content genuinely uses, `object-src 'none'`,
 
 - `script-src … https://esm.sh` — Mermaid is loaded at runtime via
   `import("https://esm.sh/mermaid@11…")` (`packages/zudo-doc/src/code-syntax/mermaid-init-script.ts`).
-- `script-src` / `style-src` / `font-src … https://cdn.jsdelivr.net` — KaTeX CSS
-  + fonts are pulled from jsDelivr when a page uses math
-  (`packages/zudo-doc/src/head/doc-head.tsx`); `script-src` also covers the
+- `script-src` / `style-src` / `font-src … https://cdn.jsdelivr.net` — reserved
+  for a KaTeX CSS/webfont jsDelivr load that `packages/zudo-doc/src/head/doc-head.tsx`
+  is wired to emit; **verification (below) found this codebase's actual `MathBlock`
+  never takes that path** — it renders KaTeX server-side at build time and ships
+  no jsdelivr reference at all (zudolab/zudo-doc#3265 asks whether this grant is
+  therefore removable; not acted on here). `script-src` also covers the
   `HtmlPreview` `externalScripts`/`externalStyles` demo on the
   `components/html-preview` doc page (e.g. the `@tailwindcss/browser` CDN
   recipe), since a `srcdoc` iframe inherits its parent document's CSP.
@@ -129,9 +132,10 @@ the CSP.
 Building a Mode 1 release binary for the first time also requires a workaround
 for #3264: `src-tauri/` has no `icons/` directory in git, but
 `tauri::generate_context!()` panics without `icons/icon.png` even with
-`bundle.icon: []` and `bundle.active: false`. Copy any PNG to
-`src-tauri/icons/icon.png` before building, then delete it — this file must
-never be committed.
+`bundle.icon: []` and `bundle.active: false`. Copy an **RGBA PNG** (Tauri's
+icon decoder panics on RGB/grayscale/indexed color types — e.g.
+`src-tauri-dev/icons/icon.png` already is one) to `src-tauri/icons/icon.png`
+before building, then delete it — this file must never be committed.
 
 ### Surfaces checked and verdicts
 
