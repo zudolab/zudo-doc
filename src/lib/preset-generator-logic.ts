@@ -269,6 +269,7 @@ export const FEATURES = [
   { value: "themePackSwitcher", label: "Theme pack switcher", cliFlag: "theme-pack-switcher", default: false },
   { value: "sidebarResizer", label: "Sidebar resizer", cliFlag: "sidebar-resizer", default: false, docPath: "/docs/guides/configuration/#sidebarresizer" },
   { value: "sidebarToggle", label: "Sidebar toggle", cliFlag: "sidebar-toggle", default: false, docPath: "/docs/guides/configuration/#sidebartoggle" },
+  { value: "tocToggle", label: "TOC toggle", cliFlag: "toc-toggle", default: false, docPath: "/docs/guides/configuration/#toctoggle" },
   { value: "versioning", label: "Versioning", cliFlag: "versioning", default: false, docPath: "/docs/guides/versioning/" },
   { value: "docHistory", label: "Document history", cliFlag: "doc-history", default: false, docPath: "/docs/guides/doc-history/" },
   { value: "bodyFootUtil", label: "Body foot util area", cliFlag: "body-foot-util", default: false, docPath: "/docs/guides/body-foot-util-area/" },
