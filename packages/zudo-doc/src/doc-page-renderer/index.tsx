@@ -27,7 +27,11 @@ import { createDocPageShell } from "../doc-page-shell/index.js";
 import { createDocContentHeader } from "../doc-content-header/index.js";
 import { createDocMetainfoArea } from "../doc-metainfo-area/index.js";
 import { createDocHistoryArea } from "../doc-history-area/index.js";
-import { deriveMdxComponents, deriveInlineVersionSwitcher } from "../chrome/derive.js";
+import {
+  deriveMdxComponents,
+  deriveInlineVersionSwitcher,
+  deriveGetUnavailableVersions,
+} from "../chrome/derive.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 
 export type { DocPageBaseProps };
@@ -114,6 +118,14 @@ export interface DocPageRendererDeps {
     currentPath: string;
     currentVersion?: string;
     versionSwitcher: JSX.Element | undefined;
+    /**
+     * This page's unavailable-version slugs, straight from
+     * `getUnavailableVersions(slug, locale)` (`../version-availability`) —
+     * see `DocPageShellProps.unavailableVersions` (`../doc-page-shell`) for
+     * the full absent/empty/populated contract this rides through to the
+     * emitted `data-doc-unavailable-versions` attribute.
+     */
+    unavailableVersions?: ReadonlySet<string>;
     versionBanner?: "unmaintained" | "unreleased";
     versionBannerLatestUrl?: string;
     versionBannerLabels?: VersionBannerLabels;
@@ -179,8 +191,15 @@ export function createRenderDocPage<S extends Settings = Settings>(
     currentVersion?: string,
   ) => Record<string, unknown>;
   const t = ctx.t;
+  // Derived ONCE here (rather than letting `deriveInlineVersionSwitcher`
+  // derive its own) and threaded into it below, so the inline switcher and
+  // the client-payload emission (epic #3242, #3243) share the SAME
+  // `createGetUnavailableVersions` cache instead of each rebuilding the
+  // per-(locale, version) nav-source / auto-index tree independently.
+  const getUnavailableVersions = deriveGetUnavailableVersions(ctx);
   const buildInlineVersionSwitcher = deriveInlineVersionSwitcher(
     ctx,
+    getUnavailableVersions,
   ) as DocPageRendererDeps["buildInlineVersionSwitcher"];
   const DocPageShell = createDocPageShell(ctx) as DocPageRendererDeps["DocPageShell"];
   const DocContentHeader = createDocContentHeader(
@@ -298,6 +317,7 @@ export function createRenderDocPage<S extends Settings = Settings>(
         currentPath={currentPath}
         currentVersion={version?.slug}
         versionSwitcher={buildInlineVersionSwitcher(slug, locale, version?.slug)}
+        unavailableVersions={getUnavailableVersions(slug, locale)}
         versionBanner={versionBannerType}
         versionBannerLatestUrl={versionBannerLatestUrl}
         versionBannerLabels={versionBannerLabels}

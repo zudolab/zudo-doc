@@ -66,6 +66,7 @@
 import type { VNode } from "preact";
 import type { VersionEntry, VersionSwitcherLabels } from "./types.js";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
+import { UNAVAILABLE_VERSIONS_ATTR } from "../version-availability/index.js";
 
 export interface VersionSwitcherProps {
   /**
@@ -346,6 +347,12 @@ export function VersionSwitcher(props: VersionSwitcherProps): VNode {
   // when no config is supplied so static / inline callers render exactly as
   // before (zudolab/zudo-doc#2553).
   const rewire = rewireConfig != null;
+  // `labels.unavailable` rides on the container alongside the rest of the
+  // rewire config rather than as a `VersionSwitcherRewireConfig` field —
+  // `labels` is already a required prop the component always has in hand,
+  // so this avoids widening the frozen public `VersionSwitcherRewireConfig`
+  // shape with a field every existing caller would need to add (#3244
+  // codex review finding).
   const rewireAttrs = rewireConfig
     ? {
         "data-version-rewire": true,
@@ -353,6 +360,7 @@ export function VersionSwitcher(props: VersionSwitcherProps): VNode {
         "data-default-locale": rewireConfig.defaultLocale,
         "data-trailing-slash": String(rewireConfig.trailingSlash),
         "data-current-locale": rewireConfig.currentLocale,
+        "data-unavailable-label": labels.unavailable,
       }
     : {};
 
@@ -505,6 +513,42 @@ document.addEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)},initVersionSwi
  * {@link VersionSwitcherRewireConfig} is passed), so the inline breadcrumb
  * switcher — re-rendered fresh on every swap — is left alone.
  *
+ * Since #3244, `rewire()` also recomputes each version entry's
+ * enabled/disabled state from the per-page availability payload #3243 emits
+ * onto the swapped `<article>` (`UNAVAILABLE_VERSIONS_ATTR`, imported here
+ * as `ATTR` — see `version-availability/index.ts` for the three-state
+ * contract). The persisted header would otherwise keep showing whichever
+ * entries were disabled/enabled on the PREVIOUS page after a same-locale SPA
+ * navigation — the exact bug epic #3242 exists to fix.
+ *
+ * The three-state contract is preserved faithfully here (fixed after a P2
+ * codex review finding on the original #3244 landing, which collapsed ABSENT
+ * into EMPTY and re-enabled every entry — turning SSR-correct disabled links
+ * into live 404s whenever a page renders through `createDocPageShell` without
+ * an availability payload):
+ *   - attribute ABSENT (`hasAvailabilityData` false) → no availability data
+ *     for the destination page. `setDisabled` is never called for any entry;
+ *     the SSR-rendered disabled/enabled state is left exactly as-is. Only the
+ *     genuinely path-derived bits (href, active state on entries that are
+ *     NOT currently disabled) are recomputed.
+ *   - attribute present, value `""` → empty unavailable set, i.e. "everything
+ *     available" — `setDisabled(a, false, …)` runs for every entry, matching
+ *     the SSR component's own `!unavailableVersions || !unavailableVersions.has(slug)`
+ *     fallback (`version-switcher.tsx`'s `isAvailable` check).
+ *   - attribute present, `"a,b"` → those slugs disabled, the rest enabled.
+ *
+ * `setDisabled` and the `setActive` guard together transition ALL FIVE
+ * SSR-divergent properties in both directions (`aria-disabled`, `tabindex`,
+ * `title`, the disjoint class sets, `aria-current`) — see the case table in
+ * `__tests__/version-switcher.test.tsx` that pins this against the real SSR
+ * branches. `setActive` runs strictly AFTER `setDisabled` re-enables an
+ * entry, so a newly-available active entry gets `aria-current="page"`
+ * restored instead of silently staying without it. In the ABSENT branch,
+ * where `setDisabled` never runs, `setActive` instead reads the anchor's
+ * OWN current `aria-disabled` attribute directly (the only source of truth
+ * left, since availability isn't being recomputed) and skips already-disabled
+ * entries the same way.
+ *
  * `window[FLAG]` makes it idempotent: the tag may re-execute on a hard reload or
  * a cross-locale header repaint, but the listener registers exactly once per
  * page lifetime.
@@ -513,6 +557,7 @@ export const VERSION_SWITCHER_REWIRE_SCRIPT = `(function(){
 var FLAG="__zdVersionSwitcherRewire";
 if(window[FLAG])return;
 window[FLAG]=true;
+var ATTR=${JSON.stringify(UNAVAILABLE_VERSIONS_ATTR)};
 var computeVersionSwitcherState=${computeVersionSwitcherState.toString()};
 function setActive(a,active){
 a.classList.toggle("font-bold",active);
@@ -520,11 +565,34 @@ a.classList.toggle("text-accent",active);
 a.classList.toggle("text-fg",!active);
 if(active){a.setAttribute("aria-current","page");}else{a.removeAttribute("aria-current");}
 }
+function setDisabled(a,disabled,unavailableLabel){
+a.classList.toggle("hover:bg-accent/10",!disabled);
+a.classList.toggle("hover:underline",!disabled);
+a.classList.toggle("focus-visible:underline",!disabled);
+a.classList.toggle("text-muted/50",disabled);
+a.classList.toggle("cursor-not-allowed",disabled);
+a.classList.toggle("pointer-events-none",disabled);
+if(disabled){
+a.setAttribute("aria-disabled","true");
+a.setAttribute("tabindex","-1");
+a.setAttribute("title",unavailableLabel);
+a.classList.remove("font-bold","text-accent","text-fg");
+a.removeAttribute("aria-current");
+}else{
+a.removeAttribute("aria-disabled");
+a.removeAttribute("tabindex");
+a.removeAttribute("title");
+}
+}
 function rewire(){
+var articleEl=document.querySelector("["+ATTR+"]");
+var hasAvailabilityData=articleEl!==null;
+var unavailableSlugs=hasAvailabilityData?(articleEl.getAttribute(ATTR)||"").split(",").filter(Boolean):[];
 var containers=document.querySelectorAll("[data-version-rewire]");
 for(var i=0;i<containers.length;i++){
 var c=containers[i];
 var config={base:c.getAttribute("data-base")||"",defaultLocale:c.getAttribute("data-default-locale")||"",trailingSlash:c.getAttribute("data-trailing-slash")==="true",currentLocale:c.getAttribute("data-current-locale")||""};
+var unavailableLabel=c.getAttribute("data-unavailable-label")||"";
 var versionAnchors=c.querySelectorAll("[data-version-slug]");
 var slugs=[];
 for(var j=0;j<versionAnchors.length;j++){
@@ -543,7 +611,14 @@ var slug=a.getAttribute("data-version-slug");
 if(!slug)continue;
 var href=state.versionHrefs[slug];
 if(href!=null)a.setAttribute("href",href);
-if(!a.hasAttribute("aria-disabled"))setActive(a,state.activeVersion===slug);
+if(hasAvailabilityData){
+var disabled=unavailableSlugs.indexOf(slug)!==-1;
+setDisabled(a,disabled,unavailableLabel);
+if(!disabled)setActive(a,state.activeVersion===slug);
+}else{
+var alreadyDisabled=a.getAttribute("aria-disabled")==="true";
+if(!alreadyDisabled)setActive(a,state.activeVersion===slug);
+}
 }
 var label=c.querySelector("[data-version-trigger-label]");
 if(label){
@@ -559,7 +634,14 @@ label.textContent=activeLabel!=null?activeLabel:state.activeVersion;
 }
 }
 }
-rewire();
+// The initial call is deferred to DOMContentLoaded when the script (inline in
+// <header>, which parses before <article>) would otherwise run before the
+// article element exists. Running early would read a missing ATTR as "no
+// unavailable slugs" and clobber the SSR-correct disabled state with
+// everything-enabled — a first-paint variant of the bug this rewire exists
+// to fix (see the doc comment above; SSR already rendered the right state for
+// this page, so a brief deferral loses nothing).
+if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",rewire);}else{rewire();}
 document.addEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)},rewire);
 })();`;
 

@@ -1744,6 +1744,7 @@ describe("scaffold — settings-drift guard: generator-known fields must cover e
       port: "shell passthrough — dev/preview server port, not a scaffold prompt",
       adapter: "shell passthrough — deploy-target wiring, project-specific",
       bundle: "shell passthrough — raw esbuild bundler options",
+      strictContentBridge: "shell passthrough — build-only zfb gate, hand-set knob not a scaffold prompt",
       chromeBindingsModule:
         "shell passthrough — host-callables module path is hand-authored after scaffold; generated doc routes consume it automatically",
       designTokenPanelConfigModule: "shell passthrough — mirrors chromeBindingsModule's contract exactly (module-path wiring, hand-authored after scaffold)",

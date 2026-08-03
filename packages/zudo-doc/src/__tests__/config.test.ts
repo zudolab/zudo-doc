@@ -90,6 +90,14 @@ describe("zudoDoc() returns a complete ZfbConfig", () => {
     expect(full.adapter).toBe("@takazudo/zfb-adapter-cloudflare");
     expect(full.bundle).toEqual({ exclude: ["components/*.stories.tsx"] });
   });
+
+  it("passes `strictContentBridge` through only when given", () => {
+    const bare = zudoDoc({ siteName: "X" });
+    expect(bare).not.toHaveProperty("strictContentBridge");
+
+    const full = zudoDoc({ strictContentBridge: true });
+    expect(full.strictContentBridge).toBe(true);
+  });
 });
 
 // ── Default-merge semantics (omitted vs explicit-false vs override) ───────────
@@ -108,6 +116,26 @@ describe("zudoDoc() default-merge semantics", () => {
         githubAutolinksRepo: "owner/repo",
       } as unknown as Parameters<typeof zudoDoc>[0]),
     ).toThrow(/githubAutolinksRepo is no longer supported/);
+  });
+
+  // #3244 codex review finding 2: a comma in a version slug would desync the
+  // comma-joined `data-doc-unavailable-versions` client payload
+  // (`version-availability/index.ts`) from the real `data-version-slug` DOM
+  // value, silently leaving a genuinely-unavailable version's link enabled.
+  it("rejects a version slug containing a comma", () => {
+    expect(() =>
+      zudoDoc({
+        versions: [{ slug: "1,0", label: "1,0", docsDir: "content/v1" }],
+      }),
+    ).toThrow(/Invalid version slug "1,0"/);
+  });
+
+  it("accepts comma-free version slugs", () => {
+    expect(() =>
+      zudoDoc({
+        versions: [{ slug: "1.0", label: "1.0", docsDir: "content/v1" }],
+      }),
+    ).not.toThrow();
   });
 
   it("omitted field falls back to DEFAULT_SETTINGS (mermaid defaults true)", () => {

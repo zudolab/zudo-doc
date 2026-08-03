@@ -1,5 +1,11 @@
 # Allowlist for scripts/check-content-fallback.mjs (#3134).
 #
+# Entries here are reachable ONLY on a `--no-strict-content-bridge` build
+# (i.e. `pnpm b4push`) — the native `strictContentBridge: true` gate in
+# `zfb.config.ts` that covers plain `pnpm build` / CI has no allowlist at
+# all. See the header of scripts/check-content-fallback.mjs for why both
+# guards exist.
+#
 # One entry per line. An entry is matched as a plain substring against each
 # offending page's dist-relative path, so a single entry covers every locale
 # (`docs/foo/` also matches `ja/docs/foo/`). Blank lines and `#` comments are

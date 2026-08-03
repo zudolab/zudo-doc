@@ -286,6 +286,23 @@ describe("zudoDocPreset collections", () => {
     });
     expect(r.collections.map((c) => c.name)).toEqual(["docs"]);
   });
+
+  // #3244 codex review finding 2 follow-up: `zudoDocPreset()` is a
+  // documented, directly-spreadable public entry (see the doc comment above
+  // its definition) — a consumer bypassing `zudoDoc()` must still hit the
+  // comma-free version-slug guard, not just the `zudoDoc()` call path.
+  it("rejects a version slug containing a comma even when called directly (bypassing zudoDoc())", () => {
+    expect(() =>
+      zudoDocPreset({
+        settings: {
+          ...fixtureSettings,
+          versions: [{ slug: "1,0", docsDir: "src/content/docs-v1" }],
+        },
+        buildDocsSchema: buildFixtureSchema,
+        directiveVocabulary: fixtureDirectives,
+      }),
+    ).toThrow(/Invalid version slug "1,0"/);
+  });
 });
 
 describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
