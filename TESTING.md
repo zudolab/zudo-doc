@@ -120,10 +120,15 @@ runs a 24-step suite
 (format → template drift → no-host-alias guard → pin parity → fixture drift → tags/canonical audit →
 current-only compatibility → token lint → component-tokens drift → e2e spec naming guard →
 @flaky tracking-issue guard → wait-debt guard → b4push/CI parity → typecheck → Worker contract proof → unit tests →
-package tests → safelist check → build → content-fallback check → link check → HTML validation → preview smoke →
+package tests → safelist check → build → content-fallback allowlist scan → link check → HTML validation → preview smoke →
 manual smoke). Each step's elapsed time is recorded and printed as a breakdown in the final
 SUMMARY block, so budget creep in any one step is visible instead of only the aggregate run
 duration.
+
+The content-fallback step is the allowlist-gated half of the content-bridge guard; the
+non-allowlisted half (`strictContentBridge: true` in `zfb.config.ts`) fails plain
+`pnpm build`/CI directly and is not a b4push step at all — see the header of
+`scripts/check-content-fallback.mjs` for why both exist.
 
 **b4push/CI parity scope.** The `check:b4push-ci-parity` guard (step 13) only cross-checks
 the lightweight guard steps 1–13 (the `# >>> b4push-ci-parity:guards:begin` / `:end` region).

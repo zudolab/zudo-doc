@@ -17,8 +17,21 @@
 // accumulated document shape, so an unrelated edit to an already-fine page
 // can flip it. That is exactly why this needs a build-output gate rather
 // than author-side discipline: the failure is invisible in the source.
-// Tracked upstream as Takazudo/zudo-front-builder#2186; retire this guard
-// only once that lands AND zfb fails the build itself.
+// Tracked upstream as Takazudo/zudo-front-builder#2186.
+//
+// Why this script still exists alongside the native `strictContentBridge`
+// gate: `strictContentBridge: true` in `zfb.config.ts` makes `zfb build`
+// itself exit non-zero on a fallback, and it gates every route that ships
+// (plain `pnpm build`, CI) — but it has NO allowlist. `pnpm b4push` builds
+// with `--no-strict-content-bridge` specifically so this post-hoc dist/
+// scan can still run, because it is the only place an allowlist can apply —
+// needed for gitignored local-only routes (`docs/claude-skills/`, generated
+// by the `.claude` watcher / `pnpm setup:doc-skill`, never present in a CI
+// checkout) that are the routes most exposed to the shape-sensitive upstream
+// trigger due to their size (~150 KB concatenated dumps). Do NOT retire this
+// script just because zfb now fails the build itself — the two guards cover
+// different builds (native-gated vs. allowlist-gated) on purpose; see
+// `.content-fallback-allowlist` for the allowlist itself.
 //
 // Known-exempt routes live in `.content-fallback-allowlist` (substring match
 // on the dist-relative path, each entry justified by a `# reason:` comment).
