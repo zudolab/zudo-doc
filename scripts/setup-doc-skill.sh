@@ -207,8 +207,15 @@ fi
 # on every platform this script targets (it is also copied verbatim into
 # downstream projects by create-zudo-doc, so it must stay portable).
 physical_dir() {
-  if [ -d "$1" ]; then
-    (cd "$1" && pwd -P)
+  local resolved
+  # Fall back to the input on ANY resolution failure -- notably an unreadable
+  # directory, where `cd` fails and the subshell yields "". Without the
+  # non-empty guard, two different unreadable paths would both collapse to ""
+  # and compare EQUAL, silently skipping a link that should have been created.
+  # stderr is suppressed so a permission-denied probe stays quiet.
+  if [ -d "$1" ] && resolved="$(cd "$1" 2>/dev/null && pwd -P)" &&
+    [ -n "$resolved" ]; then
+    printf '%s\n' "$resolved"
   else
     printf '%s\n' "$1"
   fi
