@@ -327,11 +327,15 @@ describe("setup-doc-skill.sh", () => {
 
       // Build/verify and doc-base-path instructions must name the nested
       // project directory explicitly, not just "repo root".
-      expect(skillMd).toContain(`Run \`pnpm build\` from \`${projectDir}\``);
+      // The script derives these from `git worktree list`, which always
+      // reports the PHYSICAL path, so compare against the resolved fixture
+      // path — on macOS $TMPDIR is /var/... symlinked to /private/var/...
+      const projectDirReal = realpathSync(projectDir);
+      expect(skillMd).toContain(`Run \`pnpm build\` from \`${projectDirReal}\``);
       expect(skillMd).toContain(
-        `(relative to the project root: \`${projectDir}\`)`,
+        `(relative to the project root: \`${projectDirReal}\`)`,
       );
-      expect(skillMd).toContain(`${projectDir}/CLAUDE.md`);
+      expect(skillMd).toContain(`${projectDirReal}/CLAUDE.md`);
     });
   });
 });
@@ -767,6 +771,38 @@ describe("tracked-skill linking (#3156)", () => {
 
       expect(output).not.toContain("Linked tracked skill 'check-docs'");
       expect(output).not.toContain("WARNING");
+      expect(realpathSync(join(fixtureHome, ".claude", "skills", "check-docs"))).toBe(
+        realpathSync(skillDir),
+      );
+    });
+
+    it("no-ops when the existing link reaches this project's source through a symlinked path", () => {
+      makeFixture("tracked-fixture");
+      const skillDir = makeTrackedSkill("claude", "check-docs");
+      mkdirSync(join(fixtureHome, ".claude", "skills"), { recursive: true });
+
+      // Point the pre-existing global link at the SAME skill directory, but
+      // reached through a symlinked alias of the project root, so the string
+      // stored in the link differs from the physical path the script derives
+      // from `git worktree list`. This is the portable stand-in for macOS's
+      // /var -> /private/var $TMPDIR symlink, which is what made the original
+      // bug reproduce only on macOS while Linux CI stayed green.
+      const aliasSkillDir = join(
+        fixtureRoot,
+        "alias",
+        ".claude",
+        "skills",
+        "check-docs",
+      );
+      execSync(`ln -s "${projectDir}" "${join(fixtureRoot, "alias")}"`);
+      execSync(
+        `ln -s "${aliasSkillDir}" "${join(fixtureHome, ".claude", "skills", "check-docs")}"`,
+      );
+
+      const output = runFixtureScript();
+
+      expect(output).not.toContain("WARNING");
+      expect(output).not.toContain("Linked tracked skill 'check-docs'");
       expect(realpathSync(join(fixtureHome, ".claude", "skills", "check-docs"))).toBe(
         realpathSync(skillDir),
       );
