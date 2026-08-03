@@ -11,10 +11,18 @@ export const TOC_STORAGE_KEY = "zudo-doc-toc-visible";
 // Exported for unit testing the mount-reconcile logic in a plain Node env
 // (no jsdom in the package vitest config) — the same convention the sibling
 // DesktopSidebarToggle uses via desktop-sidebar-toggle-island/index.tsx.
-// `readState` is the localStorage reader the mount effect uses to reconcile
-// `visible` on initial load; `setDataAttribute` is the `<html data-toc-hidden>`
-// writer.
-export function readState(): boolean {
+// `readTocState` is the localStorage reader the mount effect uses to
+// reconcile `visible` on initial load; `setTocDataAttribute` is the
+// `<html data-toc-hidden>` writer.
+//
+// Named distinctly from the sidebar island's own `readState`/
+// `setDataAttribute` (not just `readState`/`setDataAttribute`): zfb's island
+// scanner keys hydration markers by exported function name across the WHOLE
+// build, not per-module, so two "use client" islands sharing a helper name
+// collide and only one hydrates — silently, as a build-time warning easy to
+// miss (discovered enabling `sidebarToggle` + `tocToggle` together, epic
+// #3252, #3257).
+export function readTocState(): boolean {
   if (typeof window === "undefined") return true;
   try {
     return localStorage.getItem(TOC_STORAGE_KEY) !== "false";
@@ -23,7 +31,7 @@ export function readState(): boolean {
   }
 }
 
-export function setDataAttribute(isVisible: boolean) {
+export function setTocDataAttribute(isVisible: boolean) {
   if (isVisible) {
     document.documentElement.removeAttribute("data-toc-hidden");
   } else {
@@ -55,7 +63,7 @@ export function DesktopTocToggle() {
   // with the SSR-safe default `true`.
   useEffect(() => {
     if (!hydrated.current) return;
-    setDataAttribute(visible);
+    setTocDataAttribute(visible);
     try {
       localStorage.setItem(TOC_STORAGE_KEY, String(visible));
     } catch {
@@ -68,7 +76,7 @@ export function DesktopTocToggle() {
   // persistence effect above start syncing normally.
   useEffect(() => {
     hydrated.current = true;
-    const actual = readState();
+    const actual = readTocState();
     if (actual !== visible) {
       setVisible(actual);
     }
@@ -78,7 +86,7 @@ export function DesktopTocToggle() {
   // After each soft SPA navigation, re-apply the data-attribute so a
   // "hidden" preference is not lost when the router swaps root attributes.
   useEffect(() => {
-    const handler = () => setDataAttribute(readState());
+    const handler = () => setTocDataAttribute(readTocState());
     document.addEventListener(AFTER_NAVIGATE_EVENT, handler);
     return () => document.removeEventListener(AFTER_NAVIGATE_EVENT, handler);
   }, []);

@@ -17,8 +17,8 @@ import { Island } from "@takazudo/zfb";
 import {
   DesktopTocToggle,
   TOC_STORAGE_KEY,
-  readState,
-  setDataAttribute,
+  readTocState,
+  setTocDataAttribute,
 } from "../index.js";
 
 describe("DesktopTocToggle — SSG HTML presence", () => {
@@ -48,9 +48,13 @@ describe("DesktopTocToggle — SSG HTML presence", () => {
 // Reconcile-helper contract, mirroring desktop-sidebar-toggle-island's own
 // (bug zudolab/zudo-doc#2571 pattern). The island's mount effect reconciles
 // the persisted preference on initial load via exactly two helpers:
-// `readState()` (reads localStorage → the `visible` value) and
-// `setDataAttribute(visible)` (applies/removes `<html data-toc-hidden>`).
+// `readTocState()` (reads localStorage → the `visible` value) and
+// `setTocDataAttribute(visible)` (applies/removes `<html data-toc-hidden>`).
 // These tests pin that helper contract — the units the mount effect composes.
+// (Named distinctly from the sidebar island's own `readState`/
+// `setDataAttribute` to avoid an island-marker-name collision when both
+// islands are enabled together — see the doc comment on the exports in
+// ../index.tsx, epic #3252/#3257.)
 //
 // SCOPE NOTE (honest about what this does NOT cover): the package vitest runs
 // in a plain Node env (no jsdom/happy-dom), so these exercise the helpers
@@ -89,14 +93,14 @@ function makeFakeStorage() {
   };
 }
 
-describe("DesktopTocToggle — reconcile helpers (readState / setDataAttribute)", () => {
+describe("DesktopTocToggle — reconcile helpers (readTocState / setTocDataAttribute)", () => {
   let fakeDocument: ReturnType<typeof makeFakeDocument>;
   let fakeStorage: ReturnType<typeof makeFakeStorage>;
 
   beforeEach(() => {
     fakeDocument = makeFakeDocument();
     fakeStorage = makeFakeStorage();
-    // `window` must be defined for readState() to consult localStorage
+    // `window` must be defined for readTocState() to consult localStorage
     // (it short-circuits to `true` when window is undefined, i.e. during SSR).
     vi.stubGlobal("window", new EventTarget());
     vi.stubGlobal("document", fakeDocument);
@@ -111,11 +115,11 @@ describe("DesktopTocToggle — reconcile helpers (readState / setDataAttribute)"
     fakeStorage.setItem(TOC_STORAGE_KEY, "false");
 
     // This is exactly what the island's mount effect computes on initial load.
-    const visible = readState();
+    const visible = readTocState();
     expect(visible).toBe(false);
 
-    // ...and applies to <html> via setDataAttribute — no SPA nav involved.
-    setDataAttribute(visible);
+    // ...and applies to <html> via setTocDataAttribute — no SPA nav involved.
+    setTocDataAttribute(visible);
     expect(fakeDocument.documentElement.hasAttribute("data-toc-hidden")).toBe(
       true,
     );
@@ -125,10 +129,10 @@ describe("DesktopTocToggle — reconcile helpers (readState / setDataAttribute)"
   });
 
   it("reconciles to visible (attribute removed) when no preference is stored", () => {
-    const visible = readState();
+    const visible = readTocState();
     expect(visible).toBe(true);
 
-    setDataAttribute(visible);
+    setTocDataAttribute(visible);
     expect(fakeDocument.documentElement.hasAttribute("data-toc-hidden")).toBe(
       false,
     );
@@ -136,7 +140,7 @@ describe("DesktopTocToggle — reconcile helpers (readState / setDataAttribute)"
 
   it("treats an explicit 'true' preference as visible", () => {
     fakeStorage.setItem(TOC_STORAGE_KEY, "true");
-    expect(readState()).toBe(true);
+    expect(readTocState()).toBe(true);
   });
 });
 
