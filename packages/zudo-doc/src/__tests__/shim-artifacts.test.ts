@@ -115,6 +115,17 @@ describe("zfb-config-shim.d.ts (#2656, shape-free re-export since #3237)", () =>
 });
 
 describe("check-shim-artifacts.mjs: validateShimShape prepack guard (#3241)", () => {
+  // Narrows the guard's result union so `.error` is reachable. `expect(result.ok).toBe(false)`
+  // is a runtime assertion only — tsc still sees the `{ ok: true }` arm, and the package's own
+  // `tsc --noEmit` typechecks this file (the host tsconfig excludes `src/**/__tests__`, so
+  // `pnpm check` does not catch it).
+  const expectFailure = (
+    result: ReturnType<typeof validateShimShape>,
+  ): { ok: false; error: string } => {
+    if (result.ok) throw new Error("expected validateShimShape to reject this input, but it passed");
+    return result;
+  };
+
   it("passes on the real, current shim", () => {
     expect(validateShimShape(read("zfb-config-shim.d.ts"))).toEqual({ ok: true });
   });
@@ -123,7 +134,7 @@ describe("check-shim-artifacts.mjs: validateShimShape prepack guard (#3241)", ()
     const broken = `export * from "@takazudo/zfb/config";\n`;
     const result = validateShimShape(broken);
     expect(result.ok).toBe(false);
-    expect(result.error).toContain('declare module "zfb/config"');
+    expect(expectFailure(result).error).toContain('declare module "zfb/config"');
   });
 
   it("fails when the re-export is replaced with a hand-copied shape (the #3237 drift class)", () => {
@@ -136,7 +147,7 @@ describe("check-shim-artifacts.mjs: validateShimShape prepack guard (#3241)", ()
 `;
     const result = validateShimShape(broken);
     expect(result.ok).toBe(false);
-    expect(result.error).toContain("hand-copied shape");
+    expect(expectFailure(result).error).toContain("hand-copied shape");
   });
 
   it("fails when a top-level import/export sits outside the declare-module block (stops being ambient)", () => {
@@ -148,7 +159,7 @@ declare module "zfb/config" {
 `;
     const result = validateShimShape(broken);
     expect(result.ok).toBe(false);
-    expect(result.error).toContain("no longer merges into global scope");
+    expect(expectFailure(result).error).toContain("no longer merges into global scope");
   });
 
   // The three cases below are the AST-vs-substring gap a codex review found
@@ -163,7 +174,7 @@ declare module "zfb/config" {
 `;
     const result = validateShimShape(broken);
     expect(result.ok).toBe(false);
-    expect(result.error).toContain('declare module "zfb/config"');
+    expect(expectFailure(result).error).toContain('declare module "zfb/config"');
   });
 
   it("fails when a trailing top-level statement's brace would confuse a lastIndexOf('}') brace match", () => {
@@ -175,7 +186,7 @@ export {};
 `;
     const result = validateShimShape(broken);
     expect(result.ok).toBe(false);
-    expect(result.error).toContain("top-level import/export");
+    expect(expectFailure(result).error).toContain("top-level import/export");
   });
 
   it("fails on a differently-formatted local interface (tab/newline between export and interface)", () => {
@@ -188,7 +199,7 @@ export {};
 `;
     const result = validateShimShape(broken);
     expect(result.ok).toBe(false);
-    expect(result.error).toContain("hand-copied-shape");
+    expect(expectFailure(result).error).toContain("hand-copied-shape");
   });
 
   // The three cases below are false-negative paths a later codex review
@@ -206,7 +217,7 @@ export {};
 `;
     const result = validateShimShape(broken);
     expect(result.ok).toBe(false);
-    expect(result.error).toContain("syntax error");
+    expect(expectFailure(result).error).toContain("syntax error");
   });
 
   it("fails on a top-level EXPORTED DECLARATION (not an ExportDeclaration node) outside the block", () => {
@@ -226,7 +237,7 @@ declare module "zfb/config" {
 `;
     const result = validateShimShape(broken);
     expect(result.ok).toBe(false);
-    expect(result.error).toContain("top-level exported declaration");
+    expect(expectFailure(result).error).toContain("top-level exported declaration");
   });
 
   it("fails when the module block hides a copied shape behind a non-interface/type declaration", () => {
@@ -241,7 +252,7 @@ declare module "zfb/config" {
 `;
     const result = validateShimShape(broken);
     expect(result.ok).toBe(false);
-    expect(result.error).toContain("extra statements");
+    expect(expectFailure(result).error).toContain("extra statements");
   });
 });
 
