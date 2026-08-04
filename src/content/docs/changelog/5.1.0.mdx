@@ -1,0 +1,20 @@
+---
+title: 5.1.0
+description: Release notes for 5.1.0.
+sidebar_position: 1079
+---
+
+Released: 2026-08-05
+
+### Features
+
+- The code-block **wrap lines** toggle is now remembered. It previously lived only in a DOM class, so it was lost on every browser reload — awkward in the doc-writing loop (`pnpm dev` → edit MDX → reload → wrap is off again). Wrap is now a **page-wide** preference persisted in `sessionStorage` under `zudo-doc-code-wrap`, restored on initial load and after SPA navigation. Two consequences worth knowing: toggling any wrap button now wraps **every** code block on the page rather than just that one, and the choice is scoped to the browser-tab session rather than kept forever. Per-block persistence was rejected deliberately — every candidate key (block index, code content hash) is invalidated by editing the document, which is the exact flow the feature exists for (ae0b1db, #3270)
+
+### Bug Fixes
+
+- The wrap toggle no longer appears on code blocks that comfortably fit. Wrapping removes the very overflow that decides whether the button is offered, so the previous "keep visible while active" rule would have revealed a toggle on every short block once the page-wide preference was switched on. The unwrapped measurement is now cached on the element and reused while wrapping is active (ae0b1db)
+- A code block inside a closed `<TabItem>` panel no longer loses its wrap toggle permanently. Such a `<pre>` is `hidden`, so it has no layout box and measures `0/0` when the enhancer first sees it; caching that as "does not overflow" froze the block, because the wrap guard then stopped it ever re-measuring. On a page whose only overflowing block lives in a tab, that left no way to turn wrapping back off. A zero-size reading is now treated as *unknown* rather than *fits*, and the stored preference is deferred until the block has been measured while visible — the `ResizeObserver` applies it on the frame the panel gains a layout box, which is before paint, so the wrap still lands without a flash (912ee02)
+
+### Other Changes
+
+- Real-DOM regression coverage for the wrap preference: a new unit suite executes the actual enhancer init script under happy-dom (default-off, restore-on-load, page-wide sync, persistence of both states, the fitting-block and tab-panel visibility rules, observer settling, and graceful degradation when storage access throws), plus three Playwright specs covering reload persistence, a tab opened after wrap was restored, and a block that never overflows (912ee02, ae0b1db)
