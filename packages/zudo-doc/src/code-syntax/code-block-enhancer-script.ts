@@ -30,15 +30,75 @@ export const HIGHLIGHTED_CODE_BLOCK_SELECTOR = "pre.hi-root";
 /** Highlighted blocks plus the intentional raw-code fallback inside tabs. */
 export const CODE_BLOCK_ENHANCER_SELECTOR = `${HIGHLIGHTED_CODE_BLOCK_SELECTOR}, .tab-panel pre`;
 
+/**
+ * sessionStorage key holding the page-wide word-wrap preference (`"1"` / `"0"`).
+ *
+ * Deliberately session-scoped, not `localStorage`: wrapping is a transient
+ * reading mode, and the flow it exists for is the doc-writing loop (edit MDX →
+ * reload the tab), which a per-tab session already spans.
+ */
+export const CODE_WRAP_STORAGE_KEY = "zudo-doc-code-wrap";
+
 export const CODE_BLOCK_ENHANCER_SCRIPT = `(function () {
+  // Word wrap is a PAGE-WIDE preference, not a per-block one: toggling any
+  // button wraps every code block on the page and is remembered for the
+  // browser-tab session. Per-block persistence was rejected because every
+  // candidate key (block index, code content hash) is invalidated by editing
+  // the document — which is exactly the flow this persistence exists for.
+  var wrapMode = readWrapMode();
+
   // Single shared ResizeObserver for all code blocks on the page.
   var wrapButtons = new Map();
+  // applyWrapState, not just updateWrapVisibility: a block that was hidden at
+  // enhancement time (a closed tab panel) is measured here on the frame it
+  // becomes visible, and only then can the stored preference be applied to it.
+  // This settles in one extra observer cycle — toggling to the class a block
+  // already has produces no further size change.
   var resizeObserver = new ResizeObserver(function (entries) {
     for (var i = 0; i < entries.length; i++) {
       var btn = wrapButtons.get(entries[i].target);
-      if (btn) updateWrapVisibility(entries[i].target, btn);
+      if (btn) applyWrapState(entries[i].target, btn);
     }
   });
+
+  function readWrapMode() {
+    // Storage access throws in Safari private mode and under some
+    // cookie-blocking configurations — fall back to unwrapped.
+    try {
+      return sessionStorage.getItem(${JSON.stringify(CODE_WRAP_STORAGE_KEY)}) === "1";
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function setWrapMode(next) {
+    wrapMode = next;
+    try {
+      sessionStorage.setItem(${JSON.stringify(CODE_WRAP_STORAGE_KEY)}, next ? "1" : "0");
+    } catch (_) {}
+    // Map iteration order is insertion order, so this walks every enhanced
+    // block currently on the page. forEach yields (value, key) = (btn, pre).
+    wrapButtons.forEach(function (btn, pre) {
+      applyWrapState(pre, btn);
+    });
+  }
+
+  function applyWrapState(pre, btn) {
+    // Measure FIRST, while the block is still unwrapped — wrapping destroys
+    // the overflow signal the toggle's visibility depends on.
+    updateWrapVisibility(pre, btn);
+
+    // A block inside a closed tab panel has no layout box, so it yields no
+    // measurement and must not be wrapped yet: wrapping it now would freeze it
+    // at that unknown state and hide its toggle for good. The ResizeObserver
+    // re-runs this the moment the block gains a box (its tab is opened), which
+    // happens before paint — so the wrap still lands without a visible flash.
+    if (pre.dataset.codeOverflow === undefined) return;
+
+    pre.classList.toggle("word-wrap", wrapMode);
+    btn.classList.toggle("active", wrapMode);
+    btn.setAttribute("aria-pressed", String(wrapMode));
+  }
 
   function enhanceCodeBlocks() {
     // Selector covers two shapes:
@@ -74,7 +134,7 @@ export const CODE_BLOCK_ENHANCER_SCRIPT = `(function () {
       group.className = "code-buttons";
 
       // Word wrap toggle (only shown when content overflows).
-      var wrapBtn = createWrapButton(pre);
+      var wrapBtn = createWrapButton();
       group.appendChild(wrapBtn);
 
       // Copy button.
@@ -83,9 +143,10 @@ export const CODE_BLOCK_ENHANCER_SCRIPT = `(function () {
 
       wrapper.appendChild(group);
 
-      // Track and observe for overflow changes.
+      // Track and observe for overflow changes. applyWrapState measures the
+      // block before applying the stored preference to it.
       wrapButtons.set(pre, wrapBtn);
-      updateWrapVisibility(pre, wrapBtn);
+      applyWrapState(pre, wrapBtn);
       resizeObserver.observe(pre);
     }
   }
@@ -135,7 +196,7 @@ export const CODE_BLOCK_ENHANCER_SCRIPT = `(function () {
     return btn;
   }
 
-  function createWrapButton(pre) {
+  function createWrapButton() {
     var btn = document.createElement("button");
     btn.type = "button";
     btn.className = "code-btn code-btn-wrap";
@@ -149,19 +210,27 @@ export const CODE_BLOCK_ENHANCER_SCRIPT = `(function () {
         '<polyline points="11 22 7 18 11 14" />' +
       '</svg>';
 
+    // Page-wide toggle: setWrapMode re-syncs every tracked block, this one
+    // included, so the handler needs no reference to its own <pre>.
     btn.addEventListener("click", function () {
-      var isWrapped = pre.classList.toggle("word-wrap");
-      btn.classList.toggle("active", isWrapped);
-      btn.setAttribute("aria-pressed", String(isWrapped));
+      setWrapMode(!wrapMode);
     });
 
     return btn;
   }
 
   function updateWrapVisibility(pre, btn) {
-    // Keep visible when active (user needs to toggle back).
-    var isActive = btn.classList.contains("active");
-    btn.style.display = isActive || pre.scrollWidth > pre.clientWidth ? "" : "none";
+    // The button is offered only for blocks that actually overflow. Two
+    // readings are unusable and must not overwrite the cached one:
+    //   - a wrapped block never overflows, which is the whole point of the
+    //     cache (otherwise switching the page-wide preference on would reveal
+    //     a wrap button on every short block that never needed one);
+    //   - a block with no layout box (a closed tab panel) measures 0/0, which
+    //     means "unknown", not "fits".
+    if (!pre.classList.contains("word-wrap") && pre.clientWidth > 0) {
+      pre.dataset.codeOverflow = pre.scrollWidth > pre.clientWidth ? "1" : "0";
+    }
+    btn.style.display = pre.dataset.codeOverflow === "1" ? "" : "none";
   }
 
   // Clean up stale references before navigating away. Under zfb's
@@ -169,7 +238,8 @@ export const CODE_BLOCK_ENHANCER_SCRIPT = `(function () {
   // html survive), so the OLD pre nodes the ResizeObserver was watching
   // go away — unobserve them so the observer doesn't keep detached
   // references, then clear the wrapButtons Map so the next
-  // enhanceCodeBlocks pass can repopulate it cleanly.
+  // enhanceCodeBlocks pass can repopulate it cleanly. wrapMode itself
+  // lives in this closure and deliberately survives the swap.
   document.addEventListener(${JSON.stringify(BEFORE_NAVIGATE_EVENT)}, function () {
     wrapButtons.forEach(function (_btn, el) {
       resizeObserver.unobserve(el);

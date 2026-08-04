@@ -102,6 +102,8 @@ Multiple expressions are space-separated (`/first/ /second phrase/`); a literal 
 
 The copy and word-wrap toggle buttons are added by client-side JavaScript at runtime; they are not present in the server-rendered HTML. This runs unconditionally on every highlighted code block — independent of whether `codeEnrichment` is configured. When hydrated, the copy button markup is `button.code-btn.code-btn-copy` containing `svg.code-icon.code-icon-copy`.
 
+Word wrap is a **page-wide** preference, not a per-block one: toggling any wrap button wraps every code block on the page, and the choice is remembered for the browser-tab session (`sessionStorage`, key `zudo-doc-code-wrap`) so it survives a reload. The toggle is only offered on blocks whose content actually overflows — a block that already fits never shows one, whether wrap is on or off.
+
 ## Emitted DOM
 
 | Trigger | Emitted element(s) | Class names |
