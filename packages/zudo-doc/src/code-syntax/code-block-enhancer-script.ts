@@ -49,10 +49,15 @@ export const CODE_BLOCK_ENHANCER_SCRIPT = `(function () {
 
   // Single shared ResizeObserver for all code blocks on the page.
   var wrapButtons = new Map();
+  // applyWrapState, not just updateWrapVisibility: a block that was hidden at
+  // enhancement time (a closed tab panel) is measured here on the frame it
+  // becomes visible, and only then can the stored preference be applied to it.
+  // This settles in one extra observer cycle — toggling to the class a block
+  // already has produces no further size change.
   var resizeObserver = new ResizeObserver(function (entries) {
     for (var i = 0; i < entries.length; i++) {
       var btn = wrapButtons.get(entries[i].target);
-      if (btn) updateWrapVisibility(entries[i].target, btn);
+      if (btn) applyWrapState(entries[i].target, btn);
     }
   });
 
@@ -79,10 +84,20 @@ export const CODE_BLOCK_ENHANCER_SCRIPT = `(function () {
   }
 
   function applyWrapState(pre, btn) {
+    // Measure FIRST, while the block is still unwrapped — wrapping destroys
+    // the overflow signal the toggle's visibility depends on.
+    updateWrapVisibility(pre, btn);
+
+    // A block inside a closed tab panel has no layout box, so it yields no
+    // measurement and must not be wrapped yet: wrapping it now would freeze it
+    // at that unknown state and hide its toggle for good. The ResizeObserver
+    // re-runs this the moment the block gains a box (its tab is opened), which
+    // happens before paint — so the wrap still lands without a visible flash.
+    if (pre.dataset.codeOverflow === undefined) return;
+
     pre.classList.toggle("word-wrap", wrapMode);
     btn.classList.toggle("active", wrapMode);
     btn.setAttribute("aria-pressed", String(wrapMode));
-    updateWrapVisibility(pre, btn);
   }
 
   function enhanceCodeBlocks() {
@@ -128,11 +143,9 @@ export const CODE_BLOCK_ENHANCER_SCRIPT = `(function () {
 
       wrapper.appendChild(group);
 
-      // Track and observe for overflow changes. The visibility pass runs
-      // BEFORE the stored preference is applied so it takes a live
-      // unwrapped measurement (see updateWrapVisibility).
+      // Track and observe for overflow changes. applyWrapState measures the
+      // block before applying the stored preference to it.
       wrapButtons.set(pre, wrapBtn);
-      updateWrapVisibility(pre, wrapBtn);
       applyWrapState(pre, wrapBtn);
       resizeObserver.observe(pre);
     }
@@ -207,12 +220,14 @@ export const CODE_BLOCK_ENHANCER_SCRIPT = `(function () {
   }
 
   function updateWrapVisibility(pre, btn) {
-    // The button is offered only for blocks that actually overflow. Once a
-    // block is wrapped it no longer overflows, so the unwrapped measurement
-    // is cached on the element and reused while wrapping is on — without
-    // the cache, turning the page-wide preference on would reveal a wrap
-    // button on every short block that never needed one.
-    if (!pre.classList.contains("word-wrap")) {
+    // The button is offered only for blocks that actually overflow. Two
+    // readings are unusable and must not overwrite the cached one:
+    //   - a wrapped block never overflows, which is the whole point of the
+    //     cache (otherwise switching the page-wide preference on would reveal
+    //     a wrap button on every short block that never needed one);
+    //   - a block with no layout box (a closed tab panel) measures 0/0, which
+    //     means "unknown", not "fits".
+    if (!pre.classList.contains("word-wrap") && pre.clientWidth > 0) {
       pre.dataset.codeOverflow = pre.scrollWidth > pre.clientWidth ? "1" : "0";
     }
     btn.style.display = pre.dataset.codeOverflow === "1" ? "" : "none";

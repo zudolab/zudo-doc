@@ -265,6 +265,44 @@ test.describe("Code blocks: copy and wrap buttons", () => {
     await expect(restoredBtn).toHaveAttribute("aria-pressed", "true");
   });
 
+  test("a tab opened after wrap was restored still offers its toggle", async ({
+    page,
+  }) => {
+    // A <pre> in a closed tab panel is `hidden`, so it has no layout box when
+    // the enhancer first measures it. Treating that as "fits" while wrap is on
+    // would hide its toggle for good — leaving no way to turn wrapping off on
+    // a page whose only overflowing block lives in a tab.
+    await page.goto(PAGE, { waitUntil: "load" });
+
+    const wrapBtn = page
+      .locator("main pre.hi-root", { hasText: "longVariable" })
+      .first()
+      .locator("xpath=..")
+      .locator('button[aria-label="Toggle word wrap"]');
+    await wrapBtn.waitFor({ state: "attached", timeout: 10_000 });
+    await wrapBtn.scrollIntoViewIfNeeded();
+    await wrapBtn.hover();
+    await wrapBtn.click();
+
+    await page.reload({ waitUntil: "load" });
+
+    const rustPanel = page.locator('.tab-panel[data-tab-value="rust"]');
+    const rustPre = rustPanel.locator("pre");
+    await rustPre.waitFor({ state: "attached", timeout: 10_000 });
+
+    // Still closed: nothing is known about it yet, so it is left alone.
+    expect(await rustPanel.getAttribute("hidden")).not.toBeNull();
+
+    await page.locator('[data-tab-btn="rust"]').click();
+    expect(await rustPanel.getAttribute("hidden")).toBeNull();
+
+    // Revealed: the block is measured, wrapped, and its toggle is offered.
+    await expect(rustPre).toHaveClass(/\bword-wrap\b/);
+    await expect(
+      rustPanel.locator('button[aria-label="Toggle word wrap"]'),
+    ).toBeVisible();
+  });
+
   test("wrap toggle stays hidden on a block that never overflows", async ({
     page,
   }) => {

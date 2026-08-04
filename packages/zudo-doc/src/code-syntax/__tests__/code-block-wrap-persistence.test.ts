@@ -23,11 +23,31 @@ import {
 const OVERFLOWING = "overflowing";
 const FITTING = "fitting";
 
-/** Minimal stand-in — the script only needs observe/unobserve to exist. */
-class NoopResizeObserver {
-  observe(): void {}
-  unobserve(): void {}
+/**
+ * Stand-in that records observed elements so a test can fire the callback the
+ * way a browser would when a hidden block gains a layout box.
+ */
+class FakeResizeObserver {
+  static callbacks: Array<(entries: Array<{ target: Element }>) => void> = [];
+  static observed = new Set<Element>();
+
+  constructor(cb: (entries: Array<{ target: Element }>) => void) {
+    FakeResizeObserver.callbacks.push(cb);
+  }
+  observe(el: Element): void {
+    FakeResizeObserver.observed.add(el);
+  }
+  unobserve(el: Element): void {
+    FakeResizeObserver.observed.delete(el);
+  }
   disconnect(): void {}
+
+  /** Deliver a resize notification for `el` to every live observer. */
+  static fire(el: Element): void {
+    for (const cb of FakeResizeObserver.callbacks) {
+      if (FakeResizeObserver.observed.has(el)) cb([{ target: el }]);
+    }
+  }
 }
 
 interface Block {
@@ -101,7 +121,9 @@ function isButtonShown(block: Block): boolean {
 }
 
 beforeEach(() => {
-  Reflect.set(globalThis, "ResizeObserver", NoopResizeObserver);
+  FakeResizeObserver.callbacks = [];
+  FakeResizeObserver.observed = new Set();
+  Reflect.set(globalThis, "ResizeObserver", FakeResizeObserver);
   sessionStorage.clear();
 });
 
@@ -182,6 +204,66 @@ describe("code block wrap preference", () => {
 
     expect(isWrapped(overflowing)).toBe(false);
     expect(overflowing.wrapBtn.getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("offers the toggle on a tab-panel block opened after wrap was restored", () => {
+    // A <pre> inside a closed <TabItem> panel is `hidden`, so it measures 0/0
+    // at enhancement time. Caching that as "fits" while wrap is on would hide
+    // its toggle permanently — on a page whose only overflowing block lives in
+    // a tab, that leaves no way to turn wrapping back off.
+    sessionStorage.setItem(CODE_WRAP_STORAGE_KEY, "1");
+
+    document.body.innerHTML = `
+      <main>
+        <div class="tab-panel" hidden><pre data-fixture="${OVERFLOWING}"><code>a very long line</code></pre></div>
+      </main>
+    `;
+    const pre = queryPre(OVERFLOWING);
+    stubWidths(pre, { scrollWidth: 0, clientWidth: 0 }); // hidden: no layout box
+
+    new Function(CODE_BLOCK_ENHANCER_SCRIPT)();
+    const block = readBlock(OVERFLOWING);
+
+    // While hidden it is neither wrapped nor offering a toggle — nothing is
+    // known about it yet.
+    expect(isWrapped(block)).toBe(false);
+    expect(isButtonShown(block)).toBe(false);
+
+    // Open the tab: the panel gains a layout box and the observer fires.
+    block.pre.closest(".tab-panel")?.removeAttribute("hidden");
+    stubWidths(block.pre, { scrollWidth: 800, clientWidth: 400 });
+    FakeResizeObserver.fire(block.pre);
+
+    expect(isButtonShown(block)).toBe(true);
+    expect(isWrapped(block)).toBe(true);
+    expect(block.wrapBtn.getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("settles after the wrap it applies triggers a second resize", () => {
+    // Applying word-wrap from inside the observer changes the block's height,
+    // so the browser delivers one more notification. That second pass must be
+    // a no-op rather than flipping state back and forth.
+    sessionStorage.setItem(CODE_WRAP_STORAGE_KEY, "1");
+    const { overflowing } = loadPage();
+
+    FakeResizeObserver.fire(overflowing.pre);
+    FakeResizeObserver.fire(overflowing.pre);
+
+    expect(isWrapped(overflowing)).toBe(true);
+    expect(isButtonShown(overflowing)).toBe(true);
+    expect(overflowing.wrapBtn.getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("re-hides the toggle when a widened block stops overflowing", () => {
+    // Pre-existing behaviour that must survive the cache: while unwrapped, the
+    // measurement stays live.
+    const { overflowing } = loadPage();
+    expect(isButtonShown(overflowing)).toBe(true);
+
+    stubWidths(overflowing.pre, { scrollWidth: 300, clientWidth: 900 });
+    FakeResizeObserver.fire(overflowing.pre);
+
+    expect(isButtonShown(overflowing)).toBe(false);
   });
 
   it("still enhances blocks when storage access throws", () => {
