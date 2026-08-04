@@ -117,8 +117,8 @@ export function workspaceZfbPeerFloorMatches(rootPin, actualPin) {
 //                 the lockstep release REQUIRES: the showcase resolves this peer
 //                 from the npm registry under --frozen-lockfile, so the floor can
 //                 only point at an already-published version and is bumped
-//                 post-publish via the /l-bump-deps cycle (see RELEASE.md
-//                 "publish-lag"). Demanding exact `^<root>` here deadlocked the
+//                 post-publish via the toolchain-bump cycle (see RELEASE.md
+//                 "Bumping the toolchain" and "publish-lag"). Demanding exact `^<root>` here deadlocked the
 //                 release (the in-flight version isn't on npm yet).
 //   "exact"     — floor must equal `^<sourceValue>`. Used for the pinned (not
 //                 lockstep) zdtp peer: it's an external dep that is always
@@ -312,7 +312,7 @@ export function evaluateFirstPartyPeer({
   }
   const result = { ok: true, expected: expectedPeer, actual };
   if (actualPeer !== expectedPeer) {
-    result.advisory = `${pkg} peer floor ${actual} lags the lockstep version ${sourceValue} (still valid — root is within range). Bump it to ${expectedPeer} when convenient, e.g. via /l-bump-deps after the version publishes.`;
+    result.advisory = `${pkg} peer floor ${actual} lags the lockstep version ${sourceValue} (still valid — root is within range). Bump it to ${expectedPeer} once ${sourceValue} is published (see RELEASE.md "Bumping the toolchain").`;
   }
   return result;
 }

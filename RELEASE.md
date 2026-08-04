@@ -140,9 +140,9 @@ touch it: bumping it to the version being released (not yet on npm) makes the fr
 lockfile unresolvable and deadlocks both main CI and the publish workflows.
 
 Instead the floor **lags by design** and is adopted *after* the version publishes,
-through the normal dependency-bump cycle (`/l-bump-deps`) — exactly like the zfb /
-zdtp pins. A lagging same-major floor is correct: `^2.0.1` is satisfied by a
-`@takazudo/zudo-doc@2.1.0` install.
+through the normal dependency-bump cycle (see "Bumping the toolchain" below) —
+exactly like the zfb / zdtp pins. A lagging same-major floor is correct: `^2.0.1`
+is satisfied by a `@takazudo/zudo-doc@2.1.0` install.
 
 The pin-parity guard (`scripts/check-pin-parity.mjs`) enforces this with
 **satisfies-semantics** for the lockstep peer: it fails only when the floor would
@@ -152,6 +152,41 @@ when a valid floor lags. A clean linear release therefore needs no interleaving:
 
 > bump versions + scaffold pins → `pnpm b4push` → commit → push → main CI green →
 > tag → publish all three in publish-order.
+
+---
+
+## Bumping the toolchain (`@takazudo/*` upstream pins)
+
+Bump the upstream deps (`/dev-bump-zudo-deps`, or by hand), then run:
+
+```sh
+pnpm check:pin-parity
+```
+
+That check is the authority on where a version lives — do not maintain a
+hand-written pin map alongside it, which is how the retired `/l-bump-deps` skill
+went stale. Two things it knows that a generic dependency bumper does not:
+
+- **`packages/create-zudo-doc/src/scaffold.ts` is a pin location.** It carries
+  literal pin strings emitted into the *generated downstream* `package.json`, so a
+  tool that only rewrites `package.json` files leaves it behind. The parity check
+  fails loudly when it does — fix `scaffold.ts` to match and re-run.
+- **The first-party peer floor is bumped here, not during a release** — see
+  "First-party peer floor (publish-lag)" above. Once the lockstep version is on
+  npm, raise `packages/zudo-doc` `peerDependencies["@takazudo/zudo-doc-history-server"]`
+  to `^<version>`; until then the check's non-fatal advisory is expected.
+
+Resolve targets from the **`latest`** dist-tag, never `next` — the two have
+permanently diverged since zfb 1.0.0, and `next` is frozen on an old prerelease, so
+following it silently downgrades the toolchain by a major.
+
+The zfb family (`zfb`, `zfb-runtime`, `zfb-adapter-cloudflare`, `zfb-md-wasm`) must
+move to the same version together; a partial bump leaves the workspace peer floors
+unsatisfiable. `@takazudo/zudo-doc` and `@takazudo/zudo-doc-history-server` are
+produced here, not consumed — their versions belong to the release flow.
+
+A bump that changes `scaffold.ts` needs a `create-zudo-doc` release afterward so
+downstream scaffolds get the new pins.
 
 ---
 
