@@ -312,7 +312,11 @@ export function evaluateFirstPartyPeer({
   }
   const result = { ok: true, expected: expectedPeer, actual };
   if (actualPeer !== expectedPeer) {
-    result.advisory = `${pkg} peer floor ${actual} lags the lockstep version ${sourceValue} (still valid — root is within range). Bump it to ${expectedPeer} once ${sourceValue} is published (see RELEASE.md "Bumping the toolchain").`;
+    // Informational only — do NOT read this as a TODO. The floor trails the
+    // in-flight version by one release by construction, so raising it and then
+    // releasing simply reproduces this note. See RELEASE.md "First-party peer
+    // floor (publish-lag)".
+    result.advisory = `${pkg} peer floor ${actual} trails the lockstep version ${sourceValue} — expected, and satisfied (root is within range). No action: the floor can only name a published version, so it always lags by one release. It becomes an ERROR here if it ever stops including the root version (cross-major drift).`;
   }
   return result;
 }

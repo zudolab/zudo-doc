@@ -139,10 +139,19 @@ release script (`scripts/release-create-zudo-doc.sh`) deliberately does **not**
 touch it: bumping it to the version being released (not yet on npm) makes the frozen
 lockfile unresolvable and deadlocks both main CI and the publish workflows.
 
-Instead the floor **lags by design** and is adopted *after* the version publishes,
-through the normal dependency-bump cycle (see "Bumping the toolchain" below) —
-exactly like the zfb / zdtp pins. A lagging same-major floor is correct: `^2.0.1`
-is satisfied by a `@takazudo/zudo-doc@2.1.0` install.
+Instead the floor **lags by design**, permanently. A lagging same-major floor is
+correct: `^2.0.1` is satisfied by a `@takazudo/zudo-doc@2.1.0` install.
+
+**Do not chase the advisory — the loop does not converge.** Raising the floor to
+match the just-published version clears the note, but the *next* release moves the
+version past it again and the note returns. That is structural, not drift: the
+floor can only ever name an already-published version, so it trails the in-flight
+one by exactly one release forever. (Learned the hard way in 5.1.1, which exists
+mostly because the 5.1.0 advisory was mistaken for a chore.)
+
+Raise the floor only when there is a real reason — a genuine minimum-version
+requirement, or approaching cross-major staleness. The check errors on its own
+when the floor stops including the root version; until it does, no action.
 
 The pin-parity guard (`scripts/check-pin-parity.mjs`) enforces this with
 **satisfies-semantics** for the lockstep peer: it fails only when the floor would
@@ -171,10 +180,9 @@ went stale. Two things it knows that a generic dependency bumper does not:
   literal pin strings emitted into the *generated downstream* `package.json`, so a
   tool that only rewrites `package.json` files leaves it behind. The parity check
   fails loudly when it does — fix `scaffold.ts` to match and re-run.
-- **The first-party peer floor is bumped here, not during a release** — see
-  "First-party peer floor (publish-lag)" above. Once the lockstep version is on
-  npm, raise `packages/zudo-doc` `peerDependencies["@takazudo/zudo-doc-history-server"]`
-  to `^<version>`; until then the check's non-fatal advisory is expected.
+- **Leave the first-party peer floor alone** unless the check actually errors —
+  see "First-party peer floor (publish-lag)" above. Its trailing-by-one advisory
+  is the normal steady state, not a chore.
 
 Resolve targets from the **`latest`** dist-tag, never `next` — the two have
 permanently diverged since zfb 1.0.0, and `next` is frozen on an old prerelease, so

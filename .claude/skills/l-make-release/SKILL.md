@@ -220,12 +220,14 @@ Fix any failures and recommit before proceeding. Do not tag until b4push is full
 > an **already-published** version (the showcase resolves the peer from the npm
 > registry under `--frozen-lockfile`), so raising it to the in-flight release
 > version makes the lockfile unresolvable and deadlocks CI **and** the publish
-> workflows. The floor lags by design and is adopted *after* publish, in the
-> toolchain-bump cycle (RELEASE.md → "Bumping the toolchain"). The pin-parity
-> guard uses satisfies-semantics for this peer, so a
+> workflows. The floor lags **permanently and by design** — it can only name an
+> already-published version, so it trails the in-flight one by one release
+> forever. The pin-parity guard uses satisfies-semantics for this peer, so a
 > same-major lag (e.g. floor `^2.0.1` at release `2.1.0`) **passes** and only emits
-> a non-fatal advisory — do not "fix" that advisory by editing the floor here. See
-> RELEASE.md → "First-party peer floor (publish-lag)".
+> a non-fatal advisory. Do not "fix" that advisory — not here, and not after
+> publishing either: raising the floor just moves the lag to the next release and
+> earns a pointless patch release. See RELEASE.md → "First-party peer floor
+> (publish-lag)".
 
 ## Step 5 — Commit
 
