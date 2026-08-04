@@ -220,4 +220,79 @@ test.describe("Code blocks: copy and wrap buttons", () => {
 
     await expect(wrapBtn).toHaveAttribute("aria-pressed", "false");
   });
+
+  test("wrap preference survives a reload and applies page-wide", async ({
+    page,
+  }) => {
+    await page.goto(PAGE, { waitUntil: "load" });
+
+    // The "Long Code Block" fixture is the only one wide enough to overflow,
+    // so it is the only one that offers the toggle (see updateWrapVisibility).
+    const longPre = page
+      .locator("main pre.hi-root", { hasText: "longVariable" })
+      .first();
+    const shortPre = page
+      .locator("main pre.hi-root", { hasText: "const x = 1;" })
+      .first();
+
+    const wrapBtn = longPre
+      .locator("xpath=..")
+      .locator('button[aria-label="Toggle word wrap"]');
+    await wrapBtn.waitFor({ state: "attached", timeout: 10_000 });
+
+    // .code-buttons is opacity:0 until the wrapper is hovered — same gate the
+    // copy-button test documents above.
+    await wrapBtn.scrollIntoViewIfNeeded();
+    await wrapBtn.hover();
+    await expect(wrapBtn).toBeVisible({ timeout: 3000 });
+    await wrapBtn.click();
+
+    // Wrap is page-wide: the short block wraps too, even though it never
+    // offers a button of its own.
+    await expect(longPre).toHaveClass(/\bword-wrap\b/);
+    await expect(shortPre).toHaveClass(/\bword-wrap\b/);
+    await expect(wrapBtn).toHaveAttribute("aria-pressed", "true");
+
+    await page.reload({ waitUntil: "load" });
+
+    const restoredBtn = longPre
+      .locator("xpath=..")
+      .locator('button[aria-label="Toggle word wrap"]');
+    await restoredBtn.waitFor({ state: "attached", timeout: 10_000 });
+
+    await expect(longPre).toHaveClass(/\bword-wrap\b/);
+    await expect(shortPre).toHaveClass(/\bword-wrap\b/);
+    await expect(restoredBtn).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("wrap toggle stays hidden on a block that never overflows", async ({
+    page,
+  }) => {
+    await page.goto(PAGE, { waitUntil: "load" });
+
+    const longPre = page
+      .locator("main pre.hi-root", { hasText: "longVariable" })
+      .first();
+    const shortWrapBtn = page
+      .locator("main pre.hi-root", { hasText: "const x = 1;" })
+      .first()
+      .locator("xpath=..")
+      .locator('button[aria-label="Toggle word wrap"]');
+
+    await shortWrapBtn.waitFor({ state: "attached", timeout: 10_000 });
+    await expect(shortWrapBtn).toBeHidden();
+
+    // Turning wrap on stops every block from overflowing. Without the cached
+    // unwrapped measurement, that would reveal a wrap button on short blocks
+    // that never needed one.
+    const wrapBtn = longPre
+      .locator("xpath=..")
+      .locator('button[aria-label="Toggle word wrap"]');
+    await wrapBtn.scrollIntoViewIfNeeded();
+    await wrapBtn.hover();
+    await wrapBtn.click();
+
+    await expect(longPre).toHaveClass(/\bword-wrap\b/);
+    await expect(shortWrapBtn).toBeHidden();
+  });
 });

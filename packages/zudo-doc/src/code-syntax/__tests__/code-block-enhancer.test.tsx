@@ -7,6 +7,7 @@ import { CodeBlockEnhancer } from "../code-block-enhancer.js";
 import {
   CODE_BLOCK_ENHANCER_SCRIPT,
   CODE_BLOCK_ENHANCER_SELECTOR,
+  CODE_WRAP_STORAGE_KEY,
   HIGHLIGHTED_CODE_BLOCK_SELECTOR,
 } from "../code-block-enhancer-script.js";
 import {
@@ -87,5 +88,17 @@ describe("CODE_BLOCK_ENHANCER_SCRIPT", () => {
 
   it("uses ResizeObserver for overflow detection", () => {
     expect(CODE_BLOCK_ENHANCER_SCRIPT).toContain("ResizeObserver");
+  });
+
+  it("persists the wrap preference under the session-scoped key", () => {
+    // Behaviour is covered in code-block-wrap-persistence.test.ts; this
+    // pins the storage key itself, which is the compatibility surface —
+    // renaming it silently drops every user's remembered preference.
+    expect(CODE_WRAP_STORAGE_KEY).toBe("zudo-doc-code-wrap");
+    expect(CODE_BLOCK_ENHANCER_SCRIPT).toContain(
+      JSON.stringify(CODE_WRAP_STORAGE_KEY),
+    );
+    expect(CODE_BLOCK_ENHANCER_SCRIPT).toContain("sessionStorage");
+    expect(CODE_BLOCK_ENHANCER_SCRIPT).not.toContain("localStorage");
   });
 });

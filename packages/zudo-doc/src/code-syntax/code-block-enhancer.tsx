@@ -25,6 +25,8 @@ import { CODE_BLOCK_ENHANCER_SCRIPT } from "./code-block-enhancer-script.js";
  * - Wraps each highlighted `<pre>` (`.hi-root`) and raw tab-panel fallback in
  *   a `.code-block-wrapper` container.
  * - Adds a copy-to-clipboard button and a word-wrap toggle button.
+ * - Treats word wrap as a page-wide preference persisted in `sessionStorage`
+ *   under `CODE_WRAP_STORAGE_KEY`, restored on load and after SPA navigation.
  * - Observes resize events to hide the wrap button when content fits.
  * - Handles before-navigate cleanup and after-navigate re-init for View
  *   Transitions. Event names come from `BEFORE_NAVIGATE_EVENT` /
