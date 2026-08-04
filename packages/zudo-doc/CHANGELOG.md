@@ -4,6 +4,13 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.1.1] - 2026-08-05
+
+### Other Changes
+
+- Adopt the `^5.1.0` floor for the `@takazudo/zudo-doc-history-server` peer dependency, now that 5.1.0 is published. This floor lags a release by design: the showcase resolves the peer from the npm registry under `--frozen-lockfile`, so it can only ever name an already-published version — pointing it at an in-flight release would make the lockfile unresolvable and deadlock both CI and the publish workflows. It is therefore adopted after the fact rather than during the release (d53bd11)
+- Retire the `l-bump-deps` maintainer skill and fold what it knew into `RELEASE.md`. It carried a hand-written six-entry pin map that had drifted from the code: it still described zfb as "stable 1.x" (the project is on 2.1.0), and two of the six locations it listed now derive their expected versions from the root `package.json` rather than hardcoding them, so they needed no manual edit at all. `check:pin-parity` already enforces every pin location authoritatively, so the runbook now describes the cycle as "bump, then run the check and fix what it names" — a form that cannot rot the same way (a1d8c96)
+
 ## [5.1.0] - 2026-08-05
 
 ### Features
