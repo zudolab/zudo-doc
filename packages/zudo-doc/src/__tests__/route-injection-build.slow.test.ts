@@ -712,6 +712,98 @@ function readIslandsBundles(dir: string): string {
     .join("\n");
 }
 
+// ---------------------------------------------------------------------------
+// Islands STATIC-import-graph helpers (#3283) — used by the DTP laziness
+// assertions below to prove the zdtp payload actually left the eager graph,
+// not just that SOME emitted file happens to avoid a direct regex match. A
+// single regex on the entry file alone would miss static reachability
+// through an INTERMEDIATE chunk (entry statically imports chunk A, chunk A
+// statically imports the marker chunk) — these helpers traverse the real
+// import graph across every emitted `islands*.js` file instead.
+// ---------------------------------------------------------------------------
+
+/** Filenames of every emitted islands JS file (entry + chunks) — same filter
+ *  `readIslandsBundles` uses, kept in sync so both see the same file set. */
+function readIslandsFileNames(dir: string): string[] {
+  const assetsDir = join(dir, "dist", "assets");
+  return readdirSync(assetsDir).filter((f) => /^islands.*\.js$/.test(f));
+}
+
+/** Adjacency maps (bare filename -> Set<bare filename>) over the emitted
+ *  islands*.js chunk graph, split by import SHAPE:
+ *
+ *  - `static`: `import{...}from"./islands-chunk-X.js"`, a bare side-effect
+ *    `import"./islands-chunk-X.js"`, or `export{...}from"./islands-chunk-X.js"`
+ *    — anything the module graph pulls in as soon as the referencing chunk
+ *    itself loads.
+ *  - `dynamic`: `import("./islands-chunk-X.js")` — a call expression,
+ *    evaluated only when reached at runtime. This is the lazy-load boundary.
+ *
+ *  Regex-based (not an AST parse) and deliberately tolerant of exact
+ *  minified shapes — it only cares about these two import forms, not any
+ *  particular bundler's naming/hashing scheme. */
+function buildIslandsImportGraph(dir: string): {
+  static: Map<string, Set<string>>;
+  dynamic: Map<string, Set<string>>;
+} {
+  const assetsDir = join(dir, "dist", "assets");
+  const staticEdges = new Map<string, Set<string>>();
+  const dynamicEdges = new Map<string, Set<string>>();
+  for (const file of readIslandsFileNames(dir)) {
+    const content = readFileSync(join(assetsDir, file), "utf-8");
+    const dynamics = new Set<string>();
+    for (const m of content.matchAll(/import\(\s*["'](\.\/islands[^"']*\.js)["']\s*\)/g)) {
+      dynamics.add(m[1].replace(/^\.\//, ""));
+    }
+    const statics = new Set<string>();
+    for (const m of content.matchAll(/\bimport\s*["'](\.\/islands[^"']*\.js)["']/g)) {
+      statics.add(m[1].replace(/^\.\//, ""));
+    }
+    for (const m of content.matchAll(/\bfrom\s*["'](\.\/islands[^"']*\.js)["']/g)) {
+      statics.add(m[1].replace(/^\.\//, ""));
+    }
+    staticEdges.set(file, statics);
+    dynamicEdges.set(file, dynamics);
+  }
+  return { static: staticEdges, dynamic: dynamicEdges };
+}
+
+/** BFS closure over a single edge map, starting from (and including) `entry`. */
+function closureOver(entry: string, edges: Map<string, Set<string>>): Set<string> {
+  const seen = new Set<string>([entry]);
+  const queue = [entry];
+  while (queue.length > 0) {
+    const cur = queue.shift() as string;
+    for (const next of edges.get(cur) ?? []) {
+      if (!seen.has(next)) {
+        seen.add(next);
+        queue.push(next);
+      }
+    }
+  }
+  return seen;
+}
+
+/** The islands*.js ENTRY filename — the one emitted file that is not itself
+ *  a `-chunk-` split (zfb emits exactly one entry per build). */
+function findIslandsEntry(dir: string): string {
+  const entry = readIslandsFileNames(dir).find((f) => !/^islands-chunk-/.test(f));
+  if (entry === undefined) {
+    throw new Error(`No islands entry file found under ${join(dir, "dist/assets")}`);
+  }
+  return entry;
+}
+
+/** The filename of the first islands*.js file whose source contains `marker`
+ *  as a literal substring (not an import-specifier match — this locates
+ *  WHICH chunk carries the payload, independent of the graph helpers above). */
+function findIslandsFileContaining(dir: string, marker: string): string | undefined {
+  const assetsDir = join(dir, "dist", "assets");
+  return readIslandsFileNames(dir).find((f) =>
+    readFileSync(join(assetsDir, f), "utf-8").includes(marker),
+  );
+}
+
 describe("DH doc-history: injected doc route registers the DocHistory island (packageOwnedRoutes + docHistory)", () => {
   let fixtureDir: string;
   let buildOutput: string;
@@ -975,15 +1067,30 @@ describe("CB chrome-bindings directory: build fails loudly when chromeBindingsMo
 //   4. designTokenPanel: false → no island marker reaches the SSR HTML (HARD
 //      GATE #3). NOTE: like the pre-existing aiAssistant/imageEnlarge gating
 //      (see `doc-body-end-islands/index.tsx`'s "KNOWN CAVEAT" comment), the
-//      island's CODE may still be present in the emitted JS bundle even when
-//      its marker/render is gated off — zfb's scanner walks the STATIC
-//      "use client" import chain (`_chrome.tsx` always imports
-//      `DesignTokenPanelBootstrap` so it can thread it into `createChrome`),
-//      and bundle-stripping a statically-imported-but-conditionally-rendered
-//      island is explicitly out of scope for that established pattern. This
-//      case therefore asserts the SSR-HTML-page-level guarantee only (no
-//      marker, no toggle-shim script), matching the existing OFF-case
-//      assertions in `doc-body-end-islands/__tests__/body-end-islands.test.tsx`.
+//      island's SHELL CODE (`DesignTokenPanelBootstrap` itself) may still be
+//      present in the emitted JS bundle even when its marker/render is gated
+//      off — zfb's scanner walks the STATIC "use client" import chain
+//      (`_chrome.tsx` always imports `DesignTokenPanelBootstrap` so it can
+//      thread it into `createChrome`), and bundle-stripping a
+//      statically-imported-but-conditionally-rendered island is explicitly
+//      out of scope for that established pattern. This case therefore
+//      asserts the SSR-HTML-page-level guarantee only (no marker, no
+//      toggle-shim script), matching the existing OFF-case assertions in
+//      `doc-body-end-islands/__tests__/body-end-islands.test.tsx`.
+//
+//      This caveat is narrower than it used to be: since the #3282 lazy-load
+//      (epic #3261), `DesignTokenPanelBootstrap`'s SHELL always being present
+//      no longer drags the zdtp PAYLOAD along with it — the shell carries no
+//      top-level value import of `@takazudo/zdtp`, only a runtime
+//      `import("@takazudo/zdtp")` reached on the first toggle or a
+//      persisted-state probe hit. So the "still present" caveat above applies
+//      only to the small shell, never to zdtp's own bytes, REGARDLESS of the
+//      designTokenPanel flag. The "laziness" assertions in the
+//      "DTP design-token-panel" describe block above prove this directly by
+//      traversing the emitted islands*.js STATIC import graph: the chunk
+//      carrying zdtp's `tokenpanel-shell` marker is unreachable from the
+//      entry via static edges alone, and only reachable by crossing a
+//      dynamic `import()` edge.
 // ---------------------------------------------------------------------------
 
 /** Flip `designTokenPanel` ON in a fixture's settings.ts (it ships OFF). */
@@ -1050,6 +1157,51 @@ describe("DTP design-token-panel: injected doc route registers the DesignTokenPa
 
   it("package-default builder: the bundle carries the unchanged storagePrefix 'zudo-doc-tweak' (HARD GATE #4)", () => {
     expect(readIslandsBundles(fixtureDir)).toContain("zudo-doc-tweak");
+  });
+
+  // ---------------------------------------------------------------------------
+  // Laziness proof (#3283, verification half of the zdtp lazy-load epic
+  // #3261/#3282). The bundle-registration test above proves
+  // DesignTokenPanelBootstrap's marker/registry survive chunk splitting —
+  // this pair proves the zdtp PAYLOAD ITSELF is not in the eagerly-loaded
+  // static graph, while still being reachable once a dynamic import() edge
+  // is crossed (i.e. it is genuinely deferred, not simply absent).
+  // ---------------------------------------------------------------------------
+
+  it("laziness: the zdtp payload chunk is absent from the entry's STATIC import closure", () => {
+    const markerFile = findIslandsFileContaining(fixtureDir, "tokenpanel-shell");
+    // Sanity: the marker string must actually be emitted somewhere, or the
+    // two assertions below would vacuously pass on a typo'd marker.
+    expect(markerFile).toBeDefined();
+
+    const graph = buildIslandsImportGraph(fixtureDir);
+    const entry = findIslandsEntry(fixtureDir);
+    const staticClosure = closureOver(entry, graph.static);
+    // A direct regex on the entry file alone would miss reachability through
+    // an intermediate chunk — traverse the whole static closure instead.
+    expect(staticClosure.has(markerFile as string)).toBe(false);
+  });
+
+  it("laziness: a DYNAMIC import() edge reaches the zdtp payload chunk (the lazy-load path is real, not just absent)", () => {
+    const markerFile = findIslandsFileContaining(fixtureDir, "tokenpanel-shell");
+    expect(markerFile).toBeDefined();
+
+    const graph = buildIslandsImportGraph(fixtureDir);
+    const entry = findIslandsEntry(fixtureDir);
+    const staticClosure = closureOver(entry, graph.static);
+    // Every chunk dynamically import()ed from anywhere in the eagerly-loaded
+    // graph is a lazy-load boundary candidate. From each candidate, follow
+    // its OWN static closure — the chunks IT pulls in once it loads — to
+    // confirm the marker chunk sits behind one of these boundaries.
+    const dynamicTargets = new Set<string>();
+    for (const file of staticClosure) {
+      for (const target of graph.dynamic.get(file) ?? []) dynamicTargets.add(target);
+    }
+    expect(dynamicTargets.size).toBeGreaterThan(0);
+    const reachableViaDynamicHop = [...dynamicTargets].some((target) =>
+      closureOver(target, graph.static).has(markerFile as string),
+    );
+    expect(reachableViaDynamicHop).toBe(true);
   });
 });
 

@@ -47,7 +47,19 @@ const ALLOWED_UNCONDITIONAL_OPTIONAL_PEERS = new Set([
   "diff",
   // #2668 — `chrome/derive`'s `deriveBodyEndIslands` statically imports the real
   // `DesignTokenPanelBootstrap` (so the island auto-mounts with zero host
-  // wiring); only RENDERING is gated on `designTokenPanel`, not the import.
+  // wiring); RENDERING is gated on `designTokenPanel`, but the SHELL always
+  // reaches the graph regardless of the flag.
+  //
+  // Since #3282 (epic #3261) the shell carries no top-level VALUE import of
+  // `@takazudo/zdtp` — only a runtime `import("@takazudo/zdtp")` inside
+  // `loadZdtp()`, reached on the first toggle or a persisted-state probe hit.
+  // Still allowlisted because esbuild resolves DYNAMIC `import()` specifiers
+  // at build time same as static ones — this guard's `onResolve` hook sees
+  // both kinds — so the dynamic call still reaches the graph even though
+  // zdtp's actual bytes stay out of the eager bundle (proved by the
+  // static-import-graph laziness assertions in
+  // route-injection-build.slow.test.ts). `diff` above is precedent for a
+  // dynamically-imported-only optional peer staying allowlisted.
   "@takazudo/zdtp",
   // Reached via `mdx-components → math-block`. Math rendering is settings-gated
   // but the import is static.
