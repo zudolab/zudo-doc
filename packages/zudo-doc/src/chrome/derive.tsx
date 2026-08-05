@@ -57,7 +57,13 @@ import { createDesignTokenPanelIsland } from "../doc-body-end-islands/design-tok
 // This same static import also makes `@takazudo/zdtp` an unconditional
 // build-time dependency of every `createChrome` consumer — accepted,
 // permanent contract per #2668; see the "@takazudo/zdtp dep implication"
-// note in docs/adr/route-injection-seam.md.
+// note in docs/adr/route-injection-seam.md. NOTE: this import is of the
+// BOOTSTRAP component only — since #3282 that component no longer imports
+// `@takazudo/zdtp` eagerly itself; it `import()`s zdtp lazily on the first
+// toggle (or eagerly, pre-click, via a mount-time persisted-state probe).
+// The build-time-resolvable contract above is unaffected: the bundler still
+// needs `@takazudo/zdtp` present in node_modules to build that dynamic
+// import's chunk, regardless of when the browser actually fetches it.
 import { DesignTokenPanelBootstrap } from "../design-token-panel-bootstrap.js";
 // Island-scanner contract (#2821, ADR theme-packs.md Decision 7): the
 // theme-pack switcher flyout island is injected into the body-end islands the
