@@ -14,15 +14,18 @@
 //   gen-z-index --check                       # verify committed block is up to date (exit 1 on drift)
 //   gen-z-index --tokens <path> --css <path>  # use non-conventional source/destination paths
 //   gen-z-index --no-theme-wrapper            # emit bare --z-index-<name> declarations, no @theme wrapper
+//   gen-z-index --md-table <path>             # also generate/verify a Z_INDEX_TABLE region in a
+//                                              # markdown/MDX file (opt-in, no conventional default path)
 //
-// MUST be run with the project root as cwd — it resolves --tokens/--css (or
-// their conventional defaults) against process.cwd(), NOT against this file's
-// location. A consuming project's own package.json scripts (e.g.
-// gen:z-index / check:z-index) are responsible for invoking it from the
-// project root. This generator is opt-in per project — a project only needs
-// it when overriding one of the default tiers shipped unconditionally by
-// @takazudo/zudo-doc/theme.css — and it is not wired into this repo's own
-// b4push or CI; that integration was retired in zudolab/zudo-doc#2661.
+// MUST be run with the project root as cwd — it resolves --tokens/--css/
+// --md-table (or their conventional defaults) against process.cwd(), NOT
+// against this file's location. A consuming project's own package.json
+// scripts (e.g. gen:z-index / check:z-index) are responsible for invoking it
+// from the project root. This generator is opt-in per project — a project
+// only needs it when overriding one of the default tiers shipped
+// unconditionally by @takazudo/zudo-doc/theme.css — and it is not wired into
+// this repo's own b4push or CI; that integration was retired in
+// zudolab/zudo-doc#2661.
 //
 // The block is a Tailwind v4 `@theme { --z-index-<name>: <value>; }` for every
 // tier, so Tailwind generates `z-<name>` utilities and raw CSS can reference
@@ -30,13 +33,23 @@
 // wrapper and emits bare `--z-index-<name>: <value>;` declarations instead,
 // for projects that want to compose the block into their own `@theme` block.
 //
+// `--md-table <path>` additionally generates/verifies a second, independent
+// `GENERATED:Z_INDEX_TABLE` region — a `| Token | Kind | Role |` table, one
+// row per tier — inside a markdown/MDX file at <path>. It uses the MDX-safe
+// brace-comment marker form `{/* GENERATED:Z_INDEX_TABLE_BEGIN/END */}`
+// rather than an HTML `<!-- -->` comment, because an HTML comment is a parse
+// error in MDX. `--check` verifies BOTH regions when --md-table is given;
+// drift in either exits 1. Like the CSS block, the md-table region must be
+// seeded once by hand (just the marker pair) before the generator can find
+// it to replace.
+//
 // Pure Node (fs only — NO npm deps, no minimist). Idempotent: running twice
 // produces no diff.
 //
 // MAINTENANCE: edit src/config/z-index-tokens.ts (the source of truth), then
-// run `pnpm gen:z-index` (or the equivalent --tokens/--css invocation) and
-// commit the regenerated CSS. Never hand-edit the block between the
-// BEGIN/END markers.
+// run `pnpm gen:z-index` (or the equivalent --tokens/--css/--md-table
+// invocation) and commit the regenerated CSS (and md table, if used). Never
+// hand-edit either block between its BEGIN/END markers.
 
 import { readFileSync, writeFileSync, realpathSync } from "node:fs";
 import { resolve } from "node:path";
@@ -45,17 +58,26 @@ import { fileURLToPath } from "node:url";
 const BEGIN_MARKER = "GENERATED:Z_INDEX_BEGIN";
 const END_MARKER = "GENERATED:Z_INDEX_END";
 
+// MDX-safe markers for the optional --md-table region. An HTML `<!-- -->`
+// comment is a parse error in MDX, which is the entire reason this region
+// uses the brace-comment form instead — both markers are the literal,
+// complete text that must appear (on their own line) in the seeded file.
+const MD_TABLE_BEGIN_MARKER = "{/* GENERATED:Z_INDEX_TABLE_BEGIN */}";
+const MD_TABLE_END_MARKER = "{/* GENERATED:Z_INDEX_TABLE_END */}";
+
 // Conventional paths, relative to the project root (process.cwd()). Used as
 // the default --tokens/--css values AND as the literal text shown in the
 // generated header / log messages when no override is given — this is what
 // keeps the default invocation's output byte-identical to pre-flag output.
+// --md-table has NO conventional default: it's an opt-in region and there's
+// no natural project-wide path to assume, so it stays undefined unless given.
 const DEFAULT_TOKENS_PATH = "src/config/z-index-tokens.ts";
 const DEFAULT_CSS_PATH = "src/styles/global.css";
 
 const TIER_NAME_RE = /^[a-z0-9-]+$/;
 
 const FLAG_USAGE =
-  "Supported flags: --check, --tokens <path>, --css <path>, --no-theme-wrapper.";
+  "Supported flags: --check, --tokens <path>, --css <path>, --md-table <path>, --no-theme-wrapper.";
 
 /**
  * Hand-rolled argv parser (no minimist — this bin stays dependency-free).
@@ -64,8 +86,10 @@ const FLAG_USAGE =
  * boolean flag (`--no-theme-wrapper=x`) are all hard errors — this bin does
  * not silently ignore or guess at malformed invocations.
  *
- * Returns `{ check, tokens, css, noThemeWrapper }`; `tokens`/`css` are
- * `undefined` when not passed (callers apply the conventional defaults).
+ * Returns `{ check, tokens, css, mdTable, noThemeWrapper }`; `tokens`/`css`/
+ * `mdTable` are `undefined` when not passed (callers apply the conventional
+ * defaults — `mdTable` has none, so it stays undefined and the md-table
+ * region is skipped entirely).
  *
  * Exported for unit testing.
  */
@@ -74,6 +98,7 @@ export function parseArgs(argv) {
     check: false,
     tokens: undefined,
     css: undefined,
+    mdTable: undefined,
     noThemeWrapper: false,
   };
   const seen = new Set();
@@ -85,7 +110,7 @@ export function parseArgs(argv) {
     const inlineValue = eqIdx === -1 ? undefined : raw.slice(eqIdx + 1);
 
     const isBoolean = flag === "--check" || flag === "--no-theme-wrapper";
-    const isValueFlag = flag === "--tokens" || flag === "--css";
+    const isValueFlag = flag === "--tokens" || flag === "--css" || flag === "--md-table";
 
     if (!isBoolean && !isValueFlag) {
       throw new Error(`Unknown flag "${raw}". ${FLAG_USAGE}`);
@@ -106,9 +131,10 @@ export function parseArgs(argv) {
       continue;
     }
 
-    // Value flag (--tokens / --css): accept an inline `=value`, otherwise
-    // consume the next argv token. A missing/empty value or a next token
-    // that looks like another flag is a hard error, not a silent default.
+    // Value flag (--tokens / --css / --md-table): accept an inline `=value`,
+    // otherwise consume the next argv token. A missing/empty value or a next
+    // token that looks like another flag is a hard error, not a silent
+    // default.
     let value = inlineValue;
     if (value === undefined) {
       const next = argv[i + 1];
@@ -123,6 +149,7 @@ export function parseArgs(argv) {
     }
     if (flag === "--tokens") result.tokens = value;
     if (flag === "--css") result.css = value;
+    if (flag === "--md-table") result.mdTable = value;
   }
 
   return result;
@@ -322,18 +349,23 @@ function shellQuote(value) {
  * `gen-z-index` — is used because a project customizing --tokens/--css has
  * no guarantee it also defined a package.json script alias for that exact
  * invocation; `pnpm exec` resolves the package-local bin regardless.
+ *
+ * `mdTablePath` has no conventional default (undefined = --md-table wasn't
+ * given), so its mere presence always disqualifies the byte-identity case.
  */
-function buildRerunCommand({ tokensPath, cssPath, themeWrapper }) {
+function buildRerunCommand({ tokensPath, cssPath, themeWrapper, mdTablePath }) {
   const isDefault =
     tokensPath === DEFAULT_TOKENS_PATH &&
     cssPath === DEFAULT_CSS_PATH &&
-    themeWrapper === true;
+    themeWrapper === true &&
+    mdTablePath === undefined;
   if (isDefault) return "pnpm gen:z-index";
 
   const parts = ["pnpm exec gen-z-index"];
   if (tokensPath !== DEFAULT_TOKENS_PATH) parts.push(`--tokens ${shellQuote(tokensPath)}`);
   if (cssPath !== DEFAULT_CSS_PATH) parts.push(`--css ${shellQuote(cssPath)}`);
   if (!themeWrapper) parts.push("--no-theme-wrapper");
+  if (mdTablePath !== undefined) parts.push(`--md-table ${shellQuote(mdTablePath)}`);
   return parts.join(" ");
 }
 
@@ -352,6 +384,14 @@ function buildRerunCommand({ tokensPath, cssPath, themeWrapper }) {
  * `@theme { ... }` block; `false` (the `--no-theme-wrapper` CLI flag) emits
  * bare `--z-index-<name>: <value>;` declarations at 2-space indent instead,
  * for projects composing the block into their own `@theme` block.
+ *
+ * Deliberately does NOT accept `mdTablePath`: the CSS block's own content
+ * must depend only on the CSS-region flags (--tokens/--css/--no-theme-
+ * wrapper), never on whether --md-table happens to be passed in a given
+ * invocation — otherwise adding/dropping --md-table would flip the embedded
+ * rerun-guidance text and manufacture CSS-region drift unrelated to any
+ * actual tier change. `main()`'s own drift/error messages use
+ * `buildRerunCommand` directly (with `mdTablePath`) for that guidance instead.
  *
  * Exported for unit testing.
  */
@@ -386,7 +426,18 @@ export function buildBlock(tiers, options = {}) {
   return lines.join("\n");
 }
 
-/** Counts non-overlapping occurrences of `marker` in `str`. */
+/**
+ * Counts non-overlapping occurrences of `marker` in `str`. This is a plain
+ * substring count, not a "stand-alone marker line" match — a known,
+ * pre-existing tradeoff inherited from the CSS `@theme` region (whose BEGIN/
+ * END text is embedded mid-comment-line, e.g. `  /* GENERATED:Z_INDEX_BEGIN`,
+ * so a stricter "must be the whole line" rule would break it). This means a
+ * doc page that quotes the literal `--md-table` marker text in prose or a
+ * fenced code example (e.g. to explain the generator) is misread as a real
+ * duplicate marker. The failure mode is loud (a clear "duplicate markers"
+ * error), not silent corruption, so this is accepted rather than adding
+ * markdown-aware parsing to a dependency-free bin.
+ */
 function countOccurrences(str, marker) {
   let count = 0;
   let idx = str.indexOf(marker);
@@ -398,59 +449,145 @@ function countOccurrences(str, marker) {
 }
 
 /**
- * Replace the existing BEGIN…END block in `css` with `block`. Requires
+ * Replace the existing BEGIN…END block in `source` with `block`. Requires
  * EXACTLY one BEGIN and one END marker, with BEGIN preceding END — throws a
  * clear, distinct error for each failure mode: missing (the block must be
- * seeded once by hand), duplicated, or inverted markers. `cssPath` is used
+ * seeded once by hand), duplicated, or inverted markers.
+ *
+ * `beginMarker`/`endMarker` default to the CSS `@theme` block's markers so
+ * existing call sites (the CSS region) are unaffected; the `--md-table`
+ * region passes `MD_TABLE_BEGIN_MARKER`/`MD_TABLE_END_MARKER` instead — same
+ * function, parameterized, mirroring how gen-component-tokens.mjs reuses one
+ * `replaceBlock` across its content/chrome surfaces. `filePath` is used
  * purely for error-message context (pass the conventional default or an
- * explicit --css value).
+ * explicit --css/--md-table value).
  *
  * Exported for unit testing.
  */
-export function replaceBlock(css, block, cssPath = DEFAULT_CSS_PATH) {
-  const beginCount = countOccurrences(css, BEGIN_MARKER);
-  const endCount = countOccurrences(css, END_MARKER);
+export function replaceBlock(
+  source,
+  block,
+  beginMarker = BEGIN_MARKER,
+  endMarker = END_MARKER,
+  filePath = DEFAULT_CSS_PATH,
+) {
+  const beginCount = countOccurrences(source, beginMarker);
+  const endCount = countOccurrences(source, endMarker);
 
   if (beginCount === 0 || endCount === 0) {
     throw new Error(
-      `Could not find ${BEGIN_MARKER} … ${END_MARKER} markers in ${cssPath}.\n` +
+      `Could not find ${beginMarker} … ${endMarker} markers in ${filePath}.\n` +
         `Seed the marker block once by hand, then re-run the generator.`,
     );
   }
   if (beginCount > 1 || endCount > 1) {
     throw new Error(
-      `Found duplicate GENERATED:Z_INDEX markers in ${cssPath} (${beginCount} BEGIN, ` +
-        `${endCount} END; expected exactly one of each). Remove the extra marker(s) by ` +
-        `hand, then re-run the generator.`,
+      `Found duplicate markers in ${filePath} (${beginCount} BEGIN "${beginMarker}", ` +
+        `${endCount} END "${endMarker}"; expected exactly one of each). Remove the extra ` +
+        `marker(s) by hand, then re-run the generator.`,
     );
   }
 
-  const beginIdx = css.indexOf(BEGIN_MARKER);
-  const endIdx = css.indexOf(END_MARKER);
+  const beginIdx = source.indexOf(beginMarker);
+  const endIdx = source.indexOf(endMarker);
   if (beginIdx > endIdx) {
     throw new Error(
-      `GENERATED:Z_INDEX markers in ${cssPath} are inverted — the END marker appears ` +
-        `before the BEGIN marker. Fix the marker order by hand, then re-run the generator.`,
+      `Markers in ${filePath} are inverted — the END marker (${endMarker}) appears before ` +
+        `the BEGIN marker (${beginMarker}). Fix the marker order by hand, then re-run the ` +
+        `generator.`,
     );
   }
 
-  // Expand to the full comment line that opens the block ("  /* GENERATED:...")
-  // and to the end of the closing "*/ " line so the whole region is replaced.
-  const lineStart = css.lastIndexOf("\n", beginIdx) + 1;
-  const afterEnd = css.indexOf("\n", endIdx);
-  const lineEnd = afterEnd === -1 ? css.length : afterEnd;
-  return css.slice(0, lineStart) + block + css.slice(lineEnd);
+  // Expand to the full line that opens the block and to the end of the line
+  // that closes it, so the whole region (CSS comment or MDX brace-comment) is
+  // replaced.
+  const lineStart = source.lastIndexOf("\n", beginIdx) + 1;
+  const afterEnd = source.indexOf("\n", endIdx);
+  const lineEnd = afterEnd === -1 ? source.length : afterEnd;
+  return source.slice(0, lineStart) + block + source.slice(lineEnd);
+}
+
+/**
+ * Collapses whitespace runs — including an embedded literal newline from a
+ * multi-line `purpose:` source string (the source grammar permits a raw
+ * newline between the opening/closing quotes; only braces/backslashes/
+ * escaped quotes are rejected, see `assertSupportedPurposeGrammar`) — into a
+ * single space, and trims the result. A markdown/GFM table cell cannot
+ * contain a raw newline without corrupting the row.
+ */
+function collapseWhitespace(str) {
+  return str.replace(/\s+/g, " ").trim();
+}
+
+/** Escapes a literal `|` so it can't be misread as a table-cell boundary. */
+function escapeTableCell(str) {
+  return str.replace(/\|/g, "\\|");
+}
+
+/**
+ * Build the full `--md-table` region (markers included): a GFM
+ * `| Token | Kind | Role |` table, one row per tier, in source order.
+ *   - Token: the tier name.
+ *   - Kind: the tier's optional `kind` field, or `-` when absent.
+ *   - Role: the tier's optional `purpose` field with internal whitespace/
+ *     newlines collapsed to single spaces, or `-` when absent/empty.
+ * `|` in any cell is escaped so a stray pipe in a purpose string can't
+ * corrupt the table structure.
+ *
+ * `options.tokensPath` feeds the "do not hand-edit" note beneath the BEGIN
+ * marker (same default/meaning as `buildBlock`'s `tokensPath`).
+ * `options.beginMarker`/`options.endMarker` default to the MDX-safe
+ * `MD_TABLE_BEGIN_MARKER`/`MD_TABLE_END_MARKER` pair — overridable for tests,
+ * same convention as `replaceBlock`.
+ *
+ * Exported for unit testing.
+ */
+export function buildMdTable(tiers, options = {}) {
+  const {
+    tokensPath = DEFAULT_TOKENS_PATH,
+    beginMarker = MD_TABLE_BEGIN_MARKER,
+    endMarker = MD_TABLE_END_MARKER,
+  } = options;
+
+  const lines = [];
+  lines.push(beginMarker);
+  lines.push("");
+  lines.push(
+    `_Generated by \`gen-z-index --md-table\`; do not hand-edit — edit \`${tokensPath}\` instead._`,
+  );
+  lines.push("");
+  lines.push("| Token | Kind | Role |");
+  lines.push("| --- | --- | --- |");
+  for (const tier of tiers) {
+    const token = escapeTableCell(tier.name);
+    const kind = escapeTableCell(tier.kind ?? "-");
+    // Collapse first, THEN decide the fallback — a whitespace-only purpose
+    // (e.g. "   ") is truthy but collapses to "", which must still fall back
+    // to "-" rather than emit a blank Role cell.
+    const collapsedPurpose = tier.purpose ? collapseWhitespace(tier.purpose) : "";
+    const role = collapsedPurpose ? escapeTableCell(collapsedPurpose) : "-";
+    lines.push(`| ${token} | ${kind} | ${role} |`);
+  }
+  lines.push("");
+  lines.push(endMarker);
+  return lines.join("\n");
 }
 
 /**
  * CLI entrypoint. `argv` defaults to the real process argv (minus the node/
  * script prefix) so `isDirectInvocation()` below can call `main()` with no
  * arguments, while tests can pass a synthetic argv without touching
- * `process.argv`. Resolves --tokens/--css against `process.cwd()` (the
- * project root) for actual file I/O, but threads the AS-GIVEN path strings
- * (conventional defaults or explicit flag values) through to every message
- * and into the generated header — never the resolved absolute path — so the
- * committed CSS never embeds a machine-specific path.
+ * `process.argv`. Resolves --tokens/--css/--md-table against `process.cwd()`
+ * (the project root) for actual file I/O, but threads the AS-GIVEN path
+ * strings (conventional defaults or explicit flag values) through to every
+ * message and into the generated header — never the resolved absolute path —
+ * so the committed CSS/md file never embeds a machine-specific path.
+ *
+ * The CSS `@theme` region is always generated/verified. The `--md-table`
+ * region is entirely opt-in: when `--md-table <path>` isn't passed, no md
+ * file is read, built, or written, and `--check` only covers the CSS region
+ * (unchanged from pre-`--md-table` behavior). When it IS passed, `--check`
+ * covers BOTH regions — drift in either exits 1.
  *
  * Exported for unit testing.
  */
@@ -459,6 +596,7 @@ export function main(argv = process.argv.slice(2)) {
   const tokensPath = args.tokens ?? DEFAULT_TOKENS_PATH;
   const cssPath = args.css ?? DEFAULT_CSS_PATH;
   const themeWrapper = !args.noThemeWrapper;
+  const mdTablePath = args.mdTable;
 
   const root = process.cwd();
   const tokensAbsPath = resolve(root, tokensPath);
@@ -469,28 +607,66 @@ export function main(argv = process.argv.slice(2)) {
 
   const tiers = parseTiers(tokensSrc, tokensPath);
   const block = buildBlock(tiers, { tokensPath, cssPath, themeWrapper });
-  const next = replaceBlock(css, block, cssPath);
+  const nextCss = replaceBlock(css, block, BEGIN_MARKER, END_MARKER, cssPath);
+
+  let mdAbsPath;
+  let mdSrc;
+  let nextMd;
+  if (mdTablePath !== undefined) {
+    mdAbsPath = resolve(root, mdTablePath);
+    mdSrc = readFileSync(mdAbsPath, "utf8");
+    const mdBlock = buildMdTable(tiers, { tokensPath });
+    nextMd = replaceBlock(
+      mdSrc,
+      mdBlock,
+      MD_TABLE_BEGIN_MARKER,
+      MD_TABLE_END_MARKER,
+      mdTablePath,
+    );
+  }
 
   if (args.check) {
-    if (next !== css) {
+    let drift = false;
+    if (nextCss !== css) {
       console.error(`z-index codegen drift detected: ${cssPath} is out of date.`);
+      drift = true;
+    }
+    if (mdTablePath !== undefined && nextMd !== mdSrc) {
+      console.error(`z-index codegen drift detected: ${mdTablePath} is out of date.`);
+      drift = true;
+    }
+    if (drift) {
       console.error(
-        `Run \`${buildRerunCommand({ tokensPath, cssPath, themeWrapper })}\` and commit the result.`,
+        `Run \`${buildRerunCommand({ tokensPath, cssPath, themeWrapper, mdTablePath })}\` and commit the result.`,
       );
       return 1;
     }
-    console.log(`OK — z-index @theme block is up to date (${tiers.length} tiers).`);
-    return 0;
-  }
-
-  if (next === css) {
     console.log(
-      `z-index @theme block already up to date (${tiers.length} tiers); no change.`,
+      mdTablePath !== undefined
+        ? `OK — z-index @theme block and md table are up to date (${tiers.length} tiers).`
+        : `OK — z-index @theme block is up to date (${tiers.length} tiers).`,
     );
     return 0;
   }
-  writeFileSync(cssAbsPath, next);
-  console.log(`Wrote z-index @theme block to ${cssPath} (${tiers.length} tiers).`);
+
+  if (nextCss === css) {
+    console.log(
+      `z-index @theme block already up to date (${tiers.length} tiers); no change.`,
+    );
+  } else {
+    writeFileSync(cssAbsPath, nextCss);
+    console.log(`Wrote z-index @theme block to ${cssPath} (${tiers.length} tiers).`);
+  }
+
+  if (mdTablePath !== undefined) {
+    if (nextMd === mdSrc) {
+      console.log(`z-index table already up to date at ${mdTablePath}; no change.`);
+    } else {
+      writeFileSync(mdAbsPath, nextMd);
+      console.log(`Wrote z-index table to ${mdTablePath} (${tiers.length} tiers).`);
+    }
+  }
+
   return 0;
 }
 
