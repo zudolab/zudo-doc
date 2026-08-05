@@ -148,13 +148,28 @@ function readOpenState(instancePrefix: string): boolean {
 }
 
 /**
+ * zdtp's persisted owner-mode activation flags (verified against the zdtp
+ * 0.4.9 bundle): each makes zdtp's parked post-configure hook mount machinery
+ * even with the panel closed (autoload shell, element-path inspector, DOM
+ * tweaker), so a returning user with one of them set — and nothing else —
+ * still needs the eager load for parity with the eager-import era, where
+ * configure always ran at boot (review finding).
+ */
+const ACTIVATION_FLAG_KEY_SUFFIXES = [
+  ":autoload",
+  "-elpath-enabled",
+  "-domtweaker-enabled",
+] as const;
+
+/**
  * Persisted-state probe predicate (#3282): does the ACTIVE storage namespace
  * hold zdtp state worth an eager load? True when the public `${prefix}-open`
- * mirror reads `"1"`, or any `${prefix}-state*` key exists — the bare stem
- * match keeps it version-agnostic across `-state`, `-state-v2`/`-v3`/`-v4`,
- * and future schema revisions without enumerating them. The scan is anchored
- * to the EXACT active prefix; a whole-localStorage suffix scan is deliberately
- * off the table (it would false-positive on unrelated apps' `*-state` keys).
+ * mirror or any {@link ACTIVATION_FLAG_KEY_SUFFIXES} flag reads `"1"`, or any
+ * `${prefix}-state*` key exists — the bare stem match keeps it
+ * version-agnostic across `-state`, `-state-v2`/`-v3`/`-v4`, and future
+ * schema revisions without enumerating them. The scan is anchored to the
+ * EXACT active prefix; a whole-localStorage suffix scan is deliberately off
+ * the table (it would false-positive on unrelated apps' `*-state` keys).
  * Note the pack-scoped `--<slug>` separator keeps sibling namespaces out:
  * `<prefix>--<pack>-state` never matches the `<prefix>-state` stem.
  * Guarded: disabled/throwing storage reads as "no persisted state".
@@ -162,6 +177,9 @@ function readOpenState(instancePrefix: string): boolean {
 function hasPersistedPanelState(instancePrefix: string): boolean {
   try {
     if (localStorage.getItem(openStateKey(instancePrefix)) === "1") return true;
+    for (const suffix of ACTIVATION_FLAG_KEY_SUFFIXES) {
+      if (localStorage.getItem(`${instancePrefix}${suffix}`) === "1") return true;
+    }
     const stateKeyStem = `${instancePrefix}-state`;
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
@@ -523,6 +541,24 @@ export function bootstrapDesignTokenPanel(
     readThemePackFromDom(),
   ).storagePrefix;
   if (hasPersistedPanelState(probePrefix)) void activate();
+
+  // Pre-load pack-change probe (review finding): switching to a pack whose
+  // namespace holds persisted state must trigger the same eager load — the
+  // post-import theme-pack-changed rebuild listener does not exist yet, so
+  // without this the incoming pack's saved overrides would sit unapplied
+  // until a toggle (parity with the eager era, where the rebuild listener ran
+  // from boot). Permanently no-ops once configurePhase leaves "pending": from
+  // then on the configure body's own listener owns the event, and configure
+  // itself always reads the pack live, so an in-flight activation needs no
+  // help from this handler either.
+  window.addEventListener(THEME_PACK_CHANGED_EVENT, () => {
+    if (configurePhase !== "pending") return;
+    const packScopedPrefix = withPackScopedStoragePrefix(
+      buildConfig(readMode()),
+      readThemePackFromDom(),
+    ).storagePrefix;
+    if (hasPersistedPanelState(packScopedPrefix)) void activate();
+  });
 }
 
 // ---------------------------------------------------------------------------

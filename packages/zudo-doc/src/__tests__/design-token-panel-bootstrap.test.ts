@@ -462,6 +462,67 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
     );
   });
 
+  it.each([":autoload", "-elpath-enabled", "-domtweaker-enabled"])(
+    "a persisted %s == \"1\" owner-mode flag triggers the eager configure",
+    async (suffix) => {
+      const browser = installBrowser();
+      // zdtp's parked hook mounts machinery for these flags even with the
+      // panel closed — parity with the eager era needs the load (review
+      // finding).
+      browser.values.set(`test-panel${suffix}`, "1");
+
+      bootstrapDesignTokenPanel(makeBuilder());
+      await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    },
+  );
+
+  it("an owner-mode flag persisted as \"0\" does not trigger the load", async () => {
+    const browser = installBrowser();
+    browser.values.set("test-panel:autoload", "0");
+    browser.values.set("test-panel-elpath-enabled", "0");
+
+    bootstrapDesignTokenPanel(makeBuilder());
+    await settle();
+
+    expect(zdtp.evaluations).toBe(0);
+    expect(zdtp.configurePanel).not.toHaveBeenCalled();
+  });
+
+  it("a pre-load pack switch onto a namespace with saved state triggers the eager load", async () => {
+    const browser = installBrowser("light", "default");
+    // The boot-time (default-pack) namespace is clean, but the foundry
+    // namespace has saved overrides.
+    browser.values.set("test-panel--foundry-state-v4", "{}");
+
+    bootstrapDesignTokenPanel(makeBuilder());
+    await settle();
+    expect(zdtp.configurePanel).not.toHaveBeenCalled();
+
+    browser.setPack("foundry");
+    browser.windowTarget.dispatchEvent(new Event("theme-pack-changed"));
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+
+    // Configure read the pack live: the new namespace is bound directly, and
+    // the configure body's own pack listener did not double-run for the
+    // pre-configure event.
+    expect(zdtp.configurePanel).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ storagePrefix: "test-panel--foundry" }),
+    );
+    expect(zdtp.showDesignTokenPanel).not.toHaveBeenCalled();
+  });
+
+  it("a pre-load pack switch onto a clean namespace stays lazy", async () => {
+    const browser = installBrowser("light", "default");
+
+    bootstrapDesignTokenPanel(makeBuilder());
+    browser.setPack("foundry");
+    browser.windowTarget.dispatchEvent(new Event("theme-pack-changed"));
+    await settle();
+
+    expect(zdtp.evaluations).toBe(0);
+    expect(zdtp.configurePanel).not.toHaveBeenCalled();
+  });
+
   it("does NOT probe a sibling namespace: default-pack keys stay invisible under another pack", async () => {
     const browser = installBrowser("light", "foundry");
     // Saved tweaks exist, but only under the DEFAULT pack's namespace — the
