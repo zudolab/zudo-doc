@@ -525,6 +525,27 @@ function escapeTableCell(str) {
 }
 
 /**
+ * Escapes the characters MDX treats as syntax in text position — `<` (JSX
+ * tag open) and `{`/`}` (expression delimiters) — as character references,
+ * so a purpose like "search <dialog>" is emitted as literal text instead of
+ * failing MDX compilation as an unclosed JSX element. `&` is escaped FIRST
+ * so a purpose that already spells out an entity (e.g. "&lt;") stays
+ * literal `&lt;` on the rendered page instead of collapsing to `<`, and so
+ * the replacements below can never double-escape their own output.
+ *
+ * Braces cannot reach here via the CLI (`assertSupportedPurposeGrammar`
+ * rejects them at parse time), but `buildMdTable` is an exported helper that
+ * accepts hand-built tier arrays, so it defends against them itself.
+ */
+function escapeMdxText(str) {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/\{/g, "&#123;")
+    .replace(/\}/g, "&#125;");
+}
+
+/**
  * Build the full `--md-table` region (markers included): a GFM
  * `| Token | Kind | Role |` table, one row per tier, in source order.
  *   - Token: the tier name.
@@ -532,7 +553,10 @@ function escapeTableCell(str) {
  *   - Role: the tier's optional `purpose` field with internal whitespace/
  *     newlines collapsed to single spaces, or `-` when absent/empty.
  * `|` in any cell is escaped so a stray pipe in a purpose string can't
- * corrupt the table structure.
+ * corrupt the table structure. The Role cell is additionally MDX-escaped
+ * (`&` first, then `<`/`{`/`}` — see `escapeMdxText`) so a purpose like
+ * "search <dialog>" can't make the emitted .mdx fail to compile as an
+ * unclosed JSX element.
  *
  * `options.tokensPath` feeds the "do not hand-edit" note beneath the BEGIN
  * marker (same default/meaning as `buildBlock`'s `tokensPath`).
@@ -565,7 +589,12 @@ export function buildMdTable(tiers, options = {}) {
     // (e.g. "   ") is truthy but collapses to "", which must still fall back
     // to "-" rather than emit a blank Role cell.
     const collapsedPurpose = tier.purpose ? collapseWhitespace(tier.purpose) : "";
-    const role = collapsedPurpose ? escapeTableCell(collapsedPurpose) : "-";
+    // Role is the only free-text cell (Token is ^[a-z0-9-]+$, Kind is
+    // global|local|-), so it alone needs MDX escaping on top of the pipe
+    // escaping.
+    const role = collapsedPurpose
+      ? escapeTableCell(escapeMdxText(collapsedPurpose))
+      : "-";
     lines.push(`| ${token} | ${kind} | ${role} |`);
   }
   lines.push("");

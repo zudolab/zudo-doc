@@ -619,6 +619,46 @@ describe("buildMdTable", () => {
     expect(table).toContain("| toolbar | - | header \\| toolbar boundary |");
   });
 
+  it("escapes < in the purpose so MDX renders it as literal text, not an unclosed JSX element", () => {
+    const table = buildMdTable([
+      {
+        name: "modal",
+        value: 60,
+        kind: "global",
+        purpose: "mobile sidebar drawer panel, search <dialog>",
+      },
+    ]);
+    expect(table).toContain(
+      "| modal | global | mobile sidebar drawer panel, search &lt;dialog> |",
+    );
+    // The raw tag text must not survive anywhere in the emitted region.
+    expect(table).not.toContain("<dialog>");
+    // & was escaped BEFORE <, so our own &lt; is not double-escaped.
+    expect(table).not.toContain("&amp;lt;");
+  });
+
+  it("escapes { and } in the purpose so MDX can't read them as expression delimiters", () => {
+    const table = buildMdTable([
+      { name: "toolbar", value: 20, purpose: "renders {props.title} inline" },
+    ]);
+    expect(table).toContain("| toolbar | - | renders &#123;props.title&#125; inline |");
+    expect(table).not.toContain("{props.title}");
+  });
+
+  it("escapes & first: a purpose already containing &lt; stays literal instead of collapsing to <", () => {
+    const table = buildMdTable([
+      { name: "toolbar", value: 20, purpose: "write &lt; for a less-than sign" },
+    ]);
+    expect(table).toContain("| toolbar | - | write &amp;lt; for a less-than sign |");
+  });
+
+  it("layers MDX escaping with pipe escaping in the same purpose", () => {
+    const table = buildMdTable([
+      { name: "toolbar", value: 20, purpose: "header | search <dialog>" },
+    ]);
+    expect(table).toContain("| toolbar | - | header \\| search &lt;dialog> |");
+  });
+
   it("reflects a custom tokensPath in the 'do not hand-edit' note", () => {
     const table = buildMdTable([{ name: "content", value: 0 }], {
       tokensPath: "sub-packages/design-system/z-index-tokens.ts",
@@ -651,6 +691,26 @@ describe("Idempotency", () => {
     const mdBlock = buildMdTable(DEFAULT_TIER_DATA);
     const first = replaceBlock(initial, mdBlock, MD_TABLE_BEGIN_MARKER, MD_TABLE_END_MARKER);
     const second = replaceBlock(first, mdBlock, MD_TABLE_BEGIN_MARKER, MD_TABLE_END_MARKER);
+    expect(second).toBe(first);
+  });
+
+  it("the md-table region stays idempotent when purposes need MDX escaping (escape output is stable input)", () => {
+    // The escaped table text itself contains & / < sequences (&lt;, &#123;);
+    // idempotency holds because each run re-derives the block from the raw
+    // tier data, never from the previously-escaped table.
+    const tiers = [
+      { name: "modal", value: 60, purpose: "search <dialog> & friends" },
+      { name: "toolbar", value: 20, purpose: "renders {props.title}" },
+    ];
+    const initial = wrapInMd(seededMdBlock("old table"));
+    const mdBlock = buildMdTable(tiers);
+    const first = replaceBlock(initial, mdBlock, MD_TABLE_BEGIN_MARKER, MD_TABLE_END_MARKER);
+    const second = replaceBlock(
+      first,
+      buildMdTable(tiers),
+      MD_TABLE_BEGIN_MARKER,
+      MD_TABLE_END_MARKER,
+    );
     expect(second).toBe(first);
   });
 });
@@ -810,6 +870,39 @@ describe("main()", () => {
     expect(logSpy.mock.calls.flat().join("\n")).toContain(
       "z-index table already up to date at docs/z-index.mdx; no change.",
     );
+  });
+
+  it("--md-table escapes an MDX-hostile purpose end to end and stays byte-identical on re-run", () => {
+    mkdirSync(join(tmpDir, "src/config"), { recursive: true });
+    mkdirSync(join(tmpDir, "src/styles"), { recursive: true });
+    mkdirSync(join(tmpDir, "docs"), { recursive: true });
+    // The historical template tier that motivated this escaping: its purpose
+    // embeds a literal <dialog>. (Braces can't reach the CLI path — the
+    // purpose grammar guard rejects them at parse time.)
+    writeFileSync(
+      join(tmpDir, DEFAULT_TOKENS_PATH),
+      tokensSrcFromTiers([
+        {
+          name: "modal",
+          value: 60,
+          kind: "global",
+          purpose: "mobile sidebar drawer panel, search <dialog>",
+        },
+      ]),
+    );
+    writeFileSync(join(tmpDir, DEFAULT_CSS_PATH), wrapInCss(seededBlock("  @theme {\n  }")));
+    writeFileSync(join(tmpDir, "docs/z-index.mdx"), wrapInMd(seededMdBlock("old table")));
+
+    expect(main(["--md-table", "docs/z-index.mdx"])).toBe(0);
+    const afterFirstRun = readFileSync(join(tmpDir, "docs/z-index.mdx"), "utf8");
+    expect(afterFirstRun).toContain(
+      "| modal | global | mobile sidebar drawer panel, search &lt;dialog> |",
+    );
+    expect(afterFirstRun).not.toContain("<dialog>");
+
+    expect(main(["--md-table", "docs/z-index.mdx"])).toBe(0);
+    const afterSecondRun = readFileSync(join(tmpDir, "docs/z-index.mdx"), "utf8");
+    expect(afterSecondRun).toBe(afterFirstRun);
   });
 
   it("--check with --md-table passes when both regions already match", () => {
