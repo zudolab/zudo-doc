@@ -21,10 +21,23 @@
 
 docs/claude-skills/
 # reason: generated locally by the .claude watcher / `pnpm setup:doc-skill` and
-# gitignored (.gitignore:38), so these routes exist only in a developer's tree
-# and never in a CI build or the deployed site. The generated skill pages are
-# single concatenated dumps (l-lessons-zfb-migration-parity is ~150 KB), which
-# makes them the routes most exposed to the shape-sensitive upstream trigger —
-# and a genuine fallback on a never-shipped local-only route must not fail
-# b4push. (They currently render fine; the pre-review text scan flagged them
-# only because they *mention* the marker inside escaped <code> spans.)
+# gitignored (.gitignore:35), so these routes exist only in a developer's tree
+# and never in a CI build or the deployed site.
+#
+# Kept as defense-in-depth, not because the route is unprotected (#3259
+# supersedes the earlier "most exposed due to size" framing — do not
+# reintroduce it). Two structural defenses already guard generated skill
+# pages: `escapeForMdx()` runs over every generated body
+# (packages/zudo-doc/src/plugins/internal/claude-resources/generate.ts:580,
+# subpages :610/:625/:640) and escapes braces and non-HTML tags to entities
+# (escape-for-mdx.ts:53-86), and the output dir is wiped via a recursive
+# `rmSync` and regenerated every build (`cleanDir` at generate.ts:497, helper
+# at :65-68), so hand-placed raw MDX never survives. The entry stays because
+# the upstream trigger (Takazudo/zudo-front-builder#2186, epic #3232) is
+# shape-sensitive and size-driven (single concatenated dumps —
+# l-lessons-zfb-migration-parity is ~150 KB) rather than tied to a specific
+# character class, and `escapeForMdx()` only defends against one trigger
+# class. A genuine fallback on this never-shipped local-only route must
+# still not fail b4push. (They currently render fine; the pre-review text
+# scan flagged them only because they *mention* the marker inside escaped
+# <code> spans.)
