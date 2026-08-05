@@ -578,20 +578,58 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   //
   // All of it traces to this one intentional, self-contained change; no
   // unattributed bytes.
+  //
+  // 2026-08-06 re-baseline (zudolab/zudo-doc#3277, nightly "zudo-doc Slow
+  // Tests" red since 2026-08-03): the prior baseline (368907ac6) was rebuilt
+  // in a separate worktree and its normalized HTML byte-diffed against this
+  // epic base's HEAD (ca39ea1b6, zfb 1.1.0 → 2.1.0 across the range). Every
+  // changed byte traces to exactly two already-merged, intentional PRs — a
+  // char-level diff confirmed the common prefix/suffix around each delta is
+  // byte-identical, and the changed spans themselves are byte-identical
+  // across all three pages (modulo the one coverage-only insertion below):
+  //
+  //   - `zd-toc-col` class added to the default-TOC wrapper `<div>`
+  //     (`src/toc/...`, desktop TOC visibility toggle, #3254/epic #3252,
+  //     commit 3f8511968) — a single `"zd-toc-col "` (11-byte) prefix
+  //     insertion, present ONLY on `/docs/getting-started/coverage/` (the
+  //     sole fixture page with a TOC); the other two pages are untouched by
+  //     this change.
+  //   - `CODE_BLOCK_ENHANCER_SCRIPT` (`code-syntax/code-block-enhancer-script.ts`)
+  //     rewritten for the wrap-lines-toggle persistence feature (PR #3270:
+  //     commit ae0b1db5d "remember the code-block wrap-lines toggle" +
+  //     commit 912ee0294 "don't cache a hidden block's overflow as 'fits'")
+  //     — the inlined script is byte-identical old-vs-old and new-vs-new
+  //     across all three pages (it's unconditional on every page), growing
+  //     5338 → 8288 chars (+2950 bytes) per page.
+  //
+  // Net per-page byte deltas confirm the accounting exactly: /404.html and
+  // /docs/getting-started/ both grew by precisely 2950 bytes (script only);
+  // /docs/getting-started/coverage/ grew by precisely 2961 bytes (script +
+  // the 11-byte toc class). No other bytes moved on any page.
+  //
+  // Notable negative: zfb 1.1.0 → 2.1.0 across this range contributed ZERO
+  // bytes to any of the three pages — this also closes the "not yet proven
+  // neutral for the coverage page's engine-rendered GFM constructs" caveat
+  // the #3179 entry above left open; the coverage page's heading-IDs, task
+  // list, footnote, and directive output are all unchanged by the engine
+  // bump.
+  //
+  // All of it traces to already-merged, intentional PRs; no unattributed
+  // bytes.
 
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"2579d75bf9dd6345c7fca83bdebfc6614d234002a549a713270b261e71eb71d9"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"29f8ad2434e2c80e7ec084ce35d5403576c08d2efb14b64393fbdd822d429198"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"dbd09e697b71f41f688eb9b23cce5f8d89a420a57a4ae2c2ab748931aede0b22"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"e433f30ab887391e7bf22dd1d6af24e80cbafba3530e95c076378b26c5a5a272"`);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"aa31495915d447d5ecac35a260fe9af5f953e8380c667dfc8ac34cc96d47730d"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"c8cc832ab0d4f2771619be1fe06d2e962122f77705cc6c507df62e08d2853251"`);
   });
 });
 
