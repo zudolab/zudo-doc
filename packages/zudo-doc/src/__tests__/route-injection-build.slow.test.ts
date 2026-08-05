@@ -753,14 +753,14 @@ function buildIslandsImportGraph(dir: string): {
     const content = readFileSync(join(assetsDir, file), "utf-8");
     const dynamics = new Set<string>();
     for (const m of content.matchAll(/import\(\s*["'](\.\/islands[^"']*\.js)["']\s*\)/g)) {
-      dynamics.add(m[1].replace(/^\.\//, ""));
+      if (m[1]) dynamics.add(m[1].replace(/^\.\//, ""));
     }
     const statics = new Set<string>();
     for (const m of content.matchAll(/\bimport\s*["'](\.\/islands[^"']*\.js)["']/g)) {
-      statics.add(m[1].replace(/^\.\//, ""));
+      if (m[1]) statics.add(m[1].replace(/^\.\//, ""));
     }
     for (const m of content.matchAll(/\bfrom\s*["'](\.\/islands[^"']*\.js)["']/g)) {
-      statics.add(m[1].replace(/^\.\//, ""));
+      if (m[1]) statics.add(m[1].replace(/^\.\//, ""));
     }
     staticEdges.set(file, statics);
     dynamicEdges.set(file, dynamics);
