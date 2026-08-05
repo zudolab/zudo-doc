@@ -488,6 +488,34 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
     expect(zdtp.configurePanel).not.toHaveBeenCalled();
   });
 
+  it("a persisted :visible == \"1\" alone triggers the eager configure (and no show)", async () => {
+    const browser = installBrowser();
+    // This package's integration always writes `:autoload=1` alongside a
+    // visible panel, but a foreign/older persisted state may carry the
+    // `:visible` gate alone — zdtp's parked hook still consumes it.
+    browser.values.set("test-panel:visible", "1");
+
+    bootstrapDesignTokenPanel(makeBuilder());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await settle();
+
+    expect(zdtp.showDesignTokenPanel).not.toHaveBeenCalled();
+  });
+
+  it("a persisted :visible == \"0\" alone stays lazy until a toggle", async () => {
+    const browser = installBrowser();
+    browser.values.set("test-panel:visible", "0");
+
+    bootstrapDesignTokenPanel(makeBuilder());
+    await settle();
+
+    expect(zdtp.evaluations).toBe(0);
+    expect(zdtp.configurePanel).not.toHaveBeenCalled();
+
+    dispatchToggle(browser.windowTarget);
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+  });
+
   it("a pre-load pack switch onto a namespace with saved state triggers the eager load", async () => {
     const browser = installBrowser("light", "default");
     // The boot-time (default-pack) namespace is clean, but the foundry
