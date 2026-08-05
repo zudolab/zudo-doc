@@ -209,6 +209,20 @@ The storage prefix `zudo-doc-tweak` is locked in the package-default builder (`@
 
 The panel UI is provided by the `@takazudo/zdtp` (zdtp) npm package. The package-owned `DesignTokenPanelBootstrap` island and its wiring mechanism — calling `configurePanel`, hooking zfb's navigation lifecycle, and the mode-scoped destroy+reconfigure described below — live in `@takazudo/zudo-doc/design-token-panel-bootstrap`. The island calls `bootstrapDesignTokenPanel(buildDesignTokenPanelConfig)`, where `buildDesignTokenPanelConfig` is a `(mode) => PanelConfig` builder — this is what lets the Color tab follow light/dark. The panel self-mounts as a side effect once the island hydrates.
 
+### Lazy loading
+
+`@takazudo/zdtp` is not part of the initial page bundle. `bootstrapDesignTokenPanel` only registers a small interim click listener at mount; the actual `import("@takazudo/zdtp")` — and the `configurePanel` call that follows it — happens the first time the header trigger dispatches `toggle-design-token-panel`. Clicks that land before the import resolves are queued and coalesced into a single net show/hide once configure finishes, so a rapid double-click never fires it twice.
+
+A returning visitor with saved state doesn't wait for that click. On mount, the bootstrap probes `localStorage` under the active (pack-scoped) storage prefix and loads zdtp immediately — before any interaction — when any of the following is true:
+
+- the panel was left open (`${prefix}-open` is `"1"`),
+- a token override was saved (any `${prefix}-state*` key exists), or
+- an owner-mode flag is set (`${prefix}:autoload`, `${prefix}-elpath-enabled`, or `${prefix}-domtweaker-enabled`).
+
+The `${prefix}-open` and owner-mode checks are exact-key lookups; only the `${prefix}-state*` check walks every key currently in `localStorage` (there is no native prefix-query API), but it only ever treats a key as a hit when it starts with the exact active prefix's stem — so it can't false-positive on an unrelated app's own `*-state` keys, even though it does look at every key name to find one. Switching to a theme pack whose namespace holds saved state triggers the same eager load.
+
+Until zdtp has loaded, by either path, `window.zdtp` (the console API zdtp installs once it configures) does not exist. Once loaded it stays loaded — its own listener takes over the toggle event directly — for the rest of the page's life; only a full page load returns to this lazy state.
+
 On every `color-scheme-changed` event (dispatched by the theme toggle), the bootstrap reads the new mode and coalesces rapid toggles onto a single macrotask, then calls `handle.destroy()` followed by `configurePanel(buildDesignTokenPanelConfig(mode))` — zdtp's `configurePanel` throws if re-run in place with a structurally different config, so destroy-then-reconfigure is the only supported way to swap the Color tab's mode-scoped defaults. If the panel was open, it's re-mounted open.
 
 The header trigger button dispatches the `toggle-design-token-panel` custom event on `window`. zdtp listens for this event natively, so no additional wiring is needed when the trigger is customised through `settings.headerRightItems`.
