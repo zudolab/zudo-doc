@@ -5,13 +5,20 @@
 
 /**
  * Design-token panel (zdtp) WIRING MECHANISM + PACKAGE-DEFAULT ISLAND (#2658,
- * epic Minimal Scaffold #2651).
+ * epic Minimal Scaffold #2651). zdtp itself is LAZY-LOADED (#3282, epic
+ * #3261): this module carries NO top-level value import of `@takazudo/zdtp` —
+ * the package is `import()`ed on the first `toggle-design-token-panel`
+ * dispatch, or eagerly when the persisted-state probe finds saved tweaks / a
+ * previously-open panel, so zdtp's bundle stays out of the initial page load.
  *
  * `bootstrapDesignTokenPanel` is a callable that configures zdtp's panel and
  * wires its lifecycle hooks to zfb's navigation events via
  * `setLifecycleAdapter()`. It receives a mode-scoped PanelConfig builder —
  * either a project override or the package default from
- * `@takazudo/zudo-doc/design-token-panel-config`.
+ * `@takazudo/zudo-doc/design-token-panel-config`. The builder module is
+ * zdtp-runtime-free (type-only zdtp imports), which is what lets it stay a
+ * STATIC import here without defeating the lazy load — and lets the probe
+ * compute the exact active storage prefix before zdtp exists.
  *
  * The current call shape is a mode-scoped builder. It rebuilds the panel per
  * light/dark mode on every `color-scheme-changed` toggle:
@@ -55,14 +62,10 @@
  */
 
 import type { JSX } from "preact";
-import {
-  configurePanel,
-  reapplyPersistedOverrides,
-  setLifecycleAdapter,
-  showDesignTokenPanel,
-  type LifecycleAdapter,
-  type PanelConfig,
-  type PanelInstanceHandle,
+import type {
+  LifecycleAdapter,
+  PanelConfig,
+  PanelInstanceHandle,
 } from "@takazudo/zdtp";
 import {
   BEFORE_NAVIGATE_EVENT,
@@ -87,6 +90,9 @@ import {
 // (`routes/_virtual.d.ts`).
 import { buildDesignTokenPanelConfig } from "virtual:zudo-doc-design-token-panel-config";
 
+/** The zdtp module namespace, typed without importing any runtime code. */
+type ZdtpModule = typeof import("@takazudo/zdtp");
+
 /** Active color-scheme mode, read from `<html data-theme>`. */
 type ColorSchemeMode = "light" | "dark";
 
@@ -102,6 +108,16 @@ export type PanelConfigBuilder = (mode: ColorSchemeMode) => PanelConfig;
  * contract — do not rename.
  */
 const COLOR_SCHEME_CHANGED_EVENT = "color-scheme-changed";
+
+/**
+ * The shared panel-toggle window event: dispatched by the header palette
+ * button and re-dispatched by the SSR pre-hydration shim's `__zdtpReadyClicks`
+ * drain. Once `@takazudo/zdtp` has loaded, its own module-scope listener owns
+ * this channel; before that, the interim listener in
+ * {@link bootstrapDesignTokenPanel} uses it to trigger the lazy load.
+ * Cross-package contract — do not rename.
+ */
+const TOGGLE_PANEL_EVENT = "toggle-design-token-panel";
 
 /**
  * The panel's own open-state key for a given instance (`${storagePrefix}-open`,
@@ -129,6 +145,32 @@ function readOpenState(instancePrefix: string): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Persisted-state probe predicate (#3282): does the ACTIVE storage namespace
+ * hold zdtp state worth an eager load? True when the public `${prefix}-open`
+ * mirror reads `"1"`, or any `${prefix}-state*` key exists — the bare stem
+ * match keeps it version-agnostic across `-state`, `-state-v2`/`-v3`/`-v4`,
+ * and future schema revisions without enumerating them. The scan is anchored
+ * to the EXACT active prefix; a whole-localStorage suffix scan is deliberately
+ * off the table (it would false-positive on unrelated apps' `*-state` keys).
+ * Note the pack-scoped `--<slug>` separator keeps sibling namespaces out:
+ * `<prefix>--<pack>-state` never matches the `<prefix>-state` stem.
+ * Guarded: disabled/throwing storage reads as "no persisted state".
+ */
+function hasPersistedPanelState(instancePrefix: string): boolean {
+  try {
+    if (localStorage.getItem(openStateKey(instancePrefix)) === "1") return true;
+    const stateKeyStem = `${instancePrefix}-state`;
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key !== null && key.startsWith(stateKeyStem)) return true;
+    }
+  } catch {
+    // Storage unavailable → nothing persisted to restore → no eager load.
+  }
+  return false;
 }
 
 /** Read the active mode from `<html data-theme>`, defaulting to `light`. */
@@ -231,14 +273,15 @@ function clearAppliedTokenOverrides(config: PanelConfig): void {
 }
 
 /**
- * Bootstrap zdtp for a project. Configures the panel, drains any pre-hydration
- * click queue, and wires the zdtp lifecycle adapter to zfb's navigation events
- * so persisted token overrides re-apply on every soft navigation.
- *
- * Wires a `color-scheme-changed` listener that rebuilds the panel per
- * light/dark mode (see the toggle sequence below), and a parallel
- * `theme-pack-changed` listener that rebuilds it per theme pack with a
- * pack-scoped storage prefix (ADR theme-packs.md Decision 4, #2822).
+ * Bootstrap zdtp for a project — LAZILY (#3282). At mount this registers an
+ * interim `toggle-design-token-panel` listener, drains the pre-hydration
+ * click queue, and probes localStorage for persisted panel state; the actual
+ * `import("@takazudo/zdtp")` + configure happen on the first toggle (or
+ * immediately on a probe hit). The configure body then wires everything the
+ * pre-lazy version wired eagerly: `configurePanel` with the pack-scoped
+ * mode-config, the `color-scheme-changed` / `theme-pack-changed` rebuild
+ * listeners, `reapplyPersistedOverrides`, and the zfb lifecycle adapter via
+ * `setLifecycleAdapter`.
  *
  * @param buildConfig - The project's `(mode) => PanelConfig` builder for
  *   mode-scoped rebuilds.
@@ -254,118 +297,232 @@ export function bootstrapDesignTokenPanel(
     return;
   }
 
-  // Every configurePanel call goes through the pack-prefix post-process
-  // (withPackScopedStoragePrefix) so the namespacing rule is enforced
-  // centrally, and the CURRENT config is tracked so the theme-pack switch
-  // sequence can clear exactly the outgoing instance's token names.
-  let currentConfig: PanelConfig = withPackScopedStoragePrefix(
-    buildConfig(readMode()),
-    readThemePackFromDom(),
-  );
-  let handle: PanelInstanceHandle = configurePanel(currentConfig);
+  // Lazy-load state. RETRY SCOPE (deliberate, keep it asymmetric):
+  // - IMPORT rejection resets the import memo — the next toggle retries the
+  //   chunk load, because a failed network fetch is transient and browsers do
+  //   not cache dynamic-import failures.
+  // - CONFIGURE-phase failure is NOT auto-retried: it is a config/programming
+  //   error, so retrying would loop the same throw. It surfaces loudly via
+  //   console.error and parks the panel until the next full page load.
+  let zdtpImport: Promise<ZdtpModule> | null = null;
+  let activationInFlight = false;
+  let configurePhase: "pending" | "configured" | "failed" = "pending";
+  // Toggle dispatches received before configure completes. Coalesced into a
+  // single NET intent applied once, after configure: odd → shown, even →
+  // left as configure left it (hidden, unless zdtp's parked post-configure
+  // hook restored a previously-open panel from `${prefix}-open`).
+  let pendingToggles = 0;
 
-  // Register the color-scheme-changed listener BEFORE draining the click queue
-  // (a queued click can mount the panel first and flip listener order).
-  let pendingMode: ColorSchemeMode = readMode();
-  let timer: ReturnType<typeof setTimeout> | null = null;
+  function loadZdtp(): Promise<ZdtpModule> {
+    if (zdtpImport === null) {
+      zdtpImport = import("@takazudo/zdtp").catch((err: unknown) => {
+        // The memo resets ONLY here, on import rejection (see RETRY SCOPE).
+        zdtpImport = null;
+        throw err;
+      });
+    }
+    return zdtpImport;
+  }
 
-  window.addEventListener(COLOR_SCHEME_CHANGED_EVENT, () => {
-    pendingMode = readMode();
-    // Coalesce rapid toggles: a single macrotask reconfigures to the LATEST
-    // mode. Without this, light→dark→light before the timer fires would run
-    // three destroy/reconfigure cycles instead of one.
-    if (timer !== null) return;
-    timer = setTimeout(() => {
-      timer = null;
-      const mode = pendingMode;
-      // Read the open state BEFORE destroy (destroy keeps localStorage),
-      // keyed off the CURRENT instance's prefix so a non-showcase host prefix
-      // still round-trips correctly.
-      const wasOpen = readOpenState(handle.instanceId);
-      // MACROTASK (setTimeout 0), NOT a microtask: zdtp flushes its own
-      // mount-time `color-scheme-changed` handler (clear applied vars +
-      // reseed) on microtasks/rAF, so a macrotask guarantees that settled
-      // before we destroy + reconfigure with the new mode's defaults.
-      handle.destroy();
-      // The pack prefix follows the LIVE pack so a mode toggle on a
-      // non-default pack keeps reading/writing that pack's namespace.
-      currentConfig = withPackScopedStoragePrefix(
-        buildConfig(mode),
-        readThemePackFromDom(),
+  /**
+   * The one-shot configure body — everything the pre-lazy bootstrap ran
+   * eagerly at mount. Runs exactly once, right after the dynamic import
+   * resolves. The mode/pack rebuild listeners are registered HERE, post-
+   * import, rather than at bootstrap: both handlers read mode/pack live from
+   * the DOM when they fire, so late registration loses nothing — events
+   * before zdtp exists have no panel to rebuild.
+   */
+  function configureAndWire(zdtp: ZdtpModule): void {
+    const {
+      configurePanel,
+      reapplyPersistedOverrides,
+      setLifecycleAdapter,
+      showDesignTokenPanel,
+    } = zdtp;
+
+    // Every configurePanel call goes through the pack-prefix post-process
+    // (withPackScopedStoragePrefix) so the namespacing rule is enforced
+    // centrally, and the CURRENT config is tracked so the theme-pack switch
+    // sequence can clear exactly the outgoing instance's token names.
+    let currentConfig: PanelConfig = withPackScopedStoragePrefix(
+      buildConfig(readMode()),
+      readThemePackFromDom(),
+    );
+    let handle: PanelInstanceHandle = configurePanel(currentConfig);
+
+    let pendingMode: ColorSchemeMode = readMode();
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    window.addEventListener(COLOR_SCHEME_CHANGED_EVENT, () => {
+      pendingMode = readMode();
+      // Coalesce rapid toggles: a single macrotask reconfigures to the LATEST
+      // mode. Without this, light→dark→light before the timer fires would run
+      // three destroy/reconfigure cycles instead of one.
+      if (timer !== null) return;
+      timer = setTimeout(() => {
+        timer = null;
+        const mode = pendingMode;
+        // Read the open state BEFORE destroy (destroy keeps localStorage),
+        // keyed off the CURRENT instance's prefix so a non-showcase host prefix
+        // still round-trips correctly.
+        const wasOpen = readOpenState(handle.instanceId);
+        // MACROTASK (setTimeout 0), NOT a microtask: zdtp flushes its own
+        // mount-time `color-scheme-changed` handler (clear applied vars +
+        // reseed) on microtasks/rAF, so a macrotask guarantees that settled
+        // before we destroy + reconfigure with the new mode's defaults.
+        handle.destroy();
+        // The pack prefix follows the LIVE pack so a mode toggle on a
+        // non-default pack keeps reading/writing that pack's namespace.
+        currentConfig = withPackScopedStoragePrefix(
+          buildConfig(mode),
+          readThemePackFromDom(),
+        );
+        handle = configurePanel(currentConfig);
+        // configurePanel with a structurally-different config after destroy is
+        // the ONLY sanctioned swap (a same-prefix reconfigure otherwise throws).
+        if (wasOpen) showDesignTokenPanel();
+      }, 0);
+    });
+
+    // theme-pack-changed listener — PARALLEL to the color-scheme one, same
+    // coalescing macrotask shape (ADR theme-packs.md Decision 4 switch
+    // sequence). The engine dispatches the event only AFTER its commit
+    // (attribute + links + persistence), so every read below sees post-switch
+    // state.
+    let pendingPack: string = readThemePackFromDom();
+    let packTimer: ReturnType<typeof setTimeout> | null = null;
+
+    window.addEventListener(THEME_PACK_CHANGED_EVENT, () => {
+      pendingPack = readThemePackFromDom();
+      if (packTimer !== null) return;
+      packTimer = setTimeout(() => {
+        packTimer = null;
+        const pack = pendingPack;
+        // 1. Read the open state from the CURRENT (outgoing) instance's
+        //    `${prefix}-open` key BEFORE destroy (guarded — storage may be
+        //    disabled while the engine still commits pack switches).
+        const wasOpen = readOpenState(handle.instanceId);
+        const outgoingConfig = currentConfig;
+        // 2. Destroy the outgoing instance (deregisters only — it does NOT
+        //    clear applied inline vars, hence step 3).
+        handle.destroy();
+        // 3. Clear the OUTGOING instance's applied inline token overrides —
+        //    config-driven removeProperty, never a blanket sweep.
+        clearAppliedTokenOverrides(outgoingConfig);
+        // 4. Reconfigure with the NEW pack's scoped prefix. This registers the
+        //    new instance and makes it the active config, but does NOT itself
+        //    push that namespace's persisted overrides onto :root — configurePanel
+        //    only wires the panel UI. On the color-scheme path zdtp's OWN
+        //    listener reapplies; on this theme-pack event zdtp is unaware
+        //    (ADR Decision 4 step 4), so nothing would restore the live vars.
+        currentConfig = withPackScopedStoragePrefix(buildConfig(readMode()), pack);
+        handle = configurePanel(currentConfig);
+        // 5. Push the now-active namespace's persisted overrides back onto :root.
+        //    Without this the switch clears the outgoing pack's inline vars
+        //    (step 3) but never re-applies the incoming pack's saved tweaks —
+        //    switching A→B→A would leave A's overrides visible only inside the
+        //    panel rows, not on the live document (regression caught by the
+        //    #2826 zdtp-interplay e2e; ADR Decision 4 invariant (b)).
+        reapplyPersistedOverrides();
+        // 6. Restore visibility.
+        if (wasOpen) showDesignTokenPanel();
+      }, 0);
+    });
+
+    // Push the active namespace's persisted overrides onto :root now. zdtp's
+    // parked post-configure hook re-applies (and re-mounts a previously-open
+    // panel) on its own during configurePanel, but this direct call keeps the
+    // contract explicit instead of leaning on a zdtp internal, and re-running
+    // it is idempotent.
+    reapplyPersistedOverrides();
+
+    const adapter: LifecycleAdapter = {
+      onBeforeSwap(cb) {
+        const handler = () => cb();
+        document.addEventListener(BEFORE_NAVIGATE_EVENT, handler);
+        return () => document.removeEventListener(BEFORE_NAVIGATE_EVENT, handler);
+      },
+      onPageLoad(cb) {
+        const handler = () => cb();
+        document.addEventListener(AFTER_NAVIGATE_EVENT, handler);
+        return () => document.removeEventListener(AFTER_NAVIGATE_EVENT, handler);
+      },
+    };
+    setLifecycleAdapter(adapter);
+  }
+
+  async function activate(): Promise<void> {
+    if (activationInFlight || configurePhase !== "pending") return;
+    activationInFlight = true;
+    let zdtp: ZdtpModule;
+    try {
+      zdtp = await loadZdtp();
+    } catch (err) {
+      activationInFlight = false;
+      // Queued intent dies with the failed attempt: the toggle that retries
+      // the import carries fresh intent of its own.
+      pendingToggles = 0;
+      console.error(
+        "[zudo-doc] design-token-panel: loading @takazudo/zdtp failed; the next toggle retries.",
+        err,
       );
-      handle = configurePanel(currentConfig);
-      // configurePanel with a structurally-different config after destroy is
-      // the ONLY sanctioned swap (a same-prefix reconfigure otherwise throws).
-      if (wasOpen) showDesignTokenPanel();
-    }, 0);
-  });
+      return;
+    }
+    try {
+      configureAndWire(zdtp);
+      configurePhase = "configured";
+    } catch (err) {
+      // NOT auto-retried — see RETRY SCOPE above.
+      configurePhase = "failed";
+      console.error(
+        "[zudo-doc] design-token-panel: configure failed; the panel is disabled until the next full page load.",
+        err,
+      );
+      return;
+    } finally {
+      activationInFlight = false;
+    }
+    // Apply the NET pre-configure toggle intent exactly once (odd → shown).
+    // Multiple queued toggles never produce multiple show() calls.
+    if (pendingToggles % 2 === 1) zdtp.showDesignTokenPanel();
+    pendingToggles = 0;
+  }
 
-  // theme-pack-changed listener — PARALLEL to the color-scheme one, same
-  // coalescing macrotask shape (ADR theme-packs.md Decision 4 switch
-  // sequence). The engine dispatches the event only AFTER its commit
-  // (attribute + links + persistence), so every read below sees post-switch
-  // state.
-  let pendingPack: string = readThemePackFromDom();
-  let packTimer: ReturnType<typeof setTimeout> | null = null;
-
-  window.addEventListener(THEME_PACK_CHANGED_EVENT, () => {
-    pendingPack = readThemePackFromDom();
-    if (packTimer !== null) return;
-    packTimer = setTimeout(() => {
-      packTimer = null;
-      const pack = pendingPack;
-      // 1. Read the open state from the CURRENT (outgoing) instance's
-      //    `${prefix}-open` key BEFORE destroy (guarded — storage may be
-      //    disabled while the engine still commits pack switches).
-      const wasOpen = readOpenState(handle.instanceId);
-      const outgoingConfig = currentConfig;
-      // 2. Destroy the outgoing instance (deregisters only — it does NOT
-      //    clear applied inline vars, hence step 3).
-      handle.destroy();
-      // 3. Clear the OUTGOING instance's applied inline token overrides —
-      //    config-driven removeProperty, never a blanket sweep.
-      clearAppliedTokenOverrides(outgoingConfig);
-      // 4. Reconfigure with the NEW pack's scoped prefix. This registers the
-      //    new instance and makes it the active config, but does NOT itself
-      //    push that namespace's persisted overrides onto :root — configurePanel
-      //    only wires the panel UI. On the color-scheme path zdtp's OWN
-      //    listener reapplies; on this theme-pack event zdtp is unaware
-      //    (ADR Decision 4 step 4), so nothing would restore the live vars.
-      currentConfig = withPackScopedStoragePrefix(buildConfig(readMode()), pack);
-      handle = configurePanel(currentConfig);
-      // 5. Push the now-active namespace's persisted overrides back onto :root.
-      //    Without this the switch clears the outgoing pack's inline vars
-      //    (step 3) but never re-applies the incoming pack's saved tweaks —
-      //    switching A→B→A would leave A's overrides visible only inside the
-      //    panel rows, not on the live document (regression caught by the
-      //    #2826 zdtp-interplay e2e; ADR Decision 4 invariant (b)).
-      reapplyPersistedOverrides();
-      // 6. Restore visibility.
-      if (wasOpen) showDesignTokenPanel();
-    }, 0);
+  // Interim toggle listener, registered BEFORE the click-queue drain below so
+  // the drain's synchronous re-dispatch of a queued pre-hydration click lands
+  // here (counting as toggle intent and starting the lazy load). Once
+  // configure completes, zdtp's own module-scope listener — installed when
+  // the dynamic import evaluated — owns every subsequent dispatch; handling
+  // them here too would double-toggle each click, so this listener becomes a
+  // permanent no-op the moment configurePhase leaves "pending".
+  window.addEventListener(TOGGLE_PANEL_EVENT, () => {
+    if (configurePhase !== "pending") return;
+    pendingToggles += 1;
+    void activate();
   });
 
   // Drain the pre-hydration click queue. If the user clicked the palette
-  // button before this Island evaluated, the SSR shim in
-  // _body-end-islands.tsx captured the event as a single boolean flag.
-  // Calling __zdtpReadyClicks() here removes the shim listener and
-  // re-dispatches once (at most) so the now-registered zdtp listener
-  // picks it up and mounts the panel.
+  // button before this Island evaluated, the SSR shim (see
+  // `doc-body-end-islands/design-token-panel-island.tsx`) captured the event
+  // as a single boolean flag. Calling __zdtpReadyClicks() here removes the
+  // shim listener and re-dispatches once (at most) so the interim listener
+  // above picks it up.
   (window as { __zdtpReadyClicks?: () => void }).__zdtpReadyClicks?.();
 
-  const adapter: LifecycleAdapter = {
-    onBeforeSwap(cb) {
-      const handler = () => cb();
-      document.addEventListener(BEFORE_NAVIGATE_EVENT, handler);
-      return () => document.removeEventListener(BEFORE_NAVIGATE_EVENT, handler);
-    },
-    onPageLoad(cb) {
-      const handler = () => cb();
-      document.addEventListener(AFTER_NAVIGATE_EVENT, handler);
-      return () => document.removeEventListener(AFTER_NAVIGATE_EVENT, handler);
-    },
-  };
-  setLifecycleAdapter(adapter);
+  // Persisted-state PROBE (#3282): a returning user with saved tweaks or a
+  // previously-open panel must not wait for a toggle — without this eager
+  // load their overrides would silently revert until they opened the panel.
+  // The probed prefix is computed from the statically-available builder plus
+  // the SAME pack scoping configure applies, so it names EXACTLY the active
+  // namespace (including the `<prefix>--<slug>` pack-scoped variant; package
+  // default `zudo-doc-tweak`, host-overridable). On a hit, zdtp's parked
+  // post-configure hook re-applies the overrides and re-opens a
+  // previously-open panel once configure runs.
+  const probePrefix = withPackScopedStoragePrefix(
+    buildConfig(readMode()),
+    readThemePackFromDom(),
+  ).storagePrefix;
+  if (hasPersistedPanelState(probePrefix)) void activate();
 }
 
 // ---------------------------------------------------------------------------
