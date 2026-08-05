@@ -81,15 +81,15 @@ the two CDNs the content genuinely uses, `object-src 'none'`,
 
 - `script-src … https://esm.sh` — Mermaid is loaded at runtime via
   `import("https://esm.sh/mermaid@11…")` (`packages/zudo-doc/src/code-syntax/mermaid-init-script.ts`).
-- `script-src` / `style-src` / `font-src … https://cdn.jsdelivr.net` — reserved
-  for a KaTeX CSS/webfont jsDelivr load that `packages/zudo-doc/src/head/doc-head.tsx`
-  is wired to emit; **verification (below) found this codebase's actual `MathBlock`
-  never takes that path** — it renders KaTeX server-side at build time and ships
-  no jsdelivr reference at all (zudolab/zudo-doc#3265 asks whether this grant is
-  therefore removable; not acted on here). `script-src` also covers the
-  `HtmlPreview` `externalScripts`/`externalStyles` demo on the
-  `components/html-preview` doc page (e.g. the `@tailwindcss/browser` CDN
-  recipe), since a `srcdoc` iframe inherits its parent document's CSP.
+- `font-src` carries **no** jsdelivr grant — removed by zudolab/zudo-doc#3265.
+  KaTeX renders server-side at build time via `katex.renderToString` in
+  `packages/zudo-doc/src/math-block/index.tsx`, so no client fonts (or CSS)
+  ever load from jsdelivr; the grant was dead weight.
+- `script-src` / `style-src … https://cdn.jsdelivr.net` are retained as
+  deliberate headroom for the documented `HtmlPreview`
+  `externalScripts`/`externalStyles` demo recipe on the `components/html-preview`
+  doc page (e.g. the `@tailwindcss/browser` CDN recipe), since a `srcdoc` iframe
+  inherits its parent document's CSP.
 - `'unsafe-inline'` on `script-src`/`style-src` — the site relies on inline
   pre-paint scripts (sidebar/theme/page-loading) and inline `style=` attributes.
   Exfiltration is still blocked by `connect-src`/`img-src`/`default-src`.
@@ -149,7 +149,7 @@ this file must never be committed.
 | Surface | Verdict |
 |---|---|
 | Code highlighting | PASS — computed styles on `hi-*` classes return real distinct `oklch(...)` colors, so the `--zd-syntax-*` token CSS survives `style-src`. |
-| KaTeX | PASS — and the epic's premise was wrong: `MathBlock` renders KaTeX **server-side at build time** (`packages/zudo-doc/src/math-block/index.tsx`); the site never loads `katex.min.css` or its webfonts from jsdelivr. Identical behavior confirmed in a plain Chromium browser against the same `dist/`, so this was never a CSP/Tauri-specific concern (see zudolab/zudo-doc#3265, not acted on here). |
+| KaTeX | PASS — and the epic's premise was wrong: `MathBlock` renders KaTeX **server-side at build time** (`packages/zudo-doc/src/math-block/index.tsx`); the site never loads `katex.min.css` or its webfonts from jsdelivr. Identical behavior confirmed in a plain Chromium browser against the same `dist/`, so this was never a CSP/Tauri-specific concern — the dead `font-src` jsdelivr grant was subsequently dropped (zudolab/zudo-doc#3265/#3275). |
 | Mermaid | PASS, with one real violation on record: `style-src-attr`/`style-src-elem` block inline `style=""` writes from `esm.sh/d3-selection` and `esm.sh/mermaid` — Tauri's nonce injection neutralizes `'unsafe-inline'` for those sub-directives. This is the epic's predicted failure, landing on **style** rather than **script**. It causes no visible defect: colored-shape ratio and diagram geometry match a plain-browser rendering of the same `dist/` exactly. |
 | Sidebar + theme pre-paint | PASS — no `script-src` violations anywhere. Verified with a seeded non-default state (light theme against a dark OS, sidebar collapsed): a full app quit + relaunch showed the correct state already applied in the DOM at `PageLoadEvent::Finished`, before the window is shown, and an 8-frame rapid capture showed no flash. |
 
