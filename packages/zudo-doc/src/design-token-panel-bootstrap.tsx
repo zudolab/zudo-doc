@@ -148,15 +148,20 @@ function readOpenState(instancePrefix: string): boolean {
 }
 
 /**
- * zdtp's persisted owner-mode activation flags (verified against the zdtp
- * 0.4.9 bundle): each makes zdtp's parked post-configure hook mount machinery
- * even with the panel closed (autoload shell, element-path inspector, DOM
- * tweaker), so a returning user with one of them set — and nothing else —
- * still needs the eager load for parity with the eager-import era, where
- * configure always ran at boot (review finding).
+ * zdtp's persisted activation-flag keys (verified against the zdtp 0.4.9
+ * bundle). The owner-mode flags each make zdtp's parked post-configure hook
+ * mount machinery even with the panel closed (autoload shell, element-path
+ * inspector, DOM tweaker); `:visible` is the documented lazy-load gate that
+ * same hook consumes to re-open a previously-visible panel — this package's
+ * integration always persists `:autoload=1` alongside it, but a foreign or
+ * older persisted state may carry `:visible=1` alone (review finding). A
+ * returning user with any of them set — and nothing else — still needs the
+ * eager load for parity with the eager-import era, where configure always
+ * ran at boot.
  */
 const ACTIVATION_FLAG_KEY_SUFFIXES = [
   ":autoload",
+  ":visible",
   "-elpath-enabled",
   "-domtweaker-enabled",
 ] as const;
