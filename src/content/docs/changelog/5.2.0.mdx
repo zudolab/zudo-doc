@@ -1,0 +1,36 @@
+---
+title: 5.2.0
+description: Release notes for 5.2.0.
+sidebar_position: 1081
+---
+
+Released: 2026-08-06
+
+### Features
+
+- Lazy-load `@takazudo/zdtp` from the design-token-panel island instead of shipping it in the eager islands graph. The bootstrap module is still statically imported (island registration depends on that chain), but the panel bundle itself is now deferred to the first `toggle-design-token-panel` dispatch. A mount-time probe still loads it eagerly when the visitor has persisted panel state — a saved override, an open panel, or an owner-mode flag under the active storage prefix — so a returning user's tweaks apply without a visible delay. Visitors who never open the panel no longer pay for it (2b4e169, d7febe8, 7fad398)
+- Add a `--md-table` region to `gen-z-index`, so the z-index tier table in the docs is generated from the same token source as the CSS block rather than hand-maintained alongside it. The bin was rebuilt as testable exports with explicit path and theme-wrapper flags, and gained CLI exit-code coverage (94799b3, adced6a)
+- Render the auto-logo as a square icon via a direct-paint SVG renderer, and rasterize it into the committed Tauri app icon. The square recomposition is a separate code path from the wordmark, so the icon no longer inherits the horizontal logo's aspect handling (46a233b, 6a5152a)
+- Guard the `target-manifest` test fixture as `check-pin-parity`'s sixth surface. The fixture models the published shape a real `create-zudo-doc` consumer gets, but its `@takazudo/zudo-doc` pin is documentary — the slow test extracts a packed tarball rather than resolving from the registry, so drift there was invisible to the test suite. It had silently fallen a full major behind (8e497f3)
+- Exclude fenced code regions when scanning for `GENERATED:Z_INDEX` markers on the markdown surface, so a doc page can reproduce the marker verbatim while explaining the generator. Fence detection follows CommonMark rather than a `trim()` approximation: the three-space indent cap, same-character and length-matching closers, info-string lines that do not close, and unterminated fences are all honoured. The CSS surface is unaffected — the behaviour is gated on the call site, not sniffed from the marker text (bc861c1)
+
+### Bug Fixes
+
+- Ship a placeholder `src-tauri/icons/icon.png` in the `tauri` feature template. Without it, `tauri::generate_context!()` panics at compile time — so **every** project scaffolded with `--tauri` failed to build, even with `bundle.icon: []` and `bundle.active: false`. The host repo was fixed earlier but the generator template was not. The template ships a neutral 32×32 RGBA placeholder rather than this project's brand mark, allowlisted against the template-drift check for that reason (70dead5)
+- Count `GENERATED:Z_INDEX` markers only where they appear as structural markers, not wherever the text occurs. A doc page that quoted the marker in prose was misread as a duplicate and failed validation. Counting and locating now derive from a single scanner, which closes a latent corruption path: had only the count been tightened, a quoted marker appearing *before* the real one would have passed validation and then become the splice position (32f786f)
+- Treat a fence opened on a list-item line (`- ` + backticks) as a real fence. Missing this was not a harmless false negative — the item's closing fence, indented to the content column and carrying no list marker, was then read as a *fresh* opener that swallowed the real marker pair below it (dda487a)
+- Bound a closing fence by its opener's content column rather than a flat three spaces, so a fence opened after a wide list marker (`10) `) is closed by a closer at column 4. Previously the fence never closed and hid the real markers behind a missing-marker error (d5dd4cf)
+- Narrow the design-token-panel persisted-state probe to non-empty envelopes. It previously triggered the eager panel load on key *presence*, so an empty `{}` envelope — which carries no overrides to restore — fetched the bundle for nothing. It now triggers unless the envelope is provably empty (`{}`, `[]`, `null`), and stays schema-agnostic: it parses for emptiness without learning the format (a8beb3b)
+- Register the resolved per-instance toggle channel alongside the shared one in the pre-import listener, so a host that configures `PanelConfig.toggleEvent` — or dispatches zdtp's per-instance channel — can trigger the initial dynamic import. The instance channel is *replaced* rather than accumulated across theme-pack and colour-scheme changes, so a stale channel from a pack the visitor has left can no longer trigger a load (7cf7cc4)
+- Realign the `target-manifest` fixture's `@takazudo/zudo-doc` pin with the scaffold's `ZUDO_DOC_PIN`. It had been hand-bumped twice and then went unmaintained across four minor releases — the signature of a missing guard, which this release also adds (8c239f7)
+- MDX-escape the Role cells in the `gen-z-index` markdown table, so a role description containing MDX-significant characters does not break the page (d4f5317)
+- Drop the unused `cdn.jsdelivr.net` grant from the CSP `font-src` directive. Nothing loaded fonts from it (3c108b3)
+- Guard `matchAll` capture groups for `noUncheckedIndexedAccess` (d5833eb)
+
+### Other Changes
+
+- Extract the release script's `ZUDO_DOC_PIN` rewrite into a testable helper that updates **both** the scaffold constant and the `target-manifest` fixture in lockstep. Previously the release step rewrote only the scaffold, which is what let the fixture drift in the first place. The helper takes a repo root so tests can drive it against a temp tree, validates both files before writing either, and fails loudly rather than silently no-opping. Its tests spawn the real CLI in the exact form the shell step uses, plus assertions that read the release script itself — so a silent revert to inline rewriting fails the suite (35b07bc, 471547a)
+- Bump the `@takazudo/*` toolchain to current, keeping first-party pins out of the dependency-bump path (those belong to the release flow) and syncing the scaffold's zfb pins for pin parity (49d5d4c, 039f8df, 972fc5e)
+- Prove the zdtp payload left the eager islands graph with a build-output assertion, and cover the persisted-state probe path end-to-end in the e2e suite (ef2e567, e0c7ceb)
+- Rewrite the `claude-skills` allowlist rationale as defense-in-depth, and reword the peer-floor advisory so it no longer reads as an outstanding chore — the floor lags a release permanently and by design (159fd9d, 15117a5)
+- Re-baseline the A2 no-stub parity hashes, and merge the `icon.ts` shapes imports into one statement (a5bafd3, f04e1dd)
