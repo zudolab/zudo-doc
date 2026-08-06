@@ -127,6 +127,11 @@ function dispatchToggle(target: EventTarget): void {
   target.dispatchEvent(new Event("toggle-design-token-panel"));
 }
 
+/** Dispatch on an arbitrary toggle channel (custom / derived / shared). */
+function dispatchOn(target: EventTarget, channel: string): void {
+  target.dispatchEvent(new Event(channel));
+}
+
 /**
  * Flush the interim-listener → dynamic-import → configure promise chain
  * (REAL timers only). Used where nothing is expected to happen — positive
@@ -402,6 +407,14 @@ describe("bootstrapDesignTokenPanel — lazy zdtp load", () => {
 // zdtp eagerly at mount so overrides do not silently revert.
 // ---------------------------------------------------------------------------
 
+/**
+ * A `-state*` envelope carrying at least one override. Seeded wherever a test
+ * needs the probe's state branch to FIRE: since #3314 the branch is
+ * content-based, so `"{}"` no longer triggers it and would silently turn any
+ * such test into a no-op assertion.
+ */
+const NON_EMPTY_ENVELOPE = '{"--zd-accent":"#f00"}';
+
 describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
   function makeBuilder(prefix = "test-panel") {
     return vi.fn<PanelConfigBuilder>(
@@ -416,9 +429,9 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
     }));
   });
 
-  it("a seeded -state-v4 key triggers an eager configure without any toggle (and no show)", async () => {
+  it("a seeded non-empty -state-v4 key triggers an eager configure without any toggle (and no show)", async () => {
     const browser = installBrowser();
-    browser.values.set("test-panel-state-v4", "{}");
+    browser.values.set("test-panel-state-v4", NON_EMPTY_ENVELOPE);
 
     bootstrapDesignTokenPanel(makeBuilder());
     await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
@@ -434,7 +447,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
 
   it("an unversioned -state key triggers the eager configure (version-agnostic stem match)", async () => {
     const browser = installBrowser();
-    browser.values.set("test-panel-state", "{}");
+    browser.values.set("test-panel-state", NON_EMPTY_ENVELOPE);
 
     bootstrapDesignTokenPanel(makeBuilder());
     await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
@@ -452,7 +465,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
 
   it("probes the pack-scoped prefix when a non-default pack is active", async () => {
     const browser = installBrowser("light", "foundry");
-    browser.values.set("test-panel--foundry-state-v4", "{}");
+    browser.values.set("test-panel--foundry-state-v4", NON_EMPTY_ENVELOPE);
 
     bootstrapDesignTokenPanel(makeBuilder());
     await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
@@ -516,11 +529,29 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
     await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
   });
 
+  it(":autoload == \"1\" with :visible == \"0\" still triggers — the documented owner-mode-armed steady state", async () => {
+    const browser = installBrowser();
+    // zdtp README §10.1: `disableAutoload()` clears `:autoload`, `:visible`,
+    // `-elpath-enabled` and the open-state key TOGETHER, so this pair is an
+    // owner with the panel mounted closed — not a stale flag. Reviewed and
+    // deliberately left triggering in #3313; a `:visible=0` veto would break
+    // exactly this case (upstream: Takazudo/zudo-design-token-panel#565).
+    browser.values.set("test-panel:autoload", "1");
+    browser.values.set("test-panel:visible", "0");
+
+    bootstrapDesignTokenPanel(makeBuilder());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await settle();
+
+    // Armed, not opened: the probe never issues an explicit show().
+    expect(zdtp.showDesignTokenPanel).not.toHaveBeenCalled();
+  });
+
   it("a pre-load pack switch onto a namespace with saved state triggers the eager load", async () => {
     const browser = installBrowser("light", "default");
     // The boot-time (default-pack) namespace is clean, but the foundry
     // namespace has saved overrides.
-    browser.values.set("test-panel--foundry-state-v4", "{}");
+    browser.values.set("test-panel--foundry-state-v4", NON_EMPTY_ENVELOPE);
 
     bootstrapDesignTokenPanel(makeBuilder());
     await settle();
@@ -555,7 +586,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
     const browser = installBrowser("light", "foundry");
     // Saved tweaks exist, but only under the DEFAULT pack's namespace — the
     // active (foundry-scoped) namespace has nothing to restore.
-    browser.values.set("test-panel-state-v4", "{}");
+    browser.values.set("test-panel-state-v4", NON_EMPTY_ENVELOPE);
 
     bootstrapDesignTokenPanel(makeBuilder());
     await settle();
@@ -567,7 +598,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
   it("ignores unrelated apps' keys — no whole-localStorage suffix scan", async () => {
     installBrowser();
     const browser = installBrowser();
-    browser.values.set("other-app-state-v4", "{}");
+    browser.values.set("other-app-state-v4", NON_EMPTY_ENVELOPE);
     browser.values.set("test-panel-open", "0");
 
     bootstrapDesignTokenPanel(makeBuilder());
@@ -579,7 +610,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
 
   it("a toggle while the probe-initiated import is in flight coalesces into the same configure", async () => {
     const browser = installBrowser();
-    browser.values.set("test-panel-state-v4", "{}");
+    browser.values.set("test-panel-state-v4", NON_EMPTY_ENVELOPE);
 
     bootstrapDesignTokenPanel(makeBuilder());
     dispatchToggle(browser.windowTarget);
@@ -613,6 +644,428 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
     // The lazy toggle path must still work with storage disabled.
     dispatchToggle(browser.windowTarget);
     await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Envelope-content policy (#3314, locked by the #3313 decision): the
+// `${prefix}-state*` branch of the probe tests CONTENT, not key presence.
+// Organizing principle — trigger unless the value is PROVABLY empty, where
+// provably empty is exactly `{}`, `[]`, and the literal `null`.
+// ---------------------------------------------------------------------------
+
+describe("bootstrapDesignTokenPanel — persisted-state probe envelope policy", () => {
+  function makeBuilder(prefix = "test-panel") {
+    return vi.fn<PanelConfigBuilder>(
+      () => ({ storagePrefix: prefix }) as unknown as PanelConfig,
+    );
+  }
+
+  beforeEach(() => {
+    zdtp.configurePanel.mockImplementation((cfg: PanelConfig) => ({
+      instanceId: cfg.storagePrefix,
+      destroy: vi.fn(),
+    }));
+  });
+
+  /** Every row of the locked table, keyed by the RAW persisted value. */
+  const ENVELOPE_TRUTH_TABLE: ReadonlyArray<{
+    label: string;
+    raw: string;
+    triggers: boolean;
+  }> = [
+    { label: "an empty object", raw: "{}", triggers: false },
+    { label: "an empty array", raw: "[]", triggers: false },
+    { label: "the literal null", raw: "null", triggers: false },
+    { label: "a non-empty object", raw: '{"--zd-accent":"#f00"}', triggers: true },
+    { label: "a non-empty array", raw: '["--zd-accent"]', triggers: true },
+    { label: "a string primitive", raw: '"x"', triggers: true },
+    // `0` and `false` are the traps: falsy, but not containers we can PROVE
+    // are empty, so the conservative branch keeps them triggering.
+    { label: "the number 0", raw: "0", triggers: true },
+    { label: "the boolean false", raw: "false", triggers: true },
+    // Malformed values are handed to zdtp to migrate or reject rather than
+    // silently discarded here — the `catch` returns "not empty". Inverting
+    // this branch is the single easiest mistake to make in the predicate.
+    { label: "malformed JSON", raw: "{not json", triggers: true },
+    { label: "the empty string (malformed JSON)", raw: "", triggers: true },
+  ];
+
+  it.each(ENVELOPE_TRUTH_TABLE.filter((row) => row.triggers))(
+    "a -state-v4 envelope holding $label triggers the eager configure",
+    async ({ raw }) => {
+      const browser = installBrowser();
+      browser.values.set("test-panel-state-v4", raw);
+
+      bootstrapDesignTokenPanel(makeBuilder());
+      await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    },
+  );
+
+  it.each(ENVELOPE_TRUTH_TABLE.filter((row) => !row.triggers))(
+    "a -state-v4 envelope holding $label stays lazy until a toggle",
+    async ({ raw }) => {
+      const browser = installBrowser();
+      browser.values.set("test-panel-state-v4", raw);
+
+      bootstrapDesignTokenPanel(makeBuilder());
+      await settle();
+
+      expect(zdtp.evaluations).toBe(0);
+      expect(zdtp.configurePanel).not.toHaveBeenCalled();
+
+      // Narrowed, not disabled: the toggle path still activates.
+      dispatchToggle(browser.windowTarget);
+      await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    },
+  );
+
+  it("nothing persisted at all stays lazy (the absent-key row)", async () => {
+    installBrowser();
+
+    bootstrapDesignTokenPanel(makeBuilder());
+    await settle();
+
+    expect(zdtp.evaluations).toBe(0);
+    expect(zdtp.configurePanel).not.toHaveBeenCalled();
+  });
+
+  it("ORs across every matching key: an empty -state-v4 does not stop the scan reaching a non-empty -state-v3", async () => {
+    const browser = installBrowser();
+    // ACCEPTED FALSE POSITIVE, asserted as INTENDED behaviour so it cannot be
+    // silently "fixed": zdtp README §9 says an empty v4 key shadows the legacy
+    // v3 chain, so nothing would actually be applied here. Recognising that
+    // would require the probe to learn the version precedence, which the
+    // #3282 schema-agnostic mandate forbids — the OR stays version-blind.
+    // Insertion order matters: the empty v4 key is scanned FIRST.
+    browser.values.set("test-panel-state-v4", "{}");
+    browser.values.set("test-panel-state-v3", NON_EMPTY_ENVELOPE);
+
+    bootstrapDesignTokenPanel(makeBuilder());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+  });
+
+  it("several empty envelopes across versions still stay lazy", async () => {
+    const browser = installBrowser();
+    browser.values.set("test-panel-state-v4", "{}");
+    browser.values.set("test-panel-state-v3", "{}");
+
+    bootstrapDesignTokenPanel(makeBuilder());
+    await settle();
+
+    expect(zdtp.evaluations).toBe(0);
+    expect(zdtp.configurePanel).not.toHaveBeenCalled();
+  });
+
+  it("a sibling pack's non-empty envelope never matches the base prefix stem", async () => {
+    const browser = installBrowser("light", "default");
+    // The `--<slug>` separator keeps sibling namespaces out of the
+    // `<prefix>-state` stem — unchanged by the content narrowing, so a
+    // NON-EMPTY value is what makes this assertion meaningful.
+    browser.values.set("test-panel--foundry-state-v4", NON_EMPTY_ENVELOPE);
+
+    bootstrapDesignTokenPanel(makeBuilder());
+    await settle();
+
+    expect(zdtp.evaluations).toBe(0);
+    expect(zdtp.configurePanel).not.toHaveBeenCalled();
+  });
+
+  it("a non-empty envelope is still ignored when storage throws", async () => {
+    installBrowser();
+    vi.stubGlobal("localStorage", {
+      getItem: () => NON_EMPTY_ENVELOPE,
+      key: () => {
+        throw new Error("storage access denied");
+      },
+      get length(): number {
+        throw new Error("storage access denied");
+      },
+    });
+
+    bootstrapDesignTokenPanel(makeBuilder());
+    await settle();
+
+    expect(zdtp.evaluations).toBe(0);
+    expect(zdtp.configurePanel).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Resolved toggle channel (#3315, fixing #3292): the interim pre-import
+// listener binds the shared `toggle-design-token-panel` constant PLUS exactly
+// one resolved instance channel — `config.toggleEvent ?? toggle-${prefix}`,
+// mirroring zdtp's own `toggleEventName()` (README §5.3). A configured
+// `toggleEvent` REPLACES the derived name; the pair is never a union.
+// ---------------------------------------------------------------------------
+
+describe("bootstrapDesignTokenPanel — resolved toggle channel", () => {
+  function makeBuilder(config: Record<string, unknown>) {
+    return vi.fn<PanelConfigBuilder>(() => config as unknown as PanelConfig);
+  }
+
+  /** A builder whose prefix (and therefore derived channel) follows the mode. */
+  function makeModeBuilder() {
+    return vi.fn<PanelConfigBuilder>(
+      (mode) => ({ storagePrefix: `test-panel-${mode}` }) as unknown as PanelConfig,
+    );
+  }
+
+  beforeEach(() => {
+    zdtp.configurePanel.mockImplementation((cfg: PanelConfig) => ({
+      instanceId: cfg.storagePrefix,
+      destroy: vi.fn(),
+    }));
+  });
+
+  it("a host-configured custom toggleEvent triggers the dynamic import before load", async () => {
+    const browser = installBrowser();
+
+    bootstrapDesignTokenPanel(
+      makeBuilder({ storagePrefix: "test-panel", toggleEvent: "acme-open-tokens" }),
+    );
+    dispatchOn(browser.windowTarget, "acme-open-tokens");
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+
+    expect(zdtp.evaluations).toBe(1);
+    expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce();
+  });
+
+  it("the derived toggle-<storagePrefix> channel triggers it when no toggleEvent is configured", async () => {
+    const browser = installBrowser();
+
+    bootstrapDesignTokenPanel(makeBuilder({ storagePrefix: "test-panel" }));
+    dispatchOn(browser.windowTarget, "toggle-test-panel");
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+
+    expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce();
+  });
+
+  it("derives the channel from the PACK-SCOPED prefix when a non-default pack is active at boot", async () => {
+    const browser = installBrowser("light", "foundry");
+
+    bootstrapDesignTokenPanel(makeBuilder({ storagePrefix: "test-panel" }));
+    // The unscoped name belongs to a namespace that is not active — inert.
+    dispatchOn(browser.windowTarget, "toggle-test-panel");
+    await settle();
+    expect(zdtp.evaluations).toBe(0);
+
+    dispatchOn(browser.windowTarget, "toggle-test-panel--foundry");
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+  });
+
+  it("a configured toggleEvent REPLACES the derived name: the derived channel is not registered", async () => {
+    const browser = installBrowser();
+
+    bootstrapDesignTokenPanel(
+      makeBuilder({ storagePrefix: "test-panel", toggleEvent: "acme-open-tokens" }),
+    );
+    // zdtp would not honour `toggle-test-panel` for this instance either, so
+    // activating on it here would make the pre- and post-import channels
+    // disagree (the union hazard #3315 rules out).
+    dispatchOn(browser.windowTarget, "toggle-test-panel");
+    await settle();
+
+    expect(zdtp.evaluations).toBe(0);
+    expect(zdtp.configurePanel).not.toHaveBeenCalled();
+  });
+
+  it("keeps the shared channel live alongside a custom toggleEvent (no regression)", async () => {
+    const browser = installBrowser();
+
+    bootstrapDesignTokenPanel(
+      makeBuilder({ storagePrefix: "test-panel", toggleEvent: "acme-open-tokens" }),
+    );
+    dispatchToggle(browser.windowTarget);
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+
+    expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce();
+  });
+
+  it("ignores a custom toggleEvent for zdtp's OWN default prefix — that instance keeps the shared name", async () => {
+    const browser = installBrowser();
+    // zdtp's `toggleEventName()` short-circuits on the default storagePrefix
+    // and returns the historical shared name, discarding `toggleEvent`
+    // entirely (README §5.3; verified against the 0.4.9 bundle).
+    bootstrapDesignTokenPanel(
+      makeBuilder({
+        storagePrefix: "zudo-design-token-panel",
+        toggleEvent: "acme-open-tokens",
+      }),
+    );
+
+    dispatchOn(browser.windowTarget, "acme-open-tokens");
+    await settle();
+    expect(zdtp.evaluations).toBe(0);
+
+    dispatchToggle(browser.windowTarget);
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce();
+  });
+
+  it("a toggleEvent equal to the shared constant binds ONE listener: one dispatch, one net show", async () => {
+    const browser = installBrowser();
+    // The observable discriminator for double registration, asserted instead
+    // of the closure-local `pendingToggles`: two bindings would count ONE
+    // dispatch as TWO intents, making the net intent EVEN — configure would
+    // still run, but the panel would never be shown.
+    bootstrapDesignTokenPanel(
+      makeBuilder({
+        storagePrefix: "test-panel",
+        toggleEvent: "toggle-design-token-panel",
+      }),
+    );
+    dispatchToggle(browser.windowTarget);
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await settle();
+
+    expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce();
+  });
+
+  it("two dispatches on two DISTINCT channels stay two intents (net even → no show)", async () => {
+    const browser = installBrowser();
+
+    bootstrapDesignTokenPanel(makeBuilder({ storagePrefix: "test-panel" }));
+    // Genuinely two toggle intents — the dedupe Set guards registration, never
+    // dispatch counting, so these must NOT collapse into one.
+    dispatchToggle(browser.windowTarget);
+    dispatchOn(browser.windowTarget, "toggle-test-panel");
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await settle();
+
+    expect(zdtp.showDesignTokenPanel).not.toHaveBeenCalled();
+  });
+
+  it("a pack switch while pending rebinds the instance channel AND unbinds the old pack's", async () => {
+    const browser = installBrowser("light", "default");
+    const builder = makeBuilder({ storagePrefix: "test-panel" });
+
+    bootstrapDesignTokenPanel(builder);
+    browser.setPack("foundry");
+    browser.windowTarget.dispatchEvent(new Event("theme-pack-changed"));
+    await settle();
+    // Clean storage: the pack switch refreshed the channel without activating.
+    expect(zdtp.evaluations).toBe(0);
+
+    // STALE-CHANNEL REMOVAL, asserted explicitly: the pre-switch pack's channel
+    // must be gone, or it would keep starting an import for a namespace the
+    // user has left.
+    dispatchOn(browser.windowTarget, "toggle-test-panel");
+    await settle();
+    expect(zdtp.evaluations).toBe(0);
+    expect(zdtp.configurePanel).not.toHaveBeenCalled();
+
+    dispatchOn(browser.windowTarget, "toggle-test-panel--foundry");
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    expect(zdtp.configurePanel).toHaveBeenCalledWith(
+      expect.objectContaining({ storagePrefix: "test-panel--foundry" }),
+    );
+  });
+
+  it("a color-scheme change while pending rebinds a mode-dependent channel AND unbinds the old mode's", async () => {
+    const browser = installBrowser("light");
+    const builder = makeModeBuilder();
+
+    bootstrapDesignTokenPanel(builder);
+    browser.setMode("dark");
+    browser.windowTarget.dispatchEvent(new Event("color-scheme-changed"));
+    await settle();
+    expect(zdtp.evaluations).toBe(0);
+
+    dispatchOn(browser.windowTarget, "toggle-test-panel-light");
+    await settle();
+    expect(zdtp.evaluations).toBe(0);
+    expect(zdtp.configurePanel).not.toHaveBeenCalled();
+
+    dispatchOn(browser.windowTarget, "toggle-test-panel-dark");
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    expect(zdtp.configurePanel).toHaveBeenCalledWith(
+      expect.objectContaining({ storagePrefix: "test-panel-dark" }),
+    );
+  });
+
+  it("switching back to the boot pack rebinds its channel rather than accumulating a third", async () => {
+    const browser = installBrowser("light", "default");
+
+    bootstrapDesignTokenPanel(makeBuilder({ storagePrefix: "test-panel" }));
+    browser.setPack("foundry");
+    browser.windowTarget.dispatchEvent(new Event("theme-pack-changed"));
+    browser.setPack("default");
+    browser.windowTarget.dispatchEvent(new Event("theme-pack-changed"));
+    await settle();
+
+    dispatchOn(browser.windowTarget, "toggle-test-panel--foundry");
+    await settle();
+    expect(zdtp.evaluations).toBe(0);
+
+    dispatchOn(browser.windowTarget, "toggle-test-panel");
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    // One dispatch reached exactly one live binding → odd net intent.
+    expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce();
+  });
+
+  it("the shared channel survives a refresh whose resolved name equals it", async () => {
+    const browser = installBrowser("light", "default");
+    // The instance channel resolves to the shared constant at boot, then moves
+    // away on the pack switch. The removal branch must leave the shared
+    // registration alone — it is bound for the whole pending phase.
+    let hostToggleEvent = "toggle-design-token-panel";
+    const builder = vi.fn<PanelConfigBuilder>(
+      () =>
+        ({
+          storagePrefix: "test-panel",
+          toggleEvent: hostToggleEvent,
+        }) as unknown as PanelConfig,
+    );
+
+    bootstrapDesignTokenPanel(builder);
+    hostToggleEvent = "acme-open-tokens";
+    browser.setPack("foundry");
+    browser.windowTarget.dispatchEvent(new Event("theme-pack-changed"));
+    await settle();
+
+    dispatchToggle(browser.windowTarget);
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce();
+  });
+
+  it("the pre-hydration click-queue drain still counts exactly one toggle with both channels bound", async () => {
+    const browser = installBrowser();
+    // The drain re-dispatches the shared event synchronously — both channels
+    // are already bound by then (registration precedes the drain), and the
+    // single dispatch must still net exactly one show.
+    browser.windowTarget.__zdtpReadyClicks = () =>
+      dispatchToggle(browser.windowTarget);
+
+    bootstrapDesignTokenPanel(makeBuilder({ storagePrefix: "test-panel" }));
+    await vi.waitFor(() =>
+      expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce(),
+    );
+
+    expect(zdtp.configurePanel).toHaveBeenCalledOnce();
+  });
+
+  it("every channel becomes a no-op once configurePhase leaves pending", async () => {
+    const browser = installBrowser();
+
+    bootstrapDesignTokenPanel(
+      makeBuilder({ storagePrefix: "test-panel", toggleEvent: "acme-open-tokens" }),
+    );
+    dispatchToggle(browser.windowTarget);
+    await vi.waitFor(() =>
+      expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce(),
+    );
+
+    // Post-configure dispatches belong to the listeners zdtp binds itself;
+    // handling them here too would double-toggle every click.
+    dispatchToggle(browser.windowTarget);
+    dispatchOn(browser.windowTarget, "acme-open-tokens");
+    dispatchOn(browser.windowTarget, "toggle-test-panel");
+    await settle();
+
+    expect(zdtp.configurePanel).toHaveBeenCalledOnce();
+    expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce();
+    expect(zdtp.evaluations).toBe(1);
   });
 });
 
@@ -750,7 +1203,7 @@ describe("bootstrapDesignTokenPanel — theme-pack interplay", () => {
     builder: PanelConfigBuilder,
     activePrefix: string,
   ): Promise<void> {
-    browser.values.set(`${activePrefix}-state-v4`, "{}");
+    browser.values.set(`${activePrefix}-state-v4`, NON_EMPTY_ENVELOPE);
     bootstrapDesignTokenPanel(builder);
     await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
   }
