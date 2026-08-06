@@ -1,3 +1,8 @@
+import { execFileSync } from "node:child_process";
+import { readFileSync, writeFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { describe, it, expect } from "vitest";
 
 import {
@@ -174,5 +179,69 @@ describe("evaluateFirstPartyPeer — pinned (exact)", () => {
       actualPeer: "^0.4.0",
     });
     expect(res.ok).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Sixth guarded surface (#3307): the target-manifest fixture's
+// @takazudo/zudo-doc dependency must equal scaffold.ts's ZUDO_DOC_PIN.
+// ---------------------------------------------------------------------------
+//
+// Unlike scripts/lib/rewrite-zudo-doc-pins.mjs (#3306), check-pin-parity.mjs
+// takes no --repo-root — it resolves every path relative to ITS OWN file
+// location (see ROOT_DIR at the top of the script). There is no seam to
+// point it at a scratch tree, so the only way to exercise the real
+// drift-detection path end-to-end is to mutate the real fixture file and
+// restore it afterward. The mutation + restore is scoped to a single
+// try/finally around one synchronous execFileSync call, so a crash mid-test
+// still leaves the `finally` write to run and the tree unmutated for anyone
+// downstream.
+describe("target-manifest fixture guard (#3307, negative control)", () => {
+  const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+  const SCRIPT_PATH = resolve(REPO_ROOT, "scripts/check-pin-parity.mjs");
+  const FIXTURE_PKG_PATH = resolve(
+    REPO_ROOT,
+    "packages/zudo-doc/src/__tests__/fixtures/target-manifest/package.json",
+  );
+
+  it("exits non-zero and names the fixture path when its pin drifts from scaffold.ts", () => {
+    const original = readFileSync(FIXTURE_PKG_PATH, "utf-8");
+    try {
+      const mutated = original.replace(
+        /"@takazudo\/zudo-doc":\s*"[^"]+"/,
+        '"@takazudo/zudo-doc": "^0.0.1-wrong-on-purpose"',
+      );
+      // Guards against a regex that silently fails to match: without this,
+      // the test would "pass" on an unmutated (still-correct) fixture.
+      expect(mutated).not.toBe(original);
+      writeFileSync(FIXTURE_PKG_PATH, mutated);
+
+      let status: number | undefined;
+      let stderr = "";
+      try {
+        execFileSync(process.execPath, [SCRIPT_PATH], {
+          encoding: "utf-8",
+          stdio: ["ignore", "pipe", "pipe"],
+        });
+      } catch (error) {
+        const err = error as { status?: number; stderr?: string };
+        status = err.status;
+        stderr = err.stderr ?? "";
+      }
+
+      expect(status).toBe(1);
+      expect(stderr).toContain(FIXTURE_PKG_PATH);
+      expect(stderr).toMatch(/Fixture pin drift/);
+    } finally {
+      writeFileSync(FIXTURE_PKG_PATH, original);
+    }
+  });
+
+  it("passes on the real repo tree and reports the fixture pin (positive control)", () => {
+    const stdout = execFileSync(process.execPath, [SCRIPT_PATH], {
+      encoding: "utf-8",
+    });
+    expect(stdout).toContain("1 fixture pin");
+    expect(stdout).toContain("target-manifest fixture");
   });
 });
