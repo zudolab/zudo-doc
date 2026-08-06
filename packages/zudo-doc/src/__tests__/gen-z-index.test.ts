@@ -246,6 +246,85 @@ describe("scanMarkerLines with excludeFencedCode", () => {
     },
   );
 
+  it.each(["10) ", "1.  ", "-   "])(
+    "closes a list-item fence whose closer sits at a content column of four or more (prefix %j)",
+    (prefix) => {
+      // The closer carries no list marker of its own — it sits at the item's
+      // content column, which a four-or-more-character marker prefix pushes
+      // past a flat three-space cap. Rejecting it left the fence open, so
+      // every marker below stayed ineligible and the real one vanished.
+      const indent = " ".repeat(prefix.length);
+      const source = [
+        `${prefix}\`\`\`mdx`,
+        `${indent}${MD_TABLE_BEGIN_MARKER}`,
+        `${indent}\`\`\``,
+        "",
+        MD_TABLE_BEGIN_MARKER,
+        "",
+      ].join("\n");
+      expect(scanMarkerLines(source, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([
+        source.lastIndexOf(MD_TABLE_BEGIN_MARKER),
+      ]);
+    },
+  );
+
+  it.each([0, 1, 2, 3])(
+    "still closes a list-item fence with a closer indented by only %i space(s)",
+    (spaces) => {
+      // Measuring the allowance from the opener must be a SUPERSET of the old
+      // flat 0-3 rule, never narrower: a shallow closer keeps closing a fence
+      // opened at any indent.
+      const source = [
+        "10) ```mdx",
+        `    ${MD_TABLE_BEGIN_MARKER}`,
+        `${" ".repeat(spaces)}\`\`\``,
+        "",
+        MD_TABLE_BEGIN_MARKER,
+        "",
+      ].join("\n");
+      expect(scanMarkerLines(source, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([
+        source.lastIndexOf(MD_TABLE_BEGIN_MARKER),
+      ]);
+    },
+  );
+
+  it("expands a tab in the list-marker padding to CommonMark's four-column tab stops", () => {
+    // The opener regex accepts a tab as list-marker padding, and `"1.\t"` is
+    // three CHARACTERS but four COLUMNS. Measuring characters would cap the
+    // closer at six spaces and reject this legal one at seven.
+    const source = [
+      "1.\t```mdx",
+      `    ${MD_TABLE_BEGIN_MARKER}`,
+      "       ```",
+      "",
+      MD_TABLE_BEGIN_MARKER,
+      "",
+    ].join("\n");
+    expect(scanMarkerLines(source, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([
+      source.lastIndexOf(MD_TABLE_BEGIN_MARKER),
+    ]);
+  });
+
+  it("closes at exactly the opener's content column + 3, but not one space further", () => {
+    // Proves the new allowance is a BOUND, not an anything-goes relaxation.
+    const fenceDoc = (closerSpaces: number) =>
+      [
+        "10) ```mdx",
+        `    ${MD_TABLE_BEGIN_MARKER}`,
+        `${" ".repeat(closerSpaces)}\`\`\``,
+        "",
+        MD_TABLE_BEGIN_MARKER,
+        "",
+      ].join("\n");
+    // Content column 4 + three further spaces of slack = 7.
+    const atBound = fenceDoc(7);
+    expect(scanMarkerLines(atBound, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([
+      atBound.lastIndexOf(MD_TABLE_BEGIN_MARKER),
+    ]);
+    // One past it: the fence never closes, so nothing below is eligible.
+    expect(scanMarkerLines(fenceDoc(8), MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([]);
+  });
+
   it("does not mistake a list marker for extra indentation on a four-space-indented line", () => {
     // Guards the optional list-prefix group against relaxing the 0-3 space
     // rule by backtracking (`^ {0,3}` + optional prefix must not add up to a
@@ -927,6 +1006,28 @@ describe("replaceBlock with excludeFencedCode", () => {
         `  ${MD_TABLE_BEGIN_MARKER}`,
         `  ${MD_TABLE_END_MARKER}`,
         "  ```",
+        "",
+        MD_TABLE_BEGIN_MARKER,
+        inner,
+        MD_TABLE_END_MARKER,
+        "",
+      ].join("\n");
+    expect(replaceMd(listDoc("old table"), NEW_TABLE)).toBe(listDoc("new table"));
+  });
+
+  it("replaces the real pair when the quoting fence opens on a wide-marker list item", () => {
+    // Regression: `10) ` opens the fence (wave 2), but its closer sits at the
+    // item's content column 4 — past the old flat three-space cap. The fence
+    // therefore never closed, the real pair below stayed ineligible, and a
+    // perfectly valid doc threw "Could not find … markers".
+    const listDoc = (inner: string) =>
+      [
+        "10) Seed the region by hand:",
+        "",
+        "10) ```mdx",
+        `    ${MD_TABLE_BEGIN_MARKER}`,
+        `    ${MD_TABLE_END_MARKER}`,
+        "    ```",
         "",
         MD_TABLE_BEGIN_MARKER,
         inner,
