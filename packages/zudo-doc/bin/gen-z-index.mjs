@@ -41,7 +41,9 @@
 // error in MDX. `--check` verifies BOTH regions when --md-table is given;
 // drift in either exits 1. Like the CSS block, the md-table region must be
 // seeded once by hand (just the marker pair) before the generator can find
-// it to replace.
+// it to replace. On this surface ONLY, marker lines inside a CommonMark
+// fenced code block are ignored, so a doc page may reproduce the marker
+// verbatim while explaining the generator (see `scanMarkerLines`).
 //
 // Pure Node (fs only — NO npm deps, no minimist). Idempotent: running twice
 // produces no diff.
@@ -426,6 +428,21 @@ export function buildBlock(tiers, options = {}) {
   return lines.join("\n");
 }
 
+// CommonMark fenced-code-block rules (https://spec.commonmark.org/0.31.2/
+// #fenced-code-blocks), transcribed only as far as `scanMarkerLines` needs
+// them. Each of these is a rule a `trim()` + `startsWith` approximation gets
+// wrong, which is why they are spelled out here rather than eyeballed:
+//
+//   - An opening fence carries AT MOST three spaces of indentation. Four
+//     spaces makes the line indented code, not a fence.
+//   - A backtick opening fence's info string may not itself contain a
+//     backtick (a tilde fence's info string may contain anything).
+//   - A closing fence repeats the SAME character, at least as many times as
+//     the opener, followed by whitespace only — so an info-string line such
+//     as ```js does not close an already-open fence.
+const OPEN_FENCE_RE = /^ {0,3}(`{3,}|~{3,})(.*)$/;
+const CLOSE_FENCE_RE = /^ {0,3}(`{3,}|~{3,})[ \t]*$/;
+
 /**
  * Walks `source` line by line and returns the character offsets (into
  * `source`, in source order) of every LINE-ANCHORED occurrence of `marker` —
@@ -444,23 +461,61 @@ export function buildBlock(tiers, options = {}) {
  * closed by a trailing brace-comment on the same line) — while rejecting a
  * line where the marker is only part of a prose sentence.
  *
- * Walks one line at a time (no per-line fence-state tracking yet) so a future
- * CommonMark fenced-code-region exclusion can extend this same loop rather
- * than requiring a restructure.
+ * `options.excludeFencedCode` (default `false`) additionally tracks
+ * CommonMark fenced-code state (see the two regexes above) and makes every
+ * line from an opening fence through its closing fence — inclusive, and
+ * through end-of-source for an unterminated fence — ineligible. It is
+ * OFF by default and passed only from the `--md-table` surface: fences are a
+ * markdown construct, and the CSS surface must keep byte-identical behaviour.
+ *
+ * ACCEPTED LIMITATION: a marker line inside a **four-space-indented** code
+ * block is still counted. Indented code is not a fence, and detecting it
+ * needs far more markdown awareness (list-item continuation indentation,
+ * paragraph interruption rules) than a dependency-free bin should carry —
+ * zudolab/zudo-doc#3290 names fenced code, not indented code. The failure
+ * mode stays loud (a "duplicate markers" error), never silent corruption.
  *
  * Exported for unit testing.
  */
-export function scanMarkerLines(source, marker) {
+export function scanMarkerLines(source, marker, options = {}) {
+  const { excludeFencedCode = false } = options;
   const RESIDUE_RE = /^[\s{}/*]*$/;
   const offsets = [];
+  // `{ char, length }` while inside an open fenced region, else null.
+  let fence = null;
   let lineStart = 0;
   while (lineStart <= source.length) {
     const newlineIdx = source.indexOf("\n", lineStart);
     const lineEnd = newlineIdx === -1 ? source.length : newlineIdx;
     const line = source.slice(lineStart, lineEnd);
-    const markerIdxInLine = line.indexOf(marker);
-    if (markerIdxInLine !== -1 && RESIDUE_RE.test(line.replace(marker, ""))) {
-      offsets.push(lineStart + markerIdxInLine);
+
+    let eligible = true;
+    if (excludeFencedCode) {
+      // Classify against the line minus a CRLF carriage return, so the
+      // "whitespace only after a closing fence" rule still holds on a CRLF
+      // source. Offsets are unaffected — `line` itself is untouched.
+      const text = line.endsWith("\r") ? line.slice(0, -1) : line;
+      if (fence !== null) {
+        const close = CLOSE_FENCE_RE.exec(text);
+        if (close && close[1][0] === fence.char && close[1].length >= fence.length) {
+          fence = null;
+        }
+        eligible = false;
+      } else {
+        const open = OPEN_FENCE_RE.exec(text);
+        const backtickInInfoString = open !== null && open[1][0] === "`" && open[2].includes("`");
+        if (open !== null && !backtickInInfoString) {
+          fence = { char: open[1][0], length: open[1].length };
+          eligible = false;
+        }
+      }
+    }
+
+    if (eligible) {
+      const markerIdxInLine = line.indexOf(marker);
+      if (markerIdxInLine !== -1 && RESIDUE_RE.test(line.replace(marker, ""))) {
+        offsets.push(lineStart + markerIdxInLine);
+      }
     }
     if (newlineIdx === -1) break;
     lineStart = newlineIdx + 1;
@@ -483,6 +538,11 @@ export function scanMarkerLines(source, marker) {
  * purely for error-message context (pass the conventional default or an
  * explicit --css/--md-table value).
  *
+ * `options.excludeFencedCode` is forwarded verbatim to `scanMarkerLines` and
+ * is gated on the SURFACE, not on the marker strings: only the `--md-table`
+ * call site passes it. Defaulting it off keeps every CSS call site — and its
+ * output — byte-unchanged.
+ *
  * Exported for unit testing.
  */
 export function replaceBlock(
@@ -491,9 +551,12 @@ export function replaceBlock(
   beginMarker = BEGIN_MARKER,
   endMarker = END_MARKER,
   filePath = DEFAULT_CSS_PATH,
+  options = {},
 ) {
-  const beginOffsets = scanMarkerLines(source, beginMarker);
-  const endOffsets = scanMarkerLines(source, endMarker);
+  const { excludeFencedCode = false } = options;
+  const scanOptions = { excludeFencedCode };
+  const beginOffsets = scanMarkerLines(source, beginMarker, scanOptions);
+  const endOffsets = scanMarkerLines(source, endMarker, scanOptions);
 
   if (beginOffsets.length === 0 || endOffsets.length === 0) {
     throw new Error(
@@ -672,6 +735,7 @@ export function main(argv = process.argv.slice(2)) {
       MD_TABLE_BEGIN_MARKER,
       MD_TABLE_END_MARKER,
       mdTablePath,
+      { excludeFencedCode: true },
     );
   }
 
