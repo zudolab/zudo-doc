@@ -7,9 +7,11 @@
  * Design-token panel (zdtp) WIRING MECHANISM + PACKAGE-DEFAULT ISLAND (#2658,
  * epic Minimal Scaffold #2651). zdtp itself is LAZY-LOADED (#3282, epic
  * #3261): this module carries NO top-level value import of `@takazudo/zdtp` —
- * the package is `import()`ed on the first `toggle-design-token-panel`
- * dispatch, or eagerly when the persisted-state probe finds saved tweaks / a
- * previously-open panel, so zdtp's bundle stays out of the initial page load.
+ * the package is `import()`ed on the first dispatch on either resolved toggle
+ * channel (the shared `toggle-design-token-panel`, or this instance's own —
+ * see {@link resolveInstanceToggleEvent}), or eagerly when the persisted-state
+ * probe finds saved tweaks / a previously-open panel, so zdtp's bundle stays
+ * out of the initial page load.
  *
  * `bootstrapDesignTokenPanel` is a callable that configures zdtp's panel and
  * wires its lifecycle hooks to zfb's navigation events via
@@ -112,12 +114,47 @@ const COLOR_SCHEME_CHANGED_EVENT = "color-scheme-changed";
 /**
  * The shared panel-toggle window event: dispatched by the header palette
  * button and re-dispatched by the SSR pre-hydration shim's `__zdtpReadyClicks`
- * drain. Once `@takazudo/zdtp` has loaded, its own module-scope listener owns
- * this channel; before that, the interim listener in
+ * drain. Once `@takazudo/zdtp` has loaded, the module-scope listener it binds
+ * for its DEFAULT instance owns this channel (and routes the dispatch to
+ * whichever instance is active); before that, the interim listener in
  * {@link bootstrapDesignTokenPanel} uses it to trigger the lazy load.
  * Cross-package contract — do not rename.
  */
 const TOGGLE_PANEL_EVENT = "toggle-design-token-panel";
+
+/**
+ * zdtp's OWN default `storagePrefix` — the value that makes an instance "the
+ * default instance" for {@link resolveInstanceToggleEvent}. Not a value this
+ * package ever configures (the package default is `zudo-doc-tweak`), but a
+ * host is free to, and the rule below hinges on it. Verified against the
+ * installed zdtp 0.4.9 bundle (`dist/panel-config-*.js`), which is also where
+ * zdtp's exported `DEFAULT_TOGGLE_EVENT` / `toggleEventName()` live — we
+ * cannot import either, because a value import of `@takazudo/zdtp` here would
+ * defeat the whole lazy load (#3282).
+ */
+const ZDTP_DEFAULT_STORAGE_PREFIX = "zudo-design-token-panel";
+
+/**
+ * The window-event name that toggles THIS instance once zdtp has loaded — a
+ * verbatim mirror of zdtp's `toggleEventName(cfg)` (README §5.3's config
+ * table, and the same three-branch expression in the installed 0.4.9 bundle):
+ *
+ * - default instance (prefix === {@link ZDTP_DEFAULT_STORAGE_PREFIX}) → the
+ *   historical shared name, and a configured `toggleEvent` is IGNORED;
+ * - otherwise → `config.toggleEvent` when supplied,
+ * - else the derived `toggle-${storagePrefix}`.
+ *
+ * A configured `toggleEvent` REPLACES the derived name rather than coexisting
+ * with it (#3315) — registering shared + custom + derived as a union would let
+ * the interim listener activate on a derived name zdtp itself would not honour
+ * after configure, so the pre-import and post-import channels would disagree.
+ */
+function resolveInstanceToggleEvent(config: PanelConfig): string {
+  if (config.storagePrefix === ZDTP_DEFAULT_STORAGE_PREFIX) {
+    return TOGGLE_PANEL_EVENT;
+  }
+  return config.toggleEvent ?? `toggle-${config.storagePrefix}`;
+}
 
 /**
  * The panel's own open-state key for a given instance (`${storagePrefix}-open`,
@@ -167,17 +204,76 @@ const ACTIVATION_FLAG_KEY_SUFFIXES = [
 ] as const;
 
 /**
- * Persisted-state probe predicate (#3282): does the ACTIVE storage namespace
- * hold zdtp state worth an eager load? True when the public `${prefix}-open`
- * mirror or any {@link ACTIVATION_FLAG_KEY_SUFFIXES} flag reads `"1"`, or any
- * `${prefix}-state*` key exists — the bare stem match keeps it
- * version-agnostic across `-state`, `-state-v2`/`-v3`/`-v4`, and future
- * schema revisions without enumerating them. The scan is anchored to the
- * EXACT active prefix; a whole-localStorage suffix scan is deliberately off
- * the table (it would false-positive on unrelated apps' `*-state` keys).
- * Note the pack-scoped `--<slug>` separator keeps sibling namespaces out:
- * `<prefix>--<pack>-state` never matches the `<prefix>-state` stem.
- * Guarded: disabled/throwing storage reads as "no persisted state".
+ * Is a persisted `${prefix}-state*` envelope PROVABLY empty — i.e. does it
+ * carry zero overrides for zdtp's `reapplyPersistedOverrides()` to apply?
+ * Organizing principle (#3314, locked by #3313): **trigger unless provably
+ * empty**, and provably empty is exactly three values — `{}`, `[]`, and the
+ * literal `null`. Everything else counts as content: a non-empty object or
+ * array, any primitive (including `0` / `false` / `""`-as-JSON-string), and
+ * anything that does not parse at all.
+ *
+ * Note the inversion in the `catch`: malformed JSON returns `false` (NOT
+ * empty → the caller triggers the eager load), so zdtp gets the chance to
+ * migrate or reject the value rather than this probe silently discarding a
+ * returning user's overrides. This stays schema-agnostic per #3282 — it never
+ * looks inside the envelope beyond "does it hold anything at all".
+ */
+function isEmptyEnvelope(raw: string | null): boolean {
+  if (raw === null) return true;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return false;
+  }
+  if (parsed === null) return true;
+  if (Array.isArray(parsed)) return parsed.length === 0;
+  if (typeof parsed === "object") return Object.keys(parsed).length === 0;
+  return false;
+}
+
+/**
+ * Persisted-state probe predicate (#3282, narrowed in #3314): does the ACTIVE
+ * storage namespace hold zdtp state worth an eager load? True when the public
+ * `${prefix}-open` mirror or any {@link ACTIVATION_FLAG_KEY_SUFFIXES} flag
+ * reads `"1"`, or any `${prefix}-state*` key holds a NON-EMPTY envelope
+ * ({@link isEmptyEnvelope}). The bare stem match keeps it version-agnostic
+ * across `-state`, `-state-v2`/`-v3`/`-v4`, and future schema revisions
+ * without enumerating them. The scan is anchored to the EXACT active prefix;
+ * a whole-localStorage suffix scan is deliberately off the table (it would
+ * false-positive on unrelated apps' `*-state` keys). Note the pack-scoped
+ * `--<slug>` separator keeps sibling namespaces out: `<prefix>--<pack>-state`
+ * never matches the `<prefix>-state` stem. Guarded: disabled/throwing storage
+ * reads as "no persisted state".
+ *
+ * Three pieces of context a future reader cannot recover from the code:
+ *
+ * 1. **Content, not presence — a deliberate divergence from zdtp's own gate.**
+ *    zdtp's reference lazy-load gate (`dist/astro/host-adapter.js`) presence-
+ *    checks its state keys (`getItem(...) !== null`), so an empty `{}` there
+ *    still fetches the bundle. zdtp README §10.1 states the third eager-load
+ *    trigger as "overrides are persisted", not "a state key exists", so the
+ *    content check is the closer implementation of the documented contract.
+ *    Filed upstream as Takazudo/zudo-design-token-panel#566.
+ * 2. **`:autoload` triggering the eager load is INTENDED, not a stale flag.**
+ *    Reviewed against the installed zdtp contract in #3313 and deliberately
+ *    kept: README §9 (the `autoload` row) *defines* `'1'` as "fetches eagerly
+ *    on every page load and mounts CLOSED", and §10.1's `disableAutoload()`
+ *    clears `:autoload`, `:visible`, `-elpath-enabled` and the open-state key
+ *    together — so `:autoload=1` with `:visible=0` is the documented
+ *    owner-mode-armed steady state. A `:visible=0` veto would break exactly
+ *    that case; do not add one. The real defect (no provenance bit separating
+ *    an explicit `enableAutoload()` from a curious click, per §10.1's
+ *    auto-remember footgun) is upstream:
+ *    Takazudo/zudo-design-token-panel#565.
+ * 3. **The scan ORs across EVERY matching key and must not stop early.** §9
+ *    documents that the v4 migration leaves the legacy v1/v2/v3 keys in
+ *    place, so one user can hold several `-state*` keys at once. That yields
+ *    one ACCEPTED false positive: `-state-v4 = {}` alongside a non-empty
+ *    `-state-v3` triggers, even though the empty v4 key shadows v3 and zdtp
+ *    would apply nothing. Avoiding it would require the probe to know the
+ *    version precedence, which the #3282 schema-agnostic mandate forbids —
+ *    leave it, and do not "fix" it by learning the version ordering.
  */
 function hasPersistedPanelState(instancePrefix: string): boolean {
   try {
@@ -188,7 +284,8 @@ function hasPersistedPanelState(instancePrefix: string): boolean {
     const stateKeyStem = `${instancePrefix}-state`;
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key !== null && key.startsWith(stateKeyStem)) return true;
+      if (key === null || !key.startsWith(stateKeyStem)) continue;
+      if (!isEmptyEnvelope(localStorage.getItem(key))) return true;
     }
   } catch {
     // Storage unavailable → nothing persisted to restore → no eager load.
@@ -296,9 +393,10 @@ function clearAppliedTokenOverrides(config: PanelConfig): void {
 }
 
 /**
- * Bootstrap zdtp for a project — LAZILY (#3282). At mount this registers an
- * interim `toggle-design-token-panel` listener, drains the pre-hydration
- * click queue, and probes localStorage for persisted panel state; the actual
+ * Bootstrap zdtp for a project — LAZILY (#3282). At mount this registers the
+ * interim toggle listener on both resolved channels (#3315), drains the
+ * pre-hydration click queue, and probes localStorage for persisted panel
+ * state; the actual
  * `import("@takazudo/zdtp")` + configure happen on the first toggle (or
  * immediately on a probe hit). The configure body then wires everything the
  * pre-lazy version wired eagerly: `configurePanel` with the pack-scoped
@@ -511,58 +609,136 @@ export function bootstrapDesignTokenPanel(
     pendingToggles = 0;
   }
 
-  // Interim toggle listener, registered BEFORE the click-queue drain below so
+  /**
+   * The pack-scoped PanelConfig for the LIVE mode + pack — byte-identical to
+   * what the configure body builds, so the interim listener's channel and the
+   * probe's namespace can never disagree with the eventual instance. Each call
+   * invokes the host builder once; callers needing both the toggle channel and
+   * the probe prefix share ONE call rather than building twice.
+   */
+  function readActiveConfig(): PanelConfig {
+    return withPackScopedStoragePrefix(
+      buildConfig(readMode()),
+      readThemePackFromDom(),
+    );
+  }
+
+  // Interim toggle handler, registered BEFORE the click-queue drain below so
   // the drain's synchronous re-dispatch of a queued pre-hydration click lands
   // here (counting as toggle intent and starting the lazy load). Once
-  // configure completes, zdtp's own module-scope listener — installed when
-  // the dynamic import evaluated — owns every subsequent dispatch; handling
-  // them here too would double-toggle each click, so this listener becomes a
-  // permanent no-op the moment configurePhase leaves "pending".
-  window.addEventListener(TOGGLE_PANEL_EVENT, () => {
+  // configure completes, the listeners zdtp binds itself — when the dynamic
+  // import evaluated, and again inside configurePanel — own every subsequent
+  // dispatch on both channels; handling them here too would double-toggle each
+  // click, so this handler becomes a permanent no-op the moment configurePhase
+  // leaves "pending".
+  const onInterimToggle = (): void => {
     if (configurePhase !== "pending") return;
     pendingToggles += 1;
     void activate();
-  });
+  };
+
+  // Channel names `onInterimToggle` is currently bound to (#3315) — the
+  // double-registration guard. A host whose `toggleEvent` equals the shared
+  // constant (or whose derived channel does) must bind ONE listener, not two,
+  // or a single dispatch would count as two toggle intents and flip the net
+  // odd/even result — configure would run, but the panel would never open.
+  //
+  // It does NOT collapse two dispatches of two DISTINCT events: those are
+  // genuinely two intents. (A DOM `Event` carries exactly one `type`, so one
+  // dispatch can never reach two channel names — binding the same name twice
+  // is the only double-count path there is.)
+  //
+  // Belt-and-braces, deliberately: `addEventListener` already ignores a repeat
+  // registration of an identical (type, callback, capture) triple, and every
+  // call here shares the one `onInterimToggle` reference, so the DOM alone
+  // would cover today's code. The Set states the invariant explicitly and
+  // keeps it holding if a future edit ever wraps the handler per channel — at
+  // which point the DOM's dedupe silently stops applying.
+  const boundToggleChannels = new Set<string>();
+  // The instance channel currently bound, so a refresh can REPLACE it.
+  let instanceToggleChannel: string | null = null;
+
+  function bindToggleChannel(name: string): void {
+    if (boundToggleChannels.has(name)) return;
+    boundToggleChannels.add(name);
+    window.addEventListener(name, onInterimToggle);
+  }
+
+  /**
+   * Re-resolve the per-instance channel and swap the binding — REPLACE, never
+   * accumulate. The resolved name derives from `storagePrefix`, which changes
+   * with the active theme pack (and, for a mode-dependent builder, with the
+   * color scheme); merely adding the new name would leave a stale listener that
+   * still starts an import for a pack the user has already left. The shared
+   * constant is exempt from removal: it is bound unconditionally for the whole
+   * pending phase, so a host whose resolved channel happens to equal it must
+   * not have it unbound out from under the shared registration.
+   */
+  function refreshInstanceToggleChannel(config: PanelConfig): void {
+    const resolved = resolveInstanceToggleEvent(config);
+    if (resolved === instanceToggleChannel) return;
+    if (
+      instanceToggleChannel !== null &&
+      instanceToggleChannel !== TOGGLE_PANEL_EVENT
+    ) {
+      window.removeEventListener(instanceToggleChannel, onInterimToggle);
+      boundToggleChannels.delete(instanceToggleChannel);
+    }
+    instanceToggleChannel = resolved;
+    bindToggleChannel(resolved);
+  }
+
+  const bootConfig = readActiveConfig();
+  bindToggleChannel(TOGGLE_PANEL_EVENT);
+  refreshInstanceToggleChannel(bootConfig);
 
   // Drain the pre-hydration click queue. If the user clicked the palette
   // button before this Island evaluated, the SSR shim (see
   // `doc-body-end-islands/design-token-panel-island.tsx`) captured the event
   // as a single boolean flag. Calling __zdtpReadyClicks() here removes the
-  // shim listener and re-dispatches once (at most) so the interim listener
+  // shim listener and re-dispatches once (at most) so the interim handler
   // above picks it up.
   (window as { __zdtpReadyClicks?: () => void }).__zdtpReadyClicks?.();
 
   // Persisted-state PROBE (#3282): a returning user with saved tweaks or a
   // previously-open panel must not wait for a toggle — without this eager
   // load their overrides would silently revert until they opened the panel.
-  // The probed prefix is computed from the statically-available builder plus
-  // the SAME pack scoping configure applies, so it names EXACTLY the active
-  // namespace (including the `<prefix>--<slug>` pack-scoped variant; package
-  // default `zudo-doc-tweak`, host-overridable). On a hit, zdtp's parked
-  // post-configure hook re-applies the overrides and re-opens a
-  // previously-open panel once configure runs.
-  const probePrefix = withPackScopedStoragePrefix(
-    buildConfig(readMode()),
-    readThemePackFromDom(),
-  ).storagePrefix;
-  if (hasPersistedPanelState(probePrefix)) void activate();
+  // The probed prefix comes from the same `readActiveConfig()` result the
+  // toggle channel resolved from, so it names EXACTLY the active namespace
+  // (including the `<prefix>--<slug>` pack-scoped variant; package default
+  // `zudo-doc-tweak`, host-overridable). On a hit, zdtp's parked post-configure
+  // hook re-applies the overrides and re-opens a previously-open panel once
+  // configure runs.
+  if (hasPersistedPanelState(bootConfig.storagePrefix)) void activate();
 
-  // Pre-load pack-change probe (review finding): switching to a pack whose
-  // namespace holds persisted state must trigger the same eager load — the
-  // post-import theme-pack-changed rebuild listener does not exist yet, so
-  // without this the incoming pack's saved overrides would sit unapplied
-  // until a toggle (parity with the eager era, where the rebuild listener ran
-  // from boot). Permanently no-ops once configurePhase leaves "pending": from
-  // then on the configure body's own listener owns the event, and configure
-  // itself always reads the pack live, so an in-flight activation needs no
-  // help from this handler either.
+  // Pre-load pack-change handling, folded into ONE listener (review finding +
+  // #3315): switching to a pack whose namespace holds persisted state must
+  // trigger the same eager load — the post-import theme-pack-changed rebuild
+  // listener does not exist yet, so without this the incoming pack's saved
+  // overrides would sit unapplied until a toggle (parity with the eager era,
+  // where the rebuild listener ran from boot) — AND the new pack's namespace
+  // resolves a different instance toggle channel, which must replace the old
+  // pack's. Permanently no-ops once configurePhase leaves "pending": from then
+  // on the configure body's own listener owns the event, and configure itself
+  // always reads the pack live, so an in-flight activation needs no help from
+  // this handler either.
   window.addEventListener(THEME_PACK_CHANGED_EVENT, () => {
     if (configurePhase !== "pending") return;
-    const packScopedPrefix = withPackScopedStoragePrefix(
-      buildConfig(readMode()),
-      readThemePackFromDom(),
-    ).storagePrefix;
-    if (hasPersistedPanelState(packScopedPrefix)) void activate();
+    const activeConfig = readActiveConfig();
+    refreshInstanceToggleChannel(activeConfig);
+    if (hasPersistedPanelState(activeConfig.storagePrefix)) void activate();
+  });
+
+  // The color-scheme twin of the refresh above (#3315). `buildConfig(mode)` may
+  // make `storagePrefix` — and therefore the derived channel — mode-dependent,
+  // so a light/dark toggle during the pending phase can retarget the instance
+  // channel exactly like a pack switch does. It deliberately does NOT re-run
+  // the persisted-state probe: which namespaces are worth an eager load is the
+  // probe's own contract (#3313/#3314), and widening its trigger set is out of
+  // scope here. Same permanent no-op after configure, for the same reason.
+  window.addEventListener(COLOR_SCHEME_CHANGED_EVENT, () => {
+    if (configurePhase !== "pending") return;
+    refreshInstanceToggleChannel(readActiveConfig());
   });
 }
 
