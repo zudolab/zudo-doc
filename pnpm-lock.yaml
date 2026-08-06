@@ -27,17 +27,17 @@ importers:
         specifier: 0.4.9
         version: 0.4.9(preact@10.29.2)
       '@takazudo/zfb':
-        specifier: 2.1.0
-        version: 2.1.0
+        specifier: 2.2.0
+        version: 2.2.0
       '@takazudo/zfb-adapter-cloudflare':
-        specifier: 2.1.0
-        version: 2.1.0
+        specifier: 2.2.0
+        version: 2.2.0
       '@takazudo/zfb-md-wasm':
-        specifier: 2.1.0
-        version: 2.1.0
+        specifier: 2.2.0
+        version: 2.2.0
       '@takazudo/zfb-runtime':
-        specifier: 2.1.0
-        version: 2.1.0(@takazudo/zfb@2.1.0)
+        specifier: 2.2.0
+        version: 2.2.0(@takazudo/zfb@2.2.0)
       '@takazudo/zudo-doc':
         specifier: workspace:*
         version: link:packages/zudo-doc
@@ -226,14 +226,14 @@ importers:
         version: 4.21.0
     devDependencies:
       '@takazudo/zfb':
-        specifier: 2.1.0
-        version: 2.1.0
+        specifier: 2.2.0
+        version: 2.2.0
       '@takazudo/zfb-md-wasm':
-        specifier: 2.1.0
-        version: 2.1.0
+        specifier: 2.2.0
+        version: 2.2.0
       '@takazudo/zfb-runtime':
-        specifier: 2.1.0
-        version: 2.1.0(@takazudo/zfb@2.1.0)
+        specifier: 2.2.0
+        version: 2.2.0(@takazudo/zfb@2.2.0)
       '@takazudo/zudo-doc-history-server':
         specifier: workspace:*
         version: link:../doc-history-server
@@ -1068,52 +1068,52 @@ packages:
     peerDependencies:
       preact: ^10.29.1
 
-  '@takazudo/zfb-adapter-cloudflare@2.1.0':
-    resolution: {integrity: sha512-Sogw4jflcN4eqJhXqXewPMuj3KESELDEpsEzxmoRscApsBZEXXb3WgsC8G87IuKB1wFznDV0XlkOLVIF457lWg==}
+  '@takazudo/zfb-adapter-cloudflare@2.2.0':
+    resolution: {integrity: sha512-g3V3DIjsT7kHlCDKk0OF99nFOjrT6gegHSwvjwes1JPOn4jEUOikBojuKBPTkK178pbYFgfN8H/WiMgZljYEAA==}
     engines: {node: '>=22.0.0', pnpm: '>=10.0.0'}
     hasBin: true
 
-  '@takazudo/zfb-darwin-arm64@2.1.0':
-    resolution: {integrity: sha512-dtFo9SHf+igUsgVKOYYf9Dq6oaOHFtPN53fecXCGn5uLtVhoLhl/6pQ3TiLWZF/tLDRSN873CeA6trvPlNaKeQ==}
+  '@takazudo/zfb-darwin-arm64@2.2.0':
+    resolution: {integrity: sha512-Sey4HPAdyHaBgnnVTuNWNrfh0EqRnSAPcaO9gTiAaSiZ46lK2Q1BTB4X2CxJTbCdTy5lBhWwJkzHO1Blr7vjbg==}
     cpu: [arm64]
     os: [darwin]
 
-  '@takazudo/zfb-darwin-x64@2.1.0':
-    resolution: {integrity: sha512-bBa7f/voPDPTipEb3XwT/fpYneG/mxCOddOCY1DsXfj3TS83ADBqAI3XtehFCL8LEw+DFXpFgBQEDBAAziXr0g==}
+  '@takazudo/zfb-darwin-x64@2.2.0':
+    resolution: {integrity: sha512-zmEwzBKLQLglh3X3mZx/1f5cFXLQ1LY4slnFPXSJwg95lfs0eH12wA+R2O9h+JKIq/Ys/vGkXdGfIWAtzjXZXw==}
     cpu: [x64]
     os: [darwin]
 
-  '@takazudo/zfb-linux-arm64-gnu@2.1.0':
-    resolution: {integrity: sha512-iuVgMTytL86QCmvTjuAd1FtntUQG5izV5Wn7GsXIHfG1DuDS/OIW7upbuSYQ/dPtBRBjjmODCneEvI7JWs2Khw==}
+  '@takazudo/zfb-linux-arm64-gnu@2.2.0':
+    resolution: {integrity: sha512-DWQgdNn/E+unneAAT4t/8xHuto9zjeoBJ8YnNDKGUUbJnUvAbBMO7o1TlFl2JtOp+h13lGj4SQY/jN5+LhWsbA==}
     cpu: [arm64]
     os: [linux]
 
-  '@takazudo/zfb-linux-x64-gnu@2.1.0':
-    resolution: {integrity: sha512-0Emz6Pn5JAmwkgPYIMijVZFOG3RExo8dJXh+yLmZxQDZ04wtFt6H88YYEyMfoNF7AGK1irQOsFOcEI1mz+vFxg==}
+  '@takazudo/zfb-linux-x64-gnu@2.2.0':
+    resolution: {integrity: sha512-jpDoT3V7hQPDhvoGmTdeJwrSi6uysWFxtgpZtaRF/vNPI+HnLJg99yqkOlk54zGd2vJ0PIwLv6gdvkkZXkixzQ==}
     cpu: [x64]
     os: [linux]
 
-  '@takazudo/zfb-md-wasm@2.1.0':
-    resolution: {integrity: sha512-b+zOAQwelXIaOzgJXHRxc8Ng7BQEMqcF377a6LwCzlNprl8/8YbGsFnqUXBglGCuJnWWsDzdHF91IhEUITlD6w==}
+  '@takazudo/zfb-md-wasm@2.2.0':
+    resolution: {integrity: sha512-cjQjH4jmlsRwjUHKqJE1FiI/OFplIK0TRBnSAHw7Vy31zLmfjUAe57z3OP2ICUEsGsLvwr6hdEiw8e4YhnjcYA==}
     engines: {node: '>=20.0.0', pnpm: '>=10.0.0'}
 
-  '@takazudo/zfb-runtime@2.1.0':
-    resolution: {integrity: sha512-b8LrnwmBpA4nnhVOhxZGWMO3bS9kMoCFvjE/wZXtb04mMQo9Kvf6k+OuSE4lQpvZFm//LwzjDLQeGL2giayHNw==}
+  '@takazudo/zfb-runtime@2.2.0':
+    resolution: {integrity: sha512-Zis6QSveQ8c4QFFsOmN0MHYQj3J0dd/ZRtZwLpDcTGONTncEMv1InwT4TYR69Qxcd5S3NEDdNkRB/+tJl1BsdQ==}
     engines: {node: '>=22.0.0', pnpm: '>=10.0.0'}
     peerDependencies:
-      '@takazudo/zfb': 2.1.0
+      '@takazudo/zfb': 2.2.0
       react: ^19.2.3
     peerDependenciesMeta:
       react:
         optional: true
 
-  '@takazudo/zfb-win32-x64-msvc@2.1.0':
-    resolution: {integrity: sha512-fUcvAqudIBV+d93WjSKOQA6C0eah8KlwCytvHsItJfHBGyvZonC0GkKbNnRE7c/ggjY8C7p2/cfcW4bKSnl7Pw==}
+  '@takazudo/zfb-win32-x64-msvc@2.2.0':
+    resolution: {integrity: sha512-5MeGV2aqzauR1/Zxvb+hQestmUjijfhq3aZ1vbpJSW1b/phwjd7shOhgk6E0RbMQkdW0dXJUTLwXLcU55ah29Q==}
     cpu: [x64]
     os: [win32]
 
-  '@takazudo/zfb@2.1.0':
-    resolution: {integrity: sha512-vjusXZxOfowQRAmNvytR2zneU7X8/iwf3zVqUEr88Gvb5d1BKxhphfkPKSqa7BgVzUxCNFtlL/iTgrRyvDqW+A==}
+  '@takazudo/zfb@2.2.0':
+    resolution: {integrity: sha512-iWRn5bdjgrMq8yFTwoswj0Oh8FjkDDNVZ3IXgUQ7c7Zj6cG8HcW2Yr7vMzU2AQ2CLJSi3eu+6kOIJ5Q5rgcNaw==}
     engines: {node: '>=22.0.0', pnpm: '>=10.0.0'}
     hasBin: true
     peerDependencies:
@@ -3009,21 +3009,21 @@ snapshots:
       preact: 10.29.2
       tailwind-merge: 3.6.0
 
-  '@takazudo/zfb-adapter-cloudflare@2.1.0': {}
+  '@takazudo/zfb-adapter-cloudflare@2.2.0': {}
 
-  '@takazudo/zfb-darwin-arm64@2.1.0':
+  '@takazudo/zfb-darwin-arm64@2.2.0':
     optional: true
 
-  '@takazudo/zfb-darwin-x64@2.1.0':
+  '@takazudo/zfb-darwin-x64@2.2.0':
     optional: true
 
-  '@takazudo/zfb-linux-arm64-gnu@2.1.0':
+  '@takazudo/zfb-linux-arm64-gnu@2.2.0':
     optional: true
 
-  '@takazudo/zfb-linux-x64-gnu@2.1.0':
+  '@takazudo/zfb-linux-x64-gnu@2.2.0':
     optional: true
 
-  '@takazudo/zfb-md-wasm@2.1.0':
+  '@takazudo/zfb-md-wasm@2.2.0':
     dependencies:
       '@types/mdast': 4.0.4
       mdast-util-directive: 3.1.0
@@ -3031,21 +3031,21 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@takazudo/zfb-runtime@2.1.0(@takazudo/zfb@2.1.0)':
+  '@takazudo/zfb-runtime@2.2.0(@takazudo/zfb@2.2.0)':
     dependencies:
-      '@takazudo/zfb': 2.1.0
+      '@takazudo/zfb': 2.2.0
       hono: 4.12.25
 
-  '@takazudo/zfb-win32-x64-msvc@2.1.0':
+  '@takazudo/zfb-win32-x64-msvc@2.2.0':
     optional: true
 
-  '@takazudo/zfb@2.1.0':
+  '@takazudo/zfb@2.2.0':
     optionalDependencies:
-      '@takazudo/zfb-darwin-arm64': 2.1.0
-      '@takazudo/zfb-darwin-x64': 2.1.0
-      '@takazudo/zfb-linux-arm64-gnu': 2.1.0
-      '@takazudo/zfb-linux-x64-gnu': 2.1.0
-      '@takazudo/zfb-win32-x64-msvc': 2.1.0
+      '@takazudo/zfb-darwin-arm64': 2.2.0
+      '@takazudo/zfb-darwin-x64': 2.2.0
+      '@takazudo/zfb-linux-arm64-gnu': 2.2.0
+      '@takazudo/zfb-linux-x64-gnu': 2.2.0
+      '@takazudo/zfb-win32-x64-msvc': 2.2.0
 
   '@takazudo/zudo-design-token-lint@2.0.0':
     dependencies:
