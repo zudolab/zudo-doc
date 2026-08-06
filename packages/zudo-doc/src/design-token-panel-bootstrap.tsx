@@ -167,17 +167,76 @@ const ACTIVATION_FLAG_KEY_SUFFIXES = [
 ] as const;
 
 /**
- * Persisted-state probe predicate (#3282): does the ACTIVE storage namespace
- * hold zdtp state worth an eager load? True when the public `${prefix}-open`
- * mirror or any {@link ACTIVATION_FLAG_KEY_SUFFIXES} flag reads `"1"`, or any
- * `${prefix}-state*` key exists — the bare stem match keeps it
- * version-agnostic across `-state`, `-state-v2`/`-v3`/`-v4`, and future
- * schema revisions without enumerating them. The scan is anchored to the
- * EXACT active prefix; a whole-localStorage suffix scan is deliberately off
- * the table (it would false-positive on unrelated apps' `*-state` keys).
- * Note the pack-scoped `--<slug>` separator keeps sibling namespaces out:
- * `<prefix>--<pack>-state` never matches the `<prefix>-state` stem.
- * Guarded: disabled/throwing storage reads as "no persisted state".
+ * Is a persisted `${prefix}-state*` envelope PROVABLY empty — i.e. does it
+ * carry zero overrides for zdtp's `reapplyPersistedOverrides()` to apply?
+ * Organizing principle (#3314, locked by #3313): **trigger unless provably
+ * empty**, and provably empty is exactly three values — `{}`, `[]`, and the
+ * literal `null`. Everything else counts as content: a non-empty object or
+ * array, any primitive (including `0` / `false` / `""`-as-JSON-string), and
+ * anything that does not parse at all.
+ *
+ * Note the inversion in the `catch`: malformed JSON returns `false` (NOT
+ * empty → the caller triggers the eager load), so zdtp gets the chance to
+ * migrate or reject the value rather than this probe silently discarding a
+ * returning user's overrides. This stays schema-agnostic per #3282 — it never
+ * looks inside the envelope beyond "does it hold anything at all".
+ */
+function isEmptyEnvelope(raw: string | null): boolean {
+  if (raw === null) return true;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return false;
+  }
+  if (parsed === null) return true;
+  if (Array.isArray(parsed)) return parsed.length === 0;
+  if (typeof parsed === "object") return Object.keys(parsed).length === 0;
+  return false;
+}
+
+/**
+ * Persisted-state probe predicate (#3282, narrowed in #3314): does the ACTIVE
+ * storage namespace hold zdtp state worth an eager load? True when the public
+ * `${prefix}-open` mirror or any {@link ACTIVATION_FLAG_KEY_SUFFIXES} flag
+ * reads `"1"`, or any `${prefix}-state*` key holds a NON-EMPTY envelope
+ * ({@link isEmptyEnvelope}). The bare stem match keeps it version-agnostic
+ * across `-state`, `-state-v2`/`-v3`/`-v4`, and future schema revisions
+ * without enumerating them. The scan is anchored to the EXACT active prefix;
+ * a whole-localStorage suffix scan is deliberately off the table (it would
+ * false-positive on unrelated apps' `*-state` keys). Note the pack-scoped
+ * `--<slug>` separator keeps sibling namespaces out: `<prefix>--<pack>-state`
+ * never matches the `<prefix>-state` stem. Guarded: disabled/throwing storage
+ * reads as "no persisted state".
+ *
+ * Three pieces of context a future reader cannot recover from the code:
+ *
+ * 1. **Content, not presence — a deliberate divergence from zdtp's own gate.**
+ *    zdtp's reference lazy-load gate (`dist/astro/host-adapter.js`) presence-
+ *    checks its state keys (`getItem(...) !== null`), so an empty `{}` there
+ *    still fetches the bundle. zdtp README §10.1 states the third eager-load
+ *    trigger as "overrides are persisted", not "a state key exists", so the
+ *    content check is the closer implementation of the documented contract.
+ *    Filed upstream as Takazudo/zudo-design-token-panel#566.
+ * 2. **`:autoload` triggering the eager load is INTENDED, not a stale flag.**
+ *    Reviewed against the installed zdtp contract in #3313 and deliberately
+ *    kept: README §9 (the `autoload` row) *defines* `'1'` as "fetches eagerly
+ *    on every page load and mounts CLOSED", and §10.1's `disableAutoload()`
+ *    clears `:autoload`, `:visible`, `-elpath-enabled` and the open-state key
+ *    together — so `:autoload=1` with `:visible=0` is the documented
+ *    owner-mode-armed steady state. A `:visible=0` veto would break exactly
+ *    that case; do not add one. The real defect (no provenance bit separating
+ *    an explicit `enableAutoload()` from a curious click, per §10.1's
+ *    auto-remember footgun) is upstream:
+ *    Takazudo/zudo-design-token-panel#565.
+ * 3. **The scan ORs across EVERY matching key and must not stop early.** §9
+ *    documents that the v4 migration leaves the legacy v1/v2/v3 keys in
+ *    place, so one user can hold several `-state*` keys at once. That yields
+ *    one ACCEPTED false positive: `-state-v4 = {}` alongside a non-empty
+ *    `-state-v3` triggers, even though the empty v4 key shadows v3 and zdtp
+ *    would apply nothing. Avoiding it would require the probe to know the
+ *    version precedence, which the #3282 schema-agnostic mandate forbids —
+ *    leave it, and do not "fix" it by learning the version ordering.
  */
 function hasPersistedPanelState(instancePrefix: string): boolean {
   try {
@@ -188,7 +247,8 @@ function hasPersistedPanelState(instancePrefix: string): boolean {
     const stateKeyStem = `${instancePrefix}-state`;
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key !== null && key.startsWith(stateKeyStem)) return true;
+      if (key === null || !key.startsWith(stateKeyStem)) continue;
+      if (!isEmptyEnvelope(localStorage.getItem(key))) return true;
     }
   } catch {
     // Storage unavailable → nothing persisted to restore → no eager load.
