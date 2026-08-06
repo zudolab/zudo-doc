@@ -16,8 +16,16 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // Import via relative path that steps outside src/ into bin/.
 // Vitest resolves this at test time; it is NOT compiled by tsup.
 const BIN_PATH = resolve(__dirname, "../../bin/gen-z-index.mjs");
-const { parseArgs, parseTiers, validateTiers, buildBlock, buildMdTable, replaceBlock, main } =
-  await import(BIN_PATH);
+const {
+  parseArgs,
+  parseTiers,
+  validateTiers,
+  buildBlock,
+  buildMdTable,
+  replaceBlock,
+  scanMarkerLines,
+  main,
+} = await import(BIN_PATH);
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -120,6 +128,339 @@ describe("Import side effects", () => {
     expect(typeof replaceBlock).toBe("function");
     expect(typeof validateTiers).toBe("function");
     expect(typeof parseArgs).toBe("function");
+    expect(typeof scanMarkerLines).toBe("function");
+  });
+});
+
+// ── scanMarkerLines ────────────────────────────────────────────────────────
+
+describe("scanMarkerLines", () => {
+  it("counts the CSS mid-comment-line BEGIN form", () => {
+    const source = `  /* ${BEGIN_MARKER}\n`;
+    const offsets = scanMarkerLines(source, BEGIN_MARKER);
+    expect(offsets).toEqual([source.indexOf(BEGIN_MARKER)]);
+  });
+
+  it("counts the CSS mid-comment-line END form", () => {
+    const source = `  /* ${END_MARKER} */\n`;
+    const offsets = scanMarkerLines(source, END_MARKER);
+    expect(offsets).toEqual([source.indexOf(END_MARKER)]);
+  });
+
+  it("counts the MDX whole-line brace-comment form", () => {
+    const source = `${MD_TABLE_BEGIN_MARKER}\n`;
+    const offsets = scanMarkerLines(source, MD_TABLE_BEGIN_MARKER);
+    expect(offsets).toEqual([0]);
+  });
+
+  it("does not count a prose mention of the marker", () => {
+    const source = `The generator finds ${BEGIN_MARKER} in your CSS.\n`;
+    expect(scanMarkerLines(source, BEGIN_MARKER)).toEqual([]);
+  });
+
+  it("finds only the structural occurrence when a prose mention and a real marker both appear", () => {
+    const source = `see ${BEGIN_MARKER} for details\n  /* ${BEGIN_MARKER}\n`;
+    const offsets = scanMarkerLines(source, BEGIN_MARKER);
+    const realIdx = source.indexOf(BEGIN_MARKER, source.indexOf("\n"));
+    expect(offsets).toEqual([realIdx]);
+  });
+
+  it("returns offsets in source order across multiple structural occurrences", () => {
+    const source = `  /* ${BEGIN_MARKER}\nmiddle\n  /* ${BEGIN_MARKER}\n`;
+    const offsets = scanMarkerLines(source, BEGIN_MARKER);
+    expect(offsets).toHaveLength(2);
+    expect(offsets[0]).toBeLessThan(offsets[1]!);
+  });
+
+  it("returns an empty array when the marker is absent entirely", () => {
+    expect(scanMarkerLines("nothing here\n", BEGIN_MARKER)).toEqual([]);
+  });
+});
+
+// ── scanMarkerLines — fenced code exclusion (md surface only) ───────────────
+
+describe("scanMarkerLines with excludeFencedCode", () => {
+  const FENCED = { excludeFencedCode: true };
+
+  /** Offsets of every quoted-or-real marker occurrence, in source order. */
+  function allOccurrences(source: string): number[] {
+    const found: number[] = [];
+    let idx = source.indexOf(MD_TABLE_BEGIN_MARKER);
+    while (idx !== -1) {
+      found.push(idx);
+      idx = source.indexOf(MD_TABLE_BEGIN_MARKER, idx + 1);
+    }
+    return found;
+  }
+
+  it("ignores a marker line inside a backtick fence and finds the real one outside", () => {
+    const source = ["```mdx", MD_TABLE_BEGIN_MARKER, "```", "", MD_TABLE_BEGIN_MARKER, ""].join("\n");
+    expect(scanMarkerLines(source, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([
+      source.lastIndexOf(MD_TABLE_BEGIN_MARKER),
+    ]);
+  });
+
+  it("ignores a marker line inside a tilde fence", () => {
+    const source = ["~~~mdx", MD_TABLE_BEGIN_MARKER, "~~~", "", MD_TABLE_BEGIN_MARKER, ""].join("\n");
+    expect(scanMarkerLines(source, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([
+      source.lastIndexOf(MD_TABLE_BEGIN_MARKER),
+    ]);
+  });
+
+  it.each([1, 2, 3])(
+    "treats a fence indented by %i space(s) as a fence (up to three are allowed)",
+    (spaces) => {
+      const indent = " ".repeat(spaces);
+      const source = [
+        `${indent}\`\`\``,
+        MD_TABLE_BEGIN_MARKER,
+        `${indent}\`\`\``,
+        "",
+        MD_TABLE_BEGIN_MARKER,
+        "",
+      ].join("\n");
+      expect(scanMarkerLines(source, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([
+        source.lastIndexOf(MD_TABLE_BEGIN_MARKER),
+      ]);
+    },
+  );
+
+  it.each(["-", "*", "+", "1.", "10)"])(
+    "opens a fence on a list-item line beginning with %s",
+    (marker) => {
+      // The list marker is a container prefix, not content. Missing this
+      // opener is what turns the item's own closing fence (indented, so
+      // carrying no marker) into a bogus opener that swallows the real
+      // region below — see the replaceBlock regression test.
+      const source = [
+        `${marker} \`\`\`mdx`,
+        `  ${MD_TABLE_BEGIN_MARKER}`,
+        "  ```",
+        "",
+        MD_TABLE_BEGIN_MARKER,
+        "",
+      ].join("\n");
+      expect(scanMarkerLines(source, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([
+        source.lastIndexOf(MD_TABLE_BEGIN_MARKER),
+      ]);
+    },
+  );
+
+  it.each(["10) ", "1.  ", "-   "])(
+    "closes a list-item fence whose closer sits at a content column of four or more (prefix %j)",
+    (prefix) => {
+      // The closer carries no list marker of its own — it sits at the item's
+      // content column, which a four-or-more-character marker prefix pushes
+      // past a flat three-space cap. Rejecting it left the fence open, so
+      // every marker below stayed ineligible and the real one vanished.
+      const indent = " ".repeat(prefix.length);
+      const source = [
+        `${prefix}\`\`\`mdx`,
+        `${indent}${MD_TABLE_BEGIN_MARKER}`,
+        `${indent}\`\`\``,
+        "",
+        MD_TABLE_BEGIN_MARKER,
+        "",
+      ].join("\n");
+      expect(scanMarkerLines(source, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([
+        source.lastIndexOf(MD_TABLE_BEGIN_MARKER),
+      ]);
+    },
+  );
+
+  it.each([0, 1, 2, 3])(
+    "still closes a list-item fence with a closer indented by only %i space(s)",
+    (spaces) => {
+      // Measuring the allowance from the opener must be a SUPERSET of the old
+      // flat 0-3 rule, never narrower: a shallow closer keeps closing a fence
+      // opened at any indent.
+      const source = [
+        "10) ```mdx",
+        `    ${MD_TABLE_BEGIN_MARKER}`,
+        `${" ".repeat(spaces)}\`\`\``,
+        "",
+        MD_TABLE_BEGIN_MARKER,
+        "",
+      ].join("\n");
+      expect(scanMarkerLines(source, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([
+        source.lastIndexOf(MD_TABLE_BEGIN_MARKER),
+      ]);
+    },
+  );
+
+  it("expands a tab in the list-marker padding to CommonMark's four-column tab stops", () => {
+    // The opener regex accepts a tab as list-marker padding, and `"1.\t"` is
+    // three CHARACTERS but four COLUMNS. Measuring characters would cap the
+    // closer at six spaces and reject this legal one at seven.
+    const source = [
+      "1.\t```mdx",
+      `    ${MD_TABLE_BEGIN_MARKER}`,
+      "       ```",
+      "",
+      MD_TABLE_BEGIN_MARKER,
+      "",
+    ].join("\n");
+    expect(scanMarkerLines(source, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([
+      source.lastIndexOf(MD_TABLE_BEGIN_MARKER),
+    ]);
+  });
+
+  it("closes at exactly the opener's content column + 3, but not one space further", () => {
+    // Proves the new allowance is a BOUND, not an anything-goes relaxation.
+    const fenceDoc = (closerSpaces: number) =>
+      [
+        "10) ```mdx",
+        `    ${MD_TABLE_BEGIN_MARKER}`,
+        `${" ".repeat(closerSpaces)}\`\`\``,
+        "",
+        MD_TABLE_BEGIN_MARKER,
+        "",
+      ].join("\n");
+    // Content column 4 + three further spaces of slack = 7.
+    const atBound = fenceDoc(7);
+    expect(scanMarkerLines(atBound, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([
+      atBound.lastIndexOf(MD_TABLE_BEGIN_MARKER),
+    ]);
+    // One past it: the fence never closes, so nothing below is eligible.
+    expect(scanMarkerLines(fenceDoc(8), MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([]);
+  });
+
+  it("does not mistake a list marker for extra indentation on a four-space-indented line", () => {
+    // Guards the optional list-prefix group against relaxing the 0-3 space
+    // rule by backtracking (`^ {0,3}` + optional prefix must not add up to a
+    // four-space allowance).
+    const source = ["    ```", `    ${MD_TABLE_BEGIN_MARKER}`, "    ```", ""].join("\n");
+    expect(scanMarkerLines(source, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([
+      source.indexOf(MD_TABLE_BEGIN_MARKER),
+    ]);
+  });
+
+  it("does not open a fence on a list marker with no space before the backticks", () => {
+    const source = ["-```mdx", MD_TABLE_BEGIN_MARKER, ""].join("\n");
+    expect(scanMarkerLines(source, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([
+      source.indexOf(MD_TABLE_BEGIN_MARKER),
+    ]);
+  });
+
+  it("does NOT treat a four-space-indented ``` line as a fence (accepted limitation)", () => {
+    // Four spaces makes it an indented code block, which this scanner
+    // deliberately does not model — the marker inside is still counted.
+    const source = [
+      "    ```",
+      `    ${MD_TABLE_BEGIN_MARKER}`,
+      "    ```",
+      "",
+      MD_TABLE_BEGIN_MARKER,
+      "",
+    ].join("\n");
+    expect(scanMarkerLines(source, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual(
+      allOccurrences(source),
+    );
+  });
+
+  it("does not let an info-string line (```js) close an open fence", () => {
+    const source = [
+      "```",
+      MD_TABLE_BEGIN_MARKER,
+      "```js",
+      MD_TABLE_BEGIN_MARKER,
+      "```",
+      "",
+      MD_TABLE_BEGIN_MARKER,
+      "",
+    ].join("\n");
+    expect(scanMarkerLines(source, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([
+      source.lastIndexOf(MD_TABLE_BEGIN_MARKER),
+    ]);
+  });
+
+  it("does not let a closing fence shorter than the opening fence close it", () => {
+    const source = [
+      "````",
+      MD_TABLE_BEGIN_MARKER,
+      "```",
+      MD_TABLE_BEGIN_MARKER,
+      "````",
+      "",
+      MD_TABLE_BEGIN_MARKER,
+      "",
+    ].join("\n");
+    expect(scanMarkerLines(source, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([
+      source.lastIndexOf(MD_TABLE_BEGIN_MARKER),
+    ]);
+  });
+
+  it("lets a closing fence longer than the opening fence close it", () => {
+    const source = ["```", MD_TABLE_BEGIN_MARKER, "`````", MD_TABLE_BEGIN_MARKER, ""].join("\n");
+    expect(scanMarkerLines(source, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([
+      source.lastIndexOf(MD_TABLE_BEGIN_MARKER),
+    ]);
+  });
+
+  it("does not let a tilde line close a backtick fence", () => {
+    const source = [
+      "```",
+      MD_TABLE_BEGIN_MARKER,
+      "~~~",
+      MD_TABLE_BEGIN_MARKER,
+      "```",
+      "",
+      MD_TABLE_BEGIN_MARKER,
+      "",
+    ].join("\n");
+    expect(scanMarkerLines(source, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([
+      source.lastIndexOf(MD_TABLE_BEGIN_MARKER),
+    ]);
+  });
+
+  it("does not open a backtick fence whose info string contains a backtick", () => {
+    const source = ["``` see `code`", MD_TABLE_BEGIN_MARKER, ""].join("\n");
+    expect(scanMarkerLines(source, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([
+      source.indexOf(MD_TABLE_BEGIN_MARKER),
+    ]);
+  });
+
+  it("opens a tilde fence even when its info string contains a backtick", () => {
+    const source = ["~~~ see `code`", MD_TABLE_BEGIN_MARKER, "~~~", ""].join("\n");
+    expect(scanMarkerLines(source, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([]);
+  });
+
+  it("treats everything after an unterminated fence as fenced", () => {
+    const source = [
+      MD_TABLE_BEGIN_MARKER,
+      "```",
+      MD_TABLE_BEGIN_MARKER,
+      "still fenced",
+      MD_TABLE_BEGIN_MARKER,
+      "",
+    ].join("\n");
+    expect(scanMarkerLines(source, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([0]);
+  });
+
+  it("keeps offsets correct and still closes fences on a CRLF source", () => {
+    const source = ["```", MD_TABLE_BEGIN_MARKER, "```", MD_TABLE_BEGIN_MARKER, ""].join("\r\n");
+    expect(scanMarkerLines(source, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([
+      source.lastIndexOf(MD_TABLE_BEGIN_MARKER),
+    ]);
+  });
+
+  it("closes a fence whose closing line carries trailing whitespace", () => {
+    const source = ["```", MD_TABLE_BEGIN_MARKER, "```  \t", MD_TABLE_BEGIN_MARKER, ""].join("\n");
+    expect(scanMarkerLines(source, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([
+      source.lastIndexOf(MD_TABLE_BEGIN_MARKER),
+    ]);
+  });
+
+  it("finds a marker on a final line with no trailing newline", () => {
+    const source = ["```", MD_TABLE_BEGIN_MARKER, "```", MD_TABLE_BEGIN_MARKER].join("\n");
+    expect(scanMarkerLines(source, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([
+      source.lastIndexOf(MD_TABLE_BEGIN_MARKER),
+    ]);
+  });
+
+  it("counts a fenced marker when the option is off — the CSS surface's behaviour", () => {
+    const source = ["```", MD_TABLE_BEGIN_MARKER, "```", MD_TABLE_BEGIN_MARKER, ""].join("\n");
+    expect(scanMarkerLines(source, MD_TABLE_BEGIN_MARKER)).toEqual(allOccurrences(source));
   });
 });
 
@@ -544,6 +885,235 @@ describe("replaceBlock", () => {
     expect(next).toContain(altBegin);
     expect(next).toContain("old table");
   });
+
+  it("a prose mention of the marker plus one real marker pair replaces correctly (does not throw duplicate)", () => {
+    const prose = `see ${BEGIN_MARKER} for details\n\n`;
+    const source = `${prose}${seededBlock("  @theme {\n    --z-index-content: 0;\n  }")}`;
+    const next = replaceBlock(source, buildBlock([{ name: "content", value: 1 }]));
+    expect(next).toContain(prose);
+    expect(next).toContain("--z-index-content: 1;");
+    expect(next).not.toContain("old comment");
+  });
+
+  it("splices at the structural BEGIN marker when a prose mention of BEGIN precedes it", () => {
+    // A bare source.indexOf(beginMarker) would land on the prose mention
+    // (which comes first in the file) and corrupt the splice by cutting the
+    // prose line in half instead of replacing the real comment block.
+    const prose = `Note: search for ${BEGIN_MARKER} to find the block.\n`;
+    const source = `${prose}${seededBlock("  @theme {\n    --z-index-content: 0;\n  }")}\n`;
+    const next = replaceBlock(source, buildBlock([{ name: "content", value: 1 }]));
+    expect(next.startsWith(prose)).toBe(true);
+    expect(next).toContain("--z-index-content: 1;");
+    expect(next).not.toContain("old comment");
+  });
+
+  it("splices through to the structural END marker when a prose mention of END sits between the real markers", () => {
+    // A bare source.indexOf(endMarker) would land on this prose line (it
+    // appears earlier in the file than the real closing marker) and
+    // truncate the splice there, leaving the real END marker line behind as
+    // stray leftover text instead of being replaced — silent corruption,
+    // not a loud error.
+    const prose = `mentions ${END_MARKER} in passing`;
+    const inner = `  @theme {\n    --z-index-content: 0;\n  }\n${prose}`;
+    const source = wrapInCss(seededBlock(inner));
+    const next = replaceBlock(source, buildBlock([{ name: "content", value: 1 }]));
+
+    expect(next).toContain("--z-index-content: 1;");
+    expect(next).not.toContain("old comment");
+    expect(next).not.toContain(prose);
+    // Exactly one END marker survives — the one baked into the freshly
+    // built block. A stray leftover from a mislocated splice would leave
+    // two.
+    expect(next.split(END_MARKER)).toHaveLength(2);
+  });
+});
+
+// ── replaceBlock — fenced code exclusion (md surface) ──────────────────────
+
+describe("replaceBlock with excludeFencedCode", () => {
+  const NEW_TABLE = `${MD_TABLE_BEGIN_MARKER}\nnew table\n${MD_TABLE_END_MARKER}`;
+
+  function replaceMd(source: string, block: string): string {
+    return replaceBlock(source, block, MD_TABLE_BEGIN_MARKER, MD_TABLE_END_MARKER, "doc.mdx", {
+      excludeFencedCode: true,
+    });
+  }
+
+  /** A doc that first QUOTES the marker pair inside `fenceLines`, then carries the real region. */
+  function mdDoc(fenceLines: string[], tableInner: string): string {
+    return [
+      "Seed the region by hand:",
+      "",
+      ...fenceLines,
+      "",
+      MD_TABLE_BEGIN_MARKER,
+      tableInner,
+      MD_TABLE_END_MARKER,
+      "",
+    ].join("\n");
+  }
+
+  const BACKTICK_FENCE = ["```mdx", MD_TABLE_BEGIN_MARKER, MD_TABLE_END_MARKER, "```"];
+  const TILDE_FENCE = ["~~~mdx", MD_TABLE_BEGIN_MARKER, MD_TABLE_END_MARKER, "~~~"];
+
+  it("replaces the real pair when a backtick fence quotes the marker lines", () => {
+    const next = replaceMd(mdDoc(BACKTICK_FENCE, "old table"), NEW_TABLE);
+    expect(next).toBe(mdDoc(BACKTICK_FENCE, "new table"));
+  });
+
+  it("replaces the real pair when a tilde fence quotes the marker lines", () => {
+    const next = replaceMd(mdDoc(TILDE_FENCE, "old table"), NEW_TABLE);
+    expect(next).toBe(mdDoc(TILDE_FENCE, "new table"));
+  });
+
+  it.each([1, 2, 3])(
+    "replaces the real pair when the quoting fence is indented by %i space(s)",
+    (spaces) => {
+      const indent = " ".repeat(spaces);
+      const fence = [
+        `${indent}\`\`\`mdx`,
+        MD_TABLE_BEGIN_MARKER,
+        MD_TABLE_END_MARKER,
+        `${indent}\`\`\``,
+      ];
+      expect(replaceMd(mdDoc(fence, "old table"), NEW_TABLE)).toBe(mdDoc(fence, "new table"));
+    },
+  );
+
+  it("still throws on a marker quoted inside a four-space-indented code block (accepted limitation)", () => {
+    const indented = [
+      "    ```",
+      `    ${MD_TABLE_BEGIN_MARKER}`,
+      `    ${MD_TABLE_END_MARKER}`,
+      "    ```",
+    ];
+    expect(() => replaceMd(mdDoc(indented, "old table"), NEW_TABLE)).toThrow(
+      /duplicate markers.*doc\.mdx/s,
+    );
+  });
+
+  it("replaces the real pair when the quoting fence opens on a list-item line", () => {
+    // Regression: a missed `- ```mdx` opener left the quoted markers eligible
+    // AND turned the item's indented closing fence into a bogus opener that
+    // hid the real pair — so exactly one valid-looking pair survived and the
+    // generated block was spliced into the quoted example instead. Silent
+    // corruption, where wave 1 had thrown a loud duplicate-marker error.
+    const listDoc = (inner: string) =>
+      [
+        "- Seed the region by hand:",
+        "",
+        "- ```mdx",
+        `  ${MD_TABLE_BEGIN_MARKER}`,
+        `  ${MD_TABLE_END_MARKER}`,
+        "  ```",
+        "",
+        MD_TABLE_BEGIN_MARKER,
+        inner,
+        MD_TABLE_END_MARKER,
+        "",
+      ].join("\n");
+    expect(replaceMd(listDoc("old table"), NEW_TABLE)).toBe(listDoc("new table"));
+  });
+
+  it("replaces the real pair when the quoting fence opens on a wide-marker list item", () => {
+    // Regression: `10) ` opens the fence (wave 2), but its closer sits at the
+    // item's content column 4 — past the old flat three-space cap. The fence
+    // therefore never closed, the real pair below stayed ineligible, and a
+    // perfectly valid doc threw "Could not find … markers".
+    const listDoc = (inner: string) =>
+      [
+        "10) Seed the region by hand:",
+        "",
+        "10) ```mdx",
+        `    ${MD_TABLE_BEGIN_MARKER}`,
+        `    ${MD_TABLE_END_MARKER}`,
+        "    ```",
+        "",
+        MD_TABLE_BEGIN_MARKER,
+        inner,
+        MD_TABLE_END_MARKER,
+        "",
+      ].join("\n");
+    expect(replaceMd(listDoc("old table"), NEW_TABLE)).toBe(listDoc("new table"));
+  });
+
+  it("does not count a real marker pair that follows an unterminated fence", () => {
+    const source = ["```", "", MD_TABLE_BEGIN_MARKER, "old table", MD_TABLE_END_MARKER, ""].join(
+      "\n",
+    );
+    expect(() => replaceMd(source, NEW_TABLE)).toThrow(/Could not find.*doc\.mdx/s);
+  });
+
+  it("replaces the real pair when an unterminated fence follows it", () => {
+    const trailing = (inner: string) =>
+      [MD_TABLE_BEGIN_MARKER, inner, MD_TABLE_END_MARKER, "", "```", MD_TABLE_BEGIN_MARKER, ""].join(
+        "\n",
+      );
+    expect(replaceMd(trailing("old table"), NEW_TABLE)).toBe(trailing("new table"));
+  });
+
+  it("splices at the right offsets on a CRLF source", () => {
+    const source = [
+      "```",
+      MD_TABLE_BEGIN_MARKER,
+      "```",
+      "",
+      MD_TABLE_BEGIN_MARKER,
+      "old table",
+      MD_TABLE_END_MARKER,
+      "outro",
+      "",
+    ].join("\r\n");
+    // The CR that precedes the END line's LF sits INSIDE the replaced region,
+    // so it is consumed along with the old block — pre-existing splice
+    // behaviour (`replaceBlock` cuts at the LF), unchanged by fence handling.
+    const expected =
+      ["```", MD_TABLE_BEGIN_MARKER, "```", "", ""].join("\r\n") + NEW_TABLE + "\noutro\r\n";
+    expect(replaceMd(source, NEW_TABLE)).toBe(expected);
+  });
+
+  it("splices correctly when the END marker is the final line with no trailing newline", () => {
+    const source = [
+      "```",
+      MD_TABLE_BEGIN_MARKER,
+      "```",
+      "",
+      MD_TABLE_BEGIN_MARKER,
+      "old table",
+      MD_TABLE_END_MARKER,
+    ].join("\n");
+    const expected = ["```", MD_TABLE_BEGIN_MARKER, "```", "", ""].join("\n") + NEW_TABLE;
+    expect(replaceMd(source, NEW_TABLE)).toBe(expected);
+  });
+
+  it("stays idempotent on an md source containing a fenced marker quote", () => {
+    const mdBlock = buildMdTable(DEFAULT_TIER_DATA);
+    const first = replaceMd(mdDoc(BACKTICK_FENCE, "old table"), mdBlock);
+    const second = replaceMd(first, mdBlock);
+    expect(second).toBe(first);
+  });
+
+  it("leaves the CSS surface's fence-blind behaviour intact — a fenced marker still counts there", () => {
+    const source = wrapInCss(
+      [
+        "```",
+        `  /* ${BEGIN_MARKER}`,
+        `  /* ${END_MARKER} */`,
+        "```",
+        seededBlock("  @theme {\n  }"),
+      ].join("\n"),
+    );
+    expect(() => replaceBlock(source, buildBlock([{ name: "content", value: 0 }]))).toThrow(
+      /duplicate markers/,
+    );
+  });
+
+  it("produces byte-identical CSS output for the default tiers", () => {
+    const initial = wrapInCss(seededBlock("  @theme {\n  }"));
+    expect(replaceBlock(initial, buildBlock(DEFAULT_TIER_DATA))).toBe(
+      `/* preamble */\n\n${GOLDEN_DEFAULT_BLOCK}\n`,
+    );
+  });
 });
 
 // ── buildMdTable ───────────────────────────────────────────────────────────
@@ -849,6 +1419,37 @@ describe("main()", () => {
 
     const logged = logSpy.mock.calls.flat().join("\n");
     expect(logged).toContain("docs/z-index.mdx");
+  });
+
+  it("--md-table ignores a marker pair quoted inside a fenced code block", () => {
+    mkdirSync(join(tmpDir, "src/config"), { recursive: true });
+    mkdirSync(join(tmpDir, "src/styles"), { recursive: true });
+    mkdirSync(join(tmpDir, "docs"), { recursive: true });
+    writeFileSync(join(tmpDir, DEFAULT_TOKENS_PATH), tokensSrcFromTiers(DEFAULT_TIER_DATA));
+    writeFileSync(join(tmpDir, DEFAULT_CSS_PATH), wrapInCss(seededBlock("  @theme {\n  }")));
+    // A doc page explaining the generator reproduces the marker pair verbatim
+    // inside a fence, then carries the real region below it.
+    const quoted = [
+      "Seed the region by hand:",
+      "",
+      "```mdx",
+      MD_TABLE_BEGIN_MARKER,
+      MD_TABLE_END_MARKER,
+      "```",
+      "",
+    ].join("\n");
+    writeFileSync(join(tmpDir, "docs/z-index.mdx"), `${quoted}\n${seededMdBlock("old table")}\n`);
+
+    expect(main(["--md-table", "docs/z-index.mdx"])).toBe(0);
+
+    const writtenMd = readFileSync(join(tmpDir, "docs/z-index.mdx"), "utf8");
+    expect(writtenMd.startsWith(quoted)).toBe(true);
+    expect(writtenMd).toContain("| content | - | - |");
+    expect(writtenMd).not.toContain("old table");
+
+    // Round-trip: the freshly written file is already up to date.
+    expect(main(["--check", "--md-table", "docs/z-index.mdx"])).toBe(0);
+    expect(readFileSync(join(tmpDir, "docs/z-index.mdx"), "utf8")).toBe(writtenMd);
   });
 
   it("--md-table is idempotent end to end: a second run makes no further change", () => {

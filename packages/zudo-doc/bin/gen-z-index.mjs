@@ -41,7 +41,9 @@
 // error in MDX. `--check` verifies BOTH regions when --md-table is given;
 // drift in either exits 1. Like the CSS block, the md-table region must be
 // seeded once by hand (just the marker pair) before the generator can find
-// it to replace.
+// it to replace. On this surface ONLY, marker lines inside a CommonMark
+// fenced code block are ignored, so a doc page may reproduce the marker
+// verbatim while explaining the generator (see `scanMarkerLines`).
 //
 // Pure Node (fs only — NO npm deps, no minimist). Idempotent: running twice
 // produces no diff.
@@ -426,33 +428,157 @@ export function buildBlock(tiers, options = {}) {
   return lines.join("\n");
 }
 
+// CommonMark fenced-code-block rules (https://spec.commonmark.org/0.31.2/
+// #fenced-code-blocks), transcribed only as far as `scanMarkerLines` needs
+// them. Each of these is a rule a `trim()` + `startsWith` approximation gets
+// wrong, which is why they are spelled out here rather than eyeballed:
+//
+//   - An opening fence carries AT MOST three spaces of indentation. Four
+//     spaces makes the line indented code, not a fence.
+//   - A fence may open on a list-item line (`- ```mdx`), because the list
+//     marker is a container prefix rather than content. Missing this one is
+//     not a harmless false negative: the item's closing fence — indented to
+//     the item's content column, so carrying NO list marker — would then be
+//     read as a fresh opener and swallow every marker below it, silently
+//     splicing the generated block into the quoted example. Loud failure is
+//     acceptable here; silent corruption is not.
+//   - A backtick opening fence's info string may not itself contain a
+//     backtick (a tilde fence's info string may contain anything).
+//   - A closing fence repeats the SAME character, at least as many times as
+//     the opener, followed by whitespace only — so an info-string line such
+//     as ```js does not close an already-open fence. It carries no list
+//     marker of its own, which is why only OPEN_FENCE_RE accepts one.
+//   - A closing fence's indentation allowance is measured from the OPENING
+//     fence, not from column zero: inside a container the closer sits at the
+//     container's content column and may carry up to three further spaces.
+//     So the bound is `opener indent + 3`, where the opener's indent is its
+//     leading spaces PLUS any list-marker prefix width. A flat three-space
+//     cap is wrong for any marker four or more characters wide (`10) `, or
+//     `1.` followed by two spaces): the item's real closer would be rejected,
+//     the fence would never close, and every marker below it would stay
+//     ineligible. Since the opener's indent is never negative, a closer at
+//     0-3 spaces still closes a fence opened at ANY indent.
+//   - Indentation is measured in COLUMNS, with a tab advancing to the next
+//     four-column tab stop. The opener accepts a tab as list-marker padding,
+//     and `"1.\t".length` (3) undercounts that item's real content column
+//     (4) — which would then reject a legal closer sitting at column + 3.
+const OPEN_FENCE_RE = /^( {0,3}(?:(?:[-*+]|\d{1,9}[.)])[ \t]+)?)(`{3,}|~{3,})(.*)$/;
+const CLOSE_FENCE_RE = /^( *)(`{3,}|~{3,})[ \t]*$/;
+
 /**
- * Counts non-overlapping occurrences of `marker` in `str`. This is a plain
- * substring count, not a "stand-alone marker line" match — a known,
- * pre-existing tradeoff inherited from the CSS `@theme` region (whose BEGIN/
- * END text is embedded mid-comment-line, e.g. `  /* GENERATED:Z_INDEX_BEGIN`,
- * so a stricter "must be the whole line" rule would break it). This means a
- * doc page that quotes the literal `--md-table` marker text in prose or a
- * fenced code example (e.g. to explain the generator) is misread as a real
- * duplicate marker. The failure mode is loud (a clear "duplicate markers"
- * error), not silent corruption, so this is accepted rather than adding
- * markdown-aware parsing to a dependency-free bin.
+ * Column width of an opening fence's prefix (leading spaces plus any
+ * list-marker prefix), expanding tabs to CommonMark's four-column tab stops —
+ * see the tab-stop rule in the block comment above. `CLOSE_FENCE_RE` matches
+ * spaces only, so the closer side needs no equivalent (and accepting a
+ * tab-indented closer would widen behaviour the pre-existing `^ {0,3}` cap
+ * never had).
  */
-function countOccurrences(str, marker) {
-  let count = 0;
-  let idx = str.indexOf(marker);
-  while (idx !== -1) {
-    count++;
-    idx = str.indexOf(marker, idx + marker.length);
+function fenceIndentColumns(prefix) {
+  let column = 0;
+  for (const ch of prefix) {
+    column = ch === "\t" ? column + 4 - (column % 4) : column + 1;
   }
-  return count;
+  return column;
+}
+
+/**
+ * Walks `source` line by line and returns the character offsets (into
+ * `source`, in source order) of every LINE-ANCHORED occurrence of `marker` —
+ * a line where removing the marker text leaves behind only whitespace and
+ * comment/brace delimiter characters. This is the single scanner both
+ * `replaceBlock`'s validation (duplicate/missing/inverted) and its splice
+ * positions read from, so counting and locating can never diverge: a marker
+ * mentioned in prose (e.g. "see GENERATED:Z_INDEX_BEGIN for details") is
+ * invisible to this scanner, whether it appears before, between, or after the
+ * real structural markers.
+ *
+ * Predicate: for a line containing `marker`, `line.replace(marker, "")` must
+ * match `/^[\s{}/*]*$/`. This covers both real marker forms — the CSS
+ * mid-comment-line pair (e.g. `  /* GENERATED:Z_INDEX_BEGIN`) and the MDX
+ * whole-line brace-comment pair (e.g. `{/* GENERATED:Z_INDEX_TABLE_BEGIN`,
+ * closed by a trailing brace-comment on the same line) — while rejecting a
+ * line where the marker is only part of a prose sentence.
+ *
+ * `options.excludeFencedCode` (default `false`) additionally tracks
+ * CommonMark fenced-code state (see the two regexes above) and makes every
+ * line from an opening fence through its closing fence — inclusive, and
+ * through end-of-source for an unterminated fence — ineligible. It is
+ * OFF by default and passed only from the `--md-table` surface: fences are a
+ * markdown construct, and the CSS surface must keep byte-identical behaviour.
+ *
+ * ACCEPTED LIMITATION: a marker line inside a **four-space-indented** code
+ * block is still counted. Indented code is not a fence, and detecting it
+ * needs far more markdown awareness (list-item continuation indentation,
+ * paragraph interruption rules) than a dependency-free bin should carry —
+ * zudolab/zudo-doc#3290 names fenced code, not indented code. The failure
+ * mode stays loud (a "duplicate markers" error), never silent corruption.
+ *
+ * Exported for unit testing.
+ */
+export function scanMarkerLines(source, marker, options = {}) {
+  const { excludeFencedCode = false } = options;
+  const RESIDUE_RE = /^[\s{}/*]*$/;
+  const offsets = [];
+  // `{ char, length, indent }` while inside an open fenced region, else null.
+  // `indent` is the opening fence's content COLUMN (leading spaces plus any
+  // list-marker prefix, tabs expanded), which bounds how far its closer may be
+  // indented.
+  let fence = null;
+  let lineStart = 0;
+  while (lineStart <= source.length) {
+    const newlineIdx = source.indexOf("\n", lineStart);
+    const lineEnd = newlineIdx === -1 ? source.length : newlineIdx;
+    const line = source.slice(lineStart, lineEnd);
+
+    let eligible = true;
+    if (excludeFencedCode) {
+      // Classify against the line minus a CRLF carriage return, so the
+      // "whitespace only after a closing fence" rule still holds on a CRLF
+      // source. Offsets are unaffected — `line` itself is untouched.
+      const text = line.endsWith("\r") ? line.slice(0, -1) : line;
+      if (fence !== null) {
+        const close = CLOSE_FENCE_RE.exec(text);
+        if (
+          close &&
+          close[2][0] === fence.char &&
+          close[2].length >= fence.length &&
+          close[1].length <= fence.indent + 3
+        ) {
+          fence = null;
+        }
+        eligible = false;
+      } else {
+        const open = OPEN_FENCE_RE.exec(text);
+        const backtickInInfoString = open !== null && open[2][0] === "`" && open[3].includes("`");
+        if (open !== null && !backtickInInfoString) {
+          fence = {
+            char: open[2][0],
+            length: open[2].length,
+            indent: fenceIndentColumns(open[1]),
+          };
+          eligible = false;
+        }
+      }
+    }
+
+    if (eligible) {
+      const markerIdxInLine = line.indexOf(marker);
+      if (markerIdxInLine !== -1 && RESIDUE_RE.test(line.replace(marker, ""))) {
+        offsets.push(lineStart + markerIdxInLine);
+      }
+    }
+    if (newlineIdx === -1) break;
+    lineStart = newlineIdx + 1;
+  }
+  return offsets;
 }
 
 /**
  * Replace the existing BEGIN…END block in `source` with `block`. Requires
- * EXACTLY one BEGIN and one END marker, with BEGIN preceding END — throws a
- * clear, distinct error for each failure mode: missing (the block must be
- * seeded once by hand), duplicated, or inverted markers.
+ * EXACTLY one line-anchored BEGIN and one line-anchored END marker (per
+ * `scanMarkerLines`), with BEGIN preceding END — throws a clear, distinct
+ * error for each failure mode: missing (the block must be seeded once by
+ * hand), duplicated, or inverted markers.
  *
  * `beginMarker`/`endMarker` default to the CSS `@theme` block's markers so
  * existing call sites (the CSS region) are unaffected; the `--md-table`
@@ -462,6 +588,11 @@ function countOccurrences(str, marker) {
  * purely for error-message context (pass the conventional default or an
  * explicit --css/--md-table value).
  *
+ * `options.excludeFencedCode` is forwarded verbatim to `scanMarkerLines` and
+ * is gated on the SURFACE, not on the marker strings: only the `--md-table`
+ * call site passes it. Defaulting it off keeps every CSS call site — and its
+ * output — byte-unchanged.
+ *
  * Exported for unit testing.
  */
 export function replaceBlock(
@@ -470,26 +601,29 @@ export function replaceBlock(
   beginMarker = BEGIN_MARKER,
   endMarker = END_MARKER,
   filePath = DEFAULT_CSS_PATH,
+  options = {},
 ) {
-  const beginCount = countOccurrences(source, beginMarker);
-  const endCount = countOccurrences(source, endMarker);
+  const { excludeFencedCode = false } = options;
+  const scanOptions = { excludeFencedCode };
+  const beginOffsets = scanMarkerLines(source, beginMarker, scanOptions);
+  const endOffsets = scanMarkerLines(source, endMarker, scanOptions);
 
-  if (beginCount === 0 || endCount === 0) {
+  if (beginOffsets.length === 0 || endOffsets.length === 0) {
     throw new Error(
       `Could not find ${beginMarker} … ${endMarker} markers in ${filePath}.\n` +
         `Seed the marker block once by hand, then re-run the generator.`,
     );
   }
-  if (beginCount > 1 || endCount > 1) {
+  if (beginOffsets.length > 1 || endOffsets.length > 1) {
     throw new Error(
-      `Found duplicate markers in ${filePath} (${beginCount} BEGIN "${beginMarker}", ` +
-        `${endCount} END "${endMarker}"; expected exactly one of each). Remove the extra ` +
+      `Found duplicate markers in ${filePath} (${beginOffsets.length} BEGIN "${beginMarker}", ` +
+        `${endOffsets.length} END "${endMarker}"; expected exactly one of each). Remove the extra ` +
         `marker(s) by hand, then re-run the generator.`,
     );
   }
 
-  const beginIdx = source.indexOf(beginMarker);
-  const endIdx = source.indexOf(endMarker);
+  const beginIdx = beginOffsets[0];
+  const endIdx = endOffsets[0];
   if (beginIdx > endIdx) {
     throw new Error(
       `Markers in ${filePath} are inverted — the END marker (${endMarker}) appears before ` +
@@ -651,6 +785,7 @@ export function main(argv = process.argv.slice(2)) {
       MD_TABLE_BEGIN_MARKER,
       MD_TABLE_END_MARKER,
       mdTablePath,
+      { excludeFencedCode: true },
     );
   }
 
