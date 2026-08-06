@@ -112,17 +112,11 @@ the two CDNs the content genuinely uses, `object-src 'none'`,
 ```sh
 GEN_DOC_HISTORY=1 pnpm build
 
-# Prerequisite (#3264): src-tauri/ ships no icons/ directory, but
-# tauri::generate_context!() panics without icons/icon.png — see below.
-mkdir -p src-tauri/icons && cp src-tauri-dev/icons/icon.png src-tauri/icons/icon.png
-
 cd src-tauri && cargo tauri build --no-bundle
 # launch the binary directly — do NOT go through `cargo tauri dev` or
 # `cargo tauri build --debug` (see below for why), and do NOT launch it via
 # `cargo run` / `cargo tauri`
 open target/release/zudo-doc          # or run the binary path directly
-
-rm -rf icons                          # never commit this
 ```
 
 **`cargo tauri dev` and `cargo tauri build --debug` do not verify this.**
@@ -136,13 +130,36 @@ and Tauri's nonce injection actually apply. This is the trap that made the
 whole verification epic necessary — a dev run "working" proves nothing about
 the CSP.
 
-**Why the icon step above is needed (#3264).** `src-tauri/` has no `icons/`
-directory in git, but `tauri::generate_context!()` panics without
-`icons/icon.png` even with `bundle.icon: []` and `bundle.active: false` — the
-empty `icon` array does not exempt it. It must be an **RGBA PNG**: Tauri's icon
-decoder panics on RGB/grayscale/indexed color types (`src-tauri-dev/icons/icon.png`
-already is one, which is why the recipe copies that). Delete it after building —
-this file must never be committed.
+**Why the recipe above needs no icon workaround anymore (#3264, resolved by
+#3287).** `tauri::generate_context!()` panics without `icons/icon.png` even
+with `bundle.icon: []` and `bundle.active: false` — the empty `icon` array
+does not exempt it. It must be an **RGBA PNG**: Tauri's icon decoder panics on
+RGB/grayscale/indexed color types. This directory used to have no committed
+`icons/`, so the reproduce recipe had to copy `src-tauri-dev/icons/icon.png`
+in before building and delete it afterward. `icons/icon.png` is now committed
+here, so that copy/delete workaround is gone.
+
+The committed icon is **generated**, not copied from `src-tauri-dev/` — it is
+the square variant of the AutoLogo design (`packages/zudo-doc/src/auto-logo/icon.ts`,
+`shapes-square.ts`), rasterized to a 1024×1024 RGBA PNG with the seed
+`"zudo-doc"` (this repo's `siteName`), which selects the "bookmark" glyph.
+Regenerate it after any auto-logo geometry/color change with:
+
+```sh
+pnpm build:workspace && node scripts/gen-tauri-icon.mjs
+```
+
+`build:workspace` first is required — `scripts/gen-tauri-icon.mjs` imports the
+compiled `packages/zudo-doc/dist/auto-logo/icon.js`, and the workspace-build
+guard used elsewhere in this repo only checks that `dist/` exists, not that
+it's fresh. The rasterizer uses the already-installed `@playwright/test`
+Chromium (no native image deps added) and hard-asserts the output is a fully
+opaque RGBA PNG before writing it — see the script's own comments for why a
+plain Chromium screenshot isn't enough (it silently drops the alpha channel
+for fully-opaque content). Committing the PNG is a manual, non-CI step, same
+policy as the Mode 2 stock icon: Playwright's rendered PNG bytes aren't stable
+across Chromium versions, so this is not a build step or a CI byte-parity
+check — regenerate and re-commit by hand when the source SVG changes.
 
 ### Surfaces checked and verdicts
 
