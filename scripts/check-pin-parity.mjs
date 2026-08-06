@@ -5,7 +5,7 @@
 //   "W1A §5#4 — pin sources out of lockstep"
 //
 // The upstream zfb-family packages used by generated projects are represented
-// across five surfaces that must stay in lockstep:
+// across six surfaces that must stay in lockstep:
 //
 //   1. Root package.json `@takazudo/zfb` engine pin.
 //   2. Root package.json companion pins (runtime and md-wasm).
@@ -17,6 +17,15 @@
 //   5. packages/zudo-doc/package.json zfb-family `peerDependencies` — caret
 //      floors derived from the exact root pins, so compatible later releases
 //      are accepted without weakening the root/dev/scaffold reproducibility.
+//   6. packages/zudo-doc/src/__tests__/fixtures/target-manifest/package.json —
+//      the confirm-gate fixture's `@takazudo/zudo-doc` dependency, which must
+//      equal the literal ZUDO_DOC_PIN scaffold.ts emits (#3, constant-reference
+//      form). This pin is DOCUMENTARY, not functional: the slow test that
+//      consumes this fixture extracts a packed tarball straight into
+//      `node_modules/@takazudo/zudo-doc` and symlinks the rest, so the
+//      dependency spec is never resolved from the registry — drift here is
+//      invisible to the test suite and would otherwise go uncaught the same
+//      way it silently fell a full major behind between 4.5 and 5.1.1 (#3304).
 //
 // Historically, bumping #1/#2 (e.g. via `pnpm up @takazudo/zfb@latest`)
 // silently left #3/#4/#5 stale. This script makes that drift a CI/b4push error.
@@ -42,6 +51,13 @@ const SCAFFOLD_TS_PATH = resolve(
   "packages/create-zudo-doc/src/scaffold.ts",
 );
 const ZUDO_DOC_PKG_PATH = resolve(ROOT_DIR, "packages/zudo-doc/package.json");
+const TARGET_MANIFEST_PKG_PATH = resolve(
+  ROOT_DIR,
+  "packages/zudo-doc/src/__tests__/fixtures/target-manifest/package.json",
+);
+
+// The single dependency the target-manifest fixture guards (surface #6).
+const FIXTURE_PACKAGE = "@takazudo/zudo-doc";
 
 // External upstream packages emitted by the scaffold: each pin must equal
 // root dependencies[pkg]. The Cloudflare adapter is intentionally absent: the
@@ -59,10 +75,13 @@ const PINNED_PACKAGES = [
 // stripped) must equal root package.json `version` (the lockstep release
 // version). These are NOT in root dependencies — they ARE root.
 //
-// Cross-reference: scripts/release-create-zudo-doc.sh Step 2c (colon form)
-// and Step 2d (bracket-assignment form) are the source of truth that WRITES
-// these pins on every release bump. Keep this list in sync with those steps
-// so any future 3rd internal pin gets guarded here too.
+// Cross-reference: scripts/release-create-zudo-doc.sh Step 2c calls
+// scripts/lib/rewrite-zudo-doc-pins.mjs (the colon-form ZUDO_DOC_PIN rewrite,
+// plus the target-manifest fixture below — #3306), and Step 2d rewrites
+// @takazudo/zudo-doc-history-server inline (bracket-assignment form). Those
+// are the source of truth that WRITES these pins on every release bump. Keep
+// this list in sync with those steps so any future 3rd internal pin gets
+// guarded here too.
 const INTERNAL_PINNED_PACKAGES = [
   "@takazudo/zudo-doc",
   "@takazudo/zudo-doc-history-server",
@@ -325,6 +344,9 @@ function main() {
   const rootPkg = JSON.parse(readFileSync(ROOT_PKG_PATH, "utf-8"));
   const scaffoldSrc = readFileSync(SCAFFOLD_TS_PATH, "utf-8");
   const zudoDocPkg = JSON.parse(readFileSync(ZUDO_DOC_PKG_PATH, "utf-8"));
+  const targetManifestPkg = JSON.parse(
+    readFileSync(TARGET_MANIFEST_PKG_PATH, "utf-8"),
+  );
 
   const mismatches = [];
 
@@ -387,6 +409,39 @@ function main() {
         rootPin: releaseVersion,
         scaffoldPin,
         kind: "internal",
+      });
+    }
+  }
+
+  // ── Fixture: target-manifest package.json must mirror the literal scaffold
+  // pin (#3307). The pin is DOCUMENTARY — see the header comment for why the
+  // slow test that consumes this fixture cannot catch drift here on its own.
+  {
+    const scaffoldPin = readScaffoldPin(scaffoldSrc, FIXTURE_PACKAGE);
+    const fixturePin = targetManifestPkg.dependencies?.[FIXTURE_PACKAGE];
+
+    if (scaffoldPin === null) {
+      // Already reported by the internal-pins loop above; skip to avoid a
+      // duplicate mismatch for the same missing scaffold.ts pin.
+    } else if (fixturePin === undefined) {
+      mismatches.push({
+        pkg: FIXTURE_PACKAGE,
+        reason: `Missing ${FIXTURE_PACKAGE} dependency in the target-manifest fixture`,
+        expected: scaffoldPin,
+        actual: "(missing)",
+        file: TARGET_MANIFEST_PKG_PATH,
+        field: "dependencies",
+        kind: "fixture",
+      });
+    } else if (fixturePin !== scaffoldPin) {
+      mismatches.push({
+        pkg: FIXTURE_PACKAGE,
+        reason: `Fixture pin drift — target-manifest fixture pins ${fixturePin} but scaffold.ts ZUDO_DOC_PIN is ${scaffoldPin}`,
+        expected: scaffoldPin,
+        actual: fixturePin,
+        file: TARGET_MANIFEST_PKG_PATH,
+        field: "dependencies",
+        kind: "fixture",
       });
     }
   }
@@ -523,7 +578,7 @@ function main() {
 
   if (mismatches.length === 0) {
     console.log(
-      `OK — pin parity verified for ${PINNED_PACKAGES.length} external + ${INTERNAL_PINNED_PACKAGES.length} internal + ${ZUDO_DOC_ZFB_PACKAGES.length * 2} workspace-package field(s) + ${FIRST_PARTY_PEER_CHECKS.length} first-party peer floor(s):`,
+      `OK — pin parity verified for ${PINNED_PACKAGES.length} external + ${INTERNAL_PINNED_PACKAGES.length} internal + ${ZUDO_DOC_ZFB_PACKAGES.length * 2} workspace-package field(s) + ${FIRST_PARTY_PEER_CHECKS.length} first-party peer floor(s) + 1 fixture pin:`,
     );
     for (const pkgName of PINNED_PACKAGES) {
       console.log(`  ${pkgName} = ${rootPkg.dependencies[pkgName]}`);
@@ -534,6 +589,9 @@ function main() {
         `  ${pkgName} = ${scaffoldPin} (matches release ${releaseVersion})`,
       );
     }
+    console.log(
+      `  target-manifest fixture dependencies[${FIXTURE_PACKAGE}] = ${targetManifestPkg.dependencies?.[FIXTURE_PACKAGE]} (matches scaffold.ts ZUDO_DOC_PIN)`,
+    );
     for (const pkgName of ZUDO_DOC_ZFB_PACKAGES) {
       const rootPin = rootPkg.dependencies[pkgName];
       console.log(
@@ -573,6 +631,12 @@ function main() {
       console.error(`    field:    ${m.field}`);
       console.error(`    expected: ${m.expected}`);
       console.error(`    actual:   ${m.actual}`);
+    } else if (m.kind === "fixture") {
+      console.error(`  [${m.pkg}]  ${m.reason}`);
+      console.error(`    file:     ${m.file}`);
+      console.error(`    field:    ${m.field}`);
+      console.error(`    expected: ${m.expected}`);
+      console.error(`    actual:   ${m.actual}`);
     } else {
       // workspace-package
       console.error(`  [${m.pkg}]  ${m.reason}`);
@@ -592,6 +656,10 @@ function main() {
   console.error(`  - ${ZUDO_DOC_PKG_PATH}`);
   console.error(
     `      zfb devDependencies must be exact-equal to root pins; zfb peerDependencies and pinned peer floors must be ^<root pin>; the lockstep peer floor must INCLUDE the root version`,
+  );
+  console.error(`  - ${TARGET_MANIFEST_PKG_PATH}`);
+  console.error(
+    `      the fixture's ${FIXTURE_PACKAGE} dependency must equal scaffold.ts's ZUDO_DOC_PIN literal (documentary — see scripts/lib/rewrite-zudo-doc-pins.mjs, which rewrites both on release)`,
   );
   console.error("then re-run this check.");
   return 1;
