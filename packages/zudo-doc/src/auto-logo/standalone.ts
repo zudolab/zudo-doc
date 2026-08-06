@@ -34,6 +34,7 @@ import {
   pickGlyphName,
   type ShapePrimitive,
 } from "./shapes.js";
+import { escapeAttr, renderShape as renderShapeWith } from "./render-shape.js";
 
 const MASK_ID = "auto-logo-mask";
 
@@ -48,18 +49,8 @@ const MASK_COLORS: Record<string, string> = {
   "var(--color-bg)": "#000",
 };
 
-function escapeAttr(value: string): string {
-  return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
 function renderShape(shape: ShapePrimitive): string {
-  const attrs = Object.entries(shape.attrs)
-    .map(([key, value]) => {
-      const resolved = typeof value === "string" && value in MASK_COLORS ? MASK_COLORS[value]! : value;
-      return `${key}="${escapeAttr(String(resolved))}"`;
-    })
-    .join(" ");
-  return `<${shape.el} ${attrs} />`;
+  return renderShapeWith(shape, MASK_COLORS);
 }
 
 /**
