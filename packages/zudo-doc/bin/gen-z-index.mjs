@@ -448,8 +448,38 @@ export function buildBlock(tiers, options = {}) {
 //     the opener, followed by whitespace only — so an info-string line such
 //     as ```js does not close an already-open fence. It carries no list
 //     marker of its own, which is why only OPEN_FENCE_RE accepts one.
-const OPEN_FENCE_RE = /^ {0,3}(?:(?:[-*+]|\d{1,9}[.)])[ \t]+)?(`{3,}|~{3,})(.*)$/;
-const CLOSE_FENCE_RE = /^ {0,3}(`{3,}|~{3,})[ \t]*$/;
+//   - A closing fence's indentation allowance is measured from the OPENING
+//     fence, not from column zero: inside a container the closer sits at the
+//     container's content column and may carry up to three further spaces.
+//     So the bound is `opener indent + 3`, where the opener's indent is its
+//     leading spaces PLUS any list-marker prefix width. A flat three-space
+//     cap is wrong for any marker four or more characters wide (`10) `, or
+//     `1.` followed by two spaces): the item's real closer would be rejected,
+//     the fence would never close, and every marker below it would stay
+//     ineligible. Since the opener's indent is never negative, a closer at
+//     0-3 spaces still closes a fence opened at ANY indent.
+//   - Indentation is measured in COLUMNS, with a tab advancing to the next
+//     four-column tab stop. The opener accepts a tab as list-marker padding,
+//     and `"1.\t".length` (3) undercounts that item's real content column
+//     (4) — which would then reject a legal closer sitting at column + 3.
+const OPEN_FENCE_RE = /^( {0,3}(?:(?:[-*+]|\d{1,9}[.)])[ \t]+)?)(`{3,}|~{3,})(.*)$/;
+const CLOSE_FENCE_RE = /^( *)(`{3,}|~{3,})[ \t]*$/;
+
+/**
+ * Column width of an opening fence's prefix (leading spaces plus any
+ * list-marker prefix), expanding tabs to CommonMark's four-column tab stops —
+ * see the tab-stop rule in the block comment above. `CLOSE_FENCE_RE` matches
+ * spaces only, so the closer side needs no equivalent (and accepting a
+ * tab-indented closer would widen behaviour the pre-existing `^ {0,3}` cap
+ * never had).
+ */
+function fenceIndentColumns(prefix) {
+  let column = 0;
+  for (const ch of prefix) {
+    column = ch === "\t" ? column + 4 - (column % 4) : column + 1;
+  }
+  return column;
+}
 
 /**
  * Walks `source` line by line and returns the character offsets (into
@@ -489,7 +519,10 @@ export function scanMarkerLines(source, marker, options = {}) {
   const { excludeFencedCode = false } = options;
   const RESIDUE_RE = /^[\s{}/*]*$/;
   const offsets = [];
-  // `{ char, length }` while inside an open fenced region, else null.
+  // `{ char, length, indent }` while inside an open fenced region, else null.
+  // `indent` is the opening fence's content COLUMN (leading spaces plus any
+  // list-marker prefix, tabs expanded), which bounds how far its closer may be
+  // indented.
   let fence = null;
   let lineStart = 0;
   while (lineStart <= source.length) {
@@ -505,15 +538,24 @@ export function scanMarkerLines(source, marker, options = {}) {
       const text = line.endsWith("\r") ? line.slice(0, -1) : line;
       if (fence !== null) {
         const close = CLOSE_FENCE_RE.exec(text);
-        if (close && close[1][0] === fence.char && close[1].length >= fence.length) {
+        if (
+          close &&
+          close[2][0] === fence.char &&
+          close[2].length >= fence.length &&
+          close[1].length <= fence.indent + 3
+        ) {
           fence = null;
         }
         eligible = false;
       } else {
         const open = OPEN_FENCE_RE.exec(text);
-        const backtickInInfoString = open !== null && open[1][0] === "`" && open[2].includes("`");
+        const backtickInInfoString = open !== null && open[2][0] === "`" && open[3].includes("`");
         if (open !== null && !backtickInInfoString) {
-          fence = { char: open[1][0], length: open[1].length };
+          fence = {
+            char: open[2][0],
+            length: open[2].length,
+            indent: fenceIndentColumns(open[1]),
+          };
           eligible = false;
         }
       }
