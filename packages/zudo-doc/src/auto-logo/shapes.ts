@@ -1,7 +1,8 @@
 // auto-logo/shapes.ts — shared glyph + plate shape data for the AutoLogo
 // Preact component (index.tsx) and the dependency-free standalone SVG
-// string builder (standalone.ts). Plain data only — no JSX, no preact — so
-// both consumers render the exact same geometry from a single source and
+// string builders (standalone.ts, and the square icon path via
+// shapes-square.ts + icon.ts). Plain data only — no JSX, no preact — so
+// every consumer renders the exact same geometry from a single source and
 // cannot drift (issue #3048).
 //
 // Color contract: colors are carried as the same two string tokens the JSX
@@ -12,8 +13,9 @@
 // (issue #3108 — matches the takazudomodular model). `AutoLogo` spreads
 // these attrs verbatim (they resolve correctly in a live, styled SVG);
 // `standalone.ts` substitutes both tokens with concrete luminance-mask
-// colors when serializing (no `var(`/`currentColor` can reach an ejected
-// file, since only these two tokens are ever used as color values here).
+// colors and `icon.ts` with concrete paint hexes when serializing (no
+// `var(`/`currentColor` can reach an ejected or icon file, since only these
+// two tokens are ever used as color values here).
 
 /** One SVG primitive as plain data: element name + its attributes. */
 export interface ShapePrimitive {
@@ -36,57 +38,100 @@ const INK = "currentColor";
 /** Knockout color token — page background (see the color contract above). */
 const KO = "var(--color-bg)";
 
-/** Full-bleed plate rect, filled with the page background so the tile
- *  interior reads as the page itself (opaque, not `fill: "none"`, so it also
- *  covers a textured page background). */
-export const PLATE_SHAPE: ShapePrimitive = {
-  el: "rect",
-  attrs: { x: 0, y: 0, width: W, height: H, fill: KO },
-};
+/** Inputs for {@link buildPlateShapes}. */
+export interface PlateParams {
+  w: number;
+  h: number;
+  inset: number;
+  discR: number;
+}
 
-/** Thin inner frame stroke, drawn in ink over the plate. */
-export const INNER_FRAME_SHAPE: ShapePrimitive = {
-  el: "rect",
-  attrs: {
-    x: INSET,
-    y: INSET,
-    width: W - INSET * 2,
-    height: H - INSET * 2,
-    fill: "none",
-    stroke: INK,
-    "stroke-width": 1.6,
-  },
-};
+/** One plate composition (everything except the glyph shape data) as built
+ *  by {@link buildPlateShapes}. */
+export interface PlateShapes {
+  /** Full-bleed plate rect, filled with the page background so the tile
+   *  interior reads as the page itself (opaque, not `fill: "none"`, so it
+   *  also covers a textured page background). */
+  plate: ShapePrimitive;
+  /** Thin inner frame stroke, drawn in ink over the plate. */
+  innerFrame: ShapePrimitive;
+  /** 4 diagonal corner rays in ink, each stopping just short of the disc. */
+  rays: ShapePrimitive[];
+  /** Centered ink disc — the glyph is knocked back out of it. */
+  disc: ShapePrimitive;
+  /** Scale that fits a glyph's 100×100 box onto the disc
+   *  (slight overscan reads better). */
+  glyphScale: number;
+  /** Transform that centers the scaled glyph box on the disc. */
+  glyphTransform: string;
+}
 
-/** 4 diagonal corner rays in ink, each stopping just short of the disc edge. */
-export const RAY_SHAPES: ShapePrimitive[] = (
-  [
-    [INSET, INSET],
-    [W - INSET, INSET],
-    [INSET, H - INSET],
-    [W - INSET, H - INSET],
-  ] as Array<[number, number]>
-).map(([x, y]) => {
-  const dx = CX - x;
-  const dy = CY - y;
-  const len = Math.hypot(dx, dy);
-  const stop = (len - DISC_R - 7) / len;
-  return {
-    el: "line",
-    attrs: { x1: x, y1: y, x2: x + dx * stop, y2: y + dy * stop, stroke: INK, "stroke-width": 1.4 },
-  } satisfies ShapePrimitive;
-});
+/**
+ * Build the "decorated plate" composition — plate, inset frame, 4 corner
+ * rays, center disc, glyph transform — for any plate size. The 200×105 rect
+ * logo constants below and the square icon recomposition
+ * (`shapes-square.ts`, epic #3285) are both built from this one function so
+ * their geometry cannot drift.
+ */
+export function buildPlateShapes({ w, h, inset, discR }: PlateParams): PlateShapes {
+  const cx = w / 2;
+  const cy = h / 2;
 
-/** Centered ink disc — the glyph below is knocked back out of it. */
-export const DISC_SHAPE: ShapePrimitive = {
-  el: "circle",
-  attrs: { cx: CX, cy: CY, r: DISC_R, fill: INK },
-};
+  const plate: ShapePrimitive = {
+    el: "rect",
+    attrs: { x: 0, y: 0, width: w, height: h, fill: KO },
+  };
 
-/** Scale + translate that centers a glyph's 100×100 box onto the disc
- *  (slight overscan reads better). */
-export const GLYPH_SCALE = ((DISC_R * 2) / 100) * 1.05;
-export const GLYPH_TRANSFORM = `translate(${CX - 50 * GLYPH_SCALE}, ${CY - 50 * GLYPH_SCALE}) scale(${GLYPH_SCALE})`;
+  const innerFrame: ShapePrimitive = {
+    el: "rect",
+    attrs: {
+      x: inset,
+      y: inset,
+      width: w - inset * 2,
+      height: h - inset * 2,
+      fill: "none",
+      stroke: INK,
+      "stroke-width": 1.6,
+    },
+  };
+
+  const rays: ShapePrimitive[] = (
+    [
+      [inset, inset],
+      [w - inset, inset],
+      [inset, h - inset],
+      [w - inset, h - inset],
+    ] as Array<[number, number]>
+  ).map(([x, y]) => {
+    const dx = cx - x;
+    const dy = cy - y;
+    const len = Math.hypot(dx, dy);
+    const stop = (len - discR - 7) / len;
+    return {
+      el: "line",
+      attrs: { x1: x, y1: y, x2: x + dx * stop, y2: y + dy * stop, stroke: INK, "stroke-width": 1.4 },
+    } satisfies ShapePrimitive;
+  });
+
+  const disc: ShapePrimitive = {
+    el: "circle",
+    attrs: { cx, cy, r: discR, fill: INK },
+  };
+
+  const glyphScale = ((discR * 2) / 100) * 1.05;
+  const glyphTransform = `translate(${cx - 50 * glyphScale}, ${cy - 50 * glyphScale}) scale(${glyphScale})`;
+
+  return { plate, innerFrame, rays, disc, glyphScale, glyphTransform };
+}
+
+const RECT_PLATE_SHAPES = buildPlateShapes({ w: W, h: H, inset: INSET, discR: DISC_R });
+
+export const PLATE_SHAPE: ShapePrimitive = RECT_PLATE_SHAPES.plate;
+export const INNER_FRAME_SHAPE: ShapePrimitive = RECT_PLATE_SHAPES.innerFrame;
+export const RAY_SHAPES: ShapePrimitive[] = RECT_PLATE_SHAPES.rays;
+export const DISC_SHAPE: ShapePrimitive = RECT_PLATE_SHAPES.disc;
+export const GLYPH_SCALE = RECT_PLATE_SHAPES.glyphScale;
+export const GLYPH_TRANSFORM = RECT_PLATE_SHAPES.glyphTransform;
 
 /** Line-art glyphs drawn in a 100×100 box centered at (50,50), as plain
  *  shape data. Every painted `fill`/`stroke` here is the knockout token, so
