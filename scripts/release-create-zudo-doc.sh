@@ -60,11 +60,15 @@ set -euo pipefail
 #   3. Bumps version in packages/create-zudo-doc/package.json
 #   4. Bumps version in packages/zudo-doc/package.json  (W4A — #1732)
 #   5. Bumps version in packages/doc-history-server/package.json  (W4A — #1732)
-#   6. Bumps the @takazudo/zudo-doc pin in scaffold.ts to ^<new-version>
-#      so the generated package.json points at the zudo-doc version being
-#      released (W4A — #1732). The @takazudo/zfb / @takazudo/zfb-runtime
-#      pins in scaffold.ts are upstream-tracked separately and gated by
-#      scripts/check-pin-parity.mjs — they are NOT touched here.
+#   6. Bumps the @takazudo/zudo-doc pin to ^<new-version> in BOTH lockstep
+#      surfaces — the `ZUDO_DOC_PIN` constant in scaffold.ts (so the generated
+#      package.json points at the zudo-doc version being released, W4A — #1732)
+#      and the target-manifest fixture at
+#      packages/zudo-doc/src/__tests__/fixtures/target-manifest/package.json
+#      (which documents the published shape a consumer gets, #3306). Both are
+#      rewritten by scripts/lib/rewrite-zudo-doc-pins.mjs. The @takazudo/zfb /
+#      @takazudo/zfb-runtime pins in scaffold.ts are upstream-tracked separately
+#      and gated by scripts/check-pin-parity.mjs — they are NOT touched here.
 #   7. Scaffolds EN+JA changelog MDX entries
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -260,30 +264,31 @@ node -e "
 "
 echo "  ✓ $DHS_PKG_JSON → $NEW_VERSION"
 
-# ── Step 2c: Align @takazudo/zudo-doc pin in scaffold.ts (W4A — #1732) ────
-# The generated downstream package.json pins ^X.Y.Z(-next.N)? of @takazudo/zudo-doc;
-# when zudo-doc bumps, the pin must move with it so a fresh scaffold gets
-# the version we just published — including prerelease versions.
-# The pin now lives in the exported `ZUDO_DOC_PIN` constant (scaffold.ts uses it
-# in both generatePackageJson() and scaffold()); check-pin-parity.mjs resolves
-# that constant. The regex matches both stable (^X.Y.Z) and prerelease
-# (^X.Y.Z-next.N) pins. The zfb pins are NOT touched — those track the upstream
-# zfb release cadence and are gated by scripts/check-pin-parity.mjs.
+# ── Step 2c: Align @takazudo/zudo-doc pins — scaffold.ts + fixture (#3306) ────
+# TWO surfaces spell out the released @takazudo/zudo-doc version as a literal
+# and must move together:
+#   - the exported `ZUDO_DOC_PIN` constant in scaffold.ts (used by both
+#     generatePackageJson() and scaffold()), which is what a fresh scaffold's
+#     generated package.json pins — including prerelease versions;
+#   - packages/zudo-doc/src/__tests__/fixtures/target-manifest/package.json,
+#     the fixture documenting the PUBLISHED shape a real consumer gets. Its pin
+#     is documentary (the slow test extracts a packed tarball rather than
+#     resolving from the registry), so drift there fails nothing on its own —
+#     which is how it silently fell a full major behind (#3304).
+# The rewrite lives in scripts/lib/rewrite-zudo-doc-pins.mjs rather than inline
+# here: the release path's failure mode is "the next release breaks", provable
+# only by releasing. Behind an importable seam taking the repo root as a
+# parameter, this exact code is unit-tested against a temp tree
+# (scripts/__tests__/rewrite-zudo-doc-pins.test.ts). It hard-fails if either
+# pin cannot be located, and prints the ✓ line for each file it rewrites.
+# The zfb pins are NOT touched — those track the upstream zfb release cadence
+# and are gated by scripts/check-pin-parity.mjs.
 
 echo ""
-echo "▶ Aligning @takazudo/zudo-doc pin (ZUDO_DOC_PIN) in scaffold.ts..."
-node -e "
-  const fs = require('fs');
-  const src = fs.readFileSync('$SCAFFOLD_TS', 'utf-8');
-  const re = /(export const ZUDO_DOC_PIN\s*=\s*\")\^?[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?(\")/;
-  if (!re.test(src)) {
-    console.error('Error: could not locate ZUDO_DOC_PIN constant in $SCAFFOLD_TS');
-    process.exit(1);
-  }
-  const next = src.replace(re, '\$1^$NEW_VERSION\$3');
-  fs.writeFileSync('$SCAFFOLD_TS', next);
-"
-echo "  ✓ $SCAFFOLD_TS @takazudo/zudo-doc → ^$NEW_VERSION"
+echo "▶ Aligning @takazudo/zudo-doc pins (scaffold.ts ZUDO_DOC_PIN + target-manifest fixture)..."
+node "$ROOT_DIR/scripts/lib/rewrite-zudo-doc-pins.mjs" \
+  --repo-root "$ROOT_DIR" \
+  --version "$NEW_VERSION"
 
 # ── Step 2d: Align @takazudo/zudo-doc-history-server pin in scaffold.ts ───────
 # A docHistory-enabled generated package.json carries a direct
