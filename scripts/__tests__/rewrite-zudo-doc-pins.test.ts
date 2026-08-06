@@ -255,9 +255,16 @@ describe("release-create-zudo-doc.sh wiring", () => {
   const releaseScript = readFileSync(RELEASE_SCRIPT_PATH, "utf-8");
 
   it("invokes the helper with a repo root and the new version", () => {
-    expect(releaseScript).toMatch(
-      /node "\$ROOT_DIR\/scripts\/lib\/rewrite-zudo-doc-pins\.mjs" \\\s*\n\s*--repo-root "\$ROOT_DIR" \\\s*\n\s*--version "\$NEW_VERSION"/,
-    );
+    // Matched without pinning line breaks so reformatting the invocation does
+    // not fail the test — what must hold is that the shell runs THIS script
+    // and hands it the repo root plus the version being released.
+    const command = 'node "$ROOT_DIR/scripts/lib/rewrite-zudo-doc-pins.mjs"';
+    const start = releaseScript.indexOf(command);
+    expect(start).toBeGreaterThan(-1);
+
+    const invocation = releaseScript.slice(start).split("\n\n")[0];
+    expect(invocation).toContain('--repo-root "$ROOT_DIR"');
+    expect(invocation).toContain('--version "$NEW_VERSION"');
   });
 
   it("keeps no inline ZUDO_DOC_PIN rewrite in the shell script", () => {
