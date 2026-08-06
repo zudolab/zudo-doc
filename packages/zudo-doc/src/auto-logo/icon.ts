@@ -22,10 +22,9 @@
 // `dist/auto-logo/standalone.js`. Enforced by
 // `__tests__/standalone-eval-graph.test.ts`.
 
-import { GLYPH_SHAPES, pickGlyphName } from "./shapes.js";
+import { GLYPH_SHAPES, pickGlyphName, type ShapePrimitive } from "./shapes.js";
 import { SQUARE_SIZE, SQUARE_PLATE_SHAPES } from "./shapes-square.js";
 import { escapeAttr, renderShape as renderShapeWith } from "./render-shape.js";
-import type { ShapePrimitive } from "./shapes.js";
 
 /** Icon plate color — light plate, pinned by #3286. */
 export const ICON_BG = "#ffffff";
