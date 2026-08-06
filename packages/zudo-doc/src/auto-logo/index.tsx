@@ -39,6 +39,7 @@ import {
 
 export { pickGlyphName };
 export { renderAutoLogoStandaloneSvg } from "./standalone.js";
+export { renderAutoLogoIconSvg } from "./icon.js";
 
 /** Props for {@link AutoLogo}. */
 export interface AutoLogoProps {

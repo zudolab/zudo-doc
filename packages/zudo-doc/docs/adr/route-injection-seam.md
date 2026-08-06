@@ -319,7 +319,7 @@ the same `setup(ctx)` hook.
   default for fast tests).
 - **`@takazudo/zdtp` dep implication:** the same static import that makes
   `DesignTokenPanelBootstrap` the seam default (`chrome/derive.tsx`, ~line
-  55) makes `@takazudo/zdtp` an **unconditional build-time dependency** of
+  65) makes `@takazudo/zdtp` an **unconditional build-time dependency** of
   every `createChrome` consumer — even `designTokenPanel: false` projects
   (the "Could not resolve '@takazudo/zdtp'" failure class from #2660). Same
   shape as the `diff` peer implication above: only RENDERING is gated on the
@@ -330,6 +330,17 @@ the same `setup(ctx)` hook.
   `generatePackageJson()` (`packages/create-zudo-doc/src/scaffold.ts`) is the
   corresponding scaffold-side guarantee — without it `zfb build` fails with
   the same error even on a fully barebone project.
+
+  **Runtime load is a separate concern from this build-time contract**
+  (#3282): `DesignTokenPanelBootstrap` no longer imports `@takazudo/zdtp`
+  eagerly at its own module scope — it `import()`s zdtp lazily, on the first
+  `toggle-design-token-panel` dispatch, or eagerly-but-post-mount when a
+  persisted-state probe finds saved panel state under the active storage
+  prefix (see the docblock in `design-token-panel-bootstrap.tsx`). That only
+  changes WHEN the browser fetches zdtp's bytes; it does not change whether
+  the bundler needs `@takazudo/zdtp` resolvable at build time — the dynamic
+  import specifier still has to resolve to produce the lazy chunk, so the
+  dependency implication above is unchanged.
 - **Mode-scoped BUILDER, not a resolved config** (#2610): the virtual module
   re-exports a `(mode: "light" | "dark") => PanelConfig` function, never a
   plain object — `@takazudo/zudo-doc/design-token-panel-bootstrap`'s
