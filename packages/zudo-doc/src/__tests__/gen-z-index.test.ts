@@ -225,6 +225,44 @@ describe("scanMarkerLines with excludeFencedCode", () => {
     },
   );
 
+  it.each(["-", "*", "+", "1.", "10)"])(
+    "opens a fence on a list-item line beginning with %s",
+    (marker) => {
+      // The list marker is a container prefix, not content. Missing this
+      // opener is what turns the item's own closing fence (indented, so
+      // carrying no marker) into a bogus opener that swallows the real
+      // region below — see the replaceBlock regression test.
+      const source = [
+        `${marker} \`\`\`mdx`,
+        `  ${MD_TABLE_BEGIN_MARKER}`,
+        "  ```",
+        "",
+        MD_TABLE_BEGIN_MARKER,
+        "",
+      ].join("\n");
+      expect(scanMarkerLines(source, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([
+        source.lastIndexOf(MD_TABLE_BEGIN_MARKER),
+      ]);
+    },
+  );
+
+  it("does not mistake a list marker for extra indentation on a four-space-indented line", () => {
+    // Guards the optional list-prefix group against relaxing the 0-3 space
+    // rule by backtracking (`^ {0,3}` + optional prefix must not add up to a
+    // four-space allowance).
+    const source = ["    ```", `    ${MD_TABLE_BEGIN_MARKER}`, "    ```", ""].join("\n");
+    expect(scanMarkerLines(source, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([
+      source.indexOf(MD_TABLE_BEGIN_MARKER),
+    ]);
+  });
+
+  it("does not open a fence on a list marker with no space before the backticks", () => {
+    const source = ["-```mdx", MD_TABLE_BEGIN_MARKER, ""].join("\n");
+    expect(scanMarkerLines(source, MD_TABLE_BEGIN_MARKER, FENCED)).toEqual([
+      source.indexOf(MD_TABLE_BEGIN_MARKER),
+    ]);
+  });
+
   it("does NOT treat a four-space-indented ``` line as a fence (accepted limitation)", () => {
     // Four spaces makes it an indented code block, which this scanner
     // deliberately does not model — the marker inside is still counted.
@@ -873,6 +911,29 @@ describe("replaceBlock with excludeFencedCode", () => {
     expect(() => replaceMd(mdDoc(indented, "old table"), NEW_TABLE)).toThrow(
       /duplicate markers.*doc\.mdx/s,
     );
+  });
+
+  it("replaces the real pair when the quoting fence opens on a list-item line", () => {
+    // Regression: a missed `- ```mdx` opener left the quoted markers eligible
+    // AND turned the item's indented closing fence into a bogus opener that
+    // hid the real pair — so exactly one valid-looking pair survived and the
+    // generated block was spliced into the quoted example instead. Silent
+    // corruption, where wave 1 had thrown a loud duplicate-marker error.
+    const listDoc = (inner: string) =>
+      [
+        "- Seed the region by hand:",
+        "",
+        "- ```mdx",
+        `  ${MD_TABLE_BEGIN_MARKER}`,
+        `  ${MD_TABLE_END_MARKER}`,
+        "  ```",
+        "",
+        MD_TABLE_BEGIN_MARKER,
+        inner,
+        MD_TABLE_END_MARKER,
+        "",
+      ].join("\n");
+    expect(replaceMd(listDoc("old table"), NEW_TABLE)).toBe(listDoc("new table"));
   });
 
   it("does not count a real marker pair that follows an unterminated fence", () => {

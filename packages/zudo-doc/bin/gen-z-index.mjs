@@ -435,12 +435,20 @@ export function buildBlock(tiers, options = {}) {
 //
 //   - An opening fence carries AT MOST three spaces of indentation. Four
 //     spaces makes the line indented code, not a fence.
+//   - A fence may open on a list-item line (`- ```mdx`), because the list
+//     marker is a container prefix rather than content. Missing this one is
+//     not a harmless false negative: the item's closing fence — indented to
+//     the item's content column, so carrying NO list marker — would then be
+//     read as a fresh opener and swallow every marker below it, silently
+//     splicing the generated block into the quoted example. Loud failure is
+//     acceptable here; silent corruption is not.
 //   - A backtick opening fence's info string may not itself contain a
 //     backtick (a tilde fence's info string may contain anything).
 //   - A closing fence repeats the SAME character, at least as many times as
 //     the opener, followed by whitespace only — so an info-string line such
-//     as ```js does not close an already-open fence.
-const OPEN_FENCE_RE = /^ {0,3}(`{3,}|~{3,})(.*)$/;
+//     as ```js does not close an already-open fence. It carries no list
+//     marker of its own, which is why only OPEN_FENCE_RE accepts one.
+const OPEN_FENCE_RE = /^ {0,3}(?:(?:[-*+]|\d{1,9}[.)])[ \t]+)?(`{3,}|~{3,})(.*)$/;
 const CLOSE_FENCE_RE = /^ {0,3}(`{3,}|~{3,})[ \t]*$/;
 
 /**
