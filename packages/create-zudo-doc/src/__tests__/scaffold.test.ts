@@ -430,6 +430,7 @@ describe("scaffold — tauri no longer ships find-in-page template files (packag
       "src-tauri/Cargo.toml",
       "src-tauri/build.rs",
       "src-tauri/capabilities/default.json",
+      "src-tauri/icons/icon.png",
       "src-tauri/src/main.rs",
       "src-tauri/tauri.conf.json",
     ]) {
@@ -823,7 +824,7 @@ describe("scaffold — changelog feature", () => {
 });
 
 describe("scaffold — every-feature manifest is exactly base + the documented per-feature deltas", () => {
-  it("all-on scaffold emits exactly the expected 43-file set", async () => {
+  it("all-on scaffold emits exactly the expected 44-file set", async () => {
     await scaffold({
       ...baseChoices,
       projectName: "test-all-on",
@@ -860,6 +861,7 @@ describe("scaffold — every-feature manifest is exactly base + the documented p
       "src-tauri/Cargo.toml",
       "src-tauri/build.rs",
       "src-tauri/capabilities/default.json",
+      "src-tauri/icons/icon.png",
       "src-tauri/src/main.rs",
       "src-tauri/tauri.conf.json",
       "src/config/tag-vocabulary.ts",
