@@ -209,6 +209,20 @@ Colorタブは常に、現在アクティブなモード（ライトまたはダ
 
 パネルUIは `@takazudo/zdtp`（zdtp）npmパッケージが提供します。パッケージ所有の `DesignTokenPanelBootstrap` アイランドと、`configurePanel` の呼び出し、zfb のナビゲーションライフサイクルへのフック、および後述のモードスコープな destroy+reconfigure の仕組みは `@takazudo/zudo-doc/design-token-panel-bootstrap` にあります。アイランドは `bootstrapDesignTokenPanel(buildDesignTokenPanelConfig)` を呼び出します。`buildDesignTokenPanelConfig` は `(mode) => PanelConfig` のビルダーであり、これが Color タブをライト/ダークに追従させる仕組みです。アイランドがハイドレートすると、パネルはその副作用として自己マウントされます。
 
+### 遅延読み込み
+
+`@takazudo/zdtp` は初期ページバンドルには含まれません。`bootstrapDesignTokenPanel` はマウント時に小さな暫定クリックリスナーを登録するだけで、実際の `import("@takazudo/zdtp")`（とそれに続く `configurePanel` の呼び出し）は、ヘッダーのトリガーが最初に `toggle-design-token-panel` をディスパッチしたときに実行されます。インポートが解決する前に届いたクリックはキューにためられ、configure完了後に正味1回分の表示/非表示にまとめられるため、すばやい連続クリックが二重に発火することはありません。
+
+保存済みの状態を持つ再訪ユーザーは、そのクリックを待つ必要がありません。マウント時にブートストラップは、アクティブな（パックスコープの）ストレージプレフィックス配下の `localStorage` を確認し、以下のいずれかが真であれば、操作前に即座に zdtp を読み込みます:
+
+- パネルが開いたままだった（`${prefix}-open` が `"1"`）
+- トークンオーバーライドが保存されていた（`${prefix}-state*` というキーが存在する）
+- オーナーモードのフラグが設定されている（`${prefix}:autoload`・`${prefix}-elpath-enabled`・`${prefix}-domtweaker-enabled` のいずれか）
+
+`${prefix}-open` とオーナーモードのチェックはキーを直接指定した参照ですが、`${prefix}-state*` のチェックだけは、その時点で `localStorage` に存在するすべてのキーを走査します（プレフィックスで問い合わせるネイティブAPIは存在しないため）。ただし、アクティブなプレフィックスの厳密な語幹で始まるキーだけをヒットとして扱うため、すべてのキー名には目を通しつつも、無関係な別アプリ自身の `*-state` キーに誤反応することはありません。保存済み状態を持つテーマパックへの切り替えも、同様の即時読み込みを引き起こします。
+
+いずれの経路でも zdtp が読み込まれるまでは、`window.zdtp`（zdtp が構成完了時にインストールするコンソールAPI）は存在しません。一度読み込まれると、そのページが存続する間はその読み込まれた状態を保ち続けます — トグルイベントは zdtp 自身のリスナーが直接引き継ぎます。この遅延状態に戻るのは、ページを丸ごと再読み込みしたときだけです。
+
 （テーマトグルがディスパッチする）`color-scheme-changed` イベントのたびに、ブートストラップは新しいモードを読み取り、素早い連続トグルを 1 つのマクロタスクにまとめてから、`handle.destroy()` に続けて `configurePanel(buildDesignTokenPanelConfig(mode))` を呼び出します — zdtp の `configurePanel` は、構造的に異なる設定でその場で再実行すると例外を投げるため、destroy してから再構成することが、Color タブのモードスコープなデフォルトを差し替える唯一のサポートされた方法です。パネルが開いていた場合は、開いた状態で再マウントされます。
 
 ヘッダーのトリガーボタンは `window` に `toggle-design-token-panel` カスタムイベントをディスパッチします。zdtpはこのイベントをネイティブに受け取るため、`headerRightItems` フィールドでトリガーをカスタマイズしても追加の配線は必要ありません。
