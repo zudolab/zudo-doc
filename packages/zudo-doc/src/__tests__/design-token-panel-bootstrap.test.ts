@@ -402,6 +402,14 @@ describe("bootstrapDesignTokenPanel — lazy zdtp load", () => {
 // zdtp eagerly at mount so overrides do not silently revert.
 // ---------------------------------------------------------------------------
 
+/**
+ * A `-state*` envelope carrying at least one override. Seeded wherever a test
+ * needs the probe's state branch to FIRE: since #3314 the branch is
+ * content-based, so `"{}"` no longer triggers it and would silently turn any
+ * such test into a no-op assertion.
+ */
+const NON_EMPTY_ENVELOPE = '{"--zd-accent":"#f00"}';
+
 describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
   function makeBuilder(prefix = "test-panel") {
     return vi.fn<PanelConfigBuilder>(
@@ -416,9 +424,9 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
     }));
   });
 
-  it("a seeded -state-v4 key triggers an eager configure without any toggle (and no show)", async () => {
+  it("a seeded non-empty -state-v4 key triggers an eager configure without any toggle (and no show)", async () => {
     const browser = installBrowser();
-    browser.values.set("test-panel-state-v4", "{}");
+    browser.values.set("test-panel-state-v4", NON_EMPTY_ENVELOPE);
 
     bootstrapDesignTokenPanel(makeBuilder());
     await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
@@ -434,7 +442,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
 
   it("an unversioned -state key triggers the eager configure (version-agnostic stem match)", async () => {
     const browser = installBrowser();
-    browser.values.set("test-panel-state", "{}");
+    browser.values.set("test-panel-state", NON_EMPTY_ENVELOPE);
 
     bootstrapDesignTokenPanel(makeBuilder());
     await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
@@ -452,7 +460,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
 
   it("probes the pack-scoped prefix when a non-default pack is active", async () => {
     const browser = installBrowser("light", "foundry");
-    browser.values.set("test-panel--foundry-state-v4", "{}");
+    browser.values.set("test-panel--foundry-state-v4", NON_EMPTY_ENVELOPE);
 
     bootstrapDesignTokenPanel(makeBuilder());
     await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
@@ -516,11 +524,29 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
     await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
   });
 
+  it(":autoload == \"1\" with :visible == \"0\" still triggers — the documented owner-mode-armed steady state", async () => {
+    const browser = installBrowser();
+    // zdtp README §10.1: `disableAutoload()` clears `:autoload`, `:visible`,
+    // `-elpath-enabled` and the open-state key TOGETHER, so this pair is an
+    // owner with the panel mounted closed — not a stale flag. Reviewed and
+    // deliberately left triggering in #3313; a `:visible=0` veto would break
+    // exactly this case (upstream: Takazudo/zudo-design-token-panel#565).
+    browser.values.set("test-panel:autoload", "1");
+    browser.values.set("test-panel:visible", "0");
+
+    bootstrapDesignTokenPanel(makeBuilder());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await settle();
+
+    // Armed, not opened: the probe never issues an explicit show().
+    expect(zdtp.showDesignTokenPanel).not.toHaveBeenCalled();
+  });
+
   it("a pre-load pack switch onto a namespace with saved state triggers the eager load", async () => {
     const browser = installBrowser("light", "default");
     // The boot-time (default-pack) namespace is clean, but the foundry
     // namespace has saved overrides.
-    browser.values.set("test-panel--foundry-state-v4", "{}");
+    browser.values.set("test-panel--foundry-state-v4", NON_EMPTY_ENVELOPE);
 
     bootstrapDesignTokenPanel(makeBuilder());
     await settle();
@@ -555,7 +581,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
     const browser = installBrowser("light", "foundry");
     // Saved tweaks exist, but only under the DEFAULT pack's namespace — the
     // active (foundry-scoped) namespace has nothing to restore.
-    browser.values.set("test-panel-state-v4", "{}");
+    browser.values.set("test-panel-state-v4", NON_EMPTY_ENVELOPE);
 
     bootstrapDesignTokenPanel(makeBuilder());
     await settle();
@@ -567,7 +593,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
   it("ignores unrelated apps' keys — no whole-localStorage suffix scan", async () => {
     installBrowser();
     const browser = installBrowser();
-    browser.values.set("other-app-state-v4", "{}");
+    browser.values.set("other-app-state-v4", NON_EMPTY_ENVELOPE);
     browser.values.set("test-panel-open", "0");
 
     bootstrapDesignTokenPanel(makeBuilder());
@@ -579,7 +605,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
 
   it("a toggle while the probe-initiated import is in flight coalesces into the same configure", async () => {
     const browser = installBrowser();
-    browser.values.set("test-panel-state-v4", "{}");
+    browser.values.set("test-panel-state-v4", NON_EMPTY_ENVELOPE);
 
     bootstrapDesignTokenPanel(makeBuilder());
     dispatchToggle(browser.windowTarget);
@@ -613,6 +639,150 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
     // The lazy toggle path must still work with storage disabled.
     dispatchToggle(browser.windowTarget);
     await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Envelope-content policy (#3314, locked by the #3313 decision): the
+// `${prefix}-state*` branch of the probe tests CONTENT, not key presence.
+// Organizing principle — trigger unless the value is PROVABLY empty, where
+// provably empty is exactly `{}`, `[]`, and the literal `null`.
+// ---------------------------------------------------------------------------
+
+describe("bootstrapDesignTokenPanel — persisted-state probe envelope policy", () => {
+  function makeBuilder(prefix = "test-panel") {
+    return vi.fn<PanelConfigBuilder>(
+      () => ({ storagePrefix: prefix }) as unknown as PanelConfig,
+    );
+  }
+
+  beforeEach(() => {
+    zdtp.configurePanel.mockImplementation((cfg: PanelConfig) => ({
+      instanceId: cfg.storagePrefix,
+      destroy: vi.fn(),
+    }));
+  });
+
+  /** Every row of the locked table, keyed by the RAW persisted value. */
+  const ENVELOPE_TRUTH_TABLE: ReadonlyArray<{
+    label: string;
+    raw: string;
+    triggers: boolean;
+  }> = [
+    { label: "an empty object", raw: "{}", triggers: false },
+    { label: "an empty array", raw: "[]", triggers: false },
+    { label: "the literal null", raw: "null", triggers: false },
+    { label: "a non-empty object", raw: '{"--zd-accent":"#f00"}', triggers: true },
+    { label: "a non-empty array", raw: '["--zd-accent"]', triggers: true },
+    { label: "a string primitive", raw: '"x"', triggers: true },
+    // `0` and `false` are the traps: falsy, but not containers we can PROVE
+    // are empty, so the conservative branch keeps them triggering.
+    { label: "the number 0", raw: "0", triggers: true },
+    { label: "the boolean false", raw: "false", triggers: true },
+    // Malformed values are handed to zdtp to migrate or reject rather than
+    // silently discarded here — the `catch` returns "not empty". Inverting
+    // this branch is the single easiest mistake to make in the predicate.
+    { label: "malformed JSON", raw: "{not json", triggers: true },
+    { label: "the empty string (malformed JSON)", raw: "", triggers: true },
+  ];
+
+  it.each(ENVELOPE_TRUTH_TABLE.filter((row) => row.triggers))(
+    "a -state-v4 envelope holding $label triggers the eager configure",
+    async ({ raw }) => {
+      const browser = installBrowser();
+      browser.values.set("test-panel-state-v4", raw);
+
+      bootstrapDesignTokenPanel(makeBuilder());
+      await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    },
+  );
+
+  it.each(ENVELOPE_TRUTH_TABLE.filter((row) => !row.triggers))(
+    "a -state-v4 envelope holding $label stays lazy until a toggle",
+    async ({ raw }) => {
+      const browser = installBrowser();
+      browser.values.set("test-panel-state-v4", raw);
+
+      bootstrapDesignTokenPanel(makeBuilder());
+      await settle();
+
+      expect(zdtp.evaluations).toBe(0);
+      expect(zdtp.configurePanel).not.toHaveBeenCalled();
+
+      // Narrowed, not disabled: the toggle path still activates.
+      dispatchToggle(browser.windowTarget);
+      await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    },
+  );
+
+  it("nothing persisted at all stays lazy (the absent-key row)", async () => {
+    installBrowser();
+
+    bootstrapDesignTokenPanel(makeBuilder());
+    await settle();
+
+    expect(zdtp.evaluations).toBe(0);
+    expect(zdtp.configurePanel).not.toHaveBeenCalled();
+  });
+
+  it("ORs across every matching key: an empty -state-v4 does not stop the scan reaching a non-empty -state-v3", async () => {
+    const browser = installBrowser();
+    // ACCEPTED FALSE POSITIVE, asserted as INTENDED behaviour so it cannot be
+    // silently "fixed": zdtp README §9 says an empty v4 key shadows the legacy
+    // v3 chain, so nothing would actually be applied here. Recognising that
+    // would require the probe to learn the version precedence, which the
+    // #3282 schema-agnostic mandate forbids — the OR stays version-blind.
+    // Insertion order matters: the empty v4 key is scanned FIRST.
+    browser.values.set("test-panel-state-v4", "{}");
+    browser.values.set("test-panel-state-v3", NON_EMPTY_ENVELOPE);
+
+    bootstrapDesignTokenPanel(makeBuilder());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+  });
+
+  it("several empty envelopes across versions still stay lazy", async () => {
+    const browser = installBrowser();
+    browser.values.set("test-panel-state-v4", "{}");
+    browser.values.set("test-panel-state-v3", "{}");
+
+    bootstrapDesignTokenPanel(makeBuilder());
+    await settle();
+
+    expect(zdtp.evaluations).toBe(0);
+    expect(zdtp.configurePanel).not.toHaveBeenCalled();
+  });
+
+  it("a sibling pack's non-empty envelope never matches the base prefix stem", async () => {
+    const browser = installBrowser("light", "default");
+    // The `--<slug>` separator keeps sibling namespaces out of the
+    // `<prefix>-state` stem — unchanged by the content narrowing, so a
+    // NON-EMPTY value is what makes this assertion meaningful.
+    browser.values.set("test-panel--foundry-state-v4", NON_EMPTY_ENVELOPE);
+
+    bootstrapDesignTokenPanel(makeBuilder());
+    await settle();
+
+    expect(zdtp.evaluations).toBe(0);
+    expect(zdtp.configurePanel).not.toHaveBeenCalled();
+  });
+
+  it("a non-empty envelope is still ignored when storage throws", async () => {
+    installBrowser();
+    vi.stubGlobal("localStorage", {
+      getItem: () => NON_EMPTY_ENVELOPE,
+      key: () => {
+        throw new Error("storage access denied");
+      },
+      get length(): number {
+        throw new Error("storage access denied");
+      },
+    });
+
+    bootstrapDesignTokenPanel(makeBuilder());
+    await settle();
+
+    expect(zdtp.evaluations).toBe(0);
+    expect(zdtp.configurePanel).not.toHaveBeenCalled();
   });
 });
 
@@ -750,7 +920,7 @@ describe("bootstrapDesignTokenPanel — theme-pack interplay", () => {
     builder: PanelConfigBuilder,
     activePrefix: string,
   ): Promise<void> {
-    browser.values.set(`${activePrefix}-state-v4`, "{}");
+    browser.values.set(`${activePrefix}-state-v4`, NON_EMPTY_ENVELOPE);
     bootstrapDesignTokenPanel(builder);
     await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
   }
