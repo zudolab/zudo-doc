@@ -16,8 +16,16 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // Import via relative path that steps outside src/ into bin/.
 // Vitest resolves this at test time; it is NOT compiled by tsup.
 const BIN_PATH = resolve(__dirname, "../../bin/gen-z-index.mjs");
-const { parseArgs, parseTiers, validateTiers, buildBlock, buildMdTable, replaceBlock, main } =
-  await import(BIN_PATH);
+const {
+  parseArgs,
+  parseTiers,
+  validateTiers,
+  buildBlock,
+  buildMdTable,
+  replaceBlock,
+  scanMarkerLines,
+  main,
+} = await import(BIN_PATH);
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -120,6 +128,52 @@ describe("Import side effects", () => {
     expect(typeof replaceBlock).toBe("function");
     expect(typeof validateTiers).toBe("function");
     expect(typeof parseArgs).toBe("function");
+    expect(typeof scanMarkerLines).toBe("function");
+  });
+});
+
+// ── scanMarkerLines ────────────────────────────────────────────────────────
+
+describe("scanMarkerLines", () => {
+  it("counts the CSS mid-comment-line BEGIN form", () => {
+    const source = `  /* ${BEGIN_MARKER}\n`;
+    const offsets = scanMarkerLines(source, BEGIN_MARKER);
+    expect(offsets).toEqual([source.indexOf(BEGIN_MARKER)]);
+  });
+
+  it("counts the CSS mid-comment-line END form", () => {
+    const source = `  /* ${END_MARKER} */\n`;
+    const offsets = scanMarkerLines(source, END_MARKER);
+    expect(offsets).toEqual([source.indexOf(END_MARKER)]);
+  });
+
+  it("counts the MDX whole-line brace-comment form", () => {
+    const source = `${MD_TABLE_BEGIN_MARKER}\n`;
+    const offsets = scanMarkerLines(source, MD_TABLE_BEGIN_MARKER);
+    expect(offsets).toEqual([0]);
+  });
+
+  it("does not count a prose mention of the marker", () => {
+    const source = `The generator finds ${BEGIN_MARKER} in your CSS.\n`;
+    expect(scanMarkerLines(source, BEGIN_MARKER)).toEqual([]);
+  });
+
+  it("finds only the structural occurrence when a prose mention and a real marker both appear", () => {
+    const source = `see ${BEGIN_MARKER} for details\n  /* ${BEGIN_MARKER}\n`;
+    const offsets = scanMarkerLines(source, BEGIN_MARKER);
+    const realIdx = source.indexOf(BEGIN_MARKER, source.indexOf("\n"));
+    expect(offsets).toEqual([realIdx]);
+  });
+
+  it("returns offsets in source order across multiple structural occurrences", () => {
+    const source = `  /* ${BEGIN_MARKER}\nmiddle\n  /* ${BEGIN_MARKER}\n`;
+    const offsets = scanMarkerLines(source, BEGIN_MARKER);
+    expect(offsets).toHaveLength(2);
+    expect(offsets[0]).toBeLessThan(offsets[1]!);
+  });
+
+  it("returns an empty array when the marker is absent entirely", () => {
+    expect(scanMarkerLines("nothing here\n", BEGIN_MARKER)).toEqual([]);
   });
 });
 
@@ -543,6 +597,47 @@ describe("replaceBlock", () => {
     const next = replaceBlock(source, buildBlock([{ name: "content", value: 0 }]));
     expect(next).toContain(altBegin);
     expect(next).toContain("old table");
+  });
+
+  it("a prose mention of the marker plus one real marker pair replaces correctly (does not throw duplicate)", () => {
+    const prose = `see ${BEGIN_MARKER} for details\n\n`;
+    const source = `${prose}${seededBlock("  @theme {\n    --z-index-content: 0;\n  }")}`;
+    const next = replaceBlock(source, buildBlock([{ name: "content", value: 1 }]));
+    expect(next).toContain(prose);
+    expect(next).toContain("--z-index-content: 1;");
+    expect(next).not.toContain("old comment");
+  });
+
+  it("splices at the structural BEGIN marker when a prose mention of BEGIN precedes it", () => {
+    // A bare source.indexOf(beginMarker) would land on the prose mention
+    // (which comes first in the file) and corrupt the splice by cutting the
+    // prose line in half instead of replacing the real comment block.
+    const prose = `Note: search for ${BEGIN_MARKER} to find the block.\n`;
+    const source = `${prose}${seededBlock("  @theme {\n    --z-index-content: 0;\n  }")}\n`;
+    const next = replaceBlock(source, buildBlock([{ name: "content", value: 1 }]));
+    expect(next.startsWith(prose)).toBe(true);
+    expect(next).toContain("--z-index-content: 1;");
+    expect(next).not.toContain("old comment");
+  });
+
+  it("splices through to the structural END marker when a prose mention of END sits between the real markers", () => {
+    // A bare source.indexOf(endMarker) would land on this prose line (it
+    // appears earlier in the file than the real closing marker) and
+    // truncate the splice there, leaving the real END marker line behind as
+    // stray leftover text instead of being replaced — silent corruption,
+    // not a loud error.
+    const prose = `mentions ${END_MARKER} in passing`;
+    const inner = `  @theme {\n    --z-index-content: 0;\n  }\n${prose}`;
+    const source = wrapInCss(seededBlock(inner));
+    const next = replaceBlock(source, buildBlock([{ name: "content", value: 1 }]));
+
+    expect(next).toContain("--z-index-content: 1;");
+    expect(next).not.toContain("old comment");
+    expect(next).not.toContain(prose);
+    // Exactly one END marker survives — the one baked into the freshly
+    // built block. A stray leftover from a mislocated splice would leave
+    // two.
+    expect(next.split(END_MARKER)).toHaveLength(2);
   });
 });
 

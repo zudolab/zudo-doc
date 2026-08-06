@@ -427,32 +427,53 @@ export function buildBlock(tiers, options = {}) {
 }
 
 /**
- * Counts non-overlapping occurrences of `marker` in `str`. This is a plain
- * substring count, not a "stand-alone marker line" match — a known,
- * pre-existing tradeoff inherited from the CSS `@theme` region (whose BEGIN/
- * END text is embedded mid-comment-line, e.g. `  /* GENERATED:Z_INDEX_BEGIN`,
- * so a stricter "must be the whole line" rule would break it). This means a
- * doc page that quotes the literal `--md-table` marker text in prose or a
- * fenced code example (e.g. to explain the generator) is misread as a real
- * duplicate marker. The failure mode is loud (a clear "duplicate markers"
- * error), not silent corruption, so this is accepted rather than adding
- * markdown-aware parsing to a dependency-free bin.
+ * Walks `source` line by line and returns the character offsets (into
+ * `source`, in source order) of every LINE-ANCHORED occurrence of `marker` —
+ * a line where removing the marker text leaves behind only whitespace and
+ * comment/brace delimiter characters. This is the single scanner both
+ * `replaceBlock`'s validation (duplicate/missing/inverted) and its splice
+ * positions read from, so counting and locating can never diverge: a marker
+ * mentioned in prose (e.g. "see GENERATED:Z_INDEX_BEGIN for details") is
+ * invisible to this scanner, whether it appears before, between, or after the
+ * real structural markers.
+ *
+ * Predicate: for a line containing `marker`, `line.replace(marker, "")` must
+ * match `/^[\s{}/*]*$/`. This covers both real marker forms — the CSS
+ * mid-comment-line pair (e.g. `  /* GENERATED:Z_INDEX_BEGIN`) and the MDX
+ * whole-line brace-comment pair (e.g. `{/* GENERATED:Z_INDEX_TABLE_BEGIN`,
+ * closed by a trailing brace-comment on the same line) — while rejecting a
+ * line where the marker is only part of a prose sentence.
+ *
+ * Walks one line at a time (no per-line fence-state tracking yet) so a future
+ * CommonMark fenced-code-region exclusion can extend this same loop rather
+ * than requiring a restructure.
+ *
+ * Exported for unit testing.
  */
-function countOccurrences(str, marker) {
-  let count = 0;
-  let idx = str.indexOf(marker);
-  while (idx !== -1) {
-    count++;
-    idx = str.indexOf(marker, idx + marker.length);
+export function scanMarkerLines(source, marker) {
+  const RESIDUE_RE = /^[\s{}/*]*$/;
+  const offsets = [];
+  let lineStart = 0;
+  while (lineStart <= source.length) {
+    const newlineIdx = source.indexOf("\n", lineStart);
+    const lineEnd = newlineIdx === -1 ? source.length : newlineIdx;
+    const line = source.slice(lineStart, lineEnd);
+    const markerIdxInLine = line.indexOf(marker);
+    if (markerIdxInLine !== -1 && RESIDUE_RE.test(line.replace(marker, ""))) {
+      offsets.push(lineStart + markerIdxInLine);
+    }
+    if (newlineIdx === -1) break;
+    lineStart = newlineIdx + 1;
   }
-  return count;
+  return offsets;
 }
 
 /**
  * Replace the existing BEGIN…END block in `source` with `block`. Requires
- * EXACTLY one BEGIN and one END marker, with BEGIN preceding END — throws a
- * clear, distinct error for each failure mode: missing (the block must be
- * seeded once by hand), duplicated, or inverted markers.
+ * EXACTLY one line-anchored BEGIN and one line-anchored END marker (per
+ * `scanMarkerLines`), with BEGIN preceding END — throws a clear, distinct
+ * error for each failure mode: missing (the block must be seeded once by
+ * hand), duplicated, or inverted markers.
  *
  * `beginMarker`/`endMarker` default to the CSS `@theme` block's markers so
  * existing call sites (the CSS region) are unaffected; the `--md-table`
@@ -471,25 +492,25 @@ export function replaceBlock(
   endMarker = END_MARKER,
   filePath = DEFAULT_CSS_PATH,
 ) {
-  const beginCount = countOccurrences(source, beginMarker);
-  const endCount = countOccurrences(source, endMarker);
+  const beginOffsets = scanMarkerLines(source, beginMarker);
+  const endOffsets = scanMarkerLines(source, endMarker);
 
-  if (beginCount === 0 || endCount === 0) {
+  if (beginOffsets.length === 0 || endOffsets.length === 0) {
     throw new Error(
       `Could not find ${beginMarker} … ${endMarker} markers in ${filePath}.\n` +
         `Seed the marker block once by hand, then re-run the generator.`,
     );
   }
-  if (beginCount > 1 || endCount > 1) {
+  if (beginOffsets.length > 1 || endOffsets.length > 1) {
     throw new Error(
-      `Found duplicate markers in ${filePath} (${beginCount} BEGIN "${beginMarker}", ` +
-        `${endCount} END "${endMarker}"; expected exactly one of each). Remove the extra ` +
+      `Found duplicate markers in ${filePath} (${beginOffsets.length} BEGIN "${beginMarker}", ` +
+        `${endOffsets.length} END "${endMarker}"; expected exactly one of each). Remove the extra ` +
         `marker(s) by hand, then re-run the generator.`,
     );
   }
 
-  const beginIdx = source.indexOf(beginMarker);
-  const endIdx = source.indexOf(endMarker);
+  const beginIdx = beginOffsets[0];
+  const endIdx = endOffsets[0];
   if (beginIdx > endIdx) {
     throw new Error(
       `Markers in ${filePath} are inverted — the END marker (${endMarker}) appears before ` +
