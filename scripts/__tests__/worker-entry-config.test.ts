@@ -99,13 +99,11 @@ describe("custom Worker deployment contract", () => {
     }
   });
 
-  it("arms every post-deploy gate with the current propagation retry policy", () => {
+  it("keeps every post-deploy gate on a bounded propagation retry policy", () => {
     // #3125: after a deploy the edge can 404 a just-published URL for tens of
     // seconds. Every gate that fetches the deployed site must carry the same
     // retry policy, or it goes red on propagation rather than on a real defect.
     for (const [path, expected] of [
-      // Two retrying curls: the homepage HTML, then the hashed stylesheet.
-      [".github/actions/css-shape-smoke-gate/action.yml", 2],
       // Two per workflow: the root-asset-URL gate and the public-asset gate.
       // The third post-deploy curl (POST /api/ai-chat) deliberately omits both
       // -f and the retry flags — a JSON validation 4xx is a valid response.
@@ -132,6 +130,15 @@ describe("custom Worker deployment contract", () => {
       expect(source).not.toContain("--retry-delay 3");
       expect(source).not.toContain("--retry-delay 2");
     }
+
+    const cssAction = read(".github/actions/css-shape-smoke-gate/action.yml");
+    const cssGate = read(".github/actions/css-shape-smoke-gate/run.sh");
+    expect(cssAction).toContain('bash "${{ github.action_path }}/run.sh"');
+    expect(cssGate).toContain('MAX_ATTEMPTS="${CSS_FETCH_ATTEMPTS:-11}"');
+    expect(cssGate).toContain('RETRY_DELAY_SECONDS="${CSS_FETCH_RETRY_DELAY_SECONDS:-6}"');
+    expect(cssGate).toContain('for ((ATTEMPT = 1; ATTEMPT <= MAX_ATTEMPTS; ATTEMPT += 1))');
+    expect(cssGate).toContain('if [ "$ATTEMPT" -lt "$MAX_ATTEMPTS" ]');
+    expect(cssGate).not.toContain("--retry");
 
     for (const workflow of [
       ".github/workflows/main-deploy.yml",
