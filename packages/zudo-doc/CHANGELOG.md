@@ -4,6 +4,12 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.2.1] - 2026-08-08
+
+### Bug Fixes
+
+- Retry the post-deploy CSS-shape smoke gate as a coherent homepage HTML → referenced stylesheet transaction. The previous curl policy captured one content-hashed stylesheet path and retried that same URL for the full propagation window, so it could never recover when a Cloudflare deployment transition rotated the hash away. The gate now re-fetches HTML on each of 11 bounded attempts, preserves HTML/CSS agreement within each attempt, and retains all three scanner-regression thresholds. Executable fake-network tests cover homepage failures, missing links, stale-hash rotation, terminal diagnostics, and the no-trailing-sleep budget (ea176ec)
+
 ## [5.2.0] - 2026-08-06
 
 ### Features

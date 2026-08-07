@@ -1,0 +1,11 @@
+---
+title: 5.2.1
+description: 5.2.1のリリースノート。
+sidebar_position: 1082
+---
+
+リリース日: 2026-08-08
+
+### バグ修正
+
+- デプロイ後の CSS shape smoke gate を、トップページ HTML とそこから参照されるスタイルシートを一組のトランザクションとして再試行するようにしました。従来の curl ポリシーは content hash 付きスタイルシートのパスを一度だけ取得し、伝播待ちの全期間で同じ URL を再試行していたため、Cloudflare のデプロイ切り替え中に hash が更新されると復旧できませんでした。現在は最大 11 回の有界な試行ごとに HTML を再取得し、各試行内で HTML と CSS の整合性を保ちながら、scanner regression を検出する 3 つの閾値をすべて維持しています。実際のシェル処理を実行する fake network テストで、トップページ取得失敗、CSS link の欠落、古い hash からの切り替え、最終エラーの診断、末尾で余分に sleep しない retry budget をカバーしました（ea176ec）
