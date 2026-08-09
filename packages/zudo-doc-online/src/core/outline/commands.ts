@@ -47,6 +47,9 @@ import {
 export const defaultIdFactory: IdFactory = (kind) =>
   `${kind}-${globalThis.crypto.randomUUID()}`;
 
+/** Headroom past the outline's own size before a repeating factory gives up. */
+const ID_MINT_ATTEMPTS = 32;
+
 const SLUG_ISSUE_CODES: Record<SlugIssue, OutlineErrorCode> = {
   empty: "slug-empty",
   "too-long": "slug-too-long",
@@ -126,7 +129,9 @@ function addCategory(
   );
   if (!slug.ok) return slug;
 
-  const id = createId("category");
+  const id = mintId(doc, createId, "category");
+  if (id === null) return idGenerationFailed("category");
+
   const next = cloneDoc(doc);
   next.categories.push({ id, slug: slug.slug, title, pages: [] });
   return { ok: true, doc: next, selectedId: id, changed: true };
@@ -216,7 +221,9 @@ function addPage(
 
   let id: string;
   if (command.pageId === undefined) {
-    id = createId("page");
+    const minted = mintId(doc, createId, "page");
+    if (minted === null) return idGenerationFailed("page");
+    id = minted;
   } else {
     const explicit =
       typeof command.pageId === "string" ? command.pageId.trim() : "";
@@ -400,11 +407,38 @@ function replaceDoc(
   if (problem !== null) return fail("invalid-doc", problem);
 
   const normalized = normalizeDoc(command.doc);
-  if (outlinesEqual(doc, normalized)) return unchanged(doc, selectedId);
-
   const ids = collectIds(normalized);
+  // Repaired before the equality check on purpose: a selection pointing at no
+  // node is stale either way, and the caller should not have to know whether
+  // the payload happened to match to get a usable selection back.
   const repaired = selectedId !== null && ids.has(selectedId) ? selectedId : null;
+
+  if (outlinesEqual(doc, normalized)) {
+    return { ok: true, doc, selectedId: repaired, changed: false };
+  }
   return { ok: true, doc: normalized, selectedId: repaired, changed: true };
+}
+
+/**
+ * Draws ids from the factory until one is free. An injected factory is allowed
+ * to repeat itself — a per-command counter restarted at 1 is a natural way to
+ * write a deterministic one — so a collision means "ask again", not "fail".
+ * The budget scales with the outline so a restarting counter always clears it;
+ * only a factory that cannot produce a fresh id at all runs out.
+ */
+function mintId(
+  doc: OutlineDoc,
+  createId: IdFactory,
+  kind: "category" | "page",
+): string | null {
+  const taken = collectIds(doc);
+  const attempts = taken.size + ID_MINT_ATTEMPTS;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const minted = createId(kind);
+    const id = typeof minted === "string" ? minted.trim() : "";
+    if (id.length > 0 && !taken.has(id)) return id;
+  }
+  return null;
 }
 
 /**
@@ -622,6 +656,13 @@ function categoryNotFound(categoryId: string): CommandFailure {
 
 function pageNotFound(pageId: string): CommandFailure {
   return fail("page-not-found", `No page with id "${pageId}".`);
+}
+
+function idGenerationFailed(kind: "category" | "page"): CommandFailure {
+  return fail(
+    "id-generation-failed",
+    `The id factory produced no unused id for the new ${kind}.`,
+  );
 }
 
 function indexOutOfRange(value: unknown, maxIndex: number): CommandFailure {

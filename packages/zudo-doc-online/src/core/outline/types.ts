@@ -150,6 +150,7 @@ export type OutlineErrorCode =
   | "index-out-of-range"
   | "invalid-page-order"
   | "invalid-doc"
+  | "id-generation-failed"
   | "unknown-command";
 
 /**
@@ -174,7 +175,11 @@ export interface CommandSuccess {
    * itself (untouched), so callers may compare by reference.
    */
   doc: OutlineDoc;
-  /** Repaired selection: a category or page id, or null when nothing is left. */
+  /**
+   * Repaired selection: a category or page id, or null when nothing is left.
+   * Read this even on a `changed: false` result — `replace-doc` still clears a
+   * selection that points at no node, whether or not the outline itself moved.
+   */
   selectedId: string | null;
   changed: boolean;
   meta?: CommandMeta;

@@ -101,6 +101,70 @@ describe("add-category", () => {
   });
 });
 
+describe("id minting", () => {
+  it("draws again when the factory repeats an id already in the outline", () => {
+    // A per-command counter restarted at 1 is the natural way to write a
+    // deterministic factory, and it collides with ids minted by earlier
+    // commands unless the mint retries.
+    const first = expectOk(
+      applyCommand(
+        testDoc(),
+        { type: "add-category", title: "First" },
+        { createId: sequentialIds() },
+      ),
+    );
+    const second = expectOk(
+      applyCommand(
+        first.doc,
+        { type: "add-category", title: "Second" },
+        { createId: sequentialIds() },
+      ),
+    );
+
+    expect(first.selectedId).toBe("category-1");
+    expect(second.selectedId).toBe("category-2");
+    expect(new Set(second.doc.categories.map((c) => c.id)).size).toBe(
+      second.doc.categories.length,
+    );
+  });
+
+  it("skips past ids taken by a category or a page", () => {
+    const queue = ["cat-b", "page-a2", "page-fresh"];
+    const result = expectOk(
+      applyCommand(
+        testDoc(),
+        { type: "add-page", categoryId: "cat-a", title: "New" },
+        { createId: () => queue.shift() ?? "exhausted" },
+      ),
+    );
+    expect(result.selectedId).toBe("page-fresh");
+  });
+
+  it("fails when the factory can never produce a free id", () => {
+    for (const command of [
+      { type: "add-category", title: "X" },
+      { type: "add-page", categoryId: "cat-a", title: "X" },
+    ] satisfies OutlineCommand[]) {
+      const failure = expectFail(
+        applyCommand(testDoc(), command, { createId: () => "cat-a" }),
+      );
+      expect(failure.code, command.type).toBe("id-generation-failed");
+    }
+  });
+
+  it("fails when the factory returns nothing usable", () => {
+    expect(
+      expectFail(
+        applyCommand(
+          testDoc(),
+          { type: "add-category", title: "X" },
+          { createId: () => "   " },
+        ),
+      ).code,
+    ).toBe("id-generation-failed");
+  });
+});
+
 describe("rename-category", () => {
   it("changes the title and leaves the slug alone", () => {
     const result = expectOk(
@@ -876,6 +940,19 @@ describe("replace-doc", () => {
     );
     expect(result.changed).toBe(false);
     expect(result.doc).toBe(doc);
+  });
+
+  it("clears a stale selection even when the payload changes nothing", () => {
+    const doc = testDoc();
+    const result = expectOk(
+      applyCommand(
+        doc,
+        { type: "replace-doc", doc: testDoc() },
+        { selectedId: "page-gone" },
+      ),
+    );
+    expect(result.changed).toBe(false);
+    expect(result.selectedId).toBeNull();
   });
 
   it("normalizes the payload, dropping stray fields and trimming titles", () => {
