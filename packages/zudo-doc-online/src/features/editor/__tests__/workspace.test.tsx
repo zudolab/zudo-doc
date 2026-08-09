@@ -398,6 +398,44 @@ describe("position moves", () => {
   });
 });
 
+describe("the status bar", () => {
+  it("routes the vim preference through the workspace's storage override", async () => {
+    const { container, storage } = await mount();
+
+    queryByText<HTMLButtonElement>(container, "button", "vim off")?.click();
+    await settle();
+
+    // The pane must honour the same override the rest of the chrome does —
+    // otherwise an isolated mount silently reads and writes the real
+    // localStorage, and the preference leaks between them.
+    expect(storage.entries.get("zdo-editor-vim")).toBe("on");
+    expect(queryByText(container, "button", "-- NORMAL --")).toBeDefined();
+  });
+
+  it("drops the caret and vim controls when no editor is mounted", async () => {
+    const { container } = await mount();
+    expect(container.textContent).toContain("Ln 1, Col 1");
+
+    // A page whose load fails renders the empty pane instead of an editor.
+    // The status the previous page left behind carries `onToggleVim`, so a
+    // footer that kept showing it would offer a vim toggle with no editor
+    // behind it.
+    vi.spyOn(store, "loadPage").mockRejectedValue(new Error("boom"));
+    queryByText<HTMLElement>(
+      requireElement(container, 'nav[aria-label="Pages"]'),
+      "span",
+      "Theming",
+    )
+      ?.closest("button")
+      ?.click();
+    await settle(5);
+
+    expect(container.textContent).not.toContain("Ln 1, Col 1");
+    expect(queryByText(container, "button", "vim off")).toBeUndefined();
+    expect(queryByText(container, "button", "-- NORMAL --")).toBeUndefined();
+  });
+});
+
 describe("the split", () => {
   it("exposes a resizable separator and persists a keyboard resize", async () => {
     const { container, storage } = await mount();

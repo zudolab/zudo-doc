@@ -44,7 +44,7 @@
  *   the top.
  */
 
-import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import { Annotation, EditorState } from "@codemirror/state";
 import { EditorView, type ViewUpdate } from "@codemirror/view";
 import {
@@ -118,10 +118,17 @@ export default function EditorPaneSlot({
 
   // Latest-props refs: the CodeMirror callbacks outlive any one render, so
   // they must not close over the props of the render that created them.
-  const onChangeRef = useRef(onChange);
+  //
+  // `onChange` is stored WITH the page it belongs to. The chrome rebuilds it
+  // per render around the newly active save machine, so an edit reported
+  // while the buffer still held the previous page's text would be autosaved
+  // into the newly selected page's file. The buffer swap below is a layout
+  // effect precisely so that window never opens; pairing the two here means
+  // the invariant is enforced rather than merely timed.
+  const editTargetRef = useRef({ pageId, onChange });
   const onStatusChangeRef = useRef(onStatusChange);
   const onRequestSaveRef = useRef(onRequestSave);
-  onChangeRef.current = onChange;
+  editTargetRef.current = { pageId, onChange };
   onStatusChangeRef.current = onStatusChange;
   onRequestSaveRef.current = onRequestSave;
 
@@ -192,7 +199,13 @@ export default function EditorPaneSlot({
         const programmatic = update.transactions.some(
           (transaction) => transaction.annotation(ProgrammaticChange) === true,
         );
-        if (!programmatic) onChangeRef.current(next);
+        const target = editTargetRef.current;
+        // Dropping an edit whose page no longer matches the buffer loses a
+        // keystroke the user is about to have replaced anyway; reporting it
+        // would write one page's body into another page's file.
+        if (!programmatic && target.pageId === loadedPageRef.current) {
+          target.onChange(next);
+        }
         ticker.publish({
           pageId: loadedPageRef.current,
           markdown: next,
@@ -254,7 +267,16 @@ export default function EditorPaneSlot({
 
   // Page switch, then external document replacement — in that order, because
   // a switch also changes `value` and must not be mistaken for one.
-  useEffect(() => {
+  //
+  // LAYOUT effect, not a passive one. A passive effect runs after paint, so a
+  // tab switch would leave a window — at least one frame — in which the
+  // buffer still shows page A while the props already address page B's save
+  // machine. A keystroke landing in that window is page A's text arriving as
+  // page B's edit, and ~500ms later it is page B's file on disk. Running in
+  // the commit phase closes the window entirely: the props and the buffer
+  // change together, exactly as they did when this pane was a controlled
+  // textarea.
+  useLayoutEffect(() => {
     const view = viewRef.current;
     if (!view) return;
 

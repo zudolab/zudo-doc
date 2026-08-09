@@ -196,10 +196,16 @@ export function EditorWorkspace({
   }, [activeSave?.status, activeMachine]);
 
   // A stale Ln/Col from the previous tab would be a small lie in the status
-  // bar; clearing it is cheaper than teaching the footer to distrust it.
+  // bar; clearing it is cheaper than teaching the footer to distrust it. The
+  // condition is "is a pane actually mounted", not merely "is a page open":
+  // a loading or errored session shows an EmptyPane instead, and the status
+  // it left behind includes the vim toggle — a control the footer would go on
+  // offering with no editor behind it.
+  const editorMounted =
+    activePageId !== null && activeSession?.status === "ready" && Boolean(activeSave);
   useEffect(() => {
-    if (activePageId === null) setEditorStatus(undefined);
-  }, [activePageId]);
+    if (!editorMounted) setEditorStatus(undefined);
+  }, [editorMounted]);
 
   const openPage = useCallback(
     (pageId: string) => {
@@ -405,6 +411,7 @@ export function EditorWorkspace({
                 onStatusChange={setEditorStatus}
                 onRequestSave={() => activeMachine?.flush()}
                 onReload={() => activePageId && registry.reload(activePageId)}
+                storage={storage}
               />
             }
             previewHeader={
@@ -502,6 +509,8 @@ interface EditorBodyProps {
   onStatusChange: (status: EditorPaneStatus) => void;
   onRequestSave: () => void;
   onReload: () => void;
+  /** Forwarded to the pane so its vim preference honours the same override. */
+  storage?: KeyValueStorage | null;
 }
 
 function EditorBody({
@@ -513,6 +522,7 @@ function EditorBody({
   onStatusChange,
   onRequestSave,
   onReload,
+  storage,
 }: EditorBodyProps) {
   if (pageId === null) {
     return (
@@ -545,6 +555,7 @@ function EditorBody({
       readOnly={session.save.status === "conflict"}
       onStatusChange={onStatusChange}
       onRequestSave={onRequestSave}
+      storage={storage}
     />
   );
 }

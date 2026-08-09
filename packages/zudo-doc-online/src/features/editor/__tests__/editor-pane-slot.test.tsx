@@ -38,6 +38,8 @@ interface MountedPane {
   ticker: EditorContentTicker;
   view: () => EditorView;
   rerender: (props: PaneProps) => void;
+  /** A commit with NO passive-effect flush — the frame a tab switch opens. */
+  rerenderWithoutEffects: (props: PaneProps) => void;
   statuses: EditorPaneStatus[];
   latestStatus: () => EditorPaneStatus;
 }
@@ -52,22 +54,24 @@ function mount(props: PaneProps, storage = createFakeStorage()): MountedPane {
   const ticker = new EditorContentTicker({ delayMs: 10_000 });
   const statuses: EditorPaneStatus[] = [];
 
+  function paint(next: PaneProps): void {
+    render(
+      <EditorPaneSlot
+        {...next}
+        onChange={next.onChange ?? (() => {})}
+        onStatusChange={(status) => {
+          statuses.push(status);
+          next.onStatusChange?.(status);
+        }}
+        storage={storage}
+        ticker={ticker}
+      />,
+      container,
+    );
+  }
+
   function draw(next: PaneProps): void {
-    act(() => {
-      render(
-        <EditorPaneSlot
-          {...next}
-          onChange={next.onChange ?? (() => {})}
-          onStatusChange={(status) => {
-            statuses.push(status);
-            next.onStatusChange?.(status);
-          }}
-          storage={storage}
-          ticker={ticker}
-        />,
-        container,
-      );
-    });
+    act(() => paint(next));
   }
 
   draw(props);
@@ -83,6 +87,10 @@ function mount(props: PaneProps, storage = createFakeStorage()): MountedPane {
       return view;
     },
     rerender: draw,
+    // Preact's `render` flushes LAYOUT effects synchronously and defers
+    // passive ones, so calling it bare reproduces exactly the window a
+    // `useEffect`-based buffer swap would leave open.
+    rerenderWithoutEffects: paint,
     statuses,
     latestStatus: () => {
       const status = statuses.at(-1);
@@ -257,6 +265,25 @@ describe("switching pages", () => {
 
     pane.ticker.flush();
     expect(seen).toEqual(["page-b:body of B"]);
+  });
+
+  it("never feeds the previous page's text to the newly selected page", () => {
+    const onChange = vi.fn();
+    const pane = mount({ pageId: "page-a", value: "body of A", onChange });
+    const view = pane.view();
+    typeInto(view, "a draft only page A should ever receive");
+    onChange.mockClear();
+
+    // The chrome rebuilds `onChange` around page B's save machine during this
+    // very commit. If the buffer swap waited for a passive effect, the buffer
+    // would still hold page A's draft here — and the keystroke below would
+    // autosave it into page B's file ~500ms later.
+    pane.rerenderWithoutEffects({ pageId: "page-b", value: "body of B", onChange });
+    act(() => {
+      view.dispatch({ changes: { from: view.state.doc.length, insert: "!" } });
+    });
+
+    expect(onChange).toHaveBeenCalledExactlyOnceWith("body of B!");
   });
 
   it("recounts the words for the page that is actually open", () => {
