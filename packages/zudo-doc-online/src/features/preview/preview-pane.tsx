@@ -25,6 +25,7 @@
 
 import { useCallback, useEffect, useRef } from "preact/hooks";
 import { useSyncExternalStore } from "preact/compat";
+import type { JSX } from "preact";
 import {
   editorContentTicker,
   useEditorContentTick,
@@ -33,6 +34,34 @@ import {
 import { PreviewRenderLoop, type PreviewSnapshot } from "./render-runtime";
 import "./prose.css";
 import "./syntax.css";
+
+/**
+ * `headingIds: { strategy: "hierarchical" }` emits `href="#slug"` hash-link
+ * anchors, and hand-written markdown can do the same. The app is a
+ * hash-routed SPA (`#/editor/:pageId`, …) with a global `hashchange`
+ * listener (`src/app/router.ts`) that treats any unrecognized hash as the
+ * default outline route -- letting a click actually change
+ * `location.hash` would silently kick the user out of the editor to the
+ * outline. Intercept and scroll within the preview's own scroll container
+ * instead of letting the click reach the browser's default navigation.
+ */
+function handlePreviewClick(event: JSX.TargetedMouseEvent<HTMLDivElement>): void {
+  const anchor = (event.target as HTMLElement).closest("a");
+  if (!anchor) return;
+  const href = anchor.getAttribute("href");
+  if (!href || !href.startsWith("#") || href === "#") return;
+
+  event.preventDefault();
+  // A malformed percent-encoded fragment throws URIError -- fall back to
+  // the raw (undecoded) id rather than letting the click do nothing.
+  let targetId: string;
+  try {
+    targetId = decodeURIComponent(href.slice(1));
+  } catch {
+    targetId = href.slice(1);
+  }
+  anchor.ownerDocument.getElementById(targetId)?.scrollIntoView({ block: "start" });
+}
 
 export interface PreviewPaneProps {
   pageId: string;
@@ -98,7 +127,11 @@ export default function PreviewPane({
             </div>
           ) : null
         ) : (
-          <div className="zdo-prose" dangerouslySetInnerHTML={{ __html: snapshot.html }} />
+          <div
+            className="zdo-prose"
+            onClick={handlePreviewClick}
+            dangerouslySetInnerHTML={{ __html: snapshot.html }}
+          />
         )}
       </div>
     </div>

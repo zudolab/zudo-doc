@@ -123,6 +123,168 @@ export function postProcessAdmonitions(html: string): string {
 }
 
 /* ============================================================================
+ * Best-effort HTML sanitization before DOM injection
+ *
+ * `renderHtml` preserves raw HTML from the markdown source VERBATIM --
+ * verified empirically (not documented in the package's own contract):
+ * `<script>`, an `onload`/`onerror`/`onclick` attribute, and a
+ * `javascript:` URL all survive into its output unchanged. Since this pane
+ * injects that output via `dangerouslySetInnerHTML` in the SPA's own
+ * origin, unsanitized content is script execution in this app -- and epic
+ * #3327 explicitly designs this surface for AI-agent authoring via the MCP
+ * server, so the source of a given page's markdown is not always the human
+ * at the keyboard. `postProcessAdmonitions` MUST run before this (it needs
+ * to see the raw `<Note>`-style tags) -- this pass runs last, right before
+ * the trust boundary the HTML is about to cross.
+ *
+ * This is a hand-rolled allowlist walk over a real parsed DOM tree (native
+ * `DOMParser`, zero new dependencies -- epic #3327 contract 4 forbids a
+ * child sub-issue from adding one, e.g. DOMPurify), not a text-pattern
+ * sanitizer -- a real parse tree closes most of the bypass classes a regex
+ * sanitizer is prone to, but this has not had the adversarial scrutiny a
+ * battle-tested library has. Treat this as a deliberate, scoped mitigation
+ * for THIS tool's threat model (a loopback-bound single-user local dev
+ * server -- epic non-goals), not a substitute for a real sanitizer library;
+ * adopting one needs to go through the bootstrap sub-issue's
+ * dependency-addition path, not a Wave-7 child.
+ * ========================================================================== */
+
+/** Tags whose entire subtree is dropped -- there is no safe way to keep their content. */
+const SANITIZE_DROP_TAGS = new Set([
+  "script",
+  "style",
+  "iframe",
+  "object",
+  "embed",
+  "link",
+  "meta",
+  "base",
+  "form",
+  "svg",
+  "math",
+  "noscript",
+]);
+
+/** Tags this pane's own pipeline can legitimately produce -- everything else is unwrapped (kept as already-sanitized text/children, tag stripped). */
+const SANITIZE_ALLOWED_TAGS = new Set([
+  "a",
+  "p",
+  "br",
+  "hr",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "strong",
+  "em",
+  "del",
+  "ins",
+  "code",
+  "pre",
+  "span",
+  "blockquote",
+  "ul",
+  "ol",
+  "li",
+  "table",
+  "thead",
+  "tbody",
+  "tr",
+  "th",
+  "td",
+  "img",
+  "input",
+  "div",
+  "details",
+  "summary",
+]);
+
+const SANITIZE_GLOBAL_ATTRS = new Set(["class", "id", "title", "aria-label", "aria-hidden", "dir", "lang", "open"]);
+
+const SANITIZE_TAG_ATTRS: Record<string, ReadonlySet<string>> = {
+  a: new Set(["href", "rel"]),
+  img: new Set(["src", "alt"]),
+  input: new Set(["type", "disabled", "checked"]),
+  ol: new Set(["start"]),
+  th: new Set(["colspan", "rowspan"]),
+  td: new Set(["colspan", "rowspan"]),
+};
+
+const SANITIZE_URL_ATTRS = new Set(["href", "src"]);
+
+/** Matches an explicit URL scheme (`foo:`), so a bare relative reference like `example.com/x` or `../x` is left alone. */
+const URL_SCHEME_RE = /^([a-zA-Z][a-zA-Z0-9+.-]*):/;
+const SAFE_URL_SCHEMES = new Set(["http", "https", "mailto", "tel"]);
+
+function isSafeUrl(value: string): boolean {
+  // Browsers ignore embedded control characters (tab/newline/CR) when
+  // resolving a URL scheme -- a known sanitizer-bypass trick strips them
+  // out of `javascript:` to dodge a naive prefix check. Normalize first.
+  const normalized = value.replace(/[\u0000-\u001f\u007f]/g, "").trim();
+  if (normalized === "" || normalized.startsWith("#")) return true;
+  const schemeMatch = URL_SCHEME_RE.exec(normalized);
+  const scheme = schemeMatch?.[1];
+  if (scheme === undefined) return true; // no scheme -- a relative reference
+  return SAFE_URL_SCHEMES.has(scheme.toLowerCase());
+}
+
+function sanitizeElement(el: Element): void {
+  // Depth-first: children are fully sanitized before this element's own
+  // fate (drop / unwrap / keep) is decided, so an unwrap below re-parents
+  // already-safe nodes.
+  for (const child of [...el.children]) {
+    sanitizeElement(child);
+  }
+
+  const tag = el.tagName.toLowerCase();
+
+  if (SANITIZE_DROP_TAGS.has(tag)) {
+    el.remove();
+    return;
+  }
+
+  if (!SANITIZE_ALLOWED_TAGS.has(tag)) {
+    el.replaceWith(...el.childNodes);
+    return;
+  }
+
+  const tagAttrs = SANITIZE_TAG_ATTRS[tag];
+  for (const attr of [...el.attributes]) {
+    const name = attr.name.toLowerCase();
+    // Event-handler attributes are rejected unconditionally, ahead of the
+    // allowlist below -- a belt-and-suspenders check, since none of them
+    // appear in SANITIZE_GLOBAL_ATTRS/SANITIZE_TAG_ATTRS anyway.
+    if (name.startsWith("on")) {
+      el.removeAttribute(attr.name);
+      continue;
+    }
+    if (SANITIZE_URL_ATTRS.has(name) && !isSafeUrl(attr.value)) {
+      el.removeAttribute(attr.name);
+      continue;
+    }
+    if (SANITIZE_GLOBAL_ATTRS.has(name) || tagAttrs?.has(name)) continue;
+    el.removeAttribute(attr.name);
+  }
+}
+
+/**
+ * Best-effort sanitization pass -- see the section header above for scope
+ * and rationale. A no-op outside a DOM environment (`DOMParser` absent):
+ * this function is only ever meaningfully called from the browser, where
+ * `preview-pane.tsx` is the sole caller right before `dangerouslySetInnerHTML`.
+ */
+export function sanitizePreviewHtml(html: string): string {
+  if (typeof DOMParser === "undefined") return html;
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  for (const child of [...doc.body.children]) {
+    sanitizeElement(child);
+  }
+  return doc.body.innerHTML;
+}
+
+/* ============================================================================
  * Lazy wasm module loading -- cached module promise, evicted on rejection
  * ========================================================================== */
 
@@ -192,7 +354,8 @@ export interface RenderPreviewDeps {
 }
 
 /**
- * Renders one markdown snapshot to admonition-post-processed HTML.
+ * Renders one markdown snapshot to admonition-post-processed, sanitized
+ * HTML -- safe to hand `preview-pane.tsx` for `dangerouslySetInnerHTML`.
  *
  * Expected failures (malformed input, an `options` mistake) never throw from
  * `renderHtml` itself -- they come back as `diagnostics` with `html: null`,
@@ -225,7 +388,10 @@ export async function renderPreviewHtml(
   if (html === null) {
     throw new PreviewRenderFailure(describeDiagnostics(diagnostics));
   }
-  return postProcessAdmonitions(html);
+  // Order matters: admonitions must be resolved from the raw <Note>-style
+  // tags BEFORE sanitization, which does not know those tag names and would
+  // otherwise unwrap them as unrecognized elements.
+  return sanitizePreviewHtml(postProcessAdmonitions(html));
 }
 
 /* ============================================================================
@@ -299,9 +465,20 @@ export class PreviewRenderLoop {
     return this.snapshot;
   }
 
-  /** Debounced entry point -- call on every markdown change. */
+  /**
+   * Debounced entry point -- call on every markdown change. Mints a new
+   * request id IMMEDIATELY (not only once the debounce fires): otherwise an
+   * older render still in flight when a page switch or a fast follow-up
+   * edit calls `schedule()` again could still land and get applied during
+   * the new debounce window, painting stale content under the newer
+   * content's identity for up to `delayMs`. `fire()` reuses this same id
+   * rather than minting its own, so the id a render settles under always
+   * matches the id of the content that was last scheduled for it.
+   */
   schedule(markdown: string): void {
     this.pendingMarkdown = markdown;
+    this.nextRequestId += 1;
+    this.latestRequestId = this.nextRequestId;
     this.cancelTimer();
     this.timer = this.scheduleTimeout(() => {
       this.timer = undefined;
@@ -324,9 +501,10 @@ export class PreviewRenderLoop {
     const markdown = this.pendingMarkdown;
     if (markdown === null) return;
     this.pendingMarkdown = null;
-    this.nextRequestId += 1;
-    const requestId = this.nextRequestId;
-    this.latestRequestId = requestId;
+    // The id minted by schedule() when THIS markdown was queued -- not a
+    // fresh one -- so a still-newer schedule() call in the meantime (which
+    // already bumped latestRequestId past it) correctly outranks it below.
+    const requestId = this.latestRequestId;
     this.render(markdown).then(
       (html) => this.applyOutcome(requestId, { html, error: null }),
       (error: unknown) =>

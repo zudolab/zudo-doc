@@ -76,6 +76,59 @@ describe("PreviewPane", () => {
     }
   });
 
+  it("intercepts a same-page hash-link click instead of letting it change location.hash (SPA router guard)", async () => {
+    vi.useFakeTimers();
+    const originalHash = window.location.hash;
+    try {
+      const loop = new PreviewRenderLoop({
+        delayMs: 10,
+        render: vi
+          .fn()
+          .mockResolvedValue(
+            '<h2 id="prerequisites">Prerequisites<a href="#prerequisites" class="hash-link"></a></h2>',
+          ),
+      });
+      const container = mount({
+        pageId: "page-a",
+        title: "Installation",
+        path: "getting-started/installation",
+        markdown: "## Prerequisites",
+        renderLoop: loop,
+      });
+
+      await act(async () => {
+        vi.advanceTimersByTime(10);
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      const anchor = container.querySelector<HTMLAnchorElement>("a.hash-link");
+      expect(anchor).not.toBeNull();
+      // jsdom does not implement scrollIntoView at all (a known gap, not a
+      // stubbed no-op), so vi.spyOn has nothing to wrap -- install a plain
+      // mock function directly.
+      const scrollMock = vi.fn();
+      HTMLElement.prototype.scrollIntoView = scrollMock;
+
+      act(() => {
+        anchor?.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+      });
+
+      // The click must never reach the browser's default hash-navigation --
+      // the app's global hashchange listener treats an unknown hash as the
+      // outline route, which would silently abandon the editor.
+      expect(window.location.hash).toBe(originalHash);
+      expect(scrollMock).toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+      window.location.hash = originalHash;
+      // @ts-expect-error -- undo the direct prototype assignment above so it
+      // doesn't leak into other tests in this file (jsdom has no original
+      // implementation to fall back to).
+      delete HTMLElement.prototype.scrollIntoView;
+    }
+  });
+
   it("shows a quiet error strip while keeping the last good preview visible", async () => {
     vi.useFakeTimers();
     try {

@@ -1,10 +1,13 @@
+// @vitest-environment jsdom
 /**
  * The preview pane's runtime pieces in isolation: the directive→admonition
- * post-processor against recorded wasm fixture HTML, the wasm module
- * cache's load/evict-on-rejection contract, the render loop's debounce +
- * out-of-order (stale-drop) protection, and one end-to-end pass through the
- * REAL `@takazudo/zfb-md-wasm` against the sample Installation page (the
- * package loads fine under Node/vitest — see the bootstrap spike).
+ * post-processor against recorded wasm fixture HTML, the HTML sanitizer
+ * (needs `DOMParser` -- hence the jsdom environment for this whole file),
+ * the wasm module cache's load/evict-on-rejection contract, the render
+ * loop's debounce + out-of-order (stale-drop) protection, and one
+ * end-to-end pass through the REAL `@takazudo/zfb-md-wasm` against the
+ * sample Installation page (the package loads fine under Node/vitest --
+ * see the bootstrap spike -- and jsdom does not change that).
  */
 
 import { describe, expect, it, vi } from "vitest";
@@ -15,6 +18,7 @@ import {
   loadZfbMdWasm,
   postProcessAdmonitions,
   renderPreviewHtml,
+  sanitizePreviewHtml,
 } from "../render-runtime";
 import { auroraInstallationMarkdown } from "../../../sample/aurora-docs";
 
@@ -86,6 +90,70 @@ describe("postProcessAdmonitions", () => {
     expect(out.indexOf("zdo-admonition-note")).toBeLessThan(out.indexOf("zdo-admonition-tip"));
     expect(out).toContain('<div class="zdo-admonition-body">one</div>');
     expect(out).toContain('<div class="zdo-admonition-body">two</div>');
+  });
+});
+
+describe("sanitizePreviewHtml", () => {
+  it("drops a script tag entirely, including its text content", () => {
+    const out = sanitizePreviewHtml("<p>before</p><script>alert(1)</script><p>after</p>");
+    expect(out).not.toContain("<script");
+    expect(out).not.toContain("alert(1)");
+    expect(out).toContain("<p>before</p>");
+    expect(out).toContain("<p>after</p>");
+  });
+
+  it("strips every on* event-handler attribute regardless of tag", () => {
+    const out = sanitizePreviewHtml('<img src="x.png" onerror="alert(1)"><div onclick="alert(2)">hi</div>');
+    expect(out).not.toContain("onerror");
+    expect(out).not.toContain("onclick");
+    expect(out).toContain('<img src="x.png">');
+    expect(out).toContain("hi");
+  });
+
+  it("neutralizes a javascript: href but keeps a safe http(s) href", () => {
+    const out = sanitizePreviewHtml(
+      '<a href="javascript:alert(1)">bad</a><a href="https://example.com">good</a>',
+    );
+    expect(out).not.toContain("javascript:");
+    expect(out).toContain('href="https://example.com"');
+  });
+
+  it("removes an inline <svg> (a common onload vector) entirely", () => {
+    const out = sanitizePreviewHtml('<p>x</p><svg onload="alert(1)"><circle/></svg>');
+    expect(out).not.toContain("<svg");
+    expect(out).not.toContain("onload");
+  });
+
+  it("unwraps an unrecognized tag but keeps its (sanitized) text content", () => {
+    // e.g. a github [!IMPORTANT] alert's <Important> tag, which
+    // postProcessAdmonitions deliberately leaves untouched.
+    const out = sanitizePreviewHtml("<Important>heads up</Important>");
+    expect(out).not.toContain("<Important");
+    expect(out).toContain("heads up");
+  });
+
+  it("leaves this pane's own admonition and syntax-highlight markup fully intact", () => {
+    const html =
+      '<div class="zdo-admonition zdo-admonition-note"><p class="zdo-admonition-title">Note</p>' +
+      '<div class="zdo-admonition-body">body</div></div>' +
+      '<pre class="hi-root"><code><span class="hi-kw">const</span></code></pre>' +
+      // `open=""` (not bare `open`) is DOMParser/innerHTML's own normal
+      // serialization of a boolean attribute on round-trip -- not a
+      // sanitizer effect, so the input is already written in that form.
+      '<details class="zdo-admonition zdo-admonition-details" open=""><summary class="zdo-admonition-title">D</summary></details>';
+    expect(sanitizePreviewHtml(html)).toBe(html);
+  });
+
+  it("is a no-op when DOMParser is unavailable", () => {
+    const original = globalThis.DOMParser;
+    // @ts-expect-error -- deliberately simulating a DOM-less environment
+    delete globalThis.DOMParser;
+    try {
+      const html = "<script>alert(1)</script>";
+      expect(sanitizePreviewHtml(html)).toBe(html);
+    } finally {
+      globalThis.DOMParser = original;
+    }
   });
 });
 
@@ -224,6 +292,48 @@ describe("PreviewRenderLoop", () => {
       await Promise.resolve();
       expect(loop.getSnapshot().html).toBe("<p>second</p>");
       expect(listener).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("invalidates an in-flight render the instant new content is scheduled, not only once the newer debounce fires", async () => {
+    // Regression coverage for a real race: a naive implementation only
+    // mints a new request id once fire() runs (300ms after schedule()), so
+    // an old render resolving DURING that debounce window would still be
+    // treated as "latest" and applied -- painting stale content under a
+    // newer page/edit's identity for up to `delayMs`.
+    vi.useFakeTimers();
+    try {
+      const resolvers: Array<(html: string) => void> = [];
+      const render = vi.fn(
+        () =>
+          new Promise<string>((resolve) => {
+            resolvers.push(resolve);
+          }),
+      );
+      const loop = new PreviewRenderLoop({ delayMs: 300, render });
+
+      loop.schedule("old, slow (e.g. the page just switched away from)");
+      vi.advanceTimersByTime(300);
+      expect(render).toHaveBeenCalledTimes(1);
+
+      // A follow-up edit/page-switch schedules new content, but its OWN
+      // debounce has NOT fired yet.
+      loop.schedule("new content, still debouncing");
+      vi.advanceTimersByTime(100); // < the 300ms debounce -- fire() has not run
+      expect(render).toHaveBeenCalledTimes(1);
+
+      // The old render lands inside that window.
+      resolvers[0]?.("<p>stale</p>");
+      await Promise.resolve();
+      await Promise.resolve();
+
+      // It must already be rejected as stale, even though the new render
+      // has not started yet.
+      const snapshot = loop.getSnapshot();
+      expect(snapshot.html).not.toBe("<p>stale</p>");
+      expect(snapshot.loading).toBe(true);
     } finally {
       vi.useRealTimers();
     }
