@@ -1,0 +1,3 @@
+# Local project store written by the API server (server/store/file-store.ts).
+# Real user content lives here at runtime — it is never part of the repo.
+data/

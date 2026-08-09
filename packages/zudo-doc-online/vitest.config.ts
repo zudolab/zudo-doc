@@ -16,7 +16,10 @@ export default defineConfig({
     },
   },
   test: {
-    include: ["src/**/__tests__/**/*.test.{ts,tsx}"],
+    include: [
+      "src/**/__tests__/**/*.test.{ts,tsx}",
+      "server/**/__tests__/**/*.test.ts",
+    ],
     exclude: ["**/node_modules/**"],
     // Default environment is node (plain `*.test.ts` specs, e.g. the wasm
     // spike, need no DOM). Specs that mount Preact components (`.tsx`) opt
