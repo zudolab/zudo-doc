@@ -14,22 +14,20 @@
  * editor's own content can never feed back into the layout and push the pane
  * open.
  *
- * WHY THE ARBITRARY-VALUE FORM (`min-h-[0]`, `min-w-[0]`, `inset-[0]`) rather
- * than the plain `min-h-0` / `inset-0` utilities: this app loads Tailwind in
- * "approach B" (preflight + utilities, no default theme — see the
- * design-system skill), so the bare `--spacing` multiplier every numeric
- * spacing utility computes from is never defined, and Tailwind emits NO RULE
- * AT ALL for `min-h-0`, `min-w-0`, `inset-0` or `left-0`. Confirmed against
- * this package's own `vite build` output: the classes are simply absent from
- * the stylesheet, so the chain above would be silently inert. The bracket
- * form compiles to the exact same declarations without consulting the
- * spacing scale. Once `tokens.css` defines `--spacing`, these can go back to
- * the plain utilities — nothing else about the layout changes.
+ * WHY `min-h-[0px]` / `min-w-[0px]` AND NOT `min-h-0` / `min-w-0`: Tailwind
+ * refuses to generate a rule for a UNITLESS arbitrary length on these two
+ * properties — `min-h-[0]` and `min-w-[0]` produce no CSS at all, silently, so
+ * the chain above reads as present in the source while being entirely inert in
+ * the browser. (`inset-[0]` and `left-[0]` do compile, which is exactly what
+ * makes the trap convincing: the same bracket form works for some properties
+ * and not others.) The `[0px]` spelling is the one verified to emit
+ * `min-height: 0` in this package's built stylesheet, and it is what the
+ * outline surface uses too.
  *
- * The divider is a real `role="separator"` with `aria-valuenow/min/max` and
- * keyboard resizing (`rail-state.ts` owns the arithmetic), so the split is
- * operable without a pointer — a drag handle that is mouse-only is a
- * keyboard user's dead end.
+ * Do not "simplify" these to the bare utilities without re-running
+ * `pnpm --filter zudo-doc-online build` and grepping the emitted CSS for the
+ * escaped selector. This whole comment exists because a hand-rolled regex
+ * once reported `min-h-[0]` as present when it was not.
  */
 
 import { useRef } from "preact/hooks";
@@ -74,15 +72,15 @@ export function EditorSplit({
   }
 
   return (
-    <div ref={trackRef} className="flex min-h-[0] min-w-[0] flex-1">
+    <div ref={trackRef} className="flex min-h-[0px] min-w-[0px] flex-1">
       <section
         aria-label="Markdown editor"
-        className="flex min-h-[0] min-w-[0] flex-none flex-col bg-bg"
+        className="flex min-h-[0px] min-w-[0px] flex-none flex-col bg-bg"
         style={{ flexBasis: `${percent}%` }}
       >
         <PaneHead>{editorHeader}</PaneHead>
-        <div className="relative min-h-[0] flex-1">
-          <div className="absolute inset-[0]">{editor}</div>
+        <div className="relative min-h-[0px] flex-1">
+          <div className="absolute inset-[0px]">{editor}</div>
         </div>
       </section>
 
@@ -127,7 +125,7 @@ export function EditorSplit({
 
       <section
         aria-label="Preview"
-        className="flex min-h-[0] min-w-[0] flex-1 flex-col bg-surface"
+        className="flex min-h-[0px] min-w-[0px] flex-1 flex-col bg-surface"
       >
         <PaneHead>{previewHeader}</PaneHead>
         {preview}

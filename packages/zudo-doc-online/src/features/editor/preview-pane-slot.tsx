@@ -35,7 +35,7 @@ export default function PreviewPaneSlot({ title, path, markdown }: PreviewPaneSl
   const head = lines.slice(0, PREVIEW_HEAD_LINES).join("\n");
 
   return (
-    <div className="min-h-[0] flex-1 overflow-y-auto px-hsp-xl py-vsp-md">
+    <div className="min-h-[0px] flex-1 overflow-y-auto px-hsp-xl py-vsp-md">
       <div className="mx-auto flex max-w-(--zdo-preview-measure) flex-col gap-vsp-sm">
         <div className="rounded-md border border-border bg-(--zdo-wash-info) px-hsp-lg py-vsp-sm">
           <p className="text-small font-semibold text-info">Preview placeholder</p>
