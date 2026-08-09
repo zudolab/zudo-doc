@@ -90,6 +90,7 @@ export class ProjectEventsClient {
   private reconnectTimer: ReturnType<typeof setTimeout> | undefined;
   private readonly eventListeners = new Set<ProjectEventsListener>();
   private readonly reconnectListeners = new Set<ReconnectListener>();
+  private readonly openListeners = new Set<() => void>();
 
   constructor(options: ProjectEventsClientOptions) {
     const baseUrl = options.baseUrl ?? "/api";
@@ -117,6 +118,7 @@ export class ProjectEventsClient {
     source.onopen = () => {
       this.reconnectAttempt = 0;
       this.state = "open";
+      for (const listener of [...this.openListeners]) listener();
       const isReconnect = this.everConnected;
       this.everConnected = true;
       if (isReconnect) {
@@ -155,6 +157,22 @@ export class ProjectEventsClient {
   onReconnect(listener: ReconnectListener): () => void {
     this.reconnectListeners.add(listener);
     return () => this.reconnectListeners.delete(listener);
+  }
+
+  /**
+   * Fires after EVERY successful connection, including the first — a
+   * superset of `onReconnect`. Exists for a consumer that has no separate
+   * "initial state" read to rely on being current (unlike `revision-
+   * coordinator.ts`'s binder, which adopts a snapshot revision before
+   * `connect()` is even called): subscribing only after the first `loadPage`
+   * / `loadSnapshot` call already resolved leaves a gap between that read
+   * and the stream actually opening, during which a change is silently
+   * missed (no replay). A consumer that refetches on `onOpen` closes that
+   * gap the moment the connection is confirmed live, first connect or not.
+   */
+  onOpen(listener: () => void): () => void {
+    this.openListeners.add(listener);
+    return () => this.openListeners.delete(listener);
   }
 
   private teardownSource(): void {
