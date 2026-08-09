@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A-v1 three-pane-classic — zudo-doc online</title>
+<style>
+/* ============================================================
+   TOKENS (inlined from _shared/tokens.css — do not edit here)
+   ============================================================ */
+/* zudo-doc online prototypes — shared design tokens (3-tier ramp strategy)
+   Tier 1: --palette-{group}-{n}  (n = incremental id, NOT Tailwind 100-900)
+   Tier 2: --theme-*  (the ONLY vars components/CM theme may use)
+   Dark mode = alternative Tier-2-feeding Tier-1 values via [data-theme]. */
+
+:root,
+:root[data-theme="light"] {
+  /* Tier 1 — base ramp (bg end → fg end), low-chroma cool gray */
+  --palette-base-0: oklch(0.985 0.002 250);
+  --palette-base-1: oklch(0.962 0.004 250);
+  --palette-base-2: oklch(0.915 0.006 250);
+  --palette-base-3: oklch(0.78 0.01 250);
+  --palette-base-4: oklch(0.55 0.014 250);
+  --palette-base-5: oklch(0.36 0.016 250);
+  --palette-base-6: oklch(0.21 0.018 250);
+  /* Tier 1 — accent ramp (indigo-blue, chroma peaks mid) */
+  --palette-accent-0: oklch(0.93 0.045 262);
+  --palette-accent-1: oklch(0.55 0.19 262);
+  --palette-accent-2: oklch(0.46 0.21 262);
+  /* Tier 1 — state */
+  --palette-state-danger: oklch(0.55 0.19 25);
+  --palette-state-success: oklch(0.58 0.14 150);
+  --palette-state-warning: oklch(0.70 0.14 80);
+  --palette-state-info: oklch(0.60 0.12 230);
+}
+
+:root[data-theme="dark"] {
+  --palette-base-0: oklch(0.19 0.012 255);
+  --palette-base-1: oklch(0.225 0.014 255);
+  --palette-base-2: oklch(0.28 0.016 255);
+  --palette-base-3: oklch(0.42 0.016 255);
+  --palette-base-4: oklch(0.62 0.014 255);
+  --palette-base-5: oklch(0.78 0.01 255);
+  --palette-base-6: oklch(0.93 0.006 255);
+  --palette-accent-0: oklch(0.31 0.06 262);
+  --palette-accent-1: oklch(0.70 0.16 262);
+  --palette-accent-2: oklch(0.78 0.14 262);
+  --palette-state-danger: oklch(0.68 0.17 25);
+  --palette-state-success: oklch(0.70 0.13 150);
+  --palette-state-warning: oklch(0.78 0.13 80);
+  --palette-state-info: oklch(0.72 0.11 230);
+}
+
+:root {
+  /* Tier 2 — semantic roles (components use ONLY these) */
+  --theme-bg: var(--palette-base-0);
+  --theme-surface: var(--palette-base-1);
+  --theme-surface-2: var(--palette-base-2);
+  --theme-border: var(--palette-base-2);
+  --theme-border-strong: var(--palette-base-3);
+  --theme-fg: var(--palette-base-6);
+  --theme-fg-mild: var(--palette-base-5);
+  --theme-muted: var(--palette-base-4);
+  --theme-accent: var(--palette-accent-1);
+  --theme-accent-hover: var(--palette-accent-2);
+  --theme-accent-soft: var(--palette-accent-0);
+  --theme-accent-fg: oklch(0.99 0 0);
+  --theme-danger: var(--palette-state-danger);
+  --theme-success: var(--palette-state-success);
+  --theme-warning: var(--palette-state-warning);
+  --theme-info: var(--palette-state-info);
+
+  /* Type + shape */
+  --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  --radius-s: 4px;
+  --radius-m: 8px;
+  --shadow-1: 0 1px 3px oklch(0 0 0 / 0.12);
+  --shadow-2: 0 4px 16px oklch(0 0 0 / 0.16);
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--theme-fg);
+  background: var(--theme-bg);
+  overflow: hidden;
+}
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+input, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--theme-accent); outline-offset: 2px; }
+svg { display: block; }
+
+.app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================================
+   TOP TOOLBAR
+   ============================================================ */
+.topbar {
+  flex: none;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px 0 14px;
+  background: var(--theme-surface);
+  border-bottom: 1px solid var(--theme-border);
+}
+.wordmark {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+.wordmark .logo {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: var(--theme-accent);
+  color: var(--theme-accent-fg);
+  font-weight: 700;
+  font-size: 13px;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+.wordmark .name {
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.wordmark .name .online { color: var(--theme-muted); font-weight: 500; }
+
+.topbar-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--theme-border-strong);
+  opacity: 0.5;
+  flex: none;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.breadcrumb .crumb {
+  padding: 3px 6px;
+  border-radius: var(--radius-s);
+  color: var(--theme-fg-mild);
+}
+.breadcrumb button.crumb:hover {
+  background: color-mix(in oklch, var(--theme-fg) 6%, transparent);
+  color: var(--theme-fg);
+}
+.breadcrumb .crumb-sep { color: var(--theme-muted); user-select: none; }
+.breadcrumb .crumb.current {
+  color: var(--theme-fg);
+  font-weight: 600;
+}
+.breadcrumb .draft-flag {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--theme-warning);
+  margin-left: 5px;
+  vertical-align: 1px;
+}
+
+.topbar-spacer { flex: 1; }
+
+/* save chip */
+.save-chip {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--theme-border);
+  border-radius: 999px;
+  background: var(--theme-bg);
+  font-size: 12px;
+  color: var(--theme-fg-mild);
+  user-select: none;
+}
+.save-chip .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--theme-success);
+  transition: background 0.15s;
+}
+.save-chip[data-state="edited"] .dot { background: var(--theme-warning); }
+.save-chip[data-state="saving"] .dot {
+  background: var(--theme-info);
+  animation: pulse 0.9s ease-in-out infinite;
+}
+@keyframes pulse { 50% { opacity: 0.35; } }
+
+/* publish group */
+.publish-group {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.publish-hint {
+  text-align: right;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--theme-muted);
+  white-space: nowrap;
+}
+.publish-hint .when { color: var(--theme-fg-mild); }
+.publish-hint .delta { color: var(--theme-muted); }
+.btn-publish {
+  height: 30px;
+  padding: 0 14px;
+  border-radius: var(--radius-s);
+  background: var(--theme-accent);
+  color: var(--theme-accent-fg);
+  font-weight: 600;
+  font-size: 12.5px;
+  box-shadow: var(--shadow-1);
+}
+.btn-publish:hover { background: var(--theme-accent-hover); }
+
+.avatar {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--theme-accent-soft);
+  color: var(--theme-accent);
+  font-size: 11px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in oklch, var(--theme-accent) 25%, transparent);
+}
+
+/* ============================================================
+   METADATA STRIP (collapsible, rendered expanded)
+   ============================================================ */
+.meta-strip {
+  flex: none;
+  background: var(--theme-surface);
+  border-bottom: 1px solid var(--theme-border);
+}
+.meta-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 34px;
+  padding: 0 16px 0 12px;
+  text-align: left;
+}
+.meta-head:hover { background: color-mix(in oklch, var(--theme-fg) 4%, transparent); }
+.meta-head .chev {
+  flex: none;
+  color: var(--theme-muted);
+  transition: transform 0.15s;
+}
+.meta-strip.collapsed .meta-head .chev { transform: rotate(-90deg); }
+.meta-head .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--theme-fg-mild);
+}
+.meta-head .slug {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--theme-muted);
+  margin-left: 4px;
+}
+.meta-fields {
+  display: grid;
+  grid-template-columns: 260px 1fr 110px;
+  gap: 14px;
+  padding: 2px 16px 14px;
+}
+.meta-strip.collapsed .meta-fields { display: none; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--theme-muted);
+  letter-spacing: 0.02em;
+}
+.field input {
+  height: 30px;
+  padding: 0 9px;
+  border: 1px solid var(--theme-border-strong);
+  border-radius: var(--radius-s);
+  background: var(--theme-bg);
+  font-size: 12.5px;
+}
+.field input:hover { border-color: color-mix(in oklch, var(--theme-border-strong) 60%, var(--theme-muted)); }
+.field input:focus-visible {
+  outline: 2px solid var(--theme-accent);
+  outline-offset: -1px;
+  border-color: transparent;
+}
+.field .hint { font-size: 10.5px; color: var(--theme-muted); }
+
+/* ============================================================
+   WORKSPACE — rail | editor | preview
+   ============================================================ */
+.workspace {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+/* --- left rail (page tree) --- */
+.rail {
+  flex: none;
+  width: 240px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--theme-surface);
+}
+.rail-filter {
+  flex: none;
+  padding: 10px 12px 6px;
+}
+.rail-filter .filter-wrap {
+  position: relative;
+  color: var(--theme-muted);
+}
+.rail-filter .filter-wrap svg {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.rail-filter input {
+  width: 100%;
+  height: 27px;
+  padding: 0 8px 0 27px;
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-s);
+  background: var(--theme-bg);
+  font-size: 12px;
+  color: var(--theme-fg);
+}
+.rail-filter input::placeholder { color: var(--theme-muted); }
+.rail-tree {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 8px 12px;
+}
+.tree-root-row,
+.tree-group-head,
+.tree-page {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  border-radius: var(--radius-s);
+  text-align: left;
+  white-space: nowrap;
+}
+.tree-root-row {
+  height: 28px;
+  padding: 0 8px;
+  color: var(--theme-muted);
+  margin-bottom: 2px;
+}
+.tree-root-row .t { font-style: italic; overflow: hidden; text-overflow: ellipsis; }
+.chip-derived {
+  flex: none;
+  margin-left: auto;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--theme-muted);
+  border: 1px solid var(--theme-border-strong);
+  border-radius: 999px;
+  padding: 1px 6px;
+}
+.tree-group { margin-top: 10px; }
+.tree-group-head {
+  height: 26px;
+  padding: 0 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--theme-muted);
+}
+.tree-group-head:hover { color: var(--theme-fg-mild); }
+.tree-group-head .caret {
+  flex: none;
+  color: var(--theme-muted);
+}
+.tree-group-head .dir {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  opacity: 0.8;
+}
+.tree-page {
+  height: 28px;
+  padding: 0 8px 0 24px;
+  font-size: 13px;
+  color: var(--theme-fg-mild);
+}
+.tree-page:hover { background: color-mix(in oklch, var(--theme-fg) 5%, transparent); }
+.tree-page .t { overflow: hidden; text-overflow: ellipsis; }
+.tree-page .tag-index {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--theme-muted);
+}
+.tree-page .draft-dot {
+  flex: none;
+  margin-left: auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--theme-warning);
+}
+.tree-page.current {
+  background: color-mix(in oklch, var(--theme-accent) 10%, transparent);
+  box-shadow: inset 2px 0 0 var(--theme-accent);
+  color: var(--theme-fg);
+  font-weight: 600;
+}
+.tree-page.current:hover { background: color-mix(in oklch, var(--theme-accent) 13%, transparent); }
+.rail-foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--theme-border);
+  font-size: 11px;
+  color: var(--theme-muted);
+}
+.rail-foot .draft-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--theme-warning);
+}
+
+/* --- pane dividers with drag affordance --- */
+.divider {
+  flex: none;
+  width: 7px;
+  cursor: col-resize;
+  position: relative;
+  background: var(--theme-bg);
+  border-left: 1px solid var(--theme-border);
+  border-right: 1px solid var(--theme-border);
+}
+.divider::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--theme-border-strong);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 -8px 0 var(--theme-border-strong), 0 8px 0 var(--theme-border-strong);
+}
+.divider:hover {
+  background: color-mix(in oklch, var(--theme-accent) 10%, transparent);
+}
+.divider:hover::before {
+  background: var(--theme-accent);
+  box-shadow: 0 -8px 0 var(--theme-accent), 0 8px 0 var(--theme-accent);
+}
+
+/* --- shared pane chrome --- */
+.pane {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--theme-bg);
+}
+.pane-head {
+  flex: none;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--theme-border);
+  background: color-mix(in oklch, var(--theme-surface) 55%, var(--theme-bg));
+}
+.pane-head .pane-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--theme-muted);
+}
+.pane-head .pane-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--theme-muted);
+}
+
+/* --- editor pane --- */
+#editor {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.cm-editor { height: 100%; }
+.cm-scroller { overflow: auto; padding: 10px 4px; }
+.cm-fallback {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 16px 18px;
+  border: none;
+  resize: none;
+  background: transparent;
+  color: var(--theme-fg);
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  line-height: 1.65;
+}
+.cm-fallback:focus-visible { outline: none; }
+
+.statusbar {
+  flex: none;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 12px;
+  border-top: 1px solid var(--theme-border);
+  background: color-mix(in oklch, var(--theme-surface) 55%, var(--theme-bg));
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--theme-muted);
+  user-select: none;
+}
+.statusbar .vim-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 18px;
+  padding: 0 7px;
+  border-radius: var(--radius-s);
+  border: 1px solid var(--theme-border-strong);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--theme-fg-mild);
+}
+.statusbar .vim-toggle:hover { background: color-mix(in oklch, var(--theme-fg) 6%, transparent); }
+.statusbar .vim-toggle .vim-state { color: var(--theme-muted); }
+.statusbar .sb-spacer { flex: 1; }
+
+/* --- preview pane --- */
+.preview-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.preview-body {
+  max-width: 660px;
+  margin: 0 auto;
+  padding: 32px 40px 72px;
+}
+.preview-body.flash { animation: pv-flash 0.45s ease-out; }
+@keyframes pv-flash {
+  0% { opacity: 0.45; }
+  100% { opacity: 1; }
+}
+
+/* preview typography */
+.preview-body h1 {
+  font-size: 26px;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.preview-body .lede {
+  font-size: 14.5px;
+  color: var(--theme-muted);
+  margin-bottom: 22px;
+}
+.preview-body h2 {
+  font-size: 17.5px;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  font-weight: 650;
+  margin: 30px 0 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--theme-border);
+}
+.preview-body p { font-size: 14px; line-height: 1.65; margin-bottom: 12px; color: var(--theme-fg-mild); }
+.preview-body p strong { color: var(--theme-fg); }
+.preview-body ul, .preview-body ol {
+  padding-left: 22px;
+  margin-bottom: 14px;
+}
+.preview-body li {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--theme-fg-mild);
+  margin-bottom: 4px;
+}
+.preview-body li::marker { color: var(--theme-muted); }
+.preview-body code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--theme-surface-2);
+  border-radius: var(--radius-s);
+  padding: 1.5px 5px;
+  color: var(--theme-fg);
+}
+.preview-body .codeblock {
+  position: relative;
+  background: var(--theme-surface);
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-m);
+  margin: 14px 0 18px;
+}
+.preview-body .codeblock .lang {
+  position: absolute;
+  top: 7px;
+  right: 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--theme-muted);
+}
+.preview-body .codeblock pre {
+  padding: 14px 16px;
+  overflow-x: auto;
+}
+.preview-body .codeblock pre code {
+  background: none;
+  padding: 0;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--theme-fg);
+}
+.preview-body .admonition {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 16px 0 18px;
+  padding: 11px 14px;
+  border-radius: var(--radius-m);
+  border: 1px solid color-mix(in oklch, var(--theme-info) 30%, transparent);
+  border-left: 3px solid var(--theme-info);
+  background: color-mix(in oklch, var(--theme-info) 7%, transparent);
+}
+.preview-body .admonition-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--theme-info);
+}
+.preview-body .admonition p { margin: 0; font-size: 13.5px; }
+
+/* ============================================================
+   VARIANT BADGE
+   ============================================================ */
+.variant-badge {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 12px;
+  border-radius: 999px;
+  background: var(--theme-fg);
+  color: var(--theme-bg);
+  font-size: 11.5px;
+  font-weight: 600;
+  box-shadow: var(--shadow-2);
+}
+.variant-badge .theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--theme-bg) 18%, transparent);
+  color: var(--theme-bg);
+  font-size: 11px;
+  font-weight: 600;
+}
+.variant-badge .theme-toggle:hover {
+  background: color-mix(in oklch, var(--theme-bg) 30%, transparent);
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ======================= TOP TOOLBAR ======================= -->
+  <header class="topbar">
+    <div class="wordmark">
+      <div class="logo" aria-hidden="true">z</div>
+      <div class="name">zudo-doc <span class="online">online</span></div>
+    </div>
+    <div class="topbar-sep" aria-hidden="true"></div>
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <button class="crumb" type="button">Aurora Docs</button>
+      <span class="crumb-sep" aria-hidden="true">/</span>
+      <button class="crumb" type="button">Getting Started</button>
+      <span class="crumb-sep" aria-hidden="true">/</span>
+      <span class="crumb current" aria-current="page">Installation<span class="draft-flag" title="Unsaved draft"></span></span>
+    </nav>
+    <div class="topbar-spacer"></div>
+    <div class="save-chip" id="saveChip" data-state="saved" role="status" aria-live="polite">
+      <span class="dot" aria-hidden="true"></span>
+      <span class="save-text" id="saveText">Saved</span>
+    </div>
+    <div class="topbar-sep" aria-hidden="true"></div>
+    <div class="publish-group">
+      <div class="publish-hint">
+        <span class="when">Published 2d ago</span><br>
+        <span class="delta">2 pages changed since</span>
+      </div>
+      <button class="btn-publish" type="button">Publish</button>
+    </div>
+    <button class="avatar" type="button" aria-label="Account — TZ">TZ</button>
+  </header>
+
+  <!-- ======================= METADATA STRIP ======================= -->
+  <section class="meta-strip" id="metaStrip" aria-label="Page metadata">
+    <button class="meta-head" type="button" id="metaToggle" aria-expanded="true">
+      <svg class="chev" width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+        <path d="M2 3.5 5 6.5 8 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="label">Page metadata</span>
+      <span class="slug">getting-started/installation.mdx</span>
+    </button>
+    <div class="meta-fields" id="metaFields">
+      <div class="field">
+        <label for="fTitle">Title</label>
+        <input id="fTitle" type="text" value="Installation">
+      </div>
+      <div class="field">
+        <label for="fDesc">Description</label>
+        <input id="fDesc" type="text" value="Install the Aurora Docs toolchain and scaffold your first project.">
+      </div>
+      <div class="field">
+        <label for="fPos">Sidebar position</label>
+        <input id="fPos" type="number" value="3" min="1">
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= WORKSPACE ======================= -->
+  <div class="workspace">
+
+    <!-- left rail: page tree -->
+    <nav class="rail" aria-label="Pages">
+      <div class="rail-filter">
+        <div class="filter-wrap">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input type="search" placeholder="Filter pages…" aria-label="Filter pages">
+        </div>
+      </div>
+      <div class="rail-tree">
+        <div class="tree-root-row">
+          <span class="t">Top page</span>
+          <span class="chip-derived">derived</span>
+        </div>
+
+        <div class="tree-group">
+          <button class="tree-group-head" type="button" aria-expanded="true">
+            <svg class="caret" width="8" height="8" viewBox="0 0 8 8" fill="currentColor" aria-hidden="true"><path d="M1.5 2.2 4 5.2 6.5 2.2Z"/></svg>
+            <span>Getting Started</span>
+            <span class="dir">getting-started/</span>
+          </button>
+          <button class="tree-page" type="button"><span class="t">Getting Started</span> <span class="tag-index">index</span></button>
+          <button class="tree-page" type="button"><span class="t">Introduction</span></button>
+          <button class="tree-page current" type="button" aria-current="page"><span class="t">Installation</span><span class="draft-dot" title="Unsaved draft"></span></button>
+          <button class="tree-page" type="button"><span class="t">Quick Start</span></button>
+        </div>
+
+        <div class="tree-group">
+          <button class="tree-group-head" type="button" aria-expanded="true">
+            <svg class="caret" width="8" height="8" viewBox="0 0 8 8" fill="currentColor" aria-hidden="true"><path d="M1.5 2.2 4 5.2 6.5 2.2Z"/></svg>
+            <span>Guides</span>
+            <span class="dir">guides/</span>
+          </button>
+          <button class="tree-page" type="button"><span class="t">Guides</span> <span class="tag-index">index</span></button>
+          <button class="tree-page" type="button"><span class="t">Writing Pages</span></button>
+          <button class="tree-page" type="button"><span class="t">Sidebar Structure</span></button>
+          <button class="tree-page" type="button"><span class="t">Theming</span><span class="draft-dot" title="Draft — never published"></span></button>
+          <button class="tree-page" type="button"><span class="t">Internationalization</span></button>
+          <button class="tree-page" type="button"><span class="t">Publishing</span></button>
+        </div>
+
+        <div class="tree-group">
+          <button class="tree-group-head" type="button" aria-expanded="true">
+            <svg class="caret" width="8" height="8" viewBox="0 0 8 8" fill="currentColor" aria-hidden="true"><path d="M1.5 2.2 4 5.2 6.5 2.2Z"/></svg>
+            <span>Reference</span>
+            <span class="dir">reference/</span>
+          </button>
+          <button class="tree-page" type="button"><span class="t">Reference</span> <span class="tag-index">index</span></button>
+          <button class="tree-page" type="button"><span class="t">Configuration</span></button>
+          <button class="tree-page" type="button"><span class="t">Frontmatter</span></button>
+          <button class="tree-page" type="button"><span class="t">CLI</span></button>
+        </div>
+      </div>
+      <div class="rail-foot">
+        <span class="draft-dot" aria-hidden="true"></span>
+        <span>14 pages · 2 drafts</span>
+      </div>
+    </nav>
+
+    <div class="divider" role="separator" aria-orientation="vertical" aria-label="Resize pages rail" tabindex="0"></div>
+
+    <!-- center: editor -->
+    <section class="pane" aria-label="Markdown editor">
+      <div class="pane-head">
+        <span class="pane-label">Editor</span>
+        <div class="pane-right">
+          <span>Markdown + MDX</span>
+        </div>
+      </div>
+      <div id="editor"></div>
+      <div class="statusbar">
+        <button class="vim-toggle" type="button" aria-pressed="false">
+          <span>VIM</span><span class="vim-state">off</span>
+        </button>
+        <span>Ln 24, Col 1</span>
+        <span class="sb-spacer"></span>
+        <span>UTF-8</span>
+        <span>LF</span>
+      </div>
+    </section>
+
+    <div class="divider" role="separator" aria-orientation="vertical" aria-label="Resize editor" tabindex="0"></div>
+
+    <!-- right: preview -->
+    <section class="pane" aria-label="Preview">
+      <div class="pane-head">
+        <span class="pane-label">Preview</span>
+        <div class="pane-right">
+          <span>Auto-refresh</span>
+        </div>
+      </div>
+      <div class="preview-scroll">
+        <article class="preview-body" id="previewBody">
+          <h1>Installation</h1>
+          <p class="lede">Install the Aurora Docs toolchain and scaffold your first project.</p>
+          <p>Aurora Docs runs on any machine with Node 22+. This page walks through installing the toolchain and creating your first project.</p>
+
+          <h2>Prerequisites</h2>
+          <ul>
+            <li>Node.js 22 or newer</li>
+            <li>pnpm 9 (<code>corepack enable pnpm</code>)</li>
+            <li>A GitHub account for publishing</li>
+          </ul>
+
+          <h2>Install</h2>
+          <div class="codeblock">
+            <span class="lang" aria-hidden="true">bash</span>
+            <pre><code>pnpm create aurora-docs my-docs
+cd my-docs
+pnpm dev</code></pre>
+          </div>
+
+          <div class="admonition" role="note">
+            <div class="admonition-title">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M12 11v5"/></svg>
+              Note
+            </div>
+            <p>The dev server starts on port 4321. Pass <code>--port</code> to change it.</p>
+          </div>
+
+          <h2>Next steps</h2>
+          <ol>
+            <li>Open <code>src/content/docs/</code> and edit your first page</li>
+            <li>Adjust the sidebar in the outline editor</li>
+            <li>Hit <strong>Publish</strong> when it looks right</li>
+          </ol>
+        </article>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- ======================= VARIANT BADGE ======================= -->
+<div class="variant-badge">
+  <span>A-v1 three-pane-classic</span>
+  <button class="theme-toggle" type="button" id="themeToggle" aria-label="Switch to dark theme">
+    <svg id="themeIcon" width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg>
+    <span id="themeLabel">Dark</span>
+  </button>
+</div>
+
+<script>
+/* -------- shared state (visible to the module script below) -------- */
+const SAMPLE_MARKDOWN = [
+  "Aurora Docs runs on any machine with Node 22+. This page walks",
+  "through installing the toolchain and creating your first project.",
+  "",
+  "## Prerequisites",
+  "",
+  "- Node.js 22 or newer",
+  "- pnpm 9 (`corepack enable pnpm`)",
+  "- A GitHub account for publishing",
+  "",
+  "## Install",
+  "",
+  "```bash",
+  "pnpm create aurora-docs my-docs",
+  "cd my-docs",
+  "pnpm dev",
+  "```",
+  "",
+  ":::note",
+  "The dev server starts on port 4321. Pass `--port` to change it.",
+  ":::",
+  "",
+  "## Next steps",
+  "",
+  "1. Open `src/content/docs/` and edit your first page",
+  "2. Adjust the sidebar in the outline editor",
+  "3. Hit **Publish** when it looks right",
+].join("\n");
+
+/* -------- honest save chip: Saved → Edited → Saving… → Saved -------- */
+const saveChip = document.getElementById("saveChip");
+const saveText = document.getElementById("saveText");
+let saveTimer = null;
+let savingTimer = null;
+
+function setSaveState(state) {
+  saveChip.dataset.state = state;
+  saveText.textContent = state === "saved" ? "Saved" : state === "edited" ? "Edited" : "Saving…";
+}
+
+function onEdited() {
+  setSaveState("edited");
+  clearTimeout(saveTimer);
+  clearTimeout(savingTimer);
+  saveTimer = setTimeout(() => {
+    setSaveState("saving");
+    savingTimer = setTimeout(() => setSaveState("saved"), 700);
+  }, 1000);
+  flashPreview();
+}
+
+/* -------- fake preview refresh shimmer -------- */
+const previewBody = document.getElementById("previewBody");
+let flashTimer = null;
+function flashPreview() {
+  if (flashTimer) return;
+  previewBody.classList.add("flash");
+  flashTimer = setTimeout(() => {
+    previewBody.classList.remove("flash");
+    flashTimer = null;
+  }, 500);
+}
+
+/* -------- metadata strip collapse -------- */
+const metaStrip = document.getElementById("metaStrip");
+const metaToggle = document.getElementById("metaToggle");
+metaToggle.addEventListener("click", () => {
+  const collapsed = metaStrip.classList.toggle("collapsed");
+  metaToggle.setAttribute("aria-expanded", String(!collapsed));
+});
+
+/* metadata edits count as edits too */
+for (const id of ["fTitle", "fDesc", "fPos"]) {
+  document.getElementById(id).addEventListener("input", onEdited);
+}
+
+/* -------- theme toggle -------- */
+const themeToggle = document.getElementById("themeToggle");
+const themeLabel = document.getElementById("themeLabel");
+const themeIcon = document.getElementById("themeIcon");
+themeToggle.addEventListener("click", () => {
+  const root = document.documentElement;
+  const next = root.dataset.theme === "dark" ? "light" : "dark";
+  root.dataset.theme = next;
+  const toDark = next === "light";
+  themeLabel.textContent = toDark ? "Dark" : "Light";
+  themeToggle.setAttribute("aria-label", toDark ? "Switch to dark theme" : "Switch to light theme");
+  themeIcon.innerHTML = toDark
+    ? '<path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/>'
+    : '<circle cx="12" cy="12" r="5"/><path d="M12 1v3M12 20v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1 12h3M20 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>';
+});
+</script>
+
+<script type="module">
+const DEPS = "@codemirror/state@6.5.2,@codemirror/view@6.38.1,@codemirror/language@6.11.0";
+try {
+  const [{ EditorView, basicSetup }, { markdown }] = await Promise.all([
+    import(`https://esm.sh/codemirror@6.0.2?deps=${DEPS}`),
+    import(`https://esm.sh/@codemirror/lang-markdown@6.3.2?deps=${DEPS}`),
+  ]);
+  const view = new EditorView({
+    doc: SAMPLE_MARKDOWN,
+    parent: document.querySelector("#editor"),
+    extensions: [
+      basicSetup,
+      markdown(),
+      EditorView.lineWrapping,
+      EditorView.updateListener.of(u => { if (u.docChanged) onEdited(); }),
+      EditorView.theme({
+        "&": { height: "100%", fontSize: "13.5px" },
+        ".cm-scroller": { fontFamily: "var(--font-mono)" },
+        "&.cm-editor": { backgroundColor: "transparent", color: "var(--theme-fg)" },
+        ".cm-gutters": { backgroundColor: "transparent", color: "var(--theme-muted)", border: "none" },
+        ".cm-activeLine": { backgroundColor: "color-mix(in oklch, var(--theme-accent) 6%, transparent)" },
+        ".cm-cursor": { borderLeftColor: "var(--theme-accent)" },
+      }),
+    ],
+  });
+} catch (e) {
+  // CDN failed: fallback textarea so layout judgment still works
+  const ta = document.createElement("textarea");
+  ta.className = "cm-fallback";
+  ta.value = SAMPLE_MARKDOWN;
+  ta.addEventListener("input", onEdited);
+  document.querySelector("#editor").replaceChildren(ta);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+/* zudo-doc online prototypes — shared design tokens (3-tier ramp strategy)
+   Tier 1: --palette-{group}-{n}  (n = incremental id, NOT Tailwind 100-900)
+   Tier 2: --theme-*  (the ONLY vars components/CM theme may use)
+   Dark mode = alternative Tier-2-feeding Tier-1 values via [data-theme]. */
+
+:root,
+:root[data-theme="light"] {
+  /* Tier 1 — base ramp (bg end → fg end), low-chroma cool gray */
+  --palette-base-0: oklch(0.985 0.002 250);
+  --palette-base-1: oklch(0.962 0.004 250);
+  --palette-base-2: oklch(0.915 0.006 250);
+  --palette-base-3: oklch(0.78 0.01 250);
+  --palette-base-4: oklch(0.55 0.014 250);
+  --palette-base-5: oklch(0.36 0.016 250);
+  --palette-base-6: oklch(0.21 0.018 250);
+  /* Tier 1 — accent ramp (indigo-blue, chroma peaks mid) */
+  --palette-accent-0: oklch(0.93 0.045 262);
+  --palette-accent-1: oklch(0.55 0.19 262);
+  --palette-accent-2: oklch(0.46 0.21 262);
+  /* Tier 1 — state */
+  --palette-state-danger: oklch(0.55 0.19 25);
+  --palette-state-success: oklch(0.58 0.14 150);
+  --palette-state-warning: oklch(0.70 0.14 80);
+  --palette-state-info: oklch(0.60 0.12 230);
+}
+
+:root[data-theme="dark"] {
+  --palette-base-0: oklch(0.19 0.012 255);
+  --palette-base-1: oklch(0.225 0.014 255);
+  --palette-base-2: oklch(0.28 0.016 255);
+  --palette-base-3: oklch(0.42 0.016 255);
+  --palette-base-4: oklch(0.62 0.014 255);
+  --palette-base-5: oklch(0.78 0.01 255);
+  --palette-base-6: oklch(0.93 0.006 255);
+  --palette-accent-0: oklch(0.31 0.06 262);
+  --palette-accent-1: oklch(0.70 0.16 262);
+  --palette-accent-2: oklch(0.78 0.14 262);
+  --palette-state-danger: oklch(0.68 0.17 25);
+  --palette-state-success: oklch(0.70 0.13 150);
+  --palette-state-warning: oklch(0.78 0.13 80);
+  --palette-state-info: oklch(0.72 0.11 230);
+}
+
+:root {
+  /* Tier 2 — semantic roles (components use ONLY these) */
+  --theme-bg: var(--palette-base-0);
+  --theme-surface: var(--palette-base-1);
+  --theme-surface-2: var(--palette-base-2);
+  --theme-border: var(--palette-base-2);
+  --theme-border-strong: var(--palette-base-3);
+  --theme-fg: var(--palette-base-6);
+  --theme-fg-mild: var(--palette-base-5);
+  --theme-muted: var(--palette-base-4);
+  --theme-accent: var(--palette-accent-1);
+  --theme-accent-hover: var(--palette-accent-2);
+  --theme-accent-soft: var(--palette-accent-0);
+  --theme-accent-fg: oklch(0.99 0 0);
+  --theme-danger: var(--palette-state-danger);
+  --theme-success: var(--palette-state-success);
+  --theme-warning: var(--palette-state-warning);
+  --theme-info: var(--palette-state-info);
+
+  /* Type + shape */
+  --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  --radius-s: 4px;
+  --radius-m: 8px;
+  --shadow-1: 0 1px 3px oklch(0 0 0 / 0.12);
+  --shadow-2: 0 4px 16px oklch(0 0 0 / 0.16);
+}

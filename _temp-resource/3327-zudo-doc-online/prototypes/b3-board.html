@@ -1,0 +1,991 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>zudo-doc online — outline editor (B-v3 board)</title>
+<style>
+/* ============================================================
+   _shared/tokens.css — inlined verbatim
+   ============================================================ */
+/* zudo-doc online prototypes — shared design tokens (3-tier ramp strategy)
+   Tier 1: --palette-{group}-{n}  (n = incremental id, NOT Tailwind 100-900)
+   Tier 2: --theme-*  (the ONLY vars components/CM theme may use)
+   Dark mode = alternative Tier-2-feeding Tier-1 values via [data-theme]. */
+
+:root,
+:root[data-theme="light"] {
+  /* Tier 1 — base ramp (bg end → fg end), low-chroma cool gray */
+  --palette-base-0: oklch(0.985 0.002 250);
+  --palette-base-1: oklch(0.962 0.004 250);
+  --palette-base-2: oklch(0.915 0.006 250);
+  --palette-base-3: oklch(0.78 0.01 250);
+  --palette-base-4: oklch(0.55 0.014 250);
+  --palette-base-5: oklch(0.36 0.016 250);
+  --palette-base-6: oklch(0.21 0.018 250);
+  /* Tier 1 — accent ramp (indigo-blue, chroma peaks mid) */
+  --palette-accent-0: oklch(0.93 0.045 262);
+  --palette-accent-1: oklch(0.55 0.19 262);
+  --palette-accent-2: oklch(0.46 0.21 262);
+  /* Tier 1 — state */
+  --palette-state-danger: oklch(0.55 0.19 25);
+  --palette-state-success: oklch(0.58 0.14 150);
+  --palette-state-warning: oklch(0.70 0.14 80);
+  --palette-state-info: oklch(0.60 0.12 230);
+}
+
+:root[data-theme="dark"] {
+  --palette-base-0: oklch(0.19 0.012 255);
+  --palette-base-1: oklch(0.225 0.014 255);
+  --palette-base-2: oklch(0.28 0.016 255);
+  --palette-base-3: oklch(0.42 0.016 255);
+  --palette-base-4: oklch(0.62 0.014 255);
+  --palette-base-5: oklch(0.78 0.01 255);
+  --palette-base-6: oklch(0.93 0.006 255);
+  --palette-accent-0: oklch(0.31 0.06 262);
+  --palette-accent-1: oklch(0.70 0.16 262);
+  --palette-accent-2: oklch(0.78 0.14 262);
+  --palette-state-danger: oklch(0.68 0.17 25);
+  --palette-state-success: oklch(0.70 0.13 150);
+  --palette-state-warning: oklch(0.78 0.13 80);
+  --palette-state-info: oklch(0.72 0.11 230);
+}
+
+:root {
+  /* Tier 2 — semantic roles (components use ONLY these) */
+  --theme-bg: var(--palette-base-0);
+  --theme-surface: var(--palette-base-1);
+  --theme-surface-2: var(--palette-base-2);
+  --theme-border: var(--palette-base-2);
+  --theme-border-strong: var(--palette-base-3);
+  --theme-fg: var(--palette-base-6);
+  --theme-fg-mild: var(--palette-base-5);
+  --theme-muted: var(--palette-base-4);
+  --theme-accent: var(--palette-accent-1);
+  --theme-accent-hover: var(--palette-accent-2);
+  --theme-accent-soft: var(--palette-accent-0);
+  --theme-accent-fg: oklch(0.99 0 0);
+  --theme-danger: var(--palette-state-danger);
+  --theme-success: var(--palette-state-success);
+  --theme-warning: var(--palette-state-warning);
+  --theme-info: var(--palette-state-info);
+
+  /* Type + shape */
+  --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  --radius-s: 4px;
+  --radius-m: 8px;
+  --shadow-1: 0 1px 3px oklch(0 0 0 / 0.12);
+  --shadow-2: 0 4px 16px oklch(0 0 0 / 0.16);
+}
+
+/* ============================================================
+   B-v3 board — component styles
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--theme-fg);
+  background: var(--theme-bg);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--theme-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-s);
+}
+
+svg { display: block; flex: none; }
+
+/* ---------- app header ---------- */
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 52px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--theme-border);
+  background: var(--theme-bg);
+  flex: none;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-s);
+  color: var(--theme-muted);
+}
+.back-btn:hover { background: var(--theme-surface-2); color: var(--theme-fg); }
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.brand-logo {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  background: var(--theme-accent);
+  color: var(--theme-accent-fg);
+  font-weight: 700;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.brand-name {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.brand-name .online { color: var(--theme-muted); font-weight: 500; }
+
+.crumb-sep { color: var(--theme-border-strong); user-select: none; }
+
+.project-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 8px;
+  margin-left: -8px;
+  border-radius: var(--radius-s);
+}
+.project-name:hover { background: var(--theme-surface-2); }
+.project-name svg { color: var(--theme-muted); }
+
+.header-spacer { flex: 1; }
+
+.save-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--theme-muted);
+  padding: 4px 10px;
+  border: 1px solid var(--theme-border);
+  border-radius: 999px;
+  background: var(--theme-surface);
+}
+.save-chip .save-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--theme-success);
+}
+
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--theme-accent-soft);
+  color: var(--theme-accent);
+  font-size: 10.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.02em;
+}
+
+/* ---------- page heading row ---------- */
+.page-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 22px 32px 4px;
+  flex: none;
+}
+.page-head h1 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.page-head .meta {
+  font-size: 12px;
+  color: var(--theme-muted);
+}
+
+/* ---------- board ---------- */
+.board-scroll {
+  overflow-x: auto;
+}
+.board {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 32px 8px;
+  min-width: max-content;
+}
+
+.col {
+  width: 256px;
+  flex: none;
+  background: var(--theme-surface);
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-m);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.col-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 2px 0;
+}
+.col-grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--theme-muted);
+  border-radius: var(--radius-s);
+  cursor: grab;
+}
+.col-grip:hover { background: var(--theme-surface-2); color: var(--theme-fg-mild); }
+
+.slug-chip {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--theme-fg-mild);
+  background: var(--theme-surface-2);
+  border-radius: var(--radius-s);
+  padding: 2.5px 7px;
+}
+
+.col-count {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--theme-muted);
+  background: color-mix(in oklch, var(--theme-surface-2) 60%, transparent);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+
+.kebab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-s);
+  color: var(--theme-muted);
+}
+.kebab:hover { background: var(--theme-surface-2); color: var(--theme-fg); }
+
+.col-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+  font-size: 13.5px;
+  font-weight: 650;
+  letter-spacing: -0.005em;
+}
+.col-title .rename {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-s);
+  color: var(--theme-muted);
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.col:hover .col-title .rename { opacity: 1; }
+.col-title .rename:hover { background: var(--theme-surface-2); color: var(--theme-fg); }
+
+/* ---------- cards ---------- */
+.cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  background: var(--theme-bg);
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-m);
+  padding: 8px 8px 8px 4px;
+  box-shadow: var(--shadow-1);
+}
+
+.card-grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  align-self: stretch;
+  color: var(--theme-border-strong);
+  cursor: grab;
+  border-radius: var(--radius-s);
+}
+.card:hover .card-grip { color: var(--theme-muted); }
+
+.card-body { flex: 1; min-width: 0; }
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 550;
+  line-height: 1.3;
+}
+.draft-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--theme-warning);
+  flex: none;
+}
+
+.card-slug {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--theme-muted);
+}
+.card-slug .state {
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  color: var(--theme-warning);
+}
+.chip-index {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--theme-accent);
+  background: color-mix(in oklch, var(--theme-accent) 10%, transparent);
+  border-radius: var(--radius-s);
+  padding: 1px 5px;
+}
+
+.card-actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.card:hover .card-actions,
+.card.is-hover .card-actions { opacity: 1; }
+.card.is-hover {
+  background: color-mix(in oklch, var(--theme-surface-2) 45%, var(--theme-bg));
+  border-color: var(--theme-border-strong);
+}
+.card-actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-s);
+  color: var(--theme-muted);
+}
+.card-actions button:hover { background: var(--theme-surface-2); color: var(--theme-fg); }
+.card-actions button.danger:hover { color: var(--theme-danger); }
+
+/* origin ghost — where the dragged card came from */
+.card.is-origin {
+  background: transparent;
+  border: 1.5px dashed var(--theme-border-strong);
+  box-shadow: none;
+}
+.card.is-origin > * { opacity: 0.35; }
+
+/* drop slot in the target column */
+.drop-slot {
+  position: relative;
+  height: 52px;
+  border: 1.5px dashed var(--theme-accent);
+  border-radius: var(--radius-m);
+  background: color-mix(in oklch, var(--theme-accent) 7%, transparent);
+}
+
+/* the card mid-drag, floating above the slot */
+.card.is-dragging {
+  position: absolute;
+  top: -14px;
+  left: -34px;
+  width: 238px;
+  transform: rotate(3deg);
+  box-shadow: var(--shadow-2);
+  border-color: var(--theme-accent);
+  cursor: grabbing;
+  z-index: 10;
+}
+.card.is-dragging .card-grip { color: var(--theme-accent); }
+
+/* add-page / add-category affordances */
+.add-page {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 8px;
+  border: 1.5px dashed var(--theme-border-strong);
+  border-radius: var(--radius-m);
+  color: var(--theme-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+.add-page:hover {
+  color: var(--theme-accent);
+  border-color: var(--theme-accent);
+  background: color-mix(in oklch, var(--theme-accent) 5%, transparent);
+}
+
+.ghost-col {
+  width: 224px;
+  flex: none;
+  min-height: 132px;
+  border: 1.5px dashed var(--theme-border-strong);
+  border-radius: var(--radius-m);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--theme-muted);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.ghost-col:hover {
+  color: var(--theme-accent);
+  border-color: var(--theme-accent);
+  background: color-mix(in oklch, var(--theme-accent) 5%, transparent);
+}
+
+/* ---------- top-page pseudo-column ---------- */
+.col.top-col {
+  background: color-mix(in oklch, var(--theme-accent) 4%, var(--theme-surface));
+  border-color: color-mix(in oklch, var(--theme-accent) 18%, var(--theme-border));
+}
+.top-col .col-head { gap: 8px; padding-left: 6px; }
+.top-col .lock { color: var(--theme-muted); }
+.chip-derived {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--theme-accent);
+  background: color-mix(in oklch, var(--theme-accent) 10%, transparent);
+  border-radius: var(--radius-s);
+  padding: 2px 6px;
+}
+.top-col .col-title { padding-left: 6px; }
+
+.top-thumb {
+  margin: 2px 4px 0;
+  background: var(--theme-bg);
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-m);
+  box-shadow: var(--shadow-1);
+  padding: 8px;
+}
+.thumb-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-bottom: 6px;
+  margin-bottom: 7px;
+  border-bottom: 1px solid var(--theme-border);
+}
+.thumb-nav .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--theme-accent);
+}
+.thumb-nav .bar {
+  height: 3.5px;
+  border-radius: 2px;
+  background: var(--theme-border-strong);
+}
+.thumb-nav .bar:nth-of-type(2) { width: 26px; }
+.thumb-nav .bar:nth-of-type(3) { width: 18px; }
+.thumb-nav .bar:nth-of-type(4) { width: 22px; }
+.thumb-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+.thumb-cell {
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-s);
+  padding: 6px 6px 7px;
+  background: color-mix(in oklch, var(--theme-surface) 55%, transparent);
+}
+.thumb-cell .t {
+  height: 4px;
+  width: 70%;
+  border-radius: 2px;
+  background: var(--theme-fg-mild);
+  margin-bottom: 4px;
+}
+.thumb-cell .l {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--theme-border-strong);
+  margin-top: 3px;
+}
+.thumb-cell .l.short { width: 60%; }
+.thumb-cell.empty {
+  border-style: dashed;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--theme-border-strong);
+  font-size: 12px;
+}
+.thumb-caption {
+  margin-top: 7px;
+  font-size: 10.5px;
+  color: var(--theme-muted);
+  line-height: 1.45;
+  text-align: center;
+}
+
+.top-note {
+  padding: 2px 6px 4px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--theme-muted);
+}
+
+/* ---------- board caption ---------- */
+.board-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 32px 22px;
+  font-size: 11.5px;
+  color: var(--theme-muted);
+  flex: none;
+  flex-wrap: wrap;
+}
+.board-note svg { color: var(--theme-border-strong); }
+.nav-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 10px;
+  padding-left: 14px;
+  border-left: 1px solid var(--theme-border);
+}
+.nav-pill {
+  font-size: 10.5px;
+  font-weight: 550;
+  color: var(--theme-fg-mild);
+  background: var(--theme-surface-2);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.nav-arrow { color: var(--theme-border-strong); }
+
+/* ---------- variant badge ---------- */
+.variant-badge {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--theme-fg);
+  color: var(--theme-bg);
+  border-radius: 999px;
+  padding: 6px 8px 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: var(--shadow-2);
+  z-index: 100;
+}
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: var(--theme-bg);
+  background: color-mix(in oklch, var(--theme-bg) 18%, transparent);
+}
+.theme-toggle:hover { background: color-mix(in oklch, var(--theme-bg) 30%, transparent); }
+.theme-toggle .icon-sun { display: none; }
+[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <button class="back-btn" title="Back to dashboard" aria-label="Back to dashboard">
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 3 5 7.5 9.5 12"/></svg>
+  </button>
+  <div class="brand">
+    <div class="brand-logo" aria-hidden="true">z</div>
+    <div class="brand-name">zudo-doc <span class="online">online</span></div>
+  </div>
+  <span class="crumb-sep" aria-hidden="true">/</span>
+  <button class="project-name">
+    Aurora Docs
+    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4 5 6.5 7.5 4"/></svg>
+  </button>
+  <div class="header-spacer"></div>
+  <span class="save-chip"><span class="save-dot" aria-hidden="true"></span>Structure saved</span>
+  <div class="avatar" title="Takeshi Zudo">TZ</div>
+</header>
+
+<div class="page-head">
+  <h1>Site structure</h1>
+  <span class="meta">3 categories · 14 pages</span>
+</div>
+
+<div class="board-scroll">
+  <main class="board" aria-label="Site structure board">
+
+    <!-- ===== fixed pseudo-column: derived top page ===== -->
+    <section class="col top-col" aria-label="Top page (derived)">
+      <header class="col-head">
+        <svg class="lock" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2.2" y="5.2" width="7.6" height="5" rx="1.2"/><path d="M4 5V3.8a2 2 0 0 1 4 0V5"/></svg>
+        <span class="col-title" style="padding:0; font-size:13.5px;">Top page</span>
+        <span class="chip-derived">derived</span>
+      </header>
+      <div class="top-thumb" aria-hidden="true">
+        <div class="thumb-nav">
+          <span class="dot"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
+        </div>
+        <div class="thumb-grid">
+          <div class="thumb-cell"><div class="t"></div><div class="l"></div><div class="l short"></div></div>
+          <div class="thumb-cell"><div class="t"></div><div class="l"></div><div class="l short"></div></div>
+          <div class="thumb-cell"><div class="t"></div><div class="l"></div><div class="l short"></div></div>
+          <div class="thumb-cell empty">+</div>
+        </div>
+        <div class="thumb-caption">Category grid preview</div>
+      </div>
+      <p class="top-note">Generated from your categories — not directly authored. One tile per column, in board order.</p>
+    </section>
+
+    <!-- ===== getting-started/ ===== -->
+    <section class="col" aria-label="Category: Getting Started">
+      <header class="col-head">
+        <button class="col-grip" title="Drag to reorder category" aria-label="Drag to reorder Getting Started">
+          <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="3" cy="3" r="1.2"/><circle cx="7" cy="3" r="1.2"/><circle cx="3" cy="7" r="1.2"/><circle cx="7" cy="7" r="1.2"/><circle cx="3" cy="11" r="1.2"/><circle cx="7" cy="11" r="1.2"/></svg>
+        </button>
+        <span class="slug-chip">getting-started/</span>
+        <span class="col-count">4</span>
+        <button class="kebab" title="Category actions" aria-label="Getting Started actions">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><circle cx="2" cy="6" r="1.1"/><circle cx="6" cy="6" r="1.1"/><circle cx="10" cy="6" r="1.1"/></svg>
+        </button>
+      </header>
+      <div class="col-title">
+        Getting Started
+        <button class="rename" title="Rename category" aria-label="Rename Getting Started">
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8.3 1.7l2 2L4 10l-2.6.6L2 8z"/></svg>
+        </button>
+      </div>
+      <ul class="cards">
+        <li class="card">
+          <button class="card-grip" title="Drag to reorder" aria-label="Drag Getting Started index"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="3" cy="3" r="1.2"/><circle cx="7" cy="3" r="1.2"/><circle cx="3" cy="7" r="1.2"/><circle cx="7" cy="7" r="1.2"/><circle cx="3" cy="11" r="1.2"/><circle cx="7" cy="11" r="1.2"/></svg></button>
+          <div class="card-body">
+            <div class="card-title">Getting Started</div>
+            <div class="card-slug">index <span class="chip-index">category page</span></div>
+          </div>
+          <div class="card-actions">
+            <button title="Rename"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8.3 1.7l2 2L4 10l-2.6.6L2 8z"/></svg></button>
+            <button class="danger" title="Delete"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h8M4.8 3V1.8h2.4V3M3 3l.6 7h4.8L9 3"/></svg></button>
+          </div>
+        </li>
+        <li class="card">
+          <button class="card-grip" title="Drag to reorder" aria-label="Drag Introduction"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="3" cy="3" r="1.2"/><circle cx="7" cy="3" r="1.2"/><circle cx="3" cy="7" r="1.2"/><circle cx="7" cy="7" r="1.2"/><circle cx="3" cy="11" r="1.2"/><circle cx="7" cy="11" r="1.2"/></svg></button>
+          <div class="card-body">
+            <div class="card-title">Introduction</div>
+            <div class="card-slug">introduction</div>
+          </div>
+          <div class="card-actions">
+            <button title="Rename"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8.3 1.7l2 2L4 10l-2.6.6L2 8z"/></svg></button>
+            <button class="danger" title="Delete"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h8M4.8 3V1.8h2.4V3M3 3l.6 7h4.8L9 3"/></svg></button>
+          </div>
+        </li>
+        <li class="card">
+          <button class="card-grip" title="Drag to reorder" aria-label="Drag Installation"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="3" cy="3" r="1.2"/><circle cx="7" cy="3" r="1.2"/><circle cx="3" cy="7" r="1.2"/><circle cx="7" cy="7" r="1.2"/><circle cx="3" cy="11" r="1.2"/><circle cx="7" cy="11" r="1.2"/></svg></button>
+          <div class="card-body">
+            <div class="card-title">Installation <span class="draft-dot" title="Draft — unsaved edits"></span></div>
+            <div class="card-slug">installation <span class="state">draft</span></div>
+          </div>
+          <div class="card-actions">
+            <button title="Rename"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8.3 1.7l2 2L4 10l-2.6.6L2 8z"/></svg></button>
+            <button class="danger" title="Delete"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h8M4.8 3V1.8h2.4V3M3 3l.6 7h4.8L9 3"/></svg></button>
+          </div>
+        </li>
+        <li class="card">
+          <button class="card-grip" title="Drag to reorder" aria-label="Drag Quick Start"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="3" cy="3" r="1.2"/><circle cx="7" cy="3" r="1.2"/><circle cx="3" cy="7" r="1.2"/><circle cx="7" cy="7" r="1.2"/><circle cx="3" cy="11" r="1.2"/><circle cx="7" cy="11" r="1.2"/></svg></button>
+          <div class="card-body">
+            <div class="card-title">Quick Start</div>
+            <div class="card-slug">quick-start</div>
+          </div>
+          <div class="card-actions">
+            <button title="Rename"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8.3 1.7l2 2L4 10l-2.6.6L2 8z"/></svg></button>
+            <button class="danger" title="Delete"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h8M4.8 3V1.8h2.4V3M3 3l.6 7h4.8L9 3"/></svg></button>
+          </div>
+        </li>
+      </ul>
+      <button class="add-page">
+        <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M5.5 1.5v8M1.5 5.5h8"/></svg>
+        Add page
+      </button>
+    </section>
+
+    <!-- ===== guides/ ===== -->
+    <section class="col" aria-label="Category: Guides">
+      <header class="col-head">
+        <button class="col-grip" title="Drag to reorder category" aria-label="Drag to reorder Guides">
+          <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="3" cy="3" r="1.2"/><circle cx="7" cy="3" r="1.2"/><circle cx="3" cy="7" r="1.2"/><circle cx="7" cy="7" r="1.2"/><circle cx="3" cy="11" r="1.2"/><circle cx="7" cy="11" r="1.2"/></svg>
+        </button>
+        <span class="slug-chip">guides/</span>
+        <span class="col-count">6</span>
+        <button class="kebab" title="Category actions" aria-label="Guides actions">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><circle cx="2" cy="6" r="1.1"/><circle cx="6" cy="6" r="1.1"/><circle cx="10" cy="6" r="1.1"/></svg>
+        </button>
+      </header>
+      <div class="col-title">
+        Guides
+        <button class="rename" title="Rename category" aria-label="Rename Guides">
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8.3 1.7l2 2L4 10l-2.6.6L2 8z"/></svg>
+        </button>
+      </div>
+      <ul class="cards">
+        <li class="card">
+          <button class="card-grip" title="Drag to reorder" aria-label="Drag Guides index"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="3" cy="3" r="1.2"/><circle cx="7" cy="3" r="1.2"/><circle cx="3" cy="7" r="1.2"/><circle cx="7" cy="7" r="1.2"/><circle cx="3" cy="11" r="1.2"/><circle cx="7" cy="11" r="1.2"/></svg></button>
+          <div class="card-body">
+            <div class="card-title">Guides</div>
+            <div class="card-slug">index <span class="chip-index">category page</span></div>
+          </div>
+          <div class="card-actions">
+            <button title="Rename"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8.3 1.7l2 2L4 10l-2.6.6L2 8z"/></svg></button>
+            <button class="danger" title="Delete"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h8M4.8 3V1.8h2.4V3M3 3l.6 7h4.8L9 3"/></svg></button>
+          </div>
+        </li>
+        <!-- hard-coded hover state (shows the hidden affordances) -->
+        <li class="card is-hover">
+          <button class="card-grip" title="Drag to reorder" aria-label="Drag Writing Pages"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="3" cy="3" r="1.2"/><circle cx="7" cy="3" r="1.2"/><circle cx="3" cy="7" r="1.2"/><circle cx="7" cy="7" r="1.2"/><circle cx="3" cy="11" r="1.2"/><circle cx="7" cy="11" r="1.2"/></svg></button>
+          <div class="card-body">
+            <div class="card-title">Writing Pages</div>
+            <div class="card-slug">writing-pages</div>
+          </div>
+          <div class="card-actions">
+            <button title="Rename"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8.3 1.7l2 2L4 10l-2.6.6L2 8z"/></svg></button>
+            <button class="danger" title="Delete"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h8M4.8 3V1.8h2.4V3M3 3l.6 7h4.8L9 3"/></svg></button>
+          </div>
+        </li>
+        <!-- origin ghost: Sidebar Structure is mid-drag toward reference/ -->
+        <li class="card is-origin" aria-label="Sidebar Structure — being moved">
+          <span class="card-grip"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="3" cy="3" r="1.2"/><circle cx="7" cy="3" r="1.2"/><circle cx="3" cy="7" r="1.2"/><circle cx="7" cy="7" r="1.2"/><circle cx="3" cy="11" r="1.2"/><circle cx="7" cy="11" r="1.2"/></svg></span>
+          <div class="card-body">
+            <div class="card-title">Sidebar Structure</div>
+            <div class="card-slug">sidebar-structure</div>
+          </div>
+        </li>
+        <li class="card">
+          <button class="card-grip" title="Drag to reorder" aria-label="Drag Theming"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="3" cy="3" r="1.2"/><circle cx="7" cy="3" r="1.2"/><circle cx="3" cy="7" r="1.2"/><circle cx="7" cy="7" r="1.2"/><circle cx="3" cy="11" r="1.2"/><circle cx="7" cy="11" r="1.2"/></svg></button>
+          <div class="card-body">
+            <div class="card-title">Theming <span class="draft-dot" title="Draft — never published"></span></div>
+            <div class="card-slug">theming <span class="state">draft · never published</span></div>
+          </div>
+          <div class="card-actions">
+            <button title="Rename"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8.3 1.7l2 2L4 10l-2.6.6L2 8z"/></svg></button>
+            <button class="danger" title="Delete"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h8M4.8 3V1.8h2.4V3M3 3l.6 7h4.8L9 3"/></svg></button>
+          </div>
+        </li>
+        <li class="card">
+          <button class="card-grip" title="Drag to reorder" aria-label="Drag Internationalization"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="3" cy="3" r="1.2"/><circle cx="7" cy="3" r="1.2"/><circle cx="3" cy="7" r="1.2"/><circle cx="7" cy="7" r="1.2"/><circle cx="3" cy="11" r="1.2"/><circle cx="7" cy="11" r="1.2"/></svg></button>
+          <div class="card-body">
+            <div class="card-title">Internationalization</div>
+            <div class="card-slug">i18n</div>
+          </div>
+          <div class="card-actions">
+            <button title="Rename"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8.3 1.7l2 2L4 10l-2.6.6L2 8z"/></svg></button>
+            <button class="danger" title="Delete"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h8M4.8 3V1.8h2.4V3M3 3l.6 7h4.8L9 3"/></svg></button>
+          </div>
+        </li>
+        <li class="card">
+          <button class="card-grip" title="Drag to reorder" aria-label="Drag Publishing"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="3" cy="3" r="1.2"/><circle cx="7" cy="3" r="1.2"/><circle cx="3" cy="7" r="1.2"/><circle cx="7" cy="7" r="1.2"/><circle cx="3" cy="11" r="1.2"/><circle cx="7" cy="11" r="1.2"/></svg></button>
+          <div class="card-body">
+            <div class="card-title">Publishing</div>
+            <div class="card-slug">publishing</div>
+          </div>
+          <div class="card-actions">
+            <button title="Rename"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8.3 1.7l2 2L4 10l-2.6.6L2 8z"/></svg></button>
+            <button class="danger" title="Delete"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h8M4.8 3V1.8h2.4V3M3 3l.6 7h4.8L9 3"/></svg></button>
+          </div>
+        </li>
+      </ul>
+      <button class="add-page">
+        <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M5.5 1.5v8M1.5 5.5h8"/></svg>
+        Add page
+      </button>
+    </section>
+
+    <!-- ===== reference/ (drop target) ===== -->
+    <section class="col" aria-label="Category: Reference">
+      <header class="col-head">
+        <button class="col-grip" title="Drag to reorder category" aria-label="Drag to reorder Reference">
+          <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="3" cy="3" r="1.2"/><circle cx="7" cy="3" r="1.2"/><circle cx="3" cy="7" r="1.2"/><circle cx="7" cy="7" r="1.2"/><circle cx="3" cy="11" r="1.2"/><circle cx="7" cy="11" r="1.2"/></svg>
+        </button>
+        <span class="slug-chip">reference/</span>
+        <span class="col-count">4</span>
+        <button class="kebab" title="Category actions" aria-label="Reference actions">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><circle cx="2" cy="6" r="1.1"/><circle cx="6" cy="6" r="1.1"/><circle cx="10" cy="6" r="1.1"/></svg>
+        </button>
+      </header>
+      <div class="col-title">
+        Reference
+        <button class="rename" title="Rename category" aria-label="Rename Reference">
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8.3 1.7l2 2L4 10l-2.6.6L2 8z"/></svg>
+        </button>
+      </div>
+      <ul class="cards">
+        <li class="card">
+          <button class="card-grip" title="Drag to reorder" aria-label="Drag Reference index"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="3" cy="3" r="1.2"/><circle cx="7" cy="3" r="1.2"/><circle cx="3" cy="7" r="1.2"/><circle cx="7" cy="7" r="1.2"/><circle cx="3" cy="11" r="1.2"/><circle cx="7" cy="11" r="1.2"/></svg></button>
+          <div class="card-body">
+            <div class="card-title">Reference</div>
+            <div class="card-slug">index <span class="chip-index">category page</span></div>
+          </div>
+          <div class="card-actions">
+            <button title="Rename"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8.3 1.7l2 2L4 10l-2.6.6L2 8z"/></svg></button>
+            <button class="danger" title="Delete"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h8M4.8 3V1.8h2.4V3M3 3l.6 7h4.8L9 3"/></svg></button>
+          </div>
+        </li>
+        <li class="card">
+          <button class="card-grip" title="Drag to reorder" aria-label="Drag Configuration"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="3" cy="3" r="1.2"/><circle cx="7" cy="3" r="1.2"/><circle cx="3" cy="7" r="1.2"/><circle cx="7" cy="7" r="1.2"/><circle cx="3" cy="11" r="1.2"/><circle cx="7" cy="11" r="1.2"/></svg></button>
+          <div class="card-body">
+            <div class="card-title">Configuration</div>
+            <div class="card-slug">config</div>
+          </div>
+          <div class="card-actions">
+            <button title="Rename"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8.3 1.7l2 2L4 10l-2.6.6L2 8z"/></svg></button>
+            <button class="danger" title="Delete"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h8M4.8 3V1.8h2.4V3M3 3l.6 7h4.8L9 3"/></svg></button>
+          </div>
+        </li>
+        <!-- drop slot + the card mid-drag floating over it -->
+        <li class="drop-slot" aria-label="Drop position">
+          <div class="card is-dragging" aria-label="Sidebar Structure — dragging">
+            <span class="card-grip"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="3" cy="3" r="1.2"/><circle cx="7" cy="3" r="1.2"/><circle cx="3" cy="7" r="1.2"/><circle cx="7" cy="7" r="1.2"/><circle cx="3" cy="11" r="1.2"/><circle cx="7" cy="11" r="1.2"/></svg></span>
+            <div class="card-body">
+              <div class="card-title">Sidebar Structure</div>
+              <div class="card-slug">sidebar-structure</div>
+            </div>
+          </div>
+        </li>
+        <li class="card">
+          <button class="card-grip" title="Drag to reorder" aria-label="Drag Frontmatter"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="3" cy="3" r="1.2"/><circle cx="7" cy="3" r="1.2"/><circle cx="3" cy="7" r="1.2"/><circle cx="7" cy="7" r="1.2"/><circle cx="3" cy="11" r="1.2"/><circle cx="7" cy="11" r="1.2"/></svg></button>
+          <div class="card-body">
+            <div class="card-title">Frontmatter</div>
+            <div class="card-slug">frontmatter</div>
+          </div>
+          <div class="card-actions">
+            <button title="Rename"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8.3 1.7l2 2L4 10l-2.6.6L2 8z"/></svg></button>
+            <button class="danger" title="Delete"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h8M4.8 3V1.8h2.4V3M3 3l.6 7h4.8L9 3"/></svg></button>
+          </div>
+        </li>
+        <li class="card">
+          <button class="card-grip" title="Drag to reorder" aria-label="Drag CLI"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="3" cy="3" r="1.2"/><circle cx="7" cy="3" r="1.2"/><circle cx="3" cy="7" r="1.2"/><circle cx="7" cy="7" r="1.2"/><circle cx="3" cy="11" r="1.2"/><circle cx="7" cy="11" r="1.2"/></svg></button>
+          <div class="card-body">
+            <div class="card-title">CLI</div>
+            <div class="card-slug">cli</div>
+          </div>
+          <div class="card-actions">
+            <button title="Rename"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8.3 1.7l2 2L4 10l-2.6.6L2 8z"/></svg></button>
+            <button class="danger" title="Delete"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h8M4.8 3V1.8h2.4V3M3 3l.6 7h4.8L9 3"/></svg></button>
+          </div>
+        </li>
+      </ul>
+      <button class="add-page">
+        <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M5.5 1.5v8M1.5 5.5h8"/></svg>
+        Add page
+      </button>
+    </section>
+
+    <!-- ===== ghost column ===== -->
+    <button class="ghost-col">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 2.5v11M2.5 8h11"/></svg>
+      Add category
+    </button>
+
+  </main>
+</div>
+
+<footer class="board-note">
+  <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="3" cy="3" r="1.2"/><circle cx="7" cy="3" r="1.2"/><circle cx="3" cy="7" r="1.2"/><circle cx="7" cy="7" r="1.2"/><circle cx="3" cy="11" r="1.2"/><circle cx="7" cy="11" r="1.2"/></svg>
+  <span>Drag columns to reorder — column order is the site's header navigation.</span>
+  <span class="nav-preview" aria-label="Header navigation preview">
+    Header nav
+    <span class="nav-arrow" aria-hidden="true">→</span>
+    <span class="nav-pill">Getting Started</span>
+    <span class="nav-pill">Guides</span>
+    <span class="nav-pill">Reference</span>
+  </span>
+</footer>
+
+<div class="variant-badge">
+  B-v3 board
+  <button class="theme-toggle" id="themeToggle" title="Toggle light/dark" aria-label="Toggle light/dark theme">
+    <svg class="icon-moon" width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M10.4 7.4A4.8 4.8 0 0 1 4.6 1.6a4.8 4.8 0 1 0 5.8 5.8z"/></svg>
+    <svg class="icon-sun" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><circle cx="6" cy="6" r="2.4"/><path d="M6 .8v1.2M6 10v1.2M.8 6H2M10 6h1.2M2.3 2.3l.85.85M8.85 8.85l.85.85M9.7 2.3l-.85.85M3.15 8.85l-.85.85"/></svg>
+  </button>
+</div>
+
+<script>
+document.getElementById("themeToggle").addEventListener("click", () => {
+  const root = document.documentElement;
+  root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+});
+</script>
+
+</body>
+</html>
