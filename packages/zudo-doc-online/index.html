@@ -14,6 +14,10 @@
       // preference lives).
       (function () {
         var STORAGE_KEY = "zudo-doc-online-theme";
+        // Mirrors color-scheme-sync.ts's COLOR_SCHEME_CHANGED_EVENT. This
+        // inline script can't import the TS constant, so the literal is
+        // duplicated here on purpose — keep both in sync if it ever renames.
+        var CHANGED_EVENT = "color-scheme-changed";
         function getSystemMode() {
           return window.matchMedia("(prefers-color-scheme: dark)").matches
             ? "dark"
@@ -33,7 +37,10 @@
         } catch (e) {}
         applyTheme(resolveMode(stored));
         // Re-apply on system preference change, but ONLY when the user has
-        // no stored choice — an explicit choice always wins.
+        // no stored choice — an explicit choice always wins. Also dispatch
+        // the change event so any mounted ThemeToggle re-syncs its icon /
+        // label / mode state instead of going stale (it only reads the DOM
+        // on mount and on this event — see color-scheme-sync.ts).
         window.matchMedia("(prefers-color-scheme: dark)").addEventListener(
           "change",
           function () {
@@ -43,6 +50,7 @@
             } catch (e) {}
             if (current !== "light" && current !== "dark") {
               applyTheme(getSystemMode());
+              window.dispatchEvent(new CustomEvent(CHANGED_EVENT));
             }
           },
         );

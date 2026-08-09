@@ -62,6 +62,14 @@ describe("parseRoute", () => {
     });
   });
 
+  it("falls back to the default route for a malformed percent-encoded pageId instead of throwing", () => {
+    expect(() => parseRoute("#/editor/%")).not.toThrow();
+    expect(parseRoute("#/editor/%")).toEqual({ name: "outline" });
+    expect(parseRoute("#/popped-out/preview/%E0%A4%A")).toEqual({
+      name: "outline",
+    });
+  });
+
   it("tolerates a trailing slash", () => {
     expect(parseRoute("#/editor/installation/")).toEqual({
       name: "editor",

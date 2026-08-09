@@ -19,6 +19,20 @@ function normalizeHash(hash: string): string {
   return hash.replace(/^#/, "").replace(/^\/+/, "").replace(/\/+$/, "");
 }
 
+/** `decodeURIComponent` throws `URIError` on a malformed percent-encoded
+ * sequence (e.g. a bare "%" or a truncated UTF-8 escape) instead of
+ * returning a value — decode defensively so a malformed pageId segment
+ * falls back to the default route like any other malformed hash, rather
+ * than throwing out of `parseRoute` (which runs before the shell mounts —
+ * an uncaught throw there would leave the page blank). */
+function decodePageId(segment: string): string | null {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return null;
+  }
+}
+
 /** Parse a `location.hash` string into a Route. Unknown/malformed hashes
  * (including the empty hash) fall back to the default outline route. */
 export function parseRoute(hash: string): Route {
@@ -30,7 +44,10 @@ export function parseRoute(hash: string): Route {
   }
 
   if (segments.length === 2 && first === "editor" && second) {
-    return { name: "editor", pageId: decodeURIComponent(second) };
+    const pageId = decodePageId(second);
+    if (pageId !== null) {
+      return { name: "editor", pageId };
+    }
   }
 
   if (
@@ -39,7 +56,10 @@ export function parseRoute(hash: string): Route {
     second === "preview" &&
     third
   ) {
-    return { name: "popped-out-preview", pageId: decodeURIComponent(third) };
+    const pageId = decodePageId(third);
+    if (pageId !== null) {
+      return { name: "popped-out-preview", pageId };
+    }
   }
 
   return DEFAULT_ROUTE;
