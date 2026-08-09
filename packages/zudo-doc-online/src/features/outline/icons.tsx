@@ -115,3 +115,24 @@ export function PlusIcon({ size = "xs" }: IconProps) {
     </svg>
   );
 }
+
+/** The board's (#3337) drag-handle affordance: a 2x3 dot grid, filled rather
+ * than stroked (a grip reads as "grab" better solid than outlined). */
+export function GripIcon({ size = "xs" }: IconProps) {
+  return (
+    <svg
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 10 14"
+      fill="currentColor"
+      className={SIZE_CLASS[size]}
+    >
+      <circle cx="3" cy="3" r="1.2" />
+      <circle cx="7" cy="3" r="1.2" />
+      <circle cx="3" cy="7" r="1.2" />
+      <circle cx="7" cy="7" r="1.2" />
+      <circle cx="3" cy="11" r="1.2" />
+      <circle cx="7" cy="11" r="1.2" />
+    </svg>
+  );
+}

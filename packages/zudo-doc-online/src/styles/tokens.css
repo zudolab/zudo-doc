@@ -70,6 +70,25 @@
   --zdo-code-bg: var(--palette-base-2);
   --zdo-code-fg: var(--palette-base-6);
 
+  /* ---- Kanban board (--zdo-kb-*) — component-scoped bag for the board view
+   * (#3337). Declared here (not as ad-hoc inline styles) per the
+   * design-system skill; every value aliases an existing role/shape token —
+   * `--radius-md` etc. resolve fine from a `--zdo-*`-tier declaration even
+   * though they are themselves declared inside `@theme` below, since custom
+   * properties resolve by scope, not source order. Consumption sites
+   * re-embed the same default as a `var()` fallback (recipe §2 rule 1):
+   * `var(--zdo-kb-card-bg, var(--zdo-surface))`. `board/tokens.ts`
+   * materializes this SAME bag as a JS object so it can also be handed
+   * explicitly to the portaled drag overlay, which sits outside this
+   * scope's DOM subtree (recipe §2 rule 2). ---- */
+  --zdo-kb-board-bg: transparent;
+  --zdo-kb-column-bg: var(--zdo-surface-2);
+  --zdo-kb-column-radius: var(--radius-md);
+  --zdo-kb-card-bg: var(--zdo-surface);
+  --zdo-kb-card-border: var(--zdo-border);
+  --zdo-kb-card-radius: var(--radius-sm);
+  --zdo-kb-card-shadow: var(--shadow-1);
+
   /* ---- Tier 1 — abstract type scale (raw values, NOT for direct component
    * use — feeds the --text-* semantic roles in @theme below only) ---- */
   --text-scale-xs: 0.75rem; /* 12px */
