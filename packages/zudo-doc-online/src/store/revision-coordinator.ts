@@ -63,12 +63,20 @@ export class RevisionCoordinator {
    * next queued mutation does not repeat the same stale send) and then
    * re-throws to the caller that owns this particular mutation — a conflict
    * is never swallowed, only used to keep the queue's own bookkeeping honest.
+   *
+   * A successful result also goes through `adoptRevision` (monotonic),
+   * never a plain assignment: while `task` is in flight, an SSE event for
+   * some OTHER client's commit can arrive and adopt a newer revision than
+   * this mutation's own response carries — network delivery gives no
+   * ordering guarantee between the two channels. An unconditional assignment
+   * here would regress the tracked revision, making the next queued
+   * mutation send one the server has already moved past.
    */
   enqueue<T extends Revisioned>(task: (expectedRevision: number) => Promise<T>): Promise<T> {
     const run = this.queue.then(async () => {
       try {
         const result = await task(this.revision);
-        this.revision = result.revision;
+        this.adoptRevision(result.revision);
         return result;
       } catch (error) {
         if (error instanceof RevisionConflictError) {
@@ -93,11 +101,13 @@ export interface CoordinatedProjectStore {
 }
 
 /**
- * Builds the `ProjectStore` a save machine actually talks to: reads
- * (`loadSnapshot`, `loadPage`) pass straight through, while both mutation
- * methods are routed through the coordinator's queue. The `expectedRevision`
- * argument a caller passes to `applyOutlineCommand`/`savePage` is accepted
- * for interface parity but intentionally ignored — see the module comment.
+ * Builds the `ProjectStore` a save machine actually talks to: both reads
+ * (`loadSnapshot`, `loadPage`) adopt whatever revision they observe into the
+ * coordinator — a stale-revision read must never leave the coordinator
+ * behind a resource it just fetched — while both mutation methods are routed
+ * through the coordinator's queue. The `expectedRevision` argument a caller
+ * passes to `applyOutlineCommand`/`savePage` is accepted for interface
+ * parity but intentionally ignored — see the module comment.
  */
 export function createCoordinatedStore(
   inner: ProjectStore,
@@ -119,7 +129,9 @@ export function createCoordinatedStore(
     },
 
     async loadPage(id) {
-      return inner.loadPage(id);
+      const page = await inner.loadPage(id);
+      coordinator.adoptRevision(page.revision);
+      return page;
     },
 
     savePage(id, _expectedRevision, input) {

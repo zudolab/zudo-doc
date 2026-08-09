@@ -7,9 +7,18 @@
  * this id to tell "a change I just made" from "a change another tab or
  * client made" without any server-side session concept.
  *
- * `sessionStorage` (not `localStorage`) is deliberate: the id should survive
- * a reload of the same tab but NOT be shared with a duplicated tab, which is
- * what makes it a stand-in for "this browser tab" rather than "this browser".
+ * `sessionStorage` (not `localStorage`) is deliberate: the id survives a
+ * reload of the same tab but is never shared with a genuinely new tab.
+ *
+ * KNOWN LIMITATION: a browser's "duplicate tab" action copies `sessionStorage`
+ * verbatim into the new tab, so two tabs opened that way share one id until
+ * one of them is closed and reopened — a mutation from either would be
+ * misclassified as the other's own event, momentarily weakening the SSE
+ * dirty-guard between exactly those two tabs. Detecting that reliably needs
+ * live cross-tab coordination (e.g. the Web Locks API or a BroadcastChannel
+ * handshake at startup), which is an async, wider-reaching change than this
+ * synchronous accessor should carry — left for a follow-up rather than
+ * fixed here.
  */
 
 const STORAGE_KEY = "zdo-client-id";

@@ -78,6 +78,24 @@ describe("RevisionCoordinator.enqueue", () => {
     );
     expect(after.revision).toBe(2);
   });
+
+  it("never regresses the tracked revision when a newer one was adopted while the task was in flight", async () => {
+    const coordinator = new RevisionCoordinator(1);
+    let resolveTask!: (value: { revision: number }) => void;
+    const pending = new Promise<{ revision: number }>((resolve) => {
+      resolveTask = resolve;
+    });
+
+    const mutation = coordinator.enqueue(() => pending);
+    // An SSE event for some OTHER client's commit arrives while this
+    // mutation's own HTTP response is still in flight.
+    coordinator.adoptRevision(5);
+    // This mutation's own (now out-of-date) response finally lands.
+    resolveTask({ revision: 3 });
+    await mutation;
+
+    expect(coordinator.currentRevision).toBe(5);
+  });
 });
 
 describe("RevisionCoordinator.adoptRevision", () => {
@@ -123,6 +141,16 @@ describe("createCoordinatedStore", () => {
 
     expect(coordinator.currentRevision).toBe(1);
     await store.loadSnapshot();
+    expect(coordinator.currentRevision).toBe(2);
+  });
+
+  it("syncs the coordinator's tracked revision on loadPage too", async () => {
+    const inner = createTestStore();
+    inner.applyExternalPageWrite("page-1", { markdown: "External\n" });
+    const { store, coordinator } = createCoordinatedStore(inner, 1);
+
+    expect(coordinator.currentRevision).toBe(1);
+    await store.loadPage("page-1");
     expect(coordinator.currentRevision).toBe(2);
   });
 

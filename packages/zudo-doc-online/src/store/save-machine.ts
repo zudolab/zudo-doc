@@ -125,11 +125,22 @@ export class PageSaveMachine {
       frontmatter: patch.frontmatter ?? this.content.frontmatter,
       markdown: patch.markdown ?? this.content.markdown,
     };
-    // A save already in flight stays "saving" — its own resolution decides
-    // whether this newer content still needs a follow-up save.
-    if (this.status !== "saving") this.status = "dirty";
     this.error = undefined;
-    this.armDebounce();
+
+    if (this.status === "saving") {
+      // A save already in flight stays "saving" — its own resolution decides
+      // whether this newer content still needs a follow-up save.
+    } else if (this.remoteChanged) {
+      // An unresolved remote change is still flagged: the coordinator has
+      // likely already adopted that event's revision, so an unguarded
+      // autosave here would succeed and silently overwrite it. Route through
+      // conflict instead of auto-arming — only an explicit retry()/discard()
+      // may resume saving.
+      this.status = "conflict";
+    } else {
+      this.status = "dirty";
+      this.armDebounce();
+    }
     this.emit();
   }
 
@@ -155,11 +166,23 @@ export class PageSaveMachine {
   /**
    * Called by the events wiring (`bindPageSaveMachine`) for a remote
    * `page-changed` naming this page. A clean machine (nothing to lose)
-   * refetches silently; a protected one only raises the `remoteChanged` flag.
+   * refetches silently; a protected one raises the `remoteChanged` flag.
+   *
+   * A `dirty` machine additionally moves to `conflict` and disarms its
+   * pending debounce timer: `bindCoordinatorToEvents` adopts this same
+   * event's revision into the coordinator, so an unguarded autosave that
+   * fires afterward would be accepted by the server (its expectedRevision
+   * now matches) and silently overwrite the remote edit instead of 409ing.
+   * Routing through `conflict` reuses the existing retry()/discard()
+   * resolution instead of a save nobody asked for.
    */
   handleRemoteChange(): void {
     if (PROTECTED_STATUSES.has(this.status)) {
       this.remoteChanged = true;
+      if (this.status === "dirty") {
+        this.clearTimeoutImpl(this.debounceTimer as ReturnType<typeof setTimeout>);
+        this.status = "conflict";
+      }
       this.emit();
       return;
     }
@@ -209,7 +232,17 @@ export class PageSaveMachine {
       this.error = undefined;
 
       if (draftEquals(this.content, dispatched)) {
+        // A successful commit at the coordinator's live revision is proof
+        // this page's content is now the definitive server state — any
+        // remote change this machine had been flagging is superseded.
+        this.remoteChanged = false;
         this.status = "saved";
+        this.emit();
+      } else if (this.remoteChanged) {
+        // More local edits landed during the flight, AND a remote change was
+        // flagged too — require an explicit retry()/discard() rather than
+        // silently resuming autosave over content that may itself be stale.
+        this.status = "conflict";
         this.emit();
       } else {
         // More edits landed while this save was in flight — still dirty.
@@ -241,6 +274,11 @@ export class PageSaveMachine {
   private async refetchFromServer(): Promise<void> {
     try {
       const payload = await this.store.loadPage(this.pageId);
+      // Concurrent refetches (a conflict-triggered one racing a reconnect- or
+      // remote-change-triggered one) can resolve out of order over the
+      // network; drop a response that is no longer the freshest state this
+      // machine has already adopted rather than regressing onto it.
+      if (payload.revision < this.revision) return;
       this.applyLoad(payload);
     } catch (error) {
       this.error =

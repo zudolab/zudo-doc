@@ -55,8 +55,8 @@ describe("own-origin suppression", () => {
 });
 
 describe("dirty guard", () => {
-  it("a remote page-changed while dirty sets remoteChanged and leaves content untouched", async () => {
-    const { inner, store, events } = setup();
+  it("a remote page-changed while dirty enters conflict, disarming autosave, and leaves content untouched", async () => {
+    const { inner, store, coordinator, events } = setup();
     const page1 = await store.loadPage("page-1");
     const machine = new PageSaveMachine({ pageId: "page-1", store, initial: page1 });
     bindPageSaveMachine(machine, events);
@@ -71,10 +71,20 @@ describe("dirty guard", () => {
       origin: "tab-b",
     });
 
+    // The coordinator adopted this same event's revision — proving why an
+    // unguarded autosave here would have been accepted by the server and
+    // silently overwritten the remote edit.
+    expect(coordinator.currentRevision).toBe(inner.getRevision());
+
     const snapshot = machine.getSnapshot();
-    expect(snapshot.status).toBe("dirty");
+    expect(snapshot.status).toBe("conflict");
     expect(snapshot.remoteChanged).toBe(true);
     expect(snapshot.content.markdown).toBe("My unsaved draft\n");
+
+    // The autosave debounce armed by edit() must not fire and clobber the
+    // remote edit; only an explicit retry()/discard() may act now.
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(await store.loadPage("page-1")).toMatchObject({ markdown: "Someone else's edit\n" });
   });
 
   it("a remote page-changed while clean silently refetches the page", async () => {

@@ -352,8 +352,9 @@ describe("PageSaveMachine — remote-change dirty guard", () => {
     expect(machine.getSnapshot().status).toBe("idle");
   });
 
-  it("flags remoteChanged without touching content when dirty", () => {
-    const store = makeStore();
+  it("moves to conflict (not dirty) and disarms the pending autosave when dirty", async () => {
+    const savePage = vi.fn();
+    const store = makeStore({ savePage });
     const machine = new PageSaveMachine({ pageId: "page-1", store, initial: initialPayload });
     machine.edit({ markdown: "Mine\n" });
 
@@ -362,8 +363,16 @@ describe("PageSaveMachine — remote-change dirty guard", () => {
     const snapshot = machine.getSnapshot();
     expect(snapshot.remoteChanged).toBe(true);
     expect(snapshot.content.markdown).toBe("Mine\n");
-    expect(snapshot.status).toBe("dirty");
+    // Not "dirty": the coordinator has likely already adopted this event's
+    // revision, so a debounce-fired autosave would succeed and silently
+    // overwrite the remote edit instead of 409ing. Only an explicit
+    // retry()/discard() may resume saving.
+    expect(snapshot.status).toBe("conflict");
     expect(store.loadPage).not.toHaveBeenCalled();
+
+    // The pending debounce from edit() must not fire on its own.
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(savePage).not.toHaveBeenCalled();
   });
 
   it("flags remoteChanged without touching content while saving", async () => {
@@ -409,6 +418,55 @@ describe("PageSaveMachine — remote-change dirty guard", () => {
 
     expect(machine.getSnapshot().remoteChanged).toBe(true);
     expect(machine.getSnapshot().content.markdown).toBe("Mine\n");
+  });
+
+  it("ignores a stale out-of-order refetch response", async () => {
+    // Two concurrent clean-path refetches (a targeted remote change
+    // immediately followed by a reconnect signal) whose network responses
+    // resolve out of order — the later request's fresher content must win
+    // even though its response arrives first.
+    let resolveFirst!: (value: PagePayload) => void;
+    const firstPending = new Promise<PagePayload>((resolve) => {
+      resolveFirst = resolve;
+    });
+    const loadPage = vi
+      .fn()
+      .mockImplementationOnce(() => firstPending)
+      .mockResolvedValueOnce({ ...initialPayload, revision: 3, markdown: "Second (fresher)\n" });
+    const store = makeStore({ loadPage });
+    const machine = new PageSaveMachine({ pageId: "page-1", store, initial: initialPayload });
+
+    machine.handleRemoteChange(); // refetch #1 — slow, still pending
+    machine.handleReconnectRefetch(); // refetch #2 — resolves immediately
+    await vi.advanceTimersByTimeAsync(0);
+    expect(machine.getSnapshot().content.markdown).toBe("Second (fresher)\n");
+
+    resolveFirst({ ...initialPayload, revision: 2, markdown: "First (stale, arrives late)\n" });
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(machine.getSnapshot().content.markdown).toBe("Second (fresher)\n");
+  });
+});
+
+describe("PageSaveMachine — remoteChanged clears on a successful save", () => {
+  it("clears remoteChanged once an explicit retry from conflict succeeds", async () => {
+    const savePage = vi.fn().mockResolvedValueOnce(savedResult("Edited\n", 2));
+    const store = makeStore({ savePage });
+    // A long debounce so the fix under test (disarming on remote change) is
+    // what prevents a save, not an incidentally-elapsed timer.
+    const machine = new PageSaveMachine({ pageId: "page-1", store, initial: initialPayload, debounceMs: 100_000 });
+
+    machine.edit({ markdown: "Edited\n" });
+    machine.handleRemoteChange(); // dirty -> conflict, remoteChanged set, debounce disarmed
+    expect(machine.getSnapshot().status).toBe("conflict");
+    expect(machine.getSnapshot().remoteChanged).toBe(true);
+
+    machine.retry();
+    await vi.advanceTimersByTimeAsync(0);
+
+    const snapshot = machine.getSnapshot();
+    expect(snapshot.status).toBe("saved");
+    expect(snapshot.remoteChanged).toBe(false);
   });
 });
 
