@@ -19,6 +19,7 @@ export default defineConfig({
     include: [
       "src/**/__tests__/**/*.test.{ts,tsx}",
       "server/**/__tests__/**/*.test.ts",
+      "mcp/**/__tests__/**/*.test.ts",
     ],
     exclude: ["**/node_modules/**"],
     // Default environment is node (plain `*.test.ts` specs, e.g. the wasm
