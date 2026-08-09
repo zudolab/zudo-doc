@@ -4,6 +4,50 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>zudo-doc online</title>
+    <script>
+      // FOUC-free theme bootstrap — runs before the bundle and before first
+      // paint. Resolution: stored choice > prefers-color-scheme > "light".
+      // Mirrors @takazudo/zudo-doc's own bootstrap mechanism (see
+      // packages/zudo-doc/src/theme/color-scheme-provider.tsx) under this
+      // app's OWN storage key (color-scheme-sync.ts uses the same key, so
+      // a runtime toggle and this bootstrap always agree on where the
+      // preference lives).
+      (function () {
+        var STORAGE_KEY = "zudo-doc-online-theme";
+        function getSystemMode() {
+          return window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light";
+        }
+        function applyTheme(mode) {
+          document.documentElement.setAttribute("data-theme", mode);
+          document.documentElement.style.colorScheme = mode;
+        }
+        function resolveMode(stored) {
+          if (stored === "light" || stored === "dark") return stored;
+          return getSystemMode();
+        }
+        var stored = null;
+        try {
+          stored = localStorage.getItem(STORAGE_KEY);
+        } catch (e) {}
+        applyTheme(resolveMode(stored));
+        // Re-apply on system preference change, but ONLY when the user has
+        // no stored choice — an explicit choice always wins.
+        window.matchMedia("(prefers-color-scheme: dark)").addEventListener(
+          "change",
+          function () {
+            var current = null;
+            try {
+              current = localStorage.getItem(STORAGE_KEY);
+            } catch (e) {}
+            if (current !== "light" && current !== "dark") {
+              applyTheme(getSystemMode());
+            }
+          },
+        );
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
