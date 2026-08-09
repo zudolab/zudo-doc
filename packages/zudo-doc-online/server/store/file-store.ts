@@ -66,6 +66,14 @@ export const PAGE_EXTENSION = ".md";
  */
 const SAFE_PAGE_ID = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
 
+/**
+ * Mutex key guarding slug allocation. Deriving a free slug and claiming it must
+ * be one step, or two same-titled creations both resolve to the same slug and
+ * the second overwrites the first. A slug can never contain ":", so this key
+ * cannot collide with a project's own lock.
+ */
+const CREATE_LOCK = "::create";
+
 const projectFileSchema = z
   .object({
     schemaVersion: z.literal(PROJECT_SCHEMA_VERSION),
@@ -240,40 +248,44 @@ export class FileProjectStore implements ProjectStore {
       throw new StoreError("invalid-request", "A project needs a title.", 400);
     }
 
-    const slug = deriveUniqueSlug(trimmed, await this.projectSlugs());
-    const categoryId = this.mintId("category");
-    const pageId = this.mintId("page");
+    return this.locks.run(CREATE_LOCK, async () => {
+      const slug = deriveUniqueSlug(trimmed, await this.projectSlugs());
+      const categoryId = this.mintId("category");
+      const pageId = this.mintId("page");
 
-    const outline: OutlineDoc = {
-      schemaVersion: 1,
-      projectTitle: trimmed,
-      categories: [
-        {
-          id: categoryId,
-          slug: "getting-started",
-          title: "Getting started",
-          pages: [{ id: pageId, slug: "index" }],
-        },
-      ],
-    };
+      const outline: OutlineDoc = {
+        schemaVersion: 1,
+        projectTitle: trimmed,
+        categories: [
+          {
+            id: categoryId,
+            slug: "getting-started",
+            title: "Getting started",
+            pages: [{ id: pageId, slug: "index" }],
+          },
+        ],
+      };
 
-    return this.locks.run(slug, async () => {
-      const dir = this.projectDir(slug);
-      await mkdir(path.join(dir, PAGES_DIR), { recursive: true });
+      // The project's own lock as well: a concurrent read of this slug would
+      // otherwise run recovery and clear the staging directory mid-commit.
+      return this.locks.run(slug, async () => {
+        const dir = this.projectDir(slug);
+        await mkdir(path.join(dir, PAGES_DIR), { recursive: true });
 
-      const tx = new Transaction(dir, 0, 1);
-      tx.write(OUTLINE_FILE, toJson(outline));
-      tx.write(
-        pageRelPath(pageId),
-        serializePageFile(
-          { title: "Introduction" },
-          "Write the first page of this documentation base here.\n",
-        ),
-      );
-      tx.write(PROJECT_FILE, toJson(projectFileFor(trimmed, 1)));
-      await tx.commit();
+        const tx = new Transaction(dir, 0, 1);
+        tx.write(OUTLINE_FILE, toJson(outline));
+        tx.write(
+          pageRelPath(pageId),
+          serializePageFile(
+            { title: "Introduction" },
+            "Write the first page of this documentation base here.\n",
+          ),
+        );
+        tx.write(PROJECT_FILE, toJson(projectFileFor(trimmed, 1)));
+        await tx.commit();
 
-      return this.compose(slug, { schemaVersion: 1, title: trimmed, revision: 1 }, outline);
+        return this.compose(slug, { schemaVersion: 1, title: trimmed, revision: 1 }, outline);
+      });
     });
   }
 
@@ -361,6 +373,23 @@ export class FileProjectStore implements ProjectStore {
         input.frontmatter ?? stored?.frontmatter ?? { title: placement.slug };
       const markdown = input.markdown ?? stored?.markdown ?? "";
 
+      // Both fields omitted means "leave everything alone". Falling through to
+      // the byte comparison would rewrite a hand-formatted file into canonical
+      // form and burn a revision for content the caller never sent.
+      if (input.frontmatter === undefined && input.markdown === undefined) {
+        return {
+          page: {
+            id: pageId,
+            slug: placement.slug,
+            categoryId: placement.categoryId,
+            revision: project.revision,
+            frontmatter,
+            markdown,
+          },
+          changed: false,
+        };
+      }
+
       const parsedFrontmatter = pageFrontmatterSchema.safeParse(frontmatter);
       if (!parsedFrontmatter.success) {
         throw new StoreError(
@@ -416,26 +445,27 @@ export class FileProjectStore implements ProjectStore {
    * created, or null when the store was already populated.
    */
   async seedIfEmpty(): Promise<string | null> {
-    const existing = await this.listProjects();
-    if (existing.length > 0) return null;
+    return this.locks.run(CREATE_LOCK, async () => {
+      if ((await this.projectSlugs()).length > 0) return null;
 
-    const slug = deriveUniqueSlug(AURORA_PROJECT_TITLE, []);
-    return this.locks.run(slug, async () => {
-      const dir = this.projectDir(slug);
-      await mkdir(path.join(dir, PAGES_DIR), { recursive: true });
+      const slug = deriveUniqueSlug(AURORA_PROJECT_TITLE, []);
+      return this.locks.run(slug, async () => {
+        const dir = this.projectDir(slug);
+        await mkdir(path.join(dir, PAGES_DIR), { recursive: true });
 
-      const tx = new Transaction(dir, 0, 1);
-      tx.write(OUTLINE_FILE, toJson(auroraDocsOutline));
-      for (const page of auroraDocsPages) {
-        tx.write(
-          pageRelPath(page.id),
-          serializePageFile(frontmatterFromMeta(page.meta), page.markdown),
-        );
-      }
-      tx.write(PROJECT_FILE, toJson(projectFileFor(AURORA_PROJECT_TITLE, 1)));
-      await tx.commit();
+        const tx = new Transaction(dir, 0, 1);
+        tx.write(OUTLINE_FILE, toJson(auroraDocsOutline));
+        for (const page of auroraDocsPages) {
+          tx.write(
+            pageRelPath(page.id),
+            serializePageFile(frontmatterFromMeta(page.meta), page.markdown),
+          );
+        }
+        tx.write(PROJECT_FILE, toJson(projectFileFor(AURORA_PROJECT_TITLE, 1)));
+        await tx.commit();
 
-      return slug;
+        return slug;
+      });
     });
   }
 
@@ -809,8 +839,12 @@ function assertFileSafeCommand(command: OutlineCommand): void {
       return;
     }
     for (const category of doc.categories) {
-      for (const page of category?.pages ?? []) {
-        assertPageId(page?.id);
+      // Anything that is not a page id in the expected shape is left entirely
+      // to `validateOutlineDoc`, which explains it better than a filename rule
+      // could — and which is why this loop must not throw on the way there.
+      if (!Array.isArray(category?.pages)) continue;
+      for (const page of category.pages) {
+        if (typeof page?.id === "string") assertPageId(page.id);
       }
     }
   }

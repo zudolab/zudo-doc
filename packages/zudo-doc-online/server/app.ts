@@ -52,22 +52,33 @@ export function createApp(deps: AppDeps): Hono {
 
   app.use("*", async (c, next) => {
     const origin = c.req.header("Origin");
-    if (origin !== undefined && !LOCAL_ORIGIN.test(origin)) {
-      return c.json(
-        {
-          error: {
-            code: "forbidden-origin",
-            message: `Origin "${origin}" is not allowed; this server serves local clients only.`,
-          },
-        },
-        403,
-      );
-    }
-    // Echoed so a local browser client can read the response at all.
     if (origin !== undefined) {
+      if (!LOCAL_ORIGIN.test(origin)) {
+        return c.json(
+          {
+            error: {
+              code: "forbidden-origin",
+              message: `Origin "${origin}" is not allowed; this server serves local clients only.`,
+            },
+          },
+          403,
+        );
+      }
+      // Echoed so a local browser client can read the response at all.
       c.header("Access-Control-Allow-Origin", origin);
       c.header("Vary", "Origin");
     }
+
+    // The SPA is served from another port, so every JSON POST/PUT it makes is
+    // preceded by a preflight. Without an answer here the browser refuses to
+    // send the mutation at all — the request never reaches a route.
+    if (c.req.method === "OPTIONS") {
+      c.header("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS");
+      c.header("Access-Control-Allow-Headers", "Content-Type");
+      c.header("Access-Control-Max-Age", "600");
+      return c.body(null, 204);
+    }
+
     await next();
   });
 

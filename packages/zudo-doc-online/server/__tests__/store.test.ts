@@ -88,6 +88,21 @@ describe("createProject", () => {
     expect(second.slug).toBe("docs-2");
   });
 
+  it("gives two concurrent same-title creations distinct slugs", async () => {
+    // Slug allocation and the commit that claims it are one step; otherwise
+    // both requests derive "docs" and the second overwrites the first.
+    const created = await Promise.all([
+      store.createProject("Docs"),
+      store.createProject("Docs"),
+    ]);
+
+    expect(new Set(created.map((project) => project.slug)).size).toBe(2);
+    expect((await store.listProjects()).map((project) => project.slug)).toEqual([
+      "docs",
+      "docs-2",
+    ]);
+  });
+
   it("rejects a blank title", async () => {
     await expectStoreError(store.createProject("   "), "invalid-request");
   });
@@ -379,6 +394,20 @@ describe("page reads and writes", () => {
 
     expect(page.frontmatter.title).toBe("Introduction");
     expect(page.markdown).toBe("## Only the body changed\n");
+  });
+
+  it("leaves a hand-formatted file untouched when a write supplies neither field", async () => {
+    // Unquoted YAML the serializer would canonicalize: a write that asked for
+    // nothing must not rewrite it, nor spend a revision doing so.
+    const handWritten = "---\ntitle: Plain scalar\n---\n\nbody\n";
+    await writeFile(projectPath("docs", "pages/page-1.md"), handWritten, "utf8");
+
+    const outcome = await store.writePage("docs", "page-1", { expectedRevision: 1 });
+
+    expect(outcome.changed).toBe(false);
+    expect(outcome.page.revision).toBe(1);
+    expect(outcome.page.frontmatter.title).toBe("Plain scalar");
+    expect(await readFile(projectPath("docs", "pages/page-1.md"), "utf8")).toBe(handWritten);
   });
 
   it("treats a byte-identical write as no change at all", async () => {

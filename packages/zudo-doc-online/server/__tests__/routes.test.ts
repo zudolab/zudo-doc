@@ -196,6 +196,23 @@ describe("POST /api/projects/:project/outline/commands", () => {
     expect((await json<ErrorBody>(unknownCommand)).error.code).toBe("unknown-command");
   });
 
+  it("reports a structurally broken replace-doc as a command error, not a 500", async () => {
+    const response = await postJson("/api/projects/docs/outline/commands", {
+      expectedRevision: 1,
+      command: {
+        type: "replace-doc",
+        doc: {
+          schemaVersion: 1,
+          projectTitle: "Docs",
+          categories: [{ id: "c", slug: "c", title: "C", pages: 1 }],
+        },
+      },
+    });
+
+    expect(response.status).toBe(422);
+    expect((await json<ErrorBody>(response)).error.code).toBe("invalid-doc");
+  });
+
   it("rejects a malformed request envelope", async () => {
     for (const body of [
       { command: { type: "add-category", title: "X" } },
@@ -306,6 +323,34 @@ describe("request guards", () => {
     expect(response.headers.get("Access-Control-Allow-Origin")).toBe(
       "http://localhost:4323",
     );
+  });
+
+  it("answers the preflight a cross-port browser client sends before a write", async () => {
+    const response = await request("/api/projects/docs/pages/page-1", {
+      method: "OPTIONS",
+      headers: {
+        Origin: "http://localhost:4323",
+        "Access-Control-Request-Method": "PUT",
+        "Access-Control-Request-Headers": "content-type",
+      },
+    });
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBe(
+      "http://localhost:4323",
+    );
+    expect(response.headers.get("Access-Control-Allow-Methods")).toContain("PUT");
+    expect(response.headers.get("Access-Control-Allow-Headers")).toContain(
+      "Content-Type",
+    );
+  });
+
+  it("refuses a preflight from a disallowed origin", async () => {
+    const response = await request("/api/projects/docs/pages/page-1", {
+      method: "OPTIONS",
+      headers: { Origin: "https://evil.example", "Access-Control-Request-Method": "PUT" },
+    });
+    expect(response.status).toBe(403);
   });
 
   it("refuses a request from any other origin", async () => {
