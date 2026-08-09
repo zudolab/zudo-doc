@@ -1,0 +1,108 @@
+/* ============================================================================
+ * @layer zfb-hi -- semantic class-mode syntax colors for `renderHtml`'s
+ * `pipeline.codeHighlight: { mode: "class" }` output (epic #3327, #3338).
+ *
+ * `renderHtml` in class mode emits `hi-*` role classes on `<pre class="hi-root">
+ * <code>` fenced-code output but ships NO stylesheet for them -- the host page
+ * owns color. This block is self-contained (design-system skill + epic
+ * contract 5): it defines all 18 `HighlightRole` classes plus the two
+ * `.hi-root` fg/bg vars and the diff-insert/delete background pair, entirely
+ * on this app's own `--zdo-*` / `--zdo-code-*` tokens (never `--zd-*`, never a
+ * hardcoded hex/oklch literal, per the design-system skill).
+ *
+ * Layered (not unlayered) so a future page-level override always wins
+ * without a specificity fight -- mirrors the shape (not the token source) of
+ * @takazudo/zudo-doc's own `@layer zfb-hi` bridge in packages/zudo-doc/src/
+ * features.css, read for structural reference only; nothing here imports it.
+ * ========================================================================== */
+
+@layer zfb-hi {
+  :root {
+    --zfb-hi-fg: var(--zdo-code-fg);
+    --zfb-hi-bg: var(--zdo-code-bg);
+    --zfb-hi-esc: light-dark(oklch(0.5 0.16 150), oklch(0.72 0.13 150));
+    --zfb-hi-op: var(--zdo-code-fg);
+    --zfb-hi-com: var(--zdo-muted);
+    --zfb-hi-str: light-dark(oklch(0.5 0.16 150), oklch(0.72 0.13 150));
+    --zfb-hi-num: light-dark(oklch(0.62 0.15 55), oklch(0.76 0.13 65));
+    --zfb-hi-const: light-dark(oklch(0.62 0.15 55), oklch(0.76 0.13 65));
+    --zfb-hi-kw: var(--zdo-accent);
+    --zfb-hi-fn: light-dark(oklch(0.55 0.19 25), oklch(0.72 0.15 25));
+    --zfb-hi-ty: light-dark(oklch(0.55 0.11 220), oklch(0.75 0.1 220));
+    --zfb-hi-ns: light-dark(oklch(0.55 0.11 220), oklch(0.75 0.1 220));
+    --zfb-hi-prop: var(--zdo-fg);
+    --zfb-hi-var: var(--zdo-fg);
+    --zfb-hi-tag: var(--zdo-accent);
+    --zfb-hi-attr: light-dark(oklch(0.62 0.15 55), oklch(0.76 0.13 65));
+    --zfb-hi-punct: var(--zdo-code-fg);
+    --zfb-hi-ins: var(--zdo-success);
+    --zfb-hi-ins-bg: color-mix(in oklch, var(--zdo-success) 15%, var(--zdo-code-bg));
+    --zfb-hi-del: var(--zdo-danger);
+    --zfb-hi-del-bg: color-mix(in oklch, var(--zdo-danger) 15%, var(--zdo-code-bg));
+    --zfb-hi-hd: var(--zdo-accent);
+  }
+
+  .hi-root {
+    color: var(--zfb-hi-fg);
+    background-color: var(--zfb-hi-bg);
+  }
+
+  .hi-esc {
+    color: var(--zfb-hi-esc);
+  }
+  .hi-op {
+    color: var(--zfb-hi-op);
+  }
+  .hi-com {
+    color: var(--zfb-hi-com);
+    font-style: italic;
+  }
+  .hi-str {
+    color: var(--zfb-hi-str);
+  }
+  .hi-num {
+    color: var(--zfb-hi-num);
+  }
+  .hi-const {
+    color: var(--zfb-hi-const);
+  }
+  .hi-kw {
+    color: var(--zfb-hi-kw);
+  }
+  .hi-fn {
+    color: var(--zfb-hi-fn);
+  }
+  .hi-ty {
+    color: var(--zfb-hi-ty);
+  }
+  .hi-ns {
+    color: var(--zfb-hi-ns);
+  }
+  .hi-prop {
+    color: var(--zfb-hi-prop);
+  }
+  .hi-var {
+    color: var(--zfb-hi-var);
+  }
+  .hi-tag {
+    color: var(--zfb-hi-tag);
+  }
+  .hi-attr {
+    color: var(--zfb-hi-attr);
+  }
+  .hi-punct {
+    color: var(--zfb-hi-punct);
+  }
+  .hi-ins {
+    color: var(--zfb-hi-ins);
+    background-color: var(--zfb-hi-ins-bg);
+  }
+  .hi-del {
+    color: var(--zfb-hi-del);
+    background-color: var(--zfb-hi-del-bg);
+  }
+  .hi-hd {
+    color: var(--zfb-hi-hd);
+    font-weight: var(--font-weight-semibold);
+  }
+}

@@ -1,0 +1,341 @@
+/* ============================================================================
+ * .zdo-prose -- typography for `renderHtml` output (epic #3327, #3338).
+ *
+ * Self-contained by design (design-system skill + epic contract 5): does NOT
+ * `@import "@takazudo/zudo-doc/content.css"`. That file deliberately styles
+ * only what THAT framework's own component map leaves unstyled -- plain
+ * `renderHtml` output has no component map at all, so every element the
+ * wasm can emit for this pane's fixed pipeline (render-runtime.ts's
+ * PREVIEW_PIPELINE) needs a rule here: h1-h4, p, a, ul/ol (+ task-list
+ * checkboxes), table, blockquote, inline code, pre (colors are syntax.css's
+ * job), img, hr, del (gfm strikethrough), and the `.zdo-admonition` markup
+ * render-runtime.ts's postProcessAdmonitions() emits for the 7 directive
+ * kinds. Every color/spacing/type value below goes through this app's own
+ * `--zdo-*` / Tailwind `@theme` tokens (never `--zd-*`) per the design-system
+ * skill -- see `.claude/skills/l-design-system-zudo-doc-generator/SKILL.md`.
+ * ========================================================================== */
+
+.zdo-prose {
+  font-size: var(--text-body);
+  line-height: 1.7;
+  color: var(--zdo-fg-mild);
+  overflow-wrap: anywhere;
+}
+
+.zdo-prose > :first-child {
+  margin-top: 0;
+}
+.zdo-prose > :last-child {
+  margin-bottom: 0;
+}
+
+/* Top-level flow rhythm -- only direct children, so nested spacing (list
+   items, admonition bodies) is governed by its own rule below instead. */
+.zdo-prose > * + * {
+  margin-top: var(--spacing-vsp-md);
+}
+
+/* ---- Headings ---- */
+
+.zdo-prose h1 {
+  font-size: var(--text-heading);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+  color: var(--zdo-fg);
+}
+
+.zdo-prose h2 {
+  font-size: var(--text-title);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  color: var(--zdo-fg);
+  margin-top: var(--spacing-vsp-xl);
+}
+
+.zdo-prose h3 {
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-semibold);
+  color: var(--zdo-fg);
+  margin-top: var(--spacing-vsp-lg);
+}
+
+.zdo-prose h4 {
+  font-size: var(--text-small);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--zdo-fg-mild);
+  margin-top: var(--spacing-vsp-lg);
+}
+
+/* `headingIds: { strategy: "hierarchical" }` appends a hash-link anchor to
+   h2+ (the spike recorded that the top-level h1 gets no id/anchor). Hidden
+   until the heading is hovered/focused, matching typical doc-site idiom. */
+.zdo-prose :is(h2, h3, h4) .hash-link {
+  margin-left: var(--spacing-hsp-sm);
+  text-decoration: none;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.zdo-prose :is(h2, h3, h4) .hash-link::after {
+  content: "#";
+  color: var(--zdo-accent);
+}
+
+.zdo-prose :is(h2, h3, h4):hover .hash-link,
+.zdo-prose :is(h2, h3, h4) .hash-link:focus-visible {
+  opacity: 1;
+}
+
+/* ---- Paragraphs, links, emphasis ---- */
+
+.zdo-prose a {
+  color: var(--zdo-accent);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklch, var(--zdo-accent) 40%, transparent);
+  text-underline-offset: 0.15em;
+}
+
+.zdo-prose a:hover {
+  color: var(--zdo-accent-hover);
+}
+
+.zdo-prose strong {
+  color: var(--zdo-fg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.zdo-prose del {
+  color: var(--zdo-muted);
+}
+
+/* ---- Lists ---- */
+
+.zdo-prose ul,
+.zdo-prose ol {
+  padding-left: var(--spacing-hsp-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-vsp-xs);
+}
+
+.zdo-prose li::marker {
+  color: var(--zdo-muted);
+}
+
+.zdo-prose li > ul,
+.zdo-prose li > ol {
+  margin-top: var(--spacing-vsp-xs);
+}
+
+/* GFM task-list items render a leading checkbox input inside the `<li><p>`. */
+.zdo-prose li input[type="checkbox"] {
+  margin-right: var(--spacing-hsp-xs);
+  accent-color: var(--zdo-accent);
+}
+
+/* ---- Blockquotes ---- */
+
+.zdo-prose blockquote {
+  border-left: 3px solid var(--zdo-border-strong);
+  padding-left: var(--spacing-hsp-lg);
+  color: var(--zdo-fg-mild);
+  font-style: italic;
+}
+
+/* ---- Inline code + fenced code blocks ---- */
+
+.zdo-prose code:not(pre code) {
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  font-weight: var(--font-weight-medium);
+  background-color: var(--zdo-code-bg);
+  color: var(--zdo-code-fg);
+  border-radius: var(--radius-sm);
+  padding: 0.0625rem var(--spacing-hsp-xs);
+}
+
+.zdo-prose pre {
+  margin: 0;
+  border: 1px solid var(--zdo-border);
+  border-radius: var(--radius-md);
+  background-color: var(--zdo-code-bg);
+  padding: var(--spacing-vsp-sm) var(--spacing-hsp-lg);
+  overflow-x: auto;
+}
+
+.zdo-prose pre code {
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  line-height: 1.65;
+  background: transparent;
+  padding: 0;
+}
+
+/* ---- Tables ---- */
+
+.zdo-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-small);
+}
+
+.zdo-prose th,
+.zdo-prose td {
+  padding: var(--spacing-vsp-xs) var(--spacing-hsp-md);
+  border-bottom: 1px solid var(--zdo-border);
+  text-align: left;
+  overflow-wrap: break-word;
+}
+
+.zdo-prose th {
+  font-weight: var(--font-weight-semibold);
+  color: var(--zdo-fg);
+  border-bottom: 2px solid var(--zdo-border-strong);
+}
+
+/* ---- Misc ---- */
+
+.zdo-prose hr {
+  border: none;
+  border-top: 1px solid var(--zdo-border);
+  margin: var(--spacing-vsp-xl) 0;
+}
+
+.zdo-prose img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+}
+
+/* ============================================================================
+ * Admonitions -- postProcessAdmonitions() output (render-runtime.ts)
+ *
+ *   <div class="zdo-admonition zdo-admonition-<kind>">
+ *     <p class="zdo-admonition-title">Label</p>
+ *     <div class="zdo-admonition-body">...</div>
+ *   </div>
+ *
+ * `details` uses <details class="zdo-admonition zdo-admonition-details">
+ * with a <summary class="zdo-admonition-title"> instead of the <p>, so it
+ * stays natively collapsible (native marker triangle kept, not suppressed).
+ *
+ * Color/icon-per-kind mapping intentionally mirrors
+ * @takazudo/zudo-doc/content.css's own admonition convention (note→accent,
+ * tip→success, info→info, warning→warning, danger→danger, caution→danger
+ * with a distinct icon) -- read there for inspiration only; nothing here
+ * imports that file (self-contained per the design-system skill).
+ * ========================================================================== */
+
+.zdo-admonition {
+  border: 1px solid var(--zdo-border);
+  border-left-width: 3px;
+  border-left-color: var(--zdo-muted);
+  border-radius: var(--radius-md);
+  background-color: color-mix(in oklch, var(--zdo-muted) 8%, transparent);
+  padding: var(--spacing-vsp-sm) var(--spacing-hsp-lg);
+}
+
+.zdo-admonition-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-hsp-2xs);
+  font-size: var(--text-small);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--zdo-fg-mild);
+}
+
+.zdo-admonition-title::before {
+  flex: none;
+}
+
+.zdo-admonition-body {
+  margin-top: var(--spacing-vsp-2xs);
+  font-size: var(--text-small);
+  color: var(--zdo-fg-mild);
+}
+
+.zdo-admonition-note {
+  border-left-color: var(--zdo-accent);
+  background-color: color-mix(in oklch, var(--zdo-accent) 8%, transparent);
+}
+.zdo-admonition-note .zdo-admonition-title {
+  color: var(--zdo-accent);
+}
+.zdo-admonition-note .zdo-admonition-title::before {
+  content: "📝";
+}
+
+.zdo-admonition-tip {
+  border-left-color: var(--zdo-success);
+  background-color: color-mix(in oklch, var(--zdo-success) 8%, transparent);
+}
+.zdo-admonition-tip .zdo-admonition-title {
+  color: var(--zdo-success);
+}
+.zdo-admonition-tip .zdo-admonition-title::before {
+  content: "💡";
+}
+
+.zdo-admonition-info {
+  border-left-color: var(--zdo-info);
+  background-color: color-mix(in oklch, var(--zdo-info) 8%, transparent);
+}
+.zdo-admonition-info .zdo-admonition-title {
+  color: var(--zdo-info);
+}
+.zdo-admonition-info .zdo-admonition-title::before {
+  content: "ℹ️";
+}
+
+.zdo-admonition-warning {
+  border-left-color: var(--zdo-warning);
+  background-color: color-mix(in oklch, var(--zdo-warning) 10%, transparent);
+}
+.zdo-admonition-warning .zdo-admonition-title {
+  color: var(--zdo-warning);
+}
+.zdo-admonition-warning .zdo-admonition-title::before {
+  content: "⚠️";
+}
+
+.zdo-admonition-danger {
+  border-left-color: var(--zdo-danger);
+  background-color: color-mix(in oklch, var(--zdo-danger) 10%, transparent);
+}
+.zdo-admonition-danger .zdo-admonition-title {
+  color: var(--zdo-danger);
+}
+.zdo-admonition-danger .zdo-admonition-title::before {
+  content: "🚨";
+}
+
+.zdo-admonition-caution {
+  border-left-color: var(--zdo-danger);
+  background-color: color-mix(in oklch, var(--zdo-danger) 10%, transparent);
+}
+.zdo-admonition-caution .zdo-admonition-title {
+  color: var(--zdo-danger);
+}
+.zdo-admonition-caution .zdo-admonition-title::before {
+  content: "⛔";
+}
+
+.zdo-admonition-details > summary.zdo-admonition-title {
+  cursor: pointer;
+}
+.zdo-admonition-details[open] > summary.zdo-admonition-title {
+  margin-bottom: var(--spacing-vsp-2xs);
+}
+
+.zdo-admonition-body > :first-child {
+  margin-top: 0;
+}
+.zdo-admonition-body > :last-child {
+  margin-bottom: 0;
+}
