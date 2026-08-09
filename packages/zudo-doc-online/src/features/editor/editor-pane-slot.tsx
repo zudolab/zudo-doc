@@ -1,36 +1,74 @@
 /**
- * SLOT FILE — the CodeMirror sub-issue (#3336) replaces this file and nothing
- * else. Treat `EditorPaneSlotProps` as the contract between the chrome and
- * whatever renders the buffer.
+ * The editor buffer: a CodeMirror 6 view mounted into the slot the workspace
+ * chrome reserves for it.
  *
- * What the chrome guarantees to whatever lives here:
+ * This file is the mount seam — `EditorPaneSlotProps` is the whole contract
+ * between the chrome and the editor, and the chrome guarantees:
  *
- * - The host is a `position: absolute; inset: 0` box inside a `min-height: 0` flex
- *   chain (see `split.tsx`). An embedded editor may therefore use `height:
- *   100%` safely — the chain is intact, so it resolves against a real pixel
- *   height instead of collapsing to 0.
+ * - The host is a `position: absolute; inset: 0` box inside an unbroken
+ *   `min-height: 0` flex chain (see `split.tsx`), so `height: 100%` resolves
+ *   to real pixels rather than collapsing to zero.
  * - `value` is the page BODY only. Frontmatter lives in the metadata row and
  *   never appears in this buffer (epic #3327 contract 1).
- * - `onChange` is called with the whole next document. The caller feeds it
- *   straight to `PageSaveMachine.edit({ markdown })`, whose ~500ms trailing
- *   debounce owns autosave — do not debounce again here.
- * - `onStatusChange` is optional and drives the status bar. `mode` is the
- *   reserved slot for the vim mode indicator: the placeholder below never
- *   reports one, and the status bar renders nothing rather than inventing a
- *   `-- NORMAL --` this editor cannot honour.
+ * - `onChange` receives the whole next document, undebounced —
+ *   `PageSaveMachine`'s ~500ms trailing debounce owns autosave, and a second
+ *   debounce here would only make "Edited" lie about when it started.
  *
- * The placeholder itself is a plain `<textarea>` wired to exactly that
- * contract, so autosave, the dirty dot, the save chip and the conflict UX are
- * all provably working end to end before CodeMirror arrives.
+ * ## Why so much of this lives in refs
+ *
+ * A CodeMirror pane driven as a controlled component — document in
+ * `useState`, written back through the props on every keystroke — thrashes.
+ * Each keystroke re-renders the host, the sync effect writes the document
+ * back into the view, and the view re-measures against a document it already
+ * had; the visible symptoms are a caret that jumps and a scroll position that
+ * will not stay put. So the document lives in `docRef`, and the only thing
+ * that ever writes into the view is a change the view did NOT originate.
+ * `docRef` is what tells the two apart: when `value` comes back equal to what
+ * the last update produced, it is our own edit echoing through the save
+ * machine and is ignored.
+ *
+ * Three narrower hazards have their own guards:
+ *
+ * - **Page switches replace the state, not the document.** `view.setState`
+ *   gives the new page a fresh undo history — a `dispatch` would leave the
+ *   previous page's text one ⌘Z away inside the new page's buffer — and the
+ *   scroll goes back to the top, because keeping page A's scroll offset on
+ *   page B is meaningless.
+ * - **Programmatic replacements are annotated.** Adopting the server's text
+ *   after a conflict discard is not a user edit; without the annotation the
+ *   update listener would hand it straight back to the save machine and mark
+ *   the freshly-reconciled page dirty again.
+ * - **A full-document replacement of the SAME page restores `scrollTop`.**
+ *   CodeMirror has no reason to preserve it across a change that big, and a
+ *   reader halfway down a page they did not edit should not be thrown back to
+ *   the top.
  */
 
-import { useEffect, useRef, useState } from "preact/hooks";
-import { useCompositionGuard } from "./ime";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { Annotation, EditorState } from "@codemirror/state";
+import { EditorView, type ViewUpdate } from "@codemirror/view";
+import {
+  buildEditorExtensions,
+  createEditorCompartments,
+  currentVimMode,
+  observeVimMode,
+  readOnlyExtension,
+  readVimEnabled,
+  registerWriteExCommand,
+  vimExtension,
+  vimModeLabel,
+  writeVimEnabled,
+} from "./editor-extensions";
+import type { KeyValueStorage } from "./persistence";
+import {
+  countWords,
+  editorContentTicker,
+  EditorContentTicker,
+  PageSwitchCounter,
+} from "./use-editor-content";
 
-interface PageDraft {
-  pageId: string;
-  markdown: string;
-}
+/** Marks a transaction this component dispatched, so it is not echoed back. */
+const ProgrammaticChange = Annotation.define<boolean>();
 
 export interface EditorPaneStatus {
   /** 1-based caret line. */
@@ -38,8 +76,14 @@ export interface EditorPaneStatus {
   /** 1-based caret column. */
   column: number;
   words: number;
-  /** Editor mode label (e.g. a vim mode). Absent when the editor has none. */
+  /** Vim mode label (`-- NORMAL --`). Absent when vim mode is off. */
   mode?: string;
+  /**
+   * Turns vim mode on or off. Present whenever the editor CAN do vim, which
+   * is what lets the status bar keep offering the toggle after vim has been
+   * switched off and `mode` has gone away.
+   */
+  onToggleVim?: () => void;
 }
 
 export interface EditorPaneSlotProps {
@@ -49,6 +93,12 @@ export interface EditorPaneSlotProps {
   onChange: (markdown: string) => void;
   readOnly?: boolean;
   onStatusChange?: (status: EditorPaneStatus) => void;
+  /** `:w` — save the current draft now, bypassing the autosave debounce. */
+  onRequestSave?: () => void;
+  /** Test seam: `null` disables the vim-mode preference persistence. */
+  storage?: KeyValueStorage | null;
+  /** Test seam: the content tick this pane publishes to. */
+  ticker?: EditorContentTicker;
 }
 
 export default function EditorPaneSlot({
@@ -57,78 +107,231 @@ export default function EditorPaneSlot({
   onChange,
   readOnly = false,
   onStatusChange,
+  onRequestSave,
+  storage,
+  ticker = editorContentTicker,
 }: EditorPaneSlotProps) {
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  // Local state exists ONLY for the duration of an IME composition. Preact
-  // rewrites a controlled input's DOM value on any re-render, and during a
-  // composition — when `onChange` is deliberately suppressed, so `value` sits
-  // at the pre-composition text — that rewrite would wipe the candidate the
-  // user is still choosing.
-  //
-  // It is tagged with the page it belongs to, and outside a composition it is
-  // null, so the textarea is otherwise fully controlled by `value`. Both
-  // details matter: a buffer that survived a tab switch would render the
-  // PREVIOUS page's body for one frame, and an input in that frame would feed
-  // it to the newly-selected page's `onChange` — autosaving one page's text
-  // over another.
-  const [composedDraft, setComposedDraft] = useState<PageDraft | null>(null);
-  const buffer = composedDraft?.pageId === pageId ? composedDraft.markdown : value;
+  const hostRef = useRef<HTMLDivElement | null>(null);
+  const viewRef = useRef<EditorView | null>(null);
+  const compartmentsRef = useRef(createEditorCompartments());
+  const switchCounterRef = useRef(new PageSwitchCounter());
 
-  function report(): void {
-    const element = textareaRef.current;
-    if (!element || !onStatusChange) return;
-    onStatusChange(describeCaret(element.value, element.selectionStart ?? 0));
-  }
+  // Latest-props refs: the CodeMirror callbacks outlive any one render, so
+  // they must not close over the props of the render that created them.
+  const onChangeRef = useRef(onChange);
+  const onStatusChangeRef = useRef(onStatusChange);
+  const onRequestSaveRef = useRef(onRequestSave);
+  onChangeRef.current = onChange;
+  onStatusChangeRef.current = onStatusChange;
+  onRequestSaveRef.current = onRequestSave;
 
-  // Autosaving half-composed romaji would write real garbage to the page
-  // file, so the buffer waits for the IME to finish the same way the metadata
-  // fields do. CodeMirror handles this itself, so the replacement of this
-  // file need not carry the guard forward.
-  const isComposing = useCompositionGuard(textareaRef, (markdown) => {
-    setComposedDraft(null);
-    onChange(markdown);
-    report();
-  });
+  /** The document the view is known to hold — see the module comment. */
+  const docRef = useRef(value);
+  /** The page whose body is currently loaded, which lags `pageId` by one effect. */
+  const loadedPageRef = useRef(pageId);
+  const wordsRef = useRef(countWords(value));
+  const vimModeRef = useRef<string | undefined>(undefined);
+  const detachVimRef = useRef<(() => void) | null>(null);
 
-  // Re-report whenever the document or the page changes, so the status bar is
-  // correct on load and after a tab switch — not only after a keystroke.
-  useEffect(report, [value, pageId, onStatusChange]);
+  const [vimEnabled, setVimEnabled] = useState(() => readVimEnabled(storage));
+  const vimEnabledRef = useRef(vimEnabled);
+  vimEnabledRef.current = vimEnabled;
 
-  return (
-    <textarea
-      ref={textareaRef}
-      value={buffer}
-      readOnly={readOnly}
-      spellcheck={false}
-      aria-label="Page markdown"
-      className="size-full resize-none border-0 bg-transparent px-hsp-lg py-vsp-sm font-mono text-small leading-(--zdo-editor-leading) text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:-outline-offset-2"
-      onInput={(event) => {
-        const next = event.currentTarget.value;
-        if (isComposing()) {
-          setComposedDraft({ pageId, markdown: next });
-          return;
-        }
-        setComposedDraft(null);
-        onChange(next);
+  const toggleVim = useCallback(() => {
+    setVimEnabled((enabled) => {
+      const next = !enabled;
+      writeVimEnabled(next, storage);
+      return next;
+    });
+  }, [storage]);
+  const toggleVimRef = useRef(toggleVim);
+  toggleVimRef.current = toggleVim;
+
+  const report = useCallback((): void => {
+    const view = viewRef.current;
+    const notify = onStatusChangeRef.current;
+    if (!view || !notify) return;
+    const head = view.state.selection.main.head;
+    const line = view.state.doc.lineAt(head);
+    notify({
+      line: line.number,
+      column: head - line.from + 1,
+      words: wordsRef.current,
+      ...(vimModeRef.current === undefined ? {} : { mode: vimModeRef.current }),
+      onToggleVim: () => toggleVimRef.current(),
+    });
+  }, []);
+
+  /**
+   * (Re)binds the vim mode listener. Must run after anything that recreates
+   * the vim plugin: the initial mount, a state replacement on page switch,
+   * and the toggle itself.
+   */
+  const syncVimListener = useCallback(
+    (view: EditorView): void => {
+      detachVimRef.current?.();
+      detachVimRef.current = null;
+      if (!vimEnabledRef.current) {
+        vimModeRef.current = undefined;
+        return;
+      }
+      vimModeRef.current = vimModeLabel(currentVimMode(view));
+      detachVimRef.current = observeVimMode(view, (event) => {
+        vimModeRef.current = vimModeLabel(event);
         report();
-      }}
-      onKeyUp={report}
-      onClick={report}
-    />
+      });
+    },
+    [report],
   );
-}
 
-export function describeCaret(text: string, caret: number): EditorPaneStatus {
-  const before = text.slice(0, Math.max(0, Math.min(caret, text.length)));
-  const newlineIndex = before.lastIndexOf("\n");
-  return {
-    line: before.split("\n").length,
-    column: before.length - newlineIndex,
-    words: countWords(text),
-  };
-}
+  const handleUpdate = useCallback(
+    (update: ViewUpdate): void => {
+      if (update.docChanged) {
+        const next = update.state.doc.toString();
+        docRef.current = next;
+        const programmatic = update.transactions.some(
+          (transaction) => transaction.annotation(ProgrammaticChange) === true,
+        );
+        if (!programmatic) onChangeRef.current(next);
+        ticker.publish({
+          pageId: loadedPageRef.current,
+          markdown: next,
+          token: switchCounterRef.current.token,
+        });
+      }
+      if (update.docChanged || update.selectionSet || update.focusChanged) report();
+    },
+    [ticker, report],
+  );
 
-function countWords(text: string): number {
-  const trimmed = text.trim();
-  return trimmed === "" ? 0 : trimmed.split(/\s+/).length;
+  // Mount once. Every later change reaches the view through a transaction,
+  // never through a rebuild — recreating the view would drop the caret, the
+  // scroll offset and the undo history on every prop change.
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+
+    const initialPageId = loadedPageRef.current;
+    const token = switchCounterRef.current.switchTo(initialPageId);
+    const view = new EditorView({
+      state: EditorState.create({
+        doc: docRef.current,
+        extensions: buildEditorExtensions({
+          compartments: compartmentsRef.current,
+          vimEnabled: vimEnabledRef.current,
+          readOnly,
+          onUpdate: handleUpdate,
+        }),
+      }),
+      parent: host,
+    });
+    viewRef.current = view;
+
+    syncVimListener(view);
+    const releaseWrite = registerWriteExCommand(view, () => onRequestSaveRef.current?.());
+    ticker.publishNow({
+      pageId: initialPageId,
+      markdown: docRef.current,
+      token,
+    });
+    report();
+
+    return () => {
+      detachVimRef.current?.();
+      detachVimRef.current = null;
+      releaseWrite();
+      view.destroy();
+      viewRef.current = null;
+      // With no editor mounted there IS no editor content, and a subscriber
+      // left holding the last page's body would render it as though it were
+      // still on screen.
+      ticker.reset();
+    };
+    // Mount-only on purpose: `readOnly` and the callbacks are kept current by
+    // their own effects and refs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Page switch, then external document replacement — in that order, because
+  // a switch also changes `value` and must not be mistaken for one.
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+
+    if (loadedPageRef.current !== pageId) {
+      loadedPageRef.current = pageId;
+      const token = switchCounterRef.current.switchTo(pageId);
+      view.setState(
+        EditorState.create({
+          doc: value,
+          extensions: buildEditorExtensions({
+            compartments: compartmentsRef.current,
+            vimEnabled: vimEnabledRef.current,
+            readOnly,
+            onUpdate: handleUpdate,
+          }),
+        }),
+      );
+      view.scrollDOM.scrollTop = 0;
+      docRef.current = value;
+      wordsRef.current = countWords(value);
+      syncVimListener(view);
+      ticker.publishNow({ pageId, markdown: value, token });
+      report();
+      return;
+    }
+
+    // Fast path for the common case — the save machine handing our own edit
+    // straight back — so a keystroke does not serialise the whole document
+    // just to discover nothing changed. The authoritative check is the next
+    // one; this only skips the `toString()`.
+    if (value === docRef.current) return;
+    const current = view.state.doc.toString();
+    if (value === current) {
+      docRef.current = value;
+      return;
+    }
+
+    const scrollTop = view.scrollDOM.scrollTop;
+    view.dispatch({
+      changes: { from: 0, to: current.length, insert: value },
+      selection: { anchor: Math.min(view.state.selection.main.anchor, value.length) },
+      annotations: ProgrammaticChange.of(true),
+    });
+    view.scrollDOM.scrollTop = scrollTop;
+    docRef.current = value;
+  }, [pageId, value, readOnly, handleUpdate, syncVimListener, report, ticker]);
+
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({
+      effects: compartmentsRef.current.readOnly.reconfigure(readOnlyExtension(readOnly)),
+    });
+  }, [readOnly]);
+
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({
+      effects: compartmentsRef.current.vim.reconfigure(vimExtension(vimEnabled)),
+    });
+    syncVimListener(view);
+    report();
+  }, [vimEnabled, syncVimListener, report]);
+
+  // The word count rides the debounced tick rather than the update listener:
+  // it is an O(document) scan, and nobody needs it to be exact mid-word.
+  useEffect(
+    () =>
+      ticker.subscribe(() => {
+        const tick = ticker.getSnapshot();
+        if (!tick || tick.pageId !== loadedPageRef.current) return;
+        wordsRef.current = countWords(tick.markdown);
+        report();
+      }),
+    [ticker, report],
+  );
+
+  return <div ref={hostRef} className="zdo-cm size-full overflow-hidden" />;
 }

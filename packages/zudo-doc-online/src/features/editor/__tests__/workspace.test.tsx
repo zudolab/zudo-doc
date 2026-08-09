@@ -9,7 +9,9 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { EditorView } from "@codemirror/view";
 import { ProjectEventsClient, type MemoryProjectStore } from "../../../store/index";
+import { editorContentTicker } from "../use-editor-content";
 import { createFakeEventSourceFactory } from "../../../store/__tests__/support";
 import { mountWorkspace, queryByText, requireElement, settle } from "./harness";
 import {
@@ -52,6 +54,31 @@ function typeInto(input: HTMLInputElement | HTMLTextAreaElement, value: string):
   input.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
+/**
+ * The markdown buffer is a CodeMirror view, so these specs drive it through
+ * a transaction rather than an `input` event — `EditorView.findFromDOM` is
+ * the supported way to reach the instance the pane mounted.
+ */
+function editorView(container: HTMLElement): EditorView {
+  const view = EditorView.findFromDOM(requireElement<HTMLElement>(container, ".cm-editor"));
+  if (!view) throw new Error("no CodeMirror view is mounted");
+  return view;
+}
+
+function editorText(container: HTMLElement): string {
+  return editorView(container).state.doc.toString();
+}
+
+function typeIntoEditor(container: HTMLElement, markdown: string): void {
+  const view = editorView(container);
+  view.dispatch({
+    changes: { from: 0, to: view.state.doc.length, insert: markdown },
+    // Leave the caret where typing the text would have left it, so the status
+    // bar's Ln/Col is asserted against something a user could actually see.
+    selection: { anchor: markdown.length },
+  });
+}
+
 beforeEach(() => {
   store = createEditorTestStore();
 });
@@ -59,6 +86,7 @@ beforeEach(() => {
 afterEach(() => {
   mounted?.unmount();
   mounted = undefined;
+  editorContentTicker.reset();
   document.body.innerHTML = "";
 });
 
@@ -75,10 +103,7 @@ describe("deep link and tab strip", () => {
     );
     expect(container.textContent).toContain("installation.mdx");
     expect(container.textContent).toContain("getting-started/installation");
-    expect(
-      requireElement<HTMLTextAreaElement>(container, 'textarea[aria-label="Page markdown"]')
-        .value,
-    ).toContain("## Prerequisites");
+    expect(editorText(container)).toContain("## Prerequisites");
   });
 
   it("renders every category and page in the expanded rail", async () => {
@@ -166,10 +191,7 @@ describe("closing tabs", () => {
       events,
       saveDebounceMs: 100_000,
     });
-    typeInto(
-      requireElement<HTMLTextAreaElement>(container, 'textarea[aria-label="Page markdown"]'),
-      "unresolved draft",
-    );
+    typeIntoEditor(container, "unresolved draft");
     await settle();
     store.applyExternalPageWrite(INSTALLATION_ID, { markdown: "remote" });
     sources.instances[0]?.emitMessage({
@@ -301,24 +323,22 @@ describe("metadata autosave", () => {
 describe("markdown autosave", () => {
   it("saves the editor buffer and reports the caret in the status bar", async () => {
     const { container } = await mount();
-    const textarea = requireElement<HTMLTextAreaElement>(
-      container,
-      'textarea[aria-label="Page markdown"]',
-    );
 
-    typeInto(textarea, "one two three");
+    typeIntoEditor(container, "one two three");
+    // The word count rides the editor's ~100ms content tick; flushing it is
+    // how this spec reads the real value without waiting on wall-clock time.
+    editorContentTicker.flush();
     await settle(5);
 
     expect((await store.loadPage(INSTALLATION_ID)).markdown).toBe("one two three");
     expect(container.textContent).toContain("3 words");
+    expect(container.textContent).toContain("Ln 1, Col 14");
   });
 
   it("keeps each tab's buffer with its own page across a switch", async () => {
     const { container } = await mount();
-    const textarea = () =>
-      requireElement<HTMLTextAreaElement>(container, 'textarea[aria-label="Page markdown"]');
 
-    typeInto(textarea(), "installation body");
+    typeIntoEditor(container, "installation body");
     await settle(5);
 
     queryByText<HTMLElement>(
@@ -329,32 +349,20 @@ describe("markdown autosave", () => {
       ?.closest("button")
       ?.click();
     await settle();
-    typeInto(textarea(), "introduction body");
+    typeIntoEditor(container, "introduction body");
     await settle(5);
 
     expect((await store.loadPage(INSTALLATION_ID)).markdown).toBe("installation body");
     expect((await store.loadPage(INTRODUCTION_ID)).markdown).toBe("introduction body");
   });
 
-  it("never autosaves half-composed text, and saves once the IME finishes", async () => {
-    const { container } = await mount();
-    const textarea = requireElement<HTMLTextAreaElement>(
-      container,
-      'textarea[aria-label="Page markdown"]',
-    );
-    const original = (await store.loadPage(INSTALLATION_ID)).markdown;
-
-    textarea.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true }));
-    typeInto(textarea, "にほn");
-    await settle(5);
-    expect((await store.loadPage(INSTALLATION_ID)).markdown).toBe(original);
-
-    textarea.value = "日本語";
-    textarea.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true }));
-    await settle(5);
-
-    expect((await store.loadPage(INSTALLATION_ID)).markdown).toBe("日本語");
-  });
+  // The buffer's IME guard moved to CodeMirror when the textarea placeholder
+  // was replaced (#3336): CodeMirror tracks composition on its own
+  // contenteditable and holds the transaction back until the candidate is
+  // committed, so there is no `useCompositionGuard` in the pane to test. jsdom
+  // cannot drive a real composition on a contenteditable, so this guarantee is
+  // in the manager's browser-verification list rather than faked here. The
+  // metadata row's own IME guard is still covered in `metadata-row.test.tsx`.
 });
 
 describe("position moves", () => {
@@ -410,14 +418,12 @@ describe("the split", () => {
 
   it("keeps the editor host on an unbroken min-h-[0] chain inside an inset-[0] wrapper", async () => {
     const { container } = await mount();
-    const textarea = requireElement<HTMLTextAreaElement>(
-      container,
-      'textarea[aria-label="Page markdown"]',
-    );
+    const host = requireElement<HTMLElement>(container, ".cm-editor").parentElement;
 
-    // The CodeMirror sub-issue depends on this exact shape; jsdom computes no
-    // layout, so the assertion is structural rather than pixel-based.
-    const wrapper = textarea.parentElement;
+    // CodeMirror resolves its `height: 100%` against this chain; jsdom
+    // computes no layout, so the assertion is structural rather than
+    // pixel-based, and the rendered height is verified in the browser.
+    const wrapper = host?.parentElement;
     expect(wrapper?.className).toContain("absolute inset-[0]");
     expect(wrapper?.parentElement?.className).toContain("min-h-[0]");
 
@@ -449,10 +455,7 @@ describe("conflict handling", () => {
       saveDebounceMs: 100_000,
     });
 
-    typeInto(
-      requireElement<HTMLTextAreaElement>(container, 'textarea[aria-label="Page markdown"]'),
-      "my local draft",
-    );
+    typeIntoEditor(container, "my local draft");
     await settle();
 
     store.applyExternalPageWrite(INSTALLATION_ID, { markdown: "someone else's text" });
@@ -466,19 +469,15 @@ describe("conflict handling", () => {
 
     const banner = requireElement(container, '[role="alert"]');
     expect(banner.textContent).toContain("changed elsewhere");
-    expect(
-      requireElement<HTMLTextAreaElement>(container, 'textarea[aria-label="Page markdown"]')
-        .value,
-    ).toBe("my local draft");
+    expect(editorText(container)).toBe("my local draft");
+    // The chrome puts the buffer in read-only while the conflict is open.
+    expect(editorView(container).state.readOnly).toBe(true);
 
     queryByText<HTMLButtonElement>(banner, "button", "Discard my draft")?.click();
     await settle(4);
 
     expect(container.querySelector('[role="alert"]')).toBeNull();
-    expect(
-      requireElement<HTMLTextAreaElement>(container, 'textarea[aria-label="Page markdown"]')
-        .value,
-    ).toBe("someone else's text");
+    expect(editorText(container)).toBe("someone else's text");
 
     events.close();
   });
