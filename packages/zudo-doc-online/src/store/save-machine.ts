@@ -144,6 +144,23 @@ export class PageSaveMachine {
     this.emit();
   }
 
+  /**
+   * Saves the retained draft NOW, short-circuiting the autosave debounce.
+   * Wired to the editor's `:w` (#3336).
+   *
+   * Deliberately valid from `dirty` only. From `idle`/`saved` there is
+   * nothing to write; from `saving` the in-flight save's own resolution
+   * already decides whether a follow-up is needed. Most importantly, from
+   * `conflict`/`error` it does NOTHING: resolving those is what `retry()` and
+   * `discard()` are for, and a `:w` that silently overwrote a remote edit
+   * would be exactly the auto-retry epic #3327 contract 2 forbids.
+   */
+  flush(): void {
+    if (this.status !== "dirty") return;
+    this.clearTimeoutImpl(this.debounceTimer as ReturnType<typeof setTimeout>);
+    this.dispatchSave();
+  }
+
   /** Re-submits the retained draft. Valid from `error` or `conflict` only. */
   retry(): void {
     if (this.status !== "error" && this.status !== "conflict") return;

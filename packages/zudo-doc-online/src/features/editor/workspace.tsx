@@ -196,10 +196,16 @@ export function EditorWorkspace({
   }, [activeSave?.status, activeMachine]);
 
   // A stale Ln/Col from the previous tab would be a small lie in the status
-  // bar; clearing it is cheaper than teaching the footer to distrust it.
+  // bar; clearing it is cheaper than teaching the footer to distrust it. The
+  // condition is "is a pane actually mounted", not merely "is a page open":
+  // a loading or errored session shows an EmptyPane instead, and the status
+  // it left behind includes the vim toggle — a control the footer would go on
+  // offering with no editor behind it.
+  const editorMounted =
+    activePageId !== null && activeSession?.status === "ready" && Boolean(activeSave);
   useEffect(() => {
-    if (activePageId === null) setEditorStatus(undefined);
-  }, [activePageId]);
+    if (!editorMounted) setEditorStatus(undefined);
+  }, [editorMounted]);
 
   const openPage = useCallback(
     (pageId: string) => {
@@ -403,7 +409,9 @@ export function EditorWorkspace({
                 session={activeSession}
                 onChange={(markdown) => activeMachine?.edit({ markdown })}
                 onStatusChange={setEditorStatus}
+                onRequestSave={() => activeMachine?.flush()}
                 onReload={() => activePageId && registry.reload(activePageId)}
+                storage={storage}
               />
             }
             previewHeader={
@@ -431,14 +439,13 @@ export function EditorWorkspace({
       </div>
 
       <footer className="flex flex-none items-center gap-hsp-md border-t border-border bg-surface px-hsp-md py-vsp-2xs text-caption text-muted">
-        {/* Reserved slot: the CodeMirror sub-issue's vim mode reports through
-            `EditorPaneStatus.mode`. The textarea placeholder has no mode, so
-            nothing is rendered rather than a `-- NORMAL --` it cannot honour. */}
-        {editorStatus?.mode ? (
-          <span className="rounded-sm bg-(--zdo-wash-active) px-hsp-sm font-mono font-semibold text-accent">
-            {editorStatus.mode}
-          </span>
-        ) : null}
+        {/* The editor reports its vim mode through `EditorPaneStatus.mode`,
+            and offers `onToggleVim` whenever it is CAPABLE of vim. The two are
+            separate because `mode` is absent while vim is off — were the chip
+            keyed on `mode` alone, turning vim off would take away the only
+            affordance for turning it back on. An editor with no vim at all
+            provides neither, and the chip disappears entirely. */}
+        <VimChip status={editorStatus} />
         <span className="font-mono">{activePage ? pageFileName(activePage) : "no page"}</span>
         <span className="flex-1" />
         {editorStatus ? (
@@ -457,6 +464,42 @@ export function EditorWorkspace({
   );
 }
 
+/**
+ * The vim mode indicator, and the only control that turns vim on or off.
+ *
+ * It is a button rather than the a3 prototype's static chip because the
+ * editor has no other affordance for the toggle, and a status bar is where a
+ * vim user looks for the mode anyway.
+ */
+function VimChip({ status }: { status: EditorPaneStatus | undefined }) {
+  const toggle = status?.onToggleVim;
+  if (!toggle) {
+    return status?.mode ? (
+      <span className="rounded-sm bg-(--zdo-wash-active) px-hsp-sm font-mono font-semibold text-accent">
+        {status.mode}
+      </span>
+    ) : null;
+  }
+  const enabled = status?.mode !== undefined;
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      aria-pressed={enabled}
+      title={
+        enabled ? "Vim mode is on — click to turn it off" : "Vim mode is off — click to turn it on"
+      }
+      className={`rounded-sm px-hsp-sm font-mono font-semibold focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 ${
+        enabled
+          ? "bg-(--zdo-wash-active) text-accent"
+          : "bg-(--zdo-wash-hover) text-muted hover:text-fg-mild"
+      }`}
+    >
+      {enabled ? status?.mode : "vim off"}
+    </button>
+  );
+}
+
 interface EditorBodyProps {
   pageId: string | null;
   routePageId: string;
@@ -464,7 +507,10 @@ interface EditorBodyProps {
   session: PageSession | undefined;
   onChange: (markdown: string) => void;
   onStatusChange: (status: EditorPaneStatus) => void;
+  onRequestSave: () => void;
   onReload: () => void;
+  /** Forwarded to the pane so its vim preference honours the same override. */
+  storage?: KeyValueStorage | null;
 }
 
 function EditorBody({
@@ -474,7 +520,9 @@ function EditorBody({
   session,
   onChange,
   onStatusChange,
+  onRequestSave,
   onReload,
+  storage,
 }: EditorBodyProps) {
   if (pageId === null) {
     return (
@@ -506,6 +554,8 @@ function EditorBody({
       onChange={onChange}
       readOnly={session.save.status === "conflict"}
       onStatusChange={onStatusChange}
+      onRequestSave={onRequestSave}
+      storage={storage}
     />
   );
 }

@@ -1,9 +1,10 @@
 /**
  * `localStorage` plumbing for the editor workspace chrome.
  *
- * Three pieces of chrome state survive a reload — the open tab set, the rail
- * mode, and the split ratio. None of them is project data: losing any of them
- * costs the user one click, so nothing here ever blocks or fails loudly.
+ * Four pieces of chrome state survive a reload — the open tab set, the rail
+ * mode, the split ratio, and whether the editor is in vim mode. None of them
+ * is project data: losing any of them costs the user one click, so nothing
+ * here ever blocks or fails loudly.
  *
  * Read/write asymmetry mirrors `src/theme/color-scheme-sync.ts` (and, through
  * it, `@takazudo/zudo-doc`'s own convention): reads are wrapped in `try/catch`
@@ -25,6 +26,7 @@ const PREFIX = "zdo-editor-";
 export const OPEN_TABS_STORAGE_KEY = `${PREFIX}tabs`;
 export const RAIL_MODE_STORAGE_KEY = `${PREFIX}rail`;
 export const SPLIT_PERCENT_STORAGE_KEY = `${PREFIX}split`;
+export const VIM_MODE_STORAGE_KEY = `${PREFIX}vim`;
 
 /**
  * `undefined` means "use the ambient `localStorage` if this environment has
