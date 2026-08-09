@@ -82,12 +82,17 @@
 @theme {
   /* Tight-token guardrail: wipe Tailwind's default color palette so only the
    * --zdo-*-backed aliases below exist — enforces "no raw Tailwind color
-   * utilities" (bg-gray-100 etc. resolve to nothing). NEVER reset the bare
-   * --spacing var here — it is the multiplier every numeric spacing utility
-   * computes from; zeroing it collapses them all to 0. This file only
-   * defines the NAMED --spacing-hsp-* and --spacing-vsp-* scale below, so
-   * bare --spacing is simply never touched. */
+   * utilities" (bg-gray-100 etc. resolve to nothing). */
   --color-*: initial;
+
+  /* Approach-B gotcha (field-found by two topics independently): with only
+   * preflight+utilities imported, Tailwind v4 never defines the bare --spacing
+   * multiplier, so EVERY numeric spacing utility — including the load-bearing
+   * zero forms min-h-0 / min-w-0 / inset-0 / p-0 — silently emits NO CSS.
+   * Define it explicitly. Non-zero numerics (p-4, gap-2, …) stay banned by the
+   * repo design-token lint; this only makes the allowlisted zero/structural
+   * forms actually work. NEVER zero or remove this. */
+  --spacing: 0.25rem;
 
   --color-bg: var(--zdo-bg);
   --color-surface: var(--zdo-surface);

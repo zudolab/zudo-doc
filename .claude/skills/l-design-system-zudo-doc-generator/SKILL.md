@@ -175,3 +175,8 @@ The repo-root `design-token-lint` scans `packages/**/*.{tsx,jsx}` (this includes
   only).
 - Do NOT add a raw numeric or default-color-shade Tailwind utility — see
   Token-lint compliance above.
+
+## Field findings (epic #3327 implementation)
+
+- **Bare `--spacing` is now defined explicitly** (`--spacing: 0.25rem` in `tokens.css` `@theme`). Under approach B it is otherwise undefined and every numeric spacing utility — including the zero forms `min-h-0` / `min-w-0` / `inset-0` / `p-0` — silently emits NO CSS. The zero/structural forms are legitimate; non-zero numerics remain banned by the repo token lint. Earlier `min-h-[0px]`-style workarounds in the codebase are equivalent and may be normalized to the bare forms.
+- **IME guards must attach composition listeners imperatively.** Preact drops `onCompositionStart`/`onCompositionEnd` JSX props when the DOM implementation lacks the matching property (jsdom does), leaving the guard dead under test while appearing to work in production. Use `useCompositionGuard` from `src/features/editor/ime.ts` for every IME-guarded input (inline renames, composers) — never the JSX props.
