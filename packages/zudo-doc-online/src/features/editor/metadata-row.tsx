@@ -32,7 +32,7 @@ const FIELD_LABEL_CLASSES =
   "flex-none text-caption font-semibold uppercase tracking-(--zdo-label-tracking) text-muted";
 
 const INPUT_CLASSES =
-  "min-w-[0] rounded-sm border border-border bg-surface px-hsp-sm py-vsp-2xs text-small text-fg hover:border-border-strong focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 aria-[invalid=true]:border-danger";
+  "min-w-[0px] rounded-sm border border-border bg-surface px-hsp-sm py-vsp-2xs text-small text-fg hover:border-border-strong focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 aria-[invalid=true]:border-danger";
 
 export interface MetadataRowProps {
   page: EditorTreePage;
@@ -181,7 +181,7 @@ function InlineTextField({
   }
 
   return (
-    <div className={`flex items-center gap-hsp-sm ${grow ? "flex-1" : "flex-none"} min-w-[0]`}>
+    <div className={`flex items-center gap-hsp-sm ${grow ? "flex-1" : "flex-none"} min-w-[0px]`}>
       <label htmlFor={id} className={FIELD_LABEL_CLASSES}>
         {label}
       </label>

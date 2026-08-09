@@ -56,7 +56,7 @@ function ExpandedRail({
   return (
     <nav
       aria-label="Pages"
-      className="flex w-(--zdo-rail-expanded) flex-none flex-col border-r border-border bg-surface"
+      className="flex min-h-[0px] w-(--zdo-rail-expanded) flex-none flex-col border-r border-border bg-surface"
     >
       <div className="flex flex-none items-center gap-hsp-sm border-b border-border px-hsp-md py-vsp-xs">
         <span className="truncate text-small font-semibold">{projectTitle}</span>
@@ -109,7 +109,7 @@ function CollapsedRail({
   return (
     <nav
       aria-label="Workspace panels"
-      className="relative flex w-(--zdo-rail-collapsed) flex-none flex-col items-center gap-hsp-2xs border-r border-border bg-surface py-vsp-xs"
+      className="relative flex min-h-[0px] w-(--zdo-rail-collapsed) flex-none flex-col items-center gap-hsp-2xs border-r border-border bg-surface py-vsp-xs"
     >
       <button
         ref={pagesButtonRef}
@@ -127,7 +127,7 @@ function CollapsedRail({
         {flyoutOpen ? (
           <span
             aria-hidden="true"
-            className="absolute left-[0] top-vsp-2xs bottom-vsp-2xs w-(--zdo-rail-marker) rounded-full bg-accent"
+            className="absolute left-[0px] top-vsp-2xs bottom-vsp-2xs w-(--zdo-rail-marker) rounded-full bg-accent"
           />
         ) : null}
         <PagesIcon size="--icon-md" />

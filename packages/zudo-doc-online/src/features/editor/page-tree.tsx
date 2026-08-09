@@ -33,7 +33,7 @@ export function PageTree({
 }: PageTreeProps) {
   return (
     <div
-      className="min-h-[0] flex-1 overflow-y-auto px-hsp-sm pb-vsp-sm"
+      className="min-h-[0px] flex-1 overflow-y-auto px-hsp-sm pb-vsp-sm"
       aria-label={label}
       role="group"
     >

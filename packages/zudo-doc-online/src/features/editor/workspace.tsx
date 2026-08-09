@@ -297,8 +297,8 @@ export function EditorWorkspace({
   );
 
   return (
-    <div className="zdo-editor flex h-full min-h-[0] flex-col overflow-hidden bg-bg text-fg">
-      <div className="flex min-h-[0] flex-1">
+    <div className="zdo-editor flex h-full min-h-[0px] flex-col overflow-hidden bg-bg text-fg">
+      <div className="flex min-h-[0px] flex-1">
         <EditorRail
           mode={railMode}
           onToggleMode={handleToggleRail}
@@ -312,7 +312,7 @@ export function EditorWorkspace({
           onFlyoutOpenChange={setFlyoutOpen}
         />
 
-        <div className="flex min-h-[0] min-w-[0] flex-1 flex-col">
+        <div className="flex min-h-[0px] min-w-[0px] flex-1 flex-col">
           <TabStrip
             tabs={tabDescriptors}
             activePageId={activePageId}
@@ -518,7 +518,7 @@ function EmptyPane({
   children?: ComponentChildren;
 }) {
   return (
-    <div className="flex size-full min-h-[0] flex-col items-center justify-center gap-vsp-xs px-hsp-xl text-center">
+    <div className="flex size-full min-h-[0px] flex-col items-center justify-center gap-vsp-xs px-hsp-xl text-center">
       <p className="text-small text-muted">{message}</p>
       {children}
     </div>
@@ -541,7 +541,7 @@ function Banner({
         tone === "danger" ? "bg-(--zdo-wash-danger)" : "bg-(--zdo-wash-warning)"
       }`}
     >
-      <span className="min-w-[0] flex-1">{message}</span>
+      <span className="min-w-[0px] flex-1">{message}</span>
       {children}
     </div>
   );

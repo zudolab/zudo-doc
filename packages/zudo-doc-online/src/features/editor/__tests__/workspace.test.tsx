@@ -408,7 +408,7 @@ describe("the split", () => {
     expect(storage.entries.get("zdo-editor-split")).toBe("52");
   });
 
-  it("keeps the editor host on an unbroken min-h-[0] chain inside an inset-[0] wrapper", async () => {
+  it("keeps the editor host on an unbroken min-h-[0px] chain inside an inset-[0px] wrapper", async () => {
     const { container } = await mount();
     const textarea = requireElement<HTMLTextAreaElement>(
       container,
@@ -418,13 +418,13 @@ describe("the split", () => {
     // The CodeMirror sub-issue depends on this exact shape; jsdom computes no
     // layout, so the assertion is structural rather than pixel-based.
     const wrapper = textarea.parentElement;
-    expect(wrapper?.className).toContain("absolute inset-[0]");
-    expect(wrapper?.parentElement?.className).toContain("min-h-[0]");
+    expect(wrapper?.className).toContain("absolute inset-[0px]");
+    expect(wrapper?.parentElement?.className).toContain("min-h-[0px]");
 
     let node: HTMLElement | null = wrapper?.parentElement ?? null;
     let minHeightZeroAncestors = 0;
     while (node && node !== container) {
-      if (node.className.includes("min-h-[0]")) minHeightZeroAncestors += 1;
+      if (node.className.includes("min-h-[0px]")) minHeightZeroAncestors += 1;
       node = node.parentElement;
     }
     expect(minHeightZeroAncestors).toBeGreaterThanOrEqual(4);

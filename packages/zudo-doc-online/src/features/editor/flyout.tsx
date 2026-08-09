@@ -80,7 +80,7 @@ export function PagesFlyout({
       tabIndex={-1}
       role="dialog"
       aria-label="Pages"
-      className="absolute top-vsp-xs left-(--zdo-rail-collapsed) z-(--zdo-z-flyout) ml-hsp-sm flex max-h-full w-(--zdo-flyout-width) flex-col rounded-md border border-border bg-bg shadow-2"
+      className="absolute top-vsp-xs left-(--zdo-rail-collapsed) z-(--zdo-z-flyout) ml-hsp-sm flex max-h-full min-h-[0px] w-(--zdo-flyout-width) flex-col rounded-md border border-border bg-bg shadow-2"
     >
       <div className="flex flex-none items-center gap-hsp-sm border-b border-border px-hsp-md py-vsp-xs">
         <span className="text-small font-semibold">Pages</span>
