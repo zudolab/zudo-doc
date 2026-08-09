@@ -176,6 +176,42 @@ describe("ProjectEventsClient — reconnect", () => {
   });
 });
 
+describe("ProjectEventsClient — onOpen", () => {
+  it("fires on the initial connect, unlike onReconnect", () => {
+    const openListener = vi.fn();
+    client.onOpen(openListener);
+
+    client.connect();
+    handle.instances[0]?.emitOpen();
+
+    expect(openListener).toHaveBeenCalledTimes(1);
+  });
+
+  it("also fires on every reconnect", () => {
+    const openListener = vi.fn();
+    client.onOpen(openListener);
+
+    client.connect();
+    handle.instances[0]?.emitOpen();
+    handle.instances[0]?.emitError();
+    vi.advanceTimersByTime(100);
+    handle.instances[1]?.emitOpen();
+
+    expect(openListener).toHaveBeenCalledTimes(2);
+  });
+
+  it("stops notifying after unsubscribe", () => {
+    const openListener = vi.fn();
+    const unsubscribe = client.onOpen(openListener);
+    unsubscribe();
+
+    client.connect();
+    handle.instances[0]?.emitOpen();
+
+    expect(openListener).not.toHaveBeenCalled();
+  });
+});
+
 describe("bindCoordinatorToEvents", () => {
   it("advances the coordinator's revision for every event, own or remote", () => {
     const coordinator = new RevisionCoordinator(1);

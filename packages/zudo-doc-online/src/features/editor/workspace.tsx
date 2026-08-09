@@ -41,6 +41,8 @@ import {
 import "./editor-chrome.css";
 import EditorPaneSlot, { type EditorPaneStatus } from "./editor-pane-slot";
 import { MetadataRow } from "./metadata-row";
+import PopoutBar, { usePopoutOpen } from "../popout/popout-bar";
+import { popoutRegistry } from "../popout/popout-registry";
 import {
   buildEditorTree,
   buildMovePageCommand,
@@ -186,6 +188,10 @@ export function EditorWorkspace({
   const activePage = activePageId === null ? undefined : findTreePage(tree, activePageId);
   const activeSave = activeSession?.save;
   const activeMachine = activeSession?.machine;
+  // "" is never a registered pageId, so this reads as permanently
+  // not-popped-out whenever no page is active — keeps the hook call
+  // unconditional (Rules of Hooks) without a real page to key it on.
+  const activePreviewPoppedOut = usePopoutOpen(activePageId ?? "");
 
   // The machine parks in `saved` until acknowledged, so the chip can show a
   // real "Saved" moment instead of blinking through it.
@@ -420,16 +426,29 @@ export function EditorWorkspace({
                 <span className="ml-auto font-mono text-caption">
                   {activePage ? pagePath(activePage) : ""}
                 </span>
+                {activePage && !activePreviewPoppedOut ? (
+                  <button
+                    type="button"
+                    className={BUTTON_CLASSES}
+                    onClick={() => popoutRegistry.open(activePage.id)}
+                  >
+                    Pop out
+                  </button>
+                ) : null}
               </>
             }
             preview={
               activePage && activeSave ? (
-                <PreviewPaneSlot
-                  pageId={activePage.id}
-                  title={activePage.title}
-                  path={pagePath(activePage)}
-                  markdown={activeSave.content.markdown}
-                />
+                activePreviewPoppedOut ? (
+                  <PopoutBar pageId={activePage.id} />
+                ) : (
+                  <PreviewPaneSlot
+                    pageId={activePage.id}
+                    title={activePage.title}
+                    path={pagePath(activePage)}
+                    markdown={activeSave.content.markdown}
+                  />
+                )
               ) : (
                 <EmptyPane message="Open a page to see its preview." />
               )
