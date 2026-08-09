@@ -100,6 +100,18 @@ describe("failures the server never produces", () => {
     });
   });
 
+  it("wraps a connection dropped mid-body-stream as network-error too", async () => {
+    // `fetch` resolves as soon as headers arrive; the failure surfaces later,
+    // from `response.text()` — a distinct code path from a rejected fetch.
+    const response = new Response("", { status: 200 });
+    response.text = () => Promise.reject(new Error("stream reset"));
+    const client = clientFor(() => Promise.resolve(response));
+    await expect(client.listProjects()).rejects.toMatchObject({
+      code: "network-error",
+      status: 0,
+    });
+  });
+
   it("treats a non-JSON success body as invalid-response", async () => {
     const client = clientFor(() => Promise.resolve(new Response("not json", { status: 200 })));
     await expect(client.listProjects()).rejects.toMatchObject({

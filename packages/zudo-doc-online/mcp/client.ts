@@ -157,7 +157,20 @@ export class ZudoDocOnlineClient {
       );
     }
 
-    const text = await response.text();
+    let text: string;
+    try {
+      // `fetch` resolves as soon as headers arrive; a connection that drops
+      // while the body streams in fails here, not above — that failure is
+      // just as much a "could not reach the API" case as a rejected fetch.
+      text = await response.text();
+    } catch (error) {
+      throw new ApiError(
+        "network-error",
+        `Lost the connection to the zudo-doc online API while reading its response (${error instanceof Error ? error.message : String(error)}).`,
+        0,
+      );
+    }
+
     let parsed: unknown;
     if (text.length > 0) {
       try {
