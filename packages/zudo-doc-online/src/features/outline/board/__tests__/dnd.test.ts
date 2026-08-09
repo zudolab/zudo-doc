@@ -16,6 +16,7 @@ import {
   resolveDropBeforeId,
   resolveFinalColumnId,
   resolveMoveIndex,
+  resolveSameColumnDropIndex,
   type ColumnMap,
 } from "../dnd.js";
 
@@ -331,6 +332,10 @@ describe("resolveColumnMoveIndex", () => {
     expect(resolveColumnMoveIndex(["a", "b", "c"], "c", "a")).toBe(0);
   });
 
+  it("swaps two ADJACENT items when dragging the earlier one onto the later one (regression: a codex review round caught this resolving to a no-op via the 'insert before a post-removal index' formula board-view.tsx used to reuse here)", () => {
+    expect(resolveColumnMoveIndex(["a", "b", "c"], "a", "b")).toBe(1);
+  });
+
   it("returns null for a no-op (over is the active column itself)", () => {
     expect(resolveColumnMoveIndex(["a", "b", "c"], "a", "a")).toBeNull();
   });
@@ -342,6 +347,16 @@ describe("resolveColumnMoveIndex", () => {
   it("returns null when either id is not found", () => {
     expect(resolveColumnMoveIndex(["a", "b"], "ghost", "a")).toBeNull();
     expect(resolveColumnMoveIndex(["a", "b"], "a", "ghost")).toBeNull();
+  });
+});
+
+describe("resolveSameColumnDropIndex", () => {
+  it("is the same algorithm as resolveColumnMoveIndex, reused for a same-column card drop with no working copy", () => {
+    expect(resolveSameColumnDropIndex).toBe(resolveColumnMoveIndex);
+    // The exact scenario board-view.tsx's early branch exists for: a pure
+    // same-column drag never builds a working copy, so `over`'s ORIGINAL
+    // index (not its post-removal index) is what must be sent.
+    expect(resolveSameColumnDropIndex(["p0", "p1", "p2"], "p0", "p1")).toBe(1);
   });
 });
 

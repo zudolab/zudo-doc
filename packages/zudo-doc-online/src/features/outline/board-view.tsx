@@ -39,6 +39,7 @@ import {
   resolveDropBeforeId,
   resolveFinalColumnId,
   resolveMoveIndex,
+  resolveSameColumnDropIndex,
   useBoardSensors,
   type BoardDndData,
   type BoardOverType,
@@ -177,6 +178,37 @@ export default function BoardView({ snapshot, dispatch, selection }: OutlineView
         } else if (overData?.type === COLUMN_BODY_DND_TYPE) {
           overType = "columnBody";
           overColumnId = overData.categoryId;
+        }
+
+        // A pure same-column drag never builds a working copy (relocation
+        // returns null on same-column hover), and in that case trusting
+        // `over` directly via "insert before" is directional — dragging
+        // downward onto an OTHER card resolves back to the active card's
+        // own starting index (codex-review finding). Resolve those drops
+        // straight from ORIGINAL positions instead, before the general
+        // working-copy-aware pipeline below (which stays correct for
+        // every cross-column case, including a working copy that ends up
+        // back in the source column after an out-and-back-in drag).
+        if (workingMap === null && overType === "card" && overColumnId === sourceColumnId) {
+          const sameColumn = model.categories.find(
+            (category) => category.id === sourceColumnId,
+          );
+          const toIndex = resolveSameColumnDropIndex(
+            sameColumn?.pages.map((page) => page.id) ?? [],
+            activeId,
+            overCardId,
+          );
+          if (toIndex !== null) {
+            const command: MovePageCommand = {
+              type: "move-page",
+              pageId: activeId,
+              toCategoryId: sourceColumnId,
+              toIndex,
+            };
+            void dispatch(command);
+          }
+          cleanupDrag();
+          return;
         }
 
         // Commit from the working copy, not from `over` (recipe §4): at

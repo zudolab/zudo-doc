@@ -257,12 +257,36 @@ export function resolveColumnMoveIndex(
 }
 
 /**
+ * The SAME algorithm as `resolveColumnMoveIndex` (arrayMove's own
+ * convention — vacate, then insert at the target's ORIGINAL index),
+ * reused for a same-column card drop that never built a working copy
+ * (`relocateActiveCardToColumn` returns null for same-column hover, so a
+ * drag that stays inside one column leaves `workingMap` null start to
+ * finish). `resolveDropBeforeId`'s "insert before over" precedence-1
+ * semantics is correct for a CROSS-column drop but WRONG here: filtering
+ * the active card out before locating `over` shifts every card that
+ * originally sat AFTER the active one index to the left, so a downward
+ * same-column drag (dragging card 0 onto card 1) resolves back to its own
+ * starting index and is treated as a no-op (a codex-review finding).
+ * Resolving directly from ORIGINAL positions sidesteps that ambiguity —
+ * `board-view.tsx`'s `handleDragEnd` calls this BEFORE the general
+ * `resolveFinalColumnId` / `resolveDropBeforeId` pipeline whenever `over`
+ * is a real card in the SAME column with no working copy in play.
+ */
+export const resolveSameColumnDropIndex = resolveColumnMoveIndex;
+
+/**
  * Activation gating shared by pointer and touch sensors (recipe §3): an
  * explicit `[data-dnd-activator]` wins outright; otherwise a click on an
  * interactive descendant (button, link, form control, or anything opted out
- * via `[data-no-dnd]`) never starts a drag. Cards attach `listeners` only to
- * their dedicated grip handle, so this mostly matters for the column header,
- * which IS the whole drag handle but also hosts a delete button.
+ * via `[data-no-dnd]`) never starts a drag.
+ *
+ * The grip `<button>`s in `page-card.tsx` / `board-column.tsx` are
+ * themselves buttons, so WITHOUT `data-dnd-activator` on them this gate
+ * would block the very activator it is meant to protect — every grip carries
+ * that attribute for exactly this reason. Everything else matters for the
+ * column header, which IS the whole drag handle visually but also hosts a
+ * delete button `listeners` must never activate through.
  */
 export function isActivatingElement(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return true;

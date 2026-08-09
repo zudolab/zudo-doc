@@ -146,6 +146,7 @@ export function PageCard({
         ref={setActivatorNodeRef}
         {...dragHandleProps}
         type="button"
+        data-dnd-activator
         aria-label={`Drag ${page.title} to reorder`}
         className={GRIP_BUTTON}
       >

@@ -104,7 +104,7 @@ describe("BoardView rendering", () => {
     view.unmount();
   });
 
-  it("gives every card and column a keyboard-reachable drag handle", async () => {
+  it("gives every card and column a keyboard-reachable drag handle that also passes pointer activation gating", async () => {
     const harness = createHarness();
     const view = await mount(
       <BoardView
@@ -114,8 +114,18 @@ describe("BoardView rendering", () => {
       />,
     );
 
-    expect(queryByLabel(view.container, "Drag One to reorder")).not.toBeNull();
-    expect(queryByLabel(view.container, "Drag to reorder Alpha")).not.toBeNull();
+    const cardGrip = queryByLabel(view.container, "Drag One to reorder");
+    const columnGrip = queryByLabel(view.container, "Drag to reorder Alpha");
+    expect(cardGrip).not.toBeNull();
+    expect(columnGrip).not.toBeNull();
+
+    // `isActivatingElement` (dnd.ts) rejects a pointerdown target that is
+    // itself a <button> UNLESS it carries `data-dnd-activator` — the exact
+    // gap a codex review round caught: the grip buttons are buttons, so
+    // without this attribute the gate blocks the very activator it exists
+    // to protect, and no pointer/touch drag could ever start.
+    expect(cardGrip?.hasAttribute("data-dnd-activator")).toBe(true);
+    expect(columnGrip?.hasAttribute("data-dnd-activator")).toBe(true);
 
     view.unmount();
   });

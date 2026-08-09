@@ -149,6 +149,7 @@ export function BoardColumn({
           ref={setActivatorNodeRef}
           {...dragHandleProps}
           type="button"
+          data-dnd-activator
           aria-label={`Drag to reorder ${category.title}`}
           className={GRIP_BUTTON}
         >
