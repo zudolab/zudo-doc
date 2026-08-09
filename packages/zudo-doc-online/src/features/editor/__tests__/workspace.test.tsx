@@ -8,7 +8,7 @@
  * is left to the manager's central browser pass — see the report.
  */
 
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ProjectEventsClient, type MemoryProjectStore } from "../../../store/index";
 import { createFakeEventSourceFactory } from "../../../store/__tests__/support";
 import { mountWorkspace, queryByText, requireElement, settle } from "./harness";
@@ -152,6 +152,56 @@ describe("closing tabs", () => {
     expect(navigations.at(-1)).toBe(INSTALLATION_ID);
   });
 
+  it("asks before discarding a draft that still needs resolving", async () => {
+    const sources = createFakeEventSourceFactory();
+    const events = new ProjectEventsClient({
+      projectSlug: "aurora-docs",
+      clientId: "this-tab",
+      createEventSource: sources.factory,
+    });
+    events.connect();
+    sources.instances[0]?.emitOpen();
+
+    const { container } = await mount(INSTALLATION_ID, {
+      events,
+      saveDebounceMs: 100_000,
+    });
+    typeInto(
+      requireElement<HTMLTextAreaElement>(container, 'textarea[aria-label="Page markdown"]'),
+      "unresolved draft",
+    );
+    await settle();
+    store.applyExternalPageWrite(INSTALLATION_ID, { markdown: "remote" });
+    sources.instances[0]?.emitMessage({
+      type: "page-changed",
+      pageId: INSTALLATION_ID,
+      revision: store.getRevision(),
+      origin: "another-tab",
+    });
+    await settle();
+
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    requireElement<HTMLButtonElement>(
+      container,
+      'button[aria-label="Close Installation"]',
+    ).click();
+    await settle();
+
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(container.querySelectorAll('[role="tab"]')).toHaveLength(1);
+
+    confirm.mockReturnValue(true);
+    requireElement<HTMLButtonElement>(
+      container,
+      'button[aria-label="Close Installation"]',
+    ).click();
+    await settle();
+
+    expect(container.querySelector('[data-testid="left-editor"]')).not.toBeNull();
+    confirm.mockRestore();
+    events.close();
+  });
+
   it("reports that no page is left when the last tab closes", async () => {
     const { container, navigations } = await mount();
 
@@ -261,6 +311,29 @@ describe("markdown autosave", () => {
 
     expect((await store.loadPage(INSTALLATION_ID)).markdown).toBe("one two three");
     expect(container.textContent).toContain("3 words");
+  });
+
+  it("keeps each tab's buffer with its own page across a switch", async () => {
+    const { container } = await mount();
+    const textarea = () =>
+      requireElement<HTMLTextAreaElement>(container, 'textarea[aria-label="Page markdown"]');
+
+    typeInto(textarea(), "installation body");
+    await settle(5);
+
+    queryByText<HTMLElement>(
+      requireElement(container, 'nav[aria-label="Pages"]'),
+      "span",
+      "Introduction",
+    )
+      ?.closest("button")
+      ?.click();
+    await settle();
+    typeInto(textarea(), "introduction body");
+    await settle(5);
+
+    expect((await store.loadPage(INSTALLATION_ID)).markdown).toBe("installation body");
+    expect((await store.loadPage(INTRODUCTION_ID)).markdown).toBe("introduction body");
   });
 
   it("never autosaves half-composed text, and saves once the IME finishes", async () => {

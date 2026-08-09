@@ -79,6 +79,19 @@ export function isDirtySave(status: SaveMachineStatus | undefined): boolean {
 }
 
 /**
+ * The subset of `isDirtySave` that WILL settle on its own — a debounced write
+ * waiting to fire, or one already in flight. `error` and `conflict` are
+ * excluded because only an explicit `retry()`/`discard()` moves them, so
+ * waiting on one would wait forever.
+ *
+ * Used when a tab closes: a pending write is given time to land, an unresolved
+ * one is the user's call (`needsResolution`).
+ */
+export function hasPendingWrite(status: SaveMachineStatus | undefined): boolean {
+  return status === "dirty" || status === "saving";
+}
+
+/**
  * Whether the machine is in a state the user must resolve by hand. The
  * workspace renders its banner (retry / discard) exactly when this is true —
  * epic #3327 contract 2 forbids resolving either one automatically.

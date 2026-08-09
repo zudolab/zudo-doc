@@ -111,6 +111,39 @@ describe("PageSessionRegistry", () => {
     expect(registry.get(INSTALLATION_ID)?.status).toBe("ready");
   });
 
+  it("lets a pending autosave land after its tab is closed", async () => {
+    const store = createEditorTestStore();
+    const registry = new PageSessionRegistry({ store, debounceMs: 5 });
+    registry.open(INSTALLATION_ID);
+    await flush();
+
+    registry.get(INSTALLATION_ID)?.machine?.edit({ markdown: "typed then closed" });
+    // Closing inside the debounce window used to dispose the machine, which
+    // clears the timer — the edit vanished with no error anywhere.
+    registry.close(INSTALLATION_ID);
+    expect(registry.get(INSTALLATION_ID)).toBeUndefined();
+
+    await new Promise((resolve) => setTimeout(resolve, 30));
+
+    expect((await store.loadPage(INSTALLATION_ID)).markdown).toBe("typed then closed");
+  });
+
+  it("abandons a retiring machine when the workspace unmounts", async () => {
+    const registry = new PageSessionRegistry({
+      store: createEditorTestStore(),
+      debounceMs: 5,
+    });
+    registry.open(INSTALLATION_ID);
+    await flush();
+
+    const machine = registry.get(INSTALLATION_ID)?.machine;
+    const dispose = vi.spyOn(machine!, "dispose");
+    registry.close(INSTALLATION_ID);
+    registry.dispose();
+
+    expect(dispose).toHaveBeenCalled();
+  });
+
   it("does not resurrect a session closed while its load was in flight", async () => {
     const { store, release } = deferredStore(createEditorTestStore());
     const registry = new PageSessionRegistry({ store });

@@ -213,10 +213,18 @@ export function EditorWorkspace({
     (pageId: string) => {
       const next = closeTab(tabs, pageId);
       if (next === tabs) return;
+
+      // A pending autosave survives the close on its own (see
+      // `PageSessionRegistry.close`). An UNRESOLVED save is different: only an
+      // explicit retry or discard can move it, so closing the tab really does
+      // throw the draft away — and that is the user's decision to make, not a
+      // side effect of clicking an ✕.
+      if (needsResolution(sessions.get(pageId)?.save) && !confirmDiscard()) return;
+
       setTabs(next);
       if (next.activeId !== tabs.activeId) onNavigate(next.activeId);
     },
-    [tabs, onNavigate],
+    [tabs, sessions, onNavigate],
   );
 
   const handleToggleRail = useCallback(() => {
@@ -536,6 +544,19 @@ function Banner({
       <span className="min-w-[0] flex-1">{message}</span>
       {children}
     </div>
+  );
+}
+
+/**
+ * The one native dialog in the workspace. It guards a genuinely destructive,
+ * irreversible action (dropping a draft the machine is still holding), which
+ * is exactly the case `confirm` is for — and building a bespoke modal for it
+ * would add focus-trap and stacking concerns for no gain.
+ */
+function confirmDiscard(): boolean {
+  if (typeof window === "undefined" || typeof window.confirm !== "function") return true;
+  return window.confirm(
+    "This page has unsaved edits that still need to be resolved. Closing the tab discards them. Close anyway?",
   );
 }
 

@@ -27,6 +27,11 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { useCompositionGuard } from "./ime";
 
+interface PageDraft {
+  pageId: string;
+  markdown: string;
+}
+
 export interface EditorPaneStatus {
   /** 1-based caret line. */
   line: number;
@@ -54,13 +59,20 @@ export default function EditorPaneSlot({
   onStatusChange,
 }: EditorPaneSlotProps) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  // A local buffer, not a directly-controlled `value`. Preact rewrites a
-  // controlled input's DOM value on any re-render, and during an IME
-  // composition — when `onChange` is deliberately suppressed — that rewrite
-  // would replace the candidate text mid-composition. Mirroring the incoming
-  // value into state and adopting external changes only outside a
-  // composition keeps both behaviors.
-  const [buffer, setBuffer] = useState(value);
+  // Local state exists ONLY for the duration of an IME composition. Preact
+  // rewrites a controlled input's DOM value on any re-render, and during a
+  // composition — when `onChange` is deliberately suppressed, so `value` sits
+  // at the pre-composition text — that rewrite would wipe the candidate the
+  // user is still choosing.
+  //
+  // It is tagged with the page it belongs to, and outside a composition it is
+  // null, so the textarea is otherwise fully controlled by `value`. Both
+  // details matter: a buffer that survived a tab switch would render the
+  // PREVIOUS page's body for one frame, and an input in that frame would feed
+  // it to the newly-selected page's `onChange` — autosaving one page's text
+  // over another.
+  const [composedDraft, setComposedDraft] = useState<PageDraft | null>(null);
+  const buffer = composedDraft?.pageId === pageId ? composedDraft.markdown : value;
 
   function report(): void {
     const element = textareaRef.current;
@@ -73,17 +85,10 @@ export default function EditorPaneSlot({
   // fields do. CodeMirror handles this itself, so the replacement of this
   // file need not carry the guard forward.
   const isComposing = useCompositionGuard(textareaRef, (markdown) => {
-    setBuffer(markdown);
+    setComposedDraft(null);
     onChange(markdown);
     report();
   });
-
-  useEffect(() => {
-    // A discard or a clean-state adoption legitimately replaces the buffer;
-    // an in-flight composition is the only moment it must not.
-    if (isComposing()) return;
-    setBuffer(value);
-  }, [value, pageId]);
 
   // Re-report whenever the document or the page changes, so the status bar is
   // correct on load and after a tab switch — not only after a keystroke.
@@ -99,8 +104,11 @@ export default function EditorPaneSlot({
       className="size-full resize-none border-0 bg-transparent px-hsp-lg py-vsp-sm font-mono text-small leading-(--zdo-editor-leading) text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:-outline-offset-2"
       onInput={(event) => {
         const next = event.currentTarget.value;
-        setBuffer(next);
-        if (isComposing()) return;
+        if (isComposing()) {
+          setComposedDraft({ pageId, markdown: next });
+          return;
+        }
+        setComposedDraft(null);
         onChange(next);
         report();
       }}

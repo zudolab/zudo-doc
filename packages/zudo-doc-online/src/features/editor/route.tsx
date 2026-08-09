@@ -64,6 +64,7 @@ export default function EditorRoute({ pageId }: EditorRouteProps) {
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const refreshing = useRef(false);
+  const refreshQueued = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -83,7 +84,14 @@ export default function EditorRoute({ pageId }: EditorRouteProps) {
         const unbindCoordinator = bindCoordinatorToEvents(coordinator, events);
 
         const refresh = async (): Promise<void> => {
-          if (refreshing.current) return;
+          // An event that lands mid-refresh is REMEMBERED, not dropped: the
+          // in-flight read may have been issued before that mutation
+          // committed, so finishing it would leave the UI permanently one
+          // revision behind until some unrelated event happened along.
+          if (refreshing.current) {
+            refreshQueued.current = true;
+            return;
+          }
           refreshing.current = true;
           try {
             const next = await store.loadSnapshot();
@@ -93,6 +101,10 @@ export default function EditorRoute({ pageId }: EditorRouteProps) {
             // events client's own reconnect will trigger another one.
           } finally {
             refreshing.current = false;
+          }
+          if (refreshQueued.current && !cancelled) {
+            refreshQueued.current = false;
+            await refresh();
           }
         };
 
