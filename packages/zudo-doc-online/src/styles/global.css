@@ -1,0 +1,20 @@
+/* Approach B: only preflight + utilities, no default Tailwind theme — this
+ * app defines its own token set from scratch in tokens.css (see the
+ * --color-*: initial guardrail there) rather than overriding Tailwind's
+ * built-in palette/scales. */
+@import "tailwindcss/preflight";
+@import "tailwindcss/utilities";
+
+@import "./tokens.css";
+
+body {
+  min-height: 100dvh;
+  font-family: var(--font-ui);
+  background-color: var(--color-bg);
+  color: var(--color-fg);
+}
+
+code,
+pre {
+  font-family: var(--font-mono);
+}
