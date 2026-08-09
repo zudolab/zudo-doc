@@ -32,7 +32,6 @@ import type { OutlineCommand } from "../../core/outline/index.js";
 import {
   RevisionConflictError,
   StoreRequestError,
-  type PageFrontmatter,
   type ProjectSnapshot,
   type ProjectStore,
 } from "../../store/contract.js";
@@ -70,19 +69,27 @@ export interface OutlineProblem {
   message: string;
 }
 
-/** A mutation the surface can send — and, after a 409, re-send. */
+/**
+ * A mutation the surface can send — and, after a 409, re-send.
+ *
+ * The page variant carries the user's INTENT (a new title), never a baked
+ * frontmatter block: a re-send has to be rebuilt against whatever the server
+ * holds at retry time, or it would revert the very remote edit that caused
+ * the conflict.
+ */
 export type PendingMutation =
   | { kind: "outline"; label: string; command: OutlineCommand }
-  | {
-      kind: "page-frontmatter";
-      label: string;
-      pageId: string;
-      frontmatter: PageFrontmatter;
-    };
+  | { kind: "page-title"; label: string; pageId: string; title: string };
 
 export interface OutlineConflictState {
   mutation: PendingMutation;
   message: string;
+  /**
+   * The server state the 409 carried. A retry rebuilds its payload from this
+   * rather than from the pre-conflict copy, which is what stops "retry my
+   * change" from reverting whatever the other client just wrote.
+   */
+  latest: ProjectSnapshot;
   /**
    * True when an editor was open at the moment of the 409, so the displayed
    * outline was deliberately NOT rebased onto the server's.
@@ -145,7 +152,17 @@ export function useOutlineSurface({
     };
   }, []);
 
+  /**
+   * The one gate every writer goes through — initial load, refresh, mutation
+   * response, conflict rebase. Responses settle out of order (a refresh that
+   * started before a mutation can land after it, and an SSE-triggered refetch
+   * races both), and an older snapshot arriving last would pin the surface to
+   * stale state until the next change happened to arrive. The server's
+   * revision is the only ordering the two channels agree on, so it decides.
+   */
   const setSnapshot = useCallback((next: ProjectSnapshot) => {
+    const current = snapshotRef.current;
+    if (current !== null && next.revision < current.revision) return;
     snapshotRef.current = next;
     setSnapshotState(next);
   }, []);
@@ -223,23 +240,31 @@ export function useOutlineSurface({
   const runMutation = useCallback(
     async (
       mutation: PendingMutation,
-      resolvesConflict: boolean,
+      /** Set on a retry: the server state the 409 carried. */
+      rebaseFrom: ProjectSnapshot | null,
     ): Promise<OutlineDispatchResult> => {
       setSaveState("saving");
       setSaveError(null);
       try {
+        // The ref, not its current value: a queued mutation must patch the
+        // snapshot that exists when it RESOLVES, not the one that existed
+        // when it was enqueued.
         const applied = await applyMutation(
           store,
           coordinator,
-          snapshotRef.current,
+          () => snapshotRef.current,
           mutation,
+          rebaseFrom,
         );
         if (!mountedRef.current) return applied.result;
         setSnapshot(applied.snapshot);
         setSaveState(
           applied.result.ok && applied.result.changed ? "saved" : "no-change",
         );
-        if (resolvesConflict) setConflict(null);
+        // A retry that lands clears the banner it was launched from; an
+        // unrelated success leaves it up, because the failed change is still
+        // unapplied and still needs a decision.
+        if (rebaseFrom !== null) setConflict(null);
         return applied.result;
       } catch (error) {
         const described = describeStoreError(error);
@@ -264,6 +289,7 @@ export function useOutlineSurface({
           setConflict({
             mutation,
             message: described.message,
+            latest: error.snapshot,
             keptDraft: !clean,
           });
           setSaveState("conflict");
@@ -281,7 +307,7 @@ export function useOutlineSurface({
     (command) =>
       runMutation(
         { kind: "outline", label: describeCommand(command), command },
-        false,
+        null,
       ),
     [runMutation],
   );
@@ -300,13 +326,8 @@ export function useOutlineSurface({
         return { ok: false, ...described, conflict: false };
       }
       return runMutation(
-        {
-          kind: "page-frontmatter",
-          label: `Rename “${page.title}”`,
-          pageId,
-          frontmatter: renamedFrontmatter(page, title),
-        },
-        false,
+        { kind: "page-title", label: `Rename “${page.title}”`, pageId, title },
+        null,
       );
     },
     [runMutation],
@@ -321,7 +342,7 @@ export function useOutlineSurface({
 
   const retryConflict = useCallback(async () => {
     if (conflict === null) return;
-    await runMutation(conflict.mutation, true);
+    await runMutation(conflict.mutation, conflict.latest);
   }, [conflict, runMutation]);
 
   return {
@@ -349,8 +370,9 @@ interface AppliedMutation {
 async function applyMutation(
   store: ProjectStore,
   coordinator: RevisionCoordinator,
-  current: ProjectSnapshot | null,
+  readSnapshot: () => ProjectSnapshot | null,
   mutation: PendingMutation,
+  rebaseFrom: ProjectSnapshot | null,
 ): Promise<AppliedMutation> {
   if (mutation.kind === "outline") {
     const outcome = await store.applyOutlineCommand(
@@ -370,19 +392,39 @@ async function applyMutation(
     };
   }
 
+  // `savePage` replaces the frontmatter block wholesale, so the other fields
+  // have to be re-read from the freshest state available at SEND time. On a
+  // retry that is the snapshot the 409 carried (`rebaseFrom`), not the
+  // pre-conflict copy the first attempt used — otherwise accepting "retry my
+  // change" would quietly revert the remote description or draft edit that
+  // caused the conflict in the first place.
+  const rebaseBase = rebaseFrom ?? readSnapshot();
+  const page = rebaseBase === null ? null : findPageSummary(rebaseBase, mutation.pageId);
+  if (page === null) {
+    throw new StoreRequestError(
+      "page-not-found",
+      `No page with id "${mutation.pageId}".`,
+      404,
+    );
+  }
+  const frontmatter = renamedFrontmatter(page, mutation.title);
   const saved = await store.savePage(mutation.pageId, coordinator.currentRevision, {
-    frontmatter: mutation.frontmatter,
+    frontmatter,
   });
-  // A page write returns the page, not the project — patch the one page that
-  // changed rather than paying for a whole snapshot round trip.
+
+  // A page write returns the page, not the project, so patch the one page
+  // that changed rather than refetching everything — reading the snapshot
+  // here (after the write settled) rather than before it was queued, so an
+  // earlier queued mutation's result is not discarded.
+  const base = readSnapshot();
   const next =
-    current === null
+    base === null
       ? await store.loadSnapshot()
       : withPageFrontmatter(
-          current,
+          base,
           mutation.pageId,
-          mutation.frontmatter,
-          saved.revision,
+          frontmatter,
+          Math.max(base.revision, saved.revision),
         );
   return { snapshot: next, result: { ok: true, changed: saved.changed } };
 }

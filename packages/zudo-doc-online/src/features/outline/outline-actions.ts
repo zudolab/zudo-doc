@@ -157,17 +157,23 @@ export function describePageDelete(page: OutlinePageRow): string {
 /**
  * Frontmatter for a page rename (epic #3327 contract 1: a title is page
  * frontmatter, not outline structure — there is no `rename-page` command).
- * `savePage` REPLACES the frontmatter block wholesale, so description and
- * draft have to be carried over explicitly or the rename would erase them.
+ *
+ * `savePage` REPLACES the frontmatter block wholesale, so `current` must be
+ * the page's freshest known frontmatter: anything missing from it is not
+ * "left alone", it is deleted. Callers read that from the server immediately
+ * before the write rather than from a snapshot they captured earlier — see
+ * `use-outline-surface.ts`'s `applyMutation`.
  */
 export function renamedFrontmatter(
-  page: PageSummary,
+  current: PageFrontmatter,
   title: string,
 ): PageFrontmatter {
   return {
     title,
-    ...(page.description === undefined ? {} : { description: page.description }),
-    ...(page.draft === undefined ? {} : { draft: page.draft }),
+    ...(current.description === undefined
+      ? {}
+      : { description: current.description }),
+    ...(current.draft === undefined ? {} : { draft: current.draft }),
   };
 }
 

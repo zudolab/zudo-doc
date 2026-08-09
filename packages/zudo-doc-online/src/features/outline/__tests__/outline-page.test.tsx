@@ -6,6 +6,8 @@
  * called.
  */
 import { afterEach, describe, expect, it } from "vitest";
+import { act } from "preact/test-utils";
+import type { ProjectStore } from "../../../store/contract.js";
 import { ProjectEventsClient } from "../../../store/events.js";
 import { createFakeEventSourceFactory } from "../../../store/__tests__/support.js";
 import type { MemoryProjectStore } from "../../../store/memory-provider.js";
@@ -506,6 +508,47 @@ describe("OutlinePage — conflicts", () => {
     view.unmount();
   });
 
+  it("rebases a retried page rename onto the server's frontmatter instead of reverting it", async () => {
+    const view = await mountSurface();
+
+    // A second editor stays open for the whole test, which is what makes the
+    // 409 keep the draft: the displayed tree is deliberately NOT rebased, so
+    // a retry that rebuilt its payload from what is on screen would resend
+    // pre-conflict frontmatter — and `savePage` replaces the block wholesale,
+    // so the other client's description edit would silently disappear.
+    await click(byLabel(view.container, "Rename category Alpha"));
+
+    view.memory.applyExternalPageWrite("page-alpha-index", {
+      frontmatter: { title: "Alpha", description: "Rewritten by an agent." },
+    });
+
+    await click(byLabel(view.container, "Rename page Alpha"));
+    const input = byLabel(
+      view.container,
+      "Rename page “Alpha”",
+    ) as HTMLInputElement;
+    typeInto(input, "Overview");
+    await pressKey(input, "Enter");
+
+    expect(view.container.textContent ?? "").toContain("was not applied");
+    expect(view.container.textContent ?? "").toContain(
+      "Your in-progress edit is kept",
+    );
+    // The tree still shows pre-conflict state, so only the conflict snapshot
+    // knows about the remote description.
+    expect(queryByLabel(view.container, "Rename category “Alpha”")).not.toBeNull();
+
+    await click(buttonWithText(view.container, "Retry my change"));
+
+    const page = await view.memory.loadPage("page-alpha-index");
+    expect(page.frontmatter).toEqual({
+      title: "Overview",
+      description: "Rewritten by an agent.",
+    });
+
+    view.unmount();
+  });
+
   it("drops the failed change when the user adopts the server's outline", async () => {
     const view = await mountSurface();
 
@@ -629,6 +672,114 @@ describe("OutlinePage — live external changes", () => {
     expect(view.container.textContent ?? "").not.toContain(
       "This project changed elsewhere",
     );
+
+    view.unmount();
+  });
+});
+
+describe("OutlinePage — out-of-order responses", () => {
+  afterEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  it("keeps both renames when two page writes are queued before either responds", async () => {
+    const view = await mountSurface();
+
+    // Both editors open first, so the two commits fire back to back with no
+    // response in between — each one would otherwise patch the same
+    // pre-enqueue snapshot and the second would drop the first.
+    await click(byLabel(view.container, "Rename page One"));
+    await click(byLabel(view.container, "Rename page Two"));
+    const first = byLabel(view.container, "Rename page “One”") as HTMLInputElement;
+    const second = byLabel(view.container, "Rename page “Two”") as HTMLInputElement;
+    typeInto(first, "First steps");
+    typeInto(second, "Second steps");
+
+    await act(() => {
+      first.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+      );
+      second.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+      );
+    });
+    await flush();
+
+    const snapshot = await view.memory.loadSnapshot();
+    expect(
+      snapshot.pages.filter((page) => page.title.endsWith("steps")).map((p) => p.title),
+    ).toEqual(["First steps", "Second steps"]);
+    // The UI has to agree with the server, not show only the last writer.
+    expect(view.container.textContent ?? "").toContain("First steps");
+    expect(view.container.textContent ?? "").toContain("Second steps");
+
+    view.unmount();
+  });
+
+  it("ignores a refresh response that lost the race to a newer mutation", async () => {
+    const wiring = createWiring();
+    const sources = createFakeEventSourceFactory();
+    const events = new ProjectEventsClient({
+      projectSlug: "test-project",
+      clientId: "this-tab",
+      createEventSource: sources.factory,
+    });
+
+    // Holds the SECOND loadSnapshot open so a mutation can overtake it.
+    const held: Array<() => void> = [];
+    let holdLoads = false;
+    const gated: ProjectStore = {
+      loadSnapshot: async () => {
+        const snapshot = await wiring.store.loadSnapshot();
+        if (holdLoads) {
+          await new Promise<void>((resolve) => held.push(resolve));
+        }
+        return snapshot;
+      },
+      applyOutlineCommand: (revision, command) =>
+        wiring.store.applyOutlineCommand(revision, command),
+      loadPage: (id) => wiring.store.loadPage(id),
+      savePage: (id, revision, input) => wiring.store.savePage(id, revision, input),
+    };
+
+    const view = await mount(
+      <OutlinePage
+        store={gated}
+        coordinator={wiring.coordinator}
+        events={events}
+        viewStorage={memoryViewStorage()}
+      />,
+    );
+    sources.instances[0]?.emitOpen();
+
+    holdLoads = true;
+    sources.instances[0]?.emitMessage({
+      type: "outline-changed",
+      revision: wiring.memory.getRevision(),
+      origin: "some-agent",
+    });
+    await flush();
+    expect(held).toHaveLength(1);
+
+    await click(byLabel(view.container, "Rename category Alpha"));
+    const input = byLabel(
+      view.container,
+      "Rename category “Alpha”",
+    ) as HTMLInputElement;
+    typeInto(input, "Getting started");
+    await pressKey(input, "Enter");
+    expect(view.container.textContent ?? "").toContain("Getting started");
+
+    // The in-flight read now returns state from BEFORE the rename.
+    held[0]?.();
+    await flush();
+
+    expect(view.container.textContent ?? "").toContain("Getting started");
+    expect(await categoryTitles(wiring.memory)).toEqual([
+      "Getting started",
+      "Beta",
+      "Gamma",
+    ]);
 
     view.unmount();
   });
