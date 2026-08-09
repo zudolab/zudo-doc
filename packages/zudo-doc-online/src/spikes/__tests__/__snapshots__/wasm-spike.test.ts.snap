@@ -1,0 +1,3 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`@takazudo/zfb-md-wasm renderHtml directive + highlight spike > emits hi- classes for the fenced code block and records the directive-output finding 1`] = `"<h1>Spike fixture</h1><h2 id="heading">Heading<a href="#heading" class="hash-link" aria-label="Direct link to Heading"></a></h2><pre class="hi-root"><code><span class="line"><span class="hi-kw">const</span> <span class="hi-var">answer</span>: <span class="hi-var">number</span> <span class="hi-op">=</span> <span class="hi-num">42</span><span class="hi-punct">;</span></span></code></pre><Note>A note directive body.</Note>"`;
