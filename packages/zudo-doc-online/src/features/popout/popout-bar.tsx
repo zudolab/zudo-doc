@@ -23,21 +23,25 @@ import { popoutRegistry } from "./popout-registry";
 const ACTION_BUTTON_CLASSES =
   "rounded-sm border border-border-strong px-hsp-sm py-vsp-2xs text-caption font-semibold text-fg-mild hover:bg-(--zdo-wash-hover) focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2";
 
-/** Reactive read of `popoutRegistry.isOpen(pageId)` — re-renders the caller on open, focus (no-op re-render), and close. */
-export function usePopoutOpen(pageId: string): boolean {
+/** Reactive read of `popoutRegistry.isOpen(projectSlug, pageId)` — re-renders the caller on open, focus (no-op re-render), and close. */
+export function usePopoutOpen(projectSlug: string, pageId: string): boolean {
   const subscribe = useCallback(
     (listener: () => void) => popoutRegistry.subscribe(listener),
     [],
   );
-  const getSnapshot = useCallback(() => popoutRegistry.isOpen(pageId), [pageId]);
+  const getSnapshot = useCallback(
+    () => popoutRegistry.isOpen(projectSlug, pageId),
+    [projectSlug, pageId],
+  );
   return useSyncExternalStore(subscribe, getSnapshot);
 }
 
 export interface PopoutBarProps {
+  projectSlug: string;
   pageId: string;
 }
 
-export default function PopoutBar({ pageId }: PopoutBarProps) {
+export default function PopoutBar({ projectSlug, pageId }: PopoutBarProps) {
   return (
     <div className="flex size-full min-h-[0px] flex-col items-center justify-center gap-vsp-sm px-hsp-xl text-center">
       <p className="text-small text-muted">Previewing in another window</p>
@@ -45,14 +49,14 @@ export default function PopoutBar({ pageId }: PopoutBarProps) {
         <button
           type="button"
           className={ACTION_BUTTON_CLASSES}
-          onClick={() => popoutRegistry.focus(pageId)}
+          onClick={() => popoutRegistry.focus(projectSlug, pageId)}
         >
           Focus
         </button>
         <button
           type="button"
           className={ACTION_BUTTON_CLASSES}
-          onClick={() => popoutRegistry.bringBack(pageId)}
+          onClick={() => popoutRegistry.bringBack(projectSlug, pageId)}
         >
           Bring back
         </button>

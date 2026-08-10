@@ -27,6 +27,7 @@
  * instead of "open a second copy."
  */
 
+import { formatRoute } from "../../app/router";
 import {
   POPOUT_CHANNEL_NAME,
   POPOUT_PAGEHIDE_EVENT,
@@ -50,17 +51,27 @@ export type PopoutWindowOpener = (
 const POPOUT_WINDOW_FEATURES = "width=900,height=600,popup";
 const CLOSE_POLL_MS = 1000;
 
-export function popoutWindowName(pageId: string): string {
-  return `zdo-popout-${pageId}`;
+/** Two different projects' pages never collide (#3347): the window name
+ * carries both the project slug and the pageId. */
+export function popoutWindowName(projectSlug: string, pageId: string): string {
+  return `zdo-popout-${encodeURIComponent(projectSlug)}-${encodeURIComponent(pageId)}`;
 }
 
-/** Hash-only — resolves against the opener's own document location, i.e. the same origin/path as the main app. */
-export function popoutHashUrl(pageId: string): string {
-  return `#/popped-out/preview/${encodeURIComponent(pageId)}`;
+/** Hash-only — resolves against the opener's own document location, i.e. the
+ * same origin/path as the main app. Delegates to `router.ts`'s `formatRoute`
+ * so the popout URL shape has exactly one source of truth. */
+export function popoutHashUrl(projectSlug: string, pageId: string): string {
+  return formatRoute({ name: "popped-out-preview", projectSlug, pageId });
+}
+
+/** Composite key: a pageId alone is not unique across projects (#3347). */
+function entryKey(projectSlug: string, pageId: string): string {
+  return `${projectSlug} ${pageId}`;
 }
 
 interface PopoutEntry {
   windowName: string;
+  projectSlug: string;
   pageId: string;
   winRef: PopoutWindowLike;
 }
@@ -122,46 +133,48 @@ export class PopoutRegistry {
     return new BroadcastChannel(POPOUT_CHANNEL_NAME);
   }
 
-  isOpen(pageId: string): boolean {
-    return this.entries.has(pageId);
+  isOpen(projectSlug: string, pageId: string): boolean {
+    return this.entries.has(entryKey(projectSlug, pageId));
   }
 
   /**
-   * Opens (or, for an already-registered pageId, focuses) the pop-out for
-   * `pageId`. A popup-blocked call (`windowOpener` returns `null`) is a
-   * silent no-op — nothing to register, and there is no reliable way to
-   * distinguish "blocked" from "user dismissed the permission prompt" to
-   * report back.
+   * Opens (or, for an already-registered project+pageId, focuses) the
+   * pop-out for `pageId` in `projectSlug`. A popup-blocked call
+   * (`windowOpener` returns `null`) is a silent no-op — nothing to register,
+   * and there is no reliable way to distinguish "blocked" from "user
+   * dismissed the permission prompt" to report back.
    */
-  open(pageId: string): void {
-    const windowName = popoutWindowName(pageId);
-    const url = popoutHashUrl(pageId);
+  open(projectSlug: string, pageId: string): void {
+    const key = entryKey(projectSlug, pageId);
+    const windowName = popoutWindowName(projectSlug, pageId);
+    const url = popoutHashUrl(projectSlug, pageId);
     const winRef = this.windowOpener(url, windowName, POPOUT_WINDOW_FEATURES);
     if (winRef === null) return;
 
-    const alreadyOpen = this.entries.has(pageId);
-    this.entries.set(pageId, { windowName, pageId, winRef });
+    const alreadyOpen = this.entries.has(key);
+    this.entries.set(key, { windowName, projectSlug, pageId, winRef });
     if (!alreadyOpen) {
-      this.startPolling(pageId);
+      this.startPolling(key);
       this.emit();
     }
   }
 
   /** Alias for `open` — "Focus" re-opens by name, which is what makes an already-open popout come forward instead of duplicating. */
-  focus(pageId: string): void {
-    this.open(pageId);
+  focus(projectSlug: string, pageId: string): void {
+    this.open(projectSlug, pageId);
   }
 
   /** Closes the pop-out window via the registry's own reference and unregisters it. */
-  bringBack(pageId: string): void {
-    const entry = this.entries.get(pageId);
+  bringBack(projectSlug: string, pageId: string): void {
+    const key = entryKey(projectSlug, pageId);
+    const entry = this.entries.get(key);
     if (!entry) return;
     try {
       entry.winRef.close();
     } catch {
       // The window may already be gone — unregistering below is what matters.
     }
-    this.unregister(pageId);
+    this.unregister(key);
   }
 
   subscribe(listener: () => void): () => void {
@@ -175,34 +188,34 @@ export class PopoutRegistry {
     this.pollTimers.clear();
   }
 
-  private startPolling(pageId: string): void {
+  private startPolling(key: string): void {
     const timer = this.setIntervalImpl(() => {
-      const entry = this.entries.get(pageId);
+      const entry = this.entries.get(key);
       if (!entry) {
         this.clearIntervalImpl(timer);
         return;
       }
-      if (entry.winRef.closed) this.unregister(pageId);
+      if (entry.winRef.closed) this.unregister(key);
     }, CLOSE_POLL_MS);
-    this.pollTimers.set(pageId, timer);
+    this.pollTimers.set(key, timer);
   }
 
   private unregisterByWindowName(windowName: string): void {
     for (const entry of this.entries.values()) {
       if (entry.windowName === windowName) {
-        this.unregister(entry.pageId);
+        this.unregister(entryKey(entry.projectSlug, entry.pageId));
         return;
       }
     }
   }
 
-  private unregister(pageId: string): void {
-    const timer = this.pollTimers.get(pageId);
+  private unregister(key: string): void {
+    const timer = this.pollTimers.get(key);
     if (timer !== undefined) {
       this.clearIntervalImpl(timer);
-      this.pollTimers.delete(pageId);
+      this.pollTimers.delete(key);
     }
-    if (this.entries.delete(pageId)) this.emit();
+    if (this.entries.delete(key)) this.emit();
   }
 
   private emit(): void {

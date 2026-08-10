@@ -43,7 +43,7 @@ afterEach(() => {
 
 describe("PopoutBar", () => {
   it("renders the placeholder message and both actions", () => {
-    const container = mount(<PopoutBar pageId="page-a" />);
+    const container = mount(<PopoutBar projectSlug="proj-a" pageId="page-a" />);
 
     const buttons = container.querySelectorAll("button");
     expect(container.textContent).toContain("Previewing in another window");
@@ -53,32 +53,32 @@ describe("PopoutBar", () => {
 
   it("clicking Focus calls popoutRegistry.focus for this pageId", () => {
     const focusSpy = vi.spyOn(popoutRegistry, "focus");
-    const container = mount(<PopoutBar pageId="page-a" />);
+    const container = mount(<PopoutBar projectSlug="proj-a" pageId="page-a" />);
 
     const [focusButton] = container.querySelectorAll("button");
     act(() => {
       focusButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
 
-    expect(focusSpy).toHaveBeenCalledWith("page-a");
+    expect(focusSpy).toHaveBeenCalledWith("proj-a", "page-a");
   });
 
   it("clicking Bring back calls popoutRegistry.bringBack for this pageId", () => {
     const bringBackSpy = vi.spyOn(popoutRegistry, "bringBack");
-    const container = mount(<PopoutBar pageId="page-a" />);
+    const container = mount(<PopoutBar projectSlug="proj-a" pageId="page-a" />);
 
     const buttons = container.querySelectorAll("button");
     act(() => {
       buttons[1]?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
 
-    expect(bringBackSpy).toHaveBeenCalledWith("page-a");
+    expect(bringBackSpy).toHaveBeenCalledWith("proj-a", "page-a");
   });
 });
 
 describe("usePopoutOpen", () => {
   function Probe({ pageId }: { pageId: string }) {
-    const isOpen = usePopoutOpen(pageId);
+    const isOpen = usePopoutOpen("proj-b", pageId);
     return <span>{isOpen ? "open" : "closed"}</span>;
   }
 
@@ -88,10 +88,10 @@ describe("usePopoutOpen", () => {
     const container = mount(<Probe pageId="page-b" />);
     expect(container.textContent).toBe("closed");
 
-    act(() => popoutRegistry.open("page-b"));
+    act(() => popoutRegistry.open("proj-b", "page-b"));
     expect(container.textContent).toBe("open");
 
-    act(() => popoutRegistry.bringBack("page-b"));
+    act(() => popoutRegistry.bringBack("proj-b", "page-b"));
     expect(container.textContent).toBe("closed");
   });
 
@@ -99,7 +99,7 @@ describe("usePopoutOpen", () => {
     fakeOpener.mockReturnValue({ closed: false, close: vi.fn() });
 
     const container = mount(<Probe pageId="page-b" />);
-    act(() => popoutRegistry.open("page-c"));
+    act(() => popoutRegistry.open("proj-b", "page-c"));
 
     expect(container.textContent).toBe("closed");
   });

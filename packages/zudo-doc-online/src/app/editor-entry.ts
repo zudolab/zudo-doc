@@ -23,9 +23,10 @@
 import { useEffect, useState } from "preact/hooks";
 import type { ProjectSnapshot, ProjectStore } from "../store/contract.js";
 import type { ProjectEventsClient } from "../store/events.js";
-import type { KeyValueStorage } from "../features/editor/persistence.js";
+import { scopeStorage, type KeyValueStorage } from "../features/editor/persistence.js";
 import { readOpenTabIds } from "../features/editor/tabs-state.js";
-import type { Route } from "./router.js";
+import { LEGACY_FALLBACK_SLUG } from "./project.js";
+import { routeProjectSlug, type Route } from "./router.js";
 
 export function resolveEditorEntryPageId(
   route: Route,
@@ -67,13 +68,26 @@ export interface UseEditorEntryPageIdOptions {
   storage?: KeyValueStorage | null;
 }
 
+export interface EditorEntryResult {
+  pageId: string | null;
+  /** The active project's snapshot title, or `null` outside project context
+   * or before the first snapshot arrives — the shell hides its label then. */
+  projectTitle: string | null;
+}
+
 export function useEditorEntryPageId(
   route: Route,
   { store, events, storage }: UseEditorEntryPageIdOptions,
-): string | null {
+): EditorEntryResult {
   const [snapshot, setSnapshot] = useState<ProjectSnapshot | null>(null);
 
   useEffect(() => {
+    // A new `store` means a new project (route slug changed) — drop the
+    // previous project's snapshot immediately. Without this, the "older
+    // response is dropped" guard below would compare revisions ACROSS two
+    // unrelated projects' independent counters and could keep the old
+    // project's snapshot on screen indefinitely.
+    setSnapshot(null);
     if (store === null) return undefined;
     let cancelled = false;
 
@@ -125,5 +139,10 @@ export function useEditorEntryPageId(
     };
   }, [store, events]);
 
-  return resolveEditorEntryPageId(route, snapshot, readOpenTabIds(storage));
+  const projectSlug = routeProjectSlug(route);
+  if (projectSlug === null) return { pageId: null, projectTitle: null };
+
+  const scopedStorage = scopeStorage(projectSlug, LEGACY_FALLBACK_SLUG, storage);
+  const pageId = resolveEditorEntryPageId(route, snapshot, readOpenTabIds(scopedStorage));
+  return { pageId, projectTitle: snapshot?.title ?? null };
 }

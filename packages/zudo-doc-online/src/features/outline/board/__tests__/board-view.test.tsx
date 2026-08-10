@@ -140,7 +140,9 @@ describe("BoardView rendering", () => {
       />,
     );
 
-    const link = view.container.querySelector('a[href="#/editor/page-alpha-one"]');
+    const link = view.container.querySelector(
+      'a[href="#/p/test-project/editor/page-alpha-one"]',
+    );
     expect(link).not.toBeNull();
     expect(link?.textContent ?? "").toContain("One");
 

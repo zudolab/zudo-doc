@@ -56,6 +56,8 @@ const CHIP =
   "shrink-0 rounded-full bg-surface-2 px-hsp-xs py-vsp-2xs text-caption text-muted";
 
 export interface PageCardProps {
+  /** The project this page belongs to — threaded into the editor link (#3347). */
+  projectSlug: string;
   page: OutlinePageRow;
   categoryId: string;
   categoryTitle: string;
@@ -79,6 +81,7 @@ export interface PageCardProps {
 }
 
 export function PageCard({
+  projectSlug,
   page,
   categoryId,
   categoryTitle,
@@ -153,7 +156,7 @@ export function PageCard({
         <GripIcon />
       </button>
       <a
-        href={formatRoute({ name: "editor", pageId: page.id })}
+        href={formatRoute({ name: "editor", projectSlug, pageId: page.id })}
         className={CARD_LINK}
         onClick={(event) => {
           if (suppressClick()) {

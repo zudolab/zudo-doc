@@ -69,14 +69,14 @@ describe("workspace preview pop-out wiring", () => {
     act(() => popOutButton?.click());
     await settle();
 
-    expect(popoutRegistry.isOpen(INSTALLATION_ID)).toBe(true);
+    expect(popoutRegistry.isOpen("aurora-docs", INSTALLATION_ID)).toBe(true);
     expect(container.textContent).toContain("Previewing in another window");
     // The real preview pane unmounts while popped out.
     expect(container.querySelector('[aria-label^="Preview: "]')).toBeNull();
     // No point offering a second "Pop out" once it is already popped out.
     expect(queryByText(preview, "button", "Pop out")).toBeUndefined();
 
-    act(() => popoutRegistry.bringBack(INSTALLATION_ID));
+    act(() => popoutRegistry.bringBack("aurora-docs", INSTALLATION_ID));
   });
 
   it("clicking Bring back in the placeholder restores the real preview pane", async () => {
@@ -91,7 +91,7 @@ describe("workspace preview pop-out wiring", () => {
     act(() => queryByText<HTMLButtonElement>(preview, "button", "Bring back")?.click());
     await settle();
 
-    expect(popoutRegistry.isOpen(INSTALLATION_ID)).toBe(false);
+    expect(popoutRegistry.isOpen("aurora-docs", INSTALLATION_ID)).toBe(false);
     expect(container.textContent).not.toContain("Previewing in another window");
     expect(container.querySelector('[aria-label^="Preview: "]')).not.toBeNull();
   });
