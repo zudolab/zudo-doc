@@ -44,6 +44,7 @@ describe("package.json exports keyset snapshot", () => {
         "./auto-logo",
         "./body-foot-util",
         "./breadcrumb",
+        "./catalog",
         "./category-nav",
         "./category-tree-nav",
         "./chrome",

@@ -235,6 +235,10 @@
       "types": "./dist/toc-prepaint/index.d.ts",
       "default": "./dist/toc-prepaint/index.js"
     },
+    "./catalog": {
+      "types": "./dist/catalog.d.ts",
+      "default": "./dist/catalog.js"
+    },
     "./theme.css": "./dist/theme.css",
     "./safelist.css": "./dist/safelist.css",
     "./content.css": "./dist/content.css",
@@ -601,7 +605,7 @@
     "dev:js": "tsup --watch",
     "dev:dts": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
     "prepare": "tsup --silent && tsc -p tsconfig.build.json",
-    "prepack": "pnpm --dir ../.. gen:changelog && node scripts/check-theme-css.mjs && node scripts/check-safelist.mjs && node scripts/check-content-css.mjs && node scripts/check-page-loading-css.mjs && node scripts/check-features-css.mjs && node scripts/check-theme-packs.mjs && node scripts/check-plugins.mjs && node scripts/check-plugin-resolution.mjs && node scripts/check-eject-sources.mjs && node scripts/check-routes-src.mjs && node scripts/check-shim-artifacts.mjs && node scripts/check-virtual-modules.mjs && node bin/gen-component-tokens.mjs --check",
+    "prepack": "pnpm --dir ../.. gen:changelog && node scripts/check-theme-css.mjs && node scripts/check-safelist.mjs && node scripts/check-content-css.mjs && node scripts/check-page-loading-css.mjs && node scripts/check-features-css.mjs && node scripts/check-theme-packs.mjs && node scripts/check-catalog.mjs && node scripts/check-plugins.mjs && node scripts/check-plugin-resolution.mjs && node scripts/check-eject-sources.mjs && node scripts/check-routes-src.mjs && node scripts/check-shim-artifacts.mjs && node scripts/check-virtual-modules.mjs && node bin/gen-component-tokens.mjs --check",
     "test:plugin-resolution": "node scripts/check-plugin-resolution.mjs",
     "test": "vitest run --config vitest.config.ts",
     "test:slow": "vitest run --config vitest.slow.config.ts",

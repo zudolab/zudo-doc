@@ -20,6 +20,15 @@ The API server binds to `127.0.0.1` only — it writes real files to
 `packages/zudo-doc-online/server/data/` with no authentication, so it must
 never be reachable from the network.
 
+### Install notes
+
+This package depends on `@takazudo/zudo-doc` (`workspace:*`) for its
+`./catalog` subpath only — a pure-data import (the theme-pack catalog) that
+loads none of that package's `@takazudo/zfb` / `@takazudo/zdtp` / `katex` /
+`diff` peer dependencies at runtime. A root `pnpm install` may report those
+peers as unmet for this workspace — that's expected and safe to ignore; it's
+this package declining peers it never imports, not a broken install.
+
 ## Using this as an agent (MCP)
 
 AI agents author zudo-doc documentation bases through the API server, via the
