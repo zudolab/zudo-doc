@@ -39,6 +39,7 @@ async function mountSurface(): Promise<Surface> {
   const wiring = createWiring();
   const view = await mount(
     <OutlinePage
+      projectSlug="test-project"
       store={wiring.store}
       coordinator={wiring.coordinator}
       viewStorage={memoryViewStorage()}
@@ -586,6 +587,7 @@ describe("OutlinePage — live external changes", () => {
     });
     const view = await mount(
       <OutlinePage
+        projectSlug="test-project"
         store={wiring.store}
         coordinator={wiring.coordinator}
         events={events}
@@ -623,6 +625,7 @@ describe("OutlinePage — live external changes", () => {
     });
     const view = await mount(
       <OutlinePage
+        projectSlug="test-project"
         store={wiring.store}
         coordinator={wiring.coordinator}
         events={events}
@@ -780,6 +783,7 @@ describe("OutlinePage — out-of-order responses", () => {
 
     const view = await mount(
       <OutlinePage
+        projectSlug="test-project"
         store={gated}
         coordinator={wiring.coordinator}
         events={events}
@@ -837,6 +841,7 @@ describe("OutlinePage — view switch", () => {
 
     const first = await mount(
       <OutlinePage
+        projectSlug="test-project"
         store={firstWiring.store}
         coordinator={firstWiring.coordinator}
         viewStorage={viewStorage}
@@ -844,7 +849,7 @@ describe("OutlinePage — view switch", () => {
     );
     await click(buttonWithText(first.container, "Board"));
 
-    expect(viewStorage.values["zudo-doc-online-outline-view"]).toBe("board");
+    expect(viewStorage.values["zudo-doc-online-outline-view:test-project"]).toBe("board");
     expect(first.container.textContent ?? "").toContain("Board view");
     expect(first.container.textContent ?? "").toContain("sub-issue #3337");
     expect(first.container.textContent ?? "").not.toContain("Site structure");
@@ -853,6 +858,7 @@ describe("OutlinePage — view switch", () => {
     const secondWiring = createWiring();
     const second = await mount(
       <OutlinePage
+        projectSlug="test-project"
         store={secondWiring.store}
         coordinator={secondWiring.coordinator}
         viewStorage={viewStorage}
@@ -887,10 +893,11 @@ describe("OutlinePage — view switch", () => {
 
     const view = await mount(
       <OutlinePage
+        projectSlug="test-project"
         store={wiring.store}
         coordinator={wiring.coordinator}
         viewStorage={memoryViewStorage({
-          "zudo-doc-online-outline-view": "board",
+          "zudo-doc-online-outline-view:test-project": "board",
         })}
         boardView={BoardStub}
       />,

@@ -51,6 +51,7 @@ describe("EditorRoute — snapshot freshness", () => {
     await act(async () => {
       render(
         <EditorRoute
+          projectSlug="aurora-docs"
           pageId={INSTALLATION_ID}
           createStore={() => store}
           createEvents={() => events}
@@ -95,6 +96,7 @@ describe("EditorRoute — snapshot freshness", () => {
     await act(async () => {
       render(
         <EditorRoute
+          projectSlug="aurora-docs"
           pageId={INSTALLATION_ID}
           createStore={() => store}
           createEvents={() => events}

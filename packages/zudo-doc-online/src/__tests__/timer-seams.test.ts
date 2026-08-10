@@ -149,7 +149,7 @@ describe("default timer seams survive a browser-strict `this` check", () => {
       channel: null,
     });
 
-    expect(() => registry.open("page-1")).not.toThrow();
+    expect(() => registry.open("proj-a", "page-1")).not.toThrow();
     registry.dispose();
   });
 });

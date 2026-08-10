@@ -34,7 +34,7 @@
  */
 
 import { useEffect, useState } from "preact/hooks";
-import { DEFAULT_PROJECT_SLUG } from "../outline/route";
+import { LEGACY_FALLBACK_SLUG } from "../../app/project";
 import {
   ProjectEventsClient,
   StoreRequestError,
@@ -48,10 +48,13 @@ import { announcePopoutClose } from "./popout-bus";
 import { subscribePopoutThemeSync } from "./popout-theme-sync";
 
 export interface PopoutWindowProps {
+  /** Defaults to `LEGACY_FALLBACK_SLUG` — a test seam, since a real popout is
+   * always opened with a real project slug (`popout-registry.ts`). */
+  projectSlug?: string;
   pageId: string;
-  /** Test seam: defaults to a real HTTP store bound to `DEFAULT_PROJECT_SLUG`. */
+  /** Test seam: defaults to a real HTTP store bound to `projectSlug`. */
   store?: ProjectStore;
-  /** Test seam: defaults to a real `ProjectEventsClient` bound to `DEFAULT_PROJECT_SLUG`. `null` disables the SSE subscription entirely. */
+  /** Test seam: defaults to a real `ProjectEventsClient` bound to `projectSlug`. `null` disables the SSE subscription entirely. */
   events?: ProjectEventsClient | null;
 }
 
@@ -74,6 +77,7 @@ function isValidPageId(pageId: string): boolean {
 }
 
 export default function PopoutWindow({
+  projectSlug = LEGACY_FALLBACK_SLUG,
   pageId,
   store: injectedStore,
   events: injectedEvents,
@@ -101,12 +105,12 @@ export default function PopoutWindow({
     // still connected/closed by this effect same as the default.
     const events =
       injectedEvents === undefined
-        ? new ProjectEventsClient({ projectSlug: DEFAULT_PROJECT_SLUG, clientId: getClientId() })
+        ? new ProjectEventsClient({ projectSlug, clientId: getClientId() })
         : injectedEvents;
 
     async function boot(): Promise<void> {
       try {
-        const store = injectedStore ?? createHttpProjectStore({ projectSlug: DEFAULT_PROJECT_SLUG });
+        const store = injectedStore ?? createHttpProjectStore({ projectSlug });
         const page = await store.loadPage(pageId);
         if (cancelled) return;
         setState({ status: "ready", page });
@@ -175,7 +179,7 @@ export default function PopoutWindow({
       cleanup?.();
       events?.close();
     };
-  }, [pageId, injectedStore, injectedEvents]);
+  }, [projectSlug, pageId, injectedStore, injectedEvents]);
 
   if (state.status === "invalid") {
     return <PopoutStatus title="This pop-out link is invalid" message={state.message} />;

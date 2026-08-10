@@ -48,12 +48,18 @@ afterEach(() => {
 });
 
 describe("popoutWindowName / popoutHashUrl", () => {
-  it("names the window per-pageId and percent-encodes the hash URL", () => {
-    expect(popoutWindowName("getting-started/installation")).toBe(
-      "zdo-popout-getting-started/installation",
+  it("names the window per-project-per-pageId and percent-encodes both", () => {
+    expect(popoutWindowName("aurora-docs", "getting-started/installation")).toBe(
+      "zdo-popout-aurora-docs-getting-started%2Finstallation",
     );
-    expect(popoutHashUrl("getting-started/installation")).toBe(
-      "#/popped-out/preview/getting-started%2Finstallation",
+    expect(popoutHashUrl("aurora-docs", "getting-started/installation")).toBe(
+      "#/p/aurora-docs/popped-out/preview/getting-started%2Finstallation",
+    );
+  });
+
+  it("two different projects never collide on the same pageId", () => {
+    expect(popoutWindowName("proj-a", "page-1")).not.toBe(
+      popoutWindowName("proj-b", "page-1"),
     );
   });
 });
@@ -66,14 +72,14 @@ describe("PopoutRegistry.open", () => {
     const listener = vi.fn();
     registry.subscribe(listener);
 
-    registry.open("page-a");
+    registry.open("proj-a", "page-a");
 
     expect(opener).toHaveBeenCalledWith(
-      "#/popped-out/preview/page-a",
-      "zdo-popout-page-a",
+      "#/p/proj-a/popped-out/preview/page-a",
+      "zdo-popout-proj-a-page-a",
       "width=900,height=600,popup",
     );
-    expect(registry.isOpen("page-a")).toBe(true);
+    expect(registry.isOpen("proj-a", "page-a")).toBe(true);
     expect(listener).toHaveBeenCalledTimes(1);
   });
 
@@ -83,12 +89,12 @@ describe("PopoutRegistry.open", () => {
     const registry = new PopoutRegistry({ windowOpener: opener, channel: null });
     const listener = vi.fn();
 
-    registry.open("page-a");
+    registry.open("proj-a", "page-a");
     registry.subscribe(listener);
-    registry.open("page-a"); // re-click / Focus
+    registry.open("proj-a", "page-a"); // re-click / Focus
 
     expect(opener).toHaveBeenCalledTimes(2);
-    expect(registry.isOpen("page-a")).toBe(true);
+    expect(registry.isOpen("proj-a", "page-a")).toBe(true);
     expect(listener).not.toHaveBeenCalled();
   });
 
@@ -98,9 +104,9 @@ describe("PopoutRegistry.open", () => {
     const listener = vi.fn();
     registry.subscribe(listener);
 
-    registry.open("page-a");
+    registry.open("proj-a", "page-a");
 
-    expect(registry.isOpen("page-a")).toBe(false);
+    expect(registry.isOpen("proj-a", "page-a")).toBe(false);
     expect(listener).not.toHaveBeenCalled();
   });
 
@@ -109,11 +115,11 @@ describe("PopoutRegistry.open", () => {
     const opener = vi.fn().mockReturnValue(win);
     const registry = new PopoutRegistry({ windowOpener: opener, channel: null });
 
-    registry.open("page-a");
-    registry.focus("page-a");
+    registry.open("proj-a", "page-a");
+    registry.focus("proj-a", "page-a");
 
     expect(opener).toHaveBeenCalledTimes(2);
-    expect(opener.mock.calls[1]?.[1]).toBe("zdo-popout-page-a");
+    expect(opener.mock.calls[1]?.[1]).toBe("zdo-popout-proj-a-page-a");
   });
 });
 
@@ -122,14 +128,14 @@ describe("PopoutRegistry close detection — poll path", () => {
     const win = makeFakeWindow();
     const opener = vi.fn().mockReturnValue(win);
     const registry = new PopoutRegistry({ windowOpener: opener, channel: null });
-    registry.open("page-a");
+    registry.open("proj-a", "page-a");
     const listener = vi.fn();
     registry.subscribe(listener);
 
     win.setClosed(true);
     vi.advanceTimersByTime(1000);
 
-    expect(registry.isOpen("page-a")).toBe(false);
+    expect(registry.isOpen("proj-a", "page-a")).toBe(false);
     expect(listener).toHaveBeenCalledTimes(1);
   });
 
@@ -137,13 +143,13 @@ describe("PopoutRegistry close detection — poll path", () => {
     const win = makeFakeWindow();
     const opener = vi.fn().mockReturnValue(win);
     const registry = new PopoutRegistry({ windowOpener: opener, channel: null });
-    registry.open("page-a");
+    registry.open("proj-a", "page-a");
     const listener = vi.fn();
     registry.subscribe(listener);
 
     vi.advanceTimersByTime(5000);
 
-    expect(registry.isOpen("page-a")).toBe(true);
+    expect(registry.isOpen("proj-a", "page-a")).toBe(true);
     expect(listener).not.toHaveBeenCalled();
   });
 
@@ -151,8 +157,8 @@ describe("PopoutRegistry close detection — poll path", () => {
     const win = makeFakeWindow();
     const opener = vi.fn().mockReturnValue(win);
     const registry = new PopoutRegistry({ windowOpener: opener, channel: null });
-    registry.open("page-a");
-    registry.bringBack("page-a");
+    registry.open("proj-a", "page-a");
+    registry.bringBack("proj-a", "page-a");
     const listener = vi.fn();
     registry.subscribe(listener);
 
@@ -168,13 +174,13 @@ describe("PopoutRegistry close detection — BroadcastChannel path", () => {
     const opener = vi.fn().mockReturnValue(win);
     const channel = makeFakeChannel();
     const registry = new PopoutRegistry({ windowOpener: opener, channel });
-    registry.open("page-a");
+    registry.open("proj-a", "page-a");
     const listener = vi.fn();
     registry.subscribe(listener);
 
-    channel.emit({ event: POPOUT_PAGEHIDE_EVENT, windowName: "zdo-popout-page-a" });
+    channel.emit({ event: POPOUT_PAGEHIDE_EVENT, windowName: "zdo-popout-proj-a-page-a" });
 
-    expect(registry.isOpen("page-a")).toBe(false);
+    expect(registry.isOpen("proj-a", "page-a")).toBe(false);
     expect(listener).toHaveBeenCalledTimes(1);
   });
 
@@ -183,13 +189,13 @@ describe("PopoutRegistry close detection — BroadcastChannel path", () => {
     const opener = vi.fn().mockReturnValue(win);
     const channel = makeFakeChannel();
     const registry = new PopoutRegistry({ windowOpener: opener, channel });
-    registry.open("page-a");
+    registry.open("proj-a", "page-a");
     const listener = vi.fn();
     registry.subscribe(listener);
 
-    channel.emit({ event: POPOUT_PAGEHIDE_EVENT, windowName: "zdo-popout-unrelated-page" });
+    channel.emit({ event: POPOUT_PAGEHIDE_EVENT, windowName: "zdo-popout-proj-a-unrelated-page" });
 
-    expect(registry.isOpen("page-a")).toBe(true);
+    expect(registry.isOpen("proj-a", "page-a")).toBe(true);
     expect(listener).not.toHaveBeenCalled();
   });
 
@@ -198,11 +204,11 @@ describe("PopoutRegistry close detection — BroadcastChannel path", () => {
     const opener = vi.fn().mockReturnValue(win);
     const channel = makeFakeChannel();
     const registry = new PopoutRegistry({ windowOpener: opener, channel });
-    registry.open("page-a");
+    registry.open("proj-a", "page-a");
 
     expect(() => channel.emit("not an envelope")).not.toThrow();
-    expect(() => channel.emit({ event: "some-other-event", windowName: "zdo-popout-page-a" })).not.toThrow();
-    expect(registry.isOpen("page-a")).toBe(true);
+    expect(() => channel.emit({ event: "some-other-event", windowName: "zdo-popout-proj-a-page-a" })).not.toThrow();
+    expect(registry.isOpen("proj-a", "page-a")).toBe(true);
   });
 });
 
@@ -211,20 +217,20 @@ describe("PopoutRegistry.bringBack", () => {
     const win = makeFakeWindow();
     const opener = vi.fn().mockReturnValue(win);
     const registry = new PopoutRegistry({ windowOpener: opener, channel: null });
-    registry.open("page-a");
+    registry.open("proj-a", "page-a");
     const listener = vi.fn();
     registry.subscribe(listener);
 
-    registry.bringBack("page-a");
+    registry.bringBack("proj-a", "page-a");
 
     expect(win.close).toHaveBeenCalledTimes(1);
-    expect(registry.isOpen("page-a")).toBe(false);
+    expect(registry.isOpen("proj-a", "page-a")).toBe(false);
     expect(listener).toHaveBeenCalledTimes(1);
   });
 
   it("is a no-op for a pageId that isn't registered", () => {
     const registry = new PopoutRegistry({ windowOpener: vi.fn(), channel: null });
-    expect(() => registry.bringBack("nope")).not.toThrow();
+    expect(() => registry.bringBack("proj-a", "nope")).not.toThrow();
   });
 
   it("still unregisters even when winRef.close() throws", () => {
@@ -234,10 +240,10 @@ describe("PopoutRegistry.bringBack", () => {
     });
     const opener = vi.fn().mockReturnValue(win);
     const registry = new PopoutRegistry({ windowOpener: opener, channel: null });
-    registry.open("page-a");
+    registry.open("proj-a", "page-a");
 
-    expect(() => registry.bringBack("page-a")).not.toThrow();
-    expect(registry.isOpen("page-a")).toBe(false);
+    expect(() => registry.bringBack("proj-a", "page-a")).not.toThrow();
+    expect(registry.isOpen("proj-a", "page-a")).toBe(false);
   });
 });
 
@@ -250,7 +256,7 @@ describe("PopoutRegistry.subscribe", () => {
     const unsubscribe = registry.subscribe(listener);
     unsubscribe();
 
-    registry.open("page-a");
+    registry.open("proj-a", "page-a");
 
     expect(listener).not.toHaveBeenCalled();
   });

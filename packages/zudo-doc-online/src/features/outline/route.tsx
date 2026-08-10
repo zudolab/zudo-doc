@@ -9,16 +9,13 @@
 // swap in the memory provider without this file knowing.
 import { lazy } from "preact/compat";
 import { useMemo } from "preact/hooks";
-import { DEFAULT_PROJECT_SLUG } from "../../app/project.js";
+import { LEGACY_FALLBACK_SLUG } from "../../app/project.js";
 import { getClientId } from "../../store/client-id.js";
 import { ProjectEventsClient } from "../../store/events.js";
 import { createHttpProjectStore } from "../../store/http-provider.js";
 import { createCoordinatedStore } from "../../store/revision-coordinator.js";
 import { OutlinePage } from "./outline-page.js";
 import type { OutlineViewComponent } from "./view-props.js";
-
-/** Re-exported for the surfaces that already import it from here. */
-export { DEFAULT_PROJECT_SLUG };
 
 /**
  * Zero-touch mount seam for the board view (#3337): dropping a
@@ -44,7 +41,7 @@ export interface OutlineRouteProps {
 }
 
 export default function OutlineRoute({
-  projectSlug = DEFAULT_PROJECT_SLUG,
+  projectSlug = LEGACY_FALLBACK_SLUG,
   boardView,
 }: OutlineRouteProps = {}) {
   const wiring = useMemo(() => {
@@ -66,6 +63,7 @@ export default function OutlineRoute({
       coordinator={wiring.coordinator}
       events={wiring.events}
       boardView={resolvedBoardView}
+      projectSlug={projectSlug}
     />
   );
 }

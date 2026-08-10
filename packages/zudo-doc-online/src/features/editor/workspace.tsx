@@ -30,6 +30,7 @@
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 import { useSyncExternalStore } from "preact/compat";
 import type { ComponentChildren } from "preact";
+import { LEGACY_FALLBACK_SLUG } from "../../app/project";
 import {
   RevisionConflictError,
   StoreRequestError,
@@ -55,7 +56,7 @@ import {
   type EditorTreePage,
 } from "./page-index";
 import { PageSessionRegistry, type PageSession } from "./page-sessions";
-import type { KeyValueStorage } from "./persistence";
+import { scopeStorage, type KeyValueStorage } from "./persistence";
 import PreviewPaneSlot from "./preview-pane-slot";
 import { EditorRail } from "./rail";
 import {
@@ -119,6 +120,16 @@ export function EditorWorkspace({
   storage,
   saveDebounceMs,
 }: EditorWorkspaceProps) {
+  // The project this workspace is open on (#3347). Every persisted UI key
+  // (tabs, rail mode, split ratio, vim mode) and the popout registry are
+  // scoped by it, so a second project never shares localStorage or a popout
+  // window with this one.
+  const projectSlug = snapshot.slug;
+  const scopedStorage = useMemo(
+    () => scopeStorage(projectSlug, LEGACY_FALLBACK_SLUG, storage),
+    [projectSlug, storage],
+  );
+
   const registry = useMemo(
     () =>
       new PageSessionRegistry({
@@ -146,11 +157,15 @@ export function EditorWorkspace({
   const pageIds = useMemo(() => knownPageIds(baseTree), [baseTree]);
 
   const [tabs, setTabs] = useState<TabsState>(() =>
-    restoreTabs(readOpenTabIds(storage), routePageId, knownPageIds(buildEditorTree(snapshot))),
+    restoreTabs(
+      readOpenTabIds(scopedStorage),
+      routePageId,
+      knownPageIds(buildEditorTree(snapshot)),
+    ),
   );
-  const [railMode, setRailMode] = useState<RailMode>(() => readRailMode(storage));
+  const [railMode, setRailMode] = useState<RailMode>(() => readRailMode(scopedStorage));
   const [flyoutOpen, setFlyoutOpen] = useState(false);
-  const [splitPercent, setSplitPercent] = useState(() => readSplitPercent(storage));
+  const [splitPercent, setSplitPercent] = useState(() => readSplitPercent(scopedStorage));
   const [editorStatus, setEditorStatus] = useState<EditorPaneStatus | undefined>();
   const [outlineNotice, setOutlineNotice] = useState<OutlineNotice | null>(null);
 
@@ -172,8 +187,8 @@ export function EditorWorkspace({
   }, [tabs, pageIds, onNavigate]);
 
   useEffect(() => {
-    writeOpenTabIds(tabs.openIds, storage);
-  }, [tabs.openIds, storage]);
+    writeOpenTabIds(tabs.openIds, scopedStorage);
+  }, [tabs.openIds, scopedStorage]);
 
   // Tabs → sessions. `open` is idempotent, so this converges after one pass.
   useEffect(() => {
@@ -191,7 +206,7 @@ export function EditorWorkspace({
   // "" is never a registered pageId, so this reads as permanently
   // not-popped-out whenever no page is active — keeps the hook call
   // unconditional (Rules of Hooks) without a real page to key it on.
-  const activePreviewPoppedOut = usePopoutOpen(activePageId ?? "");
+  const activePreviewPoppedOut = usePopoutOpen(projectSlug, activePageId ?? "");
 
   // The machine parks in `saved` until acknowledged, so the chip can show a
   // real "Saved" moment instead of blinking through it.
@@ -242,18 +257,18 @@ export function EditorWorkspace({
   const handleToggleRail = useCallback(() => {
     setRailMode((mode) => {
       const next = toggleRailMode(mode);
-      writeRailMode(next, storage);
+      writeRailMode(next, scopedStorage);
       return next;
     });
     setFlyoutOpen(false);
-  }, [storage]);
+  }, [scopedStorage]);
 
   const commitSplit = useCallback(
     (percent: number) => {
       setSplitPercent(percent);
-      writeSplitPercent(percent, storage);
+      writeSplitPercent(percent, scopedStorage);
     },
-    [storage],
+    [scopedStorage],
   );
 
   const movePage = useCallback(
@@ -314,6 +329,7 @@ export function EditorWorkspace({
         <EditorRail
           mode={railMode}
           onToggleMode={handleToggleRail}
+          projectSlug={projectSlug}
           projectTitle={snapshot.title}
           tree={tree}
           pageCount={countTreePages(tree)}
@@ -417,7 +433,7 @@ export function EditorWorkspace({
                 onStatusChange={setEditorStatus}
                 onRequestSave={() => activeMachine?.flush()}
                 onReload={() => activePageId && registry.reload(activePageId)}
-                storage={storage}
+                storage={scopedStorage}
               />
             }
             previewHeader={
@@ -430,7 +446,7 @@ export function EditorWorkspace({
                   <button
                     type="button"
                     className={BUTTON_CLASSES}
-                    onClick={() => popoutRegistry.open(activePage.id)}
+                    onClick={() => popoutRegistry.open(projectSlug, activePage.id)}
                   >
                     Pop out
                   </button>
@@ -440,7 +456,7 @@ export function EditorWorkspace({
             preview={
               activePage && activeSave ? (
                 activePreviewPoppedOut ? (
-                  <PopoutBar pageId={activePage.id} />
+                  <PopoutBar projectSlug={projectSlug} pageId={activePage.id} />
                 ) : (
                   <PreviewPaneSlot
                     pageId={activePage.id}

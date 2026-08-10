@@ -28,7 +28,6 @@
 
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { ComponentChildren } from "preact";
-import { DEFAULT_PROJECT_SLUG as PROJECT_SLUG } from "../../app/project";
 import { navigateTo } from "../../app/router";
 import {
   ProjectEventsClient,
@@ -48,6 +47,7 @@ interface Bootstrap {
 }
 
 export interface EditorRouteProps {
+  projectSlug: string;
   pageId: string;
   /**
    * Test seams, mirroring `features/popout/popout-window.tsx`. Factories
@@ -60,6 +60,7 @@ export interface EditorRouteProps {
 }
 
 export default function EditorRoute({
+  projectSlug,
   pageId,
   createStore,
   createEvents,
@@ -78,7 +79,7 @@ export default function EditorRoute({
     async function boot(): Promise<void> {
       try {
         const provider =
-          createStore?.() ?? createHttpProjectStore({ projectSlug: PROJECT_SLUG });
+          createStore?.() ?? createHttpProjectStore({ projectSlug });
         const initial = await provider.loadSnapshot();
         if (cancelled) return;
 
@@ -86,7 +87,7 @@ export default function EditorRoute({
         events =
           createEvents?.() ??
           new ProjectEventsClient({
-            projectSlug: PROJECT_SLUG,
+            projectSlug,
             clientId: getClientId(),
           });
         const unbindCoordinator = bindCoordinatorToEvents(coordinator, events);
@@ -154,7 +155,7 @@ export default function EditorRoute({
       cleanup?.();
       events?.close();
     };
-  }, [attempt]);
+  }, [projectSlug, attempt]);
 
   if (error !== null) {
     return (
@@ -191,8 +192,8 @@ export default function EditorRoute({
       onNavigate={(nextPageId) => {
         // No page left to show: the outline is the only other surface that
         // makes sense to land on, and it is where a new page gets created.
-        if (nextPageId === null) navigateTo({ name: "outline" });
-        else navigateTo({ name: "editor", pageId: nextPageId });
+        if (nextPageId === null) navigateTo({ name: "outline", projectSlug });
+        else navigateTo({ name: "editor", projectSlug, pageId: nextPageId });
       }}
       onSnapshotChanged={setSnapshot}
     />
