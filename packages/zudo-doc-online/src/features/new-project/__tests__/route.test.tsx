@@ -60,6 +60,7 @@ afterEach(() => {
   }
   document.body.innerHTML = "";
   document.documentElement.removeAttribute("data-theme");
+  window.location.hash = "";
 });
 
 interface MountOptions {
@@ -68,6 +69,9 @@ interface MountOptions {
 }
 
 function mount(options: MountOptions = {}) {
+  // The wizard reads the live hash to tell "still here" from "the user left"
+  // — mount it on its own route, as the shell would.
+  window.location.hash = "#/new";
   const store = options.store ?? new MemoryProjectsDirectoryStore();
   const navigate = vi.fn<(route: Route) => void>();
   const root = document.createElement("div");
@@ -94,6 +98,11 @@ function mount(options: MountOptions = {}) {
     store,
     navigate,
     query,
+    unmount: () => {
+      act(() => {
+        render(null, root);
+      });
+    },
     cards: () => [...root.querySelectorAll<HTMLButtonElement>("[data-pack]")],
     nameInput: () => query<HTMLInputElement>("#new-project-name"),
     createButton: () =>
@@ -304,6 +313,61 @@ describe("NewProjectRoute — finish sheet", () => {
       projectSlug: "ドキュメント",
     });
   });
+
+  it("drops a create that completes after the user has navigated away", async () => {
+    const { nameInput, createButton, navigate, resolveCreate, unmount } =
+      mountPendingCreate();
+
+    input(nameInput(), "My Docs");
+    act(() => {
+      createButton().click();
+    });
+    await settle();
+
+    // The Projects link / shell header leave without touching the Escape guard.
+    unmount();
+    resolveCreate({ slug: "my-docs" });
+    await settle();
+
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it("drops a create that completes between the hash change and the unmount", async () => {
+    const { nameInput, createButton, navigate, resolveCreate } = mountPendingCreate();
+
+    input(nameInput(), "My Docs");
+    act(() => {
+      createButton().click();
+    });
+    await settle();
+
+    // A `#/` link assigns the hash synchronously; the shell unmounts this
+    // route only on the later hashchange callback.
+    window.location.hash = "#/";
+    resolveCreate({ slug: "my-docs" });
+    await settle();
+
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  function mountPendingCreate() {
+    let resolveCreate: ((snapshot: unknown) => void) | undefined;
+    const pending: ProjectsDirectoryStore = {
+      listProjects: () => Promise.resolve([]),
+      getProject: () => Promise.reject(new Error("unused")),
+      createProject: () =>
+        new Promise((resolve) => {
+          resolveCreate = resolve as (snapshot: unknown) => void;
+        }) as ReturnType<ProjectsDirectoryStore["createProject"]>,
+      deleteProject: () => Promise.reject(new Error("unused")),
+      duplicateProject: () => Promise.reject(new Error("unused")),
+    };
+    const mounted = mount({ store: pending });
+    return {
+      ...mounted,
+      resolveCreate: (snapshot: unknown) => resolveCreate?.(snapshot),
+    };
+  }
 
   it("returns to the dashboard on Escape, but never mid-composition", () => {
     const { navigate } = mount();

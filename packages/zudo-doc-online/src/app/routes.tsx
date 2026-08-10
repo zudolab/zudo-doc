@@ -28,13 +28,29 @@ function renderRoute(route: Route) {
       return <ProjectsRoute />;
     case "new-project":
       return <NewProjectRoute />;
+    // `key={route.projectSlug}` on every project-scoped surface: navigating
+    // straight from one project's outline/editor to ANOTHER project's same
+    // surface would otherwise reuse the component instance, so project-scoped
+    // child state (outline snapshot + its revision guard, open tabs, save
+    // machines) would survive into a store that now points at a different
+    // project. Keying forces a remount so all of it is rebuilt from scratch.
     case "outline":
-      return <OutlineRoute projectSlug={route.projectSlug} />;
+      return <OutlineRoute key={route.projectSlug} projectSlug={route.projectSlug} />;
     case "editor":
-      return <EditorRoute projectSlug={route.projectSlug} pageId={route.pageId} />;
+      return (
+        <EditorRoute
+          key={route.projectSlug}
+          projectSlug={route.projectSlug}
+          pageId={route.pageId}
+        />
+      );
     case "popped-out-preview":
       return (
-        <PoppedOutPreviewRoute projectSlug={route.projectSlug} pageId={route.pageId} />
+        <PoppedOutPreviewRoute
+          key={route.projectSlug}
+          projectSlug={route.projectSlug}
+          pageId={route.pageId}
+        />
       );
   }
 }

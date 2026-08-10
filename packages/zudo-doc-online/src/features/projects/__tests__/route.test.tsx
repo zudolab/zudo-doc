@@ -75,7 +75,11 @@ function railTitles(root: HTMLElement): string[] {
 }
 
 function detailTitle(root: HTMLElement): string {
-  return root.querySelector("main[aria-label='Project detail'] h1")?.textContent?.trim() ?? "";
+  return (
+    root
+      .querySelector("section[aria-label='Project detail'] h1")
+      ?.textContent?.trim() ?? ""
+  );
 }
 
 async function setSearch(root: HTMLElement, value: string): Promise<void> {
@@ -127,6 +131,12 @@ describe("ProjectsRoute — rail", () => {
 });
 
 describe("ProjectsRoute — detail pane", () => {
+  it("emits no <main> of its own — the shell already owns the page's single main landmark", async () => {
+    const { root } = await mountDashboard();
+    expect(root.querySelector("main")).toBeNull();
+    expect(root.querySelector("section[aria-label='Project detail']")).not.toBeNull();
+  });
+
   it("lists pages in outline order with draft chips, linking each into the editor", async () => {
     const { root } = await mountDashboard();
     const pagesCard = root.querySelector("section[aria-label='Pages']");

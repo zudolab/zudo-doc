@@ -52,9 +52,16 @@ const POPOUT_WINDOW_FEATURES = "width=900,height=600,popup";
 const CLOSE_POLL_MS = 1000;
 
 /** Two different projects' pages never collide (#3347): the window name
- * carries both the project slug and the pageId. */
+ * carries both the project slug and the pageId.
+ *
+ * The components are joined with `:` — a character `encodeURIComponent`
+ * escapes (to `%3A`) and therefore one that can never appear inside either
+ * encoded component. A plain `-` would NOT be unambiguous: `-` survives
+ * encoding, so project `a-b` + page `c` and project `a` + page `b-c` would
+ * produce the same window name, and the browser would retarget one project's
+ * popout at the other's page while the registry held two entries. */
 export function popoutWindowName(projectSlug: string, pageId: string): string {
-  return `zdo-popout-${encodeURIComponent(projectSlug)}-${encodeURIComponent(pageId)}`;
+  return `zdo-popout-${encodeURIComponent(projectSlug)}:${encodeURIComponent(pageId)}`;
 }
 
 /** Hash-only — resolves against the opener's own document location, i.e. the
@@ -64,9 +71,11 @@ export function popoutHashUrl(projectSlug: string, pageId: string): string {
   return formatRoute({ name: "popped-out-preview", projectSlug, pageId });
 }
 
-/** Composite key: a pageId alone is not unique across projects (#3347). */
+/** Composite key: a pageId alone is not unique across projects (#3347).
+ * Same encode-then-join-with-`:` rule as `popoutWindowName` so the map key
+ * cannot alias two different project/page pairs either. */
 function entryKey(projectSlug: string, pageId: string): string {
-  return `${projectSlug} ${pageId}`;
+  return `${encodeURIComponent(projectSlug)}:${encodeURIComponent(pageId)}`;
 }
 
 interface PopoutEntry {
