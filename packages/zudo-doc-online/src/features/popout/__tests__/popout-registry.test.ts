@@ -50,7 +50,7 @@ afterEach(() => {
 describe("popoutWindowName / popoutHashUrl", () => {
   it("names the window per-project-per-pageId and percent-encodes both", () => {
     expect(popoutWindowName("aurora-docs", "getting-started/installation")).toBe(
-      "zdo-popout-aurora-docs-getting-started%2Finstallation",
+      "zdo-popout-aurora-docs:getting-started%2Finstallation",
     );
     expect(popoutHashUrl("aurora-docs", "getting-started/installation")).toBe(
       "#/p/aurora-docs/popped-out/preview/getting-started%2Finstallation",
@@ -61,6 +61,12 @@ describe("popoutWindowName / popoutHashUrl", () => {
     expect(popoutWindowName("proj-a", "page-1")).not.toBe(
       popoutWindowName("proj-b", "page-1"),
     );
+  });
+
+  it("a hyphen shared across the slug/pageId boundary does not alias two pairs", () => {
+    // Both pairs join to "a-b-c" under a `-` separator, because
+    // encodeURIComponent leaves `-` alone.
+    expect(popoutWindowName("a-b", "c")).not.toBe(popoutWindowName("a", "b-c"));
   });
 });
 
@@ -76,7 +82,7 @@ describe("PopoutRegistry.open", () => {
 
     expect(opener).toHaveBeenCalledWith(
       "#/p/proj-a/popped-out/preview/page-a",
-      "zdo-popout-proj-a-page-a",
+      "zdo-popout-proj-a:page-a",
       "width=900,height=600,popup",
     );
     expect(registry.isOpen("proj-a", "page-a")).toBe(true);
@@ -119,7 +125,19 @@ describe("PopoutRegistry.open", () => {
     registry.focus("proj-a", "page-a");
 
     expect(opener).toHaveBeenCalledTimes(2);
-    expect(opener.mock.calls[1]?.[1]).toBe("zdo-popout-proj-a-page-a");
+    expect(opener.mock.calls[1]?.[1]).toBe("zdo-popout-proj-a:page-a");
+  });
+
+  it("keeps two boundary-hyphen pairs as separate entries and separate windows", () => {
+    const opener = vi.fn().mockImplementation(() => makeFakeWindow());
+    const registry = new PopoutRegistry({ windowOpener: opener, channel: null });
+
+    registry.open("a-b", "c");
+    registry.open("a", "b-c");
+
+    expect(registry.isOpen("a-b", "c")).toBe(true);
+    expect(registry.isOpen("a", "b-c")).toBe(true);
+    expect(opener.mock.calls[0]?.[1]).not.toBe(opener.mock.calls[1]?.[1]);
   });
 });
 
@@ -178,7 +196,7 @@ describe("PopoutRegistry close detection — BroadcastChannel path", () => {
     const listener = vi.fn();
     registry.subscribe(listener);
 
-    channel.emit({ event: POPOUT_PAGEHIDE_EVENT, windowName: "zdo-popout-proj-a-page-a" });
+    channel.emit({ event: POPOUT_PAGEHIDE_EVENT, windowName: "zdo-popout-proj-a:page-a" });
 
     expect(registry.isOpen("proj-a", "page-a")).toBe(false);
     expect(listener).toHaveBeenCalledTimes(1);
@@ -193,7 +211,7 @@ describe("PopoutRegistry close detection — BroadcastChannel path", () => {
     const listener = vi.fn();
     registry.subscribe(listener);
 
-    channel.emit({ event: POPOUT_PAGEHIDE_EVENT, windowName: "zdo-popout-proj-a-unrelated-page" });
+    channel.emit({ event: POPOUT_PAGEHIDE_EVENT, windowName: "zdo-popout-proj-a:unrelated-page" });
 
     expect(registry.isOpen("proj-a", "page-a")).toBe(true);
     expect(listener).not.toHaveBeenCalled();
@@ -207,7 +225,7 @@ describe("PopoutRegistry close detection — BroadcastChannel path", () => {
     registry.open("proj-a", "page-a");
 
     expect(() => channel.emit("not an envelope")).not.toThrow();
-    expect(() => channel.emit({ event: "some-other-event", windowName: "zdo-popout-proj-a-page-a" })).not.toThrow();
+    expect(() => channel.emit({ event: "some-other-event", windowName: "zdo-popout-proj-a:page-a" })).not.toThrow();
     expect(registry.isOpen("proj-a", "page-a")).toBe(true);
   });
 });

@@ -124,8 +124,19 @@ export default function NewProjectRoute({
   const busyRef = useRef(false);
   busyRef.current = createState.status === "busy";
 
+  // Set once the wizard leaves the screen. A create request already in flight
+  // resolves into a component that is no longer mounted — following the
+  // server's slug at that point would yank the user out of wherever they
+  // navigated to (the Projects link and the shell header both leave without
+  // touching the Escape guard below), so the completion is dropped instead.
+  const unmountedRef = useRef(false);
+
   useEffect(() => {
+    unmountedRef.current = false;
     nameRef.current?.focus();
+    return () => {
+      unmountedRef.current = true;
+    };
   }, []);
 
   // Esc anywhere returns to the dashboard — unless an IME owns the key or a
@@ -160,9 +171,11 @@ export default function NewProjectRoute({
         themePack: selectedPack.slug,
         defaultMode,
       });
+      if (unmountedRef.current) return;
       // The server's derived slug is authoritative — follow it verbatim.
       navigate({ name: "outline", projectSlug: snapshot.slug });
     } catch (error) {
+      if (unmountedRef.current) return;
       setCreateState({
         status: "error",
         message:

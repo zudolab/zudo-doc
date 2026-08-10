@@ -84,7 +84,10 @@ export function DetailPane({
   ].join(" · ");
 
   return (
-    <main className="min-w-0 flex-1 overflow-y-auto bg-bg" aria-label="Project detail">
+    // A <section>, not <main> — the shell already wraps every routed surface
+    // in the page's single <main> landmark, and nesting one inside another is
+    // invalid for assistive technology.
+    <section className="min-w-0 flex-1 overflow-y-auto bg-bg" aria-label="Project detail">
       <header className="sticky top-0 border-b border-border bg-bg px-hsp-2xl pt-vsp-md pb-vsp-sm">
         <div className="flex max-w-(--zdo-pj-detail-measure) items-start justify-between gap-hsp-xl">
           <div className="min-w-0">
@@ -219,7 +222,7 @@ export function DetailPane({
           ) : null}
         </section>
       </div>
-    </main>
+    </section>
   );
 }
 

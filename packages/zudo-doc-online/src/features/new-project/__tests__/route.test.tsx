@@ -94,6 +94,11 @@ function mount(options: MountOptions = {}) {
     store,
     navigate,
     query,
+    unmount: () => {
+      act(() => {
+        render(null, root);
+      });
+    },
     cards: () => [...root.querySelectorAll<HTMLButtonElement>("[data-pack]")],
     nameInput: () => query<HTMLInputElement>("#new-project-name"),
     createButton: () =>
@@ -303,6 +308,34 @@ describe("NewProjectRoute — finish sheet", () => {
       name: "outline",
       projectSlug: "ドキュメント",
     });
+  });
+
+  it("drops a create that completes after the user has navigated away", async () => {
+    let resolveCreate: ((snapshot: unknown) => void) | undefined;
+    const pending: ProjectsDirectoryStore = {
+      listProjects: () => Promise.resolve([]),
+      getProject: () => Promise.reject(new Error("unused")),
+      createProject: () =>
+        new Promise((resolve) => {
+          resolveCreate = resolve as (snapshot: unknown) => void;
+        }) as ReturnType<ProjectsDirectoryStore["createProject"]>,
+      deleteProject: () => Promise.reject(new Error("unused")),
+      duplicateProject: () => Promise.reject(new Error("unused")),
+    };
+    const { nameInput, createButton, navigate, unmount } = mount({ store: pending });
+
+    input(nameInput(), "My Docs");
+    act(() => {
+      createButton().click();
+    });
+    await settle();
+
+    // The Projects link / shell header leave without touching the Escape guard.
+    unmount();
+    resolveCreate?.({ slug: "my-docs" });
+    await settle();
+
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   it("returns to the dashboard on Escape, but never mid-composition", () => {
