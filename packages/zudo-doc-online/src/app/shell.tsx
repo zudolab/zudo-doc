@@ -1,4 +1,5 @@
 import type { ComponentChildren } from "preact";
+import { AccountMenu } from "../auth/account-menu.js";
 import type { ProjectStore } from "../store/contract.js";
 import type { ProjectEventsClient } from "../store/events.js";
 import { ThemeToggle } from "../theme/theme-toggle.js";
@@ -81,6 +82,7 @@ export function Shell({ route, store = null, events, storage, children }: ShellP
           </nav>
         )}
         <div className="ml-auto flex items-center gap-hsp-md">
+          <AccountMenu />
           <ThemeToggle />
           <span
             aria-hidden="true"

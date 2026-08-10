@@ -1,6 +1,7 @@
 import { render } from "preact";
 import { useEffect, useMemo, useState } from "preact/hooks";
 import "./styles/global.css";
+import { createAuthClient } from "./auth/client.js";
 import { RouteView } from "./app/routes.js";
 import { Shell } from "./app/shell.js";
 import { getClientId, initClientId } from "./store/client-id.js";
@@ -64,6 +65,12 @@ function ShellApp() {
 // Awaiting here is the single point that covers every provider-construction
 // path. It never rejects — a failed claim degrades to the stored id.
 await initClientId();
+
+// Deliberately NOT awaited — resuming a bearer session against the auth
+// worker must never delay first paint. The shared `authStore` starts
+// `unknown` (account-menu.tsx renders nothing for it) and flips to
+// `signed-in`/`signed-out` whenever this settles.
+void createAuthClient().resumeSession();
 
 const root = document.getElementById("root");
 
