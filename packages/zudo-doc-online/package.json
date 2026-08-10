@@ -28,6 +28,7 @@
     "@takazudo/zfb-md-wasm": "2.2.0",
     "@takazudo/zudo-doc": "workspace:*",
     "codemirror": "^6.0.2",
+    "dompurify": "^3.4.13",
     "hono": "^4.13.1",
     "preact": "^10.29.1",
     "zod": "^4.4.3"
