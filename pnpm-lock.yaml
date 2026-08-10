@@ -319,6 +319,9 @@ importers:
       '@takazudo/zfb-md-wasm':
         specifier: 2.2.0
         version: 2.2.0
+      '@takazudo/zudo-doc':
+        specifier: workspace:*
+        version: link:../zudo-doc
       codemirror:
         specifier: ^6.0.2
         version: 6.0.2
