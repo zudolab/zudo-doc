@@ -284,12 +284,16 @@ describe("createAuthClient — storage-throw safety", () => {
     const storage = new FakeStorage(false, true);
     const store = createAuthStore();
     let seenAuth: string | null = null;
+    let seenContentType: string | null = null;
+    let seenBody: string | null = null;
     const fetchImpl = fakeFetch({
       "POST /api/auth/sign-in/email": () =>
         jsonResponse(200, {}, { "set-auth-token": TOKEN }),
       "GET /api/me": meHandler(200),
       "POST /api/auth/sign-out": (init) => {
         seenAuth = new Headers(init?.headers).get("Authorization");
+        seenContentType = new Headers(init?.headers).get("Content-Type");
+        seenBody = typeof init?.body === "string" ? init.body : null;
         return jsonResponse(200, {});
       },
     });
@@ -299,6 +303,10 @@ describe("createAuthClient — storage-throw safety", () => {
     await client.signOut();
 
     expect(seenAuth).toBe(`Bearer ${TOKEN}`);
+    // better-auth 415s a body-less sign-out POST, silently skipping the server
+    // revoke — the JSON content type + empty body are part of the wire contract.
+    expect(seenContentType).toBe("application/json");
+    expect(seenBody).toBe("{}");
     expect(store.getState()).toEqual({ status: "signed-out" });
   });
 

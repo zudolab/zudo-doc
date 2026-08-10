@@ -239,9 +239,16 @@ export function createAuthClient(options: AuthClientOptions = {}): AuthClient {
 
       if (!token) return;
       try {
+        // better-auth rejects a body-less POST as 415 Unsupported Media Type,
+        // which would silently skip the server-side revoke — the empty JSON
+        // body is required, not cosmetic (verified live against the worker).
         await fetchImpl(`${baseUrl}/api/auth/sign-out`, {
           method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: "{}",
         });
       } catch {
         // Best-effort server revoke — the client is already signed out
