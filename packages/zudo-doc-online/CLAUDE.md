@@ -101,6 +101,69 @@ subscribes to for cross-process changes — e.g. an MCP agent creating a
 project in another process. Errors reuse `contract.ts`'s `StoreRequestError`
 taxonomy unchanged; no new error codes.
 
+## Auth (`src/auth/`)
+
+SPA-side auth against `packages/zudo-doc-online-worker`'s Better Auth mount
+(epic zudolab/zudo-doc#3361, issue #3365). This is groundwork toward a future
+remote backend — **the local API server (port 4324) stays auth-free**, and
+local single-user authoring through it is completely unaffected by anything
+in this section.
+
+- **`client.ts`** — `createAuthClient()`, headless: `signUp(email, password,
+  name)`, `signIn(email, password)`, `signOut()`, `resumeSession()`. Talks to
+  `import.meta.env.VITE_AUTH_API_URL` (default `http://localhost:8787`). Both
+  `fetch` and storage are injectable (`AuthClientOptions.fetchImpl` /
+  `.storage`) so tests never touch the network or real `localStorage`. The
+  bearer session token is read from the `set-auth-token` response header on a
+  successful `sign-up/email` / `sign-in/email` call and persisted under the
+  `zdo:auth:token` key; every storage access is try/catch-guarded, **including
+  the read of the `window.localStorage` property itself** — that read can throw
+  `SecurityError` on a sandboxed origin or a policy-disabled store, and since
+  `main.tsx` builds the client during boot an unguarded one would abort the SPA
+  render; `resolveDefaultStorage()` catches it and returns an inert in-memory
+  store. When only the *write* fails (private browsing, quota), the token is
+  retained in a closure-scoped in-memory fallback so `signOut()` can still
+  revoke it server-side instead of orphaning a live server session. Subsequent
+  calls attach it as `Authorization: Bearer <token>`.
+- **Invalidation semantics (frozen — encoded as tests in
+  `__tests__/client.test.ts`)**: only a 401 from a session/protected request
+  (`GET /api/me`) clears the stored token; a 403 does NOT (valid-but-forbidden
+  or an origin rejection); a failed `signUp`/`signIn` never touches an
+  existing token (nothing is written until a new token is actually issued);
+  `signOut()` clears the local token **unconditionally** — the server revoke
+  call is best-effort and its failure never blocks the local sign-out; a
+  transient network failure on `resumeSession()` leaves the store's current
+  state untouched (the "optimistic session") rather than forcing a
+  signed-out flash.
+- **`store.ts`** — `createAuthStore()`, a tiny subscribable state machine:
+  `{status: "unknown" | "signed-out"} | {status: "signed-in", user}`.
+  `unknown` is both the initial state and where a resume attempt that can't
+  determine an answer (network failure, non-401 error) stays parked — the UI
+  must never render "signed out" chrome for it. `authStore` is the app-wide
+  singleton the boot wiring and the account UI share.
+- **Boot wiring (`src/main.tsx`)** — `void createAuthClient().resumeSession()`
+  fires **after** the existing `await initClientId()` but is itself **not
+  awaited**, so resolving a session never delays first paint. Don't collapse
+  these into one `await` chain — `initClientId()`'s synchronous-read
+  requirement (see `store/client-id.ts`) and the auth resume's
+  non-blocking requirement are independent constraints that happen to sit
+  next to each other in boot order.
+- **`account-menu.tsx`** — the top-bar account item (`app/shell.tsx`, next to
+  `ThemeToggle`). Signed-out renders a "Sign in" trigger that opens a small
+  panel toggling between sign-in and sign-up forms; signed-in renders the
+  user's email plus a "Sign out" control. Pure view over `store.ts` state
+  plus an injected `AuthClient` — component tests
+  (`__tests__/account-menu.test.tsx`) cover all three states without a real
+  client. Its store subscription re-reads the snapshot right after
+  subscribing — `resumeSession()` can settle in the gap between the initial
+  `useState` read and the effect, and a missed transition would otherwise
+  leave the item stale for the mount's lifetime. Panel z-index and width come
+  from `account-menu.css`'s component-scoped `--zdo-account-*` bag (the
+  `editor-chrome.css` precedent), not raw `z-10` / `w-64`. Every class is a
+  `--zdo-*`-backed token per
+  `.claude/skills/l-design-system-zudo-doc-generator/SKILL.md` — no `--zd-*`
+  token or framework CSS import.
+
 ## Server: file layout + transaction model (`server/`)
 
 `server/store/file-store.ts` is the only other file besides `tx.ts` that
@@ -319,6 +382,8 @@ src/
 │                          # save machine, client-id, SSE client events, PLUS the project-list-level
 │                          # pair: projects-directory.ts (contract), projects-http/memory-provider.ts,
 │                          # projects-events.ts (global SSE client)
+├── auth/                  # client.ts (headless auth client), store.ts (subscribable auth state),
+│                          # account-menu.tsx (top-bar account item) — see the Auth section above
 ├── theme/                 # Light/dark color-scheme sync (own storage key, no --zd-* coupling)
 ├── app/                   # Shell (top bar) + typed hash router (router.ts, routes.tsx)
 ├── features/

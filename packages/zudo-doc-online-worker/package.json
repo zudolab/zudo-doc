@@ -1,0 +1,27 @@
+{
+  "name": "@takazudo/zudo-doc-online-worker",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "db:migrate": "wrangler d1 migrations apply zudo-doc-online-db --local",
+    "auth:generate-schema": "pnpm dlx auth@1.6.26 generate --config scripts/better-auth-cli-config.ts --output src/auth-schema.ts --yes"
+  },
+  "dependencies": {
+    "@better-auth/drizzle-adapter": "1.6.26",
+    "better-auth": "1.6.26",
+    "drizzle-orm": "0.45.2",
+    "hono": "^4.13.1"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "0.18.5",
+    "@cloudflare/workers-types": "^4.20260608.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0",
+    "wrangler": "^4.85.0"
+  }
+}
