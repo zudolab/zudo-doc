@@ -240,8 +240,15 @@ function isSafeUrl(value: string): boolean {
 /**
  * Registers the fixed policy hooks (per-tag attribute narrowing + the
  * `isSafeUrl` href/src check) on a DOMPurify instance. `addHook` appends
- * rather than replaces, so this must only ever be called once per instance
- * -- the module-level call right below is the only call site.
+ * rather than replaces, so this must only ever run once per instance --
+ * guarded by `hooksRegistered` below, called lazily from `sanitizePreviewHtml`
+ * rather than at module load. In a DOM-less environment (Node, no `window`)
+ * the imported `dompurify` default export is an uninitialized factory with
+ * `isSupported === false` and no `addHook` method at all -- calling this
+ * unconditionally at module scope would throw the instant this module is
+ * imported anywhere outside a real DOM (e.g. a future Node-environment test
+ * or server-side import), independent of and before the `isSupported`
+ * no-op check below ever gets a chance to run.
  */
 function registerSanitizeHooks(purify: typeof DOMPurify): void {
   purify.addHook("uponSanitizeAttribute", (node, event) => {
@@ -263,7 +270,7 @@ function registerSanitizeHooks(purify: typeof DOMPurify): void {
   });
 }
 
-registerSanitizeHooks(DOMPurify);
+let hooksRegistered = false;
 
 const SANITIZE_CONFIG: DOMPurifyConfig = {
   ALLOWED_TAGS: SANITIZE_ALLOWED_TAGS,
@@ -279,6 +286,17 @@ const SANITIZE_CONFIG: DOMPurifyConfig = {
   // SANITIZE_GLOBAL_ATTRS / ALLOWED_ATTR above) and no data-* attrs at all.
   ALLOW_ARIA_ATTR: false,
   ALLOW_DATA_ATTR: false,
+  // DOMPurify's default DOM-clobbering guard drops an `id`/`name` attribute
+  // whenever its value collides with an existing `document`/form property
+  // name (e.g. `id="title"`, since `document.title` exists) -- verified
+  // empirically against this pipeline's own output. `headingIds` slugifies
+  // heading TEXT verbatim, so a page section titled "Title", "Name",
+  // "Location", etc. produces exactly such a collision, silently dropping
+  // the id while leaving its `#title`-style hash-link href intact and
+  // breaking in-page navigation. This pane trusts its own pipeline-generated
+  // ids (not free-form attacker-chosen ones), so that guard is disabled --
+  // matching the prior hand-rolled sanitizer, which never had it.
+  SANITIZE_DOM: false,
 };
 
 /**
@@ -290,6 +308,10 @@ const SANITIZE_CONFIG: DOMPurifyConfig = {
  */
 export function sanitizePreviewHtml(html: string): string {
   if (!DOMPurify.isSupported) return html;
+  if (!hooksRegistered) {
+    registerSanitizeHooks(DOMPurify);
+    hooksRegistered = true;
+  }
   return DOMPurify.sanitize(html, SANITIZE_CONFIG);
 }
 

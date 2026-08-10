@@ -230,6 +230,18 @@ describe("sanitizePreviewHtml", () => {
     const admonitionHtml = postProcessAdmonitions('<Note title="Heads up">Body text.</Note>');
     expect(sanitizePreviewHtml(admonitionHtml)).toBe(admonitionHtml);
   });
+
+  it("keeps a heading id that collides with a DOM/document property name (e.g. a heading literally titled 'Title')", () => {
+    // headingIds' hierarchical strategy slugifies heading text verbatim, so a
+    // page section titled "Title", "Name", "Location", etc. produces an id
+    // that collides with a same-named `document`/`window` property.
+    // DOMPurify's default DOM-clobbering guard (SANITIZE_DOM) silently drops
+    // such an id while leaving its `#title` hash-link href intact, breaking
+    // in-page navigation -- this policy trusts its own pipeline-generated
+    // ids, so that guard must not fire here.
+    const html = '<h2 id="title" class="hash-heading">Title<a class="hash-link" href="#title">#</a></h2>';
+    expect(sanitizePreviewHtml(html)).toBe(html);
+  });
 });
 
 describe("loadZfbMdWasm", () => {
