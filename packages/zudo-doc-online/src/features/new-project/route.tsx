@@ -21,7 +21,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import catalog, { type ThemePackMeta } from "@takazudo/zudo-doc/catalog";
-import { formatRoute, navigateTo, type Route } from "../../app/router.js";
+import { formatRoute, navigateTo, parseRoute, type Route } from "../../app/router.js";
 import { deriveSlug } from "../../core/outline/slugs.js";
 import type {
   ProjectPreset,
@@ -130,6 +130,12 @@ export default function NewProjectRoute({
   // navigated to (the Projects link and the shell header both leave without
   // touching the Escape guard below), so the completion is dropped instead.
   const unmountedRef = useRef(false);
+  // Unmount alone is not enough: clicking a `#/` link assigns the hash
+  // synchronously, but the shell only unmounts this route on the later
+  // `hashchange` callback. A create resolving inside that window would still
+  // overwrite the user's destination — so the live hash is checked too.
+  const leftWizard = (): boolean =>
+    unmountedRef.current || parseRoute(window.location.hash).name !== "new-project";
 
   useEffect(() => {
     unmountedRef.current = false;
@@ -171,11 +177,11 @@ export default function NewProjectRoute({
         themePack: selectedPack.slug,
         defaultMode,
       });
-      if (unmountedRef.current) return;
+      if (leftWizard()) return;
       // The server's derived slug is authoritative — follow it verbatim.
       navigate({ name: "outline", projectSlug: snapshot.slug });
     } catch (error) {
-      if (unmountedRef.current) return;
+      if (leftWizard()) return;
       setCreateState({
         status: "error",
         message:
