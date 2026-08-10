@@ -10,10 +10,9 @@ The local API server in `packages/zudo-doc-online/` (port 4324) stays
 auth-free — local authoring is unaffected by anything in this package. This
 worker exists only toward the eventual remote path: authenticated multi-user
 access to a zudo-doc-online project store, fronted by Better Auth
-(email/password + bearer tokens). The `/api/auth/*` routes themselves are
-not mounted yet (a later sub-issue) — this package currently only carries
-the Better Auth foundation: pinned deps, the generated schema, tracked D1
-migrations, and a vitest D1 bootstrap.
+(email/password + bearer tokens). Better Auth's `/api/auth/*` routes are
+mounted, every other `/api/*` route is gated by a fails-closed bearer
+middleware, and `GET /api/me` is the sample gated route.
 
 ## Commands
 
@@ -38,10 +37,14 @@ migrations, and a vitest D1 bootstrap.
 
 ```
 src/
-├── index.ts          # Hono app — CORS, GET /api/health, error mapping
+├── index.ts          # Hono app — CORS, /api/auth/* mount, session gate, routes
 ├── cors.ts           # CORS allowlist constant for the SPA's dev origin (4323)
 ├── auth.ts           # createAuth(env) — per-request Better Auth factory
 ├── auth-schema.ts     # GENERATED drizzle schema — see its header, do not hand-edit
+├── middleware/
+│   └── require-session.ts  # fails-closed bearer gate for app-owned /api/* routes
+├── routes/
+│   └── me.ts         # GET /api/me — sample gated route
 └── __tests__/        # vitest-pool-workers suites + D1 migration bootstrap
 scripts/
 └── better-auth-cli-config.ts  # config the schema-generation CLI runs against
@@ -78,10 +81,37 @@ migrations/
   asserts every table/column in `auth-schema.ts` exists in the migrated
   test database, so a stale migration fails loudly even in paths the auth
   flow itself wouldn't exercise.
+- Route order in `index.ts` is load-bearing: CORS → the `/api/auth/*` Better
+  Auth mount → `app.use("/api/*", requireSession)` → app-owned routes. The
+  mount is registered first so Hono answers Better Auth's endpoints before
+  the gate runs — gating sign-in behind a session only sign-in can produce
+  would be unsatisfiable. `require-session.ts` restates the `/api/auth/*` and
+  `/api/health` exclusion explicitly so a later reordering can't deadlock the
+  sign-in flow.
+- `requireSession` **fails closed** on every path — absent header, malformed
+  header, garbage/expired/revoked token, and a *thrown* `getSession()` all
+  return 401. The thrown case is caught deliberately: letting it reach the
+  `onError` 500 handler would look like a server hiccup to a caller that only
+  branches on 401. `src/__tests__/auth-contract.test.ts` covers each path
+  against a real migrated D1, including a deliberately broken `DB` binding.
+- The gate is **bearer-only**: it forwards a `Headers` object carrying just the
+  `Authorization` value to `getSession`, so a session cookie can never stand in
+  for a token. A cookie *does* resolve a session through `getSession` on its
+  own, and Better Auth 1.6.26 happens to let an invalid bearer token override
+  an ambient cookie — but that is internal ordering, not a documented
+  guarantee, so the gate does not rely on it. The scheme match is
+  case-insensitive per RFC 9110 (`bearer <token>` is valid) and requires a
+  non-empty token.
 - Response format: `{ error: { code, message } }` for routes this worker owns
-  directly (e.g. `/api/health`). Future `/api/auth/*` routes mounted from
-  Better Auth keep Better Auth's own response format — they are NOT forced
-  through this mapping.
+  directly (e.g. `/api/health`, `/api/me`). The `/api/auth/*` routes mounted
+  from Better Auth keep Better Auth's own response format — they are NOT
+  forced through this mapping.
+- `src/__tests__/lockstep.test.ts` holds two drift guards: `trustedOrigins`
+  must set-equal `CORS_CONFIG.origin` in both directions (a mismatch surfaces
+  as a baffling CSRF rejection on a CORS-allowed caller), and a source scan
+  proving no module-scope `betterAuth()`/`createAuth()` binding exists. The
+  scanner is itself covered by a negative control, so it can't silently
+  degrade into a test that always passes.
 - CORS: origins `http://localhost:4323` / `http://127.0.0.1:4323` (the SPA's
   Vite dev origin), `credentials: false`, and `exposeHeaders:
   ["set-auth-token"]` so browser JS can read the future bearer-session
