@@ -79,9 +79,15 @@ Source of truth: `packages/zudo-doc-online/src/styles/tokens.css`.
      `theme-toggle.tsx`'s sun/moon icons).
    - `--radius-{sm,md,full}`, `--shadow-{1,2}`, `--font-{ui,mono}`,
      `--font-weight-{normal,medium,semibold}` — shape/elevation/type-family tokens.
-   - Component-scoped token bags (e.g. a future kanban board's `--zdo-kb-*` set)
-     get their own dedicated block in `tokens.css`, following the same
-     `light-dark()`-at-Tier-1 pattern — they are NOT ad-hoc inline styles.
+   - Component-scoped token bags get their own dedicated block in `tokens.css`,
+     following the same `light-dark()`-at-Tier-1 pattern — they are NOT ad-hoc
+     inline styles. Shipped example: the kanban board's `--zdo-kb-*` bag
+     (`--zdo-kb-{board-bg,column-bg,column-radius,card-bg,card-border,
+     card-radius,card-shadow}`) — each key aliases an existing `--zdo-*` / Tier-1
+     value rather than introducing a new color, and `board/tokens.ts` reads them
+     with a `var(--zdo-kb-card-bg, var(--zdo-surface))`-style fallback so a
+     missing key degrades to the equivalent bare role token instead of
+     rendering unstyled.
 
 ### `global.css` import shape — "approach B", no default theme
 
@@ -128,6 +134,32 @@ whether the underlying `@theme` key actually exists yet.
   window `CustomEvent`; every mounted `<ThemeToggle>` subscribes via
   `subscribeColorSchemeChanged()` so multiple toggles (if this app ever mounts
   more than one) never disagree.
+
+## Non-Tailwind CSS: preview typography and syntax colors
+
+Two hand-authored stylesheets exist alongside the Tailwind-generated
+utilities, both under `src/features/preview/`, both self-contained (no
+`@import` of any `@takazudo/zudo-doc` CSS), and both consuming ONLY this
+app's own `--zdo-*` tokens:
+
+- **`prose.css`** — `.zdo-prose`, typography for `renderHtml`'s raw HTML
+  output (the preview pane injects markdown-rendered HTML via
+  `dangerouslySetInnerHTML`, which has no component map to style through, so
+  every element the fixed `PREVIEW_PIPELINE` can emit needs a plain CSS rule
+  here: headings, paragraphs, links, lists + task-list checkboxes, tables,
+  blockquote, inline `code`, `pre`, images, `hr`, `del`, and the
+  `.zdo-admonition` markup the post-processor emits for the seven directive
+  kinds).
+- **`syntax.css`** — `@layer zfb-hi`, the 18 `HighlightRole` colors for
+  `renderHtml`'s `codeHighlight: { mode: "class" }` output (`hi-*` classes on
+  `<pre class="hi-root"><code>`). The wasm ships no stylesheet of its own for
+  class mode, so the host page owns color — mirrors the *shape* (not the
+  token source) of `@takazudo/zudo-doc/src/features.css`'s own `@layer
+  zfb-hi` bridge, read for structural reference only, never imported.
+
+If a preview-pane element renders unstyled, check `prose.css` before
+suspecting Tailwind — most of what the preview pane shows is NOT built from
+Tailwind utility classes at all.
 
 ## CodeMirror (and any other embedded widget) theming
 
@@ -178,5 +210,5 @@ The repo-root `design-token-lint` scans `packages/**/*.{tsx,jsx}` (this includes
 
 ## Field findings (epic #3327 implementation)
 
-- **Bare `--spacing` is now defined explicitly** (`--spacing: 0.25rem` in `tokens.css` `@theme`). Under approach B it is otherwise undefined and every numeric spacing utility — including the zero forms `min-h-0` / `min-w-0` / `inset-0` / `p-0` — silently emits NO CSS. The zero/structural forms are legitimate; non-zero numerics remain banned by the repo token lint. Earlier `min-h-[0px]`-style workarounds in the codebase are equivalent and may be normalized to the bare forms.
+- **Bare `--spacing` is now defined explicitly** (`--spacing: 0.25rem` in `tokens.css` `@theme`). Under approach B it is otherwise undefined and every numeric spacing utility — including the zero forms `min-h-0` / `min-w-0` / `inset-0` / `p-0` — silently emits NO CSS. The zero/structural forms are legitimate; non-zero numerics remain banned by the repo token lint. **Both `min-h-[0px]`-style arbitrary values and the bare `min-h-0`-style forms compile correctly as of this fix — prefer the bare form going forward** for new code (it's the idiomatic Tailwind spelling and reads as intentional rather than an arbitrary-value escape hatch). The codebase still has a large existing population of the `[0px]` spelling from before this was confirmed working; that's a cosmetic backlog, not a bug — no bulk rename was done as part of confirming the gates for #3340, since a validation pass doesn't rewrite working code wholesale.
 - **IME guards must attach composition listeners imperatively.** Preact drops `onCompositionStart`/`onCompositionEnd` JSX props when the DOM implementation lacks the matching property (jsdom does), leaving the guard dead under test while appearing to work in production. Use `useCompositionGuard` from `src/features/editor/ime.ts` for every IME-guarded input (inline renames, composers) — never the JSX props.

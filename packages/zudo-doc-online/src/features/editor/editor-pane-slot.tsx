@@ -355,5 +355,5 @@ export default function EditorPaneSlot({
     [ticker, report],
   );
 
-  return <div ref={hostRef} className="zdo-cm size-full overflow-hidden" />;
+  return <div ref={hostRef} className="size-full overflow-hidden" />;
 }
