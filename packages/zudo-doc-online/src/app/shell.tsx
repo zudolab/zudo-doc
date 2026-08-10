@@ -32,7 +32,14 @@ export function Shell({ route, store = null, events, storage, children }: ShellP
   const editorPageId = useEditorEntryPageId(route, { store, events, storage });
 
   return (
-    <div className="flex min-h-dvh flex-col bg-bg text-fg">
+    // `h-dvh`, not `min-h-dvh`: a MIN height is not a definite height, so
+    // `main`'s `flex-1` share of it is not definite either, and the routed
+    // surface's `h-full` (both the editor workspace and the outline page use
+    // it) has no percentage base to resolve against — it silently collapses to
+    // content height, leaving hundreds of pixels of dead space below the app.
+    // Every link in this chain has to carry a real height for the last one to
+    // work.
+    <div className="flex h-dvh flex-col bg-bg text-fg">
       <header className="flex items-center gap-hsp-lg border-b border-border px-hsp-xl py-vsp-xs">
         <a
           href={formatRoute({ name: "outline" })}
@@ -73,7 +80,15 @@ export function Shell({ route, store = null, events, storage, children }: ShellP
           </span>
         </div>
       </header>
-      <main className="flex-1">{children}</main>
+      {/*
+        `flex-1` alone only GROWS this box — it establishes no height for a
+        child to measure against. `min-h-0` lets it shrink below its content
+        (without it a tall surface would push the column past the viewport
+        instead of scrolling inside), and `flex flex-col` makes it a real
+        height-establishing container so the routed surface's `h-full`
+        resolves and its internal panes scroll independently.
+      */}
+      <main className="flex min-h-0 flex-1 flex-col">{children}</main>
     </div>
   );
 }

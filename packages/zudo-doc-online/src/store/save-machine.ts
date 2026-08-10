@@ -108,8 +108,16 @@ export class PageSaveMachine {
     this.pageId = options.pageId;
     this.store = options.store;
     this.debounceMs = options.debounceMs ?? 500;
-    this.scheduleTimeout = options.scheduleTimeout ?? setTimeout;
-    this.clearTimeoutImpl = options.clearTimeoutImpl ?? clearTimeout;
+    // Wrapped, never a bare `?? setTimeout`. A bare global stored on a field is
+    // later invoked as `this.scheduleTimeout(...)`, which hands the browser's
+    // `setTimeout` a `this` of this instance — Chrome's Web IDL binding rejects
+    // that with `TypeError: Illegal invocation` on EVERY keystroke. Node and
+    // jsdom don't check `this`, so the suite stays green while the real browser
+    // is broken. Do not "simplify" these arrows away.
+    this.scheduleTimeout =
+      options.scheduleTimeout ?? ((callback, ms) => setTimeout(callback, ms));
+    this.clearTimeoutImpl =
+      options.clearTimeoutImpl ?? ((handle) => clearTimeout(handle));
 
     this.status = "idle";
     this.content = { frontmatter: options.initial.frontmatter, markdown: options.initial.markdown };

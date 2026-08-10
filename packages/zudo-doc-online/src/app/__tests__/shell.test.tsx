@@ -130,6 +130,41 @@ describe("Shell", () => {
 });
 
 /**
+ * jsdom computes no layout, so this can only assert the class SHAPE of the
+ * height chain, not the pixels — the manager's browser pass is what re-verifies
+ * the rendered result. It is still worth pinning: the measured bug was the
+ * shell root carrying `min-h-dvh` (a MIN height is not a definite one) and
+ * `main` carrying bare `flex-1`, which together left the routed surface's
+ * `h-full` with no percentage base and collapsed it to content height —
+ * 355-735px of dead space, and an 85px-tall editor with the rail collapsed.
+ */
+describe("Shell — viewport height chain", () => {
+  afterEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  it("gives the root a definite viewport height and main a resolvable one", async () => {
+    const container = await mountShell({
+      route: { name: "outline" },
+      store: null,
+    });
+
+    const root = container.firstElementChild;
+    expect(root?.className).toContain("h-dvh");
+    // A MIN height would break the chain again — this is the regression.
+    expect(root?.className).not.toContain("min-h-dvh");
+    expect(root?.className).toContain("flex-col");
+
+    const main = container.querySelector("main");
+    expect(main?.className).toContain("flex-1");
+    // Height-establishing container + shrinkable, so `h-full` children resolve
+    // and scroll internally instead of pushing the column past the viewport.
+    expect(main?.className).toContain("min-h-0");
+    expect(main?.className).toContain("flex-col");
+  });
+});
+
+/**
  * The nav link's target must be a PAGE ID. It used to be the hardcoded URL
  * path "getting-started/installation", which no page id ever matches, so the
  * Editor tab always landed on page-not-found.

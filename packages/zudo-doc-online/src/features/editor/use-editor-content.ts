@@ -108,8 +108,17 @@ export class EditorContentTicker {
 
   constructor(options: EditorContentTickerOptions = {}) {
     this.delayMs = options.delayMs ?? CONTENT_TICK_MS;
-    this.scheduleTimeout = options.scheduleTimeout ?? setTimeout;
-    this.clearTimeoutImpl = options.clearTimeoutImpl ?? clearTimeout;
+    // Wrapped, never a bare `?? setTimeout`. A bare global stored on a field is
+    // later invoked as `this.scheduleTimeout(...)`, which hands the browser's
+    // `setTimeout` a `this` of this instance — Chrome's Web IDL binding rejects
+    // that with `TypeError: Illegal invocation`, and because this runs inside
+    // CodeMirror's update listener the throw aborts the update, so the ticker
+    // never publishes. Node and jsdom don't check `this`, so the suite stays
+    // green while the real browser is broken. Do not "simplify" these away.
+    this.scheduleTimeout =
+      options.scheduleTimeout ?? ((callback, ms) => setTimeout(callback, ms));
+    this.clearTimeoutImpl =
+      options.clearTimeoutImpl ?? ((handle) => clearTimeout(handle));
   }
 
   subscribe(listener: ContentTickListener): () => void {
