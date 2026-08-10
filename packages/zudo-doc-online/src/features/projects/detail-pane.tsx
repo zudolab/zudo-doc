@@ -19,6 +19,7 @@ import {
   outlineOrderedPages,
   pluralize,
   resolveOpenEditorPageId,
+  type OrderedPage,
 } from "./dashboard-logic";
 import { packForPreset, PackMiniPreview, PackSwatchRow } from "./pack-swatch";
 
@@ -74,6 +75,7 @@ export function DetailPane({
   const editorPageId = resolveOpenEditorPageId(snapshot, storage);
   const updated = formatTimestamp(snapshot.updatedAt);
   const created = formatTimestamp(snapshot.createdAt);
+  const outlineHref = formatRoute({ name: "outline", projectSlug: snapshot.slug });
 
   const headerMeta = [
     pluralize(pages.length, "page"),
@@ -96,10 +98,7 @@ export function DetailPane({
             </div>
           </div>
           <div className="flex flex-none gap-hsp-sm pt-vsp-2xs">
-            <a
-              href={formatRoute({ name: "outline", projectSlug: snapshot.slug })}
-              className={BTN_GHOST}
-            >
+            <a href={outlineHref} className={BTN_GHOST}>
               Outline
             </a>
             {editorPageId === null ? (
@@ -131,7 +130,7 @@ export function DetailPane({
           created={created}
           updated={updated}
         />
-        <PagesCard snapshot={snapshot} />
+        <PagesCard slug={snapshot.slug} outlineHref={outlineHref} pages={pages} />
 
         <section
           className={`${CARD_CLASSES} border-(--zdo-pj-danger-edge)`}
@@ -322,9 +321,15 @@ function StatTiles({
   );
 }
 
-function PagesCard({ snapshot }: { snapshot: ProjectDirectorySnapshot }) {
-  const pages = outlineOrderedPages(snapshot);
-
+function PagesCard({
+  slug,
+  outlineHref,
+  pages,
+}: {
+  slug: string;
+  outlineHref: string;
+  pages: readonly OrderedPage[];
+}) {
   return (
     <section className={CARD_CLASSES} aria-label="Pages">
       <div className="flex items-center justify-between gap-hsp-md border-b border-border px-hsp-lg py-vsp-xs">
@@ -335,7 +340,7 @@ function PagesCard({ snapshot }: { snapshot: ProjectDirectorySnapshot }) {
         <p className="px-hsp-lg py-vsp-sm text-small text-muted">
           No pages yet. Add some from the{" "}
           <a
-            href={formatRoute({ name: "outline", projectSlug: snapshot.slug })}
+            href={outlineHref}
             className="text-accent underline underline-offset-2 hover:text-accent-hover"
           >
             outline
@@ -347,11 +352,7 @@ function PagesCard({ snapshot }: { snapshot: ProjectDirectorySnapshot }) {
           {pages.map((page) => (
             <li key={page.id}>
               <a
-                href={formatRoute({
-                  name: "editor",
-                  projectSlug: snapshot.slug,
-                  pageId: page.id,
-                })}
+                href={formatRoute({ name: "editor", projectSlug: slug, pageId: page.id })}
                 className={PAGE_ROW_CLASSES}
               >
                 <span className="flex min-w-0 flex-col">
