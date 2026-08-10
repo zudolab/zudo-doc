@@ -8,12 +8,24 @@
     "src/content/docs/claude/**",
     "src/content/docs/claude-md/**",
     "src/content/docs/claude-skills/**",
-    "src/content/docs/claude-agents/**"
+    "src/content/docs/claude-agents/**",
+    "_temp-resource/**"
   ],
   "addEmptyLinesInBlockJsx": {
-    "blockComponents": ["Note", "Tip", "Info", "Warning", "Danger", "Details", "Tabs", "HtmlPreview"]
+    "blockComponents": [
+      "Note",
+      "Tip",
+      "Info",
+      "Warning",
+      "Danger",
+      "Details",
+      "Tabs",
+      "HtmlPreview"
+    ]
   },
   "formatMultiLineJsx": {
-    "ignoreComponents": ["HtmlPreview"]
+    "ignoreComponents": [
+      "HtmlPreview"
+    ]
   }
 }

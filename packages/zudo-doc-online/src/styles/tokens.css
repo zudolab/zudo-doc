@@ -1,0 +1,186 @@
+/* ============================================================================
+ * zudo-doc online — design tokens (3-tier: palette ramps → --zdo-* roles →
+ * Tailwind @theme aliases).
+ *
+ * Deliberately SEPARATE from @takazudo/zudo-doc's `--zd-*` tokens — own
+ * `--zdo-*` role prefix, own ramp names, no `@takazudo/zudo-doc` CSS import.
+ * See `.claude/skills/l-design-system-zudo-doc-generator/SKILL.md` (repo
+ * root) for the full rationale and the token-lint compliance rules.
+ *
+ * Ported from `_temp-resource/3327-zudo-doc-online/prototypes/_shared/tokens.css`
+ * (epic #3327 design references) to CSS `light-dark()` form. The prototype
+ * duplicated every ramp across `:root[data-theme="light"]` /
+ * `:root[data-theme="dark"]` selector blocks; this port instead declares
+ * each Tier 1 `--palette-*` custom property ONCE, with its value itself a
+ * `light-dark(<light>, <dark>)` pair carrying the exact prototype numbers
+ * for both modes. Tier 2 `--zdo-*` role vars are then plain aliases of a
+ * single Tier 1 stop — EXCEPT `--zdo-accent-fg`, which has no Tier 1
+ * counterpart in the original file (text-on-accent needs its own
+ * contrast-flipped pair, not a ramp stop) and so carries its own
+ * `light-dark()` value directly. There are NO `[data-theme]` CSS selectors
+ * anywhere in this file — `color-scheme-sync.ts` drives the light-dark()
+ * branch selection purely via `documentElement.style.colorScheme`.
+ * ========================================================================== */
+
+:root {
+  color-scheme: light dark;
+
+  /* ---- Tier 1 — base ramp (bg end → fg end), low-chroma cool gray ---- */
+  --palette-base-0: light-dark(oklch(0.985 0.002 250), oklch(0.19 0.012 255));
+  --palette-base-1: light-dark(oklch(0.962 0.004 250), oklch(0.225 0.014 255));
+  --palette-base-2: light-dark(oklch(0.915 0.006 250), oklch(0.28 0.016 255));
+  --palette-base-3: light-dark(oklch(0.78 0.01 250), oklch(0.42 0.016 255));
+  --palette-base-4: light-dark(oklch(0.55 0.014 250), oklch(0.62 0.014 255));
+  --palette-base-5: light-dark(oklch(0.36 0.016 250), oklch(0.78 0.01 255));
+  --palette-base-6: light-dark(oklch(0.21 0.018 250), oklch(0.93 0.006 255));
+
+  /* ---- Tier 1 — accent ramp (indigo-blue, chroma peaks mid) ---- */
+  --palette-accent-0: light-dark(oklch(0.93 0.045 262), oklch(0.31 0.06 262));
+  --palette-accent-1: light-dark(oklch(0.55 0.19 262), oklch(0.7 0.16 262));
+  --palette-accent-2: light-dark(oklch(0.46 0.21 262), oklch(0.78 0.14 262));
+
+  /* ---- Tier 1 — state ---- */
+  --palette-state-danger: light-dark(oklch(0.55 0.19 25), oklch(0.68 0.17 25));
+  --palette-state-success: light-dark(oklch(0.58 0.14 150), oklch(0.7 0.13 150));
+  --palette-state-warning: light-dark(oklch(0.7 0.14 80), oklch(0.78 0.13 80));
+  --palette-state-info: light-dark(oklch(0.6 0.12 230), oklch(0.72 0.11 230));
+
+  /* ---- Tier 2 — semantic role vars. Components/CodeMirror themes consume
+   * ONLY these (or the Tailwind @theme aliases below) — never --palette-*
+   * directly. ---- */
+  --zdo-bg: var(--palette-base-0);
+  --zdo-surface: var(--palette-base-1);
+  --zdo-surface-2: var(--palette-base-2);
+  --zdo-border: var(--palette-base-2);
+  --zdo-border-strong: var(--palette-base-3);
+  --zdo-fg: var(--palette-base-6);
+  --zdo-fg-mild: var(--palette-base-5);
+  --zdo-muted: var(--palette-base-4);
+  --zdo-accent: var(--palette-accent-1);
+  --zdo-accent-hover: var(--palette-accent-2);
+  --zdo-accent-soft: var(--palette-accent-0);
+  /* Text-on-accent has no Tier 1 ramp stop to alias — accent-1's lightness
+   * flips between modes (0.55 light / 0.70 dark) to hold contrast against
+   * bg, so the readable text color on TOP of it must flip oppositely. */
+  --zdo-accent-fg: light-dark(oklch(0.99 0 0), oklch(0.16 0.02 262));
+  --zdo-danger: var(--palette-state-danger);
+  --zdo-success: var(--palette-state-success);
+  --zdo-warning: var(--palette-state-warning);
+  --zdo-info: var(--palette-state-info);
+  --zdo-code-bg: var(--palette-base-2);
+  --zdo-code-fg: var(--palette-base-6);
+
+  /* ---- Kanban board (--zdo-kb-*) — component-scoped bag for the board view
+   * (#3337). Declared here (not as ad-hoc inline styles) per the
+   * design-system skill; every value aliases an existing role/shape token —
+   * `--radius-md` etc. resolve fine from a `--zdo-*`-tier declaration even
+   * though they are themselves declared inside `@theme` below, since custom
+   * properties resolve by scope, not source order. Consumption sites
+   * re-embed the same default as a `var()` fallback (recipe §2 rule 1):
+   * `var(--zdo-kb-card-bg, var(--zdo-surface))`. `board/tokens.ts`
+   * materializes this SAME bag as a JS object so it can also be handed
+   * explicitly to the portaled drag overlay, which sits outside this
+   * scope's DOM subtree (recipe §2 rule 2). ---- */
+  --zdo-kb-board-bg: transparent;
+  --zdo-kb-column-bg: var(--zdo-surface-2);
+  --zdo-kb-column-radius: var(--radius-md);
+  --zdo-kb-card-bg: var(--zdo-surface);
+  --zdo-kb-card-border: var(--zdo-border);
+  --zdo-kb-card-radius: var(--radius-sm);
+  --zdo-kb-card-shadow: var(--shadow-1);
+
+  /* ---- Tier 1 — abstract type scale (raw values, NOT for direct component
+   * use — feeds the --text-* semantic roles in @theme below only) ---- */
+  --text-scale-xs: 0.75rem; /* 12px */
+  --text-scale-sm: 0.875rem; /* 14px */
+  --text-scale-md: 1rem; /* 16px */
+  --text-scale-lg: 1.25rem; /* 20px */
+  --text-scale-xl: 1.75rem; /* 28px */
+}
+
+@theme {
+  /* Tight-token guardrail: wipe Tailwind's default color palette so only the
+   * --zdo-*-backed aliases below exist — enforces "no raw Tailwind color
+   * utilities" (bg-gray-100 etc. resolve to nothing). */
+  --color-*: initial;
+
+  /* Approach-B gotcha (field-found by two topics independently): with only
+   * preflight+utilities imported, Tailwind v4 never defines the bare --spacing
+   * multiplier, so EVERY numeric spacing utility — including the load-bearing
+   * zero forms min-h-0 / min-w-0 / inset-0 / p-0 — silently emits NO CSS.
+   * Define it explicitly. Non-zero numerics (p-4, gap-2, …) stay banned by the
+   * repo design-token lint; this only makes the allowlisted zero/structural
+   * forms actually work. NEVER zero or remove this. */
+  --spacing: 0.25rem;
+
+  --color-bg: var(--zdo-bg);
+  --color-surface: var(--zdo-surface);
+  --color-surface-2: var(--zdo-surface-2);
+  --color-border: var(--zdo-border);
+  --color-border-strong: var(--zdo-border-strong);
+  --color-fg: var(--zdo-fg);
+  --color-fg-mild: var(--zdo-fg-mild);
+  --color-muted: var(--zdo-muted);
+  --color-accent: var(--zdo-accent);
+  --color-accent-hover: var(--zdo-accent-hover);
+  --color-accent-soft: var(--zdo-accent-soft);
+  --color-accent-fg: var(--zdo-accent-fg);
+  --color-danger: var(--zdo-danger);
+  --color-success: var(--zdo-success);
+  --color-warning: var(--zdo-warning);
+  --color-info: var(--zdo-info);
+  --color-code-bg: var(--zdo-code-bg);
+  --color-code-fg: var(--zdo-code-fg);
+
+  /* ---- Typography — Tier 2 semantic roles (reference the Tier 1 scale in
+   * bare :root above only) ---- */
+  --text-caption: var(--text-scale-xs);
+  --text-small: var(--text-scale-sm);
+  --text-body: var(--text-scale-md);
+  --text-title: var(--text-scale-lg);
+  --text-heading: var(--text-scale-xl);
+
+  /* Font families (ported verbatim from the prototype tokens.css) */
+  --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  /* ---- Spacing — hsp (horizontal axis: padding/gap/margin, inline
+   * direction) + vsp (vertical axis: padding/gap/margin, block direction) */
+  --spacing-hsp-2xs: 0.125rem; /* 2px */
+  --spacing-hsp-xs: 0.25rem; /* 4px */
+  --spacing-hsp-sm: 0.5rem; /* 8px */
+  --spacing-hsp-md: 0.75rem; /* 12px */
+  --spacing-hsp-lg: 1rem; /* 16px */
+  --spacing-hsp-xl: 1.5rem; /* 24px */
+  --spacing-hsp-2xl: 2rem; /* 32px */
+
+  --spacing-vsp-2xs: 0.1875rem; /* 3px */
+  --spacing-vsp-xs: 0.375rem; /* 6px */
+  --spacing-vsp-sm: 0.75rem; /* 12px */
+  --spacing-vsp-md: 1rem; /* 16px */
+  --spacing-vsp-lg: 1.5rem; /* 24px */
+  --spacing-vsp-xl: 2.25rem; /* 36px */
+  --spacing-vsp-2xl: 3rem; /* 48px */
+
+  /* ---- Icon sizes — not on the --spacing-* namespace on purpose (icons are
+   * a fixed-size element property, not a padding/gap/margin amount); consume
+   * via the CSS-var utility shorthand, e.g. `size-(--icon-sm)`. ---- */
+  --icon-xs: 0.75rem; /* 12px */
+  --icon-sm: 1rem; /* 16px */
+  --icon-md: 1.25rem; /* 20px */
+  --icon-lg: 1.5rem; /* 24px */
+
+  /* ---- Shape + elevation (ported from the prototype tokens.css; renamed
+   * radius-s/radius-m → radius-sm/radius-md to match Tailwind's own suffix
+   * idiom, and radius-full added for circular elements like the avatar) --- */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-full: 9999px;
+
+  --shadow-1: 0 1px 3px oklch(0 0 0 / 0.12);
+  --shadow-2: 0 4px 16px oklch(0 0 0 / 0.16);
+}

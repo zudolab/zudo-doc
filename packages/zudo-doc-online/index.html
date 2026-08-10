@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>zudo-doc online</title>
+    <script>
+      // FOUC-free theme bootstrap — runs before the bundle and before first
+      // paint. Resolution: stored choice > prefers-color-scheme > "light".
+      // Mirrors @takazudo/zudo-doc's own bootstrap mechanism (see
+      // packages/zudo-doc/src/theme/color-scheme-provider.tsx) under this
+      // app's OWN storage key (color-scheme-sync.ts uses the same key, so
+      // a runtime toggle and this bootstrap always agree on where the
+      // preference lives).
+      (function () {
+        var STORAGE_KEY = "zudo-doc-online-theme";
+        // Mirrors color-scheme-sync.ts's COLOR_SCHEME_CHANGED_EVENT. This
+        // inline script can't import the TS constant, so the literal is
+        // duplicated here on purpose — keep both in sync if it ever renames.
+        var CHANGED_EVENT = "color-scheme-changed";
+        function getSystemMode() {
+          return window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light";
+        }
+        function applyTheme(mode) {
+          document.documentElement.setAttribute("data-theme", mode);
+          document.documentElement.style.colorScheme = mode;
+        }
+        function resolveMode(stored) {
+          if (stored === "light" || stored === "dark") return stored;
+          return getSystemMode();
+        }
+        var stored = null;
+        try {
+          stored = localStorage.getItem(STORAGE_KEY);
+        } catch (e) {}
+        applyTheme(resolveMode(stored));
+        // Re-apply on system preference change, but ONLY when the user has
+        // no stored choice — an explicit choice always wins. Also dispatch
+        // the change event so any mounted ThemeToggle re-syncs its icon /
+        // label / mode state instead of going stale (it only reads the DOM
+        // on mount and on this event — see color-scheme-sync.ts).
+        window.matchMedia("(prefers-color-scheme: dark)").addEventListener(
+          "change",
+          function () {
+            var current = null;
+            try {
+              current = localStorage.getItem(STORAGE_KEY);
+            } catch (e) {}
+            if (current !== "light" && current !== "dark") {
+              applyTheme(getSystemMode());
+              window.dispatchEvent(new CustomEvent(CHANGED_EVENT));
+            }
+          },
+        );
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

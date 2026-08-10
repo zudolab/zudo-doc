@@ -1,0 +1,57 @@
+/* ============================================================================
+ * Component-scoped token bag for the editor workspace chrome (epic #3327,
+ * sub-issue #3334). Ported from the accepted prototype
+ * `_temp-resource/3327-zudo-doc-online/prototypes/a3-tabbed-workspace.html`
+ * (48px icon rail, 268px flyout, 7px split handle) plus a1's 240px expanded
+ * page-tree panel.
+ *
+ * WHY these live here and not in `src/styles/tokens.css`: the design-system
+ * skill puts component token bags in tokens.css, but every value below is
+ * private to this one feature directory, and the parallel outline surface
+ * (#3335) edits that same shared file — a feature-local bag keeps the two
+ * surfaces from colliding on a file neither of them owns. Call sites consume
+ * them exactly as they would a tokens.css bag (`w-(--zdo-rail-expanded)`,
+ * `bg-(--zdo-wash-hover)`), so promoting them later changes nothing but the
+ * declaration's address.
+ *
+ * Two kinds of value live here, and both exist because the alternative is a
+ * lint violation, not because a raw value would have been fine:
+ *
+ * - **Washes.** The prototype's hover/selection tints are
+ *   `color-mix(in oklch, <role> N%, transparent)` — the form the design-system
+ *   skill mandates for overlays instead of a raw alpha color. Naming each one
+ *   keeps the mix out of a hundred arbitrary-value class strings.
+ * - **`--zdo-z-flyout`.** The flyout is a positioned element that must paint
+ *   above the editor pane's own positioned host, which comes LATER in DOM
+ *   order; without an explicit tier the tree would be covered by the pane it
+ *   overlays. Raw `z-10` is banned by the repo's design-token lint, so the
+ *   tier is a named variable.
+ * ========================================================================== */
+
+.zdo-editor {
+  --zdo-rail-expanded: 15rem; /* 240px — a1's page-tree panel */
+  --zdo-rail-collapsed: 3rem; /* 48px — a3's icon rail */
+  --zdo-flyout-width: 16.75rem; /* 268px — a3's pages flyout */
+  --zdo-split-divider: 0.4375rem; /* 7px — a3's drag handle */
+  --zdo-split-grip: 2.125rem; /* 34px — the handle's visible grip */
+  --zdo-rail-marker: 0.15625rem; /* 2.5px — a3's active-rail-button bar */
+  --zdo-dot: 0.375rem; /* 6px — dirty / draft state dots */
+  --zdo-rail-btn: 2.375rem; /* 38px — a3's icon-rail hit target */
+  --zdo-position-field: 3.25rem; /* 52px — a3's Position input */
+  --zdo-z-flyout: 40;
+
+  /* Uppercase micro-labels (category names, metadata field labels). */
+  --zdo-label-tracking: 0.07em;
+  /* The editor buffer's line height — prose, not UI, so it runs looser. */
+  --zdo-editor-leading: 1.6;
+  /* a3's preview column measure (660px) — a reading width, not a layout width. */
+  --zdo-preview-measure: 41.25rem;
+
+  --zdo-wash-hover: color-mix(in oklch, var(--zdo-fg) 6%, transparent);
+  --zdo-wash-hover-soft: color-mix(in oklch, var(--zdo-fg) 4%, transparent);
+  --zdo-wash-active: color-mix(in oklch, var(--zdo-accent) 11%, transparent);
+  --zdo-wash-danger: color-mix(in oklch, var(--zdo-danger) 12%, transparent);
+  --zdo-wash-success: color-mix(in oklch, var(--zdo-success) 12%, transparent);
+  --zdo-wash-warning: color-mix(in oklch, var(--zdo-warning) 14%, transparent);
+  --zdo-wash-info: color-mix(in oklch, var(--zdo-info) 8%, transparent);
+}

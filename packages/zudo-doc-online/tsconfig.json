@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "esModuleInterop": true,
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "useDefineForClassFields": true,
+    "types": ["node", "vite/client"],
+    "baseUrl": ".",
+    "paths": {
+      // dnd-kit's own .d.ts imports React types (`React.ReactNode`,
+      // `React.CSSProperties`, ...); this package runs Preact in
+      // react-compat mode with no real `react` package installed. Map the
+      // bare specifiers to preact/compat so tsc resolves the same shim vite
+      // aliases to at runtime. Most-specific key first so `react/jsx-runtime`
+      // is not swallowed by the `react` entry. Mirrors the documented GOTCHA
+      // in packages/zudo-doc/CLAUDE.md.
+      "react/jsx-runtime": ["./node_modules/preact/jsx-runtime"],
+      "react-dom": ["./node_modules/preact/compat/"],
+      "react": ["./node_modules/preact/compat/"]
+    }
+  },
+  "include": ["src", "server", "mcp"]
+}
