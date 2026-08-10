@@ -57,6 +57,14 @@ function bearer(token: string) {
   return { Authorization: `Bearer ${token}` };
 }
 
+async function sessionCookie(): Promise<string> {
+  const res = await signUp();
+  expect(res.status).toBe(200);
+  const setCookie = res.headers.get("set-cookie");
+  expect(setCookie).toBeTruthy();
+  return (setCookie as string).split(";")[0] as string;
+}
+
 describe("sign-up", () => {
   it("returns 200 and issues a bearer token via the set-auth-token header", async () => {
     const res = await signUp();
@@ -124,6 +132,43 @@ describe("GET /api/me (bearer-gated)", () => {
     const token = await signUpAndGetToken();
 
     const res = await request("/api/me", { headers: { Authorization: token } });
+
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 401 for a Bearer scheme with an empty token", async () => {
+    const res = await request("/api/me", { headers: { Authorization: "Bearer " } });
+
+    expect(res.status).toBe(401);
+  });
+
+  it("accepts a lowercase bearer scheme (HTTP auth schemes are case-insensitive)", async () => {
+    const token = await signUpAndGetToken();
+
+    const res = await request("/api/me", {
+      headers: { Authorization: `bearer ${token}` },
+    });
+
+    expect(res.status).toBe(200);
+  });
+
+  // A session cookie resolves a session perfectly well through
+  // auth.api.getSession — these two lock in that /api/me nonetheless accepts
+  // the bearer token and nothing else, whether the cookie arrives alone or
+  // alongside a bad token.
+  it("rejects a valid session cookie with no bearer token", async () => {
+    const res = await request("/api/me", { headers: { Cookie: await sessionCookie() } });
+
+    expect(res.status).toBe(401);
+  });
+
+  it("does not let a session cookie substitute for an invalid bearer token", async () => {
+    const res = await request("/api/me", {
+      headers: {
+        Cookie: await sessionCookie(),
+        Authorization: "Bearer not-a-real-token",
+      },
+    });
 
     expect(res.status).toBe(401);
   });

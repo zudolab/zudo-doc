@@ -47,8 +47,11 @@ export const requireSession: MiddlewareHandler<AppEnv> = async (c, next) => {
       401,
     );
 
+  // HTTP auth schemes are case-insensitive (RFC 9110), and Better Auth
+  // lowercases the prefix itself — rejecting `bearer <token>` here would fail a
+  // standards-compliant client the auth library would have accepted.
   const authorization = c.req.header("Authorization");
-  if (!authorization?.startsWith("Bearer ")) {
+  if (!authorization || !/^bearer\s+\S/i.test(authorization)) {
     return unauthorized();
   }
 
@@ -56,9 +59,16 @@ export const requireSession: MiddlewareHandler<AppEnv> = async (c, next) => {
   // than at module scope (see src/auth.ts).
   const auth = createAuth(c.env);
 
+  // Resolve against the bearer credential ALONE — a session cookie must never
+  // stand in for it. Better Auth 1.6.26 already gives an invalid bearer token
+  // precedence over an ambient cookie, but that is its internal ordering, not a
+  // documented guarantee; forwarding only the Authorization header makes this
+  // gate's bearer-only contract independent of that behavior.
+  const bearerOnlyHeaders = new Headers({ Authorization: authorization });
+
   let session: Awaited<ReturnType<typeof auth.api.getSession>>;
   try {
-    session = await auth.api.getSession({ headers: c.req.raw.headers });
+    session = await auth.api.getSession({ headers: bearerOnlyHeaders });
   } catch {
     return unauthorized();
   }

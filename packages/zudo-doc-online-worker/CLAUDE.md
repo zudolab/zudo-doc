@@ -94,6 +94,14 @@ migrations/
   `onError` 500 handler would look like a server hiccup to a caller that only
   branches on 401. `src/__tests__/auth-contract.test.ts` covers each path
   against a real migrated D1, including a deliberately broken `DB` binding.
+- The gate is **bearer-only**: it forwards a `Headers` object carrying just the
+  `Authorization` value to `getSession`, so a session cookie can never stand in
+  for a token. A cookie *does* resolve a session through `getSession` on its
+  own, and Better Auth 1.6.26 happens to let an invalid bearer token override
+  an ambient cookie — but that is internal ordering, not a documented
+  guarantee, so the gate does not rely on it. The scheme match is
+  case-insensitive per RFC 9110 (`bearer <token>` is valid) and requires a
+  non-empty token.
 - Response format: `{ error: { code, message } }` for routes this worker owns
   directly (e.g. `/api/health`, `/api/me`). The `/api/auth/*` routes mounted
   from Better Auth keep Better Auth's own response format — they are NOT
