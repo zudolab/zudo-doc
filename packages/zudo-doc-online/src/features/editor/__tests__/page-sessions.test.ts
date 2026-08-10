@@ -128,6 +128,24 @@ describe("PageSessionRegistry", () => {
     expect((await store.loadPage(INSTALLATION_ID)).markdown).toBe("typed then closed");
   });
 
+  it("lets a pending autosave land when the workspace unmounts mid-debounce", async () => {
+    const store = createEditorTestStore();
+    const registry = new PageSessionRegistry({ store, debounceMs: 5 });
+    registry.open(INSTALLATION_ID);
+    await flush();
+
+    registry.get(INSTALLATION_ID)?.machine?.edit({ markdown: "typed then left" });
+    // Leaving the workspace (navigating to the outline) used to dispose every
+    // machine outright, clearing the debounce timer — an edit made inside the
+    // autosave window vanished with no error anywhere, exactly as closing a
+    // tab used to.
+    registry.dispose();
+
+    await new Promise((resolve) => setTimeout(resolve, 30));
+
+    expect((await store.loadPage(INSTALLATION_ID)).markdown).toBe("typed then left");
+  });
+
   it("abandons a retiring machine when the workspace unmounts", async () => {
     const registry = new PageSessionRegistry({
       store: createEditorTestStore(),

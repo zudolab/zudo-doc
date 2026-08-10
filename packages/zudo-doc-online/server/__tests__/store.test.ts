@@ -140,6 +140,19 @@ describe("seedIfEmpty", () => {
     expect(await store.seedIfEmpty()).toBeNull();
     expect(await store.listProjects()).toHaveLength(1);
   });
+
+  it("still seeds when the only directory is a rolled-back creation", async () => {
+    // What `recover()` leaves behind when a create is undone: a slug-shaped
+    // directory with no project.json. `listProjects()` already ignores it, so
+    // counting raw directories was the one place it passed as a whole project
+    // — and the SPA then 404'd on the sample base it opens by default.
+    await mkdir(projectPath("half-created", "pages"), { recursive: true });
+
+    expect(await store.seedIfEmpty()).toBe("aurora-docs");
+    expect(await store.listProjects()).toEqual([
+      { slug: "aurora-docs", title: "Aurora Docs", revision: 1 },
+    ]);
+  });
 });
 
 describe("outline commands and the page-file lifecycle", () => {

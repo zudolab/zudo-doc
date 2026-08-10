@@ -613,6 +613,42 @@ describe("OutlinePage — live external changes", () => {
     await flush();
   }
 
+  it("catches up on a change that landed before the stream opened", async () => {
+    const wiring = createWiring();
+    const sources = createFakeEventSourceFactory();
+    const events = new ProjectEventsClient({
+      projectSlug: "test-project",
+      clientId: "this-tab",
+      createEventSource: sources.factory,
+    });
+    const view = await mount(
+      <OutlinePage
+        store={wiring.store}
+        coordinator={wiring.coordinator}
+        events={events}
+        viewStorage={memoryViewStorage()}
+      />,
+    );
+
+    // Committed in the gap between the initial snapshot read and the stream
+    // reaching `open`. SSE replays nothing, so no event will ever announce
+    // it — only a refresh at open time can find it.
+    wiring.memory.applyExternalOutlineCommand({
+      type: "rename-category",
+      categoryId: "cat-beta",
+      title: "Renamed before open",
+    });
+    await flush();
+    expect(view.container.textContent ?? "").not.toContain("Renamed before open");
+
+    sources.instances[0]?.emitOpen();
+    await flush();
+
+    expect(view.container.textContent ?? "").toContain("Renamed before open");
+
+    view.unmount();
+  });
+
   it("refreshes on a remote change when nothing is being edited", async () => {
     const view = await mountWithEvents();
 
@@ -751,6 +787,11 @@ describe("OutlinePage — out-of-order responses", () => {
       />,
     );
     sources.instances[0]?.emitOpen();
+    // Opening the stream triggers its own catch-up refresh (an event landing
+    // between the initial load and `open` would otherwise be missed) — let it
+    // settle before gating reads, so the only held load is the one this spec
+    // is about.
+    await flush();
 
     holdLoads = true;
     sources.instances[0]?.emitMessage({

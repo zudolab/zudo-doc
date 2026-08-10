@@ -9,6 +9,7 @@
 // swap in the memory provider without this file knowing.
 import { lazy } from "preact/compat";
 import { useMemo } from "preact/hooks";
+import { DEFAULT_PROJECT_SLUG } from "../../app/project.js";
 import { getClientId } from "../../store/client-id.js";
 import { ProjectEventsClient } from "../../store/events.js";
 import { createHttpProjectStore } from "../../store/http-provider.js";
@@ -16,13 +17,8 @@ import { createCoordinatedStore } from "../../store/revision-coordinator.js";
 import { OutlinePage } from "./outline-page.js";
 import type { OutlineViewComponent } from "./view-props.js";
 
-/**
- * The project the API server seeds on a fresh checkout
- * (`server/store/file-store.ts` → `seedIfEmpty`). There is no project picker
- * yet — the dashboard and multi-project routing are out of scope for this
- * epic — so the surface opens the sample project directly.
- */
-export const DEFAULT_PROJECT_SLUG = "aurora-docs";
+/** Re-exported for the surfaces that already import it from here. */
+export { DEFAULT_PROJECT_SLUG };
 
 /**
  * Zero-touch mount seam for the board view (#3337): dropping a

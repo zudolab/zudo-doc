@@ -1,23 +1,33 @@
 import type { ComponentChildren } from "preact";
+import type { ProjectStore } from "../store/contract.js";
 import { ThemeToggle } from "../theme/theme-toggle.js";
+import { useEditorEntryPageId } from "./editor-entry.js";
+import type { KeyValueStorage } from "../features/editor/persistence.js";
 import { formatRoute, type Route } from "./router.js";
-
-// The outline is the site-structure surface, so it doesn't need a pageId.
-// The editor nav link needs SOME pageId to point at — later sub-issues
-// (#3332's store, #3334's editor chrome) replace this with the
-// last-opened / first page. Until then this mirrors the sample page from
-// the accepted design references (DESIGN-SPEC.md's Surface A sample).
-const SAMPLE_PAGE_ID = "getting-started/installation";
 
 const NAV_LINK_CLASSES =
   "text-small text-fg hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 aria-[current=page]:text-accent";
 
+// There is no page to open yet (or no project at all). A link that 404s would
+// be worse than no link, so the item is rendered inert.
+const NAV_ITEM_DISABLED_CLASSES = "text-small text-muted cursor-not-allowed";
+
 export interface ShellProps {
   route: Route;
+  /**
+   * Where the Editor nav link's target page is read from (`editor-entry.ts`).
+   * `null` — the default — means "no snapshot to consult", which is what a
+   * spec or any mount without a live server gets.
+   */
+  store?: ProjectStore | null;
+  /** Test seam, forwarded to `useEditorEntryPageId`. */
+  storage?: KeyValueStorage | null;
   children?: ComponentChildren;
 }
 
-export function Shell({ route, children }: ShellProps) {
+export function Shell({ route, store = null, storage, children }: ShellProps) {
+  const editorPageId = useEditorEntryPageId(route, { store, storage });
+
   return (
     <div className="flex min-h-dvh flex-col bg-bg text-fg">
       <header className="flex items-center gap-hsp-lg border-b border-border px-hsp-xl py-vsp-xs">
@@ -36,13 +46,19 @@ export function Shell({ route, children }: ShellProps) {
           >
             Outline
           </a>
-          <a
-            href={formatRoute({ name: "editor", pageId: SAMPLE_PAGE_ID })}
-            aria-current={route.name === "editor" ? "page" : undefined}
-            className={NAV_LINK_CLASSES}
-          >
-            Editor
-          </a>
+          {editorPageId === null ? (
+            <span aria-disabled="true" className={NAV_ITEM_DISABLED_CLASSES}>
+              Editor
+            </span>
+          ) : (
+            <a
+              href={formatRoute({ name: "editor", pageId: editorPageId })}
+              aria-current={route.name === "editor" ? "page" : undefined}
+              className={NAV_LINK_CLASSES}
+            >
+              Editor
+            </a>
+          )}
         </nav>
         <div className="ml-auto flex items-center gap-hsp-md">
           <ThemeToggle />

@@ -470,6 +470,52 @@ describe("PageSaveMachine — remoteChanged clears on a successful save", () => 
   });
 });
 
+describe("PageSaveMachine — remote change observed mid-save", () => {
+  it("does not report saved, and refetches, when the change arrived after the send", async () => {
+    // The response is older news than the revision the coordinator already
+    // adopted from that event, so treating it as proof of a clean save would
+    // mark stale content saved — and the next edit would overwrite whatever
+    // the other client just wrote.
+    let settleSave: (result: PageSaveResult) => void = () => undefined;
+    const savePage = vi.fn(
+      () =>
+        new Promise<PageSaveResult>((resolve) => {
+          settleSave = resolve;
+        }),
+    );
+    const serverPage: PagePayload = {
+      ...initialPayload,
+      revision: 9,
+      markdown: "From another client\n",
+    };
+    const loadPage = vi.fn().mockResolvedValue(serverPage);
+    const store = makeStore({ savePage, loadPage });
+    const machine = new PageSaveMachine({
+      pageId: "page-1",
+      store,
+      initial: initialPayload,
+    });
+
+    machine.edit({ markdown: "Mine\n" });
+    await vi.advanceTimersByTimeAsync(500);
+    expect(machine.getSnapshot().status).toBe("saving");
+
+    // Another client commits mid-flight. The local draft itself never moves,
+    // which is exactly the case that used to clear the flag.
+    machine.handleRemoteChange();
+    expect(machine.getSnapshot().remoteChanged).toBe(true);
+
+    settleSave(savedResult("Mine\n", 8));
+    await vi.advanceTimersByTimeAsync(0);
+
+    const snapshot = machine.getSnapshot();
+    expect(snapshot.status).not.toBe("saved");
+    expect(loadPage).toHaveBeenCalledWith("page-1");
+    expect(snapshot.content.markdown).toBe("From another client\n");
+    expect(snapshot.status).toBe("idle");
+  });
+});
+
 describe("PageSaveMachine — guarded no-ops", () => {
   it("retry() and discard() do nothing outside error/conflict", () => {
     const store = makeStore();

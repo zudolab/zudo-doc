@@ -1,8 +1,10 @@
 import { render } from "preact";
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useMemo, useState } from "preact/hooks";
 import "./styles/global.css";
+import { DEFAULT_PROJECT_SLUG } from "./app/project.js";
 import { RouteView } from "./app/routes.js";
 import { Shell } from "./app/shell.js";
+import { createHttpProjectStore } from "./store/http-provider.js";
 import {
   parseRoute,
   readCurrentRoute,
@@ -15,8 +17,15 @@ function ShellApp() {
 
   useEffect(() => subscribeRouteChanged(setRoute), []);
 
+  // Read-only, and only so the Editor nav link knows which page id to open —
+  // every surface still builds its own coordinated store for mutations.
+  const store = useMemo(
+    () => createHttpProjectStore({ projectSlug: DEFAULT_PROJECT_SLUG }),
+    [],
+  );
+
   return (
-    <Shell route={route}>
+    <Shell route={route} store={store}>
       <RouteView route={route} />
     </Shell>
   );

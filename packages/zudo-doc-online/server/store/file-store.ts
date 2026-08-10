@@ -443,10 +443,21 @@ export class FileProjectStore implements ProjectStore {
    * Creates the "Aurora Docs" sample project when `data/` holds no projects
    * yet, so a fresh checkout has something real to open. Returns the slug it
    * created, or null when the store was already populated.
+   *
+   * "Populated" is measured with `listProjects()`, NOT by counting directories:
+   * a creation that `recover()` rolled back leaves a directory with no
+   * `project.json`, which is not a project and which `listProjects()` already
+   * ignores. Counting raw directories would let that orphan pass as the whole
+   * store, skipping the seed and leaving the SPA to 404 on the sample project
+   * it opens by default.
    */
   async seedIfEmpty(): Promise<string | null> {
     return this.locks.run(CREATE_LOCK, async () => {
-      if ((await this.projectSlugs()).length > 0) return null;
+      // A corrupt `project.json` makes `listProjects()` throw. That is still a
+      // populated store — seeding over it would be wrong — and reporting the
+      // corruption is a read's job, not boot's, so it counts as non-empty.
+      const existing = await this.listProjects().catch(() => null);
+      if (existing === null || existing.length > 0) return null;
 
       const slug = deriveUniqueSlug(AURORA_PROJECT_TITLE, []);
       return this.locks.run(slug, async () => {

@@ -215,11 +215,17 @@ export function useOutlineSurface({
     // A reconnect means events were missed while disconnected, so the local
     // snapshot has to be treated as stale even without an event to prove it.
     const releaseReconnect = events.onReconnect(() => remoteChangeRef.current());
+    // The same reasoning applies to the FIRST connection, which `onReconnect`
+    // deliberately skips: the initial `loadSnapshot()` above runs before the
+    // stream is open, and SSE replays nothing, so a commit landing in that gap
+    // is missed forever. `onOpen` covers every successful connection.
+    const releaseOpen = events.onOpen(() => remoteChangeRef.current());
     events.connect();
     return () => {
       releaseCoordinator();
       releaseEvents();
       releaseReconnect();
+      releaseOpen();
       events.close();
     };
   }, [events, coordinator]);
