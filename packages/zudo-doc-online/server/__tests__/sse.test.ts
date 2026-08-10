@@ -5,7 +5,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ChangeEvent } from "../events";
+import { GLOBAL_EVENTS_KEY, type ChangeEvent } from "../events";
 import type { ProjectSnapshot } from "../store/file-store";
 import { createHarness, json, type TestHarness } from "./support";
 
@@ -162,5 +162,102 @@ describe("GET /api/projects/:project/events", () => {
       "the subscription to be released",
     );
     expect(harness.events.trackedProjects).toBe(0);
+  });
+});
+
+describe("global projects-changed events", () => {
+  it("publishes created/deleted/duplicated with the exact event shape", async () => {
+    const received: ChangeEvent[] = [];
+    harness.events.subscribe(GLOBAL_EVENTS_KEY, (event) => received.push(event));
+
+    const created = await harness.app.request("/api/projects", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: "Guides", clientId: "tab-a" }),
+    });
+    expect((await json<ProjectSnapshot>(created)).slug).toBe("guides");
+
+    await harness.app.request("/api/projects/guides", { method: "DELETE" });
+
+    await harness.app.request("/api/projects/docs/duplicate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ clientId: "tab-b" }),
+    });
+
+    expect(received).toEqual([
+      { type: "projects-changed", slug: "guides", action: "created", origin: "tab-a" },
+      { type: "projects-changed", slug: "guides", action: "deleted" },
+      {
+        type: "projects-changed",
+        slug: "docs-copy",
+        action: "duplicated",
+        origin: "tab-b",
+      },
+    ]);
+  });
+
+  it("never announces a project-scoped outline/page commit on the global stream", async () => {
+    const received: ChangeEvent[] = [];
+    harness.events.subscribe(GLOBAL_EVENTS_KEY, (event) => received.push(event));
+
+    await command({
+      expectedRevision: 1,
+      command: { type: "add-category", title: "Guides" },
+    });
+
+    expect(received).toEqual([]);
+  });
+
+  it("streams a projects-changed event to a connected client", async () => {
+    const response = await harness.app.request("/api/projects/_events");
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toContain("text/event-stream");
+
+    const reader = response.body?.getReader();
+    expect(reader).toBeDefined();
+    if (!reader) return;
+
+    await waitFor(
+      () => harness.events.subscriberCount(GLOBAL_EVENTS_KEY) === 1,
+      "the global subscription",
+    );
+
+    await harness.app.request("/api/projects", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: "Guides" }),
+    });
+
+    const chunk = await reader.read();
+    const frame = new TextDecoder().decode(chunk.value);
+    expect(frame.startsWith("data: ")).toBe(true);
+    expect(JSON.parse(frame.slice("data: ".length).trim())).toEqual({
+      type: "projects-changed",
+      slug: "guides",
+      action: "created",
+    });
+
+    await reader.cancel();
+    await waitFor(
+      () => harness.events.subscriberCount(GLOBAL_EVENTS_KEY) === 0,
+      "the global subscription to be released",
+    );
+  });
+
+  it("keeps a project titled Events listable and its own per-project stream reachable", async () => {
+    const events = await harness.app.request("/api/projects", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: "Events" }),
+    });
+    expect((await json<ProjectSnapshot>(events)).slug).toBe("events");
+
+    // The literal `/_events` route must not shadow the real "events" slug's
+    // own per-project stream.
+    const response = await harness.app.request("/api/projects/events/events");
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toContain("text/event-stream");
+    await response.body?.cancel();
   });
 });

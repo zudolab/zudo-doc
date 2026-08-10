@@ -10,19 +10,44 @@
  * without it every save would round-trip twice.
  */
 
-export type ChangeEventType = "outline-changed" | "page-changed";
+/**
+ * A discriminated union: `outline-changed`/`page-changed` carry the project
+ * revision the commit produced; `projects-changed` (list-level: created,
+ * deleted, duplicated) does not, because it is not scoped to one project's
+ * revision history at all.
+ */
+export type ChangeEvent =
+  | {
+      type: "outline-changed";
+      revision: number;
+      /** The `clientId` of the mutation that caused this event, when supplied. */
+      origin?: string;
+    }
+  | {
+      type: "page-changed";
+      pageId: string;
+      revision: number;
+      /** The `clientId` of the mutation that caused this event, when supplied. */
+      origin?: string;
+    }
+  | {
+      type: "projects-changed";
+      slug: string;
+      action: "created" | "deleted" | "duplicated";
+      /** The `clientId` of the mutation that caused this event, when supplied. */
+      origin?: string;
+    };
 
-export interface ChangeEvent {
-  type: ChangeEventType;
-  /** Present on `page-changed` only. */
-  pageId?: string;
-  /** The project revision the commit produced. */
-  revision: number;
-  /** The `clientId` of the mutation that caused this event, when supplied. */
-  origin?: string;
-}
+export type ChangeEventType = ChangeEvent["type"];
 
 export type ChangeListener = (event: ChangeEvent) => void;
+
+/**
+ * Reserved subscription key for the global projects stream
+ * (`GET /api/projects/_events`). Colon-keyed, so it can never collide with a
+ * project slug (`isValidSlug` never allows `:`).
+ */
+export const GLOBAL_EVENTS_KEY = "::all";
 
 /**
  * Per-project cap. A local dev server sees a handful of tabs; a number this
