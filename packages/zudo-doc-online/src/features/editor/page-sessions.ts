@@ -135,9 +135,20 @@ export class PageSessionRegistry {
     this.retire(record);
   }
 
+  /**
+   * Tears the whole registry down — the workspace unmounted (navigating to
+   * the outline, say). Every session is RETIRED rather than disposed, for the
+   * same reason `close()` retires one: disposing clears the debounce timer, so
+   * an edit made inside the ~500ms autosave window would vanish silently just
+   * because the user changed surface. Sessions already retiring from an
+   * earlier `close()` are left to finish too — `retire()`'s own timeout is the
+   * leak guard, so nothing here has to cut them short.
+   */
   dispose(): void {
-    for (const pageId of [...this.records.keys()]) this.teardown(pageId);
-    for (const abandon of [...this.retiring]) abandon();
+    for (const [pageId, record] of [...this.records]) {
+      this.records.delete(pageId);
+      this.retire(record);
+    }
     this.listeners.clear();
     this.publish();
   }
@@ -248,6 +259,13 @@ export class PageSessionRegistry {
       machine?.dispose();
       return;
     }
+
+    // Send the debounced draft NOW. The surface that owned this machine is
+    // gone, so there are no further keystrokes to coalesce, and leaving the
+    // write to a timer only widens the window in which it could be lost.
+    // A no-op unless the machine is `dirty` — a save already in flight is
+    // simply waited on below.
+    machine.flush();
 
     let finish = (): void => undefined;
     const stopWatching = machine.subscribe((save) => {

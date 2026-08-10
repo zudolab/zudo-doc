@@ -19,6 +19,11 @@
  * 409 while `content` has since moved on (the user kept typing after the
  * failed send) enters `conflict` and keeps that newer draft; only an explicit
  * `retry()` or `discard()` resolves it.
+ *
+ * The same rule governs a SUCCESSFUL response: a remote change observed while
+ * the save was in flight outlives that response, because the coordinator has
+ * already adopted a revision the response predates. Such a save never reports
+ * `saved` — see `performSave`.
  */
 
 import {
@@ -88,6 +93,14 @@ export class PageSaveMachine {
   private warnings: string[];
   private revision: number;
   private remoteChanged = false;
+  /**
+   * Bumped every time a remote change is observed. `performSave` compares it
+   * against the value captured at dispatch to tell a remote change that was
+   * already flagged BEFORE the send (which an explicit `retry()` is allowed
+   * to resolve by winning) from one that arrived DURING it (which the send's
+   * own response is too old to answer).
+   */
+  private remoteChangeSeq = 0;
   private error: { code: string; message: string } | undefined;
   private debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -95,8 +108,16 @@ export class PageSaveMachine {
     this.pageId = options.pageId;
     this.store = options.store;
     this.debounceMs = options.debounceMs ?? 500;
-    this.scheduleTimeout = options.scheduleTimeout ?? setTimeout;
-    this.clearTimeoutImpl = options.clearTimeoutImpl ?? clearTimeout;
+    // Wrapped, never a bare `?? setTimeout`. A bare global stored on a field is
+    // later invoked as `this.scheduleTimeout(...)`, which hands the browser's
+    // `setTimeout` a `this` of this instance — Chrome's Web IDL binding rejects
+    // that with `TypeError: Illegal invocation` on EVERY keystroke. Node and
+    // jsdom don't check `this`, so the suite stays green while the real browser
+    // is broken. Do not "simplify" these arrows away.
+    this.scheduleTimeout =
+      options.scheduleTimeout ?? ((callback, ms) => setTimeout(callback, ms));
+    this.clearTimeoutImpl =
+      options.clearTimeoutImpl ?? ((handle) => clearTimeout(handle));
 
     this.status = "idle";
     this.content = { frontmatter: options.initial.frontmatter, markdown: options.initial.markdown };
@@ -196,6 +217,7 @@ export class PageSaveMachine {
   handleRemoteChange(): void {
     if (PROTECTED_STATUSES.has(this.status)) {
       this.remoteChanged = true;
+      this.remoteChangeSeq += 1;
       if (this.status === "dirty") {
         this.clearTimeoutImpl(this.debounceTimer as ReturnType<typeof setTimeout>);
         this.status = "conflict";
@@ -233,12 +255,16 @@ export class PageSaveMachine {
     // exactly the object `edit()` last installed, never a partially-updated
     // view of it.
     const dispatched = this.content;
+    const dispatchedRemoteSeq = this.remoteChangeSeq;
     this.status = "saving";
     this.emit();
-    void this.performSave(dispatched);
+    void this.performSave(dispatched, dispatchedRemoteSeq);
   }
 
-  private async performSave(dispatched: PageDraft): Promise<void> {
+  private async performSave(
+    dispatched: PageDraft,
+    dispatchedRemoteSeq: number,
+  ): Promise<void> {
     try {
       const result = await this.store.savePage(this.pageId, this.revision, {
         frontmatter: dispatched.frontmatter,
@@ -249,6 +275,16 @@ export class PageSaveMachine {
       this.error = undefined;
 
       if (draftEquals(this.content, dispatched)) {
+        if (this.remoteChangeSeq !== dispatchedRemoteSeq) {
+          // A remote commit was observed AFTER this save was dispatched, so
+          // this response is older news than the revision the coordinator has
+          // already adopted. Clearing the flag here would mark stale content
+          // as saved and let the next edit overwrite the remote page. Nothing
+          // local is at risk (the draft never moved), so adopt the server's
+          // state the same way an unchanged-draft 409 does.
+          await this.refetchFromServer();
+          return;
+        }
         // A successful commit at the coordinator's live revision is proof
         // this page's content is now the definitive server state — any
         // remote change this machine had been flagging is superseded.

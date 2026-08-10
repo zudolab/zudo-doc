@@ -70,8 +70,9 @@ export interface PopoutRegistryOptions {
   windowOpener?: PopoutWindowOpener;
   /** Defaults to `createPopoutChannel()` from popout-bus.ts. Injectable so tests can drive a fake channel; `null` disables the fast path (poll-only). */
   channel?: PopoutChannelLike | null;
-  setIntervalImpl?: typeof setInterval;
-  clearIntervalImpl?: typeof clearInterval;
+  /** Injectable so specs can drive the close poll without global timer patching. */
+  setIntervalImpl?: (callback: () => void, ms: number) => ReturnType<typeof setInterval>;
+  clearIntervalImpl?: (handle: ReturnType<typeof setInterval>) => void;
 }
 
 function defaultWindowOpener(
@@ -84,8 +85,10 @@ function defaultWindowOpener(
 
 export class PopoutRegistry {
   private readonly windowOpener: PopoutWindowOpener;
-  private readonly setIntervalImpl: typeof setInterval;
-  private readonly clearIntervalImpl: typeof clearInterval;
+  private readonly setIntervalImpl: NonNullable<PopoutRegistryOptions["setIntervalImpl"]>;
+  private readonly clearIntervalImpl: NonNullable<
+    PopoutRegistryOptions["clearIntervalImpl"]
+  >;
 
   private readonly entries = new Map<string, PopoutEntry>();
   private readonly pollTimers = new Map<string, ReturnType<typeof setInterval>>();
@@ -93,8 +96,16 @@ export class PopoutRegistry {
 
   constructor(options: PopoutRegistryOptions = {}) {
     this.windowOpener = options.windowOpener ?? defaultWindowOpener;
-    this.setIntervalImpl = options.setIntervalImpl ?? setInterval;
-    this.clearIntervalImpl = options.clearIntervalImpl ?? clearInterval;
+    // Wrapped, never a bare `?? setInterval`. A bare global stored on a field is
+    // later invoked as `this.setIntervalImpl(...)`, which hands the browser's
+    // `setInterval` a `this` of this instance — Chrome's Web IDL binding rejects
+    // that with `TypeError: Illegal invocation`, so close-polling never starts.
+    // Node and jsdom don't check `this`, so the suite stays green while the
+    // real browser is broken. Do not "simplify" these arrows away.
+    this.setIntervalImpl =
+      options.setIntervalImpl ?? ((callback, ms) => setInterval(callback, ms));
+    this.clearIntervalImpl =
+      options.clearIntervalImpl ?? ((handle) => clearInterval(handle));
 
     const channel = options.channel === undefined ? this.createDefaultChannel() : options.channel;
     if (channel !== null) {

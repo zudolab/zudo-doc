@@ -28,6 +28,7 @@
 
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { ComponentChildren } from "preact";
+import { DEFAULT_PROJECT_SLUG as PROJECT_SLUG } from "../../app/project";
 import { navigateTo } from "../../app/router";
 import {
   ProjectEventsClient,
@@ -41,14 +42,6 @@ import {
 } from "../../store/index";
 import { EditorWorkspace } from "./workspace";
 
-/**
- * The slug the local API server seeds on first boot (`seedIfEmpty` derives it
- * from the sample project's title). Multi-project selection is out of scope
- * for this epic — see #3327's non-goals — so the editor opens the one project
- * that exists.
- */
-const PROJECT_SLUG = "aurora-docs";
-
 interface Bootstrap {
   store: ProjectStore;
   events: ProjectEventsClient;
@@ -56,9 +49,21 @@ interface Bootstrap {
 
 export interface EditorRouteProps {
   pageId: string;
+  /**
+   * Test seams, mirroring `features/popout/popout-window.tsx`. Factories
+   * rather than instances because `boot()` re-runs per retry attempt and must
+   * get a fresh provider/stream each time. Read once at boot, so changing
+   * either after mount has no effect until "Try again".
+   */
+  createStore?: () => ProjectStore;
+  createEvents?: () => ProjectEventsClient;
 }
 
-export default function EditorRoute({ pageId }: EditorRouteProps) {
+export default function EditorRoute({
+  pageId,
+  createStore,
+  createEvents,
+}: EditorRouteProps) {
   const [bootstrap, setBootstrap] = useState<Bootstrap | null>(null);
   const [snapshot, setSnapshot] = useState<ProjectSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -72,15 +77,18 @@ export default function EditorRoute({ pageId }: EditorRouteProps) {
 
     async function boot(): Promise<void> {
       try {
-        const provider = createHttpProjectStore({ projectSlug: PROJECT_SLUG });
+        const provider =
+          createStore?.() ?? createHttpProjectStore({ projectSlug: PROJECT_SLUG });
         const initial = await provider.loadSnapshot();
         if (cancelled) return;
 
         const { store, coordinator } = createCoordinatedStore(provider, initial.revision);
-        events = new ProjectEventsClient({
-          projectSlug: PROJECT_SLUG,
-          clientId: getClientId(),
-        });
+        events =
+          createEvents?.() ??
+          new ProjectEventsClient({
+            projectSlug: PROJECT_SLUG,
+            clientId: getClientId(),
+          });
         const unbindCoordinator = bindCoordinatorToEvents(coordinator, events);
 
         const refresh = async (): Promise<void> => {
@@ -111,7 +119,13 @@ export default function EditorRoute({ pageId }: EditorRouteProps) {
         const unsubscribe = events.onEvent(({ event, origin }) => {
           if (event.type === "outline-changed" || origin === "remote") void refresh();
         });
-        const unsubscribeReconnect = events.onReconnect(() => void refresh());
+        // Step 2's snapshot was read BEFORE the stream existed, and SSE has no
+        // replay: a commit landing in that gap would otherwise never reach
+        // this tab. `onOpen` closes it the moment the connection is confirmed
+        // live — and because it fires on EVERY successful connection, it also
+        // covers the reconnect case, which is why `onReconnect` is deliberately
+        // NOT subscribed alongside it (that would refetch twice per reconnect).
+        const unsubscribeOpen = events.onOpen(() => void refresh());
         events.connect();
 
         setSnapshot(initial);
@@ -119,7 +133,7 @@ export default function EditorRoute({ pageId }: EditorRouteProps) {
 
         cleanup = () => {
           unsubscribe();
-          unsubscribeReconnect();
+          unsubscribeOpen();
           unbindCoordinator();
         };
       } catch (caught) {
