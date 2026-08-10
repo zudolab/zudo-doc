@@ -1,0 +1,1457 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>zudo-doc online — D-v3 master-detail</title>
+
+<style>
+/* ==========================================================================
+   _shared/tokens.css — inlined verbatim
+   ========================================================================== */
+
+/* zudo-doc online prototypes — shared design tokens (3-tier ramp strategy)
+   Tier 1: --palette-{group}-{n}  (n = incremental id, NOT Tailwind 100-900)
+   Tier 2: --theme-*  (the ONLY vars components/CM theme may use)
+   Dark mode = alternative Tier-2-feeding Tier-1 values via [data-theme]. */
+
+:root,
+:root[data-theme="light"] {
+  /* Tier 1 — base ramp (bg end → fg end), low-chroma cool gray */
+  --palette-base-0: oklch(0.985 0.002 250);
+  --palette-base-1: oklch(0.962 0.004 250);
+  --palette-base-2: oklch(0.915 0.006 250);
+  --palette-base-3: oklch(0.78 0.01 250);
+  --palette-base-4: oklch(0.55 0.014 250);
+  --palette-base-5: oklch(0.36 0.016 250);
+  --palette-base-6: oklch(0.21 0.018 250);
+  /* Tier 1 — accent ramp (indigo-blue, chroma peaks mid) */
+  --palette-accent-0: oklch(0.93 0.045 262);
+  --palette-accent-1: oklch(0.55 0.19 262);
+  --palette-accent-2: oklch(0.46 0.21 262);
+  /* Tier 1 — state */
+  --palette-state-danger: oklch(0.55 0.19 25);
+  --palette-state-success: oklch(0.58 0.14 150);
+  --palette-state-warning: oklch(0.70 0.14 80);
+  --palette-state-info: oklch(0.60 0.12 230);
+}
+
+:root[data-theme="dark"] {
+  --palette-base-0: oklch(0.19 0.012 255);
+  --palette-base-1: oklch(0.225 0.014 255);
+  --palette-base-2: oklch(0.28 0.016 255);
+  --palette-base-3: oklch(0.42 0.016 255);
+  --palette-base-4: oklch(0.62 0.014 255);
+  --palette-base-5: oklch(0.78 0.01 255);
+  --palette-base-6: oklch(0.93 0.006 255);
+  --palette-accent-0: oklch(0.31 0.06 262);
+  --palette-accent-1: oklch(0.70 0.16 262);
+  --palette-accent-2: oklch(0.78 0.14 262);
+  --palette-state-danger: oklch(0.68 0.17 25);
+  --palette-state-success: oklch(0.70 0.13 150);
+  --palette-state-warning: oklch(0.78 0.13 80);
+  --palette-state-info: oklch(0.72 0.11 230);
+}
+
+:root {
+  /* Tier 2 — semantic roles (components use ONLY these) */
+  --theme-bg: var(--palette-base-0);
+  --theme-surface: var(--palette-base-1);
+  --theme-surface-2: var(--palette-base-2);
+  --theme-border: var(--palette-base-2);
+  --theme-border-strong: var(--palette-base-3);
+  --theme-fg: var(--palette-base-6);
+  --theme-fg-mild: var(--palette-base-5);
+  --theme-muted: var(--palette-base-4);
+  --theme-accent: var(--palette-accent-1);
+  --theme-accent-hover: var(--palette-accent-2);
+  --theme-accent-soft: var(--palette-accent-0);
+  --theme-accent-fg: oklch(0.99 0 0);
+  --theme-danger: var(--palette-state-danger);
+  --theme-success: var(--palette-state-success);
+  --theme-warning: var(--palette-state-warning);
+  --theme-info: var(--palette-state-info);
+
+  /* Type + shape */
+  --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  --radius-s: 4px;
+  --radius-m: 8px;
+  --shadow-1: 0 1px 3px oklch(0 0 0 / 0.12);
+  --shadow-2: 0 4px 16px oklch(0 0 0 / 0.16);
+}
+</style>
+
+<style>
+/* ==========================================================================
+   D-v3 "master-detail" — pick left, act right
+   ========================================================================== */
+
+/* --- derived tones ------------------------------------------------------- */
+:root {
+  /* State hues pulled toward fg so small text stays legible in BOTH modes.
+     oklab (not oklch) on purpose: polar oklch interpolation swings the hue
+     through green on its way to the near-neutral fg — amber warnings would
+     read as success. Rectangular oklab just darkens/lightens in place. */
+  --tone-ok: color-mix(in oklab, var(--theme-success) 70%, var(--theme-fg));
+  --tone-warn: color-mix(in oklab, var(--theme-warning) 55%, var(--theme-fg));
+  --tone-danger: color-mix(in oklab, var(--theme-danger) 88%, var(--theme-fg));
+  --tone-accent: color-mix(in oklab, var(--theme-accent) 92%, var(--theme-fg));
+
+  --wash-ok: color-mix(in oklch, var(--theme-success) 15%, transparent);
+  --wash-warn: color-mix(in oklch, var(--theme-warning) 20%, transparent);
+  --wash-danger: color-mix(in oklch, var(--theme-danger) 11%, transparent);
+  --wash-accent: color-mix(in oklch, var(--theme-accent) 12%, transparent);
+  --wash-neutral: color-mix(in oklch, var(--theme-fg) 7%, transparent);
+  --hover: color-mix(in oklch, var(--theme-fg) 5%, transparent);
+
+  --rail-w: 320px;
+  --bar-h: 48px;
+}
+
+/* --- reset --------------------------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  overflow: hidden;
+  background: var(--theme-bg);
+  color: var(--theme-fg);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+h1, h2, h3, p, dl, dd, dt, ul, li, figure { margin: 0; padding: 0; }
+ul { list-style: none; }
+button, input { font: inherit; color: inherit; }
+a { color: inherit; text-decoration: none; }
+.mono { font-family: var(--font-mono); }
+.muted { color: var(--theme-muted); }
+:focus-visible { outline: 2px solid var(--theme-accent); outline-offset: 2px; }
+
+/* --- app bar -------------------------------------------------------------- */
+.appbar {
+  height: var(--bar-h);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px 0 14px;
+  background: var(--theme-surface);
+  border-bottom: 1px solid var(--theme-border);
+}
+.logo {
+  width: 20px; height: 20px;
+  border-radius: 6px;
+  background: var(--theme-accent);
+  color: var(--theme-accent-fg);
+  font-family: var(--font-mono);
+  font-size: 12px; font-weight: 700;
+  display: grid; place-items: center;
+  flex: none;
+}
+.wordmark { font-size: 13.5px; font-weight: 650; letter-spacing: -0.005em; }
+.wordmark span { color: var(--theme-muted); font-weight: 500; }
+.appbar-spacer { flex: 1; }
+.appbar-link {
+  font-size: 12.5px; color: var(--theme-fg-mild);
+  padding: 5px 9px; border-radius: var(--radius-s);
+}
+.appbar-link:hover { background: var(--hover); }
+.avatar {
+  width: 26px; height: 26px; border-radius: 999px;
+  background: var(--theme-surface-2);
+  border: 1px solid var(--theme-border-strong);
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em;
+  color: var(--theme-fg-mild);
+  display: grid; place-items: center;
+  cursor: pointer;
+}
+
+/* --- shell ---------------------------------------------------------------- */
+.shell {
+  height: calc(100vh - var(--bar-h));
+  display: grid;
+  grid-template-columns: var(--rail-w) minmax(0, 1fr);
+}
+
+/* ==========================================================================
+   LEFT RAIL — the master list
+   ========================================================================== */
+.rail {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--theme-surface);
+  border-right: 1px solid var(--theme-border);
+}
+
+.rail-head { padding: 14px 12px 10px; }
+.rail-title {
+  display: flex; align-items: baseline; gap: 7px;
+  padding: 0 4px 9px;
+  font-size: 12px; font-weight: 650;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--theme-fg-mild);
+}
+.rail-title .count {
+  font-family: var(--font-mono);
+  font-size: 10.5px; font-weight: 500; letter-spacing: 0;
+  color: var(--theme-muted);
+  background: var(--wash-neutral);
+  border-radius: 999px;
+  padding: 1px 6px;
+  text-transform: none;
+}
+
+.search { position: relative; display: flex; align-items: center; }
+.search svg {
+  position: absolute; left: 9px;
+  width: 14px; height: 14px;
+  color: var(--theme-muted);
+  pointer-events: none;
+}
+.search input {
+  width: 100%;
+  height: 32px;
+  padding: 0 44px 0 29px;
+  background: var(--theme-bg);
+  border: 1px solid var(--theme-border-strong);
+  border-radius: var(--radius-m);
+  font-size: 13px;
+  color: var(--theme-fg);
+}
+.search input::placeholder { color: var(--theme-muted); }
+.search input:focus { border-color: var(--theme-accent); }
+.search input::-webkit-search-cancel-button { display: none; }
+.kbd {
+  position: absolute; right: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px; line-height: 1;
+  color: var(--theme-muted);
+  border: 1px solid var(--theme-border-strong);
+  border-radius: var(--radius-s);
+  padding: 3px 5px;
+  pointer-events: none;
+}
+
+.rail-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 2px 8px 12px;
+  scrollbar-width: thin;
+}
+
+.prow-wrap { position: relative; }
+.prow-wrap[hidden] { display: none; }
+
+.prow {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  margin-top: 2px;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-m);
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+}
+.prow:hover { background: var(--hover); }
+.prow[aria-current="true"] {
+  background: var(--wash-accent);
+  box-shadow: inset 2px 0 0 0 var(--theme-accent);
+}
+.prow[aria-current="true"] .prow-name { color: var(--tone-accent); font-weight: 650; }
+
+.prow-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.prow-name {
+  font-size: 13.5px; font-weight: 550;
+  letter-spacing: -0.005em;
+  color: var(--theme-fg);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.prow-meta {
+  font-size: 11px;
+  color: var(--theme-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.prow-meta.busy {
+  color: var(--tone-accent);
+  font-weight: 550;
+}
+
+.prow-extra {
+  display: flex; align-items: center; gap: 7px;
+  margin: -1px 10px 4px 54px;
+  font-size: 11px;
+  color: var(--theme-muted);
+  min-height: 16px;
+}
+.prow-extra .ibar { flex: 1; }
+
+.linkbtn {
+  background: none; border: 0; padding: 0;
+  font-size: 11px; font-weight: 600;
+  color: var(--tone-accent);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.linkbtn:hover { color: var(--theme-accent-hover); }
+
+.rail-empty {
+  padding: 26px 14px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--theme-muted);
+  line-height: 1.7;
+}
+.rail-empty b { color: var(--theme-fg-mild); font-weight: 600; }
+.rail-empty[hidden] { display: none; }
+
+.rail-foot {
+  border-top: 1px solid var(--theme-border);
+  padding: 8px;
+  background: var(--theme-surface);
+}
+.newbtn {
+  width: 100%;
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 10px;
+  background: none;
+  border: 1px dashed var(--theme-border-strong);
+  border-radius: var(--radius-m);
+  font-size: 13px; font-weight: 550;
+  color: var(--theme-fg-mild);
+  cursor: pointer;
+}
+.newbtn:hover {
+  border-color: var(--theme-accent);
+  border-style: solid;
+  color: var(--tone-accent);
+  background: var(--wash-accent);
+}
+.newbtn .plus {
+  width: 20px; height: 20px; flex: none;
+  display: grid; place-items: center;
+  border-radius: var(--radius-s);
+  background: var(--wash-neutral);
+  font-size: 11px;
+}
+.newbtn:hover .plus { background: color-mix(in oklch, var(--theme-accent) 18%, transparent); }
+
+/* ==========================================================================
+   RIGHT PANE — the detail
+   ========================================================================== */
+.detail { overflow-y: auto; min-width: 0; background: var(--theme-bg); }
+.dhead-inner, .detail-inner { max-width: 1060px; }
+
+.dhead {
+  position: sticky; top: 0; z-index: 3;
+  padding: 16px 32px 15px;
+  background: var(--theme-bg);
+  border-bottom: 1px solid var(--theme-border);
+}
+.dhead-inner {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 24px;
+}
+.dhead h1 {
+  font-size: 25px; font-weight: 660;
+  letter-spacing: -0.022em;
+  line-height: 1.15;
+}
+.dhead-sub {
+  display: flex; align-items: center; gap: 9px;
+  margin-top: 7px;
+  font-size: 12px;
+  color: var(--theme-muted);
+}
+.urlchip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 9px;
+  border: 1px solid var(--theme-border-strong);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--theme-fg-mild);
+  background: var(--theme-surface);
+}
+.urlchip:hover { border-color: var(--theme-accent); color: var(--tone-accent); }
+.urlchip .ext { font-family: var(--font-ui); font-size: 10px; opacity: 0.65; }
+.dhead-r { display: flex; gap: 8px; flex: none; padding-top: 3px; }
+
+.detail-body { padding: 20px 32px 80px; }
+.stack { display: flex; flex-direction: column; gap: 16px; }
+
+/* --- buttons -------------------------------------------------------------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-m);
+  background: transparent;
+  color: var(--theme-fg-mild);
+  font-size: 13px; font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.btn.sm { height: 26px; padding: 0 10px; font-size: 12px; }
+.btn.wide { width: 100%; }
+.btn.primary {
+  background: var(--theme-accent);
+  color: var(--theme-accent-fg);
+  box-shadow: var(--shadow-1);
+}
+.btn.primary:hover { background: var(--theme-accent-hover); }
+.btn.ghost {
+  background: var(--theme-surface);
+  border-color: var(--theme-border-strong);
+  color: var(--theme-fg);
+}
+.btn.ghost:hover { background: var(--theme-surface-2); }
+.btn.danger { background: var(--theme-danger); color: var(--theme-accent-fg); }
+.btn.danger:hover { filter: saturate(1.15) brightness(0.95); }
+.btn.danger-ghost {
+  border-color: color-mix(in oklch, var(--theme-danger) 40%, transparent);
+  color: var(--tone-danger);
+}
+.btn.danger-ghost:hover { background: var(--wash-danger); }
+.btn[disabled] { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+
+/* --- cards ---------------------------------------------------------------- */
+.card {
+  background: var(--theme-surface);
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-m);
+}
+.card-h {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--theme-border);
+}
+.card-h h2 {
+  font-size: 12px; font-weight: 650;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--theme-fg-mild);
+}
+.card-b { padding: 14px 16px; }
+
+.eyebrow {
+  font-size: 10.5px; font-weight: 650;
+  letter-spacing: 0.09em; text-transform: uppercase;
+  color: var(--theme-muted);
+}
+
+/* --- chips / dots --------------------------------------------------------- */
+.tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10.5px; font-weight: 650;
+  letter-spacing: 0.015em;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.tag.ok { color: var(--tone-ok); background: var(--wash-ok); }
+.tag.warn { color: var(--tone-warn); background: var(--wash-warn); }
+.tag.danger { color: var(--tone-danger); background: var(--wash-danger); }
+.tag.accent { color: var(--tone-accent); background: var(--wash-accent); }
+.tag.neutral { color: var(--theme-muted); background: var(--wash-neutral); }
+
+.dot {
+  width: 6px; height: 6px; flex: none;
+  border-radius: 999px;
+  display: inline-block;
+  background: var(--theme-border-strong);
+}
+.dot.ok { background: var(--theme-success); }
+.dot.warn { background: var(--theme-warning); }
+.dot.danger { background: var(--theme-danger); }
+.dot.accent { background: var(--theme-accent); }
+
+.spin {
+  width: 11px; height: 11px; flex: none;
+  border-radius: 999px;
+  border: 1.5px solid color-mix(in oklch, var(--theme-accent) 22%, transparent);
+  border-top-color: var(--theme-accent);
+  animation: spin 0.75s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.ibar {
+  height: 3px;
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--theme-accent) 16%, transparent);
+  overflow: hidden;
+  position: relative;
+}
+.ibar i {
+  position: absolute; top: 0; bottom: 0;
+  width: 36%;
+  border-radius: 999px;
+  background: var(--theme-accent);
+  animation: slide 1.5s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+@keyframes slide { 0% { left: -36%; } 100% { left: 100%; } }
+
+/* ==========================================================================
+   SAMPLE-DATA ARTWORK — theme-pack chip + mini site thumbnail
+   (pack colors arrive as inline --pack-* custom props: CONTENT, not chrome)
+   ========================================================================== */
+.chip {
+  width: 34px; height: 24px; flex: none;
+  border-radius: 5px;
+  overflow: hidden;
+  display: flex;
+  background: var(--pack-bg);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--pack-fg) 16%, transparent);
+}
+.chip-side { width: 10px; background: var(--pack-surface); }
+.chip-main {
+  flex: 1;
+  padding: 4.5px 4px 0 4px;
+  display: flex; flex-direction: column; gap: 2.5px;
+}
+.chip-main i { height: 2px; border-radius: 1px; background: color-mix(in oklch, var(--pack-fg) 30%, transparent); }
+.chip-main i:first-child { height: 3px; width: 78%; background: var(--pack-accent); }
+.chip-main i:last-child { width: 60%; }
+
+.mini {
+  font-size: var(--mini-u, 6px);
+  width: 76em; height: 44em;
+  flex: none;
+  border-radius: 1.6em;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  background: var(--pack-bg);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--pack-fg) 14%, transparent), var(--shadow-1);
+}
+.mini-bar {
+  height: 6em; flex: none;
+  display: flex; align-items: center; gap: 1.6em;
+  padding: 0 2.6em;
+  background: var(--pack-surface);
+}
+.mini-logo { width: 2.8em; height: 2.8em; border-radius: 0.8em; background: var(--pack-accent); }
+.mini-brand { width: 9em; height: 1.4em; border-radius: 0.7em; background: color-mix(in oklch, var(--pack-fg) 68%, transparent); }
+.mini-nav { margin-left: auto; display: flex; gap: 1.8em; }
+.mini-nav i { width: 5em; height: 1.1em; border-radius: 0.55em; background: color-mix(in oklch, var(--pack-fg) 32%, transparent); }
+.mini-body { flex: 1; display: flex; min-height: 0; }
+.mini-side {
+  width: 17em; flex: none;
+  padding: 2.6em 2.2em;
+  display: flex; flex-direction: column; gap: 1.7em;
+  background: color-mix(in oklch, var(--pack-surface) 58%, transparent);
+}
+.mini-side i { height: 1.1em; border-radius: 0.55em; background: color-mix(in oklch, var(--pack-fg) 26%, transparent); }
+.mini-side i.w1 { width: 86%; }
+.mini-side i.w2 { width: 66%; }
+.mini-side i.on { width: 78%; background: var(--pack-accent); }
+.mini-main { flex: 1; padding: 2.9em 3.2em; min-width: 0; }
+.mini-h {
+  font-family: var(--pack-font, sans-serif);
+  font-size: 3.2em;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--pack-fg);
+  margin-bottom: 0.75em;
+}
+.mini-lines { display: flex; flex-direction: column; gap: 1.5em; }
+.mini-lines i { height: 1.15em; border-radius: 0.6em; background: color-mix(in oklch, var(--pack-fg) 22%, transparent); }
+.mini-lines i.w1 { width: 100%; }
+.mini-lines i.w2 { width: 93%; }
+.mini-lines i.w3 { width: 72%; }
+.mini-chip {
+  margin: 2.6em 0;
+  width: 13em; height: 3.2em;
+  border-radius: 0.9em;
+  background: var(--pack-accent);
+}
+
+/* --- hero card ------------------------------------------------------------ */
+.hero { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 24px; padding: 18px; }
+.hero-meta { display: flex; flex-direction: column; align-items: flex-start; padding-top: 2px; }
+.hero-pack {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 5px;
+  font-size: 17px; font-weight: 640; letter-spacing: -0.015em;
+}
+.hero-vibe { margin-top: 3px; font-size: 12.5px; color: var(--theme-muted); }
+
+.swatches { display: flex; gap: 14px; margin-top: 14px; }
+.sw { display: flex; flex-direction: column; gap: 5px; align-items: flex-start; }
+.sw span {
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--theme-fg) 16%, transparent);
+}
+.sw small { font-size: 9.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--theme-muted); }
+
+.kv {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 5px 16px;
+  font-size: 12.5px;
+  width: 100%;
+}
+.kv dt { color: var(--theme-muted); }
+.kv dd { color: var(--theme-fg-mild); }
+.hero-meta .btn { margin-top: auto; }
+
+/* --- stats row ------------------------------------------------------------ */
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.stat { padding: 13px 18px; }
+.stat + .stat { border-left: 1px solid var(--theme-border); }
+.stat b {
+  display: block;
+  font-size: 21px; font-weight: 640;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+}
+.stat small {
+  display: flex; align-items: center; gap: 5px;
+  margin-top: 3px;
+  font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--theme-muted);
+}
+
+/* --- two-column body ------------------------------------------------------ */
+.cols { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+
+/* --- recent pages --------------------------------------------------------- */
+.pglist { padding: 5px 6px; }
+.pg {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 11px;
+  padding: 8px 10px;
+  border-radius: var(--radius-s);
+}
+.pg:hover { background: var(--hover); }
+.pg-ico { color: var(--theme-muted); display: grid; place-items: center; }
+.pg-ico svg { width: 15px; height: 15px; }
+.pg-t { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.pg-t b { font-size: 13.5px; font-weight: 550; letter-spacing: -0.005em; }
+.pg-t small {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--theme-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pg-time {
+  font-size: 11.5px;
+  color: var(--theme-muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 68px;
+  text-align: right;
+}
+
+/* --- publish card --------------------------------------------------------- */
+.pub-line { font-size: 13px; color: var(--theme-fg-mild); line-height: 1.55; }
+.pub-line b { color: var(--theme-fg); font-weight: 650; }
+.pub-changed {
+  display: flex; flex-wrap: wrap; gap: 5px;
+  margin: 10px 0 0;
+}
+.pub-changed li {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  padding: 2px 7px;
+  border-radius: var(--radius-s);
+  background: var(--theme-surface-2);
+  color: var(--theme-fg-mild);
+}
+.pub-err {
+  margin-top: 9px;
+  padding: 8px 10px;
+  border-radius: var(--radius-s);
+  background: var(--wash-danger);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--tone-danger);
+}
+.pub-err code { font-family: var(--font-mono); font-size: 10.5px; }
+.pub-act { margin-top: 14px; }
+.pub-foot {
+  margin-top: 10px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--theme-muted);
+}
+.pub-foot .mono { font-size: 10.5px; }
+
+/* --- danger zone ---------------------------------------------------------- */
+.card.danger-zone { border-color: color-mix(in oklch, var(--theme-danger) 30%, var(--theme-border)); }
+.card.danger-zone > .card-h { border-bottom-color: color-mix(in oklch, var(--theme-danger) 24%, var(--theme-border)); }
+.card.danger-zone > .card-h h2 { color: var(--tone-danger); }
+
+.dz-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  padding: 13px 16px;
+}
+.dz-row + .dz-row { border-top: 1px solid var(--theme-border); }
+.dz-row b { display: block; font-size: 13px; font-weight: 600; }
+.dz-row p { margin-top: 2px; font-size: 12px; color: var(--theme-muted); line-height: 1.5; }
+.dz-row[hidden] { display: none; }
+
+.dz-confirm {
+  display: block;
+  background: var(--wash-danger);
+  border-top: 1px solid color-mix(in oklch, var(--theme-danger) 24%, var(--theme-border));
+  padding: 14px 16px;
+}
+.dz-confirm .q { font-size: 13px; font-weight: 650; color: var(--tone-danger); }
+.dz-confirm .why { margin-top: 3px; font-size: 12px; color: var(--theme-fg-mild); line-height: 1.55; }
+.dz-confirm .why .mono { font-size: 11px; }
+.dz-actions { display: flex; gap: 8px; margin-top: 12px; }
+
+/* ==========================================================================
+   NEW PROJECT DIALOG
+   ========================================================================== */
+dialog.dlg {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--theme-fg);
+  max-width: none;
+}
+dialog.dlg::backdrop { background: color-mix(in oklch, var(--theme-fg) 42%, transparent); }
+.dlg-card {
+  width: 460px;
+  background: var(--theme-surface);
+  border: 1px solid var(--theme-border-strong);
+  border-radius: 12px;
+  box-shadow: var(--shadow-2);
+  overflow: hidden;
+}
+.dlg-h { padding: 16px 18px 12px; border-bottom: 1px solid var(--theme-border); }
+.dlg-h h2 { font-size: 16px; font-weight: 650; letter-spacing: -0.015em; }
+.dlg-h p { margin-top: 3px; font-size: 12.5px; color: var(--theme-muted); }
+.dlg-b { padding: 16px 18px; }
+.dlg-f {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--theme-border);
+  background: var(--theme-bg);
+}
+
+.field label {
+  display: block;
+  font-size: 11px; font-weight: 650;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--theme-muted);
+  margin-bottom: 6px;
+}
+.field input[type="text"] {
+  width: 100%;
+  height: 34px;
+  padding: 0 11px;
+  background: var(--theme-bg);
+  border: 1px solid var(--theme-border-strong);
+  border-radius: var(--radius-m);
+  font-size: 14px;
+}
+.field input[type="text"]:focus { border-color: var(--theme-accent); }
+.slugline {
+  margin-top: 7px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--theme-muted);
+}
+.slugline b { color: var(--tone-accent); font-weight: 600; }
+
+.packgrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+.packopt {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 9px;
+  background: var(--theme-bg);
+  border: 1px solid var(--theme-border-strong);
+  border-radius: var(--radius-m);
+  font-size: 12px; font-weight: 550;
+  cursor: pointer;
+  text-align: left;
+}
+.packopt:hover { border-color: var(--theme-muted); }
+.packopt[aria-pressed="true"] {
+  border-color: var(--theme-accent);
+  background: var(--wash-accent);
+  box-shadow: inset 0 0 0 1px var(--theme-accent);
+  color: var(--tone-accent);
+}
+.packopt .chip { width: 26px; height: 19px; border-radius: 4px; }
+.packopt .chip-side { width: 8px; }
+.packopt .chip-main { padding: 3.5px 3px 0; gap: 2px; }
+.morepacks {
+  margin-top: 10px;
+  font-size: 11.5px;
+  color: var(--theme-muted);
+}
+
+/* ==========================================================================
+   PROTO BADGE (spec-mandated pattern)
+   ========================================================================== */
+.proto-badge { position: fixed; right: 16px; bottom: 16px; z-index: 99;
+  display: flex; gap: 8px; align-items: center; padding: 6px 10px;
+  background: var(--theme-surface); border: 1px solid var(--theme-border-strong);
+  border-radius: 999px; box-shadow: var(--shadow-2); font-size: 11px;
+  font-family: var(--font-mono); color: var(--theme-muted); }
+.proto-badge button { font: inherit; color: var(--theme-fg-mild);
+  background: none; border: 1px solid var(--theme-border-strong);
+  border-radius: 999px; padding: 2px 8px; cursor: pointer; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+}
+</style>
+</head>
+
+<body>
+
+<header class="appbar">
+  <div class="logo" aria-hidden="true">z</div>
+  <div class="wordmark">zudo-doc <span>online</span></div>
+  <div class="appbar-spacer"></div>
+  <a class="appbar-link" href="#">Docs</a>
+  <button class="avatar" type="button" aria-label="Account — TZ">TZ</button>
+</header>
+
+<div class="shell">
+
+  <!-- ================= MASTER: project rail ================= -->
+  <nav class="rail" aria-label="Projects">
+    <div class="rail-head">
+      <div class="rail-title">Projects <span class="count" id="railCount">6</span></div>
+      <div class="search">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+          <circle cx="7" cy="7" r="4.5" /><path d="M10.5 10.5 14 14" stroke-linecap="round" />
+        </svg>
+        <input id="q" type="search" autocomplete="off" spellcheck="false"
+               placeholder="Search projects" aria-label="Search projects" />
+        <span class="kbd" aria-hidden="true">⌘K</span>
+      </div>
+    </div>
+
+    <ul class="rail-list" id="railList"></ul>
+
+    <div class="rail-empty" id="railEmpty" hidden>
+      No projects match “<b id="qEcho"></b>”.<br />
+      <button class="linkbtn" type="button" id="clearQ">Clear search</button>
+    </div>
+
+    <div class="rail-foot">
+      <button class="newbtn" type="button" id="newProjectBtn">
+        <span class="plus" aria-hidden="true">＋</span>
+        New project
+      </button>
+    </div>
+  </nav>
+
+  <!-- ================= DETAIL: selected project ================= -->
+  <main class="detail" id="detail" aria-label="Project detail">
+
+    <header class="dhead">
+      <div class="dhead-inner">
+        <div>
+          <h1 id="dName">Aurora Docs</h1>
+          <div class="dhead-sub">
+            <a class="urlchip" href="#" id="dUrl">
+              <span class="dot ok" aria-hidden="true"></span>
+              <span id="dUrlText">aurora-docs.zudo.dev</span>
+              <span class="ext" aria-hidden="true">↗</span>
+            </a>
+            <span aria-hidden="true">·</span>
+            <span id="dSubMeta">14 pages · updated 3h ago</span>
+          </div>
+        </div>
+        <div class="dhead-r">
+          <button class="btn ghost" type="button">Outline</button>
+          <button class="btn primary" type="button">Open editor</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="detail-body">
+      <div class="detail-inner stack">
+
+        <!-- hero: theme pack -->
+        <section class="card hero" aria-label="Theme">
+          <div class="mini" id="dMini" style="--mini-u: 6px;
+               --pack-bg: oklch(0.98 0.005 262); --pack-surface: oklch(0.95 0.01 262);
+               --pack-accent: oklch(0.55 0.19 262); --pack-fg: oklch(0.25 0.02 262);
+               --pack-font: var(--font-ui);" aria-hidden="true">
+            <div class="mini-bar">
+              <div class="mini-logo"></div><div class="mini-brand"></div>
+              <div class="mini-nav"><i></i><i></i><i></i></div>
+            </div>
+            <div class="mini-body">
+              <div class="mini-side"><i class="on"></i><i class="w1"></i><i class="w2"></i><i class="w1"></i><i class="w2"></i></div>
+              <div class="mini-main">
+                <div class="mini-h" id="dMiniH">Getting Started</div>
+                <div class="mini-lines"><i class="w1"></i><i class="w2"></i><i class="w3"></i></div>
+                <div class="mini-chip"></div>
+                <div class="mini-lines"><i class="w2"></i><i class="w3"></i></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-meta">
+            <div class="eyebrow">Theme pack</div>
+            <div class="hero-pack">
+              <span id="dPackName">Aurora</span>
+              <span class="tag neutral" id="dPackFont">sans</span>
+            </div>
+            <p class="hero-vibe" id="dPackVibe">Calm indigo, the default</p>
+
+            <div class="swatches" id="dSwatches"></div>
+
+            <dl class="kv">
+              <dt>Color scheme</dt><dd>Default</dd>
+              <dt>Default mode</dt><dd>System</dd>
+              <dt>Features</dt><dd>Search, TOC, Tags, Breadcrumbs, Pager</dd>
+            </dl>
+
+            <button class="btn ghost sm" type="button" style="margin-top: 16px;">Change theme</button>
+          </div>
+        </section>
+
+        <!-- stats -->
+        <section class="card stats" id="dStats" aria-label="Project stats"></section>
+
+        <!-- two-column: recent pages | publish -->
+        <div class="cols">
+
+          <section class="card" aria-label="Recent pages">
+            <div class="card-h">
+              <h2>Recent pages</h2>
+              <a class="linkbtn" href="#" id="dAllPages">All 14 pages ↗</a>
+            </div>
+            <div class="pglist" id="dPages"></div>
+          </section>
+
+          <section class="card" id="dPubCard" aria-label="Publish"></section>
+
+        </div>
+
+        <!-- danger zone -->
+        <section class="card danger-zone" aria-label="Danger zone">
+          <div class="card-h"><h2>Danger zone</h2></div>
+
+          <div class="dz-row">
+            <div>
+              <b>Duplicate project</b>
+              <p id="dzDupDesc">Creates an unpublished copy with all 14 pages and the same theme.</p>
+            </div>
+            <button class="btn ghost" type="button">Duplicate</button>
+          </div>
+
+          <div class="dz-row" id="dzIdle" hidden>
+            <div>
+              <b>Delete project</b>
+              <p id="dzIdleDesc">Permanently removes this project, its pages, and its subdomain.</p>
+            </div>
+            <button class="btn danger-ghost" type="button" id="dzOpenBtn">Delete…</button>
+          </div>
+
+          <div class="dz-confirm" id="dzConfirm">
+            <div class="q" id="dzQ">Delete “Aurora Docs”?</div>
+            <p class="why" id="dzWhy">
+              This removes <b>14 pages</b> (2 still drafts) and takes
+              <span class="mono">aurora-docs.zudo.dev</span> offline immediately. This can’t be undone.
+            </p>
+            <div class="dz-actions">
+              <button class="btn danger" type="button" id="dzDeleteBtn">Delete project</button>
+              <button class="btn ghost" type="button" id="dzCancelBtn">Cancel</button>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ================= NEW PROJECT DIALOG ================= -->
+<dialog class="dlg" id="newDlg" aria-labelledby="newDlgTitle">
+  <div class="dlg-card">
+    <div class="dlg-h">
+      <h2 id="newDlgTitle">New project</h2>
+      <p>Name it and pick a starting theme — everything else is editable later.</p>
+    </div>
+    <div class="dlg-b">
+      <div class="field">
+        <label for="npName">Project name</label>
+        <input id="npName" type="text" placeholder="e.g. Aurora Docs" autocomplete="off" spellcheck="false" />
+        <div class="slugline">Will be live at <b id="npSlug">untitled</b>.zudo.dev</div>
+      </div>
+
+      <div class="field" style="margin-top: 16px;">
+        <label id="npThemeLabel">Theme pack</label>
+        <div class="packgrid" id="npPacks" role="group" aria-labelledby="npThemeLabel"></div>
+        <div class="morepacks">Aurora is the default. <button class="linkbtn" type="button">Browse all 31 packs →</button></div>
+      </div>
+    </div>
+    <div class="dlg-f">
+      <button class="btn ghost" type="button" id="npCancel">Cancel</button>
+      <button class="btn primary" type="button" id="npCreate">Create project</button>
+    </div>
+  </div>
+</dialog>
+
+<div class="proto-badge">
+  <span>D-v3 master-detail</span>
+  <button id="themeToggle" type="button">◐ theme</button>
+</div>
+
+<script>
+/* ==========================================================================
+   Sample data
+   ========================================================================== */
+const PACKS = [
+  { id: "aurora",     name: "Aurora",     vibe: "Calm indigo, the default",   font: "sans",  dark: false, bg: "oklch(0.98 0.005 262)", surface: "oklch(0.95 0.01 262)",  accent: "oklch(0.55 0.19 262)", fg: "oklch(0.25 0.02 262)" },
+  { id: "paper",      name: "Paper",      vibe: "Warm cream, bookish serif",  font: "serif", dark: false, bg: "oklch(0.97 0.015 85)",  surface: "oklch(0.94 0.02 85)",   accent: "oklch(0.50 0.10 60)",  fg: "oklch(0.30 0.03 60)"  },
+  { id: "forest",     name: "Forest",     vibe: "Deep greens, field-guide",   font: "sans",  dark: false, bg: "oklch(0.975 0.008 150)", surface: "oklch(0.94 0.015 150)", accent: "oklch(0.52 0.14 150)", fg: "oklch(0.27 0.03 150)" },
+  { id: "sunset",     name: "Sunset",     vibe: "Amber warmth, friendly",     font: "sans",  dark: false, bg: "oklch(0.975 0.012 60)",  surface: "oklch(0.94 0.02 55)",   accent: "oklch(0.62 0.17 45)",  fg: "oklch(0.28 0.03 40)"  },
+  { id: "mono",       name: "Mono",       vibe: "Ink on white, zero chroma",  font: "mono",  dark: false, bg: "oklch(0.98 0 0)",        surface: "oklch(0.94 0 0)",       accent: "oklch(0.30 0 0)",      fg: "oklch(0.22 0 0)"      },
+  { id: "ocean",      name: "Ocean",      vibe: "Teal, technical calm",       font: "sans",  dark: false, bg: "oklch(0.975 0.008 210)", surface: "oklch(0.94 0.015 210)", accent: "oklch(0.55 0.12 210)", fg: "oklch(0.26 0.03 220)" },
+  { id: "berry",      name: "Berry",      vibe: "Magenta pop, playful",       font: "sans",  dark: false, bg: "oklch(0.975 0.01 340)",  surface: "oklch(0.94 0.02 340)",  accent: "oklch(0.55 0.18 340)", fg: "oklch(0.27 0.03 340)" },
+  { id: "slate",      name: "Slate",      vibe: "Steel blue, dark-first",     font: "sans",  dark: true,  bg: "oklch(0.27 0.02 250)",   surface: "oklch(0.31 0.02 250)",  accent: "oklch(0.72 0.12 250)", fg: "oklch(0.93 0.01 250)" },
+  { id: "terracotta", name: "Terracotta", vibe: "Clay red, editorial",        font: "serif", dark: false, bg: "oklch(0.97 0.012 40)",   surface: "oklch(0.94 0.02 35)",   accent: "oklch(0.58 0.14 30)",  fg: "oklch(0.30 0.04 30)"  },
+  { id: "mint",       name: "Mint",       vibe: "Fresh green-blue, light",    font: "sans",  dark: false, bg: "oklch(0.98 0.01 170)",   surface: "oklch(0.945 0.015 170)", accent: "oklch(0.60 0.12 170)", fg: "oklch(0.28 0.03 175)" },
+  { id: "noir",       name: "Noir",       vibe: "Near-black, gold accents",   font: "mono",  dark: true,  bg: "oklch(0.20 0.005 270)",  surface: "oklch(0.24 0.008 270)", accent: "oklch(0.80 0.15 90)",  fg: "oklch(0.95 0 0)"      },
+  { id: "sakura",     name: "Sakura",     vibe: "Soft pink, gentle serif",    font: "serif", dark: false, bg: "oklch(0.98 0.01 350)",   surface: "oklch(0.95 0.015 350)", accent: "oklch(0.65 0.15 355)", fg: "oklch(0.30 0.03 350)" },
+];
+
+const PROJECTS = [
+  { id: "zfb-handbook",  name: "zfb Handbook",       pack: "slate",      pages: 28, drafts: 0, status: "published", publishedAgo: "5h ago",  updatedAgo: "5h ago" },
+  { id: "aurora-docs",   name: "Aurora Docs",        pack: "aurora",     pages: 14, drafts: 2, status: "published", publishedAgo: "2d ago",  updatedAgo: "3h ago" },
+  { id: "team-onboarding", name: "Team Onboarding",  pack: "paper",      pages: 9,  drafts: 1, status: "published", publishedAgo: "3w ago",  updatedAgo: "2d ago" },
+  { id: "api-cookbook",  name: "API Cookbook",       pack: "ocean",      pages: 6,  drafts: 6, status: "never",     publishedAgo: null,      updatedAgo: "1w ago" },
+  { id: "design-tokens", name: "Design Tokens Guide", pack: "berry",     pages: 17, drafts: 0, status: "published", publishedAgo: "1mo ago", updatedAgo: "1mo ago" },
+  { id: "weekend-notes", name: "Weekend Notes",      pack: "mono",       pages: 3,  drafts: 3, status: "never",     publishedAgo: null,      updatedAgo: "4mo ago" },
+];
+
+/* live-state overlay: which project is mid-publish, which one failed */
+const LIVE = { "design-tokens": "publishing", "api-cookbook": "failed" };
+
+/* per-project detail payload: recent pages + what the publish card should say */
+const DETAILS = {
+  "zfb-handbook": {
+    changed: [],
+    pages: [
+      ["Build Pipeline", "live", "5h ago"],
+      ["Plugins", "live", "1d ago"],
+      ["Config Reference", "live", "3d ago"],
+      ["Content Collections", "live", "6d ago"],
+      ["Migrating from Astro", "live", "2w ago"],
+    ],
+  },
+  "aurora-docs": {
+    changed: ["Installation", "Theming"],
+    pages: [
+      ["Installation", "draft", "3h ago"],
+      ["Quick Start", "live", "1d ago"],
+      ["Theming", "draft", "2d ago"],
+      ["Configuration", "live", "4d ago"],
+      ["Publishing", "live", "1w ago"],
+    ],
+  },
+  "team-onboarding": {
+    changed: ["Week 1 Checklist"],
+    pages: [
+      ["Week 1 Checklist", "draft", "2d ago"],
+      ["Accounts & Access", "live", "1w ago"],
+      ["Team Rituals", "live", "2w ago"],
+      ["Glossary", "live", "3w ago"],
+    ],
+  },
+  "api-cookbook": {
+    changed: [],
+    pages: [
+      ["Authentication", "draft", "1w ago"],
+      ["Pagination", "draft", "1w ago"],
+      ["Webhooks", "draft", "2w ago"],
+      ["Rate Limits", "draft", "3w ago"],
+      ["Error Codes", "draft", "3w ago"],
+    ],
+  },
+  "design-tokens": {
+    changed: [],
+    pages: [
+      ["Color Ramps", "live", "1mo ago"],
+      ["Spacing Scale", "live", "1mo ago"],
+      ["Typography", "live", "1mo ago"],
+      ["Elevation", "live", "2mo ago"],
+      ["Motion", "live", "2mo ago"],
+    ],
+  },
+  "weekend-notes": {
+    changed: [],
+    pages: [
+      ["Scratch", "draft", "4mo ago"],
+      ["Ideas", "draft", "4mo ago"],
+      ["Links", "draft", "5mo ago"],
+    ],
+  },
+};
+
+const FONT_STACK = { serif: "Georgia, serif", mono: "var(--font-mono)", sans: "var(--font-ui)" };
+
+/* ==========================================================================
+   Helpers
+   ========================================================================== */
+const $ = (sel, root = document) => root.querySelector(sel);
+const packOf = (id) => PACKS.find((p) => p.id === id) || PACKS[0];
+const projectOf = (id) => PROJECTS.find((p) => p.id === id) || PROJECTS[0];
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+const plural = (n, w) => n + " " + w + (n === 1 ? "" : "s");
+
+const packVars = (pk) =>
+  `--pack-bg:${pk.bg};--pack-surface:${pk.surface};--pack-accent:${pk.accent};--pack-fg:${pk.fg}`;
+
+const chipHTML = (pk) =>
+  `<span class="chip" style="${packVars(pk)}" aria-hidden="true">` +
+  `<span class="chip-side"></span><span class="chip-main"><i></i><i></i><i></i></span></span>`;
+
+const docIcon =
+  `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">` +
+  `<path d="M4 2h5l3 3v9H4z" stroke-linejoin="round"/><path d="M9 2v3h3" stroke-linejoin="round"/>` +
+  `<path d="M6 8.5h4M6 11h3" stroke-linecap="round"/></svg>`;
+
+/* ==========================================================================
+   MASTER — rail rendering + filtering
+   ========================================================================== */
+const railList = $("#railList");
+const railEmpty = $("#railEmpty");
+const railCount = $("#railCount");
+let selectedId = "aurora-docs";
+
+function railStatus(p) {
+  const live = LIVE[p.id];
+  if (live === "publishing") return `<span class="spin" role="img" aria-label="Publishing"></span>`;
+  if (live === "failed") return `<span class="dot warn" role="img" aria-label="Last publish failed"></span>`;
+  if (p.status === "published") return `<span class="dot ok" role="img" aria-label="Published"></span>`;
+  return `<span class="dot" role="img" aria-label="Never published"></span>`;
+}
+
+function railMeta(p) {
+  if (LIVE[p.id] === "publishing") return `<span class="prow-meta busy">Publishing…</span>`;
+  return `<span class="prow-meta">${plural(p.pages, "page")} · ${esc(p.updatedAgo)}</span>`;
+}
+
+function buildRail() {
+  railList.innerHTML = "";
+  PROJECTS.forEach((p) => {
+    const li = document.createElement("li");
+    li.className = "prow-wrap";
+    li.dataset.name = p.name.toLowerCase();
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "prow";
+    btn.dataset.id = p.id;
+    if (p.id === selectedId) btn.setAttribute("aria-current", "true");
+    btn.innerHTML =
+      chipHTML(packOf(p.pack)) +
+      `<span class="prow-text"><span class="prow-name">${esc(p.name)}</span>${railMeta(p)}</span>` +
+      railStatus(p);
+    btn.addEventListener("click", () => select(p.id));
+    li.appendChild(btn);
+
+    if (LIVE[p.id] === "publishing") {
+      const extra = document.createElement("div");
+      extra.className = "prow-extra";
+      extra.innerHTML = `<span class="ibar"><i></i></span><span>step 2 of 3</span>`;
+      li.appendChild(extra);
+    }
+    if (LIVE[p.id] === "failed") {
+      const extra = document.createElement("div");
+      extra.className = "prow-extra";
+      extra.innerHTML =
+        `<span style="color: var(--tone-warn); font-weight: 600;">Publish failed</span>` +
+        `<span aria-hidden="true">·</span>` +
+        `<button class="linkbtn" type="button">Retry</button>`;
+      extra.querySelector("button").addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        const host = ev.currentTarget.parentElement;
+        host.innerHTML = `<span class="spin"></span><span>Retrying build…</span>`;
+        setTimeout(() => {
+          host.innerHTML =
+            `<span style="color: var(--tone-warn); font-weight: 600;">Publish failed</span>` +
+            `<span aria-hidden="true">·</span><button class="linkbtn" type="button">Retry</button>`;
+          host.querySelector("button").addEventListener("click", () => buildRail());
+        }, 1800);
+      });
+      li.appendChild(extra);
+    }
+
+    railList.appendChild(li);
+  });
+}
+
+function applyFilter(term) {
+  const t = term.trim().toLowerCase();
+  let shown = 0;
+  [...railList.children].forEach((li) => {
+    const hit = !t || li.dataset.name.includes(t);
+    li.hidden = !hit;
+    if (hit) shown += 1;
+  });
+  railCount.textContent = t ? `${shown}/${PROJECTS.length}` : String(PROJECTS.length);
+  railEmpty.hidden = shown !== 0;
+  $("#qEcho").textContent = term.trim();
+}
+
+$("#q").addEventListener("input", (e) => applyFilter(e.target.value));
+$("#clearQ").addEventListener("click", () => {
+  $("#q").value = "";
+  applyFilter("");
+  $("#q").focus();
+});
+document.addEventListener("keydown", (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+    e.preventDefault();
+    $("#q").focus();
+    $("#q").select();
+  }
+});
+
+/* ==========================================================================
+   DETAIL — render the selected project
+   ========================================================================== */
+let dangerOpen = true; /* spec: one project rendered in its inline confirm state */
+
+function select(id) {
+  if (id !== selectedId) dangerOpen = false;
+  selectedId = id;
+  [...railList.querySelectorAll(".prow")].forEach((b) => {
+    if (b.dataset.id === id) b.setAttribute("aria-current", "true");
+    else b.removeAttribute("aria-current");
+  });
+  renderDetail(id);
+  $("#detail").scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function renderHero(p, pk) {
+  const mini = $("#dMini");
+  mini.style.setProperty("--pack-bg", pk.bg);
+  mini.style.setProperty("--pack-surface", pk.surface);
+  mini.style.setProperty("--pack-accent", pk.accent);
+  mini.style.setProperty("--pack-fg", pk.fg);
+  mini.style.setProperty("--pack-font", FONT_STACK[pk.font]);
+
+  $("#dPackName").textContent = pk.name;
+  $("#dPackFont").textContent = pk.font;
+  $("#dPackVibe").textContent = pk.vibe;
+
+  $("#dSwatches").innerHTML = [
+    ["Bg", pk.bg], ["Surface", pk.surface], ["Accent", pk.accent], ["Text", pk.fg],
+  ]
+    .map(([label, c]) => `<div class="sw"><span style="background:${c}"></span><small>${label}</small></div>`)
+    .join("");
+}
+
+function renderStats(p) {
+  const pubCell =
+    p.status === "published"
+      ? `<b>${esc(p.publishedAgo)}</b><small><i class="dot ok"></i>Published</small>`
+      : `<b>—</b><small><i class="dot"></i>Never published</small>`;
+  $("#dStats").innerHTML =
+    `<div class="stat"><b>${p.pages}</b><small>Pages</small></div>` +
+    `<div class="stat"><b>${p.drafts}</b><small>${p.drafts > 0 ? '<i class="dot warn"></i>' : ""}Drafts</small></div>` +
+    `<div class="stat">${pubCell}</div>` +
+    `<div class="stat"><b>${esc(p.updatedAgo)}</b><small>Updated</small></div>`;
+}
+
+function renderPages(p) {
+  const d = DETAILS[p.id];
+  $("#dAllPages").textContent = `All ${p.pages} pages ↗`;
+  $("#dPages").innerHTML = d.pages
+    .map(([title, state, when]) => {
+      const tag =
+        state === "draft"
+          ? `<span class="tag warn">Draft</span>`
+          : `<span class="tag ok">Live</span>`;
+      return (
+        `<a class="pg" href="#">` +
+        `<span class="pg-ico">${docIcon}</span>` +
+        `<span class="pg-t"><b>${esc(title)}</b><small>/docs/${slugify(title)}</small></span>` +
+        tag +
+        `<span class="pg-time">${esc(when)}</span></a>`
+      );
+    })
+    .join("");
+}
+
+function renderPublish(p) {
+  const d = DETAILS[p.id];
+  const live = LIVE[p.id];
+  const url = `${p.id}.zudo.dev`;
+  let tag, body, action, foot;
+
+  if (live === "publishing") {
+    tag = `<span class="tag accent"><span class="spin"></span>Publishing</span>`;
+    body =
+      `<p class="pub-line"><b>Publishing…</b> building 17 pages, then uploading.</p>` +
+      `<div class="ibar" style="margin-top: 12px;"><i></i></div>` +
+      `<p class="pub-foot" style="margin-top: 8px;">Step 2 of 3 · started 40s ago</p>`;
+    action = `<button class="btn ghost wide" type="button">Cancel publish</button>`;
+    foot = `Last live version stays up at <span class="mono">${url}</span> until this finishes.`;
+  } else if (live === "failed") {
+    tag = `<span class="tag danger">Failed</span>`;
+    body =
+      `<p class="pub-line">Last publish <b>failed 1w ago</b> during the build step.</p>` +
+      `<div class="pub-err">Unresolved import in <code>/docs/authentication.mdx</code> — <code>&lt;CodeTabs /&gt;</code> is not exported.</div>`;
+    action = `<button class="btn primary wide" type="button">Retry publish</button>`;
+    foot = `This project has never been live.`;
+  } else if (p.status !== "published") {
+    tag = `<span class="tag neutral">Draft</span>`;
+    body =
+      `<p class="pub-line">Never published. All <b>${plural(p.pages, "page")}</b> are still drafts.</p>` +
+      `<p class="pub-foot" style="margin-top: 8px;">Drafts go live as normal pages once published.</p>`;
+    action = `<button class="btn primary wide" type="button">Publish project</button>`;
+    foot = `Will be live at <span class="mono">${url}</span>`;
+  } else if (d.changed.length === 0) {
+    tag = `<span class="tag ok">Live</span>`;
+    body = `<p class="pub-line">Everything is published. No changes since <b>${esc(p.publishedAgo)}</b>.</p>`;
+    action = `<button class="btn primary wide" type="button" disabled>Nothing to publish</button>`;
+    foot = `Live at <span class="mono">${url}</span>`;
+  } else {
+    tag = `<span class="tag ok">Live</span>`;
+    body =
+      `<p class="pub-line"><b>${plural(d.changed.length, "page")}</b> changed since the last publish.</p>` +
+      `<ul class="pub-changed">${d.changed.map((c) => `<li>${esc(c)}</li>`).join("")}</ul>`;
+    action = `<button class="btn primary wide" type="button">Publish ${plural(d.changed.length, "page")}</button>`;
+    foot = `Last published ${esc(p.publishedAgo)} to <span class="mono">${url}</span>`;
+  }
+
+  $("#dPubCard").innerHTML =
+    `<div class="card-h"><h2>Publish</h2>${tag}</div>` +
+    `<div class="card-b">${body}<div class="pub-act">${action}</div>` +
+    `<p class="pub-foot">${foot}</p></div>`;
+}
+
+function renderDanger(p) {
+  $("#dzDupDesc").textContent =
+    `Creates an unpublished copy with all ${plural(p.pages, "page")} and the same theme.`;
+  $("#dzIdleDesc").textContent =
+    `Permanently removes this project, its ${plural(p.pages, "page")}, and its subdomain.`;
+  $("#dzQ").textContent = `Delete “${p.name}”?`;
+  $("#dzWhy").innerHTML =
+    `This removes <b>${plural(p.pages, "page")}</b>` +
+    (p.drafts > 0 ? ` (${p.drafts} still ${p.drafts === 1 ? "a draft" : "drafts"})` : "") +
+    (p.status === "published"
+      ? ` and takes <span class="mono">${p.id}.zudo.dev</span> offline immediately.`
+      : `. Nothing is live, so no visitors are affected.`) +
+    ` This can’t be undone.`;
+  $("#dzConfirm").hidden = !dangerOpen;
+  $("#dzIdle").hidden = dangerOpen;
+}
+
+function renderDetail(id) {
+  const p = projectOf(id);
+  const pk = packOf(p.pack);
+
+  $("#dName").textContent = p.name;
+  $("#dUrlText").textContent = `${p.id}.zudo.dev`;
+  $("#dUrl").querySelector(".dot").className =
+    "dot " + (LIVE[p.id] === "failed" ? "warn" : LIVE[p.id] === "publishing" ? "accent" : p.status === "published" ? "ok" : "");
+  $("#dSubMeta").textContent =
+    `${plural(p.pages, "page")}${p.drafts ? ` · ${p.drafts} ${p.drafts === 1 ? "draft" : "drafts"}` : ""} · updated ${p.updatedAgo}`;
+
+  renderHero(p, pk);
+  renderStats(p);
+  renderPages(p);
+  renderPublish(p);
+  renderDanger(p);
+}
+
+$("#dzOpenBtn").addEventListener("click", () => {
+  dangerOpen = true;
+  renderDanger(projectOf(selectedId));
+  $("#dzCancelBtn").focus();
+});
+$("#dzCancelBtn").addEventListener("click", () => {
+  dangerOpen = false;
+  renderDanger(projectOf(selectedId));
+  $("#dzOpenBtn").focus();
+});
+$("#dzDeleteBtn").addEventListener("click", () => {
+  const btn = $("#dzDeleteBtn");
+  btn.disabled = true;
+  btn.textContent = "Deleting…";
+});
+
+/* ==========================================================================
+   NEW PROJECT dialog
+   ========================================================================== */
+const dlg = $("#newDlg");
+let npPack = "aurora";
+
+function buildPackOptions() {
+  const picks = ["aurora", "paper", "forest", "ocean", "berry", "noir"];
+  $("#npPacks").innerHTML = picks
+    .map((id) => {
+      const pk = packOf(id);
+      return (
+        `<button class="packopt" type="button" data-pack="${id}" aria-pressed="${id === npPack}">` +
+        chipHTML(pk) + `<span>${pk.name}</span></button>`
+      );
+    })
+    .join("");
+  [...$("#npPacks").children].forEach((b) => {
+    b.addEventListener("click", () => {
+      npPack = b.dataset.pack;
+      [...$("#npPacks").children].forEach((o) =>
+        o.setAttribute("aria-pressed", String(o.dataset.pack === npPack))
+      );
+    });
+  });
+}
+
+$("#newProjectBtn").addEventListener("click", () => {
+  $("#npName").value = "";
+  $("#npSlug").textContent = "untitled";
+  npPack = "aurora";
+  buildPackOptions();
+  dlg.showModal();
+  $("#npName").focus();
+});
+$("#npName").addEventListener("input", (e) => {
+  $("#npSlug").textContent = slugify(e.target.value) || "untitled";
+});
+$("#npCancel").addEventListener("click", () => dlg.close());
+$("#npCreate").addEventListener("click", () => dlg.close());
+dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });
+
+/* ==========================================================================
+   Theme toggle (spec-mandated) + boot
+   ========================================================================== */
+document.querySelector("#themeToggle").addEventListener("click", () => {
+  const r = document.documentElement;
+  r.dataset.theme = r.dataset.theme === "dark" ? "light" : "dark";
+});
+
+buildRail();
+applyFilter("");
+renderDetail(selectedId);
+</script>
+</body>
+</html>
