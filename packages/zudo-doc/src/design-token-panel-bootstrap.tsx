@@ -127,10 +127,10 @@ const TOGGLE_PANEL_EVENT = "toggle-design-token-panel";
  * default instance" for {@link resolveInstanceToggleEvent}. Not a value this
  * package ever configures (the package default is `zudo-doc-tweak`), but a
  * host is free to, and the rule below hinges on it. Verified against the
- * installed zdtp 0.4.9 bundle (`dist/panel-config-*.js`), which is also where
- * zdtp's exported `DEFAULT_TOGGLE_EVENT` / `toggleEventName()` live — we
- * cannot import either, because a value import of `@takazudo/zdtp` here would
- * defeat the whole lazy load (#3282).
+ * installed zdtp 0.4.9/0.4.10 bundle (`dist/panel-config-*.js`), which is
+ * also where zdtp's exported `DEFAULT_TOGGLE_EVENT` / `toggleEventName()`
+ * live — we cannot import either, because a value import of
+ * `@takazudo/zdtp` here would defeat the whole lazy load (#3282).
  */
 const ZDTP_DEFAULT_STORAGE_PREFIX = "zudo-design-token-panel";
 
@@ -185,7 +185,7 @@ function readOpenState(instancePrefix: string): boolean {
 }
 
 /**
- * zdtp's persisted activation-flag keys (verified against the zdtp 0.4.9
+ * zdtp's persisted activation-flag keys (verified against the zdtp 0.4.9/0.4.10
  * bundle). The owner-mode flags each make zdtp's parked post-configure hook
  * mount machinery even with the panel closed (autoload shell, element-path
  * inspector, DOM tweaker); `:visible` is the documented lazy-load gate that
@@ -367,10 +367,10 @@ function collectDeclaredTokenNames(config: PanelConfig): string[] {
  * through an `applySink`, the clear goes through the SAME sink
  * (`sink.clear(names)`, errors non-fatal per zdtp's own contract) — the
  * overrides live in the sink's target, not on the document root. Upstream
- * check (2026-07, zdtp 0.4.9): the package exposes no sanctioned
- * `clearApplied()`-style API on `PanelInstanceHandle` (only
- * instanceId/open/close/toggle/destroy), so this config-driven path is the
- * current mechanism; prefer a zdtp API if one lands
+ * check (2026-07 zdtp 0.4.9, re-checked 2026-08 zdtp 0.4.10): the package
+ * exposes no sanctioned `clearApplied()`-style API on `PanelInstanceHandle`
+ * (only instanceId/open/close/toggle/destroy), so this config-driven path is
+ * the current mechanism; prefer a zdtp API if one lands
  * (Takazudo/zudo-design-token-panel).
  */
 function clearAppliedTokenOverrides(config: PanelConfig): void {
