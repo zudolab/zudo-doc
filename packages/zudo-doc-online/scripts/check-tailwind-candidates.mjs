@@ -11,8 +11,11 @@
  * into root b4push — see packages/zudo-doc-online/CLAUDE.md.
  *
  * className values in this codebase are one of: a plain string, a bare
- * reference to a local `const NAME = "..."` class-list constant, a ternary
- * (either form directly, or nested inside a template literal's `${}`), or a
+ * reference to a local `const NAME = "..."` class-list constant, an indexed
+ * lookup into a local `const NAME: Record<K, string> = {...}` class map
+ * (e.g. `TONE_CLASSES[descriptor.tone]` — since the key is dynamic, every
+ * value in the map is treated as a reachable candidate), a ternary (either
+ * form directly, or nested inside a template literal's `${}`), or a
  * template literal mixing static text with any of the above — occasionally
  * with a `//` comment ahead of a branch. The extractor below walks that
  * grammar directly rather than regexing for quoted strings, so it doesn't
@@ -213,8 +216,27 @@ function buildConstMap(source) {
   return constMap;
 }
 
+/**
+ * Finds every `const NAME ... = { ... };` object-literal declaration (e.g. a
+ * `Record<K, string>` class map) and maps NAME to every string literal found
+ * anywhere in its body. The key that selects a value at runtime is dynamic
+ * (`TONE_CLASSES[descriptor.tone]`), so every value is a reachable candidate.
+ */
+function buildObjectMap(source) {
+  const objectMap = new Map();
+  const re = /const\s+([A-Za-z_$][A-Za-z0-9_$]*)\s*(?::[^={]*)?=\s*\{/g;
+  let match;
+  while ((match = re.exec(source))) {
+    const openBraceIndex = re.lastIndex - 1;
+    const closeIndex = findMatchingBrace(source, openBraceIndex);
+    const body = source.slice(openBraceIndex + 1, closeIndex - 1);
+    objectMap.set(match[1], extractLiteralsFromMixedText(body, new Map(), new Map()));
+  }
+  return objectMap;
+}
+
 /** Walks quoted strings and template literals anywhere in `text`, resolving `${}` bodies recursively, and skipping comments. */
-function extractLiteralsFromMixedText(text, constMap) {
+function extractLiteralsFromMixedText(text, constMap, objectMap) {
   const out = [];
   let i = 0;
   while (i < text.length) {
@@ -235,7 +257,7 @@ function extractLiteralsFromMixedText(text, constMap) {
       const raw = text.slice(i + 1, end - 1);
       const { staticParts, exprParts } = splitTemplateLiteral(raw);
       out.push(...staticParts);
-      for (const part of exprParts) out.push(...extractClassLiterals(part, constMap));
+      for (const part of exprParts) out.push(...extractClassLiterals(part, constMap, objectMap));
       i = end;
       continue;
     }
@@ -247,28 +269,33 @@ function extractLiteralsFromMixedText(text, constMap) {
 /**
  * Resolves an arbitrary className-position JS expression to the class-list
  * text(s) it can produce at runtime: a bare local-const reference resolves
- * to that const's value; a ternary recurses into ONLY its two branches
- * (never its condition); anything else falls back to walking its quoted /
- * template-literal content.
+ * to that const's value; an indexed lookup into a local object-map const
+ * (`NAME[expr]`) resolves to every value in that map; a ternary recurses
+ * into ONLY its two branches (never its condition); anything else falls
+ * back to walking its quoted / template-literal content.
  */
-function extractClassLiterals(expr, constMap) {
+function extractClassLiterals(expr, constMap, objectMap) {
   const trimmed = expr.trim();
   if (trimmed === "") return [];
   if (/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(trimmed) && constMap.has(trimmed)) {
     return [constMap.get(trimmed)];
   }
+  const indexMatch = trimmed.match(/^([A-Za-z_$][A-Za-z0-9_$]*)\[[\s\S]*\]$/);
+  if (indexMatch && objectMap.has(indexMatch[1])) {
+    return objectMap.get(indexMatch[1]);
+  }
   const ternary = splitTernary(expr);
   if (ternary) {
     return [
-      ...extractClassLiterals(ternary.consequent, constMap),
-      ...extractClassLiterals(ternary.alternate, constMap),
+      ...extractClassLiterals(ternary.consequent, constMap, objectMap),
+      ...extractClassLiterals(ternary.alternate, constMap, objectMap),
     ];
   }
-  return extractLiteralsFromMixedText(expr, constMap);
+  return extractLiteralsFromMixedText(expr, constMap, objectMap);
 }
 
 /** Extracts class-list text chunks from one `className=` occurrence. */
-function extractClassNameChunks(source, constMap, attrValueStart) {
+function extractClassNameChunks(source, constMap, objectMap, attrValueStart) {
   let i = attrValueStart;
   while (i < source.length && /\s/.test(source[i])) i++;
 
@@ -280,7 +307,7 @@ function extractClassNameChunks(source, constMap, attrValueStart) {
   if (source[i] !== "{") return [];
   const exprEnd = findMatchingBrace(source, i);
   const inner = source.slice(i + 1, exprEnd - 1);
-  return extractClassLiterals(inner, constMap);
+  return extractClassLiterals(inner, constMap, objectMap);
 }
 
 const tokenSources = new Map(); // token -> Set of relative file paths
@@ -288,11 +315,12 @@ const tokenSources = new Map(); // token -> Set of relative file paths
 for (const file of collectTsxFiles(srcDir)) {
   const source = readFileSync(file, "utf8");
   const constMap = buildConstMap(source);
+  const objectMap = buildObjectMap(source);
   const relPath = relative(packageRoot, file);
   const attrRe = /\bclassName\s*=/g;
   let match;
   while ((match = attrRe.exec(source))) {
-    const chunks = extractClassNameChunks(source, constMap, attrRe.lastIndex);
+    const chunks = extractClassNameChunks(source, constMap, objectMap, attrRe.lastIndex);
     for (const chunk of chunks) {
       for (const token of chunk.split(/\s+/).filter(Boolean)) {
         if (!tokenSources.has(token)) tokenSources.set(token, new Set());
@@ -331,10 +359,30 @@ function escapeForSelector(token) {
   return token.replace(/[[\]().:%,#/*+?^$|\\!<>=&~"']/g, (ch) => "\\" + ch);
 }
 
+/**
+ * True when `selector` appears as a COMPLETE class name in `css`, not merely
+ * as a prefix of a longer one (e.g. `.bg` must not match inside `.bg-bg`).
+ * The leading `.` is itself always a safe boundary — a literal `.` never
+ * appears mid-identifier in emitted CSS — so only the trailing edge needs
+ * checking: keep scanning past occurrences where the next character would
+ * still be part of a longer class name.
+ */
+function hasCompleteSelectorMatch(css, selector) {
+  let fromIndex = 0;
+  for (;;) {
+    const index = css.indexOf(selector, fromIndex);
+    if (index === -1) return false;
+    const nextChar = css[index + selector.length];
+    const isContinuation = nextChar !== undefined && /[A-Za-z0-9_\\-]/.test(nextChar);
+    if (!isContinuation) return true;
+    fromIndex = index + 1;
+  }
+}
+
 const missing = [];
 for (const token of tokens) {
   const selector = "." + escapeForSelector(token);
-  if (!builtCss.includes(selector)) {
+  if (!hasCompleteSelectorMatch(builtCss, selector)) {
     missing.push({ token, files: [...tokenSources.get(token)].sort() });
   }
 }

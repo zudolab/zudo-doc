@@ -167,9 +167,13 @@ A manual, package-level check — `pnpm --filter zudo-doc-online check:classes`
 — NOT wired into root b4push (b4push/CI parity has its own registration
 dance; wiring it there is a possible follow-up, not done here). It statically
 harvests every class token reachable from a `.tsx` `className` (including
-through local `const NAME = "..."` class-list constants and ternary
-branches — but never a ternary's *condition*), runs the real `vite build`,
-and fails if any harvested token produces no rule in the built CSS. This
+through local `const NAME = "..."` class-list constants, an indexed lookup
+into a local `Record<K, string>` class map — every value in the map counts,
+since the key is dynamic — and ternary branches — but never a ternary's
+*condition*), runs the real `vite build`, and fails if any harvested token
+produces no rule in the built CSS (a complete-selector match, so a typo like
+`bg` can never pass merely because a longer class like `.bg-bg` happens to
+exist). This
 catches what `pnpm lint:tokens` cannot: that check only bans raw
 non-token Tailwind utilities, it never verifies a class actually compiles to
 something. Run it after any `className` change; a stale or typo'd utility
