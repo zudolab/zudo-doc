@@ -73,7 +73,7 @@ export function createApp(deps: AppDeps): Hono {
     // preceded by a preflight. Without an answer here the browser refuses to
     // send the mutation at all — the request never reaches a route.
     if (c.req.method === "OPTIONS") {
-      c.header("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS");
+      c.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
       c.header("Access-Control-Allow-Headers", "Content-Type");
       c.header("Access-Control-Max-Age", "600");
       return c.body(null, 204);
