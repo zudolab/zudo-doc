@@ -4,6 +4,15 @@ A local web app for creating and authoring zudo-doc documentation bases — by a
 person through the SPA, or by an AI agent through the local API server and its
 MCP wrapper. Private workspace package (epic zudolab/zudo-doc#3327).
 
+Once the SPA is running (see below), open it at `http://localhost:4323/`. The
+default route (`#/`) is the projects dashboard — a rail listing every project;
+clicking a row selects it and shows its detail pane (title, theme, stats,
+outline-ordered pages), still on `#/`. The detail pane has an "Open outline"
+link into that project, plus duplicate and delete (with an inline confirm)
+actions. "New project" (`#/new`) opens a gallery-first wizard: pick a theme
+pack from the full catalog, name the project, choose a default light/dark
+mode, and create.
+
 ## Development
 
 | Command                     | What it runs                                          | Port |
@@ -58,8 +67,10 @@ contract (`server/app.ts`).
 
 | Tool                    | Purpose                                                                 |
 | ------------------------ | ------------------------------------------------------------------------ |
-| `list_projects`          | List every project and its current revision.                            |
+| `list_projects`          | List every project and its current revision (pass `summary: true` for dashboard-style counts). |
 | `create_project`         | Create a new project (one seeded category and page).                    |
+| `duplicate_project`      | Copy a project under a new `<Title> copy` slug; revision resets to 1.   |
+| `delete_project`         | Remove a project (moved to `data/.trash/`, not purged — see `CLAUDE.md`). Requires `confirm: true` — a no-op without it, and irreversible from the agent's side either way. |
 | `get_project`            | Full snapshot: outline, page metadata, revision.                        |
 | `outline_overview`       | Compact human-readable tree — the orientation call.                     |
 | `apply_outline_command`  | Restructure categories/pages (add, rename, move, remove, reorder, ...). |
