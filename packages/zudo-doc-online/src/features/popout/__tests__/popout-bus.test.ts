@@ -45,20 +45,25 @@ describe("createPopoutChannel", () => {
 });
 
 describe("announcePopoutClose", () => {
-  it("posts a popout-pagehide envelope and closes the channel", () => {
+  it("posts a popout-pagehide envelope and closes the channel", async () => {
     const posted: unknown[] = [];
     const receiver = new BroadcastChannel("zdo-popout");
-    receiver.onmessage = (event) => posted.push(event.data);
+    // Waits for the actual delivery event rather than a fixed `setTimeout`
+    // delay — a blind delay races real BroadcastChannel message delivery and
+    // is flaky under CPU contention (e.g. `pnpm test:packages` running every
+    // workspace package's suite in parallel).
+    const received = new Promise<void>((resolve) => {
+      receiver.onmessage = (event) => {
+        posted.push(event.data);
+        resolve();
+      };
+    });
 
     announcePopoutClose("zdo-popout-page-a");
+    await received;
 
-    return new Promise<void>((resolve) => {
-      setTimeout(() => {
-        expect(posted).toEqual([{ event: POPOUT_PAGEHIDE_EVENT, windowName: "zdo-popout-page-a" }]);
-        receiver.close();
-        resolve();
-      }, 0);
-    });
+    expect(posted).toEqual([{ event: POPOUT_PAGEHIDE_EVENT, windowName: "zdo-popout-page-a" }]);
+    receiver.close();
   });
 
   it("swallows a postMessage failure instead of throwing", () => {

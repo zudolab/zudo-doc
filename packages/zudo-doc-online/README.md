@@ -13,6 +13,8 @@ MCP wrapper. Private workspace package (epic zudolab/zudo-doc#3327).
 | `pnpm --filter zudo-doc-online mcp`        | The MCP stdio server, wrapping the API above             | —    |
 | `pnpm --filter zudo-doc-online test`       | Vitest (in-process; no ports)                           | —    |
 | `pnpm --filter zudo-doc-online typecheck`  | `tsc --noEmit`                                          | —    |
+| `pnpm --filter zudo-doc-online build`      | Production `vite build` of the SPA                       | —    |
+| `pnpm --filter zudo-doc-online check:classes` | Class-emission audit — see `CLAUDE.md`                | —    |
 
 The API server binds to `127.0.0.1` only — it writes real files to
 `packages/zudo-doc-online/server/data/` with no authentication, so it must

@@ -41,8 +41,12 @@ export default defineConfig(
     // Keep the e2e fixtures out of the bundler's shadow-tree walk.
     // bundle.exclude (zfb next.22) is the intended escape hatch; adopted with
     // next.23 after the stale ambient-type fix (#1834).
+    // packages/zudo-doc-online/** (#3340): its own Vite-built SPA package uses
+    // a lazy `import.meta.glob` the shadow-tree bundler doesn't support; it
+    // never ships through the host build, so excluding it is a no-op for the
+    // deployed site.
     bundle: {
-      exclude: ["e2e/fixtures/**", "_temp-resource/**"],
+      exclude: ["e2e/fixtures/**", "_temp-resource/**", "packages/zudo-doc-online/**"],
     },
     // Fail the build on a content-bridge fallback (#3229). b4push builds with
     // --no-strict-content-bridge and runs check:content-fallback instead, so the

@@ -9,7 +9,8 @@
     "mcp": "tsx mcp/index.ts",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "check:classes": "node scripts/check-tailwind-candidates.mjs"
   },
   "dependencies": {
     "@codemirror/lang-markdown": "^6.5.2",
