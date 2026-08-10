@@ -153,6 +153,24 @@ describe("seedIfEmpty", () => {
       { slug: "aurora-docs", title: "Aurora Docs", revision: 1 },
     ]);
   });
+
+  it("leaves a corrupt project alone instead of quarantining it at boot", async () => {
+    // The emptiness check must not go through the parsing read: that one moves
+    // a malformed project.json aside before throwing, which would destroy the
+    // only project's metadata and then seed the sample project over the top.
+    await mkdir(projectPath("broken", "pages"), { recursive: true });
+    await writeFile(projectPath("broken", PROJECT_FILE), "{ not json", "utf8");
+
+    expect(await store.seedIfEmpty()).toBeNull();
+    expect(await readFile(projectPath("broken", PROJECT_FILE), "utf8")).toBe(
+      "{ not json",
+    );
+    expect(
+      (await readdir(projectPath("broken"))).some((entry) =>
+        entry.includes(".corrupt-"),
+      ),
+    ).toBe(false);
+  });
 });
 
 describe("outline commands and the page-file lifecycle", () => {

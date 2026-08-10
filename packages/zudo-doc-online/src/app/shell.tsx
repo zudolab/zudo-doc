@@ -1,5 +1,6 @@
 import type { ComponentChildren } from "preact";
 import type { ProjectStore } from "../store/contract.js";
+import type { ProjectEventsClient } from "../store/events.js";
 import { ThemeToggle } from "../theme/theme-toggle.js";
 import { useEditorEntryPageId } from "./editor-entry.js";
 import type { KeyValueStorage } from "../features/editor/persistence.js";
@@ -20,13 +21,15 @@ export interface ShellProps {
    * spec or any mount without a live server gets.
    */
   store?: ProjectStore | null;
+  /** Keeps that target current as the outline changes. */
+  events?: ProjectEventsClient | null;
   /** Test seam, forwarded to `useEditorEntryPageId`. */
   storage?: KeyValueStorage | null;
   children?: ComponentChildren;
 }
 
-export function Shell({ route, store = null, storage, children }: ShellProps) {
-  const editorPageId = useEditorEntryPageId(route, { store, storage });
+export function Shell({ route, store = null, events, storage, children }: ShellProps) {
+  const editorPageId = useEditorEntryPageId(route, { store, events, storage });
 
   return (
     <div className="flex min-h-dvh flex-col bg-bg text-fg">

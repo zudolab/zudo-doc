@@ -444,20 +444,16 @@ export class FileProjectStore implements ProjectStore {
    * yet, so a fresh checkout has something real to open. Returns the slug it
    * created, or null when the store was already populated.
    *
-   * "Populated" is measured with `listProjects()`, NOT by counting directories:
-   * a creation that `recover()` rolled back leaves a directory with no
-   * `project.json`, which is not a project and which `listProjects()` already
-   * ignores. Counting raw directories would let that orphan pass as the whole
-   * store, skipping the seed and leaving the SPA to 404 on the sample project
-   * it opens by default.
+   * "Populated" means at least one USABLE project (`hasAnyProject`), NOT at
+   * least one directory: a creation that `recover()` rolled back leaves a
+   * directory with no `project.json`, which is not a project and which
+   * `listProjects()` already ignores. Counting raw directories would let that
+   * orphan pass as the whole store, skipping the seed and leaving the SPA to
+   * 404 on the sample project it opens by default.
    */
   async seedIfEmpty(): Promise<string | null> {
     return this.locks.run(CREATE_LOCK, async () => {
-      // A corrupt `project.json` makes `listProjects()` throw. That is still a
-      // populated store — seeding over it would be wrong — and reporting the
-      // corruption is a read's job, not boot's, so it counts as non-empty.
-      const existing = await this.listProjects().catch(() => null);
-      if (existing === null || existing.length > 0) return null;
+      if (await this.hasAnyProject()) return null;
 
       const slug = deriveUniqueSlug(AURORA_PROJECT_TITLE, []);
       return this.locks.run(slug, async () => {
@@ -548,6 +544,33 @@ export class FileProjectStore implements ProjectStore {
 
   private projectDir(slug: string): string {
     return path.join(this.dataDir, slug);
+  }
+
+  /**
+   * Whether `data/` holds at least one real project — a directory WITH a
+   * `project.json`, the same thing `listProjects()` requires and the thing a
+   * rolled-back creation leaves behind without.
+   *
+   * Deliberately probes for the file's PRESENCE instead of reading it through
+   * `readProjectFile()`. That path quarantines a malformed `project.json`
+   * (renames it aside) before throwing — the right response to a genuine read,
+   * but destructive for a boot-time emptiness check: it would move the only
+   * project's metadata out of the way and then seed the sample project over
+   * the top of it. A corrupt project is still a project here; reporting the
+   * corruption belongs to the read that actually needs the contents.
+   */
+  private async hasAnyProject(): Promise<boolean> {
+    for (const slug of await this.projectSlugs()) {
+      const present = await this.locks.run(
+        slug,
+        async () =>
+          (await this.readTextFile(
+            path.join(this.projectDir(slug), PROJECT_FILE),
+          )) !== null,
+      );
+      if (present) return true;
+    }
+    return false;
   }
 
   /** Directory entries that could be projects: real directories, valid slugs. */

@@ -22,6 +22,7 @@
 
 import { useEffect, useState } from "preact/hooks";
 import type { ProjectSnapshot, ProjectStore } from "../store/contract.js";
+import type { ProjectEventsClient } from "../store/events.js";
 import type { KeyValueStorage } from "../features/editor/persistence.js";
 import { readOpenTabIds } from "../features/editor/tabs-state.js";
 import type { Route } from "./router.js";
@@ -45,33 +46,63 @@ export function resolveEditorEntryPageId(
 export interface UseEditorEntryPageIdOptions {
   /** `null` means "no snapshot to consult" — the item stays disabled. */
   store: ProjectStore | null;
+  /**
+   * Keeps the target current. The shell outlives every surface, so a one-shot
+   * read would go stale the moment the outline changed underneath it — the
+   * target page could be deleted (a link that 404s again) or the first page
+   * could be added (an item stuck disabled) with no route change to notice
+   * either. Omit to read once and never refresh.
+   */
+  events?: ProjectEventsClient | null;
   /** Test seam; defaults to the ambient `localStorage` when there is one. */
   storage?: KeyValueStorage | null;
 }
 
 export function useEditorEntryPageId(
   route: Route,
-  { store, storage }: UseEditorEntryPageIdOptions,
+  { store, events, storage }: UseEditorEntryPageIdOptions,
 ): string | null {
   const [snapshot, setSnapshot] = useState<ProjectSnapshot | null>(null);
 
   useEffect(() => {
     if (store === null) return undefined;
     let cancelled = false;
-    void store.loadSnapshot().then(
-      (next) => {
-        if (!cancelled) setSnapshot(next);
-      },
-      () => {
-        // A nav link is not the place to report a dead server: the surface
-        // being navigated to says so itself, with a retry. The item simply
-        // stays disabled until a snapshot arrives.
-      },
-    );
+
+    const read = (): void => {
+      void store.loadSnapshot().then(
+        (next) => {
+          if (!cancelled) setSnapshot(next);
+        },
+        () => {
+          // A nav link is not the place to report a dead server: the surface
+          // being navigated to says so itself, with a retry. The item simply
+          // stays disabled until a snapshot arrives.
+        },
+      );
+    };
+
+    read();
+    if (!events) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    // `outline-changed` only — that is the one event class that adds or
+    // removes pages. Re-reading on `page-changed` too would mean a full
+    // snapshot GET per autosave burst for information this link never uses.
+    // Origin is deliberately ignored: a page THIS tab just deleted moves the
+    // target exactly as much as a remote agent's deletion does.
+    const releaseEvent = events.onEvent(({ event }) => {
+      if (event.type === "outline-changed") read();
+    });
+    const releaseOpen = events.onOpen(() => read());
     return () => {
       cancelled = true;
+      releaseEvent();
+      releaseOpen();
     };
-  }, [store]);
+  }, [store, events]);
 
   return resolveEditorEntryPageId(route, snapshot, readOpenTabIds(storage));
 }

@@ -5,6 +5,8 @@ import { act } from "preact/test-utils";
 import type { KeyValueStorage } from "../../features/editor/persistence.js";
 import { OPEN_TABS_STORAGE_KEY } from "../../features/editor/persistence.js";
 import type { ProjectSnapshot, ProjectStore } from "../../store/contract.js";
+import { ProjectEventsClient } from "../../store/events.js";
+import { createFakeEventSourceFactory } from "../../store/__tests__/support.js";
 import { Shell } from "../shell.js";
 
 const SNAPSHOT: ProjectSnapshot = {
@@ -189,6 +191,49 @@ describe("Shell — Editor nav target", () => {
     expect(container.querySelector('[aria-disabled="true"]')?.textContent).toBe(
       "Editor",
     );
+  });
+
+  it("re-reads the target when the outline changes under it", async () => {
+    // The shell outlives every surface, so a one-shot read goes stale as soon
+    // as the outline moves: the target page can be deleted (a link that 404s
+    // again) or the first page added (an item stuck disabled), neither of
+    // which involves a route change.
+    let current: ProjectSnapshot = { ...SNAPSHOT, revision: 3, pages: [] };
+    const store: ProjectStore = {
+      ...storeFor(SNAPSHOT),
+      loadSnapshot: async () => current,
+    };
+    const sources = createFakeEventSourceFactory();
+    const events = new ProjectEventsClient({
+      projectSlug: "aurora-docs",
+      clientId: "this-tab",
+      createEventSource: sources.factory,
+    });
+    events.connect();
+
+    const container = await mountShell({
+      route: { name: "outline" },
+      store,
+      events,
+      storage: storageWithTabs([]),
+    });
+    expect(editorLink(container)).toBeNull();
+
+    current = { ...SNAPSHOT, revision: 4 };
+    await act(async () => {
+      sources.instances[0]?.emitMessage({
+        type: "outline-changed",
+        revision: 4,
+        origin: "this-tab",
+      });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(editorLink(container)?.getAttribute("href")).toBe(
+      "#/editor/page-getting-started-installation",
+    );
+
+    events.close();
   });
 
   it("keeps the item inert when the server cannot be reached", async () => {
