@@ -264,30 +264,38 @@ implemented in `src/features/projects/`).
 
 ## Known limitations
 
-- **Duplicate-tab `clientId` collision.** `src/store/client-id.ts` stores the
-  per-tab id in `sessionStorage` (survives a reload, never shared with a
-  genuinely new tab) — but a browser's "duplicate tab" action copies
-  `sessionStorage` verbatim, so two tabs opened that way share one id until
-  one is closed and reopened. A mutation from either tab is misclassified as
-  the other's own SSE event, momentarily weakening the dirty-guard between
-  exactly those two tabs. Documented as a deliberate deferral in the file's
-  own header — fixing it needs live cross-tab coordination (Web Locks API or
-  a BroadcastChannel handshake at startup), a wider change than the
-  synchronous accessor should carry.
-- **Preview sanitizer is a hand-rolled allowlist, not a real sanitizer
-  library.** `src/features/preview/render-runtime.ts`'s `sanitizePreviewHtml`
-  walks a real parsed DOM (`DOMParser`) allowlisting tags/attributes before
-  `dangerouslySetInnerHTML` injection — necessary because `renderHtml`
-  preserves raw HTML from markdown verbatim (`<script>`, `onerror`,
-  `javascript:` URLs all survive), and this surface is designed for
-  AI-agent authoring, so the source of a page's markdown isn't always a
-  human. It has NOT had the adversarial scrutiny a battle-tested library
-  (e.g. DOMPurify) has; epic #3327 contract 4 forbids a child sub-issue from
-  adding a new dependency, so adopting a real sanitizer needs to go through
-  the bootstrap sub-issue's dependency-addition path in a future epic, not a
-  package-level patch here. Treat the current pass as a scoped mitigation
-  for this tool's actual threat model (loopback-bound, single-user local dev
-  server), not a substitute.
+- **Duplicate-tab `clientId` collision — fixed via Web Locks, except where
+  the API is missing.** `src/store/client-id.ts` still stores the per-tab id
+  in `sessionStorage`, which a browser's "duplicate tab" action copies
+  verbatim. Since #3360, `initClientId()` (awaited in `src/main.tsx` before
+  the pop-out import and `render()`, so it settles before any surface builds
+  an SSE client) claims a Web Lock named `zdo-client-id:{id}` and holds it
+  for the tab's lifetime; a duplicate loses the claim, mints a fresh id,
+  persists it, and re-claims — looping, since two duplicates can race. The
+  residual gap: an environment without `navigator.locks` (jsdom, older
+  engines) degrades to the old synchronous read, where two duplicated tabs
+  share one id until one is closed and reopened and a mutation from either is
+  misclassified as the other's own SSE event. The claim never rejects and
+  never blocks boot — a failed claim falls back rather than leaving a blank
+  SPA. Note `navigator.locks.request()`'s promise resolves only when its
+  callback settles, so holding a lock for the tab's lifetime means that
+  promise never resolves: the module resolves a separate handshake promise
+  from inside the callback and deliberately leaves the outer one unawaited.
+- **Preview sanitizer is DOMPurify with a narrowed policy.** Since #3359,
+  `src/features/preview/render-runtime.ts`'s `sanitizePreviewHtml` runs
+  DOMPurify — a battle-tested library — instead of the hand-rolled DOM walk
+  that preceded it (epic #3327's no-new-dependency contract was lifted for
+  this epic). Sanitizing at all is necessary because `renderHtml` preserves
+  raw HTML from markdown verbatim (`<script>`, `onerror`, `javascript:` URLs
+  all survive) and this surface is designed for AI-agent authoring, so the
+  markdown's author isn't always a human. Two deliberate deviations from
+  stock DOMPurify: its `ALLOWED_ATTR` is global-only, so the config passes
+  the union of every tag's attributes and an `uponSanitizeAttribute` hook
+  narrows it back down per tag (plus an `href`/`src` scheme check); and
+  `SANITIZE_DOM` is off, matching the prior sanitizer's behavior rather than
+  dropping `id`/`name` attributes the preview legitimately emits. When
+  DOMPurify reports its host environment unsupported (no DOM), sanitization
+  is a no-op — that path is server/test-side, never the browser preview.
 
 ## Directory map
 
