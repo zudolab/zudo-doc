@@ -89,6 +89,59 @@ describe("against the in-process app", () => {
       status: 404,
     });
   });
+
+  it("createProject forwards an optional preset", async () => {
+    const client = clientFor();
+    const created = await client.createProject("Docs", { schemaVersion: 1, themePack: "aurora" });
+    expect(created.preset).toEqual({ schemaVersion: 1, themePack: "aurora" });
+  });
+
+  it("listProjects({ summary: true }) adds per-project counts and metadata", async () => {
+    const client = clientFor();
+    await client.createProject("Docs");
+
+    expect(await client.listProjects()).toEqual([
+      { slug: "docs", title: "Docs", revision: 1 },
+    ]);
+    expect(await client.listProjects({ summary: true })).toEqual([
+      expect.objectContaining({
+        slug: "docs",
+        title: "Docs",
+        revision: 1,
+        pageCount: 1,
+        draftCount: 0,
+        categoryCount: 1,
+      }),
+    ]);
+  });
+
+  it("duplicateProject copies the project under a new slug at revision 1", async () => {
+    const client = clientFor();
+    await client.createProject("Docs");
+    const duplicated = await client.duplicateProject("docs");
+    expect(duplicated).toMatchObject({ slug: "docs-copy", title: "Docs copy", revision: 1 });
+  });
+
+  it("deleteProject removes the project and returns {slug, deleted: true}", async () => {
+    const client = clientFor();
+    await client.createProject("Docs");
+    await expect(client.deleteProject("docs")).resolves.toEqual({ slug: "docs", deleted: true });
+    await expect(client.getProject("docs")).rejects.toMatchObject({ code: "project-not-found" });
+  });
+
+  it("deleteProject sends clientId as a query param, not a body", async () => {
+    const seen: { url?: string; init?: RequestInit } = {};
+    const client = new ZudoDocOnlineClient({
+      fetch: (input, init) => {
+        seen.url = String(input);
+        seen.init = init;
+        return Promise.resolve(new Response(JSON.stringify({ slug: "docs", deleted: true })));
+      },
+    });
+    await client.deleteProject("docs", "tab-1");
+    expect(seen.url).toBe("http://127.0.0.1:4324/api/projects/docs?clientId=tab-1");
+    expect(seen.init?.body).toBeUndefined();
+  });
 });
 
 describe("failures the server never produces", () => {
