@@ -1,8 +1,7 @@
 name = "zudo-doc-online-api"
 main = "src/index.ts"
 compatibility_date = "2026-07-01"
-# Required later by Better Auth, which imports node:crypto
-# (epic zudolab/zudo-doc#3361).
+# Required by Better Auth, which imports node:crypto (epic zudolab/zudo-doc#3361).
 compatibility_flags = ["nodejs_compat"]
 
 [[d1_databases]]

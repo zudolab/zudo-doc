@@ -112,3 +112,6 @@ e2e/fixtures/*/.build-marker.sha256
 .wrangler/
 e2e/fixtures/*/.wrangler/
 .claude/scheduled_tasks.lock
+
+# Worker local secrets (real values); only *.dev.vars.example is tracked.
+packages/*/.dev.vars
