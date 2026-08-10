@@ -71,4 +71,51 @@ describe("EditorRoute — snapshot freshness", () => {
 
     expect(loadSnapshot.mock.calls.length).toBeGreaterThan(beforeOpen);
   });
+
+  it("refreshes once per reconnect, not twice", async () => {
+    const memory = createEditorTestStore();
+    const loadSnapshot = vi.fn(() => memory.loadSnapshot());
+    const store: ProjectStore = {
+      loadSnapshot,
+      applyOutlineCommand: (revision, command) =>
+        memory.applyOutlineCommand(revision, command),
+      loadPage: (id) => memory.loadPage(id),
+      savePage: (id, revision, input) => memory.savePage(id, revision, input),
+    };
+    const sources = createFakeEventSourceFactory();
+    const events = new ProjectEventsClient({
+      projectSlug: "aurora-docs",
+      clientId: "this-tab",
+      createEventSource: sources.factory,
+      reconnectBaseMs: 1,
+    });
+
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    await act(async () => {
+      render(
+        <EditorRoute
+          pageId={INSTALLATION_ID}
+          createStore={() => store}
+          createEvents={() => events}
+        />,
+        container as HTMLElement,
+      );
+    });
+    await settle();
+
+    sources.instances[0]?.emitOpen();
+    await settle();
+    const beforeReconnect = loadSnapshot.mock.calls.length;
+
+    // Drop the connection, let the backoff elapse, and open the new source.
+    sources.instances[0]?.emitError();
+    await settle();
+    sources.instances[1]?.emitOpen();
+    await settle();
+
+    // `onOpen` fires on every successful connection, so subscribing
+    // `onReconnect` as well would queue a second full snapshot GET here.
+    expect(loadSnapshot.mock.calls.length).toBe(beforeReconnect + 1);
+  });
 });

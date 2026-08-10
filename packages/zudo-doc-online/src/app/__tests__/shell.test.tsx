@@ -271,6 +271,77 @@ describe("Shell — Editor nav target", () => {
     events.close();
   });
 
+  it("abandons the current editor page once it stops existing", async () => {
+    // Preferring the route unconditionally pinned the item to the page the
+    // user is already stuck on when that page was deleted elsewhere, leaving
+    // no way out of page-not-found via the nav.
+    const container = await mountShell({
+      route: { name: "editor", pageId: "page-deleted-elsewhere" },
+      store: storeFor(SNAPSHOT),
+      storage: storageWithTabs([]),
+    });
+
+    expect(editorLink(container)?.getAttribute("href")).toBe(
+      "#/editor/page-getting-started-installation",
+    );
+  });
+
+  it("ignores a snapshot read that lost the race to a newer one", async () => {
+    // Two reads overlap whenever the stream opens while an outline event
+    // lands. If the older one settles last, an unguarded write would restore
+    // the stale page list and re-disable (or mis-target) the item.
+    const stale: ProjectSnapshot = { ...SNAPSHOT, revision: 3, pages: [] };
+    const fresh: ProjectSnapshot = { ...SNAPSHOT, revision: 4 };
+    const release: Array<() => void> = [];
+    let next: ProjectSnapshot = fresh;
+    const store: ProjectStore = {
+      ...storeFor(SNAPSHOT),
+      loadSnapshot: async () => {
+        const mine = next;
+        await new Promise<void>((resolve) => release.push(resolve));
+        return mine;
+      },
+    };
+    const sources = createFakeEventSourceFactory();
+    const events = new ProjectEventsClient({
+      projectSlug: "aurora-docs",
+      clientId: "this-tab",
+      createEventSource: sources.factory,
+    });
+    events.connect();
+
+    const container = await mountShell({
+      route: { name: "outline" },
+      store,
+      events,
+      storage: storageWithTabs([]),
+    });
+
+    // A second read starts and will return the OLDER revision.
+    next = stale;
+    await act(async () => {
+      sources.instances[0]?.emitMessage({
+        type: "outline-changed",
+        revision: 4,
+        origin: "this-tab",
+      });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    // Settle the fresh one first, then the stale one.
+    await act(async () => {
+      release.shift()?.();
+      release.shift()?.();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(editorLink(container)?.getAttribute("href")).toBe(
+      "#/editor/page-getting-started-installation",
+    );
+
+    events.close();
+  });
+
   it("keeps the item inert when the server cannot be reached", async () => {
     const failing: ProjectStore = {
       ...storeFor(SNAPSHOT),

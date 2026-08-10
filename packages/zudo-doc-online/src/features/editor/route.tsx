@@ -119,12 +119,12 @@ export default function EditorRoute({
         const unsubscribe = events.onEvent(({ event, origin }) => {
           if (event.type === "outline-changed" || origin === "remote") void refresh();
         });
-        const unsubscribeReconnect = events.onReconnect(() => void refresh());
         // Step 2's snapshot was read BEFORE the stream existed, and SSE has no
         // replay: a commit landing in that gap would otherwise never reach
-        // this tab. `onOpen` fires on the first connection too (unlike
-        // `onReconnect`), so refreshing here closes the gap the moment the
-        // stream is confirmed live.
+        // this tab. `onOpen` closes it the moment the connection is confirmed
+        // live — and because it fires on EVERY successful connection, it also
+        // covers the reconnect case, which is why `onReconnect` is deliberately
+        // NOT subscribed alongside it (that would refetch twice per reconnect).
         const unsubscribeOpen = events.onOpen(() => void refresh());
         events.connect();
 
@@ -133,7 +133,6 @@ export default function EditorRoute({
 
         cleanup = () => {
           unsubscribe();
-          unsubscribeReconnect();
           unsubscribeOpen();
           unbindCoordinator();
         };

@@ -32,10 +32,19 @@ export function resolveEditorEntryPageId(
   snapshot: ProjectSnapshot | null,
   storedTabIds: readonly string[],
 ): string | null {
-  if (route.name === "editor") return route.pageId;
-  if (snapshot === null) return null;
+  if (snapshot === null) {
+    // Nothing to validate against yet. The route the user is on is the only
+    // information available, and it is better than disabling the item.
+    return route.name === "editor" ? route.pageId : null;
+  }
 
   const known = new Set(snapshot.pages.map((page) => page.id));
+  // Where the user actually is wins — but only while that page still exists.
+  // A page deleted underneath them (by another tab or an MCP agent) must fall
+  // through to a real fallback rather than pinning the item to the
+  // page-not-found route the user is already stuck on.
+  if (route.name === "editor" && known.has(route.pageId)) return route.pageId;
+
   for (let index = storedTabIds.length - 1; index >= 0; index -= 1) {
     const id = storedTabIds[index];
     if (id !== undefined && known.has(id)) return id;
@@ -71,7 +80,16 @@ export function useEditorEntryPageId(
     const read = (): void => {
       void store.loadSnapshot().then(
         (next) => {
-          if (!cancelled) setSnapshot(next);
+          if (cancelled) return;
+          // Two reads can be in flight at once (the stream opening while an
+          // outline event lands, or two events in quick succession) and they
+          // settle in whatever order the network decides. The server's
+          // revision is the only ordering both agree on, so an older response
+          // arriving last is dropped rather than restoring a stale page list —
+          // the same rule `use-outline-surface.ts` applies to its snapshot.
+          setSnapshot((current) =>
+            current !== null && next.revision < current.revision ? current : next,
+          );
         },
         () => {
           // A nav link is not the place to report a dead server: the surface
@@ -96,6 +114,9 @@ export function useEditorEntryPageId(
     const releaseEvent = events.onEvent(({ event }) => {
       if (event.type === "outline-changed") read();
     });
+    // `onOpen` alone, never paired with `onReconnect`: it fires on EVERY
+    // successful connection, so subscribing both would run two full snapshot
+    // reads per reconnect.
     const releaseOpen = events.onOpen(() => read());
     return () => {
       cancelled = true;
