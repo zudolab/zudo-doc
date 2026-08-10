@@ -4,6 +4,14 @@ A local web app for creating and authoring zudo-doc documentation bases — by a
 person through the SPA, or by an AI agent through the local API server and its
 MCP wrapper. Private workspace package (epic zudolab/zudo-doc#3327).
 
+Once the SPA is running (see below), open it at `http://localhost:4323/`. The
+default route (`#/`) is the projects dashboard — a rail listing every project
+with a detail pane for the selected one. From there, "New project" (`#/new`)
+opens a gallery-first wizard: pick a theme pack from the full catalog, name
+the project, choose a default light/dark mode, and create. Selecting a
+project from the dashboard opens its outline; duplicate and delete (with an
+inline confirm) are available from the dashboard row.
+
 ## Development
 
 | Command                     | What it runs                                          | Port |
@@ -58,8 +66,10 @@ contract (`server/app.ts`).
 
 | Tool                    | Purpose                                                                 |
 | ------------------------ | ------------------------------------------------------------------------ |
-| `list_projects`          | List every project and its current revision.                            |
+| `list_projects`          | List every project and its current revision (pass `summary: true` for dashboard-style counts). |
 | `create_project`         | Create a new project (one seeded category and page).                    |
+| `duplicate_project`      | Copy a project under a new `<Title> copy` slug; revision resets to 1.   |
+| `delete_project`         | Permanently delete a project. Requires `confirm: true` — a no-op without it. |
 | `get_project`            | Full snapshot: outline, page metadata, revision.                        |
 | `outline_overview`       | Compact human-readable tree — the orientation call.                     |
 | `apply_outline_command`  | Restructure categories/pages (add, rename, move, remove, reorder, ...). |
