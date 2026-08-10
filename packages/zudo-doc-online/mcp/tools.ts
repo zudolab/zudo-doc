@@ -218,6 +218,24 @@ const pageFrontmatterInputSchema = z
   })
   .strict();
 
+// ----------------------------------------------------------------- preset
+
+/**
+ * Mirrors the server's `presetSchema` (`server/store/file-store.ts`) field
+ * for field. `.passthrough()` for the same reason as there: an agent ahead of
+ * this schema must not have its extra preset keys silently dropped before
+ * they even reach the server, which preserves them itself.
+ */
+const projectPresetInputSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    themePack: z.string().min(1).optional(),
+    colorScheme: z.string().min(1).optional(),
+    defaultMode: z.enum(["light", "dark", "system"]).optional(),
+    features: z.array(z.string()).optional(),
+  })
+  .passthrough();
+
 // ------------------------------------------------------------- tool registry
 
 export type ToolHandler = (args: Record<string, unknown>) => Promise<CallToolResult>;
@@ -267,12 +285,19 @@ export function createTools(client: ZudoDocOnlineClient): ToolDefinition[] {
         title: "List projects",
         description:
           "Lists every project this zudo-doc online server knows about, with its " +
-          "current revision. Start here when the target project's slug is not yet known.",
-        inputSchema: {},
+          "current revision. Start here when the target project's slug is not yet known. " +
+          'Pass "summary: true" to add per-project page/draft/category counts, ' +
+          "createdAt/updatedAt timestamps, and the preset — useful for a dashboard-style " +
+          "overview without reading every project's full snapshot.",
+        inputSchema: { summary: z.boolean().optional() },
       },
-      async () => {
+      async (args) => {
         try {
-          return jsonResult(await client.listProjects());
+          return jsonResult(
+            args.summary
+              ? await client.listProjects({ summary: true })
+              : await client.listProjects(),
+          );
         } catch (error) {
           return toToolError(error);
         }
@@ -286,12 +311,63 @@ export function createTools(client: ZudoDocOnlineClient): ToolDefinition[] {
         description:
           "Creates a new documentation base with one seeded category and page, and " +
           "returns its full snapshot (revision starts at 1). Use the snapshot's page id " +
-          "to write real content with write_page next.",
-        inputSchema: { title: z.string().min(1).max(200) },
+          'to write real content with write_page next. Optional "preset" carries ' +
+          "presentation-only choices (theme pack, color scheme, default light/dark mode, " +
+          "feature flags) — stored verbatim and read back by other surfaces, never " +
+          'interpreted here; "schemaVersion: 1" is required inside it when present.',
+        inputSchema: { title: z.string().min(1).max(200), preset: projectPresetInputSchema.optional() },
       },
       async (args) => {
         try {
-          return jsonResult(await client.createProject(args.title));
+          return jsonResult(await client.createProject(args.title, args.preset));
+        } catch (error) {
+          return toToolError(error);
+        }
+      },
+    ),
+
+    defineTool(
+      "duplicate_project",
+      {
+        title: "Duplicate project",
+        description:
+          "Copies an existing project — outline, pages, and preset — under a new, " +
+          'unique slug derived from "<Title> copy", and returns the new project\'s full ' +
+          "snapshot (revision starts at 1). Duplicate titles are legal; there is no " +
+          "conflict error to handle.",
+        inputSchema: { project: z.string().min(1) },
+      },
+      async (args) => {
+        try {
+          return jsonResult(await client.duplicateProject(args.project));
+        } catch (error) {
+          return toToolError(error);
+        }
+      },
+    ),
+
+    defineTool(
+      "delete_project",
+      {
+        title: "Delete project",
+        description:
+          "Permanently deletes a project. Destructive and irreversible from the agent's " +
+          'side, so it REQUIRES "confirm: true" — omitting it (or passing false) is a ' +
+          "no-op that returns an instructive error instead of deleting anything, so a " +
+          "casual or accidental call can never destroy a project.",
+        inputSchema: { project: z.string().min(1), confirm: z.boolean().optional() },
+      },
+      async (args) => {
+        if (args.confirm !== true) {
+          return errorResult({
+            code: "confirm-required",
+            message:
+              `delete_project is destructive and was not performed. Call it again with ` +
+              `confirm: true to actually delete project "${args.project}".`,
+          });
+        }
+        try {
+          return jsonResult(await client.deleteProject(args.project));
         } catch (error) {
           return toToolError(error);
         }
