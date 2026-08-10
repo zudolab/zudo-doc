@@ -186,7 +186,9 @@ describe("NewProjectRoute — gallery", () => {
     });
     expect(cards()).toHaveLength(PACK_COUNT);
     // The count readout follows the filter.
-    expect(query("main").textContent).toContain(`${PACK_COUNT} of ${PACK_COUNT} shown`);
+    expect(query('[aria-label="Theme gallery"]').textContent).toContain(
+      `${PACK_COUNT} of ${PACK_COUNT} shown`,
+    );
   });
 });
 

@@ -144,12 +144,15 @@ export default function NewProjectRoute({
 
   const trimmedTitle = title.trim();
   const slugPreview = deriveSlug(trimmedTitle);
-  const visibleCount = packs.filter(
+  const visiblePacks = packs.filter(
     (pack) => filter === "all" || pack.mode === filter,
-  ).length;
+  );
 
   async function create(): Promise<void> {
     if (busyRef.current || trimmedTitle.length === 0 || !selectedPack) return;
+    // Set the ref synchronously, not just via the render-time sync — a second
+    // click (or Enter) landing before the busy re-render must not double-fire.
+    busyRef.current = true;
     setCreateState({ status: "busy" });
     try {
       const snapshot = await directory.createProject(trimmedTitle, {
@@ -191,7 +194,9 @@ export default function NewProjectRoute({
   return (
     <section className="grid h-full min-h-[0px] grid-cols-[minmax(0,1fr)_400px]">
       {/* ============ gallery: the flow ============ */}
-      <main
+      {/* A <section>, not <main> — the shell already provides the page's
+          single <main> landmark around every routed surface. */}
+      <section
         aria-label="Theme gallery"
         className="flex min-h-[0px] flex-col overflow-y-auto px-hsp-2xl pb-vsp-2xl"
       >
@@ -234,14 +239,12 @@ export default function NewProjectRoute({
             </button>
           ))}
           <span className="ml-auto font-mono text-caption text-muted">
-            {visibleCount} of {packs.length} shown
+            {visiblePacks.length} of {packs.length} shown
           </span>
         </div>
 
         <div className="grid grid-cols-3 gap-hsp-lg pt-vsp-lg">
-          {packs
-            .filter((pack) => filter === "all" || pack.mode === filter)
-            .map((pack) => (
+          {visiblePacks.map((pack) => (
             <button
               key={pack.slug}
               type="button"
@@ -289,7 +292,7 @@ export default function NewProjectRoute({
             </button>
           ))}
         </div>
-      </main>
+      </section>
 
       {/* ============ finish sheet ============ */}
       <aside
