@@ -1,0 +1,201 @@
+/* ============================================================================
+ * Component-scoped token bag for the projects dashboard (epic #3345,
+ * sub-issue #3350). Ported from the accepted prototype
+ * `_temp-resource/3345-online-wizard-dashboard/d3-master-detail.html`
+ * (320px master rail, wide detail pane) with every color re-expressed
+ * through this app's `--zdo-*` roles — the prototype's `--theme-*` vars map
+ * conceptually, not literally.
+ *
+ * Feature-local (not in `src/styles/tokens.css`) per the `editor-chrome.css`
+ * precedent: every value below is private to this one feature directory, and
+ * the parallel wizard surface (#3351) must not collide with this file. Call
+ * sites consume the vars exactly as they would a tokens.css bag
+ * (`w-(--zdo-pj-rail)`, `bg-(--zdo-pj-wash-hover)`).
+ *
+ * The washes/tones exist because the alternative is a lint violation, not
+ * because a raw value would have been fine: overlays must be
+ * `color-mix(in oklch, <role> N%, transparent)` per the design-system skill,
+ * and the danger TONE pulls the state hue toward fg in rectangular oklab
+ * (the prototype's own note: polar oklch interpolation would swing amber/red
+ * hues through green on the way to the near-neutral fg).
+ * ========================================================================== */
+
+.zdo-projects {
+  --zdo-pj-rail: 20rem; /* 320px — d3's master-rail width */
+  --zdo-pj-detail-measure: 66.25rem; /* 1060px — d3's detail column measure */
+  --zdo-pj-dot: 0.375rem; /* 6px — draft/state dots */
+
+  --zdo-pj-wash-hover: color-mix(in oklch, var(--zdo-fg) 5%, transparent);
+  --zdo-pj-wash-neutral: color-mix(in oklch, var(--zdo-fg) 7%, transparent);
+  --zdo-pj-wash-active: color-mix(in oklch, var(--zdo-accent) 12%, transparent);
+  --zdo-pj-wash-danger: color-mix(in oklch, var(--zdo-danger) 11%, transparent);
+  --zdo-pj-wash-warning: color-mix(in oklch, var(--zdo-warning) 20%, transparent);
+
+  --zdo-pj-tone-danger: color-mix(in oklab, var(--zdo-danger) 88%, var(--zdo-fg));
+  --zdo-pj-tone-warn: color-mix(in oklab, var(--zdo-warning) 55%, var(--zdo-fg));
+
+  /* d3's `.btn.danger:hover` filter trick, re-expressed as a mixed color so
+   * the hover state stays a token reference instead of a filter. */
+  --zdo-pj-danger-hover: color-mix(in oklab, var(--zdo-danger) 90%, var(--zdo-fg));
+  --zdo-pj-danger-border: color-mix(in oklch, var(--zdo-danger) 40%, transparent);
+  /* Danger-zone card/section borders: danger mixed INTO the border role. */
+  --zdo-pj-danger-edge: color-mix(in oklch, var(--zdo-danger) 30%, var(--zdo-border));
+
+  /* Selected rail row: d3's inset accent bar, as a named shadow so the class
+   * list stays a token reference. */
+  --zdo-pj-selected-bar: inset 2px 0 0 0 var(--zdo-accent);
+
+  /* Uppercase micro-labels (card headings, stat labels, swatch captions) —
+   * same value as the editor bag's label tracking; approach B ships no
+   * default `tracking-*` scale, so the utility must reference a var. */
+  --zdo-pj-label-tracking: 0.07em;
+}
+
+/* ============================================================================
+ * Sample-data artwork — theme-pack swatch chip + mini site thumbnail.
+ * Pack colors arrive as inline `--pack-*` custom props from the catalog's
+ * `meta.preview` (DATA, not chrome — epic contract 4); every rule below only
+ * mixes those props or falls back to a neutral `--zdo-*` role, so a chip
+ * with no pack renders as the spec's neutral chip with zero extra markup.
+ * ========================================================================== */
+
+.zdo-pj-chip {
+  width: 2.125rem; /* 34px */
+  height: 1.5rem; /* 24px */
+  flex: none;
+  border-radius: 5px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5px;
+  padding: 4.5px 5px 0;
+  background: var(--pack-bg, var(--zdo-surface-2));
+  box-shadow: inset 0 0 0 1px
+    color-mix(in oklch, var(--pack-fg, var(--zdo-fg)) 16%, transparent);
+}
+.zdo-pj-chip i {
+  height: 2px;
+  border-radius: 1px;
+  background: color-mix(in oklch, var(--pack-fg, var(--zdo-fg)) 30%, transparent);
+}
+.zdo-pj-chip i:first-child {
+  height: 3px;
+  width: 78%;
+  background: var(--pack-accent, var(--zdo-border-strong));
+}
+.zdo-pj-chip i:last-child {
+  width: 60%;
+}
+
+/* Mini site thumbnail for the theme card — d3's `.mini`, simplified to the
+ * three colors the catalog's `meta.preview` actually carries (bg/fg/accent;
+ * the prototype's fourth `surface` stop is derived by mixing fg into bg). */
+.zdo-pj-mini {
+  width: 11.5rem; /* 184px */
+  height: 6.75rem; /* 108px */
+  flex: none;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--pack-bg, var(--zdo-surface-2));
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklch, var(--pack-fg, var(--zdo-fg)) 14%, transparent),
+    var(--shadow-1);
+}
+.zdo-pj-mini-bar {
+  height: 0.9375rem; /* 15px */
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 7px;
+  background: color-mix(in oklch, var(--pack-fg, var(--zdo-fg)) 7%, var(--pack-bg, var(--zdo-surface-2)));
+}
+.zdo-pj-mini-logo {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--pack-accent, var(--zdo-border-strong));
+}
+.zdo-pj-mini-brand {
+  width: 22px;
+  height: 3.5px;
+  border-radius: 2px;
+  background: color-mix(in oklch, var(--pack-fg, var(--zdo-fg)) 68%, transparent);
+}
+.zdo-pj-mini-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+.zdo-pj-mini-side {
+  width: 2.5rem; /* 40px */
+  flex: none;
+  padding: 7px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4.5px;
+  background: color-mix(in oklch, var(--pack-fg, var(--zdo-fg)) 4%, transparent);
+}
+.zdo-pj-mini-side i {
+  height: 2.5px;
+  border-radius: 1.5px;
+  background: color-mix(in oklch, var(--pack-fg, var(--zdo-fg)) 26%, transparent);
+}
+.zdo-pj-mini-side i.on {
+  width: 78%;
+  background: var(--pack-accent, var(--zdo-border-strong));
+}
+.zdo-pj-mini-side i.w1 {
+  width: 86%;
+}
+.zdo-pj-mini-side i.w2 {
+  width: 66%;
+}
+.zdo-pj-mini-main {
+  flex: 1;
+  padding: 8px 9px;
+  min-width: 0;
+}
+.zdo-pj-mini-h {
+  width: 60%;
+  height: 6px;
+  border-radius: 3px;
+  margin-bottom: 6px;
+  background: color-mix(in oklch, var(--pack-fg, var(--zdo-fg)) 80%, transparent);
+}
+.zdo-pj-mini-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.zdo-pj-mini-lines i {
+  height: 2.5px;
+  border-radius: 1.5px;
+  background: color-mix(in oklch, var(--pack-fg, var(--zdo-fg)) 22%, transparent);
+}
+.zdo-pj-mini-lines i.w1 {
+  width: 100%;
+}
+.zdo-pj-mini-lines i.w2 {
+  width: 93%;
+}
+.zdo-pj-mini-lines i.w3 {
+  width: 72%;
+}
+.zdo-pj-mini-chip {
+  margin-top: 7px;
+  width: 2rem;
+  height: 8px;
+  border-radius: 3px;
+  background: var(--pack-accent, var(--zdo-border-strong));
+}
+
+/* Flat color swatches under the mini preview (d3's `.sw`). */
+.zdo-pj-sw {
+  width: 1.375rem; /* 22px */
+  height: 1.375rem;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--zdo-fg) 16%, transparent);
+}
