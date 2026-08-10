@@ -12,24 +12,10 @@ import { z } from "zod";
 
 import type { AppDeps } from "../app";
 import { GLOBAL_EVENTS_KEY, SubscriberLimitError, type ChangeEvent } from "../events";
-import { assertProjectSlug, StoreError } from "../store/file-store";
+import { assertProjectSlug, presetSchema, StoreError } from "../store/file-store";
 
 /** Long enough to stay out of the way, short enough to beat idle proxies. */
 export const HEARTBEAT_MS = 25_000;
-
-/**
- * Stored-only fields — see the matching schema in `file-store.ts` for the
- * rationale (`.passthrough()` so unknown inner keys survive a commit).
- */
-const presetSchema = z
-  .object({
-    schemaVersion: z.literal(1),
-    themePack: z.string().min(1).optional(),
-    colorScheme: z.string().min(1).optional(),
-    defaultMode: z.enum(["light", "dark", "system"]).optional(),
-    features: z.array(z.string()).optional(),
-  })
-  .passthrough();
 
 const createProjectSchema = z.strictObject({
   title: z.string().trim().min(1).max(200),

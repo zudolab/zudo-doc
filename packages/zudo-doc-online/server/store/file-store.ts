@@ -90,7 +90,7 @@ const CREATE_LOCK = "::create";
  * inner keys are tolerated AND preserved (`.passthrough()`) — a client ahead
  * of this server's schema must not lose data on the next commit.
  */
-const presetSchema = z
+export const presetSchema = z
   .object({
     schemaVersion: z.literal(1),
     themePack: z.string().min(1).optional(),
