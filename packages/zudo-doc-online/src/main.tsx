@@ -1,9 +1,10 @@
 import { render } from "preact";
 import { useEffect, useMemo, useState } from "preact/hooks";
 import "./styles/global.css";
+import { createAuthClient } from "./auth/client.js";
 import { RouteView } from "./app/routes.js";
 import { Shell } from "./app/shell.js";
-import { getClientId } from "./store/client-id.js";
+import { getClientId, initClientId } from "./store/client-id.js";
 import { ProjectEventsClient } from "./store/events.js";
 import { createHttpProjectStore } from "./store/http-provider.js";
 import {
@@ -57,6 +58,19 @@ function ShellApp() {
     </Shell>
   );
 }
+
+// Settle this tab's client id BEFORE anything mounts: every surface builds
+// SSE/events clients during mount via the synchronous `getClientId()`, and a
+// duplicated tab only learns it must re-mint once the Web Lock claim resolves.
+// Awaiting here is the single point that covers every provider-construction
+// path. It never rejects — a failed claim degrades to the stored id.
+await initClientId();
+
+// Deliberately NOT awaited — resuming a bearer session against the auth
+// worker must never delay first paint. The shared `authStore` starts
+// `unknown` (account-menu.tsx renders nothing for it) and flips to
+// `signed-in`/`signed-out` whenever this settles.
+void createAuthClient().resumeSession();
 
 const root = document.getElementById("root");
 

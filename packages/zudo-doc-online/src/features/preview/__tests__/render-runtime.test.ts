@@ -144,16 +144,103 @@ describe("sanitizePreviewHtml", () => {
     expect(sanitizePreviewHtml(html)).toBe(html);
   });
 
-  it("is a no-op when DOMParser is unavailable", () => {
-    const original = globalThis.DOMParser;
-    // @ts-expect-error -- deliberately simulating a DOM-less environment
-    delete globalThis.DOMParser;
+  it("is a no-op when DOMPurify reports its host environment unsupported", async () => {
+    const DOMPurify = (await import("dompurify")).default;
+    const original = DOMPurify.isSupported;
+    DOMPurify.isSupported = false;
     try {
       const html = "<script>alert(1)</script>";
       expect(sanitizePreviewHtml(html)).toBe(html);
     } finally {
-      globalThis.DOMParser = original;
+      DOMPurify.isSupported = original;
     }
+  });
+
+  it("drops an <svg><script> nested payload entirely, including the nested script's content", () => {
+    const out = sanitizePreviewHtml('<p>x</p><svg><script>alert(1)</script></svg><p>y</p>');
+    expect(out).not.toContain("<svg");
+    expect(out).not.toContain("<script");
+    expect(out).not.toContain("alert(1)");
+    expect(out).toContain("<p>x</p>");
+    expect(out).toContain("<p>y</p>");
+  });
+
+  it("neutralizes a javascript: href obfuscated with uppercase casing", () => {
+    const out = sanitizePreviewHtml('<a href="JaVaScRiPt:alert(1)">bad</a>');
+    expect(out).not.toContain("javascript:");
+    expect(out).not.toContain("JaVaScRiPt");
+  });
+
+  it("neutralizes a javascript: href obfuscated with embedded control characters", () => {
+    const out = sanitizePreviewHtml('<a href="jav\tascript:alert(1)">bad</a>');
+    expect(out).not.toMatch(/href="[^"]*script:/i);
+  });
+
+  it("neutralizes a javascript: href obfuscated via HTML entities", () => {
+    // The browser/parser decodes `&#106;avascript:` to `javascript:` before
+    // the sanitizer ever sees the attribute value -- assert the decoded form
+    // is still caught.
+    const out = sanitizePreviewHtml('<a href="&#106;avascript:alert(1)">bad</a>');
+    expect(out).not.toMatch(/href="[^"]*script:/i);
+  });
+
+  it("rejects a data: URL on href and src", () => {
+    const out = sanitizePreviewHtml(
+      '<a href="data:text/html,<script>alert(1)</script>">bad</a>' +
+        '<img src="data:image/svg+xml;base64,QQ==">',
+    );
+    expect(out).not.toContain('href="data:');
+    expect(out).not.toContain('src="data:');
+  });
+
+  it("rejects a blob: URL on href and src", () => {
+    const out = sanitizePreviewHtml(
+      '<a href="blob:https://example.com/xyz">bad</a><img src="blob:https://example.com/xyz">',
+    );
+    expect(out).not.toContain('href="blob:');
+    expect(out).not.toContain('src="blob:');
+  });
+
+  it("drops a <math> payload entirely", () => {
+    const out = sanitizePreviewHtml(
+      '<p>x</p><math><mtext><script>alert(1)</script></mtext></math><p>y</p>',
+    );
+    expect(out).not.toContain("<math");
+    expect(out).not.toContain("<script");
+    expect(out).not.toContain("alert(1)");
+    expect(out).toContain("<p>x</p>");
+    expect(out).toContain("<p>y</p>");
+  });
+
+  it("strips a per-tag attribute when present on a tag it is not allowlisted for", () => {
+    // `href` is only valid on `a`; `colspan` is only valid on `th`/`td`.
+    const out = sanitizePreviewHtml('<div href="https://example.com" colspan="2">x</div>');
+    expect(out).not.toContain("href");
+    expect(out).not.toContain("colspan");
+    expect(out).toContain("<div>x</div>");
+  });
+
+  it("does not retain a drop-tag's content as text (unlike DOMPurify's own KEEP_CONTENT default)", () => {
+    const out = sanitizePreviewHtml("<style>body { color: red; }</style><p>after</p>");
+    expect(out).not.toContain("color: red");
+    expect(out).toContain("<p>after</p>");
+  });
+
+  it("passes admonition markup from postProcessAdmonitions through unchanged", () => {
+    const admonitionHtml = postProcessAdmonitions('<Note title="Heads up">Body text.</Note>');
+    expect(sanitizePreviewHtml(admonitionHtml)).toBe(admonitionHtml);
+  });
+
+  it("keeps a heading id that collides with a DOM/document property name (e.g. a heading literally titled 'Title')", () => {
+    // headingIds' hierarchical strategy slugifies heading text verbatim, so a
+    // page section titled "Title", "Name", "Location", etc. produces an id
+    // that collides with a same-named `document`/`window` property.
+    // DOMPurify's default DOM-clobbering guard (SANITIZE_DOM) silently drops
+    // such an id while leaving its `#title` hash-link href intact, breaking
+    // in-page navigation -- this policy trusts its own pipeline-generated
+    // ids, so that guard must not fire here.
+    const html = '<h2 id="title" class="hash-heading">Title<a class="hash-link" href="#title">#</a></h2>';
+    expect(sanitizePreviewHtml(html)).toBe(html);
   });
 });
 
