@@ -338,6 +338,12 @@ export default function EditorPaneSlot({
     view.dispatch({
       effects: compartmentsRef.current.vim.reconfigure(vimExtension(vimEnabled)),
     });
+    // Drop the label HERE, at the reconfigure that invalidates it, rather than
+    // leaving it to `syncVimListener`. Turning vim off destroys the adapter the
+    // mode listener was bound to, so the label is stale the instant this
+    // dispatch lands; clearing it in the same step means no later step has to
+    // run for the chip to stop claiming a mode the editor is no longer in.
+    if (!vimEnabled) vimModeRef.current = undefined;
     syncVimListener(view);
     report();
   }, [vimEnabled, syncVimListener, report]);

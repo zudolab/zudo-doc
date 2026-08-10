@@ -14,11 +14,14 @@ import { ProjectEventsClient, type MemoryProjectStore } from "../../../store/ind
 import { editorContentTicker } from "../use-editor-content";
 import { createFakeEventSourceFactory } from "../../../store/__tests__/support";
 import { mountWorkspace, queryByText, requireElement, settle } from "./harness";
+import { act } from "preact/test-utils";
+import { VIM_MODE_STORAGE_KEY } from "../persistence";
 import {
   INSTALLATION_ID,
   INTRODUCTION_ID,
   THEMING_ID,
   createEditorTestStore,
+  createFakeStorage,
 } from "./support";
 
 let store: MemoryProjectStore;
@@ -518,5 +521,38 @@ describe("conflict handling", () => {
     expect(editorText(container)).toBe("someone else's text");
 
     events.close();
+  });
+});
+
+/**
+ * The vim chip is the surface the mode label and `aria-pressed` actually reach.
+ * `editor-pane-slot.test.tsx` covers what the PANE reports; nothing covered
+ * what the footer then renders, which is where a stale `-- NORMAL --` was
+ * reported from the browser.
+ */
+describe("EditorWorkspace — vim chip", () => {
+  function vimChip(container: HTMLElement): HTMLButtonElement {
+    const chip = [...container.querySelectorAll("button")].find((button) =>
+      (button.getAttribute("title") ?? "").includes("Vim mode"),
+    );
+    if (!chip) throw new Error("the vim chip is not rendered");
+    return chip;
+  }
+
+  it("stops claiming a mode the moment vim is switched off", async () => {
+    const storage = createFakeStorage({ [VIM_MODE_STORAGE_KEY]: "on" });
+    const { container } = await mount(INSTALLATION_ID, { storage });
+
+    expect(vimChip(container).getAttribute("aria-pressed")).toBe("true");
+    expect(vimChip(container).textContent).toBe("-- NORMAL --");
+
+    await act(async () => {
+      vimChip(container).click();
+    });
+    await settle();
+
+    // No further editor interaction — the chip must be correct immediately.
+    expect(vimChip(container).getAttribute("aria-pressed")).toBe("false");
+    expect(vimChip(container).textContent).toBe("vim off");
   });
 });

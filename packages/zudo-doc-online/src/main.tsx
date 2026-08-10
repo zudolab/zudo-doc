@@ -25,6 +25,11 @@ function ShellApp() {
   // outline changing under a link it already rendered.
   const nav = useMemo(() => {
     const store = createHttpProjectStore({ projectSlug: DEFAULT_PROJECT_SLUG });
+    // A SECOND SSE connection, alongside whichever surface is mounted. Kept
+    // deliberately: the API is loopback-bound and single-user, so the extra
+    // subscriber is bounded bookkeeping, and sharing one stream would need a
+    // shell↔feature seam that does not exist yet. Consolidation candidate for
+    // the multi-tenant phase, where connection count starts to matter.
     const events = new ProjectEventsClient({
       projectSlug: DEFAULT_PROJECT_SLUG,
       clientId: getClientId(),
