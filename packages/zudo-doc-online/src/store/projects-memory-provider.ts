@@ -21,7 +21,7 @@
  * Node, matching `memory-provider.ts`'s own constraint.
  */
 
-import type { OutlineDoc } from "../core/outline/index";
+import type { IdFactory, OutlineDoc } from "../core/outline/index";
 import { deriveUniqueSlug } from "../core/outline/slugs";
 import { StoreRequestError, type PageSummary } from "./contract";
 import type {
@@ -62,14 +62,25 @@ export interface MemoryProjectsDirectoryStoreOptions {
   projects?: MemoryDirectoryProjectSeed[];
   /** Injectable clock for deterministic `createdAt`/`updatedAt` in tests. */
   now?: () => string;
+  /** Injectable so tests get deterministic ids from `createProject`'s scaffold. */
+  createId?: IdFactory;
 }
+
+/**
+ * Mirrors `server/routes/projects.ts`'s `z.string().trim().min(1).max(200)`
+ * title schema, so a memory-provider test exercises the same validation
+ * boundary a real request would hit.
+ */
+const MAX_PROJECT_TITLE_LENGTH = 200;
 
 export class MemoryProjectsDirectoryStore implements ProjectsDirectoryStore {
   private readonly projects = new Map<string, ProjectRecord>();
   private readonly now: () => string;
+  private readonly createId: IdFactory | undefined;
 
   constructor(options: MemoryProjectsDirectoryStoreOptions = {}) {
     this.now = options.now ?? (() => new Date().toISOString());
+    this.createId = options.createId;
     for (const seed of options.projects ?? []) {
       const slug = seed.slug ?? deriveUniqueSlug(seed.title, this.projects.keys());
       const timestamp = seed.createdAt ?? this.now();
@@ -98,18 +109,39 @@ export class MemoryProjectsDirectoryStore implements ProjectsDirectoryStore {
     title: string,
     preset?: ProjectPreset,
   ): Promise<ProjectDirectorySnapshot> {
-    if (title.trim().length === 0) {
-      throw new StoreRequestError("invalid-title", "Project title must not be empty.", 400);
+    const trimmed = typeof title === "string" ? title.trim() : "";
+    if (trimmed.length === 0 || trimmed.length > MAX_PROJECT_TITLE_LENGTH) {
+      throw new StoreRequestError("invalid-request", "A project needs a title.", 400);
     }
 
-    const slug = deriveUniqueSlug(title, this.projects.keys());
+    const slug = deriveUniqueSlug(trimmed, this.projects.keys());
     const timestamp = this.now();
+    const categoryId = this.mintId("category");
+    const pageId = this.mintId("page");
     const record: ProjectRecord = {
       slug,
-      title,
+      title: trimmed,
       revision: 1,
-      outline: emptyOutline(title),
-      pages: [],
+      outline: {
+        schemaVersion: 1,
+        projectTitle: trimmed,
+        categories: [
+          {
+            id: categoryId,
+            slug: "getting-started",
+            title: "Getting started",
+            pages: [{ id: pageId, slug: "index" }],
+          },
+        ],
+      },
+      pages: [
+        {
+          id: pageId,
+          slug: "index",
+          categoryId,
+          title: "Introduction",
+        },
+      ],
       createdAt: timestamp,
       updatedAt: timestamp,
       ...(preset ? { preset } : {}),
@@ -154,6 +186,13 @@ export class MemoryProjectsDirectoryStore implements ProjectsDirectoryStore {
       throw new StoreRequestError("project-not-found", `No project with slug "${slug}".`, 404);
     }
     return record;
+  }
+
+  /** Mirrors `server/store/file-store.ts`'s `mintId`: injectable, with a random-uuid fallback. */
+  private mintId(kind: "category" | "page"): string {
+    const minted = this.createId?.(kind);
+    if (typeof minted === "string" && minted.trim().length > 0) return minted.trim();
+    return `${kind}-${globalThis.crypto.randomUUID()}`;
   }
 
   private toListEntry(record: ProjectRecord, summary: boolean | undefined): ProjectListEntry {

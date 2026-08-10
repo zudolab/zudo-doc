@@ -45,11 +45,16 @@ export function createHttpProjectsDirectoryStore(
 
   async function send(path: string, init?: RequestInit): Promise<unknown> {
     let response: Response;
+    let body: unknown;
     try {
       response = await fetchImpl(path, {
         ...init,
         headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
       });
+      // Reading the body is folded into this same try: a connection that
+      // drops mid-stream (headers already received, body read rejects) must
+      // still classify as `network-error`, not leak the raw stream error.
+      body = await readJsonBody(response);
     } catch (error) {
       throw new StoreRequestError(
         "network-error",
@@ -58,7 +63,6 @@ export function createHttpProjectsDirectoryStore(
       );
     }
 
-    const body = await readJsonBody(response);
     if (!response.ok) {
       throw errorFromResponse(response.status, body);
     }

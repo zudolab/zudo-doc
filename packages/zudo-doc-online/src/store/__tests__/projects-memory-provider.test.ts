@@ -86,8 +86,10 @@ describe("MemoryProjectsDirectoryStore — getProject", () => {
 });
 
 describe("MemoryProjectsDirectoryStore — createProject", () => {
-  it("creates a project at revision 1 with an empty outline", async () => {
-    const store = createMemoryProjectsDirectoryStore();
+  it("creates a project at revision 1 with the same Getting-started scaffold the server creates", async () => {
+    const store = createMemoryProjectsDirectoryStore({
+      createId: (kind) => `${kind}-1`,
+    });
 
     const snapshot = await store.createProject("New Project");
 
@@ -96,9 +98,27 @@ describe("MemoryProjectsDirectoryStore — createProject", () => {
     expect(snapshot.outline).toEqual({
       schemaVersion: 1,
       projectTitle: "New Project",
-      categories: [],
+      categories: [
+        {
+          id: "category-1",
+          slug: "getting-started",
+          title: "Getting started",
+          pages: [{ id: "page-1", slug: "index" }],
+        },
+      ],
     });
-    expect(snapshot.pages).toEqual([]);
+    expect(snapshot.pages).toEqual([
+      { id: "page-1", slug: "index", categoryId: "category-1", title: "Introduction" },
+    ]);
+  });
+
+  it("trims the title before deriving the slug and storing it", async () => {
+    const store = createMemoryProjectsDirectoryStore();
+
+    const snapshot = await store.createProject("  New Project  ");
+
+    expect(snapshot.title).toBe("New Project");
+    expect(snapshot.slug).toBe("new-project");
   });
 
   it("round-trips the preset verbatim", async () => {
@@ -121,12 +141,29 @@ describe("MemoryProjectsDirectoryStore — createProject", () => {
     expect(snapshot.slug).toBe("docs-2");
   });
 
-  it("rejects an empty title", async () => {
+  it("rejects an empty (or whitespace-only) title", async () => {
     const store = createMemoryProjectsDirectoryStore();
 
     await expect(store.createProject("   ")).rejects.toMatchObject({
-      code: "invalid-title",
+      code: "invalid-request",
       status: 400,
+    });
+  });
+
+  it("rejects a title over 200 characters, matching the server's schema", async () => {
+    const store = createMemoryProjectsDirectoryStore();
+
+    await expect(store.createProject("a".repeat(201))).rejects.toMatchObject({
+      code: "invalid-request",
+      status: 400,
+    });
+  });
+
+  it("accepts a title at exactly 200 characters", async () => {
+    const store = createMemoryProjectsDirectoryStore();
+
+    await expect(store.createProject("a".repeat(200))).resolves.toMatchObject({
+      title: "a".repeat(200),
     });
   });
 });
