@@ -150,7 +150,7 @@ describe("deep link and tab strip", () => {
       ?.click();
     await settle();
 
-    expect(JSON.parse(storage.entries.get("zdo-editor-tabs") ?? "[]")).toEqual([
+    expect(JSON.parse(storage.entries.get("zdo-editor-tabs:aurora-docs") ?? "[]")).toEqual([
       INSTALLATION_ID,
       INTRODUCTION_ID,
     ]);
@@ -252,7 +252,7 @@ describe("rail modes", () => {
     ).click();
     await settle();
 
-    expect(storage.entries.get("zdo-editor-rail")).toBe("collapsed");
+    expect(storage.entries.get("zdo-editor-rail:aurora-docs")).toBe("collapsed");
     expect(container.querySelector('nav[aria-label="Pages"]')).toBeNull();
     const iconRail = requireElement(container, 'nav[aria-label="Workspace panels"]');
 
@@ -411,7 +411,7 @@ describe("the status bar", () => {
     // The pane must honour the same override the rest of the chrome does —
     // otherwise an isolated mount silently reads and writes the real
     // localStorage, and the preference leaks between them.
-    expect(storage.entries.get("zdo-editor-vim")).toBe("on");
+    expect(storage.entries.get("zdo-editor-vim:aurora-docs")).toBe("on");
     expect(queryByText(container, "button", "-- NORMAL --")).toBeDefined();
   });
 
@@ -454,7 +454,7 @@ describe("the split", () => {
     await settle();
 
     expect(separator.getAttribute("aria-valuenow")).toBe("52");
-    expect(storage.entries.get("zdo-editor-split")).toBe("52");
+    expect(storage.entries.get("zdo-editor-split:aurora-docs")).toBe("52");
   });
 
   it("keeps the editor host on an unbroken min-h-[0px] chain inside an inset-[0px] wrapper", async () => {

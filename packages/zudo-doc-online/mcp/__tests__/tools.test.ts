@@ -5,7 +5,7 @@
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import type { AuthoringWarning, CreatedPageMeta, ProjectSnapshot } from "../client";
+import type { AuthoringWarning, CreatedPageMeta, ProjectListSummary, ProjectSnapshot } from "../client";
 import { renderOutlineOverview } from "../tools";
 import { createMcpHarness, jsonOf, textOf, toolHandler, type McpTestHarness } from "./support";
 
@@ -35,11 +35,112 @@ describe("list_projects", () => {
   });
 });
 
+describe("list_projects: summary flag", () => {
+  it("omits summary fields by default and adds them with summary: true", async () => {
+    await call("create_project", { title: "Docs" });
+
+    const plain = jsonOf<Array<Record<string, unknown>>>(await call("list_projects"));
+    expect(plain).toEqual([{ slug: "docs", title: "Docs", revision: 1 }]);
+
+    const summarized = jsonOf<ProjectListSummary[]>(
+      await call("list_projects", { summary: true }),
+    );
+    expect(summarized).toEqual([
+      expect.objectContaining({
+        slug: "docs",
+        title: "Docs",
+        revision: 1,
+        pageCount: 1,
+        draftCount: 0,
+        categoryCount: 1,
+      }),
+    ]);
+  });
+});
+
+describe("create_project: preset", () => {
+  it("stores the preset verbatim and returns it in the snapshot", async () => {
+    const created = jsonOf<ProjectSnapshot>(
+      await call("create_project", {
+        title: "Docs",
+        preset: { schemaVersion: 1, themePack: "aurora", defaultMode: "dark" },
+      }),
+    );
+    expect(created.preset).toEqual({ schemaVersion: 1, themePack: "aurora", defaultMode: "dark" });
+  });
+
+  it("rejects a preset missing the required schemaVersion literal", async () => {
+    const tool = harness.tools.get("create_project");
+    const presetSchema = tool?.inputSchema["preset"];
+    expect(presetSchema?.safeParse({ themePack: "aurora" }).success).toBe(false);
+    expect(presetSchema?.safeParse({ schemaVersion: 1 }).success).toBe(true);
+  });
+});
+
+describe("duplicate_project", () => {
+  it("copies the project under a new slug at revision 1", async () => {
+    await call("create_project", { title: "Docs" });
+    const duplicated = jsonOf<ProjectSnapshot>(await call("duplicate_project", { project: "docs" }));
+    expect(duplicated).toMatchObject({ slug: "docs-copy", title: "Docs copy", revision: 1 });
+    expect(duplicated.pages).toHaveLength(1);
+  });
+
+  it("surfaces project-not-found for an unknown source project", async () => {
+    const result = await call("duplicate_project", { project: "missing" });
+    expect(result.isError).toBe(true);
+    expect(jsonOf(result)).toMatchObject({ code: "project-not-found" });
+  });
+});
+
+describe("delete_project", () => {
+  it("without confirm: true is a no-op with an instructive error", async () => {
+    await call("create_project", { title: "Docs" });
+
+    const withoutConfirm = await call("delete_project", { project: "docs" });
+    expect(withoutConfirm.isError).toBe(true);
+    expect(jsonOf(withoutConfirm)).toMatchObject({
+      code: "confirm-required",
+      message: expect.stringContaining("confirm: true"),
+    });
+
+    const withFalse = await call("delete_project", { project: "docs", confirm: false });
+    expect(withFalse.isError).toBe(true);
+    expect(jsonOf(withFalse)).toMatchObject({ code: "confirm-required" });
+
+    // Still there — neither call deleted it.
+    expect(jsonOf(await call("list_projects"))).toEqual([
+      { slug: "docs", title: "Docs", revision: 1 },
+    ]);
+  });
+
+  it("with confirm: true deletes and returns {slug, deleted: true}", async () => {
+    await call("create_project", { title: "Docs" });
+
+    const deleted = jsonOf<{ slug: string; deleted: boolean }>(
+      await call("delete_project", { project: "docs", confirm: true }),
+    );
+    expect(deleted).toEqual({ slug: "docs", deleted: true });
+    expect(jsonOf(await call("list_projects"))).toEqual([]);
+  });
+
+  it("surfaces project-not-found for an unknown project even with confirm: true", async () => {
+    const result = await call("delete_project", { project: "missing", confirm: true });
+    expect(result.isError).toBe(true);
+    expect(jsonOf(result)).toMatchObject({ code: "project-not-found" });
+  });
+});
+
 describe("full agent flow", () => {
   it("orient → restructure → write → re-read, with monotonic revisions", async () => {
-    // 1. create_project — revision 1, one seeded category and page.
-    const created = jsonOf<ProjectSnapshot>(await call("create_project", { title: "Docs" }));
+    // 1. create_project (with a preset) — revision 1, one seeded category and page.
+    const created = jsonOf<ProjectSnapshot>(
+      await call("create_project", {
+        title: "Docs",
+        preset: { schemaVersion: 1, themePack: "aurora" },
+      }),
+    );
     expect(created).toMatchObject({ slug: "docs", revision: 1 });
+    expect(created.preset).toEqual({ schemaVersion: 1, themePack: "aurora" });
     expect(created.outline.categories).toHaveLength(1);
     const seededCategoryId = created.outline.categories[0]?.id;
     expect(seededCategoryId).toBeTruthy();
@@ -128,6 +229,37 @@ describe("full agent flow", () => {
     // Revisions moved forward one step at a time: 1 → 2 → 3 → 4.
     expect([created.revision, addCategory.revision, addPage.revision, written.revision]).toEqual([
       1, 2, 3, 4,
+    ]);
+
+    // 9. duplicate_project — new slug, preset carried over, revision reset to 1.
+    const duplicated = jsonOf<ProjectSnapshot>(
+      await call("duplicate_project", { project: "docs" }),
+    );
+    expect(duplicated).toMatchObject({ slug: "docs-copy", title: "Docs copy", revision: 1 });
+    expect(duplicated.preset).toEqual({ schemaVersion: 1, themePack: "aurora" });
+
+    // 10. delete_project without confirm: true is a no-op.
+    const refused = await call("delete_project", { project: "docs-copy" });
+    expect(refused.isError).toBe(true);
+    expect(jsonOf(refused)).toMatchObject({ code: "confirm-required" });
+
+    // 11. delete_project with confirm: true actually deletes.
+    const deleted = jsonOf<{ slug: string; deleted: boolean }>(
+      await call("delete_project", { project: "docs-copy", confirm: true }),
+    );
+    expect(deleted).toEqual({ slug: "docs-copy", deleted: true });
+
+    // 12. list_projects (summary mode) reflects the original only, with counts.
+    const finalList = jsonOf<
+      Array<{ slug: string; revision: number; pageCount: number; draftCount: number }>
+    >(await call("list_projects", { summary: true }));
+    expect(finalList).toEqual([
+      expect.objectContaining({
+        slug: "docs",
+        revision: 4,
+        pageCount: 2,
+        draftCount: 1,
+      }),
     ]);
   });
 });

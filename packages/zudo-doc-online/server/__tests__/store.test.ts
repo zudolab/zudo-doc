@@ -4,7 +4,7 @@
  * values, because the point of the transaction layer is that the two agree.
  */
 
-import { mkdir, readdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { access, mkdir, readdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -34,15 +34,31 @@ function projectPath(slug: string, ...rest: string[]): string {
   return path.join(harness.dataDir, slug, ...rest);
 }
 
-async function readProjectFile(slug: string): Promise<{ revision: number; title: string }> {
+async function readProjectFile(slug: string): Promise<{
+  revision: number;
+  title: string;
+  createdAt?: string;
+  updatedAt?: string;
+  preset?: unknown;
+}> {
   return JSON.parse(await readFile(projectPath(slug, PROJECT_FILE), "utf8")) as {
     revision: number;
     title: string;
+    createdAt?: string;
+    updatedAt?: string;
+    preset?: unknown;
   };
 }
 
 async function pageFileNames(slug: string): Promise<string[]> {
   return (await readdir(projectPath(slug, "pages"))).sort();
+}
+
+async function pathExists(target: string): Promise<boolean> {
+  return access(target).then(
+    () => true,
+    () => false,
+  );
 }
 
 async function expectStoreError(
@@ -78,6 +94,8 @@ describe("createProject", () => {
       schemaVersion: PROJECT_SCHEMA_VERSION,
       title: "Aurora Docs",
       revision: 1,
+      createdAt: "2026-01-02T03:04:05.678Z",
+      updatedAt: "2026-01-02T03:04:05.678Z",
     });
     expect(await pageFileNames("aurora-docs")).toEqual(["page-1.md"]);
   });
@@ -113,6 +131,164 @@ describe("createProject", () => {
     expect((await store.listProjects()).map((project) => project.slug)).toEqual([
       "alpha",
       "zeta",
+    ]);
+  });
+
+  it("stores an optional preset and round-trips it through the snapshot", async () => {
+    const preset = { schemaVersion: 1 as const, themePack: "aurora", defaultMode: "dark" as const };
+    const snapshot = await store.createProject("Docs", preset);
+
+    expect(snapshot.preset).toEqual(preset);
+    expect((await readProjectFile("docs")).preset).toEqual(preset);
+
+    const reread = await store.readSnapshot("docs");
+    expect(reread.preset).toEqual(preset);
+  });
+
+  it("preserves unknown preset keys across a commit it never validated them for", async () => {
+    const preset = {
+      schemaVersion: 1 as const,
+      themePack: "aurora",
+      // Not in the current inner schema — must survive anyway.
+      futureField: "from-a-newer-client",
+    };
+    await store.createProject("Docs", preset as never);
+
+    const afterCommand = await store.applyOutlineCommand("docs", {
+      expectedRevision: 1,
+      command: { type: "add-category", title: "Guides" },
+    });
+    expect(afterCommand.snapshot.preset).toEqual(preset);
+
+    const afterPageWrite = await store.writePage("docs", "page-1", {
+      expectedRevision: 2,
+      markdown: "changed\n",
+    });
+    expect(afterPageWrite.changed).toBe(true);
+    const finalSnapshot = await store.readSnapshot("docs");
+    expect(finalSnapshot.preset).toEqual(preset);
+  });
+});
+
+describe("deleteProject", () => {
+  it("renames the project directory into the top-level trash", async () => {
+    await store.createProject("Docs");
+    expect(await pathExists(projectPath("docs"))).toBe(true);
+
+    const outcome = await store.deleteProject("docs");
+    expect(outcome).toEqual({ slug: "docs" });
+
+    expect(await pathExists(projectPath("docs"))).toBe(false);
+    const trashed = await readdir(path.join(harness.dataDir, ".trash"));
+    expect(trashed).toHaveLength(1);
+    expect(trashed[0]).toMatch(/^docs-/);
+  });
+
+  it("stops listing a deleted project and lets its slug be re-created immediately", async () => {
+    await store.createProject("Docs");
+    await store.deleteProject("docs");
+
+    expect(await store.listProjects()).toEqual([]);
+
+    const recreated = await store.createProject("Docs");
+    expect(recreated.slug).toBe("docs");
+    expect(recreated.revision).toBe(1);
+  });
+
+  it("404s deleting an unknown slug", async () => {
+    await expectStoreError(store.deleteProject("ghost"), "project-not-found");
+  });
+
+  it("uniquifies the trash destination on a same-clock-tick double delete", async () => {
+    await store.createProject("Docs");
+    await store.createProject("Docs2");
+
+    // Two projects deleted under the same fixed clock land in the same
+    // second — the second rename must not collide with the first.
+    await store.deleteProject("docs");
+    // Re-create the same slug and delete it again, still under the same
+    // fixed timestamp, to force a genuine trash-name collision.
+    await store.createProject("Docs");
+    await store.deleteProject("docs");
+
+    const trashed = await readdir(path.join(harness.dataDir, ".trash"));
+    expect(trashed).toHaveLength(2);
+    expect(new Set(trashed).size).toBe(2);
+  });
+});
+
+describe("duplicateProject", () => {
+  it("copies pages byte-identical and rewrites both title halves", async () => {
+    await store.createProject("Docs");
+    await store.writePage("docs", "page-1", {
+      expectedRevision: 1,
+      markdown: "original body\n",
+    });
+    const sourceFile = await readFile(projectPath("docs", "pages/page-1.md"), "utf8");
+
+    const copy = await store.duplicateProject("docs");
+
+    expect(copy.slug).toBe("docs-copy");
+    expect(copy.title).toBe("Docs copy");
+    expect(copy.outline.projectTitle).toBe("Docs copy");
+    expect(copy.revision).toBe(1);
+    expect(copy.createdAt).toBe("2026-01-02T03:04:05.678Z");
+    expect(copy.updatedAt).toBe("2026-01-02T03:04:05.678Z");
+
+    const copiedFile = await readFile(projectPath("docs-copy", "pages/page-1.md"), "utf8");
+    expect(copiedFile).toBe(sourceFile);
+    // The source project is untouched.
+    expect((await store.readSnapshot("docs")).title).toBe("Docs");
+  });
+
+  it("copies the preset along with the project", async () => {
+    const preset = { schemaVersion: 1 as const, themePack: "aurora" };
+    await store.createProject("Docs", preset);
+
+    const copy = await store.duplicateProject("docs");
+    expect(copy.preset).toEqual(preset);
+  });
+
+  it("derives a unique slug from the copy title", async () => {
+    await store.createProject("Docs");
+    await store.duplicateProject("docs");
+    const second = await store.duplicateProject("docs");
+    expect(second.slug).toBe("docs-copy-2");
+  });
+
+  it("404s duplicating an unknown slug", async () => {
+    await expectStoreError(store.duplicateProject("ghost"), "project-not-found");
+  });
+});
+
+describe("listProjects summary", () => {
+  it("adds counts and metadata only when requested, leaving the plain list unchanged", async () => {
+    await store.createProject("Docs", { schemaVersion: 1, themePack: "aurora" });
+    await store.applyOutlineCommand("docs", {
+      expectedRevision: 1,
+      command: { type: "add-page", categoryId: "category-1", title: "Deploying" },
+    });
+    await store.writePage("docs", "page-2", {
+      expectedRevision: 2,
+      frontmatter: { title: "Deploying", draft: true },
+    });
+
+    const plain = await store.listProjects();
+    expect(plain).toEqual([{ slug: "docs", title: "Docs", revision: 3 }]);
+
+    const withSummary = await store.listProjects({ summary: true });
+    expect(withSummary).toEqual([
+      {
+        slug: "docs",
+        title: "Docs",
+        revision: 3,
+        pageCount: 2,
+        draftCount: 1,
+        categoryCount: 1,
+        createdAt: "2026-01-02T03:04:05.678Z",
+        updatedAt: "2026-01-02T03:04:05.678Z",
+        preset: { schemaVersion: 1, themePack: "aurora" },
+      },
     ]);
   });
 });
@@ -494,6 +670,28 @@ describe("corrupt files", () => {
 
     const remaining = await readdir(projectPath("docs"));
     expect(remaining.some((name) => name.startsWith(`${PROJECT_FILE}.corrupt-`))).toBe(true);
+  });
+
+  it("still parses a project.json written before createdAt/updatedAt/preset existed", async () => {
+    await writeFile(
+      projectPath("docs", PROJECT_FILE),
+      `${JSON.stringify({ schemaVersion: PROJECT_SCHEMA_VERSION, title: "Docs", revision: 1 })}\n`,
+      "utf8",
+    );
+
+    const snapshot = await store.readSnapshot("docs");
+    expect(snapshot.createdAt).toBeUndefined();
+    expect(snapshot.updatedAt).toBeUndefined();
+    expect(snapshot.preset).toBeUndefined();
+
+    // The first edit after the old file backfills createdAt/updatedAt going
+    // forward, without quarantining the old file as malformed.
+    const outcome = await store.applyOutlineCommand("docs", {
+      expectedRevision: 1,
+      command: { type: "add-category", title: "Guides" },
+    });
+    expect(outcome.snapshot.createdAt).toBe("2026-01-02T03:04:05.678Z");
+    expect(outcome.snapshot.updatedAt).toBe("2026-01-02T03:04:05.678Z");
   });
 
   it("refuses to read a page file that is a symbolic link", async () => {

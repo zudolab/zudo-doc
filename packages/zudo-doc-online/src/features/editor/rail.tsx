@@ -30,6 +30,8 @@ const ICON_BUTTON_CLASSES =
 export interface EditorRailProps {
   mode: RailMode;
   onToggleMode: () => void;
+  /** The active project's slug — threaded into the Outline link (#3347). */
+  projectSlug: string;
   projectTitle: string;
   tree: readonly EditorTreeCategory[];
   pageCount: number;
@@ -46,6 +48,7 @@ export function EditorRail(props: EditorRailProps) {
 
 function ExpandedRail({
   onToggleMode,
+  projectSlug,
   projectTitle,
   tree,
   pageCount,
@@ -84,7 +87,7 @@ function ExpandedRail({
         <span className="size-(--zdo-dot) rounded-full bg-warning" aria-hidden="true" />
         <span>draft</span>
         <a
-          href={formatRoute({ name: "outline" })}
+          href={formatRoute({ name: "outline", projectSlug })}
           className="ml-auto hover:text-accent hover:underline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
         >
           Outline editor
@@ -96,6 +99,7 @@ function ExpandedRail({
 
 function CollapsedRail({
   onToggleMode,
+  projectSlug,
   tree,
   pageCount,
   activePageId,
@@ -134,7 +138,7 @@ function CollapsedRail({
       </button>
 
       <a
-        href={formatRoute({ name: "outline" })}
+        href={formatRoute({ name: "outline", projectSlug })}
         aria-label="Outline editor"
         title="Outline editor"
         className={RAIL_BUTTON_CLASSES}

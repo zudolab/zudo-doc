@@ -14,9 +14,10 @@
 import PopoutWindow from "./popout-window";
 
 export interface PopoutRouteProps {
+  projectSlug: string;
   pageId: string;
 }
 
-export default function PopoutRoute({ pageId }: PopoutRouteProps) {
-  return <PopoutWindow pageId={pageId} />;
+export default function PopoutRoute({ projectSlug, pageId }: PopoutRouteProps) {
+  return <PopoutWindow projectSlug={projectSlug} pageId={pageId} />;
 }

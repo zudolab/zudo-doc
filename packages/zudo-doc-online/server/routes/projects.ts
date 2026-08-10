@@ -11,33 +11,135 @@ import { streamSSE } from "hono/streaming";
 import { z } from "zod";
 
 import type { AppDeps } from "../app";
-import { SubscriberLimitError, type ChangeEvent } from "../events";
-import { assertProjectSlug, StoreError } from "../store/file-store";
+import { GLOBAL_EVENTS_KEY, SubscriberLimitError, type ChangeEvent } from "../events";
+import { assertProjectSlug, presetSchema, StoreError } from "../store/file-store";
 
 /** Long enough to stay out of the way, short enough to beat idle proxies. */
 export const HEARTBEAT_MS = 25_000;
 
 const createProjectSchema = z.strictObject({
   title: z.string().trim().min(1).max(200),
+  preset: presetSchema.optional(),
+  /** Echoed as the SSE event's `origin` so the author can skip its own event. */
+  clientId: z.string().min(1).max(128).optional(),
+});
+
+const duplicateProjectSchema = z.strictObject({
+  clientId: z.string().min(1).max(128).optional(),
 });
 
 export function createProjectRoutes(deps: AppDeps): Hono {
   const routes = new Hono();
 
-  routes.get("/", async (c) => c.json(await deps.store.listProjects()));
+  routes.get("/", async (c) => {
+    const summary = c.req.query("summary") === "1";
+    return c.json(
+      summary
+        ? await deps.store.listProjects({ summary: true })
+        : await deps.store.listProjects(),
+    );
+  });
 
   routes.post("/", async (c) => {
     const parsed = createProjectSchema.safeParse(await readJsonBody(c.req.raw));
     if (!parsed.success) {
       throw badRequest(parsed.error);
     }
-    return c.json(await deps.store.createProject(parsed.data.title), 201);
+    const snapshot = await deps.store.createProject(parsed.data.title, parsed.data.preset);
+    deps.events.publish(GLOBAL_EVENTS_KEY, {
+      type: "projects-changed",
+      slug: snapshot.slug,
+      action: "created",
+      ...(parsed.data.clientId ? { origin: parsed.data.clientId } : {}),
+    });
+    return c.json(snapshot, 201);
+  });
+
+  /**
+   * The global change stream — every project created, deleted, or
+   * duplicated, for a dashboard that must live-update when e.g. an MCP agent
+   * creates a project in another process.
+   *
+   * MUST be registered before `GET /:project` below: `_events` can never be a
+   * valid project slug (the leading underscore fails `isValidSlug`), but
+   * without this ordering the param route would still shadow it.
+   */
+  routes.get("/_events", async (c) => {
+    return streamSSE(c, async (stream) => {
+      let queue = Promise.resolve();
+      const send = (event: ChangeEvent) => {
+        queue = queue
+          .then(() => stream.writeSSE({ data: JSON.stringify(event) }))
+          .catch(() => undefined);
+      };
+
+      let unsubscribe: (() => void) | undefined;
+      try {
+        unsubscribe = deps.events.subscribe(GLOBAL_EVENTS_KEY, send);
+      } catch (error) {
+        if (error instanceof SubscriberLimitError) {
+          await stream.writeSSE({ event: "error", data: error.message });
+          return;
+        }
+        throw error;
+      }
+
+      const heartbeat = setInterval(() => {
+        void stream.write(": heartbeat\n\n");
+      }, HEARTBEAT_MS);
+      heartbeat.unref?.();
+
+      try {
+        await new Promise<void>((resolve) => {
+          const finish = () => resolve();
+          stream.onAbort(finish);
+          c.req.raw.signal.addEventListener("abort", finish, { once: true });
+        });
+      } finally {
+        clearInterval(heartbeat);
+        unsubscribe();
+      }
+    });
   });
 
   routes.get("/:project", async (c) => {
     const slug = c.req.param("project");
     assertProjectSlug(slug);
     return c.json(await deps.store.readSnapshot(slug));
+  });
+
+  // clientId travels as a query param since DELETE has no body.
+  routes.delete("/:project", async (c) => {
+    const slug = c.req.param("project");
+    assertProjectSlug(slug);
+    const clientId = c.req.query("clientId");
+
+    await deps.store.deleteProject(slug);
+    deps.events.publish(GLOBAL_EVENTS_KEY, {
+      type: "projects-changed",
+      slug,
+      action: "deleted",
+      ...(clientId ? { origin: clientId } : {}),
+    });
+    return c.json({ slug, deleted: true });
+  });
+
+  routes.post("/:project/duplicate", async (c) => {
+    const slug = c.req.param("project");
+    assertProjectSlug(slug);
+
+    const parsed = duplicateProjectSchema.safeParse(await readOptionalJsonBody(c.req.raw));
+    if (!parsed.success) throw badRequest(parsed.error);
+
+    const snapshot = await deps.store.duplicateProject(slug);
+    deps.events.publish(GLOBAL_EVENTS_KEY, {
+      type: "projects-changed",
+      // The NEW project's slug, per the wire contract — not the source's.
+      slug: snapshot.slug,
+      action: "duplicated",
+      ...(parsed.data.clientId ? { origin: parsed.data.clientId } : {}),
+    });
+    return c.json(snapshot, 201);
   });
 
   /**
@@ -108,6 +210,21 @@ export async function readJsonBody(request: Request): Promise<unknown> {
     return await request.json();
   } catch {
     throw new StoreError("invalid-request", "A JSON request body is required.", 400);
+  }
+}
+
+/**
+ * Like `readJsonBody`, but an absent/empty body is valid — for requests whose
+ * every field is optional (duplicate's `{clientId?}`), a caller with nothing
+ * to say should not have to send `{}` just to satisfy a body-required check.
+ */
+export async function readOptionalJsonBody(request: Request): Promise<unknown> {
+  const text = await request.text();
+  if (text.trim().length === 0) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new StoreError("invalid-request", "The request body must be valid JSON.", 400);
   }
 }
 

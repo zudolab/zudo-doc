@@ -1,7 +1,6 @@
 import { render } from "preact";
 import { useEffect, useMemo, useState } from "preact/hooks";
 import "./styles/global.css";
-import { DEFAULT_PROJECT_SLUG } from "./app/project.js";
 import { RouteView } from "./app/routes.js";
 import { Shell } from "./app/shell.js";
 import { getClientId } from "./store/client-id.js";
@@ -10,6 +9,7 @@ import { createHttpProjectStore } from "./store/http-provider.js";
 import {
   parseRoute,
   readCurrentRoute,
+  routeProjectSlug,
   subscribeRouteChanged,
   type Route,
 } from "./app/router.js";
@@ -19,27 +19,36 @@ function ShellApp() {
 
   useEffect(() => subscribeRouteChanged(setRoute), []);
 
+  const projectSlug = routeProjectSlug(route);
+
   // Read-only, and only so the Editor nav link knows which page id to open —
   // every surface still builds its own coordinated store for mutations. The
   // shell outlives all of them, so it needs its own stream to notice the
-  // outline changing under a link it already rendered.
+  // outline changing under a link it already rendered. Rebuilt whenever the
+  // route's project slug changes (#3347) — a leftover stream/store from a
+  // PREVIOUS project would otherwise keep resolving the nav link against the
+  // wrong project. `null` on `projects`/`new-project` — there is no project
+  // to open a stream for.
   const nav = useMemo(() => {
-    const store = createHttpProjectStore({ projectSlug: DEFAULT_PROJECT_SLUG });
+    if (projectSlug === null) return { store: null, events: null };
+    const store = createHttpProjectStore({ projectSlug });
     // A SECOND SSE connection, alongside whichever surface is mounted. Kept
     // deliberately: the API is loopback-bound and single-user, so the extra
     // subscriber is bounded bookkeeping, and sharing one stream would need a
     // shell↔feature seam that does not exist yet. Consolidation candidate for
     // the multi-tenant phase, where connection count starts to matter.
     const events = new ProjectEventsClient({
-      projectSlug: DEFAULT_PROJECT_SLUG,
+      projectSlug,
       clientId: getClientId(),
     });
     return { store, events };
-  }, []);
+  }, [projectSlug]);
 
   useEffect(() => {
-    nav.events.connect();
-    return () => nav.events.close();
+    if (nav.events === null) return undefined;
+    const events = nav.events;
+    events.connect();
+    return () => events.close();
   }, [nav]);
 
   return (
@@ -61,7 +70,13 @@ if (root) {
   const initialRoute = parseRoute(window.location.hash);
   if (initialRoute.name === "popped-out-preview") {
     const { default: PopoutRoute } = await import("./features/popout/route.js");
-    render(<PopoutRoute pageId={initialRoute.pageId} />, root);
+    render(
+      <PopoutRoute
+        projectSlug={initialRoute.projectSlug}
+        pageId={initialRoute.pageId}
+      />,
+      root,
+    );
   } else {
     render(<ShellApp />, root);
   }

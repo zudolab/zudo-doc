@@ -77,7 +77,7 @@ async function mountShell(props: Parameters<typeof Shell>[0]): Promise<HTMLEleme
 }
 
 function editorLink(container: HTMLElement): HTMLAnchorElement | null {
-  return container.querySelector<HTMLAnchorElement>('a[href^="#/editor/"]');
+  return container.querySelector<HTMLAnchorElement>('a[href^="#/p/aurora-docs/editor/"]');
 }
 
 describe("Shell", () => {
@@ -85,16 +85,13 @@ describe("Shell", () => {
     document.body.innerHTML = "";
   });
 
-  it("renders the wordmark, project name, nav links, and TZ avatar", () => {
-    const container = document.createElement("div");
-    document.body.appendChild(container);
-
-    render(
-      <Shell route={{ name: "outline" }}>
-        <div>content</div>
-      </Shell>,
-      container,
-    );
+  it("renders the wordmark, project name, nav links, and TZ avatar", async () => {
+    const container = await mountShell({
+      route: { name: "outline", projectSlug: "aurora-docs" },
+      store: storeFor(SNAPSHOT),
+      storage: storageWithTabs([]),
+      children: <div>content</div>,
+    });
 
     expect(container.textContent).toContain("zudo-doc online");
     expect(container.textContent).toContain("Aurora Docs");
@@ -102,9 +99,6 @@ describe("Shell", () => {
     expect(container.textContent).toContain("Editor");
     expect(container.textContent).toContain("TZ");
     expect(container.textContent).toContain("content");
-
-    render(null, container);
-    container.remove();
   });
 
   it("marks the nav link matching the current route with aria-current", () => {
@@ -112,17 +106,79 @@ describe("Shell", () => {
     document.body.appendChild(container);
 
     render(
-      <Shell route={{ name: "editor", pageId: "installation" }}>
+      <Shell route={{ name: "editor", projectSlug: "aurora-docs", pageId: "installation" }}>
         <div />
       </Shell>,
       container,
     );
 
-    const outlineLink = container.querySelector('a[href="#/outline"]');
-    const editorLink = container.querySelector('a[href^="#/editor/"]');
+    const outlineLink = container.querySelector('a[href="#/p/aurora-docs/outline"]');
+    const editorLink = container.querySelector('a[href^="#/p/aurora-docs/editor/"]');
 
     expect(outlineLink?.getAttribute("aria-current")).toBeNull();
     expect(editorLink?.getAttribute("aria-current")).toBe("page");
+
+    render(null, container);
+    container.remove();
+  });
+});
+
+describe("Shell — project context", () => {
+  afterEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  it("hides the project label and nav links on the projects dashboard route", () => {
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+
+    render(
+      <Shell route={{ name: "projects" }}>
+        <div />
+      </Shell>,
+      container,
+    );
+
+    expect(container.textContent).not.toContain("Aurora Docs");
+    expect(container.textContent).not.toContain("Outline");
+    expect(container.textContent).not.toContain("Editor");
+    expect(container.querySelector('a[href="#/"]')).not.toBeNull();
+
+    render(null, container);
+    container.remove();
+  });
+
+  it("hides the project label and nav links on the new-project route", () => {
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+
+    render(
+      <Shell route={{ name: "new-project" }}>
+        <div />
+      </Shell>,
+      container,
+    );
+
+    expect(container.textContent).not.toContain("Outline");
+    expect(container.textContent).not.toContain("Editor");
+
+    render(null, container);
+    container.remove();
+  });
+
+  it("the brand link always points at the projects dashboard", () => {
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+
+    render(
+      <Shell route={{ name: "outline", projectSlug: "aurora-docs" }}>
+        <div />
+      </Shell>,
+      container,
+    );
+
+    const brand = container.querySelector('a[href="#/"]');
+    expect(brand?.textContent).toBe("zudo-doc online");
 
     render(null, container);
     container.remove();
@@ -145,7 +201,7 @@ describe("Shell — viewport height chain", () => {
 
   it("gives the root a definite viewport height and main a resolvable one", async () => {
     const container = await mountShell({
-      route: { name: "outline" },
+      route: { name: "outline", projectSlug: "aurora-docs" },
       store: null,
     });
 
@@ -176,19 +232,19 @@ describe("Shell — Editor nav target", () => {
 
   it("points at the project's first page when nothing was opened before", async () => {
     const container = await mountShell({
-      route: { name: "outline" },
+      route: { name: "outline", projectSlug: "aurora-docs" },
       store: storeFor(SNAPSHOT),
       storage: storageWithTabs([]),
     });
 
     expect(editorLink(container)?.getAttribute("href")).toBe(
-      "#/editor/page-getting-started-installation",
+      "#/p/aurora-docs/editor/page-getting-started-installation",
     );
   });
 
   it("prefers the most recently opened tab that still exists", async () => {
     const container = await mountShell({
-      route: { name: "outline" },
+      route: { name: "outline", projectSlug: "aurora-docs" },
       store: storeFor(SNAPSHOT),
       // The last entry is the newest tab; the id before it is long gone.
       storage: storageWithTabs([
@@ -199,25 +255,25 @@ describe("Shell — Editor nav target", () => {
     });
 
     expect(editorLink(container)?.getAttribute("href")).toBe(
-      "#/editor/page-getting-started-first-page",
+      "#/p/aurora-docs/editor/page-getting-started-first-page",
     );
   });
 
   it("stays on the page being edited while the editor route is open", async () => {
     const container = await mountShell({
-      route: { name: "editor", pageId: "page-getting-started-first-page" },
+      route: { name: "editor", projectSlug: "aurora-docs", pageId: "page-getting-started-first-page" },
       store: storeFor(SNAPSHOT),
       storage: storageWithTabs([]),
     });
 
     expect(editorLink(container)?.getAttribute("href")).toBe(
-      "#/editor/page-getting-started-first-page",
+      "#/p/aurora-docs/editor/page-getting-started-first-page",
     );
   });
 
   it("renders an inert item, not a broken link, when the project has no pages", async () => {
     const container = await mountShell({
-      route: { name: "outline" },
+      route: { name: "outline", projectSlug: "aurora-docs" },
       store: storeFor({ ...SNAPSHOT, pages: [] }),
       storage: storageWithTabs([]),
     });
@@ -247,7 +303,7 @@ describe("Shell — Editor nav target", () => {
     events.connect();
 
     const container = await mountShell({
-      route: { name: "outline" },
+      route: { name: "outline", projectSlug: "aurora-docs" },
       store,
       events,
       storage: storageWithTabs([]),
@@ -265,7 +321,7 @@ describe("Shell — Editor nav target", () => {
     });
 
     expect(editorLink(container)?.getAttribute("href")).toBe(
-      "#/editor/page-getting-started-installation",
+      "#/p/aurora-docs/editor/page-getting-started-installation",
     );
 
     events.close();
@@ -276,13 +332,13 @@ describe("Shell — Editor nav target", () => {
     // user is already stuck on when that page was deleted elsewhere, leaving
     // no way out of page-not-found via the nav.
     const container = await mountShell({
-      route: { name: "editor", pageId: "page-deleted-elsewhere" },
+      route: { name: "editor", projectSlug: "aurora-docs", pageId: "page-deleted-elsewhere" },
       store: storeFor(SNAPSHOT),
       storage: storageWithTabs([]),
     });
 
     expect(editorLink(container)?.getAttribute("href")).toBe(
-      "#/editor/page-getting-started-installation",
+      "#/p/aurora-docs/editor/page-getting-started-installation",
     );
   });
 
@@ -311,7 +367,7 @@ describe("Shell — Editor nav target", () => {
     events.connect();
 
     const container = await mountShell({
-      route: { name: "outline" },
+      route: { name: "outline", projectSlug: "aurora-docs" },
       store,
       events,
       storage: storageWithTabs([]),
@@ -336,7 +392,7 @@ describe("Shell — Editor nav target", () => {
     });
 
     expect(editorLink(container)?.getAttribute("href")).toBe(
-      "#/editor/page-getting-started-installation",
+      "#/p/aurora-docs/editor/page-getting-started-installation",
     );
 
     events.close();
@@ -350,7 +406,7 @@ describe("Shell — Editor nav target", () => {
       },
     };
     const container = await mountShell({
-      route: { name: "outline" },
+      route: { name: "outline", projectSlug: "aurora-docs" },
       store: failing,
       storage: storageWithTabs([]),
     });

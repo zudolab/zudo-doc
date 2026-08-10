@@ -62,6 +62,8 @@ const DANGER_ICON_BUTTON =
   "shrink-0 rounded-sm p-hsp-2xs text-muted hover:bg-surface hover:text-danger focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2";
 
 export interface BoardColumnProps {
+  /** The project this outline belongs to — threaded to each card's editor link (#3347). */
+  projectSlug: string;
   category: OutlineCategoryRow;
   /** The card list to render — the working copy during a cross-column drag,
    * the derived model otherwise (`board-view.tsx` decides which). */
@@ -83,6 +85,7 @@ export interface BoardColumnProps {
 }
 
 export function BoardColumn({
+  projectSlug,
   category,
   pages,
   canMoveLeft,
@@ -216,6 +219,7 @@ export function BoardColumn({
             {pages.map((page, index) => (
               <PageCard
                 key={page.id}
+                projectSlug={projectSlug}
                 page={page}
                 categoryId={category.id}
                 categoryTitle={category.title}

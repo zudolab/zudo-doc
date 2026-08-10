@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import type { AuthoringWarning } from "../authoring-lint";
 import { MAX_BODY_BYTES } from "../app";
-import type { ProjectSnapshot, ProjectSummary } from "../store/file-store";
+import type { ProjectListSummary, ProjectSnapshot, ProjectSummary } from "../store/file-store";
 import { createHarness, json, type TestHarness } from "./support";
 
 let harness: TestHarness;
@@ -72,6 +72,113 @@ describe("GET/POST /api/projects", () => {
   it("rejects a request with no JSON body", async () => {
     const response = await request("/api/projects", { method: "POST" });
     expect(response.status).toBe(400);
+  });
+
+  it("accepts an optional preset and returns it on the snapshot", async () => {
+    const preset = { schemaVersion: 1, themePack: "aurora", defaultMode: "dark" };
+    const response = await postJson("/api/projects", { title: "Docs", preset });
+    expect(response.status).toBe(201);
+    expect((await json<ProjectSnapshot>(response)).preset).toEqual(preset);
+  });
+
+  it("rejects a preset missing its required schemaVersion literal", async () => {
+    const response = await postJson("/api/projects", {
+      title: "Docs",
+      preset: { themePack: "aurora" },
+    });
+    expect(response.status).toBe(400);
+  });
+});
+
+describe("GET /api/projects?summary=1", () => {
+  it("adds counts and metadata without changing the plain list", async () => {
+    await seedProject();
+
+    const plain = await json<ProjectSummary[]>(await request("/api/projects"));
+    expect(plain).toEqual([{ slug: "docs", title: "Docs", revision: 1 }]);
+
+    const summary = await json<ProjectListSummary[]>(
+      await request("/api/projects?summary=1"),
+    );
+    expect(summary).toHaveLength(1);
+    expect(summary[0]).toMatchObject({
+      slug: "docs",
+      title: "Docs",
+      revision: 1,
+      pageCount: 1,
+      draftCount: 0,
+      categoryCount: 1,
+    });
+    expect(summary[0]?.createdAt).toEqual(expect.any(String));
+    expect(summary[0]?.updatedAt).toEqual(expect.any(String));
+  });
+});
+
+describe("DELETE /api/projects/:project", () => {
+  it("trash-renames the project and returns {slug, deleted: true}", async () => {
+    await seedProject();
+
+    const response = await request("/api/projects/docs", { method: "DELETE" });
+    expect(response.status).toBe(200);
+    expect(await json(response)).toEqual({ slug: "docs", deleted: true });
+
+    expect(await json(await request("/api/projects"))).toEqual([]);
+    expect((await request("/api/projects/docs")).status).toBe(404);
+  });
+
+  it("lets the deleted slug be re-created immediately", async () => {
+    await seedProject();
+    await request("/api/projects/docs", { method: "DELETE" });
+
+    const recreated = await postJson("/api/projects", { title: "Docs" });
+    expect(recreated.status).toBe(201);
+    expect((await json<ProjectSnapshot>(recreated)).slug).toBe("docs");
+  });
+
+  it("404s deleting an unknown slug", async () => {
+    const response = await request("/api/projects/ghost", { method: "DELETE" });
+    expect(response.status).toBe(404);
+    expect((await json<ErrorBody>(response)).error.code).toBe("project-not-found");
+  });
+
+  it("keeps a project titled Events fully listable/openable alongside the _events route", async () => {
+    const events = await postJson("/api/projects", { title: "Events" });
+    expect(events.status).toBe(201);
+    expect((await json<ProjectSnapshot>(events)).slug).toBe("events");
+
+    const listed = await json<ProjectSummary[]>(await request("/api/projects"));
+    expect(listed.map((project) => project.slug)).toContain("events");
+
+    const opened = await request("/api/projects/events");
+    expect(opened.status).toBe(200);
+    expect((await json<ProjectSnapshot>(opened)).title).toBe("Events");
+  });
+});
+
+describe("POST /api/projects/:project/duplicate", () => {
+  it("creates a copy with both title halves rewritten and a fresh revision", async () => {
+    await seedProject();
+
+    const response = await postJson("/api/projects/docs/duplicate", {});
+    expect(response.status).toBe(201);
+
+    const copy = await json<ProjectSnapshot>(response);
+    expect(copy.slug).toBe("docs-copy");
+    expect(copy.title).toBe("Docs copy");
+    expect(copy.outline.projectTitle).toBe("Docs copy");
+    expect(copy.revision).toBe(1);
+  });
+
+  it("accepts a request with no body at all", async () => {
+    await seedProject();
+    const response = await request("/api/projects/docs/duplicate", { method: "POST" });
+    expect(response.status).toBe(201);
+  });
+
+  it("404s duplicating an unknown slug", async () => {
+    const response = await postJson("/api/projects/ghost/duplicate", {});
+    expect(response.status).toBe(404);
+    expect((await json<ErrorBody>(response)).error.code).toBe("project-not-found");
   });
 });
 
@@ -343,6 +450,19 @@ describe("request guards", () => {
     expect(response.headers.get("Access-Control-Allow-Headers")).toContain(
       "Content-Type",
     );
+  });
+
+  it("answers the preflight a browser client sends before a delete", async () => {
+    const response = await request("/api/projects/docs", {
+      method: "OPTIONS",
+      headers: {
+        Origin: "http://localhost:4323",
+        "Access-Control-Request-Method": "DELETE",
+      },
+    });
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get("Access-Control-Allow-Methods")).toContain("DELETE");
   });
 
   it("refuses a preflight from a disallowed origin", async () => {

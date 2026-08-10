@@ -1,19 +1,29 @@
-// Typed hash router — no dependency. Three routes:
-//   #/outline                        (default)
-//   #/editor/:pageId
-//   #/popped-out/preview/:pageId
+// Typed hash router — no dependency. Five routes:
+//   #/                                        (default — projects dashboard)
+//   #/new                                     (new-project stub)
+//   #/p/:slug/outline
+//   #/p/:slug/editor/:pageId
+//   #/p/:slug/popped-out/preview/:pageId
 //
-// Route-file ownership contract (epic #3327): this file + routes.tsx are
-// the shell's — later sub-issues that build out a feature surface replace
-// ONLY their own `src/features/<x>/route.tsx` stub, never this router or
-// the route map in routes.tsx.
+// Legacy (pre-multi-project) hashes keep working — `#/outline`,
+// `#/editor/:pageId`, `#/popped-out/preview/:pageId` — and parse to the
+// project-scoped equivalent using `LEGACY_FALLBACK_SLUG` (app/project.ts).
+//
+// Route-file ownership contract (epic #3327 / #3345): this file + routes.tsx
+// are the shell's — later sub-issues that build out a feature surface
+// replace ONLY their own `src/features/<x>/route.tsx` stub, never this
+// router or the route map in routes.tsx.
+
+import { LEGACY_FALLBACK_SLUG } from "./project.js";
 
 export type Route =
-  | { name: "outline" }
-  | { name: "editor"; pageId: string }
-  | { name: "popped-out-preview"; pageId: string };
+  | { name: "projects" }
+  | { name: "new-project" }
+  | { name: "outline"; projectSlug: string }
+  | { name: "editor"; projectSlug: string; pageId: string }
+  | { name: "popped-out-preview"; projectSlug: string; pageId: string };
 
-const DEFAULT_ROUTE: Route = { name: "outline" };
+const DEFAULT_ROUTE: Route = { name: "projects" };
 
 function normalizeHash(hash: string): string {
   return hash.replace(/^#/, "").replace(/^\/+/, "").replace(/\/+$/, "");
@@ -21,11 +31,11 @@ function normalizeHash(hash: string): string {
 
 /** `decodeURIComponent` throws `URIError` on a malformed percent-encoded
  * sequence (e.g. a bare "%" or a truncated UTF-8 escape) instead of
- * returning a value — decode defensively so a malformed pageId segment
- * falls back to the default route like any other malformed hash, rather
- * than throwing out of `parseRoute` (which runs before the shell mounts —
- * an uncaught throw there would leave the page blank). */
-function decodePageId(segment: string): string | null {
+ * returning a value — decode defensively so a malformed segment falls back
+ * to the default route like any other malformed hash, rather than throwing
+ * out of `parseRoute` (which runs before the shell mounts — an uncaught
+ * throw there would leave the page blank). */
+function decodeSegment(segment: string): string | null {
   try {
     return decodeURIComponent(segment);
   } catch {
@@ -34,19 +44,28 @@ function decodePageId(segment: string): string | null {
 }
 
 /** Parse a `location.hash` string into a Route. Unknown/malformed hashes
- * (including the empty hash) fall back to the default outline route. */
+ * (including the empty hash) fall back to the default projects route. */
 export function parseRoute(hash: string): Route {
   const segments = normalizeHash(hash).split("/").filter(Boolean);
-  const [first, second, third] = segments;
+  const [first, second, third, fourth, fifth] = segments;
 
+  if (segments.length === 0) {
+    return { name: "projects" };
+  }
+
+  if (segments.length === 1 && first === "new") {
+    return { name: "new-project" };
+  }
+
+  // Legacy, un-scoped hashes — land on the seeded fallback slug.
   if (segments.length === 1 && first === "outline") {
-    return { name: "outline" };
+    return { name: "outline", projectSlug: LEGACY_FALLBACK_SLUG };
   }
 
   if (segments.length === 2 && first === "editor" && second) {
-    const pageId = decodePageId(second);
+    const pageId = decodeSegment(second);
     if (pageId !== null) {
-      return { name: "editor", pageId };
+      return { name: "editor", projectSlug: LEGACY_FALLBACK_SLUG, pageId };
     }
   }
 
@@ -56,9 +75,40 @@ export function parseRoute(hash: string): Route {
     second === "preview" &&
     third
   ) {
-    const pageId = decodePageId(third);
+    const pageId = decodeSegment(third);
     if (pageId !== null) {
-      return { name: "popped-out-preview", pageId };
+      return {
+        name: "popped-out-preview",
+        projectSlug: LEGACY_FALLBACK_SLUG,
+        pageId,
+      };
+    }
+  }
+
+  // Project-scoped routes: #/p/:slug/...
+  if (first === "p" && second) {
+    const projectSlug = decodeSegment(second);
+    if (projectSlug === null) return DEFAULT_ROUTE;
+
+    if (segments.length === 3 && third === "outline") {
+      return { name: "outline", projectSlug };
+    }
+
+    if (segments.length === 4 && third === "editor" && fourth) {
+      const pageId = decodeSegment(fourth);
+      if (pageId !== null) return { name: "editor", projectSlug, pageId };
+    }
+
+    if (
+      segments.length === 5 &&
+      third === "popped-out" &&
+      fourth === "preview" &&
+      fifth
+    ) {
+      const pageId = decodeSegment(fifth);
+      if (pageId !== null) {
+        return { name: "popped-out-preview", projectSlug, pageId };
+      }
     }
   }
 
@@ -66,20 +116,33 @@ export function parseRoute(hash: string): Route {
 }
 
 /** Inverse of parseRoute: build a `location.hash`-ready string (including
- * the leading `#`) for a given Route. */
+ * the leading `#`) for a given Route. Slug and pageId segments are always
+ * URI-encoded. */
 export function formatRoute(route: Route): string {
   switch (route.name) {
+    case "projects":
+      return "#/";
+    case "new-project":
+      return "#/new";
     case "outline":
-      return "#/outline";
+      return `#/p/${encodeURIComponent(route.projectSlug)}/outline`;
     case "editor":
-      return `#/editor/${encodeURIComponent(route.pageId)}`;
+      return `#/p/${encodeURIComponent(route.projectSlug)}/editor/${encodeURIComponent(route.pageId)}`;
     case "popped-out-preview":
-      return `#/popped-out/preview/${encodeURIComponent(route.pageId)}`;
+      return `#/p/${encodeURIComponent(route.projectSlug)}/popped-out/preview/${encodeURIComponent(route.pageId)}`;
     default: {
       const exhaustive: never = route;
       return exhaustive;
     }
   }
+}
+
+/** The project slug a route addresses, or `null` for a route with no
+ * project context (`projects`, `new-project`). */
+export function routeProjectSlug(route: Route): string | null {
+  return route.name === "projects" || route.name === "new-project"
+    ? null
+    : route.projectSlug;
 }
 
 /** True when `hash` addresses the chrome-less pop-out preview route. Used

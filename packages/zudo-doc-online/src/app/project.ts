@@ -1,12 +1,17 @@
 /**
- * The one project this app opens. The API server seeds it on a fresh checkout
- * (`server/store/file-store.ts` → `seedIfEmpty`); a project picker and
- * multi-project routing are out of scope for epic #3327, so every surface
- * binds to this slug directly.
+ * The project slug a legacy, un-scoped hash (`#/outline`, `#/editor/:id`,
+ * `#/popped-out/preview/:id`) resolves to.
  *
- * It lives in the shell's own directory rather than in a feature's route file
- * because the shell needs it too, and importing it from
- * `features/outline/route.tsx` would drag that lazily-loaded route into the
- * entry bundle.
+ * Multi-project routing (#3347) threads a project slug through every route
+ * (`#/p/:slug/...`), but a bookmark or an old tab still carrying a pre-#3347
+ * hash must keep working — `router.ts`'s `parseRoute` maps it onto this
+ * slug rather than 404ing. The API server seeds this project on a fresh
+ * checkout (`server/store/file-store.ts` → `seedIfEmpty`), so it always
+ * exists.
+ *
+ * Also the ONE slug whose per-project `localStorage` values a legacy,
+ * un-scoped key is ever migrated into — see the persistence-scoping notes in
+ * `features/editor/persistence.ts` and `features/outline/view-preference.ts`.
+ * No other project ever reads a pre-#3347 unscoped value.
  */
-export const DEFAULT_PROJECT_SLUG = "aurora-docs";
+export const LEGACY_FALLBACK_SLUG = "aurora-docs";

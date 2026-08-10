@@ -63,3 +63,38 @@ export function writeStoredValue(
   if (resolved === null) return;
   resolved.setItem(key, value);
 }
+
+/**
+ * Wraps a `KeyValueStorage` so every key it sees is transparently scoped to
+ * one project slug (`:{slug}` suffix) — the multi-project persistence rule
+ * (#3347): open tabs, rail mode, split ratio, and vim mode are all per-project
+ * UI state, and every module in this file (`tabs-state.ts`, `rail-state.ts`,
+ * `editor-extensions.ts`) reads/writes through the SAME base keys regardless
+ * of which project is open, so callers wrap `storage` ONCE here rather than
+ * threading a slug through every read/write call site.
+ *
+ * A legacy, un-scoped value (written before #3347) is readable exactly once,
+ * and only for `legacyFallbackSlug` — the project a pre-#3347 hash resolves
+ * to (`app/project.ts`'s `LEGACY_FALLBACK_SLUG`). Any other project's scoped
+ * key is either present or the value does not exist; it never falls back to
+ * another project's data. There is no migration beyond this read: nothing
+ * ever WRITES to the unscoped key again once this wrapper is in place.
+ */
+export function scopeStorage(
+  slug: string,
+  legacyFallbackSlug: string,
+  explicit?: KeyValueStorage | null,
+): KeyValueStorage | null {
+  const resolved = resolveStorage(explicit);
+  if (resolved === null) return null;
+  return {
+    getItem(key: string): string | null {
+      const scoped = resolved.getItem(`${key}:${slug}`);
+      if (scoped !== null) return scoped;
+      return slug === legacyFallbackSlug ? resolved.getItem(key) : null;
+    },
+    setItem(key: string, value: string): void {
+      resolved.setItem(`${key}:${slug}`, value);
+    },
+  };
+}

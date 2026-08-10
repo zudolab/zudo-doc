@@ -59,6 +59,15 @@ export const TRASH_DIR = "trash";
 export const PAGE_EXTENSION = ".md";
 
 /**
+ * Project-level trash, a sibling of every project directory under `dataDir`
+ * (`data/.trash/<slug>-<timestamp>`). Distinct from `TRASH_DIR` ("trash"),
+ * which lives *inside* a project directory for page-level removals. The
+ * leading dot keeps it invisible to `projectSlugs()` for free — the slug
+ * shape (`isValidSlug`) never matches a dot-prefixed name.
+ */
+export const PROJECT_TRASH_DIR = ".trash";
+
+/**
  * A page id is also a filename stem, so it is restricted further than the
  * outline core requires (the core accepts any non-empty string, because an
  * importer may adopt ids the core never mints). No dots, which is what makes
@@ -74,11 +83,33 @@ const SAFE_PAGE_ID = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
  */
 const CREATE_LOCK = "::create";
 
+/**
+ * Stored-only fields the epic's later surfaces (wizard, dashboard) read but
+ * never validate the meaning of here. `schemaVersion` is a required literal
+ * so a future incompatible shape can be told apart from this one. Unknown
+ * inner keys are tolerated AND preserved (`.passthrough()`) — a client ahead
+ * of this server's schema must not lose data on the next commit.
+ */
+export const presetSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    themePack: z.string().min(1).optional(),
+    colorScheme: z.string().min(1).optional(),
+    defaultMode: z.enum(["light", "dark", "system"]).optional(),
+    features: z.array(z.string()).optional(),
+  })
+  .passthrough();
+
+export type ProjectPreset = z.infer<typeof presetSchema>;
+
 const projectFileSchema = z
   .object({
     schemaVersion: z.literal(PROJECT_SCHEMA_VERSION),
     title: z.string().min(1),
     revision: z.number().int().nonnegative(),
+    createdAt: z.string().datetime().optional(),
+    updatedAt: z.string().datetime().optional(),
+    preset: presetSchema.optional(),
   })
   .strict();
 
@@ -88,6 +119,16 @@ export interface ProjectSummary {
   slug: string;
   title: string;
   revision: number;
+}
+
+/** `listProjects({ summary: true })` — adds per-project stats and metadata. */
+export interface ProjectListSummary extends ProjectSummary {
+  pageCount: number;
+  draftCount: number;
+  categoryCount: number;
+  createdAt?: string;
+  updatedAt?: string;
+  preset?: ProjectPreset;
 }
 
 /** A page as the composed snapshot presents it: structure plus frontmatter. */
@@ -106,6 +147,9 @@ export interface ProjectSnapshot {
   revision: number;
   outline: OutlineDoc;
   pages: PageSummary[];
+  createdAt?: string;
+  updatedAt?: string;
+  preset?: ProjectPreset;
 }
 
 export interface PageDocument {
@@ -193,9 +237,13 @@ const COMMAND_STATUS: Record<OutlineErrorCode, number> = {
 };
 
 export interface ProjectStore {
-  listProjects(): Promise<ProjectSummary[]>;
-  createProject(title: string): Promise<ProjectSnapshot>;
+  listProjects(options?: {
+    summary?: boolean;
+  }): Promise<(ProjectSummary | ProjectListSummary)[]>;
+  createProject(title: string, preset?: ProjectPreset): Promise<ProjectSnapshot>;
   readSnapshot(slug: string): Promise<ProjectSnapshot>;
+  deleteProject(slug: string): Promise<{ slug: string }>;
+  duplicateProject(slug: string): Promise<ProjectSnapshot>;
   applyOutlineCommand(
     slug: string,
     input: OutlineCommandInput,
@@ -228,21 +276,55 @@ export class FileProjectStore implements ProjectStore {
     this.now = options.now ?? (() => new Date());
   }
 
-  async listProjects(): Promise<ProjectSummary[]> {
+  async listProjects(): Promise<ProjectSummary[]>;
+  async listProjects(options: { summary: true }): Promise<ProjectListSummary[]>;
+  async listProjects(
+    options?: { summary?: boolean },
+  ): Promise<(ProjectSummary | ProjectListSummary)[]> {
     const slugs = await this.projectSlugs();
-    const summaries: ProjectSummary[] = [];
+
+    if (!options?.summary) {
+      const summaries: ProjectSummary[] = [];
+      for (const slug of slugs) {
+        const project = await this.locks.run(slug, () => this.readProjectFile(slug));
+        // A directory with no project.json is not a project — a rolled-back
+        // creation leaves exactly that, and it must not fail the listing.
+        if (project) summaries.push({ slug, title: project.title, revision: project.revision });
+      }
+      return summaries.sort((a, b) => a.slug.localeCompare(b.slug));
+    }
+
+    // Opt-in only: composing every project's pages is O(total pages) reads,
+    // which the plain list above must stay cheap regardless of corpus size.
+    const summaries: ProjectListSummary[] = [];
     for (const slug of slugs) {
-      const project = await this.locks.run(slug, () =>
-        this.readProjectFile(slug),
-      );
-      // A directory with no project.json is not a project — a rolled-back
-      // creation leaves exactly that, and it must not fail the listing.
-      if (project) summaries.push({ slug, title: project.title, revision: project.revision });
+      const composed = await this.locks.run(slug, async () => {
+        const dir = this.projectDir(slug);
+        await recoverStagedCommit(dir);
+        const project = await this.readProjectFile(slug);
+        if (!project) return null;
+        const outline = await this.readOutlineFile(dir);
+        return { project, snapshot: await this.compose(slug, project, outline) };
+      });
+      if (!composed) continue;
+
+      const { project, snapshot } = composed;
+      summaries.push({
+        slug,
+        title: project.title,
+        revision: project.revision,
+        pageCount: snapshot.pages.length,
+        draftCount: snapshot.pages.filter((page) => page.draft === true).length,
+        categoryCount: snapshot.outline.categories.length,
+        ...(project.createdAt !== undefined ? { createdAt: project.createdAt } : {}),
+        ...(project.updatedAt !== undefined ? { updatedAt: project.updatedAt } : {}),
+        ...(project.preset !== undefined ? { preset: project.preset } : {}),
+      });
     }
     return summaries.sort((a, b) => a.slug.localeCompare(b.slug));
   }
 
-  async createProject(title: string): Promise<ProjectSnapshot> {
+  async createProject(title: string, preset?: ProjectPreset): Promise<ProjectSnapshot> {
     const trimmed = typeof title === "string" ? title.trim() : "";
     if (trimmed.length === 0) {
       throw new StoreError("invalid-request", "A project needs a title.", 400);
@@ -272,6 +354,14 @@ export class FileProjectStore implements ProjectStore {
         const dir = this.projectDir(slug);
         await mkdir(path.join(dir, PAGES_DIR), { recursive: true });
 
+        const nowIso = this.now().toISOString();
+        const projectFile = projectFileFor(
+          trimmed,
+          1,
+          { createdAt: nowIso, updatedAt: nowIso },
+          preset,
+        );
+
         const tx = new Transaction(dir, 0, 1);
         tx.write(OUTLINE_FILE, toJson(outline));
         tx.write(
@@ -281,10 +371,95 @@ export class FileProjectStore implements ProjectStore {
             "Write the first page of this documentation base here.\n",
           ),
         );
-        tx.write(PROJECT_FILE, toJson(projectFileFor(trimmed, 1)));
+        tx.write(PROJECT_FILE, toJson(projectFile));
         await tx.commit();
 
-        return this.compose(slug, { schemaVersion: 1, title: trimmed, revision: 1 }, outline);
+        return this.compose(slug, projectFile, outline);
+      });
+    });
+  }
+
+  async deleteProject(slug: string): Promise<{ slug: string }> {
+    assertProjectSlug(slug);
+    return this.locks.run(CREATE_LOCK, () =>
+      this.locks.run(slug, async () => {
+        const dir = this.projectDir(slug);
+        await recoverStagedCommit(dir);
+        const project = await this.readProjectFile(slug);
+        if (!project) {
+          throw new StoreError("project-not-found", `No project "${slug}".`, 404);
+        }
+
+        const trashRoot = path.join(this.dataDir, PROJECT_TRASH_DIR);
+        await mkdir(trashRoot, { recursive: true });
+
+        const stamp = timestampSlug(this.now());
+        let target = path.join(trashRoot, `${slug}-${stamp}`);
+        let counter = 2;
+        while (await pathExists(target)) {
+          target = path.join(trashRoot, `${slug}-${stamp}-${counter}`);
+          counter += 1;
+        }
+
+        await rename(dir, target);
+        return { slug };
+      }),
+    );
+  }
+
+  async duplicateProject(slug: string): Promise<ProjectSnapshot> {
+    assertProjectSlug(slug);
+    return this.locks.run(CREATE_LOCK, async () => {
+      const taken = await this.projectSlugs();
+
+      // One lock acquisition for the whole consistent read (project file,
+      // outline, every page body) — two separate acquisitions would let a
+      // concurrent edit land between them.
+      const source = await this.locks.run(slug, async () => {
+        const dir = this.projectDir(slug);
+        await recoverStagedCommit(dir);
+        const project = await this.readProjectFile(slug);
+        if (!project) {
+          throw new StoreError("project-not-found", `No project "${slug}".`, 404);
+        }
+        const outline = await this.readOutlineFile(dir);
+
+        // Reads pages/ only, which already excludes trash/ and .tx-staging/.
+        const ids = await this.pageFileIds(dir);
+        const pages = new Map<string, string>();
+        for (const id of ids) {
+          const raw = await this.readTextFile(path.join(dir, pageRelPath(id)));
+          if (raw !== null) pages.set(id, raw);
+        }
+        return { project, outline, pages };
+      });
+
+      const copyTitle = `${source.project.title} copy`;
+      const targetSlug = deriveUniqueSlug(copyTitle, taken);
+      const nowIso = this.now().toISOString();
+      // Both title-sync halves rewritten together (epic contract 1): copying
+      // outline.json verbatim would leave its projectTitle stale.
+      const targetOutline: OutlineDoc = { ...source.outline, projectTitle: copyTitle };
+      const targetProject = projectFileFor(
+        copyTitle,
+        1,
+        { createdAt: nowIso, updatedAt: nowIso },
+        source.project.preset,
+      );
+
+      return this.locks.run(targetSlug, async () => {
+        const targetDir = this.projectDir(targetSlug);
+        await mkdir(path.join(targetDir, PAGES_DIR), { recursive: true });
+
+        const tx = new Transaction(targetDir, 0, 1);
+        tx.write(OUTLINE_FILE, toJson(targetOutline));
+        for (const [id, raw] of source.pages) {
+          tx.write(pageRelPath(id), raw);
+        }
+        tx.write(PROJECT_FILE, toJson(targetProject));
+        await tx.commit();
+
+        return this.compose(targetSlug, targetProject, targetOutline);
       });
     });
   }
@@ -321,13 +496,23 @@ export class FileProjectStore implements ProjectStore {
       }
 
       const nextRevision = project.revision + 1;
+      const nowIso = this.now().toISOString();
+      // `createdAt`/`preset` carried forward from the current file — this is
+      // the "must carry the new fields through every commit path" rule; a
+      // project.json predating those fields gets `createdAt` backfilled here
+      // rather than losing it on its first edit.
+      const nextProject = projectFileFor(
+        result.doc.projectTitle,
+        nextRevision,
+        { createdAt: project.createdAt ?? nowIso, updatedAt: nowIso },
+        project.preset,
+      );
       const tx = new Transaction(dir, project.revision, nextRevision);
       tx.write(OUTLINE_FILE, toJson(result.doc));
       await this.stagePageFileLifecycle(dir, tx, input.command, outline, result.doc, result.meta?.createdPage);
-      tx.write(PROJECT_FILE, toJson(projectFileFor(result.doc.projectTitle, nextRevision)));
+      tx.write(PROJECT_FILE, toJson(nextProject));
       await tx.commit();
 
-      const nextProject = projectFileFor(result.doc.projectTitle, nextRevision);
       return {
         snapshot: await this.compose(slug, nextProject, result.doc),
         changed: true,
@@ -419,9 +604,20 @@ export class FileProjectStore implements ProjectStore {
       }
 
       const nextRevision = project.revision + 1;
+      const nowIso = this.now().toISOString();
       const tx = new Transaction(dir, project.revision, nextRevision);
       tx.write(pageRelPath(pageId), contents);
-      tx.write(PROJECT_FILE, toJson(projectFileFor(project.title, nextRevision)));
+      tx.write(
+        PROJECT_FILE,
+        toJson(
+          projectFileFor(
+            project.title,
+            nextRevision,
+            { createdAt: project.createdAt ?? nowIso, updatedAt: nowIso },
+            project.preset,
+          ),
+        ),
+      );
       await tx.commit();
 
       const reparsed = parsePageFile(contents);
@@ -460,6 +656,7 @@ export class FileProjectStore implements ProjectStore {
         const dir = this.projectDir(slug);
         await mkdir(path.join(dir, PAGES_DIR), { recursive: true });
 
+        const nowIso = this.now().toISOString();
         const tx = new Transaction(dir, 0, 1);
         tx.write(OUTLINE_FILE, toJson(auroraDocsOutline));
         for (const page of auroraDocsPages) {
@@ -468,7 +665,10 @@ export class FileProjectStore implements ProjectStore {
             serializePageFile(frontmatterFromMeta(page.meta), page.markdown),
           );
         }
-        tx.write(PROJECT_FILE, toJson(projectFileFor(AURORA_PROJECT_TITLE, 1)));
+        tx.write(
+          PROJECT_FILE,
+          toJson(projectFileFor(AURORA_PROJECT_TITLE, 1, { createdAt: nowIso, updatedAt: nowIso })),
+        );
         await tx.commit();
 
         return slug;
@@ -726,7 +926,16 @@ export class FileProjectStore implements ProjectStore {
       }
     }
 
-    return { slug, title: project.title, revision: project.revision, outline, pages };
+    return {
+      slug,
+      title: project.title,
+      revision: project.revision,
+      outline,
+      pages,
+      ...(project.createdAt !== undefined ? { createdAt: project.createdAt } : {}),
+      ...(project.updatedAt !== undefined ? { updatedAt: project.updatedAt } : {}),
+      ...(project.preset !== undefined ? { preset: project.preset } : {}),
+    };
   }
 
   /**
@@ -906,8 +1115,20 @@ function frontmatterFromMeta(meta: {
   };
 }
 
-function projectFileFor(title: string, revision: number): ProjectFile {
-  return { schemaVersion: PROJECT_SCHEMA_VERSION, title, revision };
+function projectFileFor(
+  title: string,
+  revision: number,
+  timestamps: { createdAt: string; updatedAt: string },
+  preset?: ProjectPreset,
+): ProjectFile {
+  return {
+    schemaVersion: PROJECT_SCHEMA_VERSION,
+    title,
+    revision,
+    createdAt: timestamps.createdAt,
+    updatedAt: timestamps.updatedAt,
+    ...(preset ? { preset } : {}),
+  };
 }
 
 function pageFileName(pageId: string): string {
@@ -941,4 +1162,15 @@ function assertInside(root: string, target: string): void {
 
 function isMissing(error: unknown): boolean {
   return (error as NodeJS.ErrnoException | null)?.code === "ENOENT";
+}
+
+/** Existence check for a path outside `dataDir`'s per-file safety net (`.trash/` itself). */
+async function pathExists(target: string): Promise<boolean> {
+  try {
+    await lstat(target);
+    return true;
+  } catch (error) {
+    if (isMissing(error)) return false;
+    throw error;
+  }
 }

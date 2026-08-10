@@ -26,6 +26,28 @@ server binds `127.0.0.1` only (see `server/index.ts`'s header) — it writes
 real files with no authentication, so it must never be reachable from the
 network.
 
+## SPA routes (`src/app/router.ts`, `src/app/routes.tsx`)
+
+Multi-project routing (epic #3345). `router.ts` is a typed, dependency-free
+hash router; `routes.tsx` maps each route to a lazy import of its feature's
+own `route.tsx` stub — later sub-issues replace only their stub, never the
+router or this map.
+
+| Hash | Route | Feature |
+| --- | --- | --- |
+| `#/` (default) | `projects` | `src/features/projects/` — the D3 master-detail dashboard: rail (`listProjects({summary:true})`) + detail pane (`getProject(slug)`) |
+| `#/new` | `new-project` | `src/features/new-project/` — the C3 gallery-first creation wizard (theme-pack grid + name/mode finish sheet) |
+| `#/p/:slug/outline` | `outline` | `src/features/outline/` — indented tree + board (kanban) view |
+| `#/p/:slug/editor/:pageId` | `editor` | `src/features/editor/` — tabbed workspace |
+| `#/p/:slug/popped-out/preview/:pageId` | `popped-out-preview` | `src/features/popout/` — chrome-less preview window |
+
+Legacy pre-multi-project hashes (`#/outline`, `#/editor/:pageId`,
+`#/popped-out/preview/:pageId`, un-scoped) still parse — to the project-scoped
+equivalent against `LEGACY_FALLBACK_SLUG` (`src/app/project.ts`, the seeded
+project's slug). An unknown or malformed hash (including a decode failure on
+a percent-encoded segment) falls back to the default `projects` route rather
+than throwing, since `parseRoute` runs before the shell mounts.
+
 ## Headless core (`src/core/outline/`)
 
 The outline domain model — `types.ts` (the `OutlineDoc` shape and the ten
@@ -63,6 +85,21 @@ top of the coordinator.
 compares each event's `origin` against this tab's own id (`client-id.ts`) to
 tell "a change I just made" from "a change another tab made" — see
 **Known limitations** below for the one gap in that comparison.
+
+### Projects-directory store (`projects-directory.ts`)
+
+A second, separate contract (`ProjectsDirectoryStore`) for project-LIST-level
+operations — `listProjects`, `getProject`, `createProject`, `deleteProject`,
+`duplicateProject` — deliberately split from `contract.ts`'s per-project
+`ProjectStore`: create/delete/duplicate/list have no "current revision" to
+serialize a `revision-coordinator.ts` FIFO queue against. This is what powers
+the dashboard's master list and the wizard's create path. Same two-provider
+split as the per-project pair: `projects-http-provider.ts` (real server) and
+`projects-memory-provider.ts` (tests, future offline mode). `projects-events.ts`
+is the **global** SSE client (`GET /api/projects/_events`) the dashboard
+subscribes to for cross-process changes — e.g. an MCP agent creating a
+project in another process. Errors reuse `contract.ts`'s `StoreRequestError`
+taxonomy unchanged; no new error codes.
 
 ## Server: file layout + transaction model (`server/`)
 
@@ -105,13 +142,21 @@ directly. Shared conventions (from `app.ts`'s own header):
   `LOCAL_ORIGIN`, preflight answered inline) because the SPA is served from a
   different port than the API.
 
-Routes: `GET/POST /api/projects`, `GET /api/projects/:slug`,
+Routes: `GET/POST /api/projects`, `DELETE /api/projects/:slug`,
+`POST /api/projects/:slug/duplicate`, `GET /api/projects/:slug`,
 `POST /api/projects/:slug/outline/commands`,
 `GET/PUT /api/projects/:slug/pages/:id`,
-`GET /api/projects/:slug/events` (SSE). `events.ts` (server side) is the
-change-event fan-out `EventBus` behind that SSE route — events publish only
-AFTER a commit is durable, so a subscriber that refetches on the event always
-sees at least the state the event announced.
+`GET /api/projects/:slug/events` (SSE, per-project),
+`GET /api/projects/_events` (SSE, global — every project created, deleted, or
+duplicated; registered before the `GET /:project` param route since `_events`
+can never be a valid slug, but ordering still matters). `events.ts` (server
+side) is the change-event fan-out `EventBus` behind both SSE routes — events
+publish only AFTER a commit is durable, so a subscriber that refetches on the
+event always sees at least the state the event announced. `DELETE` never
+hard-deletes: the store renames the project directory into
+`data/.trash/<slug>-<timestamp>` (`PROJECT_TRASH_DIR` in `file-store.ts`) —
+distinct from the per-page `trash/` sibling a project directory already has
+for removed pages.
 
 ## MCP tools (`mcp/`)
 
@@ -123,14 +168,28 @@ transport. `client.ts` is the only file that knows the API's URLs and wire
 shapes; every failure becomes a structured `ApiError`.
 
 Registered tools (confirmed live via a stdio smoke test — see below):
-`list_projects`, `create_project`, `get_project`, `outline_overview`,
-`apply_outline_command`, `get_page`, `write_page`, `authoring_guide`. Every
-mutation tool takes `expectedRevision` and returns the new `revision`; a
-stale one comes back as a structured `stale-revision` error, never an
-auto-retry. `authoring_guide` returns `authoring-guide.ts`'s static markdown
-— the zudo-doc content-authoring conventions (frontmatter contract, h2-not-h1
-rule, the seven admonition directives, slug rules), modeled on how a real
-zudo-doc project's own CLAUDE.md teaches the same rules to Claude.
+`list_projects`, `create_project`, `duplicate_project`, `delete_project`,
+`get_project`, `outline_overview`, `apply_outline_command`, `get_page`,
+`write_page`, `authoring_guide`. Every outline/page mutation tool takes
+`expectedRevision` and returns the new `revision`; a stale one comes back as
+a structured `stale-revision` error, never an auto-retry. `delete_project` is
+the one tool with its own confirmation gate: it REQUIRES `confirm: true` —
+omitting it (or passing `false`) is a no-op that returns a `confirm-required`
+error instead of deleting anything. `authoring_guide` returns
+`authoring-guide.ts`'s static markdown — the zudo-doc content-authoring
+conventions (frontmatter contract, h2-not-h1 rule, the seven admonition
+directives, slug rules), modeled on how a real zudo-doc project's own
+CLAUDE.md teaches the same rules to Claude.
+
+**MCP stdio smoke-tested for #3353**: booted the API server on a temp data
+dir + ephemeral port, connected an `@modelcontextprotocol/sdk` stdio client
+from within this package, and ran `list_projects` (summary) →
+`create_project` (with a preset) → `duplicate_project` (verified the
+"`<Title> copy`" title) → `delete_project` (confirmed the reject-without-
+`confirm:true` / succeed-with-`confirm:true` round trip, and that the
+project disappeared from a follow-up `list_projects`) — then closed the
+client, closed the server, and removed the temp dir. Clean exit, no orphan
+process, no residue.
 
 **MCP stdio smoke-tested for #3340**: booted the API server on a temp data
 dir, connected an `@modelcontextprotocol/sdk` stdio client from within this
@@ -195,6 +254,14 @@ the board's drag/token-bag design and the pop-out window's
 second-SPA-instance model respectively — both are now implemented as
 described in `src/features/outline/board/` and `src/features/popout/`.
 
+The multi-project routing epic (#3345) added its own prototype pair, also
+now deleted along with `_temp-resource/3345-online-wizard-dashboard/` per
+the same cleanup rule: `c3-gallery-first.html` was the reference for the
+`#/new` creation wizard (full-width theme-pack gallery + slim finish sheet,
+implemented in `src/features/new-project/`), and `d3-master-detail.html` was
+the reference for the `#/` projects dashboard (rail + detail pane,
+implemented in `src/features/projects/`).
+
 ## Known limitations
 
 - **Duplicate-tab `clientId` collision.** `src/store/client-id.ts` stores the
@@ -241,10 +308,16 @@ server/
 src/
 ├── core/outline/          # Headless domain model (types, commands, slugs, revision, site-map)
 ├── store/                 # ProjectStore contract, http/memory providers, revision coordinator,
-│                          # save machine, client-id, SSE client events
+│                          # save machine, client-id, SSE client events, PLUS the project-list-level
+│                          # pair: projects-directory.ts (contract), projects-http/memory-provider.ts,
+│                          # projects-events.ts (global SSE client)
 ├── theme/                 # Light/dark color-scheme sync (own storage key, no --zd-* coupling)
-├── app/                   # Shell (top bar) + typed hash router (routes.tsx)
+├── app/                   # Shell (top bar) + typed hash router (router.ts, routes.tsx)
 ├── features/
+│   ├── projects/            # `#/` dashboard: rail + detail pane (route.tsx, rail.tsx, detail-pane.tsx,
+│   │                        # dashboard-logic.ts, pack-swatch.tsx)
+│   ├── new-project/          # `#/new` creation wizard: theme-pack gallery + finish sheet (route.tsx,
+│   │                        # pack-preview.tsx)
 │   ├── editor/              # Tabbed workspace chrome, rail, CodeMirror pane, metadata row
 │   ├── outline/              # Indented tree + board (kanban) view, consequence preview
 │   ├── preview/               # zfb-md-wasm render runtime, prose.css, syntax.css, sanitizer

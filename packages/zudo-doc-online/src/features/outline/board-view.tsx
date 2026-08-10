@@ -331,6 +331,7 @@ export default function BoardView({ snapshot, dispatch, selection }: OutlineView
               return (
                 <BoardColumn
                   key={category.id}
+                  projectSlug={snapshot.slug}
                   category={category}
                   pages={pages}
                   canMoveLeft={category.canMoveUp}

@@ -76,6 +76,9 @@ export interface OutlinePageProps {
   /** Injectable so a test does not depend on real `localStorage`. */
   viewStorage?: ViewPreferenceStorage | undefined;
   basePath?: string;
+  /** Scopes the view-mode preference (#3347) — the project this surface is
+   * open on. */
+  projectSlug: string;
 }
 
 const PANE_PADDING = "px-hsp-2xl py-vsp-lg";
@@ -87,10 +90,11 @@ export function OutlinePage({
   boardView,
   viewStorage,
   basePath,
+  projectSlug,
 }: OutlinePageProps) {
   const surface = useOutlineSurface({ store, coordinator, events });
   const [view, setView] = useState<OutlineViewMode>(() =>
-    readOutlineView(viewStorage),
+    readOutlineView(projectSlug, viewStorage),
   );
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     null,
@@ -131,9 +135,9 @@ export function OutlinePage({
   const changeView = useCallback(
     (next: OutlineViewMode) => {
       setView(next);
-      writeOutlineView(next, viewStorage);
+      writeOutlineView(next, projectSlug, viewStorage);
     },
-    [viewStorage],
+    [projectSlug, viewStorage],
   );
 
   const send = useCallback(

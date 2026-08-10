@@ -14,7 +14,13 @@
 
 import type { AuthoringWarning } from "../server/authoring-lint";
 import type { PageFrontmatter } from "../server/store/frontmatter";
-import type { PageSummary, ProjectSnapshot, ProjectSummary } from "../server/store/file-store";
+import type {
+  PageSummary,
+  ProjectListSummary,
+  ProjectPreset,
+  ProjectSnapshot,
+  ProjectSummary,
+} from "../server/store/file-store";
 import type { CreatedPageMeta, OutlineCommand } from "../src/core/outline/index";
 
 export type {
@@ -23,6 +29,8 @@ export type {
   OutlineCommand,
   PageFrontmatter,
   PageSummary,
+  ProjectListSummary,
+  ProjectPreset,
   ProjectSnapshot,
   ProjectSummary,
 };
@@ -98,16 +106,39 @@ export class ZudoDocOnlineClient {
     this.fetchImpl = options.fetch ?? fetch;
   }
 
-  listProjects(): Promise<ProjectSummary[]> {
-    return this.request<ProjectSummary[]>("GET", "/api/projects");
+  listProjects(): Promise<ProjectSummary[]>;
+  listProjects(options: { summary: true }): Promise<ProjectListSummary[]>;
+  listProjects(options?: { summary?: boolean }): Promise<(ProjectSummary | ProjectListSummary)[]> {
+    const query = options?.summary ? "?summary=1" : "";
+    return this.request<(ProjectSummary | ProjectListSummary)[]>("GET", `/api/projects${query}`);
   }
 
-  createProject(title: string): Promise<ProjectSnapshot> {
-    return this.request<ProjectSnapshot>("POST", "/api/projects", { title });
+  createProject(title: string, preset?: ProjectPreset): Promise<ProjectSnapshot> {
+    return this.request<ProjectSnapshot>("POST", "/api/projects", {
+      title,
+      ...(preset !== undefined ? { preset } : {}),
+    });
   }
 
   getProject(project: string): Promise<ProjectSnapshot> {
     return this.request<ProjectSnapshot>("GET", `/api/projects/${encodeURIComponent(project)}`);
+  }
+
+  /** `clientId` (rare from MCP) travels as a query param — DELETE has no body. */
+  deleteProject(project: string, clientId?: string): Promise<{ slug: string; deleted: true }> {
+    const query = clientId ? `?clientId=${encodeURIComponent(clientId)}` : "";
+    return this.request<{ slug: string; deleted: true }>(
+      "DELETE",
+      `/api/projects/${encodeURIComponent(project)}${query}`,
+    );
+  }
+
+  duplicateProject(project: string, clientId?: string): Promise<ProjectSnapshot> {
+    return this.request<ProjectSnapshot>(
+      "POST",
+      `/api/projects/${encodeURIComponent(project)}/duplicate`,
+      clientId !== undefined ? { clientId } : undefined,
+    );
   }
 
   applyOutlineCommand(
