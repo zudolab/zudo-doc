@@ -49,7 +49,13 @@ try {
 }
 
 // No settings filter → every bundled pack, "default" first then alphabetical.
-const enabled = resolveEnabledPacks(registry, {});
+let enabled;
+try {
+  enabled = resolveEnabledPacks(registry, {});
+} catch (err) {
+  process.stderr.write(`\n[gen-catalog] ERROR: ${err.message}\n\n`);
+  process.exit(1);
+}
 const manifest = {
   schemaVersion: 1,
   packs: enabled.map((entry) => entry.meta),
