@@ -30,6 +30,8 @@
  * line inside an otherwise correctly styled/colored admonition box.
  */
 
+import DOMPurify from "dompurify";
+import type { Config as DOMPurifyConfig } from "dompurify";
 import type { Diagnostic, PipelineOptions } from "@takazudo/zfb-md-wasm";
 
 type WasmModule = typeof import("@takazudo/zfb-md-wasm");
@@ -123,7 +125,7 @@ export function postProcessAdmonitions(html: string): string {
 }
 
 /* ============================================================================
- * Best-effort HTML sanitization before DOM injection
+ * HTML sanitization before DOM injection (DOMPurify-backed)
  *
  * `renderHtml` preserves raw HTML from the markdown source VERBATIM --
  * verified empirically (not documented in the package's own contract):
@@ -137,20 +139,19 @@ export function postProcessAdmonitions(html: string): string {
  * to see the raw `<Note>`-style tags) -- this pass runs last, right before
  * the trust boundary the HTML is about to cross.
  *
- * This is a hand-rolled allowlist walk over a real parsed DOM tree (native
- * `DOMParser`, zero new dependencies -- epic #3327 contract 4 forbids a
- * child sub-issue from adding one, e.g. DOMPurify), not a text-pattern
- * sanitizer -- a real parse tree closes most of the bypass classes a regex
- * sanitizer is prone to, but this has not had the adversarial scrutiny a
- * battle-tested library has. Treat this as a deliberate, scoped mitigation
- * for THIS tool's threat model (a loopback-bound single-user local dev
- * server -- epic non-goals), not a substitute for a real sanitizer library;
- * adopting one needs to go through the bootstrap sub-issue's
- * dependency-addition path, not a Wave-7 child.
+ * This wraps DOMPurify (a battle-tested sanitizer library -- the
+ * hand-rolled `DOMParser` allowlist walk this replaced never had the
+ * adversarial scrutiny DOMPurify has) with the same allowlist policy the
+ * previous implementation enforced: a fixed tag allowlist, whole-subtree
+ * dropping for a fixed set of dangerous tags, per-tag (not just global)
+ * attribute narrowing, and the existing `isSafeUrl` scheme check on
+ * `href`/`src`. DOMPurify's own config knobs are global-only (`ALLOWED_ATTR`
+ * has no per-tag concept), so the per-tag narrowing below still needs a
+ * `uponSanitizeAttribute` hook.
  * ========================================================================== */
 
 /** Tags whose entire subtree is dropped -- there is no safe way to keep their content. */
-const SANITIZE_DROP_TAGS = new Set([
+const SANITIZE_DROP_TAGS = [
   "script",
   "style",
   "iframe",
@@ -163,10 +164,10 @@ const SANITIZE_DROP_TAGS = new Set([
   "svg",
   "math",
   "noscript",
-]);
+];
 
 /** Tags this pane's own pipeline can legitimately produce -- everything else is unwrapped (kept as already-sanitized text/children, tag stripped). */
-const SANITIZE_ALLOWED_TAGS = new Set([
+const SANITIZE_ALLOWED_TAGS = [
   "a",
   "p",
   "br",
@@ -199,7 +200,7 @@ const SANITIZE_ALLOWED_TAGS = new Set([
   "div",
   "details",
   "summary",
-]);
+];
 
 const SANITIZE_GLOBAL_ATTRS = new Set(["class", "id", "title", "aria-label", "aria-hidden", "dir", "lang", "open"]);
 
@@ -211,6 +212,12 @@ const SANITIZE_TAG_ATTRS: Record<string, ReadonlySet<string>> = {
   th: new Set(["colspan", "rowspan"]),
   td: new Set(["colspan", "rowspan"]),
 };
+
+/** The full attribute vocabulary across every tag -- DOMPurify's `ALLOWED_ATTR` is global-only, so this is the union; the `uponSanitizeAttribute` hook below narrows it back down per tag. */
+const SANITIZE_ALLOWED_ATTR = [
+  ...SANITIZE_GLOBAL_ATTRS,
+  ...new Set(Object.values(SANITIZE_TAG_ATTRS).flatMap((set) => [...set])),
+];
 
 const SANITIZE_URL_ATTRS = new Set(["href", "src"]);
 
@@ -230,58 +237,82 @@ function isSafeUrl(value: string): boolean {
   return SAFE_URL_SCHEMES.has(scheme.toLowerCase());
 }
 
-function sanitizeElement(el: Element): void {
-  // Depth-first: children are fully sanitized before this element's own
-  // fate (drop / unwrap / keep) is decided, so an unwrap below re-parents
-  // already-safe nodes.
-  for (const child of [...el.children]) {
-    sanitizeElement(child);
-  }
+/**
+ * Registers the fixed policy hooks (per-tag attribute narrowing + the
+ * `isSafeUrl` href/src check) on a DOMPurify instance. `addHook` appends
+ * rather than replaces, so this must only ever run once per instance --
+ * guarded by `hooksRegistered` below, called lazily from `sanitizePreviewHtml`
+ * rather than at module load. In a DOM-less environment (Node, no `window`)
+ * the imported `dompurify` default export is an uninitialized factory with
+ * `isSupported === false` and no `addHook` method at all -- calling this
+ * unconditionally at module scope would throw the instant this module is
+ * imported anywhere outside a real DOM (e.g. a future Node-environment test
+ * or server-side import), independent of and before the `isSupported`
+ * no-op check below ever gets a chance to run.
+ */
+function registerSanitizeHooks(purify: typeof DOMPurify): void {
+  purify.addHook("uponSanitizeAttribute", (node, event) => {
+    const name = event.attrName;
+    const tag = node.tagName.toLowerCase();
 
-  const tag = el.tagName.toLowerCase();
-
-  if (SANITIZE_DROP_TAGS.has(tag)) {
-    el.remove();
-    return;
-  }
-
-  if (!SANITIZE_ALLOWED_TAGS.has(tag)) {
-    el.replaceWith(...el.childNodes);
-    return;
-  }
-
-  const tagAttrs = SANITIZE_TAG_ATTRS[tag];
-  for (const attr of [...el.attributes]) {
-    const name = attr.name.toLowerCase();
-    // Event-handler attributes are rejected unconditionally, ahead of the
-    // allowlist below -- a belt-and-suspenders check, since none of them
-    // appear in SANITIZE_GLOBAL_ATTRS/SANITIZE_TAG_ATTRS anyway.
-    if (name.startsWith("on")) {
-      el.removeAttribute(attr.name);
-      continue;
+    if (SANITIZE_URL_ATTRS.has(name) && !isSafeUrl(event.attrValue)) {
+      event.keepAttr = false;
+      return;
     }
-    if (SANITIZE_URL_ATTRS.has(name) && !isSafeUrl(attr.value)) {
-      el.removeAttribute(attr.name);
-      continue;
-    }
-    if (SANITIZE_GLOBAL_ATTRS.has(name) || tagAttrs?.has(name)) continue;
-    el.removeAttribute(attr.name);
-  }
+
+    if (SANITIZE_GLOBAL_ATTRS.has(name)) return; // already in ALLOWED_ATTR; valid on every allowed tag
+    if (SANITIZE_TAG_ATTRS[tag]?.has(name)) return; // valid on this specific tag
+
+    // Anything else that made it past the global ALLOWED_ATTR allowlist is a
+    // tag-attr pairing this policy never granted (e.g. `href` on a `div`) --
+    // narrow it back out.
+    event.keepAttr = false;
+  });
 }
 
+let hooksRegistered = false;
+
+const SANITIZE_CONFIG: DOMPurifyConfig = {
+  ALLOWED_TAGS: SANITIZE_ALLOWED_TAGS,
+  ALLOWED_ATTR: SANITIZE_ALLOWED_ATTR,
+  // DOMPurify keeps a removed tag's TEXT content by default (`KEEP_CONTENT`).
+  // `ADD_FORBID_CONTENTS` layers the tags this policy needs the WHOLE
+  // subtree dropped for on top of DOMPurify's own defaults (which already
+  // include script/style/svg/math/iframe/noscript) rather than replacing
+  // them outright, so DOMPurify's other built-in drop-tags stay in effect too.
+  ADD_FORBID_CONTENTS: SANITIZE_DROP_TAGS,
+  // Both default to `true` in DOMPurify -- broader than this policy, which
+  // allows only the two explicitly-listed aria-* attrs (already present in
+  // SANITIZE_GLOBAL_ATTRS / ALLOWED_ATTR above) and no data-* attrs at all.
+  ALLOW_ARIA_ATTR: false,
+  ALLOW_DATA_ATTR: false,
+  // DOMPurify's default DOM-clobbering guard drops an `id`/`name` attribute
+  // whenever its value collides with an existing `document`/form property
+  // name (e.g. `id="title"`, since `document.title` exists) -- verified
+  // empirically against this pipeline's own output. `headingIds` slugifies
+  // heading TEXT verbatim, so a page section titled "Title", "Name",
+  // "Location", etc. produces exactly such a collision, silently dropping
+  // the id while leaving its `#title`-style hash-link href intact and
+  // breaking in-page navigation. This pane trusts its own pipeline-generated
+  // ids (not free-form attacker-chosen ones), so that guard is disabled --
+  // matching the prior hand-rolled sanitizer, which never had it.
+  SANITIZE_DOM: false,
+};
+
 /**
- * Best-effort sanitization pass -- see the section header above for scope
- * and rationale. A no-op outside a DOM environment (`DOMParser` absent):
+ * Sanitization pass -- see the section header above for scope and
+ * rationale. A no-op when DOMPurify reports its host environment
+ * unsupported (`DOMPurify.isSupported`, e.g. no `window`/DOM available):
  * this function is only ever meaningfully called from the browser, where
  * `preview-pane.tsx` is the sole caller right before `dangerouslySetInnerHTML`.
  */
 export function sanitizePreviewHtml(html: string): string {
-  if (typeof DOMParser === "undefined") return html;
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  for (const child of [...doc.body.children]) {
-    sanitizeElement(child);
+  if (!DOMPurify.isSupported) return html;
+  if (!hooksRegistered) {
+    registerSanitizeHooks(DOMPurify);
+    hooksRegistered = true;
   }
-  return doc.body.innerHTML;
+  return DOMPurify.sanitize(html, SANITIZE_CONFIG);
 }
 
 /* ============================================================================
