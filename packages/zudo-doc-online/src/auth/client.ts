@@ -23,6 +23,8 @@
  * - A transient network failure on `resumeSession()` leaves the store's
  *   current state untouched (the "optimistic session") rather than forcing
  *   a signed-out flash.
+ * - When the storage write fails, the token is retained in memory for the
+ *   page load, so `signOut()` can still revoke it server-side.
  */
 import { authStore, type AuthStore, type AuthUser } from "./store.js";
 
@@ -50,7 +52,7 @@ export interface AuthClientOptions {
   baseUrl?: string;
   /** Injectable so tests never perform a real network call. */
   fetchImpl?: typeof fetch;
-  /** Defaults to `window.localStorage`; every access is try/catch-guarded regardless. */
+  /** Defaults to `resolveDefaultStorage()`; every access is try/catch-guarded regardless. */
   storage?: AuthStorage;
   /** Defaults to the shared `authStore` singleton. */
   store?: AuthStore;
@@ -69,7 +71,32 @@ function resolveDefaultBaseUrl(): string {
   return fromEnv && fromEnv.length > 0 ? fromEnv : DEFAULT_BASE_URL;
 }
 
-function readToken(storage: AuthStorage): string | null {
+function createMemoryStorage(): AuthStorage {
+  const data = new Map<string, string>();
+  return {
+    getItem: (key) => data.get(key) ?? null,
+    setItem: (key, value) => void data.set(key, value),
+    removeItem: (key) => void data.delete(key),
+  };
+}
+
+/**
+ * Reading the `window.localStorage` PROPERTY can itself throw `SecurityError`
+ * when storage is disabled by policy or the origin is sandboxed — before any
+ * per-call guard below gets a chance to run. `main.tsx` constructs the client
+ * during boot, so an unguarded read would abort the whole SPA render.
+ */
+export function resolveDefaultStorage(): AuthStorage {
+  try {
+    const fromWindow = globalThis.window?.localStorage;
+    if (fromWindow) return fromWindow;
+  } catch {
+    // Storage access denied outright — fall through to the inert fallback.
+  }
+  return createMemoryStorage();
+}
+
+function readStoredToken(storage: AuthStorage): string | null {
   try {
     return storage.getItem(STORAGE_KEY);
   } catch {
@@ -77,20 +104,12 @@ function readToken(storage: AuthStorage): string | null {
   }
 }
 
-function writeToken(storage: AuthStorage, token: string): void {
-  try {
-    storage.setItem(STORAGE_KEY, token);
-  } catch {
-    // Storage unavailable (private browsing, quota) — the in-memory session
-    // still works for this page load; it just won't survive a reload.
-  }
-}
-
-function clearToken(storage: AuthStorage): void {
+function clearStoredToken(storage: AuthStorage): void {
   try {
     storage.removeItem(STORAGE_KEY);
   } catch {
-    // See writeToken — losing the clear write is not fatal here either.
+    // Losing the clear write is not fatal — the in-memory fallback is
+    // cleared alongside it regardless.
   }
 }
 
@@ -113,8 +132,36 @@ async function readErrorMessage(response: Response): Promise<string> {
 export function createAuthClient(options: AuthClientOptions = {}): AuthClient {
   const baseUrl = options.baseUrl ?? resolveDefaultBaseUrl();
   const fetchImpl = options.fetchImpl ?? fetch;
-  const storage: AuthStorage = options.storage ?? window.localStorage;
+  const storage: AuthStorage = options.storage ?? resolveDefaultStorage();
   const store = options.store ?? authStore;
+
+  /**
+   * Holds the session token whenever the storage write failed (private mode,
+   * quota). Without it `signOut()` would find no token, skip the server
+   * revoke, and leave the server session valid until expiry even though the
+   * store says signed-out.
+   */
+  let memoryToken: string | null = null;
+
+  function persistToken(token: string): void {
+    memoryToken = token;
+    try {
+      storage.setItem(STORAGE_KEY, token);
+      memoryToken = null;
+    } catch {
+      // Storage unavailable — `memoryToken` carries the session for this page
+      // load; it just won't survive a reload.
+    }
+  }
+
+  function readToken(): string | null {
+    return readStoredToken(storage) ?? memoryToken;
+  }
+
+  function clearToken(): void {
+    memoryToken = null;
+    clearStoredToken(storage);
+  }
 
   function requestMe(token: string): Promise<Response> {
     return fetchImpl(`${baseUrl}/api/me`, {
@@ -148,13 +195,13 @@ export function createAuthClient(options: AuthClientOptions = {}): AuthClient {
 
   /** Fetches the canonical user for a just-issued token and updates the store. */
   async function establishSession(token: string): Promise<AuthUser> {
-    writeToken(storage, token);
+    persistToken(token);
 
     const response = await requestMe(token);
     if (response.status === 401) {
       // A freshly issued token that /api/me immediately rejects — treat it
       // like any other 401 from a protected request.
-      clearToken(storage);
+      clearToken();
       store.setSignedOut();
       throw new AuthClientError(401, "Session was rejected immediately after sign-in.");
     }
@@ -186,8 +233,8 @@ export function createAuthClient(options: AuthClientOptions = {}): AuthClient {
     },
 
     async signOut() {
-      const token = readToken(storage);
-      clearToken(storage);
+      const token = readToken();
+      clearToken();
       store.setSignedOut();
 
       if (!token) return;
@@ -203,7 +250,7 @@ export function createAuthClient(options: AuthClientOptions = {}): AuthClient {
     },
 
     async resumeSession() {
-      const token = readToken(storage);
+      const token = readToken();
       if (!token) {
         store.setSignedOut();
         return null;
@@ -219,7 +266,7 @@ export function createAuthClient(options: AuthClientOptions = {}): AuthClient {
       }
 
       if (response.status === 401) {
-        clearToken(storage);
+        clearToken();
         store.setSignedOut();
         return null;
       }

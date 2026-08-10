@@ -116,10 +116,15 @@ in this section.
   `.storage`) so tests never touch the network or real `localStorage`. The
   bearer session token is read from the `set-auth-token` response header on a
   successful `sign-up/email` / `sign-in/email` call and persisted under the
-  `zdo:auth:token` key; every storage access is try/catch-guarded (private
-  browsing / disabled storage degrades to an in-memory-only session for that
-  page load rather than throwing). Subsequent calls attach it as
-  `Authorization: Bearer <token>`.
+  `zdo:auth:token` key; every storage access is try/catch-guarded, **including
+  the read of the `window.localStorage` property itself** — that read can throw
+  `SecurityError` on a sandboxed origin or a policy-disabled store, and since
+  `main.tsx` builds the client during boot an unguarded one would abort the SPA
+  render; `resolveDefaultStorage()` catches it and returns an inert in-memory
+  store. When only the *write* fails (private browsing, quota), the token is
+  retained in a closure-scoped in-memory fallback so `signOut()` can still
+  revoke it server-side instead of orphaning a live server session. Subsequent
+  calls attach it as `Authorization: Bearer <token>`.
 - **Invalidation semantics (frozen — encoded as tests in
   `__tests__/client.test.ts`)**: only a 401 from a session/protected request
   (`GET /api/me`) clears the stored token; a 403 does NOT (valid-but-forbidden
@@ -149,7 +154,13 @@ in this section.
   user's email plus a "Sign out" control. Pure view over `store.ts` state
   plus an injected `AuthClient` — component tests
   (`__tests__/account-menu.test.tsx`) cover all three states without a real
-  client. Every class is a `--zdo-*`-backed token per
+  client. Its store subscription re-reads the snapshot right after
+  subscribing — `resumeSession()` can settle in the gap between the initial
+  `useState` read and the effect, and a missed transition would otherwise
+  leave the item stale for the mount's lifetime. Panel z-index and width come
+  from `account-menu.css`'s component-scoped `--zdo-account-*` bag (the
+  `editor-chrome.css` precedent), not raw `z-10` / `w-64`. Every class is a
+  `--zdo-*`-backed token per
   `.claude/skills/l-design-system-zudo-doc-generator/SKILL.md` — no `--zd-*`
   token or framework CSS import.
 

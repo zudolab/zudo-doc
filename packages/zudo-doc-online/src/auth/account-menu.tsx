@@ -8,12 +8,13 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { createAuthClient, type AuthClient } from "./client.js";
 import { authStore, type AuthState, type AuthStore } from "./store.js";
+import "./account-menu.css";
 
 const TRIGGER_CLASSES =
   "text-small text-fg-mild hover:text-accent focus-visible:text-accent focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2";
 
 const PANEL_CLASSES =
-  "absolute right-0 top-full z-10 mt-vsp-xs w-64 rounded-md border border-border bg-surface p-hsp-md shadow-[var(--shadow-2)]";
+  "absolute right-0 top-full z-(--zdo-account-z-panel) mt-vsp-xs w-(--zdo-account-panel-width) rounded-md border border-border bg-surface p-hsp-md shadow-[var(--shadow-2)]";
 
 const FIELD_LABEL = "mb-vsp-2xs block text-caption text-muted";
 
@@ -38,7 +39,15 @@ export interface AccountMenuProps {
 
 function useAuthState(store: AuthStore): AuthState {
   const [state, setState] = useState<AuthState>(() => store.getState());
-  useEffect(() => store.subscribe(setState), [store]);
+  useEffect(() => {
+    const unsubscribe = store.subscribe(setState);
+    // A transition can land in the gap between the initial `useState` read
+    // and this subscribe — `resumeSession()` settles exactly there during
+    // boot. Re-read the snapshot so a missed transition doesn't leave the
+    // account item stuck on a stale state for the mount's lifetime.
+    setState(store.getState());
+    return unsubscribe;
+  }, [store]);
   return state;
 }
 
@@ -78,7 +87,7 @@ export function AccountMenu({ client, store = authStore }: AccountMenuProps) {
   }
 
   return (
-    <div className="relative">
+    <div className="zdo-account-menu relative">
       <button
         type="button"
         className={TRIGGER_CLASSES}

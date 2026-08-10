@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import type { AuthClient } from "../client";
-import { createAuthStore } from "../store";
+import { createAuthStore, type AuthStore } from "../store";
 import { AccountMenu } from "../account-menu";
 
 const USER = { id: "u1", email: "a@example.com", name: "A" };
@@ -51,6 +51,26 @@ describe("AccountMenu — unknown state", () => {
     const { root } = mount(fakeClient(), store);
 
     expect(root.textContent).toBe("");
+  });
+});
+
+describe("AccountMenu — subscription gap", () => {
+  it("catches up to a transition that lands before the effect subscribes", () => {
+    const inner = createAuthStore();
+    // Simulates `resumeSession()` settling in the window between the initial
+    // `useState` snapshot read and the effect's subscribe: the transition
+    // happens first, so the listener registered after it is never notified.
+    const store: AuthStore = {
+      ...inner,
+      subscribe(listener) {
+        inner.setSignedIn(USER);
+        return inner.subscribe(listener);
+      },
+    };
+
+    const { root } = mount(fakeClient(), store);
+
+    expect(root.textContent).toContain(USER.email);
   });
 });
 

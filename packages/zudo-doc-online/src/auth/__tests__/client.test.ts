@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-import { AuthClientError, createAuthClient } from "../client";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { AuthClientError, createAuthClient, resolveDefaultStorage } from "../client";
 import { createAuthStore } from "../store";
 
 const BASE_URL = "http://localhost:8787";
@@ -8,14 +8,17 @@ const TOKEN = "token-abc";
 
 class FakeStorage {
   private data = new Map<string, string>();
-  constructor(private throwOnAccess = false) {}
+  constructor(
+    private throwOnAccess = false,
+    private throwOnWrite = false,
+  ) {}
 
   getItem(key: string): string | null {
     if (this.throwOnAccess) throw new Error("storage unavailable");
     return this.data.get(key) ?? null;
   }
   setItem(key: string, value: string): void {
-    if (this.throwOnAccess) throw new Error("storage unavailable");
+    if (this.throwOnAccess || this.throwOnWrite) throw new Error("storage unavailable");
     this.data.set(key, value);
   }
   removeItem(key: string): void {
@@ -274,6 +277,90 @@ describe("createAuthClient — storage-throw safety", () => {
     const client = createAuthClient({ baseUrl: BASE_URL, fetchImpl, storage, store });
 
     await expect(client.signOut()).resolves.toBeUndefined();
+    expect(store.getState()).toEqual({ status: "signed-out" });
+  });
+
+  it("still revokes the token server-side after a failed storage write", async () => {
+    const storage = new FakeStorage(false, true);
+    const store = createAuthStore();
+    let seenAuth: string | null = null;
+    const fetchImpl = fakeFetch({
+      "POST /api/auth/sign-in/email": () =>
+        jsonResponse(200, {}, { "set-auth-token": TOKEN }),
+      "GET /api/me": meHandler(200),
+      "POST /api/auth/sign-out": (init) => {
+        seenAuth = new Headers(init?.headers).get("Authorization");
+        return jsonResponse(200, {});
+      },
+    });
+    const client = createAuthClient({ baseUrl: BASE_URL, fetchImpl, storage, store });
+
+    await client.signIn("a@example.com", "pw");
+    await client.signOut();
+
+    expect(seenAuth).toBe(`Bearer ${TOKEN}`);
+    expect(store.getState()).toEqual({ status: "signed-out" });
+  });
+
+  it("forgets the in-memory fallback token on sign-out", async () => {
+    const storage = new FakeStorage(false, true);
+    const store = createAuthStore();
+    const fetchImpl = fakeFetch({
+      "POST /api/auth/sign-in/email": () =>
+        jsonResponse(200, {}, { "set-auth-token": TOKEN }),
+      "GET /api/me": meHandler(200),
+      "POST /api/auth/sign-out": () => jsonResponse(200, {}),
+    });
+    const client = createAuthClient({ baseUrl: BASE_URL, fetchImpl, storage, store });
+
+    await client.signIn("a@example.com", "pw");
+    await client.signOut();
+    fetchImpl.mockClear();
+    await client.signOut();
+
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+});
+
+describe("resolveDefaultStorage", () => {
+  afterEach(() => {
+    Reflect.deleteProperty(globalThis, "window");
+  });
+
+  function stubWindowWithThrowingStorage(): void {
+    const fakeWindow = {};
+    Object.defineProperty(fakeWindow, "localStorage", {
+      get() {
+        throw new Error("SecurityError: storage is disabled by policy");
+      },
+    });
+    Object.defineProperty(globalThis, "window", {
+      value: fakeWindow,
+      configurable: true,
+      writable: true,
+    });
+  }
+
+  it("falls back to an inert in-memory storage when the localStorage GETTER throws", () => {
+    stubWindowWithThrowingStorage();
+
+    const storage = resolveDefaultStorage();
+    storage.setItem("k", "v");
+
+    expect(storage.getItem("k")).toBe("v");
+    storage.removeItem("k");
+    expect(storage.getItem("k")).toBeNull();
+  });
+
+  it("lets the client be constructed at boot even when the localStorage GETTER throws", async () => {
+    stubWindowWithThrowingStorage();
+    const store = createAuthStore();
+    const fetchImpl = vi.fn();
+
+    const client = createAuthClient({ baseUrl: BASE_URL, fetchImpl, store });
+
+    await expect(client.resumeSession()).resolves.toBeNull();
+    expect(fetchImpl).not.toHaveBeenCalled();
     expect(store.getState()).toEqual({ status: "signed-out" });
   });
 });
