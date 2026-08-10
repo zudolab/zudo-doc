@@ -5,7 +5,7 @@ import { Suspense, lazy } from "preact/compat";
 import type { Route } from "./router.js";
 
 const ProjectsRoute = lazy(() => import("../features/projects/route.js"));
-const NewProjectRoute = lazy(() => import("../features/projects/new-route.js"));
+const NewProjectRoute = lazy(() => import("../features/new-project/route.js"));
 const OutlineRoute = lazy(() => import("../features/outline/route.js"));
 const EditorRoute = lazy(() => import("../features/editor/route.js"));
 const PoppedOutPreviewRoute = lazy(() => import("../features/popout/route.js"));
