@@ -24,7 +24,7 @@
 //
 // The generated `dist/catalog.js` embeds the manifest as a JSON literal —
 // no `node:fs` import, no filesystem access at import time, so a browser app
-// (packages/zudo-doc-online) can import this subpath directly.
+// (e.g. zudolab/zudo-doc-cloud) can import this subpath directly.
 
 import { writeFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
