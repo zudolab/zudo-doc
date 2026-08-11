@@ -25,7 +25,7 @@
     "@lezer/highlight": "1.2.3",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "@replit/codemirror-vim": "^6.4.0",
-    "@takazudo/zfb-md-wasm": "2.2.0",
+    "@takazudo/zfb-md-wasm": "2.3.1",
     "@takazudo/zudo-doc": "workspace:*",
     "codemirror": "^6.0.2",
     "dompurify": "^3.4.13",

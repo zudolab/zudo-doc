@@ -701,9 +701,12 @@ function generatePackageJson(choices: UserChoices) {
     // there is no generator-side migration. Additive alongside it:
     // `strictContentBridge`, a build-only gate that fails `zfb build` when a
     // collection entry falls back to `<pre data-zfb-content-fallback>`.
-    "@takazudo/zfb": "2.2.0",
-    "@takazudo/zfb-runtime": "2.2.0",
-    "@takazudo/zfb-md-wasm": "2.2.0",
+    // 2.3.0/2.3.1: additive + bugfix only (desktop TOC collapse toggle,
+    // markdown fragment validation fixes, dev-server CSS rebuild loop fix).
+    // No generator-side migration.
+    "@takazudo/zfb": "2.3.1",
+    "@takazudo/zfb-runtime": "2.3.1",
+    "@takazudo/zfb-md-wasm": "2.3.1",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
