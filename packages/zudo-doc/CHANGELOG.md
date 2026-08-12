@@ -4,6 +4,21 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.4.0] - 2026-08-13
+
+### Features
+
+- create-zudo-doc: new **Claude skills (writing)** scaffold feature (`--claude-skills-writing`, off by default) — ships the new `zudo-doc-writing` Claude Code skill into generated projects: a doc-writing + navigation-structure guide (plan-the-nav-tree-first workflow, 3-level hierarchy, file-structure-is-navigation, category index pages, `sidebar_position` discipline, frontmatter schema, no-h1 rule, relative `.mdx` links, admonition syntax) that keeps AI-assisted doc authoring from producing chaotic navigation. Independent of the existing "Claude skills (user-facing)" checkbox. (b37e28e5, #3383)
+
+### Bug Fixes
+
+- Corrected stale doc-authoring claims in the writing-rules skill and the Writing Docs guide: the default docs frontmatter schema is `.passthrough()` (custom keys are preserved, not rejected — and a typo'd framework field is silently ignored rather than erroring), and the admonition set includes the `caution` type (the `Caution` component, plus the JSX-only `Important` component). (9acbc838, 3f338647, #3384)
+
+### Other Changes
+
+- Restructured the Claude Skills guide (EN+JA) around the two independent opt-in skill features, and fixed the stale claim that shipped skills are verbatim monorepo copies. (4511619d)
+- Template drift check: allowlisted the template-only `zudo-doc-writing` skill (its correctness is guarded by the generator's vitest suite). (821f6602)
+
 ## [5.3.0] - 2026-08-11
 
 ### Features
