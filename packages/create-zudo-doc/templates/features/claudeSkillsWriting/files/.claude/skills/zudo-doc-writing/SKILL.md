@@ -170,7 +170,7 @@ Your content here.
 | `draft` | boolean | No | Exclude the page from the build entirely |
 | `unlisted` | boolean | No | Built but hidden from sidebar/nav |
 
-Frontmatter is Zod-validated at build time — do not invent new fields; unknown fields are rejected.
+Frontmatter is Zod-validated at build time. The table above covers the framework-known fields; custom keys (e.g. `author`, `status`) pass through and are preserved for your own use — they just carry no built-in behavior.
 
 ### No h1 in content
 
@@ -201,11 +201,16 @@ Directive syntax — preferred in prose-heavy content.
 <Warning title="Be Careful">JSX syntax — preferred when nesting other JSX.</Warning>
 ```
 
-Five types: `note`/`<Note>`, `tip`/`<Tip>`, `info`/`<Info>`, `warning`/`<Warning>`, `danger`/`<Danger>`. All accept an optional title.
+Six types: `note`/`<Note>`, `tip`/`<Tip>`, `info`/`<Info>`, `warning`/`<Warning>`, `danger`/`<Danger>`, `caution`/`<Caution>`. All accept an optional title. (JSX additionally registers `<Important>`, used by GitHub-alert conversion.)
 
 ## i18n (only when this project's i18n feature is enabled)
 
 Check `zfb.config.ts`: if the `zudoDoc({...})` call sets a non-empty `locales` field, i18n is on. Then every page must exist in BOTH the default-locale directory (`src/content/docs/`) and each secondary-locale directory (e.g. `src/content/docs-ja/`), mirroring the same tree — same filenames, translated prose, identical code blocks. A non-i18n scaffold has no secondary content directory; skip this section entirely.
+
+Two carve-outs — do NOT create secondary-locale mirrors for these:
+
+- Pages with `generated: true` in frontmatter (build-generated content).
+- Paths listed in the `defaultLocaleOnlyPrefixes` setting in `zfb.config.ts` — default-locale-only by design (the Claude Resources feature, when enabled, registers its four `/docs/claude-*` prefixes there).
 
 ## Common Mistakes (Do Not Do)
 
