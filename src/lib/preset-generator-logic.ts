@@ -263,6 +263,7 @@ export const FEATURES = [
   { value: "sidebarFilter", label: "Sidebar filter", cliFlag: "sidebar-filter", default: true, docPath: "/docs/guides/sidebar-filter/" },
   { value: "claudeResources", label: "Claude Resources", cliFlag: "claude-resources", default: false, docPath: "/docs/guides/claude-resources/" },
   { value: "claudeSkills", label: "Claude skills (user-facing)", cliFlag: "claude-skills", default: false, docPath: "/docs/guides/claude-skills/" },
+  { value: "claudeSkillsWriting", label: "Claude skills (writing)", cliFlag: "claude-skills-writing", default: false, docPath: "/docs/guides/claude-skills/#claude-skills-writing" },
   { value: "designTokenPanel", label: "Design Token Panel", cliFlag: "design-token-panel", default: false, docPath: "/docs/reference/design-token-panel/" },
   // No docPath yet — the theme-packs guide page lands with #2827; add it
   // here once that page exists.

@@ -250,6 +250,13 @@ export const FEATURES: Feature[] = [
     cliFlag: "claude-skills",
   },
   {
+    value: "claudeSkillsWriting",
+    label: "Claude skills (writing)",
+    hint: "Ship the zudo-doc-writing skill (doc-writing + navigation-structure guide for AI-assisted authoring)",
+    default: false,
+    cliFlag: "claude-skills-writing",
+  },
+  {
     value: "designTokenPanel",
     label: "Design Token Panel",
     hint: "Interactive tabbed panel for tweaking spacing, font, size, and color tokens",

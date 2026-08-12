@@ -23,6 +23,7 @@ export interface CliArgs {
   versioning?: boolean;
   claudeResources?: boolean;
   claudeSkills?: boolean;
+  claudeSkillsWriting?: boolean;
   docHistory?: boolean;
   llmsTxt?: boolean;
   skillSymlinker?: boolean;

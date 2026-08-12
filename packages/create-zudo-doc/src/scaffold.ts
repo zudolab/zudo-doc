@@ -308,6 +308,27 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     }
   }
 
+  // 2c. Copy the writing-guide skill when enabled — same shipping model as
+  // 2b (committed, scaffold-authored template; not read from the monorepo's
+  // .claude/skills/), but an independent checkbox: the writing + navigation
+  // guide targets AI-assisted content authoring, which a project may want
+  // without the design-system/translate/version-bump bundle (or vice versa).
+  if (choices.features.includes("claudeSkillsWriting")) {
+    const skillSrc = path.join(
+      featuresDir,
+      "claudeSkillsWriting/files/.claude/skills/zudo-doc-writing",
+    );
+    const skillDest = path.join(targetDir, ".claude/skills/zudo-doc-writing");
+    if (await fs.pathExists(skillSrc)) {
+      await fs.copy(skillSrc, skillDest);
+    } else {
+      // Defensive only — unreachable in a healthy publish.
+      console.warn(
+        'claudeSkillsWriting: missing template source for "zudo-doc-writing", skipping',
+      );
+    }
+  }
+
   const defaultLang = choices.defaultLang;
   const escapedName = capitalize(choices.projectName.replace(/-/g, " "));
 

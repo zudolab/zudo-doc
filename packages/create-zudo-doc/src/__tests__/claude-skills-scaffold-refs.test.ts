@@ -8,9 +8,10 @@
 // mentioned in each shipped skill's SKILL.md body actually exists in the
 // generated project.
 //
-// Two shapes are exercised:
-//   (a) minimal + claudeSkills only        — no i18n / versioning / changelog
-//   (b) claudeSkills + i18n + versioning + changelog
+// Two shapes are exercised (both enable claudeSkills + claudeSkillsWriting,
+// so every shipped skill variant is covered):
+//   (a) minimal + the skill features only  — no i18n / versioning / changelog
+//   (b) skill features + i18n + versioning + changelog
 // Shape (b) enables BOTH `versioning` and `changelog` because the SINGULAR
 // `changelog` feature is what seeds `src/content/docs/changelog/` — the
 // `versioning` feature alone never creates a changelog page (see
@@ -65,6 +66,10 @@ const SKILLS = [
   "zudo-doc-version-bump",
   "zudo-doc-design-system",
   "zudo-doc-translate",
+  // Ships from the claudeSkillsWriting feature (its own template dir), not
+  // claudeSkills — both shapes below enable both features so every shipped
+  // skill variant is ref-checked against the same generated scaffolds.
+  "zudo-doc-writing",
 ] as const;
 
 // Recognized repo-relative path shapes. Deliberately narrow — the goal is
@@ -208,8 +213,8 @@ async function collectRefVerdicts(
 }
 
 describe("claude-skills scaffold refs — generated-scaffold integration guard (#2949)", () => {
-  it("shape (a) minimal + claudeSkills only: every unconditional referenced path exists", async () => {
-    const features = ["claudeSkills"];
+  it("shape (a) minimal + skill features only: every unconditional referenced path exists", async () => {
+    const features = ["claudeSkills", "claudeSkillsWriting"];
     const dir = await scaffoldShape("shape-a-minimal-skills", features);
 
     const verdicts = await collectRefVerdicts(dir, features);
@@ -226,8 +231,14 @@ describe("claude-skills scaffold refs — generated-scaffold integration guard (
     expect(pkg.scripts.b4push).toBe("pnpm check && pnpm build");
   });
 
-  it("shape (b) claudeSkills + i18n + versioning + changelog: every referenced path (incl. conditional) exists", async () => {
-    const features = ["claudeSkills", "i18n", "versioning", "changelog"];
+  it("shape (b) skill features + i18n + versioning + changelog: every referenced path (incl. conditional) exists", async () => {
+    const features = [
+      "claudeSkills",
+      "claudeSkillsWriting",
+      "i18n",
+      "versioning",
+      "changelog",
+    ];
     const dir = await scaffoldShape("shape-b-full", features);
 
     const verdicts = await collectRefVerdicts(dir, features);
