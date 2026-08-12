@@ -38,6 +38,8 @@ injection anchors:
      (`scripts/setup-doc-skill.sh`, copied in `scaffold.ts` directly, not a
      `templates/features/` dir), `claudeSkills` (copies curated
      `zudo-doc-*` Claude Code skills from the monorepo, also in
+     `scaffold.ts` directly), `claudeSkillsWriting` (copies the
+     `zudo-doc-writing` writing/navigation-guide skill, also in
      `scaffold.ts` directly).
    - **`postProcess` patches** (small, targeted string patches to an
      already-generated file — never new files): `docHistory` (patches the
