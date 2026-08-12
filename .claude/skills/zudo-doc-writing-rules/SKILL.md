@@ -76,7 +76,7 @@ The schema is package-owned (`@takazudo/zudo-doc/docs-schema`, source `packages/
 | `hide_sidebar` | boolean | no | Hide the left sidebar on this page |
 | `hide_toc` | boolean | no | Hide the right-side table of contents |
 
-Unknown fields are rejected by the Zod schema — do not invent new ones without updating the schema.
+The schema ends with `.passthrough()`, so custom keys (e.g. `author`, `status`) are preserved rather than rejected — they simply carry no built-in behavior. Consequence: a typo in a framework field name (`sidebar_postion`) does NOT error at build time; double-check spellings against the table above.
 
 ## Linking Between Docs
 
@@ -112,9 +112,10 @@ Body content.
 <Info>...</Info>
 <Warning>...</Warning>
 <Danger>...</Danger>
+<Caution>...</Caution>
 ```
 
-All five components accept an optional `title` prop.
+All admonition components accept an optional `title` prop. (`caution` is danger-adjacent, used by GitHub-style `[!CAUTION]` alerts; JSX additionally registers `<Important>` for `[!IMPORTANT]`.)
 
 ## Common Mistakes (Do Not Do)
 
@@ -125,7 +126,7 @@ All five components accept an optional `title` prop.
 - **Updating only the EN or only the JA version** — breaks the bilingual mirror (except for pages under `defaultLocaleOnlyPrefixes` or with `generated: true`).
 - **Absolute `/docs/...` links in prose** — the resolver cannot verify them; use relative `./page.mdx` instead.
 - **Omitting the `.mdx` extension in links** — the resolver requires it.
-- **Inventing frontmatter fields** — the Zod schema will reject them at build time.
+- **Misspelling framework frontmatter fields** — the schema passes unknown keys through, so a typo'd `sidebar_position` silently does nothing instead of erroring.
 - **Translating code inside code blocks** — the bilingual rule says code stays identical.
 
 ## Recommended Workflow
