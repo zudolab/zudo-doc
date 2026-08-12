@@ -1,6 +1,6 @@
 ---
-title: Claude Skills (User-Facing)
-description: Ship the curated zudo-doc-* Claude Code skills with your generated project.
+title: Claude Skills
+description: Ship curated zudo-doc-* Claude Code skills with your generated project.
 sidebar_position: 11
 tags:
   - type:guide
@@ -8,19 +8,24 @@ tags:
 
 ## Overview
 
-When you scaffold a project with `create-zudo-doc`, the **Claude skills (user-facing)** option ships a curated set of `zudo-doc-*` [Claude Code skills](https://docs.anthropic.com/en/docs/claude-code/skills) into your project's `.claude/skills/` directory. These are working skills — not generated documentation — that help you (and anyone working in your project with Claude Code) edit the design system, translate docs, and cut releases following zudo-doc's own conventions.
+When you scaffold a project with `create-zudo-doc`, two independent options ship curated `zudo-doc-*` [Claude Code skills](https://docs.anthropic.com/en/docs/claude-code/skills) into your project's `.claude/skills/` directory:
 
-This feature is **off by default**. Enable it when scaffolding if you want the bundled skills copied into your new project.
+- **Claude skills (user-facing)** — authoring/maintenance skills: edit the design system, translate docs, and cut releases following zudo-doc's own conventions.
+- **Claude skills (writing)** — a single writing-guide skill that teaches AI agents how to write docs and structure navigation correctly.
+
+These are working skills — not generated documentation. Each is a self-contained `SKILL.md` maintained as a scaffold-ready variant inside the `create-zudo-doc` package itself (rewritten for a generated project's layout, not copied verbatim from the zudo-doc repository), and becomes available as a slash command in Claude Code sessions opened inside your project.
+
+Both features are **off by default** and can be enabled independently — pick either, both, or neither when scaffolding.
 
 <Info>
 
-This is distinct from [Claude Code Resources](./claude-resources.mdx), which auto-generates documentation **pages** from your `.claude/` directory, and from the [Documentation Skill Symlinker](./doc-skill-symlinker.mdx), which turns your docs into a lookup skill. Claude skills (user-facing) instead **ships ready-made authoring skills** into your project.
+This is distinct from [Claude Code Resources](./claude-resources.mdx), which auto-generates documentation **pages** from your `.claude/` directory, and from the [Documentation Skill Symlinker](./doc-skill-symlinker.mdx), which turns your docs into a lookup skill. The Claude skills features instead **ship ready-made skills** into your project.
 
 </Info>
 
-## What Gets Shipped
+## Claude Skills (User-Facing)
 
-Enabling the feature copies three skills from the zudo-doc monorepo into your scaffolded project's `.claude/skills/`:
+Enabling **Claude skills (user-facing)** copies three skills into your scaffolded project's `.claude/skills/`:
 
 | Skill | Purpose |
 |-------|---------|
@@ -28,19 +33,13 @@ Enabling the feature copies three skills from the zudo-doc monorepo into your sc
 | `zudo-doc-translate` | Translate documentation between English and Japanese following zudo-doc's bilingual conventions. |
 | `zudo-doc-version-bump` | Bump the package version, generate changelog docs, commit, tag, and create a GitHub release. |
 
-Each skill is a self-contained `SKILL.md` (plus any bundled references) that becomes available as a slash command in Claude Code sessions opened inside your project.
-
-## Enabling the Feature
-
 Select **Claude skills (user-facing)** in the interactive `create-zudo-doc` prompts, or pass the CLI flag:
 
 ```bash
 pnpm create zudo-doc my-docs --claude-skills
 ```
 
-The feature is off unless you opt in.
-
-## What Else It Wires Up
+### What Else It Wires Up
 
 Because `zudo-doc-version-bump` runs `<package-manager> b4push` as part of its release flow, enabling this feature also adds a minimal `b4push` script to your generated `package.json` so the skill does not fail with a missing-script error on a fresh project:
 
@@ -54,6 +53,28 @@ Because `zudo-doc-version-bump` runs `<package-manager> b4push` as part of its r
 
 This is a deliberately small stub — type-check then build. You are free to expand it into a richer pre-push pipeline later.
 
+## Claude Skills (Writing)
+
+Enabling **Claude skills (writing)** copies one skill into your scaffolded project's `.claude/skills/`:
+
+| Skill | Purpose |
+|-------|---------|
+| `zudo-doc-writing` | Doc-writing and navigation-structure guide — the plan-the-nav-tree-first workflow, the 3-level navigation hierarchy, file-structure-is-navigation, category index pages, `sidebar_position` discipline, frontmatter schema, the no-h1 rule, relative `.mdx` links, and admonition syntax. |
+
+This skill exists because AI agents asked to "fill in the docs" without guidance almost always produce a chaotic navigation structure — pages dumped wherever seemed closest, no category landing pages, alphabetical sidebar ordering. The skill condenses the [Writing Docs](../getting-started/writing-docs.mdx) and [How to Structure Navigations](../getting-started/structuring-navigations.mdx) guides into rules an agent consults before creating or editing any page, which reliably keeps generated doc sites in good shape.
+
+Select **Claude skills (writing)** in the interactive prompts, or pass the CLI flag:
+
+```bash
+pnpm create zudo-doc my-docs --claude-skills-writing
+```
+
+<Tip>
+
+If you plan to let an AI agent write most of your documentation, enable this feature — then tell the agent to invoke `/zudo-doc-writing` before it creates pages. The nav-planning step is the part agents skip most often, and the one that matters most.
+
+</Tip>
+
 ## Using the Skills
 
 Once scaffolded, open your project in Claude Code and invoke a skill as a slash command. For example, before touching styles:
@@ -62,7 +83,13 @@ Once scaffolded, open your project in Claude Code and invoke a skill as a slash 
 /zudo-doc-design-system colors
 ```
 
-Claude reads the design-system rules and applies them to your change. The translate and version-bump skills work the same way — invoke them by name when you need them.
+Or before writing documentation:
+
+```
+/zudo-doc-writing
+```
+
+Claude reads the rules and applies them to your change. The other skills work the same way — invoke them by name when you need them.
 
 <Tip>
 

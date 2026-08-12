@@ -70,7 +70,22 @@ export const LINT_SKILLS = [
   "zudo-doc-version-bump",
   "zudo-doc-design-system",
   "zudo-doc-translate",
+  // Born scaffold-authored (no monorepo `.claude/skills/` source to diverge
+  // from — the monorepo covers the same ground with its own granular
+  // zudo-doc-writing-rules + zudo-doc-navigation-design skills). Listed here
+  // so the DENYLIST lint still guards it against monorepo-only idioms
+  // creeping in via future edits. Ships from the claudeSkillsWriting
+  // feature's template dir, not claudeSkills' (see TEMPLATE_FEATURE_DIRS).
+  "zudo-doc-writing",
 ];
+
+/**
+ * Feature template directory each shipped skill lives under. Skills not
+ * listed here default to the original `claudeSkills` directory.
+ */
+const TEMPLATE_FEATURE_DIRS: Record<string, string> = {
+  "zudo-doc-writing": "claudeSkillsWriting",
+};
 
 /**
  * Monorepo-only paths/idioms that must never appear in a LINT_SKILLS
@@ -113,6 +128,13 @@ export const DENYLIST = [
   "src/CLAUDE.md",
   // The maintainer's personal Claude Code skill, not shipped to consumers.
   "/css-wisdom",
+  // Monorepo-only granular skills — the shipped zudo-doc-writing variant
+  // consolidates their content; a scaffold has no such companion skills to
+  // defer to, so referencing them would send readers to a dead slash command.
+  "zudo-doc-writing-rules",
+  "zudo-doc-navigation-design",
+  // Maintainer link-audit skill, not shipped to consumers.
+  "/check-docs",
 ];
 
 function sourcePath(skill: string): string {
@@ -120,9 +142,10 @@ function sourcePath(skill: string): string {
 }
 
 function templatePath(skill: string): string {
+  const featureDir = TEMPLATE_FEATURE_DIRS[skill] ?? "claudeSkills";
   return path.join(
     PKG_ROOT,
-    "templates/features/claudeSkills/files/.claude/skills",
+    `templates/features/${featureDir}/files/.claude/skills`,
     skill,
     "SKILL.md",
   );

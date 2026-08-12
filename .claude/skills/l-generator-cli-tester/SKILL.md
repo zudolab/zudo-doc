@@ -55,6 +55,7 @@ files:
 | `tauri` / `tauriDev` | Ship `src-tauri/**` / `src-tauri-dev/**` Rust project shells |
 | `skillSymlinker` | Copies `scripts/setup-doc-skill.sh` |
 | `claudeSkills` | Copies `.claude/skills/{zudo-doc-design-system,zudo-doc-translate,zudo-doc-version-bump}/**` from the monorepo |
+| `claudeSkillsWriting` | Copies `.claude/skills/zudo-doc-writing/**` (scaffold.ts, from `templates/features/claudeSkillsWriting/`) |
 | `changelog` (scaffold.ts, not a feature module) | Adds `src/content/docs/changelog/index.mdx` (+ locale mirror if i18n is also on) |
 
 Every other feature (`search`, `sidebarFilter`, `sidebarResizer`,
@@ -197,6 +198,7 @@ cd __inbox/generator-test-lang-ja && \
 cd __inbox/generator-test-all-features && \
   node $REPO_ROOT/packages/create-zudo-doc/dist/index.js test-project --yes \
   --i18n --search --sidebar-filter --claude-resources --claude-skills \
+  --claude-skills-writing \
   --design-token-panel --sidebar-resizer --sidebar-toggle --versioning \
   --doc-history --body-foot-util --llms-txt --skill-symlinker \
   --footer-nav-group --image-enlarge --footer-copyright --changelog \
@@ -375,6 +377,7 @@ Confirm the 5 directories above (`pages/lib`, `src/components`, `src/utils`, `sr
 | `.claude/skills/zudo-doc-design-system/` | PRESENT (claudeSkills) |
 | `.claude/skills/zudo-doc-translate/` | PRESENT (claudeSkills) |
 | `.claude/skills/zudo-doc-version-bump/` | PRESENT (claudeSkills) |
+| `.claude/skills/zudo-doc-writing/` | PRESENT (claudeSkillsWriting) |
 | `src-tauri/` | ABSENT (tauri excluded from this pattern) |
 | `pages/docs/tags/index.tsx` | ABSENT (docTags routes are package-injected, never a file — even with `docTags: true`) |
 | `src/components/` | ABSENT (still true even with every feature on) |

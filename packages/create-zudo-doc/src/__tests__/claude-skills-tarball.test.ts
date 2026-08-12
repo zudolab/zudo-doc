@@ -73,4 +73,10 @@ describe("npm tarball ships claudeSkills template files (#2921)", () => {
       );
     }
   });
+
+  it("includes the claudeSkillsWriting zudo-doc-writing skill template", () => {
+    expect(files).toContain(
+      "templates/features/claudeSkillsWriting/files/.claude/skills/zudo-doc-writing/SKILL.md",
+    );
+  });
 });

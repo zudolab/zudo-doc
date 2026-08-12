@@ -17,9 +17,10 @@ chrome, islands, default `@theme` tokens, even the doc ROUTES themselves via
    patched by exactly one feature's `postProcess` hook.
 2. **Generate** the ONE `zfb.config.ts` programmatically (`zfb-config-gen.ts`)
    — diff-from-defaults: only fields the user actually chose are emitted.
-3. **Compose** selected features — copy feature files (only four features have
-   a `templates/features/<name>/files/` directory: `claudeSkills`, `i18n`,
-   `tauri`, `tauriDev`) and run `postProcess` hooks for the handful of cases
+3. **Compose** selected features — copy feature files (only five features have
+   a `templates/features/<name>/files/` directory: `claudeSkills`,
+   `claudeSkillsWriting`, `i18n`, `tauri`, `tauriDev`) and run `postProcess`
+   hooks for the handful of cases
    that need a small source patch (`docHistory` threads itself into the doc
    stub(s); `designTokenPanel` inserts the one conditional zdtp CSS import
    line; `tagGovernance` writes a tiny `src/config/` pair *inline* — it has no
@@ -44,7 +45,7 @@ left to inject or copy.
 |------|------|
 | `src/scaffold.ts` | Orchestrates the scaffold pipeline: copy base, seed content, generate `zfb.config.ts` + `package.json`, compose features |
 | `src/compose.ts` | Composition engine: injection system (mostly unused now — see below), feature resolution |
-| `src/features/*.ts` | Feature modules — settings-field emission via `zfb-config-gen.ts` + a handful of genuine file copies / `postProcess` patches. 19 module files, 19 `featureModules` keys in `index.ts` — one of which (`footer`) is a pseudo-feature triggered by `footerNavGroup`/`footerCopyright`/`footerTaglist`. `sidebarFilter` has no module (built into the package's sidebar tree); `skillSymlinker`, `claudeSkills`, and `changelog` are handled directly in `scaffold.ts` |
+| `src/features/*.ts` | Feature modules — settings-field emission via `zfb-config-gen.ts` + a handful of genuine file copies / `postProcess` patches. 19 module files, 19 `featureModules` keys in `index.ts` — one of which (`footer`) is a pseudo-feature triggered by `footerNavGroup`/`footerCopyright`/`footerTaglist`. `sidebarFilter` has no module (built into the package's sidebar tree); `skillSymlinker`, `claudeSkills`, `claudeSkillsWriting`, and `changelog` are handled directly in `scaffold.ts` |
 | `src/zfb-config-gen.ts` | The SINGLE config generator — emits the one `zfb.config.ts` (`defineConfig(zudoDoc({...}))`), diff-from-defaults against a local mirror of `packages/zudo-doc/src/config.ts`'s `DEFAULT_SETTINGS`. Replaces the former `settings-gen.ts` + `zfb-config-gen.ts` two-file split — there is no more `src/config/settings.ts` in a fresh scaffold |
 | `src/claude-md-gen.ts` | Generates the per-project `CLAUDE.md` for the scaffolded site, including the current zfb semantic-highlighting contract, chrome bindings, and binding-aware eject guidance |
 | `src/preset.ts` | Resolves a JSON `--preset` file (or CLI flags) into `UserChoices` — unrelated to the package's own `@takazudo/zudo-doc/preset`, despite the similar name |
@@ -60,7 +61,7 @@ left to inject or copy.
 | Directory | Role |
 |-----------|------|
 | `templates/base/` | The locked ~17-file minimal manifest (barebone, EN-only): `pages/index.tsx` (1-line re-export), `pages/docs/[[...slug]].tsx` (self-contained doc stub — see its header comment for why it's required), `src/styles/global.css` (~20-line `@import` chain + token-override slot), `tsconfig.json` (5-line extends form), `public/favicon.svg`/`favicon.ico`/`favicon-32x32.png`/`favicon-16x16.png` (byte-identical copies of the repo-root `public/` files — #3186). `zfb.config.ts`/`package.json`/`CLAUDE.md`/`.gitignore`/`.npmrc`/`pnpm-workspace.yaml` are generated programmatically, not copied from here. |
-| `templates/features/*/files/` | Feature-specific files copied when a feature is selected. Exactly four have a template directory: `claudeSkills` (skill copies, driven from `scaffold.ts`), `i18n` (locale doc stub), `tauri` and `tauriDev` (Rust shells). `tagGovernance` has **no** template directory — it writes one explicit tag vocabulary/config module inline in its `postProcess`; all audit/suggest behavior comes from package-owned bins. |
+| `templates/features/*/files/` | Feature-specific files copied when a feature is selected. Exactly five have a template directory: `claudeSkills` (skill copies, driven from `scaffold.ts`), `claudeSkillsWriting` (the zudo-doc-writing skill, also driven from `scaffold.ts`), `i18n` (locale doc stub), `tauri` and `tauriDev` (Rust shells). `tagGovernance` has **no** template directory — it writes one explicit tag vocabulary/config module inline in its `postProcess`; all audit/suggest behavior comes from package-owned bins. |
 
 ### Injection anchors — mostly retired
 

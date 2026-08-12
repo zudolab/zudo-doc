@@ -121,13 +121,14 @@ const BAREBONE_MANIFEST = [
   "zfb.config.ts",
 ].sort();
 
-/** All 26 feature values wired to a real (non-pseudo, non-scaffold.ts-only) module. */
+/** All 27 feature values wired to a real (non-pseudo, non-scaffold.ts-only) module. */
 const ALL_FEATURES = [
   "i18n",
   "search",
   "sidebarFilter",
   "claudeResources",
   "claudeSkills",
+  "claudeSkillsWriting",
   "designTokenPanel",
   "themePackSwitcher",
   "sidebarResizer",
@@ -769,6 +770,79 @@ describe("scaffold — claudeSkills feature", () => {
   });
 });
 
+describe("scaffold — claudeSkillsWriting feature", () => {
+  it("copies the zudo-doc-writing skill when enabled", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-claude-skills-writing",
+      features: ["claudeSkillsWriting"],
+    });
+    const project = projectPath("test-claude-skills-writing");
+    expect(
+      await fs.pathExists(
+        path.join(project, ".claude/skills/zudo-doc-writing/SKILL.md"),
+      ),
+    ).toBe(true);
+    // Independent of claudeSkills — the 3 user-facing skills must NOT ride along.
+    for (const skill of [
+      "zudo-doc-design-system",
+      "zudo-doc-translate",
+      "zudo-doc-version-bump",
+    ]) {
+      expect(
+        await fs.pathExists(path.join(project, `.claude/skills/${skill}`)),
+      ).toBe(false);
+    }
+    // No b4push stub either — that's claudeSkills' (version-bump's) wiring.
+    const pkg = await fs.readJson(path.join(project, "package.json"));
+    expect(pkg.scripts.b4push).toBeUndefined();
+  });
+
+  it("does not ride along with claudeSkills alone", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-claude-skills-no-writing",
+      features: ["claudeSkills"],
+    });
+    expect(
+      await fs.pathExists(
+        projectPath(
+          "test-claude-skills-no-writing",
+          ".claude/skills/zudo-doc-writing",
+        ),
+      ),
+    ).toBe(false);
+  });
+
+  it("composes with claudeSkills — both enabled ships all 4 skills", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-claude-skills-both",
+      features: ["claudeSkills", "claudeSkillsWriting"],
+    });
+    const project = projectPath("test-claude-skills-both");
+    for (const skill of [
+      "zudo-doc-design-system",
+      "zudo-doc-translate",
+      "zudo-doc-version-bump",
+      "zudo-doc-writing",
+    ]) {
+      expect(
+        await fs.pathExists(
+          path.join(project, `.claude/skills/${skill}/SKILL.md`),
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("ships nothing when disabled", async () => {
+    await scaffold(baseChoices);
+    expect(
+      await fs.pathExists(projectPath("test-doc", ".claude/skills")),
+    ).toBe(false);
+  });
+});
+
 describe("scaffold — changelog feature", () => {
   it("writes a starter src/content/docs/changelog/index.mdx", async () => {
     await scaffold({
@@ -824,7 +898,7 @@ describe("scaffold — changelog feature", () => {
 });
 
 describe("scaffold — every-feature manifest is exactly base + the documented per-feature deltas", () => {
-  it("all-on scaffold emits exactly the expected 44-file set", async () => {
+  it("all-on scaffold emits exactly the expected 45-file set", async () => {
     await scaffold({
       ...baseChoices,
       projectName: "test-all-on",
@@ -835,6 +909,7 @@ describe("scaffold — every-feature manifest is exactly base + the documented p
       ".claude/skills/zudo-doc-design-system/SKILL.md",
       ".claude/skills/zudo-doc-translate/SKILL.md",
       ".claude/skills/zudo-doc-version-bump/SKILL.md",
+      ".claude/skills/zudo-doc-writing/SKILL.md",
       ".gitignore",
       ".npmrc",
       "CLAUDE.md",

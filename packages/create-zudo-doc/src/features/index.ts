@@ -54,6 +54,7 @@ export const featureModules: Record<string, FeatureModule> = {
   dynamicPageTransition: dynamicPageTransitionFeature,
   // skillSymlinker — handled in scaffold.ts
   // claudeSkills — handled in scaffold.ts (copies zudo-doc-* skills from monorepo)
+  // claudeSkillsWriting — handled in scaffold.ts (copies the zudo-doc-writing skill)
   tagGovernance: tagGovernanceFeature,
   docTags: docTagsFeature,
   footerTaglist: footerTaglistFeature,
