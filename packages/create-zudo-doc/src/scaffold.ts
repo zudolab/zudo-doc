@@ -725,9 +725,15 @@ function generatePackageJson(choices: UserChoices) {
     // 2.3.0/2.3.1: additive + bugfix only (desktop TOC collapse toggle,
     // markdown fragment validation fixes, dev-server CSS rebuild loop fix).
     // No generator-side migration.
-    "@takazudo/zfb": "2.3.1",
-    "@takazudo/zfb-runtime": "2.3.1",
-    "@takazudo/zfb-md-wasm": "2.3.1",
+    // 2.4.0: additive + bugfix only (plugin log envelopes rendered on the
+    // terminal, stale plugin bundle temp-file sweeping, an SSR request-param
+    // detector wired into dev/build/check, and a wrangler minimum-version gate
+    // in `zfb preview` replacing the old exact-equality check). A fresh
+    // scaffold ships no plugins and no SSR routes, so there is no
+    // generator-side migration.
+    "@takazudo/zfb": "2.4.0",
+    "@takazudo/zfb-runtime": "2.4.0",
+    "@takazudo/zfb-md-wasm": "2.4.0",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
