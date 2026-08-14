@@ -34,7 +34,9 @@ while [ "$#" -gt 0 ]; do
 done
 
 printf '%s\n' "$URL" >> "$CALL_LOG"
-COUNT=$(wc -l < "$CALL_LOG")
+# BSD wc pads its count with leading spaces, so the COUNT case below would
+# never match on macOS — strip whitespace to keep the fixture portable.
+COUNT=$(wc -l < "$CALL_LOG" | tr -d '[:space:]')
 
 write_css() {
   cp "$HEALTHY_CSS" "$OUTPUT"
