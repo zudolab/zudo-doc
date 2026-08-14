@@ -1,0 +1,20 @@
+---
+title: 5.5.0
+description: 5.5.0のリリースノート。
+sidebar_position: 1085
+---
+
+リリース日: 2026-08-14
+
+### 機能
+
+- `@takazudo/zfb`ファミリー（`zfb`、`zfb-runtime`、`zfb-md-wasm`、`zfb-adapter-cloudflare`）を2.4.0から2.5.0へ、ルート・`@takazudo/zudo-doc`・`create-zudo-doc`のスキャフォールドピンすべてで更新しました。zfb 2.5.0では**オートリンクリテラルがGFMの保守的デフォルトに追加**されたため、マークダウン中に裸で書いたURL（`https://example.com`）が設定なしでリンクとしてレンダリングされます。プリセットは部分的な`gfm`オブジェクトを渡しているので新しいデフォルトをそのまま継承し、オプトインは不要です。CJKに隣接した裸URLも、デフォルト有効の`cjkFriendly`がオートリンク境界のフィックスアップを組み込むため、正しい境界で終端します。(a898b287)
+
+### バグ修正
+
+- はじめにガイド（EN+JA）で、開発サーバーのURLを`[url](url)`ではなく裸のURLとして記述するようにしました。2.5.0のデフォルト有効なオートリンクリテラルの下では、この書き方は`<a>`の中に`<a>`がネストしたマークアップを生成し、HTMLバリデーションに失敗します。上流には[Takazudo/zudo-front-builder#2388](https://github.com/Takazudo/zudo-front-builder/issues/2388)として報告済みです。(bbbf5d53)
+- CSS shapeスモークゲートのテスト：BSDの`wc -l`がカウントに付ける先頭の空白を除去し、フェイクcurlフィクスチャの`case`が一致するようにしました。これによりLinux CIだけでなくmacOSでもテストが通ります。(55b094a0)
+
+### その他の変更
+
+- CJK Friendlyのリファレンス（EN+JA）に、`gfm.autolinkLiteral`がzfb 2.5.0以降デフォルトで有効である旨を追記しました（有効化が必要な機能であるかのような記述を修正）。(bbbf5d53)

@@ -1,0 +1,20 @@
+---
+title: 5.5.0
+description: Release notes for 5.5.0.
+sidebar_position: 1085
+---
+
+Released: 2026-08-14
+
+### Features
+
+- Bumped the `@takazudo/zfb` family (`zfb`, `zfb-runtime`, `zfb-md-wasm`, `zfb-adapter-cloudflare`) from 2.4.0 to 2.5.0 across the root, `@takazudo/zudo-doc`, and the `create-zudo-doc` scaffold pin. zfb 2.5.0 adds **autolink literals to the conservative GFM default**, so a bare URL written in markdown (`https://example.com`) now renders as a link with no configuration. The preset passes a partial `gfm` object, which inherits the new default — nothing to opt into. CJK-adjacent bare URLs still terminate at the right boundary, because `cjkFriendly` (on by default) wires the autolink boundary fixup. (a898b287)
+
+### Bug Fixes
+
+- Write the dev-server URL bare in the Introduction guide (EN+JA) instead of as `[url](url)`. Under 2.5.0's default-on autolink literals that form emits an `<a>` nested inside an `<a>`, which fails HTML validation. Reported upstream as [Takazudo/zudo-front-builder#2388](https://github.com/Takazudo/zudo-front-builder/issues/2388). (bbbf5d53)
+- CSS-shape smoke gate test: strip the leading whitespace BSD `wc -l` pads its count with, so the fake-curl fixture's `case` matches and the test passes on macOS as well as Linux CI. (55b094a0)
+
+### Other Changes
+
+- CJK Friendly reference (EN+JA) now notes that `gfm.autolinkLiteral` is on by default as of zfb 2.5.0, rather than presenting it as something to enable. (bbbf5d53)
