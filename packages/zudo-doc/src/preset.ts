@@ -317,10 +317,12 @@ export function zudoDocPreset({
     markdown: {
       features: buildMarkdownFeatures(settings, directiveVocabulary),
       ...(settings.cjkFriendly !== undefined ? { cjkFriendly: settings.cjkFriendly } : {}),
-      // zfb's gfm default is conservative (strikethrough + table only); the
-      // preset turns on the other two GFM constructs so task lists and
-      // footnotes render for real instead of as literal `[ ]` / `[^1]` text
-      // (#3197, #3208).
+      // zfb's gfm default is conservative — strikethrough, table, and (since
+      // zfb 2.5.0) autolinkLiteral on, task lists and footnotes off. A partial
+      // object only overrides the keys it names, so the two opted in here are
+      // the delta: task lists and footnotes render for real instead of as
+      // literal `[ ]` / `[^1]` text (#3197, #3208), and bare URLs autolink via
+      // the inherited default.
       gfm: { taskListItem: true, footnoteDefinition: true },
     },
     // zfb class mode keeps renderer output semantic and delegates color to

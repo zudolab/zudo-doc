@@ -731,9 +731,14 @@ function generatePackageJson(choices: UserChoices) {
     // in `zfb preview` replacing the old exact-equality check). A fresh
     // scaffold ships no plugins and no SSR routes, so there is no
     // generator-side migration.
-    "@takazudo/zfb": "2.4.0",
-    "@takazudo/zfb-runtime": "2.4.0",
-    "@takazudo/zfb-md-wasm": "2.4.0",
+    // 2.5.0: `markdown.gfm`'s conservative default now also includes
+    // `autolinkLiteral`, so bare URLs in markdown render as links without
+    // config. Behavioral, but purely additive for authors; a partial `gfm`
+    // object still inherits the default for keys it does not name, so the
+    // preset's `{ taskListItem, footnoteDefinition }` picks it up for free.
+    "@takazudo/zfb": "2.5.0",
+    "@takazudo/zfb-runtime": "2.5.0",
+    "@takazudo/zfb-md-wasm": "2.5.0",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
