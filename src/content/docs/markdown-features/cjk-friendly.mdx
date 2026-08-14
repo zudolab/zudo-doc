@@ -11,7 +11,7 @@ sidebar_position: 2
 CJK Friendly governs two post-parse fixups that adapt CommonMark/GFM rules to CJK text:
 
 1. **Emphasis/strong flanking.** CommonMark's emphasis-flanking rules treat CJK ideographs and kana as neither whitespace nor punctuation. As a result, `**bold**` or `_italic_` markers placed immediately next to Chinese, Japanese, or Korean characters are parsed as literal asterisks and underscores rather than formatting delimiters. This fixup post-processes the markdown AST and re-tokenizes emphasis rules to account for CJK content, so bold and italic work correctly around ideographs and kana.
-2. **Bare-URL autolink boundary.** GFM's autolink-literal grammar terminates a bare URL only on ASCII whitespace, so a URL flush against CJK text (`詳細はhttps://example.com参照`) swallows the trailing CJK run into the `href`. This fixup terminates the link at the first CJK character instead. It only applies when `gfm.autolinkLiteral` is also enabled.
+2. **Bare-URL autolink boundary.** GFM's autolink-literal grammar terminates a bare URL only on ASCII whitespace, so a URL flush against CJK text (`詳細はhttps://example.com参照`) swallows the trailing CJK run into the `href`. This fixup terminates the link at the first CJK character instead. It only applies when `gfm.autolinkLiteral` is also enabled — which it is by default, since zfb 2.5.0 includes autolink literals in the conservative GFM default.
 
 ## Example
 
