@@ -202,7 +202,7 @@ test.describe("VT Chrome Persist: sidebar scroll preservation", () => {
     // Wait beyond the old delayed 50 ms reset. An early-success poll could
     // otherwise pass before the regression fires.
     await page.locator("#desktop-sidebar").waitFor({ state: "attached", timeout: 5000 });
-    await page.waitForTimeout(100);
+    await page.waitForTimeout(100); // wait-ok: observe past the legacy 50 ms delayed reset before asserting
 
     const scrollTopAfter = await page.evaluate(() => {
       const aside = document.querySelector("#desktop-sidebar");
