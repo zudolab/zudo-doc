@@ -18,6 +18,7 @@ import { smartBreakToHtml } from "../smart-break/index.js";
 import { AFTER_NAVIGATE_EVENT, BEFORE_NAVIGATE_EVENT } from "../transitions/index.js";
 import { filterTree } from "../sidebar-filter/index.js";
 import { findActiveSlug, normalizePath } from "../sidebar-active-slug/index.js";
+import { installSidebarScrollPreserve } from "./sidebar-scroll-preserve.js";
 
 function ToggleChevron({ isExpanded, className }: { isExpanded: boolean; className?: string }) {
   return (
@@ -94,36 +95,15 @@ function useActiveSlug(nodes: SidebarNavNode[], initial?: string): string | unde
  * Preserve `#desktop-sidebar` scrollTop across SPA navigations.
  */
 function useSidebarScrollPreserve() {
-  useEffect(() => {
-    let savedScrollTop = 0;
-    let restoreTimer: ReturnType<typeof setTimeout> | undefined;
-
-    const onBefore = () => {
-      if (restoreTimer !== undefined) {
-        clearTimeout(restoreTimer);
-        restoreTimer = undefined;
-      }
-      const aside = document.querySelector<HTMLElement>("#desktop-sidebar");
-      if (aside) savedScrollTop = aside.scrollTop;
-    };
-
-    const onAfter = () => {
-      const aside = document.querySelector<HTMLElement>("#desktop-sidebar");
-      if (!aside) return;
-      restoreTimer = setTimeout(() => {
-        restoreTimer = undefined;
-        aside.scrollTop = savedScrollTop;
-      }, 50);
-    };
-
-    document.addEventListener(BEFORE_NAVIGATE_EVENT, onBefore);
-    document.addEventListener(AFTER_NAVIGATE_EVENT, onAfter);
-    return () => {
-      document.removeEventListener(BEFORE_NAVIGATE_EVENT, onBefore);
-      document.removeEventListener(AFTER_NAVIGATE_EVENT, onAfter);
-      if (restoreTimer !== undefined) clearTimeout(restoreTimer);
-    };
-  }, []);
+  useEffect(
+    () =>
+      installSidebarScrollPreserve({
+        document,
+        requestAnimationFrame: window.requestAnimationFrame.bind(window),
+        cancelAnimationFrame: window.cancelAnimationFrame.bind(window),
+      }),
+    [],
+  );
 }
 
 function RootMenuItemEntry({ item }: { item: SidebarRootMenuItem }) {
