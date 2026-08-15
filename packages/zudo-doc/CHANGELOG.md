@@ -4,6 +4,17 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.5.2] - 2026-08-16
+
+### Bug Fixes
+
+- Preserve the sidebar scroll position across SPA navigation and island remounts. (7e8130f4b, 63629e73e, 7fadc3308)
+- Suppress GFM task-list markers in rendered documentation. (4d9dbf941)
+
+### Other Changes
+
+- Added regression coverage for stale sidebar snapshots and sidebar timing. (5632de06f, 360857d79)
+
 ## [5.5.1] - 2026-08-15
 
 ### Bug Fixes
