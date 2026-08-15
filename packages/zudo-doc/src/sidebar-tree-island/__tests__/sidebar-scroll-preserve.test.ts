@@ -2,7 +2,11 @@
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AFTER_NAVIGATE_EVENT, BEFORE_NAVIGATE_EVENT } from "../../transitions/index.js";
-import { installSidebarScrollPreserve } from "../sidebar-scroll-preserve.js";
+import {
+  disposeSidebarScrollPreserve,
+  ensureSidebarScrollPreserve,
+  installSidebarScrollPreserve,
+} from "../sidebar-scroll-preserve.js";
 
 interface ControlledScrollTop {
   element: HTMLElement;
@@ -68,9 +72,8 @@ beforeEach(() => {
   document.body.innerHTML = "";
 });
 
-afterEach(async () => {
+afterEach(() => {
   document.body.innerHTML = "";
-  await Promise.resolve();
 });
 
 describe("desktop sidebar scroll preservation", () => {
@@ -160,7 +163,7 @@ describe("desktop sidebar scroll preservation", () => {
     cleanup();
   });
 
-  it("cancels a pending restore and invalidates saved state on cleanup", async () => {
+  it("cancels a pending restore and invalidates saved state on cleanup", () => {
     const frames = createFrameScheduler();
     const sidebar = createSidebar(34);
     const cleanup = installSidebarScrollPreserve({ document, ...frames });
@@ -169,7 +172,6 @@ describe("desktop sidebar scroll preservation", () => {
     dispatch(AFTER_NAVIGATE_EVENT);
     cleanup();
     sidebar.setValue(3);
-    await Promise.resolve();
     frames.flush();
     dispatch(AFTER_NAVIGATE_EVENT);
     frames.flush();
@@ -179,22 +181,22 @@ describe("desktop sidebar scroll preservation", () => {
     expect(sidebar.getValue()).toBe(3);
   });
 
-  it("carries the navigation snapshot across a synchronous island reinstall", () => {
+  it("keeps the snapshot in the duplicate-safe document singleton", () => {
     const frames = createFrameScheduler();
     const sidebar = createSidebar(60);
-    const cleanupOldInstall = installSidebarScrollPreserve({ document, ...frames });
+    ensureSidebarScrollPreserve({ document, ...frames });
 
     dispatch(BEFORE_NAVIGATE_EVENT);
-    // The router temporarily lifts the persisted aside while its island is
-    // re-rendered. Chromium clamps scrollTop while the content height is gone.
+    // Chromium clamps scrollTop while the persisted aside's island content is
+    // temporarily gone. A later component/module boot call must neither replace
+    // the controller nor lose the snapshot captured before that collapse.
     sidebar.setValue(0);
-    cleanupOldInstall();
-    const cleanupNewInstall = installSidebarScrollPreserve({ document, ...frames });
+    ensureSidebarScrollPreserve({ document, ...frames });
     dispatch(AFTER_NAVIGATE_EVENT);
     frames.flush();
 
     expect(sidebar.getValue()).toBe(60);
     expect(sidebar.getWrites()).toBe(1);
-    cleanupNewInstall();
+    disposeSidebarScrollPreserve(document);
   });
 });
