@@ -68,8 +68,9 @@ beforeEach(() => {
   document.body.innerHTML = "";
 });
 
-afterEach(() => {
+afterEach(async () => {
   document.body.innerHTML = "";
+  await Promise.resolve();
 });
 
 describe("desktop sidebar scroll preservation", () => {
@@ -159,7 +160,7 @@ describe("desktop sidebar scroll preservation", () => {
     cleanup();
   });
 
-  it("cancels a pending restore and invalidates saved state on cleanup", () => {
+  it("cancels a pending restore and invalidates saved state on cleanup", async () => {
     const frames = createFrameScheduler();
     const sidebar = createSidebar(34);
     const cleanup = installSidebarScrollPreserve({ document, ...frames });
@@ -168,6 +169,7 @@ describe("desktop sidebar scroll preservation", () => {
     dispatch(AFTER_NAVIGATE_EVENT);
     cleanup();
     sidebar.setValue(3);
+    await Promise.resolve();
     frames.flush();
     dispatch(AFTER_NAVIGATE_EVENT);
     frames.flush();
@@ -175,5 +177,24 @@ describe("desktop sidebar scroll preservation", () => {
     expect(frames.canceled).toEqual([1]);
     expect(sidebar.getWrites()).toBe(0);
     expect(sidebar.getValue()).toBe(3);
+  });
+
+  it("carries the navigation snapshot across a synchronous island reinstall", () => {
+    const frames = createFrameScheduler();
+    const sidebar = createSidebar(60);
+    const cleanupOldInstall = installSidebarScrollPreserve({ document, ...frames });
+
+    dispatch(BEFORE_NAVIGATE_EVENT);
+    // The router temporarily lifts the persisted aside while its island is
+    // re-rendered. Chromium clamps scrollTop while the content height is gone.
+    sidebar.setValue(0);
+    cleanupOldInstall();
+    const cleanupNewInstall = installSidebarScrollPreserve({ document, ...frames });
+    dispatch(AFTER_NAVIGATE_EVENT);
+    frames.flush();
+
+    expect(sidebar.getValue()).toBe(60);
+    expect(sidebar.getWrites()).toBe(1);
+    cleanupNewInstall();
   });
 });
