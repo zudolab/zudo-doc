@@ -1,0 +1,15 @@
+---
+title: 5.5.1
+description: Release notes for 5.5.1.
+sidebar_position: 1086
+---
+
+Released: 2026-08-15
+
+### Bug Fixes
+
+- Bumped the `@takazudo/zfb` family (`zfb`, `zfb-runtime`, `zfb-md-wasm`, `zfb-adapter-cloudflare`) from 2.5.0 to 2.5.1 across the root, `@takazudo/zudo-doc`, and the `create-zudo-doc` scaffold pin. This is a bugfix-only patch that settles the autolink-literal regressions introduced when 2.5.0 flipped `gfm.autolinkLiteral` on by default: a link is now unwrapped only when it genuinely is an autolink literal (the shape is matched on the visible text rather than the URL alone, case-folded), nested autolinks inside a link label or author-written MDX JSX are dropped rather than emitted as an `<a>` inside an `<a>`, and footnote bodies are spared. `[https://example.com](https://example.com)` therefore no longer produces invalid nested-anchor HTML — [Takazudo/zudo-front-builder#2388](https://github.com/Takazudo/zudo-front-builder/issues/2388), reported from this project during the 5.5.0 release, is fixed upstream. The same release also makes CJK-friendly emphasis, hard breaks, math constructs, and `markdown.gfm` itself apply consistently at the secondary parse sites (transcluded files, re-parsed directive bodies, and the HTML path), so those constructs no longer behave differently depending on where in a document they appear. (68aa94c5)
+
+### Other Changes
+
+- Raised the `@takazudo/zudo-doc-history-server` peer floor in `@takazudo/zudo-doc` from `^5.4.0` to `^5.5.0`, the routine post-publish catch-up now that 5.5.0 is live on npm. The floor trails the in-flight release by one version permanently and by design. (68aa94c5)
