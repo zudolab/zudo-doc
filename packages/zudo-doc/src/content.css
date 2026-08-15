@@ -164,6 +164,19 @@
   color: var(--color-muted);
 }
 
+/* GFM task-list inputs are emitted as disabled direct children of a tight
+ * item, or as children of the item's paragraph in a loose list. The
+ * component-rendered ancestor `ul` carries an inline disc marker, so reset
+ * only those generated task rows on the `li` itself. Keep the direct-child
+ * shape and disabled constraint narrow so authored/nested checkboxes remain
+ * ordinary list content. */
+.zd-content :where(
+  li:has(> input[type="checkbox"][disabled]),
+  li:has(> p > input[type="checkbox"][disabled])
+) {
+  list-style-type: none;
+}
+
 .zd-content :where(li > ul, li > ol) {
   margin-top: var(--spacing-vsp-xs);
   margin-bottom: 0;
