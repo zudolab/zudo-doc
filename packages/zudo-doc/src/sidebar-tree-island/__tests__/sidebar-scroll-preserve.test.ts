@@ -75,8 +75,13 @@ afterEach(() => {
 describe("desktop sidebar scroll preservation", () => {
   it("does not schedule or write when the navigation had no saved sidebar", () => {
     const frames = createFrameScheduler();
+    const staleSidebar = createSidebar(91);
     const cleanup = installSidebarScrollPreserve({ document, ...frames });
 
+    // Seed an older snapshot, then prove that a before-navigation with no
+    // live sidebar clears it instead of leaking it into the next swap.
+    dispatch(BEFORE_NAVIGATE_EVENT);
+    staleSidebar.element.remove();
     dispatch(BEFORE_NAVIGATE_EVENT);
     const sidebar = createSidebar(17);
     dispatch(AFTER_NAVIGATE_EVENT);
