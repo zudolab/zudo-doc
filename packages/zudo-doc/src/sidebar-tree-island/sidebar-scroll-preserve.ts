@@ -6,20 +6,20 @@ interface SidebarScrollPreserveOptions {
   cancelAnimationFrame: (handle: number) => void;
 }
 
-interface SidebarScrollPreserveController {
-  retain: () => void;
-  release: () => void;
-}
+const installedControllers = new WeakMap<Document, () => void>();
 
-const controllers = new WeakMap<Document, SidebarScrollPreserveController>();
-
-function createController({
+/**
+ * Install the scroll-preservation state machine on a document.
+ *
+ * This low-level entrypoint owns an explicit cleanup for focused tests and
+ * non-singleton hosts. The sidebar's browser module uses the durable,
+ * duplicate-safe `ensureSidebarScrollPreserve` wrapper below instead.
+ */
+export function installSidebarScrollPreserve({
   document,
   requestAnimationFrame,
   cancelAnimationFrame,
-}: SidebarScrollPreserveOptions): SidebarScrollPreserveController {
-  let leases = 0;
-  let disposalGeneration = 0;
+}: SidebarScrollPreserveOptions): () => void {
   let snapshot: { element: HTMLElement; scrollTop: number } | undefined;
   let restoreFrame: number | undefined;
 
@@ -30,16 +30,13 @@ function createController({
   };
 
   const onBefore = () => {
-    if (leases === 0) return;
     cancelPendingRestore();
-
     const element = document.querySelector<HTMLElement>("#desktop-sidebar");
     snapshot = element ? { element, scrollTop: element.scrollTop } : undefined;
   };
 
   const onAfter = () => {
-    if (leases === 0 || !snapshot) return;
-
+    if (!snapshot) return;
     const saved = snapshot;
     snapshot = undefined;
     restoreFrame = requestAnimationFrame(() => {
@@ -52,57 +49,40 @@ function createController({
   document.addEventListener(BEFORE_NAVIGATE_EVENT, onBefore);
   document.addEventListener(AFTER_NAVIGATE_EVENT, onAfter);
 
-  const controller: SidebarScrollPreserveController = {
-    retain() {
-      leases += 1;
-      disposalGeneration += 1;
-    },
-    release() {
-      if (leases === 0) return;
-      leases -= 1;
-      if (leases !== 0) return;
-
-      // A persisted sidebar island is synchronously unmounted and re-mounted
-      // during a body swap. Suspend writes and cancel queued work immediately,
-      // but keep the current-navigation snapshot for one microtask so that the
-      // replacement effect can retain this controller before after-swap. A true
-      // unmount has no matching retain, so its stale state and listeners are
-      // still discarded before the next task.
-      cancelPendingRestore();
-      const generation = ++disposalGeneration;
-      queueMicrotask(() => {
-        if (leases !== 0 || disposalGeneration !== generation) return;
-        snapshot = undefined;
-        document.removeEventListener(BEFORE_NAVIGATE_EVENT, onBefore);
-        document.removeEventListener(AFTER_NAVIGATE_EVENT, onAfter);
-        controllers.delete(document);
-      });
-    },
+  return () => {
+    document.removeEventListener(BEFORE_NAVIGATE_EVENT, onBefore);
+    document.removeEventListener(AFTER_NAVIGATE_EVENT, onAfter);
+    cancelPendingRestore();
+    snapshot = undefined;
   };
-
-  return controller;
 }
 
 /**
- * Install navigation-scoped scroll preservation for the persisted desktop
- * sidebar. Exposed separately from the hook so the browser lifecycle itself
- * can be exercised without duplicating this state machine in tests.
+ * Install exactly one module-lifetime controller for a browser document.
+ * Repeated calls from component renders or duplicate boot paths are no-ops.
  */
-export function installSidebarScrollPreserve({
-  document,
-  requestAnimationFrame,
-  cancelAnimationFrame,
-}: SidebarScrollPreserveOptions): () => void {
-  let controller = controllers.get(document);
-  if (!controller) {
-    controller = createController({ document, requestAnimationFrame, cancelAnimationFrame });
-    controllers.set(document, controller);
-  }
-  controller.retain();
-  let released = false;
-  return () => {
-    if (released) return;
-    released = true;
-    controller.release();
+export function ensureSidebarScrollPreserve(
+  options?: SidebarScrollPreserveOptions,
+): void {
+  const resolved = options ?? resolveBrowserOptions();
+  if (!resolved || installedControllers.has(resolved.document)) return;
+  installedControllers.set(
+    resolved.document,
+    installSidebarScrollPreserve(resolved),
+  );
+}
+
+function resolveBrowserOptions(): SidebarScrollPreserveOptions | undefined {
+  if (typeof document === "undefined" || typeof window === "undefined") return undefined;
+  return {
+    document,
+    requestAnimationFrame: window.requestAnimationFrame.bind(window),
+    cancelAnimationFrame: window.cancelAnimationFrame.bind(window),
   };
+}
+
+/** Test/HMR teardown for a controller installed through the singleton wrapper. */
+export function disposeSidebarScrollPreserve(document: Document): void {
+  installedControllers.get(document)?.();
+  installedControllers.delete(document);
 }
