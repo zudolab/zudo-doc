@@ -224,3 +224,62 @@ test.describe("Math: KaTeX rendering via <MathBlock>", () => {
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// GFM task-list marker reset
+// ---------------------------------------------------------------------------
+
+test.describe("GFM task lists: disabled checkbox marker reset", () => {
+  test("tight and loose task rows have no disc marker while ordinary lists retain one", async ({
+    page,
+  }) => {
+    await page.goto("/docs/guides/task-lists-test", {
+      waitUntil: "networkidle",
+    });
+
+    const rows = await page.locator(".zd-content li").evaluateAll((items) =>
+      items.map((item) => ({
+        text: item.textContent?.replace(/\s+/g, " ").trim() ?? "",
+        listStyleType: getComputedStyle(item).listStyleType,
+        checkboxes: Array.from(
+          item.querySelectorAll<HTMLInputElement>(
+            ':scope > input[type="checkbox"], :scope > p > input[type="checkbox"]',
+          ),
+        ).map((checkbox) => ({
+          checked: checkbox.checked,
+          disabled: checkbox.disabled,
+        })),
+      })),
+    );
+
+    expect(rows).toEqual(
+      expect.arrayContaining([
+        {
+          text: "Tight checked item",
+          listStyleType: "none",
+          checkboxes: [{ checked: true, disabled: true }],
+        },
+        {
+          text: "Tight unchecked item",
+          listStyleType: "none",
+          checkboxes: [{ checked: false, disabled: true }],
+        },
+        {
+          text: "Loose checked item",
+          listStyleType: "none",
+          checkboxes: [{ checked: true, disabled: true }],
+        },
+        {
+          text: "Loose unchecked item",
+          listStyleType: "none",
+          checkboxes: [{ checked: false, disabled: true }],
+        },
+        {
+          text: "Ordinary unordered item",
+          listStyleType: "disc",
+          checkboxes: [],
+        },
+      ]),
+    );
+  });
+});

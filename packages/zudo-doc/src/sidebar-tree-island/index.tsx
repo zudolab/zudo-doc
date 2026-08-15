@@ -18,6 +18,13 @@ import { smartBreakToHtml } from "../smart-break/index.js";
 import { AFTER_NAVIGATE_EVENT, BEFORE_NAVIGATE_EVENT } from "../transitions/index.js";
 import { filterTree } from "../sidebar-filter/index.js";
 import { findActiveSlug, normalizePath } from "../sidebar-active-slug/index.js";
+import { ensureSidebarScrollPreserve } from "./sidebar-scroll-preserve.js";
+
+// The persisted aside can transiently tear down and re-mount its SidebarTree
+// effect during a body swap. Keep navigation snapshot ownership at browser
+// module/document lifetime so that island lifecycle cannot discard it between
+// before-preparation and after-swap. SSR evaluation is a safe no-op.
+ensureSidebarScrollPreserve();
 
 function ToggleChevron({ isExpanded, className }: { isExpanded: boolean; className?: string }) {
   return (
@@ -88,42 +95,6 @@ function useActiveSlug(nodes: SidebarNavNode[], initial?: string): string | unde
   }, [nodes]);
 
   return slug;
-}
-
-/**
- * Preserve `#desktop-sidebar` scrollTop across SPA navigations.
- */
-function useSidebarScrollPreserve() {
-  useEffect(() => {
-    let savedScrollTop = 0;
-    let restoreTimer: ReturnType<typeof setTimeout> | undefined;
-
-    const onBefore = () => {
-      if (restoreTimer !== undefined) {
-        clearTimeout(restoreTimer);
-        restoreTimer = undefined;
-      }
-      const aside = document.querySelector<HTMLElement>("#desktop-sidebar");
-      if (aside) savedScrollTop = aside.scrollTop;
-    };
-
-    const onAfter = () => {
-      const aside = document.querySelector<HTMLElement>("#desktop-sidebar");
-      if (!aside) return;
-      restoreTimer = setTimeout(() => {
-        restoreTimer = undefined;
-        aside.scrollTop = savedScrollTop;
-      }, 50);
-    };
-
-    document.addEventListener(BEFORE_NAVIGATE_EVENT, onBefore);
-    document.addEventListener(AFTER_NAVIGATE_EVENT, onAfter);
-    return () => {
-      document.removeEventListener(BEFORE_NAVIGATE_EVENT, onBefore);
-      document.removeEventListener(AFTER_NAVIGATE_EVENT, onAfter);
-      if (restoreTimer !== undefined) clearTimeout(restoreTimer);
-    };
-  }, []);
 }
 
 function RootMenuItemEntry({ item }: { item: SidebarRootMenuItem }) {
@@ -202,7 +173,6 @@ function SidebarFooter({ links, themeDefaultMode }: { links?: SidebarLocaleLink[
 
 export function SidebarTree({ nodes, currentSlug, rootMenuItems, backToMenuLabel, localeLinks, themeDefaultMode }: SidebarTreeProps) {
   const activeSlug = useActiveSlug(nodes, currentSlug);
-  useSidebarScrollPreserve();
   const [query, setQuery] = useState("");
   const [showingRootMenu, setShowingRootMenu] = useState(false);
   const filterRef = useRef<HTMLInputElement>(null);
