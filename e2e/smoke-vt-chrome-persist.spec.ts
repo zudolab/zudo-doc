@@ -170,42 +170,47 @@ test.describe("VT Chrome Persist: sidebar scroll preservation", () => {
     await page.goto(GUIDES_INDEX, { waitUntil: "domcontentloaded" });
     await waitForSidebarHydration(page);
 
-    // Attempt to scroll the sidebar; note whether it is actually scrollable.
+    // Give this regression a deterministic scroll container independent of
+    // fixture content and host viewport changes.
     const scrollInfo = await page.evaluate(() => {
-      const aside = document.querySelector("#desktop-sidebar");
-      if (!aside) return { scrollable: false, scrollTop: 0 };
-      const scrollable = aside.scrollHeight > aside.clientHeight;
-      if (scrollable) aside.scrollTop = 60;
-      return { scrollable, scrollTop: aside.scrollTop };
+      const aside = document.querySelector<HTMLElement>("#desktop-sidebar");
+      if (!aside) return null;
+      aside.style.height = "160px";
+      aside.style.maxHeight = "160px";
+      aside.style.overflowY = "auto";
+      aside.scrollTop = 60;
+      return {
+        scrollHeight: aside.scrollHeight,
+        clientHeight: aside.clientHeight,
+        scrollTop: aside.scrollTop,
+      };
     });
+
+    expect(scrollInfo, "Expected #desktop-sidebar to exist").not.toBeNull();
+    expect(
+      scrollInfo!.scrollHeight,
+      "Sidebar fixture must overflow for the scroll preservation regression",
+    ).toBeGreaterThan(scrollInfo!.clientHeight);
+    expect(
+      scrollInfo!.scrollTop,
+      "Browser must accept the requested nonzero sidebar scroll position",
+    ).toBe(60);
 
     const swapFired = await spaClick(page, GUIDES_PAGE_1);
     expect(swapFired, "zfb:after-swap did not fire within 10 s").toBe(true);
 
-    // Wait for the sidebar to remain attached after the swap (persisted node).
+    // Wait beyond the old delayed 50 ms reset. An early-success poll could
+    // otherwise pass before the regression fires.
     await page.locator("#desktop-sidebar").waitFor({ state: "attached", timeout: 5000 });
+    await page.waitForTimeout(100);
 
     const scrollTopAfter = await page.evaluate(() => {
       const aside = document.querySelector("#desktop-sidebar");
       return aside ? aside.scrollTop : -1;
     });
 
-    if (scrollInfo.scrollable && scrollInfo.scrollTop > 0) {
-      // Sidebar was scrollable and we actually moved it: assert preservation.
-      // Allow a ±30 px tolerance in case the island adjusted to show the
-      // active item.
-      expect(
-        scrollTopAfter,
-        "aside scrollTop should be preserved after SPA swap (within ±30 px tolerance)",
-      ).toBeGreaterThanOrEqual(scrollInfo.scrollTop - 30);
-    } else {
-      // Sidebar was not scrollable (content shorter than viewport) or
-      // scrollTop stayed at 0 — just verify it did not reset to a negative
-      // value (element gone).
-      expect(
-        scrollTopAfter,
-        "aside should still be present in DOM after swap (scrollTop ≥ 0)",
-      ).toBeGreaterThanOrEqual(0);
-    }
+    expect(scrollTopAfter, "aside scrollTop should be preserved exactly after SPA swap").toBe(
+      scrollInfo!.scrollTop,
+    );
   });
 });
