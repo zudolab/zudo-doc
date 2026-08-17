@@ -90,12 +90,7 @@ export function loadCategoryMeta(contentDir: string): Map<string, CategoryMeta> 
   // Builtins unavailable: preserve the #2030 degrade-to-empty-map behaviour
   // verbatim — cache the raw (unresolved) contentDir key, skip the scan, and
   // return an empty map. Routes still enumerate; sidecar meta just doesn't apply.
-  let absolute: string;
-  try {
-    absolute = builtins ? builtins.path.resolve(contentDir) : contentDir;
-  } catch {
-    absolute = contentDir;
-  }
+  const absolute = builtins ? builtins.path.resolve(contentDir) : contentDir;
   const cached = cache.get(absolute);
   if (cached) return cached;
   const result = new Map<string, CategoryMeta>();

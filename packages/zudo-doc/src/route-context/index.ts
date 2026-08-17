@@ -47,8 +47,8 @@ import {
 } from "../route-enumerators/index.js";
 import type { DocNavNode, DocPageEntry } from "../doc-page-props/index.js";
 import type { HeadingItem } from "../extract-headings/index.js";
+import { stableDocs as defaultStableDocs } from "../routes/_docs-helpers.js";
 import {
-  stableDocs as defaultStableDocs,
   isNavVisible,
   buildNavTree,
   buildBreadcrumbs,
@@ -56,7 +56,7 @@ import {
   groupSatelliteNodes,
   findNode,
   firstRoutedHref,
-} from "../routes/_docs-helpers.js";
+} from "../site-schema/nav-tree.js";
 
 export type {
   RouteContext,

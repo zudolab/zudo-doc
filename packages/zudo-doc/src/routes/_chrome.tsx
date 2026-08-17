@@ -13,7 +13,7 @@
 import { routeCtx } from "./_context.js";
 import { createChrome } from "../chrome/index.js";
 import { DocHistory } from "../doc-history/index.js";
-import type { DocNavNode } from "./_docs-helpers.js";
+import type { DocNavNode } from "../site-schema/types.js";
 // Imported via the BARE published subpath rather than a relative
 // `../chrome-bindings.js`. This file is copied into consumer projects by the
 // routes-src mechanism (`scripts/copy-routes-src.mjs`), which rewrites relative

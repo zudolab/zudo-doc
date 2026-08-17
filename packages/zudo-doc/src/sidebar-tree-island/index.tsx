@@ -88,8 +88,11 @@ function currentPathOverride(): string | undefined {
  * already set rather than clearing it.
  */
 function deriveActiveSlug(nodes: SidebarNavNode[], pathname?: string): string | undefined {
+  // `||` (not `??`) so an empty-string `pathname` falls through to the live
+  // sources instead of silently disabling derivation — SidebarWithDefaults
+  // defaults its own currentPath to "", so "" is the natural absent shape.
   const resolved =
-    pathname ?? currentPathOverride() ?? (typeof window !== "undefined" ? window.location.pathname : undefined);
+    pathname || currentPathOverride() || (typeof window !== "undefined" ? window.location.pathname : undefined);
   if (!resolved) return undefined;
   return findActiveSlug(nodes, normalizePath(resolved));
 }
@@ -107,13 +110,19 @@ function useActiveSlug(nodes: SidebarNavNode[], initial?: string, currentPath?: 
   );
 
   useEffect(() => {
-    const update = () => {
-      const found = deriveActiveSlug(nodes, currentPath);
+    const update = (pathname?: string) => {
+      const found = deriveActiveSlug(nodes, pathname);
       if (found !== undefined) setSlug(found);
     };
-    update();
-    document.addEventListener(AFTER_NAVIGATE_EVENT, update);
-    return () => document.removeEventListener(AFTER_NAVIGATE_EVENT, update);
+    // The static `currentPath` prop is an SSR-serialized value for the page the
+    // island first hydrated on — valid at hydration time only. Post-navigation
+    // updates must re-read the LIVE sources (dataset override, then
+    // location.pathname); recomputing from the frozen prop would pin the
+    // highlight to the first-loaded page across client-router navigations.
+    const onNavigate = () => update();
+    update(currentPath);
+    document.addEventListener(AFTER_NAVIGATE_EVENT, onNavigate);
+    return () => document.removeEventListener(AFTER_NAVIGATE_EVENT, onNavigate);
   }, [nodes, currentPath]);
 
   return slug;

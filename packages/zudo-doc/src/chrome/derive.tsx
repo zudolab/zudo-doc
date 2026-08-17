@@ -23,7 +23,7 @@
 import type { JSX, VNode, ComponentChildren } from "preact";
 import type { ChromeContext, FactoryComponent } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
-import type { CategoryMeta } from "../routes/_docs-helpers.js";
+import type { CategoryMeta } from "../sidebar-tree/types.js";
 
 import { createComposeMetaTitle } from "../compose-meta-title/index.js";
 import {

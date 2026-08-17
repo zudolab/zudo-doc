@@ -11,30 +11,18 @@
 // WHAT MOVED: every pure nav helper this file used to define — `buildNavTree`,
 // `groupSatelliteNodes`, `findNode`, `firstRoutedHref`, `collectAutoIndexNodes`,
 // `buildBreadcrumbs`, `isNavVisible` — now lives in `../site-schema/nav-tree.js`
-// and is re-exported below unchanged (#3395). Cutting them loose is what lets
-// `createDocRouteEntries` reach `buildBreadcrumbs` without dragging
-// `@takazudo/zfb/content` into an otherwise browser-safe graph.
+// (#3395); import them from there, not from here. Cutting them loose is what
+// lets `createDocRouteEntries` reach `buildBreadcrumbs` without dragging
+// `@takazudo/zfb/content` into an otherwise browser-safe graph. This module
+// deliberately re-exports NOTHING: a second import path for the nav helpers
+// through this file would put them one hop from the `@takazudo/zfb/content`
+// edge this file exists to carry.
 
 import {
   getCollection,
   getContentSnapshot,
 } from "@takazudo/zfb/content";
-import type { CategoryMeta } from "../sidebar-tree/types.js";
-import type { DocNavNode, DocPageEntry, DocPageFrontmatter } from "../doc-page-props/index.js";
-
-export type { CategoryMeta, DocNavNode, DocPageEntry };
-export type { BreadcrumbItem } from "../site-schema/types.js";
-export type { BuildHref, BuildNavTreeOptions } from "../site-schema/nav-tree.js";
-
-export {
-  buildBreadcrumbs,
-  buildNavTree,
-  collectAutoIndexNodes,
-  findNode,
-  firstRoutedHref,
-  groupSatelliteNodes,
-  isNavVisible,
-} from "../site-schema/nav-tree.js";
+import type { DocPageEntry, DocPageFrontmatter } from "../doc-page-props/index.js";
 
 // ---------------------------------------------------------------------------
 // Content bridge — snapshot-anchored stable docs (Decision 5)
