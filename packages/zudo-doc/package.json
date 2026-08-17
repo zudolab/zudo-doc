@@ -557,6 +557,10 @@
       "types": "./dist/sidebar-active-slug/index.d.ts",
       "default": "./dist/sidebar-active-slug/index.js"
     },
+    "./current-path": {
+      "types": "./dist/current-path/index.d.ts",
+      "default": "./dist/current-path/index.js"
+    },
     "./i18n-defaults": {
       "types": "./dist/i18n-defaults/index.d.ts",
       "default": "./dist/i18n-defaults/index.js"

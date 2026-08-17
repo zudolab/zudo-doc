@@ -66,6 +66,7 @@
 import type { VNode } from "preact";
 import type { VersionEntry, VersionSwitcherLabels } from "./types.js";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
+import { CURRENT_PATH_SCRIPT_PRELUDE } from "../current-path/index.js";
 import { UNAVAILABLE_VERSIONS_ATTR } from "../version-availability/index.js";
 
 export interface VersionSwitcherProps {
@@ -553,16 +554,18 @@ document.addEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)},initVersionSwi
  * a cross-locale header repaint, but the listener registers exactly once per
  * page lifetime.
  *
- * The pathname fed to `computeVersionSwitcherState` prefers
- * `document.documentElement.dataset.zdCurrentPath` over `location.pathname` —
- * the same explicit current-route override `nav-overflow-script.ts` /
- * `sidebar-tree-island` / `language-switcher.tsx` read (zudolab/zudo-doc#3398).
+ * The pathname fed to `computeVersionSwitcherState` comes from the embedded
+ * `readCurrentPath`, which prefers the `data-zd-current-path` override over
+ * `location.pathname` — the same explicit current-route reader
+ * `nav-overflow-script.ts` / `sidebar-tree-island` / `language-switcher.tsx`
+ * use (zudolab/zudo-doc#3398, consolidated by #3408).
  */
 export const VERSION_SWITCHER_REWIRE_SCRIPT = `(function(){
 var FLAG="__zdVersionSwitcherRewire";
 if(window[FLAG])return;
 window[FLAG]=true;
 var ATTR=${JSON.stringify(UNAVAILABLE_VERSIONS_ATTR)};
+${CURRENT_PATH_SCRIPT_PRELUDE}
 var computeVersionSwitcherState=${computeVersionSwitcherState.toString()};
 function setActive(a,active){
 a.classList.toggle("font-bold",active);
@@ -604,7 +607,7 @@ for(var j=0;j<versionAnchors.length;j++){
 var s=versionAnchors[j].getAttribute("data-version-slug");
 if(s)slugs.push(s);
 }
-var state=computeVersionSwitcherState(document.documentElement.dataset.zdCurrentPath||location.pathname,config,slugs);
+var state=computeVersionSwitcherState(readCurrentPath(CURRENT_PATH_DATASET_KEY),config,slugs);
 var latest=c.querySelector("[data-version-latest]");
 if(latest){
 latest.setAttribute("href",state.latestHref);

@@ -16,6 +16,7 @@ import type {
 } from "../types.js";
 import type { VersionSwitcherRewireConfig } from "../version-switcher.js";
 import { AFTER_NAVIGATE_EVENT } from "../../transitions/page-events.js";
+import { CURRENT_PATH_SCRIPT_PRELUDE } from "../../current-path/index.js";
 import { makeUrlHelpers } from "../../url-helpers/index.js";
 
 type AnyVNode = VNode<{ children?: ComponentChildren; [key: string]: unknown }>;
@@ -446,8 +447,10 @@ describe("VERSION_SWITCHER_REWIRE_SCRIPT", () => {
     expect(VERSION_SWITCHER_REWIRE_SCRIPT).toContain("data-version-rewire");
     expect(VERSION_SWITCHER_REWIRE_SCRIPT).toContain("computeVersionSwitcherState");
     // Explicit current-route override read order (zudolab/zudo-doc#3398):
-    // dataset attribute first, location.pathname as the fallback default.
-    expect(VERSION_SWITCHER_REWIRE_SCRIPT).toContain("dataset.zdCurrentPath");
+    // dataset attribute first, location.pathname as the fallback default. The
+    // reader is spliced in from current-path/index.ts (#3408); the executing
+    // proof lives in current-path/__tests__/current-path-surfaces.test.tsx.
+    expect(VERSION_SWITCHER_REWIRE_SCRIPT).toContain(CURRENT_PATH_SCRIPT_PRELUDE);
     expect(VERSION_SWITCHER_REWIRE_SCRIPT).toContain("location.pathname");
     // idempotency guard (single document-level listener per page lifetime)
     expect(VERSION_SWITCHER_REWIRE_SCRIPT).toContain("__zdVersionSwitcherRewire");

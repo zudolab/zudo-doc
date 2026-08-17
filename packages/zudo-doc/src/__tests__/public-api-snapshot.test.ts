@@ -59,6 +59,7 @@ describe("package.json exports keyset snapshot", () => {
         "./content",
         "./content-admonition",
         "./content.css",
+        "./current-path",
         "./design-token-panel-bootstrap",
         "./design-token-panel-config",
         "./desktop-sidebar-toggle-island",
