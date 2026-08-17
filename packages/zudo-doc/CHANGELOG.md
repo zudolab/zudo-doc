@@ -4,6 +4,16 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.5.3] - 2026-08-17
+
+### Bug Fixes
+
+- Upgraded the zfb toolchain to 2.5.2, which fixes markdown directive nesting across blank lines, collapsed-run recognition on split shapes, fence-state carryover into the sibling scan, and JSX reconstruction swallowing nested line breaks. (f69f5c7b6)
+
+### Other Changes
+
+- Bumped the generated scaffold's zfb pins to 2.5.2 so a fresh project picks up the same fixes. (f69f5c7b6)
+
 ## [5.5.2] - 2026-08-16
 
 ### Bug Fixes
