@@ -17,6 +17,45 @@ This package provides the missing-by-design framework concerns:
 - **View Transitions** (`./transitions`) — native View Transitions API shim (Chrome/Edge/Safari 18+); persistent regions via `view-transition-name`. No-op fallback in Firefox.
 - **Head injection** (`./head`) — canonical, og:\*, twitter:\*, robots, preload hints, RSS link, sitemap link, and theme-color output.
 - **SSR-skip wrappers** (`./ssr-skip`) — `<AiChatModalIsland>`, `<ImageEnlargeIsland>`, `<DesignTokenTweakPanelIsland>`, `<MockInitIsland>` — wrap zfb's `<Island ssrFallback>` with the right fallback markup so doc pages don't have to re-implement the SSR-skip pattern.
+- **Site schema** (`./site-schema`) — browser-safe nav tree / breadcrumb / pager domain, with zero zfb engine or filesystem coupling. See below.
+
+## `./site-schema` — the browser-safe site-shape domain
+
+Everything needed to answer "what is the shape of this documentation site?" — which routes exist, how they nest, what the previous/next page is, and what breadcrumb trail leads to a slug — without any of the rendering, disk access, or zfb engine coupling the rest of the package carries. A browser bundle, a Cloudflare Worker, or any non-zfb tool can compute the same answers the SSG build computes.
+
+**What it exports.** The route-existence builder `createDocRouteEntries`; the nav-tree builder `buildNavTree`; the blessed breadcrumb builder `buildBreadcrumbs`; the pager resolver `resolveDocPrevNext`; tree-walking helpers (`findNode`, `firstRoutedHref`, `flattenTree`, `flattenSubtree`, `collectAutoIndexNodes`, `groupSatelliteNodes`, `isNavVisible`, `rewriteNavHref`, `remapNavChildHrefs`); the `headerNav` scoping helpers `getCategoryOrder` / `getNavSectionForSlug` / `getNavSubtree`; the underlying `buildSidebarTree` primitive; the TOC helper `extractHeadings`; and the `schemaVersion` contract constant. Every props/route type is generic over the entry shape (defaulting to a structural `DocEntryLike`) so the subpath never needs to import zfb's `CollectionEntry` — see `API.md` for the full function and type reference.
+
+**Derivation contracts** — the rules a consumer relies on, not just the function names:
+
+- **Route emission.** An entry with `category_no_page: true` carries category metadata only and emits NO route. Every category with children but no `index.mdx` emits one synthesized auto-index route.
+- **The blessed breadcrumb rule.** `buildBreadcrumbs` is THE route-time slug-split walk that produces `props.breadcrumbs` — the same contract the SSG build uses. The presentation-layer `findPath` / `buildBreadcrumbItems` pair stays a component-side detail and is deliberately NOT exported; consumers reconstruct breadcrumbs through this function, not by re-walking the tree themselves.
+- **Category-scoped prev/next.** `resolveDocPrevNext` resolves prev/next against the route's OWN flattened subtree, not the whole site — so a category's last page has no `next` (and its first page has no `prev`). Frontmatter `pagination_prev` / `pagination_next` overrides resolve against that same caller-supplied tree, never a foreign one.
+
+**The `schemaVersion` fail-closed contract.** `schemaVersion` (currently `1`) is a contract-version constant, not a feature flag — check it before trusting the shape of anything else the subpath exports, and fail closed (refuse to render, or warn loudly) rather than silently mis-reading a shape change after a package upgrade. The pattern is deliberately the same one `@takazudo/zudo-doc/catalog` already established for its `ThemePacksIndexManifest.schemaVersion`.
+
+**Browser-safety guarantees.** Nothing reachable from `./site-schema` — through the bundled JS graph OR the transitive `.d.ts` graph — may be a `node:*` builtin, `preact`, a `.css` file, a `virtual:` module, or an `@takazudo/zfb*` package. Three guards hold that line:
+
+1. `src/__tests__/site-schema.test.ts` bundles the barrel with esbuild `platform: "neutral"` and walks the emitted declaration graph for the same violations.
+2. `scripts/check-site-schema.mjs` repeats the bundle check against the built `dist/site-schema/index.js` in the `prepack` chain, so a publish cannot ship a graph the source-level guard would have rejected.
+3. The `package.json#exports` keyset snapshot in `src/__tests__/public-api-snapshot.test.ts` pins the subpath's presence and shape.
+
+**Consumer story.** Import `@takazudo/zudo-doc/site-schema` anywhere you need zudo-doc's site semantics without a zfb build behind you — an SPA shell rendering its own nav chrome, a Worker computing breadcrumbs for an API response, or a script that needs to know what page comes next:
+
+```ts
+import {
+  schemaVersion,
+  buildNavTree,
+  buildBreadcrumbs,
+  resolveDocPrevNext,
+} from "@takazudo/zudo-doc/site-schema";
+
+if (schemaVersion !== 1) {
+  throw new Error(`Unsupported @takazudo/zudo-doc/site-schema version: ${schemaVersion}`);
+}
+
+const tree = buildNavTree(docs, "en", categoryMeta, buildHref);
+const breadcrumbs = buildBreadcrumbs(tree, "guides/color", homeHref);
+```
 
 ## Optional peer dependency: `@takazudo/zfb-md-wasm`
 
