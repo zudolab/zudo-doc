@@ -6,12 +6,13 @@
 // The ADR's "Ordering note (MUST-verify in #2822)": assert the theme-pack
 // provider renders IMMEDIATELY AFTER <ColorSchemeProvider/> in the
 // head-with-defaults output, and that the emitted bootstrap contains the
-// document.write + noscript shapes.
+// inlined-map + noscript shapes.
 
 import { describe, expect, it } from "vitest";
 import { render } from "preact-render-to-string";
 import { createHeadWithDefaults } from "../index.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
+import { THEME_PACK_LATCH_CSS } from "../../theme/theme-pack-provider.js";
 import type { ThemePackRegistry } from "../../theme-packs-registry/index.js";
 
 const REGISTRY = [
@@ -53,13 +54,15 @@ describe("HeadWithDefaults — theme-pack bootstrap emission", () => {
     const themePackIdx = out.indexOf(THEME_PACK_MARKER);
     expect(colorSchemeIdx).toBeGreaterThan(-1);
     expect(themePackIdx).toBeGreaterThan(colorSchemeIdx);
-    // "Immediately after": nothing but the script boundary sits between the
-    // color-scheme bootstrap's closing </script> and the theme-pack script.
+    // "Immediately after": between the color-scheme bootstrap's closing
+    // </script> and the theme-pack script sits EXACTLY the theme-pack anti-FOUC
+    // latch <style> — the provider's own first child, which must precede its
+    // script (#3399) — and nothing else.
     const between = out.slice(
       out.indexOf("</script>", colorSchemeIdx) + "</script>".length,
       out.lastIndexOf("<script>", themePackIdx),
     );
-    expect(between).toBe("");
+    expect(between).toBe(`<style>${THEME_PACK_LATCH_CSS}</style>`);
   });
 
   it("inlines the enabled {slug → version} map and the base prefix", () => {
