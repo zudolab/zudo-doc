@@ -226,7 +226,7 @@ or a non-zfb tool can compute the same answers the SSG build computes.
 `DocRouteEntry`, `BuildDocRouteEntriesArgs`, `DocRouteEntriesContext`,
 `DocRouteEntriesAPI`, `NavSourceDocs`, `BreadcrumbItem`, `HeadingItem`,
 `SidebarNode`, `CategoryMeta`, `SidebarFrontmatter`, `CollectionEntryLike`,
-`DocEntryLike`, `PaginationOverrides`, `BuildHref`, `BuildNavTreeOptions`,
+`DocEntryLike`, `PaginationOverrides`, `BuildHref`,
 `NavScopeNode`, `NavScopeHeaderNavItem`.
 
 `NavSourceDocs` + `DocNavNode` are the nav-manifest types. Every props/route

@@ -56,7 +56,7 @@ export type {
   DocRouteEntry,
 } from "./doc-route-entries.js";
 
-export type { BuildHref, BuildNavTreeOptions } from "./nav-tree.js";
+export type { BuildHref } from "./nav-tree.js";
 
 export type { PaginationOverrides } from "../doc-route-paths/index.js";
 

@@ -32,10 +32,6 @@ export function isNavVisible(doc: DocEntryLike): boolean {
 /** A docs-href builder: `(slug, locale) => url`. */
 export type BuildHref = (slug: string, locale: string) => string;
 
-export interface BuildNavTreeOptions {
-  buildHref?: BuildHref;
-}
-
 function toNavNode(node: SidebarNode): DocNavNode {
   return {
     slug: node.id,
@@ -100,9 +96,8 @@ export function buildNavTree(
   locale: string,
   categoryMeta: Map<string, CategoryMeta> | undefined,
   buildHref: BuildHref,
-  options?: BuildNavTreeOptions,
 ): DocNavNode[] {
-  const href: BuildHref = options?.buildHref ?? buildHref;
+  const href: BuildHref = buildHref;
   const sidebarTree = buildSidebarTree(
     docs,
     locale,
