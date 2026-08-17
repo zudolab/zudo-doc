@@ -123,6 +123,11 @@ export function switchLocaleHref(
  * `window[FLAG]` makes it idempotent: the tag may re-execute on a hard reload
  * or a cross-locale header repaint, but the listener is registered exactly
  * once per page lifetime.
+ *
+ * The pathname fed to `switchLocaleHref` prefers
+ * `document.documentElement.dataset.zdCurrentPath` over `location.pathname` —
+ * the same explicit current-route override `nav-overflow-script.ts` /
+ * `sidebar-tree-island` / `version-switcher.tsx` read (zudolab/zudo-doc#3398).
  */
 export const LANGUAGE_SWITCHER_INIT_SCRIPT = `(function(){
 var FLAG="__zdLanguageSwitcherInit";
@@ -140,7 +145,7 @@ for(var j=0;j<anchors.length;j++){
 var a=anchors[j];
 var target=a.getAttribute("lang");
 if(!target)continue;
-a.setAttribute("href",switchLocaleHref(window.location.pathname,config,currentLang,target));
+a.setAttribute("href",switchLocaleHref(document.documentElement.dataset.zdCurrentPath||location.pathname,config,currentLang,target));
 }
 }
 }

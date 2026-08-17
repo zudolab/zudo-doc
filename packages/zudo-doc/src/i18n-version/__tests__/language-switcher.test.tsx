@@ -193,7 +193,10 @@ describe("LANGUAGE_SWITCHER_INIT_SCRIPT", () => {
     expect(LANGUAGE_SWITCHER_INIT_SCRIPT).toContain(JSON.stringify(AFTER_NAVIGATE_EVENT));
     expect(LANGUAGE_SWITCHER_INIT_SCRIPT).toContain("data-language-switcher");
     expect(LANGUAGE_SWITCHER_INIT_SCRIPT).toContain("switchLocaleHref");
-    expect(LANGUAGE_SWITCHER_INIT_SCRIPT).toContain("window.location.pathname");
+    // Explicit current-route override read order (zudolab/zudo-doc#3398):
+    // dataset attribute first, location.pathname as the fallback default.
+    expect(LANGUAGE_SWITCHER_INIT_SCRIPT).toContain("dataset.zdCurrentPath");
+    expect(LANGUAGE_SWITCHER_INIT_SCRIPT).toContain("location.pathname");
     // idempotency guard (single document-level listener per page lifetime)
     expect(LANGUAGE_SWITCHER_INIT_SCRIPT).toContain("__zdLanguageSwitcherInit");
   });

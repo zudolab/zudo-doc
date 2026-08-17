@@ -61,38 +61,60 @@ function saveOpenSet(set: Set<string>) {
 }
 
 /**
- * Derive the active slug from the current document URL. Used as a hydration-
- * time fallback when the parent island does not forward `currentSlug` through
- * its prop boundary, and at every View Transition to keep the highlight in
- * sync.
+ * Explicit current-route override, checked before `window.location.pathname`.
+ * An embedding host (e.g. an iframe `srcdoc` preview shell) sets
+ * `document.documentElement.dataset.zdCurrentPath` because inside
+ * `about:srcdoc`, `location.pathname` is the literal string "srcdoc" (matches
+ * no route) and Chromium refuses `history.replaceState` there, so the page
+ * cannot self-correct via navigation (zudolab/zudo-doc#3398, spike ledger
+ * adl-0005). This is the same override source `nav-overflow-script.ts` /
+ * `version-switcher.tsx` / `language-switcher.tsx` read.
  */
-function deriveActiveSlugFromUrl(nodes: SidebarNavNode[]): string | undefined {
-  if (typeof window === "undefined") return undefined;
-  const pathname = normalizePath(window.location.pathname);
-  return findActiveSlug(nodes, pathname);
+function currentPathOverride(): string | undefined {
+  if (typeof document === "undefined") return undefined;
+  return document.documentElement.dataset.zdCurrentPath || undefined;
+}
+
+/**
+ * Derive the active slug from an explicit current-route input. Resolution
+ * order: the `pathname` argument, then `currentPathOverride()`, then
+ * `window.location.pathname`. Used as a hydration-time fallback when the
+ * parent island does not forward `currentSlug` through its prop boundary,
+ * and at every View Transition to keep the highlight in sync.
+ *
+ * Returns `undefined` both when no pathname is resolvable AND when the
+ * resolved pathname matches no route (e.g. the literal "srcdoc") — callers
+ * must treat `undefined` as "no update," preserving whatever active slug is
+ * already set rather than clearing it.
+ */
+function deriveActiveSlug(nodes: SidebarNavNode[], pathname?: string): string | undefined {
+  const resolved =
+    pathname ?? currentPathOverride() ?? (typeof window !== "undefined" ? window.location.pathname : undefined);
+  if (!resolved) return undefined;
+  return findActiveSlug(nodes, normalizePath(resolved));
 }
 
 /**
  * Track the current active slug, updating on View Transition navigations.
  *
  * The initial-state initialiser prefers the SSR-supplied `initial` prop, but
- * falls back to deriving the slug from `window.location.pathname` when the
- * prop is missing.
+ * falls back to `deriveActiveSlug` (explicit `currentPath` input, then the
+ * override/location fallbacks) when the prop is missing.
  */
-function useActiveSlug(nodes: SidebarNavNode[], initial?: string): string | undefined {
+function useActiveSlug(nodes: SidebarNavNode[], initial?: string, currentPath?: string): string | undefined {
   const [slug, setSlug] = useState<string | undefined>(() =>
-    initial !== undefined ? initial : deriveActiveSlugFromUrl(nodes),
+    initial !== undefined ? initial : deriveActiveSlug(nodes, currentPath),
   );
 
   useEffect(() => {
     const update = () => {
-      const found = deriveActiveSlugFromUrl(nodes);
+      const found = deriveActiveSlug(nodes, currentPath);
       if (found !== undefined) setSlug(found);
     };
     update();
     document.addEventListener(AFTER_NAVIGATE_EVENT, update);
     return () => document.removeEventListener(AFTER_NAVIGATE_EVENT, update);
-  }, [nodes]);
+  }, [nodes, currentPath]);
 
   return slug;
 }
@@ -143,6 +165,13 @@ function RootMenuItemEntry({ item }: { item: SidebarRootMenuItem }) {
 export interface SidebarTreeProps {
   nodes: SidebarNavNode[];
   currentSlug?: string;
+  /**
+   * Explicit current-route override, checked before
+   * `document.documentElement.dataset.zdCurrentPath` and
+   * `window.location.pathname` when deriving the active slug on hydration
+   * and at every View Transition. See `deriveActiveSlug` (zudolab/zudo-doc#3398).
+   */
+  currentPath?: string;
   rootMenuItems?: SidebarRootMenuItem[];
   backToMenuLabel?: string;
   localeLinks?: SidebarLocaleLink[];
@@ -171,8 +200,8 @@ function SidebarFooter({ links, themeDefaultMode }: { links?: SidebarLocaleLink[
   );
 }
 
-export function SidebarTree({ nodes, currentSlug, rootMenuItems, backToMenuLabel, localeLinks, themeDefaultMode }: SidebarTreeProps) {
-  const activeSlug = useActiveSlug(nodes, currentSlug);
+export function SidebarTree({ nodes, currentSlug, currentPath, rootMenuItems, backToMenuLabel, localeLinks, themeDefaultMode }: SidebarTreeProps) {
+  const activeSlug = useActiveSlug(nodes, currentSlug, currentPath);
   const [query, setQuery] = useState("");
   const [showingRootMenu, setShowingRootMenu] = useState(false);
   const filterRef = useRef<HTMLInputElement>(null);

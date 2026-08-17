@@ -445,7 +445,10 @@ describe("VERSION_SWITCHER_REWIRE_SCRIPT", () => {
     expect(VERSION_SWITCHER_REWIRE_SCRIPT).toContain(JSON.stringify(AFTER_NAVIGATE_EVENT));
     expect(VERSION_SWITCHER_REWIRE_SCRIPT).toContain("data-version-rewire");
     expect(VERSION_SWITCHER_REWIRE_SCRIPT).toContain("computeVersionSwitcherState");
-    expect(VERSION_SWITCHER_REWIRE_SCRIPT).toContain("window.location.pathname");
+    // Explicit current-route override read order (zudolab/zudo-doc#3398):
+    // dataset attribute first, location.pathname as the fallback default.
+    expect(VERSION_SWITCHER_REWIRE_SCRIPT).toContain("dataset.zdCurrentPath");
+    expect(VERSION_SWITCHER_REWIRE_SCRIPT).toContain("location.pathname");
     // idempotency guard (single document-level listener per page lifetime)
     expect(VERSION_SWITCHER_REWIRE_SCRIPT).toContain("__zdVersionSwitcherRewire");
   });
