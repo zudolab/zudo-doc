@@ -552,6 +552,11 @@ document.addEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)},initVersionSwi
  * `window[FLAG]` makes it idempotent: the tag may re-execute on a hard reload or
  * a cross-locale header repaint, but the listener registers exactly once per
  * page lifetime.
+ *
+ * The pathname fed to `computeVersionSwitcherState` prefers
+ * `document.documentElement.dataset.zdCurrentPath` over `location.pathname` —
+ * the same explicit current-route override `nav-overflow-script.ts` /
+ * `sidebar-tree-island` / `language-switcher.tsx` read (zudolab/zudo-doc#3398).
  */
 export const VERSION_SWITCHER_REWIRE_SCRIPT = `(function(){
 var FLAG="__zdVersionSwitcherRewire";
@@ -599,7 +604,7 @@ for(var j=0;j<versionAnchors.length;j++){
 var s=versionAnchors[j].getAttribute("data-version-slug");
 if(s)slugs.push(s);
 }
-var state=computeVersionSwitcherState(window.location.pathname,config,slugs);
+var state=computeVersionSwitcherState(document.documentElement.dataset.zdCurrentPath||location.pathname,config,slugs);
 var latest=c.querySelector("[data-version-latest]");
 if(latest){
 latest.setAttribute("href",state.latestHref);

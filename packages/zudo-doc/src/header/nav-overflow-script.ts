@@ -31,6 +31,7 @@
 // script can be reviewed in isolation.
 
 import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
+import { computeActiveNavPath, pathMatchesNavPath } from "./nav-active.js";
 import {
   NAV_CHEVRON_ACTIVE,
   NAV_CHEVRON_INACTIVE,
@@ -45,6 +46,17 @@ import {
   NAV_TOP_ACTIVE,
   NAV_TOP_INACTIVE,
 } from "./nav-class-tokens.js";
+
+// Explicit current-route override read order, shared by all four active-nav
+// read sites (sidebar-tree-island, this script, version-switcher,
+// language-switcher — zudolab/zudo-doc#3398): an embedding host may set
+// `document.documentElement.dataset.zdCurrentPath` before `location.pathname`
+// is trustworthy. Inside an iframe `srcdoc` document, `location.pathname` is
+// the literal string "srcdoc" (matches no route) and Chromium refuses
+// `history.replaceState` there, so the page can't self-correct via
+// navigation (spike ledger adl-0005). Written inline into the script string
+// below (rather than a `.toString()`-embedded helper) since the whole
+// NAV_OVERFLOW_SCRIPT body is already hand-authored plain JS.
 
 // The class lists spliced into the script below are the SSR ↔ runtime
 // lockstep: they must match the strings header.tsx renders. Both files import
@@ -78,20 +90,28 @@ export const NAV_OVERFLOW_SCRIPT = `(function () {
     catch (e) { return ""; }
   }
 
-  function isUnderPath(cur, p) {
-    if (!p) return false;
-    if (cur === p) return true;
-    return p !== "/" && cur.indexOf(p + "/") === 0;
+  // Explicit current-route override — see the module-level comment in
+  // nav-overflow-script.ts for the full rationale (zudolab/zudo-doc#3398).
+  function getCurrentPath() {
+    var override = document.documentElement.dataset.zdCurrentPath;
+    return override || location.pathname;
   }
+
+  // Shared matching core (zudolab/zudo-doc#3398): embedded verbatim from
+  // nav-active.ts so this script's longest-match walk cannot drift from the
+  // SSR header's own computeActiveNavPath call (header.tsx). computeActiveNavPath
+  // closes over pathMatchesNavPath, so both are embedded together.
+  var pathMatchesNavPath = ${pathMatchesNavPath.toString()};
+  var computeActiveNavPath = ${computeActiveNavPath.toString()};
 
   // Recompute which header nav item is "active" from the CURRENT URL and
   // repaint the highlight. SSR sets the active item on first paint, but the
   // header is persisted across same-locale client-router swaps
   // (data-zfb-transition-persist), so without this the highlight would stay
   // frozen on the page where the header was first rendered. Mirrors the
-  // sidebar island's client-side approach (match location.pathname against
+  // sidebar island's client-side approach (match the current path against
   // each entry's href) and the SSR longest-match + dropdown-parent rules.
-  // URL-based: hrefs and location.pathname both carry the base + locale
+  // URL-based: hrefs and the current path both carry the base + locale
   // prefix, so they compare directly without stripping.
   function applyActiveNav() {
     var nav = document.querySelector("[data-header-nav]");
@@ -99,25 +119,30 @@ export const NAV_OVERFLOW_SCRIPT = `(function () {
     var topItems = Array.from(nav.querySelectorAll(":scope > [data-nav-item]"));
     if (topItems.length === 0) return;
 
-    var cur = trimSlashes(location.pathname);
+    var cur = trimSlashes(getCurrentPath());
 
-    // Deepest (longest) nav path the current URL lives under, across both
-    // top-level and dropdown-child paths — matches computeActiveNavPath.
-    var activePath = "";
+    // Build NavItemLike-shaped entries from the live DOM so the shared
+    // computeActiveNavPath can do the deepest-match walk — the same call
+    // shape the SSR header uses (matches computeActiveNavPath). A dropdown
+    // missing its own top-level anchor is skipped entirely (path "" would
+    // otherwise match every current path — pathMatchesNavPath treats "" as
+    // the root "/"), mirroring the parentLink guard used below for the same
+    // malformed-markup case.
+    var navItems = [];
     topItems.forEach(function (it) {
       var isDropdown = it.hasAttribute("data-nav-item-dropdown");
       var topA = isDropdown ? it.querySelector(":scope > a") : it;
-      if (topA) {
-        var tp = navPathname(topA);
-        if (isUnderPath(cur, tp) && tp.length > activePath.length) activePath = tp;
-      }
+      if (!topA) return;
+      var children = [];
       if (isDropdown) {
         it.querySelectorAll(":scope > div a").forEach(function (c) {
-          var cp = navPathname(c);
-          if (isUnderPath(cur, cp) && cp.length > activePath.length) activePath = cp;
+          children.push({ path: navPathname(c) });
         });
       }
+      navItems.push({ path: navPathname(topA), children: children });
     });
+
+    var activePath = computeActiveNavPath(navItems, cur) || "";
 
     function setTopActive(a, active) {
       if (!a) return;
