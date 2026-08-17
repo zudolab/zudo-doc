@@ -740,9 +740,14 @@ function generatePackageJson(choices: UserChoices) {
     // visible text rather than the URL alone (and spares footnote bodies and
     // nested link labels), plus CJK-friendly emphasis/hard-break and math
     // handling at the secondary parse sites. No generator-side migration.
-    "@takazudo/zfb": "2.5.1",
-    "@takazudo/zfb-runtime": "2.5.1",
-    "@takazudo/zfb-md-wasm": "2.5.1",
+    // 2.5.2: bugfix only — blank-line-separated container directives now nest,
+    // collapsed-run recognition is gated/tolerant of the split shape, the
+    // opener paragraph's fence state carries into the sibling scan, and
+    // reconstruct_jsx stops swallowing nested Break nodes. No generator-side
+    // migration.
+    "@takazudo/zfb": "2.5.2",
+    "@takazudo/zfb-runtime": "2.5.2",
+    "@takazudo/zfb-md-wasm": "2.5.2",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
