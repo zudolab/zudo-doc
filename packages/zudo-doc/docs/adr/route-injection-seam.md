@@ -291,13 +291,45 @@ the same `setup(ctx)` hook.
 - **Different from `chromeBindingsModule` in one important way: scanner
   reachability IS part of this contract.** Unlike the chrome-bindings channel
   (SSR-presentational only — see the caveat above), the real
-  `DesignTokenPanelBootstrap` **island component** is NOT itself carried
+  design-token-panel **island component** is NOT itself carried
   through the config virtual module — it is a separate, statically-imported
-  component (`@takazudo/zudo-doc/design-token-panel-bootstrap`). Only the
-  PanelConfig *data* (mode-scoped builder) travels through the
-  `designTokenPanelConfigModule` re-export; the component itself is always
+  component. Only the PanelConfig *data* (mode-scoped builder) travels through
+  the `designTokenPanelConfigModule` re-export; the component itself is always
   reachable by zfb's island scanner regardless of whether a host configured
   this setting.
+- **Where the virtual specifier is imported (revised by #3396, epic #3394).**
+  Originally `design-token-panel-bootstrap.tsx` imported
+  `virtual:zudo-doc-design-token-panel-config` directly, which made the whole
+  chrome graph un-bundleable without the routes plugin (see the amended bullet
+  below). It now imports the package-default builder as a plain module, and the
+  override channel lives in a **routes-only configured wrapper**,
+  `routes/_design-token-panel-bootstrap.tsx`:
+  - the wrapper is the only module in the package importing the virtual
+    specifier, and it lives in the routes graph, which zfb always bundles with
+    the plugin active (`routes-src/` copy is automatic — the copier takes every
+    non-test file in `src/routes/`);
+  - `routes/_chrome.tsx` threads it through the existing
+    `hostBindings.DesignTokenPanelBootstrap` slot, spread BEFORE
+    `...chromeBindings` so a host's own slot value still wins;
+  - it is a **component-level** seam, deliberately not a module-level setter.
+    The route/SSR module graph and the hydrated island bundle are separate
+    graphs, so a setter called during route evaluation would configure only the
+    server-side copy of the bootstrap module while the client re-evaluated it
+    and kept the default. Passing the builder as an argument from a component
+    that lives inside the island bundle is the only shape that survives that
+    boundary;
+  - the wrapper's exported identifier (`ConfiguredDesignTokenPanelBootstrap`)
+    is DISTINCT from `DesignTokenPanelBootstrap` on purpose. `chrome/derive.tsx`
+    still statically imports the package default as the slot default, so both
+    components sit in the scanned graph; sharing a name would trip zfb's
+    "island marker name collision" diagnostic and silently drop one of them.
+    The `displayName` must equal the export identifier — zfb registers islands
+    by the scanner-visible export name.
+  - **Known gap:** a host rendering docs through a self-contained `pages/` stub
+    (the locked-manifest shape, #2653) calls `createChrome` directly and so gets
+    the package default, not the wrapper — `designTokenPanelConfigModule` does
+    not apply to those pages. Such a host threads its own builder via
+    `chromeBindings.DesignTokenPanelBootstrap`.
 - **Slot default lives at the chrome seam (gate-2 fix, Wave-5 confirm
   #2659).** The static import + slot wiring sit in `chrome/derive.tsx`'s
   `deriveBodyEndIslands` — `hostBindings.DesignTokenPanelBootstrap` DEFAULTS
@@ -312,14 +344,17 @@ the same `setup(ctx)` hook.
   still accepts a host override. If a host supplies a whole `BodyEndIslands`
   override, the derive seam composes the package-owned panel island alongside
   it; the host override does not replace or duplicate the panel mount.
-  Consequence: `@takazudo/zudo-doc/chrome` now
-  transitively imports `virtual:zudo-doc-design-token-panel-config`, so a
-  `packageOwnedRoutes: false` host that bundles chrome must register/alias
-  that module itself (the package vitest config aliases it to the package
-  default for fast tests).
-- **`@takazudo/zdtp` dep implication:** the same static import that makes
-  `DesignTokenPanelBootstrap` the seam default (`chrome/derive.tsx`, ~line
-  65) makes `@takazudo/zdtp` an **unconditional build-time dependency** of
+  ~~Consequence: `@takazudo/zudo-doc/chrome` now transitively imports
+  `virtual:zudo-doc-design-token-panel-config`, so a `packageOwnedRoutes: false`
+  host that bundles chrome must register/alias that module itself (the package
+  vitest config aliases it to the package default for fast tests).~~ **Retired
+  by #3396** — the chrome graph carries no `virtual:` specifier any more, so no
+  alias is needed anywhere (the vitest alias was removed with it) and chrome
+  bundles outside a zfb build. See the "Where the virtual specifier is
+  imported" bullet above.
+- **`@takazudo/zdtp` dep implication (UNCHANGED by #3396):** the same static
+  import that makes `DesignTokenPanelBootstrap` the seam default
+  (`chrome/derive.tsx`) makes `@takazudo/zdtp` an **unconditional build-time dependency** of
   every `createChrome` consumer — even `designTokenPanel: false` projects
   (the "Could not resolve '@takazudo/zdtp'" failure class from #2660). Same
   shape as the `diff` peer implication above: only RENDERING is gated on the
