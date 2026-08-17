@@ -80,12 +80,11 @@ const docsUrlFor = (base: string) => (slug: string) => (slug ? `${base}/docs/${s
 /** A minimal but complete route context, parameterized on its URL space so two
  *  instances are distinguishable in their output. */
 function makeContext(base: string): DocRouteEntriesContext {
-  const docsUrl = docsUrlFor(base);
   return {
     defaultLocale: "en",
     buildNavTree: (docs, locale, categoryMeta, buildHref) =>
       buildNavTree(docs, locale, categoryMeta, buildHref),
-    docsUrl: (slug) => docsUrl(slug),
+    docsUrl: docsUrlFor(base),
     withBase: (path) => `${base}${path}`,
     collectAutoIndexNodes: (tree) => collectAutoIndexNodes(tree) as AutoIndexNode[],
     getNavSectionForSlug: () => undefined,
@@ -323,9 +322,10 @@ describe("createDocRouteEntries", () => {
     expect(a[0]?.props.breadcrumbs[0]?.href).toBe("/a/");
     expect(b[0]?.props.breadcrumbs[0]?.href).toBe("/b/");
 
-    const aHrefs = a.map((r) => r.props.autoIndex?.href ?? r.props.entry?.slug);
-    const bHrefs = b.map((r) => r.props.autoIndex?.href ?? r.props.entry?.slug);
-    expect(aHrefs).not.toEqual(bHrefs);
+    const autoIndexHref = (routes: typeof a) =>
+      routes.find((r) => r.slug === "orphans")?.props.autoIndex?.href;
+    expect(autoIndexHref(a)).toBe("/a/docs/orphans/");
+    expect(autoIndexHref(b)).toBe("/b/docs/orphans/");
   });
 });
 

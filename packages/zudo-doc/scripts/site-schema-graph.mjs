@@ -38,12 +38,12 @@ export function forbiddenLabel(specifier) {
  */
 export async function loadEsbuild(fromPaths) {
   const require = createRequire(import.meta.url);
-  for (const via of ["tsup", "vite", "vitest", "esbuild"]) {
+  // Each host package is resolved first, then esbuild is resolved FROM it —
+  // pnpm's store keeps esbuild out of this package's own node_modules.
+  for (const host of ["tsup", "vite", "vitest"]) {
     try {
-      const specifier = via === "esbuild" ? "esbuild" : `${via}/package.json`;
-      const pkgPath = require.resolve(specifier, { paths: fromPaths });
-      if (via === "esbuild") return await import(pkgPath);
-      return await import(createRequire(pkgPath).resolve("esbuild"));
+      const hostPkg = require.resolve(`${host}/package.json`, { paths: fromPaths });
+      return await import(createRequire(hostPkg).resolve("esbuild"));
     } catch {
       // try the next host package
     }
