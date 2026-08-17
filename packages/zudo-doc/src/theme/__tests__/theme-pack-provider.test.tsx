@@ -560,6 +560,20 @@ describe("buildThemePackBootstrap (executed)", () => {
     });
   });
 
+  it("contains no document.write anywhere in the emitted text (all branches, not just the exercised ones)", () => {
+    // The behavior tests above prove the paths they exercise; this pins the
+    // whole string, so a document.write reintroduced on a branch no test walks
+    // still fails. It is the single defect #3399 exists to prevent.
+    for (const configured of ["default", "foundry"]) {
+      const script = buildThemePackBootstrap(configured, ENABLED, "/sub/");
+      expect(script).not.toContain("document.write");
+      expect(script).not.toContain("document.open");
+      // …and the latch attribute IS inlined (a build-static JSON literal).
+      expect(script).toContain(`"${THEME_PACK_LOADING_ATTR}"`);
+      expect(script).toContain(`=${THEME_PACK_LOAD_WATCHDOG_MS};`);
+    }
+  });
+
   it("emits identical script text across repeated calls with the same arguments (build-static contract)", () => {
     // zfb's scriptsAlreadyRan dedupe is keyed on textContent — the bootstrap
     // must be a pure function of its inputs so every page's inline script is
