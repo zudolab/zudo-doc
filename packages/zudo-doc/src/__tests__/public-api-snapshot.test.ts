@@ -161,6 +161,7 @@ describe("package.json exports keyset snapshot", () => {
         "./sidebar-utils",
         "./sidebar-with-defaults",
         "./sidebar/types",
+        "./site-schema",
         "./site-tree-nav",
         "./site-tree-nav-island",
         "./slug",
