@@ -616,20 +616,58 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   //
   // All of it traces to already-merged, intentional PRs; no unattributed
   // bytes.
+  //
+  // 2026-08-18 re-baseline (zudolab/zudo-doc#3401, epic #3394 wave-1 → base
+  // merge): pre-epic HEAD (3902f7f0) rebuilt in a scratch worktree and
+  // byte-diffed against this epic base's HEAD via the same
+  // `parity-html-normalize.mjs` helper this test uses. All three pages grew
+  // by IDENTICALLY 2040 bytes (no page-specific delta, unlike the #3277
+  // entry's TOC-only +11 bytes) and every changed line traces to exactly two
+  // already-merged, intentional wave-1 PRs:
+  //
+  //   - `zudolab/zudo-doc#3399` (theme-pack no-FOUC bootstrap rewrite,
+  //     `theme/theme-pack-provider.tsx`): adds the anti-FOUC latch
+  //     `<style>html[data-zd-theme-pack-loading] body{visibility:hidden}</style>`
+  //     immediately before the bootstrap `<script>`, and replaces the old
+  //     `document.write('<link ...>')` insertion with
+  //     `createElement`/`head.appendChild` plus a `LOADING_ATTR`/`WATCHDOG`
+  //     latch-release dance — present verbatim on every page (unconditional,
+  //     not gated on `themePack`).
+  //   - `zudolab/zudo-doc#3398` (explicit current-route input,
+  //     `header/nav-overflow-script.ts`): replaces the inlined
+  //     `isUnderPath`/raw `location.pathname` walk with a `getCurrentPath()`
+  //     override read plus `pathMatchesNavPath`/`computeActiveNavPath`
+  //     embedded verbatim from `nav-active.ts`, so the client script's
+  //     longest-match walk can't drift from the SSR header's own
+  //     `computeActiveNavPath` call — also unconditional, present on every
+  //     page.
+  //
+  // Both scripts are page-independent boilerplate emitted on every SSG page,
+  // which is exactly why all three otherwise-unrelated fixture pages moved by
+  // the same byte count. No other wave-1 sub-issue (category-meta-fs #3397 —
+  // this fixture has no `_category_.json` so `loadCategoryMeta` is an empty
+  // map either way; dtp-virtual-seam #3396 — `designTokenPanel` stays `false`
+  // in this fixture, so the DTP island markup is absent both before and
+  // after; site-schema subpath/active-nav-input plumbing — pure refactors of
+  // code this fixture's build doesn't exercise differently) touched a single
+  // byte of these three pages.
+  //
+  // All of it traces to already-merged, intentional PRs; no unattributed
+  // bytes.
 
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"29f8ad2434e2c80e7ec084ce35d5403576c08d2efb14b64393fbdd822d429198"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"e8da2b7dfb3dd4f40819c45d1099f0f628425d3e7d1d8f6b1950087ca7b2dacc"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"e433f30ab887391e7bf22dd1d6af24e80cbafba3530e95c076378b26c5a5a272"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"c7d1036b74679e01fba0de5291eead1e87ae102107081e34be5a580ebbdc53dd"`);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"c8cc832ab0d4f2771619be1fe06d2e962122f77705cc6c507df62e08d2853251"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"efdd372af488957c34c567eb779243c2b0c0ca8699d51644342a6acbc6cbb279"`);
   });
 });
 
