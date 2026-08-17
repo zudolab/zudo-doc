@@ -31,6 +31,7 @@
 // script can be reviewed in isolation.
 
 import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
+import { CURRENT_PATH_SCRIPT_PRELUDE } from "../current-path/index.js";
 import { computeActiveNavPath, pathMatchesNavPath } from "./nav-active.js";
 import {
   NAV_CHEVRON_ACTIVE,
@@ -46,17 +47,6 @@ import {
   NAV_TOP_ACTIVE,
   NAV_TOP_INACTIVE,
 } from "./nav-class-tokens.js";
-
-// Explicit current-route override read order, shared by all four active-nav
-// read sites (sidebar-tree-island, this script, version-switcher,
-// language-switcher — zudolab/zudo-doc#3398): an embedding host may set
-// `document.documentElement.dataset.zdCurrentPath` before `location.pathname`
-// is trustworthy. Inside an iframe `srcdoc` document, `location.pathname` is
-// the literal string "srcdoc" (matches no route) and Chromium refuses
-// `history.replaceState` there, so the page can't self-correct via
-// navigation (spike ledger adl-0005). Written inline into the script string
-// below (rather than a `.toString()`-embedded helper) since the whole
-// NAV_OVERFLOW_SCRIPT body is already hand-authored plain JS.
 
 // The class lists spliced into the script below are the SSR ↔ runtime
 // lockstep: they must match the strings header.tsx renders. Both files import
@@ -90,12 +80,10 @@ export const NAV_OVERFLOW_SCRIPT = `(function () {
     catch (e) { return ""; }
   }
 
-  // Explicit current-route override — see the module-level comment in
-  // nav-overflow-script.ts for the full rationale (zudolab/zudo-doc#3398).
-  function getCurrentPath() {
-    var override = document.documentElement.dataset.zdCurrentPath;
-    return override || location.pathname;
-  }
+  // Explicit current-route override, embedded from current-path/index.ts so
+  // this script cannot drift from the three other read sites
+  // (zudolab/zudo-doc#3398, #3408).
+  ${CURRENT_PATH_SCRIPT_PRELUDE}
 
   // Shared matching core (zudolab/zudo-doc#3398): embedded verbatim from
   // nav-active.ts so this script's longest-match walk cannot drift from the
@@ -119,7 +107,7 @@ export const NAV_OVERFLOW_SCRIPT = `(function () {
     var topItems = Array.from(nav.querySelectorAll(":scope > [data-nav-item]"));
     if (topItems.length === 0) return;
 
-    var cur = trimSlashes(getCurrentPath());
+    var cur = trimSlashes(readCurrentPath(CURRENT_PATH_DATASET_KEY));
 
     // Build NavItemLike-shaped entries from the live DOM so the shared
     // computeActiveNavPath can do the deepest-match walk — the same call

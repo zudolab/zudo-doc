@@ -12,6 +12,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { NAV_OVERFLOW_SCRIPT } from "../nav-overflow-script.js";
 import { NAV_TOP_ACTIVE } from "../nav-class-tokens.js";
+import { CURRENT_PATH_DATASET_KEY } from "../../current-path/index.js";
 
 function setLocation(pathname: string): void {
   (window as unknown as { happyDOM?: { setURL: (url: string) => void } }).happyDOM?.setURL(
@@ -40,7 +41,7 @@ function buildNav(): HTMLElement {
 describe("NAV_OVERFLOW_SCRIPT — executed in jsdom (applyActiveNav)", () => {
   afterEach(() => {
     document.body.innerHTML = "";
-    delete document.documentElement.dataset.zdCurrentPath;
+    delete document.documentElement.dataset[CURRENT_PATH_DATASET_KEY];
   });
 
   it("marks the matching top-level item active from location.pathname", () => {
@@ -72,7 +73,7 @@ describe("NAV_OVERFLOW_SCRIPT — executed in jsdom (applyActiveNav)", () => {
 
   it("prefers document.documentElement.dataset.zdCurrentPath over location.pathname", () => {
     setLocation("/blog/post-1");
-    document.documentElement.dataset.zdCurrentPath = "/docs/introduction";
+    document.documentElement.dataset[CURRENT_PATH_DATASET_KEY] = "/docs/introduction";
     const nav = buildNav();
 
     new Function(NAV_OVERFLOW_SCRIPT)();

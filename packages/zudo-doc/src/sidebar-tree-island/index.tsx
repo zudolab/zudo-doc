@@ -18,6 +18,7 @@ import { smartBreakToHtml } from "../smart-break/index.js";
 import { AFTER_NAVIGATE_EVENT, BEFORE_NAVIGATE_EVENT } from "../transitions/index.js";
 import { filterTree } from "../sidebar-filter/index.js";
 import { findActiveSlug, normalizePath } from "../sidebar-active-slug/index.js";
+import { CURRENT_PATH_DATASET_KEY, readCurrentPath } from "../current-path/index.js";
 import { ensureSidebarScrollPreserve } from "./sidebar-scroll-preserve.js";
 
 // The persisted aside can transiently tear down and re-mount its SidebarTree
@@ -61,26 +62,12 @@ function saveOpenSet(set: Set<string>) {
 }
 
 /**
- * Explicit current-route override, checked before `window.location.pathname`.
- * An embedding host (e.g. an iframe `srcdoc` preview shell) sets
- * `document.documentElement.dataset.zdCurrentPath` because inside
- * `about:srcdoc`, `location.pathname` is the literal string "srcdoc" (matches
- * no route) and Chromium refuses `history.replaceState` there, so the page
- * cannot self-correct via navigation (zudolab/zudo-doc#3398, spike ledger
- * adl-0005). This is the same override source `nav-overflow-script.ts` /
- * `version-switcher.tsx` / `language-switcher.tsx` read.
- */
-function currentPathOverride(): string | undefined {
-  if (typeof document === "undefined") return undefined;
-  return document.documentElement.dataset.zdCurrentPath || undefined;
-}
-
-/**
  * Derive the active slug from an explicit current-route input. Resolution
- * order: the `pathname` argument, then `currentPathOverride()`, then
- * `window.location.pathname`. Used as a hydration-time fallback when the
- * parent island does not forward `currentSlug` through its prop boundary,
- * and at every View Transition to keep the highlight in sync.
+ * order is owned by {@link readCurrentPath}: the `pathname` argument, then the
+ * `data-zd-current-path` override, then `window.location.pathname`. Used as a
+ * hydration-time fallback when the parent island does not forward
+ * `currentSlug` through its prop boundary, and at every View Transition to
+ * keep the highlight in sync.
  *
  * Returns `undefined` both when no pathname is resolvable AND when the
  * resolved pathname matches no route (e.g. the literal "srcdoc") — callers
@@ -88,11 +75,10 @@ function currentPathOverride(): string | undefined {
  * already set rather than clearing it.
  */
 function deriveActiveSlug(nodes: SidebarNavNode[], pathname?: string): string | undefined {
-  // `||` (not `??`) so an empty-string `pathname` falls through to the live
-  // sources instead of silently disabling derivation — SidebarWithDefaults
-  // defaults its own currentPath to "", so "" is the natural absent shape.
-  const resolved =
-    pathname || currentPathOverride() || (typeof window !== "undefined" ? window.location.pathname : undefined);
+  // An empty-string `pathname` must fall through to the live sources instead
+  // of silently disabling derivation — SidebarWithDefaults defaults its own
+  // currentPath to "", so "" is the natural absent shape.
+  const resolved = readCurrentPath(CURRENT_PATH_DATASET_KEY, pathname);
   if (!resolved) return undefined;
   return findActiveSlug(nodes, normalizePath(resolved));
 }
@@ -175,10 +161,10 @@ export interface SidebarTreeProps {
   nodes: SidebarNavNode[];
   currentSlug?: string;
   /**
-   * Explicit current-route override, checked before
-   * `document.documentElement.dataset.zdCurrentPath` and
-   * `window.location.pathname` when deriving the active slug on hydration
-   * and at every View Transition. See `deriveActiveSlug` (zudolab/zudo-doc#3398).
+   * Explicit current-route override, checked before the
+   * `data-zd-current-path` dataset override and `window.location.pathname`
+   * when deriving the active slug on hydration and at every View Transition.
+   * See `deriveActiveSlug` (zudolab/zudo-doc#3398).
    */
   currentPath?: string;
   rootMenuItems?: SidebarRootMenuItem[];

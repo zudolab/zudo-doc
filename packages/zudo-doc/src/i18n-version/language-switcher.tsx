@@ -29,6 +29,7 @@ import type { VNode } from "preact";
 import { Fragment } from "preact";
 import type { LocaleLink } from "./types.js";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
+import { CURRENT_PATH_SCRIPT_PRELUDE } from "../current-path/index.js";
 
 /**
  * The minimal project config the client re-wire needs to reproduce
@@ -124,15 +125,17 @@ export function switchLocaleHref(
  * or a cross-locale header repaint, but the listener is registered exactly
  * once per page lifetime.
  *
- * The pathname fed to `switchLocaleHref` prefers
- * `document.documentElement.dataset.zdCurrentPath` over `location.pathname` —
- * the same explicit current-route override `nav-overflow-script.ts` /
- * `sidebar-tree-island` / `version-switcher.tsx` read (zudolab/zudo-doc#3398).
+ * The pathname fed to `switchLocaleHref` comes from the embedded
+ * `readCurrentPath`, which prefers the `data-zd-current-path` override over
+ * `location.pathname` — the same explicit current-route reader
+ * `nav-overflow-script.ts` / `sidebar-tree-island` / `version-switcher.tsx`
+ * use (zudolab/zudo-doc#3398, consolidated by #3408).
  */
 export const LANGUAGE_SWITCHER_INIT_SCRIPT = `(function(){
 var FLAG="__zdLanguageSwitcherInit";
 if(window[FLAG])return;
 window[FLAG]=true;
+${CURRENT_PATH_SCRIPT_PRELUDE}
 var switchLocaleHref=${switchLocaleHref.toString()};
 function rewire(){
 var containers=document.querySelectorAll("[data-language-switcher]");
@@ -145,7 +148,7 @@ for(var j=0;j<anchors.length;j++){
 var a=anchors[j];
 var target=a.getAttribute("lang");
 if(!target)continue;
-a.setAttribute("href",switchLocaleHref(document.documentElement.dataset.zdCurrentPath||location.pathname,config,currentLang,target));
+a.setAttribute("href",switchLocaleHref(readCurrentPath(CURRENT_PATH_DATASET_KEY),config,currentLang,target));
 }
 }
 }

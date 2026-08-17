@@ -17,6 +17,7 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { SidebarTree, type SidebarTreeProps } from "../index.js";
 import type { SidebarNavNode } from "../../sidebar/types.js";
+import { CURRENT_PATH_DATASET_KEY } from "../../current-path/index.js";
 
 const NODES: SidebarNavNode[] = [
   {
@@ -65,12 +66,12 @@ afterEach(() => {
     mounted.remove();
     mounted = null;
   }
-  delete document.documentElement.dataset.zdCurrentPath;
+  delete document.documentElement.dataset[CURRENT_PATH_DATASET_KEY];
 });
 
 describe("SidebarTree — explicit current-route override", () => {
   it("prefers the explicit currentPath prop over the dataset override", () => {
-    document.documentElement.dataset.zdCurrentPath = "/docs/introduction";
+    document.documentElement.dataset[CURRENT_PATH_DATASET_KEY] = "/docs/introduction";
     const container = mount({ nodes: NODES, currentPath: "/docs/guides/getting-started" });
 
     const active = container.querySelector('a[aria-current="page"]');
@@ -78,7 +79,7 @@ describe("SidebarTree — explicit current-route override", () => {
   });
 
   it("falls back to document.documentElement.dataset.zdCurrentPath when no currentPath prop is given", () => {
-    document.documentElement.dataset.zdCurrentPath = "/docs/introduction";
+    document.documentElement.dataset[CURRENT_PATH_DATASET_KEY] = "/docs/introduction";
     const container = mount({ nodes: NODES });
 
     const active = container.querySelector('a[aria-current="page"]');
