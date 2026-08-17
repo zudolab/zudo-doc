@@ -1,26 +1,63 @@
 // ThemePackProvider — the FOUC-safe theme-pack bootstrap, sibling of
 // `color-scheme-provider.tsx` (ADR `docs/adr/theme-packs.md`, Decision 3
 // "Hard-load bootstrap"; epic Theme Core #2812, sub-issue #2822; soft-nav FOUC
-// fix zudolab/zudo-doc#3136, sub-issue #3137).
+// fix zudolab/zudo-doc#3136, sub-issue #3137; document.write removal +
+// explicit latch zudolab/zudo-doc#3399).
 //
 // Rendered by `head-with-defaults` IMMEDIATELY AFTER `<ColorSchemeProvider/>`.
 // Emits, in order:
 //
-//   1. An inline `<script>` that resolves the active pack slug
-//      (validated localStorage value, else the configured slug) BEFORE first
-//      paint, sets `<html data-theme-pack>`, and — for a non-default pack —
-//      `document.write`s the single pack stylesheet link. The written link is
-//      parser-inserted, therefore render-blocking in every browser: the one
-//      mechanism with a hard cross-browser pre-paint guarantee AND exactly one
-//      stylesheet request that is correct the first time (no default-then-
-//      stored double fetch, no MutationObserver races). Chrome's
-//      document.write intervention targets parser-blocking cross-origin
-//      *scripts*, not stylesheets. There is deliberately NO eager SSR link —
-//      an inline script cannot rewrite an SSR link's href "before the
-//      request" (by the time the element is scriptable its fetch has started).
-//   2. A `<noscript>` fallback link for the CONFIGURED pack (omitted when the
+//   1. A build-static anti-FOUC latch `<style>` (`THEME_PACK_LATCH_CSS`) —
+//      `html[data-zd-theme-pack-loading] body{visibility:hidden}`. It MUST
+//      precede the script so the rule is already live when the body parses;
+//      it is inert until the script sets the attribute, so pages that load no
+//      pack stylesheet are unaffected.
+//   2. An inline `<script>` that resolves the active pack slug
+//      (validated localStorage value, else the validated live html attribute,
+//      else the configured slug) BEFORE first paint, sets
+//      `<html data-theme-pack>`, and — for a non-default pack — inserts the
+//      single pack stylesheet link via `createElement`/`head.appendChild`
+//      under the latch (see the contract below). Still exactly one stylesheet
+//      request that is correct the first time (no default-then-stored double
+//      fetch, no MutationObserver races) and zero requests for `default`.
+//      There is deliberately NO eager SSR link — an inline script cannot
+//      rewrite an SSR link's href "before the request" (by the time the
+//      element is scriptable its fetch has started).
+//   3. A `<noscript>` fallback link for the CONFIGURED pack (omitted when the
 //      configured pack is `default`) so a no-JS visitor gets the configured
-//      look, matching the SSR `data-theme-pack` html attribute.
+//      look, matching the SSR `data-theme-pack` html attribute. The latch is
+//      never armed on the no-JS path (only the script sets it), so a no-JS
+//      visitor can never end up staring at a hidden body.
+//
+// ANTI-FOUC LATCH CONTRACT (#3399 — read before touching the insertion path).
+// The bootstrap used to `document.write` the link during head parse: a
+// parser-inserted stylesheet is render-blocking in every browser, which was a
+// HARD pre-paint guarantee. That mechanism had to go, because `document.write`
+// after page load implicitly `document.open()`s and DESTROYS the live document
+// — fatal the moment the chrome is evaluated a second time (SPA embedding).
+// A script-inserted head stylesheet does NOT block the parser; Chromium and
+// Firefox generally still block paint on a pending head sheet, Safari is the
+// soft spot. So the guarantee is replaced by an EXPLICIT, bounded one:
+//
+//   - Before inserting the link the script sets `data-zd-theme-pack-loading`
+//     on `<html>`, which the latch `<style>` turns into a hidden body.
+//   - The attribute is cleared on the link's `load` OR `error`.
+//   - A `THEME_PACK_LOAD_WATCHDOG_MS` (2s) timer clears it unconditionally.
+//
+// In words: **no FOUC for a pack stylesheet that loads within the watchdog;
+// a bounded flash beyond it.** Past 2s, blank-screen avoidance deliberately
+// wins over strict no-FOUC — a hung or very slow stylesheet must never leave
+// the page permanently blank. This is a real (accepted) weakening versus the
+// parser-inserted link; do not "restore" `document.write` to close it.
+//
+// Re-evaluating the script after load is INERT with respect to the stylesheet:
+// the insertion is guarded on an existing `link[data-zd-theme-pack-css]` whose
+// href matches the resolved slug, which is already in the head synchronously
+// after the first evaluation — so a duplicate run finds it whether the sheet
+// is still pending or already loaded, and neither re-requests it nor re-arms
+// the latch. (The two soft-nav handlers below are each individually
+// idempotent, so a duplicate registration would also be harmless; zfb's
+// `scriptsAlreadyRan` textContent dedupe prevents one in the first place.)
 //
 // SPA soft navigation (zfb Strategy B) — PRIMARY mechanism is a
 // `BEFORE_SWAP_EVENT` ("zfb:before-swap") listener. zfb dispatches this event
@@ -45,8 +82,9 @@
 // `createElement`/`appendChild`, and removes stale/wrong-slug links (including
 // dropping the link entirely when the resolved slug is `default`). It also
 // covers the default-pack case, which the before-swap handler intentionally
-// skips (there is nothing to persist for `default`). Neither handler EVER
-// uses `document.write` after load — that would clobber the live document.
+// skips (there is nothing to persist for `default`). Neither handler arms the
+// latch: a soft navigation keeps the already-loaded live link (that is the
+// whole point of the before-swap injection), so there is nothing to wait for.
 // Slug resolution is stored-first (validated) per the ADR, with a validated
 // LIVE `<html data-theme-pack>` fallback before the configured default:
 // `data-theme-pack` rides `preserveHtmlAttrs`, so when persistence failed
@@ -80,6 +118,35 @@ import {
   buildPackCssUrl,
 } from "../theme-pack-switcher/theme-pack-sync.js";
 import type { ThemePackRegistry } from "../theme-packs-registry/index.js";
+
+/**
+ * Transient `<html>` attribute the hard-load bootstrap sets while the pack
+ * stylesheet request is in flight. Paired with {@link THEME_PACK_LATCH_CSS};
+ * cleared on the link's load/error or by the watchdog. Deliberately NOT part
+ * of `preserveHtmlAttrs` — it must never survive a soft navigation.
+ *
+ * Not to be confused with `THEME_PACK_LINK_LOADING_ATTR`
+ * (`data-zd-theme-pack-css-loading`), which marks the in-flight `<link>`
+ * during a RUNTIME `applyThemePack` swap. Different element, different
+ * mechanism — a runtime swap awaits the sheet off-screen and never hides
+ * the body.
+ */
+export const THEME_PACK_LOADING_ATTR = "data-zd-theme-pack-loading";
+
+/**
+ * Upper bound (ms) on how long the latch may hide the body. Past this the
+ * attribute is cleared regardless of the stylesheet's state: blank-screen
+ * avoidance wins over strict no-FOUC (see the latch contract in the file
+ * header).
+ */
+export const THEME_PACK_LOAD_WATCHDOG_MS = 2000;
+
+/**
+ * The latch rule, emitted as a build-static `<style>` BEFORE the bootstrap
+ * script so it is live by the time the body parses. Inert until the script
+ * sets {@link THEME_PACK_LOADING_ATTR}.
+ */
+export const THEME_PACK_LATCH_CSS = `html[${THEME_PACK_LOADING_ATTR}] body{visibility:hidden}`;
 
 export interface ThemePackProviderProps {
   /** The build-configured pack slug (`settings.themePack`, default `"default"`). */
@@ -144,6 +211,8 @@ export function buildThemePackBootstrap(
   const runtimeGlobal = JSON.stringify(THEME_PACK_RUNTIME_GLOBAL);
   const afterNav = JSON.stringify(AFTER_NAVIGATE_EVENT);
   const beforeSwap = JSON.stringify(BEFORE_SWAP_EVENT);
+  const loadingAttr = JSON.stringify(THEME_PACK_LOADING_ATTR);
+  const watchdog = JSON.stringify(THEME_PACK_LOAD_WATCHDOG_MS);
   return `(function(){
 var configured=${configured};
 var packs=${packs};
@@ -151,12 +220,30 @@ var base=${b};
 var KEY=${key};
 var ATTR=${attr};
 var LINK_ATTR=${linkAttr};
+var LOADING_ATTR=${loadingAttr};
+var WATCHDOG=${watchdog};
 var DEFAULT_SLUG=${defaultSlug};
 function resolveSlug(){var stored=null;try{stored=localStorage.getItem(KEY);}catch(e){}if(stored&&Object.prototype.hasOwnProperty.call(packs,stored))return stored;var live=document.documentElement.getAttribute(ATTR);if(live&&Object.prototype.hasOwnProperty.call(packs,live))return live;return configured;}
 function packHref(slug){return base+"theme-packs/"+slug+"/pack.css?v="+packs[slug];}
+function hasPackLink(href){var ls=document.querySelectorAll("link["+LINK_ATTR+"]");for(var i=0;i<ls.length;i++){if(ls[i].getAttribute("href")===href)return true;}return false;}
 var slug=resolveSlug();
-document.documentElement.setAttribute(ATTR,slug);
-if(slug!==DEFAULT_SLUG){document.write('<link rel="stylesheet" '+LINK_ATTR+' href="'+packHref(slug)+'">');}
+var root=document.documentElement;
+root.setAttribute(ATTR,slug);
+if(slug!==DEFAULT_SLUG){
+var href=packHref(slug);
+if(!hasPackLink(href)){
+root.setAttribute(LOADING_ATTR,"");
+var release=function(){root.removeAttribute(LOADING_ATTR);};
+var link=document.createElement("link");
+link.setAttribute("rel","stylesheet");
+link.setAttribute(LINK_ATTR,"");
+link.setAttribute("href",href);
+link.onload=release;
+link.onerror=release;
+document.head.appendChild(link);
+setTimeout(release,WATCHDOG);
+}
+}
 window[${runtimeGlobal}]={base:base,packs:packs,configured:configured};
 document.addEventListener(${beforeSwap},function(e){
 var s=resolveSlug();
@@ -185,9 +272,11 @@ if(want!==null&&!found){var nl=document.createElement("link");nl.setAttribute("r
 }
 
 /**
- * Server-rendered head fragment: the pre-paint bootstrap `<script>` plus the
- * `<noscript>` configured-pack fallback. No hydration — like
- * `ColorSchemeProvider` it just emits markup the engine streams into `<head>`.
+ * Server-rendered head fragment: the anti-FOUC latch `<style>`, the pre-paint
+ * bootstrap `<script>`, and the `<noscript>` configured-pack fallback. No
+ * hydration — like `ColorSchemeProvider` it just emits markup the engine
+ * streams into `<head>`. The latch style MUST stay first (see the contract in
+ * the file header).
  */
 export default function ThemePackProvider({
   configuredSlug,
@@ -203,6 +292,7 @@ export default function ThemePackProvider({
 
   return (
     <>
+      <style dangerouslySetInnerHTML={{ __html: THEME_PACK_LATCH_CSS }} />
       <script dangerouslySetInnerHTML={{ __html: bootstrap }} />
       {noscriptHref !== null && (
         <noscript>

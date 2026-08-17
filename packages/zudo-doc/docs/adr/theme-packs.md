@@ -190,6 +190,10 @@ commit; only the active pack's CSS + fonts ever load.
 - `data-theme-pack` is appended to `<ClientRouter preserveHtmlAttrs>` in
   `src/doclayout/doc-layout.tsx` (alongside `data-sidebar-hidden`,
   `data-theme`, `style`).
+- `<html data-zd-theme-pack-loading>` — the transient hard-load anti-FOUC
+  latch (#3399). Present only while the initial pack stylesheet request is in
+  flight, bounded by a ~2s watchdog. Never persisted, never in
+  `preserveHtmlAttrs`.
 
 **Hard-load bootstrap (pre-paint, BEFORE the initial pack stylesheet
 request).** A correction to the sketch in #2822's original body: an inline
@@ -204,7 +208,16 @@ emits the (single, correct) link:
 JSON-literal style) is rendered by `src/head-with-defaults/index.tsx`
 IMMEDIATELY AFTER `<ColorSchemeProvider …/>`, and emits in order:
 
-1. An inline `<script>` (`buildThemePackBootstrap(configuredSlug, enabled,
+1. A build-static anti-FOUC latch `<style>` — emitted BEFORE the script so
+   the rule is live by the time the body parses:
+
+   ```css
+   html[data-zd-theme-pack-loading] body{visibility:hidden}
+   ```
+
+   Inert until the script arms it, so pages that load no pack stylesheet
+   (and every no-JS visitor) are unaffected.
+2. An inline `<script>` (`buildThemePackBootstrap(configuredSlug, enabled,
    base)` where `enabled` is the ordered `{ slug → version }` map from the
    registry):
 
@@ -216,27 +229,61 @@ IMMEDIATELY AFTER `<ColorSchemeProvider …/>`, and emits in order:
      var KEY = "zudo-doc-theme-pack";
      var stored = null; try { stored = localStorage.getItem(KEY); } catch (e) {}
      var slug = (stored && Object.prototype.hasOwnProperty.call(packs, stored))
-       ? stored : configured;
-     document.documentElement.setAttribute("data-theme-pack", slug);
+       ? stored : configured;   // …then a validated live html attribute, then configured
+     var root = document.documentElement;
+     root.setAttribute("data-theme-pack", slug);
      if (slug !== "default") {
-       document.write('<link rel="stylesheet" data-zd-theme-pack-css href="'
-         + base + 'theme-packs/' + slug + '/pack.css?v=' + packs[slug] + '">');
+       var href = base + 'theme-packs/' + slug + '/pack.css?v=' + packs[slug];
+       if (!hasPackLink(href)) {              // post-load re-evaluation is inert
+         root.setAttribute("data-zd-theme-pack-loading", "");
+         var release = function(){ root.removeAttribute("data-zd-theme-pack-loading"); };
+         var link = document.createElement("link");
+         /* rel=stylesheet, data-zd-theme-pack-css, href */
+         link.onload = release; link.onerror = release;
+         document.head.appendChild(link);
+         setTimeout(release, 2000);           // watchdog
+       }
      }
      document.addEventListener(BEFORE_SWAP_EVENT, /* pre-swap injection, PRIMARY — see SPA below */);
      document.addEventListener(AFTER_NAVIGATE_EVENT, /* re-apply, FALLBACK/cleanup — see SPA below */);
    })();
    ```
 
-   `document.write` during initial head parse is deliberate: the written
-   link is **parser-inserted**, therefore render-blocking in every browser —
-   the one mechanism with a hard cross-browser pre-paint guarantee AND
-   exactly one stylesheet request that is correct the first time (no
-   default-then-stored double fetch, no MutationObserver races). Chrome's
-   document.write intervention targets parser-blocking cross-origin
-   *scripts*, not stylesheets. The AFTER_NAVIGATE re-apply handler must use
-   `createElement`/`appendChild` (document.write after load would clobber the
-   document).
-2. A `<noscript><link rel="stylesheet" href="{base}theme-packs/<configured>/pack.css?v=…"></noscript>`
+   **Superseded mechanism (zudolab/zudo-doc#3399).** This step originally
+   `document.write`-d the link during head parse. A parser-inserted
+   stylesheet is render-blocking in every browser, so that was a HARD
+   cross-browser pre-paint guarantee (and Chrome's document.write
+   intervention targets parser-blocking cross-origin *scripts*, not
+   stylesheets — it was never at risk there). It was replaced because
+   `document.write` after page load implicitly `document.open()`s and
+   DESTROYS the live document, which makes any post-load re-evaluation of
+   the chrome — SPA embedding, #3393 — fatal rather than merely redundant.
+
+   **Latch contract (the explicit replacement guarantee).** A script-inserted
+   head stylesheet does not block the parser; Chromium and Firefox generally
+   still block paint on a pending head sheet, Safari is the soft spot. So the
+   compensation is stated rather than assumed: the script arms
+   `data-zd-theme-pack-loading` on `<html>` before appending the link and
+   clears it on the link's `load` OR `error`, with a ~2s watchdog clearing it
+   unconditionally. In words: **no FOUC for a pack stylesheet that loads
+   within the watchdog; a bounded flash beyond it** — past 2s,
+   blank-screen avoidance deliberately wins over strict no-FOUC, because a
+   hung stylesheet must never leave the page permanently blank. This is an
+   accepted weakening versus the parser-inserted link; do not restore
+   `document.write` to close it.
+
+   Everything else the old mechanism bought is preserved: exactly one
+   stylesheet request, correct the first time (no default-then-stored double
+   fetch, no MutationObserver races), and zero requests for `default`.
+   Post-load re-evaluation is inert because the insertion is guarded on an
+   existing `link[data-zd-theme-pack-css]` whose href matches the resolved
+   slug — present synchronously after the first evaluation, so a duplicate
+   run finds it whether the sheet is still pending or already loaded.
+   `data-zd-theme-pack-loading` is deliberately NOT in `preserveHtmlAttrs`:
+   it must never survive a soft navigation. The BEFORE_SWAP / AFTER_NAVIGATE
+   handlers use `createElement`/`appendChild` and never arm the latch (the
+   live link is already loaded — there is nothing to wait for).
+3. A `<noscript><link rel="stylesheet" href="{base}theme-packs/<configured>/pack.css?v=…"></noscript>`
    fallback (omitted when the configured pack is `default`) so a no-JS
    visitor gets the CONFIGURED pack (matching the SSR html attribute).
 
@@ -321,9 +368,9 @@ there is nothing to persist for the stock look). Idempotent when nothing
 changed.
 
 **Ordering note (MUST-verify in #2822):** the runtime-inserted link is
-appended to head end, hence after the main bundle stylesheet; the
-bootstrap-written link's position is wherever head-with-defaults renders the
-provider. Because all pack rules are attr-scoped (specificity ≥ (0,1,1) over
+appended to head end, hence after the main bundle stylesheet; since #3399 the
+bootstrap's own link is appended to head end too (it is no longer written at
+the provider's position during parse). Because all pack rules are attr-scoped (specificity ≥ (0,1,1) over
 the package's unlayered rules and the SSR `:root` token style at (0,1,0)),
 link order does not decide the cascade — but #2822 should still assert the
 provider renders after `<ColorSchemeProvider/>` in a jsdom test.
