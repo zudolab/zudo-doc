@@ -38,8 +38,9 @@
  * `packages/zudo-doc/src/chrome/derive.tsx` statically imports it so zfb's
  * island scanner walks route → chrome → derive → here (mirrors the DocHistory
  * #2480 static-import contract). A host that ejects entirely can call
- * `bootstrapDesignTokenPanel` with its own builder, but current package-owned
- * routes use this component directly.
+ * `bootstrapDesignTokenPanel` with its own builder. Package-owned INJECTED
+ * routes do not render this component — they render the configured wrapper
+ * described below — but every other `createChrome` caller does.
  *
  * COUPLING REMOVED (#3396, epic #3394): this module no longer imports any
  * `virtual:` specifier, so `@takazudo/zudo-doc/chrome` (which reaches here via
@@ -777,8 +778,8 @@ let bootstrapped = false;
  * whichever mode-scoped builder the caller supplies.
  *
  * Exists so the routes-only configured wrapper
- * (`routes/_design-token-panel-bootstrap.tsx`, #3396) gets byte-identical
- * one-shot semantics to {@link DesignTokenPanelBootstrap} while supplying the
+ * (`routes/_design-token-panel-bootstrap.tsx`, #3396) gets the same one-shot
+ * semantics as {@link DesignTokenPanelBootstrap} while supplying the
  * host-overridable builder from `virtual:zudo-doc-design-token-panel-config`.
  * The guard is deliberately shared across both callers: `deriveBodyEndIslands`
  * renders exactly ONE of them, and if a host ever mounted both, configuring the
