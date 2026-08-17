@@ -90,6 +90,11 @@ const NODE_FREE_MODULES = [
   // BundleConfig) and `zod` (ZodType) imports are type-only and erased before
   // esbuild resolution.
   "config.ts",
+  // The browser-safe nav/breadcrumb/pager domain (#3395). Covered here for the
+  // node-free half of its contract; `site-schema.test.ts` additionally rejects
+  // preact, `.css`, `virtual:` and `@takazudo/zfb*`, which this list's shared
+  // `external: ["preact", …]` setting deliberately does not police.
+  "site-schema/index.ts",
 ] as const;
 
 describe("S1a foundation primitives are node-builtin-free (--platform=neutral)", () => {
