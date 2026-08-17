@@ -49,16 +49,14 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      // The routes plugin's design-token-panel-config virtual module (#2658).
-      // `chrome/derive.tsx` statically imports the DesignTokenPanelBootstrap
-      // island (whose module imports this virtual specifier), so any fast test
-      // that touches the chrome graph needs it resolvable. Alias it to the
-      // package default builder — exactly what the plugin's loader emits when
-      // `settings.designTokenPanelConfigModule` is absent (plugins/routes.ts).
-      "virtual:zudo-doc-design-token-panel-config": resolve(
-        pkgRoot,
-        "src/design-token-panel-config/index.ts",
-      ),
+      // NOTE (#3396): there is deliberately NO alias for
+      // `virtual:zudo-doc-design-token-panel-config` here any more. The chrome
+      // graph no longer imports that specifier — `design-token-panel-bootstrap.tsx`
+      // binds the package-default builder directly, and the only importer left
+      // is `src/routes/_design-token-panel-bootstrap.tsx`, which no fast test
+      // loads. Re-adding an alias would mask a regression that reintroduced the
+      // routes-plugin coupling into the chrome graph.
+      //
       // preact-render-to-string is hoisted into the workspace root pnpm store
       // but not surfaced at root or package node_modules. Pin it explicitly so
       // JSX rendering tests work without bloating the package's own deps.

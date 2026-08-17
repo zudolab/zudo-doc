@@ -450,6 +450,13 @@ export interface Settings {
    * Only the PATH travels through `settings` (a string is serializable
    * data) — the bundler imports the actual builder from the re-exported
    * module. Irrelevant when `designTokenPanel` is `false`.
+   *
+   * KNOWN GAP (#3396): this setting applies only to pages rendered through the
+   * package-injected routes. A doc page rendered by a SELF-CONTAINED host
+   * `pages/` stub mounts the package-default bootstrap and silently ignores
+   * this module — such a host must override the panel through
+   * `chromeBindings.DesignTokenPanelBootstrap` instead (see
+   * `docs/adr/route-injection-seam.md`).
    */
   designTokenPanelConfigModule?: string;
   /**

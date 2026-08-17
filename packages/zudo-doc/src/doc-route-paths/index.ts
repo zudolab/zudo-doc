@@ -16,7 +16,10 @@
 // `urlFor(slug) => string` closure, so the same code serves latest, locale,
 // versioned, and versioned-locale routes without branching on context.
 
-import type { DocNavNode } from "../doc-page-props/index.js";
+// `DocNavNode` comes from the browser-safe `site-schema` types (#3395) rather
+// than `doc-page-props` — the latter aliases zfb's `CollectionEntry`, and that
+// declaration edge would follow this module into every graph that imports it.
+import type { DocNavNode } from "../site-schema/types.js";
 
 // Re-export DocNavNode so callers can import it from this subpath.
 export type { DocNavNode };

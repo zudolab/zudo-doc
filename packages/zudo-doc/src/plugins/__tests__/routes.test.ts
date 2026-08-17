@@ -19,10 +19,16 @@
 // built HTML + client bundle registration + a real build failure) lives in
 // the slow-tier `__tests__/route-injection-build.slow.test.ts` (Case DTP),
 // per the project's fast/slow test-tier split (zudolab/zudo-doc#2530).
+//
+// The loader contract below is UNCHANGED by #3396 — what changed is WHO
+// imports the specifier the loader serves. The second describe block is the
+// fast guard for that: the routes-only wrapper must be the sole importer, or
+// `@takazudo/zudo-doc/chrome` silently regains its routes-plugin coupling.
 
 import { describe, expect, it, afterEach } from "vitest";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
-import { join } from "node:path";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readdirSync, readFileSync } from "node:fs";
+import { join, relative, resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
 import routesPlugin from "../routes.js";
 
@@ -149,5 +155,58 @@ describe("routes plugin — virtual:zudo-doc-design-token-panel-config (#2658)",
     expect(thrown).toBeDefined();
     expect(thrown!.message).toContain("designTokenPanelConfigModule");
     expect(thrown!.message).toContain("directory, not a module file");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// #3396 seam guard — the routes-only wrapper is the SOLE importer of the
+// design-token-panel-config virtual specifier.
+//
+// This automates the acceptance-criteria grep. The regression it catches is
+// invisible to every other fast test: re-adding the import to
+// `design-token-panel-bootstrap.tsx` (or anywhere else in the chrome graph)
+// still typechecks and still builds under zfb, and only breaks the ONE thing
+// the epic is about — bundling `@takazudo/zudo-doc/chrome` outside a zfb build,
+// where nothing registers the specifier.
+// ---------------------------------------------------------------------------
+
+const SRC_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+const DTP_CONFIG_SPECIFIER = "virtual:zudo-doc-design-token-panel-config";
+
+/** Every compiled `.ts`/`.tsx` source under `src/`, excluding tests and the
+ *  ambient `.d.ts` declarations (which must keep naming the specifier). */
+function collectSourceFiles(dir: string, out: string[] = []): string[] {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name === "__tests__") continue;
+      collectSourceFiles(full, out);
+      continue;
+    }
+    if (!/\.tsx?$/.test(entry.name)) continue;
+    if (/\.d\.ts$/.test(entry.name)) continue;
+    if (/\.test\.tsx?$/.test(entry.name)) continue;
+    out.push(full);
+  }
+  return out;
+}
+
+describe("routes plugin — design-token-panel-config specifier is routes-only (#3396)", () => {
+  const importers = collectSourceFiles(SRC_ROOT)
+    .filter((file) =>
+      new RegExp(String.raw`\bfrom\s+(["'])${DTP_CONFIG_SPECIFIER}\1`).test(
+        readFileSync(file, "utf8"),
+      ),
+    )
+    .map((file) => relative(SRC_ROOT, file).split("\\").join("/"));
+
+  it("exactly one source module imports the specifier", () => {
+    expect(importers).toEqual(["routes/_design-token-panel-bootstrap.tsx"]);
+  });
+
+  it("the generic bootstrap module binds the package-default builder instead", () => {
+    const source = readFileSync(join(SRC_ROOT, "design-token-panel-bootstrap.tsx"), "utf8");
+    expect(source).toContain('from "./design-token-panel-config/index.js"');
+    expect(source).not.toContain(`from "${DTP_CONFIG_SPECIFIER}"`);
   });
 });

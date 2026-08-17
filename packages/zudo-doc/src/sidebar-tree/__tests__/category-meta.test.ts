@@ -89,4 +89,19 @@ describe("loadCategoryMeta", () => {
     const b = loadCategoryMeta(dir);
     expect(a).toBe(b);
   });
+
+  it("degrades to an empty map without throwing when process.getBuiltinModule is unavailable", () => {
+    const dir = makeFixture();
+    const original = process.getBuiltinModule;
+    // Simulate a runtime (or a future SSG stub) where the builtin resolver
+    // this module depends on is absent — mirrors the #2030 degrade path.
+    // @ts-expect-error test-only removal to simulate an unavailable resolver
+    delete process.getBuiltinModule;
+    try {
+      const meta = loadCategoryMeta(dir);
+      expect(meta.size).toBe(0);
+    } finally {
+      process.getBuiltinModule = original;
+    }
+  });
 });

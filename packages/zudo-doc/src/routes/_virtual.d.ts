@@ -57,8 +57,11 @@ declare module "virtual:zudo-doc-chrome-bindings" {
 // …)`, #2658). No on-disk source — materialised at build, either as a
 // re-export of the host's `settings.designTokenPanelConfigModule` file or as
 // a re-export of the package default (`@takazudo/zudo-doc/design-token-panel-config`)
-// when the setting is absent. See `plugins/routes.ts` and this package's
-// `design-token-panel-bootstrap.tsx` for the full contract.
+// when the setting is absent. Since #3396 its SOLE importer is the
+// routes-only wrapper `./_design-token-panel-bootstrap.tsx` — the generic
+// `design-token-panel-bootstrap.tsx` binds the package default directly, so
+// `@takazudo/zudo-doc/chrome` bundles without the routes plugin. See
+// `plugins/routes.ts` and that bootstrap module for the full contract.
 //
 // Typed via an inline `import(...)` type (not a top-level import, for the
 // same ambient-module-declaration reason as `chromeBindings` above) — see

@@ -13,7 +13,7 @@
 import { routeCtx } from "./_context.js";
 import { createChrome } from "../chrome/index.js";
 import { DocHistory } from "../doc-history/index.js";
-import type { DocNavNode } from "./_docs-helpers.js";
+import type { DocNavNode } from "../site-schema/types.js";
 // Imported via the BARE published subpath rather than a relative
 // `../chrome-bindings.js`. This file is copied into consumer projects by the
 // routes-src mechanism (`scripts/copy-routes-src.mjs`), which rewrites relative
@@ -27,6 +27,10 @@ import { defineChromeBindings } from "@takazudo/zudo-doc/chrome-bindings";
 // ("Host-callables channel — chromeBindingsModule"). Not present on disk; the
 // package ships ambient typings for it (`routes/_virtual.d.ts`).
 import { chromeBindings } from "virtual:zudo-doc-chrome-bindings";
+// Routes-only configured design-token-panel island (#3396) — the ONLY importer
+// of `virtual:zudo-doc-design-token-panel-config` in the package. Static, for
+// the same island-scanner reason as `DocHistory` above.
+import { ConfiguredDesignTokenPanelBootstrap } from "./_design-token-panel-bootstrap.js";
 
 // Island-scanner contract (load-bearing): the injected doc routes reach the real
 // DocHistory client island ONLY through this static import → `createChrome`
@@ -57,15 +61,23 @@ import { chromeBindings } from "virtual:zudo-doc-chrome-bindings";
 // the way the static `DocHistory` import above is (the virtual re-export sits
 // outside zfb's static-import scanner reachability graph) — see the ADR.
 //
-// `DesignTokenPanelBootstrap` (#2658) is NOT threaded here: unlike DocHistory
-// (whose derive-level default is a no-op stub), the package-default island IS
-// the derive-level default (`chrome/derive.tsx`'s `deriveBodyEndIslands`,
-// gate-2 fix from the Wave-5 confirm #2659) — so this shim, the locked-manifest
-// self-contained doc stub (#2653), and every other bare `createChrome` caller
-// all get it without explicit wiring. Scanner reachability holds through the
-// static chain route → this shim → `createChrome` → `chrome/derive` →
-// `design-token-panel-bootstrap`.
+// `DesignTokenPanelBootstrap` IS threaded here since #3396, but only to swap
+// the BUILDER — the mount, the settings gate, and the slot default all still
+// belong to `chrome/derive.tsx`'s `deriveBodyEndIslands` (gate-2 fix from the
+// Wave-5 confirm #2659), so the locked-manifest self-contained doc stub (#2653)
+// and every other bare `createChrome` caller keep getting the package-default
+// island with no explicit wiring. On THESE injected routes the configured
+// wrapper wins, which is what carries a host's
+// `settings.designTokenPanelConfigModule` through. Scanner reachability holds
+// through the static chain route → this shim → `_design-token-panel-bootstrap`.
+//
+// It is spread BEFORE `...chromeBindings` (unlike `DocHistory`, which is spread
+// after): a host's own `DesignTokenPanelBootstrap` slot value must still win,
+// exactly as it did when the derive-level default was the only package wiring.
 const chrome = createChrome(routeCtx, {
+  ...defineChromeBindings({
+    DesignTokenPanelBootstrap: ConfiguredDesignTokenPanelBootstrap,
+  }),
   ...chromeBindings,
   ...defineChromeBindings({ DocHistory }),
 });

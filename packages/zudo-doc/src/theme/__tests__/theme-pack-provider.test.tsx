@@ -1,23 +1,29 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 // Unit tests for the theme-pack FOUC-safe bootstrap (ADR
-// `docs/adr/theme-packs.md` Decision 3 "Hard-load bootstrap"; #2822).
+// `docs/adr/theme-packs.md` Decision 3 "Hard-load bootstrap"; #2822;
+// document.write → head appendChild + explicit latch, #3399).
 //
 // Two layers of coverage:
-//   1. RENDER — `ThemePackProvider` emits the inline script + the configured-
-//      pack <noscript> fallback (omitted for "default") via
-//      preact-render-to-string.
+//   1. RENDER — `ThemePackProvider` emits the latch <style>, the inline
+//      script, and the configured-pack <noscript> fallback (omitted for
+//      "default") via preact-render-to-string.
 //   2. BEHAVIOR — the emitted script STRING is executed against a fake
-//      document/localStorage/window (the script only references those three
-//      globals, so `new Function` parameter shadowing injects the fakes),
-//      proving the stored-slug resolution, validation fallback, base-prefixed
-//      document.write, runtime-global publication, and the AFTER_NAVIGATE
-//      re-apply handler (createElement/appendChild — NEVER document.write
-//      after load).
+//      document/localStorage/window (the script references those three globals
+//      plus `setTimeout`, so `new Function` parameter shadowing injects the
+//      fakes and vitest's fake timers drive the watchdog), proving the
+//      stored-slug resolution, validation fallback, base-prefixed single link
+//      insertion, the latch lifecycle (armed before insertion; released on
+//      load, on error, and by the watchdog), inertness of a post-load
+//      re-evaluation, runtime-global publication, and the AFTER_NAVIGATE
+//      re-apply handler.
 
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render } from "preact-render-to-string";
 import ThemePackProvider, {
+  THEME_PACK_LATCH_CSS,
+  THEME_PACK_LOADING_ATTR,
+  THEME_PACK_LOAD_WATCHDOG_MS,
   buildThemePackBootstrap,
   resolveThemePackSsrSlug,
   themePackVersionMap,
@@ -38,6 +44,10 @@ const ENABLED = { default: "0.0.0", foundry: "1.2.3" };
 
 class FakeBootstrapLink {
   parentNode: FakeBootstrapHead | null = null;
+  // The bootstrap assigns these directly (the on* property form, so the fake
+  // needs no addEventListener); tests fire them to drive the latch lifecycle.
+  onload: (() => void) | null = null;
+  onerror: (() => void) | null = null;
   private attrs = new Map<string, string>();
   setAttribute(name: string, value: string): void {
     this.attrs.set(name, value);
@@ -91,7 +101,11 @@ type BootstrapEventHandler = (event?: { newDocument?: unknown }) => void;
 
 interface BootstrapEnv {
   document: {
-    documentElement: { getAttribute(n: string): string | null };
+    documentElement: {
+      getAttribute(n: string): string | null;
+      setAttribute(n: string, v: string): void;
+      removeAttribute(n: string): void;
+    };
     write: ReturnType<typeof vi.fn>;
     addEventListener: (type: string, handler: BootstrapEventHandler) => void;
     createElement: (tag: string) => FakeBootstrapLink;
@@ -100,6 +114,7 @@ interface BootstrapEnv {
   };
   window: Record<string, unknown>;
   attr: (name: string) => string | null;
+  hasAttr: (name: string) => boolean;
   head: FakeBootstrapHead;
   listeners: Map<string, BootstrapEventHandler[]>;
   fireAfterNavigate: () => void;
@@ -113,11 +128,16 @@ function makeBootstrapEnv(stored: string | null, storageThrows = false): Bootstr
   const doc: BootstrapEnv["document"] = {
     documentElement: {
       getAttribute: (n: string) => attrs.get(n) ?? null,
-      // @ts-expect-error — setAttribute lives on the same object literal.
       setAttribute: (n: string, v: string) => {
         attrs.set(n, v);
       },
+      removeAttribute: (n: string) => {
+        attrs.delete(n);
+      },
     },
+    // Retained purely as a regression guard: the bootstrap must NEVER call it
+    // (a post-load document.write implicitly document.open()s and destroys the
+    // live document — the whole reason for #3399).
     write: vi.fn(),
     addEventListener: (type, handler) => {
       const arr = listeners.get(type) ?? [];
@@ -144,6 +164,7 @@ function makeBootstrapEnv(stored: string | null, storageThrows = false): Bootstr
     document: doc,
     window: win,
     attr: (name) => attrs.get(name) ?? null,
+    hasAttr: (name) => attrs.has(name),
     head,
     listeners,
     fireAfterNavigate: () => {
@@ -161,8 +182,9 @@ function makeBootstrapEnv(stored: string | null, storageThrows = false): Bootstr
 
 function runBootstrap(script: string, env: BootstrapEnv): void {
   const storage = (env as unknown as { __storage: unknown }).__storage;
-  // The script references exactly these three globals; parameter shadowing
-  // injects the fakes.
+  // The script references exactly these three globals (plus `setTimeout`,
+  // which resolves to the ambient one — vitest's fake timers drive the
+  // watchdog); parameter shadowing injects the fakes.
   new Function("document", "localStorage", "window", script)(
     env.document,
     storage,
@@ -170,28 +192,46 @@ function runBootstrap(script: string, env: BootstrapEnv): void {
   );
 }
 
+/** The single pack link the bootstrap inserted into the live head. */
+function onlyPackLink(env: BootstrapEnv): FakeBootstrapLink {
+  expect(env.head.children).toHaveLength(1);
+  return env.head.children[0]!;
+}
+
+function expectPackLink(link: FakeBootstrapLink, href: string): void {
+  expect(link.getAttribute("rel")).toBe("stylesheet");
+  expect(link.hasAttribute(THEME_PACK_LINK_ATTR)).toBe(true);
+  expect(link.getAttribute("href")).toBe(href);
+}
+
 // ---------------------------------------------------------------------------
 // Behavior — executing the emitted script
 // ---------------------------------------------------------------------------
 
 describe("buildThemePackBootstrap (executed)", () => {
-  it("uses a VALID persisted slug over the configured one and document.writes exactly one render-blocking link", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("uses a VALID persisted slug over the configured one and head-appends exactly one link", () => {
     const env = makeBootstrapEnv("foundry");
     runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
 
     expect(env.attr(THEME_PACK_ATTR)).toBe("foundry");
-    expect(env.document.write).toHaveBeenCalledTimes(1);
-    expect(env.document.write).toHaveBeenCalledWith(
-      `<link rel="stylesheet" ${THEME_PACK_LINK_ATTR} href="/theme-packs/foundry/pack.css?v=1.2.3">`,
-    );
+    expectPackLink(onlyPackLink(env), "/theme-packs/foundry/pack.css?v=1.2.3");
+    // The mechanism #3399 removed: document.write after load destroys the doc.
+    expect(env.document.write).not.toHaveBeenCalled();
   });
 
-  it("falls back to the configured slug on an INVALID stored slug (no crash, no write for default)", () => {
+  it("falls back to the configured slug on an INVALID stored slug (no crash, no link for default)", () => {
     const env = makeBootstrapEnv("no-such-pack");
     runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
 
     expect(env.attr(THEME_PACK_ATTR)).toBe("default");
-    expect(env.document.write).not.toHaveBeenCalled();
+    expect(env.head.children).toHaveLength(0);
   });
 
   it("survives a throwing localStorage (falls back to configured)", () => {
@@ -199,14 +239,16 @@ describe("buildThemePackBootstrap (executed)", () => {
     runBootstrap(buildThemePackBootstrap("foundry", ENABLED, "/"), env);
 
     expect(env.attr(THEME_PACK_ATTR)).toBe("foundry");
-    expect(env.document.write).toHaveBeenCalledTimes(1);
+    expectPackLink(onlyPackLink(env), "/theme-packs/foundry/pack.css?v=1.2.3");
   });
 
-  it("emits no stylesheet write when the resolved pack is default (stock look = zero requests)", () => {
+  it("inserts no stylesheet AND never arms the latch when the resolved pack is default (stock look = zero requests)", () => {
     const env = makeBootstrapEnv(null);
     runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
 
     expect(env.attr(THEME_PACK_ATTR)).toBe("default");
+    expect(env.head.children).toHaveLength(0);
+    expect(env.hasAttr(THEME_PACK_LOADING_ATTR)).toBe(false);
     expect(env.document.write).not.toHaveBeenCalled();
   });
 
@@ -214,9 +256,138 @@ describe("buildThemePackBootstrap (executed)", () => {
     const env = makeBootstrapEnv("foundry");
     runBootstrap(buildThemePackBootstrap("default", ENABLED, "/sub/"), env);
 
-    expect(env.document.write).toHaveBeenCalledWith(
-      `<link rel="stylesheet" ${THEME_PACK_LINK_ATTR} href="/sub/theme-packs/foundry/pack.css?v=1.2.3">`,
-    );
+    expectPackLink(onlyPackLink(env), "/sub/theme-packs/foundry/pack.css?v=1.2.3");
+  });
+
+  // -------------------------------------------------------------------------
+  // Anti-FOUC latch lifecycle (#3399)
+  // -------------------------------------------------------------------------
+
+  describe("anti-FOUC latch", () => {
+    it("is armed BEFORE the link is appended and stays set while the sheet is pending", () => {
+      const env = makeBootstrapEnv("foundry");
+      let attrAtAppend: string | null = null;
+      const realAppend = env.head.appendChild.bind(env.head);
+      env.head.appendChild = (el: FakeBootstrapLink) => {
+        attrAtAppend = env.attr(THEME_PACK_LOADING_ATTR);
+        realAppend(el);
+      };
+
+      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+
+      // Ordering is the whole point: arming after the append would race the
+      // request it is supposed to cover.
+      expect(attrAtAppend).toBe("");
+      expect(env.hasAttr(THEME_PACK_LOADING_ATTR)).toBe(true);
+    });
+
+    it("is cleared when the stylesheet loads", () => {
+      const env = makeBootstrapEnv("foundry");
+      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+
+      onlyPackLink(env).onload!();
+
+      expect(env.hasAttr(THEME_PACK_LOADING_ATTR)).toBe(false);
+      // The pack attribute itself is untouched by the release.
+      expect(env.attr(THEME_PACK_ATTR)).toBe("foundry");
+    });
+
+    it("is cleared when the stylesheet errors (a 404 pack must not blank the page)", () => {
+      const env = makeBootstrapEnv("foundry");
+      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+
+      onlyPackLink(env).onerror!();
+
+      expect(env.hasAttr(THEME_PACK_LOADING_ATTR)).toBe(false);
+    });
+
+    it("is cleared by the watchdog on a sheet that never resolves — blank-screen avoidance wins", () => {
+      const env = makeBootstrapEnv("foundry");
+      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+
+      // Still latched right up to the deadline (the contract is "no FOUC
+      // within the watchdog", not "clear early").
+      vi.advanceTimersByTime(THEME_PACK_LOAD_WATCHDOG_MS - 1);
+      expect(env.hasAttr(THEME_PACK_LOADING_ATTR)).toBe(true);
+
+      vi.advanceTimersByTime(1);
+      expect(env.hasAttr(THEME_PACK_LOADING_ATTR)).toBe(false);
+    });
+
+    it("survives the watchdog firing after an ordinary load (release is idempotent)", () => {
+      const env = makeBootstrapEnv("foundry");
+      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+
+      onlyPackLink(env).onload!();
+      // The watchdog still fires; clearing an already-cleared latch must be a
+      // harmless no-op rather than an error or a state reset.
+      vi.advanceTimersByTime(THEME_PACK_LOAD_WATCHDOG_MS);
+
+      expect(env.hasAttr(THEME_PACK_LOADING_ATTR)).toBe(false);
+      expect(env.attr(THEME_PACK_ATTR)).toBe("foundry");
+      expect(env.head.children).toHaveLength(1);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Post-load re-evaluation (SPA embedding — #3393 companion)
+  // -------------------------------------------------------------------------
+
+  describe("duplicate evaluation is inert", () => {
+    it("does not re-request or re-latch while the FIRST link is still pending", () => {
+      const env = makeBootstrapEnv("foundry");
+      const script = buildThemePackBootstrap("default", ENABLED, "/");
+      runBootstrap(script, env);
+      const first = onlyPackLink(env);
+
+      // Second evaluation with the sheet still in flight (latch still armed).
+      runBootstrap(script, env);
+
+      expect(env.head.children).toEqual([first]);
+      expect(env.document.write).not.toHaveBeenCalled();
+
+      // The FIRST link's load still releases the latch — the second run must
+      // not have replaced the handler or armed a second, unreleasable latch.
+      first.onload!();
+      expect(env.hasAttr(THEME_PACK_LOADING_ATTR)).toBe(false);
+      vi.advanceTimersByTime(THEME_PACK_LOAD_WATCHDOG_MS * 2);
+      expect(env.hasAttr(THEME_PACK_LOADING_ATTR)).toBe(false);
+    });
+
+    it("does not re-request or arm the latch when a matching link is ALREADY LOADED", () => {
+      const env = makeBootstrapEnv("foundry");
+      const script = buildThemePackBootstrap("default", ENABLED, "/");
+      runBootstrap(script, env);
+      const first = onlyPackLink(env);
+      first.onload!();
+      expect(env.hasAttr(THEME_PACK_LOADING_ATTR)).toBe(false);
+
+      runBootstrap(script, env);
+
+      expect(env.head.children).toEqual([first]);
+      // Re-arming here would hide the body of an already-styled page for 2s.
+      expect(env.hasAttr(THEME_PACK_LOADING_ATTR)).toBe(false);
+      expect(env.document.write).not.toHaveBeenCalled();
+    });
+
+    it("DOES insert when only a STALE (wrong-slug) pack link is present", () => {
+      // The guard keys on the resolved slug's href, not on the marker alone —
+      // otherwise a leftover link from another pack would suppress the
+      // correct one.
+      const env = makeBootstrapEnv("foundry");
+      const stale = new FakeBootstrapLink();
+      stale.setAttribute("rel", "stylesheet");
+      stale.setAttribute(THEME_PACK_LINK_ATTR, "");
+      stale.setAttribute("href", "/theme-packs/foundry/pack.css?v=0.0.1");
+      env.head.appendChild(stale);
+
+      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+
+      expect(env.head.children).toHaveLength(2);
+      const inserted = env.head.children.find((l) => l !== stale)!;
+      expectPackLink(inserted, "/theme-packs/foundry/pack.css?v=1.2.3");
+      expect(env.hasAttr(THEME_PACK_LOADING_ATTR)).toBe(true);
+    });
   });
 
   it("publishes the runtime global applyThemePack validates against", () => {
@@ -240,41 +411,32 @@ describe("buildThemePackBootstrap (executed)", () => {
     it("re-asserts the attribute and re-inserts a dropped link via appendChild — never document.write", () => {
       const env = makeBootstrapEnv("foundry");
       runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
-      expect(env.document.write).toHaveBeenCalledTimes(1);
+      onlyPackLink(env).onload!();
 
       // Simulate zfb's head swap dropping the pack link + the root-attribute
       // reset a missing preserve-list would cause.
       env.head.children.length = 0;
-      (env.document.documentElement as unknown as {
-        setAttribute(n: string, v: string): void;
-      }).setAttribute(THEME_PACK_ATTR, "default");
+      env.document.documentElement.setAttribute(THEME_PACK_ATTR, "default");
 
       env.fireAfterNavigate();
 
       expect(env.attr(THEME_PACK_ATTR)).toBe("foundry");
-      expect(env.head.children).toHaveLength(1);
-      const link = env.head.children[0]!;
-      expect(link.getAttribute("rel")).toBe("stylesheet");
-      expect(link.hasAttribute(THEME_PACK_LINK_ATTR)).toBe(true);
-      expect(link.getAttribute("href")).toBe("/theme-packs/foundry/pack.css?v=1.2.3");
-      // Post-load re-apply must never document.write (it would clobber the doc).
-      expect(env.document.write).toHaveBeenCalledTimes(1);
+      expectPackLink(onlyPackLink(env), "/theme-packs/foundry/pack.css?v=1.2.3");
+      // Post-load re-apply must never document.write (it would clobber the doc)
+      // and must not re-arm the hard-load latch.
+      expect(env.document.write).not.toHaveBeenCalled();
+      expect(env.hasAttr(THEME_PACK_LOADING_ATTR)).toBe(false);
     });
 
     it("is idempotent when the correct link survived the swap", () => {
       const env = makeBootstrapEnv("foundry");
       runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
-
-      // Seed the head with the exact link the bootstrap would have written.
-      const existing = new FakeBootstrapLink();
-      existing.setAttribute("rel", "stylesheet");
-      existing.setAttribute(THEME_PACK_LINK_ATTR, "");
-      existing.setAttribute("href", "/theme-packs/foundry/pack.css?v=1.2.3");
-      env.head.appendChild(existing);
+      const bootstrapped = onlyPackLink(env);
+      bootstrapped.onload!();
 
       env.fireAfterNavigate();
 
-      expect(env.head.children).toEqual([existing]);
+      expect(env.head.children).toEqual([bootstrapped]);
     });
 
     it("keeps a live (unpersisted) pack across soft navigation when storage has nothing", () => {
@@ -283,9 +445,7 @@ describe("buildThemePackBootstrap (executed)", () => {
       // (which rides preserveHtmlAttrs) is the only surviving record.
       const env = makeBootstrapEnv(null);
       runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
-      (env.document.documentElement as unknown as {
-        setAttribute(n: string, v: string): void;
-      }).setAttribute(THEME_PACK_ATTR, "foundry");
+      env.document.documentElement.setAttribute(THEME_PACK_ATTR, "foundry");
       // The head swap dropped the runtime link.
       env.head.children.length = 0;
 
@@ -331,7 +491,7 @@ describe("buildThemePackBootstrap (executed)", () => {
       // switcher, no stored preference — just settings.themePack != "default".
       const env = makeBootstrapEnv(null);
       runBootstrap(buildThemePackBootstrap("foundry", ENABLED, "/"), env);
-      expect(env.document.write).toHaveBeenCalledTimes(1);
+      expectPackLink(onlyPackLink(env), "/theme-packs/foundry/pack.css?v=1.2.3");
 
       const newDoc = new FakeNewDocument();
       env.fireBeforeSwap(newDoc);
@@ -356,7 +516,7 @@ describe("buildThemePackBootstrap (executed)", () => {
     it("does nothing when newDocument is the live document (defensive no-op)", () => {
       const env = makeBootstrapEnv("foundry");
       runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
-      expect(env.head.children).toHaveLength(0);
+      const live = onlyPackLink(env);
 
       // Fire with the SAME reference used as the shadowed `document` global.
       // Without the `newDocument === document` guard this would append a
@@ -364,7 +524,7 @@ describe("buildThemePackBootstrap (executed)", () => {
       // / env.head.appendChild — corrupting the live document.
       env.fireBeforeSwap(env.document);
 
-      expect(env.head.children).toHaveLength(0);
+      expect(env.head.children).toEqual([live]);
     });
 
     it("does nothing when newDocument.head already has a stylesheet link with the exact href", () => {
@@ -400,6 +560,20 @@ describe("buildThemePackBootstrap (executed)", () => {
     });
   });
 
+  it("contains no document.write anywhere in the emitted text (all branches, not just the exercised ones)", () => {
+    // The behavior tests above prove the paths they exercise; this pins the
+    // whole string, so a document.write reintroduced on a branch no test walks
+    // still fails. It is the single defect #3399 exists to prevent.
+    for (const configured of ["default", "foundry"]) {
+      const script = buildThemePackBootstrap(configured, ENABLED, "/sub/");
+      expect(script).not.toContain("document.write");
+      expect(script).not.toContain("document.open");
+      // …and the latch attribute IS inlined (a build-static JSON literal).
+      expect(script).toContain(`"${THEME_PACK_LOADING_ATTR}"`);
+      expect(script).toContain(`=${THEME_PACK_LOAD_WATCHDOG_MS};`);
+    }
+  });
+
   it("emits identical script text across repeated calls with the same arguments (build-static contract)", () => {
     // zfb's scriptsAlreadyRan dedupe is keyed on textContent — the bootstrap
     // must be a pure function of its inputs so every page's inline script is
@@ -415,25 +589,38 @@ describe("buildThemePackBootstrap (executed)", () => {
 // ---------------------------------------------------------------------------
 
 describe("ThemePackProvider (rendered)", () => {
-  it("emits the bootstrap script and the configured-pack noscript fallback", () => {
+  it("emits the latch style, the bootstrap script and the configured-pack noscript fallback", () => {
     const out = render(
       <ThemePackProvider configuredSlug="foundry" enabled={ENABLED} base="/" />,
     );
+    expect(out).toContain(`<style>${THEME_PACK_LATCH_CSS}</style>`);
     expect(out).toContain("<script>");
     expect(out).toContain('"zudo-doc-theme-pack"');
     expect(out).toContain(
       '<noscript><link rel="stylesheet" href="/theme-packs/foundry/pack.css?v=1.2.3"/></noscript>',
     );
-    // The script must precede the noscript (ADR emission order).
+    // Emission order (ADR Decision 3): latch style → script → noscript. The
+    // latch MUST precede the script that arms it, or the rule would not be
+    // live when the body parses.
+    expect(out.indexOf("<style>")).toBeLessThan(out.indexOf("<script>"));
     expect(out.indexOf("<script>")).toBeLessThan(out.indexOf("<noscript>"));
   });
 
-  it("omits the noscript fallback when the configured pack is default", () => {
+  it("emits the latch style even for the default pack (build-static, inert until armed)", () => {
     const out = render(
       <ThemePackProvider configuredSlug="default" enabled={ENABLED} base="/" />,
     );
+    expect(out).toContain(`<style>${THEME_PACK_LATCH_CSS}</style>`);
     expect(out).toContain("<script>");
     expect(out).not.toContain("<noscript>");
+  });
+
+  it("keeps the latch rule scoped to the loading attribute (never a bare body rule)", () => {
+    // A latch that hid the body unconditionally would blank every page the
+    // instant the stylesheet failed to ship.
+    expect(THEME_PACK_LATCH_CSS).toBe(
+      `html[${THEME_PACK_LOADING_ATTR}] body{visibility:hidden}`,
+    );
   });
 });
 

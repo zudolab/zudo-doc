@@ -41,8 +41,10 @@
 //      SECOND host-callables channel, identical mechanics to #2 above (#2658).
 //      `settings.designTokenPanelConfigModule` carries a project-root-relative
 //      PATH to a host module exporting a named `buildDesignTokenPanelConfig`.
-//      `design-token-panel-bootstrap.tsx`'s `DesignTokenPanelBootstrap` island
-//      imports this virtual module. Registered UNCONDITIONALLY: absent setting
+//      `routes/_design-token-panel-bootstrap.tsx`'s configured island wrapper
+//      is the SOLE importer of this virtual module (#3396 moved it out of
+//      `design-token-panel-bootstrap.tsx` so the generic chrome graph carries
+//      no `virtual:` specifier). Registered UNCONDITIONALLY: absent setting
 //      → re-exports the PACKAGE DEFAULT (`@takazudo/zudo-doc/design-token-panel-config`,
 //      not an empty fallback — there is no meaningful "empty" builder);
 //      present-but-missing file → a loud Error at plugin setup naming the
@@ -327,7 +329,7 @@ const plugin = definePlugin({
     // (3) Design-token-panel-config virtual module — the THIRD virtual module
     // (#2658, mirrors the chromeBindingsModule contract above exactly, via the
     // same `resolveHostModuleOverride` guards). Registered UNCONDITIONALLY:
-    // `design-token-panel-bootstrap.tsx`'s `DesignTokenPanelBootstrap` island
+    // `routes/_design-token-panel-bootstrap.tsx`'s configured island wrapper
     // always imports this specifier, so the module must exist even when the
     // setting is absent — in that case the loader re-exports the PACKAGE
     // DEFAULT builder (`@takazudo/zudo-doc/design-token-panel-config`) instead

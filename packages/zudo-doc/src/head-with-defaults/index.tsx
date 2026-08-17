@@ -158,9 +158,10 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
         <ColorSchemeProvider cssText={cssText} colorMode={colorMode} />
         {/* Theme-pack bootstrap — MUST render immediately after
             <ColorSchemeProvider/> (ADR theme-packs.md Decision 3 ordering
-            note, #2822). Emits the pre-paint slug-resolution script (which
-            document.writes the render-blocking pack link for a non-default
-            active pack) plus the no-JS <noscript> fallback link for the
+            note, #2822). Emits the anti-FOUC latch <style>, then the pre-paint
+            slug-resolution script (which head-appends the pack link for a
+            non-default active pack, hiding the body behind the latch until it
+            loads — #3399), plus the no-JS <noscript> fallback link for the
             configured pack. */}
         {themePackEnabled !== null && (
           <ThemePackProvider

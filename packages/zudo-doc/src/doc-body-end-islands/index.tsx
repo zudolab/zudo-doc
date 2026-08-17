@@ -35,19 +35,21 @@
 //
 // `designTokenPanel` (#2658) is DIFFERENT from the AiChatModal/ImageEnlarge/
 // MermaidEnlarge trio above: the real `DesignTokenPanelBootstrap` component is
-// itself a package component (`@takazudo/zudo-doc/design-token-panel-bootstrap`,
-// self-contained via the `virtual:zudo-doc-design-token-panel-config` virtual
-// module), but importing it here directly would leak that virtual-module
-// dependency into `createBodyEndIslands`'s generic, routes-plugin-independent
-// reachability graph (this factory is also called by `chrome/derive.tsx` for a
-// FUTURE host calling `createChrome` directly, without `packageOwnedRoutes`).
-// So it is injected as an explicit `DesignTokenPanelBootstrap` dependency
-// (`BodyEndIslandsDeps`) instead of imported at module top-level —
-// `chrome/derive.tsx`'s `deriveBodyEndIslands` statically imports the real
-// component and supplies it as the slot DEFAULT for every `createChrome`
+// itself a package component (`@takazudo/zudo-doc/design-token-panel-bootstrap`),
+// but it is injected as an explicit `DesignTokenPanelBootstrap` dependency
+// (`BodyEndIslandsDeps`) rather than imported at module top-level, so this
+// factory keeps a single injection point for the two shapes the component can
+// take. `chrome/derive.tsx`'s `deriveBodyEndIslands` statically imports the
+// package default and supplies it as the slot DEFAULT for every `createChrome`
 // consumer (#2659 gate-2 fix; the scanner walks route → chrome → derive →
-// component, mirroring the DocHistory #2480 chain). See
-// `../design-token-panel-bootstrap.tsx` for the full coupling note. *Not skip-ssr in the zfb-marker sense — it renders
+// component, mirroring the DocHistory #2480 chain); on injected routes
+// `routes/_chrome.tsx` overrides that slot with the configured wrapper that
+// carries a host's `designTokenPanelConfigModule` (#3396). Neither module
+// imports a `virtual:` specifier any more — the original reason for the deps
+// injection (keeping `virtual:zudo-doc-design-token-panel-config` out of this
+// factory's routes-plugin-independent reachability graph) was retired by #3396,
+// but the injection stays because it is now what lets the routes graph swap the
+// component. See `../design-token-panel-bootstrap.tsx` for the full contract. *Not skip-ssr in the zfb-marker sense — it renders
 // `null` on both SSR and client, so it uses `Island({ when })` with no
 // `ssrFallback` (matches `ClientRouterBootstrap`'s host-side precedent), which
 // zfb marks `data-zfb-island` (no `-skip-ssr` suffix).

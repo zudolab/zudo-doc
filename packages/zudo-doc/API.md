@@ -18,7 +18,7 @@ New snapshot guards (added in `packages/zudo-doc/src/__tests__/public-api-snapsh
 
 ---
 
-## 1. Subpath Exports (147 total)
+## 1. Subpath Exports (149 total)
 
 The full `package.json#exports` keyset is the contract. Any addition or removal requires a deliberate, reviewed change that will fail the snapshot guard.
 
@@ -192,10 +192,61 @@ behavior change from the previous standalone-line-below-the-row placement,
 | `./nav-source-cache` | Navigation source cache |
 | `./nav-source-docs` | Navigation source for docs collections |
 | `./doc-route-paths` | Doc route path builders |
-| `./doc-route-entries` | Doc route entry generators |
+| `./doc-route-entries` | Doc route entry generators — the zfb-typed binding of `./site-schema`'s builder (`props.entry` is zfb's `CollectionEntry`) |
+| `./site-schema` | Browser-safe nav / breadcrumb / pager domain — see below |
 | `./route-enumerators` | Route enumeration utilities |
 | `./locale-merge` | Locale-aware content merging |
 | `./tree-nav-shared` | Shared tree navigation primitives |
+
+#### `./site-schema` — the browser-safe site-shape domain (#3395)
+
+Everything needed to answer "what is the shape of this documentation site?" —
+which routes exist, how they nest, what the previous/next page is, and what
+breadcrumb trail leads to a slug — with none of the rendering, disk access, or
+zfb engine coupling the rest of the package carries. A browser bundle, a Worker,
+or a non-zfb tool can compute the same answers the SSG build computes.
+
+**Exported functions**
+
+| Export | Contract |
+|---|---|
+| `createDocRouteEntries(ctx)` | The "which routes exist" builder: an entry with `category_no_page: true` emits NO route; every category with children but no `index.mdx` emits one auto-index route. Generic over the entry shape; its memo is scoped per factory instance |
+| `buildNavTree` | Flat doc list → recursive `DocNavNode[]`, including root-index node synthesis |
+| `buildBreadcrumbs` | THE blessed breadcrumb contract — the route-time slug-split walk over `DocNavNode` that produces `props.breadcrumbs`. (The component-side `findPath` / `buildBreadcrumbItems` pair stays presentation detail and is deliberately NOT exported) |
+| `collectAutoIndexNodes`, `groupSatelliteNodes`, `findNode`, `firstRoutedHref`, `isNavVisible` | Nav-tree walkers and the navigation visibility predicate |
+| `resolveDocPrevNext` | Pager resolution, including the "a category's last page has no next" rule and `pagination_prev`/`pagination_next` overrides |
+| `flattenTree`, `flattenSubtree`, `rewriteNavHref`, `remapNavChildHrefs` | Pre-order flattening and versioned-href remapping |
+| `getCategoryOrder`, `getNavSectionForSlug`, `getNavSubtree` | `headerNav` `categoryMatch` scoping |
+| `buildSidebarTree` | The underlying framework-agnostic tree builder |
+| `extractHeadings` | MDX body → TOC `HeadingItem[]` |
+| `schemaVersion` | Contract version (currently `1`) so consumers can fail closed on a change |
+
+**Exported types** — `DocNavNode`, `AutoIndexNode`, `DocPageFrontmatter`,
+`DocPageBaseProps` / `DocPageEntryProps` / `DocPageAutoIndexProps`,
+`DocRouteEntry`, `BuildDocRouteEntriesArgs`, `DocRouteEntriesContext`,
+`DocRouteEntriesAPI`, `NavSourceDocs`, `BreadcrumbItem`, `HeadingItem`,
+`SidebarNode`, `CategoryMeta`, `SidebarFrontmatter`, `CollectionEntryLike`,
+`DocEntryLike`, `PaginationOverrides`, `BuildHref`,
+`NavScopeNode`, `NavScopeHeaderNavItem`.
+
+`NavSourceDocs` + `DocNavNode` are the nav-manifest types. Every props/route
+type is generic over the entry shape and defaults to the structural
+`DocEntryLike`; `./doc-page-props` and `./doc-route-entries` re-bind them to
+zfb's `CollectionEntry` so engine-side consumers keep `entry.Content`.
+
+**Browser-safety contract, and the three guards that hold it.** Nothing
+reachable from this subpath — through the bundled JS graph OR the transitive
+`.d.ts` graph — may be a `node:*` builtin, `preact`, a `.css` file, a
+`virtual:` module, or an `@takazudo/zfb*` package.
+
+1. `src/__tests__/site-schema.test.ts` bundles the barrel with esbuild
+   `platform: "neutral"`, records every specifier at resolve time, and walks the
+   emitted declaration graph for the same violations.
+2. `scripts/check-site-schema.mjs` repeats the bundle check against the built
+   `dist/site-schema/index.js` in the `prepack` chain, so a publish cannot ship a
+   graph the source-level guard would have rejected.
+3. The `package.json#exports` keyset snapshot in
+   `src/__tests__/public-api-snapshot.test.ts`.
 
 ### Package-Owned Routes (A2)
 

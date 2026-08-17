@@ -22,6 +22,7 @@
 import type { CategoryMeta } from "../sidebar-tree/index.js";
 import { loadCategoryMeta as loadCategoryMetaImpl } from "../sidebar-tree/index.js";
 import type { DocPageEntry } from "../doc-page-props/index.js";
+import type { NavSourceDocs as NavSourceDocsShape } from "../site-schema/types.js";
 import { memoizeDerived } from "../nav-source-cache/index.js";
 import { mergeLocaleDocs } from "../locale-merge/index.js";
 import type { Settings } from "../settings.js";
@@ -32,17 +33,12 @@ import type { Settings } from "../settings.js";
 
 export type { CategoryMeta, DocPageEntry };
 
-export interface NavSourceDocs {
-  /** Full doc list (merged + draft-filtered; unlisted retained per options). */
-  docs: DocPageEntry[];
-  /** `docs.filter(isNavVisible)` — stable instance for buildNavTree. */
-  navDocs: DocPageEntry[];
-  /** Stable category-meta Map for the active (locale, version). */
-  categoryMeta: Map<string, CategoryMeta>;
-  /** Slugs that came from the locale collection (for isFallback). Empty for
-   *  default-locale / single-collection cases. */
-  localeSlugSet: ReadonlySet<string>;
-}
+/**
+ * The resolved nav source for one (locale, version) context, carrying zfb
+ * collection entries. The shape itself is browser-safe and declared in
+ * `../site-schema/types.js` (#3395); this alias pins it to `DocPageEntry`.
+ */
+export type NavSourceDocs = NavSourceDocsShape<DocPageEntry>;
 
 /**
  * How to filter the merged doc list.

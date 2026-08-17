@@ -61,6 +61,13 @@ import type { ComponentChildren, JSX } from "preact";
 // swaps the DOM via document.startViewTransition — same behaviour as
 // Astro's <ClientRouter />. Mounted here so it lands in <head> on every
 // page that uses this shell. Closes zudolab/zudo-doc#1522.
+//
+// KNOWN COUPLING: this import is NOT side-effect-free — @takazudo/zfb-runtime
+// wires document/window listeners at module scope on import, before this
+// component ever mounts. Upstream fix tracked at
+// https://github.com/Takazudo/zudo-front-builder/issues/2429 (component/
+// activation split). Switching to a side-effect-free import is deferred to a
+// future @takazudo/zfb-runtime pin bump once that split ships.
 import { ClientRouter } from "@takazudo/zfb-runtime";
 
 /**

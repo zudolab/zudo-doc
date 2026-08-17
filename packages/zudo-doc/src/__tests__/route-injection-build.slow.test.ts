@@ -616,20 +616,58 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   //
   // All of it traces to already-merged, intentional PRs; no unattributed
   // bytes.
+  //
+  // 2026-08-18 re-baseline (zudolab/zudo-doc#3401, epic #3394 wave-1 → base
+  // merge): pre-epic HEAD (3902f7f0) rebuilt in a scratch worktree and
+  // byte-diffed against this epic base's HEAD via the same
+  // `parity-html-normalize.mjs` helper this test uses. All three pages grew
+  // by IDENTICALLY 2040 bytes (no page-specific delta, unlike the #3277
+  // entry's TOC-only +11 bytes) and every changed line traces to exactly two
+  // already-merged, intentional wave-1 PRs:
+  //
+  //   - `zudolab/zudo-doc#3399` (theme-pack no-FOUC bootstrap rewrite,
+  //     `theme/theme-pack-provider.tsx`): adds the anti-FOUC latch
+  //     `<style>html[data-zd-theme-pack-loading] body{visibility:hidden}</style>`
+  //     immediately before the bootstrap `<script>`, and replaces the old
+  //     `document.write('<link ...>')` insertion with
+  //     `createElement`/`head.appendChild` plus a `LOADING_ATTR`/`WATCHDOG`
+  //     latch-release dance — present verbatim on every page (unconditional,
+  //     not gated on `themePack`).
+  //   - `zudolab/zudo-doc#3398` (explicit current-route input,
+  //     `header/nav-overflow-script.ts`): replaces the inlined
+  //     `isUnderPath`/raw `location.pathname` walk with a `getCurrentPath()`
+  //     override read plus `pathMatchesNavPath`/`computeActiveNavPath`
+  //     embedded verbatim from `nav-active.ts`, so the client script's
+  //     longest-match walk can't drift from the SSR header's own
+  //     `computeActiveNavPath` call — also unconditional, present on every
+  //     page.
+  //
+  // Both scripts are page-independent boilerplate emitted on every SSG page,
+  // which is exactly why all three otherwise-unrelated fixture pages moved by
+  // the same byte count. No other wave-1 sub-issue (category-meta-fs #3397 —
+  // this fixture has no `_category_.json` so `loadCategoryMeta` is an empty
+  // map either way; dtp-virtual-seam #3396 — `designTokenPanel` stays `false`
+  // in this fixture, so the DTP island markup is absent both before and
+  // after; site-schema subpath/active-nav-input plumbing — pure refactors of
+  // code this fixture's build doesn't exercise differently) touched a single
+  // byte of these three pages.
+  //
+  // All of it traces to already-merged, intentional PRs; no unattributed
+  // bytes.
 
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"29f8ad2434e2c80e7ec084ce35d5403576c08d2efb14b64393fbdd822d429198"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"e8da2b7dfb3dd4f40819c45d1099f0f628425d3e7d1d8f6b1950087ca7b2dacc"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"e433f30ab887391e7bf22dd1d6af24e80cbafba3530e95c076378b26c5a5a272"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"c7d1036b74679e01fba0de5291eead1e87ae102107081e34be5a580ebbdc53dd"`);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"c8cc832ab0d4f2771619be1fe06d2e962122f77705cc6c507df62e08d2853251"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"efdd372af488957c34c567eb779243c2b0c0ca8699d51644342a6acbc6cbb279"`);
   });
 });
 
@@ -1051,8 +1089,19 @@ describe("CB chrome-bindings directory: build fails loudly when chromeBindingsMo
 // module (`virtual:zudo-doc-design-token-panel-config`, mirrors
 // `chromeBindingsModule` exactly).
 //
+// NOTE (#3396): on INJECTED routes the mounted component is the routes-only
+// configured wrapper `ConfiguredDesignTokenPanelBootstrap`
+// (`routes/_design-token-panel-bootstrap.tsx`), threaded through
+// `hostBindings.DesignTokenPanelBootstrap` by `routes/_chrome.tsx` — that is
+// the module that imports `virtual:zudo-doc-design-token-panel-config` now.
+// The package default `DesignTokenPanelBootstrap` remains the derive-level slot
+// default for bare `createChrome` callers (self-contained `pages/` stubs), and
+// its name must stay DISTINCT from the wrapper's or zfb's island-marker
+// collision diagnostic drops one of the two. Hence every marker assertion below
+// names the WRAPPER; `INJECTED_DTP_ISLAND` is that name.
+//
 //   1. designTokenPanel: true, NO designTokenPanelConfigModule → the injected
-//      doc route emits the `data-zfb-island="DesignTokenPanelBootstrap"`
+//      doc route emits the `data-zfb-island="ConfiguredDesignTokenPanelBootstrap"`
 //      marker AND the emitted islands client bundle registers the real
 //      component (marker <-> registry match => hydration, the same
 //      structural proof DH established for DocHistory) AND carries the
@@ -1067,10 +1116,10 @@ describe("CB chrome-bindings directory: build fails loudly when chromeBindingsMo
 //   4. designTokenPanel: false → no island marker reaches the SSR HTML (HARD
 //      GATE #3). NOTE: like the pre-existing aiAssistant/imageEnlarge gating
 //      (see `doc-body-end-islands/index.tsx`'s "KNOWN CAVEAT" comment), the
-//      island's SHELL CODE (`DesignTokenPanelBootstrap` itself) may still be
+//      island's SHELL CODE (the bootstrap component itself) may still be
 //      present in the emitted JS bundle even when its marker/render is gated
 //      off — zfb's scanner walks the STATIC "use client" import chain
-//      (`_chrome.tsx` always imports `DesignTokenPanelBootstrap` so it can
+//      (`_chrome.tsx` always imports the configured wrapper so it can
 //      thread it into `createChrome`), and bundle-stripping a
 //      statically-imported-but-conditionally-rendered island is explicitly
 //      out of scope for that established pattern. This case therefore
@@ -1092,6 +1141,15 @@ describe("CB chrome-bindings directory: build fails loudly when chromeBindingsMo
 //      entry via static edges alone, and only reachable by crossing a
 //      dynamic `import()` edge.
 // ---------------------------------------------------------------------------
+
+/** The island marker injected package routes emit for the design-token panel:
+ *  the routes-only configured wrapper, NOT the package default (#3396). */
+const INJECTED_DTP_ISLAND = "ConfiguredDesignTokenPanelBootstrap";
+
+/** The package-default island name — the derive-level slot default that bare
+ *  `createChrome` callers get. Never the marker on an injected route, and it
+ *  must never collide with {@link INJECTED_DTP_ISLAND}. */
+const DEFAULT_DTP_ISLAND = "DesignTokenPanelBootstrap";
 
 /** Flip `designTokenPanel` ON in a fixture's settings.ts (it ships OFF). */
 function enableDesignTokenPanel(dir: string): void {
@@ -1127,19 +1185,33 @@ function enableMissingDesignTokenPanelConfigModule(dir: string): void {
   writeFileSync(settingsPath, src);
 }
 
-describe("DTP design-token-panel: injected doc route registers the DesignTokenPanelBootstrap island (packageOwnedRoutes + designTokenPanel)", () => {
+describe("DTP design-token-panel: injected doc route registers the configured design-token-panel island (packageOwnedRoutes + designTokenPanel)", () => {
   let fixtureDir: string;
+  let buildOutput: string;
 
   it("setup: fixture builds with designTokenPanel enabled + empty pages/", { timeout: 180_000 }, () => {
     fixtureDir = setupFixture({ emptyPages: true });
     enableDesignTokenPanel(fixtureDir);
-    runZfbBuild(fixtureDir);
+    buildOutput = runZfbBuild(fixtureDir);
   });
 
-  it("marker: injected /docs/getting-started/ HTML carries the DesignTokenPanelBootstrap island marker (non-skip-ssr)", () => {
+  it("marker: injected /docs/getting-started/ HTML carries the configured island marker (non-skip-ssr)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expectHtmlAttr(html, "data-zfb-island", "DesignTokenPanelBootstrap");
-    expect(countHtmlAttr(html, "data-zfb-island", "DesignTokenPanelBootstrap")).toBe(1);
+    expectHtmlAttr(html, "data-zfb-island", INJECTED_DTP_ISLAND);
+    expect(countHtmlAttr(html, "data-zfb-island", INJECTED_DTP_ISLAND)).toBe(1);
+    // Exactly one panel island: the derive-level package default must NOT also
+    // mount alongside the routes wrapper (#3396 — the wrapper REPLACES it in
+    // the slot rather than composing with it).
+    expect(countHtmlAttr(html, "data-zfb-island", DEFAULT_DTP_ISLAND)).toBe(0);
+  });
+
+  it("no name collision: the package default and the routes wrapper both register (#3396)", () => {
+    // Both components are statically reachable from the injected route (the
+    // wrapper via `_chrome.tsx`, the package default via `chrome/derive.tsx`'s
+    // slot default). If they ever shared a marker name, zfb would drop one and
+    // say so — which would silently un-hydrate the panel.
+    expect(buildOutput).not.toMatch(/island marker name collision/i);
+    expect(buildOutput).not.toMatch(/has no matching registry entry/i);
   });
 
   it("shim: injected /docs/getting-started/ HTML carries the pre-hydration toggle-shim script", () => {
@@ -1148,11 +1220,11 @@ describe("DTP design-token-panel: injected doc route registers the DesignTokenPa
     expect(html).toContain("toggle-design-token-panel");
   });
 
-  it("bundle: the emitted islands client bundle registers DesignTokenPanelBootstrap (marker <-> registry match => hydration)", () => {
-    // Marker present (above) + DesignTokenPanelBootstrap in the client bundle
-    // = the marker has a matching registry entry, which is exactly what
-    // zfb's hydration requires (same structural proof as Case DH).
-    expect(readIslandsBundles(fixtureDir)).toContain("DesignTokenPanelBootstrap");
+  it("bundle: the emitted islands client bundle registers the configured island (marker <-> registry match => hydration)", () => {
+    // Marker present (above) + the same name in the client bundle = the marker
+    // has a matching registry entry, which is exactly what zfb's hydration
+    // requires (same structural proof as Case DH).
+    expect(readIslandsBundles(fixtureDir)).toContain(INJECTED_DTP_ISLAND);
   });
 
   it("package-default builder: the bundle carries the unchanged storagePrefix 'zudo-doc-tweak' (HARD GATE #4)", () => {
@@ -1205,7 +1277,7 @@ describe("DTP design-token-panel: injected doc route registers the DesignTokenPa
   });
 });
 
-describe("DTP host body-end override: package derive seam retains exactly one DesignTokenPanelBootstrap", () => {
+describe("DTP host body-end override: package derive seam retains exactly one design-token-panel island", () => {
   let fixtureDir: string;
   let buildOutput: string;
 
@@ -1219,25 +1291,28 @@ describe("DTP host body-end override: package derive seam retains exactly one De
   it("composes the host body-end content with exactly one package-owned marker", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
     expect(html).toContain("HOST-BODY-END-MARKER");
-    expect(countHtmlAttr(html, "data-zfb-island", "DesignTokenPanelBootstrap")).toBe(1);
+    expect(countHtmlAttr(html, "data-zfb-island", INJECTED_DTP_ISLAND)).toBe(1);
+    expect(countHtmlAttr(html, "data-zfb-island", DEFAULT_DTP_ISLAND)).toBe(0);
     expect(html).toContain("__zdtpToggleShimInstalled");
   });
 
   it("keeps a matching client registry entry without the duplicate-component warning", () => {
-    expect(readIslandsBundles(fixtureDir)).toContain("DesignTokenPanelBootstrap");
+    expect(readIslandsBundles(fixtureDir)).toContain(INJECTED_DTP_ISLAND);
     expect(buildOutput).not.toMatch(/cannot hydrate both components/i);
+    expect(buildOutput).not.toMatch(/island marker name collision/i);
   });
 });
 
 describe("DTP host override: designTokenPanelConfigModule wires the host's builder into the bundle", () => {
   let fixtureDir: string;
+  let buildOutput: string;
 
   it("setup: fixture builds with designTokenPanel + designTokenPanelConfigModule set", { timeout: 180_000 }, () => {
     fixtureDir = setupFixture({ emptyPages: true });
     enableDesignTokenPanel(fixtureDir);
     enableDesignTokenPanelConfigModule(fixtureDir);
     // Should not throw — the resolved file (src/design-token-panel-config.ts) exists.
-    runZfbBuild(fixtureDir);
+    buildOutput = runZfbBuild(fixtureDir);
   });
 
   it("bindings: the emitted islands client bundle carries the host-only token label (not the package default)", () => {
@@ -1245,9 +1320,40 @@ describe("DTP host override: designTokenPanelConfigModule wires the host's build
     expect(bundle).toContain("DTP-HOST-CONFIG-MODULE-MARKER");
   });
 
-  it("marker: injected /docs/getting-started/ HTML still carries the DesignTokenPanelBootstrap island marker", () => {
+  it("marker: injected /docs/getting-started/ HTML still carries the configured island marker", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expectHtmlAttr(html, "data-zfb-island", "DesignTokenPanelBootstrap");
+    expectHtmlAttr(html, "data-zfb-island", INJECTED_DTP_ISLAND);
+  });
+
+  // -------------------------------------------------------------------------
+  // #3396 end-to-end proof. The two assertions above are each necessary but
+  // individually weak: the host label could sit in a dead chunk, and the marker
+  // could point at a component that never registers. Together with the two
+  // below they close the loop — the SAME island that carries the host builder
+  // is the one the marker names AND the one the client registry exposes, so the
+  // override genuinely reaches the panel that hydrates.
+  //
+  // This is the empirical answer to the #2480 question the issue raises: that
+  // lesson was about COMPONENT imports going dynamic and silently killing
+  // registration. Moving only the CONFIG import into the routes graph is
+  // exempt — registration is unaffected, as these assertions show.
+  // -------------------------------------------------------------------------
+
+  it("registration: the configured island is in the client registry alongside the host's builder", () => {
+    const bundle = readIslandsBundles(fixtureDir);
+    expect(bundle).toContain(INJECTED_DTP_ISLAND);
+    expect(bundle).toContain("DTP-HOST-CONFIG-MODULE-MARKER");
+    // The package default must NOT be what the page mounted — otherwise the
+    // host builder would be in the bundle but unreachable from the live panel.
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    expect(countHtmlAttr(html, "data-zfb-island", DEFAULT_DTP_ISLAND)).toBe(0);
+    expect(countHtmlAttr(html, "data-zfb-island", INJECTED_DTP_ISLAND)).toBe(1);
+  });
+
+  it("scanner: the build reports no marker collision and no unmatched marker", () => {
+    expect(buildOutput).not.toMatch(/island marker name collision/i);
+    expect(buildOutput).not.toMatch(/has no matching registry entry/i);
+    expect(buildOutput).not.toMatch(/cannot hydrate both components/i);
   });
 });
 
@@ -1280,9 +1386,10 @@ describe("DTP off: designTokenPanel false emits no island marker on the page (HA
     runZfbBuild(fixtureDir);
   });
 
-  it("no marker: injected /docs/getting-started/ HTML carries no DesignTokenPanelBootstrap marker", () => {
+  it("no marker: injected /docs/getting-started/ HTML carries neither design-token-panel marker", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(html).not.toMatch(htmlAttrPattern("data-zfb-island", "DesignTokenPanelBootstrap"));
+    expect(html).not.toMatch(htmlAttrPattern("data-zfb-island", INJECTED_DTP_ISLAND));
+    expect(html).not.toMatch(htmlAttrPattern("data-zfb-island", DEFAULT_DTP_ISLAND));
   });
 
   it("no shim: injected /docs/getting-started/ HTML carries no toggle-shim script", () => {
@@ -1968,6 +2075,26 @@ describe("TM build+check+css: the locked manifest builds, typechecks, and ships 
 // included — mounts the settings-gated island with no explicit wiring. The
 // cases below are the regression guard: the stub's island-marker set must
 // stay IDENTICAL to the injected-route baseline.
+//
+// *** #3396 AMENDMENT — the panel island now has TWO shapes ***
+// The gate-2 invariant above (both variants mount the settings-gated panel) is
+// intact, but the two variants no longer mount the SAME COMPONENT, so their raw
+// marker strings differ:
+//   - injected route → `ConfiguredDesignTokenPanelBootstrap`, the routes-only
+//     wrapper that reads `virtual:zudo-doc-design-token-panel-config` and so
+//     honors a host's `designTokenPanelConfigModule`;
+//   - self-contained stub → `DesignTokenPanelBootstrap`, the package default
+//     bound to the package-default builder.
+// This divergence is FORCED, not incidental: the virtual specifier cannot be
+// imported from a module whose realpath is under node_modules (zfb's bundler
+// does not run the virtual-module resolver there — the S1 #2370 gap), which is
+// why the wrapper must live in the staged `routes-src/` tree and cannot be a
+// public package subpath the stub could import. The two components must also
+// carry distinct names or zfb's island-marker collision diagnostic drops one.
+// The builder cannot be handed across as a prop either — it is a function, so
+// it cannot survive the SSR → hydration boundary.
+// The diff below therefore NORMALIZES the panel marker (strict everywhere else)
+// and asserts each variant's own shape explicitly.
 // ---------------------------------------------------------------------------
 
 describe("TM group 2: island-set diff — self-contained doc stub vs. injected-route baseline (designTokenPanel: true)", () => {
@@ -1988,25 +2115,36 @@ describe("TM group 2: island-set diff — self-contained doc stub vs. injected-r
     expect(html).toContain("TM-INDEX-MARKER: target-manifest-render-proof");
   });
 
-  it("baseline: injected /docs/getting-started/ carries the DesignTokenPanelBootstrap marker + a matching client-bundle registry entry", () => {
+  it("baseline: injected /docs/getting-started/ carries the configured panel marker + a matching client-bundle registry entry", () => {
     const html = readBuiltHtml(baselineDir, "docs/getting-started/index.html");
-    expectHtmlAttr(html, "data-zfb-island", "DesignTokenPanelBootstrap");
-    expect(readIslandsBundles(baselineDir)).toContain("DesignTokenPanelBootstrap");
+    expectHtmlAttr(html, "data-zfb-island", INJECTED_DTP_ISLAND);
+    expect(readIslandsBundles(baselineDir)).toContain(INJECTED_DTP_ISLAND);
   });
 
-  it("home route (both variants): / carries the DesignTokenPanelBootstrap marker via the re-export — unaffected by the doc-stub gap", () => {
+  it("home route (both variants): / carries the configured panel marker via the re-export — unaffected by the doc-stub gap", () => {
+    // `pages/index.tsx` is a 1-line re-export of `routes/index` in BOTH
+    // variants, so both reach the panel island through `routes/_chrome.tsx` —
+    // i.e. the configured wrapper, even in the with-stub fixture.
     for (const dir of [stubDir, baselineDir]) {
       const html = readBuiltHtml(dir, "index.html");
-      expectHtmlAttr(html, "data-zfb-island", "DesignTokenPanelBootstrap");
+      expectHtmlAttr(html, "data-zfb-island", INJECTED_DTP_ISLAND);
     }
-    expect(readIslandsBundles(stubDir)).toContain("DesignTokenPanelBootstrap");
+    expect(readIslandsBundles(stubDir)).toContain(INJECTED_DTP_ISLAND);
   });
 
-  it("island-set diff: the self-contained stub's marker set is IDENTICAL to the injected baseline (gate-2 fix: incl. DesignTokenPanelBootstrap)", () => {
-    const baselineMarkers = new Set(
+  it("island-set diff: the self-contained stub's marker set matches the injected baseline (gate-2 fix; panel marker normalized per #3396)", () => {
+    // Fold the two panel shapes onto one token so the set diff stays STRICT
+    // for every other island while tolerating the one divergence #3396 forces
+    // (see the block header). A stub page that mounted NO panel at all — the
+    // original #2658 gate-2 gap — still fails here, because normalization maps
+    // a name onto another name, it never invents one.
+    const normalize = (markers: string[]): Set<string> =>
+      new Set(markers.map((m) => m.split(INJECTED_DTP_ISLAND).join(DEFAULT_DTP_ISLAND)));
+
+    const baselineMarkers = normalize(
       extractIslandMarkers(readBuiltHtml(baselineDir, "docs/getting-started/index.html")),
     );
-    const stubMarkers = new Set(
+    const stubMarkers = normalize(
       extractIslandMarkers(readBuiltHtml(stubDir, "docs/getting-started/index.html")),
     );
     const missingFromStub = [...baselineMarkers].filter((m) => !stubMarkers.has(m)).sort();
@@ -2017,15 +2155,27 @@ describe("TM group 2: island-set diff — self-contained doc stub vs. injected-r
     // ["data-zfb-island=DesignTokenPanelBootstrap"] — the #2658 gate-2 gap.)
     expect(extraInStub).toEqual([]);
     expect(missingFromStub).toEqual([]);
+    // The normalization must not be silently doing nothing: the panel island
+    // has to be in the set at all, or both sides could be vacuously equal.
+    expect(baselineMarkers).toContain(`data-zfb-island=${DEFAULT_DTP_ISLAND}`);
   });
 
   // Was `it.fails` while the gate-2 gap was open (see the module-header note
   // above); flipped to a plain `it` by the #2658 gate-2 fix, per the marker's
   // own instruction. The registry pairing lives in the "home route" case above
   // (shared islands bundle) — this asserts the stub page's own marker.
-  it("doc route carries the DesignTokenPanelBootstrap marker, matching the baseline (#2658 gate-2 fix)", () => {
+  it("doc route carries the PACKAGE-DEFAULT panel marker + a matching registry entry (#2658 gate-2 fix, #3396 shape)", () => {
     const html = readBuiltHtml(stubDir, "docs/getting-started/index.html");
-    expectHtmlAttr(html, "data-zfb-island", "DesignTokenPanelBootstrap");
+    expectHtmlAttr(html, "data-zfb-island", DEFAULT_DTP_ISLAND);
+    // The stub reaches the package default, NOT the routes wrapper — the
+    // known #3396 gap: `designTokenPanelConfigModule` does not apply to pages
+    // rendered by a self-contained stub.
+    expect(countHtmlAttr(html, "data-zfb-island", INJECTED_DTP_ISLAND)).toBe(0);
+    // No bundle-substring assertion here: `ConfiguredDesignTokenPanelBootstrap`
+    // CONTAINS `DesignTokenPanelBootstrap`, so a `toContain` on the default's
+    // name cannot distinguish the two registry entries and would pass even if
+    // only the wrapper registered. The collision/unmatched-marker guards in the
+    // DTP blocks above are what prove both entries exist.
   });
 });
 
