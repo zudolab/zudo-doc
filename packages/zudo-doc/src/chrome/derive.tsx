@@ -45,14 +45,16 @@ import { createDesignTokenPanelIsland } from "../doc-body-end-islands/design-tok
 // (route → chrome → derive → bootstrap is the scanner-reachability chain; a
 // dynamic/type-only import silently kills island registration — #2480 lesson).
 //
-// COUPLING NOTE: this module (and therefore `@takazudo/zudo-doc/chrome`) now
-// transitively imports `virtual:zudo-doc-design-token-panel-config`, which
-// only the routes plugin registers (`settings.packageOwnedRoutes`, default
-// on). A `packageOwnedRoutes: false` host that bundles chrome must register
-// that virtual module (or alias it to
-// `@takazudo/zudo-doc/design-token-panel-config`) itself — see the KNOWN
-// COUPLING note in `../design-token-panel-bootstrap.tsx`. The package's own
-// vitest config aliases it for fast tests (vitest.config.ts).
+// COUPLING NOTE (resolved #3396, epic #3394): this module — and therefore
+// `@takazudo/zudo-doc/chrome` — used to transitively import
+// `virtual:zudo-doc-design-token-panel-config`, which only the routes plugin
+// registers, so a `packageOwnedRoutes: false` host had to alias the specifier
+// to bundle chrome at all (and the package's own vitest config carried a
+// matching alias). The bootstrap module now binds the package-default builder
+// directly; the host `designTokenPanelConfigModule` override enters through the
+// routes-only wrapper `routes/_design-token-panel-bootstrap.tsx`, which
+// `routes/_chrome.tsx` threads into the `DesignTokenPanelBootstrap` slot
+// consumed below. Keep this import free of `virtual:` specifiers.
 //
 // This same static import also makes `@takazudo/zdtp` an unconditional
 // build-time dependency of every `createChrome` consumer — accepted,
@@ -346,6 +348,13 @@ function deriveThemePackSwitcherProps(ctx: ChromeContext): ThemePackSwitcherProp
  * still replace the DTP component through
  * `hostBindings.DesignTokenPanelBootstrap`, but the package remains the sole
  * owner of the mounts and settings gates.
+ *
+ * Since #3396 the injected package routes use that same slot: `routes/_chrome.tsx`
+ * supplies `ConfiguredDesignTokenPanelBootstrap`, which is identical to the
+ * default except that its builder comes from
+ * `virtual:zudo-doc-design-token-panel-config` (i.e. a host's
+ * `designTokenPanelConfigModule`). The default below is what every non-routes
+ * `createChrome` caller keeps getting.
  */
 export function deriveBodyEndIslands(ctx: ChromeContext) {
   const designTokenPanelDeps = {

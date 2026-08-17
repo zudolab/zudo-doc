@@ -30,27 +30,41 @@
  *   bootstrapDesignTokenPanel(buildDesignTokenPanelConfig);
  *
  * `DesignTokenPanelBootstrap` (below) is the PACKAGE-OWNED island component
- * that wires the mode-scoped builder for package-owned routes with no host
- * config file — the #2658 "Approach (a)" package default. It resolves its
- * builder from the `virtual:zudo-doc-design-token-panel-config` virtual
- * module the routes plugin registers (`../plugins/routes.ts`): absent a host
- * `designTokenPanelConfigModule` override, that resolves to
- * `@takazudo/zudo-doc/design-token-panel-config`'s `buildDesignTokenPanelConfig`.
+ * that wires the mode-scoped builder for every `createChrome` consumer with no
+ * host config file — the #2658 "Approach (a)" package default. Since #3396 it
+ * binds the package-default builder DIRECTLY
+ * (`./design-token-panel-config/index.js`), not the routes plugin's
+ * `virtual:zudo-doc-design-token-panel-config` module.
  * `packages/zudo-doc/src/chrome/derive.tsx` statically imports it so zfb's
  * island scanner walks route → chrome → derive → here (mirrors the DocHistory
  * #2480 static-import contract). A host that ejects entirely can call
  * `bootstrapDesignTokenPanel` with its own builder, but current package-owned
  * routes use this component directly.
  *
- * KNOWN COUPLING: `DesignTokenPanelBootstrap`'s top-level import of
- * `virtual:zudo-doc-design-token-panel-config` requires the routes plugin
- * (`settings.packageOwnedRoutes`, default `true`) to be active in the
- * consuming project, since that plugin is what registers the virtual module.
- * A project that explicitly sets `packageOwnedRoutes: false` AND wants to
- * reuse the bare `bootstrapDesignTokenPanel` export for its own component is
- * unaffected — that import graph never reaches `DesignTokenPanelBootstrap` —
- * but a `packageOwnedRoutes: false` project must not import the package island
- * component itself.
+ * COUPLING REMOVED (#3396, epic #3394): this module no longer imports any
+ * `virtual:` specifier, so `@takazudo/zudo-doc/chrome` (which reaches here via
+ * `chrome/derive.tsx`) bundles OUTSIDE a zfb build with zero shims, and a
+ * `packageOwnedRoutes: false` host needs no alias for the config specifier.
+ *
+ * WHERE THE HOST OVERRIDE ENTERS NOW: `settings.designTokenPanelConfigModule`
+ * still travels through `virtual:zudo-doc-design-token-panel-config`, but the
+ * ONLY module that imports that specifier is the routes-only wrapper
+ * `routes/_design-token-panel-bootstrap.tsx`. It calls
+ * {@link runDesignTokenPanelBootstrapOnce} with the resolved builder and is
+ * threaded into `hostBindings.DesignTokenPanelBootstrap` by `routes/_chrome.tsx`,
+ * so `deriveBodyEndIslands` renders it instead of the package default on
+ * injected routes. The wrapper is a component-level seam INSIDE the client
+ * island bundle — deliberately NOT a module-level setter: the route/SSR graph
+ * and the hydrated island bundle are separate module graphs, so a setter called
+ * during route evaluation would configure only the server instance while the
+ * client re-evaluated this module and kept the default.
+ *
+ * KNOWN GAP (#3396): a host that renders docs through a SELF-CONTAINED
+ * `pages/` stub (the locked-manifest shape, #2653 — it calls `createChrome`
+ * directly rather than going through `routes/_chrome.tsx`) reaches the package
+ * default here, so `designTokenPanelConfigModule` does NOT apply to those
+ * pages. Such a host threads its own builder explicitly, via
+ * `chromeBindings.DesignTokenPanelBootstrap`.
  *
  * Package-first wiring landed in S9a zudolab/zudo-doc#2333; mode-scoped rebuild
  * wiring was added in zudolab/zudo-doc#2610 and the package-default island in
@@ -83,14 +97,15 @@ import {
   THEME_PACK_CHANGED_EVENT,
   readThemePackFromDom,
 } from "./theme-pack-switcher/theme-pack-sync.js";
-// Host-callables channel, third virtual module (#2658, mirrors #2501's
-// chromeBindingsModule): absent `settings.designTokenPanelConfigModule` →
-// re-exports the package default (`@takazudo/zudo-doc/design-token-panel-config`);
-// present → re-exports the host's module. Registered unconditionally by the
-// routes plugin (`../plugins/routes.ts`) whenever `packageOwnedRoutes` is on.
-// Not present on disk; the package ships ambient typings for it
-// (`routes/_virtual.d.ts`).
-import { buildDesignTokenPanelConfig } from "virtual:zudo-doc-design-token-panel-config";
+// PACKAGE-DEFAULT builder, imported as a plain on-disk module (#3396). This
+// was `virtual:zudo-doc-design-token-panel-config` until #3396; that static
+// import made every chrome consumer un-bundleable without the routes plugin
+// registering the specifier. The host-override channel now enters through the
+// routes-only wrapper (`routes/_design-token-panel-bootstrap.tsx`), so this
+// module — and therefore `@takazudo/zudo-doc/chrome` — needs no alias or shim
+// outside a zfb build. The builder module is zdtp-runtime-free (type-only zdtp
+// imports), so importing it statically does not defeat the #3282 lazy load.
+import { buildDesignTokenPanelConfig } from "./design-token-panel-config/index.js";
 
 /** The zdtp module namespace, typed without importing any runtime code. */
 type ZdtpModule = typeof import("@takazudo/zdtp");
@@ -758,25 +773,46 @@ export function bootstrapDesignTokenPanel(
 let bootstrapped = false;
 
 /**
+ * Run {@link bootstrapDesignTokenPanel} at most once per module instance, with
+ * whichever mode-scoped builder the caller supplies.
+ *
+ * Exists so the routes-only configured wrapper
+ * (`routes/_design-token-panel-bootstrap.tsx`, #3396) gets byte-identical
+ * one-shot semantics to {@link DesignTokenPanelBootstrap} while supplying the
+ * host-overridable builder from `virtual:zudo-doc-design-token-panel-config`.
+ * The guard is deliberately shared across both callers: `deriveBodyEndIslands`
+ * renders exactly ONE of them, and if a host ever mounted both, configuring the
+ * panel twice would re-mount it rather than layer the two configs.
+ *
+ * This is a CALL, not a module-level setter — the builder is passed in at
+ * render time inside whichever bundle the island actually hydrates in, so it
+ * never has to cross the route-graph → island-bundle boundary.
+ */
+export function runDesignTokenPanelBootstrapOnce(build: PanelConfigBuilder): void {
+  if (bootstrapped) return;
+  bootstrapped = true;
+  bootstrapDesignTokenPanel(build);
+}
+
+/**
  * The package-default `<DesignTokenPanelBootstrap/>` island: mounted (via
  * `Island({ when: "load" })`, no `ssrFallback` — it renders nothing on either
  * side) by `../doc-body-end-islands/index.tsx` when `settings.designTokenPanel`
  * is on, gated the same way `AiChatModal`/`ImageEnlarge`/`MermaidEnlarge` are.
- * On first render, calls `bootstrapDesignTokenPanel` with the mode-scoped
- * `buildDesignTokenPanelConfig` builder resolved from
- * `virtual:zudo-doc-design-token-panel-config` (package default, or the
- * host's `designTokenPanelConfigModule` override).
+ * On first render, calls `bootstrapDesignTokenPanel` with the PACKAGE-DEFAULT
+ * mode-scoped `buildDesignTokenPanelConfig` builder. A host's
+ * `designTokenPanelConfigModule` override does not reach this component — it
+ * arrives through the routes-only wrapper described in the module docblock.
  *
  * `displayName` pinned explicitly (belt-and-braces, matching
  * `AiChatModal`/`ImageEnlarge`/`MermaidEnlarge`/`DocHistory`) so zfb's
  * `captureComponentName` emits a stable `data-zfb-island="DesignTokenPanelBootstrap"`
- * marker independent of minification.
+ * marker independent of minification. It MUST keep matching the exported
+ * binding identifier — zfb's island scanner registers by the scanner-visible
+ * export name and warns when a `displayName` diverges from it.
  */
 export function DesignTokenPanelBootstrap(): JSX.Element | null {
-  if (!bootstrapped) {
-    bootstrapped = true;
-    bootstrapDesignTokenPanel(buildDesignTokenPanelConfig);
-  }
+  runDesignTokenPanelBootstrapOnce(buildDesignTokenPanelConfig);
   return null;
 }
 DesignTokenPanelBootstrap.displayName = "DesignTokenPanelBootstrap";
