@@ -35,8 +35,9 @@
 
 import { z } from "zod";
 import type { ColorScheme } from "./color-scheme-utils.js";
-import type { TagVocabularyEntry } from "./settings.js";
+import type { TagVocabularyEntry, FaviconConfig } from "./settings.js";
 import { assertNoCommaInVersionSlugs } from "./version-availability/index.js";
+import { assertNoEmptyStringFaviconOrLogo } from "./config-assertions/index.js";
 // Type-only — erased by esbuild before the node-builtin-free eval-graph
 // bundle runs (mirrors config.ts's `@takazudo/zfb/config` type-only import).
 import type { DirectiveSpec } from "@takazudo/zfb/config";
@@ -89,6 +90,17 @@ export interface PresetSettings {
   base: string;
   siteName: string;
   siteDescription: string;
+  /**
+   * Home-hero logo. `zudoDocPreset()` doesn't otherwise consume this field —
+   * rendering happens in `home-page/index.tsx` against the full `Settings`
+   * object — it is carried here only so `assertNoEmptyStringFaviconOrLogo`
+   * (`config-assertions/index.ts`) can validate a direct `zudoDocPreset()`
+   * call the same way `zudoDoc()` does (#3474).
+   */
+  logo?: string | false;
+  /** Favicon links. Same rationale as {@link PresetSettings.logo} — carried
+   *  only for `assertNoEmptyStringFaviconOrLogo` (#3474). */
+  favicon?: string | FaviconConfig | false;
   siteUrl: string;
   trailingSlash: boolean;
   minifyHtml?: boolean;
@@ -305,6 +317,13 @@ export function zudoDocPreset({
   // must hit the same comma-free version-slug guard (#3244 codex review
   // finding 2 follow-up; see `version-availability/index.ts`).
   assertNoCommaInVersionSlugs(settings.versions);
+
+  // Same rationale, different guard: `zudoDoc()` (`../config.ts`) already
+  // runs this check too, but a consumer calling `zudoDocPreset()` straight
+  // (bypassing `zudoDoc()`) must still reject an empty-string `logo`/
+  // `favicon` before it silently resolves to "the current document" per the
+  // HTML spec (#3471, #3474).
+  assertNoEmptyStringFaviconOrLogo(settings);
 
   // `z.toJSONSchema` is a runtime call but the result is a stable JSON
   // document. Compute it once and reuse the same object across every

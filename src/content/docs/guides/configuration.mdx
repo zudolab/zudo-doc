@@ -83,6 +83,8 @@ Home-hero logo. `"auto"` (the default) renders a generated deterministic SVG see
 
 Run `npx zudo-doc eject logo` to materialize the generated mark as a real file: it writes `public/img/logo.svg` and flips this field to `"/img/logo.svg"`, so you own an editable asset — tweak it, replace it, or reuse it elsewhere (e.g. for OGP) — instead of the request-time generated default. See [Customizing → Rung 5](../reference/customizing.mdx#rung-5-—-ejecting-a-component) for the CLI flags.
 
+`logo: ""` throws a `TypeError` at config resolution instead of silently rendering a CSS mask of an empty path — pass `false` to hide the logo, or omit the field for the default.
+
 Default: `"auto"`
 
 ### favicon
@@ -98,6 +100,9 @@ Type: `string | FaviconConfig | false` · Default: `undefined` (the four-link se
 | any other string | One link to that path, with `type` inferred from the file extension |
 | a `FaviconConfig` object | Only the slots you supply, always in `svg` → `ico` → `png32` → `png16` order |
 | `false` | No favicon links at all |
+| `""` | Throws a `TypeError` at config resolution — see below |
+
+**The empty string is rejected, not emitted.** Per the HTML spec an empty `href` resolves to the *current document*, so `favicon: ""` would silently make every page fetch its own HTML as a "favicon" — a wasted request and a garbage tab icon. `zudoDoc({ favicon: "" })` throws a `TypeError` naming the field instead; pass `false` for no favicon links, or omit the field for the default four-link set. The same rejection applies to an empty-string `FaviconConfig` slot (e.g. `favicon: { ico: "" }`) — the error names the specific slot (`favicon.ico`). An empty *object* (`favicon: {}`, no slots at all) is unaffected and still validly emits nothing. Only the exact empty string is rejected — a whitespace-only value like `" "` is passed through as-is.
 
 **The default is a convention, not a check.** It emits all four links whether or not the files exist — so a project whose `public/` has no `favicon.ico` still ships `<link rel="icon" href="/favicon.ico" sizes="any">` on every page, and every visitor's browser console logs a 404 for it. Supplying only the slots you actually have is the fix:
 

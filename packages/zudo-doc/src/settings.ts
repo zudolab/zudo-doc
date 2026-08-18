@@ -259,7 +259,10 @@ export interface MetaTagsConfig {
  *
  * Values starting with `/` are passed through `withBase()`; anything else
  * (`data:`, `https://…`) is emitted verbatim. The `"auto"` sentinel is a
- * whole-`favicon` value only — it is not meaningful inside this object.
+ * whole-`favicon` value only — it is not meaningful inside this object. An
+ * empty-string slot (e.g. `{ ico: "" }`) throws a `TypeError` naming the
+ * slot at config resolution rather than being emitted (#3471) — `{}` (no
+ * slots at all) stays valid and emits nothing.
  */
 export interface FaviconConfig {
   svg?: string;
@@ -310,7 +313,9 @@ export interface Settings {
    * Home-hero logo. `"auto"` (the default when omitted) renders a generated
    * deterministic SVG seeded by `siteName`; a path string (e.g.
    * `"/img/logo.svg"`) renders that asset as a theme-adaptive CSS mask;
-   * `false` hides the logo block entirely.
+   * `false` hides the logo block entirely. The empty string `""` throws a
+   * `TypeError` at config resolution instead of silently rendering a mask
+   * of an empty path — pass `false` or omit the field instead (#3471).
    */
   logo?: string | false;
   /**
@@ -320,7 +325,10 @@ export interface Settings {
    * generated from `siteName` (the same glyph `logo: "auto"` renders); any
    * other string emits one link with the `type` inferred from its extension;
    * a {@link FaviconConfig} object emits only the slots it supplies; `false`
-   * emits no favicon links at all.
+   * emits no favicon links at all. The empty string `""` (top-level or any
+   * `FaviconConfig` slot) throws a `TypeError` at config resolution instead
+   * of silently emitting `<link rel="icon" href="">`, which the HTML spec
+   * resolves to the current document — pass `false` or omit instead (#3471).
    */
   favicon?: string | FaviconConfig | false;
   base: string;
