@@ -606,17 +606,20 @@
     "zudo-doc": "./bin/zudo-doc.mjs"
   },
   "scripts": {
-    "build": "tsup && tsc -p tsconfig.build.json",
-    "predev": "node ../../scripts/ensure-workspace-build.mjs",
+    "gen:search-widget-script": "node scripts/gen-search-widget-script.mjs",
+    "build": "node scripts/gen-search-widget-script.mjs && tsup && tsc -p tsconfig.build.json",
+    "predev": "node ../../scripts/ensure-workspace-build.mjs && node scripts/gen-search-widget-script.mjs",
     "// dev": "Do NOT add `--continue-on-error` here. It stops a fatal watcher exit from cascading, but the dead watcher then fails silently — a dead dev:dts leaves dist/*.d.ts frozen while the JS keeps updating, which typechecks cleanly against stale types instead of failing loudly like #3113's absent declarations did. See the #3129 section in CLAUDE.md.",
     "dev": "run-p dev:js dev:dts",
     "dev:js": "tsup --watch",
     "dev:dts": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
-    "prepare": "tsup --silent && tsc -p tsconfig.build.json",
+    "prepare": "node scripts/gen-search-widget-script.mjs && tsup --silent && tsc -p tsconfig.build.json",
     "prepack": "pnpm --dir ../.. gen:changelog && node scripts/check-theme-css.mjs && node scripts/check-safelist.mjs && node scripts/check-content-css.mjs && node scripts/check-page-loading-css.mjs && node scripts/check-features-css.mjs && node scripts/check-theme-packs.mjs && node scripts/check-catalog.mjs && node scripts/check-site-schema.mjs && node scripts/check-plugins.mjs && node scripts/check-plugin-resolution.mjs && node scripts/check-eject-sources.mjs && node scripts/check-routes-src.mjs && node scripts/check-shim-artifacts.mjs && node scripts/check-virtual-modules.mjs && node bin/gen-component-tokens.mjs --check",
     "test:plugin-resolution": "node scripts/check-plugin-resolution.mjs",
+    "pretest": "node scripts/gen-search-widget-script.mjs",
     "test": "vitest run --config vitest.config.ts",
     "test:slow": "vitest run --config vitest.slow.config.ts",
+    "pretypecheck": "node scripts/gen-search-widget-script.mjs",
     "typecheck": "tsc --noEmit"
   },
   "files": [
