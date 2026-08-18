@@ -1811,6 +1811,40 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
 //   4. `zfb dev` renders / and /docs/getting-started/ (200 + content marker).
 //   5. Computed-token smoke on built CSS (theme.css contract).
 //   6. Fixture file count == 17 (guards floor creep).
+//
+// *** KNOWN BENIGN WARNING — every Case TM build ***
+// Every build of this fixture logs `island marker name collision:
+// "ConfiguredDesignTokenPanelBootstrap"`. Cause: this fixture's `pages/index.tsx`
+// re-exports `@takazudo/zudo-doc/routes/index`, so the compiled
+// `dist/routes/_chrome.js` → `dist/routes/_design-token-panel-bootstrap.js`
+// graph is scanned alongside the staged `routes-src/` copy — the same
+// component reaches zfb's island scanner from two files, and the scanner keys
+// islands by marker name rather than resolved component identity. Benign: zfb
+// keeps the `routes-src/` copy and the surviving registry entry matches every
+// emitted marker, so behavior is correct — the cost is unconditional noise,
+// and it is why this fixture cannot assert a collision-free build (see "TM
+// group 2b" below for the full explanation and the local assertion it drives).
+// Decision (tolerate + file upstream) recorded on zudolab/zudo-doc#3418.
+// Upstream tracking issue (zfb island-scanner identity dedupe):
+// https://github.com/Takazudo/zudo-front-builder/issues/2441
+//
+// The upstream fix (PR Takazudo/zudo-front-builder#2442) dedupes by resolved
+// component identity, and reaches THIS case via a byte-identity branch: the
+// staged copy is compared against the PUBLISHED file the package ships at the
+// same stem under `node_modules/@takazudo/zudo-doc/routes-src/`. So the
+// invariant we owe upstream is narrow — `ensureStaged` (src/plugins/routes.ts)
+// must stay byte-preserving RELATIVE TO WHAT THE PACKAGE SHIPS. A future
+// rewrite inside build-time `scripts/copy-routes-src.mjs` is harmless (it runs
+// pre-publish, so both compared participants are post-rewrite); a rewrite
+// inside `ensureStaged` would break the match and resurrect this warning.
+//
+// Accepted upstream trade-off: two GENUINELY DIFFERENT components shipped by
+// the SAME package under one marker name are now silently deduped too. Only a
+// cross-package name collision still warns. So zfb can no longer tell us if
+// this package ever collides two real components — our own tests are the only
+// guard for that.
+// Flipping this fixture to assert a collision-free build, once the upstream
+// fix ships and zfb is bumped here: zudolab/zudo-doc#3433.
 // ---------------------------------------------------------------------------
 
 /** Set up a target-manifest fixture instance: copy the locked-manifest fixture

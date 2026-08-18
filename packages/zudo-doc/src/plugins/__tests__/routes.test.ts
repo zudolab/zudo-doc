@@ -35,15 +35,24 @@ import routesPlugin from "../routes.js";
 /** Minimal mock of the fields `routes.ts`'s `setup()` actually reads
  *  (`options`, `projectRoot`) plus no-op stubs for the rest of
  *  `ZfbSetupContext` (`command`, `config`, `logger`, `addAlias`,
- *  `addClientEntry`) — this plugin's `setup()` never touches those. */
+ *  `addClientEntry`) — this plugin's `setup()` never touches those.
+ *  `warnings` collects every `ctx.logger.warn(...)` call verbatim, for the
+ *  DTP shadow-diagnostic coverage below (#3428). */
 function makeCtx(projectRoot: string, settings: Record<string, unknown>) {
   const virtualModules = new Map<string, () => string | Promise<string>>();
+  const warnings: string[] = [];
   const ctx = {
     command: "build" as const,
     projectRoot,
     config: {} as never,
     options: { settings, translations: {}, tagVocabulary: [], colorSchemes: null },
-    logger: { info() {}, warn() {}, error() {} },
+    logger: {
+      info() {},
+      warn(msg: string) {
+        warnings.push(msg);
+      },
+      error() {},
+    },
     addAlias() {},
     addVirtualModule(specifier: string, loader: () => string | Promise<string>) {
       virtualModules.set(specifier, loader);
@@ -51,7 +60,7 @@ function makeCtx(projectRoot: string, settings: Record<string, unknown>) {
     injectRoute() {},
     addClientEntry() {},
   };
-  return { ctx, virtualModules };
+  return { ctx, virtualModules, warnings };
 }
 
 const tempDirs: string[] = [];
@@ -190,6 +199,119 @@ function collectSourceFiles(dir: string, out: string[] = []): string[] {
   }
   return out;
 }
+
+// ---------------------------------------------------------------------------
+// DTP shadow diagnostic (zudolab/zudo-doc#3420, spec #3428) — warns at plugin
+// setup when `designTokenPanelConfigModule` is set but every derived route's
+// URL is shadowed by a kept user `pages/` file, unless the resolved
+// `chromeBindingsModule` already names the documented workaround.
+// ---------------------------------------------------------------------------
+
+/** The static/always-on route patterns `deriveRoutes()` emits when locales,
+ *  versions, `docTags`, and `aiAssistant` are all absent — see `routes.ts`
+ *  section "Static / always-on". Used below to build full vs. partial
+ *  shadowing fixtures without reaching into the plugin's private catalog. */
+const ALWAYS_ON_ROUTE_PATTERNS = ["/404", "/sitemap.xml", "/robots.txt", "/docs/[[...slug]]"];
+
+/** Write a `pages/` stub file that shadows `pattern` (the plain FILE form —
+ *  one of the two shapes `derivePagesCandidates` recognises). */
+function shadowRouteWithStub(projectRoot: string, pattern: string) {
+  const relPath = `${pattern.replace(/^\//, "")}.tsx`;
+  const absPath = join(projectRoot, "pages", relPath);
+  mkdirSync(dirname(absPath), { recursive: true });
+  writeFileSync(absPath, "export default function Page() { return null; }\n");
+}
+
+/** Write a valid, existing `designTokenPanelConfigModule` file and return its
+ *  project-root-relative path for the settings object. */
+function writeConfigModule(projectRoot: string): string {
+  mkdirSync(join(projectRoot, "src"), { recursive: true });
+  writeFileSync(
+    join(projectRoot, "src", "dtp-config.ts"),
+    "export function buildDesignTokenPanelConfig() { return {}; }\n",
+  );
+  return "./src/dtp-config.ts";
+}
+
+describe("routes plugin — DTP shadow diagnostic (#3420, #3428)", () => {
+  it("warns exactly once when every derived route is shadowed and no chromeBindings workaround is present", () => {
+    const projectRoot = makeProjectRoot();
+    for (const pattern of ALWAYS_ON_ROUTE_PATTERNS) shadowRouteWithStub(projectRoot, pattern);
+    const designTokenPanelConfigModule = writeConfigModule(projectRoot);
+
+    const { ctx, warnings } = makeCtx(projectRoot, {
+      packageOwnedRoutes: true,
+      designTokenPanelConfigModule,
+    });
+    routesPlugin.setup!(ctx as never);
+
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("designTokenPanelConfigModule");
+    expect(warnings[0]).toContain("zudolab/zudo-doc#3420");
+    expect(warnings[0]).toContain("DesignTokenPanelBootstrap");
+  });
+
+  it("stays silent when shadowing is only partial", () => {
+    const projectRoot = makeProjectRoot();
+    // Shadow every route except /sitemap.xml.
+    for (const pattern of ALWAYS_ON_ROUTE_PATTERNS) {
+      if (pattern === "/sitemap.xml") continue;
+      shadowRouteWithStub(projectRoot, pattern);
+    }
+    const designTokenPanelConfigModule = writeConfigModule(projectRoot);
+
+    const { ctx, warnings } = makeCtx(projectRoot, {
+      packageOwnedRoutes: true,
+      designTokenPanelConfigModule,
+    });
+    routesPlugin.setup!(ctx as never);
+
+    expect(warnings).toHaveLength(0);
+  });
+
+  it("stays silent when no route is shadowed", () => {
+    const projectRoot = makeProjectRoot();
+    const designTokenPanelConfigModule = writeConfigModule(projectRoot);
+
+    const { ctx, warnings } = makeCtx(projectRoot, {
+      packageOwnedRoutes: true,
+      designTokenPanelConfigModule,
+    });
+    routesPlugin.setup!(ctx as never);
+
+    expect(warnings).toHaveLength(0);
+  });
+
+  it("stays silent when designTokenPanelConfigModule is unset, even with full shadowing", () => {
+    const projectRoot = makeProjectRoot();
+    for (const pattern of ALWAYS_ON_ROUTE_PATTERNS) shadowRouteWithStub(projectRoot, pattern);
+
+    const { ctx, warnings } = makeCtx(projectRoot, { packageOwnedRoutes: true });
+    routesPlugin.setup!(ctx as never);
+
+    expect(warnings).toHaveLength(0);
+  });
+
+  it("stays silent when the resolved chromeBindingsModule file names DesignTokenPanelBootstrap", () => {
+    const projectRoot = makeProjectRoot();
+    for (const pattern of ALWAYS_ON_ROUTE_PATTERNS) shadowRouteWithStub(projectRoot, pattern);
+    const designTokenPanelConfigModule = writeConfigModule(projectRoot);
+    writeFileSync(
+      join(projectRoot, "src", "chrome-bindings.tsx"),
+      'import { DesignTokenPanelBootstrap } from "@takazudo/zudo-doc/design-token-panel-bootstrap";\n' +
+        "export const chromeBindings = { DesignTokenPanelBootstrap };\n",
+    );
+
+    const { ctx, warnings } = makeCtx(projectRoot, {
+      packageOwnedRoutes: true,
+      designTokenPanelConfigModule,
+      chromeBindingsModule: "./src/chrome-bindings.tsx",
+    });
+    routesPlugin.setup!(ctx as never);
+
+    expect(warnings).toHaveLength(0);
+  });
+});
 
 describe("routes plugin — design-token-panel-config specifier is routes-only (#3396)", () => {
   const importers = collectSourceFiles(SRC_ROOT)

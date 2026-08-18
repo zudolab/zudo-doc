@@ -19,6 +19,9 @@
 #   Worker Contract Proof    — Worker typecheck + runtime DO tests + Wrangler dry-run
 #   Package Unit Tests       — pnpm install; pnpm test:packages (all 5 package suites)
 #   Root Unit Tests          — pnpm install; pnpm test:unit (src/**/__tests__, scripts/__tests__)
+#   A2 Parity Gate           — path-filtered (#3419): skips unless an every-page script
+#                              emitter file changed; else pnpm install + build:workspace +
+#                              the A2 no-stub parity slow-suite subset
 #   Build Site               — full clone, pnpm install; pnpm build + check:links
 #   HTML validate            — needs build-site; pnpm check:html
 #   Build Doc History        — full clone, pnpm install; doc-history-server generate
@@ -474,6 +477,165 @@ jobs:
 
       - name: Run root unit tests
         run: pnpm test:unit
+
+  # ---------------------------------------------------------------------------
+  # Job 1.7: A2 no-stub parity gate (path-filtered) (#3419)
+  # ---------------------------------------------------------------------------
+  # The A2 no-stub parity describe in route-injection-build.slow.test.ts
+  # (packages/zudo-doc) asserts sha256-stable normalized HTML for pages built
+  # with package-owned routes and no host stubs. Those hashes only move when
+  # one of a small set of "every-page script emitter" files changes (scripts
+  # embedded via toString()/generated into every page's HTML — theme pack,
+  # current-path, nav overflow/active, i18n switchers, the search widget
+  # script generator, page-transition events). Running the full slow suite on
+  # every PR is wasteful, so this job diffs the PR against its base and only
+  # runs the parity subset when an emitter file is touched — otherwise it
+  # exits green on the skip path. The sibling generator-hardening epic
+  # (zudolab/zudo-doc#3425) is expected to exercise the RUN path.
+  #
+  # fetch-depth: 0 so the diff below has the full history needed to resolve
+  # the merge-base against the PR's base SHA (mirrors build-site/build-history).
+  a2-parity-gate:
+    name: A2 No-Stub Parity Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          fetch-depth: 0
+
+      - name: Detect every-page script emitter changes
+        id: detect-emitters
+        env:
+          # Passed via env (not inlined into the script) so the SHA never
+          # flows through shell interpolation of a ${{ }} expression.
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+
+          # Files whose change can shift the byte-identical HTML the A2 no-stub
+          # parity hashes assert on (zudolab/zudo-doc#3419). One path per line;
+          # a trailing slash means prefix (directory) match below.
+          #
+          # BEST-EFFORT, NOT EXHAUSTIVE. The hashes cover the WHOLE normalized
+          # page HTML, not just the inlined scripts, so any package source that
+          # contributes SSR markup to the fixture's pages can move them — the
+          # test file's own re-baseline log records exactly that happening for
+          # `src/header/header.tsx` and `src/doc-content-header/index.tsx`
+          # (#3039). Those two are listed for that reason; when a re-baseline
+          # traces to some other markup source, add it here in the same PR.
+          #
+          # The parity test file itself is listed so a PR that EDITS the
+          # expected hashes re-runs the suite and proves the new baseline,
+          # instead of skipping the gate on the one PR where it matters most.
+          EMITTERS=(
+            "packages/zudo-doc/src/theme/theme-pack-provider.tsx"
+            "packages/zudo-doc/src/current-path/index.ts"
+            "packages/zudo-doc/src/header/nav-overflow-script.ts"
+            "packages/zudo-doc/src/header/nav-active.ts"
+            "packages/zudo-doc/src/header/header.tsx"
+            "packages/zudo-doc/src/doc-content-header/index.tsx"
+            "packages/zudo-doc/src/i18n-version/version-switcher.tsx"
+            "packages/zudo-doc/src/i18n-version/language-switcher.tsx"
+            "packages/zudo-doc/src/search-widget-script/"
+            "packages/zudo-doc/scripts/gen-search-widget-script.mjs"
+            "packages/zudo-doc/src/transitions/page-events.ts"
+            "packages/zudo-doc/src/__tests__/route-injection-build.slow.test.ts"
+          )
+
+          CHANGED_FILES="$(git diff --name-only "$BASE_SHA"...HEAD)"
+          echo "Changed files vs base ($BASE_SHA):"
+          echo "$CHANGED_FILES"
+          echo ""
+
+          MATCHED=0
+          while IFS= read -r file; do
+            if [ -z "$file" ]; then
+              continue
+            fi
+            for emitter in "${EMITTERS[@]}"; do
+              case "$emitter" in
+                */)
+                  case "$file" in
+                    "$emitter"*)
+                      echo "Emitter changed (dir match): $file"
+                      MATCHED=1
+                      ;;
+                  esac
+                  ;;
+                *)
+                  if [ "$file" = "$emitter" ]; then
+                    echo "Emitter changed: $file"
+                    MATCHED=1
+                  fi
+                  ;;
+              esac
+            done
+          done <<<"$CHANGED_FILES"
+
+          if [ "$MATCHED" -eq 0 ]; then
+            echo ""
+            echo "No every-page script emitter files changed — skipping the A2 no-stub parity suite."
+            echo "run_parity=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "run_parity=true" >> "$GITHUB_OUTPUT"
+
+      - name: Setup pnpm
+        if: steps.detect-emitters.outputs.run_parity == 'true'
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+        with:
+          dest: ~/setup-pnpm-${{ github.job }}
+
+      - name: Setup Node.js
+        if: steps.detect-emitters.outputs.run_parity == 'true'
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        if: steps.detect-emitters.outputs.run_parity == 'true'
+        run: pnpm install --frozen-lockfile
+
+      # Mandatory, not just a freshness nicety: the slow suite builds its
+      # fixtures against workspace dist/, and ensure:workspace-build (which
+      # pnpm install alone triggers via prepare) only checks existence, not
+      # freshness (#3053) — a stale dist/ would silently pass a build that
+      # should have failed or produce parity hashes for the wrong source.
+      - name: Build workspace packages
+        if: steps.detect-emitters.outputs.run_parity == 'true'
+        run: pnpm build:workspace
+
+      - name: Run A2 no-stub parity slow-suite subset
+        id: parity
+        if: steps.detect-emitters.outputs.run_parity == 'true'
+        working-directory: packages/zudo-doc
+        # Block scalar (not inline `run: <value>`) — the --testNamePattern
+        # value contains unquoted-looking `: ` sequences ("A2 no-stub: ...",
+        # "setup: ...") that a YAML plain scalar parses as a nested mapping
+        # key. Indentation-scoped block scalars have no such ambiguity.
+        run: |
+          pnpm exec vitest run --config vitest.slow.config.ts --testNamePattern "A2 no-stub: injected routes render correct HTML.*(setup: fixture builds|parity:)"
+
+      - name: Re-baseline guidance
+        # Scoped to the parity step's own outcome (not bare `if: failure()`,
+        # and not merely the run path) so an unrelated failure — checkout,
+        # pnpm install, build:workspace — doesn't print a hash re-baseline
+        # message that has nothing to do with what broke.
+        if: failure() && steps.parity.outcome == 'failure'
+        run: |
+          echo "::error::A2 no-stub parity suite failed."
+          echo "If this is an intentional HTML/asset change (not a regression), re-baseline"
+          echo "the expected sha256 hashes in"
+          echo "packages/zudo-doc/src/__tests__/route-injection-build.slow.test.ts,"
+          echo "following that file's dated re-baseline comment-block convention (search for"
+          echo "'re-baseline' in the file for prior examples, e.g. a block like:"
+          echo "  // 2026-08-18 re-baseline (zudolab/zudo-doc#NNNN, <why>): ..."
+          echo "Add a NEW dated block with issue attribution in THIS PR when you update a hash —"
+          echo "do not silently overwrite an old hash without one."
 
   # ---------------------------------------------------------------------------
   # Job 2: Build the zfb docs site (full clone — needed for SSG meta dates)
