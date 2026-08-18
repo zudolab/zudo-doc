@@ -64,7 +64,9 @@ const FIXTURE_PACKAGE = "@takazudo/zudo-doc";
 // default scaffold is pure static and consumers choose their deploy adapter.
 // @takazudo/zdtp is included here so the scaffold's emitted zdtp pin is
 // parity-checked against root dependencies — same staleness class as #2381 / #2445.
-const PINNED_PACKAGES = [
+// Exported (#3456) so scripts/check-scaffold-pin-freshness.mjs can reuse the
+// same package list against the npm registry instead of duplicating it.
+export const PINNED_PACKAGES = [
   "@takazudo/zfb",
   "@takazudo/zfb-runtime",
   "@takazudo/zfb-md-wasm",
@@ -182,8 +184,11 @@ const FIRST_PARTY_PEER_CHECKS = [
  * `@takazudo/zudo-doc-history-server` (no closing quote follows `zudo-doc` in
  * the longer name). When the value is a bare identifier instead of a quoted
  * literal, we resolve that identifier's `const NAME = "..."` declaration.
+ *
+ * Exported (#3456) so scripts/check-scaffold-pin-freshness.mjs can read the
+ * same scaffold-emitted pin without re-implementing this parsing.
  */
-function readScaffoldPin(scaffoldSrc, pkgName) {
+export function readScaffoldPin(scaffoldSrc, pkgName) {
   const escaped = pkgName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const re = new RegExp(
     `["']${escaped}["']\\s*(?::|\\]\\s*=)\\s*["']([^"']+)["']`,

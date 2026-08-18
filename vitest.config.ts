@@ -49,7 +49,14 @@ export default defineConfig({
         extends: true,
         test: {
           name: "scripts",
-          include: ["scripts/__tests__/**/*.test.ts"],
+          // `.test.mjs` alongside the usual `.test.ts`: #3456's spec named
+          // scripts/__tests__/check-scaffold-pin-freshness.test.mjs exactly
+          // (the script under test is plain .mjs with no TS syntax), so the
+          // glob was widened rather than renaming the file to the .ts norm.
+          include: [
+            "scripts/__tests__/**/*.test.ts",
+            "scripts/__tests__/**/*.test.mjs",
+          ],
           // Subprocess-heavy integration-flavored tests; 2x the largest 30s
           // child budget for load headroom under host CPU contention (#2563).
           testTimeout: 60_000,
