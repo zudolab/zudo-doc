@@ -265,6 +265,28 @@ line and `latest` *is* the preview channel, so it becomes the comparison
 target; when `latest` is stable, the package is reported "skipped," not stale,
 not a failure.
 
+**Blind spot: same-core prerelease drift is announced, not silently passed
+(#3475).** The gate compares versions on their numeric `MAJOR.MINOR.PATCH`
+core only (mirroring `check:pin-parity`'s core-only convention), dropping the
+prerelease identifier. Two prereleases sharing a core therefore compare
+equal by that check alone — e.g. pin `0.2.0-next.9` against a registry
+`next` of `0.2.0-next.20`. A core-level bump (`0.2.0-next.9` →
+`0.3.0-next.1`) is still caught as `stale`; only a same-core prerelease
+drift is invisible to the numeric comparison. Rather than reporting that
+case `ok` (a false pass — the pin could be many prereleases behind), the
+gate reports it **`skipped`**, with a warning naming the package, the pin,
+and the registry target, saying freshness was **not** verified and must be
+checked by hand. An exactly-identical prerelease pin (same core *and* same
+full version string) still reports `ok` — nothing to warn about there, and
+warning on a genuine match would just train people to ignore the gate.
+`skipped` does **not** fail the gate (see the next paragraph for the
+`lookup-error` contrast) — it is a known coverage limit, not a confirmed
+staleness. This was a deliberate scope decision (#3469): real semver §11
+prerelease-identifier comparison would close the gap fully, but it was
+rejected as diverging from `check:pin-parity`'s core-only convention and
+pulling that script into scope too. If `check:pin-parity` ever adopts real
+prerelease comparison, this gate should move with it.
+
 **Fails closed on a registry error.** A lookup failure (network error, timeout,
 unusable response) blocks the gate the same as a confirmed-stale pin, but is
 reported as a distinct finding kind ("lookup-error" vs. "stale") — a release
