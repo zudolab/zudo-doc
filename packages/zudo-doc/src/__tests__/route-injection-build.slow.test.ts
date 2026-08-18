@@ -1826,7 +1826,16 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
 // group 2b" below for the full explanation and the local assertion it drives).
 // Decision (tolerate + file upstream) recorded on zudolab/zudo-doc#3418.
 // Upstream tracking issue (zfb island-scanner identity dedupe):
-// UPSTREAM_ISSUE_URL_PLACEHOLDER
+// https://github.com/Takazudo/zudo-front-builder/issues/2441
+//
+// The upstream fix dedupes by resolved component identity, and reaches THIS
+// case via a byte-identity branch: the staged copy is compared against the file
+// the package ships at the same stem under `node_modules/@takazudo/zudo-doc/
+// routes-src/`. That branch only fires while `ensureStaged`
+// (src/plugins/routes.ts) stays a verbatim `cpSync`. If staging ever starts
+// rewriting what it copies — the way build-time `copy-routes-src.mjs` rewrites
+// specifiers — the two participants stop being byte-identical and this warning
+// returns. A genuinely different component colliding by name still warns.
 // ---------------------------------------------------------------------------
 
 /** Set up a target-manifest fixture instance: copy the locked-manifest fixture
