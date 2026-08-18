@@ -1,0 +1,31 @@
+---
+title: 5.6.0
+description: Release notes for 5.6.0.
+sidebar_position: 1089
+---
+
+Released: 2026-08-19
+
+### Features
+
+- Added a configurable `favicon` setting. It accepts a plain path string or an object form for multiple slots, with slot types inferred from the file extension rather than hardcoded. (0a8376421, ad6ecb8d4, 5d389b887)
+- Added a browser-safe `@takazudo/zudo-doc/site-schema` subpath so navigation-tree types and helpers can be imported from client code without pulling in Node built-ins. (303cffbc4, 2dde43bcd)
+- Threaded an explicit current-route input through the four active-nav read sites instead of having each one rediscover the path. (9e6461aac, 85aee0625)
+- Added a scaffold pin freshness gate that catches a generated project pinning an unpublished `@takazudo/*` version, and wired it into the publish and prepare flows. (2ba9b5d78, 87eafbddd)
+- The design-token panel now warns when `designTokenPanelConfigModule`'s routes are fully shadowed by host routes. (f846f1d25)
+
+### Bug Fixes
+
+- Theme-pack bootstrap no longer uses `document.write` — it appends to `<head>` and arms the anti-FOUC latch only while `document.readyState` is `loading`. (192976c7a, 0007c33b3)
+- A stub page can no longer decide the whole session's design-token panel config; the DTP shadow diagnostic is now scoped to reader-facing routes, gated on `designTokenPanel`, and its file reads are guarded so it can never fail a build. (1f45c135e, 6c807e6bb, e649d957b, 506b1264d, 904f29f20)
+- Empty-string `favicon` and `logo` values are now rejected at config resolution instead of emitting a broken tag. (fbff0f6be)
+- `category-meta` resolves `node:fs` / `node:path` at call time, so importing it from a browser bundle no longer fails. (fd220bfd0)
+- The search-widget inline script is now generated with esbuild `transformSync` and committed as a prebuilt static literal, guarded by a drift gate. (3f55098be, dbfe84092, f40faab3c)
+- The scaffold pin freshness gate reports skipped-with-warning for differing same-core prerelease pins, and no longer has a blind spot when no `next` tag exists. (814a04229, 36dfce205, 86abf4d64)
+
+### Other Changes
+
+- Bumped the zfb family to 2.7.1, including `zfb-adapter-cloudflare`, and asserted a collision-free build. (918bffb75, d6be0800e, be7b507ee)
+- Bumped `@takazudo/zdtp` to 0.4.11. (be76be2b8)
+- Added a path-filtered A2 no-stub parity gate to PR checks, plus a chrome eval-graph guard and theme-pack write-time link guard. (c5583f116, 54f4e55ea, e77d992df)
+- Documented the favicon setting, the site-schema subpath, and the theme-pack embedder link-ordering contract in both EN and JA. (417c3b058, 7b36984f1, d1a80cb32)
