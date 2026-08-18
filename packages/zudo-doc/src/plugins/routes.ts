@@ -51,12 +51,16 @@
 //      resolved absolute path (never a silent fallback to the package default).
 //
 //      Between #3 and #4, a build-time-only DIAGNOSTIC (no behavior change,
-//      zudolab/zudo-doc#3420, spec #3428) warns when `designTokenPanelConfigModule`
-//      is set but every derived route below is shadowed by a kept user
-//      `pages/` file — meaning the configured builder can never reach an
-//      injected route. Suppressed when the resolved `chromeBindingsModule`
-//      file already names `DesignTokenPanelBootstrap` (the documented
-//      workaround). See the guard case inline, next to #3 above.
+//      zudolab/zudo-doc#3420, spec #3428; scoped by #3434/#3435) warns when
+//      `settings.designTokenPanel` is on, `designTokenPanelConfigModule` is
+//      set, and every READER-FACING derived route below is shadowed by a kept
+//      user `pages/` file — meaning the configured builder can never reach an
+//      injected route a reader browses. Suppressed when the resolved
+//      `chromeBindingsModule` file already names `DesignTokenPanelBootstrap`
+//      (the documented workaround), or when a shadowing `pages/` file is an
+//      exact default re-export of the shadowed route's own entrypoint (#3451
+//      — such a file still reaches the bootstrap through `routes/_chrome.tsx`).
+//      See the guard case inline, next to #3 above.
 //
 //   4. injectRoute(pattern, entrypoint[, opts]) — the 16-route catalog
 //      (Decision 3), patterns derived from `options.settings.locales` /
@@ -112,6 +116,12 @@ interface RoutesSettings {
   versions?: RoutesVersionConfig[] | false;
   docTags?: boolean;
   aiAssistant?: boolean;
+  /** See `settings.ts` — whether the interactive Design Token Panel is enabled
+   *  at all. Read ONLY by the shadow diagnostic below (#3435): with the feature
+   *  off, `designTokenPanelConfigModule` is documented as irrelevant, so the
+   *  diagnostic must not tell such a host to wire up a panel that never
+   *  renders either way. Nothing else in this plugin gates on it. */
+  designTokenPanel?: boolean;
   /** See `settings.ts` — project-root-relative path to a host bindings module. */
   chromeBindingsModule?: string;
   /** See `settings.ts` — project-root-relative path to a host design-token
@@ -142,6 +152,97 @@ interface RouteSpec {
   pattern: string;
   entrypoint: string;
   opts?: { prerender?: boolean };
+  /**
+   * Whether this route counts toward the DTP shadow diagnostic's denominator
+   * (#3434). REQUIRED, deliberately — a newly added route must state its
+   * membership, so forgetting one is a type error instead of the silent
+   * miss #3434 *is*.
+   *
+   * The name is scoped to the DIAGNOSTIC, not to the route's own nature,
+   * because that is all the flag actually asserts. In particular it is NOT
+   * `rendersPanel`: `/404` genuinely DOES render the configured DTP bootstrap
+   * (`routes/404.tsx` passes `bodyEndComponents={<BodyEndIslands …/>}`, and
+   * `routes/_chrome.tsx` feeds that chrome the configured wrapper), so a
+   * `rendersPanel: false` tag on it would be a false claim in the source. It
+   * is likewise not `kind: "doc-content"` — the counted set includes the
+   * locale home, the tag pages and the version pages.
+   *
+   * `false` for the four routes a reader never browses as documentation:
+   * `/sitemap.xml` and `/robots.txt` cannot render an HTML panel at all (they
+   * would hold the check at "not fully shadowed" forever), `/api/ai-chat` is a
+   * JSON endpoint, and `/404` is an error page — losing the panel there says
+   * nothing about whether the site's docs still have one. The never-injected
+   * `/` (see the note in `deriveRoutes`) is absent from the catalog entirely
+   * and so cannot be counted either.
+   */
+  includedInDtpShadowDiagnostic: boolean;
+}
+
+/**
+ * The DTP shadow diagnostic's warn/silent decision, extracted from `setup()`
+ * so the vacuity guard below is directly unit-testable (#3434).
+ *
+ * Returns `true` only when there is at least one reader-facing route AND every
+ * one of them is shadowed. The emptiness check is the whole reason this is a
+ * named function: `[].every(…)` is vacuously `true`, so an empty denominator
+ * would otherwise fire the warning for every host. That state is unreachable
+ * through `deriveRoutes` today (`/docs/[[...slug]]` is always emitted and
+ * always counted), which is exactly why it needs a test that calls this
+ * directly — a build-driven test cannot construct it.
+ */
+export function shouldWarnDtpFullyShadowed(
+  routes: ReadonlyArray<Pick<RouteSpec, "pattern" | "includedInDtpShadowDiagnostic">>,
+  isShadowed: (pattern: string) => boolean,
+): boolean {
+  const counted = routes.filter((route) => route.includedInDtpShadowDiagnostic);
+  if (counted.length === 0) return false;
+  return counted.every((route) => isShadowed(route.pattern));
+}
+
+/**
+ * Best-effort check for the one shape that makes a `pages/` file shadowing a
+ * package route harmless to the DTP shadow diagnostic (#3451): an exact
+ * default RE-EXPORT of that route's OWN package entrypoint —
+ *
+ *   export { default, paths, frontmatter } from "@takazudo/zudo-doc/routes/docs-slug";
+ *
+ * Such a file still reaches the configured chrome bootstrap through
+ * `routes/_chrome.tsx` (it forwards to the very entrypoint the package would
+ * have injected), so `existsSync` finding it should not count as a real
+ * shadow — narrowing the diagnostic's denominator to reader-facing routes
+ * (#3434) made this false positive reachable, where before it was hidden by
+ * the always-surviving `/404` / `/sitemap.xml` entries.
+ *
+ * Deliberately NARROW, and best-effort in the same sense as the
+ * `workaroundLikelyApplied` check in `setup()` below: a cheap text scan over
+ * the file's source, not module evaluation or an AST parse. It intentionally
+ * does NOT suppress on any of these shapes, because none of them prove the
+ * route still reaches the bootstrap:
+ *
+ *  - the specifier appearing only inside a comment (stripped before matching)
+ *  - an unused import of the specifier (no `export { default … } from` at all)
+ *  - a re-export of a DIFFERENT package route (the specifier must match
+ *    `entrypoint` exactly)
+ *  - a file that imports the package route but exports its own default
+ *
+ * Conversely, a host that reaches the same entrypoint some OTHER way this
+ * scan cannot see (e.g. a local wrapper module) still counts as shadowed and
+ * may trigger the diagnostic even though it is actually safe — that false
+ * positive is the accepted cost of a text-only heuristic (the warning
+ * message states this limit too).
+ */
+function isExactDefaultReExport(source: string, entrypoint: string): boolean {
+  // Strip comments first so a commented-out re-export line is never mistaken
+  // for a live one. This itself is best-effort: it does not understand
+  // string literals, so a `//`/`/* */` sequence inside a string would also
+  // get stripped — an acceptable limit for the simple import/export-only
+  // `pages/` stub files this heuristic targets.
+  const withoutComments = source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+  const specifier = entrypoint.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const reExportPattern = new RegExp(
+    `export\\s*\\{[^}]*\\bdefault\\b(?!\\s+as\\s)[^}]*\\}\\s*from\\s*(["'])${specifier}\\1`,
+  );
+  return reExportPattern.test(withoutComments);
 }
 
 /**
@@ -164,15 +265,15 @@ function deriveRoutes(settings: RoutesSettings): RouteSpec[] {
   // ctx.command). The routes/index.tsx entrypoint exists and is exported from
   // the package for when the user drops their pages/index.tsx stub and a future
   // zfb version lifts the restriction. Tracked: Takazudo/zudo-front-builder#1227.
-  routes.push({ pattern: "/404", entrypoint: "@takazudo/zudo-doc/routes/404" });
-  routes.push({ pattern: "/sitemap.xml", entrypoint: "@takazudo/zudo-doc/routes/sitemap.xml" });
-  routes.push({ pattern: "/robots.txt", entrypoint: "@takazudo/zudo-doc/routes/robots.txt" });
-  routes.push({ pattern: "/docs/[[...slug]]", entrypoint: "@takazudo/zudo-doc/routes/docs-slug" });
+  routes.push({ pattern: "/404", entrypoint: "@takazudo/zudo-doc/routes/404", includedInDtpShadowDiagnostic: false });
+  routes.push({ pattern: "/sitemap.xml", entrypoint: "@takazudo/zudo-doc/routes/sitemap.xml", includedInDtpShadowDiagnostic: false });
+  routes.push({ pattern: "/robots.txt", entrypoint: "@takazudo/zudo-doc/routes/robots.txt", includedInDtpShadowDiagnostic: false });
+  routes.push({ pattern: "/docs/[[...slug]]", entrypoint: "@takazudo/zudo-doc/routes/docs-slug", includedInDtpShadowDiagnostic: true });
 
   // ── Tags (gated on settings.docTags) ──────────────────────────────────
   if (docTags) {
-    routes.push({ pattern: "/docs/tags", entrypoint: "@takazudo/zudo-doc/routes/docs-tags-index" });
-    routes.push({ pattern: "/docs/tags/[tag]", entrypoint: "@takazudo/zudo-doc/routes/docs-tags-tag" });
+    routes.push({ pattern: "/docs/tags", entrypoint: "@takazudo/zudo-doc/routes/docs-tags-index", includedInDtpShadowDiagnostic: true });
+    routes.push({ pattern: "/docs/tags/[tag]", entrypoint: "@takazudo/zudo-doc/routes/docs-tags-tag", includedInDtpShadowDiagnostic: true });
   }
 
   // ── AI chat (SSR — prerender:false; gated on settings.aiAssistant) ─────
@@ -181,28 +282,29 @@ function deriveRoutes(settings: RoutesSettings): RouteSpec[] {
       pattern: "/api/ai-chat",
       entrypoint: "@takazudo/zudo-doc/routes/api-ai-chat",
       opts: { prerender: false },
+      includedInDtpShadowDiagnostic: false,
     });
   }
 
   // ── Versions (default-locale) ─────────────────────────────────────────
   if (hasVersions) {
-    routes.push({ pattern: "/docs/versions", entrypoint: "@takazudo/zudo-doc/routes/docs-versions" });
-    routes.push({ pattern: "/v/[version]/docs/[[...slug]]", entrypoint: "@takazudo/zudo-doc/routes/v-docs-slug" });
-    routes.push({ pattern: "/v/[version]/[locale]/docs/[[...slug]]", entrypoint: "@takazudo/zudo-doc/routes/v-locale-docs-slug" });
+    routes.push({ pattern: "/docs/versions", entrypoint: "@takazudo/zudo-doc/routes/docs-versions", includedInDtpShadowDiagnostic: true });
+    routes.push({ pattern: "/v/[version]/docs/[[...slug]]", entrypoint: "@takazudo/zudo-doc/routes/v-docs-slug", includedInDtpShadowDiagnostic: true });
+    routes.push({ pattern: "/v/[version]/[locale]/docs/[[...slug]]", entrypoint: "@takazudo/zudo-doc/routes/v-locale-docs-slug", includedInDtpShadowDiagnostic: true });
   }
 
   // ── Per non-default locale (dynamic [locale] pattern, injected once) ───
   // Only emit the locale-prefixed patterns when at least one non-default
   // locale is configured — otherwise `[locale]` paths() would enumerate empty.
   if (localeCodes.length > 0) {
-    routes.push({ pattern: "/[locale]", entrypoint: "@takazudo/zudo-doc/routes/locale-index" });
-    routes.push({ pattern: "/[locale]/docs/[[...slug]]", entrypoint: "@takazudo/zudo-doc/routes/locale-docs-slug" });
+    routes.push({ pattern: "/[locale]", entrypoint: "@takazudo/zudo-doc/routes/locale-index", includedInDtpShadowDiagnostic: true });
+    routes.push({ pattern: "/[locale]/docs/[[...slug]]", entrypoint: "@takazudo/zudo-doc/routes/locale-docs-slug", includedInDtpShadowDiagnostic: true });
     if (docTags) {
-      routes.push({ pattern: "/[locale]/docs/tags", entrypoint: "@takazudo/zudo-doc/routes/locale-docs-tags-index" });
-      routes.push({ pattern: "/[locale]/docs/tags/[tag]", entrypoint: "@takazudo/zudo-doc/routes/locale-docs-tags-tag" });
+      routes.push({ pattern: "/[locale]/docs/tags", entrypoint: "@takazudo/zudo-doc/routes/locale-docs-tags-index", includedInDtpShadowDiagnostic: true });
+      routes.push({ pattern: "/[locale]/docs/tags/[tag]", entrypoint: "@takazudo/zudo-doc/routes/locale-docs-tags-tag", includedInDtpShadowDiagnostic: true });
     }
     if (hasVersions) {
-      routes.push({ pattern: "/[locale]/docs/versions", entrypoint: "@takazudo/zudo-doc/routes/locale-docs-versions" });
+      routes.push({ pattern: "/[locale]/docs/versions", entrypoint: "@takazudo/zudo-doc/routes/locale-docs-versions", includedInDtpShadowDiagnostic: true });
     }
   }
 
@@ -361,25 +463,63 @@ const plugin = definePlugin({
         : `export { buildDesignTokenPanelConfig } from "@takazudo/zudo-doc/design-token-panel-config";\n`,
     );
 
-    // (3.5) DTP shadow diagnostic (zudolab/zudo-doc#3420, spec #3428).
+    // (3.5) DTP shadow diagnostic (zudolab/zudo-doc#3420, spec #3428; scoped
+    // by #3434/#3435; re-export false-positive guarded by #3451).
     // Decision 6 above drops an injected route SILENTLY when a kept user
     // `pages/` file claims the same URL — so a locked-manifest host that
     // sets `designTokenPanelConfigModule` while its `pages/` stubs shadow
-    // EVERY injected route gets no configured DTP island anywhere: the panel
-    // vanishes site-wide with no build error. Warn loudly at setup instead.
-    // "ALL derived routes shadowed" is the sufficient condition — partial
-    // shadowing stays silent (the config still applies on the surviving
-    // routes). Gated on the RESOLVED path (not the raw setting) since
-    // `resolveHostModuleOverride` above already turned an invalid setting
-    // into a thrown Error — reaching here means the module genuinely
-    // resolved. Diagnostic only: does not change which routes get injected
-    // below.
-    if (designTokenPanelConfigAbsPath) {
+    // every injected route a READER BROWSES gets no configured DTP island on
+    // any page of its documentation: the panel vanishes with no build error.
+    // Warn loudly at setup instead. "All reader-facing derived routes
+    // shadowed" is the sufficient condition (`includedInDtpShadowDiagnostic`
+    // on `RouteSpec` — the original `every(derivedRoutes)` never fired for
+    // the very host shape that motivated the diagnostic, because
+    // `/sitemap.xml` and `/robots.txt` are always injected and are never
+    // shadowed by the two-stub minimal scaffold, #3434). Partial shadowing
+    // stays silent (the config still applies on the surviving reader routes).
+    //
+    // Two gates, both needed:
+    //  - `settings.designTokenPanel` — with the feature off, `settings.ts`
+    //    documents `designTokenPanelConfigModule` as irrelevant, so warning
+    //    about a panel that never renders either way contradicts the
+    //    documented contract (#3435).
+    //  - the RESOLVED path, not the raw setting — `resolveHostModuleOverride`
+    //    above already turned an invalid setting into a thrown Error, so
+    //    reaching here means the module genuinely resolved.
+    //
+    // Diagnostic only: does not change which routes get injected below.
+    if (settings.designTokenPanel === true && designTokenPanelConfigAbsPath) {
       const pagesDir = join(ctx.projectRoot, "pages");
-      const allRoutesShadowed = derivedRoutes.every((route) =>
-        derivePagesCandidates(route.pattern).some((rel) => existsSync(join(pagesDir, rel))),
-      );
-      if (allRoutesShadowed) {
+      // Looked up per-pattern below so the re-export guard (#3451) can
+      // compare a shadowing file's specifier against THIS route's own
+      // `entrypoint` — a re-export of a different package route must still
+      // count as a real shadow.
+      const routesByPattern = new Map(derivedRoutes.map((route) => [route.pattern, route]));
+      const readerRoutesAllShadowed = shouldWarnDtpFullyShadowed(derivedRoutes, (pattern) => {
+        const route = routesByPattern.get(pattern);
+        return derivePagesCandidates(pattern).some((rel) => {
+          const abs = join(pagesDir, rel);
+          if (!existsSync(abs)) return false;
+          // A kept `pages/` file that exactly default-re-exports the
+          // shadowed route's own entrypoint still reaches the configured
+          // bootstrap through routes/_chrome.tsx — don't count it as a real
+          // shadow (#3451). Read failures (unreadable file, a path that is
+          // actually a directory) fall back to "counts as a shadow": this is a
+          // build-time DIAGNOSTIC and must never be the thing that fails a
+          // build.
+          let source: string | undefined;
+          try {
+            source = readFileSync(abs, "utf8");
+          } catch {
+            return true;
+          }
+          if (route && isExactDefaultReExport(source, route.entrypoint)) {
+            return false;
+          }
+          return true;
+        });
+      });
+      if (readerRoutesAllShadowed) {
         // Best-effort heuristic: a cheap text scan for the literal export
         // name, not an evaluation of the resolved module — the module
         // cannot be executed here, at plugin setup. A host that composes
@@ -388,21 +528,42 @@ const plugin = definePlugin({
         // literal token ever appearing in the resolved file keeps warning —
         // the message below tells such hosts the warning is safe to ignore
         // once the workaround is genuinely wired up.
+        // Read guarded for the same reason as the candidate scan above: this
+        // whole block only ever prints a warning, so an unreadable file (EACCES,
+        // EIO) must degrade to "assume not applied" rather than throw out of
+        // setup() and fail the build. `resolveHostModuleOverride` already proved
+        // this path exists and is a file, so EISDIR is not reachable here — but
+        // leaving the two reads asymmetrically guarded would read as deliberate.
+        let chromeBindingsSource: string | undefined;
+        if (chromeBindingsAbsPath !== undefined) {
+          try {
+            chromeBindingsSource = readFileSync(chromeBindingsAbsPath, "utf8");
+          } catch {
+            chromeBindingsSource = undefined;
+          }
+        }
         const workaroundLikelyApplied =
-          chromeBindingsAbsPath !== undefined &&
-          readFileSync(chromeBindingsAbsPath, "utf8").includes("DesignTokenPanelBootstrap");
+          chromeBindingsSource !== undefined &&
+          chromeBindingsSource.includes("DesignTokenPanelBootstrap");
         if (!workaroundLikelyApplied) {
           ctx.logger.warn(
             "zudo-doc: settings.designTokenPanelConfigModule is set, but every " +
-              "injected route's URL is shadowed by a kept user pages/ file — the " +
-              "configured Design Token Panel builder can never apply anywhere on " +
-              "this site (zudolab/zudo-doc#3420). Thread your builder through " +
+              "reader-facing injected route's URL is shadowed by a kept user " +
+              "pages/ file — the configured Design Token Panel builder can never " +
+              "apply on any documentation page a reader browses on this site " +
+              "(zudolab/zudo-doc#3420). Thread your builder through " +
               "chromeBindings.DesignTokenPanelBootstrap instead — that binding wins " +
               "everywhere, including stub-rendered pages (see the " +
               "designTokenPanelConfigModule docblock in settings.ts). If you already " +
               "did this via a chromeBindingsModule that composes the bootstrap " +
               'indirectly (never spelling "DesignTokenPanelBootstrap" literally in ' +
-              "the resolved file), this warning is safe to ignore.",
+              "the resolved file), this warning is safe to ignore. A pages/ file " +
+              "that cleanly re-exports a shadowed route's own entrypoint " +
+              '(`export { default, paths, frontmatter } from "@takazudo/zudo-doc/' +
+              'routes/…"`) does not count as a real shadow either — but that check ' +
+              "is also a best-effort text scan, not module evaluation, so a file " +
+              "that reaches the same entrypoint some other way may still trigger " +
+              "this warning even though it is safe.",
           );
         }
       }

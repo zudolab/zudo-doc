@@ -466,20 +466,36 @@ export interface Settings {
    * binding wins everywhere and is unaffected by this rule. See
    * `docs/adr/route-injection-seam.md`.
    *
-   * EDGE CASE (zudolab/zudo-doc#3420, diagnostic added #3428): a
-   * locked-manifest host whose kept `pages/` stubs happen to shadow EVERY
-   * injected route (Decision 6 in `plugins/routes.ts` drops a collided
-   * injected route silently — user `pages/` always wins) gets no configured
-   * DTP island anywhere on the site when this setting is set, with no build
-   * error. `plugins/routes.ts` now probes for exactly this at plugin setup —
-   * if every derived route's URL resolves to an existing user `pages/` file,
-   * it emits a loud `ctx.logger.warn` naming this gap and the
-   * `chromeBindings.DesignTokenPanelBootstrap` workaround above, UNLESS the
-   * resolved `chromeBindingsModule` file already contains the literal token
+   * EDGE CASE (zudolab/zudo-doc#3420, diagnostic added #3428, scoped by
+   * #3434/#3435): a locked-manifest host whose kept `pages/` stubs happen to
+   * shadow every injected route a READER BROWSES (Decision 6 in
+   * `plugins/routes.ts` drops a collided injected route silently — user
+   * `pages/` always wins) gets no configured DTP island on any page of its
+   * documentation when this setting is set, with no build error.
+   * `plugins/routes.ts` now probes for exactly this at plugin setup — if every
+   * derived route tagged `includedInDtpShadowDiagnostic` resolves to an
+   * existing user `pages/` file, it emits a loud `ctx.logger.warn` naming this
+   * gap and the `chromeBindings.DesignTokenPanelBootstrap` workaround above.
+   * The denominator deliberately excludes `/404`, `/sitemap.xml`,
+   * `/robots.txt` and `/api/ai-chat` — none of them is a documentation page a
+   * reader browses, and the two non-HTML ones could never be shadowed by a
+   * minimal scaffold, which is what kept the original all-routes form of this
+   * check from ever firing (#3434).
+   *
+   * Three further suppressions: the diagnostic is silent unless
+   * `designTokenPanel` is `true` (with the feature off this setting is
+   * irrelevant, per the paragraph above — #3435); silent when the resolved
+   * `chromeBindingsModule` file already contains the literal token
    * `DesignTokenPanelBootstrap` (a best-effort static text scan — an
    * indirectly-composed override that never spells the name out keeps
-   * warning). Partial shadowing stays silent: the config still applies on
-   * whichever routes survive.
+   * warning); and a `pages/` file that is an exact default re-export of the
+   * shadowed route's OWN package entrypoint
+   * (`export { default, paths, frontmatter } from "@takazudo/zudo-doc/routes/…"`)
+   * does not count as a shadow at all, because it still reaches the configured
+   * bootstrap through `routes/_chrome.tsx` (#3451 — also a best-effort text
+   * scan, so a file that reaches the same entrypoint some other way still
+   * counts as shadowed). Partial shadowing stays silent: the config still
+   * applies on whichever reader-facing routes survive.
    */
   designTokenPanelConfigModule?: string;
   /**
