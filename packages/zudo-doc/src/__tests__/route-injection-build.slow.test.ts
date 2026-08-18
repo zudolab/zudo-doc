@@ -655,19 +655,42 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // All of it traces to already-merged, intentional PRs; no unattributed
   // bytes.
 
+  // 2026-08-18 re-baseline (Deps And Fixes epic, zudolab/zudo-doc#3410):
+  // two independent deltas, both verified by building this fixture fresh at
+  // the epic anchor (main @ 275b55729) and at the merged epic base, diffing
+  // the normalized HTML of all three pages:
+  //   - Pre-existing main-side drift: 85aee0625 (#3408, merged as PR #3409)
+  //     consolidated the current-route override into CURRENT_PATH_SCRIPT_PRELUDE,
+  //     changing the embedded nav-overflow / version-switcher / language-switcher
+  //     script text on every SSG page AFTER the 54f4e55ea re-baseline — these
+  //     three snapshots were red on main from 275b55729 onward (that agent-fix
+  //     session did not run test:slow, and no CI/b4push tier runs it).
+  //   - This epic: #3413 (theme-pack anti-FOUC latch readyState guard) adds
+  //     `var shouldLatch=document.readyState==="loading"` and gates the
+  //     LOADING_ATTR set + watchdog setTimeout on it — the ONLY anchor→base
+  //     delta on all three pages (identical bytes per page). The zfb 2.6.0
+  //     bump (#3411) contributed ZERO bytes (emitRenderArtifacts is flag-off
+  //     inert; no sentinel leakage), and #3412's frozen SEARCH_WIDGET_SCRIPT
+  //     is byte-identical to the previous runtime-composed text by design.
+  // GOTCHA re-learned during attribution: this fixture builds against the
+  // workspace package's dist/ via the node_modules symlink, and the ensure
+  // guard checks existence, not freshness (#3053) — a stale dist/ in the tree
+  // that runs this suite silently tests OLD compiled code. Run
+  // `pnpm build:workspace` before trusting these hashes.
+
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"e8da2b7dfb3dd4f40819c45d1099f0f628425d3e7d1d8f6b1950087ca7b2dacc"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"277bff98a8c915d0fb39ef864d8e1273ccd17a0defc944464a7ec6bc87765de3"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"c7d1036b74679e01fba0de5291eead1e87ae102107081e34be5a580ebbdc53dd"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"6bf7926f9e25707b8de53c3d2be276253f138497e54eb44d7046c05db56c297d"`);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"efdd372af488957c34c567eb779243c2b0c0ca8699d51644342a6acbc6cbb279"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"5d1f4635a82eff94ffac690a0e37801f3103466654c6f135340579ae22bce709"`);
   });
 });
 
