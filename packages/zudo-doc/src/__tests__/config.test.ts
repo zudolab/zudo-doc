@@ -138,6 +138,52 @@ describe("zudoDoc() default-merge semantics", () => {
     ).not.toThrow();
   });
 
+  // #3471: an empty-string href resolves to the CURRENT document per the
+  // HTML spec, so `favicon: ""` silently makes every page fetch its own HTML
+  // as a "favicon", and `logo: ""` renders a CSS mask of an empty path.
+  // #3474 rejects the exact empty string loudly at config resolution.
+  describe("empty-string logo/favicon rejection (#3474)", () => {
+    it("rejects logo: \"\"", () => {
+      expect(() => zudoDoc({ logo: "" })).toThrow(TypeError);
+      expect(() => zudoDoc({ logo: "" })).toThrow(/logo/);
+    });
+
+    it("rejects favicon: \"\"", () => {
+      expect(() => zudoDoc({ favicon: "" })).toThrow(TypeError);
+      expect(() => zudoDoc({ favicon: "" })).toThrow(/favicon/);
+    });
+
+    it("rejects an empty-string favicon object slot, naming the slot", () => {
+      expect(() => zudoDoc({ favicon: { svg: "" } })).toThrow(/favicon\.svg/);
+      expect(() => zudoDoc({ favicon: { ico: "" } })).toThrow(/favicon\.ico/);
+      expect(() => zudoDoc({ favicon: { png32: "" } })).toThrow(/favicon\.png32/);
+      expect(() => zudoDoc({ favicon: { png16: "" } })).toThrow(/favicon\.png16/);
+    });
+
+    it("favicon: {} (no slots) stays valid and emits nothing", () => {
+      expect(() => zudoDoc({ favicon: {} })).not.toThrow();
+    });
+
+    it("whitespace-only logo/favicon does NOT throw (only the exact empty string is rejected)", () => {
+      expect(() => zudoDoc({ logo: " " })).not.toThrow();
+      expect(() => zudoDoc({ favicon: " " })).not.toThrow();
+      expect(() => zudoDoc({ favicon: { svg: " " } })).not.toThrow();
+    });
+
+    it("unchanged: false, \"auto\", omitted, and a fully-populated favicon object", () => {
+      expect(() => zudoDoc({ logo: false })).not.toThrow();
+      expect(() => zudoDoc({ logo: "auto" })).not.toThrow();
+      expect(() => zudoDoc({})).not.toThrow();
+      expect(() => zudoDoc({ favicon: false })).not.toThrow();
+      expect(() => zudoDoc({ favicon: "auto" })).not.toThrow();
+      expect(() =>
+        zudoDoc({
+          favicon: { svg: "/a.svg", ico: "/a.ico", png32: "/a-32.png", png16: "/a-16.png" },
+        }),
+      ).not.toThrow();
+    });
+  });
+
   it("omitted field falls back to DEFAULT_SETTINGS (mermaid defaults true)", () => {
     expect(zudoDoc({}).markdown?.features?.mermaid).toBe(true);
   });

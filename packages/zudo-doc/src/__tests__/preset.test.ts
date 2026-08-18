@@ -303,6 +303,65 @@ describe("zudoDocPreset collections", () => {
       }),
     ).toThrow(/Invalid version slug "1,0"/);
   });
+
+  // #3474, same rationale as the comma guard above: `zudoDocPreset()` is a
+  // documented, directly-spreadable public entry — a consumer bypassing
+  // `zudoDoc()` must still hit the empty-string logo/favicon guard (#3471).
+  describe("empty-string logo/favicon rejection, called directly (bypassing zudoDoc())", () => {
+    it("rejects logo: \"\"", () => {
+      expect(() =>
+        zudoDocPreset({
+          settings: { ...fixtureSettings, logo: "" },
+          buildDocsSchema: buildFixtureSchema,
+          directiveVocabulary: fixtureDirectives,
+        }),
+      ).toThrow(/logo/);
+    });
+
+    it("rejects favicon: \"\"", () => {
+      expect(() =>
+        zudoDocPreset({
+          settings: { ...fixtureSettings, favicon: "" },
+          buildDocsSchema: buildFixtureSchema,
+          directiveVocabulary: fixtureDirectives,
+        }),
+      ).toThrow(/favicon/);
+    });
+
+    it("rejects an empty-string favicon object slot, naming the slot", () => {
+      expect(() =>
+        zudoDocPreset({
+          settings: { ...fixtureSettings, favicon: { png16: "" } },
+          buildDocsSchema: buildFixtureSchema,
+          directiveVocabulary: fixtureDirectives,
+        }),
+      ).toThrow(/favicon\.png16/);
+    });
+
+    it("favicon: {} (no slots) stays valid", () => {
+      expect(() =>
+        zudoDocPreset({
+          settings: { ...fixtureSettings, favicon: {} },
+          buildDocsSchema: buildFixtureSchema,
+          directiveVocabulary: fixtureDirectives,
+        }),
+      ).not.toThrow();
+    });
+
+    it("whitespace-only logo/favicon does NOT throw", () => {
+      expect(() =>
+        zudoDocPreset({
+          settings: { ...fixtureSettings, logo: " ", favicon: " " },
+          buildDocsSchema: buildFixtureSchema,
+          directiveVocabulary: fixtureDirectives,
+        }),
+      ).not.toThrow();
+    });
+
+    it("unchanged: omitted logo/favicon", () => {
+      expect(() => preset()).not.toThrow();
+    });
+  });
 });
 
 describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {

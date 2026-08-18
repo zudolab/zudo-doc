@@ -96,6 +96,7 @@ import { defaultDirectiveVocabulary } from "./directive-vocabulary-defaults/inde
 import { defaultTranslations } from "./i18n-defaults/index.js";
 import { defaultColorSchemes } from "./color-schemes-defaults/index.js";
 import { assertNoCommaInVersionSlugs } from "./version-availability/index.js";
+import { assertNoEmptyStringFaviconOrLogo } from "./config-assertions/index.js";
 
 /** The `settings.claudeResources` block (or `false` when disabled). */
 type ClaudeResourcesConfig =
@@ -220,7 +221,9 @@ export interface ZudoDocConfig {
    * Home-hero logo. `"auto"` renders a generated deterministic SVG seeded by
    * `siteName` (no asset needed); a path string (e.g. `"/img/logo.svg"`)
    * renders that asset as a theme-adaptive CSS mask; `false` hides the logo
-   * block entirely.
+   * block entirely. The empty string `""` throws a `TypeError` at config
+   * resolution instead of silently rendering a mask of an empty path — pass
+   * `false` or omit the field instead (#3471).
    * @default "auto"
    */
   logo?: string | false;
@@ -233,7 +236,10 @@ export interface ZudoDocConfig {
    * link with the `type` inferred from its extension; a `FaviconConfig`
    * object emits only the slots it supplies (drop `ico` when your `public/`
    * has no `favicon.ico` and the dead link is never emitted); `false` emits
-   * no favicon links at all.
+   * no favicon links at all. The empty string `""` (top-level or any
+   * `FaviconConfig` slot) throws a `TypeError` at config resolution instead
+   * of silently emitting `<link rel="icon" href="">`, which the HTML spec
+   * resolves to the current document — pass `false` or omit instead (#3471).
    * @default undefined
    */
   favicon?: string | FaviconConfig | false;
@@ -687,6 +693,13 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
   // enforced inside `zudoDocPreset()` itself (see that call below) since the
   // preset is separately callable as documented public API.
   assertNoCommaInVersionSlugs(settings.versions);
+
+  // An empty-string `logo`/`favicon` (including a `favicon` object slot)
+  // silently resolves to "the current document" per the HTML spec (#3471) —
+  // reject it here, at config resolution. Also enforced inside
+  // `zudoDocPreset()` itself (see that call below) since the preset is
+  // separately callable as documented public API.
+  assertNoEmptyStringFaviconOrLogo(settings);
 
   const fragment = zudoDocPreset({
     settings,
