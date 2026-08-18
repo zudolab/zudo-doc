@@ -155,8 +155,18 @@ function resolveFaviconLinks(
 
   const slots = favicon ?? DEFAULT_FAVICON;
   const links: FaviconLinkAttrs[] = [];
+  // Slot `type` is INFERRED from the supplied value's extension, falling back
+  // to the slot's canonical type. The fallback keeps the default four-link set
+  // (and any conventionally-named override) byte-identical, while a slot
+  // pointed at another format (`png32: "/icon-32.webp"`) is no longer
+  // mislabelled `image/png` — browsers use the declared type when picking an
+  // icon. `ico` stays untyped, as the historical markup had it.
   if (slots.svg !== undefined) {
-    links.push({ rel: "icon", type: "image/svg+xml", href: faviconHref(slots.svg, withBase) });
+    links.push({
+      rel: "icon",
+      type: faviconType(slots.svg) ?? "image/svg+xml",
+      href: faviconHref(slots.svg, withBase),
+    });
   }
   if (slots.ico !== undefined) {
     links.push({ rel: "icon", href: faviconHref(slots.ico, withBase), sizes: "any" });
@@ -164,7 +174,7 @@ function resolveFaviconLinks(
   if (slots.png32 !== undefined) {
     links.push({
       rel: "icon",
-      type: "image/png",
+      type: faviconType(slots.png32) ?? "image/png",
       sizes: "32x32",
       href: faviconHref(slots.png32, withBase),
     });
@@ -172,7 +182,7 @@ function resolveFaviconLinks(
   if (slots.png16 !== undefined) {
     links.push({
       rel: "icon",
-      type: "image/png",
+      type: faviconType(slots.png16) ?? "image/png",
       sizes: "16x16",
       href: faviconHref(slots.png16, withBase),
     });

@@ -389,6 +389,28 @@ describe("HeadWithDefaults — settings.favicon", () => {
     ]);
   });
 
+  it("object slot type follows the value's extension, not the slot name", () => {
+    // A slot pointed at another format must not be mislabelled with the slot's
+    // canonical type — browsers use the declared `type` when picking an icon.
+    const ctx = makeFakeChromeContext({
+      settings: { favicon: { svg: "/icon.png", png32: "/icon-32.webp" } },
+    });
+    const HeadWithDefaults = createHeadWithDefaults(ctx);
+    expect(iconLinks(render(<HeadWithDefaults title="Test" />))).toEqual([
+      '<link rel="icon" type="image/png" href="/icon.png"/>',
+      '<link rel="icon" type="image/webp" sizes="32x32" href="/icon-32.webp"/>',
+    ]);
+  });
+
+  it("object slot type falls back to the slot's canonical type for an unknown extension", () => {
+    const HeadWithDefaults = createHeadWithDefaults(
+      makeFakeChromeContext({ settings: { favicon: { png16: "/icon-16" } } }),
+    );
+    expect(iconLinks(render(<HeadWithDefaults title="Test" />))).toEqual([
+      '<link rel="icon" type="image/png" sizes="16x16" href="/icon-16"/>',
+    ]);
+  });
+
   it.each([
     ["false", false],
     ["{}", {}],
