@@ -27,9 +27,15 @@
 // source change in the diff, and the emit was never byte-identical to the
 // esbuild-compiled bindings this generator replaced in #3412 anyway, so
 // `typescript` bought no stability it actually had. esbuild is only a
-// transitive dep here via tsup, so it's pinned as an explicit `esbuild`
-// devDependency in package.json, version-aligned with tsup's own `esbuild`
-// range), executes each transpiled CommonJS module in an isolated sandbox
+// transitive dep here via tsup, so it's declared as an explicit `esbuild`
+// devDependency in package.json. NOTE: the range there is deliberately the
+// same `>=0.28.1` the ROOT package.json `pnpm.overrides` forces — an override
+// wins over any dependency range in the workspace, so declaring tsup's own
+// `^0.27.0` here would be a dead range that never matches what is installed.
+// The effective esbuild floor is therefore open-ended, and byte stability of
+// this generator's output is guaranteed by `pnpm check:search-widget-drift`
+// (b4push + CI) rather than by the version range), executes each transpiled
+// CommonJS module in an isolated sandbox
 // (empty `module`/`exports`, no external deps — both source files are
 // import-free), then reads the REAL runtime values off the sandbox's
 // `exports`:
@@ -140,10 +146,13 @@ function transpile(sourcePath) {
       `[gen-search-widget-script] failed to transpile ${sourcePath}: ${messages}`,
     );
   }
+  // Warnings are fatal on purpose: this file's output is embedded verbatim
+  // into a shipped browser script, so anything esbuild flags must be resolved
+  // in the source rather than silently carried through.
   if (result.warnings.length > 0) {
     const messages = result.warnings.map((w) => w.text).join("; ");
     throw new Error(
-      `[gen-search-widget-script] failed to transpile ${sourcePath}: ${messages}`,
+      `[gen-search-widget-script] esbuild reported warning(s) while transpiling ${sourcePath} (treated as fatal): ${messages}`,
     );
   }
   return result.code;
