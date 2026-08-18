@@ -364,8 +364,14 @@ function deriveThemePackSwitcherProps(ctx: ChromeContext): ThemePackSwitcherProp
  * nothing at all", so no `<Island>` marker and no pre-hydration toggle shim
  * reach the HTML. A stub component would emit a marker under a name zfb's
  * island registry does not carry, which zfb reports as an unmatched marker.
+ *
+ * Exported because `header-with-defaults` must apply the SAME predicate to the
+ * `trigger:design-token-panel` header item: a page whose slot resolved to
+ * `undefined` mounts no island AND no pre-hydration toggle shim, so a header
+ * toggle button rendered there would dispatch into a document with no listener
+ * and no click queue — a dead button. The two gates must stay in lockstep.
  */
-function skipsPackageDefaultDesignTokenPanel(settings: Settings): boolean {
+export function skipsPackageDefaultDesignTokenPanel(settings: Settings): boolean {
   return Boolean(settings.designTokenPanelConfigModule) && settings.packageOwnedRoutes !== false;
 }
 

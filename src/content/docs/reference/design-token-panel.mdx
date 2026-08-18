@@ -46,6 +46,8 @@ export default defineConfig(
 
 This showcase uses the package-owned bootstrap and package-default builder. Set `designTokenPanelConfigModule` only when the auto-injected bootstrap should load a custom mode-scoped builder instead.
 
+Note that the setting applies only to pages rendered through the package-injected routes: while it is set, a doc page rendered by a self-contained host `pages/` stub mounts no panel island (and no header panel button) at all, so the stub page cannot hijack the once-per-session panel config with the package-default builder. To also get a panel on stub-rendered pages, thread your builder through `chromeBindings.DesignTokenPanelBootstrap` — that binding wins everywhere (see [Host chrome bindings](./host-chrome-bindings.mdx)).
+
 ## The Five Tabs
 
 The panel is divided into five tabs, each focused on a single token family. Tabs expose nothing but the tokens they own — you never have to scroll past colors to reach spacing.

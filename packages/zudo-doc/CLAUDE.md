@@ -12,7 +12,12 @@ subpath exports, `zudoDocPreset` options (`Settings`), `@theme` design tokens,
 
 ## Build: tsup (JS) + tsc (DTS) — two passes, not one
 
-`build`/`prepare` run **tsup THEN `tsc -p tsconfig.build.json`** (`--emitDeclarationOnly`).
+`build`/`prepare` run **`gen-search-widget-script.mjs`, THEN tsup, THEN `tsc -p
+tsconfig.build.json`** (`--emitDeclarationOnly`). The generator (#3412) must run
+first because it writes the gitignored `src/search-widget-script/generated-script.ts`
+that `search-widget-script/index.ts` imports — without it the first tsup/tsc pass
+fails resolving `./generated-script.js` (it is also wired into `predev`,
+`pretest`, `pretypecheck`, and the tsup `onSuccess` chain for the same reason).
 tsup emits only the JS (`dts:false`); `tsc` emits the `.d.ts`. The split exists
 because tsup's `dts:true` rollup-based declaration bundler is **combinatorial in
 memory across entries** — with `bundle:false` + ~200 source entries it OOMs even
@@ -243,10 +248,13 @@ spreads it into `defineConfig` and keeps only the shell fields it still owns
 
 tsup only compiles `.ts/.tsx`. CSS is produced by the tsup `onSuccess` hook
 (runs after every build/`--watch`, so a one-shot build's `clean` cannot leave
-`dist/` without them):
+`dist/` without them). The CSS-relevant prefix of the chain (the full chain in
+`tsup.config.ts` continues with the eject-sources / routes-src /
+virtual-modules / theme-packs / catalog copies and
+`gen-search-widget-script.mjs` — see that file for the authoritative order):
 
 ```
-onSuccess: "node scripts/copy-theme-css.mjs && node scripts/copy-content-css.mjs && node scripts/copy-page-loading-css.mjs && node scripts/copy-features-css.mjs && node scripts/gen-safelist.mjs"
+onSuccess: "node scripts/copy-theme-css.mjs && node scripts/copy-content-css.mjs && node scripts/copy-page-loading-css.mjs && node scripts/copy-features-css.mjs && node scripts/gen-safelist.mjs && …"
 ```
 
 1. **`dist/theme.css`** ← copied verbatim from `src/theme.css` by

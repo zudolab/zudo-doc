@@ -55,7 +55,7 @@
 // write-if-changed keeps that loop-free (an unchanged regeneration does not
 // re-trigger tsup's watcher).
 
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, realpathSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
@@ -90,9 +90,14 @@ const TRANSPILE_OPTIONS = {
   reportDiagnostics: true,
 };
 
-/** A source string carrying no `import`/`export`/`require`/`exports` module scaffolding. */
+/** A source string carrying no CommonJS/ESM module scaffolding that could
+ *  survive the transpile into the embedded browser script. Matches only the
+ *  syntactic shapes (`require(...)`, `import(...)`, `module.exports`,
+ *  `exports.x`), NOT the bare words — the extracted function text includes
+ *  body comments, and a comment merely mentioning "import"/"export" must not
+ *  fail the build. */
 function assertNoModuleScaffolding(label, text) {
-  if (/\b(import|export|require)\b|module\.exports|\bexports\s*\./.test(text)) {
+  if (/\brequire\s*\(|\bimport\s*\(|\bmodule\.exports\b|\bexports\s*\./.test(text)) {
     throw new Error(
       `[gen-search-widget-script] ${label} leaked module scaffolding into the embedded script:\n${text}`,
     );
@@ -613,9 +618,20 @@ export function buildSearchWidgetScript() {
 }
 
 // ── CLI entry: write-if-changed ─────────────────────────────────────────────
-const isMainModule =
-  process.argv[1] &&
-  resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+// Realpath both sides: Node resolves the ESM entry's `import.meta.url` to its
+// REAL path (default --preserve-symlinks=false) while `process.argv[1]` keeps
+// whatever spelling the invoker typed, so under a symlinked checkout a plain
+// `resolve()` comparison silently mismatches and the CLI becomes an exit-0
+// no-op — leaving generated-script.ts missing (hard tsup failure later) or,
+// worse, stale.
+const isMainModule = (() => {
+  if (!process.argv[1]) return false;
+  try {
+    return realpathSync(resolve(process.argv[1])) === fileURLToPath(import.meta.url);
+  } catch {
+    return false;
+  }
+})();
 
 if (isMainModule) {
   const script = buildSearchWidgetScript();
