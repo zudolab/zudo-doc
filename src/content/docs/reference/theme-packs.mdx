@@ -131,11 +131,11 @@ Most projects never need this. It applies only to a **host or embedder that emit
 - **Emit it before the zudo-doc head bootstrap, and tag it `data-zd-theme-pack-css`.** The bootstrap looks for a link carrying that attribute whose `href` matches the resolved pack; finding yours, it inserts nothing — one element, one request.
 - **Match the href exactly**, including the cache-busting query: `{base}theme-packs/<slug>/pack.css?v=<pack version>`, where `{base}` is the site's base path with its trailing slash and the version is the one in the pack's `meta.json`. The check is an exact string comparison, so a link missing the `?v=` part reads as a different stylesheet and you get both.
 - **`data-zfb-transition-persist` alone is not enough.** The check keys on `data-zd-theme-pack-css`; a link tagged only for zfb's transition persistence is invisible to it.
-- **Emitted after the bootstrap, a cold boot ends up with two `<link>` elements on one href — and two requests.** The bootstrap runs first and cannot see a link the parser has not reached yet, and nothing later can recover the fetch: by the time any post-parse handler could merge the two elements, the parser has already issued both requests.
+- **Emitted after the bootstrap, a cold boot ends up with two `<link>` elements on one href.** The bootstrap runs first and cannot see a link the parser has not reached yet, and nothing later can undo it on that first paint: by the time any post-parse handler could merge the two elements, the parser has already committed to both. Whether that costs a second network request depends on how the stylesheet is served: normally the duplicate href is a cache hit, so the cost is just the redundant element — but under `Cache-Control: no-store` it is a genuine second fetch, which is how the original report measured it (same URL, same wire bytes, twice per cold boot).
 
 ```html
-<!-- must precede the zudo-doc head bootstrap; ?v= is the pack's meta.json version -->
-<link rel="stylesheet" data-zd-theme-pack-css href="/theme-packs/foundry/pack.css?v=1.0.0" />
+<!-- must precede the zudo-doc head bootstrap; slug and ?v= are YOUR pack's, read from its meta.json -->
+<link rel="stylesheet" data-zd-theme-pack-css href="/theme-packs/my-pack/pack.css?v=1.0.0" />
 ```
 
 ## Authoring a pack

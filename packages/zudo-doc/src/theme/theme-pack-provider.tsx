@@ -75,13 +75,18 @@
 //
 // EMBEDDER CONTRACT (#3437/#3447): an embedder that emits the pack `<link>`
 // itself must emit it BEFORE the zudo-doc head bootstrap and tag it
-// `data-zd-theme-pack-css` (the `hasPackLink` guard above matches on this
-// attribute + href). Emitted after, the bootstrap runs first and cannot see
-// the not-yet-parsed embedder link, so the cold boot yields two elements and
-// two requests — which this provider cannot prevent, because both requests
-// are already issued by the time any post-parse handler (DOMContentLoaded or
-// later) could run. There is no reconcile for this ordering; see the
-// "residual gap" note on #3447.
+// `data-zd-theme-pack-css` (the `hasPackLink` guard in the emitted script
+// below matches on this attribute + href). Emitted after, the bootstrap runs
+// first and cannot see the not-yet-parsed embedder link, so the cold boot
+// yields two elements for one href — which this provider cannot prevent,
+// because the parser has committed to both by the time any post-parse handler
+// (DOMContentLoaded or later) could run. Whether the duplicate costs a second
+// network fetch depends on caching: normally it is a cache hit and only the
+// redundant element is wasted, but under `Cache-Control: no-store` it is a real
+// second fetch — which is the condition #3437 measured it under, so do not
+// downgrade this to "just a redundant element".
+// There is no reconcile for this ordering; see the "residual gap" note on
+// #3447.
 //
 // SPA soft navigation (zfb Strategy B) — PRIMARY mechanism is a
 // `BEFORE_SWAP_EVENT` ("zfb:before-swap") listener. zfb dispatches this event
