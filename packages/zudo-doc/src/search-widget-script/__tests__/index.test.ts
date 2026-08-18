@@ -12,6 +12,13 @@
  * catching the case where scoring.ts / page-events.ts changed but
  * generated-script.ts was never regenerated. The scoring logic's own
  * behavior is covered separately by scoring.test.ts.
+ *
+ * This is a real guard, not a vacuous one: `pretest` no longer regenerates
+ * generated-script.ts ahead of the test run (dropped in zudolab/zudo-doc#3431
+ * now that the file is committed to git instead of gitignored), so
+ * SEARCH_WIDGET_SCRIPT here is whatever byte content is actually checked
+ * in — the same drift `pnpm check:search-widget-drift` (b4push + CI) catches
+ * via `git diff` after a fresh regeneration.
  */
 
 import { describe, it, expect } from "vitest";
