@@ -31,11 +31,14 @@ function runCli(args: string[], cwd: string) {
   return spawnSync(process.execPath, [BIN_PATH, ...args], {
     cwd,
     encoding: "utf8",
-    // Explicit subprocess deadline (#3465): stays inside the package's
-    // testTimeout (30_000, vitest.config.ts) so a hung CLI fails as "the
+    // Explicit subprocess deadline (#3465): a hung CLI fails as "the
     // subprocess exceeded its own deadline" (SIGTERM here) rather than the
     // ambiguous "Test timed out in 5000ms." vitest previously produced.
-    timeout: 25_000,
+    // Sized so that the WORST CASE — two sequential runCli() calls in one
+    // test (the "second run" cases below) — still totals under the package
+    // testTimeout (30_000, vitest.config.ts); a per-call 25s would have let
+    // two hung runs blow the blunt test timeout first, defeating the point.
+    timeout: 10_000,
   });
 }
 

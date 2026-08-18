@@ -88,10 +88,14 @@ export default defineConfig({
     // observed), a subprocess CLI (eject-logo/cli-smoke.test.ts), and WASM
     // loads (highlight-runtime.integration.test.ts) that legitimately exceed
     // vitest's 5000ms default once the machine is contended. Ordering
-    // invariant: every per-operation deadline in this package (e.g. the
-    // cli-smoke spawnSync timeout, design-token-panel-bootstrap.test.ts's
-    // WAIT_FOR_OPTS) stays strictly BELOW this value, so the specific,
-    // diagnosable deadline always fires before this blunt one.
+    // invariant: every per-operation deadline reached from a TEST BODY (e.g.
+    // the cli-smoke spawnSync timeout, design-token-panel-bootstrap.test.ts's
+    // WAIT_FOR_OPTS) stays strictly below this value — counting the worst-case
+    // number of sequential such operations in a single test, not just one —
+    // so the specific, diagnosable deadline always fires before this blunt
+    // one. Hook deadlines are exempt: they race vitest's separate hookTimeout,
+    // never this one (theme-packs-tarball.test.ts's 60s `beforeAll` is the
+    // one such case).
     testTimeout: 30_000,
     server: {
       deps: {
