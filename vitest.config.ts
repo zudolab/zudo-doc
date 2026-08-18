@@ -49,10 +49,17 @@ export default defineConfig({
         extends: true,
         test: {
           name: "scripts",
-          // `.test.mjs` alongside the usual `.test.ts`: #3456's spec named
-          // scripts/__tests__/check-scaffold-pin-freshness.test.mjs exactly
-          // (the script under test is plain .mjs with no TS syntax), so the
-          // glob was widened rather than renaming the file to the .ts norm.
+          // `.test.mjs` alongside the usual `.test.ts` (#3456). The norm here is
+          // `.test.ts` even for `.mjs` scripts — check-pin-parity.test.ts imports
+          // straight from check-pin-parity.mjs and typechecks fine, because it
+          // annotates its own locals. A test that is plain JS does not: this
+          // project adds `noUncheckedIndexedAccess` on top of strict, and
+          // `scripts/**` is inside tsconfig's `include`, so writing a plain-JS
+          // test as `.ts` demanded ~18 non-null assertions on ordinary
+          // `results[0]` reads — noise that asserts nothing about the code under
+          // test. Measured, not assumed: the rename was tried and produced
+          // exactly those errors. Prefer `.test.ts` for anything that carries
+          // real types; `.test.mjs` is for plain-JS tests of plain-JS scripts.
           include: [
             "scripts/__tests__/**/*.test.ts",
             "scripts/__tests__/**/*.test.mjs",
