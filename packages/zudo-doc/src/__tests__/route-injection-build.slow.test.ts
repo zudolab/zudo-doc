@@ -1828,14 +1828,23 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
 // Upstream tracking issue (zfb island-scanner identity dedupe):
 // https://github.com/Takazudo/zudo-front-builder/issues/2441
 //
-// The upstream fix dedupes by resolved component identity, and reaches THIS
-// case via a byte-identity branch: the staged copy is compared against the file
-// the package ships at the same stem under `node_modules/@takazudo/zudo-doc/
-// routes-src/`. That branch only fires while `ensureStaged`
-// (src/plugins/routes.ts) stays a verbatim `cpSync`. If staging ever starts
-// rewriting what it copies — the way build-time `copy-routes-src.mjs` rewrites
-// specifiers — the two participants stop being byte-identical and this warning
-// returns. A genuinely different component colliding by name still warns.
+// The upstream fix (PR Takazudo/zudo-front-builder#2442) dedupes by resolved
+// component identity, and reaches THIS case via a byte-identity branch: the
+// staged copy is compared against the PUBLISHED file the package ships at the
+// same stem under `node_modules/@takazudo/zudo-doc/routes-src/`. So the
+// invariant we owe upstream is narrow — `ensureStaged` (src/plugins/routes.ts)
+// must stay byte-preserving RELATIVE TO WHAT THE PACKAGE SHIPS. A future
+// rewrite inside build-time `scripts/copy-routes-src.mjs` is harmless (it runs
+// pre-publish, so both compared participants are post-rewrite); a rewrite
+// inside `ensureStaged` would break the match and resurrect this warning.
+//
+// Accepted upstream trade-off: two GENUINELY DIFFERENT components shipped by
+// the SAME package under one marker name are now silently deduped too. Only a
+// cross-package name collision still warns. So zfb can no longer tell us if
+// this package ever collides two real components — our own tests are the only
+// guard for that.
+// Flipping this fixture to assert a collision-free build, once the upstream
+// fix ships and zfb is bumped here: zudolab/zudo-doc#3433.
 // ---------------------------------------------------------------------------
 
 /** Set up a target-manifest fixture instance: copy the locked-manifest fixture

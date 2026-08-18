@@ -515,21 +515,34 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Every-page script emitter files (zudolab/zudo-doc#3419) — a change
-          # to any of these can shift the byte-identical HTML the A2 no-stub
-          # parity hashes assert on. One path per line. The search-widget-script
-          # entry is a directory (trailing slash = prefix match below) — it
-          # covers scoring.ts and any committed generated file under it.
+          # Files whose change can shift the byte-identical HTML the A2 no-stub
+          # parity hashes assert on (zudolab/zudo-doc#3419). One path per line;
+          # a trailing slash means prefix (directory) match below.
+          #
+          # BEST-EFFORT, NOT EXHAUSTIVE. The hashes cover the WHOLE normalized
+          # page HTML, not just the inlined scripts, so any package source that
+          # contributes SSR markup to the fixture's pages can move them — the
+          # test file's own re-baseline log records exactly that happening for
+          # `src/header/header.tsx` and `src/doc-content-header/index.tsx`
+          # (#3039). Those two are listed for that reason; when a re-baseline
+          # traces to some other markup source, add it here in the same PR.
+          #
+          # The parity test file itself is listed so a PR that EDITS the
+          # expected hashes re-runs the suite and proves the new baseline,
+          # instead of skipping the gate on the one PR where it matters most.
           EMITTERS=(
             "packages/zudo-doc/src/theme/theme-pack-provider.tsx"
             "packages/zudo-doc/src/current-path/index.ts"
             "packages/zudo-doc/src/header/nav-overflow-script.ts"
             "packages/zudo-doc/src/header/nav-active.ts"
+            "packages/zudo-doc/src/header/header.tsx"
+            "packages/zudo-doc/src/doc-content-header/index.tsx"
             "packages/zudo-doc/src/i18n-version/version-switcher.tsx"
             "packages/zudo-doc/src/i18n-version/language-switcher.tsx"
             "packages/zudo-doc/src/search-widget-script/"
             "packages/zudo-doc/scripts/gen-search-widget-script.mjs"
             "packages/zudo-doc/src/transitions/page-events.ts"
+            "packages/zudo-doc/src/__tests__/route-injection-build.slow.test.ts"
           )
 
           CHANGED_FILES="$(git diff --name-only "$BASE_SHA"...HEAD)"
@@ -597,6 +610,7 @@ jobs:
         run: pnpm build:workspace
 
       - name: Run A2 no-stub parity slow-suite subset
+        id: parity
         if: steps.detect-emitters.outputs.run_parity == 'true'
         working-directory: packages/zudo-doc
         # Block scalar (not inline `run: <value>`) — the --testNamePattern
@@ -607,10 +621,11 @@ jobs:
           pnpm exec vitest run --config vitest.slow.config.ts --testNamePattern "A2 no-stub: injected routes render correct HTML.*(setup: fixture builds|parity:)"
 
       - name: Re-baseline guidance
-        # Scoped to the run path (not bare `if: failure()`) so an unrelated
-        # failure upstream — e.g. checkout itself — doesn't print a hash
-        # re-baseline message that has nothing to do with what broke.
-        if: failure() && steps.detect-emitters.outputs.run_parity == 'true'
+        # Scoped to the parity step's own outcome (not bare `if: failure()`,
+        # and not merely the run path) so an unrelated failure — checkout,
+        # pnpm install, build:workspace — doesn't print a hash re-baseline
+        # message that has nothing to do with what broke.
+        if: failure() && steps.parity.outcome == 'failure'
         run: |
           echo "::error::A2 no-stub parity suite failed."
           echo "If this is an intentional HTML/asset change (not a regression), re-baseline"
