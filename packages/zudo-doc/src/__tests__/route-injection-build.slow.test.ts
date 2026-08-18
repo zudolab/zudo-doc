@@ -671,12 +671,41 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   //     delta on all three pages (identical bytes per page). The zfb 2.6.0
   //     bump (#3411) contributed ZERO bytes (emitRenderArtifacts is flag-off
   //     inert; no sentinel leakage), and #3412's frozen SEARCH_WIDGET_SCRIPT
-  //     is byte-identical to the previous runtime-composed text by design.
+  //     contributed ZERO bytes because this fixture never embeds it (see the
+  //     2026-08-18 wave1-esbuild-emit entry below for why "byte-identical by
+  //     design" was the wrong framing for that claim).
   // GOTCHA re-learned during attribution: this fixture builds against the
   // workspace package's dist/ via the node_modules symlink, and the ensure
   // guard checks existence, not freshness (#3053) — a stale dist/ in the tree
   // that runs this suite silently tests OLD compiled code. Run
   // `pnpm build:workspace` before trusting these hashes.
+
+  // 2026-08-18 re-baseline check (Widget Gen Hardening epic #3429, sub #3430):
+  // switched scripts/gen-search-widget-script.mjs from `ts.transpileModule()`
+  // to esbuild's `transformSync()` (zudolab/zudo-doc#3422) — a real change to
+  // SEARCH_WIDGET_SCRIPT's frozen bytes, confirmed by the pinned CSP hash in
+  // `src/search-widget-script/__tests__/index.test.ts` moving from
+  // `sha256-+5B4Vd+U+da3+BnCkNPUykM/fhmKrp1vv/H9rtLotp8=` to
+  // `sha256-tsOQwdl7im/ak4CiaOz+qHmK65mbUf6u93iFf0csoG0=`. All three hashes
+  // below are UNCHANGED by that switch and needed no re-pin — this
+  // route-injection fixture's `src/config/settings.ts` never wires a
+  // `SearchWidget` binding through `chromeBindingsModule`, so `<site-search>`
+  // and its embedded script never appear in any of the three fixture pages;
+  // confirmed by running the targeted A2 no-stub subset after
+  // `pnpm build:workspace` and observing all four tests green with no diff.
+  //
+  // This is also the correction promised by the entry directly above (and by
+  // zudolab/zudo-doc#3422 itself): the prior "#3412's frozen
+  // SEARCH_WIDGET_SCRIPT is byte-identical to the previous runtime-composed
+  // text by design" claim was never true — `ts.transpileModule()`'s CommonJS
+  // emit was never proven byte-identical to the pre-#3412 esbuild-compiled
+  // live-binding embedding it replaced (different tool, different transpile
+  // pass). The claim happened to cost nothing here only because this
+  // particular fixture never embeds SEARCH_WIDGET_SCRIPT at all — not because
+  // the two emits actually matched.
+  //
+  // All of it traces to this one intentional, self-contained toolchain
+  // change; no unattributed bytes.
 
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");

@@ -21,11 +21,18 @@
 //
 // HOW: reads `src/search-widget-script/scoring.ts` and
 // `src/transitions/page-events.ts` SOURCE, strips TypeScript types
-// deterministically via `ts.transpileModule()` (typescript is already a
-// devDependency — no new dep), executes each transpiled CommonJS module in
-// an isolated sandbox (empty `module`/`exports`, no external deps — both
-// source files are import-free), then reads the REAL runtime values off the
-// sandbox's `exports`:
+// deterministically via esbuild's `transformSync()` (zudolab/zudo-doc#3422 /
+// #3430 — switched off `ts.transpileModule()`: a routine `typescript` bump
+// could reformat its emit and silently rewrite the frozen bytes with no
+// source change in the diff, and the emit was never byte-identical to the
+// esbuild-compiled bindings this generator replaced in #3412 anyway, so
+// `typescript` bought no stability it actually had. esbuild is only a
+// transitive dep here via tsup, so it's pinned as an explicit `esbuild`
+// devDependency in package.json, version-aligned with tsup's own `esbuild`
+// range), executes each transpiled CommonJS module in an isolated sandbox
+// (empty `module`/`exports`, no external deps — both source files are
+// import-free), then reads the REAL runtime values off the sandbox's
+// `exports`:
 //   - `exports.prepareLc.toString()` / `exports.scoreEntry.toString()` — the
 //     exact same Function.prototype.toString() mechanism the old code used,
 //     just run once here instead of on every module evaluation downstream.
@@ -58,7 +65,7 @@
 import { readFileSync, writeFileSync, existsSync, realpathSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import ts from "typescript";
+import { transformSync } from "esbuild";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(__dirname, "..");
@@ -75,19 +82,26 @@ const OUTPUT_PATH = resolve(
   "src/search-widget-script/generated-script.ts",
 );
 
-// Explicit compiler options (per the issue spec) — CommonJS so each source's
-// `export`s become plain `exports.X = X` assignments we can read off a
-// sandboxed `module.exports`, ES2020 so `var`-style function bodies pass
-// through unchanged (no downlevel helpers), isolatedModules because each
-// file is transpiled alone with no cross-file type info.
-const TRANSPILE_OPTIONS = {
-  compilerOptions: {
-    module: ts.ModuleKind.CommonJS,
-    target: ts.ScriptTarget.ES2020,
-    esModuleInterop: false,
-    isolatedModules: true,
-  },
-  reportDiagnostics: true,
+// Explicit, stable esbuild options (per the issue spec) — `format: "cjs"` so
+// each source's `export`s become a CommonJS `module.exports` object we can
+// read off the sandboxed `module` param (same shape the old CommonJS
+// transpile output produced), `target: "es2020"` so `var`-style function
+// bodies pass through unchanged (no downlevel helpers), `platform: "neutral"`
+// so esbuild injects no Node/browser global shims (both source files are
+// import-free — nothing to shim). Every minify knob is explicitly false: the
+// acceptance criterion is a human-readable, byte-stable emit across runs,
+// never a minified one — leaving any of them at esbuild's default would be
+// non-obvious from reading this file alone.
+const TRANSFORM_OPTIONS = {
+  loader: "ts",
+  format: "cjs",
+  target: "es2020",
+  platform: "neutral",
+  sourcemap: false,
+  minify: false,
+  minifyWhitespace: false,
+  minifyIdentifiers: false,
+  minifySyntax: false,
 };
 
 /** A source string carrying no CommonJS/ESM module scaffolding that could
@@ -104,22 +118,25 @@ function assertNoModuleScaffolding(label, text) {
   }
 }
 
-/** Transpile a TS source file to CommonJS JS, type-stripped, via the TS compiler API. */
+/** Transpile a TS source file to CommonJS JS, type-stripped, via esbuild's `transformSync`. */
 function transpile(sourcePath) {
   const source = readFileSync(sourcePath, "utf8");
-  const { outputText, diagnostics } = ts.transpileModule(
-    source,
-    TRANSPILE_OPTIONS,
-  );
-  if (diagnostics && diagnostics.length > 0) {
-    const messages = diagnostics
-      .map((d) => ts.flattenDiagnosticMessageText(d.messageText, "\n"))
-      .join("; ");
+  let result;
+  try {
+    result = transformSync(source, TRANSFORM_OPTIONS);
+  } catch (err) {
+    const messages = (err.errors ?? []).map((e) => e.text).join("; ") || err.message;
     throw new Error(
       `[gen-search-widget-script] failed to transpile ${sourcePath}: ${messages}`,
     );
   }
-  return outputText;
+  if (result.warnings.length > 0) {
+    const messages = result.warnings.map((w) => w.text).join("; ");
+    throw new Error(
+      `[gen-search-widget-script] failed to transpile ${sourcePath}: ${messages}`,
+    );
+  }
+  return result.code;
 }
 
 /** Execute transpiled CommonJS source in an isolated sandbox and return its exports. */
