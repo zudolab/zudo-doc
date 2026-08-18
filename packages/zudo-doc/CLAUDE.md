@@ -14,11 +14,11 @@ subpath exports, `zudoDocPreset` options (`Settings`), `@theme` design tokens,
 
 `build`/`prepare` run **`gen-search-widget-script.mjs`, THEN tsup, THEN `tsc -p
 tsconfig.build.json`** (`--emitDeclarationOnly`). The generator (#3412) must run
-first because it writes the gitignored `src/search-widget-script/generated-script.ts`
+first because it writes `src/search-widget-script/generated-script.ts`
 that `search-widget-script/index.ts` imports — without it the first tsup/tsc pass
-fails resolving `./generated-script.js` (it is also wired into `predev`,
-`pretest`, `pretypecheck`, and the tsup `onSuccess` chain for the same reason).
-tsup emits only the JS (`dts:false`); `tsc` emits the `.d.ts`. The split exists
+fails resolving `./generated-script.js` (it is also wired into `predev` and the
+tsup `onSuccess` chain for the same reason). tsup emits only the JS
+(`dts:false`); `tsc` emits the `.d.ts`. The split exists
 because tsup's `dts:true` rollup-based declaration bundler is **combinatorial in
 memory across entries** — with `bundle:false` + ~200 source entries it OOMs even
 at an 8GB Node heap (the JS pass alone finishes in ~150ms). `tsc
@@ -28,6 +28,13 @@ CI no longer needs (and the scripts no longer set) a raised `NODE_OPTIONS` heap.
 `tsconfig.build.json` extends `tsconfig.json` with `emitDeclarationOnly`/`outDir:dist`/
 `rootDir:src` and excludes test globs so test files don't emit. See zudolab/zudo-doc
 epic #2344.
+
+Since zudolab/zudo-doc#3431, `generated-script.ts` is committed to git (a
+deliberate departure from the gitignored-generated-file convention below —
+see the generator's own header comment) with a `pnpm check:search-widget-drift`
+guard (b4push + CI) proving the committed bytes match a fresh regeneration;
+`pretest`/`pretypecheck` no longer regenerate it ahead of those runs, so
+`test`/`typecheck` exercise whatever is actually checked in.
 
 `dev` mirrors that same two-pass split as two parallel watchers (#3113):
 `dev:js` (`tsup --watch`) and `dev:dts`

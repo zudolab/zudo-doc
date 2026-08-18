@@ -41,11 +41,21 @@
 //
 // Composes the full IIFE script string (the template logic moved out of
 // index.ts) and writes it, write-if-changed, to
-// `src/search-widget-script/generated-script.ts` with a GENERATED banner —
-// same convention as `routes-src/` / `virtual-modules.d.ts` (see
-// copy-routes-src.mjs / copy-virtual-modules.mjs). Gitignored; NOT added to
-// the package `exports` map or `files[]` — it stays internal like
-// `scoring.ts`.
+// `src/search-widget-script/generated-script.ts` with a GENERATED banner.
+//
+// UNLIKE `routes-src/` / `virtual-modules.d.ts` (see copy-routes-src.mjs /
+// copy-virtual-modules.mjs), this generated file IS tracked in git — a
+// deliberate departure from that gitignored-build-artifact convention,
+// decided on zudolab/zudo-doc#3421 and landed by #3431. The other generated
+// files are copies of source that already lives in the repo (or virtual
+// modules with no meaningful diff to review); this one is the opposite —
+// its whole value is a frozen, reviewable snapshot of `prepareLc`/
+// `scoreEntry`/`AFTER_NAVIGATE_EVENT` that a plain `git diff` can catch
+// drifting from `scoring.ts`/`page-events.ts` (via
+// `pnpm check:search-widget-drift`, wired into b4push + CI), rather than
+// only a stale-artifact check every downstream build silently regenerates.
+// It still stays internal like `scoring.ts` — NOT added to the package
+// `exports` map or `files[]`.
 //
 // `buildSearchWidgetScript()` is exported so both this script's CLI entry
 // point AND the vitest drift-guard test
@@ -660,6 +670,12 @@ if (isMainModule) {
 // Re-run \`pnpm --filter @takazudo/zudo-doc gen:search-widget-script\` (or any
 // build/dev entry point, which already runs it) to regenerate after editing
 // either source file.
+//
+// This file is committed to git (zudolab/zudo-doc#3421 / #3431) — a
+// deliberate departure from this repo's usual gitignored-generated-file
+// convention (routes-src/, virtual-modules.d.ts). Regenerate AND commit the
+// result after editing either source file; \`pnpm check:search-widget-drift\`
+// (b4push + CI) fails on a stale commit here.
 `;
 
   const output = `${banner}

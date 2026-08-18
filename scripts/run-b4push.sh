@@ -16,18 +16,20 @@ set -euo pipefail
 #  10. E2E spec naming guard (#2095) — asserts fixture-prefix + no orphan specs
 #  11. @flaky/@local-only tracking-issue guard (#2292) — every quarantined test must link an issue
 #  12. Wait-debt guard (#2538) — zero-tolerance waitForTimeout wait-ok annotation check
-#  13. B4push/CI parity check (guard manifest meta-check — #1967)
-#  14. Type checking (zfb check + workspace package typechecks)
-#  15. Worker contract proof (types + Workers runtime + Wrangler dry-run)
-#  16. Root unit tests (test:unit) — builds @takazudo/zudo-doc as a side-effect
-#  17. Package tests (test:packages) — ~1,535 suite tests across workspace packages (as of 2026-07)
-#  18. Package safelist check (#1994) — requires dist/safelist.css from step 16
-#  19. Build (zfb build)
-#  20. Content-fallback check (#3134) — no page may ship a <pre data-zfb-content-fallback> body
-#  21. Link check
-#  22. HTML validation (html-validate dist/**/*.html)
-#  23. Automated preview smoke (blocking)
-#  24. Manual interactive smoke (operator-driven)
+#  13. Search-widget-script commit drift check (#3421, #3431) — committed generated-script.ts
+#      must match a fresh regeneration
+#  14. B4push/CI parity check (guard manifest meta-check — #1967)
+#  15. Type checking (zfb check + workspace package typechecks)
+#  16. Worker contract proof (types + Workers runtime + Wrangler dry-run)
+#  17. Root unit tests (test:unit) — builds @takazudo/zudo-doc as a side-effect
+#  18. Package tests (test:packages) — ~1,535 suite tests across workspace packages (as of 2026-07)
+#  19. Package safelist check (#1994) — requires dist/safelist.css from step 17
+#  20. Build (zfb build)
+#  21. Content-fallback check (#3134) — no page may ship a <pre data-zfb-content-fallback> body
+#  22. Link check
+#  23. HTML validation (html-validate dist/**/*.html)
+#  24. Automated preview smoke (blocking)
+#  25. Manual interactive smoke (operator-driven)
 #
 # The former "Z-index codegen drift check" step was retired in
 # zudolab/zudo-doc#2661: the project-side src/config/z-index-tokens.ts (and
@@ -40,13 +42,13 @@ set -euo pipefail
 # it for time-budget reasons — the bounded fast pass stays fast.
 #
 # Env overrides for non-interactive use:
-#   B4PUSH_SKIP_HTML_VALIDATE=1  — skip HTML validation (step 22)
+#   B4PUSH_SKIP_HTML_VALIDATE=1  — skip HTML validation (step 23)
 #   B4PUSH_SKIP_PREVIEW_SMOKE=1  — skip the automated preview smoke
 #   B4PUSH_SKIP_MANUAL_SMOKE=1   — skip the manual interactive smoke
 
 START_TIME=$(date +%s)
 FAILURES=()
-TOTAL_STEPS=24
+TOTAL_STEPS=25
 CURRENT_STEP=0
 
 # Per-step elapsed timing (#2538) — makes budget creep in any one step
@@ -55,7 +57,7 @@ CURRENT_STEP=0
 # STEP_LABEL track the step currently in flight. Timing is recorded when the
 # *next* step() call fires (or once more at script end for the last step) —
 # this covers steps that run several sequential checks under one header
-# (e.g. step 13 "Type checking") without needing every pass/fail/skip call
+# (e.g. step 15 "Type checking") without needing every pass/fail/skip call
 # site to know about timing.
 STEP_START_TIME=0
 STEP_LABEL=""
@@ -229,7 +231,21 @@ else
   fail "Wait-debt guard"
 fi
 
-# ── Step 13: B4push/CI parity check ──────────────────
+# ── Step 13: Search-widget-script commit drift check (#3421, #3431) ──
+# Regenerates packages/zudo-doc/src/search-widget-script/generated-script.ts
+# (write-if-changed) and git-diffs the committed file against the result —
+# that generated file is tracked in git (a deliberate departure from the
+# gitignored routes-src/ convention, see its own header comment), so this is
+# a real drift guard rather than a stale-artifact check. See
+# scripts/check-search-widget-drift.sh.
+step "Search-widget-script commit drift check (check:search-widget-drift)"
+if (cd "$ROOT_DIR" && pnpm check:search-widget-drift); then
+  pass "Search-widget-script commit drift check passed"
+else
+  fail "Search-widget-script commit drift check"
+fi
+
+# ── Step 14: B4push/CI parity check ──────────────────
 # Pure-Node check — verifies every lightweight guard gate in this file also
 # has a corresponding CI job. See scripts/check-b4push-ci-parity.mjs.
 step "B4push/CI parity check (check:b4push-ci-parity)"
@@ -241,7 +257,7 @@ fi
 
 # <<< b4push-ci-parity:guards:end
 
-# ── Step 14: Type checking ─────────────────────────────
+# ── Step 15: Type checking ─────────────────────────────
 # Prefer `zfb check` (the post-cutover entry point). If it fails to
 # start (e.g. binary not yet built), fall back to `tsc --noEmit` so the
 # typecheck still gates pushes.
@@ -274,7 +290,7 @@ else
   fail "Package typechecks"
 fi
 
-# ── Step 15: Worker contract proof ───────────────────
+# ── Step 16: Worker contract proof ───────────────────
 step "Worker contract proof (types + runtime + dry-run)"
 if (cd "$ROOT_DIR" && pnpm verify:worker-contract); then
   pass "Worker contract proof passed"
@@ -282,7 +298,7 @@ else
   fail "Worker contract proof"
 fi
 
-# ── Step 16: Root unit tests ──────────────────────────
+# ── Step 17: Root unit tests ──────────────────────────
 # Root `test:unit` (vitest) guards src/**/__tests__ and scripts/__tests__,
 # which previously ran in no local gate and no CI workflow (#1856). Runs
 # before the expensive site build for fast logic-level feedback.
@@ -292,7 +308,7 @@ fi
 # rather than whatever dist/ happened to be lying around (the preflight above
 # only repairs a MISSING dist/, it never refreshes a stale one). CI's package
 # and root test jobs build for the same reason. Building here also leaves
-# dist/safelist.css ready for the safelist check in step 18.
+# dist/safelist.css ready for the safelist check in step 19.
 #
 # `build:workspace` — not `pnpm --filter @takazudo/zudo-doc build` — because
 # that package's own tsc pass needs @takazudo/zudo-doc-history-server's
@@ -306,10 +322,10 @@ else
   fail "Root unit tests"
 fi
 
-# ── Step 17: Package tests ────────────────────────────
+# ── Step 18: Package tests ────────────────────────────
 # Runs all workspace package test suites (~1,535 tests as of 2026-07). Closes the local/CI
 # asymmetry where package tests ran in CI but not in b4push (#1851/#1856).
-# dist/ is already built by step 16 — no extra prep needed.
+# dist/ is already built by step 17 — no extra prep needed.
 step "Package tests + subpath resolution"
 if (cd "$ROOT_DIR" && pnpm test:packages && pnpm --filter @takazudo/zudo-doc test:plugin-resolution); then
   pass "Package tests + subpath resolution passed"
@@ -317,12 +333,12 @@ else
   fail "Package tests + subpath resolution"
 fi
 
-# ── Step 18: Package safelist check ──────────────────
+# ── Step 19: Package safelist check ──────────────────
 # Verifies that the generated dist/safelist.css in packages/zudo-doc/ covers
 # every responsive-variant + arbitrary-value utility class used in
 # packages/zudo-doc/src/**/*.tsx. Catches regressions where gen-safelist.mjs
 # misses a new utility class before it reaches consumers (#1994).
-# Requires dist/safelist.css — produced by the package build in step 16.
+# Requires dist/safelist.css — produced by the package build in step 17.
 step "Package safelist check (check:package-safelist)"
 if (cd "$ROOT_DIR" && pnpm check:package-safelist); then
   pass "Package safelist check passed"
@@ -330,9 +346,9 @@ else
   fail "Package safelist check"
 fi
 
-# ── Step 19: Build ────────────────────────────────────
+# ── Step 20: Build ────────────────────────────────────
 # --no-strict-content-bridge overrides the zfb.config.ts strictContentBridge
-# gate (#3234) so this build still produces a dist/ for step 20's
+# gate (#3234) so this build still produces a dist/ for step 21's
 # content-fallback check to scan — the two guards can't run on the same build.
 step "Build (zfb build)"
 if (cd "$ROOT_DIR" && pnpm build --no-strict-content-bridge); then
@@ -341,7 +357,7 @@ else
   fail "Build"
 fi
 
-# ── Step 20: Content-fallback check ───────────────────
+# ── Step 21: Content-fallback check ───────────────────
 #
 # zfb only *warns* when it declines to wire a page's compiled MDX through
 # the content bridge, then ships that page's whole body as a single
@@ -359,7 +375,7 @@ else
   fail "Content-fallback check"
 fi
 
-# ── Step 21: Link check ───────────────────────────────
+# ── Step 22: Link check ───────────────────────────────
 #
 # Strict on broken links + absolute MDX-source warnings (real 404s
 # / sub-path bypass). Trailing-slash warnings stay warn-only — they
@@ -379,7 +395,7 @@ else
   fail "Link check"
 fi
 
-# ── Step 22: HTML validation ──────────────────────────
+# ── Step 23: HTML validation ──────────────────────────
 step "HTML validation (html-validate)"
 if [[ "${B4PUSH_SKIP_HTML_VALIDATE:-}" == "1" ]]; then
   skip "HTML validation (B4PUSH_SKIP_HTML_VALIDATE=1)"
@@ -391,7 +407,7 @@ else
   fi
 fi
 
-# ── Step 23: Automated preview smoke (blocking) ──────
+# ── Step 24: Automated preview smoke (blocking) ──────
 step "Preview smoke (automated)"
 if [[ "${B4PUSH_SKIP_PREVIEW_SMOKE:-}" == "1" ]]; then
   skip "Preview smoke (B4PUSH_SKIP_PREVIEW_SMOKE=1)"
@@ -403,7 +419,7 @@ else
   fi
 fi
 
-# ── Step 24: Manual interactive smoke ────────────────
+# ── Step 25: Manual interactive smoke ────────────────
 step "Manual interactive smoke"
 if [[ "${B4PUSH_SKIP_MANUAL_SMOKE:-}" == "1" ]]; then
   skip "Manual smoke (B4PUSH_SKIP_MANUAL_SMOKE=1)"
