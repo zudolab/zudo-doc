@@ -196,6 +196,31 @@ if [ "${DRY:-0}" = "1" ]; then
   exit 0
 fi
 
+# ── Scaffold pin freshness (early feedback, #3457) ────────────────────────────
+#
+# This is EARLY FEEDBACK ONLY, not the enforcement point — publication happens
+# later, when a human publishes the GitHub Draft Release
+# (.github/workflows/publish-create-zudo-doc.yml), and a scaffold pin can go
+# stale in the gap between this script preparing the release and that publish.
+# The gate that actually BLOCKS a stale release runs there, immediately before
+# `npm publish`. Running it here too just means a release author learns about
+# a stale pin now, while preparing, instead of days later at publish time. See
+# RELEASE.md ("Scaffold pin freshness gate") for what a failure means, the
+# remedy, and how prerelease pins are compared against the registry.
+
+echo ""
+echo "▶ Checking scaffold pin freshness against the npm registry..."
+if (cd "$ROOT_DIR" && pnpm check:scaffold-pin-freshness); then
+  echo "  ✓ scaffold pins are current"
+else
+  echo ""
+  echo "Error: scaffold pin freshness check failed — a pin in packages/create-zudo-doc/src/scaffold.ts" >&2
+  echo "        is stale, or the npm registry lookup failed. See RELEASE.md 'Scaffold pin freshness gate'." >&2
+  echo "Remedy: bump the pin via /dev-bump-zudo-deps, then re-run 'pnpm check:pin-parity' to confirm every" >&2
+  echo "        pin location still agrees, and re-run this script." >&2
+  exit 1
+fi
+
 # ── Read current versions (real run) ─────────────────────────────────────────
 
 OLD_ROOT_VERSION=$(node -p "require('$PKG_JSON').version" 2>/dev/null)
