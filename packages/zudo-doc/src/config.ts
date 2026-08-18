@@ -20,6 +20,9 @@
  * object (e.g. `colorMode`, `metaTags`) REPLACES the default wholesale; it is
  * NOT deep-merged key-by-key. This is safe because every nested config type is
  * all-required-fields, so a caller supplying one supplies all of its fields.
+ * ONE exception: `FaviconConfig` is all-optional — wholesale replacement IS its
+ * semantics (only the supplied slots emit a `<link rel="icon">`), and its
+ * default is `undefined`, so there is nothing for a partial object to clobber.
  * `zudoDoc()` also supplies the Wave-3 package defaults
  * (`buildDocsSchema`/`directiveVocabulary`/`translations`/`colorSchemes`/tag
  * vocabulary) unless overridden, and returns a **complete `ZfbConfig`** — the
@@ -85,6 +88,7 @@ import type {
   FrontmatterPreviewConfig,
   BodyFootUtilAreaConfig,
   HtmlPreviewConfig,
+  FaviconConfig,
 } from "./settings.js";
 
 import { buildDocsSchema as defaultBuildDocsSchema } from "./docs-schema/index.js";
@@ -117,6 +121,7 @@ export const DEFAULT_SETTINGS: Settings = {
   siteName: "Docs",
   siteDescription: "",
   logo: "auto",
+  favicon: undefined,
   base: "/",
   trailingSlash: false,
   home: { wide: false },
@@ -219,6 +224,19 @@ export interface ZudoDocConfig {
    * @default "auto"
    */
   logo?: string | false;
+  /**
+   * Favicon `<link rel="icon">` set. Omitted keeps the four-file convention
+   * (`/favicon.svg`, `/favicon.ico`, `/favicon-32x32.png`,
+   * `/favicon-16x16.png` — what `create-zudo-doc` ships in `public/`);
+   * `"auto"` emits one inline SVG data-URL icon generated from `siteName`,
+   * the same glyph `logo: "auto"` renders; any other string emits a single
+   * link with the `type` inferred from its extension; a `FaviconConfig`
+   * object emits only the slots it supplies (drop `ico` when your `public/`
+   * has no `favicon.ico` and the dead link is never emitted); `false` emits
+   * no favicon links at all.
+   * @default undefined
+   */
+  favicon?: string | FaviconConfig | false;
   /**
    * Public URL sub-path prefix mounted in front of every absolute asset URL
    * (e.g. `"/pj/my-site/"`). `"/"` = root-mounted.

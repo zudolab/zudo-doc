@@ -15,6 +15,8 @@
 import { describe, it, expect } from "vitest";
 import { render } from "preact-render-to-string";
 import { createHeadWithDefaults } from "../index.js";
+import { renderAutoLogoIconSvg } from "../../auto-logo/icon.js";
+import { pickGlyphName } from "../../auto-logo/shapes.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 
 describe("HeadWithDefaults — SiteHeadConfig head extras", () => {
@@ -339,5 +341,138 @@ describe("HeadWithDefaults — favicon set", () => {
     expect(out).toContain(
       '<link rel="icon" type="image/png" sizes="16x16" href="/sub/favicon-16x16.png"/>',
     );
+  });
+});
+
+// ── settings.favicon (#3460) ────────────────────────────────────────────────
+// The two tests above pin the OMITTED-DEFAULT path and must stay unchanged —
+// they are the byte-identity baseline every case below is measured against.
+
+describe("HeadWithDefaults — settings.favicon", () => {
+  /** The emitted `<link rel="icon">` tags, so assertions can't be satisfied
+   *  (or broken) by unrelated head markup. */
+  function iconLinks(html: string): string[] {
+    return html.match(/<link rel="icon"[^>]*\/>/g) ?? [];
+  }
+
+  // The equivalence #3461 leans on: the showcase can adopt the explicit object
+  // form without moving the A2 parity hashes.
+  it("object form spelling out all four slots is byte-identical to the omitted default", () => {
+    const Default = createHeadWithDefaults(makeFakeChromeContext({}));
+    const Explicit = createHeadWithDefaults(
+      makeFakeChromeContext({
+        settings: {
+          favicon: {
+            svg: "/favicon.svg",
+            ico: "/favicon.ico",
+            png32: "/favicon-32x32.png",
+            png16: "/favicon-16x16.png",
+          },
+        },
+      }),
+    );
+    const renderedDefault = render(<Default title="Test" />);
+    expect(renderedDefault).toContain('href="/favicon.svg"'); // guard: not vacuously equal
+    expect(render(<Explicit title="Test" />)).toBe(renderedDefault);
+  });
+
+  it("object subset emits only the supplied slots, keeping slot order", () => {
+    const ctx = makeFakeChromeContext({
+      settings: { favicon: { png32: "/icon-32.png", svg: "/icon.svg" } },
+    });
+    const HeadWithDefaults = createHeadWithDefaults(ctx);
+    // Only the two supplied slots, in the declared order (not the object's own
+    // key order) — and no `ico` link, which is the #3440 404 fix.
+    expect(iconLinks(render(<HeadWithDefaults title="Test" />))).toEqual([
+      '<link rel="icon" type="image/svg+xml" href="/icon.svg"/>',
+      '<link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png"/>',
+    ]);
+  });
+
+  it.each([
+    ["false", false],
+    ["{}", {}],
+  ])("%s emits no favicon links at all", (_label, favicon) => {
+    const HeadWithDefaults = createHeadWithDefaults(
+      makeFakeChromeContext({ settings: { favicon } }),
+    );
+    const out = render(<HeadWithDefaults title="Test" />);
+    expect(iconLinks(out)).toEqual([]);
+    expect(out).not.toContain('rel="icon"');
+  });
+
+  it("string form emits one link with the extension-inferred type, base-prefixed", () => {
+    const ctx = makeFakeChromeContext({
+      settings: { favicon: "/assets/my-icon.png" },
+      overrides: { withBase: (p: string) => `/sub${p}` },
+    });
+    const HeadWithDefaults = createHeadWithDefaults(ctx);
+    // One link, no `sizes`, and none of the default four survives.
+    expect(iconLinks(render(<HeadWithDefaults title="Test" />))).toEqual([
+      '<link rel="icon" type="image/png" href="/sub/assets/my-icon.png"/>',
+    ]);
+  });
+
+  it("string form omits type for an unknown extension", () => {
+    const HeadWithDefaults = createHeadWithDefaults(
+      makeFakeChromeContext({ settings: { favicon: "/icon.bmpx" } }),
+    );
+    expect(iconLinks(render(<HeadWithDefaults title="Test" />))).toEqual([
+      '<link rel="icon" href="/icon.bmpx"/>',
+    ]);
+  });
+
+  it("string form ignores a query/hash suffix when inferring type", () => {
+    const HeadWithDefaults = createHeadWithDefaults(
+      makeFakeChromeContext({ settings: { favicon: "/icon.svg?v=2" } }),
+    );
+    expect(iconLinks(render(<HeadWithDefaults title="Test" />))).toEqual([
+      '<link rel="icon" type="image/svg+xml" href="/icon.svg?v=2"/>',
+    ]);
+  });
+
+  it("absolute-URL string is emitted verbatim (no withBase prefix)", () => {
+    const HeadWithDefaults = createHeadWithDefaults(
+      makeFakeChromeContext({
+        settings: { favicon: "https://cdn.example.com/icon.png" },
+        overrides: { withBase: (p: string) => `/sub${p}` },
+      }),
+    );
+    expect(iconLinks(render(<HeadWithDefaults title="Test" />))).toEqual([
+      '<link rel="icon" type="image/png" href="https://cdn.example.com/icon.png"/>',
+    ]);
+  });
+
+  it('"auto" emits one deterministic SVG data-URL link seeded by siteName', () => {
+    function faviconHrefOf(siteName: string, withBase?: (p: string) => string): string {
+      const Head = createHeadWithDefaults(
+        makeFakeChromeContext({
+          settings: { favicon: "auto", siteName },
+          ...(withBase ? { overrides: { withBase } } : {}),
+        }),
+      );
+      const out = render(<Head title="Test" />);
+      const links = iconLinks(out);
+      expect(links, `expected exactly one favicon link, got: ${out}`).toHaveLength(1);
+      const m = links[0]!.match(
+        /^<link rel="icon" type="image\/svg\+xml" href="(data:image\/svg\+xml,[^"]*)"\/>$/,
+      );
+      expect(m, `expected an SVG data-URL favicon link, got: ${links[0]}`).not.toBeNull();
+      return m![1]!;
+    }
+
+    // A non-root base must NOT prefix a data: URL, and the payload is exactly
+    // the auto-logo icon for that seed — the same seed rule as `logo: "auto"`.
+    const href = faviconHrefOf("Test Site", (p: string) => `/sub${p}`);
+    expect(href).toBe(
+      `data:image/svg+xml,${encodeURIComponent(renderAutoLogoIconSvg("Test Site"))}`,
+    );
+
+    // Deterministic for one seed, and seed-sensitive across two. The pair is
+    // chosen so the two seeds select different glyphs (the only thing that
+    // varies per seed) — re-pick it if GLYPH_NAMES ever changes length.
+    expect(faviconHrefOf("Test Site")).toBe(faviconHrefOf("Test Site"));
+    expect(pickGlyphName("Test Site")).not.toBe(pickGlyphName("Another Site"));
+    expect(faviconHrefOf("Test Site")).not.toBe(faviconHrefOf("Another Site"));
   });
 });

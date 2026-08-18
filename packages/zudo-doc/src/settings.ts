@@ -251,6 +251,24 @@ export interface MetaTagsConfig {
 }
 
 /**
+ * Explicit favicon link set. Each key maps to one `<link rel="icon">` slot of
+ * the default four-file convention, and **only the supplied keys are emitted**
+ * — that is how a project whose `public/` has no `favicon.ico` stops shipping
+ * a 404ing link. Emission order is fixed (`svg → ico → png32 → png16`)
+ * regardless of key order in the object; `{}` emits nothing.
+ *
+ * Values starting with `/` are passed through `withBase()`; anything else
+ * (`data:`, `https://…`) is emitted verbatim. The `"auto"` sentinel is a
+ * whole-`favicon` value only — it is not meaningful inside this object.
+ */
+export interface FaviconConfig {
+  svg?: string;
+  png32?: string;
+  png16?: string;
+  ico?: string;
+}
+
+/**
  * Site-wide custom `<head>` extras injected into every page via
  * {@link HeadWithDefaults}. All fields are JSON-serializable (no VNodes or
  * callables) — settings objects are `JSON.stringify`'d in the
@@ -295,6 +313,16 @@ export interface Settings {
    * `false` hides the logo block entirely.
    */
   logo?: string | false;
+  /**
+   * Favicon links. Omitted (the default) emits the four-file convention
+   * (`/favicon.svg`, `/favicon.ico`, `/favicon-32x32.png`,
+   * `/favicon-16x16.png`); `"auto"` emits one inline SVG data-URL icon
+   * generated from `siteName` (the same glyph `logo: "auto"` renders); any
+   * other string emits one link with the `type` inferred from its extension;
+   * a {@link FaviconConfig} object emits only the slots it supplies; `false`
+   * emits no favicon links at all.
+   */
+  favicon?: string | FaviconConfig | false;
   base: string;
   trailingSlash: boolean;
   /** Package-owned home-page layout. Narrow when omitted. */
