@@ -94,9 +94,12 @@ mode the workflow verifies that `NPM_TOKEN` authenticates against the registry v
 **Caveat:** the dry-run must target the *candidate* tag or ref — NOT `main` and NOT
 an already-published tag. The reason is ordering: the workflow runs a "version not
 already published" safeguard (Safeguard 3) *before* the dry-run/auth step
-(Safeguard 4). An already-published tag triggers a hard failure at Safeguard 3 and
+(Safeguard 5). An already-published tag triggers a hard failure at Safeguard 3 and
 the auth smoke is never reached. Similarly, dispatching from `main` fails at
 Safeguard 1 (tag-shape check) before auth is tested.
+
+Scaffold pin freshness (Safeguard 4) also runs before the auth step, unconditionally
+— see "Scaffold pin freshness gate" below.
 
 Correct dry-run target: a tag or branch pointing at the candidate commit whose
 version has been bumped in `package.json` but not yet published to npm.
@@ -195,6 +198,75 @@ produced here, not consumed — their versions belong to the release flow.
 
 A bump that changes `scaffold.ts` needs a `create-zudo-doc` release afterward so
 downstream scaffolds get the new pins.
+
+---
+
+## Scaffold pin freshness gate
+
+`scripts/check-scaffold-pin-freshness.mjs` (`pnpm check:scaffold-pin-freshness`)
+closes the **recurrence** half of #3442: `create-zudo-doc@5.5.3` shipped on
+2026-08-17 pinning `@takazudo/zfb` at `2.5.2` — three weeks after the fix it
+needed had already shipped upstream. Nothing checked that a scaffold pin was
+still current **at release time**, and the failure was invisible to every other
+gate (build, typecheck, and link check all pass; it only shows in a browser).
+
+This is a different question from `check:pin-parity` above. Pin parity asks "do
+`scaffold.ts` and the rest of the repo agree with each other?" (internal
+consistency). This gate asks "is what they agree on still current on npm?"
+(freshness against the registry) — and it deliberately does **not** relax any
+pin to a caret; #3455 explicitly rejected that option, since `scaffold.ts`'s
+exact-pin literals are a reproducibility guarantee (see `check:pin-parity`'s own
+documentation). The fix for a stale pin is always to bump the exact literal.
+
+**Where it runs:**
+
+- **`.github/workflows/publish-create-zudo-doc.yml`, Safeguard 4/5** — the real
+  enforcement point. `scripts/release-create-zudo-doc.sh` only *prepares* a
+  release (rewrites pins, bumps versions); publication happens later, when a
+  human publishes the GitHub Draft Release, and a pin can go stale in that gap.
+  This step runs unconditionally, immediately before `npm publish` (including on
+  a `dry_run`, so a dry run proves this safeguard too) and blocks the release if
+  it fails.
+- **`scripts/release-create-zudo-doc.sh`** — the same check runs as an early
+  preflight in the real (non-`DRY=1`) path, before any file is bumped. This is
+  early feedback only, not the enforcement point: a release author learns about
+  a stale pin while preparing instead of days later at publish time.
+- **By hand:** `pnpm check:scaffold-pin-freshness`.
+
+**Deliberately NOT a PR gate.** It does not run in `pr-checks.yml` and is not
+part of the `scripts/run-b4push.sh` guard region (so the
+`check:b4push-ci-parity` meta-check has nothing to reconcile it against). Two
+independent reasons: an upstream publish must never block an unrelated PR, and
+the check makes a live call to the npm registry — the opposite of the
+deterministic, offline-friendly checks that gate routine PRs and pushes.
+
+**What a failure means:** the scaffold would ship (or just shipped, in the
+release-script case) a pin behind what the registry actually has — a fresh
+`create-zudo-doc` scaffold would install an out-of-date `@takazudo/zfb` (or
+whichever pinned package went stale), reproducing the #3442 shape.
+
+**Remedy:** bump the stale pin — `/dev-bump-zudo-deps`, or by hand — then
+re-run `pnpm check:pin-parity` to confirm the bump kept every pin location in
+agreement (see "Bumping the toolchain" above), and re-run
+`pnpm check:scaffold-pin-freshness` to confirm the gate now passes.
+
+**Prerelease pins read the `next` dist-tag, not `latest`.** A pin carrying a
+`-prerelease` suffix (e.g. `0.2.0-next.9`) is compared against the registry's
+`next` dist-tag. As the "dist-tag table" section above documents, `next` and
+`latest` are two permanently-diverging channels once a package has any stable
+release — `next` is not "the version after latest," it is a separate, often
+much *older*, opt-in preview line. Comparing every pin against `latest`
+unconditionally would misfire on a correct prerelease pin, flagging it "stale"
+against a numerically higher stable `latest` it was never meant to track — the
+same `next`/`latest` divergence #3442 named as the likely cause of the original
+gap. If the registry has no `next` tag at all for a prerelease pin, the package
+is reported "skipped," not stale, not a failure.
+
+**Fails closed on a registry error.** A lookup failure (network error, timeout,
+unusable response) blocks the gate the same as a confirmed-stale pin, but is
+reported as a distinct finding kind ("lookup-error" vs. "stale") — a release
+blocked by a flaky registry is recoverable by retrying; a stale release already
+published to npm is not.
 
 ---
 

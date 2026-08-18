@@ -62,6 +62,7 @@
     "check:template-drift": "bash scripts/check-template-drift.sh",
     "check:fixture-settings-drift": "node scripts/check-fixture-settings-drift.mjs",
     "check:pin-parity": "node scripts/check-pin-parity.mjs",
+    "check:scaffold-pin-freshness": "node scripts/check-scaffold-pin-freshness.mjs",
     "check:b4push-ci-parity": "node scripts/check-b4push-ci-parity.mjs",
     "check:e2e-spec-naming": "node scripts/check-e2e-spec-naming.mjs",
     "check:flaky-tracking-issue": "node scripts/check-flaky-tracking-issue.mjs",
