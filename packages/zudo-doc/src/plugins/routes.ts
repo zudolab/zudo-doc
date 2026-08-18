@@ -57,7 +57,10 @@
 //      user `pages/` file — meaning the configured builder can never reach an
 //      injected route a reader browses. Suppressed when the resolved
 //      `chromeBindingsModule` file already names `DesignTokenPanelBootstrap`
-//      (the documented workaround). See the guard case inline, next to #3 above.
+//      (the documented workaround), or when a shadowing `pages/` file is an
+//      exact default re-export of the shadowed route's own entrypoint (#3451
+//      — such a file still reaches the bootstrap through `routes/_chrome.tsx`).
+//      See the guard case inline, next to #3 above.
 //
 //   4. injectRoute(pattern, entrypoint[, opts]) — the 16-route catalog
 //      (Decision 3), patterns derived from `options.settings.locales` /
@@ -194,6 +197,52 @@ export function shouldWarnDtpFullyShadowed(
   const counted = routes.filter((route) => route.includedInDtpShadowDiagnostic);
   if (counted.length === 0) return false;
   return counted.every((route) => isShadowed(route.pattern));
+}
+
+/**
+ * Best-effort check for the one shape that makes a `pages/` file shadowing a
+ * package route harmless to the DTP shadow diagnostic (#3451): an exact
+ * default RE-EXPORT of that route's OWN package entrypoint —
+ *
+ *   export { default, paths, frontmatter } from "@takazudo/zudo-doc/routes/docs-slug";
+ *
+ * Such a file still reaches the configured chrome bootstrap through
+ * `routes/_chrome.tsx` (it forwards to the very entrypoint the package would
+ * have injected), so `existsSync` finding it should not count as a real
+ * shadow — narrowing the diagnostic's denominator to reader-facing routes
+ * (#3434) made this false positive reachable, where before it was hidden by
+ * the always-surviving `/404` / `/sitemap.xml` entries.
+ *
+ * Deliberately NARROW, and best-effort in the same sense as the
+ * `workaroundLikelyApplied` check in `setup()` below: a cheap text scan over
+ * the file's source, not module evaluation or an AST parse. It intentionally
+ * does NOT suppress on any of these shapes, because none of them prove the
+ * route still reaches the bootstrap:
+ *
+ *  - the specifier appearing only inside a comment (stripped before matching)
+ *  - an unused import of the specifier (no `export { default … } from` at all)
+ *  - a re-export of a DIFFERENT package route (the specifier must match
+ *    `entrypoint` exactly)
+ *  - a file that imports the package route but exports its own default
+ *
+ * Conversely, a host that reaches the same entrypoint some OTHER way this
+ * scan cannot see (e.g. a local wrapper module) still counts as shadowed and
+ * may trigger the diagnostic even though it is actually safe — that false
+ * positive is the accepted cost of a text-only heuristic (the warning
+ * message states this limit too).
+ */
+function isExactDefaultReExport(source: string, entrypoint: string): boolean {
+  // Strip comments first so a commented-out re-export line is never mistaken
+  // for a live one. This itself is best-effort: it does not understand
+  // string literals, so a `//`/`/* */` sequence inside a string would also
+  // get stripped — an acceptable limit for the simple import/export-only
+  // `pages/` stub files this heuristic targets.
+  const withoutComments = source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+  const specifier = entrypoint.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const reExportPattern = new RegExp(
+    `export\\s*\\{[^}]*\\bdefault\\b(?!\\s+as\\s)[^}]*\\}\\s*from\\s*(["'])${specifier}\\1`,
+  );
+  return reExportPattern.test(withoutComments);
 }
 
 /**
@@ -415,7 +464,7 @@ const plugin = definePlugin({
     );
 
     // (3.5) DTP shadow diagnostic (zudolab/zudo-doc#3420, spec #3428; scoped
-    // by #3434/#3435).
+    // by #3434/#3435; re-export false-positive guarded by #3451).
     // Decision 6 above drops an injected route SILENTLY when a kept user
     // `pages/` file claims the same URL — so a locked-manifest host that
     // sets `designTokenPanelConfigModule` while its `pages/` stubs shadow
@@ -441,9 +490,26 @@ const plugin = definePlugin({
     // Diagnostic only: does not change which routes get injected below.
     if (settings.designTokenPanel === true && designTokenPanelConfigAbsPath) {
       const pagesDir = join(ctx.projectRoot, "pages");
-      const readerRoutesAllShadowed = shouldWarnDtpFullyShadowed(derivedRoutes, (pattern) =>
-        derivePagesCandidates(pattern).some((rel) => existsSync(join(pagesDir, rel))),
-      );
+      // Looked up per-pattern below so the re-export guard (#3451) can
+      // compare a shadowing file's specifier against THIS route's own
+      // `entrypoint` — a re-export of a different package route must still
+      // count as a real shadow.
+      const routesByPattern = new Map(derivedRoutes.map((route) => [route.pattern, route]));
+      const readerRoutesAllShadowed = shouldWarnDtpFullyShadowed(derivedRoutes, (pattern) => {
+        const route = routesByPattern.get(pattern);
+        return derivePagesCandidates(pattern).some((rel) => {
+          const abs = join(pagesDir, rel);
+          if (!existsSync(abs)) return false;
+          // A kept `pages/` file that exactly default-re-exports the
+          // shadowed route's own entrypoint still reaches the configured
+          // bootstrap through routes/_chrome.tsx — don't count it as a real
+          // shadow (#3451).
+          if (route && isExactDefaultReExport(readFileSync(abs, "utf8"), route.entrypoint)) {
+            return false;
+          }
+          return true;
+        });
+      });
       if (readerRoutesAllShadowed) {
         // Best-effort heuristic: a cheap text scan for the literal export
         // name, not an evaluation of the resolved module — the module
@@ -468,7 +534,13 @@ const plugin = definePlugin({
               "designTokenPanelConfigModule docblock in settings.ts). If you already " +
               "did this via a chromeBindingsModule that composes the bootstrap " +
               'indirectly (never spelling "DesignTokenPanelBootstrap" literally in ' +
-              "the resolved file), this warning is safe to ignore.",
+              "the resolved file), this warning is safe to ignore. A pages/ file " +
+              "that cleanly re-exports a shadowed route's own entrypoint " +
+              '(`export { default, paths, frontmatter } from "@takazudo/zudo-doc/' +
+              'routes/…"`) does not count as a real shadow either — but that check ' +
+              "is also a best-effort text scan, not module evaluation, so a file " +
+              "that reaches the same entrypoint some other way may still trigger " +
+              "this warning even though it is safe.",
           );
         }
       }
