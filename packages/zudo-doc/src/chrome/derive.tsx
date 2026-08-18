@@ -335,6 +335,41 @@ function deriveThemePackSwitcherProps(ctx: ChromeContext): ThemePackSwitcherProp
 }
 
 /**
+ * Whether the package-default `DesignTokenPanelBootstrap` must NOT be used as
+ * the slot default (#3414, the fix for #3406's entry-page-dependent latch).
+ *
+ * `runDesignTokenPanelBootstrapOnce` configures zdtp at most once per browser
+ * session and both islands share that latch, so on a host that set
+ * `designTokenPanelConfigModule` the FIRST page loaded decides the config for
+ * the whole SPA session. A self-contained `pages/` stub (the locked-manifest
+ * shape, #2653) calls `createChrome` with no hostBindings and would otherwise
+ * mount the package default here — hard-load such a page first and the host's
+ * builder never applies to any page, silently.
+ *
+ * Skipping the slot default on exactly that combination makes the configured
+ * island the genuine first caller on every session, whatever the entry page.
+ * Two deliberate boundaries:
+ *
+ * - An explicit `ctx.hostBindings.DesignTokenPanelBootstrap` still wins —
+ *   `deriveBodyEndIslands` consults this only once that slot came back empty.
+ *   That covers the injected-route path too, where `routes/_chrome.tsx`
+ *   supplies `ConfiguredDesignTokenPanelBootstrap` through the same slot.
+ * - `packageOwnedRoutes: false` is excluded: without the routes plugin there is
+ *   no configured island anywhere, and `designTokenPanelConfigModule` is inert
+ *   by its own contract — skipping there would drop the panel from every page
+ *   rather than defer it to a better-configured one.
+ *
+ * The slot resolves to `undefined` rather than a null-rendering stub component:
+ * `createDesignTokenPanelIsland` already treats an absent component as "render
+ * nothing at all", so no `<Island>` marker and no pre-hydration toggle shim
+ * reach the HTML. A stub component would emit a marker under a name zfb's
+ * island registry does not carry, which zfb reports as an unmatched marker.
+ */
+function skipsPackageDefaultDesignTokenPanel(settings: Settings): boolean {
+  return Boolean(settings.designTokenPanelConfigModule) && settings.packageOwnedRoutes !== false;
+}
+
+/**
  * Derive the body-end islands. The package owns the settings-gated
  * DesignTokenPanelBootstrap + ThemePackSwitcher mounts even when a host
  * supplies a BodyEndIslands override; the override is composed with those
@@ -354,13 +389,16 @@ function deriveThemePackSwitcherProps(ctx: ChromeContext): ThemePackSwitcherProp
  * default except that its builder comes from
  * `virtual:zudo-doc-design-token-panel-config` (i.e. a host's
  * `designTokenPanelConfigModule`). The default below is what every non-routes
- * `createChrome` caller keeps getting.
+ * `createChrome` caller keeps getting — EXCEPT under the one condition
+ * {@link skipsPackageDefaultDesignTokenPanel} describes.
  */
 export function deriveBodyEndIslands(ctx: ChromeContext) {
   const designTokenPanelDeps = {
     DesignTokenPanelBootstrap:
       ctx.hostBindings.DesignTokenPanelBootstrap ??
-      (DesignTokenPanelBootstrap as unknown as FactoryComponent),
+      (skipsPackageDefaultDesignTokenPanel(ctx.settings)
+        ? undefined
+        : (DesignTokenPanelBootstrap as unknown as FactoryComponent)),
   };
   const themePackSwitcherDeps = {
     themePackSwitcherProps: deriveThemePackSwitcherProps(ctx),
