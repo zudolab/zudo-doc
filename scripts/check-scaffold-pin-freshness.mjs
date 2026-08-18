@@ -49,6 +49,27 @@
 //      permanently blind to the very staleness shape it exists to catch);
 //      if `latest` is stable, the package is reported "skipped" — not
 //      stale, not a failure.
+//   4. LOUD SKIP ON SAME-CORE PRERELEASE MISMATCH (#3475, closing the blind
+//      spot #3469 found). This gate compares only the numeric
+//      MAJOR.MINOR.PATCH core (see parseCore/compareCore below), so two
+//      prereleases sharing a core — e.g. pin `0.2.0-next.9` vs registry
+//      `0.2.0-next.20` — are indistinguishable by that comparison alone.
+//      Reporting those "ok" would be a false pass: the pin could be many
+//      prereleases behind and the gate would stay silent. So when a
+//      prerelease pin's core matches the registry target's core but the
+//      FULL version strings differ, this is reported as "skipped" with a
+//      visible warning naming the package, the pin, and the registry
+//      target, saying freshness was NOT verified for it — never "ok". An
+//      EXACTLY-identical prerelease pin (core AND full string both match)
+//      is still "ok" — nothing to warn about there, and warning on a true
+//      match would just train people to ignore the gate. A "skipped"
+//      finding does NOT fail the gate (see the `ok` computation at the end
+//      of checkScaffoldPinFreshness) — this is a known coverage limit
+//      surfaced for a human to check by hand, not a confirmed-stale pin.
+//      Deliberately NOT full semver §11 prerelease-identifier comparison —
+//      that was considered and rejected (#3469) as diverging from
+//      check-pin-parity.mjs's core-only convention; the goal is removing
+//      the silence, not closing the coverage gap.
 //
 // Design: the registry lookup is INJECTED (`fetchDistTags`) so
 // checkScaffoldPinFreshness() is pure and the test suite never touches the
@@ -101,11 +122,13 @@ export function isPrereleaseVersion(version) {
  *
  * KNOWN LIMITATION (intentional, mirrors satisfiesCaret()'s rationale): two
  * prereleases sharing a core — e.g. "0.2.0-next.9" vs "0.2.0-next.20" —
- * compare EQUAL and are never reported stale against each other. Catching
- * that class would need real prerelease-identifier ordering (fragile across
- * -next/-beta/-rc), which is out of scope for the false-positive this gate
- * exists to prevent (see semantics #3). A core-level bump (e.g. 0.2.0-next.9
- * vs 0.3.0-next.1) is still caught.
+ * compare EQUAL here and are never reported STALE against each other.
+ * Catching that class for real would need full prerelease-identifier
+ * ordering (fragile across -next/-beta/-rc), which is out of scope (see
+ * semantics #3/#4). This is NOT silent, though: the caller reports a
+ * same-core-but-differing prerelease pair as "skipped" with a warning
+ * rather than a false "ok" — see semantics #4 above. A core-level bump
+ * (e.g. 0.2.0-next.9 vs 0.3.0-next.1) is still caught as "stale" here.
  */
 function parseCore(version) {
   if (typeof version !== "string") return null;
@@ -130,7 +153,15 @@ function compareCore(a, b) {
  * semantics #1 above. Each finding has a `kind` of:
  *   "stale"          — pin is behind the comparison dist-tag.
  *   "ok"              — pin is current.
- *   "skipped"         — prerelease pin with no "next" tag to compare against.
+ *   "skipped"         — freshness was NOT verified for this pin. Two causes:
+ *                        (a) prerelease pin with no "next" tag to compare
+ *                        against, or (b) prerelease pin whose core matches
+ *                        the registry target but the full version strings
+ *                        differ (semantics #4) — the gate cannot tell
+ *                        whether it is current or many prereleases behind.
+ *                        Never fails the gate (see the `ok` computation
+ *                        below) but is always visible in the finding
+ *                        message.
  *   "lookup-error"    — registry fetch failed, or returned an unusable shape.
  *   "unreadable-pin"  — scaffold.ts has no parseable literal for this
  *                        package (should already be caught by
@@ -251,6 +282,46 @@ export async function checkScaffoldPinFreshness({
       continue;
     }
 
+    // Semantics #4: same core, but the full version strings differ (e.g.
+    // pin "0.2.0-next.9" vs registry "0.2.0-next.20"). compareCore() cannot
+    // see this difference, so an "ok" here would be a false pass — the pin
+    // could be many prereleases behind. Report "skipped" with a warning
+    // instead. An exact string match (identical pin) falls through to "ok"
+    // below — nothing to warn about there. The warning is worded per case:
+    // a prerelease registry target genuinely cannot be ordered here, but a
+    // STABLE target sharing the core (pin "0.2.0-next.9" vs "next" =
+    // "0.2.0") outranks the pin by semver §11 — still not failed (that
+    // would be a behaviour change to semantics #3's "never compare a
+    // prerelease pin against a stable line" stance), but not described as
+    // unknowable either.
+    if (
+      prerelease &&
+      compareCore(pinCore, registryCore) === 0 &&
+      scaffoldPin.replace(/^[\^~]/, "") !== registryVersion
+    ) {
+      findings.push({
+        kind: "skipped",
+        pkg: pkgName,
+        pin: scaffoldPin,
+        registryVersion,
+        tag: targetTag,
+        message: isPrereleaseVersion(registryVersion)
+          ? `${pkgName} scaffold pin ${scaffoldPin} was NOT checked for freshness — ` +
+            `it shares its MAJOR.MINOR.PATCH core with registry "${targetTag}" ` +
+            `${registryVersion}, but the full prerelease strings differ. This gate ` +
+            `compares numeric cores only (known limitation), so it cannot tell ` +
+            `whether ${pkgName} is current or several prereleases behind. Verify ` +
+            `manually.`
+          : `${pkgName} scaffold pin ${scaffoldPin} was NOT checked for freshness — ` +
+            `registry "${targetTag}" is the STABLE release ${registryVersion}, which ` +
+            `shares the pin's MAJOR.MINOR.PATCH core. Per semver a release outranks ` +
+            `its own prereleases, so this pin is behind — but this gate compares ` +
+            `numeric cores only (known limitation) and does not fail on it. Bump the ` +
+            `pin, or confirm by hand that the prerelease line is the intended target.`,
+      });
+      continue;
+    }
+
     findings.push({
       kind: "ok",
       pkg: pkgName,
@@ -330,8 +401,14 @@ async function main() {
     return 1;
   }
 
+  const skipped = result.findings.filter((f) => f.kind === "skipped");
   console.log("");
-  console.log("OK — all scaffold pins are current (or intentionally skipped as prerelease-with-no-next-tag).");
+  console.log("OK — all scaffold pins are current (or intentionally skipped).");
+  if (skipped.length > 0) {
+    console.log(
+      `  ${skipped.length} pin(s) skipped — freshness NOT verified for these, see SKIP lines above for why.`,
+    );
+  }
   return 0;
 }
 

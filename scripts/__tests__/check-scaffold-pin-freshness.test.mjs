@@ -251,12 +251,11 @@ describe("checkScaffoldPinFreshness — (4) prerelease semantics", () => {
     );
   });
 
-  it("does not treat a same-core prerelease bump as stale (core-only comparison)", async () => {
-    // Documents the known limitation from the test above: 0.2.0-next.9 vs
-    // 0.2.0-next.20 share a core and are NOT distinguished — this is
-    // intentional (see checkScaffoldPinFreshness's parseCore/compareCore),
-    // not a bug, and is asserted here so a future change to that behavior
-    // is a deliberate, visible decision.
+  it("reports a same-core but DIFFERING prerelease as 'skipped' with a warning, not a false 'ok' (#3475)", async () => {
+    // 0.2.0-next.9 (pin) vs 0.2.0-next.20 (registry) share a core, so
+    // compareCore() alone can't distinguish them — that is the blind spot
+    // #3469 found. This gate must not silently report "ok" here (the pin
+    // could be many prereleases behind); it must announce the blind spot.
     const fetchDistTags = stubRegistry({
       "@takazudo/zfb": { latest: "2.7.1", next: "0.2.0-next.20" },
     });
@@ -267,8 +266,62 @@ describe("checkScaffoldPinFreshness — (4) prerelease semantics", () => {
       fetchDistTags,
     });
 
+    // "skipped" does not fail the gate — it is a known coverage limit, not
+    // a confirmed-stale pin (see the script header's semantics #4).
     expect(result.ok).toBe(true);
-    expect(result.findings[0].kind).toBe("ok");
+    expect(result.findings[0]).toEqual(
+      expect.objectContaining({
+        kind: "skipped",
+        pkg: "@takazudo/zfb",
+        pin: "0.2.0-next.9",
+        registryVersion: "0.2.0-next.20",
+        tag: "next",
+      }),
+    );
+    // The warning must name the package, the pin, and the registry target.
+    expect(result.findings[0].message).toContain("@takazudo/zfb");
+    expect(result.findings[0].message).toContain("0.2.0-next.9");
+    expect(result.findings[0].message).toContain("0.2.0-next.20");
+  });
+
+  it("words the same-core skip differently when the registry target is STABLE, not a prerelease", async () => {
+    // pin 0.2.0-next.9 vs "next" = 0.2.0: semver §11 says the release
+    // outranks its own prereleases, so "cannot tell" would be wrong wording
+    // even though the gate still declines to fail on it.
+    const fetchDistTags = stubRegistry({
+      "@takazudo/zfb": { latest: "0.2.0", next: "0.2.0" },
+    });
+
+    const result = await checkScaffoldPinFreshness({
+      scaffoldSrc: PRERELEASE_SCAFFOLD_SRC, // pins 0.2.0-next.9
+      packages: ["@takazudo/zfb"],
+      fetchDistTags,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.findings[0].kind).toBe("skipped");
+    expect(result.findings[0].message).toContain("STABLE");
+    expect(result.findings[0].message).not.toContain("cannot tell");
+  });
+
+  it("still reports 'ok' when a prerelease pin exactly matches the registry target (no false warning)", async () => {
+    // Same core AND identical full version string — the pin genuinely is
+    // current. Warning here would be noise that trains people to ignore
+    // the gate (acceptance criterion from #3475).
+    const fetchDistTags = stubRegistry({
+      "@takazudo/zfb": { latest: "2.7.1", next: "0.2.0-next.9" },
+    });
+
+    const result = await checkScaffoldPinFreshness({
+      scaffoldSrc: PRERELEASE_SCAFFOLD_SRC, // pins 0.2.0-next.9
+      packages: ["@takazudo/zfb"],
+      fetchDistTags,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.findings[0]).toEqual(
+      expect.objectContaining({ kind: "ok", pin: "0.2.0-next.9", registryVersion: "0.2.0-next.9" }),
+    );
   });
 
   it("falls back to 'latest' when there is no 'next' tag AND 'latest' is itself a prerelease", async () => {
