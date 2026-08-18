@@ -234,14 +234,15 @@ IMMEDIATELY AFTER `<ColorSchemeProvider …/>`, and emits in order:
      root.setAttribute("data-theme-pack", slug);
      if (slug !== "default") {
        var href = base + 'theme-packs/' + slug + '/pack.css?v=' + packs[slug];
-       if (!hasPackLink(href)) {              // post-load re-evaluation is inert
-         root.setAttribute("data-zd-theme-pack-loading", "");
+       if (!hasPackLink(href)) {              // stale/missing link → (re)insert
+         var shouldLatch = document.readyState === "loading"; // hard load only
+         if (shouldLatch) root.setAttribute("data-zd-theme-pack-loading", "");
          var release = function(){ root.removeAttribute("data-zd-theme-pack-loading"); };
          var link = document.createElement("link");
          /* rel=stylesheet, data-zd-theme-pack-css, href */
          link.onload = release; link.onerror = release;
          document.head.appendChild(link);
-         setTimeout(release, 2000);           // watchdog
+         if (shouldLatch) setTimeout(release, 2000); // watchdog
        }
      }
      document.addEventListener(BEFORE_SWAP_EVENT, /* pre-swap injection, PRIMARY — see SPA below */);
@@ -265,8 +266,14 @@ IMMEDIATELY AFTER `<ColorSchemeProvider …/>`, and emits in order:
    compensation is stated rather than assumed: the script arms
    `data-zd-theme-pack-loading` on `<html>` before appending the link and
    clears it on the link's `load` OR `error`, with a ~2s watchdog clearing it
-   unconditionally. In words: **no FOUC for a pack stylesheet that loads
-   within the watchdog; a bounded flash beyond it** — past 2s,
+   unconditionally — but arming (and the watchdog) only happens while
+   `document.readyState === "loading"` (zudolab/zudo-doc#3407/#3413). This is
+   a non-deferred, no-src inline head script, so on a genuine hard load the
+   parser cannot have advanced past it — `readyState` is guaranteed
+   `"loading"` there, and the guard can only ever suppress a POST-PAINT
+   re-evaluation. In words: **no FOUC for a pack stylesheet that loads
+   within the watchdog; a bounded flash beyond it; and a post-paint pack
+   swap never hides an already-painted body** — past 2s on a hard load,
    blank-screen avoidance deliberately wins over strict no-FOUC, because a
    hung stylesheet must never leave the page permanently blank. This is an
    accepted weakening versus the parser-inserted link; do not restore
@@ -275,10 +282,16 @@ IMMEDIATELY AFTER `<ColorSchemeProvider …/>`, and emits in order:
    Everything else the old mechanism bought is preserved: exactly one
    stylesheet request, correct the first time (no default-then-stored double
    fetch, no MutationObserver races), and zero requests for `default`.
-   Post-load re-evaluation is inert because the insertion is guarded on an
-   existing `link[data-zd-theme-pack-css]` whose href matches the resolved
-   slug — present synchronously after the first evaluation, so a duplicate
-   run finds it whether the sheet is still pending or already loaded.
+   Post-load re-evaluation is inert with respect to the stylesheet request
+   because the insertion is guarded on an existing
+   `link[data-zd-theme-pack-css]` whose href matches the resolved slug —
+   present synchronously after the first evaluation, so a duplicate run
+   finds it whether the sheet is still pending or already loaded. When only
+   a STALE different-slug link is present, the correct link is still
+   inserted (link creation and onload/onerror wiring are unconditional) —
+   but with the `readyState` guard above, that correction can never re-arm
+   the latch once the body has painted, so "post-load re-evaluation is
+   inert" now holds for the latch as well as for the request count.
    `data-zd-theme-pack-loading` is deliberately NOT in `preserveHtmlAttrs`:
    it must never survive a soft navigation. The BEFORE_SWAP / AFTER_NAVIGATE
    handlers use `createElement`/`appendChild` and never arm the latch (the

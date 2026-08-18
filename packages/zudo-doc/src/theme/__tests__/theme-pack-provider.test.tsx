@@ -106,6 +106,9 @@ interface BootstrapEnv {
       setAttribute(n: string, v: string): void;
       removeAttribute(n: string): void;
     };
+    // Defaults to "loading" in makeBootstrapEnv (hard-load default) — the
+    // readyState guard (#3407/#3413) gates the latch arm + watchdog on this.
+    readyState: string;
     write: ReturnType<typeof vi.fn>;
     addEventListener: (type: string, handler: BootstrapEventHandler) => void;
     createElement: (tag: string) => FakeBootstrapLink;
@@ -121,7 +124,15 @@ interface BootstrapEnv {
   fireBeforeSwap: (newDocument: unknown) => void;
 }
 
-function makeBootstrapEnv(stored: string | null, storageThrows = false): BootstrapEnv {
+function makeBootstrapEnv(
+  stored: string | null,
+  storageThrows = false,
+  // Defaults to "loading" — a genuine hard load, matching the guarantee that
+  // a non-deferred no-src inline head script can never see any other value
+  // (#3407/#3413). Every existing latch-armed assertion in this file relies
+  // on this default; pass "complete" to simulate a post-paint re-evaluation.
+  readyState = "loading",
+): BootstrapEnv {
   const attrs = new Map<string, string>();
   const head = new FakeBootstrapHead();
   const listeners = new Map<string, BootstrapEventHandler[]>();
@@ -135,6 +146,7 @@ function makeBootstrapEnv(stored: string | null, storageThrows = false): Bootstr
         attrs.delete(n);
       },
     },
+    readyState,
     // Retained purely as a regression guard: the bootstrap must NEVER call it
     // (a post-load document.write implicitly document.open()s and destroys the
     // live document — the whole reason for #3399).
@@ -370,10 +382,35 @@ describe("buildThemePackBootstrap (executed)", () => {
       expect(env.document.write).not.toHaveBeenCalled();
     });
 
-    it("DOES insert when only a STALE (wrong-slug) pack link is present", () => {
+    it("DOES insert when only a STALE (wrong-slug) pack link is present, but does NOT re-arm the latch post-paint (readyState complete)", () => {
       // The guard keys on the resolved slug's href, not on the marker alone —
       // otherwise a leftover link from another pack would suppress the
-      // correct one.
+      // correct one. But this re-evaluation happens after the body has
+      // already painted (SPA embedding, #3399/#3407), so hiding it behind
+      // the latch for up to 2s would be strictly worse than the stale link
+      // it is correcting — the readyState guard (#3413) keeps the latch off.
+      const env = makeBootstrapEnv("foundry", false, "complete");
+      const stale = new FakeBootstrapLink();
+      stale.setAttribute("rel", "stylesheet");
+      stale.setAttribute(THEME_PACK_LINK_ATTR, "");
+      stale.setAttribute("href", "/theme-packs/foundry/pack.css?v=0.0.1");
+      env.head.appendChild(stale);
+
+      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+
+      expect(env.head.children).toHaveLength(2);
+      const inserted = env.head.children.find((l) => l !== stale)!;
+      expectPackLink(inserted, "/theme-packs/foundry/pack.css?v=1.2.3");
+      expect(env.hasAttr(THEME_PACK_LOADING_ATTR)).toBe(false);
+      // No watchdog timer scheduled either — not just "cleared before we
+      // looked", but never armed in the first place.
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it("DOES insert AND still arms the latch when only a STALE (wrong-slug) pack link is present on a hard load (readyState loading)", () => {
+      // Sibling of the post-paint case above: the same stale-link correction
+      // during a genuine hard load (the default readyState) must still latch
+      // — the gate is proven in both directions.
       const env = makeBootstrapEnv("foundry");
       const stale = new FakeBootstrapLink();
       stale.setAttribute("rel", "stylesheet");
@@ -387,6 +424,9 @@ describe("buildThemePackBootstrap (executed)", () => {
       const inserted = env.head.children.find((l) => l !== stale)!;
       expectPackLink(inserted, "/theme-packs/foundry/pack.css?v=1.2.3");
       expect(env.hasAttr(THEME_PACK_LOADING_ATTR)).toBe(true);
+      // The watchdog IS scheduled on a hard load — proves the gate in both
+      // directions alongside the post-paint case above.
+      expect(vi.getTimerCount()).toBe(1);
     });
   });
 
