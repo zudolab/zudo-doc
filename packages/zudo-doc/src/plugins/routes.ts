@@ -361,17 +361,20 @@ const plugin = definePlugin({
         : `export { buildDesignTokenPanelConfig } from "@takazudo/zudo-doc/design-token-panel-config";\n`,
     );
 
-    // (3.5) DTP shadow-shadowing diagnostic (zudolab/zudo-doc#3420, spec
-    // #3428). Decision 6 above drops an injected route SILENTLY when a kept
-    // user `pages/` file claims the same URL — so a locked-manifest host
-    // that sets `designTokenPanelConfigModule` while its `pages/` stubs
-    // shadow EVERY injected route gets no configured DTP island anywhere:
-    // the panel vanishes site-wide with no build error. Warn loudly at setup
-    // instead. "ALL derived routes shadowed" is the sufficient condition —
-    // partial shadowing stays silent (the config still applies on the
-    // surviving routes). Diagnostic only: does not change which routes get
-    // injected below.
-    if (settings.designTokenPanelConfigModule) {
+    // (3.5) DTP shadow diagnostic (zudolab/zudo-doc#3420, spec #3428).
+    // Decision 6 above drops an injected route SILENTLY when a kept user
+    // `pages/` file claims the same URL — so a locked-manifest host that
+    // sets `designTokenPanelConfigModule` while its `pages/` stubs shadow
+    // EVERY injected route gets no configured DTP island anywhere: the panel
+    // vanishes site-wide with no build error. Warn loudly at setup instead.
+    // "ALL derived routes shadowed" is the sufficient condition — partial
+    // shadowing stays silent (the config still applies on the surviving
+    // routes). Gated on the RESOLVED path (not the raw setting) since
+    // `resolveHostModuleOverride` above already turned an invalid setting
+    // into a thrown Error — reaching here means the module genuinely
+    // resolved. Diagnostic only: does not change which routes get injected
+    // below.
+    if (designTokenPanelConfigAbsPath) {
       const pagesDir = join(ctx.projectRoot, "pages");
       const allRoutesShadowed = derivedRoutes.every((route) =>
         derivePagesCandidates(route.pattern).some((rel) => existsSync(join(pagesDir, rel))),
