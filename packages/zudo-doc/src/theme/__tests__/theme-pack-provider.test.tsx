@@ -342,6 +342,43 @@ describe("buildThemePackBootstrap (executed)", () => {
   });
 
   // -------------------------------------------------------------------------
+  // Write-time guard (hasPackLink — the source contract header's embedder
+  // note, #3437/#3447). Proves the `<link>` insertion is guarded on the
+  // element's PRESENCE, not just idempotent across repeated bootstrap runs
+  // (that is the separate "duplicate evaluation" coverage below). Assertions
+  // are on element COUNT via `document.querySelectorAll`, never on string
+  // absence — the "already present" case seeds the head with a link itself,
+  // so a string-absence check could pass by tripping on that fixture data
+  // instead of proving the guard actually fired.
+  // -------------------------------------------------------------------------
+
+  describe("write-time guard (hasPackLink)", () => {
+    it("does not insert when a matching link is ALREADY PRESENT in the head before the bootstrap runs", () => {
+      const env = makeBootstrapEnv("foundry");
+      const existing = new FakeBootstrapLink();
+      existing.setAttribute("rel", "stylesheet");
+      existing.setAttribute(THEME_PACK_LINK_ATTR, "");
+      existing.setAttribute("href", "/theme-packs/foundry/pack.css?v=1.2.3");
+      env.head.appendChild(existing);
+
+      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+
+      const links = env.document.querySelectorAll(`link[${THEME_PACK_LINK_ATTR}]`);
+      expect(links).toHaveLength(1);
+      expect(links[0]).toBe(existing);
+    });
+
+    it("inserts exactly one link when NONE is present in the head before the bootstrap runs", () => {
+      const env = makeBootstrapEnv("foundry");
+
+      runBootstrap(buildThemePackBootstrap("default", ENABLED, "/"), env);
+
+      const links = env.document.querySelectorAll(`link[${THEME_PACK_LINK_ATTR}]`);
+      expect(links).toHaveLength(1);
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // Post-load re-evaluation (SPA embedding — #3393 companion)
   // -------------------------------------------------------------------------
 

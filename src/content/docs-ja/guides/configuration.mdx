@@ -85,6 +85,61 @@ export { default } from "@takazudo/zudo-doc/routes/index";
 
 デフォルト: `"auto"`
 
+### favicon
+
+各ページの `<head>` に出力される `<link rel="icon">` のセット。省略すると、`create-zudo-doc` が新規プロジェクトの `public/` に同梱する 4 ファイル構成 — `favicon.svg`、`favicon.ico`（`sizes="any"`）、`favicon-32x32.png`、`favicon-16x16.png` — がこの順で出力されます。
+
+型: `string | FaviconConfig | false` · デフォルト: `undefined`（上記 4 リンクのセット）
+
+| 値 | 出力されるもの |
+|-------|---------------|
+| 省略 | 上記 4 リンクのデフォルト |
+| `"auto"` | `siteName` から生成したインライン SVG の `data:` URL アイコンを 1 つ。アセットファイルは不要 |
+| それ以外の文字列 | そのパスへのリンクを 1 つ。`type` は拡張子から推論 |
+| `FaviconConfig` オブジェクト | 指定したスロットだけを、常に `svg` → `ico` → `png32` → `png16` の順で出力 |
+| `false` | favicon のリンクを一切出力しない |
+
+**デフォルトはあくまで規約であり、ファイルの存在チェックではありません。** 実ファイルの有無にかかわらず 4 本のリンクを出力するため、`public/` に `favicon.ico` を置いていないプロジェクトでも全ページに `<link rel="icon" href="/favicon.ico" sizes="any">` が出力され、訪問者のブラウザーコンソールにはもれなく 404 が記録されます。これを避けるには、実際に用意してあるスロットだけをオブジェクト形式で指定します。
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    // No favicon.ico in public/, so no ico link — and no console 404.
+    favicon: {
+      svg: "/favicon.svg",
+      png32: "/favicon-32x32.png",
+      png16: "/favicon-16x16.png",
+    },
+  }),
+);
+```
+
+`FaviconConfig` は `{ svg?: string; png32?: string; png16?: string; ico?: string }` です。すべてのキーが任意で、オブジェクト内での記述順は出力に影響しません（出力順は固定です）。`{}` は何も出力せず、`false` と同じ結果になります。
+
+素の文字列を渡すとセットはリンク 1 本に縮退し、`type` は拡張子から推論されます（`.svg`、`.png`、`.ico`、`.jpg` / `.jpeg`、`.gif`、`.webp`、`.avif`）。それ以外の拡張子では `type` を省略し、ブラウザーの判定に委ねます。推論時に `?query` や `#hash` は無視されるため、`"/icon.svg?v=2"` でも `type="image/svg+xml"` が付きます。
+
+```ts
+favicon: "/icon.png", // one link, type="image/png"
+favicon: false,       // no favicon links at all
+```
+
+`favicon: "auto"` はアセットファイルを一切必要としません。`siteName` から決定論的に生成した SVG favicon を、インライン `data:` URL のリンク 1 本として出力します。グリフのシードは [`logo: "auto"`](#アイデンティティと-url-logo) と同じなので、ヒーローのロゴとブラウザータブのアイコンには同じマークが表示されます。ただし favicon 側は正方形・不透明で、パレットはライト固定です。タブのアイコンは、CSS マスクで描画されるヒーローロゴのようにページのカラーモードへ追従できないためです。
+
+<Note>
+
+SVG favicon のサポートはブラウザー間でまだムラがあります（特に Safari）。`"auto"` は未対応のブラウザーでも壊れたアイコンにはならず、既定の空アイコンにフォールバックするだけですが、対応範囲を最大化したいプロジェクトは実ファイルの `.ico` / `.png` を用意してオブジェクト形式を使ってください。
+
+</Note>
+
+`/` で始まる href の値には、設定した [`base`](#アイデンティティと-url-base) が前置されます。サブパスにデプロイした場合、`"/favicon.svg"` は `/pj/my-site/favicon.svg` に解決されます。それ以外の値 — `https://…` の絶対 URL や `data:` URL — はそのまま出力されます。
+
+<Warning>
+
+[`head.alternateLinks`](#アイデンティティと-url-head) でこのセットを置き換えることはできません。`head` のエントリは favicon ブロックの**後**に出力されるため、そこに `{ rel: "icon" }` を書いてもリンクが 1 本追加されるだけで、ここで出力されるリンクを削除することも上書きすることもできません。セットの内容を変更する手段は `favicon` だけです。
+
+</Warning>
+
 ### siteUrl
 
 サイトマップ / canonical / `og:url` のための正規サイトオリジン（例 `"https://example.com"`）。空 = 未設定。

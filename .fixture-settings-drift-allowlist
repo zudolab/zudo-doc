@@ -209,3 +209,12 @@ sidebar:themePackSwitcher
 i18n:themePackSwitcher
 smoke:themePackSwitcher
 versioning:themePackSwitcher
+
+# ── favicon ────────────────────────────────────────────────────────────────────
+# reason: favicon is demonstrated host-only (explicit object form ≡ omitted default);
+#         fixtures deliberately exercise the omitted-default four-link convention
+sidebar:favicon
+i18n:favicon
+theme:favicon
+smoke:favicon
+versioning:favicon

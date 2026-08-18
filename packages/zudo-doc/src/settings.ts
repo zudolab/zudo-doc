@@ -251,6 +251,24 @@ export interface MetaTagsConfig {
 }
 
 /**
+ * Explicit favicon link set. Each key maps to one `<link rel="icon">` slot of
+ * the default four-file convention, and **only the supplied keys are emitted**
+ * — that is how a project whose `public/` has no `favicon.ico` stops shipping
+ * a 404ing link. Emission order is fixed (`svg → ico → png32 → png16`)
+ * regardless of key order in the object; `{}` emits nothing.
+ *
+ * Values starting with `/` are passed through `withBase()`; anything else
+ * (`data:`, `https://…`) is emitted verbatim. The `"auto"` sentinel is a
+ * whole-`favicon` value only — it is not meaningful inside this object.
+ */
+export interface FaviconConfig {
+  svg?: string;
+  png32?: string;
+  png16?: string;
+  ico?: string;
+}
+
+/**
  * Site-wide custom `<head>` extras injected into every page via
  * {@link HeadWithDefaults}. All fields are JSON-serializable (no VNodes or
  * callables) — settings objects are `JSON.stringify`'d in the
@@ -295,6 +313,16 @@ export interface Settings {
    * `false` hides the logo block entirely.
    */
   logo?: string | false;
+  /**
+   * Favicon links. Omitted (the default) emits the four-file convention
+   * (`/favicon.svg`, `/favicon.ico`, `/favicon-32x32.png`,
+   * `/favicon-16x16.png`); `"auto"` emits one inline SVG data-URL icon
+   * generated from `siteName` (the same glyph `logo: "auto"` renders); any
+   * other string emits one link with the `type` inferred from its extension;
+   * a {@link FaviconConfig} object emits only the slots it supplies; `false`
+   * emits no favicon links at all.
+   */
+  favicon?: string | FaviconConfig | false;
   base: string;
   trailingSlash: boolean;
   /** Package-owned home-page layout. Narrow when omitted. */
@@ -466,20 +494,36 @@ export interface Settings {
    * binding wins everywhere and is unaffected by this rule. See
    * `docs/adr/route-injection-seam.md`.
    *
-   * EDGE CASE (zudolab/zudo-doc#3420, diagnostic added #3428): a
-   * locked-manifest host whose kept `pages/` stubs happen to shadow EVERY
-   * injected route (Decision 6 in `plugins/routes.ts` drops a collided
-   * injected route silently — user `pages/` always wins) gets no configured
-   * DTP island anywhere on the site when this setting is set, with no build
-   * error. `plugins/routes.ts` now probes for exactly this at plugin setup —
-   * if every derived route's URL resolves to an existing user `pages/` file,
-   * it emits a loud `ctx.logger.warn` naming this gap and the
-   * `chromeBindings.DesignTokenPanelBootstrap` workaround above, UNLESS the
-   * resolved `chromeBindingsModule` file already contains the literal token
+   * EDGE CASE (zudolab/zudo-doc#3420, diagnostic added #3428, scoped by
+   * #3434/#3435): a locked-manifest host whose kept `pages/` stubs happen to
+   * shadow every injected route a READER BROWSES (Decision 6 in
+   * `plugins/routes.ts` drops a collided injected route silently — user
+   * `pages/` always wins) gets no configured DTP island on any page of its
+   * documentation when this setting is set, with no build error.
+   * `plugins/routes.ts` now probes for exactly this at plugin setup — if every
+   * derived route tagged `includedInDtpShadowDiagnostic` resolves to an
+   * existing user `pages/` file, it emits a loud `ctx.logger.warn` naming this
+   * gap and the `chromeBindings.DesignTokenPanelBootstrap` workaround above.
+   * The denominator deliberately excludes `/404`, `/sitemap.xml`,
+   * `/robots.txt` and `/api/ai-chat` — none of them is a documentation page a
+   * reader browses, and the two non-HTML ones could never be shadowed by a
+   * minimal scaffold, which is what kept the original all-routes form of this
+   * check from ever firing (#3434).
+   *
+   * Three further suppressions: the diagnostic is silent unless
+   * `designTokenPanel` is `true` (with the feature off this setting is
+   * irrelevant, per the paragraph above — #3435); silent when the resolved
+   * `chromeBindingsModule` file already contains the literal token
    * `DesignTokenPanelBootstrap` (a best-effort static text scan — an
    * indirectly-composed override that never spells the name out keeps
-   * warning). Partial shadowing stays silent: the config still applies on
-   * whichever routes survive.
+   * warning); and a `pages/` file that is an exact default re-export of the
+   * shadowed route's OWN package entrypoint
+   * (`export { default, paths, frontmatter } from "@takazudo/zudo-doc/routes/…"`)
+   * does not count as a shadow at all, because it still reaches the configured
+   * bootstrap through `routes/_chrome.tsx` (#3451 — also a best-effort text
+   * scan, so a file that reaches the same entrypoint some other way still
+   * counts as shadowed). Partial shadowing stays silent: the config still
+   * applies on whichever reader-facing routes survive.
    */
   designTokenPanelConfigModule?: string;
   /**

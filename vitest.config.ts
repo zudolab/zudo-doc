@@ -49,7 +49,21 @@ export default defineConfig({
         extends: true,
         test: {
           name: "scripts",
-          include: ["scripts/__tests__/**/*.test.ts"],
+          // `.test.mjs` alongside the usual `.test.ts` (#3456). The norm here is
+          // `.test.ts` even for `.mjs` scripts — check-pin-parity.test.ts imports
+          // straight from check-pin-parity.mjs and typechecks fine, because it
+          // annotates its own locals. A test that is plain JS does not: this
+          // project adds `noUncheckedIndexedAccess` on top of strict, and
+          // `scripts/**` is inside tsconfig's `include`, so writing a plain-JS
+          // test as `.ts` demanded ~18 non-null assertions on ordinary
+          // `results[0]` reads — noise that asserts nothing about the code under
+          // test. Measured, not assumed: the rename was tried and produced
+          // exactly those errors. Prefer `.test.ts` for anything that carries
+          // real types; `.test.mjs` is for plain-JS tests of plain-JS scripts.
+          include: [
+            "scripts/__tests__/**/*.test.ts",
+            "scripts/__tests__/**/*.test.mjs",
+          ],
           // Subprocess-heavy integration-flavored tests; 2x the largest 30s
           // child budget for load headroom under host CPU contention (#2563).
           testTimeout: 60_000,

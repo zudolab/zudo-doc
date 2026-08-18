@@ -242,6 +242,7 @@ describe("Settings public field set snapshot", () => {
         "siteName",
         "siteDescription",
         "logo",
+        "favicon",
         "base",
         "trailingSlash",
         "home",

@@ -49,6 +49,13 @@ import {
   type PanelConfigBuilder,
 } from "../design-token-panel-bootstrap.js";
 
+// Named-deadline headroom for the 39 `vi.waitFor()` calls below (#3465,
+// #3452 Wave 1 diagnosis): kept strictly inside the package testTimeout
+// (30_000, vitest.config.ts) so on expiry `vi.waitFor` rethrows the last
+// failing `expect(...)` — naming the exact awaited condition instead of a
+// blunt anonymous test timeout.
+const WAIT_FOR_OPTS = { timeout: 10_000, interval: 50 } as const;
+
 beforeEach(() => {
   vi.doMock("@takazudo/zdtp", zdtpFactory);
   zdtp.evaluations = 0;
@@ -150,7 +157,7 @@ async function activateViaToggle(
 ): Promise<void> {
   bootstrapDesignTokenPanel(builder);
   dispatchToggle(browser.windowTarget);
-  await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalled());
+  await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalled(), WAIT_FOR_OPTS);
 }
 
 describe("bootstrapDesignTokenPanel — lazy zdtp load", () => {
@@ -202,8 +209,9 @@ describe("bootstrapDesignTokenPanel — lazy zdtp load", () => {
 
     bootstrapDesignTokenPanel(builder);
     dispatchToggle(browser.windowTarget);
-    await vi.waitFor(() =>
-      expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce(),
+    await vi.waitFor(
+      () => expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce(),
+      WAIT_FOR_OPTS,
     );
 
     expect(zdtp.evaluations).toBe(1);
@@ -237,7 +245,7 @@ describe("bootstrapDesignTokenPanel — lazy zdtp load", () => {
     bootstrapDesignTokenPanel(builder);
     browser.setMode("dark");
     dispatchToggle(browser.windowTarget);
-    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalled());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalled(), WAIT_FOR_OPTS);
 
     expect(builder).toHaveBeenLastCalledWith("dark");
     expect(zdtp.configurePanel).toHaveBeenCalledWith(
@@ -261,8 +269,9 @@ describe("bootstrapDesignTokenPanel — lazy zdtp load", () => {
       dispatchToggle(browser.windowTarget);
 
     bootstrapDesignTokenPanel(builder);
-    await vi.waitFor(() =>
-      expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce(),
+    await vi.waitFor(
+      () => expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce(),
+      WAIT_FOR_OPTS,
     );
 
     expect(zdtp.configurePanel).toHaveBeenCalledOnce();
@@ -284,8 +293,9 @@ describe("bootstrapDesignTokenPanel — lazy zdtp load", () => {
     dispatchToggle(browser.windowTarget);
     dispatchToggle(browser.windowTarget);
     dispatchToggle(browser.windowTarget);
-    await vi.waitFor(() =>
-      expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce(),
+    await vi.waitFor(
+      () => expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce(),
+      WAIT_FOR_OPTS,
     );
 
     expect(zdtp.evaluations).toBe(1);
@@ -306,7 +316,7 @@ describe("bootstrapDesignTokenPanel — lazy zdtp load", () => {
     bootstrapDesignTokenPanel(builder);
     dispatchToggle(browser.windowTarget);
     dispatchToggle(browser.windowTarget);
-    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
     await settle();
 
     expect(zdtp.showDesignTokenPanel).not.toHaveBeenCalled();
@@ -323,8 +333,9 @@ describe("bootstrapDesignTokenPanel — lazy zdtp load", () => {
     });
 
     await activateViaToggle(browser, builder);
-    await vi.waitFor(() =>
-      expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce(),
+    await vi.waitFor(
+      () => expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce(),
+      WAIT_FOR_OPTS,
     );
 
     // Post-configure dispatches belong to zdtp's own module-scope listener
@@ -360,8 +371,9 @@ describe("bootstrapDesignTokenPanel — lazy zdtp load", () => {
     // model the browser behavior for the retry.
     vi.doMock("@takazudo/zdtp", zdtpFactory);
     dispatchToggle(browser.windowTarget);
-    await vi.waitFor(() =>
-      expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce(),
+    await vi.waitFor(
+      () => expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce(),
+      WAIT_FOR_OPTS,
     );
 
     // The retry toggle carries fresh intent (count restarted at 1 → shown).
@@ -381,7 +393,7 @@ describe("bootstrapDesignTokenPanel — lazy zdtp load", () => {
 
     bootstrapDesignTokenPanel(builder);
     dispatchToggle(browser.windowTarget);
-    await vi.waitFor(() => expect(errorSpy).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(errorSpy).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
 
     expect(zdtp.configurePanel).toHaveBeenCalledOnce();
     expect(zdtp.showDesignTokenPanel).not.toHaveBeenCalled();
@@ -434,7 +446,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
     browser.values.set("test-panel-state-v4", NON_EMPTY_ENVELOPE);
 
     bootstrapDesignTokenPanel(makeBuilder());
-    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
     await settle();
 
     expect(zdtp.evaluations).toBe(1);
@@ -450,7 +462,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
     browser.values.set("test-panel-state", NON_EMPTY_ENVELOPE);
 
     bootstrapDesignTokenPanel(makeBuilder());
-    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
   });
 
   it("-open == \"1\" triggers the eager configure", async () => {
@@ -458,7 +470,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
     browser.values.set("test-panel-open", "1");
 
     bootstrapDesignTokenPanel(makeBuilder());
-    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
     await settle();
     expect(zdtp.showDesignTokenPanel).not.toHaveBeenCalled();
   });
@@ -468,7 +480,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
     browser.values.set("test-panel--foundry-state-v4", NON_EMPTY_ENVELOPE);
 
     bootstrapDesignTokenPanel(makeBuilder());
-    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
 
     expect(zdtp.configurePanel).toHaveBeenCalledWith(
       expect.objectContaining({ storagePrefix: "test-panel--foundry" }),
@@ -485,7 +497,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
       browser.values.set(`test-panel${suffix}`, "1");
 
       bootstrapDesignTokenPanel(makeBuilder());
-      await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+      await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
     },
   );
 
@@ -509,7 +521,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
     browser.values.set("test-panel:visible", "1");
 
     bootstrapDesignTokenPanel(makeBuilder());
-    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
     await settle();
 
     expect(zdtp.showDesignTokenPanel).not.toHaveBeenCalled();
@@ -526,7 +538,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
     expect(zdtp.configurePanel).not.toHaveBeenCalled();
 
     dispatchToggle(browser.windowTarget);
-    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
   });
 
   it(":autoload == \"1\" with :visible == \"0\" still triggers — the documented owner-mode-armed steady state", async () => {
@@ -540,7 +552,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
     browser.values.set("test-panel:visible", "0");
 
     bootstrapDesignTokenPanel(makeBuilder());
-    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
     await settle();
 
     // Armed, not opened: the probe never issues an explicit show().
@@ -559,7 +571,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
 
     browser.setPack("foundry");
     browser.windowTarget.dispatchEvent(new Event("theme-pack-changed"));
-    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
 
     // Configure read the pack live: the new namespace is bound directly, and
     // the configure body's own pack listener did not double-run for the
@@ -614,8 +626,9 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
 
     bootstrapDesignTokenPanel(makeBuilder());
     dispatchToggle(browser.windowTarget);
-    await vi.waitFor(() =>
-      expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce(),
+    await vi.waitFor(
+      () => expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce(),
+      WAIT_FOR_OPTS,
     );
 
     expect(zdtp.configurePanel).toHaveBeenCalledOnce();
@@ -643,7 +656,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
 
     // The lazy toggle path must still work with storage disabled.
     dispatchToggle(browser.windowTarget);
-    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
   });
 });
 
@@ -698,7 +711,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe envelope policy", 
       browser.values.set("test-panel-state-v4", raw);
 
       bootstrapDesignTokenPanel(makeBuilder());
-      await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+      await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
     },
   );
 
@@ -716,7 +729,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe envelope policy", 
 
       // Narrowed, not disabled: the toggle path still activates.
       dispatchToggle(browser.windowTarget);
-      await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+      await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
     },
   );
 
@@ -742,7 +755,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe envelope policy", 
     browser.values.set("test-panel-state-v3", NON_EMPTY_ENVELOPE);
 
     bootstrapDesignTokenPanel(makeBuilder());
-    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
   });
 
   it("several empty envelopes across versions still stay lazy", async () => {
@@ -825,7 +838,7 @@ describe("bootstrapDesignTokenPanel — resolved toggle channel", () => {
       makeBuilder({ storagePrefix: "test-panel", toggleEvent: "acme-open-tokens" }),
     );
     dispatchOn(browser.windowTarget, "acme-open-tokens");
-    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
 
     expect(zdtp.evaluations).toBe(1);
     expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce();
@@ -836,7 +849,7 @@ describe("bootstrapDesignTokenPanel — resolved toggle channel", () => {
 
     bootstrapDesignTokenPanel(makeBuilder({ storagePrefix: "test-panel" }));
     dispatchOn(browser.windowTarget, "toggle-test-panel");
-    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
 
     expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce();
   });
@@ -851,7 +864,7 @@ describe("bootstrapDesignTokenPanel — resolved toggle channel", () => {
     expect(zdtp.evaluations).toBe(0);
 
     dispatchOn(browser.windowTarget, "toggle-test-panel--foundry");
-    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
   });
 
   it("a configured toggleEvent REPLACES the derived name: the derived channel is not registered", async () => {
@@ -877,7 +890,7 @@ describe("bootstrapDesignTokenPanel — resolved toggle channel", () => {
       makeBuilder({ storagePrefix: "test-panel", toggleEvent: "acme-open-tokens" }),
     );
     dispatchToggle(browser.windowTarget);
-    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
 
     expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce();
   });
@@ -899,7 +912,7 @@ describe("bootstrapDesignTokenPanel — resolved toggle channel", () => {
     expect(zdtp.evaluations).toBe(0);
 
     dispatchToggle(browser.windowTarget);
-    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
     expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce();
   });
 
@@ -916,7 +929,7 @@ describe("bootstrapDesignTokenPanel — resolved toggle channel", () => {
       }),
     );
     dispatchToggle(browser.windowTarget);
-    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
     await settle();
 
     expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce();
@@ -930,7 +943,7 @@ describe("bootstrapDesignTokenPanel — resolved toggle channel", () => {
     // dispatch counting, so these must NOT collapse into one.
     dispatchToggle(browser.windowTarget);
     dispatchOn(browser.windowTarget, "toggle-test-panel");
-    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
     await settle();
 
     expect(zdtp.showDesignTokenPanel).not.toHaveBeenCalled();
@@ -956,7 +969,7 @@ describe("bootstrapDesignTokenPanel — resolved toggle channel", () => {
     expect(zdtp.configurePanel).not.toHaveBeenCalled();
 
     dispatchOn(browser.windowTarget, "toggle-test-panel--foundry");
-    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
     expect(zdtp.configurePanel).toHaveBeenCalledWith(
       expect.objectContaining({ storagePrefix: "test-panel--foundry" }),
     );
@@ -978,7 +991,7 @@ describe("bootstrapDesignTokenPanel — resolved toggle channel", () => {
     expect(zdtp.configurePanel).not.toHaveBeenCalled();
 
     dispatchOn(browser.windowTarget, "toggle-test-panel-dark");
-    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
     expect(zdtp.configurePanel).toHaveBeenCalledWith(
       expect.objectContaining({ storagePrefix: "test-panel-dark" }),
     );
@@ -999,7 +1012,7 @@ describe("bootstrapDesignTokenPanel — resolved toggle channel", () => {
     expect(zdtp.evaluations).toBe(0);
 
     dispatchOn(browser.windowTarget, "toggle-test-panel");
-    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
     // One dispatch reached exactly one live binding → odd net intent.
     expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce();
   });
@@ -1025,7 +1038,7 @@ describe("bootstrapDesignTokenPanel — resolved toggle channel", () => {
     await settle();
 
     dispatchToggle(browser.windowTarget);
-    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
     expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce();
   });
 
@@ -1038,8 +1051,9 @@ describe("bootstrapDesignTokenPanel — resolved toggle channel", () => {
       dispatchToggle(browser.windowTarget);
 
     bootstrapDesignTokenPanel(makeBuilder({ storagePrefix: "test-panel" }));
-    await vi.waitFor(() =>
-      expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce(),
+    await vi.waitFor(
+      () => expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce(),
+      WAIT_FOR_OPTS,
     );
 
     expect(zdtp.configurePanel).toHaveBeenCalledOnce();
@@ -1052,8 +1066,9 @@ describe("bootstrapDesignTokenPanel — resolved toggle channel", () => {
       makeBuilder({ storagePrefix: "test-panel", toggleEvent: "acme-open-tokens" }),
     );
     dispatchToggle(browser.windowTarget);
-    await vi.waitFor(() =>
-      expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce(),
+    await vi.waitFor(
+      () => expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce(),
+      WAIT_FOR_OPTS,
     );
 
     // Post-configure dispatches belong to the listeners zdtp binds itself;
@@ -1090,7 +1105,7 @@ describe("bootstrapDesignTokenPanel — color-scheme rebuild", () => {
     browser.values.set("test-panel-light-open", "1");
 
     bootstrapDesignTokenPanel(builder);
-    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
 
     vi.useFakeTimers();
     browser.setMode("dark");
@@ -1205,7 +1220,7 @@ describe("bootstrapDesignTokenPanel — theme-pack interplay", () => {
   ): Promise<void> {
     browser.values.set(`${activePrefix}-state-v4`, NON_EMPTY_ENVELOPE);
     bootstrapDesignTokenPanel(builder);
-    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
   }
 
   it("configures with the pack-scoped prefix when a non-default pack is already active at boot", async () => {
@@ -1237,7 +1252,7 @@ describe("bootstrapDesignTokenPanel — theme-pack interplay", () => {
     browser.values.set("zudo-doc-tweak-open", "1");
 
     bootstrapDesignTokenPanel(builder);
-    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
 
     vi.useFakeTimers();
     browser.setPack("foundry");

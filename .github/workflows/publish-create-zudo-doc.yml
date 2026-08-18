@@ -17,6 +17,17 @@
 #   auth check and would abort first. Safeguard 1 remains as defense-in-depth for a
 #   matching-prefix-but-invalid-semver ref.
 #
+# Scaffold pin freshness (Safeguard 4/5):
+#   Runs scripts/check-scaffold-pin-freshness.mjs against the live npm registry —
+#   this is the actual enforcement point for the #3442 recurrence shape (a
+#   scaffold pin, e.g. @takazudo/zfb, that was current when
+#   scripts/release-create-zudo-doc.sh prepared the release but went stale before
+#   publication). It runs unconditionally, including on a dry run, so
+#   `dry_run: true` proves this safeguard passes too — consistent with this
+#   workflow's "prove the token and safeguards pass" contract above. See
+#   RELEASE.md ("Scaffold pin freshness gate") for what a failure means, the
+#   remedy, and how prerelease pins are compared against the registry.
+#
 # NPM_TOKEN must be an Automation token (type: "Automation" in npmjs.com).
 # Automation tokens bypass npm's 2FA for `npm publish`, which is required
 # for CI-driven publishing. Classic Publish tokens with 2FA enabled would
@@ -72,11 +83,11 @@ jobs:
         with:
           ref: ${{ github.event.release.tag_name || github.ref }}
 
-      # ── Safeguard 1/4: Tag must start with "v" ─────────────────────────────
+      # ── Safeguard 1/5: Tag must start with "v" ─────────────────────────────
       # Reject accidental triggers from non-version tags (e.g. "latest",
       # "stable", or typos). Pure shell — runs before any tooling setup so
       # bad tags fail fast with a clear message.
-      - name: '[Safeguard 1/4] Reject non-v* release tags'
+      - name: '[Safeguard 1/5] Reject non-v* release tags'
         shell: bash
         env:
           TAG: ${{ github.event.release.tag_name || github.ref_name }}
@@ -107,10 +118,10 @@ jobs:
           node-version: 22
           registry-url: https://registry.npmjs.org
 
-      # ── Safeguard 2/4: package.json version must match the tag ─────────────
+      # ── Safeguard 2/5: package.json version must match the tag ─────────────
       # Prevents a publish where the tag was pushed without a matching version
       # bump (or vice-versa). Uses the VERSION env set by Safeguard 1.
-      - name: '[Safeguard 2/4] Assert package.json version matches tag'
+      - name: '[Safeguard 2/5] Assert package.json version matches tag'
         shell: bash
         run: |
           PKG_VERSION=$(node -p "require('./packages/create-zudo-doc/package.json').version")
@@ -122,13 +133,13 @@ jobs:
             exit 1
           fi
 
-      # ── Safeguard 3/4: Version must not already be published ───────────────
+      # ── Safeguard 3/5: Version must not already be published ───────────────
       # npm publish is irreversible (unpublish is locked after 72 h for
       # packages with dependents). Guard against accidental double-publish.
       # We check stdout: `npm view` prints the version string if it exists
       # and exits 0; it prints nothing and exits non-zero if absent.
       # We treat non-empty stdout as "already published".
-      - name: '[Safeguard 3/4] Assert version not yet published to npm'
+      - name: '[Safeguard 3/5] Assert version not yet published to npm'
         shell: bash
         run: |
           EXISTING=$(npm view "create-zudo-doc@$VERSION" version 2>/dev/null || true)
@@ -167,14 +178,34 @@ jobs:
           echo "DIST_TAG=$DIST_TAG" >> "$GITHUB_ENV"
           echo "Dist tag: $DIST_TAG (version: $VERSION)"
 
-      # ── Safeguard 4/4: Dry-run path ────────────────────────────────────────
+      # ── Safeguard 4/5: Scaffold pin freshness ───────────────────────────────
+      # The actual enforcement point for the #3442 recurrence shape: a pin in
+      # packages/create-zudo-doc/src/scaffold.ts (e.g. @takazudo/zfb) that was
+      # current when scripts/release-create-zudo-doc.sh prepared this release
+      # can go stale in the gap before publication — that gap is exactly how
+      # create-zudo-doc@5.5.3 shipped a three-week-stale zfb pin. Runs
+      # unconditionally (including on dry_run) so a dry run proves this
+      # safeguard passes too, matching Safeguards 1-3 above. A registry lookup
+      # failure fails the gate the same as a confirmed-stale pin — see
+      # RELEASE.md ("Scaffold pin freshness gate") for the remedy and how
+      # prerelease pins are compared against the registry's "next" dist-tag.
+      - name: '[Safeguard 4/5] Assert scaffold pins are current'
+        shell: bash
+        run: |
+          if ! pnpm check:scaffold-pin-freshness; then
+            echo "::error::A scaffold pin in packages/create-zudo-doc/src/scaffold.ts is stale, or the npm registry lookup failed. See RELEASE.md 'Scaffold pin freshness gate'."
+            echo "::error::Remedy: bump the pin via /dev-bump-zudo-deps (this keeps scripts/check-pin-parity.mjs pin parity intact), then re-tag and re-publish."
+            exit 1
+          fi
+
+      # ── Safeguard 5/5: Dry-run path ────────────────────────────────────────
       # When dry_run is true (workflow_dispatch only), prove the secret
       # authenticates and print what would be published — then stop.
       # NOTE: `npm publish --dry-run` does NOT prove auth; it skips network
       # calls entirely and never contacts the registry. Running `npm whoami`
       # with NODE_AUTH_TOKEN is the only way to confirm the token is valid
       # before the real publish.
-      - name: '[Safeguard 4/4] Dry-run: verify auth then stop (skip real publish)'
+      - name: '[Safeguard 5/5] Dry-run: verify auth then stop (skip real publish)'
         if: ${{ inputs.dry_run == true }}
         shell: bash
         env:

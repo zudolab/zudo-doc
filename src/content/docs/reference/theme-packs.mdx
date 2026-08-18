@@ -124,6 +124,20 @@ pnpm create zudo-doc my-docs --theme-pack foundry --theme-pack-switcher
 - A pack's **Light/Dark badge** is its designed-primary mode — a hint about which mode the pack was designed around, not a capability flag. Every pack defines both modes, and the header mode toggle works identically on all of them.
 - [Design Token Panel](./design-token-panel.mdx) tweaks are **per-pack**: an override you save while pack A is active is stored against pack A, hidden while another pack is active, and restored verbatim when you switch back. On the `default` pack the panel keeps using its original storage, so tweaks saved before theme packs existed survive an upgrade untouched.
 
+## Emitting the pack stylesheet yourself
+
+Most projects never need this. It applies only to a **host or embedder that emits the pack stylesheet `<link>` itself** — typically so the link survives zfb's head swap. The pre-paint bootstrap will use your link instead of inserting its own, but only under a strict ordering contract.
+
+- **Emit it before the zudo-doc head bootstrap, and tag it `data-zd-theme-pack-css`.** The bootstrap looks for a link carrying that attribute whose `href` matches the resolved pack; finding yours, it inserts nothing — one element, one request.
+- **Match the href exactly**, including the cache-busting query: `{base}theme-packs/<slug>/pack.css?v=<pack version>`, where `{base}` is the site's base path with its trailing slash and the version is the one in the pack's `meta.json`. The check is an exact string comparison, so a link missing the `?v=` part reads as a different stylesheet and you get both.
+- **`data-zfb-transition-persist` alone is not enough.** The check keys on `data-zd-theme-pack-css`; a link tagged only for zfb's transition persistence is invisible to it.
+- **Emitted after the bootstrap, a cold boot ends up with two `<link>` elements on one href.** The bootstrap runs first and cannot see a link the parser has not reached yet, and nothing later can undo it on that first paint: by the time any post-parse handler could merge the two elements, the parser has already committed to both. Whether that costs a second network request depends on how the stylesheet is served: normally the duplicate href is a cache hit, so the cost is just the redundant element — but under `Cache-Control: no-store` it is a genuine second fetch, which is how the original report measured it (same URL, same wire bytes, twice per cold boot).
+
+```html
+<!-- must precede the zudo-doc head bootstrap; slug and ?v= are YOUR pack's, read from its meta.json -->
+<link rel="stylesheet" data-zd-theme-pack-css href="/theme-packs/my-pack/pack.css?v=1.0.0" />
+```
+
 ## Authoring a pack
 
 A pack is one directory — `theme-packs/<slug>/` — holding `pack.css`, `meta.json`, and an optional `fonts/` folder. `meta.json` carries the pack's identity (slug, display name, description, Light/Dark badge, version) plus the resolved preview swatches the browse-all dialog paints its cards from.

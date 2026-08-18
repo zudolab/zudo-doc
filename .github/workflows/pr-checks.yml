@@ -522,9 +522,12 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Files whose change can shift the byte-identical HTML the A2 no-stub
-          # parity hashes assert on (zudolab/zudo-doc#3419). One path per line;
-          # a trailing slash means prefix (directory) match below.
+          # This list has two classes of entry — CAN-MOVE-HASHES and
+          # CANARY-ONLY — marked inline below. One path per line; a trailing
+          # slash means prefix (directory) match below.
+          #
+          # CAN-MOVE-HASHES: files whose change can shift the byte-identical
+          # HTML the A2 no-stub parity hashes assert on (zudolab/zudo-doc#3419).
           #
           # BEST-EFFORT, NOT EXHAUSTIVE. The hashes cover the WHOLE normalized
           # page HTML, not just the inlined scripts, so any package source that
@@ -534,10 +537,28 @@ jobs:
           # (#3039). Those two are listed for that reason; when a re-baseline
           # traces to some other markup source, add it here in the same PR.
           #
-          # The parity test file itself is listed so a PR that EDITS the
+          # CANARY-ONLY: `search-widget-script/` and
+          # `gen-search-widget-script.mjs` CANNOT move the hashes. No fixture
+          # (resolution-chain, route-injection, route-injection-i18n,
+          # target-manifest) wires a SearchWidget binding through
+          # chromeBindingsModule, so SEARCH_WIDGET_SCRIPT never appears in any
+          # fixture's HTML. Confirmed empirically by zudolab/zudo-doc#3430,
+          # which changed the generator's output bytes (the pinned CSP hash
+          # moved) while all three A2 parity hashes stayed identical. They are
+          # kept in this list anyway: the A2 slow suite runs nowhere else in CI
+          # (excluded from b4push and the regular CI jobs for time-budget
+          # reasons — see TESTING.md), so triggering it on a search-widget
+          # change is still a useful canary — it proves the fixtures still
+          # build and the pipeline still produces the expected pages — just
+          # not the hash-movement signal every other entry provides.
+          #
+          # The parity test file itself is listed (marked below) for a third,
+          # distinct reason: it is not an SSR-markup source and cannot move
+          # the hashes by changing fixture HTML, but a PR that EDITS the
           # expected hashes re-runs the suite and proves the new baseline,
           # instead of skipping the gate on the one PR where it matters most.
           EMITTERS=(
+            # -- CAN-MOVE-HASHES --
             "packages/zudo-doc/src/theme/theme-pack-provider.tsx"
             "packages/zudo-doc/src/current-path/index.ts"
             "packages/zudo-doc/src/header/nav-overflow-script.ts"
@@ -546,9 +567,13 @@ jobs:
             "packages/zudo-doc/src/doc-content-header/index.tsx"
             "packages/zudo-doc/src/i18n-version/version-switcher.tsx"
             "packages/zudo-doc/src/i18n-version/language-switcher.tsx"
+            "packages/zudo-doc/src/head-with-defaults/index.tsx"
+            # -- CANARY-ONLY: cannot move the hashes (zudolab/zudo-doc#3430) --
             "packages/zudo-doc/src/search-widget-script/"
             "packages/zudo-doc/scripts/gen-search-widget-script.mjs"
+            # -- CAN-MOVE-HASHES --
             "packages/zudo-doc/src/transitions/page-events.ts"
+            # -- re-run trigger for hash edits, not an SSR-markup source; see note above --
             "packages/zudo-doc/src/__tests__/route-injection-build.slow.test.ts"
           )
 
