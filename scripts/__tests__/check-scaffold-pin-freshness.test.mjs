@@ -284,6 +284,26 @@ describe("checkScaffoldPinFreshness — (4) prerelease semantics", () => {
     expect(result.findings[0].message).toContain("0.2.0-next.20");
   });
 
+  it("words the same-core skip differently when the registry target is STABLE, not a prerelease", async () => {
+    // pin 0.2.0-next.9 vs "next" = 0.2.0: semver §11 says the release
+    // outranks its own prereleases, so "cannot tell" would be wrong wording
+    // even though the gate still declines to fail on it.
+    const fetchDistTags = stubRegistry({
+      "@takazudo/zfb": { latest: "0.2.0", next: "0.2.0" },
+    });
+
+    const result = await checkScaffoldPinFreshness({
+      scaffoldSrc: PRERELEASE_SCAFFOLD_SRC, // pins 0.2.0-next.9
+      packages: ["@takazudo/zfb"],
+      fetchDistTags,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.findings[0].kind).toBe("skipped");
+    expect(result.findings[0].message).toContain("STABLE");
+    expect(result.findings[0].message).not.toContain("cannot tell");
+  });
+
   it("still reports 'ok' when a prerelease pin exactly matches the registry target (no false warning)", async () => {
     // Same core AND identical full version string — the pin genuinely is
     // current. Warning here would be noise that trains people to ignore

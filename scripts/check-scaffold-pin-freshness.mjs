@@ -282,12 +282,18 @@ export async function checkScaffoldPinFreshness({
       continue;
     }
 
-    // Semantics #4: same core, but the full prerelease strings differ (e.g.
+    // Semantics #4: same core, but the full version strings differ (e.g.
     // pin "0.2.0-next.9" vs registry "0.2.0-next.20"). compareCore() cannot
     // see this difference, so an "ok" here would be a false pass — the pin
     // could be many prereleases behind. Report "skipped" with a warning
     // instead. An exact string match (identical pin) falls through to "ok"
-    // below — nothing to warn about there.
+    // below — nothing to warn about there. The warning is worded per case:
+    // a prerelease registry target genuinely cannot be ordered here, but a
+    // STABLE target sharing the core (pin "0.2.0-next.9" vs "next" =
+    // "0.2.0") outranks the pin by semver §11 — still not failed (that
+    // would be a behaviour change to semantics #3's "never compare a
+    // prerelease pin against a stable line" stance), but not described as
+    // unknowable either.
     if (
       prerelease &&
       compareCore(pinCore, registryCore) === 0 &&
@@ -299,13 +305,19 @@ export async function checkScaffoldPinFreshness({
         pin: scaffoldPin,
         registryVersion,
         tag: targetTag,
-        message:
-          `${pkgName} scaffold pin ${scaffoldPin} was NOT checked for freshness — ` +
-          `it shares its MAJOR.MINOR.PATCH core with registry "${targetTag}" ` +
-          `${registryVersion}, but the full prerelease strings differ. This gate ` +
-          `compares numeric cores only (known limitation), so it cannot tell ` +
-          `whether ${pkgName} is current or several prereleases behind. Verify ` +
-          `manually.`,
+        message: isPrereleaseVersion(registryVersion)
+          ? `${pkgName} scaffold pin ${scaffoldPin} was NOT checked for freshness — ` +
+            `it shares its MAJOR.MINOR.PATCH core with registry "${targetTag}" ` +
+            `${registryVersion}, but the full prerelease strings differ. This gate ` +
+            `compares numeric cores only (known limitation), so it cannot tell ` +
+            `whether ${pkgName} is current or several prereleases behind. Verify ` +
+            `manually.`
+          : `${pkgName} scaffold pin ${scaffoldPin} was NOT checked for freshness — ` +
+            `registry "${targetTag}" is the STABLE release ${registryVersion}, which ` +
+            `shares the pin's MAJOR.MINOR.PATCH core. Per semver a release outranks ` +
+            `its own prereleases, so this pin is behind — but this gate compares ` +
+            `numeric cores only (known limitation) and does not fail on it. Bump the ` +
+            `pin, or confirm by hand that the prerelease line is the intended target.`,
       });
       continue;
     }
