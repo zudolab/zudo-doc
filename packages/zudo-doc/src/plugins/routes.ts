@@ -50,6 +50,14 @@
 //      present-but-missing file → a loud Error at plugin setup naming the
 //      resolved absolute path (never a silent fallback to the package default).
 //
+//      Between #3 and #4, a build-time-only DIAGNOSTIC (no behavior change,
+//      zudolab/zudo-doc#3420, spec #3428) warns when `designTokenPanelConfigModule`
+//      is set but every derived route below is shadowed by a kept user
+//      `pages/` file — meaning the configured builder can never reach an
+//      injected route. Suppressed when the resolved `chromeBindingsModule`
+//      file already names `DesignTokenPanelBootstrap` (the documented
+//      workaround). See the guard case inline, next to #3 above.
+//
 //   4. injectRoute(pattern, entrypoint[, opts]) — the 16-route catalog
 //      (Decision 3), patterns derived from `options.settings.locales` /
 //      `options.settings.versions`. Dynamic `[locale]` / `[version]` patterns
@@ -67,7 +75,7 @@
 // sibling `doc-history.ts` for the standalone-module rationale.
 
 import { createRequire } from "node:module";
-import { existsSync, statSync, cpSync, rmSync, mkdirSync } from "node:fs";
+import { existsSync, statSync, readFileSync, cpSync, rmSync, mkdirSync } from "node:fs";
 import { dirname, basename, join } from "node:path";
 import { definePlugin, type ZfbSetupContext } from "@takazudo/zfb/plugins";
 import {
@@ -75,6 +83,7 @@ import {
   resolveEnabledPacks,
   type ThemePackRegistry,
 } from "../theme-packs-registry/index.js";
+import { derivePagesCandidates } from "./route-pages-candidates.js";
 
 // ---------------------------------------------------------------------------
 // Options shape (filled by the preset from settings — fully serializable).
@@ -265,6 +274,9 @@ const plugin = definePlugin({
     const translations = options.translations ?? {};
     const tagVocabulary = options.tagVocabulary ?? [];
     const colorSchemes = options.colorSchemes ?? null;
+    // Computed once, shared by the shadow diagnostic below (3.5) and the
+    // injection loop (4) — both need the same derived catalog.
+    const derivedRoutes = deriveRoutes(settings);
 
     // (0) Theme-pack registry (ADR docs/adr/theme-packs.md, Decision 2
     // "Registry threading to SSR/islands", #2819). Resolves the shipped
@@ -349,6 +361,50 @@ const plugin = definePlugin({
         : `export { buildDesignTokenPanelConfig } from "@takazudo/zudo-doc/design-token-panel-config";\n`,
     );
 
+    // (3.5) DTP shadow-shadowing diagnostic (zudolab/zudo-doc#3420, spec
+    // #3428). Decision 6 above drops an injected route SILENTLY when a kept
+    // user `pages/` file claims the same URL — so a locked-manifest host
+    // that sets `designTokenPanelConfigModule` while its `pages/` stubs
+    // shadow EVERY injected route gets no configured DTP island anywhere:
+    // the panel vanishes site-wide with no build error. Warn loudly at setup
+    // instead. "ALL derived routes shadowed" is the sufficient condition —
+    // partial shadowing stays silent (the config still applies on the
+    // surviving routes). Diagnostic only: does not change which routes get
+    // injected below.
+    if (settings.designTokenPanelConfigModule) {
+      const pagesDir = join(ctx.projectRoot, "pages");
+      const allRoutesShadowed = derivedRoutes.every((route) =>
+        derivePagesCandidates(route.pattern).some((rel) => existsSync(join(pagesDir, rel))),
+      );
+      if (allRoutesShadowed) {
+        // Best-effort heuristic: a cheap text scan for the literal export
+        // name, not an evaluation of the resolved module — the module
+        // cannot be executed here, at plugin setup. A host that composes
+        // `chromeBindings.DesignTokenPanelBootstrap` indirectly (re-exported
+        // through another module, built from a variable, etc.) without the
+        // literal token ever appearing in the resolved file keeps warning —
+        // the message below tells such hosts the warning is safe to ignore
+        // once the workaround is genuinely wired up.
+        const workaroundLikelyApplied =
+          chromeBindingsAbsPath !== undefined &&
+          readFileSync(chromeBindingsAbsPath, "utf8").includes("DesignTokenPanelBootstrap");
+        if (!workaroundLikelyApplied) {
+          ctx.logger.warn(
+            "zudo-doc: settings.designTokenPanelConfigModule is set, but every " +
+              "injected route's URL is shadowed by a kept user pages/ file — the " +
+              "configured Design Token Panel builder can never apply anywhere on " +
+              "this site (zudolab/zudo-doc#3420). Thread your builder through " +
+              "chromeBindings.DesignTokenPanelBootstrap instead — that binding wins " +
+              "everywhere, including stub-rendered pages (see the " +
+              "designTokenPanelConfigModule docblock in settings.ts). If you already " +
+              "did this via a chromeBindingsModule that composes the bootstrap " +
+              'indirectly (never spelling "DesignTokenPanelBootstrap" literally in ' +
+              "the resolved file), this warning is safe to ignore.",
+          );
+        }
+      }
+    }
+
     // (4) Inject the derived route catalog (Decision 3). Build-only render
     // today (dev falls through — upstream #1227); precedence drops collisions
     // with kept user `pages/` routes (Decision 6).
@@ -410,7 +466,7 @@ const plugin = definePlugin({
       return dest;
     };
 
-    for (const route of deriveRoutes(settings)) {
+    for (const route of derivedRoutes) {
       let resolvedEntrypoint: string;
       try {
         const compiledPath = require.resolve(route.entrypoint);
