@@ -58,6 +58,7 @@
     "lint:tokens": "design-token-lint",
     "gen:component-tokens": "gen-component-tokens",
     "check:component-tokens": "gen-component-tokens --check",
+    "check:search-widget-drift": "bash scripts/check-search-widget-drift.sh",
     "check:template-drift": "bash scripts/check-template-drift.sh",
     "check:fixture-settings-drift": "node scripts/check-fixture-settings-drift.mjs",
     "check:pin-parity": "node scripts/check-pin-parity.mjs",

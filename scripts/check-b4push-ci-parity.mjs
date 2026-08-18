@@ -149,6 +149,16 @@ const REQUIRED_CI_GUARDS = [
     b4pushScript: "check:wait-debt",
     comment: "Wait-debt guard (scripts/check-wait-debt.mjs, #2538)",
   },
+  {
+    // Search-widget-script commit drift guard: the committed
+    // packages/zudo-doc/src/search-widget-script/generated-script.ts must
+    // match a fresh regeneration. CI runs it as a step inside the
+    // already-installed package-tests job (not its own pure-Node job) since
+    // the generator imports the `esbuild` dependency directly (#3421, #3431).
+    ciNeedle: "check:search-widget-drift",
+    b4pushScript: "check:search-widget-drift",
+    comment: "Search-widget-script commit drift guard (zudolab/zudo-doc#3431)",
+  },
 ];
 
 const ALLOWLIST_PATH = resolve(ROOT, ".b4push-ci-parity-allowlist");

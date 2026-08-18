@@ -465,6 +465,21 @@ export interface Settings {
    * your builder through `chromeBindings.DesignTokenPanelBootstrap` — that
    * binding wins everywhere and is unaffected by this rule. See
    * `docs/adr/route-injection-seam.md`.
+   *
+   * EDGE CASE (zudolab/zudo-doc#3420, diagnostic added #3428): a
+   * locked-manifest host whose kept `pages/` stubs happen to shadow EVERY
+   * injected route (Decision 6 in `plugins/routes.ts` drops a collided
+   * injected route silently — user `pages/` always wins) gets no configured
+   * DTP island anywhere on the site when this setting is set, with no build
+   * error. `plugins/routes.ts` now probes for exactly this at plugin setup —
+   * if every derived route's URL resolves to an existing user `pages/` file,
+   * it emits a loud `ctx.logger.warn` naming this gap and the
+   * `chromeBindings.DesignTokenPanelBootstrap` workaround above, UNLESS the
+   * resolved `chromeBindingsModule` file already contains the literal token
+   * `DesignTokenPanelBootstrap` (a best-effort static text scan — an
+   * indirectly-composed override that never spells the name out keeps
+   * warning). Partial shadowing stays silent: the config still applies on
+   * whichever routes survive.
    */
   designTokenPanelConfigModule?: string;
   /**

@@ -671,12 +671,41 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   //     delta on all three pages (identical bytes per page). The zfb 2.6.0
   //     bump (#3411) contributed ZERO bytes (emitRenderArtifacts is flag-off
   //     inert; no sentinel leakage), and #3412's frozen SEARCH_WIDGET_SCRIPT
-  //     is byte-identical to the previous runtime-composed text by design.
+  //     contributed ZERO bytes because this fixture never embeds it (see the
+  //     2026-08-18 wave1-esbuild-emit entry below for why "byte-identical by
+  //     design" was the wrong framing for that claim).
   // GOTCHA re-learned during attribution: this fixture builds against the
   // workspace package's dist/ via the node_modules symlink, and the ensure
   // guard checks existence, not freshness (#3053) — a stale dist/ in the tree
   // that runs this suite silently tests OLD compiled code. Run
   // `pnpm build:workspace` before trusting these hashes.
+
+  // 2026-08-18 re-baseline check (Widget Gen Hardening epic #3429, sub #3430):
+  // switched scripts/gen-search-widget-script.mjs from `ts.transpileModule()`
+  // to esbuild's `transformSync()` (zudolab/zudo-doc#3422) — a real change to
+  // SEARCH_WIDGET_SCRIPT's frozen bytes, confirmed by the pinned CSP hash in
+  // `src/search-widget-script/__tests__/index.test.ts` moving from
+  // `sha256-+5B4Vd+U+da3+BnCkNPUykM/fhmKrp1vv/H9rtLotp8=` to
+  // `sha256-tsOQwdl7im/ak4CiaOz+qHmK65mbUf6u93iFf0csoG0=`. All three hashes
+  // below are UNCHANGED by that switch and needed no re-pin — this
+  // route-injection fixture's `src/config/settings.ts` never wires a
+  // `SearchWidget` binding through `chromeBindingsModule`, so `<site-search>`
+  // and its embedded script never appear in any of the three fixture pages;
+  // confirmed by running the targeted A2 no-stub subset after
+  // `pnpm build:workspace` and observing all four tests green with no diff.
+  //
+  // This is also the correction promised by the entry directly above (and by
+  // zudolab/zudo-doc#3422 itself): the prior "#3412's frozen
+  // SEARCH_WIDGET_SCRIPT is byte-identical to the previous runtime-composed
+  // text by design" claim was never true — `ts.transpileModule()`'s CommonJS
+  // emit was never proven byte-identical to the pre-#3412 esbuild-compiled
+  // live-binding embedding it replaced (different tool, different transpile
+  // pass). The claim happened to cost nothing here only because this
+  // particular fixture never embeds SEARCH_WIDGET_SCRIPT at all — not because
+  // the two emits actually matched.
+  //
+  // All of it traces to this one intentional, self-contained toolchain
+  // change; no unattributed bytes.
 
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
@@ -1811,6 +1840,40 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
 //   4. `zfb dev` renders / and /docs/getting-started/ (200 + content marker).
 //   5. Computed-token smoke on built CSS (theme.css contract).
 //   6. Fixture file count == 17 (guards floor creep).
+//
+// *** KNOWN BENIGN WARNING — every Case TM build ***
+// Every build of this fixture logs `island marker name collision:
+// "ConfiguredDesignTokenPanelBootstrap"`. Cause: this fixture's `pages/index.tsx`
+// re-exports `@takazudo/zudo-doc/routes/index`, so the compiled
+// `dist/routes/_chrome.js` → `dist/routes/_design-token-panel-bootstrap.js`
+// graph is scanned alongside the staged `routes-src/` copy — the same
+// component reaches zfb's island scanner from two files, and the scanner keys
+// islands by marker name rather than resolved component identity. Benign: zfb
+// keeps the `routes-src/` copy and the surviving registry entry matches every
+// emitted marker, so behavior is correct — the cost is unconditional noise,
+// and it is why this fixture cannot assert a collision-free build (see "TM
+// group 2b" below for the full explanation and the local assertion it drives).
+// Decision (tolerate + file upstream) recorded on zudolab/zudo-doc#3418.
+// Upstream tracking issue (zfb island-scanner identity dedupe):
+// https://github.com/Takazudo/zudo-front-builder/issues/2441
+//
+// The upstream fix (PR Takazudo/zudo-front-builder#2442) dedupes by resolved
+// component identity, and reaches THIS case via a byte-identity branch: the
+// staged copy is compared against the PUBLISHED file the package ships at the
+// same stem under `node_modules/@takazudo/zudo-doc/routes-src/`. So the
+// invariant we owe upstream is narrow — `ensureStaged` (src/plugins/routes.ts)
+// must stay byte-preserving RELATIVE TO WHAT THE PACKAGE SHIPS. A future
+// rewrite inside build-time `scripts/copy-routes-src.mjs` is harmless (it runs
+// pre-publish, so both compared participants are post-rewrite); a rewrite
+// inside `ensureStaged` would break the match and resurrect this warning.
+//
+// Accepted upstream trade-off: two GENUINELY DIFFERENT components shipped by
+// the SAME package under one marker name are now silently deduped too. Only a
+// cross-package name collision still warns. So zfb can no longer tell us if
+// this package ever collides two real components — our own tests are the only
+// guard for that.
+// Flipping this fixture to assert a collision-free build, once the upstream
+// fix ships and zfb is bumped here: zudolab/zudo-doc#3433.
 // ---------------------------------------------------------------------------
 
 /** Set up a target-manifest fixture instance: copy the locked-manifest fixture
