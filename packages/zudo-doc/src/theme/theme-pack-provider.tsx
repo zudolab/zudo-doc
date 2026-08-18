@@ -29,7 +29,8 @@
 //      never armed on the no-JS path (only the script sets it), so a no-JS
 //      visitor can never end up staring at a hidden body.
 //
-// ANTI-FOUC LATCH CONTRACT (#3399 — read before touching the insertion path).
+// ANTI-FOUC LATCH CONTRACT (#3399 — read before touching the insertion path;
+// readyState guard #3407/#3413).
 // The bootstrap used to `document.write` the link during head parse: a
 // parser-inserted stylesheet is render-blocking in every browser, which was a
 // HARD pre-paint guarantee. That mechanism had to go, because `document.write`
@@ -40,24 +41,37 @@
 // soft spot. So the guarantee is replaced by an EXPLICIT, bounded one:
 //
 //   - Before inserting the link the script sets `data-zd-theme-pack-loading`
-//     on `<html>`, which the latch `<style>` turns into a hidden body.
+//     on `<html>`, which the latch `<style>` turns into a hidden body — but
+//     ONLY while `document.readyState === "loading"`. This is a non-deferred,
+//     no-src inline head script: on a genuine hard load the parser cannot
+//     have advanced past it, so `readyState` is guaranteed `"loading"` there.
+//     The guard therefore only ever suppresses a POST-PAINT re-evaluation
+//     (the #3399 SPA-embedding case) — it never weakens the hard-load
+//     guarantee.
 //   - The attribute is cleared on the link's `load` OR `error`.
-//   - A `THEME_PACK_LOAD_WATCHDOG_MS` (2s) timer clears it unconditionally.
+//   - A `THEME_PACK_LOAD_WATCHDOG_MS` (2s) timer clears it unconditionally —
+//     scheduled only when the latch was armed (readyState guard again).
 //
 // In words: **no FOUC for a pack stylesheet that loads within the watchdog;
-// a bounded flash beyond it.** Past 2s, blank-screen avoidance deliberately
-// wins over strict no-FOUC — a hung or very slow stylesheet must never leave
-// the page permanently blank. This is a real (accepted) weakening versus the
-// parser-inserted link; do not "restore" `document.write` to close it.
+// a bounded flash beyond it; and a post-paint pack swap never hides an
+// already-painted body.** Past 2s on a hard load, blank-screen avoidance
+// deliberately wins over strict no-FOUC — a hung or very slow stylesheet must
+// never leave the page permanently blank. This is a real (accepted) weakening
+// versus the parser-inserted link; do not "restore" `document.write` to
+// close it.
 //
 // Re-evaluating the script after load is INERT with respect to the stylesheet:
 // the insertion is guarded on an existing `link[data-zd-theme-pack-css]` whose
 // href matches the resolved slug, which is already in the head synchronously
 // after the first evaluation — so a duplicate run finds it whether the sheet
 // is still pending or already loaded, and neither re-requests it nor re-arms
-// the latch. (The two soft-nav handlers below are each individually
-// idempotent, so a duplicate registration would also be harmless; zfb's
-// `scriptsAlreadyRan` textContent dedupe prevents one in the first place.)
+// the latch. When only a STALE different-slug link is present (no matching
+// href yet), the correct link is still inserted — link insertion and its
+// onload/onerror wiring are unconditional — but the `readyState` guard above
+// means that correction never re-arms the latch once the body has painted.
+// (The two soft-nav handlers below are each individually idempotent, so a
+// duplicate registration would also be harmless; zfb's `scriptsAlreadyRan`
+// textContent dedupe prevents one in the first place.)
 //
 // SPA soft navigation (zfb Strategy B) — PRIMARY mechanism is a
 // `BEFORE_SWAP_EVENT` ("zfb:before-swap") listener. zfb dispatches this event
@@ -120,10 +134,13 @@ import {
 import type { ThemePackRegistry } from "../theme-packs-registry/index.js";
 
 /**
- * Transient `<html>` attribute the hard-load bootstrap sets while the pack
- * stylesheet request is in flight. Paired with {@link THEME_PACK_LATCH_CSS};
- * cleared on the link's load/error or by the watchdog. Deliberately NOT part
- * of `preserveHtmlAttrs` — it must never survive a soft navigation.
+ * Transient `<html>` attribute the bootstrap sets while the pack stylesheet
+ * request is in flight, but ONLY while `document.readyState === "loading"`
+ * (#3407/#3413) — a post-paint re-evaluation (SPA embedding, #3399) inserts a
+ * corrective link without ever arming the latch, since the body it would hide
+ * is already painted. Paired with {@link THEME_PACK_LATCH_CSS}; cleared on
+ * the link's load/error or by the watchdog. Deliberately NOT part of
+ * `preserveHtmlAttrs` — it must never survive a soft navigation.
  *
  * Not to be confused with `THEME_PACK_LINK_LOADING_ATTR`
  * (`data-zd-theme-pack-css-loading`), which marks the in-flight `<link>`
@@ -232,7 +249,8 @@ root.setAttribute(ATTR,slug);
 if(slug!==DEFAULT_SLUG){
 var href=packHref(slug);
 if(!hasPackLink(href)){
-root.setAttribute(LOADING_ATTR,"");
+var shouldLatch=document.readyState==="loading";
+if(shouldLatch){root.setAttribute(LOADING_ATTR,"");}
 var release=function(){root.removeAttribute(LOADING_ATTR);};
 var link=document.createElement("link");
 link.setAttribute("rel","stylesheet");
@@ -241,7 +259,7 @@ link.setAttribute("href",href);
 link.onload=release;
 link.onerror=release;
 document.head.appendChild(link);
-setTimeout(release,WATCHDOG);
+if(shouldLatch){setTimeout(release,WATCHDOG);}
 }
 }
 window[${runtimeGlobal}]={base:base,packs:packs,configured:configured};
