@@ -503,8 +503,17 @@ const plugin = definePlugin({
           // A kept `pages/` file that exactly default-re-exports the
           // shadowed route's own entrypoint still reaches the configured
           // bootstrap through routes/_chrome.tsx — don't count it as a real
-          // shadow (#3451).
-          if (route && isExactDefaultReExport(readFileSync(abs, "utf8"), route.entrypoint)) {
+          // shadow (#3451). Read failures (unreadable file, a path that is
+          // actually a directory) fall back to "counts as a shadow": this is a
+          // build-time DIAGNOSTIC and must never be the thing that fails a
+          // build.
+          let source: string | undefined;
+          try {
+            source = readFileSync(abs, "utf8");
+          } catch {
+            return true;
+          }
+          if (route && isExactDefaultReExport(source, route.entrypoint)) {
             return false;
           }
           return true;
@@ -519,9 +528,23 @@ const plugin = definePlugin({
         // literal token ever appearing in the resolved file keeps warning —
         // the message below tells such hosts the warning is safe to ignore
         // once the workaround is genuinely wired up.
+        // Read guarded for the same reason as the candidate scan above: this
+        // whole block only ever prints a warning, so an unreadable file (EACCES,
+        // EIO) must degrade to "assume not applied" rather than throw out of
+        // setup() and fail the build. `resolveHostModuleOverride` already proved
+        // this path exists and is a file, so EISDIR is not reachable here — but
+        // leaving the two reads asymmetrically guarded would read as deliberate.
+        let chromeBindingsSource: string | undefined;
+        if (chromeBindingsAbsPath !== undefined) {
+          try {
+            chromeBindingsSource = readFileSync(chromeBindingsAbsPath, "utf8");
+          } catch {
+            chromeBindingsSource = undefined;
+          }
+        }
         const workaroundLikelyApplied =
-          chromeBindingsAbsPath !== undefined &&
-          readFileSync(chromeBindingsAbsPath, "utf8").includes("DesignTokenPanelBootstrap");
+          chromeBindingsSource !== undefined &&
+          chromeBindingsSource.includes("DesignTokenPanelBootstrap");
         if (!workaroundLikelyApplied) {
           ctx.logger.warn(
             "zudo-doc: settings.designTokenPanelConfigModule is set, but every " +

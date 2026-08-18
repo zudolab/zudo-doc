@@ -482,14 +482,20 @@ export interface Settings {
    * minimal scaffold, which is what kept the original all-routes form of this
    * check from ever firing (#3434).
    *
-   * Two further suppressions: the diagnostic is silent unless
+   * Three further suppressions: the diagnostic is silent unless
    * `designTokenPanel` is `true` (with the feature off this setting is
-   * irrelevant, per the paragraph above — #3435), and silent when the resolved
+   * irrelevant, per the paragraph above — #3435); silent when the resolved
    * `chromeBindingsModule` file already contains the literal token
    * `DesignTokenPanelBootstrap` (a best-effort static text scan — an
    * indirectly-composed override that never spells the name out keeps
-   * warning). Partial shadowing stays silent: the config still applies on
-   * whichever reader-facing routes survive.
+   * warning); and a `pages/` file that is an exact default re-export of the
+   * shadowed route's OWN package entrypoint
+   * (`export { default, paths, frontmatter } from "@takazudo/zudo-doc/routes/…"`)
+   * does not count as a shadow at all, because it still reaches the configured
+   * bootstrap through `routes/_chrome.tsx` (#3451 — also a best-effort text
+   * scan, so a file that reaches the same entrypoint some other way still
+   * counts as shadowed). Partial shadowing stays silent: the config still
+   * applies on whichever reader-facing routes survive.
    */
   designTokenPanelConfigModule?: string;
   /**
