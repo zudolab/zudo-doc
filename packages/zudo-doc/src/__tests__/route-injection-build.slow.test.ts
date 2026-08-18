@@ -1151,6 +1151,13 @@ const INJECTED_DTP_ISLAND = "ConfiguredDesignTokenPanelBootstrap";
  *  must never collide with {@link INJECTED_DTP_ISLAND}. */
 const DEFAULT_DTP_ISLAND = "DesignTokenPanelBootstrap";
 
+/** Token label the target-manifest fixture's WRITTEN-AT-SETUP host builder
+ *  carries (`setupTargetManifestFixture`'s `designTokenPanelConfigModule`
+ *  option) — proves the host's builder, not the package default, reached the
+ *  islands bundle. Distinct from the route-injection fixture's
+ *  `DTP-HOST-CONFIG-MODULE-MARKER` so a cross-fixture mix-up cannot pass. */
+const TM_DTP_HOST_MARKER = "TM-DTP-HOST-CONFIG-MARKER";
+
 /** Flip `designTokenPanel` ON in a fixture's settings.ts (it ships OFF). */
 function enableDesignTokenPanel(dir: string): void {
   const settingsPath = join(dir, "src/config/settings.ts");
@@ -1792,10 +1799,15 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
  *  the thing under test). `options.removeDocStub` strips
  *  `pages/docs/[[...slug]].tsx` — the negative-guard / apples-to-apples
  *  island-diff baseline variant, proving the stub (not just
- *  `packageOwnedRoutes`) is what's under test. Returns the temp fixture dir. */
+ *  `packageOwnedRoutes`) is what's under test.
+ *
+ *  `options.designTokenPanelConfigModule` writes a host PanelConfig builder
+ *  into the temp copy and points the setting at it — the #3414 variant. It is
+ *  written HERE rather than committed to the fixture source because group 6
+ *  pins that source at exactly 17 files. Returns the temp fixture dir. */
 function setupTargetManifestFixture(
   tarballPath: string,
-  options: { removeDocStub?: boolean } = {},
+  options: { removeDocStub?: boolean; designTokenPanelConfigModule?: boolean } = {},
 ): string {
   const dir = mkdtempSync(join(tmpdir(), "zudo-doc-target-manifest-"));
   tempDirs.push(dir);
@@ -1821,6 +1833,51 @@ function setupTargetManifestFixture(
 
   if (options.removeDocStub) {
     rmSync(join(dir, "pages/docs"), { recursive: true, force: true });
+  }
+
+  if (options.designTokenPanelConfigModule) {
+    writeFileSync(
+      join(dir, "src/design-token-panel-config.ts"),
+      `export function buildDesignTokenPanelConfig(mode: "light" | "dark") {
+  return {
+    storagePrefix: "tm-host-tweak",
+    consoleNamespace: "tmHost",
+    modalClassPrefix: "tm-host-panel-modal",
+    schemaId: "tm-host-tokens/v1",
+    exportFilenameBase: "tm-host-tokens",
+    tabs: [
+      {
+        id: "tm-host-tab",
+        label: "${TM_DTP_HOST_MARKER}",
+        tiers: [
+          {
+            id: "tm-host-tier",
+            label: \`Host Tier (\${mode})\`,
+            items: [
+              {
+                id: "tm-host-token",
+                cssVar: "--tm-host-token",
+                label: "Host Token",
+                default: "1rem",
+                type: { kind: "length", step: 0.1, unit: "rem" },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+}
+`,
+    );
+    const configPath = join(dir, "zfb.config.ts");
+    writeFileSync(
+      configPath,
+      readFileSync(configPath, "utf-8").replace(
+        /designTokenPanel:\s*true,/,
+        'designTokenPanel: true,\n    designTokenPanelConfigModule: "./src/design-token-panel-config.ts",',
+      ),
+    );
   }
 
   return dir;
@@ -2095,6 +2152,19 @@ describe("TM build+check+css: the locked manifest builds, typechecks, and ships 
 // it cannot survive the SSR → hydration boundary.
 // The diff below therefore NORMALIZES the panel marker (strict everywhere else)
 // and asserts each variant's own shape explicitly.
+//
+// *** #3414 AMENDMENT — the gate-2 invariant is now CONDITIONAL ***
+// "The stub's island-marker set equals the injected baseline's" holds only
+// while the host sets NO `designTokenPanelConfigModule` — which this fixture
+// does not, so every case below is unchanged and still pins the gate-2 fix.
+// When the setting IS present, the stub deliberately mounts NO panel island at
+// all: both islands share one per-SESSION zdtp latch, so a stub page winning it
+// with the package-default builder made the host's builder apply or not
+// depending on which page the browser hard-loaded first (#3406).
+// `chrome/derive.tsx` therefore drops the slot default under exactly that
+// combination. The "TM group 2b" block below is that case — it is a SEPARATE
+// fixture build rather than an extra assertion here precisely because the two
+// configurations have genuinely different correct answers.
 // ---------------------------------------------------------------------------
 
 describe("TM group 2: island-set diff — self-contained doc stub vs. injected-route baseline (designTokenPanel: true)", () => {
@@ -2164,18 +2234,108 @@ describe("TM group 2: island-set diff — self-contained doc stub vs. injected-r
   // above); flipped to a plain `it` by the #2658 gate-2 fix, per the marker's
   // own instruction. The registry pairing lives in the "home route" case above
   // (shared islands bundle) — this asserts the stub page's own marker.
-  it("doc route carries the PACKAGE-DEFAULT panel marker + a matching registry entry (#2658 gate-2 fix, #3396 shape)", () => {
+  it("doc route carries the PACKAGE-DEFAULT panel marker + a matching registry entry (#2658 gate-2 fix, #3396 shape, #3414 no-config-module case)", () => {
     const html = readBuiltHtml(stubDir, "docs/getting-started/index.html");
     expectHtmlAttr(html, "data-zfb-island", DEFAULT_DTP_ISLAND);
-    // The stub reaches the package default, NOT the routes wrapper — the
-    // known #3396 gap: `designTokenPanelConfigModule` does not apply to pages
-    // rendered by a self-contained stub.
+    // The stub reaches the package default, NOT the routes wrapper —
+    // `designTokenPanelConfigModule` does not apply to pages rendered by a
+    // self-contained stub. This fixture sets NO such module, which is what
+    // makes the package default the right thing to mount here: it carries the
+    // same builder the wrapper would have, so there is nothing to defer to.
+    // With the setting present the correct answer flips to "no island at all" —
+    // see "TM group 2b".
     expect(countHtmlAttr(html, "data-zfb-island", INJECTED_DTP_ISLAND)).toBe(0);
     // No bundle-substring assertion here: `ConfiguredDesignTokenPanelBootstrap`
     // CONTAINS `DesignTokenPanelBootstrap`, so a `toContain` on the default's
     // name cannot distinguish the two registry entries and would pass even if
     // only the wrapper registered. The collision/unmatched-marker guards in the
     // DTP blocks above are what prove both entries exist.
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Group 2b — the locked manifest WITH `designTokenPanelConfigModule` set: the
+// derive-level skip (#3414, fix for #3406).
+//
+// Same fixture and same stub as group 2, plus a host PanelConfig builder the
+// setting points at. The panel is configured once per browser SESSION and both
+// islands share that latch, so before #3414 a hard load on the stub page won it
+// with the PACKAGE-DEFAULT builder and the host's builder then applied to no
+// page in the session — silently, and only on some entry points.
+//
+// The fix makes `chrome/derive.tsx` skip the package-default slot value when
+// this setting is set and the host supplied no explicit
+// `chromeBindings.DesignTokenPanelBootstrap`. So the stub page mounts NOTHING
+// (a deliberate absence — a host wanting a panel there threads its own
+// bootstrap through chromeBindings), and the configured island on the injected
+// routes is the genuine first caller from every entry page.
+// ---------------------------------------------------------------------------
+
+describe("TM group 2b: designTokenPanelConfigModule — the stub mounts no panel, the injected route carries the host's builder (#3414)", () => {
+  let fixtureDir: string;
+  let buildOutput: string;
+
+  it("setup: build the locked manifest with the doc stub AND a host designTokenPanelConfigModule", { timeout: 180_000 }, () => {
+    const tarballPath = packPackage();
+    fixtureDir = setupTargetManifestFixture(tarballPath, {
+      designTokenPanelConfigModule: true,
+    });
+    buildOutput = runZfbBuild(fixtureDir);
+  });
+
+  it("the stub-rendered doc route mounts NEITHER panel island (the derive-level skip)", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    // Sanity: a real doc render, not a 404 — otherwise the absences below
+    // would be vacuous.
+    expect(html).toContain("TM-INDEX-MARKER: target-manifest-render-proof");
+    expect(countHtmlAttr(html, "data-zfb-island", DEFAULT_DTP_ISLAND)).toBe(0);
+    // Absent for a second reason: `/` DOES carry this marker (the case below),
+    // so its absence here is also what proves the page came from the stub
+    // rather than from the injected route quietly taking the URL over.
+    expect(countHtmlAttr(html, "data-zfb-island", INJECTED_DTP_ISLAND)).toBe(0);
+  });
+
+  it("the stub-rendered doc route also carries no pre-hydration toggle shim", () => {
+    // The shim queues clicks for a bootstrap to drain. With no panel island on
+    // the page there is no drainer, so emitting it would strand every click.
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    expect(html).not.toContain("__zdtpToggleShimInstalled");
+  });
+
+  it("the injected route (/) still carries the configured island + the toggle shim", () => {
+    const html = readBuiltHtml(fixtureDir, "index.html");
+    expectHtmlAttr(html, "data-zfb-island", INJECTED_DTP_ISLAND);
+    expect(countHtmlAttr(html, "data-zfb-island", DEFAULT_DTP_ISLAND)).toBe(0);
+    expect(html).toContain("__zdtpToggleShimInstalled");
+  });
+
+  it("the islands bundle carries the HOST's builder, registered against the configured island", () => {
+    // The two together are the end-to-end claim: the host's builder is in the
+    // bundle AND the island the page mounts is the one that registers — so
+    // whichever page the session hard-loads, the builder that reaches the live
+    // panel is the host's.
+    const bundle = readIslandsBundles(fixtureDir);
+    expect(bundle).toContain(TM_DTP_HOST_MARKER);
+    expect(bundle).toContain(INJECTED_DTP_ISLAND);
+  });
+
+  it("the skip leaves no unmatched marker behind", () => {
+    // Dropping a component out of a slot is exactly the shape of mistake that
+    // produces an island marker with no registry entry (#2480), so assert zfb
+    // saw neither that nor a double-hydration.
+    expect(buildOutput).not.toMatch(/has no matching registry entry/i);
+    expect(buildOutput).not.toMatch(/cannot hydrate both components/i);
+    // Deliberately NOT asserted here: `island marker name collision`. Every
+    // target-manifest build emits one for `ConfiguredDesignTokenPanelBootstrap`,
+    // with or without this setting and on every variant — the fixture's
+    // `pages/index.tsx` re-exports `@takazudo/zudo-doc/routes/index`, so the
+    // COMPILED `dist/routes/_chrome.js` graph is scanned alongside the staged
+    // `routes-src/` one and the same component reaches the scanner from two
+    // files. zfb keeps the routes-src copy; the two share a name, so the
+    // surviving registry entry still matches every emitted marker. Pre-existing
+    // and unrelated to #3414 — the emptyPages route-injection fixture, which
+    // has no such re-export stub, is where that assertion belongs (and it is
+    // asserted there).
   });
 });
 

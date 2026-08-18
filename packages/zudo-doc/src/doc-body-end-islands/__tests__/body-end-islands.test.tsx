@@ -299,6 +299,112 @@ describe("deriveBodyEndIslands — package DTP ownership with a host body-end ov
 });
 
 // ---------------------------------------------------------------------------
+// deriveBodyEndIslands — the #3414 derive-level skip (fix for #3406).
+//
+// `runDesignTokenPanelBootstrapOnce` configures zdtp once per browser SESSION
+// and both panel islands share that latch, so on a host that set
+// `designTokenPanelConfigModule` the first page loaded decided the config for
+// the whole SPA session. These cases pin the seam that closes it: with the
+// setting present and no explicit host binding, the slot default is dropped so
+// a self-contained `pages/` stub mounts NO panel island — leaving the injected
+// route's configured island as the genuine first caller from any entry page.
+//
+// The MARKER here names the REAL package default (not the Fake above), because
+// the whole point is which component `deriveBodyEndIslands` picks when the host
+// supplies none.
+// ---------------------------------------------------------------------------
+
+describe("deriveBodyEndIslands — designTokenPanelConfigModule skips the package-default slot (#3414)", () => {
+  const MARKER = 'data-zfb-island="DesignTokenPanelBootstrap"';
+  const HOST_MARKER = 'data-zfb-island="HostOwnDesignTokenPanelBootstrap"';
+
+  /** A host's own bootstrap component, threaded through
+   *  `chromeBindings.DesignTokenPanelBootstrap` — the documented workaround
+   *  that must keep winning under every settings combination. */
+  function HostOwnDesignTokenPanelBootstrap() {
+    return null;
+  }
+  HostOwnDesignTokenPanelBootstrap.displayName = "HostOwnDesignTokenPanelBootstrap";
+
+  function renderDerived(
+    settings: Record<string, unknown>,
+    hostBindings: Record<string, unknown> = {},
+  ): string {
+    const BodyEndIslands = deriveBodyEndIslands({
+      settings: { ...ALL_OFF, designTokenPanel: true, ...settings },
+      hostBindings,
+    } as unknown as ChromeContext);
+    return render(<BodyEndIslands basePath="/" />);
+  }
+
+  it("setting present, no host binding: no panel island and no toggle shim reach the HTML", () => {
+    const html = renderDerived({
+      designTokenPanelConfigModule: "./src/design-token-panel-config.ts",
+    });
+    expect(html).not.toContain(MARKER);
+    // Nothing at all — not a marker under some other name, and not the
+    // pre-hydration shim, which would queue clicks nothing ever drains.
+    expect(html).not.toContain("data-zfb-island");
+    expect(html).not.toContain("__zdtpToggleShimInstalled");
+  });
+
+  it("setting absent: the package default still mounts (no regression for hosts that never set it)", () => {
+    const html = renderDerived({});
+    expect(html).toContain(MARKER);
+    expect(html).toContain("__zdtpToggleShimInstalled");
+  });
+
+  it("setting present + explicit chromeBindings binding: the host's component wins unchanged", () => {
+    const html = renderDerived(
+      { designTokenPanelConfigModule: "./src/design-token-panel-config.ts" },
+      { DesignTokenPanelBootstrap: HostOwnDesignTokenPanelBootstrap },
+    );
+    expect(html).toContain(HOST_MARKER);
+    expect(html).not.toContain(MARKER);
+    expect(html).toContain("__zdtpToggleShimInstalled");
+  });
+
+  it("setting present + packageOwnedRoutes false: the package default still mounts (no configured island exists to defer to)", () => {
+    const html = renderDerived({
+      designTokenPanelConfigModule: "./src/design-token-panel-config.ts",
+      packageOwnedRoutes: false,
+    });
+    expect(html).toContain(MARKER);
+  });
+
+  it("setting present + designTokenPanel false: still nothing, via the pre-existing feature gate", () => {
+    const html = renderDerived({
+      designTokenPanel: false,
+      designTokenPanelConfigModule: "./src/design-token-panel-config.ts",
+    });
+    expect(html).not.toContain(MARKER);
+    expect(html).not.toContain("__zdtpToggleShimInstalled");
+  });
+
+  it("the skip also applies on the host-BodyEndIslands composition path", () => {
+    // deriveBodyEndIslands has two branches; the composed one rebuilds the
+    // panel island itself, so it needs its own proof rather than inheriting
+    // the default branch's.
+    function HostBodyEndIslands() {
+      return <div data-testid="host-body-end">host-only islands</div>;
+    }
+    const withSetting = renderDerived(
+      { designTokenPanelConfigModule: "./src/design-token-panel-config.ts" },
+      { BodyEndIslands: HostBodyEndIslands },
+    );
+    expect(withSetting).toContain('data-testid="host-body-end"');
+    expect(withSetting).not.toContain(MARKER);
+    expect(withSetting).not.toContain("__zdtpToggleShimInstalled");
+
+    // Positive control on the same branch: without the setting it still mounts
+    // the package default, so the absence above is the skip and not the
+    // composition path having lost the panel outright.
+    const withoutSetting = renderDerived({}, { BodyEndIslands: HostBodyEndIslands });
+    expect(withoutSetting).toContain(MARKER);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // FindInPageInit island gate (zudolab/zudo-doc#2689). Unlike
 // DesignTokenPanelBootstrap, `FindInPageInit` is a plain static top-level
 // import (no `deps` injection — see the module header note in `../index.tsx`),

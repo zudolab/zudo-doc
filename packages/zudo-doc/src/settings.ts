@@ -451,12 +451,20 @@ export interface Settings {
    * data) — the bundler imports the actual builder from the re-exported
    * module. Irrelevant when `designTokenPanel` is `false`.
    *
-   * KNOWN GAP (#3396): this setting applies only to pages rendered through the
-   * package-injected routes. A doc page rendered by a SELF-CONTAINED host
-   * `pages/` stub mounts the package-default bootstrap and silently ignores
-   * this module — such a host must override the panel through
-   * `chromeBindings.DesignTokenPanelBootstrap` instead (see
-   * `docs/adr/route-injection-seam.md`).
+   * SCOPE (#3396, bounded by #3414): this setting applies only to pages
+   * rendered through the package-injected routes. A doc page rendered by a
+   * SELF-CONTAINED host `pages/` stub does not reach the configured island —
+   * and, since the panel is configured once per browser session, a stub page
+   * mounting the package-default bootstrap used to decide the config for the
+   * whole session whenever it was the hard-loaded entry page (#3406).
+   *
+   * So when this setting is set and the host supplies no explicit
+   * `chromeBindings.DesignTokenPanelBootstrap`, stub-rendered pages now mount
+   * NO panel island at all (the injected routes still get the configured one,
+   * from any entry page). To get a panel on stub-rendered pages too, thread
+   * your builder through `chromeBindings.DesignTokenPanelBootstrap` — that
+   * binding wins everywhere and is unaffected by this rule. See
+   * `docs/adr/route-injection-seam.md`.
    */
   designTokenPanelConfigModule?: string;
   /**

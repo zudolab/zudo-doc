@@ -57,7 +57,7 @@ import { buildDesignTokenPanelConfig } from "virtual:zudo-doc-design-token-panel
  * non-`ssrFallback` `Island({ when: "load" })` shape.
  */
 export function ConfiguredDesignTokenPanelBootstrap(): JSX.Element | null {
-  runDesignTokenPanelBootstrapOnce(buildDesignTokenPanelConfig);
+  runDesignTokenPanelBootstrapOnce(buildDesignTokenPanelConfig, "configured");
   return null;
 }
 ConfiguredDesignTokenPanelBootstrap.displayName = "ConfiguredDesignTokenPanelBootstrap";

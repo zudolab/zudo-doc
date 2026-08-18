@@ -325,11 +325,46 @@ the same `setup(ctx)` hook.
     "island marker name collision" diagnostic and silently drop one of them.
     The `displayName` must equal the export identifier — zfb registers islands
     by the scanner-visible export name.
-  - **Known gap:** a host rendering docs through a self-contained `pages/` stub
-    (the locked-manifest shape, #2653) calls `createChrome` directly and so gets
-    the package default, not the wrapper — `designTokenPanelConfigModule` does
-    not apply to those pages. Such a host threads its own builder via
-    `chromeBindings.DesignTokenPanelBootstrap`.
+  - **Self-contained `pages/` stubs (was a known gap; bounded by #3414).** A
+    host rendering docs through a self-contained `pages/` stub (the
+    locked-manifest shape, #2653) calls `createChrome` directly and so gets the
+    package default, not the wrapper — `designTokenPanelConfigModule` does not
+    apply to those pages. That was worse than a per-page gap, because
+    `runDesignTokenPanelBootstrapOnce`'s latch is per SESSION: both islands
+    share it, so whichever one ran first in the browser session won for the
+    whole SPA session. Hard-load a stub page first and the host's builder never
+    applied to ANY page, with no diagnostic (#3406). Two changes bound it:
+    - **Derive-level skip.** `chrome/derive.tsx`'s `deriveBodyEndIslands` does
+      not use the package default as the slot default when
+      `settings.designTokenPanelConfigModule` is set, the host supplied no
+      explicit `chromeBindings.DesignTokenPanelBootstrap`, and
+      `packageOwnedRoutes` is on. The slot resolves to `undefined`, which
+      `createDesignTokenPanelIsland` already renders as nothing — no island
+      marker, no pre-hydration toggle shim (a null-rendering stub component
+      would instead emit a marker zfb's island registry has no entry for). So a
+      stub page can no longer poison the latch with the wrong builder, and the
+      configured island is the genuine first caller from any entry page. The
+      `packageOwnedRoutes: false` carve-out matters: with no routes plugin
+      there is no configured island anywhere, so skipping would drop the panel
+      entirely rather than defer it.
+    - **Origin-tagged diagnostic.** The latch records which island won
+      (`"default" | "configured"`) and its builder; a later call carrying a
+      DIFFERENT builder `console.warn`s in the browser, naming
+      `designTokenPanelConfigModule` and the
+      `chromeBindings.DesignTokenPanelBootstrap` workaround. Builder identity
+      (not just origin) is the gate: with the setting absent the virtual module
+      re-exports exactly the package-default builder, so the very common
+      default-then-configured sequence is a genuine no-op and must stay silent.
+    - **Consequence, deliberate:** under that configuration stub-rendered pages
+      show no panel. A host that wants one there threads its builder through
+      `chromeBindings.DesignTokenPanelBootstrap`, which wins everywhere and is
+      exempt from the skip.
+    - **Rejected (#3414):** full config precedence via zdtp `handle.destroy()`
+      → re-`configurePanel()`. zdtp 0.4.10 sanctions destroy-first
+      reconfiguration, but it needs `bootstrapDesignTokenPanel` to return a
+      disposer — a change to the frozen `./design-token-panel-bootstrap`
+      subpath (API.md) — plus named rebuild-listener teardown, for marginal
+      gain over the skip.
 - **Slot default lives at the chrome seam (gate-2 fix, Wave-5 confirm
   #2659).** The static import + slot wiring sit in `chrome/derive.tsx`'s
   `deriveBodyEndIslands` — `hostBindings.DesignTokenPanelBootstrap` DEFAULTS
