@@ -30,7 +30,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readdirSync, readFileSyn
 import { join, relative, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
-import routesPlugin from "../routes.js";
+import routesPlugin, { shouldWarnDtpFullyShadowed } from "../routes.js";
 
 /** Minimal mock of the fields `routes.ts`'s `setup()` actually reads
  *  (`options`, `projectRoot`) plus no-op stubs for the rest of
@@ -201,9 +201,10 @@ function collectSourceFiles(dir: string, out: string[] = []): string[] {
 }
 
 // ---------------------------------------------------------------------------
-// DTP shadow diagnostic (zudolab/zudo-doc#3420, spec #3428) — warns at plugin
-// setup when `designTokenPanelConfigModule` is set but every derived route's
-// URL is shadowed by a kept user `pages/` file, unless the resolved
+// DTP shadow diagnostic (zudolab/zudo-doc#3420, spec #3428; scoped by
+// #3434/#3435) — warns at plugin setup when `designTokenPanel` is on,
+// `designTokenPanelConfigModule` is set, and every READER-FACING derived
+// route's URL is shadowed by a kept user `pages/` file, unless the resolved
 // `chromeBindingsModule` already names the documented workaround.
 // ---------------------------------------------------------------------------
 
@@ -212,6 +213,11 @@ function collectSourceFiles(dir: string, out: string[] = []): string[] {
  *  section "Static / always-on". Used below to build full vs. partial
  *  shadowing fixtures without reaching into the plugin's private catalog. */
 const ALWAYS_ON_ROUTE_PATTERNS = ["/404", "/sitemap.xml", "/robots.txt", "/docs/[[...slug]]"];
+
+/** The subset of `ALWAYS_ON_ROUTE_PATTERNS` tagged
+ *  `includedInDtpShadowDiagnostic: true` — i.e. the diagnostic's whole
+ *  denominator for a project with no locales, versions or tags. */
+const ALWAYS_ON_READER_FACING_PATTERNS = ["/docs/[[...slug]]"];
 
 /** Write a `pages/` stub file that shadows `pattern` (the plain FILE form —
  *  one of the two shapes `derivePagesCandidates` recognises). */
@@ -241,6 +247,7 @@ describe("routes plugin — DTP shadow diagnostic (#3420, #3428)", () => {
 
     const { ctx, warnings } = makeCtx(projectRoot, {
       packageOwnedRoutes: true,
+      designTokenPanel: true,
       designTokenPanelConfigModule,
     });
     routesPlugin.setup!(ctx as never);
@@ -251,17 +258,48 @@ describe("routes plugin — DTP shadow diagnostic (#3420, #3428)", () => {
     expect(warnings[0]).toContain("DesignTokenPanelBootstrap");
   });
 
-  it("stays silent when shadowing is only partial", () => {
+  // The #3420 motivating shape, and the regression #3434 exists to fix: the
+  // locked minimal scaffold keeps exactly two `pages/` stubs — `index.tsx`
+  // (which shadows nothing in the catalog, since `/` is never injected) and
+  // `docs/[[...slug]].tsx`. `/404`, `/sitemap.xml` and `/robots.txt` therefore
+  // survive, which held the old all-routes `every()` at `false` forever — even
+  // though every doc page a reader visits is stub-rendered with no panel.
+  it("warns for the locked minimal scaffold, where /404, /sitemap.xml and /robots.txt survive unshadowed (#3434)", () => {
     const projectRoot = makeProjectRoot();
-    // Shadow every route except /sitemap.xml.
-    for (const pattern of ALWAYS_ON_ROUTE_PATTERNS) {
-      if (pattern === "/sitemap.xml") continue;
-      shadowRouteWithStub(projectRoot, pattern);
-    }
+    // `pages/index.tsx` verbatim — NOT via `shadowRouteWithStub`, because it
+    // shadows no injected route at all (that is the point of this fixture).
+    mkdirSync(join(projectRoot, "pages"), { recursive: true });
+    writeFileSync(
+      join(projectRoot, "pages", "index.tsx"),
+      "export default function Page() { return null; }\n",
+    );
+    shadowRouteWithStub(projectRoot, "/docs/[[...slug]]");
     const designTokenPanelConfigModule = writeConfigModule(projectRoot);
 
     const { ctx, warnings } = makeCtx(projectRoot, {
       packageOwnedRoutes: true,
+      designTokenPanel: true,
+      designTokenPanelConfigModule,
+    });
+    routesPlugin.setup!(ctx as never);
+
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("zudolab/zudo-doc#3420");
+  });
+
+  it("stays silent when shadowing is only partial", () => {
+    const projectRoot = makeProjectRoot();
+    // `docTags` widens the reader-facing set to three patterns; shadow all but
+    // one of them (plus every always-on route, to prove the surviving
+    // reader-facing route is what keeps this silent).
+    for (const pattern of ALWAYS_ON_ROUTE_PATTERNS) shadowRouteWithStub(projectRoot, pattern);
+    shadowRouteWithStub(projectRoot, "/docs/tags");
+    const designTokenPanelConfigModule = writeConfigModule(projectRoot);
+
+    const { ctx, warnings } = makeCtx(projectRoot, {
+      packageOwnedRoutes: true,
+      docTags: true,
+      designTokenPanel: true,
       designTokenPanelConfigModule,
     });
     routesPlugin.setup!(ctx as never);
@@ -275,6 +313,25 @@ describe("routes plugin — DTP shadow diagnostic (#3420, #3428)", () => {
 
     const { ctx, warnings } = makeCtx(projectRoot, {
       packageOwnedRoutes: true,
+      designTokenPanel: true,
+      designTokenPanelConfigModule,
+    });
+    routesPlugin.setup!(ctx as never);
+
+    expect(warnings).toHaveLength(0);
+  });
+
+  it("stays silent when only the non-reader-facing routes are shadowed", () => {
+    const projectRoot = makeProjectRoot();
+    for (const pattern of ALWAYS_ON_ROUTE_PATTERNS) {
+      if (ALWAYS_ON_READER_FACING_PATTERNS.includes(pattern)) continue;
+      shadowRouteWithStub(projectRoot, pattern);
+    }
+    const designTokenPanelConfigModule = writeConfigModule(projectRoot);
+
+    const { ctx, warnings } = makeCtx(projectRoot, {
+      packageOwnedRoutes: true,
+      designTokenPanel: true,
       designTokenPanelConfigModule,
     });
     routesPlugin.setup!(ctx as never);
@@ -286,7 +343,29 @@ describe("routes plugin — DTP shadow diagnostic (#3420, #3428)", () => {
     const projectRoot = makeProjectRoot();
     for (const pattern of ALWAYS_ON_ROUTE_PATTERNS) shadowRouteWithStub(projectRoot, pattern);
 
-    const { ctx, warnings } = makeCtx(projectRoot, { packageOwnedRoutes: true });
+    const { ctx, warnings } = makeCtx(projectRoot, {
+      packageOwnedRoutes: true,
+      designTokenPanel: true,
+    });
+    routesPlugin.setup!(ctx as never);
+
+    expect(warnings).toHaveLength(0);
+  });
+
+  // #3435 — `designTokenPanelConfigModule` resolves unconditionally and
+  // `designTokenPanel` defaults to false, so a host with the feature off and a
+  // leftover config-module value must not be told to wire up a panel that
+  // never renders either way (settings.ts documents the setting as irrelevant
+  // in that state).
+  it("stays silent when designTokenPanel is off, even with a config module and full shadowing (#3435)", () => {
+    const projectRoot = makeProjectRoot();
+    for (const pattern of ALWAYS_ON_ROUTE_PATTERNS) shadowRouteWithStub(projectRoot, pattern);
+    const designTokenPanelConfigModule = writeConfigModule(projectRoot);
+
+    const { ctx, warnings } = makeCtx(projectRoot, {
+      packageOwnedRoutes: true,
+      designTokenPanelConfigModule,
+    });
     routesPlugin.setup!(ctx as never);
 
     expect(warnings).toHaveLength(0);
@@ -304,12 +383,67 @@ describe("routes plugin — DTP shadow diagnostic (#3420, #3428)", () => {
 
     const { ctx, warnings } = makeCtx(projectRoot, {
       packageOwnedRoutes: true,
+      designTokenPanel: true,
       designTokenPanelConfigModule,
       chromeBindingsModule: "./src/chrome-bindings.tsx",
     });
     routesPlugin.setup!(ctx as never);
 
     expect(warnings).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The extracted warn/silent predicate (#3434). `deriveRoutes` always emits a
+// counted `/docs/[[...slug]]`, so the empty-denominator case is unreachable
+// through `setup()` — calling the helper directly is the only way to prove the
+// vacuity guard is live rather than dead code.
+// ---------------------------------------------------------------------------
+
+describe("shouldWarnDtpFullyShadowed — vacuity guard (#3434)", () => {
+  const alwaysShadowed = () => true;
+
+  it("returns false for an empty route list (never vacuously true)", () => {
+    expect(shouldWarnDtpFullyShadowed([], alwaysShadowed)).toBe(false);
+  });
+
+  it("returns false when no route is tagged reader-facing, however shadowed", () => {
+    expect(
+      shouldWarnDtpFullyShadowed(
+        [
+          { pattern: "/sitemap.xml", includedInDtpShadowDiagnostic: false },
+          { pattern: "/robots.txt", includedInDtpShadowDiagnostic: false },
+        ],
+        alwaysShadowed,
+      ),
+    ).toBe(false);
+  });
+
+  it("ignores unshadowed non-reader-facing routes when deciding", () => {
+    const shadowed = new Set(["/docs/[[...slug]]"]);
+    expect(
+      shouldWarnDtpFullyShadowed(
+        [
+          { pattern: "/404", includedInDtpShadowDiagnostic: false },
+          { pattern: "/sitemap.xml", includedInDtpShadowDiagnostic: false },
+          { pattern: "/docs/[[...slug]]", includedInDtpShadowDiagnostic: true },
+        ],
+        (pattern) => shadowed.has(pattern),
+      ),
+    ).toBe(true);
+  });
+
+  it("returns false while any reader-facing route survives", () => {
+    const shadowed = new Set(["/docs/[[...slug]]"]);
+    expect(
+      shouldWarnDtpFullyShadowed(
+        [
+          { pattern: "/docs/[[...slug]]", includedInDtpShadowDiagnostic: true },
+          { pattern: "/docs/tags", includedInDtpShadowDiagnostic: true },
+        ],
+        (pattern) => shadowed.has(pattern),
+      ),
+    ).toBe(false);
   });
 });
 
