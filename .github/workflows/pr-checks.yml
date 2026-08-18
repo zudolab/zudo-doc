@@ -425,6 +425,13 @@ jobs:
       - name: Build @takazudo/zudo-doc
         run: pnpm --filter @takazudo/zudo-doc build
 
+      # Search-widget-script commit drift guard (#3421, #3431). Runs as a
+      # step here rather than its own pure-Node job because the generator
+      # imports the `esbuild` dependency directly, so it needs the install
+      # this job already did.
+      - name: Check search-widget-script drift
+        run: pnpm check:search-widget-drift
+
       - name: Run package unit tests
         run: pnpm test:packages
 
