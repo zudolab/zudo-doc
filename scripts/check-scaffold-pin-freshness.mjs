@@ -42,15 +42,24 @@
 //      (e.g. `0.2.0-next.9`) as "stale" against a numerically higher stable
 //      `latest` it was never meant to track. So: a pin carrying a
 //      `-prerelease` suffix is compared against the registry's `next`
-//      dist-tag, never `latest`. If the registry has no `next` tag at all,
-//      the package is reported "skipped" — not stale, not a failure.
+//      dist-tag, never a STABLE `latest`. Two sub-cases when there is no
+//      `next` tag: if `latest` is itself a prerelease the package has no
+//      stable line at all and `latest` IS the preview channel, so it is used
+//      as the comparison target (skipping there would leave the gate
+//      permanently blind to the very staleness shape it exists to catch);
+//      if `latest` is stable, the package is reported "skipped" — not
+//      stale, not a failure.
 //
 // Design: the registry lookup is INJECTED (`fetchDistTags`) so
 // checkScaffoldPinFreshness() is pure and the test suite never touches the
 // real network. The CLI wrapper at the bottom of this file supplies the
 // real npm registry fetch (bounded by DEFAULT_TIMEOUT_MS).
 //
-// NOT wired into any workflow or release script yet — that is Wave 2 (#3457).
+// Wired in by #3457: Safeguard 4/5 of .github/workflows/publish-create-zudo-doc.yml
+// (immediately before `npm publish`, run even on a dry run), plus an early-feedback
+// preflight in scripts/release-create-zudo-doc.sh and the `check:scaffold-pin-freshness`
+// package script. Deliberately NOT a PR gate — it hits the live registry, so an
+// upstream publish must never be able to fail an unrelated PR.
 
 import { readFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -171,8 +180,20 @@ export async function checkScaffoldPinFreshness({
     }
 
     const prerelease = isPrereleaseVersion(scaffoldPin);
-    const targetTag = prerelease ? "next" : "latest";
-    const registryVersion = distTags?.[targetTag];
+    let targetTag = prerelease ? "next" : "latest";
+    let registryVersion = distTags?.[targetTag];
+
+    // Semantics #3, refinement: a package with NO stable release yet has no
+    // separate "next" tag — its "latest" IS the preview line (e.g. a 0.x
+    // package published only as 0.5.0-next.N). Skipping there would make the
+    // gate permanently blind to exactly the #3442 staleness shape it exists
+    // to catch, so fall back to "latest" when "latest" is itself a
+    // prerelease. When "latest" is stable, the skip below still applies —
+    // that is the diverging-channels case the skip was written for.
+    if (prerelease && !registryVersion && isPrereleaseVersion(distTags?.latest)) {
+      targetTag = "latest";
+      registryVersion = distTags.latest;
+    }
 
     if (!registryVersion) {
       if (prerelease) {
@@ -183,8 +204,9 @@ export async function checkScaffoldPinFreshness({
           pkg: pkgName,
           pin: scaffoldPin,
           message:
-            `${pkgName} pin ${scaffoldPin} is a prerelease and the registry ` +
-            `has no "next" dist-tag to compare against — skipping (not reported stale).`,
+            `${pkgName} pin ${scaffoldPin} is a prerelease, the registry has no ` +
+            `"next" dist-tag, and "latest" is a stable line this pin was never ` +
+            `meant to track — skipping (not reported stale).`,
         });
         continue;
       }

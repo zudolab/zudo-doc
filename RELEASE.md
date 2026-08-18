@@ -259,8 +259,11 @@ much *older*, opt-in preview line. Comparing every pin against `latest`
 unconditionally would misfire on a correct prerelease pin, flagging it "stale"
 against a numerically higher stable `latest` it was never meant to track — the
 same `next`/`latest` divergence #3442 named as the likely cause of the original
-gap. If the registry has no `next` tag at all for a prerelease pin, the package
-is reported "skipped," not stale, not a failure.
+gap. If the registry has no `next` tag at all for a prerelease pin, it depends
+on `latest`: when `latest` is itself a prerelease the package has no stable
+line and `latest` *is* the preview channel, so it becomes the comparison
+target; when `latest` is stable, the package is reported "skipped," not stale,
+not a failure.
 
 **Fails closed on a registry error.** A lookup failure (network error, timeout,
 unusable response) blocks the gate the same as a confirmed-stale pin, but is

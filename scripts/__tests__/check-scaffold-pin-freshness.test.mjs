@@ -271,7 +271,32 @@ describe("checkScaffoldPinFreshness — (4) prerelease semantics", () => {
     expect(result.findings[0].kind).toBe("ok");
   });
 
-  it("skips (does not fail or report stale) a prerelease pin when the registry has no 'next' tag", async () => {
+  it("falls back to 'latest' when there is no 'next' tag AND 'latest' is itself a prerelease", async () => {
+    // A package with no stable release yet (e.g. published only as
+    // 0.x.y-next.N) has no separate "next" tag — its "latest" IS the preview
+    // line. Skipping there would make the gate permanently blind to exactly
+    // the #3442 staleness shape it exists to catch.
+    const fetchDistTags = stubRegistry({
+      "@takazudo/zfb": { latest: "0.3.0-next.1" }, // no "next" key
+    });
+
+    const result = await checkScaffoldPinFreshness({
+      scaffoldSrc: PRERELEASE_SCAFFOLD_SRC, // pins 0.2.0-next.9
+      packages: ["@takazudo/zfb"],
+      fetchDistTags,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.findings[0]).toEqual(
+      expect.objectContaining({
+        kind: "stale",
+        tag: "latest",
+        registryVersion: "0.3.0-next.1",
+      }),
+    );
+  });
+
+  it("skips (does not fail or report stale) a prerelease pin when the registry has no 'next' tag and 'latest' is stable", async () => {
     const fetchDistTags = stubRegistry({
       "@takazudo/zfb": { latest: "2.7.1" }, // no "next" key
     });
