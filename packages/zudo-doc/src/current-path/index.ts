@@ -1,5 +1,5 @@
 // Single source of truth for the explicit current-route override
-// (zudolab/zudo-doc#3398, consolidated by #3408).
+// (zudolab/zudo-doc#3398, consolidated by #3408; resolves #3405).
 //
 // An embedding host may set `document.documentElement.dataset.zdCurrentPath`
 // before `location.pathname` is trustworthy: inside an iframe `srcdoc`

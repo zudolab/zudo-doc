@@ -745,9 +745,15 @@ function generatePackageJson(choices: UserChoices) {
     // opener paragraph's fence state carries into the sibling scan, and
     // reconstruct_jsx stops swallowing nested Break nodes. No generator-side
     // migration.
-    "@takazudo/zfb": "2.5.2",
-    "@takazudo/zfb-runtime": "2.5.2",
-    "@takazudo/zfb-md-wasm": "2.5.2",
+    // 2.6.0: adds render-artifact export plumbing (emitRenderArtifacts
+    // config/CLI flag, region identity + raw-source digest + headings
+    // metadata, render-artifact sentinel wrap/extract/strip) — flag-off by
+    // default, so a fresh scaffold needs no config change to pick it up.
+    // Also fixes the client router to tolerate about:srcdoc history
+    // restrictions. No generator-side migration.
+    "@takazudo/zfb": "2.6.0",
+    "@takazudo/zfb-runtime": "2.6.0",
+    "@takazudo/zfb-md-wasm": "2.6.0",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's

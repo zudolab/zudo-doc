@@ -60,12 +60,26 @@
  * during route evaluation would configure only the server instance while the
  * client re-evaluated this module and kept the default.
  *
- * KNOWN GAP (#3396): a host that renders docs through a SELF-CONTAINED
- * `pages/` stub (the locked-manifest shape, #2653 — it calls `createChrome`
- * directly rather than going through `routes/_chrome.tsx`) reaches the package
- * default here, so `designTokenPanelConfigModule` does NOT apply to those
- * pages. Such a host threads its own builder explicitly, via
- * `chromeBindings.DesignTokenPanelBootstrap`.
+ * SELF-CONTAINED `pages/` STUBS (was a KNOWN GAP in #3396; closed by #3414).
+ * A host that renders docs through a self-contained `pages/` stub (the
+ * locked-manifest shape, #2653 — it calls `createChrome` directly rather than
+ * going through `routes/_chrome.tsx`) reaches the package default here, so
+ * `designTokenPanelConfigModule` does not apply to those pages. Because
+ * {@link runDesignTokenPanelBootstrapOnce}'s latch is per SESSION, not per
+ * page, that used to make the whole SPA session's panel config depend on which
+ * page was hard-loaded first (#3406). Two things now bound it:
+ *
+ * - `chrome/derive.tsx` SKIPS this package default as the slot default when
+ *   `settings.designTokenPanelConfigModule` is set and the host supplied no
+ *   explicit `chromeBindings.DesignTokenPanelBootstrap` (and
+ *   `packageOwnedRoutes` is on). Stub-rendered pages then mount NO panel island
+ *   at all, so they can no longer win the latch with the wrong builder — the
+ *   configured island is the genuine first caller whatever the entry page. The
+ *   absence on stub pages is deliberate; such a host threads its own builder
+ *   via `chromeBindings.DesignTokenPanelBootstrap` to get a panel there too.
+ * - Any residual default-then-configured race that skip does not close warns at
+ *   runtime, naming both the setting and that workaround — see
+ *   {@link runDesignTokenPanelBootstrapOnce}.
  *
  * Package-first wiring landed in S9a zudolab/zudo-doc#2333; mode-scoped rebuild
  * wiring was added in zudolab/zudo-doc#2610 and the package-default island in
@@ -763,15 +777,69 @@ export function bootstrapDesignTokenPanel(
 // ---------------------------------------------------------------------------
 
 /**
- * Guards the bootstrap call to run at most once per module instance — the
- * component itself may run during SSR (harmless no-op: `bootstrapDesignTokenPanel`
- * bails out on its own `typeof window === "undefined"` guard) as well as on
- * client hydration, and re-running `configurePanel` on every render would
- * re-mount the panel each time. Module-scoped rather than `useRef`/`useEffect`
- * so the guard is cheap and framework-lifecycle-independent (this component
- * has no children to schedule effects around).
+ * Which island won the once-latch below (#3414).
+ *
+ * - `"default"` — the package-default {@link DesignTokenPanelBootstrap}, bound
+ *   to the package-default builder.
+ * - `"configured"` — the routes-only wrapper
+ *   (`routes/_design-token-panel-bootstrap.tsx`), bound to whatever
+ *   `virtual:zudo-doc-design-token-panel-config` resolved to (a host's
+ *   `settings.designTokenPanelConfigModule` when set, the package default
+ *   otherwise).
  */
-let bootstrapped = false;
+export type DesignTokenPanelBootstrapOrigin = "default" | "configured";
+
+/**
+ * Guards the bootstrap call to run at most once per module instance, and
+ * records WHICH island won (#3414) so a later loser can be diagnosed — the
+ * component itself may run during SSR (harmless no-op:
+ * `bootstrapDesignTokenPanel` bails out on its own
+ * `typeof window === "undefined"` guard) as well as on client hydration, and
+ * re-running `configurePanel` on every render would re-mount the panel each
+ * time. Module-scoped rather than `useRef`/`useEffect` so the guard is cheap
+ * and framework-lifecycle-independent (this component has no children to
+ * schedule effects around).
+ *
+ * The winning BUILDER is kept alongside the origin because the two islands very
+ * often carry the SAME builder: with no `designTokenPanelConfigModule` set, the
+ * virtual module re-exports exactly the package default this module imports, so
+ * a default-then-configured sequence is a no-op with nothing to warn about.
+ * Comparing builder identity is what keeps the diagnostic off that (very
+ * common) path.
+ */
+let bootstrapWinner: { origin: DesignTokenPanelBootstrapOrigin; build: PanelConfigBuilder } | null =
+  null;
+
+/** One diagnostic per session, not one per navigation: the losing island
+ *  re-runs on every soft nav to a page that mounts it, and the same warning
+ *  repeated is noise rather than information. */
+let warnedLostRace = false;
+
+/**
+ * Warn when a bootstrap call carrying a DIFFERENT builder loses the once-latch
+ * — the entry-page-dependent-config symptom of #3406. Browser-only: during SSG
+ * every page render shares one module instance, so a build-time copy would fire
+ * once per build with page-ordering wording that does not apply there.
+ */
+function warnLostBootstrapRace(
+  winnerOrigin: DesignTokenPanelBootstrapOrigin,
+  loserOrigin: DesignTokenPanelBootstrapOrigin,
+): void {
+  if (typeof window === "undefined" || warnedLostRace) return;
+  warnedLostRace = true;
+  const detail =
+    loserOrigin === "configured" && winnerOrigin === "default"
+      ? "The package-default island configured the panel earlier in this browser session, " +
+        "so `designTokenPanelConfigModule` did not apply on this page. This happens when the " +
+        "session first hard-loaded a page rendered by a self-contained `pages/` stub, which " +
+        "reaches the package default instead of the package-injected route. " +
+        "Thread your builder through `chromeBindings.DesignTokenPanelBootstrap` to make it " +
+        "apply on every page regardless of entry point."
+      : `The ${winnerOrigin} island configured the panel first; this ${loserOrigin} island's ` +
+        "builder was ignored. zdtp is configured once per session — mount exactly one " +
+        "design-token-panel bootstrap, e.g. via `chromeBindings.DesignTokenPanelBootstrap`.";
+  console.warn(`[zudo-doc] design-token panel already configured. ${detail}`);
+}
 
 /**
  * Run {@link bootstrapDesignTokenPanel} at most once per module instance, with
@@ -785,13 +853,25 @@ let bootstrapped = false;
  * renders exactly ONE of them, and if a host ever mounted both, configuring the
  * panel twice would re-mount it rather than layer the two configs.
  *
+ * `origin` tags WHICH island is calling (#3414). It is optional, defaulting to
+ * `"default"`, because this function is reachable from the frozen
+ * `./design-token-panel-bootstrap` subpath (API.md) — an added required
+ * parameter would break an ejected host that calls it. Both in-package callers
+ * pass it explicitly.
+ *
  * This is a CALL, not a module-level setter — the builder is passed in at
  * render time inside whichever bundle the island actually hydrates in, so it
  * never has to cross the route-graph → island-bundle boundary.
  */
-export function runDesignTokenPanelBootstrapOnce(build: PanelConfigBuilder): void {
-  if (bootstrapped) return;
-  bootstrapped = true;
+export function runDesignTokenPanelBootstrapOnce(
+  build: PanelConfigBuilder,
+  origin: DesignTokenPanelBootstrapOrigin = "default",
+): void {
+  if (bootstrapWinner) {
+    if (bootstrapWinner.build !== build) warnLostBootstrapRace(bootstrapWinner.origin, origin);
+    return;
+  }
+  bootstrapWinner = { origin, build };
   bootstrapDesignTokenPanel(build);
 }
 
@@ -813,7 +893,7 @@ export function runDesignTokenPanelBootstrapOnce(build: PanelConfigBuilder): voi
  * export name and warns when a `displayName` diverges from it.
  */
 export function DesignTokenPanelBootstrap(): JSX.Element | null {
-  runDesignTokenPanelBootstrapOnce(buildDesignTokenPanelConfig);
+  runDesignTokenPanelBootstrapOnce(buildDesignTokenPanelConfig, "default");
   return null;
 }
 DesignTokenPanelBootstrap.displayName = "DesignTokenPanelBootstrap";

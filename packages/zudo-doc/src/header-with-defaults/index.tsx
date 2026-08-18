@@ -26,6 +26,7 @@ import {
   deriveGetUnavailableVersions,
   deriveNavDataPrep,
   deriveSearchWidgetSlot,
+  skipsPackageDefaultDesignTokenPanel,
 } from "../chrome/derive.js";
 import type { SidebarNavNode, SidebarRootMenuItem } from "../sidebar/types.js";
 import type { LocaleLink } from "../url-helpers/index.js";
@@ -237,7 +238,18 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
     const headerRightItems = filterHeaderRightItems(
       (settings.headerRightItems as Parameters<typeof filterHeaderRightItems>[0]) ?? [],
       {
-        designTokenPanel: Boolean(settings.designTokenPanel),
+        // Mirrors `deriveBodyEndIslands`' slot resolution (#3414): when the
+        // derive-level skip leaves a page with no panel island and no
+        // pre-hydration toggle shim, the header toggle button must go with
+        // them — otherwise it dispatches `toggle-design-token-panel` into a
+        // document with no listener and no click queue (a dead button).
+        // `hostBindings.DesignTokenPanelBootstrap` covers the injected-route
+        // path too (`routes/_chrome.tsx` threads the configured island through
+        // that slot), so injected pages keep the button.
+        designTokenPanel:
+          Boolean(settings.designTokenPanel) &&
+          (ctx.hostBindings.DesignTokenPanelBootstrap != null ||
+            !skipsPackageDefaultDesignTokenPanel(ctx.settings)),
         aiAssistant: Boolean(settings.aiAssistant),
         colorMode: Boolean(settings.colorMode),
         hasLocales: Object.keys(settings.locales).length > 0,
