@@ -31,8 +31,8 @@ importers:
         specifier: 2.7.1
         version: 2.7.1(react@19.2.8)
       '@takazudo/zfb-adapter-cloudflare':
-        specifier: 2.6.0
-        version: 2.6.0
+        specifier: 2.7.1
+        version: 2.7.1
       '@takazudo/zfb-md-wasm':
         specifier: 2.7.1
         version: 2.7.1
@@ -1133,8 +1133,8 @@ packages:
     peerDependencies:
       preact: 10.29.2
 
-  '@takazudo/zfb-adapter-cloudflare@2.6.0':
-    resolution: {integrity: sha512-b0m+qluHHKJ09Hg0Sfo4COTyeMhpHROSV+DfRU3SqeXQiI8J2uzRRTuLD6dyvsyth4kqRyLTsKJ8AK4VLfanxA==}
+  '@takazudo/zfb-adapter-cloudflare@2.7.1':
+    resolution: {integrity: sha512-J0/sT9SY4Te4Yq6KM2cVlTRoGIprDRoqh33DNfDuYSM73kTFzf8N4e6SiRe4rx5p4f45eaw2Oz5CFUp5H4/qlg==}
     engines: {node: '>=22.0.0', pnpm: '>=10.0.0'}
     hasBin: true
 
@@ -3229,7 +3229,7 @@ snapshots:
       preact: 10.29.2
       tailwind-merge: 3.6.0
 
-  '@takazudo/zfb-adapter-cloudflare@2.6.0': {}
+  '@takazudo/zfb-adapter-cloudflare@2.7.1': {}
 
   '@takazudo/zfb-darwin-arm64@2.7.1':
     optional: true
