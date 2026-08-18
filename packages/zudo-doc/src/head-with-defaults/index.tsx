@@ -22,7 +22,8 @@ import ThemePackProvider, {
 } from "../theme/theme-pack-provider.js";
 import { DEFAULT_THEME_PACK_SLUG } from "../theme-pack-switcher/theme-pack-sync.js";
 import type { ChromeContext } from "../factory-context/index.js";
-import type { Settings } from "../settings.js";
+import type { Settings, FaviconConfig } from "../settings.js";
+import { renderAutoLogoIconSvg } from "../auto-logo/icon.js";
 import { deriveComposeMetaTitle, deriveColorSchemeGenerators } from "../chrome/derive.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 
@@ -55,6 +56,138 @@ export interface HeadWithDefaultsSettings {
   sidebarResizer?: boolean;
   /** Configured theme-pack slug (ADR `docs/adr/theme-packs.md`, #2822). */
   themePack?: string;
+  /** Favicon link set — see {@link resolveFaviconLinks} for the emission table. */
+  favicon?: string | FaviconConfig | false;
+}
+
+// ── favicon emission (#3460) ────────────────────────────────────────────────
+
+/** `favicon: "auto"` — the documented sentinel value, mirroring `logo: "auto"`. */
+const FAVICON_AUTO = "auto";
+
+/**
+ * The historical hardcoded four-link set, expressed as a `FaviconConfig` so the
+ * omitted default and a fully-spelled-out object form go through ONE code path
+ * and cannot drift apart. Pinned by the object≡default equivalence test.
+ */
+const DEFAULT_FAVICON: Required<FaviconConfig> = {
+  svg: "/favicon.svg",
+  ico: "/favicon.ico",
+  png32: "/favicon-32x32.png",
+  png16: "/favicon-16x16.png",
+};
+
+/** Extension → `type` attribute. Anything else omits `type` (browsers sniff). */
+const FAVICON_TYPE_BY_EXT: Record<string, string> = {
+  svg: "image/svg+xml",
+  png: "image/png",
+  ico: "image/x-icon",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  webp: "image/webp",
+  avif: "image/avif",
+};
+
+function faviconType(value: string): string | undefined {
+  const path = value.split(/[?#]/)[0] ?? "";
+  const file = path.slice(path.lastIndexOf("/") + 1);
+  const dot = file.lastIndexOf(".");
+  if (dot < 0) return undefined;
+  return FAVICON_TYPE_BY_EXT[file.slice(dot + 1).toLowerCase()];
+}
+
+/** Root-relative values get the deployment base prefix; `data:` / absolute URLs don't. */
+function faviconHref(value: string, withBase: (p: string) => string): string {
+  return value.startsWith("/") ? withBase(value) : value;
+}
+
+/**
+ * One resolved `<link rel="icon">`. Attributes are emitted in KEY INSERTION
+ * ORDER (JSX spread preserves it), so each descriptor below is written in the
+ * exact order the historical hardcoded markup used.
+ */
+type FaviconLinkAttrs = { rel: "icon" } & Record<string, string>;
+
+/**
+ * Resolve `settings.favicon` into the `<link rel="icon">` attribute set.
+ *
+ * | value | emission |
+ * | --- | --- |
+ * | omitted | {@link DEFAULT_FAVICON} — today's four links, `svg → ico → png32 → png16` |
+ * | `false` | nothing |
+ * | `"auto"` | one inline SVG data-URL icon seeded by `siteName` |
+ * | other string | one link, `type` inferred from the extension, no `sizes` |
+ * | object | only the supplied slots, same fixed order as the default |
+ *
+ * Object slots keep their default counterpart's exact attribute shape and
+ * order, so a full four-slot object is byte-identical to the omitted default.
+ *
+ * Returns plain attribute objects rather than vnodes because the caller
+ * resolves this ONCE per factory and renders it on every page: a vnode is
+ * mutated by the renderer it is handed to, so it must not be shared across
+ * renders — an attribute object can be.
+ */
+function resolveFaviconLinks(
+  favicon: string | FaviconConfig | false | undefined,
+  siteName: string,
+  withBase: (p: string) => string,
+): FaviconLinkAttrs[] {
+  if (favicon === false) return [];
+
+  if (typeof favicon === "string") {
+    if (favicon === FAVICON_AUTO) {
+      // Same seed rule as `logo: "auto"` (auto-logo/index.tsx) so the favicon
+      // shows the same generated glyph as the home-hero logo. Deterministic:
+      // identical siteName → byte-identical href.
+      const svg = encodeURIComponent(renderAutoLogoIconSvg(siteName));
+      return [{ rel: "icon", type: "image/svg+xml", href: `data:image/svg+xml,${svg}` }];
+    }
+    const type = faviconType(favicon);
+    return [
+      {
+        rel: "icon",
+        ...(type !== undefined ? { type } : {}),
+        href: faviconHref(favicon, withBase),
+      },
+    ];
+  }
+
+  const slots = favicon ?? DEFAULT_FAVICON;
+  const links: FaviconLinkAttrs[] = [];
+  // Slot `type` is INFERRED from the supplied value's extension, falling back
+  // to the slot's canonical type. The fallback keeps the default four-link set
+  // (and any conventionally-named override) byte-identical, while a slot
+  // pointed at another format (`png32: "/icon-32.webp"`) is no longer
+  // mislabelled `image/png` — browsers use the declared type when picking an
+  // icon. `ico` stays untyped, as the historical markup had it.
+  if (slots.svg !== undefined) {
+    links.push({
+      rel: "icon",
+      type: faviconType(slots.svg) ?? "image/svg+xml",
+      href: faviconHref(slots.svg, withBase),
+    });
+  }
+  if (slots.ico !== undefined) {
+    links.push({ rel: "icon", href: faviconHref(slots.ico, withBase), sizes: "any" });
+  }
+  if (slots.png32 !== undefined) {
+    links.push({
+      rel: "icon",
+      type: faviconType(slots.png32) ?? "image/png",
+      sizes: "32x32",
+      href: faviconHref(slots.png32, withBase),
+    });
+  }
+  if (slots.png16 !== undefined) {
+    links.push({
+      rel: "icon",
+      type: faviconType(slots.png16) ?? "image/png",
+      sizes: "16x16",
+      href: faviconHref(slots.png16, withBase),
+    });
+  }
+  return links;
 }
 
 /**
@@ -89,6 +222,11 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
   // default base and "/sub/" for a sub-path deployment, so the bootstrap can
   // concatenate `base + "theme-packs/<slug>/pack.css?v=…"` verbatim.
   const themePackBase = withBase("/");
+
+  // Favicon links resolve once per factory — `settings.favicon` and `withBase`
+  // are both fixed for the life of the context, and `"auto"` would otherwise
+  // re-serialize its ~1KB SVG on every page.
+  const faviconLinks = resolveFaviconLinks(settings.favicon, settings.siteName, withBase);
 
   /**
    * Default-bearing host wrapper that injects og:title / og:description,
@@ -178,11 +316,12 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
             from doc-page-shell's head slot via createSidebarVisibilityPrepaint,
             zudolab/zudo-doc#2571). */}
         {settings.sidebarResizer && <script dangerouslySetInnerHTML={{ __html: SIDEBAR_RESIZER_RESTORE_SCRIPT }} />}
-        {/* favicon set — withBase() handles the configured base path prefix */}
-        <link rel="icon" type="image/svg+xml" href={withBase("/favicon.svg")} />
-        <link rel="icon" href={withBase("/favicon.ico")} sizes="any" />
-        <link rel="icon" type="image/png" sizes="32x32" href={withBase("/favicon-32x32.png")} />
-        <link rel="icon" type="image/png" sizes="16x16" href={withBase("/favicon-16x16.png")} />
+        {/* favicon set — see resolveFaviconLinks() for the settings.favicon
+            emission table. Omitting the setting keeps the historical four
+            links, byte-identical, withBase()-prefixed. */}
+        {faviconLinks.map((attrs, i) => (
+          <link key={i} {...attrs} />
+        ))}
         {canonical !== undefined && <link rel="canonical" href={canonical} />}
         {/* Site-wide <head> extras from settings.head (SiteHeadConfig).
             The entire block is gated on ctx.settings.head being present so that

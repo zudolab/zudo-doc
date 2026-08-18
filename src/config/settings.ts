@@ -13,6 +13,7 @@ export type {
   TagGovernanceMode,
   TagVocabularyEntry,
   MetaTagsConfig,
+  FaviconConfig,
 } from "@takazudo/zudo-doc/settings";
 import type {
   HeaderNavItem,
@@ -27,6 +28,7 @@ import type {
   TagPlacement,
   TagGovernanceMode,
   MetaTagsConfig,
+  FaviconConfig,
   Settings,
 } from "@takazudo/zudo-doc/settings";
 
@@ -42,6 +44,14 @@ export const settings = {
   siteDescription: "Documentation base framework built with zfb, MDX, and Tailwind CSS v4." as string,
   // Showcase keeps its hand-drawn asset; downstream default is "auto" (generated SVG).
   logo: "/img/logo.svg" as string | false,
+  // Explicit object form of the four canonical paths — output byte-identical to the
+  // omitted default (#3460's equivalence test pins this); demonstrates the FaviconConfig shape.
+  favicon: {
+    svg: "/favicon.svg",
+    ico: "/favicon.ico",
+    png32: "/favicon-32x32.png",
+    png16: "/favicon-16x16.png",
+  } satisfies FaviconConfig as string | FaviconConfig | false,
   base: "/",
   trailingSlash: true as boolean,
   minifyHtml: true as boolean,

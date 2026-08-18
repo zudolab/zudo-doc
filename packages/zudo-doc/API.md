@@ -345,6 +345,7 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `colorMode` | `ColorModeConfig \| false` | Light/dark mode config, or `false` to disable |
 | `siteName` | `string` | Site name used in `<title>` and OG tags |
 | `siteDescription` | `string` | Default site description |
+| `favicon?` | `string \| FaviconConfig \| false` | `<link rel="icon">` set. Omitted emits the four-file convention (`/favicon.svg`, `/favicon.ico`, `/favicon-32x32.png`, `/favicon-16x16.png`); `"auto"` emits one inline SVG data-URL icon seeded by `siteName`; any other string emits a single link with `type` inferred from the extension; a `FaviconConfig` (`{ svg?, png32?, png16?, ico? }`) emits only the slots it supplies, always in `svg → ico → png32 → png16` order; `false` emits none. |
 | `base` | `string` | Base URL path prefix |
 | `trailingSlash` | `boolean` | Whether to add trailing slashes to URLs |
 | `minifyHtml?` | `boolean` | Minify production HTML output from `zfb build`; defaults to `true` when omitted |

@@ -567,6 +567,7 @@ jobs:
             "packages/zudo-doc/src/doc-content-header/index.tsx"
             "packages/zudo-doc/src/i18n-version/version-switcher.tsx"
             "packages/zudo-doc/src/i18n-version/language-switcher.tsx"
+            "packages/zudo-doc/src/head-with-defaults/index.tsx"
             # -- CANARY-ONLY: cannot move the hashes (zudolab/zudo-doc#3430) --
             "packages/zudo-doc/src/search-widget-script/"
             "packages/zudo-doc/scripts/gen-search-widget-script.mjs"
