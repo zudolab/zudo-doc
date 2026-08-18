@@ -394,6 +394,104 @@ describe("routes plugin — DTP shadow diagnostic (#3420, #3428)", () => {
 });
 
 // ---------------------------------------------------------------------------
+// DTP shadow diagnostic — re-export false-positive guard (#3451).
+//
+// Narrowing the denominator to reader-facing routes (#3434) made a false
+// positive reachable: a `pages/docs/[[...slug]].tsx` that merely default
+// re-exports the package route it shadows —
+//
+//   export { default, paths, frontmatter } from "@takazudo/zudo-doc/routes/docs-slug";
+//
+// — still reaches the configured bootstrap through `routes/_chrome.tsx`, so
+// it should not warn. Every fixture below shadows ONLY `/docs/[[...slug]]`,
+// which is the sole reader-facing route under default settings (no locales,
+// versions, docTags, or aiAssistant) — so that one file alone determines
+// warn vs. silent.
+// ---------------------------------------------------------------------------
+
+/** The `/docs/[[...slug]]` route's own package entrypoint — mirrors the
+ *  "Static / always-on" entry in `deriveRoutes()`. */
+const DOCS_SLUG_ENTRYPOINT = "@takazudo/zudo-doc/routes/docs-slug";
+
+/** Write `pages/docs/[[...slug]].tsx` with arbitrary `content` — the sole
+ *  reader-facing route under default settings, so it alone drives warn vs.
+ *  silent for the fixtures below. */
+function writeDocsSlugPage(projectRoot: string, content: string) {
+  const absPath = join(projectRoot, "pages", "docs", "[[...slug]].tsx");
+  mkdirSync(dirname(absPath), { recursive: true });
+  writeFileSync(absPath, content);
+}
+
+/** Run `setup()` against a `pages/docs/[[...slug]].tsx` fixture with the
+ *  given `content` and return the collected warnings. */
+function warningsForDocsSlugFixture(content: string): string[] {
+  const projectRoot = makeProjectRoot();
+  writeDocsSlugPage(projectRoot, content);
+  const designTokenPanelConfigModule = writeConfigModule(projectRoot);
+
+  const { ctx, warnings } = makeCtx(projectRoot, {
+    packageOwnedRoutes: true,
+    designTokenPanel: true,
+    designTokenPanelConfigModule,
+  });
+  routesPlugin.setup!(ctx as never);
+  return warnings;
+}
+
+describe("routes plugin — DTP shadow diagnostic re-export guard (#3451)", () => {
+  it("case 1: exact default re-export from the shadowed route's own entrypoint → silent", () => {
+    const warnings = warningsForDocsSlugFixture(
+      `export { default, paths, frontmatter } from "${DOCS_SLUG_ENTRYPOINT}";\n`,
+    );
+    expect(warnings).toHaveLength(0);
+  });
+
+  it("case 2: specifier appears only in a comment → warns", () => {
+    const warnings = warningsForDocsSlugFixture(
+      `// export { default, paths, frontmatter } from "${DOCS_SLUG_ENTRYPOINT}";\n` +
+        "export default function Page() { return null; }\n",
+    );
+    expect(warnings).toHaveLength(1);
+  });
+
+  it("case 3: unused import of the specifier → warns", () => {
+    const warnings = warningsForDocsSlugFixture(
+      `import "${DOCS_SLUG_ENTRYPOINT}";\n` +
+        "export default function Page() { return null; }\n",
+    );
+    expect(warnings).toHaveLength(1);
+  });
+
+  it("case 4: imports a different package route than the one shadowed → warns", () => {
+    const warnings = warningsForDocsSlugFixture(
+      'export { default, paths } from "@takazudo/zudo-doc/routes/locale-index";\n',
+    );
+    expect(warnings).toHaveLength(1);
+  });
+
+  it("case 5: imports the package route but exports its own default → warns", () => {
+    const warnings = warningsForDocsSlugFixture(
+      `import DocsSlug, { paths, frontmatter } from "${DOCS_SLUG_ENTRYPOINT}";\n` +
+        "export default function CustomPage(props) { return DocsSlug(props); }\n" +
+        "export { paths, frontmatter };\n",
+    );
+    expect(warnings).toHaveLength(1);
+  });
+
+  it("case 6: genuine stub with no package-route reference at all → warns", () => {
+    const warnings = warningsForDocsSlugFixture("export default function Page() { return null; }\n");
+    expect(warnings).toHaveLength(1);
+  });
+
+  it("the warning text states the re-export heuristic's limits", () => {
+    const warnings = warningsForDocsSlugFixture("export default function Page() { return null; }\n");
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("re-exports a shadowed route's own entrypoint");
+    expect(warnings[0]).toContain("best-effort text scan");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // The extracted warn/silent predicate (#3434). `deriveRoutes` always emits a
 // counted `/docs/[[...slug]]`, so the empty-denominator case is unreachable
 // through `setup()` — calling the helper directly is the only way to prove the
