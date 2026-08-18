@@ -1841,31 +1841,32 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
 //   5. Computed-token smoke on built CSS (theme.css contract).
 //   6. Fixture file count == 17 (guards floor creep).
 //
-// *** KNOWN BENIGN WARNING — every Case TM build ***
-// Every build of this fixture logs `island marker name collision:
-// "ConfiguredDesignTokenPanelBootstrap"`. Cause: this fixture's `pages/index.tsx`
-// re-exports `@takazudo/zudo-doc/routes/index`, so the compiled
-// `dist/routes/_chrome.js` → `dist/routes/_design-token-panel-bootstrap.js`
-// graph is scanned alongside the staged `routes-src/` copy — the same
-// component reaches zfb's island scanner from two files, and the scanner keys
-// islands by marker name rather than resolved component identity. Benign: zfb
-// keeps the `routes-src/` copy and the surviving registry entry matches every
-// emitted marker, so behavior is correct — the cost is unconditional noise,
-// and it is why this fixture cannot assert a collision-free build (see "TM
-// group 2b" below for the full explanation and the local assertion it drives).
-// Decision (tolerate + file upstream) recorded on zudolab/zudo-doc#3418.
-// Upstream tracking issue (zfb island-scanner identity dedupe):
-// https://github.com/Takazudo/zudo-front-builder/issues/2441
+// *** RESOLVED as of zfb 2.7.1 — the collision warning is now ASSERTED ABSENT ***
+// Until zfb 2.7.1, every build of this fixture logged `island marker name
+// collision: "ConfiguredDesignTokenPanelBootstrap"`. Cause: this fixture's
+// `pages/index.tsx` re-exports `@takazudo/zudo-doc/routes/index`, so the
+// compiled `dist/routes/_chrome.js` → `dist/routes/_design-token-panel-bootstrap.js`
+// graph is scanned alongside the staged `routes-src/` copy — the same component
+// reached zfb's island scanner from two files, and the scanner keyed islands by
+// marker name rather than resolved component identity. It was benign (zfb kept
+// the `routes-src/` copy and the surviving registry entry matched every emitted
+// marker) but unconditional, which is why this fixture could not assert a
+// collision-free build. See "TM group 2b" below for the fuller explanation.
+// Decision (tolerate + file upstream) recorded on zudolab/zudo-doc#3418;
+// upstream issue Takazudo/zudo-front-builder#2441, fixed by PR #2442,
+// released in zfb 2.7.1 and adopted here (zudolab/zudo-doc#3433).
+// The setup test of "TM build+check+css" now asserts the warning is absent.
 //
-// The upstream fix (PR Takazudo/zudo-front-builder#2442) dedupes by resolved
-// component identity, and reaches THIS case via a byte-identity branch: the
-// staged copy is compared against the PUBLISHED file the package ships at the
-// same stem under `node_modules/@takazudo/zudo-doc/routes-src/`. So the
-// invariant we owe upstream is narrow — `ensureStaged` (src/plugins/routes.ts)
-// must stay byte-preserving RELATIVE TO WHAT THE PACKAGE SHIPS. A future
-// rewrite inside build-time `scripts/copy-routes-src.mjs` is harmless (it runs
-// pre-publish, so both compared participants are post-rewrite); a rewrite
-// inside `ensureStaged` would break the match and resurrect this warning.
+// The fix dedupes by resolved component identity, and reaches THIS case via a
+// byte-identity branch: the staged copy is compared against the PUBLISHED file
+// the package ships at the same stem under
+// `node_modules/@takazudo/zudo-doc/routes-src/`. So the invariant we owe
+// upstream is narrow — `ensureStaged` (src/plugins/routes.ts) must stay
+// byte-preserving RELATIVE TO WHAT THE PACKAGE SHIPS. A future rewrite inside
+// build-time `scripts/copy-routes-src.mjs` is harmless (it runs pre-publish, so
+// both compared participants are post-rewrite); a rewrite inside `ensureStaged`
+// would break the match and fail the collision-free assertion above. That
+// failure mode is the reason the assertion is worth keeping.
 //
 // Accepted upstream trade-off: two GENUINELY DIFFERENT components shipped by
 // the SAME package under one marker name are now silently deduped too. Only a
@@ -2120,7 +2121,22 @@ describe("TM build+check+css: the locked manifest builds, typechecks, and ships 
   it("setup: pack the package and build the target-manifest fixture (with the doc stub)", { timeout: 180_000 }, () => {
     const tarballPath = packPackage();
     fixtureDir = setupTargetManifestFixture(tarballPath);
-    runZfbBuild(fixtureDir);
+    const buildOutput = runZfbBuild(fixtureDir);
+    // Non-vacuity guard, and it must come FIRST: every assertion below is a
+    // NEGATIVE one, so an empty capture would pass them all while proving
+    // nothing. runZfbBuild merges stdout+stderr, so a successful build is
+    // never silent.
+    expect(buildOutput.length).toBeGreaterThan(0);
+    // This fixture double-scans the same components (dist graph + staged
+    // routes-src/ copy), which zfb ≤2.7.0 reported as a marker-name collision
+    // on every build. zfb 2.7.1 dedupes by resolved component identity, so a
+    // collision-free build is now assertable — and this assertion is the only
+    // end-to-end proof of that fix anywhere: zfb's own coverage stops at the
+    // classifier and never runs a real build. If it fails, report upstream
+    // (zudolab/zudo-doc#3433, Takazudo/zudo-front-builder#2441) rather than
+    // relaxing it — a genuine collision between two DIFFERENT components must
+    // still warn.
+    expect(buildOutput).not.toMatch(/island marker name collision/i);
   });
 
   // ---- Group 1 ----

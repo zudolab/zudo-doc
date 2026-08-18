@@ -106,10 +106,10 @@
   },
   "dependencies": {
     "@takazudo/zdtp": "0.4.10",
-    "@takazudo/zfb": "2.6.0",
+    "@takazudo/zfb": "2.7.1",
     "@takazudo/zfb-adapter-cloudflare": "2.6.0",
-    "@takazudo/zfb-md-wasm": "2.6.0",
-    "@takazudo/zfb-runtime": "2.6.0",
+    "@takazudo/zfb-md-wasm": "2.7.1",
+    "@takazudo/zfb-runtime": "2.7.1",
     "@takazudo/zudo-doc": "workspace:*",
     "diff": "^8.0.3",
     "katex": "^0.16.38",
