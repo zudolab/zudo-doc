@@ -632,7 +632,7 @@
     "CHANGELOG.md"
   ],
   "peerDependencies": {
-    "@takazudo/zdtp": "^0.4.10",
+    "@takazudo/zdtp": "^0.4.11",
     "@takazudo/zfb": "^2.7.1",
     "@takazudo/zfb-md-wasm": "^2.7.1",
     "@takazudo/zfb-runtime": "^2.7.1",

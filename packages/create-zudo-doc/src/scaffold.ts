@@ -826,7 +826,7 @@ function generatePackageJson(choices: UserChoices) {
     // same reason. This is the ACCEPTED, permanent contract per #2668 — see
     // the "@takazudo/zdtp dep implication" note in
     // packages/zudo-doc/docs/adr/route-injection-seam.md.
-    "@takazudo/zdtp": "0.4.10",
+    "@takazudo/zdtp": "0.4.11",
     // (@takazudo/zudo-doc-history-server is NOT here — it is gated on the
     // docHistory feature, see the block below. It was briefly unconditional
     // (#3080) to work around doc-history-area importing its `/exclude` subpath

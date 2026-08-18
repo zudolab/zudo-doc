@@ -360,7 +360,7 @@ the same `setup(ctx)` hook.
       `chromeBindings.DesignTokenPanelBootstrap`, which wins everywhere and is
       exempt from the skip.
     - **Rejected (#3414):** full config precedence via zdtp `handle.destroy()`
-      → re-`configurePanel()`. zdtp 0.4.10 sanctions destroy-first
+      → re-`configurePanel()`. zdtp 0.4.10/0.4.11 sanctions destroy-first
       reconfiguration, but it needs `bootstrapDesignTokenPanel` to return a
       disposer — a change to the frozen `./design-token-panel-bootstrap`
       subpath (API.md) — plus named rebuild-listener teardown, for marginal
