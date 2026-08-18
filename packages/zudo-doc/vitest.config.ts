@@ -83,6 +83,16 @@ export default defineConfig({
     // separate config (vitest.slow.config.ts). Mirrors
     // packages/create-zudo-doc/vitest.config.ts (zudolab/zudo-doc#2530).
     exclude: ["**/node_modules/**", "**/*.slow.test.ts"],
+    // Deadline headroom under CPU contention (#3465, #3452 Wave 1 diagnosis):
+    // this suite runs real tsc (resolution-chain.test.ts, 11.3-18.4s
+    // observed), a subprocess CLI (eject-logo/cli-smoke.test.ts), and WASM
+    // loads (highlight-runtime.integration.test.ts) that legitimately exceed
+    // vitest's 5000ms default once the machine is contended. Ordering
+    // invariant: every per-operation deadline in this package (e.g. the
+    // cli-smoke spawnSync timeout, design-token-panel-bootstrap.test.ts's
+    // WAIT_FOR_OPTS) stays strictly BELOW this value, so the specific,
+    // diagnosable deadline always fires before this blunt one.
+    testTimeout: 30_000,
     server: {
       deps: {
         // Inline the zfb island runtime so vite transforms it through the

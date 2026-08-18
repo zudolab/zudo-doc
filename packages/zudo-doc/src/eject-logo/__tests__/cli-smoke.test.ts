@@ -28,7 +28,15 @@ export default defineConfig(
 `;
 
 function runCli(args: string[], cwd: string) {
-  return spawnSync(process.execPath, [BIN_PATH, ...args], { cwd, encoding: "utf8" });
+  return spawnSync(process.execPath, [BIN_PATH, ...args], {
+    cwd,
+    encoding: "utf8",
+    // Explicit subprocess deadline (#3465): stays inside the package's
+    // testTimeout (30_000, vitest.config.ts) so a hung CLI fails as "the
+    // subprocess exceeded its own deadline" (SIGTERM here) rather than the
+    // ambiguous "Test timed out in 5000ms." vitest previously produced.
+    timeout: 25_000,
+  });
 }
 
 let tempDir: string;
