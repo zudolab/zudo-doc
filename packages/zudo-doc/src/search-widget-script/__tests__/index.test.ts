@@ -24,7 +24,7 @@ import { AFTER_NAVIGATE_EVENT } from "../../transitions/index.js";
 // against SEARCH_WIDGET_SCRIPT's current frozen bytes. A failure here means
 // the shipped script bytes genuinely changed (a scoring.ts / page-events.ts
 // edit was regenerated) — update the pin as a deliberate, reviewed diff.
-const EXPECTED_CSP_HASH = "sha256-+5B4Vd+U+da3+BnCkNPUykM/fhmKrp1vv/H9rtLotp8=";
+const EXPECTED_CSP_HASH = "sha256-tsOQwdl7im/ak4CiaOz+qHmK65mbUf6u93iFf0csoG0=";
 
 describe("SEARCH_WIDGET_SCRIPT generation", () => {
   it("matches a fresh re-generation from scoring.ts + page-events.ts (drift guard)", () => {
