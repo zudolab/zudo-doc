@@ -19,8 +19,9 @@ generators must run first: `gen-search-widget-script.mjs` (#3412) writes
 imports, and `gen-nav-overflow-script.mjs` (#3534) writes
 `src/header/nav-overflow-generated-script.ts` that `header/nav-overflow-script.ts`
 imports — without either, the first tsup/tsc pass fails resolving the missing
-`./generated-script.js` (both are also wired into `predev` and the tsup
-`onSuccess` chain for the same reason). tsup emits only the JS
+`./generated-script.js` / `./nav-overflow-generated-script.js` (both generators
+are also wired into `predev` and the tsup `onSuccess` chain for the same
+reason). tsup emits only the JS
 (`dts:false`); `tsc` emits the `.d.ts`. The split exists
 because tsup's `dts:true` rollup-based declaration bundler is **combinatorial in
 memory across entries** — with `bundle:false` + ~200 source entries it OOMs even
