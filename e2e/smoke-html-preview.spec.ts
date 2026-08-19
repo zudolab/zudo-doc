@@ -111,7 +111,7 @@ test.describe("HtmlPreview: zfb md-wasm resources and semantic output", () => {
       });
     });
 
-    await page.goto(PAGE, { waitUntil: "networkidle" });
+    await page.goto(PAGE, { waitUntil: "domcontentloaded" });
 
     const island = page
       .locator('[data-zfb-island="HtmlPreviewWrapperInner"]')
