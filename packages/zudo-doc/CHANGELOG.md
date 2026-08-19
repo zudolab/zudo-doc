@@ -4,6 +4,12 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.6.1] - 2026-08-19
+
+### Bug Fixes
+
+- `stripMarkdown` now decodes numeric and common named HTML character references while preserving intraword underscores in identifiers, preventing corrupted plain text in the search index and `llms.txt` output. (634458d2)
+
 ## [5.6.0] - 2026-08-19
 
 ### Features
