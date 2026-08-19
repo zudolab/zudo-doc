@@ -741,8 +741,9 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // the movement must have come from other non-normalized bytes of the same
   // epic change.)
 
-  // 2026-08-20 re-baseline (Nav Overflow Literal epic, zudolab/zudo-doc#3502,
-  // confirm sub #3536) — NOT attributable to this epic's changes. The Wave 1
+  // 2026-08-20 re-baseline (Nav Overflow Literal epic zudolab/zudo-doc#3533,
+  // motivated by #3502; confirm sub #3536) — NOT attributable to this epic's
+  // changes. The Wave 1
   // sub (#3534) recorded the frozen `NAV_OVERFLOW_SCRIPT` literal as
   // byte-identical to the old module-eval text (old and new both 12390 bytes,
   // sha256 `9569d4127510607e8b69b8c0e3e22027eee443bbda3ff0e097de41cdf183dbd7`),
@@ -760,7 +761,14 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // lockfile) reproducibly yields the NEW hashes below, never the committed
   // ones. So `d76231d4`'s committed baseline was never reproducible from a
   // clean build at the moment it was written — most likely computed against a
-  // stale/dirty `dist/` rather than a fresh `pnpm build:workspace`. This is a
+  // stale/dirty `dist/` rather than a fresh `pnpm build:workspace`. NOTE the
+  // unresolved tension with the review-fix entry above, which recorded "a
+  // fresh run confirmed the three hashes below are unmoved" for the OLD
+  // values: both claims cannot hold, so either that run's `dist/` was itself
+  // stale in the same way, or a live cross-environment non-determinism
+  // remains undiagnosed — if these hashes move again on an unrelated PR,
+  // treat THAT as the working hypothesis rather than re-baselining a third
+  // time on prose. This is a
   // pre-existing gap in the merged base, exactly the class of drift this
   // confirm sub exists to catch (the slow lane doesn't gate PRs on its own).
   // Re-baselining here to the values every clean build actually produces; no

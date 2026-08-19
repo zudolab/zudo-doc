@@ -15,11 +15,16 @@
  * nav-overflow-active-exec.test.ts (execution) and nav-class-tokens.test.ts
  * (emitted class text).
  *
- * This is a real guard, not a vacuous one: nothing regenerates
- * nav-overflow-generated-script.ts ahead of the test run, so
- * NAV_OVERFLOW_SCRIPT here is whatever byte content is actually checked in —
- * mirroring the search-widget-script drift guard
- * (src/search-widget-script/__tests__/index.test.ts).
+ * Guard scope, honestly stated: a bare `pnpm --filter @takazudo/zudo-doc
+ * test` regenerates nothing, so NAV_OVERFLOW_SCRIPT here is whatever is on
+ * disk. But root `pnpm test` (via build:workspace) and the package build DO
+ * re-run the generator first, and in b4push/CI the check:nav-overflow-drift
+ * step runs before this lane — in those paths a stale file has already been
+ * rewritten and the byte-equality below is trivially true. The
+ * committed-bytes invariant is then carried by the shell drift guard's
+ * `git diff` (an uncommitted rewrite fails it) plus the CSP hash pin below
+ * (any content change fails it) — mirroring the search-widget-script drift
+ * guard (src/search-widget-script/__tests__/index.test.ts).
  */
 
 import { describe, it, expect } from "vitest";

@@ -685,6 +685,15 @@ jobs:
             "packages/zudo-doc/src/theme/theme-pack-provider.tsx"
             "packages/zudo-doc/src/current-path/index.ts"
             "packages/zudo-doc/src/header/nav-overflow-script.ts"
+            # Since zudolab/zudo-doc#3534 the nav-overflow script bytes are a
+            # frozen committed literal: ANY change to its four sources
+            # (current-path/index.ts, nav-active.ts, nav-class-tokens.ts,
+            # page-events.ts) or to the generator's template must land in the
+            # generated file below, so it is the load-bearing entry — a
+            # nav-class-tokens.ts-only edit would otherwise skip this gate.
+            # The generator is listed too, mirroring gen-search-widget-script.
+            "packages/zudo-doc/src/header/nav-overflow-generated-script.ts"
+            "packages/zudo-doc/scripts/gen-nav-overflow-script.mjs"
             "packages/zudo-doc/src/header/nav-active.ts"
             "packages/zudo-doc/src/header/header.tsx"
             "packages/zudo-doc/src/doc-content-header/index.tsx"

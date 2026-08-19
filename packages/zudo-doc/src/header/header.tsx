@@ -321,8 +321,9 @@ export function Header(props: HeaderProps): JSX.Element {
       //     mountNewIslands re-reads the attribute at mount time (#3530)
       //   - Header nav + aria-current: NAV_OVERFLOW_SCRIPT re-runs on
       //     AFTER_NAVIGATE_EVENT (frozen by zudolab/zudo-doc#3534 — the
-      //     addEventListener call lives in scripts/gen-nav-overflow-script.mjs:573,
-      //     verified (a))
+      //     `addEventListener(${afterNavigateEventLiteral}, initNavOverflow)`
+      //     call at the tail of the template in
+      //     scripts/gen-nav-overflow-script.mjs, verified (a))
       //   - LanguageSwitcher: its target hrefs ARE per-page (the equivalent
       //     page in each other locale), so within a same-locale persist window
       //     they WOULD go stale — the locale is constant but the path is not.

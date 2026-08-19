@@ -45,4 +45,13 @@
 // comment for the list); the vitest guard at
 // `src/header/__tests__/nav-overflow-script.test.ts` proves the committed
 // literal still matches a fresh regeneration.
+//
+// EJECTED COPIES (`zudo-doc eject header`): the generator is NOT shipped, so
+// in an ejected tree the re-exported literal is permanently frozen — editing
+// the ejected `./nav-class-tokens.ts` or `./nav-active.ts` changes the SSR
+// markup (header.tsx imports them live) but NOT this client script, breaking
+// the SSR ↔ runtime class lockstep those files exist to guarantee. To change
+// the client script in an ejected copy, edit the literal in
+// `./nav-overflow-generated-script.ts` directly (it is plain JS in a string)
+// and keep it in step with your token edits by hand.
 export { NAV_OVERFLOW_SCRIPT } from "./nav-overflow-generated-script.js";

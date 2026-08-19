@@ -263,9 +263,12 @@ spreads it into `defineConfig` and keeps only the shell fields it still owns
 tsup only compiles `.ts/.tsx`. CSS is produced by the tsup `onSuccess` hook
 (runs after every build/`--watch`, so a one-shot build's `clean` cannot leave
 `dist/` without them). The CSS-relevant prefix of the chain (the full chain in
-`tsup.config.ts` continues with the eject-sources / routes-src /
-virtual-modules / theme-packs / catalog copies and
-`gen-search-widget-script.mjs` — see that file for the authoritative order):
+`tsup.config.ts` continues with `gen-nav-overflow-script.mjs` — which must
+stay BEFORE the eject-sources copy, since `eject/header/` gets `src/header/`
+verbatim and would otherwise carry the previous literal for one watch cycle
+(#3534) — then the eject-sources / routes-src / virtual-modules / theme-packs
+/ catalog copies and `gen-search-widget-script.mjs` — see that file for the
+authoritative order):
 
 ```
 onSuccess: "node scripts/copy-theme-css.mjs && node scripts/copy-content-css.mjs && node scripts/copy-page-loading-css.mjs && node scripts/copy-features-css.mjs && node scripts/gen-safelist.mjs && …"
