@@ -471,7 +471,7 @@ fi
 # entry whenever the underlying issue gets fixed so the strict
 # gate then catches future regressions of the same shape.
 step "Link check (check-links --strict-broken --strict-absolute)"
-if (cd "$ROOT_DIR" && pnpm run check:links -- --strict-broken --strict-absolute --allowlist=.check-links-allowlist); then
+if (cd "$ROOT_DIR" && pnpm run check:links -- --strict-broken --strict-absolute --strict-anchors --allowlist=.check-links-allowlist); then
   pass "Link check passed"
 else
   fail "Link check"
