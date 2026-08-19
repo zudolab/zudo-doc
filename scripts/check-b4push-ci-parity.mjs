@@ -157,6 +157,15 @@ const REQUIRED_CI_GUARDS = [
     comment: "@takazudo/zudo-doc publish contract (#3489)",
   },
   {
+    // Default-lane test specs must not launch known build/package-lifecycle
+    // commands that can mutate a live dist/. Both CI and b4push invoke the
+    // dependency-free scanner directly with node, so there is no pnpm token
+    // for the region parser to extract.
+    ciNeedle: "check-dist-mutating-tests.mjs",
+    b4pushScript: null,
+    comment: "Default-lane dist-mutating test guard (#3488)",
+  },
+  {
     // Search-widget-script commit drift guard: the committed
     // packages/zudo-doc/src/search-widget-script/generated-script.ts must
     // match a fresh regeneration. CI runs it as a step inside the

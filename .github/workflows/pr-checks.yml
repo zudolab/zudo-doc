@@ -15,6 +15,7 @@
 #   E2E Spec Naming Guard    — pure-Node, no install; scripts/check-e2e-spec-naming.mjs
 #   Flaky Tracking-Issue Guard — pure-Node, no install; scripts/check-flaky-tracking-issue.mjs
 #   Wait-Debt Guard           — pure-Node, no install; scripts/check-wait-debt.mjs
+#   Dist-Mutating Test Guard  — pure-Node, no install; scripts/check-dist-mutating-tests.mjs
 #   Lint Gates               — pnpm install; tag guards + pnpm lint:tokens
 #   Type Check               — pnpm install; pnpm check (zfb check → tsc --noEmit)
 #   Worker Contract Proof    — Worker typecheck + runtime DO tests + Wrangler dry-run
@@ -207,6 +208,24 @@ jobs:
       - name: Pack @takazudo/zudo-doc (dry run)
         working-directory: packages/zudo-doc
         run: npm pack --dry-run
+
+  # ---------------------------------------------------------------------------
+  # Job 0.645: Default-lane dist-mutating test guard (#3488)
+  # ---------------------------------------------------------------------------
+  # Keeps the default test lane from directly launching known build or package
+  # lifecycle commands that can mutate a live dist/. This is deliberately a
+  # narrow command-launch scanner; it does not claim to detect indirect shell
+  # wrappers, aliases, or direct filesystem writers.
+  # Pure-Node script — uses preinstalled Node 22 on the runner image, no pnpm.
+  check-dist-mutating-tests:
+    name: Dist-Mutating Test Guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Check default-lane dist-mutating test commands
+        run: node scripts/check-dist-mutating-tests.mjs
 
   # ---------------------------------------------------------------------------
   # Job 0.65: B4push/CI parity check (guard manifest meta-check)
