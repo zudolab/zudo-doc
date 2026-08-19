@@ -311,8 +311,9 @@ describe("package.json wiring for the three shipped artifacts (#2656)", () => {
   });
 
   it("runs both new guards in prepack", () => {
-    expect(pkg.scripts.prepack).toContain("check-shim-artifacts.mjs");
-    expect(pkg.scripts.prepack).toContain("check-virtual-modules.mjs");
+    expect(pkg.scripts["check:prepack-contract"]).toContain("check-shim-artifacts.mjs");
+    expect(pkg.scripts["check:prepack-contract"]).toContain("check-virtual-modules.mjs");
+    expect(pkg.scripts.prepack).toBe("pnpm check:prepack-contract");
   });
 
   it("generates virtual-modules.d.ts in the tsup onSuccess chain", () => {
