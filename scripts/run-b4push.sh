@@ -20,7 +20,7 @@ set -euo pipefail
 #      must match a fresh regeneration
 #  14. @takazudo/zudo-doc publish contract (check:prepack-contract)
 #  15. Default-lane dist-mutating test guard (#3488)
-#  16. B4push/CI parity check (guard manifest meta-check — #1967)
+#  16. Required-checks manifest + B4push/CI parity meta-checks (#3494, #1967)
 #  17. Type checking (zfb check + workspace package typechecks)
 #  18. Worker contract proof (types + Workers runtime + Wrangler dry-run)
 #  19. Root unit tests (test:unit) — fast src/scripts specs; builds @takazudo/zudo-doc as a side-effect
@@ -268,14 +268,15 @@ else
   fail "Default-lane dist-mutating test guard"
 fi
 
-# ── Step 16: B4push/CI parity check ──────────────────
-# Pure-Node check — verifies every lightweight guard gate in this file also
-# has a corresponding CI job. See scripts/check-b4push-ci-parity.mjs.
-step "B4push/CI parity check (check:b4push-ci-parity)"
-if (cd "$ROOT_DIR" && pnpm check:b4push-ci-parity); then
-  pass "B4push/CI parity check passed"
+# ── Step 16: Guard-manifest meta-checks ──────────────
+# Both checks are pure Node and dependency-free. The first verifies that every
+# PR workflow job is classified as required or reasoned-allowlisted; the second
+# verifies every lightweight local guard has corresponding CI coverage.
+step "Required-checks manifest + B4push/CI parity checks"
+if (cd "$ROOT_DIR" && node scripts/check-required-checks.mjs && pnpm check:b4push-ci-parity); then
+  pass "Required-checks manifest + B4push/CI parity checks passed"
 else
-  fail "B4push/CI parity check"
+  fail "Required-checks manifest + B4push/CI parity checks"
 fi
 
 # <<< b4push-ci-parity:guards:end

@@ -11,6 +11,7 @@
 #   Fixture Settings Drift   — pure-Node, no install; scripts/check-fixture-settings-drift.mjs
 #   Package Safelist Check   — pnpm install + package build; scripts/check-package-safelist.mjs
 #   Publish Contract Gates   — pnpm install + zudo-doc contract + npm pack dry-run
+#   Required Checks Manifest Guard — pure-Node, no install; file-only job-name coverage
 #   B4push/CI Parity Check   — pure-Node, no install; scripts/check-b4push-ci-parity.mjs
 #   E2E Spec Naming Guard    — pure-Node, no install; scripts/check-e2e-spec-naming.mjs
 #   Flaky Tracking-Issue Guard — pure-Node, no install; scripts/check-flaky-tracking-issue.mjs
@@ -227,6 +228,22 @@ jobs:
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Check default-lane dist-mutating test commands
         run: node scripts/check-dist-mutating-tests.mjs
+
+  # ---------------------------------------------------------------------------
+  # Job 0.647: Required-checks manifest guard (#3494)
+  # ---------------------------------------------------------------------------
+  # Pure file-level comparison: every job name in this workflow must appear in
+  # either .required-checks-manifest or the reasoned allowlist. Deliberately no
+  # API calls, token permissions, dependency install, or network requirement.
+  check-required-checks:
+    name: Required Checks Manifest Guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Check required-checks manifest
+        run: node scripts/check-required-checks.mjs
 
   # ---------------------------------------------------------------------------
   # Job 0.65: B4push/CI parity check (guard manifest meta-check)

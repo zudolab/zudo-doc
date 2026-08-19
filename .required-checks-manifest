@@ -1,0 +1,29 @@
+# Required PR Checks contexts.
+#
+# This file is the reviewed source of truth for the status checks that should
+# eventually be applied to branch protection. Keep names byte-for-byte equal
+# to job `name:` values in .github/workflows/pr-checks.yml.
+
+Package Unit Tests
+Pin Parity Check
+Fixture Settings Drift Check
+Lint Gates
+B4push/CI Parity Check
+E2E Tests
+Build Site
+Build Doc History
+Type Check
+Root Unit Tests
+HTML validate
+Worker Contract Proof
+Package Safelist Check
+Template Drift Check
+No-Host-Alias-In-Package Guard
+E2E Spec Naming Guard
+Flaky Tracking-Issue Guard
+Wait-Debt Guard
+Component-Tokens Codegen Drift Check
+A2 No-Stub Parity Gate
+Dist-Mutating Test Guard
+Publish Contract Gates
+Slow Unit Tests
