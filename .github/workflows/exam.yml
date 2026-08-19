@@ -5,12 +5,13 @@
 # they accumulate.
 #
 # Jobs:
-#   e2e-full        — full e2e suite (CI-safe lane) + quarantine @flaky lane
-#   slow-create     — create-zudo-doc slow integration tests (real npm install + zfb build)
-#   slow-zudo-doc   — @takazudo/zudo-doc slow route-injection-build test (real zfb builds +
-#                     npm pack; #2530 — moved out of pnpm test/pr-checks package-tests)
-#   theme-a11y      — rendered per-theme-pack WCAG contrast audit (scripts/theme-a11y-audit.ts);
-#                     too slow/still-maturing for pr-checks, so it's T3-only (#3036)
+#   scaffold-pin-published — cheap registry guard for unpublished scaffold pins (#3549)
+#   e2e-full              — full e2e suite (CI-safe lane) + quarantine @flaky lane
+#   slow-create           — create-zudo-doc slow integration tests (real npm install + zfb build)
+#   slow-zudo-doc         — @takazudo/zudo-doc slow route-injection-build test (real zfb builds +
+#                           npm pack; #2530 — moved out of pnpm test/pr-checks package-tests)
+#   theme-a11y            — rendered per-theme-pack WCAG contrast audit (scripts/theme-a11y-audit.ts);
+#                           too slow/still-maturing for pr-checks, so it's T3-only (#3036)
 #
 # Failure reporting:
 #   scripts/file-exam-issue.sh  — deduped failure issue, scoped per-workflow-job-identity
@@ -41,7 +42,74 @@ permissions:
 
 jobs:
   # ---------------------------------------------------------------------------
-  # Job 1: Full E2E — CI-safe suite + quarantine @flaky lane
+  # Job 1: Scaffold pin published guard — cheap, no install required
+  # ---------------------------------------------------------------------------
+  # This check intentionally runs directly with Node: it imports only built-in
+  # modules and sibling scripts, so package-manager setup/install would add
+  # needless cost.
+  scaffold-pin-published:
+    name: Scaffold Pin Published Guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version-file: .nvmrc
+
+      - name: Run scaffold pin published guard
+        run: node scripts/check-scaffold-pin-published.mjs
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Notify scaffold pin guard status
+  # ---------------------------------------------------------------------------
+  scaffold-pin-published-notify:
+    name: Scaffold Pin Guard Notification
+    needs: [scaffold-pin-published]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Notify via IFTTT
+        if: env.IFTTT_PROD_NOTIFY != ''
+        env:
+          IFTTT_PROD_NOTIFY: ${{ secrets.IFTTT_PROD_NOTIFY }}
+          RAW_COMMIT_MSG: ${{ github.event.head_commit.message }}
+          PIN_PUBLISHED_RESULT: ${{ needs.scaffold-pin-published.result }}
+          GITHUB_SHA_VAL: ${{ github.sha }}
+          SERVER_URL: ${{ github.server_url }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          if [ "$PIN_PUBLISHED_RESULT" = "success" ]; then
+            STATUS="zudo-doc scaffold pin published guard succeeded!"
+          elif [ "$PIN_PUBLISHED_RESULT" = "failure" ]; then
+            STATUS="zudo-doc scaffold pin published guard failed"
+          else
+            STATUS="zudo-doc scaffold pin published guard cancelled"
+          fi
+
+          COMMIT_MSG=$(printf '%s\n' "$RAW_COMMIT_MSG" | head -1)
+          SHORT_SHA=$(echo "$GITHUB_SHA_VAL" | cut -c1-7)
+          RUN_URL="${SERVER_URL}/${REPO}/actions/runs/${RUN_ID}"
+
+          PAYLOAD=$(jq -n \
+            --arg v1 "$STATUS" \
+            --arg v2 "$SHORT_SHA $COMMIT_MSG" \
+            --arg v3 "$RUN_URL" \
+            '{"value1":$v1,"value2":$v2,"value3":$v3}')
+
+          curl -sSf --max-time 10 -X POST "$IFTTT_PROD_NOTIFY" \
+            -H 'Content-Type: application/json' \
+            -d "$PAYLOAD" || echo "::warning::IFTTT notification failed"
+
+  # ---------------------------------------------------------------------------
+  # Job 3: Full E2E — CI-safe suite + quarantine @flaky lane
   # ---------------------------------------------------------------------------
   e2e-full:
     name: Full E2E Tests
@@ -170,7 +238,7 @@ jobs:
           retention-days: 14
 
   # ---------------------------------------------------------------------------
-  # Job 2: create-zudo-doc slow integration tests
+  # Job 4: create-zudo-doc slow integration tests
   # ---------------------------------------------------------------------------
   # Runs `test:slow` which exercises real `pnpm install` against the registry
   # + a full zfb build. Too expensive for every PR; runs nightly here.
@@ -221,7 +289,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
 
   # ---------------------------------------------------------------------------
-  # Job 3: @takazudo/zudo-doc slow route-injection-build test
+  # Job 5: @takazudo/zudo-doc slow route-injection-build test
   # ---------------------------------------------------------------------------
   # Runs `test:slow`, which exercises ~11 real `zfb build`s (the injected-route
   # byte-parity proof, PKGWIRE #2425 / A2 #2363) plus an `npm pack` round trip —
@@ -280,7 +348,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
 
   # ---------------------------------------------------------------------------
-  # Job 4: Theme A11y Audit — rendered per-theme-pack WCAG contrast audit
+  # Job 6: Theme A11y Audit — rendered per-theme-pack WCAG contrast audit
   # ---------------------------------------------------------------------------
   # scripts/theme-a11y-audit.ts renders the BUILT showcase once per (theme pack
   # × light/dark mode) via a real browser and reads computed styles — distinct

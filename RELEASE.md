@@ -295,6 +295,47 @@ published to npm is not.
 
 ---
 
+## Scaffold pin published gate
+
+`scripts/check-scaffold-pin-published.mjs` (`pnpm check:scaffold-pin-published`)
+answers a different release-window question from the freshness gate above:
+does every internal package pin emitted by `scaffold.ts` have at least one
+published npm version satisfying its caret range? A release can legitimately
+create a new range before that version is published, so this check must tolerate
+the short window between bumping pins and publishing the packages.
+
+**Where it runs:**
+
+- **Nightly Exam** — `.github/workflows/exam.yml` runs the check directly with
+  Node, without installing dependencies. This is the routine enforcement point
+  once the previous release should be live on npm; a failure sends the usual
+  IFTTT notification.
+- **`scripts/run-b4push.sh`** — the check is step 18, after the
+  `b4push-ci-parity:guards:end` marker. The release sequence is
+  `bump pins → b4push → publish`, so the release instructions run
+  `B4PUSH_SKIP_PIN_PUBLISHED=1 pnpm b4push` during that intentional window.
+- **`scripts/release-create-zudo-doc.sh`** — the check also runs in the
+  preflight, before any version bump. It catches an unpublished pin left behind
+  by an aborted earlier release.
+- **By hand:** `pnpm check:scaffold-pin-published`.
+
+**Deliberately NOT a PR gate.** This check makes live npm registry calls, and a
+new scaffold pin is expected to be unpublished while its release is in flight.
+Making it a normal PR or unconditionally blocking b4push would create the same
+publish-lag deadlock described in the pin-parity section: the release could not
+pass its checks until after publication, but publication requires the checked
+commit first. The b4push escape is limited to the release workflow; nightly
+enforcement and the release preflight still catch a pin that remains unpublished
+outside that window.
+
+**What a failure means:** at least one scaffold pin has no satisfying version on
+the npm registry, or the registry lookup failed. For a release in progress, use
+the documented b4push escape and publish the packages in the required order. For
+an ordinary nightly or preflight failure, finish or roll back the pending release,
+then re-run `pnpm check:scaffold-pin-published`.
+
+---
+
 ## Tag namespaces and Draft Release model
 
 Each package has its own tag namespace and its own publish workflow. Publishing a

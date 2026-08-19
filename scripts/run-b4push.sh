@@ -23,20 +23,21 @@ set -euo pipefail
 #  15. @takazudo/zudo-doc publish contract (check:prepack-contract)
 #  16. Default-lane dist-mutating test guard (#3488)
 #  17. Required-checks manifest + B4push/CI parity meta-checks (#3494, #1967)
-#  18. Type checking (zfb check + workspace package typechecks)
-#  19. Worker contract proof (types + Workers runtime + Wrangler dry-run)
-#  20. Root unit tests (test:unit) — 903 tests (901 passed, 2 skipped); builds @takazudo/zudo-doc
-#  21. Slow unit tests (test:unit:slow + two create-zudo-doc specs) — 60 slow root tests +
+#  18. Scaffold pin published guard (release-window-aware; #3549)
+#  19. Type checking (zfb check + workspace package typechecks)
+#  20. Worker contract proof (types + Workers runtime + Wrangler dry-run)
+#  21. Root unit tests (test:unit) — 903 tests (901 passed, 2 skipped); builds @takazudo/zudo-doc
+#  22. Slow unit tests (test:unit:slow + two create-zudo-doc specs) — 60 slow root tests +
 #      5 retiered create-zudo-doc tests; blocking
-#  22. Package tests (test:packages) — 2,988 suite tests across 4 workspace packages
+#  23. Package tests (test:packages) — 2,988 suite tests across 4 workspace packages
 #      (44/73/596/2,275; 5 retiered create-zudo-doc tests run in Slow Unit Tests)
-#  23. Package safelist check (#1994) — requires dist/safelist.css from step 20
-#  24. Build (zfb build)
-#  25. Content-fallback check (#3134) — no page may ship a <pre data-zfb-content-fallback> body
-#  26. Link check
-#  27. HTML validation (html-validate dist/**/*.html)
-#  28. Automated preview smoke (blocking)
-#  29. Manual interactive smoke (operator-driven)
+#  24. Package safelist check (#1994) — requires dist/safelist.css from step 21
+#  25. Build (zfb build)
+#  26. Content-fallback check (#3134) — no page may ship a <pre data-zfb-content-fallback> body
+#  27. Link check
+#  28. HTML validation (html-validate dist/**/*.html)
+#  29. Automated preview smoke (blocking)
+#  30. Manual interactive smoke (operator-driven)
 #
 # The former "Z-index codegen drift check" step was retired in
 # zudolab/zudo-doc#2661: the project-side src/config/z-index-tokens.ts (and
@@ -49,13 +50,14 @@ set -euo pipefail
 # it for time-budget reasons — the bounded fast pass stays fast.
 #
 # Env overrides for non-interactive use:
-#   B4PUSH_SKIP_HTML_VALIDATE=1  — skip HTML validation (step 26)
-#   B4PUSH_SKIP_PREVIEW_SMOKE=1  — skip the automated preview smoke (step 27)
-#   B4PUSH_SKIP_MANUAL_SMOKE=1   — skip the manual interactive smoke
+#   B4PUSH_SKIP_PIN_PUBLISHED=1  — skip the release-window guard (step 18)
+#   B4PUSH_SKIP_HTML_VALIDATE=1  — skip HTML validation (step 28)
+#   B4PUSH_SKIP_PREVIEW_SMOKE=1  — skip the automated preview smoke (step 29)
+#   B4PUSH_SKIP_MANUAL_SMOKE=1   — skip the manual interactive smoke (step 30)
 
 START_TIME=$(date +%s)
 FAILURES=()
-TOTAL_STEPS=29
+TOTAL_STEPS=30
 CURRENT_STEP=0
 
 # Per-step elapsed timing (#2538) — makes budget creep in any one step
@@ -297,7 +299,23 @@ fi
 
 # <<< b4push-ci-parity:guards:end
 
-# ── Step 18: Type checking ─────────────────────────────
+# ── Step 18: Scaffold pin published guard (#3549) ─────
+# This live npm-registry check belongs outside the parity guard region: the
+# scaffold intentionally points at the in-flight release version before that
+# version is published. Release callers opt out during that window; nightly
+# exam and the release preflight enforce it when a published pin is expected.
+step "Scaffold pin published guard (check:scaffold-pin-published)"
+if [[ "${B4PUSH_SKIP_PIN_PUBLISHED:-}" == "1" ]]; then
+  skip "Scaffold pin published guard (B4PUSH_SKIP_PIN_PUBLISHED=1)"
+else
+  if (cd "$ROOT_DIR" && pnpm check:scaffold-pin-published); then
+    pass "Scaffold pin published guard passed"
+  else
+    fail "Scaffold pin published guard"
+  fi
+fi
+
+# ── Step 19: Type checking ─────────────────────────────
 # Prefer `zfb check` (the post-cutover entry point). If it fails to
 # start (e.g. binary not yet built), fall back to `tsc --noEmit` so the
 # typecheck still gates pushes.
@@ -330,7 +348,7 @@ else
   fail "Package typechecks"
 fi
 
-# ── Step 19: Worker contract proof ───────────────────
+# ── Step 20: Worker contract proof ───────────────────
 step "Worker contract proof (types + runtime + dry-run)"
 if (cd "$ROOT_DIR" && pnpm verify:worker-contract); then
   pass "Worker contract proof passed"
@@ -338,7 +356,7 @@ else
   fail "Worker contract proof"
 fi
 
-# ── Step 20: Root unit tests ──────────────────────────
+# ── Step 21: Root unit tests ──────────────────────────
 # Root `test:unit` (vitest) guards src/**/__tests__ and scripts/__tests__,
 # which previously ran in no local gate and no CI workflow (#1856). Runs
 # before the expensive site build for fast logic-level feedback.
@@ -362,7 +380,7 @@ else
   fail "Root unit tests"
 fi
 
-# ── Step 21: Slow unit tests ──────────────────────────
+# ── Step 22: Slow unit tests ──────────────────────────
 # The subprocess-heavy root specs and the two retiered create-zudo-doc specs
 # are excluded from their default lanes and remain blocking local gates.
 # Keep both invocations in this existing step so b4push retains its current
@@ -384,7 +402,7 @@ else
   fail "retiered create-zudo-doc slow tests"
 fi
 
-# ── Step 22: Package tests ────────────────────────────
+# ── Step 23: Package tests ────────────────────────────
 # Runs all workspace package test suites (2,988 tests across 4 packages: search-worker 44,
 # doc-history-server 73, create-zudo-doc 596, zudo-doc 2,275). The 5 retiered
 # create-zudo-doc tests run in the blocking Slow Unit Tests lane. Closes the local/CI
@@ -397,7 +415,7 @@ else
   fail "Package tests + subpath resolution"
 fi
 
-# ── Step 23: Package safelist check ──────────────────
+# ── Step 24: Package safelist check ──────────────────
 # Verifies that the generated dist/safelist.css in packages/zudo-doc/ covers
 # every responsive-variant + arbitrary-value utility class used in
 # packages/zudo-doc/src/**/*.tsx. Catches regressions where gen-safelist.mjs
@@ -410,7 +428,7 @@ else
   fail "Package safelist check"
 fi
 
-# ── Step 24: Build ────────────────────────────────────
+# ── Step 25: Build ────────────────────────────────────
 # --no-strict-content-bridge overrides the zfb.config.ts strictContentBridge
 # gate (#3234) so this build still produces a dist/ for step 25's
 # content-fallback check to scan — the two guards can't run on the same build.
@@ -421,7 +439,7 @@ else
   fail "Build"
 fi
 
-# ── Step 25: Content-fallback check ───────────────────
+# ── Step 26: Content-fallback check ───────────────────
 #
 # zfb only *warns* when it declines to wire a page's compiled MDX through
 # the content bridge, then ships that page's whole body as a single
@@ -439,7 +457,7 @@ else
   fail "Content-fallback check"
 fi
 
-# ── Step 26: Link check ───────────────────────────────
+# ── Step 27: Link check ───────────────────────────────
 #
 # Strict on broken links + absolute MDX-source warnings (real 404s
 # / sub-path bypass). Trailing-slash warnings stay warn-only — they
@@ -459,7 +477,7 @@ else
   fail "Link check"
 fi
 
-# ── Step 27: HTML validation ──────────────────────────
+# ── Step 28: HTML validation ──────────────────────────
 step "HTML validation (html-validate)"
 if [[ "${B4PUSH_SKIP_HTML_VALIDATE:-}" == "1" ]]; then
   skip "HTML validation (B4PUSH_SKIP_HTML_VALIDATE=1)"
@@ -471,7 +489,7 @@ else
   fi
 fi
 
-# ── Step 28: Automated preview smoke (blocking) ──────
+# ── Step 29: Automated preview smoke (blocking) ──────
 step "Preview smoke (automated)"
 if [[ "${B4PUSH_SKIP_PREVIEW_SMOKE:-}" == "1" ]]; then
   skip "Preview smoke (B4PUSH_SKIP_PREVIEW_SMOKE=1)"
@@ -483,7 +501,7 @@ else
   fi
 fi
 
-# ── Step 29: Manual interactive smoke ────────────────
+# ── Step 30: Manual interactive smoke ────────────────
 step "Manual interactive smoke"
 if [[ "${B4PUSH_SKIP_MANUAL_SMOKE:-}" == "1" ]]; then
   skip "Manual smoke (B4PUSH_SKIP_MANUAL_SMOKE=1)"
