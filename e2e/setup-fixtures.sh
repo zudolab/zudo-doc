@@ -89,10 +89,11 @@
 #
 # Skip-rebuild-when-fresh:
 #   Each fixture stores a hash marker at <fixture>/.build-marker.sha256
-#   covering all build inputs (fixture src/content + src/config, shared
-#   inputs: pages/, plugins/, src/ dirs, packages/zudo-doc sources,
-#   pnpm-lock.yaml, zfb.config.ts, and this script). When the hash matches
-#   the marker on disk the build is skipped. E2E_FORCE_REBUILD=1 bypasses.
+#   covering all build inputs (fixture src/content + src/config + public/,
+#   shared inputs: pages/, plugins/, src/ dirs, package sources and built
+#   artifacts, pnpm-lock.yaml, zfb.config.ts, and this script). When the hash
+#   matches the marker on disk the build is skipped. E2E_FORCE_REBUILD=1
+#   bypasses.
 
 set -euo pipefail
 
@@ -178,14 +179,15 @@ ROOT_SYMLINKED_DIRS=(
 # Hash helper — computes a build-input hash for a given fixture.
 # ---------------------------------------------------------------------------
 # Covers everything the build actually consumes:
-#   1. Fixture-specific inputs: src/content/ + src/config/
+#   1. Fixture-specific inputs: src/content/ + src/config/ + public/
 #   2. Shared inputs consumed via symlink/copy:
-#      pages/, plugins/, src/{components,hooks,...}, packages/zudo-doc/
+#      pages/, plugins/, src/{components,hooks,...}, package sources
 #   3. Root config files copied into fixture: zfb.config.ts, tsconfig.json, etc.
 #   4. Lock file (pins zfb version): pnpm-lock.yaml
-#   5. This script itself (structural change → rebuild needed)
+#   5. Built package artifacts consumed by the fixture: packages/*/dist/
+#   6. This script itself (structural change → rebuild needed)
 #
-# Strategy: use `git ls-files -s` for tracked paths (fast, content-addressed)
+# Strategy: use `git ls-files` for tracked paths (fast path for the file list)
 # and fall back to checksumming untracked files via find+shasum. This handles
 # both clean checkouts (all tracked) and working-tree edits (untracked
 # fixture content changes invalidate the marker correctly).
@@ -202,8 +204,17 @@ compute_build_hash() {
     return
   fi
 
+  # A missing package dist cannot produce a verified fixture build. Return an
+  # empty hash before entering the pipeline so is_build_fresh() rebuilds
+  # conservatively instead of hashing an absent input as fresh.
+  if [ ! -d "$REPO_ROOT/packages/zudo-doc/dist" ] || \
+    [ ! -d "$REPO_ROOT/packages/doc-history-server/dist" ]; then
+    echo ""
+    return
+  fi
+
   {
-    # --- Fixture-specific inputs (content + per-fixture config) ---
+    # --- Fixture-specific inputs (content + config + public assets) ---
     # Use find+shasum to capture actual file contents including untracked
     # edits, so local content changes always invalidate the marker.
     if [ -d "$fixture_dir/src/content" ]; then
@@ -216,9 +227,15 @@ compute_build_hash() {
         shasum "$fixture_dir/src/config/settings.ts" 2>/dev/null || true
       fi
     fi
+    if [ -d "$fixture_dir/public" ]; then
+      # public/ is materialised during setup, including fixture-owned files
+      # and copied root assets. Hash current bytes so an asset edit invalidates
+      # the marker while a bare touch does not.
+      find "$fixture_dir/public" -type f | sort | xargs shasum 2>/dev/null || true
+    fi
 
     # --- Shared inputs (git-tracked file LIST, working-tree CONTENT) ---
-    # pages/, plugins/, src/{components,lib,...}, packages/zudo-doc/
+    # pages/, plugins/, src/{components,lib,...}, package sources
     #
     # `git ls-files` gives the tracked path list (respecting .gitignore, so
     # build output / nested node_modules never enter the hash); piping those
@@ -241,11 +258,23 @@ compute_build_hash() {
         src/config/ \
         src/chrome-bindings.tsx \
         packages/zudo-doc/ \
+        packages/doc-history-server/ \
         pnpm-lock.yaml \
         zfb.config.ts \
         tsconfig.json \
         2>/dev/null | sort -z | xargs -0 shasum 2>/dev/null || true
     )
+
+    # --- Built package artifacts (content-addressed) ---
+    # The fixture build consumes the compiled workspace packages through the
+    # packages/ symlink. Source bytes alone cannot detect a stale, partial, or
+    # missing package build, so include both packages' current dist/ bytes.
+    # A missing dist/ is a conservative cache miss rather than an empty input.
+    for dist_dir in \
+      "$REPO_ROOT/packages/zudo-doc/dist" \
+      "$REPO_ROOT/packages/doc-history-server/dist"; do
+      find "$dist_dir" -type f | sort | xargs shasum 2>/dev/null || true
+    done
 
     # --- This script itself (structural change → rebuild) ---
     shasum "$REPO_ROOT/e2e/setup-fixtures.sh" 2>/dev/null || true
