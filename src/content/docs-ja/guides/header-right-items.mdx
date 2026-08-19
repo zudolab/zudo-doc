@@ -143,7 +143,7 @@ headerRightItems: [
 
 プロジェクト固有のコンポーネント名は `chromeBindings.headerRightComponents` で解決します。型付きの設定手順全体は [Host Chrome Bindings](../reference/host-chrome-bindings.mdx) を参照してください。クライアント island に対応する静的な登録経路も用意していない限り、レンダラーは SSR 表示用として扱います。
 
-登録済み island の props が現在のページではなくブラウザーセッションに属する場合は、live island 自体か persist されたヘッダー内の祖先要素に `data-zd-props-preserve` を付けます。オプトアウトは live DOM を基準に判定され、対象 island のシリアライズ済み props は置き換えられず、remount 対象にもなりません。persist されたヘッダー自体に属性を付けると配下の全 island がオプトアウトされるため、遷移先ページの props を受け取るべき island には付けないでください。
+登録済み island の props が現在のページではなくブラウザーセッションに属する場合は、遷移前から存在する island 自体か、persist されたヘッダー内の祖先要素に `data-zd-props-preserve` を付けます。オプトアウトは遷移前から存在する DOM を基準に判定され、対象 island のシリアライズ済み props は置き換えられず、remount 対象にもなりません。persist されたヘッダー自体に属性を付けると配下の全 island がオプトアウトされるため、遷移先ページの props を受け取るべき island には付けないでください。
 
 ## テーマ切替のカスタマイズ
 
