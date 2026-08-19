@@ -9,6 +9,48 @@ import { join, relative } from "node:path";
 import matter from "gray-matter";
 import { toRouteSlug } from "../slug/index.js";
 
+const NAMED_CHARACTER_REFERENCES: Readonly<Record<string, string>> = {
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  nbsp: "\u00a0",
+};
+
+function decodeCharacterReferences(value: string): string {
+  return value
+    .replace(
+      /&#(?:([0-9]+)|[xX]([0-9a-fA-F]+));/g,
+      (
+        reference,
+        decimal: string | undefined,
+        hexadecimal: string | undefined,
+      ) => {
+        const digits = decimal ?? hexadecimal;
+        if (!digits) return reference;
+        const codePoint = Number.parseInt(digits, decimal ? 10 : 16);
+        if (
+          codePoint > 0x10ffff ||
+          (codePoint >= 0xd800 && codePoint <= 0xdfff)
+        ) {
+          return reference;
+        }
+        try {
+          return String.fromCodePoint(codePoint);
+        } catch {
+          return reference;
+        }
+      },
+    )
+    .replace(
+      /&(lt|gt|quot|apos|nbsp);/g,
+      (reference, name: string) =>
+        NAMED_CHARACTER_REFERENCES[name] ?? reference,
+    )
+    // Decode ampersands last so encoded references are decoded only once.
+    .replace(/&amp;/g, "&");
+}
+
 /**
  * Frontmatter fields the integrations read off each MDX/MD file. Extra
  * keys pass through via the index signature. Mirrors the host project's
@@ -50,23 +92,28 @@ export interface MdDocFrontmatter {
  * rules without also updating the byte-equality fixtures (topic-plugin-audit).
  */
 export function stripMarkdown(md: string): string {
+  const withoutCodeCommentsAndTags = md
+    // Remove code blocks
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/`[^`]+`/g, "")
+    // Remove JSX/MDX block comments ({/* ... */}) — they never render to
+    // users in MDX, so a leading comment must not become a page's fallback
+    // description (zudo-doc#2175). Must precede the emphasis rule below,
+    // which would otherwise mangle the `/* … */` asterisks into `{/ … /}`.
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
+    // Remove HTML tags
+    .replace(/<[^>]+>/g, "");
+
   return (
-    md
-      // Remove code blocks
-      .replace(/```[\s\S]*?```/g, "")
-      .replace(/`[^`]+`/g, "")
-      // Remove JSX/MDX block comments ({/* ... */}) — they never render to
-      // users in MDX, so a leading comment must not become a page's fallback
-      // description (zudo-doc#2175). Must precede the emphasis rule below,
-      // which would otherwise mangle the `/* … */` asterisks into `{/ … /}`.
-      .replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
-      // Remove HTML tags
-      .replace(/<[^>]+>/g, "")
+    decodeCharacterReferences(withoutCodeCommentsAndTags)
       // Remove headings markers
       .replace(/^#{1,6}\s+/gm, "")
       // Remove emphasis/bold markers
       .replace(/\*{1,3}([^*]+)\*{1,3}/g, "$1")
-      .replace(/_{1,3}([^_]+)_{1,3}/g, "$1")
+      .replace(
+        /(^|[^\p{L}\p{N}])(_{1,3})(?=\S)([^_\n]*?\S)\2(?=$|[^\p{L}\p{N}])/gmu,
+        "$1$3",
+      )
       // Remove images (must run before link removal)
       .replace(/!\[[^\]]*\]\([^)]+\)/g, "")
       // Remove links but keep text
