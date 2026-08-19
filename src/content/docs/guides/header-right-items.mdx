@@ -139,6 +139,12 @@ headerRightItems: [
 ],
 ```
 
+### Add a custom renderer
+
+Project-owned component names are resolved through `chromeBindings.headerRightComponents`; see [Host Chrome Bindings](../reference/host-chrome-bindings.mdx) for the complete typed setup. Treat a renderer as SSR-presentational unless its client island also has a supported static registration path.
+
+For a registered island whose props belong to the browser session rather than the current page, add `data-zd-props-preserve` to the live island or an ancestor inside the persisted header. The live DOM governs this opt-out: navigation neither replaces that island's serialized props nor marks it for remount. Putting the attribute on the persisted header opts out every nested island, so leave it off page-derived islands that should receive the incoming page's props.
+
 ## Customizing the theme toggle
 
 The built-in `theme-toggle` component is enough for most sites. Some consumers still keep their **own** `ThemeToggle` in their project — to place it in a custom spot, compose it into their own island wrapper, or because they were avoiding the `@takazudo/zudo-doc/theme` barrel (which has a React-resolution hazard — see below). In all of these cases, **import `ThemeToggle` from the dedicated `@takazudo/zudo-doc/theme-toggle` subpath** instead of hand-copying a local component.

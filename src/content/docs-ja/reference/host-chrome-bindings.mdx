@@ -97,6 +97,18 @@ export const chromeBindings = defineChromeBindings({
 
 ルートコンテキストを通るのは項目名だけで、`headerRightComponents` 自体はホストのコーラブルモジュールに残ります。ほかの bindings モジュール内コンポーネントと同様、静的なアイランド登録経路も持たない限り SSR 表示用として扱ってください。
 
+### セッション固有の island props を保持する
+
+同一ロケール内でページを移動すると、persist されたヘッダー内の island が持つシリアライズ済み props は、デフォルトでは遷移先ページの値に更新されます。ページから導出する props にはこの動作を使ってください。一方、静的に登録したホスト island がセッション固有の props を持つ場合 — たとえば、初期カウントを次ページの SSR スナップショットで置き換えたくないバッジ — は、island のルート要素か persist されたヘッダー内の祖先要素に `data-zd-props-preserve` を付けます。
+
+```tsx
+<div data-zd-props-preserve>
+  <SessionBadge initialCount={unreadCount} />
+</div>
+```
+
+オプトアウトの判定に使われるのは遷移前から存在する live DOM です。遷移先ページだけに属性を付けても、現在の island は保持されません。保持対象の island では `data-props` の更新も remount フラグの付与も行われません。persist されたヘッダー自体に `data-zd-props-preserve` を付けると、配下の全 island が一括でオプトアウトされます。そのため、セッション固有の props を所有する範囲だけを囲むようにしてください。
+
 ### 既存スロットの「取り残し」も解消する
 
 `docContentHeaderExtras` と `homeExtras` は新しい継ぎ目ですが、`ChromeHostBindings` にはこのチャネルが存在する以前から、注入ルートへ**届く手段がなかった**スロットがいくつかありました — それらはスタブのデフォルトのまま黙って据え置かれていました。`chromeBindingsModule` はそれらをまとめて解消します。

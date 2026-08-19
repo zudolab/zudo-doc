@@ -103,6 +103,18 @@ The renderer receives the exact header-right render context: the serialized `ite
 
 Only the item name travels in the route-context data. `headerRightComponents` remains in the host-callables module and is never serialized. As with other bindings-module components, treat these renderers as SSR-presentational unless they also have a supported static island-registration path.
 
+### Preserving session-scoped island props
+
+By default, same-locale navigation refreshes the serialized props of islands nested under the persisted header from the incoming page. Keep that behavior for page-derived props. If a statically registered host island instead owns session-scoped props — for example, a badge whose initial count must not be replaced by the next page's SSR snapshot — place `data-zd-props-preserve` on the island's root element or an ancestor inside the persisted header:
+
+```tsx
+<div data-zd-props-preserve>
+  <SessionBadge initialCount={unreadCount} />
+</div>
+```
+
+The live DOM governs the opt-out; adding the attribute only to the incoming page does not preserve the current island. A preserved island receives neither an updated `data-props` value nor a remount flag. Placing `data-zd-props-preserve` on the persisted header itself is a blanket opt-out for every nested island, so prefer the narrowest boundary that owns the session-scoped props.
+
 ### It un-strands the pre-existing slots too
 
 `docContentHeaderExtras` and `homeExtras` are new, but `ChromeHostBindings` already had several slots that had **no way to reach injected routes** before this channel existed — they silently stayed at their stub defaults. `chromeBindingsModule` un-strands all of them at once:

@@ -319,6 +319,8 @@ export function Header(props: HeaderProps): JSX.Element {
       //     island module): on BEFORE_SWAP_EVENT it copies the incoming
       //     document's data-props onto the live nested islands, and
       //     mountNewIslands re-reads the attribute at mount time (#3530)
+      //     Host islands can opt out with data-zd-props-preserve on the live
+      //     island or an ancestor inside this persisted root (#3555).
       //   - Header nav + aria-current: NAV_OVERFLOW_SCRIPT re-runs on
       //     AFTER_NAVIGATE_EVENT (frozen by zudolab/zudo-doc#3534 — the
       //     `addEventListener(${afterNavigateEventLiteral}, initNavOverflow)`
