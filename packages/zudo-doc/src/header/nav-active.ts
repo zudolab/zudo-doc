@@ -54,12 +54,14 @@ export function pathForMatch(
  * Segment-aware prefix test: nav path `/docs/guides` matches `/docs/guides`
  * and `/docs/guides/...` but NOT `/docs/guideship`.
  *
- * Exported (not just module-private) so `nav-overflow-script.ts` can embed it
- * verbatim via `.toString()` alongside `computeActiveNavPath` — that function
- * closes over this one, so a bare `computeActiveNavPath.toString()` embed
- * would reference an undefined `pathMatchesNavPath` in the browser (see the
- * caution note on `computeActiveNavPath` below). Kept self-contained (no
- * outer references) for the same reason.
+ * Exported (not just module-private) so `scripts/gen-nav-overflow-script.mjs`
+ * can embed it verbatim via `.toString()` alongside `computeActiveNavPath` —
+ * that function closes over this one, so a bare `computeActiveNavPath.toString()`
+ * embed would reference an undefined `pathMatchesNavPath` in the browser (see
+ * the caution note on `computeActiveNavPath` below). Kept self-contained (no
+ * outer references) for the same reason. The generator freezes both into the
+ * committed `nav-overflow-generated-script.ts` literal at package build time
+ * (zudolab/zudo-doc#3534) — this is no longer a live per-module-eval embed.
  */
 export function pathMatchesNavPath(currentPath: string, navPath: string): boolean {
   if (currentPath === navPath) return true;
@@ -69,8 +71,9 @@ export function pathMatchesNavPath(currentPath: string, navPath: string): boolea
 
 /**
  * CAUTION (zudolab/zudo-doc#3398): this closes over `pathMatchesNavPath`
- * above. `nav-overflow-script.ts` embeds both via `.toString()` (never this
- * one alone) so the generated browser script is self-contained.
+ * above. `scripts/gen-nav-overflow-script.mjs` embeds both via `.toString()`
+ * (never this one alone) so the frozen browser script (`./nav-overflow-generated-script.ts`,
+ * zudolab/zudo-doc#3534) is self-contained.
  */
 export function computeActiveNavPath(
   navItems: readonly NavItemLike[],

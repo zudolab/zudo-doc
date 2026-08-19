@@ -85,12 +85,16 @@ describe("CURRENT_PATH_SCRIPT_PRELUDE", () => {
     );
   });
 
-  it("is spliced into all three string-embedded client scripts", () => {
-    for (const script of [
-      NAV_OVERFLOW_SCRIPT,
-      LANGUAGE_SWITCHER_INIT_SCRIPT,
-      VERSION_SWITCHER_REWIRE_SCRIPT,
-    ]) {
+  it("is spliced into the two still-live string-embedded client scripts", () => {
+    // NAV_OVERFLOW_SCRIPT is no longer a live per-module-eval splice — it is a
+    // frozen literal generated at package build time
+    // (scripts/gen-nav-overflow-script.mjs, zudolab/zudo-doc#3534). Its
+    // embedding is proven by the byte-equality drift guard in
+    // ../../header/__tests__/nav-overflow-script.test.ts instead; asserting
+    // containment here would still pass (the generator does splice the real
+    // prelude in) but would duplicate that guard rather than exercise a live
+    // embedding.
+    for (const script of [LANGUAGE_SWITCHER_INIT_SCRIPT, VERSION_SWITCHER_REWIRE_SCRIPT]) {
       expect(script).toContain(CURRENT_PATH_SCRIPT_PRELUDE);
     }
   });

@@ -80,14 +80,19 @@ export default defineConfig((options) => ({
   // one-shot build's clean wipes dist/ first; gen-safelist only scans
   // dist/*.js so the copied .css does not affect it.
   //
-  // gen-search-widget-script.mjs (zudolab/zudo-doc#3412) also runs here —
-  // NOT for the cold-start case (package.json's build/prepare/predev scripts
-  // already run it BEFORE tsup starts, since generated-script.ts must exist
-  // on disk for tsup to compile index.ts's import of it) but so a mid-`dev:js
-  // --watch` edit to scoring.ts / transitions/page-events.ts regenerates
-  // generated-script.ts too: write-if-changed means an unrelated onSuccess
-  // run is a no-op, but a real content change rewrites the file, which
-  // tsup's watcher (already watching it — it matches the `src/**/*.ts` entry
-  // glob) then picks up as a normal incremental rebuild.
-  onSuccess: "node scripts/copy-theme-css.mjs && node scripts/copy-content-css.mjs && node scripts/copy-page-loading-css.mjs && node scripts/copy-features-css.mjs && node scripts/gen-safelist.mjs && node scripts/copy-eject-sources.mjs && node scripts/copy-routes-src.mjs && node scripts/copy-virtual-modules.mjs && node scripts/copy-theme-packs.mjs && node scripts/gen-catalog.mjs && node scripts/gen-search-widget-script.mjs",
+  // gen-search-widget-script.mjs (zudolab/zudo-doc#3412) and
+  // gen-nav-overflow-script.mjs (zudolab/zudo-doc#3534) also run here — NOT
+  // for the cold-start case (package.json's build/prepare/predev scripts
+  // already run both BEFORE tsup starts, since their generated files must
+  // exist on disk for tsup to compile the modules that import them) but so a
+  // mid-`dev:js --watch` edit to one of their source files regenerates the
+  // generated file too: write-if-changed means an unrelated onSuccess run is
+  // a no-op, but a real content change rewrites the file, which tsup's
+  // watcher (already watching it — it matches the `src/**/*.ts` entry glob)
+  // then picks up as a normal incremental rebuild. gen-nav-overflow-script.mjs
+  // runs BEFORE copy-eject-sources.mjs specifically — copy-eject-sources.mjs
+  // copies `src/header/` verbatim into `eject/`, so running the generator
+  // after it would copy the PREVIOUS literal into eject/ on the first watch
+  // cycle.
+  onSuccess: "node scripts/copy-theme-css.mjs && node scripts/copy-content-css.mjs && node scripts/copy-page-loading-css.mjs && node scripts/copy-features-css.mjs && node scripts/gen-safelist.mjs && node scripts/gen-nav-overflow-script.mjs && node scripts/copy-eject-sources.mjs && node scripts/copy-routes-src.mjs && node scripts/copy-virtual-modules.mjs && node scripts/copy-theme-packs.mjs && node scripts/gen-catalog.mjs && node scripts/gen-search-widget-script.mjs",
 }));
