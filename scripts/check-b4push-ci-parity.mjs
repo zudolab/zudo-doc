@@ -150,6 +150,13 @@ const REQUIRED_CI_GUARDS = [
     comment: "Wait-debt guard (scripts/check-wait-debt.mjs, #2538)",
   },
   {
+    // @takazudo/zudo-doc publish contract: pnpm --filter ... check:prepack-contract
+    // (CI) / pnpm --filter ... check:prepack-contract (b4push, #3489).
+    ciNeedle: "check:prepack-contract",
+    b4pushScript: "check:prepack-contract",
+    comment: "@takazudo/zudo-doc publish contract (#3489)",
+  },
+  {
     // Search-widget-script commit drift guard: the committed
     // packages/zudo-doc/src/search-widget-script/generated-script.ts must
     // match a fresh regeneration. CI runs it as a step inside the
@@ -204,9 +211,11 @@ function extractB4pushGuardRegion(src) {
     if (line.includes(`<<< ${REGION_CLOSE_MARKER}`)) {
       break;
     }
-    // Match: pnpm <script> or pnpm run <script>
+    // Match: pnpm <script>, pnpm run <script>, or pnpm --filter <pkg> <script>
     // Stop at first whitespace, ), ;, or end-of-line after the script name.
-    const m = line.match(/\bpnpm(?:\s+run)?\s+([A-Za-z0-9:_-]+)/);
+    const m = line.match(
+      /\bpnpm(?:\s+--filter\s+\S+)?(?:\s+run)?\s+([A-Za-z0-9:_-]+)/,
+    );
     if (m) {
       tokens.push(m[1]);
     }
