@@ -155,7 +155,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 22
+          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -285,7 +285,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 22
+          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -322,7 +322,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 22
+          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -364,7 +364,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 22
+          node-version-file: .nvmrc
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Download exact site build output
@@ -415,7 +415,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 22
+          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -471,7 +471,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 22
+          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -626,7 +626,7 @@ jobs:
         if: steps.detect-emitters.outputs.run_parity == 'true'
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 22
+          node-version-file: .nvmrc
 
       - name: Install dependencies
         if: steps.detect-emitters.outputs.run_parity == 'true'
@@ -704,7 +704,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 22
+          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -756,7 +756,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 22
+          node-version-file: .nvmrc
 
       - name: Install deps (no scripts)
         run: pnpm install --frozen-lockfile --ignore-scripts
@@ -797,7 +797,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 22
+          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -859,7 +859,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 22
+          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
