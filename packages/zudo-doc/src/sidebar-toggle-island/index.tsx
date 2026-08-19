@@ -8,8 +8,16 @@ import { useState, useEffect } from "preact/hooks";
 // After zudolab/zudo-doc#1335 the host components pull lifecycle event names
 // from the v2 transitions module rather than hard-coding `astro:*` literals.
 import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
+import { ensureNestedIslandPropsRefresh } from "../transitions/nested-island-props-refresh.js";
 import { SidebarTree } from "../sidebar-tree-island/index.js";
 import type { SidebarNavNode, SidebarRootMenuItem, SidebarLocaleLink } from "../sidebar/types.js";
+
+// This island lives INSIDE the persisted `<header>`, so a same-locale swap
+// lifts it verbatim and would re-mount it from the previous page's serialized
+// props (zudolab/zudo-doc#3525). The refresh has to outlive the island's own
+// mount/unmount cycle across a swap, so it is installed at document lifetime
+// here rather than from an effect. SSR evaluation is a safe no-op.
+ensureNestedIslandPropsRefresh();
 
 const cx = (...classes: Array<string | false | null | undefined>) =>
   classes.filter(Boolean).join(" ");

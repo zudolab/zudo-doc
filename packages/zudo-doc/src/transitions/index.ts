@@ -11,9 +11,24 @@
 //     helpers. With the SPA router, AFTER_NAVIGATE_EVENT fires after
 //     each same-document swap; BEFORE_NAVIGATE_EVENT fires before.
 
+//   - `nested-island-props-refresh.ts` — the document-lifetime helper that
+//     refreshes nested-island `data-props` at the `zfb:before-swap` seam
+//     (zudolab/zudo-doc#3530).
+
 export {
   BEFORE_NAVIGATE_EVENT,
   AFTER_NAVIGATE_EVENT,
   onBeforeNavigate,
   onAfterNavigate,
 } from "./page-events.js";
+
+// `BEFORE_SWAP_EVENT` stays OUT of this barrel on purpose (see its JSDoc in
+// page-events.ts): its consumers need the raw event object's `newDocument`, not
+// a bare notification, so they import it from `./page-events.js` directly.
+//
+// The refresh helper's `ensure` entrypoint, by contrast, MUST be reachable
+// here. `sidebar-toggle-island` is ejectable, and eject rewrites every
+// parent-relative import `../<seg>/<rest>` to `@takazudo/zudo-doc/<seg>`
+// (`eject/index.ts`) — so the island's `../transitions/…` import lands on this
+// barrel in an ejected project and would otherwise resolve to nothing.
+export { ensureNestedIslandPropsRefresh } from "./nested-island-props-refresh.js";
