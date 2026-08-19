@@ -154,7 +154,7 @@ const ALL_FEATURES = [
   "noindex",
 ];
 
-describe("scaffold — barebone manifest (locked 17-file shape, #2653 Decision 4)", () => {
+describe("scaffold — barebone manifest (locked 18-file shape, #2653 Decision 4)", () => {
   let files: string[];
 
   beforeAll(async () => {

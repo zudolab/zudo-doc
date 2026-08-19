@@ -470,7 +470,7 @@ fi
 # generated route URLs that don't have MDX sources). Delete an
 # entry whenever the underlying issue gets fixed so the strict
 # gate then catches future regressions of the same shape.
-step "Link check (check-links --strict-broken --strict-absolute)"
+step "Link check (check-links --strict-broken --strict-absolute --strict-anchors)"
 if (cd "$ROOT_DIR" && pnpm run check:links -- --strict-broken --strict-absolute --strict-anchors --allowlist=.check-links-allowlist); then
   pass "Link check passed"
 else
