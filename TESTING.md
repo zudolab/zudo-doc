@@ -25,7 +25,7 @@ is a blocking PR lane, and the visual-regression baseline is deliberately skippe
 
 | Level | What | Scope | Command |
 |-------|------|-------|---------|
-| L1 | Vitest unit tests | `src/**/__tests__/`, `scripts/__tests__/` (~1,981 tests) + 4 workspace packages (2,971 tests: search-worker 44, doc-history-server 73, create-zudo-doc 603, zudo-doc 2,251) — reproduce the package census with `pnpm test:packages` | `pnpm test` |
+| L1 | Vitest unit tests | `src/**/__tests__/`, `scripts/__tests__/` (~1,981 tests) + 4 workspace packages (2,964 tests: search-worker 44, doc-history-server 73, create-zudo-doc 596, zudo-doc 2,251) — reproduce the package census with `pnpm test:packages`; 5 retiered `create-zudo-doc` tests run separately in Slow Unit Tests | `pnpm test` |
 | L1 Worker | Workers-runtime unit/integration tests | Custom entry export graph and SQLite `AiChatDailySpendCap` concurrency using `@cloudflare/vitest-pool-workers` | `pnpm test:worker` |
 | L2 | *Not used* — jsdom/happy-dom + Testing Library DOM component tests | Intentionally skipped in this repo — see "Why L2 is skipped" below | — |
 | L3 | Static dist reads + build-output verification | Read pre-built `dist/` HTML with `readFileSync` (Playwright specs using `makeDistReader(fixture)`); also covers the b4push build-output steps (link check, HTML validation, preview smoke) — see "L3 details" below | `E2E_FIXTURES=<fixture> npx playwright test --project <fixture> e2e/<fixture>-*.spec.ts` (e.g. `E2E_FIXTURES=versioning npx playwright test --project versioning e2e/versioning.spec.ts`) — any spec using `makeDistReader(fixture)` from `e2e/dist-helper.ts` |
@@ -116,7 +116,7 @@ because it never runs in CI — the table tracks *where in the pipeline* a tier 
 Run before pushing, or when iterating on a change:
 
 ```bash
-pnpm test          # L1: builds @takazudo/zudo-doc, runs ~1,981 root vitest + 2,971 package tests across 4 packages
+pnpm test          # L1: builds @takazudo/zudo-doc, runs ~1,981 root vitest + 2,964 package tests across 4 packages
 pnpm check         # TypeScript typecheck (zfb check)
 pnpm check:worker  # generated binding + custom Worker typecheck
 pnpm test:worker   # builds first, then runs Workers-runtime/SQLite DO tests
@@ -224,8 +224,8 @@ timing breakdown printed by `scripts/run-b4push.sh` (the timing state is set up 
 `scripts/run-b4push.sh:54-69`, in the `START_TIME`/`TOTAL_STEPS` and `STEP_*` block).
 It includes the blocking slow
 unit subset, but deliberately excludes the full five-fixture Playwright run and
-the registry-install/full-build slow-create sweep reserved for T3. A 5–10 minute
-wall-clock result is a soft design target, not a hard gate: local machines are
+the registry-install/full-build slow-create sweep reserved for T3. A ≤25-minute
+wall-clock result is an advisory design target, not a hard gate: local machines are
 noisy, so pass/fail is completion plus structural boundedness, not a single timing
 threshold. Use `pnpm b4push` to reproduce the lane and its timings.
 

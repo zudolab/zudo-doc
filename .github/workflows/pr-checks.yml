@@ -20,7 +20,8 @@
 #   Lint Gates               — pnpm install; tag guards + pnpm lint:tokens
 #   Type Check               — pnpm install; pnpm check (zfb check → tsc --noEmit)
 #   Worker Contract Proof    — Worker typecheck + runtime DO tests + Wrangler dry-run
-#   Package Unit Tests       — pnpm install; pnpm test:packages (all 4 package suites; 2,971 tests)
+#   Package Unit Tests       — pnpm install; pnpm test:packages (4 package suites; 2,964 tests:
+#                              search-worker 44, doc-history-server 73, create-zudo-doc 596, zudo-doc 2,251)
 #   Root Unit Tests          — pnpm install; pnpm test:unit (fast src/scripts specs)
 #   Slow Unit Tests           — pnpm install; root slow specs + two retiered create-zudo-doc specs
 #   A2 Parity Gate           — path-filtered (#3419): skips unless an every-page script
