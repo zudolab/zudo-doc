@@ -98,9 +98,10 @@ const baseChoices: UserChoices = {
 // The locked manifest (#2653 Decision 4 / #2660 completion comment).
 // ---------------------------------------------------------------------------
 
-/** The locked ~17-file barebone (EN-only) manifest. Grew from 12 to 13 with
+/** The locked ~18-file barebone (EN-only) manifest. Grew from 12 to 13 with
  *  pnpm-workspace.yaml (#2923 — disables pnpm 11's minimumReleaseAge gate),
- *  then from 13 to 17 with the default public/ favicon set (#3186). */
+ *  then from 13 to 17 with the default public/ favicon set (#3186), and to
+ *  18 with the generated-project link checker (#3552). */
 const BAREBONE_MANIFEST = [
   ".gitignore",
   ".npmrc",
@@ -113,6 +114,7 @@ const BAREBONE_MANIFEST = [
   "public/favicon-32x32.png",
   "public/favicon.ico",
   "public/favicon.svg",
+  "scripts/check-links.js",
   "src/content/docs/getting-started/index.mdx",
   "src/content/docs/getting-started/installation.mdx",
   "src/content/docs/getting-started/introduction.mdx",
@@ -165,7 +167,7 @@ describe("scaffold — barebone manifest (locked 17-file shape, #2653 Decision 4
     await fs.remove(dir);
   });
 
-  it("emits EXACTLY the 17 locked-manifest files — no more, no less", () => {
+  it("emits EXACTLY the 18 locked-manifest files — no more, no less", () => {
     expect(files).toEqual(BAREBONE_MANIFEST);
   });
 });
@@ -898,7 +900,7 @@ describe("scaffold — changelog feature", () => {
 });
 
 describe("scaffold — every-feature manifest is exactly base + the documented per-feature deltas", () => {
-  it("all-on scaffold emits exactly the expected 45-file set", async () => {
+  it("all-on scaffold emits exactly the expected 46-file set", async () => {
     await scaffold({
       ...baseChoices,
       projectName: "test-all-on",
@@ -922,6 +924,7 @@ describe("scaffold — every-feature manifest is exactly base + the documented p
       "public/favicon-32x32.png",
       "public/favicon.ico",
       "public/favicon.svg",
+      "scripts/check-links.js",
       "scripts/setup-doc-skill.sh",
       "src-tauri-dev/.gitignore",
       "src-tauri-dev/Cargo.toml",
@@ -1479,7 +1482,7 @@ describe("scaffold — CLAUDE.md generation", () => {
 });
 
 describe("scaffold — generated package.json", () => {
-  it("scripts: only dev/build/preview/check by default — no check:html, gen:z-index, or check:z-index", async () => {
+  it("scripts: emits dev/build/preview/check/check:links by default — no check:html, gen:z-index, or check:z-index", async () => {
     await scaffold(baseChoices);
     const pkg = await fs.readJson(projectPath("test-doc", "package.json"));
     expect(pkg.scripts).toEqual({
@@ -1487,6 +1490,7 @@ describe("scaffold — generated package.json", () => {
       build: "zfb build",
       preview: "zfb preview",
       check: "zfb check",
+      "check:links": "node scripts/check-links.js",
     });
   });
 
