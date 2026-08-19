@@ -160,6 +160,8 @@ jobs:
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -197,6 +199,8 @@ jobs:
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -365,6 +369,8 @@ jobs:
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -402,6 +408,8 @@ jobs:
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -444,6 +452,8 @@ jobs:
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Download exact site build output
@@ -468,15 +478,10 @@ jobs:
   # publish attempt. This job runs all 5 package suites on every PR so a
   # broken suite turns the PR red instead of hiding until release day.
   #
-  # Build step precedes the test run for clean-runner parity: @takazudo/zudo-doc
-  # ships compiled dist/ (built by tsup). The publish workflow runs
-  # `pnpm --filter @takazudo/zudo-doc build` before its test step for the same
-  # reason — the suite imports that compiled output, and building explicitly
-  # guarantees it reflects current source. (The plain `pnpm install` below does
-  # run the package's `prepare` build, so dist/ is not actually absent here —
-  # this step is about freshness, not existence. A tree installed with
-  # `--ignore-scripts` is the case where it would be missing outright; see
-  # scripts/ensure-workspace-build.mjs and zudolab/zudo-doc#3053.)
+  # `pnpm install` runs @takazudo/zudo-doc's `prepare` build, so the compiled
+  # dist/ is already current on a clean runner. The guard below verifies that
+  # all exported workspace artifacts exist without rebuilding them; this keeps
+  # the package-test lane from paying for a second identical build.
   package-tests:
     name: Package Unit Tests
     runs-on: ubuntu-latest
@@ -495,14 +500,14 @@ jobs:
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Build @takazudo/zudo-doc before testing — clean-runner parity; the
-      # suite may import built dist/ which does not exist on a fresh runner.
-      - name: Build @takazudo/zudo-doc
-        run: pnpm --filter @takazudo/zudo-doc build
+      - name: Ensure workspace packages are built
+        run: pnpm ensure:workspace-build
 
       # Search-widget-script commit drift guard (#3421, #3431). Runs as a
       # step here rather than its own pure-Node job because the generator
@@ -551,15 +556,16 @@ jobs:
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Build @takazudo/zudo-doc before testing — clean-runner parity; the root
-      # suite imports built dist/ (@takazudo/zudo-doc/theme) which does not
-      # exist on a fresh runner.
-      - name: Build @takazudo/zudo-doc
-        run: pnpm --filter @takazudo/zudo-doc build
+      # `pnpm install` runs the package's prepare build; this guard verifies the
+      # generated @takazudo/zudo-doc exports without rebuilding them.
+      - name: Ensure workspace packages are built
+        run: pnpm ensure:workspace-build
 
       - name: Run root unit tests
         run: pnpm test:unit
@@ -588,14 +594,16 @@ jobs:
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Build @takazudo/zudo-doc before testing — the tags CLI specs invoke
-      # package bins from the workspace package's generated dist/.
-      - name: Build @takazudo/zudo-doc
-        run: pnpm --filter @takazudo/zudo-doc build
+      # `pnpm install` runs the package's prepare build; this guard verifies the
+      # generated package bins without rebuilding them.
+      - name: Ensure workspace packages are built
+        run: pnpm ensure:workspace-build
 
       - name: Run slow root unit tests
         run: pnpm test:unit:slow
@@ -742,6 +750,8 @@ jobs:
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
         if: steps.detect-emitters.outputs.run_parity == 'true'
@@ -820,6 +830,8 @@ jobs:
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -872,6 +884,8 @@ jobs:
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install deps (no scripts)
         run: pnpm install --frozen-lockfile --ignore-scripts
@@ -913,6 +927,8 @@ jobs:
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -975,6 +991,8 @@ jobs:
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
