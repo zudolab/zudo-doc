@@ -4,18 +4,33 @@ This document maps the test-wisdom framework onto this repo concretely. It is th
 authoritative reference for what to run, when, and why. `CLAUDE.md` and `e2e/CLAUDE.md`
 link here rather than duplicating policy.
 
+## Archetype and deliberate deltas
+
+This repo is two test-wisdom archetypes at once: an **SSG / docs site** (the
+showcase) and an **npm library / CLI** (three lockstep-published packages). The
+SSG side needs build-output verification, HTML validation, link checking, and
+browser coverage for its interactive islands. The npm-library side needs package
+unit tests plus checks over the artifact that will be packed and published. The
+npm-library escalation trigger is: **ships a package → add a pack/publish check**;
+#3484 and #3489 are this repo's answer to that trigger.
+
+The repo records its other archetype deltas here rather than silently inheriting
+the playbook defaults: L2 is replaced by SSR string contracts, the slow unit lane
+is a blocking PR lane, and the visual-regression baseline is deliberately skipped
+(see the sections below). These are decisions, not missing coverage.
+
 ---
 
 ## Test Levels
 
 | Level | What | Scope | Command |
 |-------|------|-------|---------|
-| L1 | Vitest unit tests | `src/**/__tests__/`, `scripts/__tests__/` (~1,981 tests) + workspace packages (~1,535 tests) — counts as of 2026-07, see `pnpm test` / `pnpm test:unit` / `pnpm test:packages` | `pnpm test` |
+| L1 | Vitest unit tests | `src/**/__tests__/`, `scripts/__tests__/` (~1,981 tests) + 4 workspace packages (2,971 tests: search-worker 44, doc-history-server 73, create-zudo-doc 603, zudo-doc 2,251) — reproduce the package census with `pnpm test:packages` | `pnpm test` |
 | L1 Worker | Workers-runtime unit/integration tests | Custom entry export graph and SQLite `AiChatDailySpendCap` concurrency using `@cloudflare/vitest-pool-workers` | `pnpm test:worker` |
 | L2 | *Not used* — jsdom/happy-dom + Testing Library DOM component tests | Intentionally skipped in this repo — see "Why L2 is skipped" below | — |
 | L3 | Static dist reads + build-output verification | Read pre-built `dist/` HTML with `readFileSync` (Playwright specs using `makeDistReader(fixture)`); also covers the b4push build-output steps (link check, HTML validation, preview smoke) — see "L3 details" below | `E2E_FIXTURES=<fixture> npx playwright test --project <fixture> e2e/<fixture>-*.spec.ts` (e.g. `E2E_FIXTURES=versioning npx playwright test --project versioning e2e/versioning.spec.ts`) — any spec using `makeDistReader(fixture)` from `e2e/dist-helper.ts` |
 | L4 | Playwright E2E | 5-fixture browser suite — interactive, full-build, full-browser; fixtures: sidebar (4500), i18n (4501), theme (4502), smoke (4503), versioning (4504) | `pnpm test:e2e` (local), `pnpm test:e2e:ci` (CI) |
-| L5 | `/verify-ui` | Computed-style verification, screenshot-level visual assertion | Invoke the `/verify-ui` skill |
+| L5 | `/verify-ui` | Computed-style verification plus informal screenshot review; no committed screenshot baseline | Invoke the `/verify-ui` skill |
 | L6 | Test-flow skills | Final-resort: full user-journey replay with screen observation | `/test-flow-html-preview-hydration`, `/test-flow-sidebar-width-restore` |
 
 ### Why L2 is skipped
@@ -48,9 +63,9 @@ the target spec never touches `page` — `playwright.config.ts` boots one `webSe
 active fixture regardless of which specs in that fixture's project actually use it.
 
 **Three b4push steps are also L3 in spirit** — they verify the *built* `dist/` rather than
-source, just outside the Playwright/`makeDistReader` pattern: link check (step 20, reads
-`dist/**/*.html` for broken links), HTML validation (step 21, `html-validate
-dist/**/*.html`), and the automated preview smoke (step 22, `scripts/smoke-preview.mjs` —
+source, just outside the Playwright/`makeDistReader` pattern: link check (step 25, reads
+`dist/**/*.html` for broken links), HTML validation (step 26, `html-validate
+dist/**/*.html`), and the automated preview smoke (step 27, `scripts/smoke-preview.mjs` —
 boots a real `pnpm preview` server and asserts on live HTTP responses). These run as part of
 `pnpm b4push` and CI's build-site job family, not as `*.spec.ts` files.
 
@@ -68,6 +83,17 @@ boots a real `pnpm preview` server and asserts on live HTTP responses). These ru
 - **Pixel-level layout, computed CSS, visual regression** → L5 `/verify-ui`.
 - **Deeply reproduced user flows that L4 struggles to replicate reliably** → L6 test-flow skills (rare — reserve for known-hard flows).
 
+### Deliberate visual-regression skip
+
+The Playwright `toHaveScreenshot` matcher appears nowhere in executable test
+source (verify with `rg -n "toHaveScreenshot" e2e packages src scripts`). The
+theme packs and the design-token panel are arguably design-critical surfaces that
+could justify a committed baseline, but this repo deliberately does not carry one
+today. Their coverage is the existing computed-style `/verify-ui` checks, theme
+accessibility audit, and interactive Playwright tests. Add a baseline only as an
+explicit, reviewed decision with stable snapshot ownership; the absence of one is
+a stated archetype delta, not an oversight.
+
 ---
 
 ## Test Tiers
@@ -75,7 +101,7 @@ boots a real `pnpm preview` server and asserts on live HTTP responses). These ru
 | Tier | Description | What runs | Command |
 |------|-------------|-----------|---------|
 | T0 | Local fast pass | L1 unit + typecheck + single-fixture e2e | `pnpm test`, `pnpm check`, `E2E_FIXTURES=<fixture> npx playwright test --project <fixture>` |
-| T1 | CI gates (authoritative) | pr-checks: guard jobs + typecheck + unit/package tests + build + full 5-fixture e2e (`pnpm test:e2e:ci`, ~3 min) | `pr-checks.yml` on every PR |
+| T1 | CI gates (authoritative) | pr-checks: guard jobs + typecheck + unit/package tests + build + full 5-fixture e2e (`pnpm test:e2e:ci`, historical job-level median 242s; final sample 190s) | `pr-checks.yml` on every PR |
 | T2 | Full-e2e split | *Not used* — see "Why T2 is unused" below | — |
 | T3 | Nightly exam | Full suite + quarantine lane + slow integration tests | Auto: `exam.yml` on schedule; on-demand: `gh workflow run exam.yml --ref <branch>` |
 
@@ -90,7 +116,7 @@ because it never runs in CI — the table tracks *where in the pipeline* a tier 
 Run before pushing, or when iterating on a change:
 
 ```bash
-pnpm test          # L1: builds @takazudo/zudo-doc, runs ~1,981 root vitest + ~1,535 package tests (as of 2026-07)
+pnpm test          # L1: builds @takazudo/zudo-doc, runs ~1,981 root vitest + 2,971 package tests across 4 packages
 pnpm check         # TypeScript typecheck (zfb check)
 pnpm check:worker  # generated binding + custom Worker typecheck
 pnpm test:worker   # builds first, then runs Workers-runtime/SQLite DO tests
@@ -114,15 +140,21 @@ its Playwright webServer. Repeated runs skip the build when inputs are unchanged
 5-fixture suite with `pnpm test:e2e:ci` (excluding `@flaky`, `@local-only`, and
 `@verification` tests — see Tag Taxonomy below).
 
+**Slow Unit Tests** (#3492, #3493) is also a required PR lane, not a nightly lane. It runs the
+subprocess-heavy root specs and the two retiered `create-zudo-doc` specs on every
+PR, while keeping those costs out of the default unit/package critical paths.
+They remain blocking because they cover release-relevant behavior; the other
+registry-install/full-build slow specs stay in the nightly `slow-create` job.
+
 **b4push** (`pnpm b4push`) is the bounded local convenience pass — wisdom-tier **T4**, not
 T1 (see the note above the tiers table); it's covered here for workflow ergonomics only. It
-runs a 25-step suite
+runs a 28-step suite
 (format → template drift → no-host-alias guard → pin parity → fixture drift → tags/canonical audit →
 current-only compatibility → token lint → component-tokens drift → e2e spec naming guard →
-@flaky tracking-issue guard → wait-debt guard → search-widget-script commit drift →
-b4push/CI parity → typecheck → Worker contract proof → unit tests →
-package tests → safelist check → build → content-fallback allowlist scan → link check → HTML validation → preview smoke →
-manual smoke). Each step's elapsed time is recorded and printed as a breakdown in the final
+@flaky tracking-issue guard → wait-debt guard → search-widget-script commit drift → publish contract →
+dist-mutation guard → required-checks manifest/parity → typecheck → Worker contract proof → root unit tests →
+slow unit tests → package tests → safelist check → build → content-fallback allowlist scan → link check →
+HTML validation → preview smoke → manual smoke). Each step's elapsed time is recorded and printed as a breakdown in the final
 SUMMARY block, so budget creep in any one step is visible instead of only the aggregate run
 duration.
 
@@ -131,8 +163,8 @@ non-allowlisted half (`strictContentBridge: true` in `zfb.config.ts`) fails plai
 `pnpm build`/CI directly and is not a b4push step at all — see the header of
 `scripts/check-content-fallback.mjs` for why both exist.
 
-**b4push/CI parity scope.** The `check:b4push-ci-parity` guard (step 14) only cross-checks
-the lightweight guard steps 1–14 (the `# >>> b4push-ci-parity:guards:begin` / `:end` region).
+**b4push/CI parity scope.** The `check:b4push-ci-parity` guard (step 16) only cross-checks
+the lightweight guard steps 1–16 (the `# >>> b4push-ci-parity:guards:begin` / `:end` region).
 The heavy steps — typecheck, unit tests, package tests, safelist check, build, link check,
 HTML validation, preview smoke — are intentionally outside this region and outside the parity
 manifest. They run in CI as separate full-install jobs (not redundant pure-Node scripts), so
@@ -145,16 +177,18 @@ Playwright for two reasons:
 
 1. **Time budget** — the full 5-fixture suite (build + browser) takes several minutes.
    b4push must stay fast enough to run before every push.
-2. **Bypassability** — local runs are developer-controlled. CI cannot be bypassed;
-   it is the single source of truth for green/red.
+2. **Bypassability** — local runs are developer-controlled. The required PR
+   contexts are the authoritative merge signal, subject to the deliberate solo-
+   maintainer exceptions recorded in "Required checks and live protection" below.
 
 ### T2 — Full-e2e split (not used)
 
 The wisdom framework's trigger for T2 is T1 exceeding its ~10 minute budget. This repo's
-full 5-fixture Playwright suite (`pnpm test:e2e:ci`, pr-checks' `e2e` job) completes in ~3
-minutes — measured from recent `pr-checks.yml` runs — comfortably inside that budget, so
-there is nothing to split out. Revisit if the suite's runtime grows enough to approach the
-~10 minute mark.
+full 5-fixture Playwright suite (`pnpm test:e2e:ci`, pr-checks' `E2E Tests` job) has a
+historical job-level median of 242s and a final optimized sample of 190s, comfortably
+inside that budget, so there is nothing to split out. Revisit if the suite's runtime grows
+enough to approach the ~10 minute mark. The timing protocol is documented below; do not
+substitute workflow-level queue-inclusive timestamps.
 
 ### T3 — Nightly exam
 
@@ -181,6 +215,130 @@ failure in one job never appends onto another job's open issue. Repeated failure
 same job append comments to the same open issue; each job's next green run closes it via
 `--green` (`if: success()` step, added right after the `if: failure()` step in each job)
 with a closing comment, so the issue list doesn't accumulate stale entries (#2535).
+
+### T4 — Local heavy lane (`pnpm b4push`)
+
+T4 is a convenience layer, never an enforcement substitute for T1. The structural
+target for `pnpm b4push` is a finite, warm-tree 28-step pass with the full per-step
+timing breakdown printed by `scripts/run-b4push.sh` (the timing state is set up in
+`scripts/run-b4push.sh:54-69`, in the `START_TIME`/`TOTAL_STEPS` and `STEP_*` block).
+It includes the blocking slow
+unit subset, but deliberately excludes the full five-fixture Playwright run and
+the registry-install/full-build slow-create sweep reserved for T3. A 5–10 minute
+wall-clock result is a soft design target, not a hard gate: local machines are
+noisy, so pass/fail is completion plus structural boundedness, not a single timing
+threshold. Use `pnpm b4push` to reproduce the lane and its timings.
+
+### CI runtime parity (#3485)
+
+The heavy local lane must use CI's runtime: `.nvmrc` is the Node 22 selector, and
+every `pr-checks.yml` job uses `actions/setup-node` with `node-version-file:
+.nvmrc`. Run `node --version && npm --version && pnpm --version` before T4 and
+use the Node 22/npm 10 pairing used by CI. A local T4 pass under another Node/npm
+major is blind to runtime-dependent lifecycle behavior by construction; that is
+why `pnpm b4push` once passed while the release path died (#3485).
+
+### Measurement protocol and throughput evidence
+
+Every CI timing claim in this document uses the job-level
+`started_at` → `completed_at` interval, not workflow-level timestamps:
+
+```sh
+gh api repos/zudolab/zudo-doc/actions/runs/<id>/jobs \
+  --jq '.jobs[] | select(.name == "E2E Tests") | {name, startedAt: .started_at, completedAt: .completed_at}'
+```
+
+`gh run list`'s workflow-level `createdAt` → `updatedAt` includes runner-queue
+wait and workflow orchestration, so it cannot support a claim about test execution
+time. With the job-level protocol, the five pre-change E2E jobs have a historical
+median of 242s and the first final-configuration sample was 190s. The local
+#3499 protocol used `CI=1 npx playwright test --retries=0` for five separate full
+invocations: the medians were 133.28s (baseline), 104.57s (remove the obsolete
+stagger), and 81.75s (`fullyParallel: true`); the final
+`CI=1 npx playwright test --retries=0 --repeat-each=3` pass was 951/951. These
+local measurements are throughput evidence, not CI timing claims.
+
+#3491's setup-node caching experiment is also recorded by job-level timings: the
+median runner-seconds regressed from 814 to 885, so caching was reverted. The only
+remaining #3491 work is redundant-build cleanup; there is no setup-node cache
+contract to preserve.
+
+### Required checks and live main protection (#3494, #3498)
+
+`.required-checks-manifest` is the reviewed source of truth and
+`node scripts/check-required-checks.mjs` verifies that it covers the workflow's
+jobs. Live `main` protection currently requires exactly these 23 contexts, in the
+manifest order:
+
+```text
+Package Unit Tests
+Pin Parity Check
+Fixture Settings Drift Check
+Lint Gates
+B4push/CI Parity Check
+E2E Tests
+Build Site
+Build Doc History
+Type Check
+Root Unit Tests
+HTML validate
+Worker Contract Proof
+Package Safelist Check
+Template Drift Check
+No-Host-Alias-In-Package Guard
+E2E Spec Naming Guard
+Flaky Tracking-Issue Guard
+Wait-Debt Guard
+Component-Tokens Codegen Drift Check
+A2 No-Stub Parity Gate
+Dist-Mutating Test Guard
+Publish Contract Gates
+Slow Unit Tests
+```
+
+Re-read the live state with `gh api repos/zudolab/zudo-doc/branches/main/protection`.
+The rollback was exercised and the final state reapplied. A deliberately failing
+`Type Check` on scratch PR #3523 produced GitHub's `mergeStateStatus=BLOCKED` /
+`mergeable_state=blocked`, proving that a required context blocks policy merge.
+The live protection still has `enforce_admins: false` and no required PR reviews;
+those are deliberate solo-maintainer deviations, not evidence that CI is
+universally unbypassable. `Preview Deploy` and `Required Checks Manifest Guard`
+remain reasoned allowlist entries rather than required contexts.
+
+### Dist guard and immutable artifact convention (#3488)
+
+`node scripts/check-dist-mutating-tests.mjs` runs in both b4push and the
+`Dist-Mutating Test Guard` PR job. It is deliberately narrow: it catches known
+direct build/package-lifecycle command launches in default-lane specs, but does
+not claim to detect indirect wrappers, aliases, or direct filesystem writers.
+The broader repository rule is a **convention**:
+
+> A test that reads a built artifact should own an immutable snapshot of it. No
+> default-lane test may launch a build or package-lifecycle command.
+
+The 5.6.1 failure is the worked example. Fast-tier tarball tests used
+`npm pack --dry-run --json --ignore-scripts` against a live package directory;
+npm 10.9.4 still ran `prepare` despite `--ignore-scripts`, mutating the `dist/`
+being read, while npm 11.x did not:
+
+| npm runtime | Observed behavior for the same pack command |
+|-------------|----------------------------------------------|
+| 10.9.4 | Runs `prepare` despite `--ignore-scripts` |
+| 11.x | Does not run `prepare` in this case |
+
+`--ignore-scripts` is a flag, not a property. A test's read-only-ness must not
+depend on one npm implementation. The tests now pack a sanitized throwaway
+snapshot with lifecycle hooks removed, while the convention remains broader than
+the mechanically checkable guard.
+
+### Publish-contract job (#3484, #3489)
+
+The `Publish Contract Gates` PR job builds `@takazudo/zudo-doc`, runs
+`pnpm --filter @takazudo/zudo-doc check:prepack-contract`, and executes
+`npm pack --dry-run` from `packages/zudo-doc`. This is the npm-archetype gate over
+the publishable artifact, not a source-only unit check. The `create-zudo-doc`
+publish contract is intentionally mapped to the existing build and package-test
+jobs rather than duplicated here; both package paths are covered before release.
 
 ### Theme A11y Audit (`theme-a11y` job — T3 nightly + on-demand dev tool)
 

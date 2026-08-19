@@ -26,7 +26,7 @@ set -euo pipefail
 #  19. Root unit tests (test:unit) — fast src/scripts specs; builds @takazudo/zudo-doc as a side-effect
 #  20. Slow unit tests (test:unit:slow + two create-zudo-doc specs) — blocking
 #      subprocess-heavy root specs and the two retiered package specs
-#  21. Package tests (test:packages) — ~1,535 suite tests across workspace packages (as of 2026-07)
+#  21. Package tests (test:packages) — 2,971 suite tests across 4 workspace packages
 #  22. Package safelist check (#1994) — requires dist/safelist.css from step 19
 #  23. Build (zfb build)
 #  24. Content-fallback check (#3134) — no page may ship a <pre data-zfb-content-fallback> body
@@ -370,7 +370,7 @@ else
 fi
 
 # ── Step 21: Package tests ────────────────────────────
-# Runs all workspace package test suites (~1,535 tests as of 2026-07). Closes the local/CI
+# Runs all workspace package test suites (2,971 tests across 4 packages). Closes the local/CI
 # asymmetry where package tests ran in CI but not in b4push (#1851/#1856).
 # dist/ is already built by step 19 — no extra prep needed.
 step "Package tests + subpath resolution"

@@ -20,7 +20,7 @@
 #   Lint Gates               — pnpm install; tag guards + pnpm lint:tokens
 #   Type Check               — pnpm install; pnpm check (zfb check → tsc --noEmit)
 #   Worker Contract Proof    — Worker typecheck + runtime DO tests + Wrangler dry-run
-#   Package Unit Tests       — pnpm install; pnpm test:packages (all 5 package suites)
+#   Package Unit Tests       — pnpm install; pnpm test:packages (all 4 package suites; 2,971 tests)
 #   Root Unit Tests          — pnpm install; pnpm test:unit (fast src/scripts specs)
 #   Slow Unit Tests           — pnpm install; root slow specs + two retiered create-zudo-doc specs
 #   A2 Parity Gate           — path-filtered (#3419): skips unless an every-page script
@@ -465,7 +465,7 @@ jobs:
   # ---------------------------------------------------------------------------
   # Guards the gap from #1851: package-scoped vitest suites previously ran
   # only inside publish workflows, so a broken suite was invisible until a
-  # publish attempt. This job runs all 5 package suites on every PR so a
+  # publish attempt. This job runs all 4 package suites on every PR so a
   # broken suite turns the PR red instead of hiding until release day.
   #
   # `pnpm install` runs @takazudo/zudo-doc's `prepare` build, so the compiled
