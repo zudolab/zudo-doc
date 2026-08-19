@@ -44,10 +44,16 @@
 // island module, and that island is `when: "visible"` — so on a page where the
 // hamburger has never become visible (desktop viewport, or a soft navigation
 // performed before the drawer bundle loaded) no listener is installed and that
-// swap goes unrefreshed. This is accepted rather than worked around: before
-// the drawer's first hydration there is no stale mounted state to correct, and
-// whatever `data-props` the header is carrying at that point is re-read from
-// scratch on the first mount that does happen.
+// swap goes unrefreshed. Nothing else refreshes a persisted header's nested
+// `data-props`, so an unrefreshed swap leaves the value serialized for the page
+// where the header FIRST rendered — and a drawer that hydrates only later
+// (e.g. a desktop → mobile viewport change after several soft navigations)
+// mounts from that original page's tree. This is accepted rather than worked
+// around: in this package's bundled-islands build the chunk containing this
+// module loads with the first island that hydrates on page one, so in practice
+// the listener is installed before the first swap; closing the residual
+// per-island-bundle gap would require registration from an always-loaded
+// module instead of this lazy island's own bundle.
 
 import { BEFORE_SWAP_EVENT } from "./page-events.js";
 
@@ -60,6 +66,20 @@ const ISLAND_ATTR = "data-zfb-island";
 /** zfb's serialized-props attribute; opaque to this module. */
 const PROPS_ATTR = "data-props";
 
+/**
+ * zfb's cross-package "needs-remount" flag (`clearMountedForRemount` /
+ * `fire()` in `@takazudo/zfb`'s runtime). Load-bearing for one race: an island
+ * whose dynamic import is still in flight when the swap happens. `fire()`
+ * snapshots `readProps(element)` BEFORE the import starts, and on resolve uses
+ * that pre-navigation snapshot UNLESS this flag is present — with the flag it
+ * re-reads `data-props` at resolve time, which is exactly the runtime's
+ * documented channel for "a props refresh that happened during the import".
+ * For the common already-unmounted island, `mountNewIslands` consumes and
+ * clears the flag before a normal fresh-props mount, so setting it is a no-op
+ * there.
+ */
+const ISLAND_REMOUNT_ATTR = "data-zfb-island-remount";
+
 /** `Node.DOCUMENT_NODE`, spelled out so no DOM global is needed under SSR. */
 const DOCUMENT_NODE = 9;
 
@@ -67,6 +87,9 @@ interface NestedIslandPropsRefreshOptions {
   document: Document;
 }
 
+// The install/ensure/dispose document-singleton shape below mirrors
+// `sidebar-tree-island/sidebar-scroll-preserve.ts` — keep the two in step (or
+// extract a shared factory) when changing the ensure/dispose semantics.
 const installedControllers = new WeakMap<Document, () => void>();
 
 /**
@@ -236,9 +259,13 @@ function applyProps(liveIsland: Element, incomingIsland: Element): void {
   if (incoming === current) return;
   if (incoming === null) {
     liveIsland.removeAttribute(PROPS_ATTR);
-    return;
+  } else {
+    liveIsland.setAttribute(PROPS_ATTR, incoming);
   }
-  liveIsland.setAttribute(PROPS_ATTR, incoming);
+  // See ISLAND_REMOUNT_ATTR above: without the flag, an island whose dynamic
+  // import is in flight across the swap mounts from its pre-navigation props
+  // snapshot and #3525 reproduces with the DOM attribute looking correct.
+  liveIsland.setAttribute(ISLAND_REMOUNT_ATTR, "");
 }
 
 /**

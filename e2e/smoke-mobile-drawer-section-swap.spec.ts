@@ -32,13 +32,19 @@
  *   4. Reopen and assert: the destination-only leaf is present and active,
  *      the origin-only leaf is gone, the persisted header survived both
  *      halves of the persist contract (DOM identity AND its computed
- *      `viewTransitionName`), and exactly one Navigation Timing entry
- *      exists for the whole journey (a hard load anywhere would add a
- *      second — this is the automated proxy for the source issue's
- *      five-point softness proof).
+ *      `viewTransitionName`), and the single Navigation Timing entry still
+ *      names the ORIGIN URL (a hard load anywhere would reset the
+ *      per-document timeline with that hop's URL instead — this is the
+ *      automated proxy for the source issue's five-point softness proof).
  */
 import { test, expect, type Page } from "@playwright/test";
-import { spaClick } from "./nav-helpers";
+import { spaClickSelector } from "./nav-helpers";
+import {
+  closeMobileDrawer,
+  drawerLinkSelector,
+  mobileSidebar,
+  openMobileDrawer,
+} from "./mobile-drawer-helpers";
 
 test.use({ viewport: { width: 390, height: 844 } });
 
@@ -46,52 +52,24 @@ const GETTING_STARTED = "/docs/getting-started";
 const GUIDES_INDEX_HREF = "/docs/guides";
 const GUIDES_PAGE_1_HREF = "/docs/guides/page-1";
 
-function mobileSidebar(page: Page) {
-  return page.locator("[data-zd-mobile-sidebar]");
-}
-
-/**
- * Open the mobile drawer via the hamburger, retrying the click as a unit.
- *
- * `SidebarToggle` is `Island({ when: "visible" })` — its `onClick` only
- * exists once the island has hydrated, and the zfb runtime dispatches no
- * event and mutates no DOM attribute on mount completion, so there is no
- * better signal to poll. A click issued before hydration is silently
- * dropped. Retrying the click-and-check as a unit via `toPass` (mirrors
- * `theme-pack-helpers.ts`'s `openFlyout`) makes a dropped first click
- * self-heal instead of flaking — and succeeding at all proves hydration
- * completed. Module evaluation (which runs `ensureNestedIslandPropsRefresh`
- * as a side effect, `sidebar-toggle-island/index.tsx:20`) strictly precedes
- * the mount call in zfb's island-mount chain, so "the button is clickable"
- * is a safe proxy for "the before-swap refresh listener is registered" —
- * navigating before this wait is the documented uncovered race
- * (`nested-island-props-refresh.ts`'s "Known gap" comment) and would make
- * the whole regression proof meaningless.
- */
-async function openMobileDrawer(page: Page): Promise<void> {
-  const hamburger = page.locator('button[aria-label="Open sidebar"]');
-  const closeButton = page.locator('button[aria-label="Close sidebar"]');
-  await expect(async () => {
-    await hamburger.click();
-    await expect(closeButton).toBeVisible({ timeout: 500 });
-  }).toPass({ timeout: 10000 });
-}
-
-/**
- * Close the drawer via the backdrop overlay, not the hamburger button.
- *
- * `z-modal-backdrop` (50) sits ABOVE the header's `z-toolbar` (20) by design
- * (`sidebar-toggle-island/index.tsx`'s backdrop comment) — the open drawer
- * is a modal surface that dims the whole viewport, hamburger included. A
- * real pointer click therefore cannot land on the "Close sidebar" button
- * while the drawer is open (mirrors `smoke-mobile-sidebar.spec.ts`'s
- * "clicking backdrop closes the sidebar" test, which dispatches directly on
- * the backdrop for the same reason).
- */
-async function closeMobileDrawer(page: Page): Promise<void> {
-  await page.locator("header div.fixed.inset-0").dispatchEvent("click");
-  await expect(page.locator('button[aria-label="Open sidebar"]')).toBeVisible({ timeout: 5000 });
-}
+// Drawer plumbing lives in the shared helper module (`mobile-drawer-helpers.ts`).
+// Two rationale notes specific to THIS spec:
+//
+//   - `openMobileDrawer` succeeding is also the hydration gate for the
+//     regression proof: module evaluation (which runs
+//     `ensureNestedIslandPropsRefresh` as a side effect,
+//     `sidebar-toggle-island/index.tsx`) strictly precedes the mount call in
+//     zfb's island-mount chain, so "the button is clickable" is a safe proxy
+//     for "the before-swap refresh listener is registered" — navigating
+//     before this wait is the documented uncovered race
+//     (`nested-island-props-refresh.ts`'s "Known gap" comment) and would make
+//     the whole regression proof meaningless.
+//
+//   - The SPA clicks MUST go through `drawerLinkSelector`: the bare-href
+//     `spaClick` takes the first document-order `a[href]` match, and any
+//     header re-composition could silently move that onto the hidden desktop
+//     `Learn` link — leaving this spec green without ever exercising the
+//     drawer path it exists to prove.
 
 interface HeaderPersistSnapshot {
   marker: number;
@@ -132,6 +110,11 @@ test.describe("Mobile drawer: cross-section soft-navigation regression (#3525/#3
   test("drawer tree and active marker refresh after a cross-section SPA swap, header persist intact", async ({
     page,
   }) => {
+    // The journey's own step budgets (4 drawer opens at 10s each, 2 swap waits
+    // at 10s each, a close at 5s) sum well past Playwright's 30s default; a
+    // single slow-CI hydration retry would otherwise kill the test mid-journey
+    // with a timeout that says nothing about the regression under test.
+    test.setTimeout(90_000);
     await page.goto(GETTING_STARTED, { waitUntil: "domcontentloaded" });
 
     // ---- Step 1: origin baseline --------------------------------------
@@ -153,6 +136,10 @@ test.describe("Mobile drawer: cross-section soft-navigation regression (#3525/#3
     ).toHaveCount(0);
 
     const baseline = await tagHeaderForPersistCheck(page);
+    expect(
+      baseline.viewTransitionName,
+      "persisted header should carry a real view-transition-name (features.css assigns zfb-header) — a 'none' baseline would make every later comparison vacuous",
+    ).not.toBe("none");
 
     // ---- Step 2: close, reopen, soft-navigate cross-section via the
     // drawer's root menu (the only cross-section path at this viewport) --
@@ -163,7 +150,10 @@ test.describe("Mobile drawer: cross-section soft-navigation regression (#3525/#3
     const learnLink = sidebarPanel.getByRole("link", { name: "Learn", exact: true });
     await expect(learnLink, "root menu should list the guides section's entry point").toBeVisible();
 
-    const crossSectionSwapFired = await spaClick(page, GUIDES_INDEX_HREF);
+    const crossSectionSwapFired = await spaClickSelector(
+      page,
+      drawerLinkSelector(GUIDES_INDEX_HREF),
+    );
     expect(crossSectionSwapFired, "zfb:after-swap did not fire for the cross-section hop").toBe(
       true,
     );
@@ -190,7 +180,10 @@ test.describe("Mobile drawer: cross-section soft-navigation regression (#3525/#3
       "destination guides leaf should now be present in the reopened tree",
     ).toBeVisible();
 
-    const sameSectionSwapFired = await spaClick(page, GUIDES_PAGE_1_HREF);
+    const sameSectionSwapFired = await spaClickSelector(
+      page,
+      drawerLinkSelector(GUIDES_PAGE_1_HREF),
+    );
     expect(sameSectionSwapFired, "zfb:after-swap did not fire for the same-section hop").toBe(
       true,
     );
@@ -221,12 +214,21 @@ test.describe("Mobile drawer: cross-section soft-navigation regression (#3525/#3
       "header viewTransitionName should still be unchanged at the end of the journey",
     ).toBe(baseline.viewTransitionName);
 
-    const navigationEntryCount = await page.evaluate(
-      () => performance.getEntriesByType("navigation").length,
+    // The Navigation Timing timeline is per-document, so a hard load does NOT
+    // "add a second entry" — it replaces the document and resets the timeline
+    // to exactly one entry again. The count alone can never catch one; the
+    // single entry's URL can: it must still be the journey's ORIGIN, whereas a
+    // hard load at any hop would leave that hop's URL here instead.
+    const navigationEntryUrls = await page.evaluate(() =>
+      performance.getEntriesByType("navigation").map((entry) => entry.name),
     );
     expect(
-      navigationEntryCount,
-      "exactly one Navigation Timing entry should exist for the whole journey — a hard load at any hop would add a second",
-    ).toBe(1);
+      navigationEntryUrls,
+      "exactly one Navigation Timing entry should exist for the whole journey",
+    ).toHaveLength(1);
+    expect(
+      navigationEntryUrls[0],
+      "the only hard load should be the journey's origin — this is the automated proxy for the source issue's softness proof",
+    ).toContain(GETTING_STARTED);
   });
 });

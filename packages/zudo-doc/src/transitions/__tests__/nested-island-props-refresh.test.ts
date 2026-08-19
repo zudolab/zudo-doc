@@ -11,6 +11,7 @@ import {
 const PERSIST_ATTR = "data-zfb-transition-persist";
 const ISLAND_ATTR = "data-zfb-island";
 const PROPS_ATTR = "data-props";
+const REMOUNT_ATTR = "data-zfb-island-remount";
 
 /** Props serialization is opaque to the helper, so any stable string will do. */
 const oldTree = '{"nodes":[{"slug":"guides/a"}]}';
@@ -79,6 +80,33 @@ describe("nested-island props refresh on zfb:before-swap", () => {
     );
 
     expect(liveIsland("SidebarToggle").getAttribute(PROPS_ATTR)).toBe(newTree);
+  });
+
+  it("flags a refreshed island for remount so an in-flight import re-reads props", () => {
+    // zfb's `fire()` snapshots `data-props` BEFORE its dynamic import starts;
+    // on resolve it uses that pre-navigation snapshot UNLESS
+    // `data-zfb-island-remount` is present. Without the flag, an import in
+    // flight across the swap mounts the OLD tree while the DOM attribute looks
+    // correct — #3525 reproduces invisibly.
+    install();
+    setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
+
+    dispatchBeforeSwap(
+      parseIncoming(header("header-en", island("SidebarToggle", newTree))),
+    );
+
+    expect(liveIsland("SidebarToggle").getAttribute(REMOUNT_ATTR)).toBe("");
+  });
+
+  it("does not flag an island whose props are unchanged", () => {
+    install();
+    setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
+
+    dispatchBeforeSwap(
+      parseIncoming(header("header-en", island("SidebarToggle", oldTree))),
+    );
+
+    expect(liveIsland("SidebarToggle").hasAttribute(REMOUNT_ATTR)).toBe(false);
   });
 
   it("pairs roots by key, not by document position", () => {
@@ -325,7 +353,8 @@ describe("ensureNestedIslandPropsRefresh", () => {
       parseIncoming(header("header-en", island("SidebarToggle", newTree))),
     );
 
-    expect(setAttribute).toHaveBeenCalledTimes(1);
+    const propsWrites = setAttribute.mock.calls.filter(([name]) => name === PROPS_ATTR);
+    expect(propsWrites).toHaveLength(1);
     expect(target.getAttribute(PROPS_ATTR)).toBe(newTree);
   });
 

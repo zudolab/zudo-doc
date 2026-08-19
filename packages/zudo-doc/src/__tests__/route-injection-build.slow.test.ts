@@ -728,6 +728,19 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // All of it traces to this one intentional, already-merged epic change; no
   // unattributed bytes.
 
+  // 2026-08-20 (same epic, review fix — NO re-baseline needed): `applyProps`
+  // in `transitions/nested-island-props-refresh.ts` now also sets
+  // `data-zfb-island-remount` (the in-flight-import race fix), and
+  // `sidebar-toggle-island/index.tsx` imports the ensure helper through the
+  // transitions barrel instead of the deep path. A fresh run confirmed the
+  // three hashes below are unmoved: the changed bytes live INSIDE the islands
+  // chunk, and `parity-html-normalize.mjs` replaces hashed asset filenames
+  // with stable placeholders, so chunk-content changes are inert here. (That
+  // also means the entry above's "shifts the hashed filename embedded in
+  // every page" mechanism cannot be what moved these hashes on 2026-08-19 —
+  // the movement must have come from other non-normalized bytes of the same
+  // epic change.)
+
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toMatchInlineSnapshot(`"22bb416fb0002eb35b555051c73f7b9be5930a83f6ef0e0cda5b6acfd07c1050"`);

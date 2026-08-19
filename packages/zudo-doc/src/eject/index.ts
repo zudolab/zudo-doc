@@ -272,10 +272,11 @@ export interface ZudoDocJson {
 //   onBeforeNavigate, onAfterNavigate), so the rewrite is safe — callers importing
 //   only those symbols from `@takazudo/zudo-doc/transitions` will find them.
 //   The same obligation now covers `ensureNestedIslandPropsRefresh`, which
-//   `sidebar-toggle-island` imports from `../transitions/nested-island-props-refresh.js`
+//   `sidebar-toggle-island` imports from `../transitions/index.js`
 //   (zudolab/zudo-doc#3530): anything an ejectable component reaches for under
 //   `../transitions/` must be re-exported by that barrel, whatever file it
-//   actually lives in.
+//   actually lives in — the rewrite collapses every `../transitions/<rest>`
+//   specifier to `@takazudo/zudo-doc/transitions`.
 
 /**
  * Rewrite parent-relative cross-component imports (`../<seg>/<rest>`) to

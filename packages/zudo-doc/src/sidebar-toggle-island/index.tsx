@@ -7,8 +7,12 @@
 import { useState, useEffect } from "preact/hooks";
 // After zudolab/zudo-doc#1335 the host components pull lifecycle event names
 // from the v2 transitions module rather than hard-coding `astro:*` literals.
-import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
-import { ensureNestedIslandPropsRefresh } from "../transitions/nested-island-props-refresh.js";
+// `ensureNestedIslandPropsRefresh` is imported through the barrel (not the
+// deep `./nested-island-props-refresh.js` path) on purpose: eject rewrites
+// EVERY `../transitions/<anything>.js` import to the single specifier
+// `@takazudo/zudo-doc/transitions`, so two distinct relative imports would
+// collapse into duplicate import statements in an ejected copy.
+import { AFTER_NAVIGATE_EVENT, ensureNestedIslandPropsRefresh } from "../transitions/index.js";
 import { SidebarTree } from "../sidebar-tree-island/index.js";
 import type { SidebarNavNode, SidebarRootMenuItem, SidebarLocaleLink } from "../sidebar/types.js";
 
