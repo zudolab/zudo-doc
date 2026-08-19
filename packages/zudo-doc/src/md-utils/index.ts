@@ -29,6 +29,12 @@ function decodeCharacterReferences(value: string): string {
         const digits = decimal ?? hexadecimal;
         if (!digits) return reference;
         const codePoint = Number.parseInt(digits, decimal ? 10 : 16);
+        if (
+          codePoint > 0x10ffff ||
+          (codePoint >= 0xd800 && codePoint <= 0xdfff)
+        ) {
+          return reference;
+        }
         try {
           return String.fromCodePoint(codePoint);
         } catch {

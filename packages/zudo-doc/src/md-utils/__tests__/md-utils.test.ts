@@ -61,6 +61,7 @@ describe("md-utils stripMarkdown plain-text preservation (zudo-doc#3478)", () =>
     expect(
       stripMarkdown("&#x41;&#X42; &lt;b&gt; &quot;x&quot; &apos;y&apos;"),
     ).toBe('AB <b> "x" \'y\'');
+    expect(stripMarkdown("left&nbsp;right")).toBe("left\u00a0right");
   });
 
   it("decodes references only once and leaves invalid numeric references intact", () => {
@@ -68,6 +69,7 @@ describe("md-utils stripMarkdown plain-text preservation (zudo-doc#3478)", () =>
     expect(stripMarkdown("&#999999999999999999999;")).toBe(
       "&#999999999999999999999;",
     );
+    expect(stripMarkdown("&#xD800;")).toBe("&#xD800;");
   });
 
   it("preserves intraword underscores in identifiers", () => {
