@@ -199,8 +199,10 @@ function collectUniqueOwnedIslands(root: Element): Map<string, Element> {
 
 /**
  * Index elements by an attribute value, keeping only values that occur exactly
- * once. Empty values are skipped: zfb emits a bare `data-zfb-island` before its
- * rewriter fills in the component name, and such a marker cannot be matched.
+ * once. An empty value is skipped rather than treated as a key of its own: zfb
+ * emits a bare `data-zfb-island` before its rewriter fills in the component
+ * name, and an empty persist key is likewise not an identity anything should be
+ * paired on.
  */
 function indexUniquely(
   elements: Iterable<Element>,
