@@ -9,10 +9,15 @@
 //
 // Four surfaces read it — `sidebar-tree-island/index.tsx` imports directly;
 // `header/nav-overflow-script.ts`, `i18n-version/version-switcher.tsx`, and
-// `i18n-version/language-switcher.tsx` are string-embedded client scripts and
-// splice in CURRENT_PATH_SCRIPT_PRELUDE instead. Nothing here may close over
-// module scope, because `readCurrentPath` is serialized with
-// `Function.prototype.toString()` into those script strings.
+// `i18n-version/language-switcher.tsx` are string-embedded client scripts.
+// The header's embedding is frozen at package build time by
+// `scripts/gen-nav-overflow-script.mjs`, which reads CURRENT_PATH_SCRIPT_PRELUDE
+// as a value off this module's exports and splices it into the committed
+// `header/nav-overflow-generated-script.ts` literal (zudolab/zudo-doc#3534);
+// the other two surfaces still splice it in live, at their own module-eval
+// time. Nothing here may close over module scope, because `readCurrentPath`
+// is serialized with `Function.prototype.toString()` into those script
+// strings.
 
 /**
  * The `dataset` property name of the current-route override — i.e. the
