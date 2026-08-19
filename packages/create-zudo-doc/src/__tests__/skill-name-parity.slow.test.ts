@@ -66,7 +66,7 @@ afterEach(async () => {
  *
  * `setup-doc-skill.sh` calls `git -C "$ROOT_DIR" worktree list` and
  * `git rev-parse --show-prefix`, so it is not runnable against a bare
- * directory — it needs a real git repo (see init-git-repo.test.ts for the
+ * directory — it needs a real git repo (see init-git-repo.slow.test.ts for the
  * same `initGitRepo` usage). Both `initGitRepo` and the script itself run
  * under `fakeHome` — never the developer's real `$HOME`, which would
  * otherwise write real symlinks into `~/.claude/skills` or `~/.codex/skills`.

@@ -24,7 +24,8 @@ set -euo pipefail
 #  17. Type checking (zfb check + workspace package typechecks)
 #  18. Worker contract proof (types + Workers runtime + Wrangler dry-run)
 #  19. Root unit tests (test:unit) — fast src/scripts specs; builds @takazudo/zudo-doc as a side-effect
-#  20. Slow root unit tests (test:unit:slow) — subprocess-heavy root specs
+#  20. Slow unit tests (test:unit:slow + two create-zudo-doc specs) — blocking
+#      subprocess-heavy root specs and the two retiered package specs
 #  21. Package tests (test:packages) — ~1,535 suite tests across workspace packages (as of 2026-07)
 #  22. Package safelist check (#1994) — requires dist/safelist.css from step 19
 #  23. Build (zfb build)
@@ -346,14 +347,26 @@ else
   fail "Root unit tests"
 fi
 
-# ── Step 20: Slow root unit tests ─────────────────────
-# The four subprocess-heavy scripts specs are excluded from test:unit and
-# remain a blocking local gate through the dedicated slow config.
+# ── Step 20: Slow unit tests ──────────────────────────
+# The subprocess-heavy root specs and the two retiered create-zudo-doc specs
+# are excluded from their default lanes and remain blocking local gates.
+# Keep both invocations in this existing step so b4push retains its current
+# 28-step shape; the other create-zudo-doc slow specs stay nightly-only.
 step "Slow root unit tests (test:unit:slow)"
 if (cd "$ROOT_DIR" && pnpm test:unit:slow); then
   pass "Slow root unit tests passed"
 else
   fail "Slow root unit tests"
+fi
+if (
+  cd "$ROOT_DIR/packages/create-zudo-doc" &&
+  pnpm exec vitest run --config vitest.slow.config.ts \
+    src/__tests__/skill-name-parity.slow.test.ts \
+    src/__tests__/init-git-repo.slow.test.ts
+); then
+  pass "retiered create-zudo-doc slow tests passed"
+else
+  fail "retiered create-zudo-doc slow tests"
 fi
 
 # ── Step 21: Package tests ────────────────────────────

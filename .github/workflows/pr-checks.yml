@@ -22,7 +22,7 @@
 #   Worker Contract Proof    — Worker typecheck + runtime DO tests + Wrangler dry-run
 #   Package Unit Tests       — pnpm install; pnpm test:packages (all 5 package suites)
 #   Root Unit Tests          — pnpm install; pnpm test:unit (fast src/scripts specs)
-#   Slow Unit Tests           — pnpm install; pnpm test:unit:slow (four subprocess-heavy root specs)
+#   Slow Unit Tests           — pnpm install; root slow specs + two retiered create-zudo-doc specs
 #   A2 Parity Gate           — path-filtered (#3419): skips unless an every-page script
 #                              emitter file changed; else pnpm install + build:workspace +
 #                              the A2 no-stub parity slow-suite subset
@@ -565,11 +565,12 @@ jobs:
         run: pnpm test:unit
 
   # ---------------------------------------------------------------------------
-  # Job 1.65: Root slow unit suite
+  # Job 1.65: Slow unit suite
   # ---------------------------------------------------------------------------
-  # The four root specs in scripts/__tests__/ exercise shell scripts and CLI
-  # entrypoints in child processes. They remain blocking PR coverage, but run
-  # in their own lane so they do not hold the default root-unit critical path.
+  # The subprocess-heavy root specs and the two retiered create-zudo-doc specs
+  # remain blocking PR coverage, but run in their own lane so they do not hold
+  # the default unit/package critical paths. The other create-zudo-doc slow
+  # integration specs remain on the established nightly slow-create path.
   root-slow-tests:
     name: Slow Unit Tests
     runs-on: ubuntu-latest
@@ -599,6 +600,13 @@ jobs:
 
       - name: Run slow root unit tests
         run: pnpm test:unit:slow
+
+      # Only the two retiered specs belong in this PR lane. The other package
+      # slow specs perform registry installs and full builds and stay on the
+      # established nightly slow-create path.
+      - name: Run retiered create-zudo-doc slow unit tests
+        working-directory: packages/create-zudo-doc
+        run: pnpm exec vitest run --config vitest.slow.config.ts src/__tests__/skill-name-parity.slow.test.ts src/__tests__/init-git-repo.slow.test.ts
 
   # ---------------------------------------------------------------------------
   # Job 1.7: A2 no-stub parity gate (path-filtered) (#3419)
