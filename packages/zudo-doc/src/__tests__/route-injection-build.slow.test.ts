@@ -741,19 +741,44 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // the movement must have come from other non-normalized bytes of the same
   // epic change.)
 
+  // 2026-08-20 re-baseline (Nav Overflow Literal epic, zudolab/zudo-doc#3502,
+  // confirm sub #3536) — NOT attributable to this epic's changes. The Wave 1
+  // sub (#3534) recorded the frozen `NAV_OVERFLOW_SCRIPT` literal as
+  // byte-identical to the old module-eval text (old and new both 12390 bytes,
+  // sha256 `9569d4127510607e8b69b8c0e3e22027eee443bbda3ff0e097de41cdf183dbd7`),
+  // so a freeze-caused move was already implausible. This confirm sub verified
+  // that directly: building the fixture at the pre-epic commit (`f247b6d0`,
+  // the merged-base tip right after the Drawer Refresh epic landed) and at
+  // this epic's HEAD produced byte-identical normalized HTML for all three
+  // pages — ruling out #3534/#3535 entirely.
+  //
+  // The actual root cause predates this epic and even predates the Drawer
+  // Refresh review-fix commit above: building the fixture at `d76231d4` itself
+  // — the exact commit that pinned the hashes below (`22bb416f…` /
+  // `b0e72a15…` / `e1bb7893…`, Drawer Refresh epic #3525, confirm sub #3532)
+  // — with an otherwise-identical toolchain (same `@takazudo/zfb@2.7.1`, same
+  // lockfile) reproducibly yields the NEW hashes below, never the committed
+  // ones. So `d76231d4`'s committed baseline was never reproducible from a
+  // clean build at the moment it was written — most likely computed against a
+  // stale/dirty `dist/` rather than a fresh `pnpm build:workspace`. This is a
+  // pre-existing gap in the merged base, exactly the class of drift this
+  // confirm sub exists to catch (the slow lane doesn't gate PRs on its own).
+  // Re-baselining here to the values every clean build actually produces; no
+  // unattributed bytes.
+
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"22bb416fb0002eb35b555051c73f7b9be5930a83f6ef0e0cda5b6acfd07c1050"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"5513e16ed45d3d459ec050275bee26ecce8b358acf1c26046f92671ae24ed08e"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"b0e72a15f55df682905b7b7c8f544e428ac440f2e04cec7ee266769a2c276f9a"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"72770b335328330b136b7e0492b045fbffa9f29f3be5569a446b5f0772bb3157"`);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"e1bb7893dd3264b1449b93d8940000cf19b5adcb777be419613b660c3e6d958b"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"a47eba52783ba7670022f07ffbb41042b1fea115956d0e5d73d38cc851d31d6d"`);
   });
 });
 
