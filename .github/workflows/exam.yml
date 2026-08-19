@@ -47,6 +47,9 @@ jobs:
     name: Full E2E Tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      CI_SAFE_E2E_OUTPUT_DIR: test-results/ci-safe
+      FLAKY_E2E_OUTPUT_DIR: test-results/flaky
     container:
       # renovate: datasource=docker depName=mcr.microsoft.com/playwright versioning=docker
       image: mcr.microsoft.com/playwright:v1.58.2-noble
@@ -80,9 +83,17 @@ jobs:
       # (it treats the suffix as a reporter MODULE name → MODULE_NOT_FOUND); the
       # env var is the supported way to redirect the json reporter's file output.
       - name: Run CI-safe E2E suite
-        run: pnpm test:e2e:ci:json
+        run: >
+          bash e2e/setup-fixtures.sh &&
+          pnpm exec playwright test
+          --grep-invert "@flaky|@local-only|@verification"
+          --reporter=list,json
+          --output "$CI_SAFE_E2E_OUTPUT_DIR"
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-report/ci-results.json
+
+      - name: Guard E2E output directories differ
+        run: test "$CI_SAFE_E2E_OUTPUT_DIR" != "$FLAKY_E2E_OUTPUT_DIR"
 
       - name: Report retry flakes
         if: always()
@@ -100,6 +111,7 @@ jobs:
         run: >
           npx playwright test
           --grep @flaky
+          --output "$FLAKY_E2E_OUTPUT_DIR"
           --reporter=list,json
           --pass-with-no-tests
         continue-on-error: true
@@ -149,12 +161,12 @@ jobs:
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: exam-e2e-reports
-          # test-results/ carries the on-first-retry trace zips + failure
-          # screenshots (Playwright's outputDir default); playwright-report/
-          # carries the JSON reports. Neither dir is nested in the other.
+          # Playwright clears outputDir on every run, so upload both distinct
+          # lane directories to preserve each lane's traces and screenshots.
           path: |
             playwright-report/
-            test-results/
+            test-results/ci-safe/
+            test-results/flaky/
           retention-days: 14
 
   # ---------------------------------------------------------------------------
