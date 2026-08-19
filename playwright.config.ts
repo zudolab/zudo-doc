@@ -28,6 +28,7 @@ const fixtureIndex = (name: Fixture): number =>
 
 export default defineConfig({
   testDir: "./e2e",
+  fullyParallel: true,
   // CI-only single retry: tolerate the intermittent first-navigation flake
   // (page.goto ERR_ABORTED / 30 s timeout) without masking real failures locally.
   retries: process.env.CI ? 1 : 0,
