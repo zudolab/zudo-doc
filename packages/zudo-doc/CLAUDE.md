@@ -12,12 +12,16 @@ subpath exports, `zudoDocPreset` options (`Settings`), `@theme` design tokens,
 
 ## Build: tsup (JS) + tsc (DTS) — two passes, not one
 
-`build`/`prepare` run **`gen-search-widget-script.mjs`, THEN tsup, THEN `tsc -p
-tsconfig.build.json`** (`--emitDeclarationOnly`). The generator (#3412) must run
-first because it writes `src/search-widget-script/generated-script.ts`
-that `search-widget-script/index.ts` imports — without it the first tsup/tsc pass
-fails resolving `./generated-script.js` (it is also wired into `predev` and the
-tsup `onSuccess` chain for the same reason). tsup emits only the JS
+`build`/`prepare` run **`gen-search-widget-script.mjs`, `gen-nav-overflow-script.mjs`,
+THEN tsup, THEN `tsc -p tsconfig.build.json`** (`--emitDeclarationOnly`). Both
+generators must run first: `gen-search-widget-script.mjs` (#3412) writes
+`src/search-widget-script/generated-script.ts` that `search-widget-script/index.ts`
+imports, and `gen-nav-overflow-script.mjs` (#3534) writes
+`src/header/nav-overflow-generated-script.ts` that `header/nav-overflow-script.ts`
+imports — without either, the first tsup/tsc pass fails resolving the missing
+`./generated-script.js` / `./nav-overflow-generated-script.js` (both generators
+are also wired into `predev` and the tsup `onSuccess` chain for the same
+reason). tsup emits only the JS
 (`dts:false`); `tsc` emits the `.d.ts`. The split exists
 because tsup's `dts:true` rollup-based declaration bundler is **combinatorial in
 memory across entries** — with `bundle:false` + ~200 source entries it OOMs even
@@ -34,7 +38,10 @@ deliberate departure from the gitignored-generated-file convention below —
 see the generator's own header comment) with a `pnpm check:search-widget-drift`
 guard (b4push + CI) proving the committed bytes match a fresh regeneration;
 `pretest`/`pretypecheck` no longer regenerate it ahead of those runs, so
-`test`/`typecheck` exercise whatever is actually checked in.
+`test`/`typecheck` exercise whatever is actually checked in. Since
+zudolab/zudo-doc#3534, `src/header/nav-overflow-generated-script.ts` is
+committed the same way, guarded by the mirrored `pnpm check:nav-overflow-drift`
+(b4push + CI, #3535).
 
 `dev` mirrors that same two-pass split as two parallel watchers (#3113):
 `dev:js` (`tsup --watch`) and `dev:dts`
@@ -256,9 +263,12 @@ spreads it into `defineConfig` and keeps only the shell fields it still owns
 tsup only compiles `.ts/.tsx`. CSS is produced by the tsup `onSuccess` hook
 (runs after every build/`--watch`, so a one-shot build's `clean` cannot leave
 `dist/` without them). The CSS-relevant prefix of the chain (the full chain in
-`tsup.config.ts` continues with the eject-sources / routes-src /
-virtual-modules / theme-packs / catalog copies and
-`gen-search-widget-script.mjs` — see that file for the authoritative order):
+`tsup.config.ts` continues with `gen-nav-overflow-script.mjs` — which must
+stay BEFORE the eject-sources copy, since `eject/header/` gets `src/header/`
+verbatim and would otherwise carry the previous literal for one watch cycle
+(#3534) — then the eject-sources / routes-src / virtual-modules / theme-packs
+/ catalog copies and `gen-search-widget-script.mjs` — see that file for the
+authoritative order):
 
 ```
 onSuccess: "node scripts/copy-theme-css.mjs && node scripts/copy-content-css.mjs && node scripts/copy-page-loading-css.mjs && node scripts/copy-features-css.mjs && node scripts/gen-safelist.mjs && …"

@@ -13,11 +13,15 @@
 //
 // Tokens are ARRAYS, not whole strings, because the two consumers need
 // different shapes: `header.tsx` joins them into `class={}` attributes, while
-// the script both spreads them into `classList.add/remove(...)` calls and
-// joins them into `className` assignments. Keeping them composable per-part
-// also lets the overflow-menu recipes (which intentionally differ from the
-// header-bar items in padding/weight/base) reuse the shared color tokens
-// instead of re-typing them.
+// `scripts/gen-nav-overflow-script.mjs` (zudolab/zudo-doc#3534 — the assembly
+// that used to live in `nav-overflow-script.ts` at module-eval time, now
+// frozen into the committed `nav-overflow-generated-script.ts` literal at
+// package build time) reads these arrays off this module's exports and both
+// spreads them into `classList.add/remove(...)` calls and joins them into
+// `className` assignments. Keeping them composable per-part also lets the
+// overflow-menu recipes (which intentionally differ from the header-bar
+// items in padding/weight/base) reuse the shared color tokens instead of
+// re-typing them.
 
 // ── Header-bar top-level item: active-state color toggle ─────────────────
 // setTopActive() (script) ↔ the top-level <a> in renderNavItem() (SSR).
