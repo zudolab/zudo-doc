@@ -139,6 +139,12 @@ headerRightItems: [
 ],
 ```
 
+### カスタムレンダラーを追加する
+
+プロジェクト固有のコンポーネント名は `chromeBindings.headerRightComponents` で解決します。型付きの設定手順全体は [Host Chrome Bindings](../reference/host-chrome-bindings.mdx) を参照してください。クライアント island に対応する静的な登録経路も用意していない限り、レンダラーは SSR 表示用として扱います。
+
+登録済み island の props が現在のページではなくブラウザーセッションに属する場合は、遷移前から存在する island 自体か、persist されたヘッダー内の祖先要素に `data-zd-props-preserve` を付けます。オプトアウトは遷移前から存在する DOM を基準に判定され、対象 island のシリアライズ済み props は置き換えられず、remount 対象にもなりません。persist されたヘッダー自体に属性を付けると配下の全 island がオプトアウトされるため、遷移先ページの props を受け取るべき island には付けないでください。
+
 ## テーマ切替のカスタマイズ
 
 組み込みの `theme-toggle` コンポーネントでたいていのサイトは事足ります。それでも、トグルを独自の場所に配置したい、自前の island ラッパーに組み込みたい、あるいは `@takazudo/zudo-doc/theme` バレル(React 解決の落とし穴があります — 後述)を避けたいといった理由で、プロジェクト内に **自前の** `ThemeToggle` を持ち続ける場合があります。いずれの場合も、ローカルにコンポーネントを手でコピーするのではなく、**専用の `@takazudo/zudo-doc/theme-toggle` サブパスから `ThemeToggle` をインポート**してください。

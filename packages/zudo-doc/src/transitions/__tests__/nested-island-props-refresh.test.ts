@@ -11,6 +11,7 @@ import {
 const PERSIST_ATTR = "data-zfb-transition-persist";
 const ISLAND_ATTR = "data-zfb-island";
 const PROPS_ATTR = "data-props";
+const PROPS_PRESERVE_ATTR = "data-zd-props-preserve";
 const REMOUNT_ATTR = "data-zfb-island-remount";
 
 /** Props serialization is opaque to the helper, so any stable string will do. */
@@ -258,6 +259,136 @@ describe("nested-island props refresh on zfb:before-swap", () => {
     // stops at the inner boundary, and the inner boundary is itself dropped as
     // a refresh root because it sits inside another persisted element.
     expect(liveIsland("ThemeToggle").getAttribute(PROPS_ATTR)).toBe(oldTree);
+  });
+
+  it("preserves an island carrying data-zd-props-preserve", () => {
+    install();
+    setLiveBody(
+      header(
+        "header-en",
+        `<div ${ISLAND_ATTR}="SearchWidget" ${PROPS_PRESERVE_ATTR} ${PROPS_ATTR}='${oldTree}'></div>`,
+      ),
+    );
+
+    dispatchBeforeSwap(
+      parseIncoming(
+        header(
+          "header-en",
+          `<div ${ISLAND_ATTR}="SearchWidget" ${PROPS_ATTR}='${newTree}'></div>`,
+        ),
+      ),
+    );
+
+    const preserved = liveIsland("SearchWidget");
+    expect(preserved.getAttribute(PROPS_ATTR)).toBe(oldTree);
+    expect(preserved.hasAttribute(REMOUNT_ATTR)).toBe(false);
+  });
+
+  it("preserves an island under a data-zd-props-preserve ancestor within the root", () => {
+    install();
+    setLiveBody(
+      header(
+        "header-en",
+        `<div ${PROPS_PRESERVE_ATTR}><div ${ISLAND_ATTR}="SearchWidget" ${PROPS_ATTR}='${oldTree}'></div></div>`,
+      ),
+    );
+
+    dispatchBeforeSwap(
+      parseIncoming(
+        header(
+          "header-en",
+          `<div ${PROPS_PRESERVE_ATTR}><div ${ISLAND_ATTR}="SearchWidget" ${PROPS_ATTR}='${newTree}'></div></div>`,
+        ),
+      ),
+    );
+
+    const preserved = liveIsland("SearchWidget");
+    expect(preserved.getAttribute(PROPS_ATTR)).toBe(oldTree);
+    expect(preserved.hasAttribute(REMOUNT_ATTR)).toBe(false);
+  });
+
+  it("preserves every island when the persisted root carries data-zd-props-preserve", () => {
+    install();
+    setLiveBody(
+      `<header ${PERSIST_ATTR}="header-en" ${PROPS_PRESERVE_ATTR}>` +
+        island("SearchWidget", oldTree) +
+        island("SidebarToggle", oldTree) +
+        `</header>`,
+    );
+
+    dispatchBeforeSwap(
+      parseIncoming(
+        `<header ${PERSIST_ATTR}="header-en" ${PROPS_PRESERVE_ATTR}>` +
+          island("SearchWidget", newTree) +
+          island("SidebarToggle", newTree) +
+          `</header>`,
+      ),
+    );
+
+    for (const name of ["SearchWidget", "SidebarToggle"]) {
+      const preserved = liveIsland(name);
+      expect(preserved.getAttribute(PROPS_ATTR)).toBe(oldTree);
+      expect(preserved.hasAttribute(REMOUNT_ATTR)).toBe(false);
+    }
+  });
+
+  it("refreshes an island when only an ancestor outside the persisted root is preserved", () => {
+    install();
+    setLiveBody(
+      `<div ${PROPS_PRESERVE_ATTR}>${header("header-en", island("SearchWidget", oldTree))}</div>`,
+    );
+
+    dispatchBeforeSwap(
+      parseIncoming(
+        `<div ${PROPS_PRESERVE_ATTR}>${header("header-en", island("SearchWidget", newTree))}</div>`,
+      ),
+    );
+
+    expect(liveIsland("SearchWidget").getAttribute(PROPS_ATTR)).toBe(newTree);
+    expect(liveIsland("SearchWidget").getAttribute(REMOUNT_ATTR)).toBe("");
+  });
+
+  it("refreshes sibling islands without data-zd-props-preserve", () => {
+    install();
+    setLiveBody(
+      header(
+        "header-en",
+        `<div ${ISLAND_ATTR}="SearchWidget" ${PROPS_PRESERVE_ATTR} ${PROPS_ATTR}='${oldTree}'></div>` +
+          island("SidebarToggle", oldTree),
+      ),
+    );
+
+    dispatchBeforeSwap(
+      parseIncoming(
+        header(
+          "header-en",
+          `<div ${ISLAND_ATTR}="SearchWidget" ${PROPS_PRESERVE_ATTR} ${PROPS_ATTR}='${newTree}'></div>` +
+            island("SidebarToggle", newTree),
+        ),
+      ),
+    );
+
+    expect(liveIsland("SearchWidget").getAttribute(PROPS_ATTR)).toBe(oldTree);
+    expect(liveIsland("SearchWidget").hasAttribute(REMOUNT_ATTR)).toBe(false);
+    expect(liveIsland("SidebarToggle").getAttribute(PROPS_ATTR)).toBe(newTree);
+    expect(liveIsland("SidebarToggle").getAttribute(REMOUNT_ATTR)).toBe("");
+  });
+
+  it("refreshes normally when data-zd-props-preserve exists only on the incoming side", () => {
+    install();
+    setLiveBody(header("header-en", island("SearchWidget", oldTree)));
+
+    dispatchBeforeSwap(
+      parseIncoming(
+        header(
+          "header-en",
+          `<div ${ISLAND_ATTR}="SearchWidget" ${PROPS_PRESERVE_ATTR} ${PROPS_ATTR}='${newTree}'></div>`,
+        ),
+      ),
+    );
+
+    expect(liveIsland("SearchWidget").getAttribute(PROPS_ATTR)).toBe(newTree);
+    expect(liveIsland("SearchWidget").getAttribute(REMOUNT_ATTR)).toBe("");
   });
 
   it("removes data-props when the incoming island has none", () => {

@@ -17,9 +17,10 @@ themselves via `packageOwnedRoutes`) ships from `@takazudo/zudo-doc` in
 `node_modules`. There is no more copy-then-strip and no more `@slot:`
 injection anchors:
 
-1. Copy the minimal **base template** (`templates/base/`) — 5 files, no
-   anchors: `pages/index.tsx`, `pages/docs/[[...slug]].tsx`,
-   `src/styles/global.css`, `tsconfig.json`, `scripts/setup-doc-skill.sh`
+1. Copy the minimal **base template** (`templates/base/`) — 10 files, no
+   injection anchors: `pages/index.tsx`, `pages/docs/[[...slug]].tsx`,
+   `src/styles/global.css`, `tsconfig.json`, `scripts/setup-doc-skill.sh`,
+   `scripts/check-links.js`, and four `public/` favicon files
    (the last is excluded from the unconditional mirror and copied only when
    `skillSymlinker` is selected — see `scaffold.ts`'s `EXCLUDE_FROM_MIRROR`).
 2. **Generate** the ONE `zfb.config.ts` programmatically (`zfb-config-gen.ts`)
@@ -137,17 +138,18 @@ For each feature-gated behavior in the main project, verify:
 
 ### 1e. Base template drift
 
-Compare the 5 base template files against their showcase / package counterparts (there is very little to compare now — most showcase behavior is package-owned, not template-mirrored):
+Compare the 6 source-code base template files against their showcase / package counterparts (the four favicon files are byte-identical assets; most showcase behavior is package-owned, not template-mirrored):
 
 - `templates/base/pages/index.tsx` — 1-line re-export
 - `templates/base/pages/docs/[[...slug]].tsx` — self-contained doc-route stub (compare against the showcase's `pages/docs/[[...slug]].tsx`, which the `.template-drift-allowlist` allows to diverge — the showcase adds `chromeBindingsModule` wiring the minimal stub doesn't need)
 - `templates/base/src/styles/global.css` — fixed ~20-line `@import` chain (compare against the showcase's `src/styles/global.css`, also allowlisted — the showcase's is a superset)
 - `templates/base/tsconfig.json` — 5-line extends form (compare against the showcase's `tsconfig.json`, allowlisted — the showcase's is a superset per the `paths`/`baseUrl` GOTCHA documented in `packages/zudo-doc/CLAUDE.md`)
 - `templates/base/scripts/setup-doc-skill.sh` — should be byte-identical to the root `scripts/setup-doc-skill.sh` (the root copy IS the source template; not allowlisted, must match exactly)
+- `templates/base/scripts/check-links.js` — source-first counterpart to the showcase checker; allowlisted because generated projects read literal settings from `zfb.config.ts` instead of the showcase's `src/config/settings.ts`, so validation-core changes require manual parity review
 
 **Automated first check**: Run `pnpm check:template-drift` before doing manual analysis. This runs `scripts/check-template-drift.sh` and quickly identifies files that differ between the main project and the base template.
 
-**Allowlist note**: The 6 pairs in `.template-drift-allowlist` (`global.css`, `tsconfig.json`, `pages/index.tsx`, the two doc-route stubs, and the `tauri` feature's orphaned find-in-page files) are skipped by the automated script's whole-file content check because they intentionally differ (the showcase carries wiring the minimal template doesn't need). These files **still require manual review** — check that any non-slot-section changes in the main project are reflected in the template counterpart. `global.css` also has a dedicated automated guard (`check_global_css_legacy_tokens` in `scripts/check-template-drift.sh`) that fails if the template regresses to a pre-ramp-restructure token or drops the `@import "@takazudo/zudo-doc/theme.css"` line — that one drift class stays automated even though the rest of the file needs manual review.
+**Allowlist note**: The 7 pairs in `.template-drift-allowlist` (`global.css`, `tsconfig.json`, `pages/index.tsx`, the two doc-route stubs, `scripts/check-links.js`, and the `tauri` feature's orphaned find-in-page files) are skipped by the automated script's whole-file content check because they intentionally differ (the showcase carries wiring the minimal template doesn't need). These files **still require manual review** — check that validation-core or other relevant changes in the main project are reflected in the template counterpart. `global.css` also has a dedicated automated guard (`check_global_css_legacy_tokens` in `scripts/check-template-drift.sh`) that fails if the template regresses to a pre-ramp-restructure token or drops the `@import "@takazudo/zudo-doc/theme.css"` line — that one drift class stays automated even though the rest of the file needs manual review.
 
 ## Step 2: Report Findings
 
@@ -206,7 +208,7 @@ After fixes:
 | `packages/create-zudo-doc/src/features/index.ts` | Registers every feature module |
 | `packages/create-zudo-doc/src/scaffold.ts` | Orchestrates generation pipeline, generates `package.json`, `.gitignore`, `.npmrc`, seeds starter content |
 | `packages/create-zudo-doc/src/claude-md-gen.ts` | Generates the per-project `CLAUDE.md` |
-| `packages/create-zudo-doc/templates/base/` | The locked ~12-file (barebone) minimal manifest's static half — 5 files, no `@slot:` anchors |
+| `packages/create-zudo-doc/templates/base/` | The locked ~18-file (barebone) minimal manifest's static half — 10 files, no `@slot:` anchors |
 | `packages/create-zudo-doc/templates/features/` | Feature-specific files copied when a feature is enabled — only `i18n`, `tagGovernance`, `tauri`, `tauriDev` still have any |
 | `packages/zudo-doc/src/preset.ts` | `zudoDocPreset()` — wires plugins/collections/markdown from settings fields; the generator never wires plugins directly |
 | `packages/create-zudo-doc/src/__tests__/scaffold.test.ts` | Manifest-shape assertions (exact 12-file barebone list, exact all-on list, settings-drift guard) |

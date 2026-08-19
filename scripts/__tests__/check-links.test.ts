@@ -12,10 +12,13 @@ import {
   resolveLinkDetail,
   resolveLink,
   extractMdxAbsoluteLinks,
+  extractMdxFragmentLinks,
   checkHtmlLinksAndTrailing,
   checkMdxLinks,
+  checkMdxAnchors,
   formatReport,
   collectFiles,
+  readAllowlist,
 } from "../check-links.js";
 
 const CHECK_LINKS_SCRIPT = fileURLToPath(new URL("../check-links.js", import.meta.url));
@@ -38,6 +41,7 @@ describe("check-links", () => {
         "--",
         "--strict-broken",
         "--strict-absolute",
+        "--strict-anchors",
         "--strict-trailing",
         "--allowlist=.check-links-allowlist",
         "-h",
@@ -48,6 +52,7 @@ describe("check-links", () => {
       expect(result.status).toBe(0);
       expect(result.stdout).toContain("--strict-broken");
       expect(result.stdout).toContain("--strict-absolute");
+      expect(result.stdout).toContain("--strict-anchors");
       expect(result.stdout).toContain("--strict-trailing");
       expect(result.stdout).not.toMatch(/^\s*--strict\s/m);
     });
@@ -218,8 +223,10 @@ describe("check-links", () => {
       );
     });
 
-    it("skips anchor-only links", () => {
-      expect(extractHtmlLinks(`<a href="#section">A</a>`)).toEqual([]);
+    it("extracts anchor-only links for local-fragment validation", () => {
+      expect(extractHtmlLinks(`<a href="#section">A</a>`)).toEqual([
+        { href: "#section", line: 1 },
+      ]);
     });
 
     it("skips mailto links", () => {
@@ -608,6 +615,36 @@ describe("check-links", () => {
     });
   });
 
+  describe("extractMdxFragmentLinks", () => {
+    it("finds relative, local, query-plus-fragment, and empty fragments", () => {
+      const content = [
+        "[relative](./other.mdx#target)",
+        "[local](#local)",
+        "[query](./other.mdx?view=all#target)",
+        "[empty](#)",
+      ].join("\n");
+      expect(extractMdxFragmentLinks(content)).toEqual([
+        { href: "./other.mdx#target", line: 1 },
+        { href: "#local", line: 2 },
+        { href: "./other.mdx?view=all#target", line: 3 },
+        { href: "#", line: 4 },
+      ]);
+    });
+
+    it("preserves fenced-code and inline-code exclusions", () => {
+      const content = [
+        "`[inline](./other.mdx#hidden)`",
+        "~~~md",
+        "[fenced](./other.mdx#hidden)",
+        "~~~",
+        "[visible](./other.mdx#shown)",
+      ].join("\n");
+      expect(extractMdxFragmentLinks(content)).toEqual([
+        { href: "./other.mdx#shown", line: 5 },
+      ]);
+    });
+  });
+
   // --- checkHtmlLinksAndTrailing (integration) ---
 
   describe("checkHtmlLinksAndTrailing", () => {
@@ -648,6 +685,97 @@ describe("check-links", () => {
 
       const { broken } = await checkHtmlLinksAndTrailing(distDir, tmpDir, BASE);
       expect(broken).toEqual([]);
+    });
+
+    it("validates hierarchical, h5/h6, and non-heading target ids", async () => {
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(join(distDir, "docs", "source"), { recursive: true });
+      mkdirSync(join(distDir, "docs", "target"), { recursive: true });
+      writeFileSync(
+        join(distDir, "docs", "source", "index.html"),
+        [
+          '<a href="../target/#parent-child">hierarchical</a>',
+          '<a href="../target/#parent-child-deep">h5</a>',
+          '<a href="../target/#static-target">static</a>',
+        ].join("\n"),
+      );
+      writeFileSync(
+        join(distDir, "docs", "target", "index.html"),
+        '<h3 id="parent-child"></h3><h5 id="parent-child-deep"></h5><div id="static-target"></div>',
+      );
+
+      const { anchors } = await checkHtmlLinksAndTrailing(distDir, tmpDir);
+      expect(anchors).toEqual([]);
+    });
+
+    it("reports leaf-only and missing anchors with source details", async () => {
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(join(distDir, "docs", "source"), { recursive: true });
+      mkdirSync(join(distDir, "docs", "target"), { recursive: true });
+      writeFileSync(
+        join(distDir, "docs", "source", "index.html"),
+        '<a href="../target/#child">leaf only</a>\n<a href="../target/#absent">missing</a>',
+      );
+      writeFileSync(
+        join(distDir, "docs", "target", "index.html"),
+        '<h3 id="parent-child"></h3>',
+      );
+
+      const { anchors } = await checkHtmlLinksAndTrailing(distDir, tmpDir);
+      expect(anchors).toEqual([
+        {
+          file: "dist/docs/source/index.html", line: 1,
+          href: "../target/#child", fragment: "child", reason: "missing target id",
+        },
+        {
+          file: "dist/docs/source/index.html", line: 2,
+          href: "../target/#absent", fragment: "absent", reason: "missing target id",
+        },
+      ]);
+    });
+
+    it("handles local, query, encoded, empty, and malformed fragments", async () => {
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(join(distDir, "docs", "source"), { recursive: true });
+      writeFileSync(
+        join(distDir, "docs", "source", "index.html"),
+        [
+          '<div id="local"></div><div id="foo bar"></div>',
+          '<a href="#local">local</a>',
+          '<a href="?view=all#local">query</a>',
+          '<a href="#foo%20bar">encoded</a>',
+          '<a href="#">empty</a>',
+          '<a href="#bad%ZZ">malformed</a>',
+        ].join("\n"),
+      );
+
+      const { anchors } = await checkHtmlLinksAndTrailing(distDir, tmpDir);
+      expect(anchors).toEqual([
+        {
+          file: "dist/docs/source/index.html", line: 5,
+          href: "#", fragment: "", reason: "empty fragment",
+        },
+        {
+          file: "dist/docs/source/index.html", line: 6,
+          href: "#bad%ZZ", fragment: "bad%ZZ", reason: "malformed percent-encoding",
+        },
+      ]);
+    });
+
+    it("keeps anchor checks behind version exclude patterns", async () => {
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(join(distDir, "docs", "source"), { recursive: true });
+      mkdirSync(join(distDir, "v", "1.0", "target"), { recursive: true });
+      writeFileSync(
+        join(distDir, "docs", "source", "index.html"),
+        '<a href="/v/1.0/target/#missing">versioned</a>',
+      );
+      writeFileSync(join(distDir, "v", "1.0", "target", "index.html"), "<p>target</p>");
+
+      const { anchors } = await checkHtmlLinksAndTrailing(
+        distDir, tmpDir, "/", [/\/v\/[^/]+\//],
+      );
+      expect(anchors).toEqual([]);
     });
   });
 
@@ -721,6 +849,129 @@ describe("check-links", () => {
         [],
       );
       expect(warnings).toEqual([]);
+    });
+  });
+
+  describe("checkMdxAnchors", () => {
+    it("validates hierarchical h5/h6 and explicit static ids in relative targets", async () => {
+      const docsDir = join(tmpDir, "src", "content", "docs");
+      mkdirSync(docsDir, { recursive: true });
+      writeFileSync(
+        join(docsDir, "source.mdx"),
+        [
+          "[child](./target.mdx#parent-child)",
+          "[deep](./target.mdx#parent-child-deep)",
+          "[static](./target.mdx#static-target)",
+        ].join("\n"),
+      );
+      writeFileSync(
+        join(docsDir, "target.mdx"),
+        "## Parent\n### Child\n##### Deep\n<div id=\"static-target\" />",
+      );
+
+      expect(await checkMdxAnchors([docsDir], tmpDir, "/", [])).toEqual([]);
+    });
+
+    it("does not mistake prose containing id syntax for a static element id", async () => {
+      const docsDir = join(tmpDir, "src", "content", "docs");
+      mkdirSync(docsDir, { recursive: true });
+      writeFileSync(join(docsDir, "source.mdx"), "[x](./target.mdx#not-an-id)");
+      writeFileSync(join(docsDir, "target.mdx"), 'The syntax is `id="not-an-id"`.');
+
+      const anchors = await checkMdxAnchors([docsDir], tmpDir, "/", []);
+      expect(anchors).toHaveLength(1);
+      expect(anchors[0]?.reason).toBe("missing target id");
+    });
+
+    it("reports the leaf-only mistake and a nonexistent anchor", async () => {
+      const docsDir = join(tmpDir, "src", "content", "docs");
+      mkdirSync(docsDir, { recursive: true });
+      writeFileSync(
+        join(docsDir, "source.mdx"),
+        "[leaf](./target.mdx#child)\n[missing](./target.mdx#nonexistent-anchor)",
+      );
+      writeFileSync(join(docsDir, "target.mdx"), "## Parent\n### Child");
+
+      const anchors = await checkMdxAnchors([docsDir], tmpDir, "/", []);
+      expect(anchors).toEqual([
+        {
+          file: "src/content/docs/source.mdx", line: 1,
+          href: "./target.mdx#child", fragment: "child", reason: "missing target id",
+        },
+        {
+          file: "src/content/docs/source.mdx", line: 2,
+          href: "./target.mdx#nonexistent-anchor", fragment: "nonexistent-anchor", reason: "missing target id",
+        },
+      ]);
+    });
+
+    it("handles local, query, percent-encoded, empty, and malformed fragments", async () => {
+      const docsDir = join(tmpDir, "src", "content", "docs");
+      mkdirSync(docsDir, { recursive: true });
+      writeFileSync(
+        join(docsDir, "source.mdx"),
+        [
+          "## Local",
+          '<div id="foo bar" />',
+          "[local](#local)",
+          "[query](./target.mdx?view=all#target)",
+          "[encoded](#foo%20bar)",
+          "[empty](#)",
+          "[malformed](#bad%ZZ)",
+        ].join("\n"),
+      );
+      writeFileSync(join(docsDir, "target.mdx"), "## Target");
+
+      const anchors = await checkMdxAnchors([docsDir], tmpDir, "/", []);
+      expect(anchors).toEqual([
+        {
+          file: "src/content/docs/source.mdx", line: 6,
+          href: "#", fragment: "", reason: "empty fragment",
+        },
+        {
+          file: "src/content/docs/source.mdx", line: 7,
+          href: "#bad%ZZ", fragment: "bad%ZZ", reason: "malformed percent-encoding",
+        },
+      ]);
+    });
+
+    it("resolves a JA-to-EN anchor in the actual EN target", async () => {
+      const docsDir = join(tmpDir, "src", "content", "docs");
+      const jaDir = join(tmpDir, "src", "content", "docs-ja");
+      mkdirSync(docsDir, { recursive: true });
+      mkdirSync(jaDir, { recursive: true });
+      writeFileSync(join(docsDir, "target.mdx"), "## English Target");
+      writeFileSync(join(jaDir, "target.mdx"), "## Japanese Target");
+      writeFileSync(jaDir + "/source.mdx", "[EN](/docs/target#english-target)");
+
+      expect(
+        await checkMdxAnchors([docsDir, jaDir], tmpDir, "/", ["ja"]),
+      ).toEqual([]);
+    });
+
+    it("keeps source anchor checks behind version exclude patterns", async () => {
+      const docsDir = join(tmpDir, "src", "content", "docs");
+      mkdirSync(docsDir, { recursive: true });
+      writeFileSync(
+        join(docsDir, "source.mdx"),
+        "[versioned](/v/1.0/docs/target#missing)",
+      );
+      expect(
+        await checkMdxAnchors([docsDir], tmpDir, "/", [], [/\/v\/[^/]+\//]),
+      ).toEqual([]);
+    });
+  });
+
+  describe("readAllowlist", () => {
+    it("preserves href fragments while ignoring comment-only lines", async () => {
+      const file = join(tmpDir, ".check-links-allowlist");
+      writeFileSync(
+        file,
+        "# comment\nsrc/content/docs/a.mdx:3:./b.mdx#target\n",
+      );
+      expect(await readAllowlist(file)).toEqual(
+        new Set(["src/content/docs/a.mdx:3:./b.mdx#target"]),
+      );
     });
   });
 
@@ -891,7 +1142,7 @@ describe("check-links", () => {
     it("shows success message when no issues", () => {
       const report = formatReport([], []);
       expect(report).toContain(
-        "✓ No broken links or absolute path issues found",
+        "✓ No broken links, invalid anchors, or absolute path issues found",
       );
     });
 
@@ -924,6 +1175,23 @@ describe("check-links", () => {
       expect(report).toContain("=== Broken Links");
       expect(report).not.toContain("=== Absolute Links");
       expect(report).toContain("✗ Found 1 broken link");
+    });
+
+    it("formats invalid anchors as their own category with the fragment", () => {
+      const report = formatReport([], [], [], [
+        {
+          file: "src/content/docs/a.mdx",
+          line: 3,
+          href: "./b.mdx#missing",
+          fragment: "missing",
+          reason: "missing target id",
+        },
+      ]);
+      expect(report).toContain("=== Invalid Anchors ===");
+      expect(report).toContain(
+        "./b.mdx#missing  (fragment: #missing; missing target id)",
+      );
+      expect(report).toContain("✗ Found 1 invalid anchor");
     });
   });
 });

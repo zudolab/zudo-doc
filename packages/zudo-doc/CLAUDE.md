@@ -467,7 +467,13 @@ specifier end-to-end.
    base/i18n stubs consume the virtual object; the generator's doc-history
    patch must spread it before replacing only `DocHistory`. Components declared
    only inside the virtual module are SSR-presentational unless a separate
-   static island registration path exists.
+   static island registration path exists. A host island with session-scoped
+   props (for example, a badge nested under the persisted header) can opt out
+   of the nested-island props refresh with `data-zd-props-preserve` on the
+   island or an ancestor inside the persisted root. The live side governs; the
+   attribute on the persisted root is a blanket opt-out for every nested
+   island, and an opted-out island receives neither a props write nor a remount
+   flag.
 
 ### GOTCHA — preact/compat `paths` stay in the PROJECT tsconfig, not the base
 
