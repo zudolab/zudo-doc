@@ -20,8 +20,8 @@
 #   Lint Gates               — pnpm install; tag guards + pnpm lint:tokens
 #   Type Check               — pnpm install; pnpm check (zfb check → tsc --noEmit)
 #   Worker Contract Proof    — Worker typecheck + runtime DO tests + Wrangler dry-run
-#   Package Unit Tests       — pnpm install; pnpm test:packages (4 package suites; 2,964 tests:
-#                              search-worker 44, doc-history-server 73, create-zudo-doc 596, zudo-doc 2,251)
+#   Package Unit Tests       — pnpm install; pnpm test:packages (4 package suites; 2,988 tests:
+#                              search-worker 44, doc-history-server 73, create-zudo-doc 596, zudo-doc 2,275)
 #   Root Unit Tests          — pnpm install; pnpm test:unit (903 tests: 901 passed, 2 skipped)
 #   Slow Unit Tests           — pnpm install; 60 slow root tests + 5 retiered create-zudo-doc tests
 #   A2 Parity Gate           — path-filtered (#3419): skips unless an every-page script
@@ -505,6 +505,13 @@ jobs:
       - name: Check search-widget-script drift
         run: pnpm check:search-widget-drift
 
+      # Nav-overflow-script commit drift guard (#3534, #3535). Same rationale
+      # as the search-widget-script step above — the generator imports
+      # `esbuild` directly, so it rides this job's install rather than its
+      # own pure-Node job.
+      - name: Check nav-overflow-script drift
+        run: pnpm check:nav-overflow-drift
+
       - name: Run package unit tests
         run: pnpm test:packages
 
@@ -678,6 +685,15 @@ jobs:
             "packages/zudo-doc/src/theme/theme-pack-provider.tsx"
             "packages/zudo-doc/src/current-path/index.ts"
             "packages/zudo-doc/src/header/nav-overflow-script.ts"
+            # Since zudolab/zudo-doc#3534 the nav-overflow script bytes are a
+            # frozen committed literal: ANY change to its four sources
+            # (current-path/index.ts, nav-active.ts, nav-class-tokens.ts,
+            # page-events.ts) or to the generator's template must land in the
+            # generated file below, so it is the load-bearing entry — a
+            # nav-class-tokens.ts-only edit would otherwise skip this gate.
+            # The generator is listed too, mirroring gen-search-widget-script.
+            "packages/zudo-doc/src/header/nav-overflow-generated-script.ts"
+            "packages/zudo-doc/scripts/gen-nav-overflow-script.mjs"
             "packages/zudo-doc/src/header/nav-active.ts"
             "packages/zudo-doc/src/header/header.tsx"
             "packages/zudo-doc/src/doc-content-header/index.tsx"

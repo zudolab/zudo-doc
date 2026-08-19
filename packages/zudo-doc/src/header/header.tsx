@@ -310,12 +310,20 @@ export function Header(props: HeaderProps): JSX.Element {
       //   - Search: <site-search> custom element re-registers on
       //     AFTER_NAVIGATE_EVENT (_search-widget-script.ts:184, verified (a))
       //   - SidebarToggle (mobile): closes on AFTER_NAVIGATE_EVENT
-      //     (sidebar-toggle.tsx:72, verified (a); sidebar content is
-      //     re-serialised into Island data-props on every SSR render, so
-      //     same-locale swaps see stale SSR in the persist window but the
-      //     Island re-hydrates with correct nodes on mount)
+      //     (sidebar-toggle-island/index.tsx, verified (a)). Its section tree
+      //     rides the Island's serialised data-props, and re-hydration alone
+      //     does NOT correct it — the header is lifted verbatim, so the Island
+      //     re-mounts from the OLD props (zudolab/zudo-doc#3525). What corrects
+      //     it is `ensureNestedIslandPropsRefresh`
+      //     (transitions/nested-island-props-refresh.ts, registered from the
+      //     island module): on BEFORE_SWAP_EVENT it copies the incoming
+      //     document's data-props onto the live nested islands, and
+      //     mountNewIslands re-reads the attribute at mount time (#3530)
       //   - Header nav + aria-current: NAV_OVERFLOW_SCRIPT re-runs on
-      //     AFTER_NAVIGATE_EVENT (nav-overflow-script.ts:198, verified (a))
+      //     AFTER_NAVIGATE_EVENT (frozen by zudolab/zudo-doc#3534 — the
+      //     `addEventListener(${afterNavigateEventLiteral}, initNavOverflow)`
+      //     call at the tail of the template in
+      //     scripts/gen-nav-overflow-script.mjs, verified (a))
       //   - LanguageSwitcher: its target hrefs ARE per-page (the equivalent
       //     page in each other locale), so within a same-locale persist window
       //     they WOULD go stale — the locale is constant but the path is not.

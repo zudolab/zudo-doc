@@ -25,7 +25,7 @@ is a blocking PR lane, and the visual-regression baseline is deliberately skippe
 
 | Level | What | Scope | Command |
 |-------|------|-------|---------|
-| L1 | Vitest unit tests | Root fast lane: 903 tests (901 passed, 2 skipped) in `src/**/__tests__/` and `scripts/__tests__/`, via `pnpm test:unit`; package lanes: 2,964 tests (search-worker 44, doc-history-server 73, create-zudo-doc 596, zudo-doc 2,251), via `pnpm test:packages`. Combined `pnpm test` runs these fast lanes only. Separate Slow Unit Tests runs 60 slow root tests via `pnpm test:unit:slow` plus 5 retiered `create-zudo-doc` tests | Root: `pnpm test:unit`; packages: `pnpm test:packages`; combined: `pnpm test` |
+| L1 | Vitest unit tests | Root fast lane: 903 tests (901 passed, 2 skipped) in `src/**/__tests__/` and `scripts/__tests__/`, via `pnpm test:unit`; package lanes: 2,988 tests (search-worker 44, doc-history-server 73, create-zudo-doc 596, zudo-doc 2,275), via `pnpm test:packages`. Combined `pnpm test` runs these fast lanes only. Separate Slow Unit Tests runs 60 slow root tests via `pnpm test:unit:slow` plus 5 retiered `create-zudo-doc` tests | Root: `pnpm test:unit`; packages: `pnpm test:packages`; combined: `pnpm test` |
 | L1 Worker | Workers-runtime unit/integration tests | Custom entry export graph and SQLite `AiChatDailySpendCap` concurrency using `@cloudflare/vitest-pool-workers` | `pnpm test:worker` |
 | L2 | *Not used* — jsdom/happy-dom + Testing Library DOM component tests | Intentionally skipped in this repo — see "Why L2 is skipped" below | — |
 | L3 | Static dist reads + build-output verification | Read pre-built `dist/` HTML with `readFileSync` (Playwright specs using `makeDistReader(fixture)`); also covers the b4push build-output steps (link check, HTML validation, preview smoke) — see "L3 details" below | `E2E_FIXTURES=<fixture> npx playwright test --project <fixture> e2e/<fixture>-*.spec.ts` (e.g. `E2E_FIXTURES=versioning npx playwright test --project versioning e2e/versioning.spec.ts`) — any spec using `makeDistReader(fixture)` from `e2e/dist-helper.ts` |
@@ -116,7 +116,7 @@ because it never runs in CI — the table tracks *where in the pipeline* a tier 
 Run before pushing, or when iterating on a change:
 
 ```bash
-pnpm test          # L1 fast lanes only: builds @takazudo/zudo-doc, runs 903 root tests (901 passed, 2 skipped) + 2,964 package tests across 4 packages
+pnpm test          # L1 fast lanes only: builds @takazudo/zudo-doc, runs 903 root tests (901 passed, 2 skipped) + 2,988 package tests across 4 packages
 pnpm check         # TypeScript typecheck (zfb check)
 pnpm check:worker  # generated binding + custom Worker typecheck
 pnpm test:worker   # builds first, then runs Workers-runtime/SQLite DO tests
@@ -149,11 +149,11 @@ registry-install/full-build slow specs stay in the nightly `slow-create` job.
 
 **b4push** (`pnpm b4push`) is the bounded local convenience pass — wisdom-tier **T4**, not
 T1 (see the note above the tiers table); it's covered here for workflow ergonomics only. It
-runs a 28-step suite
+runs a 29-step suite
 (format → template drift → no-host-alias guard → pin parity → fixture drift → tags/canonical audit →
 current-only compatibility → token lint → component-tokens drift → e2e spec naming guard →
-@flaky tracking-issue guard → wait-debt guard → search-widget-script commit drift → publish contract →
-dist-mutation guard → required-checks manifest/parity → typecheck → Worker contract proof → root unit tests →
+@flaky tracking-issue guard → wait-debt guard → search-widget-script commit drift → nav-overflow-script commit drift →
+publish contract → dist-mutation guard → required-checks manifest/parity → typecheck → Worker contract proof → root unit tests →
 slow unit tests → package tests → safelist check → build → content-fallback allowlist scan → link check →
 HTML validation → preview smoke → manual smoke). Each step's elapsed time is recorded and printed as a breakdown in the final
 SUMMARY block, so budget creep in any one step is visible instead of only the aggregate run
@@ -164,8 +164,8 @@ non-allowlisted half (`strictContentBridge: true` in `zfb.config.ts`) fails plai
 `pnpm build`/CI directly and is not a b4push step at all — see the header of
 `scripts/check-content-fallback.mjs` for why both exist.
 
-**b4push/CI parity scope.** The `check:b4push-ci-parity` guard (step 16) only cross-checks
-the lightweight guard steps 1–16 (the `# >>> b4push-ci-parity:guards:begin` / `:end` region).
+**b4push/CI parity scope.** The `check:b4push-ci-parity` guard (step 17) only cross-checks
+the lightweight guard steps 1–17 (the `# >>> b4push-ci-parity:guards:begin` / `:end` region).
 The heavy steps — typecheck, unit tests, package tests, safelist check, build, link check,
 HTML validation, preview smoke — are intentionally outside this region and outside the parity
 manifest. They run in CI as separate full-install jobs (not redundant pure-Node scripts), so
@@ -220,7 +220,7 @@ with a closing comment, so the issue list doesn't accumulate stale entries (#253
 ### T4 — Local heavy lane (`pnpm b4push`)
 
 T4 is a convenience layer, never an enforcement substitute for T1. The structural
-target for `pnpm b4push` is a finite, warm-tree 28-step pass with the full per-step
+target for `pnpm b4push` is a finite, warm-tree 29-step pass with the full per-step
 timing breakdown printed by `scripts/run-b4push.sh` (the timing state is set up in
 `scripts/run-b4push.sh:54-69`, in the `START_TIME`/`TOTAL_STEPS` and `STEP_*` block).
 It includes the blocking Slow Unit Tests lane (60 slow root tests plus 5 retiered

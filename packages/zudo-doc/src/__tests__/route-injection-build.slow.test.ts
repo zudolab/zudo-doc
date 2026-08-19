@@ -707,19 +707,86 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // All of it traces to this one intentional, self-contained toolchain
   // change; no unattributed bytes.
 
+  // 2026-08-19 re-baseline (Drawer Refresh epic, zudolab/zudo-doc#3525, wave-3
+  // confirm sub #3532): all three pages moved by a page-independent delta —
+  // the same shape as the #3401 entry above. Root cause: #3530 (nested-island
+  // props-refresh at the before-swap seam) adds a new module
+  // `transitions/nested-island-props-refresh.ts` and wires it in from
+  // `sidebar-toggle-island/index.tsx` (`ensureNestedIslandPropsRefresh()`,
+  // called at module scope). That island ships inside this fixture's bundled
+  // islands chunk (confirmed by grepping a fresh build's
+  // `assets/islands-<hash>.js` for `SidebarToggle`), so the source change
+  // shifts the chunk's content hash — and therefore the hashed filename string
+  // (`assets/islands-<hash>.js`) embedded verbatim in every SSG page,
+  // unconditional and page-independent, exactly like the #3401 script-text
+  // deltas above. `header.tsx`/`transitions/index.ts`/`eject/index.ts` deltas
+  // in this same epic (#3530's re-exported barrel entry + comment updates)
+  // are comment/type-only and contribute no bytes. The sibling sub #3531 (new
+  // e2e spec `smoke-mobile-drawer-section-swap.spec.ts`) touches only test
+  // code and is likewise inert here.
+  //
+  // All of it traces to this one intentional, already-merged epic change; no
+  // unattributed bytes.
+
+  // 2026-08-20 (same epic, review fix — NO re-baseline needed): `applyProps`
+  // in `transitions/nested-island-props-refresh.ts` now also sets
+  // `data-zfb-island-remount` (the in-flight-import race fix), and
+  // `sidebar-toggle-island/index.tsx` imports the ensure helper through the
+  // transitions barrel instead of the deep path. A fresh run confirmed the
+  // three hashes below are unmoved: the changed bytes live INSIDE the islands
+  // chunk, and `parity-html-normalize.mjs` replaces hashed asset filenames
+  // with stable placeholders, so chunk-content changes are inert here. (That
+  // also means the entry above's "shifts the hashed filename embedded in
+  // every page" mechanism cannot be what moved these hashes on 2026-08-19 —
+  // the movement must have come from other non-normalized bytes of the same
+  // epic change.)
+
+  // 2026-08-20 re-baseline (Nav Overflow Literal epic zudolab/zudo-doc#3533,
+  // motivated by #3502; confirm sub #3536) — NOT attributable to this epic's
+  // changes. The Wave 1
+  // sub (#3534) recorded the frozen `NAV_OVERFLOW_SCRIPT` literal as
+  // byte-identical to the old module-eval text (old and new both 12390 bytes,
+  // sha256 `9569d4127510607e8b69b8c0e3e22027eee443bbda3ff0e097de41cdf183dbd7`),
+  // so a freeze-caused move was already implausible. This confirm sub verified
+  // that directly: building the fixture at the pre-epic commit (`f247b6d0`,
+  // the merged-base tip right after the Drawer Refresh epic landed) and at
+  // this epic's HEAD produced byte-identical normalized HTML for all three
+  // pages — ruling out #3534/#3535 entirely.
+  //
+  // The actual root cause predates this epic and even predates the Drawer
+  // Refresh review-fix commit above: building the fixture at `d76231d4` itself
+  // — the exact commit that pinned the hashes below (`22bb416f…` /
+  // `b0e72a15…` / `e1bb7893…`, Drawer Refresh epic #3525, confirm sub #3532)
+  // — with an otherwise-identical toolchain (same `@takazudo/zfb@2.7.1`, same
+  // lockfile) reproducibly yields the NEW hashes below, never the committed
+  // ones. So `d76231d4`'s committed baseline was never reproducible from a
+  // clean build at the moment it was written — most likely computed against a
+  // stale/dirty `dist/` rather than a fresh `pnpm build:workspace`. NOTE the
+  // unresolved tension with the review-fix entry above, which recorded "a
+  // fresh run confirmed the three hashes below are unmoved" for the OLD
+  // values: both claims cannot hold, so either that run's `dist/` was itself
+  // stale in the same way, or a live cross-environment non-determinism
+  // remains undiagnosed — if these hashes move again on an unrelated PR,
+  // treat THAT as the working hypothesis rather than re-baselining a third
+  // time on prose. This is a
+  // pre-existing gap in the merged base, exactly the class of drift this
+  // confirm sub exists to catch (the slow lane doesn't gate PRs on its own).
+  // Re-baselining here to the values every clean build actually produces; no
+  // unattributed bytes.
+
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"277bff98a8c915d0fb39ef864d8e1273ccd17a0defc944464a7ec6bc87765de3"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"5513e16ed45d3d459ec050275bee26ecce8b358acf1c26046f92671ae24ed08e"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"6bf7926f9e25707b8de53c3d2be276253f138497e54eb44d7046c05db56c297d"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"72770b335328330b136b7e0492b045fbffa9f29f3be5569a446b5f0772bb3157"`);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"5d1f4635a82eff94ffac690a0e37801f3103466654c6f135340579ae22bce709"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"a47eba52783ba7670022f07ffbb41042b1fea115956d0e5d73d38cc851d31d6d"`);
   });
 });
 
