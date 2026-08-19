@@ -70,6 +70,8 @@ behaviour byte-for-byte.
 | `docContentHeaderExtras` | Renders nothing. A renderer (not a component) called as `({ entry, slug, locale, isFallback?, version? }) => unknown` for `kind === "entry"` doc pages on all 4 doc routes (including versioned pages — it receives `version` and decides for itself). Renders between the `<h1>` and the metainfo/tags block in `DocContentHeader`. |
 | `homeExtras` | Renders nothing. A renderer called as `({ locale }) => unknown` for the home hero. The `/` home route is never injected by the routes plugin (zfb rejects `/`), so this fires on injected `/[locale]` homes and on any host that threads it through `createChrome`; a `HomePageView` `extras` prop takes precedence when both are present. Rendered INLINE at the end of the links row, `/`-separated (#3012). |
 
+Host islands rendered through `headerRightComponents` can preserve session-scoped props across navigation that retains the same persisted root by placing `data-zd-props-preserve` on the live island or an ancestor inside that root. The live side governs this opt-out. Putting the attribute on the persisted root preserves every nested island; preserved islands receive neither a `data-props` write nor a remount flag.
+
 ### `createHomePageView(ctx)` (`./home-page`)
 
 Factory for the shared home-page (site index) body: hero (logo mask block,
