@@ -116,6 +116,13 @@ const REQUIRED_CI_GUARDS = [
     comment: "B4push/CI parity meta-check (this script, #1967)",
   },
   {
+    // Required-checks manifest coverage: raw node in b4push and CI. It stays
+    // dependency-free because it must also work unauthenticated and offline.
+    ciNeedle: "check-required-checks.mjs",
+    b4pushScript: null,
+    comment: "Required-checks manifest guard (#3494)",
+  },
+  {
     // E2E spec naming guard: asserts fixture-prefix + no orphan specs (#2095)
     ciNeedle: "check-e2e-spec-naming.mjs",
     b4pushScript: "check:e2e-spec-naming",

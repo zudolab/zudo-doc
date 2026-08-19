@@ -1,0 +1,5 @@
+# PR Checks jobs intentionally excluded from .required-checks-manifest.
+# Format: <exact job name> # reason: <why this job must not be required>
+
+Preview Deploy # reason: deployment depends on Cloudflare availability and is not a correctness gate
+Required Checks Manifest Guard # reason: the guard must be able to validate its own first workflow run before its context can be required
