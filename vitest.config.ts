@@ -21,6 +21,10 @@ export default defineConfig({
     },
   },
   test: {
+    // Root subprocess-heavy specs use the slow suffix and run through the
+    // dedicated PR-gated config (vitest.slow.config.ts). Keep them out of the
+    // default lane so `pnpm test:unit` stays focused on fast unit coverage.
+    exclude: ["**/node_modules/**", "**/*.slow.test.ts"],
     server: {
       deps: {
         // Inline the zfb island runtime so vite transforms it through the
@@ -64,6 +68,9 @@ export default defineConfig({
             "scripts/__tests__/**/*.test.ts",
             "scripts/__tests__/**/*.test.mjs",
           ],
+          // The subprocess-heavy specs are retained as PR gates, but run in
+          // the separate root slow lane to keep this default lane bounded.
+          exclude: ["scripts/__tests__/**/*.slow.test.ts"],
           // Subprocess-heavy integration-flavored tests; 2x the largest 30s
           // child budget for load headroom under host CPU contention (#2563).
           testTimeout: 60_000,
