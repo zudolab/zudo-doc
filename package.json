@@ -32,6 +32,7 @@
     "check:worker": "tsc --noEmit -p tsconfig.worker.json",
     "test": "pnpm build:workspace && pnpm test:unit && pnpm test:packages",
     "test:unit": "pnpm ensure:workspace-build && vitest run",
+    "test:unit:slow": "pnpm ensure:workspace-build && vitest run --config vitest.slow.config.ts",
     "test:worker": "pnpm build && vitest run --config vitest.worker.config.ts",
     "test:worker:built": "vitest run --config vitest.worker.config.ts",
     "verify:worker-dry-run": "node scripts/verify-worker-dry-run.mjs",
