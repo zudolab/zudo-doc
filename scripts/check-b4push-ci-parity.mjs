@@ -182,6 +182,17 @@ const REQUIRED_CI_GUARDS = [
     b4pushScript: "check:search-widget-drift",
     comment: "Search-widget-script commit drift guard (zudolab/zudo-doc#3431)",
   },
+  {
+    // Nav-overflow-script commit drift guard: the committed
+    // packages/zudo-doc/src/header/nav-overflow-generated-script.ts must
+    // match a fresh regeneration. CI runs it as a step inside the
+    // already-installed package-tests job (not its own pure-Node job) since
+    // the generator imports the `esbuild` dependency directly, mirroring the
+    // search-widget-script guard above (#3534, #3535).
+    ciNeedle: "check:nav-overflow-drift",
+    b4pushScript: "check:nav-overflow-drift",
+    comment: "Nav-overflow-script commit drift guard (zudolab/zudo-doc#3535)",
+  },
 ];
 
 const ALLOWLIST_PATH = resolve(ROOT, ".b4push-ci-parity-allowlist");
