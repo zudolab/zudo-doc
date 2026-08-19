@@ -28,6 +28,8 @@ import { test, expect } from "./fixtures";
 
 const TRIGGER = "#design-token-trigger";
 const SHELL = ".tokenpanel-shell";
+const OPEN_STATE_KEY = "zudo-doc-tweak-open";
+const VISIBLE_STATE_KEY = "zudo-doc-tweak:visible";
 
 const SPACING_CSS_VAR = "--spacing-hsp-lg";
 const SPACING_OVERRIDE_VALUE = "3rem";
@@ -39,8 +41,28 @@ async function openPanel(page: Page): Promise<void> {
 }
 
 async function closePanel(page: Page): Promise<void> {
-  await page.locator(TRIGGER).click();
+  await page.getByRole("button", { name: "Close panel", exact: true }).click();
   await expect(page.locator(SHELL)).toBeHidden({ timeout: 5000 });
+  // DOM-hidden is not yet a durable reload boundary: zdtp persists its public
+  // open mirror and adapter-level visibility intent separately. Wait for both
+  // to describe the closed state before navigating away, otherwise a delayed
+  // persistence effect can make the fresh page legitimately restore OPEN.
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          ({ openStateKey, visibleStateKey }) => ({
+            open: localStorage.getItem(openStateKey),
+            visible: localStorage.getItem(visibleStateKey),
+          }),
+          {
+            openStateKey: OPEN_STATE_KEY,
+            visibleStateKey: VISIBLE_STATE_KEY,
+          },
+        ),
+      { timeout: 5000 },
+    )
+    .toEqual({ open: null, visible: "0" });
 }
 
 async function openSpacingTab(page: Page): Promise<void> {
@@ -81,10 +103,10 @@ test.describe("Design token panel (zdtp) persisted-state probe", () => {
     await setSpacingOverride(page, SPACING_OVERRIDE_INPUT);
     expect(await readCssVar(page, SPACING_CSS_VAR)).toBe(SPACING_OVERRIDE_VALUE);
 
-    // Close the panel before reloading: the `${prefix}-open` mirror reads
-    // "0", so any eager load observed after reload can only be explained by
-    // the OTHER branch hasPersistedPanelState checks — the `${prefix}-state*`
-    // key — not by a previously-open panel being restored.
+    // Close the panel before reloading: the `${prefix}-open` mirror is absent
+    // and `${prefix}:visible` reads "0", so any eager load observed after
+    // reload can only be explained by the OTHER hasPersistedPanelState branch
+    // — the `${prefix}-state*` key — not by a previously-open panel restore.
     await closePanel(page);
 
     // A genuine full reload, not zfb's SPA transition: this resets the JS
