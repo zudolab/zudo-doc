@@ -84,7 +84,7 @@ export const PINNED_PACKAGES = [
 // are the source of truth that WRITES these pins on every release bump. Keep
 // this list in sync with those steps so any future 3rd internal pin gets
 // guarded here too.
-const INTERNAL_PINNED_PACKAGES = [
+export const INTERNAL_PINNED_PACKAGES = [
   "@takazudo/zudo-doc",
   "@takazudo/zudo-doc-history-server",
 ];
