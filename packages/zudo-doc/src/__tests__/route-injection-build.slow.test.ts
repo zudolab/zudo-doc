@@ -707,19 +707,53 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // All of it traces to this one intentional, self-contained toolchain
   // change; no unattributed bytes.
 
+  // 2026-08-19 re-baseline (Drawer Refresh epic, zudolab/zudo-doc#3525, wave-3
+  // confirm sub #3532): all three pages moved by a page-independent delta —
+  // the same shape as the #3401 entry above. Root cause: #3530 (nested-island
+  // props-refresh at the before-swap seam) adds a new module
+  // `transitions/nested-island-props-refresh.ts` and wires it in from
+  // `sidebar-toggle-island/index.tsx` (`ensureNestedIslandPropsRefresh()`,
+  // called at module scope). That island ships inside this fixture's bundled
+  // islands chunk (confirmed by grepping a fresh build's
+  // `assets/islands-<hash>.js` for `SidebarToggle`), so the source change
+  // shifts the chunk's content hash — and therefore the hashed filename string
+  // (`assets/islands-<hash>.js`) embedded verbatim in every SSG page,
+  // unconditional and page-independent, exactly like the #3401 script-text
+  // deltas above. `header.tsx`/`transitions/index.ts`/`eject/index.ts` deltas
+  // in this same epic (#3530's re-exported barrel entry + comment updates)
+  // are comment/type-only and contribute no bytes. The sibling sub #3531 (new
+  // e2e spec `smoke-mobile-drawer-section-swap.spec.ts`) touches only test
+  // code and is likewise inert here.
+  //
+  // All of it traces to this one intentional, already-merged epic change; no
+  // unattributed bytes.
+
+  // 2026-08-20 (same epic, review fix — NO re-baseline needed): `applyProps`
+  // in `transitions/nested-island-props-refresh.ts` now also sets
+  // `data-zfb-island-remount` (the in-flight-import race fix), and
+  // `sidebar-toggle-island/index.tsx` imports the ensure helper through the
+  // transitions barrel instead of the deep path. A fresh run confirmed the
+  // three hashes below are unmoved: the changed bytes live INSIDE the islands
+  // chunk, and `parity-html-normalize.mjs` replaces hashed asset filenames
+  // with stable placeholders, so chunk-content changes are inert here. (That
+  // also means the entry above's "shifts the hashed filename embedded in
+  // every page" mechanism cannot be what moved these hashes on 2026-08-19 —
+  // the movement must have come from other non-normalized bytes of the same
+  // epic change.)
+
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"277bff98a8c915d0fb39ef864d8e1273ccd17a0defc944464a7ec6bc87765de3"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"22bb416fb0002eb35b555051c73f7b9be5930a83f6ef0e0cda5b6acfd07c1050"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"6bf7926f9e25707b8de53c3d2be276253f138497e54eb44d7046c05db56c297d"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"b0e72a15f55df682905b7b7c8f544e428ac440f2e04cec7ee266769a2c276f9a"`);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"5d1f4635a82eff94ffac690a0e37801f3103466654c6f135340579ae22bce709"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"e1bb7893dd3264b1449b93d8940000cf19b5adcb777be419613b660c3e6d958b"`);
   });
 });
 
