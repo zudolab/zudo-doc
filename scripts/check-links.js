@@ -3,13 +3,17 @@
 /**
  * check-links.js — Post-build broken link checker
  *
- * Mode 1: Scan built HTML in dist/ for broken internal links
- * Mode 2: Scan MDX source for absolute links bypassing base path
+ * Mode 1: Scan built HTML in dist/ for broken internal links and anchors
+ * Mode 2: Scan MDX source for absolute links and invalid fragment targets
  */
 
-import { readFile, readdir, access } from "node:fs/promises";
+import { readFile, readdir, access, stat } from "node:fs/promises";
 import { join, extname, resolve, relative, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  extractHeadings,
+  slugify,
+} from "@takazudo/zudo-doc/extract-headings";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
@@ -22,6 +26,7 @@ Options:
   -h, --help           Show this help
   --strict-broken      Fail when broken links remain after the allowlist
   --strict-absolute    Fail when absolute MDX links remain after the allowlist
+  --strict-anchors     Fail when invalid anchors remain after the allowlist
   --strict-trailing    Fail when trailing-slash warnings remain after the allowlist
   --allowlist=PATH     Exclude exact <file>:<line>:<href> entries from failure counts`;
 
@@ -32,6 +37,7 @@ function parseCliArgs(argv) {
     help: false,
     strictBroken: false,
     strictAbsolute: false,
+    strictAnchors: false,
     strictTrailing: false,
     allowlistPath: null,
   };
@@ -46,6 +52,8 @@ function parseCliArgs(argv) {
       result.strictBroken = true;
     } else if (arg === "--strict-absolute") {
       result.strictAbsolute = true;
+    } else if (arg === "--strict-anchors") {
+      result.strictAnchors = true;
     } else if (arg === "--strict-trailing") {
       result.strictTrailing = true;
     } else if (arg.startsWith("--allowlist=")) {
@@ -152,9 +160,8 @@ export function extractHtmlLinks(html) {
   let lastIndex = 0;
   let currentLine = 1;
   while ((match = regex.exec(html)) !== null) {
-    const href = match[1] || match[2];
+    const href = match[1] ?? match[2];
     if (/^https?:\/\//i.test(href)) continue;
-    if (/^#/.test(href)) continue;
     if (/^mailto:/i.test(href)) continue;
     if (/^javascript:/i.test(href)) continue;
     if (/^data:/i.test(href)) continue;
@@ -186,6 +193,108 @@ function safeDecodePath(path) {
   }
 }
 
+function parseHref(href) {
+  const hashAt = href.indexOf("#");
+  const beforeFragment = hashAt === -1 ? href : href.slice(0, hashAt);
+  const queryAt = beforeFragment.indexOf("?");
+  const rawPath = queryAt === -1
+    ? beforeFragment
+    : beforeFragment.slice(0, queryAt);
+  const rawFragment = hashAt === -1 ? null : href.slice(hashAt + 1);
+
+  if (rawFragment === null) {
+    return {
+      path: safeDecodePath(rawPath),
+      fragment: null,
+      fragmentError: null,
+    };
+  }
+  if (rawFragment === "") {
+    return {
+      path: safeDecodePath(rawPath),
+      fragment: "",
+      fragmentError: "empty fragment",
+    };
+  }
+  try {
+    return {
+      path: safeDecodePath(rawPath),
+      fragment: decodeURIComponent(rawFragment),
+      fragmentError: null,
+    };
+  } catch {
+    return {
+      path: safeDecodePath(rawPath),
+      fragment: rawFragment,
+      fragmentError: "malformed percent-encoding",
+    };
+  }
+}
+
+async function resolveLinkTargetDetail(
+  href,
+  distDir,
+  basePath = "/",
+  fileDir = "",
+  sourceFile = null,
+) {
+  const { path: clean, fragment, fragmentError } = parseHref(href);
+  if (!clean) {
+    return {
+      type: "root",
+      targetFile: sourceFile ?? join(distDir, "index.html"),
+      fragment,
+      fragmentError,
+    };
+  }
+
+  let absolute = clean;
+  if (!clean.startsWith("/")) {
+    const dirInDist = fileDir ? relative(distDir, fileDir) : "";
+    absolute = "/" + join(dirInDist, clean);
+  }
+
+  let stripped = absolute;
+  if (basePath !== "/" && stripped.startsWith(basePath)) {
+    stripped = "/" + stripped.slice(basePath.length);
+  }
+
+  const relPath = stripped.startsWith("/") ? stripped.slice(1) : stripped;
+  if (!relPath) {
+    return {
+      type: "root",
+      targetFile: join(distDir, "index.html"),
+      fragment,
+      fragmentError,
+    };
+  }
+
+  if (extname(relPath)) {
+    const targetFile = join(distDir, relPath);
+    return {
+      type: (await fileExists(targetFile)) ? "file" : "missing",
+      targetFile,
+      fragment,
+      fragmentError,
+    };
+  }
+
+  const indexFile = join(distDir, relPath, "index.html");
+  if (await fileExists(indexFile)) {
+    return {
+      type: "directoryIndex",
+      targetFile: indexFile,
+      fragment,
+      fragmentError,
+    };
+  }
+  const htmlFile = join(distDir, relPath + ".html");
+  if (await fileExists(htmlFile)) {
+    return { type: "file", targetFile: htmlFile, fragment, fragmentError };
+  }
+  return { type: "missing", targetFile: null, fragment, fragmentError };
+}
+
 /**
  * Resolve a link and return its resolution type:
  *   'root'           — empty path or resolves to the site root (always valid)
@@ -194,43 +303,7 @@ function safeDecodePath(path) {
  *   'missing'        — target does not exist
  */
 export async function resolveLinkDetail(href, distDir, basePath = "/", fileDir = "") {
-  const clean = safeDecodePath(href.split("#")[0].split("?")[0]);
-  if (!clean) return "root";
-
-  let absolute = clean;
-
-  // Resolve relative links against the file's directory within dist
-  if (!clean.startsWith("/")) {
-    // Relative link — resolve against the file's containing directory
-    const dirInDist = fileDir ? relative(distDir, fileDir) : "";
-    absolute = "/" + join(dirInDist, clean);
-  }
-
-  // Strip base path prefix from the href to get the path relative to dist/
-  let stripped = absolute;
-  if (basePath !== "/" && stripped.startsWith(basePath)) {
-    stripped = "/" + stripped.slice(basePath.length);
-  }
-
-  const relPath = stripped.startsWith("/") ? stripped.slice(1) : stripped;
-  if (!relPath) return "root";
-
-  // Has file extension → check exact path
-  if (extname(relPath)) {
-    const exists = await fileExists(join(distDir, relPath));
-    return exists ? "file" : "missing";
-  }
-
-  // Ends with / → check index.html inside
-  if (relPath.endsWith("/")) {
-    const exists = await fileExists(join(distDir, relPath, "index.html"));
-    return exists ? "directoryIndex" : "missing";
-  }
-
-  // No extension, no trailing slash → try dir/index.html then .html
-  if (await fileExists(join(distDir, relPath, "index.html"))) return "directoryIndex";
-  if (await fileExists(join(distDir, relPath + ".html"))) return "file";
-  return "missing";
+  return (await resolveLinkTargetDetail(href, distDir, basePath, fileDir)).type;
 }
 
 export async function resolveLink(href, distDir, basePath = "/", fileDir = "") {
@@ -302,6 +375,225 @@ export function extractMdxAbsoluteLinks(content, locales) {
   return issues;
 }
 
+/** Extract internal MDX/Markdown links that carry a fragment. */
+export function extractMdxFragmentLinks(content) {
+  const links = [];
+  const lines = content.split("\n");
+  let codeFenceOpener = null;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const fence = /^([`~]{3,})/.exec(line.trimStart())?.[1];
+    if (fence !== undefined) {
+      if (codeFenceOpener === null) codeFenceOpener = fence;
+      else if (
+        fence[0] === codeFenceOpener[0] &&
+        fence.length >= codeFenceOpener.length
+      ) {
+        codeFenceOpener = null;
+      }
+      continue;
+    }
+    if (codeFenceOpener !== null) continue;
+
+    const searchLine = stripInlineCode(line);
+    let match;
+    const markdownLink = /\]\(\s*([^\s)#]*#[^\s)]*)(?:\s+[^)]*)?\)/g;
+    while ((match = markdownLink.exec(searchLine)) !== null) {
+      const href = match[1];
+      if (!/^(?:https?:|mailto:|javascript:|data:|tel:)/i.test(href)) {
+        links.push({ href, line: i + 1 });
+      }
+    }
+
+    const jsxHref = /\bhref\s*=\s*(?:"([^"]*#[^"]*)"|'([^']*#[^']*)')/g;
+    while ((match = jsxHref.exec(searchLine)) !== null) {
+      const href = match[1] ?? match[2];
+      if (!/^(?:https?:|mailto:|javascript:|data:|tel:)/i.test(href)) {
+        links.push({ href, line: i + 1 });
+      }
+    }
+  }
+
+  return links;
+}
+
+function headingText(raw) {
+  return raw
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/(?<![\w])__([^_]+)__(?![\w])/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/(?<![\w])_([^_]+)_(?![\w])/g, "$1")
+    .trim();
+}
+
+/** All-depth mirror of the renderer's hierarchical SlugAllocator. */
+function allHierarchicalHeadingIds(body) {
+  const ids = new Set(extractHeadings(body).map((heading) => heading.slug));
+  const seen = new Map();
+  const stack = [];
+  let codeFenceOpener = null;
+
+  for (const line of body.split("\n")) {
+    const fence = /^([`~]{3,})/.exec(line.trimStart())?.[1];
+    if (fence !== undefined) {
+      if (codeFenceOpener === null) codeFenceOpener = fence;
+      else if (
+        fence[0] === codeFenceOpener[0] &&
+        fence.length >= codeFenceOpener.length
+      ) {
+        codeFenceOpener = null;
+      }
+      continue;
+    }
+    if (codeFenceOpener !== null) continue;
+
+    const match = /^(#{2,6})[ \t]+(.+)$/.exec(line.trim());
+    if (match === null) continue;
+    const depth = match[1].length;
+    const base = slugify(headingText(match[2]));
+    if (base === "") continue;
+
+    while ((stack.at(-1)?.depth ?? -1) >= depth) stack.pop();
+    const parent = stack.at(-1);
+    const candidate = parent === undefined ? base : `${parent.id}-${base}`;
+    const count = seen.get(candidate) ?? 0;
+    seen.set(candidate, count + 1);
+    const id = count === 0 ? candidate : `${candidate}-${count}`;
+    stack.push({ depth, id });
+    ids.add(id);
+  }
+  return ids;
+}
+
+function extractStaticMdxIds(body) {
+  const ids = new Set();
+  let codeFenceOpener = null;
+  const visibleLines = [];
+  for (const line of body.split("\n")) {
+    const fence = /^([`~]{3,})/.exec(line.trimStart())?.[1];
+    if (fence !== undefined) {
+      if (codeFenceOpener === null) codeFenceOpener = fence;
+      else if (
+        fence[0] === codeFenceOpener[0] &&
+        fence.length >= codeFenceOpener.length
+      ) {
+        codeFenceOpener = null;
+      }
+      visibleLines.push("");
+      continue;
+    }
+    visibleLines.push(codeFenceOpener === null ? stripInlineCode(line) : "");
+  }
+
+  const elements = visibleLines.join("\n");
+  const regex = /<[A-Za-z][^>]*\bid\s*=\s*(?:"([^"]+)"|'([^']+)')[^>]*>/gs;
+  let match;
+  while ((match = regex.exec(elements)) !== null) {
+    ids.add(match[1] ?? match[2]);
+  }
+  return ids;
+}
+
+async function resolveMdxTarget(sourceFile, href, contentDirs, locales, basePath) {
+  const { path: decodedPath } = parseHref(href);
+  let rawPath = decodedPath;
+  if (basePath !== "/" && rawPath.startsWith(basePath)) {
+    rawPath = "/" + rawPath.slice(basePath.length);
+  }
+
+  let target;
+  if (rawPath === "") {
+    target = sourceFile;
+  } else if (rawPath.startsWith("/docs/")) {
+    target = resolve(contentDirs[0], rawPath.slice("/docs/".length));
+  } else {
+    const locale = locales.find((key) => rawPath.startsWith(`/${key}/docs/`));
+    if (locale !== undefined) {
+      const localeIndex = locales.indexOf(locale);
+      const localeDir = contentDirs[localeIndex + 1];
+      if (localeDir === undefined) return null;
+      target = resolve(localeDir, rawPath.slice(`/${locale}/docs/`.length));
+    } else if (rawPath.startsWith("/")) {
+      return null;
+    } else {
+      target = resolve(dirname(sourceFile), rawPath);
+    }
+  }
+
+  const candidates = extname(target)
+    ? [target]
+    : [
+        target,
+        `${target}.mdx`,
+        `${target}.md`,
+        resolve(target, "index.mdx"),
+        resolve(target, "index.md"),
+      ];
+  for (const candidate of candidates) {
+    if (await fileExists(candidate) && (await stat(candidate)).isFile()) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+export async function checkMdxAnchors(
+  contentDirs,
+  rootDir,
+  basePath = "/",
+  locales,
+  excludePatterns = [],
+) {
+  assertLocaleList(locales);
+  const anchors = [];
+  const idCache = new Map();
+
+  for (const dir of contentDirs) {
+    if (!(await fileExists(dir))) continue;
+    const files = await collectFiles(dir, [".mdx", ".md"]);
+    for (const file of files) {
+      const content = await readFile(file, "utf-8");
+      for (const { href, line } of extractMdxFragmentLinks(content)) {
+        if (excludePatterns.some((pattern) => pattern.test(href))) continue;
+        const parsed = parseHref(href);
+        if (parsed.fragmentError !== null) {
+          anchors.push({
+            file: relative(rootDir, file),
+            line,
+            href,
+            fragment: parsed.fragment,
+            reason: parsed.fragmentError,
+          });
+          continue;
+        }
+
+        const target = await resolveMdxTarget(file, href, contentDirs, locales, basePath);
+        if (target === null) continue;
+        let ids = idCache.get(target);
+        if (ids === undefined) {
+          const targetBody = await readFile(target, "utf-8");
+          ids = allHierarchicalHeadingIds(targetBody);
+          for (const id of extractStaticMdxIds(targetBody)) ids.add(id);
+          idCache.set(target, ids);
+        }
+        if (!ids.has(parsed.fragment)) {
+          anchors.push({
+            file: relative(rootDir, file),
+            line,
+            href,
+            fragment: parsed.fragment,
+            reason: "missing target id",
+          });
+        }
+      }
+    }
+  }
+  return anchors;
+}
+
 // --- Main Check Functions ---
 
 /**
@@ -319,11 +611,13 @@ export async function checkHtmlLinksAndTrailing(
   checkTrailing = false,
 ) {
   const broken = [];
+  const anchors = [];
   const trailingSlash = [];
   const htmlFiles = await collectFiles(distDir, [".html"]);
   // One shared cache keyed by resolution type ("root"|"file"|"directoryIndex"|"missing").
   // Both checks read from the same resolved detail so each href is stat'd once.
   const cache = new Map();
+  const idCache = new Map();
 
   for (const file of htmlFiles) {
     const content = await readFile(file, "utf-8");
@@ -334,19 +628,59 @@ export async function checkHtmlLinksAndTrailing(
     for (const { href, line } of links) {
       if (excludePatterns.some((p) => p.test(href))) continue;
 
-      // Cache key: absolute links use href only; relative links include fileDir
-      const cacheKey = href.startsWith("/") ? href : `${fileDir}:${href}`;
-      let type;
+      // Cache key: absolute links use href only; relative and local-fragment
+      // links include their exact source file.
+      const cacheKey = href.startsWith("/") ? href : `${file}:${href}`;
+      let detail;
       if (cache.has(cacheKey)) {
-        type = cache.get(cacheKey);
+        detail = cache.get(cacheKey);
       } else {
-        type = await resolveLinkDetail(href, distDir, basePath, fileDir);
-        cache.set(cacheKey, type);
+        detail = await resolveLinkTargetDetail(
+          href,
+          distDir,
+          basePath,
+          fileDir,
+          file,
+        );
+        cache.set(cacheKey, detail);
       }
+      const { type } = detail;
 
       // Broken-link check
       if (type === "missing") {
         broken.push({ file: relFile, line, href });
+      }
+
+      if (detail.fragment !== null) {
+        let reason = detail.fragmentError;
+        if (
+          reason === null &&
+          type !== "missing" &&
+          detail.targetFile !== null &&
+          extname(detail.targetFile) === ".html"
+        ) {
+          let ids = idCache.get(detail.targetFile);
+          if (ids === undefined) {
+            const targetHtml = await readFile(detail.targetFile, "utf-8");
+            ids = new Set();
+            const idRegex = /\bid\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;
+            let idMatch;
+            while ((idMatch = idRegex.exec(targetHtml)) !== null) {
+              ids.add(idMatch[1] ?? idMatch[2]);
+            }
+            idCache.set(detail.targetFile, ids);
+          }
+          if (!ids.has(detail.fragment)) reason = "missing target id";
+        }
+        if (reason !== null) {
+          anchors.push({
+            file: relFile,
+            line,
+            href,
+            fragment: detail.fragment,
+            reason,
+          });
+        }
       }
 
       // Trailing-slash check (opt-in)
@@ -368,7 +702,7 @@ export async function checkHtmlLinksAndTrailing(
     }
   }
 
-  return { broken, trailingSlash };
+  return { broken, anchors, trailingSlash };
 }
 
 export async function checkMdxLinks(contentDirs, rootDir, distDir = null, basePath = "/", locales) {
@@ -396,7 +730,12 @@ export async function checkMdxLinks(contentDirs, rootDir, distDir = null, basePa
 
 // --- Report ---
 
-export function formatReport(brokenLinks, mdxWarnings, trailingSlashWarnings = []) {
+export function formatReport(
+  brokenLinks,
+  mdxWarnings,
+  trailingSlashWarnings = [],
+  anchorWarnings = [],
+) {
   const lines = [];
 
   if (brokenLinks.length > 0) {
@@ -423,7 +762,21 @@ export function formatReport(brokenLinks, mdxWarnings, trailingSlashWarnings = [
     lines.push("");
   }
 
-  const total = brokenLinks.length + mdxWarnings.length + trailingSlashWarnings.length;
+  if (anchorWarnings.length > 0) {
+    lines.push("=== Invalid Anchors ===");
+    for (const { file, line, href, fragment, reason } of anchorWarnings) {
+      lines.push(
+        `  ${file}:${line}  ${href}  (fragment: #${fragment}; ${reason})`,
+      );
+    }
+    lines.push("");
+  }
+
+  const total =
+    brokenLinks.length +
+    mdxWarnings.length +
+    trailingSlashWarnings.length +
+    anchorWarnings.length;
   if (total > 0) {
     const parts = [];
     if (brokenLinks.length > 0) {
@@ -441,9 +794,14 @@ export function formatReport(brokenLinks, mdxWarnings, trailingSlashWarnings = [
         `${trailingSlashWarnings.length} trailing slash warning${trailingSlashWarnings.length === 1 ? "" : "s"}`,
       );
     }
+    if (anchorWarnings.length > 0) {
+      parts.push(
+        `${anchorWarnings.length} invalid anchor${anchorWarnings.length === 1 ? "" : "s"}`,
+      );
+    }
     lines.push(`✗ Found ${parts.join(" and ")}`);
   } else {
-    lines.push("✓ No broken links or absolute path issues found");
+    lines.push("✓ No broken links, invalid anchors, or absolute path issues found");
   }
 
   return lines.join("\n");
@@ -452,7 +810,7 @@ export function formatReport(brokenLinks, mdxWarnings, trailingSlashWarnings = [
 // --- Allowlist ---
 
 /**
- * Read the allowlist file (one entry per line; `#` comments stripped).
+ * Read the allowlist file (one entry per line; comment-only lines skipped).
  * Each non-blank line is a literal `<file>:<line>:<href>` exact match.
  * Returns a Set for O(1) lookup against `entryKey()` output below.
  */
@@ -462,7 +820,8 @@ export async function readAllowlist(allowlistPath) {
   const text = await readFile(allowlistPath, "utf-8");
   const lines = text
     .split("\n")
-    .map((l) => l.replace(/#.*$/, "").trim())
+    .map((l) => l.trim())
+    .filter((l) => !l.startsWith("#"))
     .filter((l) => l.length > 0);
   return new Set(lines);
 }
@@ -478,6 +837,7 @@ async function main() {
     help,
     strictBroken,
     strictAbsolute,
+    strictAnchors,
     strictTrailing,
     allowlistPath,
   } = parseCliArgs(process.argv.slice(2));
@@ -506,22 +866,33 @@ async function main() {
   const contentDirs = [join(rootDir, docsDir), ...localeDirs.map((d) => join(rootDir, d))];
 
   // Single-pass dist walk: broken links + trailing-slash warnings in one read.
-  const [{ broken: brokenLinks, trailingSlash: trailingSlashWarnings }, mdxWarnings] =
+  const [
+    {
+      broken: brokenLinks,
+      anchors: htmlAnchorWarnings,
+      trailingSlash: trailingSlashWarnings,
+    },
+    mdxWarnings,
+    mdxAnchorWarnings,
+  ] =
     await Promise.all([
       checkHtmlLinksAndTrailing(distDir, rootDir, basePath, excludePatterns, trailingSlash),
       checkMdxLinks(contentDirs, rootDir, distDir, basePath, localeKeys),
+      checkMdxAnchors(contentDirs, rootDir, basePath, localeKeys, excludePatterns),
     ]);
+  const anchorWarnings = [...htmlAnchorWarnings, ...mdxAnchorWarnings];
 
   // --- Flag parsing ---
   //
-  // Three strict knobs (separable so a deploy can fail on real 404s
+  // Four strict knobs (separable so a deploy can fail on real 404s
   // without blocking on warn-only categories) plus an allowlist:
   //
   //   --strict-broken    fail when broken links > 0 (after allowlist)
   //   --strict-absolute  fail when absolute warnings > 0 (after allowlist)
+  //   --strict-anchors   fail when invalid anchors > 0 (after allowlist)
   //   --strict-trailing  fail when trailing-slash warnings > 0 (after allowlist)
   //   --allowlist=PATH   skip entries listed in PATH (one
-  //                      `<file>:<line>:<href>` per line, `#` comments)
+  //                      `<file>:<line>:<href>` per line, comment-only lines)
   const resolvedAllowlist = allowlistPath
     ? (allowlistPath.startsWith("/") ? allowlistPath : join(rootDir, allowlistPath))
     : null;
@@ -533,14 +904,21 @@ async function main() {
   const filterOut = (entries) => entries.filter((e) => !allowlist.has(entryKey(e)));
   const realBroken = filterOut(brokenLinks);
   const realAbsolute = filterOut(mdxWarnings);
+  const realAnchors = filterOut(anchorWarnings);
   const realTrailing = filterOut(trailingSlashWarnings);
 
-  console.log(formatReport(brokenLinks, mdxWarnings, trailingSlashWarnings));
+  console.log(formatReport(
+    brokenLinks,
+    mdxWarnings,
+    trailingSlashWarnings,
+    anchorWarnings,
+  ));
 
   if (allowlist.size > 0) {
     const skipped =
       (brokenLinks.length - realBroken.length) +
       (mdxWarnings.length - realAbsolute.length) +
+      (anchorWarnings.length - realAnchors.length) +
       (trailingSlashWarnings.length - realTrailing.length);
     if (skipped > 0) {
       console.log(
@@ -550,7 +928,10 @@ async function main() {
   }
 
   const hasIssues =
-    brokenLinks.length > 0 || mdxWarnings.length > 0 || trailingSlashWarnings.length > 0;
+    brokenLinks.length > 0 ||
+    mdxWarnings.length > 0 ||
+    anchorWarnings.length > 0 ||
+    trailingSlashWarnings.length > 0;
 
   // Per-category strict failure (real counts). Combined into one exit
   // code so b4push only needs one invocation. Print which category
@@ -564,6 +945,10 @@ async function main() {
     console.log(`\n❌ STRICT FAIL: ${realAbsolute.length} absolute MDX-source link${realAbsolute.length === 1 ? "" : "s"} (after allowlist).`);
     failed = true;
   }
+  if (strictAnchors && realAnchors.length > 0) {
+    console.log(`\n❌ STRICT FAIL: ${realAnchors.length} invalid anchor${realAnchors.length === 1 ? "" : "s"} (after allowlist).`);
+    failed = true;
+  }
   if (strictTrailing && realTrailing.length > 0) {
     console.log(`\n❌ STRICT FAIL: ${realTrailing.length} trailing-slash warning${realTrailing.length === 1 ? "" : "s"} (after allowlist).`);
     failed = true;
@@ -572,10 +957,10 @@ async function main() {
     process.exit(1);
   }
 
-  if (hasIssues && !strictBroken && !strictAbsolute && !strictTrailing) {
+  if (hasIssues && !strictBroken && !strictAbsolute && !strictAnchors && !strictTrailing) {
     console.log("\nNote: Issues found but running in non-strict mode (exit 0).");
     console.log(
-      "Use --strict-broken / --strict-absolute / --strict-trailing to fail on selected issue categories.",
+      "Use --strict-broken / --strict-absolute / --strict-anchors / --strict-trailing to fail on selected issue categories.",
     );
   }
 }

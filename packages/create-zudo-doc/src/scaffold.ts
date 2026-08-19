@@ -907,6 +907,7 @@ function generatePackageJson(choices: UserChoices) {
     build: "zfb build",
     preview: "zfb preview",
     check: "zfb check",
+    "check:links": "node scripts/check-links.js",
   };
 
   if (choices.features.includes("docHistory")) {
