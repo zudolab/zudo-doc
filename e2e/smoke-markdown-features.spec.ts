@@ -234,10 +234,15 @@ test.describe("GFM task lists: disabled checkbox marker reset", () => {
     page,
   }) => {
     await page.goto("/docs/guides/task-lists-test", {
-      waitUntil: "networkidle",
+      waitUntil: "domcontentloaded",
     });
 
-    const rows = await page.locator(".zd-content li").evaluateAll((items) =>
+    const rowsLocator = page.locator(".zd-content li");
+    await expect(
+      rowsLocator.filter({ hasText: "Tight checked item" }),
+    ).toBeVisible();
+
+    const rows = await rowsLocator.evaluateAll((items) =>
       items.map((item) => ({
         text: item.textContent?.replace(/\s+/g, " ").trim() ?? "",
         listStyleType: getComputedStyle(item).listStyleType,

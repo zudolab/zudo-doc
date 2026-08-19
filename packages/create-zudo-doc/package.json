@@ -49,7 +49,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:slow": "vitest run --config vitest.slow.config.ts",
-    "prepublishOnly": "pnpm build && pnpm test"
+    "check:publish-contract": "pnpm build && pnpm test",
+    "prepublishOnly": "pnpm check:publish-contract"
   },
   "dependencies": {
     "@clack/prompts": "^0.9.1",

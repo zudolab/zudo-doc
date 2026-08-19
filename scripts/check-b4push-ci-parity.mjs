@@ -116,6 +116,13 @@ const REQUIRED_CI_GUARDS = [
     comment: "B4push/CI parity meta-check (this script, #1967)",
   },
   {
+    // Required-checks manifest coverage: raw node in b4push and CI. It stays
+    // dependency-free because it must also work unauthenticated and offline.
+    ciNeedle: "check-required-checks.mjs",
+    b4pushScript: null,
+    comment: "Required-checks manifest guard (#3494)",
+  },
+  {
     // E2E spec naming guard: asserts fixture-prefix + no orphan specs (#2095)
     ciNeedle: "check-e2e-spec-naming.mjs",
     b4pushScript: "check:e2e-spec-naming",
@@ -148,6 +155,22 @@ const REQUIRED_CI_GUARDS = [
     ciNeedle: "check-wait-debt.mjs",
     b4pushScript: "check:wait-debt",
     comment: "Wait-debt guard (scripts/check-wait-debt.mjs, #2538)",
+  },
+  {
+    // @takazudo/zudo-doc publish contract: pnpm --filter ... check:prepack-contract
+    // (CI) / pnpm --filter ... check:prepack-contract (b4push, #3489).
+    ciNeedle: "check:prepack-contract",
+    b4pushScript: "check:prepack-contract",
+    comment: "@takazudo/zudo-doc publish contract (#3489)",
+  },
+  {
+    // Default-lane test specs must not launch known build/package-lifecycle
+    // commands that can mutate a live dist/. Both CI and b4push invoke the
+    // dependency-free scanner directly with node, so there is no pnpm token
+    // for the region parser to extract.
+    ciNeedle: "check-dist-mutating-tests.mjs",
+    b4pushScript: null,
+    comment: "Default-lane dist-mutating test guard (#3488)",
   },
   {
     // Search-widget-script commit drift guard: the committed
@@ -204,9 +227,11 @@ function extractB4pushGuardRegion(src) {
     if (line.includes(`<<< ${REGION_CLOSE_MARKER}`)) {
       break;
     }
-    // Match: pnpm <script> or pnpm run <script>
+    // Match: pnpm <script>, pnpm run <script>, or pnpm --filter <pkg> <script>
     // Stop at first whitespace, ), ;, or end-of-line after the script name.
-    const m = line.match(/\bpnpm(?:\s+run)?\s+([A-Za-z0-9:_-]+)/);
+    const m = line.match(
+      /\bpnpm(?:\s+--filter\s+\S+)?(?:\s+run)?\s+([A-Za-z0-9:_-]+)/,
+    );
     if (m) {
       tokens.push(m[1]);
     }

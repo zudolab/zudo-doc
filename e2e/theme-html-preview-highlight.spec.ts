@@ -184,11 +184,12 @@ test.describe("HtmlPreview semantic syntax tokens", () => {
     });
 
     await preseedLightTheme(page);
-    await page.goto(PAGE, { waitUntil: "networkidle" });
+    await page.goto(PAGE, { waitUntil: "domcontentloaded" });
 
     const island = page.locator(ISLAND_SELECTOR).filter({
       hasText: "Syntax Token Preview",
     });
+    await expect(island).toHaveCount(1);
     await island.scrollIntoViewIfNeeded();
     // The accessible name changes to "Hide code" after the first successful
     // click. Keep a stable locator while polling through the island hydration

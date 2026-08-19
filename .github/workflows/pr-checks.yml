@@ -10,15 +10,20 @@
 #   Pin Parity Check         — pure-Node, no install; scripts/check-pin-parity.mjs
 #   Fixture Settings Drift   — pure-Node, no install; scripts/check-fixture-settings-drift.mjs
 #   Package Safelist Check   — pnpm install + package build; scripts/check-package-safelist.mjs
+#   Publish Contract Gates   — pnpm install + zudo-doc contract + npm pack dry-run
+#   Required Checks Manifest Guard — pure-Node, no install; file-only job-name coverage
 #   B4push/CI Parity Check   — pure-Node, no install; scripts/check-b4push-ci-parity.mjs
 #   E2E Spec Naming Guard    — pure-Node, no install; scripts/check-e2e-spec-naming.mjs
 #   Flaky Tracking-Issue Guard — pure-Node, no install; scripts/check-flaky-tracking-issue.mjs
 #   Wait-Debt Guard           — pure-Node, no install; scripts/check-wait-debt.mjs
+#   Dist-Mutating Test Guard  — pure-Node, no install; scripts/check-dist-mutating-tests.mjs
 #   Lint Gates               — pnpm install; tag guards + pnpm lint:tokens
 #   Type Check               — pnpm install; pnpm check (zfb check → tsc --noEmit)
 #   Worker Contract Proof    — Worker typecheck + runtime DO tests + Wrangler dry-run
-#   Package Unit Tests       — pnpm install; pnpm test:packages (all 5 package suites)
-#   Root Unit Tests          — pnpm install; pnpm test:unit (src/**/__tests__, scripts/__tests__)
+#   Package Unit Tests       — pnpm install; pnpm test:packages (4 package suites; 2,964 tests:
+#                              search-worker 44, doc-history-server 73, create-zudo-doc 596, zudo-doc 2,251)
+#   Root Unit Tests          — pnpm install; pnpm test:unit (903 tests: 901 passed, 2 skipped)
+#   Slow Unit Tests           — pnpm install; 60 slow root tests + 5 retiered create-zudo-doc tests
 #   A2 Parity Gate           — path-filtered (#3419): skips unless an every-page script
 #                              emitter file changed; else pnpm install + build:workspace +
 #                              the A2 no-stub parity slow-suite subset
@@ -155,7 +160,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 22
+          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -165,6 +170,81 @@ jobs:
 
       - name: Check package safelist drift
         run: node scripts/check-package-safelist.mjs
+
+  # ---------------------------------------------------------------------------
+  # Job 0.64: Publish contract gates (#3484/#3489)
+  # ---------------------------------------------------------------------------
+  # Runs the extracted @takazudo/zudo-doc prepack contract before any publish.
+  # The final npm pack dry-run deliberately exercises the real prepack lifecycle
+  # path as well, so a publish-only regression turns the PR red.
+  #
+  # create-zudo-doc's check:publish-contract is intentionally mapped to the
+  # existing Build Site and Package Unit Tests jobs (its build and test commands)
+  # rather than duplicated in this focused publish-contract job.
+  publish-contract-gates:
+    name: Publish Contract Gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+        with:
+          dest: ~/setup-pnpm-${{ github.job }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build @takazudo/zudo-doc
+        run: pnpm --filter @takazudo/zudo-doc build
+
+      - name: Run @takazudo/zudo-doc prepack contract
+        run: pnpm --filter @takazudo/zudo-doc check:prepack-contract
+
+      - name: Pack @takazudo/zudo-doc (dry run)
+        working-directory: packages/zudo-doc
+        run: npm pack --dry-run
+
+  # ---------------------------------------------------------------------------
+  # Job 0.645: Default-lane dist-mutating test guard (#3488)
+  # ---------------------------------------------------------------------------
+  # Keeps the default test lane from directly launching known build or package
+  # lifecycle commands that can mutate a live dist/. This is deliberately a
+  # narrow command-launch scanner; it does not claim to detect indirect shell
+  # wrappers, aliases, or direct filesystem writers.
+  # Pure-Node script — uses preinstalled Node 22 on the runner image, no pnpm.
+  check-dist-mutating-tests:
+    name: Dist-Mutating Test Guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Check default-lane dist-mutating test commands
+        run: node scripts/check-dist-mutating-tests.mjs
+
+  # ---------------------------------------------------------------------------
+  # Job 0.647: Required-checks manifest guard (#3494)
+  # ---------------------------------------------------------------------------
+  # Pure file-level comparison: every job name in this workflow must appear in
+  # either .required-checks-manifest or the reasoned allowlist. Deliberately no
+  # API calls, token permissions, dependency install, or network requirement.
+  check-required-checks:
+    name: Required Checks Manifest Guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Check required-checks manifest
+        run: node scripts/check-required-checks.mjs
 
   # ---------------------------------------------------------------------------
   # Job 0.65: B4push/CI parity check (guard manifest meta-check)
@@ -285,7 +365,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 22
+          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -322,7 +402,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 22
+          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -364,7 +444,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 22
+          node-version-file: .nvmrc
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Download exact site build output
@@ -386,18 +466,13 @@ jobs:
   # ---------------------------------------------------------------------------
   # Guards the gap from #1851: package-scoped vitest suites previously ran
   # only inside publish workflows, so a broken suite was invisible until a
-  # publish attempt. This job runs all 5 package suites on every PR so a
+  # publish attempt. This job runs all 4 package suites on every PR so a
   # broken suite turns the PR red instead of hiding until release day.
   #
-  # Build step precedes the test run for clean-runner parity: @takazudo/zudo-doc
-  # ships compiled dist/ (built by tsup). The publish workflow runs
-  # `pnpm --filter @takazudo/zudo-doc build` before its test step for the same
-  # reason — the suite imports that compiled output, and building explicitly
-  # guarantees it reflects current source. (The plain `pnpm install` below does
-  # run the package's `prepare` build, so dist/ is not actually absent here —
-  # this step is about freshness, not existence. A tree installed with
-  # `--ignore-scripts` is the case where it would be missing outright; see
-  # scripts/ensure-workspace-build.mjs and zudolab/zudo-doc#3053.)
+  # `pnpm install` runs @takazudo/zudo-doc's `prepare` build, so the compiled
+  # dist/ is already current on a clean runner. The guard below verifies that
+  # all exported workspace artifacts exist without rebuilding them; this keeps
+  # the package-test lane from paying for a second identical build.
   package-tests:
     name: Package Unit Tests
     runs-on: ubuntu-latest
@@ -415,15 +490,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 22
+          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Build @takazudo/zudo-doc before testing — clean-runner parity; the
-      # suite may import built dist/ which does not exist on a fresh runner.
-      - name: Build @takazudo/zudo-doc
-        run: pnpm --filter @takazudo/zudo-doc build
+      - name: Ensure workspace packages are built
+        run: pnpm ensure:workspace-build
 
       # Search-widget-script commit drift guard (#3421, #3431). Runs as a
       # step here rather than its own pure-Node job because the generator
@@ -442,7 +515,7 @@ jobs:
   # Job 1.6: Root unit suite
   # ---------------------------------------------------------------------------
   # Guards the gap from #1856: the root `test:unit` suite (vitest run, backed
-  # by the root vitest.config.ts — src/**/__tests__ and scripts/__tests__) ran
+  # by the root vitest.config.ts — fast src/**/__tests__ and scripts/__tests__ specs) ran
   # in no CI workflow and was not in `pnpm b4push`, so a broken root-src/scripts
   # test could land on a PR (and main) without turning anything red. This is a
   # distinct scope from package-tests (#1851), which only gates packages/*.
@@ -471,19 +544,62 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 22
+          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Build @takazudo/zudo-doc before testing — clean-runner parity; the root
-      # suite imports built dist/ (@takazudo/zudo-doc/theme) which does not
-      # exist on a fresh runner.
-      - name: Build @takazudo/zudo-doc
-        run: pnpm --filter @takazudo/zudo-doc build
+      # `pnpm install` runs the package's prepare build; this guard verifies the
+      # generated @takazudo/zudo-doc exports without rebuilding them.
+      - name: Ensure workspace packages are built
+        run: pnpm ensure:workspace-build
 
       - name: Run root unit tests
         run: pnpm test:unit
+
+  # ---------------------------------------------------------------------------
+  # Job 1.65: Slow unit suite
+  # ---------------------------------------------------------------------------
+  # The subprocess-heavy root specs and the two retiered create-zudo-doc specs
+  # remain blocking PR coverage, but run in their own lane so they do not hold
+  # the default unit/package critical paths. The other create-zudo-doc slow
+  # integration specs remain on the established nightly slow-create path.
+  root-slow-tests:
+    name: Slow Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+        with:
+          dest: ~/setup-pnpm-${{ github.job }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # `pnpm install` runs the package's prepare build; this guard verifies the
+      # generated package bins without rebuilding them.
+      - name: Ensure workspace packages are built
+        run: pnpm ensure:workspace-build
+
+      - name: Run slow root unit tests
+        run: pnpm test:unit:slow
+
+      # Only the two retiered specs belong in this PR lane. The other package
+      # slow specs perform registry installs and full builds and stay on the
+      # established nightly slow-create path.
+      - name: Run retiered create-zudo-doc slow unit tests
+        working-directory: packages/create-zudo-doc
+        run: pnpm exec vitest run --config vitest.slow.config.ts src/__tests__/skill-name-parity.slow.test.ts src/__tests__/init-git-repo.slow.test.ts
 
   # ---------------------------------------------------------------------------
   # Job 1.7: A2 no-stub parity gate (path-filtered) (#3419)
@@ -626,7 +742,7 @@ jobs:
         if: steps.detect-emitters.outputs.run_parity == 'true'
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 22
+          node-version-file: .nvmrc
 
       - name: Install dependencies
         if: steps.detect-emitters.outputs.run_parity == 'true'
@@ -704,7 +820,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 22
+          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -756,7 +872,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 22
+          node-version-file: .nvmrc
 
       - name: Install deps (no scripts)
         run: pnpm install --frozen-lockfile --ignore-scripts
@@ -797,7 +913,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 22
+          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -859,7 +975,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 22
+          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

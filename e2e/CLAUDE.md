@@ -61,6 +61,13 @@ to stay inside the fixture root.
 - **Fixture-specific** (kept in git per fixture): `src/config/settings.ts`, `src/content/`, optionally `public/<fixture-only-files>/`
 - **Seed file**: `.zfb/doc-history-meta.json` is created as `{}` so the bundler's static `#doc-history-meta` import resolves on the first run; the doc-history plugin's preBuild hook overwrites it on subsequent builds.
 
+Fixture freshness markers hash the current bytes of all fixture-local `src/content/`,
+`src/config/settings.ts`, and `public/` files, the shared `packages/zudo-doc/` and
+`packages/doc-history-server/` sources, and both packages' built `dist/` trees,
+alongside the copied sources, config, lockfile, and setup script. Missing package
+artifacts or an unavailable `shasum` force a rebuild; unchanged bytes (including a
+bare `touch`) keep a warm fixture fresh.
+
 The `theme` fixture removes the copied `pages/docs/` user stub during setup so
 its docs route is package-owned. This is load-bearing for tests of fixture-local
 `colorSchemes`: the showcase's legacy user-route context deliberately supplies
@@ -106,7 +113,10 @@ npx playwright test e2e/smoke-search.spec.ts --project smoke   # or a single fil
 ```
 
 The staleness itself is guarded — `compute_build_hash()` covers each fixture's
-`src/content/` — but the marker is only consulted when the script actually runs.
+`src/content/`, `public/`, package sources, and built package artifacts — but the
+marker is only consulted when the script actually runs. The `test:e2e*` package
+scripts first run `pnpm ensure:workspace-build` so those artifacts are present and
+current before setup checks the markers.
 
 **Fast path**: `E2E_FIXTURES=<name>` scopes both `setup-fixtures.sh` (builds only that fixture) and `playwright.config.ts` (boots only its webServer, zero stagger); repeated runs skip the build when inputs are unchanged (`e2e/fixtures/<name>/.build-marker.sha256` tracks the hash); `E2E_FORCE_REBUILD=1` forces a full rebuild.
 

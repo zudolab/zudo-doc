@@ -2,6 +2,8 @@
 
 ## First-time setup on a new machine
 
+The repository uses Node.js 22 locally and in CI. If you use nvm, run `nvm use` from the repository root to apply the version in `.nvmrc` before installing dependencies.
+
 zfb and zdtp are consumed as published npm packages — there is no sibling-checkout build step. A plain install pulls everything, including zfb's prebuilt platform binary (shipped via a platform-specific npm optionalDependency, e.g. `@takazudo/zfb-linux-x64-gnu`):
 
 ```sh

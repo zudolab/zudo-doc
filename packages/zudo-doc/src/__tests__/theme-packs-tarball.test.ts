@@ -15,8 +15,15 @@
 // `route-injection-build.slow.test.ts`.
 
 import { describe, it, expect, beforeAll } from "vitest";
-import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import {
+  cpSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -30,14 +37,15 @@ interface NpmPackDryRunEntry {
   files: NpmPackDryRunFile[];
 }
 
+const LIFECYCLE_OUTPUT_RE =
+  /(?:^> .*\b(?:prepare|prepack)\b|\[(?:copy-theme-css|copy-content-css|copy-page-loading-css|copy-features-css|copy-eject-sources|copy-routes-src|copy-virtual-modules|copy-theme-packs|gen-catalog|gen-search-widget-script)\]|^gen-safelist:)/m;
+
 /**
- * Extract the JSON array from `npm pack --json` stdout. `--ignore-scripts`
- * SHOULD keep lifecycle output off stdout, but some npm/CI combinations still
- * leak a copy-script line ahead of the JSON — CI observed
- * `[copy-theme-packs] dist/theme-packs/ OK` prepended, which broke a naive
- * `JSON.parse(stdout)` with "Unexpected token 'c'". That leaked line itself
- * starts with `[`, so we can't just slice from the first bracket; scan every
- * `[` and return the first slice that parses to an array.
+ * Extract the JSON array from `npm pack --json` stdout. npm 10 can run
+ * `prepare` for `npm pack` despite the `--ignore-scripts` CLI flag; the
+ * previously observed `[copy-theme-packs]` prefix was evidence of that build,
+ * not a logging quirk. The subprocess guard below now rejects lifecycle output,
+ * while this scanner remains as defence-in-depth for unrelated npm noise.
  */
 function parsePackJson(stdout: string): NpmPackDryRunEntry[] {
   for (let i = stdout.indexOf("["); i !== -1; i = stdout.indexOf("[", i + 1)) {
@@ -54,20 +62,55 @@ function parsePackJson(stdout: string): NpmPackDryRunEntry[] {
 }
 
 function packFileList(): string[] {
-  // --ignore-scripts: this is a file-listing check against the CURRENT
-  // dist/ (the test harness already ran the real prepack/check-*.mjs guards
-  // via `pnpm --filter @takazudo/zudo-doc build`+`test` — see this repo's
-  // CLAUDE.md). It suppresses the lifecycle banners on most npm versions;
-  // parsePackJson() makes the parse robust to any that still leak.
-  const stdout = execFileSync(
-    "npm",
-    ["pack", "--dry-run", "--json", "--ignore-scripts"],
-    { cwd: PKG_ROOT, encoding: "utf8" },
-  );
-  const parsed = parsePackJson(stdout);
-  const entry = parsed[0];
-  if (!entry) throw new Error("npm pack --dry-run --json produced no entries");
-  return entry.files.map((f) => f.path);
+  // npm 10's directory packer unconditionally runs `prepare`, ignoring both
+  // ignore-scripts forms. Pack a sanitized snapshot so even that implementation
+  // cannot execute a lifecycle or mutate the live dist/ this test is inspecting.
+  const snapshotRoot = mkdtempSync(resolve(tmpdir(), "zudo-doc-pack-"));
+  try {
+    cpSync(PKG_ROOT, snapshotRoot, {
+      recursive: true,
+      filter: (source) => source !== resolve(PKG_ROOT, "node_modules"),
+    });
+    const packageJsonPath = resolve(snapshotRoot, "package.json");
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as {
+      scripts?: Record<string, string>;
+    };
+    if (packageJson.scripts) {
+      delete packageJson.scripts.prepare;
+      delete packageJson.scripts.prepack;
+      delete packageJson.scripts.postpack;
+    }
+    writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
+
+    const result = spawnSync(
+      "npm",
+      ["pack", "--dry-run", "--json", "--ignore-scripts"],
+      {
+        cwd: snapshotRoot,
+        encoding: "utf8",
+        env: { ...process.env, npm_config_ignore_scripts: "true" },
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
+    if (result.error) throw result.error;
+    const stdout = result.stdout ?? "";
+    const stderr = result.stderr ?? "";
+    expect(
+      `${stdout}\n${stderr}`,
+      "npm pack must not run prepare, prepack, or the tsup onSuccess chain",
+    ).not.toMatch(LIFECYCLE_OUTPUT_RE);
+    if (result.status !== 0) {
+      throw new Error(
+        `npm pack --dry-run --json exited with status ${result.status}. stderr:\n${stderr}`,
+      );
+    }
+    const parsed = parsePackJson(stdout);
+    const entry = parsed[0];
+    if (!entry) throw new Error("npm pack --dry-run --json produced no entries");
+    return entry.files.map((f) => f.path);
+  } finally {
+    rmSync(snapshotRoot, { recursive: true, force: true });
+  }
 }
 
 describe("npm tarball ships theme-pack assets (ADR docs/adr/theme-packs.md, #2820)", () => {
