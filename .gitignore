@@ -13,6 +13,8 @@ packages/zudo-doc/routes-src/
 # src/routes/_virtual.d.ts; it ships in the npm tarball via files[] but is
 # not tracked in git (same policy as routes-src/).
 packages/zudo-doc/virtual-modules.d.ts
+# Package-local CLI test snapshots (bin + dist), removed by the test suite.
+packages/zudo-doc/.cli-snapshot-*/
 .zfb/
 # W6A — un-ignore the create-zudo-doc seed file so it ships in the
 # generated tarball. .zfb/ stays gitignored everywhere else; the seed
