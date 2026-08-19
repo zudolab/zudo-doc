@@ -209,7 +209,7 @@ Mirror the English content in Japanese. Sections: `### 破壊的変更`, `### �
 ## Step 4 — Validate
 
 ```bash
-pnpm b4push
+B4PUSH_SKIP_PIN_PUBLISHED=1 pnpm b4push
 ```
 
 Fix any failures and recommit before proceeding. Do not tag until b4push is fully green.

@@ -221,6 +221,18 @@ else
   exit 1
 fi
 
+echo ""
+echo "▶ Checking scaffold pins for a published satisfying version..."
+if (cd "$ROOT_DIR" && pnpm check:scaffold-pin-published); then
+  echo "  ✓ scaffold pins have a published satisfying version"
+else
+  echo ""
+  echo "Error: scaffold pin published check failed — a pin has no satisfying version on the npm registry." >&2
+  echo "        This can indicate an unfinished release from an earlier run. See RELEASE.md 'Scaffold pin published gate'." >&2
+  echo "Remedy: finish or roll back the pending publication, then re-run this script." >&2
+  exit 1
+fi
+
 # ── Read current versions (real run) ─────────────────────────────────────────
 
 OLD_ROOT_VERSION=$(node -p "require('$PKG_JSON').version" 2>/dev/null)
@@ -416,7 +428,7 @@ echo ""
 echo "Next steps:"
 echo "  1. Fill in changelog: src/content/docs/changelog/$NEW_VERSION.mdx"
 echo "  2. Fill in Japanese:  src/content/docs-ja/changelog/$NEW_VERSION.mdx"
-echo "  3. Run pnpm b4push to validate"
+echo "  3. Run B4PUSH_SKIP_PIN_PUBLISHED=1 pnpm b4push to validate"
 echo "  4. Commit, push, wait for CI."
 echo ""
 echo "  Publish ORDER matters — zudo-doc and zudo-doc-history-server first,"
