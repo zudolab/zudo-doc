@@ -250,11 +250,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Clean-runner parity: the suite builds a fixture against this package's
-      # dist/, which does not exist on a fresh runner (mirrors pr-checks'
-      # package-tests job).
-      - name: Build @takazudo/zudo-doc
-        run: pnpm --filter @takazudo/zudo-doc build
+      # `pnpm install` runs the package's prepare build; this guard verifies the
+      # generated package dist/ without paying for a second identical build.
+      - name: Ensure workspace packages are built
+        run: pnpm ensure:workspace-build
 
       - name: Run @takazudo/zudo-doc slow tests
         run: pnpm --filter @takazudo/zudo-doc test:slow
@@ -321,11 +320,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Clean-runner parity: the showcase build resolves @takazudo/zudo-doc
-      # through its dist/, which does not exist on a fresh runner (mirrors
-      # the slow-zudo-doc job above).
-      - name: Build @takazudo/zudo-doc
-        run: pnpm --filter @takazudo/zudo-doc build
+      # `pnpm install` runs the package's prepare build; this guard verifies the
+      # generated package dist/ before the showcase build consumes it.
+      - name: Ensure workspace packages are built
+        run: pnpm ensure:workspace-build
 
       - name: Build site
         run: pnpm build
