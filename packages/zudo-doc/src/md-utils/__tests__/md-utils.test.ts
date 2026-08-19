@@ -53,6 +53,39 @@ describe("md-utils stripMarkdown JSX comment removal (zudo-doc#2175)", () => {
   });
 });
 
+describe("md-utils stripMarkdown plain-text preservation (zudo-doc#3478)", () => {
+  it("decodes decimal, hexadecimal, and common named character references", () => {
+    expect(stripMarkdown("DELETE /items/&#123;item_id&#125;")).toBe(
+      "DELETE /items/{item_id}",
+    );
+    expect(
+      stripMarkdown("&#x41;&#X42; &lt;b&gt; &quot;x&quot; &apos;y&apos;"),
+    ).toBe('AB <b> "x" \'y\'');
+  });
+
+  it("decodes references only once and leaves invalid numeric references intact", () => {
+    expect(stripMarkdown("&amp;#123; &amp;lt;")).toBe("&#123; &lt;");
+    expect(stripMarkdown("&#999999999999999999999;")).toBe(
+      "&#999999999999999999999;",
+    );
+  });
+
+  it("preserves intraword underscores in identifiers", () => {
+    expect(stripMarkdown("GET /account_settings/export_targets")).toBe(
+      "GET /account_settings/export_targets",
+    );
+    expect(stripMarkdown("error_code_400 item_part_id is_active")).toBe(
+      "error_code_400 item_part_id is_active",
+    );
+  });
+
+  it("continues to remove valid underscore emphasis delimiters", () => {
+    expect(stripMarkdown("_italic_ and __bold__ and ___both___")).toBe(
+      "italic and bold and both",
+    );
+  });
+});
+
 describe("md-utils slugToUrl", () => {
   it("builds a path-only default-locale URL", () => {
     expect(slugToUrl("guides/intro", null, "")).toBe("/docs/guides/intro");
