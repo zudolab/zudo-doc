@@ -66,6 +66,9 @@ const ISLAND_ATTR = "data-zfb-island";
 /** zfb's serialized-props attribute; opaque to this module. */
 const PROPS_ATTR = "data-props";
 
+/** Opts a live nested island out of this helper's props refresh. */
+const PROPS_PRESERVE_ATTR = "data-zd-props-preserve";
+
 /**
  * zfb's cross-package "needs-remount" flag (`clearMountedForRemount` /
  * `fire()` in `@takazudo/zfb`'s runtime). Load-bearing for one race: an island
@@ -148,6 +151,11 @@ export function disposeNestedIslandPropsRefresh(document: Document): void {
  *      that is missing on either side, or duplicated on either side, is
  *      skipped — there is no defensible pairing for it.
  *   2. Within a paired root, group the islands it OWNS by island name.
+ *      On the live side only, exclude an island carrying
+ *      `data-zd-props-preserve`, or one with an ancestor carrying that
+ *      attribute when the closest such ancestor is inside the persisted root
+ *      (including the root itself). The incoming side is never filtered:
+ *      preservation is a live-side opt-out, not an incoming-side pairing rule.
  *   3. Refresh only names that resolve to exactly one island on both sides.
  *
  * Position is never used: the live and incoming DOM are different renders of
@@ -169,7 +177,7 @@ function refreshNestedIslandProps(
     const incomingIslands = collectUniqueOwnedIslands(incomingRoot);
     if (incomingIslands.size === 0) continue;
 
-    for (const [name, liveIsland] of collectUniqueOwnedIslands(liveRoot)) {
+    for (const [name, liveIsland] of collectUniqueOwnedIslands(liveRoot, true)) {
       const incomingIsland = incomingIslands.get(name);
       if (!incomingIsland) continue;
       applyProps(liveIsland, incomingIsland);
@@ -213,9 +221,17 @@ function collectRefreshableRoots(doc: Document): Map<string, Element> {
  * In either case zfb's persisted-island props/remount path already owns that
  * element's refresh, and this helper must not compete with it.
  */
-function collectUniqueOwnedIslands(root: Element): Map<string, Element> {
+function collectUniqueOwnedIslands(
+  root: Element,
+  excludePreserved = false,
+): Map<string, Element> {
   const owned = Array.from(root.querySelectorAll(`[${ISLAND_ATTR}]`)).filter(
-    (island) => island.closest(`[${PERSIST_ATTR}]`) === root,
+    (island) => {
+      if (island.closest(`[${PERSIST_ATTR}]`) !== root) return false;
+      if (!excludePreserved) return true;
+      const preserveBoundary = island.closest(`[${PROPS_PRESERVE_ATTR}]`);
+      return preserveBoundary === null || !root.contains(preserveBoundary);
+    },
   );
   return indexUniquely(owned, ISLAND_ATTR);
 }
