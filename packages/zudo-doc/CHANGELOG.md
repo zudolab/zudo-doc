@@ -4,6 +4,25 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.7.0] - 2026-08-20
+
+### Features
+
+- `NAV_OVERFLOW_SCRIPT` is now shipped as a committed, drift-gated literal generated at package build time — its bytes no longer depend on the consumer's bundler, so one published CSP inline-script hash covers every rendering. The frozen output is byte-identical to the previous render-time assembly, so no hash changes with this release (93865aac)
+- A `check:nav-overflow-drift` guard now runs in b4push (step 14 of the 29-step suite), CI, the b4push/CI parity manifest, and `prepack`, so any future change to the script's sources fails loudly instead of silently shifting consumer CSP hashes (a9440c2e)
+
+### Bug Fixes
+
+- The mobile drawer no longer keeps a stale section tree and active marker after a same-locale cross-section soft navigation: nested-island `data-props` inside persisted elements are refreshed at the `zfb:before-swap` seam, generalizing zfb's top-level persisted-island refresh. Locale-toggle behavior and header persistence are unchanged (9dd1b77c)
+- Islands whose dynamic import is still in flight across a swap now remount from the refreshed props (`data-zfb-island-remount` is set on change), closing a race where the drawer could mount from the pre-navigation snapshot (797e9a8c)
+- `prepack` now also gates on `check:search-widget-drift`, so packing from a drifted tree can no longer publish CSP-breaking `SEARCH_WIDGET_SCRIPT` bytes (5103feb3)
+
+### Other Changes
+
+- New mobile cross-section soft-navigation e2e regression spec for the drawer (smoke fixture), with shared drawer helpers (5ac8f536)
+- Route-injection parity snapshots re-baselined with full attribution; the file now documents that a further unexplained hash move must be treated as live non-determinism and diagnosed rather than re-pinned (7a607cd5)
+- Testing docs aligned with the test-hardening retiering: fast/slow lanes clarified and post-retiering counts corrected (07fff398)
+
 ## [5.6.1] - 2026-08-19
 
 ### Bug Fixes
