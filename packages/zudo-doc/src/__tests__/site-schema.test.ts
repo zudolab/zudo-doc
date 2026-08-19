@@ -119,7 +119,8 @@ describe("./site-schema subpath export", () => {
     const pkg = JSON.parse(readFileSync(resolve(PKG_ROOT, "package.json"), "utf8")) as {
       scripts: Record<string, string>;
     };
-    expect(pkg.scripts.prepack).toContain("check-site-schema.mjs");
+    expect(pkg.scripts["check:prepack-contract"]).toContain("check-site-schema.mjs");
+    expect(pkg.scripts.prepack).toBe("pnpm check:prepack-contract");
   });
 });
 
