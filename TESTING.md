@@ -25,7 +25,7 @@ is a blocking PR lane, and the visual-regression baseline is deliberately skippe
 
 | Level | What | Scope | Command |
 |-------|------|-------|---------|
-| L1 | Vitest unit tests | `src/**/__tests__/`, `scripts/__tests__/` (~1,981 tests) + 4 workspace packages (2,964 tests: search-worker 44, doc-history-server 73, create-zudo-doc 596, zudo-doc 2,251) — reproduce the package census with `pnpm test:packages`; 5 retiered `create-zudo-doc` tests run separately in Slow Unit Tests | `pnpm test` |
+| L1 | Vitest unit tests | Root fast lane: 903 tests (901 passed, 2 skipped) in `src/**/__tests__/` and `scripts/__tests__/`, via `pnpm test:unit`; package lanes: 2,964 tests (search-worker 44, doc-history-server 73, create-zudo-doc 596, zudo-doc 2,251), via `pnpm test:packages`. Combined `pnpm test` runs these fast lanes only. Separate Slow Unit Tests runs 60 slow root tests via `pnpm test:unit:slow` plus 5 retiered `create-zudo-doc` tests | Root: `pnpm test:unit`; packages: `pnpm test:packages`; combined: `pnpm test` |
 | L1 Worker | Workers-runtime unit/integration tests | Custom entry export graph and SQLite `AiChatDailySpendCap` concurrency using `@cloudflare/vitest-pool-workers` | `pnpm test:worker` |
 | L2 | *Not used* — jsdom/happy-dom + Testing Library DOM component tests | Intentionally skipped in this repo — see "Why L2 is skipped" below | — |
 | L3 | Static dist reads + build-output verification | Read pre-built `dist/` HTML with `readFileSync` (Playwright specs using `makeDistReader(fixture)`); also covers the b4push build-output steps (link check, HTML validation, preview smoke) — see "L3 details" below | `E2E_FIXTURES=<fixture> npx playwright test --project <fixture> e2e/<fixture>-*.spec.ts` (e.g. `E2E_FIXTURES=versioning npx playwright test --project versioning e2e/versioning.spec.ts`) — any spec using `makeDistReader(fixture)` from `e2e/dist-helper.ts` |
@@ -116,7 +116,7 @@ because it never runs in CI — the table tracks *where in the pipeline* a tier 
 Run before pushing, or when iterating on a change:
 
 ```bash
-pnpm test          # L1: builds @takazudo/zudo-doc, runs ~1,981 root vitest + 2,964 package tests across 4 packages
+pnpm test          # L1 fast lanes only: builds @takazudo/zudo-doc, runs 903 root tests (901 passed, 2 skipped) + 2,964 package tests across 4 packages
 pnpm check         # TypeScript typecheck (zfb check)
 pnpm check:worker  # generated binding + custom Worker typecheck
 pnpm test:worker   # builds first, then runs Workers-runtime/SQLite DO tests
@@ -140,9 +140,10 @@ its Playwright webServer. Repeated runs skip the build when inputs are unchanged
 5-fixture suite with `pnpm test:e2e:ci` (excluding `@flaky`, `@local-only`, and
 `@verification` tests — see Tag Taxonomy below).
 
-**Slow Unit Tests** (#3492, #3493) is also a required PR lane, not a nightly lane. It runs the
-subprocess-heavy root specs and the two retiered `create-zudo-doc` specs on every
-PR, while keeping those costs out of the default unit/package critical paths.
+**Slow Unit Tests** (#3492, #3493) is also a required PR lane, not a nightly lane. It runs 60
+slow root tests via `pnpm test:unit:slow` plus the 5 tests in the two retiered
+`create-zudo-doc` specs on every PR, while keeping those costs out of the default
+unit/package critical paths.
 They remain blocking because they cover release-relevant behavior; the other
 registry-install/full-build slow specs stay in the nightly `slow-create` job.
 
@@ -222,8 +223,8 @@ T4 is a convenience layer, never an enforcement substitute for T1. The structura
 target for `pnpm b4push` is a finite, warm-tree 28-step pass with the full per-step
 timing breakdown printed by `scripts/run-b4push.sh` (the timing state is set up in
 `scripts/run-b4push.sh:54-69`, in the `START_TIME`/`TOTAL_STEPS` and `STEP_*` block).
-It includes the blocking slow
-unit subset, but deliberately excludes the full five-fixture Playwright run and
+It includes the blocking Slow Unit Tests lane (60 slow root tests plus 5 retiered
+`create-zudo-doc` tests), but deliberately excludes the full five-fixture Playwright run and
 the registry-install/full-build slow-create sweep reserved for T3. A ≤25-minute
 wall-clock result is an advisory design target, not a hard gate: local machines are
 noisy, so pass/fail is completion plus structural boundedness, not a single timing

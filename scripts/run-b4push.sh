@@ -23,9 +23,9 @@ set -euo pipefail
 #  16. Required-checks manifest + B4push/CI parity meta-checks (#3494, #1967)
 #  17. Type checking (zfb check + workspace package typechecks)
 #  18. Worker contract proof (types + Workers runtime + Wrangler dry-run)
-#  19. Root unit tests (test:unit) — fast src/scripts specs; builds @takazudo/zudo-doc as a side-effect
-#  20. Slow unit tests (test:unit:slow + two create-zudo-doc specs) — blocking
-#      subprocess-heavy root specs and the two retiered package specs
+#  19. Root unit tests (test:unit) — 903 tests (901 passed, 2 skipped); builds @takazudo/zudo-doc
+#  20. Slow unit tests (test:unit:slow + two create-zudo-doc specs) — 60 slow root tests +
+#      5 retiered create-zudo-doc tests; blocking
 #  21. Package tests (test:packages) — 2,964 suite tests across 4 workspace packages
 #      (44/73/596/2,251; 5 retiered create-zudo-doc tests run in Slow Unit Tests)
 #  22. Package safelist check (#1994) — requires dist/safelist.css from step 19

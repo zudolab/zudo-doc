@@ -22,8 +22,8 @@
 #   Worker Contract Proof    — Worker typecheck + runtime DO tests + Wrangler dry-run
 #   Package Unit Tests       — pnpm install; pnpm test:packages (4 package suites; 2,964 tests:
 #                              search-worker 44, doc-history-server 73, create-zudo-doc 596, zudo-doc 2,251)
-#   Root Unit Tests          — pnpm install; pnpm test:unit (fast src/scripts specs)
-#   Slow Unit Tests           — pnpm install; root slow specs + two retiered create-zudo-doc specs
+#   Root Unit Tests          — pnpm install; pnpm test:unit (903 tests: 901 passed, 2 skipped)
+#   Slow Unit Tests           — pnpm install; 60 slow root tests + 5 retiered create-zudo-doc tests
 #   A2 Parity Gate           — path-filtered (#3419): skips unless an every-page script
 #                              emitter file changed; else pnpm install + build:workspace +
 #                              the A2 no-stub parity slow-suite subset
