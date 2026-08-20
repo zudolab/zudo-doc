@@ -18,6 +18,7 @@ import docHistory from "../plugins/doc-history.js";
 import llmsTxt from "../plugins/llms-txt.js";
 import searchIndex from "../plugins/search-index.js";
 import claudeResources from "../plugins/claude-resources.js";
+import codexResources from "../plugins/codex-resources.js";
 import changelog from "../plugins/changelog.js";
 import { connectToZfbHandler } from "../plugins/connect-adapter.js";
 
@@ -66,6 +67,16 @@ describe("claude-resources plugin shape", () => {
 
   it("has a preBuild function", () => {
     expect(typeof claudeResources.preBuild).toBe("function");
+  });
+});
+
+describe("codex-resources plugin shape", () => {
+  it("has the public plugin name", () => {
+    expect(codexResources.name).toBe("@takazudo/zudo-doc-codex-resources");
+  });
+
+  it("has a preBuild function", () => {
+    expect(typeof codexResources.preBuild).toBe("function");
   });
 });
 
