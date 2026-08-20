@@ -1,0 +1,8 @@
+# Project-scoped defaults for working on zudo-doc.
+
+[agents]
+max_concurrent_threads_per_session = 6
+
+[[skills.config]]
+path = ".codex/skills/check-docs"
+enabled = true
