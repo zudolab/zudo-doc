@@ -1,7 +1,17 @@
 import fs from "node:fs";
 import path from "node:path";
-import matter from "gray-matter";
-import { escapeForMdx } from "./escape-for-mdx.js";
+import {
+  assertNotIndexReserved,
+  cleanDir,
+  downgradeRepoRelativeLinks,
+  ensureDir,
+  escapeForMdx,
+  escapeTitle,
+  findNamedFiles,
+  generateSkillsCategory,
+  parseFrontmatter,
+  writeCategoryIndex,
+} from "../resource-docs-shared/index.js";
 
 export interface ClaudeResourcesConfig {
   claudeDir: string;
@@ -32,254 +42,11 @@ interface CommandItem {
   description: string;
 }
 
-interface SkillReference {
-  name: string;
-  title: string;
-  content: string;
-}
-
-interface SkillItem {
-  name: string;
-  dir: string;
-  description: string;
-  references: SkillReference[];
-}
-
 interface AgentItem {
   name: string;
   file: string;
   description: string;
   model: string;
-}
-
-// ---------------------------------------------------------------------------
-// Utility
-// ---------------------------------------------------------------------------
-
-function ensureDir(dir: string) {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-}
-
-function cleanDir(dir: string) {
-  if (!fs.existsSync(dir)) return;
-  fs.rmSync(dir, { recursive: true, force: true });
-}
-
-function parseFrontmatter(content: string) {
-  try {
-    return matter(content);
-  } catch {
-    return null;
-  }
-}
-
-function escapeTitle(s: string): string {
-  // Backslashes must be escaped first — the value is embedded in
-  // double-quoted YAML frontmatter where `\d` or `C:\path` is invalid.
-  return s.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-}
-
-function listFiles(dir: string): string[] {
-  if (!fs.existsSync(dir)) return [];
-  return fs
-    .readdirSync(dir, { withFileTypes: true })
-    .filter((d) => d.isFile())
-    .map((d) => d.name)
-    .sort();
-}
-
-function writeCategoryIndex(
-  outputDir: string,
-  label: string,
-  position: number,
-  description: string,
-) {
-  const mdx = `---
-title: "${escapeTitle(label)}"
-description: "${escapeTitle(description)}"
-sidebar_position: ${position}
-category_no_page: true
-generated: true
----
-`;
-  fs.writeFileSync(path.join(outputDir, "index.mdx"), mdx);
-}
-
-/**
- * Writes an unlisted sub-page MDX file. Used for skill references, scripts,
- * and assets.
- *
- * The route is derived from the file's path within the content collection —
- * deliberately NOT from an explicit `slug:`. zfb's `resolveMarkdownLinks`
- * resolves relative links against the *source file path*, so the on-disk
- * location of these pages must match the URL the skill page links to. Writing
- * them at `<dir>/ref-<name>.mdx` (siblings of the skill's `index.mdx`) is what
- * makes the `./ref-<name>` links resolve (#2411).
- */
-function writeUnlistedSubPage(
-  outputPath: string,
-  title: string,
-  body: string,
-) {
-  fs.writeFileSync(
-    outputPath,
-    `---\ntitle: "${escapeTitle(title)}"\nunlisted: true\ngenerated: true\n---\n\n${body}\n`,
-  );
-}
-
-/**
- * Guards that the given name/slug is not the reserved "index" value.
- * Throws with a contextual message if it is.
- */
-function assertNotIndexReserved(
-  nameOrSlug: string,
-  errorMessage: string,
-) {
-  if (nameOrSlug === "index") {
-    throw new Error(errorMessage);
-  }
-}
-
-/**
- * Whether a markdown link target is a repo-relative file reference
- * (`./wrangler.toml`, `../../schema/photos.sql`, `foo/bar.md`) rather than
- * something the doc site can resolve: an absolute URL (`https://…`), a
- * protocol-relative URL (`//…`), a site-absolute path (`/docs/…`), a pure
- * anchor (`#…`), or a scheme (`mailto:`, `tel:`).
- */
-function isRepoRelativeLink(url: string): boolean {
-  const trimmed = url.trim();
-  if (trimmed === "") return false;
-  if (trimmed.startsWith("#")) return false; // anchor
-  if (trimmed.startsWith("/")) return false; // site-absolute or protocol-relative (//host)
-  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed)) return false; // has a scheme (http:, mailto:, …)
-  return true;
-}
-
-/**
- * Downgrade repo-relative markdown links in a mirrored `CLAUDE.md` body to
- * inline code so they don't dangle in the flattened mirror tree (#2411).
- *
- * A `CLAUDE.md`'s relative links point at real repo files (correct for an
- * in-repo reader), but the mirror flattens each file into a single
- * `claude-md/<name>.mdx` page with no counterpart for those targets — left as
- * links they surface as `broken link:` warnings on every affected page. Inline
- * code keeps the reference legible (`` `wrangler.toml` ``) without a href.
- *
- * Code spans are preserved verbatim: a `[x](./y)` inside a fenced block or an
- * inline-code span is literal text, not a link, and must not be rewritten.
- */
-function downgradeRepoRelativeLinks(content: string): string {
-  const blockPlaceholder = "\x00CRLINK_BLOCK_";
-  const inlinePlaceholder = "\x00CRLINK_INLINE_";
-
-  // Extract fenced code blocks so their contents are untouched. Both backtick
-  // (```) and tilde (~~~) fences are recognised; the `\1` backreference makes
-  // the closing fence match the same delimiter the block opened with.
-  const codeBlocks: string[] = [];
-  const withBlocks = content.replace(/(`{3,}|~{3,})[^\n]*\n[\s\S]*?\1/g, (match) => {
-    codeBlocks.push(match);
-    return `${blockPlaceholder}${codeBlocks.length - 1}\x00`;
-  });
-
-  const transformed = withBlocks
-    .split(new RegExp(`(${blockPlaceholder}\\d+\x00)`, "g"))
-    .map((part) => {
-      if (new RegExp(`^${blockPlaceholder}\\d+\x00$`).test(part)) return part;
-
-      // Preserve inline-code spans, then rewrite links in the remaining text.
-      const inlineCodes: string[] = [];
-      const withInline = part.replace(
-        /(`{1,3})(?!`)([\s\S]*?[^`])\1(?!`)/g,
-        (match) => {
-          inlineCodes.push(match);
-          return `${inlinePlaceholder}${inlineCodes.length - 1}\x00`;
-        },
-      );
-
-      const rewritten = withInline.replace(
-        /!?\[([^\]]*)\]\(([^)]+)\)/g,
-        (match, text: string, url: string) =>
-          isRepoRelativeLink(url) ? `\`${text}\`` : match,
-      );
-
-      return rewritten.replace(
-        new RegExp(`${inlinePlaceholder}(\\d+)\x00`, "g"),
-        (_, idx: string) => inlineCodes[Number(idx)] ?? "",
-      );
-    })
-    .join("");
-
-  return transformed.replace(
-    new RegExp(`${blockPlaceholder}(\\d+)\x00`, "g"),
-    (_, idx: string) => codeBlocks[Number(idx)] ?? "",
-  );
-}
-
-// ---------------------------------------------------------------------------
-// CLAUDE.md discovery
-// ---------------------------------------------------------------------------
-
-/**
- * Directory names skipped by basename at ANY depth of the walk.
- *
- * These are build output, vendored trees, and tooling scratch dirs that can
- * belong to *any* project under the scan root, not just the one at its top
- * level. Anchoring them to the scan root (the pre-#3200 behaviour) meant a
- * doc site in a repo subdirectory with `scanRoot` widened to the repo root
- * still walked its own `dist/`, `public/`, `out/`, and `test-results/` on
- * every build — the exact nested layout `scanRoot` exists for.
- *
- * `.git` needs no entry here: dot-prefixed entries are already skipped at any
- * depth by the loop below.
- */
-const EXCLUDED_DIR_NAMES = new Set([
-  "node_modules",
-  "worktrees",
-  "dist",
-  "out",
-  "public",
-  "__inbox",
-  "test-results",
-]);
-
-function findClaudeMdFiles(dir: string, excludeDirs: string[]): string[] {
-  const results: string[] = [];
-  if (!fs.existsSync(dir)) return results;
-
-  // Strip trailing separators (path.join preserves one on e.g. "docs/") so the
-  // boundary compare below stays exact for such entries too.
-  const excludes = excludeDirs.map((d) =>
-    d.endsWith(path.sep) ? d.slice(0, -path.sep.length) : d,
-  );
-
-  for (const item of fs.readdirSync(dir)) {
-    if (EXCLUDED_DIR_NAMES.has(item)) continue;
-    if (item.startsWith(".")) continue;
-    const itemPath = path.join(dir, item);
-    // Path-segment-boundary-aware: a raw startsWith(d) would also match a
-    // sibling like "dist-extra" against an excluded "dist" (#2561).
-    if (excludes.some((d) => itemPath === d || itemPath.startsWith(d + path.sep))) continue;
-
-    // lstat (not stat) so symlinks aren't followed — a symlinked dir can point
-    // back into the project (e.g. e2e fixtures linking to packages/) or out to
-    // a slow mount (e.g. /mnt/c on WSL) and either turns the walk into a
-    // multi-minute hang.
-    let stat: fs.Stats;
-    try {
-      stat = fs.lstatSync(itemPath);
-    } catch {
-      continue;
-    }
-    if (stat.isDirectory()) {
-      results.push(...findClaudeMdFiles(itemPath, excludes));
-    } else if (stat.isFile() && item === "CLAUDE.md") {
-      results.push(itemPath);
-    }
-  }
-  return results;
 }
 
 // ---------------------------------------------------------------------------
@@ -305,7 +72,7 @@ function generateClaudemdDocs(
     path.join(config.docsDir),
   ];
 
-  const files = findClaudeMdFiles(scanRoot, excludeDirs);
+  const files = findNamedFiles(scanRoot, excludeDirs, ["CLAUDE.md"]);
   if (files.length === 0) return [];
 
   ensureDir(outputDir);
@@ -415,237 +182,17 @@ ${escapeForMdx(parsed.content.trim())}
 // Skills generation
 // ---------------------------------------------------------------------------
 
-type TreeEntry =
-  | { isDir: false; name: string }
-  | { isDir: true; name: string; children: string[] };
-
-function getSkillFileTree(
-  skillDir: string,
-  subDirs: { name: string; files: string[] }[],
-): string {
-  const lines: string[] = [`${skillDir}/`];
-  const entries: TreeEntry[] = [{ isDir: false, name: "SKILL.md" }];
-
-  for (const sub of subDirs) {
-    entries.push({ isDir: true, name: sub.name, children: sub.files });
-  }
-
-  for (let i = 0; i < entries.length; i++) {
-    const entry = entries[i];
-    if (!entry) continue;
-    const isLast = i === entries.length - 1;
-    const prefix = isLast ? "└── " : "├── ";
-
-    if (!entry.isDir) {
-      lines.push(`${prefix}${entry.name}`);
-    } else {
-      lines.push(`${prefix}${entry.name}/`);
-      for (let j = 0; j < entry.children.length; j++) {
-        const child = entry.children[j];
-        if (!child) continue;
-        const childIsLast = j === entry.children.length - 1;
-        const continuation = isLast ? "    " : "│   ";
-        const childPrefix = childIsLast ? "└── " : "├── ";
-        lines.push(`${continuation}${childPrefix}${child}`);
-      }
-    }
-  }
-
-  return lines.join("\n");
-}
-
-function getScriptDescription(filePath: string): string {
-  try {
-    const topLines = fs.readFileSync(filePath, "utf8").split("\n", 2);
-    // Skip shebang, use second line if available
-    const firstLine = topLines[0] ?? "";
-    const commentLine = firstLine.startsWith("#!")
-      ? topLines[1] ?? ""
-      : firstLine;
-    // Match # comments (shell/python) or // comments (JS/TS)
-    const match = commentLine.match(/^(?:#|\/\/)\s*(.+)/);
-    return match ? ` — ${match[1]}` : "";
-  } catch {
-    return "";
-  }
-}
-
-function getSkillReferences(
-  skillsDir: string,
-  skillDir: string,
-): SkillReference[] {
-  const refsDir = path.join(skillsDir, skillDir, "references");
-  if (!fs.existsSync(refsDir)) return [];
-
-  return fs
-    .readdirSync(refsDir)
-    .filter((f) => f.endsWith(".md"))
-    .map((f) => {
-      const content = fs.readFileSync(path.join(refsDir, f), "utf8");
-      const name = f.replace(/\.md$/, "");
-      const h1Match = content.match(/^#\s+(.+)$/m);
-      const title = h1Match?.[1] ?? name;
-      return { name, title, content };
-    })
-    .sort((a, b) => a.name.localeCompare(b.name));
-}
-
-function generateSkillsDocs(config: ClaudeResourcesConfig): SkillItem[] {
-  const skillsDir = path.join(config.claudeDir, "skills");
-  const outputDir = path.join(config.docsDir, "claude-skills");
-
-  cleanDir(outputDir);
-
-  if (!fs.existsSync(skillsDir)) return [];
-
-  const dirs = fs.readdirSync(skillsDir).filter((d) => {
-    const skillPath = path.join(skillsDir, d);
-    return (
-      fs.statSync(skillPath).isDirectory() &&
-      fs.existsSync(path.join(skillPath, "SKILL.md"))
-    );
+function generateSkillsDocs(
+  config: ClaudeResourcesConfig,
+): ReturnType<typeof generateSkillsCategory> {
+  return generateSkillsCategory({
+    skillsDirs: [path.join(config.claudeDir, "skills")],
+    outputDir: path.join(config.docsDir, "claude-skills"),
+    label: "Skills",
+    position: 902,
+    description: "Skill packages",
+    sourceLabel: ".claude/skills",
   });
-
-  if (dirs.length === 0) return [];
-
-  ensureDir(outputDir);
-  const items: SkillItem[] = [];
-
-  for (const dir of dirs) {
-    assertNotIndexReserved(
-      dir,
-      `claude-resources: skill directory ".claude/skills/index/" uses the reserved name "index", which is used for the category metadata file. Rename the skill directory to resolve the conflict.`,
-    );
-    const content = fs.readFileSync(
-      path.join(skillsDir, dir, "SKILL.md"),
-      "utf8",
-    );
-    const parsed = parseFrontmatter(content);
-    if (!parsed) continue;
-
-    const name = (parsed.data.name as string) || dir;
-    const description = (parsed.data.description as string) || "";
-    const references = getSkillReferences(skillsDir, dir);
-
-    items.push({ name, dir, description, references });
-
-    const scriptFiles = listFiles(path.join(skillsDir, dir, "scripts"));
-    const assetFiles = listFiles(path.join(skillsDir, dir, "assets"));
-    const refFiles = references.map((r) => `${r.name}.md`);
-
-    // Collect non-empty subdirectories for tree display
-    const subDirs: { name: string; files: string[] }[] = [];
-    if (scriptFiles.length > 0) subDirs.push({ name: "scripts", files: scriptFiles });
-    if (refFiles.length > 0) subDirs.push({ name: "references", files: refFiles });
-    if (assetFiles.length > 0) subDirs.push({ name: "assets", files: assetFiles });
-
-    // File tree + links to renderable .md sub-files
-    let fileStructureSection = "";
-    if (subDirs.length > 0) {
-      const tree = `\`\`\`\n${getSkillFileTree(dir, subDirs)}\n\`\`\``;
-
-      // Collect links to all .md sub-files that get pages. Links use
-      // ./<subpage>; because the skill page is written as `<dir>/index.mdx`,
-      // these resolve to the sibling `<dir>/<subpage>.mdx` files (#2411).
-      const links: string[] = [];
-      for (const ref of references) {
-        links.push(`- [references/${ref.name}.md](./ref-${ref.name})`);
-      }
-      for (const f of scriptFiles.filter((s) => s.endsWith(".md"))) {
-        const slug = f.replace(/\.md$/, "");
-        links.push(`- [scripts/${f}](./script-${slug})`);
-      }
-      for (const f of assetFiles.filter((a) => a.endsWith(".md"))) {
-        const slug = f.replace(/\.md$/, "");
-        links.push(`- [assets/${f}](./asset-${slug})`);
-      }
-
-      const linkList = links.length > 0 ? `\n\n${links.join("\n")}` : "";
-      fileStructureSection = `## File Structure\n\n${tree}${linkList}`;
-    }
-
-    const shortDesc = description.length > 200
-      ? description.substring(0, 200) + "..."
-      : description;
-
-    // Rewrite references/scripts/assets links in skill body to match doc site URLs
-    let skillBody = parsed.content.trim();
-    skillBody = skillBody
-      .replace(/\]\(references\/([^)]+)\.md\)/g, "](./ref-$1)")
-      .replace(/\]\(scripts\/([^)]+)\.md\)/g, "](./script-$1)")
-      .replace(/\]\(assets\/([^)]+)\.md\)/g, "](./asset-$1)");
-
-    const body = [
-      fileStructureSection,
-      escapeForMdx(skillBody),
-    ]
-      .filter(Boolean)
-      .join("\n\n");
-
-    const mdx = `---
-title: "${escapeTitle(name)}"
-description: "${escapeTitle(shortDesc)}"
-sidebar_label: "${escapeTitle(name)}"
-generated: true
----
-
-${body}`;
-
-    // Write the skill page as the directory index (`<dir>/index.mdx`) so its
-    // route is `claude-skills/<dir>` served at URL `.../claude-skills/<dir>/`.
-    // This makes the reference/script/asset pages genuine siblings inside
-    // `<dir>/`, which is what lets the `./ref-<name>` links above resolve.
-    const skillDirOut = path.join(outputDir, dir);
-    ensureDir(skillDirOut);
-    fs.writeFileSync(path.join(skillDirOut, "index.mdx"), mdx);
-
-    // Generate unlisted sub-pages as nested files inside `<dir>/`. Their routes
-    // (`claude-skills/<dir>/ref-<name>`, …) are derived from these file paths
-    // and therefore match the `./ref-<name>` / `./script-<name>` /
-    // `./asset-<name>` links emitted above (#2411).
-    for (const ref of references) {
-      writeUnlistedSubPage(
-        path.join(skillDirOut, `ref-${ref.name}.mdx`),
-        ref.title,
-        escapeForMdx(ref.content.trim()),
-      );
-    }
-
-    for (const f of scriptFiles.filter((s) => s.endsWith(".md"))) {
-      const slug = f.replace(/\.md$/, "");
-      const raw = fs.readFileSync(
-        path.join(skillsDir, dir, "scripts", f),
-        "utf8",
-      );
-      const h1Match = raw.match(/^#\s+(.+)$/m);
-      const title = h1Match?.[1] ?? slug;
-      writeUnlistedSubPage(
-        path.join(skillDirOut, `script-${slug}.mdx`),
-        title,
-        escapeForMdx(raw.trim()),
-      );
-    }
-
-    for (const f of assetFiles.filter((a) => a.endsWith(".md"))) {
-      const slug = f.replace(/\.md$/, "");
-      const raw = fs.readFileSync(
-        path.join(skillsDir, dir, "assets", f),
-        "utf8",
-      );
-      const h1Match = raw.match(/^#\s+(.+)$/m);
-      const title = h1Match?.[1] ?? slug;
-      writeUnlistedSubPage(
-        path.join(skillDirOut, `asset-${slug}.mdx`),
-        title,
-        escapeForMdx(raw.trim()),
-      );
-    }
-  }
-
-  items.sort((a, b) => a.name.localeCompare(b.name));
-
-  writeCategoryIndex(outputDir, "Skills", 902, "Skill packages");
-  return items;
 }
 
 // ---------------------------------------------------------------------------
