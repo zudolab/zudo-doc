@@ -7,13 +7,14 @@ const packageJson = JSON.parse(
 ) as { exports: Record<string, unknown> };
 
 describe("current integration subpaths", () => {
-  it("exports all five current zfb plugins", () => {
+  it("exports all six current zfb plugins", () => {
     expect(Object.keys(packageJson.exports)).toEqual(
       expect.arrayContaining([
         "./plugins/doc-history",
         "./plugins/llms-txt",
         "./plugins/search-index",
         "./plugins/claude-resources",
+        "./plugins/codex-resources",
         "./plugins/changelog",
       ]),
     );

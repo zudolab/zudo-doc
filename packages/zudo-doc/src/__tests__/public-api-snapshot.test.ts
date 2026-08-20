@@ -120,6 +120,7 @@ describe("package.json exports keyset snapshot", () => {
         "./page-loading.css",
         "./plugins/changelog",
         "./plugins/claude-resources",
+        "./plugins/codex-resources",
         "./plugins/doc-history",
         "./plugins/llms-txt",
         "./plugins/routes",

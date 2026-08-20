@@ -279,6 +279,7 @@ reachable from this subpath — through the bundled JS graph OR the transitive
 | `./plugins/llms-txt` | llms.txt generation zfb plugin |
 | `./plugins/search-index` | Search index zfb plugin |
 | `./plugins/claude-resources` | Claude resources generation zfb plugin |
+| `./plugins/codex-resources` | Codex resources generation zfb plugin |
 | `./plugins/routes` | Package-owned route injection zfb plugin. Registers `virtual:zudo-doc-route-context` (serializable data only) and `virtual:zudo-doc-chrome-bindings` (re-export of the host module named by `settings.chromeBindingsModule`, or an empty-object fallback), then injects the derived route catalog |
 
 ### Utilities

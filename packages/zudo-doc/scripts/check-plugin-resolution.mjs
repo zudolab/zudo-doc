@@ -4,7 +4,7 @@
 // plugins must load through ./plugins/*, while deleted compatibility
 // integrations must be rejected by Node's package exports boundary.
 
-import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -13,6 +13,7 @@ const CURRENT_PLUGINS = {
   "@takazudo/zudo-doc/plugins/llms-txt": ["postBuild", "devMiddleware"],
   "@takazudo/zudo-doc/plugins/search-index": ["postBuild", "devMiddleware"],
   "@takazudo/zudo-doc/plugins/claude-resources": ["preBuild"],
+  "@takazudo/zudo-doc/plugins/codex-resources": ["preBuild"],
   "@takazudo/zudo-doc/plugins/changelog": ["postBuild"],
   "@takazudo/zudo-doc/plugins/theme-packs": ["setup", "postBuild", "devMiddleware"],
 };
@@ -65,9 +66,12 @@ process.stdout.write("[check-plugin-resolution] retained integrations/changelog 
 const projectRoot = mkdtempSync(join(tmpdir(), "zudo-doc-plugin-resolution-"));
 const docsDir = join(projectRoot, "docs");
 const claudeDir = join(projectRoot, ".claude");
+const codexDir = join(projectRoot, ".codex");
 const outDir = join(projectRoot, "dist");
 mkdirSync(docsDir, { recursive: true });
 mkdirSync(claudeDir, { recursive: true });
+mkdirSync(join(codexDir, "agents"), { recursive: true });
+writeFileSync(join(codexDir, "agents", "x.toml"), 'name = "x"\n');
 const logger = { info() {}, warn() {}, error() {} };
 const registered = [];
 const register = (path, handler) => registered.push({ path, handler });
@@ -107,6 +111,17 @@ try {
     options: { claudeDir, scanRoot: claudeDir, docsDir },
     logger,
   });
+
+  const codexResources = loadedPlugins.get("@takazudo/zudo-doc/plugins/codex-resources");
+  await codexResources.preBuild({
+    projectRoot,
+    outDir,
+    options: { codexDir, scanRoot: projectRoot, docsDir },
+    logger,
+  });
+  if (!existsSync(join(docsDir, "codex-agents/x.mdx"))) {
+    throw new Error("Codex resources lifecycle smoke output missing: docs/codex-agents/x.mdx");
+  }
 
   const changelogPlugin = loadedPlugins.get("@takazudo/zudo-doc/plugins/changelog");
   await changelogPlugin.postBuild({
