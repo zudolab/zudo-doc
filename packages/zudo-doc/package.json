@@ -670,6 +670,7 @@
     "minimist": "^1.2.8",
     "picocolors": "^1.1.1",
     "pluralize": "^8.0.0",
+    "smol-toml": "^1.8.0",
     "string-similarity": "^4.0.4",
     "tsx": "^4.21.0"
   },
