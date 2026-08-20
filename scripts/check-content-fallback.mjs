@@ -33,12 +33,10 @@
 // The `docs/claude-skills/` allowlist entry is defense-in-depth, not a gap
 // (#3259 supersedes the earlier "most exposed due to size" framing — do not
 // reintroduce it). Two structural defenses already sit between generated
-// skill pages and the fallback: `escapeForMdx()` runs over every generated
-// body (packages/zudo-doc/src/plugins/internal/claude-resources/generate.ts:580,
-// subpages :610/:625/:640) and turns braces and non-HTML tags into entities
-// (escape-for-mdx.ts:53-86), and the output directory is wiped with a
-// recursive `rmSync` and regenerated on every build (`cleanDir` at
-// generate.ts:497, helper at :65-68), so hand-placed raw MDX never survives
+// skill pages and the fallback: the shared `escapeForMdx` helper runs over
+// every generated body and subpage and turns braces and non-HTML tags into
+// entities, and the shared `cleanDir` helper wipes the output directory
+// recursively before every build, so hand-placed raw MDX never survives
 // between runs. The entry is kept anyway because the upstream trigger
 // (Takazudo/zudo-front-builder#2186, tracked in epic #3232) is
 // shape-sensitive and size-driven (~150 KB concatenated dumps) rather than

@@ -206,7 +206,7 @@ describe("generateLlmsFullTxt", () => {
 // We import it directly from the dist file to test the pure transform used by
 // the claude-resources plugin (which delegates to generateClaudeResourcesDocs → escapeForMdx).
 // @ts-ignore — bypasses the exports map restriction
-import { escapeForMdx } from "../../../packages/zudo-doc/dist/plugins/internal/claude-resources/escape-for-mdx.js";
+import { escapeForMdx } from "../../../packages/zudo-doc/dist/plugins/internal/resource-docs-shared/escape-for-mdx.js";
 
 describe("escapeForMdx", () => {
   it("passes HTML tags through unchanged (they are valid in MDX)", () => {
