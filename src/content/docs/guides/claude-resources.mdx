@@ -64,6 +64,7 @@ Generated files are written to `src/content/docs/` and are recreated on every bu
 |--------|------|-------------|
 | `claudeDir` | string | Path to the `.claude/` directory (relative to project root) |
 | `projectRoot` | string | Optional project root override for resolving CLAUDE.md file paths |
+| `scanRoot` | string | Optional repository-wide discovery root for the CLAUDE.md walk; defaults to `projectRoot` |
 
 The `projectRoot` option is useful in monorepo setups where the `.claude/` directory is not at the project root.
 

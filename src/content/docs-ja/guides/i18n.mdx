@@ -139,6 +139,12 @@ export default defineConfig(
       "/docs/claude-skills/",
       "/docs/claude-agents/",
       "/docs/claude-commands/",
+      "/docs/codex-agents-md/",
+      "/docs/codex-config/",
+      "/docs/codex-agents/",
+      "/docs/codex-hooks/",
+      "/docs/codex-rules/",
+      "/docs/codex-skills/",
     ],
   }),
 );
@@ -150,11 +156,11 @@ export default defineConfig(
 
 ### 現在のエントリ
 
-上記の4つのプレフィックスは、プロジェクトの`.claude/`ディレクトリにあるClaude設定ファイル（`CLAUDE.md`、スキル、エージェント、コマンド）を表示する自動生成ページ（Claudeリソースセクション）をカバーしています。ソース素材（Claude設定ファイル）は翻訳されていないため、これらは英語専用となっています。
+上記の10個のプレフィックスは、ClaudeリソースとCodexリソースのセクションをカバーしています。プロジェクトの`.claude/`と`.codex/`にあるリソースに加え、`AGENTS.md`ファイルと`.agents/skills/`ディレクトリを表示する自動生成ページです。ソースとなるファイル自体は翻訳されていないため、これらのページは英語専用です。
 
 <Note>
 
-トップレベルの`/docs/claude/`インデックスページはこのリストに含まれて**いません** — `docs-ja/claude/index.mdx`にバイリンガルのスタブが存在します。デフォルトロケール専用なのは、より深い4つのプレフィックス（`claude-md/`、`claude-skills/`、`claude-agents/`、`claude-commands/`）のみです。
+トップレベルの`/docs/claude/`と`/docs/codex/`のインデックスページは、このリストに含まれて**いません**。それぞれ`docs-ja/claude/index.mdx`と`docs-ja/codex/index.mdx`にバイリンガルのスタブがあります。デフォルトロケール専用なのは、上記に挙げた10個の深いプレフィックスだけです。
 
 </Note>
 
@@ -172,6 +178,12 @@ defaultLocaleOnlyPrefixes: [
   "/docs/claude-skills/",
   "/docs/claude-agents/",
   "/docs/claude-commands/",
+  "/docs/codex-agents-md/",
+  "/docs/codex-config/",
+  "/docs/codex-agents/",
+  "/docs/codex-hooks/",
+  "/docs/codex-rules/",
+  "/docs/codex-skills/",
   "/docs/api-reference/", // 追加するプレフィックス
 ] as string[],
 ```

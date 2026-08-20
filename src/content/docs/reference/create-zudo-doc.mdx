@@ -80,6 +80,7 @@ Independently of the color scheme, the scaffold can start a project on any bundl
 | `--[no-]search` | Built-in full-text/word-match search over a generated `search-index.json` | on |
 | `--[no-]sidebar-filter` | Real-time sidebar filtering | on |
 | `--[no-]claude-resources` | Claude Code docs generation | off |
+| `--[no-]codex-resources` | Codex docs generation | off |
 | `--[no-]claude-skills` | Ship zudo-doc-* Claude Code skills (design-system, translate, version-bump) | off |
 | `--[no-]claude-skills-writing` | Ship the zudo-doc-writing skill (doc-writing + navigation-structure guide for AI-assisted authoring) | off |
 | `--[no-]design-token-panel` | Interactive tabbed panel for tweaking spacing, font, size, and color tokens | off |
@@ -190,6 +191,7 @@ pnpm create zudo-doc my-docs \
   --no-i18n \
   --search \
   --no-claude-resources \
+  --no-codex-resources \
   --pm pnpm \
   --install \
   --yes

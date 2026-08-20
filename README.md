@@ -27,7 +27,7 @@ pnpm dev       # zfb dev server on http://localhost:4321
 
 | Command | Description |
 | --- | --- |
-| `pnpm dev` | Dev server (zfb on :4321) + doc-history server (:4322) + `.claude/` watcher |
+| `pnpm dev` | Dev server (zfb on :4321) + doc-history server (:4322) + `.claude/` and `.codex/` watchers |
 | `pnpm dev:zfb` | zfb dev server only |
 | `pnpm dev:network` | Dev server bound to `0.0.0.0` for LAN access |
 | `pnpm build` | Static HTML export to `dist/` |

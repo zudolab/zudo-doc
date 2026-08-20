@@ -139,6 +139,12 @@ export default defineConfig(
       "/docs/claude-skills/",
       "/docs/claude-agents/",
       "/docs/claude-commands/",
+      "/docs/codex-agents-md/",
+      "/docs/codex-config/",
+      "/docs/codex-agents/",
+      "/docs/codex-hooks/",
+      "/docs/codex-rules/",
+      "/docs/codex-skills/",
     ],
   }),
 );
@@ -150,11 +156,11 @@ Any page whose URL starts with one of these prefixes exists **only** in the defa
 
 ### Current entries
 
-The four prefixes above cover the Claude-resource sections — the auto-generated pages that surface `CLAUDE.md`, skills, agents, and commands from the project's `.claude/` directory. These are English-only because the source material (Claude config files) is not translated.
+The ten prefixes above cover the Claude- and Codex-resource sections. They are the auto-generated pages that surface resources from the project's `.claude/` and `.codex/` directories, plus `AGENTS.md` files and `.agents/skills/` directories. These pages are English-only because their source material is not translated.
 
 <Note>
 
-The top-level `/docs/claude/` index page is **not** in this list — it has a bilingual stub at `docs-ja/claude/index.mdx`. Only the four deeper prefixes (`claude-md/`, `claude-skills/`, `claude-agents/`, `claude-commands/`) are default-locale-only.
+The top-level `/docs/claude/` and `/docs/codex/` index pages are **not** in this list — they have bilingual stubs at `docs-ja/claude/index.mdx` and `docs-ja/codex/index.mdx`. Only the ten deeper prefixes listed above are default-locale-only.
 
 </Note>
 
@@ -172,6 +178,12 @@ defaultLocaleOnlyPrefixes: [
   "/docs/claude-skills/",
   "/docs/claude-agents/",
   "/docs/claude-commands/",
+  "/docs/codex-agents-md/",
+  "/docs/codex-config/",
+  "/docs/codex-agents/",
+  "/docs/codex-hooks/",
+  "/docs/codex-rules/",
+  "/docs/codex-skills/",
   "/docs/api-reference/", // your new prefix
 ] as string[],
 ```
