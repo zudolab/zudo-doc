@@ -552,4 +552,13 @@ export async function eject(
         `  Provenance:  .zudo-doc.json\n`,
     ),
   );
+
+  if (component === "header") {
+    console.log(
+      pc.bold("Header frozen-script regeneration:") +
+        `\n  After editing ${localDir}/nav-active.ts or nav-class-tokens.ts, run:` +
+        `\n  node ./${localDir}/gen-nav-overflow-script.mjs` +
+        `\n  Commit ${localDir}/nav-overflow-generated-script.ts with your edits.\n`,
+    );
+  }
 }
