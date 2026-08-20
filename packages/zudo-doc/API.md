@@ -530,6 +530,26 @@ The eject surface exposed by `zudo-doc eject <component>`. Defined in `packages/
 | `doc-history` | `@takazudo/zudo-doc/doc-history` | `src/components/zudo-doc/doc-history` |
 | `site-tree-nav-island` | `@takazudo/zudo-doc/site-tree-nav-island` | `src/components/zudo-doc/site-tree-nav-island` |
 
+### Ejected header frozen-script regeneration
+
+The `header` payload includes `gen-nav-overflow-script.mjs` beside the editable
+TypeScript sources. Editing `nav-active.ts` or `nav-class-tokens.ts` requires a
+regeneration so the server-rendered classes and the client-router repaint stay
+in lockstep:
+
+```sh
+node ./src/components/zudo-doc/header/gen-nav-overflow-script.mjs
+```
+
+Commit the rewritten `nav-overflow-generated-script.ts` with the customization.
+The generator deliberately gets the current-path prelude and after-navigation
+event from the installed `@takazudo/zudo-doc` package, while the active-match
+functions and class tokens come from the local ejected files. It resolves its
+`esbuild` transformer through the package's own dependency graph; the project
+does not need to install a separate generator tool. The output remains a frozen
+plain string, so its inline-script bytes and CSP hash do not depend on the
+consumer bundler.
+
 ---
 
 ## Migration Notes

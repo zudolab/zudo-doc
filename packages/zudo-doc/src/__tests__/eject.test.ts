@@ -2,10 +2,18 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "fs-extra";
 import os from "os";
 import path from "path";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { fileURLToPath } from "node:url";
 import { eject, EJECTABLE } from "@takazudo/zudo-doc/eject";
 import type { ZudoDocJson } from "@takazudo/zudo-doc/eject";
 
 const TEMP_PREFIX = "create-zudo-doc-eject-test-";
+const execFileAsync = promisify(execFile);
+const REAL_PACKAGE_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../..",
+);
 
 // ── Fixture helpers ───────────────────────────────────────────────────────────
 
@@ -56,6 +64,12 @@ const ANSI_ESCAPE = new RegExp(
 
 function capturedOutput(spy: ReturnType<typeof vi.spyOn>): string {
   return spy.mock.calls.flat().join("\n").replace(ANSI_ESCAPE, "");
+}
+
+function extractFrozenScript(generatedModule: string): string {
+  const match = generatedModule.match(/  return (".*");$/m);
+  if (!match?.[1]) throw new Error("generated module did not contain a string return");
+  return JSON.parse(match[1]) as string;
 }
 
 // ── Test state ────────────────────────────────────────────────────────────────
@@ -321,6 +335,75 @@ describe("eject() — copy + provenance", () => {
     expect(await fs.pathExists(destDir)).toBe(true);
     expect(await fs.pathExists(path.join(destDir, "index.ts"))).toBe(true);
     expect(await fs.pathExists(path.join(destDir, "comp.tsx"))).toBe(true);
+  });
+
+  it("ships a runnable header generator that embeds local tokens and package inputs", async () => {
+    const projectDir = path.join(tempDir, "project-header-generator");
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    await fs.ensureDir(path.join(projectDir, "node_modules/@takazudo"));
+    await fs.ensureSymlink(
+      REAL_PACKAGE_ROOT,
+      path.join(projectDir, "node_modules/@takazudo/zudo-doc"),
+      "dir",
+    );
+
+    await eject("header", {
+      cwd: projectDir,
+      resolvePackageRoot: makeResolver(REAL_PACKAGE_ROOT),
+    });
+
+    expect(capturedOutput(log)).toContain(
+      "node ./src/components/zudo-doc/header/gen-nav-overflow-script.mjs",
+    );
+
+    const headerDir = path.join(
+      projectDir,
+      "src/components/zudo-doc/header",
+    );
+    const generatorPath = path.join(headerDir, "gen-nav-overflow-script.mjs");
+    const tokensPath = path.join(headerDir, "nav-class-tokens.ts");
+    const outputPath = path.join(headerDir, "nav-overflow-generated-script.ts");
+    expect(await fs.pathExists(generatorPath)).toBe(true);
+
+    const packageGenerated = await fs.readFile(outputPath, "utf8");
+
+    // With untouched local sources, ejected regeneration must preserve the
+    // exact inline-script bytes (and therefore the consumer's CSP hash), even
+    // though the generated module's provenance banner is local-project-aware.
+    await execFileAsync(process.execPath, [generatorPath], { cwd: projectDir });
+    const ejectedGenerated = await fs.readFile(outputPath, "utf8");
+    expect(extractFrozenScript(ejectedGenerated)).toBe(
+      extractFrozenScript(packageGenerated),
+    );
+
+    const tokens = await fs.readFile(tokensPath, "utf8");
+    await fs.writeFile(
+      tokensPath,
+      tokens.replace('"bg-fg"', '"ejected-regenerated-active"'),
+      "utf8",
+    );
+    const navActivePath = path.join(headerDir, "nav-active.ts");
+    const navActive = await fs.readFile(navActivePath, "utf8");
+    await fs.writeFile(
+      navActivePath,
+      navActive.replace(
+        "if (currentPath === navPath) return true;",
+        'if (currentPath === navPath) return navPath !== "ejected-never-match";',
+      ),
+      "utf8",
+    );
+
+    await execFileAsync(process.execPath, [generatorPath], { cwd: projectDir });
+
+    const after = await fs.readFile(outputPath, "utf8");
+    expect(after).not.toBe(ejectedGenerated);
+    expect(after).toContain("ejected-regenerated-active");
+    expect(after).toContain("ejected-never-match");
+    // These values come from the installed package's current-path and
+    // transitions modules, proving all four generator inputs are available.
+    expect(after).toContain("zdCurrentPath");
+    expect(after).toContain("zfb:after-swap");
+    log.mockRestore();
   });
 
   it("writes .zudo-doc.json with the component recorded", async () => {

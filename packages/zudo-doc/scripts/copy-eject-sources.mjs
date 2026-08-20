@@ -16,7 +16,7 @@
 // watch or otherwise. We wipe and recreate `eject/` here to keep the
 // output deterministic (no stale files from renamed or removed components).
 
-import { cpSync, rmSync, mkdirSync, statSync, readdirSync } from "node:fs";
+import { cpSync, copyFileSync, rmSync, mkdirSync, statSync, readdirSync } from "node:fs";
 import { resolve, dirname, relative, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -79,6 +79,17 @@ for (const name of EJECTABLE) {
     recursive: true,
     filter: (src) => !shouldExclude(src, srcDir),
   });
+
+  // The frozen header literal has two project-owned inputs after eject
+  // (nav-active.ts and nav-class-tokens.ts). Ship the real generator beside
+  // them so local edits have a deterministic regeneration path; its other two
+  // inputs remain package-owned and are resolved from the installed dist/.
+  if (name === "header") {
+    copyFileSync(
+      resolve(PKG_ROOT, "scripts/gen-nav-overflow-script.mjs"),
+      resolve(destDir, "gen-nav-overflow-script.mjs"),
+    );
+  }
 
   const n = countFiles(destDir);
   totalFiles += n;

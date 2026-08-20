@@ -22,13 +22,14 @@
 // reflects on a live function again, and the emitted bytes become
 // consumer-bundler-independent.
 //
-// HOW: reads `src/current-path/index.ts`, `src/header/nav-active.ts`,
-// `src/header/nav-class-tokens.ts`, and `src/transitions/page-events.ts`
+// HOW (package build): reads `src/current-path/index.ts`,
+// `src/header/nav-active.ts`, `src/header/nav-class-tokens.ts`, and
+// `src/transitions/page-events.ts`
 // SOURCE, strips TypeScript types deterministically via esbuild's
 // `transformSync()` (same rationale as gen-search-widget-script.mjs — see
 // that file's header comment for the full `ts.transpileModule()` vs esbuild
 // history, zudolab/zudo-doc#3422 / #3430 — identical here: esbuild is only a
-// transitive dep via tsup, declared as an explicit `esbuild` devDependency,
+// package dependency (it is also used by the shipped ejected-header generator),
 // and the effective floor tracks the root `pnpm.overrides` range), executes
 // each transpiled CommonJS module in an isolated sandbox (empty
 // `module`/`exports`; all four source files are import-free), then reads
@@ -68,6 +69,14 @@
 // from its four source files. It stays internal like the source files it
 // reads — NOT added to the package `exports` map or `files[]`.
 //
+// EJECTED HEADER MODE (zudolab/zudo-doc#3541): copy-eject-sources.mjs ships
+// this same generator beside the ejected header files. In that location it
+// reads project-owned nav-active.ts / nav-class-tokens.ts locally, while the
+// current-path and page-event inputs come from the installed package's dist/
+// modules. It resolves esbuild from that package's dependency graph, so a
+// consumer runs the understandable, self-contained command printed by eject:
+// `node ./src/components/zudo-doc/header/gen-nav-overflow-script.mjs`.
+//
 // `buildNavOverflowScript()` is exported so both this script's CLI entry
 // point AND the vitest drift-guard test
 // (`src/header/__tests__/nav-overflow-script.test.ts`) can call it: the test
@@ -89,17 +98,87 @@
 // zudolab/zudo-doc#3535 — see scripts/check-nav-overflow-script-drift.sh.
 
 import { readFileSync, writeFileSync, existsSync, realpathSync } from "node:fs";
+import { createRequire } from "node:module";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { transformSync } from "esbuild";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const PKG_ROOT = resolve(__dirname, "..");
-const CURRENT_PATH_SRC_PATH = resolve(PKG_ROOT, "src/current-path/index.ts");
-const NAV_ACTIVE_SRC_PATH = resolve(PKG_ROOT, "src/header/nav-active.ts");
-const NAV_CLASS_TOKENS_SRC_PATH = resolve(PKG_ROOT, "src/header/nav-class-tokens.ts");
-const PAGE_EVENTS_SRC_PATH = resolve(PKG_ROOT, "src/transitions/page-events.ts");
-const OUTPUT_PATH = resolve(PKG_ROOT, "src/header/nav-overflow-generated-script.ts");
+
+/** Find the installed package from an ejected header without assuming npm's
+ * node_modules layout. The symlinked package root is enough: createRequire()
+ * below resolves esbuild from the package's own dependency graph under npm,
+ * pnpm, and yarn installs. */
+function findInstalledPackageRoot(startDirs) {
+  for (const startDir of startDirs) {
+    let dir = resolve(startDir);
+    while (true) {
+      const candidate = resolve(dir, "node_modules/@takazudo/zudo-doc");
+      if (existsSync(resolve(candidate, "package.json"))) return realpathSync(candidate);
+      const parent = dirname(dir);
+      if (parent === dir) break;
+      dir = parent;
+    }
+  }
+  throw new Error(
+    "[gen-nav-overflow-script] could not find node_modules/@takazudo/zudo-doc. " +
+      "Run this command from an installed zudo-doc project after `pnpm install`.",
+  );
+}
+
+/** Resolve the generator's four inputs and output in package-build or ejected mode. */
+export function resolveGenerationContext() {
+  const packageRootCandidate = resolve(__dirname, "..");
+  const packageHeaderDir = resolve(packageRootCandidate, "src/header");
+  const isPackageGenerator = existsSync(resolve(packageHeaderDir, "nav-active.ts"));
+
+  if (isPackageGenerator) {
+    return {
+      kind: "package",
+      packageRoot: packageRootCandidate,
+      currentPathSource: resolve(packageRootCandidate, "src/current-path/index.ts"),
+      navActiveSource: resolve(packageHeaderDir, "nav-active.ts"),
+      navClassTokensSource: resolve(packageHeaderDir, "nav-class-tokens.ts"),
+      pageEventsSource: resolve(packageRootCandidate, "src/transitions/page-events.ts"),
+      outputPath: resolve(packageHeaderDir, "nav-overflow-generated-script.ts"),
+    };
+  }
+
+  // In an ejected payload this script sits beside the two project-owned
+  // customization inputs. The current-path prelude and page-event vocabulary
+  // intentionally stay package-owned and come from the installed compiled
+  // modules, so an ejected project does not fork framework lifecycle inputs.
+  if (
+    !existsSync(resolve(__dirname, "nav-active.ts")) ||
+    !existsSync(resolve(__dirname, "nav-class-tokens.ts"))
+  ) {
+    throw new Error(
+      "[gen-nav-overflow-script] expected nav-active.ts and nav-class-tokens.ts " +
+        `beside the ejected generator at ${__dirname}`,
+    );
+  }
+  const packageRoot = findInstalledPackageRoot([process.cwd(), __dirname]);
+  return {
+    kind: "ejected",
+    packageRoot,
+    currentPathSource: resolve(packageRoot, "dist/current-path/index.js"),
+    navActiveSource: resolve(__dirname, "nav-active.ts"),
+    navClassTokensSource: resolve(__dirname, "nav-class-tokens.ts"),
+    pageEventsSource: resolve(packageRoot, "dist/transitions/page-events.js"),
+    outputPath: resolve(__dirname, "nav-overflow-generated-script.ts"),
+  };
+}
+
+function loadTransformSync(packageRoot) {
+  try {
+    const requireFromPackage = createRequire(resolve(packageRoot, "package.json"));
+    return requireFromPackage("esbuild").transformSync;
+  } catch (err) {
+    throw new Error(
+      "[gen-nav-overflow-script] could not load the esbuild dependency shipped by " +
+        `@takazudo/zudo-doc: ${err.message}`,
+    );
+  }
+}
 
 // Explicit, stable esbuild options — identical rationale to
 // gen-search-widget-script.mjs's TRANSFORM_OPTIONS (see that file): `format:
@@ -137,11 +216,14 @@ function assertNoModuleScaffolding(label, text) {
 }
 
 /** Transpile a TS source file to CommonJS JS, type-stripped, via esbuild's `transformSync`. */
-function transpile(sourcePath) {
+function transpile(sourcePath, transformSync) {
   const source = readFileSync(sourcePath, "utf8");
   let result;
   try {
-    result = transformSync(source, TRANSFORM_OPTIONS);
+    result = transformSync(source, {
+      ...TRANSFORM_OPTIONS,
+      loader: sourcePath.endsWith(".ts") ? "ts" : "js",
+    });
   } catch (err) {
     const messages = (err.errors ?? []).map((e) => e.text).join("; ") || err.message;
     throw new Error(
@@ -175,8 +257,8 @@ function executeCommonJs(code, label) {
 }
 
 /** Extract the real CURRENT_PATH_SCRIPT_PRELUDE value from current-path/index.ts. */
-function extractCurrentPathPrelude() {
-  const outputText = transpile(CURRENT_PATH_SRC_PATH);
+function extractCurrentPathPrelude(context, transformSync) {
+  const outputText = transpile(context.currentPathSource, transformSync);
   const exportsObj = executeCommonJs(outputText, "current-path/index.ts");
   const value = exportsObj.CURRENT_PATH_SCRIPT_PRELUDE;
   if (typeof value !== "string" || !value) {
@@ -189,8 +271,8 @@ function extractCurrentPathPrelude() {
 }
 
 /** Extract the real, unit-tested pathMatchesNavPath/computeActiveNavPath source text from nav-active.ts. */
-function extractNavActiveFunctions() {
-  const outputText = transpile(NAV_ACTIVE_SRC_PATH);
+function extractNavActiveFunctions(context, transformSync) {
+  const outputText = transpile(context.navActiveSource, transformSync);
   const exportsObj = executeCommonJs(outputText, "nav-active.ts");
   const { pathMatchesNavPath, computeActiveNavPath } = exportsObj;
   if (typeof pathMatchesNavPath !== "function" || typeof computeActiveNavPath !== "function") {
@@ -224,8 +306,8 @@ const NAV_CLASS_TOKEN_NAMES = [
 ];
 
 /** Extract the twelve real class-token arrays from nav-class-tokens.ts. */
-function extractNavClassTokens() {
-  const outputText = transpile(NAV_CLASS_TOKENS_SRC_PATH);
+function extractNavClassTokens(context, transformSync) {
+  const outputText = transpile(context.navClassTokensSource, transformSync);
   const exportsObj = executeCommonJs(outputText, "nav-class-tokens.ts");
   const tokens = {};
   for (const name of NAV_CLASS_TOKEN_NAMES) {
@@ -255,8 +337,8 @@ function extractNavClassTokens() {
 }
 
 /** Extract the real AFTER_NAVIGATE_EVENT value from transitions/page-events.ts — never hardcoded. */
-function extractAfterNavigateEvent() {
-  const outputText = transpile(PAGE_EVENTS_SRC_PATH);
+function extractAfterNavigateEvent(context, transformSync) {
+  const outputText = transpile(context.pageEventsSource, transformSync);
   const exportsObj = executeCommonJs(outputText, "page-events.ts");
   const value = exportsObj.AFTER_NAVIGATE_EVENT;
   if (typeof value !== "string" || !value) {
@@ -288,9 +370,13 @@ const clsAppend = (tokens) => JSON.stringify(" " + tokens.join(" "));
  * in nav-overflow-script.ts, but with the four previously-live interpolations
  * replaced by frozen values extracted above.
  */
-export function buildNavOverflowScript() {
-  const currentPathPrelude = extractCurrentPathPrelude();
-  const { pathMatchesNavPathSrc, computeActiveNavPathSrc } = extractNavActiveFunctions();
+export function buildNavOverflowScript(context = resolveGenerationContext()) {
+  const transformSync = loadTransformSync(context.packageRoot);
+  const currentPathPrelude = extractCurrentPathPrelude(context, transformSync);
+  const { pathMatchesNavPathSrc, computeActiveNavPathSrc } = extractNavActiveFunctions(
+    context,
+    transformSync,
+  );
   const {
     NAV_TOP_ACTIVE,
     NAV_TOP_INACTIVE,
@@ -304,8 +390,10 @@ export function buildNavOverflowScript() {
     NAV_MENU_PLAIN_ACTIVE_SUFFIX,
     NAV_MENU_CHILD_ACTIVE,
     NAV_MENU_CHILD_INACTIVE,
-  } = extractNavClassTokens();
-  const afterNavigateEventLiteral = JSON.stringify(extractAfterNavigateEvent());
+  } = extractNavClassTokens(context, transformSync);
+  const afterNavigateEventLiteral = JSON.stringify(
+    extractAfterNavigateEvent(context, transformSync),
+  );
 
   return /* javascript */ `(function () {
   var cleanupNavOverflow = null;
@@ -610,10 +698,9 @@ const isMainModule = (() => {
   }
 })();
 
-if (isMainModule) {
-  const script = buildNavOverflowScript();
-
-  const banner = `// GENERATED FILE — do not edit by hand.
+function buildGeneratedModule(script, context) {
+  const banner = context.kind === "package"
+    ? `// GENERATED FILE — do not edit by hand.
 // Produced by scripts/gen-nav-overflow-script.mjs (zudolab/zudo-doc#3534,
 // epic #3533) from src/current-path/index.ts (CURRENT_PATH_SCRIPT_PRELUDE),
 // src/header/nav-active.ts (pathMatchesNavPath/computeActiveNavPath,
@@ -627,9 +714,18 @@ if (isMainModule) {
 // zudolab/zudo-doc#3421 / #3431) — a deliberate departure from this repo's
 // usual gitignored-generated-file convention (routes-src/, virtual-modules.d.ts).
 // Regenerate AND commit the result after editing any of the four source files.
+`
+    : `// GENERATED FILE — do not edit by hand.
+// Produced by the ejected header's gen-nav-overflow-script.mjs from the local
+// nav-active.ts and nav-class-tokens.ts customization inputs plus the installed
+// @takazudo/zudo-doc current-path and page-event inputs.
+// Re-run \`node ./src/components/zudo-doc/header/gen-nav-overflow-script.mjs\`
+// after editing either local input, then commit this file with your customization.
+// The script value remains frozen so its CSP bytes do not depend on the
+// consumer bundler.
 `;
 
-  const output = `${banner}
+  return `${banner}
 /** Returns the frozen desktop-nav overflow controller IIFE script. NOTE: the
  * vitest drift guard imports buildNavOverflowScript from
  * scripts/gen-nav-overflow-script.mjs (a fresh re-generation) — NEVER from
@@ -645,17 +741,31 @@ export function buildNavOverflowScript(): string {
  * transitions/page-events.ts for the frozen sources. */
 export const NAV_OVERFLOW_SCRIPT: string = buildNavOverflowScript();
 `;
+}
 
-  const existing = existsSync(OUTPUT_PATH) ? readFileSync(OUTPUT_PATH, "utf8") : null;
+/** Regenerate the committed package literal or the local ejected literal. */
+export function generateNavOverflowScript(context = resolveGenerationContext()) {
+  const script = buildNavOverflowScript(context);
+  const output = buildGeneratedModule(script, context);
+
+  const existing = existsSync(context.outputPath)
+    ? readFileSync(context.outputPath, "utf8")
+    : null;
 
   if (existing === output) {
     process.stdout.write(
-      "[gen-nav-overflow-script] nav-overflow-generated-script.ts unchanged, skip write\n",
+      `[gen-nav-overflow-script] ${context.outputPath} unchanged, skip write\n`,
     );
   } else {
-    writeFileSync(OUTPUT_PATH, output, "utf8");
+    writeFileSync(context.outputPath, output, "utf8");
     process.stdout.write(
-      "[gen-nav-overflow-script] nav-overflow-generated-script.ts written\n",
+      `[gen-nav-overflow-script] ${context.outputPath} written\n`,
     );
   }
+
+  return { output, outputPath: context.outputPath, changed: existing !== output };
+}
+
+if (isMainModule) {
+  generateNavOverflowScript();
 }
