@@ -402,6 +402,7 @@ export interface Settings {
   htmlPreview: HtmlPreviewConfig | undefined;
   versions: VersionConfig[] | false;
   claudeResources: { claudeDir: string; projectRoot?: string; scanRoot?: string } | false;
+  codexResources: { codexDir: string; projectRoot?: string; scanRoot?: string } | false;
   defaultLocaleOnlyPrefixes: string[];
   footer: FooterConfig | false;
   headerNav: HeaderNavItem[];

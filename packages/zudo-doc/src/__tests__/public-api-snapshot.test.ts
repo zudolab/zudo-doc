@@ -289,6 +289,7 @@ describe("Settings public field set snapshot", () => {
         "htmlPreview",
         "versions",
         "claudeResources",
+        "codexResources",
         "defaultLocaleOnlyPrefixes",
         "footer",
         "headerNav",

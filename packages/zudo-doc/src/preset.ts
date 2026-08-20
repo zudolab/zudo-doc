@@ -71,6 +71,14 @@ export interface PresetClaudeResourcesConfig {
   scanRoot?: string;
 }
 
+/** The `settings.codexResources` block (or `false` when disabled). */
+export interface PresetCodexResourcesConfig {
+  codexDir: string;
+  projectRoot?: string;
+  /** Root for `AGENTS.md` / `AGENTS.override.md` and `.agents/skills/` discovery; defaults to `projectRoot`. */
+  scanRoot?: string;
+}
+
 export interface PresetChangelogConfig {
   sourceDir: string;
   outputFile: string;
@@ -111,6 +119,7 @@ export interface PresetSettings {
   docHistory?: boolean;
   docHistoryExclude?: string[];
   claudeResources?: PresetClaudeResourcesConfig | false;
+  codexResources?: PresetCodexResourcesConfig | false;
   /**
    * When `true` (the **default** when omitted — #2404), the preset adds the
    * package-owned route-injection plugin (`@takazudo/zudo-doc/plugins/routes`).
@@ -577,6 +586,19 @@ function buildPlugins(
               claudeDir: settings.claudeResources.claudeDir,
               projectRoot: settings.claudeResources.projectRoot,
               scanRoot: settings.claudeResources.scanRoot,
+              docsDir: settings.docsDir,
+            },
+          },
+        ]
+      : []),
+    ...(settings.codexResources
+      ? [
+          {
+            name: "@takazudo/zudo-doc/plugins/codex-resources",
+            options: {
+              codexDir: settings.codexResources.codexDir,
+              projectRoot: settings.codexResources.projectRoot,
+              scanRoot: settings.codexResources.scanRoot,
               docsDir: settings.docsDir,
             },
           },
