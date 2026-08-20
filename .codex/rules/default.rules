@@ -1,0 +1,51 @@
+# Safe, routine commands for this repository.
+
+prefix_rule(
+    pattern = ["pnpm", "check"],
+    decision = "allow",
+    justification = "Type checking is a read-only repository validation.",
+    match = ["pnpm check"],
+    not_match = ["pnpm check:links --fix"],
+)
+
+prefix_rule(
+    pattern = ["pnpm", "test:unit"],
+    decision = "allow",
+    justification = "The unit test suite validates changes without publishing them.",
+)
+
+prefix_rule(
+    pattern = ["pnpm", "build"],
+    decision = "allow",
+    justification = "The local static build is a standard repository check.",
+)
+
+prefix_rule(
+    pattern = ["pnpm", "format:check"],
+    decision = "allow",
+    justification = "Formatting verification is a read-only repository check.",
+)
+
+prefix_rule(
+    pattern = ["pnpm", "check:compatibility-contract"],
+    decision = "allow",
+    justification = "The compatibility contract scan is a bounded local validation.",
+)
+
+prefix_rule(
+    pattern = ["gh", "issue", "view"],
+    decision = "allow",
+    justification = "Reading an issue provides the authoritative task context.",
+)
+
+prefix_rule(
+    pattern = ["gh", "pr", "status"],
+    decision = "allow",
+    justification = "Reading pull-request checks is a non-mutating status query.",
+)
+
+prefix_rule(
+    pattern = ["git", "push"],
+    decision = "prompt",
+    justification = "Pushing changes is an external repository mutation and needs confirmation.",
+)
