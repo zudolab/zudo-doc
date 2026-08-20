@@ -73,7 +73,8 @@ Each feature has a `--[no-]<flag>` form. Passing `--feature` enables it; `--no-f
 | `--[no-]sidebar-filter` | Real-time sidebar filter | on |
 | `--[no-]image-enlarge` | Click-to-enlarge for oversized images | on |
 | `--[no-]tag-governance` | Vocabulary-aware tag audit + suggest scripts | off |
-| `--[no-]claude-resources` | Auto-generate Claude Code docs (`CLAUDE.md`, `llms.txt`) | off |
+| `--[no-]claude-resources` | Auto-generate Claude Code docs from `.claude/` | off |
+| `--[no-]codex-resources` | Auto-generate Codex docs from `.codex/` + `AGENTS.md` | off |
 | `--[no-]claude-skills` | Ship zudo-doc Claude Code skills (design-system, translate, version-bump) | off |
 | `--[no-]design-token-panel` | Interactive panel for tweaking spacing, font, color tokens | off |
 | `--[no-]sidebar-resizer` | Draggable sidebar width handle | off |

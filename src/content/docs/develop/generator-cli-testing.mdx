@@ -11,7 +11,7 @@ Two Claude Code skills automate this workflow:
 | Skill | Purpose |
 |-------|---------|
 | `/l-generator-cli-tester <pattern>` | Test a single generation pattern |
-| `/l-run-generator-cli-whole-test` | Run all 9 patterns, fix bugs, verify everything passes |
+| `/l-run-generator-cli-whole-test` | Run all 10 patterns, fix bugs, verify everything passes |
 
 ## Test Patterns
 
@@ -24,6 +24,7 @@ Each pattern enables a different feature combination:
 | `i18n` | Only i18n enabled |
 | `sidebar-filter` | Only sidebar filter enabled |
 | `claude-resources` | Only Claude Resources enabled |
+| `codex-resources` | Only Codex Resources enabled |
 | `design-token-panel` | Only design token panel enabled (uses API) |
 | `light-dark` | Light-dark color scheme mode |
 | `lang-ja` | Japanese as default language |
@@ -33,7 +34,7 @@ Each pattern enables a different feature combination:
 
 ### Full test suite
 
-Run all 9 patterns end-to-end, automatically fix any failures, and verify:
+Run all 10 patterns end-to-end, automatically fix any failures, and verify:
 
 ```
 /l-run-generator-cli-whole-test
@@ -71,9 +72,9 @@ Each pattern goes through these steps:
 
 The `/l-run-generator-cli-whole-test` skill has a structured bug-fix phase:
 
-1. **Phase 1** — Run all 9 patterns and collect results
+1. **Phase 1** — Run all 10 patterns and collect results
 2. **Phase 2** — For each failure: diagnose which step failed, read the relevant generator source file, apply a minimal fix, rebuild the CLI and re-test the failing pattern, then commit each fix individually
-3. **Phase 3** — Re-run all 9 patterns from scratch to ensure no regressions
+3. **Phase 3** — Re-run all 10 patterns from scratch to ensure no regressions
 4. **Phase 4** — Output a summary report
 
 ### Common failure categories

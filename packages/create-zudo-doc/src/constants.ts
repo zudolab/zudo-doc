@@ -243,6 +243,13 @@ export const FEATURES: Feature[] = [
     cliFlag: "claude-resources",
   },
   {
+    value: "codexResources",
+    label: "Codex Resources",
+    hint: "Auto-generate Codex docs (.codex/, AGENTS.md)",
+    default: false,
+    cliFlag: "codex-resources",
+  },
+  {
     value: "claudeSkills",
     label: "Claude skills (user-facing)",
     hint: "Ship zudo-doc-* Claude Code skills (design-system, translate, version-bump)",

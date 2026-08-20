@@ -264,18 +264,32 @@ function buildDesiredConfig(choices: UserChoices): Record<string, unknown> {
 
   desired.versions = choices.features.includes("versioning") ? [] : false;
 
+  const defaultLocaleOnlyPrefixes: string[] = [];
   if (choices.features.includes("claudeResources")) {
     desired.claudeResources = { claudeDir: ".claude" };
-    desired.defaultLocaleOnlyPrefixes = [
+    defaultLocaleOnlyPrefixes.push(
       "/docs/claude-md/",
       "/docs/claude-skills/",
       "/docs/claude-agents/",
       "/docs/claude-commands/",
-    ];
+    );
   } else {
     desired.claudeResources = false;
-    desired.defaultLocaleOnlyPrefixes = [];
   }
+  if (choices.features.includes("codexResources")) {
+    desired.codexResources = { codexDir: ".codex" };
+    defaultLocaleOnlyPrefixes.push(
+      "/docs/codex-agents-md/",
+      "/docs/codex-config/",
+      "/docs/codex-agents/",
+      "/docs/codex-hooks/",
+      "/docs/codex-rules/",
+      "/docs/codex-skills/",
+    );
+  } else {
+    desired.codexResources = false;
+  }
+  desired.defaultLocaleOnlyPrefixes = defaultLocaleOnlyPrefixes;
 
   // ── Footer ────────────────────────────────────────────────────────────
   if (
@@ -322,6 +336,13 @@ function buildDesiredConfig(choices: UserChoices): Record<string, unknown> {
       label: "Claude",
       path: "/docs/claude",
       categoryMatch: "claude",
+    });
+  }
+  if (choices.features.includes("codexResources")) {
+    headerNav.push({
+      label: "Codex",
+      path: "/docs/codex",
+      categoryMatch: "codex",
     });
   }
   if (choices.features.includes("changelog")) {

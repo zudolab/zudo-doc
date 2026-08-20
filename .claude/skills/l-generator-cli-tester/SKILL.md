@@ -29,6 +29,7 @@ Where `<pattern>` is one of the test patterns listed below.
 | `i18n` | Only i18n enabled |
 | `sidebar-filter` | Only sidebar filter enabled |
 | `claude-resources` | Only claude resources enabled |
+| `codex-resources` | Only Codex resources enabled |
 | `design-token-panel` | Only design token panel enabled (uses --design-token-panel CLI flag) |
 | `light-dark` | Light-dark color mode |
 | `lang-ja` | Japanese as default language |
@@ -151,6 +152,15 @@ cd __inbox/generator-test-claude-resources && \
   --color-scheme-mode single --scheme "Default Dark" --no-install
 ```
 
+**codex-resources:**
+
+```bash
+cd __inbox/generator-test-codex-resources && \
+  node $REPO_ROOT/packages/create-zudo-doc/dist/index.js test-project --yes \
+  --no-search --no-sidebar-filter --no-i18n --no-claude-resources --codex-resources \
+  --color-scheme-mode single --scheme "Default Dark" --no-install
+```
+
 **design-token-panel:**
 
 ```bash
@@ -197,7 +207,7 @@ cd __inbox/generator-test-lang-ja && \
 ```bash
 cd __inbox/generator-test-all-features && \
   node $REPO_ROOT/packages/create-zudo-doc/dist/index.js test-project --yes \
-  --i18n --search --sidebar-filter --claude-resources --claude-skills \
+  --i18n --search --sidebar-filter --claude-resources --codex-resources --claude-skills \
   --claude-skills-writing \
   --design-token-panel --sidebar-resizer --sidebar-toggle --versioning \
   --doc-history --body-foot-util --llms-txt --skill-symlinker \
@@ -338,6 +348,15 @@ Confirm the 5 directories above (`pages/lib`, `src/components`, `src/utils`, `sr
 | `zfb.config.ts` `defaultLocaleOnlyPrefixes` | contains the 4 `/docs/claude-*/` prefixes |
 | `zfb.config.ts` `headerNav` | contains a `{ label: "Claude", path: "/docs/claude", categoryMatch: "claude" }` entry |
 
+**codex-resources:**
+
+| File | Expected |
+|------|----------|
+| (baseline unchanged — codexResources has no file footprint) | — |
+| `zfb.config.ts` `codexResources` | `{ codexDir: ".codex" }` |
+| `zfb.config.ts` `defaultLocaleOnlyPrefixes` | contains the 6 `/docs/codex-*/` prefixes |
+| `zfb.config.ts` `headerNav` | contains a `{ label: "Codex", path: "/docs/codex", categoryMatch: "codex" }` entry |
+
 **design-token-panel:**
 
 | File | Expected |
@@ -417,6 +436,11 @@ There is no `src/config/settings.ts` to read in a fresh scaffold. Read `__inbox/
 **claude-resources:**
 
 - `claudeResources: { claudeDir: ".claude" }`
+
+**codex-resources:**
+
+- `codexResources: { codexDir: ".codex" }`
+- `defaultLocaleOnlyPrefixes` contains all six `/docs/codex-*/` prefixes
 
 **design-token-panel:**
 
@@ -533,7 +557,7 @@ Provide a clear pass/fail report:
 ## Important Notes
 
 - Always `cd` back to the repo root between major steps (use absolute paths)
-- The `--yes` flag auto-fills all unspecified options with defaults. Feature defaults with `--yes`: search=true, sidebarFilter=true, imageEnlarge=true, dynamicPageTransition=true, footerCopyright=true, tagGovernance=false, i18n=false, claudeResources=false, designTokenPanel=false (all other features false)
+- The `--yes` flag auto-fills all unspecified options with defaults. Feature defaults with `--yes`: search=true, sidebarFilter=true, imageEnlarge=true, dynamicPageTransition=true, footerCopyright=true, tagGovernance=false, i18n=false, claudeResources=false, codexResources=false, designTokenPanel=false (all other features false)
 - Use `--no-install` with CLI to prevent auto-install, then install manually for better error visibility
 - `sidebarFilter` has zero structural effect in the minimal manifest (no TODO, no strip step needed — it never had a file or field to remove)
 - The dev server smoke test uses `pnpm dev` (generated projects have a single `dev` script)
