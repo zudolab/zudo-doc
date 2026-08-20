@@ -80,6 +80,7 @@ zudo-doc が同梱するカラースキームは `Default Light` と `Default Da
 | `--[no-]search` | 生成された `search-index.json` を使った組み込みの全文/ワードマッチ検索 | オン |
 | `--[no-]sidebar-filter` | サイドバーのリアルタイムフィルタリング | オン |
 | `--[no-]claude-resources` | Claude Code ドキュメント生成 | オフ |
+| `--[no-]codex-resources` | Codex ドキュメント生成 | オフ |
 | `--[no-]claude-skills` | zudo-doc-* Claude Code スキルを同梱（design-system、translate、version-bump） | オフ |
 | `--[no-]claude-skills-writing` | zudo-doc-writing スキルを同梱（AI 支援執筆向けのドキュメント執筆 + ナビゲーション構造ガイド） | オフ |
 | `--[no-]design-token-panel` | スペーシング・フォント・サイズ・カラーの各トークンを編集するタブ型パネル | オフ |
@@ -190,6 +191,7 @@ pnpm create zudo-doc my-docs \
   --no-i18n \
   --search \
   --no-claude-resources \
+  --no-codex-resources \
   --pm pnpm \
   --install \
   --yes

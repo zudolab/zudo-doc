@@ -95,7 +95,7 @@ Set `versioned: false` on any item that points at content with no versioned coun
 
 <Warning>
 
-If your project enables [versioning](./versioning.mdx), audit every `headerNav` item that links to unversioned content and set `versioned: false` on it. The showcase's own "Claude" header item (from the `claudeResources` feature) is the textbook case: those routes are generated only for the default `docsDir` and never exist inside an archived version directory, so it sets `versioned: false`.
+If your project enables [versioning](./versioning.mdx), audit every `headerNav` item that links to unversioned content and set `versioned: false` on it. The showcase's own "Claude" and "Codex" header items (from the `claudeResources` and `codexResources` features) are textbook cases: those routes are generated only for the default `docsDir` and never exist inside an archived version directory, so both items set `versioned: false`.
 
 </Warning>
 

@@ -57,7 +57,7 @@ The URL slug is derived from the filename, so kebab-case also keeps URLs clean.
 - Keep `<HtmlPreview>` and other JSX blocks identical.
 - The JA directory should mirror the EN directory tree exactly.
 - **Exception**: pages with `generated: true` in frontmatter are skipped (they are generated at build time).
-- **Exception**: pages whose paths fall under `settings.defaultLocaleOnlyPrefixes` are default-locale-only by design — do NOT create a JA mirror for them. The source of truth is `settings.defaultLocaleOnlyPrefixes` in `src/config/settings.ts`. Current entries: `/docs/claude-md/`, `/docs/claude-skills/`, `/docs/claude-agents/`, `/docs/claude-commands/`. The top-level `/docs/claude/` index is bilingual — only the four deep prefixes above are default-locale-only.
+- **Exception**: pages whose paths fall under `settings.defaultLocaleOnlyPrefixes` are default-locale-only by design — do NOT create a JA mirror for them. The source of truth is `settings.defaultLocaleOnlyPrefixes` in `src/config/settings.ts`. Current entries: `/docs/claude-md/`, `/docs/claude-skills/`, `/docs/claude-agents/`, `/docs/claude-commands/`, `/docs/codex-agents-md/`, `/docs/codex-config/`, `/docs/codex-agents/`, `/docs/codex-hooks/`, `/docs/codex-rules/`, `/docs/codex-skills/`. The top-level `/docs/claude/` and `/docs/codex/` indexes are bilingual — only the ten deep prefixes above are default-locale-only.
 
 ## Frontmatter Schema
 

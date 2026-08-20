@@ -210,7 +210,7 @@ Check `zfb.config.ts`: if the `zudoDoc({...})` call sets a non-empty `locales` f
 Two carve-outs — do NOT create secondary-locale mirrors for these:
 
 - Pages with `generated: true` in frontmatter (build-generated content).
-- Paths listed in the `defaultLocaleOnlyPrefixes` setting in `zfb.config.ts` — default-locale-only by design (the Claude Resources feature, when enabled, registers its four `/docs/claude-*` prefixes there).
+- Paths listed in the `defaultLocaleOnlyPrefixes` setting in `zfb.config.ts` — default-locale-only by design (the Claude Resources and Codex Resources features, when enabled, register four `/docs/claude-*` prefixes and six `/docs/codex-*` prefixes there; their top-level `/docs/claude/` and `/docs/codex/` indexes remain bilingual).
 
 ## Common Mistakes (Do Not Do)
 
