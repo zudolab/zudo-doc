@@ -1,0 +1,79 @@
+---
+title: Codexリソース
+description: Codexリソースからドキュメントを自動生成します。
+sidebar_position: 8.1
+---
+
+## 概要
+
+zudo-docは、プロジェクト内のCodexリソースからドキュメントページを自動生成できます。対象となるのは、`AGENTS.md`ファイル、設定プロファイル、カスタムエージェント、フック、ルール、スキルです。有効にすると、生成されたページはヘッダーナビゲーションの**Codex**セクションに表示されます。
+
+## Codexリソースの有効化
+
+`zfb.config.ts`で`codexResources`を設定します：
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    codexResources: {
+      codexDir: ".codex",
+    },
+  }),
+);
+```
+
+インテグレーションを無効にするには`false`を設定します：
+
+```ts
+codexResources: false,
+```
+
+## 生成されるもの
+
+インテグレーションは以下のドキュメントセクションを生成します：
+
+| 生成先ディレクトリ | 内容 | ソース |
+|---------------------|------|--------|
+| `codex/`（位置904） | カテゴリカードを備えた概要ページ | — |
+| `codex-agents-md/`（位置905） | すべての`AGENTS.md`と`AGENTS.override.md` | `scanRoot`から探索 |
+| `codex-config/`（位置906） | `config.toml`、`*.config.toml`プロファイル、`config.toml.example` | `.codex/` |
+| `codex-agents/`（位置907） | カスタムサブエージェント | `.codex/agents/*.toml` |
+| `codex-hooks/`（位置908） | ライフサイクルフックとフックスクリプト | `.codex/hooks.json`と`.codex/hooks/` |
+| `codex-rules/`（位置909） | コマンド承認ルール | `.codex/rules/*.rules` |
+| `codex-skills/`（位置910） | スキルパッケージ | `.codex/skills/`と、プロジェクトルートおよびスキャンルートの`.agents/skills/` |
+
+リソースごとにインデックスページが作られ、検出された各リソースは個別の詳細ページとして表示されます。
+
+## 仕組み
+
+インテグレーションは`@takazudo/zudo-doc/plugins/codex-resources` zfbプラグインとしてビルド時に動作します。`codexResources`が設定されていれば、`zudoDoc()`がプラグインを自動的に組み込みます。`preBuild`フックでは次の処理を行います：
+
+1. `projectRoot`、`scanRoot`、設定された`.codex/`ディレクトリを解決
+2. `scanRoot`を探索して`AGENTS.md`と`AGENTS.override.md`を検出
+3. 設定された各リソースの場所から、設定、エージェント、フック、ルール、スキルを検出
+4. 7つの`codex*`ディレクトリにインデックスページと詳細ページのMDXを生成
+5. 生成したページをzfbのコンテンツコレクションから利用できる状態にする
+
+生成されたページは、ヘッダーナビゲーションの**Codex**タブに表示されます。すべてのCodex生成セクションでタブをアクティブにするには、`categoryMatch: "codex"`を設定します。
+
+ヘッダーアイテムには`versioned: false`を設定してください。Codexの生成ルートが作られるのはデフォルトの`docsDir`だけで、`/v/{version}`配下には生成されません。バージョン対応のリンクにすると、過去バージョンの表示中に存在しないルートを指してしまいます。
+
+## 設定オプション
+
+| オプション | 型 | 説明 |
+|------------|----|------|
+| `codexDir` | string | `.codex/`ディレクトリへのパス。`projectRoot`を基準に解決 |
+| `projectRoot` | string | 省略可能なプロジェクトルートの上書き。`codexDir`と生成先の`docsDir`はこのルートを基準に解決 |
+| `scanRoot` | string | 省略可能なリポジトリ全体の探索ルート。デフォルトは`projectRoot`で、`AGENTS.md` / `AGENTS.override.md`の探索と、リポジトリレベルの`.agents/skills/`ルートの両方に適用 |
+
+<Note>
+
+スキルは`<codexDir>/skills/`、`<projectRoot>/.agents/skills/`、`<scanRoot>/.agents/skills/`の優先順で検出されます。同じ実体パスを指すルートは重複排除されます。異なるディレクトリに同名のスキルがある場合は、先に検出したルートが優先され、プラグインが警告を記録します。Codex自体は、異なるスコープに同名のスキルがある構成も許容します。
+
+</Note>
+
+<Tip>
+
+Claude CodeとCodexで同じスキルを一元管理するには、ソースを1か所に置き、そのスキルディレクトリを`.claude/skills/`と`.codex/skills/`の両方からシンボリックリンクします。
+
+</Tip>

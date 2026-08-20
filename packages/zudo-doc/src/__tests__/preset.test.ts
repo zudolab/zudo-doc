@@ -220,6 +220,7 @@ const fixtureSettings: PresetSettings = {
   docHistory: true,
   docHistoryExclude: ["drafts/**"],
   claudeResources: { claudeDir: ".claude" },
+  codexResources: { codexDir: ".codex" },
   packageOwnedRoutes: true,
 };
 
@@ -370,6 +371,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
     expect(plugins.map((p) => p.name)).toEqual([
       "@takazudo/zudo-doc/plugins/routes",
       "@takazudo/zudo-doc/plugins/claude-resources",
+      "@takazudo/zudo-doc/plugins/codex-resources",
       "@takazudo/zudo-doc/plugins/doc-history",
       "@takazudo/zudo-doc/plugins/search-index",
       "@takazudo/zudo-doc/plugins/theme-packs",
@@ -383,6 +385,12 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
     expect(byName["@takazudo/zudo-doc/plugins/claude-resources"]).toEqual({
       claudeDir: ".claude",
       projectRoot: undefined,
+      docsDir: "src/content/docs",
+    });
+    expect(byName["@takazudo/zudo-doc/plugins/codex-resources"]).toEqual({
+      codexDir: ".codex",
+      projectRoot: undefined,
+      scanRoot: undefined,
       docsDir: "src/content/docs",
     });
     expect(byName["@takazudo/zudo-doc/plugins/doc-history"]).toEqual({
@@ -448,9 +456,9 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
     expect(docHistory?.options?.["exclude"]).toEqual([]);
   });
 
-  it("omits claude-resources / doc-history / llms-txt / changelog when their settings are falsy", () => {
+  it("omits claude-resources / codex-resources / doc-history / llms-txt / changelog when their settings are falsy", () => {
     const r = zudoDocPreset({
-      settings: { ...fixtureSettings, claudeResources: false, docHistory: false, llmsTxt: false, changelogs: false, packageOwnedRoutes: false },
+      settings: { ...fixtureSettings, claudeResources: false, codexResources: false, docHistory: false, llmsTxt: false, changelogs: false, packageOwnedRoutes: false },
       buildDocsSchema: buildFixtureSchema,
       directiveVocabulary: fixtureDirectives,
     });

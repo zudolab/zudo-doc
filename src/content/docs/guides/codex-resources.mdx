@@ -1,0 +1,79 @@
+---
+title: Codex Resources
+description: Auto-generate documentation from your Codex resources.
+sidebar_position: 8.1
+---
+
+## Overview
+
+zudo-doc can automatically generate documentation pages from your project's Codex resources — `AGENTS.md` files, configuration profiles, custom agents, hooks, rules, and skills. When enabled, these pages appear under the **Codex** header navigation section.
+
+## Enabling Codex Resources
+
+Set `codexResources` in `zfb.config.ts`:
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    codexResources: {
+      codexDir: ".codex",
+    },
+  }),
+);
+```
+
+Set it to `false` to disable the integration:
+
+```ts
+codexResources: false,
+```
+
+## What Gets Generated
+
+The integration creates the following documentation sections:
+
+| Generated directory | Contents | Source |
+|---------------------|----------|--------|
+| `codex/` (position 904) | Overview page with category cards | — |
+| `codex-agents-md/` (position 905) | Every `AGENTS.md` and `AGENTS.override.md` | Walked from `scanRoot` |
+| `codex-config/` (position 906) | `config.toml`, `*.config.toml` profiles, and `config.toml.example` | `.codex/` |
+| `codex-agents/` (position 907) | Custom subagents | `.codex/agents/*.toml` |
+| `codex-hooks/` (position 908) | Lifecycle hooks and hook scripts | `.codex/hooks.json` and `.codex/hooks/` |
+| `codex-rules/` (position 909) | Command approval rules | `.codex/rules/*.rules` |
+| `codex-skills/` (position 910) | Skill packages | `.codex/skills/` and project/scan-root `.agents/skills/` directories |
+
+Each resource section has an index page, and discovered resources are rendered as individual detail pages.
+
+## How It Works
+
+The integration runs at build time as the `@takazudo/zudo-doc/plugins/codex-resources` zfb plugin. When `codexResources` is configured, `zudoDoc()` wires in the plugin automatically. Its `preBuild` hook:
+
+1. Resolves `projectRoot`, `scanRoot`, and the configured `.codex/` directory
+2. Walks `scanRoot` for `AGENTS.md` and `AGENTS.override.md` files
+3. Discovers configuration, agents, hooks, rules, and skills from the configured resource locations
+4. Generates MDX index and detail pages in the seven `codex*` directories
+5. Makes those pages available to zfb's content collections for rendering
+
+The generated pages appear under the **Codex** header navigation tab. Configure the tab with `categoryMatch: "codex"` so it activates for every generated Codex section.
+
+Set the header item to `versioned: false`. Generated Codex routes exist only in the default `docsDir`; they are never written beneath `/v/{version}`, so a version-aware link would point to a route that does not exist while an archived version is active.
+
+## Configuration Options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `codexDir` | string | Path to the `.codex/` directory, resolved from `projectRoot` |
+| `projectRoot` | string | Optional project root override; anchors `codexDir` and the generated `docsDir` |
+| `scanRoot` | string | Optional repository-wide discovery root; defaults to `projectRoot` and controls both the `AGENTS.md` / `AGENTS.override.md` walk and the repository-level `.agents/skills/` root |
+
+<Note>
+
+Skills are discovered in precedence order from `<codexDir>/skills/`, `<projectRoot>/.agents/skills/`, then `<scanRoot>/.agents/skills/`. Roots that resolve to the same real path are deduplicated. If different directories provide the same skill name, the first root wins and the plugin logs a warning, even though Codex itself permits same-named skills in different scopes.
+
+</Note>
+
+<Tip>
+
+To maintain a skill once for both Claude Code and Codex, keep its source in one location and symlink the skill directory into `.claude/skills/` and `.codex/skills/`.
+
+</Tip>

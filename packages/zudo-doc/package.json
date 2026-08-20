@@ -179,6 +179,10 @@
       "types": "./dist/plugins/claude-resources.d.ts",
       "default": "./dist/plugins/claude-resources.js"
     },
+    "./plugins/codex-resources": {
+      "types": "./dist/plugins/codex-resources.d.ts",
+      "default": "./dist/plugins/codex-resources.js"
+    },
     "./plugins/routes": {
       "types": "./dist/plugins/routes.d.ts",
       "default": "./dist/plugins/routes.js"
@@ -670,6 +674,7 @@
     "minimist": "^1.2.8",
     "picocolors": "^1.1.1",
     "pluralize": "^8.0.0",
+    "smol-toml": "^1.8.0",
     "string-similarity": "^4.0.4",
     "tsx": "^4.21.0"
   },

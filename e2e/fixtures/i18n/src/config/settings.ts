@@ -46,6 +46,7 @@ export const settings = {
   findInPage: false as boolean,
   dynamicPageTransition: true as boolean,
   claudeResources: false as { claudeDir: string; projectRoot?: string; scanRoot?: string } | false,
+  codexResources: false as { codexDir: string; projectRoot?: string; scanRoot?: string } | false,
   defaultLocaleOnlyPrefixes: [] as string[],
   tocMinDepth: 2 as number,
   tocMaxDepth: 4 as number,

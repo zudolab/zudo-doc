@@ -297,16 +297,22 @@ describe("enumerateDocsRoutes — defaultLocaleOnlyPrefixes filter", () => {
     mockGetCollection.mockImplementation((_name: string) => []);
   });
 
-  it("does not emit /ja/docs/claude-md/* for EN-only fallback entries", () => {
+  it("does not emit /ja/docs/claude-* or /ja/docs/codex-* for EN-only fallback entries", () => {
     mockGetCollection.mockImplementation((name: string) => {
       if (name === "docs-ja") {
-        return [makeEntry("claude", { title: "Claude JA stub" })];
+        return [
+          makeEntry("claude", { title: "Claude JA stub" }),
+          makeEntry("codex", { title: "Codex JA stub" }),
+        ];
       }
       if (name === "docs") {
         return [
           makeEntry("claude", { title: "Claude EN" }),
           makeEntry("claude-md/overview", { title: "CLAUDE.md overview" }),
           makeEntry("claude-skills/intro", { title: "Skills intro" }),
+          makeEntry("codex", { title: "Codex EN" }),
+          makeEntry("codex-agents-md/overview", { title: "AGENTS.md overview" }),
+          makeEntry("codex-skills/intro", { title: "Skills intro" }),
         ];
       }
       return [];
@@ -315,12 +321,17 @@ describe("enumerateDocsRoutes — defaultLocaleOnlyPrefixes filter", () => {
     const urls = enumerateDocsRoutes("ja");
     expect(urls.some((u) => u.includes("/ja/docs/claude-md/"))).toBe(false);
     expect(urls.some((u) => u.includes("/ja/docs/claude-skills/"))).toBe(false);
+    expect(urls.some((u) => u.includes("/ja/docs/codex-agents-md/"))).toBe(false);
+    expect(urls.some((u) => u.includes("/ja/docs/codex-skills/"))).toBe(false);
   });
 
   it("still emits /ja/docs/claude/ for the locale-authored JA stub", () => {
     mockGetCollection.mockImplementation((name: string) => {
       if (name === "docs-ja") {
-        return [makeEntry("claude", { title: "Claude JA stub" })];
+        return [
+          makeEntry("claude", { title: "Claude JA stub" }),
+          makeEntry("codex", { title: "Codex JA stub" }),
+        ];
       }
       if (name === "docs") {
         return [
@@ -333,6 +344,7 @@ describe("enumerateDocsRoutes — defaultLocaleOnlyPrefixes filter", () => {
 
     const urls = enumerateDocsRoutes("ja");
     expect(urls.some((u) => u.endsWith("/ja/docs/claude/"))).toBe(true);
+    expect(urls.some((u) => u.endsWith("/ja/docs/codex/"))).toBe(true);
   });
 
   it("does not filter EN enumeration — default locale emits all docs", () => {
@@ -344,6 +356,13 @@ describe("enumerateDocsRoutes — defaultLocaleOnlyPrefixes filter", () => {
           makeEntry("claude-skills/intro", { title: "Skills intro" }),
           makeEntry("claude-agents/guide", { title: "Agents guide" }),
           makeEntry("claude-commands/ref", { title: "Commands ref" }),
+          makeEntry("codex", { title: "Codex EN" }),
+          makeEntry("codex-agents-md/overview", { title: "AGENTS.md overview" }),
+          makeEntry("codex-config/ref", { title: "Config reference" }),
+          makeEntry("codex-agents/guide", { title: "Agents guide" }),
+          makeEntry("codex-hooks/ref", { title: "Hooks reference" }),
+          makeEntry("codex-rules/ref", { title: "Rules reference" }),
+          makeEntry("codex-skills/intro", { title: "Skills intro" }),
         ];
       }
       return [];
@@ -354,6 +373,12 @@ describe("enumerateDocsRoutes — defaultLocaleOnlyPrefixes filter", () => {
     expect(urls.some((u) => u.includes("/docs/claude-skills/"))).toBe(true);
     expect(urls.some((u) => u.includes("/docs/claude-agents/"))).toBe(true);
     expect(urls.some((u) => u.includes("/docs/claude-commands/"))).toBe(true);
+    expect(urls.some((u) => u.includes("/docs/codex-agents-md/"))).toBe(true);
+    expect(urls.some((u) => u.includes("/docs/codex-config/"))).toBe(true);
+    expect(urls.some((u) => u.includes("/docs/codex-agents/"))).toBe(true);
+    expect(urls.some((u) => u.includes("/docs/codex-hooks/"))).toBe(true);
+    expect(urls.some((u) => u.includes("/docs/codex-rules/"))).toBe(true);
+    expect(urls.some((u) => u.includes("/docs/codex-skills/"))).toBe(true);
   });
 
   it("does not emit /v/{version}/ja/docs/claude-md/* for EN-only fallback versioned entries", () => {

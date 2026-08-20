@@ -262,6 +262,7 @@ export const FEATURES = [
   { value: "search", label: "Pagefind search", cliFlag: "search", default: true, docPath: "/docs/guides/search/" },
   { value: "sidebarFilter", label: "Sidebar filter", cliFlag: "sidebar-filter", default: true, docPath: "/docs/guides/sidebar-filter/" },
   { value: "claudeResources", label: "Claude Resources", cliFlag: "claude-resources", default: false, docPath: "/docs/guides/claude-resources/" },
+  { value: "codexResources", label: "Codex Resources", cliFlag: "codex-resources", default: false, docPath: "/docs/guides/codex-resources/" },
   { value: "claudeSkills", label: "Claude skills (user-facing)", cliFlag: "claude-skills", default: false, docPath: "/docs/guides/claude-skills/" },
   { value: "claudeSkillsWriting", label: "Claude skills (writing)", cliFlag: "claude-skills-writing", default: false, docPath: "/docs/guides/claude-skills/#claude-skills-writing" },
   { value: "designTokenPanel", label: "Design Token Panel", cliFlag: "design-token-panel", default: false, docPath: "/docs/reference/design-token-panel/" },

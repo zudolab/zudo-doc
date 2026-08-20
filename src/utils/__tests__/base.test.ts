@@ -73,6 +73,8 @@ describe("isDefaultLocaleOnlyPath", () => {
   beforeAll(() => {
     expect(settings.defaultLocaleOnlyPrefixes).toContain("/docs/claude-md/");
     expect(settings.defaultLocaleOnlyPrefixes).not.toContain("/docs/claude/");
+    expect(settings.defaultLocaleOnlyPrefixes).toContain("/docs/codex-agents-md/");
+    expect(settings.defaultLocaleOnlyPrefixes).not.toContain("/docs/codex/");
     expect(normalizedBase).toBe("");
   });
 
@@ -86,6 +88,18 @@ describe("isDefaultLocaleOnlyPath", () => {
 
   it("returns true for a sub-path under /docs/claude-md/", () => {
     expect(isDefaultLocaleOnlyPath("/docs/claude-md/some-file/")).toBe(true);
+  });
+
+  it("returns false for /docs/codex/ (top-level codex is bilingual, not in prefix list)", () => {
+    expect(isDefaultLocaleOnlyPath("/docs/codex/")).toBe(false);
+  });
+
+  it("returns true for /docs/codex-agents-md/", () => {
+    expect(isDefaultLocaleOnlyPath("/docs/codex-agents-md/")).toBe(true);
+  });
+
+  it("returns true for a sub-path under /docs/codex-agents-md/", () => {
+    expect(isDefaultLocaleOnlyPath("/docs/codex-agents-md/some-file/")).toBe(true);
   });
 
   it("returns false for /docs/guides/", () => {

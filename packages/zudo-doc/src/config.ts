@@ -103,6 +103,11 @@ type ClaudeResourcesConfig =
   | { claudeDir: string; projectRoot?: string; scanRoot?: string }
   | false;
 
+/** The `settings.codexResources` block (or `false` when disabled). */
+type CodexResourcesConfig =
+  | { codexDir: string; projectRoot?: string; scanRoot?: string }
+  | false;
+
 // ---------------------------------------------------------------------------
 // DEFAULT_SETTINGS — the documented default for EVERY serializable settings
 // field. `zudoDoc()` merges user fields over these per-field (user wins). Every
@@ -176,6 +181,7 @@ export const DEFAULT_SETTINGS: Settings = {
   htmlPreview: undefined,
   versions: false,
   claudeResources: false,
+  codexResources: false,
   defaultLocaleOnlyPrefixes: [],
   footer: false,
   headerNav: [],
@@ -494,6 +500,18 @@ export interface ZudoDocConfig {
    * @default false
    */
   claudeResources?: ClaudeResourcesConfig;
+  /**
+   * Codex-resources ingestion config, or `false` to disable.
+   * `codexDir` is the `.codex/` directory, resolved against `projectRoot`.
+   * `projectRoot` anchors relative paths and the output base. `scanRoot` is
+   * the repo-wide discovery root for the `AGENTS.md` / `AGENTS.override.md`
+   * walk (including its relPath base for titles/slugs) and the repo-level
+   * `.agents/skills/` root; it defaults to `projectRoot`. This lets a doc site
+   * in a repo subdirectory scan repo-wide instructions and team skills while
+   * writing into its own collection (#2558).
+   * @default false
+   */
+  codexResources?: CodexResourcesConfig;
   /**
    * Route prefixes served only in the default locale (never locale-prefixed).
    * @default []

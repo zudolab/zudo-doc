@@ -189,6 +189,7 @@ export function generateCLAUDEFile(choices: UserChoices): string {
     docHistory: "Document edit history",
     llmsTxt: "Generates llms.txt for LLM consumption",
     claudeResources: "Auto-generated docs for Claude Code resources",
+    codexResources: "Auto-generated docs for Codex resources (.codex/, AGENTS.md)",
     changelog: "Changelog page at `/docs/changelog`",
     tauri:
       "Desktop app wrapper (`cargo tauri dev` / `cargo tauri build`) — Cmd/Ctrl+F find bar via the package-owned `FindInPageInit` island (`findInPage: true` in `zfb.config.ts`)",
