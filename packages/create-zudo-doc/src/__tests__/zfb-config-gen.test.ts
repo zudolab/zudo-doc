@@ -256,7 +256,7 @@ describe("generateZfbConfig — simple boolean feature fields", () => {
     (feature) => {
       const fieldName = expected_field_name(feature);
       const result = generateZfbConfig(baseChoices);
-      expect(result).not.toMatch(new RegExp(`\\b${fieldName}:\\s*true`));
+      expect(result).not.toMatch(new RegExp(`\\b${fieldName}\\s*:`));
     },
   );
 
