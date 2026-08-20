@@ -8,6 +8,10 @@ export {
   writeUnlistedSubPage,
 } from "./mdx.js";
 export { isRepoRelativeLink, downgradeRepoRelativeLinks } from "./links.js";
+export {
+  escapeMarkdownTableCell,
+  renderCodeFence,
+} from "./markdown-structure.js";
 export { EXCLUDED_DIR_NAMES, findNamedFiles } from "./walk.js";
 export {
   generateSkillsCategory,
