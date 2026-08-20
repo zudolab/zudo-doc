@@ -284,6 +284,28 @@ describe("generateCodexResourcesDocs", () => {
     expect(console.warn).toHaveBeenCalled();
   });
 
+  it("warns and falls back for wrong-type skill frontmatter", () => {
+    write(
+      path.join(codexDir, "skills", "wrong-frontmatter", "SKILL.md"),
+      "---\nname:\n  nested: value\ndescription:\n  - invalid\n---\n\nStill generated.\n",
+    );
+
+    expect(generate).not.toThrow();
+    const page = matter(fs.readFileSync(
+      path.join(docsDir, "codex-skills", "wrong-frontmatter", "index.mdx"),
+      "utf8",
+    ));
+    expect(page.data.title).toBe("wrong-frontmatter");
+    expect(page.data.description).toBe("");
+    expect(page.content).toContain("Still generated.");
+    expect(console.warn).toHaveBeenCalledWith(
+      expect.stringContaining('skill frontmatter field "name"'),
+    );
+    expect(console.warn).toHaveBeenCalledWith(
+      expect.stringContaining('skill frontmatter field "description"'),
+    );
+  });
+
   it("malformed hooks.json does not suppress hook script pages", () => {
     write(path.join(codexDir, "hooks.json"), "{");
     const counts = generate();

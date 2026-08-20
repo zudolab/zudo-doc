@@ -178,6 +178,19 @@ function readSkillFiles(dir: string): string[] {
   }
 }
 
+function readFrontmatterString(
+  value: unknown,
+  field: string,
+  skillFile: string,
+): string | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value === "string") return value;
+  console.warn(
+    `resource-docs: skill frontmatter field "${field}" in "${skillFile}" must be a string; using the fallback value.`,
+  );
+  return undefined;
+}
+
 /**
  * Generate a category containing Claude/Codex-shaped skill packages.
  *
@@ -260,8 +273,10 @@ export function generateSkillsCategory({
     const parsed = parseFrontmatter(content);
     if (!parsed) continue;
 
-    const name = (parsed.data.name as string) || dir;
-    const skillDescription = (parsed.data.description as string) || "";
+    const skillFile = path.join(skillAbsDir, "SKILL.md");
+    const name = readFrontmatterString(parsed.data.name, "name", skillFile) || dir;
+    const skillDescription =
+      readFrontmatterString(parsed.data.description, "description", skillFile) || "";
     const references = getSkillReferences(sourceDir, dir);
 
     items.push({ name, dir, description: skillDescription, references });
