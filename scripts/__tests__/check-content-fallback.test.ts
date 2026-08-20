@@ -97,10 +97,10 @@ describe("partitionFallbacks", () => {
 describe(".content-fallback-allowlist", () => {
   // Guards against the allowlist quietly growing into a place where real
   // shipped regressions get parked instead of fixed (#3134).
-  it("only exempts the locally-generated claude-skills routes", () => {
+  it("only exempts the locally-generated Claude and Codex skills routes", () => {
     const entries = parseAllowlist(
       readFileSync(resolve(ROOT, ".content-fallback-allowlist"), "utf8"),
     );
-    expect(entries).toEqual(["docs/claude-skills/"]);
+    expect(entries).toEqual(["docs/claude-skills/", "docs/codex-skills/"]);
   });
 });

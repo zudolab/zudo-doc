@@ -39,3 +39,10 @@ docs/claude-skills/
 # still not fail b4push. (They currently render fine; the pre-review text
 # scan flagged them only because they *mention* the marker inside escaped
 # <code> spans.)
+
+docs/codex-skills/
+# reason: generated locally by the Codex watcher / `runCodexResourcesPreStep` and
+# gitignored (.gitignore), so these locally generated skill dumps exist only in a
+# developer's tree and never in a CI build or the deployed site. The shared
+# `escapeForMdx` and `cleanDir` helpers provide the same defense-in-depth for
+# these generated pages as for the Claude skill pages.
