@@ -3,8 +3,10 @@ import fs from "fs-extra";
 import os from "os";
 import path from "path";
 import { execFile } from "node:child_process";
+import { createRequire } from "node:module";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
+import { transformSync } from "esbuild";
 import { eject, EJECTABLE } from "@takazudo/zudo-doc/eject";
 import type { ZudoDocJson } from "@takazudo/zudo-doc/eject";
 
@@ -13,6 +15,11 @@ const execFileAsync = promisify(execFile);
 const REAL_PACKAGE_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "../..",
+);
+const requireFromTest = createRequire(import.meta.url);
+const ESBUILD_ROOT = path.resolve(
+  path.dirname(requireFromTest.resolve("esbuild")),
+  "..",
 );
 
 // ── Fixture helpers ───────────────────────────────────────────────────────────
@@ -70,6 +77,18 @@ function extractFrozenScript(generatedModule: string): string {
   const match = generatedModule.match(/  return (".*");$/m);
   if (!match?.[1]) throw new Error("generated module did not contain a string return");
   return JSON.parse(match[1]) as string;
+}
+
+function evaluateTypeScriptModule(source: string): Record<string, unknown> {
+  const code = transformSync(source, {
+    loader: "ts",
+    format: "cjs",
+    target: "es2020",
+    platform: "neutral",
+  }).code;
+  const moduleObj: { exports: Record<string, unknown> } = { exports: {} };
+  new Function("module", "exports", code)(moduleObj, moduleObj.exports);
+  return moduleObj.exports;
 }
 
 // ── Test state ────────────────────────────────────────────────────────────────
@@ -340,16 +359,63 @@ describe("eject() — copy + provenance", () => {
   it("ships a runnable header generator that embeds local tokens and package inputs", async () => {
     const projectDir = path.join(tempDir, "project-header-generator");
     const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const headerSourceDir = path.join(REAL_PACKAGE_ROOT, "src/header");
+    const pkgRoot = await buildFixturePackage(tempDir, "header", {
+      "gen-nav-overflow-script.mjs": await fs.readFile(
+        path.join(REAL_PACKAGE_ROOT, "scripts/gen-nav-overflow-script.mjs"),
+        "utf8",
+      ),
+      "nav-active.ts": await fs.readFile(
+        path.join(headerSourceDir, "nav-active.ts"),
+        "utf8",
+      ),
+      "nav-class-tokens.ts": await fs.readFile(
+        path.join(headerSourceDir, "nav-class-tokens.ts"),
+        "utf8",
+      ),
+      "nav-overflow-generated-script.ts": await fs.readFile(
+        path.join(headerSourceDir, "nav-overflow-generated-script.ts"),
+        "utf8",
+      ),
+    });
+
+    const currentPathExports = evaluateTypeScriptModule(
+      await fs.readFile(
+        path.join(REAL_PACKAGE_ROOT, "src/current-path/index.ts"),
+        "utf8",
+      ),
+    );
+    const pageEventExports = evaluateTypeScriptModule(
+      await fs.readFile(
+        path.join(REAL_PACKAGE_ROOT, "src/transitions/page-events.ts"),
+        "utf8",
+      ),
+    );
+    await fs.outputFile(
+      path.join(pkgRoot, "dist/current-path/index.js"),
+      `export const CURRENT_PATH_SCRIPT_PRELUDE = ${JSON.stringify(currentPathExports.CURRENT_PATH_SCRIPT_PRELUDE)};\n`,
+    );
+    await fs.outputFile(
+      path.join(pkgRoot, "dist/transitions/page-events.js"),
+      `export const AFTER_NAVIGATE_EVENT = ${JSON.stringify(pageEventExports.AFTER_NAVIGATE_EVENT)};\n`,
+    );
+    await fs.ensureDir(path.join(pkgRoot, "node_modules"));
+    await fs.ensureSymlink(
+      ESBUILD_ROOT,
+      path.join(pkgRoot, "node_modules/esbuild"),
+      "dir",
+    );
+
     await fs.ensureDir(path.join(projectDir, "node_modules/@takazudo"));
     await fs.ensureSymlink(
-      REAL_PACKAGE_ROOT,
+      pkgRoot,
       path.join(projectDir, "node_modules/@takazudo/zudo-doc"),
       "dir",
     );
 
     await eject("header", {
       cwd: projectDir,
-      resolvePackageRoot: makeResolver(REAL_PACKAGE_ROOT),
+      resolvePackageRoot: makeResolver(pkgRoot),
     });
 
     expect(capturedOutput(log)).toContain(
