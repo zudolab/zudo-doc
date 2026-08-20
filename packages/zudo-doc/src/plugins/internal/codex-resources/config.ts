@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { parse, TomlDate } from "smol-toml";
 import {
+  formatFrontmatterString,
   cleanDir,
   ensureDir,
   escapeMarkdownTableCell,
@@ -122,7 +123,13 @@ export function generateConfigCategory(
   }
 
   if (items.length > 0) {
-    writeCategoryIndex(outputDir, "Config", 906, "config.toml and profiles");
+    writeCategoryIndex(
+      outputDir,
+      "Config",
+      906,
+      "config.toml and profiles",
+      formatFrontmatterString,
+    );
   }
   return items;
 }

@@ -3,6 +3,7 @@ import path from "node:path";
 import matter from "gray-matter";
 import {
   escapeForMdx,
+  formatFrontmatterString,
   generateSkillsCategory,
 } from "../resource-docs-shared/index.js";
 import { isRecord, warn } from "./utils.js";
@@ -91,5 +92,6 @@ export function generateSkillsCategoryDocs(config: CodexResourcesConfig) {
     description: "Skill packages",
     sourceLabel: ".codex/skills",
     renderExtraHeader: renderOpenAiMetadata,
+    renderFrontmatterString: formatFrontmatterString,
   });
 }

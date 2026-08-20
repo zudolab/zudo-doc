@@ -193,6 +193,19 @@ describe("generateCodexResourcesDocs", () => {
     );
   });
 
+  it("emits formatter-stable frontmatter scalars", () => {
+    generate();
+    expect(fs.readFileSync(path.join(docsDir, "codex", "index.mdx"), "utf8")).toContain(
+      "title: Codex\ndescription: OpenAI Codex configuration reference.",
+    );
+    expect(fs.readFileSync(
+      path.join(docsDir, "codex-skills", "test-skill", "index.mdx"),
+      "utf8",
+    )).toContain(
+      "title: Test Skill\ndescription: A test skill\nsidebar_label: Test Skill",
+    );
+  });
+
   it("writes root-first AGENTS pages and preserves both instruction files", () => {
     generate();
     const dir = path.join(docsDir, "codex-agents-md");

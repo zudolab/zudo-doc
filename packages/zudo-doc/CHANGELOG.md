@@ -4,6 +4,24 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.9.0] - 2026-08-20
+
+### Features
+
+- Added Codex Resources generation for `AGENTS.md`, Codex configuration, custom agents, hooks, rules, and skills, with dedicated parsing and rendering for each resource type. (`666c12059`)
+- Added the public Codex Resources plugin and wired it through package settings, presets, `create-zudo-doc`, and generated project configuration. (`752a3fe5a`, `a7fa47906`, `5831cd73e`)
+- Added Codex Resources showcase data, navigation, localization, development watching, and complete English and Japanese documentation. (`a4dca1e40`, `1a2e6d5bc`, `f1396e7a1`)
+
+### Bug Fixes
+
+- Added type validation and deterministic fallbacks for malformed skill frontmatter values. (`710a1d225`)
+- Made generated Codex Resources frontmatter formatter-stable while preserving YAML string semantics and existing Claude Resources output.
+
+### Other Changes
+
+- Extracted shared resource-documentation helpers while preserving existing Claude Resources output byte-for-byte. (`c9165d5cb`)
+- Expanded generator, scaffold, build, and responsive navigation regression coverage for Codex Resources. (`142c11aa4`)
+
 ## [5.8.0] - 2026-08-20
 
 ### Features

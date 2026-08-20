@@ -3,7 +3,7 @@ import path from "node:path";
 import {
   assertNotIndexReserved,
   escapeMarkdownTableCell,
-  escapeTitle,
+  formatFrontmatterString,
 } from "../resource-docs-shared/index.js";
 
 export function warn(filePath: string, message: string): void {
@@ -61,10 +61,10 @@ export function writeGeneratedPage({
     : `sidebar_position: ${sidebarPosition}\n`;
   const label = sidebarLabel === undefined
     ? ""
-    : `sidebar_label: "${escapeTitle(sidebarLabel)}"\n`;
+    : `sidebar_label: ${formatFrontmatterString(sidebarLabel)}\n`;
   fs.writeFileSync(
     outputPath,
-    `---\ntitle: "${escapeTitle(title)}"\ndescription: "${escapeTitle(description)}"\n${position}${label}generated: true\n---\n\n${body.trim()}\n`,
+    `---\ntitle: ${formatFrontmatterString(title)}\ndescription: ${formatFrontmatterString(description)}\n${position}${label}generated: true\n---\n\n${body.trim()}\n`,
   );
 }
 

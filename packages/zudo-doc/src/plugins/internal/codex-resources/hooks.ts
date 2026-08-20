@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import {
+  formatFrontmatterString,
   cleanDir,
   ensureDir,
   getScriptDescription,
@@ -191,7 +192,13 @@ export function generateHooksCategory(
     ...generateHookScripts(config, outputDir, emitted),
   ];
   if (items.length > 0) {
-    writeCategoryIndex(outputDir, "Hooks", 908, "Lifecycle hooks");
+    writeCategoryIndex(
+      outputDir,
+      "Hooks",
+      908,
+      "Lifecycle hooks",
+      formatFrontmatterString,
+    );
   }
   return items;
 }

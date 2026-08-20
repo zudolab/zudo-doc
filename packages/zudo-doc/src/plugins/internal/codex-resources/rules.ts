@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import {
+  formatFrontmatterString,
   cleanDir,
   ensureDir,
   renderCodeFence,
@@ -286,7 +287,13 @@ export function generateRulesCategory(
   }
 
   if (items.length > 0) {
-    writeCategoryIndex(outputDir, "Rules", 909, "Command approval rules");
+    writeCategoryIndex(
+      outputDir,
+      "Rules",
+      909,
+      "Command approval rules",
+      formatFrontmatterString,
+    );
   }
   return items;
 }

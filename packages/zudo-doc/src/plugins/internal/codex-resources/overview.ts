@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { formatFrontmatterString } from "../resource-docs-shared/index.js";
 import { cleanDir, ensureDir } from "../resource-docs-shared/index.js";
 import type { CodexResourcesConfig } from "./generate.js";
 
@@ -29,6 +30,6 @@ export function generateOverview(
 
   fs.writeFileSync(
     path.join(outputDir, "index.mdx"),
-    `---\ntitle: "Codex"\ndescription: "OpenAI Codex configuration reference."\nsidebar_position: 904\ngenerated: true\n---\n\n## Resources\n\n<CategoryNav categories={${JSON.stringify(slugs)}} />\n`,
+    `---\ntitle: ${formatFrontmatterString("Codex")}\ndescription: ${formatFrontmatterString("OpenAI Codex configuration reference.")}\nsidebar_position: 904\ngenerated: true\n---\n\n## Resources\n\n<CategoryNav categories={${JSON.stringify(slugs)}} />\n`,
   );
 }

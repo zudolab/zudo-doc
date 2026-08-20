@@ -3,7 +3,9 @@ export { cleanDir, ensureDir, listFiles } from "./fs.js";
 export {
   assertNotIndexReserved,
   escapeTitle,
+  formatFrontmatterString,
   parseFrontmatter,
+  type FrontmatterStringRenderer,
   writeCategoryIndex,
   writeUnlistedSubPage,
 } from "./mdx.js";

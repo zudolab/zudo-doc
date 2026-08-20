@@ -5,6 +5,7 @@ import {
   assertNotIndexReserved,
   escapeTitle,
   parseFrontmatter,
+  type FrontmatterStringRenderer,
   writeCategoryIndex,
   writeUnlistedSubPage,
 } from "./mdx.js";
@@ -33,6 +34,7 @@ export interface GenerateSkillsCategoryOptions {
   description: string;
   sourceLabel: string;
   renderExtraHeader?: RenderExtraHeader;
+  renderFrontmatterString?: FrontmatterStringRenderer;
 }
 
 type TreeEntry =
@@ -206,6 +208,7 @@ export function generateSkillsCategory({
   description,
   sourceLabel,
   renderExtraHeader,
+  renderFrontmatterString,
 }: GenerateSkillsCategoryOptions): SkillItem[] {
   cleanDir(outputDir);
 
@@ -345,10 +348,11 @@ export function generateSkillsCategory({
       .filter(Boolean)
       .join("\n\n");
 
+    const renderString = renderFrontmatterString ?? ((value: string) => `"${escapeTitle(value)}"`);
     const mdx = `---
-title: "${escapeTitle(name)}"
-description: "${escapeTitle(shortDesc)}"
-sidebar_label: "${escapeTitle(name)}"
+title: ${renderString(name)}
+description: ${renderString(shortDesc)}
+sidebar_label: ${renderString(name)}
 generated: true
 ---
 
@@ -371,6 +375,7 @@ ${body}`;
         path.join(skillDirOut, `ref-${ref.name}.mdx`),
         ref.title,
         escapeForMdx(ref.content.trim()),
+        renderFrontmatterString,
       );
     }
 
@@ -392,6 +397,7 @@ ${body}`;
         path.join(skillDirOut, `script-${slug}.mdx`),
         title,
         escapeForMdx(raw.trim()),
+        renderFrontmatterString,
       );
     }
 
@@ -413,12 +419,13 @@ ${body}`;
         path.join(skillDirOut, `asset-${slug}.mdx`),
         title,
         escapeForMdx(raw.trim()),
+        renderFrontmatterString,
       );
     }
   }
 
   items.sort((a, b) => a.name.localeCompare(b.name));
 
-  writeCategoryIndex(outputDir, label, position, description);
+  writeCategoryIndex(outputDir, label, position, description, renderFrontmatterString);
   return items;
 }

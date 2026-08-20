@@ -16,15 +16,30 @@ export function escapeTitle(s: string): string {
   return s.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
 
+export type FrontmatterStringRenderer = (value: string) => string;
+
+export function formatFrontmatterString(value: string): string {
+  if (!/[\r\n]/.test(value)) {
+    try {
+      const parsed = matter(`---\nvalue: ${value}\n---\n`).data.value;
+      if (parsed === value) return value;
+    } catch {
+      // Fall through to the JSON-compatible quoted YAML scalar.
+    }
+  }
+  return JSON.stringify(value);
+}
+
 export function writeCategoryIndex(
   outputDir: string,
   label: string,
   position: number,
   description: string,
+  renderString: FrontmatterStringRenderer = (value) => `"${escapeTitle(value)}"`,
 ): void {
   const mdx = `---
-title: "${escapeTitle(label)}"
-description: "${escapeTitle(description)}"
+title: ${renderString(label)}
+description: ${renderString(description)}
 sidebar_position: ${position}
 category_no_page: true
 generated: true
@@ -48,10 +63,11 @@ export function writeUnlistedSubPage(
   outputPath: string,
   title: string,
   body: string,
+  renderString: FrontmatterStringRenderer = (value) => `"${escapeTitle(value)}"`,
 ): void {
   fs.writeFileSync(
     outputPath,
-    `---\ntitle: "${escapeTitle(title)}"\nunlisted: true\ngenerated: true\n---\n\n${body}\n`,
+    `---\ntitle: ${renderString(title)}\nunlisted: true\ngenerated: true\n---\n\n${body}\n`,
   );
 }
 

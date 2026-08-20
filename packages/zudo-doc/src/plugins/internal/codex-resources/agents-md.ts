@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import {
+  formatFrontmatterString,
   cleanDir,
   downgradeRepoRelativeLinks,
   ensureDir,
@@ -74,6 +75,7 @@ export function generateAgentsMdCategory(
     "AGENTS.md",
     905,
     "Project instructions for Codex",
+    formatFrontmatterString,
   );
   return items.map(({ relPath, slug }) => ({ relPath, slug }));
 }

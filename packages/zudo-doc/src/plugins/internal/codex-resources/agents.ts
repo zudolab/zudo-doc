@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { parse } from "smol-toml";
 import {
+  formatFrontmatterString,
   cleanDir,
   ensureDir,
   escapeForMdx,
@@ -109,7 +110,13 @@ export function generateAgentsCategory(
   }
 
   if (items.length > 0) {
-    writeCategoryIndex(outputDir, "Agents", 907, "Custom subagents");
+    writeCategoryIndex(
+      outputDir,
+      "Agents",
+      907,
+      "Custom subagents",
+      formatFrontmatterString,
+    );
   }
   return items;
 }
