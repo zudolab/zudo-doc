@@ -71,12 +71,13 @@ relocate_generated() {
   STASH_DIR="$(mktemp -d)"
   local line p
   # Gitignored paths under .claude/ and src/content/ are exactly what a clean CI
-  # clone lacks. The build's claudeResources feature generates /docs/claude-*
-  # routes from .claude/ (tracked skills/agents); a locally-generated, gitignored
-  # skill such as .claude/skills/zudo-doc-wisdom/ would otherwise inject an extra
-  # route + a sidebar entry on EVERY page, diverging from CI. (.claude/docs under
-  # src/content/docs/claude*/ is dev-watch HMR output, not the build source, but
-  # relocating it too is harmless and keeps the tree CI-clean.)
+  # clone lacks. The build's claudeResources and codexResources features generate
+  # /docs/claude-* and /docs/codex-* routes from their tracked inputs; a
+  # locally-generated, gitignored skill such as .claude/skills/zudo-doc-wisdom/
+  # would otherwise inject an extra route + a sidebar entry on EVERY page,
+  # diverging from CI. (Generated src/content/docs/claude*/ and
+  # src/content/docs/codex*/ are dev-watch HMR output, not the build source, but
+  # relocating them too is harmless and keeps the tree CI-clean.)
   # settings.local.json is this machine's Claude Code config, not build input —
   # never relocate it (would disturb the running harness).
   while IFS= read -r line; do

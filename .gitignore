@@ -36,6 +36,15 @@ src/content/docs/claude-md/
 src/content/docs/claude-commands/
 src/content/docs/claude-skills/
 src/content/docs/claude-agents/
+
+# Generated Codex resource docs
+src/content/docs/codex/
+src/content/docs/codex-agents-md/
+src/content/docs/codex-config/
+src/content/docs/codex-agents/
+src/content/docs/codex-hooks/
+src/content/docs/codex-rules/
+src/content/docs/codex-skills/
 test-results/
 .playwright-cli/
 

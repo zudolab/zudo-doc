@@ -213,8 +213,8 @@ export const settings = {
   dynamicPageTransition: true as boolean,
   frontmatterPreview: {} satisfies FrontmatterPreviewConfig as FrontmatterPreviewConfig | false,
   docHistory: true,
-  // Generated from project CLAUDE.md files; omit these high-churn pages from history capture.
-  docHistoryExclude: ["claude-md/**"],
+  // Generated from project CLAUDE.md / AGENTS.md files; omit these high-churn pages from history capture.
+  docHistoryExclude: ["claude-md/**", "codex-agents-md/**"],
   bodyFootUtilArea: {
     docHistory: true,
     viewSourceLink: true,
@@ -237,12 +237,20 @@ export const settings = {
   claudeResources: {
     claudeDir: ".claude",
   } as { claudeDir: string; projectRoot?: string; scanRoot?: string } | false,
-  codexResources: false as { codexDir: string; projectRoot?: string; scanRoot?: string } | false,
+  codexResources: {
+    codexDir: ".codex",
+  } as { codexDir: string; projectRoot?: string; scanRoot?: string } | false,
   defaultLocaleOnlyPrefixes: [
     "/docs/claude-md/",
     "/docs/claude-skills/",
     "/docs/claude-agents/",
     "/docs/claude-commands/",
+    "/docs/codex-agents-md/",
+    "/docs/codex-config/",
+    "/docs/codex-agents/",
+    "/docs/codex-hooks/",
+    "/docs/codex-rules/",
+    "/docs/codex-skills/",
   ] as string[],
   footer: {
     links: [
@@ -302,10 +310,11 @@ export const settings = {
       ],
     },
     { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
-    // Claude-resources routes are generated only for the default docsDir and never
+    // Claude/Codex-resources routes are generated only for the default docsDir and never
     // exist in an archived version directory, so this item must opt out of version
     // prefixing (#3216/#3217) — otherwise it 404s under an active `/v/{version}`.
     { label: "Claude", labelKey: "nav.claude", path: "/docs/claude", categoryMatch: "claude", versioned: false },
+    { label: "Codex", labelKey: "nav.codex", path: "/docs/codex", categoryMatch: "codex", versioned: false },
     { label: "Changelog", labelKey: "nav.changelog", path: "/docs/changelog", categoryMatch: "changelog" },
     { label: "Develop", labelKey: "nav.develop", path: "/docs/develop", categoryMatch: "develop" },
   ] satisfies HeaderNavItem[] as HeaderNavItem[],
