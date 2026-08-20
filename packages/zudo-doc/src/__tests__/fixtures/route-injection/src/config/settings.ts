@@ -57,6 +57,7 @@ export const settings = {
   htmlPreview: undefined,
   versions: false,
   claudeResources: false,
+  codexResources: false,
   defaultLocaleOnlyPrefixes: [],
   footer: false,
   headerNav: [],

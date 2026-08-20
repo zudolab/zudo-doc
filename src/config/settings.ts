@@ -237,6 +237,7 @@ export const settings = {
   claudeResources: {
     claudeDir: ".claude",
   } as { claudeDir: string; projectRoot?: string; scanRoot?: string } | false,
+  codexResources: false as { codexDir: string; projectRoot?: string; scanRoot?: string } | false,
   defaultLocaleOnlyPrefixes: [
     "/docs/claude-md/",
     "/docs/claude-skills/",

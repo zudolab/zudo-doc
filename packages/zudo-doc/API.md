@@ -390,6 +390,7 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `htmlPreview` | `HtmlPreviewConfig \| undefined` | HTML preview sandbox config |
 | `versions` | `VersionConfig[] \| false` | Multi-version config |
 | `claudeResources` | `{ claudeDir: string; projectRoot?: string; scanRoot?: string } \| false` | Claude resources generation config (`scanRoot` — CLAUDE.md discovery root, defaults to `projectRoot`; #2558) |
+| `codexResources` | `{ codexDir: string; projectRoot?: string; scanRoot?: string } \| false` | Codex resources generation config (`scanRoot` — repo-wide `AGENTS.md` / `AGENTS.override.md` and `.agents/skills/` discovery root, defaults to `projectRoot`; default `false`) |
 | `defaultLocaleOnlyPrefixes` | `string[]` | URL prefixes that only render for the default locale |
 | `footer` | `FooterConfig \| false` | Footer config |
 | `headerNav` | `HeaderNavItem[]` | Header navigation items. Each item (and child) accepts `versioned?: boolean` (default `true`) — set `false` to suppress the `/v/{version}` prefix for a target that has no versioned counterpart. |
