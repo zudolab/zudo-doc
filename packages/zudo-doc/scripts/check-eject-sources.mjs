@@ -9,7 +9,7 @@
 //           non-empty (contains at least one file).
 // Exit 1 → a directory is missing or empty (with a clear diagnostic message).
 
-import { statSync, readdirSync } from "node:fs";
+import { statSync, readdirSync, existsSync, readFileSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -64,6 +64,22 @@ for (const name of EJECTABLE) {
   }
 
   process.stdout.write(`[check-eject-sources] eject/${name}/ OK (${size} files)\n`);
+}
+
+const headerGenerator = resolve(EJECT_ROOT, "header/gen-nav-overflow-script.mjs");
+const sourceGenerator = resolve(PKG_ROOT, "scripts/gen-nav-overflow-script.mjs");
+if (!existsSync(headerGenerator)) {
+  process.stderr.write(
+    "\n[check-eject-sources] ERROR: eject/header/gen-nav-overflow-script.mjs is missing.\n" +
+      "  The ejected header must ship its frozen-script regeneration path.\n",
+  );
+  ok = false;
+} else if (readFileSync(headerGenerator, "utf8") !== readFileSync(sourceGenerator, "utf8")) {
+  process.stderr.write(
+    "\n[check-eject-sources] ERROR: the ejected header generator is stale.\n" +
+      "  Re-run `pnpm --filter @takazudo/zudo-doc build` and retry.\n",
+  );
+  ok = false;
 }
 
 if (!ok) process.exit(1);

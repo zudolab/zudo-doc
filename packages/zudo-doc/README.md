@@ -67,6 +67,23 @@ pnpm add @takazudo/zfb-md-wasm
 
 Projects scaffolded by `create-zudo-doc` already include it. If you never render `<HtmlPreview>` / `<HighlightedCode>`, you can omit it.
 
+## Ejected header customization
+
+`zudo-doc eject header` copies a complete frozen-script regeneration path into
+`src/components/zudo-doc/header`. After changing the ejected `nav-active.ts` or
+`nav-class-tokens.ts`, regenerate the local client controller and commit the
+result:
+
+```sh
+node ./src/components/zudo-doc/header/gen-nav-overflow-script.mjs
+```
+
+The command uses the two local customization inputs plus the installed
+package's current-path and page-event inputs. Its `esbuild` transformer is
+provided by `@takazudo/zudo-doc`; no additional project dependency is needed.
+The resulting `nav-overflow-generated-script.ts` stays frozen for stable CSP
+hashes across consumer bundlers.
+
 ## ⚠️ HTML preview iframe sandbox — trust assumption
 
 `<HtmlPreview>` / `<HtmlPreviewWrapper>` render their preview inside an `<iframe srcdoc>` whose `sandbox` attribute **defaults** to:

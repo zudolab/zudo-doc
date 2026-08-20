@@ -46,12 +46,15 @@
 // `src/header/__tests__/nav-overflow-script.test.ts` proves the committed
 // literal still matches a fresh regeneration.
 //
-// EJECTED COPIES (`zudo-doc eject header`): the generator is NOT shipped, so
-// in an ejected tree the re-exported literal is permanently frozen — editing
-// the ejected `./nav-class-tokens.ts` or `./nav-active.ts` changes the SSR
-// markup (header.tsx imports them live) but NOT this client script, breaking
-// the SSR ↔ runtime class lockstep those files exist to guarantee. To change
-// the client script in an ejected copy, edit the literal in
-// `./nav-overflow-generated-script.ts` directly (it is plain JS in a string)
-// and keep it in step with your token edits by hand.
+// EJECTED COPIES (`zudo-doc eject header`): the payload ships
+// `./gen-nav-overflow-script.mjs`. After editing the local `./nav-active.ts`
+// or `./nav-class-tokens.ts`, run:
+//
+//   node ./src/components/zudo-doc/header/gen-nav-overflow-script.mjs
+//
+// The generator reads those two local customization inputs and the installed
+// package's current-path/page-event inputs, then rewrites the local
+// `./nav-overflow-generated-script.ts`. Commit that generated file with the
+// edits. Do not edit its string literal by hand: regeneration preserves the
+// frozen, consumer-bundler-independent bytes required for stable CSP hashes.
 export { NAV_OVERFLOW_SCRIPT } from "./nav-overflow-generated-script.js";
