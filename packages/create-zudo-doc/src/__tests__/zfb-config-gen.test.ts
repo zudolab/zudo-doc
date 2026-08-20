@@ -71,6 +71,7 @@ describe("generateZfbConfig — imports and wrapper shape", () => {
     expect(result).not.toContain("doc-history-plugin.mjs");
     expect(result).not.toContain("llms-txt-plugin.mjs");
     expect(result).not.toContain("claude-resources-plugin.mjs");
+    expect(result).not.toContain("codex-resources-plugin.mjs");
     expect(result).not.toContain("search-index-plugin.mjs");
   });
 });
@@ -374,6 +375,63 @@ describe("generateZfbConfig — claudeResources", () => {
   });
 });
 
+describe("generateZfbConfig — codexResources", () => {
+  it("emits codexResources, all Codex prefixes, and a Codex headerNav entry", () => {
+    const result = generateZfbConfig({
+      ...baseChoices,
+      features: ["codexResources"],
+    });
+    expect(result).toContain("codexResources: {");
+    expect(result).toContain('codexDir: ".codex"');
+    for (const prefix of [
+      "/docs/codex-agents-md/",
+      "/docs/codex-config/",
+      "/docs/codex-agents/",
+      "/docs/codex-hooks/",
+      "/docs/codex-rules/",
+      "/docs/codex-skills/",
+    ]) {
+      expect(result).toContain(`"${prefix}"`);
+    }
+    expect(result).toContain('label: "Codex"');
+    expect(result).toContain('path: "/docs/codex"');
+  });
+
+  it("omits codexResources and defaultLocaleOnlyPrefixes when disabled", () => {
+    const result = generateZfbConfig(baseChoices);
+    expect(result).not.toContain("codexResources");
+    expect(result).not.toContain("defaultLocaleOnlyPrefixes");
+  });
+
+  it("merges Claude and Codex prefixes and orders both satellite nav entries before Changelog", () => {
+    const result = generateZfbConfig({
+      ...baseChoices,
+      features: ["claudeResources", "codexResources", "changelog"],
+    });
+    for (const prefix of [
+      "/docs/claude-md/",
+      "/docs/claude-skills/",
+      "/docs/claude-agents/",
+      "/docs/claude-commands/",
+      "/docs/codex-agents-md/",
+      "/docs/codex-config/",
+      "/docs/codex-agents/",
+      "/docs/codex-hooks/",
+      "/docs/codex-rules/",
+      "/docs/codex-skills/",
+    ]) {
+      expect(result).toContain(`"${prefix}"`);
+    }
+    const gettingStarted = result.indexOf('label: "Getting Started"');
+    const claude = result.indexOf('label: "Claude"');
+    const codex = result.indexOf('label: "Codex"');
+    const changelog = result.indexOf('label: "Changelog"');
+    expect(gettingStarted).toBeLessThan(claude);
+    expect(claude).toBeLessThan(codex);
+    expect(codex).toBeLessThan(changelog);
+  });
+});
+
 describe("generateZfbConfig — footer (footerNavGroup / footerCopyright / footerTaglist)", () => {
   it("emits footer.links when footerNavGroup is enabled", () => {
     const result = generateZfbConfig({
@@ -611,6 +669,7 @@ describe("generateZfbConfig — never emits escape-hatch / shell / package-only 
         "bodyFootUtil",
         "versioning",
         "claudeResources",
+        "codexResources",
         "footerNavGroup",
         "footerCopyright",
         "footerTaglist",

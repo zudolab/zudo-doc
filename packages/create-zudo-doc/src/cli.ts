@@ -22,6 +22,7 @@ export interface CliArgs {
   sidebarToggle?: boolean;
   versioning?: boolean;
   claudeResources?: boolean;
+  codexResources?: boolean;
   claudeSkills?: boolean;
   claudeSkillsWriting?: boolean;
   docHistory?: boolean;

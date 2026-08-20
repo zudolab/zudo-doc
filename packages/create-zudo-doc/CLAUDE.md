@@ -45,7 +45,7 @@ left to inject or copy.
 |------|------|
 | `src/scaffold.ts` | Orchestrates the scaffold pipeline: copy base, seed content, generate `zfb.config.ts` + `package.json`, compose features |
 | `src/compose.ts` | Composition engine: injection system (mostly unused now — see below), feature resolution |
-| `src/features/*.ts` | Feature modules — settings-field emission via `zfb-config-gen.ts` + a handful of genuine file copies / `postProcess` patches. 19 module files, 19 `featureModules` keys in `index.ts` — one of which (`footer`) is a pseudo-feature triggered by `footerNavGroup`/`footerCopyright`/`footerTaglist`. `sidebarFilter` has no module (built into the package's sidebar tree); `skillSymlinker`, `claudeSkills`, `claudeSkillsWriting`, and `changelog` are handled directly in `scaffold.ts` |
+| `src/features/*.ts` | Feature modules — settings-field emission via `zfb-config-gen.ts` + a handful of genuine file copies / `postProcess` patches. 20 module files, 20 `featureModules` keys in `index.ts` — one of which (`footer`) is a pseudo-feature triggered by `footerNavGroup`/`footerCopyright`/`footerTaglist`. `sidebarFilter` has no module (built into the package's sidebar tree); `skillSymlinker`, `claudeSkills`, `claudeSkillsWriting`, and `changelog` are handled directly in `scaffold.ts` |
 | `src/zfb-config-gen.ts` | The SINGLE config generator — emits the one `zfb.config.ts` (`defineConfig(zudoDoc({...}))`), diff-from-defaults against a local mirror of `packages/zudo-doc/src/config.ts`'s `DEFAULT_SETTINGS`. Replaces the former `settings-gen.ts` + `zfb-config-gen.ts` two-file split — there is no more `src/config/settings.ts` in a fresh scaffold |
 | `src/claude-md-gen.ts` | Generates the per-project `CLAUDE.md` for the scaffolded site, including the current zfb semantic-highlighting contract, chrome bindings, and binding-aware eject guidance |
 | `src/preset.ts` | Resolves a JSON `--preset` file (or CLI flags) into `UserChoices` — unrelated to the package's own `@takazudo/zudo-doc/preset`, despite the similar name |
@@ -92,7 +92,7 @@ Runs vitest tests in `src/__tests__/`.
 Two Claude Code skills test the full scaffold-build-run cycle:
 
 - `/l-generator-cli-tester <pattern>` — Test a single generation pattern
-- `/l-run-generator-cli-whole-test` — Run all 9 patterns, fix bugs, verify everything
+- `/l-run-generator-cli-whole-test` — Run all 10 patterns, fix bugs, verify everything
 
 #### Test patterns
 
@@ -103,6 +103,7 @@ Two Claude Code skills test the full scaffold-build-run cycle:
 | `i18n` | Only i18n enabled |
 | `sidebar-filter` | Only sidebar filter enabled |
 | `claude-resources` | Only Claude Resources enabled |
+| `codex-resources` | Only Codex Resources enabled |
 | `design-token-panel` | Only design token panel enabled (uses `--design-token-panel` CLI flag) |
 | `light-dark` | Light-dark color scheme mode |
 | `lang-ja` | Japanese as default language |

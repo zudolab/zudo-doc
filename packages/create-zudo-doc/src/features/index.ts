@@ -16,6 +16,7 @@ import { tocToggleFeature } from "./toc-toggle.js";
 import { docHistoryFeature } from "./doc-history.js";
 import { llmsTxtFeature } from "./llms-txt.js";
 import { claudeResourcesFeature } from "./claude-resources.js";
+import { codexResourcesFeature } from "./codex-resources.js";
 import { designTokenPanelFeature } from "./design-token-panel.js";
 import { themePackSwitcherFeature } from "./theme-pack-switcher.js";
 import { i18nFeature } from "./i18n.js";
@@ -39,6 +40,7 @@ export const featureModules: Record<string, FeatureModule> = {
   search: searchFeature,
   // sidebarFilter — built into sidebar-tree.tsx, stays in base
   claudeResources: claudeResourcesFeature,
+  codexResources: codexResourcesFeature,
   designTokenPanel: designTokenPanelFeature,
   themePackSwitcher: themePackSwitcherFeature,
   sidebarResizer: sidebarResizerFeature,

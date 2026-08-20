@@ -41,12 +41,13 @@ Run in this order (CLI flags and details are defined in `/l-generator-cli-tester
 3. **`i18n`** — Only i18n enabled
 4. **`sidebar-filter`** — Only sidebar filter enabled
 5. **`claude-resources`** — Only Claude Resources enabled
-6. **`design-token-panel`** — Only design token panel enabled (uses `--design-token-panel` CLI flag)
-7. **`light-dark`** — Light-dark color scheme mode
-8. **`lang-ja`** — Japanese as default language
-9. **`all-features`** — Everything ON, maximum complexity (uses the enumerated CLI invocation)
+6. **`codex-resources`** — Only Codex Resources enabled
+7. **`design-token-panel`** — Only design token panel enabled (uses `--design-token-panel` CLI flag)
+8. **`light-dark`** — Light-dark color scheme mode
+9. **`lang-ja`** — Japanese as default language
+10. **`all-features`** — Everything ON, maximum complexity (uses the enumerated CLI invocation)
 
-> **Note:** These 9 patterns are valid manual smoke tests. The authoritative bug-hunt pattern matrix (15 patterns across Waves 4, 5, and 5b) lives in the Wave 2 spec (`__inbox/gen-cli-audit-spec/spec.md`) and the associated bug-hunt issues. Do not delete or rename these 9 patterns — they remain useful standalone checks.
+> **Note:** These 10 patterns are valid manual smoke tests. The authoritative bug-hunt pattern matrix (15 patterns across Waves 4, 5, and 5b) lives in the Wave 2 spec (`__inbox/gen-cli-audit-spec/spec.md`) and the associated bug-hunt issues. Do not delete or rename these 10 patterns — they remain useful standalone checks.
 
 ### Running each pattern
 

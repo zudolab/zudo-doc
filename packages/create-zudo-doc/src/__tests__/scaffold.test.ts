@@ -123,12 +123,13 @@ const BAREBONE_MANIFEST = [
   "zfb.config.ts",
 ].sort();
 
-/** All 27 feature values wired to a real (non-pseudo, non-scaffold.ts-only) module. */
+/** All 28 feature values wired to a real (non-pseudo, non-scaffold.ts-only) module. */
 const ALL_FEATURES = [
   "i18n",
   "search",
   "sidebarFilter",
   "claudeResources",
+  "codexResources",
   "claudeSkills",
   "claudeSkillsWriting",
   "designTokenPanel",
@@ -991,6 +992,7 @@ describe("scaffold — zfb.config.ts content shape (integration with generateZfb
       "docHistory",
       "llmsTxt",
       "claudeResources",
+      "codexResources",
       "designTokenPanel",
       "tagGovernance",
       "footer:",
@@ -1054,6 +1056,22 @@ describe("scaffold — zfb.config.ts content shape (integration with generateZfb
     expect(config).not.toContain("sidebarResizer");
     expect(config).not.toContain("sidebarToggle");
     expect(config).not.toContain("designTokenPanel");
+  });
+
+  it("emits the codexResources field and Codex header navigation when selected", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-codex-resources",
+      features: ["codexResources"],
+    });
+    const config = await fs.readFile(
+      projectPath("test-codex-resources", "zfb.config.ts"),
+      "utf-8",
+    );
+    expect(config).toContain("codexResources: {");
+    expect(config).toContain('codexDir: ".codex"');
+    expect(config).toContain('label: "Codex"');
+    expect(config).toContain('path: "/docs/codex"');
   });
 
   it("src/content.config.ts is NOT emitted (content config lives in zfb.config.ts)", async () => {
