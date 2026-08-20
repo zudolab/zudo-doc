@@ -52,7 +52,7 @@ export function deriveDocSkillName(projectName: string): string {
  *
  * Bumped in lockstep by scripts/release-create-zudo-doc.sh.
  */
-export const ZUDO_DOC_PIN = "^5.7.0";
+export const ZUDO_DOC_PIN = "^5.8.0";
 
 /**
  * Files in `templates/base/**` that must not be copied by the unconditional
@@ -826,7 +826,7 @@ function generatePackageJson(choices: UserChoices) {
     // same reason. This is the ACCEPTED, permanent contract per #2668 — see
     // the "@takazudo/zdtp dep implication" note in
     // packages/zudo-doc/docs/adr/route-injection-seam.md.
-    "@takazudo/zdtp": "0.4.11",
+    "@takazudo/zdtp": "0.4.12",
     // (@takazudo/zudo-doc-history-server is NOT here — it is gated on the
     // docHistory feature, see the block below. It was briefly unconditional
     // (#3080) to work around doc-history-area importing its `/exclude` subpath
@@ -878,7 +878,7 @@ function generatePackageJson(choices: UserChoices) {
     // `/exclude` at module scope from the always-bundled chrome graph; #3110
     // moved compileExclude into @takazudo/zudo-doc, so docHistory-OFF projects
     // no longer need the package at all.
-    deps["@takazudo/zudo-doc-history-server"] = "^5.7.0";
+    deps["@takazudo/zudo-doc-history-server"] = "^5.8.0";
     // tsx is no longer needed here: the relocated package plugin imports the
     // runner directly (no `tsx -e` spawn) since the package ships compiled
     // dist/ — package-first migration #2321 (#2337).

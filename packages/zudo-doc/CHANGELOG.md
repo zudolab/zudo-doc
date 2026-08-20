@@ -4,6 +4,23 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.8.0] - 2026-08-20
+
+### Features
+
+- Added strict anchor validation to the showcase and generated-project link checkers, including source-first validation for scaffolded sites. (`b50bd9aac`, `59127e7fe`)
+- Added a published-version guard that prevents release scaffolds from pinning first-party packages that are not yet available from npm. (`4bdc37132`, `8c234c08e`)
+- Shipped a complete nav-overflow regeneration path with ejected headers, preserving stable CSP bytes while allowing local nav behavior and class-token customization. (`1b3d501c3`, `721ff37d3`)
+
+### Bug Fixes
+
+- Made nested island props preservation explicit with `data-zd-props-preserve`, preventing opted-out islands from receiving props updates or remount flags during client navigation. (`e75cff084`)
+
+### Other Changes
+
+- Strengthened `docTags` regression coverage so an unselected feature cannot emit either a `true` or `false` config field. (`37dec787c`)
+- Updated `@takazudo/zdtp` to 0.4.12 across the package, showcase, and generated scaffold.
+
 ## [5.7.0] - 2026-08-20
 
 ### Features
