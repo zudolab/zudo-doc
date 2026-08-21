@@ -59,7 +59,7 @@ const breadcrumbs = buildBreadcrumbs(tree, "guides/color", homeHref);
 
 ## Optional peer dependency: `@takazudo/zfb-md-wasm`
 
-`./html-preview-wrapper`'s `<HighlightedCode>` lazily imports the package root and calls `highlightCode()` for client-side semantic syntax highlighting. `@takazudo/zfb-md-wasm` is declared as an **optional peerDependency** — install the same prerelease version as the rest of your zfb packages if you use that subpath:
+`./html-preview-wrapper`'s `<HighlightedCode>` lazily imports the public `@takazudo/zfb-md-wasm/highlight` subpath and calls `highlightCode()` for client-side semantic syntax highlighting. `@takazudo/zfb-md-wasm` is declared as an **optional peerDependency** — install the same version as the rest of your zfb packages if you use that subpath:
 
 ```sh
 pnpm add @takazudo/zfb-md-wasm
