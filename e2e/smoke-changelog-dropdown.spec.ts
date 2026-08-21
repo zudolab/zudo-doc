@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures";
-import { expectHtmlAttr, getAttrValue } from "./html-assertions";
+import { attrSource, expectHtmlAttr, getAttrValue } from "./html-assertions";
 import { readDistFile } from "./smoke-dist-helper";
 
 function extractHeaderNav(html: string): string {
@@ -38,16 +38,19 @@ function extractChangelogDropdown(html: string): {
 }
 
 function extractCategoryNav(html: string): string {
-  const match = html.match(
-    /<nav\b(?=[^>]*aria-label=["']Child pages["'])[^>]*>[\s\S]*?<\/nav>/,
-  );
-  expect(match).toBeTruthy();
-  return match![0];
+  const marker = '<nav class="mt-vsp-lg mb-vsp-md grid';
+  const navStart = html.indexOf(marker);
+  const navEnd = html.indexOf("</nav>", navStart);
+  expect(navStart).toBeGreaterThanOrEqual(0);
+  expect(navEnd).toBeGreaterThan(navStart);
+  return html.slice(navStart, navEnd + "</nav>".length);
 }
 
 function extractSidebar(html: string): string {
   const match = html.match(
-    /<aside\b(?=[^>]*\bid=["']desktop-sidebar["'])[^>]*>[\s\S]*?<\/aside>/,
+    new RegExp(
+      `<aside\\b(?=[^>]*${attrSource("id", "desktop-sidebar")})[^>]*>[\\s\\S]*?</aside>`,
+    ),
   );
   expect(match).toBeTruthy();
   return match![0];
@@ -105,8 +108,8 @@ test.describe("Nested Changelog navigation (static)", () => {
     const html = readDistFile("docs/changelog/index.html");
     const categoryNav = extractCategoryNav(html);
 
-    expectHtmlAttr(categoryNav, "href", "/docs/changelog/pkg-a/");
-    expectHtmlAttr(categoryNav, "href", "/docs/changelog/pkg-b/");
+    expectHtmlAttr(categoryNav, "href", "/docs/changelog/pkg-a");
+    expectHtmlAttr(categoryNav, "href", "/docs/changelog/pkg-b");
     expect(categoryNav).toContain("pkg-a");
     expect(categoryNav).toContain("pkg-b");
   });
@@ -126,7 +129,7 @@ test.describe("Nested Changelog navigation (static)", () => {
     const html = readDistFile("docs/changelog/pkg-a/1.1.0/index.html");
     const sidebar = extractSidebar(html);
 
-    expectHtmlAttr(sidebar, "href", "/docs/changelog/pkg-a/");
-    expectHtmlAttr(sidebar, "href", "/docs/changelog/pkg-b/");
+    expectHtmlAttr(sidebar, "href", "/docs/changelog/pkg-a");
+    expectHtmlAttr(sidebar, "href", "/docs/changelog/pkg-b");
   });
 });
