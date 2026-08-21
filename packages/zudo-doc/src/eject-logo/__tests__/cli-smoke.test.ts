@@ -64,6 +64,8 @@ let projectDir: string;
 let configPath: string;
 let svgPath: string;
 
+// Copying and cleaning the immutable snapshot can contend with the package
+// suite's other workers, so both lifecycle hooks get explicit 30s headroom.
 beforeAll(async () => {
   // Keep the snapshot inside the package so the copied bin's bare imports
   // (minimist and picocolors) still resolve through package/workspace
@@ -94,13 +96,13 @@ beforeAll(async () => {
     }
   }
   throw lastCopyError ?? new Error("Could not create CLI snapshot");
-});
+}, 30_000);
 
 afterAll(async () => {
   if (snapshotDir) {
     await fs.remove(snapshotDir);
   }
-});
+}, 30_000);
 
 beforeEach(async () => {
   tempDir = await fs.mkdtemp(path.join(os.tmpdir(), TEMP_PREFIX));
