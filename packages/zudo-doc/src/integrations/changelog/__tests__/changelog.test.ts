@@ -134,6 +134,37 @@ describe("changelog integration", () => {
     expect(second).toContain("First release.");
   });
 
+  it("warns when a landing directory contains per-package changelogs", () => {
+    const root = tempProject();
+    writeEntry(root, "changelog/index.mdx", "---\ntitle: Changelog\n---\n");
+    writeEntry(root, "changelog/pkg-a/1.0.0.mdx", "---\ntitle: 1.0.0\n---\n");
+    writeEntry(root, "changelog/img/x.png", "not a changelog");
+
+    const warnings: string[] = [];
+    const logger = {
+      info: () => undefined,
+      warn: (message: string) => warnings.push(message),
+    };
+    const landingResult = emitChangelogs({
+      projectRoot: root,
+      changelogs: [{ sourceDir: "changelog", outputFile: "CHANGELOG.md" }],
+      logger,
+    });
+
+    expect(readFileSync(landingResult.written[0]!, "utf-8")).toContain("# Changelog");
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("changelog");
+    expect(warnings[0]).toContain("pkg-a");
+    expect(warnings[0]).not.toContain("img");
+
+    emitChangelogs({
+      projectRoot: root,
+      changelogs: [{ sourceDir: "changelog/pkg-a", outputFile: "packages/pkg-a/CHANGELOG.md" }],
+      logger,
+    });
+    expect(warnings).toHaveLength(1);
+  });
+
   it("fails clearly when a configured source directory is missing", () => {
     const root = tempProject();
 
