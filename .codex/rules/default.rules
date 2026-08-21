@@ -43,9 +43,3 @@ prefix_rule(
     decision = "allow",
     justification = "Reading pull-request checks is a non-mutating status query.",
 )
-
-prefix_rule(
-    pattern = ["git", "push"],
-    decision = "prompt",
-    justification = "Pushing changes is an external repository mutation and needs confirmation.",
-)
