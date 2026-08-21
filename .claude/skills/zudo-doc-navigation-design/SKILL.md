@@ -39,7 +39,7 @@ The header is the topmost level. It holds only the biggest categories.
 
 - **3–6 items max.** More than 6 overwhelms users and wraps the header.
 - **Each item is a broad section, not a page.** "Guides" ✓, "How to install" ✗.
-- **`categoryMatch` must be a single top-level directory name.** Multi-segment values (e.g. `"platforms/xbox"`) break active-state highlighting. If you need nested grouping, use a header-level dropdown with children — not a path.
+- **`categoryMatch` must be a single top-level directory name.** Multi-segment values (e.g. `"platforms/xbox"`) break active-state highlighting and sidebar scoping. When dropdown children are nested under one top-level directory, keep `categoryMatch` on the parent and omit it from the children; child active state comes from `path`. Per-package changelogs (`changelog/core`, `changelog/cli`) are the canonical example. Children that represent separate top-level directories may each use their own single-segment `categoryMatch`.
 - **Dropdowns are for closely related sections only.** "Learn > Guides, Components" makes sense. "Everything > 7 miscellaneous items" does not — split into separate header items instead.
 
 ## Sidebar Structure Rules

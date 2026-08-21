@@ -50,10 +50,13 @@ zudo-doc が同梱するカラースキームは `Default Light` と `Default Da
 |--------|------|-----------|
 | `--name <name>` | プロジェクト名（または最初の位置引数） | `my-docs` |
 | `--lang <code>` | デフォルト言語コード | `en` |
+| `--changelog-packages <a,b>` | ネストした変更履歴ランディングページと、カンマ区切りの各スラッグに対応するパッケージインデックスを生成 | — |
 | `--github-url <url>` | GitHub リポジトリ URL（ヘッダーリンク + ソースリンクに使用） | — |
 | `--pm <manager>` | パッケージマネージャー: `pnpm`, `npm`, `yarn`, `bun` | `pnpm` |
 | `--[no-]install` | スキャフォールディング後に依存関係をインストール | プロンプト |
 | `--[no-]git` | git リポジトリと初回コミットを初期化（doc-history メタデータを有効化） | オン |
+
+`--changelog-packages core,cli`を`--changelog`とともに指定すると、マルチパッケージ用の変更履歴レイアウトが生成されます。
 
 ### カラースキーム
 

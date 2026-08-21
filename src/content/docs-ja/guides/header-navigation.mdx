@@ -27,10 +27,10 @@ export default defineConfig(
   zudoDoc({
     // ...
     headerNav: [
-      // フラットリンク（ドロップダウンなし）
+      // Flat link (no dropdown)
       { label: "Getting Started", labelKey: "nav.gettingStarted", path: "/docs/getting-started", categoryMatch: "getting-started" },
 
-      // 子を持つドロップダウン親
+      // Dropdown parent with children
       {
         label: "Learn",
         labelKey: "nav.learn",
@@ -70,7 +70,7 @@ export default defineConfig(
 | `label` | string | ドロップダウンに表示されるテキスト |
 | `labelKey` | string（オプション） | i18n翻訳キー |
 | `path` | string | リンク先のURLパス |
-| `categoryMatch` | string（オプション） | この子アイテムをサイドバーカテゴリにリンク |
+| `categoryMatch` | string（オプション） | この子を別のトップレベルサイドバーカテゴリにリンク。親カテゴリ配下のネストしたパスでは省略 |
 | `versioned` | boolean（オプション） | このアイテムのリンクがアクティブな`/v/{version}`プレフィックスを持つかどうか。デフォルトは`true` |
 
 ### `labelKey`
@@ -86,6 +86,28 @@ export default defineConfig(
 例えば、`categoryMatch: "guides"`はタブを`guides/`コンテンツディレクトリにリンクします。ユーザーが`/docs/guides/`配下のページに移動すると、「Guides」タブがアクティブになり、サイドバーにはguidesカテゴリのみが表示されます。
 
 子アイテムにも`categoryMatch`を設定できます。例えば、子に`categoryMatch: "components"`を設定すると、`/docs/components/`にアクセスした際に親ドロップダウンがアクティブになり、サイドバーがコンポーネントセクションにフィルタリングされます。
+
+#### 1つのカテゴリ配下にネストした子を置く
+
+すべての子が1つのトップレベルカテゴリ配下にネストしている場合、`categoryMatch`は親だけに設定します。子のアクティブ状態はそれぞれの`path`から判定され、親の単一セグメントの`categoryMatch`によってサイドバーにはトップレベルカテゴリ全体が表示されます。パッケージごとの変更履歴が典型的な例です：
+
+```ts
+{
+  label: "Changelog",
+  path: "/docs/changelog",
+  categoryMatch: "changelog",
+  children: [
+    { label: "Core", path: "/docs/changelog/core" },
+    { label: "CLI", path: "/docs/changelog/cli" },
+  ],
+}
+```
+
+<Warning>
+
+このような子に親の`categoryMatch`をコピーしたり、`categoryMatch: "changelog/core"`のような複数セグメントの値を使用したりしないでください。`categoryMatch`はトップレベルディレクトリだけに一致するため、複数セグメントの子の値は一致せず、サイドバーが空になることがあります。親子で重複する値と、子の複数セグメントの値はビルド時に警告されます。
+
+</Warning>
 
 ### `versioned`
 
