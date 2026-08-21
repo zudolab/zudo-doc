@@ -43,3 +43,9 @@ prefix_rule(
     decision = "allow",
     justification = "Reading pull-request checks is a non-mutating status query.",
 )
+
+prefix_rule(
+    pattern = ["git", "push", "origin"],
+    decision = "allow",
+    justification = "The manager publishes reviewed branches after the repository's full pre-push gate.",
+)
