@@ -200,7 +200,7 @@ Output a final report:
 ### Summary
 
 - Patterns tested: 11
-- Passed on first try: 6
+- Passed on first try: 8
 - Needed fixes: 3
 - Unit tests: PASS
 
