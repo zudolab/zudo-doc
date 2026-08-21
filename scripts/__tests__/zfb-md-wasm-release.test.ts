@@ -3,6 +3,7 @@ import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 
 import { highlightCode } from "@takazudo/zfb-md-wasm";
+import { highlightCode as highlightCodeOnly } from "@takazudo/zfb-md-wasm/highlight";
 import { describe, expect, it } from "vitest";
 
 const require = createRequire(import.meta.url);
@@ -85,7 +86,10 @@ describe("@takazudo/zfb-md-wasm release contract", () => {
       readFileSync(resolve(packageRoot, "package.json"), "utf8"),
     ) as {
       version: string;
-      exports: { ".": { browser: string; default: string; types: string } };
+      exports: {
+        ".": { browser: string; default: string; types: string };
+        "./highlight": { browser: string; default: string; types: string };
+      };
     };
     const browserEntryPath = resolve(
       packageRoot,
@@ -115,5 +119,68 @@ describe("@takazudo/zfb-md-wasm release contract", () => {
     );
     expect(statSync(gluePath).size).toBeGreaterThan(0);
     expect(statSync(wasmPath).size).toBeGreaterThan(0);
+  });
+
+  it("ships the ./highlight browser entry with glue and WASM resource edges", () => {
+    const packageJson = JSON.parse(
+      readFileSync(resolve(packageRoot, "package.json"), "utf8"),
+    ) as {
+      version: string;
+      exports: {
+        ".": { browser: string; default: string; types: string };
+        "./highlight": { browser: string; default: string; types: string };
+      };
+    };
+    const browserEntryPath = resolve(
+      packageRoot,
+      packageJson.exports["./highlight"].browser,
+    );
+    const browserEntry = readFileSync(browserEntryPath, "utf8");
+    const gluePath = resolve(
+      packageRoot,
+      "dist/wasm-highlight/zfb_md_wasm_highlight_glue.zfb-resource.mjs",
+    );
+    const wasmPath = resolve(
+      packageRoot,
+      "dist/wasm-highlight/zfb_md_wasm_highlight_bg.wasm",
+    );
+
+    expect(packageJson.version).toBe(rootPin);
+    expect(packageJson.exports["./highlight"]).toEqual({
+      types: "./dist/highlight.d.ts",
+      browser: "./dist/highlight-browser.js",
+      default: "./dist/highlight.js",
+    });
+    expect(browserEntry).toContain(
+      'import glueHref from "./wasm-highlight/zfb_md_wasm_highlight_glue.zfb-resource.mjs?url";',
+    );
+    expect(browserEntry).toContain(
+      'import wasmHref from "./wasm-highlight/zfb_md_wasm_highlight_bg.wasm?url";',
+    );
+    expect(statSync(gluePath).size).toBeGreaterThan(0);
+    expect(statSync(wasmPath).size).toBeGreaterThan(0);
+  });
+
+  it.each(expectedHighlights)(
+    "keeps ./highlight HTML byte-identical to the root entry for $language",
+    async ({ language, code }) => {
+      const [rootResult, highlightResult] = await Promise.all([
+        highlightCode(code, { language }),
+        highlightCodeOnly(code, { language }),
+      ]);
+
+      expect(highlightResult.html).toBe(rootResult.html);
+    },
+  );
+
+  it("keeps ./highlight HTML byte-identical for an unknown-language warning", async () => {
+    const options = { language: "not-a-bundled-syntax" };
+    const [rootResult, highlightResult] = await Promise.all([
+      highlightCode("<tag>&", options),
+      highlightCodeOnly("<tag>&", options),
+    ]);
+
+    expect(highlightResult.html).toBe(rootResult.html);
+    expect(highlightResult.diagnostics).toEqual(rootResult.diagnostics);
   });
 });
