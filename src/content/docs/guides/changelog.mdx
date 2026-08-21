@@ -198,7 +198,7 @@ changelogs: [
 ],
 ```
 
-The build warns when a configured `sourceDir` points at the landing directory or when a package directory has no non-index release files.
+The build warns about the landing-directory pitfall when a configured `sourceDir` yields no release entries but contains subdirectories with MDX files.
 
 <Tip>
 
@@ -211,10 +211,12 @@ Previous/next pagination runs across the entire `changelog` section, so it can c
 Pass a comma-separated package list when scaffolding a project:
 
 ```bash
-pnpm create zudo-doc my-docs --changelog --changelog-packages core,cli
+pnpm create zudo-doc my-docs --changelog-packages core,cli
 ```
 
-The generator creates the landing page and one package index for each slug. The version-bump skill then updates the selected packages: it adds a new version section to each single-page changelog, or a new per-version file to each package using the per-version-file layout.
+`--changelog-packages` implies `--changelog`. The generator creates the landing page and one package index for each slug, but it does not add a `changelogs` output configuration. To emit package `CHANGELOG.md` files, switch those packages to the per-version-file layout and configure one `changelogs` entry per package.
+
+The version-bump skill keeps one lockstep root version and updates all packages by default, or only the packages you select. It adds a new version section to each selected single-page changelog, or a new per-version file to each selected package using the per-version-file layout. Independent per-package versioning is not supported.
 
 ## Version Bump Script
 
