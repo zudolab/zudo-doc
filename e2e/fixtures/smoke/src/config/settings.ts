@@ -80,6 +80,15 @@ export const settings = {
         { label: "Guides", path: "/docs/guides", categoryMatch: "guides" },
       ],
     },
+    {
+      label: "Changelog",
+      path: "/docs/changelog",
+      categoryMatch: "changelog",
+      children: [
+        { label: "pkg-a", path: "/docs/changelog/pkg-a" },
+        { label: "pkg-b", path: "/docs/changelog/pkg-b" },
+      ],
+    },
   ] satisfies HeaderNavItem[] as HeaderNavItem[],
   headerRightItems: [
     { type: "trigger", trigger: "design-token-panel" },
