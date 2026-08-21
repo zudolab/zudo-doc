@@ -353,7 +353,12 @@ gh release create v{NEW_VERSION} --title "v{NEW_VERSION}" --notes "$NOTES"
 ```
 
 For a root per-version-file layout, remove the frontmatter from the new entry and use the rest of
-its body as `NOTES`.
+its body as `NOTES`:
+
+```bash
+NOTES=$(awk 'NR==1&&$0=="---"{fm=1;next} fm&&$0=="---"{fm=0;next} !fm{print}' "src/content/docs/changelog/{NEW_VERSION}.mdx")
+gh release create v{NEW_VERSION} --title "v{NEW_VERSION}" --notes "$NOTES"
+```
 
 For a multi-package changelog, concatenate the primary-language notes for every selected package,
 in the same order shown to the user, under a `## <slug>` heading. This concrete loop handles a mix
