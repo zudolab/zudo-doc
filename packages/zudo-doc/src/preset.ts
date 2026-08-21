@@ -37,7 +37,10 @@ import { z } from "zod";
 import type { ColorScheme } from "./color-scheme-utils.js";
 import type { TagVocabularyEntry, FaviconConfig } from "./settings.js";
 import { assertNoCommaInVersionSlugs } from "./version-availability/index.js";
-import { assertNoEmptyStringFaviconOrLogo } from "./config-assertions/index.js";
+import {
+  assertNoEmptyStringFaviconOrLogo,
+  warnAmbiguousDropdownCategoryMatch,
+} from "./config-assertions/index.js";
 // Type-only — erased by esbuild before the node-builtin-free eval-graph
 // bundle runs (mirrors config.ts's `@takazudo/zfb/config` type-only import).
 import type { DirectiveSpec } from "@takazudo/zfb/config";
@@ -84,6 +87,16 @@ export interface PresetChangelogConfig {
   outputFile: string;
   packageName?: string;
   title?: string;
+}
+
+/** Minimal structural header-nav shape needed by preset diagnostics. */
+export interface PresetHeaderNavItem {
+  label?: string;
+  categoryMatch?: string;
+  children?: Array<{
+    label?: string;
+    categoryMatch?: string;
+  }>;
 }
 
 /**
@@ -169,6 +182,8 @@ export interface PresetSettings {
    * descriptor's options alongside `themePack`.
    */
   themePacks?: string[];
+  /** Header navigation, used for non-throwing dropdown category diagnostics. */
+  headerNav?: PresetHeaderNavItem[];
 }
 
 /**
@@ -333,6 +348,10 @@ export function zudoDocPreset({
   // `favicon` before it silently resolves to "the current document" per the
   // HTML spec (#3471, #3474).
   assertNoEmptyStringFaviconOrLogo(settings);
+
+  // This diagnostic belongs only to the directly-callable preset. `zudoDoc()`
+  // delegates here, so a second call site would emit duplicate warnings.
+  warnAmbiguousDropdownCategoryMatch(settings.headerNav);
 
   // `z.toJSONSchema` is a runtime call but the result is a stable JSON
   // document. Compute it once and reuse the same object across every

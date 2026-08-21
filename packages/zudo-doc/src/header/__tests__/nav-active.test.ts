@@ -176,3 +176,35 @@ describe("isNavItemActiveByCategory", () => {
     expect(isNavItemActiveByCategory(child, "guides")).toBe(false);
   });
 });
+
+describe("nested dropdown children under one category", () => {
+  const changelog = {
+    path: "/docs/changelog",
+    categoryMatch: "changelog",
+    children: [
+      { path: "/docs/changelog/pkg-a" },
+      { path: "/docs/changelog/pkg-b" },
+    ],
+  } satisfies NavItemLike;
+
+  it("prefers the deepest child path for a nested package page", () => {
+    expect(computeActiveNavPath([changelog], "/docs/changelog/pkg-a/1.0.0")).toBe(
+      "/docs/changelog/pkg-a",
+    );
+  });
+
+  it("does not category-match children that omit categoryMatch", () => {
+    expect(isNavItemActiveByCategory(changelog.children![0]!, "changelog")).toBe(false);
+    expect(isNavItemActiveByCategory(changelog, "changelog")).toBe(true);
+  });
+
+  it("documents the duplicate-category footgun", () => {
+    const ambiguous = {
+      ...changelog,
+      children: changelog.children!.map((child) => ({ ...child, categoryMatch: "changelog" })),
+    } satisfies NavItemLike;
+
+    expect(isNavItemActiveByCategory(ambiguous.children![0]!, "changelog")).toBe(true);
+    expect(isNavItemActiveByCategory(ambiguous.children![1]!, "changelog")).toBe(true);
+  });
+});
