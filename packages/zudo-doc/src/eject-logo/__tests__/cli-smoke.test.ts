@@ -65,7 +65,7 @@ let configPath: string;
 let svgPath: string;
 
 // Copying and cleaning the immutable snapshot can contend with the package
-// suite's other workers, so both lifecycle hooks get explicit 30s headroom.
+// suite's other workers (#3619), so both hooks get explicit 30s headroom.
 beforeAll(async () => {
   // Keep the snapshot inside the package so the copied bin's bare imports
   // (minimist and picocolors) still resolve through package/workspace
