@@ -59,6 +59,10 @@ Welcome to the Getting Started section. Choose a topic below to begin.
 
 各スラッグは対応するナビゲーションノードに解決され、カードとして表示されます。ツリー内で見つからないスラッグは、エラーにならず単に無視されます。no-pageカテゴリ（`index.mdx` の `category_no_page: true`、またはレガシーの `_category_.json` の `noPage: true`）はそれ自体のルートを持たないため、カードのリンク先はそのカテゴリ配下で最初にルートを持つ子ページになります。到達可能なページがない no-page カテゴリは、リンク切れを出力する代わりにスキップされます。
 
+### ネストしたカテゴリ
+
+`category`プロップには、ネストしたカテゴリパスも指定できます。例えば、`<CategoryNav category="changelog/core" />`は`guides/layout-demos`と同じパターンで、`changelog/core/`直下のリリースページを一覧表示します。親のランディングページでは、`<CategoryNav category="changelog" />`によって各パッケージサブカテゴリの`index.mdx`が1枚ずつカードとして表示されます。
+
 ## 特徴
 
 - **2カラムグリッド** — デスクトップでは`sm:grid-cols-2`、モバイルではシングルカラムで表示
@@ -74,7 +78,7 @@ Welcome to the Getting Started section. Choose a topic below to begin.
 ```
 src/content/docs/
   getting-started/
-    index.mdx              ← <CategoryNav category="getting-started" /> を使用
+    index.mdx              ← uses <CategoryNav category="getting-started" />
     introduction.mdx
     installation.mdx
     writing-docs.mdx

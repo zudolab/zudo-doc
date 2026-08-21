@@ -70,7 +70,7 @@ Child items use the same properties as `HeaderNavItem` except they cannot have t
 | `label` | string | Display text shown in the dropdown |
 | `labelKey` | string (optional) | i18n translation key |
 | `path` | string | URL path the link navigates to |
-| `categoryMatch` | string (optional) | Links this child to a sidebar category |
+| `categoryMatch` | string (optional) | Links this child to a separate top-level sidebar category; omit it for nested paths under the parent's category |
 | `versioned` | boolean (optional) | Whether this item's link carries the active `/v/{version}` prefix. Default `true` |
 
 ### `labelKey`
@@ -86,6 +86,28 @@ The `categoryMatch` property connects a header tab to a specific sidebar categor
 For example, `categoryMatch: "guides"` links the tab to the `guides/` content directory. When a user navigates to any page under `/docs/guides/`, the "Guides" tab becomes active and the sidebar shows only the guides category.
 
 Children can also have `categoryMatch`. For example, placing `categoryMatch: "components"` on a child ensures that visiting `/docs/components/` activates the parent dropdown and filters the sidebar to the components section.
+
+#### Nested Children Under One Category
+
+When every child is nested below one top-level category, keep `categoryMatch` only on the parent. Child active state is resolved from each child's `path`, while the parent's single-segment `categoryMatch` keeps the sidebar scoped to the complete top-level category. Per-package changelogs are the canonical example:
+
+```ts
+{
+  label: "Changelog",
+  path: "/docs/changelog",
+  categoryMatch: "changelog",
+  children: [
+    { label: "Core", path: "/docs/changelog/core" },
+    { label: "CLI", path: "/docs/changelog/cli" },
+  ],
+}
+```
+
+<Warning>
+
+Do not copy the parent's `categoryMatch` onto these children, and do not use a multi-segment value such as `categoryMatch: "changelog/core"`. `categoryMatch` only matches a top-level directory; a multi-segment child value never matches and can empty the sidebar. The build warns about duplicated parent/child values and multi-segment child values.
+
+</Warning>
 
 ### `versioned`
 

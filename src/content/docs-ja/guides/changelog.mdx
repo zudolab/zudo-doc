@@ -13,9 +13,9 @@ zudo-docには、リリースノートとバージョン履歴を追跡するた
 ```
 src/content/docs/
 └── changelog/
-    ├── index.mdx          # カテゴリインデックスページ（降順ソートを設定）
-    ├── 0.2.0.mdx          # 新しいエントリ (sidebar_position: 2)
-    └── 0.1.0.mdx          # 古いエントリ (sidebar_position: 1)
+    ├── index.mdx          # Category index page (sets desc sort order)
+    ├── 0.2.0.mdx          # Newer entry (sidebar_position: 2)
+    └── 0.1.0.mdx          # Older entry (sidebar_position: 1)
 ```
 
 ## カテゴリ設定
@@ -43,20 +43,20 @@ category_sort_order: "desc"
 ```mdx title="src/content/docs/changelog/0.2.0.mdx"
 ---
 title: "0.2.0"
-description: このリリースの概要。
+description: Short summary of this release.
 sidebar_position: 2
 ---
 
-このリリースの変更概要。
+Summary of changes in this release.
 
-### 機能
+### Features
 
-- 機能A
-- 機能B
+- Feature A
+- Feature B
 
-### バグ修正
+### Bug Fixes
 
-- 問題Xの修正
+- Fix for issue X
 ```
 
 <Tip>
@@ -98,15 +98,126 @@ MDXファイルは引き続き正とするソースです。生成される`CHAN
 
 配列に項目を追加することで、複数の出力先を設定できます。モノレポで複数パッケージそれぞれに独自の変更履歴を持たせたい場合に便利です。
 
+## 複数の変更履歴（マルチパッケージプロジェクト）
+
+モノレポから複数のパッケージを個別に公開する場合は、ネストした変更履歴を使用します。トップレベルのページをランディングページにし、パッケージごとにネストしたカテゴリを用意します：
+
+```
+src/content/docs/changelog/
+├── index.mdx
+├── core/
+│   └── index.mdx
+└── cli/
+    └── index.mdx
+```
+
+これにより、`/docs/changelog`、`/docs/changelog/core`、`/docs/changelog/cli`が生成されます。ランディングページにはパッケージカテゴリを一覧表示し、`category_sort_order: "desc"`は設定しません：
+
+```mdx title="changelog/index.mdx"
+---
+title: Changelog
+sidebar_position: 10
+---
+
+Release notes for every package in this repository.
+
+<CategoryNav category="changelog" />
+```
+
+### パッケージごとに1ページ（デフォルト）
+
+デフォルトでは、ジェネレーターはパッケージごとに1つの`index.mdx`を作成します。パッケージの履歴全体をそのページに置き、`## Unreleased`の後にバージョンごとのセクションを続けます：
+
+```mdx title="changelog/core/index.mdx"
+---
+title: Core
+sidebar_position: 1
+---
+
+## Unreleased
+
+### Added
+
+- Work in progress.
+
+## 1.0.0
+
+Released: 2026-08-22
+
+### Added
+
+- Initial release.
+```
+
+### バージョンごとに1ファイル
+
+パッケージの`CHANGELOG.md`も出力する場合は、バージョンごとにファイルを分けます。この形式では、パッケージのインデックスで降順を設定し、リリースファイルを表示します：
+
+```
+src/content/docs/changelog/core/
+├── index.mdx
+├── 1.1.0.mdx
+└── 1.0.0.mdx
+```
+
+```mdx title="changelog/core/index.mdx"
+---
+title: Core
+sidebar_position: 1
+category_sort_order: "desc"
+---
+
+Release notes for the core package.
+
+<CategoryNav category="changelog/core" />
+```
+
+`changelogs`に設定する各パッケージディレクトリには、`index.mdx`以外のリリース別MDXファイルが必要です。`sourceDir`にはトップレベルの`changelog/`ランディングディレクトリではなく、必ずパッケージディレクトリを指定します：
+
+```ts title="zfb.config.ts"
+changelogs: [
+  {
+    sourceDir: "src/content/docs/changelog/core",
+    outputFile: "packages/core/CHANGELOG.md",
+    packageName: "@acme/core",
+  },
+  {
+    sourceDir: "src/content/docs/changelog/cli",
+    outputFile: "packages/cli/CHANGELOG.md",
+    packageName: "@acme/cli",
+  },
+],
+```
+
+設定した`sourceDir`からリリースエントリが見つからず、その配下のサブディレクトリにMDXファイルがある場合は、ランディングディレクトリを指定した可能性があるとしてビルド時に警告が表示されます。
+
+<Tip>
+
+前へ／次へページネーションは`changelog`セクション全体を対象とするため、別のパッケージへまたがることがあります。その遷移が紛らわしい場合は、パッケージ境界のページのフロントマターで`pagination_prev: null`または`pagination_next: null`を設定してください。
+
+</Tip>
+
+### レイアウトの生成
+
+プロジェクトのスキャフォールド時に、パッケージをカンマ区切りで指定します：
+
+```bash
+pnpm create zudo-doc my-docs --changelog-packages core,cli
+```
+
+`--changelog-packages`は`--changelog`を暗黙的に有効にします。ジェネレーターはランディングページと、各スラッグに対応するパッケージインデックスを作成しますが、`changelogs`の出力設定は追加しません。パッケージの`CHANGELOG.md`を出力するには、対象パッケージをバージョン別ファイル形式に切り替え、パッケージごとに1つの`changelogs`項目を設定してください。
+
+バージョンバンプスキルは、ルートの1つのバージョンをロックステップで管理し、デフォルトですべてのパッケージを更新します。対象パッケージを選択することもできます。選択した1ページ形式の変更履歴には新しいバージョンセクションを追加し、選択したバージョン別ファイル形式のパッケージには新しいバージョンファイルを追加します。パッケージごとの独立したバージョニングには対応していません。
+
 ## バージョンバンプスクリプト
 
 zudo-docにはバージョン管理を自動化する`scripts/version-bump.sh`スクリプトが含まれています：
 
 ```bash
-# バージョンをバンプして変更履歴エントリを作成
+# Bump version and create changelog entry
 ./scripts/version-bump.sh 0.2.0
 
-# バージョンをバンプして変更履歴エントリを作成し、現在のドキュメントをスナップショット
+# Bump version, create changelog entry, and snapshot current docs
 ./scripts/version-bump.sh 1.0.0 --snapshot
 ```
 
@@ -144,10 +255,10 @@ zudo-docにはバージョン管理を自動化する`scripts/version-bump.sh`�
 8. npm公開のガイド（プライベートパッケージの場合はスキップ）
 
 ```bash
-# Claude Codeでスキルを実行
+# Run the skill in Claude Code
 /zudo-doc-version-bump
 
-# 提案ステップをスキップしてバンプの種類を指定
+# Or skip the proposal step by specifying the bump type
 /zudo-doc-version-bump patch
 ```
 
@@ -159,14 +270,33 @@ zudo-docにはバージョン管理を自動化する`scripts/version-bump.sh`�
 
 ## ヘッダーナビゲーション
 
-変更履歴セクションはヘッダーナビゲーションからリンクされています。これは`zfb.config.ts`の`headerNav`で設定されます：
+1つの変更履歴には、フラットな`headerNav`アイテムを使用します：
 
 ```ts
 headerNav: [
-  // ...その他のアイテム
+  // ...other items
   { label: "Changelog", labelKey: "nav.changelog", path: "/docs/changelog", categoryMatch: "changelog" },
 ],
 ```
+
+複数パッケージの変更履歴では、親をドロップダウンにします。`categoryMatch: "changelog"`は親に残し、子からは`categoryMatch`を省略します：
+
+```ts
+headerNav: [
+  // ...other items
+  {
+    label: "Changelog",
+    path: "/docs/changelog",
+    categoryMatch: "changelog",
+    children: [
+      { label: "Core", path: "/docs/changelog/core" },
+      { label: "CLI", path: "/docs/changelog/cli" },
+    ],
+  },
+],
+```
+
+ネストした子のアクティブ状態はパスを基準に判定されます。一方、`categoryMatch`は単一のトップレベルディレクトリでサイドバーの範囲を決めます。親と重複する値や`"changelog/core"`のような複数セグメントの値はトップレベルカテゴリに一致せず、サイドバーが空になることがあります。どちらの誤りもビルド時に警告されます。一般的な規則については、[ヘッダーナビゲーション](./header-navigation.mdx#1つのカテゴリ配下にネストした子を置く)を参照してください。
 
 ## i18n
 
