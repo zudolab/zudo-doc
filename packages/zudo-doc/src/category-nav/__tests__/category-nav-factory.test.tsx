@@ -121,6 +121,55 @@ describe("createCategoryNavWrapper — version threading (#3218), category mode"
   });
 });
 
+describe("createCategoryNavWrapper — nested changelog categories", () => {
+  function makeChangelogDeps(): CategoryNavDeps {
+    const tree: CategoryNavNode[] = [
+      makeNode("changelog", {
+        label: "Changelog",
+        children: [
+          makeNode("changelog/pkg-a", { label: "Package A", description: "Package A releases" }),
+          makeNode("changelog/pkg-b", { label: "Package B", description: "Package B releases" }),
+        ],
+      }),
+    ];
+    return makeDeps({ buildNavTree: () => tree });
+  }
+
+  it("renders the two package cards under category=changelog", () => {
+    const result = createCategoryNavWrapper(makeChangelogDeps())({ category: "changelog" });
+    expect(cardsOf(result).map(({ label, href, description }) => ({ label, href, description }))).toEqual([
+      { label: "Package A", href: "/docs/changelog/pkg-a", description: "Package A releases" },
+      { label: "Package B", href: "/docs/changelog/pkg-b", description: "Package B releases" },
+    ]);
+  });
+
+  it("renders a package's version pages under category=changelog/pkg-a", () => {
+    const deps = makeChangelogDeps();
+    const originalBuildNavTree = deps.buildNavTree;
+    deps.buildNavTree = (...args) =>
+      originalBuildNavTree(...args).map((node) => ({
+        ...node,
+        children: node.children.map((child) =>
+          child.slug === "changelog/pkg-a"
+            ? {
+                ...child,
+                children: [
+                  makeNode("changelog/pkg-a/1.0", { label: "1.0", href: "/docs/changelog/pkg-a/1.0" }),
+                  makeNode("changelog/pkg-a/2.0", { label: "2.0", href: "/docs/changelog/pkg-a/2.0" }),
+                ],
+              }
+            : child,
+        ),
+      }));
+
+    const result = createCategoryNavWrapper(deps)({ category: "changelog/pkg-a" });
+    expect(cardsOf(result).map((card) => card.href)).toEqual([
+      "/docs/changelog/pkg-a/1.0",
+      "/docs/changelog/pkg-a/2.0",
+    ]);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // `categories` mode (explicit top-level slug list)
 // ---------------------------------------------------------------------------
