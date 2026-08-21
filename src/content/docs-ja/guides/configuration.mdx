@@ -622,6 +622,23 @@ Changelog 生成設定、または無効化するなら `false`。
 
 デフォルト: `false`
 
+マルチパッケージプロジェクトでは、パッケージごとに1つの項目を追加します。各`sourceDir`には、トップレベルの変更履歴ランディングディレクトリではなく、`index.mdx`以外のリリース別MDXファイルを含むパッケージ固有のディレクトリを指定する必要があります：
+
+```ts
+changelogs: [
+  {
+    sourceDir: "src/content/docs/changelog/core",
+    outputFile: "packages/core/CHANGELOG.md",
+    packageName: "@acme/core",
+  },
+  {
+    sourceDir: "src/content/docs/changelog/cli",
+    outputFile: "packages/cli/CHANGELOG.md",
+    packageName: "@acme/cli",
+  },
+],
+```
+
 [Changelog ガイド](./changelog.mdx)を参照してください。
 
 ### claudeResources

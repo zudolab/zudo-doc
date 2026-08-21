@@ -50,10 +50,13 @@ Independently of the color scheme, the scaffold can start a project on any bundl
 |------|-------------|---------|
 | `--name <name>` | Project name (or first positional arg) | `my-docs` |
 | `--lang <code>` | Default language code | `en` |
+| `--changelog-packages <a,b>` | Generate a nested changelog landing page and one package index per comma-separated slug | — |
 | `--github-url <url>` | GitHub repository URL (drives header link + source link) | — |
 | `--pm <manager>` | Package manager: `pnpm`, `npm`, `yarn`, `bun` | `pnpm` |
 | `--[no-]install` | Install dependencies after scaffolding | prompt |
 | `--[no-]git` | Initialize a git repository + initial commit (enables doc-history metadata) | on |
+
+`--changelog-packages core,cli` implies `--changelog` and scaffolds a multi-package changelog layout.
 
 ### Color Scheme
 

@@ -11,14 +11,15 @@
 // Two shapes are exercised (both enable claudeSkills + claudeSkillsWriting,
 // so every shipped skill variant is covered):
 //   (a) minimal + the skill features only  — no i18n / versioning / changelog
-//   (b) skill features + i18n + versioning + changelog
+//   (b) skill features + i18n + versioning + multi-package changelog
 // Shape (b) enables BOTH `versioning` and `changelog` because the SINGULAR
 // `changelog` feature is what seeds `src/content/docs/changelog/` — the
 // `versioning` feature alone never creates a changelog page (see
 // `src/features/versioning.ts`'s header comment: it is purely a
 // `zudoDoc({ versions: [] })` config field, no file copy). Shape (b) is the
 // only shape that exercises the version-bump skill's changelog-update
-// positive path.
+// positive path. Its `core`/`cli` pages also make the package-directory
+// layout described by that skill concrete in the generated fixture.
 //
 // Design choice — CONDITIONAL_PATHS allowlist over block-parsing:
 // The 3 variant SKILL.md files phrase "this only applies if feature X is
@@ -27,7 +28,7 @@
 // project's i18n feature is enabled", "if enabled, major bumps only" in a
 // heading). Parsing those into a reliable "inside a conditional block"
 // boundary detector would be more fragile than the actual conditional
-// surface it needs to cover: across all 3 skills there are only 3 literal
+// surface it needs to cover: across all 3 skills there are only 4 literal
 // path tokens that are genuinely feature-gated. An explicit allowlist below
 // (`CONDITIONAL_PATHS`, keyed by the `UserChoices.features` id(s) that must
 // be enabled for the path to exist) is simpler, auditable at a glance, and
@@ -119,10 +120,12 @@ function extractReferencedPaths(markdown: string): string[] {
 // feature is present in the shape under test (shape (a) skips all of
 // these; shape (b) enables all of them).
 const CONDITIONAL_PATHS: Record<string, string[]> = {
-  // zudo-doc-version-bump: "### English changelog" section — the
+  // zudo-doc-version-bump: primary changelog root used for layout discovery.
+  "src/content/docs/changelog/": ["changelog"],
+  // zudo-doc-version-bump: primary changelog existence check — the
   // `changelog` feature is what seeds this file (versioning alone does not).
   "src/content/docs/changelog/index.mdx": ["changelog"],
-  // zudo-doc-version-bump: "### Japanese changelog" section — needs BOTH
+  // zudo-doc-version-bump: other-locale changelog section — needs BOTH
   // the changelog page (changelog) and the secondary content dir (i18n).
   "src/content/docs-ja/changelog/index.mdx": ["changelog", "i18n"],
   // zudo-doc-version-bump ("...and `src/content/docs-ja/`) now represent
@@ -153,6 +156,7 @@ const EXCLUDED_PATHS = new Set([
 async function scaffoldShape(
   projectName: string,
   features: string[],
+  changelogPackages?: string[],
 ): Promise<string> {
   const choices: UserChoices = {
     projectName,
@@ -161,6 +165,7 @@ async function scaffoldShape(
     singleScheme: "Default Dark",
     features,
     packageManager: "pnpm",
+    changelogPackages,
   };
   await scaffold(choices);
   return path.join(tempDir, projectName);
@@ -231,7 +236,7 @@ describe("claude-skills scaffold refs — generated-scaffold integration guard (
     expect(pkg.scripts.b4push).toBe("pnpm check && pnpm build");
   });
 
-  it("shape (b) skill features + i18n + versioning + changelog: every referenced path (incl. conditional) exists", async () => {
+  it("shape (b) skill features + i18n + versioning + multi-package changelog: every referenced path (incl. conditional) exists", async () => {
     const features = [
       "claudeSkills",
       "claudeSkillsWriting",
@@ -239,13 +244,13 @@ describe("claude-skills scaffold refs — generated-scaffold integration guard (
       "versioning",
       "changelog",
     ];
-    const dir = await scaffoldShape("shape-b-full", features);
+    const dir = await scaffoldShape("shape-b-full", features, ["core", "cli"]);
 
     const verdicts = await collectRefVerdicts(dir, features);
     const missing = verdicts.filter((v) => !v.exists);
     expect(missing).toEqual([]);
     expect(verdicts.length).toBeGreaterThan(0);
-    // All 3 CONDITIONAL_PATHS entries must actually have been exercised
+    // All CONDITIONAL_PATHS entries must actually have been exercised
     // here — if a variant's wording drifts and no longer matches an entry,
     // this catches the allowlist going stale (silently asserting nothing).
     const conditionalRefsSeen = new Set(
@@ -253,6 +258,23 @@ describe("claude-skills scaffold refs — generated-scaffold integration guard (
     );
     for (const conditionalPath of Object.keys(CONDITIONAL_PATHS)) {
       expect(conditionalRefsSeen.has(conditionalPath)).toBe(true);
+    }
+
+    for (const localeDir of ["docs", "docs-ja"]) {
+      for (const slug of ["core", "cli"]) {
+        expect(
+          await fs.pathExists(
+            path.join(
+              dir,
+              "src/content",
+              localeDir,
+              "changelog",
+              slug,
+              "index.mdx",
+            ),
+          ),
+        ).toBe(true);
+      }
     }
 
     const pkg = await fs.readJson(path.join(dir, "package.json"));

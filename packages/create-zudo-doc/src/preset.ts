@@ -58,6 +58,51 @@ export interface PresetMetaTagsConfig {
   twitterCreator?: string;
 }
 
+const CHANGELOG_PACKAGE_SLUG_RE = /^[a-z0-9][a-z0-9-]*$/;
+
+/**
+ * Parse the comma-separated CLI form (or normalize the array form used by
+ * presets and the programmatic API). Empty entries are ignored so a trailing
+ * comma is harmless; validation below still rejects an entirely empty list.
+ */
+export function parseChangelogPackages(
+  value: string | readonly string[],
+): string[] {
+  const values = typeof value === "string" ? value.split(",") : value;
+  return values.map((slug) => slug.trim()).filter(Boolean);
+}
+
+/**
+ * Shared changelog-package validation for CLI, JSON presets, and the
+ * programmatic API. Keeping this next to the parser prevents the three entry
+ * points from accepting different slug grammars or duplicate lists.
+ */
+export function validateChangelogPackages(list: unknown): string | null {
+  if (!Array.isArray(list)) {
+    return `"changelogPackages" must be an array`;
+  }
+  for (let i = 0; i < list.length; i++) {
+    if (typeof list[i] !== "string") {
+      return `changelogPackages[${i}] must be a string`;
+    }
+  }
+  const packages = parseChangelogPackages(list as string[]);
+  if (packages.length === 0) {
+    return `"changelogPackages" must contain at least one package`;
+  }
+  const seen = new Set<string>();
+  for (const slug of packages) {
+    if (!CHANGELOG_PACKAGE_SLUG_RE.test(slug)) {
+      return `Invalid changelog package slug "${slug}". Slugs must match /^[a-z0-9][a-z0-9-]*$/`;
+    }
+    if (seen.has(slug)) {
+      return `Duplicate changelog package "${slug}"`;
+    }
+    seen.add(slug);
+  }
+  return null;
+}
+
 /**
  * Validates a `headerRightItems` value against the v1 preset allowlist.
  * Shared by `validatePreset()` (JSON preset path) and `createZudoDoc()`
@@ -158,6 +203,8 @@ export interface PresetJson {
   /** Theme pack slug (ADR #2818 Decision 7), validated against THEME_PACKS. */
   themePack?: string;
   features?: string[];
+  /** Package slugs for the nested changelog layout. */
+  changelogPackages?: string[];
   githubUrl?: string;
   cjkFriendly?: boolean;
   minifyHtml?: boolean;
@@ -203,6 +250,18 @@ export function validatePreset(json: unknown): string | null {
   }
   if (p.features !== undefined && !Array.isArray(p.features)) {
     return `"features" must be an array in preset`;
+  }
+  if (p.changelogPackages !== undefined) {
+    if (!Array.isArray(p.changelogPackages)) {
+      return `"changelogPackages" must be an array in preset`;
+    }
+    const changelogPackages = p.changelogPackages.every(
+      (slug): slug is string => typeof slug === "string",
+    )
+      ? parseChangelogPackages(p.changelogPackages)
+      : p.changelogPackages;
+    const err = validateChangelogPackages(changelogPackages);
+    if (err) return err;
   }
   if (p.defaultLang && !VALID_LANGS.has(p.defaultLang)) {
     return `Invalid language "${p.defaultLang}" in preset`;
@@ -277,6 +336,9 @@ export function presetToChoices(json: PresetJson): PartialChoices {
   if (json.githubUrl !== undefined) choices.githubUrl = json.githubUrl;
   if (json.cjkFriendly !== undefined) choices.cjkFriendly = json.cjkFriendly;
   if (json.minifyHtml !== undefined) choices.minifyHtml = json.minifyHtml;
+  if (json.changelogPackages !== undefined) {
+    choices.changelogPackages = parseChangelogPackages(json.changelogPackages);
+  }
   if (json.headerRightItems !== undefined) {
     choices.headerRightItems = json.headerRightItems;
   }

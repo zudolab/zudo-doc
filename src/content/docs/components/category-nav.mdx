@@ -59,6 +59,10 @@ By default `CategoryNav` infers a single parent and lists its immediate children
 
 Each slug is resolved to its nav node and rendered as a card; slugs not found in the tree are silently skipped. A no-page category (`category_no_page: true` in `index.mdx`, or `noPage: true` in a legacy `_category_.json`) has no route of its own, so its card links to the category's first routed descendant page; a no-page category with no reachable page is skipped rather than rendering a dead link.
 
+### Nested categories
+
+The `category` prop also accepts a nested category path. For example, `<CategoryNav category="changelog/core" />` lists the immediate release pages under `changelog/core/`, following the same pattern as `guides/layout-demos`. On the parent landing page, `<CategoryNav category="changelog" />` renders one card for each package subcategory's `index.mdx`.
+
 ## Features
 
 - **2-column grid** — displays `sm:grid-cols-2` on desktop, single column on mobile

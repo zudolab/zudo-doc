@@ -107,6 +107,117 @@ Multiple outputs can be configured by adding more items to the array. This is
 useful when a monorepo wants separate package changelogs, each generated from
 its own changelog source directory.
 
+## Multiple Changelogs (Multi-Package Projects)
+
+Use a nested changelog when a monorepo publishes several packages independently. The top-level page becomes a landing page, and each package gets its own nested category:
+
+```
+src/content/docs/changelog/
+├── index.mdx
+├── core/
+│   └── index.mdx
+└── cli/
+    └── index.mdx
+```
+
+This produces `/docs/changelog`, `/docs/changelog/core`, and `/docs/changelog/cli`. The landing page lists the package categories and does **not** use `category_sort_order: "desc"`:
+
+```mdx title="changelog/index.mdx"
+---
+title: Changelog
+sidebar_position: 10
+---
+
+Release notes for every package in this repository.
+
+<CategoryNav category="changelog" />
+```
+
+### One Page per Package (Default)
+
+By default, the generator creates one `index.mdx` per package. Keep the complete package history on that page, with `## Unreleased` followed by version sections:
+
+```mdx title="changelog/core/index.mdx"
+---
+title: Core
+sidebar_position: 1
+---
+
+## Unreleased
+
+### Added
+
+- Work in progress.
+
+## 1.0.0
+
+Released: 2026-08-22
+
+### Added
+
+- Initial release.
+```
+
+### One File per Version
+
+Use separate version files when you also emit a package `CHANGELOG.md`. In this variant, the package index sets descending order and renders its release files:
+
+```
+src/content/docs/changelog/core/
+├── index.mdx
+├── 1.1.0.mdx
+└── 1.0.0.mdx
+```
+
+```mdx title="changelog/core/index.mdx"
+---
+title: Core
+sidebar_position: 1
+category_sort_order: "desc"
+---
+
+Release notes for the core package.
+
+<CategoryNav category="changelog/core" />
+```
+
+Each package directory configured in `changelogs` must contain non-index, per-release MDX files. Set `sourceDir` to that package directory, never to the top-level `changelog/` landing directory:
+
+```ts title="zfb.config.ts"
+changelogs: [
+  {
+    sourceDir: "src/content/docs/changelog/core",
+    outputFile: "packages/core/CHANGELOG.md",
+    packageName: "@acme/core",
+  },
+  {
+    sourceDir: "src/content/docs/changelog/cli",
+    outputFile: "packages/cli/CHANGELOG.md",
+    packageName: "@acme/cli",
+  },
+],
+```
+
+The build warns about the landing-directory pitfall when a configured `sourceDir` yields no release entries but contains subdirectories with MDX files.
+
+<Tip>
+
+Previous/next pagination runs across the entire `changelog` section, so it can cross from one package into another. On package boundary pages, set `pagination_prev: null` or `pagination_next: null` in frontmatter when that transition would be confusing.
+
+</Tip>
+
+### Generate the Layout
+
+Pass a comma-separated package list when scaffolding a project:
+
+```bash
+pnpm create zudo-doc my-docs --changelog-packages core,cli
+```
+
+`--changelog-packages` implies `--changelog`. The generator creates the landing page and one package index for each slug, but it does not add a `changelogs` output configuration. To emit package `CHANGELOG.md` files, switch those packages to the per-version-file layout and configure one `changelogs` entry per package.
+
+The version-bump skill keeps one lockstep root version and updates all packages by default, or only the packages you select. It adds a new version section to each selected single-page changelog, or a new per-version file to each selected package using the per-version-file layout. Independent per-package versioning is not supported.
+
 ## Version Bump Script
 
 zudo-doc includes a `scripts/version-bump.sh` script that automates version management:
@@ -168,7 +279,7 @@ The skill requires at least one `v*` tag to exist. If this is the first release,
 
 ## Header Navigation
 
-The changelog section is linked from the header navigation. This is configured via `headerNav` in `zfb.config.ts`:
+For one changelog, use a flat `headerNav` item:
 
 ```ts
 headerNav: [
@@ -176,6 +287,25 @@ headerNav: [
   { label: "Changelog", labelKey: "nav.changelog", path: "/docs/changelog", categoryMatch: "changelog" },
 ],
 ```
+
+For multiple package changelogs, make the parent a dropdown. Keep `categoryMatch: "changelog"` on the parent and omit `categoryMatch` from its children:
+
+```ts
+headerNav: [
+  // ...other items
+  {
+    label: "Changelog",
+    path: "/docs/changelog",
+    categoryMatch: "changelog",
+    children: [
+      { label: "Core", path: "/docs/changelog/core" },
+      { label: "CLI", path: "/docs/changelog/cli" },
+    ],
+  },
+],
+```
+
+Nested child active state is path-based, while `categoryMatch` scopes the sidebar by a single top-level directory. Two or more children that share a `categoryMatch` can all appear active in server-rendered HTML. A multi-segment value such as `"changelog/core"` never matches the top-level category and can leave the sidebar empty. The build reports a warning for either mistake. See [Header Navigation](./header-navigation.mdx#properties-categorymatch-nested-children-under-one-category) for the general rule.
 
 ## i18n
 

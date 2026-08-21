@@ -1,6 +1,11 @@
 import * as p from "@clack/prompts";
 import { SINGLE_SCHEMES, FEATURES, SUPPORTED_LANGS, THEME_PACKS } from "./constants.js";
-import type { PresetHeaderRightItem, PresetMetaTagsConfig } from "./preset.js";
+import {
+  parseChangelogPackages,
+  validateChangelogPackages,
+  type PresetHeaderRightItem,
+  type PresetMetaTagsConfig,
+} from "./preset.js";
 import { validateProjectName } from "./utils.js";
 
 export interface UserChoices {
@@ -18,6 +23,10 @@ export interface UserChoices {
   themePack?: string;
   // Features
   features: string[];
+  // Optional package slugs for the nested changelog layout. An empty array
+  // means the single starter page; undefined means the interactive prompt has
+  // not answered yet.
+  changelogPackages?: string[];
   // Feature values explicitly disabled via --no-<flag> on the CLI. Used to
   // emit a warning when an auto-enable (e.g. bodyFootUtil forces docHistory)
   // overrides an explicit user choice. Never populated by interactive prompts.
@@ -53,6 +62,7 @@ export interface PartialChoices {
   defaultMode?: "light" | "dark";
   themePack?: string;
   features?: Partial<Record<string, boolean>>;
+  changelogPackages?: string[];
   // Feature values explicitly disabled via --no-<flag> on the CLI. Threaded
   // through to UserChoices so scaffold.ts can warn on forced auto-enables.
   explicitlyDisabledFeatures?: string[];
@@ -229,6 +239,26 @@ export async function runPrompts(
     features = result;
   }
 
+  // 4.5 Changelog package layout. A blank answer deliberately preserves the
+  // existing single-page starter. CLI/preset/--yes callers prefill this value
+  // so they remain non-interactive.
+  let changelogPackages = prefilled.changelogPackages;
+  if (features.includes("changelog") && changelogPackages === undefined) {
+    const result = await p.text({
+      message:
+        "Package changelogs (comma-separated slugs; leave empty for a single changelog):",
+      placeholder: "core,cli",
+      defaultValue: "",
+      validate(value) {
+        if (!value.trim()) return;
+        const parsed = parseChangelogPackages(value);
+        return validateChangelogPackages(parsed) ?? undefined;
+      },
+    });
+    if (p.isCancel(result)) process.exit(0);
+    changelogPackages = parseChangelogPackages(result);
+  }
+
   // 5. GitHub URL (drives header GitHub icon + view-source link)
   let githubUrl: string | undefined = prefilled.githubUrl;
   if (githubUrl === undefined) {
@@ -275,6 +305,7 @@ export async function runPrompts(
     defaultMode,
     themePack,
     features,
+    changelogPackages,
     explicitlyDisabledFeatures: prefilled.explicitlyDisabledFeatures,
     githubUrl,
     cjkFriendly: prefilled.cjkFriendly,

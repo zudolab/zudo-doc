@@ -282,7 +282,14 @@ export function Header(props: HeaderProps): JSX.Element {
 
   const isNonDefaultLocale = lang != null && lang !== i18n.defaultLocale;
   const pathWithoutBase = urlHelpers.stripBase(currentPath);
-  const matchPath = pathForMatch(pathWithoutBase, lang, i18n.defaultLocale);
+  // `navHref` adds the active version prefix to rendered links, but the
+  // configured header paths are intentionally unversioned. Remove the
+  // version segment before locale normalization so SSR active state agrees
+  // with those configured paths on archived pages too. Keep this local to
+  // the renderer: `nav-active.ts` is embedded verbatim in the frozen
+  // overflow script and must remain unchanged.
+  const pathWithoutVersion = stripCurrentVersionPrefix(pathWithoutBase, currentVersion);
+  const matchPath = pathForMatch(pathWithoutVersion, lang, i18n.defaultLocale);
 
   const activeNavPath = computeActiveNavPath(headerNav, matchPath);
   const rightItemDispatch = createRightItemDispatch(headerRightComponents);
@@ -540,6 +547,24 @@ function renderNavItem(
       {label}
     </a>
   );
+}
+
+/**
+ * Remove the active `/v/{version}` route prefix from a pathname.
+ *
+ * Version slugs are a path segment, so `/v/1.0` must not strip a path such as
+ * `/v/1.01/...`. The equality branch also keeps the route root normalized to
+ * `/` instead of returning an empty string. This helper deliberately lives in
+ * `header.tsx`; `nav-active.ts` is copied into the CSP-hash-pinned overflow
+ * script and is not part of the SSR-only version normalization seam.
+ */
+function stripCurrentVersionPrefix(path: string, currentVersion?: string): string {
+  if (currentVersion == null || currentVersion === "") return path;
+
+  const prefix = `/v/${currentVersion}`;
+  if (path === prefix) return "/";
+  if (path.startsWith(`${prefix}/`)) return path.slice(prefix.length);
+  return path;
 }
 
 type RightItemContext = Omit<HeaderRightComponentProps, "item" | "index">;

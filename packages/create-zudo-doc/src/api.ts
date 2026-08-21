@@ -1,7 +1,12 @@
 import path from "path";
 import { SINGLE_SCHEMES, THEME_PACKS } from "./constants.js";
 import type { PresetHeaderRightItem, PresetMetaTagsConfig } from "./preset.js";
-import { validateHeaderRightItems, validateMetaTags } from "./preset.js";
+import {
+  parseChangelogPackages,
+  validateChangelogPackages,
+  validateHeaderRightItems,
+  validateMetaTags,
+} from "./preset.js";
 import { scaffold } from "./scaffold.js";
 import { initGitRepo, installDependencies, validateProjectName } from "./utils.js";
 
@@ -20,6 +25,8 @@ export interface CreateOptions {
   /** Theme pack slug (ADR #2818 Decision 7), validated against THEME_PACKS. Default: "default". */
   themePack?: string;
   features: string[];
+  /** Package slugs for the nested changelog layout; implies `changelog`. */
+  changelogPackages?: string[];
   /** GitHub repository URL — drives the header GitHub link and body-foot
    *  "View source on GitHub" link. Empty = disabled. */
   githubUrl?: string;
@@ -83,7 +90,17 @@ export async function createZudoDoc(options: CreateOptions): Promise<string> {
     const err = validateMetaTags(rest.metaTags);
     if (err) throw new Error(err);
   }
-  const choices = { ...rest, defaultLang: rest.defaultLang ?? "en" };
+  let changelogPackages = rest.changelogPackages;
+  if (changelogPackages !== undefined) {
+    const err = validateChangelogPackages(changelogPackages);
+    if (err) throw new Error(err);
+    changelogPackages = parseChangelogPackages(changelogPackages);
+  }
+  const choices = {
+    ...rest,
+    defaultLang: rest.defaultLang ?? "en",
+    changelogPackages,
+  };
   await scaffold(choices);
   const targetDir = path.resolve(process.cwd(), choices.projectName);
   if (install) {

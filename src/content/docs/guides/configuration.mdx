@@ -625,6 +625,23 @@ Changelog generation config(s), or `false` to disable.
 
 Default: `false`
 
+For a multi-package project, add one entry per package. Each `sourceDir` must be the package-specific directory that contains non-index, per-release MDX files—not the top-level changelog landing directory:
+
+```ts
+changelogs: [
+  {
+    sourceDir: "src/content/docs/changelog/core",
+    outputFile: "packages/core/CHANGELOG.md",
+    packageName: "@acme/core",
+  },
+  {
+    sourceDir: "src/content/docs/changelog/cli",
+    outputFile: "packages/cli/CHANGELOG.md",
+    packageName: "@acme/cli",
+  },
+],
+```
+
 See the [Changelog guide](./changelog.mdx).
 
 ### claudeResources

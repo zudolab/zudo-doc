@@ -19,6 +19,33 @@ describe("presetToChoices — cjkFriendly", () => {
   });
 });
 
+describe("changelogPackages preset support", () => {
+  it("forwards normalized package slugs", () => {
+    expect(
+      presetToChoices({ changelogPackages: [" core ", "", "cli"] }),
+    ).toEqual(expect.objectContaining({ changelogPackages: ["core", "cli"] }));
+  });
+
+  it("accepts valid slugs, including a numeric slug", () => {
+    expect(validatePreset({ changelogPackages: ["core", "123"] })).toBeNull();
+  });
+
+  it("rejects an invalid slug", () => {
+    expect(validatePreset({ changelogPackages: ["core_lib"] })).toMatch(
+      /Invalid changelog package slug "core_lib"/,
+    );
+  });
+
+  it("rejects duplicate and empty lists", () => {
+    expect(validatePreset({ changelogPackages: ["core", "core"] })).toMatch(
+      /Duplicate changelog package "core"/,
+    );
+    expect(validatePreset({ changelogPackages: [] })).toMatch(
+      /must contain at least one package/,
+    );
+  });
+});
+
 describe("presetToChoices — minifyHtml", () => {
   it("forwards minifyHtml: true", () => {
     const choices = presetToChoices({ minifyHtml: true });

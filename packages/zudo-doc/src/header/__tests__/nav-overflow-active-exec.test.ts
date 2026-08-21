@@ -38,6 +38,22 @@ function buildNav(): HTMLElement {
   return nav;
 }
 
+function buildNestedChangelogNav(): HTMLElement {
+  const nav = document.createElement("nav");
+  nav.setAttribute("data-header-nav", "");
+  nav.innerHTML = `
+    <div data-nav-item data-nav-item-dropdown>
+      <a href="/docs/changelog">Changelog</a>
+      <div>
+        <a href="/docs/changelog/pkg-a">Package A</a>
+        <a href="/docs/changelog/pkg-b">Package B</a>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(nav);
+  return nav;
+}
+
 describe("NAV_OVERFLOW_SCRIPT — executed in jsdom (applyActiveNav)", () => {
   afterEach(() => {
     document.body.innerHTML = "";
@@ -69,6 +85,24 @@ describe("NAV_OVERFLOW_SCRIPT — executed in jsdom (applyActiveNav)", () => {
     expect(learnLink?.getAttribute("aria-current")).toBe("page");
     expect(activeChild?.getAttribute("data-active")).toBe("");
     expect(inactiveChild?.hasAttribute("data-active")).toBe(false);
+  });
+
+  it("marks exactly one sibling-prefix changelog child active", () => {
+    setLocation("/docs/changelog/pkg-a/1.0.0");
+    const nav = buildNestedChangelogNav();
+
+    new Function(NAV_OVERFLOW_SCRIPT)();
+
+    expect(nav.querySelector('a[href="/docs/changelog"]')?.getAttribute("aria-current")).toBe(
+      "page",
+    );
+    expect(nav.querySelectorAll('a[data-active=""]').length).toBe(1);
+    expect(nav.querySelector('a[href="/docs/changelog/pkg-a"]')?.getAttribute("data-active")).toBe(
+      "",
+    );
+    expect(nav.querySelector('a[href="/docs/changelog/pkg-b"]')?.hasAttribute("data-active")).toBe(
+      false,
+    );
   });
 
   it("prefers document.documentElement.dataset.zdCurrentPath over location.pathname", () => {

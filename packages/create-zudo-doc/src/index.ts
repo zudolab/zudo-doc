@@ -60,6 +60,9 @@ async function main() {
   if (args.themePack) prefilled.themePack = args.themePack;
   if (args.pm) prefilled.packageManager = args.pm;
   if (args.githubUrl !== undefined) prefilled.githubUrl = args.githubUrl;
+  if (args.changelogPackages !== undefined) {
+    prefilled.changelogPackages = args.changelogPackages;
+  }
 
   // Build feature overrides from explicit flags — driven by FEATURES constant
   const featureFlags: Partial<Record<string, boolean>> = {};
@@ -95,6 +98,9 @@ async function main() {
     prefilled.themePack ??= "default";
     prefilled.packageManager ??= "pnpm";
     prefilled.githubUrl ??= "";
+    // A blank package list is the explicit non-interactive choice for the
+    // existing single-page changelog. A non-empty CLI/preset list above wins.
+    prefilled.changelogPackages ??= [];
     // For features: set defaults for any not explicitly specified
     const featureDefaults: Partial<Record<string, boolean>> = {};
     for (const f of FEATURES) {

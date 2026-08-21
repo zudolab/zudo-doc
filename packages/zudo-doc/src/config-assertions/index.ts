@@ -9,6 +9,21 @@
 
 import type { FaviconConfig } from "../settings.js";
 
+/** Structural subset of a header dropdown read by the category-match guard. */
+export interface AmbiguousDropdownCategoryMatchItem {
+  label?: string;
+  categoryMatch?: string;
+  children?: Array<{
+    label?: string;
+    categoryMatch?: string;
+  }>;
+}
+
+/** Logger surface accepted by the non-throwing header-nav diagnostic. */
+export interface ConfigAssertionLogger {
+  warn(message: string): void;
+}
+
 /** Structural subset of `Settings` {@link assertNoEmptyStringFaviconOrLogo} reads. */
 export interface EmptyStringFaviconOrLogoSubject {
   logo?: string | false;
@@ -63,6 +78,73 @@ export function assertNoEmptyStringFaviconOrLogo(settings: EmptyStringFaviconOrL
           `Invalid favicon.${slot} "": omit the slot to fall back to the default, or supply a non-empty path.`,
         );
       }
+    }
+  }
+}
+
+/**
+ * Warn about `categoryMatch` values that cannot express the intended
+ * dropdown grouping.
+ *
+ * A category matcher is compared with the first slug segment by the nav-scope
+ * resolver, so a value containing `/` never matches. Likewise, duplicate
+ * child values make every matching child category-active. Children grouped
+ * under one top-level directory should omit `categoryMatch` and rely on the
+ * deepest matching child path; Learn-style children should use distinct
+ * top-level values.
+ *
+ * This is intentionally a diagnostic rather than a config assertion: malformed
+ * navigation should remain buildable, and each offending value is reported at
+ * most once per parent dropdown. The `"!"` matcher is the intentional default
+ * bucket and is excluded from both checks.
+ */
+export function warnAmbiguousDropdownCategoryMatch(
+  headerNav: readonly AmbiguousDropdownCategoryMatchItem[] | undefined,
+  logger: ConfigAssertionLogger = console,
+): void {
+  if (!headerNav) return;
+
+  for (const item of headerNav) {
+    const children = item.children;
+    if (!children || children.length === 0) continue;
+
+    const childCounts = new Map<string, number>();
+    for (const child of children) {
+      const value = child.categoryMatch;
+      if (value == null || value === "!") continue;
+      childCounts.set(value, (childCounts.get(value) ?? 0) + 1);
+    }
+
+    const offendingValues: string[] = [];
+    const addOffendingValue = (value: string | undefined): void => {
+      if (value == null || value === "!" || offendingValues.includes(value)) return;
+      offendingValues.push(value);
+    };
+
+    if (item.categoryMatch?.includes("/")) {
+      addOffendingValue(item.categoryMatch);
+    }
+    for (const child of children) {
+      if (child.categoryMatch?.includes("/")) {
+        addOffendingValue(child.categoryMatch);
+      }
+    }
+    for (const [value, count] of childCounts) {
+      if (count >= 2) addOffendingValue(value);
+    }
+
+    for (const value of offendingValues) {
+      const reasons = [
+        ...(value.includes("/") ? ["contains `/` and never matches a top-level slug"] : []),
+        ...((childCounts.get(value) ?? 0) >= 2 ? ["is shared by multiple children"] : []),
+      ].join("; ");
+      const parentLabel = item.label ?? "(unnamed)";
+      logger.warn(
+        `zudo-doc: header dropdown "${parentLabel}" has categoryMatch "${value}" that ${reasons}. ` +
+          "Children grouped under one top-level directory should omit categoryMatch " +
+          "(active state follows the deepest matching child path); Learn-style children " +
+          "should use distinct top-level values.",
+      );
     }
   }
 }
