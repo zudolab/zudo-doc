@@ -26,9 +26,9 @@ function isMdWasmResource(rawUrl: string): boolean {
   const pathname = new URL(rawUrl).pathname;
   return (
     (pathname.includes(
-      "islands-resource-zfb_md_wasm_glue.zfb-resource-",
+      "islands-resource-zfb_md_wasm_highlight_glue.zfb-resource-",
     ) && pathname.endsWith(".mjs")) ||
-    (pathname.includes("islands-resource-zfb_md_wasm_bg-") &&
+    (pathname.includes("islands-resource-zfb_md_wasm_highlight_bg-") &&
       pathname.endsWith(".wasm"))
   );
 }

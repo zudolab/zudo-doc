@@ -98,9 +98,9 @@ function specifiersInDiagnostics(text: string, re: RegExp): string[] {
 // `@takazudo/zfb-md-wasm` needs to be marked `external` here: it is an
 // OPTIONAL peer (`package.json#peerDependenciesMeta`) that
 // `html-preview-wrapper/highlight-runtime.ts` reaches through a genuine
-// `import("@takazudo/zfb-md-wasm")` (browser-time-only, per the project root
-// CLAUDE.md's "zfb semantic highlighting" note) — its OWN dist bundle
-// contains an internal Node/browser environment branch
+// `import("@takazudo/zfb-md-wasm/highlight")` (browser-time-only, per the
+// project root CLAUDE.md's "zfb semantic highlighting" note) — its OWN dist
+// bundle contains an internal Node/browser environment branch
 // (`node:fs/promises`/`node:url`) that is not part of THIS package's import
 // graph and would otherwise false-positive the guard when esbuild inlines
 // the dynamic-import target. `preact`, `@takazudo/zfb`, and `@takazudo/zdtp`

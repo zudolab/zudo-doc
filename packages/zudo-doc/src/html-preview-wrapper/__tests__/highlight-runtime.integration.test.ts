@@ -7,18 +7,27 @@ import {
 } from "../highlight-runtime.js";
 
 const runtime = createHighlightRuntime(
-  () => import("@takazudo/zfb-md-wasm"),
+  () => import("@takazudo/zfb-md-wasm/highlight"),
 );
 
 describe("HTML Preview zfb-md-wasm integration", () => {
-  it("keeps the lazy runtime edge on the public package root", () => {
+  it("keeps every import on the public highlight subpath", () => {
     const source = readFileSync(
       new URL("../highlight-runtime.ts", import.meta.url),
       "utf8",
     );
 
-    expect(source).toContain('import("@takazudo/zfb-md-wasm")');
-    expect(source).not.toContain("@takazudo/zfb-md-wasm/");
+    expect(source).toMatch(
+      /const defaultRuntime = createHighlightRuntime\(\s*\(\) => import\("@takazudo\/zfb-md-wasm\/highlight"\),?\s*\);/,
+    );
+
+    const specifiers = [
+      ...source.matchAll(/["'](@takazudo\/zfb-md-wasm(?:\/[^"']*)?)["']/g),
+    ].map((match) => match[1]);
+
+    expect(new Set(specifiers)).toEqual(
+      new Set(["@takazudo/zfb-md-wasm/highlight"]),
+    );
     expect(source).not.toMatch(/zfb_md_wasm|\.zfb-resource|\.wasm["']/);
   });
 
@@ -39,7 +48,7 @@ describe("HTML Preview zfb-md-wasm integration", () => {
       roles: ["hi-kw", "hi-var", "hi-op", "hi-num", "hi-punct"],
     },
   ])(
-    "loads the public root and emits semantic $language markup",
+    "loads the public highlight entry and emits semantic $language markup",
     async ({ language, code, roles }) => {
       const result = await runtime.highlightCode(code, { language });
       const html = getUsableHighlightHtml(result);

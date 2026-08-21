@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { HighlightCodeResult } from "@takazudo/zfb-md-wasm";
+import type { HighlightCodeResult } from "@takazudo/zfb-md-wasm/highlight";
 
 import {
   createHighlightRuntime,
@@ -31,7 +31,7 @@ async function flushMicrotasks(): Promise<void> {
 }
 
 describe("createHighlightRuntime", () => {
-  it("lazily imports the package root once and forwards direct highlight calls", async () => {
+  it("lazily imports the highlight subpath once and forwards direct highlight calls", async () => {
     const highlightCode = vi.fn().mockResolvedValue(success);
     const importModule = vi.fn<HighlightModuleImporter>().mockResolvedValue({
       highlightCode,
