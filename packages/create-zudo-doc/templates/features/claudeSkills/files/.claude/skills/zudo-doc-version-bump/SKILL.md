@@ -103,32 +103,61 @@ which package manager (`<pm>`) the project otherwise uses. `--no-git-tag-version
 also creating a commit/tag — this skill handles that later, once everything else is ready. A
 direct edit of the `"version"` field in `package.json` works identically if preferred.
 
+The project has **one root version**. All packages represented in a multi-package changelog move
+to `{NEW_VERSION}` in lockstep; independent per-package versions are out of scope for this skill.
+
 ## Update the changelog (if enabled)
 
-Check whether the project has a changelog page:
+First check whether the default-language changelog exists:
 
 ```bash
 test -f src/content/docs/changelog/index.mdx && echo "changelog present"
 ```
 
-If that file does not exist, the changelog feature is not in use — skip this whole section and
-go straight to "Archive docs as a versioned snapshot".
+If `src/content/docs/changelog/index.mdx` does not exist, the changelog feature is not in use —
+skip this whole section and go straight to "Archive docs as a versioned snapshot".
 
-Unlike a per-version file, a scaffolded changelog is a single `index.mdx` page. Add the new
-release as a section **above** the existing ones (newest first), using only the categories that
-have entries.
+### Discover package and page layouts
 
-### Default-language changelog (`src/content/docs/changelog/index.mdx`)
+Treat `src/content/docs/changelog/` as the primary changelog root. List every immediate child
+directory that contains an `index.mdx`; each directory name is a package slug:
 
-This is the project's PRIMARY changelog page. It was seeded in whichever language the project's
-`defaultLang` setting is, so use whichever heading set below already matches the page — don't
-assume English.
+```bash
+find src/content/docs/changelog -mindepth 2 -maxdepth 2 -type f -name index.mdx \
+  -print | sed 's#/index\.mdx$##; s#.*/##' | sort
+```
 
-**If the page uses English headings:**
+Then follow exactly one branch:
+
+1. **One or more package directories:** the root `index.mdx` is a landing page and must never be
+   edited. Show the package slugs to the user and ask which packages this release touches. Default
+   to **all packages**; accept a comma-separated list. Reject names that are not in the discovered
+   list. Apply the per-directory procedure below to each selected package directory.
+2. **No package directories:** apply the per-directory procedure to the changelog root itself.
+
+For every selected directory, detect its layout independently, before making changes:
+
+```bash
+find "<changelog-directory>" -maxdepth 1 -type f -name '*.mdx' ! -name index.mdx \
+  -print -quit
+```
+
+- Any output means **per-version-file layout**. Create a new version file; never insert a version
+  section into that directory's `index.mdx`.
+- No output means **single-page layout**. Edit that directory's `index.mdx` using the existing
+  section procedure.
+
+This per-directory check is mandatory: packages in one project may use different layouts.
+
+### Choose the language-specific headings
+
+The primary content directory was seeded in the project's `defaultLang`, so do not assume it is
+English. For a single-page directory, inspect its `index.mdx`. For a per-version-file directory,
+inspect its existing sibling version entries. Use the heading set already used by those files.
+
+**English heading set:**
 
 ```mdx
-## {NEW_VERSION}
-
 ### Breaking Changes
 
 - Description (commit-hash)
@@ -146,14 +175,9 @@ assume English.
 - Description (commit-hash)
 ```
 
-On the very first bump, the page still has the scaffold's starter `## Unreleased` section —
-replace that heading with `## {NEW_VERSION}` rather than adding a second heading.
-
-**If the page uses Japanese headings:**
+**Japanese heading set:**
 
 ```mdx
-## {NEW_VERSION}
-
 ### 破壊的変更
 
 - Description (commit-hash)
@@ -171,8 +195,44 @@ replace that heading with `## {NEW_VERSION}` rather than adding a second heading
 - Description (commit-hash)
 ```
 
-On the very first bump, the page still has the scaffold's starter `## 未リリース` section —
-replace that heading with `## {NEW_VERSION}` the same way.
+In either language, include only categories that have entries. Each entry is the commit subject
+with its short hash in parentheses.
+
+### Update a single-page directory
+
+Add this release above all existing release sections in the directory's `index.mdx` (newest
+first):
+
+```mdx
+## {NEW_VERSION}
+
+<!-- categories and entries from the matching heading set above -->
+```
+
+On the first bump, replace the starter `## Unreleased` or `## 未リリース` heading with
+`## {NEW_VERSION}` instead of adding a second release heading.
+
+### Update a per-version-file directory
+
+Create `<changelog-directory>/<version>.mdx`, where `<version>` is `{NEW_VERSION}` without a
+leading `v`. Never section-edit this directory's `index.mdx`. Determine the greatest numeric
+`sidebar_position` in the existing sibling version files and use that value plus one. The new file
+must have localized frontmatter and body text matching its siblings, in this shape:
+
+```mdx
+---
+title: "{NEW_VERSION}"
+description: Release notes for {NEW_VERSION}.
+sidebar_position: {MAX_EXISTING_PLUS_ONE}
+---
+
+Released: {YYYY-MM-DD}
+
+<!-- categories and entries from the matching heading set above -->
+```
+
+Use a concise Japanese `description` when the sibling entries are Japanese, but keep the required
+`Released: {YYYY-MM-DD}` line in either language. Use today's date for `{YYYY-MM-DD}`.
 
 ### Other-locale changelog
 
@@ -180,17 +240,13 @@ Only applies when i18n is enabled — i.e. a second content directory exists alo
 one. Which locale that is depends on the project's `defaultLang`: for an English-default project
 this is the Japanese changelog at `src/content/docs-ja/changelog/index.mdx`; for a
 Japanese-default project this is the English changelog under the `docs-en` directory instead. If
-the other-locale changelog page doesn't exist, skip this file.
+the other-locale changelog root doesn't exist, skip mirroring.
 
-Use the OTHER heading set from above (the one you didn't use for the default-language page —
-English primary means Japanese secondary, and vice versa), following the same "add a new
-`## {NEW_VERSION}` section above the existing ones" rule, and replace that page's own starter
-heading on the very first bump.
-
-Rules:
-
-- Only include sections that have entries
-- Each entry should be the commit subject with the short hash in parentheses
+Mirror exactly the selected primary targets by relative path under the other-locale root, detect
+each mirror directory's layout independently, and apply the matching single-page or
+per-version-file procedure. Use the other language's heading set. In a multi-package layout,
+never edit either locale's landing `changelog/index.mdx`. If a selected package has no matching
+other-locale directory, report it and stop instead of silently creating a divergent layout.
 
 ## Archive docs as a versioned snapshot (if enabled, major bumps only)
 
@@ -253,7 +309,7 @@ Stage and commit **all** version bump changes:
 
 ```bash
 git add package.json
-git add src/content/docs/changelog/index.mdx src/content/docs-ja/changelog/index.mdx 2>/dev/null
+git add src/content/docs*/changelog/ 2>/dev/null
 git add src/content/docs-v* 2>/dev/null
 # Also stage any other modified files (e.g. formatting fixes from the build/test step)
 git diff --name-only | xargs -r git add
@@ -288,13 +344,43 @@ git tag v{NEW_VERSION}
 git push --tags
 ```
 
-After pushing the tag, create a GitHub release. If the changelog feature is enabled, pull the
-section you just wrote out of the single changelog page as the release notes:
+After pushing the tag, create a GitHub release. If a root single-page changelog was updated, pull
+the section you just wrote out as before:
 
 ```bash
 NOTES=$(awk -v ver="## {NEW_VERSION}" '$0==ver{f=1;next} f&&/^## /{f=0} f' src/content/docs/changelog/index.mdx)
 gh release create v{NEW_VERSION} --title "v{NEW_VERSION}" --notes "$NOTES"
 ```
+
+For a root per-version-file layout, remove the frontmatter from the new entry and use the rest of
+its body as `NOTES`:
+
+```bash
+NOTES=$(awk 'NR==1&&$0=="---"{fm=1;next} fm&&$0=="---"{fm=0;next} !fm{print}' "src/content/docs/changelog/{NEW_VERSION}.mdx")
+gh release create v{NEW_VERSION} --title "v{NEW_VERSION}" --notes "$NOTES"
+```
+
+For a multi-package changelog, concatenate the primary-language notes for every selected package,
+in the same order shown to the user, under a `## <slug>` heading. This concrete loop handles a mix
+of single-page and per-version-file package directories:
+
+```bash
+NOTES=""
+for slug in $SELECTED_PACKAGES; do
+  dir="src/content/docs/changelog/$slug"
+  if test -f "$dir/{NEW_VERSION}.mdx"; then
+    body=$(awk 'NR==1&&$0=="---"{fm=1;next} fm&&$0=="---"{fm=0;next} !fm{print}' "$dir/{NEW_VERSION}.mdx")
+  else
+    body=$(awk -v ver="## {NEW_VERSION}" '$0==ver{f=1;next} f&&/^## /{f=0} f' "$dir/index.mdx")
+  fi
+  printf -v NOTES '%s## %s\n\n%s\n\n' "$NOTES" "$slug" "$body"
+done
+gh release create v{NEW_VERSION} --title "v{NEW_VERSION}" --notes "$NOTES"
+```
+
+Set `SELECTED_PACKAGES` to the validated, space-separated package slugs chosen earlier. Build
+release notes from the primary-language files only; the other-locale mirror is not duplicated in
+the GitHub release body.
 
 If the changelog feature is off, write the release notes directly from the categorized commit
 analysis instead:
@@ -326,7 +412,7 @@ Package is marked as private — skipping npm publish.
 Report the summary:
 
 - Version bumped: `{OLD_VERSION}` → `{NEW_VERSION}`
-- Changelog updated (EN + JA, if the changelog feature is enabled)
+- Changelog layout(s) and selected package(s) updated (EN + JA, if enabled)
 - Docs snapshot created (if the versioning feature is enabled and a snapshot was taken)
 - Git tag: `v{NEW_VERSION}`
 - GitHub release: link to the release
