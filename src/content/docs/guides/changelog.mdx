@@ -305,7 +305,7 @@ headerNav: [
 ],
 ```
 
-Nested child active state is path-based, while `categoryMatch` scopes the sidebar by a single top-level directory. A duplicated value or a multi-segment value such as `"changelog/core"` never matches the top-level category and can leave the sidebar empty; the build reports a warning for either mistake. See [Header Navigation](./header-navigation.mdx#properties-categorymatch-nested-children-under-one-category) for the general rule.
+Nested child active state is path-based, while `categoryMatch` scopes the sidebar by a single top-level directory. Two or more children that share a `categoryMatch` can all appear active in server-rendered HTML. A multi-segment value such as `"changelog/core"` never matches the top-level category and can leave the sidebar empty. The build reports a warning for either mistake. See [Header Navigation](./header-navigation.mdx#properties-categorymatch-nested-children-under-one-category) for the general rule.
 
 ## i18n
 

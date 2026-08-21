@@ -105,7 +105,7 @@ export default defineConfig(
 
 <Warning>
 
-このような子に親の`categoryMatch`をコピーしたり、`categoryMatch: "changelog/core"`のような複数セグメントの値を使用したりしないでください。`categoryMatch`はトップレベルディレクトリだけに一致するため、複数セグメントの子の値は一致せず、サイドバーが空になることがあります。親子で重複する値と、子の複数セグメントの値はビルド時に警告されます。
+このような子に親の`categoryMatch`をコピーしたり、`categoryMatch: "changelog/core"`のような複数セグメントの値を使用したりしないでください。`categoryMatch`はトップレベルディレクトリだけに一致するため、複数セグメントの子の値は一致せず、サイドバーが空になることがあります。2つ以上の子が同じ`categoryMatch`を共有する場合と、親または子が複数セグメントの値を使用する場合は、ビルド時に警告されます。
 
 </Warning>
 

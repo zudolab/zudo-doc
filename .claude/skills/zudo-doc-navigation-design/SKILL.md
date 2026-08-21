@@ -68,10 +68,10 @@ Before creating any new doc page, check this list:
 Every category directory must have an `index.mdx`. This file is the **landing page** for that category — keep it short:
 
 - A 1–2 sentence intro describing what the category covers.
-- A `<CategoryNav category="<dir>" />` component that auto-renders links to sibling pages.
+- A `<CategoryNav category="<category-path>" />` component that auto-renders links to child pages.
 - **No full content or prose beyond the intro.** Real documentation lives in sibling `.mdx` files under the same directory.
 
-The `category` prop value is the **top-level directory name** (e.g. `category="reference"` for `src/content/docs/reference/`). Do not include path separators or the full path.
+The `category` prop value is the directory path relative to the docs content root. Use a single segment for a top-level category (for example, `category="reference"`) or a slash-separated path for a nested category (for example, `category="changelog/core"`). Do not include `src/content/docs/` or a leading slash.
 
 Example `index.mdx` for a `guides/` category:
 
