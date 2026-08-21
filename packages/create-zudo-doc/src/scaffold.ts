@@ -202,8 +202,6 @@ title: Changelog
 sidebar_position: 99
 ---
 
-# Changelog
-
 ## Unreleased
 
 - Initial release
@@ -214,7 +212,49 @@ title: 変更履歴
 sidebar_position: 99
 ---
 
-# 変更履歴
+## 未リリース
+
+- 初回リリース
+`;
+
+const CHANGELOG_LANDING_CONTENT_EN = () => `---
+title: Changelog
+description: Release notes for each package.
+sidebar_position: 99
+---
+
+Release notes for each package.
+
+<CategoryNav category="changelog" />
+`;
+
+const CHANGELOG_LANDING_CONTENT_JA = () => `---
+title: 変更履歴
+description: パッケージごとのリリースノート。
+sidebar_position: 99
+---
+
+パッケージごとのリリースノート。
+
+<CategoryNav category="changelog" />
+`;
+
+const CHANGELOG_PACKAGE_CONTENT_EN = (slug: string, position: number) => `---
+title: "${slug}"
+description: Release notes for ${slug}.
+sidebar_position: ${position}
+---
+
+## Unreleased
+
+- Initial release
+`;
+
+const CHANGELOG_PACKAGE_CONTENT_JA = (slug: string, position: number) => `---
+title: "${slug}"
+description: ${slug} のリリースノート。
+sidebar_position: ${position}
+---
 
 ## 未リリース
 
@@ -247,6 +287,21 @@ export async function scaffold(choices: UserChoices): Promise<void> {
       );
     }
     choices.features = [...choices.features, "docHistory"];
+  }
+
+  // A non-empty package list implies the changelog feature. Warn when the
+  // CLI explicitly disabled it, then honor the package-layout request.
+  if (
+    choices.changelogPackages !== undefined &&
+    choices.changelogPackages.length > 0 &&
+    !choices.features.includes("changelog")
+  ) {
+    if (choices.explicitlyDisabledFeatures?.includes("changelog")) {
+      console.warn(
+        "changelog-packages requires changelog; enabling it despite --no-changelog",
+      );
+    }
+    choices.features = [...choices.features, "changelog"];
   }
 
   // Resolve template directories
@@ -402,26 +457,70 @@ export async function scaffold(choices: UserChoices): Promise<void> {
 
   // When changelog is ON, create a starter changelog page
   if (choices.features.includes("changelog")) {
-    const changelogContent =
-      defaultLang === "ja" ? CHANGELOG_CONTENT_JA() : CHANGELOG_CONTENT_EN();
-    await fs.outputFile(
-      path.join(targetDir, "src/content/docs/changelog/index.mdx"),
-      changelogContent,
-    );
+    const packageSlugs = choices.changelogPackages ?? [];
+    if (packageSlugs.length === 0) {
+      const changelogContent =
+        defaultLang === "ja" ? CHANGELOG_CONTENT_JA() : CHANGELOG_CONTENT_EN();
+      await fs.outputFile(
+        path.join(targetDir, "src/content/docs/changelog/index.mdx"),
+        changelogContent,
+      );
+    } else {
+      const landingContent =
+        defaultLang === "ja"
+          ? CHANGELOG_LANDING_CONTENT_JA()
+          : CHANGELOG_LANDING_CONTENT_EN();
+      await fs.outputFile(
+        path.join(targetDir, "src/content/docs/changelog/index.mdx"),
+        landingContent,
+      );
+      for (const [index, slug] of packageSlugs.entries()) {
+        const packageContent =
+          defaultLang === "ja"
+            ? CHANGELOG_PACKAGE_CONTENT_JA(slug, index + 1)
+            : CHANGELOG_PACKAGE_CONTENT_EN(slug, index + 1);
+        await fs.outputFile(
+          path.join(targetDir, `src/content/docs/changelog/${slug}/index.mdx`),
+          packageContent,
+        );
+      }
+    }
 
     if (choices.features.includes("i18n")) {
       const secondaryLang = getSecondaryLang(defaultLang);
-      const secondaryChangelogContent =
-        secondaryLang === "ja"
-          ? CHANGELOG_CONTENT_JA()
-          : CHANGELOG_CONTENT_EN();
-      await fs.outputFile(
-        path.join(
-          targetDir,
-          `src/content/docs-${secondaryLang}/changelog/index.mdx`,
-        ),
-        secondaryChangelogContent,
-      );
+      if (packageSlugs.length === 0) {
+        const secondaryChangelogContent =
+          secondaryLang === "ja"
+            ? CHANGELOG_CONTENT_JA()
+            : CHANGELOG_CONTENT_EN();
+        await fs.outputFile(
+          path.join(
+            targetDir,
+            `src/content/docs-${secondaryLang}/changelog/index.mdx`,
+          ),
+          secondaryChangelogContent,
+        );
+      } else {
+        const secondaryLandingContent =
+          secondaryLang === "ja"
+            ? CHANGELOG_LANDING_CONTENT_JA()
+            : CHANGELOG_LANDING_CONTENT_EN();
+        const secondaryDir = `src/content/docs-${secondaryLang}/changelog`;
+        await fs.outputFile(
+          path.join(targetDir, `${secondaryDir}/index.mdx`),
+          secondaryLandingContent,
+        );
+        for (const [index, slug] of packageSlugs.entries()) {
+          const secondaryPackageContent =
+            secondaryLang === "ja"
+              ? CHANGELOG_PACKAGE_CONTENT_JA(slug, index + 1)
+              : CHANGELOG_PACKAGE_CONTENT_EN(slug, index + 1);
+          await fs.outputFile(
+            path.join(targetDir, `${secondaryDir}/${slug}/index.mdx`),
+            secondaryPackageContent,
+          );
+        }
+      }
     }
   }
 

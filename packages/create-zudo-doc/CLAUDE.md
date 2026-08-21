@@ -39,6 +39,12 @@ migration, epics #2321/#2344/#2356). `src/features/<name>.ts`'s header
 comment says, per feature, exactly why there's nothing (or almost nothing)
 left to inject or copy.
 
+The `changelog` feature is handled directly in `scaffold.ts`. The optional
+`--changelog-packages <a,b>` value (also available as the `changelogPackages`
+preset/API array) implies `changelog`, seeds one nested page per validated slug,
+and emits the Changelog header dropdown. `CreateOptions` and `PresetJson` must
+remain in parity for this value as well as the other preset-only options.
+
 ## Key Files
 
 | File | Role |
@@ -52,7 +58,7 @@ left to inject or copy.
 | `src/constants.ts` | Feature definitions, supported langs, header-right labels, and the current Default light/dark scheme pairing |
 | `src/utils.ts` | Shared utilities (patchFile, patchDefaultLang, getSecondaryLang) |
 | `src/cli.ts` | CLI argument parsing (minimist) |
-| `src/api.ts` | Programmatic API (`createZudoDoc()`). `CreateOptions` must stay in sync with `PresetJson` (`preset.ts`) — a field added to one and not the other is a type-level parity gap (#2922). Shape validation for `headerRightItems`/`metaTags` is shared via `preset.ts`'s exported `validateHeaderRightItems()`/`validateMetaTags()` — extend those, don't re-implement the allowlists here. |
+| `src/api.ts` | Programmatic API (`createZudoDoc()`). `CreateOptions` must stay in sync with `PresetJson` (`preset.ts`) — a field added to one and not the other is a type-level parity gap (#2922). Shape validation for `headerRightItems`/`metaTags`/`changelogPackages` is shared via `preset.ts`'s exported validators — extend those, don't re-implement the allowlists here. |
 | `src/prompts.ts` | Interactive prompts (@clack/prompts) |
 | `src/index.ts` | Entry point |
 
@@ -92,7 +98,7 @@ Runs vitest tests in `src/__tests__/`.
 Two Claude Code skills test the full scaffold-build-run cycle:
 
 - `/l-generator-cli-tester <pattern>` — Test a single generation pattern
-- `/l-run-generator-cli-whole-test` — Run all 10 patterns, fix bugs, verify everything
+- `/l-run-generator-cli-whole-test` — Run all 11 patterns, fix bugs, verify everything
 
 #### Test patterns
 

@@ -33,6 +33,7 @@ Where `<pattern>` is one of the test patterns listed below.
 | `design-token-panel` | Only design token panel enabled (uses --design-token-panel CLI flag) |
 | `light-dark` | Light-dark color mode |
 | `lang-ja` | Japanese as default language |
+| `multi-changelog` | Per-package changelog pages and nested Changelog dropdown |
 | `all-features` | Everything ON (except tauri/tauriDev — Rust toolchain, out of scope for this smoke pattern) |
 
 ## Architecture context (read before verifying files)
@@ -57,7 +58,7 @@ files:
 | `skillSymlinker` | Copies `scripts/setup-doc-skill.sh` |
 | `claudeSkills` | Copies `.claude/skills/{zudo-doc-design-system,zudo-doc-translate,zudo-doc-version-bump}/**` from the monorepo |
 | `claudeSkillsWriting` | Copies `.claude/skills/zudo-doc-writing/**` (scaffold.ts, from `templates/features/claudeSkillsWriting/`) |
-| `changelog` (scaffold.ts, not a feature module) | Adds `src/content/docs/changelog/index.mdx` (+ locale mirror if i18n is also on) |
+| `changelog` (scaffold.ts, not a feature module) | Adds `src/content/docs/changelog/index.mdx` (+ locale mirror if i18n is also on); `--changelog-packages` adds a landing page and one nested page per slug |
 
 Every other feature (`search`, `sidebarFilter`, `sidebarResizer`,
 `sidebarToggle`, `claudeResources`, `versioning`, `bodyFootUtil`, `llmsTxt`,
@@ -201,6 +202,24 @@ cd __inbox/generator-test-lang-ja && \
   --no-search --no-sidebar-filter --no-i18n --no-claude-resources \
   --lang ja --color-scheme-mode single --scheme "Default Dark" --no-install
 ```
+
+**multi-changelog:**
+
+```bash
+cd __inbox/generator-test-multi-changelog && \
+  node $REPO_ROOT/packages/create-zudo-doc/dist/index.js test-project --yes \
+  --changelog-packages core,cli --i18n --no-install
+```
+
+The value-taking option implies `changelog`. The generated project must contain
+`src/content/docs/changelog/index.mdx`,
+`src/content/docs/changelog/core/index.mdx`,
+`src/content/docs/changelog/cli/index.mdx`, and the matching
+`src/content/docs-ja/changelog/**` mirrors. The landing page uses
+`<CategoryNav category="changelog" />`; each package page starts at `##
+Unreleased` and has quoted frontmatter titles. `zfb.config.ts` must contain a
+Changelog header item with `core` and `cli` children that have paths but no
+`categoryMatch`.
 
 **all-features** (mirrors `scaffold.test.ts`'s `ALL_FEATURES` minus `tauri`/`tauriDev`):
 
@@ -464,6 +483,17 @@ There is no `src/config/settings.ts` to read in a fresh scaffold. Read `__inbox/
 - `tagGovernance: "warn"`, `tagVocabulary: true`, `tagVocabularyEntries: tagVocabulary` (raw import reference)
 - `versions: []`
 - `footer` is an object with `links`, `copyright`, and `taglist`
+
+**multi-changelog:**
+
+- `zfb.config.ts` has `headerNav`'s Changelog item with `categoryMatch:
+  "changelog"` and children for `core` and `cli`; children have no
+  `categoryMatch`
+- `src/content/docs/changelog/index.mdx` is the landing page and contains the
+  CategoryNav component
+- `src/content/docs/changelog/{core,cli}/index.mdx` each has a quoted `title`,
+  the corresponding `sidebar_position`, and `## Unreleased`
+- the i18n mirror has the same nested file set under `src/content/docs-ja/`
 
 ## Step 8: Compare Against Showcase
 

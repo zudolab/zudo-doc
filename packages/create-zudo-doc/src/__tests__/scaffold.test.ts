@@ -876,6 +876,95 @@ describe("scaffold — changelog feature", () => {
     ).toBe(true);
   });
 
+  it("seeds nested per-package pages, a landing page, and dropdown config", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-multi-changelog",
+      features: ["changelog"],
+      changelogPackages: ["core", "123"],
+    });
+    const project = projectPath("test-multi-changelog");
+    const landing = await fs.readFile(
+      path.join(project, "src/content/docs/changelog/index.mdx"),
+      "utf-8",
+    );
+    const numericPage = await fs.readFile(
+      path.join(project, "src/content/docs/changelog/123/index.mdx"),
+      "utf-8",
+    );
+    const config = await fs.readFile(path.join(project, "zfb.config.ts"), "utf-8");
+    const claude = await fs.readFile(path.join(project, "CLAUDE.md"), "utf-8");
+
+    expect(landing).toContain("description: Release notes for each package.");
+    expect(landing).toContain('<CategoryNav category="changelog" />');
+    expect(landing).not.toContain("# Changelog");
+    expect(numericPage).toContain('title: "123"');
+    expect(numericPage).toContain("sidebar_position: 2");
+    expect(numericPage).toContain("## Unreleased");
+    expect(numericPage).not.toMatch(/^# /m);
+    expect(config).toContain('categoryMatch: "changelog"');
+    expect(config).toContain('path: "/docs/changelog/core"');
+    expect(config).toContain('path: "/docs/changelog/123"');
+    expect(claude).toContain(
+      "Changelog pages at `/docs/changelog/<slug>` — one per package: core, 123",
+    );
+  });
+
+  it("mirrors nested per-package pages in the secondary locale", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-multi-changelog-i18n",
+      features: ["changelog", "i18n"],
+      changelogPackages: ["core", "cli"],
+    });
+    for (const slug of ["core", "cli"]) {
+      expect(
+        await fs.pathExists(
+          projectPath("test-multi-changelog-i18n", `src/content/docs-ja/changelog/${slug}/index.mdx`),
+        ),
+      ).toBe(true);
+    }
+    const landing = await fs.readFile(
+      projectPath("test-multi-changelog-i18n", "src/content/docs-ja/changelog/index.mdx"),
+      "utf-8",
+    );
+    expect(landing).toContain("パッケージごとのリリースノート。");
+  });
+
+  it("removes the body-level H1 from the single changelog starter", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-single-changelog-no-h1",
+      features: ["changelog"],
+    });
+    const content = await fs.readFile(
+      projectPath("test-single-changelog-no-h1", "src/content/docs/changelog/index.mdx"),
+      "utf-8",
+    );
+    expect(content).not.toMatch(/^# /m);
+    expect(content).toContain("## Unreleased");
+  });
+
+  it("auto-enables changelog and warns when packages override --no-changelog", async () => {
+    const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-multi-changelog-no-changelog",
+      features: [],
+      changelogPackages: ["core"],
+      explicitlyDisabledFeatures: ["changelog"],
+    });
+    expect(warning).toHaveBeenCalledWith(
+      "changelog-packages requires changelog; enabling it despite --no-changelog",
+    );
+    expect(
+      await fs.pathExists(
+        projectPath("test-multi-changelog-no-changelog", "src/content/docs/changelog/core/index.mdx"),
+      ),
+    ).toBe(true);
+    warning.mockRestore();
+  });
+
   it("does not write a changelog directory when disabled", async () => {
     await scaffold(baseChoices);
     expect(
@@ -957,6 +1046,11 @@ describe("scaffold — every-feature manifest is exactly base + the documented p
       "zfb.config.ts",
     ].sort();
     expect(files).toEqual(expected);
+    const config = await fs.readFile(
+      projectPath("test-all-on", "zfb.config.ts"),
+      "utf-8",
+    );
+    expect(config).not.toContain("children:");
   });
 });
 
@@ -2158,6 +2252,40 @@ describe("createZudoDoc() — CreateOptions preset parity (#2922)", () => {
     const config = await fs.readFile(path.join(targetDir, "zfb.config.ts"), "utf-8");
     expect(config).toContain('component: "github-link"');
     expect(config).toContain('trigger: "ai-chat"');
+  });
+
+  it("createZudoDoc() accepts changelogPackages and implies changelog", async () => {
+    const targetDir = await createZudoDoc({
+      projectName: "valid-multi-changelog-test",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: [],
+      changelogPackages: ["core", "cli"],
+      packageManager: "pnpm",
+    });
+    expect(
+      await fs.pathExists(
+        path.join(targetDir, "src/content/docs/changelog/core/index.mdx"),
+      ),
+    ).toBe(true);
+    const config = await fs.readFile(path.join(targetDir, "zfb.config.ts"), "utf-8");
+    expect(config).toContain('path: "/docs/changelog/cli"');
+  });
+
+  it("createZudoDoc() and validatePreset() reject the same invalid changelog slug", async () => {
+    const invalidPackages = ["core_lib"];
+    const expected = /Invalid changelog package slug "core_lib"/;
+    await expect(
+      createZudoDoc({
+        projectName: "invalid-multi-changelog-test",
+        colorSchemeMode: "single",
+        singleScheme: "Default Dark",
+        features: [],
+        changelogPackages: invalidPackages,
+        packageManager: "pnpm",
+      }),
+    ).rejects.toThrow(expected);
+    expect(validatePreset({ changelogPackages: invalidPackages })).toMatch(expected);
   });
 
   it("createZudoDoc() throws for a non-object metaTags value, same rule as validatePreset()", async () => {

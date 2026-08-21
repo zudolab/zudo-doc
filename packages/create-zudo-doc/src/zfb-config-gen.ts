@@ -346,11 +346,25 @@ function buildDesiredConfig(choices: UserChoices): Record<string, unknown> {
     });
   }
   if (choices.features.includes("changelog")) {
-    headerNav.push({
-      label: "Changelog",
-      path: "/docs/changelog",
-      categoryMatch: "changelog",
-    });
+    if (choices.changelogPackages && choices.changelogPackages.length > 0) {
+      headerNav.push({
+        label: "Changelog",
+        path: "/docs/changelog",
+        categoryMatch: "changelog",
+        // nav-scope matches the first slug segment only; nested children
+        // highlight by path and must not carry a multi-segment categoryMatch.
+        children: choices.changelogPackages.map((slug) => ({
+          label: slug,
+          path: `/docs/changelog/${slug}`,
+        })),
+      });
+    } else {
+      headerNav.push({
+        label: "Changelog",
+        path: "/docs/changelog",
+        categoryMatch: "changelog",
+      });
+    }
   }
   desired.headerNav = headerNav;
 
