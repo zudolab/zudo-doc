@@ -45,9 +45,10 @@ Run in this order (CLI flags and details are defined in `/l-generator-cli-tester
 7. **`design-token-panel`** — Only design token panel enabled (uses `--design-token-panel` CLI flag)
 8. **`light-dark`** — Light-dark color scheme mode
 9. **`lang-ja`** — Japanese as default language
-10. **`all-features`** — Everything ON, maximum complexity (uses the enumerated CLI invocation)
+10. **`multi-changelog`** — Per-package changelog pages and nested Changelog dropdown
+11. **`all-features`** — Everything ON, maximum complexity (uses the enumerated CLI invocation)
 
-> **Note:** These 10 patterns are valid manual smoke tests. The authoritative bug-hunt pattern matrix (15 patterns across Waves 4, 5, and 5b) lives in the Wave 2 spec (`__inbox/gen-cli-audit-spec/spec.md`) and the associated bug-hunt issues. Do not delete or rename these 10 patterns — they remain useful standalone checks.
+> **Note:** These 11 patterns are valid manual smoke tests. The authoritative bug-hunt pattern matrix (15 patterns across Waves 4, 5, and 5b) lives in the Wave 2 spec (`__inbox/gen-cli-audit-spec/spec.md`) and the associated bug-hunt issues. Do not delete or rename these 11 patterns — they remain useful standalone checks.
 
 ### Running each pattern
 
@@ -157,6 +158,7 @@ Run every pattern again from scratch to ensure fixes didn't break other patterns
 /l-generator-cli-tester design-token-panel
 /l-generator-cli-tester light-dark
 /l-generator-cli-tester lang-ja
+/l-generator-cli-tester multi-changelog
 /l-generator-cli-tester all-features
 ```
 
@@ -197,7 +199,7 @@ Output a final report:
 
 ### Summary
 
-- Patterns tested: 9
+- Patterns tested: 11
 - Passed on first try: 6
 - Needed fixes: 3
 - Unit tests: PASS

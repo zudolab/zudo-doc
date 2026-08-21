@@ -482,6 +482,34 @@ describe("generateZfbConfig — changelog headerNav entry", () => {
     const result = generateZfbConfig(baseChoices);
     expect(result).not.toContain("Changelog");
   });
+
+  it("adds categoryMatch-less package children for the multi-changelog layout", () => {
+    const result = generateZfbConfig({
+      ...baseChoices,
+      features: ["changelog"],
+      changelogPackages: ["core", "cli"],
+    });
+    expect(result).toContain('categoryMatch: "changelog"');
+    expect(result).toContain('label: "core"');
+    expect(result).toContain('path: "/docs/changelog/core"');
+    expect(result).toContain('label: "cli"');
+    expect(result).toContain('path: "/docs/changelog/cli"');
+    const children = result.match(
+      /children: \[([\s\S]*?)\n\s{8}\],/,
+    );
+    expect(children?.[1]).toBeDefined();
+    expect(children?.[1]).not.toContain("categoryMatch");
+  });
+
+  it("keeps the flat Changelog item when no package slugs are supplied", () => {
+    const result = generateZfbConfig({
+      ...baseChoices,
+      features: ["changelog"],
+      changelogPackages: [],
+    });
+    expect(result).toContain('categoryMatch: "changelog"');
+    expect(result).not.toContain("children:");
+  });
 });
 
 describe("generateZfbConfig — headerRightItems override", () => {

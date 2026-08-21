@@ -53,6 +53,12 @@ describe("parseArgs", () => {
     it("--theme-pack undefined when not provided", () => {
       expect(parseArgs([]).themePack).toBeUndefined();
     });
+
+    it("--changelog-packages parses, trims, and drops empty entries", () => {
+      expect(
+        parseArgs(["--changelog-packages", " core, ,cli,, "]).changelogPackages,
+      ).toEqual(["core", "cli"]);
+    });
   });
 
   describe("boolean feature flags — enabled", () => {
@@ -150,6 +156,32 @@ describe("parseArgs", () => {
       expect(result.pm).toBe("pnpm");
       expect(result.yes).toBe(true);
     });
+  });
+});
+
+describe("validateArgs — changelog packages", () => {
+  it("accepts valid slugs, including a numeric slug", () => {
+    expect(
+      validateArgs({ changelogPackages: ["core", "cli-tool", "123"] }),
+    ).toBeNull();
+  });
+
+  it("rejects an invalid slug", () => {
+    expect(validateArgs({ changelogPackages: ["core_lib"] })).toMatch(
+      /Invalid changelog package slug "core_lib"/,
+    );
+  });
+
+  it("rejects duplicate slugs", () => {
+    expect(validateArgs({ changelogPackages: ["core", "core"] })).toMatch(
+      /Duplicate changelog package "core"/,
+    );
+  });
+
+  it("rejects an empty list", () => {
+    expect(validateArgs({ changelogPackages: [] })).toMatch(
+      /must contain at least one package/,
+    );
   });
 });
 

@@ -1,6 +1,10 @@
 import minimist from "minimist";
 import pc from "picocolors";
 import { FEATURES, SINGLE_SCHEMES, SUPPORTED_LANGS, THEME_PACKS } from "./constants.js";
+import {
+  parseChangelogPackages,
+  validateChangelogPackages,
+} from "./preset.js";
 import { validateProjectName } from "./utils.js";
 
 export interface CliArgs {
@@ -34,6 +38,7 @@ export interface CliArgs {
   dynamicPageTransition?: boolean;
   footerCopyright?: boolean;
   changelog?: boolean;
+  changelogPackages?: string[];
   tagGovernance?: boolean;
   footerTaglist?: boolean;
   bodyFootUtil?: boolean;
@@ -59,6 +64,7 @@ export function parseArgs(argv: string[] = process.argv.slice(2)): CliArgs {
       "dark-scheme",
       "default-mode",
       "theme-pack",
+      "changelog-packages",
       "github-url",
       "preset",
       "pm",
@@ -96,6 +102,13 @@ export function parseArgs(argv: string[] = process.argv.slice(2)): CliArgs {
   if (raw["dark-scheme"]) args.darkScheme = raw["dark-scheme"];
   if (raw["default-mode"]) args.defaultMode = raw["default-mode"];
   if (raw["theme-pack"]) args.themePack = raw["theme-pack"];
+  if (raw["changelog-packages"] !== undefined) {
+    args.changelogPackages = parseChangelogPackages(
+      typeof raw["changelog-packages"] === "string"
+        ? raw["changelog-packages"]
+        : String(raw["changelog-packages"] ?? ""),
+    );
+  }
   if (raw.preset) args.preset = raw.preset;
   if (raw.pm) args.pm = raw.pm;
   if (typeof raw["github-url"] === "string") args.githubUrl = raw["github-url"];
@@ -143,6 +156,7 @@ ${pc.bold("Options:")}
   --theme-pack <slug>          Theme pack (${themePackList})
                                Default: default
 ${featureHelp}
+  --changelog-packages <a,b>  Per-package changelog pages (implies changelog)
   --github-url <url>           GitHub repository URL (drives header link + source link)
   --preset <path>              Load settings from a JSON preset file (use "-" for stdin)
   --pm <manager>               pnpm | npm | yarn | bun
@@ -161,6 +175,9 @@ ${pc.bold("Examples:")}
 
   ${pc.dim("# Fully specified")}
   create-zudo-doc my-docs --lang ja --scheme "Default Dark" --no-i18n --pm pnpm --install
+
+  ${pc.dim("# Per-package changelog pages")}
+  create-zudo-doc my-docs --changelog-packages core,cli --yes
 `);
 }
 
@@ -199,6 +216,11 @@ export function validateArgs(args: CliArgs): string | null {
 
   if (args.pm && !["pnpm", "npm", "yarn", "bun"].includes(args.pm)) {
     return `Invalid package manager "${args.pm}". Must be pnpm, npm, yarn, or bun`;
+  }
+
+  if (args.changelogPackages !== undefined) {
+    const changelogError = validateChangelogPackages(args.changelogPackages);
+    if (changelogError) return changelogError;
   }
 
   // Validate scheme combinations

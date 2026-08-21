@@ -91,6 +91,7 @@ Each feature has a `--[no-]<flag>` form. Passing `--feature` enables it; `--no-f
 | `--[no-]footer-copyright` | Copyright notice in the footer | on |
 | `--[no-]footer-taglist` | Grouped tag index in the footer (requires tag-governance) | off |
 | `--[no-]changelog` | Changelog page | off |
+| `--changelog-packages <a,b>` | Per-package changelog pages and a Changelog dropdown (implies `--changelog`) | none |
 
 ### Advanced
 
@@ -121,6 +122,9 @@ pnpm create zudo-doc my-docs \
 
 # Fully featured site from a preset file
 pnpm create zudo-doc my-docs --preset ./my-preset.json --install
+
+# Per-package changelog pages
+pnpm create zudo-doc my-docs --changelog-packages core,cli --yes
 ```
 
 ## Programmatic API
@@ -134,6 +138,7 @@ await createZudoDoc({
   colorSchemeMode: "single",
   singleScheme: "Default Dark",
   features: ["search", "sidebarFilter", "tagGovernance"],
+  changelogPackages: ["core", "cli"],
   packageManager: "pnpm",
   install: true,
 });
