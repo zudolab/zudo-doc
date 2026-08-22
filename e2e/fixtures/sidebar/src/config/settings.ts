@@ -66,6 +66,13 @@ export const settings = {
       categoryMatch: "getting-started",
     },
     { label: "Guides", path: "/docs/guides", categoryMatch: "guides" },
+    { label: "Notes", path: "/docs/notes", categoryMatch: "notes" },
+    { label: "Journal", path: "/docs/journal", categoryMatch: "journal" },
+    {
+      label: "Series by Year",
+      path: "/docs/series-year",
+      categoryMatch: "series-year",
+    },
   ] satisfies HeaderNavItem[] as HeaderNavItem[],
   packageOwnedRoutes: true,
 };
