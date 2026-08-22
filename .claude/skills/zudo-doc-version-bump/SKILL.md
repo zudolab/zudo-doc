@@ -1,9 +1,10 @@
 ---
 name: zudo-doc-version-bump
 description: >-
-  Bump package version, generate changelog docs, commit, tag, and create GitHub release. Use when:
-  (1) User says 'version bump', 'bump version', 'release', or 'zudo-doc-version-bump', (2) User
-  wants to create a new release of this project.
+  Bump the lockstep monorepo version, author package-specific changelogs, commit,
+  tag all three packages, and create distinct GitHub releases. Use when: (1) User
+  says 'version bump', 'bump version', 'release', or 'zudo-doc-version-bump',
+  (2) User wants to create a new release of this monorepo.
 user-invocable: true
 disable-model-invocation: true
 argument-description: "Optional: major, minor, or patch to skip the proposal step"
@@ -11,15 +12,18 @@ argument-description: "Optional: major, minor, or patch to skip the proposal ste
 
 # /zudo-doc-version-bump
 
-Bump the version, generate changelog doc pages, commit, tag, and create a GitHub release.
+Bump the monorepo's lockstep version, author one truthful localized release note per
+published package, commit, tag, and create three package-specific GitHub releases.
 
 ## Preconditions
 
-Before doing anything else, verify ALL of the following. If any check fails, stop and tell the user.
+Before doing anything else, verify all of the following. If any check fails, stop and
+tell the user.
 
-1. Current branch is `main`
-2. Working tree is clean (`git status --porcelain` returns empty)
-3. At least one `v*` tag exists (`git tag -l 'v*'`). If no tag exists, tell the user to create the initial tag first (e.g. `git tag v0.1.0 && git push --tags`).
+1. Current branch is `main`.
+2. Working tree is clean (`git status --porcelain` returns empty).
+3. At least one `v*` tag exists (`git tag -l 'v*'`). If none exists, tell the user to
+   create the initial tag first.
 
 Find the latest version tag:
 
@@ -27,217 +31,185 @@ Find the latest version tag:
 git tag -l 'v*' --sort=-v:refname | head -1
 ```
 
-## Analyze changes since last tag
-
-Run:
+## Analyze and classify changes
 
 ```bash
 git log <last-tag>..HEAD --oneline
-```
-
-and
-
-```bash
 git diff <last-tag>..HEAD --stat
 ```
 
-Categorize each commit by its conventional-commit prefix:
+Use conventional-commit semantics to propose the version: breaking changes (`feat!:`,
+`fix!:`, or `BREAKING CHANGE`) cause a major bump, `feat:` causes a minor bump, and
+everything else causes a patch bump.
 
-- **Breaking Changes**: commits with an exclamation mark suffix (e.g. `feat!:`) or BREAKING CHANGE in body
-- **Features**: `feat:` prefix
-- **Bug Fixes**: `fix:` prefix
-- **Other Changes**: everything else (`docs:`, `chore:`, `refactor:`, `ci:`, `test:`, `style:`, `perf:`, etc.)
+Separately inspect every commit and its diff to route user-facing release notes by
+published-package ownership:
+
+| Changelog slug | Published package | Owns |
+|---|---|---|
+| `doc-history-server` | `@takazudo/zudo-doc-history-server` | History server API, CLI, and runtime behavior |
+| `zudo-doc` | `@takazudo/zudo-doc` | Framework, integrations, plugins, and public package behavior |
+| `create-zudo-doc` | `create-zudo-doc` | Generator CLI and generated-project behavior |
+
+Apply these rules exactly:
+
+- Duplicate a user-facing change into every affected package note when it spans two or
+  three packages.
+- Omit repo/showcase documentation, tests, CI, and maintenance work when it has no
+  user-facing effect on a published package.
+- A lockstep package with no user-facing package change still receives a localized
+  “No package-specific changes” entry. Never borrow another package's narrative.
+- Each GitHub release receives only its package's English note body.
 
 ## Propose version bump
 
-Based on the changes:
+If the user passed `major`, `minor`, or `patch`, use it directly. Otherwise present the
+proposal and categorized commits, then wait for confirmation.
 
-- If there are breaking changes → propose **major** bump
-- If there are features (no breaking) → propose **minor** bump
-- Otherwise → propose **patch** bump
-
-If the user passed an argument (`major`, `minor`, or `patch`), use that directly instead of proposing.
-
-Present the proposal to the user:
-
-```
-Proposed bump: {current} → {new} ({type})
-
-Breaking Changes:
-- description (hash)
-
-Features:
-- description (hash)
-
-Bug Fixes:
-- description (hash)
-
-Other Changes:
-- description (hash)
-```
-
-Only show sections that have entries. **Wait for user confirmation before proceeding.**
-
-If this is a **major** version bump, ask the user whether they want to archive the current docs as a versioned snapshot (i.e. run with `--snapshot`). Explain that this copies the current docs to a versioned directory for the old version.
-
-## Run version-bump.sh
-
-Run the existing version bump script to update package.json and create changelog entry files:
+## Run the version bump
 
 ```bash
-./scripts/version-bump.sh {NEW_VERSION}
-# Or with snapshot for major bumps:
-./scripts/version-bump.sh {NEW_VERSION} --snapshot
+./scripts/release-create-zudo-doc.sh {NEW_VERSION}
 ```
 
-This script:
+The monorepo release script bumps the root plus all three publishable package versions,
+aligns the generated-project package pins, and scaffolds exactly six entries:
 
-1. Updates `version` in `package.json`
-2. Creates `src/content/docs/changelog/{NEW_VERSION}.mdx` (EN)
-3. Creates `src/content/docs-ja/changelog/{NEW_VERSION}.mdx` (JA)
-4. With `--snapshot`: copies current docs to versioned directories and prints settings.ts entry to add
+- `src/content/docs/changelog/doc-history-server/{NEW_VERSION}.mdx`
+- `src/content/docs/changelog/zudo-doc/{NEW_VERSION}.mdx`
+- `src/content/docs/changelog/create-zudo-doc/{NEW_VERSION}.mdx`
+- `src/content/docs-ja/changelog/doc-history-server/{NEW_VERSION}.mdx`
+- `src/content/docs-ja/changelog/zudo-doc/{NEW_VERSION}.mdx`
+- `src/content/docs-ja/changelog/create-zudo-doc/{NEW_VERSION}.mdx`
 
-## Fill in changelog content
+## Author all six package entries
 
-After the script creates the template files, **replace the placeholder content** with the actual categorized changes from the commit analysis.
+Replace every placeholder with only that package's classified changes. English entries
+use `Released: {YYYY-MM-DD}` and the applicable `### Breaking Changes`, `### Features`,
+`### Bug Fixes`, and `### Other Changes` sections. Japanese mirrors use
+`リリース日: {YYYY-MM-DD}` and `### 破壊的変更`, `### 機能`, `### バグ修正`, and
+`### その他の変更`. Omit empty categories.
 
-### English changelog (`src/content/docs/changelog/{NEW_VERSION}.mdx`)
+For an unchanged package, retain the release date and use exactly:
 
-```mdx
----
-title: {NEW_VERSION}
-description: Release notes for {NEW_VERSION}.
-sidebar_position: {value from script}
----
+```md
+# English
+- No package-specific changes.
 
-Released: {YYYY-MM-DD}
-
-### Breaking Changes
-
-- Description (commit-hash)
-
-### Features
-
-- Description (commit-hash)
-
-### Bug Fixes
-
-- Description (commit-hash)
-
-### Other Changes
-
-- Description (commit-hash)
+# Japanese
+- パッケージ固有の変更はありません。
 ```
 
-### Japanese changelog (`src/content/docs-ja/changelog/{NEW_VERSION}.mdx`)
+Do not omit any of the six files. A cross-package change must be translated into each
+affected English/Japanese pair.
 
-```mdx
----
-title: {NEW_VERSION}
-description: {NEW_VERSION}のリリースノート。
-sidebar_position: {value from script}
----
+## Regenerate and validate
 
-リリース日: {YYYY-MM-DD}
-
-### 破壊的変更
-
-- Description (commit-hash)
-
-### 機能
-
-- Description (commit-hash)
-
-### バグ修正
-
-- Description (commit-hash)
-
-### その他の変更
-
-- Description (commit-hash)
-```
-
-Rules:
-
-- Only include sections that have entries
-- Use today's date for the release date
-- Each entry should be the commit subject with the short hash in parentheses
-
-## Build and test
-
-Run the full build and test suite to make sure everything is good:
+Regenerate all package Markdown changelogs from the English MDX entries:
 
 ```bash
-pnpm b4push
+pnpm gen:changelog
 ```
 
-If anything fails, fix the issue and re-run. Do not proceed with committing until all checks pass.
+Inspect and stage all three generated outputs:
+
+- `packages/doc-history-server/CHANGELOG.md`
+- `packages/zudo-doc/CHANGELOG.md`
+- `packages/create-zudo-doc/CHANGELOG.md`
+
+Then run:
+
+```bash
+B4PUSH_SKIP_PIN_PUBLISHED=1 pnpm b4push
+```
+
+Fix failures and rerun. Do not commit until the gate passes, and do not tag until the
+pushed commit passes CI.
 
 ## Commit changes
 
-Stage and commit **all** version bump changes — include any files modified by b4push formatting fixes:
+Stage all lockstep version and pin files printed by
+`scripts/release-create-zudo-doc.sh`, plus all six MDX entries and all three generated
+Markdown changelogs. At minimum, the note artifacts are:
 
 ```bash
-git add package.json src/content/docs/changelog/{NEW_VERSION}.mdx src/content/docs-ja/changelog/{NEW_VERSION}.mdx
-# Also stage any other modified files (e.g. formatting fixes from b4push)
-git diff --name-only | xargs git add
-git commit -m "chore: Bump version to v{NEW_VERSION}"
+git add \
+  package.json \
+  packages/doc-history-server/package.json \
+  packages/zudo-doc/package.json \
+  packages/create-zudo-doc/package.json \
+  packages/create-zudo-doc/src/scaffold.ts \
+  src/content/docs/changelog/doc-history-server/{NEW_VERSION}.mdx \
+  src/content/docs/changelog/zudo-doc/{NEW_VERSION}.mdx \
+  src/content/docs/changelog/create-zudo-doc/{NEW_VERSION}.mdx \
+  src/content/docs-ja/changelog/doc-history-server/{NEW_VERSION}.mdx \
+  src/content/docs-ja/changelog/zudo-doc/{NEW_VERSION}.mdx \
+  src/content/docs-ja/changelog/create-zudo-doc/{NEW_VERSION}.mdx \
+  packages/doc-history-server/CHANGELOG.md \
+  packages/zudo-doc/CHANGELOG.md \
+  packages/create-zudo-doc/CHANGELOG.md
+git diff --name-only | xargs -r git add
+git commit -m "chore: bump version to v{NEW_VERSION}"
 ```
 
 ## Push and wait for CI
 
-Push the commits first (without the tag) and wait for CI to pass:
-
-```bash
-git push
-```
-
-Then check CI status. Use `gh run list --branch main --limit 1 --json status,conclusion,headSha` and verify the `headSha` matches the pushed commit. Poll every 30 seconds, with a **maximum of 10 minutes**. If CI is still running after 10 minutes, ask the user whether to keep waiting or proceed.
-
-If CI fails, investigate the failure with `gh run view <run-id> --log-failed`, fix the issue, commit, and push again.
+Push the commit without tags, then poll the newest `main` run and verify its `headSha`
+matches the pushed commit. Poll every 30 seconds for at most 10 minutes. Investigate and
+fix a failed run. If it is still running at 10 minutes, ask whether to keep waiting.
 
 **Do not tag or publish until CI is green.**
 
-## Tag, push tag, and create GitHub release
+## Tag all three lockstep packages
 
-**Ask the user for confirmation before tagging.**
+Ask the user for confirmation before tagging, then create and push all three tags:
 
 ```bash
+git tag zudo-doc-history-server-{NEW_VERSION}
+git tag zudo-doc-v{NEW_VERSION}
 git tag v{NEW_VERSION}
-git push --tags
+git push origin \
+  zudo-doc-history-server-{NEW_VERSION} \
+  zudo-doc-v{NEW_VERSION} \
+  v{NEW_VERSION}
 ```
 
-After pushing the tag, create a GitHub release. Use `awk` to strip only the YAML frontmatter (first `---` to second `---`) from the changelog file:
+All three packages are released in lockstep even if one or more notes contain the
+explicit no-change entry.
+
+## Create three package-specific GitHub releases
+
+Extract three independent English bodies. Never reuse one shared `$NOTES` value:
 
 ```bash
-NOTES=$(awk 'BEGIN{f=0} /^---$/{f++; next} f>=2' src/content/docs/changelog/{NEW_VERSION}.mdx)
-gh release create v{NEW_VERSION} --title "v{NEW_VERSION}" --notes "$NOTES"
+HISTORY_NOTES=$(awk 'BEGIN{f=0} /^---$/{f++; next} f>=2' \
+  src/content/docs/changelog/doc-history-server/{NEW_VERSION}.mdx)
+ZUDO_DOC_NOTES=$(awk 'BEGIN{f=0} /^---$/{f++; next} f>=2' \
+  src/content/docs/changelog/zudo-doc/{NEW_VERSION}.mdx)
+CREATE_NOTES=$(awk 'BEGIN{f=0} /^---$/{f++; next} f>=2' \
+  src/content/docs/changelog/create-zudo-doc/{NEW_VERSION}.mdx)
+
+PRE=""; case "{NEW_VERSION}" in *-*) PRE="--prerelease";; esac
+
+gh release create "zudo-doc-history-server-{NEW_VERSION}" \
+  --title "@takazudo/zudo-doc-history-server {NEW_VERSION}" \
+  --notes "$HISTORY_NOTES" --draft $PRE
+
+gh release create "zudo-doc-v{NEW_VERSION}" \
+  --title "@takazudo/zudo-doc {NEW_VERSION}" \
+  --notes "$ZUDO_DOC_NOTES" --draft $PRE
+
+gh release create "v{NEW_VERSION}" \
+  --title "create-zudo-doc {NEW_VERSION}" \
+  --notes "$CREATE_NOTES" --draft $PRE
 ```
 
-## Publish to npm (if applicable)
-
-If the package is **not** marked as `"private": true` in `package.json`, tell the user to publish:
-
-```
-The package is ready for npm publishing. Run:
-
-  pnpm publish
-
-(This requires browser-based 2FA and must be done manually.)
-```
-
-If the package is `"private": true`, skip this step and inform the user:
-
-```
-Package is marked as private — skipping npm publish.
-```
+Any version containing a hyphen is a prerelease and must receive `--prerelease`; stable
+versions omit it. Keep all three releases as drafts until their package/body mapping has
+been reviewed. Publish in dependency order: history server, zudo-doc, then
+create-zudo-doc, waiting for each npm publication before the next.
 
 ## Done
 
-Report the summary:
-
-- Version bumped: `{OLD_VERSION}` → `{NEW_VERSION}`
-- Changelog created (EN + JA)
-- Git tag: `v{NEW_VERSION}`
-- GitHub release: link to the release
-- npm publish status (published / skipped for private package)
+Report the version bump, six localized MDX entries, three generated `CHANGELOG.md`
+outputs, three tags, three GitHub release links, and npm publication state.
