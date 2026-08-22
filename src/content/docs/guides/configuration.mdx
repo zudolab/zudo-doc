@@ -63,6 +63,23 @@ export { default } from "@takazudo/zudo-doc/routes/index";
 
 Type: `{ wide?: boolean }` · Default: `{ wide: false }`
 
+### siteTreeNavIgnore
+
+Top-level category slugs to hide from the package-owned home-page category grid on `/` and locale-prefixed home pages such as `/ja`, and from the `<SiteTreeNav />` / `<SiteTreeNavDemo />` MDX tags. This does not affect header nav, sidebar, search, or sitemap.
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    siteTreeNavIgnore: ["inbox", "develop"],
+  }),
+);
+```
+
+The package previously hard-coded `["inbox", "develop"]` for this showcase's own need. The package default is now `[]`; set this field when your site needs to hide categories.
+
+Type: `string[]` · Default: `[]`
+
 ## Identity and URLs
 
 ### siteName

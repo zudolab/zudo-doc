@@ -92,8 +92,11 @@ export function buildDocsSchema(opts?: BuildDocsSchemaOptions) {
       category_shape: z.enum(["note-tray"]).optional(),
       note_tray_dated: z.boolean().optional(),
       note_tray_sidebar: z.enum(["index", "year", "month"]).optional(),
-      // Quote these values in YAML (for example, date: "2026-08-22") so
-      // parsers do not coerce them into Date objects before schema validation.
+      // zfb keeps scalar frontmatter values as strings whether quoted or not;
+      // the regex below validates those strings' YYYY-MM-DD format. Quoting is
+      // optional here and only aids interoperability with YAML 1.1 tooling,
+      // such as js-yaml, that consumes these fields and would coerce a bare
+      // date into a Date object (#3642).
       date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
       updated: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
     })

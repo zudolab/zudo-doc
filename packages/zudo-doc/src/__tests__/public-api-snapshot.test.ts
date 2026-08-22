@@ -250,6 +250,7 @@ describe("Settings public field set snapshot", () => {
         "base",
         "trailingSlash",
         "home",
+        "siteTreeNavIgnore",
         "minifyHtml",
         "docsDir",
         "entryDocSlug",

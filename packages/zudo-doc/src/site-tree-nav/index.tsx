@@ -114,6 +114,13 @@ export interface SiteTreeNavDeps {
    * loud dev warning is emitted) rather than throwing.
    */
   versionedDocsUrl?: (slug: string, versionSlug: string, lang: string) => string;
+  /**
+   * Top-level category slugs hidden from the SiteTreeNav island. This optional
+   * field keeps hand-constructed `SiteTreeNavDeps` compatible with the frozen
+   * `./site-tree-nav` public subpath; omitted means nothing is hidden. The
+   * package chrome passes `settings.siteTreeNavIgnore`.
+   */
+  categoryIgnore?: string[];
 }
 
 /**
@@ -139,6 +146,7 @@ export function createSiteTreeNavWrapper(
     groupSatelliteNodes,
     getCategoryOrder,
     versionedDocsUrl,
+    categoryIgnore,
   } = deps;
 
   function SiteTreeNavWrapper({
@@ -186,7 +194,7 @@ export function createSiteTreeNavWrapper(
         <SiteTreeNav
           tree={tree}
           categoryOrder={categoryOrder}
-          categoryIgnore={["inbox", "develop"]}
+          categoryIgnore={categoryIgnore}
           ariaLabel={ariaLabel}
         />
       ),

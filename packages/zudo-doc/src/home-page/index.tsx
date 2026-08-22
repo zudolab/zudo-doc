@@ -146,6 +146,7 @@ export function createHomePageView<S extends Settings = Settings>(
 ): (props: HomePageViewProps) => JSX.Element {
   assertChromeContext(ctx, "createHomePageView");
   const settings = ctx.settings;
+  const categoryIgnore = settings.siteTreeNavIgnore ?? [];
   const t = ctx.t;
   const withBase = ctx.withBase;
   const defaultLocale = ctx.defaultLocale;
@@ -280,7 +281,7 @@ export function createHomePageView<S extends Settings = Settings>(
             <SiteTreeNav
               tree={tree as unknown as SidebarNavNode[]}
               categoryOrder={categoryOrder}
-              categoryIgnore={["inbox", "develop"]}
+              categoryIgnore={categoryIgnore}
               initiallyCollapsedCategorySlugs={initiallyCollapsedCategorySlugs}
               locale={locale}
               updatedLabel={t("doc.updated", locale)}

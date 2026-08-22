@@ -63,6 +63,23 @@ export { default } from "@takazudo/zudo-doc/routes/index";
 
 型: `{ wide?: boolean }` · デフォルト: `{ wide: false }`
 
+### siteTreeNavIgnore
+
+`/` や `/ja` のようなロケール接頭辞付きホームページにあるパッケージ所有のカテゴリグリッド、および `<SiteTreeNav />` / `<SiteTreeNavDemo />` MDX タグから非表示にするトップレベルカテゴリのスラッグです。ヘッダーナビ、サイドバー、検索、サイトマップには影響しません。
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    siteTreeNavIgnore: ["inbox", "develop"],
+  }),
+);
+```
+
+このショーケース固有の用途のため、以前はパッケージが `["inbox", "develop"]` をハードコードしていました。現在のパッケージデフォルトは `[]` です。サイトでカテゴリを非表示にしたい場合はこのフィールドを設定してください。
+
+型: `string[]` · デフォルト: `[]`
+
 ## アイデンティティと URL
 
 ### siteName

@@ -44,7 +44,7 @@ updated: "2026-08-22"
 Note content begins here.
 ```
 
-YAMLで文字列として扱われるよう、`date`と`updated`の値は引用符で囲んでください。
+ここでは`date: 2026-08-22`と`date: "2026-08-22"`は同じ扱いです。zfbは引用符の有無にかかわらずフロントマターのスカラー値を文字列として保持し、スキーマが`YYYY-MM-DD`形式を検証したうえで、ビルドが暦上存在しない日付を拒否します。これらのフィールドを利用する別のYAML 1.1ツール（js-yamlなど）が、引用符のない日付を`Date`オブジェクトに変換する場合に限り、相互運用性のために引用符を付けてください。
 
 ## 宣言キー
 
@@ -108,7 +108,7 @@ YAMLで文字列として扱われるよう、`date`と`updated`の値は引用�
 | `category_shape is only allowed on top-level categories` | トレイのディレクトリをdocsコンテンツルート直下へ移動 |
 | `a note tray must be declared by a category index.mdx` | トレイディレクトリの`index.mdx`へ宣言を移動 |
 | `note-tray children must be flat leaf files` | ネストしたページをトレイ直下へ移し、子ディレクトリを削除 |
-| `dated note-tray children require date` | `unlisted`を含む全アイテムに、引用符で囲んだ暦上有効な`date`を追加 |
+| `dated note-tray children require date` | `unlisted`を含む全アイテムに、暦上有効な`date`（`YYYY-MM-DD`）を追加 |
 | `year grouping requires note_tray_dated: true`または`month grouping requires note_tray_dated: true` | `note_tray_dated`を有効にするか、`note_tray_sidebar: "index"`を使用 |
 | `a note-tray index must be a visible routed page` | indexから`category_no_page: true`、`unlisted: true`、`standalone: true`を外し、ルートが生成されるようにする |
 | `date is not a calendar-valid YYYY-MM-DD value`または同等の`updated`エラー | `"2026-02-28"`のような実在する日付を使用。`"2026-02-31"`などは不可 |
