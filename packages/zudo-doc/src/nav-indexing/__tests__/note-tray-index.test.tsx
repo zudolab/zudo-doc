@@ -43,6 +43,21 @@ describe("NoteTrayIndex", () => {
     expect(html).toContain("Updated <time");
   });
 
+  it("keeps the visible stable rank accessible and never invents rank 00", () => {
+    const ranked = serialize(
+      NoteTrayIndex({ ...base, items: [item("sixth", { rank: 6 })] }),
+    );
+    const missing = serialize(
+      NoteTrayIndex({ ...base, items: [item("missing", { rank: undefined })] }),
+    );
+
+    const rankSpan = ranked.match(/<span[^>]*>06<\/span>/)?.[0];
+    expect(rankSpan).toBeDefined();
+    expect(rankSpan).not.toContain("aria-hidden");
+    expect(missing).not.toContain(">00</span>");
+    expect(missing).toMatch(/<span[^>]*text-heading[^>]*><\/span>/);
+  });
+
   it("renders cards with h2 links, excerpts, tags, and showDate-gated dates", () => {
     const tagged = item("card", {
       date: "2026-08-22",

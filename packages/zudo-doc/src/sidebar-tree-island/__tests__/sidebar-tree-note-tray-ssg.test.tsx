@@ -156,4 +156,13 @@ describe("SidebarTree — note tray SSG", () => {
     expect(html).toMatch(/>01<\/span><span[^>]*>Mobile alpha<\/span>/);
     expect(html).toContain('data-nav-active');
   });
+
+  it("does not invent rank 00 when an optional rank is absent", () => {
+    const unranked = item("unranked", "Unranked", 1);
+    unranked.rank = undefined;
+    const html = render(<SidebarTree nodes={[tray("index", [unranked])]} />);
+
+    expect(html).not.toContain(">00</span>");
+    expect(html).toContain(">Unranked</span>");
+  });
 });

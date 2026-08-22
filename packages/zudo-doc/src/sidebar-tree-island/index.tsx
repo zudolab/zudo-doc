@@ -416,7 +416,7 @@ function TrayItem({
         >
           {rankDigits !== undefined && (
             <span className={`shrink-0 tabular-nums ${isActive ? "text-bg/70" : "text-muted"}`}>
-              {String(item.rank ?? 0).padStart(rankDigits, "0")}
+              {item.rank === undefined ? "" : String(item.rank).padStart(rankDigits, "0")}
             </span>
           )}
           <span className="min-w-0 flex-1" dangerouslySetInnerHTML={{ __html: labelHtml }} />

@@ -75,8 +75,11 @@ function IndexList(props: NoteTrayIndexProps): JSX.Element {
           key={item.slug}
           class="grid grid-cols-[auto_1fr] gap-x-hsp-lg border-b border-muted py-vsp-md"
         >
-          <span class="tabular-nums text-heading leading-none text-muted" aria-hidden="true">
-            {String(item.rank ?? 0).padStart(width, "0")}
+          <span
+            class="tabular-nums text-heading leading-none text-muted"
+            style={{ width: `${width}ch` }}
+          >
+            {item.rank === undefined ? "" : String(item.rank).padStart(width, "0")}
           </span>
           <div class="min-w-0">
             {item.href ? (
