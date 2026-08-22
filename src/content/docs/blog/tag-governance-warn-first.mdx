@@ -1,0 +1,19 @@
+---
+title: Warn First, Error Later
+description: Tag governance can start as a useful audit signal before it becomes a build gate.
+sidebar_position: 5
+date: 2026-03-10
+tags:
+  - content
+  - type:guide
+---
+
+## Make drift visible
+
+When a team first adopts a tag vocabulary, unknown tags are often clues rather than mistakes. Setting `tagGovernance` to `"warn"` lets the build continue while the audit report shows where the vocabulary and the content disagree. Authors can then decide whether a tag is a typo, a rename, or a legitimate addition.
+
+The [tag governance guide](../guides/tag-governance.mdx) treats the vocabulary as a maintained part of the project, not a one-time list. That makes the eventual move to `"strict"` deliberate: by the time unknown tags fail the build, the team has already had a chance to resolve them.
+
+## Enforcement is a product decision
+
+Warnings are not a weaker version of correctness; they are a different rollout stage. A small private site may switch to errors immediately, while a shared documentation base benefits from a period of observation. The important part is that the policy is explicit and checked by the same tooling that authors use locally.

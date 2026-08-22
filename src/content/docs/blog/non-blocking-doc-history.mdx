@@ -1,0 +1,19 @@
+---
+title: Keeping Doc History Out of the Build
+description: Git history stays useful when expensive per-document work runs outside the main site build.
+sidebar_position: 4
+date: 2026-02-24
+tags:
+  - doc-history
+  - content
+---
+
+## Two jobs, two timings
+
+Document history needs `git log --follow`, which is valuable but expensive when a site has many content files. The main build should produce pages and get out of the way; history generation can then run as its own batch job and publish the dropdown data alongside the site artifact.
+
+The [document history guide](../guides/doc-history.mdx) describes the two modes. Local development reads history from the small server, while CI can generate the static JSON in parallel. Neither path makes rendering every page wait for a separate history walk.
+
+## Preserve the useful metadata
+
+The split does not mean dropping authorship or dates from a page. The build still writes the inexpensive visible metadata, and the history service fills in the deeper commit list when it is available. Separating those costs keeps the default local loop quick without making the published site forget where its documents came from.
