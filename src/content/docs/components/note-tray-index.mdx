@@ -12,7 +12,7 @@ The examples below use the showcase Blog tray.
 
 ## Numbered Index
 
-The default `index` style emphasizes stable, zero-padded ranks and includes each item's description.
+The default `index` style emphasizes stable, zero-padded ranks and includes each item's description. The whole row is the link, not only the title. Hovering or focusing a row lights the rules above and below it and underlines its text; the rank remains the row marker.
 
 <NoteTrayIndex category="blog" style="index" />
 
@@ -22,7 +22,7 @@ The default `index` style emphasizes stable, zero-padded ranks and includes each
 
 ## Cards
 
-The `cards` style gives each item more space and includes tags when tag navigation is enabled.
+The `cards` style gives each item more space and includes tags when tag navigation is enabled. As with `CategoryNav`, the framed card is the link, while tag chips inside the frame remain separate links. When `showDate` is set, the date appears in a column at the right edge of the card on wide viewports and after the title on narrow viewports.
 
 <NoteTrayIndex category="blog" style="cards" showDate />
 
@@ -32,7 +32,7 @@ The `cards` style gives each item more space and includes tags when tag navigati
 
 ## Timeline
 
-The `timeline` style groups a dated tray by month. It always displays dates and throws a build error when used with an undated tray.
+The `timeline` style groups a dated tray by month. Each item shows the day number as a marker on the rail and starts with the title. The timeline never shows `updated`, and it throws a build error when used with an undated tray.
 
 <NoteTrayIndex category="blog" style="timeline" />
 
@@ -46,7 +46,7 @@ The `timeline` style groups a dated tray by month. It always displays dates and 
 |------|------|---------|-------------|
 | `category` | string | Current containing tray | Tray slug to list, such as `"blog"` |
 | `style` | `"index" \| "cards" \| "timeline"` | `"index"` | Listing presentation |
-| `showDate` | boolean | `false` | Shows `date` and `updated` in index and card styles; timeline always shows dates |
+| `showDate` | boolean | `false` | Shows `date` and `updated` in the index and card styles; the timeline always shows the date (created) only |
 | `lang` | `Locale` | auto-detected | Overrides the content locale |
 
 Items follow the tray's `category_sort_order`. An empty tray, an unknown category, or a category that is not a note tray renders nothing.
