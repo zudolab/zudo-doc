@@ -4,6 +4,23 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.10.0] - 2026-08-22
+
+### Features
+
+- Added first-class multi-package changelogs, including nested package navigation, per-package release pages, bilingual guidance, and the `create-zudo-doc --changelog-packages` option. (`91f179c8`, `302eac4f`)
+- Upgraded the zfb package family to 2.9.0 and moved HtmlPreview to the public highlight-only WASM runtime, reducing the emitted WASM payload by about 55%. (`52291ec5`, `2911a651`)
+
+### Bug Fixes
+
+- Hardened nested changelog navigation and added diagnostics when an emitter targets a multi-package landing directory instead of a package release directory. (`302eac4f`, `c4266e4a`)
+- Normalized non-pill sidebar current rows in Drift, Hearth, Sakura, Scandi, and Timberline while preserving each pack's nested active treatment. (`7c4e0444`)
+
+### Other Changes
+
+- Added bilingual documentation, publish-contract coverage, and positive browser detectors for the highlight-only runtime. (`b97ef30c`, `92269d49`)
+- Added package-test hook headroom for concurrent CI load without changing subprocess deadlines. (`4d1417a9`)
+
 ## [5.9.0] - 2026-08-20
 
 ### Features
