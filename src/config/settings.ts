@@ -108,9 +108,19 @@ export const settings = {
   llmsTxt: true,
   changelogs: [
     {
-      sourceDir: "src/content/docs/changelog",
+      sourceDir: "src/content/docs/changelog/zudo-doc",
       outputFile: "packages/zudo-doc/CHANGELOG.md",
       packageName: "@takazudo/zudo-doc",
+    },
+    {
+      sourceDir: "src/content/docs/changelog/create-zudo-doc",
+      outputFile: "packages/create-zudo-doc/CHANGELOG.md",
+      packageName: "create-zudo-doc",
+    },
+    {
+      sourceDir: "src/content/docs/changelog/doc-history-server",
+      outputFile: "packages/doc-history-server/CHANGELOG.md",
+      packageName: "@takazudo/zudo-doc-history-server",
     },
   ],
   // Reserved: not yet consumed by the zfb pipeline; wiring site TBD (#2140).
@@ -315,7 +325,17 @@ export const settings = {
     // prefixing (#3216/#3217) — otherwise it 404s under an active `/v/{version}`.
     { label: "Claude", labelKey: "nav.claude", path: "/docs/claude", categoryMatch: "claude", versioned: false },
     { label: "Codex", labelKey: "nav.codex", path: "/docs/codex", categoryMatch: "codex", versioned: false },
-    { label: "Changelog", labelKey: "nav.changelog", path: "/docs/changelog", categoryMatch: "changelog" },
+    {
+      label: "Changelog",
+      labelKey: "nav.changelog",
+      path: "/docs/changelog",
+      categoryMatch: "changelog",
+      children: [
+        { label: "zudo-doc", path: "/docs/changelog/zudo-doc" },
+        { label: "create-zudo-doc", path: "/docs/changelog/create-zudo-doc" },
+        { label: "doc-history-server", path: "/docs/changelog/doc-history-server" },
+      ],
+    },
     { label: "Develop", labelKey: "nav.develop", path: "/docs/develop", categoryMatch: "develop" },
   ] satisfies HeaderNavItem[] as HeaderNavItem[],
   headerRightItems: [
