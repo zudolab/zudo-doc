@@ -2,7 +2,7 @@
    Scandi — zudo-doc theme pack (ADR docs/adr/theme-packs.md)
 
    Hygge minimalism: an oat/ecru room with sage and clay accents,
-   pill-shaped nav actives, an even 8px radius discipline, and a
+   pill-shaped nested nav actives, an even 8px radius discipline, and a
    linen-subtle weave on the page body (two cheap repeating
    gradients at ~2% ink — text backdrops stay effectively solid).
    Light = a Scandinavian interior at midday; dark = hygge night —
@@ -180,12 +180,12 @@ html[data-theme-pack="scandi"] aside[data-zd-mobile-sidebar] a:hover:not([data-n
   background: color-mix(in srgb, var(--zd-accent) 10%, transparent);
   color: var(--zd-accent-hover);
 }
-/* root-level actives carry aria-current="page" but not
-   data-nav-active — round their default ink fill to the 8px
-   discipline so no squared default remnant survives. */
-html[data-theme-pack="scandi"] #desktop-sidebar a[aria-current="page"],
-html[data-theme-pack="scandi"] aside[data-zd-mobile-sidebar] a[aria-current="page"] {
-  border-radius: 8px;
+/* Non-pill current rows keep the structural full-width band square in
+   both sidebar surfaces. The data-nav-active rule below owns the flat
+   nested pill. */
+html[data-theme-pack="scandi"] #desktop-sidebar a[aria-current="page"]:not([data-nav-active]),
+html[data-theme-pack="scandi"] aside[data-zd-mobile-sidebar] a[aria-current="page"]:not([data-nav-active]) {
+  border-radius: 0;
 }
 /* active leaf item: THE signature — a full pill in deep sage
    (candle amber at night), oat text, flat as painted wood. Fill
