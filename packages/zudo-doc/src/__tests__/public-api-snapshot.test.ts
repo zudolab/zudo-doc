@@ -117,6 +117,7 @@ describe("package.json exports keyset snapshot", () => {
         "./nav-scope",
         "./nav-source-cache",
         "./nav-source-docs",
+        "./note-tray-index",
         "./note-tray-model",
         "./page-loading",
         "./page-loading.css",

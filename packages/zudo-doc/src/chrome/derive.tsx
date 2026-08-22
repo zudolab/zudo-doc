@@ -79,6 +79,7 @@ import { DEFAULT_THEME_PACK_SLUG } from "../theme-pack-switcher/theme-pack-sync.
 import { SearchWidget } from "../search-widget/index.js";
 import { createMdxComponents } from "../mdx-components/index.js";
 import { createCategoryNavWrapper } from "../category-nav/index.js";
+import { createNoteTrayIndexWrapper } from "../note-tray-index/index.js";
 import { createCategoryTreeNavWrapper } from "../category-tree-nav/index.js";
 import { createSiteTreeNavWrapper } from "../site-tree-nav/index.js";
 import { Details } from "../details/index.js";
@@ -593,6 +594,27 @@ export function deriveMdxComponents(ctx: ChromeContext) {
       versionedDocsUrl: ctx.versionedDocsUrl,
     }) as unknown as FactoryComponent);
 
+  const NoteTrayIndexWrapper = createNoteTrayIndexWrapper({
+    defaultLocale: ctx.defaultLocale,
+    docTags: ctx.settings.docTags,
+    resolveNavSource: ctx.resolveNavSource as never,
+    buildNavTree: ((docs: unknown[], locale: string, categoryMeta: Map<string, unknown>) =>
+      ctx.buildNavTree(docs as never[], locale, categoryMeta as never, (slug, loc) =>
+        ctx.docsUrl(slug, loc),
+      )) as never,
+    findNode: ctx.findNode as never,
+    toRouteSlug: ctx.toRouteSlug,
+    resolveTag: (raw) => ctx.resolveTagBound(raw).canonical,
+    tagHref: (tag, locale) =>
+      ctx.withBase(
+        locale === ctx.defaultLocale
+          ? `/docs/tags/${encodeURIComponent(tag)}`
+          : `/${locale}/docs/tags/${encodeURIComponent(tag)}`,
+      ),
+    t: (key, locale) => ctx.t(key, locale),
+    versionedDocsUrl: ctx.versionedDocsUrl,
+  });
+
   /** HtmlPreview MDX binding (package default) — `settings.htmlPreview` is a
    *  serializable setting in the route-context payload. */
   function HtmlPreviewBound(props: HtmlPreviewWrapperProps): JSX.Element {
@@ -613,15 +635,21 @@ export function deriveMdxComponents(ctx: ChromeContext) {
   };
   const mdxExtras = { ...mdxExtrasDefault, ...(ctx.hostBindings.mdxExtras ?? {}) };
 
-  function createMdxComponentsBound(lang: string = ctx.defaultLocale, currentVersion?: string) {
+  function createMdxComponentsBound(
+    lang: string = ctx.defaultLocale,
+    currentVersion?: string,
+    currentSlug = "",
+  ) {
     return createMdxComponents({
       settings: ctx.settings,
       locale: lang,
       currentVersion,
+      currentSlug,
       navData: {
         CategoryNav: CategoryNavWrapper as never,
         CategoryTreeNav: CategoryTreeNavWrapper as never,
         SiteTreeNav: SiteTreeNavWrapper as never,
+        NoteTrayIndex: NoteTrayIndexWrapper as never,
       },
       // Package-owned content components wired here so an INJECTED docs route
       // renders MDX using these tags without the "MDX requires '<X>' to be

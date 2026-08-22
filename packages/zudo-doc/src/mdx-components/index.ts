@@ -49,7 +49,7 @@ import { MathBlock } from "../math-block/index.js";
 type AnyComponent = (props: Record<string, unknown>) => unknown;
 
 /**
- * The 4 host-supplied, locale-aware nav wrappers. Each accepts a `lang` prop;
+ * The host-supplied, locale-aware nav wrappers. Each accepts a `lang` prop;
  * the factory injects the active `locale` so the wrapper queries the correct
  * collection. `SiteTreeNav` is reused for both the `SiteTreeNav` and
  * `SiteTreeNavDemo` MDX tags (matching the showcase mapping).
@@ -58,6 +58,7 @@ export interface MdxNavData {
   CategoryNav: AnyComponent;
   CategoryTreeNav: AnyComponent;
   SiteTreeNav: AnyComponent;
+  NoteTrayIndex: AnyComponent;
 }
 
 export interface CreateMdxComponentsOptions {
@@ -83,6 +84,8 @@ export interface CreateMdxComponentsOptions {
    * which wrapper `navData` holds.
    */
   currentVersion?: string;
+  /** Canonical slug of the page being rendered, used to infer its containing note tray. */
+  currentSlug: string;
   /** Host-supplied locale-aware nav wrappers. */
   navData: MdxNavData;
   /**
@@ -285,7 +288,7 @@ function makeEnlargeableParagraph(
 export function createMdxComponents(
   options: CreateMdxComponentsOptions,
 ): Record<string, unknown> {
-  const { settings, locale, currentVersion, navData, extras } = options;
+  const { settings, locale, currentVersion, currentSlug, navData, extras } = options;
 
   const ContentImg = makeContentImg(settings.base);
   const EnlargeableParagraph = makeEnlargeableParagraph(
@@ -302,6 +305,8 @@ export function createMdxComponents(
     navData.CategoryTreeNav({ ...props, lang: locale, currentVersion });
   const SiteTreeNavBound = (props: Record<string, unknown>) =>
     navData.SiteTreeNav({ ...props, lang: locale, currentVersion });
+  const NoteTrayIndexBound = (props: Record<string, unknown>) =>
+    navData.NoteTrayIndex({ ...props, lang: locale, currentVersion, currentSlug });
 
   return {
     ...defaultComponents,
@@ -336,6 +341,7 @@ export function createMdxComponents(
     CategoryTreeNav: CategoryTreeNavBound,
     SiteTreeNav: SiteTreeNavBound,
     SiteTreeNavDemo: SiteTreeNavBound,
+    NoteTrayIndex: NoteTrayIndexBound,
     // Host extras win over any same-named default above (Details, HtmlPreview,
     // Island, PresetGenerator, showcase stubs, etc.).
     ...(extras ?? {}),

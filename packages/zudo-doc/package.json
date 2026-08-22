@@ -477,6 +477,10 @@
       "types": "./dist/category-nav/index.d.ts",
       "default": "./dist/category-nav/index.js"
     },
+    "./note-tray-index": {
+      "types": "./dist/note-tray-index/index.d.ts",
+      "default": "./dist/note-tray-index/index.js"
+    },
     "./category-tree-nav": {
       "types": "./dist/category-tree-nav/index.d.ts",
       "default": "./dist/category-tree-nav/index.js"

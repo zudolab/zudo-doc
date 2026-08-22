@@ -189,6 +189,7 @@ behavior change from the previous standalone-line-below-the-row placement,
 |---|---|
 | `./nav-indexing` | Navigation indexing utilities |
 | `./nav-indexing/types` | Navigation indexing type definitions |
+| `./note-tray-index` | Note-tray index MDX component factory |
 | `./nav-scope` | Navigation scope context |
 | `./nav-data-prep` | Navigation data preparation |
 | `./nav-source-cache` | Navigation source cache |
