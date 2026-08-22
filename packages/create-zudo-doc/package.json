@@ -40,7 +40,8 @@
     "bin",
     "dist",
     "templates",
-    "!dist/__tests__"
+    "!dist/__tests__",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
