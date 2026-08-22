@@ -73,8 +73,8 @@ The schema is package-owned (`@takazudo/zudo-doc/docs-schema`, source `packages/
 | `note_tray_dated` | boolean | no | Requires `date` on every tray item, including unlisted items |
 | `note_tray_sidebar` | `"index" \| "year" \| "month"` | no | Tray sidebar style; grouped styles require a dated tray |
 | `category_sort_order` | `"asc" \| "desc"` | no | Category or tray display direction; defaults to `"asc"` |
-| `date` | `"YYYY-MM-DD"` | no | Required on every item in a dated tray; quote in YAML |
-| `updated` | `"YYYY-MM-DD"` | no | Optional update date on any doc; quote in YAML |
+| `date` | `"YYYY-MM-DD"` | no | Required on every item in a dated tray; quoting is optional because zfb keeps scalar values as strings |
+| `updated` | `"YYYY-MM-DD"` | no | Optional update date on any doc; quoting is optional because zfb keeps scalar values as strings |
 | `tags` | string[] | no | Cross-category grouping |
 | `draft` | boolean | no | Excludes the page from the build entirely |
 | `unlisted` | boolean | no | Built but hidden from sidebar/nav |

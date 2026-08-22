@@ -212,7 +212,7 @@ Selects the sidebar presentation for a note tray. `index` shows stable ranks; `y
 - **Type:** `"YYYY-MM-DD"`
 - **Required:** Only for every item in a dated note tray
 
-Sets the document date. Quote the value in YAML. The schema checks the format and the build rejects impossible calendar dates.
+Sets the document date. Quoting is optional because zfb keeps the scalar value as a string either way. The schema validates the `YYYY-MM-DD` format, and the build rejects impossible calendar dates. Quote the value for interoperability only when another YAML 1.1 tool, such as js-yaml, consumes this field and would coerce a bare date into a `Date` object.
 
 ```mdx
 ---
