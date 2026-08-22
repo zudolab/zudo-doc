@@ -214,6 +214,11 @@ html[data-theme-pack="hearth"] #desktop-sidebar a {
     background-color 0.15s ease,
     color 0.15s ease;
 }
+/* Keep the structural current-row band square; data-nav-active is the
+   explicit hook for Hearth's nested brick cushion. */
+html[data-theme-pack="hearth"] #desktop-sidebar a[aria-current="page"]:not([data-nav-active]) {
+  border-radius: 0;
+}
 html[data-theme-pack="hearth"] #desktop-sidebar a:hover {
   color: var(--zd-accent);
   text-decoration: none;
