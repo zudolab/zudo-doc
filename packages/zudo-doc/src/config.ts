@@ -131,6 +131,7 @@ export const DEFAULT_SETTINGS: Settings = {
   base: "/",
   trailingSlash: false,
   home: { wide: false },
+  siteTreeNavIgnore: [],
   minifyHtml: true,
   docsDir: "src/content/docs",
   entryDocSlug: "getting-started",
@@ -266,6 +267,15 @@ export interface ZudoDocConfig {
    * @default { wide: false }
    */
   home?: HomeConfig;
+  /**
+   * Top-level category slugs hidden from the package-owned home-page category
+   * grid on `/` and locale homes AND from the `<SiteTreeNav />` /
+   * `<SiteTreeNavDemo />` MDX tag. They still appear in header nav, sidebar,
+   * search and sitemap. Before this field the package hard-coded
+   * `["inbox", "develop"]` (#3641).
+   * @default []
+   */
+  siteTreeNavIgnore?: string[];
   /**
    * Minify production HTML output from `zfb build`.
    * @default true

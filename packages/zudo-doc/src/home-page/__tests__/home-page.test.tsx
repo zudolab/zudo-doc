@@ -50,6 +50,25 @@ const CHANGELOG_TREE: DocNavNode[] = [
     ],
   },
 ];
+const DEVELOP_TREE: DocNavNode[] = [
+  {
+    slug: "develop",
+    label: "develop",
+    position: 0,
+    href: "/docs/develop",
+    hasPage: true,
+    children: [
+      {
+        slug: "develop/example",
+        label: "Example",
+        position: 0,
+        href: "/docs/develop/example",
+        hasPage: true,
+        children: [],
+      },
+    ],
+  },
+];
 
 function makeProps(overrides: Partial<HomePageViewProps> = {}): HomePageViewProps {
   return {
@@ -219,6 +238,21 @@ describe("createHomePageView — SiteTreeNav island", () => {
 
     expect(html).toContain('aria-expanded="true" aria-label="Collapse Release notes"');
     expect(html).toContain('href="/docs/changelog/1.0.0"');
+  });
+
+  it("shows a develop category by default when no siteTreeNavIgnore setting is provided", () => {
+    const HomePageView = createHomePageView(makeFakeChromeContext());
+    const html = render(<HomePageView {...makeProps({ tree: DEVELOP_TREE })} />);
+
+    expect(html).toContain('href="/docs/develop"');
+  });
+
+  it("hides a develop category when siteTreeNavIgnore includes it", () => {
+    const ctx = makeFakeChromeContext({ settings: { siteTreeNavIgnore: ["develop"] } });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps({ tree: DEVELOP_TREE })} />);
+
+    expect(html).not.toContain('href="/docs/develop"');
   });
 
   it("localizes note-tray dates and the existing updated label", () => {

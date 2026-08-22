@@ -80,6 +80,10 @@ Factory for the shared home-page (site index) body: hero (logo mask block,
 `HomePageView` component with props
 `{ locale, extras?, heroLink?, tree, categoryOrder, tagCount, tags?, tagLimit? }`.
 
+The `SiteTreeNav` island's `categoryIgnore` comes from
+`settings.siteTreeNavIgnore` (default `[]`; the package hard-coded
+`["inbox", "develop"]` before #3641).
+
 `tagCount` (together with `settings.docTags`) gates the tags section. When
 `tags` (the pre-resolved `TagItem[]` list `prepareHomeData` now also returns) is
 provided and non-empty, the section renders the tag chips — capped at `tagLimit`
@@ -163,7 +167,7 @@ behavior change from the previous standalone-line-below-the-row placement,
 | `./home-page` | `createHomePageView(ctx)` — home-page (site index) view factory; see below |
 | `./category-nav` | Category navigation component |
 | `./category-tree-nav` | Category tree navigation component |
-| `./site-tree-nav` | Site tree navigation component |
+| `./site-tree-nav` | Site tree navigation component; its `SiteTreeNavDeps.categoryIgnore` field is optional (omitted means nothing is hidden) |
 | `./html-preview-wrapper` | HTML preview wrapper component |
 | `./design-token-panel-bootstrap` | Design token panel bootstrap wiring |
 

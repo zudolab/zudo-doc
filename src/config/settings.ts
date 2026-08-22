@@ -77,6 +77,7 @@ export const settings = {
   sitemap: true,
   docMetainfo: true,
   docTags: true,
+  siteTreeNavIgnore: ["inbox", "develop"] as string[], // hides the showcase's develop/ category from the home grid + <SiteTreeNav /> (#1463/#1480 → setting per #3641)
   // Not yet wired: settings uses "before-pager" but DocTags (v2 package) expects "before-footer" — types must align first (#2140).
   tagPlacement: "after-title" as TagPlacement,
   /**

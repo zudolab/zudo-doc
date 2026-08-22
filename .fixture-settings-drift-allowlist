@@ -218,3 +218,12 @@ i18n:favicon
 theme:favicon
 smoke:favicon
 versioning:favicon
+
+# ── siteTreeNavIgnore ─────────────────────────────────────────────────────────
+# reason: no e2e fixture has an inbox/ or develop/ category, so the setting is
+#         not exercised; fixtures keep the package default []
+sidebar:siteTreeNavIgnore
+i18n:siteTreeNavIgnore
+theme:siteTreeNavIgnore
+smoke:siteTreeNavIgnore
+versioning:siteTreeNavIgnore

@@ -14,6 +14,7 @@
 
 import { describe, expect, it, vi } from "vitest";
 import { SiteTreeNav } from "../../site-tree-nav-island/index.js";
+import type { SiteTreeNavProps } from "../../site-tree-nav-island/index.js";
 import { createSiteTreeNavWrapper } from "../index.js";
 import type { SiteTreeNavDeps } from "../index.js";
 import type { SidebarNavNode } from "../../sidebar/types.js";
@@ -118,6 +119,29 @@ describe("createSiteTreeNavWrapper — Island(when:idle) preserved (epic #2344 S
     expect(() => SiteTreeNavWrapper({ lang: "en", ariaLabel: "Site navigation" })).not.toThrow();
   });
 
+  it("passes categoryIgnore to the SiteTreeNav island", () => {
+    const deps = makeDeps({
+      categoryIgnore: ["develop"],
+      buildNavTree: () => [makeNode("develop", [makeNode("develop/example")])],
+      getCategoryOrder: () => [],
+    });
+    const SiteTreeNavWrapper = createSiteTreeNavWrapper(deps);
+    const result = SiteTreeNavWrapper({ lang: "en" });
+
+    expect(siteTreeNavProps(result).categoryIgnore).toEqual(["develop"]);
+  });
+
+  it("leaves categoryIgnore undefined when omitted so a develop root is shown", () => {
+    const deps = makeDeps({
+      buildNavTree: () => [makeNode("develop", [makeNode("develop/example")])],
+      getCategoryOrder: () => [],
+    });
+    const SiteTreeNavWrapper = createSiteTreeNavWrapper(deps);
+    const result = SiteTreeNavWrapper({ lang: "en" });
+
+    expect(siteTreeNavProps(result).categoryIgnore).toBeUndefined();
+  });
+
   it("SiteTreeNav island marker name is 'SiteTreeNav' — proxy for data-zfb-island (epic #2344 S8)", () => {
     // The Island({when:"idle", children:<SiteTreeNav ...>}) call in the factory
     // relies on SiteTreeNav.displayName === "SiteTreeNav" to emit
@@ -141,6 +165,11 @@ describe("createSiteTreeNavWrapper — Island(when:idle) preserved (epic #2344 S
 function treeOf(result: unknown): SidebarNavNode[] {
   const el = result as { props: { children: { props: { tree: SidebarNavNode[] } } } };
   return el.props.children.props.tree;
+}
+
+function siteTreeNavProps(result: unknown): SiteTreeNavProps {
+  const el = result as { props: { children: { props: SiteTreeNavProps } } };
+  return el.props.children.props;
 }
 
 describe("createSiteTreeNavWrapper — version threading (#3218)", () => {
