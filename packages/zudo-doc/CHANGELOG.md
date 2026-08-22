@@ -4,6 +4,20 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.11.0] - 2026-08-22
+
+### Features
+
+- Added the `siteTreeNavIgnore` setting so selected site-tree categories can be omitted from sidebar and home-page navigation while their documents remain available. (`2d1aa78f`)
+
+### Bug Fixes
+
+- Aligned grouped note-tray child items with the deeper indentation used by the corresponding expanded layout. (`5bbf365f`)
+
+### Other Changes
+
+- Updated the zfb package family to 2.10.0 and documented `siteTreeNavIgnore` plus quoted date frontmatter guidance in English and Japanese. (`acaa01cf`, `3f15cc2f`, `c484754b`)
+
 ## [5.10.0] - 2026-08-22
 
 ### Features
