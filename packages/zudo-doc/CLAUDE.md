@@ -10,6 +10,14 @@ The frozen 1.0 public API contract is documented in `API.md` (this directory):
 subpath exports, `zudoDocPreset` options (`Settings`), `@theme` design tokens,
 `doclayout` slot anchors, and the ejectable component list.
 
+## Note-tray schema and navigation
+
+`src/docs-schema/index.ts` owns the note-tray frontmatter fields. Cross-field and
+calendar validation lives in `src/site-schema/note-tray-validate.ts`; shared ordering,
+rank, grouping, and date behavior lives in `src/note-tray-model/`. The sidebar,
+`NoteTrayIndex`, pager, and home page must consume that shared model rather than
+re-deriving tray behavior.
+
 ## Build: tsup (JS) + tsc (DTS) — two passes, not one
 
 `build`/`prepare` run **`gen-search-widget-script.mjs`, `gen-nav-overflow-script.mjs`,

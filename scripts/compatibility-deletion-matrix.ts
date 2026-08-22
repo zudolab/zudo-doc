@@ -590,6 +590,7 @@ export const survivorAllowlist: readonly SurvivorClassification[] = [
       "^CLAUDE\\.md$",
       "^e2e/setup-fixtures\\.sh$",
       "^packages/zudo-doc/src/plugins/internal/doc-history/",
+      "^src/content/docs(-ja)?/blog/non-blocking-doc-history\\.mdx$",
       "^src/content/docs(-ja)?/guides/(deployment|doc-history)\\.mdx$",
       "^src/content/docs(-ja)?/reference/doc-history-server\\.mdx$",
     ],

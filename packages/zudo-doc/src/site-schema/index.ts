@@ -110,3 +110,5 @@ export { extractHeadings } from "../extract-headings/index.js";
 // ── Route enumeration ───────────────────────────────────────────────────────
 
 export { createDocRouteEntries } from "./doc-route-entries.js";
+
+export { validateNoteTrays } from "./note-tray-validate.js";

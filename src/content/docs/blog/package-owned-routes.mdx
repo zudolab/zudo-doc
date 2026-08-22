@@ -1,0 +1,19 @@
+---
+title: Why Routes Belong to the Package
+description: Moving route and chrome behavior into zudo-doc keeps projects focused on their content.
+sidebar_position: 1
+date: 2026-01-12
+tags:
+  - customization
+  - type:reference
+---
+
+## A smaller host surface
+
+The showcase used to own more of the route layer: page entry points, collection wiring, and pieces of the document chrome. That made every framework change look like a project migration. Moving those responsibilities into the `@takazudo/zudo-doc` package leaves the host with a small configuration seam and its content tree.
+
+This is more than code organization. A generated project and the showcase now exercise the same route contract, so a fix to the package is tested against a real site instead of a collection of copied stubs. The [header navigation guide](../guides/header-navigation.mdx) remains a host-level configuration example; the route machinery underneath it is shared.
+
+## Keep the seam intentional
+
+The host still owns the things that express a site's identity: settings, translations, tags, and optional chrome bindings. Everything else should have a clear reason to stay local. That boundary makes upgrades easier to explain and gives new projects a dependable starting point.

@@ -71,13 +71,13 @@ function changelogNav(root = EN_CHANGELOG): { tree: NavNode[]; flat: NavNode[] }
 }
 
 describe("showcase package changelog hierarchy", () => {
-  it("keeps the bilingual tree aligned with 93 historical entries in zudo-doc", () => {
+  it("keeps the bilingual tree aligned with 94 historical entries in zudo-doc", () => {
     const en = mdxFiles(EN_CHANGELOG);
     const ja = mdxFiles(JA_CHANGELOG);
     expect(ja).toEqual(en);
 
     const historical = en.filter((path) => path !== "index.mdx" && !path.endsWith("/index.mdx"));
-    expect(historical).toHaveLength(93);
+    expect(historical).toHaveLength(94);
     expect(historical.every((path) => path.startsWith("zudo-doc/"))).toBe(true);
     expect(en).toEqual([
       "create-zudo-doc/index.mdx",
@@ -99,7 +99,7 @@ describe("showcase package changelog hierarchy", () => {
 
     const { tree } = changelogNav();
     const zudo = findNode(tree, "changelog/zudo-doc");
-    expect(zudo?.children[0]?.slug).toBe("changelog/zudo-doc/5.9.0");
+    expect(zudo?.children[0]?.slug).toBe("changelog/zudo-doc/5.10.0");
     expect(zudo?.children.at(-1)?.slug).toBe("changelog/zudo-doc/0.1.0");
   });
 

@@ -1,0 +1,19 @@
+---
+title: Designing the 16rem Drawer
+description: A fixed-width sidebar drawer keeps navigation predictable without taking over the document.
+sidebar_position: 3
+date: 2026-02-11
+tags:
+  - design-system
+  - customization
+---
+
+## A width with a job
+
+The sidebar drawer is intentionally `16rem` wide. That width gives page titles enough room to remain recognizable while keeping the document column comfortable on a laptop. It is a small design decision, but it gives every category the same starting geometry and makes the open and closed states easy to reason about.
+
+The [sidebar guide](../guides/sidebar.mdx) explains the navigation model; the drawer is the space where that model becomes usable. Long labels can still wrap, and the main content can keep its own readable measure instead of shrinking to fit an unpredictable menu.
+
+## Responsive by default
+
+On smaller screens, the drawer becomes an overlay rather than a second permanent column. The visual treatment changes, but the information architecture does not. Readers get the same links, in the same order, whether they are opening the tray with a pointer or navigating from a narrow viewport.

@@ -42,7 +42,12 @@ title: Quick Start
 | `sidebar_label` | string | いいえ | `title`の値 | サイドバーに表示されるラベルのオーバーライド |
 | `category` | string | いいえ | ディレクトリ名 | 将来の使用のために予約 |
 | `category_no_page` | boolean | いいえ | `false` | カテゴリをリンクなしのヘッダーにする（ルート・サイトマップ・検索エントリなし） |
-| `category_sort_order` | string | いいえ | — | カテゴリ内ページのソート順（例：新しい順に`"desc"`） |
+| `category_sort_order` | `"asc" \| "desc"` | いいえ | `"asc"` | カテゴリ内ページのソート順 |
+| `category_shape` | `"note-tray"` | いいえ | 通常のツリー | トップレベルのフラットなカテゴリをノートトレイにする |
+| `note_tray_dated` | boolean | いいえ | `false` | ノートトレイの全アイテムに`date`を必須化 |
+| `note_tray_sidebar` | `"index" \| "year" \| "month"` | いいえ | `"index"` | ノートトレイのサイドバー表示を選択 |
+| `date` | `"YYYY-MM-DD"` | いいえ | — | ドキュメントの日付。日付付きノートトレイのアイテムでは必須 |
+| `updated` | `"YYYY-MM-DD"` | いいえ | — | どのドキュメントにも指定できる任意の更新日 |
 | `search_exclude` | boolean | いいえ | `false` | ページを検索インデックスから除外 |
 | `tags` | string[] | いいえ | -- | 横断的なナビゲーション用タグ |
 | `draft` | boolean | いいえ | `false` | 本番ビルドから除外（開発時は表示） |
@@ -167,6 +172,62 @@ category_sort_order: "desc"
 sidebar_position: 20
 ---
 ```
+
+ノートトレイでは、サイドバー、`NoteTrayIndex`、前・次ページャー、ホームページのすべてでこの順序が使われます。詳しくは[ノートトレイ](./note-tray.mdx)を参照してください。
+
+### `category_shape`
+
+- **型：** `"note-tray"`
+- **必須：** No
+- **デフォルト：** 通常のツリーカテゴリ
+
+トップレベルカテゴリの`index.mdx`に`category_shape: "note-tray"`を設定すると、直下の子ファイルがフラットな順序付きページ列になります。ノートトレイには表示されるルート付きindexが必要で、子ディレクトリは置けません。
+
+```mdx
+---
+title: Notes
+sidebar_position: 3
+category_shape: "note-tray"
+---
+```
+
+### `note_tray_dated`
+
+- **型：** `boolean`
+- **必須：** No
+- **デフォルト：** `false`
+
+ノートトレイのindexで`true`にすると、`unlisted`を含むトレイ内の全アイテムに`date`が必要です。ビルドは問題のあるslugをすべて報告します。
+
+### `note_tray_sidebar`
+
+- **型：** `"index" | "year" | "month"`
+- **必須：** No
+- **デフォルト：** `"index"`
+
+ノートトレイのサイドバー表示を選びます。`index`は安定したrankを表示し、`year`と`month`はアイテムを時系列でグループ化します。後者2つには`note_tray_dated: true`が必要です。
+
+### `date`
+
+- **型：** `"YYYY-MM-DD"`
+- **必須：** 日付付きノートトレイの全アイテムで必須
+
+ドキュメントの日付を設定します。YAMLでは値を引用符で囲んでください。スキーマが形式を確認し、ビルドが暦上存在しない日付を拒否します。
+
+```mdx
+---
+title: Project Note
+sidebar_position: 1
+date: "2026-08-20"
+---
+```
+
+### `updated`
+
+- **型：** `"YYYY-MM-DD"`
+- **必須：** No
+
+どのドキュメントにも任意の更新日を設定できます。ドキュメントヘッダーでは`date`の隣に表示され、日付を表示するノートトレイのインデックスとホームページにも表示されます。`date`がなくても単独で表示できます。サイドバーとページャーには`updated`を表示しません。
 
 ### `search_exclude`
 

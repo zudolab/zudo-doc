@@ -320,6 +320,7 @@ export const settings = {
       ],
     },
     { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
+    { label: "Blog", labelKey: "nav.blog", path: "/docs/blog", categoryMatch: "blog" },
     // Claude/Codex-resources routes are generated only for the default docsDir and never
     // exist in an archived version directory, so this item must opt out of version
     // prefixing (#3216/#3217) — otherwise it 404s under an active `/v/{version}`.

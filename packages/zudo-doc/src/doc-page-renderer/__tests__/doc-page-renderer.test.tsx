@@ -8,13 +8,15 @@
  */
 
 import { describe, expect, it } from "vitest";
-import type { VNode } from "preact";
+import type { JSX, VNode } from "preact";
 import { createRenderDocPage } from "../index.js";
 import type { RenderDocPageOptions } from "../index.js";
 import type { DocPageBaseProps } from "../../doc-page-props/index.js";
 import type { ChromeContext } from "../../factory-context/index.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 import { deriveGetUnavailableVersions } from "../../chrome/derive.js";
+import type { NoteTrayIndexProps } from "../../nav-indexing/note-tray-index.js";
+import { serialize } from "../../nav-indexing/__tests__/helpers.js";
 
 // ---------------------------------------------------------------------------
 // Minimal fakes factory
@@ -109,6 +111,72 @@ describe("createRenderDocPage — standalone chrome suppression", () => {
       expect(historySlot.props["sourceFileExt"]).toBe(ext);
     },
   );
+});
+
+describe("createRenderDocPage — NoteTrayIndex MDX registration", () => {
+  it.each([
+    { name: "latest", locale: "en", version: undefined, expectedHref: "/en/docs/notes/one" },
+    { name: "localized", locale: "ja", version: undefined, expectedHref: "/ja/docs/notes/one" },
+    { name: "versioned", locale: "en", version: "1.0", expectedHref: "/v/1.0/en/docs/notes/one" },
+  ])("renders the component on $name pages", ({ locale, version, expectedHref }) => {
+    const navDocs = [
+      { slug: "notes", data: { title: "Notes", category_shape: "note-tray" } },
+      { slug: "notes/one", data: { title: "One" } },
+    ];
+    const tree = [{
+      slug: "notes",
+      label: "Notes",
+      href: `/${locale}/docs/notes`,
+      hasPage: true,
+      position: 1,
+      shape: "note-tray" as const,
+      noteTrayDated: false,
+      children: [{
+        slug: "notes/one",
+        label: "One",
+        href: `/${locale}/docs/notes/one`,
+        hasPage: true,
+        position: 1,
+        rank: 1,
+        children: [],
+      }],
+    }];
+    const findNode = (nodes: typeof tree, slug: string): (typeof tree)[number] | undefined => {
+      for (const node of nodes) {
+        if (node.slug === slug) return node;
+      }
+    };
+    const ctx = makeFakeChromeContext({
+      overrides: {
+        resolveNavSource: (() => ({ navDocs, docs: navDocs, categoryMeta: new Map() })) as never,
+        buildNavTree: (() => tree) as never,
+        findNode: findNode as never,
+      },
+    });
+    const props = makeEntryProps({ slug: "notes" });
+    if (props.kind !== "entry") throw new Error("expected entry");
+    props.entry.Content = (({ components }: { components: Record<string, unknown> }) => {
+      const Component = components.NoteTrayIndex as (props: Record<string, unknown>) => JSX.Element;
+      return <Component />;
+    }) as never;
+
+    const page = createRenderDocPage(ctx)(props, {
+      locale,
+      version: version ? { slug: version } : undefined,
+    }) as VNode<Record<string, unknown>>;
+    const content = page.props.contentSlot as VNode<Record<string, unknown>>;
+    const bound = (content.type as (props: Record<string, unknown>) => VNode)(content.props);
+    const rendered = (bound.type as (props: Record<string, unknown>) => VNode)(bound.props);
+    const noteTrayProps = rendered.props as unknown as NoteTrayIndexProps;
+    const html = serialize(
+      (rendered.type as (props: NoteTrayIndexProps) => JSX.Element)(noteTrayProps),
+    );
+
+    expect(noteTrayProps.locale).toBe(locale);
+    expect(noteTrayProps.items[0]?.href).toBe(expectedHref);
+    expect(html).toContain(`href="${expectedHref}"`);
+    expect(html).toContain("One");
+  });
 });
 
 // ---------------------------------------------------------------------------

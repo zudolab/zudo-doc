@@ -1,0 +1,129 @@
+---
+title: Note Trays
+description: Build flat, ordered categories for notes, journals, and other sequential writing.
+sidebar_position: 3.1
+tags:
+  - content
+  - customization
+---
+
+A note tray is a top-level category for a flat sequence of pages. Think of papers on a tray: put the latest one on top for a journal, or read them in order for a course or notebook. The sequence comes from `sidebar_position`; dates are optional metadata rather than the sort key.
+
+## Declare a Note Tray
+
+Declare the tray in its required category `index.mdx`:
+
+```mdx title="notes/index.mdx"
+---
+title: Notes
+sidebar_position: 3
+category_shape: "note-tray"
+category_sort_order: "desc"
+note_tray_dated: true
+note_tray_sidebar: "month"
+---
+
+Recent notes, newest first.
+
+<NoteTrayIndex style="timeline" />
+```
+
+Place each item directly beside the index:
+
+```mdx title="notes/first-note.mdx"
+---
+title: First Note
+description: What changed and why.
+sidebar_position: 1
+date: "2026-08-20"
+updated: "2026-08-22"
+---
+
+## Summary
+
+Note content begins here.
+```
+
+Quote `date` and `updated` values so YAML keeps them as strings.
+
+## Declaration Keys
+
+| Key | Type | Default | Meaning |
+|-----|------|---------|---------|
+| `category_shape` | `"note-tray"` | absent (regular tree category) | Declares this top-level category as a note tray |
+| `note_tray_dated` | boolean | `false` | Requires every item, including unlisted items, to have `date` |
+| `note_tray_sidebar` | `"index" \| "year" \| "month"` | `"index"` | Chooses the tray sidebar presentation; `year` and `month` require a dated tray |
+| `category_sort_order` | `"asc" \| "desc"` | `"asc"` | Sets the order everywhere: sidebar, index, pager, and home page |
+| `date` | `"YYYY-MM-DD"` | — | Item date; required in a dated tray and optional on other documents |
+| `updated` | `"YYYY-MM-DD"` | — | Optional update date on any document |
+
+`sidebar_position` remains the ordering key. zudo-doc derives a stable, 1-based rank after sorting positions and then slugs in ascending order. The rank is zero-padded to the item-count width and does not change when display order is descending, so a six-item descending tray reads `06` through `01`. Missing, fractional, and duplicate positions retain the normal category behavior; note trays add no position validation.
+
+For dated trays, keep `sidebar_position` monotonic with `date`. This is a recommendation, not a validation rule, but it prevents chronological groups from containing a surprising reading order.
+
+## Sidebar Styles
+
+Set `note_tray_sidebar` on the tray index:
+
+| Style | Use it when |
+|-------|-------------|
+| `"index"` | Reading order matters most. The sidebar shows zero-padded ranks and works with dated or undated trays |
+| `"year"` | A long dated archive is easiest to scan by year |
+| `"month"` | A frequently updated dated journal benefits from finer monthly groups |
+
+Year and month groups follow `category_sort_order` chronologically. Items inside each group follow their ranks in the same direction. Grouped sidebars show `MM-DD` beside each item; the plain index sidebar shows ranks. The sidebar shows `date`, but never `updated`.
+
+## NoteTrayIndex
+
+`NoteTrayIndex` is globally available in MDX. On a tray index it infers the current tray, or you can pass `category` explicitly from another page:
+
+```mdx
+<NoteTrayIndex />
+<NoteTrayIndex style="cards" showDate />
+<NoteTrayIndex category="notes" style="timeline" />
+```
+
+Its three styles are:
+
+- `index` (default) — a compact numbered list with titles and descriptions
+- `cards` — one card per item, including descriptions and tags
+- `timeline` — items grouped by month along a timeline; requires `note_tray_dated: true`
+
+Dates are hidden in `index` and `cards` unless `showDate` is set. Timeline always shows them. Wherever the component shows a `date`, it also shows `updated` beside it with the localized “Updated” label. An item with only `updated` displays that value alone. An empty tray renders nothing.
+
+See the [NoteTrayIndex component page](../components/note-tray-index.mdx) for live examples.
+
+## Home Page and Pager
+
+The home page recognizes note trays automatically. Instead of rendering them as nested category trees, it uses the same flat tray ordering and sidebar grouping choice. Dated blocks show `date` and `updated`; undated blocks use ranks, and an `updated` value can appear alone when `date` is absent. Empty trays are omitted.
+
+Previous and next links also follow tray rank order and `category_sort_order`. They show `date` when present, but not `updated`.
+
+## Validation Errors
+
+`pnpm build` validates each locale and version and reports every offending slug under `Invalid note-tray configuration`. Fix errors as follows:
+
+| Error | Fix |
+|-------|-----|
+| `category_shape is only allowed on top-level categories` | Move the tray directory directly under the docs content root |
+| `a note tray must be declared by a category index.mdx` | Put the declaration in the tray directory's `index.mdx` |
+| `note-tray children must be flat leaf files` | Move nested pages directly into the tray and remove child directories |
+| `dated note-tray children require date` | Add a quoted, calendar-valid `date` to every item, including `unlisted` items |
+| `year grouping requires note_tray_dated: true` or `month grouping requires note_tray_dated: true` | Enable `note_tray_dated`, or use `note_tray_sidebar: "index"` |
+| `a note-tray index must be a visible routed page` | Remove `category_no_page: true`, `unlisted: true`, or `standalone: true` from the index and ensure it has a route |
+| `date is not a calendar-valid YYYY-MM-DD value` or the equivalent `updated` error | Use a real date such as `"2026-02-28"`; values such as `"2026-02-31"` are rejected |
+
+The content schema also rejects strings that do not match `YYYY-MM-DD`. Note-tray validation then rejects impossible calendar dates.
+
+## Limitations
+
+Note trays are intentionally narrow:
+
+- They are top-level categories only.
+- Their items are flat files only; nested trays and subdirectories are not supported.
+- The tray must have a visible, routed `index.mdx`.
+- They use the regular docs collection and routes and do not add a no-sidebar article layout.
+- Ordering comes only from `sidebar_position` and `category_sort_order`; there is no runtime sort toggle.
+- Pagination, RSS, excerpts, authors, reading time, and “recent N” sidebars are not built in.
+- A tray remains a normal header navigation item; there is no tray badge or special dropdown.
+- Existing categories, including the showcase changelog, are not converted automatically.

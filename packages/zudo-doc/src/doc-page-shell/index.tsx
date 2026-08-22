@@ -58,6 +58,12 @@ export interface DocPageNavNode {
   href?: string;
   hasPage: boolean;
   children: DocPageNavNode[];
+  shape?: "note-tray";
+  noteTrayDated?: boolean;
+  noteTraySidebar?: "index" | "year" | "month";
+  date?: string;
+  updated?: string;
+  rank?: number;
 }
 
 /** Slots and parameters that vary between the 4 doc routes. */

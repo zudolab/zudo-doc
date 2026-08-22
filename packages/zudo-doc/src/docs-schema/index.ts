@@ -89,6 +89,13 @@ export function buildDocsSchema(opts?: BuildDocsSchemaOptions) {
       // over the sidecar.
       category_no_page: z.boolean().optional(),
       category_sort_order: z.enum(["asc", "desc"]).optional(),
+      category_shape: z.enum(["note-tray"]).optional(),
+      note_tray_dated: z.boolean().optional(),
+      note_tray_sidebar: z.enum(["index", "year", "month"]).optional(),
+      // Quote these values in YAML (for example, date: "2026-08-22") so
+      // parsers do not coerce them into Date objects before schema validation.
+      date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+      updated: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
     })
     .passthrough();
 }

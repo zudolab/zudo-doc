@@ -29,4 +29,33 @@ describe("createDocPager — data-doc-pager hook", () => {
     const html = render(<DocPager prev={null} next={null} locale="en" />);
     expect(html).toMatch(/<nav[^>]*data-doc-pager[^>]*>/);
   });
+
+  it("renders a formatted authored date below each neighbour label when present", () => {
+    const ctx = makeFakeChromeContext();
+    const DocPager = createDocPager(ctx);
+    const html = render(
+      <DocPager
+        prev={{ href: "/docs/a", label: "A", date: "2026-08-12" }}
+        next={{ href: "/docs/b", label: "B", date: "2026-08-15" }}
+        locale="en"
+      />,
+    );
+
+    expect(html).toContain("A</p><p class=\"text-caption text-muted\">Aug 12, 2026");
+    expect(html).toContain("B</p><p class=\"text-caption text-muted\">Aug 15, 2026");
+  });
+
+  it("does not render a date line when a neighbour has no authored date", () => {
+    const ctx = makeFakeChromeContext();
+    const DocPager = createDocPager(ctx);
+    const html = render(
+      <DocPager
+        prev={{ href: "/docs/a", label: "A" }}
+        next={{ href: "/docs/b", label: "B", updated: "2026-08-15" }}
+        locale="en"
+      />,
+    );
+
+    expect(html).not.toContain('<p class="text-caption text-muted">');
+  });
 });

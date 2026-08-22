@@ -53,6 +53,11 @@ describe("buildDocsSchema", () => {
       generated: false,
       category_no_page: true,
       category_sort_order: "asc" as const,
+      category_shape: "note-tray" as const,
+      note_tray_dated: true,
+      note_tray_sidebar: "month" as const,
+      date: "2026-08-22",
+      updated: "2026-08-23",
     };
     expect(schema.safeParse(fixture).success).toBe(true);
   });
@@ -61,6 +66,12 @@ describe("buildDocsSchema", () => {
     const schema = buildDocsSchema();
     const result = schema.safeParse({ title: "Hello", category_sort_order: "random" });
     expect(result.success).toBe(false);
+  });
+
+  it("rejects date strings that are not YYYY-MM-DD", () => {
+    const schema = buildDocsSchema();
+    expect(schema.safeParse({ title: "Hello", date: "2026-8-22" }).success).toBe(false);
+    expect(schema.safeParse({ title: "Hello", updated: "August 22, 2026" }).success).toBe(false);
   });
 
   describe("tags governance", () => {

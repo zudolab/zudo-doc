@@ -1,0 +1,129 @@
+---
+title: ノートトレイ
+description: ノートや日誌など、順番に読む文章のためのフラットなカテゴリを作成します。
+sidebar_position: 3.1
+tags:
+  - content
+  - customization
+---
+
+ノートトレイは、フラットなページ列をまとめるトップレベルカテゴリです。トレイに重ねた紙をイメージしてください。日誌なら最新の1枚を一番上に置き、講座やノート集なら順番に読み進められます。並び順は`sidebar_position`で決まり、日付はソートキーではなく任意のメタデータです。
+
+## ノートトレイを宣言する
+
+必須のカテゴリ`index.mdx`でトレイを宣言します。
+
+```mdx title="notes/index.mdx"
+---
+title: Notes
+sidebar_position: 3
+category_shape: "note-tray"
+category_sort_order: "desc"
+note_tray_dated: true
+note_tray_sidebar: "month"
+---
+
+Recent notes, newest first.
+
+<NoteTrayIndex style="timeline" />
+```
+
+各アイテムはindexと同じディレクトリに直接置きます。
+
+```mdx title="notes/first-note.mdx"
+---
+title: First Note
+description: What changed and why.
+sidebar_position: 1
+date: "2026-08-20"
+updated: "2026-08-22"
+---
+
+## Summary
+
+Note content begins here.
+```
+
+YAMLで文字列として扱われるよう、`date`と`updated`の値は引用符で囲んでください。
+
+## 宣言キー
+
+| キー | 型 | デフォルト | 意味 |
+|-----|------|---------|---------|
+| `category_shape` | `"note-tray"` | 未指定（通常のツリーカテゴリ） | このトップレベルカテゴリをノートトレイとして宣言 |
+| `note_tray_dated` | boolean | `false` | `unlisted`のアイテムを含む全アイテムに`date`を必須化 |
+| `note_tray_sidebar` | `"index" \| "year" \| "month"` | `"index"` | トレイのサイドバー表示を選択。`year`と`month`には日付付きトレイが必要 |
+| `category_sort_order` | `"asc" \| "desc"` | `"asc"` | サイドバー・インデックス・ページャー・ホームページすべての順序を指定 |
+| `date` | `"YYYY-MM-DD"` | — | アイテムの日付。日付付きトレイでは必須、その他のドキュメントでは任意 |
+| `updated` | `"YYYY-MM-DD"` | — | どのドキュメントにも指定できる任意の更新日 |
+
+並び順のキーは引き続き`sidebar_position`です。zudo-docは、まずposition、次にslugの昇順で並べた結果から、1始まりの安定したrankを導出します。rankはアイテム数に応じた桁数でゼロ埋めされ、表示順を降順にしても変わりません。そのため、6件の降順トレイは`06`から`01`と表示されます。positionの未指定・小数・重複は通常のカテゴリと同じように扱われ、ノートトレイ独自のposition検証はありません。
+
+日付付きトレイでは、`sidebar_position`が`date`と同じ時系列になるように付けることを推奨します。これは検証ルールではありませんが、日付グループ内の読み順が不自然になるのを防げます。
+
+## サイドバーのスタイル
+
+トレイのindexに`note_tray_sidebar`を設定します。
+
+| スタイル | 適した場面 |
+|-------|-------------|
+| `"index"` | 読む順番を最も重視するとき。ゼロ埋めしたrankを表示し、日付の有無を問わず利用可能 |
+| `"year"` | 長期間にわたる日付付きアーカイブを年単位で探したいとき |
+| `"month"` | 更新頻度の高い日誌を月単位で細かくまとめたいとき |
+
+年・月グループは`category_sort_order`に従って時系列で並び、グループ内のアイテムも同じ向きのrank順になります。グループ化したサイドバーでは各アイテムに`MM-DD`を表示し、通常のindexサイドバーではrankを表示します。サイドバーに`date`は表示されますが、`updated`は表示されません。
+
+## NoteTrayIndex
+
+`NoteTrayIndex`はMDXでグローバルに利用できます。トレイのindexでは現在のトレイを自動判定し、別のページから使う場合は`category`を明示できます。
+
+```mdx
+<NoteTrayIndex />
+<NoteTrayIndex style="cards" showDate />
+<NoteTrayIndex category="notes" style="timeline" />
+```
+
+3つのスタイルがあります。
+
+- `index`（デフォルト）— タイトルとdescriptionを並べるコンパクトな番号付きリスト
+- `cards` — descriptionとタグを含む、アイテムごとのカード
+- `timeline` — 月ごとにまとめたタイムライン。`note_tray_dated: true`が必要
+
+`index`と`cards`では、`showDate`を設定しない限り日付を表示しません。timelineでは常に表示します。コンポーネントが`date`を表示する場所では、`updated`もローカライズされた「更新」ラベルとともに隣に表示します。`updated`だけのアイテムでは、その値だけを表示します。空のトレイは何もレンダリングしません。
+
+実例は[NoteTrayIndexコンポーネントページ](../components/note-tray-index.mdx)を参照してください。
+
+## ホームページとページャー
+
+ホームページはノートトレイを自動的に認識します。ネストしたカテゴリツリーとしてではなく、同じフラットなトレイ順とサイドバーのグループ設定を使って表示します。日付付きブロックには`date`と`updated`を表示し、日付なしのブロックにはrankを表示します。`date`がなくても`updated`だけを表示できます。空のトレイは表示されません。
+
+前・次リンクもトレイのrank順と`category_sort_order`に従います。`date`があれば表示しますが、`updated`は表示しません。
+
+## 検証エラー
+
+`pnpm build`はロケールとバージョンごとに検証し、`Invalid note-tray configuration`の下に問題のあるslugをすべて表示します。次のように修正してください。
+
+| エラー | 修正方法 |
+|-------|-----|
+| `category_shape is only allowed on top-level categories` | トレイのディレクトリをdocsコンテンツルート直下へ移動 |
+| `a note tray must be declared by a category index.mdx` | トレイディレクトリの`index.mdx`へ宣言を移動 |
+| `note-tray children must be flat leaf files` | ネストしたページをトレイ直下へ移し、子ディレクトリを削除 |
+| `dated note-tray children require date` | `unlisted`を含む全アイテムに、引用符で囲んだ暦上有効な`date`を追加 |
+| `year grouping requires note_tray_dated: true`または`month grouping requires note_tray_dated: true` | `note_tray_dated`を有効にするか、`note_tray_sidebar: "index"`を使用 |
+| `a note-tray index must be a visible routed page` | indexから`category_no_page: true`、`unlisted: true`、`standalone: true`を外し、ルートが生成されるようにする |
+| `date is not a calendar-valid YYYY-MM-DD value`または同等の`updated`エラー | `"2026-02-28"`のような実在する日付を使用。`"2026-02-31"`などは不可 |
+
+コンテンツスキーマは、まず`YYYY-MM-DD`形式に一致しない文字列を拒否します。その後、ノートトレイの検証で暦上存在しない日付を拒否します。
+
+## 制限事項
+
+ノートトレイは意図的に用途を絞った機能です。
+
+- トップレベルカテゴリでのみ使用できます。
+- アイテムはフラットなファイルだけです。ネストしたトレイやサブディレクトリには対応しません。
+- トレイには、表示されルートを持つ`index.mdx`が必要です。
+- 通常のdocsコレクションとルートを使い、サイドバーなしの記事レイアウトを新たに追加するものではありません。
+- 並び順は`sidebar_position`と`category_sort_order`だけで決まり、実行時のソート切り替えはありません。
+- ページ分割、RSS、抜粋、著者、読了時間、「最新N件」のサイドバーは組み込まれていません。
+- トレイは通常のヘッダーナビ項目として扱われ、専用バッジやドロップダウンはありません。
+- ショーケースの変更履歴を含む既存カテゴリが、自動的にノートトレイへ変換されることはありません。

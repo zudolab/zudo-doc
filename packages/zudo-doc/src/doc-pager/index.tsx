@@ -12,11 +12,18 @@ import { ChevronLeft, ChevronRight } from "../icons/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
+import { formatDate } from "../format-date/index.js";
 
 // NavNode is a superset; we only need the fields the pager uses.
 interface PagerNode {
   href?: string;
   label: string;
+  shape?: "note-tray";
+  noteTrayDated?: boolean;
+  noteTraySidebar?: "index" | "year" | "month";
+  date?: string;
+  updated?: string;
+  rank?: number;
 }
 
 export interface DocPagerProps {
@@ -63,6 +70,7 @@ export function createDocPager<S extends Settings = Settings>(
             <p class="text-small font-semibold underline group-hover:text-accent">
               {prev.label}
             </p>
+            {prev.date && <p class="text-caption text-muted">{formatDate(prev.date, locale)}</p>}
           </a>
         ) : (
           <div />
@@ -79,6 +87,7 @@ export function createDocPager<S extends Settings = Settings>(
             <p class="text-small font-semibold underline group-hover:text-accent">
               {next.label}
             </p>
+            {next.date && <p class="text-caption text-muted">{formatDate(next.date, locale)}</p>}
           </a>
         ) : (
           <div />

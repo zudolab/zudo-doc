@@ -85,6 +85,8 @@ The `categoryMatch` property connects a header tab to a specific sidebar categor
 
 For example, `categoryMatch: "guides"` links the tab to the `guides/` content directory. When a user navigates to any page under `/docs/guides/`, the "Guides" tab becomes active and the sidebar shows only the guides category.
 
+A [note tray](./note-tray.mdx) is not a special header-nav type. Add it like any other top-level category: set the item's `path` to the tray index and its single-segment `categoryMatch` to the tray directory name. The tray declaration in `index.mdx` controls its sidebar and listing behavior.
+
 Children can also have `categoryMatch`. For example, placing `categoryMatch: "components"` on a child ensures that visiting `/docs/components/` activates the parent dropdown and filters the sidebar to the components section.
 
 #### Nested Children Under One Category

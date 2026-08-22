@@ -20,6 +20,14 @@ import { filterTree } from "../sidebar-filter/index.js";
 import { findActiveSlug, normalizePath } from "../sidebar-active-slug/index.js";
 import { CURRENT_PATH_DATASET_KEY, readCurrentPath } from "../current-path/index.js";
 import { ensureSidebarScrollPreserve } from "./sidebar-scroll-preserve.js";
+import {
+  formatYearMonthLabel,
+  getNoteTrayItems,
+  groupItems,
+  rankWidth,
+  type NoteTrayGroup,
+} from "../note-tray-model/index.js";
+import { formatMonthDay } from "../format-date/index.js";
 
 // The persisted aside can transiently tear down and re-mount its SidebarTree
 // effect during a body swap. Keep navigation snapshot ownership at browser
@@ -235,6 +243,12 @@ export function SidebarTree({ nodes, currentSlug, currentPath, rootMenuItems, ba
     [localeLinks, themeDefaultMode],
   );
 
+  const noteTrayRoot = nodes.length === 1 && nodes[0]?.shape === "note-tray" ? nodes[0] : undefined;
+  const filteredNoteTrayRoot = noteTrayRoot
+    ? filteredNodes.find((node) => node.slug === noteTrayRoot.slug)
+    : undefined;
+  const locale = localeLinks?.find((link) => link.active)?.code ?? "en";
+
   // Root menu view: show headerNav items as a simple list (Docusaurus-style)
   if (showingRootMenu && rootMenuItems) {
     return (
@@ -293,17 +307,235 @@ export function SidebarTree({ nodes, currentSlug, currentPath, rootMenuItems, ba
           />
         </div>
       </div>
-      <NodeList
-        nodes={filteredNodes}
-        currentSlug={activeSlug}
-        depth={0}
-        forceOpen={!!query}
-      />
+      {noteTrayRoot ? (
+        filteredNoteTrayRoot && (
+          <TrayList
+            tray={filteredNoteTrayRoot}
+            itemCount={getNoteTrayItems(noteTrayRoot).length}
+            currentSlug={activeSlug}
+            forceOpen={!!query}
+            locale={locale}
+          />
+        )
+      ) : (
+        <NodeList
+          nodes={filteredNodes}
+          currentSlug={activeSlug}
+          depth={0}
+          forceOpen={!!query}
+        />
+      )}
       {footer}
     </nav>
   );
 }
 SidebarTree.displayName = "SidebarTree";
+
+function TrayList({
+  tray,
+  itemCount,
+  currentSlug,
+  forceOpen,
+  locale,
+}: {
+  tray: SidebarNavNode;
+  itemCount: number;
+  currentSlug?: string;
+  forceOpen: boolean;
+  locale: string;
+}) {
+  const items = getNoteTrayItems(tray);
+  const sidebarStyle = tray.noteTraySidebar ?? "index";
+  const width = rankWidth(itemCount);
+
+  return (
+    <>
+      <LeafNode node={tray} currentSlug={currentSlug} depth={0} isLast={items.length === 0} />
+      {sidebarStyle === "index" ? (
+        items.map((item, index) => (
+          <TrayItem
+            key={item.slug}
+            item={item}
+            currentSlug={currentSlug}
+            rankDigits={width}
+            isLast={index === items.length - 1}
+          />
+        ))
+      ) : (
+        groupItems(items, sidebarStyle, tray.sortOrder ?? "asc").map((group, index, groups) => (
+          <TrayGroupNode
+            key={group.key}
+            traySlug={tray.slug}
+            group={group}
+            grouping={sidebarStyle}
+            locale={locale}
+            currentSlug={currentSlug}
+            forceOpen={forceOpen}
+            isLast={index === groups.length - 1}
+          />
+        ))
+      )}
+    </>
+  );
+}
+
+function TrayItem({
+  item,
+  currentSlug,
+  rankDigits,
+  isLast,
+  showDate = false,
+  depth = 1,
+}: {
+  item: SidebarNavNode;
+  currentSlug?: string;
+  rankDigits?: number;
+  isLast: boolean;
+  showDate?: boolean;
+  depth?: number;
+}) {
+  if (!item.href) return null;
+  const isActive = item.slug === currentSlug;
+  const labelHtml = smartBreakToHtml(item.label);
+  const shortDate = item.date ? formatMonthDay(item.date) : undefined;
+
+  return (
+    <div className={isLast ? "pb-vsp-md" : ""}>
+      <div className="relative">
+        <ConnectorLines depth={depth} isLast={isLast} topPad="var(--spacing-vsp-2xs)" />
+        <a
+          href={item.href}
+          aria-current={isActive ? "page" : undefined}
+          data-nav-active={isActive ? "" : undefined}
+          className={`flex items-start gap-hsp-xs py-vsp-2xs pr-[4px] text-small break-words ${
+            isActive
+              ? "bg-fg font-medium text-bg"
+              : "text-muted hover:text-accent hover:underline focus:underline focus:text-accent"
+          }`}
+          style={{ paddingLeft: padLeft(depth, false) }}
+        >
+          {rankDigits !== undefined && (
+            <span className={`shrink-0 tabular-nums${isActive ? "" : " text-muted"}`}>
+              {item.rank === undefined ? "" : String(item.rank).padStart(rankDigits, "0")}
+            </span>
+          )}
+          <span className="min-w-0 flex-1" dangerouslySetInnerHTML={{ __html: labelHtml }} />
+          {showDate && shortDate && (
+            <span className={`shrink-0 tabular-nums${isActive ? "" : " text-muted"}`}>
+              {shortDate}
+            </span>
+          )}
+        </a>
+      </div>
+    </div>
+  );
+}
+
+function noteTrayGroupStorageKey(traySlug: string, groupKey: string): string {
+  return `${traySlug}#${groupKey}`;
+}
+
+function TrayGroupNode({
+  traySlug,
+  group,
+  grouping,
+  locale,
+  currentSlug,
+  forceOpen,
+  isLast,
+}: {
+  traySlug: string;
+  group: NoteTrayGroup<SidebarNavNode>;
+  grouping: "year" | "month";
+  locale: string;
+  currentSlug?: string;
+  forceOpen: boolean;
+  isLast: boolean;
+}) {
+  const containsCurrent = group.items.some((item) => item.slug === currentSlug);
+  const [open, setOpen] = useState(containsCurrent);
+  const storageKey = noteTrayGroupStorageKey(traySlug, group.key);
+  const label = grouping === "year" ? group.key : formatYearMonthLabel(group.key, locale);
+
+  useEffect(() => {
+    const stored = getOpenSet();
+    if (stored.has(storageKey) && !open) setOpen(true);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (containsCurrent && !open) {
+      setOpen(true);
+      const stored = getOpenSet();
+      stored.add(storageKey);
+      saveOpenSet(stored);
+    }
+  }, [containsCurrent]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (open) {
+      const stored = getOpenSet();
+      if (!stored.has(storageKey)) {
+        stored.add(storageKey);
+        saveOpenSet(stored);
+      }
+    }
+  }, [open, storageKey]);
+
+  const toggle = useCallback(() => {
+    setOpen((previous) => {
+      const next = !previous;
+      const stored = getOpenSet();
+      if (next) stored.add(storageKey);
+      else stored.delete(storageKey);
+      saveOpenSet(stored);
+      return next;
+    });
+  }, [storageKey]);
+
+  const isExpanded = forceOpen || open;
+
+  return (
+    <div className={!isLast && isExpanded ? "relative" : ""}>
+      {!isLast && isExpanded && (
+        <div
+          className="absolute border-l border-solid border-muted z-local-1"
+          style={{ left: connectorLeft(1), top: 0, bottom: 0 }}
+        />
+      )}
+      <div className="relative">
+        <ConnectorLines depth={1} isLast={isLast} topPad="var(--spacing-vsp-xs)" />
+        <button
+          type="button"
+          onClick={toggle}
+          className="flex w-full items-center gap-hsp-md py-vsp-xs text-left text-small font-semibold text-fg hover:text-accent hover:underline focus:underline focus:text-accent break-words"
+          style={{ paddingLeft: padLeft(1, true) }}
+          aria-expanded={isExpanded}
+          aria-label={isExpanded ? `Collapse ${label}` : `Expand ${label}`}
+          data-zd-sidebar-open-key={storageKey}
+        >
+          <span className="aspect-square flex items-center justify-center w-[1.5rem] shrink-0 border border-muted">
+            <ToggleChevron isExpanded={isExpanded} className="text-muted" />
+          </span>
+          <span>{label}</span>
+        </button>
+      </div>
+      {isExpanded && (
+        <div>
+          {group.items.map((item, index) => (
+            <TrayItem
+              key={item.slug}
+              item={item}
+              currentSlug={currentSlug}
+              isLast={index === group.items.length - 1}
+              showDate
+              depth={2}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // NodeList is memo-wrapped so that when only the filter query changes but
 // a subtree's nodes/currentSlug/depth/forceOpen are unchanged, Preact can

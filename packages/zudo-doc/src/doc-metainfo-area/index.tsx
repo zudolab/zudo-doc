@@ -19,25 +19,7 @@ import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
 import { toHistorySlug } from "../slug/index.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
-
-// BCP-47 locale tag mapping used by Intl.DateTimeFormat.
-// Originally mirrored from `src/utils/git-info.ts` (removed in S1 #1928).
-const LOCALE_TO_BCP47: Record<string, string> = {
-  en: "en-US",
-  ja: "ja-JP",
-  de: "de-DE",
-};
-
-/** Format an ISO date string for display, respecting the active locale. */
-function formatDate(isoDate: string, locale: string): string {
-  const d = new Date(isoDate);
-  if (isNaN(d.getTime())) return isoDate;
-  return d.toLocaleDateString(LOCALE_TO_BCP47[locale] ?? "en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
+import { formatDate } from "../format-date/index.js";
 
 /** Per-entry metadata shape from the doc-history manifest. */
 export interface DocHistoryMetaEntry {

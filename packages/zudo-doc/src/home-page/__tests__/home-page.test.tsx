@@ -220,6 +220,51 @@ describe("createHomePageView — SiteTreeNav island", () => {
     expect(html).toContain('aria-expanded="true" aria-label="Collapse Release notes"');
     expect(html).toContain('href="/docs/changelog/1.0.0"');
   });
+
+  it("localizes note-tray dates and the existing updated label", () => {
+    const ctx = makeFakeChromeContext({
+      overrides: {
+        t: (key: string, locale: string) =>
+          key === "doc.updated" && locale === "ja" ? "更新" : key,
+      },
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(
+      <HomePageView
+        {...makeProps({
+          locale: "ja",
+          tree: [
+            {
+              slug: "blog",
+              label: "Blog",
+              position: 0,
+              href: "/ja/docs/blog",
+              hasPage: true,
+              shape: "note-tray",
+              noteTrayDated: true,
+              noteTraySidebar: "index",
+              children: [
+                {
+                  slug: "blog/post",
+                  label: "Post",
+                  position: 0,
+                  href: "/ja/docs/blog/post",
+                  hasPage: true,
+                  rank: 1,
+                  date: "2026-08-19",
+                  updated: "2026-08-20",
+                  children: [],
+                },
+              ],
+            },
+          ],
+        })}
+      />,
+    );
+
+    expect(html).toContain("2026年8月19日");
+    expect(html).toContain("更新 2026年8月20日");
+  });
 });
 
 describe("createHomePageView — docTags gating", () => {

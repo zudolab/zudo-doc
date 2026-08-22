@@ -35,4 +35,9 @@ export const defaultFrontmatterPreviewIgnoreKeys: readonly string[] = [
   "generated",
   "category_no_page",
   "category_sort_order",
+  "category_shape",
+  "note_tray_dated",
+  "note_tray_sidebar",
+  "date",
+  "updated",
 ];

@@ -774,6 +774,9 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // Re-baselining here to the values every clean build actually produces; no
   // unattributed bytes.
 
+  // 2026-08-22 re-baseline (Note Tray epic zudolab/zudo-doc#3620): the new
+  // document date line intentionally changes package-owned doc-header markup.
+
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toMatchInlineSnapshot(`"5513e16ed45d3d459ec050275bee26ecce8b358acf1c26046f92671ae24ed08e"`);
@@ -781,12 +784,12 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"72770b335328330b136b7e0492b045fbffa9f29f3be5569a446b5f0772bb3157"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"0341fefb967b57e75d98383b9500c5847ba10461a4364944560f3129a69a72b8"`);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"a47eba52783ba7670022f07ffbb41042b1fea115956d0e5d73d38cc851d31d6d"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"edce747ea033381e892b4cf29ba27e1c690d8e38587886cf0fd1ff52a12bf860"`);
   });
 });
 

@@ -41,5 +41,12 @@ Navigation is filesystem-driven — directory structure becomes sidebar navigati
   `sidebar_label` for a custom sidebar name; add `category_sort_order: "desc"` for
   newest-first ordering; add `category_no_page: true` to create a non-linked category header
   (no route/sitemap/search entry)
+- Categories have two shapes: the default nested tree uses `<CategoryNav>` on its index;
+  a top-level, flat note tray declares `category_shape: "note-tray"` and uses
+  `<NoteTrayIndex>`. A tray requires a visible routed `index.mdx`; `note_tray_dated: true`
+  requires `date` on every child (including unlisted children), and `note_tray_sidebar`
+  accepts `"index"`, `"year"`, or `"month"` (the grouped styles require a dated tray).
+- Note-tray order always comes from `sidebar_position` plus `category_sort_order`; rank is
+  derived and must not be authored. Keep positions monotonic with `date` in dated trays.
 - `_category_.json` still works but triggers a zfb build warning; prefer `index.mdx` frontmatter
 - Header nav is defined in `src/config/settings.ts` via `headerNav` with `categoryMatch`

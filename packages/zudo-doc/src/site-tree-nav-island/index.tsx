@@ -6,8 +6,21 @@
 // lets us consume React-typed components in this Preact app.
 import { useState } from "preact/hooks";
 import type { SidebarNavNode } from "../sidebar/types.js";
-import { INDENT, connectorLeft, ConnectorLines, CategoryLinkIcon } from "../tree-nav-shared/index.js";
+import {
+  INDENT,
+  connectorLeft,
+  ConnectorLines,
+  CategoryLinkIcon,
+} from "../tree-nav-shared/index.js";
 import { ChevronRight } from "../icons/index.js";
+import {
+  formatDate,
+  formatYearMonthLabel,
+  getNoteTrayItems,
+  groupItems,
+  rankWidth,
+} from "../note-tray-model/index.js";
+import { formatMonthDay } from "../format-date/index.js";
 import { initialCategoryOpenState, toggleCategoryOpenState } from "./state.js";
 
 // site-tree-nav uses wider padding than the narrow sidebar
@@ -42,6 +55,10 @@ export interface SiteTreeNavProps {
   categoryIgnore?: string[];
   /** Root-category slugs that should start collapsed. */
   initiallyCollapsedCategorySlugs?: string[];
+  /** Locale used by dated note-tray rows. */
+  locale?: string;
+  /** Localized label shown before an item's updated date. */
+  updatedLabel?: string;
 }
 
 export function SiteTreeNav({
@@ -50,6 +67,8 @@ export function SiteTreeNav({
   categoryOrder,
   categoryIgnore,
   initiallyCollapsedCategorySlugs,
+  locale = "en",
+  updatedLabel = "Updated",
 }: SiteTreeNavProps) {
   let processedTree = tree;
   if (categoryIgnore) {
@@ -69,20 +88,27 @@ export function SiteTreeNav({
         gridTemplateColumns: "repeat(auto-fill, minmax(min(18rem, 100%), 1fr))",
       }}
     >
-      {processedTree.map((node) => (
-        <div key={node.slug} className="min-w-0 border border-muted pl-hsp-sm py-vsp-2xs">
-          {node.children.length > 0 ? (
-            <CategoryNode
-              node={node}
-              depth={0}
-              isLast={true}
-              initiallyCollapsed={initiallyCollapsed.has(node.slug)}
-            />
-          ) : (
-            <LeafNode node={node} depth={0} isLast={true} />
-          )}
-        </div>
-      ))}
+      {processedTree.map((node) => {
+        if (node.shape === "note-tray" && getNoteTrayItems(node).length === 0) {
+          return null;
+        }
+        return (
+          <div key={node.slug} className="min-w-0 border border-muted pl-hsp-sm py-vsp-2xs">
+            {node.children.length > 0 ? (
+              <CategoryNode
+                node={node}
+                depth={0}
+                isLast={true}
+                initiallyCollapsed={initiallyCollapsed.has(node.slug)}
+                locale={locale}
+                updatedLabel={updatedLabel}
+              />
+            ) : (
+              <LeafNode node={node} depth={0} isLast={true} />
+            )}
+          </div>
+        );
+      })}
     </nav>
   );
 }
@@ -118,11 +144,15 @@ function CategoryNode({
   depth,
   isLast,
   initiallyCollapsed = false,
+  locale = "en",
+  updatedLabel = "Updated",
 }: {
   node: SidebarNavNode;
   depth: number;
   isLast: boolean;
   initiallyCollapsed?: boolean;
+  locale?: string;
+  updatedLabel?: string;
 }) {
   const [open, setOpen] = useState(() => initialCategoryOpenState(initiallyCollapsed));
   const toggle = () => setOpen(toggleCategoryOpenState);
@@ -185,10 +215,130 @@ function CategoryNode({
       </div>
       {open && (
         <div>
-          <NodeList nodes={node.children} depth={depth + 1} />
+          {node.shape === "note-tray" && depth === 0 ? (
+            <NoteTrayNodeList node={node} locale={locale} updatedLabel={updatedLabel} />
+          ) : (
+            <NodeList nodes={node.children} depth={depth + 1} />
+          )}
         </div>
       )}
     </div>
+  );
+}
+
+function NoteTrayNodeList({
+  node,
+  locale,
+  updatedLabel,
+}: {
+  node: SidebarNavNode;
+  locale: string;
+  updatedLabel: string;
+}) {
+  const items = getNoteTrayItems(node);
+  const width = rankWidth(items);
+  const showDate = node.noteTrayDated === true;
+  const grouping =
+    showDate && node.noteTraySidebar !== "index"
+      ? node.noteTraySidebar
+      : undefined;
+
+  if (grouping === "year" || grouping === "month") {
+    return (
+      <div className="pl-hsp-md">
+        {groupItems(items, grouping, node.sortOrder ?? "asc").map((group) => (
+          <div key={group.key} data-note-tray-group={group.key}>
+            <div className="pt-vsp-sm pb-vsp-2xs text-micro tracking-wide uppercase text-muted">
+              {grouping === "year"
+                ? group.key
+                : formatYearMonthLabel(group.key, locale)}
+            </div>
+            {group.items.map((item) => (
+              <NoteTrayRow
+                key={item.slug}
+                item={item}
+                locale={locale}
+                updatedLabel={updatedLabel}
+                rankWidth={width}
+                showDate={showDate}
+                groupedDate={true}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="pl-hsp-md">
+      {items.map((item) => (
+        <NoteTrayRow
+          key={item.slug}
+          item={item}
+          locale={locale}
+          updatedLabel={updatedLabel}
+          rankWidth={width}
+          showDate={showDate}
+          groupedDate={false}
+        />
+      ))}
+    </div>
+  );
+}
+
+function NoteTrayRow({
+  item,
+  locale,
+  updatedLabel,
+  rankWidth: width,
+  showDate,
+  groupedDate,
+}: {
+  item: SidebarNavNode;
+  locale: string;
+  updatedLabel: string;
+  rankWidth: number;
+  showDate: boolean;
+  groupedDate: boolean;
+}) {
+  if (!item.href) return null;
+  const dateLabel = showDate && item.date
+    ? groupedDate
+      ? formatMonthDay(item.date)
+      : formatDate(item.date, locale)
+    : undefined;
+
+  return (
+    <a
+      href={item.href}
+      data-note-tray-row
+      className="flex items-start gap-hsp-sm py-vsp-2xs text-small text-fg hover:text-accent hover:underline focus:underline"
+    >
+      {dateLabel ? (
+        <time
+          dateTime={item.date}
+          className="shrink-0 font-mono tabular-nums text-caption text-muted"
+        >
+          {dateLabel}
+        </time>
+      ) : (
+        <span
+          className="shrink-0 font-mono tabular-nums text-caption text-muted"
+          style={{ width: `${width}ch` }}
+        >
+          {item.rank === undefined ? "" : String(item.rank).padStart(width, "0")}
+        </span>
+      )}
+      <span className="min-w-0">
+        <span>{item.label}</span>
+        {item.updated && (
+          <span className="block text-micro text-muted">
+            {updatedLabel} {formatDate(item.updated, locale)}
+          </span>
+        )}
+      </span>
+    </a>
   );
 }
 

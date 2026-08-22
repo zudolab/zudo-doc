@@ -80,10 +80,14 @@ export interface DocPageRendererDeps {
    * Build locale-aware MDX components bag.
    * Host passes `createMdxComponents` (from `pages/_mdx-components.ts`).
    * `currentVersion` (#3218) threads the active `/v/{version}` slug into the
-   * nav-card wrappers (CategoryNav/CategoryTreeNav/SiteTreeNav) so their hrefs
-   * resolve within the version — undefined on latest/unversioned pages.
+   * nav wrappers so their data and hrefs resolve within the version. The
+   * current slug lets NoteTrayIndex infer its containing tray.
    */
-  createMdxComponents: (locale: string, currentVersion?: string) => Record<string, unknown>;
+  createMdxComponents: (
+    locale: string,
+    currentVersion: string | undefined,
+    currentSlug: string,
+  ) => Record<string, unknown>;
   /** Translate a UI string key for a locale. */
   t: (key: string, locale: string) => string;
   /**
@@ -189,6 +193,7 @@ export function createRenderDocPage<S extends Settings = Settings>(
   const createMdxComponents = deriveMdxComponents(ctx).createMdxComponentsBound as (
     locale: string,
     currentVersion?: string,
+    currentSlug?: string,
   ) => Record<string, unknown>;
   const t = ctx.t;
   // Derived ONCE here (rather than letting `deriveInlineVersionSwitcher`
@@ -223,9 +228,9 @@ export function createRenderDocPage<S extends Settings = Settings>(
     const description = props.kind === "autoIndex" ? props.autoIndex.description : props.entry.data.description;
 
     // Locale-aware components bag — creates nav wrappers bound to the active
-    // locale (and version, #3218) so CategoryNav/CategoryTreeNav/SiteTreeNav
-    // query the right collection and remap hrefs into the version.
-    const components = createMdxComponents(locale, version?.slug);
+    // locale, version, and current slug so nav components query the right
+    // collection, remap hrefs into the version, and infer page-local context.
+    const components = createMdxComponents(locale, version?.slug, slug);
 
     // Resolve child hrefs for auto-index pages. Versioned routes: child cards
     // already carry versioned hrefs from paths() (#1916 #2) — just filter to
