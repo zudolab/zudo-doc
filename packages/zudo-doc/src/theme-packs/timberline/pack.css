@@ -243,6 +243,11 @@ html[data-theme-pack="timberline"] #desktop-sidebar a {
     background-color 0.15s ease,
     color 0.15s ease;
 }
+/* Keep the structural current-row plank square; data-nav-active is the
+   explicit hook for Timberline's nested chamfer. */
+html[data-theme-pack="timberline"] #desktop-sidebar a[aria-current="page"]:not([data-nav-active]) {
+  border-radius: 0;
+}
 html[data-theme-pack="timberline"] #desktop-sidebar a:hover:not([data-nav-active]):not([aria-current="page"]) {
   color: var(--zd-accent);
   text-decoration: none;

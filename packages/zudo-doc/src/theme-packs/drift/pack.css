@@ -9,7 +9,7 @@
    same desaturated blue accent family, never harsh white. Chrome is
    ringed by glow rather than drawn by border: hairline rings +
    layered soft shadows on code, cards, and admonitions; fixed
-   radial light pools drift at opposite page corners; nav/TOC
+   radial light pools drift at opposite page corners; nested nav/TOC
    actives are pill-shaped and glowing. Syntax is a hushed pastel
    palette around the blue axis.
 
@@ -282,6 +282,11 @@ html[data-theme-pack="drift"] #desktop-sidebar a {
     color 0.2s,
     background-color 0.2s,
     box-shadow 0.25s;
+}
+/* Non-pill current rows keep the stock full-width band. The explicit
+   data-nav-active marker below is reserved for Drift's nested glow pill. */
+html[data-theme-pack="drift"] #desktop-sidebar a[aria-current="page"]:not([data-nav-active]) {
+  border-radius: 0;
 }
 html[data-theme-pack="drift"] #desktop-sidebar a:hover {
   text-decoration: none;
