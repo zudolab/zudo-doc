@@ -47,6 +47,10 @@
 # Inter-job data sharing uses upload-artifact/download-artifact (retention-days: 1
 # keeps storage bounded; artifacts are the purpose-built mechanism for intra-run handoff).
 #
+# Workers Static Assets deploy artifact contract: the archived `dist/` tree must
+# retain `dist/_redirects` alongside the generated pages, so PR previews exercise
+# the same explicit legacy-route redirects as production and branch previews.
+#
 # Concurrency: cancel in-progress runs for the same PR to save resources.
 
 name: PR Checks
@@ -1067,8 +1071,9 @@ jobs:
       - name: Prepare dist for deployment
         # Workers static assets: deploy directly from dist/ (no deploy/pj/zudo-doc/
         # nesting). zfb emits a flat dist/ — the dist/client/ Astro hybrid-mode
-        # shape is never produced. Write .assetsignore so _worker.js and
-        # _zfb_inner.mjs are not served as downloadable public files.
+        # shape is never produced. Keep dist/_redirects (the explicit Workers
+        # Static Assets redirect manifest) and write .assetsignore so _worker.js
+        # and _zfb_inner.mjs are not served as downloadable public files.
         run: |
           # (g) Merge doc history JSONs into dist/ directly.
           if [ -d doc-history-out ] && [ "$(ls -A doc-history-out 2>/dev/null)" ]; then

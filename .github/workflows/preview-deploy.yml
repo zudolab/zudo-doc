@@ -29,9 +29,9 @@
 #
 # ----------------------------------------------------------------------------
 # Deployed artifact contract — see main-deploy.yml top-of-file for the
-# canonical 8-category list (Workers static assets; category (c) _redirects
-# was dropped in the Pages→Workers migration #1691). Categories (a),(b),(d)–(i)
-# MUST be preserved here in parity with production (audited in epic #1337 task 5).
+# canonical 9-category list (Workers static assets, including category (c)
+# dist/_redirects). Categories (a)–(i) MUST be preserved here in parity with
+# production (audited in epic #1337 task 5).
 #
 # Category (g) doc-history is handled by a dedicated build-history job
 # (full clone, fetch-depth: 0) that runs in parallel with build-site.
@@ -262,6 +262,8 @@ jobs:
         # Workers Assets layout (base="/" — no pj/zudo-doc/ nesting):
         #   dist/index.html and per-route dist/**/index.html   (a) HTML pages
         #   dist/404.html                                       (b) zfb #100
+        #   dist/_redirects                                     (c) Workers Static
+        #                                                        Assets redirects
         #   dist/sitemap.xml                                    (d) page route
         #   dist/search-index.json                              (e) plugin
         #   dist/llms*.txt                                      (f) plugin
