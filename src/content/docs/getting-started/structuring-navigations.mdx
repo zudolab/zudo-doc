@@ -51,6 +51,16 @@ page. You do not need to replace the scaffolded `pages/index.tsx` re-export or
 write a separate locale home route. See [Configuration](../guides/configuration.mdx#home-page-home)
 for the complete setting contract.
 
+### Hiding a Category from the Home Grid
+
+```ts
+zudoDoc({
+  siteTreeNavIgnore: ["inbox", "develop"],
+});
+```
+
+This hides those top-level categories from `/`, locale homes, and `<SiteTreeNav />`; see [Configuration](../guides/configuration.mdx#home-page-sitetreenavignore) for the complete contract, including unaffected header nav, sidebar, search, and sitemap.
+
 ## Header Navigation Rules
 
 The header navigation is the topmost level. It should contain only the broadest categories that define your site's major sections.

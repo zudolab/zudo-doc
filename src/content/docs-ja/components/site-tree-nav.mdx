@@ -34,6 +34,8 @@ sidebar_position: 7
 
 プロップは不要です。現在のロケールのドキュメントコレクションを自身で取得し、ナビゲーションツリーを構築して、インタラクティブなアイランドをレンダリングします — 上記の`SiteTreeNavDemo`と同じラッパーが使用されます。
 
+ツリーから非表示にするカテゴリは、`zfb.config.ts` の [`siteTreeNavIgnore`](../guides/configuration.mdx#ホームページ-sitetreenavignore) で設定します。
+
 ### ページモジュールでの利用
 
 すでに`tree`を持っているページモジュール（例：`buildNavTree` + `groupSatelliteNodes`で構築済み）では、代わりに`tree`プロップを直接受け取る生のコンポーネントをインポートできます：
@@ -52,6 +54,8 @@ export default function IndexPage() {
 }
 ```
 
+生のアイランドの `categoryIgnore` プロップは、サイト全体の [`siteTreeNavIgnore`](../guides/configuration.mdx#ホームページ-sitetreenavignore) 設定に相当する呼び出し単位の指定です。パッケージのホームページと MDX タグは、ここにその設定を渡します。
+
 このリポジトリ自体のホームページ（`pages/index.tsx`）は、このアイランドを直接呼び出していません。解決済みのロケールを`prepareHomeData()`に渡し、その結果を`HomePageView`（どちらも`@takazudo/zudo-doc/home-page`から提供）に渡しています。`HomePageView`はヒーローセクションやタグセクションと一緒に、内部で`SiteTreeNav`をレンダリングします。
 
 このコンポーネントは展開・折りたたみのインタラクティブ機能にPreactステートを使用するため、zfbのアイランドランタイムを介してクライアントでハイドレートされます。
@@ -64,7 +68,7 @@ export default function IndexPage() {
 |------|------|---------|-------------|
 | `tree` | `NavNode[]` | （必須） | コンテンツコレクションから構築されたナビゲーションツリー |
 | `categoryOrder` | `string[]` | — | トップレベルカテゴリのカスタム並び順 |
-| `categoryIgnore` | `string[]` | — | ツリーから非表示にするカテゴリスラッグ |
+| `categoryIgnore` | `string[]` | — | ツリーから非表示にするカテゴリスラッグ（パッケージのホームページと MDX タグはここに `siteTreeNavIgnore` を渡します） |
 | `initiallyCollapsedCategorySlugs` | `string[]` | — | 初期状態で折りたたんでおくルートカテゴリのスラッグ |
 | `ariaLabel` | `string` | `"Site index"` | nav要素のアクセシビリティラベル |
 
