@@ -98,6 +98,9 @@ describe("SidebarTree — note tray SSG", () => {
     expect(html).not.toContain("12-09");
     expect(html.indexOf("Newest")).toBeLessThan(html.indexOf("Active article"));
     expect(html).not.toContain("text-bg/70");
+
+    const activeLink = html.match(/<a href="\/docs\/notes\/active"[^>]*>/)?.[0];
+    expect(activeLink).toContain("padding-left:calc(3 * clamp(0.8rem, 1.2vw, 1.625rem) + 1.25rem + 5px)");
   });
 
   it("localizes month labels for English and Japanese and keeps active groups open", () => {

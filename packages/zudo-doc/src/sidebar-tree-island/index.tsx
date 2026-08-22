@@ -44,6 +44,7 @@ function ToggleChevron({ isExpanded, className }: { isExpanded: boolean; classNa
 }
 
 const STORAGE_KEY = "zd-sidebar-open";
+const GROUPED_TRAY_ITEM_DEPTH = 3;
 
 function padLeft(depth: number, forCategory: boolean): string {
   if (depth === 0) return `calc(${BASE_PAD} + ${forCategory ? "0.15rem" : "0rem"})`;
@@ -528,7 +529,9 @@ function TrayGroupNode({
               currentSlug={currentSlug}
               isLast={index === group.items.length - 1}
               showDate
-              depth={2}
+              // Leave one visual indentation step between the group branch
+              // and its dated child branch so the hierarchy reads clearly.
+              depth={GROUPED_TRAY_ITEM_DEPTH}
             />
           ))}
         </div>
