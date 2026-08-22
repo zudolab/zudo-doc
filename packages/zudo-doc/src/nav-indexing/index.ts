@@ -47,6 +47,13 @@ export type { DocCardGridProps, DocCardItem } from "./doc-card-grid.js";
 export { VersionsPageContent } from "./versions-page-content.js";
 export type { VersionsPageContentProps } from "./versions-page-content.js";
 
+export { NoteTrayIndex } from "./note-tray-index.js";
+export type {
+  NoteTrayIndexItem,
+  NoteTrayIndexProps,
+  NoteTrayIndexStyle,
+} from "./note-tray-index.js";
+
 export type {
   NavNode,
   TagItem,
