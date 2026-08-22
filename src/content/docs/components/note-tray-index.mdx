@@ -1,0 +1,58 @@
+---
+title: NoteTrayIndex
+description: Render a note tray as a numbered index, card list, or dated timeline.
+sidebar_position: 8.5
+---
+
+## Overview
+
+`NoteTrayIndex` is a server-rendered Preact component for listing the flat items in a note tray. It is globally available in MDX with no import or hydration directive.
+
+The examples below use the showcase Blog tray.
+
+## Numbered Index
+
+The default `index` style emphasizes stable, zero-padded ranks and includes each item's description.
+
+<NoteTrayIndex category="blog" style="index" />
+
+```mdx
+<NoteTrayIndex category="blog" style="index" />
+```
+
+## Cards
+
+The `cards` style gives each item more space and includes tags when tag navigation is enabled.
+
+<NoteTrayIndex category="blog" style="cards" showDate />
+
+```mdx
+<NoteTrayIndex category="blog" style="cards" showDate />
+```
+
+## Timeline
+
+The `timeline` style groups a dated tray by month. It always displays dates and throws a build error when used with an undated tray.
+
+<NoteTrayIndex category="blog" style="timeline" />
+
+```mdx
+<NoteTrayIndex category="blog" style="timeline" />
+```
+
+## Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `category` | string | Current containing tray | Tray slug to list, such as `"blog"` |
+| `style` | `"index" \| "cards" \| "timeline"` | `"index"` | Listing presentation |
+| `showDate` | boolean | `false` | Shows `date` and `updated` in index and card styles; timeline always shows dates |
+| `lang` | `Locale` | auto-detected | Overrides the content locale |
+
+Items follow the tray's `category_sort_order`. An empty tray, an unknown category, or a category that is not a note tray renders nothing.
+
+See [Note Trays](../guides/note-tray.mdx) for declaration fields, ordering, validation, and limitations.
+
+## Source
+
+The MDX wrapper ships from `@takazudo/zudo-doc/note-tray-index` and the presentational component from `@takazudo/zudo-doc/nav-indexing`. Package-owned routes register it automatically.

@@ -251,6 +251,8 @@ category_sort_order: "desc"
 
 When `category_sort_order` is `"desc"`, items are sorted in reverse — highest position first, then reverse alphabetical. This is useful for date-based content (changelogs, release notes) where the newest items should appear at the top.
 
+Note trays use the same field as their single ordering contract. The selected direction controls how stable ranks are listed in the sidebar, `<NoteTrayIndex>`, previous/next pager, and home-page block; the rank values themselves never change. With `note_tray_sidebar: "year"` or `"month"`, groups are chronological in that direction and items inside each group follow rank. Keep `sidebar_position` monotonic with `date` so grouped dates and reading order agree. See [Note Trays](./note-tray.mdx) for the complete setup.
+
 <Note>
 
 `_category_.json` still works but triggers a zfb build warning. Prefer frontmatter on `index.mdx` for new categories.
@@ -285,3 +287,4 @@ For changelog-style categories, combine `sortOrder: "desc"` with date-prefixed f
 - Use sequential numbers (1, 2, 3...) for pages within each category
 - Leave gaps between numbers (e.g., 10, 20, 30) if you expect to insert pages later
 - Use `category_sort_order: "desc"` in `index.mdx` for newest-first categories
+- For a note tray, choose `note_tray_sidebar: "index"`, `"year"`, or `"month"`; year and month require dates on every item

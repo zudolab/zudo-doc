@@ -31,6 +31,15 @@ Each level narrows scope. Never jump levels — do not put a specific page direc
 - Subdirectories become nested collapsible categories.
 - The `headerNav` setting maps top-level directories to header items via `categoryMatch`.
 
+## Category Shapes
+
+Choose the category shape before writing its index:
+
+- **Tree (default)** — a topic hierarchy that may contain subdirectories. Keep `index.mdx` to a short intro plus `<CategoryNav category="<category-path>" />`.
+- **Note tray** — a top-level, flat sequence such as a journal, course, or notebook: papers on a tray, latest on top or read in order. Declare `category_shape: "note-tray"` on its visible routed `index.mdx`, allow only direct child files, and use `<NoteTrayIndex>` instead of `<CategoryNav>`.
+
+Note trays keep the normal `sidebar_position` comparator and use `category_sort_order` everywhere. `note_tray_dated: true` requires a quoted, calendar-valid `date` on every item, including unlisted items. `note_tray_sidebar` accepts `"index"`, `"year"`, or `"month"`; year/month grouping requires a dated tray. Keep `sidebar_position` monotonic with `date` as a documented recommendation, not a validation rule.
+
 **Consequence**: design the filesystem with navigation in mind from the start. Do not reorganize the sidebar via config hacks — reorganize the files.
 
 ## Header Navigation Rules
@@ -68,7 +77,7 @@ Before creating any new doc page, check this list:
 Every category directory must have an `index.mdx`. This file is the **landing page** for that category — keep it short:
 
 - A 1–2 sentence intro describing what the category covers.
-- A `<CategoryNav category="<category-path>" />` component that auto-renders links to child pages.
+- A `<CategoryNav category="<category-path>" />` component for a tree category, or `<NoteTrayIndex />` for a declared note tray.
 - **No full content or prose beyond the intro.** Real documentation lives in sibling `.mdx` files under the same directory.
 
 The `category` prop value is the directory path relative to the docs content root. Use a single segment for a top-level category (for example, `category="reference"`) or a slash-separated path for a nested category (for example, `category="changelog/core"`). Do not include `src/content/docs/` or a leading slash.
@@ -92,7 +101,7 @@ Before creating any new category directory:
 
 - [ ] Is this really a new category, or does it belong under an existing one? Default to "fewer categories."
 - [ ] Does it need a header nav entry, or is it a nested sidebar category inside an existing header entry?
-- [ ] Have you created `index.mdx` with a short intro + `<CategoryNav>` (not full content) and `sidebar_position`?
+- [ ] Have you chosen tree vs note-tray shape and created `index.mdx` with the matching list component, a short intro, and `sidebar_position`?
 - [ ] If you added a header entry, does its `categoryMatch` value equal the new top-level directory name (single segment)?
 - [ ] Does the new category have at least 3 pages? Fewer than 3 usually means the pages belong under a broader category instead.
 
@@ -105,7 +114,8 @@ Before creating any new category directory:
 - **Missing `index.mdx` in category directories.** Category has no landing page.
 - **Multi-segment `categoryMatch`** (e.g. `"platforms/xbox"`). Breaks active highlighting — use a single top-level directory name.
 - **Reorganizing via config instead of filesystem.** If you are tempted to add a custom sidebar config override, the underlying filesystem is probably wrong. Fix the files instead.
-- **Stuffing a category `index.mdx` with full content/prose.** The index is a landing page — keep it to a short intro + `<CategoryNav>` and put real content in sibling files.
+- **Using `<CategoryNav>` for a note tray.** It loses tray-specific ranks, dates, and ordering; use `<NoteTrayIndex>`.
+- **Stuffing a category `index.mdx` with full content/prose.** The index is a landing page — keep it to a short intro plus the shape-appropriate list component and put real content in sibling files.
 
 ## When in Doubt
 
