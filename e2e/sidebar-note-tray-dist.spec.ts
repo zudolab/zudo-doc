@@ -4,13 +4,13 @@ import { makeDistReader } from "./dist-helper";
 const { readDistFile } = makeDistReader("sidebar");
 
 test.describe("Sidebar note trays: static dist", () => {
-  test("the index tray emits zero-padded rank markup for all five items", () => {
+  test("the index tray exposes zero-padded stable ranks for all five items", () => {
     const html = readDistFile("docs/notes/index.html");
 
     expect(html).toMatch(/<ol\b[^>]*border-t border-muted[^>]*>/);
     for (const rank of ["01", "02", "03", "04", "05"]) {
       expect(html).toMatch(
-        new RegExp(`<span\\b(?=[^>]*aria-hidden)(?=[^>]*tabular-nums)[^>]*>${rank}</span>`),
+        new RegExp(`<span\\b(?![^>]*aria-hidden)(?=[^>]*tabular-nums)[^>]*>${rank}</span>`),
       );
     }
     expect(html).toContain("First Note");
