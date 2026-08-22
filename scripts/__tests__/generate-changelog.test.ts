@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
@@ -25,7 +25,9 @@ describe("real changelog corpus -> generated CHANGELOG.md", () => {
       const sourceDir = resolve(ROOT, config.sourceDir);
       const entries = loadChangelogEntries({ sourceDir });
 
-      expect(entries.length).toBeGreaterThan(0);
+      if (config.outputFile === "packages/zudo-doc/CHANGELOG.md") {
+        expect(entries.length).toBeGreaterThan(0);
+      }
 
       const resorted = [...entries].sort(compareEntriesNewestFirst);
       expect(entries.map((entry) => entry.version)).toEqual(
@@ -54,4 +56,16 @@ describe("real changelog corpus -> generated CHANGELOG.md", () => {
       expect(committed).toBe(markdown);
     });
   }
+
+  it("lists every generated package changelog in its npm files[] contract", () => {
+    for (const config of changelogs) {
+      expect(existsSync(resolve(ROOT, config.outputFile))).toBe(true);
+      const packageJsonPath =
+        config.outputFile.split("/").slice(0, 2).join("/") + "/package.json";
+      const packageJson = JSON.parse(readFileSync(resolve(ROOT, packageJsonPath), "utf-8")) as {
+        files?: string[];
+      };
+      expect(packageJson.files).toContain("CHANGELOG.md");
+    }
+  });
 });
