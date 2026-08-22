@@ -187,6 +187,32 @@ describe("SiteTreeNav — note-tray blocks", () => {
     expect(html).not.toContain("data-note-tray-group");
   });
 
+  it("keeps optional dates as ranks in an undated index tray", () => {
+    const html = render(
+      <SiteTreeNav
+        locale="en"
+        tree={[
+          {
+            slug: "series",
+            label: "Series",
+            position: 0,
+            href: "/docs/series",
+            hasPage: true,
+            shape: "note-tray",
+            noteTraySidebar: "index",
+            children: [
+              { slug: "series/intro", label: "Introduction", position: 0, href: "/docs/series/intro", hasPage: true, rank: 1, date: "2026-08-19", children: [] },
+            ],
+          },
+        ]}
+      />,
+    );
+
+    expect(html).toContain(">01</span><span class=\"min-w-0\"><span>Introduction</span>");
+    expect(html).not.toContain('<time datetime="2026-08-19"');
+    expect(html).not.toContain("Aug 19, 2026");
+  });
+
   it("renders dated month groups chronologically with rank-ordered rows", () => {
     const html = render(
       <SiteTreeNav
