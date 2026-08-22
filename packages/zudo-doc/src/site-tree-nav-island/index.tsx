@@ -18,9 +18,9 @@ import {
   formatYearMonthLabel,
   getNoteTrayItems,
   groupItems,
-  parseIsoDate,
   rankWidth,
 } from "../note-tray-model/index.js";
+import { formatMonthDay } from "../format-date/index.js";
 import { initialCategoryOpenState, toggleCategoryOpenState } from "./state.js";
 
 // site-tree-nav uses wider padding than the narrow sidebar
@@ -226,13 +226,6 @@ function CategoryNode({
   );
 }
 
-function noteTrayMonthDay(date: string): string {
-  const parts = parseIsoDate(date);
-  return parts
-    ? `${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}`
-    : date;
-}
-
 function NoteTrayNodeList({
   node,
   locale,
@@ -244,8 +237,9 @@ function NoteTrayNodeList({
 }) {
   const items = getNoteTrayItems(node);
   const width = rankWidth(items);
+  const showDate = node.noteTrayDated === true;
   const grouping =
-    node.noteTrayDated && node.noteTraySidebar !== "index"
+    showDate && node.noteTraySidebar !== "index"
       ? node.noteTraySidebar
       : undefined;
 
@@ -266,6 +260,7 @@ function NoteTrayNodeList({
                 locale={locale}
                 updatedLabel={updatedLabel}
                 rankWidth={width}
+                showDate={showDate}
                 groupedDate={true}
               />
             ))}
@@ -284,6 +279,7 @@ function NoteTrayNodeList({
           locale={locale}
           updatedLabel={updatedLabel}
           rankWidth={width}
+          showDate={showDate}
           groupedDate={false}
         />
       ))}
@@ -296,18 +292,20 @@ function NoteTrayRow({
   locale,
   updatedLabel,
   rankWidth: width,
+  showDate,
   groupedDate,
 }: {
   item: SidebarNavNode;
   locale: string;
   updatedLabel: string;
   rankWidth: number;
+  showDate: boolean;
   groupedDate: boolean;
 }) {
   if (!item.href) return null;
-  const dateLabel = item.date
+  const dateLabel = showDate && item.date
     ? groupedDate
-      ? noteTrayMonthDay(item.date)
+      ? formatMonthDay(item.date)
       : formatDate(item.date, locale)
     : undefined;
 
