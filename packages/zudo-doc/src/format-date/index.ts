@@ -60,6 +60,27 @@ export function formatDate(iso: string, locale: string): string {
   }).format(date);
 }
 
+/** Format the localized month/day portion of an ISO date in UTC. */
+export function formatMonthDayLabel(iso: string, locale: string): string {
+  const date = toUtcDate(iso);
+  if (!date) return iso;
+  return new Intl.DateTimeFormat(LOCALE_TO_BCP47[locale] ?? "en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(date);
+}
+
+/** Format the localized year portion of an ISO date in UTC. */
+export function formatYear(iso: string, locale: string): string {
+  const date = toUtcDate(iso);
+  if (!date) return iso;
+  return new Intl.DateTimeFormat(LOCALE_TO_BCP47[locale] ?? "en-US", {
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(date);
+}
+
 /** Format a year/month label with the year first in every locale. */
 export function formatYearMonth(iso: string, locale: string): string {
   const date = toUtcDate(iso.length === 7 ? `${iso}-01` : iso);
