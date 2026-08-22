@@ -20,6 +20,10 @@ describe("NoteTrayIndex index style", () => {
     expect(html).toContain("About one");
     expect(html).toContain("Aug 22, 2026");
     expect(html).toContain("Updated <time");
+    expect(html).toMatch(/<li[^>]*><a [^>]*href="\/docs\/one"/);
+    expect(html).toMatch(/<ol[^>]*\[&_li\]:mb-0[^>]*>/);
+    expect(html).not.toMatch(/<ol[^>]*border-t/);
+    expect(html).toMatch(/<li[^>]*border-y border-muted[^>]*>/);
   });
 
   it("keeps the visible stable rank accessible and never invents rank 00", () => {

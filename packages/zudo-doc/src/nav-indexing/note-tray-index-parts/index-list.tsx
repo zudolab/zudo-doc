@@ -9,38 +9,52 @@ import { DateLine } from "./date-line.js";
 export function IndexList(props: NoteTrayIndexProps): JSX.Element {
   const width = rankWidth(props.items);
   return (
-    <ol class="border-t border-muted">
-      {props.items.map((item) => (
-        <li
-          key={item.slug}
-          class="grid grid-cols-[auto_1fr] gap-x-hsp-lg border-b border-muted py-vsp-md"
-        >
-          <span
-            class="tabular-nums text-heading leading-none text-muted"
-            style={{ width: `${width}ch` }}
-          >
-            {item.rank === undefined ? "" : String(item.rank).padStart(width, "0")}
-          </span>
-          <div class="min-w-0">
+    <ol class="[&_li]:mb-0">
+      {props.items.map((item) => {
+        const rowClass = item.href
+          ? "relative -mt-px first:mt-0 border-y border-muted hover:z-local-1 hover:border-accent focus-within:z-local-1 focus-within:border-accent"
+          : "relative -mt-px first:mt-0 border-y border-muted";
+        const rankClass = item.href
+          ? "tabular-nums text-heading leading-none text-muted group-hover:text-fg group-focus-visible:text-fg"
+          : "tabular-nums text-heading leading-none text-muted";
+        const labelClass = item.href
+          ? "font-medium text-fg underline decoration-muted group-hover:text-accent group-hover:decoration-accent group-focus-visible:text-accent group-focus-visible:decoration-accent"
+          : "font-medium text-fg";
+        const detailClass = item.href
+          ? "mt-vsp-2xs block text-small text-muted group-hover:text-accent group-hover:underline group-focus-visible:text-accent group-focus-visible:underline"
+          : "mt-vsp-2xs block text-small text-muted";
+        const dateClass = item.href
+          ? "mt-vsp-2xs block text-caption text-muted group-hover:text-accent group-hover:underline group-focus-visible:text-accent group-focus-visible:underline"
+          : "mt-vsp-2xs block text-caption text-muted";
+        const rowContent = (
+          <>
+            <span class={rankClass} style={{ width: `${width}ch` }}>
+              {item.rank === undefined ? "" : String(item.rank).padStart(width, "0")}
+            </span>
+            <span class="min-w-0">
+              <span class={labelClass}>{item.label}</span>
+              {item.description && <span class={detailClass}>{item.description}</span>}
+              {props.showDate && (
+                <span class={dateClass}>
+                  <DateLine item={item} locale={props.locale} updatedLabel={props.updatedLabel} />
+                </span>
+              )}
+            </span>
+          </>
+        );
+
+        return (
+          <li key={item.slug} class={rowClass}>
             {item.href ? (
-              <a
-                class="font-medium text-fg hover:text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-                href={item.href}
-              >
-                {item.label}
+              <a href={item.href} class="group grid grid-cols-[auto_1fr] gap-x-hsp-lg py-vsp-md">
+                {rowContent}
               </a>
             ) : (
-              <span class="font-medium text-fg">{item.label}</span>
+              <span class="grid grid-cols-[auto_1fr] gap-x-hsp-lg py-vsp-md">{rowContent}</span>
             )}
-            {item.description && <p class="mt-vsp-2xs text-small text-muted">{item.description}</p>}
-            {props.showDate && (
-              <span class="mt-vsp-2xs block">
-                <DateLine item={item} locale={props.locale} updatedLabel={props.updatedLabel} />
-              </span>
-            )}
-          </div>
-        </li>
-      ))}
+          </li>
+        );
+      })}
     </ol>
   );
 }
