@@ -1,0 +1,20 @@
+---
+title: Moving a Showcase Off Astro
+description: A framework migration is easier to review when the content tree remains the stable center of the site.
+sidebar_position: 6
+date: 2026-03-27
+updated: 2026-04-02
+tags:
+  - customization
+  - type:guide
+---
+
+## Keep the content recognizable
+
+The showcase migration away from Astro was successful because the content tree stayed familiar. Pages remained `.mdx` files with frontmatter, directories continued to define navigation, and the bilingual mirror kept the same filenames. Readers saw a new engine underneath a site they already understood.
+
+That continuity made the change reviewable in small pieces. Route ownership, package builds, and chrome bindings could move independently while the [installation guide](../getting-started/installation.mdx) and the rest of the authoring workflow kept their shape.
+
+## Migrate contracts, not just files
+
+A framework switch is complete when the behaviors around a page still have clear owners: the package renders shared chrome, the host supplies site identity, and content authors keep using the same conventions. Treating those as contracts exposes missing pieces earlier than copying an old directory into a new build system.
