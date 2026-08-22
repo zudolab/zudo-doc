@@ -69,6 +69,7 @@ describe("SidebarTree — note tray SSG", () => {
     const activeLink = html.match(/<a href="\/docs\/notes\/beta"[^>]*>/)?.[0];
     expect(activeLink).toContain('aria-current="page"');
     expect(activeLink).toContain("data-nav-active");
+    expect(html).not.toContain("text-bg/70");
   });
 
   it("marks the non-collapsible tray root active on the index page", () => {
@@ -96,6 +97,7 @@ describe("SidebarTree — note tray SSG", () => {
     expect(html).toContain("01-03");
     expect(html).not.toContain("12-09");
     expect(html.indexOf("Newest")).toBeLessThan(html.indexOf("Active article"));
+    expect(html).not.toContain("text-bg/70");
   });
 
   it("localizes month labels for English and Japanese and keeps active groups open", () => {

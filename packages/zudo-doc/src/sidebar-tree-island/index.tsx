@@ -415,13 +415,13 @@ function TrayItem({
           style={{ paddingLeft: padLeft(depth, false) }}
         >
           {rankDigits !== undefined && (
-            <span className={`shrink-0 tabular-nums ${isActive ? "text-bg/70" : "text-muted"}`}>
+            <span className={`shrink-0 tabular-nums${isActive ? "" : " text-muted"}`}>
               {item.rank === undefined ? "" : String(item.rank).padStart(rankDigits, "0")}
             </span>
           )}
           <span className="min-w-0 flex-1" dangerouslySetInnerHTML={{ __html: labelHtml }} />
           {showDate && shortDate && (
-            <span className={`shrink-0 tabular-nums ${isActive ? "text-bg/70" : "text-muted"}`}>
+            <span className={`shrink-0 tabular-nums${isActive ? "" : " text-muted"}`}>
               {shortDate}
             </span>
           )}
