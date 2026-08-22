@@ -34,6 +34,8 @@ Use the global MDX tag directly in any `.mdx` file — no import needed:
 
 No props are required. It self-fetches the current locale's docs collection, builds the nav tree, and renders the interactive island — the same wrapper used by `SiteTreeNavDemo` above.
 
+Categories hidden from the tree come from [`siteTreeNavIgnore`](../guides/configuration.mdx#home-page-sitetreenavignore) in `zfb.config.ts`.
+
 ### In a page module
 
 A page module that already has a `tree` in hand (e.g. built via `buildNavTree` + `groupSatelliteNodes`) can import the raw, tree-prop-driven component instead:
@@ -52,6 +54,8 @@ export default function IndexPage() {
 }
 ```
 
+The raw island's `categoryIgnore` prop is the per-call equivalent of the site-wide [`siteTreeNavIgnore`](../guides/configuration.mdx#home-page-sitetreenavignore) setting; the package home page and the MDX tag pass that setting here.
+
 This repository's own home page (`pages/index.tsx`) doesn't call this island directly — it hands the resolved locale to `prepareHomeData()` and passes the result to `HomePageView`, both from `@takazudo/zudo-doc/home-page`, which renders `SiteTreeNav` internally alongside the hero and tag section.
 
 The component uses Preact state for expand/collapse interactivity, so it hydrates on the client through zfb's island runtime.
@@ -64,7 +68,7 @@ Props below apply to the raw `SiteTreeNav` island (`@takazudo/zudo-doc/site-tree
 |------|------|---------|-------------|
 | `tree` | `NavNode[]` | (required) | The navigation tree built from content collection |
 | `categoryOrder` | `string[]` | — | Custom ordering of top-level categories |
-| `categoryIgnore` | `string[]` | — | Category slugs to hide from the tree |
+| `categoryIgnore` | `string[]` | — | Category slugs to hide from the tree (the package home page and the MDX tag pass `siteTreeNavIgnore` here) |
 | `initiallyCollapsedCategorySlugs` | `string[]` | — | Root-category slugs that should start collapsed |
 | `ariaLabel` | `string` | `"Site index"` | Accessibility label for the nav element |
 
