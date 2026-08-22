@@ -85,6 +85,8 @@ export default defineConfig(
 
 例えば、`categoryMatch: "guides"`はタブを`guides/`コンテンツディレクトリにリンクします。ユーザーが`/docs/guides/`配下のページに移動すると、「Guides」タブがアクティブになり、サイドバーにはguidesカテゴリのみが表示されます。
 
+[ノートトレイ](./note-tray.mdx)は特別なヘッダーナビ型ではありません。他のトップレベルカテゴリと同じように追加し、アイテムの`path`をトレイのindexへ、単一セグメントの`categoryMatch`をトレイのディレクトリ名へ設定します。サイドバーと一覧の動作は`index.mdx`内のトレイ宣言が制御します。
+
 子アイテムにも`categoryMatch`を設定できます。例えば、子に`categoryMatch: "components"`を設定すると、`/docs/components/`にアクセスした際に親ドロップダウンがアクティブになり、サイドバーがコンポーネントセクションにフィルタリングされます。
 
 #### 1つのカテゴリ配下にネストした子を置く

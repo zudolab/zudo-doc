@@ -42,7 +42,12 @@ title: Quick Start
 | `sidebar_label` | string | No | Value of `title` | Override label shown in sidebar |
 | `category` | string | No | Directory name | Reserved for future use |
 | `category_no_page` | boolean | No | `false` | Makes the category a non-linked header (no route, sitemap entry, or search entry) |
-| `category_sort_order` | string | No | — | Sort order for pages within the category (e.g., `"desc"` for newest-first) |
+| `category_sort_order` | `"asc" \| "desc"` | No | `"asc"` | Sort order for pages within the category |
+| `category_shape` | `"note-tray"` | No | Regular tree | Makes a top-level, flat category a note tray |
+| `note_tray_dated` | boolean | No | `false` | Requires every note-tray item to have `date` |
+| `note_tray_sidebar` | `"index" \| "year" \| "month"` | No | `"index"` | Selects the note-tray sidebar presentation |
+| `date` | `"YYYY-MM-DD"` | No | — | Document date; required for items in a dated note tray |
+| `updated` | `"YYYY-MM-DD"` | No | — | Optional update date on any document |
 | `search_exclude` | boolean | No | `false` | Exclude the page from search indexing |
 | `tags` | string[] | No | -- | Tags for cross-cutting navigation |
 | `draft` | boolean | No | `false` | Exclude from production build (visible in dev) |
@@ -167,6 +172,62 @@ category_sort_order: "desc"
 sidebar_position: 20
 ---
 ```
+
+For a note tray, this order is used consistently by the sidebar, `NoteTrayIndex`, previous/next pager, and home page. See [Note Trays](./note-tray.mdx).
+
+### `category_shape`
+
+- **Type:** `"note-tray"`
+- **Required:** No
+- **Default:** Regular tree category
+
+Set `category_shape: "note-tray"` on a top-level category's `index.mdx` to make its direct child files a flat, ordered sequence. A note tray requires a visible routed index and does not permit child directories.
+
+```mdx
+---
+title: Notes
+sidebar_position: 3
+category_shape: "note-tray"
+---
+```
+
+### `note_tray_dated`
+
+- **Type:** `boolean`
+- **Required:** No
+- **Default:** `false`
+
+When `true` on a note-tray index, every item in the tray must have `date`, including `unlisted` items. The build reports every offending slug.
+
+### `note_tray_sidebar`
+
+- **Type:** `"index" | "year" | "month"`
+- **Required:** No
+- **Default:** `"index"`
+
+Selects the sidebar presentation for a note tray. `index` shows stable ranks; `year` and `month` group items chronologically and require `note_tray_dated: true`.
+
+### `date`
+
+- **Type:** `"YYYY-MM-DD"`
+- **Required:** Only for every item in a dated note tray
+
+Sets the document date. Quote the value in YAML. The schema checks the format and the build rejects impossible calendar dates.
+
+```mdx
+---
+title: Project Note
+sidebar_position: 1
+date: "2026-08-20"
+---
+```
+
+### `updated`
+
+- **Type:** `"YYYY-MM-DD"`
+- **Required:** No
+
+Sets an optional update date on any document. It appears beside `date` in the document header and on dated note-tray index and home-page surfaces. It can appear by itself when `date` is absent. The sidebar and pager never show `updated`.
 
 ### `search_exclude`
 

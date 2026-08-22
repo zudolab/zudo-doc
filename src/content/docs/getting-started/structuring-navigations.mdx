@@ -117,9 +117,15 @@ src/content/docs/guides/        ← sidebar category "Guides"
 
 Each `.mdx` file appears as a sidebar item. Subdirectories become nested collapsible categories.
 
+### Category Shapes
+
+Most categories are trees: they can contain subdirectories, and their `index.mdx` is a short landing page with `<CategoryNav>`. A **note tray** is the alternative for a top-level, flat sequence such as a journal, course, or notebook. Declare `category_shape: "note-tray"` on its `index.mdx`, keep every item directly inside the category, and use `<NoteTrayIndex>` for its landing-page list. Note trays can be index-ordered or grouped by year or month when every item has a date.
+
+This showcase's Getting Started section is a note tray: its pages form one intentional reading sequence rather than a nested topic tree. See [Note Trays](../guides/note-tray.mdx) for the full declaration and validation contract.
+
 ### Category Top Page (index.mdx)
 
-Every category directory should have an `index.mdx` that acts as the **landing page** for that category. Keep it minimal: a 1–2 sentence description of the category followed by a `<CategoryNav>` component, which automatically renders links to all sibling pages.
+Every category directory should have an `index.mdx` that acts as the **landing page** for that category. For a regular tree category, keep it minimal: a 1–2 sentence description followed by `<CategoryNav>`, which automatically renders links to all sibling pages. For a note tray, use `<NoteTrayIndex>` instead.
 
 ```mdx
 ---
@@ -132,7 +138,7 @@ Step-by-step guides for common zudo-doc tasks.
 <CategoryNav category="guides" />
 ```
 
-The `category` prop is the top-level directory name (e.g. `"guides"` for `src/content/docs/guides/`). Do not put full documentation content in the index — keep real docs in sibling `.mdx` files under the same directory.
+The `category` prop is the top-level directory name (e.g. `"guides"` for `src/content/docs/guides/`). Do not put full documentation content in the index — keep real docs in sibling `.mdx` files under the same directory. The same brevity rule applies to a note-tray index even though its list component differs.
 
 ## Concrete Real-World Example
 

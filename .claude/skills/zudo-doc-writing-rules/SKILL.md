@@ -69,6 +69,12 @@ The schema is package-owned (`@takazudo/zudo-doc/docs-schema`, source `packages/
 | `sidebar_position` | number | recommended | Without it, pages sort alphabetically |
 | `description` | string | no | Subtitle below the h1 |
 | `sidebar_label` | string | no | Overrides `title` in the sidebar only |
+| `category_shape` | `"note-tray"` | no | Declares a top-level, flat note-tray category on its `index.mdx` |
+| `note_tray_dated` | boolean | no | Requires `date` on every tray item, including unlisted items |
+| `note_tray_sidebar` | `"index" \| "year" \| "month"` | no | Tray sidebar style; grouped styles require a dated tray |
+| `category_sort_order` | `"asc" \| "desc"` | no | Category or tray display direction; defaults to `"asc"` |
+| `date` | `"YYYY-MM-DD"` | no | Required on every item in a dated tray; quote in YAML |
+| `updated` | `"YYYY-MM-DD"` | no | Optional update date on any doc; quote in YAML |
 | `tags` | string[] | no | Cross-category grouping |
 | `draft` | boolean | no | Excludes the page from the build entirely |
 | `unlisted` | boolean | no | Built but hidden from sidebar/nav |

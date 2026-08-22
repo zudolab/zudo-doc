@@ -1,0 +1,58 @@
+---
+title: NoteTrayIndex
+description: ノートトレイを番号付きインデックス、カード一覧、日付タイムラインとして表示します。
+sidebar_position: 8.5
+---
+
+## 概要
+
+`NoteTrayIndex`は、ノートトレイ内のフラットなアイテムを一覧表示するサーバーレンダリングのPreactコンポーネントです。MDXでグローバルに利用でき、インポートもハイドレーション指定も必要ありません。
+
+以下の例ではショーケースのBlogトレイを使用します。
+
+## 番号付きインデックス
+
+デフォルトの`index`スタイルは、安定したゼロ埋めのrankを強調し、各アイテムのdescriptionも表示します。
+
+<NoteTrayIndex category="blog" style="index" />
+
+```mdx
+<NoteTrayIndex category="blog" style="index" />
+```
+
+## カード
+
+`cards`スタイルは各アイテムをゆったり表示し、タグナビゲーションが有効ならタグも含めます。
+
+<NoteTrayIndex category="blog" style="cards" showDate />
+
+```mdx
+<NoteTrayIndex category="blog" style="cards" showDate />
+```
+
+## タイムライン
+
+`timeline`スタイルは日付付きトレイを月ごとにまとめます。日付は常に表示され、日付なしのトレイで使うとビルドエラーになります。
+
+<NoteTrayIndex category="blog" style="timeline" />
+
+```mdx
+<NoteTrayIndex category="blog" style="timeline" />
+```
+
+## プロップ
+
+| プロップ | 型 | デフォルト | 説明 |
+|------|------|---------|-------------|
+| `category` | string | 現在のページを含むトレイ | 一覧表示するトレイのslug（例：`"blog"`） |
+| `style` | `"index" \| "cards" \| "timeline"` | `"index"` | 一覧の表示形式 |
+| `showDate` | boolean | `false` | indexとcardスタイルで`date`と`updated`を表示。timelineでは常に日付を表示 |
+| `lang` | `Locale` | 自動検出 | コンテンツのロケールを上書き |
+
+アイテムはトレイの`category_sort_order`に従います。空のトレイ、存在しないカテゴリ、ノートトレイではないカテゴリでは何もレンダリングしません。
+
+宣言フィールド、並び順、検証、制限事項については[ノートトレイ](../guides/note-tray.mdx)を参照してください。
+
+## ソース
+
+MDXラッパーは`@takazudo/zudo-doc/note-tray-index`、表示コンポーネントは`@takazudo/zudo-doc/nav-indexing`から提供されます。パッケージ所有ルートによって自動的に登録されます。
