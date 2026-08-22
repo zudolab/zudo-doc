@@ -2,16 +2,13 @@
 set -euo pipefail
 
 # ─────────────────────────────────────────────────────────────────────────────
-# release-create-zudo-doc.sh — Bump root + create-zudo-doc versions in lockstep
-#                               and scaffold EN+JA changelog entries
+# release-create-zudo-doc.sh — Bump all published package versions in lockstep
+#                               and scaffold package-specific EN+JA changelogs
 #
-# WHY a new script instead of modifying version-bump.sh:
-#   version-bump.sh is dual-purpose — it is also shipped to downstream
-#   scaffolded projects via create-zudo-doc. Modifying it risks breaking that
-#   contract. This sibling script reuses the same high-level logic (bump JSON,
-#   scaffold MDX) but targets BOTH root package.json AND
-#   packages/create-zudo-doc/package.json, and accepts prerelease semver
-#   (e.g. 1.0.0-next.1) which version-bump.sh's strict regex would reject.
+# This repository-specific release script keeps all four package versions and
+# published pins in lockstep, and accepts prerelease semver (e.g.
+# 1.0.0-next.1). The separate generated-project version-bump skill owns the
+# generic downstream workflow; scripts/version-bump.sh is showcase-only.
 #
 # Usage:
 #   ./scripts/release-create-zudo-doc.sh [<new-version>|major|minor|patch|next|stable]
@@ -69,7 +66,7 @@ set -euo pipefail
 #      rewritten by scripts/lib/rewrite-zudo-doc-pins.mjs. The @takazudo/zfb /
 #      @takazudo/zfb-runtime pins in scaffold.ts are upstream-tracked separately
 #      and gated by scripts/check-pin-parity.mjs — they are NOT touched here.
-#   7. Scaffolds EN+JA changelog MDX entries
+#   7. Scaffolds one EN+JA changelog MDX pair per published package
 # ─────────────────────────────────────────────────────────────────────────────
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
@@ -354,67 +351,12 @@ node -e "
 "
 echo "  ✓ $SCAFFOLD_TS @takazudo/zudo-doc-history-server → ^$NEW_VERSION"
 
-# ── Step 3: Scaffold EN + JA changelog entries ────────────────────────────────
+# ── Step 3: Scaffold package-specific EN + JA changelog entries ──────────────
 
-CHANGELOG_DIR="$ROOT_DIR/src/content/docs/changelog"
-CHANGELOG_JA_DIR="$ROOT_DIR/src/content/docs-ja/changelog"
-
-# Determine sidebar_position: count existing .mdx files (excluding index.mdx)
-# High values produce descending sort (newest first). Index page uses position 10.
-EXISTING_COUNT=$(find "$CHANGELOG_DIR" -maxdepth 1 -name '*.mdx' ! -name 'index.mdx' 2>/dev/null | wc -l | tr -d ' ')
-SIDEBAR_POS=$((1000 + EXISTING_COUNT + 1))
-
-CHANGELOG_FILE="$CHANGELOG_DIR/$NEW_VERSION.mdx"
-CHANGELOG_JA_FILE="$CHANGELOG_JA_DIR/$NEW_VERSION.mdx"
-
-if [ -f "$CHANGELOG_FILE" ]; then
-  echo ""
-  echo "Warning: $CHANGELOG_FILE already exists — skipping changelog scaffold"
-else
-  echo ""
-  echo "▶ Scaffolding changelog entries (sidebar_position: $SIDEBAR_POS)..."
-
-  mkdir -p "$CHANGELOG_DIR"
-  mkdir -p "$CHANGELOG_JA_DIR"
-
-  cat > "$CHANGELOG_FILE" << MDXEOF
----
-title: $NEW_VERSION
-description: Release notes for $NEW_VERSION.
-sidebar_position: $SIDEBAR_POS
----
-
-<!-- Add release notes here -->
-
-### Features
-
-- <!-- Describe new features -->
-
-### Bug Fixes
-
-- <!-- Describe bug fixes -->
-MDXEOF
-  echo "  ✓ $CHANGELOG_FILE"
-
-  cat > "$CHANGELOG_JA_FILE" << MDXEOF
----
-title: $NEW_VERSION
-description: ${NEW_VERSION}のリリースノート。
-sidebar_position: $SIDEBAR_POS
----
-
-<!-- リリースノートをここに追加 -->
-
-### 機能
-
-- <!-- 新機能を記述 -->
-
-### バグ修正
-
-- <!-- バグ修正を記述 -->
-MDXEOF
-  echo "  ✓ $CHANGELOG_JA_FILE"
-fi
+echo ""
+bash "$ROOT_DIR/scripts/lib/scaffold-package-changelogs.sh" \
+  "$ROOT_DIR" \
+  "$NEW_VERSION"
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 
@@ -426,21 +368,23 @@ echo "  scaffold.ts @takazudo/zudo-doc pin → ^$NEW_VERSION"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 echo "Next steps:"
-echo "  1. Fill in changelog: src/content/docs/changelog/$NEW_VERSION.mdx"
-echo "  2. Fill in Japanese:  src/content/docs-ja/changelog/$NEW_VERSION.mdx"
-echo "  3. Run B4PUSH_SKIP_PIN_PUBLISHED=1 pnpm b4push to validate"
-echo "  4. Commit, push, wait for CI."
+echo "  1. Fill all three package entries under src/content/docs/changelog/<package>/$NEW_VERSION.mdx"
+echo "  2. Fill all three Japanese mirrors under src/content/docs-ja/changelog/<package>/$NEW_VERSION.mdx"
+echo "     (use an explicit localized no-package-change entry when needed)."
+echo "  3. Run pnpm gen:changelog and stage all three package CHANGELOG.md outputs."
+echo "  4. Run B4PUSH_SKIP_PIN_PUBLISHED=1 pnpm b4push to validate."
+echo "  5. Commit, push, wait for CI."
 echo ""
 echo "  Publish ORDER matters — zudo-doc and zudo-doc-history-server first,"
 echo "  then create-zudo-doc (whose generated package.json pins @takazudo/zudo-doc ^$NEW_VERSION)."
 echo ""
-echo "  5a. If zudo-doc-history-server or zudo-doc changed:"
+echo "  6a. Tag and draft zudo-doc-history-server and zudo-doc (always, in lockstep):"
 echo "      git tag zudo-doc-history-server-$NEW_VERSION && git push origin zudo-doc-history-server-$NEW_VERSION"
 echo "      git tag zudo-doc-v$NEW_VERSION && git push origin zudo-doc-v$NEW_VERSION"
 echo "      Create DRAFT releases for each tag — publishing fires"
 echo "      publish-zudo-doc-history-server.yml and publish-zudo-doc.yml."
 echo ""
-echo "  5b. After 5a is live on npm:"
+echo "  6b. After 6a is live on npm:"
 echo "      git tag v$NEW_VERSION && git push origin v$NEW_VERSION"
 echo "      Create a DRAFT release for v$NEW_VERSION — publishing fires"
 echo "      publish-create-zudo-doc.yml."

@@ -555,7 +555,9 @@ export const survivorAllowlist: readonly SurvivorClassification[] = [
       "^packages/zudo-doc/API\\.md$",
       "^packages/zudo-doc/src/(integrations/changelog|plugins/changelog)",
       "^packages/zudo-doc/src/__tests__/",
+      "^packages/zudo-doc/CHANGELOG\\.md$",
       "^packages/create-zudo-doc/",
+      "^packages/doc-history-server/CHANGELOG\\.md$",
       "^scripts/generate-changelog\\.ts$",
     ],
     reason: "The changelog emitter/loader is the canonical implementation used by the active plugin and repository generator.",
@@ -611,6 +613,8 @@ export const survivorAllowlist: readonly SurvivorClassification[] = [
     classification: "historical",
     allowPathPatterns: [
       "^packages/zudo-doc/CHANGELOG\\.md$",
+      "^packages/create-zudo-doc/CHANGELOG\\.md$",
+      "^packages/doc-history-server/CHANGELOG\\.md$",
       "^src/content/docs(-ja)?/changelog/",
       "^packages/zudo-doc/src/theme-toggle/__tests__/",
     ],
@@ -621,6 +625,8 @@ export const survivorAllowlist: readonly SurvivorClassification[] = [
     classification: "dependency-owned",
     allowPathPatterns: [
       "^packages/zudo-doc/CHANGELOG\\.md$",
+      "^packages/create-zudo-doc/CHANGELOG\\.md$",
+      "^packages/doc-history-server/CHANGELOG\\.md$",
       "^src/content/docs(-ja)?/changelog/",
       "^packages/zudo-doc/(eject/)?theme-toggle/color-scheme-sync\\.ts$",
       "^packages/zudo-doc/src/theme-toggle/__tests__/",

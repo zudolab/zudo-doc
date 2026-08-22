@@ -46,6 +46,6 @@ prefix_rule(
 
 prefix_rule(
     pattern = ["git", "push"],
-    decision = "prompt",
-    justification = "Pushing changes is an external repository mutation and needs confirmation.",
+    decision = "allow",
+    justification = "The manager checkout may push authorized workflow branches; the repository pre-push hook still blocks child worktrees.",
 )

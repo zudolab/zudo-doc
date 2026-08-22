@@ -115,15 +115,16 @@ function packFileList(): string[] {
 
 describe("npm tarball ships theme-pack assets (ADR docs/adr/theme-packs.md, #2820)", () => {
   // `npm pack --dry-run --json` shells out to npm, which builds the ideal
-  // dependency tree even for a dry run — cheap on a warm local npm (~1s) but
-  // observed at ~11s on a cold CI runner, blowing vitest's 5s per-test default.
-  // Run it ONCE in beforeAll with a generous timeout and assert against the
-  // cached list, so the slow subprocess is paid once and the assertions are
-  // instant (and the second test never pays it at all).
+  // dependency tree even for a dry run. Under concurrent package-suite load
+  // (#3619), the sanitized snapshot and pack can exceed the former 60s hook
+  // deadline.
+  // Run it ONCE in beforeAll with 120s of headroom and assert against the
+  // cached list, so the subprocess is paid once and the assertions are instant
+  // (and the second test never pays it at all).
   let files: string[];
   beforeAll(() => {
     files = packFileList();
-  }, 60_000);
+  }, 120_000);
 
   it("includes every bundled pack's meta.json, pack.css (when shipped), and fonts/*", () => {
     // "default" — meta.json only; the reserved no-op pack must NOT ship

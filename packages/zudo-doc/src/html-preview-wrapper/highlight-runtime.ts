@@ -1,10 +1,10 @@
 import type {
   HighlightCodeOptions,
   HighlightCodeResult,
-} from "@takazudo/zfb-md-wasm";
+} from "@takazudo/zfb-md-wasm/highlight";
 
 type HighlightModule = Pick<
-  typeof import("@takazudo/zfb-md-wasm"),
+  typeof import("@takazudo/zfb-md-wasm/highlight"),
   "highlightCode"
 >;
 
@@ -20,11 +20,11 @@ export interface HtmlPreviewHighlightRuntime {
 /**
  * Build the HTML Preview's lazy zfb highlighting adapter.
  *
- * The cached value is only the public package-root module import. A rejected
- * import is evicted so a later source-panel mount can retry a transient chunk
- * load. Calls to `highlightCode` are deliberately not cached: the upstream
- * package owns WASM initialization and trap recovery, while the component owns
- * request cancellation and stale-result protection.
+ * The cached value is only the public `./highlight` subpath module import. A
+ * rejected import is evicted so a later source-panel mount can retry a transient
+ * chunk load. Calls to `highlightCode` are deliberately not cached: the
+ * upstream package owns WASM initialization and trap recovery, while the
+ * component owns request cancellation and stale-result protection.
  */
 export function createHighlightRuntime(
   importModule: HighlightModuleImporter,
@@ -53,7 +53,7 @@ export function createHighlightRuntime(
 }
 
 const defaultRuntime = createHighlightRuntime(
-  () => import("@takazudo/zfb-md-wasm"),
+  () => import("@takazudo/zfb-md-wasm/highlight"),
 );
 
 /**
