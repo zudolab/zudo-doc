@@ -212,9 +212,19 @@ const fixtureSettings: PresetSettings = {
   llmsTxt: true,
   changelogs: [
     {
-      sourceDir: "src/content/docs/changelog",
+      sourceDir: "src/content/docs/changelog/zudo-doc",
       outputFile: "packages/zudo-doc/CHANGELOG.md",
       packageName: "@takazudo/zudo-doc",
+    },
+    {
+      sourceDir: "src/content/docs/changelog/create-zudo-doc",
+      outputFile: "packages/create-zudo-doc/CHANGELOG.md",
+      packageName: "create-zudo-doc",
+    },
+    {
+      sourceDir: "src/content/docs/changelog/doc-history-server",
+      outputFile: "packages/doc-history-server/CHANGELOG.md",
+      packageName: "@takazudo/zudo-doc-history-server",
     },
   ],
   docHistory: true,
@@ -420,9 +430,19 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
     expect(byName["@takazudo/zudo-doc/plugins/changelog"]).toEqual({
       changelogs: [
         {
-          sourceDir: "src/content/docs/changelog",
+          sourceDir: "src/content/docs/changelog/zudo-doc",
           outputFile: "packages/zudo-doc/CHANGELOG.md",
           packageName: "@takazudo/zudo-doc",
+        },
+        {
+          sourceDir: "src/content/docs/changelog/create-zudo-doc",
+          outputFile: "packages/create-zudo-doc/CHANGELOG.md",
+          packageName: "create-zudo-doc",
+        },
+        {
+          sourceDir: "src/content/docs/changelog/doc-history-server",
+          outputFile: "packages/doc-history-server/CHANGELOG.md",
+          packageName: "@takazudo/zudo-doc-history-server",
         },
       ],
     });

@@ -4,6 +4,10 @@ Standalone package for extracting and serving git history of documentation files
 
 History extraction runs independently from the zfb site build so expensive `git log --follow` calls can be generated in a dedicated CI job.
 
+Release history is shipped as `CHANGELOG.md` in the npm package. The file is
+generated from the repository's changelog MDX pages; edit those source pages
+instead of editing the generated markdown directly.
+
 ## Modes
 
 ### Server mode (local development)
