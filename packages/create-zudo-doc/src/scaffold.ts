@@ -850,11 +850,11 @@ function generatePackageJson(choices: UserChoices) {
     // default, so a fresh scaffold needs no config change to pick it up.
     // Also fixes the client router to tolerate about:srcdoc history
     // restrictions. No generator-side migration.
-    // 2.9.0: routine toolchain bump from 2.7.1, adopted in lockstep with the
+    // 2.10.0: routine toolchain bump from 2.9.0, adopted in lockstep with the
     // root package.json pins. No generator-side migration.
-    "@takazudo/zfb": "2.9.0",
-    "@takazudo/zfb-runtime": "2.9.0",
-    "@takazudo/zfb-md-wasm": "2.9.0",
+    "@takazudo/zfb": "2.10.0",
+    "@takazudo/zfb-runtime": "2.10.0",
+    "@takazudo/zfb-md-wasm": "2.10.0",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
