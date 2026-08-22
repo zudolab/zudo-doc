@@ -17,6 +17,12 @@ import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 interface PagerNode {
   href?: string;
   label: string;
+  shape?: "note-tray";
+  noteTrayDated?: boolean;
+  noteTraySidebar?: "index" | "year" | "month";
+  date?: string;
+  updated?: string;
+  rank?: number;
 }
 
 export interface DocPagerProps {

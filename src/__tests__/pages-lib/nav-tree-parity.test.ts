@@ -114,6 +114,11 @@ function legacyToNavNodes(
       hasPage: !!doc && noPage !== true,
       children,
       sortOrder,
+      shape: doc?.data.category_shape,
+      noteTrayDated: doc?.data.note_tray_dated,
+      noteTraySidebar: doc?.data.note_tray_sidebar,
+      date: doc?.data.date,
+      updated: doc?.data.updated,
     });
   }
 
@@ -123,6 +128,9 @@ function legacyToNavNodes(
     if (posCompare !== 0) return order === "desc" ? -posCompare : posCompare;
     const slugCompare = a.slug.localeCompare(b.slug);
     return order === "desc" ? -slugCompare : slugCompare;
+  });
+  nodes.forEach((node, index) => {
+    node.rank = order === "desc" ? nodes.length - index : index + 1;
   });
 
   return nodes;

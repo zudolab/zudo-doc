@@ -42,6 +42,11 @@ export interface SidebarFrontmatter {
    * sidecar when both are present.
    */
   category_sort_order?: "asc" | "desc";
+  category_shape?: "note-tray";
+  note_tray_dated?: boolean;
+  note_tray_sidebar?: "index" | "year" | "month";
+  date?: string;
+  updated?: string;
 }
 
 /**
@@ -94,6 +99,13 @@ export interface SidebarNode {
   hasPage: boolean;
   sortOrder?: "asc" | "desc";
   collapsed?: boolean;
+  shape?: "note-tray";
+  noteTrayDated?: boolean;
+  noteTraySidebar?: "index" | "year" | "month";
+  date?: string;
+  updated?: string;
+  /** Stable 1-based position in this sibling list's ascending order. */
+  rank?: number;
   children: SidebarNode[];
 }
 
