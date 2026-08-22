@@ -17,6 +17,7 @@ import type { Settings } from "../settings.js";
 import { createDocMetainfoArea } from "../doc-metainfo-area/index.js";
 import { createDocTagsArea } from "../doc-tags-area/index.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
+import { formatDate } from "../format-date/index.js";
 
 export type { FrontmatterCellRenderer };
 
@@ -146,6 +147,20 @@ export function createDocContentHeader<S extends Settings = Settings>(
           isFallback,
           version,
         }) as ComponentChildren}
+
+        {/* Authored date line — independent of the git-derived metainfo block.
+            Unlike that block, these values come directly from frontmatter and
+            remain available for every document, including pages without git
+            history metadata. */}
+        {(entry.data.date || entry.data.updated) && (
+          <p class="text-caption text-muted mb-vsp-md" data-doc-date>
+            {entry.data.date ? formatDate(entry.data.date, locale) : null}
+            {entry.data.date && entry.data.updated ? " · " : null}
+            {entry.data.updated
+              ? `${t("doc.updated", locale)} ${formatDate(entry.data.updated, locale)}`
+              : null}
+          </p>
+        )}
 
         {/* Build-time date block (Created / Updated / Author).
             doc-metainfo placement — between <h1> and description.
