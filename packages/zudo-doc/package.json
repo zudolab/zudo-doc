@@ -600,6 +600,14 @@
     "./eject-logo": {
       "types": "./dist/eject-logo/index.d.ts",
       "default": "./dist/eject-logo/index.js"
+    },
+    "./format-date": {
+      "types": "./dist/format-date/index.d.ts",
+      "default": "./dist/format-date/index.js"
+    },
+    "./note-tray-model": {
+      "types": "./dist/note-tray-model/index.d.ts",
+      "default": "./dist/note-tray-model/index.js"
     }
   },
   "bin": {

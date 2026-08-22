@@ -38,6 +38,7 @@ import type {
   HeadingItem,
   NavSourceDocs,
 } from "./types.js";
+import { validateNoteTrays } from "./note-tray-validate.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -198,6 +199,7 @@ export function createDocRouteEntries<E extends DocEntryLike = DocEntryLike>(
 
       // Nav docs: exclude unlisted (for sidebar/prev-next) but keep for breadcrumbs
       const tree = buildNavTree(navDocs, locale, categoryMeta);
+      validateNoteTrays(tree, docs);
       // Breadcrumb tree: latest routes use the full tree (including unlisted)
       // for accurate crumbs; versioned routes resolve crumbs against the nav
       // tree itself (#1916 #1).

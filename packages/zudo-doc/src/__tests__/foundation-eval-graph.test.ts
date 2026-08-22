@@ -95,6 +95,8 @@ const NODE_FREE_MODULES = [
   // preact, `.css`, `virtual:` and `@takazudo/zfb*`, which this list's shared
   // `external: ["preact", …]` setting deliberately does not police.
   "site-schema/index.ts",
+  "format-date/index.ts",
+  "note-tray-model/index.ts",
 ] as const;
 
 describe("S1a foundation primitives are node-builtin-free (--platform=neutral)", () => {

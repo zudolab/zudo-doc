@@ -188,6 +188,17 @@ function toSidebarNodes<T extends SidebarFrontmatter>(
       ...(href !== undefined ? { href } : {}),
       hasPage,
       ...(hasSortOrder ? { sortOrder } : {}),
+      ...(doc?.data.category_shape !== undefined
+        ? { shape: doc.data.category_shape }
+        : {}),
+      ...(doc?.data.note_tray_dated !== undefined
+        ? { noteTrayDated: doc.data.note_tray_dated }
+        : {}),
+      ...(doc?.data.note_tray_sidebar !== undefined
+        ? { noteTraySidebar: doc.data.note_tray_sidebar }
+        : {}),
+      ...(doc?.data.date !== undefined ? { date: doc.data.date } : {}),
+      ...(doc?.data.updated !== undefined ? { updated: doc.data.updated } : {}),
       children,
     });
 
@@ -208,6 +219,12 @@ function toSidebarNodes<T extends SidebarFrontmatter>(
     const slugCompare = a.id.localeCompare(b.id);
     return order === "desc" ? -slugCompare : slugCompare;
   });
+
+  // Rank is derived from the ascending comparator, independent of display
+  // direction. A descending list therefore displays N ... 1.
+  for (let index = 0; index < nodes.length; index++) {
+    nodes[index]!.rank = order === "desc" ? nodes.length - index : index + 1;
+  }
 
   return nodes;
 }

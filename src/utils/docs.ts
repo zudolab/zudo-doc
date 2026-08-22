@@ -31,6 +31,12 @@ export interface NavNode {
   children: NavNode[];
   sortOrder?: "asc" | "desc";
   collapsed?: boolean;
+  shape?: "note-tray";
+  noteTrayDated?: boolean;
+  noteTraySidebar?: "index" | "year" | "month";
+  date?: string;
+  updated?: string;
+  rank?: number;
 }
 
 // Module-level cache — persists across all page renders during a single build.
@@ -106,6 +112,11 @@ function navTreeCacheKey(
         slug,
         category_no_page,
         category_sort_order,
+        category_shape,
+        note_tray_dated,
+        note_tray_sidebar,
+        date,
+        updated,
       } = d.data;
       return JSON.stringify([
         d.data.slug ?? toRouteSlug(d.slug),
@@ -118,6 +129,11 @@ function navTreeCacheKey(
         slug,
         category_no_page,
         category_sort_order,
+        category_shape,
+        note_tray_dated,
+        note_tray_sidebar,
+        date,
+        updated,
       ]);
     })
     .sort()
@@ -215,6 +231,9 @@ export function buildNavTree(
       if (posCompare !== 0) return posCompare;
       return a.slug.localeCompare(b.slug);
     });
+    result.forEach((node, index) => {
+      node.rank = index + 1;
+    });
   }
 
   if (useCache) {
@@ -258,6 +277,12 @@ function toRootNavNode(
     hasPage: noPage !== true,
     children: [],
     sortOrder,
+    shape: doc.data.category_shape,
+    noteTrayDated: doc.data.note_tray_dated,
+    noteTraySidebar: doc.data.note_tray_sidebar,
+    date: doc.data.date,
+    updated: doc.data.updated,
+    rank: 1,
   };
 }
 
@@ -275,6 +300,12 @@ function toNavNode(node: SidebarNode): NavNode {
     hasPage: node.hasPage,
     children: node.children.map(toNavNode),
     sortOrder: node.sortOrder ?? "asc",
+    shape: node.shape,
+    noteTrayDated: node.noteTrayDated,
+    noteTraySidebar: node.noteTraySidebar,
+    date: node.date,
+    updated: node.updated,
+    rank: node.rank,
   };
 }
 

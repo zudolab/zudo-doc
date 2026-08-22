@@ -54,6 +54,12 @@ export interface DocNavNode {
   children: DocNavNode[];
   sortOrder?: "asc" | "desc";
   collapsed?: boolean;
+  shape?: "note-tray";
+  noteTrayDated?: boolean;
+  noteTraySidebar?: "index" | "year" | "month";
+  date?: string;
+  updated?: string;
+  rank?: number;
 }
 
 /** A category node with children but no page of its own — an auto-index. */
@@ -83,6 +89,11 @@ export interface DocPageFrontmatter {
   sidebar_label?: string;
   category_no_page?: boolean;
   category_sort_order?: "asc" | "desc";
+  category_shape?: "note-tray";
+  note_tray_dated?: boolean;
+  note_tray_sidebar?: "index" | "year" | "month";
+  date?: string;
+  updated?: string;
   pagination_prev?: string | null;
   pagination_next?: string | null;
   tags?: string[];

@@ -35,6 +35,12 @@ export interface SidebarNavNode {
   children: SidebarNavNode[];
   sortOrder?: "asc" | "desc";
   collapsed?: boolean;
+  shape?: "note-tray";
+  noteTrayDated?: boolean;
+  noteTraySidebar?: "index" | "year" | "month";
+  date?: string;
+  updated?: string;
+  rank?: number;
 }
 
 /**

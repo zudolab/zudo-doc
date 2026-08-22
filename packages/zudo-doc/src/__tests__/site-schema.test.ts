@@ -32,6 +32,7 @@ import {
   isNavVisible,
   resolveDocPrevNext,
   flattenTree,
+  validateNoteTrays,
 } from "../site-schema/index.js";
 import type {
   AutoIndexNode,
@@ -152,6 +153,7 @@ describe("site-schema exported symbols", () => {
         "resolveDocPrevNext",
         "rewriteNavHref",
         "schemaVersion",
+        "validateNoteTrays",
       ]
     `);
   });
@@ -209,6 +211,34 @@ describe("site-schema pure surface", () => {
   it("builds a nav tree with category nesting", () => {
     expect(tree.map((n) => n.slug).sort()).toEqual(["getting-started", "guides"]);
     expect(findNode(tree, "getting-started/install")?.hasPage).toBe(true);
+  });
+
+  it("carries note-tray fields through the DocNavNode allowlist", () => {
+    const noteTree = buildNavTree(
+      [
+        entry("notes/index", {
+          category_shape: "note-tray",
+          note_tray_dated: true,
+          note_tray_sidebar: "month",
+        }),
+        entry("notes/hello", {
+          sidebar_position: 1,
+          date: "2026-08-22",
+          updated: "2026-08-23",
+        }),
+      ],
+      "en",
+      undefined,
+      docsUrlFor(""),
+    );
+    expect(noteTree[0]).toMatchObject({
+      shape: "note-tray",
+      noteTrayDated: true,
+      noteTraySidebar: "month",
+      children: [
+        { date: "2026-08-22", updated: "2026-08-23", rank: 1 },
+      ],
+    });
   });
 
   it("treats a category without an index.mdx as an auto-index", () => {
@@ -271,6 +301,71 @@ describe("site-schema pure surface", () => {
   });
 });
 
+describe("validateNoteTrays", () => {
+  function validate(docs: DocEntryLike[]): void {
+    const tree = buildNavTree(
+      docs.filter(isNavVisible),
+      "en",
+      undefined,
+      docsUrlFor(""),
+    );
+    validateNoteTrays(tree, docs);
+  }
+
+  it("accepts a valid flat dated tray", () => {
+    expect(() =>
+      validate([
+        entry("notes/index", {
+          category_shape: "note-tray",
+          note_tray_dated: true,
+          note_tray_sidebar: "month",
+        }),
+        entry("notes/one", { date: "2026-08-22" }),
+      ]),
+    ).not.toThrow();
+  });
+
+  it("reports every offending slug across rules (a)-(f)", () => {
+    const docs = [
+      entry("nested/notes/index", { category_shape: "note-tray" }),
+      entry("nested/notes/deep/item"),
+      entry("dated/index", {
+        category_shape: "note-tray",
+        note_tray_dated: true,
+      }),
+      entry("dated/unlisted", { unlisted: true }),
+      entry("grouped/index", {
+        category_shape: "note-tray",
+        note_tray_sidebar: "year",
+      }),
+      entry("hidden/index", {
+        category_shape: "note-tray",
+        category_no_page: true,
+      }),
+      entry("bad-date", { date: "2026-02-31", updated: "2026-13-01" }),
+    ];
+
+    let message = "";
+    try {
+      validate(docs);
+    } catch (error) {
+      message = (error as Error).message;
+    }
+    expect(message).toContain("[a] nested/notes");
+    expect(message).toContain("[b] nested/notes/deep/item");
+    expect(message).toContain("[c] dated/unlisted");
+    expect(message).toContain("[d] grouped");
+    expect(message).toContain("[e] hidden");
+    expect(message).toContain("[f] bad-date");
+  });
+
+  it("rejects a declaration on a non-index file", () => {
+    expect(() => validate([entry("notes", { category_shape: "note-tray" })])).toThrow(
+      /notes.*index\.mdx/,
+    );
+  });
+});
+
 // ---------------------------------------------------------------------------
 // (3b) createDocRouteEntries — route emission + memo scoping
 // ---------------------------------------------------------------------------
@@ -307,6 +402,24 @@ describe("createDocRouteEntries", () => {
     const first = buildDocRouteEntries({ source, locale: "en", routeSig: "docs;en" });
     const second = buildDocRouteEntries({ source, locale: "en", routeSig: "docs;en" });
     expect(second).toBe(first);
+  });
+
+  it("runs note-tray validation as part of memoized route construction", () => {
+    const invalidDocs = [
+      entry("notes/index", {
+        category_shape: "note-tray",
+        note_tray_dated: true,
+      }),
+      entry("notes/unlisted", { unlisted: true }),
+    ];
+    const source = {
+      ...makeSource(invalidDocs),
+      navDocs: invalidDocs.filter(isNavVisible),
+    };
+    const { buildDocRouteEntries } = createDocRouteEntries(makeContext(""));
+    expect(() =>
+      buildDocRouteEntries({ source, locale: "en", routeSig: "docs;en" }),
+    ).toThrow(/notes\/unlisted/);
   });
 
   // Regression for #3395: the memo used to be keyed on `source.docs` identity +

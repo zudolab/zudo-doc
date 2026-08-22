@@ -42,6 +42,12 @@ function toNavNode(node: SidebarNode): DocNavNode {
     hasPage: node.hasPage,
     children: node.children.map(toNavNode),
     sortOrder: node.sortOrder ?? "asc",
+    shape: node.shape,
+    noteTrayDated: node.noteTrayDated,
+    noteTraySidebar: node.noteTraySidebar,
+    date: node.date,
+    updated: node.updated,
+    rank: node.rank,
   };
 }
 
@@ -79,6 +85,12 @@ function toRootNavNode(
     hasPage: noPage !== true,
     children: [],
     sortOrder,
+    shape: doc.data.category_shape,
+    noteTrayDated: doc.data.note_tray_dated,
+    noteTraySidebar: doc.data.note_tray_sidebar,
+    date: doc.data.date,
+    updated: doc.data.updated,
+    rank: 1,
   };
 }
 
@@ -118,6 +130,9 @@ export function buildNavTree(
       const posCompare = a.position - b.position;
       if (posCompare !== 0) return posCompare;
       return a.slug.localeCompare(b.slug);
+    });
+    result.forEach((node, index) => {
+      node.rank = index + 1;
     });
   }
   return result;
