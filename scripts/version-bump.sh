@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ─────────────────────────────────────────────────────────────
-# version-bump.sh — Bump version, create changelog entry,
+# version-bump.sh — Bump the showcase version, create package changelogs,
 #                    and optionally snapshot docs
 # ─────────────────────────────────────────────────────────────
 #
@@ -15,7 +15,7 @@ set -euo pipefail
 #
 # What it does:
 #   1. Updates the version in package.json
-#   2. Creates a changelog entry MDX file (EN + JA)
+#   2. Creates one changelog entry per package and locale (three × EN/JA)
 #   3. With --snapshot: copies current docs to a versioned directory
 #      and adds the OLD version to settings.ts versions array
 # ─────────────────────────────────────────────────────────────
@@ -31,7 +31,7 @@ if [ $# -lt 1 ]; then
   echo "  --snapshot   Archive current docs as a versioned snapshot before bumping"
   echo ""
   echo "Examples:"
-  echo "  $0 0.2.0              # Bump version + create changelog entry"
+  echo "  $0 0.2.0              # Bump version + create package changelog entries"
   echo "  $0 1.0.0 --snapshot   # Also snapshot current docs as old version"
   exit 1
 fi
@@ -73,66 +73,12 @@ node -e "
 "
 echo "  ✓ package.json updated to $NEW_VERSION"
 
-# ── Step 2: Create changelog entry ───────────────────────────
+# ── Step 2: Create package-specific changelog entries ─────────
 
-CHANGELOG_DIR="$ROOT_DIR/src/content/docs/changelog"
-CHANGELOG_JA_DIR="$ROOT_DIR/src/content/docs-ja/changelog"
-
-# Determine sidebar_position: count existing .mdx files (excluding index.mdx)
-# Use high values for descending sort (newest first). Index page uses position 10.
-EXISTING_COUNT=$(find "$CHANGELOG_DIR" -maxdepth 1 -name '*.mdx' ! -name 'index.mdx' 2>/dev/null | wc -l | tr -d ' ')
-SIDEBAR_POS=$((1000 + EXISTING_COUNT + 1))
-
-CHANGELOG_FILE="$CHANGELOG_DIR/$NEW_VERSION.mdx"
-CHANGELOG_JA_FILE="$CHANGELOG_JA_DIR/$NEW_VERSION.mdx"
-
-if [ -f "$CHANGELOG_FILE" ]; then
-  echo "Warning: $CHANGELOG_FILE already exists, skipping changelog creation"
-else
-  echo ""
-  echo "▶ Creating changelog entry..."
-
-  mkdir -p "$CHANGELOG_DIR"
-  mkdir -p "$CHANGELOG_JA_DIR"
-
-  cat > "$CHANGELOG_FILE" << MDXEOF
----
-title: $NEW_VERSION
-description: Release notes for $NEW_VERSION.
-sidebar_position: $SIDEBAR_POS
----
-
-<!-- Add release notes here -->
-
-### Features
-
-- <!-- Describe new features -->
-
-### Bug Fixes
-
-- <!-- Describe bug fixes -->
-MDXEOF
-  echo "  ✓ Created $CHANGELOG_FILE (sidebar_position: $SIDEBAR_POS)"
-
-  cat > "$CHANGELOG_JA_FILE" << MDXEOF
----
-title: $NEW_VERSION
-description: ${NEW_VERSION}のリリースノート。
-sidebar_position: $SIDEBAR_POS
----
-
-<!-- リリースノートをここに追加 -->
-
-### 機能
-
-- <!-- 新機能を記述 -->
-
-### バグ修正
-
-- <!-- バグ修正を記述 -->
-MDXEOF
-  echo "  ✓ Created $CHANGELOG_JA_FILE"
-fi
+echo ""
+bash "$ROOT_DIR/scripts/lib/scaffold-package-changelogs.sh" \
+  "$ROOT_DIR" \
+  "$NEW_VERSION"
 
 # ── Step 3 (optional): Snapshot docs ─────────────────────────
 
@@ -186,8 +132,8 @@ echo "  Done! Version bumped to $NEW_VERSION"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 echo "Next steps:"
-echo "  1. Edit the changelog entry: src/content/docs/changelog/$NEW_VERSION.mdx"
-echo "  2. Edit the Japanese mirror: src/content/docs-ja/changelog/$NEW_VERSION.mdx"
+echo "  1. Edit each package entry under src/content/docs/changelog/<package>/$NEW_VERSION.mdx"
+echo "  2. Edit each Japanese mirror under src/content/docs-ja/changelog/<package>/$NEW_VERSION.mdx"
 if [ "$SNAPSHOT" = true ]; then
   echo "  3. Add the version entry to src/config/settings.ts (see above)"
 fi

@@ -20,6 +20,10 @@ bunx create-zudo-doc
 
 Running without arguments starts the **interactive mode**: the CLI prompts for project name, language, color scheme, and which optional features to enable, then scaffolds the project and optionally installs dependencies.
 
+Release history is shipped as `CHANGELOG.md` in the npm package. The file is
+generated from the repository's changelog MDX pages; edit those source pages
+instead of editing the generated markdown directly.
+
 ## Non-Interactive Usage
 
 Pass `--yes` to accept all defaults and skip prompts, or provide flags to pre-answer specific questions:

@@ -116,7 +116,7 @@ downstream `package.json`. If `create-zudo-doc` is published first and a user ru
 the scaffold before the peer packages land on npm, `pnpm install` in the new project
 fails with a 404 on the pinned `@takazudo/zudo-doc` version.
 
-Recommended sequence when all three packages change in the same release:
+All three packages are versioned and released in lockstep. Recommended sequence:
 
 1. Tag `zudo-doc-history-server-X.Y.Z` and publish the GitHub Draft Release for
    `@takazudo/zudo-doc-history-server`. Wait for the CI publish to succeed.
@@ -124,8 +124,44 @@ Recommended sequence when all three packages change in the same release:
    Wait for the CI publish to succeed.
 3. Tag `vX.Y.Z` and publish the Draft Release for `create-zudo-doc`.
 
-If only one or two packages changed, skip the unchanged packages — but still
-maintain the order above for any that do change.
+Do not skip an unchanged package: its package-specific release note records that it has
+no user-facing package change, while the lockstep release and publish order remain the
+same.
+
+---
+
+## Package-specific release notes
+
+Every lockstep release has six source entries: one English and one Japanese entry for
+each published package. The English entry also provides that package's GitHub Release
+body, and generates that package's committed `CHANGELOG.md`:
+
+| Package | EN source (JA replaces `docs` with `docs-ja`) | Generated output | Git tag |
+|---|---|---|---|
+| `@takazudo/zudo-doc-history-server` | `src/content/docs/changelog/doc-history-server/<version>.mdx` | `packages/doc-history-server/CHANGELOG.md` | `zudo-doc-history-server-<version>` |
+| `@takazudo/zudo-doc` | `src/content/docs/changelog/zudo-doc/<version>.mdx` | `packages/zudo-doc/CHANGELOG.md` | `zudo-doc-v<version>` |
+| `create-zudo-doc` | `src/content/docs/changelog/create-zudo-doc/<version>.mdx` | `packages/create-zudo-doc/CHANGELOG.md` | `v<version>` |
+
+Classify notes by user-facing package ownership, not merely by commit prefix or touched
+directory. Duplicate a user-facing change into every affected package note when it spans
+packages. Omit repo/showcase documentation, tests, CI, and maintenance changes when they
+do not affect published-package users. An unchanged lockstep package still gets an
+explicit localized entry:
+
+```md
+# English
+- No package-specific changes.
+
+# Japanese
+- パッケージ固有の変更はありません。
+```
+
+After authoring all six entries, run `pnpm gen:changelog` and stage all three generated
+outputs. When creating GitHub releases, extract three independent note bodies and map
+each one to the tag in the table. Never reuse one shared `$NOTES` value across tags.
+Titles are `@takazudo/zudo-doc-history-server <version>`,
+`@takazudo/zudo-doc <version>`, and `create-zudo-doc <version>`. Versions containing a
+hyphen are prereleases and each `gh release create` command must include `--prerelease`.
 
 ---
 

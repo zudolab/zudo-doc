@@ -28,8 +28,9 @@ proposal, not at tagging, not at publish). The user invoked `/l-make-release` to
 release — deliver one.
 
 **`--confirm`** — when this flag is passed, insert a single confirmation gate **right
-before the irreversible npm publish** (Step 9): show the version + the three packages + a
-one-line changelog summary and ask "Correct — publish now?". Only publish on an
+before the irreversible npm publish** (Step 9): show the version + the three packages +
+one line summarizing each package-specific note and ask "Correct — publish now?". Only
+publish on an
 affirmative answer; otherwise stop with the drafts left in place. `--confirm` does NOT add
 prompts anywhere else — the rest of the flow stays autonomous.
 
@@ -125,7 +126,8 @@ it to the script. Otherwise:
 git log <last-tag>..HEAD --oneline
 ```
 
-Categorize commits by conventional-commit prefix and propose. **During `0.x`
+Use the conventional-commit prefix to propose the version, then separately classify
+each user-facing change by the published package(s) it affects. **During `0.x`
 (Scheme B — see "Version scheme")** the major stays at `0` and a breaking change
 rides a minor bump, NOT a jump to `1.0.0`:
 
@@ -135,6 +137,22 @@ rides a minor bump, NOT a jump to `1.0.0`:
 (Post-1.0, switch to standard SemVer: breaking → `major`, `feat:` → `minor`,
 otherwise → `patch`. The deliberate jump to `1.0.0` itself is always an explicit
 `major` / `<semver>` arg.)
+
+The version category is not the release-note destination. Inspect each commit and its
+diff and assign its user-facing effect to one or more of these package owners:
+
+| Changelog slug | Published package | Owns |
+|---|---|---|
+| `doc-history-server` | `@takazudo/zudo-doc-history-server` | History server API, CLI, and runtime behavior |
+| `zudo-doc` | `@takazudo/zudo-doc` | Framework, integrations, plugins, and public package behavior |
+| `create-zudo-doc` | `create-zudo-doc` | Generator CLI and the projects it emits |
+
+- Duplicate a user-facing change into every affected package note when it spans two or
+  three packages. Do not replace it with a vague shared summary.
+- Omit repository/showcase documentation, tests, CI, and maintenance changes when they
+  do not affect a published package's users.
+- A lockstep package with no user-facing change still gets its own localized no-change
+  entry in Step 3; all three packages are always released.
 
 For an opt-in preview, propose the `next` keyword (or an explicit `-next.N`).
 To preview the computed version without touching any files, use the dry path:
@@ -162,18 +180,29 @@ This script (sibling to `version-bump.sh`, does NOT modify it):
 4. Bumps `packages/create-zudo-doc/package.json`
 5. Bumps `packages/zudo-doc/package.json` (W4A — #1732)
 6. Bumps `packages/doc-history-server/package.json` (W4A — #1732)
-7. Rewrites `@takazudo/zudo-doc` pin in `scaffold.ts` to `^<new-version>` — including
-   prerelease versions (e.g. `^0.2.0-next.1`) so a fresh downstream scaffold resolves
-   the version being released
-8. Scaffolds `src/content/docs/changelog/<NEW_VERSION>.mdx` (EN)
-9. Scaffolds `src/content/docs-ja/changelog/<NEW_VERSION>.mdx` (JA)
+7. Rewrites the `@takazudo/zudo-doc` and
+   `@takazudo/zudo-doc-history-server` pins in `scaffold.ts` to `^<new-version>` —
+   including prerelease versions (e.g. `^0.2.0-next.1`) so a fresh downstream scaffold
+   resolves the packages being released
+8. Scaffolds one entry for each package under
+   `src/content/docs/changelog/{doc-history-server,zudo-doc,create-zudo-doc}/<NEW_VERSION>.mdx`
+9. Scaffolds the matching three Japanese entries under
+   `src/content/docs-ja/changelog/{doc-history-server,zudo-doc,create-zudo-doc}/<NEW_VERSION>.mdx`
 
 ## Step 3 — Fill in the changelog
 
-Replace the placeholder content in both MDX files with the actual categorized changes
-from the commit analysis (Step 1).
+Replace the placeholder content in all six MDX files with the package-owned changes
+from Step 1. Each English/Japanese pair describes only its package. A cross-cutting
+change appears in each affected pair; repo/showcase/docs/CI-only work with no published
+package effect appears in none.
 
-### English (`src/content/docs/changelog/<NEW_VERSION>.mdx`)
+### English (all three package slugs)
+
+Apply this shape to:
+
+- `src/content/docs/changelog/doc-history-server/<NEW_VERSION>.mdx`
+- `src/content/docs/changelog/zudo-doc/<NEW_VERSION>.mdx`
+- `src/content/docs/changelog/create-zudo-doc/<NEW_VERSION>.mdx`
 
 ```mdx
 ---
@@ -201,12 +230,37 @@ Released: <YYYY-MM-DD>
 - Description (commit-hash)
 ```
 
-### Japanese (`src/content/docs-ja/changelog/<NEW_VERSION>.mdx`)
+### Japanese (all three package slugs)
 
-Mirror the English content in Japanese. Sections: `### 破壊的変更`, `### 機能`,
-`### バグ修正`, `### その他の変更`. Use `リリース日: <YYYY-MM-DD>`.
+Create the corresponding files under `src/content/docs-ja/changelog/<package>/` and
+mirror the English package-specific content in Japanese. Sections: `### 破壊的変更`,
+`### 機能`, `### バグ修正`, `### その他の変更`. Use
+`リリース日: <YYYY-MM-DD>`.
+
+When a package has no user-facing package change, replace all placeholder sections with
+exactly one bullet after the release date:
+
+```md
+# English
+- No package-specific changes.
+
+# Japanese
+- パッケージ固有の変更はありません。
+```
+
+Do not omit an unchanged package entry: lockstep releases require three truthful notes.
 
 ## Step 4 — Validate
+
+Regenerate all three package Markdown changelogs from the completed English entries:
+
+```bash
+pnpm gen:changelog
+```
+
+Confirm that `packages/doc-history-server/CHANGELOG.md`,
+`packages/zudo-doc/CHANGELOG.md`, and `packages/create-zudo-doc/CHANGELOG.md` contain the
+new version and reflect their respective package note before running the full gate:
 
 ```bash
 B4PUSH_SKIP_PIN_PUBLISHED=1 pnpm b4push
@@ -239,8 +293,15 @@ git add package.json \
         packages/zudo-doc/package.json \
         packages/doc-history-server/package.json \
         packages/create-zudo-doc/src/scaffold.ts \
-        src/content/docs/changelog/<NEW_VERSION>.mdx \
-        src/content/docs-ja/changelog/<NEW_VERSION>.mdx
+        src/content/docs/changelog/doc-history-server/<NEW_VERSION>.mdx \
+        src/content/docs/changelog/zudo-doc/<NEW_VERSION>.mdx \
+        src/content/docs/changelog/create-zudo-doc/<NEW_VERSION>.mdx \
+        src/content/docs-ja/changelog/doc-history-server/<NEW_VERSION>.mdx \
+        src/content/docs-ja/changelog/zudo-doc/<NEW_VERSION>.mdx \
+        src/content/docs-ja/changelog/create-zudo-doc/<NEW_VERSION>.mdx \
+        packages/doc-history-server/CHANGELOG.md \
+        packages/zudo-doc/CHANGELOG.md \
+        packages/create-zudo-doc/CHANGELOG.md
 # Add any formatting fixes from b4push:
 git diff --name-only | xargs -r git add
 git commit -m "chore: bump create-zudo-doc to v<NEW_VERSION>"
@@ -286,8 +347,9 @@ The three tag namespaces are distinct so each fires exactly one publish workflow
 
 ## Step 8 — Create three DRAFT GitHub releases (one per package)
 
-Extract the changelog body once (strip the YAML frontmatter), then create a
-DRAFT release for **each of the three tags**. **Title each with the package
+Extract each package's English changelog body independently (strip the YAML
+frontmatter), then create a DRAFT release for **each of the three tags**. Never reuse
+one shared notes value across tags. **Title each with the package
 name + bare version** to match the existing release history — NOT the raw tag
 (`create-zudo-doc 0.2.0-next.4`, not `v0.2.0-next.4`). Mark every prerelease
 (`-next` / `-beta` / `-rc`) with `--prerelease`:
@@ -299,28 +361,33 @@ name + bare version** to match the existing release history — NOT the raw tag
 | `v<NEW_VERSION>` | `create-zudo-doc <NEW_VERSION>` |
 
 ```bash
-NOTES=$(awk 'BEGIN{f=0} /^---$/{f++; next} f>=2' \
-        src/content/docs/changelog/<NEW_VERSION>.mdx)
+HISTORY_NOTES=$(awk 'BEGIN{f=0} /^---$/{f++; next} f>=2' \
+  src/content/docs/changelog/doc-history-server/<NEW_VERSION>.mdx)
+ZUDO_DOC_NOTES=$(awk 'BEGIN{f=0} /^---$/{f++; next} f>=2' \
+  src/content/docs/changelog/zudo-doc/<NEW_VERSION>.mdx)
+CREATE_NOTES=$(awk 'BEGIN{f=0} /^---$/{f++; next} f>=2' \
+  src/content/docs/changelog/create-zudo-doc/<NEW_VERSION>.mdx)
 
 # --prerelease for any version containing a hyphen (next/beta/rc); empty for stable.
 PRE=""; case "<NEW_VERSION>" in *-*) PRE="--prerelease";; esac
 
 gh release create "zudo-doc-history-server-<NEW_VERSION>" \
   --title "@takazudo/zudo-doc-history-server <NEW_VERSION>" \
-  --notes "$NOTES" --draft $PRE
+  --notes "$HISTORY_NOTES" --draft $PRE
 
 gh release create "zudo-doc-v<NEW_VERSION>" \
   --title "@takazudo/zudo-doc <NEW_VERSION>" \
-  --notes "$NOTES" --draft $PRE
+  --notes "$ZUDO_DOC_NOTES" --draft $PRE
 
 gh release create "v<NEW_VERSION>" \
   --title "create-zudo-doc <NEW_VERSION>" \
-  --notes "$NOTES" --draft $PRE
+  --notes "$CREATE_NOTES" --draft $PRE
 ```
 
 The `--draft` flag is critical on all three. A draft release does NOT trigger
-its publish workflow. (The same `$NOTES` body is used for all three — the
-changelog is a single lockstep release note covering every package.)
+its publish workflow. Before proceeding, inspect the three drafts and verify each body
+matches the package and tag in the table; an unchanged package must show its explicit
+no-change entry rather than another package's narrative.
 
 ## Step 9 — Publish the three releases to npm (autonomous by default)
 
@@ -335,10 +402,9 @@ publishes immediately.
 
 ```
 About to publish <NEW_VERSION> to npm — IRREVERSIBLE:
-  1. @takazudo/zudo-doc-history-server
-  2. @takazudo/zudo-doc
-  3. create-zudo-doc
-Changelog: <one-line summary>
+  1. @takazudo/zudo-doc-history-server — <one-line package-note summary>
+  2. @takazudo/zudo-doc — <one-line package-note summary>
+  3. create-zudo-doc — <one-line package-note summary>
 Correct — publish now? (yes / no)
 ```
 

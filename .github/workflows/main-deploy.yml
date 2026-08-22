@@ -31,13 +31,15 @@
 # We do NOT cancel in-progress runs -- the earlier deploy should finish.
 #
 # ----------------------------------------------------------------------------
-# Deployed artifact contract (8 categories, migrated to Workers static assets
+# Deployed artifact contract (9 categories, migrated to Workers static assets
 # in epic #1691).
 # Future edits MUST keep these intact in the dist/ directory passed to
 # `wrangler deploy`:
 #
 #   (a) dist/index.html and per-route dist/**/index.html           (HTML pages)
 #   (b) dist/404.html at root                                      (zfb #100)
+#   (c) dist/_redirects                                             (explicit
+#       legacy-route redirects consumed by Workers Static Assets)
 #   (d) dist/sitemap.xml                                           (package-owned
 #       route, ADR-005)
 #   (e) dist/search-index.json                                     (search-index
@@ -261,6 +263,8 @@ jobs:
         # Layout produced (Workers static assets, epic #1691):
         #   dist/index.html and per-route dist/**/index.html   (a) HTML pages
         #   dist/404.html                                      (b) 404 fallback
+        #   dist/_redirects                                    (c) Workers Static
+        #                                                       Assets redirects
         #   dist/sitemap.xml                                   (d) sitemap
         #   dist/search-index.json                             (e) search plugin
         #   dist/llms*.txt                                     (f) llms-txt plugin
