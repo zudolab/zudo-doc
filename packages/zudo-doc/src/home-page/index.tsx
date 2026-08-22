@@ -282,6 +282,8 @@ export function createHomePageView<S extends Settings = Settings>(
               categoryOrder={categoryOrder}
               categoryIgnore={["inbox", "develop"]}
               initiallyCollapsedCategorySlugs={initiallyCollapsedCategorySlugs}
+              locale={locale}
+              updatedLabel={t("doc.updated", locale)}
             />
           ),
         }) as unknown as VNode}
