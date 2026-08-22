@@ -57,7 +57,7 @@ export interface SiteTreeNavProps {
   initiallyCollapsedCategorySlugs?: string[];
   /** Locale used by dated note-tray rows. */
   locale?: string;
-  /** Localized label shown before an item's updated date. */
+  /** @deprecated — no longer rendered (created date only). */
   updatedLabel?: string;
 }
 
@@ -332,11 +332,6 @@ function NoteTrayRow({
       )}
       <span className="min-w-0">
         <span>{item.label}</span>
-        {item.updated && (
-          <span className="block text-micro text-muted">
-            {updatedLabel} {formatDate(item.updated, locale)}
-          </span>
-        )}
       </span>
     </a>
   );

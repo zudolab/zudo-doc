@@ -183,7 +183,7 @@ describe("SiteTreeNav — note-tray blocks", () => {
 
     expect(html).toContain('<time datetime="2026-08-19"');
     expect(html).toContain("Aug 19, 2026");
-    expect(html).toContain("Updated Aug 20, 2026");
+    expect(html).not.toContain("Updated");
     expect(html).not.toContain("data-note-tray-group");
   });
 
@@ -242,7 +242,7 @@ describe("SiteTreeNav — note-tray blocks", () => {
     expect(html).toContain('data-note-tray-group="2026-08"');
     expect(html).toContain("2026年8月");
     expect(html).toContain(">08-19</time>");
-    expect(html).toContain("更新 2026年8月15日");
+    expect(html).not.toContain("更新");
     expect(html.indexOf("Newest")).toBeLessThan(html.indexOf("Newer"));
     expect(html.indexOf("2026年8月")).toBeLessThan(html.indexOf("2026年7月"));
   });
