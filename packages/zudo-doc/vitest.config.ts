@@ -94,8 +94,8 @@ export default defineConfig({
     // number of sequential such operations in a single test, not just one —
     // so the specific, diagnosable deadline always fires before this blunt
     // one. Hook deadlines are exempt: they race vitest's separate hookTimeout,
-    // never this one (theme-packs-tarball.test.ts's 60s `beforeAll` is the
-    // one such case).
+    // never this one (theme-packs-tarball.test.ts's 120s beforeAll and
+    // cli-smoke.test.ts's 30s snapshot hooks are examples).
     testTimeout: 30_000,
     server: {
       deps: {

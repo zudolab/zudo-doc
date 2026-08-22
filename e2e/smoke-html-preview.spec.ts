@@ -15,10 +15,10 @@ import { DIST_DIR, readDistFile } from "./smoke-dist-helper";
 
 const PAGE = "/docs/guides/html-preview-test";
 const DIST_PAGE = "docs/guides/html-preview-test/index.html";
-const RESOURCE_PREFIX = "islands-resource-zfb_md_wasm_";
+const RESOURCE_PREFIX = "islands-resource-zfb_md_wasm_highlight_";
 const RESOURCE_GLUE_PREFIX =
-  "islands-resource-zfb_md_wasm_glue.zfb-resource-";
-const RESOURCE_WASM_PREFIX = "islands-resource-zfb_md_wasm_bg-";
+  "islands-resource-zfb_md_wasm_highlight_glue.zfb-resource-";
+const RESOURCE_WASM_PREFIX = "islands-resource-zfb_md_wasm_highlight_bg-";
 
 type ResourceKind = "glue" | "wasm";
 
