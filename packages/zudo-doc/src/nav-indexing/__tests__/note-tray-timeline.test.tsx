@@ -16,11 +16,14 @@ describe("NoteTrayIndex timeline style", () => {
         ...base,
         locale,
         style: "timeline",
-        items: [item("dated", { date: "2026-08-22" })],
+        items: [item("dated", { date: "2026-08-22", updated: "2026-08-23" })],
       }),
     );
     expect(html).toContain(label);
     expect(html).toContain(locale === "ja" ? "2026年8月22日" : "Aug 22, 2026");
+    expect(html).toContain(">22<");
+    expect(html.indexOf("<a")).toBeLessThan(html.indexOf("<time"));
+    expect(html).not.toContain("Updated");
     expect(html.indexOf("dated")).toBeLessThan(html.indexOf("About dated"));
   });
 
