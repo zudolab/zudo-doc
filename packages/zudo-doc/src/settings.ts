@@ -335,6 +335,8 @@ export interface Settings {
   trailingSlash: boolean;
   /** Package-owned home-page layout. Narrow when omitted. */
   home?: HomeConfig;
+  /** Top-level category slugs hidden from the package home-page grid and the `<SiteTreeNav />` MDX tag. Nothing hidden when omitted. */
+  siteTreeNavIgnore?: string[];
   /** Minify production HTML output from `zfb build`. Defaults to `true` when omitted. */
   minifyHtml?: boolean;
   docsDir: string;

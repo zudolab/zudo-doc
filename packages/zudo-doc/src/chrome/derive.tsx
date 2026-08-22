@@ -592,6 +592,7 @@ export function deriveMdxComponents(ctx: ChromeContext) {
       groupSatelliteNodes: ctx.groupSatelliteNodes as never,
       getCategoryOrder: ctx.getCategoryOrder,
       versionedDocsUrl: ctx.versionedDocsUrl,
+      categoryIgnore: ctx.settings.siteTreeNavIgnore,
     }) as unknown as FactoryComponent);
 
   const NoteTrayIndexWrapper = createNoteTrayIndexWrapper({
