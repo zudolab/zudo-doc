@@ -3,9 +3,9 @@
 /**
  * smoke-preview.mjs — automated preview-shape smoke test.
  *
- * Boots `pnpm preview` (which delegates to `wrangler pages dev` under
- * the Cloudflare adapter), waits for the server to come up, fetches a
- * representative set of URLs, and asserts the deploy-shape checks
+ * Boots `pnpm preview` (which delegates to Wrangler's Workers Static Assets
+ * preview under the Cloudflare adapter), waits for the server to come up,
+ * fetches a representative set of URLs, and asserts the deploy-shape checks
  * documented in epic #500 S6:
  *
  *   - HTML routes 200 + non-empty <main>
@@ -17,6 +17,10 @@
  *     demo-mode reply, 400/401/405 cover real-mode error shapes;
  *     anything that returns the SPA-shell HTML means the CF adapter
  *     wrap or worker-runtime wiring is broken)
+ *   - representative pre-package-split changelog URLs return explicit 301s
+ *     with the expected Location under Workers Static Assets, in both
+ *     locales; trailing-slash destination pages return 200 and their package
+ *     landing pages do not loop
  *
  * Wall-clock budget: a few seconds once bound; boot may take up to ~15s
  * under polling (see CHOKIDAR_USEPOLLING). Exit codes: 0 = pass, non-zero = fail.
@@ -52,6 +56,48 @@ const checks = [
   { url: "/", status: 200, body: htmlMainNonEmpty },
   { url: "/docs/getting-started/", status: 200, body: htmlMainNonEmpty },
   {
+    url: "/docs/changelog/0.1.0",
+    status: 301,
+    redirect: "manual",
+    body: locationIs("/docs/changelog/zudo-doc/0.1.0"),
+  },
+  {
+    url: "/docs/changelog/5.9.0",
+    status: 301,
+    redirect: "manual",
+    body: locationIs("/docs/changelog/zudo-doc/5.9.0"),
+  },
+  {
+    url: "/ja/docs/changelog/0.1.0",
+    status: 301,
+    redirect: "manual",
+    body: locationIs("/ja/docs/changelog/zudo-doc/0.1.0"),
+  },
+  {
+    url: "/ja/docs/changelog/5.9.0",
+    status: 301,
+    redirect: "manual",
+    body: locationIs("/ja/docs/changelog/zudo-doc/5.9.0"),
+  },
+  { url: "/docs/changelog/zudo-doc/0.1.0/", status: 200, body: htmlMainNonEmpty },
+  { url: "/docs/changelog/zudo-doc/5.9.0/", status: 200, body: htmlMainNonEmpty },
+  { url: "/ja/docs/changelog/zudo-doc/0.1.0/", status: 200, body: htmlMainNonEmpty },
+  { url: "/ja/docs/changelog/zudo-doc/5.9.0/", status: 200, body: htmlMainNonEmpty },
+  {
+    url: "/docs/changelog/zudo-doc",
+    status: [200, 301, 307],
+    redirect: "manual",
+    body: redirectDoesNotLoop,
+  },
+  {
+    url: "/ja/docs/changelog/zudo-doc",
+    status: [200, 301, 307],
+    redirect: "manual",
+    body: redirectDoesNotLoop,
+  },
+  { url: "/docs/changelog/zudo-doc/", status: 200, body: htmlMainNonEmpty },
+  { url: "/ja/docs/changelog/zudo-doc/", status: 200, body: htmlMainNonEmpty },
+  {
     url: "/sitemap.xml",
     status: 200,
     body: (s) =>
@@ -80,6 +126,30 @@ function htmlMainNonEmpty(html) {
   const text = m[1].replace(/<[^>]+>/g, "").trim();
   if (text.length < 20) return `<main> body too short (${text.length} chars)`;
   return null;
+}
+
+function locationIs(expectedPath) {
+  return (_body, response) => {
+    const location = response.headers.get("location");
+    if (!location) return "missing Location header";
+    const actual = new URL(location, BASE);
+    const expected = new URL(expectedPath, BASE);
+    if (actual.origin !== expected.origin || actual.pathname !== expected.pathname || actual.search !== expected.search) {
+      return `Location ${location} did not match ${expectedPath}`;
+    }
+    return null;
+  };
+}
+
+function redirectDoesNotLoop(_body, response) {
+  if (response.status < 300) return null;
+  const location = response.headers.get("location");
+  if (!location) return "landing page redirect missing Location header";
+  const requestPath = new URL(response.url).pathname;
+  const targetPath = new URL(location, BASE).pathname;
+  return targetPath === requestPath
+    ? `landing page redirects to itself (${targetPath})`
+    : null;
 }
 
 function searchIndexHasEntries(text) {
@@ -148,6 +218,7 @@ async function waitForReady(child) {
 
 async function runCheck(c) {
   const init = { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) };
+  if (c.redirect) init.redirect = c.redirect;
   if (c.method) {
     init.method = c.method;
     init.headers = { "content-type": "application/json" };
