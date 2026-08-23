@@ -6,10 +6,10 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import pluralize from "pluralize";
-import stringSimilarity from "string-similarity";
 
 import {
   audit,
+  compareTwoStrings,
   findNearDuplicates,
   hasHardIssues,
 } from "@takazudo/zudo-doc/tags-audit";
@@ -23,7 +23,7 @@ const CLI = join(REPO_ROOT, "packages", "zudo-doc", "bin", "tags-audit.mjs");
 const CONFIG = "src/config/tag-vocabulary.ts";
 const NEAR_DUP_HELPERS = {
   singular: pluralize.singular,
-  compareTwoStrings: stringSimilarity.compareTwoStrings,
+  compareTwoStrings,
 };
 
 const FIXTURE_VOCAB: readonly TagVocabularyEntry[] = [
@@ -31,6 +31,16 @@ const FIXTURE_VOCAB: readonly TagVocabularyEntry[] = [
   { id: "type:tutorial", group: "type" },
   { id: "content", group: "topic" },
 ];
+
+describe("tags-audit — string similarity", () => {
+  it("preserves the prior whitespace-insensitive bigram scores", () => {
+    expect(compareTwoStrings("", "")).toBe(1);
+    expect(compareTwoStrings("foo bar", "foobar")).toBe(1);
+    expect(compareTwoStrings("a", "b")).toBe(0);
+    expect(compareTwoStrings("healed", "sealed")).toBe(0.8);
+    expect(compareTwoStrings("aaaa", "aa")).toBe(0.5);
+  });
+});
 
 describe("tags-audit — detection", () => {
   let tmpDir: string;
@@ -105,10 +115,17 @@ describe("tags-audit — detection", () => {
 
   it("detects high-similarity near-duplicates", () => {
     const pairs = findNearDuplicates(
-      ["deployment", "deployments"],
+      ["deployment", "deployement"],
       NEAR_DUP_HELPERS,
     );
-    expect(pairs.length).toBeGreaterThanOrEqual(1);
+    expect(pairs).toEqual([
+      {
+        a: "deployement",
+        b: "deployment",
+        reason: "similarity",
+        score: 16 / 19,
+      },
+    ]);
   });
 });
 
