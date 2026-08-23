@@ -4,6 +4,19 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.12.0] - 2026-08-23
+
+### Features
+
+- Redesigned note-tray cards as responsive, fully linked subgrid layouts that preserve separate tag links and show localized date stamps on wide screens. (`3b0f9301`)
+- Added accessible day-number markers to monthly note-tray timelines. (`2d1efb7d`)
+
+### Bug Fixes
+
+- Made numbered note-tray index rows fully clickable with consistent hover and keyboard-focus framing. (`6d729e0a`)
+- Limited note-tray metadata in the site tree to created dates instead of also showing updated dates. (`98283c9c`)
+- Anchored tagged card frames to their first subgrid row so the border stays attached to the card content. (`b33201e5`)
+
 ## [5.11.0] - 2026-08-23
 
 ### Features
