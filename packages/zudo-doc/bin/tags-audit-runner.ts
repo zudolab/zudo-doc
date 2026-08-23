@@ -21,10 +21,10 @@ import { resolve } from "node:path";
 
 import pc from "picocolors";
 import pluralize from "pluralize";
-import stringSimilarity from "string-similarity";
 
 import {
   audit,
+  compareTwoStrings,
   formatTextReport,
   hasHardIssues,
   type AuditOptions,
@@ -71,7 +71,7 @@ async function main(): Promise<void> {
     vocabularyActive: config.vocabularyActive,
     nearDupHelpers: {
       singular: pluralize.singular,
-      compareTwoStrings: stringSimilarity.compareTwoStrings,
+      compareTwoStrings,
     },
   };
 

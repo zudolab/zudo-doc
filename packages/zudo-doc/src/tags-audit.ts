@@ -58,8 +58,7 @@ export interface AuditOptions {
   vocabularyActive: boolean;
   /**
    * Near-duplicate detection callbacks. Optional — if omitted the relevant
-   * checks are silently skipped so callers without pluralize / string-similarity
-   * can still use the core functions.
+   * checks are silently skipped so callers can still use the core functions.
    */
   nearDupHelpers?: NearDupHelpers;
 }
@@ -120,6 +119,35 @@ export async function collectMdxFiles(dir: string): Promise<string[]> {
 export function normalizeTags(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.filter((v): v is string => typeof v === "string");
+}
+
+/** Return the Sørensen–Dice similarity of two whitespace-insensitive bigram sets. */
+export function compareTwoStrings(first: string, second: string): number {
+  const normalizedFirst = first.replace(/\s+/g, "");
+  const normalizedSecond = second.replace(/\s+/g, "");
+
+  if (normalizedFirst === normalizedSecond) return 1;
+  if (normalizedFirst.length < 2 || normalizedSecond.length < 2) return 0;
+
+  const firstBigrams = new Map<string, number>();
+  for (let index = 0; index < normalizedFirst.length - 1; index++) {
+    const bigram = normalizedFirst.slice(index, index + 2);
+    firstBigrams.set(bigram, (firstBigrams.get(bigram) ?? 0) + 1);
+  }
+
+  let intersectionSize = 0;
+  for (let index = 0; index < normalizedSecond.length - 1; index++) {
+    const bigram = normalizedSecond.slice(index, index + 2);
+    const remaining = firstBigrams.get(bigram) ?? 0;
+    if (remaining === 0) continue;
+    firstBigrams.set(bigram, remaining - 1);
+    intersectionSize++;
+  }
+
+  return (
+    (2 * intersectionSize) /
+    (normalizedFirst.length + normalizedSecond.length - 2)
+  );
 }
 
 /** Similarity threshold above which two distinct tags are flagged as near-duplicates. */
