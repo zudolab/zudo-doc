@@ -4,6 +4,16 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.12.1] - 2026-08-24
+
+### Bug Fixes
+
+- Removed the deprecated `string-similarity` runtime dependency from tag auditing while preserving its whitespace-insensitive near-duplicate scoring behavior. (`b5fa7a6c`)
+
+### Other Changes
+
+- Updated the zfb package family to 2.10.1 and raised the `@takazudo/zudo-doc-history-server` peer floor to the published 5.12.0 release. (`b5fa7a6c`)
+
 ## [5.12.0] - 2026-08-23
 
 ### Features
