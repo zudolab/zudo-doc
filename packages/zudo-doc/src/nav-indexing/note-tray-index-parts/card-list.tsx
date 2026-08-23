@@ -100,7 +100,7 @@ export function CardList(props: NoteTrayIndexProps): JSX.Element {
               {item.href ? (
                 <a
                   href={item.href}
-                  class="group col-span-full row-span-2 grid grid-rows-subgrid sm:grid-cols-subgrid rounded border border-muted bg-surface px-hsp-xl py-vsp-lg hover:border-accent focus-visible:border-accent"
+                  class="group col-span-full row-start-1 row-span-2 grid grid-rows-subgrid sm:grid-cols-subgrid rounded border border-muted bg-surface px-hsp-xl py-vsp-lg hover:border-accent focus-visible:border-accent"
                 >
                   <div class="col-start-1 row-start-1 min-w-0">
                     <CardBody
@@ -121,7 +121,7 @@ export function CardList(props: NoteTrayIndexProps): JSX.Element {
                   )}
                 </a>
               ) : (
-                <div class="col-span-full row-span-2 grid grid-rows-subgrid sm:grid-cols-subgrid rounded border border-muted bg-surface px-hsp-xl py-vsp-lg">
+                <div class="col-span-full row-start-1 row-span-2 grid grid-rows-subgrid sm:grid-cols-subgrid rounded border border-muted bg-surface px-hsp-xl py-vsp-lg">
                   <div class="col-start-1 row-start-1 min-w-0">
                     <CardBody
                       item={item}

@@ -22,7 +22,9 @@ describe("NoteTrayIndex card style", () => {
     expect(shown).toContain("Aug 22, 2026");
     expect(shown).toContain(">Aug 22</span>");
     expect(hidden).not.toContain("Aug 22, 2026");
-    expect(shown).toContain('<a href="/docs/card" class="group col-span-full');
+    expect(shown).toContain(
+      '<a href="/docs/card" class="group col-span-full row-start-1 row-span-2',
+    );
     expect(shown).toContain("border border-muted");
     expect(shown).toContain("grid-rows-subgrid");
     expect(shown.indexOf('<a href="/docs/tags/preact"')).toBeGreaterThan(
