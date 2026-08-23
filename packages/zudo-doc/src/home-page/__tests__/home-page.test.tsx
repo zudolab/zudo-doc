@@ -255,7 +255,7 @@ describe("createHomePageView — SiteTreeNav island", () => {
     expect(html).not.toContain('href="/docs/develop"');
   });
 
-  it("localizes note-tray dates and the existing updated label", () => {
+  it("localizes note-tray dates without rendering the updated label", () => {
     const ctx = makeFakeChromeContext({
       overrides: {
         t: (key: string, locale: string) =>
@@ -297,7 +297,11 @@ describe("createHomePageView — SiteTreeNav island", () => {
     );
 
     expect(html).toContain("2026年8月19日");
-    expect(html).toContain("更新 2026年8月20日");
+    const noteTrayRow = html.match(
+      /<a[^>]*data-note-tray-row[^>]*>[\s\S]*?<\/a>/,
+    )?.[0];
+    expect(noteTrayRow).toBeDefined();
+    expect(noteTrayRow).not.toContain("更新");
   });
 });
 

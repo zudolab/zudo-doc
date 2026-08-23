@@ -7,7 +7,7 @@ test.describe("Sidebar note trays: static dist", () => {
   test("the index tray exposes zero-padded stable ranks for all five items", () => {
     const html = readDistFile("docs/notes/index.html");
 
-    expect(html).toMatch(/<ol\b[^>]*border-t border-muted[^>]*>/);
+    expect(html).toMatch(/<li\b[^>]*border-y border-muted[^>]*>/);
     for (const rank of ["01", "02", "03", "04", "05"]) {
       expect(html).toMatch(
         new RegExp(`<span\\b(?![^>]*aria-hidden)(?=[^>]*tabular-nums)[^>]*>${rank}</span>`),
@@ -22,7 +22,7 @@ test.describe("Sidebar note trays: static dist", () => {
     const timelineHtml = readDistFile("docs/journal/index.html");
     const cardsHtml = readDistFile("docs/series-year/index.html");
 
-    expect(indexHtml).toMatch(/<ol\b[^>]*border-t border-muted[^>]*>/);
+    expect(indexHtml).toMatch(/<li\b[^>]*border-y border-muted[^>]*>/);
     expect(timelineHtml).toMatch(/class=(?:"space-y-vsp-lg"|space-y-vsp-lg)/);
     expect(timelineHtml).toContain("2026 August");
     expect(timelineHtml).toContain("2026 July");

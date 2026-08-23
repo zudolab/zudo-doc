@@ -12,7 +12,7 @@ sidebar_position: 8.5
 
 ## 番号付きインデックス
 
-デフォルトの`index`スタイルは、安定したゼロ埋めのrankを強調し、各アイテムのdescriptionも表示します。
+デフォルトの`index`スタイルは、安定したゼロ埋めのrankを強調し、各アイテムのdescriptionも表示します。タイトルだけでなく、行全体がリンクです。行をホバーまたはフォーカスすると、上下の罫線が強調され、テキストに下線が付きます。rankは引き続き行のマーカーとして表示されます。
 
 <NoteTrayIndex category="blog" style="index" />
 
@@ -22,7 +22,7 @@ sidebar_position: 8.5
 
 ## カード
 
-`cards`スタイルは各アイテムをゆったり表示し、タグナビゲーションが有効ならタグも含めます。
+`cards`スタイルは各アイテムをゆったり表示し、タグナビゲーションが有効ならタグも含めます。`CategoryNav`と同様に、枠で囲まれたカード全体がリンクです。ただし、枠内のタグチップはそれぞれ独立したリンクのままです。`showDate`を設定すると、広い画面ではカード右端の列に日付を表示し、狭い画面ではタイトルの後に表示します。
 
 <NoteTrayIndex category="blog" style="cards" showDate />
 
@@ -32,7 +32,7 @@ sidebar_position: 8.5
 
 ## タイムライン
 
-`timeline`スタイルは日付付きトレイを月ごとにまとめます。日付は常に表示され、日付なしのトレイで使うとビルドエラーになります。
+`timeline`スタイルは日付付きトレイを月ごとにまとめます。各アイテムは、日を示す数字をレール上のマーカーとして表示し、タイトルから始まります。`timeline`には`updated`を表示しません。また、日付なしのトレイで使うとビルドエラーになります。
 
 <NoteTrayIndex category="blog" style="timeline" />
 
@@ -46,7 +46,7 @@ sidebar_position: 8.5
 |------|------|---------|-------------|
 | `category` | string | 現在のページを含むトレイ | 一覧表示するトレイのslug（例：`"blog"`） |
 | `style` | `"index" \| "cards" \| "timeline"` | `"index"` | 一覧の表示形式 |
-| `showDate` | boolean | `false` | indexとcardスタイルで`date`と`updated`を表示。timelineでは常に日付を表示 |
+| `showDate` | boolean | `false` | indexとcardスタイルで`date`と`updated`を表示。timelineでは作成日を示す`date`だけを常に表示 |
 | `lang` | `Locale` | 自動検出 | コンテンツのロケールを上書き |
 
 アイテムはトレイの`category_sort_order`に従います。空のトレイ、存在しないカテゴリ、ノートトレイではないカテゴリでは何もレンダリングしません。

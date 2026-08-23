@@ -85,17 +85,17 @@ Year and month groups follow `category_sort_order` chronologically. Items inside
 
 Its three styles are:
 
-- `index` (default) — a compact numbered list with titles and descriptions
-- `cards` — one card per item, including descriptions and tags
-- `timeline` — items grouped by month along a timeline; requires `note_tray_dated: true`
+- `index` (default) — a compact numbered list with titles and descriptions; the whole row is the link
+- `cards` — one linked card per item, including descriptions and separately linked tags
+- `timeline` — items grouped by month along a timeline, with the day number on the rail and the title first; requires `note_tray_dated: true`
 
-Dates are hidden in `index` and `cards` unless `showDate` is set. Timeline always shows them. Wherever the component shows a `date`, it also shows `updated` beside it with the localized “Updated” label. An item with only `updated` displays that value alone. An empty tray renders nothing.
+Dates are hidden in `index` and `cards` unless `showDate` is set. In those two styles, `updated` appears beside `date` with the localized “Updated” label. Timeline always shows the created date only and never shows `updated`. An item with only `updated` displays that value alone in the `index` and `cards` styles when `showDate` is set. An empty tray renders nothing.
 
 See the [NoteTrayIndex component page](../components/note-tray-index.mdx) for live examples.
 
 ## Home Page and Pager
 
-The home page recognizes note trays automatically. Instead of rendering them as nested category trees, it uses the same flat tray ordering and sidebar grouping choice. Dated blocks show `date` and `updated`; undated blocks use ranks, and an `updated` value can appear alone when `date` is absent. Empty trays are omitted.
+The home page recognizes note trays automatically. Instead of rendering them as nested category trees, it uses the same flat tray ordering and sidebar grouping choice. Dated blocks show the created `date` only; undated blocks use ranks. Empty trays are omitted.
 
 Previous and next links also follow tray rank order and `category_sort_order`. They show `date` when present, but not `updated`.
 
