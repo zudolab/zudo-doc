@@ -60,10 +60,13 @@ const GUIDES_PAGE_1_HREF = "/docs/guides/page-1";
 //     `ensureNestedIslandPropsRefresh` as a side effect,
 //     `sidebar-toggle-island/index.tsx`) strictly precedes the mount call in
 //     zfb's island-mount chain, so "the button is clickable" is a safe proxy
-//     for "the before-swap refresh listener is registered" — navigating
+//     for "the commit-boundary refresh listener is registered" — navigating
 //     before this wait is the documented uncovered race
 //     (`nested-island-props-refresh.ts`'s "Known gap" comment) and would make
-//     the whole regression proof meaningless.
+//     the whole regression proof meaningless. The listener stages props at
+//     `zfb:before-swap` and writes them only when zfb invokes `event.swap()`;
+//     this success-path journey therefore proves the committed-navigation
+//     half of that contract.
 //
 //   - The SPA clicks MUST go through `drawerLinkSelector`: the bare-href
 //     `spaClick` takes the first document-order `a[href]` match, and any

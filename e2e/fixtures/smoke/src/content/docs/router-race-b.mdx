@@ -1,0 +1,14 @@
+---
+title: Router Race Page B
+sidebar_position: 100
+---
+
+This body and its destination-only script must never commit after Back wins.
+
+<script
+  data-router-race-b-script
+  dangerouslySetInnerHTML={{
+    __html:
+      "window.__zfbBackRace && (window.__zfbBackRace.bScriptRuns += 1);",
+  }}
+/>
