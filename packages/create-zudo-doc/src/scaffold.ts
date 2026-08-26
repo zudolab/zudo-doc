@@ -861,9 +861,13 @@ function generatePackageJson(choices: UserChoices) {
     // router reserves the `__paths__` route prefix. A fresh scaffold authors no
     // `__paths__` route and opts into nothing here, so there is no
     // generator-side migration.
-    "@takazudo/zfb": "2.11.0",
-    "@takazudo/zfb-runtime": "2.11.0",
-    "@takazudo/zfb-md-wasm": "2.11.0",
+    // 2.12.0 adds the deterministic standalone `zfb css` command for compiling
+    // one CSS entrypoint without route discovery or page rendering, and fixes
+    // a Back race before ClientRouter DOM swaps. Both changes are additive
+    // tooling/runtime behavior; a fresh scaffold needs no config migration.
+    "@takazudo/zfb": "2.12.0",
+    "@takazudo/zfb-runtime": "2.12.0",
+    "@takazudo/zfb-md-wasm": "2.12.0",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's

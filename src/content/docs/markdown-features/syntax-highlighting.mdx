@@ -54,7 +54,7 @@ Code titles, copy and wrap controls, line and word emphasis, diff markers, tabs/
 
 ## Shared runtime contract
 
-The [HtmlPreview](../components/html-preview.mdx) source panel uses the browser-time `@takazudo/zfb-md-wasm/highlight` renderer, loading the highlight-only artifact instead of the full root pipeline. The shipped highlight artifact is 1,476,740 B, compared with 3,274,064 B for the root artifact. It emits the same `pre.hi-root` / `hi-*` vocabulary and consumes the same syntax design tokens. The WASM module is loaded only when a source panel is opened (or initially rendered with `defaultOpen`); changing a color scheme or editing a syntax token recolors the existing DOM without rerunning either renderer.
+The [HtmlPreview](../components/html-preview.mdx) source panel uses the browser-time `@takazudo/zfb-md-wasm/highlight` renderer, loading the highlight-only artifact instead of the full root pipeline. The shipped highlight artifact is 1,476,740 B, compared with 3,273,252 B for the root artifact. It emits the same `pre.hi-root` / `hi-*` vocabulary and consumes the same syntax design tokens. The WASM module is loaded only when a source panel is opened (or initially rendered with `defaultOpen`); changing a color scheme or editing a syntax token recolors the existing DOM without rerunning either renderer.
 
 ## Migration from theme-name output
 
