@@ -187,7 +187,9 @@ function SidebarFooter({ links, themeDefaultMode }: { links?: SidebarLocaleLink[
   return (
     // pb-[50vh] provides scroll room so the footer doesn't sit at the very bottom of the viewport
     <div className="lg:hidden flex items-center gap-hsp-md border-t border-muted px-hsp-sm py-vsp-xs pb-[50vh] text-small">
-      {themeDefaultMode && <ThemeToggle defaultMode={themeDefaultMode} />}
+      {themeDefaultMode && (
+        <ThemeToggle defaultMode={themeDefaultMode} pendingUntilHydrated={true} />
+      )}
       {links && links.map((link, i) => (
         <span key={link.href} className="flex items-center gap-hsp-xs">
           {i > 0 && <span className="text-muted">/</span>}

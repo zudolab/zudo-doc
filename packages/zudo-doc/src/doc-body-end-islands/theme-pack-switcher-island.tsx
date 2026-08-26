@@ -15,6 +15,12 @@ export interface ThemePackSwitcherIslandDeps {
   /** The `settings.themePackSwitcher` gate (default `false`). */
   themePackSwitcher: boolean;
   /**
+   * Keep the launcher pending until the first mount effect. `false` disables
+   * only zudo-doc's pending affordance; zfb's island hydration marker remains
+   * owned by zfb.
+   */
+  pendingUntilHydrated?: boolean;
+  /**
    * SSR props derived from `ctx.themePackRegistry` by
    * `chrome/derive.tsx` (ADR theme-packs.md Decision 7 "Switcher data
    * flow"). `null` means the registry was not threaded
@@ -46,6 +52,7 @@ export interface ThemePackSwitcherIslandDeps {
 export function createThemePackSwitcherIsland(
   deps: ThemePackSwitcherIslandDeps,
 ): () => JSX.Element | null {
+  const pendingUntilHydrated = deps.pendingUntilHydrated ?? true;
   const ThemePackSwitcher = deps.ThemePackSwitcher as unknown as
     | ThemePackSwitcherComponent
     | undefined;
@@ -60,7 +67,12 @@ export function createThemePackSwitcherIsland(
         {
           Island({
             when: "load",
-            children: <ThemePackSwitcher {...deps.themePackSwitcherProps} />,
+            children: (
+              <ThemePackSwitcher
+                {...deps.themePackSwitcherProps}
+                pendingUntilHydrated={pendingUntilHydrated}
+              />
+            ),
           }) as unknown as VNode
         }
       </>
