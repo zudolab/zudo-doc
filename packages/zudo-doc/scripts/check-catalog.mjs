@@ -7,10 +7,12 @@
 // stale manifest for consumers (mirrors check-theme-packs.mjs).
 //
 // Asserts: dist/catalog.js and dist/catalog.d.ts exist, the manifest has
-// schemaVersion 1, exactly 31 packs (the current bundled pack count —
-// zudolab/zudo-doc#3349 acceptance criterion), and every pack carries the
-// full preview.{light,dark} swatch fields the catalog exists to serve
-// (bg/fg/accent/syntax).
+// schemaVersion 2, exactly 31 packs (the current bundled pack count —
+// zudolab/zudo-doc#3349 acceptance criterion), every entry carries the
+// registry-derived `hasStylesheet` boolean, and every pack carries the full
+// preview.{light,dark} swatch fields the catalog exists to serve
+// (bg/fg/accent/syntax). Catalog schemaVersion 2 is independent from each
+// pack's own meta.json schemaVersion 1.
 //
 // Exit 0 → dist/catalog.js is valid and complete.
 // Exit 1 → missing artifact or a shape violation (with a clear diagnostic).
@@ -37,7 +39,7 @@ if (!existsSync(DIST_JS) || !existsSync(DIST_DTS)) {
   process.exit(1);
 }
 
-const { default: catalog } = await import(DIST_JS);
+const { default: catalog, validateThemePackCatalog } = await import(DIST_JS);
 
 let allOk = true;
 function fail(message) {
@@ -45,8 +47,18 @@ function fail(message) {
   allOk = false;
 }
 
-if (catalog.schemaVersion !== 1) {
-  fail(`schemaVersion must be 1, got ${JSON.stringify(catalog.schemaVersion)}.`);
+if (typeof validateThemePackCatalog !== "function") {
+  fail("catalog must export validateThemePackCatalog(value).");
+} else {
+  try {
+    validateThemePackCatalog(catalog);
+  } catch (err) {
+    fail(`catalog validator rejected the generated manifest: ${err.message}`);
+  }
+}
+
+if (catalog.schemaVersion !== 2) {
+  fail(`schemaVersion must be 2, got ${JSON.stringify(catalog.schemaVersion)}.`);
 }
 if (!Array.isArray(catalog.packs)) {
   fail(`catalog.packs must be an array, got ${typeof catalog.packs}.`);
@@ -57,7 +69,14 @@ if (!Array.isArray(catalog.packs)) {
     );
   }
   for (const pack of catalog.packs) {
-    const preview = pack?.preview;
+    if (pack === null || typeof pack !== "object" || Array.isArray(pack)) {
+      fail("catalog entry must be an object.");
+      continue;
+    }
+    if (typeof pack.hasStylesheet !== "boolean") {
+      fail(`pack "${pack.slug}" is missing boolean hasStylesheet.`);
+    }
+    const preview = pack.meta?.preview;
     for (const mode of ["light", "dark"]) {
       const swatches = preview?.[mode];
       if (!swatches) {
