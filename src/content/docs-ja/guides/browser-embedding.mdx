@@ -1,0 +1,196 @@
+---
+title: ブラウザーへの埋め込み
+description: zfb のサイトビルドを実行せず、ブラウザーバンドル内で zudo-doc のクロームを描画します。
+sidebar_position: 16.5
+---
+
+## 埋め込み API でできること
+
+ブラウザー埋め込み用の API を使うと、ホストがプレーンなサイトデータから zudo-doc のクロームを組み立てて描画できます。完成済みのスタイルシートを 1 ファイル配信し、シリアライズ可能なルートコンテキストのペイロードを作り、ランタイムコンテキストを復元して、必要なクロームを描画するという流れです。利用側で `zfb build` を実行する必要はありません。
+
+4 つの要素は、それぞれ次の役割を担います:
+
+- `@takazudo/zudo-doc/compiled.css` は、パッケージの preflight、ユーティリティ、テーマ、本文、ローディング、機能別スタイルを、完成済みの CSS 1 ファイルとして提供します。
+- `createRouteContextPayload` は、プレーンな設定・翻訳・カタログデータ・カラースキーム・タグから、シリアライズ可能なペイロードを作ります。
+- `createRouteContext` は、そのペイロードの周囲に URL・ナビゲーション・コンテンツ・ルートの各ヘルパーを復元します。
+- `createChrome` はパッケージ標準の描画面を組み立てます。省略可能な第 2 引数には、[ホストクロームバインディング](../reference/host-chrome-bindings.mdx)で説明しているものと同じホストバインディングを渡せます。
+
+## 1. コンパイル済みスタイルシートを配信する
+
+`@takazudo/zudo-doc/compiled.css` をパッケージマネージャー経由で解決し、公開 URL へコピーするか、アセットとしてバンドルします。zudo-doc のマークアップを描画する前に、この 1 ファイルを読み込んでください:
+
+```html
+<link rel="stylesheet" href="/browser-embed/compiled.css" />
+<div id="browser-embed-root"></div>
+<script type="module" src="/browser-embed.js"></script>
+```
+
+このファイルはすでにコンパイル済みです。ブラウザー側の利用者が zfb の Tailwind パイプライン、zfb のコンテンツツリー、`zfb build` のいずれかを用意する必要はありません。選択したテーマパックのスタイルは別レイヤーとして扱い、このベースファイルの後に読み込みます。
+
+## 2. ペイロードを組み立ててクロームを描画する
+
+次のコードは、常設のブラウザー埋め込み統合テストと同じ形です。コンテンツエントリーはホストが所有し、`stableDocs` を通じて渡します。それ以外の設定と翻訳はパッケージのデフォルトで補われます。
+
+```tsx title="src/browser-embed.tsx"
+/** @jsxRuntime automatic */
+/** @jsxImportSource preact */
+
+import { render as renderToString } from "preact-render-to-string";
+import catalog from "@takazudo/zudo-doc/catalog";
+import { createRouteContextPayload } from "@takazudo/zudo-doc/route-context-payload";
+import { createRouteContext } from "@takazudo/zudo-doc/route-context";
+import { createChrome } from "@takazudo/zudo-doc/chrome";
+import type { DocPageEntry } from "@takazudo/zudo-doc/doc-page-props";
+
+const entry = {
+  id: "guides/browser-embed",
+  slug: "guides/browser-embed",
+  collection: "docs",
+  module_specifier: "guides/browser-embed.mdx",
+  data: {
+    title: "Browser embed",
+    description: "Rendered entirely in a browser bundle",
+  },
+  Content: () => <p>This content came from the host.</p>,
+} as unknown as DocPageEntry;
+
+const payload = createRouteContextPayload({
+  siteTitle: "Browser Docs",
+  categories: [
+    { label: "Guides", path: "/docs/guides", categoryMatch: "guides" },
+  ],
+  catalog,
+  settings: {
+    base: "/browser-embed/",
+    colorMode: false,
+    designTokenPanel: false,
+    docHistory: false,
+    headerRightItems: [],
+    packageOwnedRoutes: false,
+  },
+});
+
+const routeContext = createRouteContext(payload, {
+  stableDocs: () => [entry],
+});
+const chrome = createChrome(routeContext);
+const page = chrome.renderDocPage(
+  {
+    kind: "entry",
+    entry,
+    breadcrumbs: [{ label: "Browser embed" }],
+    prev: null,
+    next: null,
+    headings: [],
+  },
+  { locale: "en" },
+);
+
+document.querySelector("#browser-embed-root")!.innerHTML = renderToString(page);
+```
+
+`createRouteContextPayload` は、最初にドキュメント化されたパッケージデフォルトを適用し、最後にトップレベルの `settings` を上書きします。ネストした設定オブジェクトはディープマージされず、オブジェクト単位で置き換わります。`catalog` を渡すと、パッケージビルドと同じ順序・検証規則で、有効なテーマパックのレジストリがペイロードビルダーから導出されます。
+
+この例では描画面だけが必要なため、返された Preact ノードを HTML へシリアライズしています。Preact ランタイムを管理しているホストなら、そのランタイムから返されたノードを描画することもできます。
+
+## `createRouteContext` の境界では zfb の解決が必要
+
+ホストが独自の `stableDocs` 関数を渡しても、`@takazudo/zudo-doc/route-context` には `@takazudo/zfb/content` への静的 import エッジが残っています。そのためブラウザーバンドラーは、この peer サブパスを解決できる必要があります。解決できない構成では、互換性のあるスタブへ明示的に alias してください。`stableDocs` の注入で変わるのは実行時の処理であり、バンドルグラフから静的依存が消えるわけではありません。
+
+ランタイムグラフと宣言グラフの両方について、厳密に graph-clean であることを検査しているサブパスは次の 3 つです:
+
+- `@takazudo/zudo-doc/route-context-payload`
+- `@takazudo/zudo-doc/theme-packs-registry`
+- `@takazudo/zudo-doc/site-schema`
+
+`@takazudo/zudo-doc/catalog` も、import 時にファイルシステムへアクセスしない、ブラウザーセーフな生成済みデータです。一方、zfb content へのエッジが除去されるまでは、`createRouteContext` 自体を graph-clean と説明してはいけません。
+
+## 3. テーマパックを重ねる
+
+選択したパックのディレクトリを、フォントも含めてアセットベース配下に公開します。次に、カタログの `hasStylesheet` フィールドを見て、リンクが必要か判断します。予約済みの `default` パックは `false`、スタイルを持つパックは `true` です。
+
+```ts title="src/browser-embed.tsx (continued)"
+async function applyThemePack(slug: string) {
+  const pack = catalog.packs.find((entry) => entry.slug === slug);
+  if (!pack) throw new Error(`Unknown theme pack: ${slug}`);
+
+  const previousLink = document.querySelector<HTMLLinkElement>(
+    "link[data-zd-theme-pack-css]",
+  );
+
+  if (pack.hasStylesheet) {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.dataset.zdThemePackCss = "";
+    link.href = `${payload.settings.base}theme-packs/${pack.slug}/pack.css?v=${pack.meta.version}`;
+
+    const loaded = new Promise<void>((resolve, reject) => {
+      link.addEventListener("load", () => resolve(), { once: true });
+      link.addEventListener("error", () => reject(new Error(`Failed to load ${slug}`)), {
+        once: true,
+      });
+    });
+    document.head.append(link);
+    try {
+      await loaded;
+    } catch (error) {
+      link.remove();
+      throw error;
+    }
+    previousLink?.remove();
+  } else {
+    previousLink?.remove();
+  }
+
+  document.documentElement.dataset.themePack = pack.slug;
+}
+```
+
+DOM フックは両方とも契約の一部です。スタイルシートのリンクは `link[data-zd-theme-pack-css]`、有効なパックは `html[data-theme-pack]` で表します。切り替えをアトミックにするため、デフォルト以外のパックではスタイルシートの読み込み完了後にルート属性を設定してください。キャッシュバスターの `?v=` は `pack.meta.version` と常に一致させます。リンクの順序、永続化、ライブ切り替えの詳細は[テーマパック](../reference/theme-packs.mdx)を参照してください。
+
+## カタログ v2 とパックメタデータ v1 は別の契約
+
+ブラウザーカタログは `schemaVersion: 2` の集約マニフェストです。各カタログエントリーには `hasStylesheet: boolean` が追加されています。`validateThemePackCatalog` と `buildThemePackRegistry` は、v1 カタログを受け取るとどちらも fail-closed で拒否します。欠けているスタイルシートフラグを `true` または `false` だと推測することはありません。
+
+一方、各パック自身の `meta.json` は引き続き `schemaVersion: 1` です。このバージョンが表すのは、1 パック分のメタデータフィールドです。集約カタログのバージョンとは無関係です:
+
+| 契約 | 現行バージョン | 対象 |
+| --- | --- | --- |
+| カタログマニフェスト | `2` | `packs` 配列全体と、各エントリーの `hasStylesheet` フィールド |
+| パックの `meta.json` | `1` | 1 パックの識別情報、フォント、バージョン、モード、プレビュースウォッチ |
+
+カタログを v2 へ上げても、パックの `meta.json` を v2 へ変更する必要はありません。
+
+## ハイドレーション前の pending 状態は公開契約
+
+パッケージ標準のテーマトグルとテーマパックスイッチャーのランチャーは、SSR 時に次の状態で描画されます:
+
+```html
+<button data-zd-pending="" aria-disabled="true">...</button>
+```
+
+`data-zd-pending=""` は、ホストがスタイル対象にできる安定した zudo-doc のフックです。パッケージ CSS はあらかじめ `opacity: 0.7` と `pointer-events: none` を適用します。セマンティックな状態は `aria-disabled="true"` で伝え、マウントするまではコンポーネントのハンドラーがポインター、Enter、Space による実行を無視します。ネイティブの `disabled` と `inert` は意図的に付けていないため、コントロールはフォーカス可能なままで、ブラウザー標準の disabled 表示にも塗り替えられません。
+
+両方のベアコンポーネントは `pendingUntilHydrated?: boolean` を公開しており、デフォルトは `true` です。ハイドレーション前から実際に機能するプログレッシブエンハンスメントを持つ直接利用者は、`pendingUntilHydrated={false}` を渡せます。その場合、pending 属性、ARIA 状態、ハンドラーのガード、パッケージの pending スタイルがすべて外れます。このライフサイクル用エスケープハッチに対応する zudo-doc のグローバル設定はありません。
+
+最初のクライアント `useEffect` がマウント後に pending 状態を解除します。これにより SSR とクライアントの初回描画は一致します。クライアントルーターによるナビゲーションで island が新しく再マウントされると、pending 状態が短時間戻る場合があります。再マウント中はまだ操作できないため、この挙動は意図したものです。
+
+## zfb のマウント済みマーカーは読み取り専用の別シグナル
+
+`data-zfb-island-mounted` は zudo-doc ではなく zfb が所有します。zfb は生成済みの `mount()` 関数が返った後に外側の island ラッパーへこの属性を書き込み、アンマウントや再マウントの際には削除します。SSR で出力することはありません。zudo-doc の設定から抑止することもできず、利用者が自分で書き込んだり削除したりしてはいけません。
+
+特に重要なのは、このマーカーが意味するのはランタイムが `mount()` を呼び、その関数が返ったという事実だけであり、コンポーネントが操作可能になったことを保証しない点です。zfb の[「マウント状態を監視する」](https://github.com/Takazudo/zudo-front-builder/blob/main/docs/src/content/docs-ja/concepts/islands.mdx#マウント状態を監視する)と[「マウント後のマーカー」](https://github.com/Takazudo/zudo-front-builder/blob/main/docs/src/content/docs-ja/api/island.mdx#マウント後のマーカー)を参照してください。zudo-doc の操作可否の契約には、内側のコントロールに付く `data-zd-pending` と `aria-disabled` を使います。
+
+## 開発サーバーの readiness を利用側の契約にしない
+
+`x-zfb-dev-generation` と `x-zfb-dev-ready` のレスポンスヘッダー、および `GET {base}/__zfb/ready` が存在するのは `zfb dev` の実行中だけです（このリポジトリの `pnpm dev` ではポート 4321）。`zfb preview` には存在せず、静的にホストしたビルド出力にも含まれません。
+
+コントロールが操作可能か判断するために、埋め込み側がこのエンドポイントをポーリングしたり、これらのヘッダーを調べたりしてはいけません。代わりに、ここで説明した pending 状態の契約を使ってください。この契約は配信モードにかかわらず、描画されたコントロール自身に含まれます。
+
+## 見た目だけの回避策から移行する
+
+テーマコントロールの SSR マークアップには、デフォルトで `data-zd-pending=""` と `aria-disabled="true"` が追加されます。これらのコントロールを対象にしたスナップショットや、マークアップの完全一致テストは更新してください。ネイティブの `disabled` と `inert` は追加されないため、従来のタブ順は変わりません。
+
+アップグレード後は、[CCResDoc #183](https://github.com/Takazudo/ccresdoc/issues/183)、[#184](https://github.com/Takazudo/ccresdoc/issues/184)、[#185](https://github.com/Takazudo/ccresdoc/issues/185)で追跡されているものを含め、見た目やポインターだけで readiness を表現していたホスト側の回避策を削除できます。pending 中の見た目を変えたい場合は、スクリプトの状態を探るのではなく、安定した `data-zd-pending` フックをスタイルしてください。ハイドレーション前から本当に動作するコンポーネントを直接利用している場合は、`pendingUntilHydrated={false}` でオプトアウトできます。
+
+埋め込み側で `@takazudo/zfb-md-wasm` を使って Markdown を描画する場合、directive と alert の本文には 2.10.1 より後の最初のリリース（[zfb #2570](https://github.com/Takazudo/zudo-front-builder/issues/2570)）が最低要件です。このリポジトリの現在の pin は 2.11.0 です。2.10.1 では本文がフラット化され、段落構造とインラインマークアップが失われます。
