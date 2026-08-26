@@ -10,6 +10,9 @@
 // dragging in filesystem access itself.
 
 import { z } from "zod";
+import type { ThemePackMeta, ThemePackSwatches } from "../route-context-payload/types.js";
+
+export type { ThemePackMeta, ThemePackSwatches } from "../route-context-payload/types.js";
 
 /** `[a-z0-9][a-z0-9-]*` — a pack's slug MUST equal its directory name
  *  (Decision 6.7 "slug regex + dir-name parity"). */
@@ -35,11 +38,7 @@ const themePackSwatchesSchema = z.object({
     comment: z.string().min(1),
     callable: z.string().min(1),
   }),
-});
-
-/** Preview swatches for the dialog grid — RESOLVED plain CSS colors, one set
- *  per mode. See {@link themePackMetaSchema}'s `preview` field. */
-export type ThemePackSwatches = z.infer<typeof themePackSwatchesSchema>;
+}) satisfies z.ZodType<ThemePackSwatches>;
 
 export const themePackMetaSchema = z.object({
   schemaVersion: z.literal(1),
@@ -58,11 +57,4 @@ export const themePackMetaSchema = z.object({
     light: themePackSwatchesSchema,
     dark: themePackSwatchesSchema,
   }),
-});
-
-/**
- * A pack's `meta.json`, schema-validated (ADR Decision 1). `mode` is a
- * designed-primary badge only — every pack still defines BOTH modes via
- * `light-dark()` in `pack.css`.
- */
-export type ThemePackMeta = z.infer<typeof themePackMetaSchema>;
+}) satisfies z.ZodType<ThemePackMeta>;

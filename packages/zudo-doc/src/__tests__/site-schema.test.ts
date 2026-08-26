@@ -57,6 +57,10 @@ const DIST_DTS = resolve(PKG_ROOT, "dist/site-schema/index.d.ts");
 // vitest both resolve it, and TypeScript never has to.
 interface SiteSchemaGraph {
   forbiddenLabel(specifier: string): string | undefined;
+  analyzeDeclarationGraph(entry: string): {
+    violations: Array<{ specifier: string; label: string; importer: string }>;
+    files: string[];
+  };
   analyzeSiteSchemaGraph(args: { entry: string; resolveFrom: string[] }): Promise<{
     violations: Array<{ specifier: string; label: string; importer: string }>;
     specifiers: string[];
@@ -478,55 +482,20 @@ describe("site-schema stays browser-safe", () => {
 // (4b) Browser safety — TRANSITIVE declaration graph
 // ---------------------------------------------------------------------------
 
-/** Every `from "…"` specifier in a declaration file. */
-function declarationSpecifiers(source: string): string[] {
-  return [...source.matchAll(/\bfrom\s*["']([^"']+)["']/g)].map((m) => m[1] as string);
-}
-
-/** Resolve a relative `.js`/extensionless specifier to its emitted `.d.ts`. */
-function resolveDeclaration(fromFile: string, specifier: string): string | undefined {
-  const base = resolve(dirname(fromFile), specifier);
-  for (const candidate of [
-    base.replace(/\.js$/, ".d.ts"),
-    `${base}.d.ts`,
-    resolve(base, "index.d.ts"),
-  ]) {
-    if (existsSync(candidate)) return candidate;
-  }
-  return undefined;
-}
-
 describe("site-schema declaration graph", () => {
   it("never reaches @takazudo/zfb (or any other forbidden package) transitively", async () => {
-    const { forbiddenLabel } = await loadGraphHelper();
+    const { analyzeDeclarationGraph } = await loadGraphHelper();
     expect(
       existsSync(DIST_DTS),
       `${DIST_DTS} missing — run \`pnpm --filter @takazudo/zudo-doc build\``,
     ).toBe(true);
 
-    const seen = new Set<string>();
-    const violations: string[] = [];
-    const queue = [DIST_DTS];
-
-    while (queue.length > 0) {
-      const file = queue.pop() as string;
-      if (seen.has(file)) continue;
-      seen.add(file);
-
-      for (const specifier of declarationSpecifiers(readFileSync(file, "utf8"))) {
-        const label = forbiddenLabel(specifier);
-        if (label) {
-          violations.push(`${specifier} (${label}) declared in ${file}`);
-          continue;
-        }
-        if (!specifier.startsWith(".")) continue;
-        const next = resolveDeclaration(file, specifier);
-        if (next) queue.push(next);
-      }
-    }
-
-    expect(violations, violations.join("\n")).toEqual([]);
+    const { violations, files } = analyzeDeclarationGraph(DIST_DTS);
+    expect(
+      violations,
+      violations.map((v) => `${v.specifier} (${v.label}) declared in ${v.importer}`).join("\n"),
+    ).toEqual([]);
     // The walk must have covered more than the barrel itself.
-    expect(seen.size).toBeGreaterThan(1);
+    expect(files.length).toBeGreaterThan(1);
   });
 });
