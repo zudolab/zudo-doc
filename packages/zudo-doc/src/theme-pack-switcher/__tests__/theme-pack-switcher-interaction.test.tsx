@@ -23,6 +23,7 @@
 
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "preact";
+import { render as renderToString } from "preact-render-to-string";
 import { act } from "preact/test-utils";
 import { ThemePackSwitcher, type ThemePackSwitcherProps } from "../index.js";
 import { THEME_PACK_ATTR } from "../theme-pack-sync.js";
@@ -41,14 +42,35 @@ const PROPS: ThemePackSwitcherProps = {
 // the current test's own launcher. Track + unmount/remove after every test.
 let mounted: HTMLDivElement | null = null;
 
-function mount(props: ThemePackSwitcherProps): HTMLDivElement {
+function mount(
+  props: ThemePackSwitcherProps,
+  beforeEffects?: (launcher: HTMLButtonElement) => void,
+): HTMLDivElement {
   const container = document.createElement("div");
   document.body.appendChild(container);
   act(() => {
     render(<ThemePackSwitcher {...props} />, container);
+    const launcher = container.querySelector<HTMLButtonElement>("[data-switcher-launcher]");
+    expect(launcher).not.toBeNull();
+    beforeEffects?.(launcher!);
   });
   mounted = container;
   return container;
+}
+
+function activate(
+  launcher: HTMLButtonElement,
+  path: "click" | "Enter" | " ",
+): void {
+  launcher.focus();
+  expect(document.activeElement).toBe(launcher);
+  if (path !== "click") {
+    launcher.dispatchEvent(new KeyboardEvent("keydown", { key: path, bubbles: true }));
+  }
+  launcher.click();
+  if (path !== "click") {
+    launcher.dispatchEvent(new KeyboardEvent("keyup", { key: path, bubbles: true }));
+  }
 }
 
 afterEach(() => {
@@ -66,6 +88,40 @@ afterEach(() => {
 });
 
 describe("ThemePackSwitcher — real-DOM interaction", () => {
+  it.each(["click", "Enter", " "] as const)(
+    "guards %s before the first effect, then enables it",
+    (path) => {
+      const container = mount(PROPS, (launcher) => {
+        const ssr = document.createElement("div");
+        ssr.innerHTML = renderToString(<ThemePackSwitcher {...PROPS} />);
+        expect(launcher.parentElement!.outerHTML).toBe(
+          ssr.querySelector("[data-theme-pack-switcher]")!.outerHTML,
+        );
+        expect(launcher.tabIndex).toBe(0);
+        expect(launcher.getAttribute("data-zd-pending")).toBe("");
+        expect(launcher.getAttribute("aria-disabled")).toBe("true");
+        activate(launcher, path);
+        expect(launcher.parentElement!.querySelector("[data-switcher-card]")).toBeNull();
+      });
+
+      const launcher = container.querySelector<HTMLButtonElement>("[data-switcher-launcher]")!;
+      expect(launcher.hasAttribute("data-zd-pending")).toBe(false);
+      expect(launcher.hasAttribute("aria-disabled")).toBe(false);
+      act(() => activate(launcher, path));
+      expect(container.querySelector("[data-switcher-card]")).not.toBeNull();
+    },
+  );
+
+  it("activates immediately when pendingUntilHydrated is false", () => {
+    const container = mount({ ...PROPS, pendingUntilHydrated: false }, (launcher) => {
+      expect(launcher.hasAttribute("data-zd-pending")).toBe(false);
+      expect(launcher.hasAttribute("aria-disabled")).toBe(false);
+      activate(launcher, "Enter");
+    });
+
+    expect(container.querySelector("[data-switcher-card]")).not.toBeNull();
+  });
+
   it("clicking the launcher opens the card and exposes data-switcher-card", () => {
     const container = mount(PROPS);
 

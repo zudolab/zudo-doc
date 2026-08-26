@@ -612,6 +612,21 @@ describe("eject() — import rewiring", () => {
 // ── eject() — host call site rewiring ────────────────────────────────────────
 
 describe("eject() — host call site rewiring", () => {
+  it("ships ThemeToggle with its hydration-pending hook as a same-directory dependency", async () => {
+    const ejectDir = path.join(REAL_PACKAGE_ROOT, "eject/theme-toggle");
+    const indexSource = await fs.readFile(path.join(ejectDir, "index.tsx"), "utf8");
+    const hookSource = await fs.readFile(
+      path.join(ejectDir, "hydration-pending.ts"),
+      "utf8",
+    );
+
+    expect(indexSource).toContain('from "./hydration-pending.js"');
+    expect(indexSource).not.toContain('from "../hydration-pending.js"');
+    expect(hookSource).toBe(
+      await fs.readFile(path.join(REAL_PACKAGE_ROOT, "src/hydration-pending.ts"), "utf8"),
+    );
+  });
+
   it("does not mistake an import example inside the copied tree for a host call site", async () => {
     const projectDir = path.join(tempDir, "project-self-import-comment");
     await fs.ensureDir(projectDir);

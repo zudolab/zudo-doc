@@ -22,6 +22,13 @@ function bridgeValue(name: string): string | undefined {
 }
 
 describe("src/features.css source contract", () => {
+  it("dims pending buttons and removes pointer hit-testing", () => {
+    expect(css).toContain(`button[data-zd-pending] {
+  opacity: 0.7;
+  pointer-events: none;
+}`);
+  });
+
   it("keeps the default header on an opaque surface layer", () => {
     expect(css).toContain("header[data-header]");
     expect(css).toContain("background-color: var(--color-surface, var(--color-bg));");
