@@ -30,11 +30,35 @@ function parseIncoming(bodyHtml: string): Document {
   );
 }
 
-/** Dispatch the REAL `zfb:before-swap` event the router fires. */
-function dispatchBeforeSwap(newDocument: unknown): void {
+interface DispatchBeforeSwapOptions {
+  invokeSwap?: boolean;
+  swap?: unknown;
+  receiver?: unknown;
+  args?: unknown[];
+}
+
+/** Dispatch the REAL writable `zfb:before-swap` shape, then commit by default. */
+function dispatchBeforeSwap(
+  newDocument: unknown,
+  options: DispatchBeforeSwapOptions = {},
+): Event & { newDocument: unknown; swap?: unknown } {
   const event = new Event(BEFORE_SWAP_EVENT);
-  Object.assign(event, { newDocument });
+  Object.assign(event, {
+    newDocument,
+    swap: Object.prototype.hasOwnProperty.call(options, "swap")
+      ? options.swap
+      : vi.fn(),
+  });
   document.dispatchEvent(event);
+  const swapEvent = event as Event & { newDocument: unknown; swap?: unknown };
+  if (options.invokeSwap !== false && typeof swapEvent.swap === "function") {
+    Reflect.apply(
+      swapEvent.swap as (...args: unknown[]) => unknown,
+      options.receiver ?? swapEvent,
+      options.args ?? [],
+    );
+  }
+  return swapEvent;
 }
 
 function island(name: string, props?: string): string {
@@ -58,8 +82,8 @@ function liveIsland(name: string): Element {
 // stale.
 const pendingDisposers: Array<() => void> = [];
 
-function install(): () => void {
-  const dispose = installNestedIslandPropsRefresh({ document });
+function install(reportError?: (error: unknown) => void): () => void {
+  const dispose = installNestedIslandPropsRefresh({ document, reportError });
   pendingDisposers.push(dispose);
   return dispose;
 }
@@ -72,6 +96,89 @@ afterEach(() => {
 });
 
 describe("nested-island props refresh on zfb:before-swap", () => {
+  it("does not mutate live props or remount state until the swap callback commits", () => {
+    install();
+    setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
+
+    const event = dispatchBeforeSwap(
+      parseIncoming(header("header-en", island("SidebarToggle", newTree))),
+      { invokeSwap: false },
+    );
+
+    const target = liveIsland("SidebarToggle");
+    expect(target.getAttribute(PROPS_ATTR)).toBe(oldTree);
+    expect(target.hasAttribute(REMOUNT_ATTR)).toBe(false);
+
+    Reflect.apply(event.swap as () => unknown, event, []);
+    expect(target.getAttribute(PROPS_ATTR)).toBe(newTree);
+    expect(target.getAttribute(REMOUNT_ATTR)).toBe("");
+  });
+
+  it("applies a committed plan and delegates exactly once", () => {
+    install();
+    setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
+    const delegate = vi.fn(() => "committed");
+
+    const event = dispatchBeforeSwap(
+      parseIncoming(header("header-en", island("SidebarToggle", newTree))),
+      { invokeSwap: false, swap: delegate },
+    );
+    const first = Reflect.apply(event.swap as () => unknown, event, []);
+    const second = Reflect.apply(event.swap as () => unknown, event, []);
+
+    expect(first).toBe("committed");
+    expect(second).toBe("committed");
+    expect(delegate).toHaveBeenCalledOnce();
+    expect(liveIsland("SidebarToggle").getAttribute(PROPS_ATTR)).toBe(newTree);
+  });
+
+  it("composes a pre-existing swap override with its receiver, arguments, and return value", () => {
+    install();
+    setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
+    const receiver = { kind: "router" };
+    const delegate = vi.fn(function (this: unknown, value: string) {
+      return { receiver: this, value };
+    });
+
+    const event = dispatchBeforeSwap(
+      parseIncoming(header("header-en", island("SidebarToggle", newTree))),
+      { invokeSwap: false, swap: delegate },
+    );
+    const result = Reflect.apply(
+      event.swap as (value: string) => unknown,
+      receiver,
+      ["sentinel"],
+    );
+
+    expect(delegate).toHaveBeenCalledOnce();
+    expect(result).toEqual({ receiver, value: "sentinel" });
+  });
+
+  it("reports a refresh-write failure but still delegates exactly once", () => {
+    const reportError = vi.fn();
+    install(reportError);
+    setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
+    const target = liveIsland("SidebarToggle");
+    const writeError = new Error("injected props write failure");
+    vi.spyOn(target, "setAttribute").mockImplementation((name, value) => {
+      if (name === PROPS_ATTR) throw writeError;
+      Element.prototype.setAttribute.call(target, name, value);
+    });
+    const delegate = vi.fn(() => "router-committed");
+
+    const event = dispatchBeforeSwap(
+      parseIncoming(header("header-en", island("SidebarToggle", newTree))),
+      { invokeSwap: false, swap: delegate },
+    );
+    const result = Reflect.apply(event.swap as () => unknown, event, []);
+
+    expect(result).toBe("router-committed");
+    expect(delegate).toHaveBeenCalledOnce();
+    expect(reportError).toHaveBeenCalledOnce();
+    expect(reportError).toHaveBeenCalledWith(writeError);
+    expect(target.getAttribute(PROPS_ATTR)).toBe(oldTree);
+  });
+
   it("refreshes a nested island inside a persisted root paired by exact key", () => {
     install();
     setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
@@ -443,6 +550,47 @@ describe("nested-island props refresh on zfb:before-swap", () => {
     dispatchBeforeSwap(document);
 
     expect(liveIsland("SidebarToggle").getAttribute(PROPS_ATTR)).toBe(oldTree);
+  });
+
+  it("ignores an event whose swap callback is missing or not a function", () => {
+    install();
+    setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
+    const incoming = parseIncoming(
+      header("header-en", island("SidebarToggle", newTree)),
+    );
+
+    dispatchBeforeSwap(incoming, { swap: undefined });
+    dispatchBeforeSwap(incoming, { swap: "not-a-function" });
+
+    const target = liveIsland("SidebarToggle");
+    expect(target.getAttribute(PROPS_ATTR)).toBe(oldTree);
+    expect(target.hasAttribute(REMOUNT_ATTR)).toBe(false);
+  });
+
+  it("leaves a function-valued but non-writable swap event untouched", () => {
+    install();
+    setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
+    const delegate = vi.fn();
+    const event = new Event(BEFORE_SWAP_EVENT) as Event & {
+      newDocument: Document;
+      swap: () => void;
+    };
+    Object.defineProperties(event, {
+      newDocument: {
+        value: parseIncoming(
+          header("header-en", island("SidebarToggle", newTree)),
+        ),
+      },
+      swap: { value: delegate, writable: false },
+    });
+
+    document.dispatchEvent(event);
+
+    expect(event.swap).toBe(delegate);
+    expect(delegate).not.toHaveBeenCalled();
+    const target = liveIsland("SidebarToggle");
+    expect(target.getAttribute(PROPS_ATTR)).toBe(oldTree);
+    expect(target.hasAttribute(REMOUNT_ATTR)).toBe(false);
   });
 
   it("stops refreshing after the installer's disposer runs", () => {

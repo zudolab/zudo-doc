@@ -62,12 +62,10 @@ import type { ComponentChildren, JSX } from "preact";
 // Astro's <ClientRouter />. Mounted here so it lands in <head> on every
 // page that uses this shell. Closes zudolab/zudo-doc#1522.
 //
-// KNOWN COUPLING: this import is NOT side-effect-free — @takazudo/zfb-runtime
-// wires document/window listeners at module scope on import, before this
-// component ever mounts. Upstream fix tracked at
-// https://github.com/Takazudo/zudo-front-builder/issues/2429 (component/
-// activation split). Switching to a side-effect-free import is deferred to a
-// future @takazudo/zfb-runtime pin bump once that split ships.
+// Since zfb-runtime's component/activation split (#2437), this root-barrel
+// import is side-effect-free: it only renders the router's head metadata/CSS.
+// Browser activation remains the host ClientRouterBootstrap island's explicit
+// `@takazudo/zfb-runtime/client-router` side-effect import.
 import { ClientRouter } from "@takazudo/zfb-runtime";
 
 /**

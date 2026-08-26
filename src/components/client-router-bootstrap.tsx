@@ -10,11 +10,12 @@
 //
 //   if (typeof document !== "undefined") { init(); }
 //
-// The host's existing `import { ClientRouter } from "@takazudo/zfb-runtime"`
-// in doc-layout.tsx happens during SSR (where typeof document ===
-// "undefined"), so the side effect is silently skipped — the router
-// module never reaches the client bundle and every navigation falls
-// through to a full page load. W7A's Playwright harness confirmed this:
+// The host's `import { ClientRouter } from "@takazudo/zfb-runtime"` in
+// doc-layout.tsx intentionally resolves to the pure component module after
+// zfb-runtime's component/activation split (#2437). It renders the router's
+// head contract during SSR but does not register browser listeners. Without
+// this explicit activation import, every navigation falls through to a full
+// page load. W7A's Playwright harness confirmed the original failure shape:
 // pageswap.viewTransition is null, getAnimations() is empty during nav,
 // and the sidebar DOM identity is destroyed on every click.
 //
@@ -52,12 +53,10 @@ import type { JSX } from "preact";
  * client-router barrel in the per-island bundle, where the side-effect
  * import above can fire on the client.
  *
- * Note: the SSR `<ClientRouter />` mounted by `DocLayout` (via
- * `enableClientRouter`) self-activates the SPA router when its head meta
- * tags reach the browser. This host island is therefore a no-op for
- * router activation — it is kept only for the `when="load"` hydration
- * slot and bundle inclusion. The actual on/off gate is
- * `enableClientRouter` on `<DocLayoutWithDefaults>`, set to
+ * The SSR `<ClientRouter />` mounted by `DocLayout` (via
+ * `enableClientRouter`) emits the opt-in metadata; this island activates the
+ * browser router when its `when="load"` bundle evaluates. The actual on/off
+ * gate remains `enableClientRouter` on `<DocLayoutWithDefaults>`, set to
  * `settings.dynamicPageTransition` at every call site.
  */
 function ClientRouterBootstrap(): JSX.Element | null {
