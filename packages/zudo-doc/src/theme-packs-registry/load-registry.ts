@@ -13,22 +13,17 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 
-import type { ThemePackMeta } from "./meta-schema.js";
+import type {
+  ThemePackMeta,
+  ThemePackRegistry,
+  ThemePackRegistryEntry,
+} from "../route-context-payload/types.js";
 import { validateThemePack } from "./validator.js";
 
-/** One entry in the aggregated, canonically-ordered bundled registry. */
-export interface ThemePackRegistryEntry {
-  /** The pack's directory name (equals `meta.slug`). */
-  slug: string;
-  /** The pack's schema-validated `meta.json`. */
-  meta: ThemePackMeta;
-  /** Whether this pack ships a `pack.css` (always `false` for `"default"`). */
-  hasStylesheet: boolean;
-}
-
-/** The full bundled registry, or a subset of it (after `resolveEnabledPacks`)
- *  — an ordered array; order carries meaning (canonical / switcher order). */
-export type ThemePackRegistry = ThemePackRegistryEntry[];
+export type {
+  ThemePackRegistry,
+  ThemePackRegistryEntry,
+} from "../route-context-payload/types.js";
 
 function readFontFiles(fontsDir: string): string[] {
   if (!existsSync(fontsDir)) return [];

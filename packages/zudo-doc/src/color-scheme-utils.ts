@@ -22,60 +22,30 @@
  * scheme names, `colorMode` settings) stays project-side.
  */
 
-/** A color literal — an `oklch(…)` (or any valid CSS color) string. */
-export type OKLCH = string;
+import type {
+  ColorScheme,
+  ModeMap,
+  OKLCH,
+  RampRef,
+  Ramps,
+  SemanticKey,
+  StateRole,
+  SyntaxSemanticKey,
+} from "./route-context-payload/types.js";
 
-/** The four semantic state colors that live on their own ramp. */
-export type StateRole = "danger" | "success" | "warning" | "info";
+export type {
+  ColorScheme,
+  ModeMap,
+  OKLCH,
+  RampRef,
+  Ramps,
+  SemanticKey,
+  StateRole,
+  SyntaxSemanticKey,
+} from "./route-context-payload/types.js";
 
 /** Canonical order of the state ramp — used for `--palette-state-*` emit. */
 export const STATE_ROLES: readonly StateRole[] = ["danger", "success", "warning", "info"];
-
-/**
- * A reference into the shared ramps, resolved by `resolveRampRef`:
- *   - `{ base: n }`   → `ramps.base[n]`
- *   - `{ accent: n }` → `ramps.accent[n]`
- *   - `{ state: r }`  → `ramps.state[r]`
- *   - a bare string   → a literal OKLCH value, returned as-is
- */
-export type RampRef = { base: number } | { accent: number } | { state: StateRole } | OKLCH;
-
-/** The shared Tier-1 ramps. Values are identical across light/dark modes; the
- *  per-mode differences live in `ModeMap`, not here. */
-export interface Ramps {
-  /** Warm-neutral base ramp — 5 entries, index 0 = lightest. */
-  base: OKLCH[];
-  /** Accent ramp — 3 entries. */
-  accent: OKLCH[];
-  /** The four state colors. */
-  state: Record<StateRole, OKLCH>;
-}
-
-/** The 23 semantic roles that map onto `--zd-*` custom properties. */
-export type SemanticKey =
-  | "surface"
-  | "muted"
-  | "accent"
-  | "accentHover"
-  | "codeBg"
-  | "codeFg"
-  | "success"
-  | "danger"
-  | "warning"
-  | "info"
-  | "mermaidNodeBg"
-  | "mermaidText"
-  | "mermaidLine"
-  | "mermaidLabelBg"
-  | "mermaidNoteBg"
-  | "chatUserBg"
-  | "chatUserText"
-  | "chatAssistantBg"
-  | "chatAssistantText"
-  | "imageOverlayBg"
-  | "imageOverlayFg"
-  | "matchedKeywordBg"
-  | "matchedKeywordFg";
 
 /** Canonical order of the 23 semantic roles — used for `--zd-*` emit. */
 export const SEMANTIC_KEYS: readonly SemanticKey[] = [
@@ -121,8 +91,6 @@ export const SYNTAX_SEMANTIC_KEYS = [
   "syntaxDeleted",
 ] as const;
 
-export type SyntaxSemanticKey = (typeof SYNTAX_SEMANTIC_KEYS)[number];
-
 /** Existing semantic role inherited when a syntax role has no explicit map. */
 export const SYNTAX_SEMANTIC_ALIASES: Readonly<Record<SyntaxSemanticKey, SemanticKey>> = {
   syntaxComment: "muted",
@@ -147,27 +115,6 @@ export const SYNTAX_CSS_NAMES: Readonly<Record<SyntaxSemanticKey, string>> = {
   syntaxInserted: "--zd-syntax-inserted",
   syntaxDeleted: "--zd-syntax-deleted",
 };
-
-/** The per-mode wiring: each UI role points at a ramp stop (or literal OKLCH)
- *  via a `RampRef`. Two `ColorScheme`s (light + dark) share `ramps` but carry
- *  their own `ModeMap`. */
-export interface ModeMap {
-  bg: RampRef;
-  fg: RampRef;
-  selectionBg: RampRef;
-  selectionFg: RampRef;
-  semantic: Record<SemanticKey, RampRef>;
-  /** Optional syntax-specific overrides. An absent map and omitted roles
-   *  inherit the aliases in `SYNTAX_SEMANTIC_ALIASES`, preserving schemes
-   *  authored before syntax tokens existed. */
-  syntax?: Partial<Record<SyntaxSemanticKey, RampRef>>;
-}
-
-/** A complete color scheme — shared Tier-1 ramps + per-mode Tier-2 wiring. */
-export interface ColorScheme {
-  ramps: Ramps;
-  map: ModeMap;
-}
 
 /** Default per-mode semantic wiring (Default Dark reference — see epic #2584).
  *  Scheme authors spread this into `map.semantic` and override individual roles

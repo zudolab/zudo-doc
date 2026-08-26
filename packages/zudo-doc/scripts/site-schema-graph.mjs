@@ -15,6 +15,8 @@
 // fails to resolve, or gets inlined away.
 
 import { createRequire } from "node:module";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 
 /** Specifier classes that must never be reachable from `./site-schema`. */
 export const FORBIDDEN_SPECIFIERS = [
@@ -28,6 +30,56 @@ export const FORBIDDEN_SPECIFIERS = [
 /** The forbidden class a specifier belongs to, or `undefined` when it is fine. */
 export function forbiddenLabel(specifier) {
   return FORBIDDEN_SPECIFIERS.find((rule) => rule.pattern.test(specifier))?.label;
+}
+
+/** Every `from "..."` specifier in a declaration file. */
+export function declarationSpecifiers(source) {
+  return [...source.matchAll(/\bfrom\s*["']([^"']+)["']/g)].map((match) => match[1]);
+}
+
+/** Resolve a relative `.js`/extensionless specifier to its emitted `.d.ts`. */
+export function resolveDeclaration(fromFile, specifier) {
+  const base = resolve(dirname(fromFile), specifier);
+  for (const candidate of [
+    base.replace(/\.js$/, ".d.ts"),
+    `${base}.d.ts`,
+    resolve(base, "index.d.ts"),
+  ]) {
+    if (existsSync(candidate)) return candidate;
+  }
+  return undefined;
+}
+
+/**
+ * Walk the transitive emitted declaration graph rooted at `entry` and report
+ * forbidden package/specifier classes using the same rules as the JS guard.
+ *
+ * @param {string} entry - absolute path to an emitted `.d.ts` file.
+ * @returns {{ violations: Array<{ specifier: string, label: string, importer: string }>, files: string[] }}
+ */
+export function analyzeDeclarationGraph(entry) {
+  const seen = new Set();
+  const violations = [];
+  const queue = [entry];
+
+  while (queue.length > 0) {
+    const file = queue.pop();
+    if (seen.has(file)) continue;
+    seen.add(file);
+
+    for (const specifier of declarationSpecifiers(readFileSync(file, "utf8"))) {
+      const label = forbiddenLabel(specifier);
+      if (label) {
+        violations.push({ specifier, label, importer: file });
+        continue;
+      }
+      if (!specifier.startsWith(".")) continue;
+      const next = resolveDeclaration(file, specifier);
+      if (next) queue.push(next);
+    }
+  }
+
+  return { violations, files: [...seen].sort() };
 }
 
 /**
