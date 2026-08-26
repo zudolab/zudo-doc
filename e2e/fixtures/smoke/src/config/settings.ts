@@ -12,7 +12,12 @@ import type {
 
 export const settings = {
   colorScheme: "Default Dark",
-  colorMode: false as ColorModeConfig | false,
+  colorMode: {
+    defaultMode: "dark",
+    lightScheme: "Default Light",
+    darkScheme: "Default Dark",
+    respectPrefersColorScheme: true,
+  } satisfies ColorModeConfig as ColorModeConfig | false,
   siteName: "Smoke Test",
   siteDescription: "Test fixture for smoke E2E tests" as string,
   logo: "auto" as string | false,
