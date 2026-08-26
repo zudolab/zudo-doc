@@ -1,60 +1,23 @@
 #!/usr/bin/env node
-// Build the site-independent browser stylesheet with zfb's own embedded
-// Tailwind engine. The disposable project deliberately has no ambient content:
-// its two explicit @source trees are the complete scanning contract.
+// Build the package's browser stylesheet with zfb's standalone CSS command.
+// Keep the source set explicit: package CSS must not inherit a host project's
+// pages/content tree or zfb's default auto-source roots.
 
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
-import {
-  cpSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  readdirSync,
-  renameSync,
-  rmSync,
-  statSync,
-  symlinkSync,
-  writeFileSync,
-} from "node:fs";
-import { tmpdir } from "node:os";
+import { readFileSync } from "node:fs";
 import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_PACKAGE_ROOT = resolve(SCRIPT_DIR, "..");
-const CSS_INPUTS = [
-  "theme.css",
-  "safelist.css",
-  "content.css",
-  "page-loading.css",
-  "features.css",
-];
-const CANONICAL_ENTRY = `@layer zd-preflight, zd-flow;
-@import "tailwindcss/preflight" layer(zd-preflight);
-@import "tailwindcss/utilities";
-
-@import "@takazudo/zudo-doc/theme.css";
-@import "@takazudo/zudo-doc/safelist.css";
-@import "@takazudo/zudo-doc/content.css";
-@import "@takazudo/zudo-doc/page-loading.css";
-@import "@takazudo/zudo-doc/features.css";
-
-@source "./package-src/**/*.{tsx,ts,jsx,js}";
-@source "./node_modules/@takazudo/zudo-doc/dist/**/*.{tsx,ts,jsx,js}";
-@source not "./node_modules/@takazudo/zudo-doc/dist/catalog.js";
-`;
+const REPOSITORY_ROOT = resolve(DEFAULT_PACKAGE_ROOT, "../..");
+const ENTRY_RELATIVE_PATH = "src/compiled.entry.css";
 
 const require = createRequire(import.meta.url);
 const ZFB_PACKAGE_JSON = require.resolve("@takazudo/zfb/package.json");
 const ZFB_PACKAGE_ROOT = dirname(ZFB_PACKAGE_JSON);
 const ZFB_BIN = resolve(ZFB_PACKAGE_ROOT, require(ZFB_PACKAGE_JSON).bin.zfb);
-
-function linkPackage(scratchRoot, packageName, packageRoot) {
-  const target = resolve(scratchRoot, "node_modules", packageName);
-  mkdirSync(dirname(target), { recursive: true });
-  symlinkSync(packageRoot, target, "dir");
-}
 
 function assertRule(css, selector, declarations) {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -92,7 +55,12 @@ export function assertCompiledCss(css, { packageRoot, tempRoot } = {}) {
   if (/\b(?:19|20)\d{2}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(css)) {
     throw new Error("compiled CSS contains a timestamp");
   }
-  for (const leakedPath of [tempRoot, packageRoot, DEFAULT_PACKAGE_ROOT]) {
+  for (const leakedPath of [
+    tempRoot,
+    packageRoot,
+    DEFAULT_PACKAGE_ROOT,
+    REPOSITORY_ROOT,
+  ]) {
     if (leakedPath && css.includes(leakedPath)) {
       throw new Error(`compiled CSS contains an absolute path: ${leakedPath}`);
     }
@@ -129,134 +97,53 @@ export function assertCompiledCss(css, { packageRoot, tempRoot } = {}) {
   return bytes;
 }
 
-function copySourceTree(sourceRoot, targetRoot) {
-  cpSync(sourceRoot, targetRoot, {
-    recursive: true,
-    filter(source) {
-      if (statSync(source).isDirectory()) return true;
-      return /\.(?:tsx?|jsx?)$/.test(source);
-    },
-  });
-}
-
-function copyConsumerDist(distRoot, targetRoot) {
-  cpSync(distRoot, targetRoot, {
-    recursive: true,
-    filter(source) {
-      if (statSync(source).isDirectory()) return true;
-      const rel = relative(distRoot, source).split("\\").join("/");
-      return rel !== "catalog.js" && /\.js$/.test(rel);
-    },
-  });
-}
-
 export function generateCompiledCss(
   outputPath = resolve(DEFAULT_PACKAGE_ROOT, "dist/compiled.css"),
   { packageRoot = DEFAULT_PACKAGE_ROOT } = {},
 ) {
-  const scratchRoot = mkdtempSync(resolve(tmpdir(), "zudo-doc-compiled-css-"));
-  try {
-    const packageDist = resolve(
-      scratchRoot,
-      "node_modules/@takazudo/zudo-doc/dist",
-    );
-    mkdirSync(packageDist, { recursive: true });
-    for (const filename of CSS_INPUTS) {
-      cpSync(
-        resolve(packageRoot, "dist", filename),
-        resolve(packageDist, filename),
-      );
-    }
-    copyConsumerDist(resolve(packageRoot, "dist"), packageDist);
-    copySourceTree(
-      resolve(packageRoot, "src"),
-      resolve(scratchRoot, "package-src"),
-    );
+  const resolvedPackageRoot = resolve(packageRoot);
+  const resolvedOutputPath = resolve(outputPath);
+  const inputPath = resolve(resolvedPackageRoot, ENTRY_RELATIVE_PATH);
+  const packageRootArg = relative(REPOSITORY_ROOT, resolvedPackageRoot);
+  const inputArg = relative(REPOSITORY_ROOT, inputPath);
+  const outputArg = relative(REPOSITORY_ROOT, resolvedOutputPath);
 
-    writeFileSync(
-      resolve(scratchRoot, "node_modules/@takazudo/zudo-doc/package.json"),
-      `${JSON.stringify({
-        name: "@takazudo/zudo-doc",
-        type: "module",
-        exports: Object.fromEntries(
-          CSS_INPUTS.map((filename) => [`./${filename}`, `./dist/${filename}`]),
-        ),
-      }, null, 2)}\n`,
-    );
-    // The native build still bundles a neutral page and therefore resolves its
-    // framework/runtime imports. Link the package's already-installed exact
-    // runtime graph; these files are build tooling, never content sources.
-    const zfbRuntimeRoot = resolve(
-      dirname(require.resolve("@takazudo/zfb-runtime/server")),
-      "..",
-    );
-    linkPackage(scratchRoot, "@takazudo/zfb-runtime", zfbRuntimeRoot);
-    linkPackage(scratchRoot, "@takazudo/zfb", ZFB_PACKAGE_ROOT);
-    linkPackage(scratchRoot, "hono", resolve(zfbRuntimeRoot, "../../hono"));
-    linkPackage(scratchRoot, "react", resolve(zfbRuntimeRoot, "../../react"));
-    linkPackage(
-      scratchRoot,
-      "preact-render-to-string",
-      dirname(require.resolve("preact-render-to-string/package.json")),
-    );
-    linkPackage(
-      scratchRoot,
-      "preact",
-      dirname(require.resolve("preact/package.json")),
-    );
-    mkdirSync(resolve(scratchRoot, "pages"));
-    mkdirSync(resolve(scratchRoot, "src/styles"), { recursive: true });
-    writeFileSync(
-      resolve(scratchRoot, "pages/index.tsx"),
-      "export default function IndexPage() { return null; }\n",
-    );
-    writeFileSync(
-      resolve(scratchRoot, "package.json"),
-      '{"name":"zudo-doc-compiled-css-scratch","private":true,"type":"module"}\n',
-    );
-    writeFileSync(
-      resolve(scratchRoot, "zfb.config.ts"),
-      'export default { framework: "preact", tailwind: { enabled: true }, codeHighlight: { mode: "class" } };\n',
-    );
-    writeFileSync(resolve(scratchRoot, "src/styles/global.css"), CANONICAL_ENTRY);
-
-    const outDir = resolve(scratchRoot, "out");
-    const result = spawnSync(
-      process.execPath,
-      [ZFB_BIN, "build", "--outdir", outDir],
-      { cwd: scratchRoot, encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] },
-    );
-    if (result.error) throw result.error;
-    if (result.status !== 0) {
-      throw new Error(`zfb build failed with status ${result.status}`);
-    }
-
-    const assetsDir = resolve(outDir, "assets");
-    const matches = readdirSync(assetsDir).filter((name) =>
-      /^styles-[0-9a-f]{8}\.css$/.test(name),
-    );
-    if (matches.length !== 1) {
-      throw new Error(
-        `expected exactly one assets/styles-*.css, found ${matches.length}`,
-      );
-    }
-    const css = readFileSync(resolve(assetsDir, matches[0]), "utf8");
-    const bytes = assertCompiledCss(css, {
-      packageRoot,
-      tempRoot: scratchRoot,
-    });
-
-    mkdirSync(dirname(outputPath), { recursive: true });
-    const atomicPath = resolve(
-      dirname(outputPath),
-      `.${relative(dirname(outputPath), outputPath)}.${process.pid}.tmp`,
-    );
-    writeFileSync(atomicPath, css, "utf8");
-    renameSync(atomicPath, outputPath);
-    return { bytes, outputPath };
-  } finally {
-    rmSync(scratchRoot, { recursive: true, force: true });
+  // This package intentionally has no zfb site config. The CLI override keeps
+  // the package's class-mode semantic highlighting contract while allowing a
+  // supplied packageRoot's config to provide any other highlight settings.
+  const result = spawnSync(
+    process.execPath,
+    [
+      ZFB_BIN,
+      "css",
+      "--input",
+      inputArg,
+      "--output",
+      outputArg,
+      "--project-root",
+      packageRootArg,
+      "--source",
+      "src/**/*.{tsx,ts,jsx,js}",
+      "--source",
+      "dist/**/*.{tsx,ts,jsx,js}",
+      "--no-auto-source",
+      "--code-highlight-mode",
+      "class",
+    ],
+    {
+      cwd: REPOSITORY_ROOT,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "inherit"],
+    },
+  );
+  if (result.error) throw result.error;
+  if (result.status !== 0) {
+    throw new Error(`zfb css failed with status ${result.status}`);
   }
+
+  const css = readFileSync(resolvedOutputPath, "utf8");
+  const bytes = assertCompiledCss(css, { packageRoot: resolvedPackageRoot });
+  return { bytes, outputPath: resolvedOutputPath };
 }
 
 if (

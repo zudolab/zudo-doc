@@ -75,10 +75,14 @@ export default defineConfig((options) => ({
   // stay as written and resolve against the consumer's node_modules
   // at runtime.
   // After every compilation (build, prepare, and --watch): copy the static
-  // content stylesheet into dist/ (shipped as `@takazudo/zudo-doc/content.css`),
-  // then regenerate dist/safelist.css. Both must run AFTER tsup because a
-  // one-shot build's clean wipes dist/ first; gen-safelist only scans
-  // dist/*.js so the copied .css does not affect it.
+  // content stylesheets into dist/ (shipped as the package CSS exports), then
+  // regenerate dist/safelist.css. Both must run AFTER tsup because a one-shot
+  // build's clean wipes dist/ first; gen-safelist only scans dist/*.js so the
+  // copied .css does not affect it. A one-shot build then runs
+  // gen-compiled-css.mjs, which invokes the standalone `zfb css` command with
+  // the package entry and explicit src/dist sources. It must stay after the
+  // copied stylesheets and safelist, and is deliberately excluded from watch
+  // mode because it is a heavyweight whole-package scan.
   //
   // gen-search-widget-script.mjs (zudolab/zudo-doc#3412) and
   // gen-nav-overflow-script.mjs (zudolab/zudo-doc#3534) also run here — NOT
