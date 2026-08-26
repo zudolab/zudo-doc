@@ -88,6 +88,10 @@ test.describe("HtmlPreview: zfb md-wasm resources and semantic output", () => {
     page,
     assertNoConsoleErrors,
   }) => {
+    // The smoke fixture enables colorMode for browser-embed coverage. Pin the
+    // system preference so the semantic-color checks exercise Default Dark.
+    await page.emulateMedia({ colorScheme: "dark" });
+
     const resourceRequests: Array<{ kind: ResourceKind; url: string }> = [];
     const resourceResponses: Array<{
       kind: ResourceKind;
@@ -193,7 +197,7 @@ test.describe("HtmlPreview: zfb md-wasm resources and semantic output", () => {
           defaultDarkAccent: resolveColor("--palette-accent-1"),
         };
       });
-    expect(defaultDarkColors.theme).toBeUndefined();
+    expect(defaultDarkColors.theme).toBe("dark");
     expect(defaultDarkColors.token).toBe(defaultDarkColors.semantic);
     expect(defaultDarkColors.token).toBe(
       defaultDarkColors.defaultDarkAccent,

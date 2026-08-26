@@ -77,6 +77,9 @@ test.describe("Code blocks: copy and wrap buttons", () => {
   test("Default Dark resolves native keywords through the syntax semantic", async ({
     page,
   }) => {
+    // The smoke fixture enables colorMode for browser-embed coverage. Pin the
+    // system preference so this assertion continues to exercise Default Dark.
+    await page.emulateMedia({ colorScheme: "dark" });
     await page.goto(PAGE, { waitUntil: "load" });
 
     const colors = await page
@@ -103,8 +106,8 @@ test.describe("Code blocks: copy and wrap buttons", () => {
         };
       });
 
-    expect(colors.theme).toBeUndefined();
-    expect(colors.colorScheme).toBe("normal");
+    expect(colors.theme).toBe("dark");
+    expect(colors.colorScheme).toBe("dark");
     expect(colors.token).toBe(colors.syntaxSemantic);
     expect(colors.token).toBe(colors.defaultDarkAccent);
   });
