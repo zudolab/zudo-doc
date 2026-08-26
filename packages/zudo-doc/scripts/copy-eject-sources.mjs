@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // scripts/copy-eject-sources.mjs
 //
-// Copy each ejectable component's source directory verbatim from
+// Copy each ejectable component's source directory from
 // `src/<component>/` into `eject/<component>/` so the package can ship TS
 // source for the `zudo-doc eject <component>` CLI (Decision 1 — C0 #2359).
 //
@@ -16,7 +16,16 @@
 // watch or otherwise. We wipe and recreate `eject/` here to keep the
 // output deterministic (no stale files from renamed or removed components).
 
-import { cpSync, copyFileSync, rmSync, mkdirSync, statSync, readdirSync } from "node:fs";
+import {
+  cpSync,
+  copyFileSync,
+  readFileSync,
+  rmSync,
+  mkdirSync,
+  statSync,
+  readdirSync,
+  writeFileSync,
+} from "node:fs";
 import { resolve, dirname, relative, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -88,6 +97,28 @@ for (const name of EJECTABLE) {
     copyFileSync(
       resolve(PKG_ROOT, "scripts/gen-nav-overflow-script.mjs"),
       resolve(destDir, "gen-nav-overflow-script.mjs"),
+    );
+  }
+
+  // ThemeToggle shares the package-internal hydration hook with another
+  // component. Keep the ejected copy self-contained by placing that hook
+  // beside its index and retargeting only the generated eject artifact.
+  if (name === "theme-toggle") {
+    const indexPath = resolve(destDir, "index.tsx");
+    const sourceImport = 'from "../hydration-pending.js"';
+    const indexSource = readFileSync(indexPath, "utf8");
+    if (!indexSource.includes(sourceImport)) {
+      throw new Error(
+        "[copy-eject-sources] theme-toggle hydration-pending import changed; update the eject rewrite.",
+      );
+    }
+    copyFileSync(
+      resolve(SRC_ROOT, "hydration-pending.ts"),
+      resolve(destDir, "hydration-pending.ts"),
+    );
+    writeFileSync(
+      indexPath,
+      indexSource.replace(sourceImport, 'from "./hydration-pending.js"'),
     );
   }
 

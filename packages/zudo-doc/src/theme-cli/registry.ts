@@ -14,11 +14,8 @@
 // the same relative shape `src/plugins/theme-packs.ts`'s `themePacksDir()`
 // uses for its own independent resolution.
 
-import {
-  loadThemePackRegistry,
-  type ThemePackRegistry,
-  type ThemePackRegistryEntry,
-} from "../theme-packs-registry/index.js";
+import { loadThemePackRegistry } from "../theme-packs-registry/load-registry.js";
+import type { ThemePackRegistry, ThemePackRegistryEntry } from "../theme-packs-registry/index.js";
 
 export type { ThemePackRegistry, ThemePackRegistryEntry };
 

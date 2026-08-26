@@ -69,4 +69,22 @@ describe("HeaderWithDefaults — versioned headerNav items (#3216/#3190)", () =>
     expect(html).toContain('href="/v/1.0/docs/guides"');
     expect(html).toContain('href="/v/1.0/docs/guides/advanced"');
   });
+
+  it("keeps the package header ThemeToggle pending until hydration", () => {
+    const ctx = makeFakeChromeContext({
+      settings: {
+        colorMode: { defaultMode: "dark" },
+        headerRightItems: [{ type: "component", component: "theme-toggle" }],
+      },
+    });
+    const HeaderWithDefaults = createHeaderWithDefaults(ctx);
+    const html = render(<HeaderWithDefaults lang="en" />);
+    const markerIndex = html.indexOf('data-zfb-island="ThemeToggle"');
+    expect(markerIndex).toBeGreaterThanOrEqual(0);
+    const button = html.slice(markerIndex).match(/<button\b[^>]*>/)?.[0];
+
+    expect(button).toBeDefined();
+    expect(button).toMatch(/\sdata-zd-pending(?:=""|\s|>)/);
+    expect(button).toContain('aria-disabled="true"');
+  });
 });

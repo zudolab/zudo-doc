@@ -110,6 +110,10 @@ e2e/fixtures/*/public/favicon.ico
 e2e/fixtures/*/public/favicon.svg
 e2e/fixtures/*/public/favicon-16x16.png
 e2e/fixtures/*/public/favicon-32x32.png
+e2e/fixtures/*/public/_redirects
+# Browser-embed fixture output generated from the committed e2e/browser-embed
+# source by setup-fixtures.sh (JS/WASM/CSS are rebuilt from workspace pins).
+e2e/fixtures/smoke/public/browser-embed/
 
 # migration-check harness workspace (throwaway build artifacts)
 .l-zfb-migration-check/

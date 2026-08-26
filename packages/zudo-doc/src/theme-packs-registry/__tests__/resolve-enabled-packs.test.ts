@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { resolveEnabledPacks } from "../resolve-enabled-packs.js";
-import type { ThemePackRegistry, ThemePackRegistryEntry } from "../load-registry.js";
+import type { ThemePackRegistry, ThemePackRegistryEntry } from "../types.js";
 import type { ThemePackMeta } from "../meta-schema.js";
 
 function makeEntry(slug: string, mode: "light" | "dark" = "light"): ThemePackRegistryEntry {

@@ -233,6 +233,10 @@ compute_build_hash() {
       # the marker while a bare touch does not.
       find "$fixture_dir/public" -type f | sort | xargs shasum 2>/dev/null || true
     fi
+    if [ "$fixture" = "smoke" ] && [ -d "$REPO_ROOT/e2e/browser-embed" ]; then
+      find "$REPO_ROOT/e2e/browser-embed" -type f | sort | xargs shasum 2>/dev/null || true
+      shasum "$REPO_ROOT/e2e/browser-embed.vite.config.ts" 2>/dev/null || true
+    fi
 
     # --- Shared inputs (git-tracked file LIST, working-tree CONTENT) ---
     # pages/, plugins/, src/{components,lib,...}, package sources
@@ -638,6 +642,23 @@ fi
 echo ""
 echo "Pre-building fixtures sequentially..."
 for fixture in "${FIXTURES[@]}"; do
+  if [ "$fixture" = "smoke" ]; then
+    echo "  Building browser-embed assets"
+    rm -rf "$REPO_ROOT/e2e/fixtures/smoke/public/browser-embed"
+    mkdir -p "$REPO_ROOT/e2e/fixtures/smoke/public/browser-embed"
+    cp "$REPO_ROOT/e2e/browser-embed/index.html" \
+      "$REPO_ROOT/e2e/fixtures/smoke/public/browser-embed/index.html"
+    cp "$REPO_ROOT/packages/zudo-doc/dist/compiled.css" \
+      "$REPO_ROOT/e2e/fixtures/smoke/public/browser-embed/compiled.css"
+    rm -rf "$REPO_ROOT/e2e/fixtures/smoke/public/browser-embed/theme-packs/foundry"
+    mkdir -p "$REPO_ROOT/e2e/fixtures/smoke/public/browser-embed/theme-packs"
+    cp -R "$REPO_ROOT/packages/zudo-doc/dist/theme-packs/foundry" \
+      "$REPO_ROOT/e2e/fixtures/smoke/public/browser-embed/theme-packs/foundry"
+    (cd "$REPO_ROOT" && pnpm exec vite build --config e2e/browser-embed.vite.config.ts) || {
+      echo "  FAILED: browser-embed asset build failed" >&2
+      exit 1
+    }
+  fi
   if is_build_fresh "$fixture"; then
     echo "  Skipping (fresh): $fixture"
     continue

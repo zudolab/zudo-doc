@@ -14,6 +14,7 @@
 // not alias "react" to "preact/compat", so importing from "react" here
 // would fail to resolve.
 import { useState, useEffect } from "preact/hooks";
+import { useHydrationPending } from "../hydration-pending.js";
 import {
   applyColorScheme,
   readColorSchemeFromDom,
@@ -69,6 +70,8 @@ function MoonIcon() {
 
 export interface ThemeToggleProps {
   defaultMode?: ColorSchemeMode;
+  /** Keep activation pending until the first successful mount. @default true */
+  pendingUntilHydrated?: boolean;
 }
 
 // NAMED export (not default) on purpose: tsup compiles a default export
@@ -79,7 +82,9 @@ export interface ThemeToggleProps {
 // the package's MobileToc island).
 export function ThemeToggle({
   defaultMode = "dark",
+  pendingUntilHydrated = true,
 }: ThemeToggleProps) {
+  const pending = useHydrationPending(pendingUntilHydrated);
   // Initial state must match server render to avoid hydration mismatch.
   // Actual theme is synced from DOM in useEffect below.
   const [mode, setMode] = useState<ColorSchemeMode>(defaultMode);
@@ -94,6 +99,7 @@ export function ThemeToggle({
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggle() {
+    if (pending) return;
     const next = mode === "dark" ? "light" : "dark";
     setMode(next);
     applyColorScheme(next);
@@ -105,6 +111,8 @@ export function ThemeToggle({
     <button
       onClick={toggle}
       aria-label={`Switch to ${nextMode} mode`}
+      aria-disabled={pending ? "true" : undefined}
+      data-zd-pending={pending ? "" : undefined}
       className="text-muted hover:text-fg transition-colors p-hsp-sm focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
     >
       {mode === "dark" ? <SunIcon /> : <MoonIcon />}

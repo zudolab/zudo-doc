@@ -1044,3 +1044,8 @@ nav[data-zd-toc], div[data-zd-mobile-toc] {
 }
 
 /* END --zdc-* chrome component tokens */
+
+button[data-zd-pending] {
+  opacity: 0.7;
+  pointer-events: none;
+}

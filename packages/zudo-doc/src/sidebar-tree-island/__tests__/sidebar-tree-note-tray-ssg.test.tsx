@@ -162,6 +162,16 @@ describe("SidebarTree — note tray SSG", () => {
     expect(html).toContain('data-nav-active');
   });
 
+  it("keeps the nested sidebar ThemeToggle pending until hydration", () => {
+    const html = render(
+      <SidebarToggle nodes={[]} themeDefaultMode="dark" />,
+    );
+    const button = html.match(/<button\b[^>]*data-zd-pending[^>]*>/)?.[0];
+
+    expect(button).toBeDefined();
+    expect(button).toContain('aria-disabled="true"');
+  });
+
   it("does not invent rank 00 when an optional rank is absent", () => {
     const unranked = item("unranked", "Unranked", 1);
     unranked.rank = undefined;

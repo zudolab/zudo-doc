@@ -41,7 +41,7 @@ if (!existsSync(DIST_THEME_PACKS)) {
 let registry;
 try {
   const { loadThemePackRegistry } = await import(
-    resolve(PKG_ROOT, "dist/theme-packs-registry/index.js")
+    resolve(PKG_ROOT, "dist/theme-packs-registry/load-registry.js")
   );
   registry = loadThemePackRegistry(DIST_THEME_PACKS);
 } catch (err) {

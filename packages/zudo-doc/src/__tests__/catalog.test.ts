@@ -13,12 +13,13 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(__dirname, "../..");
+const DIST_DTS = resolve(PKG_ROOT, "dist/catalog.d.ts");
 
 describe("@takazudo/zudo-doc/catalog", () => {
   it("aggregates every bundled theme pack, default first then alphabetical", async () => {
     const { default: catalog } = await import(resolve(PKG_ROOT, "dist/catalog.js"));
 
-    expect(catalog.schemaVersion).toBe(1);
+    expect(catalog.schemaVersion).toBe(2);
     expect(catalog.packs.length).toBe(31);
     expect(catalog.packs[0].slug).toBe("default");
 
@@ -30,8 +31,9 @@ describe("@takazudo/zudo-doc/catalog", () => {
     const { default: catalog } = await import(resolve(PKG_ROOT, "dist/catalog.js"));
 
     for (const pack of catalog.packs) {
+      expect(typeof pack.hasStylesheet, `${pack.slug}.hasStylesheet`).toBe("boolean");
       for (const mode of ["light", "dark"] as const) {
-        const swatches = pack.preview[mode];
+        const swatches = pack.meta.preview[mode];
         expect(swatches.bg, `${pack.slug}.preview.${mode}.bg`).toBeTruthy();
         expect(swatches.fg, `${pack.slug}.preview.${mode}.fg`).toBeTruthy();
         expect(swatches.accent, `${pack.slug}.preview.${mode}.accent`).toBeTruthy();
@@ -41,6 +43,55 @@ describe("@takazudo/zudo-doc/catalog", () => {
         expect(swatches.syntax.callable, `${pack.slug}.preview.${mode}.syntax.callable`).toBeTruthy();
       }
     }
+  });
+
+  it("carries hasStylesheet from the filesystem registry, not a slug heuristic", async () => {
+    const { default: catalog } = await import(resolve(PKG_ROOT, "dist/catalog.js"));
+    const { loadThemePackRegistry } = await import(
+      resolve(PKG_ROOT, "dist/theme-packs-registry/load-registry.js"),
+    );
+    const { resolveEnabledPacks } = await import(
+      resolve(PKG_ROOT, "dist/theme-packs-registry/index.js"),
+    );
+    const registry = loadThemePackRegistry(resolve(PKG_ROOT, "src/theme-packs"));
+    const enabled = resolveEnabledPacks(registry, {});
+
+    expect(
+      catalog.packs.map((pack: { slug: string; hasStylesheet: boolean }) => [
+        pack.slug,
+        pack.hasStylesheet,
+      ]),
+    ).toEqual(
+      enabled.map((entry: { slug: string; hasStylesheet: boolean }) => [
+        entry.slug,
+        entry.hasStylesheet,
+      ]),
+    );
+  });
+
+  it("exports a v2 validator that rejects a v1-shaped manifest", async () => {
+    const { default: catalog, validateThemePackCatalog } = await import(
+      resolve(PKG_ROOT, "dist/catalog.js"),
+    );
+
+    expect(validateThemePackCatalog(catalog)).toBe(catalog);
+    const v1Manifest = {
+      schemaVersion: 1,
+      packs: catalog.packs.map((pack: { meta: unknown }) => pack.meta),
+    };
+    expect(() => validateThemePackCatalog(v1Manifest)).toThrow(
+      /schemaVersion 1.*expected 2/,
+    );
+  });
+
+  it("declares the v2 manifest and entry types in the generated declaration", async () => {
+    const fs = await import("node:fs/promises");
+    const dts = await fs.readFile(DIST_DTS, "utf8");
+
+    expect(dts).toContain("interface ThemePackCatalogEntry");
+    expect(dts).toContain("interface ThemePacksCatalogManifest");
+    expect(dts).toContain("hasStylesheet: boolean");
+    expect(dts).toContain("validateThemePackCatalog");
   });
 
   it("exposes the ./catalog subpath export", async () => {

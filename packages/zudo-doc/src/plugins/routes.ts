@@ -82,11 +82,9 @@ import { createRequire } from "node:module";
 import { existsSync, statSync, readFileSync, cpSync, rmSync, mkdirSync } from "node:fs";
 import { dirname, basename, join } from "node:path";
 import { definePlugin, type ZfbSetupContext } from "@takazudo/zfb/plugins";
-import {
-  loadThemePackRegistry,
-  resolveEnabledPacks,
-  type ThemePackRegistry,
-} from "../theme-packs-registry/index.js";
+import { loadThemePackRegistry } from "../theme-packs-registry/load-registry.js";
+import { resolveEnabledPacks } from "../theme-packs-registry/index.js";
+import type { ThemePackRegistry } from "../theme-packs-registry/index.js";
 import { derivePagesCandidates } from "./route-pages-candidates.js";
 
 // ---------------------------------------------------------------------------

@@ -852,9 +852,18 @@ function generatePackageJson(choices: UserChoices) {
     // restrictions. No generator-side migration.
     // 2.10.1: routine toolchain bump from 2.10.0, adopted in lockstep with the
     // root package.json pins. No generator-side migration.
-    "@takazudo/zfb": "2.10.1",
-    "@takazudo/zfb-runtime": "2.10.1",
-    "@takazudo/zfb-md-wasm": "2.10.1",
+    // 2.11.0: additive only. Islands gain an observable post-mount DOM marker
+    // (`ISLAND_MOUNTED_ATTR` = `data-zfb-island-mounted`), written on the island
+    // wrapper after mount() returns and never emitted at SSR, with the
+    // documented consumer gate `[data-zfb-island]:not([data-zfb-island-mounted])`.
+    // Dev-server hydration readiness is now published atomically, renderHtml
+    // preserves custom component body HTML instead of flattening it, and the
+    // router reserves the `__paths__` route prefix. A fresh scaffold authors no
+    // `__paths__` route and opts into nothing here, so there is no
+    // generator-side migration.
+    "@takazudo/zfb": "2.11.0",
+    "@takazudo/zfb-runtime": "2.11.0",
+    "@takazudo/zfb-md-wasm": "2.11.0",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's

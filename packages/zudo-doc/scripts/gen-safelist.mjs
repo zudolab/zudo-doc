@@ -15,7 +15,7 @@
 //   consumer-side @source directives point at the correct published files.
 
 import { readFileSync, writeFileSync, readdirSync } from "node:fs";
-import { resolve, join, dirname } from "node:path";
+import { resolve, join, dirname, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -25,13 +25,19 @@ const OUT_FILE = resolve(DIST_DIR, "safelist.css");
 // ── File discovery ─────────────────────────────────────────────────────────
 
 /** Recursively collect .js files under dir. */
-function findJsFiles(dir) {
+export function findJsFiles(dir, root = dir) {
   const results = [];
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+  const entries = readdirSync(dir, { withFileTypes: true }).sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
+  for (const entry of entries) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
-      results.push(...findJsFiles(full));
-    } else if (entry.name.endsWith(".js")) {
+      results.push(...findJsFiles(full, root));
+    } else if (
+      entry.name.endsWith(".js") &&
+      relative(root, full).split("\\").join("/") !== "catalog.js"
+    ) {
       results.push(full);
     }
   }

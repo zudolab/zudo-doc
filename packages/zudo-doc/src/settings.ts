@@ -22,23 +22,7 @@
  */
 export type TagGovernanceMode = "off" | "warn" | "strict";
 
-/**
- * A single entry in the tag vocabulary.
- *
- * - `id`         — canonical tag id. What content files should ideally use.
- * - `label`      — optional human-readable label (falls back to `id`).
- * - `description`— optional short description for tooling / tag index pages.
- * - `group`      — optional grouping key used by the grouped tag footer
- *                  (e.g. `"type"`, `"level"`, `"topic"`).
- * Content must use `id` exactly. Retired or misspelled ids are unknown tags;
- * the vocabulary intentionally has no alias or deprecation migration fields.
- */
-export interface TagVocabularyEntry {
-  id: string;
-  label?: string;
-  description?: string;
-  group?: string;
-}
+export type { TagVocabularyEntry } from "./route-context-payload/types.js";
 
 export interface HeaderNavChildItem {
   label: string;
