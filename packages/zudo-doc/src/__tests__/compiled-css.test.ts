@@ -86,9 +86,12 @@ describe("compiled.css", () => {
         const warmPath = resolve(tempRoot, "warm.css");
         generateCompiledCss(cleanPath, { packageRoot: fixtureRoot });
 
+        // Keep the sentinel itself out of package-src's static Tailwind scan:
+        // only the generated warm catalog.js may contain the complete token.
+        const catalogSentinel = ["bg-", "[rgb(1,2,3)]"].join("");
         writeFileSync(
           resolve(fixtureRoot, "dist/catalog.js"),
-          'export const sentinel = "bg-[rgb(1,2,3)]";\n',
+          `export const sentinel = ${JSON.stringify(catalogSentinel)};\n`,
         );
         generateCompiledCss(warmPath, { packageRoot: fixtureRoot });
 
