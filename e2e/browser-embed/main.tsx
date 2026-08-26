@@ -7,7 +7,6 @@ import { renderHtml } from "@takazudo/zfb-md-wasm/render";
 import { createRouteContextPayload } from "@takazudo/zudo-doc/route-context-payload";
 import { createRouteContext } from "@takazudo/zudo-doc/route-context";
 import { createChrome } from "@takazudo/zudo-doc/chrome";
-import type { ChromeHostBindings } from "@takazudo/zudo-doc/factory-context";
 import type { DocPageEntry } from "@takazudo/zudo-doc/doc-page-props";
 
 const MARKDOWN = `:::note[Heads up]
@@ -54,42 +53,6 @@ function htmlToPreact(html: string, components: Record<string, unknown>): VNode 
   return h(Fragment, null, Array.from(document.body.childNodes).map(convert));
 }
 
-function ChromeHeader() {
-  return (
-    <header
-      data-browser-chrome="header"
-      class="flex h-[3.5rem] items-center border-b border-muted bg-surface px-hsp-lg"
-    >
-      Browser embed header
-    </header>
-  );
-}
-
-function ChromeFooter() {
-  return (
-    <footer data-browser-chrome="footer" class="border-t border-muted text-muted p-vsp-md">
-      Browser embed footer
-    </footer>
-  );
-}
-
-function ChromeSidebar() {
-  return (
-    <aside data-browser-chrome="sidebar" class="bg-surface text-fg p-hsp-lg">
-      Browser embed sidebar
-    </aside>
-  );
-}
-
-const hostBindings: ChromeHostBindings = {
-  Header: ChromeHeader,
-  Footer: ChromeFooter,
-  Sidebar: ChromeSidebar,
-  Toc: () => <nav data-browser-chrome="toc">Browser embed TOC</nav>,
-  Breadcrumb: () => <nav data-browser-chrome="breadcrumb">Browser embed breadcrumb</nav>,
-  DocPager: () => <nav data-browser-chrome="pager">Browser embed pager</nav>,
-};
-
 declare global {
   interface Window {
     browserEmbed: {
@@ -122,7 +85,6 @@ async function main() {
     data: {
       title: "Browser embed integration",
       description: "Rendered entirely in a browser bundle",
-      standalone: true,
     },
     Content: ({ components }: { components: Record<string, unknown> }) =>
       htmlToPreact(mdWasmHtml, components),
@@ -139,7 +101,7 @@ async function main() {
     },
   });
   const routeContext = createRouteContext(payload, { stableDocs: () => [entry] });
-  const chrome = createChrome(routeContext, hostBindings);
+  const chrome = createChrome(routeContext);
   const page = chrome.renderDocPage(
     {
       kind: "entry",

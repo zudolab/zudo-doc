@@ -15,12 +15,14 @@ test("browser bundle renders md-wasm content through route context and real chro
   await expect(stylesheets).toHaveCount(1);
   await expect(stylesheets).toHaveAttribute("href", "/browser-embed/compiled.css");
 
-  const header = page.locator('[data-browser-chrome="header"]');
-  const sidebar = page.locator('[data-browser-chrome="sidebar"]');
+  const header = page.locator("header[data-header]");
+  const sidebar = page.locator('aside[aria-label="Documentation sidebar"]');
+  const pager = page.locator("nav[data-doc-pager]");
   const content = page.locator(".zd-content");
   await expect(header).toHaveCSS("height", "56px");
   await expect(header).toHaveCSS("display", "flex");
   await expect(sidebar).toHaveCSS("background-color", "oklch(0.185 0.005 65)");
+  await expect(pager).toHaveCSS("display", "grid");
   await expect(content).toHaveCSS("font-size", "19.2px");
   await expect(content).toHaveCSS("line-height", "31.2px");
 
@@ -94,6 +96,9 @@ test("Chromium page.route holds /assets/islands*.js through the real pending win
     await expect(island).not.toHaveAttribute("data-zfb-island-mounted", "");
     await expect(toggle).toHaveAttribute("data-zd-pending", "");
     await expect(toggle).toHaveAttribute("aria-disabled", "true");
+    await expect(toggle).not.toHaveAttribute("disabled", "");
+    await expect(toggle).not.toHaveAttribute("inert", "");
+    await expect(toggle).toHaveCSS("opacity", "0.7");
     await expect(toggle).toHaveCSS("pointer-events", "none");
 
     const initialTheme = await page.locator("html").getAttribute("data-theme");
@@ -108,6 +113,8 @@ test("Chromium page.route holds /assets/islands*.js through the real pending win
     await expect(island).toHaveAttribute("data-zfb-island-mounted", "");
     await expect(toggle).not.toHaveAttribute("data-zd-pending", "");
     await expect(toggle).not.toHaveAttribute("aria-disabled", "true");
+    await expect(toggle).toHaveCSS("opacity", "1");
+    await expect(toggle).toHaveCSS("pointer-events", "auto");
 
     await toggle.focus();
     await page.keyboard.press("Enter");
