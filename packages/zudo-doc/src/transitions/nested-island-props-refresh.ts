@@ -15,21 +15,20 @@
 // existing slug when re-derivation against a stale tree yields `undefined`, so
 // correcting the nodes corrects the marker too).
 //
-// Why the fix belongs on `zfb:before-swap`
-// ----------------------------------------
-// The router's swap sequence (`@takazudo/zfb-runtime`
-// `client-router/router.js`) is:
+// Why the fix belongs inside the writable `zfb:before-swap` callback
+// ------------------------------------------------------------------
+// zfb-runtime 2.12 dispatches `zfb:before-swap`, may await the fallback-old
+// animation, then checks the navigation's abort signal. Only after that check
+// does it synchronously cancel pending islands, unmount the old body, and call
+// the event's writable `swap()` callback. That callback is the commit boundary:
+// before it, a newer navigation may still win without touching the live page;
+// once teardown starts, the current commit must finish.
 //
-//   cancelPendingIslands() → unmountIslands(document.body, incoming.body)
-//   → doSwap() [dispatches `zfb:before-swap`, then swapBodyElement()]
-//   → … → mountNewIslands()
-//
-// By the time `zfb:before-swap` dispatches, the nested islands have already
-// been torn down (they carry no persist attribute of their own, so
-// `unmountIslands` does NOT skip them), and `mountNewIslands` re-reads
-// `data-props` from the DOM at mount time. So writing the incoming value onto
-// the live element in this window is picked up on the next mount with no extra
-// remount flag and no second render.
+// This listener therefore computes an immutable props-mutation plan during
+// dispatch and composes `event.swap` without writing to the live DOM. The plan
+// is applied only when zfb invokes that callback, immediately before the
+// captured swap delegates to the router. `mountNewIslands` then re-reads the
+// committed `data-props` at mount time.
 //
 // This helper imports `BEFORE_SWAP_EVENT` straight from `./page-events.js`
 // rather than through `./index.js`: the barrel deliberately does not re-export
@@ -88,6 +87,20 @@ const DOCUMENT_NODE = 9;
 
 interface NestedIslandPropsRefreshOptions {
   document: Document;
+  /** Explicit error seam for hosts/tests; omitted errors surface in a microtask. */
+  reportError?: (error: unknown) => void;
+}
+
+type SwapCallback = (this: unknown, ...args: unknown[]) => unknown;
+
+interface BeforeSwapEventLike extends Event {
+  newDocument?: unknown;
+  swap?: unknown;
+}
+
+interface PropsMutation {
+  readonly liveIsland: Element;
+  readonly incomingProps: string | null;
 }
 
 // The install/ensure/dispose document-singleton shape below mirrors
@@ -104,17 +117,67 @@ const installedControllers = new WeakMap<Document, () => void>();
  */
 export function installNestedIslandPropsRefresh({
   document,
+  reportError,
 }: NestedIslandPropsRefreshOptions): () => void {
   const onBeforeSwap = (event: Event) => {
-    const incoming = (event as Event & { newDocument?: unknown }).newDocument;
+    const swapEvent = event as BeforeSwapEventLike;
+    const incoming = swapEvent.newDocument;
     // A missing or non-Document `newDocument` (a synthetic dispatch, a future
     // runtime that renames the field) means there is nothing to copy FROM, and
     // `newDocument === document` would make every island its own source. Both
     // are no-ops rather than throws — but note this is a targeted guard, not a
-    // try/catch around the refresh: a bug inside `refreshNestedIslandProps`
-    // must still surface.
-    if (!isDocument(incoming) || incoming === document) return;
-    refreshNestedIslandProps(document, incoming);
+    // try/catch around plan construction: a bug inside the pairing/read logic
+    // must still surface before zfb begins teardown.
+    if (
+      !isDocument(incoming) ||
+      incoming === document ||
+      typeof swapEvent.swap !== "function"
+    ) {
+      return;
+    }
+
+    // Capture by value before replacing the writable callback. In particular,
+    // never look up `swapEvent.swap` from inside the wrapper: that would point
+    // back to the wrapper itself and recurse.
+    const capturedSwap = swapEvent.swap as SwapCallback;
+    const plan = buildNestedIslandPropsMutationPlan(document, incoming);
+    let commitStarted = false;
+    let commitOutcome:
+      | { readonly ok: true; readonly value: unknown }
+      | { readonly ok: false; readonly error: unknown }
+      | undefined;
+    const composedSwap: SwapCallback = function (...args) {
+      if (commitStarted) {
+        if (!commitOutcome) return undefined;
+        if (!commitOutcome.ok) throw commitOutcome.error;
+        return commitOutcome.value;
+      }
+      commitStarted = true;
+      try {
+        const value = commitMutationPlanAndDelegate(
+          plan,
+          capturedSwap,
+          this,
+          args,
+          reportError,
+        );
+        commitOutcome = { ok: true, value };
+        return value;
+      } catch (error) {
+        commitOutcome = { ok: false, error };
+        throw error;
+      }
+    };
+
+    // A synthetic/future event may expose a function-valued but non-writable
+    // slot. Treat it as an unsupported event shape, leaving both callback and
+    // live DOM untouched.
+    try {
+      swapEvent.swap = composedSwap;
+    } catch {
+      return;
+    }
+    if (swapEvent.swap !== composedSwap) return;
   };
 
   document.addEventListener(BEFORE_SWAP_EVENT, onBeforeSwap);
@@ -143,8 +206,9 @@ export function disposeNestedIslandPropsRefresh(document: Document): void {
 }
 
 /**
- * Copy `data-props` from the incoming document onto the live nested islands
- * that are about to be lifted through the swap.
+ * Build the immutable `data-props` mutation plan for live nested islands that
+ * will be lifted through the swap. This function only reads both documents;
+ * applying the returned plan is reserved for the commit callback.
  *
  * Matching contract, in order:
  *   1. Pair persisted ROOTS by exact `data-zfb-transition-persist` value. A key
@@ -162,12 +226,13 @@ export function disposeNestedIslandPropsRefresh(document: Document): void {
  * different pages, so ordinal alignment would silently cross-assign props the
  * moment a conditional island appears or disappears.
  */
-function refreshNestedIslandProps(
+function buildNestedIslandPropsMutationPlan(
   liveDocument: Document,
   incomingDocument: Document,
-): void {
+): readonly Readonly<PropsMutation>[] {
+  const plan: PropsMutation[] = [];
   const liveRoots = collectRefreshableRoots(liveDocument);
-  if (liveRoots.size === 0) return;
+  if (liveRoots.size === 0) return Object.freeze(plan);
   const incomingRoots = collectRefreshableRoots(incomingDocument);
 
   for (const [persistKey, liveRoot] of liveRoots) {
@@ -180,9 +245,51 @@ function refreshNestedIslandProps(
     for (const [name, liveIsland] of collectUniqueOwnedIslands(liveRoot, true)) {
       const incomingIsland = incomingIslands.get(name);
       if (!incomingIsland) continue;
-      applyProps(liveIsland, incomingIsland);
+      const incomingProps = incomingIsland.getAttribute(PROPS_ATTR);
+      if (incomingProps === liveIsland.getAttribute(PROPS_ATTR)) continue;
+      plan.push(Object.freeze({ liveIsland, incomingProps }));
     }
   }
+
+  return Object.freeze(plan);
+}
+
+/**
+ * Apply the staged live writes and delegate once, as one synchronous commit.
+ *
+ * A failed helper write is recorded while the remaining staged mutations are
+ * attempted. The captured router/user callback is then invoked exactly once
+ * with the wrapper's receiver and arguments. Reporting happens only after that
+ * delegation attempt, so neither a helper failure nor a failing reporter can
+ * strand zfb after island teardown has begun. The delegate's return/throw
+ * behavior always wins; helper errors use the explicit reporter when supplied,
+ * otherwise they are rethrown in a microtask and remain observable.
+ */
+function commitMutationPlanAndDelegate(
+  plan: readonly Readonly<PropsMutation>[],
+  delegate: SwapCallback,
+  receiver: unknown,
+  args: unknown[],
+  reportError: ((error: unknown) => void) | undefined,
+): unknown {
+  const helperErrors: unknown[] = [];
+  for (const mutation of plan) {
+    try {
+      applyPropsMutation(mutation);
+    } catch (error) {
+      helperErrors.push(error);
+    }
+  }
+
+  let delegateResult: unknown;
+  try {
+    delegateResult = delegate.apply(receiver, args);
+  } catch (delegateError) {
+    reportRefreshErrors(helperErrors, reportError);
+    throw delegateError;
+  }
+  reportRefreshErrors(helperErrors, reportError);
+  return delegateResult;
 }
 
 /**
@@ -269,19 +376,45 @@ function indexUniquely(
  * attribute means the incoming render has no props, which must REMOVE the live
  * attribute rather than leave the previous page's value in place.
  */
-function applyProps(liveIsland: Element, incomingIsland: Element): void {
-  const incoming = incomingIsland.getAttribute(PROPS_ATTR);
-  const current = liveIsland.getAttribute(PROPS_ATTR);
-  if (incoming === current) return;
-  if (incoming === null) {
+function applyPropsMutation({
+  liveIsland,
+  incomingProps,
+}: Readonly<PropsMutation>): void {
+  if (incomingProps === null) {
     liveIsland.removeAttribute(PROPS_ATTR);
   } else {
-    liveIsland.setAttribute(PROPS_ATTR, incoming);
+    liveIsland.setAttribute(PROPS_ATTR, incomingProps);
   }
   // See ISLAND_REMOUNT_ATTR above: without the flag, an island whose dynamic
   // import is in flight across the swap mounts from its pre-navigation props
   // snapshot and #3525 reproduces with the DOM attribute looking correct.
   liveIsland.setAttribute(ISLAND_REMOUNT_ATTR, "");
+}
+
+function reportRefreshErrors(
+  errors: unknown[],
+  reportError: ((error: unknown) => void) | undefined,
+): void {
+  if (errors.length === 0) return;
+  const error =
+    errors.length === 1
+      ? errors[0]
+      : new AggregateError(errors, "Nested-island props refresh failed");
+  if (reportError) {
+    try {
+      reportError(error);
+    } catch (reporterError) {
+      surfaceAsynchronously(reporterError);
+    }
+    return;
+  }
+  surfaceAsynchronously(error);
+}
+
+function surfaceAsynchronously(error: unknown): void {
+  queueMicrotask(() => {
+    throw error;
+  });
 }
 
 /**
