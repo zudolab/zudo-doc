@@ -29,6 +29,32 @@ const PROPS: ThemePackSwitcherProps = {
 describe("ThemePackSwitcher — SSR shape", () => {
   const html = render(<ThemePackSwitcher {...PROPS} />);
 
+  function launcherMarkup(output: string): string {
+    const match = output.match(/<button\b[^>]*data-switcher-launcher[^>]*>/);
+    expect(match).not.toBeNull();
+    return match![0];
+  }
+
+  it.each([undefined, true])("emits the launcher pending contract by default (%s)", (enabled) => {
+    const launcher = launcherMarkup(
+      render(<ThemePackSwitcher {...PROPS} pendingUntilHydrated={enabled} />),
+    );
+
+    expect(launcher).toMatch(/\sdata-zd-pending(?:=""|\s|>)/);
+    expect(launcher).toContain('aria-disabled="true"');
+    expect(launcher).not.toMatch(/\sdisabled(?:=|\s|>)/);
+    expect(launcher).not.toMatch(/\sinert(?:=|\s|>)/);
+  });
+
+  it("omits the launcher pending contract for the explicit opt-out", () => {
+    const launcher = launcherMarkup(
+      render(<ThemePackSwitcher {...PROPS} pendingUntilHydrated={false} />),
+    );
+
+    expect(launcher).not.toContain("data-zd-pending");
+    expect(launcher).not.toContain("aria-disabled");
+  });
+
   it("renders the launcher button, closed (aria-expanded=false, popup wiring)", () => {
     expect(html).toContain('aria-label="Theme pack switcher"');
     expect(html).toContain('aria-haspopup="dialog"');
@@ -69,6 +95,9 @@ describe("ThemePackSwitcher — SSR shape", () => {
 
   it("is a deterministic function of its serializable props (hydration-safe)", () => {
     expect(render(<ThemePackSwitcher {...PROPS} />)).toBe(html);
+    expect(render(<ThemePackSwitcher {...PROPS} pendingUntilHydrated />)).toBe(
+      render(<ThemePackSwitcher {...PROPS} pendingUntilHydrated />),
+    );
   });
 
   it("pins displayName for the island-scanner marker (#1446 contract)", () => {

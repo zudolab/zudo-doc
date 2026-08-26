@@ -36,6 +36,7 @@
 import type { JSX, VNode } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { ChevronLeft, ChevronRight, Close } from "../icons/index.js";
+import { useHydrationPending } from "../hydration-pending.js";
 import { ThemePackDialog } from "../theme-pack-dialog/index.js";
 import { applyThemePack } from "./theme-pack-sync.js";
 import {
@@ -64,6 +65,8 @@ export interface ThemePackSwitcherProps {
   /** Base prefix WITH trailing slash (`ctx.withBase("/")`) — forwarded to
    *  the browse-all dialog for its `{base}theme-packs/index.json` fetch. */
   base: string;
+  /** Keep launcher activation pending until the first successful mount. @default true */
+  pendingUntilHydrated?: boolean;
 }
 
 /** Props of the browse-all dialog mounted through {@link ThemePackDialogSlot}
@@ -159,7 +162,13 @@ const ICON_BUTTON_CLASS =
  * `Island({ when: "load" })` — see
  * `../doc-body-end-islands/theme-pack-switcher-island.tsx`.
  */
-export function ThemePackSwitcher({ active, order, base }: ThemePackSwitcherProps): JSX.Element {
+export function ThemePackSwitcher({
+  active,
+  order,
+  base,
+  pendingUntilHydrated = true,
+}: ThemePackSwitcherProps): JSX.Element {
+  const pending = useHydrationPending(pendingUntilHydrated);
   // Initial state must match the server render (hydration safety): card
   // closed, active = the SSR-configured slug. The user's stored pack is
   // synced from the DOM in the effect below.
@@ -290,9 +299,14 @@ export function ThemePackSwitcher({ active, order, base }: ThemePackSwitcherProp
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label="Theme pack switcher"
+        aria-disabled={pending ? "true" : undefined}
         title="Theme packs"
         data-switcher-launcher
-        onClick={() => setOpen(!open)}
+        data-zd-pending={pending ? "" : undefined}
+        onClick={() => {
+          if (pending) return;
+          setOpen(!open);
+        }}
         class="flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-full border border-muted bg-surface text-fg shadow-lg transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
       >
         <PaletteIcon className="h-icon-md w-icon-md" />
