@@ -53,6 +53,7 @@ describe("package.json exports keyset snapshot", () => {
         "./code-syntax",
         "./color-scheme-utils",
         "./color-schemes-defaults",
+        "./compiled.css",
         "./component-tokens",
         "./compose-meta-title",
         "./config",
