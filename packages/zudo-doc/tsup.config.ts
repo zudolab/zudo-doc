@@ -94,5 +94,19 @@ export default defineConfig((options) => ({
   // copies `src/header/` verbatim into `eject/`, so running the generator
   // after it would copy the PREVIOUS literal into eject/ on the first watch
   // cycle.
-  onSuccess: "node scripts/copy-theme-css.mjs && node scripts/copy-content-css.mjs && node scripts/copy-page-loading-css.mjs && node scripts/copy-features-css.mjs && node scripts/gen-safelist.mjs && node scripts/gen-nav-overflow-script.mjs && node scripts/copy-eject-sources.mjs && node scripts/copy-routes-src.mjs && node scripts/copy-virtual-modules.mjs && node scripts/copy-theme-packs.mjs && node scripts/gen-catalog.mjs && node scripts/gen-search-widget-script.mjs",
+  onSuccess: [
+    "node scripts/copy-theme-css.mjs",
+    "node scripts/copy-content-css.mjs",
+    "node scripts/copy-page-loading-css.mjs",
+    "node scripts/copy-features-css.mjs",
+    "node scripts/gen-safelist.mjs",
+    ...(!options.watch ? ["node scripts/gen-compiled-css.mjs"] : []),
+    "node scripts/gen-nav-overflow-script.mjs",
+    "node scripts/copy-eject-sources.mjs",
+    "node scripts/copy-routes-src.mjs",
+    "node scripts/copy-virtual-modules.mjs",
+    "node scripts/copy-theme-packs.mjs",
+    "node scripts/gen-catalog.mjs",
+    "node scripts/gen-search-widget-script.mjs",
+  ].join(" && "),
 }));

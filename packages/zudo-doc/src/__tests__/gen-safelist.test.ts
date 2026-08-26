@@ -1,4 +1,12 @@
 import { describe, it, expect } from "vitest";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -10,7 +18,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // We import the .mjs file via a relative path that steps outside src/ into
 // scripts/. Vitest resolves this at test time; it is NOT compiled by tsup.
-const { extractTokens, emitSafelist } = await import(
+const { extractTokens, emitSafelist, findJsFiles } = await import(
   resolve(__dirname, "../../scripts/gen-safelist.mjs")
 );
 
@@ -19,6 +27,31 @@ const { extractTokens, emitSafelist } = await import(
 function tokens(src: string): Set<string> {
   return extractTokens(src, new Set());
 }
+
+describe("findJsFiles", () => {
+  it("excludes retained dist/catalog.js while keeping normal compiled JS", () => {
+    const dist = mkdtempSync(resolve(tmpdir(), "zudo-doc-safelist-"));
+    try {
+      mkdirSync(resolve(dist, "sidebar"));
+      writeFileSync(resolve(dist, "catalog.js"), '"sentinel-catalog-utility"');
+      writeFileSync(resolve(dist, "sidebar/index.js"), '"sentinel-normal-utility"');
+
+      const files = findJsFiles(dist);
+      const result = new Set<string>();
+      for (const file of files) {
+        extractTokens(readFileSync(file, "utf8"), result);
+      }
+
+      expect(files.map((file: string) => file.slice(dist.length + 1))).toEqual([
+        "sidebar/index.js",
+      ]);
+      expect(result.has("sentinel-catalog-utility")).toBe(false);
+      expect(result.has("sentinel-normal-utility")).toBe(true);
+    } finally {
+      rmSync(dist, { recursive: true, force: true });
+    }
+  });
+});
 
 // ── extractTokens ──────────────────────────────────────────────────────────
 
