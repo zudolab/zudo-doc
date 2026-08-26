@@ -148,7 +148,7 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
 
     const themeToggle = Island({
       when: "load",
-      children: <ThemeToggle defaultMode={themeDefaultMode} />,
+      children: <ThemeToggle defaultMode={themeDefaultMode} pendingUntilHydrated={true} />,
     }) as unknown as VNode;
 
     const searchWidget = (

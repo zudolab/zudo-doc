@@ -33,7 +33,10 @@ import {
 import { deriveBodyEndIslands } from "../../chrome/derive.js";
 import type { ChromeContext } from "../../factory-context/index.js";
 import type { ThemePackRegistry } from "../../theme-packs-registry/index.js";
-import type { ThemePackSwitcherProps } from "../../theme-pack-switcher/index.js";
+import {
+  ThemePackSwitcher,
+  type ThemePackSwitcherProps,
+} from "../../theme-pack-switcher/index.js";
 
 const ALL_ON = {
   aiAssistant: true,
@@ -59,6 +62,7 @@ function renderIslands(
   deps: {
     DesignTokenPanelBootstrap?: typeof FakeDesignTokenPanelBootstrap;
     themePackSwitcherProps?: ThemePackSwitcherProps | null;
+    pendingUntilHydrated?: boolean;
     ThemePackSwitcher?: typeof FakeThemePackSwitcher;
   } = {},
 ): string {
@@ -475,6 +479,24 @@ describe("BodyEndIslands — ThemePackSwitcher island gate (#2821)", () => {
     // Serializable props ride the marker for the hydrate-time mount.
     expect(html).toContain("data-props");
     expect(html).toContain("foundry");
+  });
+
+  it("passes a false pendingUntilHydrated override to the switcher launcher", () => {
+    const html = renderIslands(
+      { ...ALL_OFF, themePackSwitcher: true },
+      {
+        pendingUntilHydrated: false,
+        themePackSwitcherProps: THEME_PACK_SWITCHER_PROPS,
+        // Use the real component here so this assertion covers the launcher
+        // DOM contract rather than only the factory's marker wiring.
+        ThemePackSwitcher: ThemePackSwitcher as unknown as typeof FakeThemePackSwitcher,
+      },
+    );
+    const launcher = html.match(/<button\b[^>]*data-switcher-launcher[^>]*>/)?.[0];
+    expect(html).toContain('data-zfb-island="ThemePackSwitcher"');
+    expect(launcher).toBeDefined();
+    expect(launcher).not.toContain("data-zd-pending");
+    expect(launcher).not.toContain("aria-disabled");
   });
 
   it("themePackSwitcher OFF: emits no marker even with deps supplied", () => {

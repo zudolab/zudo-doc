@@ -418,6 +418,7 @@ export function deriveBodyEndIslands(ctx: ChromeContext) {
       settings: ctx.settings,
       ...designTokenPanelDeps,
       ...themePackSwitcherDeps,
+      pendingUntilHydrated: true,
     });
   }
 
@@ -428,6 +429,7 @@ export function deriveBodyEndIslands(ctx: ChromeContext) {
   const ThemePackSwitcherIsland = createThemePackSwitcherIsland({
     themePackSwitcher: ctx.settings.themePackSwitcher === true,
     ...themePackSwitcherDeps,
+    pendingUntilHydrated: true,
   });
   type BodyEndIslandsProps = { basePath: string; aiChatBodyLabel?: string };
   const HostBodyEnd = HostBodyEndIslands as unknown as (

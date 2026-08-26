@@ -155,6 +155,12 @@ export interface BodyEndIslandsDeps {
    */
   themePackSwitcherProps?: ThemePackSwitcherProps | null;
   /**
+   * Keep the theme-pack launcher pending until its first mount effect. The
+   * package chrome path pins this to `true`; direct factory consumers may opt
+   * out of zudo-doc's pending affordance without changing zfb's marker.
+   */
+  pendingUntilHydrated?: boolean;
+  /**
    * The real `ThemePackSwitcher` island component (#2821), injected by
    * `chrome/derive.tsx` (which statically imports it — the island-scanner
    * reachability chain, mirroring `DesignTokenPanelBootstrap` above).
@@ -193,6 +199,7 @@ export function createBodyEndIslands(
     themePackSwitcher: settings.themePackSwitcher === true,
     themePackSwitcherProps: deps.themePackSwitcherProps ?? null,
     ThemePackSwitcher: deps.ThemePackSwitcher,
+    pendingUntilHydrated: deps.pendingUntilHydrated ?? true,
   });
 
   function BodyEndIslands({

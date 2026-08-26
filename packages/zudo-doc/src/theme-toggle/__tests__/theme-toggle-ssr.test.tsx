@@ -51,6 +51,15 @@ describe("ThemeToggle — SSR pending shape", () => {
     expect(button).toContain('aria-disabled="true"');
   });
 
+  it("forwards the explicit opt-out through the island wrapper", () => {
+    const html = render(<ThemeToggleIsland pendingUntilHydrated={false} />);
+    const button = buttonMarkup(html);
+
+    expect(html).toContain('data-zfb-island="ThemeToggle"');
+    expect(button).not.toContain("data-zd-pending");
+    expect(button).not.toContain("aria-disabled");
+  });
+
   it("preserves the named export and displayName", () => {
     expect(ThemeToggleModule.ThemeToggle).toBe(ThemeToggle);
     expect(ThemeToggle.displayName).toBe("ThemeToggle");
