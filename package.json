@@ -40,6 +40,7 @@
     "verify:worker-contract": "pnpm build && pnpm check:worker && pnpm test:worker:built && node scripts/verify-worker-dry-run.mjs --skip-build",
     "test:packages": "pnpm ensure:workspace-build && pnpm -r --filter './packages/*' run test",
     "test:e2e": "pnpm ensure:workspace-build && bash e2e/setup-fixtures.sh && playwright test",
+    "test:e2e:browser-embed": "pnpm ensure:workspace-build && E2E_FIXTURES=smoke bash e2e/setup-fixtures.sh && E2E_FIXTURES=smoke playwright test e2e/smoke-browser-embed.spec.ts --project smoke",
     "test:e2e:ci": "pnpm ensure:workspace-build && bash e2e/setup-fixtures.sh && playwright test --grep-invert \"@flaky|@local-only|@verification\"",
     "test:e2e:ci:json": "pnpm ensure:workspace-build && bash e2e/setup-fixtures.sh && playwright test --grep-invert \"@flaky|@local-only|@verification\" --reporter=list,json",
     "check:links": "node scripts/check-links.js",
