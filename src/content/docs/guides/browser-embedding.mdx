@@ -1,0 +1,196 @@
+---
+title: Browser Embedding
+description: Render zudo-doc chrome in a browser bundle without running a zfb site build.
+sidebar_position: 16.5
+---
+
+## What the embed surface provides
+
+The browser-embed path lets a host assemble and render zudo-doc chrome from plain site data. The host ships one compiled stylesheet, builds a serializable route-context payload, reconstructs the runtime context, and renders the chrome it needs. The consumer does **not** run `zfb build`.
+
+The four pieces have separate jobs:
+
+- `@takazudo/zudo-doc/compiled.css` contains the package's preflight, utilities, theme, content, loading, and feature styles in one finished CSS file.
+- `createRouteContextPayload` converts plain settings, translations, catalog data, color schemes, and tags into the serializable payload.
+- `createRouteContext` restores the URL, navigation, content, and route helpers around that payload.
+- `createChrome` builds the package-default render surface. Its optional second argument accepts the same host bindings described in [Host Chrome Bindings](../reference/host-chrome-bindings.mdx).
+
+## 1. Ship the compiled stylesheet
+
+Resolve `@takazudo/zudo-doc/compiled.css` through your package manager and copy or bundle it to a public URL. Link that one artifact before rendering zudo-doc markup:
+
+```html
+<link rel="stylesheet" href="/browser-embed/compiled.css" />
+<div id="browser-embed-root"></div>
+<script type="module" src="/browser-embed.js"></script>
+```
+
+The file is already compiled. A browser consumer does not need zfb's Tailwind pipeline, a zfb content tree, or a `zfb build` step. Styles for a selected theme pack remain a separate layer and load after this base file.
+
+## 2. Build a payload and render the chrome
+
+The following shape mirrors the durable browser-embed integration test. The host owns the content entry and supplies it through `stableDocs`; package defaults fill the remaining settings and translations.
+
+```tsx title="src/browser-embed.tsx"
+/** @jsxRuntime automatic */
+/** @jsxImportSource preact */
+
+import { render as renderToString } from "preact-render-to-string";
+import catalog from "@takazudo/zudo-doc/catalog";
+import { createRouteContextPayload } from "@takazudo/zudo-doc/route-context-payload";
+import { createRouteContext } from "@takazudo/zudo-doc/route-context";
+import { createChrome } from "@takazudo/zudo-doc/chrome";
+import type { DocPageEntry } from "@takazudo/zudo-doc/doc-page-props";
+
+const entry = {
+  id: "guides/browser-embed",
+  slug: "guides/browser-embed",
+  collection: "docs",
+  module_specifier: "guides/browser-embed.mdx",
+  data: {
+    title: "Browser embed",
+    description: "Rendered entirely in a browser bundle",
+  },
+  Content: () => <p>This content came from the host.</p>,
+} as unknown as DocPageEntry;
+
+const payload = createRouteContextPayload({
+  siteTitle: "Browser Docs",
+  categories: [
+    { label: "Guides", path: "/docs/guides", categoryMatch: "guides" },
+  ],
+  catalog,
+  settings: {
+    base: "/browser-embed/",
+    colorMode: false,
+    designTokenPanel: false,
+    docHistory: false,
+    headerRightItems: [],
+    packageOwnedRoutes: false,
+  },
+});
+
+const routeContext = createRouteContext(payload, {
+  stableDocs: () => [entry],
+});
+const chrome = createChrome(routeContext);
+const page = chrome.renderDocPage(
+  {
+    kind: "entry",
+    entry,
+    breadcrumbs: [{ label: "Browser embed" }],
+    prev: null,
+    next: null,
+    headings: [],
+  },
+  { locale: "en" },
+);
+
+document.querySelector("#browser-embed-root")!.innerHTML = renderToString(page);
+```
+
+`createRouteContextPayload` applies its documented package defaults first and the top-level `settings` overrides last. Nested settings objects replace rather than deep-merge. Passing `catalog` lets the payload builder derive the enabled theme-pack registry with the same ordering and validation as the package build.
+
+This example serializes the returned Preact node to HTML because the host only needs a render surface. A host that owns a Preact runtime may render the returned node through that runtime instead.
+
+## The `createRouteContext` boundary still resolves zfb
+
+`@takazudo/zudo-doc/route-context` still has a static import edge to `@takazudo/zfb/content`, even when the host passes its own `stableDocs` function. A browser bundler must therefore be able to resolve that peer subpath, or explicitly alias it to a compatible stub. Injecting `stableDocs` changes what runs; it does not remove the static dependency from the bundle graph.
+
+The strictly graph-clean subpaths, guarded across both their runtime and declaration graphs, are:
+
+- `@takazudo/zudo-doc/route-context-payload`
+- `@takazudo/zudo-doc/theme-packs-registry`
+- `@takazudo/zudo-doc/site-schema`
+
+`@takazudo/zudo-doc/catalog` is also browser-safe generated data with no filesystem access at import time. Do not describe `createRouteContext` itself as graph-clean until its zfb content edge is removed.
+
+## 3. Layer a theme pack
+
+Publish the selected pack directory, including its fonts, under your asset base. Then use the catalog's `hasStylesheet` field to decide whether a link is needed. The reserved `default` pack reports `false`; styled packs report `true`.
+
+```ts title="src/browser-embed.tsx (continued)"
+async function applyThemePack(slug: string) {
+  const pack = catalog.packs.find((entry) => entry.slug === slug);
+  if (!pack) throw new Error(`Unknown theme pack: ${slug}`);
+
+  const previousLink = document.querySelector<HTMLLinkElement>(
+    "link[data-zd-theme-pack-css]",
+  );
+
+  if (pack.hasStylesheet) {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.dataset.zdThemePackCss = "";
+    link.href = `${payload.settings.base}theme-packs/${pack.slug}/pack.css?v=${pack.meta.version}`;
+
+    const loaded = new Promise<void>((resolve, reject) => {
+      link.addEventListener("load", () => resolve(), { once: true });
+      link.addEventListener("error", () => reject(new Error(`Failed to load ${slug}`)), {
+        once: true,
+      });
+    });
+    document.head.append(link);
+    try {
+      await loaded;
+    } catch (error) {
+      link.remove();
+      throw error;
+    }
+    previousLink?.remove();
+  } else {
+    previousLink?.remove();
+  }
+
+  document.documentElement.dataset.themePack = pack.slug;
+}
+```
+
+Both DOM hooks are part of the contract: the stylesheet link is `link[data-zd-theme-pack-css]`, and the active pack is selected by `html[data-theme-pack]`. Set the root attribute only after a non-default stylesheet loads so the switch is atomic. Keep the cache-busting `?v=` value synchronized with `pack.meta.version`. See [Theme Packs](../reference/theme-packs.mdx) for link ordering, persistence, and live-switching behavior.
+
+## Catalog v2 and pack metadata v1 are independent
+
+The browser catalog is an aggregate manifest with `schemaVersion: 2`. Every catalog entry now includes `hasStylesheet: boolean`. Both `validateThemePackCatalog` and `buildThemePackRegistry` fail closed when given a v1 catalog; they do not guess whether a missing stylesheet flag should be true or false.
+
+Each pack's own `meta.json` still has `schemaVersion: 1`. That version describes one pack's metadata fields. It is unrelated to the aggregate catalog version:
+
+| Contract | Current version | Scope |
+| --- | --- | --- |
+| Catalog manifest | `2` | The complete `packs` array and each entry's `hasStylesheet` field |
+| Pack `meta.json` | `1` | One pack's identity, fonts, version, mode, and preview swatches |
+
+Upgrading the catalog to v2 does not require changing a pack's `meta.json` to v2.
+
+## The pre-hydration pending state is public
+
+The package-default theme toggle and theme-pack switcher launcher render this state during SSR:
+
+```html
+<button data-zd-pending="" aria-disabled="true">...</button>
+```
+
+`data-zd-pending=""` is the stable zudo-doc hook a host may style against. Package CSS already applies `opacity: 0.7` and `pointer-events: none`. `aria-disabled="true"` supplies the semantic state, while the component handler ignores pointer, Enter, and Space activation until mount. The control deliberately has neither native `disabled` nor `inert`, so it remains focusable and does not inherit browser disabled-control repainting.
+
+Both bare components expose `pendingUntilHydrated?: boolean`, defaulting to `true`. Direct consumers with real progressive enhancement may pass `pendingUntilHydrated={false}`; that removes the pending attribute, ARIA state, handler guard, and package pending style. There is no global zudo-doc setting for this lifecycle escape hatch.
+
+The first client `useEffect` clears the pending state after mount, keeping SSR and the first client render identical. A fresh island remount during client-router navigation may briefly emit the pending state again; that is intentional because activation is not yet available during the remount.
+
+## zfb's mounted marker is a separate, read-only signal
+
+`data-zfb-island-mounted` belongs to zfb, not zudo-doc. zfb writes it on the outer island wrapper after the generated `mount()` function returns, removes it during unmount or remount, and never emits it during SSR. zudo-doc settings cannot suppress it, and consumers must never write or remove it themselves.
+
+Most importantly, the marker means only that the runtime called `mount()` and it returned; it does **not** guarantee that the component is interactive. See zfb's [Observing mount state](https://github.com/Takazudo/zudo-front-builder/blob/main/docs/src/content/docs/concepts/islands.mdx#observing-mount-state) and [Post-mount marker](https://github.com/Takazudo/zudo-front-builder/blob/main/docs/src/content/docs/api/island.mdx#post-mount-marker) sections. Use the inner control's `data-zd-pending` and `aria-disabled` state for the zudo-doc interaction contract.
+
+## Do not use the dev readiness signal as a consumer contract
+
+The `x-zfb-dev-generation` and `x-zfb-dev-ready` response headers, plus `GET {base}/__zfb/ready`, exist only under `zfb dev` (`pnpm dev` uses port 4321 in this repository). They are absent under `zfb preview` and from statically hosted build output.
+
+An embedder must not poll that endpoint or inspect those headers to decide whether controls are interactive. Use the documented pending-state contract instead; it travels with the rendered control in every serving mode.
+
+## Migration from visual-only workarounds
+
+Theme controls now add `data-zd-pending=""` and `aria-disabled="true"` to their SSR markup by default. Update snapshots or exact-markup assertions that cover those controls. Existing tab order is unchanged because the package does not add native `disabled` or `inert`.
+
+Hosts may remove visual or pointer-only readiness workarounds after upgrading, including the workaround tracked by [CCResDoc #183](https://github.com/Takazudo/ccresdoc/issues/183), [#184](https://github.com/Takazudo/ccresdoc/issues/184), and [#185](https://github.com/Takazudo/ccresdoc/issues/185). If a host wants a different pending appearance, restyle the stable `data-zd-pending` hook instead of probing script status. Direct component consumers that genuinely work before hydration can opt out with `pendingUntilHydrated={false}`.
+
+If an embedder renders Markdown with `@takazudo/zfb-md-wasm`, directive and alert bodies require the first release after 2.10.1 ([zfb #2570](https://github.com/Takazudo/zudo-front-builder/issues/2570)). This repository currently pins 2.11.0; 2.10.1 flattens those bodies and loses paragraph and inline-markup structure.
