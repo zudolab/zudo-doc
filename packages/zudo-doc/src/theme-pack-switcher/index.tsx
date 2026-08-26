@@ -65,7 +65,7 @@ export interface ThemePackSwitcherProps {
   /** Base prefix WITH trailing slash (`ctx.withBase("/")`) — forwarded to
    *  the browse-all dialog for its `{base}theme-packs/index.json` fetch. */
   base: string;
-  /** Disable only when activation is useful before island hydration. */
+  /** Keep launcher activation pending until the first successful mount. @default true */
   pendingUntilHydrated?: boolean;
 }
 

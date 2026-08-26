@@ -70,6 +70,7 @@ function MoonIcon() {
 
 export interface ThemeToggleProps {
   defaultMode?: ColorSchemeMode;
+  /** Keep activation pending until the first successful mount. @default true */
   pendingUntilHydrated?: boolean;
 }
 
