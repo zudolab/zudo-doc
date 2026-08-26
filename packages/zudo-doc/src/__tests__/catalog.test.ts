@@ -47,7 +47,10 @@ describe("@takazudo/zudo-doc/catalog", () => {
 
   it("carries hasStylesheet from the filesystem registry, not a slug heuristic", async () => {
     const { default: catalog } = await import(resolve(PKG_ROOT, "dist/catalog.js"));
-    const { loadThemePackRegistry, resolveEnabledPacks } = await import(
+    const { loadThemePackRegistry } = await import(
+      resolve(PKG_ROOT, "dist/theme-packs-registry/load-registry.js"),
+    );
+    const { resolveEnabledPacks } = await import(
       resolve(PKG_ROOT, "dist/theme-packs-registry/index.js"),
     );
     const registry = loadThemePackRegistry(resolve(PKG_ROOT, "src/theme-packs"));

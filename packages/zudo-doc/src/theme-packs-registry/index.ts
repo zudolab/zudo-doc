@@ -1,18 +1,20 @@
 // theme-packs-registry — public barrel (ADR `docs/adr/theme-packs.md`).
 //
-// Three independent pieces, per the ADR:
-//   - `loadThemePackRegistry` — node-side fs scan of `theme-packs/<slug>/`
-//     directories (used by `src/plugins/routes.ts`'s `setup()`, and will be
-//     reused by `src/plugins/theme-packs.ts`, #2820).
+// This is the browser-safe half of the registry split, per the ADR:
+//   - `buildThemePackRegistry` — catalog-v2 + settings projection builder.
 //   - `resolveEnabledPacks` — PURE settings ∩ bundled-registry resolver.
 //   - `validateThemePack` — PURE, filesystem-free pack validator (also the
 //     build-time check `scripts/copy-theme-packs.mjs`, #2820, will run per
 //     pack before copying to `dist/`).
+//   - `meta-schema`, `token-manifest`, and registry types.
 //
-// `factory-context/index.ts` imports `ThemePackRegistry`/`ThemePackMeta` as
-// `import type` only (erased before bundling) so the node-side `node:fs`
-// import in `load-registry.ts` never reaches the node-free config eval graph
-// (`config.ts`/`preset.ts` — see their eval-graph guards).
+// The node-side `loadThemePackRegistry` filesystem scan intentionally does
+// NOT come through this barrel. Node callers import `./load-registry.js`
+// directly so this public subpath stays safe for browser and Worker bundles.
+//
+// Existing factory-context consumers import the registry shapes as types only
+// (the payload-types leaf owns those declarations), so this barrel can remain
+// in the node-free config/browser graph without pulling in the loader.
 
 export {
   THEME_PACK_SLUG_RE,
@@ -36,13 +38,18 @@ export {
   type ThemePackValidationSeverity,
 } from "./validator.js";
 
-export {
-  loadThemePackRegistry,
-  type ThemePackRegistry,
-  type ThemePackRegistryEntry,
-} from "./load-registry.js";
+export type { ThemePackRegistry, ThemePackRegistryEntry } from "./types.js";
 
 export {
   resolveEnabledPacks,
   type ResolveEnabledPacksSettings,
 } from "./resolve-enabled-packs.js";
+
+export {
+  buildThemePackRegistry,
+  schemaVersion,
+  type ThemePackCatalogEntry,
+  type ThemePackRegistrySettings,
+  type ThemePackSettingsProjection,
+  type ThemePacksCatalogManifest,
+} from "./build-registry.js";

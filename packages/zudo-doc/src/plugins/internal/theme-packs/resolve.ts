@@ -6,11 +6,9 @@
 // each hook call re-derives the resolved set from its own `ctx.options`,
 // mirroring `routes.ts`'s `setup()` shape.
 
-import {
-  loadThemePackRegistry,
-  resolveEnabledPacks,
-  type ThemePackRegistry,
-} from "../../../theme-packs-registry/index.js";
+import { loadThemePackRegistry } from "../../../theme-packs-registry/load-registry.js";
+import { resolveEnabledPacks } from "../../../theme-packs-registry/index.js";
+import type { ThemePackRegistry } from "../../../theme-packs-registry/index.js";
 import type { ThemePacksPluginOptions } from "./types.js";
 
 /**
