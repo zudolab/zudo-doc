@@ -20,9 +20,10 @@
 // `copy-theme-packs.mjs` precedent: runs from the tsup `onSuccess` chain,
 // AFTER copy-theme-packs.mjs (so both read the same validated SRC packs
 // directory), and imports the ALREADY-COMPILED
-// `dist/theme-packs-registry/index.js` for `loadThemePackRegistry` +
-// `resolveEnabledPacks` — pure, browser-safe logic already proven against
-// this exact registry shape.
+// `dist/theme-packs-registry/load-registry.js` for the filesystem loader and
+// `dist/theme-packs-registry/index.js` for `resolveEnabledPacks` — the latter
+// is the pure, browser-safe logic already proven against this exact registry
+// shape.
 //
 // The generated `dist/catalog.js` embeds the manifest as a JSON literal —
 // no `node:fs` import, no filesystem access at import time, so a browser app
@@ -38,8 +39,11 @@ const SRC = resolve(PKG_ROOT, "src/theme-packs");
 const DIST_JS = resolve(PKG_ROOT, "dist/catalog.js");
 const DIST_DTS = resolve(PKG_ROOT, "dist/catalog.d.ts");
 
-const { loadThemePackRegistry, resolveEnabledPacks } = await import(
-  resolve(PKG_ROOT, "dist/theme-packs-registry/index.js")
+const { loadThemePackRegistry } = await import(
+  resolve(PKG_ROOT, "dist/theme-packs-registry/load-registry.js"),
+);
+const { resolveEnabledPacks } = await import(
+  resolve(PKG_ROOT, "dist/theme-packs-registry/index.js"),
 );
 
 let registry;

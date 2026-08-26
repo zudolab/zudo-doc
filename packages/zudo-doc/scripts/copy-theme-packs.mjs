@@ -14,13 +14,14 @@
 // Runs from the tsup `onSuccess` chain AFTER compilation (a one-shot build's
 // clean wipes dist/ first — `clean: !options.watch`, so a watch build does
 // not) — mirrors copy-theme-css.mjs's shape. Before copying, this
-// imports the ALREADY-COMPILED `dist/theme-packs-registry/index.js` (tsup
-// just finished compiling it) and calls `loadThemePackRegistry` against the
-// SOURCE directory — which validates every bundled pack (ADR Decision 6.7)
-// and throws loudly, naming the offending pack, on any failure. This is what
-// makes a broken pack fail the PACKAGE build, not a consumer's site build
+// imports the ALREADY-COMPILED `dist/theme-packs-registry/load-registry.js`
+// (tsup just finished compiling it) and calls `loadThemePackRegistry` against
+// the SOURCE directory — which validates every bundled pack (ADR Decision
+// 6.7) and throws loudly, naming the offending pack, on any failure. This is
+// what makes a broken pack fail the PACKAGE build, not a consumer's site build
 // (mirrors `copy-eject-sources.mjs`'s "import from dist/, already compiled"
-// precedent).
+// precedent). The public `index.js` barrel is intentionally browser-safe and
+// does not export the filesystem loader.
 
 import { cpSync, mkdirSync, rmSync, statSync } from "node:fs";
 import { resolve, dirname } from "node:path";
@@ -41,7 +42,7 @@ try {
 }
 
 const { loadThemePackRegistry } = await import(
-  resolve(PKG_ROOT, "dist/theme-packs-registry/index.js")
+  resolve(PKG_ROOT, "dist/theme-packs-registry/load-registry.js")
 );
 
 let registry;

@@ -5,7 +5,7 @@
 // any future browser-side tooling.
 
 import { DEFAULT_THEME_PACK_SLUG } from "./meta-schema.js";
-import type { ThemePackRegistry } from "./load-registry.js";
+import type { ThemePackRegistry } from "./types.js";
 
 /** The subset of settings this resolver reads. */
 export interface ResolveEnabledPacksSettings {
