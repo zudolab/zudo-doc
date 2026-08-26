@@ -99,19 +99,37 @@ describe("nested-island props refresh on zfb:before-swap", () => {
   it("does not mutate live props or remount state until the swap callback commits", () => {
     install();
     setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
+    const target = liveIsland("SidebarToggle");
+    const beforeDispatchOuterHtml = target.outerHTML;
 
     const event = dispatchBeforeSwap(
       parseIncoming(header("header-en", island("SidebarToggle", newTree))),
       { invokeSwap: false },
     );
 
-    const target = liveIsland("SidebarToggle");
     expect(target.getAttribute(PROPS_ATTR)).toBe(oldTree);
     expect(target.hasAttribute(REMOUNT_ATTR)).toBe(false);
+    expect(target.outerHTML).toBe(beforeDispatchOuterHtml);
 
     Reflect.apply(event.swap as () => unknown, event, []);
     expect(target.getAttribute(PROPS_ATTR)).toBe(newTree);
     expect(target.getAttribute(REMOUNT_ATTR)).toBe("");
+  });
+
+  it("captures an immutable incoming-props snapshot during dispatch", () => {
+    install();
+    setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
+    const incoming = parseIncoming(
+      header("header-en", island("SidebarToggle", newTree)),
+    );
+
+    const event = dispatchBeforeSwap(incoming, { invokeSwap: false });
+    incoming
+      .querySelector(`[${ISLAND_ATTR}="SidebarToggle"]`)
+      ?.setAttribute(PROPS_ATTR, '{"changed":"after-dispatch"}');
+    Reflect.apply(event.swap as () => unknown, event, []);
+
+    expect(liveIsland("SidebarToggle").getAttribute(PROPS_ATTR)).toBe(newTree);
   });
 
   it("applies a committed plan and delegates exactly once", () => {

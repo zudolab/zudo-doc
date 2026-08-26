@@ -206,8 +206,9 @@ export function disposeNestedIslandPropsRefresh(document: Document): void {
 }
 
 /**
- * Copy `data-props` from the incoming document onto the live nested islands
- * that are about to be lifted through the swap.
+ * Build the immutable `data-props` mutation plan for live nested islands that
+ * will be lifted through the swap. This function only reads both documents;
+ * applying the returned plan is reserved for the commit callback.
  *
  * Matching contract, in order:
  *   1. Pair persisted ROOTS by exact `data-zfb-transition-persist` value. A key
