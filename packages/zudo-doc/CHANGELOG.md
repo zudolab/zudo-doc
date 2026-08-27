@@ -4,6 +4,23 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.13.0] - 2026-08-27
+
+### Features
+
+- Added browser-safe route-context payload types, `createRouteContextPayload()`, and a theme-pack registry builder so host applications can render package-default chrome outside the zfb route runtime. (`f25c76b9`, `e5db342e`, `b7221d01`)
+- Published theme catalog schema v2 with explicit stylesheet capability metadata and runtime validation. (`169c9103`)
+- Added the deterministic, browser-ready `@takazudo/zudo-doc/compiled.css` export, now built with zfb's standalone CSS compiler. (`3258a445`, `211b4e7b`)
+- Made theme controls accessible but inactive until hydration completes, with `pendingUntilHydrated={false}` available for direct consumers that can activate earlier. (`2c71e483`, `b2faceb7`)
+
+### Bug Fixes
+
+- Aligned persisted nested-island prop refresh with the router's abort-safe commit boundary, preventing stale navigation data from reaching the live page during Back-navigation races. (`4a0ffce6`)
+
+### Other Changes
+
+- Updated the zfb peer package family to 2.12.0. (`9cf3fd4b`)
+
 ## [5.12.1] - 2026-08-24
 
 ### Bug Fixes

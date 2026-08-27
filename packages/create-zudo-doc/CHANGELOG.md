@@ -4,6 +4,12 @@ All notable changes to `create-zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.13.0] - 2026-08-27
+
+### Other Changes
+
+- Updated newly generated projects to the zfb 2.12.0 package family, including its standalone CSS compiler and abort-safe client-router swap behavior. (`9cf3fd4b`)
+
 ## [5.12.1] - 2026-08-24
 
 ### Other Changes
