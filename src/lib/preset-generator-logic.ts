@@ -259,7 +259,7 @@ export function specToHeaderRightItem(spec: HeaderRightItemSpec): HeaderRightIte
 
 export const FEATURES = [
   { value: "i18n", label: "i18n (multi-language)", cliFlag: "i18n", default: false, docPath: "/docs/guides/i18n/" },
-  { value: "search", label: "Pagefind search", cliFlag: "search", default: true, docPath: "/docs/guides/search/" },
+  { value: "search", label: "Full-text search", cliFlag: "search", default: true, docPath: "/docs/guides/search/" },
   { value: "sidebarFilter", label: "Sidebar filter", cliFlag: "sidebar-filter", default: true, docPath: "/docs/guides/sidebar-filter/" },
   { value: "claudeResources", label: "Claude Resources", cliFlag: "claude-resources", default: false, docPath: "/docs/guides/claude-resources/" },
   { value: "codexResources", label: "Codex Resources", cliFlag: "codex-resources", default: false, docPath: "/docs/guides/codex-resources/" },
