@@ -9,7 +9,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, resolve } from "node:path";
+import { basename, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
@@ -55,7 +55,12 @@ function packCompiledCss(root: string): Buffer {
   cpSync(PACKAGE_ROOT, snapshot, {
     recursive: true,
     filter(source) {
-      return source !== resolve(PACKAGE_ROOT, "node_modules");
+      if (source === resolve(PACKAGE_ROOT, "node_modules")) return false;
+      // eject-logo/__tests__/cli-smoke.test.ts creates and deletes
+      // `.cli-snapshot-*` dirs directly inside PACKAGE_ROOT; a concurrent
+      // vitest worker can remove one between this copy's readdir and its
+      // lstat, throwing ENOENT here.
+      return !basename(source).startsWith(".cli-snapshot-");
     },
   });
   const packageJsonPath = resolve(snapshot, "package.json");
