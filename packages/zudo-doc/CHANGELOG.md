@@ -4,6 +4,12 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.13.1] - 2026-08-28
+
+### Other Changes
+
+- Raised the `@takazudo/zfb`, `@takazudo/zfb-runtime`, and `@takazudo/zfb-md-wasm` peer range to `^2.13.1`, and the `@takazudo/zudo-doc-history-server` peer floor to `^5.13.0`. (`c36fd4d0`)
+
 ## [5.13.0] - 2026-08-27
 
 ### Features
