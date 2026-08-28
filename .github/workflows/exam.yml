@@ -18,7 +18,8 @@
 #                                  (one open issue per exam job, not shared across jobs
 #                                  despite the common `exam-failure` label); `--green`
 #                                  closes it with a comment on the next passing run
-#                                  (zudolab/zudo-doc#2535)
+#                                  (zudolab/zudo-doc#2535); wired into all five exam jobs,
+#                                  scaffold-pin-published included (#3715)
 #   scripts/report-flaky-lane.mjs — posts pass/fail telemetry to each @flaky test's
 #                                    linked tracking issue
 #   scripts/report-retry-flakes.mjs — CI-safe-suite retry-pass triage signal; files/
@@ -60,9 +61,33 @@ jobs:
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: .nvmrc
+          # Default cache=true reads packageManager from package.json and
+          # shells out to `pnpm store path`, but this job installs no pnpm.
+          package-manager-cache: false
 
       - name: Run scaffold pin published guard
         run: node scripts/check-scaffold-pin-published.mjs
+
+      - name: File failure issue
+        if: failure()
+        run: |
+          bash scripts/file-exam-issue.sh \
+            --run-url "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --workflow "Nightly Exam / Scaffold Pin Published Guard"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+
+      - name: Close exam issue on green run
+        if: success()
+        run: |
+          bash scripts/file-exam-issue.sh \
+            --green \
+            --run-url "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --workflow "Nightly Exam / Scaffold Pin Published Guard"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
 
   # ---------------------------------------------------------------------------
   # Job 2: Notify scaffold pin guard status
