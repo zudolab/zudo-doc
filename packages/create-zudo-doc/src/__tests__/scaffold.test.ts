@@ -1529,6 +1529,9 @@ describe("scaffold — CLAUDE.md generation", () => {
     expect(content).toContain("**search**");
     expect(content).toContain("**docHistory**");
     expect(content).toContain("**llmsTxt**");
+    // search ships as zudo-doc's own self-contained widget, not Pagefind (#3716).
+    expect(content).toContain("**search** — Full-text search");
+    expect(content).not.toContain("Pagefind");
   });
 
   it("uses the correct package manager in commands", async () => {
@@ -1688,16 +1691,15 @@ describe("scaffold — generated package.json", () => {
     expect(pkg.dependencies["katex"]).toBeDefined();
   });
 
-  it("adds pagefind to devDependencies only when search is enabled", async () => {
+  it("adds neither minisearch nor pagefind when search is enabled", async () => {
+    // Search ships as @takazudo/zudo-doc's own self-contained generated
+    // search-widget script — no third-party search engine is needed (#3716).
     await scaffold({ ...baseChoices, projectName: "test-search", features: ["search"] });
     const withSearch = await fs.readJson(
       projectPath("test-search", "package.json"),
     );
-    expect(withSearch.devDependencies["pagefind"]).toBeDefined();
-
-    await scaffold(baseChoices);
-    const without = await fs.readJson(projectPath("test-doc", "package.json"));
-    expect(without.devDependencies["pagefind"]).toBeUndefined();
+    expect(withSearch.dependencies["minisearch"]).toBeUndefined();
+    expect(withSearch.devDependencies["pagefind"]).toBeUndefined();
   });
 
   it("adds @takazudo/zudo-doc-history-server only when docHistory is on (#3110)", async () => {

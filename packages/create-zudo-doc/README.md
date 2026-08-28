@@ -73,7 +73,7 @@ Each feature has a `--[no-]<flag>` form. Passing `--feature` enables it; `--no-f
 | Flag | Description | Default |
 |------|-------------|---------|
 | `--[no-]i18n` | Multi-language support (adds a secondary locale) | off |
-| `--[no-]search` | Pagefind full-text search | on |
+| `--[no-]search` | Full-text search | on |
 | `--[no-]sidebar-filter` | Real-time sidebar filter | on |
 | `--[no-]image-enlarge` | Click-to-enlarge for oversized images | on |
 | `--[no-]tag-governance` | Vocabulary-aware tag audit + suggest scripts | off |
