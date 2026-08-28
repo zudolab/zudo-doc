@@ -180,7 +180,7 @@ export function generateCLAUDEFile(choices: UserChoices): string {
 
   // Enabled features
   const featureDescriptions: Record<string, string> = {
-    search: "Full-text search via Pagefind",
+    search: "Full-text search",
     designTokenPanel:
       "Interactive tabbed panel for tweaking spacing, font, size, and color tokens",
     sidebarResizer: "Draggable sidebar width",

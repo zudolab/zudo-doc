@@ -337,8 +337,8 @@ Confirm the 5 directories above (`pages/lib`, `src/components`, `src/utils`, `sr
 | File | Expected |
 |------|----------|
 | (baseline unchanged — search has no file footprint) | — |
-| `package.json` `devDependencies["pagefind"]` | PRESENT |
-| `package.json` `dependencies["minisearch"]` | PRESENT |
+| `package.json` `devDependencies["pagefind"]` | ABSENT (search is zudo-doc's own generated widget — no third-party engine, #3716) |
+| `package.json` `dependencies["minisearch"]` | ABSENT (same reason — do not re-add) |
 | `zfb.config.ts` `headerRightItems` | contains `{ type: "component", component: "search" }` |
 
 **i18n:**

@@ -223,8 +223,8 @@ export const FEATURES: Feature[] = [
   },
   {
     value: "search",
-    label: "Pagefind search",
-    hint: "Full-text search",
+    label: "Full-text search",
+    hint: "Built-in client-side search",
     default: true,
     cliFlag: "search",
   },

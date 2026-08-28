@@ -2,10 +2,10 @@
 # file-exam-issue.sh — Deduped failure issue reporter for exam.yml.
 #
 # Per-workflow dedup strategy (zudolab/zudo-doc#2535):
-#   - Three exam jobs (e2e-full / slow-create / slow-zudo-doc) share the
-#     `exam-failure` label, so label-only lookup previously matched
-#     `.[0]` of ANY open exam-failure issue — an e2e-full failure could
-#     append onto an unrelated slow-create issue that happened to be older.
+#   - All exam jobs share the `exam-failure` label, so label-only lookup
+#     previously matched `.[0]` of ANY open exam-failure issue — an
+#     e2e-full failure could append onto an unrelated slow-create issue
+#     that happened to be older.
 #   - Dedup now also matches on the issue TITLE, which embeds the workflow
 #     identity (`[exam] Nightly suite failure: <workflow>`), so each job's
 #     open issue is scoped to that job.

@@ -973,10 +973,9 @@ function generatePackageJson(choices: UserChoices) {
     // (see the scripts block below; `.htmlvalidate.json` no longer ships).
   };
 
-  if (choices.features.includes("search")) {
-    deps["minisearch"] = "^7.2.0";
-    devDeps["pagefind"] = "^1.4.0";
-  }
+  // search ships as @takazudo/zudo-doc's own self-contained generated
+  // search-widget script (custom word-match scorer) — no third-party search
+  // engine dependency is needed here. Do not re-add minisearch/pagefind.
 
   if (choices.features.includes("docHistory")) {
     // (`diff` remains an unconditional base dep — see the `deps` block above:
