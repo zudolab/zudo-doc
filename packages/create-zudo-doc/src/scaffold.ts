@@ -865,9 +865,15 @@ function generatePackageJson(choices: UserChoices) {
     // one CSS entrypoint without route discovery or page rendering, and fixes
     // a Back race before ClientRouter DOM swaps. Both changes are additive
     // tooling/runtime behavior; a fresh scaffold needs no config migration.
-    "@takazudo/zfb": "2.12.0",
-    "@takazudo/zfb-runtime": "2.12.0",
-    "@takazudo/zfb-md-wasm": "2.12.0",
+    // 2.13.1: toolchain-only. The published JS tarballs for `@takazudo/zfb`,
+    // `zfb-runtime`, and `zfb-adapter-cloudflare` differ from 2.12.0 in their
+    // package.json version fields alone — 2.13.0 made CI-attested publishing
+    // the default, and 2.13.1's livereload bfcache-lifecycle fix lives in the
+    // per-platform Rust binary. `zfb-md-wasm` rebuilt its WASM with a
+    // byte-identical export surface. No generator-side migration.
+    "@takazudo/zfb": "2.13.1",
+    "@takazudo/zfb-runtime": "2.13.1",
+    "@takazudo/zfb-md-wasm": "2.13.1",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
