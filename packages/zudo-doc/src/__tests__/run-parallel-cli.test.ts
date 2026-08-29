@@ -149,7 +149,11 @@ describe("run-parallel", () => {
       stdio: "ignore",
     });
     await delay(1500);
-    process.kill(child.pid, "SIGTERM");
+    // ChildProcess.pid is optional in the type: it is undefined when the spawn
+    // itself failed, which would make the assertions below vacuously pass.
+    const { pid } = child;
+    if (pid === undefined) throw new Error("coordinator failed to spawn");
+    process.kill(pid, "SIGTERM");
     await delay(ORPHAN_GRACE_MS);
     expect(await exists("long.done")).toBe(false);
   });
