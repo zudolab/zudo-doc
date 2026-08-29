@@ -885,6 +885,13 @@ function generatePackageJson(choices: UserChoices) {
     // ties this pin to packages/zudo-doc's version, so the lockstep release
     // bumps both together; do not cut a create-zudo-doc release until the
     // matching @takazudo/zudo-doc version (with content.css) is on npm.
+    // RELEASE DEPENDENCY (same shape as the content.css one above): the
+    // docHistory `dev`/`dev:network` scripts now invoke `run-parallel`, a bin
+    // added to @takazudo/zudo-doc in this monorepo but NOT present in published
+    // 5.13.1. `^5.13.1` floats up, so a fresh install resolves the bumped
+    // version — but do not cut a create-zudo-doc release until a
+    // @takazudo/zudo-doc that ships bin/run-parallel.mjs is on npm, or every
+    // docHistory scaffold fails at `dev` with `run-parallel: not found`.
     // ZUDO_DOC_PIN is the shared constant — scaffold() uses the same value
     // to seed .zudo-doc.json so the provenance and the dep can never drift.
     "@takazudo/zudo-doc": ZUDO_DOC_PIN,

@@ -176,6 +176,10 @@ let signalCount = 0;
 
 function signalTree(child, signal) {
   if (child.exitCode !== null || child.signalCode !== null) return;
+  // `pid` is undefined when the spawn itself failed. There is no tree to walk,
+  // and passing it through would print a bogus "could not signal pid undefined"
+  // line (or run `taskkill /pid undefined`) on an already-failing teardown.
+  if (child.pid === undefined) return;
 
   if (process.platform === "win32") {
     // Windows has no process groups to signal; taskkill /T walks the tree.
@@ -189,7 +193,9 @@ function signalTree(child, signal) {
     return;
   }
 
-  // Deepest last so a parent cannot spawn a replacement child after we passed it.
+  // collectTree yields parents before children; reversing signals the deepest
+  // descendants first, so an intermediate `pnpm run x` is not left briefly
+  // holding a still-live grandchild it does not forward signals to.
   for (const pid of collectTree(child.pid).reverse()) {
     try {
       process.kill(pid, signal);
