@@ -186,7 +186,7 @@ function decodeHtmlAttributeValue(value) {
 
 export function extractHtmlLinks(html) {
   const links = [];
-  const regex = /<a\s[^>]*?href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`\\]+))[^>]*>/gi;
+  const regex = /<a(?=\s)[^>]*?\shref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`\\]+))[^>]*>/gi;
   let match;
   let lastIndex = 0;
   let currentLine = 1;
@@ -209,7 +209,7 @@ export function extractHtmlLinks(html) {
 
 export function extractHtmlIds(html) {
   const ids = [];
-  const regex = /\bid\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`\\]+))/gi;
+  const regex = /<[A-Za-z][^>]*?\sid\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`\\]+))[^>]*>/gi;
   let match;
   while ((match = regex.exec(html)) !== null) {
     ids.push(decodeHtmlAttributeValue(match[1] ?? match[2] ?? match[3]));

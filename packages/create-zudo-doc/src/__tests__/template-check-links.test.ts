@@ -143,7 +143,7 @@ describe("generated check-links.js — built HTML attributes (#3720)", () => {
     const result = await runFixture({
       args: ["--strict-broken", "--strict-anchors"],
       files: {
-        "dist/index.html": `<div data-props='{"html":"<a href=\\\"#\\\">example</a><div id=\\\"ghost\\\"></div>"}'></div>\n`,
+        "dist/index.html": `<a data-href=/docs/missing>Label</a><a-card href=/docs/missing>Card</a-card><div data-id=ghost></div><div data-props='{"html":"<a href=\\\"#\\\">example</a><div id=\\\"ghost\\\"></div>"}'></div>\n`,
       },
     });
     expect(result.status).toBe(0);

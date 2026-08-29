@@ -306,6 +306,14 @@ describe("check-links", () => {
       const html = `<div data-props='{"html":"<a href=\\\"#\\\">example</a>"}'></div>`;
       expect(extractHtmlLinks(html)).toEqual([]);
     });
+
+    it("does not treat data-href as a link target", () => {
+      expect(extractHtmlLinks(`<a data-href=/docs/missing>Label</a>`)).toEqual([]);
+    });
+
+    it("does not treat a custom element beginning with a- as an anchor", () => {
+      expect(extractHtmlLinks(`<a-card href=/docs/missing>Card</a-card>`)).toEqual([]);
+    });
   });
 
   describe("extractHtmlIds", () => {
@@ -317,6 +325,10 @@ describe("check-links", () => {
     it("does not extract ids from escaped serialized demo markup", () => {
       const html = `<div data-props='{"html":"<div id=\\\"ghost\\\"></div>"}'></div>`;
       expect(extractHtmlIds(html)).toEqual([]);
+    });
+
+    it("does not treat data-id as an element id", () => {
+      expect(extractHtmlIds(`<div data-id=ghost></div>`)).toEqual([]);
     });
   });
 
