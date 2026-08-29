@@ -287,7 +287,7 @@ jobs:
         id: deploy
         # Applies v1-ai-chat-daily-spend-cap/new_sqlite_classes in production.
         # The custom entry preserves the generated adapter graph from build-site.
-        run: npx wrangler@4.85.0 deploy
+        run: npx wrangler@4.111.0 deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
