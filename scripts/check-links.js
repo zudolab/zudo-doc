@@ -153,14 +153,45 @@ export async function collectFiles(dir, extensions) {
 
 // --- HTML Link Extraction ---
 
+const HTML_NAMED_CHARACTER_REFERENCES = {
+  amp: "&",
+  apos: "'",
+  gt: ">",
+  lt: "<",
+  quot: '"',
+};
+
+function decodeHtmlAttributeValue(value) {
+  return value.replace(
+    /&(?:#([0-9]+)|#x([0-9a-f]+)|(amp|apos|gt|lt|quot));/gi,
+    (_reference, decimal, hexadecimal, named) => {
+      if (named !== undefined) {
+        return HTML_NAMED_CHARACTER_REFERENCES[named.toLowerCase()];
+      }
+      const codePoint = Number.parseInt(
+        hexadecimal ?? decimal,
+        hexadecimal === undefined ? 10 : 16,
+      );
+      if (
+        codePoint === 0 ||
+        codePoint > 0x10ffff ||
+        (codePoint >= 0xd800 && codePoint <= 0xdfff)
+      ) {
+        return "\uFFFD";
+      }
+      return String.fromCodePoint(codePoint);
+    },
+  );
+}
+
 export function extractHtmlLinks(html) {
   const links = [];
-  const regex = /<a\s[^>]*?href=(?:"([^"]*)"|'([^']*)')[^>]*>/gi;
+  const regex = /<a(?=\s)[^>]*?\shref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`\\]+))[^>]*>/gi;
   let match;
   let lastIndex = 0;
   let currentLine = 1;
   while ((match = regex.exec(html)) !== null) {
-    const href = match[1] ?? match[2];
+    const href = decodeHtmlAttributeValue(match[1] ?? match[2] ?? match[3]);
     if (/^https?:\/\//i.test(href)) continue;
     if (/^mailto:/i.test(href)) continue;
     if (/^javascript:/i.test(href)) continue;
@@ -176,14 +207,23 @@ export function extractHtmlLinks(html) {
   return links;
 }
 
+export function extractHtmlIds(html) {
+  const ids = [];
+  const regex = /<[A-Za-z][^>]*?\sid\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`\\]+))[^>]*>/gi;
+  let match;
+  while ((match = regex.exec(html)) !== null) {
+    ids.push(decodeHtmlAttributeValue(match[1] ?? match[2] ?? match[3]));
+  }
+  return ids;
+}
+
 // --- Link Resolution ---
 
 /**
- * Decode percent-encoding the way a static server / browser does before
- * mapping a URL path to the filesystem. Tag hrefs are emitted URL-encoded
- * (e.g. /docs/tags/type%3Aguide/) while the built output dir keeps the raw
- * tag name (dist/docs/tags/type:guide/), so the checker must decode to
- * find the file. Malformed sequences (stray "%") pass through unchanged.
+ * Decode percent-encoding for build outputs that use decoded filesystem names.
+ * Other zfb outputs preserve encoded route segments on disk, so dist resolution
+ * tries the literal URL path first and this decoded form second. Malformed
+ * sequences (stray "%") pass through unchanged.
  */
 function safeDecodePath(path) {
   try {
@@ -205,6 +245,7 @@ function parseHref(href) {
   if (rawFragment === null) {
     return {
       path: safeDecodePath(rawPath),
+      rawPath,
       fragment: null,
       fragmentError: null,
     };
@@ -212,6 +253,7 @@ function parseHref(href) {
   if (rawFragment === "") {
     return {
       path: safeDecodePath(rawPath),
+      rawPath,
       fragment: "",
       fragmentError: "empty fragment",
     };
@@ -219,39 +261,25 @@ function parseHref(href) {
   try {
     return {
       path: safeDecodePath(rawPath),
+      rawPath,
       fragment: decodeURIComponent(rawFragment),
       fragmentError: null,
     };
   } catch {
     return {
       path: safeDecodePath(rawPath),
+      rawPath,
       fragment: rawFragment,
       fragmentError: "malformed percent-encoding",
     };
   }
 }
 
-async function resolveLinkTargetDetail(
-  href,
-  distDir,
-  basePath = "/",
-  fileDir = "",
-  sourceFile = null,
-) {
-  const { path: clean, fragment, fragmentError } = parseHref(href);
-  if (!clean) {
-    return {
-      type: "root",
-      targetFile: sourceFile ?? join(distDir, "index.html"),
-      fragment,
-      fragmentError,
-    };
-  }
-
-  let absolute = clean;
-  if (!clean.startsWith("/")) {
+async function resolveBuiltPath(path, distDir, basePath, fileDir) {
+  let absolute = path;
+  if (!path.startsWith("/")) {
     const dirInDist = fileDir ? relative(distDir, fileDir) : "";
-    absolute = "/" + join(dirInDist, clean);
+    absolute = "/" + join(dirInDist, path);
   }
 
   let stripped = absolute;
@@ -261,36 +289,57 @@ async function resolveLinkTargetDetail(
 
   const relPath = stripped.startsWith("/") ? stripped.slice(1) : stripped;
   if (!relPath) {
-    return {
-      type: "root",
-      targetFile: join(distDir, "index.html"),
-      fragment,
-      fragmentError,
-    };
+    return { type: "root", targetFile: join(distDir, "index.html") };
   }
 
   if (extname(relPath)) {
     const targetFile = join(distDir, relPath);
+    return (await fileExists(targetFile))
+      ? { type: "file", targetFile }
+      : { type: "missing", targetFile: null };
+  }
+
+  const indexFile = join(distDir, relPath, "index.html");
+  if (await fileExists(indexFile)) {
+    return { type: "directoryIndex", targetFile: indexFile };
+  }
+  const htmlFile = join(distDir, relPath + ".html");
+  if (await fileExists(htmlFile)) {
+    return { type: "file", targetFile: htmlFile };
+  }
+  return { type: "missing", targetFile: null };
+}
+
+async function resolveLinkTargetDetail(
+  href,
+  distDir,
+  basePath = "/",
+  fileDir = "",
+  sourceFile = null,
+) {
+  const {
+    path: decodedPath,
+    rawPath,
+    fragment,
+    fragmentError,
+  } = parseHref(href);
+  if (!rawPath) {
     return {
-      type: (await fileExists(targetFile)) ? "file" : "missing",
-      targetFile,
+      type: "root",
+      targetFile: sourceFile ?? join(distDir, "index.html"),
       fragment,
       fragmentError,
     };
   }
 
-  const indexFile = join(distDir, relPath, "index.html");
-  if (await fileExists(indexFile)) {
-    return {
-      type: "directoryIndex",
-      targetFile: indexFile,
-      fragment,
-      fragmentError,
-    };
-  }
-  const htmlFile = join(distDir, relPath + ".html");
-  if (await fileExists(htmlFile)) {
-    return { type: "file", targetFile: htmlFile, fragment, fragmentError };
+  const pathCandidates = rawPath === decodedPath
+    ? [rawPath]
+    : [rawPath, decodedPath];
+  for (const path of pathCandidates) {
+    const detail = await resolveBuiltPath(path, distDir, basePath, fileDir);
+    if (detail.type !== "missing") {
+      return { ...detail, fragment, fragmentError };
+    }
   }
   return { type: "missing", targetFile: null, fragment, fragmentError };
 }
@@ -618,10 +667,20 @@ export async function checkHtmlLinksAndTrailing(
   // Both checks read from the same resolved detail so each href is stat'd once.
   const cache = new Map();
   const idCache = new Map();
+  const pages = [];
+  const scanned = { links: 0, ids: 0 };
 
   for (const file of htmlFiles) {
     const content = await readFile(file, "utf-8");
     const links = extractHtmlLinks(content);
+    const ids = extractHtmlIds(content);
+    scanned.links += links.length;
+    scanned.ids += ids.length;
+    idCache.set(file, new Set(ids));
+    pages.push({ file, links });
+  }
+
+  for (const { file, links } of pages) {
     const fileDir = dirname(file);
     const relFile = relative(rootDir, file);
 
@@ -662,12 +721,9 @@ export async function checkHtmlLinksAndTrailing(
           let ids = idCache.get(detail.targetFile);
           if (ids === undefined) {
             const targetHtml = await readFile(detail.targetFile, "utf-8");
-            ids = new Set();
-            const idRegex = /\bid\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;
-            let idMatch;
-            while ((idMatch = idRegex.exec(targetHtml)) !== null) {
-              ids.add(idMatch[1] ?? idMatch[2]);
-            }
+            const targetIds = extractHtmlIds(targetHtml);
+            scanned.ids += targetIds.length;
+            ids = new Set(targetIds);
             idCache.set(detail.targetFile, ids);
           }
           if (!ids.has(detail.fragment)) reason = "missing target id";
@@ -702,7 +758,7 @@ export async function checkHtmlLinksAndTrailing(
     }
   }
 
-  return { broken, anchors, trailingSlash };
+  return { broken, anchors, trailingSlash, scanned };
 }
 
 export async function checkMdxLinks(contentDirs, rootDir, distDir = null, basePath = "/", locales) {
@@ -871,6 +927,7 @@ async function main() {
       broken: brokenLinks,
       anchors: htmlAnchorWarnings,
       trailingSlash: trailingSlashWarnings,
+      scanned,
     },
     mdxWarnings,
     mdxAnchorWarnings,
@@ -913,6 +970,9 @@ async function main() {
     trailingSlashWarnings,
     anchorWarnings,
   ));
+  console.log(
+    `\nBuilt HTML scan: ${scanned.links} internal link${scanned.links === 1 ? "" : "s"} and ${scanned.ids} ID attribute${scanned.ids === 1 ? "" : "s"} inspected.`,
+  );
 
   if (allowlist.size > 0) {
     const skipped =
