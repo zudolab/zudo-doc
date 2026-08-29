@@ -1001,12 +1001,6 @@ function generatePackageJson(choices: UserChoices) {
     // tsx is no longer needed here: the relocated package plugin imports the
     // runner directly (no `tsx -e` spawn) since the package ships compiled
     // dist/ — package-first migration #2321 (#2337).
-    // npm-run-all2 provides `run-p`, used by the docHistory `dev` script
-    // (below) to run the zfb dev server and the doc-history API server
-    // concurrently — otherwise the :4322 proxy target never starts and the
-    // feature silently looks broken (#2926). Same maintained fork/pin this
-    // monorepo's own root package.json uses.
-    devDeps["npm-run-all2"] = "^7.0.2";
   }
 
   // claudeResources: tsx is no longer needed. The relocated package plugin
@@ -1035,16 +1029,20 @@ function generatePackageJson(choices: UserChoices) {
     // running concurrently — otherwise the Created/Updated/Author block
     // silently never appears in dev (#2926). `doc-history-server` is the bin
     // shipped by the @takazudo/zudo-doc-history-server dep added above;
-    // `run-p` (npm-run-all2, added to devDependencies above) runs both.
-    scripts.dev = "run-p dev:zfb dev:history";
+    // `run-parallel` runs both. It is a bin shipped by @takazudo/zudo-doc — an
+    // unconditional dep added above — so concurrency costs this project no extra
+    // devDependency. It replaced npm-run-all2's `run-p`, which was the sole
+    // source of four advisories (shell-quote DoS; brace-expansion@2 DoS x3).
+    scripts.dev = "run-parallel dev:zfb dev:history";
     scripts["dev:zfb"] = "zfb dev";
-    // run-p swallows trailing args and npm-run-all2 v7's `{@}` placeholder
-    // strips flag names, so `pnpm dev -- --host 0.0.0.0` is silently ignored
-    // (verified in issue #2940) — dev:network is a dedicated LAN-bound script
+    // run-parallel deliberately does not forward trailing args — run-p swallowed
+    // them too, and npm-run-all2 v7's `{@}` placeholder stripped flag names, so
+    // `pnpm dev -- --host 0.0.0.0` is silently ignored (verified in issue #2940
+    // against run-p, and preserved on purpose). dev:network is a LAN-bound script
     // instead. Only zfb binds 0.0.0.0; the history server stays loopback-only
     // and LAN clients reach it through zfb's `/doc-history/*` dev proxy.
     scripts["dev:zfb:network"] = "zfb dev --host 0.0.0.0";
-    scripts["dev:network"] = "run-p dev:zfb:network dev:history";
+    scripts["dev:network"] = "run-parallel dev:zfb:network dev:history";
     // Relative --content-dir/--locale paths are resolved by resolveContentPath
     // (packages/doc-history-server/src/args.ts) against INIT_CWD (falling back
     // to process.cwd()) — correct for the supported invocation (`<pm> dev` /

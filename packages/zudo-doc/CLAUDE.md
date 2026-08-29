@@ -70,11 +70,13 @@ Three consequences of pairing them:
 
 ### A watcher exit tears down the whole dev session (accepted, #3129)
 
-`run-p` **aborts its sibling** when one task exits non-zero, and root `pnpm dev` nests
-this `run-p` inside another one (`run-p dev:zfb dev:history dev:claude-watch dev:zudo-doc`).
-So a fatal `dev:dts` exit kills `dev:js`, which fails `dev:zudo-doc`, which takes down
-`zfb dev` and the doc-history server with it. Two hops, verified against
-`npm-run-all2@7.0.2` — not assumed.
+`run-parallel` **aborts its sibling** when one task exits non-zero, and root `pnpm dev`
+nests this `run-parallel` inside another one
+(`run-parallel dev:zfb dev:history dev:claude-watch dev:zudo-doc`). So a fatal `dev:dts`
+exit kills `dev:js`, which fails `dev:zudo-doc`, which takes down `zfb dev` and the
+doc-history server with it. Two hops, verified against `npm-run-all2@7.0.2` — not
+assumed — and preserved deliberately when that dependency was replaced by the
+package-owned `bin/run-parallel.mjs` (its header documents the parity).
 
 **This is accepted behaviour, not an open bug.** It is loud and self-announcing:
 
@@ -110,7 +112,9 @@ tsup 8.5.1 / TypeScript. This case is instant and self-evident rather than insid
 the syntax error and relaunch. Before #3126 there was a single watcher, so neither shape
 of this cascade existed.
 
-**Do NOT "fix" this with `run-p --continue-on-error`.** It keeps the surviving watcher
+**Do NOT "fix" this by adding a `--continue-on-error` equivalent to `run-parallel`.**
+(npm-run-all2 spelled it `run-p --continue-on-error`; the replacement deliberately ships
+no such flag.) It keeps the surviving watcher
 alive, but the dead one then fails *silently*: a dead `dev:dts` leaves `dist/*.d.ts`
 frozen at its last-emitted state while the JS keeps updating around it. That is the same
 class of `dist`-out-of-sync-with-source problem the paired-watcher split (#3126) was added

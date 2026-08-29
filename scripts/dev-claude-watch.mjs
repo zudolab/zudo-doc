@@ -121,7 +121,7 @@ watcher
 console.log(`[claude-watch] watching ${CLAUDE_DIR}`);
 
 // ---------------------------------------------------------------------------
-// Signal handling — exit cleanly so run-p doesn't leave orphans
+// Signal handling — exit cleanly so run-parallel doesn't leave orphans
 // ---------------------------------------------------------------------------
 
 async function shutdown(signal) {

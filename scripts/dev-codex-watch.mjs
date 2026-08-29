@@ -195,7 +195,7 @@ watcher
 console.log(`[codex-watch] watching ${watchInputs.join(", ")}`);
 
 // ---------------------------------------------------------------------------
-// Signal handling — exit cleanly so run-p does not leave orphans.
+// Signal handling — exit cleanly so run-parallel does not leave orphans.
 // ---------------------------------------------------------------------------
 
 async function shutdown(signal) {

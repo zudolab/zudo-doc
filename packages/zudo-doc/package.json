@@ -626,6 +626,7 @@
   "bin": {
     "gen-component-tokens": "./bin/gen-component-tokens.mjs",
     "gen-z-index": "./bin/gen-z-index.mjs",
+    "run-parallel": "./bin/run-parallel.mjs",
     "tags-audit": "./bin/tags-audit.mjs",
     "tags-suggest": "./bin/tags-suggest.mjs",
     "zudo-doc": "./bin/zudo-doc.mjs"
@@ -636,7 +637,7 @@
     "build": "node scripts/gen-search-widget-script.mjs && node scripts/gen-nav-overflow-script.mjs && tsup && tsc -p tsconfig.build.json",
     "predev": "node ../../scripts/ensure-workspace-build.mjs && node scripts/gen-search-widget-script.mjs && node scripts/gen-nav-overflow-script.mjs",
     "// dev": "Do NOT add `--continue-on-error` here. It stops a fatal watcher exit from cascading, but the dead watcher then fails silently — a dead dev:dts leaves dist/*.d.ts frozen while the JS keeps updating, which typechecks cleanly against stale types instead of failing loudly like #3113's absent declarations did. See the #3129 section in CLAUDE.md.",
-    "dev": "run-p dev:js dev:dts",
+    "dev": "node bin/run-parallel.mjs dev:js dev:dts",
     "dev:js": "tsup --watch",
     "dev:dts": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
     "prepare": "node scripts/gen-search-widget-script.mjs && node scripts/gen-nav-overflow-script.mjs && tsup --silent && tsc -p tsconfig.build.json",
@@ -708,7 +709,6 @@
     "@types/node": "^25.3.5",
     "@types/pluralize": "^0.0.33",
     "happy-dom": "^20.10.6",
-    "npm-run-all2": "^7.0.2",
     "preact": "^10.29.1",
     "preact-render-to-string": "^6.6.6",
     "tsup": "^8.0.0",

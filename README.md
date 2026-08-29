@@ -55,7 +55,7 @@ Usually you can just re-run `pnpm dev`. Two cases where re-running alone will no
   means `fs.inotify.max_user_watches` is. Raising the other one does nothing.
 
 This is accepted behaviour rather than an open bug; `packages/zudo-doc/CLAUDE.md` explains
-why, and why `run-p --continue-on-error` is deliberately *not* the fix.
+why, and why a `--continue-on-error` equivalent is deliberately *not* the fix.
 
 ## Internationalization
 
