@@ -12,7 +12,7 @@ instead of editing the generated markdown directly.
 
 ### Server mode (local development)
 
-Runs an HTTP server that serves history on demand. Used by `pnpm dev` at the repository root, which starts zfb, this server, and the package dev processes concurrently via `run-p`.
+Runs an HTTP server that serves history on demand. Used by `pnpm dev` at the repository root, which starts zfb, this server, and the package dev processes concurrently via `run-parallel`.
 
 ```bash
 pnpm dev -- \

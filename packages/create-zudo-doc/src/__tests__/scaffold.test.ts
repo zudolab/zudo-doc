@@ -1439,7 +1439,7 @@ describe("scaffold — bodyFootUtil auto-enables docHistory (#1795 behavior, re-
     const pkg = await fs.readJson(projectPath("test-body-foot", "package.json"));
     expect(pkg.scripts["dev:zfb:network"]).toBe("zfb dev --host 0.0.0.0");
     expect(pkg.scripts["dev:network"]).toBe(
-      "run-p dev:zfb:network dev:history",
+      "run-parallel dev:zfb:network dev:history",
     );
   });
 });
@@ -1561,7 +1561,7 @@ describe("scaffold — CLAUDE.md generation", () => {
       "utf-8",
     );
     expect(withDocHistory).toContain("doc-history API server (port 4322)");
-    expect(withDocHistory).toContain("run-p");
+    expect(withDocHistory).toContain("run-parallel");
     expect(withDocHistory).toContain("pnpm dev:zfb");
     expect(withDocHistory).toContain("pnpm dev:history");
     expect(withDocHistory).toContain("pnpm dev:network");
@@ -1578,7 +1578,7 @@ describe("scaffold — CLAUDE.md generation", () => {
       "utf-8",
     );
     expect(without).not.toContain("doc-history API server");
-    expect(without).not.toContain("run-p");
+    expect(without).not.toContain("run-parallel");
     expect(without).toContain("zfb dev server (port 4321)");
     expect(without).not.toContain("dev:network");
     expect(without).not.toContain("Trusted networks only");
@@ -1737,7 +1737,7 @@ describe("scaffold — generated package.json", () => {
     expect(pkg.dependencies["@takazudo/zudo-doc-history-server"]).toBeDefined();
   });
 
-  it("wires a two-process dev script + pinned npm-run-all2 when docHistory is enabled (#2926)", async () => {
+  it("wires a two-process dev script using the package-owned run-parallel bin when docHistory is enabled (#2926)", async () => {
     await scaffold({
       ...baseChoices,
       projectName: "test-history-dev-script",
@@ -1746,19 +1746,21 @@ describe("scaffold — generated package.json", () => {
     const pkg = await fs.readJson(
       projectPath("test-history-dev-script", "package.json"),
     );
-    expect(pkg.scripts.dev).toBe("run-p dev:zfb dev:history");
+    expect(pkg.scripts.dev).toBe("run-parallel dev:zfb dev:history");
     expect(pkg.scripts["dev:zfb"]).toBe("zfb dev");
     expect(pkg.scripts["dev:history"]).toBe(
       "doc-history-server --port 4322 --content-dir src/content/docs",
     );
     expect(pkg.scripts["dev:zfb:network"]).toBe("zfb dev --host 0.0.0.0");
     expect(pkg.scripts["dev:network"]).toBe(
-      "run-p dev:zfb:network dev:history",
+      "run-parallel dev:zfb:network dev:history",
     );
-    expect(pkg.devDependencies["npm-run-all2"]).toBe("^7.0.2");
+    // The dep is gone: run-parallel ships as a bin from @takazudo/zudo-doc,
+    // which every scaffold already depends on unconditionally.
+    expect(pkg.devDependencies["npm-run-all2"]).toBeUndefined();
   });
 
-  it("does NOT add the docHistory dev scripts or npm-run-all2 when docHistory is disabled", async () => {
+  it("does NOT add the docHistory dev scripts when docHistory is disabled", async () => {
     await scaffold(baseChoices);
     const pkg = await fs.readJson(projectPath("test-doc", "package.json"));
     expect(pkg.scripts.dev).toBe("zfb dev");
@@ -1807,15 +1809,17 @@ describe("scaffold — generated package.json", () => {
     const pkg = await fs.readJson(
       projectPath("test-body-foot-dev-script", "package.json"),
     );
-    expect(pkg.scripts.dev).toBe("run-p dev:zfb dev:history");
+    expect(pkg.scripts.dev).toBe("run-parallel dev:zfb dev:history");
     expect(pkg.scripts["dev:history"]).toBe(
       "doc-history-server --port 4322 --content-dir src/content/docs",
     );
     expect(pkg.scripts["dev:zfb:network"]).toBe("zfb dev --host 0.0.0.0");
     expect(pkg.scripts["dev:network"]).toBe(
-      "run-p dev:zfb:network dev:history",
+      "run-parallel dev:zfb:network dev:history",
     );
-    expect(pkg.devDependencies["npm-run-all2"]).toBe("^7.0.2");
+    // The dep is gone: run-parallel ships as a bin from @takazudo/zudo-doc,
+    // which every scaffold already depends on unconditionally.
+    expect(pkg.devDependencies["npm-run-all2"]).toBeUndefined();
   });
 
   it("adds package-owned tags:audit/tags:suggest scripts without project-side tooling deps", async () => {

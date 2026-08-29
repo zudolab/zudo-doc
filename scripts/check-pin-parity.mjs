@@ -167,10 +167,13 @@ const FIRST_PARTY_PEER_CHECKS = [
  * scaffold.ts uses three forms for package pins:
  *   Colon form (object literal):
  *     "@takazudo/zudo-doc": "^0.2.0-next.1",
- *   Bracket-assignment form (conditional feature deps, e.g. npm-run-all2):
+ *   Bracket-assignment form (conditional feature deps, e.g.
+ *   @takazudo/zudo-doc-history-server, which is added only under `docHistory`):
  *     deps["<feature-dep>"] = "^0.2.0-next.1";
- *     (NB: @takazudo/zudo-doc-history-server used to use this form but moved to
- *      the colon form above when it became an unconditional dep — #3080.)
+ *     (NB: that package went colon-form when #3080 made it unconditional, then
+ *      back to this form when #3110 let docHistory-OFF projects drop it. The
+ *      other long-standing example of this form, npm-run-all2, is gone — it was
+ *      replaced by the package-owned `run-parallel` bin to shed four advisories.)
  *   Constant-reference form (C1 #2362 — the pin is hoisted to a module
  *   constant so the dep pin and the `.zudo-doc.json` provenance seed can't
  *   drift):

@@ -20,7 +20,7 @@ Doc History Serverは`packages/doc-history-server/`にあるサブパッケー�
 
 ## サーバーモード（ローカル開発）
 
-サーバーは設定可能なポート（デフォルト4322）で実行され、REST API経由でドキュメント履歴を配信します。`docHistory`を有効にしてscaffoldしたプロジェクトでは、これは自動的に配線されます — `create-zudo-doc`は`dev`スクリプトとして`run-p dev:zfb dev:history`を生成するため、zfbとdoc-history-serverが同時に実行されます。
+サーバーは設定可能なポート（デフォルト4322）で実行され、REST API経由でドキュメント履歴を配信します。`docHistory`を有効にしてscaffoldしたプロジェクトでは、これは自動的に配線されます — `create-zudo-doc`は`dev`スクリプトとして`run-parallel dev:zfb dev:history`を生成するため、zfbとdoc-history-serverが同時に実行されます。`run-parallel`は`@takazudo/zudo-doc`が同梱する小さなbinなので、追加の開発依存は不要です。
 
 ### サーバーの起動
 
@@ -84,7 +84,7 @@ GET /doc-history/ja/guides/writing-docs.json
 
 開発モードでは、doc-historyのzfbプラグインの`devMiddleware`フックが`/doc-history/*`リクエストをこのサーバーにプロキシします。これにより、ブラウザの履歴パネルはzfb開発サーバーを通じてスタンドアロンサーバーから透過的に取得します。
 
-`docHistory`が有効なプロジェクトが生成する`dev`スクリプト（`run-p dev:zfb dev:history`）は、zfb（ポート4321）とdoc-history-server（ポート4322）を同時に実行します。
+`docHistory`が有効なプロジェクトが生成する`dev`スクリプト（`run-parallel dev:zfb dev:history`）は、zfb（ポート4321）とdoc-history-server（ポート4322）を同時に実行します。
 
 ## CLIモード（CIビルド）
 
