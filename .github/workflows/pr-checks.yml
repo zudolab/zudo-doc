@@ -1109,12 +1109,12 @@ jobs:
           # before assigning a version alias. The preview config has no custom
           # routes and keeps its primary workers.dev route disabled, so this
           # applies service-level settings without receiving public traffic.
-          npx wrangler@4.85.0 deploy \
+          npx wrangler@4.111.0 deploy \
             --config "$PREVIEW_CONFIG" \
             --message="Preview service bootstrap @ ${GITHUB_SHA:0:7}"
           upload_preview() {
             : > "$DEPLOY_LOG"
-            npx wrangler@4.85.0 versions upload \
+            npx wrangler@4.111.0 versions upload \
               --config "$PREVIEW_CONFIG" \
               --preview-alias "$ALIAS" \
               2>&1 | tee "$DEPLOY_LOG"
