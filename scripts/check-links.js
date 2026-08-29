@@ -220,11 +220,10 @@ export function extractHtmlIds(html) {
 // --- Link Resolution ---
 
 /**
- * Decode percent-encoding the way a static server / browser does before
- * mapping a URL path to the filesystem. Tag hrefs are emitted URL-encoded
- * (e.g. /docs/tags/type%3Aguide/) while the built output dir keeps the raw
- * tag name (dist/docs/tags/type:guide/), so the checker must decode to
- * find the file. Malformed sequences (stray "%") pass through unchanged.
+ * Decode percent-encoding for build outputs that use decoded filesystem names.
+ * Other zfb outputs preserve encoded route segments on disk, so dist resolution
+ * tries the literal URL path first and this decoded form second. Malformed
+ * sequences (stray "%") pass through unchanged.
  */
 function safeDecodePath(path) {
   try {
@@ -246,6 +245,7 @@ function parseHref(href) {
   if (rawFragment === null) {
     return {
       path: safeDecodePath(rawPath),
+      rawPath,
       fragment: null,
       fragmentError: null,
     };
@@ -253,6 +253,7 @@ function parseHref(href) {
   if (rawFragment === "") {
     return {
       path: safeDecodePath(rawPath),
+      rawPath,
       fragment: "",
       fragmentError: "empty fragment",
     };
@@ -260,39 +261,25 @@ function parseHref(href) {
   try {
     return {
       path: safeDecodePath(rawPath),
+      rawPath,
       fragment: decodeURIComponent(rawFragment),
       fragmentError: null,
     };
   } catch {
     return {
       path: safeDecodePath(rawPath),
+      rawPath,
       fragment: rawFragment,
       fragmentError: "malformed percent-encoding",
     };
   }
 }
 
-async function resolveLinkTargetDetail(
-  href,
-  distDir,
-  basePath = "/",
-  fileDir = "",
-  sourceFile = null,
-) {
-  const { path: clean, fragment, fragmentError } = parseHref(href);
-  if (!clean) {
-    return {
-      type: "root",
-      targetFile: sourceFile ?? join(distDir, "index.html"),
-      fragment,
-      fragmentError,
-    };
-  }
-
-  let absolute = clean;
-  if (!clean.startsWith("/")) {
+async function resolveBuiltPath(path, distDir, basePath, fileDir) {
+  let absolute = path;
+  if (!path.startsWith("/")) {
     const dirInDist = fileDir ? relative(distDir, fileDir) : "";
-    absolute = "/" + join(dirInDist, clean);
+    absolute = "/" + join(dirInDist, path);
   }
 
   let stripped = absolute;
@@ -302,36 +289,57 @@ async function resolveLinkTargetDetail(
 
   const relPath = stripped.startsWith("/") ? stripped.slice(1) : stripped;
   if (!relPath) {
-    return {
-      type: "root",
-      targetFile: join(distDir, "index.html"),
-      fragment,
-      fragmentError,
-    };
+    return { type: "root", targetFile: join(distDir, "index.html") };
   }
 
   if (extname(relPath)) {
     const targetFile = join(distDir, relPath);
+    return (await fileExists(targetFile))
+      ? { type: "file", targetFile }
+      : { type: "missing", targetFile: null };
+  }
+
+  const indexFile = join(distDir, relPath, "index.html");
+  if (await fileExists(indexFile)) {
+    return { type: "directoryIndex", targetFile: indexFile };
+  }
+  const htmlFile = join(distDir, relPath + ".html");
+  if (await fileExists(htmlFile)) {
+    return { type: "file", targetFile: htmlFile };
+  }
+  return { type: "missing", targetFile: null };
+}
+
+async function resolveLinkTargetDetail(
+  href,
+  distDir,
+  basePath = "/",
+  fileDir = "",
+  sourceFile = null,
+) {
+  const {
+    path: decodedPath,
+    rawPath,
+    fragment,
+    fragmentError,
+  } = parseHref(href);
+  if (!rawPath) {
     return {
-      type: (await fileExists(targetFile)) ? "file" : "missing",
-      targetFile,
+      type: "root",
+      targetFile: sourceFile ?? join(distDir, "index.html"),
       fragment,
       fragmentError,
     };
   }
 
-  const indexFile = join(distDir, relPath, "index.html");
-  if (await fileExists(indexFile)) {
-    return {
-      type: "directoryIndex",
-      targetFile: indexFile,
-      fragment,
-      fragmentError,
-    };
-  }
-  const htmlFile = join(distDir, relPath + ".html");
-  if (await fileExists(htmlFile)) {
-    return { type: "file", targetFile: htmlFile, fragment, fragmentError };
+  const pathCandidates = rawPath === decodedPath
+    ? [rawPath]
+    : [rawPath, decodedPath];
+  for (const path of pathCandidates) {
+    const detail = await resolveBuiltPath(path, distDir, basePath, fileDir);
+    if (detail.type !== "missing") {
+      return { ...detail, fragment, fragmentError };
+    }
   }
   return { type: "missing", targetFile: null, fragment, fragmentError };
 }

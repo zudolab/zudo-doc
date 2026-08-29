@@ -139,6 +139,19 @@ describe("generated check-links.js — built HTML attributes (#3720)", () => {
     expect(result.stdout).toContain("Built HTML scan: 1 internal link and 1 ID attribute inspected.");
   });
 
+  it("resolves unquoted links to encoded build directories", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken"],
+      files: {
+        "dist/index.html": "<a href=/docs/tags/type%3Aguide/>Guide</a>\n",
+        "dist/docs/tags/type%3Aguide/index.html": "<p>Guide</p>\n",
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Built HTML scan: 1 internal link and 0 ID attributes inspected.");
+  });
+
   it("does not scan escaped serialized demo markup as live HTML", async () => {
     const result = await runFixture({
       args: ["--strict-broken", "--strict-anchors"],

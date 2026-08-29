@@ -485,12 +485,12 @@ function parseHref(href) {
   const queryAt = beforeFragment.indexOf("?");
   const rawPath = queryAt === -1 ? beforeFragment : beforeFragment.slice(0, queryAt);
   const rawFragment = hashAt === -1 ? null : href.slice(hashAt + 1);
-  if (rawFragment === null) return { path: safeDecodePath(rawPath), fragment: null, fragmentError: null };
-  if (rawFragment === "") return { path: safeDecodePath(rawPath), fragment: "", fragmentError: "empty fragment" };
+  if (rawFragment === null) return { path: safeDecodePath(rawPath), rawPath, fragment: null, fragmentError: null };
+  if (rawFragment === "") return { path: safeDecodePath(rawPath), rawPath, fragment: "", fragmentError: "empty fragment" };
   try {
-    return { path: safeDecodePath(rawPath), fragment: decodeURIComponent(rawFragment), fragmentError: null };
+    return { path: safeDecodePath(rawPath), rawPath, fragment: decodeURIComponent(rawFragment), fragmentError: null };
   } catch {
-    return { path: safeDecodePath(rawPath), fragment: rawFragment, fragmentError: "malformed percent-encoding" };
+    return { path: safeDecodePath(rawPath), rawPath, fragment: rawFragment, fragmentError: "malformed percent-encoding" };
   }
 }
 
@@ -676,23 +676,32 @@ export async function checkMdxAnchors(contentDirs, rootDir, basePath = "/", loca
   return anchors;
 }
 
-async function resolveDistTarget(href, distDir, basePath = "/", fileDir = "", sourceFile = null) {
-  const { path: clean, fragment, fragmentError } = parseHref(href);
-  if (!clean) return { type: "root", targetFile: sourceFile ?? join(distDir, "index.html"), fragment, fragmentError };
-  let absolute = clean;
-  if (!clean.startsWith("/")) absolute = "/" + join(fileDir ? relative(distDir, fileDir) : "", clean);
+async function resolveBuiltPath(path, distDir, basePath, fileDir) {
+  let absolute = path;
+  if (!path.startsWith("/")) absolute = "/" + join(fileDir ? relative(distDir, fileDir) : "", path);
   let stripped = absolute;
   if (basePath !== "/" && stripped.startsWith(basePath)) stripped = "/" + stripped.slice(basePath.length);
   const relPath = stripped.startsWith("/") ? stripped.slice(1) : stripped;
-  if (!relPath) return { type: "root", targetFile: join(distDir, "index.html"), fragment, fragmentError };
+  if (!relPath) return { type: "root", targetFile: join(distDir, "index.html") };
   if (extname(relPath)) {
     const targetFile = join(distDir, relPath);
-    return { type: (await fileExists(targetFile)) ? "file" : "missing", targetFile, fragment, fragmentError };
+    return (await fileExists(targetFile)) ? { type: "file", targetFile } : { type: "missing", targetFile: null };
   }
   const indexFile = join(distDir, relPath, "index.html");
-  if (await fileExists(indexFile)) return { type: "directoryIndex", targetFile: indexFile, fragment, fragmentError };
+  if (await fileExists(indexFile)) return { type: "directoryIndex", targetFile: indexFile };
   const htmlFile = join(distDir, relPath + ".html");
-  if (await fileExists(htmlFile)) return { type: "file", targetFile: htmlFile, fragment, fragmentError };
+  if (await fileExists(htmlFile)) return { type: "file", targetFile: htmlFile };
+  return { type: "missing", targetFile: null };
+}
+
+async function resolveDistTarget(href, distDir, basePath = "/", fileDir = "", sourceFile = null) {
+  const { path: decodedPath, rawPath, fragment, fragmentError } = parseHref(href);
+  if (!rawPath) return { type: "root", targetFile: sourceFile ?? join(distDir, "index.html"), fragment, fragmentError };
+  const pathCandidates = rawPath === decodedPath ? [rawPath] : [rawPath, decodedPath];
+  for (const path of pathCandidates) {
+    const detail = await resolveBuiltPath(path, distDir, basePath, fileDir);
+    if (detail.type !== "missing") return { ...detail, fragment, fragmentError };
+  }
   return { type: "missing", targetFile: null, fragment, fragmentError };
 }
 

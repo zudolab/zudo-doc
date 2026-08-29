@@ -494,6 +494,14 @@ describe("check-links", () => {
       ).toBe("directoryIndex");
     });
 
+    it("resolves build outputs that preserve encoded path segments", async () => {
+      mkdirSync(join(tmpDir, "docs", "tags", "type%3Aguide"), { recursive: true });
+      writeFileSync(join(tmpDir, "docs", "tags", "type%3Aguide", "index.html"), "");
+      expect(
+        await resolveLinkDetail("/pj/zudo-doc/docs/tags/type%3Aguide/", tmpDir, BASE),
+      ).toBe("directoryIndex");
+    });
+
     it("decodes percent-encoded path segments before resolving (no trailing slash)", async () => {
       mkdirSync(join(tmpDir, "docs", "tags", "type:guide"), { recursive: true });
       writeFileSync(join(tmpDir, "docs", "tags", "type:guide", "index.html"), "");
