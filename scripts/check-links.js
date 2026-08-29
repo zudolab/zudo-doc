@@ -153,14 +153,45 @@ export async function collectFiles(dir, extensions) {
 
 // --- HTML Link Extraction ---
 
+const HTML_NAMED_CHARACTER_REFERENCES = {
+  amp: "&",
+  apos: "'",
+  gt: ">",
+  lt: "<",
+  quot: '"',
+};
+
+function decodeHtmlAttributeValue(value) {
+  return value.replace(
+    /&(?:#([0-9]+)|#x([0-9a-f]+)|(amp|apos|gt|lt|quot));/gi,
+    (_reference, decimal, hexadecimal, named) => {
+      if (named !== undefined) {
+        return HTML_NAMED_CHARACTER_REFERENCES[named.toLowerCase()];
+      }
+      const codePoint = Number.parseInt(
+        hexadecimal ?? decimal,
+        hexadecimal === undefined ? 10 : 16,
+      );
+      if (
+        codePoint === 0 ||
+        codePoint > 0x10ffff ||
+        (codePoint >= 0xd800 && codePoint <= 0xdfff)
+      ) {
+        return "\uFFFD";
+      }
+      return String.fromCodePoint(codePoint);
+    },
+  );
+}
+
 export function extractHtmlLinks(html) {
   const links = [];
-  const regex = /<a\s[^>]*?href=(?:"([^"]*)"|'([^']*)')[^>]*>/gi;
+  const regex = /<a\s[^>]*?href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`\\]+))[^>]*>/gi;
   let match;
   let lastIndex = 0;
   let currentLine = 1;
   while ((match = regex.exec(html)) !== null) {
-    const href = match[1] ?? match[2];
+    const href = decodeHtmlAttributeValue(match[1] ?? match[2] ?? match[3]);
     if (/^https?:\/\//i.test(href)) continue;
     if (/^mailto:/i.test(href)) continue;
     if (/^javascript:/i.test(href)) continue;
@@ -174,6 +205,16 @@ export function extractHtmlLinks(html) {
     links.push({ href, line: currentLine });
   }
   return links;
+}
+
+export function extractHtmlIds(html) {
+  const ids = [];
+  const regex = /\bid\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`\\]+))/gi;
+  let match;
+  while ((match = regex.exec(html)) !== null) {
+    ids.push(decodeHtmlAttributeValue(match[1] ?? match[2] ?? match[3]));
+  }
+  return ids;
 }
 
 // --- Link Resolution ---
@@ -618,10 +659,20 @@ export async function checkHtmlLinksAndTrailing(
   // Both checks read from the same resolved detail so each href is stat'd once.
   const cache = new Map();
   const idCache = new Map();
+  const pages = [];
+  const scanned = { links: 0, ids: 0 };
 
   for (const file of htmlFiles) {
     const content = await readFile(file, "utf-8");
     const links = extractHtmlLinks(content);
+    const ids = extractHtmlIds(content);
+    scanned.links += links.length;
+    scanned.ids += ids.length;
+    idCache.set(file, new Set(ids));
+    pages.push({ file, links });
+  }
+
+  for (const { file, links } of pages) {
     const fileDir = dirname(file);
     const relFile = relative(rootDir, file);
 
@@ -662,12 +713,9 @@ export async function checkHtmlLinksAndTrailing(
           let ids = idCache.get(detail.targetFile);
           if (ids === undefined) {
             const targetHtml = await readFile(detail.targetFile, "utf-8");
-            ids = new Set();
-            const idRegex = /\bid\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;
-            let idMatch;
-            while ((idMatch = idRegex.exec(targetHtml)) !== null) {
-              ids.add(idMatch[1] ?? idMatch[2]);
-            }
+            const targetIds = extractHtmlIds(targetHtml);
+            scanned.ids += targetIds.length;
+            ids = new Set(targetIds);
             idCache.set(detail.targetFile, ids);
           }
           if (!ids.has(detail.fragment)) reason = "missing target id";
@@ -702,7 +750,7 @@ export async function checkHtmlLinksAndTrailing(
     }
   }
 
-  return { broken, anchors, trailingSlash };
+  return { broken, anchors, trailingSlash, scanned };
 }
 
 export async function checkMdxLinks(contentDirs, rootDir, distDir = null, basePath = "/", locales) {
@@ -871,6 +919,7 @@ async function main() {
       broken: brokenLinks,
       anchors: htmlAnchorWarnings,
       trailingSlash: trailingSlashWarnings,
+      scanned,
     },
     mdxWarnings,
     mdxAnchorWarnings,
@@ -913,6 +962,9 @@ async function main() {
     trailingSlashWarnings,
     anchorWarnings,
   ));
+  console.log(
+    `\nBuilt HTML scan: ${scanned.links} internal link${scanned.links === 1 ? "" : "s"} and ${scanned.ids} ID attribute${scanned.ids === 1 ? "" : "s"} inspected.`,
+  );
 
   if (allowlist.size > 0) {
     const skipped =

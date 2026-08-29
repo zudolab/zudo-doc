@@ -19,6 +19,7 @@ type Fixture = {
 
 async function runFixture(fixture: Fixture) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), TEMP_PREFIX));
+  expect(await fs.pathExists(path.join(root, "dist"))).toBe(false);
   await fs.outputFile(
     path.join(root, "zfb.config.ts"),
     fixture.config ?? 'export default defineConfig(zudoDoc({ siteName: "Fixture" }));\n',
@@ -26,7 +27,6 @@ async function runFixture(fixture: Fixture) {
   for (const [relativePath, content] of Object.entries(fixture.files)) {
     await fs.outputFile(path.join(root, relativePath), content);
   }
-  expect(await fs.pathExists(path.join(root, "dist"))).toBe(false);
   const result = spawnSync(process.execPath, [TEMPLATE_SCRIPT, ...(fixture.args ?? [])], {
     cwd: root,
     encoding: "utf-8",
@@ -110,5 +110,44 @@ export default defineConfig(zudoDoc({ docsDir }));\n`,
     expect(result.status).toBe(1);
     expect(`${result.stdout}${result.stderr}`).toContain("field docsDir");
     expect(`${result.stdout}${result.stderr}`).toContain("literal string");
+  });
+});
+
+describe("generated check-links.js — built HTML attributes (#3720)", () => {
+  it("fails on a broken unquoted href instead of reporting a false green", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken"],
+      files: {
+        "dist/index.html": "<a href=/docs/missing>Missing</a>\n",
+      },
+    });
+    expect(result.status).toBe(1);
+    expect(`${result.stdout}${result.stderr}`).toContain("dist/index.html:1  /docs/missing");
+    expect(result.stdout).toContain("Built HTML scan: 1 internal link and 0 ID attributes inspected.");
+  });
+
+  it("accepts unquoted href and id values after decoding HTML entities", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken", "--strict-anchors"],
+      files: {
+        "dist/index.html": "<a href=/docs/target#section&amp;details>Target</a>\n",
+        "dist/docs/target/index.html": "<h2 id=section&#x26;details>Target</h2>\n",
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Built HTML scan: 1 internal link and 1 ID attribute inspected.");
+  });
+
+  it("does not scan escaped serialized demo markup as live HTML", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken", "--strict-anchors"],
+      files: {
+        "dist/index.html": `<div data-props='{"html":"<a href=\\\"#\\\">example</a><div id=\\\"ghost\\\"></div>"}'></div>\n`,
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Built HTML scan: 0 internal links and 0 ID attributes inspected.");
   });
 });

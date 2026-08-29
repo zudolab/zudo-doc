@@ -9,6 +9,7 @@ import {
   parseTrailingSlash,
   parseContentDirs,
   extractHtmlLinks,
+  extractHtmlIds,
   resolveLinkDetail,
   resolveLink,
   extractMdxAbsoluteLinks,
@@ -289,6 +290,33 @@ describe("check-links", () => {
         { href: "/a", line: 1 },
         { href: "/b", line: 2 },
       ]);
+    });
+
+    it("extracts unquoted hrefs and decodes HTML character references", () => {
+      const html = `<a href=/docs/target?first&amp;second#section&#38;details>Target</a>`;
+      expect(extractHtmlLinks(html)).toEqual([
+        {
+          href: "/docs/target?first&second#section&details",
+          line: 1,
+        },
+      ]);
+    });
+
+    it("does not extract escaped serialized demo markup", () => {
+      const html = `<div data-props='{"html":"<a href=\\\"#\\\">example</a>"}'></div>`;
+      expect(extractHtmlLinks(html)).toEqual([]);
+    });
+  });
+
+  describe("extractHtmlIds", () => {
+    it("extracts quoted and unquoted ids with decoded character references", () => {
+      const html = `<h2 id=section&amp;details></h2><div id="quoted&#x26;id"></div>`;
+      expect(extractHtmlIds(html)).toEqual(["section&details", "quoted&id"]);
+    });
+
+    it("does not extract ids from escaped serialized demo markup", () => {
+      const html = `<div data-props='{"html":"<div id=\\\"ghost\\\"></div>"}'></div>`;
+      expect(extractHtmlIds(html)).toEqual([]);
     });
   });
 
@@ -685,6 +713,27 @@ describe("check-links", () => {
 
       const { broken } = await checkHtmlLinksAndTrailing(distDir, tmpDir, BASE);
       expect(broken).toEqual([]);
+    });
+
+    it("reports how many built HTML links and ids were inspected", async () => {
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(join(distDir, "docs", "target"), { recursive: true });
+      writeFileSync(
+        join(distDir, "index.html"),
+        `<a href=/docs/target#section&amp;details>Target</a>`,
+      );
+      writeFileSync(
+        join(distDir, "docs", "target", "index.html"),
+        `<h2 id=section&#x26;details>Target</h2>`,
+      );
+
+      const { broken, anchors, scanned } = await checkHtmlLinksAndTrailing(
+        distDir,
+        tmpDir,
+      );
+      expect(broken).toEqual([]);
+      expect(anchors).toEqual([]);
+      expect(scanned).toEqual({ links: 1, ids: 1 });
     });
 
     it("validates hierarchical, h5/h6, and non-heading target ids", async () => {
