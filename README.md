@@ -38,7 +38,7 @@ pnpm dev       # zfb dev server on http://localhost:4321
 
 ### If `pnpm dev` exits back to the prompt
 
-`pnpm dev` runs several processes in parallel via `run-p`, which **aborts the others when
+`pnpm dev` runs several processes in parallel via `run-parallel`, which **aborts the others when
 one exits non-zero**. So a fatal crash in any single one ends the whole session, with:
 
 ```

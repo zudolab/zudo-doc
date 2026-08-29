@@ -6,13 +6,15 @@
 // would, because the whole contract is process behaviour — exit codes and whether
 // siblings actually die. None of it is observable from a pure unit test.
 //
-// The parity being locked here is with npm-run-all2@7.0.2 lib/run-tasks.js, and it
-// is load-bearing: packages/zudo-doc/CLAUDE.md (#3129) documents the resulting
+// The behaviour locked here was checked against npm-run-all2@7.0.2, and it is
+// load-bearing: packages/zudo-doc/CLAUDE.md (#3129) documents the resulting
 // dev-session teardown cascade as ACCEPTED behaviour, so a regression that made a
-// failure quiet would silently invalidate that contract.
+// failure quiet would silently invalidate that contract. Note that the exit CODE
+// is an intentional improvement over run-p rather than parity -- see the comment
+// in the abort test.
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { spawnSync } from "node:child_process";
+import { spawnSync, spawn as spawnProc } from "node:child_process";
 import { setTimeout as delay } from "node:timers/promises";
 import fs from "fs-extra";
 import os from "node:os";
@@ -48,6 +50,10 @@ beforeEach(async () => {
       "ok:a": write("a.done"),
       "ok:b": write("b.done"),
       "fail:three": 'node -e "process.exit(3)"',
+      // Dies BY a signal rather than exiting, to exercise the 128+signum path.
+      "suicide:term": 'node -e "process.kill(process.pid,\'SIGTERM\')"',
+      // A coordinator nested inside a coordinator — the #3129 two-hop shape.
+      nested: `node "${BIN}" fail:three`,
       long: writeAfter("long.done", LONG_TASK_MS),
     },
   });
@@ -77,7 +83,12 @@ describe("run-parallel", () => {
   it("aborts siblings and exits with the failing task's code", async () => {
     const result = run("fail:three", "long");
 
-    // run-p exited with the first failing task's code, not a generic 1.
+    // DELIBERATE DIVERGENCE, not parity: run-p always exits 1 here, because its
+    // bin/common/bootstrap.js ends with
+    //   .then(() => process.exit(0), () => process.exit(1))
+    // discarding the code its own error object carries. Verified by running
+    // run-p 7.0.2 against a task exiting 2 -- it printed `exited with 2` and
+    // returned 1. Propagating the real code keeps a signal kill distinguishable.
     expect(result.status).toBe(3);
     // CLAUDE.md #3129 quotes this exact wording as the cascade's signature.
     expect(result.stderr).toContain('ERROR: "fail:three" exited with 3.');
@@ -118,5 +129,50 @@ describe("run-parallel", () => {
     const result = run();
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("no scripts given");
+  });
+  it("reports 128+signum when a task is killed by a signal", async () => {
+    // The arithmetic that makes a signal kill non-zero (and so abort siblings).
+    // 143 = 128 + SIGTERM(15).
+    const result = run("suicide:term", "long");
+    expect(result.status).toBe(143);
+    expect(result.stderr).toContain('ERROR: "suicide:term" exited with 143.');
+    await delay(ORPHAN_GRACE_MS);
+    expect(await exists("long.done")).toBe(false);
+  });
+
+  it("forwards a signal aimed at the coordinator alone to its children", async () => {
+    // Ctrl+C reaches children directly via the shared process group, but a signal
+    // sent to this pid only does not -- without forwarding, every child would keep
+    // running. This is the case that used to leak.
+    const child = spawnProc(process.execPath, [BIN, "long"], {
+      cwd: dir,
+      stdio: "ignore",
+    });
+    await delay(1500);
+    process.kill(child.pid, "SIGTERM");
+    await delay(ORPHAN_GRACE_MS);
+    expect(await exists("long.done")).toBe(false);
+  });
+
+  it("propagates a failure through a nested coordinator (the #3129 two-hop cascade)", async () => {
+    // Root `pnpm dev` nests one run-parallel inside another; #3129 depends on a
+    // fatal exit travelling BOTH hops. Anything that swallowed the inner failure
+    // would leave a half-dead dev session looking healthy.
+    const result = run("nested", "long");
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain('ERROR: "fail:three" exited with 3.');
+    expect(result.stderr).toContain('ERROR: "nested" exited with');
+    await delay(ORPHAN_GRACE_MS);
+    expect(await exists("long.done")).toBe(false);
+  });
+
+  it("ships the bin from the package so scaffolded projects resolve it", async () => {
+    // The whole no-new-devDependency argument rests on this mapping existing and
+    // on `bin` being packed; a rename or a files/ regression would silently break
+    // every generated project's dev script.
+    const pkg = await fs.readJson(path.resolve(__dirname, "../../package.json"));
+    expect(pkg.bin["run-parallel"]).toBe("./bin/run-parallel.mjs");
+    expect(pkg.files).toContain("bin");
+    expect(await fs.pathExists(BIN)).toBe(true);
   });
 });

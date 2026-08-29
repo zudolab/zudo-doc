@@ -1035,10 +1035,11 @@ function generatePackageJson(choices: UserChoices) {
     // source of four advisories (shell-quote DoS; brace-expansion@2 DoS x3).
     scripts.dev = "run-parallel dev:zfb dev:history";
     scripts["dev:zfb"] = "zfb dev";
-    // run-parallel deliberately does not forward trailing args — run-p swallowed
-    // them too, and npm-run-all2 v7's `{@}` placeholder stripped flag names, so
-    // `pnpm dev -- --host 0.0.0.0` is silently ignored (verified in issue #2940
-    // against run-p, and preserved on purpose). dev:network is a LAN-bound script
+    // Neither runner forwards trailing args, but they differ in how loudly: run-p
+    // SILENTLY ignored `pnpm dev -- --host 0.0.0.0` (verified in issue #2940),
+    // whereas run-parallel rejects it with an error naming the remedy — silence
+    // about a flag the user clearly meant is the "quiet lie" #3129 argues against.
+    // Either way dev:network is the LAN-bound script
     // instead. Only zfb binds 0.0.0.0; the history server stays loopback-only
     // and LAN clients reach it through zfb's `/doc-history/*` dev proxy.
     scripts["dev:zfb:network"] = "zfb dev --host 0.0.0.0";
@@ -1046,7 +1047,7 @@ function generatePackageJson(choices: UserChoices) {
     // Relative --content-dir/--locale paths are resolved by resolveContentPath
     // (packages/doc-history-server/src/args.ts) against INIT_CWD (falling back
     // to process.cwd()) — correct for the supported invocation (`<pm> dev` /
-    // `<pm> run dev` from the project root, which is what run-p's child
+    // `<pm> run dev` from the project root, which is what run-parallel's child
     // processes inherit). It resolves against the WRONG directory only if this
     // generated project is itself nested inside a larger pnpm/npm workspace
     // and dev:history is invoked via `<pm> --filter <this-package> ...` from

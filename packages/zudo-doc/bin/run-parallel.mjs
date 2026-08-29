@@ -1,76 +1,77 @@
 #!/usr/bin/env node
 // packages/zudo-doc/bin/run-parallel.mjs
 //
-// Runs several package.json scripts in parallel. Drop-in replacement for the
-// `run-p <task>...` form this project used from npm-run-all2, which was removed
-// because it was the sole source of four security advisories (shell-quote
-// quadratic-complexity DoS; brace-expansion@2 DoS x3) that nothing else pulled.
+// Runs several package.json scripts in parallel. Replaces the `run-p <task>...`
+// form this project used from npm-run-all2, which was removed because it was the
+// sole source of four security advisories (shell-quote quadratic-complexity DoS;
+// brace-expansion@2 DoS x3) that nothing else in the tree pulled.
 //
 // Only the literal-name form is supported -- `run-parallel a b c`. npm-run-all2's
 // globs (`dev:*`), flags, and `{@}` placeholders are deliberately NOT implemented;
-// every call site in this repo and in generated projects uses the plain form.
+// every call site here and in generated projects uses the plain form.
 //
-// Behaviour is matched against npm-run-all2@7.0.2 lib/run-tasks.js, not assumed:
+// Behaviour was checked against npm-run-all2@7.0.2 rather than assumed. It matches
+// on the points that matter, and deviates on two, on purpose:
 //
-//   - A task exiting NON-ZERO aborts every sibling and this process exits with
-//     that task's code. A task exiting ZERO does NOT abort siblings (that is
-//     run-p's `--race`, off by default).
+//   MATCHED
+//   - A task exiting NON-ZERO aborts every sibling. A task exiting ZERO does not
+//     (that is run-p's `--race`, off by default).
 //   - A task killed by a signal reports 128 + signum, per the POSIX convention
-//     Node documents for process exit codes -- non-zero, so it aborts too.
+//     Node documents for exit codes -- non-zero, so it aborts too.
+//   - Only the FIRST failure is reported; siblings killed by the resulting
+//     teardown stay quiet.
 //   - The failure line matches run-p's wording, because packages/zudo-doc/CLAUDE.md
-//     (#3129) quotes it verbatim as the signature of the accepted teardown cascade:
+//     (#3129) quotes it verbatim as the signature of the accepted cascade:
 //         ERROR: "dev:dts" exited with 1.
+//
+//   DELIBERATELY DIFFERENT
+//   - Exit code: run-p ALWAYS exits 1 on failure. Its bin/common/bootstrap.js ends
+//     with `.then(() => process.exit(0), () => process.exit(1))`, discarding the
+//     code its own error object carries -- verified by running run-p 7.0.2 against
+//     a task exiting 2: it printed `exited with 2` and returned 1. This script
+//     propagates the real code instead, so a signal kill stays distinguishable
+//     (137 for SIGKILL) rather than flattening to 1. Both are non-zero, so the
+//     #3129 cascade behaves identically either way.
+//   - Trailing args: run-p silently swallowed them, which is why a separate
+//     `dev:network` script exists (#2940). Silently ignoring a flag the user
+//     clearly meant is exactly the "quiet lie" #3129 argues against, so this
+//     script fails loudly and names the remedy instead.
 //
 // The teardown cascade is the POINT, not a bug: root `pnpm dev` nests one of these
 // inside another, so a fatal `dev:dts` exit takes down the whole dev session loudly
 // rather than leaving a dead watcher emitting stale output. Do NOT add a
 // --continue-on-error equivalent; #3129 rejects it explicitly (frozen .d.ts files
-// typecheck cleanly against stale types -- a quiet lie beats no crash at all).
+// typecheck cleanly against stale types).
 //
 // Two implementation choices that look incidental and are not:
 //
-//   1. Children are spawned WITHOUT `detached`, so they stay in this process's
-//      group -- exactly what run-p did. That keeps Ctrl+C working (the terminal
-//      signals the whole foreground group) and, critically, lets a child read the
-//      inherited TTY stdin: `zfb dev` is Vite-based and binds stdin for its
-//      keyboard shortcuts. A detached child is not in the foreground group, so
-//      that same read would raise SIGTTIN and stop the process.
-//   2. Teardown walks the full descendant tree instead of signalling just the
-//      direct child. `pnpm run x` sits between us and the real watcher, and does
-//      not reliably forward SIGTERM; killing only the direct child strands the
-//      watcher. Orphaned watchers are not hypothetical here -- they accumulate
-//      until `inotify_init` fails with EMFILE (see the #3129 section).
-//
-// Trailing arguments are intentionally NOT forwarded to the tasks. run-p swallowed
-// them too, which is the whole reason a separate `dev:network` script exists
-// (verified in issue #2940) -- forwarding them here would silently change what
-// `pnpm dev -- --host 0.0.0.0` does.
+//   1. Children are spawned WITHOUT `detached`, exactly as run-p did, so they stay
+//      in this process's group. That keeps terminal job control working and lets a
+//      child read the inherited TTY stdin: `zfb dev` is Vite-based and binds stdin
+//      for its keyboard shortcuts. A child in its own group is not the terminal's
+//      foreground group, so that same read raises SIGTTIN and stops it.
+//   2. Teardown walks the full descendant tree rather than signalling just the
+//      direct child. `pnpm run x` sits between us and the real watcher and does not
+//      reliably forward SIGTERM, so signalling only the child strands it. Orphaned
+//      watchers are not hypothetical here -- they accumulate until `inotify_init`
+//      fails with EMFILE (see the #3129 section).
 
-import { spawn } from "node:child_process";
-import { execFileSync } from "node:child_process";
+import { spawn, execFileSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
-const SIGNAL_NUMBERS = {
-  SIGHUP: 1,
-  SIGINT: 2,
-  SIGQUIT: 3,
-  SIGILL: 4,
-  SIGTRAP: 5,
-  SIGABRT: 6,
-  SIGFPE: 8,
-  SIGKILL: 9,
-  SIGSEGV: 11,
-  SIGPIPE: 13,
-  SIGALRM: 14,
-  SIGTERM: 15,
-};
+// Platform-reported numbers rather than a hand-copied table, so the 128+signum
+// arithmetic cannot drift from the host's actual signal set.
+const SIGNAL_NUMBERS = os.constants.signals;
 
 function usage(message) {
   process.stderr.write(`ERROR: ${message}\n`);
   process.stderr.write(
     "Usage: run-parallel <script-name>...\n" +
-      "Only literal script names are supported (no globs, flags, or forwarded args).\n",
+      "Only literal script names are supported: no globs, no flags, and no\n" +
+      "forwarded arguments. To pass flags to one script, run it directly:\n" +
+      "  <npm|pnpm|yarn|bun> run <script> -- <flags>\n",
   );
   process.exit(1);
 }
@@ -81,9 +82,9 @@ if (tasks.length === 0) {
   usage("no scripts given.");
 }
 for (const task of tasks) {
-  // Reject anything that looks like an npm-run-all2 feature we did not port, so a
-  // stale `run-p --continue-on-error` or `dev:*` fails loudly instead of being
-  // mistaken for a script literally named `--continue-on-error`.
+  // Reject anything resembling an npm-run-all2 feature that was not ported, so a
+  // stale `run-p --continue-on-error`, or a `pnpm dev -- --host 0.0.0.0` that used
+  // to be swallowed, fails loudly instead of being taken for a script name.
   if (task.startsWith("-")) {
     usage(`flags are not supported, got ${JSON.stringify(task)}.`);
   }
@@ -96,7 +97,7 @@ for (const task of tasks) {
  * Resolve the package-manager command used to run a script, mirroring how
  * npm-run-all2 did it: prefer `npm_execpath` (set by every package manager while
  * running a script), and run it through the current Node binary when it points at
- * a JS file, since a `.cjs` shim is not directly executable on every platform.
+ * a JS file, since a `.cjs` shim is not directly executable everywhere.
  */
 function resolveRunner() {
   const execpath = process.env.npm_execpath;
@@ -106,20 +107,18 @@ function resolveRunner() {
     }
     return { command: execpath, prefix: ["run"] };
   }
+  // Fallback covers all four package managers create-zudo-doc can scaffold.
   const agent = process.env.npm_config_user_agent ?? "";
-  const name = agent.startsWith("pnpm")
-    ? "pnpm"
-    : agent.startsWith("yarn")
-      ? "yarn"
-      : "npm";
+  const name =
+    ["pnpm", "yarn", "bun"].find((pm) => agent.startsWith(pm)) ?? "npm";
   return { command: name, prefix: ["run"] };
 }
 
 /**
- * Collect a process and all of its descendants, deepest last, so a caller can
- * signal the whole tree. Reads /proc directly on Linux (no subprocess, and this
- * runs on a teardown path where spawning is least welcome) and falls back to `ps`
- * elsewhere, notably macOS.
+ * Collect a process and all of its descendants, parents before children, so a
+ * caller can signal the whole tree. Reads /proc directly on Linux (no subprocess,
+ * and this runs on a teardown path where spawning is least welcome) and falls back
+ * to `ps` elsewhere, notably macOS.
  */
 function collectTree(rootPid) {
   const childrenByParent = new Map();
@@ -173,30 +172,51 @@ const runner = resolveRunner();
 const running = new Map();
 let firstFailure = null;
 let tearingDown = false;
+let signalCount = 0;
 
-function terminate(child) {
+function signalTree(child, signal) {
   if (child.exitCode !== null || child.signalCode !== null) return;
+
+  if (process.platform === "win32") {
+    // Windows has no process groups to signal; taskkill /T walks the tree.
+    try {
+      execFileSync("taskkill", ["/pid", String(child.pid), "/T", "/F"], {
+        stdio: "ignore",
+      });
+    } catch {
+      // Already gone, or not ours to kill. Nothing actionable on teardown.
+    }
+    return;
+  }
+
+  // Deepest last so a parent cannot spawn a replacement child after we passed it.
   for (const pid of collectTree(child.pid).reverse()) {
     try {
-      process.kill(pid, "SIGTERM");
-    } catch {
-      // ESRCH: already gone. EPERM: not ours to signal. Neither is actionable
-      // on a teardown path, and neither should mask the original failure.
+      process.kill(pid, signal);
+    } catch (error) {
+      // ESRCH just means it already exited, which is the common case in a tree
+      // that is collapsing anyway. Anything else is worth a line, but must never
+      // mask the original failure by throwing here.
+      if (error.code !== "ESRCH") {
+        process.stderr.write(
+          `run-parallel: could not signal pid ${pid}: ${error.code ?? error.message}\n`,
+        );
+      }
     }
   }
 }
 
-function tearDown() {
+function tearDown(signal = "SIGTERM") {
   if (tearingDown) return;
   tearingDown = true;
-  for (const child of running.values()) terminate(child);
+  for (const child of running.values()) signalTree(child, signal);
 }
 
 for (const task of tasks) {
   const child = spawn(runner.command, [...runner.prefix, task], {
     stdio: "inherit",
     // No `detached` -- see the header note. Children share this process group so
-    // Ctrl+C reaches them and they can read the inherited TTY stdin.
+    // terminal job control works and they can read the inherited TTY stdin.
   });
   running.set(task, child);
 
@@ -204,9 +224,12 @@ for (const task of tasks) {
     running.delete(task);
     if (!firstFailure) {
       firstFailure = { task, code: 1 };
-      process.stderr.write(`ERROR: "${task}" failed to start: ${error.message}\n`);
+      process.stderr.write(
+        `ERROR: "${task}" failed to start: ${error.message}\n`,
+      );
     }
     tearDown();
+    if (running.size === 0) process.exitCode = firstFailure.code;
   });
 
   child.on("close", (code, signal) => {
@@ -226,11 +249,18 @@ for (const task of tasks) {
   });
 }
 
-// Ctrl+C already reached the children directly (same process group), so do not
-// signal them again -- just stop launching work and let their `close` handlers
-// settle the exit code.
-for (const signal of ["SIGINT", "SIGTERM"]) {
-  process.on(signal, () => {
-    tearingDown = true;
+// A terminal-generated Ctrl+C already reached the children directly, since they
+// share this process group -- but a signal aimed at this pid alone did not, and
+// without forwarding it that case would leave every child running. Re-signalling
+// a child that is already dying is harmless (ESRCH is ignored above).
+for (const name of ["SIGINT", "SIGTERM", "SIGHUP", "SIGQUIT"]) {
+  process.on(name, () => {
+    signalCount += 1;
+    // Escalate if a second signal arrives: something is refusing to shut down,
+    // and hanging here would strand exactly the watchers this script exists to
+    // reap. `tearingDown` is reset so the second pass is not short-circuited.
+    const forwarded = signalCount > 1 ? "SIGKILL" : name;
+    tearingDown = false;
+    tearDown(forwarded);
   });
 }

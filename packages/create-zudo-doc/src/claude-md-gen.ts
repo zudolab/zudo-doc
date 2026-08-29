@@ -45,7 +45,7 @@ export function generateCLAUDEFile(choices: UserChoices): string {
   const pm = choices.packageManager;
   if (choices.features.includes("docHistory")) {
     lines.push(
-      `- \`${pmRunCommand(pm, "dev")}\` — runs the zfb dev server (port 4321) and the doc-history API server (port 4322) concurrently via \`run-p\` (\`${pmRunCommand(pm, "dev:zfb")}\` / \`${pmRunCommand(pm, "dev:history")}\` individually)`,
+      `- \`${pmRunCommand(pm, "dev")}\` — runs the zfb dev server (port 4321) and the doc-history API server (port 4322) concurrently via \`run-parallel\` (a bin from @takazudo/zudo-doc) (\`${pmRunCommand(pm, "dev:zfb")}\` / \`${pmRunCommand(pm, "dev:history")}\` individually)`,
     );
     lines.push(
       `- \`${pmRunCommand(pm, "dev:network")}\` — same, but zfb binds \`--host 0.0.0.0\` for LAN access (\`${pmRunCommand(pm, "dev:zfb:network")}\` individually); the doc-history server stays loopback-only and LAN clients reach it through zfb's \`/doc-history/*\` dev proxy`,
@@ -54,7 +54,7 @@ export function generateCLAUDEFile(choices: UserChoices): string {
       `- **Trusted networks only:** this also serves your git doc-history — including UNPUBLISHED local commits — to anyone on the LAN via the \`/doc-history/*\` proxy`,
     );
     lines.push(
-      `- \`run-p\` swallows trailing args, so other zfb flags don't forward through \`${pmRunCommand(pm, "dev")}\` — pass them directly instead: \`${pm} run dev:zfb -- <flags>\``,
+      `- \`run-parallel\` does not forward trailing args — it rejects them with an error rather than silently ignoring them, so pass other zfb flags directly instead: \`${pm} run dev:zfb -- <flags>\``,
     );
   } else {
     lines.push(`- \`${pmRunCommand(pm, "dev")}\` — zfb dev server (port 4321)`);

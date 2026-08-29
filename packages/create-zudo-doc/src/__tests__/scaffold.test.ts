@@ -1561,7 +1561,7 @@ describe("scaffold — CLAUDE.md generation", () => {
       "utf-8",
     );
     expect(withDocHistory).toContain("doc-history API server (port 4322)");
-    expect(withDocHistory).toContain("run-p");
+    expect(withDocHistory).toContain("run-parallel");
     expect(withDocHistory).toContain("pnpm dev:zfb");
     expect(withDocHistory).toContain("pnpm dev:history");
     expect(withDocHistory).toContain("pnpm dev:network");
@@ -1578,7 +1578,7 @@ describe("scaffold — CLAUDE.md generation", () => {
       "utf-8",
     );
     expect(without).not.toContain("doc-history API server");
-    expect(without).not.toContain("run-p");
+    expect(without).not.toContain("run-parallel");
     expect(without).toContain("zfb dev server (port 4321)");
     expect(without).not.toContain("dev:network");
     expect(without).not.toContain("Trusted networks only");

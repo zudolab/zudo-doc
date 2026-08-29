@@ -53,7 +53,7 @@ committed the same way, guarded by the mirrored `pnpm check:nav-overflow-drift`
 
 `dev` mirrors that same two-pass split as two parallel watchers (#3113):
 `dev:js` (`tsup --watch`) and `dev:dts`
-(`tsc -p tsconfig.build.json --watch --preserveWatchOutput`), joined by `run-p`.
+(`tsc -p tsconfig.build.json --watch --preserveWatchOutput`), joined by `run-parallel`.
 Declarations therefore stay current during package dev — they no longer lag behind
 the JS. The two do not fight over `dist/`: they write disjoint extensions, and tsup's
 watcher already ignores `dist/`, so the `.d.ts` writes cannot retrigger a JS rebuild.
