@@ -287,12 +287,14 @@ function extractNavActiveFunctions(context, transformSync) {
   return { pathMatchesNavPathSrc, computeActiveNavPathSrc };
 }
 
-// The twelve class-token arrays nav-overflow-script.ts used to import
+// The fourteen class-token arrays nav-overflow-script.ts used to import
 // directly from nav-class-tokens.ts (see that module's header comment for
 // the SSR ↔ runtime lockstep rationale, zudolab/zudo-doc#3023).
 const NAV_CLASS_TOKEN_NAMES = [
   "NAV_TOP_ACTIVE",
   "NAV_TOP_INACTIVE",
+  "NAV_MORE_ACTIVE",
+  "NAV_MORE_INACTIVE",
   "NAV_CHEVRON_ACTIVE",
   "NAV_CHEVRON_INACTIVE",
   "NAV_CHILD_ACTIVE",
@@ -305,7 +307,7 @@ const NAV_CLASS_TOKEN_NAMES = [
   "NAV_MENU_CHILD_INACTIVE",
 ];
 
-/** Extract the twelve real class-token arrays from nav-class-tokens.ts. */
+/** Extract the fourteen real class-token arrays from nav-class-tokens.ts. */
 function extractNavClassTokens(context, transformSync) {
   const outputText = transpile(context.navClassTokensSource, transformSync);
   const exportsObj = executeCommonJs(outputText, "nav-class-tokens.ts");
@@ -380,6 +382,8 @@ export function buildNavOverflowScript(context = resolveGenerationContext()) {
   const {
     NAV_TOP_ACTIVE,
     NAV_TOP_INACTIVE,
+    NAV_MORE_ACTIVE,
+    NAV_MORE_INACTIVE,
     NAV_CHEVRON_ACTIVE,
     NAV_CHEVRON_INACTIVE,
     NAV_CHILD_ACTIVE,
@@ -521,8 +525,26 @@ export function buildNavOverflowScript(context = resolveGenerationContext()) {
     var moreToggle = document.querySelector("[data-nav-more-toggle]");
     if (!nav || !moreContainer || !moreMenu || !moreToggle) return;
 
+    function setMoreActive(active) {
+      if (active) {
+        moreToggle.classList.add(${clsArgs(NAV_MORE_ACTIVE)});
+        moreToggle.classList.remove(${clsArgs(NAV_MORE_INACTIVE)});
+      } else {
+        moreToggle.classList.add(${clsArgs(NAV_MORE_INACTIVE)});
+        moreToggle.classList.remove(${clsArgs(NAV_MORE_ACTIVE)});
+      }
+    }
+
+    // The persisted header can be re-initialized with a different nav shape.
+    // Clear a prior page's transferred active state even when there are no
+    // items and update() will not be installed (#3758).
+    setMoreActive(false);
+
     var items = Array.from(nav.querySelectorAll(":scope > [data-nav-item]"));
-    if (items.length === 0) return;
+    if (items.length === 0) {
+      moreContainer.style.display = "none";
+      return;
+    }
 
     var controller = new AbortController();
 
@@ -532,6 +554,7 @@ export function buildNavOverflowScript(context = resolveGenerationContext()) {
       moreMenu.innerHTML = "";
       moreMenu.classList.add("hidden");
       moreToggle.setAttribute("aria-expanded", "false");
+      setMoreActive(false);
 
       var itemWidths = items.map(function (el) { return el.offsetWidth; });
       var moreWidth = moreContainer.offsetWidth;
@@ -563,10 +586,21 @@ export function buildNavOverflowScript(context = resolveGenerationContext()) {
         cutoffIndex = i2 + 1;
       }
 
+      var hiddenHasActiveItem = false;
       for (var i3 = cutoffIndex; i3 < items.length; i3++) {
-        items[i3].style.display = "none";
+        var hiddenItem = items[i3];
+        hiddenItem.style.display = "none";
+        var hiddenTopLink = hiddenItem.hasAttribute("data-nav-item-dropdown")
+          ? hiddenItem.querySelector(":scope > a")
+          : hiddenItem;
+        var hiddenActiveChild = hiddenItem.querySelector(":scope > div a[data-active]");
+        if ((hiddenTopLink && hiddenTopLink.getAttribute("aria-current") === "page") || hiddenActiveChild) {
+          hiddenHasActiveItem = true;
+        }
       }
+      setMoreActive(hiddenHasActiveItem);
 
+      var currentCloneAssigned = false;
       for (var i4 = cutoffIndex; i4 < items.length; i4++) {
         var el = items[i4];
         var isDropdown = el.hasAttribute("data-nav-item-dropdown");
@@ -574,6 +608,9 @@ export function buildNavOverflowScript(context = resolveGenerationContext()) {
         if (isDropdown) {
           var parentLink = el.querySelector(":scope > a");
           var childLinks = el.querySelectorAll(":scope > div a");
+          var hasActiveChild = Array.from(childLinks).some(function (child) {
+            return child.hasAttribute("data-active");
+          });
           if (parentLink) {
             var li = document.createElement("li");
             var a = document.createElement("a");
@@ -583,6 +620,10 @@ export function buildNavOverflowScript(context = resolveGenerationContext()) {
             a.className = ${clsLiteral(NAV_MENU_PARENT)};
             if (parentLink.getAttribute("aria-current") === "page") {
               a.className += ${clsAppend(NAV_MENU_PARENT_ACTIVE_SUFFIX)};
+              if (!hasActiveChild && !currentCloneAssigned) {
+                a.setAttribute("aria-current", "page");
+                currentCloneAssigned = true;
+              }
             }
             li.appendChild(a);
             moreMenu.appendChild(li);
@@ -596,6 +637,10 @@ export function buildNavOverflowScript(context = resolveGenerationContext()) {
             a.className = isChildActive
               ? ${clsLiteral(NAV_MENU_CHILD_ACTIVE)}
               : ${clsLiteral(NAV_MENU_CHILD_INACTIVE)};
+            if (isChildActive && !currentCloneAssigned) {
+              a.setAttribute("aria-current", "page");
+              currentCloneAssigned = true;
+            }
             li.appendChild(a);
             moreMenu.appendChild(li);
           });
@@ -608,6 +653,10 @@ export function buildNavOverflowScript(context = resolveGenerationContext()) {
           a2.className = ${clsLiteral(NAV_MENU_PLAIN)};
           if (anchor.getAttribute("aria-current") === "page") {
             a2.className += ${clsAppend(NAV_MENU_PLAIN_ACTIVE_SUFFIX)};
+            if (!currentCloneAssigned) {
+              a2.setAttribute("aria-current", "page");
+              currentCloneAssigned = true;
+            }
           }
           li2.appendChild(a2);
           moreMenu.appendChild(li2);

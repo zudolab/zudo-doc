@@ -34,6 +34,18 @@ export const NAV_TOP_INACTIVE: readonly string[] = [
   "focus:text-accent",
 ];
 
+// ── Overflow "···" toggle: current entry hidden vs visible ──────────────
+// update() (generated script) ↔ the data-nav-more-toggle SSR button. Keep
+// hover/focus-visible underlines in the static button recipe; these arrays
+// own only mutually-exclusive state colours, so keyboard focus remains
+// visible while the toggle carries the hidden-current affordance (#3758).
+export const NAV_MORE_ACTIVE: readonly string[] = [...NAV_TOP_ACTIVE];
+export const NAV_MORE_INACTIVE: readonly string[] = [
+  "text-muted",
+  "hover:text-accent",
+  "focus-visible:text-accent",
+];
+
 // ── Header-bar dropdown chevron SVG: active-state color toggle ───────────
 // applyActiveNav() (script) ↔ the chevron <svg> in renderNavItem() (SSR).
 export const NAV_CHEVRON_ACTIVE: readonly string[] = ["text-bg"];

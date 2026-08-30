@@ -50,6 +50,7 @@ import {
   NAV_CHEVRON_INACTIVE,
   NAV_CHILD_ACTIVE,
   NAV_CHILD_INACTIVE,
+  NAV_MORE_INACTIVE,
   NAV_TOP_ACTIVE,
   NAV_TOP_INACTIVE,
 } from "./nav-class-tokens.js";
@@ -375,7 +376,16 @@ export function Header(props: HeaderProps): JSX.Element {
         <div class="relative shrink-0" data-nav-more style="display:none">
           <button
             type="button"
-            class="px-hsp-md py-vsp-2xs text-small font-medium text-muted hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline cursor-pointer"
+            class={[
+              "px-hsp-md",
+              "py-vsp-2xs",
+              "text-small",
+              "font-medium",
+              ...NAV_MORE_INACTIVE,
+              "hover:underline",
+              "focus-visible:underline",
+              "cursor-pointer",
+            ].join(" ")}
             data-nav-more-toggle
             aria-expanded="false"
           >
