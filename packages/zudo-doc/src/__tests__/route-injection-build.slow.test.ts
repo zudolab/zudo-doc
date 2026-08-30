@@ -777,6 +777,14 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // 2026-08-22 re-baseline (Note Tray epic zudolab/zudo-doc#3620): the new
   // document date line intentionally changes package-owned doc-header markup.
 
+  // 2026-08-30 re-baseline (Nav Padding And Blog Demo Notice epic
+  // zudolab/zudo-doc#3731, sub #3732): replacing the sidebar tree's hardcoded
+  // `pr-[4px]` with responsive `pr-hsp-xs lg:pr-hsp-sm` intentionally changes
+  // the package-owned sidebar markup on both docs pages. The homepage-only
+  // site-tree-nav row padding does not appear in these docs-page fixtures.
+  // `/404.html` remains unchanged at `5513e16e…`, confirming the movement is
+  // limited to pages that render the sidebar tree.
+
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toMatchInlineSnapshot(`"5513e16ed45d3d459ec050275bee26ecce8b358acf1c26046f92671ae24ed08e"`);
@@ -784,12 +792,12 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"0341fefb967b57e75d98383b9500c5847ba10461a4364944560f3129a69a72b8"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"77786a6fd0b29334c89fc48bcca2a033123d6ebb3b21772ffb18c9c48e4b3d30"`);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"edce747ea033381e892b4cf29ba27e1c690d8e38587886cf0fd1ff52a12bf860"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"332a652e6633b46208cc024975074f77015c7576686cade09ecd676a9c25c21d"`);
   });
 });
 
