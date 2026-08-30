@@ -34,8 +34,6 @@ function parseRequestedLines(value: string | undefined): RequestedLines | null {
   return { start, end };
 }
 
-const MAX_VIEWER_LINES = 2_000;
-
 export function createAssetCode(context: AssetComponentContext) {
   return function AssetCode({
     src,
@@ -73,15 +71,13 @@ export function createAssetCode(context: AssetComponentContext) {
       );
     }
 
-    const canLinkFirstLine =
-      excerpt.startLine > 0 &&
-      excerpt.html !== "" &&
-      excerpt.startLine <= Math.min(excerpt.totalLines, MAX_VIEWER_LINES);
     const viewerHref = assetViewerHref({
       base: context.base,
       routePrefix: context.routePrefix,
       path: resolved.path,
-      fragment: canLinkFirstLine ? `L${excerpt.startLine}` : undefined,
+      fragment: excerpt.viewerLineAvailable
+        ? `L${excerpt.startLine}`
+        : undefined,
     });
     const shown = Math.max(0, excerpt.endLine - excerpt.startLine + 1);
     const rangeLabel =

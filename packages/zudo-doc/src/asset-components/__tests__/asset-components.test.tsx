@@ -29,6 +29,7 @@ const manifest: AssetManifest = {
       endLine: 44,
       totalLines: 94,
       truncated: false,
+      viewerLineAvailable: true,
     },
   },
 };
@@ -85,7 +86,7 @@ describe("asset authoring components", () => {
     ).toBe("");
   });
 
-  it("omits an unreachable fragment beyond the truncated viewer body", () => {
+  it("uses a manifest-confirmed fragment beyond the old plain-text cutoff", () => {
     const farManifest: AssetManifest = {
       ...manifest,
       entries: [{ ...manifest.entries[0]!, lines: 3_000 }],
@@ -96,6 +97,7 @@ describe("asset authoring components", () => {
           endLine: 2_510,
           totalLines: 3_000,
           truncated: false,
+          viewerLineAvailable: true,
         },
       },
     };
@@ -103,7 +105,29 @@ describe("asset authoring components", () => {
     const html = render(
       <AssetCode src="/media/demo/file.js" lines="2500-2510" />,
     );
+    expect(html).toContain('href="/project/view/demo/file.js/#L2500"');
+  });
+
+  it("omits the fragment when the viewer body has no matching anchor", () => {
+    const noAnchorManifest: AssetManifest = {
+      ...manifest,
+      excerpts: {
+        "demo/file.js#1-2": {
+          html: '<pre class="hi-root"><code><span class="line" data-line="1">x</span></code></pre>',
+          startLine: 1,
+          endLine: 2,
+          totalLines: 94,
+          truncated: false,
+          viewerLineAvailable: false,
+        },
+      },
+    };
+    const AssetCode = createAssetCode({
+      ...context,
+      assetManifest: noAnchorManifest,
+    });
+    const html = render(<AssetCode src="/media/demo/file.js" lines="1-2" />);
     expect(html).toContain('href="/project/view/demo/file.js/"');
-    expect(html).not.toContain("#L2500");
+    expect(html).not.toContain("#L1");
   });
 });

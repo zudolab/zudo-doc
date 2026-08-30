@@ -216,6 +216,7 @@ describe("excerpt slicing", () => {
       endLine: 3,
       totalLines: 4,
       truncated: false,
+      viewerLineAvailable: false,
     });
     expect(excerpt.html).toContain('data-line="2"');
     expect(excerpt.html).toContain('data-line="3"');

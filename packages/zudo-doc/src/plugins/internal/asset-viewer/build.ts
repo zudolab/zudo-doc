@@ -19,6 +19,11 @@ import type { AssetRecord, AssetRecords } from "./types.js";
 
 const MANIFEST_WARNING_BYTES = 256 * 1024;
 
+function hasViewerLineAnchor(html: string | undefined, line: number): boolean {
+  if (html === undefined || line < 1) return false;
+  return html.includes(`id="L${line}"`) || html.includes(`id='L${line}'`);
+}
+
 export interface AssetSnapshotLogger {
   warn(message: string): void;
 }
@@ -118,7 +123,7 @@ export async function buildAssetSnapshot({
     const record = records[request.path];
     if (source === undefined || record?.lines === undefined) continue;
     const end = request.end ?? record.lines;
-    const excerpt = await renderExcerpt(
+    const renderedExcerpt = await renderExcerpt(
       source,
       record.language ?? "text",
       request.start,
@@ -126,7 +131,13 @@ export async function buildAssetSnapshot({
       record.lines,
       highlightCode,
     );
-    excerpts[`${request.path}#${request.start}-${end}`] = excerpt;
+    excerpts[`${request.path}#${request.start}-${end}`] = {
+      ...renderedExcerpt,
+      viewerLineAvailable: hasViewerLineAnchor(
+        record.html,
+        renderedExcerpt.startLine,
+      ),
+    };
   }
 
   const manifest: AssetManifest = { dir, routePrefix, entries, excerpts };

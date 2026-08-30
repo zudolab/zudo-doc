@@ -219,6 +219,7 @@ export async function renderExcerpt(
       endLine: 0,
       totalLines: 0,
       truncated: false,
+      viewerLineAvailable: false,
     };
   }
 
@@ -244,5 +245,8 @@ export async function renderExcerpt(
     endLine: sliced.endLine,
     totalLines: normalizedTotal,
     truncated: sliced.truncated,
+    // renderExcerpt does not receive the full viewer body. The snapshot
+    // builder replaces this after checking the completed route-only record.
+    viewerLineAvailable: false,
   };
 }
