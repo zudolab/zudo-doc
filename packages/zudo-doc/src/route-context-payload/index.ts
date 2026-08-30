@@ -18,6 +18,10 @@ import type {
 } from "./types.js";
 
 export type {
+  AssetExcerpt,
+  AssetIndexEntry,
+  AssetKind,
+  AssetManifest,
   ColorScheme,
   RouteContextPayload,
   TagVocabularyEntry,
