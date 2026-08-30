@@ -61,7 +61,10 @@ describe("asset index page SSG", () => {
     expect(html).toContain("data-zd-asset-index-page");
     expect(html).toContain("data-zd-wide");
     expect(html.match(/<details open>/g)).toHaveLength(2);
-    expect(html).toContain('<ul role="group">');
+    expect(html).toContain('<ul><li><details open>');
+    expect(html).not.toMatch(/\brole="(?:tree|treeitem|group)"/);
+    expect(html).toMatch(/<button\b(?=[^>]*\bdisabled\b)(?=[^>]*data-zd-asset-index-action="expand")/);
+    expect(html).toMatch(/<button\b(?=[^>]*\bdisabled\b)(?=[^>]*data-zd-asset-index-action="collapse")/);
     expect(html).toContain('href="/files/demo/readme.txt/"');
     expect(html).toContain('href="/files/demo/deep/logo.png/"');
     expect(html).toContain("2 files");
