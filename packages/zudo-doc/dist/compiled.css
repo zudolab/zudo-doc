@@ -1923,6 +1923,14 @@
     border-color: var(--color-accent);
   }
 }
+.focus-visible\:bg-accent\/10 {
+  &:focus-visible {
+    background-color: var(--color-accent);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, var(--color-accent) 10%, transparent);
+    }
+  }
+}
 .focus-visible\:text-accent {
   &:focus-visible {
     color: var(--color-accent);
@@ -1992,6 +2000,11 @@
 .sm\:mr-0 {
   @media (width >= 640px) {
     margin-right: var(--spacing-0);
+  }
+}
+.sm\:block {
+  @media (width >= 640px) {
+    display: block;
   }
 }
 .sm\:flex {
@@ -3452,6 +3465,34 @@ button[data-zd-pending] {
     grid-template-columns: minmax(0, 1fr) 20rem;
     align-items: start;
   }
+}
+[data-zd-asset-tree]:where(ul), [data-zd-asset-tree] :where(ul) {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+[data-zd-asset-tree] :where(ul) {
+  margin-left: var(--spacing-hsp-md);
+  padding-left: var(--spacing-hsp-md);
+  border-left: 1px solid currentColor;
+  @supports (color: color-mix(in lab, red, red)) {
+    border-left: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  }
+}
+[data-zd-asset-tree] :where(summary) {
+  list-style: none;
+}
+[data-zd-asset-tree] :where(summary)::-webkit-details-marker {
+  display: none;
+}
+[data-zd-asset-tree] :where(summary)::marker {
+  content: "";
+}
+[data-zd-asset-tree] details[open] > summary > svg:first-child {
+  transform: rotate(90deg);
+}
+[data-zd-asset-tree] details:not([open]) > summary > svg:nth-child(3), [data-zd-asset-tree] details[open] > summary > svg:nth-child(2) {
+  display: none;
 }
 @property --tw-translate-x {
   syntax: "*";

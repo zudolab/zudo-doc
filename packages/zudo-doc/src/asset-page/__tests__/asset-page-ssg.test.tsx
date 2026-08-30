@@ -33,6 +33,11 @@ function page(
   settings: Record<string, unknown> = {},
   translationOverrides: Record<string, string> = {},
 ): string {
+  const base = String(settings.base ?? "/");
+  const routePrefix = String(settings.assetViewerRoutePrefix ?? "files");
+  const dir = String(settings.assetViewerDir ?? "assets");
+  const withBase = (path: string) =>
+    `${base === "/" ? "" : `/${base.replace(/^\/+|\/+$/g, "")}`}${path}`;
   const ctx = makeFakeChromeContext({
     settings: {
       assetViewerDir: "assets",
@@ -42,7 +47,8 @@ function page(
       ...settings,
     },
     overrides: {
-      assetManifest: { dir: "assets", routePrefix: "files", entries: [], excerpts: {} },
+      assetManifest: { dir, routePrefix, entries: [], excerpts: {} },
+      withBase,
       t: (key: string) => ({
         "asset.badge": "Asset", "asset.crumb": "Assets", "asset.download": "Download",
         "asset.openRaw": "Open raw", "asset.copy": "Copy", "asset.wrap": "Wrap",
@@ -68,7 +74,8 @@ describe("asset page SSG", () => {
     expect(html).not.toContain("<aside");
     expect(html).toContain(">Asset</span>");
     expect(html).toContain(">Assets</span>");
-    expect(html).not.toContain('<a href="/files/">Assets</a>');
+    expect(html).toContain('<span class="text-fg">Assets</span>');
+    expect(html).not.toMatch(/<a href="\/files\/"[^>]*>Assets<\/a>/);
     expect(html).toContain("← Back to Brand");
     expect(html).toContain("data-doc-description");
     expect(html).toContain("data-doc-metainfo");
@@ -78,6 +85,23 @@ describe("asset page SSG", () => {
     expect(html).toContain("Guide › Brand");
     expect(html).toContain("/blob/HEAD/public/assets/img/logo.svg");
     expect(html.match(/>Download<\/a>/g)?.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("links the Assets crumb only when the index is enabled", () => {
+    const disabled = page(asset(), { assetViewerIndex: false });
+    expect(disabled).toContain('<span class="text-fg">Assets</span>');
+    expect(disabled).not.toMatch(/<a href="\/files\/"[^>]*>Assets<\/a>/);
+
+    const enabled = page(asset(), { assetViewerIndex: true });
+    expect(enabled).toMatch(/<a href="\/files\/"[^>]*>Assets<\/a>/);
+
+    const custom = page(asset(), {
+      assetViewerIndex: true,
+      base: "/pj/x/",
+      assetViewerRoutePrefix: "media/view",
+    });
+    expect(custom).toMatch(/<a href="\/pj\/x\/media\/view\/"[^>]*>Assets<\/a>/);
+    expect(custom).not.toContain("/pj/x/pj/x/");
   });
 
   it.each([false, true])("renders SVG through img and exactly one ImageEnlarge marker when imageEnlarge=%s", (imageEnlarge) => {

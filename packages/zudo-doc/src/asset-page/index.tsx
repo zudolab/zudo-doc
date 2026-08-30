@@ -200,9 +200,10 @@ export function createAssetPageView<S extends Settings = Settings>(ctx: ChromeCo
       String(asset.lines ?? 0),
     );
     const dirSegments = asset.dir.split("/").filter(Boolean);
+    const indexUrl = ctx.withBase(`/${routePrefix}/`);
     const breadcrumbItems = [
       { label: "", href: ctx.withBase("/") },
-      { label: t("asset.crumb", locale) },
+      { label: t("asset.crumb", locale), ...(settings.assetViewerIndex ? { href: indexUrl } : {}) },
       ...dirSegments.map((label) => ({ label })),
       { label: asset.name },
     ];
