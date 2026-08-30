@@ -66,6 +66,22 @@ function truncatePlainText(text: string): { text: string; truncated: boolean } {
   };
 }
 
+function plainResult(
+  text: string,
+  highlightedHtml?: string,
+): HighlightAssetResult {
+  const plain = truncatePlainText(text);
+  return {
+    html:
+      highlightedHtml !== undefined && !plain.truncated
+        ? highlightedHtml
+        : fallbackHtml(plain.text),
+    plain: true,
+    previewable: true,
+    truncated: plain.truncated,
+  };
+}
+
 /**
  * Render a text asset. The optional WASM peer stays behind this awaited lazy
  * import; callers invoke this function only from the feature-gated asset-body
@@ -86,13 +102,7 @@ export async function highlightAsset(
   }
 
   if (bytes > MAX_HIGHLIGHT_BYTES) {
-    const plain = truncatePlainText(text);
-    return {
-      html: fallbackHtml(plain.text),
-      plain: true,
-      previewable: true,
-      truncated: plain.truncated,
-    };
+    return plainResult(text);
   }
 
   try {
@@ -105,27 +115,21 @@ export async function highlightAsset(
     );
 
     if (result.html == null || hasError) {
-      return {
-        html: fallbackHtml(text),
-        plain: true,
-        previewable: true,
-        truncated: false,
-      };
+      return plainResult(text);
+    }
+
+    if (result.diagnostics.length > 0) {
+      return plainResult(text, result.html);
     }
 
     return {
       html: result.html,
-      plain: result.diagnostics.length > 0,
+      plain: false,
       previewable: true,
       truncated: false,
     };
   } catch {
-    return {
-      html: fallbackHtml(text),
-      plain: true,
-      previewable: true,
-      truncated: false,
-    };
+    return plainResult(text);
   }
 }
 
@@ -140,7 +144,7 @@ export function withLineIds(html: string): string {
   return html.replace(/<span\b([^>]*)>/g, (tag, attributes: string) => {
     if (!hasLineClass(attributes)) return tag;
     lineNumber += 1;
-    if (/\bid\s*=/.test(attributes)) return tag;
+    if (/(?:^|\s)id\s*=/.test(attributes)) return tag;
     return `<span${attributes} id="L${lineNumber}">`;
   });
 }

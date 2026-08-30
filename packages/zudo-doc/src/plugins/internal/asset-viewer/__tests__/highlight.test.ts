@@ -77,6 +77,35 @@ describe("highlightAsset", () => {
     });
   });
 
+  it("applies the plain-line cap to warning and rejection fallbacks", async () => {
+    const text = `${"short\n".repeat(MAX_PLAIN_LINES)}last`;
+    highlightCode.mockResolvedValueOnce({
+      html: "<pre>upstream plain output</pre>",
+      diagnostics: [
+        {
+          severity: "warning",
+          source: "highlight",
+          message: "unknown language",
+          line: null,
+          column: null,
+        },
+      ],
+    });
+
+    const warning = await highlightAsset(text, "unknown");
+    expect(warning.truncated).toBe(true);
+    expect(warning.html?.match(/class="line"/g)).toHaveLength(MAX_PLAIN_LINES);
+    expect(warning.html).not.toContain("last");
+
+    highlightCode.mockRejectedValueOnce(new Error("missing peer"));
+    const rejection = await highlightAsset(text, "text");
+    expect(rejection.truncated).toBe(true);
+    expect(rejection.html?.match(/class="line"/g)).toHaveLength(
+      MAX_PLAIN_LINES,
+    );
+    expect(rejection.html).not.toContain("last");
+  });
+
   it("skips WASM above the highlight cap and truncates plain previews by line", async () => {
     const overCap = `${"x".repeat(MAX_HIGHLIGHT_BYTES)}\n`;
     const plain = await highlightAsset(overCap, "javascript");
@@ -132,6 +161,12 @@ describe("line transforms", () => {
     const fallback = await highlightAsset("one\ntwo", "text");
     expect(withLineIds(fallback.html!)).toContain(
       '<span class="line" id="L2">two</span>',
+    );
+  });
+
+  it("does not mistake data-id for a line anchor", () => {
+    expect(withLineIds('<span class="line" data-id="source">x</span>')).toBe(
+      '<span class="line" data-id="source" id="L1">x</span>',
     );
   });
 });
