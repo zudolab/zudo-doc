@@ -1057,13 +1057,16 @@ button[data-zd-pending] {
 }
 
 .zd-asset-page .zd-asset-code .line {
-  display: grid;
-  grid-template-columns: var(--zd-asset-gutter, 4ch) minmax(0, 1fr);
+  display: block;
+  width: 100%;
 }
 
 .zd-asset-page .zd-asset-code .line::before {
   counter-increment: line;
   content: counter(line);
+  display: inline-block;
+  box-sizing: border-box;
+  width: var(--zd-asset-gutter, 4ch);
   padding-right: var(--spacing-hsp-lg);
   color: var(--color-muted);
   text-align: right;
@@ -1077,7 +1080,9 @@ button[data-zd-pending] {
 
 .zd-asset-page .zd-asset-filebar {
   position: sticky;
-  top: var(--zd-header-h);
+  /* Match Header's fixed h-[3.5rem]; --zd-header-h intentionally includes
+   * extra clearance for in-page anchor scrolling. */
+  top: 3.5rem;
   z-index: var(--z-index-local-2);
 }
 

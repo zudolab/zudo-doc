@@ -95,6 +95,17 @@ test.describe("Asset viewer: static pages and authoring", () => {
   test("renders full-file line ids without copying gutter numbers into code", () => {
     const html = assetPage("demo.js");
     const markup = codeMarkup(html);
+    expect(html).not.toMatch(/>asset\.[^<]+</);
+    for (const label of [
+      "Assets",
+      "Asset",
+      "Download",
+      "Open raw",
+      "Copy",
+      "Wrap",
+    ]) {
+      expect(html).toContain(`>${label}<`);
+    }
     expect(markup).toMatch(new RegExp(attrSource("id", "L1")));
     expect(
       markup.match(/\bid\s*=\s*(?:"L\d+"|'L\d+'|L\d+)(?=[\s>/])/g),
@@ -219,6 +230,32 @@ test.describe("Asset viewer: browser interactions", () => {
     await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
     const pre = page.locator("pre.zd-asset-code");
     await expect(pre).toBeVisible();
+    const firstLineTokenRows = await page.locator("#L1 > span").evaluateAll(
+      (tokens) =>
+        new Set(
+          tokens.map((token) => Math.round(token.getBoundingClientRect().top)),
+        ).size,
+    );
+    expect(firstLineTokenRows).toBe(1);
+    const linePositions = await page.locator(".zd-asset-code .line").evaluateAll(
+      (lines) => lines.map((line) => {
+        const rect = line.getBoundingClientRect();
+        return { left: Math.round(rect.left), top: Math.round(rect.top) };
+      }),
+    );
+    expect(new Set(linePositions.map(({ left }) => left)).size).toBe(1);
+    for (let index = 1; index < linePositions.length; index += 1) {
+      expect(linePositions[index]?.top).toBeGreaterThan(
+        linePositions[index - 1]?.top ?? 0,
+      );
+    }
+    const stickyTop = await page.locator(".zd-asset-filebar").evaluate(
+      (element) => Number.parseFloat(getComputedStyle(element).top),
+    );
+    const headerHeight = await page.locator("header[data-header]").evaluate(
+      (element) => element.getBoundingClientRect().height,
+    );
+    expect(stickyTop).toBeCloseTo(headerHeight, 0);
     const actions = page.locator("[data-zd-asset-actions]").first();
     const copy = actions.locator('[data-zd-asset-action="copy"]');
     const wrap = actions.locator('[data-zd-asset-action="wrap"]');
