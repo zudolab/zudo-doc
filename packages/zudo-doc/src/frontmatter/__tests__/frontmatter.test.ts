@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { createRequire } from "node:module";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { matter } from "../index.js";
+import { matter, stringify } from "../index.js";
 
 // Parity suite for the in-house splitter that replaced `gray-matter`
 // (zudolab/zudo-doc#3729). Every expectation below was taken from
@@ -99,6 +99,11 @@ describe("matter — block parsing", () => {
     expect(data.child).toEqual({ a: 1, b: 2 });
   });
 
+  it("normalizes a null document to an empty object", () => {
+    // gray-matter did this in its excerpt pass, verified against 4.0.3.
+    expect(matter("---\nnull\n---\nbody").data).toEqual({});
+  });
+
   it("passes a non-object YAML root through unchanged", () => {
     // Call sites guard with an isRecord() check and rely on this.
     expect(matter("---\njust a string\n---\nbody").data).toBe("just a string");
@@ -189,5 +194,39 @@ describe("package dependencies", () => {
     expect(declared).not.toContain("gray-matter");
     expect(declared).not.toContain("js-yaml");
     expect(pkg.dependencies?.yaml).toBeTruthy();
+  });
+});
+
+// `stringify` is the inverse used by the `tags-suggest` bin to write approved
+// tags back into a doc file. Expectations verified against gray-matter 4.0.3.
+describe("stringify", () => {
+  it("wraps data in fences and terminates the body with a newline", () => {
+    expect(stringify("Body", { title: "X" })).toBe("---\ntitle: X\n---\nBody\n");
+  });
+
+  it("does not double the body's existing trailing newline", () => {
+    expect(stringify("Body\n", { title: "X" })).toBe(
+      "---\ntitle: X\n---\nBody\n",
+    );
+  });
+
+  it("emits no fence at all for empty data", () => {
+    expect(stringify("Body\n", {})).toBe("Body\n");
+  });
+
+  it("round-trips through matter()", () => {
+    const source = "---\ntitle: Home\ntags:\n  - a\n  - b\n---\nBody text.\n";
+    const parsed = matter(source);
+    expect(stringify(parsed.content, parsed.data)).toBe(source);
+  });
+
+  it("leaves a long scalar on one line instead of folding it", () => {
+    // Deliberate divergence: js-yaml's 80-column default reflowed this into a
+    // `>-` block, churning frontmatter the tool only meant to add tags to.
+    const description =
+      "a fairly long description value that might wrap somewhere around eighty columns maybe";
+    const out = stringify("Body\n", { description, tags: ["a"] });
+    expect(out).toContain(`description: ${description}\n`);
+    expect(out).not.toContain(">-");
   });
 });

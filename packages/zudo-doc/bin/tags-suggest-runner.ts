@@ -13,7 +13,11 @@ import { appendFile, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { isAbsolute, relative, resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { matter } from "@takazudo/zudo-doc/frontmatter";
+import {
+  matter,
+  stringify as stringifyFrontmatter,
+  type ParsedFrontmatter,
+} from "@takazudo/zudo-doc/frontmatter";
 
 import type { TagVocabularyEntry } from "@takazudo/zudo-doc/settings";
 import {
@@ -266,11 +270,11 @@ function asStringArray(v: unknown): string[] {
 
 async function writeFrontmatterTags(
   filePath: string,
-  parsed: matter.GrayMatterFile<string>,
+  parsed: ParsedFrontmatter,
   nextTags: string[],
 ): Promise<void> {
   const data = { ...parsed.data, tags: nextTags };
-  const rebuilt = matter.stringify(parsed.content, data);
+  const rebuilt = stringifyFrontmatter(parsed.content, data);
   await writeFile(filePath, rebuilt, "utf-8");
 }
 

@@ -16,7 +16,7 @@
  * where it happens.
  */
 
-import { parse as parseYaml } from "yaml";
+import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 
 const OPEN = "---";
 /** Closing fence, newline included — gray-matter searches for `\n---`, which
@@ -112,5 +112,28 @@ function parseBlock(block: string, language: string): Record<string, unknown> {
   // core on purpose: a bare `2026-01-12` now yields the STRING that zfb and
   // the docs schema already expect, rather than the `Date` js-yaml 3 coerced
   // it into (zudolab/zudo-doc#3642).
-  return parseYaml(block, { merge: true }) as Record<string, unknown>;
+  const parsed = parseYaml(block, { merge: true }) as unknown;
+  // A `null` document normalizes to `{}` — gray-matter did this in its excerpt
+  // pass. Scalar and array roots deliberately pass through, as they did there.
+  return (parsed ?? {}) as Record<string, unknown>;
+}
+
+/**
+ * Rebuild a document from body content plus frontmatter data — the inverse of
+ * {@link matter}, and the one writer this package needs (`tags-suggest` writes
+ * approved tags back into a doc file).
+ *
+ * Matches gray-matter's `stringify`: empty data emits no fence at all, and the
+ * body always ends with a newline. The one deliberate difference is that long
+ * scalars are NOT folded. js-yaml's 80-column default reflowed unrelated
+ * frontmatter — a long `description:` came back as a `>-` block — which is
+ * needless churn in a file the tool is only meant to add tags to.
+ */
+export function stringify(
+  content: string,
+  data: Record<string, unknown>,
+): string {
+  const block = stringifyYaml(data, { lineWidth: 0 }).trim();
+  const fence = block === "{}" ? "" : `${OPEN}\n${block}\n${OPEN}\n`;
+  return fence + (content.endsWith("\n") ? content : `${content}\n`);
 }
