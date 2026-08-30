@@ -321,7 +321,7 @@ describe("NAV_OVERFLOW_SCRIPT — executed in jsdom (applyActiveNav)", () => {
     expect(menu.querySelectorAll('a[aria-current="page"]')).toHaveLength(0);
   });
 
-  it("clears transferred state when a resize removes measurable overflow", () => {
+  it("clears transferred state when overflow disappears or nav is unmeasurable", () => {
     setLocation("/blog/post-1");
     const nav = buildNav();
     const { container, toggle } = appendOverflowControls(nav, 250);
@@ -330,9 +330,21 @@ describe("NAV_OVERFLOW_SCRIPT — executed in jsdom (applyActiveNav)", () => {
     expectMoreToggleState(toggle, true);
 
     toggle.click();
-    nav.dataset.testClientWidth = "0";
     const resize = resizeCallbacks[resizeCallbacks.length - 1];
     expect(resize).toBeDefined();
+
+    nav.dataset.testClientWidth = "400";
+    resize?.([], {} as ResizeObserver);
+
+    expectMoreToggleState(toggle, false);
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(container.style.display).toBe("none");
+
+    nav.dataset.testClientWidth = "250";
+    resize?.([], {} as ResizeObserver);
+    expectMoreToggleState(toggle, true);
+
+    nav.dataset.testClientWidth = "0";
     resize?.([], {} as ResizeObserver);
 
     expectMoreToggleState(toggle, false);

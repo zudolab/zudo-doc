@@ -862,19 +862,31 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // `/404.html` remains unchanged at `5513e16e…`, confirming the movement is
   // limited to pages that render the sidebar tree.
 
+  // 2026-08-31 re-baseline (Header Overflow Active State epic #3772, sub
+  // #3773; supersedes #3758): all three pages move through the same two
+  // unconditional, page-independent header deltas. First, the frozen
+  // `NAV_OVERFLOW_SCRIPT` literal now transfers active styling to the More
+  // toggle and `aria-current="page"` to exactly one collapsed clone, then
+  // clears that state on every responsive recomputation. Second,
+  // `data-nav-more-toggle` composes its existing muted/hover/focus color tokens
+  // from `NAV_MORE_INACTIVE`; that preserves the token set but reorders those
+  // static class-attribute bytes. The branch changes no other rendered path,
+  // and asset-filename normalization excludes bundle-hash noise. No
+  // unattributed bytes.
+
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"5513e16ed45d3d459ec050275bee26ecce8b358acf1c26046f92671ae24ed08e"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"6647af70dd88cf00d6b2f14bfe814f7108630fc73c1a0751d3227605825006ed"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"77786a6fd0b29334c89fc48bcca2a033123d6ebb3b21772ffb18c9c48e4b3d30"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"4ae04fe0b935e209927afb6ce2b7e532a4a52f19a912b4761b1fbe692542883e"`);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"332a652e6633b46208cc024975074f77015c7576686cade09ecd676a9c25c21d"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"2bd665f060295f6c4818f30eb6be4f482f89ec57e97b5e8151ed99cb05b28d93"`);
   });
 });
 
