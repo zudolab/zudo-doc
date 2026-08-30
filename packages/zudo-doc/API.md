@@ -18,7 +18,7 @@ New snapshot guards (added in `packages/zudo-doc/src/__tests__/public-api-snapsh
 
 ---
 
-## 1. Subpath Exports (149 total)
+## 1. Subpath Exports (150 total)
 
 The full `package.json#exports` keyset is the contract. Any addition or removal requires a deliberate, reviewed change that will fail the snapshot guard.
 
@@ -291,6 +291,7 @@ reachable from this subpath — through the bundled JS graph OR the transitive
 
 | Subpath | Description |
 |---|---|
+| `./asset-path` | Browser-safe canonical asset path validation, segment-wise URL encoding/decoding, viewer/raw href builders, asset-viewer settings validation, and the dependency-free asset exclude-glob matcher. |
 | `./content` | MDX content rendering utilities |
 | `./mdx-components` | MDX component map |
 | `./metainfo` | Page metainfo utilities |
