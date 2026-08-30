@@ -10,6 +10,8 @@ import {
   NAV_MENU_PARENT_ACTIVE_SUFFIX,
   NAV_MENU_PLAIN,
   NAV_MENU_PLAIN_ACTIVE_SUFFIX,
+  NAV_MORE_ACTIVE,
+  NAV_MORE_INACTIVE,
   NAV_TOP_ACTIVE,
   NAV_TOP_INACTIVE,
 } from "../nav-class-tokens.js";
@@ -35,6 +37,13 @@ describe("nav-class-tokens — pinned lockstep values", () => {
   it("dropdown chevron active / inactive", () => {
     expect(join(NAV_CHEVRON_ACTIVE)).toBe("text-bg");
     expect(join(NAV_CHEVRON_INACTIVE)).toBe("text-muted");
+  });
+
+  it("overflow toggle active / inactive colours", () => {
+    expect(join(NAV_MORE_ACTIVE)).toBe("bg-fg text-bg");
+    expect(join(NAV_MORE_INACTIVE)).toBe(
+      "text-muted hover:text-accent focus-visible:text-accent",
+    );
   });
 
   it("dropdown child active / inactive", () => {
@@ -82,6 +91,21 @@ describe("NAV_OVERFLOW_SCRIPT emits the shared tokens verbatim", () => {
     );
     expect(NAV_OVERFLOW_SCRIPT).toContain(
       'svg.classList.add("text-muted"); svg.classList.remove("text-bg");',
+    );
+  });
+
+  it("overflow more-toggle state", () => {
+    expect(NAV_OVERFLOW_SCRIPT).toContain(
+      'moreToggle.classList.add("bg-fg", "text-bg");',
+    );
+    expect(NAV_OVERFLOW_SCRIPT).toContain(
+      'moreToggle.classList.remove("text-muted", "hover:text-accent", "focus-visible:text-accent");',
+    );
+    expect(NAV_OVERFLOW_SCRIPT).toContain(
+      'moreToggle.classList.add("text-muted", "hover:text-accent", "focus-visible:text-accent");',
+    );
+    expect(NAV_OVERFLOW_SCRIPT).toContain(
+      'moreToggle.classList.remove("bg-fg", "text-bg");',
     );
   });
 
