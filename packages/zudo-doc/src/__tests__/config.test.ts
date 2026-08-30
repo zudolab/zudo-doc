@@ -390,15 +390,22 @@ describe("zudoDoc() escape-hatch overrides", () => {
     expect(config.markdown?.features?.directives).toEqual({ note: "MyNote" });
   });
 
-  it("`translations` / `colorSchemes` / `tagVocabularyEntries` ride into routes options", () => {
+  it("translation additions merge over defaults while other data overrides ride into routes options", () => {
     const opts = routesOptions(
       zudoDoc({
-        translations: { en: { "doc.allTags": "All Tags" } },
+        translations: { en: { "doc.allTags": "Every tag" } },
         colorSchemes: { "Custom": defaultColorSchemes["Default Dark"]! },
         tagVocabularyEntries: [{ id: "ai" }],
       }),
     );
-    expect(opts?.translations).toEqual({ en: { "doc.allTags": "All Tags" } });
+    expect(opts?.translations).toMatchObject({
+      en: {
+        "doc.allTags": "Every tag",
+        "asset.indexBadge": "Index",
+      },
+      ja: { "asset.indexBadge": "インデックス" },
+      de: { "nav.gettingStarted": "Erste Schritte" },
+    });
     expect(opts?.tagVocabulary).toEqual([{ id: "ai" }]);
     expect(opts?.colorSchemes).toHaveProperty("Custom");
   });
