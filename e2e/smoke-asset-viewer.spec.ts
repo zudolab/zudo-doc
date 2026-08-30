@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { Download } from "@playwright/test";
 import { expect, test } from "./fixtures";
 import { attrSource, booleanAttrSource } from "./html-assertions";
 import { spaClick } from "./nav-helpers";
@@ -263,20 +264,24 @@ test.describe("Asset viewer: browser interactions", () => {
   });
 
   test("raw Download bypasses the router and fetches the asset once", async ({
-    browser,
     page,
     assertNoConsoleErrors,
   }) => {
     await page.goto("/files/demo.js/", { waitUntil: "domcontentloaded" });
 
-    const cdpSession = await browser.newBrowserCDPSession();
-    const cdpDownloads: string[] = [];
-    cdpSession.on("Browser.downloadWillBegin", (payload) => {
-      if (new URL(payload.url).pathname === "/assets/demo.js") {
-        cdpDownloads.push(payload.url);
+    const expectedAbsoluteUrl = new URL("/assets/demo.js", page.url()).href;
+    const downloadUrls: string[] = [];
+    const onDownload = (download: Download) => {
+      const url = download.url();
+      if (new URL(url).pathname === "/assets/demo.js") {
+        downloadUrls.push(url);
       }
-    });
+    };
+    page.on("download", onDownload);
     try {
+      // Chromium's browser-managed download is delivered through Playwright's
+      // download event stream, not the page/context request streams or a fresh
+      // browser-level CDP session. This event carries the actual transfer URL.
       await page.evaluate(() => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (window as any).__assetViewerBeforePreparationCount = 0;
@@ -290,10 +295,7 @@ test.describe("Asset viewer: browser interactions", () => {
       await page.getByRole("link", { name: "Download" }).first().click();
       const download = await downloadPromise;
 
-      await expect.poll(() => cdpDownloads.length).toBe(1);
-      expect(cdpDownloads).toEqual([
-        new URL("/assets/demo.js", page.url()).href,
-      ]);
+      expect(downloadUrls).toEqual([expectedAbsoluteUrl]);
       const beforePreparationCount = await page.evaluate(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         () => (window as any).__assetViewerBeforePreparationCount,
@@ -302,7 +304,7 @@ test.describe("Asset viewer: browser interactions", () => {
       expect(download.suggestedFilename()).toBe("demo.js");
       assertNoConsoleErrors();
     } finally {
-      await cdpSession.detach();
+      page.off("download", onDownload);
     }
   });
 
