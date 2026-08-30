@@ -39,7 +39,7 @@
 src/styles/global.css
 
 # scripts/check-links.js
-# reason: generated projects resolve base/trailingSlash/docsDir/locales from zfb.config.ts; the host checker reads src/config/settings.ts.
+# reason: generated projects resolve base/trailingSlash/docsDir/locales from zfb.config.ts while the host checker reads src/config/settings.ts; both intentionally share the same link/anchor resolution, including terminal-slash directories with extension-bearing names.
 scripts/check-links.js
 
 # ── tsconfig.json ───────────────────────────────────────────────────────────

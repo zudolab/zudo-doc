@@ -36,6 +36,10 @@ describe("normalizedBase + withBase", () => {
     expect(helpers().withBase("/sitemap.xml")).toBe("/sitemap.xml");
   });
 
+  it("preserves an explicit trailing slash on extension-bearing directories", () => {
+    expect(helpers().withBase("/files/img/logo.svg/")).toBe("/files/img/logo.svg/");
+  });
+
   it("omits the trailing slash when trailingSlash is false", () => {
     expect(helpers({ trailingSlash: false }).withBase("/docs/x")).toBe("/docs/x");
   });
