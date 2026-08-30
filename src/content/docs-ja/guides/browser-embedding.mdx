@@ -193,4 +193,4 @@ DOM フックは両方とも契約の一部です。スタイルシートのリ�
 
 アップグレード後は、[CCResDoc #183](https://github.com/Takazudo/ccresdoc/issues/183)、[#184](https://github.com/Takazudo/ccresdoc/issues/184)、[#185](https://github.com/Takazudo/ccresdoc/issues/185)で追跡されているものを含め、見た目やポインターだけで readiness を表現していたホスト側の回避策を削除できます。pending 中の見た目を変えたい場合は、スクリプトの状態を探るのではなく、安定した `data-zd-pending` フックをスタイルしてください。ハイドレーション前から本当に動作するコンポーネントを直接利用している場合は、`pendingUntilHydrated={false}` でオプトアウトできます。
 
-埋め込み側で `@takazudo/zfb-md-wasm` を使って Markdown を描画する場合、directive と alert の本文には 2.10.1 より後の最初のリリース（[zfb #2570](https://github.com/Takazudo/zudo-front-builder/issues/2570)）が最低要件です。このリポジトリの現在の pin は 2.13.1 です。2.10.1 では本文がフラット化され、段落構造とインラインマークアップが失われます。
+埋め込み側で `@takazudo/zfb-md-wasm` を使って Markdown を描画する場合、directive と alert の本文には 2.10.1 より後の最初のリリース（[zfb #2570](https://github.com/Takazudo/zudo-front-builder/issues/2570)）が最低要件です。このリポジトリの現在の pin は 2.14.0 です。2.10.1 では本文がフラット化され、段落構造とインラインマークアップが失われます。
