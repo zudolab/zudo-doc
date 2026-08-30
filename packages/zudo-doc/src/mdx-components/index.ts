@@ -380,13 +380,16 @@ export function createMdxComponents(
   } = options;
 
   const ContentImg = makeContentImg(settings.base);
+  const assetDir = assetManifest?.dir ?? settings.assetViewerDir;
+  const assetRoutePrefix =
+    assetManifest?.routePrefix ?? settings.assetViewerRoutePrefix;
   const EnlargeableParagraph = makeEnlargeableParagraph(
     settings.imageEnlarge,
     ContentImg,
     {
       base: settings.base,
-      dir: settings.assetViewerDir,
-      routePrefix: settings.assetViewerRoutePrefix,
+      dir: assetDir,
+      routePrefix: assetRoutePrefix,
       manifest: assetManifest,
     },
   );
@@ -394,8 +397,8 @@ export function createMdxComponents(
     ? createContentLink({
         base: settings.base,
         assetManifest,
-        routePrefix: settings.assetViewerRoutePrefix,
-        dir: settings.assetViewerDir,
+        routePrefix: assetRoutePrefix,
+        dir: assetDir,
       })
     : defaultComponents.a;
 

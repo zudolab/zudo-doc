@@ -155,13 +155,30 @@ function collectExcerptRequests(
   return requests;
 }
 
+function isSentenceBoundary(content: string, index: number): boolean {
+  const character = content[index];
+  if (character === "\n" || character === "。") return true;
+  if (character !== ".") return false;
+
+  // A dot inside a filename or Markdown link label is not sentence
+  // punctuation. Requiring whitespace (or EOF) after ASCII full stops keeps
+  // `[example.js](/assets/example.js)` intact while still finding prose ends.
+  const next = content[index + 1];
+  return next === undefined || /\s/.test(next);
+}
+
 function nearestSentenceEnd(content: string, from: number): number {
-  const candidates = [
-    content.indexOf(".", from),
-    content.indexOf("。", from),
-    content.indexOf("\n", from),
-  ].filter((index) => index >= 0);
-  return candidates.length === 0 ? content.length : Math.min(...candidates) + 1;
+  for (let index = from; index < content.length; index += 1) {
+    if (isSentenceBoundary(content, index)) return index + 1;
+  }
+  return content.length;
+}
+
+function nearestSentenceStart(content: string, before: number): number {
+  for (let index = before - 1; index >= 0; index -= 1) {
+    if (isSentenceBoundary(content, index)) return index + 1;
+  }
+  return 0;
 }
 
 function contextForMatch(
@@ -169,12 +186,7 @@ function contextForMatch(
   matchStart: number,
   matchEnd: number,
 ): string {
-  const start =
-    Math.max(
-      content.lastIndexOf(".", matchStart - 1),
-      content.lastIndexOf("。", matchStart - 1),
-      content.lastIndexOf("\n", matchStart - 1),
-    ) + 1;
+  const start = nearestSentenceStart(content, matchStart);
   const end = nearestSentenceEnd(content, matchEnd);
   const raw = content.slice(start, end);
   const context = raw.trim().replace(/\s+/g, " ");

@@ -568,6 +568,8 @@ export const survivorAllowlist: readonly SurvivorClassification[] = [
     allowPathPatterns: [
       "^packages/doc-history-server/",
       "^packages/zudo-doc/src/plugins/internal/doc-history/",
+      "^packages/zudo-doc/src/plugins/internal/asset-viewer/(git-meta\\.ts|__tests__/(build|git-meta)\\.test\\.ts)$",
+      "^packages/zudo-doc/src/plugins/__tests__/routes\\.test\\.ts$",
       "^packages/zudo-doc/src/__tests__/",
       "^e2e/",
       "^\\.github/workflows/",
@@ -579,7 +581,7 @@ export const survivorAllowlist: readonly SurvivorClassification[] = [
       "^src/content/docs(-ja)?/guides/(deployment|doc-history)\\.mdx$",
       "^src/content/docs(-ja)?/reference/doc-history-server\\.mdx$",
     ],
-    reason: "The environment switch keeps generated and fixture builds independent of Git history.",
+    reason: "The environment switch keeps generated, fixture, and asset-metadata builds independent of Git history.",
   },
   {
     marker: "--follow",

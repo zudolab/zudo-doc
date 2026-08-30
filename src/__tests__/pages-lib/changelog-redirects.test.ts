@@ -63,7 +63,7 @@ describe("showcase package changelog redirects", () => {
   const rules = parseRedirects(PUBLIC_REDIRECTS);
 
   it("covers exactly every historical EN and JA route", () => {
-    expect(en).toHaveLength(99);
+    expect(en).toHaveLength(100);
     expect(ja).toEqual(en);
     expect(rules).toEqual(expectedRules(en, ja));
   });

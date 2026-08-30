@@ -5,6 +5,7 @@ import type { JSX } from "preact";
 import { assetViewerHref } from "../asset-path/index.js";
 import {
   AssetFileIcon,
+  assetComponentText,
   MissingAssetWarning,
   resolveAssetEntry,
   type AssetComponentContext,
@@ -101,12 +102,23 @@ export function createAssetCode(context: AssetComponentContext) {
           dangerouslySetInnerHTML={{ __html: excerpt.html }}
         />
         <footer className="flex flex-wrap items-center justify-between gap-x-hsp-md gap-y-vsp-3xs border-t border-muted px-hsp-lg py-vsp-2xs text-caption text-muted">
-          <span>Showing {shown} of {excerpt.totalLines} lines</span>
+          <span>
+            {assetComponentText(
+              context,
+              "asset.showingLines",
+              "Showing {shown} of {total} lines",
+              { shown, total: excerpt.totalLines },
+            )}
+          </span>
           <a
             className="text-accent hover:underline focus-visible:underline"
             href={viewerHref}
           >
-            View full file →
+            {assetComponentText(
+              context,
+              "asset.viewFullFile",
+              "View full file",
+            )} →
           </a>
         </footer>
       </section>

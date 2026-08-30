@@ -28,7 +28,11 @@ function asset(overrides: Partial<AssetRecord> = {}): AssetRecord {
   };
 }
 
-function page(entry: AssetRecord, settings: Record<string, unknown> = {}): string {
+function page(
+  entry: AssetRecord,
+  settings: Record<string, unknown> = {},
+  translationOverrides: Record<string, string> = {},
+): string {
   const ctx = makeFakeChromeContext({
     settings: {
       assetViewerDir: "assets",
@@ -42,9 +46,11 @@ function page(entry: AssetRecord, settings: Record<string, unknown> = {}): strin
       t: (key: string) => ({
         "asset.badge": "Asset", "asset.crumb": "Assets", "asset.download": "Download",
         "asset.openRaw": "Open raw", "asset.copy": "Copy", "asset.wrap": "Wrap",
+        "asset.lines": "{count} lines",
         "asset.linkedFrom": "Linked from", "asset.noPreview": "No preview available.",
         "asset.truncated": "Preview truncated.", "doc.updated": "Updated",
         "doc.viewSource": "View source on GitHub",
+        ...translationOverrides,
       }[key] ?? key),
       absoluteUrl: (path: string) => `https://docs.example${path}`,
     },
@@ -88,6 +94,33 @@ describe("asset page SSG", () => {
     expect(html).toContain('src="/project/assets/img/logo.svg"');
     expect(html).toContain('href="https://docs.example/project/files/img/logo.svg/"');
     expect(html).not.toContain("/project/project/");
+  });
+
+  it("uses the shared asset size formatter in page metadata", () => {
+    const html = page(asset({ bytes: 2_900 }));
+    expect(html).toContain(">2.9 KB</span>");
+    expect(html).not.toContain("2.8 KB");
+  });
+
+  it("uses the locale line-count template in header and code metadata", () => {
+    const html = page(
+      asset({
+        path: "src/demo.js",
+        name: "demo.js",
+        dir: "src",
+        kind: "code",
+        mime: "text/javascript",
+        language: "javascript",
+        lines: 2,
+        width: undefined,
+        height: undefined,
+        html: '<pre class="hi-root"><code><span class="line" id="L1">one</span></code></pre>',
+      }),
+      {},
+      { "asset.lines": "{count} source rows" },
+    );
+    expect(html.match(/2 source rows/g)).toHaveLength(2);
+    expect(html).not.toContain("2 lines");
   });
 
   it("renders code with a sticky bar, line ids, counter-safe markup, truncation and no media grid", () => {

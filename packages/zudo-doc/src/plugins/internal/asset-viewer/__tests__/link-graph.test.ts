@@ -81,7 +81,7 @@ describe("collectAssetLinks", () => {
       1,
     );
     expect(refs.find(({ title }) => title === "Getting Started")?.context).toBe(
-      "Download [the guide](/downloads/My%20Guide.pdf) before continuing.",
+      "Download [the guide.pdf](/downloads/My%20Guide.pdf) before continuing.",
     );
   });
 

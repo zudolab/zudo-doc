@@ -13,6 +13,7 @@ import { formatDate } from "../format-date/index.js";
 import { buildGitHubSourceUrl } from "../github-helpers/index.js";
 import { createHeadWithDefaults } from "../head-with-defaults/index.js";
 import { assetRawHref, assetViewerHref } from "../asset-path/index.js";
+import { formatAssetBytes } from "../asset-components/index.js";
 import type { AssetRecord } from "../plugins/internal/asset-viewer/types.js";
 import { resolveThemePackSsrSlug } from "../theme/theme-pack-provider.js";
 import type { Settings } from "../settings.js";
@@ -23,12 +24,6 @@ export type { AssetRecord } from "../plugins/internal/asset-viewer/types.js";
 
 export interface AssetPageViewProps {
   entry: AssetRecord;
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(bytes < 10240 ? 1 : 0)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function formatDuration(seconds: number): string {
@@ -43,8 +38,8 @@ function kindLabel(asset: AssetRecord): string {
   return asset.mime.split("/").at(-1)?.toUpperCase() ?? asset.kind.toUpperCase();
 }
 
-function facetLabel(asset: AssetRecord): string | null {
-  if (asset.lines !== undefined) return `${asset.lines} lines`;
+function facetLabel(asset: AssetRecord, linesLabel?: string): string | null {
+  if (asset.lines !== undefined) return linesLabel ?? `${asset.lines} lines`;
   if (asset.kind === "video" && asset.durationSec !== undefined) {
     return formatDuration(asset.durationSec);
   }
@@ -62,8 +57,8 @@ export function AssetEyebrow({ asset, badge }: { asset: AssetRecord; badge: stri
   );
 }
 
-export function AssetHeader({ asset, locale, badge, updatedLabel }: { asset: AssetRecord; locale: string; badge: string; updatedLabel: string }): VNode {
-  const facet = facetLabel(asset);
+export function AssetHeader({ asset, locale, badge, updatedLabel, linesLabel }: { asset: AssetRecord; locale: string; badge: string; updatedLabel: string; linesLabel?: string }): VNode {
+  const facet = facetLabel(asset, linesLabel);
   return (
     <header>
       <AssetEyebrow asset={asset} badge={badge} />
@@ -71,7 +66,7 @@ export function AssetHeader({ asset, locale, badge, updatedLabel }: { asset: Ass
       <div data-doc-metainfo class="mb-vsp-md flex flex-wrap items-center gap-x-hsp-md gap-y-vsp-2xs text-caption text-fg">
         {asset.dir && <span>{asset.dir}</span>}
         {facet && <span>{facet}</span>}
-        <span>{formatBytes(asset.bytes)}</span>
+        <span>{formatAssetBytes(asset.bytes)}</span>
         {asset.updatedDate && <span>{updatedLabel} {formatDate(asset.updatedDate, locale)}</span>}
         {asset.author && <span>{asset.author}</span>}
       </div>
@@ -95,12 +90,12 @@ export function AssetActions({ rawUrl, downloadLabel, openRawLabel, copyLabel, w
   );
 }
 
-export function AssetCodeBody({ asset, copyLabel, wrapLabel, truncatedLabel }: { asset: AssetRecord; copyLabel: string; wrapLabel: string; truncatedLabel: string }): VNode {
+export function AssetCodeBody({ asset, copyLabel, wrapLabel, truncatedLabel, linesLabel }: { asset: AssetRecord; copyLabel: string; wrapLabel: string; truncatedLabel: string; linesLabel?: string }): VNode {
   const highlightedCode = asset.html?.match(/^<pre\b[^>]*>\s*(<code\b[\s\S]*<\/code>)\s*<\/pre>$/)?.[1] ?? "";
   return (
     <section>
       <div class="zd-asset-filebar flex flex-wrap items-center justify-between gap-hsp-sm border border-muted bg-surface px-hsp-md py-vsp-2xs text-caption">
-        <span class="font-mono">{asset.name} · {asset.lines ?? 0} lines · {formatBytes(asset.bytes)} · {kindLabel(asset)}</span>
+        <span class="font-mono">{asset.name} · {linesLabel ?? `${asset.lines ?? 0} lines`} · {formatAssetBytes(asset.bytes)} · {kindLabel(asset)}</span>
         <span class="flex gap-hsp-sm">
           <button type="button" disabled data-zd-asset-action="copy" class="text-fg hover:text-accent focus-visible:text-accent">{copyLabel}</button>
           <button type="button" disabled data-zd-asset-action="wrap" class="text-fg hover:text-accent focus-visible:text-accent">{wrapLabel}</button>
@@ -150,7 +145,7 @@ export function AssetDownloadPanel({ asset, rawUrl, noPreview, downloadLabel, co
     <section class="rounded border border-dashed border-muted p-hsp-xl text-center">
       <div aria-hidden="true" class="mb-vsp-xs text-heading">↓</div>
       <h2 class="font-mono text-title font-bold">{asset.name}</h2>
-      <p class="mb-vsp-sm text-caption text-muted">{kindLabel(asset)} · {formatBytes(asset.bytes)}</p>
+      <p class="mb-vsp-sm text-caption text-muted">{kindLabel(asset)} · {formatAssetBytes(asset.bytes)}</p>
       <p class="mb-vsp-md text-small text-muted">{noPreview}</p>
       <div class="flex flex-wrap justify-center gap-hsp-sm">
         <a download href={rawUrl} class={`${actionClass(true)} hover:underline focus-visible:underline`}>{downloadLabel}</a>
@@ -173,7 +168,7 @@ export function AssetLinkedFrom({ asset, label }: { asset: AssetRecord; label: s
 }
 
 export function AssetDetails({ asset }: { asset: AssetRecord }): VNode {
-  const rows: Array<[string, string]> = [["Type", asset.mime], ["Size", formatBytes(asset.bytes)], ["Path", asset.path]];
+  const rows: Array<[string, string]> = [["Type", asset.mime], ["Size", formatAssetBytes(asset.bytes)], ["Path", asset.path]];
   if (asset.width !== undefined && asset.height !== undefined) rows.splice(1, 0, ["Dimensions", `${asset.width} × ${asset.height}`]);
   if (asset.updatedDate) rows.push(["Updated", asset.updatedDate]);
   return <section><h2 class="mb-vsp-xs text-title font-bold">Details</h2><dl class="grid grid-cols-[auto_1fr] gap-x-hsp-md gap-y-vsp-2xs text-caption">{rows.map(([term, value]) => <><dt class="font-medium text-muted">{term}</dt><dd class="min-w-0 break-words text-fg">{value}</dd></>)}</dl></section>;
@@ -200,6 +195,10 @@ export function createAssetPageView<S extends Settings = Settings>(ctx: ChromeCo
     const dir = ctx.assetManifest?.dir ?? settings.assetViewerDir;
     const viewerUrl = assetViewerHref({ base: settings.base, routePrefix, path: asset.path });
     const rawUrl = assetRawHref({ base: settings.base, dir, path: asset.path });
+    const linesLabel = t("asset.lines", locale).replace(
+      "{count}",
+      String(asset.lines ?? 0),
+    );
     const dirSegments = asset.dir.split("/").filter(Boolean);
     const breadcrumbItems = [
       { label: "", href: ctx.withBase("/") },
@@ -216,13 +215,13 @@ export function createAssetPageView<S extends Settings = Settings>(ctx: ChromeCo
     else if (asset.kind === "image") body = <MediaLayout stage={<AssetImageStage asset={asset} rawUrl={rawUrl} />} details={details} linked={linked} />;
     else if (asset.kind === "video") body = <MediaLayout stage={<AssetVideoStage asset={asset} rawUrl={rawUrl} />} details={details} linked={linked} />;
     else if (asset.kind === "pdf") body = <MediaLayout stage={<AssetPdfStage asset={asset} rawUrl={rawUrl}>{downloadPanel}</AssetPdfStage>} details={details} linked={linked} />;
-    else body = <><AssetCodeBody asset={asset} copyLabel={t("asset.copy", locale)} wrapLabel={t("asset.wrap", locale)} truncatedLabel={t("asset.truncated", locale)} /><AssetDetails asset={asset} />{linked}</>;
+    else body = <><AssetCodeBody asset={asset} copyLabel={t("asset.copy", locale)} wrapLabel={t("asset.wrap", locale)} truncatedLabel={t("asset.truncated", locale)} linesLabel={linesLabel} /><AssetDetails asset={asset} />{linked}</>;
     const showSource = settings.bodyFootUtilArea !== false && settings.bodyFootUtilArea.viewSourceLink !== false;
     return (
       <DocLayoutWithDefaults title={composeMetaTitle(asset.name)} head={<HeadWithDefaults title={asset.name} description={asset.description} canonical={ctx.absoluteUrl(viewerUrl)} />} lang={locale} dataThemePack={dataThemePack} noindex={settings.noindex} hideSidebar hideToc sidebarOverride={false} contentWide breadcrumbOverride={<BreadcrumbWithDefaults items={breadcrumbItems} />} headerOverride={<HeaderWithDefaults lang={locale} currentPath={viewerUrl} hideSidebarToggle />} footerOverride={<FooterWithDefaults lang={locale} />} bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} forceImageEnlarge={asset.kind === "image" && asset.previewable && asset.sniffOk} />} enableClientRouter={settings.dynamicPageTransition}>
         <div class="zd-asset-page" data-zd-asset-page>
           {asset.linkedFrom[0] && <p class="mb-vsp-xs text-caption"><a href={asset.linkedFrom[0].href} class="text-muted hover:text-accent focus-visible:text-accent hover:underline focus-visible:underline">← Back to {asset.linkedFrom[0].title}</a></p>}
-          <AssetHeader asset={asset} locale={locale} badge={t("asset.badge", locale)} updatedLabel={t("doc.updated", locale)} />
+          <AssetHeader asset={asset} locale={locale} badge={t("asset.badge", locale)} updatedLabel={t("doc.updated", locale)} linesLabel={linesLabel} />
           <AssetActions rawUrl={rawUrl} downloadLabel={t("asset.download", locale)} openRawLabel={t("asset.openRaw", locale)} copyLabel={t("asset.copy", locale)} wrapLabel={t("asset.wrap", locale)} code={!isMedia && asset.previewable && asset.sniffOk} />
           {body}
           <AssetActions rawUrl={rawUrl} downloadLabel={t("asset.download", locale)} openRawLabel={t("asset.openRaw", locale)} copyLabel={t("asset.copy", locale)} wrapLabel={t("asset.wrap", locale)} bottom />

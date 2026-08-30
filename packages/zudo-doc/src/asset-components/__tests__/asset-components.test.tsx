@@ -64,6 +64,31 @@ describe("asset authoring components", () => {
     expect(html).toContain('href="/project/view/demo/file.js/#L27"');
   });
 
+  it("localizes line metadata and the full-file action", () => {
+    const translations: Record<string, string> = {
+      "asset.lines": "{count} 行",
+      "asset.showingLines": "{total} 行中 {shown} 行を表示",
+      "asset.viewFullFile": "ファイル全体を見る",
+      "asset.download": "ダウンロード",
+    };
+    const localizedContext = {
+      ...context,
+      t: (key: string) => translations[key] ?? key,
+    };
+    const Asset = createAssetCard(localizedContext);
+    const AssetCode = createAssetCode(localizedContext);
+    const cardHtml = render(<Asset src="/media/demo/file.js" />);
+    expect(cardHtml).toContain("94 行");
+    expect(cardHtml).toContain("ファイル全体を見る →");
+    expect(cardHtml).toContain("ダウンロード →");
+    const html = render(
+      <AssetCode src="/media/demo/file.js" lines="27-44" />,
+    );
+    expect(html).toContain("94 行中 18 行を表示");
+    expect(html).toContain("ファイル全体を見る →");
+    expect(html).not.toContain("Showing 18 of 94 lines");
+  });
+
   it("shows a visible warning when the requested excerpt was not built", () => {
     const AssetCode = createAssetCode(context);
     const html = render(<AssetCode src="/media/demo/file.js" lines="1-2" />);

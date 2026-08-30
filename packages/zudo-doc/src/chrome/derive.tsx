@@ -655,28 +655,37 @@ export function deriveMdxComponents(ctx: ChromeContext) {
   const assetComponentContext = {
     base: ctx.settings.base,
     assetManifest: ctx.assetManifest,
-    routePrefix: ctx.settings.assetViewerRoutePrefix,
-    dir: ctx.settings.assetViewerDir,
+    routePrefix:
+      ctx.assetManifest?.routePrefix ?? ctx.settings.assetViewerRoutePrefix,
+    dir: ctx.assetManifest?.dir ?? ctx.settings.assetViewerDir,
   };
-
-  // Package-default MDX extras; host-supplied `mdxExtras` override per-key.
-  const mdxExtrasDefault: Record<string, unknown> = {
-    Asset: createAssetCard(assetComponentContext) as never,
-    AssetCode: createAssetCode(assetComponentContext) as never,
-    Details: Details as never,
-    HtmlPreview: HtmlPreviewBound as never,
-    Island: IslandPassthrough as never,
-    // PresetGenerator stays a package stub (render nothing): it is the
-    // showcase's project-bound interactive island; downstream projects stub it.
-    PresetGenerator: (_props: unknown) => null,
-  };
-  const mdxExtras = { ...mdxExtrasDefault, ...(ctx.hostBindings.mdxExtras ?? {}) };
 
   function createMdxComponentsBound(
     lang: string = ctx.defaultLocale,
     currentVersion?: string,
     currentSlug = "",
   ) {
+    // Asset authoring components are locale-bound at the same point as the
+    // surrounding MDX map. Host-supplied `mdxExtras` still override per-key.
+    const localizedAssetContext = {
+      ...assetComponentContext,
+      t: (key: string) => ctx.t(key, lang),
+    };
+    const mdxExtrasDefault: Record<string, unknown> = {
+      Asset: createAssetCard(localizedAssetContext) as never,
+      AssetCode: createAssetCode(localizedAssetContext) as never,
+      Details: Details as never,
+      HtmlPreview: HtmlPreviewBound as never,
+      Island: IslandPassthrough as never,
+      // PresetGenerator stays a package stub (render nothing): it is the
+      // showcase's project-bound interactive island; downstream projects stub it.
+      PresetGenerator: (_props: unknown) => null,
+    };
+    const mdxExtras = {
+      ...mdxExtrasDefault,
+      ...(ctx.hostBindings.mdxExtras ?? {}),
+    };
+
     return createMdxComponents({
       settings: ctx.settings,
       assetManifest: ctx.assetManifest,

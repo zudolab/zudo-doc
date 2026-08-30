@@ -5,6 +5,7 @@ import type { JSX } from "preact";
 import { assetRawHref, assetViewerHref } from "../asset-path/index.js";
 import {
   AssetFileIcon,
+  assetComponentText,
   formatAssetBytes,
   formatAssetLanguage,
   MissingAssetWarning,
@@ -44,7 +45,14 @@ export function createAssetCard(context: AssetComponentContext) {
     const details = [
       formatAssetLanguage(entry.language),
       formatAssetBytes(entry.bytes),
-      entry.lines === undefined ? undefined : `${entry.lines} lines`,
+      entry.lines === undefined
+        ? undefined
+        : assetComponentText(
+            context,
+            "asset.lines",
+            "{count} lines",
+            { count: entry.lines },
+          ),
     ].filter((value): value is string => value !== undefined);
     const finalDescription = description ?? entry.description;
 
@@ -72,14 +80,22 @@ export function createAssetCard(context: AssetComponentContext) {
                 className="text-accent hover:underline focus-visible:underline"
                 href={viewerHref}
               >
-                View →
+                {assetComponentText(
+                  context,
+                  "asset.viewFullFile",
+                  "View full file",
+                )} →
               </a>
               <a
                 className="text-accent hover:underline focus-visible:underline"
                 href={rawHref}
                 download
               >
-                Download →
+                {assetComponentText(
+                  context,
+                  "asset.download",
+                  "Download",
+                )} →
               </a>
             </div>
           </div>

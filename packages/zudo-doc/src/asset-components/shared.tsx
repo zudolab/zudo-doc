@@ -13,6 +13,21 @@ export interface AssetComponentContext {
   assetManifest: AssetManifest | null;
   routePrefix: string;
   dir: string;
+  /** Locale-bound package translator. Omitted callers retain English fallbacks. */
+  t?: (key: string) => string;
+}
+
+export function assetComponentText(
+  context: AssetComponentContext,
+  key: string,
+  fallback: string,
+  values: Record<string, string | number> = {},
+): string {
+  let text = context.t?.(key) ?? fallback;
+  for (const [name, value] of Object.entries(values)) {
+    text = text.replace(`{${name}}`, String(value));
+  }
+  return text;
 }
 
 export function resolveAssetEntry(
