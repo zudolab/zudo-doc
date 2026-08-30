@@ -169,3 +169,239 @@ export function GitHub({ className }: IconProps): VNode {
     </svg>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Folder (closed)
+// ---------------------------------------------------------------------------
+
+export function Folder({ className }: IconProps): VNode {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class={className || undefined}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      stroke-width="2"
+      aria-hidden="true"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+      />
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Folder — open
+// ---------------------------------------------------------------------------
+
+export function FolderOpen({ className }: IconProps): VNode {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class={className || undefined}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      stroke-width="2"
+      aria-hidden="true"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M3 18V7a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v1"
+      />
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M3 18l2.4-6.4A1 1 0 0 1 6.3 11H22l-2.4 6.4a1 1 0 0 1-.9.6H3z"
+      />
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// File — generic
+// ---------------------------------------------------------------------------
+
+export function FileGeneric({ className }: IconProps): VNode {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class={className || undefined}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      stroke-width="2"
+      aria-hidden="true"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"
+      />
+      <path stroke-linecap="round" stroke-linejoin="round" d="M14 3v5h5" />
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// File — code
+// ---------------------------------------------------------------------------
+
+export function FileCode({ className }: IconProps): VNode {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class={className || undefined}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      stroke-width="2"
+      aria-hidden="true"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"
+      />
+      <path stroke-linecap="round" stroke-linejoin="round" d="M14 3v5h5" />
+      <path stroke-linecap="round" stroke-linejoin="round" d="m10 13-2 2 2 2" />
+      <path stroke-linecap="round" stroke-linejoin="round" d="m14 13 2 2-2 2" />
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// File — text
+// ---------------------------------------------------------------------------
+
+export function FileText({ className }: IconProps): VNode {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class={className || undefined}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      stroke-width="2"
+      aria-hidden="true"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"
+      />
+      <path stroke-linecap="round" stroke-linejoin="round" d="M14 3v5h5" />
+      <path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6" />
+      <path stroke-linecap="round" stroke-linejoin="round" d="M9 17h6" />
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// File — image
+// ---------------------------------------------------------------------------
+
+export function FileImage({ className }: IconProps): VNode {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class={className || undefined}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      stroke-width="2"
+      aria-hidden="true"
+    >
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <circle cx="8.5" cy="10" r="1.5" />
+      <path stroke-linecap="round" stroke-linejoin="round" d="m21 16-5-5L6 21" />
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// File — video
+// ---------------------------------------------------------------------------
+
+export function FileVideo({ className }: IconProps): VNode {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class={className || undefined}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      stroke-width="2"
+      aria-hidden="true"
+    >
+      <rect x="3" y="6" width="13" height="12" rx="2" />
+      <path stroke-linecap="round" stroke-linejoin="round" d="m16 10 5-3v10l-5-3" />
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// File — PDF
+// ---------------------------------------------------------------------------
+
+export function FilePdf({ className }: IconProps): VNode {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class={className || undefined}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      stroke-width="2"
+      aria-hidden="true"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"
+      />
+      <path stroke-linecap="round" stroke-linejoin="round" d="M14 3v5h5" />
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M8.5 17v-5h1.75a1.5 1.5 0 0 1 0 3H8.5"
+      />
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M13 12v5h1.2a2.5 2.5 0 0 0 0-5z"
+      />
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// File — archive
+// ---------------------------------------------------------------------------
+
+export function FileArchive({ className }: IconProps): VNode {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class={className || undefined}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      stroke-width="2"
+      aria-hidden="true"
+    >
+      <rect x="3" y="4" width="18" height="4" rx="1" />
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"
+      />
+      <path stroke-linecap="round" stroke-linejoin="round" d="M10 12h4" />
+    </svg>
+  );
+}
