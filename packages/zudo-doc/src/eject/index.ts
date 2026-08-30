@@ -47,6 +47,16 @@ export interface EjectableEntry {
 }
 
 export const EJECTABLE: Record<string, EjectableEntry> = {
+  "asset-components": {
+    packageSubpath: "@takazudo/zudo-doc/asset-components",
+    localDir: "src/components/zudo-doc/asset-components",
+    classification: {
+      kind: "nested",
+      remediation:
+        "Set chromeBindings.mdxExtras.Asset and chromeBindings.mdxExtras.AssetCode " +
+        "to project-owned wrappers around the local createAssetCard and createAssetCode factories.",
+    },
+  },
   header: {
     packageSubpath: "@takazudo/zudo-doc/header",
     localDir: "src/components/zudo-doc/header",

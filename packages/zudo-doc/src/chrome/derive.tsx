@@ -78,6 +78,7 @@ import { createThemePackSwitcherIsland } from "../doc-body-end-islands/theme-pac
 import { DEFAULT_THEME_PACK_SLUG } from "../theme-pack-switcher/theme-pack-sync.js";
 import { SearchWidget } from "../search-widget/index.js";
 import { createMdxComponents } from "../mdx-components/index.js";
+import { createAssetCard, createAssetCode } from "../asset-components/index.js";
 import { createCategoryNavWrapper } from "../category-nav/index.js";
 import { createNoteTrayIndexWrapper } from "../note-tray-index/index.js";
 import { createCategoryTreeNavWrapper } from "../category-tree-nav/index.js";
@@ -627,8 +628,17 @@ export function deriveMdxComponents(ctx: ChromeContext) {
     }) as JSX.Element;
   }
 
+  const assetComponentContext = {
+    base: ctx.settings.base,
+    assetManifest: ctx.assetManifest,
+    routePrefix: ctx.settings.assetViewerRoutePrefix,
+    dir: ctx.settings.assetViewerDir,
+  };
+
   // Package-default MDX extras; host-supplied `mdxExtras` override per-key.
   const mdxExtrasDefault: Record<string, unknown> = {
+    Asset: createAssetCard(assetComponentContext) as never,
+    AssetCode: createAssetCode(assetComponentContext) as never,
     Details: Details as never,
     HtmlPreview: HtmlPreviewBound as never,
     Island: IslandPassthrough as never,
@@ -645,6 +655,7 @@ export function deriveMdxComponents(ctx: ChromeContext) {
   ) {
     return createMdxComponents({
       settings: ctx.settings,
+      assetManifest: ctx.assetManifest,
       locale: lang,
       currentVersion,
       currentSlug,

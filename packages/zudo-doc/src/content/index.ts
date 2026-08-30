@@ -21,7 +21,11 @@ export { HeadingH2 } from "./heading-h2.js";
 export { HeadingH3 } from "./heading-h3.js";
 export { HeadingH4 } from "./heading-h4.js";
 export { ContentParagraph } from "./content-paragraph.js";
-export { ContentLink } from "./content-link.js";
+export {
+  ContentLink,
+  createContentLink,
+  type CreateContentLinkOptions,
+} from "./content-link.js";
 export { ContentStrong } from "./content-strong.js";
 export { ContentBlockquote } from "./content-blockquote.js";
 export { ContentUl } from "./content-ul.js";
