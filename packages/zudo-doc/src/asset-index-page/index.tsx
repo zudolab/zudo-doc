@@ -127,9 +127,9 @@ function countLabel(count: number, plural: string, single: string): string {
 
 function AssetTree({ node, base, routePrefix, fileCountLabel, fileCountSingleLabel, linesLabel, root = false }: { node: AssetTreeNode; base: string; routePrefix: string; fileCountLabel: string; fileCountSingleLabel: string; linesLabel: string; root?: boolean }): VNode {
   return (
-    <ul data-zd-asset-tree={root ? true : undefined} role={root ? "tree" : "group"}>
+    <ul data-zd-asset-tree={root ? true : undefined}>
       {node.dirs.map((dir) => (
-        <li role="treeitem">
+        <li>
           <details open>
             <summary class="flex cursor-pointer items-center gap-hsp-xs rounded px-hsp-sm py-vsp-3xs text-small hover:bg-accent/10 focus-visible:bg-accent/10">
               <ChevronRight className="h-icon-xs w-icon-xs shrink-0 text-muted transition-transform" />
@@ -149,7 +149,7 @@ function AssetTree({ node, base, routePrefix, fileCountLabel, fileCountSingleLab
         const facet = facetLabel(asset, linesLabel);
         const meta = [kindLabel(asset), facet, formatAssetBytes(asset.bytes)].filter(Boolean).join(" · ");
         return (
-          <li role="treeitem">
+          <li>
             <a href={assetViewerHref({ base, routePrefix, path: asset.path })} title={asset.name} class="flex min-w-0 items-center gap-hsp-xs rounded px-hsp-sm py-vsp-3xs text-small text-fg hover:bg-accent/10 hover:text-accent hover:underline focus-visible:bg-accent/10 focus-visible:text-accent focus-visible:underline">
               <ChevronRight className="invisible h-icon-xs w-icon-xs shrink-0" />
               <Icon className="h-icon-sm w-icon-sm shrink-0 text-muted" />
