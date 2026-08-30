@@ -12,7 +12,7 @@ import type { ChromeContext } from "../factory-context/index.js";
 import { formatDate } from "../format-date/index.js";
 import { buildGitHubSourceUrl } from "../github-helpers/index.js";
 import { createHeadWithDefaults } from "../head-with-defaults/index.js";
-import { assetRawHref, assetViewerHref, encodeAssetPathForUrl } from "../asset-path/index.js";
+import { assetRawHref, assetViewerHref } from "../asset-path/index.js";
 import type { AssetRecord } from "../plugins/internal/asset-viewer/types.js";
 import { resolveThemePackSsrSlug } from "../theme/theme-pack-provider.js";
 import type { Settings } from "../settings.js";
@@ -180,7 +180,7 @@ export function AssetDetails({ asset }: { asset: AssetRecord }): VNode {
 }
 
 function MediaLayout({ stage, details, linked }: { stage: ComponentChildren; details: ComponentChildren; linked: ComponentChildren }): VNode {
-  return <div class="zd-asset-media-grid"><div class="min-w-0">{stage}</div><aside class="zd-asset-media-rail"><div class="rounded border border-muted p-hsp-lg">{details}</div>{linked}</aside></div>;
+  return <div class="zd-asset-media-grid"><div class="min-w-0">{stage}</div><div class="zd-asset-media-rail"><div class="rounded border border-muted p-hsp-lg">{details}</div>{linked}</div></div>;
 }
 
 /** Build the package-owned wide asset viewer page from a chrome context. */
@@ -203,11 +203,8 @@ export function createAssetPageView<S extends Settings = Settings>(ctx: ChromeCo
     const dirSegments = asset.dir.split("/").filter(Boolean);
     const breadcrumbItems = [
       { label: "", href: ctx.withBase("/") },
-      { label: t("asset.crumb", locale), href: ctx.withBase(`/${routePrefix}/`) },
-      ...dirSegments.map((label, index) => ({
-        label,
-        href: ctx.withBase(`/${routePrefix}/${encodeAssetPathForUrl(dirSegments.slice(0, index + 1).join("/"))}/`),
-      })),
+      { label: t("asset.crumb", locale) },
+      ...dirSegments.map((label) => ({ label })),
       { label: asset.name },
     ];
     const linked = <AssetLinkedFrom asset={asset} label={t("asset.linkedFrom", locale)} />;
