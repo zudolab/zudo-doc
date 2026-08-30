@@ -1,7 +1,6 @@
 import { resolve } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { getAllFilesFirstLastMetaAsync } from "@takazudo/zudo-doc-history-server/git-history";
 import { normalizeAssetPath } from "../../../asset-path/index.js";
 
 export interface AssetGitMetaEntry {
@@ -27,6 +26,12 @@ export async function assetGitMeta(
       cwd: projectRoot,
       encoding: "utf8",
     });
+    // The history server is an optional peer. Keep it out of the eagerly
+    // loaded routes-plugin graph so consumers that do not enable the asset
+    // viewer can build from the packed package without installing it.
+    const { getAllFilesFirstLastMetaAsync } = await import(
+      "@takazudo/zudo-doc-history-server/git-history"
+    );
     const history = await getAllFilesFirstLastMetaAsync([assetRoot]);
     const result: Record<string, AssetGitMetaEntry> = {};
     for (const [absPath, entry] of history) {
