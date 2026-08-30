@@ -344,6 +344,10 @@ export const settings = {
       ],
     },
     { label: "Develop", labelKey: "nav.develop", path: "/docs/develop", categoryMatch: "develop" },
+    // Asset viewer routes are generated once for the default docsDir and never exist
+    // under an active `/v/{version}` prefix, so this item must opt out of version
+    // prefixing — same rationale as the Claude/Codex items above.
+    { label: "Assets", labelKey: "nav.assets", path: "/files", versioned: false },
   ] satisfies HeaderNavItem[] as HeaderNavItem[],
   headerRightItems: [
     { type: "component", component: "version-switcher" },
