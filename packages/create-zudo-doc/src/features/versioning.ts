@@ -10,12 +10,9 @@ import type { FeatureModule } from "../compose.js";
  * `renderDocPage` chrome. `templates/features/versioning/files/` has been
  * empty since #2390 — there is no host stub left to copy or postProcess.
  *
- * Known limitation (pre-existing, not introduced by the minimal-scaffold
- * cutover — inherited from the same injected-DYNAMIC-route dev-mode gap the
- * locked manifest's `pages/docs/[[...slug]].tsx` stub exists to fix for the
- * primary doc route, tracked as a #2667 follow-up): the versioned doc
- * routes may still 404 in `zfb dev` since versioning has no stub of its own
- * in the locked manifest. `zfb build` is unaffected.
+ * zfb 2.13.1 renders these injected version routes in both dev and build, so
+ * versioning needs no version-specific host stub. The primary and locale doc
+ * stubs remain explicit host-owned seams.
  */
 export const versioningFeature: FeatureModule = () => ({
   name: "versioning",

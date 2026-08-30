@@ -173,7 +173,7 @@ export function generateCLAUDEFile(choices: UserChoices): string {
       `- ${secondaryLabel} docs should mirror the ${defaultLabel} directory structure`,
     );
     lines.push(
-      `- Both \`pages/docs/[[...slug]].tsx\` and \`pages/[locale]/docs/[[...slug]].tsx\` are self-contained doc-route stubs shipped by the generator — required so \`${pm} dev\` doesn't 404 on doc pages (a zfb dev-mode limitation on package-injected dynamic routes). Don't delete them.`,
+      `- Both \`pages/docs/[[...slug]].tsx\` and \`pages/[locale]/docs/[[...slug]].tsx\` are self-contained doc-route stubs shipped by the generator as explicit host-owned seams. zfb 2.13.1 also renders package-injected dynamic routes in dev; keep these files so the generated project retains route ownership and customization.`,
     );
     lines.push(``);
   }

@@ -183,9 +183,7 @@ export { default } from "@takazudo/zudo-doc/routes/index";
 
 <Note title="なぜ pages/docs/[[...slug]].tsx があるのか">
 
-パッケージのルート注入は**ビルド**時にドキュメントページをレンダリングしますが、注入された**動的**ルートは現在 `zfb dev`（`pnpm dev`）で 404 を返します。dev のオーサリングループを機能させ続けるため、パッケージの認可されたエントリーポイント（`@takazudo/zudo-doc/route-context` + `/chrome` + `virtual:zudo-doc-route-context` モジュール）からルートを再構築する小さな自己完結型スタブが出荷されます。これにより `/docs/…` は `zfb dev` と `zfb build` の両方で 200 を返します。
-
-これはスキャフォールドの中で唯一の暫定ファイルであり、アップストリームの dev レンダリングギャップが解消され次第なくなります（[フォローアップ #2667](https://github.com/zudolab/zudo-doc/issues/2667)）。
+zfb 2.13.1 では、パッケージのルート注入が **build** と **dev** の両方でドキュメントページをレンダリングします。この小さな自己完結型スタブは、明示的なホスト所有のルートシームとして残っています。パッケージの認可されたエントリーポイント（`@takazudo/zudo-doc/route-context` + `/chrome` + `virtual:zudo-doc-route-context` モジュール）からルートを再構築し、生成されたプロジェクトがパッケージ注入をシャドーしながらこのルートをカスタマイズできるようにします。これにより `/docs/…` は `zfb dev` と `zfb build` の両方で 200 を返します。
 
 </Note>
 
