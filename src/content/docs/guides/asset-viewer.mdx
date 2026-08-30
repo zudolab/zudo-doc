@@ -1,0 +1,163 @@
+---
+title: Asset Viewer
+description: Turn files outside your docs into explainable, linkable viewer pages.
+sidebar_position: 6.2
+tags:
+  - customization
+  - type:guide
+---
+
+## When to use the asset viewer
+
+Documentation often needs to explain a file that should remain outside the document itself: a helper script, architecture diagram, screen recording, PDF specification, or downloadable archive. The asset viewer keeps that file in `public/`, gives it a dedicated viewer page, and connects references in MDX to that page.
+
+Enable the feature when readers need more context than a raw file response provides:
+
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    assetViewer: true,
+    imageEnlarge: true,
+  }),
+);
+```
+
+`imageEnlarge: true` supplies the click-to-enlarge experience for images embedded in documents. The image caption's asset-page link still works when enlargement is disabled.
+
+## Directory and URL layout
+
+Put viewer-managed files below `public/<assetViewerDir>/`. With the defaults, this project layout:
+
+```text
+public/
+└── assets/
+    └── demo/
+        ├── architecture.png
+        ├── demo-project.zip
+        ├── hmr-demo.mp4
+        ├── parse-frontmatter.js
+        └── spec.pdf
+```
+
+creates two URLs for each file:
+
+- `/assets/demo/parse-frontmatter.js` is the raw public file. Images, media players, and download actions use this URL.
+- `/files/demo/parse-frontmatter.js/` is the generated viewer page. It adds file metadata, preview controls, download actions, and links back to documents that reference the asset.
+
+Root-relative URLs continue to work when the site has a non-root `base`; zudo-doc applies the configured base when rendering them.
+
+## Configuration
+
+The four top-level `zudoDoc()` fields are:
+
+| Field | Default | Purpose |
+|-------|---------|---------|
+| `assetViewer` | `false` | Generate viewer pages and enable manifest-backed MDX entry points. |
+| `assetViewerDir` | `"assets"` | Choose the directory below `public/` and the raw URL prefix. |
+| `assetViewerRoutePrefix` | `"files"` | Choose the viewer-page URL prefix. It must differ from `assetViewerDir`. |
+| `assetViewerExclude` | `[]` | Exclude matching asset-relative glob paths from viewer generation. |
+
+For example, this keeps source maps and drafts available as ordinary public files without generating viewer pages for them:
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    assetViewer: true,
+    assetViewerExclude: ["**/*.map", "drafts/**"],
+  }),
+);
+```
+
+Do not place viewer-managed files under `public/<assetViewerDir>/client/`. zfb reserves the `client/` path for browser assets, and the asset viewer reports that collision during its scan.
+
+## Author entry points
+
+All entry points below are live examples backed by the demo corpus in this repository.
+
+### A Markdown link
+
+A Markdown link to a manifest-backed raw asset is rewritten to the viewer URL and decorated with its file type and size:
+
+[parse-frontmatter.js](/assets/demo/parse-frontmatter.js)
+
+```mdx
+[parse-frontmatter.js](/assets/demo/parse-frontmatter.js)
+```
+
+External links, hash links, excluded paths, and raw URLs that are not in the manifest remain ordinary links.
+
+### An asset card
+
+Use `Asset` when the file is a primary resource. The card offers both the contextual viewer and the raw download:
+
+<Asset src="/assets/demo/demo-project.zip" />
+
+```mdx
+<Asset src="/assets/demo/demo-project.zip" />
+```
+
+`Asset` also accepts optional `title` and `description` props for document-specific wording.
+
+### A code excerpt
+
+Use `AssetCode` to quote a range directly from a source asset without copying it into the MDX file:
+
+<AssetCode src="/assets/demo/parse-frontmatter.js" lines="27-44" />
+
+```mdx
+<AssetCode src="/assets/demo/parse-frontmatter.js" lines="27-44" />
+```
+
+The build extracts and highlights the requested lines. Its footer links to the same range in the complete viewer. An excerpt is limited to 200 lines.
+
+### An image caption link
+
+A standalone image whose source is in the asset manifest keeps the normal document image and gains an **Open asset page** link in its caption:
+
+![Asset pipeline diagram](/assets/demo/architecture.png "Figure 1 — the asset viewer pipeline.")
+
+```mdx
+![Asset pipeline diagram](/assets/demo/architecture.png "Figure 1 — the asset viewer pipeline.")
+```
+
+The link includes the image dimensions. With `imageEnlarge: true`, readers can also open the same image in the enlargement dialog. See [Image Enlarge](../components/image-enlarge.mdx) for its controls and authoring rules.
+
+## Optional metadata sidecar
+
+Add `<file>.meta.json` beside an asset to replace its viewer title or add a description. For `architecture.png`, the sidecar is `architecture.png.meta.json`:
+
+```json title="public/assets/demo/architecture.png.meta.json"
+{
+  "title": "Asset viewer architecture",
+  "description": "How document references become raw-file and viewer-page links."
+}
+```
+
+Both fields are optional strings. The sidecar must be valid JSON no larger than 2 KB. It supplies build metadata only: the scanner does not create a separate viewer page for the `.meta.json` file.
+
+## What each viewer shows
+
+Every viewer page has a file header, file metadata, raw-file actions, a details panel, and links back to documents that reference the asset. Its main preview depends on the detected file kind:
+
+- **[Code and text](/assets/demo/parse-frontmatter.js)** show highlighted source with line anchors plus copy and wrapping controls. Files up to 1 MiB receive syntax highlighting; larger text files use a plain preview. Plain previews show at most 2,000 lines, and text files over 5 MiB fall back to download-only.
+- **[Images](/assets/demo/architecture.png)** provide Fit and 1:1 sizing, checker and dark backgrounds, dimensions, and the enlargement dialog.
+- **[Video](/assets/demo/hmr-demo.mp4)** uses the browser's native controls and reports detected dimensions and duration when available.
+- **[PDF](/assets/demo/spec.pdf)** embeds the browser PDF viewer and keeps a download fallback alongside it.
+- **[Archives and other unsupported formats](/assets/demo/demo-project.zip)** show a download panel instead of attempting an unsafe or misleading preview.
+
+Format detection checks file contents as well as the extension. A mismatch falls back safely rather than embedding the file as the claimed media type.
+
+## Development behavior
+
+Editing an existing asset refreshes its viewer during `pnpm dev`. Adding, removing, or renaming an asset changes the pre-enumerated watch set and requires restarting `pnpm dev`. Adding the first document link to an asset also requires a restart so the link graph and requested excerpts can be rebuilt.
+
+Use `pnpm dev:stable` when you are adding or reorganizing files frequently; it uses the build-then-serve development mode.
+
+## Leaf-page behavior
+
+Asset viewers are default-locale leaf pages. They do not appear in the docs sidebar, search index, `llms.txt`, or sitemap, and there is no locale-prefixed viewer copy. A reference from a Japanese document therefore opens the same default-locale asset page as an English reference.
+
+Viewer pages honor the site's `noindex` setting. They intentionally keep documentation chrome such as the header and footer while hiding the document sidebar and table of contents.

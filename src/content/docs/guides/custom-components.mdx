@@ -90,10 +90,12 @@ For the delivery channel and its other host-bound slots, see [Host Chrome Bindin
 The overridable names include:
 
 - Admonitions: `Note`, `Tip`, `Info`, `Warning`, `Danger`, `Important`, and `Caution`
-- Content helpers: `Details`, `HtmlPreview`, `CodeGroup`, `Tabs`, `TabItem`, `Island`, and `PresetGenerator`
+- Content helpers: `Details`, `HtmlPreview`, `CodeGroup`, `Tabs`, `TabItem`, `Island`, `PresetGenerator`, `Asset`, and `AssetCode`
 - HTML overrides such as `p`, `a`, `img`, and `table`
 
 Keep the replacement compatible with the MDX syntax and props that your existing documents use. Replacing `p` or another HTML element affects every matching element in the documentation, so prefer a new named component unless a global rendering change is intentional.
+
+`Asset` and `AssetCode` are the package defaults for manifest-backed asset cards and source excerpts. See [Asset Viewer](./asset-viewer.mdx) for their authoring syntax and the settings that supply their asset manifest.
 
 ## className, not class
 
