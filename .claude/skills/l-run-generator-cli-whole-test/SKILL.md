@@ -46,9 +46,10 @@ Run in this order (CLI flags and details are defined in `/l-generator-cli-tester
 8. **`light-dark`** — Light-dark color scheme mode
 9. **`lang-ja`** — Japanese as default language
 10. **`multi-changelog`** — Per-package changelog pages and nested Changelog dropdown
-11. **`all-features`** — Everything ON, maximum complexity (uses the enumerated CLI invocation)
+11. **`asset-viewer`** — Asset viewer enabled, with a sample page built from `public/assets/`
+12. **`all-features`** — Everything ON, maximum complexity (uses the enumerated CLI invocation)
 
-> **Note:** These 11 patterns are valid manual smoke tests. The authoritative bug-hunt pattern matrix (15 patterns across Waves 4, 5, and 5b) lives in the Wave 2 spec (`__inbox/gen-cli-audit-spec/spec.md`) and the associated bug-hunt issues. Do not delete or rename these 11 patterns — they remain useful standalone checks.
+> **Note:** These 12 patterns are valid manual smoke tests. The authoritative bug-hunt pattern matrix (15 patterns across Waves 4, 5, and 5b) lives in the Wave 2 spec (`__inbox/gen-cli-audit-spec/spec.md`) and the associated bug-hunt issues. Do not delete or rename these 12 patterns — they remain useful standalone checks.
 
 ### Running each pattern
 
@@ -159,6 +160,7 @@ Run every pattern again from scratch to ensure fixes didn't break other patterns
 /l-generator-cli-tester light-dark
 /l-generator-cli-tester lang-ja
 /l-generator-cli-tester multi-changelog
+/l-generator-cli-tester asset-viewer
 /l-generator-cli-tester all-features
 ```
 
@@ -195,11 +197,12 @@ Output a final report:
 | design-token-panel  | PASS      | PASS        | ok     |
 | light-dark         | PASS      | PASS        | ok     |
 | lang-ja            | PASS      | PASS        | ok     |
+| asset-viewer       | PASS      | PASS        | ok     |
 | all-features       | FAIL      | PASS        | fixed  |
 
 ### Summary
 
-- Patterns tested: 11
+- Patterns tested: 12
 - Passed on first try: 8
 - Needed fixes: 3
 - Unit tests: PASS

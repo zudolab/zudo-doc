@@ -34,6 +34,7 @@ Where `<pattern>` is one of the test patterns listed below.
 | `light-dark` | Light-dark color mode |
 | `lang-ja` | Japanese as default language |
 | `multi-changelog` | Per-package changelog pages and nested Changelog dropdown |
+| `asset-viewer` | Asset viewer enabled (`--asset-viewer`) |
 | `all-features` | Everything ON (except tauri/tauriDev — Rust toolchain, out of scope for this smoke pattern) |
 
 ## Architecture context (read before verifying files)
@@ -63,7 +64,7 @@ files:
 Every other feature (`search`, `sidebarFilter`, `sidebarResizer`,
 `sidebarToggle`, `claudeResources`, `versioning`, `bodyFootUtil`, `llmsTxt`,
 `docTags`, `footerNavGroup`, `footerCopyright`, `footerTaglist`,
-`imageEnlarge`, `dynamicPageTransition`, `noindex`) changes ONLY the emitted
+`imageEnlarge`, `assetViewer`, `dynamicPageTransition`, `noindex`) changes ONLY the emitted
 `zfb.config.ts` fields (or, for `search`, the generated `package.json`
 devDependencies) — verify those with a content check, not a file-presence
 check.
@@ -220,6 +221,20 @@ The value-taking option implies `changelog`. The generated project must contain
 Unreleased` and has quoted frontmatter titles. `zfb.config.ts` must contain a
 Changelog header item with `core` and `cli` children that have paths but no
 `categoryMatch`.
+
+**asset-viewer:**
+
+```bash
+cd __inbox/generator-test-asset-viewer && \
+  node $REPO_ROOT/packages/create-zudo-doc/dist/index.js test-project --yes \
+  --no-search --no-sidebar-filter --no-i18n --no-claude-resources \
+  --asset-viewer --color-scheme-mode single --scheme "Default Dark" --no-install
+mkdir -p test-project/public/assets
+printf 'export const sample = true;\n' > test-project/public/assets/sample.js
+```
+
+The sample file gives the package-owned injected route a concrete page to
+build. The viewer route is not a generated `pages/files/` stub.
 
 **all-features** (mirrors `scaffold.test.ts`'s `ALL_FEATURES` minus `tauri`/`tauriDev`):
 
@@ -399,6 +414,14 @@ Confirm the 5 directories above (`pages/lib`, `src/components`, `src/utils`, `sr
 | `src/content/docs-ja/` | ABSENT (this pattern sets the DEFAULT language to `ja`, i18n is off — content stays in `src/content/docs/`, just written in Japanese) |
 | `zfb.config.ts` `defaultLocale` | `"ja"` |
 
+**asset-viewer:**
+
+| File | Expected |
+|------|----------|
+| `public/assets/sample.js` | PRESENT (created before installation) |
+| `dist/files/sample.js/index.html` | PRESENT after the build (package-injected viewer route) |
+| `pages/files/[[...path]].tsx` | ABSENT (there is no host route stub or template counterpart) |
+
 **all-features:**
 
 | File | Expected |
@@ -473,6 +496,12 @@ There is no `src/config/settings.ts` to read in a fresh scaffold. Read `__inbox/
 
 - `defaultLocale: "ja"` — this is the authoritative field; there is no more separate `src/config/i18n.ts` deriving it at runtime, `@takazudo/zudo-doc`'s own i18n module reads `settings.defaultLocale` directly
 
+**asset-viewer:**
+
+- `assetViewer: true`
+- `assetViewerDir`, `assetViewerRoutePrefix`, and `assetViewerExclude` remain omitted because the pattern uses their package defaults (`"assets"`, `"files"`, and `[]`)
+- The generated `public/assets/sample.js` page is emitted at `dist/files/sample.js/index.html`; no `pages/files/` route stub is generated
+
 **all-features:**
 
 - `colorMode` is an object (light-dark mode, `defaultMode: "light"` — non-default, required to emit)
@@ -532,6 +561,12 @@ For **i18n** and **all-features** patterns, also check the Japanese page:
 node $HC --url "http://localhost:14350/ja/docs/getting-started" --screenshot viewport --no-block-resources
 ```
 
+For the **asset-viewer** pattern, also check the generated viewer page:
+
+```bash
+node $HC --url "http://localhost:14350/files/sample.js/" --screenshot viewport --no-block-resources
+```
+
 ### 8.5c. Verify results
 
 - All pages should return `statusCode: 200`
@@ -546,6 +581,7 @@ node $HC --url "http://localhost:14350/ja/docs/getting-started" --screenshot vie
   - **all-features**: all icons present (search, theme toggle, language switcher, color tweak)
   - **barebone**: no extra icons in header (no search, no theme toggle, no language switcher)
   - **lang-ja**: Japanese content ("ようこそ" title)
+  - **asset-viewer**: the sample JavaScript viewer page renders at `/files/sample.js/`
 
 ### 8.5d. Kill dev server
 
@@ -587,7 +623,7 @@ Provide a clear pass/fail report:
 ## Important Notes
 
 - Always `cd` back to the repo root between major steps (use absolute paths)
-- The `--yes` flag auto-fills all unspecified options with defaults. Feature defaults with `--yes`: search=true, sidebarFilter=true, imageEnlarge=true, dynamicPageTransition=true, footerCopyright=true, tagGovernance=false, i18n=false, claudeResources=false, codexResources=false, designTokenPanel=false (all other features false)
+- The `--yes` flag auto-fills all unspecified options with defaults. Feature defaults with `--yes`: search=true, sidebarFilter=true, imageEnlarge=true, dynamicPageTransition=true, footerCopyright=true, tagGovernance=false, assetViewer=false, i18n=false, claudeResources=false, codexResources=false, designTokenPanel=false (all other features false)
 - Use `--no-install` with CLI to prevent auto-install, then install manually for better error visibility
 - `sidebarFilter` has zero structural effect in the minimal manifest (no TODO, no strip step needed — it never had a file or field to remove)
 - The dev server smoke test uses `pnpm dev` (generated projects have a single `dev` script)

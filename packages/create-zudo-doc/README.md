@@ -76,6 +76,7 @@ Each feature has a `--[no-]<flag>` form. Passing `--feature` enables it; `--no-f
 | `--[no-]search` | Full-text search | on |
 | `--[no-]sidebar-filter` | Real-time sidebar filter | on |
 | `--[no-]image-enlarge` | Click-to-enlarge for oversized images | on |
+| `--[no-]asset-viewer` | Viewer pages for files under `public/assets/` | off |
 | `--[no-]tag-governance` | Vocabulary-aware tag audit + suggest scripts | off |
 | `--[no-]claude-resources` | Auto-generate Claude Code docs from `.claude/` | off |
 | `--[no-]codex-resources` | Auto-generate Codex docs from `.codex/` + `AGENTS.md` | off |
