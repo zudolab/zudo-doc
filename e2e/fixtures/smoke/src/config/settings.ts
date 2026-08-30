@@ -53,10 +53,7 @@ export const settings = {
   // Mirrors the showcase default — themePackSwitcher stays off here
   // (allowlisted, epic Theme Core #2812, #2826).
   themePack: "default" as string,
-  // The asset-page route force-mounts ImageEnlarge even when the normal
-  // setting is disabled. The focused asset-viewer run exercises both modes by
-  // setting E2E_ASSET_VIEWER_IMAGE_ENLARGE=false for the second build.
-  imageEnlarge: process.env.E2E_ASSET_VIEWER_IMAGE_ENLARGE !== "false",
+  imageEnlarge: true as boolean,
   findInPage: false as boolean,
   dynamicPageTransition: true as boolean,
   frontmatterPreview: {} satisfies FrontmatterPreviewConfig as FrontmatterPreviewConfig | false,
