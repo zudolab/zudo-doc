@@ -1,0 +1,163 @@
+---
+title: アセットビューアー
+description: ドキュメント外のファイルに、内容を確認できる専用ページと参照経路を与える。
+sidebar_position: 6.2
+tags:
+  - customization
+  - type:guide
+---
+
+## アセットビューアーが役立つ場面
+
+ヘルパースクリプト、構成図、操作動画、PDF 仕様書、配布用アーカイブなど、ドキュメントの本文には埋め込まず、別ファイルのまま説明したい資料があります。アセットビューアーを使うと、ファイルを `public/` に置いたまま専用の閲覧ページを生成し、MDX 内の参照をそのページにつなげられます。
+
+単にファイルを返すだけでは読者に十分な手掛かりを示せない場合に、この機能を有効にします。
+
+```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    assetViewer: true,
+    imageEnlarge: true,
+  }),
+);
+```
+
+`imageEnlarge: true` は、ドキュメントに埋め込んだ画像をクリックして拡大する機能を有効にします。画像キャプションからアセットページへ移動するリンクは、拡大表示を無効にしても利用できます。
+
+## ディレクトリと URL の構成
+
+ビューアーで扱うファイルは `public/<assetViewerDir>/` 配下に置きます。デフォルト設定では、次の構成になります。
+
+```text
+public/
+└── assets/
+    └── demo/
+        ├── architecture.png
+        ├── demo-project.zip
+        ├── hmr-demo.mp4
+        ├── parse-frontmatter.js
+        └── spec.pdf
+```
+
+各ファイルに対して、用途の異なる2つの URL ができます。
+
+- `/assets/demo/parse-frontmatter.js` は公開ファイルそのものを返す URL です。画像、メディアプレーヤー、ダウンロード操作はこの URL を使います。
+- `/files/demo/parse-frontmatter.js/` は生成された閲覧ページです。ファイル情報、プレビュー操作、ダウンロード操作、このファイルを参照しているドキュメントへのリンクが加わります。
+
+サイトにルート以外の `base` を設定している場合も、ルート相対 URL のまま記述できます。レンダリング時に zudo-doc が設定済みの base を付与します。
+
+## 設定
+
+`zudoDoc()` のトップレベルで、次の4項目を設定できます。
+
+| フィールド | デフォルト | 用途 |
+|-----------|-----------|------|
+| `assetViewer` | `false` | 閲覧ページを生成し、マニフェストに基づく MDX の参照機能を有効にする。 |
+| `assetViewerDir` | `"assets"` | `public/` 配下のディレクトリと、公開ファイルの URL プレフィックスを指定する。 |
+| `assetViewerRoutePrefix` | `"files"` | 閲覧ページの URL プレフィックスを指定する。`assetViewerDir` とは異なる値が必要。 |
+| `assetViewerExclude` | `[]` | アセットディレクトリからの相対パスに対して、閲覧ページの生成対象外にする glob を指定する。 |
+
+たとえば、ソースマップと下書きを通常の公開ファイルとして残しつつ、閲覧ページだけを生成対象外にするには次のように設定します。
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    assetViewer: true,
+    assetViewerExclude: ["**/*.map", "drafts/**"],
+  }),
+);
+```
+
+ビューアーで管理するファイルを `public/<assetViewerDir>/client/` 配下には置かないでください。`client/` は zfb がブラウザー向けアセット用に予約しているパスであり、アセットビューアーは走査時に衝突を報告します。
+
+## MDX から参照する方法
+
+以下はすべて、このリポジトリのデモファイルを参照する実際の表示例です。
+
+### Markdown リンク
+
+マニフェストに存在する公開ファイルへの Markdown リンクは閲覧ページの URL に書き換えられ、ファイル種別とサイズが付加されます。
+
+[parse-frontmatter.js](/assets/demo/parse-frontmatter.js)
+
+```mdx
+[parse-frontmatter.js](/assets/demo/parse-frontmatter.js)
+```
+
+外部リンク、ページ内リンク、除外対象のパス、マニフェストにない公開 URL は通常のリンクのままです。
+
+### アセットカード
+
+そのファイル自体が主要な配布物や参照資料である場合は `Asset` を使います。カードから、説明付きの閲覧ページと元ファイルのダウンロードの両方へ移動できます。
+
+<Asset src="/assets/demo/demo-project.zip" />
+
+```mdx
+<Asset src="/assets/demo/demo-project.zip" />
+```
+
+ドキュメント固有の表現が必要な場合は、`Asset` に任意の `title` と `description` props も指定できます。
+
+### コードの抜粋
+
+ソースファイルの一部を MDX へ複製せずに掲載するには `AssetCode` を使います。
+
+<AssetCode src="/assets/demo/parse-frontmatter.js" lines="27-44" />
+
+```mdx
+<AssetCode src="/assets/demo/parse-frontmatter.js" lines="27-44" />
+```
+
+指定した行はビルド時に抽出され、シンタックスハイライト付きで表示されます。フッターのリンクから、閲覧ページ上の同じ範囲へ移動できます。1つの抜粋で指定できるのは最大200行です。
+
+### 画像キャプションのリンク
+
+単独の画像がアセットマニフェストに含まれている場合、ドキュメント内での通常表示を保ったまま、キャプションに **Open asset page** リンクが加わります。
+
+![Asset pipeline diagram](/assets/demo/architecture.png "Figure 1 — the asset viewer pipeline.")
+
+```mdx
+![Asset pipeline diagram](/assets/demo/architecture.png "Figure 1 — the asset viewer pipeline.")
+```
+
+リンクには画像の寸法も表示されます。`imageEnlarge: true` の場合は、同じ画像を拡大ダイアログでも確認できます。操作方法と記述規則は [Image Enlarge](../components/image-enlarge.mdx)を参照してください。
+
+## 任意のメタデータサイドカー
+
+閲覧ページのタイトルを変えたり説明を追加したりするには、アセットと同じ場所に `<file>.meta.json` を置きます。`architecture.png` に対するサイドカーのファイル名は `architecture.png.meta.json` です。
+
+```json title="public/assets/demo/architecture.png.meta.json"
+{
+  "title": "Asset viewer architecture",
+  "description": "How document references become raw-file and viewer-page links."
+}
+```
+
+どちらも任意の文字列フィールドです。サイドカーは正しい JSON 形式で、2 KB 以下にしてください。ビルド時のメタデータとしてだけ使われるため、`.meta.json` 自体の閲覧ページは生成されません。
+
+## ファイル種別ごとの表示
+
+どの閲覧ページにも、ファイル名とメタデータ、元ファイルに対する操作、詳細情報、このファイルを参照しているドキュメントへのリンクが表示されます。中央のプレビューは、検出されたファイル種別に応じて変わります。
+
+- **[コードとテキスト](/assets/demo/parse-frontmatter.js)**: 行アンカー付きのソース、コピー操作、折り返し操作を表示します。1 MiB 以下のファイルはシンタックスハイライトされ、それを超えるテキストはプレーン表示になります。プレーン表示は最大2,000行で、5 MiB を超えるテキストはダウンロード専用になります。
+- **[画像](/assets/demo/architecture.png)**: Fit と 1:1 の表示倍率、チェッカー背景と暗色背景、画像寸法、拡大ダイアログを利用できます。
+- **[動画](/assets/demo/hmr-demo.mp4)**: ブラウザー標準の操作 UI を使い、取得できた場合は寸法と再生時間も表示します。
+- **[PDF](/assets/demo/spec.pdf)**: ブラウザーの PDF ビューアーを埋め込み、その横にダウンロード手段も残します。
+- **[アーカイブなど未対応の形式](/assets/demo/demo-project.zip)**: 安全性や正確性に欠けるプレビューは試みず、ダウンロードパネルを表示します。
+
+形式の判定では拡張子だけでなくファイル内容も確認します。両者が一致しない場合は、申告されたメディア形式として埋め込まず、安全な表示へ切り替えます。
+
+## 開発時の挙動
+
+`pnpm dev` の実行中に既存アセットを編集すると、閲覧ページにも変更が反映されます。一方、アセットの追加、削除、名前変更では監視対象の一覧が変わるため、`pnpm dev` の再起動が必要です。ドキュメントから初めてアセットを参照した場合も、リンク関係と抜粋を再構築するために再起動してください。
+
+ファイルの追加や整理を繰り返す間は、ビルドしてから配信する開発モードの `pnpm dev:stable` を使うこともできます。
+
+## リーフページとしての挙動
+
+アセットの閲覧ページは、デフォルトロケールだけに存在するリーフページです。ドキュメントのサイドバー、検索インデックス、`llms.txt`、サイトマップには掲載されず、ロケールプレフィックス付きの複製も作られません。そのため、日本語ドキュメントから参照した場合も、英語ドキュメントと同じデフォルトロケールの閲覧ページが開きます。
+
+閲覧ページはサイトの `noindex` 設定に従います。ヘッダーとフッターなどのドキュメント共通 UI は保ちつつ、ドキュメント用のサイドバーと目次は表示しません。

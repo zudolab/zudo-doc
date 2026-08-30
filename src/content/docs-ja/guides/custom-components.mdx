@@ -90,10 +90,12 @@ export default defineConfig(
 オーバーライド可能な名前には次が含まれます。
 
 - アドモニション: `Note`、`Tip`、`Info`、`Warning`、`Danger`、`Important`、`Caution`
-- コンテンツヘルパー: `Details`、`HtmlPreview`、`CodeGroup`、`Tabs`、`TabItem`、`Island`、`PresetGenerator`
+- コンテンツヘルパー: `Details`、`HtmlPreview`、`CodeGroup`、`Tabs`、`TabItem`、`Island`、`PresetGenerator`、`Asset`、`AssetCode`
 - `p`、`a`、`img`、`table` などの HTML オーバーライド
 
 置き換えるコンポーネントは、既存ドキュメントが使う MDX 構文と props に互換性を持たせてください。`p` などの HTML 要素を置き換えると、ドキュメント内の該当するすべての要素に影響します。グローバルなレンダリング変更が意図的な場合を除き、新しい名前付きコンポーネントを優先してください。
+
+`Asset` と `AssetCode` は、アセットマニフェストに基づくカードとソース抜粋を表示するパッケージ標準コンポーネントです。記述方法とマニフェストを生成する設定は [アセットビューアー](./asset-viewer.mdx)を参照してください。
 
 ## class ではなく className
 
