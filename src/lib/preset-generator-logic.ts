@@ -281,6 +281,7 @@ export const FEATURES = [
   { value: "tauriDev", label: "Tauri dev wrapper (Mode 2)", cliFlag: "tauri-dev", default: false, docPath: "/docs/guides/tauri-modes/" },
   { value: "footerNavGroup", label: "Footer nav group", cliFlag: "footer-nav-group", default: false, docPath: "/docs/guides/footer/" },
   { value: "imageEnlarge", label: "Image enlarge", cliFlag: "image-enlarge", default: true, docPath: "/docs/markdown-features/image-enlarge/" },
+  { value: "assetViewer", label: "Asset viewer", cliFlag: "asset-viewer", default: false },
   { value: "dynamicPageTransition", label: "Dynamic page transition", cliFlag: "dynamic-page-transition", default: true, docPath: "/docs/guides/dynamic-page-transitions/" },
   { value: "footerCopyright", label: "Footer copyright", cliFlag: "footer-copyright", default: true, docPath: "/docs/guides/footer/" },
   { value: "changelog", label: "Changelog", cliFlag: "changelog", default: false, docPath: "/docs/guides/changelog/" },

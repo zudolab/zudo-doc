@@ -97,56 +97,21 @@ import { defaultTranslations } from "./i18n-defaults/index.js";
 import { defaultColorSchemes } from "./color-schemes-defaults/index.js";
 import { assertNoCommaInVersionSlugs } from "./version-availability/index.js";
 import { assertNoEmptyStringFaviconOrLogo } from "./config-assertions/index.js";
+import { validateAssetViewerSettings } from "./asset-path/index.js";
 
-// TODO(S3a): replace this local compatibility guard with the canonical
-// `validateAssetViewerSettings` from `asset-path` once that foundation lands.
-// Keep config evaluation pure: this fallback does not import the scanner.
-function assertValidAssetViewerSettings(dir: unknown, routePrefix: unknown): void {
-  const validateName = (value: unknown, settingName: string): string => {
-    if (typeof value !== "string" || value.length === 0) {
-      throw new TypeError(
-        `zudo-doc: ${settingName} must be a non-empty relative path made of one or more segments`,
-      );
-    }
-
-    const segments = value.split("/");
-    if (
-      value.startsWith("/") ||
-      value.endsWith("/") ||
-      value.includes("\\") ||
-      segments.some(
-        (segment) =>
-          segment.length === 0 ||
-          segment === "." ||
-          segment === ".." ||
-          [...segment].some(
-            (char) =>
-              char.charCodeAt(0) < 0x20 ||
-              (char.charCodeAt(0) >= 0x7f && char.charCodeAt(0) <= 0x9f),
-          ),
-      )
-    ) {
-      throw new TypeError(
-        `zudo-doc: ${settingName} must be a relative path with no leading/trailing slash, backslash, or "."/".." segments (received ${JSON.stringify(value)})`,
-      );
-    }
-
-    return value.normalize("NFC");
-  };
-
-  const normalizedDir = validateName(dir, "assetViewerDir");
-  const normalizedRoutePrefix = validateName(
-    routePrefix,
-    "assetViewerRoutePrefix",
-  );
-  if (normalizedDir === normalizedRoutePrefix) {
+/** Validate config paths through the browser-safe asset-path foundation. */
+function assertValidAssetViewerSettings(dir: string, routePrefix: string): void {
+  try {
+    validateAssetViewerSettings({ dir, routePrefix });
+  } catch (error) {
+    // Keep the config API's historic field names in diagnostics while sharing
+    // the canonical validation implementation with browser-side helpers.
+    const message = error instanceof Error ? error.message : String(error);
     throw new TypeError(
-      `zudo-doc: assetViewerDir and assetViewerRoutePrefix must differ (both are ${JSON.stringify(dir)})`,
-    );
-  }
-  if (normalizedDir === "assets/client" || normalizedRoutePrefix === "assets/client") {
-    throw new TypeError(
-      'zudo-doc: assetViewerDir and assetViewerRoutePrefix must not equal reserved "assets/client"',
+      `zudo-doc: ${message
+        .replaceAll("assetViewer.dir", "assetViewerDir")
+        .replaceAll("assetViewer.routePrefix", "assetViewerRoutePrefix")
+        .replace("must be different", "must differ")}`,
     );
   }
 }
