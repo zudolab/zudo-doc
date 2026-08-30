@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="240" viewBox="0 0 720 240" role="img" aria-labelledby="graph-title graph-description">
+  <title id="graph-title">Asset link graph</title>
+  <desc id="graph-description">A document link points to a raw public asset URL and its generated viewer page.</desc>
+  <defs>
+    <style>
+      .diagram { color: #365d72; font-family: system-ui, sans-serif; }
+      .node { fill: #edf5f8; stroke: currentColor; stroke-width: 2; }
+      .line { fill: none; stroke: currentColor; stroke-width: 3; }
+      .label { fill: currentColor; font-size: 18px; font-weight: 650; }
+      .detail { fill: currentColor; font-size: 13px; }
+      .arrowhead { fill: currentColor; }
+      @media (prefers-color-scheme: dark) {
+        .diagram { color: #c3deea; }
+        .node { fill: #1e3541; }
+      }
+    </style>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse">
+      <path class="arrowhead" d="M 0 0 L 12 6 L 0 12 z" />
+    </marker>
+  </defs>
+  <g class="diagram">
+    <path class="line" d="M 220 120 H 272" marker-end="url(#arrow)" />
+    <path class="line" d="M 448 120 H 500" marker-end="url(#arrow)" />
+
+    <rect class="node" x="24" y="72" width="196" height="96" rx="12" />
+    <text class="label" x="122" y="112" text-anchor="middle">Document</text>
+    <text class="detail" x="122" y="138" text-anchor="middle">[link](asset URL)</text>
+
+    <rect class="node" x="272" y="72" width="176" height="96" rx="12" />
+    <text class="label" x="360" y="112" text-anchor="middle">Raw asset</text>
+    <text class="detail" x="360" y="138" text-anchor="middle">/assets/demo/…</text>
+
+    <rect class="node" x="500" y="72" width="196" height="96" rx="12" />
+    <text class="label" x="598" y="112" text-anchor="middle">Viewer page</text>
+    <text class="detail" x="598" y="138" text-anchor="middle">/files/demo/…/</text>
+  </g>
+</svg>
