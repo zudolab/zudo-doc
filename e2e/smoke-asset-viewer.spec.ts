@@ -263,38 +263,47 @@ test.describe("Asset viewer: browser interactions", () => {
   });
 
   test("raw Download bypasses the router and fetches the asset once", async ({
+    browser,
     page,
     assertNoConsoleErrors,
   }) => {
     await page.goto("/files/demo.js/", { waitUntil: "domcontentloaded" });
 
-    const rawRequests: string[] = [];
-    page.context().on("request", (request) => {
-      if (new URL(request.url()).pathname === "/assets/demo.js") {
-        rawRequests.push(request.url());
+    const cdpSession = await browser.newBrowserCDPSession();
+    const cdpDownloads: string[] = [];
+    cdpSession.on("Browser.downloadWillBegin", (payload) => {
+      if (new URL(payload.url).pathname === "/assets/demo.js") {
+        cdpDownloads.push(payload.url);
       }
     });
-    await page.evaluate(() => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).__assetViewerBeforePreparationCount = 0;
-      document.addEventListener("zfb:before-preparation", () => {
+    try {
+      await page.evaluate(() => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any).__assetViewerBeforePreparationCount += 1;
+        (window as any).__assetViewerBeforePreparationCount = 0;
+        document.addEventListener("zfb:before-preparation", () => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (window as any).__assetViewerBeforePreparationCount += 1;
+        });
       });
-    });
 
-    const downloadPromise = page.waitForEvent("download");
-    await page.getByRole("link", { name: "Download" }).first().click();
-    const download = await downloadPromise;
+      const downloadPromise = page.waitForEvent("download");
+      await page.getByRole("link", { name: "Download" }).first().click();
+      const download = await downloadPromise;
 
-    await expect.poll(() => rawRequests.length).toBe(1);
-    const beforePreparationCount = await page.evaluate(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      () => (window as any).__assetViewerBeforePreparationCount,
-    );
-    expect(beforePreparationCount).toBe(0);
-    expect(download.suggestedFilename()).toBe("demo.js");
-    assertNoConsoleErrors();
+      await expect.poll(() => cdpDownloads.length).toBe(1);
+      expect(cdpDownloads).toEqual([
+        new URL("/assets/demo.js", page.url()).href,
+      ]);
+      const beforePreparationCount = await page.evaluate(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        () => (window as any).__assetViewerBeforePreparationCount,
+      );
+      expect(beforePreparationCount).toBe(0);
+      expect(download.suggestedFilename()).toBe("demo.js");
+      assertNoConsoleErrors();
+    } finally {
+      await cdpSession.detach();
+    }
   });
 
   test("hostile source stays inert in the browser", async ({
