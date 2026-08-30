@@ -17,10 +17,9 @@ describe("defaultTranslations", () => {
   });
 
   // NOT asserting all locales carry the exact same key set: `de` is a
-  // documented partial locale (44/56 keys, unchanged since before this
-  // epic — missing only the `version.page.*`/`version.switcher.*` strings,
-  // pre-existing and independent of the minimal-scaffold epic). This is a
-  // supported, functioning pattern by design — the `t()` helper falls back
+  // documented partial locale. This is a supported, functioning pattern by
+  // design — package features may add EN/JA defaults without requiring an
+  // immediate complete German table because the `t()` helper falls back through
   // `translations[locale]?.[key] ?? translations[defaultLocale]?.[key] ??
   // key` (see this module's header comment), not a bug to guard against.
 
@@ -34,6 +33,12 @@ describe("defaultTranslations", () => {
       "このファイル形式はプレビューできません。ダウンロードしてローカルで開いてください。",
     );
     expect(defaultTranslations.de?.["asset.badge"]).toBeUndefined();
+  });
+
+  it("keeps the complete English and Japanese key sets in parity", () => {
+    expect(Object.keys(defaultTranslations.ja ?? {}).sort()).toEqual(
+      Object.keys(defaultTranslations.en ?? {}).sort(),
+    );
   });
 
   it("is a plain serializable Record<string, Record<string, string>> (route-context virtual-module rule)", () => {

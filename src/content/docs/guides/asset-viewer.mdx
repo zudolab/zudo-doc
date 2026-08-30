@@ -37,8 +37,14 @@ public/
     └── demo/
         ├── architecture.png
         ├── demo-project.zip
+        ├── diagrams/
+        │   ├── link-graph.svg
+        │   └── link-graph.svg.meta.json
         ├── hmr-demo.mp4
         ├── parse-frontmatter.js
+        ├── scripts/
+        │   ├── README.txt
+        │   └── check-frontmatter.mjs
         └── spec.pdf
 ```
 
@@ -51,7 +57,7 @@ Root-relative URLs continue to work when the site has a non-root `base`; zudo-do
 
 ## Configuration
 
-The four top-level `zudoDoc()` fields are:
+The five top-level `zudoDoc()` fields are:
 
 | Field | Default | Purpose |
 |-------|---------|---------|
@@ -59,6 +65,7 @@ The four top-level `zudoDoc()` fields are:
 | `assetViewerDir` | `"assets"` | Choose the directory below `public/` and the raw URL prefix. |
 | `assetViewerRoutePrefix` | `"files"` | Choose the viewer-page URL prefix. It must differ from `assetViewerDir`. |
 | `assetViewerExclude` | `[]` | Exclude matching asset-relative glob paths from viewer generation. |
+| `assetViewerIndex` | `false` | Generate the listing page at the viewer route prefix. |
 
 For example, this keeps source maps and drafts available as ordinary public files without generating viewer pages for them:
 
@@ -72,6 +79,39 @@ export default defineConfig(
 ```
 
 Do not place viewer-managed files under `public/<assetViewerDir>/client/`. zfb reserves the `client/` path for browser assets, and the asset viewer reports that collision during its scan.
+
+## The assets index page
+
+Enable the index alongside the asset viewer to generate a browsable listing at `/<assetViewerRoutePrefix>/`:
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    assetViewer: true,
+    assetViewerIndex: true,
+  }),
+);
+```
+
+The index displays the included assets as a directory tree. Folder rows are collapsible disclosure toggles rather than links; they show aggregate file counts and sizes for their subtrees. File rows link to the corresponding viewer pages and show metadata such as file type and size. When no included assets exist, the page shows an empty-state message instead of a tree.
+
+`assetViewerExclude` applies to both viewer-page generation and the index, while excluded files remain available at their raw public URLs. Metadata sidecars are also omitted from the listing. Like individual viewer pages, the index exists only in the default locale.
+
+This showcase enables the feature, so you can open the [live assets index](/files/). To expose the index in your own site header, add an unversioned item to `headerNav`:
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    assetViewer: true,
+    assetViewerIndex: true,
+    headerNav: [
+      { label: "Assets", labelKey: "nav.assets", path: "/files", versioned: false },
+    ],
+  }),
+);
+```
+
+`versioned: false` keeps the link pointed at the single default-locale route instead of adding an archived-version prefix. See [Header Navigation](./header-navigation.mdx#properties-versioned) for the full item contract.
 
 ## Author entry points
 
@@ -127,12 +167,12 @@ The link includes the image dimensions. With `imageEnlarge: true`, readers can a
 
 ## Optional metadata sidecar
 
-Add `<file>.meta.json` beside an asset to replace its viewer title or add a description. For `architecture.png`, the sidecar is `architecture.png.meta.json`:
+Add `<file>.meta.json` beside an asset to replace its viewer title or add a description. The demo corpus includes `diagrams/link-graph.svg.meta.json` beside `link-graph.svg`:
 
-```json title="public/assets/demo/architecture.png.meta.json"
+```json title="public/assets/demo/diagrams/link-graph.svg.meta.json"
 {
-  "title": "Asset viewer architecture",
-  "description": "How document references become raw-file and viewer-page links."
+  "title": "Asset link graph",
+  "description": "How a document link maps to the raw asset URL and its generated viewer page."
 }
 ```
 
@@ -152,12 +192,12 @@ Format detection checks file contents as well as the extension. A mismatch falls
 
 ## Development behavior
 
-Editing an existing asset refreshes its viewer during `pnpm dev`. Adding, removing, or renaming an asset changes the pre-enumerated watch set and requires restarting `pnpm dev`. Adding the first document link to an asset also requires a restart so the link graph and requested excerpts can be rebuilt.
+Editing an existing asset refreshes its viewer during `pnpm dev`. Adding, removing, or renaming an asset changes the watch set, which is pre-enumerated when the plugin starts, and requires restarting `pnpm dev`. Until then, the assets index also remains stale. Adding the first document link to an asset requires a restart so the link graph and requested excerpts can be rebuilt.
 
 Use `pnpm dev:stable` when you are adding or reorganizing files frequently; it uses the build-then-serve development mode.
 
-## Leaf-page behavior
+## Generated-route behavior
 
-Asset viewers are default-locale leaf pages. They do not appear in the docs sidebar, search index, `llms.txt`, or sitemap, and there is no locale-prefixed viewer copy. A reference from a Japanese document therefore opens the same default-locale asset page as an English reference.
+Individual asset viewers are leaf pages, while the optional route-prefix page is an asset listing. Both exist only in the default locale and stay out of the docs sidebar, search index, `llms.txt`, and sitemap. A reference from a Japanese document therefore opens the same default-locale asset route as an English reference.
 
 Viewer pages honor the site's `noindex` setting. They intentionally keep documentation chrome such as the header and footer while hiding the document sidebar and table of contents.

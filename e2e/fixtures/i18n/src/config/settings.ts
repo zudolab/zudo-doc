@@ -44,6 +44,7 @@ export const settings = {
   assetViewerDir: "assets",
   assetViewerRoutePrefix: "files",
   assetViewerExclude: [],
+  assetViewerIndex: false,
   // Mirrors the showcase default — themePackSwitcher stays off here
   // (allowlisted, epic Theme Core #2812, #2826).
   themePack: "default" as string,

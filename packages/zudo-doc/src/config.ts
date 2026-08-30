@@ -99,6 +99,26 @@ import { assertNoCommaInVersionSlugs } from "./version-availability/index.js";
 import { assertNoEmptyStringFaviconOrLogo } from "./config-assertions/index.js";
 import { validateAssetViewerSettings } from "./asset-path/index.js";
 
+/** Merge project translation additions without discarding package UI strings. */
+function mergeDefaultTranslations(
+  overrides: PresetTranslations | undefined,
+): PresetTranslations {
+  if (overrides === undefined) return defaultTranslations;
+
+  const merged: PresetTranslations = {};
+  const locales = new Set([
+    ...Object.keys(defaultTranslations),
+    ...Object.keys(overrides),
+  ]);
+  for (const locale of locales) {
+    merged[locale] = {
+      ...(defaultTranslations[locale] ?? {}),
+      ...(overrides[locale] ?? {}),
+    };
+  }
+  return merged;
+}
+
 /** Validate config paths through the browser-safe asset-path foundation. */
 function assertValidAssetViewerSettings(dir: string, routePrefix: string): void {
   try {
@@ -200,6 +220,7 @@ export const DEFAULT_SETTINGS: Settings = {
   assetViewerDir: "assets",
   assetViewerRoutePrefix: "files",
   assetViewerExclude: [],
+  assetViewerIndex: false,
   bodyFootUtilArea: false,
   htmlPreview: undefined,
   versions: false,
@@ -520,6 +541,8 @@ export interface ZudoDocConfig {
   assetViewerRoutePrefix?: string;
   /** Glob patterns (relative to the asset dir) excluded from viewer generation. @default [] */
   assetViewerExclude?: string[];
+  /** When `true` (and `assetViewer` is `true`), generate a listing page at `/<assetViewerRoutePrefix>/` showing every managed asset as a folder tree. No effect when `assetViewer` is `false`. @default false */
+  assetViewerIndex?: boolean;
   /**
    * Body-foot utility area (doc-history / view-source), or `false` to disable.
    * @default false
@@ -641,8 +664,9 @@ export interface ZudoDocConfig {
    */
   colorSchemes?: Record<string, ColorScheme>;
   /**
-   * Override the UI-string translation table. When omitted, the shipped
-   * en/ja/de defaults (`@takazudo/zudo-doc/i18n-defaults`) are used.
+   * Override individual UI strings by locale and key. Shipped en/ja/de
+   * defaults (`@takazudo/zudo-doc/i18n-defaults`) are retained for keys the
+   * project does not supply.
    * @default undefined (`defaultTranslations` is used)
    */
   translations?: PresetTranslations;
@@ -776,7 +800,7 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
           tagVocabulary: userTagVocabularyEntries,
         })),
     directiveVocabulary: userDirectives ?? defaultDirectiveVocabulary,
-    translations: userTranslations ?? defaultTranslations,
+    translations: mergeDefaultTranslations(userTranslations),
     colorSchemes: userColorSchemes ?? defaultColorSchemes,
     tagVocabulary: userTagVocabularyEntries ?? [],
   });

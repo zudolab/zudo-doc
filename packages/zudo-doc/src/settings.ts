@@ -392,6 +392,8 @@ export interface Settings {
   assetViewerRoutePrefix: string;
   /** Asset paths excluded from viewer generation. */
   assetViewerExclude: string[];
+  /** Whether the asset viewer index page is generated. */
+  assetViewerIndex: boolean;
   bodyFootUtilArea: BodyFootUtilAreaConfig | false;
   htmlPreview: HtmlPreviewConfig | undefined;
   versions: VersionConfig[] | false;

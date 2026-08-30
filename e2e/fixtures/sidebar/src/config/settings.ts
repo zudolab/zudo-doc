@@ -58,6 +58,7 @@ export const settings = {
   assetViewerDir: "assets",
   assetViewerRoutePrefix: "files",
   assetViewerExclude: [],
+  assetViewerIndex: false,
   claudeResources: false as { claudeDir: string; projectRoot?: string; scanRoot?: string } | false,
   codexResources: false as { codexDir: string; projectRoot?: string; scanRoot?: string } | false,
   defaultLocaleOnlyPrefixes: [] as string[],

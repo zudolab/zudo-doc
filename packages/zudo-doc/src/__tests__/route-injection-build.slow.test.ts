@@ -274,6 +274,7 @@ describe("asset viewer injected-route regression", () => {
     const dir = setupFixture({ emptyPages: true });
     rewriteFixtureSettings(dir, [
       ["assetViewer: false", "assetViewer: true"],
+      ["assetViewerIndex: false", "assetViewerIndex: true"],
       ["assetViewerExclude: []", 'assetViewerExclude: ["skip/**"]'],
     ]);
     mkdirSync(join(dir, "public", "assets", "img"), { recursive: true });
@@ -289,7 +290,12 @@ describe("asset viewer injected-route regression", () => {
 
     expect(existsSync(join(dir, "dist", "files", "a.js", "index.html"))).toBe(true);
     expect(existsSync(join(dir, "dist", "files", "img", "b.svg", "index.html"))).toBe(true);
-    expect(readBuiltHtml(dir, "files/a.js/index.html")).toContain("19 bytes");
+    expect(existsSync(join(dir, "dist", "files", "index.html"))).toBe(true);
+    const indexHtml = readBuiltHtml(dir, "files/index.html");
+    expect(indexHtml).toContain("data-zd-asset-index-page");
+    expectHtmlAttr(indexHtml, "href", "/files/a.js/");
+    expectHtmlAttr(indexHtml, "href", "/files/img/b.svg/");
+    expect(readBuiltHtml(dir, "files/a.js/index.html")).toContain("19 B");
     expect(existsSync(join(dir, "dist", "assets", "a.js"))).toBe(true);
     expect(existsSync(join(dir, "dist", "files", "skip", "hidden.txt", "index.html"))).toBe(false);
     expectGeneratedTextExcludesFiles(dir);
@@ -302,6 +308,7 @@ describe("asset viewer injected-route regression", () => {
       ["assetViewer: false", "assetViewer: true"],
       ['assetViewerDir: "assets"', 'assetViewerDir: "downloads"'],
       ['assetViewerRoutePrefix: "files"', 'assetViewerRoutePrefix: "browse"'],
+      ["assetViewerIndex: false", "assetViewerIndex: true"],
       ["  packageOwnedRoutes: true", "  packageOwnedRoutes: false"],
     ]);
     mkdirSync(join(dir, "public", "downloads"), { recursive: true });
@@ -309,7 +316,8 @@ describe("asset viewer injected-route regression", () => {
 
     runZfbBuild(dir);
 
-    const html = readBuiltHtml(dir, "browse/a.js/index.html");
+    expect(existsSync(join(dir, "dist", "browse", "a.js", "index.html"))).toBe(true);
+    const html = readBuiltHtml(dir, "browse/index.html");
     expect(html).toMatch(/href=(?:"\/pj\/x\/browse\/a\.js\/"|\/pj\/x\/browse\/a\.js\/)/);
     expect(html).not.toContain("/pj/x/pj/x/");
     expect(existsSync(join(dir, "dist", "docs", "getting-started", "index.html"))).toBe(false);
