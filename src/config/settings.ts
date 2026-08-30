@@ -230,6 +230,7 @@ export const settings = {
   assetViewerDir: "assets",
   assetViewerRoutePrefix: "files",
   assetViewerExclude: [],
+  assetViewerIndex: true,
   bodyFootUtilArea: {
     docHistory: true,
     viewSourceLink: true,

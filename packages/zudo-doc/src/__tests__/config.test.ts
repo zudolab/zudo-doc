@@ -145,6 +145,7 @@ describe("zudoDoc() default-merge semantics", () => {
       expect(DEFAULT_SETTINGS.assetViewerDir).toBe("assets");
       expect(DEFAULT_SETTINGS.assetViewerRoutePrefix).toBe("files");
       expect(DEFAULT_SETTINGS.assetViewerExclude).toEqual([]);
+      expect(DEFAULT_SETTINGS.assetViewerIndex).toBe(false);
       expect(options).toMatchObject({
         assetViewer: false,
         assetViewerDir: "assets",

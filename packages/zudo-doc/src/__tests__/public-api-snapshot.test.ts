@@ -302,6 +302,7 @@ describe("Settings public field set snapshot", () => {
         "assetViewerDir",
         "assetViewerRoutePrefix",
         "assetViewerExclude",
+        "assetViewerIndex",
         "bodyFootUtilArea",
         "htmlPreview",
         "versions",
