@@ -41,6 +41,7 @@ describe("package.json exports keyset snapshot", () => {
       [
         ".",
         "./ai-chat-modal",
+        "./asset-page",
         "./asset-path",
         "./auto-logo",
         "./body-foot-util",

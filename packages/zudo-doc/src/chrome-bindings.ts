@@ -75,6 +75,8 @@ export interface SearchWidgetSlotProps {
 export interface BodyEndIslandsSlotProps {
   basePath: string;
   aiChatBodyLabel?: string;
+  /** Asset image pages force one ImageEnlarge mount independently of the site setting. */
+  forceImageEnlarge?: boolean;
 }
 
 /**

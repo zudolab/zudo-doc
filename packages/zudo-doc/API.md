@@ -292,6 +292,7 @@ reachable from this subpath — through the bundled JS graph OR the transitive
 
 | Subpath | Description |
 |---|---|
+| `./asset-page` | `createAssetPageView(ctx)` and the SSR asset-viewer components for code, image, video, PDF, and download-only files. |
 | `./asset-path` | Browser-safe canonical asset path validation, segment-wise URL encoding/decoding, viewer/raw href builders, asset-viewer settings validation, and the dependency-free asset exclude-glob matcher. |
 | `./content` | MDX content rendering utilities |
 | `./mdx-components` | MDX component map |

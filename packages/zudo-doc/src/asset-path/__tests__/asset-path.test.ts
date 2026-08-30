@@ -10,6 +10,10 @@ import {
 } from "../index.js";
 
 describe("asset path normalization and URL round trips", () => {
+  it("builds an extension-bearing viewer URL with the required trailing slash", () => {
+    expect(assetViewerHref({ base: "/", routePrefix: "files", path: "img/logo.svg" })).toBe("/files/img/logo.svg/");
+  });
+
   it.each([
     ["folder/hello world.ts", "folder/hello%20world.ts"],
     ["資料/設計図.svg", "%E8%B3%87%E6%96%99/%E8%A8%AD%E8%A8%88%E5%9B%B3.svg"],

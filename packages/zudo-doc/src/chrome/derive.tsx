@@ -431,15 +431,39 @@ export function deriveBodyEndIslands(ctx: ChromeContext) {
     ...themePackSwitcherDeps,
     pendingUntilHydrated: true,
   });
-  type BodyEndIslandsProps = { basePath: string; aiChatBodyLabel?: string };
+  type BodyEndIslandsProps = {
+    basePath: string;
+    aiChatBodyLabel?: string;
+    forceImageEnlarge?: boolean;
+  };
   const HostBodyEnd = HostBodyEndIslands as unknown as (
     props: BodyEndIslandsProps,
   ) => JSX.Element;
 
   function BodyEndIslands(props: BodyEndIslandsProps): JSX.Element {
+    const addsForcedImageEnlarge =
+      props.forceImageEnlarge === true && !ctx.settings.imageEnlarge;
+    const ForceImageEnlarge =
+      addsForcedImageEnlarge
+        ? createBodyEndIslands({
+            settings: {
+              aiAssistant: false,
+              imageEnlarge: true,
+              mermaid: false,
+              dynamicPageTransition: false,
+              designTokenPanel: false,
+              findInPage: false,
+              themePackSwitcher: false,
+            },
+          })
+        : null;
     return (
       <>
-        <HostBodyEnd {...props} />
+        <HostBodyEnd
+          {...props}
+          forceImageEnlarge={addsForcedImageEnlarge ? false : props.forceImageEnlarge}
+        />
+        {ForceImageEnlarge ? <ForceImageEnlarge basePath={props.basePath} /> : null}
         <DesignTokenPanelIsland />
         <ThemePackSwitcherIsland />
       </>
