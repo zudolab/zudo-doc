@@ -64,18 +64,23 @@ describe("asset page inline script", () => {
       }
     }
     const locationFixture = { hash: "" };
+    let measuredPseudo = "";
     new Function(
       "document",
       "Element",
       "location",
       "getComputedStyle",
       ASSET_PAGE_SCRIPT,
-    )(documentFixture, FakeElement, locationFixture, () => ({ gridTemplateColumns: "40px 200px" }));
+    )(documentFixture, FakeElement, locationFixture, (_element: unknown, pseudo: string) => {
+      measuredPseudo = pseudo;
+      return { width: "40px" };
+    });
 
     clickListener?.({ target: new FakeElement(), clientX: 160, offsetX: 2 });
     expect(locationFixture.hash).toBe("");
 
     clickListener?.({ target: new FakeElement(), clientX: 120, offsetX: 99 });
     expect(locationFixture.hash).toBe("L7");
+    expect(measuredPseudo).toBe("::before");
   });
 });

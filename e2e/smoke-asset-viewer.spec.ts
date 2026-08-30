@@ -249,6 +249,8 @@ test.describe("Asset viewer: browser interactions", () => {
         linePositions[index - 1]?.top ?? 0,
       );
     }
+    await page.locator("#L3").click({ position: { x: 1, y: 2 } });
+    await expect(page).toHaveURL(/#L3$/);
     const stickyTop = await page.locator(".zd-asset-filebar").evaluate(
       (element) => Number.parseFloat(getComputedStyle(element).top),
     );
