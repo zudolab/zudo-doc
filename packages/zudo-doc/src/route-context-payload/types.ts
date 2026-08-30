@@ -166,6 +166,8 @@ export interface AssetExcerpt {
   endLine: number;
   totalLines: number;
   truncated: boolean;
+  /** Whether the full viewer body contains an anchor for `startLine`. */
+  viewerLineAvailable: boolean;
 }
 
 /** Serializable index plus requested excerpts consumed by asset routes. */

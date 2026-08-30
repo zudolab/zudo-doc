@@ -7,7 +7,8 @@ import { HeadingH2 } from "../heading-h2.js";
 import { HeadingH3 } from "../heading-h3.js";
 import { HeadingH4 } from "../heading-h4.js";
 import { ContentParagraph } from "../content-paragraph.js";
-import { ContentLink } from "../content-link.js";
+import { ContentLink, createContentLink } from "../content-link.js";
+import type { AssetManifest } from "../../route-context-payload/types.js";
 import { ContentStrong } from "../content-strong.js";
 import { ContentBlockquote } from "../content-blockquote.js";
 import { ContentUl } from "../content-ul.js";
@@ -230,6 +231,85 @@ describe("ContentLink", () => {
       </ContentLink>,
     );
     expect(html).not.toContain("text-accent");
+  });
+
+  const assetManifest: AssetManifest = {
+    dir: "media",
+    routePrefix: "view",
+    entries: [
+      {
+        path: "demo/file.js",
+        name: "file.js",
+        dir: "demo",
+        kind: "code",
+        mime: "text/javascript",
+        language: "javascript",
+        bytes: 2_900,
+        lines: 94,
+      },
+    ],
+    excerpts: {},
+  };
+
+  it("decorates exact manifest matches and rewrites them to the viewer", () => {
+    const AssetLink = createContentLink({
+      base: "/project",
+      assetManifest,
+      routePrefix: "view",
+      dir: "media",
+    });
+    const html = serialize(
+      <AssetLink href="/media/demo/file.js">demo/file.js</AssetLink>,
+    );
+    expect(html).toContain('href="/project/view/demo/file.js/"');
+    expect(html).toContain("2.9 KB");
+    expect(html).toContain("<svg");
+  });
+
+  it.each([
+    ["non-match", "/media/demo/missing.js"],
+    ["external", "https://example.com/file.js"],
+    ["hash", "#file"],
+  ])("leaves %s links unchanged", (_label, href) => {
+    const AssetLink = createContentLink({
+      base: "/project",
+      assetManifest,
+      routePrefix: "view",
+      dir: "media",
+    });
+    const html = serialize(<AssetLink href={href}>file.js</AssetLink>);
+    expect(html).toContain(`href="${href}"`);
+    expect(html).not.toContain("2.9 KB");
+  });
+
+  it("preserves the block-link early return", () => {
+    const AssetLink = createContentLink({
+      base: "/project",
+      assetManifest,
+      routePrefix: "view",
+      dir: "media",
+    });
+    const html = serialize(
+      <AssetLink href="/media/demo/file.js" className="block">
+        file.js
+      </AssetLink>,
+    );
+    expect(html).toContain('href="/media/demo/file.js"');
+    expect(html).not.toContain("2.9 KB");
+  });
+
+  it("degrades to plain ContentLink with a null manifest", () => {
+    const AssetLink = createContentLink({
+      base: "/project",
+      assetManifest: null,
+      routePrefix: "view",
+      dir: "media",
+    });
+    const html = serialize(
+      <AssetLink href="/media/demo/file.js">file.js</AssetLink>,
+    );
+    expect(html).toContain('href="/media/demo/file.js"');
+    expect(html).not.toContain("2.9 KB");
   });
 });
 

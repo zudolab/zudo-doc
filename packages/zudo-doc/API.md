@@ -18,7 +18,7 @@ New snapshot guards (added in `packages/zudo-doc/src/__tests__/public-api-snapsh
 
 ---
 
-## 1. Subpath Exports (150 total)
+## 1. Subpath Exports (161 total)
 
 The full `package.json#exports` keyset is the contract. Any addition or removal requires a deliberate, reviewed change that will fail the snapshot guard.
 
@@ -36,6 +36,7 @@ The full `package.json#exports` keyset is the contract. Any addition or removal 
 | `./chrome` | `createChrome(context, hostBindings?)` — assembles a `ChromeContext` from a `RouteContext` + `ChromeHostBindings` (stub defaults) and wires all page-chrome factories; returns the `Chrome` surface |
 | `./eject` | `EJECTABLE` map + `eject()` function + `ZudoDocJson` type — ejectable component registry for the `zudo-doc eject` CLI |
 | `./eject-logo` | `ejectLogo()` + config-rewrite/site-name-resolution types — implementation behind the `zudo-doc eject logo` CLI (issue #3050). Not registered in `EJECTABLE` — it renders a fresh SVG and rewrites a config field rather than copying source, so the bin special-cases `eject logo` ahead of the `EJECTABLE` lookup. |
+| `./asset-components` | SSR-only asset authoring factories: `createAssetCard()` for `<Asset>` cards and `createAssetCode()` for requested manifest excerpts. |
 | `./theme-cli` | `listThemePacks()` / `formatThemeList()` / `applyThemePack()` + config-rewrite/provenance types — implementation behind the `zudo-doc theme list\|apply <slug>` CLI (issue #2824) |
 | `./component-tokens` | `COMPONENT_TOKENS` const + `ComponentToken` / `ComponentTokenCategory` / `ComponentTokenName` types — the `--zdc-*` component-level CSS custom property registry. Consumers read this to discover every rebrand knob; redefine the listed `cssVar`s in `:root` to override defaults. **Snapshot-guarded** (`component-tokens-snapshot.test.ts`). |
 
@@ -513,7 +514,7 @@ Defined in `packages/zudo-doc/src/doclayout/anchors.ts` and exported via `./docl
 
 ---
 
-## 5. Ejectable Component List (18)
+## 5. Ejectable Component List (19)
 
 The eject surface exposed by `zudo-doc eject <component>`. Defined in `packages/zudo-doc/src/eject/index.ts` (exported as `@takazudo/zudo-doc/eject`; `EJECTABLE` map). Source files are shipped in the package's `eject/` directory.
 
@@ -521,6 +522,7 @@ The eject surface exposed by `zudo-doc eject <component>`. Defined in `packages/
 
 | CLI name | Package subpath | Default local destination |
 |---|---|---|
+| `asset-components` | `@takazudo/zudo-doc/asset-components` | `src/components/zudo-doc/asset-components` |
 | `header` | `@takazudo/zudo-doc/header` | `src/components/zudo-doc/header` |
 | `footer` | `@takazudo/zudo-doc/footer` | `src/components/zudo-doc/footer` |
 | `breadcrumb` | `@takazudo/zudo-doc/breadcrumb` | `src/components/zudo-doc/breadcrumb` |

@@ -28,6 +28,10 @@ describe("EJECTABLE map 1.0 snapshot", () => {
 
     expect(snapshot).toMatchInlineSnapshot(`
       {
+        "asset-components": {
+          "localDir": "src/components/zudo-doc/asset-components",
+          "packageSubpath": "@takazudo/zudo-doc/asset-components",
+        },
         "breadcrumb": {
           "localDir": "src/components/zudo-doc/breadcrumb",
           "packageSubpath": "@takazudo/zudo-doc/breadcrumb",
@@ -104,7 +108,7 @@ describe("EJECTABLE map 1.0 snapshot", () => {
     `);
   });
 
-  it("contains exactly 18 components in the 1.0 contract", () => {
-    expect(Object.keys(EJECTABLE)).toHaveLength(18);
+  it("contains exactly 19 components in the 1.0 contract", () => {
+    expect(Object.keys(EJECTABLE)).toHaveLength(19);
   });
 });

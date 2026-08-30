@@ -3,6 +3,7 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { buildAssetSnapshot } from "../build.js";
+import { MAX_INLINE_BYTES } from "../highlight.js";
 
 const tempDirs: string[] = [];
 afterEach(() => {
@@ -50,5 +51,66 @@ describe("buildAssetSnapshot", () => {
     });
     expect(snapshot.records["file-0.txt"]?.html).toContain('id="L1"');
     expect(snapshot.watchFiles.every((path) => path.startsWith(assetRoot))).toBe(true);
+  });
+
+  it("records fragment availability from the completed viewer body", async () => {
+    const projectRoot = mkdtempSync(join(tmpdir(), "zudo-doc-assets-anchors-"));
+    tempDirs.push(projectRoot);
+    const assetRoot = join(projectRoot, "public", "assets");
+    const contentRoot = join(projectRoot, "content");
+    mkdirSync(assetRoot, { recursive: true });
+    mkdirSync(contentRoot, { recursive: true });
+    writeFileSync(
+      join(assetRoot, "anchored.js"),
+      Array.from({ length: 2_501 }, (_, index) => `anchored ${index + 1}`).join("\n"),
+    );
+    const oversizedLine = "const oversized = true;\n";
+    writeFileSync(
+      join(assetRoot, "oversized.js"),
+      oversizedLine.repeat(
+        Math.ceil((MAX_INLINE_BYTES + 1) / Buffer.byteLength(oversizedLine)),
+      ),
+    );
+    writeFileSync(
+      join(contentRoot, "index.mdx"),
+      [
+        "---",
+        "title: Anchor test",
+        "---",
+        '<AssetCode src="/assets/anchored.js" lines="2500" />',
+        '<AssetCode src="/assets/oversized.js" lines="1" />',
+      ].join("\n"),
+    );
+    process.env.SKIP_DOC_HISTORY = "1";
+
+    const snapshot = await buildAssetSnapshot({
+      projectRoot,
+      dir: "assets",
+      routePrefix: "files",
+      exclude: [],
+      contentRoots: [{ dir: contentRoot, urlFor: (slug) => `/docs/${slug}/` }],
+      base: "/",
+      trailingSlash: true,
+      logger: { warn: () => undefined },
+      highlightCode: async (source) => ({
+        html: `<pre class="hi-root"><code>${source
+          .split("\n")
+          .map((line) => `<span class="line">${line}</span>`)
+          .join("")}</code></pre>`,
+        diagnostics: [],
+      }),
+    });
+
+    expect(snapshot.records["anchored.js"]?.html).toContain('id="L2500"');
+    expect(snapshot.manifest.excerpts["anchored.js#2500-2500"]).toMatchObject({
+      startLine: 2_500,
+      viewerLineAvailable: true,
+    });
+    expect(snapshot.records["oversized.js"]?.html).toBeUndefined();
+    expect(snapshot.manifest.excerpts["oversized.js#1-1"]).toMatchObject({
+      startLine: 1,
+      html: expect.stringContaining('data-line="1"'),
+      viewerLineAvailable: false,
+    });
   });
 });

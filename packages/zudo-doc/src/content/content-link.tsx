@@ -3,6 +3,9 @@
 
 import type { JSX, VNode } from "preact";
 import { SmartBreak as SmartBreakBase } from "../smart-break/index.js";
+import { decodeAuthoredHref, assetViewerHref } from "../asset-path/index.js";
+import type { AssetManifest } from "../route-context-payload/types.js";
+import { AssetFileIcon, formatAssetBytes } from "../asset-components/index.js";
 
 // SmartBreak returns VNode; cast to align with JSX.IntrinsicElements["a"].children
 // under compat mode. Runtime is fine since the preact/compat alias is in effect.
@@ -44,6 +47,65 @@ export function ContentLink({ href, className, children, ...rest }: Props) {
       {content}
     </a>
   );
+}
+
+export interface CreateContentLinkOptions {
+  base: string;
+  assetManifest: AssetManifest | null;
+  routePrefix: string;
+  dir: string;
+}
+
+/**
+ * Bind ContentLink to an asset manifest. Only exact manifest entries are
+ * decorated and redirected; every other anchor follows ContentLink verbatim.
+ */
+export function createContentLink({
+  base,
+  assetManifest,
+  routePrefix,
+  dir,
+}: CreateContentLinkOptions) {
+  return function ManifestAwareContentLink(props: Props) {
+    const { href, className, children } = props;
+    const classes = typeof className === "string" ? className.split(" ") : [];
+
+    // Preserve the established early-return variants before attempting any
+    // path decoding. Heading hashes and block cards are not inline asset links.
+    if (
+      assetManifest === null ||
+      typeof href !== "string" ||
+      href.startsWith("#") ||
+      classes.includes("block") ||
+      classes.includes("hash-link")
+    ) {
+      return <ContentLink {...props} />;
+    }
+
+    const decoded = decodeAuthoredHref(href, { base, dir });
+    const entry = decoded
+      ? assetManifest.entries.find((candidate) => candidate.path === decoded.path)
+      : undefined;
+    if (!decoded || !entry) return <ContentLink {...props} />;
+
+    return (
+      <ContentLink
+        {...props}
+        href={assetViewerHref({
+          base,
+          routePrefix,
+          path: entry.path,
+          fragment: decoded.fragment,
+        })}
+      >
+        <span className="inline-flex items-baseline gap-x-hsp-xs font-mono">
+          <AssetFileIcon className="h-icon-sm w-icon-sm shrink-0" />
+          <span>{children}</span>
+          <span className="text-caption text-muted">({formatAssetBytes(entry.bytes)})</span>
+        </span>
+      </ContentLink>
+    );
+  };
 }
 
 function extractText(children: unknown): string | null {

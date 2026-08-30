@@ -630,6 +630,10 @@
       "types": "./dist/asset-path/index.d.ts",
       "default": "./dist/asset-path/index.js"
     },
+    "./asset-components": {
+      "types": "./dist/asset-components/index.d.ts",
+      "default": "./dist/asset-components/index.js"
+    },
     "./frontmatter": {
       "types": "./dist/frontmatter/index.d.ts",
       "default": "./dist/frontmatter/index.js"
