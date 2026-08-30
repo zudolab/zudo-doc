@@ -701,6 +701,7 @@ jobs:
             "packages/zudo-doc/src/header/nav-active.ts"
             "packages/zudo-doc/src/header/header.tsx"
             "packages/zudo-doc/src/doc-content-header/index.tsx"
+            "packages/zudo-doc/src/sidebar-tree-island/"
             "packages/zudo-doc/src/i18n-version/version-switcher.tsx"
             "packages/zudo-doc/src/i18n-version/language-switcher.tsx"
             "packages/zudo-doc/src/head-with-defaults/index.tsx"

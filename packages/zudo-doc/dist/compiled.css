@@ -1307,6 +1307,9 @@
 .pr-hsp-xl {
   padding-right: var(--spacing-hsp-xl);
 }
+.pr-hsp-xs {
+  padding-right: var(--spacing-hsp-xs);
+}
 .pb-\[50vh\] {
   padding-bottom: 50vh;
 }
@@ -2166,6 +2169,11 @@
 .lg\:pt-vsp-2xl {
   @media (width >= 1024px) {
     padding-top: var(--spacing-vsp-2xl);
+  }
+}
+.lg\:pr-hsp-sm {
+  @media (width >= 1024px) {
+    padding-right: var(--spacing-hsp-sm);
   }
 }
 .lg\:text-left {
