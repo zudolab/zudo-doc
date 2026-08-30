@@ -245,7 +245,7 @@ function NoteTrayNodeList({
 
   if (grouping === "year" || grouping === "month") {
     return (
-      <div className="pl-hsp-md">
+      <div className="pl-hsp-md pr-hsp-sm">
         {groupItems(items, grouping, node.sortOrder ?? "asc").map((group) => (
           <div key={group.key} data-note-tray-group={group.key}>
             <div className="pt-vsp-sm pb-vsp-2xs text-micro tracking-wide uppercase text-muted">
@@ -271,7 +271,7 @@ function NoteTrayNodeList({
   }
 
   return (
-    <div className="pl-hsp-md">
+    <div className="pl-hsp-md pr-hsp-sm">
       {items.map((item) => (
         <NoteTrayRow
           key={item.slug}
@@ -361,8 +361,8 @@ function LeafNode({
         <a
           href={node.href}
           className={isRoot
-            ? "flex items-start gap-hsp-xs py-[calc(var(--spacing-vsp-xs)+0.15rem)] text-small font-semibold text-fg hover:text-accent hover:underline focus:underline"
-            : `block py-vsp-2xs ${isLast ? "pb-vsp-xs" : ""} text-small text-fg hover:text-accent hover:underline focus:underline`
+            ? "flex items-start gap-hsp-xs py-[calc(var(--spacing-vsp-xs)+0.15rem)] pr-hsp-sm text-small font-semibold text-fg hover:text-accent hover:underline focus:underline"
+            : `block py-vsp-2xs pr-hsp-sm ${isLast ? "pb-vsp-xs" : ""} text-small text-fg hover:text-accent hover:underline focus:underline`
           }
           style={{ paddingLeft }}
         >
