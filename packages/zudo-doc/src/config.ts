@@ -98,6 +98,59 @@ import { defaultColorSchemes } from "./color-schemes-defaults/index.js";
 import { assertNoCommaInVersionSlugs } from "./version-availability/index.js";
 import { assertNoEmptyStringFaviconOrLogo } from "./config-assertions/index.js";
 
+// TODO(S3a): replace this local compatibility guard with the canonical
+// `validateAssetViewerSettings` from `asset-path` once that foundation lands.
+// Keep config evaluation pure: this fallback does not import the scanner.
+function assertValidAssetViewerSettings(dir: unknown, routePrefix: unknown): void {
+  const validateName = (value: unknown, settingName: string): string => {
+    if (typeof value !== "string" || value.length === 0) {
+      throw new TypeError(
+        `zudo-doc: ${settingName} must be a non-empty relative path made of one or more segments`,
+      );
+    }
+
+    const segments = value.split("/");
+    if (
+      value.startsWith("/") ||
+      value.endsWith("/") ||
+      value.includes("\\") ||
+      segments.some(
+        (segment) =>
+          segment.length === 0 ||
+          segment === "." ||
+          segment === ".." ||
+          [...segment].some(
+            (char) =>
+              char.charCodeAt(0) < 0x20 ||
+              (char.charCodeAt(0) >= 0x7f && char.charCodeAt(0) <= 0x9f),
+          ),
+      )
+    ) {
+      throw new TypeError(
+        `zudo-doc: ${settingName} must be a relative path with no leading/trailing slash, backslash, or "."/".." segments (received ${JSON.stringify(value)})`,
+      );
+    }
+
+    return value.normalize("NFC");
+  };
+
+  const normalizedDir = validateName(dir, "assetViewerDir");
+  const normalizedRoutePrefix = validateName(
+    routePrefix,
+    "assetViewerRoutePrefix",
+  );
+  if (normalizedDir === normalizedRoutePrefix) {
+    throw new TypeError(
+      `zudo-doc: assetViewerDir and assetViewerRoutePrefix must differ (both are ${JSON.stringify(dir)})`,
+    );
+  }
+  if (normalizedDir === "assets/client" || normalizedRoutePrefix === "assets/client") {
+    throw new TypeError(
+      'zudo-doc: assetViewerDir and assetViewerRoutePrefix must not equal reserved "assets/client"',
+    );
+  }
+}
+
 /** The `settings.claudeResources` block (or `false` when disabled). */
 type ClaudeResourcesConfig =
   | { claudeDir: string; projectRoot?: string; scanRoot?: string }
@@ -178,6 +231,10 @@ export const DEFAULT_SETTINGS: Settings = {
   frontmatterPreview: false,
   docHistory: false,
   docHistoryExclude: [],
+  assetViewer: false,
+  assetViewerDir: "assets",
+  assetViewerRoutePrefix: "files",
+  assetViewerExclude: [],
   bodyFootUtilArea: false,
   htmlPreview: undefined,
   versions: false,
@@ -490,6 +547,14 @@ export interface ZudoDocConfig {
    * @default []
    */
   docHistoryExclude?: string[];
+  /** Generate a viewer page for every file under `public/<assetViewerDir>/**`. @default false */
+  assetViewer?: boolean;
+  /** Directory under `public/` holding viewable assets (also the raw URL prefix `/<dir>/…`). `client/` is reserved by zfb. @default "assets" */
+  assetViewerDir?: string;
+  /** URL prefix of the generated viewer pages (`/<prefix>/<path>/`). Must differ from `assetViewerDir`. @default "files" */
+  assetViewerRoutePrefix?: string;
+  /** Glob patterns (relative to the asset dir) excluded from viewer generation. @default [] */
+  assetViewerExclude?: string[];
   /**
    * Body-foot utility area (doc-history / view-source), or `false` to disable.
    * @default false
@@ -711,6 +776,13 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
   // Safe because nested config types are all-required-field. `settingsOverrides`
   // is a Partial<Settings>.
   const settings: Settings = { ...DEFAULT_SETTINGS, ...settingsOverrides };
+
+  // Validate both prefixes at config resolution, before route injection or
+  // filesystem scanning can observe an unsafe/colliding path.
+  assertValidAssetViewerSettings(
+    settings.assetViewerDir,
+    settings.assetViewerRoutePrefix,
+  );
 
   // A version slug rides through `version-availability/index.ts`'s
   // comma-joined `data-doc-unavailable-versions` client payload unescaped

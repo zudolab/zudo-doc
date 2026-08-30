@@ -384,6 +384,14 @@ export interface Settings {
   frontmatterPreview: FrontmatterPreviewConfig | false;
   docHistory: boolean;
   docHistoryExclude: string[];
+  /** Whether package-owned viewer pages are generated for public assets. */
+  assetViewer: boolean;
+  /** Directory under `public/` containing viewable assets. */
+  assetViewerDir: string;
+  /** URL prefix for generated viewer pages. */
+  assetViewerRoutePrefix: string;
+  /** Asset paths excluded from viewer generation. */
+  assetViewerExclude: string[];
   bodyFootUtilArea: BodyFootUtilAreaConfig | false;
   htmlPreview: HtmlPreviewConfig | undefined;
   versions: VersionConfig[] | false;

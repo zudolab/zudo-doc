@@ -40,6 +40,10 @@ export const settings = {
   math: false,
   docHistory: false,
   docHistoryExclude: [],
+  assetViewer: false,
+  assetViewerDir: "assets",
+  assetViewerRoutePrefix: "files",
+  assetViewerExclude: [],
   // Mirrors the showcase default — themePackSwitcher stays off here
   // (allowlisted, epic Theme Core #2812, #2826).
   themePack: "default" as string,

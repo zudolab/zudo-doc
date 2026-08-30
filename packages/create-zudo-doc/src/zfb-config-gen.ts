@@ -66,6 +66,10 @@ export const DEFAULT_MIRROR: Record<string, unknown> = {
   dynamicPageTransition: false,
   docHistory: false,
   docHistoryExclude: [],
+  assetViewer: false,
+  assetViewerDir: "assets",
+  assetViewerRoutePrefix: "files",
+  assetViewerExclude: [],
   bodyFootUtilArea: false,
   versions: false,
   claudeResources: false,
@@ -252,6 +256,7 @@ function buildDesiredConfig(choices: UserChoices): Record<string, unknown> {
     "dynamicPageTransition",
   );
   desired.docHistory = choices.features.includes("docHistory");
+  desired.assetViewer = choices.features.includes("assetViewer");
 
   if (choices.features.includes("bodyFootUtil")) {
     desired.bodyFootUtilArea = {
@@ -430,6 +435,10 @@ const FIELD_ORDER = [
   "findInPage",
   "dynamicPageTransition",
   "docHistory",
+  "assetViewer",
+  "assetViewerDir",
+  "assetViewerRoutePrefix",
+  "assetViewerExclude",
   "bodyFootUtilArea",
   "versions",
   "claudeResources",
