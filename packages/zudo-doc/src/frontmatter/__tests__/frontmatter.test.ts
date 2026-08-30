@@ -102,6 +102,14 @@ describe("matter — block parsing", () => {
   it("normalizes a null document to an empty object", () => {
     // gray-matter did this in its excerpt pass, verified against 4.0.3.
     expect(matter("---\nnull\n---\nbody").data).toEqual({});
+    // Same for a bare document-end marker, and for the JSON engine.
+    expect(matter("---\n...\n---\nbody").data).toEqual({});
+    expect(matter("---json\nnull\n---\nbody").data).toEqual({});
+  });
+
+  it("still passes other falsy roots through — `??`, not `||`", () => {
+    expect(matter("---\nfalse\n---\nbody").data).toBe(false);
+    expect(matter("---\n0\n---\nbody").data).toBe(0);
   });
 
   it("passes a non-object YAML root through unchanged", () => {
@@ -178,7 +186,10 @@ describe("package dependencies", () => {
   it("does not depend on gray-matter or js-yaml", () => {
     const require = createRequire(import.meta.url);
     // src/frontmatter/__tests__/ -> src/frontmatter/ -> src/ -> packages/zudo-doc/
-    const pkgRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
+    const pkgRoot = resolve(
+      dirname(fileURLToPath(import.meta.url)),
+      "../../..",
+    );
     const pkg = require(resolve(pkgRoot, "package.json")) as {
       dependencies?: Record<string, string>;
       devDependencies?: Record<string, string>;
@@ -201,7 +212,9 @@ describe("package dependencies", () => {
 // tags back into a doc file. Expectations verified against gray-matter 4.0.3.
 describe("stringify", () => {
   it("wraps data in fences and terminates the body with a newline", () => {
-    expect(stringify("Body", { title: "X" })).toBe("---\ntitle: X\n---\nBody\n");
+    expect(stringify("Body", { title: "X" })).toBe(
+      "---\ntitle: X\n---\nBody\n",
+    );
   });
 
   it("does not double the body's existing trailing newline", () => {
@@ -218,6 +231,19 @@ describe("stringify", () => {
     const source = "---\ntitle: Home\ntags:\n  - a\n  - b\n---\nBody text.\n";
     const parsed = matter(source);
     expect(stringify(parsed.content, parsed.data)).toBe(source);
+  });
+
+  it("quotes scalars a YAML 1.1 reader would misread, as js-yaml did", () => {
+    // The frontmatter guide tells authors to quote dates for YAML 1.1 interop.
+    // Rewriting a file must not silently strip those quotes.
+    expect(stringify("Body\n", { date: "2026-08-22" })).toContain(
+      'date: "2026-08-22"',
+    );
+    expect(stringify("Body\n", { t: "yes" })).toContain('t: "yes"');
+    // Unambiguous scalars stay plain — no blanket quoting.
+    expect(stringify("Body\n", { title: "Home" })).toContain("title: Home\n");
+    // …and no `%YAML 1.1` directive leaks into the block.
+    expect(stringify("Body\n", { title: "Home" })).not.toContain("%YAML");
   });
 
   it("leaves a long scalar on one line instead of folding it", () => {

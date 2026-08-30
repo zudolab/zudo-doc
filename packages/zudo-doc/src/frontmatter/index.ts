@@ -99,7 +99,7 @@ export function matter(input: string): ParsedFrontmatter {
 
 function parseBlock(block: string, language: string): Record<string, unknown> {
   if (language === "json") {
-    return JSON.parse(block) as Record<string, unknown>;
+    return normalizeRoot(JSON.parse(block));
   }
   if (language !== "" && language !== "yaml" && language !== "yml") {
     // gray-matter also threw here for a tag with no registered engine. Its
@@ -112,10 +112,27 @@ function parseBlock(block: string, language: string): Record<string, unknown> {
   // core on purpose: a bare `2026-01-12` now yields the STRING that zfb and
   // the docs schema already expect, rather than the `Date` js-yaml 3 coerced
   // it into (zudolab/zudo-doc#3642).
-  const parsed = parseYaml(block, { merge: true }) as unknown;
-  // A `null` document normalizes to `{}` — gray-matter did this in its excerpt
-  // pass. Scalar and array roots deliberately pass through, as they did there.
-  return (parsed ?? {}) as Record<string, unknown>;
+  //
+  // The other 1.1 resolvers js-yaml 3 applied and 1.2 core does not are all
+  // numeric, and each now yields the literal text rather than a surprising
+  // number: `0755` is 755, not octal 493; `1:30` stays "1:30", not sexagesimal
+  // 90; `12_000` stays "12_000", not 12000. Every frontmatter field this
+  // project defines is a string, an enum, or a plain decimal, so the literal
+  // reading is the safe one — but it IS a value change for zero-padded,
+  // colon-separated, or underscore-grouped numbers.
+  return normalizeRoot(parseYaml(block, { merge: true }));
+}
+
+/**
+ * A `null`/`undefined` document root normalizes to `{}` — gray-matter did this
+ * in its excerpt pass (`lib/excerpt.js`), for every engine. Other falsy roots
+ * (`false`, `0`, `""`) and scalar/array roots deliberately pass through, as
+ * they did there, so this is `??` and not `||`. Without it a block such as
+ * `---\n...\n---` yields `data: null` and every unguarded call site — e.g.
+ * `tags-audit.ts`'s `parsed.data.tags` — throws a TypeError.
+ */
+function normalizeRoot(value: unknown): Record<string, unknown> {
+  return (value ?? {}) as Record<string, unknown>;
 }
 
 /**
@@ -128,12 +145,24 @@ function parseBlock(block: string, language: string): Record<string, unknown> {
  * scalars are NOT folded. js-yaml's 80-column default reflowed unrelated
  * frontmatter — a long `description:` came back as a `>-` block — which is
  * needless churn in a file the tool is only meant to add tags to.
+ *
+ * `version: "1.1"` applies to SERIALIZATION ONLY (parsing above stays 1.2
+ * core) and reproduces js-yaml 3's quoting: a string that a YAML 1.1 reader
+ * would resolve to something else gets quoted. Without it `date: "2026-08-22"`
+ * would be rewritten unquoted and `tags: ["yes"]` as bare `yes` — the exact
+ * interop hazard `src/content/docs/guides/frontmatter.mdx` tells authors to
+ * avoid, silently introduced into every file `tags-suggest --apply` touches.
+ * `directives: false` keeps the `%YAML 1.1` header out of the emitted block.
  */
 export function stringify(
   content: string,
   data: Record<string, unknown>,
 ): string {
-  const block = stringifyYaml(data, { lineWidth: 0 }).trim();
+  const block = stringifyYaml(data, {
+    lineWidth: 0,
+    version: "1.1",
+    directives: false,
+  }).trim();
   const fence = block === "{}" ? "" : `${OPEN}\n${block}\n${OPEN}\n`;
   return fence + (content.endsWith("\n") ? content : `${content}\n`);
 }
