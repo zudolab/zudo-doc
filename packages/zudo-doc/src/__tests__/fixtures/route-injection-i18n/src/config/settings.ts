@@ -62,6 +62,7 @@ export const settings = {
   assetViewerDir: "assets",
   assetViewerRoutePrefix: "files",
   assetViewerExclude: [],
+  assetViewerIndex: false,
   bodyFootUtilArea: false,
   htmlPreview: undefined,
   versions: false,

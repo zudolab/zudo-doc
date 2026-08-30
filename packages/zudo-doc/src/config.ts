@@ -200,6 +200,7 @@ export const DEFAULT_SETTINGS: Settings = {
   assetViewerDir: "assets",
   assetViewerRoutePrefix: "files",
   assetViewerExclude: [],
+  assetViewerIndex: false,
   bodyFootUtilArea: false,
   htmlPreview: undefined,
   versions: false,
@@ -520,6 +521,8 @@ export interface ZudoDocConfig {
   assetViewerRoutePrefix?: string;
   /** Glob patterns (relative to the asset dir) excluded from viewer generation. @default [] */
   assetViewerExclude?: string[];
+  /** When `true` (and `assetViewer` is `true`), generate a listing page at `/<assetViewerRoutePrefix>/` showing every managed asset as a folder tree. No effect when `assetViewer` is `false`. @default false */
+  assetViewerIndex?: boolean;
   /**
    * Body-foot utility area (doc-history / view-source), or `false` to disable.
    * @default false
