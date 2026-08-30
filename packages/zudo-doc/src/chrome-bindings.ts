@@ -136,6 +136,8 @@ export interface HeaderSlotProps {
   currentVersion?: string;
   currentSlug?: string;
   navSection?: string;
+  /** Omit the mobile sidebar toggle and its drawer landmark. */
+  hideSidebarToggle?: boolean;
 }
 
 /** Props supplied at every package `Footer` replacement call site. */

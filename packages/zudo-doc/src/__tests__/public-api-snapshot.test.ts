@@ -435,6 +435,7 @@ describe("chrome customization public type snapshots", () => {
           "currentVersion",
           "currentSlug",
           "navSection",
+          "hideSidebarToggle",
         ],
         "SidebarSlotProps": [
           "currentSlug",

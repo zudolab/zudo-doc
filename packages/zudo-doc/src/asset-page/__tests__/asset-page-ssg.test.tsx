@@ -59,6 +59,7 @@ describe("asset page SSG", () => {
     expect(html).toContain("data-zd-wide");
     expect(html).toContain("data-zd-nosidebar");
     expect(html).not.toContain('aria-label="Table of contents"');
+    expect(html).not.toContain("<aside");
     expect(html).toContain(">Asset</span>");
     expect(html).toContain(">Assets</span>");
     expect(html).not.toContain('<a href="/files/">Assets</a>');
@@ -80,7 +81,6 @@ describe("asset page SSG", () => {
     expect(html).not.toContain("<svg xmlns=\"http://www.w3.org/2000/svg\"><svg");
     expect(html.match(/data-zfb-island-skip-ssr="ImageEnlarge"/g)).toHaveLength(1);
     expect(html).toContain("zd-asset-media-grid");
-    expect(html).not.toContain('<aside class="zd-asset-media-rail"');
   });
 
   it("applies a configured base exactly once to viewer and raw URLs", () => {

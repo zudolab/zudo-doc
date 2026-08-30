@@ -42,6 +42,8 @@ export interface HeaderWithDefaultsProps {
   currentSlug?: string;
   /** Header-nav category matcher used to scope the sidebar tree. */
   navSection?: string;
+  /** Omit the mobile sidebar toggle and its drawer landmark. */
+  hideSidebarToggle?: boolean;
 }
 
 /** Version config entry subset the factory reads. */
@@ -120,6 +122,7 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
       currentVersion,
       currentSlug,
       navSection,
+      hideSidebarToggle = false,
     } = props;
     const lang = langProp;
 
@@ -132,19 +135,21 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
     // Wrap SidebarToggle in Island so the SSG output carries the full tree
     // HTML AND the data-zfb-island="SidebarToggle" marker for client-side
     // hydration. See detailed comment in host's _header-with-defaults.tsx.
-    const sidebarToggle = Island({
-      when: "visible",
-      children: (
-        <SidebarToggle
-          nodes={sidebarNodes}
-          currentSlug={currentSlug}
-          rootMenuItems={rootMenuItems}
-          backToMenuLabel={backToMenuLabel}
-          localeLinks={localeLinks}
-          themeDefaultMode={themeDefaultMode}
-        />
-      ),
-    }) as unknown as VNode;
+    const sidebarToggle = hideSidebarToggle
+      ? false
+      : Island({
+        when: "visible",
+        children: (
+          <SidebarToggle
+            nodes={sidebarNodes}
+            currentSlug={currentSlug}
+            rootMenuItems={rootMenuItems}
+            backToMenuLabel={backToMenuLabel}
+            localeLinks={localeLinks}
+            themeDefaultMode={themeDefaultMode}
+          />
+        ),
+      }) as unknown as VNode;
 
     const themeToggle = Island({
       when: "load",
