@@ -497,6 +497,14 @@ TOC に含まれる最大見出し深度（2〜4）。
 
 たとえば `["**/*.map", "drafts/**"]` を指定すると、ソースマップとアセットディレクトリ内の `drafts/` 配下を除外できます。
 
+### assetViewerIndex
+
+アセットビューアーが有効なとき、`/<assetViewerRoutePrefix>/` にアセット一覧ページを生成します。
+
+デフォルト: `false`
+
+一覧の挙動とヘッダーナビへの追加方法は [アセットビューアー](./asset-viewer.mdx#アセット一覧ページ)を参照してください。
+
 ### findInPage
 
 body-end islands に `FindInPageInit` アイランド（Cmd/Ctrl+F 検索バー）をマウントします。

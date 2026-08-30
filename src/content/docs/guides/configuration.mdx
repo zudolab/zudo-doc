@@ -497,6 +497,14 @@ Type: `string[]` · Default: `[]`
 
 For example, `["**/*.map", "drafts/**"]` skips source maps and everything below the asset directory's `drafts/` folder.
 
+### assetViewerIndex
+
+Generate an asset listing page at `/<assetViewerRoutePrefix>/` when the asset viewer is enabled.
+
+Default: `false`
+
+See [Asset Viewer](./asset-viewer.mdx#the-assets-index-page) for the listing behavior and header-navigation setup.
+
 ### findInPage
 
 Mount the `FindInPageInit` island (Cmd/Ctrl+F find bar) in the body-end islands.
