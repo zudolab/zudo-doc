@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import type { Download } from "@playwright/test";
 import { expect, test } from "./fixtures";
 import { attrSource, booleanAttrSource } from "./html-assertions";
-import { spaClick } from "./nav-helpers";
+import { spaClick, spaClickSelector } from "./nav-helpers";
 import { DIST_DIR, readDistFile } from "./smoke-dist-helper";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -26,6 +26,7 @@ const ASSET_FILES = [
   "spec.pdf",
   "notes.txt",
   "evil.js",
+  "nested/inner.txt",
 ] as const;
 
 const TEST_DOC = "/docs/guides/asset-viewer-test";
@@ -90,6 +91,20 @@ test.describe("Asset viewer: static pages and authoring", () => {
         ),
       );
     }
+  });
+
+  test("builds the asset index with every fixture asset in its tree", () => {
+    const html = readDistFile("files/index.html");
+    expect(html).toContain("data-zd-asset-index-page");
+    for (const path of ASSET_FILES) {
+      expect(
+        anchorWithHref(html, `/files/${path}/`),
+        `asset index link missing for ${path}`,
+      ).toBeTruthy();
+    }
+    expect(html).toMatch(
+      /<details\b[^>]*>[\s\S]*?<summary\b[^>]*>[\s\S]*?<span\b[^>]*>nested\/<\/span>[\s\S]*?<\/summary>[\s\S]*?<\/details>/i,
+    );
   });
 
   test("renders full-file line ids without copying gutter numbers into code", () => {
@@ -198,6 +213,57 @@ test.describe("Asset viewer: static pages and authoring", () => {
 
 test.describe("Asset viewer: browser interactions", () => {
   test.use({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 2 });
+
+  test("asset index controls arm and toggle every folder", async ({
+    page,
+    assertNoConsoleErrors,
+  }) => {
+    await page.goto("/files/", { waitUntil: "domcontentloaded" });
+
+    const expand = page.locator('[data-zd-asset-index-action="expand"]');
+    const collapse = page.locator('[data-zd-asset-index-action="collapse"]');
+    await expect(expand).toBeEnabled();
+    await expect(collapse).toBeEnabled();
+
+    const folders = page.locator("[data-zd-asset-tree] details");
+    await expect(folders).not.toHaveCount(0);
+    const allFoldersOpen = () =>
+      folders.evaluateAll((details) =>
+        details.every((detail) => (detail as HTMLDetailsElement).open),
+      );
+    const allFoldersClosed = () =>
+      folders.evaluateAll((details) =>
+        details.every((detail) => !(detail as HTMLDetailsElement).open),
+      );
+
+    await collapse.click();
+    await expect.poll(allFoldersClosed).toBe(true);
+    await expand.click();
+    await expect.poll(allFoldersOpen).toBe(true);
+    assertNoConsoleErrors();
+  });
+
+  test("SPA round trip from the asset index through a viewer and back via Assets", async ({
+    page,
+    assertNoConsoleErrors,
+  }) => {
+    await page.goto("/files/", { waitUntil: "domcontentloaded" });
+    expect(await spaClick(page, "/files/demo.js/")).toBe(true);
+    await expect(page).toHaveURL(/\/files\/demo\.js\/$/);
+    await expect(page.locator("[data-zd-asset-page]")).toBeVisible();
+
+    const assetsCrumb = page.getByRole("link", { name: "Assets", exact: true });
+    await expect(assetsCrumb).toBeVisible();
+    expect(
+      await spaClickSelector(
+        page,
+        'nav[aria-label="Breadcrumb"] a[href="/files/"]',
+      ),
+    ).toBe(true);
+    await expect(page).toHaveURL(/\/files\/$/);
+    await expect(page.locator("[data-zd-asset-index-page]")).toBeVisible();
+    assertNoConsoleErrors();
+  });
 
   test("asset images force ImageEnlarge at DPR 2 and Escape closes the dialog", async ({
     page,

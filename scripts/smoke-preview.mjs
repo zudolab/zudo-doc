@@ -55,6 +55,7 @@ const REQUEST_TIMEOUT_MS = 4_000;
 const checks = [
   { url: "/", status: 200, body: htmlMainNonEmpty },
   { url: "/docs/getting-started/", status: 200, body: htmlMainNonEmpty },
+  { url: "/files/", status: 200, body: htmlMainNonEmpty },
   {
     url: "/docs/changelog/0.1.0",
     status: 301,
