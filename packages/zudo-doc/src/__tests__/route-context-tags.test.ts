@@ -68,6 +68,34 @@ describe("createRouteContext asset manifest normalization", () => {
     expect(ctx.settings.defaultLocaleOnlyPrefixes).toEqual(["/private/", "/files/"]);
     expect(settings.defaultLocaleOnlyPrefixes).toEqual(["/private/"]);
   });
+
+  it("uses the configured viewer prefix when an enabled host omits the manifest", () => {
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      assetViewer: true,
+      assetViewerRoutePrefix: "media/view",
+      trailingSlash: true,
+      defaultLocaleOnlyPrefixes: ["/private/"],
+    };
+    const ctx = createRouteContext(
+      {
+        settings,
+        translations: {},
+        tagVocabulary: [],
+        colorSchemes: null,
+        assetManifest: null,
+      },
+      { stableDocs: () => [] },
+    );
+    expect(ctx.assetManifest).toBeNull();
+    expect(ctx.settings).toBe(settings);
+    expect(ctx.settings.defaultLocaleOnlyPrefixes).toEqual(["/private/"]);
+    expect(ctx.isDefaultLocaleOnlyPath("/media/view/example.svg")).toBe(true);
+    expect(ctx.navHref("/media/view", "ja", undefined, false)).toBe(
+      "/media/view/",
+    );
+    expect(settings.defaultLocaleOnlyPrefixes).toEqual(["/private/"]);
+  });
 });
 
 describe("createRouteContext canonical tag aggregation", () => {

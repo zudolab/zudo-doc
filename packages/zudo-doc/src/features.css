@@ -1140,6 +1140,10 @@ button[data-zd-pending] {
   list-style: none;
 }
 
+[data-zd-asset-tree] :where(li) {
+  margin: 0;
+}
+
 [data-zd-asset-tree] :where(ul) {
   margin-left: var(--spacing-hsp-md);
   padding-left: var(--spacing-hsp-md);

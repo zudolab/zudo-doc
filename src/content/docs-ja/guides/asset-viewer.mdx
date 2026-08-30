@@ -105,13 +105,13 @@ export default defineConfig(
     assetViewer: true,
     assetViewerIndex: true,
     headerNav: [
-      { label: "Files", path: "/files/", versioned: false },
+      { label: "Assets", labelKey: "nav.assets", path: "/files", versioned: false },
     ],
   }),
 );
 ```
 
-`versioned: false` を指定すると、アーカイブ版のプレフィックスを加えず、単一のデフォルトロケールルートを指し続けます。項目の設定全般は [ヘッダーナビゲーション](./header-navigation.mdx#versioned)を参照してください。
+`versioned: false` を指定すると、アーカイブ版のプレフィックスを加えず、単一のデフォルトロケールルートを指し続けます。項目の設定全般は [ヘッダーナビゲーション](./header-navigation.mdx#プロパティ-versioned)を参照してください。
 
 ## MDX から参照する方法
 

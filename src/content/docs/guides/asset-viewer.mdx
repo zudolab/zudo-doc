@@ -105,13 +105,13 @@ export default defineConfig(
     assetViewer: true,
     assetViewerIndex: true,
     headerNav: [
-      { label: "Files", path: "/files/", versioned: false },
+      { label: "Assets", labelKey: "nav.assets", path: "/files", versioned: false },
     ],
   }),
 );
 ```
 
-`versioned: false` keeps the link pointed at the single default-locale route instead of adding an archived-version prefix. See [Header Navigation](./header-navigation.mdx#versioned) for the full item contract.
+`versioned: false` keeps the link pointed at the single default-locale route instead of adding an archived-version prefix. See [Header Navigation](./header-navigation.mdx#properties-versioned) for the full item contract.
 
 ## Author entry points
 

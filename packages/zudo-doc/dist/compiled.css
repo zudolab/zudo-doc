@@ -3471,6 +3471,9 @@ button[data-zd-pending] {
   padding: 0;
   list-style: none;
 }
+[data-zd-asset-tree] :where(li) {
+  margin: 0;
+}
 [data-zd-asset-tree] :where(ul) {
   margin-left: var(--spacing-hsp-md);
   padding-left: var(--spacing-hsp-md);

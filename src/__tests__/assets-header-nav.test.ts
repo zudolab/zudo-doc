@@ -12,16 +12,16 @@ describe("showcase Assets header navigation", () => {
     expect(item?.versioned).toBe(false);
     expect(item).not.toHaveProperty("categoryMatch");
 
-    // The real route payload carries the scanned asset manifest. Its route
-    // context adds the asset prefix to default-locale-only paths, so the
-    // versioned JA mobile menu keeps this link at /files/.
+    // The showcase home-page context is deliberately lightweight and omits
+    // the filesystem-backed manifest. The enabled viewer setting still makes
+    // its route prefix default-locale-only, so the JA menu stays at /files/.
     const context = createRouteContext(
       {
         settings,
         translations,
         tagVocabulary: [],
         colorSchemes: null,
-        assetManifest: { dir: "assets", routePrefix: "files", entries: [], excerpts: {} },
+        assetManifest: null,
       },
       { stableDocs: () => [] },
     );
