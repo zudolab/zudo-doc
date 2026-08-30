@@ -242,6 +242,7 @@ describe("generateZfbConfig — simple boolean feature fields", () => {
     ["sidebarResizer", "sidebarResizer: true"],
     ["sidebarToggle", "sidebarToggle: true"],
     ["imageEnlarge", "imageEnlarge: true"],
+    ["assetViewer", "assetViewer: true"],
     ["dynamicPageTransition", "dynamicPageTransition: true"],
     ["docHistory", "docHistory: true"],
     ["noindex", "noindex: true"],

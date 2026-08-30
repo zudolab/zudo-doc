@@ -204,6 +204,7 @@ const fixtureSettings: PresetSettings = {
   base: "/",
   siteName: "zudo-doc",
   siteDescription: "Documentation base framework.",
+  githubUrl: "https://github.com/zudolab/zudo-doc",
   siteUrl: "https://zudo-doc.takazudomodular.com",
   trailingSlash: true,
   minifyHtml: true,
@@ -229,6 +230,10 @@ const fixtureSettings: PresetSettings = {
   ],
   docHistory: true,
   docHistoryExclude: ["drafts/**"],
+  assetViewer: true,
+  assetViewerDir: "assets",
+  assetViewerRoutePrefix: "files",
+  assetViewerExclude: ["drafts/**"],
   claudeResources: { claudeDir: ".claude" },
   codexResources: { codexDir: ".codex" },
   packageOwnedRoutes: true,
@@ -409,6 +414,17 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       base: "/",
       exclude: ["drafts/**"],
     });
+    expect(byName["@takazudo/zudo-doc/plugins/routes"]).toMatchObject({
+      packageOwnedRoutes: true,
+      assetViewer: true,
+      assetViewerDir: "assets",
+      assetViewerRoutePrefix: "files",
+      assetViewerExclude: ["drafts/**"],
+      docsDir: "src/content/docs",
+      locales: { ja: { dir: "src/content/docs-ja" } },
+      versions: [{ slug: "1.0", docsDir: "src/content/docs-v1" }],
+      githubUrl: "https://github.com/zudolab/zudo-doc",
+    });
     expect(byName["@takazudo/zudo-doc/plugins/search-index"]).toEqual({
       docsDir: "src/content/docs",
       locales: { ja: { dir: "src/content/docs-ja" } },
@@ -478,7 +494,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
 
   it("omits claude-resources / codex-resources / doc-history / llms-txt / changelog when their settings are falsy", () => {
     const r = zudoDocPreset({
-      settings: { ...fixtureSettings, claudeResources: false, codexResources: false, docHistory: false, llmsTxt: false, changelogs: false, packageOwnedRoutes: false },
+      settings: { ...fixtureSettings, claudeResources: false, codexResources: false, docHistory: false, llmsTxt: false, changelogs: false, packageOwnedRoutes: false, assetViewer: false },
       buildDocsSchema: buildFixtureSchema,
       directiveVocabulary: fixtureDirectives,
     });
@@ -490,16 +506,42 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
 
   // ── packageOwnedRoutes gate (Package-First Finale #2356, ADR
   //    route-injection-seam.md Decision 4) — off only when explicitly false.
-  it("omits the routes plugin when packageOwnedRoutes is explicitly false", () => {
+  it("omits the routes plugin when packageOwnedRoutes and assetViewer are explicitly false", () => {
     const r = zudoDocPreset({
-      settings: { ...fixtureSettings, packageOwnedRoutes: false },
+      settings: { ...fixtureSettings, packageOwnedRoutes: false, assetViewer: false },
       buildDocsSchema: buildFixtureSchema,
       directiveVocabulary: fixtureDirectives,
     });
     expect(r.plugins.map((p) => p.name)).not.toContain("@takazudo/zudo-doc/plugins/routes");
   });
 
-  it("adds the routes bare-specifier descriptor only when packageOwnedRoutes is true", () => {
+  it("keeps the routes plugin for assetViewer when packageOwnedRoutes is false", () => {
+    const r = zudoDocPreset({
+      settings: { ...fixtureSettings, packageOwnedRoutes: false, assetViewer: true },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+    const routes = r.plugins.find((p) => p.name === "@takazudo/zudo-doc/plugins/routes");
+    expect(routes?.options).toMatchObject({
+      packageOwnedRoutes: false,
+      assetViewer: true,
+      assetViewerDir: "assets",
+      assetViewerRoutePrefix: "files",
+      assetViewerExclude: ["drafts/**"],
+    });
+  });
+
+  it("omits the routes plugin when packageOwnedRoutes is false and assetViewer is omitted", () => {
+    const { assetViewer: _assetViewer, ...settingsWithoutAssetViewer } = fixtureSettings;
+    const r = zudoDocPreset({
+      settings: { ...settingsWithoutAssetViewer, packageOwnedRoutes: false },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+    expect(r.plugins.map((p) => p.name)).not.toContain("@takazudo/zudo-doc/plugins/routes");
+  });
+
+  it("adds the routes bare-specifier descriptor when packageOwnedRoutes is true", () => {
     const r = zudoDocPreset({
       settings: { ...fixtureSettings, packageOwnedRoutes: true },
       buildDocsSchema: buildFixtureSchema,

@@ -123,7 +123,7 @@ const BAREBONE_MANIFEST = [
   "zfb.config.ts",
 ].sort();
 
-/** All 28 feature values wired to a real (non-pseudo, non-scaffold.ts-only) module. */
+/** All 29 feature values wired to a real (non-pseudo, non-scaffold.ts-only) module. */
 const ALL_FEATURES = [
   "i18n",
   "search",
@@ -146,6 +146,7 @@ const ALL_FEATURES = [
   "tauriDev",
   "footerNavGroup",
   "imageEnlarge",
+  "assetViewer",
   "dynamicPageTransition",
   "footerCopyright",
   "changelog",

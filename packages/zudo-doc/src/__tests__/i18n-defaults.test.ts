@@ -29,6 +29,11 @@ describe("defaultTranslations", () => {
     expect(defaultTranslations.en?.["nav.gettingStarted"]).toBe("Getting Started");
     expect(defaultTranslations.ja?.["nav.gettingStarted"]).toBe("はじめに");
     expect(defaultTranslations.de?.["nav.gettingStarted"]).toBe("Erste Schritte");
+    expect(defaultTranslations.en?.["asset.badge"]).toBe("Asset");
+    expect(defaultTranslations.ja?.["asset.noPreview"]).toBe(
+      "このファイル形式はプレビューできません。ダウンロードしてローカルで開いてください。",
+    );
+    expect(defaultTranslations.de?.["asset.badge"]).toBeUndefined();
   });
 
   it("is a plain serializable Record<string, Record<string, string>> (route-context virtual-module rule)", () => {

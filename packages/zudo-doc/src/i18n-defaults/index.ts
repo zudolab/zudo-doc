@@ -5,8 +5,9 @@
  * `src/config/i18n.ts` `translations` export (epic zudolab/zudo-doc#2651,
  * S4 #2654) so a generated project needs no i18n config file of its own.
  *
- * Locale code → key → translated string. Fully populated for `en`, `ja`, and
- * `de`; the other locales in the generator's `SUPPORTED_LANGS` list
+ * Locale code → key → translated string. The `en` and `ja` tables carry the
+ * complete package surface; `de` remains the documented partial locale. The
+ * other locales in the generator's `SUPPORTED_LANGS` list
  * (zh-cn/zh-tw/ko/es/fr/pt) fall back to `en` at lookup time (the template's
  * `t()` helper does `translations[locale]?.[key] ?? translations[defaultLocale]?.[key] ?? key`)
  * rather than shipping their own fully-translated table here.
@@ -56,6 +57,19 @@ export const defaultTranslations: PresetTranslations = {
     "doc.seeAllTags": "See all tags",
     "doc.created": "Created",
     "doc.updated": "Updated",
+    "asset.badge": "Asset",
+    "asset.crumb": "Assets",
+    "asset.download": "Download",
+    "asset.copy": "Copy",
+    "asset.openRaw": "Open raw",
+    "asset.wrap": "Wrap",
+    "asset.lines": "{count} lines",
+    "asset.linkedFrom": "Linked from",
+    "asset.noPreview":
+      "No preview is available for this file type. Download it and open it locally.",
+    "asset.viewFullFile": "View full file",
+    "asset.showingLines": "Showing {shown} of {total} lines",
+    "asset.truncated": "Preview truncated — download the file for the rest.",
     "doc.noTags": "No tags found.",
     "doc.pageCount": "{count} pages",
     "doc.pageCountSingle": "{count} page",
@@ -121,6 +135,19 @@ export const defaultTranslations: PresetTranslations = {
     "doc.seeAllTags": "すべてのタグを見る",
     "doc.created": "作成",
     "doc.updated": "更新",
+    "asset.badge": "アセット",
+    "asset.crumb": "アセット",
+    "asset.download": "ダウンロード",
+    "asset.copy": "コピー",
+    "asset.openRaw": "ファイルを開く",
+    "asset.wrap": "折り返し",
+    "asset.lines": "{count} 行",
+    "asset.linkedFrom": "リンク元",
+    "asset.noPreview":
+      "このファイル形式はプレビューできません。ダウンロードしてローカルで開いてください。",
+    "asset.viewFullFile": "ファイル全体を見る",
+    "asset.showingLines": "{total} 行中 {shown} 行を表示",
+    "asset.truncated": "プレビューは省略されています。全体はダウンロードしてください。",
     "doc.noTags": "タグが見つかりません。",
     "doc.pageCount": "{count}ページ",
     "doc.pageCountSingle": "{count}ページ",

@@ -122,6 +122,8 @@ export interface PresetSettings {
   /** Favicon links. Same rationale as {@link PresetSettings.logo} — carried
    *  only for `assertNoEmptyStringFaviconOrLogo` (#3474). */
   favicon?: string | FaviconConfig | false;
+  /** GitHub repository URL used by asset backlink metadata. */
+  githubUrl?: string | false;
   siteUrl: string;
   trailingSlash: boolean;
   minifyHtml?: boolean;
@@ -131,6 +133,14 @@ export interface PresetSettings {
   changelogs?: PresetChangelogConfig[] | false;
   docHistory?: boolean;
   docHistoryExclude?: string[];
+  /** Generate package-owned viewer pages for files under the configured asset directory. */
+  assetViewer?: boolean;
+  /** Project-public directory containing viewable assets. */
+  assetViewerDir?: string;
+  /** URL prefix for generated asset viewer pages. */
+  assetViewerRoutePrefix?: string;
+  /** Relative asset glob patterns excluded from viewer generation. */
+  assetViewerExclude?: string[];
   claudeResources?: PresetClaudeResourcesConfig | false;
   codexResources?: PresetCodexResourcesConfig | false;
   /**
@@ -524,6 +534,14 @@ function buildPlugins(
   // Effective value: default-on (#2404 — fixes the silent empty build). An
   // omitted field is treated as `true`; explicit `false` stays the opt-out.
   const effectivePackageOwnedRoutes = settings.packageOwnedRoutes ?? true;
+  // Asset-only consumers still need the routes plugin for the injected files
+  // route, even when they retain host-owned document stubs. Keep this
+  // projection flat and serializable so the route plugin can consume it
+  // without reaching back into the config-evaluation graph.
+  const assetViewer = settings.assetViewer === true;
+  const assetViewerDir = settings.assetViewerDir ?? "assets";
+  const assetViewerRoutePrefix = settings.assetViewerRoutePrefix ?? "files";
+  const assetViewerExclude = settings.assetViewerExclude ?? [];
 
   // Build-time diagnostic (#2405): when packageOwnedRoutes is on but
   // translations/colorSchemes were not passed, emit ONE actionable warning so
@@ -571,7 +589,8 @@ function buildPlugins(
   }
 
   return [
-    // Package-owned route injection — default-on (#2404). The descriptor is a
+    // Package-owned route injection — default-on (#2404), or asset-viewer-only
+    // when requested. The descriptor is a
     // BARE SPECIFIER, never an imported plugin function: the preset's node-free
     // eval-graph guard (preset.test.ts) bundles this module under
     // --platform=neutral, and importing the plugin would drag its
@@ -581,7 +600,7 @@ function buildPlugins(
     // the route catalog from `settings.locales` / `settings.versions`. Listed
     // FIRST so an injected route is registered before the other plugins'
     // preBuild work runs (ordering is cosmetic — injection happens in `setup`).
-    ...(effectivePackageOwnedRoutes
+    ...(effectivePackageOwnedRoutes || assetViewer
       ? [
           {
             name: "@takazudo/zudo-doc/plugins/routes",
@@ -593,6 +612,18 @@ function buildPlugins(
               translations: routeContext.translations ?? {},
               tagVocabulary: routeContext.tagVocabulary ?? [],
               colorSchemes: routeContext.colorSchemes ?? null,
+              // Flat route-plugin projection consumed by the asset viewer and
+              // link graph. Keep only serializable data here; versions retain
+              // their slug/docsDir/locale directory data for link assembly.
+              packageOwnedRoutes: effectivePackageOwnedRoutes,
+              assetViewer,
+              assetViewerDir,
+              assetViewerRoutePrefix,
+              assetViewerExclude,
+              docsDir: settings.docsDir,
+              locales: localeRecord,
+              versions: settings.versions ?? false,
+              githubUrl: settings.githubUrl,
             },
           },
         ]

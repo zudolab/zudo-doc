@@ -59,6 +59,10 @@ export const settings = {
   frontmatterPreview: {} satisfies FrontmatterPreviewConfig as FrontmatterPreviewConfig | false,
   docHistory: true,
   docHistoryExclude: [],
+  assetViewer: true,
+  assetViewerDir: "assets",
+  assetViewerRoutePrefix: "files",
+  assetViewerExclude: [],
   bodyFootUtilArea: {
     docHistory: true,
     viewSourceLink: true,
