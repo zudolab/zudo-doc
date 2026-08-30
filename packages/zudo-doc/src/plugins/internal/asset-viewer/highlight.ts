@@ -20,6 +20,14 @@ export interface SlicedLines {
   truncated: boolean;
 }
 
+export type HighlightCode = (
+  source: string,
+  options: { language: string; mode: "class" },
+) => Promise<{
+  html?: string | null;
+  diagnostics: Array<{ severity: string }>;
+}>;
+
 function escapeHtml(text: string): string {
   return text.replace(
     /[&<>"]/g,
@@ -82,14 +90,12 @@ function plainResult(
   };
 }
 
-/**
- * Render a text asset. The optional WASM peer stays behind this awaited lazy
- * import; callers invoke this function only from the feature-gated asset-body
- * loader.
- */
+/** Render a text asset using the highlighter supplied by the route-only,
+ * feature-gated asset-bodies loader. */
 export async function highlightAsset(
   text: string,
   language: string,
+  highlightCode: HighlightCode,
 ): Promise<HighlightAssetResult> {
   const bytes = byteLength(text);
   if (bytes > MAX_INLINE_BYTES) {
@@ -106,9 +112,6 @@ export async function highlightAsset(
   }
 
   try {
-    const { highlightCode } = await import(
-      "@takazudo/zfb-md-wasm/highlight"
-    );
     const result = await highlightCode(text, { language, mode: "class" });
     const hasError = result.diagnostics.some(
       (diagnostic) => diagnostic.severity === "error",
@@ -204,6 +207,7 @@ export async function renderExcerpt(
   start: number,
   end: number,
   totalLines: number,
+  highlightCode: HighlightCode,
 ): Promise<AssetExcerpt> {
   const normalizedTotal = Number.isFinite(totalLines)
     ? Math.max(0, Math.trunc(totalLines))
@@ -229,7 +233,7 @@ export async function renderExcerpt(
     Math.max(clampedStart, requestedEnd),
   );
   const sliced = sliceLines(text, clampedStart, clampedEnd);
-  const highlighted = await highlightAsset(sliced.text, language);
+  const highlighted = await highlightAsset(sliced.text, language, highlightCode);
 
   return {
     html:

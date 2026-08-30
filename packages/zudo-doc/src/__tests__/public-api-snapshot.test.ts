@@ -145,6 +145,7 @@ describe("package.json exports keyset snapshot", () => {
         "./routes/docs-tags-index",
         "./routes/docs-tags-tag",
         "./routes/docs-versions",
+        "./routes/files-path",
         "./routes/index",
         "./routes/locale-docs-slug",
         "./routes/locale-docs-tags-index",

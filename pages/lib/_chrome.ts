@@ -37,8 +37,10 @@ import { chromeBindings } from "virtual:zudo-doc-chrome-bindings";
 // compat) — the routes plugin always threads it, but the type admits undefined.
 const themePackRegistry =
   (virtualRouteContext as unknown as RouteContextPayload).themePackRegistry ?? null;
+const assetManifest =
+  (virtualRouteContext as unknown as RouteContextPayload).assetManifest ?? null;
 
 export const { HomePageView } = createChrome(
-  { ...routeContext, themePackRegistry },
+  { ...routeContext, themePackRegistry, assetManifest },
   chromeBindings,
 );

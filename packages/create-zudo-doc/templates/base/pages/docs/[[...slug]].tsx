@@ -1,10 +1,8 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
-// Locked manifest (#2653 Decision 4): a SELF-CONTAINED doc-route stub —
-// REQUIRED because the injected DYNAMIC `/docs/[[...slug]]` route 404s in
-// `zfb dev` (real pre-existing gap in zfb's dev-mode dynamic-route rendering,
-// distinct from the `/`-injection gap zfb#1227; empirically confirmed on
-// #2653). This stub reconstructs the doc route from scratch using ONLY the
+// Locked manifest (#2653 Decision 4): a SELF-CONTAINED doc-route stub retained
+// for explicit host route ownership. zfb 2.13.1 also serves injected dynamic
+// routes in dev. This stub reconstructs the doc route from scratch using ONLY the
 // sanctioned package entrypoints — no `pages/lib`, no `@/config`:
 //   1. the `virtual:zudo-doc-route-context` virtual module (serializable
 //      settings/translations/tagVocabulary/colorSchemes payload),

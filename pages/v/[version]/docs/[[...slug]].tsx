@@ -1,9 +1,8 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 // Self-contained doc-route stub (#2653 Decision 4 correction; locked form
-// #2660) — see pages/docs/[[...slug]].tsx for the full rationale (injected
-// DYNAMIC routes 404 in `zfb dev`; this file keeps `pnpm dev` working on
-// `/v/<ver>/docs/...`). Versioned EN docs route: `paths()` enumerates one
+// #2660) — retained as the showcase's explicit host-owned route; zfb 2.13.1
+// also serves the injected dynamic route in dev. Versioned EN docs route: `paths()` enumerates one
 // route per (version, slug) over the `docs-v-${version.slug}` collection.
 //
 // Same three sanctioned package entrypoints as the default-locale stub, plus

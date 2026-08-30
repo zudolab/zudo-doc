@@ -195,4 +195,6 @@ export interface RouteContextPayload<S = Settings> {
    * `createRouteContext` normalizes omission to `null` (feature inert).
    */
   themePackRegistry?: ThemePackRegistry | null;
+  /** Asset-viewer index payload. Omitted by older hosts; omission is inert. */
+  assetManifest?: AssetManifest | null;
 }

@@ -11,6 +11,7 @@ import { buildThemePackRegistry } from "../theme-packs-registry/build-registry.j
 import type { ThemePacksCatalogManifest } from "../theme-packs-registry/build-registry.js";
 import type { HeaderNavItem, LocaleConfig, Settings } from "../settings.js";
 import type {
+  AssetManifest,
   ColorScheme,
   RouteContextPayload,
   TagVocabularyEntry,
@@ -56,6 +57,8 @@ export type RouteContextTranslations = Record<string, Record<string, string>>;
  *   derivation wholesale. Otherwise `catalog` is projected through the shared
  *   `buildThemePackRegistry`; with no catalog, the registry is `null` and the
  *   theme-pack feature is inert.
+ * - `assetManifest`, when supplied, replaces the inert `null` default
+ *   wholesale; its entries and excerpts are never merged.
  */
 export interface CreateRouteContextPayloadInput {
   /** Site title; becomes `settings.siteName`. */
@@ -82,6 +85,8 @@ export interface CreateRouteContextPayloadInput {
   colorSchemes?: Record<string, ColorScheme> | null;
   /** Explicit registry replacement. `null` forces the feature inert. */
   themePackRegistry?: ThemePackRegistry | null;
+  /** Author-facing asset index replacement. `null` forces the feature inert. */
+  assetManifest?: AssetManifest | null;
 }
 
 function mergeTranslations(
@@ -149,5 +154,6 @@ export function createRouteContextPayload(
         ? defaultColorSchemes
         : input.colorSchemes,
     themePackRegistry,
+    assetManifest: input.assetManifest ?? null,
   };
 }

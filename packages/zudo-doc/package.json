@@ -502,6 +502,10 @@
       "types": "./dist/routes/404.d.ts",
       "default": "./dist/routes/404.js"
     },
+    "./routes/files-path": {
+      "types": "./dist/routes/files-path.d.ts",
+      "default": "./dist/routes/files-path.js"
+    },
     "./routes/sitemap.xml": {
       "types": "./dist/routes/sitemap.xml.d.ts",
       "default": "./dist/routes/sitemap.xml.js"

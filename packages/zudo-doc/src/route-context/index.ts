@@ -89,7 +89,19 @@ export function createRouteContext<S extends Settings = Settings>(
   payload: RouteContextPayload<S>,
   options: CreateRouteContextOptions = {},
 ): RouteContext<S> {
-  const settings = payload.settings;
+  const assetManifest = payload.assetManifest ?? null;
+  const assetPrefix = assetManifest === null ? null : `/${assetManifest.routePrefix}/`;
+  const settings = (
+    assetPrefix === null || payload.settings.defaultLocaleOnlyPrefixes.includes(assetPrefix)
+      ? payload.settings
+      : {
+          ...payload.settings,
+          defaultLocaleOnlyPrefixes: [
+            ...payload.settings.defaultLocaleOnlyPrefixes,
+            assetPrefix,
+          ],
+        }
+  ) as S;
   const translations = payload.translations;
   const tagVocabulary = payload.tagVocabulary;
   const colorSchemes = payload.colorSchemes;
@@ -212,6 +224,7 @@ export function createRouteContext<S extends Settings = Settings>(
     settings,
     colorSchemes,
     themePackRegistry,
+    assetManifest,
     i18n,
     defaultLocale,
     locales,
