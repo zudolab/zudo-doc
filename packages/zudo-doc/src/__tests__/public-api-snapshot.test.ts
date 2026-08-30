@@ -42,6 +42,7 @@ describe("package.json exports keyset snapshot", () => {
         ".",
         "./ai-chat-modal",
         "./asset-components",
+        "./asset-page",
         "./asset-path",
         "./auto-logo",
         "./body-foot-util",
@@ -435,6 +436,7 @@ describe("chrome customization public type snapshots", () => {
           "currentVersion",
           "currentSlug",
           "navSection",
+          "hideSidebarToggle",
         ],
         "SidebarSlotProps": [
           "currentSlug",

@@ -103,6 +103,7 @@ export async function buildAssetSnapshot({
     const meta = gitMeta[path];
     const record: AssetRecord = {
       ...entry,
+      sniffOk: probe.sniffOk,
       ...(meta?.createdDate === undefined ? {} : { createdDate: meta.createdDate }),
       ...(meta?.updatedDate === undefined ? {} : { updatedDate: meta.updatedDate }),
       ...(meta?.author === undefined ? {} : { author: meta.author }),
