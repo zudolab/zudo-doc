@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "./fixtures";
+import { attrSource, booleanAttrSource } from "./html-assertions";
 import { spaClick } from "./nav-helpers";
 import { DIST_DIR, readDistFile } from "./smoke-dist-helper";
 
@@ -50,8 +51,18 @@ function stripMarkup(markup: string): string {
     .replace(/&#(?:39|x27);/gi, "'");
 }
 
+function anchorWithHref(html: string, href: string): string {
+  return (
+    html.match(
+      new RegExp(
+        `<a\\b(?=[^>]*${attrSource("href", href)})[^>]*>[\\s\\S]*?<\\/a>`,
+      ),
+    )?.[0] ?? ""
+  );
+}
+
 function excerptMarkup(html: string): string {
-  const lineStart = html.indexOf('data-line="2"');
+  const lineStart = html.search(new RegExp(attrSource("data-line", "2")));
   if (lineStart < 0) return "";
   const sectionStart = html.lastIndexOf("<section", lineStart);
   const sectionEnd = html.indexOf("</section>", lineStart);
@@ -71,15 +82,22 @@ test.describe("Asset viewer: static pages and authoring", () => {
       expect(html, `viewer page missing for ${path}`).toContain("data-zd-asset-page");
       expect(html).toContain("data-zd-wide");
       expect(html).not.toMatch(/<aside\b/i);
-      expect(html).not.toMatch(/data-zd-toc|aria-label="Table of contents"/i);
+      expect(html).not.toMatch(
+        new RegExp(
+          `data-zd-toc|${attrSource("aria-label", "Table of contents")}`,
+          "i",
+        ),
+      );
     }
   });
 
   test("renders full-file line ids without copying gutter numbers into code", () => {
     const html = assetPage("demo.js");
     const markup = codeMarkup(html);
-    expect(markup).toContain('id="L1"');
-    expect(markup.match(/\bid="L\d+"/g)).toHaveLength(6);
+    expect(markup).toMatch(new RegExp(attrSource("id", "L1")));
+    expect(
+      markup.match(/\bid\s*=\s*(?:"L\d+"|'L\d+'|L\d+)(?=[\s>/])/g),
+    ).toHaveLength(6);
     expect(stripMarkup(markup)).toBe(DEMO_SOURCE);
     // The visible gutter is a CSS counter (`.line::before`), so its numbers
     // must never become text inside the copied/highlighted `<code>` element.
@@ -89,10 +107,8 @@ test.describe("Asset viewer: static pages and authoring", () => {
 
   test("decorates an authored asset link with viewer href, icon, and size", () => {
     const html = readDistFile("docs/guides/asset-viewer-test/index.html");
-    const link = html.match(
-      /<a\b(?=[^>]*href="\/files\/demo\.js\/"|[^>]*href='\/files\/demo\.js\/')[^>]*>[\s\S]*?<\/a>/,
-    )?.[0];
-    expect(link).toBeDefined();
+    const link = anchorWithHref(html, "/files/demo.js/");
+    expect(link).toBeTruthy();
     expect(link).toContain("h-icon-sm");
     expect(link).toContain(DEMO_SIZE_LABEL);
   });
@@ -100,15 +116,21 @@ test.describe("Asset viewer: static pages and authoring", () => {
   test("adds download/raw attributes to the viewer and Asset card", () => {
     const viewer = assetPage("demo.js");
     expect(viewer).toMatch(
-      /<a\b(?=[^>]*href="\/assets\/demo\.js"|[^>]*href='\/assets\/demo\.js')[^>]*\bdownload(?:\s*=|\s|>)/,
+      new RegExp(
+        `<a\\b(?=[^>]*${attrSource("href", "/assets/demo.js")})(?=[^>]*${booleanAttrSource("download")})[^>]*>`,
+      ),
     );
     expect(viewer).toMatch(
-      /<a\b(?=[^>]*href="\/assets\/demo\.js"|[^>]*href='\/assets\/demo\.js')[^>]*data-zfb-reload/,
+      new RegExp(
+        `<a\\b(?=[^>]*${attrSource("href", "/assets/demo.js")})(?=[^>]*${booleanAttrSource("data-zfb-reload")})[^>]*>`,
+      ),
     );
 
     const doc = readDistFile("docs/guides/asset-viewer-test/index.html");
     expect(doc).toMatch(
-      /<a\b(?=[^>]*href="\/assets\/bundle\.zip"|[^>]*href='\/assets\/bundle\.zip')[^>]*\bdownload(?:\s*=|\s|>)/,
+      new RegExp(
+        `<a\\b(?=[^>]*${attrSource("href", "/assets/bundle.zip")})(?=[^>]*${booleanAttrSource("download")})[^>]*>`,
+      ),
     );
   });
 
@@ -117,22 +139,28 @@ test.describe("Asset viewer: static pages and authoring", () => {
     const excerpt = excerptMarkup(html);
     expect(excerpt).toBeTruthy();
     for (const line of [2, 3, 4, 5]) {
-      expect(excerpt).toContain(`data-line="${line}"`);
+      expect(excerpt).toMatch(new RegExp(attrSource("data-line", String(line))));
     }
     expect(excerpt).not.toMatch(/\bid\s*=/i);
   });
 
   test("renders a manifest image caption with its viewer link", () => {
     const html = readDistFile("docs/guides/asset-viewer-test/index.html");
-    expect(html).toMatch(
-      /<figcaption\b[\s\S]*?>[\s\S]*?Diagram[\s\S]*?<a\b(?=[^>]*href="\/files\/diagram\.png\/"|[^>]*href='\/files\/diagram\.png\/')[^>]*>[\s\S]*?Open asset page[\s\S]*?<\/a>[\s\S]*?<\/figcaption>/,
+    const caption = html.match(/<figcaption\b[\s\S]*?<\/figcaption>/i)?.[0] ?? "";
+    expect(caption).toContain("Diagram");
+    expect(anchorWithHref(caption, "/files/diagram.png/")).toContain(
+      "Open asset page",
     );
     expect(html).toContain("3200 × 1800");
   });
 
   test("asset image pages carry their own ImageEnlarge island marker", () => {
     const html = assetPage("diagram.png");
-    expect(html.match(/data-zfb-island-skip-ssr="ImageEnlarge"/g)).toHaveLength(1);
+    expect(
+      html.match(
+        new RegExp(attrSource("data-zfb-island-skip-ssr", "ImageEnlarge"), "g"),
+      ),
+    ).toHaveLength(1);
   });
 
   test("keeps generated asset viewer routes out of search, llms, and sitemap indexes", () => {
@@ -147,7 +175,7 @@ test.describe("Asset viewer: static pages and authoring", () => {
 
   test("escapes hostile source as inert code", () => {
     const html = assetPage("evil.js");
-    expect(html).toContain("&lt;/code&gt;&lt;script&gt;alert(1)&lt;/script&gt;");
+    expect(stripMarkup(codeMarkup(html))).toBe(EVIL_SOURCE);
     expect(html).not.toContain("<script>alert(1)</script>");
   });
 });
@@ -241,7 +269,7 @@ test.describe("Asset viewer: browser interactions", () => {
     await page.goto("/files/demo.js/", { waitUntil: "domcontentloaded" });
 
     const rawRequests: string[] = [];
-    page.on("request", (request) => {
+    page.context().on("request", (request) => {
       if (new URL(request.url()).pathname === "/assets/demo.js") {
         rawRequests.push(request.url());
       }
