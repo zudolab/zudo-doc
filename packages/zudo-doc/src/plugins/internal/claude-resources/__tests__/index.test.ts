@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import matter from "gray-matter";
+import { matter } from "../../../../frontmatter/index.js";
 import { runClaudeResourcesPreStep } from "../index.js";
 
 // Exercises the imperative runner `runClaudeResourcesPreStep` — in particular

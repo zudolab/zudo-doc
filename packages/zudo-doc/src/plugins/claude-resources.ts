@@ -8,7 +8,9 @@
 // pulled in a CJS `require("fs")` that esbuild's ESM-only config-loader
 // bundle could not satisfy. Both constraints are now lifted: the package
 // ships compiled `dist/` and the plugin host is plain Node (not an esbuild
-// bundle), so the runner can be imported directly.
+// bundle), so the runner can be imported directly. (gray-matter itself is
+// gone too — frontmatter now goes through the package's own splitter over
+// the maintained `yaml` package, zudolab/zudo-doc#3729.)
 
 import type { ZfbBuildHookContext, ZfbPlugin } from "@takazudo/zfb/plugins";
 import { runClaudeResourcesPreStep } from "./internal/claude-resources/index.js";

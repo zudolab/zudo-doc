@@ -621,6 +621,10 @@
     "./route-context-payload": {
       "types": "./dist/route-context-payload/index.d.ts",
       "default": "./dist/route-context-payload/index.js"
+    },
+    "./frontmatter": {
+      "types": "./dist/frontmatter/index.d.ts",
+      "default": "./dist/frontmatter/index.js"
     }
   },
   "bin": {
@@ -692,12 +696,12 @@
     "@inquirer/prompts": "^8.4.2",
     "esbuild": ">=0.28.1",
     "fs-extra": "^11.3.0",
-    "gray-matter": "^4.0.3",
     "minimist": "^1.2.8",
     "picocolors": "^1.1.1",
     "pluralize": "^8.0.0",
     "smol-toml": "^1.8.0",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@takazudo/zfb": "2.13.1",
