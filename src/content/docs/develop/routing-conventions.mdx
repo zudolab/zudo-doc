@@ -152,10 +152,10 @@ scaffold's `pages/index.tsx` is a one-line re-export of
 `@takazudo/zudo-doc/routes/index`. It provides the home page; it is not an
 example of route shadowing.
 
-The self-contained documentation-route stubs in the scaffold are also not
-optional shadowing examples. Injected dynamic routes currently return 404 in
-`zfb dev`, so the stubs are required to keep `pnpm dev` working for doc pages.
-This is a separate upstream limitation from the `/` injection restriction.
+The self-contained documentation-route stubs in the scaffold are retained as
+explicit host-owned seams, not because injected dynamic routes fail in dev.
+zfb 2.13.1 renders those injected routes in both dev and build. The `/` route
+remains a separate exception because zfb does not permit injecting `/`.
 
 When you customize a doc-route stub that shadows an injected route, it must
 also import `chromeBindings` from `virtual:zudo-doc-chrome-bindings` and pass it

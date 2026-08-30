@@ -28,11 +28,10 @@
  * that the locked manifest's self-contained doc-route stub
  * (`pages/docs/[[...slug]].tsx`) actually builds the doc route, not just the
  * home page. This is a BUILD-time check only. The authoritative `zfb dev`
- * `/docs/*` 200 assertion (proving the stub is required because the
- * package-injected dynamic route 404s in dev mode) lives in #2659's confirm
- * gate (`target-manifest` slow test) — do not duplicate that heavy dev-server
- * probe here, and do not "simplify" this stub away assuming route injection
- * alone covers dev-mode rendering. It does not (#2653).
+ * `/docs/*` 200 assertion lives in #2659's confirm gate
+ * (`target-manifest` slow test) — do not duplicate that heavy dev-server
+ * probe here. Keep this stub as the explicit host-owned route seam even though
+ * zfb 2.13.1 also renders package-injected dynamic routes in dev.
  *
  * ## Tier
  *

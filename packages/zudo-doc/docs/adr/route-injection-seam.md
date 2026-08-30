@@ -155,8 +155,9 @@ while the stubs exist.
   `package.json#exports` entries (append convention).
 - Flag-off ⇒ byte-unchanged build; the node-free preset eval-graph guard stays
   green (descriptor is a bare specifier).
-- Dev rendering of injected routes remains a no-op until the upstream zfb dev
-  pipeline lands; verify package routes via `zfb build`.
+- zfb 2.13.1 renders injected static and dynamic routes in both dev and build.
+  Kept host stubs still win collisions, and `/` remains a separate exception
+  because zfb does not permit injecting the root route.
 
 ### Island registration under injected routes (DocHistory) — #2480
 

@@ -183,9 +183,7 @@ A re-export works here because the static `/` route needs no build-time `paths()
 
 <Note title="Why pages/docs/[[...slug]].tsx exists">
 
-Package route injection renders your doc pages at **build** time, but injected **dynamic** routes currently return 404 in `zfb dev` (`pnpm dev`). To keep the dev authoring loop working, a small self-contained stub ships that reconstructs the doc route from the package's sanctioned entrypoints (`@takazudo/zudo-doc/route-context` + `/chrome` + the `virtual:zudo-doc-route-context` module). It makes `/docs/…` return 200 in both `zfb dev` and `zfb build`.
-
-This is the one interim file in the scaffold that will disappear once the upstream dev-render gap closes ([follow-up #2667](https://github.com/zudolab/zudo-doc/issues/2667)).
+Package route injection renders your doc pages in both **build** and **dev** with zfb 2.13.1. The small self-contained stub remains as an explicit host-owned route seam: it reconstructs the doc route from the package's sanctioned entrypoints (`@takazudo/zudo-doc/route-context` + `/chrome` + the `virtual:zudo-doc-route-context` module) and lets the generated project customize that route while it shadows the package injection. It makes `/docs/…` return 200 in both `zfb dev` and `zfb build`.
 
 </Note>
 
