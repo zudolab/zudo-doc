@@ -42,6 +42,34 @@ describe("createRouteContext theme-pack registry normalization", () => {
   });
 });
 
+describe("createRouteContext asset manifest normalization", () => {
+  it("normalizes omission to null without mutating caller settings", () => {
+    const settings = { ...DEFAULT_SETTINGS, defaultLocaleOnlyPrefixes: [] };
+    const ctx = createRouteContext(
+      { settings, translations: {}, tagVocabulary: [], colorSchemes: null },
+      { stableDocs: () => [] },
+    );
+    expect(ctx.assetManifest).toBeNull();
+    expect(ctx.settings).toBe(settings);
+  });
+
+  it("adds the viewer prefix to a derived settings object exactly once", () => {
+    const settings = { ...DEFAULT_SETTINGS, defaultLocaleOnlyPrefixes: ["/private/"] };
+    const ctx = createRouteContext(
+      {
+        settings,
+        translations: {},
+        tagVocabulary: [],
+        colorSchemes: null,
+        assetManifest: { dir: "assets", routePrefix: "files", entries: [], excerpts: {} },
+      },
+      { stableDocs: () => [] },
+    );
+    expect(ctx.settings.defaultLocaleOnlyPrefixes).toEqual(["/private/", "/files/"]);
+    expect(settings.defaultLocaleOnlyPrefixes).toEqual(["/private/"]);
+  });
+});
+
 describe("createRouteContext canonical tag aggregation", () => {
   it("keeps exact canonical ids and retired ids as separate tag pages", () => {
     const ctx = makeContext();

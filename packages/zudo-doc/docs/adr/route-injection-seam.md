@@ -12,12 +12,11 @@ to let `@takazudo/zudo-doc` **own the doc routes** so a generated project can sh
 an (almost) empty `pages/`, while keeping the current stubs and gating the new
 path behind a dormant flag.
 
-zfb `0.1.0-next.62` provides the mechanism: a plugin's `setup(ctx)` hook exposes
-`ctx.injectRoute(pattern, entrypoint)` (prerendered at BUILD) and
-`ctx.addVirtualModule(specifier, loader)`. `injectRoute` is **build-only** today —
-the dev router only logs injected matches and falls through (upstream
-Takazudo/zudo-front-builder#1227). So injection is gated OFF by default and the
-existing `pages/` stubs stay; with the flag off the build is byte-unchanged.
+zfb provides the mechanism: a plugin's `setup(ctx)` hook exposes
+`ctx.injectRoute(pattern, entrypoint)` and `ctx.addVirtualModule(specifier, loader)`.
+As of zfb 2.13.1, injected static and dynamic routes render in both build and
+dev. User `pages/` files retain precedence when they intentionally shadow an
+injected route.
 
 ## Decisions
 

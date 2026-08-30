@@ -81,6 +81,7 @@ export function makeFakeChromeContext(opts: FakeChromeContextOptions = {}): Chro
     settings,
     colorSchemes: null,
     themePackRegistry: null,
+    assetManifest: null,
     i18n: { defaultLocale: "en", locales: ["en"], getLocaleLabel: (l: string) => l.toUpperCase() },
     defaultLocale: "en",
     locales: ["en"],

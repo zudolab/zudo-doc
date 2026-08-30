@@ -27,7 +27,7 @@ describe("highlightAsset", () => {
   it("awaits class-mode highlighting at the highlight cap boundary", async () => {
     const text = "x".repeat(MAX_HIGHLIGHT_BYTES);
 
-    await expect(highlightAsset(text, "javascript")).resolves.toMatchObject({
+    await expect(highlightAsset(text, "javascript", highlightCode)).resolves.toMatchObject({
       plain: false,
       previewable: true,
       truncated: false,
@@ -56,6 +56,7 @@ describe("highlightAsset", () => {
     const result = await highlightAsset(
       '</code><script data-x="yes">&</script>\nnext',
       "javascript",
+      highlightCode,
     );
 
     expect(result).toEqual({
@@ -69,7 +70,7 @@ describe("highlightAsset", () => {
 
   it("falls back when highlighting rejects", async () => {
     highlightCode.mockRejectedValue(new Error("optional peer unavailable"));
-    await expect(highlightAsset("a\n", "text")).resolves.toEqual({
+    await expect(highlightAsset("a\n", "text", highlightCode)).resolves.toEqual({
       html: '<pre class="hi-root"><code><span class="line">a\n</span></code></pre>',
       plain: true,
       previewable: true,
@@ -92,13 +93,13 @@ describe("highlightAsset", () => {
       ],
     });
 
-    const warning = await highlightAsset(text, "unknown");
+    const warning = await highlightAsset(text, "unknown", highlightCode);
     expect(warning.truncated).toBe(true);
     expect(warning.html?.match(/class="line"/g)).toHaveLength(MAX_PLAIN_LINES);
     expect(warning.html).not.toContain("last");
 
     highlightCode.mockRejectedValueOnce(new Error("missing peer"));
-    const rejection = await highlightAsset(text, "text");
+    const rejection = await highlightAsset(text, "text", highlightCode);
     expect(rejection.truncated).toBe(true);
     expect(rejection.html?.match(/class="line"/g)).toHaveLength(
       MAX_PLAIN_LINES,
@@ -108,14 +109,14 @@ describe("highlightAsset", () => {
 
   it("skips WASM above the highlight cap and truncates plain previews by line", async () => {
     const overCap = `${"x".repeat(MAX_HIGHLIGHT_BYTES)}\n`;
-    const plain = await highlightAsset(overCap, "javascript");
+    const plain = await highlightAsset(overCap, "javascript", highlightCode);
     expect(plain).toMatchObject({ plain: true, previewable: true });
     expect(highlightCode).not.toHaveBeenCalled();
 
     const manyLines = `${"a\n".repeat(MAX_PLAIN_LINES)}${"x".repeat(
       MAX_HIGHLIGHT_BYTES,
     )}\nlast`;
-    const truncated = await highlightAsset(manyLines, "javascript");
+    const truncated = await highlightAsset(manyLines, "javascript", highlightCode);
     expect(truncated.truncated).toBe(true);
     expect(truncated.html?.match(/class="line"/g)).toHaveLength(
       MAX_PLAIN_LINES,
@@ -126,11 +127,11 @@ describe("highlightAsset", () => {
 
   it("keeps the inline boundary previewable and omits the body only above it", async () => {
     const atBoundary = "x".repeat(MAX_INLINE_BYTES);
-    const boundary = await highlightAsset(atBoundary, "text");
+    const boundary = await highlightAsset(atBoundary, "text", highlightCode);
     expect(boundary).toMatchObject({ previewable: true, plain: true });
     expect(boundary.html).not.toBeNull();
 
-    const aboveBoundary = await highlightAsset(`${atBoundary}x`, "text");
+    const aboveBoundary = await highlightAsset(`${atBoundary}x`, "text", highlightCode);
     expect(aboveBoundary).toEqual({
       html: null,
       plain: true,
@@ -158,7 +159,7 @@ describe("line transforms", () => {
 
   it("adds ids to fallback line spans", async () => {
     highlightCode.mockRejectedValue(new Error("missing"));
-    const fallback = await highlightAsset("one\ntwo", "text");
+    const fallback = await highlightAsset("one\ntwo", "text", highlightCode);
     expect(withLineIds(fallback.html!)).toContain(
       '<span class="line" id="L2">two</span>',
     );
@@ -208,7 +209,7 @@ describe("excerpt slicing", () => {
 
   it("uses real data-line offsets and never viewer ids", async () => {
     const text = "one\ntwo\nthree\nfour";
-    const excerpt = await renderExcerpt(text, "javascript", 2, 3, 4);
+    const excerpt = await renderExcerpt(text, "javascript", 2, 3, 4, highlightCode);
 
     expect(excerpt).toMatchObject({
       startLine: 2,

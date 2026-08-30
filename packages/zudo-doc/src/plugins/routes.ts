@@ -4,7 +4,7 @@
 //
 // This plugin lets `@takazudo/zudo-doc` OWN the doc routes so a project can
 // ship an (almost) empty `pages/`. It is added by the preset's `buildPlugins()`
-// ONLY when `settings.packageOwnedRoutes` is true — a bare-specifier descriptor
+// when package-owned docs or the asset viewer needs route injection — a bare-specifier descriptor
 // (`{ name: "@takazudo/zudo-doc/plugins/routes", options }`), never an imported
 // function, so the preset's node-free config eval-graph guard stays green.
 //
@@ -68,10 +68,8 @@
 //      are injected ONCE; the entrypoint's `paths()` enumerates the concrete
 //      values (same as the kept `pages/*.tsx` stubs).
 //
-// Build-only today: zfb `0.1.0-next.62` `injectRoute` prerenders at BUILD; the
-// dev router only logs an injected match and falls through (upstream
-// Takazudo/zudo-front-builder#1227). Verify package routes via `zfb build`, not
-// `zfb dev`. A package route colliding with a kept user `pages/` route is
+// zfb 2.13.1 renders injected static and dynamic routes in both build and dev.
+// A package route colliding with a kept user `pages/` route is
 // dropped silently (user `pages/` wins — Decision 6), so with the stubs present
 // flipping the flag on is a harmless no-op.
 //
@@ -86,6 +84,9 @@ import { loadThemePackRegistry } from "../theme-packs-registry/load-registry.js"
 import { resolveEnabledPacks } from "../theme-packs-registry/index.js";
 import type { ThemePackRegistry } from "../theme-packs-registry/index.js";
 import { derivePagesCandidates } from "./route-pages-candidates.js";
+import { scanAssets } from "./internal/asset-viewer/scan.js";
+import { buildAssetSnapshot } from "./internal/asset-viewer/build.js";
+import type { AssetLinkContentRoot } from "./internal/asset-viewer/link-graph.js";
 
 // ---------------------------------------------------------------------------
 // Options shape (filled by the preset from settings — fully serializable).
@@ -112,6 +113,8 @@ interface RoutesVersionConfig {
 interface RoutesSettings {
   locales?: Record<string, RoutesLocaleConfig>;
   versions?: RoutesVersionConfig[] | false;
+  base?: string;
+  trailingSlash?: boolean;
   docTags?: boolean;
   aiAssistant?: boolean;
   /** See `settings.ts` — whether the interactive Design Token Panel is enabled
@@ -138,6 +141,14 @@ interface RoutesPluginOptions {
   translations: Record<string, Record<string, string>>;
   tagVocabulary: ReadonlyArray<Record<string, unknown>>;
   colorSchemes: Record<string, unknown> | null;
+  packageOwnedRoutes?: boolean;
+  assetViewer?: boolean;
+  assetViewerDir?: string;
+  assetViewerRoutePrefix?: string;
+  assetViewerExclude?: string[];
+  docsDir?: string;
+  locales?: Record<string, { dir?: string }>;
+  versions?: RoutesVersionConfig[] | false;
 }
 
 // ---------------------------------------------------------------------------
@@ -249,12 +260,26 @@ function isExactDefaultReExport(source: string, entrypoint: string): boolean {
  * filenames). Dynamic `[locale]` / `[version]` patterns are emitted ONCE; the
  * entrypoint's `paths()` enumerates the concrete values.
  */
-function deriveRoutes(settings: RoutesSettings): RouteSpec[] {
+function deriveRoutes(
+  settings: RoutesSettings,
+  options: Pick<RoutesPluginOptions, "packageOwnedRoutes" | "assetViewer" | "assetViewerRoutePrefix">,
+): RouteSpec[] {
   const routes: RouteSpec[] = [];
   const localeCodes = Object.keys(settings.locales ?? {});
   const hasVersions = Array.isArray(settings.versions) && settings.versions.length > 0;
   const docTags = settings.docTags === true;
   const aiAssistant = settings.aiAssistant === true;
+
+  if (options.packageOwnedRoutes === false) {
+    if (options.assetViewer === true) {
+      routes.push({
+        pattern: `/${options.assetViewerRoutePrefix ?? "files"}/[[...path]]`,
+        entrypoint: "@takazudo/zudo-doc/routes/files-path",
+        includedInDtpShadowDiagnostic: true,
+      });
+    }
+    return routes;
+  }
 
   // ── Static / always-on ────────────────────────────────────────────────
   // Note: pattern "/" is NOT injected here — zfb 0.1.0-next.62's injectRoute
@@ -306,7 +331,61 @@ function deriveRoutes(settings: RoutesSettings): RouteSpec[] {
     }
   }
 
+  if (options.assetViewer === true) {
+    routes.push({
+      pattern: `/${options.assetViewerRoutePrefix ?? "files"}/[[...path]]`,
+      entrypoint: "@takazudo/zudo-doc/routes/files-path",
+      includedInDtpShadowDiagnostic: true,
+    });
+  }
+
   return routes;
+}
+
+function applyTrailingSlash(path: string, trailingSlash: boolean): string {
+  return trailingSlash && !path.endsWith("/") ? `${path}/` : path;
+}
+
+function withBase(base: string, path: string): string {
+  const prefix = base === "/" ? "" : base.replace(/\/+$/, "");
+  return `${prefix}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+function assetContentRoots(
+  projectRoot: string,
+  options: RoutesPluginOptions,
+  settings: RoutesSettings,
+): AssetLinkContentRoot[] {
+  const base = typeof settings.base === "string" ? settings.base : "/";
+  const trailingSlash = settings.trailingSlash !== false;
+  const roots: AssetLinkContentRoot[] = [];
+  const add = (
+    dir: string | undefined,
+    prefix: string,
+    metadata: Pick<AssetLinkContentRoot, "locale" | "version"> = {},
+  ) => {
+    if (!dir) return;
+    roots.push({
+      dir: join(projectRoot, dir),
+      ...metadata,
+      urlFor: (slug) => applyTrailingSlash(withBase(base, `${prefix}/${slug}`), trailingSlash),
+    });
+  };
+
+  add(options.docsDir, "/docs");
+  for (const [locale, config] of Object.entries(options.locales ?? {})) {
+    add(config.dir, `/${locale}/docs`, { locale });
+  }
+  for (const version of Array.isArray(options.versions) ? options.versions : []) {
+    add(version.docsDir, `/v/${version.slug}/docs`, { version: version.slug });
+    for (const [locale, config] of Object.entries(version.locales ?? {})) {
+      add(config.dir, `/v/${version.slug}/${locale}/docs`, {
+        locale,
+        version: version.slug,
+      });
+    }
+  }
+  return roots;
 }
 
 // ---------------------------------------------------------------------------
@@ -368,7 +447,7 @@ function resolveHostModuleOverride(
 const plugin = definePlugin({
   name: "@takazudo/zudo-doc/plugins/routes",
 
-  setup(ctx: ZfbSetupContext) {
+  async setup(ctx: ZfbSetupContext) {
     const options = ctx.options as unknown as RoutesPluginOptions;
     const settings = options.settings ?? {};
     const translations = options.translations ?? {};
@@ -376,7 +455,7 @@ const plugin = definePlugin({
     const colorSchemes = options.colorSchemes ?? null;
     // Computed once, shared by the shadow diagnostic below (3.5) and the
     // injection loop (4) — both need the same derived catalog.
-    const derivedRoutes = deriveRoutes(settings);
+    const derivedRoutes = deriveRoutes(settings, options);
 
     // (0) Theme-pack registry (ADR docs/adr/theme-packs.md, Decision 2
     // "Registry threading to SSR/islands", #2819). Resolves the shipped
@@ -397,6 +476,99 @@ const plugin = definePlugin({
       { themePack: settings.themePack, themePacks: settings.themePacks },
     );
 
+    const assetViewer = options.assetViewer === true;
+    const assetViewerDir = options.assetViewerDir ?? "assets";
+    const assetViewerRoutePrefix = options.assetViewerRoutePrefix ?? "files";
+    const assetViewerExclude = options.assetViewerExclude ?? [];
+    // `watchFiles` is a fixed registration-time option in zfb, so existing
+    // files require this one lightweight pre-enumeration. The expensive scan
+    // → probe → git → link → highlight snapshot remains loader-lazy below;
+    // preview skips even this enumeration because its loaders are inert.
+    const assetWatchFiles =
+      assetViewer && ctx.command !== "preview"
+        ? (await scanAssets(ctx.projectRoot, assetViewerDir, assetViewerExclude)).map(
+            (path) => join(ctx.projectRoot, "public", assetViewerDir, path),
+          )
+        : [];
+    const contentRoots = assetContentRoots(ctx.projectRoot, options, settings);
+    let snapshotPromise: ReturnType<typeof buildAssetSnapshot> | undefined;
+    type HighlightCode = import("./internal/asset-viewer/highlight.js").HighlightCode;
+    let resolveHighlightCode: ((value: HighlightCode) => void) | undefined;
+    let rejectHighlightCode: ((reason: unknown) => void) | undefined;
+    let highlightCodeReady = false;
+    let highlighterLoadPromise: Promise<void> | undefined;
+    const highlightCodePromise = new Promise<HighlightCode>((resolve, reject) => {
+      resolveHighlightCode = resolve;
+      rejectHighlightCode = reject;
+    });
+    if (assetViewer && assetWatchFiles.length === 0) {
+      highlightCodeReady = true;
+      resolveHighlightCode?.(async () => {
+        throw new Error("[asset-viewer] highlighting requested without an asset file");
+      });
+    }
+    const invokedLoaders = new Set<"context" | "bodies">();
+
+    const getSnapshot = () => {
+      snapshotPromise ??= highlightCodePromise
+        .then((highlightCode) =>
+          buildAssetSnapshot({
+            projectRoot: ctx.projectRoot,
+            dir: assetViewerDir,
+            routePrefix: assetViewerRoutePrefix,
+            exclude: assetViewerExclude,
+            contentRoots,
+            base: typeof settings.base === "string" ? settings.base : "/",
+            trailingSlash: settings.trailingSlash !== false,
+            logger: ctx.logger,
+            highlightCode,
+          }),
+        )
+        .catch((error) => {
+          snapshotPromise = undefined;
+          throw error;
+        });
+      return snapshotPromise;
+    };
+
+    const beginLoader = (name: "context" | "bodies") => {
+      if (invokedLoaders.has(name)) {
+        snapshotPromise = undefined;
+        invokedLoaders.clear();
+      }
+      invokedLoaders.add(name);
+    };
+
+    const assetBodiesLoader = async (trackInvocation = true): Promise<string> => {
+      if (trackInvocation) beginLoader("bodies");
+      if (!assetViewer) return "export default {};\n";
+      if (!highlightCodeReady) {
+        highlighterLoadPromise ??= (async () => {
+          try {
+            const { highlightCode } = await import("@takazudo/zfb-md-wasm/highlight");
+            highlightCodeReady = true;
+            resolveHighlightCode?.(highlightCode);
+          } catch (error) {
+            rejectHighlightCode?.(error);
+            throw error;
+          }
+        })();
+        await highlighterLoadPromise;
+      }
+      const snapshot = await getSnapshot();
+      return `export default ${JSON.stringify(snapshot.records)};\n`;
+    };
+
+    // Register bodies first for a stable module catalog. Some zfb build graphs
+    // request route context before this route-only module; the context loader
+    // invokes this same callback without marking a reload so the optional
+    // import still has exactly one feature-gated owner.
+    ctx.addVirtualModule(
+      "virtual:zudo-doc-asset-bodies",
+      assetBodiesLoader,
+      { watchFiles: assetWatchFiles },
+    );
+
     // (1) Route-context virtual module — SERIALIZABLE DATA ONLY (Decision 1).
     // `JSON.stringify` is the boundary that enforces "no functions / no
     // components": any non-serializable value would silently drop, so the
@@ -404,14 +576,22 @@ const plugin = definePlugin({
     // need is an importable package subpath, NOT carried here.
     ctx.addVirtualModule(
       "virtual:zudo-doc-route-context",
-      () =>
-        `export const routeContext = ${JSON.stringify({
-          settings,
-          translations,
-          tagVocabulary,
-          colorSchemes,
-          themePackRegistry,
-        })};\n`,
+      async () => {
+        beginLoader("context");
+        if (assetViewer && !highlightCodeReady) await assetBodiesLoader(false);
+        const assetManifest = assetViewer ? (await getSnapshot()).manifest : null;
+        return (
+          `export const routeContext = ${JSON.stringify({
+            settings,
+            translations,
+            tagVocabulary,
+            colorSchemes,
+            themePackRegistry,
+            assetManifest,
+          })};\n`
+        );
+      },
+      { watchFiles: assetWatchFiles },
     );
 
     // (2) Chrome-bindings virtual module — the host-callables channel (#2501).
@@ -567,9 +747,9 @@ const plugin = definePlugin({
       }
     }
 
-    // (4) Inject the derived route catalog (Decision 3). Build-only render
-    // today (dev falls through — upstream #1227); precedence drops collisions
-    // with kept user `pages/` routes (Decision 6).
+    // (4) Inject the derived route catalog (Decision 3). zfb 2.13.1 renders
+    // injected dynamic routes in dev and build; precedence still drops
+    // collisions with kept user `pages/` routes (Decision 6).
     //
     // zfb 0.1.0-next.62 resolves the `entrypoint` argument as a filesystem
     // path from the project root — it does NOT resolve bare npm package

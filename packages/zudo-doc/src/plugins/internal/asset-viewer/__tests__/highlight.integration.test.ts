@@ -3,8 +3,9 @@ import { describe, expect, it } from "vitest";
 import { highlightAsset, withLineIds } from "../highlight.js";
 
 let peerAvailable = true;
+let highlightCode: import("../highlight.js").HighlightCode | undefined;
 try {
-  await import("@takazudo/zfb-md-wasm/highlight");
+  highlightCode = (await import("@takazudo/zfb-md-wasm/highlight")).highlightCode;
 } catch {
   peerAvailable = false;
 }
@@ -17,6 +18,7 @@ describe("asset viewer real WASM highlighting", () => {
       const known = await highlightAsset(
         'const answer = "yes";\nconsole.log(answer);',
         "javascript",
+        highlightCode!,
       );
       expect(known.plain).toBe(false);
       expect(known.html).toContain('<pre class="hi-root"><code>');
@@ -24,7 +26,7 @@ describe("asset viewer real WASM highlighting", () => {
       expect(known.html).toContain('class="line"');
       expect(withLineIds(known.html!)).toContain('id="L2"');
 
-      const unknown = await highlightAsset("<tag>&", "not-a-bundled-syntax");
+      const unknown = await highlightAsset("<tag>&", "not-a-bundled-syntax", highlightCode!);
       expect(unknown.plain).toBe(true);
       expect(unknown.html).toBe(
         '<pre class="hi-root"><code><span class="line">&lt;tag&gt;&amp;</span></code></pre>',

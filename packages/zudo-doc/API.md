@@ -261,6 +261,7 @@ reachable from this subpath — through the bundled JS graph OR the transitive
 |---|---|
 | `./routes/index` | Root index route |
 | `./routes/404` | 404 route |
+| `./routes/files-path` | Asset viewer catch-all route (enabled by `assetViewer`) |
 | `./routes/sitemap.xml` | Sitemap XML route |
 | `./routes/robots.txt` | Robots.txt route |
 | `./routes/docs-slug` | Docs slug route |
@@ -285,7 +286,7 @@ reachable from this subpath — through the bundled JS graph OR the transitive
 | `./plugins/search-index` | Search index zfb plugin |
 | `./plugins/claude-resources` | Claude resources generation zfb plugin |
 | `./plugins/codex-resources` | Codex resources generation zfb plugin |
-| `./plugins/routes` | Package-owned route injection zfb plugin. Registers `virtual:zudo-doc-route-context` (serializable data only) and `virtual:zudo-doc-chrome-bindings` (re-export of the host module named by `settings.chromeBindingsModule`, or an empty-object fallback), then injects the derived route catalog |
+| `./plugins/routes` | Package-owned route injection zfb plugin. Registers the serializable route context, route-only asset bodies, and host chrome bindings virtual modules, then injects the enabled doc and asset route catalog |
 
 ### Utilities
 

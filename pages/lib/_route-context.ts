@@ -42,6 +42,9 @@ export const routeContext = createRouteContext(
     // over the top. See ADR docs/adr/theme-packs.md Decision 2 ("a host that
     // builds its own payload must thread the registry itself").
     themePackRegistry: null,
+    // Route-private virtual data is layered in `_chrome.ts`; keeping this
+    // lightweight host context inert preserves direct vitest imports.
+    assetManifest: null,
   },
   { stableDocs },
 );

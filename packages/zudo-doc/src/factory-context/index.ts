@@ -19,6 +19,7 @@ import type { Settings } from "../settings.js";
 // Type-only imports (erased at build — they never enter the runtime/eval graph,
 // so this module stays node-free; the foundation-eval-graph guard covers it).
 import type {
+  AssetManifest,
   ColorScheme,
   RouteContextPayload,
   ThemePackRegistry,
@@ -170,6 +171,8 @@ export interface RouteContext<S = Settings>
   /** Resolved, enabled, ordered theme-pack registry (or `null`) — see
    *  {@link RouteContextPayload.themePackRegistry}. */
   themePackRegistry: ThemePackRegistry | null;
+  /** Author-facing asset index, or `null` when the viewer is disabled. */
+  assetManifest: AssetManifest | null;
   /** The reconstructed i18n surface. */
   i18n: FactoryI18n;
   /** Default locale code (un-prefixed `/docs/...`). */
