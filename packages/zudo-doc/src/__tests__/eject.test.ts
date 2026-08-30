@@ -110,12 +110,13 @@ afterEach(async () => {
 // ── EJECTABLE map ─────────────────────────────────────────────────────────────
 
 describe("EJECTABLE map", () => {
-  it("contains exactly 18 components", () => {
-    expect(Object.keys(EJECTABLE)).toHaveLength(18);
+  it("contains exactly 19 components", () => {
+    expect(Object.keys(EJECTABLE)).toHaveLength(19);
   });
 
   it("includes all required components", () => {
     const required = [
+      "asset-components",
       "header",
       "footer",
       "breadcrumb",
@@ -163,6 +164,7 @@ describe("EJECTABLE map", () => {
       "toc",
     ]);
     expect((byClass.nested ?? []).map(([name]) => name).sort()).toEqual([
+      "asset-components",
       "desktop-sidebar-toggle-island",
       "doc-history",
       "image-enlarge",
@@ -222,6 +224,7 @@ describe("eject() — binding-aware guidance", () => {
   }
 
   const nestedCases = [
+    ["asset-components", "chromeBindings.mdxExtras.Asset"],
     ["theme-toggle", "chromeBindings.headerRightComponents"],
     ["page-loading", "chromeBindings.BodyEndIslands"],
     ["sidebar-tree-island", "chromeBindings.Sidebar"],

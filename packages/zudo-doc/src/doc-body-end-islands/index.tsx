@@ -179,6 +179,8 @@ export interface BodyEndIslandsProps {
    * screen readers announce the chat entrypoint correctly before hydration.
    */
   aiChatBodyLabel?: string;
+  /** Force the ImageEnlarge island for a page-owned enlargeable image. */
+  forceImageEnlarge?: boolean;
 }
 
 /**
@@ -205,6 +207,7 @@ export function createBodyEndIslands(
   function BodyEndIslands({
     basePath,
     aiChatBodyLabel = DEFAULT_AI_CHAT_BODY_LABEL,
+    forceImageEnlarge = false,
   }: BodyEndIslandsProps): JSX.Element {
     // Gated on `settings.aiAssistant` (zudolab/zudo-doc#2058): when off, neither
     // the AiChatModal island marker nor the sr-only "AI Assistant" landmark
@@ -229,7 +232,7 @@ export function createBodyEndIslands(
     // `<dialog class="zd-enlarge-dialog …">` shell so the dist HTML carries one
     // dialog from the start; hydration (when="idle") swaps in the real
     // ImageEnlarge component.
-    const imageEnlarge = settings.imageEnlarge
+    const imageEnlarge = settings.imageEnlarge || forceImageEnlarge
       ? (Island({
           when: "idle",
           ssrFallback: <ImageEnlargeSsrFallback />,

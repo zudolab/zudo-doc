@@ -463,6 +463,12 @@ describe("check-links", () => {
       expect(await resolveLinkDetail("/pj/zudo-doc/docs/foo/", tmpDir, BASE)).toBe("directoryIndex");
     });
 
+    it("treats a slashed extension-bearing directory as a directory index", async () => {
+      mkdirSync(join(tmpDir, "files", "demo", "x.js"), { recursive: true });
+      writeFileSync(join(tmpDir, "files", "demo", "x.js", "index.html"), "");
+      expect(await resolveLinkDetail("/pj/zudo-doc/files/demo/x.js/", tmpDir, BASE)).toBe("directoryIndex");
+    });
+
     it("returns 'file' when resolved via .html extension", async () => {
       mkdirSync(join(tmpDir, "docs"), { recursive: true });
       writeFileSync(join(tmpDir, "docs", "foo.html"), "");
@@ -473,6 +479,12 @@ describe("check-links", () => {
       mkdirSync(join(tmpDir, "_astro"), { recursive: true });
       writeFileSync(join(tmpDir, "_astro", "style.css"), "");
       expect(await resolveLinkDetail("/pj/zudo-doc/_astro/style.css", tmpDir, BASE)).toBe("file");
+    });
+
+    it("keeps an unslashed extension-bearing asset as a file", async () => {
+      mkdirSync(join(tmpDir, "assets", "demo"), { recursive: true });
+      writeFileSync(join(tmpDir, "assets", "demo", "x.js"), "");
+      expect(await resolveLinkDetail("/pj/zudo-doc/assets/demo/x.js", tmpDir, BASE)).toBe("file");
     });
 
     it("returns 'missing' for non-existent paths", async () => {
@@ -775,6 +787,48 @@ describe("check-links", () => {
 
       const { anchors } = await checkHtmlLinksAndTrailing(distDir, tmpDir);
       expect(anchors).toEqual([]);
+    });
+
+    it("validates anchors on slashed extension-bearing viewer directories", async () => {
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(join(distDir, "files", "demo", "x.js"), { recursive: true });
+      writeFileSync(
+        join(distDir, "index.html"),
+        '<a href="/files/demo/x.js/#L12">Source</a>',
+      );
+      writeFileSync(
+        join(distDir, "files", "demo", "x.js", "index.html"),
+        '<span id="L12">line 12</span>',
+      );
+
+      const { broken, anchors } = await checkHtmlLinksAndTrailing(distDir, tmpDir);
+      expect(broken).toEqual([]);
+      expect(anchors).toEqual([]);
+    });
+
+    it("reports a missing anchor on a slashed extension-bearing viewer directory", async () => {
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(join(distDir, "files", "demo", "x.js"), { recursive: true });
+      writeFileSync(
+        join(distDir, "index.html"),
+        '<a href="/files/demo/x.js/#L999">Source</a>',
+      );
+      writeFileSync(
+        join(distDir, "files", "demo", "x.js", "index.html"),
+        '<span id="L12">line 12</span>',
+      );
+
+      const { broken, anchors } = await checkHtmlLinksAndTrailing(distDir, tmpDir);
+      expect(broken).toEqual([]);
+      expect(anchors).toEqual([
+        {
+          file: "dist/index.html",
+          line: 1,
+          href: "/files/demo/x.js/#L999",
+          fragment: "L999",
+          reason: "missing target id",
+        },
+      ]);
     });
 
     it("reports leaf-only and missing anchors with source details", async () => {

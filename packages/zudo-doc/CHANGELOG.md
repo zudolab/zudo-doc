@@ -4,6 +4,13 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.14.0] - 2026-08-30
+
+### Features
+
+- Added the configurable Asset Viewer for files under `public/assets/`, with type-specific viewer pages, raw/download links, linked-from context, and `assetViewerDir`, `assetViewerRoutePrefix`, and `assetViewerExclude` settings. (`45dc50cdb`, `19b8f0599`, `e6e77f790`)
+- Added asset authoring entry points for markdown links, the `Asset` and `AssetCode` components, and image caption links, with URL-safe viewer paths and code excerpts. (`2b74f1da2`, `6f22ebb97`, `b883bff41`)
+
 ## [5.13.1] - 2026-08-28
 
 ### Other Changes

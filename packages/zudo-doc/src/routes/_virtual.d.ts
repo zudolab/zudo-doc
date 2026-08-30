@@ -33,7 +33,13 @@ declare module "virtual:zudo-doc-route-context" {
      *  `docs/adr/theme-packs.md`, Decision 2). `null` when the routes plugin
      *  did not thread one. */
     themePackRegistry: Array<Record<string, unknown>> | null;
+    assetManifest: import("../route-context-payload/types.js").AssetManifest | null;
   };
+}
+
+declare module "virtual:zudo-doc-asset-bodies" {
+  const records: Record<string, unknown>;
+  export default records;
 }
 
 // Ambient typing for the chrome-bindings virtual module emitted by the routes

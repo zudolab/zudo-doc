@@ -23,6 +23,7 @@ import { routeContext } from "virtual:zudo-doc-route-context";
 import type { Settings } from "../settings.js";
 import type { ColorScheme } from "../color-scheme-utils.js";
 import type { ThemePackRegistry } from "../theme-packs-registry/index.js";
+import type { AssetManifest } from "../route-context-payload/types.js";
 import {
   createRouteContext,
   type RouteContextPayload,
@@ -46,6 +47,7 @@ export const colorSchemes: Record<string, ColorScheme> | null = routeCtx.colorSc
 /** Resolved, enabled, ordered theme-pack registry. `null` when the routes
  *  plugin did not thread one (ADR `docs/adr/theme-packs.md`, Decision 2). */
 export const themePackRegistry: ThemePackRegistry | null = routeCtx.themePackRegistry;
+export const assetManifest: AssetManifest | null = routeCtx.assetManifest;
 
 export const {
   i18n,

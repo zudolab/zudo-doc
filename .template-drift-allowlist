@@ -39,7 +39,7 @@
 src/styles/global.css
 
 # scripts/check-links.js
-# reason: generated projects resolve base/trailingSlash/docsDir/locales from zfb.config.ts; the host checker reads src/config/settings.ts.
+# reason: generated projects resolve base/trailingSlash/docsDir/locales from zfb.config.ts while the host checker reads src/config/settings.ts; both intentionally share the same link/anchor resolution, including terminal-slash directories with extension-bearing names.
 scripts/check-links.js
 
 # ── tsconfig.json ───────────────────────────────────────────────────────────
@@ -75,9 +75,10 @@ pages/index.tsx
 # ── pages/docs/[[...slug]].tsx ──────────────────────────────────────────────
 # ── pages/[locale]/docs/[[...slug]].tsx ─────────────────────────────────────
 # Both are self-contained doc-route stubs (#2653 Decision 4; locked form
-# #2660) — REQUIRED because the injected DYNAMIC `/docs/[[...slug]]` route
-# 404s in `zfb dev` (see each file's own header comment for the full
-# rationale). The template's copies use only the sanctioned package
+# #2660) retained as explicit host-owned seams. zfb 2.13.1 renders injected
+# static and dynamic routes in dev and build; see each file's own header
+# comment for the current ownership rationale. The template's copies use only
+# the sanctioned package
 # entrypoints (virtual:zudo-doc-route-context,
 # virtual:zudo-doc-chrome-bindings, @takazudo/zudo-doc/route-context, and
 # @takazudo/zudo-doc/chrome's createChrome). Both template stubs now thread

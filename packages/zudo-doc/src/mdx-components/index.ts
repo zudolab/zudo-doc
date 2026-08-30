@@ -38,7 +38,10 @@
 import { toChildArray } from "preact";
 import type { ComponentChildren, VNode } from "preact";
 import type { Settings } from "../settings.js";
+import type { AssetManifest } from "../route-context-payload/types.js";
 import { defaultComponents } from "../content/index.js";
+import { createContentLink } from "../content/content-link.js";
+import { decodeAuthoredHref, assetViewerHref } from "../asset-path/index.js";
 import { makeAdmonition } from "../content-admonition/index.js";
 import { CodeGroup } from "../code-group/index.js";
 import { Tabs } from "../code-syntax/index.js";
@@ -66,7 +69,12 @@ export interface CreateMdxComponentsOptions {
    * The host's resolved settings object. Read for `base` (img rewrite),
    * `imageEnlarge` (enlargeable-`p`). Only these fields are consumed here.
    */
-  settings: Pick<Settings, "base" | "imageEnlarge">;
+  settings: Pick<
+    Settings,
+    "base" | "imageEnlarge" | "assetViewerDir" | "assetViewerRoutePrefix"
+  >;
+  /** Author-facing asset index. Null/omitted keeps all MDX overrides inert. */
+  assetManifest?: AssetManifest | null;
   /**
    * Active locale for this render. Injected into each `navData` wrapper as the
    * `lang` prop so `/ja` pages resolve the JA collection. Load-bearing — do not
@@ -201,9 +209,9 @@ const ENLARGE_SVG = {
 /**
  * Build the enlarge-aware MDX paragraph override.
  *
- * When `imageEnlarge` is enabled and a paragraph contains exactly one
- * non-whitespace child that is a block-level image VNode (type === the
- * ContentImg override or "img"), this wraps the image in:
+ * When a paragraph contains exactly one non-whitespace child that is a
+ * block-level image VNode (type === the ContentImg override or "img"), this
+ * wraps enlargeable images in:
  *   <figure class="zd-enlargeable">
  *     <img ...>
  *     <button type="button" class="zd-enlarge-btn" hidden aria-label="Enlarge image">
@@ -211,15 +219,25 @@ const ENLARGE_SVG = {
  *     </button>
  *   </figure>
  *
+ * A matching manifest image also receives a figcaption with its authored alt
+ * text, dimensions, and viewer link, whether or not enlargement is enabled.
+ *
  * The `title="no-enlarge"` opt-out is read from the un-rendered VNode (Preact's
  * h() is lazy — child.type is still the ContentImg function, not yet called).
  * ContentImg strips the sentinel from the rendered img DOM.
  *
- * All other paragraphs delegate to defaultComponents.p (ContentParagraph).
+ * Non-image and non-manifest/non-enlargeable paragraphs delegate to
+ * defaultComponents.p (ContentParagraph).
  */
 function makeEnlargeableParagraph(
   imageEnlarge: boolean,
   ContentImg: AnyComponent,
+  assetOptions: {
+    base: string;
+    dir: string;
+    routePrefix: string;
+    manifest: AssetManifest | null;
+  },
 ) {
   return function EnlargeableParagraph(props: {
     children?: ComponentChildren;
@@ -234,7 +252,7 @@ function makeEnlargeableParagraph(
       return true;
     });
 
-    if (imageEnlarge && kids.length === 1) {
+    if (kids.length === 1) {
       const kid = kids[0];
       if (
         kid !== null &&
@@ -245,7 +263,20 @@ function makeEnlargeableParagraph(
         const vnode = kid as VNode<Record<string, unknown>>;
         if (vnode.type === ContentImg || vnode.type === "img") {
           const imgProps = (vnode.props ?? {}) as Record<string, unknown>;
-          if (imgProps.title !== "no-enlarge") {
+          const decoded =
+            typeof imgProps.src === "string"
+              ? decodeAuthoredHref(imgProps.src, {
+                  base: assetOptions.base,
+                  dir: assetOptions.dir,
+                })
+              : null;
+          const imageEntry = decoded
+            ? assetOptions.manifest?.entries.find(
+                (entry) => entry.path === decoded.path && entry.kind === "image",
+              )
+            : undefined;
+          const canEnlarge = imageEnlarge && imgProps.title !== "no-enlarge";
+          if (canEnlarge || imageEntry) {
             const enlargeBtn = {
               type: "button",
               props: {
@@ -258,11 +289,61 @@ function makeEnlargeableParagraph(
               key: null,
               constructor: undefined,
             };
+            const captionText =
+              typeof imgProps.alt === "string" ? imgProps.alt.trim() : "";
+            const dimensions =
+              imageEntry?.width !== undefined && imageEntry.height !== undefined
+                ? ` · ${imageEntry.width} × ${imageEntry.height}`
+                : "";
+            const figcaption = imageEntry
+              ? {
+                  type: "figcaption",
+                  props: {
+                    class:
+                      "mt-vsp-2xs flex flex-wrap items-baseline justify-center gap-x-hsp-xs text-caption text-muted",
+                    children: [
+                      captionText
+                        ? {
+                            type: "span",
+                            props: { children: captionText },
+                            key: null,
+                            constructor: undefined,
+                          }
+                        : null,
+                      captionText
+                        ? {
+                            type: "span",
+                            props: { "aria-hidden": "true", children: "|" },
+                            key: null,
+                            constructor: undefined,
+                          }
+                        : null,
+                      {
+                        type: "a",
+                        props: {
+                          class:
+                            "text-accent hover:underline focus-visible:underline",
+                          href: assetViewerHref({
+                            base: assetOptions.base,
+                            routePrefix: assetOptions.routePrefix,
+                            path: imageEntry.path,
+                          }),
+                          children: `⤢ Open asset page${dimensions}`,
+                        },
+                        key: null,
+                        constructor: undefined,
+                      },
+                    ],
+                  },
+                  key: null,
+                  constructor: undefined,
+                }
+              : null;
             return {
               type: "figure",
               props: {
-                class: "zd-enlargeable",
-                children: [vnode, enlargeBtn],
+                ...(canEnlarge ? { class: "zd-enlargeable" } : {}),
+                children: [vnode, canEnlarge ? enlargeBtn : null, figcaption],
               },
               key: null,
               constructor: undefined,
@@ -288,13 +369,38 @@ function makeEnlargeableParagraph(
 export function createMdxComponents(
   options: CreateMdxComponentsOptions,
 ): Record<string, unknown> {
-  const { settings, locale, currentVersion, currentSlug, navData, extras } = options;
+  const {
+    settings,
+    assetManifest = null,
+    locale,
+    currentVersion,
+    currentSlug,
+    navData,
+    extras,
+  } = options;
 
   const ContentImg = makeContentImg(settings.base);
+  const assetDir = assetManifest?.dir ?? settings.assetViewerDir;
+  const assetRoutePrefix =
+    assetManifest?.routePrefix ?? settings.assetViewerRoutePrefix;
   const EnlargeableParagraph = makeEnlargeableParagraph(
     settings.imageEnlarge,
     ContentImg,
+    {
+      base: settings.base,
+      dir: assetDir,
+      routePrefix: assetRoutePrefix,
+      manifest: assetManifest,
+    },
   );
+  const ManifestAwareContentLink = assetManifest
+    ? createContentLink({
+        base: settings.base,
+        assetManifest,
+        routePrefix: assetRoutePrefix,
+        dir: assetDir,
+      })
+    : defaultComponents.a;
 
   // Locale-bound nav wrappers — inject `lang: locale` so `/ja` resolves the JA
   // collection, and `currentVersion` (#3218) so `/v/{version}` pages resolve
@@ -310,6 +416,9 @@ export function createMdxComponents(
 
   return {
     ...defaultComponents,
+    // Exact manifest matches become decorated viewer links. With no manifest,
+    // retain the public ContentLink component by identity and behavior.
+    a: ManifestAwareContentLink,
     // img override: rewrites root-relative src to include settings.base.
     img: ContentImg,
     // p override: wraps block-level images in <figure class="zd-enlargeable">.

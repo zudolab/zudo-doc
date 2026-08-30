@@ -226,6 +226,10 @@ export const settings = {
   docHistory: true,
   // Generated from project CLAUDE.md / AGENTS.md files; omit these high-churn pages from history capture.
   docHistoryExclude: ["claude-md/**", "codex-agents-md/**"],
+  assetViewer: true,
+  assetViewerDir: "assets",
+  assetViewerRoutePrefix: "files",
+  assetViewerExclude: [],
   bodyFootUtilArea: {
     docHistory: true,
     viewSourceLink: true,

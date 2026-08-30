@@ -36,6 +36,7 @@ const ROUTES_SRC = resolve(__dirname, "../routes-src");
 const REQUIRED_ENTRYPOINTS = [
   "index.tsx",
   "404.tsx",
+  "files-path.tsx",
   "sitemap.xml.tsx",
   "robots.txt.tsx",
   "docs-slug.tsx",

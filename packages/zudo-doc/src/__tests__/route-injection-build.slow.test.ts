@@ -249,6 +249,83 @@ afterAll(() => {
   }
 });
 
+function rewriteFixtureSettings(
+  dir: string,
+  replacements: ReadonlyArray<[string, string]>,
+): void {
+  const file = join(dir, "src/config/settings.ts");
+  let source = readFileSync(file, "utf8");
+  for (const [from, to] of replacements) {
+    if (!source.includes(from)) throw new Error(`fixture setting not found: ${from}`);
+    source = source.replace(from, to);
+  }
+  writeFileSync(file, source);
+}
+
+function expectGeneratedTextExcludesFiles(dir: string): void {
+  for (const output of ["search-index.json", "llms.txt", "sitemap.xml"]) {
+    const file = join(dir, "dist", output);
+    if (existsSync(file)) expect(readFileSync(file, "utf8")).not.toContain("/files/");
+  }
+}
+
+describe("asset viewer injected-route regression", () => {
+  it("builds extension-bearing nested pages, keeps raw assets, and excludes configured files", { timeout: 180_000 }, () => {
+    const dir = setupFixture({ emptyPages: true });
+    rewriteFixtureSettings(dir, [
+      ["assetViewer: false", "assetViewer: true"],
+      ["assetViewerExclude: []", 'assetViewerExclude: ["skip/**"]'],
+    ]);
+    mkdirSync(join(dir, "public", "assets", "img"), { recursive: true });
+    mkdirSync(join(dir, "public", "assets", "skip"), { recursive: true });
+    writeFileSync(join(dir, "public", "assets", "a.js"), "const answer = 42;\n");
+    writeFileSync(
+      join(dir, "public", "assets", "img", "b.svg"),
+      '<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"></svg>\n',
+    );
+    writeFileSync(join(dir, "public", "assets", "skip", "hidden.txt"), "hidden\n");
+
+    runZfbBuild(dir);
+
+    expect(existsSync(join(dir, "dist", "files", "a.js", "index.html"))).toBe(true);
+    expect(existsSync(join(dir, "dist", "files", "img", "b.svg", "index.html"))).toBe(true);
+    expect(readBuiltHtml(dir, "files/a.js/index.html")).toContain("19 bytes");
+    expect(existsSync(join(dir, "dist", "assets", "a.js"))).toBe(true);
+    expect(existsSync(join(dir, "dist", "files", "skip", "hidden.txt", "index.html"))).toBe(false);
+    expectGeneratedTextExcludesFiles(dir);
+  });
+
+  it("supports custom namespaces and asset-only routing under a non-root base", { timeout: 180_000 }, () => {
+    const dir = setupFixture({ emptyPages: true });
+    rewriteFixtureSettings(dir, [
+      ['base: "/"', 'base: "/pj/x/"'],
+      ["assetViewer: false", "assetViewer: true"],
+      ['assetViewerDir: "assets"', 'assetViewerDir: "downloads"'],
+      ['assetViewerRoutePrefix: "files"', 'assetViewerRoutePrefix: "browse"'],
+      ["  packageOwnedRoutes: true", "  packageOwnedRoutes: false"],
+    ]);
+    mkdirSync(join(dir, "public", "downloads"), { recursive: true });
+    writeFileSync(join(dir, "public", "downloads", "a.js"), "export default 1;\n");
+
+    runZfbBuild(dir);
+
+    const html = readBuiltHtml(dir, "browse/a.js/index.html");
+    expect(html).toMatch(/href=(?:"\/pj\/x\/browse\/a\.js\/"|\/pj\/x\/browse\/a\.js\/)/);
+    expect(html).not.toContain("/pj/x/pj/x/");
+    expect(existsSync(join(dir, "dist", "docs", "getting-started", "index.html"))).toBe(false);
+  });
+
+  it("accepts an empty asset directory without emitting viewer pages", { timeout: 180_000 }, () => {
+    const dir = setupFixture({ emptyPages: true });
+    rewriteFixtureSettings(dir, [["assetViewer: false", "assetViewer: true"]]);
+    mkdirSync(join(dir, "public", "assets"), { recursive: true });
+
+    runZfbBuild(dir);
+
+    expect(existsSync(join(dir, "dist", "files"))).toBe(false);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Case A — No-stub: injected routes own the URL (the mandatory case).
 // ---------------------------------------------------------------------------

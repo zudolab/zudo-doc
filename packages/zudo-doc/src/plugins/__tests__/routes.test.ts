@@ -38,14 +38,20 @@ import routesPlugin, { shouldWarnDtpFullyShadowed } from "../routes.js";
  *  `addClientEntry`) — this plugin's `setup()` never touches those.
  *  `warnings` collects every `ctx.logger.warn(...)` call verbatim, for the
  *  DTP shadow-diagnostic coverage below (#3428). */
-function makeCtx(projectRoot: string, settings: Record<string, unknown>) {
+function makeCtx(
+  projectRoot: string,
+  settings: Record<string, unknown>,
+  pluginOptions: Record<string, unknown> = {},
+) {
   const virtualModules = new Map<string, () => string | Promise<string>>();
+  const virtualOptions = new Map<string, { watchFiles?: string[] } | undefined>();
+  const injectedRoutes: Array<{ pattern: string; entrypoint: string }> = [];
   const warnings: string[] = [];
   const ctx = {
     command: "build" as const,
     projectRoot,
     config: {} as never,
-    options: { settings, translations: {}, tagVocabulary: [], colorSchemes: null },
+    options: { settings, translations: {}, tagVocabulary: [], colorSchemes: null, ...pluginOptions },
     logger: {
       info() {},
       warn(msg: string) {
@@ -54,13 +60,20 @@ function makeCtx(projectRoot: string, settings: Record<string, unknown>) {
       error() {},
     },
     addAlias() {},
-    addVirtualModule(specifier: string, loader: () => string | Promise<string>) {
+    addVirtualModule(
+      specifier: string,
+      loader: () => string | Promise<string>,
+      options?: { watchFiles?: string[] },
+    ) {
       virtualModules.set(specifier, loader);
+      virtualOptions.set(specifier, options);
     },
-    injectRoute() {},
+    injectRoute(pattern: string, entrypoint: string) {
+      injectedRoutes.push({ pattern, entrypoint });
+    },
     addClientEntry() {},
   };
-  return { ctx, virtualModules, warnings };
+  return { ctx, virtualModules, virtualOptions, injectedRoutes, warnings };
 }
 
 const tempDirs: string[] = [];
@@ -70,6 +83,7 @@ function makeProjectRoot(): string {
   return dir;
 }
 afterEach(() => {
+  delete process.env.SKIP_DOC_HISTORY;
   for (const dir of tempDirs.splice(0)) {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -79,7 +93,7 @@ afterEach(() => {
  *  a given settings object. Throws if `setup()` throws. */
 async function emittedSource(projectRoot: string, settings: Record<string, unknown>): Promise<string> {
   const { ctx, virtualModules } = makeCtx(projectRoot, settings);
-  routesPlugin.setup!(ctx as never);
+  await routesPlugin.setup!(ctx as never);
   const loader = virtualModules.get("virtual:zudo-doc-design-token-panel-config");
   if (!loader) {
     throw new Error("virtual:zudo-doc-design-token-panel-config was not registered");
@@ -562,5 +576,106 @@ describe("routes plugin — design-token-panel-config specifier is routes-only (
     const source = readFileSync(join(SRC_ROOT, "design-token-panel-bootstrap.tsx"), "utf8");
     expect(source).toContain('from "./design-token-panel-config/index.js"');
     expect(source).not.toContain(`from "${DTP_CONFIG_SPECIFIER}"`);
+  });
+});
+
+describe("routes plugin — asset viewer virtual modules", () => {
+  it("keeps the route-only bodies module out of the generic chrome graph", () => {
+    const importers = collectSourceFiles(SRC_ROOT)
+      .filter((file) =>
+        readFileSync(file, "utf8").includes('from "virtual:zudo-doc-asset-bodies"'),
+      )
+      .map((file) => relative(SRC_ROOT, file).split("\\").join("/"));
+    expect(importers).toEqual(["routes/files-path.tsx"]);
+  });
+
+  it("retains only the asset route when package-owned docs are disabled", async () => {
+    const projectRoot = makeProjectRoot();
+    mkdirSync(join(projectRoot, "public", "assets"), { recursive: true });
+    const { ctx, injectedRoutes } = makeCtx(
+      projectRoot,
+      { base: "/", trailingSlash: true },
+      {
+        packageOwnedRoutes: false,
+        assetViewer: true,
+        assetViewerDir: "assets",
+        assetViewerRoutePrefix: "files",
+        assetViewerExclude: [],
+      },
+    );
+    await routesPlugin.setup!(ctx as never);
+
+    expect(injectedRoutes.map(({ pattern }) => pattern)).toEqual([
+      "/files/[[...path]]",
+    ]);
+  });
+
+  it("emits an empty manifest without waiting for an unreferenced bodies module", async () => {
+    const projectRoot = makeProjectRoot();
+    mkdirSync(join(projectRoot, "public", "assets"), { recursive: true });
+    const { ctx, virtualModules } = makeCtx(
+      projectRoot,
+      { base: "/", trailingSlash: true },
+      {
+        packageOwnedRoutes: true,
+        assetViewer: true,
+        assetViewerDir: "assets",
+        assetViewerRoutePrefix: "files",
+        assetViewerExclude: [],
+      },
+    );
+    await routesPlugin.setup!(ctx as never);
+    const source = await virtualModules.get("virtual:zudo-doc-route-context")!();
+    expect(source).toContain('"entries":[]');
+  });
+
+  it("shares one fresh snapshot and identical absolute file watches across both loaders", async () => {
+    const projectRoot = makeProjectRoot();
+    const assetRoot = join(projectRoot, "public", "assets");
+    mkdirSync(assetRoot, { recursive: true });
+    const assetFile = join(assetRoot, "a.js");
+    writeFileSync(assetFile, "const a = 1;\n");
+    process.env.SKIP_DOC_HISTORY = "1";
+    const { ctx, virtualModules, virtualOptions } = makeCtx(
+      projectRoot,
+      { base: "/", trailingSlash: true },
+      {
+        packageOwnedRoutes: true,
+        assetViewer: true,
+        assetViewerDir: "assets",
+        assetViewerRoutePrefix: "files",
+        assetViewerExclude: [],
+        docsDir: "src/content/docs",
+      },
+    );
+    await routesPlugin.setup!(ctx as never);
+    const bodies = virtualModules.get("virtual:zudo-doc-asset-bodies")!;
+    const context = virtualModules.get("virtual:zudo-doc-route-context")!;
+
+    expect([...virtualModules.keys()].indexOf("virtual:zudo-doc-asset-bodies")).toBeLessThan(
+      [...virtualModules.keys()].indexOf("virtual:zudo-doc-route-context"),
+    );
+
+    expect(virtualOptions.get("virtual:zudo-doc-asset-bodies")?.watchFiles).toEqual([
+      assetFile,
+    ]);
+    expect(virtualOptions.get("virtual:zudo-doc-route-context")?.watchFiles).toEqual([
+      assetFile,
+    ]);
+
+    // zfb may request the generic context before the route-only bodies module.
+    // That order must still seed the highlighter and settle without deadlock.
+    const firstContext = await context();
+    const firstBodies = await bodies();
+    expect(firstContext).toContain('"bytes":13');
+    expect(firstBodies).toContain('"bytes":13');
+
+    writeFileSync(assetFile, "const answer = 42;\n");
+    const [refreshedContext, refreshedBodies] = await Promise.all([
+      context(),
+      bodies(),
+    ]);
+    expect(refreshedBodies).toContain('"bytes":19');
+    expect(refreshedContext).toContain('"bytes":19');
   });
 });

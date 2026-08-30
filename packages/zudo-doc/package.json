@@ -502,6 +502,10 @@
       "types": "./dist/routes/404.d.ts",
       "default": "./dist/routes/404.js"
     },
+    "./routes/files-path": {
+      "types": "./dist/routes/files-path.d.ts",
+      "default": "./dist/routes/files-path.js"
+    },
     "./routes/sitemap.xml": {
       "types": "./dist/routes/sitemap.xml.d.ts",
       "default": "./dist/routes/sitemap.xml.js"
@@ -621,6 +625,18 @@
     "./route-context-payload": {
       "types": "./dist/route-context-payload/index.d.ts",
       "default": "./dist/route-context-payload/index.js"
+    },
+    "./asset-path": {
+      "types": "./dist/asset-path/index.d.ts",
+      "default": "./dist/asset-path/index.js"
+    },
+    "./asset-components": {
+      "types": "./dist/asset-components/index.d.ts",
+      "default": "./dist/asset-components/index.js"
+    },
+    "./asset-page": {
+      "types": "./dist/asset-page/index.d.ts",
+      "default": "./dist/asset-page/index.js"
     },
     "./frontmatter": {
       "types": "./dist/frontmatter/index.d.ts",

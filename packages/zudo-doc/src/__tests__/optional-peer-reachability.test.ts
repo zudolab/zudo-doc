@@ -76,6 +76,9 @@ const ALLOWED_UNCONDITIONAL_OPTIONAL_PEERS = new Set([
 const ROUTE_ENTRYPOINTS = [
   "src/routes/docs-slug.tsx",
   "src/routes/locale-docs-slug.tsx",
+  // Asset bodies load the optional highlighter at build time inside their
+  // feature-gated virtual loader; the route imports only the generated data.
+  "src/routes/files-path.tsx",
 ];
 
 interface EsbuildLike {

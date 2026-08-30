@@ -465,6 +465,38 @@ TOC に含まれる最大見出し深度（2〜4）。
 
 デフォルト: `false`
 
+### assetViewer
+
+`public/<assetViewerDir>/` 配下で対象となる各ファイルに、デフォルトロケールの閲覧ページを生成します。同時に、MDX でアセットリンク、カード、コード抜粋、画像キャプションのリンクを利用できるようにします。
+
+デフォルト: `false`
+
+ディレクトリ構成、閲覧ページの挙動、MDX からの参照方法は [アセットビューアー](./asset-viewer.mdx)を参照してください。
+
+### assetViewerDir
+
+ビューアーで扱うファイルを置く `public/` 配下のディレクトリを指定します。同じ値が、公開ファイルそのものを返す URL のプレフィックスになります。
+
+デフォルト: `"assets"`
+
+安全な相対 URL パスを指定し、`assetViewerRoutePrefix` とは異なる値にする必要があります。
+
+### assetViewerRoutePrefix
+
+生成される閲覧ページの URL プレフィックスを指定します。
+
+デフォルト: `"files"`
+
+デフォルト設定では、`public/assets/guide.pdf` の公開 URL は `/assets/guide.pdf`、閲覧ページは `/files/guide.pdf/` になります。
+
+### assetViewerExclude
+
+アセットディレクトリからの相対パスに glob を適用し、閲覧ページの生成対象から除外します。元のファイルは `public/` に残ります。
+
+型: `string[]` · デフォルト: `[]`
+
+たとえば `["**/*.map", "drafts/**"]` を指定すると、ソースマップとアセットディレクトリ内の `drafts/` 配下を除外できます。
+
 ### findInPage
 
 body-end islands に `FindInPageInit` アイランド（Cmd/Ctrl+F 検索バー）をマウントします。

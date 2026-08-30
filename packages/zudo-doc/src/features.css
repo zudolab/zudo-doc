@@ -9,11 +9,11 @@
  *
  * ── Consumer contract ──────────────────────────────────────────────────────
  * The consumer's @theme MUST define the custom properties consumed below:
- *   --color-{fg,muted,accent,surface,code-bg,code-fg,success,warning,
+ *   --color-{bg,fg,muted,accent,surface,code-bg,code-fg,success,warning,
  *            matched-keyword-bg,matched-keyword-fg}
- *   --spacing-{hsp-sm,hsp-2xs,hsp-lg,hsp-md,hsp-xl,vsp-xs,vsp-2xs,vsp-md,
+ *   --spacing-{hsp-sm,hsp-2xs,hsp-lg,hsp-md,hsp-xl,vsp-xs,vsp-2xs,vsp-md,vsp-lg,
  *              icon-sm}
- *   --z-index-local-1
+ *   --z-index-{local-1,local-2}
  *   --z-index-toolbar
  *   --radius-{DEFAULT,lg}
  *   --font-{mono,sans}
@@ -1048,4 +1048,87 @@ nav[data-zd-toc], div[data-zd-mobile-toc] {
 button[data-zd-pending] {
   opacity: 0.7;
   pointer-events: none;
+}
+
+/* ======== Asset viewer ======== */
+
+.zd-asset-page .zd-asset-code {
+  counter-reset: line;
+}
+
+.zd-asset-page .zd-asset-code .line {
+  display: block;
+  width: 100%;
+}
+
+.zd-asset-page .zd-asset-code .line::before {
+  counter-increment: line;
+  content: counter(line);
+  display: inline-block;
+  box-sizing: border-box;
+  width: var(--zd-asset-gutter, 4ch);
+  padding-right: var(--spacing-hsp-lg);
+  color: var(--color-muted);
+  text-align: right;
+  user-select: none;
+}
+
+.zd-asset-page .zd-asset-code .line:target {
+  background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+
+.zd-asset-page .zd-asset-filebar {
+  position: sticky;
+  /* Match Header's fixed h-[3.5rem]; --zd-header-h intentionally includes
+   * extra clearance for in-page anchor scrolling. */
+  top: 3.5rem;
+  z-index: var(--z-index-local-2);
+}
+
+.zd-asset-page .zd-asset-code + .code-buttons {
+  display: none;
+}
+
+.zd-asset-page .zd-asset-stage.is-checker {
+  background-color: var(--color-bg);
+  background-image:
+    linear-gradient(45deg, color-mix(in srgb, var(--color-muted) 10%, var(--color-bg)) 25%, transparent 25%),
+    linear-gradient(-45deg, color-mix(in srgb, var(--color-muted) 10%, var(--color-bg)) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, color-mix(in srgb, var(--color-muted) 10%, var(--color-bg)) 75%),
+    linear-gradient(-45deg, transparent 75%, color-mix(in srgb, var(--color-muted) 10%, var(--color-bg)) 75%);
+  background-position: 0 0, 0 var(--spacing-hsp-sm), var(--spacing-hsp-sm) calc(-1 * var(--spacing-hsp-sm)), calc(-1 * var(--spacing-hsp-sm)) 0;
+  background-size: calc(2 * var(--spacing-hsp-sm)) calc(2 * var(--spacing-hsp-sm));
+}
+
+.zd-asset-page .zd-asset-stage.is-dark {
+  background: var(--color-code-bg);
+}
+
+.zd-asset-page .zd-asset-stage.is-1to1 img {
+  max-width: none;
+}
+
+.zd-asset-page .zd-asset-media-grid {
+  display: grid;
+  gap: var(--spacing-vsp-lg);
+}
+
+.zd-asset-page .zd-asset-media-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: var(--spacing-vsp-md);
+}
+
+.zd-asset-page .zd-asset-media-rail > * {
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .zd-asset-page .zd-asset-media-grid {
+    grid-template-columns: minmax(0, 1fr) 20rem;
+    align-items: start;
+  }
+
 }

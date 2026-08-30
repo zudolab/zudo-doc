@@ -18,7 +18,7 @@ New snapshot guards (added in `packages/zudo-doc/src/__tests__/public-api-snapsh
 
 ---
 
-## 1. Subpath Exports (149 total)
+## 1. Subpath Exports (161 total)
 
 The full `package.json#exports` keyset is the contract. Any addition or removal requires a deliberate, reviewed change that will fail the snapshot guard.
 
@@ -36,6 +36,7 @@ The full `package.json#exports` keyset is the contract. Any addition or removal 
 | `./chrome` | `createChrome(context, hostBindings?)` — assembles a `ChromeContext` from a `RouteContext` + `ChromeHostBindings` (stub defaults) and wires all page-chrome factories; returns the `Chrome` surface |
 | `./eject` | `EJECTABLE` map + `eject()` function + `ZudoDocJson` type — ejectable component registry for the `zudo-doc eject` CLI |
 | `./eject-logo` | `ejectLogo()` + config-rewrite/site-name-resolution types — implementation behind the `zudo-doc eject logo` CLI (issue #3050). Not registered in `EJECTABLE` — it renders a fresh SVG and rewrites a config field rather than copying source, so the bin special-cases `eject logo` ahead of the `EJECTABLE` lookup. |
+| `./asset-components` | SSR-only asset authoring factories: `createAssetCard()` for `<Asset>` cards and `createAssetCode()` for requested manifest excerpts. |
 | `./theme-cli` | `listThemePacks()` / `formatThemeList()` / `applyThemePack()` + config-rewrite/provenance types — implementation behind the `zudo-doc theme list\|apply <slug>` CLI (issue #2824) |
 | `./component-tokens` | `COMPONENT_TOKENS` const + `ComponentToken` / `ComponentTokenCategory` / `ComponentTokenName` types — the `--zdc-*` component-level CSS custom property registry. Consumers read this to discover every rebrand knob; redefine the listed `cssVar`s in `:root` to override defaults. **Snapshot-guarded** (`component-tokens-snapshot.test.ts`). |
 
@@ -261,6 +262,7 @@ reachable from this subpath — through the bundled JS graph OR the transitive
 |---|---|
 | `./routes/index` | Root index route |
 | `./routes/404` | 404 route |
+| `./routes/files-path` | Asset viewer catch-all route (enabled by `assetViewer`) |
 | `./routes/sitemap.xml` | Sitemap XML route |
 | `./routes/robots.txt` | Robots.txt route |
 | `./routes/docs-slug` | Docs slug route |
@@ -285,12 +287,14 @@ reachable from this subpath — through the bundled JS graph OR the transitive
 | `./plugins/search-index` | Search index zfb plugin |
 | `./plugins/claude-resources` | Claude resources generation zfb plugin |
 | `./plugins/codex-resources` | Codex resources generation zfb plugin |
-| `./plugins/routes` | Package-owned route injection zfb plugin. Registers `virtual:zudo-doc-route-context` (serializable data only) and `virtual:zudo-doc-chrome-bindings` (re-export of the host module named by `settings.chromeBindingsModule`, or an empty-object fallback), then injects the derived route catalog |
+| `./plugins/routes` | Package-owned route injection zfb plugin. Registers the serializable route context, route-only asset bodies, and host chrome bindings virtual modules, then injects the enabled doc and asset route catalog |
 
 ### Utilities
 
 | Subpath | Description |
 |---|---|
+| `./asset-page` | `createAssetPageView(ctx)` and the SSR asset-viewer components for code, image, video, PDF, and download-only files. |
+| `./asset-path` | Browser-safe canonical asset path validation, segment-wise URL encoding/decoding, viewer/raw href builders, asset-viewer settings validation, and the dependency-free asset exclude-glob matcher. |
 | `./content` | MDX content rendering utilities |
 | `./mdx-components` | MDX component map |
 | `./metainfo` | Page metainfo utilities |
@@ -511,7 +515,7 @@ Defined in `packages/zudo-doc/src/doclayout/anchors.ts` and exported via `./docl
 
 ---
 
-## 5. Ejectable Component List (18)
+## 5. Ejectable Component List (19)
 
 The eject surface exposed by `zudo-doc eject <component>`. Defined in `packages/zudo-doc/src/eject/index.ts` (exported as `@takazudo/zudo-doc/eject`; `EJECTABLE` map). Source files are shipped in the package's `eject/` directory.
 
@@ -519,6 +523,7 @@ The eject surface exposed by `zudo-doc eject <component>`. Defined in `packages/
 
 | CLI name | Package subpath | Default local destination |
 |---|---|---|
+| `asset-components` | `@takazudo/zudo-doc/asset-components` | `src/components/zudo-doc/asset-components` |
 | `header` | `@takazudo/zudo-doc/header` | `src/components/zudo-doc/header` |
 | `footer` | `@takazudo/zudo-doc/footer` | `src/components/zudo-doc/footer` |
 | `breadcrumb` | `@takazudo/zudo-doc/breadcrumb` | `src/components/zudo-doc/breadcrumb` |

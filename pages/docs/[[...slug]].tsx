@@ -1,12 +1,8 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
-// Self-contained doc-route stub (#2653 Decision 4 correction; locked form
-// #2660) — REQUIRED because the injected DYNAMIC `/docs/[[...slug]]` route
-// 404s in `zfb dev` (a real pre-existing gap in zfb's dev-mode dynamic-route
-// rendering, distinct from the `/`-injection gap zfb#1227; empirically
-// confirmed on #2653). Deleting this file in favor of package-route injection
-// (the original work-item-2 plan) would build fine but break `pnpm dev` on
-// every doc page — so it stays, migrated to this self-contained shape instead.
+// Self-contained doc-route stub (#2653/#2660), retained as the showcase's
+// explicit host-owned route. zfb 2.13.1 now serves injected dynamic routes in
+// dev as well as build; downstream projects do not need a stub for that reason.
 //
 // Reconstructs the doc route from scratch using the three sanctioned package
 // entrypoints — no `pages/lib`, no `@/config`:

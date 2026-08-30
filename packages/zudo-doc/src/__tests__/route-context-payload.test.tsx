@@ -92,6 +92,12 @@ describe("createRouteContextPayload", () => {
       settings: { base: "/preview/", siteDescription: "settings wins" },
       tagVocabulary: [{ id: "browser" }],
       colorSchemes: customSchemes,
+      assetManifest: {
+        dir: "assets",
+        routePrefix: "files",
+        entries: [],
+        excerpts: {},
+      },
     });
 
     expect(payload.settings).toMatchObject({
@@ -113,6 +119,7 @@ describe("createRouteContextPayload", () => {
     expect(payload.themePackRegistry?.map((entry) => entry.slug)).toEqual([
       "default",
     ]);
+    expect(payload.assetManifest?.routePrefix).toBe("files");
   });
 
   it("defaults package data and makes a missing or explicitly null registry inert", () => {
@@ -127,7 +134,9 @@ describe("createRouteContextPayload", () => {
     expect(omitted.translations.en?.["nav.next"]).toBe("Next");
     expect(omitted.colorSchemes).toHaveProperty("Default Dark");
     expect(omitted.themePackRegistry).toBeNull();
+    expect(omitted.assetManifest).toBeNull();
     expect(explicit.themePackRegistry).toBeNull();
+    expect(explicit.assetManifest).toBeNull();
   });
 
   it("is accepted by createRouteContext with caller stableDocs and renders a page to string", () => {

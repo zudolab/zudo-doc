@@ -138,6 +138,52 @@ describe("zudoDoc() default-merge semantics", () => {
     ).not.toThrow();
   });
 
+  describe("asset viewer path settings", () => {
+    it("uses the documented asset viewer defaults", () => {
+      const options = routesOptions(zudoDoc({}));
+      expect(DEFAULT_SETTINGS.assetViewer).toBe(false);
+      expect(DEFAULT_SETTINGS.assetViewerDir).toBe("assets");
+      expect(DEFAULT_SETTINGS.assetViewerRoutePrefix).toBe("files");
+      expect(DEFAULT_SETTINGS.assetViewerExclude).toEqual([]);
+      expect(options).toMatchObject({
+        assetViewer: false,
+        assetViewerDir: "assets",
+        assetViewerRoutePrefix: "files",
+        assetViewerExclude: [],
+      });
+    });
+
+    it("rejects colliding asset and viewer route prefixes", () => {
+      expect(() =>
+        zudoDoc({ assetViewerDir: "x", assetViewerRoutePrefix: "x" }),
+      ).toThrow(/assetViewerDir and assetViewerRoutePrefix must differ/);
+    });
+
+    it.each([
+      ["", "files"],
+      ["/assets", "files"],
+      ["assets/", "files"],
+      ["assets", "files/"],
+      ["assets/../private", "files"],
+      ["assets", "files/../private"],
+      ["assets\\files", "files"],
+      ["assets/client", "files"],
+    ])("rejects invalid asset viewer path pair %j", (assetDir, routePrefix) => {
+      expect(() =>
+        zudoDoc({ assetViewerDir: assetDir, assetViewerRoutePrefix: routePrefix }),
+      ).toThrow(/assetViewerDir|assetViewerRoutePrefix/);
+    });
+
+    it("accepts relative single- and multi-segment asset viewer paths", () => {
+      expect(() =>
+        zudoDoc({ assetViewerDir: "public-assets/source", assetViewerRoutePrefix: "files" }),
+      ).not.toThrow();
+      expect(() =>
+        zudoDoc({ assetViewerDir: "assets", assetViewerRoutePrefix: "reference/files" }),
+      ).not.toThrow();
+    });
+  });
+
   // #3471: an empty-string href resolves to the CURRENT document per the
   // HTML spec, so `favicon: ""` silently makes every page fetch its own HTML
   // as a "favicon", and `logo: ""` renders a CSS mask of an empty path.

@@ -142,7 +142,7 @@ export interface DocLayoutWithDefaultsProps
   // ---- override slots -----------------------------------------------
   /** Replace the default site header. */
   headerOverride?: ComponentChildren;
-  /** Replace the default sidebar contents. */
+  /** Replace the default sidebar contents; pass `false` to omit its landmark entirely. */
   sidebarOverride?: ComponentChildren;
   /** Replace the default desktop TOC. */
   tocOverride?: ComponentChildren;
@@ -381,10 +381,12 @@ export function DocLayoutWithDefaults(
           // pass it through `sidebarOverride` and apply their own
           // `<Island>` wrap (see `pages/lib/_sidebar-with-defaults.tsx`
           // in the host project).
-          sidebarOverride ?? (Island({
-            when: "load",
-            children: <Sidebar nodes={[]} />,
-          }) as unknown as JSX.Element)
+          sidebarOverride === false
+            ? undefined
+            : sidebarOverride ?? (Island({
+              when: "load",
+              children: <Sidebar nodes={[]} />,
+            }) as unknown as JSX.Element)
         }
         toc={tocOverride ?? defaultToc}
         mobileToc={mobileTocOverride ?? defaultMobileToc}

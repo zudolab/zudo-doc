@@ -33,6 +33,7 @@ try {
 const required = [
   'declare module "virtual:zudo-doc-route-context"',
   'declare module "virtual:zudo-doc-chrome-bindings"',
+  'declare module "virtual:zudo-doc-asset-bodies"',
   'import("@takazudo/zudo-doc/factory-context")',
 ];
 for (const needle of required) {

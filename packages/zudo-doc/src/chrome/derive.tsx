@@ -78,6 +78,7 @@ import { createThemePackSwitcherIsland } from "../doc-body-end-islands/theme-pac
 import { DEFAULT_THEME_PACK_SLUG } from "../theme-pack-switcher/theme-pack-sync.js";
 import { SearchWidget } from "../search-widget/index.js";
 import { createMdxComponents } from "../mdx-components/index.js";
+import { createAssetCard, createAssetCode } from "../asset-components/index.js";
 import { createCategoryNavWrapper } from "../category-nav/index.js";
 import { createNoteTrayIndexWrapper } from "../note-tray-index/index.js";
 import { createCategoryTreeNavWrapper } from "../category-tree-nav/index.js";
@@ -431,15 +432,39 @@ export function deriveBodyEndIslands(ctx: ChromeContext) {
     ...themePackSwitcherDeps,
     pendingUntilHydrated: true,
   });
-  type BodyEndIslandsProps = { basePath: string; aiChatBodyLabel?: string };
+  type BodyEndIslandsProps = {
+    basePath: string;
+    aiChatBodyLabel?: string;
+    forceImageEnlarge?: boolean;
+  };
   const HostBodyEnd = HostBodyEndIslands as unknown as (
     props: BodyEndIslandsProps,
   ) => JSX.Element;
 
   function BodyEndIslands(props: BodyEndIslandsProps): JSX.Element {
+    const addsForcedImageEnlarge =
+      props.forceImageEnlarge === true && !ctx.settings.imageEnlarge;
+    const ForceImageEnlarge =
+      addsForcedImageEnlarge
+        ? createBodyEndIslands({
+            settings: {
+              aiAssistant: false,
+              imageEnlarge: true,
+              mermaid: false,
+              dynamicPageTransition: false,
+              designTokenPanel: false,
+              findInPage: false,
+              themePackSwitcher: false,
+            },
+          })
+        : null;
     return (
       <>
-        <HostBodyEnd {...props} />
+        <HostBodyEnd
+          {...props}
+          forceImageEnlarge={addsForcedImageEnlarge ? false : props.forceImageEnlarge}
+        />
+        {ForceImageEnlarge ? <ForceImageEnlarge basePath={props.basePath} /> : null}
         <DesignTokenPanelIsland />
         <ThemePackSwitcherIsland />
       </>
@@ -627,24 +652,43 @@ export function deriveMdxComponents(ctx: ChromeContext) {
     }) as JSX.Element;
   }
 
-  // Package-default MDX extras; host-supplied `mdxExtras` override per-key.
-  const mdxExtrasDefault: Record<string, unknown> = {
-    Details: Details as never,
-    HtmlPreview: HtmlPreviewBound as never,
-    Island: IslandPassthrough as never,
-    // PresetGenerator stays a package stub (render nothing): it is the
-    // showcase's project-bound interactive island; downstream projects stub it.
-    PresetGenerator: (_props: unknown) => null,
+  const assetComponentContext = {
+    base: ctx.settings.base,
+    assetManifest: ctx.assetManifest,
+    routePrefix:
+      ctx.assetManifest?.routePrefix ?? ctx.settings.assetViewerRoutePrefix,
+    dir: ctx.assetManifest?.dir ?? ctx.settings.assetViewerDir,
   };
-  const mdxExtras = { ...mdxExtrasDefault, ...(ctx.hostBindings.mdxExtras ?? {}) };
 
   function createMdxComponentsBound(
     lang: string = ctx.defaultLocale,
     currentVersion?: string,
     currentSlug = "",
   ) {
+    // Asset authoring components are locale-bound at the same point as the
+    // surrounding MDX map. Host-supplied `mdxExtras` still override per-key.
+    const localizedAssetContext = {
+      ...assetComponentContext,
+      t: (key: string) => ctx.t(key, lang),
+    };
+    const mdxExtrasDefault: Record<string, unknown> = {
+      Asset: createAssetCard(localizedAssetContext) as never,
+      AssetCode: createAssetCode(localizedAssetContext) as never,
+      Details: Details as never,
+      HtmlPreview: HtmlPreviewBound as never,
+      Island: IslandPassthrough as never,
+      // PresetGenerator stays a package stub (render nothing): it is the
+      // showcase's project-bound interactive island; downstream projects stub it.
+      PresetGenerator: (_props: unknown) => null,
+    };
+    const mdxExtras = {
+      ...mdxExtrasDefault,
+      ...(ctx.hostBindings.mdxExtras ?? {}),
+    };
+
     return createMdxComponents({
       settings: ctx.settings,
+      assetManifest: ctx.assetManifest,
       locale: lang,
       currentVersion,
       currentSlug,

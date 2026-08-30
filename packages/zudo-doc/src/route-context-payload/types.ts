@@ -139,6 +139,45 @@ export interface ThemePackRegistryEntry {
 /** The full bundled registry, or an enabled ordered subset of it. */
 export type ThemePackRegistry = ThemePackRegistryEntry[];
 
+/** Preview/rendering category inferred from an asset's extension and bytes. */
+export type AssetKind = "code" | "text" | "image" | "video" | "pdf" | "other";
+
+/** Browser-facing metadata for one scanned public asset. */
+export interface AssetIndexEntry {
+  path: string;
+  name: string;
+  /** POSIX parent path relative to the asset root; empty for root files. */
+  dir: string;
+  kind: AssetKind;
+  mime: string;
+  language?: string;
+  bytes: number;
+  lines?: number;
+  width?: number;
+  height?: number;
+  durationSec?: number;
+  description?: string;
+}
+
+/** Highlighted, line-addressed excerpt embedded in the route manifest. */
+export interface AssetExcerpt {
+  html: string;
+  startLine: number;
+  endLine: number;
+  totalLines: number;
+  truncated: boolean;
+  /** Whether the full viewer body contains an anchor for `startLine`. */
+  viewerLineAvailable: boolean;
+}
+
+/** Serializable index plus requested excerpts consumed by asset routes. */
+export interface AssetManifest {
+  dir: string;
+  routePrefix: string;
+  entries: AssetIndexEntry[];
+  excerpts: Record<string, AssetExcerpt>;
+}
+
 /**
  * Serializable data carried by `virtual:zudo-doc-route-context`.
  * `createRouteContext` reconstructs all runtime callables from this payload.
@@ -158,4 +197,6 @@ export interface RouteContextPayload<S = Settings> {
    * `createRouteContext` normalizes omission to `null` (feature inert).
    */
   themePackRegistry?: ThemePackRegistry | null;
+  /** Asset-viewer index payload. Omitted by older hosts; omission is inert. */
+  assetManifest?: AssetManifest | null;
 }

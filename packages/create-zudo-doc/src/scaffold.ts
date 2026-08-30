@@ -955,7 +955,7 @@ function generatePackageJson(choices: UserChoices) {
     // packages/zudo-doc/docs/adr/route-injection-seam.md.
     "@takazudo/zdtp": "0.4.14",
     // (@takazudo/zudo-doc-history-server is NOT here — it is gated on the
-    // docHistory feature, see the block below. It was briefly unconditional
+    // docHistory or assetViewer features, see the block below. It was briefly unconditional
     // (#3080) to work around doc-history-area importing its `/exclude` subpath
     // at module scope; that root cause was fixed in #3110 by moving
     // compileExclude into @takazudo/zudo-doc itself, so the workaround is gone
@@ -984,26 +984,29 @@ function generatePackageJson(choices: UserChoices) {
   // search-widget script (custom word-match scorer) — no third-party search
   // engine dependency is needed here. Do not re-add minisearch/pagefind.
 
-  if (choices.features.includes("docHistory")) {
+  if (
+    choices.features.includes("docHistory") ||
+    choices.features.includes("assetViewer")
+  ) {
     // (`diff` remains an unconditional base dep — see the `deps` block above:
     // packageOwnedRoutes always bundles the doc-history-area path, whose
     // module-scope `diff` import is pulled in regardless of this flag. #2342.)
     //
-    // @takazudo/zudo-doc-history-server is gated HERE, on the feature, because
-    // that is the only graph that actually reaches it: the zfb plugin
-    // (@takazudo/zudo-doc/plugins/doc-history) eagerly imports
-    // @takazudo/zudo-doc-history-server/git-history at plugin-init time, and the
-    // plugin is only wired when docHistory is on (W8A #1739). It is an optional
-    // peerDependency of @takazudo/zudo-doc and pnpm does not auto-install peers,
-    // so a docHistory-ON project must declare it directly. The pin stays lockstep
+    // @takazudo/zudo-doc-history-server is gated HERE because docHistory and
+    // assetViewer are the only feature graphs that reach it. The doc-history
+    // plugin imports `/git-history` at plugin-init time; the asset viewer loads
+    // that same subpath lazily to populate Created/Updated/Author metadata.
+    // It is an optional peerDependency of @takazudo/zudo-doc and is not
+    // auto-installed for those feature graphs, so either feature must declare
+    // it directly. The pin stays lockstep
     // with the root version (parity-guarded — INTERNAL_PINNED_PACKAGES in
     // scripts/check-pin-parity.mjs, and rewritten at release time by
     // scripts/release-create-zudo-doc.sh step 2d).
     //
     // It was briefly unconditional (#3080) because doc-history-area imported
     // `/exclude` at module scope from the always-bundled chrome graph; #3110
-    // moved compileExclude into @takazudo/zudo-doc, so docHistory-OFF projects
-    // no longer need the package at all.
+    // moved compileExclude into @takazudo/zudo-doc, so projects with both
+    // docHistory and assetViewer off no longer need the package at all.
     deps["@takazudo/zudo-doc-history-server"] = "^5.13.1";
     // tsx is no longer needed here: the relocated package plugin imports the
     // runner directly (no `tsx -e` spawn) since the package ships compiled

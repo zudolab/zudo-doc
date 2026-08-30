@@ -97,6 +97,24 @@ import { defaultTranslations } from "./i18n-defaults/index.js";
 import { defaultColorSchemes } from "./color-schemes-defaults/index.js";
 import { assertNoCommaInVersionSlugs } from "./version-availability/index.js";
 import { assertNoEmptyStringFaviconOrLogo } from "./config-assertions/index.js";
+import { validateAssetViewerSettings } from "./asset-path/index.js";
+
+/** Validate config paths through the browser-safe asset-path foundation. */
+function assertValidAssetViewerSettings(dir: string, routePrefix: string): void {
+  try {
+    validateAssetViewerSettings({ dir, routePrefix });
+  } catch (error) {
+    // Keep the config API's historic field names in diagnostics while sharing
+    // the canonical validation implementation with browser-side helpers.
+    const message = error instanceof Error ? error.message : String(error);
+    throw new TypeError(
+      `zudo-doc: ${message
+        .replaceAll("assetViewer.dir", "assetViewerDir")
+        .replaceAll("assetViewer.routePrefix", "assetViewerRoutePrefix")
+        .replace("must be different", "must differ")}`,
+    );
+  }
+}
 
 /** The `settings.claudeResources` block (or `false` when disabled). */
 type ClaudeResourcesConfig =
@@ -178,6 +196,10 @@ export const DEFAULT_SETTINGS: Settings = {
   frontmatterPreview: false,
   docHistory: false,
   docHistoryExclude: [],
+  assetViewer: false,
+  assetViewerDir: "assets",
+  assetViewerRoutePrefix: "files",
+  assetViewerExclude: [],
   bodyFootUtilArea: false,
   htmlPreview: undefined,
   versions: false,
@@ -490,6 +512,14 @@ export interface ZudoDocConfig {
    * @default []
    */
   docHistoryExclude?: string[];
+  /** Generate a viewer page for every file under `public/<assetViewerDir>/**`. @default false */
+  assetViewer?: boolean;
+  /** Directory under `public/` holding viewable assets (also the raw URL prefix `/<dir>/…`). `client/` is reserved by zfb. @default "assets" */
+  assetViewerDir?: string;
+  /** URL prefix of the generated viewer pages (`/<prefix>/<path>/`). Must differ from `assetViewerDir`. @default "files" */
+  assetViewerRoutePrefix?: string;
+  /** Glob patterns (relative to the asset dir) excluded from viewer generation. @default [] */
+  assetViewerExclude?: string[];
   /**
    * Body-foot utility area (doc-history / view-source), or `false` to disable.
    * @default false
@@ -711,6 +741,13 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
   // Safe because nested config types are all-required-field. `settingsOverrides`
   // is a Partial<Settings>.
   const settings: Settings = { ...DEFAULT_SETTINGS, ...settingsOverrides };
+
+  // Validate both prefixes at config resolution, before route injection or
+  // filesystem scanning can observe an unsafe/colliding path.
+  assertValidAssetViewerSettings(
+    settings.assetViewerDir,
+    settings.assetViewerRoutePrefix,
+  );
 
   // A version slug rides through `version-availability/index.ts`'s
   // comma-joined `data-doc-unavailable-versions` client payload unescaped

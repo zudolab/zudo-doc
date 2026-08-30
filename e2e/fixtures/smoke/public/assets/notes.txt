@@ -1,0 +1,2 @@
+Asset viewer smoke fixture.
+Plain text assets use the same safe code surface as source files.

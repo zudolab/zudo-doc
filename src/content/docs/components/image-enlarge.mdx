@@ -28,6 +28,12 @@ Add `"no-enlarge"` as the Markdown title attribute to disable the expand button 
 
 ![A wide image with opt-out applied](/img/image-enlarge/image-opt-out.webp "no-enlarge")
 
+## Asset viewer caption links
+
+When the asset viewer is enabled, a standalone image whose source is in the asset manifest gains an **Open asset page** link in its caption. The link opens the image's wide viewer page with dimensions, raw-file actions, background controls, and links back to referring documents. It is present even when that image is too small to show the enlarge button or uses `"no-enlarge"`.
+
+See [Asset Viewer](../guides/asset-viewer.mdx) for a live example. Set `imageEnlarge: true` when you want the embedded image to offer the enlargement dialog as well as its asset-page link.
+
 ## How It Works
 
 The feature has two parts:

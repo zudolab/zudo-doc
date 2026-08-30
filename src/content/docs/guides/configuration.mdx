@@ -465,6 +465,38 @@ Enable click-to-enlarge for content images.
 
 Default: `false`
 
+### assetViewer
+
+Generate a default-locale viewer page for every included file under `public/<assetViewerDir>/` and enable manifest-backed asset links, cards, code excerpts, and image-caption links in MDX.
+
+Default: `false`
+
+See [Asset Viewer](./asset-viewer.mdx) for the directory layout, viewer behavior, and author entry points.
+
+### assetViewerDir
+
+Set the directory below `public/` that contains viewer-managed files. The same value becomes the raw public URL prefix.
+
+Default: `"assets"`
+
+The value must be a safe relative URL path and must differ from `assetViewerRoutePrefix`.
+
+### assetViewerRoutePrefix
+
+Set the URL prefix for generated viewer pages.
+
+Default: `"files"`
+
+With the defaults, `public/assets/guide.pdf` is raw at `/assets/guide.pdf` and has a viewer at `/files/guide.pdf/`.
+
+### assetViewerExclude
+
+Exclude asset-relative glob paths from viewer generation while leaving the underlying files in `public/`.
+
+Type: `string[]` · Default: `[]`
+
+For example, `["**/*.map", "drafts/**"]` skips source maps and everything below the asset directory's `drafts/` folder.
+
 ### findInPage
 
 Mount the `FindInPageInit` island (Cmd/Ctrl+F find bar) in the body-end islands.

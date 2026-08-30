@@ -362,6 +362,13 @@ export const FEATURES: Feature[] = [
     cliFlag: "image-enlarge",
   },
   {
+    value: "assetViewer",
+    label: "Asset viewer",
+    hint: "Viewer pages for files under public/assets",
+    default: false,
+    cliFlag: "asset-viewer",
+  },
+  {
     value: "dynamicPageTransition",
     label: "Dynamic page transition",
     hint: "SPA-style page transition with history handling",

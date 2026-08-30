@@ -213,7 +213,7 @@ The Design Token Panel has a parallel channel, `designTokenPanelConfigModule`: t
 
 If a whole route needs to be yours, add the `.tsx` file to `pages/` at the matching path. **A project-owned page always wins over the package-injected route for the same path** — the host file shadows the injection. This is how you add an entirely custom landing route or take over a specific injected doc path.
 
-The scaffold stubs are special. `pages/index.tsx` shadows nothing: `/` is never injected, so it is a one-line re-export that provides the package home page. `pages/docs/[[...slug]].tsx` does shadow the injected doc route, but it is load-bearing rather than an optional customization example: injected dynamic routes currently return 404 in `zfb dev`, so the stub keeps doc pages working during development. See [Routing Conventions](../develop/routing-conventions.mdx#package-route-injection-and-shadowing) for the complete injection and shadowing model.
+The scaffold stubs are special. `pages/index.tsx` shadows nothing: `/` is never injected, so it is a one-line re-export that provides the package home page. `pages/docs/[[...slug]].tsx` does shadow the injected doc route, but it remains an explicit host-owned seam rather than an optional customization example. zfb 2.13.1 renders injected dynamic routes in both dev and build; the kept stub preserves host ownership and customization. See [Routing Conventions](../develop/routing-conventions.mdx#package-route-injection-and-shadowing) for the complete injection and shadowing model.
 
 ## Rung 8 — The deploy path (an explicit extend step)
 

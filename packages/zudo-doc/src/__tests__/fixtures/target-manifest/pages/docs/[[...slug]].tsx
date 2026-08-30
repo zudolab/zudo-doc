@@ -1,19 +1,17 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
-// Locked manifest (#2653 Decision 4): a SELF-CONTAINED doc-route stub —
-// REQUIRED because the injected DYNAMIC `/docs/[[...slug]]` route 404s in
-// `zfb dev` (real pre-existing gap in zfb's dev-mode dynamic-route rendering,
-// distinct from the `/`-injection gap zfb#1227; empirically confirmed on
-// #2653). This stub reconstructs the doc route from scratch using ONLY the
+// Locked manifest (#2653 Decision 4): a SELF-CONTAINED doc-route stub retained
+// for explicit host route ownership. zfb 2.13.1 also serves injected dynamic
+// routes in dev. This stub reconstructs the doc route from scratch using ONLY the
 // four sanctioned package entrypoints — no `pages/lib`, no `@/config`:
 //   1. the `virtual:zudo-doc-route-context` virtual module (serializable
 //      settings/translations/tagVocabulary/colorSchemes payload),
 //   2. `@takazudo/zudo-doc/route-context` (`createRouteContext`), and
 //   3. `@takazudo/zudo-doc/chrome` (`createChrome`), and
 //   4. `virtual:zudo-doc-chrome-bindings` (host callables or `{}` fallback).
-// Makes `/docs/getting-started/` return 200 in BOTH `zfb dev` and `zfb build`
-// (see the "TM negative guard" case in route-injection-build.slow.test.ts for
-// the no-stub 404 proof this fixes).
+// Makes `/docs/getting-started/` return 200 in BOTH `zfb dev` and `zfb build`.
+// The route-injection build test covers the corresponding package-owned route;
+// this kept file remains the explicit host-owned seam.
 
 import type { JSX } from "preact";
 import { routeContext } from "virtual:zudo-doc-route-context";

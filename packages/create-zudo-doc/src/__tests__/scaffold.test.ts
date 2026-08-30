@@ -123,7 +123,7 @@ const BAREBONE_MANIFEST = [
   "zfb.config.ts",
 ].sort();
 
-/** All 28 feature values wired to a real (non-pseudo, non-scaffold.ts-only) module. */
+/** All 29 feature values wired to a real (non-pseudo, non-scaffold.ts-only) module. */
 const ALL_FEATURES = [
   "i18n",
   "search",
@@ -146,6 +146,7 @@ const ALL_FEATURES = [
   "tauriDev",
   "footerNavGroup",
   "imageEnlarge",
+  "assetViewer",
   "dynamicPageTransition",
   "footerCopyright",
   "changelog",
@@ -1662,7 +1663,7 @@ describe("scaffold — generated package.json", () => {
     // and the chrome-derive seam always imports DesignTokenPanelBootstrap
     // (which imports @takazudo/zdtp, #2668).
     // @takazudo/zudo-doc-history-server is NOT in this set — see the
-    // docHistory-gating test below (#3110).
+    // metadata-feature gating test below.
     await scaffold(baseChoices);
     const pkg = await fs.readJson(projectPath("test-doc", "package.json"));
     expect(pkg.dependencies["@takazudo/zfb"]).toBe(ROOT_ZFB_PINS["@takazudo/zfb"]);
@@ -1702,7 +1703,7 @@ describe("scaffold — generated package.json", () => {
     expect(withSearch.devDependencies["pagefind"]).toBeUndefined();
   });
 
-  it("adds @takazudo/zudo-doc-history-server only when docHistory is on (#3110)", async () => {
+  it("adds @takazudo/zudo-doc-history-server for docHistory or assetViewer", async () => {
     // The dep was briefly unconditional (#3080) because
     // @takazudo/zudo-doc/dist/doc-history-area/index.js imported
     // @takazudo/zudo-doc-history-server/exclude at MODULE scope, and
@@ -1712,10 +1713,9 @@ describe("scaffold — generated package.json", () => {
     //
     // #3110 fixed the root cause: compileExclude moved into @takazudo/zudo-doc
     // itself, so the always-bundled graph no longer references this optional
-    // peer at all. The dep is therefore gated on the feature again — a
-    // docHistory-OFF project must NOT carry it (that is the whole point of the
-    // fix; asserting `toBeUndefined` here is what stops the workaround
-    // silently creeping back).
+    // peer at all. A project with both metadata consumers off must NOT carry it
+    // (that is the whole point of the fix; asserting `toBeUndefined` here is
+    // what stops the unconditional workaround silently creeping back).
     await scaffold({
       ...baseChoices,
       projectName: "test-history-dep-off",
@@ -1735,6 +1735,18 @@ describe("scaffold — generated package.json", () => {
     });
     const pkg = await fs.readJson(projectPath("test-history-dep", "package.json"));
     expect(pkg.dependencies["@takazudo/zudo-doc-history-server"]).toBeDefined();
+
+    // Asset Viewer uses the same package lazily for the file metadata row,
+    // even when the interactive Doc History feature itself is disabled.
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-asset-history-dep",
+      features: ["assetViewer"],
+    });
+    const assetPkg = await fs.readJson(
+      projectPath("test-asset-history-dep", "package.json"),
+    );
+    expect(assetPkg.dependencies["@takazudo/zudo-doc-history-server"]).toBeDefined();
   });
 
   it("wires a two-process dev script using the package-owned run-parallel bin when docHistory is enabled (#2926)", async () => {

@@ -24,6 +24,7 @@ import { versioningFeature } from "./versioning.js";
 import { tauriFeature } from "./tauri.js";
 import { tauriDevFeature } from "./tauri-dev.js";
 import { imageEnlargeFeature } from "./image-enlarge.js";
+import { assetViewerFeature } from "./asset-viewer.js";
 import { dynamicPageTransitionFeature } from "./dynamic-page-transition.js";
 import { tagGovernanceFeature } from "./tag-governance.js";
 import { footerTaglistFeature } from "./footer-taglist.js";
@@ -53,6 +54,7 @@ export const featureModules: Record<string, FeatureModule> = {
   tauri: tauriFeature,
   tauriDev: tauriDevFeature,
   imageEnlarge: imageEnlargeFeature,
+  assetViewer: assetViewerFeature,
   dynamicPageTransition: dynamicPageTransitionFeature,
   // skillSymlinker — handled in scaffold.ts
   // claudeSkills — handled in scaffold.ts (copies zudo-doc-* skills from monorepo)

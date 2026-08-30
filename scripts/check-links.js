@@ -292,6 +292,17 @@ async function resolveBuiltPath(path, distDir, basePath, fileDir) {
     return { type: "root", targetFile: join(distDir, "index.html") };
   }
 
+  // A terminal slash is an explicit directory request, even when the
+  // directory name contains a dot (for example, /files/demo/x.js/). Check it
+  // before extname() so viewer pages can keep their trailing-slash route and
+  // still receive fragment validation against index.html.
+  if (relPath.endsWith("/")) {
+    const indexFile = join(distDir, relPath, "index.html");
+    return (await fileExists(indexFile))
+      ? { type: "directoryIndex", targetFile: indexFile }
+      : { type: "missing", targetFile: null };
+  }
+
   if (extname(relPath)) {
     const targetFile = join(distDir, relPath);
     return (await fileExists(targetFile))

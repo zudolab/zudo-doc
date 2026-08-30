@@ -8,8 +8,8 @@ import type { FeatureModule } from "../compose.js";
  *
  * Locked manifest (#2653 Decision 4, i18n addendum): "i18n ON adds
  * `pages/[locale]/docs/[[...slug]].tsx` (a second doc stub, locale variant)
- * … No other pages." That ONE self-contained stub — required for the same
- * injected-DYNAMIC-route dev-mode 404 gap the default-locale stub fixes —
+ * … No other pages." That ONE self-contained stub — retained as an explicit
+ * host-owned route seam; zfb 2.13.1 also serves injected dynamic routes in dev —
  * is shipped under `templates/features/i18n/files/pages/[locale]/docs/`
  * and copied by `composeFeatures → copyFeatureFiles` whenever `i18n` is
  * selected. The old `pages/[locale]/index.tsx` home-route template is GONE
