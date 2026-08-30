@@ -4,6 +4,12 @@ All notable changes to `create-zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.14.0] - 2026-08-30
+
+### Features
+
+- Added the `--asset-viewer` feature flag. Generated projects now emit `assetViewer: true` in `zfb.config.ts`, enabling the package-owned viewer for files under `public/assets/` without adding a host route stub or extra template files. (`45dc50cdb`)
+
 ## [5.13.1] - 2026-08-28
 
 ### Bug Fixes
