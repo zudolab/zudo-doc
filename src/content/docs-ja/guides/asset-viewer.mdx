@@ -37,8 +37,14 @@ public/
     └── demo/
         ├── architecture.png
         ├── demo-project.zip
+        ├── diagrams/
+        │   ├── link-graph.svg
+        │   └── link-graph.svg.meta.json
         ├── hmr-demo.mp4
         ├── parse-frontmatter.js
+        ├── scripts/
+        │   ├── README.txt
+        │   └── check-frontmatter.mjs
         └── spec.pdf
 ```
 
@@ -51,7 +57,7 @@ public/
 
 ## 設定
 
-`zudoDoc()` のトップレベルで、次の4項目を設定できます。
+`zudoDoc()` のトップレベルで、次の5項目を設定できます。
 
 | フィールド | デフォルト | 用途 |
 |-----------|-----------|------|
@@ -59,6 +65,7 @@ public/
 | `assetViewerDir` | `"assets"` | `public/` 配下のディレクトリと、公開ファイルの URL プレフィックスを指定する。 |
 | `assetViewerRoutePrefix` | `"files"` | 閲覧ページの URL プレフィックスを指定する。`assetViewerDir` とは異なる値が必要。 |
 | `assetViewerExclude` | `[]` | アセットディレクトリからの相対パスに対して、閲覧ページの生成対象外にする glob を指定する。 |
+| `assetViewerIndex` | `false` | ビューアーのルートプレフィックスに一覧ページを生成する。 |
 
 たとえば、ソースマップと下書きを通常の公開ファイルとして残しつつ、閲覧ページだけを生成対象外にするには次のように設定します。
 
@@ -72,6 +79,39 @@ export default defineConfig(
 ```
 
 ビューアーで管理するファイルを `public/<assetViewerDir>/client/` 配下には置かないでください。`client/` は zfb がブラウザー向けアセット用に予約しているパスであり、アセットビューアーは走査時に衝突を報告します。
+
+## アセット一覧ページ
+
+アセットビューアーと一覧を有効にすると、`/<assetViewerRoutePrefix>/` にファイルを見渡せるページが生成されます。
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    assetViewer: true,
+    assetViewerIndex: true,
+  }),
+);
+```
+
+一覧には、対象アセットがディレクトリツリーとして表示されます。フォルダー行はリンクではなく、配下を開閉するためのトグルです。フォルダーごとに配下のファイル数と合計サイズが表示されます。ファイル行からは各閲覧ページへ移動でき、ファイル種別やサイズなどの情報も確認できます。対象ファイルが1つもない場合は、ツリーの代わりに空の状態を示すメッセージが表示されます。
+
+`assetViewerExclude` で除外したファイルは閲覧ページと一覧のどちらにも現れませんが、元の公開 URL からは引き続き取得できます。メタデータサイドカーも一覧には含まれません。一覧ページは個別の閲覧ページと同様、デフォルトロケールにだけ生成されます。
+
+このショーケースでは機能を有効にしているため、[実際のアセット一覧](/files/)を確認できます。自分のサイトのヘッダーから一覧へ移動できるようにするには、`headerNav` にバージョン非依存の項目を追加します。
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    assetViewer: true,
+    assetViewerIndex: true,
+    headerNav: [
+      { label: "Files", path: "/files/", versioned: false },
+    ],
+  }),
+);
+```
+
+`versioned: false` を指定すると、アーカイブ版のプレフィックスを加えず、単一のデフォルトロケールルートを指し続けます。項目の設定全般は [ヘッダーナビゲーション](./header-navigation.mdx#versioned)を参照してください。
 
 ## MDX から参照する方法
 
@@ -127,12 +167,12 @@ export default defineConfig(
 
 ## 任意のメタデータサイドカー
 
-閲覧ページのタイトルを変えたり説明を追加したりするには、アセットと同じ場所に `<file>.meta.json` を置きます。`architecture.png` に対するサイドカーのファイル名は `architecture.png.meta.json` です。
+閲覧ページのタイトルを変えたり説明を追加したりするには、アセットと同じ場所に `<file>.meta.json` を置きます。デモファイルには、`diagrams/link-graph.svg` と同じ場所に `link-graph.svg.meta.json` が用意されています。
 
-```json title="public/assets/demo/architecture.png.meta.json"
+```json title="public/assets/demo/diagrams/link-graph.svg.meta.json"
 {
-  "title": "Asset viewer architecture",
-  "description": "How document references become raw-file and viewer-page links."
+  "title": "Asset link graph",
+  "description": "How a document link maps to the raw asset URL and its generated viewer page."
 }
 ```
 
@@ -152,12 +192,12 @@ export default defineConfig(
 
 ## 開発時の挙動
 
-`pnpm dev` の実行中に既存アセットを編集すると、閲覧ページにも変更が反映されます。一方、アセットの追加、削除、名前変更では監視対象の一覧が変わるため、`pnpm dev` の再起動が必要です。ドキュメントから初めてアセットを参照した場合も、リンク関係と抜粋を再構築するために再起動してください。
+`pnpm dev` の実行中に既存アセットを編集すると、閲覧ページにも変更が反映されます。一方、監視対象はプラグイン起動時に列挙されるため、アセットを追加、削除、または名前変更した場合は `pnpm dev` の再起動が必要です。再起動するまで、アセット一覧にも古い内容が残ります。ドキュメントから初めてアセットを参照した場合も、リンク関係と抜粋を再構築するために再起動してください。
 
 ファイルの追加や整理を繰り返す間は、ビルドしてから配信する開発モードの `pnpm dev:stable` を使うこともできます。
 
-## リーフページとしての挙動
+## 生成ルートの挙動
 
-アセットの閲覧ページは、デフォルトロケールだけに存在するリーフページです。ドキュメントのサイドバー、検索インデックス、`llms.txt`、サイトマップには掲載されず、ロケールプレフィックス付きの複製も作られません。そのため、日本語ドキュメントから参照した場合も、英語ドキュメントと同じデフォルトロケールの閲覧ページが開きます。
+個別のアセット閲覧ページはリーフページであり、任意で有効にできるルートプレフィックス直下のページはアセット一覧です。どちらもデフォルトロケールにだけ存在し、ドキュメントのサイドバー、検索インデックス、`llms.txt`、サイトマップには掲載されません。そのため、日本語ドキュメントから参照した場合も、英語ドキュメントと同じデフォルトロケールのアセットルートが開きます。
 
 閲覧ページはサイトの `noindex` 設定に従います。ヘッダーとフッターなどのドキュメント共通 UI は保ちつつ、ドキュメント用のサイドバーと目次は表示しません。
