@@ -97,6 +97,7 @@ export const {
   BodyEndIslands,
   HomePageView,
   AssetPageView,
+  AssetIndexPageView,
 } = chrome;
 
 // The doc-route-entries builder lives on the route context; the doc entrypoints

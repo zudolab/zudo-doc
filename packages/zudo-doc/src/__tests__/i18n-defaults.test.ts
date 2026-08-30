@@ -36,6 +36,12 @@ describe("defaultTranslations", () => {
     expect(defaultTranslations.de?.["asset.badge"]).toBeUndefined();
   });
 
+  it("keeps the complete English and Japanese key sets in parity", () => {
+    expect(Object.keys(defaultTranslations.ja ?? {}).sort()).toEqual(
+      Object.keys(defaultTranslations.en ?? {}).sort(),
+    );
+  });
+
   it("is a plain serializable Record<string, Record<string, string>> (route-context virtual-module rule)", () => {
     for (const table of Object.values(defaultTranslations)) {
       for (const value of Object.values(table)) {

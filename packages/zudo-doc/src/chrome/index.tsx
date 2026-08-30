@@ -39,6 +39,7 @@ import { createVersionsPageView } from "../versions-page/index.js";
 import { createTagPages } from "../tag-pages/index.js";
 import { createHomePageView } from "../home-page/index.js";
 import { createAssetPageView } from "../asset-page/index.js";
+import { createAssetIndexPageView } from "../asset-index-page/index.js";
 import {
   deriveComposeMetaTitle,
   deriveBodyEndIslands,
@@ -93,6 +94,7 @@ export function createChrome<S extends Settings = Settings>(
   const BodyEndIslands = deriveBodyEndIslands(ctx);
   const HomePageView = createHomePageView(ctx);
   const AssetPageView = createAssetPageView(ctx);
+  const AssetIndexPageView = createAssetIndexPageView(ctx);
 
   return {
     composeMetaTitle,
@@ -109,6 +111,7 @@ export function createChrome<S extends Settings = Settings>(
     BodyEndIslands,
     HomePageView,
     AssetPageView,
+    AssetIndexPageView,
   };
 }
 

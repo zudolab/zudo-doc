@@ -1132,3 +1132,37 @@ button[data-zd-pending] {
   }
 
 }
+
+[data-zd-asset-tree]:where(ul),
+[data-zd-asset-tree] :where(ul) {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+[data-zd-asset-tree] :where(ul) {
+  margin-left: var(--spacing-hsp-md);
+  padding-left: var(--spacing-hsp-md);
+  border-left: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+}
+
+[data-zd-asset-tree] :where(summary) {
+  list-style: none;
+}
+
+[data-zd-asset-tree] :where(summary)::-webkit-details-marker {
+  display: none;
+}
+
+[data-zd-asset-tree] :where(summary)::marker {
+  content: "";
+}
+
+[data-zd-asset-tree] details[open] > summary > svg:first-child {
+  transform: rotate(90deg);
+}
+
+[data-zd-asset-tree] details:not([open]) > summary > svg:nth-child(3),
+[data-zd-asset-tree] details[open] > summary > svg:nth-child(2) {
+  display: none;
+}
