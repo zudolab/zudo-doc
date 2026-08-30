@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import matter from "gray-matter";
+import { matter } from "../../../../frontmatter/index.js";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { runCodexResourcesPreStep } from "../index.js";
 

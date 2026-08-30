@@ -1,6 +1,6 @@
 /**
  * Filesystem loader for llms-txt content. Walks a markdown content root,
- * parses frontmatter via `gray-matter`, and emits sorted
+ * parses frontmatter via the package's `frontmatter` splitter, and emits sorted
  * {@link LlmsDocEntry} records ready for the generator stage.
  *
  * The directory walk / frontmatter / URL helpers live in the shared

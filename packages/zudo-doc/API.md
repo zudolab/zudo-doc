@@ -308,6 +308,7 @@ reachable from this subpath — through the bundled JS graph OR the transitive
 | `./github-helpers` | GitHub autolink helpers |
 | `./compose-meta-title` | Meta title composition utilities |
 | `./frontmatter-preview-data` | Frontmatter preview data extraction |
+| `./frontmatter` | Frontmatter splitter (`matter()`) over the `yaml` package |
 | `./extract-headings` | Heading extraction utilities |
 
 ### Package Defaults (epic #2651, S4 #2654)

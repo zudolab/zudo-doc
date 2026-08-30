@@ -16,7 +16,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join, relative } from "node:path";
 
-import matter from "gray-matter";
+import { matter } from "./frontmatter/index.js";
 import type { TagVocabularyEntry } from "./settings.js";
 
 // ── Re-export type so callers don't need a separate import ─────────────────

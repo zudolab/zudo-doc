@@ -6,7 +6,7 @@
 
 import { readFileSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
-import matter from "gray-matter";
+import { matter } from "../frontmatter/index.js";
 import { toRouteSlug } from "../slug/index.js";
 
 const NAMED_CHARACTER_REFERENCES: Readonly<Record<string, string>> = {

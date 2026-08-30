@@ -13,7 +13,7 @@ import { appendFile, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { isAbsolute, relative, resolve } from "node:path";
 import { parseArgs } from "node:util";
-import matter from "gray-matter";
+import { matter } from "@takazudo/zudo-doc/frontmatter";
 
 import type { TagVocabularyEntry } from "@takazudo/zudo-doc/settings";
 import {

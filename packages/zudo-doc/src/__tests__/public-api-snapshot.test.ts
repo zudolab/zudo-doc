@@ -91,6 +91,7 @@ describe("package.json exports keyset snapshot", () => {
         "./footer",
         "./footer-with-defaults",
         "./format-date",
+        "./frontmatter",
         "./frontmatter-preview-data",
         "./frontmatter-preview-defaults",
         "./github-helpers",

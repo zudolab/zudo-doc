@@ -102,11 +102,11 @@ const devServers: ChildProcess[] = [];
  *     whatever pnpm happened to hoist there;
  *  2. **this package's** `node_modules` — under pnpm's strict (non-hoisting)
  *     layout a dependency declared only by `packages/zudo-doc/package.json`
- *     lives HERE and is absent from the root entirely. `gray-matter` is the
- *     load-bearing case: `dist/md-utils/index.js` imports it at build time, so
- *     a root-only sweep produces `Cannot find package 'gray-matter' imported
- *     from …/dist/md-utils/index.js` and every packed-tarball group fails
- *     (zudolab/zudo-doc#3189).
+ *     lives HERE and is absent from the root entirely. `yaml` is the
+ *     load-bearing case: `dist/frontmatter/index.js` imports it at build time,
+ *     so a root-only sweep produces `Cannot find package 'yaml' imported
+ *     from …/dist/frontmatter/index.js` and every packed-tarball group fails
+ *     (zudolab/zudo-doc#3189; the dependency was `gray-matter` until #3729).
  *
  *  Root wins on collision — pass 2 only fills gaps — so the resolution order a
  *  real consumer sees is preserved. `@takazudo` is skipped in both passes; the
@@ -1762,8 +1762,8 @@ function setupNoSrcFixture(fixtureSrc: string, tarballPath: string): string {
   const wsNm = join(WORKSPACE_ROOT, "node_modules");
   const nm = join(dir, "node_modules");
   mkdirSync(nm);
-  // `.bin`, `.pnpm`, preact, zod, gray-matter, … all needed at build time.
-  // gray-matter comes from the PACKAGE's node_modules under pnpm, not the
+  // `.bin`, `.pnpm`, preact, zod, yaml, … all needed at build time.
+  // yaml comes from the PACKAGE's node_modules under pnpm, not the
   // root — see linkFixtureNodeModules (#3189).
   linkFixtureNodeModules(nm);
   // @takazudo: real dir; symlink every @takazudo/* EXCEPT zudo-doc.
