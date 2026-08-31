@@ -12,6 +12,7 @@ import {
   hasAncestorPnpmWorkspace,
   pmRunCommand,
 } from "./utils.js";
+import { resolveLocalePlan } from "./locale-plan.js";
 
 export { getSecondaryLang };
 
@@ -262,6 +263,28 @@ sidebar_position: ${position}
 `;
 
 export async function scaffold(choices: UserChoices): Promise<void> {
+  // This must remain before path resolution and every filesystem operation.
+  // Direct callers receive the same locale validation as CLI/preset/API users.
+  const localePlan = resolveLocalePlan({
+    defaultLang: choices.defaultLang,
+    additionalLangs: choices.additionalLangs,
+    i18n: choices.features.includes("i18n"),
+    i18nExplicitlyDisabled:
+      choices.explicitlyDisabledFeatures?.includes("i18n"),
+  });
+  choices.defaultLang = localePlan.defaultLang;
+  if (choices.additionalLangs !== undefined) {
+    choices.additionalLangs = localePlan.additionalLangs;
+  }
+  choices.features = localePlan.i18n
+    ? [...new Set([...choices.features, "i18n"])]
+    : choices.features.filter((feature) => feature !== "i18n");
+  if (localePlan.overridesExplicitDisable) {
+    console.warn(
+      "additional-langs requires i18n; enabling it despite --no-i18n",
+    );
+  }
+
   const targetDir = path.resolve(process.cwd(), choices.projectName);
 
   if (await fs.pathExists(targetDir)) {

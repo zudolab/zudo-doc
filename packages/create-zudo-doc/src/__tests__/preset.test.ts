@@ -19,6 +19,35 @@ describe("presetToChoices — cjkFriendly", () => {
   });
 });
 
+describe("additionalLangs preset support", () => {
+  it("validates and forwards the normalized ordered list", () => {
+    expect(
+      validatePreset({
+        defaultLang: "en",
+        additionalLangs: [" JA ", "de-DE"],
+      }),
+    ).toBeNull();
+    expect(
+      presetToChoices({
+        defaultLang: "en",
+        additionalLangs: [" JA ", "de-DE"],
+      }),
+    ).toMatchObject({ additionalLangs: ["ja", "de-de"] });
+  });
+
+  it("keeps the existing primary language catalog", () => {
+    expect(validatePreset({ defaultLang: "pt-br" })).toMatch(/Invalid language/);
+  });
+
+  it("rejects invalid list shapes and values", () => {
+    expect(validatePreset({ additionalLangs: [] })).toMatch(/additionalLangs/);
+    expect(validatePreset({ additionalLangs: ["../ja"] })).toMatch(
+      /additionalLangs\[0\]/,
+    );
+    expect(validatePreset({ additionalLangs: "ja" })).toMatch(/must be an array/);
+  });
+});
+
 describe("changelogPackages preset support", () => {
   it("forwards normalized package slugs", () => {
     expect(

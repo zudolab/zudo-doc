@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { parseArgs, validateArgs, type CliArgs } from "../cli.js";
+import {
+  layerAdditionalLangs,
+  parseArgs,
+  validateArgs,
+  type CliArgs,
+} from "../cli.js";
 import { FEATURES } from "../constants.js";
 
 describe("parseArgs", () => {
@@ -58,6 +63,13 @@ describe("parseArgs", () => {
       expect(
         parseArgs(["--changelog-packages", " core, ,cli,, "]).changelogPackages,
       ).toEqual(["core", "cli"]);
+    });
+
+    it("--additional-langs parses once and preserves empty entries", () => {
+      expect(
+        parseArgs(["--additional-langs", " JA ,de-DE,"]).additionalLangs,
+      ).toEqual([" JA ", "de-DE", ""]);
+      expect(parseArgs([]).additionalLangs).toBeUndefined();
     });
   });
 
@@ -156,6 +168,35 @@ describe("parseArgs", () => {
       expect(result.pm).toBe("pnpm");
       expect(result.yes).toBe(true);
     });
+  });
+});
+
+describe("validateArgs — additional locales", () => {
+  it("lets the CLI list replace the preset list", () => {
+    expect(layerAdditionalLangs(["ja", "de"], ["fr", "ko"])).toEqual([
+      "fr",
+      "ko",
+    ]);
+    expect(layerAdditionalLangs(["ja"], undefined)).toEqual(["ja"]);
+  });
+
+  it("accepts and normalizes through the canonical locale contract", () => {
+    expect(
+      validateArgs({ lang: "en", additionalLangs: [" JA ", "de"] }),
+    ).toBeNull();
+  });
+
+  it("rejects explicit-empty, duplicate, primary, and unsafe lists", () => {
+    expect(validateArgs({ additionalLangs: [] })).toMatch(/additionalLangs/);
+    expect(validateArgs({ additionalLangs: ["ja", "JA"] })).toMatch(
+      /Duplicate/,
+    );
+    expect(validateArgs({ lang: "ja", additionalLangs: ["JA"] })).toMatch(
+      /defaultLang/,
+    );
+    expect(validateArgs({ additionalLangs: ["../ja"] })).toMatch(
+      /additionalLangs\[0\]/,
+    );
   });
 });
 

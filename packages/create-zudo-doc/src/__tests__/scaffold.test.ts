@@ -94,6 +94,42 @@ const baseChoices: UserChoices = {
   packageManager: "pnpm",
 };
 
+describe("locale validation happens before scaffold I/O", () => {
+  it.each([
+    ["API", "api-invalid-locale", () =>
+      createZudoDoc({
+        projectName: "api-invalid-locale",
+        defaultLang: "en",
+        additionalLangs: ["../ja"],
+        colorSchemeMode: "single" as const,
+        singleScheme: "Default Dark",
+        features: [],
+        packageManager: "pnpm" as const,
+      })],
+    ["direct scaffold", "scaffold-invalid-locale", () =>
+      scaffold({
+        ...baseChoices,
+        projectName: "scaffold-invalid-locale",
+        additionalLangs: ["../ja"],
+      })],
+  ] as const)("%s rejects without creating its target", async (_name, target, invoke) => {
+    await expect(invoke()).rejects.toThrow(/additionalLangs\[0\]/);
+    expect(await fs.pathExists(projectPath(target))).toBe(false);
+  });
+
+  it("the API accepts and normalizes a safe custom primary", async () => {
+    await createZudoDoc({
+      projectName: "api-custom-primary",
+      defaultLang: " PT-BR ",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: [],
+      packageManager: "pnpm",
+    });
+    expect(await fs.pathExists(projectPath("api-custom-primary"))).toBe(true);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // The locked manifest (#2653 Decision 4 / #2660 completion comment).
 // ---------------------------------------------------------------------------

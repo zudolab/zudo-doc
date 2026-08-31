@@ -7,10 +7,12 @@ import {
   type PresetMetaTagsConfig,
 } from "./preset.js";
 import { validateProjectName } from "./utils.js";
+import { resolveLocalePlan } from "./locale-plan.js";
 
 export interface UserChoices {
   projectName: string;
   defaultLang: string;
+  additionalLangs?: string[];
   colorSchemeMode: "single" | "light-dark";
   // For single mode
   singleScheme?: string;
@@ -54,6 +56,7 @@ export interface UserChoices {
 export interface PartialChoices {
   projectName?: string;
   defaultLang?: string;
+  additionalLangs?: string[];
   colorSchemeMode?: "single" | "light-dark";
   singleScheme?: string;
   lightScheme?: string;
@@ -294,9 +297,24 @@ export async function runPrompts(
     packageManager = result;
   }
 
+  const localePlan = resolveLocalePlan({
+    defaultLang,
+    additionalLangs: prefilled.additionalLangs,
+    i18n: features.includes("i18n"),
+    i18nExplicitlyDisabled:
+      prefilled.explicitlyDisabledFeatures?.includes("i18n"),
+  });
+  features = localePlan.i18n
+    ? [...new Set([...features, "i18n"])]
+    : features.filter((feature) => feature !== "i18n");
+
   return {
     projectName,
-    defaultLang,
+    defaultLang: localePlan.defaultLang,
+    additionalLangs:
+      prefilled.additionalLangs === undefined
+        ? undefined
+        : localePlan.additionalLangs,
     colorSchemeMode,
     singleScheme,
     lightScheme,

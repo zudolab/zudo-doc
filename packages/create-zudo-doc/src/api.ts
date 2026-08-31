@@ -9,6 +9,13 @@ import {
 } from "./preset.js";
 import { scaffold } from "./scaffold.js";
 import { initGitRepo, installDependencies, validateProjectName } from "./utils.js";
+import { resolveLocalePlan } from "./locale-plan.js";
+
+export {
+  resolveLocalePlan,
+  type LocalePlan,
+  type LocalePlanInput,
+} from "./locale-plan.js";
 
 export type { UserChoices } from "./prompts.js";
 
@@ -16,6 +23,8 @@ export interface CreateOptions {
   projectName: string;
   /** Default language code (default: "en") */
   defaultLang?: string;
+  /** Ordered additional locale codes. A non-empty list implies i18n. */
+  additionalLangs?: string[];
   colorSchemeMode: "single" | "light-dark";
   singleScheme?: string;
   lightScheme?: string;
@@ -96,9 +105,19 @@ export async function createZudoDoc(options: CreateOptions): Promise<string> {
     if (err) throw new Error(err);
     changelogPackages = parseChangelogPackages(changelogPackages);
   }
+  const localePlan = resolveLocalePlan({
+    defaultLang: rest.defaultLang ?? "en",
+    additionalLangs: rest.additionalLangs,
+    i18n: rest.features.includes("i18n"),
+  });
   const choices = {
     ...rest,
-    defaultLang: rest.defaultLang ?? "en",
+    defaultLang: localePlan.defaultLang,
+    additionalLangs:
+      rest.additionalLangs === undefined ? undefined : localePlan.additionalLangs,
+    features: localePlan.i18n
+      ? [...new Set([...rest.features, "i18n"])]
+      : rest.features.filter((feature) => feature !== "i18n"),
     changelogPackages,
   };
   await scaffold(choices);

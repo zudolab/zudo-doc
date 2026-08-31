@@ -2,6 +2,7 @@ import fs from "fs";
 import { FEATURES, SINGLE_SCHEMES, SUPPORTED_LANGS, THEME_PACKS } from "./constants.js";
 import type { PartialChoices } from "./prompts.js";
 import { validateProjectName } from "./utils.js";
+import { resolveLocalePlan } from "./locale-plan.js";
 
 /**
  * Header-right item shapes accepted in v1 of preset support. Mirrors
@@ -194,6 +195,7 @@ export function validateMetaTags(metaTags: unknown): string | null {
 export interface PresetJson {
   projectName?: string;
   defaultLang?: string;
+  additionalLangs?: string[];
   colorSchemeMode?: "single" | "light-dark";
   singleScheme?: string;
   lightScheme?: string;
@@ -266,6 +268,17 @@ export function validatePreset(json: unknown): string | null {
   if (p.defaultLang && !VALID_LANGS.has(p.defaultLang)) {
     return `Invalid language "${p.defaultLang}" in preset`;
   }
+  if (p.additionalLangs !== undefined) {
+    try {
+      resolveLocalePlan({
+        defaultLang: p.defaultLang ?? "en",
+        additionalLangs: p.additionalLangs,
+        i18n: p.features?.includes("i18n") ?? false,
+      });
+    } catch (error) {
+      return error instanceof Error ? error.message : String(error);
+    }
+  }
   if (p.colorSchemeMode && !["single", "light-dark"].includes(p.colorSchemeMode)) {
     return `Invalid colorSchemeMode "${p.colorSchemeMode}" in preset`;
   }
@@ -323,6 +336,13 @@ export function presetToChoices(json: PresetJson): PartialChoices {
 
   if (json.projectName) choices.projectName = json.projectName;
   if (json.defaultLang) choices.defaultLang = json.defaultLang;
+  if (json.additionalLangs !== undefined) {
+    choices.additionalLangs = resolveLocalePlan({
+      defaultLang: json.defaultLang ?? "en",
+      additionalLangs: json.additionalLangs,
+      i18n: json.features?.includes("i18n") ?? false,
+    }).additionalLangs;
+  }
   if (json.colorSchemeMode) choices.colorSchemeMode = json.colorSchemeMode;
   if (json.singleScheme) choices.singleScheme = json.singleScheme;
   if (json.lightScheme) choices.lightScheme = json.lightScheme;
