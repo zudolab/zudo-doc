@@ -36,6 +36,14 @@ describe("defaultTranslations", () => {
     expect(defaultTranslations.ja?.["asset.noPreview"]).toBe(
       "このファイル形式はプレビューできません。ダウンロードしてローカルで開いてください。",
     );
+    expect(defaultTranslations.en?.["resource.codex.description"]).toBe(
+      "OpenAI Codex configuration reference.",
+    );
+    expect(defaultTranslations.ja?.["resource.codex.description"]).toBe(
+      "OpenAI Codex の設定リファレンス。",
+    );
+    expect(defaultTranslations.en?.["asset.enlarge"]).toBe("Enlarge image");
+    expect(defaultTranslations.ja?.["asset.enlarge"]).toBe("画像を拡大");
     expect(defaultTranslations.de?.["asset.badge"]).toBeUndefined();
   });
 
