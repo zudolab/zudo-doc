@@ -10,7 +10,7 @@ anti-gaming rules, wait-pattern rules) see **`TESTING.md`** at repo root.
 | Fixture | Port | Purpose |
 |---|---|---|
 | sidebar | 4500 | Sidebar persistence, filter |
-| i18n | 4501 | Locale fallback, translation |
+| i18n | 4501 | Locale fallback, translation, localized generated resources/assets |
 | theme | 4502 | Light/dark toggle, hydration |
 | smoke | 4503 | General features (search, TOC, code blocks, mermaid, doc history, etc.) |
 | versioning | 4504 | Version switcher, banners |
@@ -67,6 +67,12 @@ Fixture freshness markers hash the current bytes of all fixture-local `src/conte
 alongside the copied sources, config, lockfile, and setup script. Missing package
 artifacts or an unavailable `shasum` force a rebuild; unchanged bytes (including a
 bare `touch`) keep a warm fixture fresh.
+
+The i18n fixture keeps its minimal Claude/Codex generator inputs under
+`src/content/resources/` so the existing fixture-content hash covers them. Generated
+default-locale bodies and per-locale overview/category indexes are committed as fixture
+content; each build regenerates the same files. Its `public/assets/` corpus similarly
+provides the localized asset-viewer route proof without borrowing smoke-fixture data.
 
 The `theme` fixture removes the copied `pages/docs/` user stub during setup so
 its docs route is package-owned. This is load-bearing for tests of fixture-local

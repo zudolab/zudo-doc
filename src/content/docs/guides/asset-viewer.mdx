@@ -95,7 +95,7 @@ export default defineConfig(
 
 The index displays the included assets as a directory tree. Folder rows are collapsible disclosure toggles rather than links; they show aggregate file counts and sizes for their subtrees. File rows link to the corresponding viewer pages and show metadata such as file type and size. When no included assets exist, the page shows an empty-state message instead of a tree.
 
-`assetViewerExclude` applies to both viewer-page generation and the index, while excluded files remain available at their raw public URLs. Metadata sidecars are also omitted from the listing. Like individual viewer pages, the index exists only in the default locale.
+`assetViewerExclude` applies to both viewer-page generation and the index, while excluded files remain available at their raw public URLs. Metadata sidecars are also omitted from the listing. Like individual viewer pages, the index exists in every configured locale.
 
 This showcase enables the feature, so you can open the [live assets index](/files/). To expose the index in your own site header, add an unversioned item to `headerNav`:
 
@@ -111,7 +111,7 @@ export default defineConfig(
 );
 ```
 
-`versioned: false` keeps the link pointed at the single default-locale route instead of adding an archived-version prefix. See [Header Navigation](./header-navigation.mdx#properties-versioned) for the full item contract.
+`versioned: false` keeps the link out of archived-version routes. Locale-aware navigation adds the active locale prefix automatically. See [Header Navigation](./header-navigation.mdx#properties-versioned) for the full item contract.
 
 ## Author entry points
 
@@ -198,6 +198,8 @@ Use `pnpm dev:stable` when you are adding or reorganizing files frequently; it u
 
 ## Generated-route behavior
 
-Individual asset viewers are leaf pages, while the optional route-prefix page is an asset listing. Both exist only in the default locale and stay out of the docs sidebar, search index, `llms.txt`, and sitemap. A reference from any additional-locale document therefore opens the same default-locale asset route as a primary-locale reference.
+Individual asset viewers are leaf pages, while the optional route-prefix page is an asset listing. Both exist in every configured locale and preserve that locale in generated document and index links: for example, a Japanese reference opens `/ja/files/.../`, not `/files/.../`. The routes stay out of the docs sidebar, search index, `llms.txt`, and sitemap.
+
+Viewer chrome resolves through the `asset.*` translation namespace, including Details, Type, Fit, and Checker. English and Japanese strings ship with the package; other locales follow the normal translation fallback chain. Override individual strings through `ZudoDocConfig.translations`. To restore the old default-locale-only behavior, add `/${assetViewerRoutePrefix}/` to `defaultLocaleOnlyPrefixes`; see [Internationalization](./i18n.mdx#generated-pages-and-default-locale-bodies).
 
 Viewer pages honor the site's `noindex` setting. They intentionally keep documentation chrome such as the header and footer while hiding the document sidebar and table of contents.

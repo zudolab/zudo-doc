@@ -36,22 +36,31 @@ export const settings = {
   sitemap: false,
   docMetainfo: false,
   docTags: false,
+  llmsTxt: true,
   changelogs: false as ChangelogConfig[] | false,
   math: false,
   docHistory: false,
   docHistoryExclude: [],
-  assetViewer: false,
+  assetViewer: true,
   assetViewerDir: "assets",
   assetViewerRoutePrefix: "files",
   assetViewerExclude: [],
-  assetViewerIndex: false,
+  assetViewerIndex: true,
   // Mirrors the showcase default — themePackSwitcher stays off here
   // (allowlisted, epic Theme Core #2812, #2826).
   themePack: "default" as string,
   findInPage: false as boolean,
   dynamicPageTransition: true as boolean,
-  claudeResources: false as { claudeDir: string; projectRoot?: string; scanRoot?: string } | false,
-  codexResources: false as { codexDir: string; projectRoot?: string; scanRoot?: string } | false,
+  claudeResources: {
+    claudeDir: "src/content/resources/.claude",
+    projectRoot: ".",
+    scanRoot: "src/content/resources/.claude",
+  } as { claudeDir: string; projectRoot?: string; scanRoot?: string } | false,
+  codexResources: {
+    codexDir: "src/content/resources/.codex",
+    projectRoot: ".",
+    scanRoot: "src/content/resources/.codex",
+  } as { codexDir: string; projectRoot?: string; scanRoot?: string } | false,
   // Keep one concrete default-locale-only page in the fixture so the
   // language-switcher E2E can assert that the disclosure collapses to its
   // single active link for pages without translated routes.
@@ -65,6 +74,20 @@ export const settings = {
       categoryMatch: "getting-started",
     },
     { label: "Guides", path: "/docs/guides", categoryMatch: "guides" },
+    {
+      label: "Claude",
+      labelKey: "nav.claude",
+      path: "/docs/claude",
+      categoryMatch: "claude",
+      versioned: false,
+    },
+    {
+      label: "Codex",
+      labelKey: "nav.codex",
+      path: "/docs/codex",
+      categoryMatch: "codex",
+      versioned: false,
+    },
   ] satisfies HeaderNavItem[] as HeaderNavItem[],
   // Render the desktop header language switcher so the #2551 SPA-nav re-wire
   // regression (i18n-vt-chrome-persist.spec.ts) can exercise it.
