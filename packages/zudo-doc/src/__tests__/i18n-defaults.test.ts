@@ -21,7 +21,8 @@ describe("defaultTranslations", () => {
   // design — package features may add EN/JA defaults without requiring an
   // immediate complete German table because the `t()` helper falls back through
   // `translations[locale]?.[key] ?? translations[defaultLocale]?.[key] ??
-  // key` (see this module's header comment), not a bug to guard against.
+  // translations.en?.[key] ?? key` (see this module's header comment), not a
+  // bug to guard against.
 
   it("spot-checks representative translated values", () => {
     expect(defaultTranslations.en?.["doc.allTags"]).toBe("All Tags");
