@@ -13,8 +13,8 @@ describe("showcase Assets header navigation", () => {
     expect(item).not.toHaveProperty("categoryMatch");
 
     // The showcase home-page context is deliberately lightweight and omits
-    // the filesystem-backed manifest. The enabled viewer setting still makes
-    // its route prefix default-locale-only, so the JA menu stays at /files/.
+    // the filesystem-backed manifest. With an empty default-only prefix list,
+    // the enabled viewer route is localized, so the JA menu points at /ja/files/.
     const context = createRouteContext(
       {
         settings,
@@ -32,9 +32,9 @@ describe("showcase Assets header navigation", () => {
       context.t,
       context.navHref,
     );
-    expect(menu.find((entry) => entry.label === "アセット")).toEqual({
+    expect(menu.find((entry) => entry.label === "アセット")).toMatchObject({
       label: "アセット",
-      href: "/files/",
+      href: "/ja/files/",
     });
   });
 });

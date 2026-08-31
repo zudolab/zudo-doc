@@ -69,11 +69,11 @@ describe("navHref", () => {
 });
 
 describe("isDefaultLocaleOnlyPath", () => {
-  // Guard: tests rely on these prefixes being configured.
+  // Resource pages are localized by default. The setting remains available
+  // for projects that need to opt selected paths out of localization.
   beforeAll(() => {
-    expect(settings.defaultLocaleOnlyPrefixes).toContain("/docs/claude-md/");
+    expect(settings.defaultLocaleOnlyPrefixes).toEqual([]);
     expect(settings.defaultLocaleOnlyPrefixes).not.toContain("/docs/claude/");
-    expect(settings.defaultLocaleOnlyPrefixes).toContain("/docs/codex-agents-md/");
     expect(settings.defaultLocaleOnlyPrefixes).not.toContain("/docs/codex/");
     expect(normalizedBase).toBe("");
   });
@@ -82,24 +82,24 @@ describe("isDefaultLocaleOnlyPath", () => {
     expect(isDefaultLocaleOnlyPath("/docs/claude/")).toBe(false);
   });
 
-  it("returns true for /docs/claude-md/", () => {
-    expect(isDefaultLocaleOnlyPath("/docs/claude-md/")).toBe(true);
+  it("returns false for /docs/claude-md/ so resource routes can localize", () => {
+    expect(isDefaultLocaleOnlyPath("/docs/claude-md/")).toBe(false);
   });
 
-  it("returns true for a sub-path under /docs/claude-md/", () => {
-    expect(isDefaultLocaleOnlyPath("/docs/claude-md/some-file/")).toBe(true);
+  it("returns false for a sub-path under /docs/claude-md/", () => {
+    expect(isDefaultLocaleOnlyPath("/docs/claude-md/some-file/")).toBe(false);
   });
 
   it("returns false for /docs/codex/ (top-level codex is bilingual, not in prefix list)", () => {
     expect(isDefaultLocaleOnlyPath("/docs/codex/")).toBe(false);
   });
 
-  it("returns true for /docs/codex-agents-md/", () => {
-    expect(isDefaultLocaleOnlyPath("/docs/codex-agents-md/")).toBe(true);
+  it("returns false for /docs/codex-agents-md/ so resource routes can localize", () => {
+    expect(isDefaultLocaleOnlyPath("/docs/codex-agents-md/")).toBe(false);
   });
 
-  it("returns true for a sub-path under /docs/codex-agents-md/", () => {
-    expect(isDefaultLocaleOnlyPath("/docs/codex-agents-md/some-file/")).toBe(true);
+  it("returns false for a sub-path under /docs/codex-agents-md/", () => {
+    expect(isDefaultLocaleOnlyPath("/docs/codex-agents-md/some-file/")).toBe(false);
   });
 
   it("returns false for /docs/guides/", () => {
@@ -110,8 +110,8 @@ describe("isDefaultLocaleOnlyPath", () => {
     expect(isDefaultLocaleOnlyPath("/docs/claude-extras/")).toBe(false);
   });
 
-  it("strips basePath before matching — /docs/claude-md/ returns true", () => {
-    expect(isDefaultLocaleOnlyPath("/docs/claude-md/")).toBe(true);
+  it("strips basePath before matching — /docs/claude-md/ remains localizable", () => {
+    expect(isDefaultLocaleOnlyPath("/docs/claude-md/")).toBe(false);
   });
 });
 
@@ -169,15 +169,15 @@ describe("getPathForLocale", () => {
 
 describe("buildLocaleLinks", () => {
   beforeAll(() => {
-    expect(settings.defaultLocaleOnlyPrefixes).toContain("/docs/claude-md/");
+    expect(settings.defaultLocaleOnlyPrefixes).toEqual([]);
     expect(settings.defaultLocaleOnlyPrefixes).not.toContain("/docs/claude/");
   });
 
-  it("returns single-element list for a default-locale deep claude-md path (switcher hides)", () => {
+  it("returns all locale links for a default-locale deep claude-md path", () => {
     const links = buildLocaleLinks("/docs/claude-md/some-slug/", "en");
-    expect(links).toHaveLength(1);
-    expect(links[0].code).toBe("en");
-    expect(links[0].active).toBe(true);
+    expect(links.length).toBeGreaterThan(1);
+    expect(links.some((l) => l.code === "en" && l.active)).toBe(true);
+    expect(links.some((l) => l.code === "ja")).toBe(true);
   });
 
   it("returns full list for /docs/claude/ (top-level, not in prefix list)", () => {
@@ -194,11 +194,11 @@ describe("buildLocaleLinks", () => {
     expect(links.some((l) => l.code === "ja")).toBe(true);
   });
 
-  it("returns single-element list (only ja) when on a JA deep claude-md path", () => {
+  it("returns all locale links when on a JA deep claude-md path", () => {
     const links = buildLocaleLinks("/ja/docs/claude-md/some-slug/", "ja");
-    expect(links).toHaveLength(1);
-    expect(links[0].code).toBe("ja");
-    expect(links[0].active).toBe(true);
+    expect(links.length).toBeGreaterThan(1);
+    expect(links.some((l) => l.code === "en")).toBe(true);
+    expect(links.some((l) => l.code === "ja" && l.active)).toBe(true);
   });
 
   it("builds routed hrefs on a versioned JA page (regression: switcher used to 404)", () => {

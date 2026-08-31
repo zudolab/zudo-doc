@@ -256,18 +256,7 @@ export const settings = {
   codexResources: {
     codexDir: ".codex",
   } as { codexDir: string; projectRoot?: string; scanRoot?: string } | false,
-  defaultLocaleOnlyPrefixes: [
-    "/docs/claude-md/",
-    "/docs/claude-skills/",
-    "/docs/claude-agents/",
-    "/docs/claude-commands/",
-    "/docs/codex-agents-md/",
-    "/docs/codex-config/",
-    "/docs/codex-agents/",
-    "/docs/codex-hooks/",
-    "/docs/codex-rules/",
-    "/docs/codex-skills/",
-  ] as string[],
+  defaultLocaleOnlyPrefixes: [] as string[],
   footer: {
     links: [
       {
