@@ -5,6 +5,7 @@ import {
   escapeForMdx,
   formatFrontmatterString,
   generateSkillsCategory,
+  resolveResourceLabel,
 } from "../resource-docs-shared/index.js";
 import { isRecord, warn } from "./utils.js";
 import type { CodexResourcesConfig } from "./generate.js";
@@ -87,9 +88,21 @@ export function generateSkillsCategoryDocs(config: CodexResourcesConfig) {
       path.join(scanRoot, ".agents", "skills"),
     ],
     outputDir: path.join(config.docsDir, "codex-skills"),
-    label: "Skills",
+    label: resolveResourceLabel({
+      translations: config.translations,
+      locale: config.defaultLocale ?? "en",
+      defaultLocale: config.defaultLocale,
+      key: "resource.codexSkills.label",
+      fallbackLiteral: "Skills",
+    }),
     position: 910,
-    description: "Skill packages",
+    description: resolveResourceLabel({
+      translations: config.translations,
+      locale: config.defaultLocale ?? "en",
+      defaultLocale: config.defaultLocale,
+      key: "resource.codexSkills.description",
+      fallbackLiteral: "Skill packages",
+    }),
     sourceLabel: ".codex/skills",
     renderExtraHeader: renderOpenAiMetadata,
     renderFrontmatterString: formatFrontmatterString,

@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  removeGeneratedIndex,
   resolveLocaleDirs,
   resolveResourceLabel,
   writeGeneratedIndex,
@@ -140,5 +141,19 @@ describe("writeGeneratedIndex", () => {
       /refusing to overwrite authored locale index.*generated: true.*remove or rename/i,
     );
     expect(fs.readFileSync(indexPath, "utf8")).toContain("Keep me");
+  });
+
+  it("removes stale generated indexes but preserves authored indexes", () => {
+    const root = makeTempDir();
+    const generatedPath = path.join(root, "docs-ja", "claude-commands", "index.mdx");
+    writeGeneratedIndex(generatedPath, "---\ngenerated: true\n---\n\nold\n");
+    removeGeneratedIndex(generatedPath);
+    expect(fs.existsSync(generatedPath)).toBe(false);
+
+    const authoredPath = path.join(root, "docs-ja", "claude-skills", "index.mdx");
+    fs.mkdirSync(path.dirname(authoredPath), { recursive: true });
+    fs.writeFileSync(authoredPath, "---\ntitle: Keep\n---\n\ncontent\n");
+    removeGeneratedIndex(authoredPath);
+    expect(fs.existsSync(authoredPath)).toBe(true);
   });
 });

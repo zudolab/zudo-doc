@@ -8,6 +8,7 @@ import {
   escapeForMdx,
   escapeMarkdownTableCell,
   findNamedFiles,
+  resolveResourceLabel,
   writeCategoryIndex,
 } from "../resource-docs-shared/index.js";
 import { assertUniqueSlug, writeGeneratedPage } from "./utils.js";
@@ -72,9 +73,21 @@ export function generateAgentsMdCategory(
   });
   writeCategoryIndex(
     outputDir,
-    "AGENTS.md",
+    resolveResourceLabel({
+      translations: config.translations,
+      locale: config.defaultLocale ?? "en",
+      defaultLocale: config.defaultLocale,
+      key: "resource.codexAgentsMd.label",
+      fallbackLiteral: "AGENTS.md",
+    }),
     905,
-    "Project instructions for Codex",
+    resolveResourceLabel({
+      translations: config.translations,
+      locale: config.defaultLocale ?? "en",
+      defaultLocale: config.defaultLocale,
+      key: "resource.codexAgentsMd.description",
+      fallbackLiteral: "Project instructions for Codex",
+    }),
     formatFrontmatterString,
   );
   return items.map(({ relPath, slug }) => ({ relPath, slug }));

@@ -10,10 +10,13 @@ import {
   findNamedFiles,
   generateSkillsCategory,
   parseFrontmatter,
+  removeGeneratedIndex,
   resolveLocaleDirs,
+  resolveResourceLabel,
   type ResourceLocaleConfig,
   type ResourceTranslations,
   writeCategoryIndex,
+  writeGeneratedIndex,
 } from "../resource-docs-shared/index.js";
 
 export interface ClaudeResourcesConfig {
@@ -56,6 +59,36 @@ interface AgentItem {
   file: string;
   description: string;
   model: string;
+}
+
+const DEFAULT_RESOURCE_LOCALE = "en";
+
+function resourceLabel(
+  config: ClaudeResourcesConfig,
+  locale: string,
+  key: string,
+  fallbackLiteral: string,
+): string {
+  return resolveResourceLabel({
+    translations: config.translations,
+    locale,
+    defaultLocale: config.defaultLocale,
+    key,
+    fallbackLiteral,
+  });
+}
+
+function defaultResourceLabel(
+  config: ClaudeResourcesConfig,
+  key: string,
+  fallbackLiteral: string,
+): string {
+  return resourceLabel(
+    config,
+    config.defaultLocale ?? DEFAULT_RESOURCE_LOCALE,
+    key,
+    fallbackLiteral,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -133,7 +166,16 @@ ${escapeForMdx(downgradeRepoRelativeLinks(content.trim()))}
     fs.writeFileSync(path.join(outputDir, `${item.slug}.mdx`), mdx);
   });
 
-  writeCategoryIndex(outputDir, "CLAUDE.md", 900, "Project-specific instructions");
+  writeCategoryIndex(
+    outputDir,
+    defaultResourceLabel(config, "resource.claudeMd.label", "CLAUDE.md"),
+    900,
+    defaultResourceLabel(
+      config,
+      "resource.claudeMd.description",
+      "Project-specific instructions",
+    ),
+  );
   return items;
 }
 
@@ -183,7 +225,16 @@ ${escapeForMdx(parsed.content.trim())}
 
   items.sort((a, b) => a.name.localeCompare(b.name));
 
-  writeCategoryIndex(outputDir, "Commands", 901, "Custom slash commands");
+  writeCategoryIndex(
+    outputDir,
+    defaultResourceLabel(config, "resource.claudeCommands.label", "Commands"),
+    901,
+    defaultResourceLabel(
+      config,
+      "resource.claudeCommands.description",
+      "Custom slash commands",
+    ),
+  );
   return items;
 }
 
@@ -197,9 +248,13 @@ function generateSkillsDocs(
   return generateSkillsCategory({
     skillsDirs: [path.join(config.claudeDir, "skills")],
     outputDir: path.join(config.docsDir, "claude-skills"),
-    label: "Skills",
+    label: defaultResourceLabel(config, "resource.claudeSkills.label", "Skills"),
     position: 902,
-    description: "Skill packages",
+    description: defaultResourceLabel(
+      config,
+      "resource.claudeSkills.description",
+      "Skill packages",
+    ),
     sourceLabel: ".claude/skills",
   });
 }
@@ -255,7 +310,16 @@ ${escapeForMdx(parsed.content.trim())}
 
   items.sort((a, b) => a.name.localeCompare(b.name));
 
-  writeCategoryIndex(outputDir, "Agents", 903, "Custom subagents");
+  writeCategoryIndex(
+    outputDir,
+    defaultResourceLabel(config, "resource.claudeAgents.label", "Agents"),
+    903,
+    defaultResourceLabel(
+      config,
+      "resource.claudeAgents.description",
+      "Custom subagents",
+    ),
+  );
   return items;
 }
 
@@ -286,20 +350,137 @@ function generateOverviewIndex(
   if (hasAgents) categorySlugs.push("claude-agents");
   if (hasCommands) categorySlugs.push("claude-commands");
 
-  const categoriesAttr = JSON.stringify(categorySlugs);
+  const index = renderOverviewIndex(
+    config,
+    config.defaultLocale ?? DEFAULT_RESOURCE_LOCALE,
+    categorySlugs,
+  );
+  fs.writeFileSync(path.join(outputDir, "index.mdx"), index);
 
-  const index = `---
-title: "Claude"
-description: "Claude Code configuration reference."
+  for (const [locale, localeConfig] of Object.entries(config.locales ?? {})) {
+    emitLocaleCategoryIndexes(config, locale, localeConfig.dir, {
+      hasCommands,
+      hasSkills,
+      hasAgents,
+      hasClaudemd,
+    });
+    writeGeneratedIndex(
+      path.join(localeConfig.dir, "claude", "index.mdx"),
+      renderOverviewIndex(config, locale, categorySlugs),
+    );
+  }
+}
+
+function renderOverviewIndex(
+  config: ClaudeResourcesConfig,
+  locale: string,
+  categorySlugs: string[],
+): string {
+  return `---
+title: "${escapeTitle(resourceLabel(config, locale, "resource.claude.title", "Claude"))}"
+description: "${escapeTitle(resourceLabel(
+    config,
+    locale,
+    "resource.claude.description",
+    "Claude Code configuration reference.",
+  ))}"
 sidebar_position: 899
 generated: true
 ---
 
-## Resources
+## ${escapeForMdx(resourceLabel(config, locale, "resource.resources", "Resources"))}
 
-<CategoryNav categories={${categoriesAttr}} />
+<CategoryNav categories={${JSON.stringify(categorySlugs)}} />
 `;
-  fs.writeFileSync(path.join(outputDir, "index.mdx"), index);
+}
+
+function emitLocaleCategoryIndexes(
+  config: ClaudeResourcesConfig,
+  locale: string,
+  localeDir: string,
+  presence: {
+    hasCommands: boolean;
+    hasSkills: boolean;
+    hasAgents: boolean;
+    hasClaudemd: boolean;
+  },
+): void {
+  writeLocaleCategoryIndex(
+    config,
+    locale,
+    localeDir,
+    "claude-md",
+    presence.hasClaudemd,
+    "resource.claudeMd.label",
+    "CLAUDE.md",
+    900,
+    "resource.claudeMd.description",
+    "Project-specific instructions",
+  );
+  writeLocaleCategoryIndex(
+    config,
+    locale,
+    localeDir,
+    "claude-commands",
+    presence.hasCommands,
+    "resource.claudeCommands.label",
+    "Commands",
+    901,
+    "resource.claudeCommands.description",
+    "Custom slash commands",
+  );
+  writeLocaleCategoryIndex(
+    config,
+    locale,
+    localeDir,
+    "claude-skills",
+    presence.hasSkills,
+    "resource.claudeSkills.label",
+    "Skills",
+    902,
+    "resource.claudeSkills.description",
+    "Skill packages",
+  );
+  writeLocaleCategoryIndex(
+    config,
+    locale,
+    localeDir,
+    "claude-agents",
+    presence.hasAgents,
+    "resource.claudeAgents.label",
+    "Agents",
+    903,
+    "resource.claudeAgents.description",
+    "Custom subagents",
+  );
+}
+
+function writeLocaleCategoryIndex(
+  config: ClaudeResourcesConfig,
+  locale: string,
+  localeDir: string,
+  categoryDir: string,
+  present: boolean,
+  labelKey: string,
+  fallbackLabel: string,
+  position: number,
+  descriptionKey: string,
+  fallbackDescription: string,
+): void {
+  const indexPath = path.join(localeDir, categoryDir, "index.mdx");
+  if (!present) {
+    removeGeneratedIndex(indexPath);
+    return;
+  }
+
+  writeCategoryIndex(
+    path.join(localeDir, categoryDir),
+    resourceLabel(config, locale, labelKey, fallbackLabel),
+    position,
+    resourceLabel(config, locale, descriptionKey, fallbackDescription),
+    undefined,
+    writeGeneratedIndex,
+  );
 }
 
 export function generateClaudeResourcesDocs(config: ClaudeResourcesConfig) {

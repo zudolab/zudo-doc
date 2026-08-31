@@ -6,6 +6,7 @@ import {
   ensureDir,
   getScriptDescription,
   renderCodeFence,
+  resolveResourceLabel,
   writeCategoryIndex,
 } from "../resource-docs-shared/index.js";
 import {
@@ -194,9 +195,21 @@ export function generateHooksCategory(
   if (items.length > 0) {
     writeCategoryIndex(
       outputDir,
-      "Hooks",
+      resolveResourceLabel({
+        translations: config.translations,
+        locale: config.defaultLocale ?? "en",
+        defaultLocale: config.defaultLocale,
+        key: "resource.codexHooks.label",
+        fallbackLiteral: "Hooks",
+      }),
       908,
-      "Lifecycle hooks",
+      resolveResourceLabel({
+        translations: config.translations,
+        locale: config.defaultLocale ?? "en",
+        defaultLocale: config.defaultLocale,
+        key: "resource.codexHooks.description",
+        fallbackLiteral: "Lifecycle hooks",
+      }),
       formatFrontmatterString,
     );
   }

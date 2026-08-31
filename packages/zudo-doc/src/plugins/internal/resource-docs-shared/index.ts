@@ -3,6 +3,7 @@ export {
   cleanDir,
   ensureDir,
   listFiles,
+  removeGeneratedIndex,
   resolveLocaleDirs,
   writeGeneratedIndex,
   type ResolveLocaleDirsOptions,
@@ -20,6 +21,7 @@ export {
   formatFrontmatterString,
   parseFrontmatter,
   type FrontmatterStringRenderer,
+  type MdxFileWriter,
   writeCategoryIndex,
   writeUnlistedSubPage,
 } from "./mdx.js";

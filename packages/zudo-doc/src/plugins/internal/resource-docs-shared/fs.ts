@@ -99,6 +99,28 @@ export function writeGeneratedIndex(absPath: string, mdx: string): void {
   fs.writeFileSync(absPath, mdx);
 }
 
+/**
+ * Remove a generated locale index that is no longer backed by a source
+ * category. Authored files are intentionally left untouched: locale trees
+ * can contain downstream overrides and are never recursively cleaned.
+ */
+export function removeGeneratedIndex(absPath: string): void {
+  if (!fs.existsSync(absPath)) return;
+
+  let existing: string;
+  try {
+    existing = fs.readFileSync(absPath, "utf8");
+  } catch (error) {
+    throw new Error(
+      `resource-docs: cannot inspect existing locale index "${absPath}" before removing it (${error instanceof Error ? error.message : String(error)}). Remove or rename the file, then retry.`,
+    );
+  }
+
+  if (parseFrontmatter(existing)?.data.generated === true) {
+    fs.unlinkSync(absPath);
+  }
+}
+
 export function listFiles(dir: string): string[] {
   if (!fs.existsSync(dir)) return [];
   return fs

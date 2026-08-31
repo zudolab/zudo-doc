@@ -8,6 +8,7 @@ import {
   escapeForMdx,
   escapeMarkdownTableCell,
   renderCodeFence,
+  resolveResourceLabel,
   writeCategoryIndex,
 } from "../resource-docs-shared/index.js";
 import {
@@ -112,9 +113,21 @@ export function generateAgentsCategory(
   if (items.length > 0) {
     writeCategoryIndex(
       outputDir,
-      "Agents",
+      resolveResourceLabel({
+        translations: config.translations,
+        locale: config.defaultLocale ?? "en",
+        defaultLocale: config.defaultLocale,
+        key: "resource.codexAgents.label",
+        fallbackLiteral: "Agents",
+      }),
       907,
-      "Custom subagents",
+      resolveResourceLabel({
+        translations: config.translations,
+        locale: config.defaultLocale ?? "en",
+        defaultLocale: config.defaultLocale,
+        key: "resource.codexAgents.description",
+        fallbackLiteral: "Custom subagents",
+      }),
       formatFrontmatterString,
     );
   }

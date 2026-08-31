@@ -45,6 +45,20 @@ src/content/docs/codex-agents/
 src/content/docs/codex-hooks/
 src/content/docs/codex-rules/
 src/content/docs/codex-skills/
+
+# Generated localized Claude/Codex resource indexes
+src/content/docs-ja/claude/
+src/content/docs-ja/claude-md/
+src/content/docs-ja/claude-commands/
+src/content/docs-ja/claude-skills/
+src/content/docs-ja/claude-agents/
+src/content/docs-ja/codex/
+src/content/docs-ja/codex-agents-md/
+src/content/docs-ja/codex-config/
+src/content/docs-ja/codex-agents/
+src/content/docs-ja/codex-hooks/
+src/content/docs-ja/codex-rules/
+src/content/docs-ja/codex-skills/
 test-results/
 .playwright-cli/
 

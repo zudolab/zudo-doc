@@ -108,6 +108,102 @@ describe("generateClaudeResourcesDocs", () => {
     expect(snapshotFiles(configuredDir)).toEqual(baseline);
   });
 
+  it("emits only localized shell indexes into an additional locale", () => {
+    const localeDir = path.join(tmpDir, "docs-ja");
+    generateClaudeResourcesDocs({
+      claudeDir,
+      projectRoot: tmpDir,
+      docsDir,
+      locales: { ja: { dir: localeDir } },
+      defaultLocale: "en",
+      translations: {
+        ja: {
+          "resource.claudeMd.label": "CLAUDE.md",
+          "resource.claudeMd.description": "プロジェクト固有の指示",
+          "resource.claudeCommands.label": "コマンド",
+          "resource.claudeCommands.description": "カスタムスラッシュコマンド",
+          "resource.claudeSkills.label": "スキル",
+          "resource.claudeSkills.description": "スキルパッケージ",
+          "resource.claudeAgents.label": "エージェント",
+          "resource.claudeAgents.description": "カスタムサブエージェント",
+          "resource.claude.title": "Claude",
+          "resource.claude.description": "Claude Code の設定リファレンス。",
+          "resource.resources": "リソース",
+        },
+      },
+    });
+
+    expect(Object.keys(snapshotFiles(localeDir)).sort()).toEqual([
+      "claude-agents/index.mdx",
+      "claude-commands/index.mdx",
+      "claude-md/index.mdx",
+      "claude-skills/index.mdx",
+      "claude/index.mdx",
+    ]);
+    const category = matter(fs.readFileSync(
+      path.join(localeDir, "claude-skills", "index.mdx"),
+      "utf8",
+    ));
+    expect(category.data.title).toBe("スキル");
+    expect(category.data.description).toBe("スキルパッケージ");
+    expect(category.data.category_no_page).toBe(true);
+    expect(category.data.generated).toBe(true);
+
+    const overview = fs.readFileSync(
+      path.join(localeDir, "claude", "index.mdx"),
+      "utf8",
+    );
+    expect(overview).toContain("title: \"Claude\"");
+    expect(overview).toContain("description: \"Claude Code の設定リファレンス。\"");
+    expect(overview).toContain("## リソース");
+    expect(overview).not.toContain("resource.");
+    expect(fs.existsSync(path.join(localeDir, "claude-skills", "test-skill"))).toBe(false);
+  });
+
+  it("does not emit an index for a category with no source files", () => {
+    fs.rmSync(path.join(claudeDir, "commands"), { recursive: true, force: true });
+    const localeDir = path.join(tmpDir, "docs-ja");
+
+    generateClaudeResourcesDocs({
+      claudeDir,
+      projectRoot: tmpDir,
+      docsDir,
+      locales: { ja: { dir: localeDir } },
+      defaultLocale: "en",
+    });
+
+    expect(fs.existsSync(path.join(localeDir, "claude-commands", "index.mdx"))).toBe(false);
+    expect(fs.readFileSync(path.join(localeDir, "claude", "index.mdx"), "utf8")).not.toContain(
+      "claude-commands",
+    );
+  });
+
+  it("uses the configured default locale for unprefixed generated indexes", () => {
+    generateClaudeResourcesDocs({
+      claudeDir,
+      projectRoot: tmpDir,
+      docsDir,
+      defaultLocale: "ja",
+      translations: {
+        ja: {
+          "resource.claudeMd.label": "CLAUDE.md（日本語）",
+          "resource.claudeMd.description": "プロジェクト固有の指示",
+          "resource.claude.title": "Claude（日本語）",
+          "resource.claude.description": "Claude Code の設定リファレンス。",
+          "resource.resources": "リソース",
+        },
+      },
+    });
+
+    expect(matter(fs.readFileSync(
+      path.join(docsDir, "claude-md", "index.mdx"),
+      "utf8",
+    )).data.title).toBe("CLAUDE.md（日本語）");
+    expect(fs.readFileSync(path.join(docsDir, "claude", "index.mdx"), "utf8")).toContain(
+      "## リソース",
+    );
+  });
+
   afterEach(() => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
