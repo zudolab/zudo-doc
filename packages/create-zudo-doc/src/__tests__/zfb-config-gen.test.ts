@@ -179,7 +179,7 @@ describe("generateZfbConfig — theme pack (ADR #2818)", () => {
 });
 
 describe("generateZfbConfig — i18n", () => {
-  it("emits a locales entry keyed by the secondary language", () => {
+  it("emits the legacy inferred locale when the list is omitted", () => {
     const result = generateZfbConfig({ ...baseChoices, features: ["i18n"] });
     expect(result).toContain("locales: {");
     expect(result).toContain("ja: {");
@@ -205,6 +205,30 @@ describe("generateZfbConfig — i18n", () => {
     });
     expect(result).toContain("en: {");
     expect(result).toContain('dir: "src/content/docs-en"');
+  });
+
+  it("emits every explicit locale entry in input order", () => {
+    const result = generateZfbConfig({
+      ...baseChoices,
+      features: ["i18n"],
+      additionalLangs: ["ja", "de"],
+    });
+    expect(result).toContain("ja: {");
+    expect(result).toContain('label: "JA"');
+    expect(result).toContain('dir: "src/content/docs-ja"');
+    expect(result).toContain("de: {");
+    expect(result).toContain('label: "DE"');
+    expect(result).toContain('dir: "src/content/docs-de"');
+    expect(result.indexOf("ja: {")).toBeLessThan(result.indexOf("de: {"));
+  });
+
+  it("treats a non-empty explicit list as i18n even when the feature is omitted", () => {
+    const result = generateZfbConfig({
+      ...baseChoices,
+      additionalLangs: ["ja", "de"],
+    });
+    expect(result).toContain('component: "language-switcher"');
+    expect(result).toContain('dir: "src/content/docs-de"');
   });
 });
 

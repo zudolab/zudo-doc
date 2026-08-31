@@ -1,6 +1,7 @@
 import fs from "fs-extra";
 import path from "path";
 import type { UserChoices } from "./prompts.js";
+import type { LocalePlan } from "./locale-plan.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -37,14 +38,21 @@ export interface FeatureDefinition {
    * Post-processing hook for complex transformations that cannot be expressed
    * as simple file copies or anchor injections (e.g. i18n page patching).
    */
-  postProcess?: (targetDir: string, choices: UserChoices) => Promise<void>;
+  postProcess?: (
+    targetDir: string,
+    choices: UserChoices,
+    localePlan?: LocalePlan,
+  ) => Promise<void>;
 }
 
 /**
  * A function that returns a FeatureDefinition based on user choices.
  * This allows injections to be conditional on other choices.
  */
-export type FeatureModule = (choices: UserChoices) => FeatureDefinition;
+export type FeatureModule = (
+  choices: UserChoices,
+  localePlan?: LocalePlan,
+) => FeatureDefinition;
 
 // ---------------------------------------------------------------------------
 // Anchor patterns
@@ -188,6 +196,7 @@ export async function copyFeatureFiles(
 export function resolveSelectedFeatures(
   choices: UserChoices,
   featureModules: Record<string, FeatureModule>,
+  localePlan?: LocalePlan,
 ): FeatureDefinition[] {
   const selected: FeatureDefinition[] = [];
 
@@ -200,13 +209,13 @@ export function resolveSelectedFeatures(
         choices.features.includes("footerCopyright") ||
         choices.features.includes("footerTaglist")
       ) {
-        selected.push(moduleFn(choices));
+        selected.push(moduleFn(choices, localePlan));
       }
       continue;
     }
 
     if (choices.features.includes(name)) {
-      selected.push(moduleFn(choices));
+      selected.push(moduleFn(choices, localePlan));
     }
   }
 
@@ -267,9 +276,10 @@ export async function composeFeatures(
   choices: UserChoices,
   featureModules: Record<string, FeatureModule>,
   featuresDir: string,
+  localePlan?: LocalePlan,
 ): Promise<void> {
   // 1. Resolve
-  const features = resolveSelectedFeatures(choices, featureModules);
+  const features = resolveSelectedFeatures(choices, featureModules, localePlan);
   const selectedNames = new Set(features.map((f) => f.name));
 
   // 2. Validate
@@ -291,7 +301,7 @@ export async function composeFeatures(
   // 5. Post-processing
   for (const feature of features) {
     if (feature.postProcess) {
-      await feature.postProcess(targetDir, choices);
+      await feature.postProcess(targetDir, choices, localePlan);
     }
   }
 
