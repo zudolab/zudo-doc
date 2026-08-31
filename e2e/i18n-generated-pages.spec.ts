@@ -69,11 +69,8 @@ test.describe("i18n generated pages: localized resource shell", () => {
 
     await expect(page.locator("h1")).toHaveText("localized-shell");
     await expect(
-      page.getByRole("heading", {
-        name: "Default-locale resource body",
-        exact: true,
-      }),
-    ).toBeVisible();
+      page.locator("article h2#default-locale-resource-body"),
+    ).toHaveText("Default-locale resource body");
     await expect(
       page.getByText("This English source body belongs to the default locale."),
     ).toBeVisible();
@@ -82,9 +79,7 @@ test.describe("i18n generated pages: localized resource shell", () => {
     await waitForSidebarHydration(page);
     const sidebar = desktopSidebar(page);
     await expect(sidebar.getByText("Claude", { exact: true })).toBeVisible();
-    await expect(sidebar.getByText("Codex", { exact: true })).toBeVisible();
     await expect(sidebar.getByText("スキル", { exact: true })).toBeVisible();
-    await expect(sidebar.getByText("設定", { exact: true })).toBeVisible();
 
     const breadcrumb = page.getByRole("navigation", { name: "Breadcrumb" });
     await expect(breadcrumb.getByText("スキル", { exact: true })).toBeVisible();
@@ -92,6 +87,27 @@ test.describe("i18n generated pages: localized resource shell", () => {
       "aria-label",
       "言語",
     );
+    assertNoConsoleErrors();
+  });
+
+  test("renders Japanese labels for the Codex resource sidebar", async ({
+    page,
+    assertNoConsoleErrors,
+  }) => {
+    const response = await page.goto(
+      "/ja/docs/codex-config/config-toml/",
+      { waitUntil: "domcontentloaded" },
+    );
+    expect(response?.status()).toBe(200);
+
+    await expect(page.locator("h1")).toHaveText("config.toml");
+    await waitForSidebarHydration(page);
+    const sidebar = desktopSidebar(page);
+    await expect(sidebar.getByText("Codex", { exact: true })).toBeVisible();
+    await expect(sidebar.getByText("設定", { exact: true })).toBeVisible();
+
+    const breadcrumb = page.getByRole("navigation", { name: "Breadcrumb" });
+    await expect(breadcrumb.getByText("設定", { exact: true })).toBeVisible();
     assertNoConsoleErrors();
   });
 
