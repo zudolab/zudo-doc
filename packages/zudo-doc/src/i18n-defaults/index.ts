@@ -8,9 +8,11 @@
  * Locale code → key → translated string. The `en` and `ja` tables carry the
  * complete package surface; `de` remains the documented partial locale. The
  * other locales in the generator's `SUPPORTED_LANGS` list
- * (zh-cn/zh-tw/ko/es/fr/pt) fall back to `en` at lookup time (the template's
- * `t()` helper does `translations[locale]?.[key] ?? translations[defaultLocale]?.[key] ?? key`)
- * rather than shipping their own fully-translated table here.
+ * (zh-cn/zh-tw/ko/es/fr/pt) fall back through the requested locale, configured
+ * default locale, package English, and finally the raw key at lookup time (the
+ * `t()` helper does `translations[locale]?.[key] ??
+ * translations[defaultLocale]?.[key] ?? translations.en?.[key] ?? key`) rather
+ * than shipping their own fully-translated table here.
  *
  * Locale label/derivation (mapping a locale code to its display label,
  * detecting the active locale from a URL, etc.) stays settings-driven and is

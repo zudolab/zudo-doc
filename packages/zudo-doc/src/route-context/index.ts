@@ -23,6 +23,7 @@ import type {
   FactoryI18n,
 } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
+import { defaultTranslations } from "../i18n-defaults/index.js";
 import { makeUrlHelpers } from "../url-helpers/index.js";
 import { extractHeadings as extractHeadingsBase } from "../extract-headings/index.js";
 import { toRouteSlug, toSlugParams } from "../slug/index.js";
@@ -129,6 +130,10 @@ export function createRouteContext<S extends Settings = Settings>(
         }
   ) as S;
   const translations = payload.translations;
+  // Normal payload builders merge project translations over the package table;
+  // retain the package table as a final compatibility fallback for direct/raw
+  // payloads that omit the English locale entirely.
+  const packageEnglish = defaultTranslations.en ?? {};
   const tagVocabulary = payload.tagVocabulary;
   const colorSchemes = payload.colorSchemes;
   // Normalize an omitted registry to null (→ feature inert). The payload field
@@ -161,7 +166,11 @@ export function createRouteContext<S extends Settings = Settings>(
 
   function t(key: string, locale: string = defaultLocale): string {
     return (
-      translations[locale]?.[key] ?? translations[defaultLocale]?.[key] ?? key
+      translations[locale]?.[key] ??
+      translations[defaultLocale]?.[key] ??
+      translations.en?.[key] ??
+      packageEnglish[key] ??
+      key
     );
   }
 

@@ -192,6 +192,94 @@ describe("createRouteContextPayload", () => {
   });
 });
 
+describe("createRouteContext translation precedence", () => {
+  const accessibleLabelKey = "language.switcher.label";
+
+  function makeContext(
+    translations: Record<string, Record<string, string>> = {},
+  ) {
+    return createRouteContext(
+      createRouteContextPayload({
+        siteTitle: "Fallback Docs",
+        defaultLocale: "fr",
+        locales: { de: { label: "Deutsch", dir: "content/de" } },
+        translations,
+      }),
+      { stableDocs: () => [] },
+    );
+  }
+
+  it("prefers a requested DE value over the configured default and English", () => {
+    const routeContext = makeContext({
+      fr: { [accessibleLabelKey]: "Langue" },
+      de: { [accessibleLabelKey]: "Sprache (custom)" },
+    });
+
+    expect(routeContext.t(accessibleLabelKey, "de")).toBe("Sprache (custom)");
+  });
+
+  it("uses a configured-default override before package English", () => {
+    const routeContext = makeContext({
+      fr: { [accessibleLabelKey]: "Langue" },
+    });
+
+    expect(routeContext.t(accessibleLabelKey, "es")).toBe("Langue");
+  });
+
+  it("falls back to package English for a custom primary and a partial locale", () => {
+    const routeContext = makeContext({
+      fr: { "custom.only": "Personnalisé" },
+      de: { [accessibleLabelKey]: "Sprache (custom)" },
+    });
+
+    expect(routeContext.t(accessibleLabelKey, "fr")).toBe("Language");
+    expect(routeContext.t("asset.badge", "de")).toBe("Asset");
+  });
+
+  it("retains the bundled English fallback when a raw payload omits English", () => {
+    const defaults = createRouteContextPayload({
+      siteTitle: "Fallback Docs",
+      defaultLocale: "fr",
+      locales: { de: { label: "Deutsch", dir: "content/de" } },
+    });
+    const routeContext = createRouteContext(
+      {
+        settings: defaults.settings,
+        translations: { fr: {}, de: {} },
+        tagVocabulary: [],
+        colorSchemes: null,
+        themePackRegistry: null,
+      },
+      { stableDocs: () => [] },
+    );
+
+    expect(routeContext.t(accessibleLabelKey, "fr")).toBe("Language");
+  });
+
+  it("keeps a project English override ahead of the bundled English value", () => {
+    const routeContext = makeContext({
+      en: { [accessibleLabelKey]: "Locale" },
+    });
+
+    expect(routeContext.t(accessibleLabelKey, "es")).toBe("Locale");
+  });
+
+  it("returns the raw key when no locale contains it", () => {
+    const routeContext = makeContext({});
+
+    expect(routeContext.t("missing.translation.key", "de")).toBe(
+      "missing.translation.key",
+    );
+  });
+
+  it("keeps the existing English and Japanese values", () => {
+    const routeContext = makeContext();
+
+    expect(routeContext.t(accessibleLabelKey, "en")).toBe("Language");
+    expect(routeContext.t(accessibleLabelKey, "ja")).toBe("言語");
+  });
+});
+
 describe("./route-context-payload browser safety", () => {
   it("bundles the source under platform neutral with no forbidden runtime specifiers", async () => {
     const { analyzeSiteSchemaGraph } = await loadGraphHelper();
