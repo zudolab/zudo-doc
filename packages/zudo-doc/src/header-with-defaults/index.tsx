@@ -229,6 +229,8 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
       localeLinks != null ? (
         <LanguageSwitcher
           links={localeLinks}
+          accessibleLabel={t("language.switcher.label", lang)}
+          idSuffix="header"
           config={{
             base: settings.base.replace(/\/+$/, ""),
             defaultLocale,

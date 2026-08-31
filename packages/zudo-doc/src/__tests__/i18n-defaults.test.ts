@@ -29,6 +29,9 @@ describe("defaultTranslations", () => {
     expect(defaultTranslations.ja?.["nav.gettingStarted"]).toBe("はじめに");
     expect(defaultTranslations.de?.["nav.gettingStarted"]).toBe("Erste Schritte");
     expect(defaultTranslations.en?.["asset.badge"]).toBe("Asset");
+    expect(defaultTranslations.en?.["language.switcher.label"]).toBe("Language");
+    expect(defaultTranslations.ja?.["language.switcher.label"]).toBe("言語");
+    expect(defaultTranslations.de?.["language.switcher.label"]).toBe("Sprache");
     expect(defaultTranslations.ja?.["asset.noPreview"]).toBe(
       "このファイル形式はプレビューできません。ダウンロードしてローカルで開いてください。",
     );
