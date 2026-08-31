@@ -144,6 +144,10 @@ describe("generateClaudeResourcesDocs", () => {
       path.join(localeDir, "claude-skills", "index.mdx"),
       "utf8",
     ));
+    expect(fs.readFileSync(
+      path.join(localeDir, "claude-skills", "index.mdx"),
+      "utf8",
+    )).toContain('title: "スキル"\ndescription: "スキルパッケージ"');
     expect(category.data.title).toBe("スキル");
     expect(category.data.description).toBe("スキルパッケージ");
     expect(category.data.category_no_page).toBe(true);
@@ -158,6 +162,81 @@ describe("generateClaudeResourcesDocs", () => {
     expect(overview).toContain("## リソース");
     expect(overview).not.toContain("resource.");
     expect(fs.existsSync(path.join(localeDir, "claude-skills", "test-skill"))).toBe(false);
+  });
+
+  it("serializes multiline and special overview/category translations as valid YAML", () => {
+    const localeDir = path.join(tmpDir, "docs-ja");
+    const title = 'Claude: "設定" \\ path\n{reference}';
+    const description = "First line\nSecond line: #value\tend";
+    const categoryLabel = 'スキル: "特別" \\ path\n次';
+    const categoryDescription = "説明 #1\n{details}: <Panel>";
+
+    generateClaudeResourcesDocs({
+      claudeDir,
+      projectRoot: tmpDir,
+      docsDir,
+      locales: { ja: { dir: localeDir } },
+      defaultLocale: "en",
+      translations: {
+        ja: {
+          "resource.claude.title": title,
+          "resource.claude.description": description,
+          "resource.claudeSkills.label": categoryLabel,
+          "resource.claudeSkills.description": categoryDescription,
+        },
+      },
+    });
+
+    const overview = matter(fs.readFileSync(
+      path.join(localeDir, "claude", "index.mdx"),
+      "utf8",
+    ));
+    expect(overview.data.title).toBe(title);
+    expect(overview.data.description).toBe(description);
+
+    const category = matter(fs.readFileSync(
+      path.join(localeDir, "claude-skills", "index.mdx"),
+      "utf8",
+    ));
+    expect(category.data.title).toBe(categoryLabel);
+    expect(category.data.description).toBe(categoryDescription);
+
+    const defaultOverview = fs.readFileSync(
+      path.join(docsDir, "claude", "index.mdx"),
+      "utf8",
+    );
+    expect(defaultOverview).toContain(
+      'title: "Claude"\ndescription: "Claude Code configuration reference."',
+    );
+  });
+
+  it("removes stale localized routes that become default-locale-only", () => {
+    const localeDir = path.join(tmpDir, "docs-ja");
+    const baseConfig = {
+      claudeDir,
+      projectRoot: tmpDir,
+      docsDir,
+      locales: { ja: { dir: localeDir } },
+      defaultLocale: "en",
+    };
+
+    generateClaudeResourcesDocs(baseConfig);
+    expect(fs.existsSync(path.join(localeDir, "claude", "index.mdx"))).toBe(true);
+    expect(fs.existsSync(path.join(localeDir, "claude-skills", "index.mdx"))).toBe(true);
+
+    generateClaudeResourcesDocs({
+      ...baseConfig,
+      defaultLocaleOnlyPrefixes: [
+        "/docs/claude/",
+        "/docs/claude-skills/",
+      ],
+    });
+
+    expect(fs.existsSync(path.join(localeDir, "claude", "index.mdx"))).toBe(false);
+    expect(fs.existsSync(path.join(localeDir, "claude-skills", "index.mdx"))).toBe(false);
+    expect(fs.existsSync(path.join(localeDir, "claude-agents", "index.mdx"))).toBe(true);
+    expect(fs.existsSync(path.join(docsDir, "claude", "index.mdx"))).toBe(true);
+    expect(fs.existsSync(path.join(docsDir, "claude-skills", "index.mdx"))).toBe(true);
   });
 
   it("does not emit an index for a category with no source files", () => {

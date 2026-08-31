@@ -153,6 +153,34 @@ describe("asset page SSG", () => {
     expect(html).not.toContain('href="https://docs.example/files/img/logo.svg/"');
   });
 
+  it("prefers the latest same-locale reference for a localized Back to link", () => {
+    const html = page(asset({
+      linkedFrom: [
+        { href: "/docs/brand/", title: "Brand", crumb: "Guide › Brand", context: "Default locale." },
+        { href: "/ja/docs/brand/", title: "ブランド", crumb: "ガイド › ブランド", context: "Latest Japanese reference.", locale: "ja" },
+        { href: "/ja/v/v1/docs/brand/", title: "旧ブランド", crumb: "ガイド › 旧ブランド", context: "Versioned Japanese reference.", locale: "ja", version: "v1" },
+      ],
+    }), {}, { "asset.backTo": "戻る" }, "ja");
+
+    expect(html).toContain('<a href="/ja/docs/brand/" class="text-muted hover:text-accent focus-visible:text-accent hover:underline focus-visible:underline">← 戻る ブランド</a>');
+    expect(html).not.toContain('← 戻る Brand');
+    const linkedFromHtml = html.slice(html.indexOf(">Linked from</h2>"));
+    expect(linkedFromHtml.indexOf('href="/docs/brand/"')).toBeLessThan(linkedFromHtml.indexOf('href="/ja/docs/brand/"'));
+    expect(linkedFromHtml.indexOf('href="/ja/docs/brand/"')).toBeLessThan(linkedFromHtml.indexOf('href="/ja/v/v1/docs/brand/"'));
+  });
+
+  it("falls back to the first reference when a localized page has no same-locale reference", () => {
+    const html = page(asset({
+      linkedFrom: [
+        { href: "/docs/brand/", title: "Brand", crumb: "Guide › Brand", context: "Default locale." },
+        { href: "/fr/docs/marque/", title: "Marque", crumb: "Guide › Marque", context: "French reference.", locale: "fr" },
+      ],
+    }), {}, { "asset.backTo": "戻る" }, "ja");
+
+    expect(html).toContain('<a href="/docs/brand/" class="text-muted hover:text-accent focus-visible:text-accent hover:underline focus-visible:underline">← 戻る Brand</a>');
+    expect(html).not.toContain('← 戻る Marque');
+  });
+
   it("uses the shared asset size formatter in page metadata", () => {
     const html = page(asset({ bytes: 2_900 }));
     expect(html).toContain(">2.9 KB</span>");

@@ -32,6 +32,7 @@ const plugin: ZfbPlugin = {
     const localesOpt = ctx.options["locales"];
     const defaultLocaleOpt = ctx.options["defaultLocale"];
     const translationsOpt = ctx.options["translations"];
+    const defaultLocaleOnlyPrefixesOpt = ctx.options["defaultLocaleOnlyPrefixes"];
     const result = runCodexResourcesPreStep({
       codexDir,
       projectRoot:
@@ -45,6 +46,9 @@ const plugin: ZfbPlugin = {
       translations: isRecord(translationsOpt)
         ? translationsOpt as ResourceTranslations
         : undefined,
+      defaultLocaleOnlyPrefixes: isStringArray(defaultLocaleOnlyPrefixesOpt)
+        ? defaultLocaleOnlyPrefixesOpt
+        : undefined,
     });
     ctx.logger.info(
       `codex-resources: ${result.agentsMd} AGENTS.md, ${result.config} config, ${result.agents} agents, ${result.hooks} hooks, ${result.rules} rules, ${result.skills} skills`,
@@ -54,6 +58,10 @@ const plugin: ZfbPlugin = {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
 }
 
 export default plugin;

@@ -16,6 +16,10 @@ export {
   type ResourceTranslations,
 } from "./labels.js";
 export {
+  shouldEmitResourceLocaleRoute,
+  type ResourceLocaleRouteOptions,
+} from "./locale-routes.js";
+export {
   assertNotIndexReserved,
   escapeTitle,
   formatFrontmatterString,

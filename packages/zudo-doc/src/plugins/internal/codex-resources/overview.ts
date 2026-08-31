@@ -3,9 +3,11 @@ import path from "node:path";
 import {
   cleanDir,
   ensureDir,
+  escapeForMdx,
   formatFrontmatterString,
   removeGeneratedIndex,
   resolveResourceLabel,
+  shouldEmitResourceLocaleRoute,
   writeCategoryIndex,
   writeGeneratedIndex,
 } from "../resource-docs-shared/index.js";
@@ -42,10 +44,20 @@ export function generateOverview(
 
   for (const [locale, localeConfig] of Object.entries(config.locales ?? {})) {
     emitLocaleCategoryIndexes(config, locale, localeConfig.dir, presence);
-    writeGeneratedIndex(
-      path.join(localeConfig.dir, "codex", "index.mdx"),
-      renderOverview(config, locale, slugs),
-    );
+    const overviewPath = path.join(localeConfig.dir, "codex", "index.mdx");
+    if (shouldEmitResourceLocaleRoute({
+      slug: "codex",
+      locale,
+      defaultLocale: config.defaultLocale,
+      defaultLocaleOnlyPrefixes: config.defaultLocaleOnlyPrefixes,
+    })) {
+      writeGeneratedIndex(
+        overviewPath,
+        renderOverview(config, locale, slugs),
+      );
+    } else {
+      removeGeneratedIndex(overviewPath);
+    }
   }
 }
 
@@ -66,13 +78,13 @@ function renderOverview(
     defaultLocale: config.defaultLocale,
     key: "resource.codex.description",
     fallbackLiteral: "OpenAI Codex configuration reference.",
-  }))}\nsidebar_position: 904\ngenerated: true\n---\n\n## ${resolveResourceLabel({
+  }))}\nsidebar_position: 904\ngenerated: true\n---\n\n## ${escapeForMdx(resolveResourceLabel({
     translations: config.translations,
     locale,
     defaultLocale: config.defaultLocale,
     key: "resource.resources",
     fallbackLiteral: "Resources",
-  })}\n\n<CategoryNav categories={${JSON.stringify(slugs)}} />\n`;
+  }))}\n\n<CategoryNav categories={${JSON.stringify(slugs)}} />\n`;
 }
 
 function emitLocaleCategoryIndexes(
@@ -90,7 +102,12 @@ function emitLocaleCategoryIndexes(
     fallbackDescription: string,
   ) => {
     const indexPath = path.join(localeDir, slug, "index.mdx");
-    if (!present) {
+    if (!present || !shouldEmitResourceLocaleRoute({
+      slug,
+      locale,
+      defaultLocale: config.defaultLocale,
+      defaultLocaleOnlyPrefixes: config.defaultLocaleOnlyPrefixes,
+    })) {
       removeGeneratedIndex(indexPath);
       return;
     }

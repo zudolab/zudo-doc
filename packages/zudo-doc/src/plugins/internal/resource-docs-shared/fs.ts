@@ -32,7 +32,10 @@ export function resolveLocaleDirs({
   if (locales === undefined) return undefined;
 
   const defaultDir = resolveConfiguredDir(projectRoot, docsDir);
-  const roots = new Map<string, string>([[path.normalize(defaultDir), "default docsDir"]]);
+  const defaultRoot = canonicalExistingRoot(defaultDir);
+  const roots = new Map<string, { label: string; dir: string }>([
+    [defaultRoot, { label: "default docsDir", dir: defaultDir }],
+  ]);
   const resolved: Record<string, ResourceLocaleConfig> = {};
 
   for (const [locale, config] of Object.entries(locales)) {
@@ -42,14 +45,14 @@ export function resolveLocaleDirs({
       );
     }
     const dir = resolveConfiguredDir(projectRoot, config.dir);
-    const normalizedDir = path.normalize(dir);
-    const previous = roots.get(normalizedDir);
+    const canonicalDir = canonicalExistingRoot(dir);
+    const previous = roots.get(canonicalDir);
     if (previous !== undefined) {
       throw new Error(
-        `resource-docs: locale "${locale}" directory "${dir}" overlaps ${previous} at "${defaultDir === dir ? defaultDir : normalizedDir}". Configure a distinct content directory (or remove/rename the conflicting locale).`,
+        `resource-docs: locale "${locale}" directory "${dir}" overlaps ${previous.label} at "${canonicalDir}". Configure a distinct content directory (or remove/rename the conflicting locale).`,
       );
     }
-    roots.set(normalizedDir, `locale "${locale}"`);
+    roots.set(canonicalDir, { label: `locale "${locale}"`, dir });
     resolved[locale] = { dir };
   }
 
@@ -58,6 +61,22 @@ export function resolveLocaleDirs({
 
 function resolveConfiguredDir(projectRoot: string, input: string): string {
   return path.isAbsolute(input) ? input : path.resolve(projectRoot, input);
+}
+
+/**
+ * Collapse aliases only when the configured root already exists and the host
+ * filesystem can resolve it. `realpath` catches symlink aliases and, on
+ * case-insensitive filesystems, differently-cased aliases. Missing roots keep
+ * their lexical identity so legitimate sibling directories that will be
+ * created later are never guessed to overlap.
+ */
+function canonicalExistingRoot(dir: string): string {
+  const normalized = path.normalize(dir);
+  try {
+    return path.normalize(fs.realpathSync.native(normalized));
+  } catch {
+    return normalized;
+  }
 }
 
 export function ensureDir(dir: string): void {

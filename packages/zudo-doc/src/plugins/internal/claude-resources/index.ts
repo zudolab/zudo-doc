@@ -53,6 +53,8 @@ export interface ClaudeResourcesPluginOptions {
   defaultLocale?: string;
   /** UI-string translation table used by localized generated indexes. */
   translations?: ResourceTranslations;
+  /** Route prefixes that must not receive non-default-locale indexes. */
+  defaultLocaleOnlyPrefixes?: string[];
 }
 
 /**
@@ -98,6 +100,7 @@ export function runClaudeResourcesPreStep(
     locales,
     defaultLocale: options.defaultLocale,
     translations: options.translations,
+    defaultLocaleOnlyPrefixes: options.defaultLocaleOnlyPrefixes,
   });
 }
 

@@ -60,7 +60,7 @@ Generated files are written to `src/content/docs/` and are recreated on every bu
 
 ## Locale Behavior
 
-The overview and category-index pages are generated in every configured locale, using `resource.*` UI strings for their title, description, and labels. Individual resource bodies remain in the default content directory because they are English source dumps; locale-prefixed routes display that body inside localized navigation and chrome without an untranslated-page banner. The language switcher keeps links to every configured locale.
+The overview and category-index pages are generated in every configured locale, using `resource.*` UI strings for their title, description, and labels. The default content directory holds the canonical source dump for each individual resource body; its language follows the source files and is not necessarily English. Locale-prefixed routes display that body inside localized navigation and chrome without an untranslated-page banner. The language switcher keeps links to every configured locale.
 
 English and Japanese `resource.*` strings ship with the package. Other supported locale codes follow the normal requested locale → configured default → English → literal fallback chain. You can override the labels through `ZudoDocConfig.translations`. See [Internationalization](./i18n.mdx#generated-pages-and-default-locale-bodies) for the storage rationale, `llms.txt` and search behavior, and the `defaultLocaleOnlyPrefixes` opt-out.
 

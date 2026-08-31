@@ -278,6 +278,60 @@ describe("generateCodexResourcesDocs", () => {
     )).data.title).toBe("Skills");
   });
 
+  it("escapes MDX-significant custom text in the resources heading", () => {
+    const localeDir = path.join(tmpDir, "docs-ja");
+    generateCodexResourcesDocs({
+      codexDir,
+      projectRoot: tmpDir,
+      scanRoot: tmpDir,
+      docsDir,
+      locales: { ja: { dir: localeDir } },
+      defaultLocale: "en",
+      translations: {
+        ja: { "resource.resources": "<Resource>{一覧}</Resource>" },
+      },
+    });
+
+    const overview = fs.readFileSync(
+      path.join(localeDir, "codex", "index.mdx"),
+      "utf8",
+    );
+    expect(overview).toContain(
+      "## &lt;Resource&gt;&#123;一覧&#125;&lt;/Resource&gt;",
+    );
+    expect(overview).not.toContain("## <Resource>{一覧}</Resource>");
+  });
+
+  it("removes stale localized routes that become default-locale-only", () => {
+    const localeDir = path.join(tmpDir, "docs-ja");
+    const baseConfig = {
+      codexDir,
+      projectRoot: tmpDir,
+      scanRoot: tmpDir,
+      docsDir,
+      locales: { ja: { dir: localeDir } },
+      defaultLocale: "en",
+    };
+
+    generateCodexResourcesDocs(baseConfig);
+    expect(fs.existsSync(path.join(localeDir, "codex", "index.mdx"))).toBe(true);
+    expect(fs.existsSync(path.join(localeDir, "codex-skills", "index.mdx"))).toBe(true);
+
+    generateCodexResourcesDocs({
+      ...baseConfig,
+      defaultLocaleOnlyPrefixes: [
+        "/docs/codex/",
+        "/docs/codex-skills/",
+      ],
+    });
+
+    expect(fs.existsSync(path.join(localeDir, "codex", "index.mdx"))).toBe(false);
+    expect(fs.existsSync(path.join(localeDir, "codex-skills", "index.mdx"))).toBe(false);
+    expect(fs.existsSync(path.join(localeDir, "codex-agents", "index.mdx"))).toBe(true);
+    expect(fs.existsSync(path.join(docsDir, "codex", "index.mdx"))).toBe(true);
+    expect(fs.existsSync(path.join(docsDir, "codex-skills", "index.mdx"))).toBe(true);
+  });
+
   it("emits formatter-stable frontmatter scalars", () => {
     generate();
     expect(fs.readFileSync(path.join(docsDir, "codex", "index.mdx"), "utf8")).toContain(

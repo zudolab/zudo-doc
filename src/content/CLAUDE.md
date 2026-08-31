@@ -18,19 +18,21 @@ JA mirrors the EN directory tree exactly. Exceptions below.
 
 ## Bilingual carve-outs
 
-- Pages with `generated: true` in frontmatter need no JA translation.
-- Paths under `settings.defaultLocaleOnlyPrefixes` (`src/config/settings.ts`) are
-  default-locale-only by design — create no JA mirror. Current entries:
-  `/docs/claude-md/`, `/docs/claude-skills/`, `/docs/claude-agents/`,
-  `/docs/claude-commands/`, `/docs/codex-agents-md/`, `/docs/codex-config/`,
-  `/docs/codex-agents/`, `/docs/codex-hooks/`, `/docs/codex-rules/`, `/docs/codex-skills/`.
-- The top-level `/docs/claude/` and `/docs/codex/` indexes **are** bilingual (JA stubs at
-  `docs-ja/claude/index.mdx` and `docs-ja/codex/index.mdx`); only the ten deep prefixes above
-  are default-locale-only.
-- `docs-ja/claude/index.mdx` and `docs-ja/codex/index.mdx` are deliberate JA-only stubs with
-  **no EN-parity obligation**: their EN counterparts are **build-generated**, so hand-editing
-  the JA files to mirror EN content would be clobbered on the next generate. Keep the JA stubs
-  minimal — do not attempt to translate the generated EN indexes into them.
+- Files with `generated: true` in frontmatter are generator-owned; do not hand-edit or
+  translate them.
+- The Claude/Codex resource generators own their overview and category `index.mdx` targets in
+  the default content directory and every configured locale directory. They generate localized
+  indexes from the `resource.*` translations, so do not create hand-written locale stubs.
+- If an authored file already occupies one of those generator target paths, the generator
+  refuses to overwrite it; it does not silently replace the file. Remove or rename the authored
+  index, then express its title, description, and labels through `ZudoDocConfig.translations`.
+- Claude/Codex resource detail files remain in the default content directory and are exposed at
+  other locale routes through body fallback. Do not copy those generated detail files into locale
+  directories.
+- Paths explicitly configured under `settings.defaultLocaleOnlyPrefixes`
+  (`src/config/settings.ts`) are default-locale-only by design — create no locale mirror. This
+  repository currently configures no such prefixes; the legacy resource prefixes are not
+  package or showcase defaults.
 
 ## Navigation Structure
 

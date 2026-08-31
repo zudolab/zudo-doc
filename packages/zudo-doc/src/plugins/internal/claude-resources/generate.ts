@@ -8,11 +8,13 @@ import {
   escapeForMdx,
   escapeTitle,
   findNamedFiles,
+  formatFrontmatterString,
   generateSkillsCategory,
   parseFrontmatter,
   removeGeneratedIndex,
   resolveLocaleDirs,
   resolveResourceLabel,
+  shouldEmitResourceLocaleRoute,
   type ResourceLocaleConfig,
   type ResourceTranslations,
   writeCategoryIndex,
@@ -40,6 +42,8 @@ export interface ClaudeResourcesConfig {
   defaultLocale?: string;
   /** UI-string translation table used by localized generated indexes. */
   translations?: ResourceTranslations;
+  /** Route prefixes that must not receive non-default-locale indexes. */
+  defaultLocaleOnlyPrefixes?: string[];
 }
 
 interface ClaudeMdItem {
@@ -89,6 +93,16 @@ function defaultResourceLabel(
     key,
     fallbackLiteral,
   );
+}
+
+/**
+ * Keep Claude's historical quoted frontmatter bytes for ordinary strings,
+ * while delegating unsafe scalars (notably multiline/control-character
+ * translations) to the shared YAML-safe formatter.
+ */
+function formatClaudeFrontmatterString(value: string): string {
+  const formatted = formatFrontmatterString(value);
+  return formatted === value ? JSON.stringify(value) : formatted;
 }
 
 // ---------------------------------------------------------------------------
@@ -364,10 +378,20 @@ function generateOverviewIndex(
       hasAgents,
       hasClaudemd,
     });
-    writeGeneratedIndex(
-      path.join(localeConfig.dir, "claude", "index.mdx"),
-      renderOverviewIndex(config, locale, categorySlugs),
-    );
+    const overviewPath = path.join(localeConfig.dir, "claude", "index.mdx");
+    if (shouldEmitResourceLocaleRoute({
+      slug: "claude",
+      locale,
+      defaultLocale: config.defaultLocale,
+      defaultLocaleOnlyPrefixes: config.defaultLocaleOnlyPrefixes,
+    })) {
+      writeGeneratedIndex(
+        overviewPath,
+        renderOverviewIndex(config, locale, categorySlugs),
+      );
+    } else {
+      removeGeneratedIndex(overviewPath);
+    }
   }
 }
 
@@ -377,13 +401,13 @@ function renderOverviewIndex(
   categorySlugs: string[],
 ): string {
   return `---
-title: "${escapeTitle(resourceLabel(config, locale, "resource.claude.title", "Claude"))}"
-description: "${escapeTitle(resourceLabel(
+title: ${formatClaudeFrontmatterString(resourceLabel(config, locale, "resource.claude.title", "Claude"))}
+description: ${formatClaudeFrontmatterString(resourceLabel(
     config,
     locale,
     "resource.claude.description",
     "Claude Code configuration reference.",
-  ))}"
+  ))}
 sidebar_position: 899
 generated: true
 ---
@@ -468,7 +492,12 @@ function writeLocaleCategoryIndex(
   fallbackDescription: string,
 ): void {
   const indexPath = path.join(localeDir, categoryDir, "index.mdx");
-  if (!present) {
+  if (!present || !shouldEmitResourceLocaleRoute({
+    slug: categoryDir,
+    locale,
+    defaultLocale: config.defaultLocale,
+    defaultLocaleOnlyPrefixes: config.defaultLocaleOnlyPrefixes,
+  })) {
     removeGeneratedIndex(indexPath);
     return;
   }
@@ -478,7 +507,7 @@ function writeLocaleCategoryIndex(
     resourceLabel(config, locale, labelKey, fallbackLabel),
     position,
     resourceLabel(config, locale, descriptionKey, fallbackDescription),
-    undefined,
+    formatClaudeFrontmatterString,
     writeGeneratedIndex,
   );
 }

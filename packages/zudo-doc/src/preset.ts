@@ -145,6 +145,8 @@ export interface PresetSettings {
   assetViewerExclude?: string[];
   claudeResources?: PresetClaudeResourcesConfig | false;
   codexResources?: PresetCodexResourcesConfig | false;
+  /** Route prefixes served only from the unprefixed default locale. */
+  defaultLocaleOnlyPrefixes?: string[];
   /**
    * When `true` (the **default** when omitted — #2404), the preset adds the
    * package-owned route-injection plugin (`@takazudo/zudo-doc/plugins/routes`).
@@ -642,6 +644,7 @@ function buildPlugins(
               locales: localeRecord,
               defaultLocale: settings.defaultLocale,
               translations: routeContext.translations,
+              defaultLocaleOnlyPrefixes: settings.defaultLocaleOnlyPrefixes ?? [],
             },
           },
         ]
@@ -658,6 +661,7 @@ function buildPlugins(
               locales: localeRecord,
               defaultLocale: settings.defaultLocale,
               translations: routeContext.translations,
+              defaultLocaleOnlyPrefixes: settings.defaultLocaleOnlyPrefixes ?? [],
             },
           },
         ]

@@ -6,6 +6,7 @@ import {
   removeGeneratedIndex,
   resolveLocaleDirs,
   resolveResourceLabel,
+  shouldEmitResourceLocaleRoute,
   writeGeneratedIndex,
 } from "../index.js";
 
@@ -63,6 +64,83 @@ describe("resolveLocaleDirs", () => {
         fr: { dir: path.join(projectRoot, "src/content/docs-ja") },
       },
     })).toThrow(/locale "fr".*locale "ja".*distinct content directory/);
+  });
+
+  it("rejects an existing symlink alias of the default docs root", () => {
+    const projectRoot = makeTempDir();
+    const docsDir = path.join(projectRoot, "src/content/docs");
+    const aliasDir = path.join(projectRoot, "docs-alias");
+    fs.mkdirSync(docsDir, { recursive: true });
+    fs.symlinkSync(
+      docsDir,
+      aliasDir,
+      process.platform === "win32" ? "junction" : "dir",
+    );
+
+    expect(() => resolveLocaleDirs({
+      projectRoot,
+      docsDir,
+      locales: { ja: { dir: aliasDir } },
+    })).toThrow(/locale "ja".*default docsDir.*distinct content directory/);
+  });
+
+  it("keeps distinct existing sibling roots valid", () => {
+    const projectRoot = makeTempDir();
+    for (const dir of ["docs", "docs-ja", "docs-fr"]) {
+      fs.mkdirSync(path.join(projectRoot, dir), { recursive: true });
+    }
+
+    expect(resolveLocaleDirs({
+      projectRoot,
+      docsDir: "docs",
+      locales: {
+        ja: { dir: "docs-ja" },
+        fr: { dir: "docs-fr" },
+      },
+    })).toEqual({
+      ja: { dir: path.join(projectRoot, "docs-ja") },
+      fr: { dir: path.join(projectRoot, "docs-fr") },
+    });
+  });
+
+  it("rejects case aliases when the host filesystem resolves them physically", () => {
+    const projectRoot = makeTempDir();
+    const docsDir = path.join(projectRoot, "Docs");
+    const caseAlias = path.join(projectRoot, "dOCS");
+    fs.mkdirSync(docsDir);
+
+    // Case-sensitive filesystems correctly treat this as a future sibling;
+    // the physical-alias assertion is only applicable where the alias exists.
+    if (!fs.existsSync(caseAlias)) return;
+
+    expect(() => resolveLocaleDirs({
+      projectRoot,
+      docsDir,
+      locales: { ja: { dir: caseAlias } },
+    })).toThrow(/locale "ja".*default docsDir.*distinct content directory/);
+  });
+});
+
+describe("shouldEmitResourceLocaleRoute", () => {
+  it("matches default-only prefixes against normalized /docs/.../ routes", () => {
+    expect(shouldEmitResourceLocaleRoute({
+      slug: "claude-skills",
+      locale: "ja",
+      defaultLocale: "en",
+      defaultLocaleOnlyPrefixes: ["/docs/claude-skills/"],
+    })).toBe(false);
+    expect(shouldEmitResourceLocaleRoute({
+      slug: "claude-skills",
+      locale: "en",
+      defaultLocale: "en",
+      defaultLocaleOnlyPrefixes: ["/docs/claude-skills/"],
+    })).toBe(true);
+    expect(shouldEmitResourceLocaleRoute({
+      slug: "claude-agents",
+      locale: "ja",
+      defaultLocale: "en",
+      defaultLocaleOnlyPrefixes: ["/docs/claude-skills/"],
+    })).toBe(true);
   });
 });
 

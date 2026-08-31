@@ -35,6 +35,7 @@ const DOCS_DIR = "src/content/docs";
 const DOCS_DIR_ABS = resolve(PROJECT_ROOT, DOCS_DIR);
 const LOCALES = { ja: { dir: "src/content/docs-ja" } };
 const DEFAULT_LOCALE = "en";
+const DEFAULT_LOCALE_ONLY_PREFIXES = [];
 
 // Resource labels from the package translation contract (#3816). This watcher
 // is a standalone Node process, so it keeps the same serializable values the
@@ -184,6 +185,7 @@ async function runRunner() {
     locales: LOCALES,
     defaultLocale: DEFAULT_LOCALE,
     translations: TRANSLATIONS,
+    defaultLocaleOnlyPrefixes: DEFAULT_LOCALE_ONLY_PREFIXES,
   });
   console.log(
     `[codex-watch] done: ${result.agentsMd} AGENTS.md, ${result.config} config, ${result.agents} agents, ${result.hooks} hooks, ${result.rules} rules, ${result.skills} skills`,

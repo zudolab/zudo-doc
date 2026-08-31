@@ -5,6 +5,7 @@ import { desktopSidebar, waitForSidebarHydration } from "./sidebar-helpers";
 const { readDistFile } = makeDistReader("i18n");
 const GENERATED_SKILL_ROUTE = "/ja/docs/claude-skills/localized-shell";
 const GENERATED_SKILL_PATH = `${GENERATED_SKILL_ROUTE}/`;
+const JA_ASSET_PATH = "/ja/files/locale-diagram.svg/";
 
 type SearchEntry = {
   url: string;
@@ -132,11 +133,25 @@ test.describe("i18n generated pages: localized resource shell", () => {
 });
 
 test.describe("i18n generated pages: localized asset viewer", () => {
+  test("localizes an authored Markdown asset link", async ({ page }) => {
+    const response = await page.goto("/ja/docs/getting-started", {
+      waitUntil: "domcontentloaded",
+    });
+    expect(response?.status()).toBe(200);
+
+    const article = page.locator("article");
+    const assetLink = article.getByRole("link", { name: "ロケール図" });
+    await expect(assetLink).toHaveAttribute("href", JA_ASSET_PATH);
+    await expect(
+      article.locator('a[href="/files/locale-diagram.svg/"]'),
+    ).toHaveCount(0);
+  });
+
   test("renders the Japanese asset shell and image controls", async ({
     page,
     assertNoConsoleErrors,
   }) => {
-    const response = await page.goto("/ja/files/locale-diagram.svg/", {
+    const response = await page.goto(JA_ASSET_PATH, {
       waitUntil: "domcontentloaded",
     });
     expect(response?.status()).toBe(200);
@@ -145,7 +160,22 @@ test.describe("i18n generated pages: localized asset viewer", () => {
     for (const label of ["アセット", "詳細", "種類", "全体表示", "チェッカー"]) {
       await expect(page.getByText(label, { exact: true }).first()).toBeVisible();
     }
-    await expect(page.locator("[data-language-switcher]")).toBeVisible();
+    const switcher = page.locator("header [data-language-switcher]");
+    await expect(switcher).toBeVisible();
+    await expect(switcher.locator('[aria-current="page"]')).toHaveAttribute(
+      "lang",
+      "ja",
+    );
+    // Asset viewers are directory-form routes even though ordinary fixture
+    // docs inherit trailingSlash: false.
+    await expect(switcher.locator('a[lang="en"]')).toHaveAttribute(
+      "href",
+      "/files/locale-diagram.svg/",
+    );
+    await expect(switcher.locator('a[lang="de"]')).toHaveAttribute(
+      "href",
+      "/de/files/locale-diagram.svg/",
+    );
     assertNoConsoleErrors();
   });
 });

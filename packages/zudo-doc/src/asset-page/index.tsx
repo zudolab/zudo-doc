@@ -220,6 +220,9 @@ export function createAssetPageView<S extends Settings = Settings>(ctx: ChromeCo
     const dirSegments = asset.dir.split("/").filter(Boolean);
     const indexUrl = ctx.withBase(`/${localeSegment ? `${localeSegment}/` : ""}${routePrefix}/`);
     const homeUrl = ctx.withBase(`/${localeSegment ? `${localeSegment}/` : ""}`);
+    const backLink = locale === ctx.defaultLocale
+      ? asset.linkedFrom[0]
+      : asset.linkedFrom.find((link) => link.locale === locale) ?? asset.linkedFrom[0];
     const breadcrumbItems = [
       { label: "", href: homeUrl },
       { label: t("asset.crumb", locale), ...(settings.assetViewerIndex ? { href: indexUrl } : {}) },
@@ -255,7 +258,7 @@ export function createAssetPageView<S extends Settings = Settings>(ctx: ChromeCo
     return (
       <DocLayoutWithDefaults title={composeMetaTitle(asset.name)} head={<HeadWithDefaults title={asset.name} description={asset.description} canonical={ctx.absoluteUrl(viewerUrl)} />} lang={locale} dataThemePack={dataThemePack} noindex={settings.noindex} hideSidebar hideToc sidebarOverride={false} contentWide breadcrumbOverride={<BreadcrumbWithDefaults items={breadcrumbItems} />} headerOverride={<HeaderWithDefaults lang={locale} currentPath={viewerUrl} hideSidebarToggle />} footerOverride={<FooterWithDefaults lang={locale} />} bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} forceImageEnlarge={asset.kind === "image" && asset.previewable && asset.sniffOk} />} enableClientRouter={settings.dynamicPageTransition}>
         <div class="zd-asset-page" data-zd-asset-page>
-          {asset.linkedFrom[0] && <p class="mb-vsp-xs text-caption"><a href={asset.linkedFrom[0].href} class="text-muted hover:text-accent focus-visible:text-accent hover:underline focus-visible:underline">← {t("asset.backTo", locale)} {asset.linkedFrom[0].title}</a></p>}
+          {backLink && <p class="mb-vsp-xs text-caption"><a href={backLink.href} class="text-muted hover:text-accent focus-visible:text-accent hover:underline focus-visible:underline">← {t("asset.backTo", locale)} {backLink.title}</a></p>}
           <AssetHeader asset={asset} locale={locale} badge={t("asset.badge", locale)} updatedLabel={t("doc.updated", locale)} linesLabel={linesLabel} />
           <AssetActions rawUrl={rawUrl} downloadLabel={t("asset.download", locale)} openRawLabel={t("asset.openRaw", locale)} copyLabel={t("asset.copy", locale)} wrapLabel={t("asset.wrap", locale)} code={!isMedia && asset.previewable && asset.sniffOk} />
           {body}

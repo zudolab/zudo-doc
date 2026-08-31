@@ -237,6 +237,7 @@ const fixtureSettings: PresetSettings = {
   assetViewerExclude: ["drafts/**"],
   claudeResources: { claudeDir: ".claude" },
   codexResources: { codexDir: ".codex" },
+  defaultLocaleOnlyPrefixes: ["/docs/claude-md/"],
   packageOwnedRoutes: true,
 };
 
@@ -404,6 +405,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       docsDir: "src/content/docs",
       locales: { ja: { dir: "src/content/docs-ja" } },
       defaultLocale: "en",
+      defaultLocaleOnlyPrefixes: ["/docs/claude-md/"],
     });
     expect(byName["@takazudo/zudo-doc/plugins/codex-resources"]).toEqual({
       codexDir: ".codex",
@@ -412,6 +414,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       docsDir: "src/content/docs",
       locales: { ja: { dir: "src/content/docs-ja" } },
       defaultLocale: "en",
+      defaultLocaleOnlyPrefixes: ["/docs/claude-md/"],
     });
     expect(byName["@takazudo/zudo-doc/plugins/doc-history"]).toEqual({
       docsDir: "src/content/docs",

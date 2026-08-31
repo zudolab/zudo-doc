@@ -41,6 +41,7 @@ const plugin: ZfbPlugin = {
     const localesOpt = ctx.options["locales"];
     const defaultLocaleOpt = ctx.options["defaultLocale"];
     const translationsOpt = ctx.options["translations"];
+    const defaultLocaleOnlyPrefixesOpt = ctx.options["defaultLocaleOnlyPrefixes"];
     const result = await runClaudeResourcesPreStep({
       claudeDir,
       projectRoot:
@@ -54,6 +55,9 @@ const plugin: ZfbPlugin = {
       translations: isRecord(translationsOpt)
         ? translationsOpt as ResourceTranslations
         : undefined,
+      defaultLocaleOnlyPrefixes: isStringArray(defaultLocaleOnlyPrefixesOpt)
+        ? defaultLocaleOnlyPrefixesOpt
+        : undefined,
     });
     // Surface a one-line summary so build logs make the generation
     // observable.
@@ -65,6 +69,10 @@ const plugin: ZfbPlugin = {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
 }
 
 export default plugin;

@@ -29,6 +29,7 @@ const CLAUDE_DIR = resolve(PROJECT_ROOT, ".claude");
 const DOCS_DIR = "src/content/docs";
 const LOCALES = { ja: { dir: "src/content/docs-ja" } };
 const DEFAULT_LOCALE = "en";
+const DEFAULT_LOCALE_ONLY_PREFIXES = [];
 
 // Resource labels from the package translation contract (#3816). This watcher
 // is a standalone Node process, so it keeps the same serializable values the
@@ -111,6 +112,7 @@ async function runRunner() {
     locales: LOCALES,
     defaultLocale: DEFAULT_LOCALE,
     translations: TRANSLATIONS,
+    defaultLocaleOnlyPrefixes: DEFAULT_LOCALE_ONLY_PREFIXES,
   });
   console.log(
     `[claude-watch] done: ${result.claudemd} CLAUDE.md, ${result.commands} commands, ${result.skills} skills, ${result.agents} agents`,
