@@ -108,6 +108,20 @@ e2e/fixtures/*/src/chrome-bindings.tsx
 # design-tokens-manifest.ts) doesn't need a new line here each time.
 e2e/fixtures/*/src/config/*
 !e2e/fixtures/*/src/config/settings.ts
+# i18n fixture resource-generator output. The committed inputs live under
+# src/content/resources/; fixture setup regenerates these locale trees.
+e2e/fixtures/i18n/src/content/docs/claude/
+e2e/fixtures/i18n/src/content/docs/claude-skills/
+e2e/fixtures/i18n/src/content/docs/codex/
+e2e/fixtures/i18n/src/content/docs/codex-config/
+e2e/fixtures/i18n/src/content/docs-ja/claude/
+e2e/fixtures/i18n/src/content/docs-ja/claude-skills/
+e2e/fixtures/i18n/src/content/docs-ja/codex/
+e2e/fixtures/i18n/src/content/docs-ja/codex-config/
+e2e/fixtures/i18n/src/content/docs-de/claude/
+e2e/fixtures/i18n/src/content/docs-de/claude-skills/
+e2e/fixtures/i18n/src/content/docs-de/codex/
+e2e/fixtures/i18n/src/content/docs-de/codex-config/
 # Build artefacts and history seed
 e2e/fixtures/*/.zfb
 e2e/fixtures/*/dist

@@ -88,7 +88,7 @@ The language switcher appears at the right edge of the header when more than one
 
 The switcher also has a CSS hover/focus fallback. With JavaScript disabled, a pointer hover or ordinary keyboard focus/Tab movement still reveals usable locale anchors. On a narrow viewport the same links appear inline in the mobile sidebar footer.
 
-Pages matched by `defaultLocaleOnlyPrefixes` intentionally collapse to one active link because no alternate-locale route exists. This is a route-availability rule, not a special case for Japanese.
+Pages matched by `defaultLocaleOnlyPrefixes` intentionally collapse to one active link because no alternate-locale route exists. Generated Claude/Codex resources and asset-viewer pages are available in every configured locale by default, so their language switchers retain every locale link.
 
 ## UI Translation Fallback
 
@@ -99,6 +99,23 @@ requested locale → default locale → package English → raw UI-string key
 ```
 
 This lets a project configure only the strings it has translated. Locale labels and content-directory paths remain settings-driven and do not depend on the translation table.
+
+The package ships complete built-in UI tables for English and Japanese. Other locale codes in the generator's `SUPPORTED_LANGS` list do not imply translated chrome; unless a project supplies translations, they follow the same requested locale → configured default → package English → raw key chain.
+
+Generated resource overviews and category labels use the `resource.*` namespace. Asset index and viewer chrome use `asset.*`. Override either namespace through `ZudoDocConfig.translations`:
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    translations: {
+      ja: {
+        "resource.claude.description": "チーム用 Claude Code リファレンス。",
+        "asset.details": "ファイル情報",
+      },
+    },
+  }),
+);
+```
 
 ## Adding a Locale
 
@@ -141,6 +158,14 @@ export default defineConfig(
 
 The primary locale is served at `/docs/...`; each additional locale uses its code, such as `/ja/docs/...` or `/de/docs/...`. This comes from `defaultLocale` plus the route split in `pages/` (`pages/docs/[[...slug]].tsx` and `pages/[locale]/docs/[[...slug]].tsx`); there is no `prefixDefaultLocale` option.
 
+## Generated Pages and Default-Locale Bodies
+
+Claude/Codex resource generators emit their overview and category-index pages into every configured locale directory. Asset viewer routes likewise exist at `/{locale}/${assetViewerRoutePrefix}/...`. Their title, description, navigation, breadcrumb, header, actions, and other shell labels resolve for the requested locale. The language switcher therefore links equivalent generated routes instead of collapsing to the default locale.
+
+Resource **detail bodies** remain owned by the default locale by design. They are dumps of English project source, not translated documentation. Copying them into every locale would duplicate roughly 530 KB per locale on disk and duplicate the same untruncated bodies again in each `dist/{locale}/llms-full.txt`, because `plugins/internal/llms-txt/load.ts` scans locale directories directly. It would also break the fallback convention used by every other untranslated page. Locale routes render the default-locale body inside localized chrome and intentionally omit the ordinary untranslated-page banner.
+
+This creates a deliberate indexing asymmetry. A locale's `llms.txt` and search entries include its localized resource overview pages, but not resource detail pages supplied through route fallback. This is consistent with other fallback pages because both generators index files physically present in that locale's content directory. Search-index storage is not the duplication concern: its body excerpt is capped at 300 characters by `MAX_BODY_LENGTH` in `search-index/types.ts`.
+
 ## Default-Locale-Only Prefixes
 
 Some content has no translation and should exist only in the primary locale. Configure those URL prefixes in `defaultLocaleOnlyPrefixes`:
@@ -149,6 +174,7 @@ Some content has no translation and should exist only in the primary locale. Con
 export default defineConfig(
   zudoDoc({
     defaultLocaleOnlyPrefixes: [
+      "/files/",
       "/docs/claude-md/",
       "/docs/claude-skills/",
       "/docs/claude-agents/",
@@ -164,6 +190,6 @@ export default defineConfig(
 );
 ```
 
-Any page under one of these prefixes is emitted only in the primary locale. The non-primary route list omits it, the language switcher emits only the current active link, and no mirror file should be created. Keep a prefix trailing-slash terminated, rooted at `/docs/`, and narrow enough that it does not hide pages you intend to translate.
+Any page under one of these prefixes is emitted only in the primary locale. The non-primary route list omits it and the language switcher emits only the current active link. Keep prefixes trailing-slash terminated and narrow enough that they do not hide pages you intend to translate. Documentation routes are rooted at `/docs/`; the asset viewer uses `/${assetViewerRoutePrefix}/` (shown as `/files/` above).
 
-The generated Claude and Codex resource sections use this mechanism because their source files are not translated. Their top-level `/docs/claude/` and `/docs/codex/` index pages remain ordinary localized pages.
+These entries are an opt-out recipe, not package defaults. Add `/${assetViewerRoutePrefix}/` to restore default-locale-only asset pages, and add whichever resource prefixes you want to restrict. Leave the top-level `/docs/claude/` and `/docs/codex/` overviews unrestricted if you still want their localized landing pages.

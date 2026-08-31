@@ -602,3 +602,13 @@ scaffold-floor implication is that a project can stop committing
 the plugin recreates it on every build. `SKIP_DOC_HISTORY=1` and CI
 full-manifest behavior are unaffected (see the repo root `CLAUDE.md` "Doc
 History Architecture" decision table — this wave changes none of it).
+
+## Localized generated-resource and asset routes
+
+Claude/Codex resource generators keep detail MDX in the default `docsDir`, but emit their overview and category-index MDX into every configured locale directory. Route enumeration exposes the default-locale detail entries at every configured locale path unless `defaultLocaleOnlyPrefixes` opts a resource prefix out. Those detail routes are intentional body fallbacks: they use localized sidebar, breadcrumb, header, and language-switcher chrome, but suppress the ordinary untranslated-page banner because the English source dump is the canonical body.
+
+Do not copy resource detail MDX into locale directories. The source corpus is roughly 530 KB; copies would duplicate it once on disk and again as untruncated text in every `dist/{locale}/llms-full.txt`, because `plugins/internal/llms-txt/load.ts` scans physical locale directories. Search and locale `llms.txt` therefore include localized overview pages but omit fallback-only details. This matches other fallback content. Search bodies are capped at 300 characters by `search-index/types.ts`, so search-index size is not the reason for the body-ownership decision.
+
+Asset index and leaf routes are likewise enumerated for every configured locale at `/{locale}/${assetViewerRoutePrefix}/...`. Every generated asset href must carry its active locale; a valid fallback to the unprefixed route is still a regression. Both route families use the regular language switcher and remain unversioned.
+
+Resource shell labels resolve from `resource.*`; asset viewer and index labels resolve from `asset.*`. Both namespaces flow through merged `ZudoDocConfig.translations`. Only English and Japanese are complete built-ins; all other supported locale codes resolve requested locale → configured default → package English → literal key. To restore default-locale-only behavior, consumers add `/${assetViewerRoutePrefix}/` and/or the desired resource prefixes to `defaultLocaleOnlyPrefixes`; these prefixes are not package defaults.

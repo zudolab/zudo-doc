@@ -56,7 +56,13 @@ The integration runs at build time as the `@takazudo/zudo-doc/plugins/codex-reso
 
 The generated pages appear under the **Codex** header navigation tab. Configure the tab with `categoryMatch: "codex"` so it activates for every generated Codex section.
 
-Set the header item to `versioned: false`. Generated Codex routes exist only in the default `docsDir`; they are never written beneath `/v/{version}`, so a version-aware link would point to a route that does not exist while an archived version is active.
+Set the header item to `versioned: false`. Generated Codex content is never written beneath `/v/{version}`, so a version-aware link would point to a route that does not exist while an archived version is active.
+
+## Locale Behavior
+
+The overview and category-index pages are generated in every configured locale, using `resource.*` UI strings for their title, description, and labels. Individual resource bodies remain in the default content directory because they are English source dumps; locale-prefixed routes display that body inside localized navigation and chrome without an untranslated-page banner. The language switcher keeps links to every configured locale.
+
+English and Japanese `resource.*` strings ship with the package. Other supported locale codes follow the normal requested locale → configured default → English → literal fallback chain. You can override the labels through `ZudoDocConfig.translations`. See [Internationalization](./i18n.mdx#generated-pages-and-default-locale-bodies) for the storage rationale, `llms.txt` and search behavior, and the `defaultLocaleOnlyPrefixes` opt-out.
 
 ## Configuration Options
 
