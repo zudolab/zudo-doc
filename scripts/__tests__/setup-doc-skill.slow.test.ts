@@ -340,6 +340,102 @@ describe("setup-doc-skill.sh", () => {
   });
 });
 
+describe("setup-doc-skill.sh configured locale map (#3804)", () => {
+  let fixtureRoot: string;
+  let fixtureHome: string;
+  let projectDir: string;
+
+  beforeEach(() => {
+    fixtureRoot = mkdtempSync(join(tmpdir(), "zudo-doc-locale-fixture-"));
+    fixtureHome = mkdtempSync(join(tmpdir(), "zudo-doc-locale-home-"));
+    projectDir = fixtureRoot;
+    execSync("git init -q", { cwd: fixtureRoot });
+
+    mkdirSync(join(projectDir, "scripts"), { recursive: true });
+    for (const dir of [
+      "src/content/docs/getting-started",
+      "src/content/docs-ja/getting-started",
+      "src/content/docs-de/getting-started",
+      // These are deliberate version snapshots. They must not be discovered
+      // as current locales just because their names match docs-*.
+      "src/content/docs-v1/getting-started",
+      "src/content/docs-v1-ja/getting-started",
+      "src/content/docs-v1-de/getting-started",
+    ]) {
+      mkdirSync(join(projectDir, dir), { recursive: true });
+    }
+    writeFileSync(
+      join(projectDir, "src/content/docs/getting-started/index.mdx"),
+      "---\ntitle: Test\n---\n",
+    );
+    writeFileSync(
+      join(projectDir, "zfb.config.ts"),
+      `import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(zudoDoc({
+  docsDir: "src/content/docs",
+  defaultLocale: "en",
+  locales: {
+    ja: { label: "JA", dir: "src/content/docs-ja" },
+    de: { label: "DE", dir: "src/content/docs-de" },
+  },
+  versions: [{
+    slug: "1.0",
+    docsDir: "src/content/docs-v1",
+    locales: {
+      ja: { dir: "src/content/docs-v1-ja" },
+      de: { dir: "src/content/docs-v1-de" },
+    },
+  }],
+}));
+`,
+    );
+    cpSync(SCRIPT_PATH, join(projectDir, "scripts/setup-doc-skill.sh"));
+    writeFileSync(
+      join(projectDir, "package.json"),
+      JSON.stringify({ name: "locale-fixture", scripts: {} }),
+    );
+  });
+
+  afterEach(() => {
+    if (existsSync(fixtureRoot)) rmSync(fixtureRoot, { recursive: true });
+    if (existsSync(fixtureHome)) rmSync(fixtureHome, { recursive: true });
+  });
+
+  it("links exactly configured current locales and omits version snapshots", () => {
+    const output = execSync(
+      `bash "${join(projectDir, "scripts/setup-doc-skill.sh")}" --target claude fixture-wisdom`,
+      {
+        cwd: projectDir,
+        encoding: "utf-8",
+        timeout: 30_000,
+        env: scriptEnv(fixtureHome),
+      },
+    );
+    const skillDir = join(projectDir, ".claude/skills/fixture-wisdom");
+    const skillMd = readFileSync(join(skillDir, "SKILL.md"), "utf-8");
+
+    expect(realpathSync(join(skillDir, "docs"))).toBe(
+      realpathSync(join(projectDir, "src/content/docs")),
+    );
+    expect(realpathSync(join(skillDir, "docs-ja"))).toBe(
+      realpathSync(join(projectDir, "src/content/docs-ja")),
+    );
+    expect(realpathSync(join(skillDir, "docs-de"))).toBe(
+      realpathSync(join(projectDir, "src/content/docs-de")),
+    );
+    expect(existsSync(join(skillDir, "docs-v1"))).toBe(false);
+    expect(existsSync(join(skillDir, "docs-v1-ja"))).toBe(false);
+    expect(existsSync(join(skillDir, "docs-v1-de"))).toBe(false);
+    expect(output).not.toContain("docs-v1-ja symlink");
+    expect(skillMd).toContain("`src/content/docs-ja/`");
+    expect(skillMd).toContain("`src/content/docs-de/`");
+    expect(skillMd).toContain("/de/docs/...");
+    expect(skillMd).toContain("English placeholder prose pending translation");
+  });
+});
+
 describe("suffix-aware skill-name derivation (#3154)", () => {
   // Builds a throwaway fixture project (same shape as the nested-subdir
   // fixture above) with a caller-chosen package.json `name`, so the
