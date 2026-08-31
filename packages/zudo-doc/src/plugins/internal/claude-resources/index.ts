@@ -6,6 +6,11 @@ import {
   generateClaudeResourcesDocs,
   type ClaudeResourcesConfig,
 } from "./generate.js";
+import {
+  resolveLocaleDirs,
+  type ResourceLocaleConfig,
+  type ResourceTranslations,
+} from "../resource-docs-shared/index.js";
 
 /** Options accepted by the plugin's generator runner. */
 export interface ClaudeResourcesPluginOptions {
@@ -42,6 +47,12 @@ export interface ClaudeResourcesPluginOptions {
    * match the existing Astro integration's behaviour.
    */
   docsDir?: string;
+  /** Additional locale content roots, keyed by locale code. */
+  locales?: Record<string, ResourceLocaleConfig>;
+  /** Default locale code (the unprefixed docs directory). */
+  defaultLocale?: string;
+  /** UI-string translation table used by localized generated indexes. */
+  translations?: ResourceTranslations;
 }
 
 /**
@@ -70,6 +81,11 @@ export function runClaudeResourcesPreStep(
   const docsDir = path.isAbsolute(docsDirInput)
     ? docsDirInput
     : path.resolve(projectRoot, docsDirInput);
+  const locales = resolveLocaleDirs({
+    projectRoot,
+    docsDir,
+    locales: options.locales,
+  });
 
   // The generator takes both roots: `scanRoot` is the CLAUDE.md walk root +
   // relPath base, `projectRoot` anchors the project-specific excludes (neither
@@ -79,6 +95,9 @@ export function runClaudeResourcesPreStep(
     projectRoot,
     scanRoot,
     docsDir,
+    locales,
+    defaultLocale: options.defaultLocale,
+    translations: options.translations,
   });
 }
 

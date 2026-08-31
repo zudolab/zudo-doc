@@ -106,6 +106,8 @@ export interface PresetHeaderNavItem {
  */
 export interface PresetSettings {
   docsDir: string;
+  /** Default locale code (the unprefixed docs directory). */
+  defaultLocale?: string;
   locales: Record<string, PresetLocaleConfig>;
   versions?: PresetVersionConfig[] | false;
   base: string;
@@ -637,6 +639,9 @@ function buildPlugins(
               projectRoot: settings.claudeResources.projectRoot,
               scanRoot: settings.claudeResources.scanRoot,
               docsDir: settings.docsDir,
+              locales: localeRecord,
+              defaultLocale: settings.defaultLocale,
+              translations: routeContext.translations,
             },
           },
         ]
@@ -650,6 +655,9 @@ function buildPlugins(
               projectRoot: settings.codexResources.projectRoot,
               scanRoot: settings.codexResources.scanRoot,
               docsDir: settings.docsDir,
+              locales: localeRecord,
+              defaultLocale: settings.defaultLocale,
+              translations: routeContext.translations,
             },
           },
         ]

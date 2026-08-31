@@ -63,9 +63,49 @@ function createFixture() {
   );
 }
 
+function snapshotFiles(root: string): Record<string, string> {
+  const snapshot: Record<string, string> = {};
+  const visit = (dir: string, relativeDir = "") => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const relativePath = path.join(relativeDir, entry.name);
+      const absolutePath = path.join(dir, entry.name);
+      if (entry.isDirectory()) visit(absolutePath, relativePath);
+      else snapshot[relativePath] = fs.readFileSync(absolutePath, "utf8");
+    }
+  };
+  visit(root);
+  return snapshot;
+}
+
 describe("generateClaudeResourcesDocs", () => {
   beforeEach(() => {
     createFixture();
+  });
+
+  it("keeps default-locale MDX byte-identical when locale options are threaded", () => {
+    const baselineDir = path.join(tmpDir, "baseline-docs");
+    const configuredDir = path.join(tmpDir, "configured-docs");
+
+    generateClaudeResourcesDocs({
+      claudeDir,
+      projectRoot: tmpDir,
+      docsDir: baselineDir,
+    });
+    const baseline = snapshotFiles(baselineDir);
+
+    generateClaudeResourcesDocs({
+      claudeDir,
+      projectRoot: tmpDir,
+      docsDir: configuredDir,
+      locales: { ja: { dir: "src/content/docs-ja" } },
+      defaultLocale: "en",
+      translations: {
+        en: { "resource.claude.title": "Claude" },
+        ja: { "resource.claude.title": "Claude" },
+      },
+    });
+
+    expect(snapshotFiles(configuredDir)).toEqual(baseline);
   });
 
   afterEach(() => {

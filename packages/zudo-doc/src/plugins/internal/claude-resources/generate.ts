@@ -10,6 +10,9 @@ import {
   findNamedFiles,
   generateSkillsCategory,
   parseFrontmatter,
+  resolveLocaleDirs,
+  type ResourceLocaleConfig,
+  type ResourceTranslations,
   writeCategoryIndex,
 } from "../resource-docs-shared/index.js";
 
@@ -28,6 +31,12 @@ export interface ClaudeResourcesConfig {
    */
   scanRoot?: string;
   docsDir: string;
+  /** Additional locale content roots, resolved by the runner when possible. */
+  locales?: Record<string, ResourceLocaleConfig>;
+  /** Default locale code (the unprefixed docs directory). */
+  defaultLocale?: string;
+  /** UI-string translation table used by localized generated indexes. */
+  translations?: ResourceTranslations;
 }
 
 interface ClaudeMdItem {
@@ -294,12 +303,27 @@ generated: true
 }
 
 export function generateClaudeResourcesDocs(config: ClaudeResourcesConfig) {
-  const claudemds = generateClaudemdDocs(config);
-  const commands = generateCommandsDocs(config);
-  const skills = generateSkillsDocs(config);
-  const agents = generateAgentsDocs(config);
+  // Direct callers can use the internal generator without going through the
+  // plugin runner. Normalize locale roots here too so the same overlap guard
+  // applies to both entry points. Existing default-locale generation is left
+  // untouched when `locales` is omitted.
+  const normalizedConfig = config.locales === undefined
+    ? config
+    : {
+        ...config,
+        locales: resolveLocaleDirs({
+          projectRoot: path.resolve(config.projectRoot ?? config.claudeDir),
+          docsDir: config.docsDir,
+          locales: config.locales,
+        }),
+      };
 
-  generateOverviewIndex(config, {
+  const claudemds = generateClaudemdDocs(normalizedConfig);
+  const commands = generateCommandsDocs(normalizedConfig);
+  const skills = generateSkillsDocs(normalizedConfig);
+  const agents = generateAgentsDocs(normalizedConfig);
+
+  generateOverviewIndex(normalizedConfig, {
     hasClaudemd: claudemds.length > 0,
     hasCommands: commands.length > 0,
     hasSkills: skills.length > 0,

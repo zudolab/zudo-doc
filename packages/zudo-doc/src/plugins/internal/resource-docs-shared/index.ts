@@ -1,5 +1,19 @@
 export { escapeForMdx } from "./escape-for-mdx.js";
-export { cleanDir, ensureDir, listFiles } from "./fs.js";
+export {
+  cleanDir,
+  ensureDir,
+  listFiles,
+  resolveLocaleDirs,
+  writeGeneratedIndex,
+  type ResolveLocaleDirsOptions,
+  type ResourceLocaleConfig,
+} from "./fs.js";
+export {
+  resolveLabel,
+  resolveResourceLabel,
+  type ResolveResourceLabelOptions,
+  type ResourceTranslations,
+} from "./labels.js";
 export {
   assertNotIndexReserved,
   escapeTitle,
