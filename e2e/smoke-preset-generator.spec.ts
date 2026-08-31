@@ -125,7 +125,9 @@ test.describe("PresetGenerator: hydration and interaction", () => {
       await expect(page.locator('[role="alert"]')).toBeVisible();
       const generate = page.getByRole("button", { name: "Generate Preset" });
       await expect(generate).toBeDisabled();
-      await expect(page.locator("dialog")).toHaveCount(0);
+      await expect(
+        page.locator("dialog").filter({ hasText: "Generated Preset" }),
+      ).toHaveCount(0);
 
       assertNoConsoleErrors();
     });

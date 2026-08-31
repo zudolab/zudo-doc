@@ -2,12 +2,12 @@ import { test, expect } from "./fixtures";
 import { spaClick } from "./nav-helpers";
 import type { Page } from "@playwright/test";
 
-// The i18n fixture uses zudo-doc's default `trailingSlash: false` output.
-// Keep route expectations in the emitted href form; page.goto still accepts
-// these canonical slashless URLs directly.
-const PAGE_EN = "/docs/getting-started";
-const PAGE_DE = "/de/docs/getting-started";
-const DEFAULT_ONLY_PAGE = "/docs/default-only";
+// The i18n fixture uses zudo-doc's default trailing-slash output. Keep route
+// expectations in the exact emitted href form so the SPA rewire assertions
+// verify canonical links instead of relying on preview-server redirects.
+const PAGE_EN = "/docs/getting-started/";
+const PAGE_DE = "/de/docs/getting-started/";
+const DEFAULT_ONLY_PAGE = "/docs/default-only/";
 const SWITCHER = "[data-language-switcher]";
 
 // Desktop viewport so the language disclosure is rendered in the header and
@@ -100,11 +100,15 @@ test.describe("i18n language disclosure: EN + JA + DE", () => {
     await page.goto(PAGE_EN, { waitUntil: "domcontentloaded" });
 
     const cases = [
-      { path: "/docs/guides", ja: "/ja/docs/guides", de: "/de/docs/guides" },
       {
-        path: "/docs/guides/writing-docs",
-        ja: "/ja/docs/guides/writing-docs",
-        de: "/de/docs/guides/writing-docs",
+        path: "/docs/guides/",
+        ja: "/ja/docs/guides/",
+        de: "/de/docs/guides/",
+      },
+      {
+        path: "/docs/guides/writing-docs/",
+        ja: "/ja/docs/guides/writing-docs/",
+        de: "/de/docs/guides/writing-docs/",
       },
     ];
 
