@@ -5,7 +5,7 @@ import {
   DEFAULT_HEADER_RIGHT_ITEMS,
   type FormState,
 } from "../lib/preset-generator-logic";
-import { parseArgs } from "../../packages/create-zudo-doc/src/cli";
+import { parseArgs, validateArgs } from "../../packages/create-zudo-doc/src/cli";
 
 /**
  * Split a CLI command string (as produced by buildCliCommand) into an argv
@@ -45,6 +45,7 @@ function makeState(overrides: Partial<FormState> = {}): FormState {
   return {
     projectName: "my-docs",
     defaultLang: "en",
+    additionalLangs: "",
     colorSchemeMode: "single",
     singleScheme: "Default Dark",
     lightScheme: "Default Light",
@@ -64,13 +65,25 @@ function verifyRoundtrip(state: FormState) {
   const command = buildCliCommand(state);
   const argv = cliCommandToArgv(command);
   const parsed = parseArgs(argv);
+  const expectedI18n = Boolean(state.additionalLangs.trim());
 
   expect(parsed.name).toBe(state.projectName || "my-docs");
-  expect(parsed.lang).toBe(state.defaultLang);
+  expect(parsed.lang).toBe(state.defaultLang.trim().toLowerCase());
   expect(parsed.colorSchemeMode).toBe(state.colorSchemeMode);
   expect(parsed.pm).toBe(state.packageManager);
   expect(parsed.yes).toBe(true);
   expect(parsed.themePack).toBe(state.themePack);
+  if (!/\s/.test(state.projectName)) {
+    expect(validateArgs(parsed)).toBeNull();
+  }
+
+  if (state.additionalLangs.trim()) {
+    expect(parsed.additionalLangs).toEqual(
+      state.additionalLangs.split(",").map((locale) => locale.trim().toLowerCase()),
+    );
+  } else {
+    expect(parsed.additionalLangs).toBeUndefined();
+  }
 
   if (state.colorSchemeMode === "single") {
     expect(parsed.scheme).toBe(state.singleScheme);
@@ -82,7 +95,9 @@ function verifyRoundtrip(state: FormState) {
   }
 
   for (const f of FEATURES) {
-    const expected = state.features.includes(f.value);
+    const expected = f.value === "i18n"
+      ? expectedI18n
+      : state.features.includes(f.value);
     expect(
       parsed[f.value as keyof typeof parsed],
       `Feature ${f.value} (--${f.cliFlag}): expected ${expected}`,
@@ -98,6 +113,7 @@ describe("roundtrip: buildCliCommand → parseArgs", () => {
   it("all features enabled, single scheme", () => {
     verifyRoundtrip(makeState({
       features: FEATURES.map((f) => f.value),
+      additionalLangs: "ja",
       colorSchemeMode: "single",
       singleScheme: "Default Light",
     }));
@@ -134,11 +150,24 @@ describe("roundtrip: buildCliCommand → parseArgs", () => {
     }));
   });
 
+  it("additional languages normalize, imply i18n, and roundtrip through the CLI parser", () => {
+    verifyRoundtrip(makeState({
+      defaultLang: " EN ",
+      additionalLangs: " JA , de-DE ",
+      colorSchemeMode: "light-dark",
+      lightScheme: "Default Light",
+      darkScheme: "Default Dark",
+    }));
+  });
+
   describe("each feature individually", () => {
     it.each(FEATURES.map((f) => [f.value, f.cliFlag]))(
       "only %s enabled roundtrips correctly",
       (value) => {
-        verifyRoundtrip(makeState({ features: [value] }));
+        verifyRoundtrip(makeState({
+          features: [value],
+          additionalLangs: value === "i18n" ? "ja" : "",
+        }));
       },
     );
   });

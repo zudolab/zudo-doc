@@ -19,6 +19,7 @@ function makeState(overrides: Partial<FormState> = {}): FormState {
   return {
     projectName: "my-docs",
     defaultLang: "en",
+    additionalLangs: "",
     colorSchemeMode: "single",
     singleScheme: "Default Dark",
     lightScheme: "Default Light",
@@ -74,8 +75,8 @@ describe("buildJson", () => {
     expect(json.projectName).toBe("my-docs");
   });
 
-  it("features array passes through unchanged", () => {
-    const features = ["search", "i18n", "docHistory"];
+  it("features array passes through unchanged when i18n is not selected", () => {
+    const features = ["search", "docHistory"];
     const json = buildJson(makeState({ features }));
     expect(json.features).toEqual(features);
   });
@@ -87,9 +88,35 @@ describe("buildJson", () => {
 
   it("all features enabled", () => {
     const allValues = FEATURES.map((f) => f.value);
-    const json = buildJson(makeState({ features: allValues }));
+    const json = buildJson(makeState({ features: allValues, additionalLangs: "ja" }));
     expect(json.features).toEqual(allValues);
     expect((json.features as string[]).length).toBe(FEATURES.length);
+  });
+
+  it("normalizes an explicit additional language list and derives i18n", () => {
+    const json = buildJson(
+      makeState({ defaultLang: " EN ", additionalLangs: " JA , de-DE " }),
+    );
+    expect(json.defaultLang).toBe("en");
+    expect(json.additionalLangs).toEqual(["ja", "de-de"]);
+    expect(json.features).toContain("i18n");
+  });
+
+  it("omits additionalLangs and i18n for blank input", () => {
+    const json = buildJson(makeState({ features: ["i18n", "search"] }));
+    expect(json).not.toHaveProperty("additionalLangs");
+    expect(json.features).toEqual(["search"]);
+  });
+
+  it.each([
+    "ja, ja",
+    "en",
+    "../ja",
+    "ja,",
+  ])("rejects invalid additional language input %j", (additionalLangs) => {
+    expect(() =>
+      buildJson(makeState({ additionalLangs })),
+    ).toThrow(/additionalLangs/);
   });
 });
 
@@ -102,6 +129,21 @@ describe("buildCliCommand", () => {
   it("includes --lang flag", () => {
     const cmd = buildCliCommand(makeState({ defaultLang: "ja" }));
     expect(cmd).toContain("--lang ja");
+  });
+
+  it("emits normalized additional languages and derives --i18n", () => {
+    const cmd = buildCliCommand(
+      makeState({ defaultLang: " EN ", additionalLangs: " JA , de-DE " }),
+    );
+    expect(cmd).toContain("--lang en --additional-langs ja,de-de");
+    expect(cmd.split("\n")[0]).toContain("--i18n");
+  });
+
+  it("omits --additional-langs and disables i18n for blank input", () => {
+    const cmd = buildCliCommand(makeState({ features: ["i18n", "search"] }));
+    const firstLine = cmd.split("\n")[0]!;
+    expect(firstLine).not.toContain("--additional-langs");
+    expect(firstLine).toContain("--no-i18n");
   });
 
   it("single scheme includes --scheme, no light/dark flags", () => {
@@ -141,7 +183,12 @@ describe("buildCliCommand", () => {
   it.each(FEATURES.map((f) => [f.value, f.cliFlag]))(
     "enabled feature %s produces --%s flag",
     (value, cliFlag) => {
-      const cmd = buildCliCommand(makeState({ features: [value] }));
+      const cmd = buildCliCommand(
+        makeState({
+          features: [value],
+          additionalLangs: value === "i18n" ? "ja" : "",
+        }),
+      );
       // Split only the first line to exclude the trailing shell-comment line,
       // then tokenise on whitespace. Whole-token matching avoids the substring
       // trap where e.g. "--no-tauri-dev" would match a naive .toContain("--no-tauri").
@@ -285,6 +332,7 @@ describe("default generator state — regression: matches target JSON", () => {
     const initialState: FormState = {
       projectName: "my-docs",
       defaultLang: "en",
+      additionalLangs: "",
       colorSchemeMode: "light-dark",
       singleScheme: "Default Dark",
       lightScheme: "Default Light",

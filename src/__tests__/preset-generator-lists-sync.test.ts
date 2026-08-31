@@ -16,8 +16,11 @@ import {
   SUPPORTED_LANGS as HOST_SUPPORTED_LANGS,
   HEADER_RIGHT_LABELS as HOST_HEADER_RIGHT_LABELS,
   THEME_PACKS as HOST_THEME_PACKS,
+  resolvePresetLocalePlan,
+  validateAdditionalLangs,
 } from "../lib/preset-generator-logic";
 import { validateArgs } from "../../packages/create-zudo-doc/src/cli";
+import { resolveLocalePlan } from "../../packages/create-zudo-doc/src/locale-plan";
 
 // ── Host mirror ↔ canonical constants.ts parity ─────────────────────────────
 // preset-generator-logic.ts mirrors these five lists (it is bundled into a
@@ -102,6 +105,72 @@ describe("SUPPORTED_LANGS accepted by CLI validateArgs", () => {
       ).toBeNull();
     },
   );
+});
+
+// ── Locale parser / validation parity ───────────────────────────────────────
+
+describe("host locale input mirrors the canonical locale contract", () => {
+  const cases = [
+    { defaultLang: " EN ", input: " JA ,de-DE " },
+    { defaultLang: "en", input: "" },
+    { defaultLang: "en", input: "   " },
+    { defaultLang: "en", input: "JA, ja" },
+    { defaultLang: "en", input: "en" },
+    { defaultLang: "en", input: "../ja" },
+    { defaultLang: "en", input: "." },
+    { defaultLang: "en", input: "ja/jp" },
+    { defaultLang: "en", input: "ja\\jp" },
+    { defaultLang: "en", input: "ja jp" },
+    { defaultLang: "en", input: "ja_jp" },
+    { defaultLang: "en", input: "ja;touch-x" },
+    { defaultLang: "en", input: "-ja" },
+    { defaultLang: "en", input: "ja-" },
+    { defaultLang: "en", input: "é" },
+    { defaultLang: "en", input: "ja," },
+    { defaultLang: "en", input: "ja,,de" },
+  ] as const;
+
+  function canonicalResult(defaultLang: string, input: string) {
+    try {
+      const plan = resolveLocalePlan({
+        defaultLang,
+        additionalLangs: input.trim() ? input.split(",") : undefined,
+        i18n: false,
+      });
+      return {
+        error: null,
+        plan: {
+          defaultLang: plan.defaultLang,
+          additionalLangs: plan.additionalLangs.length
+            ? plan.additionalLangs
+            : undefined,
+          i18n: plan.i18n,
+        },
+      };
+    } catch (error) {
+      return {
+        error: error instanceof Error ? error.message : String(error),
+        plan: undefined,
+      };
+    }
+  }
+
+  it.each(cases)("matches canonical normalization or rejection for %j", ({
+    defaultLang,
+    input,
+  }) => {
+    const expected = canonicalResult(defaultLang, input);
+    expect(validateAdditionalLangs(input, defaultLang)).toBe(expected.error);
+
+    if (expected.error) {
+      expect(() => resolvePresetLocalePlan(defaultLang, input)).toThrow(
+        expected.error,
+      );
+      return;
+    }
+
+    expect(resolvePresetLocalePlan(defaultLang, input)).toEqual(expected.plan);
+  });
 });
 
 // ── THEME_PACKS ──────────────────────────────────────────────────────────────

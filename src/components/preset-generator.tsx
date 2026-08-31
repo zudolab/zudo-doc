@@ -15,6 +15,7 @@ import {
   SUPPORTED_LANGS,
   HEADER_RIGHT_LABELS,
   THEME_PACKS,
+  validateAdditionalLangs,
   type FormState,
   type HeaderRightItemSpec,
   type FeatureEntry,
@@ -28,6 +29,8 @@ const DARK_SCHEMES = SINGLE_SCHEMES.filter(
 );
 
 const PACKAGE_MANAGERS = ["pnpm", "npm", "yarn", "bun"] as const;
+
+const VISIBLE_FEATURES = FEATURES.filter((feature) => feature.value !== "i18n");
 
 function headerRightItemKey(item: HeaderRightItemSpec): string {
   return `${item.kind}:${item.name}`;
@@ -210,6 +213,7 @@ export default function PresetGenerator() {
   const [state, setState] = useState<FormState>({
     projectName: "my-docs",
     defaultLang: "en",
+    additionalLangs: "",
     colorSchemeMode: "light-dark",
     singleScheme: "Default Dark",
     lightScheme: "Default Light",
@@ -225,6 +229,11 @@ export default function PresetGenerator() {
   });
 
   const [modalState, setModalState] = useState<FormState | null>(null);
+
+  const additionalLangsError = useMemo(
+    () => validateAdditionalLangs(state.additionalLangs, state.defaultLang),
+    [state.additionalLangs, state.defaultLang],
+  );
 
   const update = useCallback(
     <K extends keyof FormState>(key: K, value: FormState[K]) => {
@@ -318,23 +327,68 @@ export default function PresetGenerator() {
         />
       </section>
 
-      {/* Default Language */}
+      {/* Languages */}
       <section>
-        <SectionHeading>Default Language</SectionHeading>
-        <select
-          value={state.defaultLang}
-          aria-label="Default language"
-          onChange={(e) =>
-            update("defaultLang", (e.target as HTMLSelectElement).value)
-          }
-          className={inputClass}
-        >
-          {SUPPORTED_LANGS.map((lang) => (
-            <option key={lang.value} value={lang.value}>
-              {lang.label}
-            </option>
-          ))}
-        </select>
+        <SectionHeading>Languages</SectionHeading>
+        <div className="flex flex-col gap-y-vsp-xs">
+          <label
+            htmlFor="preset-default-language"
+            className="text-caption text-muted"
+          >
+            Default language
+          </label>
+          <select
+            id="preset-default-language"
+            value={state.defaultLang}
+            aria-label="Default language"
+            onChange={(e) =>
+              update("defaultLang", (e.target as HTMLSelectElement).value)
+            }
+            className={inputClass}
+          >
+            {SUPPORTED_LANGS.map((lang) => (
+              <option key={lang.value} value={lang.value}>
+                {lang.label}
+              </option>
+            ))}
+          </select>
+          <label
+            htmlFor="preset-additional-languages"
+            className="text-caption text-muted"
+          >
+            Additional language codes
+          </label>
+          <input
+            id="preset-additional-languages"
+            type="text"
+            value={state.additionalLangs}
+            placeholder="ja, de"
+            aria-label="Additional language codes"
+            aria-invalid={additionalLangsError !== null}
+            aria-describedby={
+              additionalLangsError ? "additional-langs-error" : undefined
+            }
+            onChange={(e) =>
+              update(
+                "additionalLangs",
+                (e.target as HTMLInputElement).value,
+              )
+            }
+            className={inputClass}
+          />
+          <p className="text-caption text-muted">
+            Comma-separated additional locale codes (for example, ja, de).
+          </p>
+          {additionalLangsError && (
+            <p
+              id="additional-langs-error"
+              role="alert"
+              className="text-caption text-danger"
+            >
+              {additionalLangsError}
+            </p>
+          )}
+        </div>
       </section>
 
       {/* Color Scheme Mode */}
@@ -461,7 +515,7 @@ export default function PresetGenerator() {
       <section>
         <SectionHeading>Features</SectionHeading>
         <div className="flex flex-col gap-y-vsp-xs">
-          {(FEATURES as readonly FeatureEntry[]).map((feat) => (
+          {(VISIBLE_FEATURES as readonly FeatureEntry[]).map((feat) => (
             <label
               key={feat.value}
               className="flex items-center gap-x-hsp-xs text-small text-fg"
@@ -776,8 +830,12 @@ export default function PresetGenerator() {
       {/* Generate Button */}
       <div className="mt-vsp-xs">
         <button
-          onClick={() => setModalState({ ...state })}
-          className="border border-accent bg-surface px-hsp-xl py-vsp-2xs text-small font-semibold text-accent transition-colors hover:bg-bg hover:text-accent-hover"
+          disabled={additionalLangsError !== null}
+          onClick={() => {
+            if (additionalLangsError !== null) return;
+            setModalState({ ...state });
+          }}
+          className="border border-accent bg-surface px-hsp-xl py-vsp-2xs text-small font-semibold text-accent transition-colors hover:bg-bg hover:text-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           Generate Preset
         </button>
