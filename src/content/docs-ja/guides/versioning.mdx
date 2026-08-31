@@ -30,6 +30,7 @@ export default defineConfig(
         docsDir: "src/content/docs-v1",
         locales: {
           ja: { dir: "src/content/docs-v1-ja" },
+          de: { dir: "src/content/docs-v1-de" },
         },
         banner: "unmaintained",
       },
@@ -64,10 +65,13 @@ versions: false,
 src/content/
 ├── docs/                # 最新バージョン（デフォルト）
 ├── docs-ja/             # 最新バージョン — 日本語
+├── docs-de/             # 最新バージョン — ドイツ語（設定時）
 ├── docs-v1/             # バージョン1.0 — 英語
 ├── docs-v1-ja/          # バージョン1.0 — 日本語
+├── docs-v1-de/          # バージョン1.0 — ドイツ語（設定時）
 ├── docs-v0.9/           # バージョン0.9 — 英語
-└── docs-v0.9-ja/        # バージョン0.9 — 日本語
+├── docs-v0.9-ja/        # バージョン0.9 — 日本語
+└── docs-v0.9-de/        # バージョン0.9 — ドイツ語（設定時）
 ```
 
 <Warning>
@@ -88,6 +92,7 @@ src/content/
 
 - **最新（日本語）：** `/ja/docs/getting-started/introduction/`
 - **バージョン1.0（日本語）：** `/v/1.0/ja/docs/getting-started/introduction/`
+- **バージョン1.0（ドイツ語）：** `/v/1.0/de/docs/getting-started/introduction/`
 
 ## バージョン切り替え
 
@@ -164,6 +169,7 @@ versions: [
     docsDir: "src/content/docs-v1",
     locales: {
       ja: { dir: "src/content/docs-v1-ja" },
+      de: { dir: "src/content/docs-v1-de" },
     },
     banner: "unmaintained",
   },
@@ -182,10 +188,11 @@ versions: [
    cp -r src/content/docs src/content/docs-v2
    ```
 
-2. 該当する場合は**ロケールディレクトリ**もコピー：
+2. 該当する場合は**設定した各ロケールディレクトリ**もコピー：
 
    ```bash
    cp -r src/content/docs-ja src/content/docs-v2-ja
+   cp -r src/content/docs-de src/content/docs-v2-de
    ```
 
 3. **設定にバージョンを追加**：
@@ -198,6 +205,7 @@ versions: [
        docsDir: "src/content/docs-v2",
        locales: {
          ja: { dir: "src/content/docs-v2-ja" },
+         de: { dir: "src/content/docs-v2-de" },
        },
        banner: "unmaintained",
      },

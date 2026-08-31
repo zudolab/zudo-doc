@@ -37,7 +37,7 @@ pnpm dev:history
 doc-history-server --port 4322 --content-dir src/content/docs
 ```
 
-`i18n`も有効な場合、`create-zudo-doc`はセカンダリロケール用の`--locale <lang>:src/content/docs-<lang>`フラグを自動的に追加します。別のフラグでサーバーを手動実行したい場合は、下記の[サーバーオプション](#サーバーモード（ローカル開発）-サーバーオプション)を参照してください。
+追加ロケールを設定すると、`create-zudo-doc`は設定済みロケールごとに、順序を保った`--locale <lang>:src/content/docs-<lang>`フラグを1つずつ追加します。たとえば EN + JA + DE では `--locale ja:src/content/docs-ja --locale de:src/content/docs-de` が出力されます。別のフラグでサーバーを手動実行したい場合は、下記の[サーバーオプション](#サーバーモード（ローカル開発）-サーバーオプション)を参照してください。
 
 ### エンドポイント
 

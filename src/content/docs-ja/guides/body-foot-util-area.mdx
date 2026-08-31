@@ -52,7 +52,7 @@ bodyFootUtilArea: false,
 ${githubUrl}/blob/HEAD/${contentDir}/${entryId}
 ```
 
-`contentDir` はページが属するコンテンツディレクトリ(英語なら `src/content/docs`、日本語なら `src/content/docs-ja`、バージョンによっては各バージョンの `docsDir`)、`entryId` はその中でのファイルパスです。
+`contentDir` はページが属するコンテンツディレクトリ（プライマリなら `src/content/docs`、追加ロケールなら `src/content/docs-ja`、バージョンによっては各バージョンの `docsDir`）、`entryId` はその中でのファイルパスです。
 
 | ページ | 解決後の URL |
 |---|---|
@@ -65,9 +65,9 @@ URL は特定ブランチではなく `HEAD` に固定されます。`HEAD` は 
 
 </Info>
 
-### 日本語ページのフォールバック
+### 追加ロケールページのフォールバック
 
-日本語ページが英語コンテンツへフォールバックしている場合、リンクは実際に描画された英語ファイル(`src/content/docs/` 側)を指します。
+追加ロケールページがプライマリコンテンツへフォールバックしている場合、リンクは実際に描画されたプライマリファイル（`src/content/docs/` 側）を指します。
 
 ## 片方だけ隠す
 

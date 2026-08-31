@@ -52,7 +52,10 @@ export const settings = {
   dynamicPageTransition: true as boolean,
   claudeResources: false as { claudeDir: string; projectRoot?: string; scanRoot?: string } | false,
   codexResources: false as { codexDir: string; projectRoot?: string; scanRoot?: string } | false,
-  defaultLocaleOnlyPrefixes: [] as string[],
+  // Keep one concrete default-locale-only page in the fixture so the
+  // language-switcher E2E can assert that the disclosure collapses to its
+  // single active link for pages without translated routes.
+  defaultLocaleOnlyPrefixes: ["/docs/default-only/"] as string[],
   tocMinDepth: 2 as number,
   tocMaxDepth: 4 as number,
   headerNav: [

@@ -7,7 +7,7 @@ import type { FeatureModule } from "../compose.js";
  * i18n feature — gates the locale-prefixed page set.
  *
  * Locked manifest (#2653 Decision 4, i18n addendum): "i18n ON adds
- * `pages/[locale]/docs/[[...slug]].tsx` (a second doc stub, locale variant)
+ * `pages/[locale]/docs/[[...slug]].tsx` (the additional-locale doc route stub)
  * … No other pages." That ONE self-contained stub — retained as an explicit
  * host-owned route seam; zfb 2.13.1 also serves injected dynamic routes in dev —
  * is shipped under `templates/features/i18n/files/pages/[locale]/docs/`
@@ -19,7 +19,7 @@ import type { FeatureModule } from "../compose.js";
  *
  * No injections: the stub iterates `settings.locales` at build/request
  * time, so no postProcess regex patching is required for non-default
- * languages. Secondary-language content mirrors under
+ * locales. Additional-locale content mirrors under
  * `src/content/docs-<lang>/` are seeded by `scaffold.ts`.
  *
  * Loud-failure check: per spec-lock Decision 8 (#1737), abort scaffolding

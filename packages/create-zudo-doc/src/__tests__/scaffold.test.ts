@@ -94,6 +94,42 @@ const baseChoices: UserChoices = {
   packageManager: "pnpm",
 };
 
+describe("locale validation happens before scaffold I/O", () => {
+  it.each([
+    ["API", "api-invalid-locale", () =>
+      createZudoDoc({
+        projectName: "api-invalid-locale",
+        defaultLang: "en",
+        additionalLangs: ["../ja"],
+        colorSchemeMode: "single" as const,
+        singleScheme: "Default Dark",
+        features: [],
+        packageManager: "pnpm" as const,
+      })],
+    ["direct scaffold", "scaffold-invalid-locale", () =>
+      scaffold({
+        ...baseChoices,
+        projectName: "scaffold-invalid-locale",
+        additionalLangs: ["../ja"],
+      })],
+  ] as const)("%s rejects without creating its target", async (_name, target, invoke) => {
+    await expect(invoke()).rejects.toThrow(/additionalLangs\[0\]/);
+    expect(await fs.pathExists(projectPath(target))).toBe(false);
+  });
+
+  it("the API accepts and normalizes a safe custom primary", async () => {
+    await createZudoDoc({
+      projectName: "api-custom-primary",
+      defaultLang: " PT-BR ",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: [],
+      packageManager: "pnpm",
+    });
+    expect(await fs.pathExists(projectPath("api-custom-primary"))).toBe(true);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // The locked manifest (#2653 Decision 4 / #2660 completion comment).
 // ---------------------------------------------------------------------------
@@ -200,6 +236,119 @@ describe("scaffold — i18n manifest (+1 file, #2653 i18n addendum)", () => {
 
   it("does NOT emit the old pages/[locale]/index.tsx home-route template", () => {
     expect(files).not.toContain("pages/[locale]/index.tsx");
+  });
+
+  it("seeds every ordered explicit locale while retaining one generic route", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-i18n-ja-de",
+      features: [],
+      additionalLangs: ["ja", "de"],
+    });
+    const project = projectPath("test-i18n-ja-de");
+    expect(
+      await listFiles(path.join(project, "src/content/docs-ja/getting-started")),
+    ).toEqual(["index.mdx", "installation.mdx", "introduction.mdx"]);
+    expect(
+      await listFiles(path.join(project, "src/content/docs-de/getting-started")),
+    ).toEqual(["index.mdx", "installation.mdx", "introduction.mdx"]);
+    expect(
+      await fs.pathExists(path.join(project, "pages/[locale]/docs/[[...slug]].tsx")),
+    ).toBe(true);
+
+    const ja = await fs.readFile(
+      path.join(project, "src/content/docs-ja/getting-started/index.mdx"),
+      "utf-8",
+    );
+    const de = await fs.readFile(
+      path.join(project, "src/content/docs-de/getting-started/index.mdx"),
+      "utf-8",
+    );
+    expect(ja).toContain("はじめに");
+    expect(de).toContain("Welcome to Test I18n Ja De.");
+    expect(de).not.toContain("ドキュメントへようこそ");
+  });
+
+  it("warns and honors an explicit locale list over --no-i18n", async () => {
+    const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      await scaffold({
+        ...baseChoices,
+        projectName: "test-i18n-list-overrides-disable",
+        features: [],
+        additionalLangs: ["ja", "de"],
+        explicitlyDisabledFeatures: ["i18n"],
+      });
+      expect(warning).toHaveBeenCalledWith(
+        "additional-langs requires i18n; enabling it despite --no-i18n",
+      );
+      expect(
+        await fs.pathExists(
+          projectPath(
+            "test-i18n-list-overrides-disable",
+            "src/content/docs-de/getting-started/index.mdx",
+          ),
+        ),
+      ).toBe(true);
+    } finally {
+      warning.mockRestore();
+    }
+  });
+});
+
+describe("scaffold — generated locale guidance (EN + JA + DE)", () => {
+  it("enumerates the configured locales in CLAUDE.md, skills, and ignores", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-generated-locale-guidance",
+      features: ["skillSymlinker", "claudeSkills", "claudeSkillsWriting"],
+      additionalLangs: ["ja", "de"],
+    });
+    const project = projectPath("test-generated-locale-guidance");
+    const claude = await fs.readFile(path.join(project, "CLAUDE.md"), "utf-8");
+    const gitignore = await fs.readFile(path.join(project, ".gitignore"), "utf-8");
+    const translate = await fs.readFile(
+      path.join(project, ".claude/skills/zudo-doc-translate/SKILL.md"),
+      "utf-8",
+    );
+    const versionBump = await fs.readFile(
+      path.join(project, ".claude/skills/zudo-doc-version-bump/SKILL.md"),
+      "utf-8",
+    );
+    const writing = await fs.readFile(
+      path.join(project, ".claude/skills/zudo-doc-writing/SKILL.md"),
+      "utf-8",
+    );
+
+    expect(claude).toContain("English (default, `en`)");
+    expect(claude).toContain("Japanese (`ja`)");
+    expect(claude).toContain("DE (`de`)");
+    expect(claude).toContain("src/content/docs-ja/");
+    expect(claude).toContain("src/content/docs-de/");
+    expect(claude).toContain("English placeholder prose pending translation");
+    expect(claude).not.toContain("secondary language");
+
+    expect(gitignore).toContain(
+      ".claude/skills/test-generated-locale-guidance-wisdom/docs-ja",
+    );
+    expect(gitignore).toContain(
+      ".claude/skills/test-generated-locale-guidance-wisdom/docs-de",
+    );
+
+    expect(translate).toContain("every requested map entry");
+    expect(translate).toContain("only when the source or target locale code is `ja`");
+    expect(translate).toContain("src/content/docs-v1-ja");
+    expect(versionBump).toContain("current `locales` map");
+    expect(versionBump).toContain("configured locale snapshots");
+    expect(versionBump).toContain("<locale-code>");
+    expect(writing).toContain("each configured additional-locale directory");
+    expect(writing).toContain("only when the locale code is `ja`");
+
+    expect(
+      await fs.pathExists(
+        path.join(project, "src/content/docs-v1-ja"),
+      ),
+    ).toBe(false);
   });
 });
 
@@ -514,6 +663,33 @@ describe("scaffold — tagGovernance explicit CLI config", () => {
     );
     expect(vocab).toContain('"src/content/docs"');
     expect(vocab).toContain('"src/content/docs-ja"');
+  });
+
+  it("includes every resolved locale directory once and in order", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-tag-gov-ja-de",
+      features: ["tagGovernance"],
+      additionalLangs: ["ja", "de"],
+    });
+    const vocab = await fs.readFile(
+      projectPath(
+        "test-tag-gov-ja-de",
+        "src/config/tag-vocabulary.ts",
+      ),
+      "utf-8",
+    );
+    const primary = vocab.indexOf('"src/content/docs"');
+    const ja = vocab.indexOf('"src/content/docs-ja"');
+    const de = vocab.indexOf('"src/content/docs-de"');
+    expect(primary).toBeGreaterThan(-1);
+    expect(ja).toBeGreaterThan(primary);
+    expect(de).toBeGreaterThan(ja);
+    expect(vocab.match(/src\/content\/docs(?:-(?:ja|de))?/g)).toEqual([
+      "src/content/docs",
+      "src/content/docs-ja",
+      "src/content/docs-de",
+    ]);
   });
 
   it("does NOT write settings-types.ts, docs-schema.ts, or any other src/config/* file", async () => {
@@ -877,6 +1053,26 @@ describe("scaffold — changelog feature", () => {
     ).toBe(true);
   });
 
+  it("seeds single-page changelogs for every explicit locale with JA/English placeholder prose", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-changelog-ja-de",
+      features: ["changelog"],
+      additionalLangs: ["ja", "de"],
+    });
+    const ja = await fs.readFile(
+      projectPath("test-changelog-ja-de", "src/content/docs-ja/changelog/index.mdx"),
+      "utf-8",
+    );
+    const de = await fs.readFile(
+      projectPath("test-changelog-ja-de", "src/content/docs-de/changelog/index.mdx"),
+      "utf-8",
+    );
+    expect(ja).toContain("## 未リリース");
+    expect(de).toContain("## Unreleased");
+    expect(de).not.toContain("## 未リリース");
+  });
+
   it("seeds nested per-package pages, a landing page, and dropdown config", async () => {
     await scaffold({
       ...baseChoices,
@@ -930,6 +1126,37 @@ describe("scaffold — changelog feature", () => {
       "utf-8",
     );
     expect(landing).toContain("パッケージごとのリリースノート。");
+  });
+
+  it("mirrors nested per-package pages in every explicit locale", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-multi-changelog-ja-de",
+      features: ["changelog"],
+      additionalLangs: ["ja", "de"],
+      changelogPackages: ["core", "cli"],
+    });
+    for (const locale of ["ja", "de"]) {
+      const localeRoot = projectPath(
+        "test-multi-changelog-ja-de",
+        `src/content/docs-${locale}/changelog`,
+      );
+      expect(await fs.pathExists(path.join(localeRoot, "index.mdx"))).toBe(true);
+      for (const slug of ["core", "cli"]) {
+        expect(
+          await fs.pathExists(path.join(localeRoot, slug, "index.mdx")),
+        ).toBe(true);
+      }
+    }
+    const deLanding = await fs.readFile(
+      projectPath(
+        "test-multi-changelog-ja-de",
+        "src/content/docs-de/changelog/index.mdx",
+      ),
+      "utf-8",
+    );
+    expect(deLanding).toContain("Release notes for each package.");
+    expect(deLanding).not.toContain("パッケージごとのリリースノート。");
   });
 
   it("removes the body-level H1 from the single changelog starter", async () => {
@@ -1809,6 +2036,21 @@ describe("scaffold — generated package.json", () => {
     );
     expect(pkg.scripts["dev:history"]).toBe(
       "doc-history-server --port 4322 --content-dir src/content/docs --locale en:src/content/docs-en",
+    );
+  });
+
+  it("emits one ordered --locale flag for every explicit additional locale", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-history-dev-script-ja-de",
+      features: ["docHistory"],
+      additionalLangs: ["ja", "de"],
+    });
+    const pkg = await fs.readJson(
+      projectPath("test-history-dev-script-ja-de", "package.json"),
+    );
+    expect(pkg.scripts["dev:history"]).toBe(
+      "doc-history-server --port 4322 --content-dir src/content/docs --locale ja:src/content/docs-ja --locale de:src/content/docs-de",
     );
   });
 

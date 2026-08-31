@@ -882,19 +882,28 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // and asset-filename normalization excludes bundle-hash noise. No
   // unattributed bytes.
 
+  // 2026-08-31 re-baseline (Multi-locale Selection epic #3798, integration
+  // sub #3805): all three pages intentionally move with the language-switcher
+  // contract. The fixture enables i18n, so each page replaces the former
+  // two-locale links and embedded re-wire script with the accessible disclosure
+  // markup plus its delegated click/outside-click/Escape handling. The same
+  // runtime is emitted on every fixture page; asset-filename normalization
+  // excludes bundle-hash noise. The surrounding semantic assertions remain
+  // green and no unrelated output changed.
+
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"6647af70dd88cf00d6b2f14bfe814f7108630fc73c1a0751d3227605825006ed"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"0e3bc91267e0a27a8d585f49ec5bb231e7e195abda49fe2c5ac148e8e4f959fa"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"4ae04fe0b935e209927afb6ce2b7e532a4a52f19a912b4761b1fbe692542883e"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"e0b96ca9842155d49a1fbaa20dcb7a88ec3efc96d801f298d27a2dfc9465230c"`);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"2bd665f060295f6c4818f30eb6be4f482f89ec57e97b5e8151ed99cb05b28d93"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"3be27c9706a68b860c0cd3526a57bb3347bcfa9dba47f98b6e849e06fd3a992d"`);
   });
 });
 

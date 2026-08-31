@@ -8,9 +8,11 @@
  * Locale code → key → translated string. The `en` and `ja` tables carry the
  * complete package surface; `de` remains the documented partial locale. The
  * other locales in the generator's `SUPPORTED_LANGS` list
- * (zh-cn/zh-tw/ko/es/fr/pt) fall back to `en` at lookup time (the template's
- * `t()` helper does `translations[locale]?.[key] ?? translations[defaultLocale]?.[key] ?? key`)
- * rather than shipping their own fully-translated table here.
+ * (zh-cn/zh-tw/ko/es/fr/pt) fall back through the requested locale, configured
+ * default locale, package English, and finally the raw key at lookup time (the
+ * `t()` helper does `translations[locale]?.[key] ??
+ * translations[defaultLocale]?.[key] ?? translations.en?.[key] ?? key`) rather
+ * than shipping their own fully-translated table here.
  *
  * Locale label/derivation (mapping a locale code to its display label,
  * detecting the active locale from a URL, etc.) stays settings-driven and is
@@ -52,6 +54,7 @@ export const defaultTranslations: PresetTranslations = {
     "doc.editPage": "Edit this page",
     "doc.viewSource": "View source on GitHub",
     "header.github": "GitHub repository",
+    "language.switcher.label": "Language",
     "doc.tags": "Tags",
     "doc.taggedWith": "Pages tagged with",
     "doc.allTags": "All Tags",
@@ -141,6 +144,7 @@ export const defaultTranslations: PresetTranslations = {
     "doc.editPage": "このページを編集",
     "doc.viewSource": "GitHub でソースを見る",
     "header.github": "GitHub リポジトリ",
+    "language.switcher.label": "言語",
     "doc.tags": "タグ",
     "doc.taggedWith": "タグ付きページ",
     "doc.allTags": "すべてのタグ",
@@ -230,6 +234,7 @@ export const defaultTranslations: PresetTranslations = {
     "doc.editPage": "Diese Seite bearbeiten",
     "doc.viewSource": "Quellcode auf GitHub ansehen",
     "header.github": "GitHub-Repository",
+    "language.switcher.label": "Sprache",
     "doc.tags": "Tags",
     "doc.taggedWith": "Seiten mit Tag",
     "doc.allTags": "Alle Tags",

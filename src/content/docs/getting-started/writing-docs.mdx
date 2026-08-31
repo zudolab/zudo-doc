@@ -180,7 +180,9 @@ For a complete list of all available components including admonitions, code bloc
 
 ## i18n (Internationalization)
 
-The default scaffold has one locale and no `src/content/docs-ja/` directory or locale route. Select the `i18n` feature during scaffolding to add a secondary language, its mirrored content directory, and `pages/[locale]/docs/[[...slug]].tsx`. You can also add locales later through the `locales` field in `zudoDoc({ ... })`.
+The default scaffold has one primary locale and no additional-locale directory or locale route. Set `--additional-langs ja,de` (or use the equivalent preset/API field) to create `src/content/docs-ja/` and `src/content/docs-de/`, with `pages/[locale]/docs/[[...slug]].tsx` serving `/ja/docs/...` and `/de/docs/...`. The primary content remains in `src/content/docs/` at `/docs/...`; add or remove additional locales later through the `locales` field in `zudoDoc({ ... })`.
+
+Keep each configured tree structurally aligned: use the same relative filenames, frontmatter, code blocks, and JSX examples, translating the prose in each locale. The `ja` starter is Japanese; arbitrary non-JA locale trees begin with English placeholder prose and must be translated before publishing. The language switcher follows configured labels and order, and UI strings fall back from requested locale to default locale, package English, then the raw key.
 
 <Tip>
 

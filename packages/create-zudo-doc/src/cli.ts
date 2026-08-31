@@ -6,10 +6,12 @@ import {
   validateChangelogPackages,
 } from "./preset.js";
 import { validateProjectName } from "./utils.js";
+import { resolveLocalePlan } from "./locale-plan.js";
 
 export interface CliArgs {
   name?: string;
   lang?: string;
+  additionalLangs?: string[];
   colorSchemeMode?: "single" | "light-dark";
   scheme?: string;
   lightScheme?: string;
@@ -53,11 +55,20 @@ export interface CliArgs {
   help?: boolean;
 }
 
+/** Presets are the base layer; an explicitly supplied CLI list replaces it. */
+export function layerAdditionalLangs(
+  presetValue: string[] | undefined,
+  cliValue: string[] | undefined,
+): string[] | undefined {
+  return cliValue === undefined ? presetValue : cliValue;
+}
+
 export function parseArgs(argv: string[] = process.argv.slice(2)): CliArgs {
   const raw = minimist(argv, {
     string: [
       "name",
       "lang",
+      "additional-langs",
       "color-scheme-mode",
       "scheme",
       "light-scheme",
@@ -96,6 +107,12 @@ export function parseArgs(argv: string[] = process.argv.slice(2)): CliArgs {
   }
 
   if (raw.lang) args.lang = raw.lang;
+  if (raw["additional-langs"] !== undefined) {
+    const value = raw["additional-langs"];
+    args.additionalLangs = (
+      typeof value === "string" ? value : String(value)
+    ).split(",");
+  }
   if (raw["color-scheme-mode"]) args.colorSchemeMode = raw["color-scheme-mode"];
   if (raw.scheme) args.scheme = raw.scheme;
   if (raw["light-scheme"]) args.lightScheme = raw["light-scheme"];
@@ -146,6 +163,7 @@ ${pc.bold("Options:")}
   --name <name>                Project name (or first positional arg)
   --lang <code>                Default language (${langList})
                                Default: en
+  --additional-langs <a,b>     Additional locale codes (ordered; implies i18n)
   --color-scheme-mode <mode>   single | light-dark
   --scheme <name>              Color scheme (single mode)
   --light-scheme <name>        Light scheme (light-dark mode)
@@ -186,6 +204,24 @@ export function validateArgs(args: CliArgs): string | null {
     const validLangs = SUPPORTED_LANGS.map((l) => l.value);
     if (!validLangs.includes(args.lang)) {
       return `Invalid language "${args.lang}". Supported: ${validLangs.join(", ")}`;
+    }
+  }
+
+  // A preset may supply the primary locale, so defer cross-field validation
+  // until the layered choices reach runPrompts() when --lang is omitted.
+  if (
+    args.additionalLangs !== undefined &&
+    (args.preset === undefined || args.lang !== undefined)
+  ) {
+    try {
+      resolveLocalePlan({
+        defaultLang: args.lang ?? "en",
+        additionalLangs: args.additionalLangs,
+        i18n: args.i18n ?? false,
+        i18nExplicitlyDisabled: args.i18n === false,
+      });
+    } catch (error) {
+      return error instanceof Error ? error.message : String(error);
     }
   }
 

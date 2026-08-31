@@ -330,9 +330,103 @@ export const DEFAULT_META_TAGS: MetaTagsFormState = {
   twitterCreator: "",
 };
 
+// Keep this browser-side copy intentionally small and grammar-compatible
+// with packages/create-zudo-doc/src/locale-plan.ts. The client island cannot
+// import the generator package source, so the parity suite exercises both
+// implementations against the same cases.
+const LOCALE_RE = /^[a-z]{2,8}(?:-[a-z0-9]{1,8})*$/;
+const LOCALE_RE_DESCRIPTION = `/${LOCALE_RE.source}/`;
+
+export interface PresetLocalePlan {
+  defaultLang: string;
+  additionalLangs?: string[];
+  i18n: boolean;
+}
+
+function normalizeLocale(value: unknown, field: string): string {
+  if (typeof value !== "string") {
+    throw new Error(`${field} must be a string`);
+  }
+  const normalized = value.trim().toLowerCase();
+  if (!LOCALE_RE.test(normalized)) {
+    throw new Error(
+      `Invalid ${field} ${JSON.stringify(value)}. Locale codes must match ${LOCALE_RE_DESCRIPTION}`,
+    );
+  }
+  return normalized;
+}
+
+/**
+ * Resolve the text input used by the preset generator into the canonical
+ * locale fields. An empty input is deliberately different from an explicit
+ * list: it omits `additionalLangs` and leaves i18n disabled.
+ */
+export function resolvePresetLocalePlan(
+  defaultLang: string,
+  additionalLangsInput: string | undefined,
+): PresetLocalePlan {
+  const normalizedDefaultLang = normalizeLocale(defaultLang, "defaultLang");
+  if (additionalLangsInput === undefined || !additionalLangsInput.trim()) {
+    return { defaultLang: normalizedDefaultLang, i18n: false };
+  }
+
+  const additionalLangs = additionalLangsInput
+    .split(",")
+    .map((locale, index) =>
+      normalizeLocale(locale, `additionalLangs[${index}]`),
+    );
+  const seen = new Set<string>();
+  for (const locale of additionalLangs) {
+    if (locale === normalizedDefaultLang) {
+      throw new Error(
+        `additionalLangs must not include defaultLang ${JSON.stringify(normalizedDefaultLang)}`,
+      );
+    }
+    if (seen.has(locale)) {
+      throw new Error(`Duplicate locale ${JSON.stringify(locale)} in additionalLangs`);
+    }
+    seen.add(locale);
+  }
+
+  return {
+    defaultLang: normalizedDefaultLang,
+    additionalLangs,
+    i18n: true,
+  };
+}
+
+/** Return the inline validation message, or null when the text is valid. */
+export function validateAdditionalLangs(
+  additionalLangsInput: string | undefined,
+  defaultLang: string,
+): string | null {
+  try {
+    resolvePresetLocalePlan(defaultLang, additionalLangsInput);
+    return null;
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error);
+  }
+}
+
+/** Normalize the text input for callers that need the canonical list only. */
+export function normalizeAdditionalLangs(
+  additionalLangsInput: string | undefined,
+  defaultLang: string,
+): string[] | undefined {
+  return resolvePresetLocalePlan(defaultLang, additionalLangsInput).additionalLangs;
+}
+
+function resolveFeatures(features: string[], i18n: boolean): string[] {
+  return i18n
+    ? [...new Set([...features, "i18n"])]
+    : features.filter((feature) => feature !== "i18n");
+}
+
 export interface FormState {
   projectName: string;
   defaultLang: string;
+  /** Raw comma-separated input; buildJson/buildCliCommand emit the normalized list. */
+  additionalLangs: string;
   colorSchemeMode: ColorSchemeMode;
   singleScheme: string;
   lightScheme: string;
@@ -349,11 +443,20 @@ export interface FormState {
 }
 
 export function buildJson(state: FormState): Record<string, unknown> {
+  const localePlan = resolvePresetLocalePlan(
+    state.defaultLang,
+    state.additionalLangs,
+  );
+  const features = resolveFeatures(state.features, localePlan.i18n);
   const base: Record<string, unknown> = {
     projectName: state.projectName || "my-docs",
-    defaultLang: state.defaultLang,
+    defaultLang: localePlan.defaultLang,
     colorSchemeMode: state.colorSchemeMode,
   };
+
+  if (localePlan.additionalLangs !== undefined) {
+    base.additionalLangs = localePlan.additionalLangs;
+  }
 
   if (state.colorSchemeMode === "single") {
     base.singleScheme = state.singleScheme;
@@ -371,7 +474,7 @@ export function buildJson(state: FormState): Record<string, unknown> {
     base.themePack = state.themePack;
   }
 
-  base.features = state.features;
+  base.features = features;
   base.cjkFriendly = state.cjkFriendly;
   base.packageManager = state.packageManager;
   // Always emit the canonical {type, trigger|component} shape (not the internal
@@ -418,12 +521,20 @@ export function buildJson(state: FormState): Record<string, unknown> {
 }
 
 export function buildCliCommand(state: FormState): string {
+  const localePlan = resolvePresetLocalePlan(
+    state.defaultLang,
+    state.additionalLangs,
+  );
+  const features = resolveFeatures(state.features, localePlan.i18n);
   const pm = state.packageManager;
   const name = state.projectName || "my-docs";
   const quotedName = /\s/.test(name) ? `"${name}"` : name;
   const parts = [`${pm} create zudo-doc ${quotedName}`];
 
-  parts.push(`--lang ${state.defaultLang}`);
+  parts.push(`--lang ${localePlan.defaultLang}`);
+  if (localePlan.additionalLangs !== undefined) {
+    parts.push(`--additional-langs ${localePlan.additionalLangs.join(",")}`);
+  }
   parts.push(`--color-scheme-mode ${state.colorSchemeMode}`);
 
   if (state.colorSchemeMode === "single") {
@@ -442,7 +553,7 @@ export function buildCliCommand(state: FormState): string {
   parts.push(`--theme-pack ${state.themePack}`);
 
   for (const feat of FEATURES) {
-    const enabled = state.features.includes(feat.value);
+    const enabled = features.includes(feat.value);
     parts.push(enabled ? `--${feat.cliFlag}` : `--no-${feat.cliFlag}`);
   }
 

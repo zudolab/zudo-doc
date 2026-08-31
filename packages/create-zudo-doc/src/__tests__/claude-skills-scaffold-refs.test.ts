@@ -119,20 +119,7 @@ function extractReferencedPaths(markdown: string): string[] {
 // path to exist in a generated scaffold. Only asserted when every listed
 // feature is present in the shape under test (shape (a) skips all of
 // these; shape (b) enables all of them).
-const CONDITIONAL_PATHS: Record<string, string[]> = {
-  // zudo-doc-version-bump: primary changelog root used for layout discovery.
-  "src/content/docs/changelog/": ["changelog"],
-  // zudo-doc-version-bump: primary changelog existence check — the
-  // `changelog` feature is what seeds this file (versioning alone does not).
-  "src/content/docs/changelog/index.mdx": ["changelog"],
-  // zudo-doc-version-bump: other-locale changelog section — needs BOTH
-  // the changelog page (changelog) and the secondary content dir (i18n).
-  "src/content/docs-ja/changelog/index.mdx": ["changelog", "i18n"],
-  // zudo-doc-version-bump ("...and `src/content/docs-ja/`) now represent
-  // the new, latest version") + zudo-doc-translate (secondary-locale docs
-  // dir) — only exists when i18n is on.
-  "src/content/docs-ja/": ["i18n"],
-};
+const CONDITIONAL_PATHS: Record<string, string[]> = {};
 
 // Path-shaped tokens that are illustrative/aspirational, not a claim the
 // path pre-exists in a fresh scaffold. Excluded from the exists-check
@@ -144,19 +131,23 @@ const EXCLUDED_PATHS = new Set([
   // barebone+claudeSkills scaffold (see scaffold.test.ts's own "barebone
   // has no ... src/components ... directory at all" assertion).
   "src/components/",
-  // zudo-doc-translate "File Naming" section: "Example:
-  // `src/content/docs/guides/writing-docs.mdx` -> ...-ja/...". An
-  // arbitrary illustrative filename to demonstrate the docs/ vs docs-ja/
-  // mirroring rule — scaffold seed content only ever creates a
-  // `getting-started/` directory, never `guides/`.
+  // zudo-doc-translate "File Naming" section: an arbitrary illustrative
+  // filename to demonstrate mirroring under a configured locale dir —
+  // scaffold seed content only ever creates a `getting-started/` directory,
+  // never `guides/`.
   "src/content/docs/guides/writing-docs.mdx",
-  "src/content/docs-ja/guides/writing-docs.mdx",
+  // The translate/writing variants name representative version-snapshot
+  // directories to warn agents away from them. These are intentionally absent
+  // from a fresh scaffold and are not current-locale assertions.
+  "src/content/docs-v1",
+  "src/content/docs-v1-ja",
 ]);
 
 async function scaffoldShape(
   projectName: string,
   features: string[],
   changelogPackages?: string[],
+  additionalLangs?: string[],
 ): Promise<string> {
   const choices: UserChoices = {
     projectName,
@@ -166,6 +157,7 @@ async function scaffoldShape(
     features,
     packageManager: "pnpm",
     changelogPackages,
+    additionalLangs,
   };
   await scaffold(choices);
   return path.join(tempDir, projectName);
@@ -279,5 +271,66 @@ describe("claude-skills scaffold refs — generated-scaffold integration guard (
 
     const pkg = await fs.readJson(path.join(dir, "package.json"));
     expect(pkg.scripts.b4push).toBe("pnpm check && pnpm build");
+  });
+
+  it("shape (c) EN + JA + DE keeps guidance and content rooted in the explicit locale map", async () => {
+    const features = [
+      "claudeSkills",
+      "claudeSkillsWriting",
+      "skillSymlinker",
+      "i18n",
+      "versioning",
+      "changelog",
+    ];
+    const dir = await scaffoldShape(
+      "shape-c-en-ja-de",
+      features,
+      ["core", "cli"],
+      ["ja", "de"],
+    );
+
+    const claude = await fs.readFile(path.join(dir, "CLAUDE.md"), "utf-8");
+    const translate = await fs.readFile(
+      path.join(dir, ".claude/skills/zudo-doc-translate/SKILL.md"),
+      "utf-8",
+    );
+    const versionBump = await fs.readFile(
+      path.join(dir, ".claude/skills/zudo-doc-version-bump/SKILL.md"),
+      "utf-8",
+    );
+    const setup = await fs.readFile(
+      path.join(dir, "scripts/setup-doc-skill.sh"),
+      "utf-8",
+    );
+    const config = await fs.readFile(path.join(dir, "zfb.config.ts"), "utf-8");
+
+    // `defaultLocale: "en"` matches the package default and is intentionally
+    // omitted by the generator's diff-from-defaults config emitter.
+    expect(config).toContain('dir: "src/content/docs-ja"');
+    expect(config).toContain('dir: "src/content/docs-de"');
+    expect(claude).toContain("Japanese (`ja`)");
+    expect(claude).toContain("DE (`de`)");
+    expect(claude).toContain("src/content/docs-de/");
+    expect(claude).toContain("English placeholder prose pending translation");
+    expect(translate).toContain("exact map of additional locale code");
+    expect(translate).toContain("src/content/docs-v1-ja");
+    expect(versionBump).toContain("current `locales` map");
+    expect(versionBump).toContain("configured locale snapshots");
+    expect(setup).toContain("does NOT walk `src/content/docs-*`");
+
+    for (const locale of ["ja", "de"]) {
+      const localeRoot = path.join(dir, `src/content/docs-${locale}`);
+      expect(await fs.pathExists(localeRoot)).toBe(true);
+      for (const slug of ["core", "cli"]) {
+        expect(
+          await fs.pathExists(path.join(localeRoot, "changelog", slug, "index.mdx")),
+        ).toBe(true);
+      }
+    }
+    // A scaffold has no version snapshots yet; guidance must not invent their
+    // directories as current locale roots.
+    expect(await fs.pathExists(path.join(dir, "src/content/docs-v1-ja"))).toBe(
+      false,
+    );
   });
 });

@@ -50,6 +50,7 @@ Independently of the color scheme, the scaffold can start a project on any bundl
 |------|-------------|---------|
 | `--name <name>` | Project name (or first positional arg) | `my-docs` |
 | `--lang <code>` | Default language code | `en` |
+| `--additional-langs <a,b>` | Ordered additional locale codes; implies i18n and replaces a preset list | — |
 | `--changelog-packages <a,b>` | Generate a nested changelog landing page and one package index per comma-separated slug | — |
 | `--github-url <url>` | GitHub repository URL (drives header link + source link) | — |
 | `--pm <manager>` | Package manager: `pnpm`, `npm`, `yarn`, `bun` | `pnpm` |
@@ -79,7 +80,7 @@ Independently of the color scheme, the scaffold can start a project on any bundl
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--[no-]i18n` | Multi-language support | off |
+| `--[no-]i18n` | Legacy multi-language toggle; without a list, infers one additional locale | off |
 | `--[no-]search` | Built-in full-text/word-match search over a generated `search-index.json` | on |
 | `--[no-]sidebar-filter` | Real-time sidebar filtering | on |
 | `--[no-]claude-resources` | Claude Code docs generation | off |
@@ -114,7 +115,7 @@ Independently of the color scheme, the scaffold can start a project on any bundl
 |------|-------------|
 | `--preset <path>` | Load settings from a JSON preset file (use `"-"` for stdin) |
 
-The `--preset` flag accepts the JSON output from the [Setup Preset Generator](../getting-started/setup-preset-generator.mdx). When a preset is loaded, all prompts are skipped (same as `--yes`). Individual CLI flags override preset values.
+The `--preset` flag accepts the JSON output from the [Setup Preset Generator](../getting-started/setup-preset-generator.mdx). When a preset is loaded, all prompts are skipped (same as `--yes`). Individual CLI flags override preset values. In particular, `--additional-langs ja,de` replaces (rather than appends to) a preset's `additionalLangs` list. A non-empty explicit list enables i18n even if the preset or CLI also contains `--no-i18n`; the CLI prints a warning when it overrides that explicit disable.
 
 ### General
 
@@ -139,7 +140,11 @@ The `--lang` flag accepts any of the following language codes:
 | `de` | German |
 | `pt` | Portuguese |
 
-The default language determines the locale used for root pages (`/docs/...`). When i18n is enabled, a secondary language is added automatically (English when the default is non-English, Japanese when the default is English).
+`--lang` selects the primary locale used for root pages (`/docs/...`). Pass any number of additional locale codes with `--additional-langs`, for example `--lang en --additional-langs ja,de`; each creates a `src/content/docs-<code>/` tree and a `/<code>/docs/...` route. The order is preserved in generated config and in the language switcher, whose labels come from the configured locale map rather than hard-coded `JP`/`JA` values.
+
+Omitting `--additional-langs`, passing a blank interactive value, or omitting `additionalLangs` in a preset creates a single-locale project. A legacy preset or API call that supplies only `i18n: true` retains compatibility inference: `ja` is inferred for primary `en`, and `en` for any other primary code. Explicit locale codes are lowercased and validated for safe path/URL use; invalid codes, separators, traversal segments, duplicates, and the primary code are rejected before files are written.
+
+The `ja` tree receives Japanese starter prose. Every other arbitrary additional locale receives English placeholder starter prose that should be translated before publishing. Built-in UI translations resolve as `requested locale → configured default locale → package English → raw UI-string key`.
 
 ## Examples
 

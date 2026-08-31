@@ -198,6 +198,6 @@ Use `pnpm dev:stable` when you are adding or reorganizing files frequently; it u
 
 ## Generated-route behavior
 
-Individual asset viewers are leaf pages, while the optional route-prefix page is an asset listing. Both exist only in the default locale and stay out of the docs sidebar, search index, `llms.txt`, and sitemap. A reference from a Japanese document therefore opens the same default-locale asset route as an English reference.
+Individual asset viewers are leaf pages, while the optional route-prefix page is an asset listing. Both exist only in the default locale and stay out of the docs sidebar, search index, `llms.txt`, and sitemap. A reference from any additional-locale document therefore opens the same default-locale asset route as a primary-locale reference.
 
 Viewer pages honor the site's `noindex` setting. They intentionally keep documentation chrome such as the header and footer while hiding the document sidebar and table of contents.

@@ -21,7 +21,8 @@ describe("defaultTranslations", () => {
   // design — package features may add EN/JA defaults without requiring an
   // immediate complete German table because the `t()` helper falls back through
   // `translations[locale]?.[key] ?? translations[defaultLocale]?.[key] ??
-  // key` (see this module's header comment), not a bug to guard against.
+  // translations.en?.[key] ?? key` (see this module's header comment), not a
+  // bug to guard against.
 
   it("spot-checks representative translated values", () => {
     expect(defaultTranslations.en?.["doc.allTags"]).toBe("All Tags");
@@ -29,6 +30,9 @@ describe("defaultTranslations", () => {
     expect(defaultTranslations.ja?.["nav.gettingStarted"]).toBe("はじめに");
     expect(defaultTranslations.de?.["nav.gettingStarted"]).toBe("Erste Schritte");
     expect(defaultTranslations.en?.["asset.badge"]).toBe("Asset");
+    expect(defaultTranslations.en?.["language.switcher.label"]).toBe("Language");
+    expect(defaultTranslations.ja?.["language.switcher.label"]).toBe("言語");
+    expect(defaultTranslations.de?.["language.switcher.label"]).toBe("Sprache");
     expect(defaultTranslations.ja?.["asset.noPreview"]).toBe(
       "このファイル形式はプレビューできません。ダウンロードしてローカルで開いてください。",
     );

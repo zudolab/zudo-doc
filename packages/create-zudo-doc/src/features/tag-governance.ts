@@ -1,7 +1,7 @@
 import fs from "fs-extra";
 import path from "path";
 import type { FeatureModule } from "../compose.js";
-import { getSecondaryLang } from "../utils.js";
+import { resolveLocalePlan } from "../locale-plan.js";
 
 /**
  * Tag governance feature.
@@ -10,18 +10,29 @@ import { getSecondaryLang } from "../utils.js";
  * feeds zfb while its default TagCliConfig export feeds both package-owned
  * bins through an explicit `--config` package-script argument.
  */
-export const tagGovernanceFeature: FeatureModule = (choices) => ({
+export const tagGovernanceFeature: FeatureModule = (choices, localePlan) => ({
   name: "tagGovernance",
   injections: [],
   postProcess: async (targetDir) => {
     const vocabPath = path.join(targetDir, "src/config/tag-vocabulary.ts");
     if (!(await fs.pathExists(vocabPath))) {
-      const contentDirs = choices.features.includes("i18n")
-        ? `[
-  "src/content/docs",
-  "src/content/docs-${getSecondaryLang(choices.defaultLang)}",
-]`
-        : `["src/content/docs"]`;
+      // `scaffold()` resolves the locale plan once and threads it through
+      // feature composition. Keep the fallback for direct FeatureModule
+      // callers (e.g. package consumers/tests) while ensuring normalization
+      // and legacy inference still have one canonical implementation.
+      const plan =
+        localePlan ??
+        resolveLocalePlan({
+          defaultLang: choices.defaultLang,
+          additionalLangs: choices.additionalLangs,
+          i18n: choices.features.includes("i18n"),
+          i18nExplicitlyDisabled:
+            choices.explicitlyDisabledFeatures?.includes("i18n"),
+        });
+      const contentDirs = [
+        "src/content/docs",
+        ...plan.additionalLangs.map((locale) => `src/content/docs-${locale}`),
+      ];
       await fs.outputFile(
         vocabPath,
         `import type { TagCliConfig } from "@takazudo/zudo-doc/tags-audit";
@@ -35,7 +46,7 @@ export const tagVocabulary: TagVocabularyEntry[] = [];
 // Package scripts pass this module to the package-owned audit/suggest bins.
 // Paths are resolved from the project root.
 const tagCliConfig = {
-  contentDirs: ${contentDirs},
+  contentDirs: ${JSON.stringify(contentDirs, null, 2)},
   vocabulary: tagVocabulary,
   governance: "warn",
   vocabularyActive: true,

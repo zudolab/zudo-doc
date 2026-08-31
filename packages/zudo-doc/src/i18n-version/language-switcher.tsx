@@ -26,7 +26,6 @@
 // `window.location.pathname` on load and on `zfb:after-swap`.
 
 import type { VNode } from "preact";
-import { Fragment } from "preact";
 import type { LocaleLink } from "./types.js";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
 import { CURRENT_PATH_SCRIPT_PRELUDE } from "../current-path/index.js";
@@ -121,9 +120,10 @@ export function switchLocaleHref(
  * first load and re-runs {@link switchLocaleHref} against the live pathname —
  * the same rebind-on-navigate contract `VERSION_SWITCHER_INIT_SCRIPT` uses.
  *
- * `window[FLAG]` makes it idempotent: the tag may re-execute on a hard reload
- * or a cross-locale header repaint, but the listener is registered exactly
- * once per page lifetime.
+ * `window[FLAG]` stores the live-DOM refresh function: the tag may re-execute
+ * after a cross-locale header repaint, but document-level delegation is
+ * registered exactly once per page lifetime and the replacement markup is
+ * refreshed immediately.
  *
  * The pathname fed to `switchLocaleHref` comes from the embedded
  * `readCurrentPath`, which prefers the `data-zd-current-path` override over
@@ -133,14 +133,26 @@ export function switchLocaleHref(
  */
 export const LANGUAGE_SWITCHER_INIT_SCRIPT = `(function(){
 var FLAG="__zdLanguageSwitcherInit";
-if(window[FLAG])return;
-window[FLAG]=true;
 ${CURRENT_PATH_SCRIPT_PRELUDE}
 var switchLocaleHref=${switchLocaleHref.toString()};
-function rewire(){
+function close(c,restoreFocus){
+var toggle=c.querySelector("[data-language-toggle]");
+var menu=c.querySelector("[data-language-menu]");
+if(!toggle||!menu)return;
+menu.classList.add("hidden");
+toggle.setAttribute("aria-expanded","false");
+if(restoreFocus)toggle.focus();
+}
+function refresh(){
 var containers=document.querySelectorAll("[data-language-switcher]");
 for(var i=0;i<containers.length;i++){
 var c=containers[i];
+close(c,false);
+var menu=c.querySelector("[data-language-menu]");
+if(menu){
+menu.classList.remove("group-hover:block","group-focus-within:block");
+}
+if(!c.hasAttribute("data-default-locale"))continue;
 var config={base:c.getAttribute("data-base")||"",defaultLocale:c.getAttribute("data-default-locale")||"",trailingSlash:c.getAttribute("data-trailing-slash")==="true"};
 var currentLang=c.getAttribute("data-current-locale")||config.defaultLocale;
 var anchors=c.querySelectorAll("a[lang]");
@@ -152,8 +164,32 @@ a.setAttribute("href",switchLocaleHref(readCurrentPath(CURRENT_PATH_DATASET_KEY)
 }
 }
 }
-rewire();
-document.addEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)},rewire);
+if(window[FLAG]){window[FLAG]();return;}
+window[FLAG]=refresh;
+document.addEventListener("click",function(e){
+var target=e.target;
+var toggle=target&&target.closest?target.closest("[data-language-toggle]"):null;
+if(toggle){
+var switcher=toggle.closest("[data-language-switcher]");
+if(switcher){
+var menu=switcher.querySelector("[data-language-menu]");
+var willOpen=toggle.getAttribute("aria-expanded")!=="true";
+document.querySelectorAll("[data-language-switcher]").forEach(function(c){if(c!==switcher)close(c,false);});
+if(menu){menu.classList.toggle("hidden",!willOpen);toggle.setAttribute("aria-expanded",String(willOpen));}
+}
+return;
+}
+document.querySelectorAll("[data-language-switcher]").forEach(function(c){if(!c.contains(target))close(c,false);});
+});
+document.addEventListener("keydown",function(e){
+if(e.key!=="Escape")return;
+document.querySelectorAll('[data-language-toggle][aria-expanded="true"]').forEach(function(toggle){
+var switcher=toggle.closest("[data-language-switcher]");
+if(switcher)close(switcher,true);
+});
+});
+refresh();
+document.addEventListener(${JSON.stringify(AFTER_NAVIGATE_EVENT)},refresh);
 })();`;
 
 export interface LanguageSwitcherProps {
@@ -176,10 +212,14 @@ export interface LanguageSwitcherProps {
    * script knows which locale segment to strip. Only read when `config` is set.
    */
   currentLocale?: string;
+  /** Localized accessible name for the disclosure trigger. */
+  accessibleLabel: string;
+  /** Optional suffix used to keep trigger/menu ids unique on the page. */
+  idSuffix?: string;
 }
 
 /**
- * Inline locale switcher rendered in the header / sidebar footer.
+ * Desktop locale disclosure rendered in the header.
  *
  * Returns `null` when there is one locale or fewer (matches the Astro
  * template's `localeLinks.length > 1 &&` guard so call-sites can mount
@@ -189,14 +229,18 @@ export function LanguageSwitcher({
   links,
   config,
   currentLocale,
+  accessibleLabel,
+  idSuffix = "",
 }: LanguageSwitcherProps): VNode | null {
   if (links.length <= 1) return null;
+
+  const menuId = `language-menu${idSuffix ? `-${idSuffix}` : ""}`;
+  const activeLink = links.find((link) => link.active) ?? links[0];
 
   // Config attributes drive the SPA re-wire script; omitted when no config
   // is supplied so static callers render exactly as before.
   const rewireAttrs = config
     ? {
-        "data-language-switcher": true,
         "data-base": config.base,
         "data-default-locale": config.defaultLocale,
         "data-trailing-slash": String(config.trailingSlash),
@@ -205,29 +249,71 @@ export function LanguageSwitcher({
     : {};
 
   return (
-    <div class="flex items-center gap-x-hsp-xs text-small" {...rewireAttrs}>
-      {links.map((link, i) => (
-        // Fragment is keyed via the locale code so the reconciler keeps
-        // the active/inactive nodes paired correctly across re-renders
-        // (e.g. when the active locale flips after navigation).
-        <Fragment key={link.code}>
-          {i > 0 && <span class="text-muted">/</span>}
-          {link.active ? (
-            <span aria-current="true" class="font-medium text-fg">
-              {link.label}
-            </span>
-          ) : (
-            <a
-              href={link.href}
-              lang={link.code}
-              class="text-muted hover:text-fg"
-            >
-              {link.label}
-            </a>
-          )}
-        </Fragment>
-      ))}
+    <div
+      class="group relative flex items-center text-small"
+      data-language-switcher
+      {...rewireAttrs}
+    >
+      <button
+        type="button"
+        class="flex max-w-[16rem] cursor-pointer items-center gap-hsp-2xs whitespace-nowrap rounded border border-muted px-hsp-sm py-vsp-3xs text-small text-muted transition-colors hover:border-accent hover:text-accent focus-visible:border-accent focus-visible:text-accent"
+        aria-label={accessibleLabel}
+        aria-controls={menuId}
+        aria-expanded="false"
+        data-language-toggle
+      >
+        <span class="truncate font-medium">{activeLink?.label}</span>
+        <ChevronDownIcon />
+      </button>
+
+      <ul
+        id={menuId}
+        class="absolute right-0 top-full z-dropdown mt-vsp-3xs hidden min-w-[8rem] max-w-[calc(100vw-var(--spacing-hsp-xl))] overflow-x-auto whitespace-nowrap rounded border border-muted bg-surface py-vsp-3xs shadow-lg group-hover:block group-focus-within:block"
+        data-language-menu
+      >
+        {links.map((link) => (
+          <li key={link.code}>
+            {link.active ? (
+              <span
+                lang={link.code}
+                aria-current="page"
+                class="block px-hsp-md py-vsp-2xs text-small font-bold text-accent"
+              >
+                {link.label}
+              </span>
+            ) : (
+              <a
+                href={link.href}
+                lang={link.code}
+                class="block px-hsp-md py-vsp-2xs text-small text-fg hover:bg-accent/10 hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline"
+              >
+                {link.label}
+              </a>
+            )}
+          </li>
+        ))}
+      </ul>
     </div>
+  );
+}
+
+function ChevronDownIcon(): VNode {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class="h-icon-xs w-icon-xs shrink-0"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      stroke-width="2"
+      aria-hidden="true"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M19 9l-7 7-7-7"
+      />
+    </svg>
   );
 }
 

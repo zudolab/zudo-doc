@@ -8,6 +8,24 @@ Use this interactive tool to configure your zudo-doc project options and generat
 
 <PresetGenerator />
 
+## Languages
+
+The **Default language** select chooses the primary locale and controls the unprefixed `/docs/...` routes. **Additional language codes** accepts a comma-separated, ordered list such as `ja, de`. A non-empty list automatically adds i18n and becomes the complete `additionalLangs` array in the generated preset; it is not limited to Japanese or to one additional locale.
+
+Leave the field blank for a single-language preset. Blank input omits `additionalLangs` and does not add `i18n` to `features`. Codes are normalized to lowercase and validated before generation; duplicates, the selected default code, path traversal, separators, and other unsafe values show an inline error and disable **Generate Preset**.
+
+The generated dialog can show both representations of the same hydrated form state. This abbreviated JSON focuses on the locale fields; the real preset may include your other feature choices:
+
+```json
+{
+  "defaultLang": "en",
+  "additionalLangs": ["ja", "de"],
+  "features": ["i18n"]
+}
+```
+
+Use the **as CLI command** checkbox to copy the equivalent `--lang en --additional-langs ja,de --i18n` flags. The CLI list replaces a preset's list when both are supplied; it does not append to it. See the [i18n guide](../guides/i18n.mdx) for legacy boolean inference and the explicit `--no-i18n` warning.
+
 ## Color Scheme
 
 The generator ships exactly two bundled color schemes — `Default Light` and `Default Dark` — sharing one set of OKLCH ramps. In **Single scheme** mode, the dropdown lets you pick either one. In **Light & Dark (toggle)** mode, the pairing is fixed to `Default Light` / `Default Dark` — there is no scheme dropdown to pick a different pairing, only the default-mode and respect-system-preference options.

@@ -1,6 +1,7 @@
 import { execSync, execFileSync } from "child_process";
 import fs from "fs-extra";
 import path from "path";
+import { resolveLocalePlan } from "./locale-plan.js";
 
 // Project-name grammar (locked by F4 — S4 #2013):
 // /^[a-z0-9][a-z0-9._-]*$/, max 214 chars, unscoped, used as both directory
@@ -170,9 +171,15 @@ export function pmRunCommand(
     : `${pm} ${script}`;
 }
 
-/** Determine the secondary language code when i18n is enabled. */
+/**
+ * Determine the first additional locale code for legacy callers.
+ *
+ * @deprecated Internal emitters now consume the complete LocalePlan. Keep
+ * this compatibility export for existing package consumers that still need
+ * the former single-additional-locale helper.
+ */
 export function getSecondaryLang(defaultLang: string): string {
-  return defaultLang === "en" ? "ja" : "en";
+  return resolveLocalePlan({ defaultLang, i18n: true }).additionalLangs[0]!;
 }
 
 /** Apply a list of regex replacements to a file (if it exists). */

@@ -108,22 +108,28 @@ to `{NEW_VERSION}` in lockstep; independent per-package versions are out of scop
 
 ## Update the changelog (if enabled)
 
-First check whether the default-language changelog exists:
+First inspect the `zudoDoc({...})` call in `zfb.config.ts`. Read
+`defaultLocale`, `docsDir`, and the complete `locales` map (each map entry is
+an additional locale code and its exact `dir`). These configured paths are the
+only current locale roots; never infer them with a `src/content/docs-*` glob,
+because versioned trees such as `docs-v1` and `docs-v1-ja` are snapshots.
+
+Then check whether the default-locale changelog exists:
 
 ```bash
-test -f src/content/docs/changelog/index.mdx && echo "changelog present"
+test -f <configured-docsDir>/changelog/index.mdx && echo "changelog present"
 ```
 
-If `src/content/docs/changelog/index.mdx` does not exist, the changelog feature is not in use —
+If `<configured-docsDir>/changelog/index.mdx` does not exist, the changelog feature is not in use —
 skip this whole section and go straight to "Archive docs as a versioned snapshot".
 
 ### Discover package and page layouts
 
-Treat `src/content/docs/changelog/` as the primary changelog root. List every immediate child
+Treat `<configured-docsDir>/changelog/` as the primary changelog root. List every immediate child
 directory that contains an `index.mdx`; each directory name is a package slug:
 
 ```bash
-find src/content/docs/changelog -mindepth 2 -maxdepth 2 -type f -name index.mdx \
+find <configured-docsDir>/changelog -mindepth 2 -maxdepth 2 -type f -name index.mdx \
   -print | sed 's#/index\.mdx$##; s#.*/##' | sort
 ```
 
@@ -151,7 +157,7 @@ This per-directory check is mandatory: packages in one project may use different
 
 ### Choose the language-specific headings
 
-The primary content directory was seeded in the project's `defaultLang`, so do not assume it is
+The primary content directory was seeded in the project's `defaultLocale`, so do not assume it is
 English. For a single-page directory, inspect its `index.mdx`. For a per-version-file directory,
 inspect its existing sibling version entries. Use the heading set already used by those files.
 
@@ -231,22 +237,26 @@ Released: {YYYY-MM-DD}
 <!-- categories and entries from the matching heading set above -->
 ```
 
-Use a concise Japanese `description` when the sibling entries are Japanese, but keep the required
-`Released: {YYYY-MM-DD}` line in either language. Use today's date for `{YYYY-MM-DD}`.
+Use a concise Japanese `description` only when the target locale code is `ja` and its sibling
+entries are Japanese, but keep the required `Released: {YYYY-MM-DD}` line in every locale. Use
+today's date for `{YYYY-MM-DD}`.
 
-### Other-locale changelog
+### Additional-locale changelogs
 
-Only applies when i18n is enabled — i.e. a second content directory exists alongside the primary
-one. Which locale that is depends on the project's `defaultLang`: for an English-default project
-this is the Japanese changelog at `src/content/docs-ja/changelog/index.mdx`; for a
-Japanese-default project this is the English changelog under the `docs-en` directory instead. If
-the other-locale changelog root doesn't exist, skip mirroring.
+This applies only when the `locales` map is non-empty. For every configured
+additional locale, resolve its exact `dir` from `zfb.config.ts` and mirror the
+selected primary targets by relative path there. Detect each locale's layout
+independently and apply the matching single-page or per-version-file procedure.
+In a multi-package layout, never edit any locale's landing
+`changelog/index.mdx`. If a selected package has no matching directory in a
+configured locale, report it and stop instead of silently creating a divergent
+layout.
 
-Mirror exactly the selected primary targets by relative path under the other-locale root, detect
-each mirror directory's layout independently, and apply the matching single-page or
-per-version-file procedure. Use the other language's heading set. In a multi-package layout,
-never edit either locale's landing `changelog/index.mdx`. If a selected package has no matching
-other-locale directory, report it and stop instead of silently creating a divergent layout.
+Choose headings from the existing target files. Apply Japanese headings and
+Japanese wording only when that target's locale code is `ja`; for every other
+locale, inspect its existing language or retain the scaffold's English
+placeholder prose until it is translated. Do not describe arbitrary locale
+codes as Japanese or as already translated.
 
 ## Archive docs as a versioned snapshot (if enabled, major bumps only)
 
@@ -256,28 +266,38 @@ declined the snapshot offer above, skip this whole section.
 
 1. Derive the old version's slug by dropping the patch component, e.g. `0.1.0` → `0.1`,
    `1.2.3` → `1.2`.
-2. Copy the current docs into a versioned directory:
+2. Copy the configured default `docsDir` into the versioned default directory. For the
+   generated layout, this is `src/content/docs-v{OLD_SLUG}`:
 
    ```bash
-   cp -r src/content/docs src/content/docs-v{OLD_SLUG}
+   cp -r <configured-docsDir> <versioned-default-docsDir>
    ```
 
-3. If i18n is enabled (a `docs-ja` directory exists), also copy the Japanese docs:
+3. For **every** entry in the current `locales` map, copy its configured `dir` into the
+   matching versioned locale directory. In the generated layout, a source
+   `src/content/docs-<locale-code>` becomes
+   `src/content/docs-v{OLD_SLUG}-<locale-code>`; preserve any custom directory
+   prefix/suffix your config uses rather than inventing a locale from a glob.
+   For the generated `docs-<locale-code>` layout, use
+   `src/content/docs-v{OLD_SLUG}-<locale-code>` as the matching target. For a
+   custom layout, derive and record the equivalent versioned path explicitly
+   for each map entry.
 
    ```bash
-   cp -r src/content/docs-ja src/content/docs-v{OLD_SLUG}-ja
+   cp -r <configured-locale-dir> <versioned-locale-dir>
    ```
 
-4. Add an entry to the `versions` array in `zfb.config.ts`:
+4. Add an entry to the `versions` array in `zfb.config.ts`, carrying the default
+   snapshot and **all** configured locale snapshots:
 
    ```ts
    versions: [
      {
        slug: "{OLD_SLUG}",
        label: "{OLD_VERSION}",
-       docsDir: "src/content/docs-v{OLD_SLUG}",
+       docsDir: "<versioned-default-docsDir>",
        locales: {
-         ja: { dir: "src/content/docs-v{OLD_SLUG}-ja" },
+         "<locale-code>": { dir: "<versioned-locale-dir>" },
        },
        banner: "unmaintained",
      },
@@ -285,10 +305,12 @@ declined the snapshot offer above, skip this whole section.
    ],
    ```
 
-   Drop the `locales` block entirely when i18n is not enabled.
+   Replace the illustrative `<locale-code>` entry with every code from the
+   current `locales` map, preserving map order. Drop the `locales` block
+   entirely when the current map is empty.
 
-5. `src/content/docs/` (and `src/content/docs-ja/`) now represent the new, latest version —
-   no further action needed there. The version switcher and versions listing page pick up the
+5. The configured current-locale directories now represent the new, latest version — no
+   further action is needed there. The version switcher and versions listing page pick up the
    new entry automatically at build time; nothing else needs wiring.
 
 ## Build and test
@@ -309,8 +331,10 @@ Stage and commit **all** version bump changes:
 
 ```bash
 git add package.json
-git add src/content/docs*/changelog/ 2>/dev/null
-git add src/content/docs-v* 2>/dev/null
+git add <configured-docsDir>/changelog/ 2>/dev/null
+# Repeat the previous command for each exact `dir` in the current `locales` map.
+git add <versioned-default-docsDir> 2>/dev/null
+# Add each exact versioned locale directory recorded in the new `versions` entry.
 # Also stage any other modified files (e.g. formatting fixes from the build/test step)
 git diff --name-only | xargs -r git add
 git commit -m "chore: Bump version to v{NEW_VERSION}"
@@ -348,7 +372,7 @@ After pushing the tag, create a GitHub release. If a root single-page changelog 
 the section you just wrote out as before:
 
 ```bash
-NOTES=$(awk -v ver="## {NEW_VERSION}" '$0==ver{f=1;next} f&&/^## /{f=0} f' src/content/docs/changelog/index.mdx)
+NOTES=$(awk -v ver="## {NEW_VERSION}" '$0==ver{f=1;next} f&&/^## /{f=0} f' <configured-docsDir>/changelog/index.mdx)
 gh release create v{NEW_VERSION} --title "v{NEW_VERSION}" --notes "$NOTES"
 ```
 
@@ -356,7 +380,7 @@ For a root per-version-file layout, remove the frontmatter from the new entry an
 its body as `NOTES`:
 
 ```bash
-NOTES=$(awk 'NR==1&&$0=="---"{fm=1;next} fm&&$0=="---"{fm=0;next} !fm{print}' "src/content/docs/changelog/{NEW_VERSION}.mdx")
+NOTES=$(awk 'NR==1&&$0=="---"{fm=1;next} fm&&$0=="---"{fm=0;next} !fm{print}' "<configured-docsDir>/changelog/{NEW_VERSION}.mdx")
 gh release create v{NEW_VERSION} --title "v{NEW_VERSION}" --notes "$NOTES"
 ```
 
@@ -367,7 +391,7 @@ of single-page and per-version-file package directories:
 ```bash
 NOTES=""
 for slug in $SELECTED_PACKAGES; do
-  dir="src/content/docs/changelog/$slug"
+  dir="<configured-docsDir>/changelog/$slug"
   if test -f "$dir/{NEW_VERSION}.mdx"; then
     body=$(awk 'NR==1&&$0=="---"{fm=1;next} fm&&$0=="---"{fm=0;next} !fm{print}' "$dir/{NEW_VERSION}.mdx")
   else
@@ -379,7 +403,7 @@ gh release create v{NEW_VERSION} --title "v{NEW_VERSION}" --notes "$NOTES"
 ```
 
 Set `SELECTED_PACKAGES` to the validated, space-separated package slugs chosen earlier. Build
-release notes from the primary-language files only; the other-locale mirror is not duplicated in
+release notes from the primary-language files only; additional-locale mirrors are not duplicated in
 the GitHub release body.
 
 If the changelog feature is off, write the release notes directly from the categorized commit
@@ -412,7 +436,7 @@ Package is marked as private — skipping npm publish.
 Report the summary:
 
 - Version bumped: `{OLD_VERSION}` → `{NEW_VERSION}`
-- Changelog layout(s) and selected package(s) updated (EN + JA, if enabled)
+- Changelog layout(s) and selected package(s) updated in all configured locales, if enabled
 - Docs snapshot created (if the versioning feature is enabled and a snapshot was taken)
 - Git tag: `v{NEW_VERSION}`
 - GitHub release: link to the release

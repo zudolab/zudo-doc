@@ -1,5 +1,7 @@
 import type { UserChoices } from "./prompts.js";
-import { capitalize, pmRunCommand } from "./utils.js";
+import type { LocalePlan } from "./locale-plan.js";
+import { resolveLocalePlan } from "./locale-plan.js";
+import { capitalize, getLangLabel, pmRunCommand } from "./utils.js";
 
 /**
  * Generate the per-project `CLAUDE.md` (minimal-scaffold shape, epic
@@ -9,9 +11,33 @@ import { capitalize, pmRunCommand } from "./utils.js";
  * longer exists. The scaffolded project is now ~13 files; almost
  * everything referenced here lives in `node_modules/@takazudo/zudo-doc`.
  */
-export function generateCLAUDEFile(choices: UserChoices): string {
+export function generateCLAUDEFile(
+  choices: UserChoices,
+  localePlan: LocalePlan = resolveLocalePlan({
+    defaultLang: choices.defaultLang,
+    additionalLangs: choices.additionalLangs,
+    i18n: choices.features.includes("i18n"),
+    i18nExplicitlyDisabled:
+      choices.explicitlyDisabledFeatures?.includes("i18n"),
+  }),
+): string {
   const siteName = capitalize(choices.projectName.replace(/-/g, " "));
   const lines: string[] = [];
+
+  const localeDisplayName = (locale: string): string => {
+    if (locale === "en") return "English";
+    if (locale === "ja") return "Japanese";
+    return getLangLabel(locale);
+  };
+
+  const localeStarterNote = (locale: string): string => {
+    if (locale === "ja") return "Japanese starter prose";
+    if (locale === "en") return "English starter prose";
+    return "English placeholder prose pending translation";
+  };
+
+  const defaultLocaleLabel = localeDisplayName(localePlan.defaultLang);
+  const additionalLocales = localePlan.i18n ? localePlan.additionalLangs : [];
 
   lines.push(`# ${siteName}`);
   lines.push(``);
@@ -72,18 +98,21 @@ export function generateCLAUDEFile(choices: UserChoices): string {
   lines.push(`pages/`);
   lines.push(`├── index.tsx             # 1-line re-export of the package home route`);
   lines.push(`└── docs/[[...slug]].tsx  # self-contained doc-route stub (required for \`${pm} dev\`)`);
-  if (choices.features.includes("i18n")) {
+  if (localePlan.i18n) {
     lines.push(`  [locale]/docs/[[...slug]].tsx  # same, for non-default locales`);
   }
   lines.push(`src/`);
   lines.push(`├── chrome-bindings.tsx   # optional typed primary chrome / named header / MDX bindings`);
   lines.push(`├── content/`);
-  lines.push(`│   └── docs/             # MDX content (this project's showcase docs)`);
-
-  if (choices.features.includes("i18n")) {
-    const secondaryLang = choices.defaultLang === "ja" ? "en" : "ja";
+  const defaultBranch = additionalLocales.length === 0 ? "└──" : "├──";
+  lines.push(
+    `│   ${defaultBranch} docs/             # ${defaultLocaleLabel} (default) MDX content (routes at /docs/; ${localeStarterNote(localePlan.defaultLang)})`,
+  );
+  for (const [index, locale] of additionalLocales.entries()) {
+    const branch =
+      index === additionalLocales.length - 1 ? "└──" : "├──";
     lines.push(
-      `│   └── docs-${secondaryLang}/         # ${secondaryLang === "ja" ? "Japanese" : "English"} MDX content (mirrors docs/)`,
+      `│   ${branch} docs-${locale}/         # ${localeDisplayName(locale)} MDX content (routes at /${locale}/docs/; ${localeStarterNote(locale)})`,
     );
   }
 
@@ -155,22 +184,20 @@ export function generateCLAUDEFile(choices: UserChoices): string {
   lines.push(``);
 
   // i18n section
-  if (choices.features.includes("i18n")) {
-    const secondaryLang = choices.defaultLang === "ja" ? "en" : "ja";
-    const defaultLabel =
-      choices.defaultLang === "ja" ? "Japanese" : "English";
-    const secondaryLabel = secondaryLang === "ja" ? "Japanese" : "English";
-
+  if (localePlan.i18n) {
     lines.push(`## i18n`);
     lines.push(``);
     lines.push(
-      `- ${defaultLabel} (default): \`/docs/...\` — content in \`src/content/docs/\``,
+      `- ${defaultLocaleLabel} (default, \`${localePlan.defaultLang}\`): \`/docs/...\` — content in \`src/content/docs/\` (${localeStarterNote(localePlan.defaultLang)})`,
     );
+    for (const locale of additionalLocales) {
+      lines.push(
+        `- ${localeDisplayName(locale)} (\`${locale}\`): \`/${locale}/docs/...\` — content in \`src/content/docs-${locale}/\` (${localeStarterNote(locale)})`,
+      );
+    }
+    lines.push(`- Every additional-locale directory should mirror the default directory structure`);
     lines.push(
-      `- ${secondaryLabel}: \`/${secondaryLang}/docs/...\` — content in \`src/content/docs-${secondaryLang}/\``,
-    );
-    lines.push(
-      `- ${secondaryLabel} docs should mirror the ${defaultLabel} directory structure`,
+      `- The \`ja\` locale, when configured, receives Japanese starter prose and uses Japanese translation conventions. Other non-EN locale directories currently receive English placeholder prose pending translation; do not assume they are already translated.`,
     );
     lines.push(
       `- Both \`pages/docs/[[...slug]].tsx\` and \`pages/[locale]/docs/[[...slug]].tsx\` are self-contained doc-route stubs shipped by the generator as explicit host-owned seams. zfb 2.13.1 also renders package-injected dynamic routes in dev; keep these files so the generated project retains route ownership and customization.`,

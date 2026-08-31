@@ -53,8 +53,9 @@ export interface FactoryI18n {
   /** Display label for a locale (e.g. `"EN"`, `"日本語"`). */
   getLocaleLabel: (locale: string) => string;
   /**
-   * Translate a UI string key for a locale, falling back to the default locale
-   * then the key itself. Optional: factories that emit no UI strings omit it.
+   * Translate a UI string key for a locale, falling back through the configured
+   * default locale, package English, then the raw key. Optional: factories
+   * that emit no UI strings omit it.
    */
   t?: (key: string, locale?: string) => string;
 }
@@ -183,7 +184,10 @@ export interface RouteContext<S = Settings>
   getLocaleConfig(locale: string): { label: string; dir: string } | undefined;
   /** Display label for a locale. */
   getLocaleLabel(locale: string): string;
-  /** Translate a UI string key for a locale (falls back to default then key). */
+  /**
+   * Translate a UI string key for a locale (falls back through the configured
+   * default locale, package English, then the raw key).
+   */
   t(key: string, locale?: string): string;
   /** The full URL-helper bag (also spread as own members via `extends`). */
   urlHelpers: UrlHelpers;

@@ -18,7 +18,7 @@ export interface LocaleLink {
   label: string;
   /** Pre-resolved href for the locale (already prefixed with the configured base). */
   href: string;
-  /** True for the currently-active locale — rendered as plain text, not a link. */
+  /** True for the currently-active locale — rendered as the disclosure's current row. */
   active: boolean;
 }
 
