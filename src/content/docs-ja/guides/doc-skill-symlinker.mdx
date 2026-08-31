@@ -20,8 +20,9 @@ sidebar_position: 9
 
 1. プロジェクト内に`.claude/skills/<skill-name>/`または`.codex/skills/<skill-name>/`ディレクトリを作成
 2. エージェントにドキュメントの使い方を伝える`SKILL.md`を生成
-3. `src/content/docs/`ディレクトリをスキルフォルダにシムリンク
-4. スキルを`~/.claude/skills/`または`~/.codex/skills/`にシムリンクし、グローバルに利用可能にする
+3. プライマリの`src/content/docs/`ディレクトリをスキルフォルダにシムリンク
+4. 設定した追加ロケールのディレクトリ（例: `src/content/docs-ja/`と`src/content/docs-de/`）をすべてスキルフォルダにシムリンク
+5. スキルを`~/.claude/skills/`または`~/.codex/skills/`にシムリンクし、グローバルに利用可能にする
 
 デフォルトでは、スクリプトがエージェントのホームディレクトリを自動判定します。`~/.codex/`だけがある場合はCodex、`~/.claude/`だけがある場合はClaude Code、両方ある場合は両方、どちらもない新しい環境では従来どおりClaude Codeを選びます。
 
@@ -34,6 +35,19 @@ pnpm run setup:doc-skill
 ```
 
 スキル名は決定的に`<プロジェクト名>-wisdom`になります（例: `zudo-doc-wisdom`）。先頭の位置引数または`SKILL_NAME`環境変数で上書きできます。
+
+```
+=== zudo-doc Skill Setup ===
+
+Target: auto -> claude codex
+
+  [claude] Created docs symlink -> ...
+  [claude] Generated SKILL.md
+  [codex] Created docs symlink -> ...
+  [codex] Generated SKILL.md
+
+Done! Skill 'zudo-doc-wisdom' is ready.
+```
 
 対象を明示したい場合は、`--target`つきのスクリプトを使います:
 
@@ -70,9 +84,12 @@ Claudeはドキュメントからフッターガイドを読み取り、ドキ�
 ```
 .claude/skills/<skill-name>/
 ├── SKILL.md       # スキル定義（フロントマターと指示）
-├── docs -> src/content/docs/         # 英語ドキュメントへのシムリンク
-└── docs-ja -> src/content/docs-ja/   # 日本語ドキュメントへのシムリンク
+├── docs -> src/content/docs/         # プライマリロケールのドキュメントへのシムリンク
+├── docs-ja -> src/content/docs-ja/   # 設定したロケールへのリンク（存在する場合）
+└── docs-de -> src/content/docs-de/   # 別の設定ロケールへのリンク（存在する場合）
 ```
+
+リンク名は設定したディレクトリのベース名に従います（カスタムディレクトリが衝突する場合はコード付きの名前にフォールバック）。生成された`SKILL.md`には正確なロケールマップが記録され、`docs-v1-ja/`のようなバージョンスナップショットは現在のロケールとしてリンクされません。構造を揃えて翻訳し、JA以外のスターターツリーには翻訳前の英語プレースホルダー文章が含まれることに注意してください。
 
 Codex対象では、同じ構成が`.codex/skills/<skill-name>/`配下に作成されます。
 

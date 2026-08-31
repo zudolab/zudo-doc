@@ -325,15 +325,18 @@ themePacks: ["default", "foundry"],
 
 ### locales
 
-追加ロケール: コード → `{ label, dir }`。それぞれが `/<code>/docs/…` ルートツリーと `docs-<code>` コレクションになります。
+追加ロケール: コード → `{ label, dir }`。それぞれが `/<code>/docs/…` ルートツリーと `docs-<code>` コレクションになります。マップの順序が維持され、言語切り替えは設定したすべての `label` をその順序で表示するため、`JP` や `JA` に固定されません。
 
 デフォルト: `{}`
 
 ```ts
 locales: {
   ja: { label: "JA", dir: "src/content/docs-ja" },
+  de: { label: "DE", dir: "src/content/docs-de" },
 },
 ```
+
+ロケールコードは URL セグメントとディレクトリのサフィックスに使われます。小文字でパス安全な値にしてください。重複、プライマリの `defaultLocale`、パス区切り文字、トラバーサル要素は、`create-zudo-doc` がファイルを書き込む前に拒否します。生成される `ja` ツリーは日本語の文章、それ以外の任意のロケールツリーは翻訳用の英語プレースホルダー文章から始まります。
 
 ### defaultLocaleOnlyPrefixes
 
@@ -341,7 +344,7 @@ locales: {
 
 デフォルト: `[]`
 
-[デフォルトロケール限定プレフィックス](./i18n.mdx#default-locale-only-prefixes)を参照してください。
+[デフォルトロケール限定プレフィックス](./i18n.mdx#デフォルトロケール専用プレフィックス)を参照してください。
 
 ### versions
 

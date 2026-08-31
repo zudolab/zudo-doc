@@ -38,7 +38,7 @@ category_sort_order: "desc"
 
 1. `src/content/docs/changelog/`にバージョン名のMDXファイルを作成（例：`0.2.0.mdx`）
 2. `sidebar_position`を前のエントリより大きい値に設定
-3. 日本語コンテンツディレクトリ（`src/content/docs-ja/changelog/`）にファイルをミラー
+3. 設定したすべての追加ロケールディレクトリ（例: `src/content/docs-ja/changelog/` と `src/content/docs-de/changelog/`）にファイルをミラー
 
 ```mdx title="src/content/docs/changelog/0.2.0.mdx"
 ---
@@ -224,7 +224,7 @@ zudo-docにはバージョン管理を自動化する`scripts/version-bump.sh`�
 スクリプトは以下のステップを実行します：
 
 1. `package.json`の`version`フィールドを更新
-2. 英語と日本語の両方のディレクトリに変更履歴エントリMDXファイルを作成
+2. プライマリと設定した各追加ロケールのディレクトリに変更履歴エントリMDXファイルを作成
 3. 正しい`sidebar_position`を自動的に設定（既存エントリからインクリメント）
 
 ### ドキュメントスナップショット
@@ -232,7 +232,7 @@ zudo-docにはバージョン管理を自動化する`scripts/version-bump.sh`�
 `--snapshot`フラグを使用すると、バンプ前に現在のドキュメントをバージョン付きスナップショットとしてアーカイブします。これはzudo-docの[バージョニングシステム](./versioning.mdx)と連携します：
 
 1. `src/content/docs/`を`src/content/docs-v{old}/`にコピー
-2. `src/content/docs-ja/`を`src/content/docs-v{old}-ja/`にコピー
+2. 設定した各追加ロケールディレクトリをコピー（例: `src/content/docs-ja/`を`src/content/docs-v{old}-ja/`、`src/content/docs-de/`を`src/content/docs-v{old}-de/`へ）
 3. `src/config/settings.ts`に追加するバージョン設定エントリを表示
 
 <Note>
@@ -248,7 +248,7 @@ zudo-docにはバージョン管理を自動化する`scripts/version-bump.sh`�
 1. 最後のgitタグ以降のコミットを分析し、カテゴリ分け（破壊的変更、機能、修正、その他）
 2. 変更内容に基づいてバージョンバンプの種類（major/minor/patch）を提案
 3. `version-bump.sh`を実行して`package.json`を更新し、変更履歴エントリを作成
-4. 変更履歴テンプレートに実際のコミット内容を記入（英語・日本語の両方）
+4. プライマリと設定した各ロケールの変更履歴テンプレートに実際のコミット内容を記入
 5. `pnpm b4push`を実行してビルドを検証
 6. コミット、プッシュ、CI待機
 7. gitタグとGitHubリリースを作成
@@ -300,4 +300,4 @@ headerNav: [
 
 ## i18n
 
-翻訳されたリリースノートを提供するために、変更履歴エントリを日本語コンテンツディレクトリ（`src/content/docs-ja/changelog/`）にミラーしてください。`index.mdx`とディレクトリ構造は英語版と一致させる必要があります。
+翻訳されたリリースノートを提供するために、変更履歴エントリを設定したすべての追加ロケールディレクトリ（例: `src/content/docs-ja/changelog/` と `src/content/docs-de/changelog/`）にミラーしてください。`index.mdx`とディレクトリ構造はプライマリ版と一致させる必要があります。

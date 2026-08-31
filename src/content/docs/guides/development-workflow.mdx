@@ -103,8 +103,8 @@ Follow these steps when adding new documentation pages:
 
 1. Create a `.mdx` file under `src/content/docs/` with `title` and `sidebar_position` in the frontmatter.
 2. Write content starting with `## h2` headings. Do not add `# h1` — the frontmatter `title` renders as the page h1.
-3. Create a matching file under `src/content/docs-ja/` with translated prose.
-4. Keep all code blocks identical between EN and JA — only translate the surrounding prose.
+3. Create a matching file under every configured additional-locale directory (for example, `src/content/docs-ja/` and `src/content/docs-de/`) with translated prose.
+4. Keep all code blocks identical across the primary and configured locale trees — only translate the surrounding prose.
 5. Run `pnpm format` to format MDX files.
 6. Run `pnpm build` to verify the site builds correctly.
 

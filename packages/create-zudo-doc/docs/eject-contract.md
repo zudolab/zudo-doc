@@ -136,7 +136,7 @@ The bin is declared in `packages/zudo-doc/package.json`:
 `bin/zudo-doc-cli-runner.ts` via `tsx`. The runner imports `eject` and `EJECTABLE` from
 `@takazudo/zudo-doc/eject` and parses `zudo-doc eject <component>` with `minimist`.
 A separate bin keeps the scaffold entry (`create-zudo-doc`) single-purpose — the
-framework-name binary owns ongoing project ops; `create-*` owns first-run scaffolding only.
+framework-name CLI owns ongoing project ops; `create-*` owns first-run scaffolding only.
 
 ## Why these calls
 

@@ -50,6 +50,26 @@ Enter a name for your project directory (default: `my-docs`).
 
 Choose the default language for your documentation site. Supported languages include English, Japanese, Chinese (Simplified/Traditional), Korean, Spanish, French, German, and Portuguese.
 
+The selected language is the primary locale: its content lives in `src/content/docs/` and its routes are unprefixed (`/docs/...`). To add more locales, enter an ordered comma-separated list in the **Additional language codes** field of the Preset Generator, or pass the list directly to the CLI:
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    defaultLocale: "en",
+    locales: {
+      ja: { label: "JA", dir: "src/content/docs-ja" },
+      de: { label: "DE", dir: "src/content/docs-de" },
+    },
+  }),
+);
+```
+
+```bash
+pnpm create zudo-doc my-docs --lang en --additional-langs ja,de --yes
+```
+
+An omitted or blank list leaves the scaffold single-language. A non-empty explicit list is normalized, validated for safe locale path segments, and implies i18n; it is the complete list rather than a request for one fixed locale. The scaffold seeds English placeholder prose for arbitrary non-Japanese locales, which you can translate after installation.
+
 ### Color Scheme Mode
 
 Choose how your site handles color schemes:
@@ -63,7 +83,7 @@ zudo-doc ships exactly these two schemes, sharing one set of OKLCH ramps — the
 
 ### Features
 
-Use the interactive picker to choose optional modules for internationalization, search and sidebar tools, Claude and Codex resources and skills, design and navigation controls, versioning and document history, tags and changelogs, desktop wrappers, and indexing. Built-in full-text/word-match search, sidebar filtering, image enlarge, dynamic page transitions, and footer copyright are selected by default.
+Use the interactive picker to choose optional modules for search and sidebar tools, Claude and Codex resources and skills, design and navigation controls, versioning and document history, tags and changelogs, desktop wrappers, and indexing. Internationalization is configured by the primary language plus the **Additional language codes** field; a non-empty additional list enables it automatically. Built-in full-text/word-match search, sidebar filtering, image enlarge, dynamic page transitions, and footer copyright are selected by default.
 
 For the complete feature list, defaults, and non-interactive flags, see the [CLI reference](../reference/create-zudo-doc.mdx#options-features).
 
@@ -156,6 +176,8 @@ my-docs/
     └── styles/
         └── global.css      # ~20-line @import chain + your token overrides
 ```
+
+When additional locales are configured, the same `src/content/` tree also contains one exact `docs-<code>/` directory per entry, such as `docs-ja/` and `docs-de/`. Keep filenames and code blocks aligned across these trees while translating prose. See [Internationalization](../guides/i18n.mdx) for fallback, validation, and default-locale-only rules.
 
 | File | Purpose |
 | --- | --- |

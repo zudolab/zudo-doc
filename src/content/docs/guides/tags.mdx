@@ -63,7 +63,7 @@ Consistent tag names keep the tag index tidy and prevent near-duplicates like `d
 - **Lowercase** — treat tags as slugs, not display text.
 - **Kebab-case** for multi-word tags — `color-scheme`, not `colorScheme` or `color_scheme`.
 - **Short and specific** — prefer `i18n` over `internationalization-and-localization`.
-- **Consistent across locales** — use the same tag slug in EN and JA frontmatter (see below).
+- **Consistent across locales** — use the same tag slug in the primary and every configured locale's frontmatter (see below).
 
 <Tip>
 
@@ -75,8 +75,8 @@ Before introducing a new tag, skim the existing tag index at [/docs/tags/](/docs
 
 Tags are **shared identifiers** across locales, not translated labels.
 
-- The same tag slug appears in both EN and JA frontmatter — e.g., `tags: [deployment]` in both files.
-- Each locale has its own tag index. The EN route `/docs/tags/deployment` lists EN pages. The JA route `/ja/docs/tags/deployment` lists JA-translated pages first and **falls back to the EN page** for any slug that has not yet been translated — so untranslated EN docs still appear under the JA tag page rather than silently disappearing.
+- The same tag slug appears in the primary and every configured locale's frontmatter — e.g., `tags: [deployment]` in each mirrored file.
+- Each locale has its own tag index. The primary route `/docs/tags/deployment` lists primary pages. An additional route such as `/ja/docs/tags/deployment` lists translated pages first and **falls back to the primary page** for any slug that has not yet been translated — so untranslated primary docs still appear under the locale's tag page rather than silently disappearing.
 - **Do not translate tag slugs.** Translating `deployment` to `デプロイ` in the JA file would split the tag into two unrelated buckets and break the cross-locale model.
 
 If you need a locale-specific display label for a tag, that is a future enhancement — today, the slug is both the identifier and the label.

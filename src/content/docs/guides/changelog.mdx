@@ -38,7 +38,7 @@ To add a new changelog entry:
 
 1. Create a new MDX file in `src/content/docs/changelog/` named after the version (e.g., `0.2.0.mdx`)
 2. Set the `sidebar_position` to a value higher than the previous entry
-3. Mirror the file in the Japanese content directory (`src/content/docs-ja/changelog/`)
+3. Mirror the file in every configured additional-locale directory (for example, `src/content/docs-ja/changelog/` and `src/content/docs-de/changelog/`)
 
 ```mdx title="src/content/docs/changelog/0.2.0.mdx"
 ---
@@ -233,7 +233,7 @@ zudo-doc includes a `scripts/version-bump.sh` script that automates version mana
 The script performs the following steps:
 
 1. Updates the `version` field in `package.json`
-2. Creates a changelog entry MDX file in both English and Japanese directories
+2. Creates a changelog entry MDX file in the primary and each configured additional-locale directory
 3. Sets the correct `sidebar_position` automatically (incremented from existing entries)
 
 ### Doc Snapshots
@@ -241,7 +241,7 @@ The script performs the following steps:
 When called with `--snapshot`, the script also archives the current documentation as a versioned snapshot before bumping. This integrates with zudo-doc's [versioning system](./versioning.mdx):
 
 1. Copies `src/content/docs/` to `src/content/docs-v{old}/`
-2. Copies `src/content/docs-ja/` to `src/content/docs-v{old}-ja/`
+2. Copies each configured additional-locale directory (for example, `src/content/docs-ja/` to `src/content/docs-v{old}-ja/` and `src/content/docs-de/` to `src/content/docs-v{old}-de/`)
 3. Prints the version config entry to add to `src/config/settings.ts`
 
 <Note>
@@ -257,7 +257,7 @@ For [Claude Code](https://claude.com/claude-code) users, zudo-doc includes a `/z
 1. Analyzes commits since the last git tag and categorizes them (breaking, features, fixes, other)
 2. Proposes a version bump type (major/minor/patch) based on the changes
 3. Runs `version-bump.sh` to update `package.json` and create changelog entries
-4. Fills in the changelog templates with actual commit details (both EN and JA)
+4. Fills in the changelog templates with actual commit details for the primary and each configured locale
 5. Runs `pnpm b4push` to validate the build
 6. Commits, pushes, and waits for CI
 7. Creates a git tag and GitHub release
@@ -309,4 +309,4 @@ Nested child active state is path-based, while `categoryMatch` scopes the sideba
 
 ## i18n
 
-Mirror changelog entries in the Japanese content directory (`src/content/docs-ja/changelog/`) to provide translated release notes. The `index.mdx` and directory structure should match the English version.
+Mirror changelog entries in every configured additional-locale directory (such as `src/content/docs-ja/changelog/` and `src/content/docs-de/changelog/`) to provide translated release notes. The `index.mdx` and directory structure should match the primary version.

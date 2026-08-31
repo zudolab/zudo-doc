@@ -325,15 +325,22 @@ Default: `"en"`
 
 ### locales
 
-Additional locales: code → `{ label, dir }`. Each becomes a `/<code>/docs/…` route tree and a `docs-<code>` collection.
+Additional locales: code → `{ label, dir }`. Each becomes a `/<code>/docs/…` route tree and a `docs-<code>` collection. The map is ordered: the language switcher renders every configured `label` in that order, so labels are not hard-coded to `JP` or `JA`.
 
 Default: `{}`
 
 ```ts
 locales: {
   ja: { label: "JA", dir: "src/content/docs-ja" },
+  de: { label: "DE", dir: "src/content/docs-de" },
 },
 ```
+
+Locale codes are used as URL segments and directory suffixes. Keep them
+lowercase and path-safe; duplicate codes, the primary `defaultLocale`, path
+separators, and traversal segments are rejected by `create-zudo-doc` before it
+writes files. The generated `ja` tree starts with Japanese prose; other
+arbitrary locale trees start with English placeholder prose for translation.
 
 ### defaultLocaleOnlyPrefixes
 

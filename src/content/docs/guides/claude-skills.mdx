@@ -30,7 +30,7 @@ Enabling **Claude skills (user-facing)** copies three skills into your scaffolde
 | Skill | Purpose |
 |-------|---------|
 | `zudo-doc-design-system` | Project-specific CSS and component rules — design tokens, the three-tier color architecture, and the component-first strategy. Consult it before editing CSS, Tailwind classes, color tokens, or component markup. |
-| `zudo-doc-translate` | Translate documentation between English and Japanese following zudo-doc's bilingual conventions. |
+| `zudo-doc-translate` | Translate documentation between the locales configured in `zfb.config.ts`, applying zudo-doc's Japanese conventions only to `ja`. |
 | `zudo-doc-version-bump` | Bump the package version, generate changelog docs, commit, tag, and create a GitHub release. |
 
 Select **Claude skills (user-facing)** in the interactive `create-zudo-doc` prompts, or pass the CLI flag:

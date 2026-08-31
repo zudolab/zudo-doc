@@ -37,7 +37,11 @@ Under the hood, that script resolves to:
 doc-history-server --port 4322 --content-dir src/content/docs
 ```
 
-When `i18n` is also enabled, `create-zudo-doc` appends a `--locale <lang>:src/content/docs-<lang>` flag for the secondary locale automatically. To run the server manually with other flags, see [Server Options](#server-mode-local-development-server-options) below.
+When additional locales are configured, `create-zudo-doc` appends one
+`--locale <lang>:src/content/docs-<lang>` flag for every configured locale, in
+order. For example, EN + JA + DE emits `--locale ja:src/content/docs-ja
+--locale de:src/content/docs-de`. To run the server manually with other flags,
+see [Server Options](#server-mode-local-development-server-options) below.
 
 ### Endpoints
 

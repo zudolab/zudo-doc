@@ -52,7 +52,7 @@ When `viewSourceLink` is enabled and `githubUrl` is set, each page shows a link 
 ${githubUrl}/blob/HEAD/${contentDir}/${entryId}
 ```
 
-where `contentDir` is the page's content directory (e.g. `src/content/docs` for English, `src/content/docs-ja` for Japanese, or the `docsDir` of the active version) and `entryId` is the page's file path within that directory.
+where `contentDir` is the page's content directory (for example, `src/content/docs` for the primary locale, `src/content/docs-ja` for an additional locale, or the `docsDir` of the active version) and `entryId` is the page's file path within that directory.
 
 | Page | Resolved URL |
 |---|---|
@@ -65,9 +65,9 @@ The URL pins to `HEAD` — not a specific branch. GitHub resolves `HEAD` to your
 
 </Info>
 
-### Japanese fallback pages
+### Additional-locale fallback pages
 
-If a Japanese page falls back to English content, the link still points to the actual file that rendered — the English `src/content/docs/` file in that case.
+If an additional-locale page falls back to primary-locale content, the link still points to the actual file that rendered — the primary-locale file in `src/content/docs/` in that case.
 
 ## Hiding a single item
 
