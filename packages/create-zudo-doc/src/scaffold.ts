@@ -904,9 +904,13 @@ function generatePackageJson(
     // Parser fixes also ship in zfb-md-wasm; runtime and the Cloudflare adapter
     // have no package-specific behavior change. Public exports and engine
     // requirements stay unchanged, so a fresh scaffold needs no migration.
-    "@takazudo/zfb": "2.14.0",
-    "@takazudo/zfb-runtime": "2.14.0",
-    "@takazudo/zfb-md-wasm": "2.14.0",
+    // 2.14.1: bugfix only — zfb drops the diagnostic-only
+    // ZFB_TAILWIND_SOURCES subprocess payload to avoid oversized Tailwind
+    // errors. The runtime, adapter, and md-wasm packages move in lockstep
+    // without public API changes, so a fresh scaffold needs no migration.
+    "@takazudo/zfb": "2.14.1",
+    "@takazudo/zfb-runtime": "2.14.1",
+    "@takazudo/zfb-md-wasm": "2.14.1",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
@@ -920,11 +924,10 @@ function generatePackageJson(
     // matching @takazudo/zudo-doc version (with content.css) is on npm.
     // RELEASE DEPENDENCY (same shape as the content.css one above): the
     // docHistory `dev`/`dev:network` scripts now invoke `run-parallel`, a bin
-    // added to @takazudo/zudo-doc in this monorepo but NOT present in published
-    // 5.13.1. `^5.13.1` floats up, so a fresh install resolves the bumped
-    // version — but do not cut a create-zudo-doc release until a
-    // @takazudo/zudo-doc that ships bin/run-parallel.mjs is on npm, or every
-    // docHistory scaffold fails at `dev` with `run-parallel: not found`.
+    // added to @takazudo/zudo-doc in 5.14.0. ZUDO_DOC_PIN starts at that
+    // published release so every fresh docHistory scaffold resolves a package
+    // that ships bin/run-parallel.mjs instead of failing at `dev` with
+    // `run-parallel: not found`.
     // ZUDO_DOC_PIN is the shared constant — scaffold() uses the same value
     // to seed .zudo-doc.json so the provenance and the dep can never drift.
     "@takazudo/zudo-doc": ZUDO_DOC_PIN,
