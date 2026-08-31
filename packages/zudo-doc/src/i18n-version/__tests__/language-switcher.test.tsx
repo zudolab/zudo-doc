@@ -1,3 +1,4 @@
+/** @vitest-environment happy-dom */
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
@@ -11,7 +12,10 @@ import {
 import type { LocaleLink } from "../types.js";
 import { makeUrlHelpers } from "../../url-helpers/index.js";
 import { AFTER_NAVIGATE_EVENT } from "../../transitions/index.js";
-import { CURRENT_PATH_SCRIPT_PRELUDE } from "../../current-path/index.js";
+import {
+  CURRENT_PATH_DATASET_KEY,
+  CURRENT_PATH_SCRIPT_PRELUDE,
+} from "../../current-path/index.js";
 
 // Minimal VNode → HTML serializer (mirrors the helper used in
 // breadcrumb.test.tsx — kept inline so the test runs without a render
@@ -74,41 +78,92 @@ const enJa: LocaleLink[] = [
 describe("LanguageSwitcher", () => {
   it("returns null when there is one or fewer links (matches the Astro guard)", () => {
     const noneRendered =
-      LanguageSwitcher({ links: [] as LocaleLink[] }) === null;
+      LanguageSwitcher({ links: [] as LocaleLink[], accessibleLabel: "Language" }) === null;
     const oneRendered =
-      LanguageSwitcher({ links: enJa.slice(0, 1) }) === null;
+      LanguageSwitcher({ links: enJa.slice(0, 1), accessibleLabel: "Language" }) === null;
     expect(noneRendered).toBe(true);
     expect(oneRendered).toBe(true);
   });
 
   it("renders a span (not an anchor) for the active locale with aria-current", () => {
-    const html = serialize(<LanguageSwitcher links={enJa} />);
-    expect(html).toContain('<span aria-current="true"');
+    const html = serialize(
+      <LanguageSwitcher links={enJa} accessibleLabel="Language" />,
+    );
+    expect(html).toContain('aria-current="page"');
+    expect(html).toContain('lang="en"');
     expect(html).toContain(">EN</span>");
   });
 
   it("renders an anchor with the lang attribute for inactive locales", () => {
-    const html = serialize(<LanguageSwitcher links={enJa} />);
+    const html = serialize(
+      <LanguageSwitcher links={enJa} accessibleLabel="Language" />,
+    );
     expect(html).toContain('href="/ja/docs/"');
     expect(html).toContain('lang="ja"');
     expect(html).toContain(">JA</a>");
   });
 
-  it("inserts a slash separator between every pair of links", () => {
-    const enJaFr: LocaleLink[] = [
+  it("renders every configured locale in order inside the disclosure", () => {
+    const enJaDe: LocaleLink[] = [
       ...enJa,
-      { code: "fr", label: "FR", href: "/fr/docs/", active: false },
+      { code: "de", label: "DE", href: "/de/docs/", active: false },
     ];
-    const html = serialize(<LanguageSwitcher links={enJaFr} />);
-    // Two separators for three links.
-    const slashCount = (html.match(/<span class="text-muted">\/<\/span>/g) ?? []).length;
-    expect(slashCount).toBe(2);
+    const html = serialize(
+      <LanguageSwitcher links={enJaDe} accessibleLabel="Language" />,
+    );
+    expect(html.indexOf(">EN</span>")).toBeLessThan(html.indexOf(">JA</a>"));
+    expect(html.indexOf(">JA</a>")).toBeLessThan(html.indexOf(">DE</a>"));
+    expect(html).not.toContain("role=\"menu\"");
+  });
+
+  it("uses the configured active label and exposes accessible disclosure state", () => {
+    const html = serialize(
+      <LanguageSwitcher
+        links={[
+          { ...enJa[0]!, label: "English", active: false },
+          { ...enJa[1]!, label: "日本語", active: true },
+        ]}
+        accessibleLabel="言語"
+        idSuffix="header"
+      />,
+    );
+    expect(html).toContain(">日本語</span>");
+    expect(html).toContain('aria-label="言語"');
+    expect(html).toContain('aria-controls="language-menu-header"');
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).toContain('id="language-menu-header"');
+    expect(html).toContain("<svg");
+
+    const shortLabelHtml = serialize(
+      <LanguageSwitcher
+        links={[
+          { ...enJa[0]!, active: false },
+          { ...enJa[1]!, label: "JP", active: true },
+        ]}
+        accessibleLabel="Language"
+      />,
+    );
+    expect(shortLabelHtml).toContain(">JP</span>");
+    expect(shortLabelHtml).toContain("<svg");
+  });
+
+  it("keeps trigger/menu linkage unique when callers provide distinct suffixes", () => {
+    const first = serialize(
+      <LanguageSwitcher links={enJa} accessibleLabel="Language" idSuffix="header-a" />,
+    );
+    const second = serialize(
+      <LanguageSwitcher links={enJa} accessibleLabel="Language" idSuffix="header-b" />,
+    );
+    expect(first).toContain('aria-controls="language-menu-header-a"');
+    expect(second).toContain('aria-controls="language-menu-header-b"');
+    expect(first).not.toContain("language-menu-header-b");
   });
 
   it("emits data-* config on the container when config is provided", () => {
     const html = serialize(
       <LanguageSwitcher
         links={enJa}
+        accessibleLabel="Language"
         config={{ base: "", defaultLocale: "en", trailingSlash: true }}
         currentLocale="ja"
       />,
@@ -119,9 +174,14 @@ describe("LanguageSwitcher", () => {
     expect(html).toContain('data-trailing-slash="true"');
   });
 
-  it("omits config attributes for a static render (no config)", () => {
-    const html = serialize(<LanguageSwitcher links={enJa} />);
-    expect(html).not.toContain("data-language-switcher");
+  it("keeps the interaction marker but omits rewire config for a static render", () => {
+    const html = serialize(
+      <LanguageSwitcher links={enJa} accessibleLabel="Language" />,
+    );
+    expect(html).toContain("data-language-switcher");
+    expect(html).not.toContain("data-default-locale");
+    expect(html).toContain("group-hover:block");
+    expect(html).toContain("group-focus-within:block");
   });
 });
 
@@ -202,5 +262,104 @@ describe("LANGUAGE_SWITCHER_INIT_SCRIPT", () => {
     expect(LANGUAGE_SWITCHER_INIT_SCRIPT).toContain("location.pathname");
     // idempotency guard (single document-level listener per page lifetime)
     expect(LANGUAGE_SWITCHER_INIT_SCRIPT).toContain("__zdLanguageSwitcherInit");
+  });
+
+  it("handles disclosure interaction, navigation reset, rewiring, and repeated init safely", () => {
+    const links: LocaleLink[] = [
+      { code: "en", label: "English", href: "#en", active: false },
+      { code: "ja", label: "日本語", href: "#ja", active: true },
+      { code: "de", label: "Deutsch", href: "#de", active: false },
+    ];
+    document.documentElement.dataset[CURRENT_PATH_DATASET_KEY] = "/ja/docs/first";
+    document.body.innerHTML = serialize(
+      <LanguageSwitcher
+        links={links}
+        accessibleLabel="言語"
+        idSuffix="header"
+        config={{ base: "", defaultLocale: "en", trailingSlash: false }}
+        currentLocale="ja"
+      />,
+    );
+
+    new Function(LANGUAGE_SWITCHER_INIT_SCRIPT)();
+
+    const switcher = document.querySelector<HTMLElement>("[data-language-switcher]")!;
+    const toggle = switcher.querySelector<HTMLButtonElement>("[data-language-toggle]")!;
+    const menu = switcher.querySelector<HTMLElement>("[data-language-menu]")!;
+    expect(menu.classList.contains("group-hover:block")).toBe(false);
+    expect(menu.classList.contains("group-focus-within:block")).toBe(false);
+    expect(switcher.querySelector('a[lang="en"]')?.getAttribute("href")).toBe(
+      "/docs/first",
+    );
+    expect(switcher.querySelector('a[lang="de"]')?.getAttribute("href")).toBe(
+      "/de/docs/first",
+    );
+
+    toggle.click();
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    expect(menu.classList.contains("hidden")).toBe(false);
+
+    const tabEvent = new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true });
+    toggle.dispatchEvent(tabEvent);
+    expect(tabEvent.defaultPrevented).toBe(false);
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    const firstLocaleLink = menu.querySelector<HTMLAnchorElement>("a[lang]")!;
+    expect(
+      Boolean(toggle.compareDocumentPosition(firstLocaleLink) & Node.DOCUMENT_POSITION_FOLLOWING),
+    ).toBe(true);
+    firstLocaleLink.focus();
+    expect(document.activeElement).toBe(firstLocaleLink);
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+
+    document.body.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(menu.classList.contains("hidden")).toBe(true);
+
+    toggle.click();
+    toggle.blur();
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(document.activeElement).toBe(toggle);
+
+    toggle.click();
+    document.documentElement.dataset[CURRENT_PATH_DATASET_KEY] = "/ja/docs/second";
+    document.dispatchEvent(new Event(AFTER_NAVIGATE_EVENT));
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(switcher.querySelector('a[lang="en"]')?.getAttribute("href")).toBe(
+      "/docs/second",
+    );
+    expect(switcher.querySelector('a[lang="de"]')?.getAttribute("href")).toBe(
+      "/de/docs/second",
+    );
+
+    new Function(LANGUAGE_SWITCHER_INIT_SCRIPT)();
+    new Function(LANGUAGE_SWITCHER_INIT_SCRIPT)();
+    document.documentElement.dataset[CURRENT_PATH_DATASET_KEY] = "/ja/docs/third";
+    document.dispatchEvent(new Event(AFTER_NAVIGATE_EVENT));
+    expect(switcher.querySelector('a[lang="en"]')?.getAttribute("href")).toBe(
+      "/docs/third",
+    );
+    toggle.click();
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+
+    document.body.innerHTML = serialize(
+      <LanguageSwitcher
+        links={links.map((link) => ({ ...link, active: link.code === "en" }))}
+        accessibleLabel="Language"
+        idSuffix="header"
+        config={{ base: "", defaultLocale: "en", trailingSlash: false }}
+        currentLocale="en"
+      />,
+    );
+    document.documentElement.dataset[CURRENT_PATH_DATASET_KEY] = "/docs/replaced";
+    new Function(LANGUAGE_SWITCHER_INIT_SCRIPT)();
+    const replacementToggle = document.querySelector<HTMLButtonElement>(
+      "[data-language-toggle]",
+    )!;
+    replacementToggle.click();
+    expect(replacementToggle.getAttribute("aria-expanded")).toBe("true");
+    expect(document.querySelector('a[lang="ja"]')?.getAttribute("href")).toBe(
+      "/ja/docs/replaced",
+    );
   });
 });

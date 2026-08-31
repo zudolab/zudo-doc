@@ -754,6 +754,9 @@
 .w-icon-xs {
   width: var(--spacing-icon-xs);
 }
+.max-w-\[16rem\] {
+  max-width: 16rem;
+}
 .max-w-\[64rem\] {
   max-width: 64rem;
 }
@@ -771,6 +774,9 @@
 }
 .max-w-\[calc\(100vw-2rem\)\] {
   max-width: calc(100vw - 2rem);
+}
+.max-w-\[calc\(100vw-var\(--spacing-hsp-xl\)\)\] {
+  max-width: calc(100vw - var(--spacing-hsp-xl));
 }
 .max-w-\[clamp\(50rem\,75vw\,90rem\)\] {
   max-width: clamp(50rem, 75vw, 90rem);
