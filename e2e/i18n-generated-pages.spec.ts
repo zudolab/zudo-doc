@@ -3,7 +3,8 @@ import { makeDistReader } from "./dist-helper";
 import { desktopSidebar, waitForSidebarHydration } from "./sidebar-helpers";
 
 const { readDistFile } = makeDistReader("i18n");
-const GENERATED_SKILL_PATH = "/ja/docs/claude-skills/localized-shell/";
+const GENERATED_SKILL_ROUTE = "/ja/docs/claude-skills/localized-shell";
+const GENERATED_SKILL_PATH = `${GENERATED_SKILL_ROUTE}/`;
 
 type SearchEntry = {
   url: string;
@@ -31,21 +32,28 @@ test.describe("i18n generated pages: static locale coverage", () => {
 
   test("keeps fallback resource bodies out of JA llms and search", () => {
     const jaLlms = readDistFile("ja/llms.txt");
-    expect(jaLlms).toContain("/ja/docs/claude/");
-    expect(jaLlms).not.toContain(GENERATED_SKILL_PATH);
+    expect(jaLlms).toMatch(/^\s*- \[Claude\]\(\/ja\/docs\/claude\):/m);
+    expect(jaLlms).not.toMatch(
+      /\/ja\/docs\/claude-skills\/localized-shell(?:\/|\b)/,
+    );
 
     const searchEntries = JSON.parse(
       readDistFile("search-index.json"),
     ) as SearchEntry[];
     const urls = searchEntries.map(({ url }) => url);
-    expect(urls).toContain("/ja/docs/claude/");
+    expect(urls).toContain("/ja/docs/claude");
+    expect(urls).not.toContain(GENERATED_SKILL_ROUTE);
     expect(urls).not.toContain(GENERATED_SKILL_PATH);
   });
 
   test("preserves the locale in asset-index viewer links", () => {
     const jaIndex = readDistFile("ja/files/index.html");
-    expect(jaIndex).toContain('href="/ja/files/locale-diagram.svg/"');
-    expect(jaIndex).not.toContain('href="/files/locale-diagram.svg/"');
+    expect(jaIndex).toMatch(
+      /href=["']?\/ja\/files\/locale-diagram\.svg\/?["']?(?=\s|>)/,
+    );
+    expect(jaIndex).not.toMatch(
+      /href=["']?\/files\/locale-diagram\.svg\/?["']?(?=\s|>)/,
+    );
   });
 });
 
@@ -60,7 +68,12 @@ test.describe("i18n generated pages: localized resource shell", () => {
     expect(response?.status()).toBe(200);
 
     await expect(page.locator("h1")).toHaveText("localized-shell");
-    await expect(page.getByText("Default-locale resource body")).toBeVisible();
+    await expect(
+      page.getByRole("heading", {
+        name: "Default-locale resource body",
+        exact: true,
+      }),
+    ).toBeVisible();
     await expect(
       page.getByText("This English source body belongs to the default locale."),
     ).toBeVisible();
