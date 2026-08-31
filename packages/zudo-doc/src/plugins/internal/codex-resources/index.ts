@@ -6,6 +6,11 @@ import {
   generateCodexResourcesDocs,
   type CodexResourcesConfig,
 } from "./generate.js";
+import {
+  resolveLocaleDirs,
+  type ResourceLocaleConfig,
+  type ResourceTranslations,
+} from "../resource-docs-shared/index.js";
 
 export interface CodexResourcesPluginOptions {
   /**
@@ -27,6 +32,12 @@ export interface CodexResourcesPluginOptions {
   scanRoot?: string;
   /** Output directory, anchored to `projectRoot` when relative. */
   docsDir?: string;
+  /** Additional locale content roots, keyed by locale code. */
+  locales?: Record<string, ResourceLocaleConfig>;
+  /** Default locale code (the unprefixed docs directory). */
+  defaultLocale?: string;
+  /** UI-string translation table used by localized generated indexes. */
+  translations?: ResourceTranslations;
 }
 
 export function runCodexResourcesPreStep(
@@ -45,12 +56,20 @@ export function runCodexResourcesPreStep(
   const docsDir = path.isAbsolute(docsDirInput)
     ? docsDirInput
     : path.resolve(projectRoot, docsDirInput);
+  const locales = resolveLocaleDirs({
+    projectRoot,
+    docsDir,
+    locales: options.locales,
+  });
 
   return generateCodexResourcesDocs({
     codexDir,
     projectRoot,
     scanRoot,
     docsDir,
+    locales,
+    defaultLocale: options.defaultLocale,
+    translations: options.translations,
   });
 }
 

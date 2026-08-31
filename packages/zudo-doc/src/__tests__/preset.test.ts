@@ -199,6 +199,7 @@ describe("preset eval-graph is node-builtin-free (--platform=neutral)", () => {
 // reads) — default English + a `ja` locale + one English-only version.
 const fixtureSettings: PresetSettings = {
   docsDir: "src/content/docs",
+  defaultLocale: "en",
   locales: { ja: { dir: "src/content/docs-ja" } },
   versions: [{ slug: "1.0", docsDir: "src/content/docs-v1" }],
   base: "/",
@@ -401,12 +402,16 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       claudeDir: ".claude",
       projectRoot: undefined,
       docsDir: "src/content/docs",
+      locales: { ja: { dir: "src/content/docs-ja" } },
+      defaultLocale: "en",
     });
     expect(byName["@takazudo/zudo-doc/plugins/codex-resources"]).toEqual({
       codexDir: ".codex",
       projectRoot: undefined,
       scanRoot: undefined,
       docsDir: "src/content/docs",
+      locales: { ja: { dir: "src/content/docs-ja" } },
+      defaultLocale: "en",
     });
     expect(byName["@takazudo/zudo-doc/plugins/doc-history"]).toEqual({
       docsDir: "src/content/docs",
