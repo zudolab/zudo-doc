@@ -151,7 +151,6 @@ function AssetTree({ node, base, routePrefix, fileCountLabel, fileCountSingleLab
         return (
           <li>
             <a href={assetViewerHref({ base, routePrefix, path: asset.path })} title={asset.name} class="flex min-w-0 items-center gap-hsp-xs rounded px-hsp-sm py-vsp-3xs text-small text-fg hover:bg-accent/10 hover:text-accent hover:underline focus-visible:bg-accent/10 focus-visible:text-accent focus-visible:underline">
-              <ChevronRight className="invisible h-icon-xs w-icon-xs shrink-0" />
               <Icon className="h-icon-sm w-icon-sm shrink-0 text-muted" />
               <span class="min-w-0 truncate font-mono">{basename(asset.path)}</span>
               <span class="ml-auto hidden whitespace-nowrap pl-hsp-lg text-caption text-muted sm:block">{meta}</span>
