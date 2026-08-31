@@ -5,6 +5,7 @@ import type { JSX } from "preact";
 import { assetViewerHref } from "../asset-path/index.js";
 import {
   AssetFileIcon,
+  assetComponentViewerLocale,
   assetComponentText,
   MissingAssetWarning,
   resolveAssetEntry,
@@ -76,6 +77,7 @@ export function createAssetCode(context: AssetComponentContext) {
       base: context.base,
       routePrefix: context.routePrefix,
       path: resolved.path,
+      locale: assetComponentViewerLocale(context, resolved.path),
       fragment: excerpt.viewerLineAvailable
         ? `L${excerpt.startLine}`
         : undefined,

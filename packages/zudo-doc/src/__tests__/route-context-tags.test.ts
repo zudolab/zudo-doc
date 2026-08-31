@@ -53,7 +53,7 @@ describe("createRouteContext asset manifest normalization", () => {
     expect(ctx.settings).toBe(settings);
   });
 
-  it("adds the viewer prefix to a derived settings object exactly once", () => {
+  it("does not hard-inject the viewer prefix into default-locale-only settings", () => {
     const settings = { ...DEFAULT_SETTINGS, defaultLocaleOnlyPrefixes: ["/private/"] };
     const ctx = createRouteContext(
       {
@@ -65,11 +65,12 @@ describe("createRouteContext asset manifest normalization", () => {
       },
       { stableDocs: () => [] },
     );
-    expect(ctx.settings.defaultLocaleOnlyPrefixes).toEqual(["/private/", "/files/"]);
+    expect(ctx.settings).toBe(settings);
+    expect(ctx.settings.defaultLocaleOnlyPrefixes).toEqual(["/private/"]);
     expect(settings.defaultLocaleOnlyPrefixes).toEqual(["/private/"]);
   });
 
-  it("uses the configured viewer prefix when an enabled host omits the manifest", () => {
+  it("localizes the configured viewer prefix unless the host explicitly opts out", () => {
     const settings = {
       ...DEFAULT_SETTINGS,
       assetViewer: true,
@@ -90,11 +91,33 @@ describe("createRouteContext asset manifest normalization", () => {
     expect(ctx.assetManifest).toBeNull();
     expect(ctx.settings).toBe(settings);
     expect(ctx.settings.defaultLocaleOnlyPrefixes).toEqual(["/private/"]);
-    expect(ctx.isDefaultLocaleOnlyPath("/media/view/example.svg")).toBe(true);
+    expect(ctx.isDefaultLocaleOnlyPath("/media/view/example.svg")).toBe(false);
     expect(ctx.navHref("/media/view", "ja", undefined, false)).toBe(
-      "/media/view/",
+      "/ja/media/view/",
     );
     expect(settings.defaultLocaleOnlyPrefixes).toEqual(["/private/"]);
+  });
+
+  it("honors an explicit viewer prefix in defaultLocaleOnlyPrefixes", () => {
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      defaultLocaleOnlyPrefixes: ["/files/"],
+    };
+    const ctx = createRouteContext(
+      {
+        settings,
+        translations: {},
+        tagVocabulary: [],
+        colorSchemes: null,
+        assetManifest: { dir: "assets", routePrefix: "files", entries: [], excerpts: {} },
+      },
+      { stableDocs: () => [] },
+    );
+    expect(ctx.settings).toBe(settings);
+    expect(ctx.isDefaultLocaleOnlyPath("/files/example.svg")).toBe(true);
+    expect(ctx.navHref("/files/example.svg", "ja", undefined, false)).toBe(
+      "/files/example.svg",
+    );
   });
 });
 

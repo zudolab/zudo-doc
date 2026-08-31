@@ -266,6 +266,32 @@ describe("ContentLink", () => {
     expect(html).toContain("<svg");
   });
 
+  it("preserves locale links except for explicitly default-only assets", () => {
+    const LocalizedLink = createContentLink({
+      base: "/project",
+      assetManifest,
+      routePrefix: "view",
+      dir: "media",
+      locale: "ja",
+      isDefaultLocaleOnlyPath: () => false,
+    });
+    expect(serialize(
+      <LocalizedLink href="/media/demo/file.js">demo/file.js</LocalizedLink>,
+    )).toContain('href="/project/ja/view/demo/file.js/"');
+
+    const DefaultOnlyLink = createContentLink({
+      base: "/project",
+      assetManifest,
+      routePrefix: "view",
+      dir: "media",
+      locale: "ja",
+      isDefaultLocaleOnlyPath: (path) => path.startsWith("/view/"),
+    });
+    expect(serialize(
+      <DefaultOnlyLink href="/media/demo/file.js">demo/file.js</DefaultOnlyLink>,
+    )).toContain('href="/project/view/demo/file.js/"');
+  });
+
   it.each([
     ["non-match", "/media/demo/missing.js"],
     ["external", "https://example.com/file.js"],

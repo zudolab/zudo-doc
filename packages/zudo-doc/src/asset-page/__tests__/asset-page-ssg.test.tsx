@@ -32,6 +32,7 @@ function page(
   entry: AssetRecord,
   settings: Record<string, unknown> = {},
   translationOverrides: Record<string, string> = {},
+  locale?: string,
 ): string {
   const base = String(settings.base ?? "/");
   const routePrefix = String(settings.assetViewerRoutePrefix ?? "files");
@@ -55,6 +56,10 @@ function page(
         "asset.lines": "{count} lines",
         "asset.linkedFrom": "Linked from", "asset.noPreview": "No preview available.",
         "asset.truncated": "Preview truncated.", "doc.updated": "Updated",
+        "asset.details": "Details", "asset.type": "Type", "asset.size": "Size",
+        "asset.path": "Path", "asset.dimensions": "Dimensions",
+        "asset.backTo": "Back to", "asset.fit": "Fit", "asset.actualSize": "1:1",
+        "asset.checker": "Checker", "asset.dark": "Dark", "asset.enlarge": "Enlarge image",
         "doc.viewSource": "View source on GitHub",
         ...translationOverrides,
       }[key] ?? key),
@@ -62,7 +67,7 @@ function page(
     },
   });
   const View = createAssetPageView(ctx);
-  return render(<View entry={entry} />);
+  return render(<View entry={entry} locale={locale} />);
 }
 
 describe("asset page SSG", () => {
@@ -118,6 +123,34 @@ describe("asset page SSG", () => {
     expect(html).toContain('src="/project/assets/img/logo.svg"');
     expect(html).toContain('href="https://docs.example/project/files/img/logo.svg/"');
     expect(html).not.toContain("/project/project/");
+  });
+
+  it("localizes page labels and uses its own locale URL as canonical", () => {
+    const html = page(asset(), {}, {
+      "asset.badge": "アセット",
+      "asset.crumb": "アセット一覧",
+      "asset.details": "詳細",
+      "asset.type": "種類",
+      "asset.size": "サイズ",
+      "asset.path": "パス",
+      "asset.dimensions": "寸法",
+      "asset.backTo": "戻る",
+      "asset.fit": "全体表示",
+      "asset.actualSize": "1:1",
+      "asset.checker": "チェッカー",
+      "asset.dark": "ダーク",
+      "asset.enlarge": "画像を拡大",
+      "doc.updated": "更新日",
+    }, "ja");
+    expect(html).toContain('lang="ja"');
+    expect(html).toContain('href="https://docs.example/ja/files/img/logo.svg/"');
+    expect(html).toContain("← 戻る Brand");
+    expect(html).toContain(">詳細</h2>");
+    expect(html).toContain(">種類</dt>");
+    expect(html).toContain(">全体表示</button>");
+    expect(html).toContain(">チェッカー</button>");
+    expect(html).toContain('aria-label="画像を拡大"');
+    expect(html).not.toContain('href="https://docs.example/files/img/logo.svg/"');
   });
 
   it("uses the shared asset size formatter in page metadata", () => {

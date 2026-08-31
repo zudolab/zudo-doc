@@ -89,6 +89,34 @@ describe("asset authoring components", () => {
     expect(html).not.toContain("Showing 18 of 94 lines");
   });
 
+  it("preserves the active locale in card and excerpt viewer links", () => {
+    const localizedContext = { ...context, locale: "ja" };
+    const Asset = createAssetCard(localizedContext);
+    const AssetCode = createAssetCode(localizedContext);
+    expect(render(<Asset src="/media/demo/file.js" />)).toContain(
+      'href="/project/ja/view/demo/file.js/"',
+    );
+    expect(render(<AssetCode src="/media/demo/file.js" lines="27-44" />)).toContain(
+      'href="/project/ja/view/demo/file.js/#L27"',
+    );
+  });
+
+  it("keeps explicitly default-only asset links on the unprefixed route", () => {
+    const defaultOnlyContext = {
+      ...context,
+      locale: "ja",
+      isDefaultLocaleOnlyPath: (path: string) => path.startsWith("/view/"),
+    };
+    const Asset = createAssetCard(defaultOnlyContext);
+    const AssetCode = createAssetCode(defaultOnlyContext);
+    expect(render(<Asset src="/media/demo/file.js" />)).toContain(
+      'href="/project/view/demo/file.js/"',
+    );
+    expect(render(<AssetCode src="/media/demo/file.js" lines="27-44" />)).toContain(
+      'href="/project/view/demo/file.js/#L27"',
+    );
+  });
+
   it("shows a visible warning when the requested excerpt was not built", () => {
     const AssetCode = createAssetCode(context);
     const html = render(<AssetCode src="/media/demo/file.js" lines="1-2" />);

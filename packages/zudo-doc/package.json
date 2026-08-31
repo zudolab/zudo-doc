@@ -506,6 +506,10 @@
       "types": "./dist/routes/files-path.d.ts",
       "default": "./dist/routes/files-path.js"
     },
+    "./routes/locale-files-path": {
+      "types": "./dist/routes/locale-files-path.d.ts",
+      "default": "./dist/routes/locale-files-path.js"
+    },
     "./routes/sitemap.xml": {
       "types": "./dist/routes/sitemap.xml.d.ts",
       "default": "./dist/routes/sitemap.xml.js"

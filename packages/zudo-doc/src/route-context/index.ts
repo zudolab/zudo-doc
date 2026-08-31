@@ -91,44 +91,7 @@ export function createRouteContext<S extends Settings = Settings>(
   options: CreateRouteContextOptions = {},
 ): RouteContext<S> {
   const assetManifest = payload.assetManifest ?? null;
-  // Host-owned routes may intentionally construct a lightweight payload with
-  // no filesystem-backed manifest (for example, the showcase home pages).
-  // The configured viewer prefix is still a real package-owned route and must
-  // remain default-locale-only in those contexts too.
-  const assetPrefix =
-    assetManifest !== null
-      ? `/${assetManifest.routePrefix}/`
-      : payload.settings.assetViewer
-        ? `/${payload.settings.assetViewerRoutePrefix}/`
-        : null;
-  const settings = (
-    assetManifest === null ||
-    assetPrefix === null ||
-    payload.settings.defaultLocaleOnlyPrefixes.includes(assetPrefix)
-      ? payload.settings
-      : {
-          ...payload.settings,
-          defaultLocaleOnlyPrefixes: [
-            ...payload.settings.defaultLocaleOnlyPrefixes,
-            assetPrefix,
-          ],
-        }
-  ) as S;
-  // Preserve the caller's settings identity for manifest-less host contexts;
-  // several host adapters deliberately keep that object live. URL helpers can
-  // still use a private derived view so the configured viewer route behaves
-  // exactly like the manifest-backed route.
-  const urlSettings = (
-    assetPrefix === null || settings.defaultLocaleOnlyPrefixes.includes(assetPrefix)
-      ? settings
-      : {
-          ...settings,
-          defaultLocaleOnlyPrefixes: [
-            ...settings.defaultLocaleOnlyPrefixes,
-            assetPrefix,
-          ],
-        }
-  ) as S;
+  const settings = payload.settings;
   const translations = payload.translations;
   // Normal payload builders merge project translations over the package table;
   // retain the package table as a final compatibility fallback for direct/raw
@@ -177,7 +140,7 @@ export function createRouteContext<S extends Settings = Settings>(
   const i18n: FactoryI18n = { defaultLocale, locales, getLocaleLabel, t };
 
   // ── URL helpers ───────────────────────────────────────────────────────────
-  const urlHelpers = makeUrlHelpers(urlSettings, i18n);
+  const urlHelpers = makeUrlHelpers(settings, i18n);
   const { withBase, docsUrl, versionedDocsUrl, navHref, isDefaultLocaleOnlyPath } =
     urlHelpers;
 

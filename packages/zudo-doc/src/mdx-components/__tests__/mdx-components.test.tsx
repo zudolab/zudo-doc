@@ -28,7 +28,7 @@ const manifest: AssetManifest = {
 
 const nav = () => null;
 
-function makeComponents(assetManifest: AssetManifest | null, imageEnlarge = true) {
+function makeComponents(assetManifest: AssetManifest | null, imageEnlarge = true, assetViewerLocale?: string) {
   return createMdxComponents({
     settings: {
       base: "/project",
@@ -37,6 +37,7 @@ function makeComponents(assetManifest: AssetManifest | null, imageEnlarge = true
       assetViewerRoutePrefix: "view",
     },
     assetManifest,
+    assetViewerLocale,
     locale: "en",
     currentSlug: "test",
     navData: {
@@ -70,6 +71,45 @@ describe("manifest image captions", () => {
     expect(html).toContain("⤢ Open asset page · 800 × 600");
     expect(html).toContain('href="/project/view/images/diagram.png/"');
     expect(html).toContain('src="/project/media/images/diagram.png"');
+  });
+
+  it("preserves the active locale in the image-caption viewer link", () => {
+    const components = makeComponents(manifest, true, "ja");
+    const Img = components.img as ComponentType<Record<string, unknown>>;
+    const Paragraph = components.p as (props: Record<string, unknown>) => unknown;
+    const html = render(Paragraph({
+      children: h(Img, { src: "/media/images/diagram.png", alt: "Diagram" }),
+    }) as never);
+    expect(html).toContain('href="/project/ja/view/images/diagram.png/"');
+  });
+
+  it("keeps a default-only image caption on the unprefixed viewer route", () => {
+    const components = createMdxComponents({
+      settings: {
+        base: "/project",
+        imageEnlarge: true,
+        assetViewerDir: "media",
+        assetViewerRoutePrefix: "view",
+      },
+      assetManifest: manifest,
+      assetViewerLocale: "ja",
+      isDefaultLocaleOnlyPath: (path) => path.startsWith("/view/"),
+      locale: "ja",
+      currentSlug: "test",
+      navData: {
+        CategoryNav: nav,
+        CategoryTreeNav: nav,
+        SiteTreeNav: nav,
+        NoteTrayIndex: nav,
+      },
+    });
+    const Img = components.img as ComponentType<Record<string, unknown>>;
+    const Paragraph = components.p as (props: Record<string, unknown>) => unknown;
+    const html = render(Paragraph({
+      children: h(Img, { src: "/media/images/diagram.png", alt: "Diagram" }),
+    }) as never);
+    expect(html).toContain('href="/project/view/images/diagram.png/"');
+    expect(html).not.toContain("/project/ja/view/");
   });
 
   it("keeps title=no-enlarge while retaining the asset-page caption", () => {

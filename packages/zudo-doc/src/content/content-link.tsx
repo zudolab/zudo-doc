@@ -54,6 +54,10 @@ export interface CreateContentLinkOptions {
   assetManifest: AssetManifest | null;
   routePrefix: string;
   dir: string;
+  /** Non-default locale segment used by asset-viewer links. */
+  locale?: string;
+  /** Match viewer paths that intentionally remain default-locale-only. */
+  isDefaultLocaleOnlyPath?: (path: string) => boolean;
 }
 
 /**
@@ -65,6 +69,8 @@ export function createContentLink({
   assetManifest,
   routePrefix,
   dir,
+  locale,
+  isDefaultLocaleOnlyPath,
 }: CreateContentLinkOptions) {
   return function ManifestAwareContentLink(props: Props) {
     const { href, className, children } = props;
@@ -95,6 +101,9 @@ export function createContentLink({
           base,
           routePrefix,
           path: entry.path,
+          locale: isDefaultLocaleOnlyPath?.(`/${routePrefix}/${entry.path}`)
+            ? undefined
+            : locale,
           fragment: decoded.fragment,
         })}
       >

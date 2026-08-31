@@ -5,6 +5,7 @@ import type { JSX } from "preact";
 import { assetRawHref, assetViewerHref } from "../asset-path/index.js";
 import {
   AssetFileIcon,
+  assetComponentViewerLocale,
   assetComponentText,
   formatAssetBytes,
   formatAssetLanguage,
@@ -40,6 +41,7 @@ export function createAssetCard(context: AssetComponentContext) {
       base: context.base,
       routePrefix: context.routePrefix,
       path,
+      locale: assetComponentViewerLocale(context, path),
     });
     const rawHref = assetRawHref({ base: context.base, dir: context.dir, path });
     const details = [
