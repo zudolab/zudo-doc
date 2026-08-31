@@ -153,6 +153,7 @@ describe("package.json exports keyset snapshot", () => {
         "./routes/locale-docs-tags-index",
         "./routes/locale-docs-tags-tag",
         "./routes/locale-docs-versions",
+        "./routes/locale-files-path",
         "./routes/locale-index",
         "./routes/robots.txt",
         "./routes/sitemap.xml",

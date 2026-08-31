@@ -13,8 +13,24 @@ export interface AssetComponentContext {
   assetManifest: AssetManifest | null;
   routePrefix: string;
   dir: string;
+  /** Non-default locale segment for viewer links. */
+  locale?: string;
+  /** Match viewer paths that intentionally remain default-locale-only. */
+  isDefaultLocaleOnlyPath?: (path: string) => boolean;
   /** Locale-bound package translator. Omitted callers retain English fallbacks. */
   t?: (key: string) => string;
+}
+
+export function assetComponentViewerLocale(
+  context: AssetComponentContext,
+  path: string,
+): string | undefined {
+  if (
+    context.isDefaultLocaleOnlyPath?.(`/${context.routePrefix}/${path}`)
+  ) {
+    return undefined;
+  }
+  return context.locale;
 }
 
 export function assetComponentText(

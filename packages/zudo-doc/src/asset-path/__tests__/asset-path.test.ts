@@ -14,6 +14,15 @@ describe("asset path normalization and URL round trips", () => {
     expect(assetViewerHref({ base: "/", routePrefix: "files", path: "img/logo.svg" })).toBe("/files/img/logo.svg/");
   });
 
+  it("inserts an encoded non-default locale before the viewer prefix", () => {
+    expect(assetViewerHref({ base: "/project", routePrefix: "files", path: "img/logo.svg", locale: "ja" })).toBe(
+      "/project/ja/files/img/logo.svg/",
+    );
+    expect(assetViewerHref({ base: "/", routePrefix: "files", path: "x.txt", locale: "zh-Hant" })).toBe(
+      "/zh-Hant/files/x.txt/",
+    );
+  });
+
   it.each([
     ["folder/hello world.ts", "folder/hello%20world.ts"],
     ["資料/設計図.svg", "%E8%B3%87%E6%96%99/%E8%A8%AD%E8%A8%88%E5%9B%B3.svg"],

@@ -586,7 +586,7 @@ describe("routes plugin — asset viewer virtual modules", () => {
         readFileSync(file, "utf8").includes('from "virtual:zudo-doc-asset-bodies"'),
       )
       .map((file) => relative(SRC_ROOT, file).split("\\").join("/"));
-    expect(importers).toEqual(["routes/files-path.tsx"]);
+    expect(importers).toEqual(["routes/files-path.tsx", "routes/locale-files-path.tsx"]);
   });
 
   it("retains only the asset route when package-owned docs are disabled", async () => {
@@ -594,7 +594,7 @@ describe("routes plugin — asset viewer virtual modules", () => {
     mkdirSync(join(projectRoot, "public", "assets"), { recursive: true });
     const { ctx, injectedRoutes } = makeCtx(
       projectRoot,
-      { base: "/", trailingSlash: true },
+      { base: "/", trailingSlash: true, locales: { ja: { label: "日本語", dir: "src/content/docs-ja" } } },
       {
         packageOwnedRoutes: false,
         assetViewer: true,
@@ -607,6 +607,7 @@ describe("routes plugin — asset viewer virtual modules", () => {
 
     expect(injectedRoutes.map(({ pattern }) => pattern)).toEqual([
       "/files/[[...path]]",
+      "/[locale]/files/[[...path]]",
     ]);
   });
 

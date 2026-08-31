@@ -45,6 +45,7 @@ interface MutableAssetTreeNode {
 
 export interface AssetIndexPageViewProps {
   entries: AssetIndexEntry[];
+  locale?: string;
 }
 
 const ARCHIVE_EXTENSIONS = new Set(["zip", "tar", "gz", "tgz", "7z", "rar"]);
@@ -125,7 +126,7 @@ function countLabel(count: number, plural: string, single: string): string {
   return (count === 1 ? single : plural).replace("{count}", String(count));
 }
 
-function AssetTree({ node, base, routePrefix, fileCountLabel, fileCountSingleLabel, linesLabel, root = false }: { node: AssetTreeNode; base: string; routePrefix: string; fileCountLabel: string; fileCountSingleLabel: string; linesLabel: string; root?: boolean }): VNode {
+function AssetTree({ node, base, routePrefix, locale, fileCountLabel, fileCountSingleLabel, linesLabel, root = false }: { node: AssetTreeNode; base: string; routePrefix: string; locale?: string; fileCountLabel: string; fileCountSingleLabel: string; linesLabel: string; root?: boolean }): VNode {
   return (
     <ul data-zd-asset-tree={root ? true : undefined}>
       {node.dirs.map((dir) => (
@@ -140,7 +141,7 @@ function AssetTree({ node, base, routePrefix, fileCountLabel, fileCountSingleLab
                 {countLabel(dir.fileCount, fileCountLabel, fileCountSingleLabel)} · {formatAssetBytes(dir.bytes)}
               </span>
             </summary>
-            <AssetTree node={dir} base={base} routePrefix={routePrefix} fileCountLabel={fileCountLabel} fileCountSingleLabel={fileCountSingleLabel} linesLabel={linesLabel} />
+            <AssetTree node={dir} base={base} routePrefix={routePrefix} locale={locale} fileCountLabel={fileCountLabel} fileCountSingleLabel={fileCountSingleLabel} linesLabel={linesLabel} />
           </details>
         </li>
       ))}
@@ -150,7 +151,7 @@ function AssetTree({ node, base, routePrefix, fileCountLabel, fileCountSingleLab
         const meta = [kindLabel(asset), facet, formatAssetBytes(asset.bytes)].filter(Boolean).join(" · ");
         return (
           <li>
-            <a href={assetViewerHref({ base, routePrefix, path: asset.path })} title={asset.name} class="flex min-w-0 items-center gap-hsp-xs rounded px-hsp-sm py-vsp-3xs text-small text-fg hover:bg-accent/10 hover:text-accent hover:underline focus-visible:bg-accent/10 focus-visible:text-accent focus-visible:underline">
+            <a href={assetViewerHref({ base, routePrefix, path: asset.path, locale })} title={asset.name} class="flex min-w-0 items-center gap-hsp-xs rounded px-hsp-sm py-vsp-3xs text-small text-fg hover:bg-accent/10 hover:text-accent hover:underline focus-visible:bg-accent/10 focus-visible:text-accent focus-visible:underline">
               <Icon className="h-icon-sm w-icon-sm shrink-0 text-muted" />
               <span class="min-w-0 truncate font-mono">{basename(asset.path)}</span>
               <span class="ml-auto hidden whitespace-nowrap pl-hsp-lg text-caption text-muted sm:block">{meta}</span>
@@ -166,7 +167,6 @@ function AssetTree({ node, base, routePrefix, fileCountLabel, fileCountSingleLab
 export function createAssetIndexPageView<S extends Settings = Settings>(ctx: ChromeContext<S>): (props: AssetIndexPageViewProps) => JSX.Element {
   assertChromeContext(ctx, "createAssetIndexPageView");
   const settings = ctx.settings;
-  const locale = ctx.defaultLocale;
   const t = ctx.t;
   const composeMetaTitle = deriveComposeMetaTitle(ctx);
   const HeadWithDefaults = createHeadWithDefaults(ctx);
@@ -174,10 +174,12 @@ export function createAssetIndexPageView<S extends Settings = Settings>(ctx: Chr
   const BodyEndIslands = deriveBodyEndIslands(ctx);
   const dataThemePack = resolveThemePackSsrSlug(ctx.themePackRegistry, settings);
 
-  return function AssetIndexPageView({ entries }: AssetIndexPageViewProps): JSX.Element {
+  return function AssetIndexPageView({ entries, locale = ctx.defaultLocale }: AssetIndexPageViewProps): JSX.Element {
+    const localeSegment = locale === ctx.defaultLocale ? undefined : locale;
     const routePrefix = ctx.assetManifest?.routePrefix ?? settings.assetViewerRoutePrefix;
     const dir = ctx.assetManifest?.dir ?? settings.assetViewerDir;
-    const indexUrl = ctx.withBase(`/${routePrefix}/`);
+    const indexUrl = ctx.withBase(`/${localeSegment ? `${localeSegment}/` : ""}${routePrefix}/`);
+    const homeUrl = ctx.withBase(`/${localeSegment ? `${localeSegment}/` : ""}`);
     const tree = buildAssetTree(entries);
     const folders = folderCount(tree);
     const fileCountLabel = t("asset.fileCount", locale);
@@ -186,7 +188,7 @@ export function createAssetIndexPageView<S extends Settings = Settings>(ctx: Chr
     const folderCountSingleLabel = t("asset.folderCountSingle", locale);
     const title = t("asset.crumb", locale);
     return (
-      <DocLayoutWithDefaults title={composeMetaTitle(title)} head={<HeadWithDefaults title={title} description={t("asset.indexDescription", locale)} canonical={ctx.absoluteUrl(indexUrl)} />} lang={locale} dataThemePack={dataThemePack} noindex={settings.noindex} hideSidebar hideToc sidebarOverride={false} contentWide breadcrumbOverride={<BreadcrumbWithDefaults items={[{ label: "", href: ctx.withBase("/") }, { label: title }]} />} headerOverride={<HeaderWithDefaults lang={locale} currentPath={indexUrl} hideSidebarToggle />} footerOverride={<FooterWithDefaults lang={locale} />} bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />} enableClientRouter={settings.dynamicPageTransition}>
+      <DocLayoutWithDefaults title={composeMetaTitle(title)} head={<HeadWithDefaults title={title} description={t("asset.indexDescription", locale)} canonical={ctx.absoluteUrl(indexUrl)} />} lang={locale} dataThemePack={dataThemePack} noindex={settings.noindex} hideSidebar hideToc sidebarOverride={false} contentWide breadcrumbOverride={<BreadcrumbWithDefaults items={[{ label: "", href: homeUrl }, { label: title }]} />} headerOverride={<HeaderWithDefaults lang={locale} currentPath={indexUrl} hideSidebarToggle />} footerOverride={<FooterWithDefaults lang={locale} />} bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />} enableClientRouter={settings.dynamicPageTransition}>
         <div data-zd-asset-index-page>
           <header>
             <div class="mb-vsp-xs flex flex-wrap items-center gap-hsp-xs text-micro tracking-wide uppercase">
@@ -208,7 +210,7 @@ export function createAssetIndexPageView<S extends Settings = Settings>(ctx: Chr
               <button type="button" disabled data-zd-asset-index-action="collapse" class="text-fg hover:text-accent focus-visible:text-accent">{t("asset.collapseAll", locale)}</button>
             </span>
           </div>
-          {entries.length > 0 ? <AssetTree root node={tree} base={settings.base} routePrefix={routePrefix} fileCountLabel={fileCountLabel} fileCountSingleLabel={fileCountSingleLabel} linesLabel={t("asset.lines", locale)} /> : <p class="text-small text-muted" data-zd-asset-index-empty>{t("asset.indexEmpty", locale)}</p>}
+          {entries.length > 0 ? <AssetTree root node={tree} base={settings.base} routePrefix={routePrefix} locale={localeSegment} fileCountLabel={fileCountLabel} fileCountSingleLabel={fileCountSingleLabel} linesLabel={t("asset.lines", locale)} /> : <p class="text-small text-muted" data-zd-asset-index-empty>{t("asset.indexEmpty", locale)}</p>}
           <script dangerouslySetInnerHTML={{ __html: ASSET_INDEX_PAGE_SCRIPT }} />
         </div>
       </DocLayoutWithDefaults>

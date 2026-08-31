@@ -669,6 +669,8 @@ export function deriveMdxComponents(ctx: ChromeContext) {
     // surrounding MDX map. Host-supplied `mdxExtras` still override per-key.
     const localizedAssetContext = {
       ...assetComponentContext,
+      locale: lang === ctx.defaultLocale ? undefined : lang,
+      isDefaultLocaleOnlyPath: ctx.isDefaultLocaleOnlyPath,
       t: (key: string) => ctx.t(key, lang),
     };
     const mdxExtrasDefault: Record<string, unknown> = {
@@ -689,6 +691,8 @@ export function deriveMdxComponents(ctx: ChromeContext) {
     return createMdxComponents({
       settings: ctx.settings,
       assetManifest: ctx.assetManifest,
+      assetViewerLocale: lang === ctx.defaultLocale ? undefined : lang,
+      isDefaultLocaleOnlyPath: ctx.isDefaultLocaleOnlyPath,
       locale: lang,
       currentVersion,
       currentSlug,

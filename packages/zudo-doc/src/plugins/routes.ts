@@ -277,6 +277,13 @@ function deriveRoutes(
         entrypoint: "@takazudo/zudo-doc/routes/files-path",
         includedInDtpShadowDiagnostic: true,
       });
+      if (localeCodes.length > 0) {
+        routes.push({
+          pattern: `/[locale]/${options.assetViewerRoutePrefix ?? "files"}/[[...path]]`,
+          entrypoint: "@takazudo/zudo-doc/routes/locale-files-path",
+          includedInDtpShadowDiagnostic: true,
+        });
+      }
     }
     return routes;
   }
@@ -328,6 +335,13 @@ function deriveRoutes(
     }
     if (hasVersions) {
       routes.push({ pattern: "/[locale]/docs/versions", entrypoint: "@takazudo/zudo-doc/routes/locale-docs-versions", includedInDtpShadowDiagnostic: true });
+    }
+    if (options.assetViewer === true) {
+      routes.push({
+        pattern: `/[locale]/${options.assetViewerRoutePrefix ?? "files"}/[[...path]]`,
+        entrypoint: "@takazudo/zudo-doc/routes/locale-files-path",
+        includedInDtpShadowDiagnostic: true,
+      });
     }
   }
 

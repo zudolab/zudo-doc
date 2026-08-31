@@ -75,6 +75,10 @@ export interface CreateMdxComponentsOptions {
   >;
   /** Author-facing asset index. Null/omitted keeps all MDX overrides inert. */
   assetManifest?: AssetManifest | null;
+  /** Non-default locale segment used by asset-viewer links. */
+  assetViewerLocale?: string;
+  /** Match asset viewer paths that intentionally remain default-locale-only. */
+  isDefaultLocaleOnlyPath?: (path: string) => boolean;
   /**
    * Active locale for this render. Injected into each `navData` wrapper as the
    * `lang` prop so `/ja` pages resolve the JA collection. Load-bearing — do not
@@ -236,6 +240,8 @@ function makeEnlargeableParagraph(
     base: string;
     dir: string;
     routePrefix: string;
+    locale?: string;
+    isDefaultLocaleOnlyPath?: (path: string) => boolean;
     manifest: AssetManifest | null;
   },
 ) {
@@ -327,6 +333,11 @@ function makeEnlargeableParagraph(
                             base: assetOptions.base,
                             routePrefix: assetOptions.routePrefix,
                             path: imageEntry.path,
+                            locale: assetOptions.isDefaultLocaleOnlyPath?.(
+                              `/${assetOptions.routePrefix}/${imageEntry.path}`,
+                            )
+                              ? undefined
+                              : assetOptions.locale,
                           }),
                           children: `⤢ Open asset page${dimensions}`,
                         },
@@ -372,6 +383,8 @@ export function createMdxComponents(
   const {
     settings,
     assetManifest = null,
+    assetViewerLocale,
+    isDefaultLocaleOnlyPath,
     locale,
     currentVersion,
     currentSlug,
@@ -390,6 +403,8 @@ export function createMdxComponents(
       base: settings.base,
       dir: assetDir,
       routePrefix: assetRoutePrefix,
+      locale: assetViewerLocale,
+      isDefaultLocaleOnlyPath,
       manifest: assetManifest,
     },
   );
@@ -399,6 +414,8 @@ export function createMdxComponents(
         assetManifest,
         routePrefix: assetRoutePrefix,
         dir: assetDir,
+        locale: assetViewerLocale,
+        isDefaultLocaleOnlyPath,
       })
     : defaultComponents.a;
 
