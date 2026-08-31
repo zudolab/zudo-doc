@@ -4,9 +4,23 @@ description: Release notes for 5.14.0.
 sidebar_position: 1100
 ---
 
-Released: 2026-08-30
+Released: 2026-08-31
 
 ### Features
 
 - Added the configurable Asset Viewer for files under `public/assets/`, with type-specific viewer pages, raw/download links, linked-from context, and `assetViewerDir`, `assetViewerRoutePrefix`, and `assetViewerExclude` settings. (`45dc50cdb`, `19b8f0599`, `e6e77f790`)
 - Added asset authoring entry points for markdown links, the `Asset` and `AssetCode` components, and image caption links, with URL-safe viewer paths and code excerpts. (`2b74f1da2`, `6f22ebb97`, `b883bff41`)
+- Added the opt-in Asset Index at `/files/`, with nested native disclosures, file-kind icons, viewer links, file metadata, expansion persistence, and the `assetViewerIndex` setting. (`debdd3cf8`, `bbf10483b`, `177028439`)
+- Added the package-owned `run-parallel` command for concurrent development tasks, with signal forwarding, descendant cleanup, and real failure-code propagation, replacing `npm-run-all2`. (`9402ff157`, `3ebfa6e9c`, `dab5d7e07`)
+- Added public `@takazudo/zudo-doc/frontmatter` parse and stringify helpers backed by YAML 1.2 parsing and YAML 1.1-safe serialization, removing the `gray-matter` and `js-yaml` 3 dependency chain. (`c07422672`, `49cfb1895`, `bd8ad5be9`)
+
+### Bug Fixes
+
+- Preserved the active navigation state when its header item moves into the overflow menu, while keeping exactly one visible `aria-current="page"`. (`81582a042`)
+- Restored deliberate right gutters in tree navigation rows. (`fa6a2074d`)
+- Retained package-default Asset Index translations when projects provide partial locale overrides. (`0b1958562`)
+- Kept Asset Index disclosure semantics native and aligned leaf-file icons with the first control column. (`295b3d8d0`, `35356dad4`)
+
+### Other Changes
+
+- Updated the zfb peer family to 2.14.0, `@takazudo/zdtp` to 0.4.14, and the doc-history-server peer floor to 5.13.1. (`dbe8553c7`, `038870c94`, `95a82f15f`)

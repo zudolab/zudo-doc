@@ -77,10 +77,10 @@ describe("showcase package changelog hierarchy", () => {
     expect(ja).toEqual(en);
 
     const releases = en.filter((path) => path !== "index.mdx" && !path.endsWith("/index.mdx"));
-    expect(releases).toHaveLength(111);
+    expect(releases).toHaveLength(112);
     expect(releases.filter((path) => path.startsWith("zudo-doc/"))).toHaveLength(100);
     expect(releases.filter((path) => path.startsWith("create-zudo-doc/"))).toHaveLength(6);
-    expect(releases.filter((path) => path.startsWith("doc-history-server/"))).toHaveLength(5);
+    expect(releases.filter((path) => path.startsWith("doc-history-server/"))).toHaveLength(6);
     expect(en).toEqual([
       "create-zudo-doc/index.mdx",
       "doc-history-server/index.mdx",
