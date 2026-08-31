@@ -30,7 +30,7 @@ tags:
 | スキル | 目的 |
 |-------|------|
 | `zudo-doc-design-system` | プロジェクト固有のCSSおよびコンポーネントルール — デザイントークン、三層カラーアーキテクチャ、コンポーネントファースト戦略。CSS、Tailwindクラス、カラートークン、コンポーネントマークアップを編集する前に参照します。 |
-| `zudo-doc-translate` | zudo-docのバイリンガル規約に従って、ドキュメントを英語と日本語の間で翻訳します。 |
+| `zudo-doc-translate` | `zfb.config.ts`で設定したロケール間でドキュメントを翻訳します。zudo-docの日本語規約は`ja`にだけ適用します。 |
 | `zudo-doc-version-bump` | パッケージバージョンの更新、changelogドキュメントの生成、コミット、タグ付け、GitHubリリースの作成を行います。 |
 
 `create-zudo-doc`の対話型プロンプトで**Claudeスキル（ユーザー向け）**を選択するか、CLIフラグを渡します：

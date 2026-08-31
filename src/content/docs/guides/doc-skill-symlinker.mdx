@@ -20,8 +20,9 @@ The setup script:
 
 1. Creates a `.claude/skills/<skill-name>/` or `.codex/skills/<skill-name>/` directory in your project
 2. Generates a `SKILL.md` that tells the agent how to use your docs
-3. Symlinks the `src/content/docs/` directory into the skill folder
-4. Symlinks the skill into `~/.claude/skills/` and/or `~/.codex/skills/` so it's available globally
+3. Symlinks the primary `src/content/docs/` directory into the skill folder
+4. Symlinks every configured additional-locale directory (for example, `src/content/docs-ja/` and `src/content/docs-de/`) into the skill folder
+5. Symlinks the skill into `~/.claude/skills/` and/or `~/.codex/skills/` so it's available globally
 
 By default, the script auto-detects your agent home directories. It uses Codex when only `~/.codex/` exists, Claude Code when only `~/.claude/` exists, both when both exist, and Claude Code as the fallback for a fresh machine.
 
@@ -83,9 +84,17 @@ After running the setup script, the following files are created:
 ```
 .claude/skills/<skill-name>/
 ├── SKILL.md       # Skill definition with frontmatter and instructions
-├── docs -> src/content/docs/         # Symlink to English docs
-└── docs-ja -> src/content/docs-ja/   # Symlink to Japanese docs (if present)
+├── docs -> src/content/docs/         # Symlink to primary-locale docs
+├── docs-ja -> src/content/docs-ja/   # Configured locale link (if present)
+└── docs-de -> src/content/docs-de/   # Another configured locale link (if present)
 ```
+
+The link names follow the configured directory basenames (or a code-qualified
+fallback when a custom directory collides). The generated `SKILL.md` records
+the exact locale map; version snapshots such as `docs-v1-ja/` are not linked as
+current locales. Keep translations structurally aligned and remember that
+non-JA starter trees contain English placeholder prose until you translate
+them.
 
 For Codex targets, the same layout is created under `.codex/skills/<skill-name>/`.
 

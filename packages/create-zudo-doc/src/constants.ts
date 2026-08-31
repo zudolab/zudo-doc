@@ -217,7 +217,7 @@ export const FEATURES: Feature[] = [
   {
     value: "i18n",
     label: "i18n (multi-language)",
-    hint: "Add a secondary language",
+    hint: "Configure additional locales",
     default: false,
     cliFlag: "i18n",
   },

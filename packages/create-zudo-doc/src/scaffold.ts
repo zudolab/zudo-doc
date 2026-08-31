@@ -702,9 +702,10 @@ function generatePackageJson(
   //   #2683); its parity coverage lives in e2e/smoke-markdown-features.spec.ts.
   //   Zero references in generator templates/source.
   const deps: Record<string, string> = {
-    // zfb engine — distributed as published npm packages (the prebuilt binary
-    // ships via an optionalDependency of @takazudo/zfb-<platform>); pinned to
-    // the pre-release the scaffold targets (per #500).
+    // zfb engine — distributed as published native engine packages (the
+    // platform package ships via an optionalDependency of
+    // @takazudo/zfb-<platform>); pinned to the pre-release the scaffold
+    // targets (per #500).
     // The two literals below must match root package.json's
     // dependencies["@takazudo/zfb"] / ["@takazudo/zfb-runtime"] —
     // enforced by scripts/check-pin-parity.mjs (W4A — #1732).

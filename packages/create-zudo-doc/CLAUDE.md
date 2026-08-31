@@ -56,7 +56,7 @@ remain in parity for this value as well as the other preset-only options.
 | `src/claude-md-gen.ts` | Generates the per-project `CLAUDE.md` for the scaffolded site, including the current zfb semantic-highlighting contract, chrome bindings, and binding-aware eject guidance |
 | `src/preset.ts` | Resolves a JSON `--preset` file (or CLI flags) into `UserChoices` — unrelated to the package's own `@takazudo/zudo-doc/preset`, despite the similar name |
 | `src/constants.ts` | Feature definitions, supported langs, header-right labels, and the current Default light/dark scheme pairing |
-| `src/utils.ts` | Shared utilities (patchFile, patchDefaultLang, getSecondaryLang) |
+| `src/utils.ts` | Shared utilities (patchFile, patchDefaultLang, and the deprecated legacy-locale compatibility helper) |
 | `src/cli.ts` | CLI argument parsing (minimist) |
 | `src/api.ts` | Programmatic API (`createZudoDoc()`). `CreateOptions` must stay in sync with `PresetJson` (`preset.ts`) — a field added to one and not the other is a type-level parity gap (#2922). Shape validation for `headerRightItems`/`metaTags`/`changelogPackages` is shared via `preset.ts`'s exported validators — extend those, don't re-implement the allowlists here. |
 | `src/prompts.ts` | Interactive prompts (@clack/prompts) |

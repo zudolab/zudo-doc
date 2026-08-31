@@ -6,42 +6,57 @@ tags:
   - i18n
 ---
 
-zudo-doc supports multiple languages using zfb's i18n routing.
+zudo-doc supports any number of additional locales through zfb's locale-aware routing. The default locale is the primary content tree; every configured entry in `locales` is an additional locale.
 
-## How It Works
+## The Locale Model
 
-- **English (default):** `/docs/...` — content lives in `src/content/docs/`
-- **Japanese:** `/ja/docs/...` — content lives in `src/content/docs-ja/`
+The primary locale is selected by `defaultLocale` and uses the unprefixed `/docs/...` route space. Additional locales are listed in the `locales` map and use their code as a URL prefix:
 
-The language switcher in the site header lets users toggle between available languages.
+- **Primary English:** `/docs/...` — `src/content/docs/`
+- **Additional Japanese:** `/ja/docs/...` — `src/content/docs-ja/`
+- **Additional German:** `/de/docs/...` — `src/content/docs-de/`
+
+The list is not limited to Japanese or to a fixed number of locales. Locale codes, labels, and directories are all project configuration.
 
 ## Settings-Based Locale Configuration
 
-Locales are configured in `zfb.config.ts`:
+Configure the primary locale and every additional locale in `zfb.config.ts`:
 
 ```ts title="zfb.config.ts"
 export default defineConfig(
   zudoDoc({
-    // ...
+    defaultLocale: "en",
     locales: {
       ja: { label: "JA", dir: "src/content/docs-ja" },
+      de: { label: "DE", dir: "src/content/docs-de" },
     },
   }),
 );
 ```
 
-For each locale entry, zudo-doc automatically:
+Each entry automatically:
 
-- Creates a zfb content collection (`docs-{code}`)
-- Registers the locale in zfb's i18n routing
-- Generates the appropriate page routes
-- Adds the locale to the language switcher
+- creates a zfb content collection named `docs-{code}`;
+- registers the code in locale-aware routing;
+- generates the corresponding page routes; and
+- adds the configured `label` to the language switcher.
 
-This means adding a new locale only requires a settings entry and a content directory — no manual collection or route setup needed.
+Do not hard-code `JP`, `JA`, or a fixed list of language links in a component. The switcher renders the configured labels in map order, so a custom locale such as `fr-ca: { label: "Français (Canada)", dir: "src/content/docs-fr-ca" }` works the same way.
+
+## Generator Input Rules
+
+The `create-zudo-doc` CLI, JSON presets, programmatic API, and Preset Generator share one locale contract:
+
+- **Omitted or blank additional locales:** the interactive blank field, an omitted `additionalLangs` preset field, or no explicit locale list produces a single-locale project. A legacy `i18n` boolean without a list keeps its compatibility inference: `ja` is inferred when the primary is `en`, and `en` is inferred for any other primary code.
+- **Explicit non-empty list:** `--additional-langs ja,de`, `additionalLangs: ["ja", "de"]`, or the equivalent UI input is the complete ordered list. It is normalized to lowercase, implies i18n, and creates `docs-ja` followed by `docs-de`.
+- **CLI over preset:** when both a preset and CLI provide `--additional-langs`, the CLI list replaces the preset list; entries are not merged or appended. Passing `--additional-langs` also enables i18n even when a preset or `--no-i18n` would otherwise disable it. The CLI prints a warning when it overrides an explicit `--no-i18n`.
+- **Validation:** each code must match `^[a-z]{2,8}(?:-[a-z0-9]{1,8})*$`, must not equal the primary code, and must not repeat. Path separators, `..`, whitespace, underscores, shell punctuation, and empty explicit entries are rejected before files are written. This keeps locale values safe as directory names and URL segments.
+
+The explicit list wins because it carries enough information to describe the complete locale plan. The legacy inference exists only for callers that still provide the old boolean-style i18n choice.
 
 ## Directory Structure
 
-Localized docs mirror the English directory structure:
+Keep each configured locale's tree aligned with the primary tree. Translate prose as you go; filenames, code blocks, and JSX examples should remain the same:
 
 ```
 src/content/
@@ -51,7 +66,13 @@ src/content/
 │   │   └── installation.mdx
 │   └── guides/
 │       └── configuration.mdx
-└── docs-ja/
+├── docs-ja/
+│   ├── getting-started/
+│   │   ├── introduction.mdx
+│   │   └── installation.mdx
+│   └── guides/
+│       └── configuration.mdx
+└── docs-de/
     ├── getting-started/
     │   ├── introduction.mdx
     │   └── installation.mdx
@@ -59,81 +80,74 @@ src/content/
         └── configuration.mdx
 ```
 
+The scaffold seeds Japanese starter prose when the locale code is `ja`. For arbitrary non-Japanese locale codes, it seeds English placeholder starter prose so the route is usable immediately; replace that prose with a translation rather than assuming the page is localized.
+
 ## Language Switcher
 
-The language switcher appears in the header's right edge. It shows the current language code (EN or JA) and a link to switch to the alternate language. The switcher automatically computes the alternate URL by adding or removing the `/ja/` prefix.
+The language switcher appears at the right edge of the header when more than one locale link is available. It lists the configured labels in order, marks the current locale as the active item, and links every other locale to the equivalent page. It recomputes those links after same-locale SPA navigation, including version prefixes and a configured site base.
 
-## UI Translation Keys
+The switcher also has a CSS hover/focus fallback. With JavaScript disabled, a pointer hover or ordinary keyboard focus/Tab movement still reveals usable locale anchors. On a narrow viewport the same links appear inline in the mobile sidebar footer.
 
-zudo-doc uses a translation key system for built-in UI strings. Keys are organized by namespace:
+Pages matched by `defaultLocaleOnlyPrefixes` intentionally collapse to one active link because no alternate-locale route exists. This is a route-availability rule, not a special case for Japanese.
 
-- `nav.*` — Header navigation labels (e.g., `nav.gettingStarted`, `nav.guides`)
-- `toc.*` — Table of contents labels
-- `search.*` — Search dialog text
-- `code.*` — Code block UI (copy button, etc.)
-- `doc.*` — Document-level UI (edit link, metadata labels, etc.)
+## UI Translation Fallback
 
-These keys allow the entire UI (not just content) to be localized across all configured languages.
+Built-in UI strings are resolved for the requested locale first, then the configured default locale, then the package's English table, and finally the raw key:
 
-## zfb Configuration
+```text
+requested locale → default locale → package English → raw UI-string key
+```
 
-The locale list flows through `zfb.config.ts`. Each entry in the `locales` field you pass to `zudoDoc({...})` becomes a `docs-{code}` content collection automatically — there is no separate `i18n` block to maintain. Page routes under `pages/[locale]/docs/[[...slug]].tsx` enumerate locales via their `paths()` export, so English pages are served without a language prefix (`/docs/...`) while non-default locales use their code as the prefix (`/ja/docs/...`).
+This lets a project configure only the strings it has translated. Locale labels and content-directory paths remain settings-driven and do not depend on the translation table.
 
-<Note>
+## Adding a Locale
 
-The locale list used throughout `zfb.config.ts` is automatically derived from the `locales` field, so you only need to maintain locales in one place.
+To add a locale such as German:
 
-</Note>
-
-## Adding a New Language
-
-To add a new language (e.g., Korean):
-
-1. Add the locale in `zfb.config.ts`:
+1. Add its exact code, display label, and content directory to `locales`:
 
    ```ts
    locales: {
      ja: { label: "JA", dir: "src/content/docs-ja" },
-     ko: { label: "KO", dir: "src/content/docs-ko" },
+     de: { label: "DE", dir: "src/content/docs-de" },
    },
    ```
 
-2. Create a content directory: `src/content/docs-ko/`
-3. Mirror the English directory structure with translated files
-4. Add UI translations for the new locale
+2. Create `src/content/docs-de/` and mirror the primary directory tree.
+3. Translate the mirrored MDX pages while preserving filenames, code blocks, and JSX blocks.
+4. Add any project-specific UI translations for `de`; missing keys follow the fallback chain above.
 
 <Tip>
 
-Step 1 is the key step — adding the locale in `zfb.config.ts` automatically creates the content collection and registers the i18n routing. No per-locale page route file is needed; the parameterized route at `pages/[locale]/docs/[[...slug]].tsx` handles every locale automatically.
+The `locales` map is the single source of truth. Adding an entry creates its collection, routes, and switcher link; no per-locale route file or hand-written collection is needed.
 
 </Tip>
 
-## defaultLocale
+## `defaultLocale`
 
-`defaultLocale` identifies which locale is served without a URL prefix. It defaults to `"en"` and must match one of the keys that zfb uses for its default-locale routing:
+`defaultLocale` identifies the locale served without a URL prefix. It defaults to `"en"` and must be the primary locale code, not one of the keys in `locales`:
 
 ```ts title="zfb.config.ts"
 export default defineConfig(
   zudoDoc({
-    // ...
     defaultLocale: "en",
     locales: {
       ja: { label: "JA", dir: "src/content/docs-ja" },
+      de: { label: "DE", dir: "src/content/docs-de" },
     },
   }),
 );
 ```
 
-The default locale is served at `/docs/...` with no language code in the path, while every other locale uses its key as a prefix — `/ja/docs/...` for Japanese. This falls out of `defaultLocale` plus the route split in `pages/` (`pages/docs/[[...slug]].tsx` vs `pages/[locale]/docs/[[...slug]].tsx`); there is no `prefixDefaultLocale` option to set. Changing `defaultLocale` requires updating the corresponding routing and collection wiring in `zfb.config.ts`.
+The primary locale is served at `/docs/...`; each additional locale uses its code, such as `/ja/docs/...` or `/de/docs/...`. This comes from `defaultLocale` plus the route split in `pages/` (`pages/docs/[[...slug]].tsx` and `pages/[locale]/docs/[[...slug]].tsx`); there is no `prefixDefaultLocale` option.
 
-## Default-locale-only prefixes
+## Default-Locale-Only Prefixes
 
-Some content is intentionally only available in the default locale. These routes are called **default-locale-only prefixes** and are controlled by the `defaultLocaleOnlyPrefixes` field in `zfb.config.ts`:
+Some content has no translation and should exist only in the primary locale. Configure those URL prefixes in `defaultLocaleOnlyPrefixes`:
 
 ```ts title="zfb.config.ts"
 export default defineConfig(
   zudoDoc({
-    // ...
     defaultLocaleOnlyPrefixes: [
       "/docs/claude-md/",
       "/docs/claude-skills/",
@@ -150,46 +164,6 @@ export default defineConfig(
 );
 ```
 
-### What it means
+Any page under one of these prefixes is emitted only in the primary locale. The non-primary route list omits it, the language switcher emits only the current active link, and no mirror file should be created. Keep a prefix trailing-slash terminated, rooted at `/docs/`, and narrow enough that it does not hide pages you intend to translate.
 
-Any page whose URL starts with one of these prefixes exists **only** in the default locale (English). The language switcher suppresses the alternate-locale link for those pages, and no Japanese mirror file should be created under `docs-ja/` for them.
-
-### Current entries
-
-The ten prefixes above cover the Claude- and Codex-resource sections. They are the auto-generated pages that surface resources from the project's `.claude/` and `.codex/` directories, plus `AGENTS.md` files and `.agents/skills/` directories. These pages are English-only because their source material is not translated.
-
-<Note>
-
-The top-level `/docs/claude/` and `/docs/codex/` index pages are **not** in this list — they have bilingual stubs at `docs-ja/claude/index.mdx` and `docs-ja/codex/index.mdx`. Only the ten deeper prefixes listed above are default-locale-only.
-
-</Note>
-
-### How the router enforces this
-
-The page route at `pages/[locale]/docs/[[...slug]].tsx` checks each slug against `defaultLocaleOnlyPrefixes` in its `paths()` export. If the reconstructed URL matches a prefix, that path is omitted from the non-default-locale path list, so no `/ja/docs/claude-md/...` route is ever generated.
-
-### Adding your own prefix
-
-If you have a section that should remain English-only (for example, auto-generated API reference pages), add its URL prefix to the array:
-
-```ts
-defaultLocaleOnlyPrefixes: [
-  "/docs/claude-md/",
-  "/docs/claude-skills/",
-  "/docs/claude-agents/",
-  "/docs/claude-commands/",
-  "/docs/codex-agents-md/",
-  "/docs/codex-config/",
-  "/docs/codex-agents/",
-  "/docs/codex-hooks/",
-  "/docs/codex-rules/",
-  "/docs/codex-skills/",
-  "/docs/api-reference/", // your new prefix
-] as string[],
-```
-
-Make sure the prefix:
-
-- Starts with `/docs/` (or the equivalent path for your content directory)
-- Ends with a trailing slash
-- Does not overlap with a prefix you want to keep bilingual
+The generated Claude and Codex resource sections use this mechanism because their source files are not translated. Their top-level `/docs/claude/` and `/docs/codex/` index pages remain ordinary localized pages.

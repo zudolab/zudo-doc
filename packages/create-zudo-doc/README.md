@@ -35,12 +35,48 @@ pnpm create zudo-doc my-docs --yes
 # Fully specified, non-interactive
 pnpm create zudo-doc my-docs \
   --lang ja \
+  --additional-langs en,de \
   --scheme "Default Dark" \
-  --no-i18n \
   --search \
   --pm pnpm \
   --install
 ```
+
+### Locales and translations
+
+`--lang` selects the primary locale. Its pages use the unprefixed
+`/docs/...` routes and `src/content/docs/`. Add any number of additional
+locales, in the order shown by the language switcher, with
+`--additional-langs <code,...>`:
+
+```bash
+pnpm create zudo-doc my-docs \
+  --lang en \
+  --additional-langs ja,de \
+  --yes
+```
+
+An omitted or blank list creates a single-locale project. The same rule
+applies to a preset that omits `additionalLangs`; an explicit non-empty list
+is normalized to lowercase, validates each code for safe URL/path use, rejects
+duplicates and the primary code, and creates `src/content/docs-<code>/` plus
+the corresponding `/<code>/docs/...` routes. A legacy preset containing only
+`i18n: true` keeps compatibility inference (`ja` for primary `en`, otherwise
+`en`).
+
+CLI locale flags replace the preset list rather than merging with it. An
+explicit `--additional-langs` also enables i18n; if it overrides
+`--no-i18n`, the CLI prints a warning so the precedence is visible.
+
+The generated starter uses Japanese prose for `ja` and English placeholder
+prose for every other additional locale. Translate those pages before
+publishing. Labels are configuration-driven: the switcher uses each locale's
+configured `label` and map order, so custom codes and labels are not tied to
+hard-coded `JP` or `JA` links.
+
+Built-in UI translations resolve in this order:
+
+`requested locale → configured default locale → package English → raw UI-string key`
 
 ## Options
 
@@ -50,6 +86,7 @@ pnpm create zudo-doc my-docs \
 |------|-------------|---------|
 | `[project-name]` | Project name (positional arg or `--name`) | prompted |
 | `--lang <code>` | Default language: `en`, `ja`, `zh-cn`, `zh-tw`, `ko`, `es`, `fr`, `de`, `pt` | `en` |
+| `--additional-langs <a,b>` | Ordered additional locale codes; implies i18n and replaces a preset list | none |
 | `--pm <manager>` | Package manager: `pnpm`, `npm`, `yarn`, `bun` | detected |
 | `--[no-]install` | Install dependencies after scaffolding | prompted |
 | `-y, --yes` | Use defaults for all unspecified options, skip prompts | — |
@@ -72,7 +109,7 @@ Each feature has a `--[no-]<flag>` form. Passing `--feature` enables it; `--no-f
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--[no-]i18n` | Multi-language support (adds a secondary locale) | off |
+| `--[no-]i18n` | Legacy multi-language toggle; with no explicit list, infers one additional locale | off |
 | `--[no-]search` | Full-text search | on |
 | `--[no-]sidebar-filter` | Real-time sidebar filter | on |
 | `--[no-]image-enlarge` | Click-to-enlarge for oversized images | on |
@@ -140,6 +177,7 @@ import { createZudoDoc } from "create-zudo-doc";
 await createZudoDoc({
   projectName: "my-docs",
   defaultLang: "en",
+  additionalLangs: ["ja", "de"],
   colorSchemeMode: "single",
   singleScheme: "Default Dark",
   features: ["search", "sidebarFilter", "tagGovernance"],
