@@ -14,15 +14,19 @@ test.use({ viewport: { width: 1280, height: 900 } });
 test.describe("i18n generated pages: static locale coverage", () => {
   test("emits localized resource overviews in every configured locale", () => {
     const jaOverview = readDistFile("ja/docs/claude/index.html");
-    expect(jaOverview).toContain(">Claude<");
+    expect(jaOverview).toMatch(/<h1\b[^>]*>Claude<\/h1>/);
     expect(jaOverview).toContain("Claude Code の設定リファレンス。");
     expect(jaOverview).toContain(">リソース<");
 
-    expect(readDistFile("de/docs/claude/index.html")).toContain(">Claude<");
+    expect(readDistFile("de/docs/claude/index.html")).toMatch(
+      /<h1\b[^>]*>Claude<\/h1>/,
+    );
     expect(readDistFile("ja/docs/codex/index.html")).toContain(
       "OpenAI Codex の設定リファレンス。",
     );
-    expect(readDistFile("de/docs/codex/index.html")).toContain(">Codex<");
+    expect(readDistFile("de/docs/codex/index.html")).toMatch(
+      /<h1\b[^>]*>Codex<\/h1>/,
+    );
   });
 
   test("keeps fallback resource bodies out of JA llms and search", () => {

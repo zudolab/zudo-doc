@@ -70,9 +70,10 @@ bare `touch`) keep a warm fixture fresh.
 
 The i18n fixture keeps its minimal Claude/Codex generator inputs under
 `src/content/resources/` so the existing fixture-content hash covers them. Generated
-default-locale bodies and per-locale overview/category indexes are committed as fixture
-content; each build regenerates the same files. Its `public/assets/` corpus similarly
-provides the localized asset-viewer route proof without borrowing smoke-fixture data.
+default-locale bodies and per-locale overview/category indexes are ignored build outputs;
+each build regenerates them from those committed inputs. Its `public/assets/` corpus
+similarly provides the localized asset-viewer route proof without borrowing smoke-fixture
+data.
 
 The `theme` fixture removes the copied `pages/docs/` user stub during setup so
 its docs route is package-owned. This is load-bearing for tests of fixture-local
