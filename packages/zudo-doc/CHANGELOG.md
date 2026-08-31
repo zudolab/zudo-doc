@@ -23,6 +23,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ### Other Changes
 
+- Existing multi-locale consumers now receive `/{locale}/files/...` Asset Viewer routes on a package bump, and Claude/Codex resource pages gain locale routes when they previously relied on the shipped default-only prefix list. To keep either family default-locale-only, add `/${assetViewerRoutePrefix}/` and/or the resource prefixes to `defaultLocaleOnlyPrefixes`. (#3820)
 - Updated the zfb peer family to 2.14.0, `@takazudo/zdtp` to 0.4.14, and the doc-history-server peer floor to 5.13.1. (`dbe8553c7`, `038870c94`, `95a82f15f`)
 
 ## [5.13.1] - 2026-08-28

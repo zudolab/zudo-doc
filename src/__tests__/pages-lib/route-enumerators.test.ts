@@ -297,7 +297,7 @@ describe("enumerateDocsRoutes — defaultLocaleOnlyPrefixes filter", () => {
     mockGetCollection.mockImplementation((_name: string) => []);
   });
 
-  it("does not emit /ja/docs/claude-* or /ja/docs/codex-* for EN-only fallback entries", () => {
+  it("emits /ja/docs/claude-* and /ja/docs/codex-* for EN-only fallback entries", () => {
     mockGetCollection.mockImplementation((name: string) => {
       if (name === "docs-ja") {
         return [
@@ -319,10 +319,10 @@ describe("enumerateDocsRoutes — defaultLocaleOnlyPrefixes filter", () => {
     });
 
     const urls = enumerateDocsRoutes("ja");
-    expect(urls.some((u) => u.includes("/ja/docs/claude-md/"))).toBe(false);
-    expect(urls.some((u) => u.includes("/ja/docs/claude-skills/"))).toBe(false);
-    expect(urls.some((u) => u.includes("/ja/docs/codex-agents-md/"))).toBe(false);
-    expect(urls.some((u) => u.includes("/ja/docs/codex-skills/"))).toBe(false);
+    expect(urls.some((u) => u.includes("/ja/docs/claude-md/"))).toBe(true);
+    expect(urls.some((u) => u.includes("/ja/docs/claude-skills/"))).toBe(true);
+    expect(urls.some((u) => u.includes("/ja/docs/codex-agents-md/"))).toBe(true);
+    expect(urls.some((u) => u.includes("/ja/docs/codex-skills/"))).toBe(true);
   });
 
   it("still emits /ja/docs/claude/ for the locale-authored JA stub", () => {
@@ -381,7 +381,7 @@ describe("enumerateDocsRoutes — defaultLocaleOnlyPrefixes filter", () => {
     expect(urls.some((u) => u.includes("/docs/codex-skills/"))).toBe(true);
   });
 
-  it("does not emit /v/{version}/ja/docs/claude-md/* for EN-only fallback versioned entries", () => {
+  it("emits /v/{version}/ja/docs/claude-md/* for EN-only fallback versioned entries", () => {
     mockGetCollection.mockImplementation((name: string) => {
       if (name === "docs-v-1.0") {
         return [makeEntry("claude-md/overview", { title: "CLAUDE.md v1" })];
@@ -393,7 +393,7 @@ describe("enumerateDocsRoutes — defaultLocaleOnlyPrefixes filter", () => {
       { slug: "1.0", label: "1.0.0", docsDir: "src/content/docs-v1" },
       "ja",
     );
-    expect(urls.some((u) => u.includes("/v/1.0/ja/docs/claude-md/"))).toBe(false);
+    expect(urls.some((u) => u.includes("/v/1.0/ja/docs/claude-md/"))).toBe(true);
   });
 });
 
