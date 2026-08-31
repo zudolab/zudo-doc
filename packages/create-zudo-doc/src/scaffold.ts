@@ -676,7 +676,7 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     );
   }
 
-  const claudeContent = generateCLAUDEFile(choices);
+  const claudeContent = generateCLAUDEFile(choices, localePlan);
   await fs.outputFile(path.join(targetDir, "CLAUDE.md"), claudeContent);
 
   // 4. Compose features (copy feature files + inject into shared files)

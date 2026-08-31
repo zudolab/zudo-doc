@@ -205,9 +205,19 @@ Six types: `note`/`<Note>`, `tip`/`<Tip>`, `info`/`<Info>`, `warning`/`<Warning>
 
 ## i18n (only when this project's i18n feature is enabled)
 
-Check `zfb.config.ts`: if the `zudoDoc({...})` call sets a non-empty `locales` field, i18n is on. Then every page must exist in BOTH the default-locale directory (`src/content/docs/`) and each secondary-locale directory (e.g. `src/content/docs-ja/`), mirroring the same tree — same filenames, translated prose, identical code blocks. A non-i18n scaffold has no secondary content directory; skip this section entirely.
+Check `zfb.config.ts`: if the `zudoDoc({...})` call sets a non-empty `locales` map, i18n is on. Read `defaultLocale`, `docsDir`, and every exact `locales` entry (`<locale-code>` → `{ dir }`). Then every page must exist in the default-locale directory and each configured additional-locale directory, mirroring the same tree — same filenames, translated prose, identical code blocks. A non-i18n scaffold has an empty `locales` map and no additional content directory; skip this section entirely.
 
-Two carve-outs — do NOT create secondary-locale mirrors for these:
+Never discover current locale roots with a `src/content/docs-*` glob. Versioned
+trees such as `src/content/docs-v1` or `src/content/docs-v1-ja` are snapshots,
+not additional locales. For the scaffold's starter prose, `ja` receives
+Japanese text when configured; arbitrary non-EN locale codes receive English
+placeholder prose pending translation. Do not describe those locales as
+already translated.
+
+Apply Japanese writing conventions only when the locale code is `ja`; do not
+infer Japanese guidance for another code.
+
+Two carve-outs — do NOT create additional-locale mirrors for these:
 
 - Pages with `generated: true` in frontmatter (build-generated content).
 - Paths listed in the `defaultLocaleOnlyPrefixes` setting in `zfb.config.ts` — default-locale-only by design (the Claude Resources and Codex Resources features, when enabled, register four `/docs/claude-*` prefixes and six `/docs/codex-*` prefixes there; their top-level `/docs/claude/` and `/docs/codex/` indexes remain bilingual).
@@ -235,7 +245,7 @@ Two carve-outs — do NOT create secondary-locale mirrors for these:
 - [ ] Is `sidebar_position` set in the frontmatter?
 - [ ] Is the file name kebab-case?
 - [ ] Does the content start with `## h2` (no h1)?
-- [ ] If i18n is enabled: is the secondary-locale mirror file created too?
+- [ ] If i18n is enabled: is the matching file created in every configured additional-locale directory?
 
 ## Full Guides
 

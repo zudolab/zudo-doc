@@ -296,6 +296,62 @@ describe("scaffold — i18n manifest (+1 file, #2653 i18n addendum)", () => {
   });
 });
 
+describe("scaffold — generated locale guidance (EN + JA + DE)", () => {
+  it("enumerates the configured locales in CLAUDE.md, skills, and ignores", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-generated-locale-guidance",
+      features: ["skillSymlinker", "claudeSkills", "claudeSkillsWriting"],
+      additionalLangs: ["ja", "de"],
+    });
+    const project = projectPath("test-generated-locale-guidance");
+    const claude = await fs.readFile(path.join(project, "CLAUDE.md"), "utf-8");
+    const gitignore = await fs.readFile(path.join(project, ".gitignore"), "utf-8");
+    const translate = await fs.readFile(
+      path.join(project, ".claude/skills/zudo-doc-translate/SKILL.md"),
+      "utf-8",
+    );
+    const versionBump = await fs.readFile(
+      path.join(project, ".claude/skills/zudo-doc-version-bump/SKILL.md"),
+      "utf-8",
+    );
+    const writing = await fs.readFile(
+      path.join(project, ".claude/skills/zudo-doc-writing/SKILL.md"),
+      "utf-8",
+    );
+
+    expect(claude).toContain("English (default, `en`)");
+    expect(claude).toContain("Japanese (`ja`)");
+    expect(claude).toContain("DE (`de`)");
+    expect(claude).toContain("src/content/docs-ja/");
+    expect(claude).toContain("src/content/docs-de/");
+    expect(claude).toContain("English placeholder prose pending translation");
+    expect(claude).not.toContain("secondary language");
+
+    expect(gitignore).toContain(
+      ".claude/skills/test-generated-locale-guidance-wisdom/docs-ja",
+    );
+    expect(gitignore).toContain(
+      ".claude/skills/test-generated-locale-guidance-wisdom/docs-de",
+    );
+
+    expect(translate).toContain("every requested map entry");
+    expect(translate).toContain("only when the source or target locale code is `ja`");
+    expect(translate).toContain("src/content/docs-v1-ja");
+    expect(versionBump).toContain("current `locales` map");
+    expect(versionBump).toContain("configured locale snapshots");
+    expect(versionBump).toContain("<locale-code>");
+    expect(writing).toContain("each configured additional-locale directory");
+    expect(writing).toContain("only when the locale code is `ja`");
+
+    expect(
+      await fs.pathExists(
+        path.join(project, "src/content/docs-v1-ja"),
+      ),
+    ).toBe(false);
+  });
+});
+
 describe("scaffold — i18n locale doc stub threads isFallback + per-locale content dir (#2651 review fix)", () => {
   // Regression guard for two real bugs in the emitted locale stub: (1) it
   // never threaded `isFallback` into renderDocPage, so untranslated fallback

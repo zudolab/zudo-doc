@@ -191,9 +191,258 @@ PROJECT_PREFIX="$(git -C "$ROOT_DIR" rev-parse --show-prefix)"
 MAIN_PROJECT_DIR="$REPO_ROOT/${PROJECT_PREFIX}"
 MAIN_PROJECT_DIR="${MAIN_PROJECT_DIR%/}"
 REPO_DOCS_DIR="$REPO_ROOT/${PROJECT_PREFIX}src/content/docs"
-REPO_DOCS_JA_DIR="$REPO_ROOT/${PROJECT_PREFIX}src/content/docs-ja"
 
-DOCS_DIR="$ROOT_DIR/src/content/docs"
+# Read the current locale map from the project's config. The generated config
+# puts `defaultLocale`, `docsDir`, and `locales` directly in `zudoDoc({...})`.
+# The showcase keeps those fields in its imported `src/config/settings.ts`, so
+# the parser also follows relative imports from `zfb.config.ts`.
+#
+# This deliberately does NOT walk `src/content/docs-*`: that naming convention
+# also matches version snapshots such as `docs-v1-ja`, which are not current
+# locale roots. The config map is the only source of truth.
+CONFIG_LOCALE_DATA="$(node - "$ROOT_DIR" <<'NODE'
+const fs = require("node:fs");
+const path = require("node:path");
+
+const root = process.argv[2];
+const configPath = path.join(root, "zfb.config.ts");
+
+function read(file) {
+  try {
+    return fs.readFileSync(file, "utf8");
+  } catch {
+    return null;
+  }
+}
+
+// Mask comments and quoted strings while preserving braces/newlines. This is
+// enough lexical shielding for the plain-data config shapes the generator
+// emits, and keeps nested `versions[].locales` objects distinguishable.
+function maskSource(source) {
+  const chars = source.split("");
+  let state = "code";
+  let quote = "";
+  for (let i = 0; i < chars.length; i += 1) {
+    const current = chars[i];
+    const next = chars[i + 1];
+    if (state === "line-comment") {
+      if (current === "\n") state = "code";
+      else chars[i] = " ";
+      continue;
+    }
+    if (state === "block-comment") {
+      if (current === "*" && next === "/") {
+        chars[i] = " ";
+        chars[i + 1] = " ";
+        i += 1;
+        state = "code";
+      } else if (current !== "\n") {
+        chars[i] = " ";
+      }
+      continue;
+    }
+    if (state === "string") {
+      if (current === "\\") {
+        chars[i] = " ";
+        if (i + 1 < chars.length && chars[i + 1] !== "\n") {
+          chars[i + 1] = " ";
+          i += 1;
+        }
+      } else if (current === quote) {
+        chars[i] = " ";
+        state = "code";
+      } else if (current !== "\n") {
+        chars[i] = " ";
+      }
+      continue;
+    }
+    if (current === "/" && next === "/") {
+      chars[i] = " ";
+      chars[i + 1] = " ";
+      i += 1;
+      state = "line-comment";
+    } else if (current === "/" && next === "*") {
+      chars[i] = " ";
+      chars[i + 1] = " ";
+      i += 1;
+      state = "block-comment";
+    } else if (current === "'" || current === '"' || current === "`") {
+      quote = current;
+      chars[i] = " ";
+      state = "string";
+    }
+  }
+  return chars.join("");
+}
+
+function braceDepths(masked) {
+  const depths = [];
+  let depth = 0;
+  for (let i = 0; i < masked.length; i += 1) {
+    depths[i] = depth;
+    if (masked[i] === "{") depth += 1;
+    else if (masked[i] === "}") depth -= 1;
+  }
+  return depths;
+}
+
+function matchingBrace(masked, open) {
+  let depth = 0;
+  for (let i = open; i < masked.length; i += 1) {
+    if (masked[i] === "{") depth += 1;
+    else if (masked[i] === "}") {
+      depth -= 1;
+      if (depth === 0) return i;
+    }
+  }
+  return -1;
+}
+
+function topLevelObject(source, property) {
+  const masked = maskSource(source);
+  const depths = braceDepths(masked);
+  const propertyPattern = new RegExp(`\\b${property}\\s*:`, "g");
+  let match;
+  while ((match = propertyPattern.exec(masked)) !== null) {
+    // Direct fields of the settings/zudoDoc object are at depth 1. Nested
+    // `versions[].locales` and nav-label locales are intentionally ignored.
+    if (depths[match.index] !== 1) continue;
+    let open = match.index + match[0].length;
+    while (/\s/.test(masked[open] ?? "")) open += 1;
+    if (masked[open] !== "{") continue;
+    const close = matchingBrace(masked, open);
+    if (close < 0) continue;
+    return { text: source.slice(open, close + 1) };
+  }
+  return null;
+}
+
+function topLevelString(source, property) {
+  const masked = maskSource(source);
+  const depths = braceDepths(masked);
+  const propertyPattern = new RegExp(`\\b${property}\\s*:`, "g");
+  let match;
+  while ((match = propertyPattern.exec(masked)) !== null) {
+    if (depths[match.index] !== 1) continue;
+    const tail = source.slice(match.index + match[0].length).trimStart();
+    const quote = tail[0];
+    if (quote !== "\"" && quote !== "'") continue;
+    const end = tail.indexOf(quote, 1);
+    if (end > 1) return tail.slice(1, end);
+  }
+  return null;
+}
+
+function parseLocaleEntries(objectText) {
+  const masked = maskSource(objectText);
+  const depths = braceDepths(masked);
+  const keyPattern = /(?:"([^"]+)"|'([^']+)'|([A-Za-z_$][A-Za-z0-9_$-]*))\s*:/g;
+  const entries = [];
+  let match;
+  while ((match = keyPattern.exec(objectText)) !== null) {
+    if (depths[match.index] !== 1) continue;
+    let open = match.index + match[0].length;
+    while (/\s/.test(masked[open] ?? "")) open += 1;
+    if (masked[open] !== "{") continue;
+    const close = matchingBrace(masked, open);
+    if (close < 0) continue;
+    const entry = objectText.slice(open, close + 1);
+    const dir = entry.match(/\bdir\s*:\s*["']([^"']+)["']/)?.[1];
+    const code = match[1] ?? match[2] ?? match[3];
+    if (!code || !dir) continue;
+    const normalizedDir = path.posix.normalize(dir.replace(/^\.\//, ""));
+    if (
+      !normalizedDir ||
+      normalizedDir === "." ||
+      normalizedDir.startsWith("../") ||
+      normalizedDir.startsWith("/")
+    ) continue;
+    if (!entries.some((item) => item.code === code || item.dir === normalizedDir)) {
+      entries.push({ code, dir: normalizedDir });
+    }
+  }
+  return entries;
+}
+
+function resolveImport(rootDir, specifier) {
+  if (!specifier.startsWith(".")) return null;
+  const base = path.resolve(rootDir, specifier);
+  for (const candidate of [
+    base,
+    `${base}.ts`,
+    `${base}.tsx`,
+    `${base}.js`,
+    `${base}.mjs`,
+    path.join(base, "index.ts"),
+  ]) {
+    if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) return candidate;
+  }
+  return null;
+}
+
+const sources = [];
+const seen = new Set();
+function addSource(file) {
+  if (!file || seen.has(file)) return;
+  const source = read(file);
+  if (source === null) return;
+  seen.add(file);
+  sources.push({ file, source });
+}
+
+addSource(configPath);
+const configSource = read(configPath) ?? "";
+const importPattern = /\bfrom\s*["']([^"']+)["']/g;
+let importMatch;
+while ((importMatch = importPattern.exec(configSource)) !== null) {
+  addSource(resolveImport(root, importMatch[1]));
+}
+
+let defaultLocale = null;
+let docsDir = null;
+let localeObject = null;
+for (const { source } of sources) {
+  if (defaultLocale === null) defaultLocale = topLevelString(source, "defaultLocale");
+  if (docsDir === null) docsDir = topLevelString(source, "docsDir");
+  if (localeObject === null) localeObject = topLevelObject(source, "locales");
+}
+
+console.log(`default\t${defaultLocale ?? "en"}`);
+console.log(`docs\t${docsDir ?? "src/content/docs"}`);
+if (localeObject) {
+  for (const { code, dir } of parseLocaleEntries(localeObject.text)) {
+    console.log(`locale\t${code}\t${dir}`);
+  }
+}
+NODE
+)"
+
+DEFAULT_LOCALE="en"
+DOCS_DIR_REL="src/content/docs"
+LOCALE_CODES=()
+LOCALE_DIR_RELS=()
+while IFS=$'\t' read -r record_type record_value record_extra; do
+  case "$record_type" in
+    default) [ -n "$record_value" ] && DEFAULT_LOCALE="$record_value" ;;
+    docs) [ -n "$record_value" ] && DOCS_DIR_REL="$record_value" ;;
+    locale)
+      # Locale maps contain additional locales only. Ignore a malformed
+      # duplicate of defaultLocale rather than creating two docs links.
+      [ -n "$record_value" ] || continue
+      [ "$record_value" = "$DEFAULT_LOCALE" ] && continue
+      duplicate="false"
+      for existing_code in "${LOCALE_CODES[@]}"; do
+        [ "$existing_code" = "$record_value" ] && duplicate="true"
+      done
+      [ "$duplicate" = "true" ] && continue
+      LOCALE_CODES+=("$record_value")
+      LOCALE_DIR_RELS+=("$record_extra")
+      ;;
+  esac
+done <<< "$CONFIG_LOCALE_DATA"
+
+DOCS_DIR="$ROOT_DIR/$DOCS_DIR_REL"
+REPO_DOCS_DIR="$REPO_ROOT/${PROJECT_PREFIX}${DOCS_DIR_REL}"
 
 # Validate docs directory exists
 if [ ! -d "$DOCS_DIR" ]; then
@@ -281,10 +530,75 @@ safe_link_tracked_skill() {
   echo "  [$target] Linked tracked skill '$skill_name' -> $link_target"
 }
 
-DOCS_JA_DIR="$ROOT_DIR/src/content/docs-ja"
-HAS_JA=""
-if [ -d "$DOCS_JA_DIR" ]; then
-  HAS_JA="true"
+# Locale links use the configured directory basename for the stable lookup
+# name (`docs-ja`, `docs-de`, ...). If a project uses a custom directory whose
+# basename is `docs` or collides with another map entry, fall back to a
+# code-qualified name rather than guessing from a broad content-directory glob.
+LOCALE_LINK_NAMES=()
+locale_link_name() {
+  local code="$1"
+  local dir="$2"
+  local name="${dir%/}"
+  name="${name##*/}"
+  [ -n "$name" ] || name="docs-$code"
+  [ "$name" = "docs" ] && name="docs-$code"
+  suffix=2
+  while :; do
+    collision="false"
+    for existing in "${LOCALE_LINK_NAMES[@]}"; do
+      if [ "$existing" = "$name" ]; then
+        collision="true"
+        break
+      fi
+    done
+    [ "$collision" = "false" ] && break
+    name="docs-$code-$suffix"
+    suffix=$((suffix + 1))
+  done
+  printf '%s\n' "$name"
+}
+
+for locale_index in "${!LOCALE_CODES[@]}"; do
+  locale_code="${LOCALE_CODES[$locale_index]}"
+  locale_dir="${LOCALE_DIR_RELS[$locale_index]}"
+  locale_link="$(locale_link_name "$locale_code" "$locale_dir")"
+  LOCALE_LINK_NAMES+=("$locale_link")
+done
+
+locale_starter_note() {
+  case "$1" in
+    ja) echo "Japanese starter prose" ;;
+    en) echo "English starter prose" ;;
+    *) echo "English placeholder prose pending translation" ;;
+  esac
+}
+
+# Build exact locale-map guidance for the generated skill. These lines come
+# only from configured `locales` entries, never from directory discovery.
+LOCALE_GUIDANCE="- \`$DEFAULT_LOCALE\` (default): \`${DOCS_DIR_REL%/}/\` — \`/docs/...\` ($(locale_starter_note "$DEFAULT_LOCALE"))"
+LOCALE_GUIDANCE+=$'\n'
+for locale_index in "${!LOCALE_CODES[@]}"; do
+  locale_code="${LOCALE_CODES[$locale_index]}"
+  locale_dir="${LOCALE_DIR_RELS[$locale_index]}"
+  locale_link="${LOCALE_LINK_NAMES[$locale_index]}"
+  locale_note="$(locale_starter_note "$locale_code")"
+  LOCALE_GUIDANCE+="- \`$locale_code\`: \`${locale_dir%/}/\` — \`/$locale_code/docs/...\` (${locale_note}); lookup link: \`$locale_link/\`"
+  LOCALE_GUIDANCE+=$'\n'
+done
+
+JA_DOCS_LINK=""
+JA_DOCS_PATH=""
+if [ "$DEFAULT_LOCALE" = "ja" ]; then
+  JA_DOCS_LINK="docs"
+  JA_DOCS_PATH="$DOCS_DIR_REL"
+else
+  for locale_index in "${!LOCALE_CODES[@]}"; do
+    if [ "${LOCALE_CODES[$locale_index]}" = "ja" ]; then
+      JA_DOCS_LINK="${LOCALE_LINK_NAMES[$locale_index]}"
+      JA_DOCS_PATH="${LOCALE_DIR_RELS[$locale_index]}"
+      break
+    fi
+  done
 fi
 
 # Discover top-level doc categories dynamically
@@ -364,10 +678,18 @@ generate_skill() {
   ensure_symlink "$skill_dir/docs" "$REPO_DOCS_DIR"
   echo "  [$target] Created docs symlink -> $REPO_DOCS_DIR"
 
-  if [ "$HAS_JA" = "true" ]; then
-    ensure_symlink "$skill_dir/docs-ja" "$REPO_DOCS_JA_DIR"
-    echo "  [$target] Created docs-ja symlink -> $REPO_DOCS_JA_DIR"
-  fi
+  for locale_index in "${!LOCALE_CODES[@]}"; do
+    locale_code="${LOCALE_CODES[$locale_index]}"
+    locale_dir="${LOCALE_DIR_RELS[$locale_index]}"
+    locale_link="${LOCALE_LINK_NAMES[$locale_index]}"
+    locale_target="$REPO_ROOT/${PROJECT_PREFIX}${locale_dir}"
+    if [ -d "$ROOT_DIR/$locale_dir" ]; then
+      ensure_symlink "$skill_dir/$locale_link" "$locale_target"
+      echo "  [$target] Created $locale_link symlink for $locale_code -> $locale_target"
+    else
+      echo "  [$target] Skipping $locale_code link; configured directory not found at $ROOT_DIR/$locale_dir"
+    fi
+  done
 
   cat > "$skill_dir/SKILL.md" << SKILLEOF
 ---
@@ -383,7 +705,7 @@ argument-hint: "[-u|--update] [topic keyword, e.g., 'configuration', 'sidebar', 
 # $PROJECT_NAME Documentation Reference
 
 Look up documentation from the $PROJECT_NAME project for $assistant_label.
-Documentation base path: \`src/content/docs\` (relative to the project root: \`$MAIN_PROJECT_DIR\`)
+Documentation base path: \`$DOCS_DIR_REL/\` (relative to the project root: \`$MAIN_PROJECT_DIR\`)
 
 ## Mode Detection
 
@@ -396,7 +718,7 @@ Strip the flag from the remaining argument to get the topic keyword.
 
 ## Lookup Mode (default)
 
-1. Find the relevant article(s) from the \`docs/\` directory based on the topic
+1. Find the relevant article(s) from the default \`docs/\` directory or one of the configured locale links listed below based on the topic
 2. Read ONLY the specific article(s) you need — do NOT load all articles at once
 3. Apply the information from the article when answering the user's question
 4. Mention the source article path so the user can find it for further reading
@@ -409,7 +731,7 @@ The user has new information and wants to add or update documentation in this re
 
 1. **Understand the new info**: Ask the user what they learned or want to
    document. The topic keyword (if provided) hints at the subject area.
-2. **Find existing docs**: Search the \`docs/\` directory for articles related to
+2. **Find existing docs**: Search the default \`docs/\` directory or the exact configured locale link for articles related to
    the topic. Read them to understand what is already covered.
 3. **Decide create vs update**: If an existing article covers the topic, update
    it. Otherwise, create a new \`.mdx\` file in the appropriate subdirectory.
@@ -422,10 +744,14 @@ The user has new information and wants to add or update documentation in this re
      \`<Danger>\`, \`<HtmlPreview>\`) where appropriate.
    - For live demos, use \`<HtmlPreview>\` with \`js\`/\`displayJs\` props.
    - Link to other docs using relative paths with \`.mdx\` extension.
-5. **Update Japanese docs**: Create or update the corresponding file under
-   \`docs-ja/\` mirroring the English directory structure. Keep code blocks,
-   Mermaid diagrams, and \`<HtmlPreview>\` blocks identical — only translate
-   surrounding prose. Exception: pages with \`generated: true\` skip translation.
+5. **Update configured locale docs**: For every additional locale listed below,
+   create or update the corresponding file under its exact configured directory,
+   mirroring the default directory structure. Keep code blocks, Mermaid
+   diagrams, and \`<HtmlPreview>\` blocks identical — only translate surrounding
+   prose. The \`ja\` locale, when present, uses Japanese translation
+   conventions. Other non-EN locales currently contain English placeholder prose
+   pending translation; do not claim they are already translated. Exception:
+   pages with \`generated: true\` skip translation.
 6. **Format**: ${FORMAT_STEP}
 7. **Verify**: ${VERIFY_STEP}
 
@@ -439,15 +765,27 @@ ${DOC_TREE}\`\`\`
 Browse the \`docs/\` directory to discover available articles. Each \`.mdx\` file
 has YAML frontmatter with \`title\` and \`description\` fields that help identify
 the right article to read.
+
+## Configured Locales
+
+The current locale map from \`zfb.config.ts\` is:
+
+$LOCALE_GUIDANCE
+
+Only these configured directories are current locale roots. Do not discover
+additional roots with a \`src/content/docs-*\` glob: versioned trees such as
+\`docs-v1\` or \`docs-v1-ja\` are snapshots, not current locales.
 SKILLEOF
 
-  if [ "$HAS_JA" = "true" ]; then
+  if [ -n "$JA_DOCS_LINK" ]; then
     cat >> "$skill_dir/SKILL.md" << JAEOF
 
 ## Japanese Documentation
 
-Japanese translations are available under \`docs-ja/\`. When the user is working
-in Japanese or asks for Japanese content, prefer articles from \`docs-ja/\`.
+Japanese translations are available under \`$JA_DOCS_LINK/\` (configured path
+\`$JA_DOCS_PATH\`). When the user is working in Japanese or asks for Japanese
+content, prefer articles from \`$JA_DOCS_LINK/\`. This section exists only
+because the config map contains the \`ja\` locale.
 JAEOF
   fi
 
@@ -464,7 +802,7 @@ JAEOF
 # (zudolab/zudo-doc#3156). Discovery walks the target's own project skills
 # directory dynamically -- not a hard-coded list, so it stays correct as
 # sites add skills. Sources resolve through MAIN_PROJECT_DIR, not ROOT_DIR,
-# the same way the generated skill's docs/docs-ja symlinks do (see the
+# the same way the generated skill's docs and configured-locale symlinks do (see the
 # REPO_ROOT/MAIN_PROJECT_DIR comment above) so the links survive worktree
 # removal. Target-local only: each target walks only its own
 # ".$target/skills/" -- a missing directory is a silent no-op, and there is
