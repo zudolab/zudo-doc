@@ -152,6 +152,16 @@ function generate() {
   });
 }
 
+function listFiles(root: string, relativeRoot = ""): string[] {
+  const files: string[] = [];
+  for (const entry of fs.readdirSync(path.join(root, relativeRoot), { withFileTypes: true })) {
+    const relativePath = path.join(relativeRoot, entry.name);
+    if (entry.isDirectory()) files.push(...listFiles(root, relativePath));
+    else files.push(relativePath);
+  }
+  return files.sort();
+}
+
 describe("generateCodexResourcesDocs", () => {
   beforeEach(() => {
     createFixture();
@@ -191,6 +201,81 @@ describe("generateCodexResourcesDocs", () => {
     expect(overview).toContain(
       '<CategoryNav categories={["codex-agents-md","codex-config","codex-agents","codex-hooks","codex-rules","codex-skills"]} />',
     );
+  });
+
+  it("emits one localized index per present category without copying body pages", () => {
+    const localeDir = path.join(tmpDir, "docs-ja");
+    generateCodexResourcesDocs({
+      codexDir,
+      projectRoot: tmpDir,
+      scanRoot: tmpDir,
+      docsDir,
+      locales: { ja: { dir: localeDir } },
+      defaultLocale: "en",
+      translations: {
+        ja: {
+          "resource.codexAgentsMd.label": "AGENTS.md",
+          "resource.codexAgentsMd.description": "Codex 向けのプロジェクト指示",
+          "resource.codexConfig.label": "設定",
+          "resource.codexConfig.description": "config.toml とプロファイル",
+          "resource.codexAgents.label": "エージェント",
+          "resource.codexAgents.description": "カスタムサブエージェント",
+          "resource.codexHooks.label": "フック",
+          "resource.codexHooks.description": "ライフサイクルフック",
+          "resource.codexRules.label": "ルール",
+          "resource.codexRules.description": "コマンド承認ルール",
+          "resource.codexSkills.label": "スキル",
+          "resource.codexSkills.description": "スキルパッケージ",
+          "resource.codex.title": "Codex",
+          "resource.codex.description": "OpenAI Codex の設定リファレンス。",
+          "resource.resources": "リソース",
+        },
+      },
+    });
+
+    expect(listFiles(localeDir)).toEqual([
+      "codex-agents-md/index.mdx",
+      "codex-agents/index.mdx",
+      "codex-config/index.mdx",
+      "codex-hooks/index.mdx",
+      "codex-rules/index.mdx",
+      "codex-skills/index.mdx",
+      "codex/index.mdx",
+    ]);
+    const category = matter(fs.readFileSync(
+      path.join(localeDir, "codex-config", "index.mdx"),
+      "utf8",
+    ));
+    expect(category.data.title).toBe("設定");
+    expect(category.data.description).toBe("config.toml とプロファイル");
+    expect(category.data.category_no_page).toBe(true);
+    expect(category.data.generated).toBe(true);
+
+    const overview = fs.readFileSync(path.join(localeDir, "codex", "index.mdx"), "utf8");
+    expect(overview).toContain("## リソース");
+    expect(overview).not.toContain("resource.");
+    expect(fs.existsSync(path.join(localeDir, "codex-agents", "reviewer.mdx"))).toBe(false);
+  });
+
+  it("falls back to English literals instead of leaking resource keys", () => {
+    const localeDir = path.join(tmpDir, "docs-fr");
+    generateCodexResourcesDocs({
+      codexDir,
+      projectRoot: tmpDir,
+      scanRoot: tmpDir,
+      docsDir,
+      locales: { fr: { dir: localeDir } },
+      defaultLocale: "fr",
+      translations: { fr: {} },
+    });
+
+    for (const file of listFiles(localeDir)) {
+      expect(fs.readFileSync(path.join(localeDir, file), "utf8")).not.toContain("resource.");
+    }
+    expect(matter(fs.readFileSync(
+      path.join(localeDir, "codex-skills", "index.mdx"),
+      "utf8",
+    )).data.title).toBe("Skills");
   });
 
   it("emits formatter-stable frontmatter scalars", () => {
