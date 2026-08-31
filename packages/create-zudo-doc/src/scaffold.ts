@@ -8,13 +8,18 @@ import { composeFeatures } from "./compose.js";
 import { featureModules } from "./features/index.js";
 import {
   capitalize,
-  getSecondaryLang,
   hasAncestorPnpmWorkspace,
   pmRunCommand,
 } from "./utils.js";
-import { resolveLocalePlan } from "./locale-plan.js";
+import {
+  resolveLocalePlan,
+  type LocalePlan,
+} from "./locale-plan.js";
 
-export { getSecondaryLang };
+// Kept as a compatibility export from the pre-list API. Internal scaffold
+// emitters consume the resolved LocalePlan directly; see utils.ts for the
+// deprecated helper implementation.
+export { getSecondaryLang } from "./utils.js";
 
 /**
  * TypeScript mirror of `DEFAULT_SKILL_NAME` in `scripts/setup-doc-skill.sh`
@@ -438,43 +443,39 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     primaryInstallationContent,
   );
 
-  // When i18n is ON, place secondary language content
-  if (choices.features.includes("i18n")) {
-    const secondaryLang = getSecondaryLang(defaultLang);
-    const secondaryDir = `src/content/docs-${secondaryLang}`;
-    await fs.ensureDir(path.join(targetDir, secondaryDir));
+  // When i18n is ON, place every additional locale's content in the canonical
+  // input order. Japanese gets the translated starter prose; all other
+  // locales deliberately use the existing English placeholder until a
+  // translation is authored.
+  for (const locale of localePlan.additionalLangs) {
+    const localeDir = `src/content/docs-${locale}`;
+    await fs.ensureDir(path.join(targetDir, localeDir));
 
-    const secondaryContent =
-      secondaryLang === "ja"
+    const localeContent =
+      locale === "ja"
         ? STARTER_CONTENT_JA()
         : STARTER_CONTENT_EN(escapedName);
     await fs.outputFile(
-      path.join(targetDir, `${secondaryDir}/getting-started/index.mdx`),
-      secondaryContent,
+      path.join(targetDir, `${localeDir}/getting-started/index.mdx`),
+      localeContent,
     );
 
-    // Secondary language child docs under getting-started/
-    const secondaryIntroductionContent =
-      secondaryLang === "ja"
+    // Additional-locale child docs under getting-started/
+    const localeIntroductionContent =
+      locale === "ja"
         ? STARTER_CHILD_INTRODUCTION_JA(escapedName)
         : STARTER_CHILD_INTRODUCTION_EN(escapedName);
     await fs.outputFile(
-      path.join(
-        targetDir,
-        `${secondaryDir}/getting-started/introduction.mdx`,
-      ),
-      secondaryIntroductionContent,
+      path.join(targetDir, `${localeDir}/getting-started/introduction.mdx`),
+      localeIntroductionContent,
     );
-    const secondaryInstallationContent =
-      secondaryLang === "ja"
+    const localeInstallationContent =
+      locale === "ja"
         ? STARTER_CHILD_INSTALLATION_JA()
         : STARTER_CHILD_INSTALLATION_EN();
     await fs.outputFile(
-      path.join(
-        targetDir,
-        `${secondaryDir}/getting-started/installation.mdx`,
-      ),
-      secondaryInstallationContent,
+      path.join(targetDir, `${localeDir}/getting-started/installation.mdx`),
+      localeInstallationContent,
     );
   }
 
@@ -509,38 +510,35 @@ export async function scaffold(choices: UserChoices): Promise<void> {
       }
     }
 
-    if (choices.features.includes("i18n")) {
-      const secondaryLang = getSecondaryLang(defaultLang);
+    for (const locale of localePlan.additionalLangs) {
       if (packageSlugs.length === 0) {
-        const secondaryChangelogContent =
-          secondaryLang === "ja"
-            ? CHANGELOG_CONTENT_JA()
-            : CHANGELOG_CONTENT_EN();
+        const localeChangelogContent =
+          locale === "ja" ? CHANGELOG_CONTENT_JA() : CHANGELOG_CONTENT_EN();
         await fs.outputFile(
           path.join(
             targetDir,
-            `src/content/docs-${secondaryLang}/changelog/index.mdx`,
+            `src/content/docs-${locale}/changelog/index.mdx`,
           ),
-          secondaryChangelogContent,
+          localeChangelogContent,
         );
       } else {
-        const secondaryLandingContent =
-          secondaryLang === "ja"
+        const localeLandingContent =
+          locale === "ja"
             ? CHANGELOG_LANDING_CONTENT_JA()
             : CHANGELOG_LANDING_CONTENT_EN();
-        const secondaryDir = `src/content/docs-${secondaryLang}/changelog`;
+        const localeDir = `src/content/docs-${locale}/changelog`;
         await fs.outputFile(
-          path.join(targetDir, `${secondaryDir}/index.mdx`),
-          secondaryLandingContent,
+          path.join(targetDir, `${localeDir}/index.mdx`),
+          localeLandingContent,
         );
         for (const [index, slug] of packageSlugs.entries()) {
-          const secondaryPackageContent =
-            secondaryLang === "ja"
+          const localePackageContent =
+            locale === "ja"
               ? CHANGELOG_PACKAGE_CONTENT_JA(slug, index + 1)
               : CHANGELOG_PACKAGE_CONTENT_EN(slug, index + 1);
           await fs.outputFile(
-            path.join(targetDir, `${secondaryDir}/${slug}/index.mdx`),
-            secondaryPackageContent,
+            path.join(targetDir, `${localeDir}/${slug}/index.mdx`),
+            localePackageContent,
           );
         }
       }
@@ -550,13 +548,13 @@ export async function scaffold(choices: UserChoices): Promise<void> {
   // 3. Generate the one config file. There is no more src/config/settings.ts —
   // every user choice rides straight into zudoDoc({...}) in zfb.config.ts
   // (locked decision #2653 #2 — diff-from-defaults single config).
-  const zfbConfigContent = generateZfbConfig(choices);
+  const zfbConfigContent = generateZfbConfig(choices, localePlan);
   await fs.outputFile(
     path.join(targetDir, "zfb.config.ts"),
     zfbConfigContent,
   );
 
-  const pkg = generatePackageJson(choices);
+  const pkg = generatePackageJson(choices, localePlan);
   await fs.outputFile(
     path.join(targetDir, "package.json"),
     JSON.stringify(pkg, null, 2) + "\n",
@@ -604,9 +602,9 @@ export async function scaffold(choices: UserChoices): Promise<void> {
   // deterministic (deriveDocSkillName(), matching DEFAULT_SKILL_NAME in
   // scripts/setup-doc-skill.sh), so these entries match the directory the
   // script creates. The setup script can target either .claude or .codex, so
-  // ignore both possible generated directories. The docs-ja symlink only
-  // exists for i18n projects (the script creates it conditionally), so gate
-  // those lines on i18n.
+  // ignore both possible generated directories. Additional-locale symlinks
+  // only exist for i18n projects (the script creates them conditionally), so
+  // gate those lines on i18n and mirror the complete resolved locale plan.
   if (choices.features.includes("skillSymlinker")) {
     const skillName = deriveDocSkillName(choices.projectName);
     gitignoreLines.push(
@@ -616,11 +614,13 @@ export async function scaffold(choices: UserChoices): Promise<void> {
       `.codex/skills/${skillName}/SKILL.md`,
       `.codex/skills/${skillName}/docs`,
     );
-    if (choices.features.includes("i18n")) {
-      gitignoreLines.push(
-        `.claude/skills/${skillName}/docs-ja`,
-        `.codex/skills/${skillName}/docs-ja`,
-      );
+    if (localePlan.i18n) {
+      for (const locale of localePlan.additionalLangs) {
+        gitignoreLines.push(
+          `.claude/skills/${skillName}/docs-${locale}`,
+          `.codex/skills/${skillName}/docs-${locale}`,
+        );
+      }
     }
     gitignoreLines.push("");
   }
@@ -680,13 +680,22 @@ export async function scaffold(choices: UserChoices): Promise<void> {
   await fs.outputFile(path.join(targetDir, "CLAUDE.md"), claudeContent);
 
   // 4. Compose features (copy feature files + inject into shared files)
-  await composeFeatures(targetDir, choices, featureModules, featuresDir);
+  await composeFeatures(
+    targetDir,
+    choices,
+    featureModules,
+    featuresDir,
+    localePlan,
+  );
 
   // Ensure content directories exist
   await fs.ensureDir(path.join(targetDir, "src/content/docs"));
 }
 
-function generatePackageJson(choices: UserChoices) {
+function generatePackageJson(
+  choices: UserChoices,
+  localePlan: LocalePlan,
+) {
   // Intentionally absent from scaffolded deps:
   //   @takazudo/zudo-doc-md-plugins — the legacy JS remark/rehype pipeline it
   //   would have named was retired outright (packages/md-plugins/ deleted,
@@ -1088,9 +1097,8 @@ function generatePackageJson(choices: UserChoices) {
     // path, not the default `<pm> dev`.
     let devHistoryScript =
       "doc-history-server --port 4322 --content-dir src/content/docs";
-    if (choices.features.includes("i18n")) {
-      const secondaryLang = getSecondaryLang(choices.defaultLang);
-      devHistoryScript += ` --locale ${secondaryLang}:src/content/docs-${secondaryLang}`;
+    for (const locale of localePlan.additionalLangs) {
+      devHistoryScript += ` --locale ${locale}:src/content/docs-${locale}`;
     }
     scripts["dev:history"] = devHistoryScript;
   }

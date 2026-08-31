@@ -1,5 +1,7 @@
 import type { UserChoices } from "./prompts.js";
-import { capitalize, getSecondaryLang, getLangLabel } from "./utils.js";
+import type { LocalePlan } from "./locale-plan.js";
+import { resolveLocalePlan } from "./locale-plan.js";
+import { capitalize, getLangLabel } from "./utils.js";
 
 /**
  * Programmatically generate the ONE `zfb.config.ts` a scaffolded project
@@ -157,7 +159,10 @@ function serializeValue(value: unknown, indent: number): string {
 // old settings-gen.ts had, but as a plain object instead of emitted lines.
 // ---------------------------------------------------------------------------
 
-function buildDesiredConfig(choices: UserChoices): Record<string, unknown> {
+function buildDesiredConfig(
+  choices: UserChoices,
+  localePlan: LocalePlan,
+): Record<string, unknown> {
   const desired: Record<string, unknown> = {};
 
   // siteName is ALWAYS emitted (locked spec — the one field you almost
@@ -186,15 +191,17 @@ function buildDesiredConfig(choices: UserChoices): Record<string, unknown> {
   desired.themePackSwitcher = choices.features.includes("themePackSwitcher");
 
   // ── i18n ──────────────────────────────────────────────────────────────
-  desired.defaultLocale = choices.defaultLang ?? "en";
-  if (choices.features.includes("i18n")) {
-    const secondaryLang = getSecondaryLang(choices.defaultLang);
-    desired.locales = {
-      [secondaryLang]: {
-        label: getLangLabel(secondaryLang),
-        dir: `src/content/docs-${secondaryLang}`,
-      },
-    };
+  desired.defaultLocale = localePlan.defaultLang;
+  if (localePlan.i18n) {
+    desired.locales = Object.fromEntries(
+      localePlan.additionalLangs.map((locale) => [
+        locale,
+        {
+          label: getLangLabel(locale),
+          dir: `src/content/docs-${locale}`,
+        },
+      ]),
+    );
   } else {
     desired.locales = {};
   }
@@ -392,7 +399,7 @@ function buildDesiredConfig(choices: UserChoices): Record<string, unknown> {
     if (choices.features.includes("search")) {
       items.push({ type: "component", component: "search" });
     }
-    if (choices.features.includes("i18n")) {
+    if (localePlan.i18n) {
       items.push({ type: "component", component: "language-switcher" });
     }
     desired.headerRightItems = items;
@@ -472,8 +479,17 @@ export function orderDesiredKeys(desiredKeys: readonly string[]): string[] {
  * Generate the full `zfb.config.ts` source: `defineConfig(zudoDoc({ ... }))`
  * with only the diff-from-defaults fields.
  */
-export function generateZfbConfig(choices: UserChoices): string {
-  const desired = buildDesiredConfig(choices);
+export function generateZfbConfig(
+  choices: UserChoices,
+  localePlan: LocalePlan = resolveLocalePlan({
+    defaultLang: choices.defaultLang,
+    additionalLangs: choices.additionalLangs,
+    i18n: choices.features.includes("i18n"),
+    i18nExplicitlyDisabled:
+      choices.explicitlyDisabledFeatures?.includes("i18n"),
+  }),
+): string {
+  const desired = buildDesiredConfig(choices, localePlan);
 
   const emittedEntries: Array<[string, unknown]> = [];
   for (const key of orderDesiredKeys(Object.keys(desired))) {

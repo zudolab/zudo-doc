@@ -171,7 +171,13 @@ export function pmRunCommand(
     : `${pm} ${script}`;
 }
 
-/** Determine the secondary language code when i18n is enabled. */
+/**
+ * Determine the first additional language code for legacy callers.
+ *
+ * @deprecated Internal emitters now consume the complete LocalePlan. Keep
+ * this compatibility export for existing package consumers that still need
+ * the former one-secondary-language helper.
+ */
 export function getSecondaryLang(defaultLang: string): string {
   return resolveLocalePlan({ defaultLang, i18n: true }).additionalLangs[0]!;
 }
