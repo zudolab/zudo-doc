@@ -1,7 +1,12 @@
 import path from "path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
-import { parseArgs, printHelp, validateArgs } from "./cli.js";
+import {
+  layerAdditionalLangs,
+  parseArgs,
+  printHelp,
+  validateArgs,
+} from "./cli.js";
 import { FEATURES } from "./constants.js";
 import { loadPreset } from "./preset.js";
 import { runPrompts, type PartialChoices } from "./prompts.js";
@@ -46,6 +51,10 @@ async function main() {
   // CLI args override preset values
   if (args.name) prefilled.projectName = args.name;
   if (args.lang) prefilled.defaultLang = args.lang;
+  prefilled.additionalLangs = layerAdditionalLangs(
+    prefilled.additionalLangs,
+    args.additionalLangs,
+  );
   if (args.colorSchemeMode) prefilled.colorSchemeMode = args.colorSchemeMode;
   if (args.scheme) {
     prefilled.colorSchemeMode = prefilled.colorSchemeMode ?? "single";

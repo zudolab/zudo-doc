@@ -2,7 +2,21 @@ import { describe, it, expect, afterEach } from "vitest";
 import fs from "fs-extra";
 import os from "os";
 import path from "path";
-import { hasAncestorPnpmWorkspace, pmRunCommand } from "../utils.js";
+import {
+  getSecondaryLang,
+  hasAncestorPnpmWorkspace,
+  pmRunCommand,
+} from "../utils.js";
+
+describe("getSecondaryLang — canonical legacy locale inference", () => {
+  it.each([
+    [" EN ", "ja"],
+    ["JA", "en"],
+    ["pt-BR", "en"],
+  ])("normalizes %j and infers %s", (primary, expected) => {
+    expect(getSecondaryLang(primary)).toBe(expected);
+  });
+});
 
 describe("pmRunCommand — package.json script invocation per package manager", () => {
   it.each([
