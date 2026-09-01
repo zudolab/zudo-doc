@@ -18,11 +18,11 @@ When the component is rendered through the route-bound MDX binding, the active p
 | `htmlPreview.viewport.label` | Viewport preset group `aria-label` |
 | `htmlPreview.source.show` | Collapsed source toggle label |
 | `htmlPreview.source.hide` | Expanded source toggle label |
-| `htmlPreview.iframe.title` | iframe title when `title` is omitted |
+| `htmlPreview.iframe.title` | Outer iframe title when the visible `title` is omitted; also the generated document-title fallback when neither an author `<title>` nor a nonblank `title` is supplied |
 
 The lookup order is requested locale → configured default locale → package English table → raw key. A custom locale may therefore supply only the keys it translates.
 
-The authored `title` prop remains in control of the title bar and iframe title when supplied. The technical code-panel headings (`HTML`, `CSS`, `Head`, and `JS`) are intentionally fixed; these translation keys do not localize them.
+The authored `title` prop controls the title bar. A nonblank value also supplies the generated iframe document title when no author `<title>` is present in the merged `head`; an author title remains authoritative. The technical code-panel headings (`HTML`, `CSS`, `Head`, and `JS`) are intentionally fixed; these translation keys do not localize them.
 
 Pass a partial `labels` object to customize one preview. Omitted keys, including keys set to `undefined`, retain their route-localized values instead of erasing them:
 
@@ -37,6 +37,38 @@ Pass a partial `labels` object to customize one preview. Omitted keys, including
 ````
 
 For a direct non-route-bound component import, omitted `labels` keys use the built-in English defaults. Pass the same partial object (or all seven keys) when that use needs another language.
+
+## Preview Document Metadata
+
+Every generated preview document receives a nonempty `<html lang>` value. When trusted `head` does not own an opening `<title>`, the component also adds a nonempty document `<title>`. The `lang` value is selected according to how the component is used:
+
+| Use | Language precedence |
+|-----|---------------------|
+| Route-bound MDX `<HtmlPreview>` wrapper | nonblank explicit `lang` → active route locale → `en` |
+| Direct low-level `HtmlPreview` import | nonblank explicit `lang` → `en` |
+
+Blank or whitespace-only `lang` values are treated as omitted. Any nonblank language tag is accepted and serialized with attribute-context escaping; the value is metadata for the generated preview document's `<html lang>`, not the language of the outer page.
+
+The generated document title follows this order:
+
+1. A trusted author opening `<title>` in the merged `head` remains caller-owned and authoritative; no generated title is added.
+2. A nonblank visible `title` prop supplies the generated document title.
+3. The merged localized/per-call `labels.preview` value supplies the generated document title.
+4. The literal `Preview` value is used as the final fallback.
+
+Blank or whitespace-only `title` and `labels.preview` values fall through to the next choice. The public API intentionally has no separate `documentTitle` prop: use `head` when the author needs to own the document's `<title>`. Only generated metadata is context-escaped (`lang` for an HTML attribute and the generated title for HTML text); free-form `head` remains trusted caller content and is preserved as supplied.
+
+The same metadata precedence and escaping apply to the complete eager preview and to a preview mounted after `loading="visible"` opens its visibility gate. The visible-mode server reservation contains no preview document until that mount occurs.
+
+```mdx
+<HtmlPreview
+  lang="fr-CA"
+  title="Visible title"
+  labels={{ preview: "Localized fallback" }}
+  head={'<title>Author title</title>'}
+  html="<p>Language and title metadata are serialized.</p>"
+/>
+```
 
 ## Deferred Loading
 
@@ -393,12 +425,13 @@ The following table describes the route-bound MDX `<HtmlPreview>` wrapper. `load
 | `html` | string | (required) | HTML content to render inside the preview iframe |
 | `loading` | `"eager" \| "visible"` | `"eager"` | Wrapper lifecycle policy. `"visible"` defers the preview subtree until viewport intersection; it is not forwarded as the native iframe `loading` attribute |
 | `css` | string | `undefined` | CSS styles applied inside the preview iframe |
-| `head` | string | `undefined` | Raw HTML injected into `<head>` (links, meta, fonts) |
+| `head` | string | `undefined` | Trusted raw HTML injected into `<head>` (links, meta, fonts). An opening author `<title>` remains caller-owned and takes precedence over generated metadata |
 | `js` | string | `undefined` | JavaScript executed inside the preview iframe |
-| `title` | string | `undefined` | Title displayed in the preview header bar |
+| `title` | string | `undefined` | Title displayed in the preview header bar and used for the generated iframe document title when no author `<title>` is present |
+| `lang` | string | route locale (`en` for direct use) | Language tag for the generated preview document's `<html lang>`. Bound use applies nonblank explicit `lang` → active route locale → `en`; direct use applies nonblank explicit `lang` → `en`; blank values fall through |
 | `height` | number | auto | Fixed iframe height in pixels. When omitted, height auto-adjusts to content |
 | `defaultOpen` | boolean | `false` | Show the source code panel expanded by default |
-| `labels` | `Partial<HtmlPreviewLabels>` | `undefined` | Per-call labels for viewport, source, and iframe controls. Missing keys retain route-locale labels (or English defaults for direct use) |
+| `labels` | `Partial<HtmlPreviewLabels>` | `undefined` | Per-call labels for viewport, source, and iframe controls. Missing keys retain route-locale labels (or English defaults for direct use); `preview` also supplies the generated iframe document title when higher-priority title sources are absent |
 | `showSource` | boolean | `true` | Render the source toggle and code panel. `false` removes them structurally but keeps the iframe; `defaultOpen` then has no effect |
 | `showViewportControls` | boolean | `true` | Render Mobile / Tablet / Full preset controls. `false` keeps Full width and the drag-resize affordance |
 | `fullHeight` | boolean | `false` | Makes the preview document's `html`/`body` stretch to 100% height. Interacts with auto-height — always pair with an explicit `height` |
