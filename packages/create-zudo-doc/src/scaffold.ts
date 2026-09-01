@@ -904,13 +904,12 @@ function generatePackageJson(
     // Parser fixes also ship in zfb-md-wasm; runtime and the Cloudflare adapter
     // have no package-specific behavior change. Public exports and engine
     // requirements stay unchanged, so a fresh scaffold needs no migration.
-    // 2.14.1: bugfix only — zfb drops the diagnostic-only
-    // ZFB_TAILWIND_SOURCES subprocess payload to avoid oversized Tailwind
-    // errors. The runtime, adapter, and md-wasm packages move in lockstep
-    // without public API changes, so a fresh scaffold needs no migration.
-    "@takazudo/zfb": "2.14.1",
-    "@takazudo/zfb-runtime": "2.14.1",
-    "@takazudo/zfb-md-wasm": "2.14.1",
+    // 2.14.2: lockstep release metadata and rebuilt md-wasm artifacts only.
+    // Public APIs, exports, config defaults, engine requirements, and shipped
+    // wasm byte sizes stay unchanged, so a fresh scaffold needs no migration.
+    "@takazudo/zfb": "2.14.2",
+    "@takazudo/zfb-runtime": "2.14.2",
+    "@takazudo/zfb-md-wasm": "2.14.2",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
