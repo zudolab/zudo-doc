@@ -37,8 +37,9 @@ export interface HtmlPreviewProps {
    * `iframe.contentDocument.body.scrollHeight` and resizes the iframe to
    * fit; `fullHeight` makes the body's height derive FROM the iframe's own
    * height instead, which creates a feedback loop when the iframe height is
-   * itself derived from the body. This component does not attempt to
-   * detect or break that loop — always set `height` alongside `fullHeight`.
+   * itself derived from the body. Auto-height is therefore disabled when
+   * `fullHeight` is used without a fixed height. Pair both props when the
+   * preview needs a height other than the default 200px reservation.
    *
    * @default false
    */
@@ -301,6 +302,7 @@ export function HtmlPreview({
       labels={labels}
       showSource={showSource}
       showViewportControls={showViewportControls}
+      autoHeight={height == null && !fullHeight}
       sandbox={sandboxValue}
       syncDelay={syncDelay}
       codeBlocks={codeBlocks}

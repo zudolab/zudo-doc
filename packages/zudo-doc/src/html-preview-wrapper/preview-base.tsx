@@ -1,9 +1,13 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
 
-import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import type { VNode } from "preact";
 import { HighlightedCode } from "./highlighted-code.js";
+import {
+  createPreviewAutoHeightController,
+  type PreviewAutoHeightController,
+} from "./preview-auto-height.js";
 
 export interface CodeBlockData {
   language: string;
@@ -38,6 +42,8 @@ export interface PreviewBaseProps {
   labels?: Partial<HtmlPreviewLabels>;
   showSource?: boolean;
   showViewportControls?: boolean;
+  /** Internal opt-out for documents whose height derives from the iframe. */
+  autoHeight?: boolean;
 }
 
 type Viewport = { label: string; width: string };
@@ -94,6 +100,7 @@ export function PreviewBase({
   labels,
   showSource,
   showViewportControls,
+  autoHeight,
 }: PreviewBaseProps): VNode {
   const resolvedLabels = resolveLabels(labels);
   const sourceVisible = showSource ?? true;
@@ -107,45 +114,49 @@ export function PreviewBase({
   );
   const [iframeHeight, setIframeHeight] = useState(height ?? 200);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-
-  const syncHeight = useCallback(() => {
-    const iframe = iframeRef.current;
-    if (!iframe || height != null) return;
-    try {
-      const doc = iframe.contentDocument;
-      if (doc?.body) {
-        const h = doc.body.scrollHeight;
-        if (h > 0) setIframeHeight(Math.max(h + 16, 200));
-      }
-    } catch {
-      // cross-origin or not yet loaded — ignore
-    }
-  }, [height]);
+  const iframeHeightRef = useRef(iframeHeight);
+  const autoHeightControllerRef = useRef<PreviewAutoHeightController | null>(
+    null,
+  );
+  iframeHeightRef.current = iframeHeight;
+  const autoHeightEnabled = (autoHeight ?? true) && height == null;
 
   useEffect(() => {
     const iframe = iframeRef.current;
-    if (!iframe) return;
-    let timeoutId: ReturnType<typeof setTimeout>;
-    const onLoad = () => {
-      if (syncDelay > 0) {
-        timeoutId = setTimeout(syncHeight, syncDelay);
-      } else {
-        syncHeight();
-      }
-    };
+    if (!iframe || !autoHeightEnabled) return;
+    const controller = createPreviewAutoHeightController({
+      iframe,
+      syncDelay,
+      getCurrentHeight: () => iframeHeightRef.current,
+      setHeight: (nextHeight) => {
+        iframeHeightRef.current = nextHeight;
+        setIframeHeight(nextHeight);
+      },
+    });
+    autoHeightControllerRef.current = controller;
+    const onLoad = () => controller.handleLoad();
     iframe.addEventListener("load", onLoad);
+    try {
+      if (iframe.contentDocument?.readyState === "complete") {
+        controller.handleLoad();
+      }
+    } catch {
+      // Opaque documents remain a safe no-op and may still emit a later load.
+    }
     return () => {
       iframe.removeEventListener("load", onLoad);
-      clearTimeout(timeoutId);
+      controller.destroy();
+      if (autoHeightControllerRef.current === controller) {
+        autoHeightControllerRef.current = null;
+      }
     };
-  }, [syncHeight, srcdoc, syncDelay]);
+  }, [autoHeightEnabled, srcdoc, syncDelay]);
 
   // Re-measure height when viewport changes (content reflows)
   useEffect(() => {
-    if (height != null) return;
-    const id = setTimeout(syncHeight, 150);
-    return () => clearTimeout(id);
-  }, [activeViewport, syncHeight, height]);
+    if (!autoHeightEnabled) return;
+    autoHeightControllerRef.current?.schedule();
+  }, [activeViewport, autoHeightEnabled]);
 
   // Without viewport controls there are no presets to select, but the
   // existing horizontal drag-resize affordance remains available.
@@ -199,7 +210,7 @@ export function PreviewBase({
             class="block w-full border-none bg-[#fff] rounded shadow-[0_1px_3px_color-mix(in_srgb,var(--color-fg)_8%,transparent)]"
             srcDoc={srcdoc}
             sandbox={sandbox}
-            style={{ height: iframeHeight }}
+            style={{ height: height ?? iframeHeight }}
             title={title ?? resolvedLabels.preview}
           />
         </div>
