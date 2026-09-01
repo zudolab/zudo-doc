@@ -372,6 +372,22 @@ Enable mermaid diagram rendering in markdown.
 
 Default: `true`
 
+### transclude
+
+Enable `:::include{file="…"}` transclusion. zudo-doc passes the enabled boolean to zfb as the object-typed `markdown.features.transclude: {}` setting; configure it here rather than replacing the package-owned Markdown feature block.
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    transclude: true,
+  }),
+);
+```
+
+Type: `boolean` · Default: `false`
+
+See [Transclude](../markdown-features/transclude.mdx) for the directive syntax, filesystem restrictions, and build-fatal failure behavior.
+
 ### math
 
 Enable KaTeX math rendering (`$…$`, `$$…$$`, fenced `math`).

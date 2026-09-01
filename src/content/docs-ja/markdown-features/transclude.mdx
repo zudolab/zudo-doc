@@ -1,66 +1,72 @@
 ---
 title: Transclude
-description: ":::include{file=\"…\"} で別ファイルの内容を埋め込みます。zudo-doc では無効（transclude レンダラー未配線）。"
+description: ":::include{file=\"…\"} を使い、Markdown パイプラインの処理前に別の Markdown / MDX ファイルを埋め込みます。"
 sidebar_position: 23
 ---
 
-`transclude` 機能は、`:::include{file="./path.md"}` ディレクティブを介して別ファイルの内容を Markdown ドキュメントに埋め込みます — Obsidian の `![[path]]` ウィキリンク構文ではありません。インクルードされたファイルは Markdown として解析され、その AST がパイプラインの残りが実行される前にマージされます。
+`transclude` は、`:::include{file="./path.md"}` ディレクティブで別の Markdown / MDX ファイルを埋め込む機能です。Obsidian の `![[path]]` ウィキリンク構文とは異なり、`<include>` コンポーネントをレンダリングする仕組みでもありません。mdast の visitor チェーンの先頭で対象ファイルを解析し、その AST を元の文書へ差し込んだあと、通常の Markdown パイプラインで処理します。
 
-:::danger[zudo-doc では無効 — transclude レンダラー未配線]
+:::danger[transclude を有効にしてから include を記述]
 
-`transclude` は zudo-doc の `zfb.config.ts` から省略され**無効化**されています。根本的な理由は、**transclude レンダラーがまだ配線されていない**ことです。ディレクティブを出力に変換する `<include>` コンポーネントが登録されていません。その結果、`:::include{file="…"}` ディレクティブは **SSR レンダリングが 500 を返します**。以下の構文はフェンスコードブロック内にのみ記載されており、このページでライブの `:::include` ディレクティブは記述していません。`zfb.config.ts` の 1 行コメントが、transclude レンダラーが配線され次第の再有効化を示しています。
+`transclude` はデフォルトで無効です。無効なままだと、zfb は解析済みの段落、つまり `Text(":::include")` とそれに続く `MdxTextExpression` を変換せずに残します。式に保持された生の属性文字列 `file="./x.md"` は正しい JavaScript ではないため、コンパイル後の JSX モジュールが壊れ、SSR は 500 を返します。原因は機能が無効なことであり、レンダラー不足ではありません。そもそも `<include>` コンポーネントは設計上存在せず、必要もありません。
+
+ライブディレクティブを書く前に、`zudoDoc({...})` で `transclude: true` を設定してください。パッケージが管理する `markdown.features` ブロックを直接設定してはいけません。
 
 :::
 
 ## 設定
 
-レンダラーが配線されたら、デフォルトで有効化します。オブジェクト型の機能であるため、オプションオブジェクトを渡す必要があります。
+zudo-doc の設定で transclude を有効にします。
 
 ```ts title="zfb.config.ts"
-export default defineConfig({
-  markdown: {
-    features: {
-      transclude: {},
-    },
-  },
-});
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    transclude: true,
+  }),
+);
 ```
 
-インクルードチェーンの最大深度を調整する場合:
+zudo-doc が公開する設定は boolean で、デフォルトは `false` です。一方、zfb の `transclude` はオブジェクト型の Markdown 機能であり、`true` という省略記法を受け付けません。そのため `zudoDoc()` は、有効時に `markdown.features.transclude: {}` へ内部変換します。このショーケースでは設定を有効にしているため、次の例もサイトをビルドするたびに実行されます。
 
-```ts title="zfb.config.ts"
-transclude: { maxDepth: 5 },
-```
+## include の動作例
+
+次の一文は、ページとしてルーティングされない専用の Markdown ファイルから取り込まれています。検証用の目印がビルド後の HTML に現れるため、単にビルドが成功しただけでなく、AST が実際に差し込まれたことまで確認できます。
+
+:::include{file="../../transclude-fixtures/transclude-live-demo-ja.md"}
 
 ## ディレクティブ構文
 
-基本的なインクルード — パスは現在のソースファイルからの相対で解決されます。
+基本の include です。パスは、このディレクティブを記述したソースファイルを基準に解決されます。
 
 ```md
 :::include{file="./snippets/intro.md"}
 ```
 
-ファイルをフェンスコードブロックとしてインクルードする場合:
+ファイルを通常のフェンスコードブロックとして取り込みます。`code=true` を指定してもタイトルバーは付きません。
 
 ```md
 :::include{file="./examples/hello.rs" code=true lang="rust"}
 ```
 
-行範囲をスライスする場合（1 始まり、両端を含む）:
+1 始まりで両端を含む行範囲を指定します。`lines` の値は正確に `N-M` の形式でなければなりません。
 
 ```md
 :::include{file="./src/lib.rs" code=true lang="rust" lines="10-30"}
 ```
 
-## オプション
+ディレクティブにラベルを付けてはいけません。`:::include[Title]{file="./snippet.md"}` は transclude 構文に一致せず、上記と同じ不正な式による SSR エラーを引き起こします。
 
-| オプション | デフォルト | 説明 |
-| --- | --- | --- |
-| `maxDepth` | `5` | インクルードチェーンの最大深度。インクルードされたファイル自身も、この深度まで `:::include` ディレクティブを含めることができます。 |
+## ファイルシステムとエラー処理の制約
 
-## 意図された機能
+- 対象ファイルは実在する必要があり、パスはソースファイルからの相対パスで指定します。絶対パスとエイリアスは使えません。
+- パスを正規化したあとも、対象はプロジェクトルート内に収まっていなければなりません。パストラバーサルでもシンボリックリンクでも、この境界を越えることはできません。
+- transclude の処理に失敗すると、原因が不正なパス、`lines` の範囲、深すぎる再帰、循環参照のいずれであっても、必ずビルドエラーになります。`linkValidation` のような警告のみのモードはありません。
+- include したファイルから別のファイルをさらに include できますが、再帰は深さ 5 までです。循環参照は、この上限に達する前でも必ず検出されます。
+- Markdown にブロック要素として認識させるため、ディレクティブの前後には空行が必要です。
 
-- **チェーン**: インクルードされたファイルは、`maxDepth` までさらに `:::include` ディレクティブを含めることができます。
-- **循環検出**: ファイルが相互にインクルードし合うことによる無限ループを防止します。
-- **パス制限**: 相対パスのみ許可され、プロジェクトルート外への走査は拒否されます。
-- **空行要件**: ディレクティブはブロックレベルのコンテンツとして認識されるために、上下に空行が必要です。
+## ビルドコンテキストが必要
+
+transclude の処理には、ソースファイルのパスとプロジェクトのファイルシステムが必要です。コンテキストを持たない `@takazudo/zfb-md-wasm/render` のパイプラインでは何も起こらず、この機能のテストには使えません。実際の `zfb build` または `zfb dev` を実行し、取り込んだ固有の内容がレンダリング結果に含まれることまで確認してください。
