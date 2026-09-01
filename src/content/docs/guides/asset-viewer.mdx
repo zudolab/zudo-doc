@@ -57,7 +57,7 @@ Root-relative URLs continue to work when the site has a non-root `base`; zudo-do
 
 ## Configuration
 
-The five top-level `zudoDoc()` fields are:
+The six top-level `zudoDoc()` fields are:
 
 | Field | Default | Purpose |
 |-------|---------|---------|
@@ -66,6 +66,7 @@ The five top-level `zudoDoc()` fields are:
 | `assetViewerRoutePrefix` | `"files"` | Choose the viewer-page URL prefix. It must differ from `assetViewerDir`. |
 | `assetViewerExclude` | `[]` | Exclude matching asset-relative glob paths from viewer generation. |
 | `assetViewerIndex` | `false` | Generate the listing page at the viewer route prefix. |
+| `assetViewerIndexing` | `false` | Opt individual viewer-page outputs into search, `llms.txt`, and the sitemap. |
 
 For example, this keeps source maps and drafts available as ordinary public files without generating viewer pages for them:
 
@@ -112,6 +113,33 @@ export default defineConfig(
 ```
 
 `versioned: false` keeps the link out of archived-version routes. Locale-aware navigation adds the active locale prefix automatically. See [Header Navigation](./header-navigation.mdx#properties-versioned) for the full item contract.
+
+## Opting asset pages into indexing
+
+Asset viewer pages stay out of the search index, `llms.txt`, and the sitemap by default. Opt into each output independently with `assetViewerIndexing`:
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    assetViewer: true,
+    assetViewerIndexing: {
+      search: true,
+      llmsTxt: true,
+      sitemap: true,
+    },
+  }),
+);
+```
+
+The setting has the shape `false | { search?: boolean; llmsTxt?: boolean; sitemap?: boolean }` and defaults to `false`. A key is enabled only when it is explicitly `true`, so a partial object leaves every omitted output disabled. `assetViewer: true` is also required; setting an indexing key alone does nothing.
+
+Each key controls one output:
+
+- `search` adds asset viewer pages to `search-index.json`. Their IDs use the `asset:` prefix.
+- `llmsTxt` adds a `## Files` section to `llms.txt` and appends asset pages to `llms-full.txt`. Text-like assets include up to 8 KB of their body, followed by an explicit truncation marker when the body is longer. Binary assets are listed as one-line stubs without a body.
+- `sitemap` adds the `/files/...` viewer routes to the sitemap.
+
+This showcase enables all three keys, so its generated search index, LLM files, and sitemap demonstrate the complete opt-in behavior.
 
 ## Author entry points
 
@@ -198,7 +226,7 @@ Use `pnpm dev:stable` when you are adding or reorganizing files frequently; it u
 
 ## Generated-route behavior
 
-Individual asset viewers are leaf pages, while the optional route-prefix page is an asset listing. Both exist in every configured locale and preserve that locale in generated document and index links: for example, a Japanese reference opens `/ja/files/.../`, not `/files/.../`. The routes stay out of the docs sidebar, search index, `llms.txt`, and sitemap.
+Individual asset viewers are leaf pages, while the optional route-prefix page is an asset listing. Both exist in every configured locale and preserve that locale in generated document and index links: for example, a Japanese reference opens `/ja/files/.../`, not `/files/.../`. The routes stay out of the docs sidebar. They also stay out of the search index, `llms.txt`, and sitemap unless the corresponding `assetViewerIndexing` key is explicitly enabled.
 
 Viewer chrome resolves through the `asset.*` translation namespace, including Details, Type, Fit, and Checker. English and Japanese strings ship with the package; other locales follow the normal translation fallback chain. Override individual strings through `ZudoDocConfig.translations`. To restore the old default-locale-only behavior, add `/${assetViewerRoutePrefix}/` to `defaultLocaleOnlyPrefixes`; see [Internationalization](./i18n.mdx#generated-pages-and-default-locale-bodies).
 

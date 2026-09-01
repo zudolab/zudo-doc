@@ -512,6 +512,16 @@ Default: `false`
 
 See [Asset Viewer](./asset-viewer.mdx#the-assets-index-page) for the listing behavior and header-navigation setup.
 
+### assetViewerIndexing
+
+Independently opt asset viewer pages into the search index, `llms.txt`, and the sitemap. `assetViewer: true` is required; indexing subkeys have no effect when the viewer is disabled.
+
+Type: `false | { search?: boolean; llmsTxt?: boolean; sitemap?: boolean }` · Default: `false`
+
+Each subkey is off unless it is explicitly `true`, including when the setting is a partial object. `search` adds asset pages to `search-index.json` with `asset:`-prefixed IDs. `llmsTxt` adds a `## Files` section to `llms.txt` and appends asset pages to `llms-full.txt`; text-like assets include up to 8 KB of body text and then an explicit truncation marker, while binary assets are one-line stubs with no body. `sitemap` adds the `/files/...` routes.
+
+See [Asset Viewer](./asset-viewer.mdx#opting-asset-pages-into-indexing) for a configuration example. This showcase enables all three subkeys.
+
 ### findInPage
 
 Mount the `FindInPageInit` island (Cmd/Ctrl+F find bar) in the body-end islands.
