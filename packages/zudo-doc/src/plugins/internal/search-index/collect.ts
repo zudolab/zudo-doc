@@ -4,7 +4,8 @@
 // build emitter and the dev middleware — keeping the walk in one place
 // guarantees `pnpm dev` and `pnpm build` produce the same JSON shape.
 
-import { resolve } from "node:path";
+import { readFileSync } from "node:fs";
+import { basename, resolve } from "node:path";
 import {
   collectMdFiles,
   isExcluded,
@@ -12,6 +13,7 @@ import {
   slugToUrl,
   stripMarkdown,
 } from "../../../md-utils/index.js";
+import { collectAssetPageDescriptors } from "../asset-viewer/asset-pages.js";
 import {
   MAX_BODY_LENGTH,
   type SearchIndexConfig,
@@ -58,6 +60,34 @@ function buildEntries(
   return entries;
 }
 
+/** Build search entries for the asset-viewer pages that actually exist. */
+function buildAssetEntries(config: SearchIndexConfig): SearchIndexEntry[] {
+  const { assetScan, projectRoot } = config;
+  if (assetScan === undefined || projectRoot === undefined) return [];
+
+  const descriptors = collectAssetPageDescriptors({
+    projectRoot,
+    assetScan,
+    consumer: "search",
+  });
+  const assetRoot = resolve(projectRoot, "public", assetScan.assetViewerDir);
+
+  return descriptors.map((descriptor) => {
+    const localePrefix = descriptor.locale === undefined ? "" : `${descriptor.locale}/`;
+    const body = descriptor.isText
+      ? truncateBody(readFileSync(resolve(assetRoot, descriptor.path), "utf8"))
+      : "";
+
+    return {
+      id: `asset:${localePrefix}${assetScan.assetViewerRoutePrefix}/${descriptor.path}`,
+      title: basename(descriptor.path),
+      body,
+      url: descriptor.url,
+      description: descriptor.path,
+    };
+  });
+}
+
 /**
  * Collect every search-index entry across the default locale plus all
  * configured non-default locales. The traversal order matches today's
@@ -78,6 +108,8 @@ export function collectSearchEntries(
       entries.push(...buildEntries(locale.dir, code, base));
     }
   }
+
+  entries.push(...buildAssetEntries(config));
 
   return entries;
 }
