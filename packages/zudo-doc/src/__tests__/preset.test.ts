@@ -437,6 +437,16 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       docsDir: "src/content/docs",
       locales: { ja: { dir: "src/content/docs-ja" } },
       base: "/",
+      assetScan: {
+        assetViewer: true,
+        assetViewerIndexing: false,
+        assetViewerDir: "assets",
+        assetViewerRoutePrefix: "files",
+        assetViewerExclude: ["drafts/**"],
+        base: "/",
+        locales: { ja: { dir: "src/content/docs-ja" } },
+        defaultLocaleOnlyPrefixes: ["/docs/claude-md/"],
+      },
     });
     expect(byName["@takazudo/zudo-doc/plugins/theme-packs"]).toEqual({
       base: "/",
@@ -450,6 +460,16 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       siteUrl: "https://zudo-doc.takazudomodular.com",
       defaultLocaleDir: "src/content/docs",
       locales: [{ code: "ja", dir: "src/content/docs-ja" }],
+      assetScan: {
+        assetViewer: true,
+        assetViewerIndexing: false,
+        assetViewerDir: "assets",
+        assetViewerRoutePrefix: "files",
+        assetViewerExclude: ["drafts/**"],
+        base: "/",
+        locales: { ja: { dir: "src/content/docs-ja" } },
+        defaultLocaleOnlyPrefixes: ["/docs/claude-md/"],
+      },
     });
     expect(byName["@takazudo/zudo-doc/plugins/changelog"]).toEqual({
       changelogs: [
@@ -471,6 +491,25 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       ],
     });
     // copy-public-plugin.mjs was removed in #2358; no project-relative plugin expected.
+  });
+
+  it("shares the serialized asset-scan projection with search and llms", () => {
+    const byName = Object.fromEntries(preset().plugins.map((p) => [p.name, p.options]));
+    const search = byName["@takazudo/zudo-doc/plugins/search-index"]?.["assetScan"];
+    const llms = byName["@takazudo/zudo-doc/plugins/llms-txt"]?.["assetScan"];
+
+    expect(search).toEqual(llms);
+    expect(search).toMatchObject({
+      assetViewer: true,
+      assetViewerIndexing: false,
+      assetViewerDir: "assets",
+      assetViewerRoutePrefix: "files",
+      assetViewerExclude: ["drafts/**"],
+      base: "/",
+      locales: { ja: { dir: "src/content/docs-ja" } },
+      defaultLocaleOnlyPrefixes: ["/docs/claude-md/"],
+    });
+    expect(search).not.toHaveProperty("projectRoot");
   });
 
   it("threads settings.themePack / themePacks into the theme-packs plugin options", () => {
@@ -752,6 +791,15 @@ describe("zudoDocPreset markdown.features", () => {
     });
     expect(r.markdown.features.mermaid).toBe(false);
     expect(r.markdown.features.headingIds).toEqual({ strategy: "hierarchical" });
+  });
+
+  it("threads transclude as zfb's object-typed feature config", () => {
+    const r = zudoDocPreset({
+      settings: { ...fixtureSettings, transclude: true },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+    expect(r.markdown.features.transclude).toEqual({});
   });
 
   // #3210 — zfb's markdown.gfm default is conservative (strikethrough +

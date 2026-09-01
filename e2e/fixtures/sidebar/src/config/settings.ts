@@ -19,6 +19,7 @@ export const settings = {
   defaultLocale: "en" as const,
   locales: {} satisfies Record<string, LocaleConfig>,
   mermaid: false,
+  transclude: false,
   // Enabled so the SidebarResizerRestore pre-paint <script> mounts in this
   // fixture — required to exercise the localStorage width-restore regression
   // deterministically (#2527; see .claude/skills/test-flow-sidebar-width-restore).
@@ -59,6 +60,7 @@ export const settings = {
   assetViewerRoutePrefix: "files",
   assetViewerExclude: [],
   assetViewerIndex: false,
+  assetViewerIndexing: false,
   claudeResources: false as { claudeDir: string; projectRoot?: string; scanRoot?: string } | false,
   codexResources: false as { codexDir: string; projectRoot?: string; scanRoot?: string } | false,
   defaultLocaleOnlyPrefixes: [] as string[],

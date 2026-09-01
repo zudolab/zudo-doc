@@ -2214,6 +2214,7 @@ describe("scaffold — settings-drift guard: generator-known fields must cover e
       docsDir: "no CLI/prompt surface yet — generator always uses the default",
       entryDocSlug: "no CLI/prompt surface yet — hand-edit post-scaffold",
       mermaid: "no CLI/prompt surface yet — package default (on) is correct for all scaffolds",
+      transclude: "no CLI/prompt surface yet — hand-edit post-scaffold",
       editUrl: "no CLI/prompt surface yet — hand-edit post-scaffold",
       siteUrl: "no CLI/prompt surface yet — hand-edit post-scaffold",
       head: "no CLI/prompt surface yet — hand-edit post-scaffold",
@@ -2231,6 +2232,7 @@ describe("scaffold — settings-drift guard: generator-known fields must cover e
       tocMinDepth: "no CLI/prompt surface yet — package default is correct for all scaffolds",
       tocMaxDepth: "no CLI/prompt surface yet — package default is correct for all scaffolds",
       frontmatterPreview: "no CLI/prompt surface yet — hand-edit post-scaffold",
+      assetViewerIndexing: "no CLI/prompt surface yet — hand-edit post-scaffold; each output is independently opt-in",
       htmlPreview: "no CLI/prompt surface yet — hand-edit post-scaffold",
       packageOwnedRoutes: "no CLI/prompt surface — flipping this off requires shipping the project's own route stubs, an eject-time decision, not a scaffold-time one",
     };
