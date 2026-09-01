@@ -103,7 +103,7 @@ export function PreviewBase({
             <button
               key={vp.label}
               type="button"
-              class={`px-hsp-sm py-hsp-2xs text-caption border rounded-full cursor-pointer transition-[background,color,border-color] duration-150 leading-snug ${
+              class={`min-h-[44px] min-w-[44px] px-hsp-sm py-hsp-2xs text-caption border rounded-full cursor-pointer transition-[background,color,border-color] duration-150 leading-snug ${
                 i === activeViewport
                   ? "bg-accent text-bg border-accent hover:bg-accent-hover hover:border-accent-hover"
                   : "bg-transparent text-muted border-muted hover:bg-[color-mix(in_srgb,var(--color-surface)_80%,var(--color-fg)_20%)]"
@@ -139,7 +139,7 @@ export function PreviewBase({
       <div class="border-t border-muted">
         <button
           type="button"
-          class="flex items-center w-full px-hsp-md py-hsp-sm text-caption font-medium text-muted bg-surface border-none cursor-pointer gap-hsp-xs hover:bg-[color-mix(in_srgb,var(--color-surface)_80%,var(--color-fg)_20%)]"
+          class="flex min-h-[44px] min-w-[44px] items-center w-full px-hsp-md py-hsp-sm text-caption font-medium text-muted bg-surface border-none cursor-pointer gap-hsp-xs hover:bg-[color-mix(in_srgb,var(--color-surface)_80%,var(--color-fg)_20%)]"
           onClick={() => setCodeOpen((v) => !v)}
           aria-expanded={codeOpen}
         >

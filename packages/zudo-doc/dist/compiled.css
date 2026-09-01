@@ -658,6 +658,9 @@
 .min-h-\[20rem\] {
   min-height: 20rem;
 }
+.min-h-\[44px\] {
+  min-height: 44px;
+}
 .min-h-\[60vh\] {
   min-height: 60vh;
 }
@@ -798,6 +801,9 @@
 }
 .min-w-\[10rem\] {
   min-width: 10rem;
+}
+.min-w-\[44px\] {
+  min-width: 44px;
 }
 .flex-1 {
   flex: 1;

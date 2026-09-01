@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, rm, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { scanAssets } from "../scan.js";
@@ -47,15 +47,21 @@ describe("scanAssets", () => {
     expect(await scanAssets(root, "assets")).toEqual(["alias/one.txt", "real/one.txt"]);
   });
 
-  it("throws on case-insensitive URL collisions", async () => {
+  it("throws on case-insensitive URL collisions", async ({ skip }) => {
     const { root, assets } = await fixture(); await writeFile(join(assets, "Logo.svg"), "x"); await writeFile(join(assets, "logo.svg"), "x");
+    if ((await readdir(assets)).length !== 2) {
+      skip("case-collision fixture unsupported: the filesystem did not preserve Logo.svg and logo.svg as distinct entries");
+    }
     await expect(scanAssets(root, "assets")).rejects.toThrow("URL collision");
   });
 
-  it("throws when distinct filenames normalize to the same NFC URL", async () => {
+  it("throws when distinct filenames normalize to the same NFC URL", async ({ skip }) => {
     const { root, assets } = await fixture();
     await writeFile(join(assets, "caf\u00e9.txt"), "x");
     await writeFile(join(assets, "cafe\u0301.txt"), "x");
+    if ((await readdir(assets)).length !== 2) {
+      skip("canonical-equivalence fixture unsupported: the filesystem did not preserve café.txt and café.txt as distinct entries");
+    }
     await expect(scanAssets(root, "assets")).rejects.toThrow("URL collision");
   });
 

@@ -335,3 +335,112 @@ test.describe("HtmlPreview: post-hydration structure", () => {
     }
   });
 });
+
+test.describe("HtmlPreview: 44px control hit targets", () => {
+  for (const viewport of [
+    { name: "desktop", width: 1280 },
+    { name: "narrow", width: 360 },
+  ]) {
+    test(`${viewport.name} controls are visible, reachable, and non-overlapping`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: viewport.width, height: 900 });
+      await page.goto(PAGE, { waitUntil: "load" });
+
+      // Use the public MDX <HtmlPreview> instance titled "JS Test" rather
+      // than reaching into implementation-specific component markup.
+      const island = page
+        .locator('[data-zfb-island="HtmlPreviewWrapperInner"]')
+        .filter({ hasText: "JS Test" });
+      await expect(island).toHaveCount(1);
+      await island.scrollIntoViewIfNeeded();
+
+      const viewportButtons = island.locator(
+        '[aria-label="Viewport size"] button',
+      );
+      const disclosureToggle = island.locator("button[aria-expanded]");
+      const controls = island.locator(
+        '[aria-label="Viewport size"] button, button[aria-expanded]',
+      );
+      await expect(viewportButtons).toHaveCount(3);
+      await expect(disclosureToggle).toHaveCount(1);
+      await expect(controls).toHaveCount(4);
+
+      const rects = [] as Array<{
+        bottom: number;
+        height: number;
+        left: number;
+        right: number;
+        top: number;
+        width: number;
+      }>;
+      for (let i = 0; i < 4; i++) {
+        const control = controls.nth(i);
+        await expect(control).toBeVisible();
+        rects.push(
+          await control.evaluate((element) => {
+            const rect = element.getBoundingClientRect();
+            return {
+              bottom: rect.bottom,
+              height: rect.height,
+              left: rect.left,
+              right: rect.right,
+              top: rect.top,
+              width: rect.width,
+            };
+          }),
+        );
+      }
+
+      for (const [index, rect] of rects.entries()) {
+        expect(rect.width, `control ${index} width`).toBeGreaterThanOrEqual(
+          44,
+        );
+        expect(rect.height, `control ${index} height`).toBeGreaterThanOrEqual(
+          44,
+        );
+      }
+
+      // Wrapping the viewport controls is valid on narrow screens, but no
+      // pair of controls may overlap, and none may be clipped horizontally.
+      for (let i = 0; i < rects.length; i++) {
+        const rect = rects[i]!;
+        if (viewport.name === "narrow") {
+          expect(rect.left, `control ${i} left edge`).toBeGreaterThanOrEqual(
+            0,
+          );
+          expect(rect.right, `control ${i} right edge`).toBeLessThanOrEqual(
+            viewport.width,
+          );
+        }
+        for (let j = i + 1; j < rects.length; j++) {
+          const other = rects[j]!;
+          const overlaps =
+            rect.left < other.right &&
+            other.left < rect.right &&
+            rect.top < other.bottom &&
+            other.top < rect.bottom;
+          expect(overlaps, `controls ${i} and ${j} overlap`).toBe(false);
+        }
+      }
+
+      if (viewport.name === "narrow") {
+        const pageWidths = await page.evaluate(() => ({
+          bodyScrollWidth: document.body.scrollWidth,
+          clientWidth: document.documentElement.clientWidth,
+          documentScrollWidth: document.documentElement.scrollWidth,
+          viewportWidth: window.innerWidth,
+        }));
+        expect(pageWidths.bodyScrollWidth).toBeLessThanOrEqual(
+          pageWidths.clientWidth + 1,
+        );
+        expect(pageWidths.documentScrollWidth).toBeLessThanOrEqual(
+          pageWidths.clientWidth + 1,
+        );
+        expect(pageWidths.clientWidth).toBeLessThanOrEqual(
+          pageWidths.viewportWidth,
+        );
+      }
+    });
+  }
+});
