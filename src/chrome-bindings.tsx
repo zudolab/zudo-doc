@@ -41,7 +41,6 @@ import { BodyEndIslands as BodyEndIslandsSeam } from "../pages/lib/_body-end-isl
 import { DetailsWrapper } from "../pages/lib/_details";
 import { PresetGeneratorFallback } from "../pages/lib/_preset-generator";
 import { DocHistory } from "@takazudo/zudo-doc/doc-history";
-import { HtmlPreviewWrapper, type HtmlPreviewWrapperProps } from "@takazudo/zudo-doc/html-preview-wrapper";
 // SSR author + date metadata — `#doc-history-meta` is the build-time manifest
 // alias (esbuild-inlined, no fs). Static import is load-bearing for the island
 // scanner chain noted below.
@@ -114,11 +113,7 @@ function IslandWrapper(props: {
   return props.children ?? null;
 }
 
-const HtmlPreviewWithGlobalConfig = (props: HtmlPreviewWrapperProps) =>
-  HtmlPreviewWrapper({ globalConfig: settings.htmlPreview ?? null, ...props });
-
 const mdxExtras = {
-  HtmlPreview: HtmlPreviewWithGlobalConfig,
   Details: DetailsWrapper,
   SmartBreak: MdxStub,
   Island: IslandWrapper,
