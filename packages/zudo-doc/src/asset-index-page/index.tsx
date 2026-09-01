@@ -195,7 +195,7 @@ export function createAssetIndexPageView<S extends Settings = Settings>(ctx: Chr
               <span class="rounded-full border border-muted px-hsp-sm py-vsp-3xs text-fg">{title}</span>
               <span class="rounded-full border border-muted px-hsp-sm py-vsp-3xs text-muted">{t("asset.indexBadge", locale)}</span>
             </div>
-            <h1 class="mb-vsp-xs border-b border-fg pb-vsp-xs font-mono text-heading font-bold leading-tight">{title}</h1>
+            <h1 class="mb-vsp-xs border-b border-fg pb-vsp-xs font-mono text-heading font-bold leading-tight break-words">{title}</h1>
             <div data-doc-metainfo class="mb-vsp-md flex flex-wrap items-center gap-x-hsp-md gap-y-vsp-2xs text-caption text-fg">
               <span>{countLabel(tree.fileCount, fileCountLabel, fileCountSingleLabel)}</span>
               <span>{countLabel(folders, folderCountLabel, folderCountSingleLabel)}</span>

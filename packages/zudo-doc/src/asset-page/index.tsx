@@ -63,7 +63,7 @@ export function AssetHeader({ asset, locale, badge, updatedLabel, linesLabel }: 
   return (
     <header>
       <AssetEyebrow asset={asset} badge={badge} />
-      <h1 class="mb-vsp-xs border-b border-fg pb-vsp-xs font-mono text-heading font-bold leading-tight">{asset.name}</h1>
+      <h1 class="mb-vsp-xs border-b border-fg pb-vsp-xs font-mono text-heading font-bold leading-tight break-words">{asset.name}</h1>
       <div data-doc-metainfo class="mb-vsp-md flex flex-wrap items-center gap-x-hsp-md gap-y-vsp-2xs text-caption text-fg">
         {asset.dir && <span>{asset.dir}</span>}
         {facet && <span>{facet}</span>}
