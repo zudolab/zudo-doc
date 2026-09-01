@@ -412,7 +412,7 @@ export function createDocPageShell<S extends Settings = Settings>(
           <>
             {/* Bottom border reads as the title's rule (#3025) — see the h1 in
                 doc-content-header; kept here too so auto-index pages match. */}
-            <h1 class="text-heading font-bold border-b border-fg pb-vsp-xs mb-vsp-xs">{autoIndexLabel}</h1>
+            <h1 class="text-heading font-bold border-b border-fg pb-vsp-xs mb-vsp-xs break-words">{autoIndexLabel}</h1>
 
             {/* Build-time date block — chrome parity (#1461). */}
             {metainfoSlot}

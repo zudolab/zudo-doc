@@ -265,7 +265,7 @@ export function createTagPages<S extends Settings = Settings>(
         bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
         enableClientRouter={settings.dynamicPageTransition}
       >
-        <h1 class="text-heading font-bold mb-vsp-xs">{pageTitle}</h1>
+        <h1 class="text-heading font-bold mb-vsp-xs break-words">{pageTitle}</h1>
         <p class="text-muted mb-vsp-lg">{countText}</p>
         <DocCardGrid ariaLabel={pageTitle} items={cardItems} />
         <DocHistoryArea slug={`tags/${tag}`} locale={locale} />
@@ -323,7 +323,7 @@ export function createTagPages<S extends Settings = Settings>(
         bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
         enableClientRouter={settings.dynamicPageTransition}
       >
-        <h1 class="text-heading font-bold mb-vsp-lg">{pageTitle}</h1>
+        <h1 class="text-heading font-bold mb-vsp-lg break-words">{pageTitle}</h1>
         {!settings.docTags || tags.length === 0 ? (
           <p class="text-muted">{t("doc.noTags", locale)}</p>
         ) : (

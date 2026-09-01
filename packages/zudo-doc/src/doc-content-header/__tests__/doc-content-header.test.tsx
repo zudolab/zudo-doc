@@ -28,7 +28,7 @@ function makeEntry(data: Record<string, unknown> = {}): DocPageEntry {
 }
 
 const BASELINE_HTML =
-  '<h1 class="text-heading font-bold border-b border-fg pb-vsp-xs mb-vsp-xs">Test Page</h1>';
+  '<h1 class="text-heading font-bold border-b border-fg pb-vsp-xs mb-vsp-xs break-words">Test Page</h1>';
 
 describe("createDocContentHeader — docContentHeaderExtras seam", () => {
   it("slot unset: renders byte-identical output to the pre-seam header", () => {
