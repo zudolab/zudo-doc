@@ -250,6 +250,11 @@ export function HtmlPreview({
   const hasScripts = containsScript(head, js, externalScripts);
   const syncDelay = hasScripts ? 300 : 0;
   const sandboxValue = resolveSandbox(sandbox, hasScripts);
+  // An empty sandbox token list is maximally restrictive, but zfb's HTML
+  // serializer drops a valueless `sandbox` attribute. Preserve attribute
+  // presence with whitespace (still zero tokens) so `sandbox=""` cannot turn
+  // into an unsandboxed iframe in the generated site.
+  const sandboxAttributeValue = sandboxValue === "" ? " " : sandboxValue;
 
   const codeBlocks = useMemo(() => {
     const resourceLines = showResources
@@ -303,7 +308,7 @@ export function HtmlPreview({
       showSource={showSource}
       showViewportControls={showViewportControls}
       autoHeight={height == null && !fullHeight}
-      sandbox={sandboxValue}
+      sandbox={sandboxAttributeValue}
       syncDelay={syncDelay}
       codeBlocks={codeBlocks}
     />

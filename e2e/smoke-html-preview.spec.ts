@@ -53,7 +53,7 @@ function previewAfterHeading(
       : '@data-zfb-island="HtmlPreviewWrapperInner"';
   return page
     .locator("article h2")
-    .filter({ hasText: heading })
+    .filter({ hasText: new RegExp(`^${heading}$`) })
     .locator(`xpath=following-sibling::*[${markerAttribute}][1]`);
 }
 
@@ -217,7 +217,9 @@ test.describe("HtmlPreview: SSG shape", () => {
     expect(fullHeight).toContain("html,body{height:100%}");
 
     const opaque = htmlSection(html, "Opaque Fixed Height Lifecycle Test");
-    expectHtmlAttr(opaque, "sandbox", "");
+    expect(opaque).toMatch(
+      /\bsandbox(?:\s*=\s*(?:"\s*"|'\s*'))?(?=[\s>/])/,
+    );
     expect(opaque).toMatch(/height:\s*300px/);
   });
 });
@@ -775,7 +777,7 @@ test.describe("HtmlPreview: lifecycle integration", () => {
     // The Full preset is intentionally wider than the content band at the
     // default Playwright viewport. Use a wide page so its media query remains
     // distinct from the 768px Tablet preset.
-    await page.setViewportSize({ width: 1600, height: 1000 });
+    await page.setViewportSize({ width: 2400, height: 1000 });
     await page.goto(PAGE, { waitUntil: "domcontentloaded" });
 
     const reflow = previewAfterHeading(page, "Reflow Lifecycle Test");
@@ -890,7 +892,7 @@ test.describe("HtmlPreview: lifecycle integration", () => {
     await opaque.scrollIntoViewIfNeeded();
     await waitForPreviewHydration(opaque);
     const iframe = opaque.locator("iframe");
-    await expect(iframe).toHaveAttribute("sandbox", "");
+    await expect(iframe).toHaveAttribute("sandbox", /^\s*$/);
     await expect.poll(() => iframeHeight(opaque)).toBe(300);
 
     const parentCanReadBody = await iframe.evaluate((frame) => {
