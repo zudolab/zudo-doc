@@ -48,7 +48,7 @@ export function emitLlmsTxt(options: LlmsTxtEmitOptions): LlmsTxtEmitResult {
 
   const meta = { siteName, siteDescription };
   const written: string[] = [];
-  const assetEntries = loadLlmsAssetEntries({ projectRoot, assetScan });
+  const assetEntries = loadLlmsAssetEntries({ projectRoot, assetScan, siteUrl });
 
   // Default locale.
   const defaultEntries = loadDocEntries({

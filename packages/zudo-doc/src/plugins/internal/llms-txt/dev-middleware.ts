@@ -142,6 +142,7 @@ export function createLlmsTxtDevMiddleware(
       const assets = loadLlmsAssetEntries({
         projectRoot: options.projectRoot,
         assetScan: options.assetScan,
+        siteUrl,
       }).filter((asset) =>
         match.locale === null
           ? asset.locale === undefined

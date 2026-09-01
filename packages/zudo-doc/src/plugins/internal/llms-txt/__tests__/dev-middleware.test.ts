@@ -96,6 +96,7 @@ describe("llms dev middleware asset parity", () => {
       siteName: "Example Docs",
       siteDescription: "Example description",
       defaultLocaleDir: data.docsDir,
+      siteUrl: "https://example.com/",
       locales: [{ code: "ja", dir: data.jaDir }],
       assetScan: data.assetScan,
     });
@@ -106,6 +107,7 @@ describe("llms dev middleware asset parity", () => {
       siteName: "Example Docs",
       siteDescription: "Example description",
       defaultLocaleDir: data.docsDir,
+      siteUrl: "https://example.com/",
       locales: [{ code: "ja", dir: data.jaDir }],
       assetScan: data.assetScan,
     });
@@ -118,6 +120,9 @@ describe("llms dev middleware asset parity", () => {
     );
     expect(await request(middleware, "/site/ja/llms-full.txt")).toBe(
       readFileSync(join(data.outDir, "ja/llms-full.txt"), "utf8"),
+    );
+    expect(await request(middleware, "/site/llms.txt")).toContain(
+      "[read me.txt](https://example.com/site/files/read%20me.txt/)",
     );
   });
 });

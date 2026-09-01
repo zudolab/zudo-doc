@@ -26,6 +26,8 @@ export interface LlmsAssetLoadOptions {
   projectRoot?: string;
   /** Shared serialized asset-viewer projection from the preset. */
   assetScan?: AssetScanProjection;
+  /** Optional canonical site origin, matching document-entry URL behavior. */
+  siteUrl?: string;
 }
 
 /**
@@ -64,11 +66,15 @@ function toLlmsAssetEntry(
   descriptor: AssetPageDescriptor,
   projectRoot: string,
   assetScan: AssetScanProjection,
+  siteUrl?: string,
 ): LlmsAssetEntry {
+  const url = siteUrl
+    ? `${siteUrl.replace(/\/$/, "")}${descriptor.url}`
+    : descriptor.url;
   if (!descriptor.isText) {
     return {
       path: descriptor.path,
-      url: descriptor.url,
+      url,
       ...(descriptor.locale === undefined ? {} : { locale: descriptor.locale }),
       isText: false,
     };
@@ -79,7 +85,7 @@ function toLlmsAssetEntry(
   );
   return {
     path: descriptor.path,
-    url: descriptor.url,
+    url,
     ...(descriptor.locale === undefined ? {} : { locale: descriptor.locale }),
     isText: true,
     content: body.content,
@@ -95,7 +101,7 @@ function toLlmsAssetEntry(
 export function loadLlmsAssetEntries(
   options: LlmsAssetLoadOptions,
 ): LlmsAssetEntry[] {
-  const { projectRoot, assetScan } = options;
+  const { projectRoot, assetScan, siteUrl } = options;
   if (projectRoot === undefined || assetScan === undefined) return [];
 
   const descriptors = collectAssetPageDescriptors({
@@ -104,6 +110,6 @@ export function loadLlmsAssetEntries(
     consumer: "llmsTxt",
   });
   return descriptors.map((descriptor) =>
-    toLlmsAssetEntry(descriptor, projectRoot, assetScan),
+    toLlmsAssetEntry(descriptor, projectRoot, assetScan, siteUrl),
   );
 }

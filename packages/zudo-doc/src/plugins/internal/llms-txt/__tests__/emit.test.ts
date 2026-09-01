@@ -140,6 +140,22 @@ describe("emitLlmsTxt asset integration", () => {
     expect(jaFull).toContain("# guide.txt\n\n> Source: /site/ja/files/guide.txt/");
   });
 
+  it("makes asset URLs absolute alongside document URLs when siteUrl is set", () => {
+    const data = fixture();
+    emitLlmsTxt(options(data, { siteUrl: "https://example.com/" }));
+
+    const index = readFileSync(join(data.outDir, "llms.txt"), "utf8");
+    const full = readFileSync(join(data.outDir, "llms-full.txt"), "utf8");
+
+    expect(index).toContain("[Intro](https://example.com/site/docs/intro)");
+    expect(index).toContain(
+      "[guide.txt](https://example.com/site/files/guide.txt/)",
+    );
+    expect(full).toContain(
+      "> Source: https://example.com/site/files/guide.txt/",
+    );
+  });
+
   it("truncates a UTF-8 asset at a complete code point", () => {
     const data = fixture();
     const body = `${"x".repeat(LLMS_ASSET_TEXT_CAP_BYTES - 4)}😀tail`;
