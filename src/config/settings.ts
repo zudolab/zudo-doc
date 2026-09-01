@@ -8,6 +8,7 @@ export type {
   VersionConfig,
   FooterConfig,
   FrontmatterPreviewConfig,
+  AssetViewerIndexingConfig,
   BodyFootUtilAreaConfig,
   TagPlacement,
   TagGovernanceMode,
@@ -24,6 +25,7 @@ import type {
   VersionConfig,
   FooterConfig,
   FrontmatterPreviewConfig,
+  AssetViewerIndexingConfig,
   BodyFootUtilAreaConfig,
   TagPlacement,
   TagGovernanceMode,
@@ -62,6 +64,9 @@ export const settings = {
     ja: { label: "JA", dir: "src/content/docs-ja" },
   } satisfies Record<string, LocaleConfig>,
   mermaid: true,
+  // Showcase demonstrates the package's transclusion setting with the live,
+  // non-routed fixtures on the EN and JA transclude documentation pages.
+  transclude: true,
   noindex: false as boolean, // When true, adds noindex/nofollow to all pages (for internal docs)
   // Not yet wired: wiring requires adding an editLink slot to BodyFootUtilArea (v2 package API change, #2140).
   editUrl: false as string | false,
@@ -231,6 +236,11 @@ export const settings = {
   assetViewerRoutePrefix: "files",
   assetViewerExclude: [],
   assetViewerIndex: true,
+  assetViewerIndexing: {
+    search: true,
+    llmsTxt: true,
+    sitemap: true,
+  } satisfies AssetViewerIndexingConfig as AssetViewerIndexingConfig | false,
   bodyFootUtilArea: {
     docHistory: true,
     viewSourceLink: true,

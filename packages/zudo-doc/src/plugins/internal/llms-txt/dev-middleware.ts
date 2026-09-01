@@ -22,12 +22,14 @@
 
 import type { IncomingMessage, ServerResponse } from "node:http";
 
+import { loadLlmsAssetEntries } from "./assets.js";
 import { generateLlmsFullTxt, generateLlmsTxt } from "./generate.js";
 import { loadDocEntries } from "./load.js";
 import type {
   LlmsTxtLocaleConfig,
   LlmsTxtSiteMeta,
 } from "./types.js";
+import type { AssetScanProjection } from "../asset-viewer/asset-pages.js";
 
 /** Connect-style middleware signature — works as a Vite plugin middleware. */
 export type LlmsTxtNextFn = (err?: unknown) => void;
@@ -58,6 +60,10 @@ export interface LlmsTxtDevMiddlewareOptions extends LlmsTxtSiteMeta {
   defaultLocaleDir: string;
   /** Additional locales (e.g. `[{ code: "ja", dir: "src/content/docs-ja" }]`). */
   locales?: LlmsTxtLocaleConfig[];
+  /** Runtime project root; injected by the zfb plugin wrapper, never serialized in the preset. */
+  projectRoot?: string;
+  /** Shared asset-viewer projection; consumed by the asset indexing wave. */
+  assetScan?: AssetScanProjection;
 }
 
 /** Public route suffixes the middleware recognises. */
@@ -133,10 +139,19 @@ export function createLlmsTxtDevMiddleware(
         base,
         siteUrl,
       });
+      const assets = loadLlmsAssetEntries({
+        projectRoot: options.projectRoot,
+        assetScan: options.assetScan,
+        siteUrl,
+      }).filter((asset) =>
+        match.locale === null
+          ? asset.locale === undefined
+          : asset.locale === match.locale,
+      );
       const body =
         match.kind === "llms"
-          ? generateLlmsTxt(entries, meta)
-          : generateLlmsFullTxt(entries, meta);
+          ? generateLlmsTxt(entries, meta, assets)
+          : generateLlmsFullTxt(entries, meta, assets);
       res.statusCode = 200;
       res.setHeader("Content-Type", "text/plain; charset=utf-8");
       res.end(body);

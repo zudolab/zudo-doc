@@ -372,6 +372,22 @@ Enable mermaid diagram rendering in markdown.
 
 Default: `true`
 
+### transclude
+
+Enable `:::include{file="…"}` transclusion. zudo-doc passes the enabled boolean to zfb as the object-typed `markdown.features.transclude: {}` setting; configure it here rather than replacing the package-owned Markdown feature block.
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    transclude: true,
+  }),
+);
+```
+
+Type: `boolean` · Default: `false`
+
+See [Transclude](../markdown-features/transclude.mdx) for the directive syntax, filesystem restrictions, and build-fatal failure behavior.
+
 ### math
 
 Enable KaTeX math rendering (`$…$`, `$$…$$`, fenced `math`).
@@ -511,6 +527,16 @@ Generate an asset listing page at `/<assetViewerRoutePrefix>/` when the asset vi
 Default: `false`
 
 See [Asset Viewer](./asset-viewer.mdx#the-assets-index-page) for the listing behavior and header-navigation setup.
+
+### assetViewerIndexing
+
+Independently opt asset viewer pages into the search index, `llms.txt`, and the sitemap. `assetViewer: true` is required; indexing subkeys have no effect when the viewer is disabled.
+
+Type: `false | { search?: boolean; llmsTxt?: boolean; sitemap?: boolean }` · Default: `false`
+
+Each subkey is off unless it is explicitly `true`, including when the setting is a partial object. `search` adds asset pages to `search-index.json` with `asset:`-prefixed IDs. `llmsTxt` adds a `## Files` section to `llms.txt` and appends asset pages to `llms-full.txt`; text-like assets include up to 8 KB of body text and then an explicit truncation marker, while binary assets are one-line stubs with no body. `sitemap` adds the `/files/...` routes.
+
+See [Asset Viewer](./asset-viewer.mdx#opting-asset-pages-into-indexing) for a configuration example. This showcase enables all three subkeys.
 
 ### findInPage
 

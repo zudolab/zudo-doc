@@ -13,8 +13,18 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { generateLlmsFullTxt, generateLlmsTxt } from "./generate.js";
+import { loadLlmsAssetEntries } from "./assets.js";
 import { loadDocEntries } from "./load.js";
 import type { LlmsTxtEmitOptions, LlmsTxtEmitResult } from "./types.js";
+
+function assetsForLocale(
+  assets: ReturnType<typeof loadLlmsAssetEntries>,
+  locale: string | null,
+) {
+  return assets.filter((asset) =>
+    locale === null ? asset.locale === undefined : asset.locale === locale,
+  );
+}
 
 /**
  * Walk every configured content root, generate the two files per
@@ -32,10 +42,13 @@ export function emitLlmsTxt(options: LlmsTxtEmitOptions): LlmsTxtEmitResult {
     defaultLocaleDir,
     locales = [],
     logger,
+    projectRoot,
+    assetScan,
   } = options;
 
   const meta = { siteName, siteDescription };
   const written: string[] = [];
+  const assetEntries = loadLlmsAssetEntries({ projectRoot, assetScan, siteUrl });
 
   // Default locale.
   const defaultEntries = loadDocEntries({
@@ -49,8 +62,14 @@ export function emitLlmsTxt(options: LlmsTxtEmitOptions): LlmsTxtEmitResult {
 
   const defaultIndexPath = join(outDir, "llms.txt");
   const defaultFullPath = join(outDir, "llms-full.txt");
-  writeFileSync(defaultIndexPath, generateLlmsTxt(defaultEntries, meta));
-  writeFileSync(defaultFullPath, generateLlmsFullTxt(defaultEntries, meta));
+  writeFileSync(
+    defaultIndexPath,
+    generateLlmsTxt(defaultEntries, meta, assetsForLocale(assetEntries, null)),
+  );
+  writeFileSync(
+    defaultFullPath,
+    generateLlmsFullTxt(defaultEntries, meta, assetsForLocale(assetEntries, null)),
+  );
   written.push(defaultIndexPath, defaultFullPath);
   logger?.info(
     `Generated llms.txt and llms-full.txt (${defaultEntries.length} pages)`,
@@ -68,8 +87,9 @@ export function emitLlmsTxt(options: LlmsTxtEmitOptions): LlmsTxtEmitResult {
     mkdirSync(localeDir, { recursive: true });
     const indexPath = join(localeDir, "llms.txt");
     const fullPath = join(localeDir, "llms-full.txt");
-    writeFileSync(indexPath, generateLlmsTxt(localeEntries, meta));
-    writeFileSync(fullPath, generateLlmsFullTxt(localeEntries, meta));
+    const localeAssets = assetsForLocale(assetEntries, code);
+    writeFileSync(indexPath, generateLlmsTxt(localeEntries, meta, localeAssets));
+    writeFileSync(fullPath, generateLlmsFullTxt(localeEntries, meta, localeAssets));
     written.push(indexPath, fullPath);
     logger?.info(
       `Generated ${code}/llms.txt and ${code}/llms-full.txt (${localeEntries.length} pages)`,

@@ -40,7 +40,7 @@ These 14 features are opt-in at the zfb engine level — each is disabled unless
 | [TOC Export](./toc-export.mdx) | `tocExport` | Exports the page table-of-contents as an `export const toc` named export. |
 | [Image Dimensions](./image-dimensions.mdx) | `imageDimensions` | Injects `width`/`height` attributes on images from disk metadata at build time. |
 | [Link Validation](./link-validation.mdx) | `linkValidation` | Validates internal links at build time and warns (or errors) on broken references. |
-| [Transclude](./transclude.mdx) | `transclude` | Embeds the content of another file via `:::include{file="…"}`. Disabled in zudo-doc (transclude renderer not yet wired). |
+| [Transclude](./transclude.mdx) | `transclude` | Splices another Markdown or MDX file into the source AST. Off by default; enable it with `zudoDoc({ transclude: true })`. |
 
 :::note[Other pipeline knobs]
 

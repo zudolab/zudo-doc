@@ -28,6 +28,7 @@ export const settings = {
   defaultLocale: "en" as const,
   locales: {} satisfies Record<string, LocaleConfig>,
   mermaid: true,
+  transclude: false,
   noindex: true as boolean,
   editUrl: "https://github.com/example/repo/edit/main" as string | false,
   githubUrl: "https://github.com/example/repo" as string | false,
@@ -64,6 +65,7 @@ export const settings = {
   assetViewerRoutePrefix: "files",
   assetViewerExclude: [],
   assetViewerIndex: true,
+  assetViewerIndexing: false,
   bodyFootUtilArea: {
     docHistory: true,
     viewSourceLink: true,

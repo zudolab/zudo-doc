@@ -6,6 +6,8 @@
 // is a breaking change to two downstream callers. See the migration
 // brief on issue zudolab/zudo-doc#475.
 
+import type { AssetScanProjection } from "../asset-viewer/asset-pages.js";
+
 /**
  * One page in the search index. The shape mirrors today's Astro
  * integration output verbatim — keep it byte-identical so downstream
@@ -13,7 +15,7 @@
  * MiniSearch) keep working unchanged after the zfb cutover.
  */
 export interface SearchIndexEntry {
-  /** Stable identifier — `slug` for the default locale, `${locale}/${slug}` otherwise. */
+  /** Stable document slug, locale-prefixed slug, or `asset:`-namespaced asset path. */
   id: string;
   /** Frontmatter title, falling back to the slug when missing. */
   title: string;
@@ -39,6 +41,10 @@ export interface SearchIndexConfig {
   locales?: Record<string, SearchIndexLocaleConfig>;
   /** Site base path (e.g. `""`, `"/docs"`); trailing slash is normalised away. */
   base?: string;
+  /** Runtime project root for asset scans; injected by the zfb plugin wrapper, never serialized in the preset. */
+  projectRoot?: string;
+  /** Shared asset-viewer projection; consumed by the asset indexing wave. */
+  assetScan?: AssetScanProjection;
 }
 
 /** Maximum body text stored per entry (display excerpt cap). */

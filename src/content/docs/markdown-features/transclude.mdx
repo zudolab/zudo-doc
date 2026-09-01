@@ -1,66 +1,72 @@
 ---
 title: Transclude
-description: "Embeds the content of another file via :::include{file=\"…\"}. Disabled in zudo-doc (transclude renderer not yet wired)."
+description: "Embeds another Markdown or MDX file via :::include{file=\"…\"} before the rest of the Markdown pipeline runs."
 sidebar_position: 23
 ---
 
-The `transclude` feature embeds the content of another file into a Markdown document via `:::include{file="./path.md"}` directives — not the Obsidian `![[path]]` wikilink syntax. The included file is parsed as Markdown and its AST is merged in before the rest of the pipeline runs.
+The `transclude` feature embeds another Markdown or MDX file through a `:::include{file="./path.md"}` directive. It is not the Obsidian `![[path]]` wikilink syntax, and it does not render an `<include>` component. Instead, transclusion is the first mdast visitor: it parses the target file, splices that AST into the source document, and lets the inserted content continue through the normal Markdown pipeline.
 
-:::danger[Disabled in zudo-doc — transclude renderer not yet wired]
+:::danger[Enable transclusion before authoring an include]
 
-`transclude` is **disabled** (omitted from zudo-doc's `zfb.config.ts`). The root reason is that **no transclude renderer is wired yet** — there is no registered `<include>` component to turn the directive into output. As a result the `:::include{file="…"}` directive **500s the SSR render**. The syntax below appears only inside fenced code blocks; no live `:::include` directive is authored on this page. A one-line comment in `zfb.config.ts` marks it for re-enable once a transclude renderer is wired.
+`transclude` is off by default. When it is off, zfb leaves the parsed paragraph—`Text(":::include")` followed by an `MdxTextExpression`—untouched. The expression still contains the raw attribute string `file="./x.md"`, which is not valid JavaScript, so the compiled JSX module fails and SSR returns 500. This is a feature-gating failure, not a missing renderer: no `<include>` component exists or is expected.
+
+Set `transclude: true` in `zudoDoc({...})` before adding a live directive. Do not configure the package-owned `markdown.features` block directly.
 
 :::
 
 ## Configuration
 
-Once a renderer is wired, enable with defaults. It is an object-typed feature, so it must be given an options object:
+Enable transclusion with the zudo-doc setting:
 
 ```ts title="zfb.config.ts"
-export default defineConfig({
-  markdown: {
-    features: {
-      transclude: {},
-    },
-  },
-});
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(
+  zudoDoc({
+    transclude: true,
+  }),
+);
 ```
 
-Adjust the maximum include-chain depth:
+The public zudo-doc setting is boolean and defaults to `false`. Upstream zfb defines `transclude` as an object-typed Markdown feature and rejects the `true` shorthand, so `zudoDoc()` translates the enabled setting to `markdown.features.transclude: {}` internally. This showcase enables the setting so the example below runs during every site build.
 
-```ts title="zfb.config.ts"
-transclude: { maxDepth: 5 },
-```
+## Live include
+
+The sentence below comes from a dedicated, non-routed Markdown fixture. Its sentinel makes the AST splice visible in the built HTML rather than merely proving that the build did not fail.
+
+:::include{file="../../transclude-fixtures/transclude-live-demo-en.md"}
 
 ## Directive syntax
 
-Basic inclusion — the path resolves relative to the current source file:
+Basic inclusion—paths resolve relative to the source file containing the directive:
 
 ```md
 :::include{file="./snippets/intro.md"}
 ```
 
-Include a file as a fenced code block:
+Include a file as a plain fenced code block. `code=true` does not add a title bar:
 
 ```md
 :::include{file="./examples/hello.rs" code=true lang="rust"}
 ```
 
-Slice a line range (1-based, both endpoints inclusive):
+Select a 1-based, inclusive line range. The `lines` value must be exactly `N-M`:
 
 ```md
 :::include{file="./src/lib.rs" code=true lang="rust" lines="10-30"}
 ```
 
-## Options
+Do not add a directive label. `:::include[Title]{file="./snippet.md"}` does not match the transclusion syntax and causes the same invalid-expression SSR failure described above.
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `maxDepth` | `5` | Maximum include-chain depth. Included files may themselves contain `:::include` directives up to this depth. |
+## Filesystem and failure constraints
 
-## Intended features
+- The target must exist, and its path must be relative to the source file. Absolute paths and aliases are not supported.
+- After canonicalization, the target must remain under the project root. Traversal and symlinks cannot escape that boundary.
+- Every transclusion failure is build-fatal, including invalid paths, invalid `lines` ranges, excessive recursion, and cycles. There is no warning-only mode such as `linkValidation` provides.
+- Includes may contain further includes, but recursion is capped at depth 5. Cycles are always detected, even before that limit is reached.
+- The directive needs blank lines above and below so Markdown recognizes it as block-level content.
 
-- **Chaining**: included files may contain further `:::include` directives, up to `maxDepth`.
-- **Cycle detection**: infinite loops from files including each other are prevented.
-- **Path restrictions**: only relative paths are allowed; traversal outside the project root is rejected.
-- **Blank-line requirement**: directives must have blank lines above and below to be recognized as block-level content.
+## Build-context requirement
+
+Transclusion needs the source path and project filesystem. The context-free `@takazudo/zfb-md-wasm/render` pipeline therefore leaves it silently inert; it cannot test this feature. Use a real `zfb build` or `zfb dev` run, then verify that distinctive included content appears in the rendered page.

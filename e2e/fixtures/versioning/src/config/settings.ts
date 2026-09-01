@@ -21,6 +21,7 @@ export const settings = {
   defaultLocale: "en" as const,
   locales: {} satisfies Record<string, LocaleConfig>,
   mermaid: false,
+  transclude: false,
   noindex: true as boolean,
   editUrl: false as string | false,
   siteUrl: "" as string,
@@ -44,6 +45,7 @@ export const settings = {
   assetViewerRoutePrefix: "files",
   assetViewerExclude: [],
   assetViewerIndex: false,
+  assetViewerIndexing: false,
   // Mirrors the showcase default — themePackSwitcher stays off here
   // (allowlisted, epic Theme Core #2812, #2826).
   themePack: "default" as string,

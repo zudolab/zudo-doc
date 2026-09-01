@@ -185,6 +185,38 @@ describe("zudoDoc() default-merge semantics", () => {
     });
   });
 
+  describe("transclude and asset-page indexing settings", () => {
+    it("defaults both settings off", () => {
+      const config = zudoDoc({});
+      const options = routesOptions(config);
+
+      expect(DEFAULT_SETTINGS.transclude).toBe(false);
+      expect(DEFAULT_SETTINGS.assetViewerIndexing).toBe(false);
+      expect(config.markdown?.features?.transclude).toBeUndefined();
+      expect(options?.settings.transclude).toBe(false);
+      expect(options?.settings.assetViewerIndexing).toBe(false);
+    });
+
+    it("threads transclude as an object-typed markdown feature", () => {
+      expect(zudoDoc({ transclude: true }).markdown?.features?.transclude).toEqual({});
+    });
+
+    it("keeps omitted asset-page indexing subkeys off for a partial object", () => {
+      const options = routesOptions(
+        zudoDoc({ assetViewerIndexing: { search: true } }),
+      );
+      const indexing = options?.settings.assetViewerIndexing as
+        | { search?: boolean; llmsTxt?: boolean; sitemap?: boolean }
+        | false
+        | undefined;
+
+      expect(indexing).toEqual({ search: true });
+      const partial = indexing && typeof indexing === "object" ? indexing : {};
+      expect(partial.llmsTxt).not.toBe(true);
+      expect(partial.sitemap).not.toBe(true);
+    });
+  });
+
   // #3471: an empty-string href resolves to the CURRENT document per the
   // HTML spec, so `favicon: ""` silently makes every page fetch its own HTML
   // as a "favicon", and `logo: ""` renders a CSS mask of an empty path.

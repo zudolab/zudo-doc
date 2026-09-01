@@ -32,6 +32,9 @@ const plugin: ZfbPlugin = {
   async postBuild(ctx: ZfbBuildHookContext) {
     await emitLlmsTxt({
       ...(ctx.options as unknown as LlmsTxtEmitOptions),
+      // `projectRoot` is runtime-only: zfb supplies the authoritative value,
+      // while the preset's serialized asset projection deliberately omits it.
+      projectRoot: ctx.projectRoot,
       outDir: ctx.outDir,
       // siteUrl is normalised to undefined when falsy because the runner
       // switches between absolute and root-relative URLs based on its
@@ -43,7 +46,12 @@ const plugin: ZfbPlugin = {
 
   devMiddleware(ctx: ZfbDevMiddlewareContext) {
     const middleware = createLlmsTxtDevMiddleware(
-      ctx.options as unknown as LlmsTxtDevMiddlewareOptions,
+      {
+        ...(ctx.options as unknown as LlmsTxtDevMiddlewareOptions),
+        // Mirror postBuild so future asset consumers see the same project
+        // root in both synchronous dev and build paths.
+        projectRoot: ctx.projectRoot,
+      },
       ctx.logger,
     );
     const handler = connectToZfbHandler(middleware);

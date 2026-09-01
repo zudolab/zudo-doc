@@ -185,6 +185,19 @@ export interface FrontmatterPreviewConfig {
   extraIgnoreKeys?: string[];
 }
 
+/**
+ * Controls which generated asset-viewer pages participate in index outputs.
+ *
+ * Each key is independently opt-in; omitted keys are treated as `false` by
+ * the corresponding consumer. The enclosing setting may also be `false` to
+ * keep all generated asset pages out of indexes.
+ */
+export interface AssetViewerIndexingConfig {
+  search?: boolean;
+  llmsTxt?: boolean;
+  sitemap?: boolean;
+}
+
 /** Home-page layout options used by the package-owned root and locale routes. */
 export interface HomeConfig {
   /** Widen the home content band for larger multi-column navigation grids. */
@@ -336,6 +349,7 @@ export interface Settings {
   defaultLocale: string;
   locales: Record<string, LocaleConfig>;
   mermaid: boolean;
+  transclude: boolean;
   noindex: boolean;
   editUrl: string | false;
   githubUrl: string | false;
@@ -394,6 +408,8 @@ export interface Settings {
   assetViewerExclude: string[];
   /** Whether the asset viewer index page is generated. */
   assetViewerIndex: boolean;
+  /** Per-output opt-in controls for indexing generated asset pages. */
+  assetViewerIndexing: AssetViewerIndexingConfig | false;
   bodyFootUtilArea: BodyFootUtilAreaConfig | false;
   htmlPreview: HtmlPreviewConfig | undefined;
   versions: VersionConfig[] | false;

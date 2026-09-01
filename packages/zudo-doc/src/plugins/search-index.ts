@@ -28,6 +28,10 @@ const plugin: ZfbPlugin = {
   async postBuild(ctx: ZfbBuildHookContext) {
     await emitSearchIndex({
       ...(ctx.options as unknown as SearchIndexBuildOptions),
+      // `projectRoot` cannot cross the preset's serialized options boundary;
+      // inject the runtime value supplied by zfb immediately before the
+      // internal emitter is called.
+      projectRoot: ctx.projectRoot,
       outDir: ctx.outDir,
       logger: ctx.logger,
     });
@@ -35,7 +39,12 @@ const plugin: ZfbPlugin = {
 
   devMiddleware(ctx: ZfbDevMiddlewareContext) {
     const middleware = createSearchIndexDevMiddleware(
-      ctx.options as unknown as SearchIndexConfig,
+      {
+        ...(ctx.options as unknown as SearchIndexConfig),
+        // Keep dev and postBuild on the same runtime project root. The
+        // serialized projection intentionally never carries this path.
+        projectRoot: ctx.projectRoot,
+      },
     );
     // zfb's `register(path, handler)` matches against the FULL request
     // URL (no base-stripping). For a non-root base (e.g. "/my-docs/"),

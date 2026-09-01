@@ -53,7 +53,7 @@ export function VersionsPageContent(
 
   return (
     <>
-      <h1 class="text-heading font-bold mb-vsp-lg">{labels.pageTitle}</h1>
+      <h1 class="text-heading font-bold mb-vsp-lg break-words">{labels.pageTitle}</h1>
 
       {/* Latest version section */}
       <section class="mb-vsp-xl">

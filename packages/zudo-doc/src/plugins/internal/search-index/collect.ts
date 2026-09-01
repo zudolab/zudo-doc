@@ -4,7 +4,8 @@
 // build emitter and the dev middleware — keeping the walk in one place
 // guarantees `pnpm dev` and `pnpm build` produce the same JSON shape.
 
-import { resolve } from "node:path";
+import { closeSync, openSync, readSync } from "node:fs";
+import { basename, resolve } from "node:path";
 import {
   collectMdFiles,
   isExcluded,
@@ -12,6 +13,7 @@ import {
   slugToUrl,
   stripMarkdown,
 } from "../../../md-utils/index.js";
+import { collectAssetPageDescriptors } from "../asset-viewer/asset-pages.js";
 import {
   MAX_BODY_LENGTH,
   type SearchIndexConfig,
@@ -22,6 +24,32 @@ function truncateBody(text: string): string {
   return text.length > MAX_BODY_LENGTH
     ? text.substring(0, MAX_BODY_LENGTH)
     : text;
+}
+
+/** Read enough UTF-8 bytes to produce the frozen 300-code-unit excerpt. */
+function readAssetExcerpt(filePath: string): string {
+  // A Unicode scalar needs at most four UTF-8 bytes. Reading four bytes per
+  // output code unit keeps this bounded even for very large public text files,
+  // while leaving enough complete input before any partial trailing sequence.
+  const sample = Buffer.allocUnsafe(MAX_BODY_LENGTH * 4);
+  const fd = openSync(filePath, "r");
+  try {
+    let offset = 0;
+    while (offset < sample.length) {
+      const bytesRead = readSync(
+        fd,
+        sample,
+        offset,
+        sample.length - offset,
+        offset,
+      );
+      if (bytesRead === 0) break;
+      offset += bytesRead;
+    }
+    return truncateBody(sample.subarray(0, offset).toString("utf8"));
+  } finally {
+    closeSync(fd);
+  }
 }
 
 /** Build search index entries for a single content directory. */
@@ -58,6 +86,34 @@ function buildEntries(
   return entries;
 }
 
+/** Build search entries for the asset-viewer pages that actually exist. */
+function buildAssetEntries(config: SearchIndexConfig): SearchIndexEntry[] {
+  const { assetScan, projectRoot } = config;
+  if (assetScan === undefined || projectRoot === undefined) return [];
+
+  const descriptors = collectAssetPageDescriptors({
+    projectRoot,
+    assetScan,
+    consumer: "search",
+  });
+  const assetRoot = resolve(projectRoot, "public", assetScan.assetViewerDir);
+
+  return descriptors.map((descriptor) => {
+    const localePrefix = descriptor.locale === undefined ? "" : `${descriptor.locale}/`;
+    const body = descriptor.isText
+      ? readAssetExcerpt(resolve(assetRoot, descriptor.path))
+      : "";
+
+    return {
+      id: `asset:${localePrefix}${assetScan.assetViewerRoutePrefix}/${descriptor.path}`,
+      title: basename(descriptor.path),
+      body,
+      url: descriptor.url,
+      description: descriptor.path,
+    };
+  });
+}
+
 /**
  * Collect every search-index entry across the default locale plus all
  * configured non-default locales. The traversal order matches today's
@@ -78,6 +134,8 @@ export function collectSearchEntries(
       entries.push(...buildEntries(locale.dir, code, base));
     }
   }
+
+  entries.push(...buildAssetEntries(config));
 
   return entries;
 }

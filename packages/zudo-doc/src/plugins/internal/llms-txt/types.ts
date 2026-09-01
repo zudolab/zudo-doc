@@ -6,6 +6,10 @@
  */
 
 import type { MdDocFrontmatter } from "../../../md-utils/index.js";
+import type { AssetScanProjection } from "../asset-viewer/asset-pages.js";
+
+/** Maximum number of UTF-8 bytes inlined for one text asset in llms-full.txt. */
+export const LLMS_ASSET_TEXT_CAP_BYTES = 8 * 1024;
 
 /**
  * Frontmatter fields the loader reads off of each MDX/MD file. Callers
@@ -41,6 +45,24 @@ export interface LlmsDocEntry {
   content: string;
   /** `frontmatter.sidebar_position`, undefined when not declared. */
   sidebarPosition: number | undefined;
+}
+
+/**
+ * One generated asset-viewer page in the llms outputs.
+ *
+ * The path is the normalized path relative to `assetViewerDir` and doubles as
+ * the display title. Binary entries intentionally omit `content`; generators
+ * render their fixed one-line stub instead of attempting to inline bytes.
+ */
+export interface LlmsAssetEntry {
+  path: string;
+  url: string;
+  /** Omitted for the default locale; present for localized outputs. */
+  locale?: string;
+  isText: boolean;
+  content?: string;
+  /** True when the source was longer than {@link LLMS_ASSET_TEXT_CAP_BYTES}. */
+  truncated?: boolean;
 }
 
 /**
@@ -110,6 +132,10 @@ export interface LlmsTxtEmitOptions extends LlmsTxtSiteMeta {
    * `outDir/<code>/llms.txt` and `outDir/<code>/llms-full.txt`.
    */
   locales?: LlmsTxtLocaleConfig[];
+  /** Runtime project root; injected by the zfb plugin wrapper, never serialized in the preset. */
+  projectRoot?: string;
+  /** Shared asset-viewer projection; consumed by the asset indexing wave. */
+  assetScan?: AssetScanProjection;
   /**
    * Optional logger. Defaults to a no-op so unit tests stay quiet; the zfb
    * plugin can pipe its logger through.
