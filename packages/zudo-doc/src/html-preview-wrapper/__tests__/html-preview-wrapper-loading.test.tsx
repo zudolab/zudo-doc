@@ -33,6 +33,7 @@ const COMPLETE_PROPS: HtmlPreviewWrapperProps = {
   head: '<meta name="preview-test" content="yes">',
   js: "window.previewMounted = true;",
   title: "Lifecycle preview",
+  lang: "pt-BR-x-preview",
   height: 320,
   defaultOpen: true,
   labels: {
@@ -95,6 +96,15 @@ describe("HtmlPreviewWrapper loading contract", () => {
     expect(serialized).toMatchObject(COMPLETE_PROPS);
     expect(serialized).toHaveProperty("__zudoDocVisibleMount", true);
     expect(serialized).not.toHaveProperty("loading");
+
+    const eager = readSerializedProps(
+      render(<HtmlPreviewWrapper {...COMPLETE_PROPS} />),
+    );
+    const {
+      __zudoDocVisibleMount: _visibleMount,
+      ...visibleSerializable
+    } = serialized;
+    expect(visibleSerializable).toEqual(eager);
   });
 
   it("uses the explicit height for an inert, non-interactive reservation", () => {
