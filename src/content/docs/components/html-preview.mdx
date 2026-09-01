@@ -38,6 +38,18 @@ Pass a partial `labels` object to customize one preview. Omitted keys, including
 
 For a direct non-route-bound component import, omitted `labels` keys use the built-in English defaults. Pass the same partial object (or all seven keys) when that use needs another language.
 
+## Deferred Loading
+
+The route-bound MDX `<HtmlPreview>` wrapper accepts `loading="eager"` or `loading="visible"`. It defaults to `"eager"`; omitting it is identical to passing `"eager"`. This is a wrapper lifecycle policy, not the native iframe `loading` attribute, and it is not forwarded to the iframe. The direct low-level `HtmlPreview` export does not accept this prop.
+
+With the default `"eager"` mode, the server renders the complete preview subtree, including the iframe, `srcdoc`, and optional chrome. zfb still uses its normal visible island timing for client hydration.
+
+With `"visible"`, server output contains only an inert, `aria-hidden` height reservation (the explicit positive `height`, or a 200px fallback). It contains no preview iframe or `srcdoc`, and no preview controls, inline scripts, or external-resource tags can run or load before the preview is mounted. After the reservation intersects the viewport, the wrapper mounts the complete preview once and normal operation begins.
+
+zfb 2.14.2 mounts a skip-SSR render target immediately, regardless of its visible marker. To preserve the deferral, the wrapper's inner target applies a one-shot `IntersectionObserver` gate to its reservation and disconnects it after the first intersecting entry. If `IntersectionObserver` is unavailable, it fails open and mounts the preview immediately.
+
+Both modes preserve the existing route-localized labels and optional `showSource` / `showViewportControls` chrome once the preview is rendered.
+
 ## Basic Usage
 
 <HtmlPreview
@@ -161,7 +173,9 @@ The two flags may be `false` together. The iframe still renders. The title bar i
 
 ## Fixed Height
 
-Use the `height` prop to set a fixed iframe height instead of auto-sizing.
+Use the `height` prop to set a fixed iframe height instead of auto-sizing. The iframe keeps that exact pixel height and the auto-height controller does not install a `ResizeObserver` or change it as the content grows or shrinks.
+
+Fixed height is required for an opaque sandbox: removing `allow-same-origin` prevents the parent from reading the iframe document. There is no opaque-origin `postMessage` resizing path, so pair a stricter `sandbox` with `height`.
 
 <HtmlPreview
   title="Fixed Height (300px)"
@@ -182,12 +196,20 @@ Use the `height` prop to set a fixed iframe height instead of auto-sizing.
   `}
 />
 
+## Auto-height Lifecycle
+
+When `height` is omitted and `fullHeight` is `false`, a readable same-origin preview measures its document after the iframe loads and keeps the iframe height synchronized. The default sandbox includes `allow-same-origin`, which allows the parent to read the preview document for this purpose.
+
+The preview observes the iframe document's `body` and `html` with `ResizeObserver`, so later growth and shrink are reflected as well as geometry changes caused by delayed stylesheets, fonts, images, or scripts. Changing a viewport preset also schedules a remeasurement after the content reflows. Script-bearing previews additionally get an immediate measurement and one 300ms follow-up measurement after load.
+
+If the iframe does not provide `ResizeObserver`, the immediate measurement and any script-driven delayed one-shot measurement are retained, but continuous tracking is unavailable. An opaque sandbox cannot be measured at all; use a fixed `height` instead.
+
 ## Full Height
 
 Use the `fullHeight` prop to make the preview document's `html`/`body` stretch to fill the iframe — useful for layouts that rely on `height: 100%` reaching the viewport (e.g. a flex column that fills the available space).
 
 :::warning[Pair with an explicit `height`]
-`fullHeight` interacts with the auto-height mechanism: auto-height measures the iframe body and resizes the iframe to fit, but `fullHeight` makes the body's height derive *from* the iframe instead — combining the two creates a feedback loop with no stable resolution. Always set an explicit `height` alongside `fullHeight`.
+`fullHeight` interacts with the auto-height mechanism: auto-height measures the iframe body and resizes the iframe to fit, but `fullHeight` makes the body's height derive *from* the iframe instead — combining the two creates a feedback loop with no stable resolution. Without a fixed `height`, `fullHeight` deliberately disables auto-height and remains observer-free at the default 200px height. The valid pattern is to pair `fullHeight` with an explicit `height`.
 :::
 
 <HtmlPreview
@@ -296,8 +318,10 @@ Use `head` and `js` props to add resources to individual previews. These are mer
 These four props are **per-usage only** — unlike `head`/`css`/`js`, they are not part of the global `htmlPreview` configuration in `zfb.config.ts`.
 
 :::warning[External resources load client-side, not at build time]
-`externalStyles`/`externalScripts` are network requests the browser makes **when the preview iframe renders**, not assets bundled at build time. The preview may briefly show unstyled/unstyled content while the resource loads, and it depends on the resource staying available at that URL.
+`externalStyles`/`externalScripts` are network requests the browser makes **when the preview iframe renders**, not assets bundled at build time. The preview may briefly show unstyled or partially styled content while the resource loads, and it depends on the resource staying available at that URL.
 :::
+
+With `loading="visible"`, the iframe is not rendered before the visibility gate opens, so external-resource requests and inline `head`/`js` work wait until the preview mounts. `loading="eager"` keeps the complete server-rendered preview behavior.
 
 A one-line Tailwind CDN demo, using `preflight={false}` since `@tailwindcss/browser` ships its own reset:
 
@@ -362,9 +386,12 @@ Removing `allow-same-origin` gives the iframe an opaque origin, which blocks the
 
 ## Props
 
+The following table describes the route-bound MDX `<HtmlPreview>` wrapper. `loading` is wrapper-only; a direct import of the low-level `HtmlPreview` accepts the preview props below but does not accept `loading`.
+
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
 | `html` | string | (required) | HTML content to render inside the preview iframe |
+| `loading` | `"eager" \| "visible"` | `"eager"` | Wrapper lifecycle policy. `"visible"` defers the preview subtree until viewport intersection; it is not forwarded as the native iframe `loading` attribute |
 | `css` | string | `undefined` | CSS styles applied inside the preview iframe |
 | `head` | string | `undefined` | Raw HTML injected into `<head>` (links, meta, fonts) |
 | `js` | string | `undefined` | JavaScript executed inside the preview iframe |
@@ -400,10 +427,12 @@ This browser-time set is smaller than the [full language list](./basic-component
 ## Notes
 
 - The preview renders inside an isolated `<iframe>` with a CSS reset (Tailwind v4 preflight), so styles do not leak in or out.
+- `loading="visible"` keeps an inert height reservation until the wrapper's one-shot visibility gate opens; it does not add a native iframe lazy-loading attribute.
 - Route-bound MDX previews use the active locale for the seven `htmlPreview.*` control labels; direct non-route-bound component use defaults to English unless `labels` is supplied.
 - `showSource={false}` removes the source toggle and highlighting subtree structurally without removing the iframe. `defaultOpen` does not reopen a hidden source region.
 - `showViewportControls={false}` removes preset buttons but keeps the Full-width container and horizontal drag-resize affordance. Both flags can be false; a title-only bar remains when a non-empty `title` is supplied, and an empty bar is omitted.
 - Previews default to `sandbox="allow-same-origin"` (or `sandbox="allow-scripts allow-same-origin"` when a `js` prop or `<script>` is present) so the iframe height auto-syncs via `contentDocument`. The `srcdoc` content is author-controlled MDX. Override with the `sandbox` prop for untrusted content — see [Security & the `sandbox` prop](#security-the-sandbox-prop) above.
+- Omitted `height` enables same-origin auto-height when `fullHeight` is false: later body geometry changes and viewport reflows are observed. A fixed `height` is exact and observer-free; an opaque sandbox needs one because no `postMessage` resizing is used.
 - Global resources from the `htmlPreview` config field are injected before per-component props.
 - The `html`, `css`, and `js` props support template literals with indentation. Leading whitespace is automatically stripped (dedented) in the source code display.
 - Client-side hydration is handled automatically by the component wrapper — no `client:load` directive needed in MDX.
