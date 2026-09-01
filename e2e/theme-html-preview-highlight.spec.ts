@@ -9,6 +9,27 @@ const DESKTOP_TOGGLE_SELECTOR =
 const PANEL_TRIGGER = "#design-token-trigger";
 const PANEL_SHELL = ".tokenpanel-shell";
 
+const NAVIGATION_TIMEOUT_MS = 15_000;
+const MOUNT_TIMEOUT_MS = 15_000;
+const NETWORK_ASSERTION_TIMEOUT_MS = 10_000;
+const GUARD_COLOR_TIMEOUT_MS = 10_000;
+const INTERACTION_TIMEOUT_MS = 3_000;
+const LOAD_STAGE_TIMEOUT_MS = 18_000;
+const SOURCE_STAGE_TIMEOUT_MS = 18_000;
+const WASM_STAGE_TIMEOUT_MS = 12_000;
+const THEME_STAGE_TIMEOUT_MS = 12_000;
+const PANEL_STAGE_TIMEOUT_MS = 15_000;
+const EDIT_STAGE_TIMEOUT_MS = 12_000;
+const SEQUENTIAL_STAGE_BUDGET_MS =
+  LOAD_STAGE_TIMEOUT_MS +
+  SOURCE_STAGE_TIMEOUT_MS +
+  WASM_STAGE_TIMEOUT_MS +
+  THEME_STAGE_TIMEOUT_MS +
+  PANEL_STAGE_TIMEOUT_MS +
+  EDIT_STAGE_TIMEOUT_MS +
+  THEME_STAGE_TIMEOUT_MS;
+const TEST_TIMEOUT_MS = Math.ceil(SEQUENTIAL_STAGE_BUDGET_MS / 0.75);
+
 type PreviewGuard = {
   pre: HTMLPreElement;
   token: HTMLSpanElement;
@@ -42,34 +63,43 @@ async function preseedLightTheme(page: Page): Promise<void> {
 
 async function waitForGuardColor(
   page: Page,
+  stage: string,
   mode: "light" | "dark",
   previousColor?: string,
 ): Promise<void> {
-  await page.waitForFunction(
-    ({ expectedMode, oldColor }) => {
-      const state = (window as PreviewGuardWindow)
-        .__zudoHtmlPreviewHighlightGuard;
-      if (
-        !state ||
-        document.documentElement.dataset.theme !== expectedMode ||
-        document.documentElement.style.colorScheme !== expectedMode
-      ) {
-        return false;
-      }
+  try {
+    await page.waitForFunction(
+      ({ expectedMode, oldColor }) => {
+        const state = (window as PreviewGuardWindow)
+          .__zudoHtmlPreviewHighlightGuard;
+        if (
+          !state ||
+          document.documentElement.dataset.theme !== expectedMode ||
+          document.documentElement.style.colorScheme !== expectedMode
+        ) {
+          return false;
+        }
 
-      const probe = document.createElement("span");
-      probe.style.color = "var(--zd-syntax-keyword)";
-      document.body.append(probe);
-      const semanticColor = getComputedStyle(probe).color;
-      probe.remove();
-      const tokenColor = getComputedStyle(state.token).color;
-      return (
-        tokenColor === semanticColor &&
-        (oldColor === undefined || tokenColor !== oldColor)
-      );
-    },
-    { expectedMode: mode, oldColor: previousColor },
-  );
+        const probe = document.createElement("span");
+        probe.style.color = "var(--zd-syntax-keyword)";
+        document.body.append(probe);
+        const semanticColor = getComputedStyle(probe).color;
+        probe.remove();
+        const tokenColor = getComputedStyle(state.token).color;
+        return (
+          tokenColor === semanticColor &&
+          (oldColor === undefined || tokenColor !== oldColor)
+        );
+      },
+      { expectedMode: mode, oldColor: previousColor },
+      { timeout: GUARD_COLOR_TIMEOUT_MS },
+    );
+  } catch (cause) {
+    throw new Error(
+      `Guard-color stage "${stage}" did not reach ${mode} within ${GUARD_COLOR_TIMEOUT_MS}ms`,
+      { cause },
+    );
+  }
 }
 
 async function startPreviewGuard(pre: Locator) {
@@ -173,116 +203,226 @@ function expectStablePreviewDom(state: Awaited<ReturnType<typeof readPreviewGuar
   expect(state.mutationCount).toBe(0);
 }
 
+test.use({ trace: "retain-on-failure" });
+
 test.describe("HtmlPreview semantic syntax tokens", () => {
   test("light, named dark, and a live edit recolor existing WASM markup", async ({
     page,
     assertNoConsoleErrors,
   }) => {
+    // Sequential stage worst cases: load/navigation 18s + source mount/open 18s
+    // + WASM/network proof 12s + named-dark recolor 12s + panel readiness 15s
+    // + live edit 12s + light recolor 12s = 99s. Each enclosing test.step bound
+    // includes its actions and nested assertion/wait bounds, so nested limits do
+    // not add again. 99s is 75% of the derived 132s test budget. Playwright also
+    // grants teardown an equal 132s budget; with CI's one retry, the 528s ceiling
+    // remains well inside the 15-minute E2E job budget.
+    test.setTimeout(TEST_TIMEOUT_MS);
+
     const resourceRequests: string[] = [];
     page.on("request", (request) => {
       if (isMdWasmResource(request.url())) resourceRequests.push(request.url());
     });
 
-    await preseedLightTheme(page);
-    await page.goto(PAGE, { waitUntil: "domcontentloaded" });
+    const island = await test.step(
+      "load the light-theme preview page",
+      async () => {
+        await preseedLightTheme(page);
+        await page.goto(PAGE, {
+          waitUntil: "domcontentloaded",
+          timeout: NAVIGATION_TIMEOUT_MS,
+        });
 
-    const island = page.locator(ISLAND_SELECTOR).filter({
-      hasText: "Syntax Token Preview",
-    });
-    await expect(island).toHaveCount(1);
-    await island.scrollIntoViewIfNeeded();
-    // The accessible name changes to "Hide code" after the first successful
-    // click. Keep a stable locator while polling through the island hydration
-    // boundary, otherwise the name-based locator stops matching precisely when
-    // the expected state is reached.
-    const sourceToggle = island.locator("button[aria-expanded]");
-    await expect
-      .poll(
-        async () => {
-          await sourceToggle.click();
-          return sourceToggle.getAttribute("aria-expanded");
-        },
-        { timeout: 10_000 },
-      )
-      .toBe("true");
-
-    const previewOutputs = island.locator(".zd-html-preview-code");
-    await expect(previewOutputs).toHaveCount(2, { timeout: 10_000 });
-    const javascriptPre = previewOutputs.nth(1).locator("pre.hi-root");
-    await expect(javascriptPre.locator("span.hi-kw").first()).toBeVisible();
-
-    const before = await startPreviewGuard(javascriptPre);
-    expect(before.theme).toBe("light");
-    expect(before.semanticDeclaration).not.toBe("");
-    expect(before.tokenColor).toBe(before.semanticColor);
-    expect(before.tokenColor).toBe(before.defaultLightColor);
-    expect(before.preInlineStyle).toBeNull();
-    expect(before.tokenInlineStyle).toBeNull();
-    expect(resourceRequests).toHaveLength(2);
-    const resourceRequestCount = resourceRequests.length;
-
-    await page.locator(DESKTOP_TOGGLE_SELECTOR).click();
-    await waitForGuardColor(page, "dark", before.tokenColor);
-
-    const namedVariation = await readPreviewGuard(page);
-    expect(namedVariation.theme).toBe("dark");
-    expect(namedVariation.tokenColor).toBe(namedVariation.semanticColor);
-    expect(namedVariation.tokenColor).toBe(
-      namedVariation.namedVariationColor,
+        const previewIsland = page.locator(ISLAND_SELECTOR).filter({
+          hasText: "Syntax Token Preview",
+        });
+        await expect(previewIsland).toHaveCount(1, {
+          timeout: NETWORK_ASSERTION_TIMEOUT_MS,
+        });
+        return previewIsland;
+      },
+      { timeout: LOAD_STAGE_TIMEOUT_MS },
     );
-    expectStablePreviewDom(namedVariation);
-    expect(resourceRequests).toHaveLength(resourceRequestCount);
 
-    await page.locator(PANEL_TRIGGER).click();
-    await expect(page.locator(PANEL_SHELL)).toBeVisible();
-    await page.getByRole("tab", { name: "Color", exact: true }).click();
-    const keywordSelect = page
-      .getByTestId("tokenpanel-semantic-ref-syntaxKeyword")
-      .getByLabel("--zd-syntax-keyword tier reference", { exact: true });
-    await expect(keywordSelect).toBeVisible();
+    await test.step(
+      "wait for the preview mount signal and open source once",
+      async () => {
+        await island.scrollIntoViewIfNeeded({
+          timeout: INTERACTION_TIMEOUT_MS,
+        });
+        // zfb stamps this after mount returns. That is sufficient here because
+        // PreviewBase attaches the source-toggle handler during render.
+        await expect(island).toHaveAttribute("data-zfb-island-mounted", "", {
+          timeout: MOUNT_TIMEOUT_MS,
+        });
+        const sourceToggle = island.locator("button[aria-expanded]");
+        await sourceToggle.click({ timeout: INTERACTION_TIMEOUT_MS });
+        await expect(sourceToggle).toHaveAttribute("aria-expanded", "true", {
+          timeout: NETWORK_ASSERTION_TIMEOUT_MS,
+        });
+      },
+      { timeout: SOURCE_STAGE_TIMEOUT_MS },
+    );
 
-    const afterPanelOpen = await readPreviewGuard(page);
-    expect(afterPanelOpen.tokenColor).toBe(namedVariation.tokenColor);
-    expect(afterPanelOpen.tokenColor).toBe(afterPanelOpen.semanticColor);
-    expectStablePreviewDom(afterPanelOpen);
+    const { before, resourceRequestCount } = await test.step(
+      "prove WASM highlighting and start the DOM-stability guard",
+      async () => {
+        const previewOutputs = island.locator(".zd-html-preview-code");
+        await expect(previewOutputs).toHaveCount(2, {
+          timeout: NETWORK_ASSERTION_TIMEOUT_MS,
+        });
+        const highlightedPre = previewOutputs.nth(1).locator("pre.hi-root");
+        await expect(
+          highlightedPre.locator("span.hi-kw").first(),
+        ).toBeVisible({ timeout: NETWORK_ASSERTION_TIMEOUT_MS });
 
-    const currentValue = await keywordSelect.inputValue();
-    const nextAccentValue = await keywordSelect
-      .locator('optgroup[label="Accent"] option')
-      .evaluateAll((options, selectedValue) => {
-        const option = options.find(
-          (candidate) =>
-            (candidate as HTMLOptionElement).value !== selectedValue,
-        ) as HTMLOptionElement | undefined;
-        return option?.value ?? null;
-      }, currentValue);
-    if (!nextAccentValue) {
-      throw new Error("syntaxKeyword has no alternate Accent ramp option");
-    }
-    await keywordSelect.selectOption(nextAccentValue);
+        const initial = await startPreviewGuard(highlightedPre);
+        expect(initial.theme).toBe("light");
+        expect(initial.semanticDeclaration).not.toBe("");
+        expect(initial.tokenColor).toBe(initial.semanticColor);
+        expect(initial.tokenColor).toBe(initial.defaultLightColor);
+        expect(initial.preInlineStyle).toBeNull();
+        expect(initial.tokenInlineStyle).toBeNull();
+        expect(resourceRequests).toHaveLength(2);
+        return {
+          before: initial,
+          resourceRequestCount: resourceRequests.length,
+        };
+      },
+      { timeout: WASM_STAGE_TIMEOUT_MS },
+    );
 
-    const checkedOption = keywordSelect.locator("option:checked");
-    const selectedPaletteVar = await checkedOption.evaluate((option) => {
-      const match = option.textContent?.match(/--palette-accent-\d+/);
-      if (!match) throw new Error("selected Accent option has no palette var");
-      return match[0];
-    });
-    await waitForGuardColor(page, "dark", afterPanelOpen.tokenColor);
+    const namedVariation = await test.step(
+      "apply the named dark theme",
+      async () => {
+        const desktopToggle = page.locator(DESKTOP_TOGGLE_SELECTOR);
+        // zudolab/zudo-doc#3828: the toggle swallows clicks while pending; a
+        // swallowed first click plus the old unbounded color guard explains the
+        // recorded one-off timeout.
+        await expect(desktopToggle).not.toHaveAttribute("data-zd-pending", "", {
+          timeout: NETWORK_ASSERTION_TIMEOUT_MS,
+        });
+        await desktopToggle.click({ timeout: INTERACTION_TIMEOUT_MS });
+        await waitForGuardColor(
+          page,
+          "named dark theme",
+          "dark",
+          before.tokenColor,
+        );
 
-    const edited = await readPreviewGuard(page, { selectedPaletteVar });
-    expect(edited.tokenColor).not.toBe(afterPanelOpen.tokenColor);
-    expect(edited.tokenColor).toBe(edited.semanticColor);
-    expect(edited.tokenColor).toBe(edited.selectedPaletteColor);
-    expectStablePreviewDom(edited);
-    expect(resourceRequests).toHaveLength(resourceRequestCount);
+        const state = await readPreviewGuard(page);
+        expect(state.theme).toBe("dark");
+        expect(state.tokenColor).toBe(state.semanticColor);
+        expect(state.tokenColor).toBe(state.namedVariationColor);
+        expectStablePreviewDom(state);
+        expect(resourceRequests).toHaveLength(resourceRequestCount);
+        return state;
+      },
+      { timeout: THEME_STAGE_TIMEOUT_MS },
+    );
 
-    await page.locator(DESKTOP_TOGGLE_SELECTOR).click();
-    await waitForGuardColor(page, "light", edited.tokenColor);
-    const lightAfterEdit = await readPreviewGuard(page, { finish: true });
-    expect(lightAfterEdit.tokenColor).toBe(lightAfterEdit.semanticColor);
-    expect(lightAfterEdit.tokenColor).toBe(lightAfterEdit.defaultLightColor);
-    expectStablePreviewDom(lightAfterEdit);
-    expect(resourceRequests).toHaveLength(resourceRequestCount);
+    const { keywordSelect, afterPanelOpen } = await test.step(
+      "open the token panel and wait for the syntax control",
+      async () => {
+        await page
+          .locator(PANEL_TRIGGER)
+          .click({ timeout: INTERACTION_TIMEOUT_MS });
+        await expect(page.locator(PANEL_SHELL)).toBeVisible({
+          timeout: NETWORK_ASSERTION_TIMEOUT_MS,
+        });
+        await page
+          .getByRole("tab", { name: "Color", exact: true })
+          .click({ timeout: INTERACTION_TIMEOUT_MS });
+        const select = page
+          .getByTestId("tokenpanel-semantic-ref-syntaxKeyword")
+          .getByLabel("--zd-syntax-keyword tier reference", { exact: true });
+        await expect(select).toBeVisible({
+          timeout: NETWORK_ASSERTION_TIMEOUT_MS,
+        });
+
+        const state = await readPreviewGuard(page);
+        expect(state.tokenColor).toBe(namedVariation.tokenColor);
+        expect(state.tokenColor).toBe(state.semanticColor);
+        expectStablePreviewDom(state);
+        return { keywordSelect: select, afterPanelOpen: state };
+      },
+      { timeout: PANEL_STAGE_TIMEOUT_MS },
+    );
+
+    const edited = await test.step(
+      "apply a live syntax-token edit",
+      async () => {
+        const currentValue = await keywordSelect.inputValue({
+          timeout: INTERACTION_TIMEOUT_MS,
+        });
+        const nextAccentValue = await keywordSelect
+          .locator('optgroup[label="Accent"] option')
+          .evaluateAll((options, selectedValue) => {
+            const option = options.find(
+              (candidate) =>
+                (candidate as HTMLOptionElement).value !== selectedValue,
+            ) as HTMLOptionElement | undefined;
+            return option?.value ?? null;
+          }, currentValue);
+        if (!nextAccentValue) {
+          throw new Error("syntaxKeyword has no alternate Accent ramp option");
+        }
+        await keywordSelect.selectOption(nextAccentValue, {
+          timeout: INTERACTION_TIMEOUT_MS,
+        });
+
+        const checkedOption = keywordSelect.locator("option:checked");
+        const selectedPaletteVar = await checkedOption.evaluate((option) => {
+          const match = option.textContent?.match(/--palette-accent-\d+/);
+          if (!match) {
+            throw new Error("selected Accent option has no palette var");
+          }
+          return match[0];
+        });
+        await waitForGuardColor(
+          page,
+          "live syntax-token edit",
+          "dark",
+          afterPanelOpen.tokenColor,
+        );
+
+        const state = await readPreviewGuard(page, { selectedPaletteVar });
+        expect(state.tokenColor).not.toBe(afterPanelOpen.tokenColor);
+        expect(state.tokenColor).toBe(state.semanticColor);
+        expect(state.tokenColor).toBe(state.selectedPaletteColor);
+        expectStablePreviewDom(state);
+        expect(resourceRequests).toHaveLength(resourceRequestCount);
+        return state;
+      },
+      { timeout: EDIT_STAGE_TIMEOUT_MS },
+    );
+
+    await test.step(
+      "return the edited preview to light theme",
+      async () => {
+        const desktopToggle = page.locator(DESKTOP_TOGGLE_SELECTOR);
+        // zudolab/zudo-doc#3828: every theme click must wait until hydration
+        // pending clears because pending clicks are intentionally swallowed.
+        await expect(desktopToggle).not.toHaveAttribute("data-zd-pending", "", {
+          timeout: NETWORK_ASSERTION_TIMEOUT_MS,
+        });
+        await desktopToggle.click({ timeout: INTERACTION_TIMEOUT_MS });
+        await waitForGuardColor(
+          page,
+          "light theme after live edit",
+          "light",
+          edited.tokenColor,
+        );
+        const lightAfterEdit = await readPreviewGuard(page, { finish: true });
+        expect(lightAfterEdit.tokenColor).toBe(lightAfterEdit.semanticColor);
+        expect(lightAfterEdit.tokenColor).toBe(
+          lightAfterEdit.defaultLightColor,
+        );
+        expectStablePreviewDom(lightAfterEdit);
+        expect(resourceRequests).toHaveLength(resourceRequestCount);
+      },
+      { timeout: THEME_STAGE_TIMEOUT_MS },
+    );
 
     assertNoConsoleErrors();
   });
