@@ -371,7 +371,7 @@ export default defineConfig(
 | `title` | string | `undefined` | プレビューヘッダーバーに表示するタイトル |
 | `height` | number | auto | iframe の固定高さ（ピクセル）。省略時はコンテンツに合わせて自動調整 |
 | `defaultOpen` | boolean | `false` | ソースコードパネルをデフォルトで展開表示する |
-| `labels` | Partial<HtmlPreviewLabels> | `undefined` | ビューポート、ソース、iframeコントロールの呼び出し単位のラベル。未指定キーはルートロケールのラベル（直接利用では英語デフォルト）を維持 |
+| `labels` | `Partial<HtmlPreviewLabels>` | `undefined` | ビューポート、ソース、iframeコントロールの呼び出し単位のラベル。未指定キーはルートロケールのラベル（直接利用では英語デフォルト）を維持 |
 | `showSource` | boolean | `true` | ソース切り替えとコードパネルを描画する。`false`では構造的に削除するがiframeは残り、その場合`defaultOpen`は効果がない |
 | `showViewportControls` | boolean | `true` | Mobile / Tablet / Fullのプリセットコントロールを描画する。`false`でもFull幅とドラッグリサイズ操作は残る |
 | `fullHeight` | boolean | `false` | プレビュードキュメントの `html`/`body` を高さ100%まで広げる。高さ自動調整と干渉するため、必ず明示的な `height` と併用する |

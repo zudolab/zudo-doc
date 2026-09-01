@@ -371,7 +371,7 @@ Removing `allow-same-origin` gives the iframe an opaque origin, which blocks the
 | `title` | string | `undefined` | Title displayed in the preview header bar |
 | `height` | number | auto | Fixed iframe height in pixels. When omitted, height auto-adjusts to content |
 | `defaultOpen` | boolean | `false` | Show the source code panel expanded by default |
-| `labels` | Partial<HtmlPreviewLabels> | `undefined` | Per-call labels for viewport, source, and iframe controls. Missing keys retain route-locale labels (or English defaults for direct use) |
+| `labels` | `Partial<HtmlPreviewLabels>` | `undefined` | Per-call labels for viewport, source, and iframe controls. Missing keys retain route-locale labels (or English defaults for direct use) |
 | `showSource` | boolean | `true` | Render the source toggle and code panel. `false` removes them structurally but keeps the iframe; `defaultOpen` then has no effect |
 | `showViewportControls` | boolean | `true` | Render Mobile / Tablet / Full preset controls. `false` keeps Full width and the drag-resize affordance |
 | `fullHeight` | boolean | `false` | Makes the preview document's `html`/`body` stretch to 100% height. Interacts with auto-height — always pair with an explicit `height` |
