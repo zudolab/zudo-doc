@@ -1,7 +1,9 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import type { Locator, Page } from "@playwright/test";
 import { test, expect } from "./fixtures";
 import { expectHtmlAttr } from "./html-assertions";
+import { spaClick } from "./nav-helpers";
 import { DIST_DIR, readDistFile } from "./smoke-dist-helper";
 
 /**
@@ -19,6 +21,107 @@ const RESOURCE_PREFIX = "islands-resource-zfb_md_wasm_highlight_";
 const RESOURCE_GLUE_PREFIX =
   "islands-resource-zfb_md_wasm_highlight_glue.zfb-resource-";
 const RESOURCE_WASM_PREFIX = "islands-resource-zfb_md_wasm_highlight_bg-";
+const VISIBLE_STYLE_PATH = "/html-preview-3852-style.css";
+const VISIBLE_SCRIPT_PATH = "/html-preview-3852-script.js";
+const HTML_PREVIEW_ISLAND = '[data-zfb-island="HtmlPreviewWrapperInner"]';
+const HTML_PREVIEW_SKIP_SSR =
+  '[data-zfb-island-skip-ssr="HtmlPreviewWrapperInner"]';
+
+function htmlSection(html: string, heading: string): string {
+  // Headings are serialized into the MobileToc data-props before the article
+  // as well as rendered in the document. Anchor at the article's actual h2
+  // so a matching title in JSON cannot make the shape assertions inspect the
+  // wrong region.
+  const articleStart = html.search(/<article\b/i);
+  if (articleStart < 0) return "";
+  const headingText = html.indexOf(heading, articleStart);
+  if (headingText < 0) return "";
+  const start = html.lastIndexOf("<h2", headingText);
+  if (start < articleStart) return "";
+  const nextHeading = html.indexOf("<h2", headingText + heading.length);
+  return html.slice(start, nextHeading < 0 ? html.length : nextHeading);
+}
+
+function previewAfterHeading(
+  page: Page,
+  heading: string,
+  mode: "eager" | "visible" = "eager",
+): Locator {
+  const markerAttribute =
+    mode === "visible"
+      ? '@data-zfb-island-skip-ssr="HtmlPreviewWrapperInner"'
+      : '@data-zfb-island="HtmlPreviewWrapperInner"';
+  return page
+    .locator("article h2")
+    .filter({ hasText: heading })
+    .locator(`xpath=following-sibling::*[${markerAttribute}][1]`);
+}
+
+async function iframeHeight(preview: Locator): Promise<number> {
+  return preview.locator("iframe").evaluate((iframe) =>
+    Number.parseFloat(iframe.style.height),
+  );
+}
+
+async function waitForPreviewHydration(preview: Locator): Promise<void> {
+  const codeToggle = preview.locator("button[aria-expanded]");
+  await expect
+    .poll(
+      async () => {
+        await codeToggle.click();
+        return codeToggle.getAttribute("aria-expanded");
+      },
+      { timeout: 10_000 },
+    )
+      .toBe("true");
+}
+
+type VisiblePreVisibility = {
+  iframeCount: number;
+  inlineTargetCount: number;
+  markerCount: number;
+  markerIndex: number;
+  markerTop: number | null;
+  mountedSignal: boolean;
+  nestedIslandCount: number;
+  pageScrollY: number;
+  reservationCount: number;
+  viewportHeight: number;
+};
+
+async function inspectVisibleMarker(page: Page): Promise<VisiblePreVisibility> {
+  return page.evaluate(
+    ({ markerSelector, title, inlineId }) => {
+      const markers = Array.from(document.querySelectorAll(markerSelector));
+      const markerIndex = markers.findIndex((element) =>
+        element.getAttribute("data-props")?.includes(title),
+      );
+      const marker = markerIndex >= 0 ? markers[markerIndex] : null;
+      return {
+        markerCount: markers.length,
+        markerIndex,
+        markerTop: marker?.getBoundingClientRect().top ?? null,
+        viewportHeight: window.innerHeight,
+        pageScrollY: window.scrollY,
+        mountedSignal: marker?.hasAttribute("data-zfb-island-mounted") ?? false,
+        iframeCount: marker?.querySelectorAll("iframe").length ?? 0,
+        reservationCount:
+          marker?.querySelectorAll("[data-zd-html-preview-reservation]").length ??
+          0,
+        inlineTargetCount: marker?.querySelectorAll(`#${inlineId}`).length ?? 0,
+        nestedIslandCount:
+          marker?.querySelectorAll(
+            "[data-zfb-island], [data-zfb-island-skip-ssr]",
+          ).length ?? 0,
+      };
+    },
+    {
+      markerSelector: HTML_PREVIEW_SKIP_SSR,
+      title: "Visible Lifecycle Test",
+      inlineId: "visible-inline-target-3852",
+    },
+  );
+}
 
 type ResourceKind = "glue" | "wasm";
 
@@ -80,6 +183,42 @@ test.describe("HtmlPreview: SSG shape", () => {
     for (const resource of [...glue, ...wasm]) {
       expect(emittedJavaScript).toContain(`./${resource}`);
     }
+  });
+
+  test("keeps eager iframe SSR while visible mode emits only an isolated reservation", () => {
+    const eager = htmlSection(html, "Eager Lifecycle Test");
+    expect(eager).not.toBe("");
+    expectHtmlAttr(eager, "data-zfb-island", "HtmlPreviewWrapperInner");
+    expect(eager).toContain("<iframe");
+    expect(eager).toContain("srcdoc=");
+
+    const visible = htmlSection(html, "Visible Lifecycle Test");
+    expect(visible).not.toBe("");
+    expectHtmlAttr(
+      visible,
+      "data-zfb-island-skip-ssr",
+      "HtmlPreviewWrapperInner",
+    );
+    expectHtmlAttr(visible, "data-when", "visible");
+    expect(visible).not.toContain('data-zfb-island="HtmlPreviewWrapperInner"');
+    expect(visible).not.toContain("<iframe");
+    expect(visible).not.toContain("srcdoc=");
+    expect(visible).not.toContain("<button");
+    expect(visible).not.toContain(
+      `<link rel="stylesheet" href="${VISIBLE_STYLE_PATH}">`,
+    );
+    expect(visible).not.toContain(
+      `<script src="${VISIBLE_SCRIPT_PATH}"></script>`,
+    );
+  });
+
+  test("keeps the fixed-height safeguards in the emitted previews", () => {
+    const fullHeight = htmlSection(html, "FullHeight Fixed Lifecycle Test");
+    expect(fullHeight).toContain("html,body{height:100%}");
+
+    const opaque = htmlSection(html, "Opaque Fixed Height Lifecycle Test");
+    expectHtmlAttr(opaque, "sandbox", "");
+    expect(opaque).toMatch(/height:\s*300px/);
   });
 });
 
@@ -443,4 +582,381 @@ test.describe("HtmlPreview: 44px control hit targets", () => {
       }
     });
   }
+});
+
+test.describe("HtmlPreview: lifecycle integration", () => {
+  test("eager mode keeps its SSR iframe and executes its inline script", async ({
+    page,
+  }) => {
+    await page.goto(PAGE, { waitUntil: "domcontentloaded" });
+
+    const eager = previewAfterHeading(page, "Eager Lifecycle Test");
+    await expect(eager).toHaveCount(1);
+    await expect(eager.locator("iframe")).toHaveCount(1);
+    await expect(
+      eager.frameLocator("iframe").locator("#eager-lifecycle-3852"),
+    ).toHaveText("eager-ran");
+  });
+
+  test("visible mode defers iframe work and local resources until explicit visibility", async ({
+    page,
+    assertNoConsoleErrors,
+  }) => {
+    const resourceRequests: string[] = [];
+    const resourceResponses: Array<{ path: string; status: number }> = [];
+    const pageErrors: string[] = [];
+    const consoleErrors: string[] = [];
+
+    // These listeners intentionally precede navigation: requests or errors
+    // caused by SSR iframe parsing would otherwise be invisible to this test.
+    page.on("request", (request) => {
+      const path = new URL(request.url()).pathname;
+      if (path === VISIBLE_STYLE_PATH || path === VISIBLE_SCRIPT_PATH) {
+        resourceRequests.push(path);
+      }
+    });
+    page.on("response", (response) => {
+      const path = new URL(response.url()).pathname;
+      if (path === VISIBLE_STYLE_PATH || path === VISIBLE_SCRIPT_PATH) {
+        resourceResponses.push({ path, status: response.status() });
+      }
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+
+    await page.goto(PAGE, { waitUntil: "domcontentloaded" });
+
+    // Do not use a locator before the explicit scroll. Locator visibility and
+    // interaction helpers may scroll the page and accidentally satisfy the
+    // visible gate. Inspect the marker and its inert subtree directly instead.
+    // zfb attaches the render-mode marker asynchronously after navigation.
+    // Wait for that lightweight mount through page.evaluate only: no locator
+    // action may auto-scroll the marker before this no-work check settles.
+    await expect
+      .poll(
+        async () => {
+          const snapshot = await inspectVisibleMarker(page);
+          return (
+            snapshot.markerIndex >= 0 &&
+            snapshot.mountedSignal &&
+            snapshot.reservationCount === 1 &&
+            snapshot.iframeCount === 0 &&
+            snapshot.inlineTargetCount === 0 &&
+            snapshot.nestedIslandCount === 0
+          );
+        },
+        { timeout: 10_000 },
+      )
+      .toBe(true);
+
+    const preVisibility = await inspectVisibleMarker(page);
+
+    expect(preVisibility.markerCount).toBeGreaterThan(0);
+    expect(preVisibility.markerIndex).toBeGreaterThanOrEqual(0);
+    expect(preVisibility.pageScrollY).toBe(0);
+    expect(preVisibility.mountedSignal).toBe(true);
+    expect(preVisibility.markerTop).not.toBeNull();
+    expect(preVisibility.markerTop as number).toBeGreaterThan(
+      preVisibility.viewportHeight,
+    );
+    // zfb may already have marked the skip-SSR container as mounted. That
+    // marker is not the heavy preview: the reservation must still contain no
+    // iframe, source document, nested island, or inline side-effect target.
+    expect(preVisibility.iframeCount).toBe(0);
+    expect(preVisibility.reservationCount).toBe(1);
+    expect(preVisibility.inlineTargetCount).toBe(0);
+    expect(preVisibility.nestedIslandCount).toBe(0);
+    expect(resourceRequests).toEqual([]);
+    expect(resourceResponses).toEqual([]);
+
+    await page.evaluate(
+      ({ markerSelector, markerIndex }) => {
+        const marker = document.querySelectorAll(markerSelector)[markerIndex];
+        marker?.scrollIntoView({ block: "center" });
+      },
+      {
+        markerSelector: HTML_PREVIEW_SKIP_SSR,
+        markerIndex: preVisibility.markerIndex,
+      },
+    );
+
+    const visible = page
+      .locator(HTML_PREVIEW_SKIP_SSR)
+      .nth(preVisibility.markerIndex);
+    const visibleIframe = visible.locator("iframe");
+    // Poll the actual iframe, not data-zfb-island-mounted: zfb mounts the
+    // skip-SSR target immediately while HtmlPreviewWrapperInner still waits
+    // for its private one-shot IntersectionObserver.
+    await expect.poll(() => visibleIframe.count(), { timeout: 10_000 }).toBe(1);
+    await expect(visible).toHaveAttribute("data-zfb-island-mounted", "");
+
+    const visibleFrame = visible.frameLocator("iframe");
+    await expect(
+      visibleFrame.locator("#visible-inline-target-3852"),
+    ).toHaveText("inline-ran");
+    await expect(
+      visibleFrame.locator("#visible-external-target-3852"),
+    ).toHaveText("external-ran");
+    await expect(
+      visibleFrame.locator("#visible-style-target-3852"),
+    ).toHaveCSS("border-left-width", "6px");
+
+    await expect
+      .poll(
+        () => resourceResponses.length,
+        { timeout: 10_000 },
+      )
+      .toBe(2);
+    expect([...resourceRequests].sort()).toEqual(
+      [VISIBLE_SCRIPT_PATH, VISIBLE_STYLE_PATH].sort(),
+    );
+    expect(resourceResponses.map(({ path }) => path).sort()).toEqual(
+      [VISIBLE_SCRIPT_PATH, VISIBLE_STYLE_PATH].sort(),
+    );
+    for (const response of resourceResponses) {
+      expect(response.status, `${response.path} response`).toBe(200);
+    }
+
+    const nestedIslandCount = await visible.evaluate((marker) =>
+      marker.querySelectorAll(
+        "[data-zfb-island], [data-zfb-island-skip-ssr]",
+      ).length,
+    );
+    expect(nestedIslandCount).toBe(0);
+    assertNoConsoleErrors();
+    expect(pageErrors).toEqual([]);
+    expect(
+      consoleErrors.filter((message) => !message.toLowerCase().includes("favicon")),
+    ).toEqual([]);
+  });
+
+  test("same-origin auto-height follows user-triggered growth and shrink", async ({
+    page,
+  }) => {
+    await page.goto(PAGE, { waitUntil: "domcontentloaded" });
+
+    const dynamic = previewAfterHeading(page, "Dynamic Lifecycle Test");
+    await expect(dynamic).toHaveCount(1);
+    await dynamic.scrollIntoViewIfNeeded();
+    await waitForPreviewHydration(dynamic);
+
+    await expect
+      .poll(() => iframeHeight(dynamic), { timeout: 10_000 })
+      .toBeGreaterThan(280);
+    const initialHeight = await iframeHeight(dynamic);
+    const dynamicFrame = dynamic.frameLocator("iframe");
+
+    await dynamicFrame.locator("#dynamic-grow-3852").click();
+    await expect(
+      dynamicFrame.locator("#dynamic-content-3852"),
+    ).toHaveAttribute("data-state", "grown");
+    await expect
+      .poll(() => iframeHeight(dynamic), { timeout: 10_000 })
+      .toBeGreaterThan(initialHeight + 250);
+    const grownHeight = await iframeHeight(dynamic);
+
+    await dynamicFrame.locator("#dynamic-shrink-3852").click();
+    await expect(
+      dynamicFrame.locator("#dynamic-content-3852"),
+    ).toHaveAttribute("data-state", "shrunk");
+    await expect
+      .poll(() => iframeHeight(dynamic), { timeout: 10_000 })
+      .toBeLessThan(grownHeight - 200);
+    await expect
+      .poll(() => iframeHeight(dynamic), { timeout: 10_000 })
+      .toBeGreaterThan(initialHeight);
+  });
+
+  test("auto-height reflows through Mobile, Tablet, and Full presets", async ({
+    page,
+  }) => {
+    // The Full preset is intentionally wider than the content band at the
+    // default Playwright viewport. Use a wide page so its media query remains
+    // distinct from the 768px Tablet preset.
+    await page.setViewportSize({ width: 1600, height: 1000 });
+    await page.goto(PAGE, { waitUntil: "domcontentloaded" });
+
+    const reflow = previewAfterHeading(page, "Reflow Lifecycle Test");
+    await expect(reflow).toHaveCount(1);
+    await reflow.scrollIntoViewIfNeeded();
+    await waitForPreviewHydration(reflow);
+    await expect
+      .poll(() => iframeHeight(reflow), { timeout: 10_000 })
+      .toBeGreaterThan(280);
+    const fullHeight = await iframeHeight(reflow);
+
+    const mobile = reflow.getByRole("button", { name: "Mobile", exact: true });
+    await mobile.click();
+    await expect(mobile).toHaveAttribute("aria-pressed", "true");
+    await expect
+      .poll(() => iframeHeight(reflow), { timeout: 10_000 })
+      .toBeGreaterThan(fullHeight + 250);
+    const mobileHeight = await iframeHeight(reflow);
+
+    const tablet = reflow.getByRole("button", { name: "Tablet", exact: true });
+    await tablet.click();
+    await expect(tablet).toHaveAttribute("aria-pressed", "true");
+    await expect
+      .poll(() => iframeHeight(reflow), { timeout: 10_000 })
+      .toBeGreaterThan(fullHeight + 100);
+    await expect
+      .poll(() => iframeHeight(reflow), { timeout: 10_000 })
+      .toBeLessThan(mobileHeight - 100);
+    const tabletHeight = await iframeHeight(reflow);
+
+    const full = reflow.getByRole("button", { name: "Full", exact: true });
+    await full.click();
+    await expect(full).toHaveAttribute("aria-pressed", "true");
+    await expect
+      .poll(() => iframeHeight(reflow), { timeout: 10_000 })
+      .toBeLessThan(tabletHeight - 100);
+    await expect
+      .poll(() => iframeHeight(reflow), { timeout: 10_000 })
+      .toBeGreaterThan(280);
+  });
+
+  test("fixed height stays exact despite oversized content and viewport changes", async ({
+    page,
+  }) => {
+    await page.goto(PAGE, { waitUntil: "domcontentloaded" });
+
+    const fixed = previewAfterHeading(page, "Fixed Height Lifecycle Test");
+    await expect(fixed).toHaveCount(1);
+    await fixed.scrollIntoViewIfNeeded();
+    await waitForPreviewHydration(fixed);
+    await expect
+      .poll(() => iframeHeight(fixed), { timeout: 10_000 })
+      .toBe(280);
+    await expect
+      .poll(
+        () =>
+          fixed.locator("iframe").evaluate(
+            (iframe) =>
+              (iframe as HTMLIFrameElement).contentDocument?.body
+                .scrollHeight ?? 0,
+          ),
+        { timeout: 10_000 },
+      )
+      .toBeGreaterThan(280);
+
+    for (const label of ["Mobile", "Tablet", "Full"]) {
+      const button = fixed.getByRole("button", { name: label, exact: true });
+      await button.click();
+      await expect(button).toHaveAttribute("aria-pressed", "true");
+      await expect.poll(() => iframeHeight(fixed)).toBe(280);
+    }
+  });
+
+  test("valid fullHeight with fixed height stays exact", async ({ page }) => {
+    await page.goto(PAGE, { waitUntil: "domcontentloaded" });
+
+    const fullHeight = previewAfterHeading(
+      page,
+      "FullHeight Fixed Lifecycle Test",
+    );
+    await expect(fullHeight).toHaveCount(1);
+    await fullHeight.scrollIntoViewIfNeeded();
+    await waitForPreviewHydration(fullHeight);
+    const iframe = fullHeight.locator("iframe");
+    await expect.poll(() => iframeHeight(fullHeight)).toBe(320);
+    await expect(iframe).toHaveAttribute(
+      "srcdoc",
+      /html,body\{height:100%\}/,
+    );
+
+    for (const label of ["Mobile", "Tablet", "Full"]) {
+      const button = fullHeight.getByRole("button", {
+        name: label,
+        exact: true,
+      });
+      await button.click();
+      await expect(button).toHaveAttribute("aria-pressed", "true");
+      await expect.poll(() => iframeHeight(fullHeight)).toBe(320);
+    }
+  });
+
+  test("opaque-origin fixed height remains readable only through its frame and stable", async ({
+    page,
+  }) => {
+    await page.goto(PAGE, { waitUntil: "domcontentloaded" });
+
+    const opaque = previewAfterHeading(
+      page,
+      "Opaque Fixed Height Lifecycle Test",
+    );
+    await expect(opaque).toHaveCount(1);
+    await opaque.scrollIntoViewIfNeeded();
+    await waitForPreviewHydration(opaque);
+    const iframe = opaque.locator("iframe");
+    await expect(iframe).toHaveAttribute("sandbox", "");
+    await expect.poll(() => iframeHeight(opaque)).toBe(300);
+
+    const parentCanReadBody = await iframe.evaluate((frame) => {
+      try {
+        return (frame as HTMLIFrameElement).contentDocument?.body != null;
+      } catch {
+        return false;
+      }
+    });
+    expect(parentCanReadBody).toBe(false);
+
+    for (const label of ["Mobile", "Tablet", "Full"]) {
+      const button = opaque.getByRole("button", { name: label, exact: true });
+      await button.click();
+      await expect(button).toHaveAttribute("aria-pressed", "true");
+      await expect.poll(() => iframeHeight(opaque)).toBe(300);
+    }
+  });
+
+  test("reload and SPA unmount leave no stale lifecycle callbacks or errors", async ({
+    page,
+    assertNoConsoleErrors,
+  }) => {
+    const pageErrors: string[] = [];
+    const consoleErrors: string[] = [];
+
+    // Install before the first navigation so errors from either the original
+    // document or its replacement are captured.
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+
+    await page.goto(PAGE, { waitUntil: "domcontentloaded" });
+    const dynamic = previewAfterHeading(page, "Dynamic Lifecycle Test");
+    await dynamic.scrollIntoViewIfNeeded();
+    await waitForPreviewHydration(dynamic);
+    await dynamic.frameLocator("iframe").locator("#dynamic-grow-3852").click();
+    await expect
+      .poll(() => iframeHeight(dynamic), { timeout: 10_000 })
+      .toBeGreaterThan(500);
+
+    // A full reload tears down the old iframe/controller and creates a fresh
+    // eager tree. The second pass proves the new tree still hydrates normally.
+    await page.reload({ waitUntil: "domcontentloaded" });
+    const reloadedDynamic = previewAfterHeading(
+      page,
+      "Dynamic Lifecycle Test",
+    );
+    await expect(reloadedDynamic).toHaveCount(1);
+    await reloadedDynamic.scrollIntoViewIfNeeded();
+    await waitForPreviewHydration(reloadedDynamic);
+    await expect
+      .poll(() => iframeHeight(reloadedDynamic), { timeout: 10_000 })
+      .toBeGreaterThan(280);
+
+    expect(await spaClick(page, "/docs/guides/page-1")).toBe(true);
+    await expect(page).toHaveURL(/\/docs\/guides\/page-1\/?$/);
+    await expect(
+      page.locator(`${HTML_PREVIEW_ISLAND}, ${HTML_PREVIEW_SKIP_SSR}`),
+    ).toHaveCount(0);
+
+    assertNoConsoleErrors();
+    expect(pageErrors).toEqual([]);
+    expect(
+      consoleErrors.filter((message) => !message.toLowerCase().includes("favicon")),
+    ).toEqual([]);
+  });
 });
