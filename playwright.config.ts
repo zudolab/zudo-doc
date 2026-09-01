@@ -32,11 +32,11 @@ export default defineConfig({
   // CI-only single retry: tolerate the intermittent first-navigation flake
   // (page.goto ERR_ABORTED / 30 s timeout) without masking real failures locally.
   retries: process.env.CI ? 1 : 0,
-  // In CI: list reporter for readable logs + JSON for retry-flake detection
-  // (scripts/report-retry-flakes.mjs parses the JSON after the run).
-  reporter: process.env.CI
-    ? [["list"], ["json", { outputFile: "playwright-report/report.json" }]]
-    : "list",
+  // List reporter for readable logs + JSON for retry-flake detection and local
+  // failure diagnosis (zudolab/zudo-doc#3828: zero-retry local failures
+  // previously left no identity-keyed artifact). The report lives outside
+  // Playwright's `outputDir` (`test-results/`), so it survives the start wipe.
+  reporter: [["list"], ["json", { outputFile: "playwright-report/report.json" }]],
   use: {
     baseURL: `http://localhost:${BASE_PORT}`,
     // Trace only the retry attempt (cheap — avoids tracing every green run)
