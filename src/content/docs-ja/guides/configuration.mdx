@@ -508,6 +508,16 @@ TOC に含まれる最大見出し深度（2〜4）。
 
 一覧の挙動とヘッダーナビへの追加方法は [アセットビューアー](./asset-viewer.mdx#アセット一覧ページ)を参照してください。
 
+### assetViewerIndexing
+
+アセット閲覧ページを、検索インデックス、`llms.txt`、サイトマップへ個別に追加します。`assetViewer: true` が前提となり、ビューアーが無効な場合はインデックス用のサブキーを設定しても何も起こりません。
+
+型: `false | { search?: boolean; llmsTxt?: boolean; sitemap?: boolean }` · デフォルト: `false`
+
+一部のキーだけを持つオブジェクトを指定した場合も含め、各サブキーは明示的に `true` を指定しない限り無効です。`search` は、`asset:` プレフィックス付きの ID でアセットページを `search-index.json` に追加します。`llmsTxt` は、`llms.txt` に `## Files` セクションを追加し、`llms-full.txt` にアセットページを追記します。テキストとして扱えるアセットでは本文を最大 8 KB まで収録し、それを超える場合は末尾に切り詰めを明示するマーカーを付けます。バイナリアセットは本文を含まない 1 行のスタブとして掲載します。`sitemap` は `/files/...` のルートを追加します。
+
+設定例は[アセットビューアー](./asset-viewer.mdx#アセットページをインデックスへ追加する)を参照してください。このショーケースでは 3 つのサブキーをすべて有効にしています。
+
 ### findInPage
 
 body-end islands に `FindInPageInit` アイランド（Cmd/Ctrl+F 検索バー）をマウントします。
