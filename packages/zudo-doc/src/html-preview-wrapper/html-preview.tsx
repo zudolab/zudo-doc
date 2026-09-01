@@ -18,6 +18,14 @@ export interface HtmlPreviewProps {
   head?: string;
   js?: string;
   title?: string;
+  /**
+   * Language tag for the generated preview document's `<html lang>`
+   * attribute. Any nonblank tag is accepted; omission or a blank value falls
+   * back to `"en"`. Bound consumers should pass their active route locale.
+   *
+   * @default "en"
+   */
+  lang?: string;
   height?: number;
   defaultOpen?: boolean;
   /** Localized labels for viewport, source, and iframe controls. */
@@ -165,6 +173,61 @@ export function resolveSandbox(
 // can insert cleanly between it and `head` without reordering this.
 const fullHeightStyle = "<style>html,body{height:100%}</style>";
 
+export interface BuildSrcdocMetadata {
+  /** Language for the generated document. Blank values fall back to `"en"`. */
+  lang?: string;
+  /** Visible preview title, used when the trusted head has no opening title. */
+  title?: string;
+  /** Localized preview label used after a blank visible title. */
+  previewLabel?: string;
+}
+
+function nonBlank(value: string | undefined): string | undefined {
+  return value?.trim() ? value : undefined;
+}
+
+function escapeHtmlAttribute(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+function escapeHtmlText(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+function hasAuthorTitle(head: string | undefined): boolean {
+  if (!head) return false;
+  const withoutComments = head.replace(/<!--[\s\S]*?-->/g, "");
+  const openingTitle = /<title(?=[\s>])/gi;
+  for (const match of withoutComments.matchAll(openingTitle)) {
+    let quote: '"' | "'" | undefined;
+    for (
+      let index = (match.index ?? 0) + match[0].length;
+      index < withoutComments.length;
+      index += 1
+    ) {
+      const character = withoutComments[index];
+      if (quote) {
+        if (character === quote) quote = undefined;
+        continue;
+      }
+      if (character === '"' || character === "'") {
+        quote = character;
+        continue;
+      }
+      if (character === ">") return true;
+      if (character === "<") break;
+    }
+  }
+  return false;
+}
+
 export function buildSrcdoc(
   html: string,
   css?: string,
@@ -174,8 +237,15 @@ export function buildSrcdoc(
   externalStyles?: string[],
   externalScripts?: string[],
   preflight?: boolean,
+  metadata?: BuildSrcdocMetadata,
 ): string {
   const includePreflight = preflight ?? true;
+  const lang = nonBlank(metadata?.lang) ?? "en";
+  const generatedTitle = hasAuthorTitle(head)
+    ? undefined
+    : (nonBlank(metadata?.title) ??
+      nonBlank(metadata?.previewLabel) ??
+      "Preview");
   const externalStylesHtml = (externalStyles ?? [])
     .map((href) => `<link rel="stylesheet" href="${href}">`)
     .join("\n");
@@ -183,10 +253,11 @@ export function buildSrcdoc(
     .map((src) => `<script src="${src}"></script>`)
     .join("\n");
   return `<!doctype html>
-<html>
+<html lang="${escapeHtmlAttribute(lang)}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+${generatedTitle ? `<title>${escapeHtmlText(generatedTitle)}</title>` : ""}
 ${includePreflight ? `<style>${preflightCss}</style>` : ""}
 ${fullHeight ? fullHeightStyle : ""}
 ${externalStylesHtml}
@@ -218,6 +289,7 @@ export function HtmlPreview({
   head,
   js,
   title,
+  lang,
   height,
   defaultOpen,
   labels,
@@ -244,8 +316,21 @@ export function HtmlPreview({
         externalStyles,
         externalScripts,
         preflight,
+        { lang, title, previewLabel: labels?.preview },
       ),
-    [html, css, head, js, fullHeight, externalStyles, externalScripts, preflight],
+    [
+      html,
+      css,
+      head,
+      js,
+      fullHeight,
+      externalStyles,
+      externalScripts,
+      preflight,
+      lang,
+      title,
+      labels?.preview,
+    ],
   );
   const hasScripts = containsScript(head, js, externalScripts);
   const syncDelay = hasScripts ? 300 : 0;

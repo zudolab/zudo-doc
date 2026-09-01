@@ -64,6 +64,14 @@ export interface HtmlPreviewWrapperProps {
 
   /** Optional title displayed in the preview title bar. */
   title?: string;
+  /**
+   * Language tag for the generated preview document. Any nonblank tag is
+   * forwarded as-is; omission or a blank value falls back to `"en"` in
+   * `<HtmlPreview>`. Bound consumers should pass their active route locale.
+   *
+   * @default "en"
+   */
+  lang?: string;
   /** Fixed iframe height in pixels. Auto-sizes when omitted. */
   height?: number;
   /** When true, the code section is expanded by default. */
@@ -248,6 +256,7 @@ export function HtmlPreviewWrapperInner(
     head,
     js,
     title,
+    lang,
     height,
     defaultOpen,
     labels,
@@ -284,6 +293,7 @@ export function HtmlPreviewWrapperInner(
       head={mergedHead}
       js={mergedJs}
       title={title}
+      lang={lang}
       height={height}
       defaultOpen={defaultOpen}
       labels={labels}
