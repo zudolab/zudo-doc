@@ -368,6 +368,22 @@ locales: {
 
 デフォルト: `true`
 
+### transclude
+
+`:::include{file="…"}` による transclude を有効化します。zudo-doc は、この boolean 値が有効なとき、オブジェクト型である zfb の `markdown.features.transclude: {}` へ変換します。パッケージ所有の Markdown 機能ブロックを置き換えず、ここで設定してください。
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    transclude: true,
+  }),
+);
+```
+
+型: `boolean` · デフォルト: `false`
+
+ディレクティブ構文、ファイルシステム上の制約、ビルドを失敗させるエラーについては [Transclude](../markdown-features/transclude.mdx) を参照してください。
+
 ### math
 
 KaTeX 数式レンダリング（`$…$`、`$$…$$`、フェンス `math`）を有効化します。
