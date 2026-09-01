@@ -14,6 +14,7 @@ import { deriveMdxComponents } from "../derive.js";
 type HtmlPreviewProps = {
   html: string;
   defaultOpen?: boolean;
+  lang?: string;
   labels?: Partial<HtmlPreviewLabels>;
 };
 
@@ -34,6 +35,27 @@ function defaultTableT(key: string, locale = "en"): string {
   );
 }
 
+function readSrcdoc(rendered: string): string {
+  const encoded = rendered.match(/\ssrcdoc="([^"]*)"/)?.[1];
+  expect(encoded).toBeDefined();
+  return (encoded ?? "")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#x27;", "'")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&amp;", "&");
+}
+
+function expectSrcdocMetadata(
+  rendered: string,
+  expectedLang: string,
+  expectedTitle: string,
+): void {
+  const srcdoc = readSrcdoc(rendered);
+  expect(srcdoc).toContain(`<html lang="${expectedLang}">`);
+  expect(srcdoc).toContain(`<title>${expectedTitle}</title>`);
+}
+
 describe("HtmlPreview MDX binding", () => {
   it("binds all visible and ARIA labels to the active Japanese route locale", () => {
     const ctx = makeFakeChromeContext({
@@ -51,6 +73,7 @@ describe("HtmlPreview MDX binding", () => {
     expect(html).toContain(">フル</button>");
     expect(html).toContain(">コードを非表示</button>");
     expect(html).toContain('title="プレビュー"');
+    expectSrcdocMetadata(html, "ja", "プレビュー");
   });
 
   it("merges a partial per-call override over locale labels without erasing peers", () => {
@@ -64,6 +87,7 @@ describe("HtmlPreview MDX binding", () => {
       labels: {
         mobile: "スマホ",
         tablet: undefined,
+        preview: "カスタムプレビュー",
       },
     });
 
@@ -72,7 +96,48 @@ describe("HtmlPreview MDX binding", () => {
     expect(html).toContain(">フル</button>");
     expect(html).toContain('aria-label="ビューポートサイズ"');
     expect(html).toContain(">コードを非表示</button>");
+    expect(html).toContain('title="カスタムプレビュー"');
+    expectSrcdocMetadata(html, "ja", "カスタムプレビュー");
+  });
+
+  it("lets an explicit document language differ from the Japanese route locale", () => {
+    const ctx = makeFakeChromeContext({
+      overrides: { t: defaultTableT },
+    });
+
+    const html = renderBoundPreview(ctx, "ja", {
+      html: "<p>hello</p>",
+      lang: "  zh-Hant-x-preview  ",
+      defaultOpen: true,
+    });
+
+    // The document language preserves the authored nonblank bytes, including
+    // surrounding whitespace, while route controls remain Japanese.
+    expect(html).toContain(
+      "&lt;html lang=&quot;  zh-Hant-x-preview  &quot;>",
+    );
+    expect(html).toContain(">モバイル</button>");
+    expect(html).toContain(">タブレット</button>");
+    expect(html).toContain(">フル</button>");
     expect(html).toContain('title="プレビュー"');
+    expectSrcdocMetadata(html, "  zh-Hant-x-preview  ", "プレビュー");
+  });
+
+  it("falls back from a blank document language to the active route locale", () => {
+    const ctx = makeFakeChromeContext({
+      overrides: { t: defaultTableT },
+    });
+
+    const html = renderBoundPreview(ctx, "ja", {
+      html: "<p>hello</p>",
+      lang: " \t\n",
+      defaultOpen: true,
+    });
+
+    expect(html).toContain("&lt;html lang=&quot;ja&quot;>");
+    expect(html).toContain(">モバイル</button>");
+    expect(html).toContain('title="プレビュー"');
+    expectSrcdocMetadata(html, "ja", "プレビュー");
   });
 
   it("passes arbitrary configured locales through requested, configured-default, and English fallbacks", () => {
@@ -122,6 +187,19 @@ describe("HtmlPreview MDX binding", () => {
     expect(html).toContain('aria-label="English viewport"');
     expect(html).toContain(">English hide</button>");
     expect(html).toContain('title="English preview"');
+    expectSrcdocMetadata(html, "de", "English preview");
+  });
+
+  it("uses the English document metadata defaults for the default route locale", () => {
+    const ctx = makeFakeChromeContext({
+      overrides: { t: defaultTableT },
+    });
+
+    const html = renderBoundPreview(ctx, "en", {
+      html: "<p>hello</p>",
+    });
+
+    expectSrcdocMetadata(html, "en", "Preview");
   });
 
   it("retains global iframe CSS/head/JS in the package binding", () => {
