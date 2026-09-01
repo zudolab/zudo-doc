@@ -4,12 +4,44 @@ description: ビューポート切り替えとソースコード表示を備え�
 sidebar_position: 9.5
 ---
 
-`<HtmlPreview>` は、分離された iframe 内で HTML/CSS のライブデモを描画するコンポーネントです。ビューポートプリセット（Mobile / Tablet / Full）とシンタックスハイライト付きの折りたたみ可能なソースコードパネルを備えています。すべての MDX ファイルでインポートなしで使用できます。
+`<HtmlPreview>` は、分離された iframe 内で HTML/CSS のライブデモを描画するコンポーネントです。ビューポートプリセット（Mobile / Tablet / Full）とシンタックスハイライト付きの折りたたみ可能なソースコードパネルを備えています。すべての MDX ファイルでインポートなしで使用できます。ルートにバインドされた MDX のバインディングはプレビューのクロームをローカライズしますが、ルートにバインドされていないコンポーネントを直接使う場合はロケール情報がなく、`labels`を渡さない限り英語ラベルが使われます。
+
+## ローカライズされたコントロール
+
+ルートにバインドされた MDX のバインディングでコンポーネントを描画すると、アクティブなページのロケールから次の7つのプレビュー用クローム文字列が提供されます。
+
+| 翻訳キー | UIでの用途 |
+|----------|------------|
+| `htmlPreview.viewport.mobile` | Mobileビューポートボタン |
+| `htmlPreview.viewport.tablet` | Tabletビューポートボタン |
+| `htmlPreview.viewport.full` | Full幅ビューポートボタン |
+| `htmlPreview.viewport.label` | ビューポートプリセットグループの`aria-label` |
+| `htmlPreview.source.show` | 折りたたまれたソース切り替えのラベル |
+| `htmlPreview.source.hide` | 展開されたソース切り替えのラベル |
+| `htmlPreview.iframe.title` | `title`が省略されたときのiframeタイトル |
+
+値の検索順は、要求されたロケール → 設定済みのデフォルトロケール → パッケージの英語テーブル → 生のキーです。
+
+指定した場合は、作成者が渡す`title`プロップがタイトルバーと iframe のタイトルを制御します。技術的なコードパネル見出し（`HTML`、`CSS`、`Head`、`JS`）は意図的に固定されており、これらの翻訳キーではローカライズされません。
+
+1つのプレビューだけをカスタマイズするには、部分的な`labels`オブジェクトを渡します。省略したキー（`undefined`を設定したキーを含む）は、ルートのロケール値を消去せず、その値を維持します。
+
+````mdx
+<HtmlPreview
+  html="<p>One preview</p>"
+  labels={{
+    mobile: "Phone",
+    preview: "Live preview",
+  }}
+/>
+````
+
+ルートにバインドされていないコンポーネントを直接インポートする場合、`labels`を省略したキーには組み込みの英語デフォルトが使われます。その利用箇所を別の言語にするには、同じ部分オブジェクト（または7つすべてのキー）を渡してください。
 
 ## 基本的な使い方
 
 <HtmlPreview
-  title="基本的なボックス"
+  title="Basic Box"
   html={`
     <div class="box">Hello, world!</div>
   `}
@@ -27,7 +59,7 @@ sidebar_position: 9.5
 
 ````mdx
 <HtmlPreview
-  title="基本的なボックス"
+  title="Basic Box"
   html={`
     <div class="box">Hello, world!</div>
   `}
@@ -49,7 +81,7 @@ sidebar_position: 9.5
 ビューポートボタン（Mobile / Tablet / Full）を使って、異なる幅でコンテンツがどのように変化するかを確認できます。プレビュー領域の右下にあるドラッグハンドルでリサイズすることもできます。
 
 <HtmlPreview
-  title="レスポンシブグリッド"
+  title="Responsive Grid"
   html={`
     <div class="grid">
       <div class="card">Card 1</div>
@@ -79,15 +111,15 @@ sidebar_position: 9.5
 
 ## HTML のみ
 
-`css` プロップを指定しない場合は、HTML のソースのみが表示されます。
+`css`、`head`、`js` のいずれのプロップも指定しない場合は、HTML のソースのみが表示されます。
 
 <HtmlPreview
-  title="HTML のみ"
+  title="HTML Only"
   html={`
     <ul style="font-family: system-ui, sans-serif; padding: 16px;">
-      <li>1つ目の項目</li>
-      <li>2つ目の項目</li>
-      <li>3つ目の項目</li>
+      <li>First item</li>
+      <li>Second item</li>
+      <li>Third item</li>
     </ul>
   `}
 />
@@ -97,7 +129,7 @@ sidebar_position: 9.5
 `defaultOpen` を指定すると、ソースコードが最初から展開された状態で表示されます。
 
 <HtmlPreview
-  title="コード表示状態"
+  title="Code Visible by Default"
   defaultOpen
   html={`
     <button class="btn">Click me</button>
@@ -119,17 +151,25 @@ sidebar_position: 9.5
   `}
 />
 
+## 任意のコントロール領域
+
+2つの任意のコントロール領域はデフォルトで表示されます。`showSource={false}`を設定すると、ソース切り替え、コードパネル、ハイライト用マークアップが構造的に省略されます。プレビューの iframe は残ります。`defaultOpen`はコードパネルの状態を初期化するだけなので、ソース領域を隠した場合は効果がありません。
+
+`showViewportControls={false}`を設定すると、Mobile / Tablet / Full のプリセットグループとボタンが構造的に省略されます。プレビューはFull幅（`100%`）のコンテナと水平方向のドラッグリサイズ操作を保持します。プリセットを隠してもリサイズは無効になりません。
+
+2つのフラグは同時に`false`にできます。iframeは引き続き描画されます。タイトルバーはビューポートコントロールが表示されているか、空でない`title`が指定されている場合に描画されます。したがって、プリセットを隠してもタイトルを指定すればタイトルだけのバーが残り、プリセットと`title`の両方を省略すれば空のバーは削除されます。
+
 ## 固定高さ
 
 `height` プロップを使って、自動調整の代わりに iframe の高さを固定できます。
 
 <HtmlPreview
-  title="固定高さ（300px）"
+  title="Fixed Height (300px)"
   height={300}
   html={`
     <div class="scroll-content">
-      <p>このプレビューは300pxの固定高さです。</p>
-      <p>高さを超えるコンテンツは iframe 内でスクロールします。</p>
+      <p>This preview has a fixed height of 300px.</p>
+      <p>Content that exceeds this height will scroll within the iframe.</p>
     </div>
   `}
   css={`
@@ -151,14 +191,14 @@ sidebar_position: 9.5
 :::
 
 <HtmlPreview
-  title="高さ100%のフレックスカラム"
+  title="Full Height Flex Column"
   height={200}
   fullHeight
   html={`
     <div class="fill">
-      <header>ヘッダー</header>
-      <main>メイン（残りのスペースを埋める）</main>
-      <footer>フッター</footer>
+      <header>Header</header>
+      <main>Main (fills remaining space)</main>
+      <footer>Footer</footer>
     </div>
   `}
   css={`
@@ -209,9 +249,9 @@ export default defineConfig(
 `head` と `js` プロップを使って、個別のプレビューにリソースを追加できます。グローバル設定の後にマージされます。
 
 <HtmlPreview
-  title="JS 付き"
+  title="With JS"
   html={`
-    <div id="output">待機中...</div>
+    <div id="output">Waiting...</div>
   `}
   css={`
     #output {
@@ -221,15 +261,15 @@ export default defineConfig(
     }
   `}
   js={`
-    document.getElementById('output').textContent = 'JS から Hello!';
+    document.getElementById('output').textContent = 'Hello from JS!';
   `}
 />
 
 ````mdx
 <HtmlPreview
-  title="JS 付き"
+  title="With JS"
   html={`
-    <div id="output">待機中...</div>
+    <div id="output">Waiting...</div>
   `}
   css={`
     #output {
@@ -239,7 +279,7 @@ export default defineConfig(
     }
   `}
   js={`
-    document.getElementById('output').textContent = 'JS から Hello!';
+    document.getElementById('output').textContent = 'Hello from JS!';
   `}
 />
 ````
@@ -290,13 +330,13 @@ export default defineConfig(
 `showResources` を指定すると、CDN の URL が非表示ではなく「HTML」コードパネルの先頭に生の行として表示されます:
 
 <HtmlPreview
-  title="Tailwind CDN（リソースを表示）"
+  title="Tailwind CDN (resources visible)"
   showResources
   externalScripts={["https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"]}
   preflight={false}
   defaultOpen
   html={`
-    <div class="px-4 py-2 bg-violet-500 text-white rounded-lg font-sans w-fit">コードを開くとCDNの行が見えます</div>
+    <div class="px-4 py-2 bg-violet-500 text-white rounded-lg font-sans w-fit">Show code to see the CDN line</div>
   `}
 />
 
@@ -311,10 +351,10 @@ export default defineConfig(
 :::
 
 ```mdx
-<!-- 最も厳格: スクリプト実行なし、オリジンは不透明 -->
+<!-- Maximally restrictive: no script execution, opaque origin -->
 <HtmlPreview html={untrusted} sandbox="" height={400} />
 
-<!-- スクリプトは許可するがオリジンは不透明（親にアクセス不可） -->
+<!-- Allow scripts but keep an opaque origin (script can't reach the parent) -->
 <HtmlPreview html={untrusted} sandbox="allow-scripts" height={400} />
 ```
 
@@ -331,6 +371,9 @@ export default defineConfig(
 | `title` | string | `undefined` | プレビューヘッダーバーに表示するタイトル |
 | `height` | number | auto | iframe の固定高さ（ピクセル）。省略時はコンテンツに合わせて自動調整 |
 | `defaultOpen` | boolean | `false` | ソースコードパネルをデフォルトで展開表示する |
+| `labels` | `Partial<HtmlPreviewLabels>` | `undefined` | ビューポート、ソース、iframeコントロールの呼び出し単位のラベル。未指定キーはルートロケールのラベル（直接利用では英語デフォルト）を維持 |
+| `showSource` | boolean | `true` | ソース切り替えとコードパネルを描画する。`false`では構造的に削除するがiframeは残り、その場合`defaultOpen`は効果がない |
+| `showViewportControls` | boolean | `true` | Mobile / Tablet / Fullのプリセットコントロールを描画する。`false`でもFull幅とドラッグリサイズ操作は残る |
 | `fullHeight` | boolean | `false` | プレビュードキュメントの `html`/`body` を高さ100%まで広げる。高さ自動調整と干渉するため、必ず明示的な `height` と併用する |
 | `sandbox` | string | auto | iframe の `sandbox` 属性。省略時は計算済みのデフォルト（スクリプトありなら `allow-scripts allow-same-origin`、なしなら `allow-same-origin`）。信頼できないコンテンツにはより厳しい値を指定 — ただし `allow-same-origin` を外すと高さ自動調整が無効になるため `height` も併せて指定する |
 | `externalStyles` | string[] | `undefined` | 外部スタイルシート URL。`head`/`css` より前に `<link rel="stylesheet">` として挿入される。コンポーネント単位のみ — ビルドバンドルされず、表示時にクライアントサイドで読み込まれる |
@@ -348,6 +391,8 @@ export default defineConfig(
 
 レンダラーは安全にエスケープされた `pre.hi-root` / `hi-*` マークアップを出力し、ドキュメントフェンスと同じ `--zd-syntax-*` パレットを共有します。遅延読み込みの境界はパネルを開く操作です。それより前に、生成された JavaScript glue と WASM companion リソースがリクエストされることはありません。未知の言語に対する warning は、エスケープ済みのセマンティックフォールバックマークアップを使用します。インポート、初期化、不正なオプション、現在の呼び出しの失敗時には、JSX でエスケープされたプレーンな `<pre><code>` フォールバックを維持します。一時的なインポート失敗は、後続のパネル描画で再試行できます。
 
+コードパネルの`HTML`、`CSS`、`Head`、`JS`見出しは技術的なラベルであり、意図的に固定されています。`htmlPreview.*`翻訳キーは周囲のコントロールを対象とし、これらの見出しは対象外です。
+
 独自の配信基盤で本番出力を提供する場合は、生成された `.mjs` / `.wasm` アセットを保持し、JavaScript と `application/wasm` の正しい MIME type で配信してください。パッケージ内部の glue パスを手作業でコピーしないでください。リソースグラフは zfb のビルドが管理します。
 
 このブラウザ実行時の言語セットは、通常のビルド時コードブロックで利用できる[言語一覧](./basic-components.mdx#コードブロック-サポートされている言語)より限定されています。
@@ -355,9 +400,12 @@ export default defineConfig(
 ## 注意事項
 
 - プレビューは CSS リセット（Tailwind v4 preflight）を含む分離された `<iframe>` 内で描画されるため、スタイルが外部に漏れることはありません。
+- ルートにバインドされた MDX プレビューは7つの`htmlPreview.*`コントロールラベルにアクティブなロケールを使います。ルートにバインドされていないコンポーネントを直接使う場合は、`labels`を渡さない限り英語がデフォルトです。
+- `showSource={false}`はiframeを削除せず、ソース切り替えとハイライト用サブツリーを構造的に削除します。隠されたソース領域を`defaultOpen`で再び開くことはできません。
+- `showViewportControls={false}`はプリセットボタンを削除しますが、Full幅のコンテナと水平方向のドラッグリサイズ操作は残ります。2つのフラグを同時に`false`にできます。空でない`title`を指定すればタイトルだけのバーが残り、空のバーは省略されます。
 - プレビューはデフォルトで `sandbox="allow-same-origin"`（`js` プロップまたは `<script>` がある場合は `sandbox="allow-scripts allow-same-origin"`）を使用し、`contentDocument` 経由で iframe の高さを自動同期します。`srcdoc` の内容は作成者が管理する MDX です。信頼できないコンテンツには `sandbox` プロップで上書きしてください — 上記の[セキュリティと `sandbox` プロップ](#セキュリティと-sandbox-プロップ)を参照。
 - `htmlPreview` 設定フィールドのグローバルリソースは、コンポーネント単位のプロップの前に挿入されます。
 - `html`、`css`、`js` プロップはインデント付きのテンプレートリテラルに対応しています。先頭の空白はソースコード表示時に自動的に除去されます。
 - クライアントサイドのハイドレーションはコンポーネントラッパーにより自動的に処理されるため、MDX 内で `client:load` ディレクティブを付ける必要はありません。
 - `externalStyles`/`externalScripts` は表示時にクライアントサイドで読み込まれます — プレビュー iframe が描画されるときにブラウザが行うネットワークリクエストであり、ビルド時にバンドルされるアセットではありません。上記の[外部スタイルシートとスクリプト](#外部リソース-外部スタイルシートとスクリプト)を参照。
-- srcdoc への挿入順序: preflight リセット（`preflight={false}` でない限り）→ `fullHeight` スタイル → `externalStyles` → `head` → `css`。
+- srcdoc への挿入順序: preflight リセット（`preflight={false}` でない限り）→ `fullHeight` スタイル → `externalStyles` → `externalScripts` → `head` → `css`。

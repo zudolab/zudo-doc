@@ -47,6 +47,39 @@ describe("defaultTranslations", () => {
     expect(defaultTranslations.de?.["asset.badge"]).toBeUndefined();
   });
 
+  it("ships the complete HtmlPreview key seam in English and Japanese", () => {
+    const keys = [
+      "htmlPreview.viewport.mobile",
+      "htmlPreview.viewport.tablet",
+      "htmlPreview.viewport.full",
+      "htmlPreview.viewport.label",
+      "htmlPreview.source.show",
+      "htmlPreview.source.hide",
+      "htmlPreview.iframe.title",
+    ];
+
+    expect(keys.every((key) => defaultTranslations.en?.[key])).toBe(true);
+    expect(keys.every((key) => defaultTranslations.ja?.[key])).toBe(true);
+    expect(defaultTranslations.en).toMatchObject({
+      "htmlPreview.viewport.mobile": "Mobile",
+      "htmlPreview.viewport.tablet": "Tablet",
+      "htmlPreview.viewport.full": "Full",
+      "htmlPreview.viewport.label": "Viewport size",
+      "htmlPreview.source.show": "Show code",
+      "htmlPreview.source.hide": "Hide code",
+      "htmlPreview.iframe.title": "Preview",
+    });
+    expect(defaultTranslations.ja).toMatchObject({
+      "htmlPreview.viewport.mobile": "モバイル",
+      "htmlPreview.viewport.tablet": "タブレット",
+      "htmlPreview.viewport.full": "フル",
+      "htmlPreview.viewport.label": "ビューポートサイズ",
+      "htmlPreview.source.show": "コードを表示",
+      "htmlPreview.source.hide": "コードを非表示",
+      "htmlPreview.iframe.title": "プレビュー",
+    });
+  });
+
   it("keeps the complete English and Japanese key sets in parity", () => {
     expect(Object.keys(defaultTranslations.ja ?? {}).sort()).toEqual(
       Object.keys(defaultTranslations.en ?? {}).sort(),
