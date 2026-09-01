@@ -23,6 +23,8 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ### Other Changes
 
+- Enabled Asset Viewer routes now localize automatically for existing multi-locale consumers after a package bump, unless `/${assetViewerRoutePrefix}/` is explicitly present in `defaultLocaleOnlyPrefixes`. Existing apps that already carry the legacy Claude/Codex resource prefixes remain default-locale-only after upgrading; remove the prefixes for resource sections you want generated in every configured locale. (#3820)
+- Migration: before building with 5.14.0, remove or rename any authored locale resource overview/category `index.mdx` at a generator target and move custom titles, descriptions, and labels to `ZudoDocConfig.translations`. The generator refuses to overwrite an existing file unless its frontmatter contains `generated: true`. (#3820)
 - Updated the zfb peer family to 2.14.0, `@takazudo/zdtp` to 0.4.14, and the doc-history-server peer floor to 5.13.1. (`dbe8553c7`, `038870c94`, `95a82f15f`)
 
 ## [5.13.1] - 2026-08-28

@@ -27,6 +27,70 @@ const PROJECT_ROOT = resolve(HERE, "..");
 // Update here if those settings drift.
 const CLAUDE_DIR = resolve(PROJECT_ROOT, ".claude");
 const DOCS_DIR = "src/content/docs";
+const LOCALES = { ja: { dir: "src/content/docs-ja" } };
+const DEFAULT_LOCALE = "en";
+const DEFAULT_LOCALE_ONLY_PREFIXES = [];
+
+// Resource labels from the package translation contract (#3816). This watcher
+// is a standalone Node process, so it keeps the same serializable values the
+// config path passes to the generator rather than importing the host's TS
+// config module directly.
+const TRANSLATIONS = {
+  en: {
+    "resource.claudeMd.label": "CLAUDE.md",
+    "resource.claudeMd.description": "Project-specific instructions",
+    "resource.claudeCommands.label": "Commands",
+    "resource.claudeCommands.description": "Custom slash commands",
+    "resource.claudeSkills.label": "Skills",
+    "resource.claudeSkills.description": "Skill packages",
+    "resource.claudeAgents.label": "Agents",
+    "resource.claudeAgents.description": "Custom subagents",
+    "resource.codexAgentsMd.label": "AGENTS.md",
+    "resource.codexAgentsMd.description": "Project instructions for Codex",
+    "resource.codexConfig.label": "Config",
+    "resource.codexConfig.description": "config.toml and profiles",
+    "resource.codexAgents.label": "Agents",
+    "resource.codexAgents.description": "Custom subagents",
+    "resource.codexHooks.label": "Hooks",
+    "resource.codexHooks.description": "Lifecycle hooks",
+    "resource.codexRules.label": "Rules",
+    "resource.codexRules.description": "Command approval rules",
+    "resource.codexSkills.label": "Skills",
+    "resource.codexSkills.description": "Skill packages",
+    "resource.claude.title": "Claude",
+    "resource.claude.description": "Claude Code configuration reference.",
+    "resource.codex.title": "Codex",
+    "resource.codex.description": "OpenAI Codex configuration reference.",
+    "resource.resources": "Resources",
+  },
+  ja: {
+    "resource.claudeMd.label": "CLAUDE.md",
+    "resource.claudeMd.description": "プロジェクト固有の指示",
+    "resource.claudeCommands.label": "コマンド",
+    "resource.claudeCommands.description": "カスタムスラッシュコマンド",
+    "resource.claudeSkills.label": "スキル",
+    "resource.claudeSkills.description": "スキルパッケージ",
+    "resource.claudeAgents.label": "エージェント",
+    "resource.claudeAgents.description": "カスタムサブエージェント",
+    "resource.codexAgentsMd.label": "AGENTS.md",
+    "resource.codexAgentsMd.description": "Codex 向けのプロジェクト指示",
+    "resource.codexConfig.label": "設定",
+    "resource.codexConfig.description": "config.toml とプロファイル",
+    "resource.codexAgents.label": "エージェント",
+    "resource.codexAgents.description": "カスタムサブエージェント",
+    "resource.codexHooks.label": "フック",
+    "resource.codexHooks.description": "ライフサイクルフック",
+    "resource.codexRules.label": "ルール",
+    "resource.codexRules.description": "コマンド承認ルール",
+    "resource.codexSkills.label": "スキル",
+    "resource.codexSkills.description": "スキルパッケージ",
+    "resource.claude.title": "Claude",
+    "resource.claude.description": "Claude Code の設定リファレンス。",
+    "resource.codex.title": "Codex",
+    "resource.codex.description": "OpenAI Codex の設定リファレンス。",
+    "resource.resources": "リソース",
+  },
+};
 
 const DEBOUNCE_MS = 300;
 
@@ -45,6 +109,10 @@ async function runRunner() {
     claudeDir: CLAUDE_DIR,
     projectRoot: PROJECT_ROOT,
     docsDir: DOCS_DIR,
+    locales: LOCALES,
+    defaultLocale: DEFAULT_LOCALE,
+    translations: TRANSLATIONS,
+    defaultLocaleOnlyPrefixes: DEFAULT_LOCALE_ONLY_PREFIXES,
   });
   console.log(
     `[claude-watch] done: ${result.claudemd} CLAUDE.md, ${result.commands} commands, ${result.skills} skills, ${result.agents} agents`,

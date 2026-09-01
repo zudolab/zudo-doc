@@ -11,6 +11,8 @@ export interface AssetViewerHrefOptions {
   base: string;
   routePrefix: string;
   path: string;
+  /** Non-default locale segment. Omit for the unprefixed default locale. */
+  locale?: string;
   /** A fragment with or without its leading `#`. */
   fragment?: string;
 }
@@ -114,15 +116,28 @@ export function decodeAuthoredHref(
 /** Build the base-prefixed, trailing-slashed asset viewer route exactly once. */
 export function assetViewerHref(options: AssetViewerHrefOptions): string {
   const routePrefix = normalizeSettingPath(options.routePrefix, "routePrefix");
+  const localePrefix = options.locale === undefined
+    ? ""
+    : `/${encodeURIComponent(normalizeLocaleSegment(options.locale))}`;
   const href = withBase(
     options.base,
-    `/${routePrefix}/${encodeAssetPathForUrl(options.path)}/`,
+    `${localePrefix}/${routePrefix}/${encodeAssetPathForUrl(options.path)}/`,
   );
   if (options.fragment == null || options.fragment === "") return href;
   if (CONTROL_CHARS.test(options.fragment)) {
     throw new Error("Asset URL fragment must not contain control characters");
   }
   return href + (options.fragment.startsWith("#") ? options.fragment : `#${options.fragment}`);
+}
+
+function normalizeLocaleSegment(locale: string): string {
+  if (locale.length === 0 || locale.includes("/") || locale.includes("\\")) {
+    throw new Error("Asset viewer locale must be a non-empty URL segment");
+  }
+  if (locale === "." || locale === ".." || CONTROL_CHARS.test(locale)) {
+    throw new Error("Asset viewer locale must be a safe URL segment");
+  }
+  return locale.normalize("NFC");
 }
 
 /** Build the base-prefixed URL for the raw public asset. */

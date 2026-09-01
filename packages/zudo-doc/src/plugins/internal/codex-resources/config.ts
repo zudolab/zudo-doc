@@ -7,6 +7,7 @@ import {
   ensureDir,
   escapeMarkdownTableCell,
   renderCodeFence,
+  resolveResourceLabel,
   writeCategoryIndex,
 } from "../resource-docs-shared/index.js";
 import {
@@ -125,9 +126,21 @@ export function generateConfigCategory(
   if (items.length > 0) {
     writeCategoryIndex(
       outputDir,
-      "Config",
+      resolveResourceLabel({
+        translations: config.translations,
+        locale: config.defaultLocale ?? "en",
+        defaultLocale: config.defaultLocale,
+        key: "resource.codexConfig.label",
+        fallbackLiteral: "Config",
+      }),
       906,
-      "config.toml and profiles",
+      resolveResourceLabel({
+        translations: config.translations,
+        locale: config.defaultLocale ?? "en",
+        defaultLocale: config.defaultLocale,
+        key: "resource.codexConfig.description",
+        fallbackLiteral: "config.toml and profiles",
+      }),
       formatFrontmatterString,
     );
   }

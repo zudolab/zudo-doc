@@ -106,6 +106,8 @@ export interface PresetHeaderNavItem {
  */
 export interface PresetSettings {
   docsDir: string;
+  /** Default locale code (the unprefixed docs directory). */
+  defaultLocale?: string;
   locales: Record<string, PresetLocaleConfig>;
   versions?: PresetVersionConfig[] | false;
   base: string;
@@ -143,6 +145,8 @@ export interface PresetSettings {
   assetViewerExclude?: string[];
   claudeResources?: PresetClaudeResourcesConfig | false;
   codexResources?: PresetCodexResourcesConfig | false;
+  /** Route prefixes served only from the unprefixed default locale. */
+  defaultLocaleOnlyPrefixes?: string[];
   /**
    * When `true` (the **default** when omitted — #2404), the preset adds the
    * package-owned route-injection plugin (`@takazudo/zudo-doc/plugins/routes`).
@@ -637,6 +641,10 @@ function buildPlugins(
               projectRoot: settings.claudeResources.projectRoot,
               scanRoot: settings.claudeResources.scanRoot,
               docsDir: settings.docsDir,
+              locales: localeRecord,
+              defaultLocale: settings.defaultLocale,
+              translations: routeContext.translations,
+              defaultLocaleOnlyPrefixes: settings.defaultLocaleOnlyPrefixes ?? [],
             },
           },
         ]
@@ -650,6 +658,10 @@ function buildPlugins(
               projectRoot: settings.codexResources.projectRoot,
               scanRoot: settings.codexResources.scanRoot,
               docsDir: settings.docsDir,
+              locales: localeRecord,
+              defaultLocale: settings.defaultLocale,
+              translations: routeContext.translations,
+              defaultLocaleOnlyPrefixes: settings.defaultLocaleOnlyPrefixes ?? [],
             },
           },
         ]

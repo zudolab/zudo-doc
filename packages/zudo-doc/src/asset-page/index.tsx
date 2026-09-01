@@ -24,6 +24,7 @@ export type { AssetRecord } from "../plugins/internal/asset-viewer/types.js";
 
 export interface AssetPageViewProps {
   entry: AssetRecord;
+  locale?: string;
 }
 
 function formatDuration(seconds: number): string {
@@ -111,16 +112,24 @@ function EnlargeIcon(): VNode {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 3H3v5m13-5h5v5M8 21H3v-5m13 5h5v-5M3 8l6-6m12 6-6-6M3 16l6 6m12-6-6 6" /></svg>;
 }
 
-export function AssetImageStage({ asset, rawUrl }: { asset: AssetRecord; rawUrl: string }): VNode {
+export interface AssetImageStageLabels {
+  fit: string;
+  actualSize: string;
+  checker: string;
+  dark: string;
+  enlarge: string;
+}
+
+export function AssetImageStage({ asset, rawUrl, labels }: { asset: AssetRecord; rawUrl: string; labels: AssetImageStageLabels }): VNode {
   return (
     <section>
       <div class="mb-vsp-xs flex flex-wrap gap-hsp-sm text-caption">
-        <div class="flex rounded border border-muted"><button type="button" aria-pressed="true" data-zd-asset-action="fit" class="px-hsp-sm py-vsp-3xs">Fit</button><button type="button" aria-pressed="false" data-zd-asset-action="1to1" class="border-l border-muted px-hsp-sm py-vsp-3xs">1:1</button></div>
-        <div class="flex rounded border border-muted"><button type="button" aria-pressed="true" data-zd-asset-action="checker" class="px-hsp-sm py-vsp-3xs">Checker</button><button type="button" aria-pressed="false" data-zd-asset-action="dark" class="border-l border-muted px-hsp-sm py-vsp-3xs">Dark</button></div>
+        <div class="flex rounded border border-muted"><button type="button" aria-pressed="true" data-zd-asset-action="fit" class="px-hsp-sm py-vsp-3xs">{labels.fit}</button><button type="button" aria-pressed="false" data-zd-asset-action="1to1" class="border-l border-muted px-hsp-sm py-vsp-3xs">{labels.actualSize}</button></div>
+        <div class="flex rounded border border-muted"><button type="button" aria-pressed="true" data-zd-asset-action="checker" class="px-hsp-sm py-vsp-3xs">{labels.checker}</button><button type="button" aria-pressed="false" data-zd-asset-action="dark" class="border-l border-muted px-hsp-sm py-vsp-3xs">{labels.dark}</button></div>
       </div>
       <figure class="zd-enlargeable zd-asset-stage is-checker flex min-h-[20rem] items-center justify-center overflow-auto rounded border border-muted bg-surface p-hsp-lg">
         <img src={rawUrl} alt={asset.description ?? asset.name} width={asset.width} height={asset.height} />
-        <button type="button" class="zd-enlarge-btn" hidden aria-label="Enlarge image"><EnlargeIcon /></button>
+        <button type="button" class="zd-enlarge-btn" hidden aria-label={labels.enlarge}><EnlargeIcon /></button>
       </figure>
     </section>
   );
@@ -167,11 +176,20 @@ export function AssetLinkedFrom({ asset, label }: { asset: AssetRecord; label: s
   );
 }
 
-export function AssetDetails({ asset }: { asset: AssetRecord }): VNode {
-  const rows: Array<[string, string]> = [["Type", asset.mime], ["Size", formatAssetBytes(asset.bytes)], ["Path", asset.path]];
-  if (asset.width !== undefined && asset.height !== undefined) rows.splice(1, 0, ["Dimensions", `${asset.width} × ${asset.height}`]);
-  if (asset.updatedDate) rows.push(["Updated", asset.updatedDate]);
-  return <section><h2 class="mb-vsp-xs text-title font-bold">Details</h2><dl class="grid grid-cols-[auto_1fr] gap-x-hsp-md gap-y-vsp-2xs text-caption">{rows.map(([term, value]) => <><dt class="font-medium text-muted">{term}</dt><dd class="min-w-0 break-words text-fg">{value}</dd></>)}</dl></section>;
+export interface AssetDetailsLabels {
+  heading: string;
+  type: string;
+  size: string;
+  path: string;
+  dimensions: string;
+  updated: string;
+}
+
+export function AssetDetails({ asset, labels }: { asset: AssetRecord; labels: AssetDetailsLabels }): VNode {
+  const rows: Array<[string, string]> = [[labels.type, asset.mime], [labels.size, formatAssetBytes(asset.bytes)], [labels.path, asset.path]];
+  if (asset.width !== undefined && asset.height !== undefined) rows.splice(1, 0, [labels.dimensions, `${asset.width} × ${asset.height}`]);
+  if (asset.updatedDate) rows.push([labels.updated, asset.updatedDate]);
+  return <section><h2 class="mb-vsp-xs text-title font-bold">{labels.heading}</h2><dl class="grid grid-cols-[auto_1fr] gap-x-hsp-md gap-y-vsp-2xs text-caption">{rows.map(([term, value]) => <><dt class="font-medium text-muted">{term}</dt><dd class="min-w-0 break-words text-fg">{value}</dd></>)}</dl></section>;
 }
 
 function MediaLayout({ stage, details, linked }: { stage: ComponentChildren; details: ComponentChildren; linked: ComponentChildren }): VNode {
@@ -182,7 +200,6 @@ function MediaLayout({ stage, details, linked }: { stage: ComponentChildren; det
 export function createAssetPageView<S extends Settings = Settings>(ctx: ChromeContext<S>): (props: AssetPageViewProps) => JSX.Element {
   assertChromeContext(ctx, "createAssetPageView");
   const settings = ctx.settings;
-  const locale = ctx.defaultLocale;
   const t = ctx.t;
   const composeMetaTitle = deriveComposeMetaTitle(ctx);
   const HeadWithDefaults = createHeadWithDefaults(ctx);
@@ -190,38 +207,58 @@ export function createAssetPageView<S extends Settings = Settings>(ctx: ChromeCo
   const BodyEndIslands = deriveBodyEndIslands(ctx);
   const dataThemePack = resolveThemePackSsrSlug(ctx.themePackRegistry, settings);
 
-  return function AssetPageView({ entry: asset }: AssetPageViewProps): JSX.Element {
+  return function AssetPageView({ entry: asset, locale = ctx.defaultLocale }: AssetPageViewProps): JSX.Element {
+    const localeSegment = locale === ctx.defaultLocale ? undefined : locale;
     const routePrefix = ctx.assetManifest?.routePrefix ?? settings.assetViewerRoutePrefix;
     const dir = ctx.assetManifest?.dir ?? settings.assetViewerDir;
-    const viewerUrl = assetViewerHref({ base: settings.base, routePrefix, path: asset.path });
+    const viewerUrl = assetViewerHref({ base: settings.base, routePrefix, path: asset.path, locale: localeSegment });
     const rawUrl = assetRawHref({ base: settings.base, dir, path: asset.path });
     const linesLabel = t("asset.lines", locale).replace(
       "{count}",
       String(asset.lines ?? 0),
     );
     const dirSegments = asset.dir.split("/").filter(Boolean);
-    const indexUrl = ctx.withBase(`/${routePrefix}/`);
+    const indexUrl = ctx.withBase(`/${localeSegment ? `${localeSegment}/` : ""}${routePrefix}/`);
+    const homeUrl = ctx.withBase(`/${localeSegment ? `${localeSegment}/` : ""}`);
+    const backLink = locale === ctx.defaultLocale
+      ? asset.linkedFrom[0]
+      : asset.linkedFrom.find((link) => link.locale === locale) ?? asset.linkedFrom[0];
     const breadcrumbItems = [
-      { label: "", href: ctx.withBase("/") },
+      { label: "", href: homeUrl },
       { label: t("asset.crumb", locale), ...(settings.assetViewerIndex ? { href: indexUrl } : {}) },
       ...dirSegments.map((label) => ({ label })),
       { label: asset.name },
     ];
     const linked = <AssetLinkedFrom asset={asset} label={t("asset.linkedFrom", locale)} />;
-    const details = <AssetDetails asset={asset} />;
+    const detailsLabels: AssetDetailsLabels = {
+      heading: t("asset.details", locale),
+      type: t("asset.type", locale),
+      size: t("asset.size", locale),
+      path: t("asset.path", locale),
+      dimensions: t("asset.dimensions", locale),
+      updated: t("doc.updated", locale),
+    };
+    const imageStageLabels: AssetImageStageLabels = {
+      fit: t("asset.fit", locale),
+      actualSize: t("asset.actualSize", locale),
+      checker: t("asset.checker", locale),
+      dark: t("asset.dark", locale),
+      enlarge: t("asset.enlarge", locale),
+    };
+    const details = <AssetDetails asset={asset} labels={detailsLabels} />;
     const downloadPanel = <AssetDownloadPanel asset={asset} rawUrl={rawUrl} noPreview={t("asset.noPreview", locale)} downloadLabel={t("asset.download", locale)} copyLabel={t("asset.copy", locale)} />;
     let body: ComponentChildren;
     const isMedia = asset.previewable && asset.sniffOk && ["image", "video", "pdf"].includes(asset.kind);
-    if (!asset.previewable || !asset.sniffOk) body = <>{downloadPanel}<AssetDetails asset={asset} />{linked}</>;
-    else if (asset.kind === "image") body = <MediaLayout stage={<AssetImageStage asset={asset} rawUrl={rawUrl} />} details={details} linked={linked} />;
+    if (!asset.previewable || !asset.sniffOk) body = <>{downloadPanel}<AssetDetails asset={asset} labels={detailsLabels} />{linked}</>;
+    else if (asset.kind === "image") body = <MediaLayout stage={<AssetImageStage asset={asset} rawUrl={rawUrl} labels={imageStageLabels} />} details={details} linked={linked} />;
     else if (asset.kind === "video") body = <MediaLayout stage={<AssetVideoStage asset={asset} rawUrl={rawUrl} />} details={details} linked={linked} />;
     else if (asset.kind === "pdf") body = <MediaLayout stage={<AssetPdfStage asset={asset} rawUrl={rawUrl}>{downloadPanel}</AssetPdfStage>} details={details} linked={linked} />;
-    else body = <><AssetCodeBody asset={asset} copyLabel={t("asset.copy", locale)} wrapLabel={t("asset.wrap", locale)} truncatedLabel={t("asset.truncated", locale)} linesLabel={linesLabel} /><AssetDetails asset={asset} />{linked}</>;
+    else body = <><AssetCodeBody asset={asset} copyLabel={t("asset.copy", locale)} wrapLabel={t("asset.wrap", locale)} truncatedLabel={t("asset.truncated", locale)} linesLabel={linesLabel} /><AssetDetails asset={asset} labels={detailsLabels} />{linked}</>;
     const showSource = settings.bodyFootUtilArea !== false && settings.bodyFootUtilArea.viewSourceLink !== false;
     return (
       <DocLayoutWithDefaults title={composeMetaTitle(asset.name)} head={<HeadWithDefaults title={asset.name} description={asset.description} canonical={ctx.absoluteUrl(viewerUrl)} />} lang={locale} dataThemePack={dataThemePack} noindex={settings.noindex} hideSidebar hideToc sidebarOverride={false} contentWide breadcrumbOverride={<BreadcrumbWithDefaults items={breadcrumbItems} />} headerOverride={<HeaderWithDefaults lang={locale} currentPath={viewerUrl} hideSidebarToggle />} footerOverride={<FooterWithDefaults lang={locale} />} bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} forceImageEnlarge={asset.kind === "image" && asset.previewable && asset.sniffOk} />} enableClientRouter={settings.dynamicPageTransition}>
         <div class="zd-asset-page" data-zd-asset-page>
-          {asset.linkedFrom[0] && <p class="mb-vsp-xs text-caption"><a href={asset.linkedFrom[0].href} class="text-muted hover:text-accent focus-visible:text-accent hover:underline focus-visible:underline">← Back to {asset.linkedFrom[0].title}</a></p>}
+          {backLink && <p class="mb-vsp-xs text-caption"><a href={backLink.href} class="text-muted hover:text-accent focus-visible:text-accent hover:underline focus-visible:underline">← {t("asset.backTo", locale)} {backLink.title}</a></p>}
           <AssetHeader asset={asset} locale={locale} badge={t("asset.badge", locale)} updatedLabel={t("doc.updated", locale)} linesLabel={linesLabel} />
           <AssetActions rawUrl={rawUrl} downloadLabel={t("asset.download", locale)} openRawLabel={t("asset.openRaw", locale)} copyLabel={t("asset.copy", locale)} wrapLabel={t("asset.wrap", locale)} code={!isMedia && asset.previewable && asset.sniffOk} />
           {body}

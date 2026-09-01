@@ -56,8 +56,10 @@ The URL slug is derived from the filename, so kebab-case also keeps URLs clean.
 - Keep **code blocks identical** — only translate prose.
 - Keep `<HtmlPreview>` and other JSX blocks identical.
 - The JA directory should mirror the EN directory tree exactly.
-- **Exception**: pages with `generated: true` in frontmatter are skipped (they are generated at build time).
-- **Exception**: pages whose paths fall under `settings.defaultLocaleOnlyPrefixes` are default-locale-only by design — do NOT create a JA mirror for them. The source of truth is `settings.defaultLocaleOnlyPrefixes` in `src/config/settings.ts`. Current entries: `/docs/claude-md/`, `/docs/claude-skills/`, `/docs/claude-agents/`, `/docs/claude-commands/`, `/docs/codex-agents-md/`, `/docs/codex-config/`, `/docs/codex-agents/`, `/docs/codex-hooks/`, `/docs/codex-rules/`, `/docs/codex-skills/`. The top-level `/docs/claude/` and `/docs/codex/` indexes are bilingual — only the ten deep prefixes above are default-locale-only.
+- **Exception**: files with `generated: true` in frontmatter are generator-owned; do not hand-edit or translate them.
+- **Exception**: the Claude/Codex resource generators own their overview and category `index.mdx` targets in the default content directory and every configured locale directory. They generate localized indexes from `resource.*` translations, so do not create hand-written locale stubs. If an authored file already occupies a target path, the generator refuses to overwrite it; remove or rename the file and express its title, description, and labels through `ZudoDocConfig.translations`.
+- **Exception**: Claude/Codex resource detail files stay in the default content directory and use body fallback at other locale routes. Do not copy those generated detail files into locale directories.
+- **Exception**: pages whose paths are explicitly listed under `settings.defaultLocaleOnlyPrefixes` are default-locale-only by design — do not create a JA mirror for them. The source of truth is `settings.defaultLocaleOnlyPrefixes` in `src/config/settings.ts`; this repository currently configures no such prefixes.
 
 ## Frontmatter Schema
 
@@ -129,7 +131,7 @@ All admonition components accept an optional `title` prop. (`caution` is danger-
 - **Adding `---` between headed sections** — headings and whitespace already provide the separation.
 - **Forgetting `sidebar_position`** — produces alphabetical chaos in the sidebar.
 - **camelCase or PascalCase file names** — breaks on some filesystems.
-- **Updating only the EN or only the JA version** — breaks the bilingual mirror (except for pages under `defaultLocaleOnlyPrefixes` or with `generated: true`).
+- **Updating only the EN or only the JA version** — breaks the bilingual mirror (except for generator-owned content and pages explicitly covered by `defaultLocaleOnlyPrefixes`).
 - **Absolute `/docs/...` links in prose** — the resolver cannot verify them; use relative `./page.mdx` instead.
 - **Omitting the `.mdx` extension in links** — the resolver requires it.
 - **Misspelling framework frontmatter fields** — the schema passes unknown keys through, so a typo'd `sidebar_position` silently does nothing instead of erroring.

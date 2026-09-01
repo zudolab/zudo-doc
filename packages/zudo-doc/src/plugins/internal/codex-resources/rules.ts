@@ -5,6 +5,7 @@ import {
   cleanDir,
   ensureDir,
   renderCodeFence,
+  resolveResourceLabel,
   writeCategoryIndex,
 } from "../resource-docs-shared/index.js";
 import {
@@ -289,9 +290,21 @@ export function generateRulesCategory(
   if (items.length > 0) {
     writeCategoryIndex(
       outputDir,
-      "Rules",
+      resolveResourceLabel({
+        translations: config.translations,
+        locale: config.defaultLocale ?? "en",
+        defaultLocale: config.defaultLocale,
+        key: "resource.codexRules.label",
+        fallbackLiteral: "Rules",
+      }),
       909,
-      "Command approval rules",
+      resolveResourceLabel({
+        translations: config.translations,
+        locale: config.defaultLocale ?? "en",
+        defaultLocale: config.defaultLocale,
+        key: "resource.codexRules.description",
+        fallbackLiteral: "Command approval rules",
+      }),
       formatFrontmatterString,
     );
   }

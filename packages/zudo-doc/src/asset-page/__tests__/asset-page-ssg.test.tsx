@@ -32,6 +32,7 @@ function page(
   entry: AssetRecord,
   settings: Record<string, unknown> = {},
   translationOverrides: Record<string, string> = {},
+  locale?: string,
 ): string {
   const base = String(settings.base ?? "/");
   const routePrefix = String(settings.assetViewerRoutePrefix ?? "files");
@@ -55,6 +56,10 @@ function page(
         "asset.lines": "{count} lines",
         "asset.linkedFrom": "Linked from", "asset.noPreview": "No preview available.",
         "asset.truncated": "Preview truncated.", "doc.updated": "Updated",
+        "asset.details": "Details", "asset.type": "Type", "asset.size": "Size",
+        "asset.path": "Path", "asset.dimensions": "Dimensions",
+        "asset.backTo": "Back to", "asset.fit": "Fit", "asset.actualSize": "1:1",
+        "asset.checker": "Checker", "asset.dark": "Dark", "asset.enlarge": "Enlarge image",
         "doc.viewSource": "View source on GitHub",
         ...translationOverrides,
       }[key] ?? key),
@@ -62,7 +67,7 @@ function page(
     },
   });
   const View = createAssetPageView(ctx);
-  return render(<View entry={entry} />);
+  return render(<View entry={entry} locale={locale} />);
 }
 
 describe("asset page SSG", () => {
@@ -118,6 +123,62 @@ describe("asset page SSG", () => {
     expect(html).toContain('src="/project/assets/img/logo.svg"');
     expect(html).toContain('href="https://docs.example/project/files/img/logo.svg/"');
     expect(html).not.toContain("/project/project/");
+  });
+
+  it("localizes page labels and uses its own locale URL as canonical", () => {
+    const html = page(asset(), {}, {
+      "asset.badge": "アセット",
+      "asset.crumb": "アセット一覧",
+      "asset.details": "詳細",
+      "asset.type": "種類",
+      "asset.size": "サイズ",
+      "asset.path": "パス",
+      "asset.dimensions": "寸法",
+      "asset.backTo": "戻る",
+      "asset.fit": "全体表示",
+      "asset.actualSize": "1:1",
+      "asset.checker": "チェッカー",
+      "asset.dark": "ダーク",
+      "asset.enlarge": "画像を拡大",
+      "doc.updated": "更新日",
+    }, "ja");
+    expect(html).toContain('lang="ja"');
+    expect(html).toContain('href="https://docs.example/ja/files/img/logo.svg/"');
+    expect(html).toContain("← 戻る Brand");
+    expect(html).toContain(">詳細</h2>");
+    expect(html).toContain(">種類</dt>");
+    expect(html).toContain(">全体表示</button>");
+    expect(html).toContain(">チェッカー</button>");
+    expect(html).toContain('aria-label="画像を拡大"');
+    expect(html).not.toContain('href="https://docs.example/files/img/logo.svg/"');
+  });
+
+  it("prefers the latest same-locale reference for a localized Back to link", () => {
+    const html = page(asset({
+      linkedFrom: [
+        { href: "/docs/brand/", title: "Brand", crumb: "Guide › Brand", context: "Default locale." },
+        { href: "/ja/docs/brand/", title: "ブランド", crumb: "ガイド › ブランド", context: "Latest Japanese reference.", locale: "ja" },
+        { href: "/ja/v/v1/docs/brand/", title: "旧ブランド", crumb: "ガイド › 旧ブランド", context: "Versioned Japanese reference.", locale: "ja", version: "v1" },
+      ],
+    }), {}, { "asset.backTo": "戻る" }, "ja");
+
+    expect(html).toContain('<a href="/ja/docs/brand/" class="text-muted hover:text-accent focus-visible:text-accent hover:underline focus-visible:underline">← 戻る ブランド</a>');
+    expect(html).not.toContain('← 戻る Brand');
+    const linkedFromHtml = html.slice(html.indexOf(">Linked from</h2>"));
+    expect(linkedFromHtml.indexOf('href="/docs/brand/"')).toBeLessThan(linkedFromHtml.indexOf('href="/ja/docs/brand/"'));
+    expect(linkedFromHtml.indexOf('href="/ja/docs/brand/"')).toBeLessThan(linkedFromHtml.indexOf('href="/ja/v/v1/docs/brand/"'));
+  });
+
+  it("falls back to the first reference when a localized page has no same-locale reference", () => {
+    const html = page(asset({
+      linkedFrom: [
+        { href: "/docs/brand/", title: "Brand", crumb: "Guide › Brand", context: "Default locale." },
+        { href: "/fr/docs/marque/", title: "Marque", crumb: "Guide › Marque", context: "French reference.", locale: "fr" },
+      ],
+    }), {}, { "asset.backTo": "戻る" }, "ja");
+
+    expect(html).toContain('<a href="/docs/brand/" class="text-muted hover:text-accent focus-visible:text-accent hover:underline focus-visible:underline">← 戻る Brand</a>');
+    expect(html).not.toContain('← 戻る Marque');
   });
 
   it("uses the shared asset size formatter in page metadata", () => {

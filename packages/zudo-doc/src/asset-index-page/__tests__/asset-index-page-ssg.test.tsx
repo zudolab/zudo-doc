@@ -34,7 +34,7 @@ const translations: Record<string, string> = {
   "asset.lines": "{count} lines",
 };
 
-function page(entries: AssetIndexEntry[], options: { base?: string; routePrefix?: string; dir?: string } = {}): string {
+function page(entries: AssetIndexEntry[], options: { base?: string; routePrefix?: string; dir?: string; locale?: string; translationOverrides?: Record<string, string> } = {}): string {
   const base = options.base ?? "/";
   const routePrefix = options.routePrefix ?? "files";
   const dir = options.dir ?? "assets";
@@ -44,12 +44,12 @@ function page(entries: AssetIndexEntry[], options: { base?: string; routePrefix?
     overrides: {
       assetManifest: { dir, routePrefix, entries, excerpts: {} },
       withBase,
-      t: (key: string) => translations[key] ?? key,
+      t: (key: string) => options.translationOverrides?.[key] ?? translations[key] ?? key,
       absoluteUrl: (path: string) => `https://docs.example${path}`,
     },
   });
   const View = createAssetIndexPageView(ctx);
-  return render(<View entries={entries} />);
+  return render(<View entries={entries} locale={options.locale} />);
 }
 
 describe("asset index page SSG", () => {
@@ -79,6 +79,21 @@ describe("asset index page SSG", () => {
     expect(html).toContain('href="/pj/x/media/view/demo/readme.txt/"');
     expect(html).toContain('href="https://docs.example/pj/x/media/view/"');
     expect(html).not.toContain("/pj/x/pj/x/");
+  });
+
+  it("renders locale chrome and preserves the locale in canonical and leaf links", () => {
+    const html = page([asset()], {
+      locale: "ja",
+      translationOverrides: {
+        "asset.crumb": "アセット",
+        "asset.indexDescription": "管理対象ファイルの一覧。",
+      },
+    });
+    expect(html).toContain('lang="ja"');
+    expect(html).toContain("アセット");
+    expect(html).toContain('href="https://docs.example/ja/files/"');
+    expect(html).toContain('href="/ja/files/demo/readme.txt/"');
+    expect(html).not.toContain('href="/files/demo/readme.txt/"');
   });
 
   it("shows an empty state while retaining the page shell", () => {

@@ -18,6 +18,13 @@ export function escapeTitle(s: string): string {
 
 export type FrontmatterStringRenderer = (value: string) => string;
 
+/**
+ * Write one generated MDX file.  The callback seam lets locale indexes use
+ * `writeGeneratedIndex` (which protects authored files) while the default
+ * locale keeps the historical direct-write behaviour.
+ */
+export type MdxFileWriter = (absolutePath: string, content: string) => void;
+
 export function formatFrontmatterString(value: string): string {
   if (!/[\r\n]/.test(value)) {
     try {
@@ -36,6 +43,8 @@ export function writeCategoryIndex(
   position: number,
   description: string,
   renderString: FrontmatterStringRenderer = (value) => `"${escapeTitle(value)}"`,
+  writeFile: MdxFileWriter = (absolutePath, content) =>
+    fs.writeFileSync(absolutePath, content),
 ): void {
   const mdx = `---
 title: ${renderString(label)}
@@ -45,7 +54,7 @@ category_no_page: true
 generated: true
 ---
 `;
-  fs.writeFileSync(path.join(outputDir, "index.mdx"), mdx);
+  writeFile(path.join(outputDir, "index.mdx"), mdx);
 }
 
 /**
