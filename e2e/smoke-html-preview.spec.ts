@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import type { Locator, Page } from "@playwright/test";
 import { test, expect } from "./fixtures";
-import { expectHtmlAttr } from "./html-assertions";
+import { expectHtmlAttr, getAttrValue } from "./html-assertions";
 import { spaClick } from "./nav-helpers";
 import { DIST_DIR, readDistFile } from "./smoke-dist-helper";
 
@@ -27,6 +27,10 @@ const HTML_PREVIEW_ISLAND = '[data-zfb-island="HtmlPreviewWrapperInner"]';
 const HTML_PREVIEW_SKIP_SSR =
   '[data-zfb-island-skip-ssr="HtmlPreviewWrapperInner"]';
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function htmlSection(html: string, heading: string): string {
   // Headings are serialized into the MobileToc data-props before the article
   // as well as rendered in the document. Anchor at the article's actual h2
@@ -42,6 +46,61 @@ function htmlSection(html: string, heading: string): string {
   return html.slice(start, nextHeading < 0 ? html.length : nextHeading);
 }
 
+function decodeHtmlEntities(value: string): string {
+  return value
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#34;", '"')
+    .replaceAll("&#x27;", "'")
+    .replaceAll("&#39;", "'")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&amp;", "&");
+}
+
+function readIframeSrcdoc(section: string): string {
+  const iframeStart = section.search(/<iframe\b/i);
+  expect(iframeStart).toBeGreaterThanOrEqual(0);
+  // The srcdoc value itself contains raw `>` characters (for example in its
+  // doctype and tags), so do not truncate the outer iframe at the first `>`.
+  // getAttrValue's quoted capture is intentionally allowed to span those
+  // characters and newlines.
+  const encoded = getAttrValue(section.slice(iframeStart), "srcdoc");
+  expect(encoded).not.toBeNull();
+  return decodeHtmlEntities(encoded ?? "");
+}
+
+function expectSrcdocMetadata(
+  section: string,
+  expectedLang: string,
+  expectedTitle: string,
+): void {
+  const srcdoc = readIframeSrcdoc(section);
+  expect(srcdoc).toContain(`<html lang="${expectedLang}">`);
+  expect(srcdoc.match(/<title\b/gi) ?? []).toHaveLength(1);
+  expect(srcdoc).toContain(`<title>${expectedTitle}</title>`);
+}
+
+type IframeDocumentMetadata = {
+  lang: string;
+  title: string;
+  titleCount: number;
+};
+
+async function iframeDocumentMetadata(
+  iframe: Locator,
+): Promise<IframeDocumentMetadata> {
+  const handle = await iframe.elementHandle();
+  if (!handle) throw new Error("HtmlPreview iframe was not attached");
+  const frame = await handle.contentFrame();
+  if (!frame) throw new Error("HtmlPreview iframe frame was not available");
+  await frame.locator("html").waitFor({ state: "attached", timeout: 10_000 });
+  return frame.evaluate(() => ({
+    lang: document.documentElement.lang,
+    title: document.title,
+    titleCount: document.querySelectorAll("title").length,
+  }));
+}
+
 function previewAfterHeading(
   page: Page,
   heading: string,
@@ -53,7 +112,7 @@ function previewAfterHeading(
       : '@data-zfb-island="HtmlPreviewWrapperInner"';
   return page
     .locator("article h2")
-    .filter({ hasText: new RegExp(`^${heading}$`) })
+    .filter({ hasText: new RegExp(`^${escapeRegExp(heading)}$`) })
     .locator(`xpath=following-sibling::*[${markerAttribute}][1]`);
 }
 
@@ -191,6 +250,8 @@ test.describe("HtmlPreview: SSG shape", () => {
     expectHtmlAttr(eager, "data-zfb-island", "HtmlPreviewWrapperInner");
     expect(eager).toContain("<iframe");
     expect(eager).toContain("srcdoc=");
+    expectHtmlAttr(eager, "sandbox", "allow-scripts");
+    expectSrcdocMetadata(eager, "en", "Trusted lifecycle title");
 
     const visible = htmlSection(html, "Visible Lifecycle Test");
     expect(visible).not.toBe("");
@@ -598,6 +659,11 @@ test.describe("HtmlPreview: lifecycle integration", () => {
     await expect(
       eager.frameLocator("iframe").locator("#eager-lifecycle-3852"),
     ).toHaveText("eager-ran");
+    expect(await iframeDocumentMetadata(eager.locator("iframe"))).toEqual({
+      lang: "en",
+      title: "Trusted lifecycle title",
+      titleCount: 1,
+    });
   });
 
   test("visible mode defers iframe work and local resources until explicit visibility", async ({
@@ -704,6 +770,11 @@ test.describe("HtmlPreview: lifecycle integration", () => {
     await expect(
       visibleFrame.locator("#visible-style-target-3852"),
     ).toHaveCSS("border-left-width", "6px");
+    expect(await iframeDocumentMetadata(visibleIframe)).toEqual({
+      lang: "en",
+      title: "Trusted lifecycle title",
+      titleCount: 1,
+    });
 
     await expect
       .poll(

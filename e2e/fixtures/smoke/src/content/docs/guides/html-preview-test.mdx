@@ -24,6 +24,9 @@ sidebar_position: 98
 <HtmlPreview
   title="Eager Lifecycle Test"
   loading="eager"
+  height={300}
+  sandbox="allow-scripts"
+  head={`<title>Trusted lifecycle title</title>`}
   html={`<p id="eager-lifecycle-3852">eager-not-run</p>`}
   js={`document.getElementById('eager-lifecycle-3852').textContent = 'eager-ran';`}
  />
@@ -100,6 +103,7 @@ document.getElementById('dynamic-shrink-3852').addEventListener('click', () => {
 <HtmlPreview
   title="Visible Lifecycle Test"
   loading="visible"
+  head={`<title>Trusted lifecycle title</title>`}
   html={`<div id="visible-inline-target-3852">inline-not-run</div>
 <div id="visible-external-target-3852">external-not-run</div>
 <div id="visible-style-target-3852">style-not-loaded</div>`}

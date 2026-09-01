@@ -1,11 +1,70 @@
 import type { Locator, Page } from "@playwright/test";
 
 import { expect, test } from "./fixtures";
+import { getAttrValue } from "./html-assertions";
+import { makeDistReader } from "./dist-helper";
 
 const I18N_BASE_URL = "http://localhost:4501";
 const PAGE_EN = "/docs/guides/html-preview-test/";
 const PAGE_JA = "/ja/docs/guides/html-preview-test/";
+const PAGE_DE = "/de/docs/guides/html-preview-test/";
+const { readDistFile } = makeDistReader("i18n");
 const ISLAND_SELECTOR = '[data-zfb-island="HtmlPreviewWrapperInner"]';
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function htmlSection(html: string, heading: string): string {
+  const articleStart = html.search(/<article\b/i);
+  if (articleStart < 0) return "";
+  const article = html.slice(articleStart);
+  const headingMatch = [...article.matchAll(/<h2\b[^>]*>[\s\S]*?<\/h2>/gi)].find(
+    (match) =>
+      decodeHtmlEntities(match[0].replace(/<[^>]*>/g, "")).trim() === heading,
+  );
+  if (!headingMatch || headingMatch.index == null) return "";
+  const start = articleStart + headingMatch.index;
+  const nextHeading = html.slice(start + headingMatch[0].length).search(/<h2\b/i);
+  return html.slice(
+    start,
+    nextHeading < 0 ? html.length : start + headingMatch[0].length + nextHeading,
+  );
+}
+
+function decodeHtmlEntities(value: string): string {
+  return value
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#34;", '"')
+    .replaceAll("&#x27;", "'")
+    .replaceAll("&#39;", "'")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&amp;", "&");
+}
+
+function readIframeSrcdoc(section: string): string {
+  const iframeStart = section.search(/<iframe\b/i);
+  expect(iframeStart).toBeGreaterThanOrEqual(0);
+  // The srcdoc value itself contains raw `>` characters (for example in its
+  // doctype and tags), so do not truncate the outer iframe at the first `>`.
+  // getAttrValue's quoted capture is intentionally allowed to span those
+  // characters and newlines.
+  const encoded = getAttrValue(section.slice(iframeStart), "srcdoc");
+  expect(encoded).not.toBeNull();
+  return decodeHtmlEntities(encoded ?? "");
+}
+
+function expectSrcdocMetadata(
+  section: string,
+  expectedLang: string,
+  expectedTitle: string,
+): void {
+  const srcdoc = readIframeSrcdoc(section);
+  expect(srcdoc).toContain(`<html lang="${expectedLang}">`);
+  expect(srcdoc.match(/<title\b/gi) ?? []).toHaveLength(1);
+  expect(srcdoc).toContain(`<title>${expectedTitle}</title>`);
+}
 
 function previewByTitle(page: Page, title: string): Locator {
   return page.locator(ISLAND_SELECTOR).filter({ hasText: title });
@@ -14,7 +73,7 @@ function previewByTitle(page: Page, title: string): Locator {
 function previewAfterHeading(page: Page, heading: string): Locator {
   return page
     .locator("article h2")
-    .filter({ hasText: heading })
+    .filter({ hasText: new RegExp(`^${escapeRegExp(heading)}$`) })
     .locator(
       'xpath=following-sibling::*[@data-zfb-island="HtmlPreviewWrapperInner"][1]',
     );
@@ -49,6 +108,84 @@ async function expectIframeMarker(
     preview.frameLocator("iframe").locator(`#${markerId}`),
   ).toHaveText(text);
 }
+
+type IframeDocumentMetadata = {
+  lang: string;
+  title: string;
+  titleCount: number;
+};
+
+async function iframeDocumentMetadata(
+  iframe: Locator,
+): Promise<IframeDocumentMetadata> {
+  const handle = await iframe.elementHandle();
+  if (!handle) throw new Error("HtmlPreview iframe was not attached");
+  const frame = await handle.contentFrame();
+  if (!frame) throw new Error("HtmlPreview iframe frame was not available");
+  await frame.locator("html").waitFor({ state: "attached", timeout: 10_000 });
+  return frame.evaluate(() => ({
+    lang: document.documentElement.lang,
+    title: document.title,
+    titleCount: document.querySelectorAll("title").length,
+  }));
+}
+
+test.describe("i18n HtmlPreview: serialized document metadata", () => {
+  test("binds route language and title fallbacks across EN, JA, and DE output", () => {
+    const routes = [
+      {
+        distPath: "docs/guides/html-preview-test/index.html",
+        localeHeading: "Locale defaults",
+        fallbackHeading: "Fallback iframe title",
+        explicitHeading: "Explicit metadata override",
+        expectedLang: "en",
+        fallbackTitle: "Preview",
+      },
+      {
+        distPath: "ja/docs/guides/html-preview-test/index.html",
+        localeHeading: "ロケールのデフォルト",
+        fallbackHeading: "フォールバック iframe タイトル",
+        explicitHeading: "明示的なメタデータ上書き",
+        expectedLang: "ja",
+        fallbackTitle: "プレビュー",
+      },
+      {
+        distPath: "de/docs/guides/html-preview-test/index.html",
+        localeHeading: "Locale defaults",
+        fallbackHeading: "Fallback iframe title",
+        explicitHeading: "Explicit metadata override",
+        expectedLang: "de",
+        fallbackTitle: "Preview",
+      },
+    ] as const;
+
+    for (const {
+      distPath,
+      localeHeading,
+      fallbackHeading,
+      explicitHeading,
+      expectedLang,
+      fallbackTitle,
+    } of routes) {
+      const html = readDistFile(distPath);
+      expectSrcdocMetadata(
+        htmlSection(html, localeHeading),
+        expectedLang,
+        "Locale defaults",
+      );
+      expectSrcdocMetadata(
+        htmlSection(html, fallbackHeading),
+        expectedLang,
+        fallbackTitle,
+      );
+      expectSrcdocMetadata(
+        htmlSection(html, explicitHeading),
+        "zh-Hant-x-preview",
+        "Explicit preview label",
+      );
+    }
+  });
+});
 
 test.describe("i18n HtmlPreview: SSR locale chrome", () => {
   test("English SSR keeps the current labels and both control regions", async ({
@@ -213,6 +350,15 @@ test.describe("i18n HtmlPreview: hydrated locale chrome", () => {
       "locale-default-frame",
       "Locale default iframe",
     );
+    await expect(preview.locator("iframe")).toHaveAttribute(
+      "title",
+      "Locale defaults",
+    );
+    expect(await iframeDocumentMetadata(preview.locator("iframe"))).toEqual({
+      lang: "en",
+      title: "Locale defaults",
+      titleCount: 1,
+    });
 
     assertNoConsoleErrors();
   });
@@ -258,6 +404,11 @@ test.describe("i18n HtmlPreview: hydrated locale chrome", () => {
       "locale-default-frame",
       "Locale default iframe",
     );
+    expect(await iframeDocumentMetadata(preview.locator("iframe"))).toEqual({
+      lang: "ja",
+      title: "Locale defaults",
+      titleCount: 1,
+    });
 
     const fallback = previewAfterHeading(
       page,
@@ -272,6 +423,87 @@ test.describe("i18n HtmlPreview: hydrated locale chrome", () => {
     );
     await expect(
       fallback.getByRole("button", { name: "タブレット", exact: true }),
+    ).toBeVisible();
+    await expectIframeMarker(
+      fallback,
+      "fallback-title-frame",
+      "Fallback title iframe",
+    );
+    expect(await iframeDocumentMetadata(fallback.locator("iframe"))).toEqual({
+      lang: "ja",
+      title: "プレビュー",
+      titleCount: 1,
+    });
+    assertNoConsoleErrors();
+  });
+
+  test("configured DE route keeps its route language while using English metadata fallbacks", async ({
+    page,
+    assertNoConsoleErrors,
+  }) => {
+    await page.goto(PAGE_DE, { waitUntil: "domcontentloaded" });
+
+    const preview = previewByTitle(page, "Locale defaults");
+    await expect(preview).toHaveCount(1);
+    await preview.scrollIntoViewIfNeeded();
+    await waitForHydration(preview, "Mobile");
+    await expectIframeMarker(
+      preview,
+      "locale-default-frame",
+      "Locale default iframe",
+    );
+    expect(await iframeDocumentMetadata(preview.locator("iframe"))).toEqual({
+      lang: "de",
+      title: "Locale defaults",
+      titleCount: 1,
+    });
+
+    const fallback = previewAfterHeading(page, "Fallback iframe title");
+    await expect(fallback).toHaveCount(1);
+    await fallback.scrollIntoViewIfNeeded();
+    await waitForHydration(fallback, "Mobile");
+    await expectIframeMarker(
+      fallback,
+      "fallback-title-frame",
+      "Fallback title iframe",
+    );
+    expect(await iframeDocumentMetadata(fallback.locator("iframe"))).toEqual({
+      lang: "de",
+      title: "Preview",
+      titleCount: 1,
+    });
+    assertNoConsoleErrors();
+  });
+
+  test("explicit language and preview-label overrides win on a Japanese route", async ({
+    page,
+    assertNoConsoleErrors,
+  }) => {
+    await page.goto(PAGE_JA, { waitUntil: "domcontentloaded" });
+
+    const explicit = previewAfterHeading(
+      page,
+      "明示的なメタデータ上書き",
+    );
+    await expect(explicit).toHaveCount(1);
+    await explicit.scrollIntoViewIfNeeded();
+    await waitForHydration(explicit, "モバイル");
+    await expect(explicit.locator("iframe")).toHaveAttribute(
+      "title",
+      "Explicit preview label",
+    );
+    await expectIframeMarker(
+      explicit,
+      "explicit-metadata-frame",
+      "Explicit metadata iframe",
+    );
+    expect(await iframeDocumentMetadata(explicit.locator("iframe"))).toEqual({
+      lang: "zh-Hant-x-preview",
+      title: "Explicit preview label",
+      titleCount: 1,
+    });
+    await expect(
+      explicit.getByRole("button", { name: "タブレット", exact: true }),
     ).toBeVisible();
     assertNoConsoleErrors();
   });

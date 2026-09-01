@@ -77,6 +77,26 @@ describe("HtmlPreview localized labels and control contract", () => {
     expect(authored).not.toContain('title="Aperçu"');
   });
 
+  it("serializes direct document metadata with low-level English fallback", () => {
+    const localized = render(
+      <HtmlPreview
+        html="<p>hello</p>"
+        lang="pt-BR-x-demo"
+        title="Olá & preview"
+      />,
+    );
+    const fallback = render(<HtmlPreview html="<p>hello</p>" lang="  " />);
+
+    expect(localized).toContain(
+      "&lt;html lang=&quot;pt-BR-x-demo&quot;>",
+    );
+    expect(localized).toContain(
+      "&lt;title>Olá &amp;amp; preview&lt;/title>",
+    );
+    expect(fallback).toContain("&lt;html lang=&quot;en&quot;>");
+    expect(fallback).toContain("&lt;title>Preview&lt;/title>");
+  });
+
   it("removes the source region structurally even when defaultOpen is true", () => {
     const html = renderBase({ showSource: false, defaultOpen: true });
 
@@ -132,5 +152,18 @@ describe("HtmlPreview localized labels and control contract", () => {
     expect(html).not.toContain('role="group"');
     expect(html).not.toContain("aria-expanded");
     expect(html).not.toContain("data-zfb-island=\"HtmlPreviewWrapper\"");
+  });
+
+  it("forwards language and localized document-title fallback through the wrapper", () => {
+    const html = render(
+      <HtmlPreviewWrapper
+        html="<p>hello</p>"
+        lang="de-CH-1996"
+        labels={{ preview: "Vorschau" }}
+      />,
+    );
+
+    expect(html).toContain("&lt;html lang=&quot;de-CH-1996&quot;>");
+    expect(html).toContain("&lt;title>Vorschau&lt;/title>");
   });
 });

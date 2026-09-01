@@ -22,6 +22,17 @@ checked independently from the title bar.
   html={`<div id="fallback-title-frame">Fallback title iframe</div>`}
 />
 
+## Explicit metadata override
+
+An explicit language tag and per-preview fallback label take precedence over
+the active route locale and its localized defaults.
+
+<HtmlPreview
+  lang="zh-Hant-x-preview"
+  labels={{ preview: "Explicit preview label" }}
+  html={`<div id="explicit-metadata-frame">Explicit metadata iframe</div>`}
+/>
+
 ## Partial labels
 
 One label can be overridden for a single preview while the other labels stay
