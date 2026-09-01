@@ -37,8 +37,9 @@ export interface HtmlPreviewProps {
    * `iframe.contentDocument.body.scrollHeight` and resizes the iframe to
    * fit; `fullHeight` makes the body's height derive FROM the iframe's own
    * height instead, which creates a feedback loop when the iframe height is
-   * itself derived from the body. This component does not attempt to
-   * detect or break that loop — always set `height` alongside `fullHeight`.
+   * itself derived from the body. Auto-height is therefore disabled when
+   * `fullHeight` is used without a fixed height. Pair both props when the
+   * preview needs a height other than the default 200px reservation.
    *
    * @default false
    */
@@ -249,6 +250,11 @@ export function HtmlPreview({
   const hasScripts = containsScript(head, js, externalScripts);
   const syncDelay = hasScripts ? 300 : 0;
   const sandboxValue = resolveSandbox(sandbox, hasScripts);
+  // An empty sandbox token list is maximally restrictive, but zfb's HTML
+  // serializer drops a valueless `sandbox` attribute. Preserve attribute
+  // presence with whitespace (still zero tokens) so `sandbox=""` cannot turn
+  // into an unsandboxed iframe in the generated site.
+  const sandboxAttributeValue = sandboxValue === "" ? " " : sandboxValue;
 
   const codeBlocks = useMemo(() => {
     const resourceLines = showResources
@@ -301,7 +307,8 @@ export function HtmlPreview({
       labels={labels}
       showSource={showSource}
       showViewportControls={showViewportControls}
-      sandbox={sandboxValue}
+      autoHeight={height == null && !fullHeight}
+      sandbox={sandboxAttributeValue}
       syncDelay={syncDelay}
       codeBlocks={codeBlocks}
     />
