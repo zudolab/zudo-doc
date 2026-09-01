@@ -22,6 +22,7 @@
 
 import type { IncomingMessage, ServerResponse } from "node:http";
 
+import { loadLlmsAssetEntries } from "./assets.js";
 import { generateLlmsFullTxt, generateLlmsTxt } from "./generate.js";
 import { loadDocEntries } from "./load.js";
 import type {
@@ -138,10 +139,18 @@ export function createLlmsTxtDevMiddleware(
         base,
         siteUrl,
       });
+      const assets = loadLlmsAssetEntries({
+        projectRoot: options.projectRoot,
+        assetScan: options.assetScan,
+      }).filter((asset) =>
+        match.locale === null
+          ? asset.locale === undefined
+          : asset.locale === match.locale,
+      );
       const body =
         match.kind === "llms"
-          ? generateLlmsTxt(entries, meta)
-          : generateLlmsFullTxt(entries, meta);
+          ? generateLlmsTxt(entries, meta, assets)
+          : generateLlmsFullTxt(entries, meta, assets);
       res.statusCode = 200;
       res.setHeader("Content-Type", "text/plain; charset=utf-8");
       res.end(body);
