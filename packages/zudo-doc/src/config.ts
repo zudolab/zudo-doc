@@ -18,11 +18,13 @@
  * `zudoDoc()` SHALLOW-merges the user's fields over {@link DEFAULT_SETTINGS} —
  * top-level fields only (`{ ...DEFAULT_SETTINGS, ...user }`). A supplied nested
  * object (e.g. `colorMode`, `metaTags`) REPLACES the default wholesale; it is
- * NOT deep-merged key-by-key. This is safe because every nested config type is
- * all-required-fields, so a caller supplying one supplies all of its fields.
- * ONE exception: `FaviconConfig` is all-optional — wholesale replacement IS its
- * semantics (only the supplied slots emit a `<link rel="icon">`), and its
- * default is `undefined`, so there is nothing for a partial object to clobber.
+ * NOT deep-merged key-by-key. Nested config types that intentionally expose
+ * optional keys (such as `FrontmatterPreviewConfig` and
+ * `AssetViewerIndexingConfig`) get their per-key defaults at the read site;
+ * this shallow merge never fills nested keys. `FaviconConfig` is also
+ * all-optional — wholesale replacement IS its semantics (only the supplied
+ * slots emit a `<link rel="icon">`), and its default is `undefined`, so there
+ * is nothing for a partial object to clobber.
  * `zudoDoc()` also supplies the Wave-3 package defaults
  * (`buildDocsSchema`/`directiveVocabulary`/`translations`/`colorSchemes`/tag
  * vocabulary) unless overridden, and returns a **complete `ZfbConfig`** — the
@@ -85,6 +87,7 @@ import type {
   HeaderNavItem,
   HeaderRightItem,
   HomeConfig,
+  AssetViewerIndexingConfig,
   FrontmatterPreviewConfig,
   BodyFootUtilAreaConfig,
   HtmlPreviewConfig,
@@ -176,6 +179,7 @@ export const DEFAULT_SETTINGS: Settings = {
   defaultLocale: "en",
   locales: {},
   mermaid: true,
+  transclude: false,
   noindex: false,
   editUrl: false,
   githubUrl: false,
@@ -221,6 +225,7 @@ export const DEFAULT_SETTINGS: Settings = {
   assetViewerRoutePrefix: "files",
   assetViewerExclude: [],
   assetViewerIndex: false,
+  assetViewerIndexing: false,
   bodyFootUtilArea: false,
   htmlPreview: undefined,
   versions: false,
@@ -354,6 +359,11 @@ export interface ZudoDocConfig {
    * @default true
    */
   mermaid?: boolean;
+  /**
+   * Enable transclusion of other Markdown/MDX files via `:::include`.
+   * @default false
+   */
+  transclude?: boolean;
   /**
    * Add `noindex,nofollow` to every page (for internal docs).
    * @default false
@@ -543,6 +553,8 @@ export interface ZudoDocConfig {
   assetViewerExclude?: string[];
   /** When `true` (and `assetViewer` is `true`), generate a listing page at `/<assetViewerRoutePrefix>/` showing every managed asset as a folder tree. No effect when `assetViewer` is `false`. @default false */
   assetViewerIndex?: boolean;
+  /** Per-output opt-in controls for indexing generated asset-viewer pages. Omitted keys are off; `false` disables all asset-page indexing. @default false */
+  assetViewerIndexing?: AssetViewerIndexingConfig | false;
   /**
    * Body-foot utility area (doc-history / view-source), or `false` to disable.
    * @default false
@@ -762,8 +774,9 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
 
   // Shallow (top-level) merge, user wins. A supplied nested object (colorMode,
   // metaTags, footer, …) replaces the default wholesale — not deep-merged.
-  // Safe because nested config types are all-required-field. `settingsOverrides`
-  // is a Partial<Settings>.
+  // Nested objects with optional keys (for example assetViewerIndexing) get
+  // their per-key defaults at the read site; this merge never fills them.
+  // `settingsOverrides` is a Partial<Settings>.
   const settings: Settings = { ...DEFAULT_SETTINGS, ...settingsOverrides };
 
   // Validate both prefixes at config resolution, before route injection or

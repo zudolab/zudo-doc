@@ -367,6 +367,7 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `defaultLocale` | `string` | Default locale code (e.g. `"en"`) |
 | `locales` | `Record<string, LocaleConfig>` | Locale configuration map |
 | `mermaid` | `boolean` | Enable Mermaid diagram rendering |
+| `transclude` | `boolean` | Enable `:::include` transclusion of other Markdown/MDX files; defaults to `false` |
 | `noindex` | `boolean` | Set `noindex` on all pages |
 | `editUrl` | `string \| false` | Base URL for "Edit this page" links |
 | `githubUrl` | `string \| false` | GitHub repo URL for the GitHub link |
@@ -397,6 +398,7 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `dynamicPageTransition` | `boolean` | Enable View Transitions API |
 | `frontmatterPreview` | `FrontmatterPreviewConfig \| false` | Frontmatter preview panel config |
 | `docHistory` | `boolean` | Enable doc history dropdown |
+| `assetViewerIndexing` | `AssetViewerIndexingConfig \| false` | Independently opt in generated asset-viewer pages to search, llms.txt, or sitemap output; defaults to `false`, and omitted subkeys are off |
 | `bodyFootUtilArea` | `BodyFootUtilAreaConfig \| false` | Body footer utility area config |
 | `htmlPreview` | `HtmlPreviewConfig \| undefined` | HTML preview sandbox config |
 | `versions` | `VersionConfig[] \| false` | Multi-version config |

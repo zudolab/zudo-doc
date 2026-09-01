@@ -35,7 +35,11 @@
 
 import { z } from "zod";
 import type { ColorScheme } from "./color-scheme-utils.js";
-import type { TagVocabularyEntry, FaviconConfig } from "./settings.js";
+import type {
+  AssetViewerIndexingConfig,
+  TagVocabularyEntry,
+  FaviconConfig,
+} from "./settings.js";
 import { assertNoCommaInVersionSlugs } from "./version-availability/index.js";
 import {
   assertNoEmptyStringFaviconOrLogo,
@@ -130,6 +134,8 @@ export interface PresetSettings {
   trailingSlash: boolean;
   minifyHtml?: boolean;
   mermaid: boolean;
+  /** Enable transclusion of other Markdown/MDX files. */
+  transclude?: boolean;
   onBrokenMarkdownLinks: "warn" | "error" | "ignore";
   llmsTxt?: boolean;
   changelogs?: PresetChangelogConfig[] | false;
@@ -143,6 +149,8 @@ export interface PresetSettings {
   assetViewerRoutePrefix?: string;
   /** Relative asset glob patterns excluded from viewer generation. */
   assetViewerExclude?: string[];
+  /** Per-output opt-in controls for indexing generated asset-viewer pages. */
+  assetViewerIndexing?: AssetViewerIndexingConfig | false;
   claudeResources?: PresetClaudeResourcesConfig | false;
   codexResources?: PresetCodexResourcesConfig | false;
   /** Route prefixes served only from the unprefixed default locale. */
@@ -473,9 +481,9 @@ function buildResolveMarkdownLinks(settings: PresetSettings): PresetResolveMarkd
 }
 
 // ---------------------------------------------------------------------------
-// markdown.features — the full opt-in block. The two settings-driven knobs are
-// `directives` (the passed-in vocabulary) and `mermaid`; everything else is a
-// fixed contract for the zudo-doc markdown pipeline.
+// markdown.features — the full opt-in block. The three settings-driven knobs
+// are `directives` (the passed-in vocabulary), `mermaid`, and `transclude`;
+// everything else is a fixed contract for the zudo-doc markdown pipeline.
 // ---------------------------------------------------------------------------
 
 function buildMarkdownFeatures(
@@ -488,6 +496,7 @@ function buildMarkdownFeatures(
     // (registered in the host's pages/_mdx-components.ts).
     directives: { ...directiveVocabulary },
     mermaid: settings.mermaid,
+    ...(settings.transclude ? { transclude: {} } : {}),
     headingMarkerToc: true,
     // Remaining opt-in features (#1804).
     githubAlerts: true,
@@ -546,6 +555,20 @@ function buildPlugins(
   const assetViewerDir = settings.assetViewerDir ?? "assets";
   const assetViewerRoutePrefix = settings.assetViewerRoutePrefix ?? "files";
   const assetViewerExclude = settings.assetViewerExclude ?? [];
+  // Shared, serialized input for the later search/llms asset-page consumers.
+  // Keep this nested because the two plugins intentionally use different
+  // shapes for their existing `locales` option (record vs. array). Runtime
+  // wrappers add `ctx.projectRoot`; it must not cross this config boundary.
+  const assetScan = {
+    assetViewer,
+    assetViewerIndexing: settings.assetViewerIndexing ?? false,
+    assetViewerDir,
+    assetViewerRoutePrefix,
+    assetViewerExclude,
+    base: settings.base,
+    locales: localeRecord,
+    defaultLocaleOnlyPrefixes: settings.defaultLocaleOnlyPrefixes ?? [],
+  };
 
   // Build-time diagnostic (#2405): when packageOwnedRoutes is on but
   // translations/colorSchemes were not passed, emit ONE actionable warning so
@@ -685,6 +708,7 @@ function buildPlugins(
         docsDir: settings.docsDir,
         locales: localeRecord,
         base: settings.base,
+        assetScan,
       },
     },
     // Theme packs (ADR docs/adr/theme-packs.md, Decision 2, #2820) — a
@@ -714,6 +738,7 @@ function buildPlugins(
               siteUrl: settings.siteUrl,
               defaultLocaleDir: settings.docsDir,
               locales: localeArray,
+              assetScan,
             },
           },
         ]
