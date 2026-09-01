@@ -92,7 +92,7 @@ describe("createHomePageView — hero markup", () => {
     const HomePageView = createHomePageView(ctx);
     const html = render(<HomePageView {...makeProps()} />);
 
-    expect(html).toContain('<h1 class="text-heading font-bold mb-vsp-2xs">Test Site</h1>');
+    expect(html).toContain('<h1 class="text-heading font-bold mb-vsp-2xs break-words">Test Site</h1>');
     expect(html).toContain(
       '<p class="text-muted text-small mb-vsp-sm">A test description</p>',
     );
