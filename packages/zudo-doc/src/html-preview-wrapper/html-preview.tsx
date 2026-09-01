@@ -3,9 +3,14 @@
 
 import { useMemo } from "preact/hooks";
 import type { VNode } from "preact";
-import { PreviewBase } from "./preview-base.js";
+import {
+  PreviewBase,
+  type HtmlPreviewLabels,
+} from "./preview-base.js";
 import { dedent } from "./dedent.js";
 import { preflightCss } from "./preflight.js";
+
+export type { HtmlPreviewLabels } from "./preview-base.js";
 
 export interface HtmlPreviewProps {
   html: string;
@@ -15,6 +20,12 @@ export interface HtmlPreviewProps {
   title?: string;
   height?: number;
   defaultOpen?: boolean;
+  /** Localized labels for viewport, source, and iframe controls. */
+  labels?: Partial<HtmlPreviewLabels>;
+  /** Whether the source toggle and code panel are rendered. @default true */
+  showSource?: boolean;
+  /** Whether the viewport preset controls are rendered. @default true */
+  showViewportControls?: boolean;
   /**
    * When true, injects `<style>html,body{height:100%}</style>` into the
    * preview document so the preview's content can stretch to fill the
@@ -208,6 +219,9 @@ export function HtmlPreview({
   title,
   height,
   defaultOpen,
+  labels,
+  showSource,
+  showViewportControls,
   fullHeight,
   sandbox,
   componentCss,
@@ -284,6 +298,9 @@ export function HtmlPreview({
       height={height}
       srcdoc={srcdoc}
       defaultOpen={defaultOpen}
+      labels={labels}
+      showSource={showSource}
+      showViewportControls={showViewportControls}
       sandbox={sandboxValue}
       syncDelay={syncDelay}
       codeBlocks={codeBlocks}

@@ -8,7 +8,7 @@ import type { VNode } from "preact";
 // types come from the package-level shim at `../_zfb-shim.d.ts`.
 import { Island } from "@takazudo/zfb";
 
-import { HtmlPreview } from "./html-preview.js";
+import { HtmlPreview, type HtmlPreviewLabels } from "./html-preview.js";
 
 /**
  * Global HTML preview configuration. Mirrors the `settings.htmlPreview`
@@ -52,6 +52,12 @@ export interface HtmlPreviewWrapperProps {
   height?: number;
   /** When true, the code section is expanded by default. */
   defaultOpen?: boolean;
+  /** Localized labels for viewport, source, and iframe controls. */
+  labels?: Partial<HtmlPreviewLabels>;
+  /** Whether the source toggle and code panel are rendered. @default true */
+  showSource?: boolean;
+  /** Whether the viewport preset controls are rendered. @default true */
+  showViewportControls?: boolean;
   /**
    * Forwarded to `<HtmlPreview>`. When true, makes the preview document's
    * `html`/`body` stretch to 100% height. Interacts with auto-height — pair
@@ -148,6 +154,9 @@ export function HtmlPreviewWrapperInner(
     title,
     height,
     defaultOpen,
+    labels,
+    showSource,
+    showViewportControls,
     fullHeight,
     sandbox,
     externalStyles,
@@ -172,6 +181,9 @@ export function HtmlPreviewWrapperInner(
       title={title}
       height={height}
       defaultOpen={defaultOpen}
+      labels={labels}
+      showSource={showSource}
+      showViewportControls={showViewportControls}
       fullHeight={fullHeight}
       sandbox={sandbox}
       componentCss={css}
