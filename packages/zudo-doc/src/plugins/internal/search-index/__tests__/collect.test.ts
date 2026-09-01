@@ -143,6 +143,19 @@ describe("collectSearchEntries asset pages", () => {
     ]);
   });
 
+  it("keeps a multibyte text excerpt at the frozen character cap", () => {
+    const text = "資料🙂".repeat(200);
+    writeAsset("unicode.txt", text);
+
+    const entries = collectSearchEntries(assetConfig()).filter(
+      (entry) => entry.title === "unicode.txt",
+    );
+
+    expect(entries).toHaveLength(2);
+    expect(entries[0]?.body).toBe(text.substring(0, 300));
+    expect(entries[1]?.body).toBe(text.substring(0, 300));
+  });
+
   it("only emits a localized asset when its generated route exists", () => {
     writeAsset("public/secret.txt", "default only");
 

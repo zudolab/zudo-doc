@@ -4,7 +4,7 @@
 // build emitter and the dev middleware — keeping the walk in one place
 // guarantees `pnpm dev` and `pnpm build` produce the same JSON shape.
 
-import { readFileSync } from "node:fs";
+import { closeSync, openSync, readSync } from "node:fs";
 import { basename, resolve } from "node:path";
 import {
   collectMdFiles,
@@ -24,6 +24,32 @@ function truncateBody(text: string): string {
   return text.length > MAX_BODY_LENGTH
     ? text.substring(0, MAX_BODY_LENGTH)
     : text;
+}
+
+/** Read enough UTF-8 bytes to produce the frozen 300-code-unit excerpt. */
+function readAssetExcerpt(filePath: string): string {
+  // A Unicode scalar needs at most four UTF-8 bytes. Reading four bytes per
+  // output code unit keeps this bounded even for very large public text files,
+  // while leaving enough complete input before any partial trailing sequence.
+  const sample = Buffer.allocUnsafe(MAX_BODY_LENGTH * 4);
+  const fd = openSync(filePath, "r");
+  try {
+    let offset = 0;
+    while (offset < sample.length) {
+      const bytesRead = readSync(
+        fd,
+        sample,
+        offset,
+        sample.length - offset,
+        offset,
+      );
+      if (bytesRead === 0) break;
+      offset += bytesRead;
+    }
+    return truncateBody(sample.subarray(0, offset).toString("utf8"));
+  } finally {
+    closeSync(fd);
+  }
 }
 
 /** Build search index entries for a single content directory. */
@@ -75,7 +101,7 @@ function buildAssetEntries(config: SearchIndexConfig): SearchIndexEntry[] {
   return descriptors.map((descriptor) => {
     const localePrefix = descriptor.locale === undefined ? "" : `${descriptor.locale}/`;
     const body = descriptor.isText
-      ? truncateBody(readFileSync(resolve(assetRoot, descriptor.path), "utf8"))
+      ? readAssetExcerpt(resolve(assetRoot, descriptor.path))
       : "";
 
     return {
