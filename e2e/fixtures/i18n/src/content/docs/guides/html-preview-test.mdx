@@ -1,0 +1,81 @@
+---
+title: HtmlPreview i18n Test
+sidebar_position: 98
+---
+
+## Locale defaults
+
+The route-bound preview uses the active locale for its visible controls,
+accessible viewport label, source disclosure, and fallback iframe title.
+
+<HtmlPreview
+  title="Locale defaults"
+  html={`<div id="locale-default-frame">Locale default iframe</div>`}
+/>
+
+## Fallback iframe title
+
+This preview omits an authored title so the locale's iframe fallback can be
+checked independently from the title bar.
+
+<HtmlPreview
+  html={`<div id="fallback-title-frame">Fallback title iframe</div>`}
+/>
+
+## Explicit metadata override
+
+An explicit language tag and per-preview fallback label take precedence over
+the active route locale and its localized defaults.
+
+<HtmlPreview
+  lang="zh-Hant-x-preview"
+  labels={{ preview: "Explicit preview label" }}
+  html={`<div id="explicit-metadata-frame">Explicit metadata iframe</div>`}
+/>
+
+## Partial labels
+
+One label can be overridden for a single preview while the other labels stay
+bound to the active route locale.
+
+<HtmlPreview
+  title="Partial labels"
+  html={`<div id="partial-labels-frame">Partial labels iframe</div>`}
+  labels={{
+    mobile: "Phone",
+    tablet: undefined,
+  }}
+/>
+
+## Source hidden
+
+The iframe remains when the source region is disabled, even when
+`defaultOpen` is also present.
+
+<HtmlPreview
+  title="Source hidden"
+  html={`<div id="source-hidden-frame">Source hidden iframe</div>`}
+  showSource={false}
+  defaultOpen
+/>
+
+## Viewport hidden
+
+The iframe remains full width and resizable when viewport presets are hidden.
+
+<HtmlPreview
+  title="Viewport hidden"
+  html={`<div id="viewport-hidden-frame">Viewport hidden iframe</div>`}
+  showViewportControls={false}
+/>
+
+## All controls hidden
+
+Both optional regions can be omitted while retaining the live iframe.
+
+<HtmlPreview
+  title="All controls hidden"
+  html={`<div id="all-controls-hidden-frame">All controls hidden iframe</div>`}
+  showSource={false}
+  showViewportControls={false}
+/>

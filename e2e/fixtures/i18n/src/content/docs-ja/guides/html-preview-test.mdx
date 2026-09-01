@@ -1,0 +1,83 @@
+---
+title: HtmlPreview i18n テスト
+sidebar_position: 98
+---
+
+## ロケールのデフォルト
+
+ルートにバインドされたプレビューは、表示コントロール、ビューポートの
+アクセシブルなラベル、ソース開示、フォールバック iframe タイトルに
+アクティブなロケールを使います。
+
+<HtmlPreview
+  title="Locale defaults"
+  html={`<div id="locale-default-frame">Locale default iframe</div>`}
+/>
+
+## フォールバック iframe タイトル
+
+作成者タイトルを省略し、タイトルバーとは別にロケールの iframe
+フォールバックを確認します。
+
+<HtmlPreview
+  html={`<div id="fallback-title-frame">Fallback title iframe</div>`}
+/>
+
+## 明示的なメタデータ上書き
+
+明示的な言語タグとプレビュー単位のフォールバックラベルは、アクティブな
+ルートロケールとローカライズ済みのデフォルトより優先されます。
+
+<HtmlPreview
+  lang="zh-Hant-x-preview"
+  labels={{ preview: "Explicit preview label" }}
+  html={`<div id="explicit-metadata-frame">Explicit metadata iframe</div>`}
+/>
+
+## 部分的なラベル
+
+1つのラベルだけをプレビュー単位で上書きし、他のラベルはアクティブな
+ルートロケールにバインドされたままにします。
+
+<HtmlPreview
+  title="Partial labels"
+  html={`<div id="partial-labels-frame">Partial labels iframe</div>`}
+  labels={{
+    mobile: "Phone",
+    tablet: undefined,
+  }}
+/>
+
+## ソースを非表示
+
+`defaultOpen`も指定していても、ソース領域を無効にしたとき iframe は
+残ります。
+
+<HtmlPreview
+  title="Source hidden"
+  html={`<div id="source-hidden-frame">Source hidden iframe</div>`}
+  showSource={false}
+  defaultOpen
+/>
+
+## ビューポートを非表示
+
+ビューポートプリセットを非表示にしても、iframe は全幅でリサイズ可能な
+状態を保ちます。
+
+<HtmlPreview
+  title="Viewport hidden"
+  html={`<div id="viewport-hidden-frame">Viewport hidden iframe</div>`}
+  showViewportControls={false}
+/>
+
+## すべてのコントロールを非表示
+
+両方の任意領域を省略しても、ライブ iframe は残ります。
+
+<HtmlPreview
+  title="All controls hidden"
+  html={`<div id="all-controls-hidden-frame">All controls hidden iframe</div>`}
+  showSource={false}
+  showViewportControls={false}
+/>

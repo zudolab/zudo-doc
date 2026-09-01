@@ -102,6 +102,44 @@ This lets a project configure only the strings it has translated. Locale labels 
 
 The package ships complete built-in UI tables for English and Japanese. Other locale codes in the generator's `SUPPORTED_LANGS` list do not imply translated chrome; unless a project supplies translations, they follow the same requested locale → configured default → package English → raw key chain.
 
+### HtmlPreview controls
+
+The route-bound MDX `HtmlPreview` binding maps the active page locale to these seven `htmlPreview.*` keys:
+
+| Translation key | Used for |
+|-----------------|----------|
+| `htmlPreview.viewport.mobile` | Mobile viewport button |
+| `htmlPreview.viewport.tablet` | Tablet viewport button |
+| `htmlPreview.viewport.full` | Full-width viewport button |
+| `htmlPreview.viewport.label` | Viewport preset group `aria-label` |
+| `htmlPreview.source.show` | Collapsed source toggle label |
+| `htmlPreview.source.hide` | Expanded source toggle label |
+| `htmlPreview.iframe.title` | iframe title when `title` is omitted |
+
+Each key follows the same lookup order: requested locale → configured `defaultLocale` → package English table → raw key. A project can provide only the labels it translates. Configure per-locale overrides in `translations`:
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    translations: {
+      fr: {
+        "htmlPreview.viewport.mobile": "Téléphone",
+        "htmlPreview.viewport.tablet": "Tablette",
+        "htmlPreview.viewport.full": "Plein écran",
+        "htmlPreview.viewport.label": "Taille de la fenêtre",
+        "htmlPreview.source.show": "Afficher le code",
+        "htmlPreview.source.hide": "Masquer le code",
+        "htmlPreview.iframe.title": "Aperçu",
+      },
+    },
+  }),
+);
+```
+
+The per-call `labels` prop is merged after the locale defaults, by key. Supplied keys override their locale values; omitted keys and keys set to `undefined` retain the locale values. A direct, non-route-bound component import has no requested locale and therefore stays on the built-in English labels unless `labels` is supplied. The technical `HTML`, `CSS`, `Head`, and `JS` code-panel headings are fixed and are intentionally not part of this translation API.
+
+The presentation-only flags are independent of translation: `showSource` and `showViewportControls` both default to `true`. Setting `showSource={false}` structurally removes the source toggle, code panel, and highlighting markup while keeping the iframe; `defaultOpen` then has no effect. Setting `showViewportControls={false}` removes the preset group but keeps the Full-width container and drag-resize affordance. Both flags may be `false` together; the iframe remains, and a title bar is shown when viewport controls are visible or a non-empty `title` is supplied. With both controls hidden and no title, the otherwise-empty bar is omitted.
+
 Generated resource overviews and category labels use the `resource.*` namespace. Asset index and viewer chrome use `asset.*`. Override either namespace through `ZudoDocConfig.translations`:
 
 ```ts title="zfb.config.ts"

@@ -4,11 +4,12 @@
 /** @jsxImportSource preact */
 
 import type { VNode } from "preact";
+import { useEffect, useRef, useState } from "preact/hooks";
 // `@takazudo/zfb` is provided by the consumer at integration time;
 // types come from the package-level shim at `../_zfb-shim.d.ts`.
 import { Island } from "@takazudo/zfb";
 
-import { HtmlPreview } from "./html-preview.js";
+import { HtmlPreview, type HtmlPreviewLabels } from "./html-preview.js";
 
 /**
  * Global HTML preview configuration. Mirrors the `settings.htmlPreview`
@@ -25,6 +26,21 @@ export interface HtmlPreviewGlobalConfig {
 }
 
 export interface HtmlPreviewWrapperProps {
+  /**
+   * Controls when the preview subtree is rendered.
+   *
+   * `"eager"` (and omission) preserves the server-rendered iframe and
+   * hydrates it when visible. `"visible"` emits only an inert height
+   * reservation during SSR and renders the preview on the client through
+   * zfb's skip-SSR island path.
+   *
+   * This is a component lifecycle policy and is not forwarded as the native
+   * iframe `loading` attribute.
+   *
+   * @default "eager"
+   */
+  loading?: "eager" | "visible";
+
   /**
    * Site-wide HTML preview configuration (resolved from
    * `settings.htmlPreview` by the caller). When provided, its
@@ -48,10 +64,24 @@ export interface HtmlPreviewWrapperProps {
 
   /** Optional title displayed in the preview title bar. */
   title?: string;
+  /**
+   * Language tag for the generated preview document. Any nonblank tag is
+   * forwarded as-is; omission or a blank value falls back to `"en"` in
+   * `<HtmlPreview>`. Bound consumers should pass their active route locale.
+   *
+   * @default "en"
+   */
+  lang?: string;
   /** Fixed iframe height in pixels. Auto-sizes when omitted. */
   height?: number;
   /** When true, the code section is expanded by default. */
   defaultOpen?: boolean;
+  /** Localized labels for viewport, source, and iframe controls. */
+  labels?: Partial<HtmlPreviewLabels>;
+  /** Whether the source toggle and code panel are rendered. @default true */
+  showSource?: boolean;
+  /** Whether the viewport preset controls are rendered. @default true */
+  showViewportControls?: boolean;
   /**
    * Forwarded to `<HtmlPreview>`. When true, makes the preview document's
    * `html`/`body` stretch to 100% height. Interacts with auto-height — pair
@@ -109,6 +139,43 @@ export interface HtmlPreviewWrapperProps {
   showResources?: boolean;
 }
 
+type HtmlPreviewWrapperInnerProps = Omit<
+  HtmlPreviewWrapperProps,
+  "loading"
+>;
+
+// zfb 2.14.x intentionally mounts skip-SSR (`mode="render"`) islands
+// immediately, regardless of their `data-when` value. This private serialized
+// flag lets the bare hydration target preserve the public marker identity while
+// applying the visible gate locally. It is deliberately absent from every
+// exported prop type and stripped before HtmlPreview is instantiated.
+const VISIBLE_MOUNT_PROP = "__zudoDocVisibleMount";
+type HtmlPreviewWrapperInnerRuntimeProps =
+  HtmlPreviewWrapperInnerProps & {
+    [VISIBLE_MOUNT_PROP]?: true;
+  };
+
+function reservationHeight(height: number | undefined): number {
+  return height != null && height > 0 ? height : 200;
+}
+
+function HtmlPreviewReservation({
+  height,
+  reservationRef,
+}: {
+  height: number | undefined;
+  reservationRef?: { current: HTMLDivElement | null };
+}): VNode {
+  return (
+    <div
+      ref={reservationRef}
+      aria-hidden="true"
+      data-zd-html-preview-reservation
+      style={{ height: reservationHeight(height) }}
+    />
+  );
+}
+
 /**
  * Bare HTML preview body — the actual island **hydration target**.
  *
@@ -137,24 +204,80 @@ export interface HtmlPreviewWrapperProps {
  * THIS bare component and the bundle hydrates it in-place.
  */
 export function HtmlPreviewWrapperInner(
-  props: HtmlPreviewWrapperProps,
+  props: HtmlPreviewWrapperInnerProps,
 ): VNode {
+  const runtimeProps = props as HtmlPreviewWrapperInnerRuntimeProps;
+  const deferUntilVisible = runtimeProps[VISIBLE_MOUNT_PROP] === true;
+  const reservationRef = useRef<HTMLDivElement>(null);
+  const [shouldRenderPreview, setShouldRenderPreview] = useState(
+    !deferUntilVisible ||
+      typeof globalThis.IntersectionObserver !== "function",
+  );
+
+  useEffect(() => {
+    if (shouldRenderPreview) return;
+    if (!deferUntilVisible) {
+      setShouldRenderPreview(true);
+      return;
+    }
+
+    const target = reservationRef.current;
+    const Observer = globalThis.IntersectionObserver;
+    if (!target || typeof Observer !== "function") {
+      // Match zfb's visible-hydration policy: unsupported observer APIs fail
+      // open so the preview remains functional in old browsers/test hosts.
+      setShouldRenderPreview(true);
+      return;
+    }
+
+    let fired = false;
+    const observer = new Observer(
+      (entries) => {
+        if (fired || !entries.some((entry) => entry.isIntersecting)) return;
+        fired = true;
+        observer.disconnect();
+        setShouldRenderPreview(true);
+      },
+      { threshold: 0 },
+    );
+    observer.observe(target);
+
+    return () => {
+      fired = true;
+      observer.disconnect();
+    };
+  }, [deferUntilVisible, shouldRenderPreview]);
+
   const {
+    [VISIBLE_MOUNT_PROP]: _visibleMount,
     globalConfig,
     html,
     css,
     head,
     js,
     title,
+    lang,
     height,
     defaultOpen,
+    labels,
+    showSource,
+    showViewportControls,
     fullHeight,
     sandbox,
     externalStyles,
     externalScripts,
     preflight,
     showResources,
-  } = props;
+  } = runtimeProps;
+
+  if (!shouldRenderPreview) {
+    return (
+      <HtmlPreviewReservation
+        height={height}
+        reservationRef={reservationRef}
+      />
+    );
+  }
 
   const mergedHead =
     [globalConfig?.head, head].filter(Boolean).join("\n") || undefined;
@@ -170,8 +293,12 @@ export function HtmlPreviewWrapperInner(
       head={mergedHead}
       js={mergedJs}
       title={title}
+      lang={lang}
       height={height}
       defaultOpen={defaultOpen}
+      labels={labels}
+      showSource={showSource}
+      showViewportControls={showViewportControls}
       fullHeight={fullHeight}
       sandbox={sandbox}
       componentCss={css}
@@ -194,12 +321,15 @@ HtmlPreviewWrapperInner.displayName = "HtmlPreviewWrapperInner";
  * HTML preview wrapper component — the public MDX-registered binding
  * (`HtmlPreview: HtmlPreviewWrapper`).
  *
- * Wraps the bare `HtmlPreviewWrapperInner` in `<Island when="visible">`,
- * mirroring the legacy `client:visible` hydration timing — the iframe is
- * heavy and not on the critical path, so hydration is deferred until the
- * preview enters the viewport. The SSG output emits
- * `data-zfb-island="HtmlPreviewWrapperInner"` around the bare tree, and the
- * client bundle hydrates `HtmlPreviewWrapperInner` against it in-place.
+ * Eager mode wraps the bare `HtmlPreviewWrapperInner` in
+ * `<Island when="visible">`, mirroring the legacy `client:visible` hydration
+ * timing while preserving the complete server-rendered preview. Visible mode
+ * uses zfb's skip-SSR fallback path: static output contains only an inert
+ * nonzero reservation, while the real serializable inner props remain on the
+ * island marker for the client mount. zfb intentionally mounts skip-SSR
+ * islands immediately, so the bare inner target keeps that reservation in
+ * place and applies its own one-shot IntersectionObserver gate before it
+ * instantiates the preview subtree; missing observer support fails open.
  *
  * The public export name and signature are unchanged from before the
  * zudolab/zudo-doc#1925 fix, so existing consumers that register
@@ -209,9 +339,25 @@ HtmlPreviewWrapperInner.displayName = "HtmlPreviewWrapperInner";
 export function HtmlPreviewWrapper(
   props: HtmlPreviewWrapperProps,
 ): VNode {
+  const { loading = "eager", ...innerProps } = props;
+
+  if (loading === "visible") {
+    const visibleInnerProps = {
+      ...innerProps,
+      [VISIBLE_MOUNT_PROP]: true,
+    } as HtmlPreviewWrapperInnerProps;
+
+    const rendered = Island({
+      when: "visible",
+      ssrFallback: <HtmlPreviewReservation height={innerProps.height} />,
+      children: <HtmlPreviewWrapperInner {...visibleInnerProps} />,
+    });
+    return rendered as unknown as VNode;
+  }
+
   const rendered = Island({
     when: "visible",
-    children: <HtmlPreviewWrapperInner {...props} />,
+    children: <HtmlPreviewWrapperInner {...innerProps} />,
   });
   return rendered as unknown as VNode;
 }

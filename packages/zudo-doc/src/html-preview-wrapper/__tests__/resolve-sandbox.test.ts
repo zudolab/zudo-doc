@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { containsScript, resolveSandbox } from "../html-preview.js";
+import { h } from "preact";
+import render from "preact-render-to-string";
+import {
+  containsScript,
+  HtmlPreview,
+  resolveSandbox,
+} from "../html-preview.js";
 
 describe("containsScript", () => {
   it("is false when neither head nor js is provided", () => {
@@ -62,6 +68,15 @@ describe("resolveSandbox — explicit override", () => {
   it("honors the empty string (maximally restrictive) — not nullish, no fallback", () => {
     expect(resolveSandbox("", true)).toBe("");
     expect(resolveSandbox("", false)).toBe("");
+  });
+
+  it("keeps a zero-token sandbox attribute present in rendered HTML", () => {
+    const html = render(h(HtmlPreview, { html: "<p>safe</p>", sandbox: "" }));
+
+    // zfb drops a valueless non-boolean attribute during site serialization.
+    // Whitespace preserves attribute presence while still parsing as no
+    // sandbox tokens (the maximally restrictive state).
+    expect(html).toContain(' sandbox=" " style=');
   });
 });
 

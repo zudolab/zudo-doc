@@ -18,3 +18,98 @@ sidebar_position: 98
   css={`#js-target { color: rgb(1, 2, 3); }`}
   js={`const target = document.getElementById('js-target');\ntarget.textContent = 'after';`}
 />
+
+## Eager Lifecycle Test
+
+<HtmlPreview
+  title="Eager Lifecycle Test"
+  loading="eager"
+  height={300}
+  sandbox="allow-scripts"
+  head={`<title>Trusted lifecycle title</title>`}
+  html={`<p id="eager-lifecycle-3852">eager-not-run</p>`}
+  js={`document.getElementById('eager-lifecycle-3852').textContent = 'eager-ran';`}
+ />
+
+## Dynamic Lifecycle Test
+
+<HtmlPreview
+  title="Dynamic Lifecycle Test"
+  html={`<button id="dynamic-grow-3852" type="button">Grow dynamic preview</button>
+<button id="dynamic-shrink-3852" type="button">Shrink dynamic preview</button>
+<div id="dynamic-content-3852">compact dynamic content</div>`}
+  css={`html, body { margin: 0; }
+#dynamic-content-3852 { height: 280px; }`}
+  js={`const content = document.getElementById('dynamic-content-3852');
+document.getElementById('dynamic-grow-3852').addEventListener('click', () => {
+  content.style.height = '680px';
+  content.dataset.state = 'grown';
+});
+document.getElementById('dynamic-shrink-3852').addEventListener('click', () => {
+  content.style.height = '360px';
+  content.dataset.state = 'shrunk';
+});`}
+ />
+
+## Reflow Lifecycle Test
+
+<HtmlPreview
+  title="Reflow Lifecycle Test"
+  html={`<div id="reflow-content-3852">viewport-sensitive content</div>`}
+  css={`html, body { margin: 0; }
+#reflow-content-3852 { height: 280px; }
+@media (max-width: 400px) {
+  #reflow-content-3852 { height: 680px; }
+}
+@media (min-width: 401px) and (max-width: 800px) {
+  #reflow-content-3852 { height: 460px; }
+}`}
+ />
+
+## Fixed Height Lifecycle Test
+
+<HtmlPreview
+  title="Fixed Height Lifecycle Test"
+  height={280}
+  html={`<div style="height: 720px">fixed-height content</div>`}
+ />
+
+## FullHeight Fixed Lifecycle Test
+
+<HtmlPreview
+  title="FullHeight Fixed Lifecycle Test"
+  height={320}
+  fullHeight
+  html={`<div id="full-height-content-3852" style="height: 100%">fullHeight fixed content</div>`}
+ />
+
+## Opaque Fixed Height Lifecycle Test
+
+<HtmlPreview
+  title="Opaque Fixed Height Lifecycle Test"
+  height={300}
+  sandbox=""
+  html={`<div id="opaque-content-3852" style="height: 700px">opaque fixed content</div>`}
+ />
+
+<div
+  id="html-preview-visible-spacer-3852"
+  style="height: 1800px"
+  aria-hidden="true"
+></div>
+
+## Visible Lifecycle Test
+
+<HtmlPreview
+  title="Visible Lifecycle Test"
+  loading="visible"
+  head={`<title>Trusted lifecycle title</title>`}
+  html={`<div id="visible-inline-target-3852">inline-not-run</div>
+<div id="visible-external-target-3852">external-not-run</div>
+<div id="visible-style-target-3852">style-not-loaded</div>`}
+  js={`document.documentElement.dataset.visibleInline3852 = 'ran';
+const target = document.getElementById('visible-inline-target-3852');
+if (target) target.textContent = 'inline-ran';`}
+  externalStyles={["/html-preview-3852-style.css"]}
+  externalScripts={["/html-preview-3852-script.js"]}
+ />

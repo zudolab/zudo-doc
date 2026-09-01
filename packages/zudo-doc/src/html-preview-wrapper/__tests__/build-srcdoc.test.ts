@@ -1,6 +1,203 @@
 import { describe, expect, it } from "vitest";
 import { buildSrcdoc } from "../html-preview.js";
 
+const fullHeightMarker = "<style>html,body{height:100%}</style>";
+
+describe("buildSrcdoc — document metadata", () => {
+  it("emits accessible English metadata for the positional default call", () => {
+    const srcdoc = buildSrcdoc("<div>hi</div>");
+
+    expect(srcdoc).toContain('<html lang="en">');
+    expect(srcdoc).toContain("<title>Preview</title>");
+  });
+
+  it("accepts arbitrary language tags and applies title precedence", () => {
+    const authored = buildSrcdoc(
+      "<div>hi</div>",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      {
+        lang: "zh-Hant-x-preview",
+        title: "Visible title",
+        previewLabel: "Localized preview",
+      },
+    );
+    const localizedFallback = buildSrcdoc(
+      "<div>hi</div>",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      { title: "  ", previewLabel: "Aperçu" },
+    );
+    const literalFallback = buildSrcdoc(
+      "<div>hi</div>",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      { lang: "\t", title: " ", previewLabel: "\n" },
+    );
+
+    expect(authored).toContain('<html lang="zh-Hant-x-preview">');
+    expect(authored).toContain("<title>Visible title</title>");
+    expect(authored).not.toContain("<title>Localized preview</title>");
+    expect(localizedFallback).toContain("<title>Aperçu</title>");
+    expect(literalFallback).toContain('<html lang="en">');
+    expect(literalFallback).toContain("<title>Preview</title>");
+  });
+
+  it("escapes generated language and title in their distinct HTML contexts", () => {
+    const srcdoc = buildSrcdoc(
+      "<div>hi</div>",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      {
+        lang: 'x&"<script>',
+        title: "Safe & </title><script>alert(1)</script>",
+      },
+    );
+
+    expect(srcdoc).toContain('lang="x&amp;&quot;&lt;script&gt;"');
+    expect(srcdoc).toContain(
+      "<title>Safe &amp; &lt;/title&gt;&lt;script&gt;alert(1)&lt;/script&gt;</title>",
+    );
+    expect(srcdoc).not.toContain("</title><script>alert(1)</script>");
+  });
+
+  it.each([
+    "<title>Author title</title>",
+    '<TITLE data-owner="author">Mixed case</TITLE>',
+    "<title\n  data-owner='author'>Whitespace</title>",
+    "<title >Spaced</title>",
+  ])("defers to a trusted author opening title without duplication: %s", (head) => {
+    const srcdoc = buildSrcdoc(
+      "<div>hi</div>",
+      undefined,
+      head,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      { title: "Generated title", previewLabel: "Fallback" },
+    );
+
+    expect(srcdoc).toContain(head);
+    expect(srcdoc).not.toContain("<title>Generated title</title>");
+    expect(srcdoc).not.toContain("<title>Fallback</title>");
+  });
+
+  it("ignores title-like markup inside HTML comments for detection", () => {
+    const head = "<!-- <TiTlE data-x='1'>Commented</TiTlE> -->\n<meta name='x'>";
+    const srcdoc = buildSrcdoc(
+      "<div>hi</div>",
+      undefined,
+      head,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      { title: "Generated title" },
+    );
+
+    expect(srcdoc).toContain("<title>Generated title</title>");
+    expect(srcdoc).toContain(head);
+  });
+
+  it("does not rewrite malformed or multiple caller-owned title markup", () => {
+    const malformedHeads = [
+      "<title data-owner='author'",
+      '<title data-owner="unterminated > attribute"',
+    ];
+    const malformedSrcdocs = malformedHeads.map((head) =>
+      buildSrcdoc(
+        "<div>hi</div>",
+        undefined,
+        head,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        { title: "Generated title" },
+      ),
+    );
+    const multiple = "<title>First</title>\n<TITLE>Second</TITLE>";
+    const multipleSrcdoc = buildSrcdoc(
+      "<div>hi</div>",
+      undefined,
+      multiple,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      { title: "Generated title" },
+    );
+
+    malformedSrcdocs.forEach((srcdoc, index) => {
+      expect(srcdoc).toContain("<title>Generated title</title>");
+      expect(srcdoc).toContain(malformedHeads[index]);
+    });
+    expect(multipleSrcdoc).toContain(multiple);
+    expect(multipleSrcdoc).not.toContain("<title>Generated title</title>");
+  });
+
+  it("preserves trusted head bytes and the established injection order", () => {
+    const head = "  <meta name='trusted' content='a > b'>\n<!-- exact bytes -->  ";
+    const srcdoc = buildSrcdoc(
+      "<div>hi</div>",
+      "body{color:red}",
+      head,
+      undefined,
+      true,
+      ["https://example.com/a.css"],
+      ["https://example.com/a.js"],
+      true,
+      { lang: "ja", title: "Metadata" },
+    );
+
+    const titleIndex = srcdoc.indexOf("<title>Metadata</title>");
+    const preflightIndex = srcdoc.indexOf("*,\n::after");
+    const fullHeightIndex = srcdoc.indexOf(fullHeightMarker);
+    const styleIndex = srcdoc.indexOf(
+      '<link rel="stylesheet" href="https://example.com/a.css">',
+    );
+    const scriptIndex = srcdoc.indexOf(
+      '<script src="https://example.com/a.js"></script>',
+    );
+    const headIndex = srcdoc.indexOf(head);
+    const cssIndex = srcdoc.indexOf("<style>body{color:red}</style>");
+
+    expect(titleIndex).toBeGreaterThan(-1);
+    expect(preflightIndex).toBeGreaterThan(titleIndex);
+    expect(fullHeightIndex).toBeGreaterThan(preflightIndex);
+    expect(styleIndex).toBeGreaterThan(fullHeightIndex);
+    expect(scriptIndex).toBeGreaterThan(styleIndex);
+    expect(headIndex).toBeGreaterThan(scriptIndex);
+    expect(cssIndex).toBeGreaterThan(headIndex);
+    expect(srcdoc.slice(headIndex, headIndex + head.length)).toBe(head);
+  });
+});
+
 describe("buildSrcdoc — fullHeight", () => {
   it("omits the fullHeight style when fullHeight is unset", () => {
     const srcdoc = buildSrcdoc("<div>hi</div>");

@@ -86,6 +86,7 @@ import { createSiteTreeNavWrapper } from "../site-tree-nav/index.js";
 import { Details } from "../details/index.js";
 import {
   HtmlPreviewWrapper,
+  type HtmlPreviewLabels,
   type HtmlPreviewWrapperProps,
 } from "../html-preview-wrapper/index.js";
 import { createInlineVersionSwitcher } from "../inline-version-switcher/index.js";
@@ -643,15 +644,6 @@ export function deriveMdxComponents(ctx: ChromeContext) {
     versionedDocsUrl: ctx.versionedDocsUrl,
   });
 
-  /** HtmlPreview MDX binding (package default) — `settings.htmlPreview` is a
-   *  serializable setting in the route-context payload. */
-  function HtmlPreviewBound(props: HtmlPreviewWrapperProps): JSX.Element {
-    return HtmlPreviewWrapper({
-      globalConfig: ctx.settings.htmlPreview ?? null,
-      ...props,
-    }) as JSX.Element;
-  }
-
   const assetComponentContext = {
     base: ctx.settings.base,
     assetManifest: ctx.assetManifest,
@@ -673,6 +665,57 @@ export function deriveMdxComponents(ctx: ChromeContext) {
       isDefaultLocaleOnlyPath: ctx.isDefaultLocaleOnlyPath,
       t: (key: string) => ctx.t(key, lang),
     };
+
+    /**
+     * Locale-bound HtmlPreview MDX binding. The route context owns the
+     * requested-locale → configured-default → English fallback chain; this
+     * factory only maps the seven package translation keys to the public
+     * HtmlPreviewLabels fields. Per-call labels are merged last with nullish
+     * semantics so an omitted/undefined key keeps its locale-derived value.
+     * The global iframe config remains package-owned and is merged by the
+     * wrapper before per-call CSS/head/JS.
+     */
+    const localizedHtmlPreviewLabels: HtmlPreviewLabels = {
+      mobile: ctx.t("htmlPreview.viewport.mobile", lang),
+      tablet: ctx.t("htmlPreview.viewport.tablet", lang),
+      full: ctx.t("htmlPreview.viewport.full", lang),
+      viewportSize: ctx.t("htmlPreview.viewport.label", lang),
+      showCode: ctx.t("htmlPreview.source.show", lang),
+      hideCode: ctx.t("htmlPreview.source.hide", lang),
+      preview: ctx.t("htmlPreview.iframe.title", lang),
+    };
+
+    /** HtmlPreview MDX binding (package default) — `settings.htmlPreview` is a
+     * serializable setting in the route-context payload. */
+    function HtmlPreviewBound(props: HtmlPreviewWrapperProps): JSX.Element {
+      const labels = props.labels;
+      // The document metadata language is independent from the route locale:
+      // an author may opt into an arbitrary BCP-47 tag for the iframe document
+      // while its controls remain localized to the surrounding route. Keep
+      // the original bytes after the nonblank check so authored whitespace is
+      // not normalized in the generated srcdoc.
+      const effectiveLang = props.lang?.trim()
+        ? props.lang
+        : lang.trim()
+          ? lang
+          : "en";
+      return HtmlPreviewWrapper({
+        globalConfig: ctx.settings.htmlPreview ?? null,
+        ...props,
+        lang: effectiveLang,
+        labels: {
+          mobile: labels?.mobile ?? localizedHtmlPreviewLabels.mobile,
+          tablet: labels?.tablet ?? localizedHtmlPreviewLabels.tablet,
+          full: labels?.full ?? localizedHtmlPreviewLabels.full,
+          viewportSize:
+            labels?.viewportSize ?? localizedHtmlPreviewLabels.viewportSize,
+          showCode: labels?.showCode ?? localizedHtmlPreviewLabels.showCode,
+          hideCode: labels?.hideCode ?? localizedHtmlPreviewLabels.hideCode,
+          preview: labels?.preview ?? localizedHtmlPreviewLabels.preview,
+        },
+      }) as JSX.Element;
+    }
+
     const mdxExtrasDefault: Record<string, unknown> = {
       Asset: createAssetCard(localizedAssetContext) as never,
       AssetCode: createAssetCode(localizedAssetContext) as never,
