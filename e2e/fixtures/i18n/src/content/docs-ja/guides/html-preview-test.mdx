@@ -23,6 +23,17 @@ sidebar_position: 98
   html={`<div id="fallback-title-frame">Fallback title iframe</div>`}
 />
 
+## 明示的なメタデータ上書き
+
+明示的な言語タグとプレビュー単位のフォールバックラベルは、アクティブな
+ルートロケールとローカライズ済みのデフォルトより優先されます。
+
+<HtmlPreview
+  lang="zh-Hant-x-preview"
+  labels={{ preview: "Explicit preview label" }}
+  html={`<div id="explicit-metadata-frame">Explicit metadata iframe</div>`}
+/>
+
 ## 部分的なラベル
 
 1つのラベルだけをプレビュー単位で上書きし、他のラベルはアクティブな
