@@ -23,6 +23,8 @@ import type { NavSourceDocs } from "../nav-source-docs/index.js";
 import type { DocPageEntry, DocNavNode } from "../doc-page-props/index.js";
 import type { CategoryMeta } from "../sidebar-tree/index.js";
 import type { Settings } from "../settings.js";
+import { assetViewerHref } from "../asset-path/index.js";
+import type { AssetManifest } from "../route-context-payload/types.js";
 import { mergeLocaleDocs } from "../locale-merge/index.js";
 
 export type { DocPageEntry, DocNavNode, NavSourceDocs };
@@ -75,6 +77,8 @@ export interface TagInfoForEnum {
 export interface RouteEnumeratorsContext {
   /** The host's resolved settings object (reads `locales`/`versions`/`docTags`). */
   settings: Settings;
+  /** Asset index manifest, or `null` when the asset viewer is disabled. */
+  assetManifest: AssetManifest | null;
   /** Default locale code. */
   defaultLocale: string;
   /** Build a docs URL for the given slug and locale. */
@@ -148,6 +152,16 @@ export interface RouteEnumeratorsAPI {
   enumerateTagsRoutes: (locale: string) => string[];
 
   /**
+   * Enumerate asset-viewer URLs for a locale.
+   *
+   * Asset routes are emitted only when asset viewing and sitemap indexing are
+   * both enabled and a scanned asset manifest is available. The default locale
+   * uses unprefixed routes; non-default locales omit paths configured as
+   * default-locale-only.
+   */
+  enumerateAssetRoutes: (locale: string) => string[];
+
+  /**
    * Enumerate doc URLs for a single (version, locale) combination.
    *
    * For the default locale: loads the versioned EN collection.
@@ -162,7 +176,7 @@ export interface RouteEnumeratorsAPI {
    * Compose all route enumerators into a deduped Map<url, lastmod>.
    *
    * Covers site root, default-locale docs + tags, per-locale docs + tags,
-   * versioned EN docs, and versioned locale docs.
+   * asset-viewer routes, versioned EN docs, and versioned locale docs.
    */
   enumerateAllRoutes: () => Map<string, string>;
 }
@@ -191,6 +205,7 @@ export interface RouteEnumeratorsAPI {
  * export const {
  *   enumerateDocsRoutes,
  *   enumerateTagsRoutes,
+ *   enumerateAssetRoutes,
  *   enumerateVersionedRoutes,
  *   enumerateAllRoutes,
  * } = createRouteEnumerators({
@@ -223,6 +238,7 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
   const getVersions = (): VersionConfigForEnum[] | false | undefined =>
     ctx.settings.versions as VersionConfigForEnum[] | false | undefined;
   const getDocTags = (): boolean | undefined => ctx.settings.docTags;
+  const assetManifest = ctx.assetManifest;
   const docsUrl = ctx.docsUrl;
   const versionedDocsUrl = ctx.versionedDocsUrl;
   const withBase = ctx.withBase;
@@ -316,6 +332,56 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
   }
 
   // ---------------------------------------------------------------------------
+  // enumerateAssetRoutes
+  // ---------------------------------------------------------------------------
+
+  function enumerateAssetRoutes(locale: string): string[] {
+    const indexing = ctx.settings.assetViewerIndexing;
+    if (
+      ctx.settings.assetViewer !== true ||
+      !indexing ||
+      typeof indexing !== "object" ||
+      indexing.sitemap !== true ||
+      assetManifest === null
+    ) {
+      return [];
+    }
+
+    const routePrefix =
+      assetManifest.routePrefix ?? ctx.settings.assetViewerRoutePrefix;
+    const urls: string[] = [];
+    const isDefaultLocale = locale === defaultLocale;
+
+    if (ctx.settings.assetViewerIndex) {
+      const indexPath = isDefaultLocale
+        ? `/${routePrefix}/`
+        : `/${locale}/${routePrefix}/`;
+      if (isDefaultLocale || !ctx.isDefaultLocaleOnlyPath(`/${routePrefix}/`)) {
+        urls.push(withBase(indexPath));
+      }
+    }
+
+    for (const entry of assetManifest.entries) {
+      if (
+        !isDefaultLocale &&
+        ctx.isDefaultLocaleOnlyPath(`/${routePrefix}/${entry.path}`)
+      ) {
+        continue;
+      }
+      urls.push(
+        assetViewerHref({
+          base: ctx.settings.base,
+          routePrefix,
+          path: entry.path,
+          ...(isDefaultLocale ? {} : { locale }),
+        }),
+      );
+    }
+
+    return [...new Set(urls)];
+  }
+
+  // ---------------------------------------------------------------------------
   // enumerateVersionedRoutes
   // ---------------------------------------------------------------------------
 
@@ -394,6 +460,11 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
       add(url);
     }
 
+    // Default locale assets
+    for (const url of enumerateAssetRoutes(defaultLocale)) {
+      add(url);
+    }
+
     // Non-default locales
     for (const locale of localeKeys) {
       add(withBase(`/${locale}`));
@@ -403,6 +474,10 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
       }
 
       for (const url of enumerateTagsRoutes(locale)) {
+        add(url);
+      }
+
+      for (const url of enumerateAssetRoutes(locale)) {
         add(url);
       }
     }
@@ -435,6 +510,7 @@ export function createRouteEnumerators(ctx: RouteEnumeratorsContext): RouteEnume
   return {
     enumerateDocsRoutes,
     enumerateTagsRoutes,
+    enumerateAssetRoutes,
     enumerateVersionedRoutes,
     enumerateAllRoutes,
   };
