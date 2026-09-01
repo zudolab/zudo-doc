@@ -59,6 +59,7 @@ src/content/docs-ja/codex-agents/
 src/content/docs-ja/codex-hooks/
 src/content/docs-ja/codex-rules/
 src/content/docs-ja/codex-skills/
+playwright-report/
 test-results/
 .playwright-cli/
 
