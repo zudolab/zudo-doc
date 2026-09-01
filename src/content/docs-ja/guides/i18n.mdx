@@ -102,6 +102,44 @@ requested locale → default locale → package English → raw UI-string key
 
 パッケージが完全な組み込みUIテーブルを同梱するのは英語と日本語です。ジェネレーターの`SUPPORTED_LANGS`に含まれる他のロケールコードまで翻訳済みという意味ではありません。プロジェクトが翻訳を渡さなければ、同じく要求ロケール → 設定済みデフォルト → パッケージ英語 → 生のキーという順で解決されます。
 
+### HtmlPreviewコントロール
+
+ルートにバインドされた MDX の`HtmlPreview`バインディングは、アクティブなページのロケールを次の7つの`htmlPreview.*`キーに対応付けます。
+
+| 翻訳キー | 用途 |
+|----------|------|
+| `htmlPreview.viewport.mobile` | Mobileビューポートボタン |
+| `htmlPreview.viewport.tablet` | Tabletビューポートボタン |
+| `htmlPreview.viewport.full` | Full幅ビューポートボタン |
+| `htmlPreview.viewport.label` | ビューポートプリセットグループの`aria-label` |
+| `htmlPreview.source.show` | 折りたたまれたソース切り替えのラベル |
+| `htmlPreview.source.hide` | 展開されたソース切り替えのラベル |
+| `htmlPreview.iframe.title` | `title`を省略したときのiframeタイトル |
+
+各キーは同じ検索順に従います。要求されたロケール → 設定済みの`defaultLocale` → パッケージの英語テーブル → 生のキーです。プロジェクトは翻訳するラベルだけを指定できます。ロケールごとの上書きは`translations`で設定します。
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    translations: {
+      fr: {
+        "htmlPreview.viewport.mobile": "Téléphone",
+        "htmlPreview.viewport.tablet": "Tablette",
+        "htmlPreview.viewport.full": "Plein écran",
+        "htmlPreview.viewport.label": "Taille de la fenêtre",
+        "htmlPreview.source.show": "Afficher le code",
+        "htmlPreview.source.hide": "Masquer le code",
+        "htmlPreview.iframe.title": "Aperçu",
+      },
+    },
+  }),
+);
+```
+
+呼び出し単位の`labels`プロップはロケールのデフォルトの後にキー単位でマージされます。指定したキーはロケール値を上書きし、省略したキーや`undefined`を設定したキーはロケール値を維持します。ルートにバインドされていないコンポーネントを直接インポートする場合は要求ロケールがないため、`labels`を渡さない限り組み込みの英語ラベルが使われます。技術的なコードパネル見出し`HTML`、`CSS`、`Head`、`JS`は固定されており、この翻訳APIの対象には意図的に含まれません。
+
+表示専用のフラグは翻訳とは独立しており、`showSource`と`showViewportControls`はどちらもデフォルトが`true`です。`showSource={false}`を設定すると、iframeを残したままソース切り替え、コードパネル、ハイライト用マークアップを構造的に削除します。その場合`defaultOpen`は効果がありません。`showViewportControls={false}`を設定するとプリセットグループを削除しますが、Full幅のコンテナとドラッグリサイズ操作は残ります。2つのフラグは同時に`false`にでき、iframeは残ります。ビューポートコントロールが表示されているか空でない`title`が指定されている場合はタイトルバーが表示されます。両方のコントロールを隠してタイトルも指定しなければ、空のバーは省略されます。
+
 生成リソースの概要とカテゴリラベルは`resource.*`名前空間を、アセット一覧とビューアーのクロームは`asset.*`名前空間を使用します。どちらも`ZudoDocConfig.translations`で上書きできます。
 
 ```ts title="zfb.config.ts"
