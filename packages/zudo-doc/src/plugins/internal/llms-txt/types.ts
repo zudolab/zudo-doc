@@ -6,6 +6,7 @@
  */
 
 import type { MdDocFrontmatter } from "../../../md-utils/index.js";
+import type { AssetScanProjection } from "../asset-viewer/asset-pages.js";
 
 /**
  * Frontmatter fields the loader reads off of each MDX/MD file. Callers
@@ -110,6 +111,10 @@ export interface LlmsTxtEmitOptions extends LlmsTxtSiteMeta {
    * `outDir/<code>/llms.txt` and `outDir/<code>/llms-full.txt`.
    */
   locales?: LlmsTxtLocaleConfig[];
+  /** Runtime project root; injected by the zfb plugin wrapper, never serialized in the preset. */
+  projectRoot?: string;
+  /** Shared asset-viewer projection; consumed by the asset indexing wave. */
+  assetScan?: AssetScanProjection;
   /**
    * Optional logger. Defaults to a no-op so unit tests stay quiet; the zfb
    * plugin can pipe its logger through.

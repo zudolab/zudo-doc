@@ -28,6 +28,7 @@ import type {
   LlmsTxtLocaleConfig,
   LlmsTxtSiteMeta,
 } from "./types.js";
+import type { AssetScanProjection } from "../asset-viewer/asset-pages.js";
 
 /** Connect-style middleware signature — works as a Vite plugin middleware. */
 export type LlmsTxtNextFn = (err?: unknown) => void;
@@ -58,6 +59,10 @@ export interface LlmsTxtDevMiddlewareOptions extends LlmsTxtSiteMeta {
   defaultLocaleDir: string;
   /** Additional locales (e.g. `[{ code: "ja", dir: "src/content/docs-ja" }]`). */
   locales?: LlmsTxtLocaleConfig[];
+  /** Runtime project root; injected by the zfb plugin wrapper, never serialized in the preset. */
+  projectRoot?: string;
+  /** Shared asset-viewer projection; consumed by the asset indexing wave. */
+  assetScan?: AssetScanProjection;
 }
 
 /** Public route suffixes the middleware recognises. */
