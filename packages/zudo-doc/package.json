@@ -686,9 +686,9 @@
   ],
   "peerDependencies": {
     "@takazudo/zdtp": "^0.4.14",
-    "@takazudo/zfb": "^2.14.1",
-    "@takazudo/zfb-md-wasm": "^2.14.1",
-    "@takazudo/zfb-runtime": "^2.14.1",
+    "@takazudo/zfb": "^2.14.2",
+    "@takazudo/zfb-md-wasm": "^2.14.2",
+    "@takazudo/zfb-runtime": "^2.14.2",
     "@takazudo/zudo-doc-history-server": "^5.14.0",
     "diff": "^8.0.0",
     "katex": "^0.16.0",
@@ -724,9 +724,9 @@
     "yaml": "^2.9.0"
   },
   "devDependencies": {
-    "@takazudo/zfb": "2.14.1",
-    "@takazudo/zfb-md-wasm": "2.14.1",
-    "@takazudo/zfb-runtime": "2.14.1",
+    "@takazudo/zfb": "2.14.2",
+    "@takazudo/zfb-md-wasm": "2.14.2",
+    "@takazudo/zfb-runtime": "2.14.2",
     "@takazudo/zudo-doc-history-server": "workspace:*",
     "@types/fs-extra": "^11.0.4",
     "@types/minimist": "^1.2.5",
