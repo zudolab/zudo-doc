@@ -13,7 +13,8 @@ function previewByTitle(page: Page, title: string): Locator {
 
 function previewAfterHeading(page: Page, heading: string): Locator {
   return page
-    .getByRole("heading", { name: heading, exact: true })
+    .locator("article h2")
+    .filter({ hasText: heading })
     .locator(
       'xpath=following-sibling::*[@data-zfb-island="HtmlPreviewWrapperInner"][1]',
     );
