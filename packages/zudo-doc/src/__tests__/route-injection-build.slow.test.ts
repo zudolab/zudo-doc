@@ -891,6 +891,13 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // excludes bundle-hash noise. The surrounding semantic assertions remain
   // green and no unrelated output changed.
 
+  // 2026-09-02 re-baseline (Issue Batch 0902 epic #3886, title-wrap sub
+  // #3887): both docs pages intentionally gain `break-words` on the
+  // package-owned DocContentHeader h1 so long unbroken titles wrap instead of
+  // widening the viewport. `/404.html` does not render that header and remains
+  // unchanged. Asset-filename normalization excludes bundle-hash noise; no
+  // unrelated bytes moved.
+
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toMatchInlineSnapshot(`"0e3bc91267e0a27a8d585f49ec5bb231e7e195abda49fe2c5ac148e8e4f959fa"`);
@@ -898,12 +905,12 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"e0b96ca9842155d49a1fbaa20dcb7a88ec3efc96d801f298d27a2dfc9465230c"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"ab27be95397b64e4f4f5f4d23a626c3ac124238698e288aa52768eeecd767f8e"`);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"3be27c9706a68b860c0cd3526a57bb3347bcfa9dba47f98b6e849e06fd3a992d"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"77ce3a3cdec248ba385153d210e565b9d9be08a1c9bda15acfdc58f5be5a2810"`);
   });
 });
 
