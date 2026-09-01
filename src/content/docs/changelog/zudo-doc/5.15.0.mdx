@@ -1,0 +1,26 @@
+---
+title: 5.15.0
+description: Release notes for 5.15.0.
+sidebar_position: 1101
+---
+
+Released: 2026-09-01
+
+### Features
+
+- Added an accessible language dropdown that scales to every configured locale instead of assuming a two-language site. (`607121e9`)
+- Generated locale-owned Claude/Codex resource indexes and Asset Viewer routes for every configured locale, with translated page chrome, locale-preserving links, and safe handling of generated versus authored indexes. (`781fb820`, `8ceca53e`, `44ae7812`, `1e558854`, `5d682bc1`)
+- Localized all seven `HtmlPreview` control labels and added per-preview `labels`, `showSource`, and `showViewportControls` overrides while preserving host-provided MDX bindings. (`ffee673f`, `6538184a`)
+- Added `loading="visible"` for route-bound `HtmlPreview` instances, deferring iframe markup, scripts, and external resources until the reserved preview area enters the viewport. (`df63d981`)
+- Kept auto-height previews synchronized after delayed content changes and viewport reflows, including both growth and shrink. (`df3d4b56`)
+- Added escaped, nonblank language and title metadata to generated preview documents, with explicit author `<title>` content retaining precedence. (`2b8b0ee3`, `55e66300`)
+
+### Bug Fixes
+
+- Retained package English strings when a configured locale supplies only partial translations. (`0a3619cb`)
+- Preserved an explicit empty `sandbox` attribute in generated HTML so strict opaque previews remain sandboxed as authored. (`c8b1cac7`)
+- Increased interactive `HtmlPreview` controls to accessible minimum hit-target dimensions. (`a35f1573`)
+
+### Other Changes
+
+- Updated the zfb peer family to 2.14.2. (`5c5bfd2f`)

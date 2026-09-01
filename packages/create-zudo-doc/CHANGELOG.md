@@ -4,6 +4,20 @@ All notable changes to `create-zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.15.0] - 2026-09-01
+
+### Features
+
+- Added one ordered locale-plan contract across the API, CLI, presets, prompts, scaffold output, and generated guidance, allowing new projects to select and emit any supported set of locales. (`10e34ca0`, `5a990248`, `c9543772`)
+
+### Bug Fixes
+
+- Newly generated multi-locale projects now localize generated Claude/Codex resource routes by default instead of keeping them limited to the default locale. (`26ecad11`)
+
+### Other Changes
+
+- Updated newly generated projects to use the zfb 2.14.2 package family. (`1c1f8f26`)
+
 ## [5.14.0] - 2026-08-31
 
 ### Features
