@@ -453,7 +453,7 @@ export function extractHtmlLinks(html) {
   let line = 1;
   while ((match = regex.exec(html)) !== null) {
     const href = decodeHtmlAttributeValue(match[1] ?? match[2] ?? match[3]);
-    if (/^(?:https?:|mailto:|javascript:|data:|tel:)/i.test(href)) continue;
+    if (/^(?:https?:|\/\/|mailto:|javascript:|data:|tel:)/i.test(href)) continue;
     for (let i = lastIndex; i < match.index; i += 1) if (html[i] === "\n") line += 1;
     lastIndex = match.index;
     links.push({ href, line });
@@ -547,12 +547,12 @@ export function extractMdxFragmentLinks(content) {
     let match;
     const markdownLink = /\]\(\s*([^\s)#]*#[^\s)]*)(?:\s+[^)]*)?\)/g;
     while ((match = markdownLink.exec(searchLine)) !== null) {
-      if (!/^(?:https?:|mailto:|javascript:|data:|tel:)/i.test(match[1])) links.push({ href: match[1], line: i + 1 });
+      if (!/^(?:https?:|\/\/|mailto:|javascript:|data:|tel:)/i.test(match[1])) links.push({ href: match[1], line: i + 1 });
     }
     const jsxHref = /\bhref\s*=\s*(?:"([^"]*#[^"]*)"|'([^']*#[^']*)')/g;
     while ((match = jsxHref.exec(searchLine)) !== null) {
       const href = match[1] ?? match[2];
-      if (!/^(?:https?:|mailto:|javascript:|data:|tel:)/i.test(href)) links.push({ href, line: i + 1 });
+      if (!/^(?:https?:|\/\/|mailto:|javascript:|data:|tel:)/i.test(href)) links.push({ href, line: i + 1 });
     }
   }
   return links;
