@@ -4,6 +4,12 @@ All notable changes to `create-zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.16.1] - 2026-09-02
+
+### Other Changes
+
+- Newly generated projects now use the zfb 2.14.3 package family. (`7e79f961a`)
+
 ## [5.16.0] - 2026-09-02
 
 - No package-specific changes.

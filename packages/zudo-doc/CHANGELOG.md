@@ -4,6 +4,12 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.16.1] - 2026-09-02
+
+### Other Changes
+
+- Updated the zfb peer and development dependency family to 2.14.3. (`7e79f961a`)
+
 ## [5.16.0] - 2026-09-02
 
 ### Features
