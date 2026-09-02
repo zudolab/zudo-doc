@@ -689,7 +689,7 @@
     "@takazudo/zfb": "^2.14.2",
     "@takazudo/zfb-md-wasm": "^2.14.2",
     "@takazudo/zfb-runtime": "^2.14.2",
-    "@takazudo/zudo-doc-history-server": "^5.14.0",
+    "@takazudo/zudo-doc-history-server": "^5.15.0",
     "diff": "^8.0.0",
     "katex": "^0.16.0",
     "preact": "^10.29.1",
