@@ -1,0 +1,22 @@
+---
+title: 5.16.0
+description: Release notes for 5.16.0.
+sidebar_position: 1102
+---
+
+Released: 2026-09-02
+
+### Features
+
+- Added opt-in Markdown/MDX transclusion through `transclude`, plus independent `assetViewerIndexing` controls for search, llms.txt, and sitemap output. (`8145aae41`)
+- Generated asset-viewer pages can now be enumerated in sitemaps and indexed in search and llms outputs, with locale, base-path, exclusion, and bounded content-extraction handling. (`5da03612e`, `b48009d7e`, `3de313585`, `76b90bc48`)
+
+### Bug Fixes
+
+- Long unbroken titles now wrap across documentation, home, asset, version, and tag pages. (`f21c6b73d`)
+- Asset search excerpts now use bounded reads for large files. (`6c81a13b3`)
+- Asset links in llms outputs now honor the configured `siteUrl`. (`67482a1d5`)
+
+### Other Changes
+
+- Raised the optional `@takazudo/zudo-doc-history-server` peer floor to the already-published 5.15.0 release. (`01bd83bc7`)
