@@ -1785,7 +1785,8 @@ describe("HOME home-page: createHomePageView adoption on the injected /[locale] 
 
   it("hero <h1>/description unchanged; hero logo renders the logo:\"auto\" AutoLogo default (#3074)", () => {
     const html = readBuiltHtml(fixtureDir, "ja/index.html");
-    expect(html).toContain('<h1 class="text-heading font-bold mb-vsp-2xs">Route Injection i18n Proof</h1>');
+    // Mirrors the hero <h1> assertion in home-page.test.tsx:96 — keep both in sync.
+    expect(html).toContain('<h1 class="text-heading font-bold mb-vsp-2xs break-words">Route Injection i18n Proof</h1>');
     // logo:"auto" (default, commit a2ba5188a) renders the generated AutoLogo
     // SVG branch, not the masked bg-fg div — mirrors the assertion
     // convention in home-page.test.tsx:69 (semantic data-auto-logo= marker
