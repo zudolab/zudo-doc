@@ -113,7 +113,55 @@ describe("LanguageSwitcher", () => {
     );
     expect(html.indexOf(">EN</span>")).toBeLessThan(html.indexOf(">JA</a>"));
     expect(html.indexOf(">JA</a>")).toBeLessThan(html.indexOf(">DE</a>"));
+    // The absence of role="menu" is deliberate, not an oversight
+    // (zudolab/zudo-doc#3927) — this is a W3C APG disclosure-navigation
+    // widget, not a menu. Full rationale sits at the `<ul>` in
+    // language-switcher.tsx, where the temptation to add the role lives.
     expect(html).not.toContain("role=\"menu\"");
+  });
+
+  it("names the disclosure list from its trigger, with ids resolving both ways", () => {
+    const cases: Array<{
+      idSuffix?: string;
+      toggleId: string;
+      menuId: string;
+    }> = [
+      {
+        idSuffix: "header",
+        toggleId: "language-toggle-header",
+        menuId: "language-menu-header",
+      },
+      { toggleId: "language-toggle", menuId: "language-menu" },
+    ];
+
+    for (const { idSuffix, toggleId, menuId } of cases) {
+      const host = document.createElement("div");
+      host.innerHTML = serialize(
+        <LanguageSwitcher
+          links={enJa}
+          accessibleLabel="言語"
+          idSuffix={idSuffix}
+        />,
+      );
+
+      const toggle = host.querySelector<HTMLButtonElement>(
+        "[data-language-toggle]",
+      )!;
+      const menu = host.querySelector<HTMLElement>("[data-language-menu]")!;
+
+      expect(toggle.id).toBe(toggleId);
+      expect(menu.id).toBe(menuId);
+      // Assert the whole relationship on one rendered instance: each aria-*
+      // reference must resolve to the *other* element, which is what makes
+      // the list's accessible name come from the trigger's aria-label.
+      expect(
+        host.querySelector(`#${toggle.getAttribute("aria-controls")}`),
+      ).toBe(menu);
+      expect(
+        host.querySelector(`#${menu.getAttribute("aria-labelledby")}`),
+      ).toBe(toggle);
+      expect(toggle.getAttribute("aria-label")).toBe("言語");
+    }
   });
 
   it("uses the configured active label and exposes accessible disclosure state", () => {

@@ -193,6 +193,7 @@ export function extractHtmlLinks(html) {
   while ((match = regex.exec(html)) !== null) {
     const href = decodeHtmlAttributeValue(match[1] ?? match[2] ?? match[3]);
     if (/^https?:\/\//i.test(href)) continue;
+    if (/^\/\//.test(href)) continue;
     if (/^mailto:/i.test(href)) continue;
     if (/^javascript:/i.test(href)) continue;
     if (/^data:/i.test(href)) continue;
@@ -461,7 +462,7 @@ export function extractMdxFragmentLinks(content) {
     const markdownLink = /\]\(\s*([^\s)#]*#[^\s)]*)(?:\s+[^)]*)?\)/g;
     while ((match = markdownLink.exec(searchLine)) !== null) {
       const href = match[1];
-      if (!/^(?:https?:|mailto:|javascript:|data:|tel:)/i.test(href)) {
+      if (!/^(?:https?:|\/\/|mailto:|javascript:|data:|tel:)/i.test(href)) {
         links.push({ href, line: i + 1 });
       }
     }
@@ -469,7 +470,7 @@ export function extractMdxFragmentLinks(content) {
     const jsxHref = /\bhref\s*=\s*(?:"([^"]*#[^"]*)"|'([^']*#[^']*)')/g;
     while ((match = jsxHref.exec(searchLine)) !== null) {
       const href = match[1] ?? match[2];
-      if (!/^(?:https?:|mailto:|javascript:|data:|tel:)/i.test(href)) {
+      if (!/^(?:https?:|\/\/|mailto:|javascript:|data:|tel:)/i.test(href)) {
         links.push({ href, line: i + 1 });
       }
     }
