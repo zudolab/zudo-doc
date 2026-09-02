@@ -235,6 +235,7 @@ export function LanguageSwitcher({
   if (links.length <= 1) return null;
 
   const menuId = `language-menu${idSuffix ? `-${idSuffix}` : ""}`;
+  const toggleId = `language-toggle${idSuffix ? `-${idSuffix}` : ""}`;
   const activeLink = links.find((link) => link.active) ?? links[0];
 
   // Config attributes drive the SPA re-wire script; omitted when no config
@@ -256,6 +257,7 @@ export function LanguageSwitcher({
     >
       <button
         type="button"
+        id={toggleId}
         class="flex max-w-[16rem] cursor-pointer items-center gap-hsp-2xs whitespace-nowrap rounded border border-muted px-hsp-sm py-vsp-3xs text-small text-muted transition-colors hover:border-accent hover:text-accent focus-visible:border-accent focus-visible:text-accent"
         aria-label={accessibleLabel}
         aria-controls={menuId}
@@ -266,8 +268,17 @@ export function LanguageSwitcher({
         <ChevronDownIcon />
       </button>
 
+      {/*
+        W3C APG disclosure navigation: a `button[aria-expanded]` disclosing a
+        list of ordinary navigation links. The `<ul>` keeps its implicit `list`
+        role and borrows the trigger's `aria-label` as its accessible name —
+        deliberately NOT `role="menu"`/`role="listbox"`, which would oblige
+        `menuitem`/`option` children, a roving tabindex, and arrow-key
+        navigation this component does not implement (zudolab/zudo-doc#3927).
+      */}
       <ul
         id={menuId}
+        aria-labelledby={toggleId}
         class="absolute right-0 top-full z-dropdown mt-vsp-3xs hidden min-w-[8rem] max-w-[calc(100vw-var(--spacing-hsp-xl))] overflow-x-auto whitespace-nowrap rounded border border-muted bg-surface py-vsp-3xs shadow-lg group-hover:block group-focus-within:block"
         data-language-menu
       >
