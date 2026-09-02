@@ -215,7 +215,7 @@ const ENLARGE_SVG = {
  *
  * When a paragraph contains exactly one non-whitespace child that is a
  * block-level image VNode (type === the ContentImg override or "img"), this
- * wraps enlargeable images in:
+ * wraps eligible images in:
  *   <figure class="zd-enlargeable">
  *     <img ...>
  *     <button type="button" class="zd-enlarge-btn" hidden aria-label="Enlarge image">
@@ -223,8 +223,10 @@ const ENLARGE_SVG = {
  *     </button>
  *   </figure>
  *
- * A matching manifest image also receives a figcaption with its authored alt
- * text, dimensions, and viewer link, whether or not enlargement is enabled.
+ * A matching manifest image also receives the `p-hsp-lg` inset and a
+ * figcaption with its authored alt text, dimensions, and viewer link, whether
+ * or not enlargement is enabled. `zd-enlargeable` and its button remain gated
+ * by the existing enlargement eligibility rule.
  *
  * The `title="no-enlarge"` opt-out is read from the un-rendered VNode (Preact's
  * h() is lazy — child.type is still the ContentImg function, not yet called).
@@ -353,7 +355,12 @@ function makeEnlargeableParagraph(
             return {
               type: "figure",
               props: {
-                ...(canEnlarge ? { class: "zd-enlargeable" } : {}),
+                class: [
+                  canEnlarge ? "zd-enlargeable" : null,
+                  imageEntry ? "p-hsp-lg" : null,
+                ]
+                  .filter((className): className is string => className !== null)
+                  .join(" "),
                 children: [vnode, canEnlarge ? enlargeBtn : null, figcaption],
               },
               key: null,
@@ -438,8 +445,9 @@ export function createMdxComponents(
     a: ManifestAwareContentLink,
     // img override: rewrites root-relative src to include settings.base.
     img: ContentImg,
-    // p override: wraps block-level images in <figure class="zd-enlargeable">.
-    // Must come AFTER ...defaultComponents to override ContentParagraph.
+    // p override: wraps eligible block-level images in a figure; manifest-backed
+    // figures also receive the p-hsp-lg inset. Must come AFTER ...defaultComponents
+    // to override ContentParagraph.
     p: EnlargeableParagraph,
     // Admonitions — real typed Preact components emitting the
     // `.admonition` / `data-admonition` structure the design-system CSS

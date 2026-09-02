@@ -66,7 +66,7 @@ describe("manifest image captions", () => {
       src: "/media/images/diagram.png",
       alt: "Architecture diagram",
     });
-    expect(html).toContain('class="zd-enlargeable"');
+    expect(html).toContain('class="zd-enlargeable p-hsp-lg"');
     expect(html).toContain("Architecture diagram");
     expect(html).toContain("⤢ Open asset page · 800 × 600");
     expect(html).toContain('href="/project/view/images/diagram.png/"');
@@ -119,6 +119,8 @@ describe("manifest image captions", () => {
       title: "no-enlarge",
     });
     expect(html).not.toContain("zd-enlarge-btn");
+    expect(html).toContain('class="p-hsp-lg"');
+    expect(html).not.toContain("zd-enlargeable");
     expect(html).not.toContain('title="no-enlarge"');
     expect(html).toContain("Open asset page");
   });
@@ -130,7 +132,18 @@ describe("manifest image captions", () => {
       false,
     );
     expect(html).not.toContain("zd-enlarge-btn");
+    expect(html).toContain('class="p-hsp-lg"');
+    expect(html).not.toContain("zd-enlargeable");
     expect(html).toContain("Open asset page");
+  });
+
+  it("keeps the existing enlargeable class without an inset for a non-manifest image", () => {
+    const html = renderImageParagraph(
+      manifest,
+      { src: "/media/images/missing.png", alt: "Missing" },
+    );
+    expect(html).toContain('class="zd-enlargeable"');
+    expect(html).not.toContain("p-hsp-lg");
   });
 
   it("leaves a non-manifest image unchanged when enlargement is disabled", () => {
@@ -140,6 +153,7 @@ describe("manifest image captions", () => {
       false,
     );
     expect(html).not.toContain("<figcaption");
+    expect(html).not.toContain("p-hsp-lg");
     expect(html).not.toContain("Open asset page");
   });
 
@@ -150,6 +164,16 @@ describe("manifest image captions", () => {
       false,
     );
     expect(html).not.toContain("<figure");
+    expect(html).not.toContain("p-hsp-lg");
     expect(html).toContain('src="/project/media/images/diagram.png"');
+  });
+
+  it("keeps a null-manifest enlargeable image unpadded", () => {
+    const html = renderImageParagraph(null, {
+      src: "/media/images/diagram.png",
+      alt: "Diagram",
+    });
+    expect(html).toContain('class="zd-enlargeable"');
+    expect(html).not.toContain("p-hsp-lg");
   });
 });
