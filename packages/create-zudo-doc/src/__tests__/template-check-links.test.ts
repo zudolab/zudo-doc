@@ -163,4 +163,27 @@ describe("generated check-links.js — built HTML attributes (#3720)", () => {
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("Built HTML scan: 0 internal links and 0 ID attributes inspected.");
   });
+
+  it("skips a protocol-relative href as external instead of reporting it broken (#3921)", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken"],
+      files: {
+        "dist/index.html": `<a href="//example.com/path">external, protocol-relative</a>\n`,
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Built HTML scan: 0 internal links and 0 ID attributes inspected.");
+  });
+
+  it("still reports a broken genuine site-root path as an internal link", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken"],
+      files: {
+        "dist/index.html": `<a href="/docs/x/">Missing root</a>\n`,
+      },
+    });
+    expect(result.status).toBe(1);
+    expect(`${result.stdout}${result.stderr}`).toContain("dist/index.html:1  /docs/x/");
+  });
 });

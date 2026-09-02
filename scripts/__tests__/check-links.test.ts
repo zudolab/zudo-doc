@@ -279,6 +279,18 @@ describe("check-links", () => {
       );
     });
 
+    it("skips protocol-relative URLs", () => {
+      expect(
+        extractHtmlLinks(`<a href="//example.com/path">External</a>`),
+      ).toEqual([]);
+    });
+
+    it("still treats a genuine site-root path as internal", () => {
+      expect(extractHtmlLinks(`<a href="/docs/x/">Root</a>`)).toEqual([
+        { href: "/docs/x/", line: 1 },
+      ]);
+    });
+
     it("extracts single-quoted href attributes", () => {
       const html = `<a href='/foo'>F</a>`;
       expect(extractHtmlLinks(html)).toEqual([{ href: "/foo", line: 1 }]);
@@ -702,6 +714,30 @@ describe("check-links", () => {
       expect(extractMdxFragmentLinks(content)).toEqual([
         { href: "./other.mdx#shown", line: 5 },
       ]);
+    });
+
+    it("skips protocol-relative URLs in markdown links", () => {
+      expect(
+        extractMdxFragmentLinks("[external](//example.com/p#frag)"),
+      ).toEqual([]);
+    });
+
+    it("skips protocol-relative URLs in JSX href attributes", () => {
+      expect(
+        extractMdxFragmentLinks(`<a href="//example.com/p#frag">External</a>`),
+      ).toEqual([]);
+    });
+
+    it("still treats a genuine site-root path as internal in markdown links", () => {
+      expect(
+        extractMdxFragmentLinks("[root](/docs/x/#frag)"),
+      ).toEqual([{ href: "/docs/x/#frag", line: 1 }]);
+    });
+
+    it("still treats a genuine site-root path as internal in JSX href attributes", () => {
+      expect(
+        extractMdxFragmentLinks(`<a href="/docs/x/#frag">Root</a>`),
+      ).toEqual([{ href: "/docs/x/#frag", line: 1 }]);
     });
   });
 
