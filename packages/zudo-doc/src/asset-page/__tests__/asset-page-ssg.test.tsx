@@ -235,8 +235,43 @@ describe("asset page SSG", () => {
     asset({ path: "archive.zip", name: "archive.zip", dir: "", kind: "other", mime: "application/zip", previewable: false, linkedFrom: [] }),
   ])("uses the safe fallback for $path", (entry) => {
     const html = page(entry);
+    const gridStart = html.indexOf('<div class="zd-asset-media-grid">');
+    const mainStart = html.indexOf('<div class="min-w-0">', gridStart);
+    const railStart = html.indexOf('<div class="zd-asset-media-rail">', gridStart);
+    const detailsBoxStart = html.indexOf('<div class="rounded border border-muted p-hsp-lg">', railStart);
+    const detailsHeadingStart = html.indexOf(">Details</h2>", detailsBoxStart);
+    const linkedHeadingStart = html.indexOf(">Linked from</h2>", railStart);
+    const firstActionsStart = html.indexOf("data-zd-asset-actions");
+    const bottomActionsStart = html.indexOf("data-zd-asset-actions", firstActionsStart + 1);
+    const sourceStart = html.indexOf("View source on GitHub");
+    const mediaGrid = html.slice(gridStart, bottomActionsStart);
+
     expect(html).toContain("No preview available.");
+    expect(gridStart).toBeGreaterThan(-1);
+    expect(mainStart).toBe(gridStart + '<div class="zd-asset-media-grid">'.length);
+    expect(railStart).toBeGreaterThan(mainStart);
+    expect(html.slice(gridStart, railStart)).toMatch(/^<div class="zd-asset-media-grid"><div class="min-w-0">[\s\S]*<\/div>$/);
+    expect(html.slice(railStart)).toMatch(/^<div class="zd-asset-media-rail"><div class="rounded border border-muted p-hsp-lg">/);
+    const downloadPanelStart = html.indexOf('<section class="rounded border border-dashed border-muted p-hsp-xl text-center">', gridStart);
+    expect(firstActionsStart).toBeGreaterThan(-1);
+    expect(firstActionsStart).toBeLessThan(gridStart);
+    expect(downloadPanelStart).toBeGreaterThan(mainStart);
+    expect(downloadPanelStart).toBeLessThan(railStart);
+    expect(mediaGrid).toContain('data-zd-asset-action="copy-url"');
+    expect(detailsBoxStart).toBeGreaterThan(railStart);
+    expect(detailsHeadingStart).toBeGreaterThan(detailsBoxStart);
+    expect(bottomActionsStart).toBeGreaterThan(detailsBoxStart);
+    expect(sourceStart).toBeGreaterThan(bottomActionsStart);
     expect(html).not.toContain("<iframe");
-    expect(html).not.toContain("zd-asset-media-grid");
+    expect(mediaGrid).not.toContain("zd-asset-code");
+    expect(mediaGrid).not.toContain("zd-asset-filebar");
+    if (entry.linkedFrom.length > 0) {
+      expect(linkedHeadingStart).toBeGreaterThan(detailsBoxStart);
+      expect(linkedHeadingStart).toBeLessThan(bottomActionsStart);
+      expect(mediaGrid).toContain("Guide › Brand");
+      expect(mediaGrid).toContain("The current logo.");
+    } else {
+      expect(linkedHeadingStart).toBe(-1);
+    }
   });
 });

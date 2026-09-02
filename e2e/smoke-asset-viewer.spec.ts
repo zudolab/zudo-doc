@@ -1,9 +1,13 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { Download } from "@playwright/test";
+import type { Download, Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { attrSource, booleanAttrSource } from "./html-assertions";
+import {
+  attrSource,
+  booleanAttrSource,
+  classAttrSource,
+} from "./html-assertions";
 import { spaClick, spaClickSelector } from "./nav-helpers";
 import { DIST_DIR, readDistFile } from "./smoke-dist-helper";
 
@@ -71,6 +75,104 @@ function excerptMarkup(html: string): string {
   return sectionStart >= 0 && sectionEnd >= 0
     ? html.slice(sectionStart, sectionEnd + "</section>".length)
     : "";
+}
+
+function figureContainingImageAlt(html: string, alt: string): string {
+  return (
+    html.match(
+      new RegExp(
+        `<figure\\b[^>]*>(?:(?!<figure\\b)[\\s\\S])*?<img\\b(?=[^>]*${attrSource("alt", alt)})[^>]*>(?:(?!<figure\\b)[\\s\\S])*?</figure>`,
+        "i",
+      ),
+    )?.[0] ?? ""
+  );
+}
+
+function classTagIndex(
+  html: string,
+  from: number,
+  tagName: string,
+  className: string,
+): number {
+  const match = html.slice(from).match(
+    new RegExp(
+      `<${tagName}\\b(?=[^>]*${classAttrSource(className)})[^>]*>`,
+      "i",
+    ),
+  );
+  return match?.index === undefined ? -1 : from + match.index;
+}
+
+async function inspectDownloadFallback(page: Page) {
+  return page.locator("[data-zd-asset-page]").evaluate((root) => {
+    const grid = root.querySelector<HTMLElement>(".zd-asset-media-grid");
+    const main = grid?.querySelector<HTMLElement>(":scope > .min-w-0") ?? null;
+    const rail = grid?.querySelector<HTMLElement>(":scope > .zd-asset-media-rail") ?? null;
+    const gridChildren = grid ? Array.from(grid.children) : [];
+    const railChildren = rail ? Array.from(rail.children) : [];
+    const detailsBox = rail?.firstElementChild ?? null;
+    const linkedSection = rail
+      ? railChildren.find(
+          (child) => child instanceof HTMLElement && child.tagName === "SECTION",
+        ) ?? null
+      : null;
+    const actions = Array.from(root.querySelectorAll<HTMLElement>("[data-zd-asset-actions]"));
+    const bottomActions = actions.at(-1) ?? null;
+    const sourceLink = Array.from(root.querySelectorAll<HTMLAnchorElement>("a")).find(
+      (anchor) => anchor.textContent?.includes("View source on GitHub"),
+    ) ?? null;
+    const follows = (before: Element | null, after: Element | null): boolean =>
+      before !== null &&
+      after !== null &&
+      Boolean(before.compareDocumentPosition(after) & Node.DOCUMENT_POSITION_FOLLOWING);
+    const rect = (element: Element | null) => {
+      if (!element) return null;
+      const box = element.getBoundingClientRect();
+      return {
+        left: box.left,
+        right: box.right,
+        top: box.top,
+        bottom: box.bottom,
+        width: box.width,
+        height: box.height,
+      };
+    };
+
+    return {
+      display: grid ? getComputedStyle(grid).display : null,
+      grid: rect(grid),
+      main: rect(main),
+      rail: rect(rail),
+      railWidth: rail ? rail.getBoundingClientRect().width : null,
+      mainBeforeRail:
+        main !== null && rail !== null && gridChildren.indexOf(main) < gridChildren.indexOf(rail),
+      boxedDetails:
+        detailsBox !== null &&
+        detailsBox.classList.contains("rounded") &&
+        detailsBox.classList.contains("border") &&
+        detailsBox.classList.contains("border-muted") &&
+        detailsBox.classList.contains("p-hsp-lg") &&
+        detailsBox.querySelector("h2")?.textContent?.trim() === "Details",
+      linkedFromInRail:
+        linkedSection !== null &&
+        linkedSection.textContent?.includes("Linked from") === true,
+      linkedAfterDetails:
+        linkedSection !== null &&
+        detailsBox !== null &&
+        railChildren.indexOf(detailsBox) < railChildren.indexOf(linkedSection),
+      downloadPanelPresent: root.querySelector('[data-zd-asset-action="copy-url"]') !== null,
+      noPreviewText: root.textContent?.includes("No preview") === true,
+      iframeCount: root.querySelectorAll("iframe").length,
+      codeViewerCount: root.querySelectorAll(".zd-asset-code, .zd-asset-filebar").length,
+      bottomActionsAfterGrid: follows(grid, bottomActions),
+      sourceAfterGrid: follows(grid, sourceLink),
+      sourceAfterBottomActions: follows(bottomActions, sourceLink),
+      actionCount: actions.length,
+      documentScrollWidth: document.documentElement.scrollWidth,
+      documentClientWidth: document.documentElement.clientWidth,
+      bodyScrollWidth: document.body.scrollWidth,
+    };
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -181,6 +283,65 @@ test.describe("Asset viewer: static pages and authoring", () => {
     expect(html).toContain("3200 × 1800");
   });
 
+  test("insets manifest figures without padding ordinary fixture images", () => {
+    const manifestHtml = readDistFile("docs/guides/asset-viewer-test/index.html");
+    const manifestFigure = figureContainingImageAlt(manifestHtml, "Diagram");
+    expect(manifestFigure).toBeTruthy();
+    expect(manifestFigure).toMatch(new RegExp(classAttrSource("p-hsp-lg")));
+
+    const ordinaryHtml = readDistFile("docs/guides/image-enlarge-test/index.html");
+    const ordinaryFigure = figureContainingImageAlt(ordinaryHtml, "oversized image");
+    expect(ordinaryFigure).toBeTruthy();
+    expect(ordinaryFigure).toMatch(new RegExp(classAttrSource("zd-enlargeable")));
+    expect(ordinaryFigure).not.toMatch(new RegExp(classAttrSource("p-hsp-lg")));
+  });
+
+  test("keeps the ZIP fallback media grid safe and ordered", () => {
+    const html = assetPage("bundle.zip");
+    const gridStart = classTagIndex(html, 0, "div", "zd-asset-media-grid");
+    const mainStart = classTagIndex(html, gridStart, "div", "min-w-0");
+    const railStart = classTagIndex(html, gridStart, "div", "zd-asset-media-rail");
+    const boxedDetailsStart = html.slice(railStart).search(
+      new RegExp(
+        `<div\\b(?=[^>]*${classAttrSource("rounded")})(?=[^>]*${classAttrSource("border")})(?=[^>]*${classAttrSource("border-muted")})(?=[^>]*${classAttrSource("p-hsp-lg")})[^>]*>`,
+        "i",
+      ),
+    );
+    const boxedDetailsAbsolute =
+      boxedDetailsStart < 0 ? -1 : railStart + boxedDetailsStart;
+    const detailsHeadingStart = html.indexOf(">Details</h2>", railStart);
+    const linkedHeadingStart = html.indexOf(">Linked from</h2>", railStart);
+    const firstActionsStart = html.indexOf("data-zd-asset-actions");
+    const bottomActionsStart = html.indexOf(
+      "data-zd-asset-actions",
+      firstActionsStart + 1,
+    );
+    const sourceStart = html.indexOf("View source on GitHub");
+    const mediaGrid = html.slice(gridStart, bottomActionsStart);
+
+    expect(gridStart).toBeGreaterThan(-1);
+    expect(mainStart).toBeGreaterThan(gridStart);
+    expect(railStart).toBeGreaterThan(mainStart);
+    expect(html.slice(gridStart, railStart)).toMatch(
+      new RegExp(
+        `^<div\\b(?=[^>]*${classAttrSource("zd-asset-media-grid")})[^>]*>\\s*<div\\b(?=[^>]*${classAttrSource("min-w-0")})[^>]*>[\\s\\S]*$`,
+        "i",
+      ),
+    );
+    expect(boxedDetailsStart).toBeGreaterThan(-1);
+    expect(detailsHeadingStart).toBeGreaterThan(boxedDetailsAbsolute);
+    expect(linkedHeadingStart).toBeGreaterThan(detailsHeadingStart);
+    expect(firstActionsStart).toBeGreaterThan(-1);
+    expect(firstActionsStart).toBeLessThan(gridStart);
+    expect(bottomActionsStart).toBeGreaterThan(railStart);
+    expect(linkedHeadingStart).toBeLessThan(bottomActionsStart);
+    expect(sourceStart).toBeGreaterThan(bottomActionsStart);
+    expect(mediaGrid).toContain("No preview");
+    expect(mediaGrid).not.toContain("<iframe");
+    expect(mediaGrid).not.toContain("zd-asset-code");
+    expect(mediaGrid).not.toContain("zd-asset-filebar");
+  });
+
   test("asset image pages carry their own ImageEnlarge island marker", () => {
     const html = assetPage("diagram.png");
     expect(
@@ -282,6 +443,102 @@ test.describe("Asset viewer: browser interactions", () => {
 
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden({ timeout: 5000 });
+    assertNoConsoleErrors();
+  });
+
+  test("asset presentation keeps manifest inset, fallback rail order, and responsive geometry", async ({
+    page,
+    assertNoConsoleErrors,
+  }) => {
+    for (const width of [1280, 800]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(TEST_DOC, { waitUntil: "domcontentloaded" });
+
+      const manifestFigure = page.locator("figure").filter({
+        has: page.locator('img[alt="Diagram"]'),
+      });
+      await expect(manifestFigure).toHaveCount(1);
+      const manifestPadding = await manifestFigure.evaluate((figure) => {
+        const style = getComputedStyle(figure);
+        return {
+          classes: figure.className,
+          values: [
+            style.paddingTop,
+            style.paddingRight,
+            style.paddingBottom,
+            style.paddingLeft,
+          ].map((value) => Number.parseFloat(value)),
+        };
+      });
+      expect(manifestPadding.classes.split(/\s+/)).toContain("p-hsp-lg");
+      for (const value of manifestPadding.values) {
+        expect(value).toBeCloseTo(16, 1);
+      }
+
+      await page.goto("/docs/guides/image-enlarge-test", {
+        waitUntil: "domcontentloaded",
+      });
+      const ordinaryFigure = page.locator("figure").filter({
+        has: page.locator('img[alt="oversized image"]'),
+      });
+      await expect(ordinaryFigure).toHaveCount(1);
+      const ordinaryPadding = await ordinaryFigure.evaluate((figure) => {
+        const style = getComputedStyle(figure);
+        return {
+          classes: figure.className,
+          values: [
+            style.paddingTop,
+            style.paddingRight,
+            style.paddingBottom,
+            style.paddingLeft,
+          ].map((value) => Number.parseFloat(value)),
+        };
+      });
+      expect(ordinaryPadding.classes.split(/\s+/)).not.toContain("p-hsp-lg");
+      for (const value of ordinaryPadding.values) {
+        expect(value).toBeCloseTo(0, 1);
+      }
+
+      await page.goto("/files/bundle.zip/", { waitUntil: "domcontentloaded" });
+      const layout = await inspectDownloadFallback(page);
+      expect(layout.display).toBe("grid");
+      expect(layout.mainBeforeRail).toBe(true);
+      expect(layout.grid).not.toBeNull();
+      expect(layout.main).not.toBeNull();
+      expect(layout.rail).not.toBeNull();
+      if (!layout.grid || !layout.main || !layout.rail) {
+        throw new Error("ZIP fallback media grid did not render its main and rail");
+      }
+      expect(layout.rail.right).toBeLessThanOrEqual(layout.grid.right + 1);
+      expect(layout.documentScrollWidth).toBeLessThanOrEqual(
+        layout.documentClientWidth + 1,
+      );
+      expect(layout.bodyScrollWidth).toBeLessThanOrEqual(
+        layout.documentClientWidth + 1,
+      );
+
+      if (width >= 1024) {
+        expect(layout.boxedDetails).toBe(true);
+        expect(layout.linkedFromInRail).toBe(true);
+        expect(layout.linkedAfterDetails).toBe(true);
+        expect(layout.downloadPanelPresent).toBe(true);
+        expect(layout.noPreviewText).toBe(true);
+        expect(layout.iframeCount).toBe(0);
+        expect(layout.codeViewerCount).toBe(0);
+        expect(layout.actionCount).toBe(2);
+        expect(layout.bottomActionsAfterGrid).toBe(true);
+        expect(layout.sourceAfterGrid).toBe(true);
+        expect(layout.sourceAfterBottomActions).toBe(true);
+        expect(layout.railWidth).not.toBeNull();
+        expect(layout.railWidth!).toBeGreaterThan(300);
+        expect(layout.railWidth!).toBeLessThan(340);
+        expect(layout.rail.left).toBeGreaterThan(layout.main.right);
+        expect(Math.abs(layout.main.top - layout.rail.top)).toBeLessThanOrEqual(1);
+      } else {
+        expect(layout.rail.top).toBeGreaterThanOrEqual(layout.main.bottom - 1);
+        expect(Math.abs(layout.main.left - layout.rail.left)).toBeLessThanOrEqual(1);
+      }
+    }
     assertNoConsoleErrors();
   });
 

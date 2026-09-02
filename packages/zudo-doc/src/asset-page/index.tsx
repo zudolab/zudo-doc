@@ -249,7 +249,7 @@ export function createAssetPageView<S extends Settings = Settings>(ctx: ChromeCo
     const downloadPanel = <AssetDownloadPanel asset={asset} rawUrl={rawUrl} noPreview={t("asset.noPreview", locale)} downloadLabel={t("asset.download", locale)} copyLabel={t("asset.copy", locale)} />;
     let body: ComponentChildren;
     const isMedia = asset.previewable && asset.sniffOk && ["image", "video", "pdf"].includes(asset.kind);
-    if (!asset.previewable || !asset.sniffOk) body = <>{downloadPanel}<AssetDetails asset={asset} labels={detailsLabels} />{linked}</>;
+    if (!asset.previewable || !asset.sniffOk) body = <MediaLayout stage={downloadPanel} details={details} linked={linked} />;
     else if (asset.kind === "image") body = <MediaLayout stage={<AssetImageStage asset={asset} rawUrl={rawUrl} labels={imageStageLabels} />} details={details} linked={linked} />;
     else if (asset.kind === "video") body = <MediaLayout stage={<AssetVideoStage asset={asset} rawUrl={rawUrl} />} details={details} linked={linked} />;
     else if (asset.kind === "pdf") body = <MediaLayout stage={<AssetPdfStage asset={asset} rawUrl={rawUrl}>{downloadPanel}</AssetPdfStage>} details={details} linked={linked} />;

@@ -325,12 +325,7 @@ export const settings = {
       ],
     },
     { label: "Reference", labelKey: "nav.reference", path: "/docs/reference", categoryMatch: "reference" },
-    { label: "Blog", labelKey: "nav.blog", path: "/docs/blog", categoryMatch: "blog" },
-    // Claude/Codex-resources routes are generated only for the default docsDir and never
-    // exist in an archived version directory, so this item must opt out of version
-    // prefixing (#3216/#3217) — otherwise it 404s under an active `/v/{version}`.
-    { label: "Claude", labelKey: "nav.claude", path: "/docs/claude", categoryMatch: "claude", versioned: false },
-    { label: "Codex", labelKey: "nav.codex", path: "/docs/codex", categoryMatch: "codex", versioned: false },
+    { label: "Develop", labelKey: "nav.develop", path: "/docs/develop", categoryMatch: "develop" },
     {
       label: "Changelog",
       labelKey: "nav.changelog",
@@ -342,11 +337,16 @@ export const settings = {
         { label: "doc-history-server", path: "/docs/changelog/doc-history-server" },
       ],
     },
-    { label: "Develop", labelKey: "nav.develop", path: "/docs/develop", categoryMatch: "develop" },
     // Asset viewer routes are generated once for the default docsDir and never exist
     // under an active `/v/{version}` prefix, so this item must opt out of version
     // prefixing — same rationale as the Claude/Codex items above.
     { label: "Assets", labelKey: "nav.assets", path: "/files", versioned: false },
+    { label: "Blog", labelKey: "nav.blog", path: "/docs/blog", categoryMatch: "blog" },
+    // Claude/Codex-resources routes are generated only for the default docsDir and never
+    // exist in an archived version directory, so this item must opt out of version
+    // prefixing (#3216/#3217) — otherwise it 404s under an active `/v/{version}`.
+    { label: "Claude", labelKey: "nav.claude", path: "/docs/claude", categoryMatch: "claude", versioned: false },
+    { label: "Codex", labelKey: "nav.codex", path: "/docs/codex", categoryMatch: "codex", versioned: false },
   ] satisfies HeaderNavItem[] as HeaderNavItem[],
   headerRightItems: [
     { type: "component", component: "version-switcher" },
