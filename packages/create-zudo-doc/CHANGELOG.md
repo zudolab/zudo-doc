@@ -4,6 +4,10 @@ All notable changes to `create-zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.16.2] - 2026-09-03
+
+- No package-specific changes.
+
 ## [5.16.1] - 2026-09-02
 
 ### Other Changes

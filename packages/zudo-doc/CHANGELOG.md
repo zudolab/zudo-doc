@@ -4,6 +4,13 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.16.2] - 2026-09-03
+
+### Bug Fixes
+
+- Asset pages that fall back to the download panel (non-previewable or failed sniff) now render it through the shared media rail layout, so their details and linked-page sections line up with previewable assets instead of stacking. (`19e2166c9`)
+- Manifest-backed block images now receive the `p-hsp-lg` inset on their figure, matching the surrounding content rhythm; `zd-enlargeable` and its enlarge button stay gated by the existing eligibility rule. (`b40ffb4c1`)
+
 ## [5.16.1] - 2026-09-02
 
 ### Other Changes
