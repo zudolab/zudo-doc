@@ -25,7 +25,7 @@ describe("DocLayout — preserveHtmlAttrs full array pin", () => {
     );
 
     expect(html).toContain(
-      'name="zfb-preserve-html-attrs" content="data-sidebar-hidden data-theme data-theme-pack style data-toc-hidden"',
+      'name="zfb-preserve-html-attrs" content="data-sidebar-hidden data-theme data-theme-pack style data-toc-hidden data-asset-details-hidden"',
     );
   });
 });
