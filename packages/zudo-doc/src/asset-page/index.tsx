@@ -195,7 +195,13 @@ export function AssetDetails({ asset, labels }: { asset: AssetRecord; labels: As
   const rows: Array<[string, string]> = [[labels.type, asset.mime], [labels.size, formatAssetBytes(asset.bytes)], [labels.path, asset.path]];
   if (asset.width !== undefined && asset.height !== undefined) rows.splice(1, 0, [labels.dimensions, `${asset.width} × ${asset.height}`]);
   if (asset.updatedDate) rows.push([labels.updated, asset.updatedDate]);
-  return <section><h2 class="mb-vsp-xs text-title font-bold">{labels.heading}</h2><dl class="grid grid-cols-[auto_1fr] gap-x-hsp-md gap-y-vsp-2xs text-caption">{rows.map(([term, value]) => <><dt class="font-medium text-muted">{term}</dt><dd class="min-w-0 break-words text-fg">{value}</dd></>)}</dl></section>;
+  // `mt-0` / `mb-0` / `pl-0` neutralize content.css's prose `dt`/`dd` rules. This
+  // <dl> is a LAYOUT grid, not a prose definition list, so `dt { margin-top }`
+  // pushes each label a row-gap below its own value and `dd { padding-left }`
+  // indents every value (#3944). Those rules use `:where()` and so carry zero
+  // specificity — a plain utility class is enough to override them, and scoping
+  // the reset here leaves authored definition lists in real prose untouched.
+  return <section><h2 class="mb-vsp-xs text-title font-bold">{labels.heading}</h2><dl class="grid grid-cols-[auto_1fr] gap-x-hsp-md gap-y-vsp-2xs text-caption">{rows.map(([term, value]) => <><dt class="mt-0 font-medium text-muted">{term}</dt><dd class="mb-0 min-w-0 break-words pl-0 text-fg">{value}</dd></>)}</dl></section>;
 }
 
 /** Stable DOM id of the details rail — the collapse toggle's `aria-controls` points at it. */

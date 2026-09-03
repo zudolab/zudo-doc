@@ -1356,6 +1356,9 @@
 .pb-vsp-xs {
   padding-bottom: var(--spacing-vsp-xs);
 }
+.pl-0 {
+  padding-left: var(--spacing-0);
+}
 .pl-\[1\.25rem\] {
   padding-left: 1.25rem;
 }
