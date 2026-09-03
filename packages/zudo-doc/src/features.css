@@ -1052,6 +1052,25 @@ button[data-zd-pending] {
 
 /* ======== Asset viewer ======== */
 
+/* The Details card is a LAYOUT grid, but it renders inside `.zd-content`, whose
+ * prose rules style authored definition lists (content.css: `:where(dt)` gets a
+ * top margin, `:where(dd)` a left padding). Applied to grid items those printed
+ * every label a row-gap BELOW its own value — "Type" under "image/png" (#3944).
+ *
+ * This reset must live HERE, not as utility classes on the elements. `:where()`
+ * zeroes only its own contents, so `.zd-content :where(dt)` still scores (0,1,0)
+ * from `.zd-content` — a TIE with `.mt-0`, broken by source order, and
+ * content.css is imported before the utilities (measured: the prose rule landed
+ * ~110KB later in the bundle and won). features.css is imported AFTER
+ * content.css by the documented consumer contract, and this selector is (0,2,0),
+ * so it wins on both counts. Scoped to the hook so authored definition lists in
+ * real prose keep their prose styling. */
+.zd-asset-page [data-zd-asset-details-list] :is(dt, dd) {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-left: 0;
+}
+
 .zd-asset-page .zd-asset-code {
   counter-reset: line;
 }

@@ -195,7 +195,13 @@ export function AssetDetails({ asset, labels }: { asset: AssetRecord; labels: As
   const rows: Array<[string, string]> = [[labels.type, asset.mime], [labels.size, formatAssetBytes(asset.bytes)], [labels.path, asset.path]];
   if (asset.width !== undefined && asset.height !== undefined) rows.splice(1, 0, [labels.dimensions, `${asset.width} × ${asset.height}`]);
   if (asset.updatedDate) rows.push([labels.updated, asset.updatedDate]);
-  return <section><h2 class="mb-vsp-xs text-title font-bold">{labels.heading}</h2><dl class="grid grid-cols-[auto_1fr] gap-x-hsp-md gap-y-vsp-2xs text-caption">{rows.map(([term, value]) => <><dt class="font-medium text-muted">{term}</dt><dd class="min-w-0 break-words text-fg">{value}</dd></>)}</dl></section>;
+  // `data-zd-asset-details-list` is the hook features.css resets the inherited
+  // prose `dt`/`dd` rules through (#3944) — this <dl> is a LAYOUT grid, not a
+  // prose definition list. The reset MUST live in CSS, not in utility classes
+  // here: `.zd-content :where(dt)` still scores (0,1,0) from `.zd-content`
+  // (`:where()` zeroes only its own contents), which TIES with `.mt-0` and then
+  // wins on source order, since content.css is imported before the utilities.
+  return <section><h2 class="mb-vsp-xs text-title font-bold">{labels.heading}</h2><dl data-zd-asset-details-list class="grid grid-cols-[auto_1fr] gap-x-hsp-md gap-y-vsp-2xs text-caption">{rows.map(([term, value]) => <><dt class="font-medium text-muted">{term}</dt><dd class="min-w-0 break-words text-fg">{value}</dd></>)}</dl></section>;
 }
 
 /** Stable DOM id of the details rail — the collapse toggle's `aria-controls` points at it. */

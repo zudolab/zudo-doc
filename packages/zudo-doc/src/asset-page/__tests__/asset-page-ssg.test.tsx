@@ -230,6 +230,16 @@ describe("asset page SSG", () => {
     expect(html).not.toContain("<iframe");
   });
 
+  it("marks the Details grid with the prose-reset hook (#3944)", () => {
+    // Markup contract ONLY. This asserts the hook features.css keys its
+    // dt/dd reset off is emitted — it canNOT prove the rows actually align,
+    // because that depends on cascade order in the built stylesheet. The real
+    // change-detector is the computed-style assertion in
+    // e2e/smoke-asset-viewer.spec.ts; an earlier attempt at this fix passed a
+    // markup-only test while the bug was fully intact at runtime.
+    expect(codePage()).toContain("data-zd-asset-details-list");
+  });
+
   it("routes code through the shared side rail: code in the stage column, Details in the bordered card", () => {
     const html = codePage();
     const gridStart = html.indexOf('<div class="zd-asset-media-grid">');

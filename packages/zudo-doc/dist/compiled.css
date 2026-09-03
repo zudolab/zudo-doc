@@ -3416,6 +3416,11 @@ button[data-zd-pending] {
   opacity: 0.7;
   pointer-events: none;
 }
+.zd-asset-page [data-zd-asset-details-list] :is(dt, dd) {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-left: 0;
+}
 .zd-asset-page .zd-asset-code {
   counter-reset: line;
 }
