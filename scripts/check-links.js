@@ -208,6 +208,28 @@ export function extractHtmlLinks(html) {
   return links;
 }
 
+// Informational counterpart to extractHtmlLinks: same regex, same lazy
+// incremental line counting, but keeps only the protocol-relative hrefs
+// that extractHtmlLinks classifies as external and skips (see #3921/#3930).
+export function extractProtocolRelativeHtmlLinks(html) {
+  const links = [];
+  const regex = /<a(?=\s)[^>]*?\shref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`\\]+))[^>]*>/gi;
+  let match;
+  let lastIndex = 0;
+  let currentLine = 1;
+  while ((match = regex.exec(html)) !== null) {
+    const href = decodeHtmlAttributeValue(match[1] ?? match[2] ?? match[3]);
+    if (!/^\/\//.test(href)) continue;
+
+    for (let i = lastIndex; i < match.index; i++) {
+      if (html[i] === '\n') currentLine++;
+    }
+    lastIndex = match.index;
+    links.push({ href, line: currentLine });
+  }
+  return links;
+}
+
 export function extractHtmlIds(html) {
   const ids = [];
   const regex = /<[A-Za-z][^>]*?\sid\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`\\]+))[^>]*>/gi;
@@ -674,6 +696,7 @@ export async function checkHtmlLinksAndTrailing(
   const broken = [];
   const anchors = [];
   const trailingSlash = [];
+  const protocolRelative = [];
   const htmlFiles = await collectFiles(distDir, [".html"]);
   // One shared cache keyed by resolution type ("root"|"file"|"directoryIndex"|"missing").
   // Both checks read from the same resolved detail so each href is stat'd once.
@@ -690,6 +713,12 @@ export async function checkHtmlLinksAndTrailing(
     scanned.ids += ids.length;
     idCache.set(file, new Set(ids));
     pages.push({ file, links });
+
+    // Informational-only: reuse the content already in memory, no second pass.
+    const relFile = relative(rootDir, file);
+    for (const { href, line } of extractProtocolRelativeHtmlLinks(content)) {
+      protocolRelative.push({ file: relFile, line, href });
+    }
   }
 
   for (const { file, links } of pages) {
@@ -770,7 +799,7 @@ export async function checkHtmlLinksAndTrailing(
     }
   }
 
-  return { broken, anchors, trailingSlash, scanned };
+  return { broken, anchors, trailingSlash, protocolRelative, scanned };
 }
 
 export async function checkMdxLinks(contentDirs, rootDir, distDir = null, basePath = "/", locales) {
@@ -798,11 +827,26 @@ export async function checkMdxLinks(contentDirs, rootDir, distDir = null, basePa
 
 // --- Report ---
 
+// The authority segment is everything after "//" up to the first "/", "?",
+// or "#". A dotless, colonless authority (no TLD-shaped or host:port-shaped
+// piece) is flagged as a likely internal-path typo — see formatReport below.
+function protocolRelativeAuthority(href) {
+  const rest = href.slice(2);
+  const end = rest.search(/[/?#]/);
+  return end === -1 ? rest : rest.slice(0, end);
+}
+
+function isLikelyInternalPathTypo(href) {
+  const authority = protocolRelativeAuthority(href);
+  return !authority.includes(".") && !authority.includes(":");
+}
+
 export function formatReport(
   brokenLinks,
   mdxWarnings,
   trailingSlashWarnings = [],
   anchorWarnings = [],
+  protocolRelative = [],
 ) {
   const lines = [];
 
@@ -836,6 +880,19 @@ export function formatReport(
       lines.push(
         `  ${file}:${line}  ${href}  (fragment: #${fragment}; ${reason})`,
       );
+    }
+    lines.push("");
+  }
+
+  // Informational only — excluded from `total` / the ✓/✗ line / the
+  // non-strict "Issues found" note below, deliberately (see #3934).
+  if (protocolRelative.length > 0) {
+    lines.push("=== Protocol-Relative Links (informational) ===");
+    for (const { file, line, href } of protocolRelative) {
+      const marker = isLikelyInternalPathTypo(href)
+        ? `  ← authority has no dot or colon; may be an internal-path typo (e.g. ${href} → ${href.slice(1)})`
+        : "";
+      lines.push(`  ${file}:${line}  ${href}${marker}`);
     }
     lines.push("");
   }
@@ -939,6 +996,7 @@ async function main() {
       broken: brokenLinks,
       anchors: htmlAnchorWarnings,
       trailingSlash: trailingSlashWarnings,
+      protocolRelative,
       scanned,
     },
     mdxWarnings,
@@ -981,10 +1039,16 @@ async function main() {
     mdxWarnings,
     trailingSlashWarnings,
     anchorWarnings,
+    protocolRelative,
   ));
   console.log(
     `\nBuilt HTML scan: ${scanned.links} internal link${scanned.links === 1 ? "" : "s"} and ${scanned.ids} ID attribute${scanned.ids === 1 ? "" : "s"} inspected.`,
   );
+  if (protocolRelative.length > 0) {
+    console.log(
+      `Protocol-relative links: ${protocolRelative.length} found (informational only — see "Protocol-Relative Links" section above; not counted as issues).`,
+    );
+  }
 
   if (allowlist.size > 0) {
     const skipped =
