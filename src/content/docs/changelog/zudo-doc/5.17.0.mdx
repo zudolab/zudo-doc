@@ -1,0 +1,24 @@
+---
+title: 5.17.0
+description: Release notes for 5.17.0.
+sidebar_position: 1105
+---
+
+Released: 2026-09-04
+
+### Features
+
+- The asset page's details side rail can now be collapsed and expanded with a toggle tab (`0eee44478`).
+
+### Bug Fixes
+
+- Route code assets through the shared details side rail instead of their own layout (`bcfd3c0dc`).
+- Keep the details card at a fixed width while the rail collapses, so its contents no longer reflow mid-animation (`a052aac2e`).
+- Collapse the details rail's grid row rather than only its paint, so the space is actually reclaimed (`856ad6dd6`).
+- Stop the prose `dt`/`dd` rules from breaking the Details grid rows (`9422069e2`, `5beb96506`).
+- Only inject `/sitemap.xml` when `settings.sitemap` is enabled (`40c89e59a`).
+- Give the language disclosure list an accessible name (`597c74828`).
+
+### Other Changes
+
+- Update the zfb peer and development dependency family to 2.15.0 (`d9f5b2f64`). `ts` and `typescript` code fences now resolve to the TypeScript grammar and `tsx` to TypeScriptReact, where both previously fell back to JavaScript highlighting. Token classes stay on zfb's existing semantic-role vocabulary, so themes need no new rules. zfb's content-pipeline fingerprint moves to v3, so the first build after upgrading re-renders cached content.

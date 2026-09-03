@@ -77,10 +77,10 @@ describe("showcase package changelog hierarchy", () => {
     expect(ja).toEqual(en);
 
     const releases = en.filter((path) => path !== "index.mdx" && !path.endsWith("/index.mdx"));
-    expect(releases).toHaveLength(124);
-    expect(releases.filter((path) => path.startsWith("zudo-doc/"))).toHaveLength(104);
-    expect(releases.filter((path) => path.startsWith("create-zudo-doc/"))).toHaveLength(10);
-    expect(releases.filter((path) => path.startsWith("doc-history-server/"))).toHaveLength(10);
+    expect(releases).toHaveLength(127);
+    expect(releases.filter((path) => path.startsWith("zudo-doc/"))).toHaveLength(105);
+    expect(releases.filter((path) => path.startsWith("create-zudo-doc/"))).toHaveLength(11);
+    expect(releases.filter((path) => path.startsWith("doc-history-server/"))).toHaveLength(11);
     expect(en).toEqual([
       "create-zudo-doc/index.mdx",
       "doc-history-server/index.mdx",
@@ -101,7 +101,7 @@ describe("showcase package changelog hierarchy", () => {
 
     const { tree } = changelogNav();
     const zudo = findNode(tree, "changelog/zudo-doc");
-    expect(zudo?.children[0]?.slug).toBe("changelog/zudo-doc/5.16.2");
+    expect(zudo?.children[0]?.slug).toBe("changelog/zudo-doc/5.17.0");
     expect(zudo?.children.at(-1)?.slug).toBe("changelog/zudo-doc/0.1.0");
   });
 

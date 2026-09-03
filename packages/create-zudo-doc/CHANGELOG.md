@@ -4,6 +4,20 @@ All notable changes to `create-zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.17.0] - 2026-09-04
+
+### Features
+
+- `check-links` now reports protocol-relative hrefs (`//host/path`) as informational notices rather than passing over them silently (`67afa352f`).
+
+### Bug Fixes
+
+- `check-links` no longer treats protocol-relative URLs (`//host/path`) as broken local links (`319169bf3`).
+
+### Other Changes
+
+- Newly generated projects now use the zfb 2.15.0 package family (`d9f5b2f64`). `ts` and `typescript` code fences resolve to the TypeScript grammar and `tsx` to TypeScriptReact, where both previously fell back to JavaScript highlighting.
+
 ## [5.16.2] - 2026-09-03
 
 - No package-specific changes.
