@@ -230,17 +230,14 @@ describe("asset page SSG", () => {
     expect(html).not.toContain("<iframe");
   });
 
-  it("neutralizes content.css prose dt/dd rules on the Details layout grid (#3944)", () => {
-    const html = codePage();
-    // The card's <dl> is a layout grid, but it renders inside .zd-content, whose
-    // prose rules give `dt` a top margin and `dd` a left padding — which printed
-    // every label a row-gap BELOW its own value. Those rules use `:where()` and
-    // carry zero specificity, so these plain utilities are what overrides them.
-    expect(html).toContain('<dt class="mt-0 font-medium text-muted">');
-    expect(html).toContain('<dd class="mb-0 min-w-0 break-words pl-0 text-fg">');
-    // Guard the reset stays scoped to this grid: no bare (unreset) dt/dd remain.
-    expect(html).not.toContain('<dt class="font-medium text-muted">');
-    expect(html).not.toContain('<dd class="min-w-0 break-words text-fg">');
+  it("marks the Details grid with the prose-reset hook (#3944)", () => {
+    // Markup contract ONLY. This asserts the hook features.css keys its
+    // dt/dd reset off is emitted — it canNOT prove the rows actually align,
+    // because that depends on cascade order in the built stylesheet. The real
+    // change-detector is the computed-style assertion in
+    // e2e/smoke-asset-viewer.spec.ts; an earlier attempt at this fix passed a
+    // markup-only test while the bug was fully intact at runtime.
+    expect(codePage()).toContain("data-zd-asset-details-list");
   });
 
   it("routes code through the shared side rail: code in the stage column, Details in the bordered card", () => {

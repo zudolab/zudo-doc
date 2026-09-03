@@ -924,6 +924,48 @@ test.describe("Asset viewer: browser interactions", () => {
 
     assertNoConsoleErrors();
   });
+
+  // Computed-style, NOT markup. The Details <dl> is a layout grid rendered
+  // inside `.zd-content`, whose prose rules style authored definition lists.
+  // Applied to grid items they printed every label a row-gap BELOW its own
+  // value (#3944). The reset lives in features.css because `.zd-content
+  // :where(dt)` scores (0,1,0) and merely TIES with a `.mt-0` utility, then
+  // wins on source order — so a markup assertion that the class is present
+  // proves nothing about the rendered result. A first attempt at this fix
+  // shipped exactly that false positive; this test is what catches it.
+  test("Details rows align each label with its own value", async ({
+    page,
+    assertNoConsoleErrors,
+  }) => {
+    await page.goto("/files/diagram.png/", { waitUntil: "load" });
+
+    const rows = await page.evaluate(() => {
+      const list = document.querySelector("[data-zd-asset-details-list]");
+      if (!list) return null;
+      const terms = [...list.querySelectorAll("dt")];
+      return terms.map((dt) => {
+        const dd = dt.nextElementSibling as HTMLElement | null;
+        return {
+          label: dt.textContent?.trim() ?? "",
+          dtTop: dt.getBoundingClientRect().top,
+          ddTop: dd ? dd.getBoundingClientRect().top : Number.NaN,
+          ddPaddingLeft: dd ? getComputedStyle(dd).paddingLeft : "",
+          dtMarginTop: getComputedStyle(dt).marginTop,
+        };
+      });
+    });
+
+    expect(rows).not.toBeNull();
+    expect(rows!.length).toBeGreaterThan(2);
+    for (const row of rows!) {
+      // Same row: the label's top edge equals its value's, not ~24px below it.
+      expect(Math.abs(row.dtTop - row.ddTop)).toBeLessThanOrEqual(1);
+      expect(row.ddPaddingLeft).toBe("0px");
+      expect(row.dtMarginTop).toBe("0px");
+    }
+
+    assertNoConsoleErrors();
+  });
 });
 
 test.describe("Asset viewer: details rail responsive contract (#3942)", () => {
