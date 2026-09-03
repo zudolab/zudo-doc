@@ -1127,10 +1127,88 @@ button[data-zd-pending] {
 
 @media (min-width: 1024px) {
   .zd-asset-page .zd-asset-media-grid {
-    grid-template-columns: minmax(0, 1fr) 20rem;
+    --zd-asset-rail-w: 20rem;
+    grid-template-columns: minmax(0, 1fr) var(--zd-asset-rail-w);
     align-items: start;
+    /* Collapsing must RECLAIM width, so the animated properties are the track
+     * sizes and the gap — not opacity alone. Both interpolate because the
+     * collapsed state below keeps the same two-track shape. */
+    transition:
+      grid-template-columns var(--zd-transition-slow) ease-in-out,
+      gap var(--zd-transition-slow) ease-in-out;
   }
 
+}
+
+/* ========================================
+ * Asset details rail collapse toggle (#3941) — mirrors "Desktop TOC toggle"
+ * above, with two deliberate differences:
+ *
+ *   - Breakpoint is lg/1024px, matching the asset grid's OWN side-by-side
+ *     switch (the block right above), NOT the TOC toggle's xl/1280px. Below
+ *     it the rail stacks normally and the toggle is not rendered.
+ *   - Disclosure semantics: the button carries aria-expanded/aria-controls.
+ *
+ * `data-asset-details-hidden` persists across SPA navigation (doc-layout.tsx
+ * preserveHtmlAttrs), so EVERY hidden-state rule below is scoped to the asset
+ * page (`.zd-asset-page` descendants / `.zd-asset-details-toggle`, which only
+ * exists there) — an unscoped rule would leak onto whatever page is reached
+ * after collapsing the rail.
+ * ======================================== */
+
+/* The controller is vanilla DOM and cannot re-render a Preact icon, so both
+ * chevrons are server-rendered and CSS picks the one matching the state. */
+.zd-asset-details-toggle [data-zd-asset-details-chevron] {
+  display: contents;
+}
+
+.zd-asset-details-toggle [data-zd-asset-details-chevron="expand"] {
+  display: none;
+}
+
+html[data-asset-details-hidden]
+  .zd-asset-details-toggle
+  [data-zd-asset-details-chevron="collapse"] {
+  display: none;
+}
+
+html[data-asset-details-hidden]
+  .zd-asset-details-toggle
+  [data-zd-asset-details-chevron="expand"] {
+  display: contents;
+}
+
+@media (min-width: 1024px) {
+  html[data-asset-details-hidden] .zd-asset-page .zd-asset-media-grid {
+    grid-template-columns: minmax(0, 1fr) 0rem;
+    gap: 0;
+  }
+
+  .zd-asset-page .zd-asset-media-rail {
+    overflow: clip; /* NOT hidden: hidden would create a scroll container */
+    transition:
+      opacity var(--zd-transition-slow) ease-in-out,
+      visibility var(--zd-transition-slow);
+  }
+
+  /* Pin the card to the EXPANDED track width instead of the base `width: 100%`
+   * (identical while expanded, since the track is exactly that wide). Letting
+   * it follow the shrinking track would re-wrap the <dl> values and the linked
+   * -from prose one character per line, ballooning the rail's height for the
+   * length of the animation and visibly jolting the page. At a fixed width the
+   * card keeps its layout and the rail simply clips it away. */
+  .zd-asset-page .zd-asset-media-rail > * {
+    width: var(--zd-asset-rail-w);
+  }
+
+  html[data-asset-details-hidden] .zd-asset-page .zd-asset-media-rail {
+    opacity: 0;
+    visibility: hidden; /* a11y: clipped rail content must not be focusable */
+  }
+
+  .zd-asset-details-toggle {
+    right: 0; /* constant — pins to the viewport edge; no tracking var needed */
+  }
 }
 
 [data-zd-asset-tree]:where(ul),

@@ -13,13 +13,19 @@ import { formatDate } from "../format-date/index.js";
 import { buildGitHubSourceUrl } from "../github-helpers/index.js";
 import { createHeadWithDefaults } from "../head-with-defaults/index.js";
 import { assetRawHref, assetViewerHref } from "../asset-path/index.js";
+import { ChevronLeft, ChevronRight } from "../icons/index.js";
 import { formatAssetBytes } from "../asset-components/index.js";
 import type { AssetRecord } from "../plugins/internal/asset-viewer/types.js";
 import { resolveThemePackSsrSlug } from "../theme/theme-pack-provider.js";
 import type { Settings } from "../settings.js";
-import { ASSET_PAGE_SCRIPT } from "./script.js";
+import { ASSET_DETAILS_PREPAINT_SCRIPT, ASSET_PAGE_SCRIPT } from "./script.js";
 
-export { ASSET_PAGE_SCRIPT } from "./script.js";
+export {
+  ASSET_DETAILS_HIDDEN_ATTR,
+  ASSET_DETAILS_PREPAINT_SCRIPT,
+  ASSET_DETAILS_STORAGE_KEY,
+  ASSET_PAGE_SCRIPT,
+} from "./script.js";
 export type { AssetRecord } from "../plugins/internal/asset-viewer/types.js";
 
 export interface AssetPageViewProps {
@@ -192,9 +198,58 @@ export function AssetDetails({ asset, labels }: { asset: AssetRecord; labels: As
   return <section><h2 class="mb-vsp-xs text-title font-bold">{labels.heading}</h2><dl class="grid grid-cols-[auto_1fr] gap-x-hsp-md gap-y-vsp-2xs text-caption">{rows.map(([term, value]) => <><dt class="font-medium text-muted">{term}</dt><dd class="min-w-0 break-words text-fg">{value}</dd></>)}</dl></section>;
 }
 
+/** Stable DOM id of the details rail — the collapse toggle's `aria-controls` points at it. */
+const ASSET_DETAILS_RAIL_ID = "zd-asset-details-rail";
+
+export interface AssetDetailsToggleLabels {
+  collapse: string;
+  expand: string;
+}
+
+/**
+ * Collapse/expand affordance for the details rail — a narrow chevron tab pinned
+ * to the right viewport edge, mirroring `.zd-desktop-toc-toggle` (#3941).
+ *
+ * Disclosure semantics (`aria-expanded` + `aria-controls`) rather than the TOC
+ * toggle's `aria-pressed`, because this control expands and collapses a region.
+ *
+ * Rendered `disabled` and armed by `ASSET_PAGE_SCRIPT` once the controller
+ * initialises — the same progressive-enhancement pattern the copy/wrap buttons
+ * use, so a no-JS page shows the rail with a visibly inert control instead of an
+ * enabled-looking button that does nothing.
+ *
+ * Both chevrons are server-rendered with one hidden in CSS: the controller is
+ * vanilla DOM (D1) and cannot re-render a Preact icon. The visible one always
+ * points the way the rail will move — right to collapse it away, left to bring
+ * it back — matching the TOC toggle's direction semantics.
+ */
+function AssetDetailsToggle({ labels }: { labels: AssetDetailsToggleLabels }): VNode {
+  return (
+    <button
+      type="button"
+      disabled
+      data-zd-asset-details-toggle
+      data-zd-label-collapse={labels.collapse}
+      data-zd-label-expand={labels.expand}
+      aria-controls={ASSET_DETAILS_RAIL_ID}
+      aria-expanded="true"
+      aria-label={labels.collapse}
+      class="zd-asset-details-toggle hidden lg:flex fixed bottom-vsp-xl z-sidebar items-center justify-center w-[1.5rem] h-[3rem] bg-surface border border-muted border-r-0 rounded-l-DEFAULT text-muted cursor-pointer transition-colors duration-200 ease-in-out hover:text-fg disabled:cursor-default disabled:opacity-50"
+    >
+      <span data-zd-asset-details-chevron="collapse"><ChevronRight className="h-icon-sm w-icon-sm" /></span>
+      <span data-zd-asset-details-chevron="expand"><ChevronLeft className="h-icon-sm w-icon-sm" /></span>
+    </button>
+  );
+}
+
 /** The single definition of the asset body grid and its bordered details card. Every asset kind routes through it — do not fork a per-kind variant (#3940). */
-function AssetBodyLayout({ stage, details, linked }: { stage: ComponentChildren; details: ComponentChildren; linked: ComponentChildren }): VNode {
-  return <div class="zd-asset-media-grid"><div class="min-w-0">{stage}</div><div class="zd-asset-media-rail"><div class="rounded border border-muted p-hsp-lg">{details}</div>{linked}</div></div>;
+function AssetBodyLayout({ stage, details, linked, toggleLabels }: { stage: ComponentChildren; details: ComponentChildren; linked: ComponentChildren; toggleLabels: AssetDetailsToggleLabels }): VNode {
+  return (
+    <>
+      <AssetDetailsToggle labels={toggleLabels} />
+      <div class="zd-asset-media-grid"><div class="min-w-0">{stage}</div><div id={ASSET_DETAILS_RAIL_ID} data-zd-asset-details class="zd-asset-media-rail"><div class="rounded border border-muted p-hsp-lg">{details}</div>{linked}</div></div>
+    </>
+  );
 }
 
 /** Build the package-owned wide asset viewer page from a chrome context. */
@@ -255,10 +310,18 @@ export function createAssetPageView<S extends Settings = Settings>(ctx: ChromeCo
     else if (asset.kind === "video") stage = <AssetVideoStage asset={asset} rawUrl={rawUrl} />;
     else if (asset.kind === "pdf") stage = <AssetPdfStage asset={asset} rawUrl={rawUrl}>{downloadPanel}</AssetPdfStage>;
     else stage = <AssetCodeBody asset={asset} copyLabel={t("asset.copy", locale)} wrapLabel={t("asset.wrap", locale)} truncatedLabel={t("asset.truncated", locale)} linesLabel={linesLabel} />;
-    const body = <AssetBodyLayout stage={stage} details={details} linked={linked} />;
+    const detailsToggleLabels: AssetDetailsToggleLabels = {
+      collapse: t("asset.detailsCollapse", locale),
+      expand: t("asset.detailsExpand", locale),
+    };
+    const body = <AssetBodyLayout stage={stage} details={details} linked={linked} toggleLabels={detailsToggleLabels} />;
     const showSource = settings.bodyFootUtilArea !== false && settings.bodyFootUtilArea.viewSourceLink !== false;
+    // Head-level so it runs before <body> is parsed: it restores a stored
+    // collapsed rail to <html> before first paint, so a hard reload of a
+    // collapsed page never flashes the expanded rail (#3941 D3).
+    const railPrepaint = <script dangerouslySetInnerHTML={{ __html: ASSET_DETAILS_PREPAINT_SCRIPT }} />;
     return (
-      <DocLayoutWithDefaults title={composeMetaTitle(asset.name)} head={<HeadWithDefaults title={asset.name} description={asset.description} canonical={ctx.absoluteUrl(viewerUrl)} />} lang={locale} dataThemePack={dataThemePack} noindex={settings.noindex} hideSidebar hideToc sidebarOverride={false} contentWide breadcrumbOverride={<BreadcrumbWithDefaults items={breadcrumbItems} />} headerOverride={<HeaderWithDefaults lang={locale} currentPath={viewerUrl} hideSidebarToggle />} footerOverride={<FooterWithDefaults lang={locale} />} bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} forceImageEnlarge={asset.kind === "image" && asset.previewable && asset.sniffOk} />} enableClientRouter={settings.dynamicPageTransition}>
+      <DocLayoutWithDefaults title={composeMetaTitle(asset.name)} head={<>{railPrepaint}<HeadWithDefaults title={asset.name} description={asset.description} canonical={ctx.absoluteUrl(viewerUrl)} /></>} lang={locale} dataThemePack={dataThemePack} noindex={settings.noindex} hideSidebar hideToc sidebarOverride={false} contentWide breadcrumbOverride={<BreadcrumbWithDefaults items={breadcrumbItems} />} headerOverride={<HeaderWithDefaults lang={locale} currentPath={viewerUrl} hideSidebarToggle />} footerOverride={<FooterWithDefaults lang={locale} />} bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} forceImageEnlarge={asset.kind === "image" && asset.previewable && asset.sniffOk} />} enableClientRouter={settings.dynamicPageTransition}>
         <div class="zd-asset-page" data-zd-asset-page>
           {backLink && <p class="mb-vsp-xs text-caption"><a href={backLink.href} class="text-muted hover:text-accent focus-visible:text-accent hover:underline focus-visible:underline">← {t("asset.backTo", locale)} {backLink.title}</a></p>}
           <AssetHeader asset={asset} locale={locale} badge={t("asset.badge", locale)} updatedLabel={t("doc.updated", locale)} linesLabel={linesLabel} />
