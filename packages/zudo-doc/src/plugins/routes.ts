@@ -117,6 +117,11 @@ interface RoutesSettings {
   trailingSlash?: boolean;
   docTags?: boolean;
   aiAssistant?: boolean;
+  /** See `settings.ts` — whether `/sitemap.xml` is injected (#3931/#3933). When
+   *  `false` or absent, the route is not injected at all — a disabled sitemap
+   *  is now absent (404) rather than a served-but-empty `<urlset>`, matching
+   *  `/robots.txt`'s existing off-state contract of omitting its `Sitemap:` line. */
+  sitemap?: boolean;
   /** See `settings.ts` — whether the interactive Design Token Panel is enabled
    *  at all. Read ONLY by the shadow diagnostic below (#3435): with the feature
    *  off, `designTokenPanelConfigModule` is documented as irrelevant, so the
@@ -177,9 +182,10 @@ interface RouteSpec {
    * locale home, the tag pages and the version pages.
    *
    * `false` for the four routes a reader never browses as documentation:
-   * `/sitemap.xml` and `/robots.txt` cannot render an HTML panel at all (they
-   * would hold the check at "not fully shadowed" forever), `/api/ai-chat` is a
-   * JSON endpoint, and `/404` is an error page — losing the panel there says
+   * `/sitemap.xml` (when injected — see the `settings.sitemap` gate below,
+   * #3931/#3933) and `/robots.txt` cannot render an HTML panel at all (either
+   * would hold the check at "not fully shadowed" forever if counted),
+   * `/api/ai-chat` is a JSON endpoint, and `/404` is an error page — losing the panel there says
    * nothing about whether the site's docs still have one. The never-injected
    * `/` (see the note in `deriveRoutes`) is absent from the catalog entirely
    * and so cannot be counted either.
@@ -296,7 +302,14 @@ function deriveRoutes(
   // the package for when the user drops their pages/index.tsx stub and a future
   // zfb version lifts the restriction. Tracked: Takazudo/zudo-front-builder#1227.
   routes.push({ pattern: "/404", entrypoint: "@takazudo/zudo-doc/routes/404", includedInDtpShadowDiagnostic: false });
-  routes.push({ pattern: "/sitemap.xml", entrypoint: "@takazudo/zudo-doc/routes/sitemap.xml", includedInDtpShadowDiagnostic: false });
+  // Gated on settings.sitemap (#3931/#3933) — a disabled sitemap is absent
+  // (404) rather than served as a well-formed but empty `<urlset>`, which
+  // reads to a crawler as a positive assertion that the site has no
+  // indexable URLs. Contrast with `/robots.txt` just below, which is
+  // unconditionally injected because it is meaningful in both states.
+  if (settings.sitemap === true) {
+    routes.push({ pattern: "/sitemap.xml", entrypoint: "@takazudo/zudo-doc/routes/sitemap.xml", includedInDtpShadowDiagnostic: false });
+  }
   routes.push({ pattern: "/robots.txt", entrypoint: "@takazudo/zudo-doc/routes/robots.txt", includedInDtpShadowDiagnostic: false });
   routes.push({ pattern: "/docs/[[...slug]]", entrypoint: "@takazudo/zudo-doc/routes/docs-slug", includedInDtpShadowDiagnostic: true });
 
@@ -665,9 +678,10 @@ const plugin = definePlugin({
     // Warn loudly at setup instead. "All reader-facing derived routes
     // shadowed" is the sufficient condition (`includedInDtpShadowDiagnostic`
     // on `RouteSpec` — the original `every(derivedRoutes)` never fired for
-    // the very host shape that motivated the diagnostic, because
-    // `/sitemap.xml` and `/robots.txt` are always injected and are never
-    // shadowed by the two-stub minimal scaffold, #3434). Partial shadowing
+    // the very host shape that motivated the diagnostic, because `/robots.txt`
+    // (and, when `settings.sitemap` enables it, `/sitemap.xml`) is tagged
+    // `includedInDtpShadowDiagnostic: false` and so is never in the
+    // denominator to begin with — #3434. Partial shadowing
     // stays silent (the config still applies on the surviving reader routes).
     //
     // Two gates, both needed:

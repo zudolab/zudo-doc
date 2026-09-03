@@ -242,6 +242,12 @@ Emit a sitemap route.
 
 Default: `false`
 
+**Set `sitemap: true` if you want one.** At the default `false`, no `/sitemap.xml` route is emitted at all — the URL 404s. Setting `siteUrl` is not enough on its own: configuring `siteUrl` only for canonical / `og:url` is a perfectly normal setup, so nothing is inferred from it and no build-time warning nudges you. This reference is where that contract lives.
+
+Serving nothing is deliberate. An empty `<urlset>` at a well-known URL is not a neutral placeholder — it is a positive assertion to crawlers that the site has no indexable URLs, which is worse than the URL simply not existing. The generated `robots.txt` already drops its `Sitemap:` line in this state, so the two artifacts now agree instead of contradicting each other. Earlier versions did emit the empty `<urlset>`; they no longer do.
+
+The gate lives in the package's route injection (`packageOwnedRoutes`, on by default). A project that hand-wires its own `pages/sitemap.xml.tsx` sits outside it and keeps whatever that page returns — and if that page re-exports the package entrypoint while `sitemap` is `false`, the build warns and still writes the empty `<urlset>`.
+
 See also the [SEO guide](./seo.mdx) for how `metaTags` and `sitemap` combine into a complete social-share + search-indexing setup.
 
 ### onBrokenMarkdownLinks

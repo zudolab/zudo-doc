@@ -223,10 +223,13 @@ function collectSourceFiles(dir: string, out: string[] = []): string[] {
 // ---------------------------------------------------------------------------
 
 /** The static/always-on route patterns `deriveRoutes()` emits when locales,
- *  versions, `docTags`, and `aiAssistant` are all absent — see `routes.ts`
- *  section "Static / always-on". Used below to build full vs. partial
- *  shadowing fixtures without reaching into the plugin's private catalog. */
-const ALWAYS_ON_ROUTE_PATTERNS = ["/404", "/sitemap.xml", "/robots.txt", "/docs/[[...slug]]"];
+ *  versions, `docTags`, `aiAssistant`, and `sitemap` are all absent — see
+ *  `routes.ts` section "Static / always-on". `/sitemap.xml` is NOT one of
+ *  these: it is gated on `settings.sitemap` (#3931/#3933) and so is absent
+ *  under these default fixtures — see the dedicated gate coverage below.
+ *  Used below to build full vs. partial shadowing fixtures without reaching
+ *  into the plugin's private catalog. */
+const ALWAYS_ON_ROUTE_PATTERNS = ["/404", "/robots.txt", "/docs/[[...slug]]"];
 
 /** The subset of `ALWAYS_ON_ROUTE_PATTERNS` tagged
  *  `includedInDtpShadowDiagnostic: true` — i.e. the diagnostic's whole
@@ -275,10 +278,14 @@ describe("routes plugin — DTP shadow diagnostic (#3420, #3428)", () => {
   // The #3420 motivating shape, and the regression #3434 exists to fix: the
   // locked minimal scaffold keeps exactly two `pages/` stubs — `index.tsx`
   // (which shadows nothing in the catalog, since `/` is never injected) and
-  // `docs/[[...slug]].tsx`. `/404`, `/sitemap.xml` and `/robots.txt` therefore
-  // survive, which held the old all-routes `every()` at `false` forever — even
-  // though every doc page a reader visits is stub-rendered with no panel.
-  it("warns for the locked minimal scaffold, where /404, /sitemap.xml and /robots.txt survive unshadowed (#3434)", () => {
+  // `docs/[[...slug]].tsx`. `/404` and `/robots.txt` therefore survive, which
+  // held the old all-routes `every()` at `false` forever — even though every
+  // doc page a reader visits is stub-rendered with no panel. (`/sitemap.xml`
+  // is not part of this fixture's catalog at all under default settings —
+  // it is gated on `settings.sitemap`, #3931/#3933 — but it was never counted
+  // by the diagnostic either way, since it is tagged
+  // `includedInDtpShadowDiagnostic: false`.)
+  it("warns for the locked minimal scaffold, where /404 and /robots.txt survive unshadowed (#3434)", () => {
     const projectRoot = makeProjectRoot();
     // `pages/index.tsx` verbatim — NOT via `shadowRouteWithStub`, because it
     // shadows no injected route at all (that is the point of this fixture).
@@ -678,5 +685,45 @@ describe("routes plugin — asset viewer virtual modules", () => {
     ]);
     expect(refreshedBodies).toContain('"bytes":19');
     expect(refreshedContext).toContain('"bytes":19');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// /sitemap.xml injection gate on settings.sitemap (#3931/#3933). With
+// `sitemap` at its documented `@default false`, the build used to still emit
+// `dist/sitemap.xml` as a well-formed but empty `<urlset>` — a positive
+// assertion to crawlers that the site has no indexable URLs, and one that
+// contradicted `/robots.txt`, which already drops its `Sitemap:` line in the
+// same state. `deriveRoutes()` now gates the `/sitemap.xml` push on
+// `settings.sitemap === true`, so it is simply absent (no injected route,
+// same shape `/robots.txt` already used) whenever the feature is off.
+// ---------------------------------------------------------------------------
+
+describe("routes plugin — /sitemap.xml injection gate (#3931/#3933)", () => {
+  it("injects /sitemap.xml when settings.sitemap is true", async () => {
+    const projectRoot = makeProjectRoot();
+    const { ctx, injectedRoutes } = makeCtx(projectRoot, { sitemap: true });
+    await routesPlugin.setup!(ctx as never);
+
+    expect(injectedRoutes.map(({ pattern }) => pattern)).toContain("/sitemap.xml");
+    expect(injectedRoutes.map(({ pattern }) => pattern)).toContain("/robots.txt");
+  });
+
+  it("omits /sitemap.xml when settings.sitemap is false", async () => {
+    const projectRoot = makeProjectRoot();
+    const { ctx, injectedRoutes } = makeCtx(projectRoot, { sitemap: false });
+    await routesPlugin.setup!(ctx as never);
+
+    expect(injectedRoutes.map(({ pattern }) => pattern)).not.toContain("/sitemap.xml");
+    expect(injectedRoutes.map(({ pattern }) => pattern)).toContain("/robots.txt");
+  });
+
+  it("omits /sitemap.xml when settings.sitemap is absent (matches the @default false)", async () => {
+    const projectRoot = makeProjectRoot();
+    const { ctx, injectedRoutes } = makeCtx(projectRoot, {});
+    await routesPlugin.setup!(ctx as never);
+
+    expect(injectedRoutes.map(({ pattern }) => pattern)).not.toContain("/sitemap.xml");
+    expect(injectedRoutes.map(({ pattern }) => pattern)).toContain("/robots.txt");
   });
 });

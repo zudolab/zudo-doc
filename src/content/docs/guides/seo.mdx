@@ -102,6 +102,12 @@ export default defineConfig(
 
 Each entry carries an absolute `<loc>` (built from `siteUrl`) and a `<lastmod>` date, sorted for stable output. The route is served by the package-owned entrypoint `@takazudo/zudo-doc/routes/sitemap.xml`. When `siteUrl` and `sitemap` are both set (and the site is not marked noindex), the generated `robots.txt` automatically advertises the sitemap with a `Sitemap:` line, so crawlers discover it without extra wiring. See the [`sitemap` reference](./configuration.mdx#identity-and-urls-sitemap).
 
+### With `sitemap` off, there is no sitemap at all
+
+`sitemap` defaults to `false`, and in that state **no `/sitemap.xml` route is emitted** — the URL 404s. Setting `siteUrl` does not switch it on, so a site configured for canonical URLs and share cards still publishes no sitemap until you ask for one. Earlier versions served a well-formed but empty `<urlset>` there; that artifact is gone.
+
+Not serving the route is the safer of the two options. A well-known URL is read as an assertion, not as a placeholder: an empty `<urlset>` tells a crawler that this site has no indexable URLs, which is a stronger and more damaging claim than the "this site publishes no sitemap" that a 404 conveys. It is the same reasoning that drops the `Sitemap:` line under `noindex`, described in *Keeping crawlers out instead* below — and because `robots.txt` already omits that line whenever `sitemap` is off, dropping the route makes the two artifacts agree instead of contradicting each other.
+
 ## Verifying the output
 
 After a build, spot-check the results:
