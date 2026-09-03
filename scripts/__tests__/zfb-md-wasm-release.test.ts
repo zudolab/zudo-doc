@@ -42,6 +42,25 @@ const expectedHighlights = [
     html:
       '<pre class="hi-root"><code><span class="line"><span class="hi-kw">const</span> <span class="hi-var">message</span> <span class="hi-op">=</span> <span class="hi-str">&quot;hello&quot;</span><span class="hi-punct">;</span></span></code></pre>',
   },
+  // zfb 2.15.0 gave TypeScript and TSX their own grammars; both previously fell
+  // back to JavaScript. The type annotation is the tell: `string` must be
+  // `hi-ty` (a type), not `hi-var`, and the `:` must be `hi-op`, not bare text.
+  {
+    language: "ts",
+    code: 'const user: string = "hi";',
+    roles: ["hi-kw", "hi-var", "hi-op", "hi-ty", "hi-str", "hi-punct"],
+    html:
+      '<pre class="hi-root"><code><span class="line"><span class="hi-kw">const</span> <span class="hi-var">user</span><span class="hi-op">:</span> <span class="hi-ty">string</span> <span class="hi-op">=</span> <span class="hi-str">&quot;hi&quot;</span><span class="hi-punct">;</span></span></code></pre>',
+  },
+  // JSX gets real tag/attribute roles under TypeScriptReact; the JavaScript
+  // grammar mis-parses the same source (closing tag swallowed into a string).
+  {
+    language: "tsx",
+    code: 'const App = () => <div className="x">hi</div>;',
+    roles: ["hi-kw", "hi-fn", "hi-op", "hi-tag", "hi-attr", "hi-str"],
+    html:
+      '<pre class="hi-root"><code><span class="line"><span class="hi-kw">const</span> <span class="hi-fn">App</span> <span class="hi-op">=</span> () <span class="hi-kw">=&gt;</span> &lt;<span class="hi-tag">div</span> <span class="hi-attr">className</span><span class="hi-op">=</span><span class="hi-str">&quot;x&quot;</span>&gt;hi&lt;/<span class="hi-tag">div</span>&gt;<span class="hi-punct">;</span></span></code></pre>',
+  },
 ] as const;
 
 describe("@takazudo/zfb-md-wasm release contract", () => {
@@ -58,6 +77,36 @@ describe("@takazudo/zfb-md-wasm release contract", () => {
       }
       expect(result.html).not.toMatch(/\sstyle=/);
       expect(result.html).not.toContain("--shiki-");
+    },
+  );
+
+  it("resolves the ts and typescript aliases to the same grammar", async () => {
+    const code = 'const user: string = "hi";';
+    const [ts, typescript] = await Promise.all([
+      highlightCode(code, { language: "ts" }),
+      highlightCode(code, { language: "typescript" }),
+    ]);
+
+    expect(ts.html).toBe(typescript.html);
+    expect(ts.diagnostics).toEqual([]);
+  });
+
+  // Guards the headline change of zfb 2.15.0: before it, `ts` and `tsx` fell
+  // back to the JavaScript grammar, so identical output here would mean the
+  // dedicated grammars silently stopped being selected.
+  it.each([
+    { language: "ts", code: 'const user: string = "hi";' },
+    { language: "tsx", code: 'const App = () => <div className="x">hi</div>;' },
+  ])(
+    "highlights $language differently from the JavaScript fallback",
+    async ({ language, code }) => {
+      const [dedicated, javascript] = await Promise.all([
+        highlightCode(code, { language }),
+        highlightCode(code, { language: "javascript" }),
+      ]);
+
+      expect(dedicated.html).not.toBe(javascript.html);
+      expect(dedicated.diagnostics).toEqual([]);
     },
   );
 
