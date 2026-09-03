@@ -445,36 +445,39 @@ function decodeHtmlAttributeValue(value) {
   );
 }
 
-export function extractHtmlLinks(html) {
-  const links = [];
+// Single shared anchor scan. `extractHtmlLinks` and
+// `extractProtocolRelativeHtmlLinks` classify the SAME set of `<a href>`
+// matches into disjoint buckets, so the grammar and the incremental line
+// counting live here once — a fix to the anchor regex must never reach only
+// one of the two callers.
+function* iterateHtmlAnchorHrefs(html) {
   const regex = /<a(?=\s)[^>]*?\shref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`\\]+))[^>]*>/gi;
   let match;
   let lastIndex = 0;
   let line = 1;
   while ((match = regex.exec(html)) !== null) {
-    const href = decodeHtmlAttributeValue(match[1] ?? match[2] ?? match[3]);
-    if (/^(?:https?:|\/\/|mailto:|javascript:|data:|tel:)/i.test(href)) continue;
     for (let i = lastIndex; i < match.index; i += 1) if (html[i] === "\n") line += 1;
     lastIndex = match.index;
+    yield { href: decodeHtmlAttributeValue(match[1] ?? match[2] ?? match[3]), line };
+  }
+}
+
+export function extractHtmlLinks(html) {
+  const links = [];
+  for (const { href, line } of iterateHtmlAnchorHrefs(html)) {
+    if (/^(?:https?:|\/\/|mailto:|javascript:|data:|tel:)/i.test(href)) continue;
     links.push({ href, line });
   }
   return links;
 }
 
-// Informational counterpart to extractHtmlLinks: same regex, same lazy
-// incremental line counting, but keeps only the protocol-relative hrefs
-// that extractHtmlLinks classifies as external and skips (see #3921/#3930).
+// Informational counterpart to extractHtmlLinks: same scan, but keeps only the
+// protocol-relative hrefs that extractHtmlLinks classifies as external and
+// skips (see #3921/#3930).
 export function extractProtocolRelativeHtmlLinks(html) {
   const links = [];
-  const regex = /<a(?=\s)[^>]*?\shref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`\\]+))[^>]*>/gi;
-  let match;
-  let lastIndex = 0;
-  let line = 1;
-  while ((match = regex.exec(html)) !== null) {
-    const href = decodeHtmlAttributeValue(match[1] ?? match[2] ?? match[3]);
+  for (const { href, line } of iterateHtmlAnchorHrefs(html)) {
     if (!/^\/\//.test(href)) continue;
-    for (let i = lastIndex; i < match.index; i += 1) if (html[i] === "\n") line += 1;
-    lastIndex = match.index;
     links.push({ href, line });
   }
   return links;
@@ -764,7 +767,8 @@ export async function checkHtmlLinksAndTrailing(
     idCache.set(file, new Set(ids));
     pages.push({ file, links });
 
-    // Informational-only: reuse the content already in memory, no second pass.
+    // Informational-only: classified from the content already in memory — no
+    // second read of the file.
     const relFile = relative(rootDir, file);
     for (const { href, line } of extractProtocolRelativeHtmlLinks(content)) {
       protocolRelative.push({ file: relFile, line, href });
