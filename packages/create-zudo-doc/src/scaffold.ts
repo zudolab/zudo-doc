@@ -907,9 +907,15 @@ function generatePackageJson(
     // 2.14.3: lockstep release metadata and rebuilt md-wasm artifacts only.
     // Public APIs, exports, config defaults, engine requirements, and shipped
     // wasm byte sizes stay unchanged, so a fresh scaffold needs no migration.
-    "@takazudo/zfb": "2.14.3",
-    "@takazudo/zfb-runtime": "2.14.3",
-    "@takazudo/zfb-md-wasm": "2.14.3",
+    // 2.15.0: `ts`/`typescript` fences now resolve to the TypeScript grammar
+    // and `tsx` to TypeScriptReact, where both previously fell back to
+    // JavaScript. The content-pipeline fingerprint moves to v3, so the first
+    // build after upgrading re-renders cached content under the new grammar
+    // set. Token classes stay on the same semantic-role vocabulary, so themes
+    // need no new rules and a fresh scaffold needs no migration.
+    "@takazudo/zfb": "2.15.0",
+    "@takazudo/zfb-runtime": "2.15.0",
+    "@takazudo/zfb-md-wasm": "2.15.0",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
