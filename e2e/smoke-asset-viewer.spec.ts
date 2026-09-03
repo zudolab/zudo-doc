@@ -35,6 +35,11 @@ const ASSET_FILES = [
 
 const TEST_DOC = "/docs/guides/asset-viewer-test";
 
+// Mirrors ASSET_DETAILS_STORAGE_KEY / ASSET_DETAILS_HIDDEN_ATTR in
+// packages/zudo-doc/src/asset-page/script.ts (#3941/#3942).
+const ASSET_DETAILS_STORAGE_KEY = "zudo-doc-asset-details-visible";
+const ASSET_DETAILS_HIDDEN_ATTR = "data-asset-details-hidden";
+
 function assetPage(path: string): string {
   return readDistFile(`files/${path}/index.html`);
 }
@@ -686,5 +691,265 @@ test.describe("Asset viewer: browser interactions", () => {
     await expect(code.locator("script")).toHaveCount(0);
     expect(dialogCount).toBe(0);
     assertNoConsoleErrors();
+  });
+
+  // -------------------------------------------------------------------------
+  // #3942: details-rail confirm coverage — code pages must match every other
+  // kind's side-by-side, bordered rail (#3940), and the collapse toggle must
+  // actually reclaim width / keep the code block scrollable (#3941).
+  // -------------------------------------------------------------------------
+
+  test("code asset pages route the details rail beside the code with a visible border, like every other kind", async ({
+    page,
+    assertNoConsoleErrors,
+  }) => {
+    await page.goto("/files/demo.js/", { waitUntil: "load" });
+
+    const pre = page.locator("pre.zd-asset-code");
+    const rail = page.locator("[data-zd-asset-details]");
+    const card = rail.locator(":scope > div").first();
+    const toggle = page.locator("[data-zd-asset-details-toggle]");
+
+    await expect(pre).toBeVisible();
+    await expect(rail).toBeVisible();
+    await expect(toggle).toBeVisible();
+
+    const codeBox = await pre.evaluate((el) => el.getBoundingClientRect());
+    const railBox = await rail.evaluate((el) => el.getBoundingClientRect());
+    // Beside, not below (the exact broken state in the issue's screenshots):
+    // the rail's top sits above the code block's bottom edge, and its left
+    // edge sits to the right of the code block's right edge.
+    expect(railBox.top).toBeLessThan(codeBox.bottom);
+    expect(railBox.left).toBeGreaterThan(codeBox.right);
+
+    const borderWidth = await card.evaluate((el) =>
+      Number.parseFloat(getComputedStyle(el).borderTopWidth),
+    );
+    expect(borderWidth).toBeGreaterThan(0);
+
+    assertNoConsoleErrors();
+  });
+
+  test("every asset kind keeps a bordered, side-by-side details rail — no stacked/borderless regression", async ({
+    page,
+    assertNoConsoleErrors,
+  }) => {
+    for (const path of [
+      "demo.js",
+      "notes.txt",
+      "diagram.png",
+      "clip.mp4",
+      "spec.pdf",
+      "bundle.zip",
+    ]) {
+      await page.goto(`/files/${path}/`, { waitUntil: "load" });
+
+      const grid = page.locator(".zd-asset-media-grid");
+      const stage = grid.locator(":scope > .min-w-0");
+      const rail = page.locator("[data-zd-asset-details]");
+      const card = rail.locator(":scope > div").first();
+
+      await expect(rail, `${path}: rail must render`).toBeVisible();
+      const stageBox = await stage.evaluate((el) => el.getBoundingClientRect());
+      const railBox = await rail.evaluate((el) => el.getBoundingClientRect());
+      expect(
+        railBox.top,
+        `${path}: rail must not stack below the stage`,
+      ).toBeLessThan(stageBox.bottom);
+      expect(
+        railBox.left,
+        `${path}: rail must sit to the right of the stage`,
+      ).toBeGreaterThan(stageBox.right);
+
+      const borderWidth = await card.evaluate((el) =>
+        Number.parseFloat(getComputedStyle(el).borderTopWidth),
+      );
+      expect(
+        borderWidth,
+        `${path}: details card must keep a visible border`,
+      ).toBeGreaterThan(0);
+
+      await expect(
+        page.locator("[data-zd-asset-details-toggle]"),
+        `${path}: collapse toggle must render`,
+      ).toBeVisible();
+    }
+    assertNoConsoleErrors();
+  });
+
+  test("collapsing the details rail reclaims code-column width and zeroes the track + gap", async ({
+    page,
+    assertNoConsoleErrors,
+  }) => {
+    await page.goto("/files/demo.js/", { waitUntil: "load" });
+
+    const grid = page.locator(".zd-asset-media-grid");
+    const codeCol = grid.locator(":scope > .min-w-0");
+    const rail = page.locator("[data-zd-asset-details]");
+    const toggle = page.locator("[data-zd-asset-details-toggle]");
+
+    await expect(toggle).toBeEnabled({ timeout: 5000 });
+    const expandedCodeWidth = await codeCol.evaluate((el) => el.getBoundingClientRect().width);
+    const expandedGap = await grid.evaluate((el) =>
+      Number.parseFloat(getComputedStyle(el).columnGap),
+    );
+    expect(expandedGap).toBeGreaterThan(0);
+
+    await toggle.click();
+    await page.waitForFunction(
+      (attr) => document.documentElement.hasAttribute(attr),
+      ASSET_DETAILS_HIDDEN_ATTR,
+      { timeout: 5000 },
+    );
+    await expect
+      .poll(() => page.evaluate((key) => localStorage.getItem(key), ASSET_DETAILS_STORAGE_KEY))
+      .toBe("false");
+
+    // Collapsing must RECLAIM width, so both the grid's gap and its own
+    // (rail) track have to settle at zero — not just fade the rail's opacity.
+    await expect
+      .poll(() => grid.evaluate((el) => Number.parseFloat(getComputedStyle(el).columnGap)))
+      .toBe(0);
+    await expect
+      .poll(() =>
+        grid.evaluate((el) => {
+          const tracks = getComputedStyle(el).gridTemplateColumns.trim().split(/\s+/);
+          return Number.parseFloat(tracks[tracks.length - 1] ?? "NaN");
+        }),
+      )
+      .toBe(0);
+
+    const collapsedCodeWidth = await codeCol.evaluate((el) => el.getBoundingClientRect().width);
+    expect(collapsedCodeWidth).toBeGreaterThan(expandedCodeWidth);
+    await expect(rail).toHaveCSS("visibility", "hidden");
+
+    // Expand again so the two toggle states are both exercised in one test.
+    await toggle.click();
+    await page.waitForFunction(
+      (attr) => !document.documentElement.hasAttribute(attr),
+      ASSET_DETAILS_HIDDEN_ATTR,
+      { timeout: 5000 },
+    );
+    await expect
+      .poll(() => grid.evaluate((el) => Number.parseFloat(getComputedStyle(el).columnGap)))
+      .toBeGreaterThan(0);
+
+    assertNoConsoleErrors();
+  });
+
+  test("a collapsed rail still lets the code block scroll horizontally without the document gaining overflow", async ({
+    page,
+    assertNoConsoleErrors,
+  }) => {
+    await page.goto("/files/demo.js/", { waitUntil: "load" });
+
+    const toggle = page.locator("[data-zd-asset-details-toggle]");
+    await expect(toggle).toBeEnabled({ timeout: 5000 });
+    await toggle.click();
+    await page.waitForFunction(
+      (attr) => document.documentElement.hasAttribute(attr),
+      ASSET_DETAILS_HIDDEN_ATTR,
+      { timeout: 5000 },
+    );
+
+    const pre = page.locator("pre.zd-asset-code");
+    const metrics = await pre.evaluate((el) => ({
+      scrollWidth: el.scrollWidth,
+      clientWidth: el.clientWidth,
+    }));
+    expect(metrics.scrollWidth).toBeGreaterThan(metrics.clientWidth);
+
+    await pre.evaluate((el) => {
+      el.scrollLeft = 24;
+    });
+    const scrollLeftAfter = await pre.evaluate((el) => el.scrollLeft);
+    expect(scrollLeftAfter).toBeGreaterThan(0);
+
+    const overflow = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    }));
+    expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.clientWidth + 1);
+
+    assertNoConsoleErrors();
+  });
+
+  test("the sticky filebar holds its viewport position across real vertical scrolling", async ({
+    page,
+    assertNoConsoleErrors,
+  }) => {
+    // A short viewport forces overflow on this otherwise-short fixture page
+    // so the filebar actually has room to scroll past its sticky offset.
+    await page.setViewportSize({ width: 1280, height: 420 });
+    await page.goto("/files/demo.js/", { waitUntil: "load" });
+
+    const filebar = page.locator(".zd-asset-filebar");
+    await expect(filebar).toBeVisible();
+    const headerHeight = await page.locator("header[data-header]").evaluate(
+      (el) => el.getBoundingClientRect().height,
+    );
+
+    // A static computed `top` read (as the existing responsive-geometry test
+    // already does) would pass even if sticky positioning were broken, since
+    // it never scrolls. Scroll for real, then read the ACTUAL viewport
+    // position. 420px is well inside the fixture page's pinned range (probed
+    // empirically: the filebar sits at its sticky offset for scrollY roughly
+    // 400-580 on this short fixture page; much further and the short code
+    // section's own bottom pushes the filebar back out of its pinned spot —
+    // that end-of-container unstick is real sticky behaviour, not a bug, so
+    // this test deliberately stays inside the safely-pinned band).
+    // Fail loudly if the fixture page ever gets short enough that the probed
+    // band no longer exists — otherwise `scrollTo` silently clamps and the
+    // sticky assertions below would be measuring an unscrolled page.
+    const maxScroll = await page.evaluate(
+      () => document.documentElement.scrollHeight - window.innerHeight,
+    );
+    expect(
+      maxScroll,
+      "fixture page must stay tall enough for the probed 420-510 sticky band",
+    ).toBeGreaterThanOrEqual(510);
+
+    await page.evaluate(() => window.scrollTo(0, 420));
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+    const pinnedTop = await filebar.evaluate((el) => el.getBoundingClientRect().top);
+    expect(pinnedTop).toBeCloseTo(headerHeight, 0);
+
+    // Scroll further still — a truly sticky element holds the SAME viewport
+    // position; a broken one (`position: static`/`relative`) would keep
+    // moving up and off-screen instead.
+    await page.evaluate(() => window.scrollTo(0, 510));
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(420);
+    const stillPinnedTop = await filebar.evaluate((el) => el.getBoundingClientRect().top);
+    expect(Math.abs(stillPinnedTop - pinnedTop)).toBeLessThanOrEqual(1);
+
+    assertNoConsoleErrors();
+  });
+});
+
+test.describe("Asset viewer: details rail responsive contract (#3942)", () => {
+  test.describe("Mobile stacking", () => {
+    test.use({ viewport: { width: 390, height: 844 } });
+
+    test("the details rail stacks below the code block and the collapse toggle is not rendered", async ({
+      page,
+      assertNoConsoleErrors,
+    }) => {
+      await page.goto("/files/demo.js/", { waitUntil: "load" });
+
+      const pre = page.locator("pre.zd-asset-code");
+      const rail = page.locator("[data-zd-asset-details]");
+      await expect(pre).toBeVisible();
+      await expect(rail).toBeVisible();
+
+      const codeBox = await pre.evaluate((el) => el.getBoundingClientRect());
+      const railBox = await rail.evaluate((el) => el.getBoundingClientRect());
+      expect(railBox.top).toBeGreaterThanOrEqual(codeBox.bottom - 1);
+
+      // Forbidden: the toggle must not appear on a viewport where the rail
+      // is not side-by-side.
+      await expect(page.locator("[data-zd-asset-details-toggle]")).not.toBeVisible();
+
+      assertNoConsoleErrors();
+    });
   });
 });

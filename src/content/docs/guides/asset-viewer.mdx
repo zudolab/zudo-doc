@@ -208,7 +208,7 @@ Both fields are optional strings. The sidecar must be valid JSON no larger than 
 
 ## What each viewer shows
 
-Every viewer page has a file header, file metadata, raw-file actions, a details panel, and links back to documents that reference the asset. Its main preview depends on the detected file kind:
+Every viewer page has a file header, file metadata, raw-file actions, a details panel, and links back to documents that reference the asset. At 1024px and above, the details panel and those back-links sit in a side rail beside the preview — for every file kind, code and text included — and a chevron tab pinned to the right edge of the viewport collapses that rail when the preview needs the full width. Narrower viewports stack the same blocks below the preview and show no tab. Its main preview depends on the detected file kind:
 
 - **[Code and text](/assets/demo/parse-frontmatter.js)** show highlighted source with line anchors plus copy and wrapping controls. Files up to 1 MiB receive syntax highlighting; larger text files use a plain preview. Plain previews show at most 2,000 lines, and text files over 5 MiB fall back to download-only.
 - **[Images](/assets/demo/architecture.png)** provide Fit and 1:1 sizing, checker and dark backgrounds, dimensions, and the enlargement dialog.
@@ -217,6 +217,8 @@ Every viewer page has a file header, file metadata, raw-file actions, a details 
 - **[Archives and other unsupported formats](/assets/demo/demo-project.zip)** show a download panel instead of attempting an unsafe or misleading preview.
 
 Format detection checks file contents as well as the extension. A mismatch falls back safely rather than embedding the file as the claimed media type.
+
+Whether the rail is collapsed or expanded is remembered by the browser and restored before the page paints, so the choice survives a reload and carries over to the next asset page opened. The rail and its tab belong to the viewer itself: there is no configuration key that turns either of them on or off.
 
 ## Development behavior
 
@@ -228,6 +230,6 @@ Use `pnpm dev:stable` when you are adding or reorganizing files frequently; it u
 
 Individual asset viewers are leaf pages, while the optional route-prefix page is an asset listing. Both exist in every configured locale and preserve that locale in generated document and index links: for example, a Japanese reference opens `/ja/files/.../`, not `/files/.../`. The routes stay out of the docs sidebar. They also stay out of the search index, `llms.txt`, and sitemap unless the corresponding `assetViewerIndexing` key is explicitly enabled.
 
-Viewer chrome resolves through the `asset.*` translation namespace, including Details, Type, Fit, and Checker. English and Japanese strings ship with the package; other locales follow the normal translation fallback chain. Override individual strings through `ZudoDocConfig.translations`. To restore the old default-locale-only behavior, add `/${assetViewerRoutePrefix}/` to `defaultLocaleOnlyPrefixes`; see [Internationalization](./i18n.mdx#generated-pages-and-default-locale-bodies).
+Viewer chrome resolves through the `asset.*` translation namespace, including Details, Type, Fit, and Checker, plus `asset.detailsCollapse` and `asset.detailsExpand` — the two accessible labels the rail's collapse tab swaps between. English and Japanese strings ship with the package; other locales follow the normal translation fallback chain. Override individual strings through `ZudoDocConfig.translations`. To restore the old default-locale-only behavior, add `/${assetViewerRoutePrefix}/` to `defaultLocaleOnlyPrefixes`; see [Internationalization](./i18n.mdx#generated-pages-and-default-locale-bodies).
 
-Viewer pages honor the site's `noindex` setting. They intentionally keep documentation chrome such as the header and footer while hiding the document sidebar and table of contents.
+Viewer pages honor the site's `noindex` setting. They intentionally keep documentation chrome such as the header and footer while hiding the document sidebar and table of contents. The chevron tab described above drives the asset page's own details rail and nothing else: it never restores the document table of contents, which stays hidden on viewer pages even when [`tocToggle`](./configuration.mdx#site-settings-toctoggle) is enabled.

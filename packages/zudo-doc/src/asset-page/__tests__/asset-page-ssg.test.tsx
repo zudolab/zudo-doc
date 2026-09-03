@@ -7,6 +7,10 @@ import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-cont
 import type { AssetRecord } from "../../plugins/internal/asset-viewer/types.js";
 import { createAssetPageView } from "../index.js";
 
+/** The rail's opening tag: the id + stable hook the collapse toggle targets, then the layout class. */
+const CARD_OPEN = '<div class="rounded border border-muted p-hsp-lg">';
+const RAIL_OPEN = '<div id="zd-asset-details-rail" data-zd-asset-details="true" class="zd-asset-media-rail">';
+
 function asset(overrides: Partial<AssetRecord> = {}): AssetRecord {
   return {
     path: "img/logo.svg",
@@ -60,6 +64,7 @@ function page(
         "asset.path": "Path", "asset.dimensions": "Dimensions",
         "asset.backTo": "Back to", "asset.fit": "Fit", "asset.actualSize": "1:1",
         "asset.checker": "Checker", "asset.dark": "Dark", "asset.enlarge": "Enlarge image",
+        "asset.detailsCollapse": "Hide details", "asset.detailsExpand": "Show details",
         "doc.viewSource": "View source on GitHub",
         ...translationOverrides,
       }[key] ?? key),
@@ -68,6 +73,10 @@ function page(
   });
   const View = createAssetPageView(ctx);
   return render(<View entry={entry} locale={locale} />);
+}
+
+function codePage(): string {
+  return page(asset({ path: "src/demo.html", name: "demo.html", dir: "src", kind: "code", mime: "text/html", language: "html", lines: 2, width: undefined, height: undefined, truncated: true, html: '<pre class="hi-root"><code><span class="line" id="L1">one</span><span class="line" id="L2">two</span></code></pre>' }));
 }
 
 describe("asset page SSG", () => {
@@ -140,6 +149,8 @@ describe("asset page SSG", () => {
       "asset.checker": "チェッカー",
       "asset.dark": "ダーク",
       "asset.enlarge": "画像を拡大",
+      "asset.detailsCollapse": "詳細を隠す",
+      "asset.detailsExpand": "詳細を表示",
       "doc.updated": "更新日",
     }, "ja");
     expect(html).toContain('lang="ja"');
@@ -208,16 +219,41 @@ describe("asset page SSG", () => {
     expect(html).not.toContain("2 lines");
   });
 
-  it("renders code with a sticky bar, line ids, counter-safe markup, truncation and no media grid", () => {
-    const html = page(asset({ path: "src/demo.html", name: "demo.html", dir: "src", kind: "code", mime: "text/html", language: "html", lines: 2, width: undefined, height: undefined, truncated: true, html: '<pre class="hi-root"><code><span class="line" id="L1">one</span><span class="line" id="L2">two</span></code></pre>' }));
+  it("renders code with a sticky bar, line ids, counter-safe markup and truncation", () => {
+    const html = codePage();
     expect(html).toContain("zd-asset-filebar");
     expect(html).toContain('id="L1"');
     expect(html).toContain('id="L2"');
     expect(html).not.toContain('<pre class="hi-root zd-asset-code" data-lang="html"><pre');
     expect(html).toContain("Preview truncated.");
     expect(html).toContain("code-btn-copy");
-    expect(html).not.toContain("zd-asset-media-grid");
     expect(html).not.toContain("<iframe");
+  });
+
+  it("routes code through the shared side rail: code in the stage column, Details in the bordered card", () => {
+    const html = codePage();
+    const gridStart = html.indexOf('<div class="zd-asset-media-grid">');
+    const mainStart = html.indexOf('<div class="min-w-0">', gridStart);
+    const railStart = html.indexOf(RAIL_OPEN, gridStart);
+    const detailsBoxStart = html.indexOf(CARD_OPEN, railStart);
+    const detailsHeadingStart = html.indexOf(">Details</h2>", detailsBoxStart);
+    const linkedHeadingStart = html.indexOf(">Linked from</h2>", railStart);
+
+    expect(gridStart).toBeGreaterThan(-1);
+    expect(mainStart).toBe(gridStart + '<div class="zd-asset-media-grid">'.length);
+    expect(railStart).toBeGreaterThan(mainStart);
+    // The rail is a sibling of the code column, not nested inside it.
+    expect(html.slice(gridStart, railStart)).toMatch(/^<div class="zd-asset-media-grid"><div class="min-w-0">[\s\S]*<\/div>$/);
+    expect(html.slice(railStart, railStart + RAIL_OPEN.length + CARD_OPEN.length)).toBe(RAIL_OPEN + CARD_OPEN);
+
+    const codeStart = html.indexOf("zd-asset-filebar", gridStart);
+    expect(codeStart).toBeGreaterThan(mainStart);
+    expect(codeStart).toBeLessThan(railStart);
+    expect(detailsHeadingStart).toBeGreaterThan(detailsBoxStart);
+    expect(linkedHeadingStart).toBeGreaterThan(detailsBoxStart);
+    // Exactly one Details panel — the code branch must not render a second, unwrapped copy.
+    expect(html.match(/>Details<\/h2>/g)).toHaveLength(1);
+    expect(html.match(/zd-asset-media-grid/g)).toHaveLength(1);
   });
 
   it("renders video and sniff-approved PDF in the media grid", () => {
@@ -237,8 +273,8 @@ describe("asset page SSG", () => {
     const html = page(entry);
     const gridStart = html.indexOf('<div class="zd-asset-media-grid">');
     const mainStart = html.indexOf('<div class="min-w-0">', gridStart);
-    const railStart = html.indexOf('<div class="zd-asset-media-rail">', gridStart);
-    const detailsBoxStart = html.indexOf('<div class="rounded border border-muted p-hsp-lg">', railStart);
+    const railStart = html.indexOf(RAIL_OPEN, gridStart);
+    const detailsBoxStart = html.indexOf(CARD_OPEN, railStart);
     const detailsHeadingStart = html.indexOf(">Details</h2>", detailsBoxStart);
     const linkedHeadingStart = html.indexOf(">Linked from</h2>", railStart);
     const firstActionsStart = html.indexOf("data-zd-asset-actions");
@@ -251,7 +287,7 @@ describe("asset page SSG", () => {
     expect(mainStart).toBe(gridStart + '<div class="zd-asset-media-grid">'.length);
     expect(railStart).toBeGreaterThan(mainStart);
     expect(html.slice(gridStart, railStart)).toMatch(/^<div class="zd-asset-media-grid"><div class="min-w-0">[\s\S]*<\/div>$/);
-    expect(html.slice(railStart)).toMatch(/^<div class="zd-asset-media-rail"><div class="rounded border border-muted p-hsp-lg">/);
+    expect(html.slice(railStart, railStart + RAIL_OPEN.length + CARD_OPEN.length)).toBe(RAIL_OPEN + CARD_OPEN);
     const downloadPanelStart = html.indexOf('<section class="rounded border border-dashed border-muted p-hsp-xl text-center">', gridStart);
     expect(firstActionsStart).toBeGreaterThan(-1);
     expect(firstActionsStart).toBeLessThan(gridStart);
@@ -273,5 +309,54 @@ describe("asset page SSG", () => {
     } else {
       expect(linkedHeadingStart).toBe(-1);
     }
+  });
+
+  it("renders the details-rail toggle uniformly across kinds, disabled and wired to the rail", () => {
+    for (const html of [codePage(), page(asset())]) {
+      const toggleStart = html.indexOf("<button type=\"button\" disabled data-zd-asset-details-toggle");
+      expect(toggleStart).toBeGreaterThan(-1);
+      const toggle = html.slice(toggleStart, html.indexOf("</button>", toggleStart));
+
+      // Disclosure semantics pointing at the rail's own id, not aria-pressed.
+      expect(toggle).toContain('aria-controls="zd-asset-details-rail"');
+      expect(toggle).toContain('aria-expanded="true"');
+      expect(toggle).toContain('aria-label="Hide details"');
+      expect(toggle).not.toContain("aria-pressed");
+      // The controller is vanilla DOM, so both chevrons ship server-rendered.
+      expect(toggle).toContain('data-zd-asset-details-chevron="collapse"');
+      expect(toggle).toContain('data-zd-asset-details-chevron="expand"');
+      expect(toggle).toContain('data-zd-label-collapse="Hide details"');
+      expect(toggle).toContain('data-zd-label-expand="Show details"');
+      // Visible only where the grid is actually side-by-side (lg/1024px),
+      // NOT the TOC toggle's xl.
+      expect(toggle).toContain("hidden lg:flex");
+      expect(toggle).not.toContain("xl:flex");
+
+      // Exactly one toggle, sitting outside the grid it controls. Matched on
+      // the rendered attribute value so the controller's own selector strings
+      // inside the inline script do not count.
+      expect(html.match(/data-zd-asset-details-toggle="true"/g)).toHaveLength(1);
+      expect(toggleStart).toBeLessThan(html.indexOf('<div class="zd-asset-media-grid">'));
+      expect(html.match(/data-zd-asset-details="true"/g)).toHaveLength(1);
+    }
+  });
+
+  it("emits the rail pre-paint script in <head> so a collapsed reload does not flash", () => {
+    const html = codePage();
+    const scriptStart = html.indexOf("zudo-doc-asset-details-visible");
+    expect(scriptStart).toBeGreaterThan(-1);
+    expect(scriptStart).toBeLessThan(html.indexOf("</head>"));
+    expect(html.slice(0, html.indexOf("</head>"))).toContain(
+      "document.documentElement.setAttribute(\"data-asset-details-hidden\",'')",
+    );
+  });
+
+  it("localizes the toggle labels", () => {
+    const html = page(asset(), {}, {
+      "asset.detailsCollapse": "詳細を隠す",
+      "asset.detailsExpand": "詳細を表示",
+    }, "ja");
+    expect(html).toContain('aria-label="詳細を隠す"');
+    expect(html).toContain('data-zd-label-expand="詳細を表示"');
   });
 });

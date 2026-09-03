@@ -358,6 +358,10 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
             unconditional (same list on every page, per the preserveHtmlAttrs
             contract above) — a no-op when the tocToggle feature is off since
             the attribute is then never set. */}
+        {/* `data-asset-details-hidden` is preserved on the same terms: the
+            asset page's inline controller writes it from localStorage
+            (asset-page/script.ts, #3941). Kept unconditional — a no-op on
+            every non-asset page, where the attribute is never set. */}
         {enableClientRouter !== false
           ? (ClientRouter({
               preserveHtmlAttrs: [
@@ -366,6 +370,7 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
                 "data-theme-pack",
                 "style",
                 "data-toc-hidden",
+                "data-asset-details-hidden",
               ],
             }) as unknown as JSX.Element)
           : null}
