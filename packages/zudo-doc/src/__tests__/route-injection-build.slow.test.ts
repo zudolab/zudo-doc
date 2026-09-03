@@ -362,6 +362,16 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
     expect(html).toContain("Route Injection Proof");
   });
 
+  // #3931/#3933 — this fixture's settings.ts sets `sitemap: false`, so
+  // `/sitemap.xml` is no longer injected at all (deriveRoutes() gates the
+  // push on `settings.sitemap === true`). A disabled sitemap is absent
+  // rather than a served-but-empty `<urlset>`. `setupFixture()` copies into a
+  // fresh `mkdtemp` dir per run, so no stale artifact from a prior build can
+  // mask this.
+  it("static: dist/sitemap.xml does not exist when settings.sitemap is false", () => {
+    expect(existsSync(join(fixtureDir, "dist", "sitemap.xml"))).toBe(false);
+  });
+
   it("dynamic: /docs/getting-started/ HTML contains the MDX page title", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
     // The docs-slug.tsx route enumerates the 'docs' collection via paths()
@@ -911,6 +921,46 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
     expect(sha256Html(html)).toMatchInlineSnapshot(`"77ce3a3cdec248ba385153d210e565b9d9be08a1c9bda15acfdc58f5be5a2810"`);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Renderer-warning proof (#3931/#3933): routes/sitemap.xml.tsx keeps its
+// `!settings.sitemap` early return (unchanged empty-<urlset> output), but is
+// now unreachable through the normal injected route on a `sitemap: false`
+// host — deriveRoutes() no longer injects `/sitemap.xml` there at all. The
+// disabled branch stays reachable only via a host-defined/manual route: a
+// kept `pages/sitemap.xml.tsx` that re-exports the package entrypoint despite
+// the feature being off. That is exactly the misconfiguration the branch's
+// `console.warn` names.
+// ---------------------------------------------------------------------------
+
+describe("A2 sitemap disabled-branch warning: manual pages/sitemap.xml.tsx re-export on a sitemap:false host", () => {
+  it("warns exactly once, naming settings.sitemap, and still emits the empty <urlset>", { timeout: 180_000 }, () => {
+    const dir = setupFixture({ emptyPages: true });
+    writeFileSync(
+      join(dir, "pages", "sitemap.xml.tsx"),
+      'export { default, frontmatter, contentType } from "@takazudo/zudo-doc/routes/sitemap.xml";\n',
+    );
+
+    const output = runZfbBuild(dir);
+
+    // zfb prints every SSR `console.warn` twice — once live during rendering,
+    // once again in its own "runtime logs:" build summary (verified against
+    // an intentionally-doubled call: two warn() calls produce two summary
+    // lines, one produces one). The structured `[warn]` summary line is
+    // therefore the reliable 1-line-per-call signal; the live line and the
+    // fact that the message itself names "settings.sitemap" twice both make
+    // counting raw substring occurrences the wrong proxy for call count.
+    const warnSummaryLines = output
+      .split("\n")
+      .filter((line) => line.includes("[warn]") && line.includes("routes/sitemap.xml was rendered"));
+    expect(warnSummaryLines).toHaveLength(1);
+    expect(warnSummaryLines[0]).toContain("settings.sitemap");
+    expect(existsSync(join(dir, "dist", "sitemap.xml"))).toBe(true);
+    expect(readFileSync(join(dir, "dist", "sitemap.xml"), "utf-8")).toContain(
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    );
   });
 });
 

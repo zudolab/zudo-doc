@@ -79,20 +79,20 @@ sibling `@takazudo/zfb` package, so `getCollection` is callable at build (and,
 once upstream dev rendering lands, at dev). Confirmed against zfb
 `0.1.0-next.62`.
 
-### 3. Pattern → entrypoint derivation (route catalog: 16 routes)
+### 3. Pattern → entrypoint derivation (route catalog: 16 route templates, several gated)
 
 `setup()` derives patterns from `settings.locales` / `settings.versions`.
 zfb route grammar matches `pages/` filenames.
 
-Static / always-on:
+Static:
 
 - `/` → root index entrypoint
 - `/404` → 404 entrypoint
-- `/sitemap.xml` → sitemap entrypoint (uses `createRouteEnumerators`)
 - `/robots.txt` → robots entrypoint
 - `/docs/[[...slug]]` → default-locale doc catch-all
 - `/docs/tags` and `/docs/tags/[tag]` → gated on `settings.docTags`
 - `/api/ai-chat` → SSR route, injected with `opts.prerender: false`, gated on `settings.aiAssistant`
+- `/sitemap.xml` → sitemap entrypoint (uses `createRouteEnumerators`), gated on `settings.sitemap` (#3931/#3933 — a disabled sitemap is now absent (404) rather than a served-but-empty `<urlset>`)
 
 Per non-default locale (`Object.keys(settings.locales)`), for each `{locale}`:
 
