@@ -9,6 +9,7 @@ import {
   parseTrailingSlash,
   parseContentDirs,
   extractHtmlLinks,
+  extractProtocolRelativeHtmlLinks,
   extractHtmlIds,
   resolveLinkDetail,
   resolveLink,
@@ -325,6 +326,46 @@ describe("check-links", () => {
 
     it("does not treat a custom element beginning with a- as an anchor", () => {
       expect(extractHtmlLinks(`<a-card href=/docs/missing>Card</a-card>`)).toEqual([]);
+    });
+  });
+
+  // --- extractProtocolRelativeHtmlLinks ---
+
+  describe("extractProtocolRelativeHtmlLinks", () => {
+    it("extracts protocol-relative hrefs with correct line numbers", () => {
+      const html = [
+        "<html>",
+        '<a href="//example.com/path">External</a>',
+        '<a href="//docs/guide">Typo?</a>',
+      ].join("\n");
+      expect(extractProtocolRelativeHtmlLinks(html)).toEqual([
+        { href: "//example.com/path", line: 2 },
+        { href: "//docs/guide", line: 3 },
+      ]);
+    });
+
+    it("returns [] for https: links", () => {
+      expect(
+        extractProtocolRelativeHtmlLinks(`<a href="https://example.com">E</a>`),
+      ).toEqual([]);
+    });
+
+    it("returns [] for mailto: links", () => {
+      expect(
+        extractProtocolRelativeHtmlLinks(`<a href="mailto:a@b.com">M</a>`),
+      ).toEqual([]);
+    });
+
+    it("returns [] for a genuine site-root path", () => {
+      expect(
+        extractProtocolRelativeHtmlLinks(`<a href="/docs/x/">Root</a>`),
+      ).toEqual([]);
+    });
+
+    it("returns [] for relative hrefs", () => {
+      expect(
+        extractProtocolRelativeHtmlLinks(`<a href="./sibling">S</a>`),
+      ).toEqual([]);
     });
   });
 
@@ -802,6 +843,29 @@ describe("check-links", () => {
       expect(broken).toEqual([]);
       expect(anchors).toEqual([]);
       expect(scanned).toEqual({ links: 1, ids: 1 });
+    });
+
+    it("collects protocol-relative hrefs as informational notices without affecting broken/anchors", async () => {
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(distDir, { recursive: true });
+      writeFileSync(
+        join(distDir, "index.html"),
+        [
+          "<html>",
+          '<a href="//docs/guide">Typo?</a>',
+          '<a href="//example.com/path">External</a>',
+        ].join("\n"),
+      );
+
+      const { broken, anchors, trailingSlash, protocolRelative } =
+        await checkHtmlLinksAndTrailing(distDir, tmpDir);
+      expect(broken).toEqual([]);
+      expect(anchors).toEqual([]);
+      expect(trailingSlash).toEqual([]);
+      expect(protocolRelative).toEqual([
+        { file: "dist/index.html", line: 2, href: "//docs/guide" },
+        { file: "dist/index.html", line: 3, href: "//example.com/path" },
+      ]);
     });
 
     it("validates hierarchical, h5/h6, and non-heading target ids", async () => {
@@ -1351,6 +1415,57 @@ describe("check-links", () => {
         "./b.mdx#missing  (fragment: #missing; missing target id)",
       );
       expect(report).toContain("✗ Found 1 invalid anchor");
+    });
+
+    it("lists protocol-relative links informationally without affecting the ✓ summary", () => {
+      const report = formatReport([], [], [], [], [
+        { file: "dist/index.html", line: 2, href: "//docs/guide" },
+      ]);
+      expect(report).toContain("=== Protocol-Relative Links (informational) ===");
+      expect(report).toContain("dist/index.html:2  //docs/guide");
+      expect(report).toContain(
+        "✓ No broken links, invalid anchors, or absolute path issues found",
+      );
+      expect(report).not.toContain("✗ Found");
+    });
+
+    it("marks a dotless, colonless authority as a likely internal-path typo", () => {
+      const report = formatReport([], [], [], [], [
+        { file: "a.html", line: 1, href: "//docs/guide" },
+      ]);
+      expect(report).toContain(
+        "//docs/guide  ← authority has no dot or colon; may be an internal-path typo (e.g. //docs/guide → /docs/guide)",
+      );
+    });
+
+    it("does not mark an authority with a dot", () => {
+      const report = formatReport([], [], [], [], [
+        { file: "a.html", line: 1, href: "//example.com/path" },
+      ]);
+      expect(report).toContain("a.html:1  //example.com/path");
+      expect(report).not.toContain("←");
+    });
+
+    it("does not mark an authority with a colon (host:port)", () => {
+      const report = formatReport([], [], [], [], [
+        { file: "a.html", line: 1, href: "//localhost:8080/x" },
+      ]);
+      expect(report).toContain("a.html:1  //localhost:8080/x");
+      expect(report).not.toContain("←");
+    });
+
+    it("marks when the authority ends at a query string", () => {
+      const report = formatReport([], [], [], [], [
+        { file: "a.html", line: 1, href: "//docs?a=1" },
+      ]);
+      expect(report).toContain("←");
+    });
+
+    it("marks when the authority ends at a fragment", () => {
+      const report = formatReport([], [], [], [], [
+        { file: "a.html", line: 1, href: "//docs#frag" },
+      ]);
+      expect(report).toContain("←");
     });
   });
 });

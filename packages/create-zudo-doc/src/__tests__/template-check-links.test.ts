@@ -187,3 +187,63 @@ describe("generated check-links.js — built HTML attributes (#3720)", () => {
     expect(`${result.stdout}${result.stderr}`).toContain("dist/index.html:1  /docs/x/");
   });
 });
+
+describe("generated check-links.js — protocol-relative informational notices (#3934)", () => {
+  it("lists a protocol-relative href informationally without failing any strict gate", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken", "--strict-absolute", "--strict-anchors", "--strict-trailing"],
+      files: {
+        "dist/index.html": `<a href="//docs/guide">Typo?</a>\n`,
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("=== Protocol-Relative Links (informational) ===");
+    expect(result.stdout).toContain(
+      "dist/index.html:1  //docs/guide  ← authority has no dot or colon; may be an internal-path typo (e.g. //docs/guide → /docs/guide)",
+    );
+    expect(result.stdout).toContain(
+      "✓ No broken links, invalid anchors, or absolute path issues found",
+    );
+    expect(result.stdout).not.toContain("Issues found but running in non-strict mode");
+    expect(result.stdout).toContain("Protocol-relative links: 1 found");
+  });
+
+  it("does not mark an authority containing a dot as a likely typo", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken"],
+      files: {
+        "dist/index.html": `<a href="//example.com/path">External</a>\n`,
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("dist/index.html:1  //example.com/path");
+    expect(result.stdout).not.toContain("←");
+  });
+
+  it("does not mark a dotless host:port authority as a likely typo", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken"],
+      files: {
+        "dist/index.html": `<a href="//localhost:8080/x">Intranet</a>\n`,
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("dist/index.html:1  //localhost:8080/x");
+    expect(result.stdout).not.toContain("←");
+  });
+
+  it("an allowlist entry for a protocol-relative href neither hides the notice nor is counted in the allowlist tally", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken", "--allowlist=.check-links-allowlist"],
+      files: {
+        "dist/index.html": `<a href="//docs/guide">Typo?</a>\n`,
+        ".check-links-allowlist": "dist/index.html:1://docs/guide\n",
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("=== Protocol-Relative Links (informational) ===");
+    expect(result.stdout).toContain("dist/index.html:1  //docs/guide");
+    expect(result.stdout).not.toContain("Allowlist:");
+  });
+});
