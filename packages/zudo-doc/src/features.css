@@ -1204,6 +1204,23 @@ html[data-asset-details-hidden]
   html[data-asset-details-hidden] .zd-asset-page .zd-asset-media-rail {
     opacity: 0;
     visibility: hidden; /* a11y: clipped rail content must not be focusable */
+
+    /* Stop the zero-width rail from sizing the grid row. `visibility` and
+     * `overflow` suppress paint, NOT layout, so without this the row stays as
+     * tall as the rail and a blank band opens under a shorter stage — measured
+     * 176px on /files/bundle.zip/ and 272px on /files/demo.js/. This is where
+     * the grid differs from the `.zd-toc-col` toggle it otherwise mirrors: the
+     * TOC is a flex row, where a zero-width column contributes no height.
+     *
+     * This applies on the click frame, NOT over the transition: `max-height`
+     * goes `none` -> `0`, and `none` is not interpolable with a length, so a
+     * transition on it is skipped entirely (verified — `getAnimations()` during
+     * a collapse lists only opacity and visibility). Do not add one back
+     * expecting a delay; making it animate would need a concrete expanded
+     * `max-height`, and a *delayed* close reads worse than an immediate one —
+     * content below would sit still for 200ms and then jump. As written, the
+     * row closes at once while the track animates out, which reads cleanly. */
+    max-height: 0;
   }
 
   .zd-asset-details-toggle {

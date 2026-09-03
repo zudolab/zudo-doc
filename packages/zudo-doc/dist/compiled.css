@@ -3512,6 +3512,7 @@ html[data-asset-details-hidden] .zd-asset-details-toggle [data-zd-asset-details-
   html[data-asset-details-hidden] .zd-asset-page .zd-asset-media-rail {
     opacity: 0;
     visibility: hidden;
+    max-height: 0;
   }
   .zd-asset-details-toggle {
     right: 0;
