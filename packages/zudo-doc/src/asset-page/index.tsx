@@ -192,7 +192,8 @@ export function AssetDetails({ asset, labels }: { asset: AssetRecord; labels: As
   return <section><h2 class="mb-vsp-xs text-title font-bold">{labels.heading}</h2><dl class="grid grid-cols-[auto_1fr] gap-x-hsp-md gap-y-vsp-2xs text-caption">{rows.map(([term, value]) => <><dt class="font-medium text-muted">{term}</dt><dd class="min-w-0 break-words text-fg">{value}</dd></>)}</dl></section>;
 }
 
-function MediaLayout({ stage, details, linked }: { stage: ComponentChildren; details: ComponentChildren; linked: ComponentChildren }): VNode {
+/** The single definition of the asset body grid and its bordered details card. Every asset kind routes through it — do not fork a per-kind variant (#3940). */
+function AssetBodyLayout({ stage, details, linked }: { stage: ComponentChildren; details: ComponentChildren; linked: ComponentChildren }): VNode {
   return <div class="zd-asset-media-grid"><div class="min-w-0">{stage}</div><div class="zd-asset-media-rail"><div class="rounded border border-muted p-hsp-lg">{details}</div>{linked}</div></div>;
 }
 
@@ -247,13 +248,14 @@ export function createAssetPageView<S extends Settings = Settings>(ctx: ChromeCo
     };
     const details = <AssetDetails asset={asset} labels={detailsLabels} />;
     const downloadPanel = <AssetDownloadPanel asset={asset} rawUrl={rawUrl} noPreview={t("asset.noPreview", locale)} downloadLabel={t("asset.download", locale)} copyLabel={t("asset.copy", locale)} />;
-    let body: ComponentChildren;
+    let stage: ComponentChildren;
     const isMedia = asset.previewable && asset.sniffOk && ["image", "video", "pdf"].includes(asset.kind);
-    if (!asset.previewable || !asset.sniffOk) body = <MediaLayout stage={downloadPanel} details={details} linked={linked} />;
-    else if (asset.kind === "image") body = <MediaLayout stage={<AssetImageStage asset={asset} rawUrl={rawUrl} labels={imageStageLabels} />} details={details} linked={linked} />;
-    else if (asset.kind === "video") body = <MediaLayout stage={<AssetVideoStage asset={asset} rawUrl={rawUrl} />} details={details} linked={linked} />;
-    else if (asset.kind === "pdf") body = <MediaLayout stage={<AssetPdfStage asset={asset} rawUrl={rawUrl}>{downloadPanel}</AssetPdfStage>} details={details} linked={linked} />;
-    else body = <><AssetCodeBody asset={asset} copyLabel={t("asset.copy", locale)} wrapLabel={t("asset.wrap", locale)} truncatedLabel={t("asset.truncated", locale)} linesLabel={linesLabel} /><AssetDetails asset={asset} labels={detailsLabels} />{linked}</>;
+    if (!asset.previewable || !asset.sniffOk) stage = downloadPanel;
+    else if (asset.kind === "image") stage = <AssetImageStage asset={asset} rawUrl={rawUrl} labels={imageStageLabels} />;
+    else if (asset.kind === "video") stage = <AssetVideoStage asset={asset} rawUrl={rawUrl} />;
+    else if (asset.kind === "pdf") stage = <AssetPdfStage asset={asset} rawUrl={rawUrl}>{downloadPanel}</AssetPdfStage>;
+    else stage = <AssetCodeBody asset={asset} copyLabel={t("asset.copy", locale)} wrapLabel={t("asset.wrap", locale)} truncatedLabel={t("asset.truncated", locale)} linesLabel={linesLabel} />;
+    const body = <AssetBodyLayout stage={stage} details={details} linked={linked} />;
     const showSource = settings.bodyFootUtilArea !== false && settings.bodyFootUtilArea.viewSourceLink !== false;
     return (
       <DocLayoutWithDefaults title={composeMetaTitle(asset.name)} head={<HeadWithDefaults title={asset.name} description={asset.description} canonical={ctx.absoluteUrl(viewerUrl)} />} lang={locale} dataThemePack={dataThemePack} noindex={settings.noindex} hideSidebar hideToc sidebarOverride={false} contentWide breadcrumbOverride={<BreadcrumbWithDefaults items={breadcrumbItems} />} headerOverride={<HeaderWithDefaults lang={locale} currentPath={viewerUrl} hideSidebarToggle />} footerOverride={<FooterWithDefaults lang={locale} />} bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} forceImageEnlarge={asset.kind === "image" && asset.previewable && asset.sniffOk} />} enableClientRouter={settings.dynamicPageTransition}>

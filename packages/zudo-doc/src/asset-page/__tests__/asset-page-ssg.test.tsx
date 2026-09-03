@@ -70,6 +70,10 @@ function page(
   return render(<View entry={entry} locale={locale} />);
 }
 
+function codePage(): string {
+  return page(asset({ path: "src/demo.html", name: "demo.html", dir: "src", kind: "code", mime: "text/html", language: "html", lines: 2, width: undefined, height: undefined, truncated: true, html: '<pre class="hi-root"><code><span class="line" id="L1">one</span><span class="line" id="L2">two</span></code></pre>' }));
+}
+
 describe("asset page SSG", () => {
   it("renders the wide chrome, naming, header, actions, backlink, metadata and body foot", () => {
     const html = page(asset());
@@ -208,16 +212,41 @@ describe("asset page SSG", () => {
     expect(html).not.toContain("2 lines");
   });
 
-  it("renders code with a sticky bar, line ids, counter-safe markup, truncation and no media grid", () => {
-    const html = page(asset({ path: "src/demo.html", name: "demo.html", dir: "src", kind: "code", mime: "text/html", language: "html", lines: 2, width: undefined, height: undefined, truncated: true, html: '<pre class="hi-root"><code><span class="line" id="L1">one</span><span class="line" id="L2">two</span></code></pre>' }));
+  it("renders code with a sticky bar, line ids, counter-safe markup and truncation", () => {
+    const html = codePage();
     expect(html).toContain("zd-asset-filebar");
     expect(html).toContain('id="L1"');
     expect(html).toContain('id="L2"');
     expect(html).not.toContain('<pre class="hi-root zd-asset-code" data-lang="html"><pre');
     expect(html).toContain("Preview truncated.");
     expect(html).toContain("code-btn-copy");
-    expect(html).not.toContain("zd-asset-media-grid");
     expect(html).not.toContain("<iframe");
+  });
+
+  it("routes code through the shared side rail: code in the stage column, Details in the bordered card", () => {
+    const html = codePage();
+    const gridStart = html.indexOf('<div class="zd-asset-media-grid">');
+    const mainStart = html.indexOf('<div class="min-w-0">', gridStart);
+    const railStart = html.indexOf('<div class="zd-asset-media-rail">', gridStart);
+    const detailsBoxStart = html.indexOf('<div class="rounded border border-muted p-hsp-lg">', railStart);
+    const detailsHeadingStart = html.indexOf(">Details</h2>", detailsBoxStart);
+    const linkedHeadingStart = html.indexOf(">Linked from</h2>", railStart);
+
+    expect(gridStart).toBeGreaterThan(-1);
+    expect(mainStart).toBe(gridStart + '<div class="zd-asset-media-grid">'.length);
+    expect(railStart).toBeGreaterThan(mainStart);
+    // The rail is a sibling of the code column, not nested inside it.
+    expect(html.slice(gridStart, railStart)).toMatch(/^<div class="zd-asset-media-grid"><div class="min-w-0">[\s\S]*<\/div>$/);
+    expect(html.slice(railStart)).toMatch(/^<div class="zd-asset-media-rail"><div class="rounded border border-muted p-hsp-lg">/);
+
+    const codeStart = html.indexOf("zd-asset-filebar", gridStart);
+    expect(codeStart).toBeGreaterThan(mainStart);
+    expect(codeStart).toBeLessThan(railStart);
+    expect(detailsHeadingStart).toBeGreaterThan(detailsBoxStart);
+    expect(linkedHeadingStart).toBeGreaterThan(detailsBoxStart);
+    // Exactly one Details panel — the code branch must not render a second, unwrapped copy.
+    expect(html.match(/>Details<\/h2>/g)).toHaveLength(1);
+    expect(html.match(/zd-asset-media-grid/g)).toHaveLength(1);
   });
 
   it("renders video and sniff-approved PDF in the media grid", () => {
