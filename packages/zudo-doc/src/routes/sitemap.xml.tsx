@@ -22,6 +22,17 @@ function escapeXml(str: string): string {
 
 export default function Sitemap(): string {
   if (!settings.sitemap) {
+    // Package-owned injection (routes.ts) now gates `/sitemap.xml` on
+    // `settings.sitemap` (#3931/#3933), so this branch is unreachable through
+    // the normal injected route on a `sitemap: false` host. It stays reachable
+    // only via a host-defined/manual route — e.g. a kept `pages/sitemap.xml.tsx`
+    // that re-exports this entrypoint despite the feature being off — which is
+    // exactly the misconfiguration this warning names.
+    console.warn(
+      "[zudo-doc] routes/sitemap.xml was rendered while settings.sitemap is false/unset; " +
+        "emitting an empty <urlset>. Set settings.sitemap: true to enable it, or remove " +
+        "the manual route that reached this entrypoint.",
+    );
     return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 </urlset>`;
