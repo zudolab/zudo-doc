@@ -730,7 +730,7 @@ test.describe("Asset viewer: browser interactions", () => {
     assertNoConsoleErrors();
   });
 
-  test("every previewable asset kind keeps a bordered, side-by-side details rail — no stacked/borderless regression", async ({
+  test("every asset kind keeps a bordered, side-by-side details rail — no stacked/borderless regression", async ({
     page,
     assertNoConsoleErrors,
   }) => {
@@ -898,6 +898,17 @@ test.describe("Asset viewer: browser interactions", () => {
     // section's own bottom pushes the filebar back out of its pinned spot —
     // that end-of-container unstick is real sticky behaviour, not a bug, so
     // this test deliberately stays inside the safely-pinned band).
+    // Fail loudly if the fixture page ever gets short enough that the probed
+    // band no longer exists — otherwise `scrollTo` silently clamps and the
+    // sticky assertions below would be measuring an unscrolled page.
+    const maxScroll = await page.evaluate(
+      () => document.documentElement.scrollHeight - window.innerHeight,
+    );
+    expect(
+      maxScroll,
+      "fixture page must stay tall enough for the probed 420-510 sticky band",
+    ).toBeGreaterThanOrEqual(510);
+
     await page.evaluate(() => window.scrollTo(0, 420));
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
     const pinnedTop = await filebar.evaluate((el) => el.getBoundingClientRect().top);

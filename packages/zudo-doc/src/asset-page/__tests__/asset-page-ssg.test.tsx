@@ -235,7 +235,7 @@ describe("asset page SSG", () => {
     const gridStart = html.indexOf('<div class="zd-asset-media-grid">');
     const mainStart = html.indexOf('<div class="min-w-0">', gridStart);
     const railStart = html.indexOf(RAIL_OPEN, gridStart);
-    const detailsBoxStart = html.indexOf('<div class="rounded border border-muted p-hsp-lg">', railStart);
+    const detailsBoxStart = html.indexOf(CARD_OPEN, railStart);
     const detailsHeadingStart = html.indexOf(">Details</h2>", detailsBoxStart);
     const linkedHeadingStart = html.indexOf(">Linked from</h2>", railStart);
 
@@ -274,7 +274,7 @@ describe("asset page SSG", () => {
     const gridStart = html.indexOf('<div class="zd-asset-media-grid">');
     const mainStart = html.indexOf('<div class="min-w-0">', gridStart);
     const railStart = html.indexOf(RAIL_OPEN, gridStart);
-    const detailsBoxStart = html.indexOf('<div class="rounded border border-muted p-hsp-lg">', railStart);
+    const detailsBoxStart = html.indexOf(CARD_OPEN, railStart);
     const detailsHeadingStart = html.indexOf(">Details</h2>", detailsBoxStart);
     const linkedHeadingStart = html.indexOf(">Linked from</h2>", railStart);
     const firstActionsStart = html.indexOf("data-zd-asset-actions");
