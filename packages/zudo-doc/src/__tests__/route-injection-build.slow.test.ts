@@ -908,19 +908,37 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // unchanged. Asset-filename normalization excludes bundle-hash noise; no
   // unrelated bytes moved.
 
+  // 2026-09-04 re-baseline (zudolab/zudo-doc#3950, cross-origin nav
+  // active-state): all three pages move together because the only shipped
+  // bytes that changed are NAV_OVERFLOW_SCRIPT's, and that script is inlined
+  // verbatim into every page. `navPathname` now returns "" for a cross-origin
+  // href, so an external `headerNav` entry can no longer collapse to "/" and
+  // steal the highlight on the site's own root route.
+  //
+  // Scope proof — the PR's whole changed-file set is:
+  //   scripts/gen-nav-overflow-script.mjs        (the script's template)
+  //   src/header/nav-overflow-generated-script.ts (its frozen literal)
+  //   src/header/__tests__/*                      (not shipped)
+  // No SSR-markup source is touched, so no other bytes can move; the two
+  // non-test files are exactly the CAN-MOVE-HASHES entries this gate's
+  // workflow lists for this script. Net script size +173 bytes vs main
+  // (the guard plus two short pointer comments — the full rationale lives in
+  // the generator, outside the emitted template, precisely so it does not
+  // ship on every page). Hashes reproduced identically across three local
+  // runs and matched CI's received values before the re-baseline.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"0e3bc91267e0a27a8d585f49ec5bb231e7e195abda49fe2c5ac148e8e4f959fa"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"2265b0c9920a2461a2027aed2c1fe4768d15ce3e46354b481bb9e200d2e52c0d"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"ab27be95397b64e4f4f5f4d23a626c3ac124238698e288aa52768eeecd767f8e"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"be5e2b926537b4365ee2cdf78806616983f03cb0b1f25090c18394f53a09a742"`);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"77ce3a3cdec248ba385153d210e565b9d9be08a1c9bda15acfdc58f5be5a2810"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"a895021fec04124711ebe5dcc7e0915b6f27b213a28706087f8110ec72c058f7"`);
   });
 });
 

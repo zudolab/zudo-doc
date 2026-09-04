@@ -399,6 +399,33 @@ export function buildNavOverflowScript(context = resolveGenerationContext()) {
     extractAfterNavigateEvent(context, transformSync),
   );
 
+  // ---------------------------------------------------------------------
+  // NOTE ON COMMENTS IN THE TEMPLATE BELOW: every byte inside the returned
+  // literal ships inline in the <head> of EVERY page, so rationale lives out
+  // here (generator source, not shipped) and the template keeps only short
+  // pointers back to these paragraphs.
+  //
+  // navPathname / cross-origin (zudolab/zudo-doc#3950)
+  // -------------------------------------------------
+  // Keeping only `.pathname` collapses an external `headerNav` entry like
+  // "https://other.example/" to "/", which then exact-matches this site's own
+  // root route and steals the highlight from whatever SSR marked active. The
+  // SSR matcher (nav-active.ts) compares the raw configured `path` string, so
+  // "https://other.example/" never equals or prefixes "/". Returning "" for a
+  // cross-origin href restores that agreement instead of re-deriving it.
+  //
+  // The "" sentinel, and why it cannot win
+  // --------------------------------------
+  // "" is produced by navPathname for a cross-origin or unparseable href.
+  // pathMatchesNavPath LETS IT PASS for every absolute current path — with
+  // navPath "" the prefix test degenerates to `currentPath.startsWith("/")`.
+  // What makes it safe is computeActiveNavPath's length-descending sort: ""
+  // is the strict minimum, so it is only ever picked when nothing else
+  // matched, and all three paint sites then guard on `activePath !== ""` and
+  // paint nothing. Those guards are load-bearing — do not drop them as
+  // "redundant". A same-origin href can never yield "" (trimSlashes floors at
+  // "/"), so "" is exclusively the sentinel.
+  // ---------------------------------------------------------------------
   return /* javascript */ `(function () {
   var cleanupNavOverflow = null;
 
@@ -407,15 +434,7 @@ export function buildNavOverflowScript(context = resolveGenerationContext()) {
     return p || "/";
   }
 
-  // Cross-origin nav entries are never matchable (zudolab/zudo-doc#3950).
-  // Keeping only \`.pathname\` collapses an external \`headerNav\` entry like
-  // "https://other.example/" to "/", which then exact-matches this site's own
-  // root route and steals the highlight from whatever SSR marked active. The
-  // SSR matcher (nav-active.ts) compares the raw configured \`path\` string, so
-  // "https://other.example/" never equals or prefixes "/" — returning "" here
-  // restores that agreement instead of re-deriving it. "" is this script's
-  // established unmatchable sentinel; see the navItems comment in
-  // applyActiveNav for why it can never win the match.
+  // "" for cross-origin: unmatchable sentinel, matching SSR (#3950).
   function navPathname(a) {
     try {
       var u = new URL(a.href, location.href);
@@ -458,16 +477,8 @@ export function buildNavOverflowScript(context = resolveGenerationContext()) {
     // shape the SSR header uses (matches computeActiveNavPath). A dropdown
     // missing its own top-level anchor is skipped entirely, mirroring the
     // parentLink guard used below for the same malformed-markup case.
-    //
-    // "" is the unmatchable sentinel — produced by navPathname for a
-    // cross-origin or unparseable href. pathMatchesNavPath does let "" pass
-    // for EVERY absolute current path (its prefix test degenerates to
-    // \`currentPath.startsWith("/")\`), but computeActiveNavPath sorts the
-    // survivors by length descending, and "" is the strict minimum: it can
-    // only be picked when nothing else matched, and every consumer below
-    // then guards on \`activePath !== ""\` and paints nothing. Those guards
-    // are what make "" safe — do not drop them. A same-origin href can
-    // never yield "" — trimSlashes floors at "/".
+    // A "" path (cross-origin) is unmatchable ONLY because of the length sort
+    // plus the \`activePath !== ""\` guards below — keep both.
     var navItems = [];
     topItems.forEach(function (it) {
       var isDropdown = it.hasAttribute("data-nav-item-dropdown");
