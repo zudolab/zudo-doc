@@ -461,11 +461,13 @@ export function buildNavOverflowScript(context = resolveGenerationContext()) {
     //
     // "" is the unmatchable sentinel — produced by navPathname for a
     // cross-origin or unparseable href. pathMatchesNavPath does let "" pass
-    // (it treats "" as the root "/"), but computeActiveNavPath sorts the
+    // for EVERY absolute current path (its prefix test degenerates to
+    // \`currentPath.startsWith("/")\`), but computeActiveNavPath sorts the
     // survivors by length descending, and "" is the strict minimum: it can
     // only be picked when nothing else matched, and every consumer below
-    // then guards on \`activePath !== ""\` and paints nothing. A same-origin
-    // href can never yield "" — trimSlashes floors at "/".
+    // then guards on \`activePath !== ""\` and paints nothing. Those guards
+    // are what make "" safe — do not drop them. A same-origin href can
+    // never yield "" — trimSlashes floors at "/".
     var navItems = [];
     topItems.forEach(function (it) {
       var isDropdown = it.hasAttribute("data-nav-item-dropdown");
