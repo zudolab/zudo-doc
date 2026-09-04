@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { execSync } from "node:child_process";
+import { execSync, spawnSync } from "node:child_process";
 import {
   mkdtempSync,
   mkdirSync,
@@ -9,6 +9,7 @@ import {
   existsSync,
   rmSync,
   realpathSync,
+  symlinkSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -337,6 +338,136 @@ describe("setup-doc-skill.sh", () => {
       );
       expect(skillMd).toContain(`${projectDirReal}/CLAUDE.md`);
     });
+  });
+});
+
+describe("generated-skill symlink guard (#3961)", () => {
+  const skillName = "guard-fixture-wisdom";
+  let fixtureRoot: string;
+  let fixtureHome: string;
+  let projectDir: string;
+
+  beforeEach(() => {
+    fixtureRoot = mkdtempSync(join(tmpdir(), "zudo-doc-symlink-guard-fixture-"));
+    fixtureHome = mkdtempSync(join(tmpdir(), "zudo-doc-symlink-guard-home-"));
+    projectDir = join(fixtureRoot, "doc");
+
+    execSync("git init -q", { cwd: fixtureRoot });
+    mkdirSync(join(projectDir, "scripts"), { recursive: true });
+    mkdirSync(join(projectDir, "src", "content", "docs", "getting-started"), {
+      recursive: true,
+    });
+    writeFileSync(
+      join(projectDir, "src", "content", "docs", "getting-started", "index.mdx"),
+      "---\ntitle: Test\n---\n",
+    );
+    cpSync(SCRIPT_PATH, join(projectDir, "scripts", "setup-doc-skill.sh"));
+    writeFileSync(
+      join(projectDir, "package.json"),
+      JSON.stringify({ name: "guard-fixture", scripts: {} }),
+    );
+  });
+
+  afterEach(() => {
+    if (existsSync(fixtureRoot)) rmSync(fixtureRoot, { recursive: true, force: true });
+    if (existsSync(fixtureHome)) rmSync(fixtureHome, { recursive: true, force: true });
+  });
+
+  function generatedSkillPath(): string {
+    return join(projectDir, ".claude", "skills", skillName);
+  }
+
+  function globalSkillPath(): string {
+    return join(fixtureHome, ".claude", "skills", skillName);
+  }
+
+  function runFixtureScript(): {
+    status: number | null;
+    stdout: string;
+    stderr: string;
+  } {
+    const result = spawnSync(
+      "bash",
+      [join(projectDir, "scripts", "setup-doc-skill.sh"), "--target", "claude", skillName],
+      {
+        cwd: projectDir,
+        encoding: "utf-8",
+        timeout: 30_000,
+        env: scriptEnv(fixtureHome),
+      },
+    );
+    return {
+      status: result.status,
+      stdout: result.stdout?.toString() ?? "",
+      stderr: result.stderr?.toString() ?? "",
+    };
+  }
+
+  it("replaces an existing symlink at the global generated-skill path", () => {
+    const oldTarget = join(fixtureRoot, "old-skill-target");
+    mkdirSync(oldTarget, { recursive: true });
+    mkdirSync(join(fixtureHome, ".claude", "skills"), { recursive: true });
+    symlinkSync(oldTarget, globalSkillPath());
+
+    const result = runFixtureScript();
+
+    expect(result.status).toBe(0);
+    expect(realpathSync(globalSkillPath())).toBe(realpathSync(generatedSkillPath()));
+    expect(realpathSync(globalSkillPath())).not.toBe(realpathSync(oldTarget));
+  });
+
+  it("creates the global symlink when nothing exists at the target", () => {
+    const result = runFixtureScript();
+
+    expect(result.status).toBe(0);
+    expect(realpathSync(globalSkillPath())).toBe(realpathSync(generatedSkillPath()));
+  });
+
+  it("refuses a real directory at the global generated-skill path", () => {
+    const globalPath = globalSkillPath();
+    const sentinelPath = join(globalPath, "sentinel.txt");
+    mkdirSync(globalPath, { recursive: true });
+    writeFileSync(sentinelPath, "do-not-delete-me");
+
+    const result = runFixtureScript();
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain(
+      `Error: '${globalPath}' already exists and is not a symlink.`,
+    );
+    expect(existsSync(sentinelPath)).toBe(true);
+    expect(readFileSync(sentinelPath, "utf-8")).toBe("do-not-delete-me");
+  });
+
+  it("refuses a real file at the global generated-skill path", () => {
+    const globalPath = globalSkillPath();
+    mkdirSync(join(fixtureHome, ".claude", "skills"), { recursive: true });
+    writeFileSync(globalPath, "do-not-delete-me");
+
+    const result = runFixtureScript();
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain(
+      `Error: '${globalPath}' already exists and is not a symlink.`,
+    );
+    expect(existsSync(globalPath)).toBe(true);
+    expect(readFileSync(globalPath, "utf-8")).toBe("do-not-delete-me");
+  });
+
+  it("refuses a real directory at the project-local docs path", () => {
+    const docsPath = join(generatedSkillPath(), "docs");
+    const sentinelPath = join(docsPath, "sentinel.txt");
+    mkdirSync(docsPath, { recursive: true });
+    writeFileSync(sentinelPath, "do-not-delete-me");
+
+    const result = runFixtureScript();
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain(
+      `Error: '${docsPath}' already exists and is not a symlink.`,
+    );
+    expect(existsSync(sentinelPath)).toBe(true);
+    expect(readFileSync(sentinelPath, "utf-8")).toBe("do-not-delete-me");
   });
 });
 
