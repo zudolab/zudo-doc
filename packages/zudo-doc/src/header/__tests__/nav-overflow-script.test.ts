@@ -38,7 +38,7 @@ import { AFTER_NAVIGATE_EVENT } from "../../transitions/index.js";
 // the shipped script bytes genuinely changed (one of the four source files
 // was edited and regenerated) — update the pin as a deliberate, reviewed
 // diff.
-const EXPECTED_CSP_HASH = "sha256-dBBdhvLvX+8wcBZbOf2hV26pN3MdgvqYA9mWNb7dndc=";
+const EXPECTED_CSP_HASH = "sha256-si3ayGcUoupfGT7ImFcKMKvaMw5Wrt5R86GI5P0dMCc=";
 
 describe("NAV_OVERFLOW_SCRIPT generation", () => {
   it("matches a fresh re-generation from the four source files (drift guard)", () => {

@@ -399,6 +399,33 @@ export function buildNavOverflowScript(context = resolveGenerationContext()) {
     extractAfterNavigateEvent(context, transformSync),
   );
 
+  // ---------------------------------------------------------------------
+  // NOTE ON COMMENTS IN THE TEMPLATE BELOW: every byte inside the returned
+  // literal ships inline in the <head> of EVERY page, so rationale lives out
+  // here (generator source, not shipped) and the template keeps only short
+  // pointers back to these paragraphs.
+  //
+  // navPathname / cross-origin (zudolab/zudo-doc#3950)
+  // -------------------------------------------------
+  // Keeping only `.pathname` collapses an external `headerNav` entry like
+  // "https://other.example/" to "/", which then exact-matches this site's own
+  // root route and steals the highlight from whatever SSR marked active. The
+  // SSR matcher (nav-active.ts) compares the raw configured `path` string, so
+  // "https://other.example/" never equals or prefixes "/". Returning "" for a
+  // cross-origin href restores that agreement instead of re-deriving it.
+  //
+  // The "" sentinel, and why it cannot win
+  // --------------------------------------
+  // "" is produced by navPathname for a cross-origin or unparseable href.
+  // pathMatchesNavPath LETS IT PASS for every absolute current path — with
+  // navPath "" the prefix test degenerates to `currentPath.startsWith("/")`.
+  // What makes it safe is computeActiveNavPath's length-descending sort: ""
+  // is the strict minimum, so it is only ever picked when nothing else
+  // matched, and all three paint sites then guard on `activePath !== ""` and
+  // paint nothing. Those guards are load-bearing — do not drop them as
+  // "redundant". A same-origin href can never yield "" (trimSlashes floors at
+  // "/"), so "" is exclusively the sentinel.
+  // ---------------------------------------------------------------------
   return /* javascript */ `(function () {
   var cleanupNavOverflow = null;
 
@@ -407,9 +434,13 @@ export function buildNavOverflowScript(context = resolveGenerationContext()) {
     return p || "/";
   }
 
+  // "" for cross-origin: unmatchable sentinel, matching SSR (#3950).
   function navPathname(a) {
-    try { return trimSlashes(new URL(a.href, location.href).pathname); }
-    catch (e) { return ""; }
+    try {
+      var u = new URL(a.href, location.href);
+      if (u.origin !== location.origin) return "";
+      return trimSlashes(u.pathname);
+    } catch (e) { return ""; }
   }
 
   // Explicit current-route override, embedded from current-path/index.ts so
@@ -444,10 +475,10 @@ export function buildNavOverflowScript(context = resolveGenerationContext()) {
     // Build NavItemLike-shaped entries from the live DOM so the shared
     // computeActiveNavPath can do the deepest-match walk — the same call
     // shape the SSR header uses (matches computeActiveNavPath). A dropdown
-    // missing its own top-level anchor is skipped entirely (path "" would
-    // otherwise match every current path — pathMatchesNavPath treats "" as
-    // the root "/"), mirroring the parentLink guard used below for the same
-    // malformed-markup case.
+    // missing its own top-level anchor is skipped entirely, mirroring the
+    // parentLink guard used below for the same malformed-markup case.
+    // A "" path (cross-origin) is unmatchable ONLY because of the length sort
+    // plus the \`activePath !== ""\` guards below — keep both.
     var navItems = [];
     topItems.forEach(function (it) {
       var isDropdown = it.hasAttribute("data-nav-item-dropdown");
