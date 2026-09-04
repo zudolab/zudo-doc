@@ -298,15 +298,38 @@ function matchingBrace(masked, open) {
   return -1;
 }
 
+function spreadZudoDocObjectRanges(masked, depths) {
+  const ranges = [];
+  const spreadPattern = /\.\.\.\s*zudoDoc\s*\(\s*/g;
+  let match;
+  while ((match = spreadPattern.exec(masked)) !== null) {
+    const open = match.index + match[0].length;
+    if (masked[open] !== "{") continue;
+    const close = matchingBrace(masked, open);
+    if (close < 0) continue;
+    ranges.push({ open, close, propertyDepth: depths[open] + 1 });
+  }
+  return ranges;
+}
+
+function isTopLevelSetting(index, depths, spreadRanges) {
+  if (depths[index] === 1) return true;
+  return spreadRanges.some(
+    ({ open, close, propertyDepth }) =>
+      index > open && index < close && depths[index] === propertyDepth,
+  );
+}
+
 function topLevelObject(source, property) {
   const masked = maskSource(source);
   const depths = braceDepths(masked);
+  const spreadRanges = spreadZudoDocObjectRanges(masked, depths);
   const propertyPattern = new RegExp(`\\b${property}\\s*:`, "g");
   let match;
   while ((match = propertyPattern.exec(masked)) !== null) {
-    // Direct fields of the settings/zudoDoc object are at depth 1. Nested
-    // `versions[].locales` and nav-label locales are intentionally ignored.
-    if (depths[match.index] !== 1) continue;
+    // Direct settings objects use depth 1; spread zudoDoc settings use their
+    // explicitly identified object depth. Nested locale maps stay ignored.
+    if (!isTopLevelSetting(match.index, depths, spreadRanges)) continue;
     let open = match.index + match[0].length;
     while (/\s/.test(masked[open] ?? "")) open += 1;
     if (masked[open] !== "{") continue;
@@ -320,10 +343,11 @@ function topLevelObject(source, property) {
 function topLevelString(source, property) {
   const masked = maskSource(source);
   const depths = braceDepths(masked);
+  const spreadRanges = spreadZudoDocObjectRanges(masked, depths);
   const propertyPattern = new RegExp(`\\b${property}\\s*:`, "g");
   let match;
   while ((match = propertyPattern.exec(masked)) !== null) {
-    if (depths[match.index] !== 1) continue;
+    if (!isTopLevelSetting(match.index, depths, spreadRanges)) continue;
     const tail = source.slice(match.index + match[0].length).trimStart();
     const quote = tail[0];
     if (quote !== "\"" && quote !== "'") continue;
@@ -407,6 +431,12 @@ for (const { source } of sources) {
   if (localeObject === null) localeObject = topLevelObject(source, "locales");
 }
 
+if (defaultLocale === null && docsDir === null && localeObject === null) {
+  console.error(
+    "no explicit locale settings found in zfb.config.ts; assuming defaults (en, src/content/docs, no additional locales)",
+  );
+}
+
 console.log(`default\t${defaultLocale ?? "en"}`);
 console.log(`docs\t${docsDir ?? "src/content/docs"}`);
 if (localeObject) {
@@ -470,12 +500,15 @@ physical_dir() {
   fi
 }
 
-# Helper: replace a symlink or file at the given path
+# Helper: replace a symlink at the given path; refuse to remove real files or directories
 ensure_symlink() {
   local link_path="$1"
   local target="$2"
-  if [ -L "$link_path" ] || [ -e "$link_path" ]; then
-    rm -rf "$link_path"
+  if [ -L "$link_path" ]; then
+    rm "$link_path"
+  elif [ -e "$link_path" ]; then
+    echo "Error: '$link_path' already exists and is not a symlink. Move or remove it and rerun setup:doc-skill." >&2
+    exit 1
   fi
   ln -s "$target" "$link_path"
 }

@@ -100,7 +100,13 @@ export default defineConfig(
 );
 ```
 
-各エントリは（`siteUrl` から組み立てられた）絶対的な `<loc>` と `<lastmod>` の日付を持ち、安定した出力になるようソートされます。このルートはパッケージ所有のエントリポイント `@takazudo/zudo-doc/routes/sitemap.xml` によって配信されます。`siteUrl` と `sitemap` の両方が設定され（かつサイトが noindex になっていない）場合、生成される `robots.txt` は `Sitemap:` 行でサイトマップを自動的に通知するため、追加の設定なしにクローラーがそれを発見できます。[`sitemap` リファレンス](./configuration.mdx#アイデンティティと-url-sitemap)を参照してください。
+各エントリは（`siteUrl` から組み立てられた）絶対的な `<loc>` と `<lastmod>` の日付を持ち、安定した出力になるようソートされます。このルートはパッケージ所有のエントリポイント `@takazudo/zudo-doc/routes/sitemap.xml` によって配信されます。`siteUrl` と `sitemap` の両方が設定され（かつサイトが noindex になっていない）場合、生成される `robots.txt` には設定した `base` を含む `Sitemap:` 行が自動的に追加されます。たとえば `base: "/doc"` と `siteUrl: "https://example.com"` の場合は `Sitemap: https://example.com/doc/sitemap.xml` となります。[`sitemap` リファレンス](./configuration.mdx#アイデンティティと-url-sitemap)を参照してください。
+
+### base 配下でのデプロイとオリジンルートの `robots.txt`
+
+標準的なクローラーはオリジンルートからのみ `robots.txt` を取得します。base パス配下で配信するサイトでは、生成される `/<base>/robots.txt` は取得されないため、そこにある `Sitemap:` 行は機能しません。運用者はオリジンルートの `robots.txt` からサイトマップを通知する必要がありますが、zudo-doc はそのファイルを生成しません。1 つのオリジンで複数の base 配下 zudo-doc インスタンスを運用する場合は、それぞれのサイトマップ参照を自分でオリジンルートのファイルに統合してください。
+
+base がルートで配信されるデプロイでは、生成された行は引き続き意味があります。その構成に対して正しいだけでなく、オリジンルートのファイルにコピーする正確な URL も示してくれます。
 
 ### `sitemap` が無効なとき、サイトマップは一切出力されない
 

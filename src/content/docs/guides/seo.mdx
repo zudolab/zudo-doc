@@ -100,7 +100,13 @@ export default defineConfig(
 );
 ```
 
-Each entry carries an absolute `<loc>` (built from `siteUrl`) and a `<lastmod>` date, sorted for stable output. The route is served by the package-owned entrypoint `@takazudo/zudo-doc/routes/sitemap.xml`. When `siteUrl` and `sitemap` are both set (and the site is not marked noindex), the generated `robots.txt` automatically advertises the sitemap with a `Sitemap:` line, so crawlers discover it without extra wiring. See the [`sitemap` reference](./configuration.mdx#identity-and-urls-sitemap).
+Each entry carries an absolute `<loc>` (built from `siteUrl`) and a `<lastmod>` date, sorted for stable output. The route is served by the package-owned entrypoint `@takazudo/zudo-doc/routes/sitemap.xml`. When `siteUrl` and `sitemap` are both set (and the site is not marked noindex), the generated `robots.txt` automatically includes a `Sitemap:` line with the configured `base`. For example, with `base: "/doc"` and `siteUrl: "https://example.com"`, it reads `Sitemap: https://example.com/doc/sitemap.xml`. See the [`sitemap` reference](./configuration.mdx#identity-and-urls-sitemap).
+
+### Based deployments and origin-root `robots.txt`
+
+Standard crawlers fetch `robots.txt` only from the origin root. On a site served under a base path, the generated `/<base>/robots.txt` is never fetched, so its `Sitemap:` line is inert. The operator must advertise the sitemap from the origin-root `robots.txt`; zudo-doc does not generate that file. If several based zudo-doc instances share one origin, merge their sitemap references into that origin-root file yourself.
+
+The generated line still matters when the base is served at the root: it is correct for that deployment shape and gives you the exact URL to copy into the origin-root file.
 
 ### With `sitemap` off, there is no sitemap at all
 

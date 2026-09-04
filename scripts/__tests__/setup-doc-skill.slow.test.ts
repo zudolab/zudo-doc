@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { execSync } from "node:child_process";
+import { execSync, spawnSync } from "node:child_process";
 import {
   mkdtempSync,
   mkdirSync,
@@ -9,6 +9,7 @@ import {
   existsSync,
   rmSync,
   realpathSync,
+  symlinkSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -340,6 +341,136 @@ describe("setup-doc-skill.sh", () => {
   });
 });
 
+describe("generated-skill symlink guard (#3961)", () => {
+  const skillName = "guard-fixture-wisdom";
+  let fixtureRoot: string;
+  let fixtureHome: string;
+  let projectDir: string;
+
+  beforeEach(() => {
+    fixtureRoot = mkdtempSync(join(tmpdir(), "zudo-doc-symlink-guard-fixture-"));
+    fixtureHome = mkdtempSync(join(tmpdir(), "zudo-doc-symlink-guard-home-"));
+    projectDir = join(fixtureRoot, "doc");
+
+    execSync("git init -q", { cwd: fixtureRoot });
+    mkdirSync(join(projectDir, "scripts"), { recursive: true });
+    mkdirSync(join(projectDir, "src", "content", "docs", "getting-started"), {
+      recursive: true,
+    });
+    writeFileSync(
+      join(projectDir, "src", "content", "docs", "getting-started", "index.mdx"),
+      "---\ntitle: Test\n---\n",
+    );
+    cpSync(SCRIPT_PATH, join(projectDir, "scripts", "setup-doc-skill.sh"));
+    writeFileSync(
+      join(projectDir, "package.json"),
+      JSON.stringify({ name: "guard-fixture", scripts: {} }),
+    );
+  });
+
+  afterEach(() => {
+    if (existsSync(fixtureRoot)) rmSync(fixtureRoot, { recursive: true, force: true });
+    if (existsSync(fixtureHome)) rmSync(fixtureHome, { recursive: true, force: true });
+  });
+
+  function generatedSkillPath(): string {
+    return join(projectDir, ".claude", "skills", skillName);
+  }
+
+  function globalSkillPath(): string {
+    return join(fixtureHome, ".claude", "skills", skillName);
+  }
+
+  function runFixtureScript(): {
+    status: number | null;
+    stdout: string;
+    stderr: string;
+  } {
+    const result = spawnSync(
+      "bash",
+      [join(projectDir, "scripts", "setup-doc-skill.sh"), "--target", "claude", skillName],
+      {
+        cwd: projectDir,
+        encoding: "utf-8",
+        timeout: 30_000,
+        env: scriptEnv(fixtureHome),
+      },
+    );
+    return {
+      status: result.status,
+      stdout: result.stdout?.toString() ?? "",
+      stderr: result.stderr?.toString() ?? "",
+    };
+  }
+
+  it("replaces an existing symlink at the global generated-skill path", () => {
+    const oldTarget = join(fixtureRoot, "old-skill-target");
+    mkdirSync(oldTarget, { recursive: true });
+    mkdirSync(join(fixtureHome, ".claude", "skills"), { recursive: true });
+    symlinkSync(oldTarget, globalSkillPath());
+
+    const result = runFixtureScript();
+
+    expect(result.status).toBe(0);
+    expect(realpathSync(globalSkillPath())).toBe(realpathSync(generatedSkillPath()));
+    expect(realpathSync(globalSkillPath())).not.toBe(realpathSync(oldTarget));
+  });
+
+  it("creates the global symlink when nothing exists at the target", () => {
+    const result = runFixtureScript();
+
+    expect(result.status).toBe(0);
+    expect(realpathSync(globalSkillPath())).toBe(realpathSync(generatedSkillPath()));
+  });
+
+  it("refuses a real directory at the global generated-skill path", () => {
+    const globalPath = globalSkillPath();
+    const sentinelPath = join(globalPath, "sentinel.txt");
+    mkdirSync(globalPath, { recursive: true });
+    writeFileSync(sentinelPath, "do-not-delete-me");
+
+    const result = runFixtureScript();
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain(
+      `Error: '${globalPath}' already exists and is not a symlink.`,
+    );
+    expect(existsSync(sentinelPath)).toBe(true);
+    expect(readFileSync(sentinelPath, "utf-8")).toBe("do-not-delete-me");
+  });
+
+  it("refuses a real file at the global generated-skill path", () => {
+    const globalPath = globalSkillPath();
+    mkdirSync(join(fixtureHome, ".claude", "skills"), { recursive: true });
+    writeFileSync(globalPath, "do-not-delete-me");
+
+    const result = runFixtureScript();
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain(
+      `Error: '${globalPath}' already exists and is not a symlink.`,
+    );
+    expect(existsSync(globalPath)).toBe(true);
+    expect(readFileSync(globalPath, "utf-8")).toBe("do-not-delete-me");
+  });
+
+  it("refuses a real directory at the project-local docs path", () => {
+    const docsPath = join(generatedSkillPath(), "docs");
+    const sentinelPath = join(docsPath, "sentinel.txt");
+    mkdirSync(docsPath, { recursive: true });
+    writeFileSync(sentinelPath, "do-not-delete-me");
+
+    const result = runFixtureScript();
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain(
+      `Error: '${docsPath}' already exists and is not a symlink.`,
+    );
+    expect(existsSync(sentinelPath)).toBe(true);
+    expect(readFileSync(sentinelPath, "utf-8")).toBe("do-not-delete-me");
+  });
+});
+
 describe("setup-doc-skill.sh configured locale map (#3804)", () => {
   let fixtureRoot: string;
   let fixtureHome: string;
@@ -361,6 +492,7 @@ describe("setup-doc-skill.sh configured locale map (#3804)", () => {
       "src/content/docs-v1/getting-started",
       "src/content/docs-v1-ja/getting-started",
       "src/content/docs-v1-de/getting-started",
+      "src/content/docs-nav-fr/getting-started",
     ]) {
       mkdirSync(join(projectDir, dir), { recursive: true });
     }
@@ -386,6 +518,11 @@ export default defineConfig(zudoDoc({
     locales: {
       ja: { dir: "src/content/docs-v1-ja" },
       de: { dir: "src/content/docs-v1-de" },
+    },
+  }],
+  headerNav: [{
+    label: {
+      locales: { fr: { dir: "src/content/docs-nav-fr" } },
     },
   }],
 }));
@@ -428,11 +565,128 @@ export default defineConfig(zudoDoc({
     expect(existsSync(join(skillDir, "docs-v1"))).toBe(false);
     expect(existsSync(join(skillDir, "docs-v1-ja"))).toBe(false);
     expect(existsSync(join(skillDir, "docs-v1-de"))).toBe(false);
+    expect(existsSync(join(skillDir, "docs-nav-fr"))).toBe(false);
     expect(output).not.toContain("docs-v1-ja symlink");
     expect(skillMd).toContain("`src/content/docs-ja/`");
     expect(skillMd).toContain("`src/content/docs-de/`");
     expect(skillMd).toContain("/de/docs/...");
     expect(skillMd).toContain("English placeholder prose pending translation");
+  });
+
+  it("reads locale settings directly inside a spread zudoDoc object", () => {
+    writeFileSync(
+      join(projectDir, "zfb.config.ts"),
+      `import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig({
+  ...zudoDoc({
+    siteName: "example",
+    defaultLocale: "en",
+    docsDir: "src/content/docs",
+    locales: { ja: { label: "日本語", dir: "src/content/docs-ja" } },
+  }),
+  publicDir: "src/assets",
+});
+`,
+    );
+
+    execSync(
+      `bash "${join(projectDir, "scripts/setup-doc-skill.sh")}" --target claude fixture-wisdom`,
+      {
+        cwd: projectDir,
+        encoding: "utf-8",
+        timeout: 30_000,
+        env: scriptEnv(fixtureHome),
+      },
+    );
+    const skillDir = join(projectDir, ".claude/skills/fixture-wisdom");
+    const skillMd = readFileSync(join(skillDir, "SKILL.md"), "utf-8");
+
+    expect(realpathSync(join(skillDir, "docs"))).toBe(
+      realpathSync(join(projectDir, "src/content/docs")),
+    );
+    expect(realpathSync(join(skillDir, "docs-ja"))).toBe(
+      realpathSync(join(projectDir, "src/content/docs-ja")),
+    );
+    expect(skillMd).toContain("- `en` (default): `src/content/docs/`");
+    expect(skillMd).toContain("- `ja`: `src/content/docs-ja/`");
+  });
+
+  it("ignores locale-like keys in an unrelated depth-2 object before the spread", () => {
+    writeFileSync(
+      join(projectDir, "zfb.config.ts"),
+      `import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig({
+  unrelated: {
+    defaultLocale: "de",
+    docsDir: "src/content/docs-de",
+    locales: { de: { dir: "src/content/docs-de" } },
+  },
+  ...zudoDoc({
+    defaultLocale: "en",
+    docsDir: "src/content/docs",
+    locales: { ja: { label: "日本語", dir: "src/content/docs-ja" } },
+  }),
+});
+`,
+    );
+
+    execSync(
+      `bash "${join(projectDir, "scripts/setup-doc-skill.sh")}" --target claude fixture-wisdom`,
+      {
+        cwd: projectDir,
+        encoding: "utf-8",
+        timeout: 30_000,
+        env: scriptEnv(fixtureHome),
+      },
+    );
+    const skillDir = join(projectDir, ".claude/skills/fixture-wisdom");
+    const skillMd = readFileSync(join(skillDir, "SKILL.md"), "utf-8");
+
+    expect(skillMd).toContain("- `en` (default): `src/content/docs/`");
+    expect(skillMd).toContain("- `ja`: `src/content/docs-ja/`");
+    expect(skillMd).not.toContain("- `de`");
+    expect(existsSync(join(skillDir, "docs-de"))).toBe(false);
+  });
+
+  it("reports the exact defaults observation when locale settings are omitted", () => {
+    writeFileSync(
+      join(projectDir, "zfb.config.ts"),
+      `import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(zudoDoc({ siteName: "example" }));
+`,
+    );
+
+    const result = spawnSync(
+      "bash",
+      [
+        join(projectDir, "scripts/setup-doc-skill.sh"),
+        "--target",
+        "claude",
+        "fixture-wisdom",
+      ],
+      {
+        cwd: projectDir,
+        encoding: "utf-8",
+        timeout: 30_000,
+        env: scriptEnv(fixtureHome),
+      },
+    );
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe(
+      "no explicit locale settings found in zfb.config.ts; assuming defaults (en, src/content/docs, no additional locales)\n",
+    );
+    const skillMd = readFileSync(
+      join(projectDir, ".claude/skills/fixture-wisdom/SKILL.md"),
+      "utf-8",
+    );
+    expect(skillMd).toContain("- `en` (default): `src/content/docs/`");
   });
 });
 

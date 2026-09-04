@@ -23,6 +23,8 @@ export interface RobotsSettings {
   noindex: boolean;
   /** Base URL of the site, used to construct the Sitemap line. */
   siteUrl?: string;
+  /** Site base path, matching Settings["base"], used to construct the Sitemap line. */
+  base?: string;
   /** When true (and siteUrl is set), append a Sitemap: line. */
   sitemap?: boolean;
 }
@@ -41,10 +43,11 @@ export function renderRobots(settings: RobotsSettings): string {
   }
 
   const siteUrlBase = (settings.siteUrl ?? "").replace(/\/$/, "");
+  const normalizedBase = (settings.base ?? "").replace(/\/+$/, "");
   const hasSitemapLine = siteUrlBase !== "" && settings.sitemap;
 
   const sitemapLine = hasSitemapLine
-    ? `Sitemap: ${siteUrlBase}/sitemap.xml\n`
+    ? `Sitemap: ${siteUrlBase}${normalizedBase}/sitemap.xml\n`
     : "";
 
   return `User-agent: *\nAllow: /\n${sitemapLine}`;
