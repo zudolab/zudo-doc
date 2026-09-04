@@ -913,9 +913,14 @@ function generatePackageJson(
     // build after upgrading re-renders cached content under the new grammar
     // set. Token classes stay on the same semantic-role vocabulary, so themes
     // need no new rules and a fresh scaffold needs no migration.
-    "@takazudo/zfb": "2.15.0",
-    "@takazudo/zfb-runtime": "2.15.0",
-    "@takazudo/zfb-md-wasm": "2.15.0",
+    // 2.15.1: documentation-only upstream release — the md-wasm README gained a
+    // note about the artifact-size repair sequence's compression tolerance. The
+    // four shipped wasm binaries are byte-size identical to 2.15.0 (rebuild
+    // noise only), and no public API, export, config default, or engine
+    // requirement moves, so a fresh scaffold needs no migration.
+    "@takazudo/zfb": "2.15.1",
+    "@takazudo/zfb-runtime": "2.15.1",
+    "@takazudo/zfb-md-wasm": "2.15.1",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
