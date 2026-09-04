@@ -492,6 +492,7 @@ describe("setup-doc-skill.sh configured locale map (#3804)", () => {
       "src/content/docs-v1/getting-started",
       "src/content/docs-v1-ja/getting-started",
       "src/content/docs-v1-de/getting-started",
+      "src/content/docs-nav-fr/getting-started",
     ]) {
       mkdirSync(join(projectDir, dir), { recursive: true });
     }
@@ -517,6 +518,11 @@ export default defineConfig(zudoDoc({
     locales: {
       ja: { dir: "src/content/docs-v1-ja" },
       de: { dir: "src/content/docs-v1-de" },
+    },
+  }],
+  headerNav: [{
+    label: {
+      locales: { fr: { dir: "src/content/docs-nav-fr" } },
     },
   }],
 }));
@@ -559,11 +565,128 @@ export default defineConfig(zudoDoc({
     expect(existsSync(join(skillDir, "docs-v1"))).toBe(false);
     expect(existsSync(join(skillDir, "docs-v1-ja"))).toBe(false);
     expect(existsSync(join(skillDir, "docs-v1-de"))).toBe(false);
+    expect(existsSync(join(skillDir, "docs-nav-fr"))).toBe(false);
     expect(output).not.toContain("docs-v1-ja symlink");
     expect(skillMd).toContain("`src/content/docs-ja/`");
     expect(skillMd).toContain("`src/content/docs-de/`");
     expect(skillMd).toContain("/de/docs/...");
     expect(skillMd).toContain("English placeholder prose pending translation");
+  });
+
+  it("reads locale settings directly inside a spread zudoDoc object", () => {
+    writeFileSync(
+      join(projectDir, "zfb.config.ts"),
+      `import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig({
+  ...zudoDoc({
+    siteName: "example",
+    defaultLocale: "en",
+    docsDir: "src/content/docs",
+    locales: { ja: { label: "日本語", dir: "src/content/docs-ja" } },
+  }),
+  publicDir: "src/assets",
+});
+`,
+    );
+
+    execSync(
+      `bash "${join(projectDir, "scripts/setup-doc-skill.sh")}" --target claude fixture-wisdom`,
+      {
+        cwd: projectDir,
+        encoding: "utf-8",
+        timeout: 30_000,
+        env: scriptEnv(fixtureHome),
+      },
+    );
+    const skillDir = join(projectDir, ".claude/skills/fixture-wisdom");
+    const skillMd = readFileSync(join(skillDir, "SKILL.md"), "utf-8");
+
+    expect(realpathSync(join(skillDir, "docs"))).toBe(
+      realpathSync(join(projectDir, "src/content/docs")),
+    );
+    expect(realpathSync(join(skillDir, "docs-ja"))).toBe(
+      realpathSync(join(projectDir, "src/content/docs-ja")),
+    );
+    expect(skillMd).toContain("- `en` (default): `src/content/docs/`");
+    expect(skillMd).toContain("- `ja`: `src/content/docs-ja/`");
+  });
+
+  it("ignores locale-like keys in an unrelated depth-2 object before the spread", () => {
+    writeFileSync(
+      join(projectDir, "zfb.config.ts"),
+      `import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig({
+  unrelated: {
+    defaultLocale: "de",
+    docsDir: "src/content/docs-de",
+    locales: { de: { dir: "src/content/docs-de" } },
+  },
+  ...zudoDoc({
+    defaultLocale: "en",
+    docsDir: "src/content/docs",
+    locales: { ja: { label: "日本語", dir: "src/content/docs-ja" } },
+  }),
+});
+`,
+    );
+
+    execSync(
+      `bash "${join(projectDir, "scripts/setup-doc-skill.sh")}" --target claude fixture-wisdom`,
+      {
+        cwd: projectDir,
+        encoding: "utf-8",
+        timeout: 30_000,
+        env: scriptEnv(fixtureHome),
+      },
+    );
+    const skillDir = join(projectDir, ".claude/skills/fixture-wisdom");
+    const skillMd = readFileSync(join(skillDir, "SKILL.md"), "utf-8");
+
+    expect(skillMd).toContain("- `en` (default): `src/content/docs/`");
+    expect(skillMd).toContain("- `ja`: `src/content/docs-ja/`");
+    expect(skillMd).not.toContain("- `de`");
+    expect(existsSync(join(skillDir, "docs-de"))).toBe(false);
+  });
+
+  it("reports the exact defaults observation when locale settings are omitted", () => {
+    writeFileSync(
+      join(projectDir, "zfb.config.ts"),
+      `import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(zudoDoc({ siteName: "example" }));
+`,
+    );
+
+    const result = spawnSync(
+      "bash",
+      [
+        join(projectDir, "scripts/setup-doc-skill.sh"),
+        "--target",
+        "claude",
+        "fixture-wisdom",
+      ],
+      {
+        cwd: projectDir,
+        encoding: "utf-8",
+        timeout: 30_000,
+        env: scriptEnv(fixtureHome),
+      },
+    );
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe(
+      "no explicit locale settings found in zfb.config.ts; assuming defaults (en, src/content/docs, no additional locales)\n",
+    );
+    const skillMd = readFileSync(
+      join(projectDir, ".claude/skills/fixture-wisdom/SKILL.md"),
+      "utf-8",
+    );
+    expect(skillMd).toContain("- `en` (default): `src/content/docs/`");
   });
 });
 
