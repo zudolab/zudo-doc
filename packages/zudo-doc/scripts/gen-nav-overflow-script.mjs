@@ -407,9 +407,21 @@ export function buildNavOverflowScript(context = resolveGenerationContext()) {
     return p || "/";
   }
 
+  // Cross-origin nav entries are never matchable (zudolab/zudo-doc#3950).
+  // Keeping only \`.pathname\` collapses an external \`headerNav\` entry like
+  // "https://other.example/" to "/", which then exact-matches this site's own
+  // root route and steals the highlight from whatever SSR marked active. The
+  // SSR matcher (nav-active.ts) compares the raw configured \`path\` string, so
+  // "https://other.example/" never equals or prefixes "/" — returning "" here
+  // restores that agreement instead of re-deriving it. "" is this script's
+  // established unmatchable sentinel; see the navItems comment in
+  // applyActiveNav for why it can never win the match.
   function navPathname(a) {
-    try { return trimSlashes(new URL(a.href, location.href).pathname); }
-    catch (e) { return ""; }
+    try {
+      var u = new URL(a.href, location.href);
+      if (u.origin !== location.origin) return "";
+      return trimSlashes(u.pathname);
+    } catch (e) { return ""; }
   }
 
   // Explicit current-route override, embedded from current-path/index.ts so
@@ -444,10 +456,16 @@ export function buildNavOverflowScript(context = resolveGenerationContext()) {
     // Build NavItemLike-shaped entries from the live DOM so the shared
     // computeActiveNavPath can do the deepest-match walk — the same call
     // shape the SSR header uses (matches computeActiveNavPath). A dropdown
-    // missing its own top-level anchor is skipped entirely (path "" would
-    // otherwise match every current path — pathMatchesNavPath treats "" as
-    // the root "/"), mirroring the parentLink guard used below for the same
-    // malformed-markup case.
+    // missing its own top-level anchor is skipped entirely, mirroring the
+    // parentLink guard used below for the same malformed-markup case.
+    //
+    // "" is the unmatchable sentinel — produced by navPathname for a
+    // cross-origin or unparseable href. pathMatchesNavPath does let "" pass
+    // (it treats "" as the root "/"), but computeActiveNavPath sorts the
+    // survivors by length descending, and "" is the strict minimum: it can
+    // only be picked when nothing else matched, and every consumer below
+    // then guards on \`activePath !== ""\` and paints nothing. A same-origin
+    // href can never yield "" — trimSlashes floors at "/".
     var navItems = [];
     topItems.forEach(function (it) {
       var isDropdown = it.hasAttribute("data-nav-item-dropdown");

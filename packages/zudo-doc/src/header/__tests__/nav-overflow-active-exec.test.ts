@@ -105,6 +105,23 @@ function buildNestedChangelogNav(): HTMLElement {
   return nav;
 }
 
+/**
+ * A nav whose last entry is an absolute URL to ANOTHER origin's root — the
+ * zudolab/zudo-doc#3950 repro shape. Reading only `.pathname` would collapse
+ * it to "/" and let it steal the highlight on this site's own root route.
+ */
+function buildCrossOriginNav(): HTMLElement {
+  const nav = document.createElement("nav");
+  nav.setAttribute("data-header-nav", "");
+  nav.innerHTML = `
+    <a data-nav-item href="/docs/section">Section</a>
+    <a data-nav-item href="/docs/section/sub-page">Sub page</a>
+    <a data-nav-item href="https://example-mock.workers.dev/">Mock</a>
+  `;
+  document.body.appendChild(nav);
+  return nav;
+}
+
 interface OverflowControls {
   container: HTMLElement;
   menu: HTMLUListElement;
@@ -257,6 +274,83 @@ describe("NAV_OVERFLOW_SCRIPT — executed in jsdom (applyActiveNav)", () => {
     new Function(NAV_OVERFLOW_SCRIPT)();
 
     expect(nav.querySelector('a[aria-current="page"]')).toBeNull();
+  });
+
+  it("never activates a cross-origin nav link on this site's root route", () => {
+    setLocation("/");
+    const nav = buildCrossOriginNav();
+
+    new Function(NAV_OVERFLOW_SCRIPT)();
+
+    expect(
+      nav.querySelector('a[href="https://example-mock.workers.dev/"]')?.getAttribute("aria-current"),
+    ).toBeNull();
+    expect(nav.querySelector('a[aria-current="page"]')).toBeNull();
+  });
+
+  it("never lets a cross-origin nav link outrank a same-origin match", () => {
+    setLocation("/docs/section/sub-page");
+    const nav = buildCrossOriginNav();
+
+    new Function(NAV_OVERFLOW_SCRIPT)();
+
+    expect(
+      nav.querySelector('a[href="/docs/section/sub-page"]')?.getAttribute("aria-current"),
+    ).toBe("page");
+    expect(nav.querySelectorAll('a[aria-current="page"]')).toHaveLength(1);
+  });
+
+  it("ignores a cross-origin nav link whose pathname mirrors a real route", () => {
+    setLocation("/docs/section");
+    const nav = document.createElement("nav");
+    nav.setAttribute("data-header-nav", "");
+    nav.innerHTML = `
+      <a data-nav-item href="/blog/">Blog</a>
+      <a data-nav-item href="https://example-mock.workers.dev/docs/section">Mock</a>
+    `;
+    document.body.appendChild(nav);
+
+    new Function(NAV_OVERFLOW_SCRIPT)();
+
+    expect(nav.querySelector('a[aria-current="page"]')).toBeNull();
+  });
+
+  it("keeps a cross-origin dropdown child out of the match set", () => {
+    setLocation("/");
+    const nav = document.createElement("nav");
+    nav.setAttribute("data-header-nav", "");
+    nav.innerHTML = `
+      <div data-nav-item data-nav-item-dropdown>
+        <a href="/learn/">Learn</a>
+        <div>
+          <a href="/learn/advanced/">Advanced</a>
+          <a href="https://example-mock.workers.dev/">Mock</a>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(nav);
+
+    new Function(NAV_OVERFLOW_SCRIPT)();
+
+    expect(nav.querySelector('a[data-active=""]')).toBeNull();
+    expect(nav.querySelector('a[aria-current="page"]')).toBeNull();
+  });
+
+  it("still matches a same-origin absolute href by its pathname", () => {
+    setLocation("/docs/section/deep");
+    const nav = document.createElement("nav");
+    nav.setAttribute("data-header-nav", "");
+    nav.innerHTML = `
+      <a data-nav-item href="http://localhost/docs/section">Section</a>
+      <a data-nav-item href="/blog/">Blog</a>
+    `;
+    document.body.appendChild(nav);
+
+    new Function(NAV_OVERFLOW_SCRIPT)();
+
+    expect(
+      nav.querySelector('a[href="http://localhost/docs/section"]')?.getAttribute("aria-current"),
+    ).toBe("page");
   });
 
   it("transfers a collapsed plain current item to the toggle and visible clone", () => {
