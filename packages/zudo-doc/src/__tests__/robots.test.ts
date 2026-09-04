@@ -42,6 +42,64 @@ describe("renderRobots", () => {
     );
   });
 
+  it("includes the configured base path in the Sitemap URL", () => {
+    const out = renderRobots({
+      noindex: false,
+      siteUrl: "https://example.com",
+      base: "/doc",
+      sitemap: true,
+    });
+    expect(out).toContain(
+      "Sitemap: https://example.com/doc/sitemap.xml\n",
+    );
+  });
+
+  it("normalizes a trailing slash from the configured base path", () => {
+    const out = renderRobots({
+      noindex: false,
+      siteUrl: "https://example.com",
+      base: "/doc/",
+      sitemap: true,
+    });
+    expect(out).toContain(
+      "Sitemap: https://example.com/doc/sitemap.xml\n",
+    );
+  });
+
+  it("does not add a slash for a root base path", () => {
+    const out = renderRobots({
+      noindex: false,
+      siteUrl: "https://example.com",
+      base: "/",
+      sitemap: true,
+    });
+    expect(out).toContain(
+      "Sitemap: https://example.com/sitemap.xml\n",
+    );
+  });
+
+  it("keeps the existing Sitemap URL when base is absent", () => {
+    const out = renderRobots({
+      noindex: false,
+      siteUrl: "https://example.com",
+      sitemap: true,
+    });
+    expect(out).toBe(
+      "User-agent: *\nAllow: /\nSitemap: https://example.com/sitemap.xml\n",
+    );
+  });
+
+  it("noindex still omits Sitemap when a base path is set", () => {
+    const out = renderRobots({
+      noindex: true,
+      siteUrl: "https://example.com",
+      base: "/doc",
+      sitemap: true,
+    });
+    expect(out).toBe("User-agent: *\nDisallow: /\n");
+    expect(out).not.toContain("Sitemap:");
+  });
+
   it("strips a trailing slash from siteUrl before building the Sitemap URL", () => {
     const out = renderRobots({
       noindex: false,
