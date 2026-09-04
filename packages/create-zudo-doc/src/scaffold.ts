@@ -58,7 +58,7 @@ export function deriveDocSkillName(projectName: string): string {
  *
  * Bumped in lockstep by scripts/release-create-zudo-doc.sh.
  */
-export const ZUDO_DOC_PIN = "^5.17.1";
+export const ZUDO_DOC_PIN = "^5.17.2";
 
 /**
  * Files in `templates/base/**` that must not be copied by the unconditional
@@ -1053,7 +1053,7 @@ function generatePackageJson(
     // `/exclude` at module scope from the always-bundled chrome graph; #3110
     // moved compileExclude into @takazudo/zudo-doc, so projects with both
     // docHistory and assetViewer off no longer need the package at all.
-    deps["@takazudo/zudo-doc-history-server"] = "^5.17.1";
+    deps["@takazudo/zudo-doc-history-server"] = "^5.17.2";
     // tsx is no longer needed here: the relocated package plugin imports the
     // runner directly (no `tsx -e` spawn) since the package ships compiled
     // dist/ — package-first migration #2321 (#2337).

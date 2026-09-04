@@ -4,6 +4,13 @@ All notable changes to `create-zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.17.2] - 2026-09-05
+
+### Bug Fixes
+
+- Prevent generated documentation-skill setup scripts from overwriting real files or directories when creating symlinks (`559e7a1`)
+- Detect locale settings inside spread `zudoDoc(...)` configurations when generating documentation skills (`c1658c9`)
+
 ## [5.17.1] - 2026-09-04
 
 ### Other Changes
