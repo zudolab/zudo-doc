@@ -935,23 +935,26 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // attributes and the script; the two docs pages move by all three.
   //
   // Both changed markup sources are listed CAN-MOVE-HASHES entries for this
-  // gate. Net script size +429 bytes vs the previous baseline. The behaviour
+  // gate. Net script size +803 bytes vs the previous baseline. The behaviour
   // change is covered semantically by five DOM tests in
   // src/header/__tests__/nav-overflow-active-exec.test.ts, three of which were
-  // confirmed to fail with the category branch removed.
+  // confirmed to fail with the category branch removed, plus one covering the
+  // shipped DOM order (the script is inlined inside <header>, so the content
+  // band does not exist at its top-level run — hence the readyState guard and
+  // the DOMContentLoaded re-init).
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"60ec1e669c42665c5f54040754c3c3dfccd6979bdc507e55a5f797c02672f107"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"922220f8c51ec19407c70534d5e3220cbb7bfb4b72d2501e0c753f0bc3080513"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"8863ce0678ef6113eaa4043dabff4fde0f217d31a0535f2d3f54d32a8f899f81"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"0f3915671abba164fb8112a356064cdae489a7ef91a9256c05eef04efb3dceef"`);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"6a8616b8685f55d9c56bef09cb55280170d62ada463ce2591430023897ed5fe1"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"2b5ef72a59351e19b4e8177a7f2cbcb3a47f08e1747687bc357611f9e721763c"`);
   });
 });
 

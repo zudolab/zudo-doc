@@ -450,6 +450,20 @@ export function buildNavOverflowScript(context = resolveGenerationContext()) {
   // `isAnchorActive` below then mirrors SSR's precedence exactly. When the
   // page has no section (home, 404, tag, version), the attribute is absent
   // and the predicate collapses to the previous path-only behaviour.
+  //
+  // PARSE ORDER — why the first paint is deferred
+  // ---------------------------------------------
+  // This script is emitted INSIDE <header> (header.tsx), which the HTML
+  // parser reaches BEFORE `.zd-doc-content-band` further down the body. At
+  // the top-level `initNavOverflow()` call the band therefore does not exist
+  // yet, `document.querySelector("[data-zd-nav-section]")` returns null, and
+  // a repaint at that moment would fall back to path-only matching and CLEAR
+  // exactly the SSR category highlight this section exists to preserve.
+  // AFTER_NAVIGATE_EVENT does not fire on initial load, so nothing would put
+  // it back. SSR's paint is already correct for the page being parsed, so
+  // `initNavOverflow` skips `applyActiveNav` while `document.readyState ===
+  // "loading"` and re-inits once on DOMContentLoaded, when the band is in the
+  // DOM. Do not "simplify" either half away.
   // ---------------------------------------------------------------------
   return /* javascript */ `(function () {
   var cleanupNavOverflow = null;
@@ -584,7 +598,8 @@ export function buildNavOverflowScript(context = resolveGenerationContext()) {
 
     // Repaint the active highlight for the current URL before measuring /
     // cloning, so the overflow "···" menu mirrors the correct active state.
-    applyActiveNav();
+    // Skipped mid-parse: the content band is not in the DOM yet (#3953).
+    if (document.readyState !== "loading") applyActiveNav();
 
     var nav = document.querySelector("[data-header-nav]");
     var moreContainer = document.querySelector("[data-nav-more]");
@@ -788,6 +803,11 @@ export function buildNavOverflowScript(context = resolveGenerationContext()) {
   }
 
   initNavOverflow();
+  // First-paint re-init once the body is parsed, so applyActiveNav can read
+  // the content band's data-zd-nav-section (#3953).
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initNavOverflow, { once: true });
+  }
   document.addEventListener(${afterNavigateEventLiteral}, initNavOverflow);
 })();`;
 }

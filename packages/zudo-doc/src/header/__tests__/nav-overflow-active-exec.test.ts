@@ -22,6 +22,7 @@ let originalOffsetWidth: PropertyDescriptor | undefined;
 let originalClientWidth: PropertyDescriptor | undefined;
 let originalDocumentFonts: PropertyDescriptor | undefined;
 let originalResizeObserver: PropertyDescriptor | undefined;
+let originalReadyState: PropertyDescriptor | undefined;
 let resizeCallbacks: ResizeObserverCallback[] = [];
 
 beforeEach(() => {
@@ -29,6 +30,9 @@ beforeEach(() => {
   originalClientWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientWidth");
   originalDocumentFonts = Object.getOwnPropertyDescriptor(document, "fonts");
   originalResizeObserver = Object.getOwnPropertyDescriptor(globalThis, "ResizeObserver");
+  // `readyState` lives on Document.prototype, so there is normally no own
+  // descriptor here — the afterEach delete restores prototype behavior.
+  originalReadyState = Object.getOwnPropertyDescriptor(document, "readyState");
   resizeCallbacks = [];
 
   Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
@@ -239,6 +243,14 @@ describe("NAV_OVERFLOW_SCRIPT — executed in jsdom (applyActiveNav)", () => {
     } else {
       delete (globalThis as unknown as { ResizeObserver?: unknown }).ResizeObserver;
     }
+    // Always restore: a test that throws between the "loading" and "complete"
+    // overrides below would otherwise leave every later test running as
+    // "loading", where initNavOverflow skips applyActiveNav entirely.
+    if (originalReadyState) {
+      Object.defineProperty(document, "readyState", originalReadyState);
+    } else {
+      delete (document as unknown as { readyState?: unknown }).readyState;
+    }
   });
 
   it("marks the matching top-level item active from location.pathname", () => {
@@ -446,6 +458,27 @@ describe("NAV_OVERFLOW_SCRIPT — executed in jsdom (applyActiveNav)", () => {
     new Function(NAV_OVERFLOW_SCRIPT)();
 
     expect(nav.querySelector('a[href="/docs/other"]')?.getAttribute("aria-current")).toBe("page");
+    expect(nav.querySelectorAll('a[aria-current="page"]')).toHaveLength(1);
+  });
+
+  it("keeps the category highlight when the band is parsed after the header script", () => {
+    // The shipped DOM order: NAV_OVERFLOW_SCRIPT is inlined inside <header>,
+    // so at its top-level run `.zd-doc-content-band` (and its
+    // data-zd-nav-section) does not exist yet. Repainting there would fall
+    // back to path-only matching and clear SSR's category highlight, and
+    // AFTER_NAVIGATE_EVENT never fires on initial load to put it back.
+    setLocation("/");
+    Object.defineProperty(document, "readyState", { configurable: true, get: () => "loading" });
+    const nav = buildCategoryNav();
+
+    new Function(NAV_OVERFLOW_SCRIPT)();
+
+    // Parser reaches the content band only after the header script ran.
+    buildSectionBand("section");
+    Object.defineProperty(document, "readyState", { configurable: true, get: () => "complete" });
+    document.dispatchEvent(new Event("DOMContentLoaded"));
+
+    expect(nav.querySelector('a[href="/docs/section"]')?.getAttribute("aria-current")).toBe("page");
     expect(nav.querySelectorAll('a[aria-current="page"]')).toHaveLength(1);
   });
 
