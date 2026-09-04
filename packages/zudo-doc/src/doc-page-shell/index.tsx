@@ -358,6 +358,7 @@ export function createDocPageShell<S extends Settings = Settings>(
         hideSidebar={hideSidebar}
         hideToc={hideToc}
         contentWide={contentWide}
+        navSection={navSection}
         headings={headings}
         canonical={canonical}
         sidebarPersistKey={sidebarPersistKey}

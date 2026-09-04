@@ -926,19 +926,32 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // the generator, outside the emitted template, precisely so it does not
   // ship on every page). Hashes reproduced identically across three local
   // runs and matched CI's received values before the re-baseline.
+  // 2026-09-04 re-baseline (zudolab/zudo-doc#3953, reuse SSR's active-state
+  // decision): all three pages move because header.tsx now emits
+  // `data-nav-category` on every nav anchor, doc-layout.tsx emits
+  // `data-zd-nav-section` on the content band, and NAV_OVERFLOW_SCRIPT (inlined
+  // verbatim into every page) gained the `isAnchorActive` predicate that reads
+  // them. `/404.html` renders no content band, so it moves only by the nav
+  // attributes and the script; the two docs pages move by all three.
+  //
+  // Both changed markup sources are listed CAN-MOVE-HASHES entries for this
+  // gate. Net script size +429 bytes vs the previous baseline. The behaviour
+  // change is covered semantically by five DOM tests in
+  // src/header/__tests__/nav-overflow-active-exec.test.ts, three of which were
+  // confirmed to fail with the category branch removed.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"2265b0c9920a2461a2027aed2c1fe4768d15ce3e46354b481bb9e200d2e52c0d"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"60ec1e669c42665c5f54040754c3c3dfccd6979bdc507e55a5f797c02672f107"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"be5e2b926537b4365ee2cdf78806616983f03cb0b1f25090c18394f53a09a742"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"8863ce0678ef6113eaa4043dabff4fde0f217d31a0535f2d3f54d32a8f899f81"`);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"a895021fec04124711ebe5dcc7e0915b6f27b213a28706087f8110ec72c058f7"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"6a8616b8685f55d9c56bef09cb55280170d62ada463ce2591430023897ed5fe1"`);
   });
 });
 
