@@ -4,6 +4,20 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.17.1] - 2026-09-04
+
+### Bug Fixes
+
+- A cross-origin `headerNav` entry no longer steals the active-nav highlight. The header's inline script rebuilt its entries from the live DOM via `new URL(a.href, location.href).pathname`, which drops the origin, so an external entry pointing at another site's root contributed `"/"` and exact-matched this site's own root route (`384cfe1d3`, `440e366fb`).
+- The client nav now reuses the active item SSR already resolved instead of re-deriving it from `location.pathname` alone. SSR prefers category matching and falls back to path matching; the client knew only the path half, so any page whose category picked an item that URL-prefix matching does not lost its highlight on load (`90b0f2904`).
+- The nav repaint now waits until the content band is parsed. The script is inlined inside `<header>`, so at its top-level run the element carrying the section attribute does not exist yet — the repaint fell back to path-only matching and cleared SSR's highlight, and no navigation event fires on initial load to put it back (`76baaf3b1`).
+- `navHref` passes an absolute cross-origin URL through untouched instead of concatenating the locale, version, and base prefixes onto it. Beyond producing a dead same-origin href, the mangled result defeated the cross-origin active-state guard above in exactly the locale and base configurations that need it most (`c6fe1bb08`).
+
+### Other Changes
+
+- The nav script's explanatory comments moved out of the emitted bytes into the generator source. The rationale for the fixes above had shipped inline in the `<head>` of every page, growing the script by 1273 bytes of prose; the net cost of the fix set is now +173 bytes (`4f4b73ce5`).
+- Update the zfb peer and development dependency family to 2.15.1 (`e54438e96`). This is a documentation-only upstream release — the shipped wasm artifacts are byte-size identical to 2.15.0 and no public API, export, config default, or engine requirement moves.
+
 ## [5.17.0] - 2026-09-04
 
 ### Features

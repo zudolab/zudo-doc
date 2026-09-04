@@ -4,6 +4,12 @@ All notable changes to `create-zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.17.1] - 2026-09-04
+
+### Other Changes
+
+- Newly generated projects now use the zfb 2.15.1 package family (`e54438e96`). This is a documentation-only upstream release with no behavior change — the shipped wasm artifacts are byte-size identical to 2.15.0 and a fresh scaffold needs no migration.
+
 ## [5.17.0] - 2026-09-04
 
 ### Features
