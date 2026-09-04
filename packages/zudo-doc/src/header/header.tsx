@@ -485,6 +485,7 @@ function renderNavItem(
         <a
           href={href}
           aria-current={isActive ? "page" : undefined}
+          data-nav-category={item.categoryMatch}
           aria-haspopup="true"
           aria-expanded="false"
           class={[
@@ -526,6 +527,7 @@ function renderNavItem(
               return (
                 <a
                   href={childHref}
+                  data-nav-category={child.categoryMatch}
                   data-active={childActive ? "" : undefined}
                   class={[
                     "block px-hsp-md py-vsp-2xs text-small hover:bg-accent/10 hover:underline focus-visible:underline",
@@ -546,6 +548,7 @@ function renderNavItem(
     <a
       href={href}
       aria-current={isActive ? "page" : undefined}
+      data-nav-category={item.categoryMatch}
       data-nav-item
       class={[
         "px-hsp-md py-vsp-2xs text-small font-medium transition-colors shrink-0",

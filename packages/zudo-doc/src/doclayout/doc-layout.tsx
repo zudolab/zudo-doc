@@ -202,6 +202,22 @@ export interface DocLayoutProps extends DocLayoutHtmlAttrs {
    */
   contentWide?: boolean;
 
+  /**
+   * The page's resolved big category (`getNavSectionForSlug`). Emitted as
+   * `data-zd-nav-section` on `.zd-doc-content-band` so the header's inline
+   * nav script can reuse SSR's own active-state decision instead of
+   * re-deriving one from the URL (zudolab/zudo-doc#3953).
+   *
+   * It belongs on the content band specifically because that element is
+   * INSIDE the client router's swapped region, while the header is persisted
+   * across swaps (`data-zfb-transition-persist`). The value therefore stays
+   * correct after a body swap, whereas anything written into the header
+   * itself would go stale. Omitted when the page has no section (home, 404,
+   * tag, version pages), in which case the script falls back to path
+   * matching exactly as before.
+   */
+  navSection?: string;
+
   /** Optional footer rendered below the content. */
   footer?: ComponentChildren;
 
@@ -269,6 +285,7 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
     toc,
     hideToc = false,
     contentWide = false,
+    navSection,
     footer,
     bodyEndComponents,
     bodyEndScripts,
@@ -434,6 +451,7 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
               class="zd-doc-content-band flex w-full gap-[clamp(1.5rem,3vw,4rem)]"
               {...(!showSidebar ? { "data-zd-nosidebar": "" } : {})}
               {...(contentWide ? { "data-zd-wide": "" } : {})}
+              {...(navSection !== undefined ? { "data-zd-nav-section": navSection } : {})}
             >
               <main class="flex-1 min-w-0 px-hsp-xl py-vsp-xl lg:px-hsp-2xl lg:py-vsp-2xl">
                 {breadcrumb}

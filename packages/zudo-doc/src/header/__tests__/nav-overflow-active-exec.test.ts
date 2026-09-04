@@ -22,6 +22,7 @@ let originalOffsetWidth: PropertyDescriptor | undefined;
 let originalClientWidth: PropertyDescriptor | undefined;
 let originalDocumentFonts: PropertyDescriptor | undefined;
 let originalResizeObserver: PropertyDescriptor | undefined;
+let originalReadyState: PropertyDescriptor | undefined;
 let resizeCallbacks: ResizeObserverCallback[] = [];
 
 beforeEach(() => {
@@ -29,6 +30,9 @@ beforeEach(() => {
   originalClientWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientWidth");
   originalDocumentFonts = Object.getOwnPropertyDescriptor(document, "fonts");
   originalResizeObserver = Object.getOwnPropertyDescriptor(globalThis, "ResizeObserver");
+  // `readyState` lives on Document.prototype, so there is normally no own
+  // descriptor here — the afterEach delete restores prototype behavior.
+  originalReadyState = Object.getOwnPropertyDescriptor(document, "readyState");
   resizeCallbacks = [];
 
   Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
@@ -122,6 +126,38 @@ function buildCrossOriginNav(): HTMLElement {
   return nav;
 }
 
+/**
+ * The zudolab/zudo-doc#3953 shape: SSR resolved the active item from the page's
+ * big category, not from the URL. `buildSectionBand` emits the content-band
+ * attribute doc-layout.tsx ships; `buildCategoryNav` emits the nav with the
+ * `data-nav-category` attributes header.tsx ships, pre-painted as SSR would.
+ */
+function buildSectionBand(section: string): HTMLElement {
+  const band = document.createElement("div");
+  band.className = "zd-doc-content-band";
+  band.setAttribute("data-zd-nav-section", section);
+  document.body.appendChild(band);
+  return band;
+}
+
+function buildCategoryNav(): HTMLElement {
+  const nav = document.createElement("nav");
+  nav.setAttribute("data-header-nav", "");
+  nav.innerHTML = `
+    <a data-nav-item data-nav-category="section" href="/docs/section"
+       aria-current="page" class="${NAV_TOP_ACTIVE.join(" ")}">Section</a>
+    <a data-nav-item data-nav-category="other" href="/docs/other">Other</a>
+    <div data-nav-item data-nav-item-dropdown>
+      <a href="/learn/" data-nav-category="learn">Learn</a>
+      <div>
+        <a href="/learn/deep/" data-nav-category="deep">Deep</a>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(nav);
+  return nav;
+}
+
 interface OverflowControls {
   container: HTMLElement;
   menu: HTMLUListElement;
@@ -206,6 +242,14 @@ describe("NAV_OVERFLOW_SCRIPT — executed in jsdom (applyActiveNav)", () => {
       Object.defineProperty(globalThis, "ResizeObserver", originalResizeObserver);
     } else {
       delete (globalThis as unknown as { ResizeObserver?: unknown }).ResizeObserver;
+    }
+    // Always restore: a test that throws between the "loading" and "complete"
+    // overrides below would otherwise leave every later test running as
+    // "loading", where initNavOverflow skips applyActiveNav entirely.
+    if (originalReadyState) {
+      Object.defineProperty(document, "readyState", originalReadyState);
+    } else {
+      delete (document as unknown as { readyState?: unknown }).readyState;
     }
   });
 
@@ -351,6 +395,91 @@ describe("NAV_OVERFLOW_SCRIPT — executed in jsdom (applyActiveNav)", () => {
     expect(
       nav.querySelector('a[href="http://localhost/docs/section"]')?.getAttribute("aria-current"),
     ).toBe("page");
+  });
+
+  it("keeps SSR's category-resolved highlight on a route whose URL matches no nav path", () => {
+    // The motivating case: "/" renders a docs/section entry. SSR marked
+    // Section active via activeCategory; before #3953 the client cleared it.
+    setLocation("/");
+    buildSectionBand("section");
+    const nav = buildCategoryNav();
+
+    new Function(NAV_OVERFLOW_SCRIPT)();
+
+    expect(nav.querySelector('a[href="/docs/section"]')?.getAttribute("aria-current")).toBe("page");
+    expect(nav.querySelectorAll('a[aria-current="page"]')).toHaveLength(1);
+  });
+
+  it("activates a dropdown parent when a child claims the page's category", () => {
+    setLocation("/");
+    buildSectionBand("deep");
+    const nav = buildCategoryNav();
+
+    new Function(NAV_OVERFLOW_SCRIPT)();
+
+    expect(nav.querySelector('a[href="/learn/"]')?.getAttribute("aria-current")).toBe("page");
+    expect(nav.querySelector('a[href="/learn/deep/"]')?.getAttribute("data-active")).toBe("");
+    expect(nav.querySelector('a[href="/docs/section"]')?.getAttribute("aria-current")).toBeNull();
+  });
+
+  it("still honors a path match for an item that declares no category", () => {
+    // SSR ORs category and path per item; the client must too, not either/or.
+    setLocation("/blog/post");
+    buildSectionBand("section");
+    const nav = document.createElement("nav");
+    nav.setAttribute("data-header-nav", "");
+    nav.innerHTML = `
+      <a data-nav-item data-nav-category="section" href="/docs/section">Section</a>
+      <a data-nav-item href="/blog">Blog</a>
+    `;
+    document.body.appendChild(nav);
+
+    new Function(NAV_OVERFLOW_SCRIPT)();
+
+    expect(nav.querySelector('a[href="/blog"]')?.getAttribute("aria-current")).toBe("page");
+    expect(nav.querySelector('a[href="/docs/section"]')?.getAttribute("aria-current")).toBe("page");
+  });
+
+  it("falls back to path-only matching when the page publishes no section", () => {
+    setLocation("/docs/other");
+    const nav = buildCategoryNav();
+
+    new Function(NAV_OVERFLOW_SCRIPT)();
+
+    expect(nav.querySelector('a[href="/docs/other"]')?.getAttribute("aria-current")).toBe("page");
+    expect(nav.querySelector('a[href="/docs/section"]')?.getAttribute("aria-current")).toBeNull();
+  });
+
+  it("ignores an empty section attribute rather than matching empty categories", () => {
+    setLocation("/docs/other");
+    buildSectionBand("");
+    const nav = buildCategoryNav();
+
+    new Function(NAV_OVERFLOW_SCRIPT)();
+
+    expect(nav.querySelector('a[href="/docs/other"]')?.getAttribute("aria-current")).toBe("page");
+    expect(nav.querySelectorAll('a[aria-current="page"]')).toHaveLength(1);
+  });
+
+  it("keeps the category highlight when the band is parsed after the header script", () => {
+    // The shipped DOM order: NAV_OVERFLOW_SCRIPT is inlined inside <header>,
+    // so at its top-level run `.zd-doc-content-band` (and its
+    // data-zd-nav-section) does not exist yet. Repainting there would fall
+    // back to path-only matching and clear SSR's category highlight, and
+    // AFTER_NAVIGATE_EVENT never fires on initial load to put it back.
+    setLocation("/");
+    Object.defineProperty(document, "readyState", { configurable: true, get: () => "loading" });
+    const nav = buildCategoryNav();
+
+    new Function(NAV_OVERFLOW_SCRIPT)();
+
+    // Parser reaches the content band only after the header script ran.
+    buildSectionBand("section");
+    Object.defineProperty(document, "readyState", { configurable: true, get: () => "complete" });
+    document.dispatchEvent(new Event("DOMContentLoaded"));
+
+    expect(nav.querySelector('a[href="/docs/section"]')?.getAttribute("aria-current")).toBe("page");
+    expect(nav.querySelectorAll('a[aria-current="page"]')).toHaveLength(1);
   });
 
   it("transfers a collapsed plain current item to the toggle and visible clone", () => {

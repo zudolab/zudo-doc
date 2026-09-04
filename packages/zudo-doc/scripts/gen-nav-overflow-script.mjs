@@ -425,6 +425,45 @@ export function buildNavOverflowScript(context = resolveGenerationContext()) {
   // paint nothing. Those guards are load-bearing — do not drop them as
   // "redundant". A same-origin href can never yield "" (trimSlashes floors at
   // "/"), so "" is exclusively the sentinel.
+  //
+  // Reusing SSR's active-state decision (zudolab/zudo-doc#3953)
+  // -----------------------------------------------------------
+  // SSR resolves the active item as `isNavItemActiveByCategory(item,
+  // activeCategory) || isNavItemActive(item, activeNavPath)` — category
+  // first, path as a per-item fallback, ORed, not either/or. This script used
+  // to know only the path half, so it repainted from the URL alone and
+  // DISCARDED SSR's category decision on every first paint: any page whose
+  // big category picks an item that URL-prefix matching does not lost its
+  // highlight on load (measured: a root route rendering a docs/<section>
+  // entry went from `aria-current="page"` to nothing).
+  //
+  // Rather than re-deriving the category client-side — a third matcher to
+  // keep in sync, which is the drift the embedded-verbatim core above exists
+  // to prevent — SSR republishes what it already resolved:
+  //   * `data-zd-nav-section` on `.zd-doc-content-band` (doc-layout.tsx) —
+  //     the page's `navSection`. That element is INSIDE the client router's
+  //     swapped region, so the value is fresh after every swap. The header is
+  //     persisted across swaps, so nothing written into it could be.
+  //   * `data-nav-category` on each nav anchor (header.tsx) — the item's
+  //     configured `categoryMatch`. Config-derived and identical on every
+  //     page, so it is safe on the persisted header.
+  // `isAnchorActive` below then mirrors SSR's precedence exactly. When the
+  // page has no section (home, 404, tag, version), the attribute is absent
+  // and the predicate collapses to the previous path-only behaviour.
+  //
+  // PARSE ORDER — why the first paint is deferred
+  // ---------------------------------------------
+  // This script is emitted INSIDE <header> (header.tsx), which the HTML
+  // parser reaches BEFORE `.zd-doc-content-band` further down the body. At
+  // the top-level `initNavOverflow()` call the band therefore does not exist
+  // yet, `document.querySelector("[data-zd-nav-section]")` returns null, and
+  // a repaint at that moment would fall back to path-only matching and CLEAR
+  // exactly the SSR category highlight this section exists to preserve.
+  // AFTER_NAVIGATE_EVENT does not fire on initial load, so nothing would put
+  // it back. SSR's paint is already correct for the page being parsed, so
+  // `initNavOverflow` skips `applyActiveNav` while `document.readyState ===
+  // "loading"` and re-inits once on DOMContentLoaded, when the band is in the
+  // DOM. Do not "simplify" either half away.
   // ---------------------------------------------------------------------
   return /* javascript */ `(function () {
   var cleanupNavOverflow = null;
@@ -472,6 +511,10 @@ export function buildNavOverflowScript(context = resolveGenerationContext()) {
 
     var cur = trimSlashes(readCurrentPath(CURRENT_PATH_DATASET_KEY));
 
+    // SSR's own resolved big category, republished per page (#3953).
+    var sectionEl = document.querySelector("[data-zd-nav-section]");
+    var navSection = (sectionEl && sectionEl.getAttribute("data-zd-nav-section")) || "";
+
     // Build NavItemLike-shaped entries from the live DOM so the shared
     // computeActiveNavPath can do the deepest-match walk — the same call
     // shape the SSR header uses (matches computeActiveNavPath). A dropdown
@@ -495,6 +538,13 @@ export function buildNavOverflowScript(context = resolveGenerationContext()) {
 
     var activePath = computeActiveNavPath(navItems, cur) || "";
 
+    // Mirrors SSR: category match OR path match, per item (see nav-active.ts).
+    function isAnchorActive(a) {
+      if (!a) return false;
+      if (navSection !== "" && a.getAttribute("data-nav-category") === navSection) return true;
+      return activePath !== "" && navPathname(a) === activePath;
+    }
+
     function setTopActive(a, active) {
       if (!a) return;
       if (active) {
@@ -514,10 +564,10 @@ export function buildNavOverflowScript(context = resolveGenerationContext()) {
       var topActive = false;
 
       if (isDropdown) {
-        var parentMatch = !!topA && navPathname(topA) === activePath && activePath !== "";
+        var parentMatch = isAnchorActive(topA);
         var anyChild = false;
         it.querySelectorAll(":scope > div a").forEach(function (c) {
-          var childActive = navPathname(c) === activePath && activePath !== "";
+          var childActive = isAnchorActive(c);
           if (childActive) {
             anyChild = true;
             c.setAttribute("data-active", "");
@@ -536,7 +586,7 @@ export function buildNavOverflowScript(context = resolveGenerationContext()) {
           else { svg.classList.add(${clsArgs(NAV_CHEVRON_INACTIVE)}); svg.classList.remove(${clsArgs(NAV_CHEVRON_ACTIVE)}); }
         }
       } else {
-        topActive = activePath !== "" && navPathname(topA) === activePath;
+        topActive = isAnchorActive(topA);
       }
 
       setTopActive(topA, topActive);
@@ -548,7 +598,8 @@ export function buildNavOverflowScript(context = resolveGenerationContext()) {
 
     // Repaint the active highlight for the current URL before measuring /
     // cloning, so the overflow "···" menu mirrors the correct active state.
-    applyActiveNav();
+    // Skipped mid-parse: the content band is not in the DOM yet (#3953).
+    if (document.readyState !== "loading") applyActiveNav();
 
     var nav = document.querySelector("[data-header-nav]");
     var moreContainer = document.querySelector("[data-nav-more]");
@@ -752,6 +803,11 @@ export function buildNavOverflowScript(context = resolveGenerationContext()) {
   }
 
   initNavOverflow();
+  // First-paint re-init once the body is parsed, so applyActiveNav can read
+  // the content band's data-zd-nav-section (#3953).
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initNavOverflow, { once: true });
+  }
   document.addEventListener(${afterNavigateEventLiteral}, initNavOverflow);
 })();`;
 }
