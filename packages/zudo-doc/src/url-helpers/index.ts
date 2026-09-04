@@ -155,6 +155,16 @@ export function makeUrlHelpers(
     currentVersion: string | undefined,
     versioned = true,
   ): string {
+    // An absolute cross-origin target owns its whole URL — locale, version and
+    // base prefixes are all meaningless for it, and concatenating them produced
+    // a same-origin nonsense href like `/ja https://other.example/` (spaces
+    // added here only to keep this comment readable). That was not merely a
+    // dead link: because the result IS same-origin, it also defeated the
+    // #3950 guard in `nav-overflow-script`, which keeps a cross-origin entry
+    // out of the active-state match by inspecting the anchor's resolved
+    // origin. Mirrors `resolveHref` above (zudolab/zudo-doc#3952).
+    if (isExternal(path)) return path;
+
     // A defaultLocaleOnly path (settings.defaultLocaleOnlyPrefixes, #1592/#2569)
     // has no non-default-locale route, so keep it in the default-locale URL space
     // even on a non-default-locale surface. The version prefix is applied

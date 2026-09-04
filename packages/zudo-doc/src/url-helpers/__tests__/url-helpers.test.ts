@@ -68,6 +68,39 @@ describe("navHref", () => {
   it("versioned: false suppresses the /v/{version} prefix (#3216/#3190)", () => {
     expect(h.navHref("/docs/claude", "en", "1.0", false)).toBe("/docs/claude/");
   });
+
+  // zudolab/zudo-doc#3952. Every one of these returned a same-origin nonsense
+  // href before the fix (e.g. "/jahttps://other.example/"), which also defeated
+  // the #3950 cross-origin active-state guard, since the mangled result IS
+  // same-origin and therefore matchable again.
+  describe("absolute cross-origin targets pass through untouched", () => {
+    const cases: ReadonlyArray<readonly [string, string | undefined, string | undefined]> = [
+      ["https://other.example/", "en", undefined],
+      ["https://other.example/", "ja", undefined],
+      ["https://other.example/", "ja", "1.0"],
+      ["https://other.example/docs/section", "ja", "1.0"],
+      ["http://other.example/", "ja", undefined],
+    ];
+    for (const [path, lang, version] of cases) {
+      it(`${path} (lang=${lang}, version=${version})`, () => {
+        expect(helpers().navHref(path, lang, version)).toBe(path);
+        expect(helpers({ base: "/app/" }).navHref(path, lang, version)).toBe(path);
+      });
+    }
+
+    it("matches resolveHref, which already passed externals through", () => {
+      const withBasePath = helpers({ base: "/app/" });
+      expect(withBasePath.navHref("https://other.example/", "ja", "1.0")).toBe(
+        withBasePath.resolveHref("https://other.example/"),
+      );
+    });
+
+    it("still prefixes a same-origin path that merely contains 'http'", () => {
+      expect(helpers().navHref("/docs/http-guide", "ja", undefined)).toBe(
+        "/ja/docs/http-guide/",
+      );
+    });
+  });
   it("versioned: false is a no-op without a currentVersion", () => {
     expect(h.navHref("/docs/claude", "en", undefined, false)).toBe("/docs/claude/");
   });
