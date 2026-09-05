@@ -92,7 +92,11 @@ describe("showcase package changelog redirects", () => {
       );
       expect(rule.destination).not.toMatch(/\/changelog\/zudo-doc\/?$/);
       expect(rule.destination).not.toBe(rule.source);
-      if (existsSync(DIST)) {
+      // dist/index.html is a representative rendered-page marker, not a build-completion
+      // sentinel: it proves the build emitted at least one page, ruling out an empty dist/
+      // left by an interrupted build, but a build killed after this file and before the
+      // changelog pages would still assert and fail here.
+      if (existsSync(join(DIST, "index.html"))) {
         expect(
           existsSync(join(DIST, rule.destination.slice(1), "index.html")),
           `${rule.destination} built page`,
