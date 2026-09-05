@@ -84,6 +84,11 @@ async function assertBackground(page: Page, stop: number) {
     .toBe(await resolvedColor(page, `--palette-base-${stop}`));
 }
 
+async function assertBackgroundSelection(page: Page, stop: number) {
+  await openTab(page, "Color");
+  await expect(bgSelect(page)).toHaveValue(await baseOption(page, stop));
+}
+
 async function switchMode(page: Page, target: "light" | "dark") {
   const oldShell = await page.locator(SHELL).elementHandle();
   expect(oldShell).not.toBeNull();
@@ -148,6 +153,15 @@ test("Color choices restore independently by mode while every global tab survive
   await expect(page.locator(SHELL)).toBeVisible();
   await assertBackground(page, 0);
 
+  // Capture the host's pristine dark CSS before making any panel edits. The
+  // select maps it to base-4, but the untouched host value can be a separate
+  // light-dark(...) expression rather than zdtp's var(--palette-base-4).
+  await switchMode(page, "dark");
+  await assertBackgroundSelection(page, 4);
+  const pristineDarkBackground = await resolvedColor(page, "--zd-bg");
+  await switchMode(page, "light");
+  await assertBackground(page, 0);
+
   await showPaletteStep(page);
   const paletteBefore = await readCssVar(page, PALETTE_VAR);
   await page
@@ -182,7 +196,10 @@ test("Color choices restore independently by mode while every global tab survive
 
   // The light edit must NOT replace the pristine dark default (base-4).
   await switchMode(page, "dark");
-  await assertBackground(page, 4);
+  await assertBackgroundSelection(page, 4);
+  await expect.poll(() => resolvedColor(page, "--zd-bg")).toBe(
+    pristineDarkBackground,
+  );
   await assertGlobals(page, paletteCss, paletteLabel!);
 
   await openTab(page, "Color");

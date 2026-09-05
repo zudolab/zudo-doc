@@ -62,25 +62,28 @@ async function rowGeometry(row: Locator) {
   return row.evaluate((element) => {
     const label = element.querySelector<HTMLElement>(".tokenpanel-row-label");
     const column = element.closest(".tokenpanel-tab-section");
-    if (!label || !column || !label.firstChild) throw new Error("Missing spacing row geometry");
-    const range = document.createRange();
-    range.setStart(label.firstChild, 0);
-    range.setEnd(label.firstChild, 8);
-    const prefix = range.getBoundingClientRect();
-    const rect = label.getBoundingClientRect();
+    if (!label || !column) throw new Error("Missing spacing row geometry");
     const bounds = element.getBoundingClientRect();
     const columnBounds = column.getBoundingClientRect();
-    // Reserve the rendered ellipsis too: allocated text width alone would let
-    // an ellipsis paint over the eighth character and falsely pass.
-    const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d")!;
     const style = getComputedStyle(label);
-    context.font = style.font;
-    const ellipsis = context.measureText("…").width;
+    const probe = document.createElement("span");
+    Object.assign(probe.style, {
+      position: "fixed",
+      visibility: "hidden",
+      whiteSpace: "pre",
+      font: style.font,
+      letterSpacing: style.letterSpacing,
+    });
+    probe.textContent = `${label.textContent!.slice(0, 8)}…`;
+    document.body.append(probe);
+    const prefixWidth = probe.getBoundingClientRect().width;
+    probe.remove();
+    const contentWidth = label.getBoundingClientRect().width -
+      parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) -
+      parseFloat(style.borderLeftWidth) - parseFloat(style.borderRightWidth);
     return {
       height: bounds.height,
-      prefixVisible: prefix.left >= rect.left && prefix.right + ellipsis <= rect.right &&
-        prefix.top >= rect.top && prefix.bottom <= rect.bottom &&
+      prefixVisible: contentWidth + 0.1 >= prefixWidth &&
         style.visibility === "visible" && style.opacity !== "0",
       contained: bounds.left >= columnBounds.left && bounds.right <= columnBounds.right &&
         element.scrollWidth <= element.clientWidth,
