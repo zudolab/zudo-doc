@@ -4,6 +4,12 @@ All notable changes to `create-zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.18.0] - 2026-09-06
+
+### Other Changes
+
+- A generated project now pins `@takazudo/zdtp` at `0.5.0` (was `0.4.14`), matching the peer requirement of the `@takazudo/zudo-doc` released alongside it (`a55182f9c`).
+
 ## [5.17.2] - 2026-09-05
 
 ### Bug Fixes

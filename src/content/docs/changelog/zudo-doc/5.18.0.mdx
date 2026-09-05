@@ -1,0 +1,21 @@
+---
+title: 5.18.0
+description: Release notes for 5.18.0.
+sidebar_position: 1108
+---
+
+Released: 2026-09-06
+
+### Features
+
+- The package-default Design Token Panel builder now declares zdtp's native tier previews, so a host that does not supply its own `buildDesignTokenPanelConfig` gets tier previews out of the box (`3f34e3d08`).
+
+### Bug Fixes
+
+- `design-token-panel-bootstrap` now adopts zdtp's isolated constants and exact activation gates instead of re-deriving them locally. The bootstrap had carried its own copies, which drifted from the package they mirror (`cb2daf973`).
+
+### Other Changes
+
+- Saved Color overrides are now scheme- and mode-scoped. The package-default builder declares separate Default Light / Default Dark identities in `panelSettings.colorMode`, so an edit made in one mode no longer replaces the other mode's default or saved mapping, and returning to a mode restores that identity's saved choice. Palette, Spacing, Font, and Size overrides remain shared across light/dark within the active theme pack (`026497e69`).
+- The `@takazudo/zdtp` optional peer requirement moves to `^0.5.0` (was `^0.4.14`), across the 0.4.15 and 0.5.0 upstream releases (`744b5c96c`, `a55182f9c`).
+- The `@takazudo/zudo-doc-history-server` optional peer floor moves to `^5.17.2` (`744b5c96c`). As always this names an already-published version and lags the in-flight release by design.

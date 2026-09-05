@@ -1,6 +1,6 @@
 {
   "name": "create-zudo-doc",
-  "version": "5.17.2",
+  "version": "5.18.0",
   "description": "Create a new zudo-doc documentation site",
   "license": "MIT",
   "author": "Takeshi Takatsudo",
