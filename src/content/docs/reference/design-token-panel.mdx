@@ -108,7 +108,7 @@ The Color tab always edits the wiring for whichever mode — light or dark — i
 
 <Note title="Known limitation">
 
-**Config-level per-mode literal defaults aren't possible.** `TierItem.default` is a single string in zdtp's config contract, so an AA-tuned per-mode literal (like `danger`) is seeded from whichever mode is active at reconfigure time rather than declared as a `{light, dark}` pair up front. Runtime per-mode editing (the **Per-mode** checkbox above) is unaffected — this only limits what a *config* can declare as a starting default.
+**zudo-doc's builder does not declare per-mode literal defaults.** `TierItem.default` is a single string, so an AA-tuned per-mode literal (like `danger`) is seeded from whichever mode is active at reconfigure time rather than declared as a `{light, dark}` pair up front. zdtp itself no longer forces this: since 0.4.5 a color tab's `colorExtras.semanticDefaults` map accepts a `{ literal: { light, dark } }` value per semantic row, and it is the sanctioned way to ship such a default. The package-default builder simply does not populate that map yet. Runtime per-mode editing (the **Per-mode** checkbox above) is unaffected — this only limits what the *config* declares as a starting default.
 
 </Note>
 
