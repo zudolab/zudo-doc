@@ -25,7 +25,16 @@ function listFilesRecursive(dir: string): string[] {
   for (const name of readdirSync(dir)) {
     const full = resolve(dir, name);
     if (statSync(full).isDirectory()) {
-      for (const nested of listFilesRecursive(full)) {
+      const nestedFiles = listFilesRecursive(full);
+      if (nestedFiles.length === 0) {
+        // An empty directory yields no files; without this the whole root
+        // entry could contribute zero paths and the copy-through assertions
+        // below would pass vacuously. The directory path itself is still a
+        // copy-through target, so assert on it.
+        files.push(name);
+        continue;
+      }
+      for (const nested of nestedFiles) {
         files.push(`${name}/${nested}`);
       }
     } else {
@@ -49,6 +58,16 @@ function isIgnored(relativePath: string): boolean {
     ["check-ignore", "--no-index", "-q", relativePath],
     { cwd: REPO_ROOT },
   );
+  // check-ignore exits 0 (ignored) / 1 (not ignored); anything else — or a
+  // spawn failure — is a broken invocation, not an answer. Surface it rather
+  // than silently reporting "not ignored", which would flip an assertion into
+  // a misleading .gitignore failure.
+  if (result.error) throw result.error;
+  if (result.status !== 0 && result.status !== 1) {
+    throw new Error(
+      `git check-ignore failed for ${relativePath} (status ${String(result.status)})`,
+    );
+  }
   return result.status === 0;
 }
 
@@ -57,6 +76,15 @@ function gitLsFiles(relativePath: string): string[] {
     cwd: REPO_ROOT,
     encoding: "utf8",
   });
+  // An empty stdout is the "fixture does not own this entry" signal, so a
+  // failed git call must not be allowed to masquerade as one — it would send
+  // the assertions down the copy-through branch and blame .gitignore.
+  if (result.error) throw result.error;
+  if (result.status !== 0 || typeof result.stdout !== "string") {
+    throw new Error(
+      `git ls-files failed for ${relativePath} (status ${String(result.status)})`,
+    );
+  }
   return result.stdout.split("\n").filter((line) => line.length > 0);
 }
 
