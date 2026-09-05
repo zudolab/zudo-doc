@@ -55,13 +55,13 @@ export function readColorSchemeFromDom(
  * destroys + reconfigures the panel with the new mode's mode-scoped semantic
  * DEFAULTS (see `design-token-panel-bootstrap.ts` + the host's
  * `buildDesignTokenPanelConfig`, #2610). That keeps the panel's per-mode
- * defaults faithful. A *saved* color OVERRIDE is still mode-agnostic here,
- * though — not because zdtp can't key it per scheme (zdtp 0.4.5 ships
- * per-scheme/per-mode keyed color persistence, v4 envelope,
- * Takazudo/zudo-design-token-panel#500 / #509) but because THIS host's color
- * cluster is scheme-less and switches modes externally (destroy + reconfigure
- * above, not zdtp's own `colorMode` field), so zdtp always resolves the same
- * single scheme identity and an override repaints both modes until Reset.
+ * defaults faithful. Saved Color overrides are scheme- and mode-scoped:
+ * the package-default builder declares separate Default Light / Default Dark
+ * identities in panelSettings.colorMode, so an edit made in one mode does not
+ * replace the other mode's default or saved mapping. Returning to a mode
+ * restores that identity's saved choice. Palette, Spacing, Font, and Size
+ * overrides remain shared across light/dark within the active theme pack.
+ * The browser contract lives in e2e/theme-panel-persistence.spec.ts (#3980).
  * See zudo-doc#2037 / #2610.
  */
 export function applyColorScheme(next: ColorSchemeMode): void {
