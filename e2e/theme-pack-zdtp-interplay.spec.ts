@@ -72,16 +72,22 @@ async function closePanel(page: Page): Promise<void> {
   await expect(page.locator(SHELL)).toBeHidden({ timeout: 5000 });
 }
 
+// zdtp 0.4.15 appends a "N changed token(s)" badge to a tab's accessible
+// name once that category holds an override (e.g. "Spacing 1 changed
+// token") — this spec re-opens each tab AFTER it already set an override
+// there, so an exact match on the bare label breaks on the second visit.
+// Match the label as a leading-word prefix instead so both the pristine
+// and the changed-badge form resolve to the same tab.
 async function openSpacingTab(page: Page): Promise<void> {
-  await page.getByRole("tab", { name: "Spacing", exact: true }).click();
+  await page.getByRole("tab", { name: /^Spacing\b/ }).click();
 }
 
 async function openFontTab(page: Page): Promise<void> {
-  await page.getByRole("tab", { name: "Font", exact: true }).click();
+  await page.getByRole("tab", { name: /^Font\b/ }).click();
 }
 
 async function openColorTab(page: Page): Promise<void> {
-  await page.getByRole("tab", { name: "Color", exact: true }).click();
+  await page.getByRole("tab", { name: /^Color\b/ }).click();
 }
 
 function accentRefSelect(page: Page): Locator {
