@@ -157,17 +157,18 @@ const TOGGLE_PANEL_EVENT = "toggle-design-token-panel";
  * default instance" for {@link resolveInstanceToggleEvent}. Not a value this
  * package ever configures (the package default is `zudo-doc-tweak`), but a
  * host is free to, and the rule below hinges on it. Verified against the
- * installed zdtp 0.4.9 through 0.4.14 bundle (`dist/panel-config-*.js`), which is
- * also where zdtp's exported `DEFAULT_TOGGLE_EVENT` / `toggleEventName()`
- * live — we cannot import either, because a value import of
- * `@takazudo/zdtp` here would defeat the whole lazy load (#3282).
+ * installed zdtp 0.4.9 through 0.4.15 bundle — the `storagePrefix` field of
+ * `DEFAULT_PANEL_CONFIG` in `dist/panel-config-*.js`, the same module that
+ * holds zdtp's `toggleEventName()`. We cannot import either, because a value
+ * import of `@takazudo/zdtp` here would defeat the whole lazy load (#3282).
  */
 const ZDTP_DEFAULT_STORAGE_PREFIX = "zudo-design-token-panel";
 
 /**
  * The window-event name that toggles THIS instance once zdtp has loaded — a
- * verbatim mirror of zdtp's `toggleEventName(cfg)` (README §5.3's config
- * table, and the same three-branch expression in the installed 0.4.14 bundle):
+ * verbatim mirror of zdtp's `toggleEventName(cfg)` (PORTABLE-CONTRACT.md §1's
+ * "Per-instance toggle events" table, and the same three-branch expression in
+ * the installed 0.4.9 through 0.4.15 `dist/panel-config-*.js` bundle):
  *
  * - default instance (prefix === {@link ZDTP_DEFAULT_STORAGE_PREFIX}) → the
  *   historical shared name, and a configured `toggleEvent` is IGNORED;
@@ -215,16 +216,46 @@ function readOpenState(instancePrefix: string): boolean {
 }
 
 /**
- * zdtp's persisted activation-flag keys (verified against the zdtp 0.4.9 through 0.4.14
- * bundle). The owner-mode flags each make zdtp's parked post-configure hook
- * mount machinery even with the panel closed (autoload shell, element-path
- * inspector, DOM tweaker); `:visible` is the documented lazy-load gate that
- * same hook consumes to re-open a previously-visible panel — this package's
- * integration always persists `:autoload=1` alongside it, but a foreign or
- * older persisted state may carry `:visible=1` alone (review finding). A
- * returning user with any of them set — and nothing else — still needs the
- * eager load for parity with the eager-import era, where configure always
- * ran at boot.
+ * zdtp's persisted activation-flag keys (verified against the zdtp 0.4.9
+ * through 0.4.15 bundle). The owner-mode flags each make zdtp's parked
+ * post-configure hook mount machinery even with the panel closed (autoload
+ * shell, element-path inspector, DOM tweaker); `:visible` is the documented
+ * lazy-load gate that same hook consumes to re-open a previously-visible
+ * panel — this package's integration persists an `:autoload` value alongside
+ * it, but a foreign or older persisted state may carry `:visible=1` alone
+ * (review finding). A returning user with any of them set — and nothing else
+ * — still needs the eager load for parity with the eager-import era, where
+ * configure always ran at boot.
+ *
+ * WHY THIS LIST IS EXHAUSTIVE, AND WHY 0.4.15 DID NOT GROW IT. zdtp
+ * PORTABLE-CONTRACT.md §6.2 enumerates the SIX gate signals its own eager-load
+ * gate honours: `:visible`, the `${prefix}-open` mirror (both handled
+ * separately by {@link hasPersistedPanelState}), a non-empty `-state*`
+ * envelope, `:autoload`, `-elpath-enabled`, and `-domtweaker-enabled`. The
+ * shipped reference gate (`dist/astro/host-adapter.js`) is byte-identical
+ * between 0.4.14 and 0.4.15 apart from its chunk-hash imports, and evaluates
+ * exactly that disjunction. Every key 0.4.15 newly persists — `-dock`,
+ * `-dock-size`, `-ghost`, `-specimen`, `-on-page-specimen`, `-snapshot-a`/`-b`,
+ * `-last-applied` — is a PREFERENCE: §6.2 lists none of them, and neither gate
+ * reads them. (0.4.15's §2 storage-key table ALSO grew `-size`, `-density`,
+ * `-position` and `-highlight-*`, but those keys were already written by
+ * 0.4.14 — the table caught up with the bundle, so their absence here is
+ * unchanged, not an oversight.) Adding any of them would force an eager bundle
+ * load for a user who merely resized or docked the panel once, so do not
+ * extend this list from §2's storage-key table — extend it only from §6.2's
+ * signal list.
+ *
+ * WHY `:autoload` IS COMPARED `=== "1"` AND NOT ALSO `'auto'`. zdtp stores the
+ * flag's PROVENANCE in its value: `'1'` when the owner ran `enableAutoload()`
+ * deliberately, `'auto'` when merely opening the panel auto-remembered it
+ * (§10.1's auto-remember footgun; every open path writes `'auto'`). zdtp's own
+ * gates honour both, and `dist/state/autoload-state.d.ts` states the split
+ * exists precisely so a downstream host can "keep an `=== '1'` probe and stop
+ * eagerly fetching the panel bundle for a visitor who clicked a panel button
+ * once months ago" — this probe IS that sanctioned host. Widening to `'auto'`
+ * would eagerly load zdtp for every casual visitor who ever opened the panel.
+ * The legacy caveat from the same file: browsers that auto-remembered before
+ * the provenance value existed hold `'1'` and read as explicit owners forever.
  */
 const ACTIVATION_FLAG_KEY_SUFFIXES = [
   ":autoload",
@@ -278,13 +309,22 @@ function isEmptyEnvelope(raw: string | null): boolean {
  *
  * Three pieces of context a future reader cannot recover from the code:
  *
- * 1. **Content, not presence — a deliberate divergence from zdtp's own gate.**
- *    zdtp's reference lazy-load gate (`dist/astro/host-adapter.js`) presence-
- *    checks its state keys (`getItem(...) !== null`), so an empty `{}` there
- *    still fetches the bundle. zdtp README §10.1 states the third eager-load
- *    trigger as "overrides are persisted", not "a state key exists", so the
- *    content check is the closer implementation of the documented contract.
- *    Filed upstream as Takazudo/zudo-design-token-panel#566.
+ * 1. **Content, not presence — now CONVERGENT with zdtp's own eager-load
+ *    gate.** This started as a deliberate divergence: zdtp's reference gate
+ *    (`dist/astro/host-adapter.js`) presence-checked its state keys, so an
+ *    empty `{}` still fetched the bundle, and the mismatch was filed upstream
+ *    as Takazudo/zudo-design-token-panel#566. Upstream adopted the content
+ *    check — by 0.4.14, still true in 0.4.15 — and PORTABLE-CONTRACT.md §6.2
+ *    now pins `hasPersistedOverrides()` as "a **content check**, not a
+ *    presence check", malformed-JSON-fails-open included. Two narrow gaps
+ *    remain, both intentional: zdtp treats the empty STRING as empty while
+ *    `isEmptyEnvelope("")` fails its `JSON.parse` and so triggers, and zdtp
+ *    matches `^prefix-state(-v\d+)?$` exactly where the stem match below stays
+ *    schema-agnostic per #3282. zdtp's OTHER gate — the parked post-configure
+ *    hook's own `hasPersistedOverrides` — still presence-checks
+ *    (`getItem(...) !== null`) exactly `-state-v2`/`-v3`/`-v4`, so a re-mount
+ *    can still fire where this probe would not; harmless, since that hook only
+ *    runs once zdtp is already loaded.
  * 2. **`:autoload` triggering the eager load is INTENDED, not a stale flag.**
  *    Reviewed against the installed zdtp contract in #3313 and deliberately
  *    kept: README §9 (the `autoload` row) *defines* `'1'` as "fetches eagerly
@@ -397,10 +437,13 @@ function collectDeclaredTokenNames(config: PanelConfig): string[] {
  * through an `applySink`, the clear goes through the SAME sink
  * (`sink.clear(names)`, errors non-fatal per zdtp's own contract) — the
  * overrides live in the sink's target, not on the document root. Upstream
- * check (2026-07 zdtp 0.4.9, re-checked 2026-08 zdtp 0.4.10 through 0.4.14): the package
- * exposes no sanctioned `clearApplied()`-style API on `PanelInstanceHandle`
- * (only instanceId/open/close/toggle/destroy), so this config-driven path is
- * the current mechanism; prefer a zdtp API if one lands
+ * check (2026-07 zdtp 0.4.9, re-checked 2026-08 zdtp 0.4.10 through 0.4.14,
+ * re-checked 2026-09 against 0.4.15): the package still exposes no sanctioned
+ * `clearApplied()`-style API — `PanelInstanceHandle` carries exactly
+ * `instanceId`/`open`/`close`/`toggle`/`destroy` in both
+ * `dist/config/panel-config.d.ts` and PORTABLE-CONTRACT.md §1, and
+ * `dist/index.d.ts` exports no package-root equivalent. So this config-driven
+ * path is the current mechanism; prefer a zdtp API if one lands
  * (Takazudo/zudo-design-token-panel).
  */
 function clearAppliedTokenOverrides(config: PanelConfig): void {
@@ -554,8 +597,14 @@ export function bootstrapDesignTokenPanel(
         //    disabled while the engine still commits pack switches).
         const wasOpen = readOpenState(handle.instanceId);
         const outgoingConfig = currentConfig;
-        // 2. Destroy the outgoing instance (deregisters only — it does NOT
-        //    clear applied inline vars, hence step 3).
+        // 2. Destroy the outgoing instance. Verified against zdtp 0.4.15: it
+        //    deregisters, unmounts the Preact tree, removes the DOM root, and
+        //    releases the instance's HOST-DOCUMENT mutations — the docked
+        //    modes' `body { margin-right/bottom }` reflow and the
+        //    `--zdtp-dock-inset-*` custom properties are restored to their
+        //    pre-claim values, keyed on the OUTGOING `storagePrefix`, so a
+        //    pack switch cannot strand reserved space. It still does NOT clear
+        //    applied inline token vars, hence step 3.
         handle.destroy();
         // 3. Clear the OUTGOING instance's applied inline token overrides —
         //    config-driven removeProperty, never a blanket sweep.
@@ -587,6 +636,15 @@ export function bootstrapDesignTokenPanel(
     // it is idempotent.
     reapplyPersistedOverrides();
 
+    // BOTH hooks are supplied deliberately: zdtp keeps its own
+    // `astro:before-swap` / `astro:page-load` document listeners bound (and
+    // console.warns) for any channel an adapter omits. `onBeforeSwap` is also
+    // what releases a docked panel's reserved host-document space across an
+    // SPA navigation — zdtp's before-swap handler unmounts each mounted
+    // instance, which restores the body margin and `--zdtp-dock-inset-*`
+    // before the swap; the `onPageLoad` handler re-materialises and re-claims
+    // it. Dropping either hook would leak that reserved space on soft nav
+    // (verified against zdtp 0.4.15).
     const adapter: LifecycleAdapter = {
       onBeforeSwap(cb) {
         const handler = () => cb();
