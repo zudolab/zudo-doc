@@ -25,8 +25,8 @@ importers:
   .:
     dependencies:
       '@takazudo/zdtp':
-        specifier: 0.4.15
-        version: 0.4.15(preact@10.29.2)
+        specifier: 0.5.0
+        version: 0.5.0(preact@10.29.2)
       '@takazudo/zfb':
         specifier: 2.15.1
         version: 2.15.1(react@19.2.8)
@@ -187,8 +187,8 @@ importers:
         specifier: ^8.4.2
         version: 8.4.2(@types/node@25.3.5)
       '@takazudo/zdtp':
-        specifier: ^0.4.15
-        version: 0.4.15(preact@10.29.2)
+        specifier: ^0.5.0
+        version: 0.5.0(preact@10.29.2)
       diff:
         specifier: ^8.0.0
         version: 8.0.3
@@ -1086,8 +1086,8 @@ packages:
   '@tailwindcss/browser@4.3.2':
     resolution: {integrity: sha512-R6hewP9HHwLAY88bFkgAYFIQMRGi9bqx6sR1anI3IThTJtwhPlAm4aHIzDKrnJ8Ct4M3d5A9PCsah8Z5+EjLiQ==}
 
-  '@takazudo/zdtp@0.4.15':
-    resolution: {integrity: sha512-DBwi0rE2gHY13goU65F3qt+QsWqej2MCFgmlGCacaC7/elcClIgfFCFEPLFjlDqmX3QLZd439WTjoWdWQb6+rA==}
+  '@takazudo/zdtp@0.5.0':
+    resolution: {integrity: sha512-14OxompH9HsUwpTS6asHOLmInCBR8FpW0HeL8XWJWMDCePGzb972iCqCdhOVwmY43Y/L94Ygj8ZHKiBTcjdWHg==}
     engines: {node: '>=22.0.0', pnpm: '>=10.0.0'}
     hasBin: true
     peerDependencies:
@@ -3046,7 +3046,7 @@ snapshots:
 
   '@tailwindcss/browser@4.3.2': {}
 
-  '@takazudo/zdtp@0.4.15(preact@10.29.2)':
+  '@takazudo/zdtp@0.5.0(preact@10.29.2)':
     dependencies:
       '@tailwindcss/browser': 4.3.2
       culori: 4.0.2
