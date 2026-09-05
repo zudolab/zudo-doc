@@ -82,19 +82,18 @@ function schemeForMode(mode: PanelMode): ColorScheme {
  *  - `control: "select"` → `type: { kind: 'select', options }`
  *  - `control: "text"`   → `type: { kind: 'text' }`
  *  - (default slider)    → `type: { kind: 'length', step, unit }`
+ *  - `numericKind: "number"` → `type: { kind: 'number', step, unit }`
  */
-function toTierItem(t: TokenDef): TierItem {
+function toTierItem(t: TokenDef, numericKind: "length" | "number" = "length"): TierItem {
   let kind;
   if (t.control === "select") {
     kind = { kind: "select" as const, options: t.options ?? [] };
   } else if (t.control === "text") {
     kind = { kind: "text" as const };
   } else {
-    kind = {
-      kind: "length" as const,
-      step: t.step,
-      unit: t.unit,
-    };
+    kind = numericKind === "number"
+      ? { kind: "number" as const, step: t.step, unit: t.unit }
+      : { kind: "length" as const, step: t.step, unit: t.unit };
   }
   const item: TierItem = {
     id: t.id,
@@ -117,11 +116,12 @@ function tierFromGroup(
   tokens: readonly TokenDef[],
   groupId: string,
   label: string,
+  numericKind: "length" | "number" = "length",
 ): TierConfig {
   return {
     id: groupId,
     label,
-    items: tokens.filter((t) => t.group === groupId).map(toTierItem),
+    items: tokens.filter((t) => t.group === groupId).map((t) => toTierItem(t, numericKind)),
   };
 }
 
@@ -285,11 +285,24 @@ function buildFontTab(): TabConfig {
     id: "font",
     label: "Font",
     tiers: [
-      tierFromGroup(FONT_TOKENS, FONT_SCALE_TIER_ID, "Scale"),
+      {
+        ...tierFromGroup(FONT_TOKENS, FONT_SCALE_TIER_ID, "Scale"),
+        preview: "size",
+      },
       buildFontRoleTier(),
-      tierFromGroup(FONT_TOKENS, "line-height", "Line height"),
-      tierFromGroup(FONT_TOKENS, "font-weight", "Font weight"),
-      tierFromGroup(FONT_TOKENS, "font-family", "Font family"),
+      {
+        ...tierFromGroup(FONT_TOKENS, "line-height", "Line height", "number"),
+        preview: "line-height",
+        previewBase: "--text-scale-md",
+      },
+      {
+        ...tierFromGroup(FONT_TOKENS, "font-weight", "Font weight"),
+        preview: "weight",
+      },
+      {
+        ...tierFromGroup(FONT_TOKENS, "font-family", "Font family"),
+        preview: "family",
+      },
     ],
   };
 }
@@ -303,9 +316,18 @@ function buildSpacingTab(): TabConfig {
     id: "spacing",
     label: "Spacing",
     tiers: [
-      tierFromGroup(SPACING_TOKENS, "hsp", "Horizontal spacing"),
-      tierFromGroup(SPACING_TOKENS, "vsp", "Vertical spacing"),
-      tierFromGroup(SPACING_TOKENS, "icon", "Icons"),
+      {
+        ...tierFromGroup(SPACING_TOKENS, "hsp", "Horizontal spacing"),
+        preview: "bar",
+      },
+      {
+        ...tierFromGroup(SPACING_TOKENS, "vsp", "Vertical spacing"),
+        preview: "bar",
+      },
+      {
+        ...tierFromGroup(SPACING_TOKENS, "icon", "Icons"),
+        preview: "bar",
+      },
       tierFromGroup(SPACING_TOKENS, "layout", "Layout"),
     ],
   };
@@ -320,8 +342,14 @@ function buildSizeTab(): TabConfig {
     id: "size",
     label: "Size",
     tiers: [
-      tierFromGroup(SIZE_TOKENS, "radius", "Radius"),
-      tierFromGroup(SIZE_TOKENS, "transition", "Transition"),
+      {
+        ...tierFromGroup(SIZE_TOKENS, "radius", "Radius"),
+        preview: "radius",
+      },
+      {
+        ...tierFromGroup(SIZE_TOKENS, "transition", "Transition"),
+        preview: "duration",
+      },
     ],
   };
 }

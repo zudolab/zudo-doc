@@ -2,6 +2,7 @@
 // builder (#2658). Fast — no zfb build involved.
 
 import { describe, expect, it } from "vitest";
+import type { TierConfig } from "@takazudo/zdtp";
 import { buildDesignTokenPanelConfig } from "../index.js";
 
 describe("buildDesignTokenPanelConfig — panel identity (HARD GATE: storagePrefix unchanged)", () => {
@@ -57,6 +58,60 @@ describe("buildDesignTokenPanelConfig — tab structure", () => {
     const font = buildDesignTokenPanelConfig("light").tabs.find((t) => t.id === "font")!;
     const roleTier = font.tiers.find((t) => t.id === "font-size")!;
     expect(roleTier.referencesTier).toBe("font-scale");
+  });
+});
+
+describe("buildDesignTokenPanelConfig — zdtp 0.5 tier previews", () => {
+  type ExpectedPreview = {
+    tab: string;
+    tier: string;
+    preview: NonNullable<TierConfig["preview"]>;
+    previewBase?: string;
+  };
+
+  const expectedPreviews: readonly ExpectedPreview[] = [
+    { tab: "font", tier: "font-scale", preview: "size" },
+    {
+      tab: "font",
+      tier: "line-height",
+      preview: "line-height",
+      previewBase: "--text-scale-md",
+    },
+    { tab: "font", tier: "font-weight", preview: "weight" },
+    { tab: "font", tier: "font-family", preview: "family" },
+    { tab: "spacing", tier: "hsp", preview: "bar" },
+    { tab: "spacing", tier: "vsp", preview: "bar" },
+    { tab: "spacing", tier: "icon", preview: "bar" },
+    { tab: "size", tier: "radius", preview: "radius" },
+    { tab: "size", tier: "transition", preview: "duration" },
+  ];
+
+  it.each(expectedPreviews)("sets the $preview preview on $tab/$tier", (expected) => {
+    const config = buildDesignTokenPanelConfig("light");
+    const tab = config.tabs.find((candidate) => candidate.id === expected.tab)!;
+    const tier = tab.tiers.find((candidate) => candidate.id === expected.tier)!;
+
+    expect(tier).toMatchObject({ preview: expected.preview });
+    expect(tier.previewBase).toBe(expected.previewBase);
+    if (expected.tier === "line-height") {
+      expect(tier.items.every((item) => item.type.kind === "number")).toBe(true);
+    }
+  });
+
+  it("emits no preview metadata outside the complete mapping", () => {
+    const config = buildDesignTokenPanelConfig("light");
+    const actual = config.tabs.flatMap((tab) =>
+      tab.tiers
+        .filter((tier) => tier.preview !== undefined)
+        .map((tier) => ({
+          tab: tab.id,
+          tier: tier.id,
+          preview: tier.preview,
+          ...(tier.previewBase === undefined ? {} : { previewBase: tier.previewBase }),
+        })),
+    );
+
+    expect(actual).toEqual(expectedPreviews);
   });
 });
 
