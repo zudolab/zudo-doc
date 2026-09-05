@@ -51,8 +51,9 @@ const ALLOWED_UNCONDITIONAL_OPTIONAL_PEERS = new Set([
   // reaches the graph regardless of the flag.
   //
   // Since #3282 (epic #3261) the shell carries no top-level VALUE import of
-  // `@takazudo/zdtp` — only a runtime `import("@takazudo/zdtp")` inside
+  // `@takazudo/zdtp` root — only a runtime `import("@takazudo/zdtp")` inside
   // `loadZdtp()`, reached on the first toggle or a persisted-state probe hit.
+  // Since 0.5 the small, side-effect-free /constants leaf is also static.
   // Still allowlisted because esbuild resolves DYNAMIC `import()` specifiers
   // at build time same as static ones — this guard's `onResolve` hook sees
   // both kinds — so the dynamic call still reaches the graph even though

@@ -360,7 +360,7 @@ the same `setup(ctx)` hook.
       `chromeBindings.DesignTokenPanelBootstrap`, which wins everywhere and is
       exempt from the skip.
     - **Rejected (#3414):** full config precedence via zdtp `handle.destroy()`
-      → re-`configurePanel()`. zdtp 0.4.10 through 0.4.15 sanctions destroy-first
+      → re-`configurePanel()`. zdtp 0.5.0 sanctions destroy-first
       reconfiguration (`RECONFIGURE_RULE = 'reject-with-error'` in
       `dist/config/panel-config.d.ts`, and PORTABLE-CONTRACT.md §1's
       "Same-prefix-different-config THROWS" rule: "To re-configure a prefix,
@@ -391,6 +391,26 @@ the same `setup(ctx)` hook.
   alias is needed anywhere (the vitest alias was removed with it) and chrome
   bundles outside a zfb build. See the "Where the virtual specifier is
   imported" bullet above.
+- **Lazy activation contract (zdtp 0.5.0, #3984).** The bootstrap's only eager
+  zdtp value import is the side-effect-free `@takazudo/zdtp/constants` leaf.
+  `DEFAULT_STORAGE_PREFIX`, `DEFAULT_TOGGLE_EVENT`, and `resolveToggleEventName`
+  define the prefix and toggle channels; `EAGER_LOAD_GATE_KEY_SUFFIXES` and
+  `EAGER_LOAD_GATE_STATE_FAMILY` define the persisted signals (public
+  PORTABLE-CONTRACT.md §1 and §6.2). Fixed flags honor `acceptedValues` and
+  `requiredConfig`, including the active config's `domTweaker` requirement.
+  This host intentionally accepts only `:autoload="1"`; auto-remembered
+  `:autoload="auto"` stays lazy. State keys match the exact `-state` / numeric
+  `-state-vN` family for the active literal prefix. Raw blank, JSON null, `{}`,
+  and `[]` are empty; malformed JSON, non-empty collections, and all parsed
+  primitives (including JSON `""`, `0`, and `false`) activate. Sibling pack
+  namespaces remain isolated, and the default `zudo-doc-tweak` prefix is
+  unchanged. The root module and `tokenpanel-shell` payload remain behind
+  `import()`.
+  The 0.5.0 lifecycle contract still requires destroy-first reconfiguration;
+  destroy releases dock space but does not clear applied token overrides.
+  `PanelInstanceHandle` exposes `instanceId`, `open`, `close`, `toggle`, and
+  `destroy`, with no public clear-applied handle or root API. Pack switches
+  therefore retain the config-driven clear through the outgoing apply sink.
 - **`@takazudo/zdtp` dep implication (UNCHANGED by #3396):** the same static
   import that makes `DesignTokenPanelBootstrap` the seam default
   (`chrome/derive.tsx`) makes `@takazudo/zdtp` an **unconditional build-time dependency** of
