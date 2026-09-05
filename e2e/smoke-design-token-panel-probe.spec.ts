@@ -65,8 +65,14 @@ async function closePanel(page: Page): Promise<void> {
     .toEqual({ open: null, visible: "0" });
 }
 
+// zdtp 0.4.15 appends a "N changed token(s)" badge to a tab's accessible
+// name once that category holds an override (e.g. "Spacing 1 changed
+// token") — this spec re-opens the Spacing tab AFTER the earlier override
+// was set (and persisted across the reload), so an exact match on the bare
+// label breaks on the second visit. Match the label as a leading-word
+// prefix instead so both the pristine and the changed-badge form resolve.
 async function openSpacingTab(page: Page): Promise<void> {
-  await page.getByRole("tab", { name: "Spacing", exact: true }).click();
+  await page.getByRole("tab", { name: /^Spacing\b/ }).click();
 }
 
 function spacingInput(page: Page) {
