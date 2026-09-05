@@ -487,7 +487,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
     );
   });
 
-  it.each([":autoload", "-elpath-enabled", "-domtweaker-enabled"])(
+  it.each([":autoload", "-elpath-enabled"])(
     "a persisted %s == \"1\" owner-mode flag triggers the eager configure",
     async (suffix) => {
       const browser = installBrowser();
@@ -500,6 +500,45 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
       await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
     },
   );
+
+  it.each([false, true])(
+    "DOM Tweaker gate requires active config (configured=%s)",
+    async (configured) => {
+      const browser = installBrowser();
+      browser.values.set("test-panel-domtweaker-enabled", "1");
+      bootstrapDesignTokenPanel(() => ({
+        storagePrefix: "test-panel",
+        ...(configured ? { domTweaker: {} } : {}),
+      }) as PanelConfig);
+      if (configured) {
+        await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
+      } else {
+        await settle();
+        expect(zdtp.evaluations).toBe(0);
+      }
+    },
+  );
+
+  it("re-probes DOM Tweaker with the current config on a pending pack switch", async () => {
+    const browser = installBrowser();
+    browser.values.set("test-panel-domtweaker-enabled", "1");
+    browser.values.set("test-panel--foundry-domtweaker-enabled", "1");
+    let configured = false;
+    bootstrapDesignTokenPanel(() => ({
+      storagePrefix: "test-panel",
+      ...(configured ? { domTweaker: {} } : {}),
+    }) as PanelConfig);
+    await settle();
+    expect(zdtp.evaluations).toBe(0);
+
+    configured = true;
+    browser.setPack("foundry");
+    browser.windowTarget.dispatchEvent(new Event("theme-pack-changed"));
+    await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
+    expect(zdtp.configurePanel).toHaveBeenCalledWith(
+      expect.objectContaining({ storagePrefix: "test-panel--foundry", domTweaker: {} }),
+    );
+  });
 
   it("an owner-mode flag persisted as \"0\" does not trigger the load", async () => {
     const browser = installBrowser();
@@ -716,7 +755,7 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
 // Envelope-content policy (#3314, locked by the #3313 decision): the
 // `${prefix}-state*` branch of the probe tests CONTENT, not key presence.
 // Organizing principle — trigger unless the value is PROVABLY empty, where
-// provably empty is exactly `{}`, `[]`, and the literal `null`.
+// provably empty is raw blank, `{}`, `[]`, and the literal `null`.
 // ---------------------------------------------------------------------------
 
 describe("bootstrapDesignTokenPanel — persisted-state probe envelope policy", () => {
@@ -753,7 +792,8 @@ describe("bootstrapDesignTokenPanel — persisted-state probe envelope policy", 
     // silently discarded here — the `catch` returns "not empty". Inverting
     // this branch is the single easiest mistake to make in the predicate.
     { label: "malformed JSON", raw: "{not json", triggers: true },
-    { label: "the empty string (malformed JSON)", raw: "", triggers: true },
+    { label: "the raw empty string", raw: "", triggers: false },
+    { label: "a JSON empty string", raw: '""', triggers: true },
   ];
 
   it.each(ENVELOPE_TRUTH_TABLE.filter((row) => row.triggers))(
@@ -782,6 +822,39 @@ describe("bootstrapDesignTokenPanel — persisted-state probe envelope policy", 
       // Narrowed, not disabled: the toggle path still activates.
       dispatchToggle(browser.windowTarget);
       await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
+    },
+  );
+
+  it.each(["-state", "-state-v0", "-state-v2", "-state-v123", "-state-v01"])(
+    "accepts exact numeric state family %s with a regex-significant prefix",
+    async (suffix) => {
+      const browser = installBrowser();
+      const prefix = "panel.[a]+($)";
+      browser.values.set(`${prefix}${suffix}`, NON_EMPTY_ENVELOPE);
+      bootstrapDesignTokenPanel(makeBuilder(prefix));
+      await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
+    },
+  );
+
+  it("treats regex metacharacters in the prefix literally", async () => {
+    const browser = installBrowser();
+    browser.values.set("panelXa-state-v4", NON_EMPTY_ENVELOPE);
+    bootstrapDesignTokenPanel(makeBuilder("panel.[a]+"));
+    await settle();
+    expect(zdtp.evaluations).toBe(0);
+  });
+
+  it.each([
+    "-state-junk", "-state-v", "-state-vx", "-state-v2-extra",
+    "-state-v2.5", "-state-v-1", "--sibling-state-v4",
+  ])(
+    "rejects unrelated suffix %s",
+    async (suffix) => {
+      const browser = installBrowser();
+      browser.values.set(`test-panel${suffix}`, NON_EMPTY_ENVELOPE);
+      bootstrapDesignTokenPanel(makeBuilder());
+      await settle();
+      expect(zdtp.evaluations).toBe(0);
     },
   );
 
