@@ -513,9 +513,61 @@ describe("bootstrapDesignTokenPanel — persisted-state probe", () => {
     expect(zdtp.configurePanel).not.toHaveBeenCalled();
   });
 
+  it(":autoload == \"auto\" does not trigger — the sanctioned === \"1\" provenance probe", async () => {
+    const browser = installBrowser();
+    // zdtp stores the flag's PROVENANCE in its value: `'1'` for a deliberate
+    // `enableAutoload()`, `'auto'` when merely opening the panel
+    // auto-remembered it. `dist/state/autoload-state.d.ts` documents the split
+    // as existing so a downstream host can "keep an `=== '1'` probe and stop
+    // eagerly fetching the panel bundle for a visitor who clicked a panel
+    // button once months ago" — this probe is that host. Widening to `'auto'`
+    // would eagerly load zdtp for every casual visitor who ever opened it.
+    browser.values.set("test-panel:autoload", "auto");
+
+    bootstrapDesignTokenPanel(makeBuilder());
+    await settle();
+
+    expect(zdtp.evaluations).toBe(0);
+    expect(zdtp.configurePanel).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["-size", '{"width":420,"height":600}'],
+    ["-dock", "right"],
+    ["-dock-size", '{"right":440,"bottom":340}'],
+    ["-density", "1"],
+    ["-ghost", "1"],
+    ["-specimen", '{"text":"Aa","preset":"body","overridden":false,"width":420}'],
+    ["-on-page-specimen", "1"],
+    ["-snapshot-a", '{"state":{},"identity":"light","savedAt":0,"edits":0}'],
+    ["-snapshot-b", '{"state":{},"identity":"light","savedAt":0,"edits":0}'],
+    ["-last-applied", "{}"],
+    ["-position", '{"x":12,"y":12}'],
+    ["-highlight-slots", '["#f00"]'],
+    ["-highlight-outline-width", "2"],
+    ["-highlight-active", '{"--zd-accent":0}'],
+  ])(
+    "a persisted %s PREFERENCE key does not trigger the eager load",
+    async (suffix, value) => {
+      const browser = installBrowser();
+      // zdtp PORTABLE-CONTRACT.md §6.2 lists exactly six eager-load gate
+      // signals; none of these persisted keys is one of them, and zdtp's own
+      // reference gate (`dist/astro/host-adapter.js`) never reads them. Adding
+      // any of them to ACTIVATION_FLAG_KEY_SUFFIXES would force a bundle load
+      // for a user who merely resized, docked, or recoloured the panel once.
+      browser.values.set(`test-panel${suffix}`, value);
+
+      bootstrapDesignTokenPanel(makeBuilder());
+      await settle();
+
+      expect(zdtp.evaluations).toBe(0);
+      expect(zdtp.configurePanel).not.toHaveBeenCalled();
+    },
+  );
+
   it("a persisted :visible == \"1\" alone triggers the eager configure (and no show)", async () => {
     const browser = installBrowser();
-    // This package's integration always writes `:autoload=1` alongside a
+    // This package's integration writes an `:autoload` value alongside a
     // visible panel, but a foreign/older persisted state may carry the
     // `:visible` gate alone — zdtp's parked hook still consumes it.
     browser.values.set("test-panel:visible", "1");
