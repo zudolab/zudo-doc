@@ -281,21 +281,21 @@ export const FEATURES: Feature[] = [
     value: "sidebarResizer",
     label: "Sidebar resizer",
     hint: "Draggable sidebar width",
-    default: false,
+    default: true,
     cliFlag: "sidebar-resizer",
   },
   {
     value: "sidebarToggle",
     label: "Sidebar toggle",
     hint: "Show/hide desktop sidebar",
-    default: false,
+    default: true,
     cliFlag: "sidebar-toggle",
   },
   {
     value: "tocToggle",
     label: "TOC toggle",
     hint: "Show/hide the desktop table of contents",
-    default: false,
+    default: true,
     cliFlag: "toc-toggle",
   },
   {
@@ -309,7 +309,7 @@ export const FEATURES: Feature[] = [
     value: "docHistory",
     label: "Document history",
     hint: "Show document edit history",
-    default: false,
+    default: true,
     cliFlag: "doc-history",
   },
   {
@@ -323,7 +323,7 @@ export const FEATURES: Feature[] = [
     value: "llmsTxt",
     label: "llms.txt",
     hint: "Generate llms.txt for LLM consumption",
-    default: false,
+    default: true,
     cliFlag: "llms-txt",
   },
   {
@@ -365,7 +365,7 @@ export const FEATURES: Feature[] = [
     value: "assetViewer",
     label: "Asset viewer",
     hint: "Viewer pages for files under public/assets",
-    default: false,
+    default: true,
     cliFlag: "asset-viewer",
   },
   {

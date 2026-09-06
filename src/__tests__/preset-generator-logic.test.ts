@@ -327,8 +327,11 @@ describe("buildJson — headerRightItems mapping", () => {
   });
 });
 
-describe("default generator state — regression: matches target JSON", () => {
-  it("buildJson() with initial state deep-equals the target JSON exactly", () => {
+describe("default generator state — regression: matches target JSON (#4007)", () => {
+  it("buildJson() with initial state matches the target JSON exactly", () => {
+    // Mirrors the component's actual initial FormState in
+    // src/components/preset-generator.tsx — including the ogImageEnabled:
+    // true override that differs from DEFAULT_META_TAGS (see #4012).
     const initialState: FormState = {
       projectName: "my-docs",
       defaultLang: "en",
@@ -344,10 +347,32 @@ describe("default generator state — regression: matches target JSON", () => {
       cjkFriendly: true,
       packageManager: "pnpm",
       headerRightItems: [...INITIAL_HEADER_RIGHT_ITEMS],
-      metaTags: makeMetaState(),
+      metaTags: makeMetaState({ ogImageEnabled: true }),
     };
 
-    expect(buildJson(initialState)).toEqual({
+    const json = buildJson(initialState);
+    const { features, ...rest } = json as { features: string[] } & Record<string, unknown>;
+
+    // features is an unordered set, not a sequence: flipping `default` flags
+    // necessarily yields catalog order, not the click-order artifact in the
+    // source issue's JSON (see epic #4010's "Corrections to the source issues").
+    expect([...features].sort()).toEqual(
+      [
+        "search",
+        "sidebarFilter",
+        "imageEnlarge",
+        "dynamicPageTransition",
+        "footerCopyright",
+        "sidebarResizer",
+        "sidebarToggle",
+        "tocToggle",
+        "docHistory",
+        "llmsTxt",
+        "assetViewer",
+      ].sort(),
+    );
+
+    expect(rest).toEqual({
       projectName: "my-docs",
       defaultLang: "en",
       colorSchemeMode: "light-dark",
@@ -355,15 +380,19 @@ describe("default generator state — regression: matches target JSON", () => {
       darkScheme: "Default Dark",
       defaultMode: "dark",
       respectPrefersColorScheme: true,
-      features: ["search", "sidebarFilter", "imageEnlarge", "dynamicPageTransition", "footerCopyright"],
       cjkFriendly: true,
       packageManager: "pnpm",
       headerRightItems: [
-        { type: "component", component: "github-link" },
         { type: "component", component: "theme-toggle" },
         { type: "component", component: "search" },
-        { type: "component", component: "language-switcher" },
       ],
+      metaTags: {
+        description: true,
+        keywords: false,
+        ogImage: "/img/ogp.png",
+        ogSiteName: true,
+        twitterCard: false,
+      },
     });
   });
 });
