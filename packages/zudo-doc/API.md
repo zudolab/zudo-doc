@@ -434,6 +434,7 @@ Defined in `src/styles/global.css`. Consumers must define these tokens in their 
 | `--color-success`, `--color-danger`, `--color-warning`, `--color-info` | Semantic status colors |
 | `--color-overlay` | Overlay/backdrop (theme-independent, always dark) |
 | `--color-page-loading-overlay` | Page-loading overlay scrim (decoupled from lightbox) |
+| `--color-page-loading-spinner` | Page-loading spinner ring. **Optional, and intentionally undefined** — the stylesheet's own `#fff` fallback pins the ring light because the scrim is theme-independent. Only set it (in step with `--color-page-loading-overlay`) if you retone the scrim; a scheme-flipping value such as `--color-fg` drops the ring to 3.02:1 in a light scheme |
 | `--color-image-overlay-bg`, `--color-image-overlay-fg` | Image enlarge overlay |
 | `--color-chat-user-bg`, `--color-chat-user-text` | AI chat user message |
 | `--color-chat-assistant-bg`, `--color-chat-assistant-text` | AI chat assistant message |

@@ -16,7 +16,15 @@
  *       host's --color-overlay token.
  *   --color-overlay   Semi-opaque backdrop colour (used by the fallback chain
  *                     above when --color-page-loading-overlay is not set).
- *   --color-fg        Spinner border colour. Falls back to #fff.
+ *   --color-page-loading-spinner
+ *       Spinner border colour. Falls back to #fff.
+ *       Deliberately NOT --color-fg: the scrim above is theme-independent
+ *       (always dark), so a scheme-flipping foreground put the ring at only
+ *       3.02:1 against it in a light scheme — under the WCAG 1.4.11 non-text
+ *       3:1 floor for practical purposes. Pinning the ring light keeps it at
+ *       6.18:1 (light scheme) / 20.13:1 (dark scheme) on the default scrim.
+ *       Override it alongside --color-page-loading-overlay whenever the
+ *       scrim is retoned, so the pair stays above the floor together.
  *   --color-accent    Colour applied to links/buttons with data-zd-nav-pending.
  *   --z-index-modal   Stack level for the overlay. Falls back to 100.
  * ========================================================================== */
@@ -52,7 +60,7 @@ button[data-zd-nav-pending] {
 .page-loading-spinner {
   width: 48px;
   height: 48px;
-  border: 5px solid var(--color-fg, #fff);
+  border: 5px solid var(--color-page-loading-spinner, #fff);
   border-bottom-color: transparent;
   border-radius: 50%;
   display: inline-block;
@@ -76,7 +84,9 @@ button[data-zd-nav-pending] {
 @media (prefers-reduced-motion: reduce) {
   .page-loading-spinner {
     animation: none;
-    border-bottom-color: var(--color-fg, #fff);
-    opacity: 0.5;
+    /* Completes the ring into a static indicator. No opacity reduction: a
+       white ring at 0.5 composites to 2.85:1 on the light-scheme scrim,
+       below the 3:1 non-text floor these users depend on. */
+    border-bottom-color: var(--color-page-loading-spinner, #fff);
   }
 }

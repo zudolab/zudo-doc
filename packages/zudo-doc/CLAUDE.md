@@ -352,10 +352,19 @@ onSuccess: "node scripts/copy-theme-css.mjs && node scripts/copy-content-css.mjs
    - **Consumer contract**: the stylesheet consumes host tokens
      `--color-page-loading-overlay` (falling back to
      `color-mix(in oklch, var(--color-overlay, #000) 60%, transparent)`),
-     `--color-fg` (spinner border; falls back to `#fff`), `--color-accent`
-     (pending-nav link colour), and `--z-index-modal` (overlay stack level;
-     falls back to `100`). All tokens are optional — bare consumers get sensible
-     defaults.
+     `--color-page-loading-spinner` (spinner border; falls back to `#fff`),
+     `--color-accent` (pending-nav link colour), and `--z-index-modal` (overlay
+     stack level; falls back to `100`). All tokens are optional — bare consumers
+     get sensible defaults.
+   - **The spinner token is deliberately NOT `--color-fg`** (#3999/#4002). The
+     scrim is theme-independent (always dark), so a scheme-flipping foreground
+     put the ring at 3.02:1 against it in a light scheme — effectively at the
+     WCAG 1.4.11 non-text 3:1 floor. Pinned light it measures 6.18:1 (Default
+     Light) / 20.13:1 (Default Dark); 6.18:1 is the light-mode ceiling, since
+     the scrim composites over a near-white page to ~`rgb(98,97,96)`. For the
+     same reason the `prefers-reduced-motion` block carries **no** `opacity` —
+     a white ring at `0.5` composites to 2.85:1 in a light scheme. Do not
+     reintroduce either.
    - **Editing**: change `src/page-loading.css`, then rebuild the package so
      `dist/page-loading.css` updates. `tsup --watch` does NOT re-copy on a bare
      `.css` change (it only watches `.ts/.tsx`), so re-run `pnpm build` after

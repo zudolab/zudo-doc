@@ -449,8 +449,23 @@ setup_fixture() {
       local entry_name
       entry_name="$(basename "$entry")"
       # Don't clobber a fixture-owned real entry of the same name (git-tracked).
-      # A leftover symlink from the old symlink-based setup IS replaced.
-      if [ -e "$fixture_dir/public/$entry_name" ] && [ ! -L "$fixture_dir/public/$entry_name" ]; then
+      # Ask git rather than the filesystem: an on-disk `[ -e ]` check also
+      # matches an empty untracked leftover directory (e.g. a stale
+      # public/assets/ from an earlier symlink-based setup), which would
+      # silently suppress the copy-through on a warm tree (#3997). A leftover
+      # symlink or untracked leftover dir of the same name IS replaced below.
+      #
+      # `--literal-pathspecs` because an entry name containing pathspec magic
+      # (`*`, `?`, `[`) would otherwise be matched as a pattern. And a FAILED
+      # `git ls-files` must abort rather than fall through: an empty result is
+      # read as "not fixture-owned", which leads straight into the `rm -rf`
+      # below, so a git error would delete git-tracked fixture-owned entries.
+      local tracked_entry
+      if ! tracked_entry="$(git -C "$REPO_ROOT" --literal-pathspecs ls-files -- "$fixture_dir/public/$entry_name")"; then
+        echo "ERROR: git ls-files failed while resolving fixture ownership of public/$entry_name" >&2
+        exit 1
+      fi
+      if [ -n "$tracked_entry" ]; then
         continue
       fi
       rm -rf "$fixture_dir/public/$entry_name"
