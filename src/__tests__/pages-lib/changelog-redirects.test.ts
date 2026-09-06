@@ -1,7 +1,16 @@
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+  utimesSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 const PUBLIC_REDIRECTS = join(ROOT, "public/_redirects");
@@ -40,6 +49,39 @@ function parseRedirects(path: string): RedirectRule[] {
       }
       return { source, destination, status };
     });
+}
+
+// Compares dist/_redirects against public/_redirects, but only when dist is at least as
+// fresh as public — see the it() block below and the acceptance criteria in issue #4011
+// for why an existsSync-only guard produces a false red on a warm tree.
+function assertDistRedirectsMatchesPublic(
+  distPath: string,
+  publicPath: string,
+  warn: (message: string) => void = (message) => console.warn(message),
+): void {
+  if (!existsSync(distPath)) return;
+  const distMtimeMs = statSync(distPath).mtimeMs;
+  const publicMtimeMs = statSync(publicPath).mtimeMs;
+  if (distMtimeMs < publicMtimeMs) {
+    // Residual gap: this skip trades a guaranteed-false red (comparing a stale dist/
+    // against a just-edited public/) for a possible false green in one narrow scenario —
+    // a warm tree where a *later* build stops copying _redirects into dist/ altogether.
+    // In that case the stale leftover keeps its old mtime forever, so this guard would
+    // skip indefinitely instead of ever catching the dropped copy step. That's accepted
+    // because everywhere a build has actually just run (CI, or any local `pnpm build`),
+    // dist/_redirects is newer than public/_redirects, so the comparison below still
+    // fires and the dropped-copy signal stays fully live. The degradation is confined to
+    // stale warm trees, which is exactly where today's existsSync-only guard was already
+    // comparing meaningless bytes.
+    warn(
+      `[changelog-redirects] skipping dist/public comparison: dist/_redirects ` +
+        `(mtime ${new Date(distMtimeMs).toISOString()}) predates public/_redirects ` +
+        `(mtime ${new Date(publicMtimeMs).toISOString()}) — the build is stale, not the ` +
+        `redirects file. Run \`pnpm build\` to refresh dist/ before trusting this check.`,
+    );
+    return;
+  }
+  expect(readFileSync(distPath, "utf8")).toBe(readFileSync(publicPath, "utf8"));
 }
 
 function expectedRules(en: string[], ja: string[]): RedirectRule[] {
@@ -108,8 +150,56 @@ describe("showcase package changelog redirects", () => {
     expect(rules.some(({ destination }) => destination.endsWith("/changelog/zudo-doc"))).toBe(false);
   });
 
-  it("matches the built public artifact whenever a build is present", () => {
-    if (!existsSync(DIST_REDIRECTS)) return;
-    expect(readFileSync(DIST_REDIRECTS, "utf8")).toBe(readFileSync(PUBLIC_REDIRECTS, "utf8"));
+  it("matches the built public artifact whenever a build is fresh", () => {
+    assertDistRedirectsMatchesPublic(DIST_REDIRECTS, PUBLIC_REDIRECTS);
+  });
+});
+
+describe("assertDistRedirectsMatchesPublic freshness guard", () => {
+  function seedFixture(distContent: string, publicContent: string, distOlder: boolean) {
+    const dir = mkdtempSync(join(tmpdir(), "changelog-redirects-freshness-"));
+    const distPath = join(dir, "dist-redirects");
+    const publicPath = join(dir, "public-redirects");
+    writeFileSync(distPath, distContent, "utf8");
+    writeFileSync(publicPath, publicContent, "utf8");
+    const now = Date.now();
+    const older = new Date(now - 60_000);
+    const newer = new Date(now);
+    utimesSync(distPath, distOlder ? older : newer, distOlder ? older : newer);
+    utimesSync(publicPath, distOlder ? newer : older, distOlder ? newer : older);
+    return { distPath, publicPath };
+  }
+
+  it("skips the comparison and warns when dist predates public, even with differing content", () => {
+    const { distPath, publicPath } = seedFixture("stale dist\n", "edited public\n", true);
+    const warn = vi.fn();
+    expect(() => assertDistRedirectsMatchesPublic(distPath, publicPath, warn)).not.toThrow();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]?.[0]).toMatch(/skipping dist\/public comparison/);
+  });
+
+  it("compares and fails when dist is fresh and differs from public", () => {
+    const { distPath, publicPath } = seedFixture("dist content\n", "public content\n", false);
+    const warn = vi.fn();
+    expect(() => assertDistRedirectsMatchesPublic(distPath, publicPath, warn)).toThrow();
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("compares and passes when dist is fresh and matches public", () => {
+    const { distPath, publicPath } = seedFixture("same content\n", "same content\n", false);
+    const warn = vi.fn();
+    expect(() => assertDistRedirectsMatchesPublic(distPath, publicPath, warn)).not.toThrow();
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("does nothing when dist does not exist", () => {
+    const dir = mkdtempSync(join(tmpdir(), "changelog-redirects-freshness-"));
+    const publicPath = join(dir, "public-redirects");
+    writeFileSync(publicPath, "public content\n", "utf8");
+    const warn = vi.fn();
+    expect(() =>
+      assertDistRedirectsMatchesPublic(join(dir, "missing-dist"), publicPath, warn),
+    ).not.toThrow();
+    expect(warn).not.toHaveBeenCalled();
   });
 });

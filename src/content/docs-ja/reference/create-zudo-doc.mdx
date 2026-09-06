@@ -28,7 +28,7 @@ create-zudo-doc [project-name] [options]
 
 <Note>
 
-`@takazudo/zdtp` は、`designTokenPanel` を有効化したプロジェクトだけでなく、**すべての生成プロジェクトの無条件の依存関係**として追加されます。パッケージのクロームはパネルのブートストラップ*モジュール*をモジュールスコープでインポートします（zfb のアイランドスキャナーがそれを見つけられるようにするためです）が、そのモジュール自身は `@takazudo/zdtp` を即時インポートするのではなく、最初の利用時に動的な `import()` で遅延読み込みします（[遅延読み込み](./design-token-panel.mdx#実装-遅延読み込み)を参照）。それでもバンドラーはそのチャンクをビルドするために `node_modules` 内でパッケージを解決できる必要があるため、設定に関わらずビルド時に必要な依存関係のままです — 遅延するのはランタイムの読み込みだけです。
+`@takazudo/zdtp` は、**`designTokenPanel` を有効化した場合にのみ**追加されます。これは `@takazudo/zudo-doc` の*オプショナル*なピア依存であり、パネルを無効にしたプロジェクトにはインストールされません。パッケージのクロームは引き続きパネルのブートストラップ*モジュール*をモジュールスコープでインポートしますが（zfb のアイランドスキャナーがそれを見つけられるようにするためです）、そのモジュールが `@takazudo/zdtp` に到達する経路は、最初の利用時の拒否ハンドリング付き動的 `import()` だけです（[遅延読み込み](./design-token-panel.mdx#実装-遅延読み込み)を参照）。この動的インポートはパッケージが存在しなくてもバンドラーが許容するため、パネルなしのプロジェクトはインストールせずにビルドできます。パネルなしでスキャフォールドしたプロジェクトで後から `designTokenPanel` を有効化する場合は、`@takazudo/zdtp` を自分でインストールし、`src/styles/global.css` に `@import "@takazudo/zdtp/styles.css";` を追加してください。
 
 </Note>
 
@@ -89,18 +89,19 @@ zudo-doc が同梱するカラースキームは `Default Light` と `Default Da
 | `--[no-]claude-skills-writing` | zudo-doc-writing スキルを同梱（AI 支援執筆向けのドキュメント執筆 + ナビゲーション構造ガイド） | オフ |
 | `--[no-]design-token-panel` | スペーシング・フォント・サイズ・カラーの各トークンを編集するタブ型パネル | オフ |
 | `--[no-]theme-pack-switcher` | インストール済みテーマパックを切り替える右下のフライアウト（と一覧ダイアログ） | オフ |
-| `--[no-]sidebar-resizer` | ドラッグでサイドバー幅を変更 | オフ |
-| `--[no-]sidebar-toggle` | デスクトップサイドバーの表示/非表示 | オフ |
-| `--[no-]toc-toggle` | デスクトップ目次の表示/非表示（xl 画面の端のシェブロン） | オフ |
+| `--[no-]sidebar-resizer` | ドラッグでサイドバー幅を変更 | オン |
+| `--[no-]sidebar-toggle` | デスクトップサイドバーの表示/非表示 | オン |
+| `--[no-]toc-toggle` | デスクトップ目次の表示/非表示（xl 画面の端のシェブロン） | オン |
 | `--[no-]versioning` | 複数バージョンのドキュメント対応 | オフ |
-| `--[no-]doc-history` | ドキュメント編集履歴 | オフ |
+| `--[no-]doc-history` | ドキュメント編集履歴 | オン |
 | `--[no-]body-foot-util` | ドキュメント下部の右寄せストリップ: ドキュメント履歴トリガー + GitHub でソースを表示リンク | オフ |
-| `--[no-]llms-txt` | LLM 向け llms.txt を生成 | オフ |
+| `--[no-]llms-txt` | LLM 向け llms.txt を生成 | オン |
 | `--[no-]skill-symlinker` | ドキュメントスキルをClaude CodeまたはCodexへシンボリックリンク | オフ |
 | `--[no-]tauri` | Tauri デスクトップアプリ（Mode 1）— ページ内検索付き macOS オフラインリーダー | オフ |
 | `--[no-]tauri-dev` | Tauri 開発ラッパー（Mode 2）— 任意プロジェクト向けの設定可能なデスクトップ開発ラッパー | オフ |
 | `--[no-]footer-nav-group` | フッターのナビゲーションリンク | オフ |
 | `--[no-]image-enlarge` | マークダウン画像のクリック拡大表示 | オン |
+| `--[no-]asset-viewer` | public/assets 配下のファイル向けの閲覧ページ | オン |
 | `--[no-]dynamic-page-transition` | 履歴管理付きのSPA風ページ遷移 | オン |
 | `--[no-]footer-copyright` | フッターの著作権表示 | オン |
 | `--[no-]changelog` | 変更履歴ページ | オフ |

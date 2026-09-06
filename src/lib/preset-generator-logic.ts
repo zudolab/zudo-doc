@@ -240,10 +240,8 @@ export const DEFAULT_HEADER_RIGHT_ITEMS: readonly HeaderRightItemSpec[] = [
 ];
 
 export const INITIAL_HEADER_RIGHT_ITEMS: readonly HeaderRightItemSpec[] = [
-  { kind: "component", name: "github-link" },
   { kind: "component", name: "theme-toggle" },
   { kind: "component", name: "search" },
-  { kind: "component", name: "language-switcher" },
 ];
 
 /**
@@ -269,19 +267,19 @@ export const FEATURES = [
   // No docPath yet — the theme-packs guide page lands with #2827; add it
   // here once that page exists.
   { value: "themePackSwitcher", label: "Theme pack switcher", cliFlag: "theme-pack-switcher", default: false },
-  { value: "sidebarResizer", label: "Sidebar resizer", cliFlag: "sidebar-resizer", default: false, docPath: "/docs/guides/configuration/#sidebarresizer" },
-  { value: "sidebarToggle", label: "Sidebar toggle", cliFlag: "sidebar-toggle", default: false, docPath: "/docs/guides/configuration/#sidebartoggle" },
-  { value: "tocToggle", label: "TOC toggle", cliFlag: "toc-toggle", default: false, docPath: "/docs/guides/configuration/#toctoggle" },
+  { value: "sidebarResizer", label: "Sidebar resizer", cliFlag: "sidebar-resizer", default: true, docPath: "/docs/guides/configuration/#sidebarresizer" },
+  { value: "sidebarToggle", label: "Sidebar toggle", cliFlag: "sidebar-toggle", default: true, docPath: "/docs/guides/configuration/#sidebartoggle" },
+  { value: "tocToggle", label: "TOC toggle", cliFlag: "toc-toggle", default: true, docPath: "/docs/guides/configuration/#toctoggle" },
   { value: "versioning", label: "Versioning", cliFlag: "versioning", default: false, docPath: "/docs/guides/versioning/" },
-  { value: "docHistory", label: "Document history", cliFlag: "doc-history", default: false, docPath: "/docs/guides/doc-history/" },
+  { value: "docHistory", label: "Document history", cliFlag: "doc-history", default: true, docPath: "/docs/guides/doc-history/" },
   { value: "bodyFootUtil", label: "Body foot util area", cliFlag: "body-foot-util", default: false, docPath: "/docs/guides/body-foot-util-area/" },
-  { value: "llmsTxt", label: "llms.txt", cliFlag: "llms-txt", default: false, docPath: "/docs/guides/llms-txt/" },
+  { value: "llmsTxt", label: "llms.txt", cliFlag: "llms-txt", default: true, docPath: "/docs/guides/llms-txt/" },
   { value: "skillSymlinker", label: "Skill symlinker", cliFlag: "skill-symlinker", default: false, docPath: "/docs/guides/doc-skill-symlinker/" },
   { value: "tauri", label: "Tauri desktop app", cliFlag: "tauri", default: false, docPath: "/docs/guides/tauri-modes/" },
   { value: "tauriDev", label: "Tauri dev wrapper (Mode 2)", cliFlag: "tauri-dev", default: false, docPath: "/docs/guides/tauri-modes/" },
   { value: "footerNavGroup", label: "Footer nav group", cliFlag: "footer-nav-group", default: false, docPath: "/docs/guides/footer/" },
   { value: "imageEnlarge", label: "Image enlarge", cliFlag: "image-enlarge", default: true, docPath: "/docs/markdown-features/image-enlarge/" },
-  { value: "assetViewer", label: "Asset viewer", cliFlag: "asset-viewer", default: false },
+  { value: "assetViewer", label: "Asset viewer", cliFlag: "asset-viewer", default: true },
   { value: "dynamicPageTransition", label: "Dynamic page transition", cliFlag: "dynamic-page-transition", default: true, docPath: "/docs/guides/dynamic-page-transitions/" },
   { value: "footerCopyright", label: "Footer copyright", cliFlag: "footer-copyright", default: true, docPath: "/docs/guides/footer/" },
   { value: "changelog", label: "Changelog", cliFlag: "changelog", default: false, docPath: "/docs/guides/changelog/" },

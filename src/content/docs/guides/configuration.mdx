@@ -458,7 +458,7 @@ Enable the interactive Design Token Panel (zdtp) for live editing of spacing, fo
 
 Default: `false`
 
-The panel works with zero extra config. To fully customize it, point `designTokenPanelConfigModule` at a host module — see [Host Chrome Bindings](../reference/host-chrome-bindings.mdx#the-design-token-panel-channel-designtokenpanelconfigmodule).
+The panel works with zero extra config **in a project scaffolded with the feature on** — that is what installs the optional `@takazudo/zdtp` peer and adds its `@import "@takazudo/zdtp/styles.css";` line. Turning this on in a project scaffolded without it needs both of those steps by hand; otherwise the panel's lazy `import("@takazudo/zdtp")` fails at runtime and only logs a warning. To fully customize it, point `designTokenPanelConfigModule` at a host module — see [Host Chrome Bindings](../reference/host-chrome-bindings.mdx#the-design-token-panel-channel-designtokenpanelconfigmodule).
 
 ### sidebarResizer
 

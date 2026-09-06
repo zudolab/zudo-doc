@@ -24,8 +24,8 @@
 //
 // ## Tier
 //
-// This file runs ~11 real `zfb build`s end-to-end (~220s total) plus an
-// `npm pack` round trip — too slow for the default `pnpm test` / pr-checks
+// This file runs ~12 real `zfb build`s end-to-end (~240s total) plus
+// `npm pack` round trips — too slow for the default `pnpm test` / pr-checks
 // package-tests lane, so it lives in the slow tier (`*.slow.test.ts`,
 // excluded by packages/zudo-doc/vitest.config.ts, run via
 // `pnpm --filter @takazudo/zudo-doc test:slow`, wired into
@@ -1959,8 +1959,18 @@ function packPackage(): string {
 
 /** Set up a no-`src/` fixture from `fixtureSrc`: extract the packed tarball into
  *  a REAL `node_modules/@takazudo/zudo-doc` dir, symlink every other workspace
- *  dep, empty `pages/`, seed `.zfb/`. Returns the temp fixture dir. */
-function setupNoSrcFixture(fixtureSrc: string, tarballPath: string): string {
+ *  dep, empty `pages/`, seed `.zfb/`. Returns the temp fixture dir.
+ *
+ *  `omitScopedPackages` lists `@takazudo/*` names (unscoped, e.g. `"zdtp"`) to
+ *  leave OUT of the symlink loop. `linkFixtureNodeModules` skips the
+ *  `@takazudo` scope entirely, so this loop is the single point where those
+ *  packages enter the fixture — omitting one here makes it genuinely
+ *  unresolvable, which is what the optional-peer build case needs (#4009). */
+function setupNoSrcFixture(
+  fixtureSrc: string,
+  tarballPath: string,
+  omitScopedPackages: string[] = [],
+): string {
   const dir = mkdtempSync(join(tmpdir(), "zudo-doc-nosrc-"));
   tempDirs.push(dir);
   cpSync(fixtureSrc, dir, { recursive: true });
@@ -1972,11 +1982,13 @@ function setupNoSrcFixture(fixtureSrc: string, tarballPath: string): string {
   // yaml comes from the PACKAGE's node_modules under pnpm, not the
   // root — see linkFixtureNodeModules (#3189).
   linkFixtureNodeModules(nm);
-  // @takazudo: real dir; symlink every @takazudo/* EXCEPT zudo-doc.
+  // @takazudo: real dir; symlink every @takazudo/* EXCEPT zudo-doc (extracted
+  // from the tarball below) and anything the caller asked to omit.
   const scopeDir = join(nm, "@takazudo");
   mkdirSync(scopeDir);
   for (const entry of readdirSync(join(wsNm, "@takazudo"))) {
     if (entry === "zudo-doc") continue;
+    if (omitScopedPackages.includes(entry)) continue;
     symlinkSync(join(wsNm, "@takazudo", entry), join(scopeDir, entry));
   }
   // @takazudo/zudo-doc: REAL directory extracted from the tarball (npm tars
@@ -2076,6 +2088,68 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
     const html = readBuiltHtml(fixtureDir, "ja/docs/getting-started/index.html");
     expect(html).toContain("はじめに");
     expect(html).toContain("locale-injected-route-render-proof");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Case OPT-ZDTP — the optional peer `@takazudo/zdtp` must be genuinely optional
+// (zudolab/zudo-doc#4009, fixed by #4018).
+//
+// `@takazudo/zudo-doc` declares `@takazudo/zdtp` as an OPTIONAL peerDependency,
+// but from #2660 to #4018 the always-bundled chrome graph statically imported
+// `@takazudo/zdtp/constants` — so a consumer that honored `optional: true` and
+// never installed it died at esbuild with
+// `Could not resolve "@takazudo/zdtp/constants"`, even with
+// `designTokenPanel: false`. 5.18.1 shipped that way.
+//
+// The existing optional-peer reachability guard (a unit test over the import
+// GRAPH) did not catch it and could not: it reports which specifiers the graph
+// references, not which of them are build-fatal when absent. Only a real build
+// against a real install without the package measures that — hence this case.
+//
+// Fixture: FIXTURE_I18N_SRC as-is; its settings already set
+// `designTokenPanel: false`, which is the configuration a consumer who skipped
+// the optional peer would run.
+// ---------------------------------------------------------------------------
+
+describe("OPT-ZDTP no-zdtp: the published package builds with the optional @takazudo/zdtp peer absent", () => {
+  let tarballPath: string;
+  let fixtureDir: string;
+  let pkgDest: string;
+
+  it("setup: pack + install WITHOUT zdtp, and confirm the preconditions", { timeout: 180_000 }, () => {
+    tarballPath = packPackage();
+    fixtureDir = setupNoSrcFixture(FIXTURE_I18N_SRC, tarballPath, ["zdtp"]);
+    pkgDest = join(fixtureDir, "node_modules/@takazudo/zudo-doc");
+
+    // Precondition 1 — zdtp is genuinely unresolvable from the fixture. Node
+    // resolution walks up from the REAL (tarball-extracted) package dir, and
+    // `setupNoSrcFixture`'s @takazudo loop is the only thing that would have
+    // put it there, so skipping it there is enough. Without this assertion the
+    // whole case could pass simply because zdtp was still installed.
+    expect(existsSync(join(fixtureDir, "node_modules/@takazudo/zdtp"))).toBe(false);
+
+    // Precondition 2 — the PACKED artifact carries the fix, and only the fix:
+    // no static `/constants` edge (#4018 vendored those constants), but the
+    // lazy `import("@takazudo/zdtp")` is still there. Without the second half a
+    // green build would also be satisfied by deleting the panel outright.
+    const bootstrap = readFileSync(
+      join(pkgDest, "dist/design-token-panel-bootstrap.js"),
+      "utf-8",
+    );
+    expect(bootstrap).not.toContain("@takazudo/zdtp/constants");
+    expect(bootstrap).toContain('import("@takazudo/zdtp")');
+  });
+
+  it("build: `zfb build` succeeds with zdtp absent from node_modules", { timeout: 180_000 }, () => {
+    runZfbBuild(fixtureDir);
+  });
+
+  it("non-vacuous: the zdtp-less build actually rendered a doc page", () => {
+    // Guards against a "build succeeded" that emitted nothing.
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    expect(html).toContain("Getting Started");
+    expect(html).toContain("injected-route-render-proof");
   });
 });
 

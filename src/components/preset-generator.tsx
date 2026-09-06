@@ -225,7 +225,7 @@ export default function PresetGenerator() {
     cjkFriendly: true,
     packageManager: "pnpm",
     headerRightItems: [...INITIAL_HEADER_RIGHT_ITEMS],
-    metaTags: { ...DEFAULT_META_TAGS },
+    metaTags: { ...DEFAULT_META_TAGS, ogImageEnabled: true },
   });
 
   const [modalState, setModalState] = useState<FormState | null>(null);

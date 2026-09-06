@@ -28,7 +28,7 @@ A few things a fresh scaffold intentionally does **not** include:
 
 <Note>
 
-`@takazudo/zdtp` is added as an **unconditional dependency** of every generated project — not only those enabling `designTokenPanel`. The package's chrome imports the panel bootstrap *module* at module scope (so zfb's island scanner can find it), but that module itself lazy-loads `@takazudo/zdtp` via a dynamic `import()` on first use rather than importing it eagerly (see [Lazy loading](./design-token-panel.mdx#implementation-lazy-loading)). The bundler still needs the package resolvable in `node_modules` to build that chunk, so it stays a build-time-required dependency regardless of the setting — only the runtime load is deferred.
+`@takazudo/zdtp` is added **only when you enable `designTokenPanel`**. It is an *optional* peer of `@takazudo/zudo-doc`, so a project that leaves the panel off never installs it. The package's chrome still imports the panel bootstrap *module* at module scope (so zfb's island scanner can find it), but that module reaches `@takazudo/zdtp` solely through a rejection-handled dynamic `import()` on first use (see [Lazy loading](./design-token-panel.mdx#implementation-lazy-loading)) — an edge the bundler tolerates when the package is absent, so a panel-less project builds without it. If you turn `designTokenPanel` on in a project that was scaffolded without it, install `@takazudo/zdtp` yourself and add `@import "@takazudo/zdtp/styles.css";` to `src/styles/global.css`.
 
 </Note>
 
@@ -89,18 +89,19 @@ Independently of the color scheme, the scaffold can start a project on any bundl
 | `--[no-]claude-skills-writing` | Ship the zudo-doc-writing skill (doc-writing + navigation-structure guide for AI-assisted authoring) | off |
 | `--[no-]design-token-panel` | Interactive tabbed panel for tweaking spacing, font, size, and color tokens | off |
 | `--[no-]theme-pack-switcher` | Bottom-right flyout (and browse-all dialog) to switch between installed theme packs | off |
-| `--[no-]sidebar-resizer` | Draggable sidebar width | off |
-| `--[no-]sidebar-toggle` | Show/hide desktop sidebar | off |
-| `--[no-]toc-toggle` | Show/hide the desktop table of contents (edge chevron, xl screens) | off |
+| `--[no-]sidebar-resizer` | Draggable sidebar width | on |
+| `--[no-]sidebar-toggle` | Show/hide desktop sidebar | on |
+| `--[no-]toc-toggle` | Show/hide the desktop table of contents (edge chevron, xl screens) | on |
 | `--[no-]versioning` | Multi-version documentation support | off |
-| `--[no-]doc-history` | Document edit history | off |
+| `--[no-]doc-history` | Document edit history | on |
 | `--[no-]body-foot-util` | Right-aligned strip below each doc: doc history trigger + View source on GitHub link | off |
-| `--[no-]llms-txt` | Generate llms.txt for LLM consumption | off |
+| `--[no-]llms-txt` | Generate llms.txt for LLM consumption | on |
 | `--[no-]skill-symlinker` | Symlink documentation skills into Claude Code or Codex | off |
 | `--[no-]tauri` | Tauri desktop app (Mode 1) — macOS offline reader with in-page search | off |
 | `--[no-]tauri-dev` | Tauri dev wrapper (Mode 2) — configurable desktop dev wrapper for any project | off |
 | `--[no-]footer-nav-group` | Navigation links in the footer | off |
 | `--[no-]image-enlarge` | Click-to-enlarge for oversized markdown images | on |
+| `--[no-]asset-viewer` | Viewer pages for files under public/assets | on |
 | `--[no-]dynamic-page-transition` | SPA-style page transition with history handling | on |
 | `--[no-]footer-copyright` | Copyright notice in the footer | on |
 | `--[no-]changelog` | Changelog page | off |

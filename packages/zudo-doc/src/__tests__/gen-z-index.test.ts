@@ -87,14 +87,20 @@ const DEFAULT_TIER_DATA: Array<{ name: string; value: number }> = [
   { name: "drag", value: 90 },
 ];
 
-/** Builds a Z_INDEX_TIERS source file from plain name/value pairs. */
+/**
+ * Builds a Z_INDEX_TIERS source file from plain name/value pairs. `quote`
+ * picks the delimiter for every string-valued field, so the same tier data can
+ * be round-tripped through both quote styles (a `singleQuote: true` Prettier
+ * config produces the single-quoted form).
+ */
 function tokensSrcFromTiers(
   tiers: ReadonlyArray<{ name: string; value: number; kind?: string; purpose?: string }>,
+  quote: '"' | "'" = '"',
 ): string {
   const objects = tiers.map((tier) => {
-    const fields = [`name: "${tier.name}"`, `value: ${tier.value}`];
-    if (tier.kind !== undefined) fields.push(`kind: "${tier.kind}"`);
-    if (tier.purpose !== undefined) fields.push(`purpose: "${tier.purpose}"`);
+    const fields = [`name: ${quote}${tier.name}${quote}`, `value: ${tier.value}`];
+    if (tier.kind !== undefined) fields.push(`kind: ${quote}${tier.kind}${quote}`);
+    if (tier.purpose !== undefined) fields.push(`purpose: ${quote}${tier.purpose}${quote}`);
     return `  { ${fields.join(", ")} },`;
   });
   return `export const Z_INDEX_TIERS = [\n${objects.join("\n")}\n];\n`;
@@ -637,6 +643,131 @@ describe("parseTiers", () => {
     expect(() => parseTiers(src)).toThrow(/Unsupported purpose string grammar/);
   });
 
+  // ── single-quoted fields (#4005 / #4014) ─────────────────────────────────
+
+  it("parses single-quoted name/kind/purpose identically to double-quoted", () => {
+    const tiers = [
+      { name: "content", value: 0, kind: "global", purpose: "base document flow" },
+      { name: "modal", value: 50, kind: "local", purpose: "dialog surface" },
+    ];
+    const fromSingle = parseTiers(tokensSrcFromTiers(tiers, "'"));
+    expect(fromSingle).toEqual(parseTiers(tokensSrcFromTiers(tiers, '"')));
+    expect(fromSingle).toEqual(tiers);
+  });
+
+  it("parses a double-quoted purpose containing an apostrophe", () => {
+    // Prettier emits a DOUBLE-quoted string precisely when the value contains
+    // an apostrophe, so this is a real, common input. A both-quotes negated
+    // class — /(["'])([^"']*)\1/ — would stop at the apostrophe and truncate
+    // it, which is why each delimiter is pinned before the value is scanned.
+    const src = `export const Z_INDEX_TIERS = [
+  { name: 'toolbar', value: 20, purpose: "doesn't break" },
+];`;
+    expect(parseTiers(src)[0].purpose).toBe("doesn't break");
+  });
+
+  it("parses a single-quoted purpose containing a plain double quote", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: 'toolbar', value: 20, purpose: 'the "sticky" top header' },
+];`;
+    expect(parseTiers(src)[0].purpose).toBe('the "sticky" top header');
+  });
+
+  it("resolves each field's delimiter independently within and across tier objects", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: 'toolbar', value: 20, kind: "global", purpose: "doesn't break" },
+  { name: "modal", value: 50, kind: 'local', purpose: 'plain purpose' },
+];`;
+    expect(parseTiers(src)).toEqual([
+      { name: "toolbar", value: 20, kind: "global", purpose: "doesn't break" },
+      { name: "modal", value: 50, kind: "local", purpose: "plain purpose" },
+    ]);
+  });
+
+  it("tolerates a newline between purpose: and a single opening quote", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  {
+    name: 'sidebar',
+    value: 10,
+    purpose:
+      'persistent layout chrome: desktop sidebar, TOC, resizer handle',
+    kind: 'global',
+  },
+];
+`;
+    expect(parseTiers(src)[0]).toMatchObject({
+      name: "sidebar",
+      value: 10,
+      kind: "global",
+      purpose: "persistent layout chrome: desktop sidebar, TOC, resizer handle",
+    });
+  });
+
+  it("throws on an unknown single-quoted kind value", () => {
+    const src = tokensSrcFromTiers([{ name: "toolbar", value: 20, kind: "bogus" }], "'");
+    expect(() => parseTiers(src)).toThrow(/Invalid kind "bogus".*toolbar/s);
+  });
+
+  it("rejects a brace inside a single-quoted purpose", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: 'x', value: 1, purpose: 'bad } text' },
+];`;
+    expect(() => parseTiers(src)).toThrow(/Unsupported purpose string grammar/);
+  });
+
+  it("rejects a backslash inside a single-quoted purpose", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: 'x', value: 1, purpose: 'bad \\\\ text' },
+];`;
+    expect(() => parseTiers(src)).toThrow(/Unsupported purpose string grammar/);
+  });
+
+  it("rejects an escaped quote inside a single-quoted purpose", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: 'x', value: 1, purpose: 'bad \\' text' },
+];`;
+    expect(() => parseTiers(src)).toThrow(/Unsupported purpose string grammar/);
+  });
+
+  it("reports an unterminated single-quoted purpose as such, not as a double-quote failure", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: 'x', value: 1, purpose: 'never closed
+];`;
+    expect(() => parseTiers(src)).toThrow(/no closing single quote found/);
+  });
+
+  it("parses a 15-tier file in a singleQuote-Prettier consumer's shape with every purpose present", () => {
+    // The reporter's file (zudolab/zzmod#2769): `singleQuote: true` Prettier,
+    // so 11 purposes are single-quoted and the 4 containing an apostrophe come
+    // out double-quoted. Before this fix, those 11 parsed to `undefined` and
+    // rendered `-` in the Role cell with exit 0 — silent data loss.
+    const src = `export const Z_INDEX_TIERS = [
+  { name: 'backdrop', value: -10, kind: 'global', purpose: 'decorative page backdrop' },
+  { name: 'content', value: 0, kind: 'global', purpose: 'base document flow' },
+  { name: 'raised', value: 5, kind: 'local', purpose: 'cards lifted within a section' },
+  { name: 'sidebar', value: 10, kind: 'global', purpose: "the layout's persistent chrome" },
+  { name: 'toolbar', value: 20, kind: 'global', purpose: 'sticky top header' },
+  { name: 'sticky', value: 30, kind: 'local', purpose: 'sticky table headers' },
+  { name: 'overlay', value: 40, kind: 'global', purpose: "an open drawer's scrim" },
+  { name: 'modal', value: 50, kind: 'global', purpose: 'dialog surface' },
+  { name: 'popover', value: 60, kind: 'global', purpose: 'anchored floating panels' },
+  { name: 'dropdown', value: 65, kind: 'global', purpose: "a select control's menu" },
+  { name: 'toast', value: 70, kind: 'global', purpose: 'transient notifications' },
+  { name: 'tooltip', value: 80, kind: 'global', purpose: 'hover and focus hints' },
+  { name: 'drag', value: 90, kind: 'global', purpose: 'element being dragged' },
+  { name: 'devtools', value: 95, kind: 'global', purpose: "the panel you can't cover" },
+  { name: 'top', value: 100, kind: 'global', purpose: 'escape hatch above everything' },
+];
+`;
+    const tiers = parseTiers(src);
+    expect(tiers).toHaveLength(15);
+    expect(tiers.every((tier: { purpose?: string }) => Boolean(tier.purpose))).toBe(true);
+    expect(tiers[3].purpose).toBe("the layout's persistent chrome");
+    expect(tiers[13].purpose).toBe("the panel you can't cover");
+    // End to end: no Role cell falls back to the `-` placeholder.
+    expect(buildMdTable(tiers)).not.toContain("| - |");
+  });
+
   it("throws when the Z_INDEX_TIERS export is absent, naming the given tokensPath", () => {
     const src = `export const OTHER = [];`;
     expect(() => parseTiers(src, "custom/path/tokens.ts")).toThrow(
@@ -656,6 +787,166 @@ describe("parseTiers", () => {
     expect(() => parseTiers(src, "custom/path/tokens.ts")).toThrow(
       /custom\/path\/tokens\.ts parsed to an empty list/,
     );
+  });
+});
+
+// ── loud failure on an unreadable field value (#4005 / #4016) ──────────────
+
+describe("parseTiers loud-failure invariant", () => {
+  // The defect class #4005 is really about: the key is THERE, the parser
+  // cannot read it, and the old code left the field undefined — `-` in the
+  // Role cell, exit 0, `--check` reporting the table up to date.
+
+  it("throws, naming the tier, on a template-literal purpose", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: "toolbar", value: 20, purpose: \`sticky top header\` },
+];`;
+    expect(() => parseTiers(src)).toThrow(/Unreadable purpose value for tier "toolbar"/);
+  });
+
+  it("throws, naming the tier, on a bare-identifier purpose", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: "toolbar", value: 20, purpose: TOOLBAR_PURPOSE },
+];`;
+    expect(() => parseTiers(src)).toThrow(/Unreadable purpose value for tier "toolbar"/);
+  });
+
+  it("throws, naming the tier, on a concatenated purpose instead of keeping the first operand", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: "toolbar", value: 20, purpose: "sticky " + "top header" },
+];`;
+    expect(() => parseTiers(src)).toThrow(/Unreadable purpose value for tier "toolbar"/);
+  });
+
+  it("throws, naming the tier, on a ternary purpose instead of keeping one branch", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: "toolbar", value: 20, purpose: COMPACT ? "short" : "long" },
+];`;
+    expect(() => parseTiers(src)).toThrow(/Unreadable purpose value for tier "toolbar"/);
+  });
+
+  it("throws, naming the tier, on a template-literal kind", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: "toolbar", value: 20, kind: \`global\` },
+];`;
+    expect(() => parseTiers(src)).toThrow(/Unreadable kind value for tier "toolbar"/);
+  });
+
+  it("throws, naming the tier, on a bare-identifier kind", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: "toolbar", value: 20, kind: GLOBAL },
+];`;
+    expect(() => parseTiers(src)).toThrow(/Unreadable kind value for tier "toolbar"/);
+  });
+
+  it("names the offending tier, not the first one, in a multi-tier file", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: "content", value: 0, purpose: "base document flow" },
+  { name: "modal", value: 50, purpose: \`dialog surface\` },
+];`;
+    expect(() => parseTiers(src)).toThrow(/Unreadable purpose value for tier "modal"/);
+  });
+
+  it("reports an unreadable name as a malformed tier object (no name left to report)", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: \`toolbar\`, value: 20 },
+];`;
+    expect(() => parseTiers(src)).toThrow(/Malformed tier object/);
+  });
+
+  // ── the false-positive surface: these must NOT throw ─────────────────────
+
+  it("does not fire when purpose: appears unquoted inside another field's string value", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: "toolbar", value: 20, note: "purpose: documented elsewhere" },
+];`;
+    expect(parseTiers(src)).toEqual([{ name: "toolbar", value: 20 }]);
+  });
+
+  it("does not read a purpose out of another field's string value", () => {
+    // A substring/regex approach picks the quoted text up out of `note` here
+    // and reports it as the tier's role.
+    const src = `export const Z_INDEX_TIERS = [
+  { name: "toolbar", value: 20, note: "purpose: 'documented elsewhere'" },
+];`;
+    expect(parseTiers(src)[0].purpose).toBeUndefined();
+  });
+
+  it("does not fire on a commented-out purpose line, and leaves the field absent", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  {
+    name: "toolbar",
+    value: 20,
+    // purpose: "temporarily disabled",
+  },
+];`;
+    expect(parseTiers(src)).toEqual([{ name: "toolbar", value: 20 }]);
+  });
+
+  it("does not fire on a commented-out purpose whose value is itself unreadable", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  {
+    name: "toolbar",
+    value: 20,
+    // purpose: \`temporarily disabled\`,
+  },
+];`;
+    expect(parseTiers(src)).toEqual([{ name: "toolbar", value: 20 }]);
+  });
+
+  it("does not fire on a block-commented kind line, and leaves the field absent", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: "toolbar", value: 20, /* kind: \`global\`, */ purpose: "sticky top header" },
+];`;
+    expect(parseTiers(src)).toEqual([
+      { name: "toolbar", value: 20, purpose: "sticky top header" },
+    ]);
+  });
+
+  it("prefers the live purpose over a commented-out earlier one", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  {
+    name: "toolbar",
+    value: 20,
+    // purpose: "old text",
+    purpose: "new text",
+  },
+];`;
+    expect(parseTiers(src)[0].purpose).toBe("new text");
+  });
+
+  it("reads each field from its own key, not from text inside another field's value", () => {
+    // #4014 left this open: once a single-quoted purpose may contain a double
+    // quote, `purpose: 'see name: "y"'` put a second `name: "..."` inside the
+    // object body, and a body-wide regex would take the wrong one.
+    const src = `export const Z_INDEX_TIERS = [
+  { purpose: 'see name: "y"', name: "toolbar", value: 20 },
+];`;
+    expect(parseTiers(src)).toEqual([
+      { name: "toolbar", value: 20, purpose: 'see name: "y"' },
+    ]);
+  });
+
+  it("keeps object boundaries correct when an unrelated field's string holds a brace", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: "toolbar", value: 20, note: "a } brace" },
+  { name: "modal", value: 50, purpose: "dialog surface" },
+];`;
+    expect(parseTiers(src)).toEqual([
+      { name: "toolbar", value: 20 },
+      { name: "modal", value: 50, purpose: "dialog surface" },
+    ]);
+  });
+
+  it("still accepts everything #4014 established, including a double-quoted apostrophe", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: 'toolbar', value: 20, kind: 'global', purpose: "doesn't break" },
+  { name: "modal", value: 50, kind: "local", purpose: 'the "sticky" surface' },
+];`;
+    expect(parseTiers(src)).toEqual([
+      { name: "toolbar", value: 20, kind: "global", purpose: "doesn't break" },
+      { name: "modal", value: 50, kind: "local", purpose: 'the "sticky" surface' },
+    ]);
   });
 });
 
@@ -1710,5 +2001,25 @@ describe("CLI (spawned node process) — exit codes", () => {
     expect(writtenCss).toContain("--z-index-content: 0;");
     const writtenMd = readFileSync(join(tmpDir, "docs/z-index.mdx"), "utf8");
     expect(writtenMd).toContain("| content | - | - |");
+  });
+
+  it("--check surfaces an unreadable purpose instead of reporting the table up to date", () => {
+    // #4016's acceptance criterion for --check: the old code parsed this file
+    // to a purpose-less tier, rebuilt a `-` Role cell that matched the seeded
+    // (equally purpose-less) table, and exited 0.
+    writeFileSync(
+      join(tmpDir, DEFAULT_TOKENS_PATH),
+      `export const Z_INDEX_TIERS = [\n  { name: "content", value: 0, purpose: \`base document flow\` },\n];\n`,
+    );
+    writeFileSync(join(tmpDir, DEFAULT_CSS_PATH), wrapInCss(GOLDEN_DEFAULT_BLOCK));
+    seedCleanMdTable();
+
+    const { status, stdout, stderr } = runCli(
+      ["--check", "--md-table", "docs/z-index.mdx"],
+      tmpDir,
+    );
+    expect(status).not.toBe(0);
+    expect(stderr).toContain('Unreadable purpose value for tier "content"');
+    expect(stdout).not.toContain("up to date");
   });
 });
