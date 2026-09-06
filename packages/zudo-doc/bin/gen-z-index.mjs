@@ -214,22 +214,55 @@ export function validateTiers(tiers, tokensPath = DEFAULT_TOKENS_PATH) {
 }
 
 /**
+ * Ordered extraction patterns for the three string-valued tier fields. Each
+ * key lists the double-quoted form FIRST and the single-quoted form second,
+ * and they are tried in that order — deliberately NOT collapsed into one
+ * `(["'])([^"']*)\1` alternation. A negated class covering both quote
+ * characters would reject `purpose: "doesn't break"`, which is exactly what
+ * Prettier emits when the value contains an apostrophe (it only reaches for
+ * double quotes in that case), so the delimiter has to be pinned down before
+ * the value is scanned rather than during it. `name` keeps its `+` quantifier
+ * (a name may not be empty); `kind`/`purpose` keep `*`.
+ */
+const FIELD_PATTERNS = {
+  name: [/name:\s*"([^"]+)"/, /name:\s*'([^']+)'/],
+  kind: [/kind:\s*"([^"]*)"/, /kind:\s*'([^']*)'/],
+  purpose: [/purpose:\s*"([^"]*)"/, /purpose:\s*'([^']*)'/],
+};
+
+/** Returns the first FIELD_PATTERNS match for `key` in a tier object body, or null. */
+function matchQuotedField(obj, key) {
+  for (const pattern of FIELD_PATTERNS[key]) {
+    const match = obj.match(pattern);
+    if (match) return match;
+  }
+  return null;
+}
+
+/**
  * Scans the raw Z_INDEX_TIERS array body for `purpose:` fields and rejects
  * any whose quoted value contains a brace or a backslash (which also covers
  * escaped quotes) BEFORE the per-object splitter runs. The per-object
  * splitter below uses a non-greedy `{...}` match to isolate each tier object,
  * which only works when no field value contains a brace — a purpose string
  * with a stray `}` would silently truncate the object split and corrupt
- * parsing instead of failing loudly. Only a flat, plain double-quoted string
- * is supported; a newline between `purpose:` and the opening quote is fine
- * (the field-key regexes below all use `\s*`, which matches newlines).
+ * parsing instead of failing loudly. Only a flat, plain string is supported,
+ * single- or double-quoted; a newline between `purpose:` and the opening
+ * quote is fine (the field-key regexes above all use `\s*`, which matches
+ * newlines).
+ *
+ * The opening delimiter is captured and the scan closes on that SAME
+ * character, so the other quote character is ordinary text inside the value:
+ * `purpose: "doesn't break"` and `purpose: 'a "quoted" phrase'` both scan
+ * cleanly. Matching either quote as a terminator would truncate both.
  */
 function assertSupportedPurposeGrammar(body, tokensPath) {
   const purposeKeyRe = /purpose:\s*/g;
   let m;
   while ((m = purposeKeyRe.exec(body)) !== null) {
     const afterKey = m.index + m[0].length;
-    if (body[afterKey] !== '"') {
+    const openingQuote = body[afterKey];
+    if (openingQuote !== '"' && openingQuote !== "'") {
       // Not immediately followed by a quote — not a value this scan can
       // confirm is a real field; let the per-object parser's generic
       // "malformed tier object" error handle it if it really is one.
@@ -242,19 +275,21 @@ function assertSupportedPurposeGrammar(body, tokensPath) {
       if (ch === "{" || ch === "}" || ch === "\\") {
         throw new Error(
           `Unsupported purpose string grammar in ${tokensPath}: purpose values may not ` +
-            `contain braces, backslashes, or escaped quotes — only flat, plain double-quoted ` +
-            `strings are supported (the object parser cannot safely handle anything else). ` +
+            `contain braces, backslashes, or escaped quotes — only flat, plain single- or ` +
+            `double-quoted strings are supported (the object parser cannot safely handle ` +
+            `anything else). ` +
             `Offending text near: ${JSON.stringify(body.slice(afterKey, Math.min(afterKey + 40, body.length)))}`,
         );
       }
-      if (ch === '"') {
+      if (ch === openingQuote) {
         closed = true;
         break;
       }
     }
     if (!closed) {
       throw new Error(
-        `Unterminated purpose string in ${tokensPath} (no closing double quote found).`,
+        `Unterminated purpose string in ${tokensPath} ` +
+          `(no closing ${openingQuote === '"' ? "double" : "single"} quote found).`,
       );
     }
     purposeKeyRe.lastIndex = i + 1;
@@ -265,10 +300,15 @@ function assertSupportedPurposeGrammar(body, tokensPath) {
  * Parse the Z_INDEX_TIERS array out of z-index-tokens.ts WITHOUT importing it
  * (this bin is a dependency-free .mjs and cannot resolve TypeScript). Reads
  * each `{ name: "...", value: <n>, kind?: "global"|"local", purpose?: "..." }`
- * object literal. Throws on a malformed source, an unsupported purpose-string
- * grammar, or an unknown `kind` value so drift between the parser and the
- * file surfaces loudly. Delegates the structural invariants (non-empty,
- * name shape, duplicate names, per-kind value uniqueness) to `validateTiers`.
+ * object literal. `name`, `kind`, and `purpose` accept EITHER quote character
+ * — a project whose Prettier config sets `singleQuote: true` needs no
+ * per-file override — and the two styles may be mixed freely within a file or
+ * within one tier object, since each field's delimiter is resolved
+ * independently (see FIELD_PATTERNS). `value` is unquoted either way. Throws
+ * on a malformed source, an unsupported purpose-string grammar, or an unknown
+ * `kind` value so drift between the parser and the file surfaces loudly.
+ * Delegates the structural invariants (non-empty, name shape, duplicate
+ * names, per-kind value uniqueness) to `validateTiers`.
  *
  * `tokensPath` is used purely for error-message context — pass the same path
  * string (conventional default or an explicit --tokens value) that was used
@@ -298,7 +338,7 @@ export function parseTiers(src, tokensPath = DEFAULT_TOKENS_PATH) {
   let m;
   while ((m = objectRe.exec(body)) !== null) {
     const obj = m[1];
-    const nameMatch = obj.match(/name:\s*"([^"]+)"/);
+    const nameMatch = matchQuotedField(obj, "name");
     const valueMatch = obj.match(/value:\s*(-?\d+)/);
     if (!nameMatch || !valueMatch) {
       throw new Error(
@@ -308,7 +348,7 @@ export function parseTiers(src, tokensPath = DEFAULT_TOKENS_PATH) {
 
     const tier = { name: nameMatch[1], value: Number(valueMatch[1]) };
 
-    const kindMatch = obj.match(/kind:\s*"([^"]*)"/);
+    const kindMatch = matchQuotedField(obj, "kind");
     if (kindMatch) {
       const kindValue = kindMatch[1];
       if (kindValue !== "global" && kindValue !== "local") {
@@ -320,7 +360,7 @@ export function parseTiers(src, tokensPath = DEFAULT_TOKENS_PATH) {
       tier.kind = kindValue;
     }
 
-    const purposeMatch = obj.match(/purpose:\s*"([^"]*)"/);
+    const purposeMatch = matchQuotedField(obj, "purpose");
     if (purposeMatch) {
       tier.purpose = purposeMatch[1];
     }
