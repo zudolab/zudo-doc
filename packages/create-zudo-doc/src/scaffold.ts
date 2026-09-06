@@ -980,26 +980,20 @@ function generatePackageJson(
     // missing copy produces no `pnpm install` warning — which is why this gap
     // shipped silently and only surfaced at build time.
     diff: "^8.0.3",
-    // @takazudo/zdtp — SAME "unconditional at build time despite being an
-    // optional peer" class as `diff` above, discovered empirically while
-    // verifying this generator's own barebone (designTokenPanel: OFF) output
-    // (epic zudolab/zudo-doc#2651, #2660 self-review — a genuine package-level
-    // coupling, not a generator bug; flagged loudly on #2660's completion
-    // comment for a package-side follow-up). Since the #2658 gate-2 fix,
-    // `chrome/derive.tsx`'s `deriveBodyEndIslands` statically imports the REAL
-    // `DesignTokenPanelBootstrap` as the default for EVERY `createChrome`
-    // consumer (so the island auto-mounts with zero host wiring when the
-    // setting is on) — and that component imports `@takazudo/zdtp` at module
-    // scope. So every page that goes through `createChrome` — which is every
-    // page in this project — pulls the zdtp import into the esbuild bundle
-    // graph, `designTokenPanel` setting or not; only RENDERING is gated on
-    // the setting, not the import. Without this dep, `zfb build` fails with
-    // "Could not resolve '@takazudo/zdtp'" even on a fully barebone project.
-    // `preact ^10.29.1` (see the floor comment above) is required for the
-    // same reason. This is the ACCEPTED, permanent contract per #2668 — see
-    // the "@takazudo/zdtp dep implication" note in
-    // packages/zudo-doc/docs/adr/route-injection-seam.md.
-    "@takazudo/zdtp": "0.5.1",
+    // (@takazudo/zdtp is NOT here — it is gated on the designTokenPanel
+    // feature, see the block below. It WAS unconditional from #2660 through
+    // #4018: `chrome/derive.tsx`'s `deriveBodyEndIslands` statically imports
+    // the REAL `DesignTokenPanelBootstrap` for EVERY `createChrome` consumer
+    // (zero host wiring when the setting is on), and that component used to
+    // import `@takazudo/zdtp/constants` at module scope — so a barebone
+    // designTokenPanel:OFF project still died with "Could not resolve
+    // '@takazudo/zdtp/constants'". #4018 vendored those constants into
+    // @takazudo/zudo-doc, leaving only a rejection-handled
+    // `import("@takazudo/zdtp")` that esbuild tolerates when the package is
+    // absent, so the dep is now genuinely conditional (#4009).
+    // `preact` stays unconditional (the app needs it regardless); its
+    // ^10.29.1 floor is still chosen so a designTokenPanel-ON project shares
+    // one preact instance with zdtp — see the floor comment above.)
     // (@takazudo/zudo-doc-history-server is NOT here — it is gated on the
     // docHistory or assetViewer features, see the block below. It was briefly unconditional
     // (#3080) to work around doc-history-area importing its `/exclude` subpath
@@ -1029,6 +1023,16 @@ function generatePackageJson(
   // search ships as @takazudo/zudo-doc's own self-contained generated
   // search-widget script (custom word-match scorer) — no third-party search
   // engine dependency is needed here. Do not re-add minisearch/pagefind.
+
+  if (choices.features.includes("designTokenPanel")) {
+    // Only the design-token-panel feature graph reaches @takazudo/zdtp: the
+    // panel payload loads through a rejection-handled `import("@takazudo/zdtp")`
+    // at first toggle, and this feature's global.css injection is what pulls in
+    // `@takazudo/zdtp/styles.css` (see features/design-token-panel.ts). Both are
+    // no-ops with the feature off, so an OFF project must not carry the dep
+    // (#4009 / #4018 — it was unconditional until then, see the `deps` block).
+    deps["@takazudo/zdtp"] = "0.5.1";
+  }
 
   if (
     choices.features.includes("docHistory") ||
