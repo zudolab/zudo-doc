@@ -212,7 +212,13 @@ function isEmptyEnvelope(raw: string | null): boolean {
  * activates, while auto-remembered "auto" stays lazy for casual visitors.
  * DOM Tweaker activates only when the active config supplies domTweaker.
  *
- * State keys match exactly -state / -state-vN, with literal prefix matching.
+ * State keys match exactly one of the suffixes in zdtp's own
+ * `READABLE_STATE_KEY_SUFFIXES` registry (via `EAGER_LOAD_GATE_STATE_FAMILY
+ * .matchesKey`), with literal prefix matching — NOT any numeric `-state-vN`.
+ * That registry is upstream-owned and, per its contract, only ever grows when
+ * the loader gains the ability to read a new format version, so a suffix that
+ * merely looks like a state key but isn't registered yet must not eagerly
+ * load a panel that cannot actually parse it.
  * OR across every matching version: an empty newer envelope does not veto a
  * non-empty legacy one. The probe intentionally does not learn migration
  * precedence. Unavailable storage reads as no persisted state.

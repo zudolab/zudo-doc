@@ -8,6 +8,7 @@ import {
   vi,
 } from "vitest";
 import type { PanelConfig } from "@takazudo/zdtp";
+import { READABLE_STATE_KEY_SUFFIXES } from "@takazudo/zdtp/constants";
 
 const zdtp = vi.hoisted(() => ({
   /**
@@ -825,14 +826,36 @@ describe("bootstrapDesignTokenPanel — persisted-state probe envelope policy", 
     },
   );
 
-  it.each(["-state", "-state-v0", "-state-v2", "-state-v123", "-state-v01"])(
-    "accepts exact numeric state family %s with a regex-significant prefix",
+  // Positive cases are derived from zdtp's own registry rather than hardcoded
+  // here, so a future storage-format bump (which must update the upstream
+  // registry per its own contract — see READABLE_STATE_KEY_SUFFIXES's
+  // docblock) keeps this list in sync automatically instead of silently
+  // going stale like the pre-0.5.1 hardcoded suffix list did.
+  it.each(Object.values(READABLE_STATE_KEY_SUFFIXES))(
+    "accepts readable state family %s with a regex-significant prefix",
     async (suffix) => {
       const browser = installBrowser();
       const prefix = "panel.[a]+($)";
       browser.values.set(`${prefix}${suffix}`, NON_EMPTY_ENVELOPE);
       bootstrapDesignTokenPanel(makeBuilder(prefix));
       await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
+    },
+  );
+
+  // Negative counterpart (zdtp 0.5.1, #4001): the eager-load gate is bounded
+  // to exactly the registry above — a numeric suffix that merely LOOKS like a
+  // state key must NOT trigger eager configure. Locks in the bounded
+  // behavior deliberately instead of leaving it untested.
+  it.each(["-state-v0", "-state-v123", "-state-v01"])(
+    "does not accept unregistered numeric state suffix %s, even with a regex-significant prefix",
+    async (suffix) => {
+      const browser = installBrowser();
+      const prefix = "panel.[a]+($)";
+      browser.values.set(`${prefix}${suffix}`, NON_EMPTY_ENVELOPE);
+      bootstrapDesignTokenPanel(makeBuilder(prefix));
+      await settle();
+      expect(zdtp.evaluations).toBe(0);
+      expect(zdtp.configurePanel).not.toHaveBeenCalled();
     },
   );
 
