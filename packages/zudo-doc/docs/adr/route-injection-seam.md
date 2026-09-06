@@ -399,8 +399,12 @@ the same `setup(ctx)` hook.
   PORTABLE-CONTRACT.md §1 and §6.2). Fixed flags honor `acceptedValues` and
   `requiredConfig`, including the active config's `domTweaker` requirement.
   This host intentionally accepts only `:autoload="1"`; auto-remembered
-  `:autoload="auto"` stays lazy. State keys match the exact `-state` / numeric
-  `-state-vN` family for the active literal prefix. Raw blank, JSON null, `{}`,
+  `:autoload="auto"` stays lazy. State keys match exactly the suffixes zdtp
+  registers in `READABLE_STATE_KEY_SUFFIXES` (via
+  `EAGER_LOAD_GATE_STATE_FAMILY.matchesKey`) for the active literal prefix —
+  **not** an open-ended numeric `-state-vN` family (corrected in zdtp 0.5.1,
+  #4001; the registry only grows when the loader learns to read a new format
+  version). Raw blank, JSON null, `{}`,
   and `[]` are empty; malformed JSON, non-empty collections, and all parsed
   primitives (including JSON `""`, `0`, and `false`) activate. Sibling pack
   namespaces remain isolated, and the default `zudo-doc-tweak` prefix is

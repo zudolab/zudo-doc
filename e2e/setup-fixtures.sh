@@ -454,7 +454,18 @@ setup_fixture() {
       # public/assets/ from an earlier symlink-based setup), which would
       # silently suppress the copy-through on a warm tree (#3997). A leftover
       # symlink or untracked leftover dir of the same name IS replaced below.
-      if [ -n "$(git -C "$REPO_ROOT" ls-files -- "$fixture_dir/public/$entry_name")" ]; then
+      #
+      # `--literal-pathspecs` because an entry name containing pathspec magic
+      # (`*`, `?`, `[`) would otherwise be matched as a pattern. And a FAILED
+      # `git ls-files` must abort rather than fall through: an empty result is
+      # read as "not fixture-owned", which leads straight into the `rm -rf`
+      # below, so a git error would delete git-tracked fixture-owned entries.
+      local tracked_entry
+      if ! tracked_entry="$(git -C "$REPO_ROOT" --literal-pathspecs ls-files -- "$fixture_dir/public/$entry_name")"; then
+        echo "ERROR: git ls-files failed while resolving fixture ownership of public/$entry_name" >&2
+        exit 1
+      fi
+      if [ -n "$tracked_entry" ]; then
         continue
       fi
       rm -rf "$fixture_dir/public/$entry_name"
