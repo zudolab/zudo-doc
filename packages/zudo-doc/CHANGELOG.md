@@ -4,6 +4,14 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.18.2] - 2026-09-06
+
+### Bug Fixes
+
+- A site with `designTokenPanel: false` (including the default) now builds without the optional `@takazudo/zdtp` peer installed. `chrome/derive` statically imported the Design Token Panel bootstrap, which imported `@takazudo/zdtp/constants`, so esbuild resolved that edge while bundling — before any runtime check of the setting could make it unreachable. A consumer that honored the published `peerDependenciesMeta` `optional: true` and omitted zdtp failed with `Could not resolve "@takazudo/zdtp/constants"`, and neither marking the package external nor an `addAlias` registration could route around it. The values the bootstrap needed are now vendored in-package, with a conformance test asserting them against the real `@takazudo/zdtp/constants` so the copies cannot drift, and a build-level test that installs a consumer without zdtp and proves the panel-disabled graph no longer reaches it. The affected published range is **5.18.0–5.18.1**; 5.17.2 was the last good release. (29b52ac5b, f6e293352)
+- `gen-z-index` accepts single-quoted `name`, `kind`, and `purpose` values. It previously matched only double-quoted ones, so a single-quoted entry was skipped without comment and silently left out of the generated scale. (64f5a8be4)
+- `gen-z-index` now fails loudly on a `purpose` or `kind` value it cannot read, instead of continuing and emitting a scale that quietly omits the unreadable entry. (0175bb5f6)
+
 ## [5.18.1] - 2026-09-06
 
 ### Bug Fixes

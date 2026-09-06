@@ -4,6 +4,17 @@ All notable changes to `create-zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.18.2] - 2026-09-06
+
+### Bug Fixes
+
+- `@takazudo/zdtp` is added to a generated project only when the Design Token Panel is enabled. It had been an unconditional direct dependency of every scaffold — which is how generated projects avoided the `@takazudo/zudo-doc` bundling bug fixed in this same release — so every project without the panel installed and carried a package it never used. With that bug fixed upstream, the dependency is now gated on `designTokenPanel`. (a93ff2293)
+- Six feature flags now default on, matching the FEATURES catalog: `--sidebar-resizer`, `--sidebar-toggle`, `--toc-toggle`, `--doc-history`, `--llms-txt`, and `--asset-viewer`. A scaffold created without explicit flags now includes these features; pass the matching `--no-` flag to opt out. (6d0d3bfb9)
+
+### Other Changes
+
+- The CLI reference table was contradicted by the change above and has been corrected: the default column now matches the catalog, and the previously-missing `--[no-]asset-viewer` row was added in catalog position. The package README's feature list was corrected the same way. (c908f7f9a, f006d4ada)
+
 ## [5.18.1] - 2026-09-06
 
 ### Other Changes
