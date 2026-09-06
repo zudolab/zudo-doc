@@ -106,7 +106,7 @@ function verifyRoundtrip(state: FormState) {
 }
 
 describe("roundtrip: buildCliCommand → parseArgs", () => {
-  it("default state (search + sidebarFilter + imageEnlarge on)", () => {
+  it("default state (11 default-on features)", () => {
     verifyRoundtrip(makeState());
   });
 
