@@ -454,7 +454,7 @@ TOC に含まれる最大見出し深度（2〜4）。
 
 デフォルト: `false`
 
-パネルは追加設定なしで動作します。完全にカスタマイズするには、`designTokenPanelConfigModule` をホストモジュールに向けます — [ホストクロームバインディング](../reference/host-chrome-bindings.mdx)を参照してください。
+**この機能を有効にしてスキャフォールドしたプロジェクトでは**、パネルは追加設定なしで動作します — そのときにオプショナルピアの `@takazudo/zdtp` がインストールされ、`@import "@takazudo/zdtp/styles.css";` の行も追加されるためです。パネルなしでスキャフォールドしたプロジェクトで有効化する場合は、この 2 つを手作業で行う必要があります。行わないと、パネルの遅延 `import("@takazudo/zdtp")` が実行時に失敗し、警告がログに出るだけになります。完全にカスタマイズするには、`designTokenPanelConfigModule` をホストモジュールに向けます — [ホストクロームバインディング](../reference/host-chrome-bindings.mdx)を参照してください。
 
 ### sidebarResizer
 

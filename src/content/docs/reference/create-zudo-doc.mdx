@@ -28,7 +28,7 @@ A few things a fresh scaffold intentionally does **not** include:
 
 <Note>
 
-`@takazudo/zdtp` is added as an **unconditional dependency** of every generated project — not only those enabling `designTokenPanel`. The package's chrome imports the panel bootstrap *module* at module scope (so zfb's island scanner can find it), but that module itself lazy-loads `@takazudo/zdtp` via a dynamic `import()` on first use rather than importing it eagerly (see [Lazy loading](./design-token-panel.mdx#implementation-lazy-loading)). The bundler still needs the package resolvable in `node_modules` to build that chunk, so it stays a build-time-required dependency regardless of the setting — only the runtime load is deferred.
+`@takazudo/zdtp` is added **only when you enable `designTokenPanel`**. It is an *optional* peer of `@takazudo/zudo-doc`, so a project that leaves the panel off never installs it. The package's chrome still imports the panel bootstrap *module* at module scope (so zfb's island scanner can find it), but that module reaches `@takazudo/zdtp` solely through a rejection-handled dynamic `import()` on first use (see [Lazy loading](./design-token-panel.mdx#implementation-lazy-loading)) — an edge the bundler tolerates when the package is absent, so a panel-less project builds without it. If you turn `designTokenPanel` on in a project that was scaffolded without it, install `@takazudo/zdtp` yourself and add `@import "@takazudo/zdtp/styles.css";` to `src/styles/global.css`.
 
 </Note>
 

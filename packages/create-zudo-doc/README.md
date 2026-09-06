@@ -113,18 +113,19 @@ Each feature has a `--[no-]<flag>` form. Passing `--feature` enables it; `--no-f
 | `--[no-]search` | Full-text search | on |
 | `--[no-]sidebar-filter` | Real-time sidebar filter | on |
 | `--[no-]image-enlarge` | Click-to-enlarge for oversized images | on |
-| `--[no-]asset-viewer` | Viewer pages for files under `public/assets/` | off |
+| `--[no-]asset-viewer` | Viewer pages for files under `public/assets/` | on |
 | `--[no-]tag-governance` | Vocabulary-aware tag audit + suggest scripts | off |
 | `--[no-]claude-resources` | Auto-generate Claude Code docs from `.claude/` | off |
 | `--[no-]codex-resources` | Auto-generate Codex docs from `.codex/` + `AGENTS.md` | off |
 | `--[no-]claude-skills` | Ship zudo-doc Claude Code skills (design-system, translate, version-bump) | off |
 | `--[no-]design-token-panel` | Interactive panel for tweaking spacing, font, color tokens | off |
-| `--[no-]sidebar-resizer` | Draggable sidebar width handle | off |
-| `--[no-]sidebar-toggle` | Show/hide desktop sidebar button | off |
+| `--[no-]sidebar-resizer` | Draggable sidebar width handle | on |
+| `--[no-]sidebar-toggle` | Show/hide desktop sidebar button | on |
+| `--[no-]toc-toggle` | Show/hide the desktop table of contents (edge chevron, xl screens) | on |
 | `--[no-]versioning` | Multi-version documentation support | off |
-| `--[no-]doc-history` | Show per-page document edit history | off |
+| `--[no-]doc-history` | Show per-page document edit history | on |
 | `--[no-]body-foot-util` | Right-aligned strip below each doc (history trigger + GitHub source link) | off |
-| `--[no-]llms-txt` | Generate `llms.txt` for LLM consumption | off |
+| `--[no-]llms-txt` | Generate `llms.txt` for LLM consumption | on |
 | `--[no-]skill-symlinker` | Symlink documentation skills into `.claude/` | off |
 | `--[no-]tauri` | Tauri desktop app — Mode 1 offline reader | off |
 | `--[no-]tauri-dev` | Tauri dev wrapper — Mode 2 configurable dev wrapper | off |
