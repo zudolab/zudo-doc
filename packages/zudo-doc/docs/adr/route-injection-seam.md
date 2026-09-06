@@ -391,8 +391,13 @@ the same `setup(ctx)` hook.
   alias is needed anywhere (the vitest alias was removed with it) and chrome
   bundles outside a zfb build. See the "Where the virtual specifier is
   imported" bullet above.
-- **Lazy activation contract (zdtp 0.5.0, #3984).** The bootstrap's only eager
-  zdtp value import is the side-effect-free `@takazudo/zdtp/constants` leaf.
+- **Lazy activation contract (zdtp 0.5.0, #3984; sourcing amended by #4018).**
+  The bootstrap has NO eager zdtp value import at all. It reads the five
+  activation constants from the in-package mirror
+  `src/design-token-panel-constants.ts` — vendored from the `^0.5.1`
+  `@takazudo/zdtp/constants` leaf and conformance-tested against it, so an
+  optional peer stays optional (#4009; see the dep-implication bullet below).
+  The names and semantics below are unchanged.
   `DEFAULT_STORAGE_PREFIX`, `DEFAULT_TOGGLE_EVENT`, and `resolveToggleEventName`
   define the prefix and toggle channels; `EAGER_LOAD_GATE_KEY_SUFFIXES` and
   `EAGER_LOAD_GATE_STATE_FAMILY` define the persisted signals (public
@@ -415,19 +420,34 @@ the same `setup(ctx)` hook.
   `PanelInstanceHandle` exposes `instanceId`, `open`, `close`, `toggle`, and
   `destroy`, with no public clear-applied handle or root API. Pack switches
   therefore retain the config-driven clear through the outgoing apply sink.
-- **`@takazudo/zdtp` dep implication (UNCHANGED by #3396):** the same static
-  import that makes `DesignTokenPanelBootstrap` the seam default
-  (`chrome/derive.tsx`) makes `@takazudo/zdtp` an **unconditional build-time dependency** of
-  every `createChrome` consumer — even `designTokenPanel: false` projects
-  (the "Could not resolve '@takazudo/zdtp'" failure class from #2660). Same
-  shape as the `diff` peer implication above: only RENDERING is gated on the
-  setting, not the import, and there is no way to keep the static import
-  (required for scanner reachability) *and* avoid bundling zdtp when the
-  feature is off. This is the ACCEPTED, permanent contract per #2668. The
-  generator's unconditional `"@takazudo/zdtp"` dependency in
-  `generatePackageJson()` (`packages/create-zudo-doc/src/scaffold.ts`) is the
-  corresponding scaffold-side guarantee — without it `zfb build` fails with
-  the same error even on a fully barebone project.
+- **`@takazudo/zdtp` dep implication (UNCHANGED by #3396; RESOLVED by #4018):**
+  the static import that makes `DesignTokenPanelBootstrap` the seam default
+  (`chrome/derive.tsx`) is retained — it is required for scanner reachability —
+  but the zdtp **package** edge it used to drag along is gone.
+
+  *History (kept, not deleted).* From #2660 through #4018 that same import made
+  `@takazudo/zdtp` an **unconditional build-time dependency** of every
+  `createChrome` consumer, even `designTokenPanel: false` projects (the
+  "Could not resolve '@takazudo/zdtp'" failure class from #2660). It was
+  recorded here as the ACCEPTED, permanent contract per #2668 — with the
+  generator's unconditional `"@takazudo/zdtp"` dependency as the scaffold-side
+  guarantee — on the reasoning that there was no way to keep the static import
+  *and* avoid bundling zdtp when the feature is off. That reasoning was wrong
+  about the last step, and the contract broke a real consumer that honored the
+  `optional: true` peer declaration (#4009).
+
+  *Current contract.* #4018 removed the last static package edge: the four data
+  constants the bootstrap needed are vendored at
+  `src/design-token-panel-constants.ts` (conformance-tested against the real
+  `@takazudo/zdtp/constants` on every default-lane run), the panel payload stays
+  behind the rejection-handled `import("@takazudo/zdtp")` in `loadZdtp()` —
+  which esbuild tolerates with the package absent, proved by real build in
+  #4015 — and the generator's zdtp dependency is now gated on the
+  `designTokenPanel` feature, matching the already-conditional
+  `@takazudo/zdtp/styles.css` import. A packed-tarball build with zdtp removed
+  from `node_modules` holds the line (`route-injection-build.slow.test.ts`).
+  The `diff` peer implication above is NOT affected — its import is an
+  unguarded `await import()` and remains build-fatal when absent.
 
   **Runtime load is a separate concern from this build-time contract**
   (#3282): `DesignTokenPanelBootstrap` no longer imports `@takazudo/zdtp`

@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 const pkgRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
 describe("published bootstrap consumer graph", () => {
-  it("eagerly loads only the constants leaf and dynamically reaches the panel payload", async () => {
+  it("eagerly loads no zdtp file at all and dynamically reaches the panel payload", async () => {
     // Exercise the actual dist export a consumer imports. Rebuild the package
     // after source changes before running this contract test.
     const result = await build({
@@ -44,8 +44,14 @@ describe("published bootstrap consumer graph", () => {
     const all = closure(entry!, true);
     const eagerZdtp = [...new Set([...eager].flatMap((name) => Object.keys(outputs[name]!.inputs)))]
       .filter((name) => name.includes("/@takazudo/zdtp/"));
-    expect(eagerZdtp).toHaveLength(1);
-    expect(eagerZdtp[0]).toMatch(/\/dist\/constants\.js$/);
+    // #4009 / #4018: ANY eager zdtp input means a consumer that honors the
+    // `optional: true` peer declaration and never installed @takazudo/zdtp
+    // cannot build (`Could not resolve "@takazudo/zdtp/..."`). The constants
+    // this used to reach through `@takazudo/zdtp/constants` are vendored at
+    // `src/design-token-panel-constants.ts`; only the rejection-handled
+    // `import("@takazudo/zdtp")` inside `loadZdtp()` may reach the package,
+    // and that edge is dynamic so it is excluded from the eager closure.
+    expect(eagerZdtp).toEqual([]);
     const payloads = result.outputFiles.filter((file) => file.text.includes("tokenpanel-shell"));
     expect(payloads.length).toBeGreaterThan(0);
     for (const payload of payloads) {
