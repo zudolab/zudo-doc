@@ -213,64 +213,248 @@ export function validateTiers(tiers, tokensPath = DEFAULT_TOKENS_PATH) {
   return tiers;
 }
 
-/**
- * Ordered extraction patterns for the three string-valued tier fields. Each
- * key lists the double-quoted form FIRST and the single-quoted form second,
- * and they are tried in that order — deliberately NOT collapsed into one
- * `(["'])([^"']*)\1` alternation. A negated class covering both quote
- * characters would reject `purpose: "doesn't break"`, which is exactly what
- * Prettier emits when the value contains an apostrophe (it only reaches for
- * double quotes in that case), so the delimiter has to be pinned down before
- * the value is scanned rather than during it. `name` keeps its `+` quantifier
- * (a name may not be empty); `kind`/`purpose` keep `*`.
- */
-const FIELD_PATTERNS = {
-  name: [/name:\s*"([^"]+)"/, /name:\s*'([^']+)'/],
-  kind: [/kind:\s*"([^"]*)"/, /kind:\s*'([^']*)'/],
-  purpose: [/purpose:\s*"([^"]*)"/, /purpose:\s*'([^']*)'/],
-};
+const WHITESPACE_RE = /\s/;
+const IDENT_START_RE = /[A-Za-z_$]/;
+const IDENT_PART_RE = /[A-Za-z0-9_$]/;
 
-/** Returns the first FIELD_PATTERNS match for `key` in a tier object body, or null. */
-function matchQuotedField(obj, key) {
-  for (const pattern of FIELD_PATTERNS[key]) {
-    const match = obj.match(pattern);
-    if (match) return match;
+/**
+ * Skips whitespace AND comments (line comments to end of line, block comments
+ * to their terminator) starting at `i`, returning the offset of the next code
+ * character. Shared by the tier scanner and the key/value walk. Comments are
+ * trivia here for a load-bearing reason: a commented-out `purpose: "..."`
+ * line must NOT count as a real property key, which is exactly why the scan
+ * below works at code level instead of regex-matching the raw object body
+ * (#4016).
+ */
+function skipTrivia(src, i) {
+  for (;;) {
+    while (i < src.length && WHITESPACE_RE.test(src[i])) i++;
+    if (src[i] === "/" && src[i + 1] === "/") {
+      const newline = src.indexOf("\n", i);
+      i = newline === -1 ? src.length : newline + 1;
+      continue;
+    }
+    if (src[i] === "/" && src[i + 1] === "*") {
+      const close = src.indexOf("*/", i + 2);
+      i = close === -1 ? src.length : close + 2;
+      continue;
+    }
+    return i;
   }
-  return null;
 }
 
 /**
- * Scans the raw Z_INDEX_TIERS array body for `purpose:` fields and rejects
- * any whose quoted value contains a brace or a backslash (which also covers
- * escaped quotes) BEFORE the per-object splitter runs. The per-object
- * splitter below uses a non-greedy `{...}` match to isolate each tier object,
- * which only works when no field value contains a brace — a purpose string
- * with a stray `}` would silently truncate the object split and corrupt
- * parsing instead of failing loudly. Only a flat, plain string is supported,
- * single- or double-quoted; a newline between `purpose:` and the opening
- * quote is fine (the field-key regexes above all use `\s*`, which matches
- * newlines).
- *
- * The opening delimiter is captured and the scan closes on that SAME
- * character, so the other quote character is ordinary text inside the value:
- * `purpose: "doesn't break"` and `purpose: 'a "quoted" phrase'` both scan
- * cleanly. Matching either quote as a terminator would truncate both.
+ * Returns the offset one past the `'`/`"` string literal opening at `i`
+ * (consuming backslash escapes), or `src.length` when it is unterminated.
+ * Escapes are consumed HERE even though an escaped quote is later rejected as
+ * an unsupported purpose grammar: the scanner has to agree with JavaScript
+ * about where the string ends, or a `name: "a\"b"` would desync every object
+ * boundary after it before the rejection ever ran.
  */
-function assertSupportedPurposeGrammar(body, tokensPath) {
-  const purposeKeyRe = /purpose:\s*/g;
-  let m;
-  while ((m = purposeKeyRe.exec(body)) !== null) {
-    const afterKey = m.index + m[0].length;
-    const openingQuote = body[afterKey];
-    if (openingQuote !== '"' && openingQuote !== "'") {
-      // Not immediately followed by a quote — not a value this scan can
-      // confirm is a real field; let the per-object parser's generic
-      // "malformed tier object" error handle it if it really is one.
+function skipQuoted(src, i) {
+  const quote = src[i];
+  for (let j = i + 1; j < src.length; j++) {
+    if (src[j] === "\\") {
+      j++;
       continue;
     }
-    let i = afterKey + 1;
+    if (src[j] === quote) return j + 1;
+  }
+  return src.length;
+}
+
+/**
+ * Returns the offset one past the template literal opening at `i`, walking
+ * `${...}` interpolations (which may nest braces, strings, and further
+ * templates). A template literal is never a SUPPORTED tier value — this
+ * exists only so a file containing one still yields correct object spans, and
+ * therefore reaches the loud per-tier rejection in `parseTiers` naming the
+ * offending tier, instead of desyncing the scan into a confusing error.
+ */
+function skipTemplate(src, i) {
+  let j = i + 1;
+  while (j < src.length) {
+    const ch = src[j];
+    if (ch === "\\") {
+      j += 2;
+      continue;
+    }
+    if (ch === "`") return j + 1;
+    if (ch === "$" && src[j + 1] === "{") {
+      let depth = 1;
+      j += 2;
+      while (j < src.length && depth > 0) {
+        const inner = src[j];
+        if (inner === '"' || inner === "'") {
+          j = skipQuoted(src, j);
+          continue;
+        }
+        if (inner === "`") {
+          j = skipTemplate(src, j);
+          continue;
+        }
+        if (inner === "{") depth++;
+        else if (inner === "}") depth--;
+        j++;
+      }
+      continue;
+    }
+    j++;
+  }
+  return src.length;
+}
+
+/**
+ * Lexes the raw Z_INDEX_TIERS array body at CODE level and returns
+ * `{ objects, keys }`:
+ *
+ *   - `objects` — one entry per top-level `{ ... }` tier literal, with its
+ *     `start`/`end` brace offsets and the property-key sites found inside it.
+ *   - `keys` — every property-key site in source order, flat. Sites belonging
+ *     to an object that never closed appear here but in no `objects` entry;
+ *     that is deliberate, so an unterminated purpose string is still reported
+ *     as such rather than as an empty tier list.
+ *
+ * A "site" is `{ key, valueStart }`, where `valueStart` is the first code
+ * character after the `:` — the offset every value read anchors at.
+ *
+ * Working at code level (strings, template literals, and comments skipped
+ * wholesale) is what makes the loud-failure invariant safe to add: a
+ * `purpose:` inside another field's string value, or on a commented-out line,
+ * is not a property key and produces neither a tier field nor an error. A
+ * substring or `/purpose\s*:/` test over the object body cannot tell those
+ * apart and would turn a silent drop into a spurious hard failure (#4016).
+ *
+ * Only depth-1 keys are collected: a tier literal is flat, and anything
+ * nested is not a tier field.
+ */
+function scanTierObjects(body) {
+  const objects = [];
+  const keys = [];
+  let current = null;
+  let depth = 0;
+  let i = 0;
+  while (i < body.length) {
+    const ch = body[i];
+    if (ch === "/" && (body[i + 1] === "/" || body[i + 1] === "*")) {
+      i = skipTrivia(body, i);
+      continue;
+    }
+    if (ch === '"' || ch === "'") {
+      i = skipQuoted(body, i);
+      continue;
+    }
+    if (ch === "`") {
+      i = skipTemplate(body, i);
+      continue;
+    }
+    if (ch === "{") {
+      depth++;
+      if (depth === 1) current = { start: i, end: -1, keys: [] };
+      i++;
+      continue;
+    }
+    if (ch === "}") {
+      if (depth === 1 && current !== null) {
+        current.end = i;
+        objects.push(current);
+        current = null;
+      }
+      if (depth > 0) depth--;
+      i++;
+      continue;
+    }
+    if (depth === 1 && IDENT_START_RE.test(ch)) {
+      let end = i + 1;
+      while (end < body.length && IDENT_PART_RE.test(body[end])) end++;
+      const afterIdent = skipTrivia(body, end);
+      if (body[afterIdent] === ":") {
+        const site = {
+          key: body.slice(i, end),
+          valueStart: skipTrivia(body, afterIdent + 1),
+        };
+        current.keys.push(site);
+        keys.push(site);
+      }
+      i = end;
+      continue;
+    }
+    i++;
+  }
+  return { objects, keys };
+}
+
+/**
+ * The LAST site for `key` in a tier object, or null. Last rather than first
+ * because a duplicated property key resolves to its final assignment in
+ * JavaScript, and the parser's job is to report what the file actually means.
+ */
+function lastKeySite(object, key) {
+  let found = null;
+  for (const site of object.keys) {
+    if (site.key === key) found = site;
+  }
+  return found;
+}
+
+/**
+ * Reads a flat, plain single- or double-quoted string starting at
+ * `valueStart`, returning its raw inner text — or `null` when the value is
+ * not a supported quoted literal at all (a template literal, a bare
+ * identifier, a concatenation, a ternary: anything this dependency-free
+ * parser cannot evaluate). Callers turn that `null` into a loud, tier-naming
+ * error rather than a missing field.
+ *
+ * The delimiter is pinned from the opening character BEFORE the value is
+ * scanned, and the scan closes on that same character, so the other quote is
+ * ordinary text inside the value: `purpose: "doesn't break"` (exactly what
+ * Prettier emits for a value containing an apostrophe) and
+ * `purpose: 'a "quoted" phrase'` both read whole. A single
+ * `(["'])([^"']*)\1` alternation would truncate both (#4005 / #4014).
+ */
+function readQuotedValue(body, valueStart) {
+  const quote = body[valueStart];
+  if (quote !== '"' && quote !== "'") return null;
+  const close = body.indexOf(quote, valueStart + 1);
+  if (close === -1) return null;
+  // The literal must BE the whole value. Anything other than the property
+  // separator after it — `"a" + b`, `cond ? "a" : "b"`, `"a" as const` —
+  // is an expression whose first operand would otherwise be read as the
+  // field, which is the same silent-data-loss shape as dropping it (#4016).
+  const afterLiteral = skipTrivia(body, close + 1);
+  if (
+    afterLiteral < body.length &&
+    body[afterLiteral] !== "," &&
+    body[afterLiteral] !== "}"
+  ) {
+    return null;
+  }
+  return body.slice(valueStart + 1, close);
+}
+
+/**
+ * Rejects any REAL `purpose:` property whose quoted value contains a brace or
+ * a backslash (which also covers escaped quotes). Backslashes are rejected
+ * because this parser never unescapes — a `\n` in the source would reach the
+ * generated table as those two literal characters. Braces were originally
+ * rejected because the old non-greedy `{...}` object splitter truncated on
+ * them; `scanTierObjects` has no such weakness, but the restriction is kept
+ * deliberately as a stable contract, so a tokens file that parsed before
+ * still parses and one that failed still fails. Only a flat, plain string is
+ * supported, single- or double-quoted; a newline between `purpose:` and the
+ * opening quote is fine (`skipTrivia` walks it).
+ *
+ * A value that does not open with a quote at ALL is deliberately not this
+ * function's business: that is the unparseable case, reported per tier — with
+ * the tier's name — by `parseTiers` below, which cannot be done from here
+ * because this pre-pass runs before any tier is identified.
+ */
+function assertSupportedPurposeGrammar(body, purposeSites, tokensPath) {
+  for (const site of purposeSites) {
+    const openingQuote = body[site.valueStart];
+    if (openingQuote !== '"' && openingQuote !== "'") continue;
     let closed = false;
-    for (; i < body.length; i++) {
+    for (let i = site.valueStart + 1; i < body.length; i++) {
       const ch = body[i];
       if (ch === "{" || ch === "}" || ch === "\\") {
         throw new Error(
@@ -278,7 +462,7 @@ function assertSupportedPurposeGrammar(body, tokensPath) {
             `contain braces, backslashes, or escaped quotes — only flat, plain single- or ` +
             `double-quoted strings are supported (the object parser cannot safely handle ` +
             `anything else). ` +
-            `Offending text near: ${JSON.stringify(body.slice(afterKey, Math.min(afterKey + 40, body.length)))}`,
+            `Offending text near: ${JSON.stringify(body.slice(site.valueStart, Math.min(site.valueStart + 40, body.length)))}`,
         );
       }
       if (ch === openingQuote) {
@@ -292,8 +476,22 @@ function assertSupportedPurposeGrammar(body, tokensPath) {
           `(no closing ${openingQuote === '"' ? "double" : "single"} quote found).`,
       );
     }
-    purposeKeyRe.lastIndex = i + 1;
   }
+}
+
+/**
+ * The loud-failure error for a tier field whose key IS present but whose
+ * value this parser cannot read (#4016). Names the tier, because "which tier"
+ * is the only question the reader has.
+ */
+function unreadableFieldError(field, tierName, body, site, tokensPath) {
+  return new Error(
+    `Unreadable ${field} value for tier "${tierName}" in ${tokensPath}: a ${field} must be a ` +
+      `flat, plain single- or double-quoted string literal. A template literal, a bare ` +
+      `identifier, a concatenation, or any other expression cannot be read by this ` +
+      `dependency-free parser and must not be silently dropped. ` +
+      `Offending text near: ${JSON.stringify(body.slice(site.valueStart, Math.min(site.valueStart + 40, body.length)))}`,
+  );
 }
 
 /**
@@ -304,11 +502,44 @@ function assertSupportedPurposeGrammar(body, tokensPath) {
  * — a project whose Prettier config sets `singleQuote: true` needs no
  * per-file override — and the two styles may be mixed freely within a file or
  * within one tier object, since each field's delimiter is resolved
- * independently (see FIELD_PATTERNS). `value` is unquoted either way. Throws
- * on a malformed source, an unsupported purpose-string grammar, or an unknown
- * `kind` value so drift between the parser and the file surfaces loudly.
- * Delegates the structural invariants (non-empty, name shape, duplicate
- * names, per-kind value uniqueness) to `validateTiers`.
+ * independently from its own opening character (see `readQuotedValue`).
+ * `value` is unquoted either way. Throws on a malformed source, an
+ * unsupported purpose-string grammar, or an unknown `kind` value so drift
+ * between the parser and the file surfaces loudly. Delegates the structural
+ * invariants (non-empty, name shape, duplicate names, per-kind value
+ * uniqueness) to `validateTiers`.
+ *
+ * ## What the loud-failure invariant covers, and what it does not (#4016)
+ *
+ * Field values are read anchored at the offsets a code-level scan
+ * (`scanTierObjects`) reports for the REAL property keys — never by regex
+ * search over the raw object text. Consequences, all deliberate:
+ *
+ *   - COVERED: a `name`/`kind`/`purpose` key that is present but whose value
+ *     is not exactly one plain quoted string — a template literal, a bare
+ *     identifier, a concatenation, a ternary — throws and names the tier,
+ *     instead of leaving the field undefined (or quietly keeping only the
+ *     leading operand) and rendering `-` with exit 0 (#4005).
+ *   - COVERED (no false positive): `purpose:` / `kind:` occurring inside
+ *     another field's string value, or on a commented-out line, is not a
+ *     property key. It yields neither a field nor an error.
+ *   - COVERED (no misparse): a value that itself spells another field name,
+ *     e.g. `purpose: 'see name: "y"'`, can no longer be mistaken for that
+ *     field, because extraction never searches the object text.
+ *   - NOT COVERED: values this parser could in principle read but the
+ *     grammar deliberately excludes — braces, backslashes, escaped quotes in
+ *     a purpose — still throw as an unsupported grammar, not as a tier field.
+ *   - NOT COVERED: `value:`. It is read as the integer literal at the start
+ *     of its value, so a constant reference reports the generic "malformed
+ *     tier object" error (without a tier name — a tier with no readable
+ *     name/value has none to report) while an arithmetic expression keeps its
+ *     leading integer. Left deliberately loose: the acceptance surface here
+ *     is the string fields, and a `value: 0 as const` hard-failing a
+ *     previously-valid file would cost more than it buys.
+ *   - NOT COVERED: any construct the scan's small lexer does not model —
+ *     quoted property keys (`"purpose": "..."`), computed keys, and spreads
+ *     are not recognized as keys at all and surface as a malformed object or
+ *     a missing field.
  *
  * `tokensPath` is used purely for error-message context — pass the same path
  * string (conventional default or an explicit --tokens value) that was used
@@ -328,29 +559,41 @@ export function parseTiers(src, tokensPath = DEFAULT_TOKENS_PATH) {
   }
   const body = arrayMatch[1];
 
-  assertSupportedPurposeGrammar(body, tokensPath);
+  const { objects, keys } = scanTierObjects(body);
+
+  // Runs across ALL purpose sites before any tier is built, so an
+  // unterminated purpose string — which swallows its object's closing brace
+  // and leaves that object out of `objects` entirely — is reported as the
+  // unterminated string it is.
+  assertSupportedPurposeGrammar(
+    body,
+    keys.filter((site) => site.key === "purpose"),
+    tokensPath,
+  );
 
   const tiers = [];
-  // Each tier is a `{ ... }` object literal; iterate top-level braces. Safe
-  // because assertSupportedPurposeGrammar above already ruled out braces
-  // inside any purpose string.
-  const objectRe = /\{([\s\S]*?)\}/g;
-  let m;
-  while ((m = objectRe.exec(body)) !== null) {
-    const obj = m[1];
-    const nameMatch = matchQuotedField(obj, "name");
-    const valueMatch = obj.match(/value:\s*(-?\d+)/);
-    if (!nameMatch || !valueMatch) {
+  for (const object of objects) {
+    const nameSite = lastKeySite(object, "name");
+    const valueSite = lastKeySite(object, "value");
+    const name = nameSite === null ? null : readQuotedValue(body, nameSite.valueStart);
+    const valueDigits =
+      valueSite === null ? null : /^-?\d+/.exec(body.slice(valueSite.valueStart));
+    // `!name` rather than `=== null`: a tier name may not be empty either.
+    if (!name || valueDigits === null) {
       throw new Error(
-        `Malformed tier object in Z_INDEX_TIERS (missing name/value) in ${tokensPath}: ${obj.trim()}`,
+        `Malformed tier object in Z_INDEX_TIERS (missing name/value) in ${tokensPath}: ` +
+          `${body.slice(object.start + 1, object.end).trim()}`,
       );
     }
 
-    const tier = { name: nameMatch[1], value: Number(valueMatch[1]) };
+    const tier = { name, value: Number(valueDigits[0]) };
 
-    const kindMatch = matchQuotedField(obj, "kind");
-    if (kindMatch) {
-      const kindValue = kindMatch[1];
+    const kindSite = lastKeySite(object, "kind");
+    if (kindSite !== null) {
+      const kindValue = readQuotedValue(body, kindSite.valueStart);
+      if (kindValue === null) {
+        throw unreadableFieldError("kind", tier.name, body, kindSite, tokensPath);
+      }
       if (kindValue !== "global" && kindValue !== "local") {
         throw new Error(
           `Invalid kind "${kindValue}" for tier "${tier.name}" in ${tokensPath} ` +
@@ -360,9 +603,13 @@ export function parseTiers(src, tokensPath = DEFAULT_TOKENS_PATH) {
       tier.kind = kindValue;
     }
 
-    const purposeMatch = matchQuotedField(obj, "purpose");
-    if (purposeMatch) {
-      tier.purpose = purposeMatch[1];
+    const purposeSite = lastKeySite(object, "purpose");
+    if (purposeSite !== null) {
+      const purposeValue = readQuotedValue(body, purposeSite.valueStart);
+      if (purposeValue === null) {
+        throw unreadableFieldError("purpose", tier.name, body, purposeSite, tokensPath);
+      }
+      tier.purpose = purposeValue;
     }
 
     tiers.push(tier);
