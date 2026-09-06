@@ -2728,7 +2728,7 @@ a[data-zd-nav-pending], button[data-zd-nav-pending] {
 .page-loading-spinner {
   width: 48px;
   height: 48px;
-  border: 5px solid var(--color-fg, #fff);
+  border: 5px solid var(--color-page-loading-spinner, #fff);
   border-bottom-color: transparent;
   border-radius: 50%;
   display: inline-block;
@@ -2753,8 +2753,7 @@ a[data-zd-nav-pending], button[data-zd-nav-pending] {
 @media (prefers-reduced-motion: reduce) {
   .page-loading-spinner {
     animation: none;
-    border-bottom-color: var(--color-fg, #fff);
-    opacity: 0.5;
+    border-bottom-color: var(--color-page-loading-spinner, #fff);
   }
 }
 header[data-header] {

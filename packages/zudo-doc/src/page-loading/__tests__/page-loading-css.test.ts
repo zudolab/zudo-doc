@@ -28,8 +28,19 @@ describe("src/page-loading.css source contract", () => {
     expect(css).toContain("var(--z-index-modal, 100)");
   });
 
-  it("references --color-fg with a fallback for the spinner border", () => {
-    expect(css).toContain("var(--color-fg, #fff)");
+  it("references --color-page-loading-spinner with a light fallback for the spinner border", () => {
+    expect(css).toContain("var(--color-page-loading-spinner, #fff)");
+  });
+
+  it("does not tie the spinner border to the scheme-flipping --color-fg", () => {
+    expect(css).not.toContain("var(--color-fg");
+  });
+
+  it("does not dim the reduced-motion spinner below the 3:1 non-text floor", () => {
+    const start = css.indexOf("prefers-reduced-motion: reduce");
+    const reducedMotionBlock = css.slice(start, css.indexOf("\n}", start));
+    expect(reducedMotionBlock).toContain("border-bottom-color");
+    expect(reducedMotionBlock).not.toContain("opacity:");
   });
 
   it("references --color-accent for pending-navigation links", () => {

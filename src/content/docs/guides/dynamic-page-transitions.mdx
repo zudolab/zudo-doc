@@ -145,7 +145,7 @@ The stylesheet reads a handful of host design tokens. **All are optional** — e
 | ------------------------------ | ----------------------------------------- | ------------------------------------------------------------------ |
 | `--color-page-loading-overlay` | The scrim (overlay background)            | `color-mix(in oklch, var(--color-overlay) 60%, transparent)`       |
 | `--color-overlay`              | Backing colour for the scrim fallback     | `#000` (used only inside the fallback above)                       |
-| `--color-fg`                   | Spinner border colour                     | `#fff`                                                             |
+| `--color-page-loading-spinner` | Spinner border colour                     | `#fff`                                                             |
 | `--color-accent`               | Highlight on the pending link/button      | _(no fallback — the highlight is simply omitted if unset)_         |
 | `--z-index-modal`              | Stack level of the overlay                | `100`                                                             |
 
@@ -168,6 +168,22 @@ The scrim now reads its **own** token, `--color-page-loading-overlay`, which is 
 ```
 
 When `--color-page-loading-overlay` is unset, the stylesheet falls back to a 60%-opacity mix of `--color-overlay`, so existing projects keep their previous appearance with no change.
+
+### Why the spinner has its own token
+
+The scrim is **theme-independent** — it is always a dark wash, in light and dark color schemes alike. So the spinner ring is pinned light too, via its own `--color-page-loading-spinner` token, instead of following the page foreground. A ring that flipped dark in a light scheme would sit at 3.02:1 against that always-dark scrim; the pinned white ring measures 6.18:1 in Default Light and 20.13:1 in Default Dark, clearing the WCAG 1.4.11 non-text floor of 3:1 in both.
+
+For the same reason the reduced-motion ring — a static, complete circle rather than a spinning arc — carries **no** opacity reduction. Dimming it to 50% would composite to 2.85:1 in a light scheme, below the floor.
+
+If you retone the scrim to something light, override the ring to match:
+
+```css
+@theme {
+  --color-page-loading-overlay: color-mix(in oklch, var(--color-bg) 70%, transparent);
+  /* A scheme-aware scrim wants a scheme-aware ring. */
+  --color-page-loading-spinner: var(--color-fg);
+}
+```
 
 ### Drop any hand-copied overlay rules
 
