@@ -790,6 +790,166 @@ describe("parseTiers", () => {
   });
 });
 
+// ── loud failure on an unreadable field value (#4005 / #4016) ──────────────
+
+describe("parseTiers loud-failure invariant", () => {
+  // The defect class #4005 is really about: the key is THERE, the parser
+  // cannot read it, and the old code left the field undefined — `-` in the
+  // Role cell, exit 0, `--check` reporting the table up to date.
+
+  it("throws, naming the tier, on a template-literal purpose", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: "toolbar", value: 20, purpose: \`sticky top header\` },
+];`;
+    expect(() => parseTiers(src)).toThrow(/Unreadable purpose value for tier "toolbar"/);
+  });
+
+  it("throws, naming the tier, on a bare-identifier purpose", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: "toolbar", value: 20, purpose: TOOLBAR_PURPOSE },
+];`;
+    expect(() => parseTiers(src)).toThrow(/Unreadable purpose value for tier "toolbar"/);
+  });
+
+  it("throws, naming the tier, on a concatenated purpose instead of keeping the first operand", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: "toolbar", value: 20, purpose: "sticky " + "top header" },
+];`;
+    expect(() => parseTiers(src)).toThrow(/Unreadable purpose value for tier "toolbar"/);
+  });
+
+  it("throws, naming the tier, on a ternary purpose instead of keeping one branch", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: "toolbar", value: 20, purpose: COMPACT ? "short" : "long" },
+];`;
+    expect(() => parseTiers(src)).toThrow(/Unreadable purpose value for tier "toolbar"/);
+  });
+
+  it("throws, naming the tier, on a template-literal kind", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: "toolbar", value: 20, kind: \`global\` },
+];`;
+    expect(() => parseTiers(src)).toThrow(/Unreadable kind value for tier "toolbar"/);
+  });
+
+  it("throws, naming the tier, on a bare-identifier kind", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: "toolbar", value: 20, kind: GLOBAL },
+];`;
+    expect(() => parseTiers(src)).toThrow(/Unreadable kind value for tier "toolbar"/);
+  });
+
+  it("names the offending tier, not the first one, in a multi-tier file", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: "content", value: 0, purpose: "base document flow" },
+  { name: "modal", value: 50, purpose: \`dialog surface\` },
+];`;
+    expect(() => parseTiers(src)).toThrow(/Unreadable purpose value for tier "modal"/);
+  });
+
+  it("reports an unreadable name as a malformed tier object (no name left to report)", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: \`toolbar\`, value: 20 },
+];`;
+    expect(() => parseTiers(src)).toThrow(/Malformed tier object/);
+  });
+
+  // ── the false-positive surface: these must NOT throw ─────────────────────
+
+  it("does not fire when purpose: appears unquoted inside another field's string value", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: "toolbar", value: 20, note: "purpose: documented elsewhere" },
+];`;
+    expect(parseTiers(src)).toEqual([{ name: "toolbar", value: 20 }]);
+  });
+
+  it("does not read a purpose out of another field's string value", () => {
+    // A substring/regex approach picks the quoted text up out of `note` here
+    // and reports it as the tier's role.
+    const src = `export const Z_INDEX_TIERS = [
+  { name: "toolbar", value: 20, note: "purpose: 'documented elsewhere'" },
+];`;
+    expect(parseTiers(src)[0].purpose).toBeUndefined();
+  });
+
+  it("does not fire on a commented-out purpose line, and leaves the field absent", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  {
+    name: "toolbar",
+    value: 20,
+    // purpose: "temporarily disabled",
+  },
+];`;
+    expect(parseTiers(src)).toEqual([{ name: "toolbar", value: 20 }]);
+  });
+
+  it("does not fire on a commented-out purpose whose value is itself unreadable", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  {
+    name: "toolbar",
+    value: 20,
+    // purpose: \`temporarily disabled\`,
+  },
+];`;
+    expect(parseTiers(src)).toEqual([{ name: "toolbar", value: 20 }]);
+  });
+
+  it("does not fire on a block-commented kind line, and leaves the field absent", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: "toolbar", value: 20, /* kind: \`global\`, */ purpose: "sticky top header" },
+];`;
+    expect(parseTiers(src)).toEqual([
+      { name: "toolbar", value: 20, purpose: "sticky top header" },
+    ]);
+  });
+
+  it("prefers the live purpose over a commented-out earlier one", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  {
+    name: "toolbar",
+    value: 20,
+    // purpose: "old text",
+    purpose: "new text",
+  },
+];`;
+    expect(parseTiers(src)[0].purpose).toBe("new text");
+  });
+
+  it("reads each field from its own key, not from text inside another field's value", () => {
+    // #4014 left this open: once a single-quoted purpose may contain a double
+    // quote, `purpose: 'see name: "y"'` put a second `name: "..."` inside the
+    // object body, and a body-wide regex would take the wrong one.
+    const src = `export const Z_INDEX_TIERS = [
+  { purpose: 'see name: "y"', name: "toolbar", value: 20 },
+];`;
+    expect(parseTiers(src)).toEqual([
+      { name: "toolbar", value: 20, purpose: 'see name: "y"' },
+    ]);
+  });
+
+  it("keeps object boundaries correct when an unrelated field's string holds a brace", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: "toolbar", value: 20, note: "a } brace" },
+  { name: "modal", value: 50, purpose: "dialog surface" },
+];`;
+    expect(parseTiers(src)).toEqual([
+      { name: "toolbar", value: 20 },
+      { name: "modal", value: 50, purpose: "dialog surface" },
+    ]);
+  });
+
+  it("still accepts everything #4014 established, including a double-quoted apostrophe", () => {
+    const src = `export const Z_INDEX_TIERS = [
+  { name: 'toolbar', value: 20, kind: 'global', purpose: "doesn't break" },
+  { name: "modal", value: 50, kind: "local", purpose: 'the "sticky" surface' },
+];`;
+    expect(parseTiers(src)).toEqual([
+      { name: "toolbar", value: 20, kind: "global", purpose: "doesn't break" },
+      { name: "modal", value: 50, kind: "local", purpose: 'the "sticky" surface' },
+    ]);
+  });
+});
+
 // ── validateTiers ──────────────────────────────────────────────────────────
 
 describe("validateTiers", () => {
@@ -1841,5 +2001,25 @@ describe("CLI (spawned node process) — exit codes", () => {
     expect(writtenCss).toContain("--z-index-content: 0;");
     const writtenMd = readFileSync(join(tmpDir, "docs/z-index.mdx"), "utf8");
     expect(writtenMd).toContain("| content | - | - |");
+  });
+
+  it("--check surfaces an unreadable purpose instead of reporting the table up to date", () => {
+    // #4016's acceptance criterion for --check: the old code parsed this file
+    // to a purpose-less tier, rebuilt a `-` Role cell that matched the seeded
+    // (equally purpose-less) table, and exited 0.
+    writeFileSync(
+      join(tmpDir, DEFAULT_TOKENS_PATH),
+      `export const Z_INDEX_TIERS = [\n  { name: "content", value: 0, purpose: \`base document flow\` },\n];\n`,
+    );
+    writeFileSync(join(tmpDir, DEFAULT_CSS_PATH), wrapInCss(GOLDEN_DEFAULT_BLOCK));
+    seedCleanMdTable();
+
+    const { status, stdout, stderr } = runCli(
+      ["--check", "--md-table", "docs/z-index.mdx"],
+      tmpDir,
+    );
+    expect(status).not.toBe(0);
+    expect(stderr).toContain('Unreadable purpose value for tier "content"');
+    expect(stdout).not.toContain("up to date");
   });
 });
