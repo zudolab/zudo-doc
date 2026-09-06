@@ -77,10 +77,13 @@ describe("showcase package changelog hierarchy", () => {
     expect(ja).toEqual(en);
 
     const releases = en.filter((path) => path !== "index.mdx" && !path.endsWith("/index.mdx"));
-    expect(releases).toHaveLength(142);
-    expect(releases.filter((path) => path.startsWith("zudo-doc/"))).toHaveLength(110);
-    expect(releases.filter((path) => path.startsWith("create-zudo-doc/"))).toHaveLength(16);
-    expect(releases.filter((path) => path.startsWith("doc-history-server/"))).toHaveLength(16);
+    // Floors, not counters: a tripwire against the corpus silently SHRINKING (a mass
+    // delete would still satisfy the ja/en equality above). Deliberately >= so a release
+    // never has to edit this file — raise one only when pruning the corpus on purpose.
+    expect(releases.length).toBeGreaterThanOrEqual(142);
+    expect(releases.filter((path) => path.startsWith("zudo-doc/")).length).toBeGreaterThanOrEqual(110);
+    expect(releases.filter((path) => path.startsWith("create-zudo-doc/")).length).toBeGreaterThanOrEqual(16);
+    expect(releases.filter((path) => path.startsWith("doc-history-server/")).length).toBeGreaterThanOrEqual(16);
     expect(en).toEqual([
       "create-zudo-doc/index.mdx",
       "doc-history-server/index.mdx",
@@ -101,7 +104,37 @@ describe("showcase package changelog hierarchy", () => {
 
     const { tree } = changelogNav();
     const zudo = findNode(tree, "changelog/zudo-doc");
-    expect(zudo?.children[0]?.slug).toBe("changelog/zudo-doc/5.18.2");
+
+    // Derived from the corpus rather than pinned to whichever version happens to be
+    // newest: this asserts the WHOLE lane is ordered newest-first (strictly stronger
+    // than the old first/last spot-check) and needs no edit when a release lands.
+    const zudoEntries = mdxFiles(EN_CHANGELOG)
+      .filter((path) => path.startsWith("zudo-doc/") && !path.endsWith("/index.mdx"))
+      .map((path) => ({
+        slug: `changelog/${path.replace(/\.mdx$/, "")}`,
+        position: frontmatter(readFileSync(join(EN_CHANGELOG, path), "utf8")).sidebar_position as number,
+      }));
+
+    // Duplicate positions would make the ordering ambiguous, letting the assertions
+    // below pass on an arbitrary tie-break rather than on a real guarantee.
+    const positions = zudoEntries.map(({ position }) => position);
+    expect(positions.every((position) => Number.isInteger(position))).toBe(true);
+    expect(new Set(positions).size).toBe(positions.length);
+
+    const expectedDesc = [...zudoEntries]
+      .sort((a, b) => b.position - a.position)
+      .map(({ slug }) => slug);
+
+    expect(zudo?.children.map((child) => child.slug)).toEqual(expectedDesc);
+
+    // Anchor the newest end to the package's own version instead of a pinned string.
+    // The release script bumps package.json and adds the changelog entry together, so
+    // these agree by construction — and this now also catches a release that assigns a
+    // non-monotonic sidebar_position, which the old hardcoded check only caught by luck.
+    const zudoDocVersion = JSON.parse(
+      readFileSync(join(ROOT, "packages/zudo-doc/package.json"), "utf8"),
+    ).version as string;
+    expect(zudo?.children[0]?.slug).toBe(`changelog/zudo-doc/${zudoDocVersion}`);
     expect(zudo?.children.at(-1)?.slug).toBe("changelog/zudo-doc/0.1.0");
   });
 

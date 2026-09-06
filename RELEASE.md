@@ -156,12 +156,34 @@ explicit localized entry:
 - パッケージ固有の変更はありません。
 ```
 
-After authoring all six entries, run `pnpm gen:changelog` and stage all three generated
-outputs. When creating GitHub releases, extract three independent note bodies and map
+After authoring all six entries, run `pnpm gen:changelog` and stage its outputs: the
+three package `CHANGELOG.md` files **and** `public/_redirects`, which the same command
+regenerates (see "Per-release derived artifacts" below). When creating GitHub releases,
+extract three independent note bodies and map
 each one to the tag in the table. Never reuse one shared `$NOTES` value across tags.
 Titles are `@takazudo/zudo-doc-history-server <version>`,
 `@takazudo/zudo-doc <version>`, and `create-zudo-doc <version>`. Versions containing a
 hyphen are prereleases and each `gh release create` command must include `--prerelease`.
+
+---
+
+## Per-release derived artifacts
+
+Two things used to need a hand-edit on **every** release, and both were invisible locally
+until a test failed mid-release:
+
+- **`public/_redirects`** — one 301 per zudo-doc changelog version, EN and JA. It is now
+  **generated** by `scripts/generate-changelog-redirects.mjs`, which `pnpm gen:changelog`
+  runs after emitting the package changelogs. Do not hand-edit it; add the changelog entry
+  and re-run `pnpm gen:changelog`.
+- **Release-count assertions** in `src/__tests__/pages-lib/changelog-hierarchy.test.ts` and
+  `changelog-redirects.test.ts` — these were exact `toHaveLength(N)` counts that every
+  release had to bump. They are now `toBeGreaterThanOrEqual` **floors** (a tripwire against
+  the corpus shrinking, not a counter), and the newest-entry check is derived from
+  `packages/zudo-doc/package.json`'s `version` rather than a pinned version string.
+
+**Neither should ever need editing as part of a release.** If a release makes you edit one,
+that is a signal something genuinely changed — investigate rather than bumping the number.
 
 ---
 

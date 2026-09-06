@@ -48,7 +48,7 @@
     "check:content-fallback": "node scripts/check-content-fallback.mjs",
     "smoke:preview": "node scripts/smoke-preview.mjs",
     "b4push": "./scripts/run-b4push.sh",
-    "gen:changelog": "tsx scripts/generate-changelog.ts",
+    "gen:changelog": "tsx scripts/generate-changelog.ts && node scripts/generate-changelog-redirects.mjs",
     "// ── Formatting ───────────────────────────────────": "",
     "format:mdx": "pnpm dlx @takazudo/mdx-formatter --write \"src/content/**/*.{md,mdx}\"",
     "format": "pnpm run format:mdx",

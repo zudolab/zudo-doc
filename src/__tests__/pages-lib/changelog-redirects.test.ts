@@ -105,7 +105,9 @@ describe("showcase package changelog redirects", () => {
   const rules = parseRedirects(PUBLIC_REDIRECTS);
 
   it("covers exactly every historical EN and JA route", () => {
-    expect(en).toHaveLength(110);
+    // Floor, not a counter — see changelog-hierarchy.test.ts. The real guarantees are
+    // the ja/en equality and the exact rule-set match below, both fully derived.
+    expect(en.length).toBeGreaterThanOrEqual(110);
     expect(ja).toEqual(en);
     expect(rules).toEqual(expectedRules(en, ja));
   });
