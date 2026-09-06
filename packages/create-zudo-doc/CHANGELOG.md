@@ -4,6 +4,13 @@ All notable changes to `create-zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.18.1] - 2026-09-06
+
+### Other Changes
+
+- Generated projects now pin `@takazudo/zdtp` at `0.5.1` (was `0.5.0`). A newly scaffolded project picks up zdtp's panel-width, header-overflow, and doc-adoption fixes, plus the persisted `spawn-ordinal` storage key that keeps multiple panels in stable cascade positions across client-side navigation. (4a72db50d)
+- Generated projects inherit the page-loading spinner contrast fix through `@takazudo/zudo-doc@^5.18.1` — see that package's 5.18.1 notes for the new `--color-page-loading-spinner` token and the reduced-motion change. (4fa1651b2)
+
 ## [5.18.0] - 2026-09-06
 
 ### Other Changes

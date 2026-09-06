@@ -1,0 +1,17 @@
+---
+title: 5.18.1
+description: Release notes for 5.18.1.
+sidebar_position: 1109
+---
+
+Released: 2026-09-06
+
+### Bug Fixes
+
+- The page-loading spinner no longer flips colour with the scheme. It previously took `--color-fg` while the scrim is deliberately theme-independent (always dark), which left the ring at only **3.02:1** against the scrim in a light scheme — over the WCAG 1.4.11 non-text 3:1 floor by 0.02. Both spinner declarations now read `var(--color-page-loading-spinner, #fff)`, a new optional host token with a light default: **6.18:1** in a light scheme and **20.13:1** in a dark one. The scrim itself is unchanged. (4fa1651b2)
+- The `prefers-reduced-motion` spinner no longer dims to `opacity: 0.5`. A white ring at 50% composites to **2.85:1** on the light-scheme scrim — still under the floor — so fixing only the colour would have left the ring non-compliant for exactly the users who rely on a static indicator. It now matches the animated ring at 6.18:1 / 20.13:1. (4fa1651b2)
+
+### Other Changes
+
+- **Behavior note for hosts that styled the spinner via `--color-fg`:** that coupling was the defect and is gone. Use the new `--color-page-loading-spinner` token instead, and override it in step with `--color-page-loading-overlay` whenever you retone the scrim, so the pair stays above the contrast floor together. The token is optional and intentionally left undefined in the package — the `#fff` fallback is the fix. (4fa1651b2)
+- `@takazudo/zdtp` peer floor moved to `^0.5.1`. zdtp 0.5.1 bounds its eager-load state-key gate to a new `READABLE_STATE_KEY_SUFFIXES` registry (`-state`, `-state-v2/v3/v4`) instead of accepting any `-state-vN`; this package already delegated to `EAGER_LOAD_GATE_STATE_FAMILY.matchesKey`, so runtime behavior follows upstream with no code change. Stale prose describing the old open-ended numeric family was corrected in the source docblock, `CLAUDE.md`, `API.md`, and the route-injection ADR. (4a72db50d, c9042f3ed, a61722e40)
