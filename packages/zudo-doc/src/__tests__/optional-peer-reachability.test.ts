@@ -53,13 +53,24 @@ const ALLOWED_UNCONDITIONAL_OPTIONAL_PEERS = new Set([
   // Since #3282 (epic #3261) the shell carries no top-level VALUE import of
   // `@takazudo/zdtp` root — only a runtime `import("@takazudo/zdtp")` inside
   // `loadZdtp()`, reached on the first toggle or a persisted-state probe hit.
-  // Since 0.5 the small, side-effect-free /constants leaf is also static.
-  // Still allowlisted because esbuild resolves DYNAMIC `import()` specifiers
-  // at build time same as static ones — this guard's `onResolve` hook sees
-  // both kinds — so the dynamic call still reaches the graph even though
-  // zdtp's actual bytes stay out of the eager bundle (proved by the
-  // static-import-graph laziness assertions in
-  // route-injection-build.slow.test.ts). `diff` above is precedent for a
+  // Since #4018 the `/constants` leaf is no longer imported either — those four
+  // data constants are vendored in-package (`src/design-token-panel-constants.ts`,
+  // conformance-tested against the real leaf), so the ONLY remaining reach is
+  // that rejection-handled dynamic import.
+  //
+  // Still allowlisted because this guard's `onResolve` filter is `/.*/` and
+  // records dynamic kinds too, so the specifier shows up here — but unlike
+  // `diff` (unguarded `await import()`) and `katex` (static), it is reachable
+  // WITHOUT being build-fatal: #4015 proved by real build that esbuild tolerates
+  // an `import(...).catch(...)` whose package is absent, leaving the bare
+  // specifier in the output. Deleting this entry would therefore fail the first
+  // `it` with `unexpected = ["@takazudo/zdtp"]` while proving nothing; the
+  // build-fatality property is measured directly by the packed-tarball
+  // no-zdtp build case in route-injection-build.slow.test.ts (#4009).
+  //
+  // zdtp's actual bytes also stay out of the eager bundle (proved by the
+  // static-import-graph laziness assertions in the same slow file, and by
+  // design-token-panel-static-graph.test.ts). `diff` above is precedent for a
   // dynamically-imported-only optional peer staying allowlisted.
   "@takazudo/zdtp",
   // Reached via `mdx-components → math-block`. Math rendering is settings-gated

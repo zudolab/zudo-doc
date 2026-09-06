@@ -22,8 +22,9 @@ import { validatePreset } from "../preset.js";
 // Minimal-scaffold cutover (epic zudolab/zudo-doc#2651). Rewritten from
 // scratch for Wave 7 (#2662) against the locked ~12-file manifest landed by
 // Wave 6 (#2660) — see that issue's completion comment for the deleted-file
-// set and the documented deviations (tagGovernance's tag config module, the
-// unconditional @takazudo/zdtp dep). The tauri feature's find-in-page island
+// set and the documented deviations (tagGovernance's tag config module, and
+// the then-unconditional @takazudo/zdtp dep — feature-gated since #4018, see
+// the designTokenPanel dependency cases below). The tauri feature's find-in-page island
 // used to be a documented "ships unwired" file-copy deviation; #2690 retired
 // it — find-in-page is now package-owned and emitted via `findInPage: true`
 // (see the "tauri no longer ships find-in-page template files" describe
@@ -1883,13 +1884,18 @@ describe("scaffold — generated package.json", () => {
     expect(pkg.devDependencies["@types/react"]).toBeUndefined();
   });
 
-  it("includes the required zfb packages, @takazudo/zudo-doc, and @takazudo/zdtp unconditionally", async () => {
-    // diff and @takazudo/zdtp are unconditional dependencies regardless of
-    // docHistory/designTokenPanel selection — packageOwnedRoutes always bundles
-    // the doc-history-area path (which imports `diff` at module scope, #2342)
-    // and the chrome-derive seam always imports DesignTokenPanelBootstrap
-    // (which imports @takazudo/zdtp, #2668).
-    // @takazudo/zudo-doc-history-server is NOT in this set — see the
+  it("includes the required zfb packages and @takazudo/zudo-doc unconditionally, but NOT @takazudo/zdtp", async () => {
+    // `diff` is an unconditional dependency regardless of the docHistory
+    // selection — packageOwnedRoutes always bundles the doc-history-area path,
+    // which imports `diff` at module scope with an unguarded `await import()`
+    // (#2342). @takazudo/zdtp is NOT in that class any more: it was
+    // unconditional under #2668 because the chrome-derive seam's static
+    // DesignTokenPanelBootstrap import reached `@takazudo/zdtp/constants`, but
+    // #4018 vendored those constants into @takazudo/zudo-doc, leaving only a
+    // rejection-handled `import("@takazudo/zdtp")` that builds fine with the
+    // package absent — so the dep is now gated on designTokenPanel (#4009).
+    // See the paired designTokenPanel case below.
+    // @takazudo/zudo-doc-history-server is NOT in this set either — see the
     // metadata-feature gating test below.
     await scaffold(baseChoices);
     const pkg = await fs.readJson(projectPath("test-doc", "package.json"));
@@ -1905,10 +1911,23 @@ describe("scaffold — generated package.json", () => {
     );
     expect(pkg.dependencies["@takazudo/zudo-doc"]).toMatch(/^\^\d+\.\d+\.\d+/);
     expect(pkg.dependencies["diff"]).toBeDefined();
-    expect(pkg.dependencies["@takazudo/zdtp"]).toBeDefined();
+    expect(pkg.dependencies["@takazudo/zdtp"]).toBeUndefined();
     expect(pkg.dependencies["astro"]).toBeUndefined();
     expect(pkg.dependencies["shiki"]).toBeUndefined();
     expect(pkg.dependencies["@shikijs/transformers"]).toBeUndefined();
+  });
+
+  it("includes @takazudo/zdtp when designTokenPanel is selected", async () => {
+    // The paired half of the case above: gated, not dropped. The panel's own
+    // `import("@takazudo/zdtp")` and its `@takazudo/zdtp/styles.css` global.css
+    // injection both need the package present when the feature is ON (#4018).
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-doc-dtp",
+      features: ["designTokenPanel"],
+    });
+    const pkg = await fs.readJson(projectPath("test-doc-dtp", "package.json"));
+    expect(pkg.dependencies["@takazudo/zdtp"]).toBeDefined();
   });
 
   it("includes zod, preact-render-to-string, and katex as always-on runtime deps", async () => {

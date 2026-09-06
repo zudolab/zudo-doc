@@ -6,8 +6,12 @@
 /**
  * Design-token panel (zdtp) WIRING MECHANISM + PACKAGE-DEFAULT ISLAND (#2658,
  * epic Minimal Scaffold #2651). zdtp itself is LAZY-LOADED (#3282, epic
- * #3261): this module carries NO top-level value import of `@takazudo/zdtp` —
- * its side-effect-free `/constants` leaf is the only eager zdtp value import.
+ * #3261): this module carries NO top-level value import of `@takazudo/zdtp`
+ * whatsoever. It used to eagerly import the side-effect-free `/constants` leaf;
+ * since #4018 those constants come from the in-package mirror
+ * `./design-token-panel-constants.js`, because that one static edge made an
+ * OPTIONAL peer a hard build-time requirement for every chrome consumer
+ * (#4009 — see that module's header).
  * The root package is `import()`ed on the first dispatch on either resolved
  * toggle channel (the shared `toggle-design-token-panel`, or this instance's own —
  * see the public 0.5 {@link resolveToggleEventName}), or eagerly when the
@@ -105,7 +109,7 @@ import {
   EAGER_LOAD_GATE_KEY_SUFFIXES,
   EAGER_LOAD_GATE_STATE_FAMILY,
   resolveToggleEventName,
-} from "@takazudo/zdtp/constants";
+} from "./design-token-panel-constants.js";
 import {
   BEFORE_NAVIGATE_EVENT,
   AFTER_NAVIGATE_EVENT,
@@ -215,7 +219,8 @@ function isEmptyEnvelope(raw: string | null): boolean {
  * State keys match exactly one of the suffixes in zdtp's own
  * `READABLE_STATE_KEY_SUFFIXES` registry (via `EAGER_LOAD_GATE_STATE_FAMILY
  * .matchesKey`), with literal prefix matching — NOT any numeric `-state-vN`.
- * That registry is upstream-owned and, per its contract, only ever grows when
+ * That registry is upstream-owned (mirrored here since #4018, conformance-
+ * tested against the real leaf) and, per its contract, only ever grows when
  * the loader gains the ability to read a new format version, so a suffix that
  * merely looks like a state key but isn't registered yet must not eagerly
  * load a panel that cannot actually parse it.
