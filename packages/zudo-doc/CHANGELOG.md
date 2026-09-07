@@ -4,6 +4,12 @@ All notable changes to `@takazudo/zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.19.0] - 2026-09-07
+
+### Bug Fixes
+
+- The `gen-z-index` and `gen-component-tokens` bins report a descriptive error instead of a raw Node stack trace. A missing input file now names the path and says which file it is, while `EACCES` / `EISDIR` keep their own message rather than collapsing into a misleading "not found", and a top-level handler prints the message to stderr and exits 1 for any deliberate throw. A non-`Error` throw prints its string form rather than a bare `undefined`. (83a4c6f7a, 134248eba)
+
 ## [5.18.2] - 2026-09-06
 
 ### Bug Fixes

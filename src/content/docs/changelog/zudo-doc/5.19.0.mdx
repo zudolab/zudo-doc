@@ -1,0 +1,11 @@
+---
+title: 5.19.0
+description: Release notes for 5.19.0.
+sidebar_position: 1111
+---
+
+Released: 2026-09-07
+
+### Bug Fixes
+
+- The `gen-z-index` and `gen-component-tokens` bins report a descriptive error instead of a raw Node stack trace. A missing input file now names the path and says which file it is, while `EACCES` / `EISDIR` keep their own message rather than collapsing into a misleading "not found", and a top-level handler prints the message to stderr and exits 1 for any deliberate throw. A non-`Error` throw prints its string form rather than a bare `undefined`. (83a4c6f7a, 134248eba)

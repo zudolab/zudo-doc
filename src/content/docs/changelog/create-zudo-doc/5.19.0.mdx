@@ -1,0 +1,19 @@
+---
+title: 5.19.0
+description: Release notes for 5.19.0.
+sidebar_position: 1017
+---
+
+Released: 2026-09-07
+
+### Features
+
+- The first positional argument is now a **destination path**, not just a project name. `create-zudo-doc sub/ref-doc` creates `sub/ref-doc` and derives the project name from the final segment (`ref-doc`); previously it failed with a project-name validation error because the one argument meant both the directory to create and the name written into the generated `package.json`. Relative (`../ref-doc`) and absolute destinations are accepted; `.`, `..`, and a filesystem root are rejected because they name no final segment. `--name` still takes a bare package name and now acts as an explicit override of the derived name while the positional continues to supply the directory. The resolved destination is followed consistently by dependency install, `git init`, and the printed `cd <dest>` hint. The programmatic `CreateOptions` API is unchanged — there `projectName` still doubles as the directory. (5a928d51e)
+
+### Bug Fixes
+
+- The printed `cd` target is quoted when the destination contains whitespace, which a path destination may now legally do, and an empty destination no longer resolves the target directory to the current working directory. (134248eba)
+
+### Other Changes
+
+- The EN and JA `create-zudo-doc` reference pages and the package README document the destination argument: an accepted-forms table, both verbatim error messages, the `--name` override, a scaffolding-into-a-subdirectory example, and a note that the programmatic API has no `destination`. (dc83c4615)
