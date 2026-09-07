@@ -8,17 +8,34 @@ import {
 import { FEATURES } from "../constants.js";
 
 describe("parseArgs", () => {
-  describe("project name", () => {
-    it("from positional arg", () => {
-      expect(parseArgs(["my-docs"]).name).toBe("my-docs");
+  // #4023 — the positional argument is the destination (may be a path); the
+  // --name flag is a separate bare package name.
+  describe("destination and project name", () => {
+    it("reads the positional arg as the destination, not the name", () => {
+      const result = parseArgs(["my-docs"]);
+      expect(result.destination).toBe("my-docs");
+      expect(result.name).toBeUndefined();
+    });
+
+    it("keeps a path destination intact", () => {
+      expect(parseArgs(["sub/ref-doc"]).destination).toBe("sub/ref-doc");
     });
 
     it("from --name flag", () => {
-      expect(parseArgs(["--name", "my-docs"]).name).toBe("my-docs");
+      const result = parseArgs(["--name", "my-docs"]);
+      expect(result.name).toBe("my-docs");
+      expect(result.destination).toBeUndefined();
+    });
+
+    it("keeps both when the positional and --name are combined", () => {
+      const result = parseArgs(["sub/ref-doc", "--name", "custom-name"]);
+      expect(result.destination).toBe("sub/ref-doc");
+      expect(result.name).toBe("custom-name");
     });
 
     it("undefined when not provided", () => {
       expect(parseArgs([]).name).toBeUndefined();
+      expect(parseArgs([]).destination).toBeUndefined();
     });
   });
 
@@ -157,7 +174,7 @@ describe("parseArgs", () => {
         "--pm", "pnpm",
         "--yes",
       ]);
-      expect(result.name).toBe("my-docs");
+      expect(result.destination).toBe("my-docs");
       expect(result.lang).toBe("ja");
       expect(result.colorSchemeMode).toBe("single");
       expect(result.scheme).toBe("Default Dark");
@@ -281,5 +298,65 @@ describe("validateArgs — theme-pack (ADR #2818)", () => {
     expect(error).toMatch(/Unknown theme pack "not-a-real-pack"/);
     expect(error).toMatch(/default/);
     expect(error).toMatch(/foundry/);
+  });
+});
+
+// #4023 — the positional destination may be a path; only its final segment is
+// checked against the locked project-name grammar.
+describe("validateArgs — destination path (#4023)", () => {
+  it.each([
+    "refdoc",
+    "sub/ref-doc",
+    "./sub/ref-doc",
+    "sub/ref-doc/",
+    "sub/",
+    "a/b/c/deep-docs",
+    // Decision: upward traversal is allowed (see splitDestination).
+    "../ref-doc",
+  ])("accepts destination %j", (destination) => {
+    expect(validateArgs({ destination })).toBeNull();
+  });
+
+  it("accepts an absolute destination", () => {
+    expect(validateArgs({ destination: "/tmp/sub/abs-docs" })).toBeNull();
+  });
+
+  it.each([".", "..", "/"])(
+    "rejects destination %j — it names no final segment",
+    (destination) => {
+      expect(validateArgs({ destination })).toMatch(/no final path segment/);
+    },
+  );
+
+  it("rejects an invalid final segment and points at it", () => {
+    const error = validateArgs({ destination: "sub/My-Docs" });
+    expect(error).toMatch(/"My-Docs"/);
+    expect(error).toMatch(/last segment/);
+    expect(error).toMatch(/lowercase/);
+  });
+
+  it("does not apply the package-name grammar to leading directories", () => {
+    expect(validateArgs({ destination: "My Sub/ref-doc" })).toBeNull();
+  });
+
+  // Decision (#4023): --name is a deliberate override of the name derived from
+  // the destination's final segment. Neither input is silently ignored — the
+  // positional still supplies the directory.
+  it("accepts a destination whose final segment is not a package name when --name overrides it", () => {
+    expect(
+      validateArgs({ destination: "sub/My-Docs", name: "ref-doc" }),
+    ).toBeNull();
+  });
+
+  it("still rejects a --name that is itself path-like", () => {
+    expect(
+      validateArgs({ destination: "sub/ref-doc", name: "my/docs" }),
+    ).toMatch(/lowercase/);
+  });
+
+  it("still rejects a destination with no final segment even with --name", () => {
+    expect(validateArgs({ destination: ".", name: "ref-doc" })).toMatch(
+      /no final path segment/,
+    );
   });
 });

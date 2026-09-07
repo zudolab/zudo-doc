@@ -5,11 +5,24 @@ import {
   parseChangelogPackages,
   validateChangelogPackages,
 } from "./preset.js";
-import { validateProjectName } from "./utils.js";
+import {
+  normalizeDestination,
+  splitDestination,
+  validateProjectName,
+} from "./utils.js";
 import { resolveLocalePlan } from "./locale-plan.js";
 
 export interface CliArgs {
+  /**
+   * The `--name` flag: a bare package name. Kept separate from `destination`
+   * so the locked project-name grammar still rejects a path here.
+   */
   name?: string;
+  /**
+   * The first positional argument: the directory to scaffold into. May be a
+   * path; its final segment becomes the project name unless `--name` overrides.
+   */
+  destination?: string;
   lang?: string;
   additionalLangs?: string[];
   colorSchemeMode?: "single" | "light-dark";
@@ -99,11 +112,11 @@ export function parseArgs(argv: string[] = process.argv.slice(2)): CliArgs {
 
   const args: CliArgs = {};
 
-  // Project name: first positional arg or --name
-  if (raw.name) {
-    args.name = raw.name;
-  } else if (raw._.length > 0 && typeof raw._[0] === "string") {
-    args.name = raw._[0];
+  // Destination: first positional arg. Project name: --name (a bare name), or
+  // the destination's final segment when --name is absent.
+  if (raw.name) args.name = raw.name;
+  if (raw._.length > 0 && typeof raw._[0] === "string") {
+    args.destination = raw._[0];
   }
 
   if (raw.lang) args.lang = raw.lang;
@@ -157,10 +170,15 @@ export function printHelp(): void {
     (f) => `  --[no-]${f.cliFlag.padEnd(22)} ${f.hint}`,
   ).join("\n");
   console.log(`
-${pc.bold("Usage:")} create-zudo-doc [project-name] [options]
+${pc.bold("Usage:")} create-zudo-doc [destination] [options]
+
+${pc.dim("  destination")}                  Directory to create the project in; may be a path
+                               (e.g. sub/my-docs). Its last segment becomes the
+                               project name. Default: my-docs
 
 ${pc.bold("Options:")}
-  --name <name>                Project name (or first positional arg)
+  --name <name>                Project name written to package.json. Overrides
+                               the name derived from the destination's last segment
   --lang <code>                Default language (${langList})
                                Default: en
   --additional-langs <a,b>     Additional locale codes (ordered; implies i18n)
@@ -193,6 +211,9 @@ ${pc.bold("Examples:")}
 
   ${pc.dim("# Fully specified")}
   create-zudo-doc my-docs --lang ja --scheme "Default Dark" --no-i18n --pm pnpm --install
+
+  ${pc.dim("# Scaffold into a subdirectory (package name: ref-doc)")}
+  create-zudo-doc sub/ref-doc --yes
 
   ${pc.dim("# Per-package changelog pages")}
   create-zudo-doc my-docs --changelog-packages core,cli --yes
@@ -271,6 +292,16 @@ export function validateArgs(args: CliArgs): string | null {
   if (args.name) {
     const nameError = validateProjectName(args.name);
     if (nameError) return nameError;
+  }
+
+  if (args.destination !== undefined) {
+    // With --name present the derived segment is overridden, so the final
+    // segment only has to be a legal *directory* name — but a destination that
+    // names no final segment at all (".", "..", "/") is still refused.
+    const result = args.name
+      ? normalizeDestination(args.destination)
+      : splitDestination(args.destination);
+    if (!result.ok) return result.error;
   }
 
   return null;

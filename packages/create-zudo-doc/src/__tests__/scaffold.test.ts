@@ -2672,3 +2672,55 @@ describe("monorepo root package.json — doc-skill opt-out (#3157)", () => {
     }
   });
 });
+
+// #4023 — the CLI destination may be a path. `choices.destination` drives the
+// directory; `choices.projectName` still drives the generated package name.
+describe("scaffold — destination path (#4023)", () => {
+  it("writes into the destination path and names the package after its final segment", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "ref-doc",
+      destination: "sub/ref-doc",
+    });
+
+    // Intermediate directories are created as needed.
+    const pkg = await fs.readJson(
+      projectPath("sub", "ref-doc", "package.json"),
+    );
+    expect(pkg.name).toBe("ref-doc");
+    // The final segment must not also be created at the top level.
+    expect(await fs.pathExists(projectPath("ref-doc"))).toBe(false);
+  });
+
+  it("keeps a bare name behaving exactly as before", async () => {
+    await scaffold({ ...baseChoices, projectName: "refdoc" });
+
+    const pkg = await fs.readJson(projectPath("refdoc", "package.json"));
+    expect(pkg.name).toBe("refdoc");
+  });
+
+  it("names the destination — not the project name — in the non-empty guard", async () => {
+    await fs.outputFile(projectPath("sub", "ref-doc", "keep.txt"), "x");
+
+    await expect(
+      scaffold({
+        ...baseChoices,
+        projectName: "ref-doc",
+        destination: "sub/ref-doc",
+      }),
+    ).rejects.toThrow(/Directory "sub\/ref-doc" already exists and is not empty/);
+  });
+
+  it("resolves an absolute destination", async () => {
+    const absolute = path.join(tempDir, "elsewhere", "abs-docs");
+
+    await scaffold({
+      ...baseChoices,
+      projectName: "abs-docs",
+      destination: absolute,
+    });
+
+    const pkg = await fs.readJson(path.join(absolute, "package.json"));
+    expect(pkg.name).toBe("abs-docs");
+  });
+});
