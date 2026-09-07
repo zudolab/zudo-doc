@@ -1940,6 +1940,57 @@ describe("CLI (spawned node process) — exit codes", () => {
     const { status, stderr } = runCli(["--bogus"], tmpDir);
     expect(status).not.toBe(0);
     expect(stderr).toContain('Unknown flag "--bogus"');
+    // The top-level handler (#4025) must turn this into a single readable
+    // line, not a raw Node stack trace. A narrower `at readFileSync` regex
+    // would miss frames like `at main (file:///…)`, so reject any `at`
+    // frame line and any `file://` reference.
+    expect(stderr).not.toMatch(/\n\s+at\s/);
+    expect(stderr).not.toContain("file://");
+  });
+
+  // ── #4025: descriptive not-found errors + top-level error handler ────────
+
+  it("reports a descriptive not-found error, with no stack trace, for a missing tokens file", () => {
+    writeFileSync(join(tmpDir, DEFAULT_CSS_PATH), wrapInCss(GOLDEN_DEFAULT_BLOCK));
+    // Tokens file intentionally not created.
+    const { status, stderr } = runCli([], tmpDir);
+    expect(status).toBe(1);
+    expect(stderr.trim()).toBe(`tokens file not found at ${DEFAULT_TOKENS_PATH}`);
+    expect(stderr).not.toMatch(/\n\s+at\s/);
+    expect(stderr).not.toContain("file://");
+  });
+
+  it("reports a descriptive not-found error, with no stack trace, for a missing css file", () => {
+    writeFileSync(join(tmpDir, DEFAULT_TOKENS_PATH), tokensSrcFromTiers(DEFAULT_TIER_DATA));
+    // CSS file intentionally not created.
+    const { status, stderr } = runCli([], tmpDir);
+    expect(status).toBe(1);
+    expect(stderr.trim()).toBe(`css file not found at ${DEFAULT_CSS_PATH}`);
+    expect(stderr).not.toMatch(/\n\s+at\s/);
+    expect(stderr).not.toContain("file://");
+  });
+
+  it("reports a descriptive not-found error, with no stack trace, for a missing --md-table file", () => {
+    seedCleanCss();
+    // docs/z-index.mdx intentionally not created.
+    const { status, stderr } = runCli(["--md-table", "docs/z-index.mdx"], tmpDir);
+    expect(status).toBe(1);
+    expect(stderr.trim()).toBe("md-table file not found at docs/z-index.mdx");
+    expect(stderr).not.toMatch(/\n\s+at\s/);
+    expect(stderr).not.toContain("file://");
+  });
+
+  it("does not report a directory-in-place-of-tokens-file failure as 'not found'", () => {
+    // A directory at the tokens path is a real, distinct failure (EISDIR) —
+    // reporting it as "not found" would send the reader looking for a
+    // missing file instead of the directory that's actually there.
+    mkdirSync(join(tmpDir, DEFAULT_TOKENS_PATH), { recursive: true });
+    writeFileSync(join(tmpDir, DEFAULT_CSS_PATH), wrapInCss(GOLDEN_DEFAULT_BLOCK));
+    const { status, stderr } = runCli([], tmpDir);
+    expect(status).toBe(1);
+    expect(stderr).not.toContain("not found");
+    expect(stderr).not.toMatch(/\n\s+at\s/);
+    expect(stderr).not.toContain("file://");
   });
 
   it("exits non-zero when a value flag is missing its value", () => {
@@ -2021,5 +2072,9 @@ describe("CLI (spawned node process) — exit codes", () => {
     expect(status).not.toBe(0);
     expect(stderr).toContain('Unreadable purpose value for tier "content"');
     expect(stdout).not.toContain("up to date");
+    // The top-level handler (#4025) catches this parseTiers throw too — it's
+    // not just for the readNamedFile guard.
+    expect(stderr).not.toMatch(/\n\s+at\s/);
+    expect(stderr).not.toContain("file://");
   });
 });

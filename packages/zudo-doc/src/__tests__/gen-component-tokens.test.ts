@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { readFileSync } from "node:fs";
+import { readFileSync, renameSync, mkdirSync, rmdirSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 
 // Import the generator functions directly so the test exercises the same
 // logic the CLI uses, without needing a built dist or running Node as a child.
@@ -11,8 +12,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Import via relative path that steps outside src/ into bin/.
 // Vitest resolves this at test time; it is NOT compiled by tsup.
+const BIN_PATH = resolve(__dirname, "../../bin/gen-component-tokens.mjs");
 const { parseTokens, groupBySelector, routeBySurface, buildBlock, replaceBlock } =
-  await import(resolve(__dirname, "../../bin/gen-component-tokens.mjs"));
+  await import(BIN_PATH);
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -435,5 +437,74 @@ describe("Default-value test — generated content.css block", () => {
     expect(featuresCss).toContain(
       "  font-weight: var(--zdc-nav-active-weight, var(--font-weight-medium));",
     );
+  });
+});
+
+// ── CLI (spawned node process) — missing-file errors (#4025) ───────────────
+//
+// This bin's tokens/css paths are package-owned absolute constants (TOKENS_PATH/
+// SURFACES in the bin itself), not cwd-relative flag values like gen-z-index's —
+// so, unlike that suite's tmpDir-seeded fixtures, proving the missing-file
+// message here means briefly moving the REAL package file out of the way and
+// spawning the real bin against it. Each test restores the file in a
+// `finally` so a failed assertion never leaves the workspace file missing.
+
+describe("CLI (spawned node process) — missing-file errors", () => {
+  const PKG_ROOT_FOR_CLI = resolve(__dirname, "../../");
+  const TOKENS_PATH = resolve(PKG_ROOT_FOR_CLI, "src/config/component-tokens.ts");
+  const CONTENT_CSS_PATH = resolve(PKG_ROOT_FOR_CLI, "src/content.css");
+
+  function runCli(): { status: number | null; stderr: string } {
+    const result = spawnSync(process.execPath, [BIN_PATH], { encoding: "utf8" });
+    return { status: result.status, stderr: result.stderr };
+  }
+
+  it("reports a descriptive not-found error, with no stack trace, for a missing tokens file", () => {
+    const backupPath = `${TOKENS_PATH}.bak-test`;
+    renameSync(TOKENS_PATH, backupPath);
+    try {
+      const { status, stderr } = runCli();
+      expect(status).toBe(1);
+      expect(stderr.trim()).toBe(
+        "tokens file not found at packages/zudo-doc/src/config/component-tokens.ts",
+      );
+      expect(stderr).not.toMatch(/\n\s+at\s/);
+      expect(stderr).not.toContain("file://");
+    } finally {
+      renameSync(backupPath, TOKENS_PATH);
+    }
+  });
+
+  it("reports a descriptive not-found error, with no stack trace, for a missing css file", () => {
+    const backupPath = `${CONTENT_CSS_PATH}.bak-test`;
+    renameSync(CONTENT_CSS_PATH, backupPath);
+    try {
+      const { status, stderr } = runCli();
+      expect(status).toBe(1);
+      expect(stderr.trim()).toBe("css file not found at packages/zudo-doc/src/content.css");
+      expect(stderr).not.toMatch(/\n\s+at\s/);
+      expect(stderr).not.toContain("file://");
+    } finally {
+      renameSync(backupPath, CONTENT_CSS_PATH);
+    }
+  });
+
+  it("does not report a directory-in-place-of-tokens-file failure as 'not found'", () => {
+    // A directory at the tokens path is a real, distinct failure (EISDIR) —
+    // reporting it as "not found" would send the reader looking for a
+    // missing file instead of the directory that's actually there.
+    const backupPath = `${TOKENS_PATH}.bak-test`;
+    renameSync(TOKENS_PATH, backupPath);
+    mkdirSync(TOKENS_PATH);
+    try {
+      const { status, stderr } = runCli();
+      expect(status).toBe(1);
+      expect(stderr).not.toContain("not found");
+      expect(stderr).not.toMatch(/\n\s+at\s/);
+      expect(stderr).not.toContain("file://");
+    } finally {
+      rmdirSync(TOKENS_PATH);
+      renameSync(backupPath, TOKENS_PATH);
+    }
   });
 });
