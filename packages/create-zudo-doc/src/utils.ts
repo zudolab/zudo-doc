@@ -4,8 +4,13 @@ import path from "path";
 import { resolveLocalePlan } from "./locale-plan.js";
 
 // Project-name grammar (locked by F4 — S4 #2013):
-// /^[a-z0-9][a-z0-9._-]*$/, max 214 chars, unscoped, used as both directory
-// name and package name. Mirrors npm's unscoped-name rules + max path safety.
+// /^[a-z0-9][a-z0-9._-]*$/, max 214 chars, unscoped. Mirrors npm's
+// unscoped-name rules + max path safety.
+//
+// This grammar covers the *package name* only — the value written to the
+// generated package.json's `name`. The directory the project is written to is
+// a separate concept (`UserChoices.destination`, see `splitDestination` below)
+// and may be any path; only its final segment is checked against this grammar.
 const PROJECT_NAME_RE = /^[a-z0-9][a-z0-9._-]*$/;
 const PROJECT_NAME_MAX = 214;
 
@@ -30,6 +35,107 @@ export function validateProjectName(name: string): string | null {
     );
   }
   return null;
+}
+
+/** Trailing path separators, platform-aware (Windows accepts both). */
+const TRAILING_SEPARATORS = path.sep === "\\" ? /[\\/]+$/ : /\/+$/;
+
+export type DestinationPath =
+  | { ok: true; destination: string; finalSegment: string }
+  | { ok: false; error: string };
+
+export type DestinationSplit =
+  | { ok: true; destination: string; projectName: string }
+  | { ok: false; error: string };
+
+/**
+ * Normalize a destination path and expose its final segment.
+ *
+ * Upward traversal (`../ref-doc`) is **allowed** — `..` is simply a relative
+ * way to name a directory outside the cwd, and absolute destinations are
+ * accepted too, so rejecting it would be inconsistent. `.`, `..`, and a
+ * filesystem root are rejected because they name no final segment.
+ *
+ * `path.resolve()` is deliberately NOT applied before extracting the segment:
+ * resolving `"."` first would turn the *current* directory's basename into an
+ * apparently valid project name and scaffold into the cwd.
+ */
+export function normalizeDestination(raw: string): DestinationPath {
+  const given = raw.trim();
+  if (given === "") {
+    return { ok: false, error: "Destination path is required" };
+  }
+
+  // `sub/ref-doc/` and `sub/ref-doc` name the same directory; keep the rest of
+  // the string as the user typed it so messages and `cd` output echo it back.
+  const destination = given.replace(TRAILING_SEPARATORS, "") || given;
+  const finalSegment = path.basename(path.normalize(destination));
+
+  if (finalSegment === "" || finalSegment === "." || finalSegment === "..") {
+    return {
+      ok: false,
+      error:
+        `Destination "${given}" has no final path segment to name the project. ` +
+        `Pass a destination whose last segment names the project, e.g. "sub/my-docs"`,
+    };
+  }
+
+  return { ok: true, destination, finalSegment };
+}
+
+/**
+ * Split a CLI destination argument into the directory to scaffold into and the
+ * package name written to the generated `package.json`.
+ *
+ * The final path segment becomes the project name and goes through the
+ * unchanged `validateProjectName`; everything before it is just a directory
+ * path and is deliberately not validated as a package name. Callers that
+ * supply the name separately (`--name`) use `normalizeDestination` instead, so
+ * a directory segment that is not a legal package name stays acceptable.
+ */
+export function splitDestination(raw: string): DestinationSplit {
+  const normalized = normalizeDestination(raw);
+  if (!normalized.ok) return normalized;
+
+  const nameError = validateProjectName(normalized.finalSegment);
+  if (nameError) {
+    return {
+      ok: false,
+      error:
+        `Invalid project name "${normalized.finalSegment}" — the last segment of ` +
+        `destination "${raw.trim()}" is used as the package name. ${nameError}`,
+    };
+  }
+
+  return {
+    ok: true,
+    destination: normalized.destination,
+    projectName: normalized.finalSegment,
+  };
+}
+
+/** The two destination-bearing fields every target-dir consumer needs. */
+export interface DestinationChoices {
+  projectName: string;
+  /**
+   * Directory to scaffold into, as given on the CLI. Absent on the
+   * programmatic/preset paths, where the project name is also the directory.
+   */
+  destination?: string;
+}
+
+/** The destination as the user expressed it — for messages and `cd` output. */
+export function destinationLabel(choices: DestinationChoices): string {
+  return choices.destination ?? choices.projectName;
+}
+
+/**
+ * The single source of truth for the absolute directory a scaffold is written
+ * to. Every caller that needs it (scaffold.ts, api.ts, index.ts) must use this
+ * rather than re-deriving it — that is how the three sites used to drift.
+ */
+export function resolveTargetDir(choices: DestinationChoices): string {
+  return path.resolve(process.cwd(), destinationLabel(choices));
 }
 
 export function installDependencies(dir: string, pm: string): void {

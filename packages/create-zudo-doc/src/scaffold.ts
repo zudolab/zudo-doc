@@ -8,8 +8,10 @@ import { composeFeatures } from "./compose.js";
 import { featureModules } from "./features/index.js";
 import {
   capitalize,
+  destinationLabel,
   hasAncestorPnpmWorkspace,
   pmRunCommand,
+  resolveTargetDir,
 } from "./utils.js";
 import {
   resolveLocalePlan,
@@ -290,13 +292,13 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     );
   }
 
-  const targetDir = path.resolve(process.cwd(), choices.projectName);
+  const targetDir = resolveTargetDir(choices);
 
   if (await fs.pathExists(targetDir)) {
     const contents = await fs.readdir(targetDir);
     if (contents.length > 0) {
       throw new Error(
-        `Directory "${choices.projectName}" already exists and is not empty`,
+        `Directory "${destinationLabel(choices)}" already exists and is not empty`,
       );
     }
   }

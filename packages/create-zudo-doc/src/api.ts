@@ -1,4 +1,3 @@
-import path from "path";
 import { SINGLE_SCHEMES, THEME_PACKS } from "./constants.js";
 import type { PresetHeaderRightItem, PresetMetaTagsConfig } from "./preset.js";
 import {
@@ -8,7 +7,12 @@ import {
   validateMetaTags,
 } from "./preset.js";
 import { scaffold } from "./scaffold.js";
-import { initGitRepo, installDependencies, validateProjectName } from "./utils.js";
+import {
+  initGitRepo,
+  installDependencies,
+  resolveTargetDir,
+  validateProjectName,
+} from "./utils.js";
 import { resolveLocalePlan } from "./locale-plan.js";
 
 export {
@@ -121,7 +125,9 @@ export async function createZudoDoc(options: CreateOptions): Promise<string> {
     changelogPackages,
   };
   await scaffold(choices);
-  const targetDir = path.resolve(process.cwd(), choices.projectName);
+  // No `destination` on CreateOptions — the programmatic API keeps the
+  // project name doubling as the directory, so the resolver falls back to it.
+  const targetDir = resolveTargetDir(choices);
   if (install) {
     installDependencies(targetDir, choices.packageManager);
   }

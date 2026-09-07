@@ -11,6 +11,12 @@ import { resolveLocalePlan } from "./locale-plan.js";
 
 export interface UserChoices {
   projectName: string;
+  // Directory to scaffold into, as given on the CLI — may be a path whose last
+  // segment is `projectName`. CLI-level only: the programmatic API
+  // (CreateOptions) and preset (PresetJson) shapes deliberately do NOT carry
+  // it, and when it is absent the project name doubles as the directory.
+  // Resolve it with `resolveTargetDir(choices)` — never re-derive.
+  destination?: string;
   defaultLang: string;
   additionalLangs?: string[];
   colorSchemeMode: "single" | "light-dark";
@@ -55,6 +61,8 @@ export interface UserChoices {
 
 export interface PartialChoices {
   projectName?: string;
+  /** See `UserChoices.destination` — CLI-supplied, never prompted for. */
+  destination?: string;
   defaultLang?: string;
   additionalLangs?: string[];
   colorSchemeMode?: "single" | "light-dark";
@@ -310,6 +318,7 @@ export async function runPrompts(
 
   return {
     projectName,
+    destination: prefilled.destination,
     defaultLang: localePlan.defaultLang,
     additionalLangs:
       prefilled.additionalLangs === undefined
