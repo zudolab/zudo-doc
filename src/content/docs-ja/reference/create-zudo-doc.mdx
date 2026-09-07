@@ -7,12 +7,52 @@ sidebar_position: 10
 ## 使い方
 
 ```bash
-create-zudo-doc [project-name] [options]
+create-zudo-doc [destination] [options]
 ```
 
 フラグなしで実行すると、対話式ウィザードが起動します。すべてのオプションはフラグで指定でき、非対話的（CI/エージェント）に使用できます。
 
 [セットアッププリセットジェネレーター](../getting-started/setup-preset-generator.mdx)を使って、対話的に設定を構成し、JSON プリセットまたは CLI コマンドとしてコピーすることもできます。
+
+### スキャフォールド先とプロジェクト名
+
+最初の位置引数は**スキャフォールド先（destination）**、つまりプロジェクトを作成するディレクトリです。パスを渡すこともでき、その**最後のセグメント**が、生成される `package.json` に書き込まれるプロジェクト名になります。
+
+```bash
+# ./sub/ref-doc を作成し、パッケージ名は "ref-doc" になります
+pnpm create zudo-doc sub/ref-doc --yes
+```
+
+プロジェクト名の文法（先頭は英小文字か数字、使えるのは英小文字・数字・ドット・アンダースコア・ハイフンのみ、最大 214 文字）が適用されるのは、この最後のセグメントだけです。その手前のディレクトリは単なるパスとして扱われるため、`Scratch-Dir/ref-doc` のような指定も通ります。
+
+| destination | 作成されるディレクトリ | プロジェクト名 |
+|-------------|----------------------|---------------|
+| `my-docs` | `./my-docs` | `my-docs` |
+| `sub/ref-doc` | `./sub/ref-doc` | `ref-doc` |
+| `./sub/ref-doc/` | `./sub/ref-doc` | `ref-doc` |
+| `../ref-doc` | `../ref-doc` | `ref-doc` |
+| `/tmp/scratch/ref-doc` | `/tmp/scratch/ref-doc` | `ref-doc` |
+
+上位ディレクトリへ遡る `../ref-doc` も、絶対パスも受け付けられます。拒否されるのは `.`、`..`、ファイルシステムのルート（`/`）で、プロジェクト名を導き出す最後のセグメントを持たないためです:
+
+```text
+Destination "." has no final path segment to name the project. Pass a destination whose last segment names the project, e.g. "sub/my-docs"
+```
+
+最後のセグメントがディレクトリ名としては妥当でも、パッケージ名の文法に反する場合は、そのセグメントを指すエラーになります:
+
+```text
+Invalid project name "My-Docs" — the last segment of destination "sub/My-Docs" is used as the package name. Project name must start with a lowercase letter or digit and contain only lowercase letters, digits, dots, underscores, and hyphens
+```
+
+`--name` を併用すると、ディレクトリは位置引数のまま、プロジェクト名だけを上書きできます。パッケージ名としては使えない名前のディレクトリにスキャフォールドしたい場合の手段です:
+
+```bash
+# ./sub/My-Docs を作成し、パッケージ名は "ref-doc" になります
+pnpm create zudo-doc sub/My-Docs --name ref-doc --yes
+```
+
+`--name` に渡せるのは従来どおり素のパッケージ名だけで、パスを渡すと拒否されます。また `--name` を付けた場合でも、最後のセグメントを持たない destination は拒否されたままです。
 
 ## CLI が生成するもの
 
@@ -48,7 +88,8 @@ zudo-doc が同梱するカラースキームは `Default Light` と `Default Da
 
 | フラグ | 説明 | デフォルト |
 |--------|------|-----------|
-| `--name <name>` | プロジェクト名（または最初の位置引数） | `my-docs` |
+| `[destination]` | スキャフォールド先のディレクトリ（最初の位置引数）。パスも指定でき、その最後のセグメントがプロジェクト名になる | `my-docs` |
+| `--name <name>` | 生成される `package.json` に書き込まれるプロジェクト名。destination の最後のセグメントから導出される名前を上書きする | destination の最後のセグメント |
 | `--lang <code>` | デフォルト言語コード | `en` |
 | `--additional-langs <a,b>` | 追加ロケールコード（順序付き）。i18n を有効にし、プリセットのリストを置き換える | — |
 | `--changelog-packages <a,b>` | ネストした変更履歴ランディングページと、カンマ区切りの各スラッグに対応するパッケージインデックスを生成 | — |
@@ -161,6 +202,14 @@ pnpm create zudo-doc
 pnpm create zudo-doc my-docs --yes
 ```
 
+### サブディレクトリへのスキャフォールド
+
+```bash
+pnpm create zudo-doc sub/ref-doc --yes
+```
+
+`sub/ref-doc/` を作成し、パッケージ名は `ref-doc` になります。1 つの作業用ディレクトリの下に複数のプロジェクトを並べて生成したいとき（たとえば 2 つのテンプレートバージョンを diff で比較したいとき）に便利です。
+
 ### 日本語サイト、単一ダークスキーム
 
 ```bash
@@ -208,7 +257,7 @@ pnpm create zudo-doc my-docs \
 
 ## プログラム API
 
-パッケージはプログラム API もエクスポートしています。オプションオブジェクトは JSON プリセットと同じフィールドに加え、`install` と `git` オプションを受け付けます。プログラム API ではどちらもデフォルトで `false` です:
+パッケージはプログラム API もエクスポートしています。オプションオブジェクトは JSON プリセットと同じフィールドに加え、`install` と `git` オプションを受け付けます。プログラム API ではどちらもデフォルトで `false` です。`destination` オプションはありません。スキャフォールド先のパスは CLI レベルの概念であり、プログラム API ではカレントディレクトリを基準に `projectName` がそのままディレクトリ名を兼ねます:
 
 ```ts
 import { createZudoDoc } from "create-zudo-doc";

@@ -42,6 +42,42 @@ pnpm create zudo-doc my-docs \
   --install
 ```
 
+### Destination paths
+
+The positional argument is the **destination** — the directory to scaffold
+into, not just a bare name. It may be a path (relative, `../`-prefixed, or
+absolute), and its **last segment** becomes the project name written to the
+generated `package.json`:
+
+```bash
+# Creates ./sub/ref-doc with the package name "ref-doc"
+pnpm create zudo-doc sub/ref-doc --yes
+```
+
+Only that last segment has to satisfy the project-name grammar (starts with a
+lowercase letter or digit; lowercase letters, digits, dots, underscores, and
+hyphens only; 214 characters max) — the directories leading up to it are just a
+path. `.`, `..`, and a filesystem root are rejected, because they name no last
+segment to derive the project name from.
+
+Use `--name` to override the derived name while the positional argument keeps
+supplying the directory:
+
+```bash
+# Creates ./sub/My-Docs with the package name "ref-doc"
+pnpm create zudo-doc sub/My-Docs --name ref-doc --yes
+```
+
+This makes side-by-side scaffolding straightforward — for example, comparing
+two template versions by generating both into one scratch directory and
+diffing them:
+
+```bash
+pnpm create zudo-doc@5.17.0 /tmp/tpl-check/v5.17 --yes
+pnpm create zudo-doc@5.18.0 /tmp/tpl-check/v5.18 --yes
+diff -r /tmp/tpl-check/v5.17 /tmp/tpl-check/v5.18
+```
+
 ### Locales and translations
 
 `--lang` selects the primary locale. Its pages use the unprefixed
@@ -84,7 +120,8 @@ Built-in UI translations resolve in this order:
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `[project-name]` | Project name (positional arg or `--name`) | prompted |
+| `[destination]` | Directory to scaffold into; may be a path whose last segment becomes the project name | prompted |
+| `--name <name>` | Project name written to `package.json`; overrides the name derived from the destination | destination's last segment |
 | `--lang <code>` | Default language: `en`, `ja`, `zh-cn`, `zh-tw`, `ko`, `es`, `fr`, `de`, `pt` | `en` |
 | `--additional-langs <a,b>` | Ordered additional locale codes; implies i18n and replaces a preset list | none |
 | `--pm <manager>` | Package manager: `pnpm`, `npm`, `yarn`, `bun` | detected |
