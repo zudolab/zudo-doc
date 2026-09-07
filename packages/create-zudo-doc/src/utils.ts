@@ -126,7 +126,10 @@ export interface DestinationChoices {
 
 /** The destination as the user expressed it — for messages and `cd` output. */
 export function destinationLabel(choices: DestinationChoices): string {
-  return choices.destination ?? choices.projectName;
+  // `||`, not `??`: an empty destination is as absent as an undefined one, and
+  // letting `""` through would resolve the target directory to the cwd and
+  // scaffold on top of it.
+  return choices.destination || choices.projectName;
 }
 
 /**

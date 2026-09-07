@@ -67,7 +67,11 @@ function verifyRoundtrip(state: FormState) {
   const parsed = parseArgs(argv);
   const expectedI18n = Boolean(state.additionalLangs.trim());
 
-  expect(parsed.name).toBe(state.projectName || "my-docs");
+  // #4023: the positional argument parses as the DESTINATION, not `name`.
+  // buildCliCommand emits the project name positionally and never emits
+  // --name, so the derived name comes from the destination's final segment.
+  expect(parsed.destination).toBe(state.projectName || "my-docs");
+  expect(parsed.name).toBeUndefined();
   expect(parsed.lang).toBe(state.defaultLang.trim().toLowerCase());
   expect(parsed.colorSchemeMode).toBe(state.colorSchemeMode);
   expect(parsed.pm).toBe(state.packageManager);

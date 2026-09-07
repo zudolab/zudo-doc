@@ -138,6 +138,9 @@ async function main() {
   const choices = await runPrompts(prefilled);
   const targetDir = resolveTargetDir(choices);
   const destination = destinationLabel(choices);
+  // A destination may now contain spaces (only its LAST segment goes through
+  // the project-name grammar), so the `cd` we print has to stay copy-pastable.
+  const cdTarget = /\s/.test(destination) ? `"${destination}"` : destination;
 
   const s = p.spinner();
   s.start("Scaffolding project...");
@@ -166,7 +169,7 @@ async function main() {
 
     if (p.isCancel(result)) {
       p.outro(
-        `Done! cd ${destination} and install dependencies manually.`,
+        `Done! cd ${cdTarget} and install dependencies manually.`,
       );
       return;
     }
@@ -216,7 +219,7 @@ async function main() {
 
   console.log();
   console.log(`  ${pc.bold("Next steps:")}`);
-  console.log(`  cd ${destination}`);
+  console.log(`  cd ${cdTarget}`);
   console.log(`  ${pmRunCommand(choices.packageManager, "dev")}`);
   console.log();
 }
