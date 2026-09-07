@@ -1024,6 +1024,26 @@ export function buildMdTable(tiers, options = {}) {
 }
 
 /**
+ * Reads a user-supplied file, translating a missing file into a message that
+ * names both which file (`label`) and where it looked (`asGivenPath` — the
+ * as-given path, never the resolved absolute one, matching the convention
+ * documented on `main()` below). Only ENOENT is translated: EACCES/EISDIR
+ * etc. are real, distinct failures (a permissions problem or "that's a
+ * directory") that a "not found" message would misreport, so they propagate
+ * unchanged with Node's own message.
+ */
+function readNamedFile(absPath, asGivenPath, label) {
+  try {
+    return readFileSync(absPath, "utf8");
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      throw new Error(`${label} file not found at ${asGivenPath}`);
+    }
+    throw error;
+  }
+}
+
+/**
  * CLI entrypoint. `argv` defaults to the real process argv (minus the node/
  * script prefix) so `isDirectInvocation()` below can call `main()` with no
  * arguments, while tests can pass a synthetic argv without touching
@@ -1052,8 +1072,8 @@ export function main(argv = process.argv.slice(2)) {
   const tokensAbsPath = resolve(root, tokensPath);
   const cssAbsPath = resolve(root, cssPath);
 
-  const tokensSrc = readFileSync(tokensAbsPath, "utf8");
-  const css = readFileSync(cssAbsPath, "utf8");
+  const tokensSrc = readNamedFile(tokensAbsPath, tokensPath, "tokens");
+  const css = readNamedFile(cssAbsPath, cssPath, "css");
 
   const tiers = parseTiers(tokensSrc, tokensPath);
   const block = buildBlock(tiers, { tokensPath, cssPath, themeWrapper });
@@ -1064,7 +1084,7 @@ export function main(argv = process.argv.slice(2)) {
   let nextMd;
   if (mdTablePath !== undefined) {
     mdAbsPath = resolve(root, mdTablePath);
-    mdSrc = readFileSync(mdAbsPath, "utf8");
+    mdSrc = readNamedFile(mdAbsPath, mdTablePath, "md-table");
     const mdBlock = buildMdTable(tiers, { tokensPath });
     nextMd = replaceBlock(
       mdSrc,
@@ -1141,5 +1161,20 @@ function isDirectInvocation() {
 }
 
 if (isDirectInvocation()) {
-  process.exit(main());
+  // Turns any Error thrown by main() (there are ~17 deliberate `throw new
+  // Error(...)` call sites above, plus the readNamedFile guard) into a single
+  // readable stderr line instead of a raw Node stack trace. This also hides
+  // the stack for a genuine *programming* error, not just a user-input one —
+  // an accepted CLI tradeoff, not an accident: the process still exits 1 and
+  // nothing is swallowed, but a future reader debugging an internal crash
+  // needs to call the exported `main()` directly (or temporarily remove this
+  // try/catch) to see the stack. Exit codes are unchanged: main()'s own
+  // return value (0 or 1) still flows through process.exit on the success
+  // path; only an uncaught throw is newly turned into exit(1) with a message.
+  try {
+    process.exit(main());
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
 }
