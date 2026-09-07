@@ -1,7 +1,16 @@
-import { describe, it, expect } from "vitest";
-import { resolve, dirname } from "node:path";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { readFileSync } from "node:fs";
+import {
+  readFileSync,
+  writeFileSync,
+  copyFileSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { spawnSync } from "node:child_process";
 
 // Import the generator functions directly so the test exercises the same
 // logic the CLI uses, without needing a built dist or running Node as a child.
@@ -11,8 +20,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Import via relative path that steps outside src/ into bin/.
 // Vitest resolves this at test time; it is NOT compiled by tsup.
+const BIN_PATH = resolve(__dirname, "../../bin/gen-component-tokens.mjs");
 const { parseTokens, groupBySelector, routeBySurface, buildBlock, replaceBlock } =
-  await import(resolve(__dirname, "../../bin/gen-component-tokens.mjs"));
+  await import(BIN_PATH);
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -435,5 +445,126 @@ describe("Default-value test — generated content.css block", () => {
     expect(featuresCss).toContain(
       "  font-weight: var(--zdc-nav-active-weight, var(--font-weight-medium));",
     );
+  });
+});
+
+// ── CLI (spawned node process) — missing-file errors (#4025) ───────────────
+//
+// This bin's tokens/css paths are package-owned constants derived from the bin
+// file's OWN location (PKG_ROOT = dirname(bin)/..), not cwd-relative flag
+// values like gen-z-index's. So the CLI is exercised against a COPY of the bin
+// dropped into a temp package root: the copy reads that root's `src/` tree,
+// letting each case seed — or deliberately omit — a file without ever touching
+// the real workspace.
+//
+// Renaming the real package files instead would race every other test file:
+// vitest runs test FILES in parallel, and content-css.test.ts (top-level
+// `readFileSync("../content.css")`) and component-tokens-snapshot.test.ts
+// (top-level `import "../config/component-tokens.js"`) read those exact paths
+// at import time — plus an interrupted run would leave a tracked source file
+// deleted.
+//
+// The asserted messages still carry repo-relative paths because the bin
+// hardcodes them (TOKENS_REL_PATH / SURFACES[].relPath), so they are identical
+// when the bin runs from a copy.
+
+describe("CLI (spawned node process) — missing-file errors", () => {
+  const TOKENS_SRC = `
+export const COMPONENT_TOKENS: ComponentToken[] = [
+  {
+    cssVar: "--zdc-doc-title-font",
+    selector: "h1.text-heading",
+    property: "font-family",
+    default: "inherit",
+    component: "doc-title",
+    surface: "content",
+    category: "typography",
+    description: "Some description.",
+  },
+];`;
+
+  let tmpRoot: string;
+  let tmpBin: string;
+
+  beforeEach(() => {
+    tmpRoot = mkdtempSync(join(tmpdir(), "gen-component-tokens-"));
+    mkdirSync(join(tmpRoot, "bin"));
+    mkdirSync(join(tmpRoot, "src", "config"), { recursive: true });
+    tmpBin = join(tmpRoot, "bin", "gen-component-tokens.mjs");
+    // The bin imports only node: builtins, so a bare file copy is runnable.
+    copyFileSync(BIN_PATH, tmpBin);
+  });
+
+  afterEach(() => {
+    rmSync(tmpRoot, { recursive: true, force: true });
+  });
+
+  function tokensPath(): string {
+    return join(tmpRoot, "src", "config", "component-tokens.ts");
+  }
+
+  function seedTokens(): void {
+    writeFileSync(tokensPath(), TOKENS_SRC);
+  }
+
+  function seedCss(): void {
+    writeFileSync(
+      join(tmpRoot, "src", "content.css"),
+      wrapInCss(`${BEGIN_MARKER}\n${END_MARKER}`),
+    );
+    writeFileSync(
+      join(tmpRoot, "src", "features.css"),
+      wrapInCss(`${CHROME_BEGIN_MARKER}\n${CHROME_END_MARKER}`),
+    );
+  }
+
+  function runCli(): { status: number | null; stderr: string } {
+    const result = spawnSync(process.execPath, [tmpBin], { encoding: "utf8" });
+    return { status: result.status, stderr: result.stderr };
+  }
+
+  // Positive control: without this, a fixture that never runs the generator at
+  // all would satisfy every "should not say X" assertion below.
+  it("succeeds when the copied bin has a complete package root", () => {
+    seedTokens();
+    seedCss();
+    const { status, stderr } = runCli();
+    expect(stderr).toBe("");
+    expect(status).toBe(0);
+  });
+
+  it("reports a descriptive not-found error, with no stack trace, for a missing tokens file", () => {
+    seedCss();
+    // Tokens file intentionally not created.
+    const { status, stderr } = runCli();
+    expect(status).toBe(1);
+    expect(stderr.trim()).toBe(
+      "tokens file not found at packages/zudo-doc/src/config/component-tokens.ts",
+    );
+    expect(stderr).not.toMatch(/\n\s+at\s/);
+    expect(stderr).not.toContain("file://");
+  });
+
+  it("reports a descriptive not-found error, with no stack trace, for a missing css file", () => {
+    seedTokens();
+    // content.css intentionally not created (it is the first routed surface).
+    const { status, stderr } = runCli();
+    expect(status).toBe(1);
+    expect(stderr.trim()).toBe("css file not found at packages/zudo-doc/src/content.css");
+    expect(stderr).not.toMatch(/\n\s+at\s/);
+    expect(stderr).not.toContain("file://");
+  });
+
+  it("does not report a directory-in-place-of-tokens-file failure as 'not found'", () => {
+    // A directory at the tokens path is a real, distinct failure (EISDIR) —
+    // reporting it as "not found" would send the reader looking for a
+    // missing file instead of the directory that's actually there.
+    seedCss();
+    mkdirSync(tokensPath());
+    const { status, stderr } = runCli();
+    expect(status).toBe(1);
+    expect(stderr).not.toContain("not found");
+    expect(stderr).not.toMatch(/\n\s+at\s/);
+    expect(stderr).not.toContain("file://");
   });
 });

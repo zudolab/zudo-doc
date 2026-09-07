@@ -7,12 +7,52 @@ sidebar_position: 10
 ## Usage
 
 ```bash
-create-zudo-doc [project-name] [options]
+create-zudo-doc [destination] [options]
 ```
 
 When run without flags, the CLI launches an interactive wizard. All options can be specified via flags for non-interactive (CI/agent) usage.
 
 You can also use the [Setup Preset Generator](../getting-started/setup-preset-generator.mdx) to interactively build a configuration and copy it as a JSON preset or CLI command.
+
+### Destination and project name
+
+The first positional argument is the **destination** — the directory to scaffold into. It may be a path, and its **last segment** becomes the project name written to the generated `package.json`:
+
+```bash
+# Creates ./sub/ref-doc, package name "ref-doc"
+pnpm create zudo-doc sub/ref-doc --yes
+```
+
+Only that last segment goes through the project-name grammar (starts with a lowercase letter or digit; lowercase letters, digits, dots, underscores, and hyphens only; 214 characters max). The directories leading up to it are just a path, so `Scratch-Dir/ref-doc` is accepted.
+
+| Destination | Directory created | Project name |
+|-------------|-------------------|--------------|
+| `my-docs` | `./my-docs` | `my-docs` |
+| `sub/ref-doc` | `./sub/ref-doc` | `ref-doc` |
+| `./sub/ref-doc/` | `./sub/ref-doc` | `ref-doc` |
+| `../ref-doc` | `../ref-doc` | `ref-doc` |
+| `/tmp/scratch/ref-doc` | `/tmp/scratch/ref-doc` | `ref-doc` |
+
+Upward traversal (`../ref-doc`) and absolute destinations are both accepted. What is rejected is `.`, `..`, and a filesystem root (`/`) — they name no last segment to derive the project name from:
+
+```text
+Destination "." has no final path segment to name the project. Pass a destination whose last segment names the project, e.g. "sub/my-docs"
+```
+
+When the last segment is a legal directory name but not a legal package name, the error points at that segment:
+
+```text
+Invalid project name "My-Docs" — the last segment of destination "sub/My-Docs" is used as the package name. Project name must start with a lowercase letter or digit and contain only lowercase letters, digits, dots, underscores, and hyphens
+```
+
+`--name` overrides the derived name while the positional argument still supplies the directory — that is how you scaffold into a directory whose name is not a valid package name:
+
+```bash
+# Creates ./sub/My-Docs, package name "ref-doc"
+pnpm create zudo-doc sub/My-Docs --name ref-doc --yes
+```
+
+`--name` itself remains a bare package name: a path passed to it is still rejected. And a destination with no last segment stays rejected even when `--name` is present.
 
 ## What the CLI generates
 
@@ -48,7 +88,8 @@ Independently of the color scheme, the scaffold can start a project on any bundl
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--name <name>` | Project name (or first positional arg) | `my-docs` |
+| `[destination]` | Directory to scaffold into (first positional arg); may be a path whose last segment becomes the project name | `my-docs` |
+| `--name <name>` | Project name written to the generated `package.json`; overrides the name derived from the destination | destination's last segment |
 | `--lang <code>` | Default language code | `en` |
 | `--additional-langs <a,b>` | Ordered additional locale codes; implies i18n and replaces a preset list | — |
 | `--changelog-packages <a,b>` | Generate a nested changelog landing page and one package index per comma-separated slug | — |
@@ -161,6 +202,14 @@ pnpm create zudo-doc
 pnpm create zudo-doc my-docs --yes
 ```
 
+### Scaffolding into a subdirectory
+
+```bash
+pnpm create zudo-doc sub/ref-doc --yes
+```
+
+Creates `sub/ref-doc/` with the package name `ref-doc`. Useful for generating several projects side by side under one scratch directory — for example to diff two template versions against each other.
+
 ### Japanese site, single dark scheme
 
 ```bash
@@ -208,7 +257,7 @@ pnpm create zudo-doc my-docs \
 
 ## Programmatic API
 
-The package also exports a programmatic API. The options object accepts the same fields as the JSON preset, plus `install` and `git` options. The programmatic API defaults both to `false`.
+The package also exports a programmatic API. The options object accepts the same fields as the JSON preset, plus `install` and `git` options. The programmatic API defaults both to `false`. There is no `destination` option — the destination path is a CLI-level concept, so here `projectName` doubles as the directory name, resolved against the current working directory.
 
 ```ts
 import { createZudoDoc } from "create-zudo-doc";

@@ -1,4 +1,3 @@
-import path from "path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import {
@@ -11,7 +10,14 @@ import { FEATURES } from "./constants.js";
 import { loadPreset } from "./preset.js";
 import { runPrompts, type PartialChoices } from "./prompts.js";
 import { scaffold } from "./scaffold.js";
-import { installDependencies, initGitRepo, pmRunCommand } from "./utils.js";
+import {
+  destinationLabel,
+  initGitRepo,
+  installDependencies,
+  normalizeDestination,
+  pmRunCommand,
+  resolveTargetDir,
+} from "./utils.js";
 
 async function main() {
   const args = parseArgs();
@@ -49,6 +55,17 @@ async function main() {
   }
 
   // CLI args override preset values
+  if (args.destination !== undefined) {
+    // validateArgs() already rejected a destination with no usable final
+    // segment, so this only fails on an input that never reaches here.
+    const dest = normalizeDestination(args.destination);
+    if (dest.ok) {
+      prefilled.destination = dest.destination;
+      prefilled.projectName = dest.finalSegment;
+    }
+  }
+  // --name is a deliberate override of the name derived from the destination's
+  // last segment; the positional keeps supplying the directory either way.
   if (args.name) prefilled.projectName = args.name;
   if (args.lang) prefilled.defaultLang = args.lang;
   prefilled.additionalLangs = layerAdditionalLangs(
@@ -119,7 +136,11 @@ async function main() {
   }
 
   const choices = await runPrompts(prefilled);
-  const targetDir = path.resolve(process.cwd(), choices.projectName);
+  const targetDir = resolveTargetDir(choices);
+  const destination = destinationLabel(choices);
+  // A destination may now contain spaces (only its LAST segment goes through
+  // the project-name grammar), so the `cd` we print has to stay copy-pastable.
+  const cdTarget = /\s/.test(destination) ? `"${destination}"` : destination;
 
   const s = p.spinner();
   s.start("Scaffolding project...");
@@ -148,7 +169,7 @@ async function main() {
 
     if (p.isCancel(result)) {
       p.outro(
-        `Done! cd ${choices.projectName} and install dependencies manually.`,
+        `Done! cd ${cdTarget} and install dependencies manually.`,
       );
       return;
     }
@@ -193,12 +214,12 @@ async function main() {
   }
 
   p.outro(
-    `${pc.green("Done!")} Your project is ready at ${pc.cyan(choices.projectName)}`,
+    `${pc.green("Done!")} Your project is ready at ${pc.cyan(destination)}`,
   );
 
   console.log();
   console.log(`  ${pc.bold("Next steps:")}`);
-  console.log(`  cd ${choices.projectName}`);
+  console.log(`  cd ${cdTarget}`);
   console.log(`  ${pmRunCommand(choices.packageManager, "dev")}`);
   console.log();
 }

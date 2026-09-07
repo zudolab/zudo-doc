@@ -45,6 +45,11 @@ const TOKENS_PATH = resolve(PKG_ROOT, "src/config/component-tokens.ts");
 const CONTENT_CSS_PATH = resolve(PKG_ROOT, "src/content.css");
 const FEATURES_CSS_PATH = resolve(PKG_ROOT, "src/features.css");
 
+// Repo-relative label for TOKENS_PATH, matching the SURFACES table's relPath
+// convention below — used only in the missing-file message so it never
+// embeds this machine's absolute path.
+const TOKENS_REL_PATH = "packages/zudo-doc/src/config/component-tokens.ts";
+
 // Default marker pair = the content-surface block. Kept under the original
 // names so buildBlock/replaceBlock default to the content block, preserving the
 // byte-identical content.css output (and the existing unit-test call sites).
@@ -259,10 +264,30 @@ export function replaceBlock(
   return css.slice(0, lineStart) + block + css.slice(lineEnd);
 }
 
+/**
+ * Reads a package-owned file, translating a missing file into a message that
+ * names both which file (`label`) and its repo-relative path (`relPath`) —
+ * these paths are absolute constants (see TOKENS_PATH/SURFACES above), so the
+ * relative label is what keeps the message free of a machine-specific path.
+ * Only ENOENT is translated: EACCES/EISDIR etc. are real, distinct failures
+ * (a permissions problem or "that's a directory") that a "not found" message
+ * would misreport, so they propagate unchanged with Node's own message.
+ */
+function readNamedFile(absPath, relPath, label) {
+  try {
+    return readFileSync(absPath, "utf8");
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      throw new Error(`${label} file not found at ${relPath}`);
+    }
+    throw error;
+  }
+}
+
 function main() {
   const check = process.argv.includes("--check");
 
-  const tokensSrc = readFileSync(TOKENS_PATH, "utf8");
+  const tokensSrc = readNamedFile(TOKENS_PATH, TOKENS_REL_PATH, "tokens");
   const tokens = parseTokens(tokensSrc);
   const routes = routeBySurface(tokens);
 
@@ -277,7 +302,7 @@ function main() {
       `${target.surface}: ${surfaceTokens.length} token(s), ${selectorCount} selector(s)`,
     );
 
-    const css = readFileSync(target.cssPath, "utf8");
+    const css = readNamedFile(target.cssPath, target.relPath, "css");
     const block = buildBlock(surfaceTokens, target.beginMarker, target.endMarker);
     const next = replaceBlock(
       css,
@@ -344,5 +369,21 @@ function isDirectInvocation() {
 }
 
 if (isDirectInvocation()) {
-  process.exit(main());
+  // Turns any Error thrown by main() (the readNamedFile guard, the parser's
+  // loud-failure throws, or replaceBlock's missing-markers throw) into a
+  // single readable stderr line instead of a raw Node stack trace. This also
+  // hides the stack for a genuine *programming* error, not just a user-input
+  // one — an accepted CLI tradeoff, not an accident: the process still exits
+  // 1 and nothing is swallowed, but a future reader debugging an internal
+  // crash needs to call the exported `main()` directly (or temporarily
+  // remove this try/catch) to see the stack. Exit codes are unchanged:
+  // main()'s own return value (0 or 1) still flows through process.exit on
+  // the success path; only an uncaught throw is newly turned into exit(1)
+  // with a message.
+  try {
+    process.exit(main());
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
 }
