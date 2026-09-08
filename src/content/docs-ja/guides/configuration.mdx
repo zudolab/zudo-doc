@@ -464,16 +464,24 @@ export default defineConfig(
 
 ### locales
 
-追加ロケール: コード → `{ label, dir }`。それぞれが `/<code>/docs/…` ルートツリーと `docs-<code>` コレクションになります。マップの順序が維持され、言語切り替えは設定したすべての `label` をその順序で表示するため、`JP` や `JA` に固定されません。
+追加ロケール: コード → `{ label, dir, description? }`。それぞれが `/<code>/docs/…` ルートツリーと `docs-<code>` コレクションになります。マップの順序が維持され、言語切り替えは設定したすべての `label` をその順序で表示するため、`JP` や `JA` に固定されません。
 
 デフォルト: `{}`
 
 ```ts
 locales: {
-  ja: { label: "JA", dir: "src/content/docs-ja" },
+  ja: {
+    label: "JA",
+    dir: "src/content/docs-ja",
+    description: "プロジェクトの使い方をまとめたドキュメント。",
+  },
   de: { label: "DE", dir: "src/content/docs-de" },
 },
 ```
+
+`description`は、そのロケールのホームページのヒーローに表示する説明文です。文字列で指定でき、省略すると`settings.siteDescription`が使われます。空文字列（`""`）を指定した場合は、説明文を空欄にできます。`settings.locales`に登録するのはデフォルト以外のロケールだけなので、デフォルトロケールでは常に`settings.siteDescription`が使われ、ロケール別の上書きはできません。
+
+現時点では、この設定が反映されるのはホームページのヒーローの説明文だけです。`llms.txt`はどのロケールでも共通の`siteDescription`を使い、ホームページには引き続き`<meta name="description">`が出力されません。
 
 ロケールコードは URL セグメントとディレクトリのサフィックスに使われます。小文字でパス安全な値にしてください。重複、プライマリの `defaultLocale`、パス区切り文字、トラバーサル要素は、`create-zudo-doc` がファイルを書き込む前に拒否します。生成される `ja` ツリーは日本語の文章、それ以外の任意のロケールツリーは翻訳用の英語プレースホルダー文章から始まります。
 
