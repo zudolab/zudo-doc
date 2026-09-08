@@ -200,6 +200,8 @@ By default the export is a **diff against the defaults** — only tokens you hav
 
 `$schema` is `zudo-design-tokens/v2` while every changed value is a plain string or palette-index number, and upgrades automatically to `/v3` the moment any Color-tab row holds a `{ref}` or `{literal}` object — which, under the mode-scoped model, is normal for a real zudo-doc export. `ref` points at a Palette-tab ramp stop (`{tab, tier, item}`); `literal` is either a single OKLCH string or, for a **Per-mode** row, a `{light, dark}` pair. Re-importing via **Load** round-trips both shapes cleanly.
 
+If you import a Color-tab `literal` as a single `light-dark(...)` string through **Load from JSON…**, opening its swatch shows an expression disclosure, with the hex input and color sliders disabled. Choose **Edit as literal** to enable the controls; editing replaces the expression with a literal color. This single-string import differs from the **Per-mode** `{light, dark}` pair described above.
+
 Flip the **Show defaults too** toggle in the modal header to emit the full token tree (every tab, every token, including untouched defaults). Use this form when you want a complete snapshot to hand to a designer or AI that does not know your theme.
 
 ## Load-from-JSON
