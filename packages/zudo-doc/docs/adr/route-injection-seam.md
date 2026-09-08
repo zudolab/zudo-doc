@@ -394,7 +394,7 @@ the same `setup(ctx)` hook.
 - **Lazy activation contract (zdtp 0.5.0, #3984; sourcing amended by #4018).**
   The bootstrap has NO eager zdtp value import at all. It reads the five
   activation constants from the in-package mirror
-  `src/design-token-panel-constants.ts` — vendored from the `^0.5.1`
+  `src/design-token-panel-constants.ts` — vendored from the `^0.5.2`
   `@takazudo/zdtp/constants` leaf and conformance-tested against it, so an
   optional peer stays optional (#4009; see the dep-implication bullet below).
   The names and semantics below are unchanged.
