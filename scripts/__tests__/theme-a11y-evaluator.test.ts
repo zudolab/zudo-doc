@@ -12,16 +12,22 @@
 import { describe, it, expect } from "vitest";
 
 import {
+  AUDIT_PAGES,
+  COVERAGE_CONTRACT,
   MAX_SKIP_RATIO,
+  PAGE_ADMONITIONS,
+  PAGE_GETTING_STARTED,
   THRESHOLD_NORMAL,
   THRESHOLD_UI,
   UNREADABLE_IMAGE,
   allowlistKey,
   classifyLargeText,
   compositeOver,
+  describeUnauditedScenarios,
   detectPseudoOverlay,
   detectStaleAllowlistEntries,
   evaluateCoverage,
+  evaluateCoverageMatrix,
   evaluateSample,
   findAllowlistEntry,
   parseImageStops,
@@ -32,7 +38,15 @@ import {
   thresholdFor,
   validateAllowlist,
 } from "../theme-a11y-evaluator";
-import type { AllowlistEntry, AncestorLayer, PseudoLayer, RawSample } from "../theme-a11y-evaluator";
+import type {
+  AllowlistEntry,
+  AncestorLayer,
+  CoverageScenario,
+  CoverageStats,
+  PseudoLayer,
+  RawSample,
+} from "../theme-a11y-evaluator";
+import { INVENTORY, validateInventoryExpectations } from "../theme-a11y-inventory";
 
 // ---------------------------------------------------------------------------
 // helpers
@@ -513,40 +527,242 @@ describe("allowlist", () => {
 // coverage contract
 // ---------------------------------------------------------------------------
 
+/**
+ * The eight requirements the contract carried BEFORE it gained a page axis
+ * (#4033), with their original minima. A per-page contract must never turn a
+ * group that was required everywhere into a group required nowhere, so each of
+ * these is asserted both structurally (still in the admonitions contract at the
+ * same min) and behaviourally (zero and under-min both still error).
+ */
+const ORIGINAL_REQUIREMENTS: ReadonlyArray<readonly [string, number]> = [
+  ["header-nav", 3],
+  ["sidebar-link", 3],
+  ["toc-link", 3],
+  ["content-heading", 1],
+  ["content-paragraph", 1],
+  ["admonition-title", 4],
+  ["admonition-body", 4],
+  ["pager-link", 1],
+];
+
+/** Counts that exactly satisfy a page's contract (every min met, hover present). */
+function satisfyingStats(page: string, overrides: Partial<CoverageStats> = {}): CoverageStats {
+  const groupCounts: Record<string, number> = {};
+  const hoverCounts: Record<string, number> = {};
+  let matched = 0;
+  for (const req of COVERAGE_CONTRACT[page] ?? []) {
+    groupCounts[req.group] = req.min;
+    matched += req.min;
+    if (req.requireHover) {
+      hoverCounts[req.group] = 1;
+      matched += 1;
+    }
+  }
+  return { groupCounts, hoverCounts, matched, skipped: 0, ...overrides };
+}
+
+function scenario(page: string, stats: CoverageStats, pack = "x", mode = "light"): CoverageScenario {
+  return { pack, mode, page, stats };
+}
+
+describe("COVERAGE_CONTRACT (per-page)", () => {
+  it("still requires every pre-#4033 group at its original minimum, on the admonitions page", () => {
+    const reqs = COVERAGE_CONTRACT[PAGE_ADMONITIONS] ?? [];
+    for (const [group, min] of ORIGINAL_REQUIREMENTS) {
+      const found = reqs.find((r) => r.group === group);
+      expect(found, `"${group}" must still be required`).toBeDefined();
+      expect(found?.min, `"${group}" minimum must not be lowered`).toBe(min);
+    }
+  });
+
+  it("binds each active-state group to the page that actually renders it", () => {
+    const admonitions = (COVERAGE_CONTRACT[PAGE_ADMONITIONS] ?? []).map((r) => r.group);
+    const gettingStarted = (COVERAGE_CONTRACT[PAGE_GETTING_STARTED] ?? []).map((r) => r.group);
+
+    // A leaf page under a dropdown category: active dropdown + active LEAF,
+    // and structurally never a plain active top-level nav item.
+    expect(admonitions).toContain("header-nav-dropdown-active");
+    expect(admonitions).toContain("sidebar-active-leaf");
+    expect(admonitions).not.toContain("header-nav-active");
+    expect(admonitions).not.toContain("sidebar-active-root");
+
+    // A root category page under a plain nav item: the only source of
+    // header-nav-active, and its active sidebar node is a ROOT.
+    expect(gettingStarted).toContain("header-nav-active");
+    expect(gettingStarted).toContain("sidebar-active-root");
+    expect(gettingStarted).not.toContain("sidebar-active-leaf");
+    expect(gettingStarted).not.toContain("toc-link");
+  });
+
+  it("requires hover samples for every hover-regression target", () => {
+    const hoverRequired = new Set<string>();
+    for (const page of AUDIT_PAGES) {
+      for (const req of COVERAGE_CONTRACT[page] ?? []) {
+        if (req.requireHover) hoverRequired.add(req.group);
+      }
+    }
+    for (const group of [
+      "header-nav-active",
+      "header-nav-dropdown-active",
+      "sidebar-active-leaf",
+      "sidebar-active-root",
+      "sidebar-link",
+    ]) {
+      expect(hoverRequired, `"${group}" must require a hover sample`).toContain(group);
+    }
+  });
+
+  it("agrees with the inventory's declared expectations", () => {
+    expect(validateInventoryExpectations()).toEqual([]);
+  });
+
+  it("detects inventory/contract drift", () => {
+    const contract = { [PAGE_ADMONITIONS]: [{ group: "not-in-the-inventory" }] };
+    const errors = validateInventoryExpectations(INVENTORY, contract);
+    expect(errors.some((e) => e.includes("not-in-the-inventory"))).toBe(true);
+    // …and the admonitions-required items now have no matching requirement.
+    expect(errors.some((e) => e.includes("sidebar-active-leaf"))).toBe(true);
+  });
+});
+
 describe("evaluateCoverage", () => {
-  const fullCounts = {
-    "header-nav": 4,
-    "sidebar-link": 6,
-    "toc-link": 5,
-    "content-heading": 5,
-    "content-paragraph": 8,
-    "admonition-title": 5,
-    "admonition-body": 5,
-    "pager-link": 2,
-  };
-
   it("passes when every required group meets its min and skips are low", () => {
-    expect(evaluateCoverage("x/light", { groupCounts: fullCounts, matched: 40, skipped: 2 })).toEqual([]);
+    for (const page of AUDIT_PAGES) {
+      const stats = satisfyingStats(page, { skipped: 2 });
+      expect(evaluateCoverage(scenario(page, stats)).errors, page).toEqual([]);
+    }
   });
 
-  it("flags a required group that matched ZERO (configuration error)", () => {
-    const { ["toc-link"]: _drop, ...missing } = fullCounts;
-    const errors = evaluateCoverage("x/light", { groupCounts: missing, matched: 40, skipped: 0 });
-    expect(errors.some((e) => e.includes("toc-link") && /ZERO/.test(e))).toBe(true);
+  it.each(ORIGINAL_REQUIREMENTS)(
+    'still errors when the original requirement "%s" matches ZERO',
+    (group) => {
+      const stats = satisfyingStats(PAGE_ADMONITIONS);
+      delete stats.groupCounts[group];
+      const { errors } = evaluateCoverage(scenario(PAGE_ADMONITIONS, stats));
+      expect(errors.some((e) => e.includes(`"${group}"`) && /ZERO/.test(e))).toBe(true);
+    },
+  );
+
+  it.each(ORIGINAL_REQUIREMENTS.filter(([, min]) => min > 1))(
+    'still errors when the original requirement "%s" falls below its min of %i',
+    (group, min) => {
+      const stats = satisfyingStats(PAGE_ADMONITIONS);
+      stats.groupCounts[group] = min - 1;
+      const { errors } = evaluateCoverage(scenario(PAGE_ADMONITIONS, stats));
+      expect(
+        errors.some((e) => e.includes(`"${group}"`) && e.includes(`min ${min}`)),
+      ).toBe(true);
+    },
+  );
+
+  it("reports a group's zero-match ONLY on the page that requires it", () => {
+    // header-nav-active is required on getting-started and legitimately absent
+    // on admonitions — the direct regression test for the single-page blind
+    // spot (#4033): auditing only admonitions asserted nothing about it.
+    const gs = satisfyingStats(PAGE_GETTING_STARTED);
+    delete gs.groupCounts["header-nav-active"];
+    delete gs.hoverCounts["header-nav-active"];
+    const gsErrors = evaluateCoverage(scenario(PAGE_GETTING_STARTED, gs)).errors;
+    expect(gsErrors.some((e) => e.includes('"header-nav-active"') && /ZERO/.test(e))).toBe(true);
+
+    // The same absence on the admonitions page is not an error at all.
+    const adm = satisfyingStats(PAGE_ADMONITIONS);
+    expect(adm.groupCounts["header-nav-active"]).toBeUndefined();
+    expect(evaluateCoverage(scenario(PAGE_ADMONITIONS, adm)).errors).toEqual([]);
   });
 
-  it("flags an under-min group", () => {
-    const errors = evaluateCoverage(
-      "x/light",
-      { groupCounts: { ...fullCounts, "admonition-title": 2 }, matched: 40, skipped: 0 },
-    );
-    expect(errors.some((e) => e.includes("admonition-title") && /min/.test(e))).toBe(true);
+  it("errors when a required hover sample is missing even though the static count is fine", () => {
+    const stats = satisfyingStats(PAGE_GETTING_STARTED);
+    // Static coverage untouched — only the hover measurement never happened.
+    delete stats.hoverCounts["sidebar-active-root"];
+    const { errors } = evaluateCoverage(scenario(PAGE_GETTING_STARTED, stats));
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain('"sidebar-active-root"');
+    expect(errors[0]).toMatch(/hover/i);
   });
 
   it("flags a SKIP share over the ceiling", () => {
-    const errors = evaluateCoverage("x/light", { groupCounts: fullCounts, matched: 10, skipped: 4 });
+    const stats = satisfyingStats(PAGE_ADMONITIONS, { matched: 10, skipped: 4 });
+    const { errors } = evaluateCoverage(scenario(PAGE_ADMONITIONS, stats));
     expect(errors.some((e) => /ceiling/.test(e))).toBe(true);
     // sanity: 4/10 = 40% > MAX_SKIP_RATIO
     expect(4 / 10).toBeGreaterThan(MAX_SKIP_RATIO);
+  });
+
+  it("reports an undeclared page as UNAUDITED instead of silently clean", () => {
+    const outcome = evaluateCoverage(
+      scenario("/docs/nowhere/", { groupCounts: {}, hoverCounts: {}, matched: 0, skipped: 0 }),
+    );
+    expect(outcome.errors).toEqual([]);
+    expect(outcome.notes).toHaveLength(1);
+    expect(outcome.notes[0]).toMatch(/UNAUDITED/);
+  });
+});
+
+describe("evaluateCoverageMatrix", () => {
+  it("never lets one pack/mode mask another's gap", () => {
+    const good = satisfyingStats(PAGE_ADMONITIONS);
+    const bad = satisfyingStats(PAGE_ADMONITIONS);
+    delete bad.groupCounts["toc-link"];
+
+    const outcomes = evaluateCoverageMatrix([
+      scenario(PAGE_ADMONITIONS, good, "washi", "light"),
+      scenario(PAGE_ADMONITIONS, bad, "brutalist", "light"),
+      scenario(PAGE_ADMONITIONS, good, "brutalist", "dark"),
+    ]);
+
+    expect(outcomes.map((o) => o.errors.length)).toEqual([0, 1, 0]);
+    const flagged = outcomes.filter((o) => o.errors.length > 0);
+    expect(flagged[0]?.pack).toBe("brutalist");
+    expect(flagged[0]?.mode).toBe("light");
+    expect(flagged[0]?.errors[0]).toContain("brutalist/light");
+  });
+
+  it("keeps per-page results separate when only the second page fails", () => {
+    const outcomes = evaluateCoverageMatrix([
+      scenario(PAGE_ADMONITIONS, satisfyingStats(PAGE_ADMONITIONS)),
+      scenario(PAGE_GETTING_STARTED, {
+        ...satisfyingStats(PAGE_GETTING_STARTED),
+        groupCounts: { ...satisfyingStats(PAGE_GETTING_STARTED).groupCounts, "pager-link": 0 },
+      }),
+    ]);
+    expect(outcomes[0]?.errors).toEqual([]);
+    expect(outcomes[1]?.errors.some((e) => e.includes('"pager-link"'))).toBe(true);
+    expect(outcomes[1]?.errors[0]).toContain(PAGE_GETTING_STARTED);
+  });
+});
+
+describe("describeUnauditedScenarios", () => {
+  const full = {
+    allPacks: ["default", "washi"],
+    auditedPacks: ["default", "washi"],
+    allModes: ["light", "dark"],
+    auditedModes: ["light", "dark"],
+    auditedPages: [...AUDIT_PAGES],
+  };
+
+  it("says nothing when the run covered everything", () => {
+    expect(describeUnauditedScenarios(full)).toEqual([]);
+  });
+
+  it("names the omitted packs, modes and pages", () => {
+    const notes = describeUnauditedScenarios({
+      ...full,
+      auditedPacks: ["default"],
+      auditedModes: ["light"],
+      auditedPages: [PAGE_ADMONITIONS],
+    });
+    expect(notes.some((n) => n.includes("washi"))).toBe(true);
+    expect(notes.some((n) => n.includes("dark"))).toBe(true);
+    const pageNote = notes.find((n) => n.includes(PAGE_GETTING_STARTED));
+    expect(pageNote).toBeDefined();
+    // The point of the note: the skipped page's requirements were asserted nowhere.
+    expect(pageNote).toContain("header-nav-active");
+  });
+
+  it("flags an audited page that has no declared contract", () => {
+    const notes = describeUnauditedScenarios({ ...full, auditedPages: [...AUDIT_PAGES, "/docs/nowhere/"] });
+    expect(notes).toHaveLength(1);
+    expect(notes[0]).toContain("/docs/nowhere/");
   });
 });
