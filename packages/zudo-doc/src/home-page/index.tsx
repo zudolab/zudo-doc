@@ -201,7 +201,7 @@ export function createHomePageView<S extends Settings = Settings>(
     const rowItems: ComponentChildren[] = [];
     if (primary) {
       rowItems.push(
-        <a href={primary.href} class="text-fg underline hover:text-accent">
+        <a href={primary.href} class="whitespace-nowrap text-fg underline hover:text-accent">
           {primary.label}
         </a>,
       );
@@ -210,7 +210,7 @@ export function createHomePageView<S extends Settings = Settings>(
       rowItems.push(
         <a
           href={settings.githubUrl as string}
-          class="inline-flex items-center gap-[0.3em] text-fg underline hover:text-accent"
+          class="inline-flex items-center gap-[0.3em] whitespace-nowrap text-fg underline hover:text-accent"
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -261,10 +261,12 @@ export function createHomePageView<S extends Settings = Settings>(
                 aria-hidden="true"
               />
             ) : null}
-            <div>
+            <div class="min-w-0">
               <h1 class="text-heading font-bold mb-vsp-2xs break-words">{settings.siteName}</h1>
-              <p class="text-muted text-small mb-vsp-sm">{settings.siteDescription}</p>
-              <div class="flex items-center justify-center lg:justify-start gap-hsp-md text-small">
+              <p class="text-muted text-small mb-vsp-sm">
+                {settings.locales[locale]?.description ?? settings.siteDescription}
+              </p>
+              <div class="flex flex-wrap items-center justify-center lg:justify-start gap-hsp-md text-small">
                 {rowItems.map((item, index) => (
                   <Fragment key={index}>
                     {index > 0 && <span class="text-muted">/</span>}

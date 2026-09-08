@@ -66,7 +66,11 @@ export const settings = {
   dateFormat: "locale" as DateFormatSetting,
   defaultLocale: "en" as const,
   locales: {
-    ja: { label: "JA", dir: "src/content/docs-ja" },
+    ja: {
+      label: "JA",
+      dir: "src/content/docs-ja",
+      description: "zfb・MDX・Tailwind CSS v4 を使ったドキュメントフレームワーク。",
+    },
   } satisfies Record<string, LocaleConfig>,
   mermaid: true,
   // Showcase demonstrates the package's transclusion setting with the live,

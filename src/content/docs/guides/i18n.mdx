@@ -25,14 +25,25 @@ Configure the primary locale and every additional locale in `zfb.config.ts`:
 ```ts title="zfb.config.ts"
 export default defineConfig(
   zudoDoc({
+    siteDescription: "Documentation for using the project.",
     defaultLocale: "en",
     locales: {
-      ja: { label: "JA", dir: "src/content/docs-ja" },
+      ja: {
+        label: "JA",
+        dir: "src/content/docs-ja",
+        description: "プロジェクトの使い方をまとめたドキュメント。",
+      },
       de: { label: "DE", dir: "src/content/docs-de" },
     },
   }),
 );
 ```
+
+Each `locales` entry requires `label` and `dir`. In this example, the Japanese hero uses its own description; German uses the global `siteDescription`.
+
+`description` is an optional string for that locale’s home page hero. When omitted, it falls back to `settings.siteDescription`; an empty string (`""`) intentionally leaves the hero description blank. `settings.locales` contains only non-default locales, so the default locale always uses `settings.siteDescription` and has no locale-specific override.
+
+Current limitations: this field affects only the home page hero description. `llms.txt` still uses the global `siteDescription` for every locale, and home pages still emit no `<meta name="description">`.
 
 Each entry automatically:
 
@@ -159,12 +170,16 @@ export default defineConfig(
 
 To add a locale such as German:
 
-1. Add its exact code, display label, and content directory to `locales`:
+1. Add its exact code, display label, and content directory to `locales`. Optionally set `description` to translate its home page hero text:
 
    ```ts
    locales: {
      ja: { label: "JA", dir: "src/content/docs-ja" },
-     de: { label: "DE", dir: "src/content/docs-de" },
+     de: {
+       label: "DE",
+       dir: "src/content/docs-de",
+       description: "Dokumentation zur Verwendung des Projekts.",
+     },
    },
    ```
 
@@ -199,6 +214,8 @@ The primary locale is served at `/docs/...`; each additional locale uses its cod
 ## Date Formats Per Locale
 
 `dateFormat` accepts per-locale overrides, and on a multilingual site that is normally the form you want: `Aug 22, 2026` and `2026年8月22日` are both correct for their locale, and no single pattern serves both.
+
+On every dated surface, the render locale is the page locale, including on single-locale sites; it is no longer derived from whether a locale switcher is present.
 
 ```ts title="zfb.config.ts"
 export default defineConfig(

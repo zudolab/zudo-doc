@@ -180,6 +180,8 @@ export interface SidebarTreeProps {
   currentPath?: string;
   rootMenuItems?: SidebarRootMenuItem[];
   backToMenuLabel?: string;
+  /** Display locale; falls back to the active locale link, then English. */
+  locale?: string;
   localeLinks?: SidebarLocaleLink[];
   themeDefaultMode?: "light" | "dark";
   /**
@@ -189,8 +191,7 @@ export interface SidebarTreeProps {
    * mobile drawer). Optional and absent-safe: omitted means every role behaves
    * as `"locale"` — today's `Intl` output (#4075).
    *
-   * Deliberately NOT derived from `localeLinks` the way the `locale` local
-   * below is: the patterns are resolved against the real page locale at SSR,
+   * The patterns are resolved against the real page locale at SSR,
    * so they stay correct on a single-locale site where `localeLinks` is empty.
    */
   dateFormats?: ResolvedDateFormats;
@@ -220,7 +221,7 @@ function SidebarFooter({ links, themeDefaultMode }: { links?: SidebarLocaleLink[
   );
 }
 
-export function SidebarTree({ nodes, currentSlug, currentPath, rootMenuItems, backToMenuLabel, localeLinks, themeDefaultMode, dateFormats }: SidebarTreeProps) {
+export function SidebarTree({ nodes, currentSlug, currentPath, rootMenuItems, backToMenuLabel, locale: localeProp, localeLinks, themeDefaultMode, dateFormats }: SidebarTreeProps) {
   const activeSlug = useActiveSlug(nodes, currentSlug, currentPath);
   const [query, setQuery] = useState("");
   const [showingRootMenu, setShowingRootMenu] = useState(false);
@@ -264,7 +265,7 @@ export function SidebarTree({ nodes, currentSlug, currentPath, rootMenuItems, ba
   const filteredNoteTrayRoot = noteTrayRoot
     ? filteredNodes.find((node) => node.slug === noteTrayRoot.slug)
     : undefined;
-  const locale = localeLinks?.find((link) => link.active)?.code ?? "en";
+  const locale = localeProp ?? localeLinks?.find((link) => link.active)?.code ?? "en";
 
   // Root menu view: show headerNav items as a simple list (Docusaurus-style)
   if (showingRootMenu && rootMenuItems) {

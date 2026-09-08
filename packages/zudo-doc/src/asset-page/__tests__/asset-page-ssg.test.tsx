@@ -88,7 +88,9 @@ describe("asset page SSG", () => {
     expect(html).not.toContain("<aside");
     expect(html).toContain(">Asset</span>");
     expect(html).toContain(">Assets</span>");
-    expect(html).toContain('<span class="text-fg">Assets</span>');
+    expect(html).toContain(
+      '<span class="text-fg min-w-0 break-words">Assets</span>',
+    );
     expect(html).not.toMatch(/<a href="\/files\/"[^>]*>Assets<\/a>/);
     expect(html).toContain("← Back to Brand");
     expect(html).toContain("data-doc-description");
@@ -103,7 +105,9 @@ describe("asset page SSG", () => {
 
   it("links the Assets crumb only when the index is enabled", () => {
     const disabled = page(asset(), { assetViewerIndex: false });
-    expect(disabled).toContain('<span class="text-fg">Assets</span>');
+    expect(disabled).toContain(
+      '<span class="text-fg min-w-0 break-words">Assets</span>',
+    );
     expect(disabled).not.toMatch(/<a href="\/files\/"[^>]*>Assets<\/a>/);
 
     const enabled = page(asset(), { assetViewerIndex: true });

@@ -15,7 +15,7 @@
 // This module is **types only** — no runtime values, no node builtins — so it
 // stays importable from the config eval graph and from client islands alike.
 
-import type { Settings } from "../settings.js";
+import type { LocaleConfig, Settings } from "../settings.js";
 // Type-only imports (erased at build — they never enter the runtime/eval graph,
 // so this module stays node-free; the foundation-eval-graph guard covers it).
 import type {
@@ -180,8 +180,8 @@ export interface RouteContext<S = Settings>
   defaultLocale: string;
   /** All supported locale codes, default first. */
   locales: readonly string[];
-  /** Per-locale `{ label, dir }` config lookup. */
-  getLocaleConfig(locale: string): { label: string; dir: string } | undefined;
+  /** Per-locale configuration lookup, including an optional home description. */
+  getLocaleConfig(locale: string): LocaleConfig | undefined;
   /** Display label for a locale. */
   getLocaleLabel(locale: string): string;
   /**

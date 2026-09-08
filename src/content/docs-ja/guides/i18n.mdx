@@ -25,14 +25,25 @@ zudo-docはzfbのロケール対応ルーティングを通じて、任意の数
 ```ts title="zfb.config.ts"
 export default defineConfig(
   zudoDoc({
+    siteDescription: "Documentation for using the project.",
     defaultLocale: "en",
     locales: {
-      ja: { label: "JA", dir: "src/content/docs-ja" },
+      ja: {
+        label: "JA",
+        dir: "src/content/docs-ja",
+        description: "プロジェクトの使い方をまとめたドキュメント。",
+      },
       de: { label: "DE", dir: "src/content/docs-de" },
     },
   }),
 );
 ```
+
+`locales`の各エントリには`label`と`dir`が必須です。この例では、日本語のヒーローには日本語の説明文が表示され、ドイツ語では共通の`siteDescription`が使われます。
+
+`description`は、そのロケールのホームページのヒーローに表示する説明文です。文字列で指定でき、省略すると`settings.siteDescription`が使われます。空文字列（`""`）を指定した場合は、説明文を空欄にできます。`settings.locales`に登録するのはデフォルト以外のロケールだけなので、デフォルトロケールでは常に`settings.siteDescription`が使われ、ロケール別の上書きはできません。
+
+現時点では、この設定が反映されるのはホームページのヒーローの説明文だけです。`llms.txt`はどのロケールでも共通の`siteDescription`を使い、ホームページには引き続き`<meta name="description">`が出力されません。
 
 各エントリに対して自動的に次が行われます。
 
@@ -159,12 +170,16 @@ export default defineConfig(
 
 ドイツ語などのロケールを追加するには、次の手順を実行します。
 
-1. 正確なコード、表示ラベル、コンテンツディレクトリを`locales`に追加します。
+1. 正確なコード、表示ラベル、コンテンツディレクトリを`locales`に追加します。ホームページのヒーローの説明文も翻訳する場合は、`description`を指定します。
 
    ```ts
    locales: {
      ja: { label: "JA", dir: "src/content/docs-ja" },
-     de: { label: "DE", dir: "src/content/docs-de" },
+     de: {
+       label: "DE",
+       dir: "src/content/docs-de",
+       description: "Dokumentation zur Verwendung des Projekts.",
+     },
    },
    ```
 
@@ -199,6 +214,8 @@ export default defineConfig(
 ## ロケールごとの日付形式
 
 `dateFormat` はロケールごとの上書きを受け付けます。多言語サイトでは通常こちらの形式を使うことになります。`Aug 22, 2026` も `2026年8月22日` もそれぞれのロケールでは正しく、1 つのパターンで両方を賄うことはできないからです。
+
+日付が表示されるすべての箇所で、単一ロケールサイトを含め、レンダリングロケールはページのロケールになり、ロケール切り替えの有無から決まることはなくなりました。
 
 ```ts title="zfb.config.ts"
 export default defineConfig(

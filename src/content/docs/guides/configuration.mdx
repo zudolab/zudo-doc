@@ -464,16 +464,24 @@ Default: `"en"`
 
 ### locales
 
-Additional locales: code → `{ label, dir }`. Each becomes a `/<code>/docs/…` route tree and a `docs-<code>` collection. The map is ordered: the language switcher renders every configured `label` in that order, so labels are not hard-coded to `JP` or `JA`.
+Additional locales: code → `{ label, dir, description? }`. Each becomes a `/<code>/docs/…` route tree and a `docs-<code>` collection. The map is ordered: the language switcher renders every configured `label` in that order, so labels are not hard-coded to `JP` or `JA`.
 
 Default: `{}`
 
 ```ts
 locales: {
-  ja: { label: "JA", dir: "src/content/docs-ja" },
+  ja: {
+    label: "JA",
+    dir: "src/content/docs-ja",
+    description: "プロジェクトの使い方をまとめたドキュメント。",
+  },
   de: { label: "DE", dir: "src/content/docs-de" },
 },
 ```
+
+`description` is an optional string for that locale’s home page hero. When omitted, it falls back to `settings.siteDescription`; an empty string (`""`) intentionally leaves the hero description blank. `settings.locales` contains only non-default locales, so the default locale always uses `settings.siteDescription` and has no locale-specific override.
+
+Current limitations: this field affects only the home page hero description. `llms.txt` still uses the global `siteDescription` for every locale, and home pages still emit no `<meta name="description">`.
 
 Locale codes are used as URL segments and directory suffixes. Keep them
 lowercase and path-safe; duplicate codes, the primary `defaultLocale`, path
