@@ -6,4 +6,4 @@ sidebar_position: 1113
 
 ## その他の変更
 
-- オプションの `@takazudo/zdtp` peer 範囲を `^0.5.2 || ^0.6.0` に広げ、ショーケースと生成プロジェクトの固定バージョンを 0.6.1 に更新しました。この利用方法に対する上流の変更は追加的なもので、4 つのパネル API、公開定数、配布されるパネルのスタイルシートは維持されています。0.6.1 に対するパネルの起動処理、同梱定数の適合性、オプション peer の到達可能性のテストは成功しています。パネルのスタイルシートは `@import "@takazudo/zdtp/styles.css"` で明示的に読み込む必要があります。これは `create-zudo-doc` が従来から出力している設定です。`global.css` を手動で編集したプロジェクトでは、この import を確認してください。このリリース以降、利用側の pnpm 設定にある `@takazudo/zudo-doc>@takazudo/zdtp` 用の `peerDependencyRules.allowedVersions` 例外は削除できます。
+- オプションの `@takazudo/zdtp` peer 範囲を `^0.5.2 || ^0.6.0 || ^0.7.0` に広げ、ショーケースと生成プロジェクトの固定バージョンを 0.7.0 に更新しました。この利用方法に対する上流の変更は追加的なもので、4 つのパネル API、公開定数、配布されるパネルのスタイルシートは維持されています。zdtp 0.7.0 には破壊的変更が 1 つ含まれます。`TokenDashboard` が `mode` から chrome の外観を決めなくなり、明示的な `chrome` prop が必要になりました。ただしこのコンポーネントは本パッケージの利用範囲に含まれないため、移行作業は不要です。0.7.0 に対するパネルの起動処理、同梱定数の適合性、オプション peer の到達可能性のテストは成功しています。パネルのスタイルシートは `@import "@takazudo/zdtp/styles.css"` で明示的に読み込む必要があります。これは `create-zudo-doc` が従来から出力している設定です。`global.css` を手動で編集したプロジェクトでは、この import を確認してください。このリリース以降、利用側の pnpm 設定にある `@takazudo/zudo-doc>@takazudo/zdtp` 用の `peerDependencyRules.allowedVersions` 例外は削除できます。
