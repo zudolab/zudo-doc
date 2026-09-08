@@ -1,0 +1,11 @@
+---
+title: 5.19.1
+description: Release notes for 5.19.1.
+sidebar_position: 1018
+---
+
+Released: 2026-09-08
+
+### Other Changes
+
+- A generated project's `package.json` now pins `@takazudo/zfb`, `@takazudo/zfb-runtime`, and `@takazudo/zfb-md-wasm` at `2.16.0`, and `@takazudo/zdtp` at `0.5.2` when the Design Token Panel feature is enabled (`47c149385`). Both upstream releases are drop-in for a fresh scaffold — zfb 2.16.0 fixes an `ETXTBSY` crash when first executing a just-written esbuild binary, zdtp 0.5.2 is additive — so no public API, export, config default, or engine requirement moves and a fresh scaffold needs no migration.

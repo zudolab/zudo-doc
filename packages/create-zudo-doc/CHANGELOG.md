@@ -4,6 +4,12 @@ All notable changes to `create-zudo-doc` are documented in this file.
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.19.1] - 2026-09-08
+
+### Other Changes
+
+- A generated project's `package.json` now pins `@takazudo/zfb`, `@takazudo/zfb-runtime`, and `@takazudo/zfb-md-wasm` at `2.16.0`, and `@takazudo/zdtp` at `0.5.2` when the Design Token Panel feature is enabled (`47c149385`). Both upstream releases are drop-in for a fresh scaffold — zfb 2.16.0 fixes an `ETXTBSY` crash when first executing a just-written esbuild binary, zdtp 0.5.2 is additive — so no public API, export, config default, or engine requirement moves and a fresh scaffold needs no migration.
+
 ## [5.19.0] - 2026-09-07
 
 ### Features

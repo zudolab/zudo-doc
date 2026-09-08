@@ -1,0 +1,12 @@
+---
+title: 5.19.1
+description: Release notes for 5.19.1.
+sidebar_position: 1112
+---
+
+Released: 2026-09-08
+
+### Other Changes
+
+- Updated the zfb peer and development dependency family to 2.16.0 (`47c149385`). The upstream release carries one bug fix: zfb's esbuild version-gate spawn (`ensure_binary_verified`) now retries on `ETXTBSY` through zfb-build's existing retry loop instead of a bare `.output()`, so a build no longer dies with `Text file busy (os error 26)` on the first exec of a binary a packaged zfb has only just written to a tempdir. `@takazudo/zfb-md-wasm` changes only its README — every shipped artifact keeps its 2.15.1 byte size — and no public API, export, config default, or engine requirement moves.
+- Raised the `@takazudo/zdtp` peer floor to `^0.5.2` (`47c149385`). The upstream release is additive for this consumer: a stable `data-zdtp-action` attribute on the header actions, and a fix keying popover and header items by that action id instead of by display label. There is no storage-key or config-shape migration, and the vendored design-token-panel constants mirror stays conformant against the real `@takazudo/zdtp/constants` leaf.
