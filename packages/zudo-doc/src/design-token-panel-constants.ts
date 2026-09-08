@@ -16,7 +16,7 @@
 // WHY IT MAY BE TRUSTED: `src/__tests__/design-token-panel-constants-conformance.test.ts`
 // asserts this module against the REAL `@takazudo/zdtp/constants` (installed in
 // this repo) on every default-lane test run — data by value, `matchesKey` and
-// `resolveToggleEventName` behaviourally. Drift inside the `^0.5.1` peer range
+// `resolveToggleEventName` behaviourally. Drift inside the `^0.5.2` peer range
 // fails there. Update this file only together with that test.
 //
 // This is a MIRROR, not a fork: do not add symbols the bootstrap does not use,

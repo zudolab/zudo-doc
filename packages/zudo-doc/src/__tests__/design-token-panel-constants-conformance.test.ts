@@ -13,7 +13,7 @@
 // is free to add constants this package does not use, and asserting it would
 // turn every unrelated zdtp release into a red build.
 //
-// The peer range in package.json is `^0.5.1` (>=0.5.1 <0.6.0), which bounds the
+// The peer range in package.json is `^0.5.2` (>=0.5.2 <0.6.0), which bounds the
 // drift this test has to catch; a future widening to `^0.6` is exactly when it
 // earns its keep.
 
