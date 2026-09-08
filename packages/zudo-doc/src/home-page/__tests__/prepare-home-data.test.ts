@@ -19,6 +19,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import type { RouteContext } from "../../factory-context/index.js";
 import type { DocPageEntry, DocNavNode } from "../../doc-page-props/index.js";
 import type { CategoryMeta } from "../../sidebar-tree/index.js";
+import type { LocaleConfig } from "../../settings.js";
 
 const { loadCategoryMetaMock } = vi.hoisted(() => ({
   loadCategoryMetaMock: vi.fn(),
@@ -43,7 +44,7 @@ function makeDoc(overrides: Partial<DocPageEntry> = {}): DocPageEntry {
 
 interface StubOptions {
   defaultLocale?: string;
-  getLocaleConfig?: RouteContext["getLocaleConfig"];
+  getLocaleConfig?: (locale: string) => LocaleConfig | undefined;
   navDocs?: DocPageEntry[];
   resolvedCategoryMeta?: Map<string, CategoryMeta>;
   tree?: DocNavNode[];
@@ -71,7 +72,7 @@ function makeStubRouteContext(opts: StubOptions = {}) {
 
   const ctx = {
     defaultLocale: opts.defaultLocale ?? "en",
-    getLocaleConfig: opts.getLocaleConfig ?? (() => undefined),
+    getLocaleConfig: opts.getLocaleConfig ?? ((_locale: string) => undefined),
     resolveNavSource,
     buildNavTree,
     getCategoryOrder,
