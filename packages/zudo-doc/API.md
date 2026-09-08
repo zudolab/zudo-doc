@@ -367,7 +367,7 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `docsDir` | `string` | Path to English docs content directory |
 | `entryDocSlug` | `string` | Route slug (no leading/trailing slashes, e.g. `"getting-started"` or `"overview/getting-started"`) of the doc page the versions page links to as "latest docs" / each past version's docs entry point. Not validated at runtime. |
 | `defaultLocale` | `string` | Default locale code (e.g. `"en"`) |
-| `locales` | `Record<string, LocaleConfig>` | Locale configuration map |
+| `locales` | `Record<string, LocaleConfig>` | Non-default locale configuration map; see `LocaleConfig` below |
 | `mermaid` | `boolean` | Enable Mermaid diagram rendering |
 | `transclude` | `boolean` | Enable `:::include` transclusion of other Markdown/MDX files; defaults to `false` |
 | `noindex` | `boolean` | Set `noindex` on all pages |
@@ -415,6 +415,20 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `themePack?` | `string` | Active theme-pack slug. Default `"default"` (the stock look — no pack stylesheet loaded). Must be a member of the resolved `themePacks` list; an unknown slug fails the build loudly at plugin setup. See ADR `docs/adr/theme-packs.md`. |
 | `themePackSwitcher?` | `boolean` | Mount the bottom-right theme-pack switcher flyout (and its browse-all dialog). Default `false`. |
 | `themePacks?` | `string[]` | Enabled theme-pack slugs, in switcher order. Default `undefined` (every bundled pack, `"default"` first then alphabetical). An explicit list is authoritative — may omit `"default"`, reorder freely; duplicate/unknown slugs fail the build loudly. |
+
+### `LocaleConfig`
+
+Each entry in `settings.locales` configures a non-default locale:
+
+| Field | Type | Description |
+|---|---|---|
+| `label` | `string` | Display label in the language switcher |
+| `dir` | `string` | Content directory for this locale |
+| `description?` | `string` | Optional home page hero description. When omitted, falls back to `settings.siteDescription`; `""` intentionally leaves the description blank. |
+
+`settings.locales` contains only non-default locales. The default locale always uses `settings.siteDescription` and has no locale-specific override.
+
+Current limitations: `description` affects only the home page hero. `llms.txt` still uses the global `siteDescription` for every locale, and home pages still emit no `<meta name="description">`.
 
 ---
 
