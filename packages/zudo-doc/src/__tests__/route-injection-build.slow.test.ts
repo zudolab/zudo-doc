@@ -990,19 +990,54 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // additions listed above. Detailed JSON, retained fixture HTML, and the
   // reusable comparison harness are recorded in the #4100 parity evidence
   // accompanying this re-baseline.
+  //
+  // 2026-09-09 re-baseline (zudolab/zudo-doc#4105, source issues #4082/#4083;
+  // depends on #4103/#4104): precondition checked before regeneration — this
+  // base carries the #4098 breadcrumb fix (`min-w-0 break-words` on the
+  // terminal crumb) and the breadcrumb emitter is registered in the A2
+  // workflow. This is the SECOND re-baseline of this locale-threading sweep,
+  // stacked on #4098's first re-baseline (#4100), so these hashes were rebuilt
+  // from the current breadcrumb-containing base rather than its pre-breadcrumb
+  // ancestor.
+  //
+  // The prior pin (`efd6117b50d59ecdb9cb8a493786ba17073f1e7f`) and this head
+  // (`bddf6d4d40154de7e7785f4c4cc852b2472d1d80`) were each rebuilt with
+  // `pnpm build:workspace`, then the route-injection fixture was built
+  // separately against each package dist/. All three pages move after
+  // normalized asset-filename replacement:
+  // `/404.html` `1584d9769e1195eedbac94d95e81495737c5c89ab1d8ad7c2fbc298da62dd418`
+  // → `25f43ef8ebd9dfbeb6c35f274ec15f5ac083d3794c9bb6529f536085027a80db`,
+  // `/docs/getting-started/` `c8b39bc221a7968cef4aa4b7255be7a89a09be309b1047a3d54c5ce4322aac01`
+  // → `8e62dc6fc4e7988e8181e0551f5ec9650205b28e15a06fa1cefc8358ca8111ad`,
+  // and `/docs/getting-started/coverage/`
+  // `01efe5d322f84446ef6ef892bc61f960bfa0b756befb72a1b33eb5dfbc6a178c`
+  // → `75e480b2061eead0c58600bf822d08ece3ed481da4088d86161dc9c8cc100f4e`.
+  // Raw asset filenames necessarily differ when the islands bundle changes;
+  // the pinned values are normalized-HTML hashes.
+  //
+  // Parsed `data-props` were compared independently after HTML decoding and
+  // JSON parsing: exactly five additions, all `locale: "en"` at the default
+  // locale — one SidebarToggle island on `/404.html`, SidebarToggle plus
+  // SidebarTree on `/docs/getting-started/`, and SidebarToggle plus
+  // SidebarTree on `/docs/getting-started/coverage/`. No existing prop value
+  // changed and none was removed. The independent SSR comparison found no
+  // rendered-text or `<time>` movement; after replacing only `data-props`
+  // values with a sentinel, every other normalized byte was identical.
+  // Detailed parsed-props and SSR evidence is retained with #4105's parity
+  // evidence.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"1584d9769e1195eedbac94d95e81495737c5c89ab1d8ad7c2fbc298da62dd418"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"25f43ef8ebd9dfbeb6c35f274ec15f5ac083d3794c9bb6529f536085027a80db"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"c8b39bc221a7968cef4aa4b7255be7a89a09be309b1047a3d54c5ce4322aac01"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"8e62dc6fc4e7988e8181e0551f5ec9650205b28e15a06fa1cefc8358ca8111ad"`);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"01efe5d322f84446ef6ef892bc61f960bfa0b756befb72a1b33eb5dfbc6a178c"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"75e480b2061eead0c58600bf822d08ece3ed481da4088d86161dc9c8cc100f4e"`);
   });
 });
 
