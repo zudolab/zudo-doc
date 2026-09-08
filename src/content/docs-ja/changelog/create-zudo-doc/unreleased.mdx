@@ -1,0 +1,10 @@
+---
+title: Unreleased
+description: 次のリリースに向けた変更。
+sidebar_position: 1019
+---
+
+## その他の変更
+
+- デザイントークンパネル機能向けに生成プロジェクトへ出力される `@takazudo/zdtp` のピンを `0.5.2` から `0.6.1` へ、続いて `0.7.0` へ更新しました（`e0fc27fbd`、`9554dbbea`）。新しいスキャフォールドではこの機能に `0.7.0` がインストールされます。上流の変更はスキャフォールドのパネル統合と互換性があり、移行作業は不要です。
+- 生成プロジェクトの `templates/base/scripts/check-links.js` と `templates/base/scripts/setup-doc-skill.sh` を stock Bash 3.2 で動作するよう強化しました。単一パスの HTML スキャン、引用符付き属性からの `id` とリンクの抽出、安全なロケール・設定処理を含みます（`7c0144e51`、`0e52271b9`、`85b603e33`、`f6b699fe0`、`df9c57beb`）。
