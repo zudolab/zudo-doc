@@ -10,6 +10,7 @@ import {
   parseContentDirs,
   extractHtmlLinks,
   extractProtocolRelativeHtmlLinks,
+  classifyHtmlAnchorHrefs,
   extractHtmlIds,
   resolveLinkDetail,
   resolveLink,
@@ -425,6 +426,34 @@ describe("check-links", () => {
       expect(
         extractProtocolRelativeHtmlLinks(`<a title="a > b" href="//example.com/p">E</a>`),
       ).toEqual([{ href: "//example.com/p", line: 1 }]);
+    });
+  });
+
+  // --- classifyHtmlAnchorHrefs ---
+
+  describe("classifyHtmlAnchorHrefs", () => {
+    it("splits one anchor pass into the same two buckets the single-bucket views return", () => {
+      const html = [
+        "<html>",
+        '<a href="/docs/a/">internal</a>',
+        '<a href="//example.com/path">protocol relative</a>',
+        '<a href="https://example.com">external</a>',
+        '<a href="mailto:a@b.com">mail</a>',
+        '<a title="a > b" href="//docs/typo">protocol relative behind a quoted &gt;</a>',
+        '<a href="./sibling">relative</a>',
+      ].join("\n");
+
+      const { links, protocolRelative } = classifyHtmlAnchorHrefs(html);
+      expect(links).toEqual([
+        { href: "/docs/a/", line: 2 },
+        { href: "./sibling", line: 7 },
+      ]);
+      expect(protocolRelative).toEqual([
+        { href: "//example.com/path", line: 3 },
+        { href: "//docs/typo", line: 6 },
+      ]);
+      expect(links).toEqual(extractHtmlLinks(html));
+      expect(protocolRelative).toEqual(extractProtocolRelativeHtmlLinks(html));
     });
   });
 
@@ -1096,6 +1125,113 @@ describe("check-links", () => {
       );
       expect(anchors).toEqual([]);
     });
+
+    // #4048: the protocol-relative list used to bypass excludePatterns
+    // entirely, so a consumer had no way to quiet a known entry.
+    it("drops a protocol-relative href matched by excludePatterns", async () => {
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(distDir, { recursive: true });
+      writeFileSync(
+        join(distDir, "index.html"),
+        [
+          '<a href="//cdn.example.com/v/1.2/lib.js">versioned</a>',
+          '<a href="//cdn.example.com/latest/lib.js">unversioned</a>',
+        ].join("\n"),
+      );
+
+      const { protocolRelative } = await checkHtmlLinksAndTrailing(
+        distDir, tmpDir, "/", [/\/v\/[^/]+\//],
+      );
+      // Filtering is on the HREF, like every other category — the versioned
+      // segment is in the link, not in the path of the page that carries it.
+      expect(protocolRelative).toEqual([
+        {
+          file: "dist/index.html",
+          line: 2,
+          href: "//cdn.example.com/latest/lib.js",
+        },
+      ]);
+    });
+
+    it("keeps every protocol-relative href when no pattern matches", async () => {
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(join(distDir, "v", "1.0"), { recursive: true });
+      // The SOURCE page is versioned while the href is not: href semantics
+      // keep this entry, path semantics would have dropped it.
+      writeFileSync(
+        join(distDir, "v", "1.0", "index.html"),
+        '<a href="//example.com/path">external</a>',
+      );
+
+      const { protocolRelative } = await checkHtmlLinksAndTrailing(
+        distDir, tmpDir, "/", [/\/v\/[^/]+\//],
+      );
+      expect(protocolRelative).toEqual([
+        { file: "dist/v/1.0/index.html", line: 1, href: "//example.com/path" },
+      ]);
+    });
+
+    // #4048: ids used to be extracted eagerly for every page.
+    it("does not extract ids from a page no fragment references", async () => {
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(join(distDir, "orphan"), { recursive: true });
+      writeFileSync(join(distDir, "index.html"), '<a href="/orphan/">plain</a>');
+      writeFileSync(
+        join(distDir, "orphan", "index.html"),
+        '<h2 id="a">a</h2><h2 id="b">b</h2>',
+      );
+
+      const { broken, scanned } = await checkHtmlLinksAndTrailing(distDir, tmpDir);
+      expect(broken).toEqual([]);
+      expect(scanned).toEqual({ links: 1, ids: 0 });
+    });
+
+    it("extracts a referenced target's ids once no matter how many links point at it", async () => {
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(join(distDir, "target"), { recursive: true });
+      mkdirSync(join(distDir, "other"), { recursive: true });
+      writeFileSync(
+        join(distDir, "index.html"),
+        ['<a href="/target/#a">one</a>', '<a href="/target/#b">two</a>'].join("\n"),
+      );
+      writeFileSync(
+        join(distDir, "other", "index.html"),
+        '<a href="/target/#a">three</a>',
+      );
+      writeFileSync(
+        join(distDir, "target", "index.html"),
+        '<h2 id="a">a</h2><h2 id="b">b</h2>',
+      );
+
+      const { anchors, scanned } = await checkHtmlLinksAndTrailing(distDir, tmpDir);
+      expect(anchors).toEqual([]);
+      expect(scanned).toEqual({ links: 3, ids: 2 });
+    });
+
+    it("validates a same-page fragment from the HTML already in memory", async () => {
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(distDir, { recursive: true });
+      writeFileSync(
+        join(distDir, "index.html"),
+        [
+          '<a href="#here">valid</a>',
+          '<a href="#gone">invalid</a>',
+          '<h2 id="here">here</h2>',
+        ].join("\n"),
+      );
+
+      const { anchors, scanned } = await checkHtmlLinksAndTrailing(distDir, tmpDir);
+      expect(anchors).toEqual([
+        {
+          file: "dist/index.html",
+          line: 2,
+          href: "#gone",
+          fragment: "gone",
+          reason: "missing target id",
+        },
+      ]);
+      expect(scanned).toEqual({ links: 2, ids: 1 });
+    });
   });
 
   // --- checkMdxLinks (integration) ---
@@ -1189,6 +1325,46 @@ describe("check-links", () => {
       );
 
       expect(await checkMdxAnchors([docsDir], tmpDir, "/", [])).toEqual([]);
+    });
+
+    // #4048: the MDX-source id extractor carried the same [^>] defect #4046
+    // fixed in the two built-HTML scans — a ">" inside an earlier quoted
+    // attribute truncated the tag and lost the id, failing a valid anchor.
+    it("finds a static id that follows a > inside a quoted attribute", async () => {
+      const docsDir = join(tmpDir, "src", "content", "docs");
+      mkdirSync(docsDir, { recursive: true });
+      writeFileSync(
+        join(docsDir, "source.mdx"),
+        [
+          "[double](./target.mdx#double)",
+          "[single](./target.mdx#single)",
+          "[data](./target.mdx#data)",
+        ].join("\n"),
+      );
+      writeFileSync(
+        join(docsDir, "target.mdx"),
+        [
+          '<h2 title="a > b" id="double">Double</h2>',
+          "<h2 title='a > b' id='single'>Single</h2>",
+          '<h2 data-x="p > q" id="data">Data</h2>',
+        ].join("\n"),
+      );
+
+      expect(await checkMdxAnchors([docsDir], tmpDir, "/", [])).toEqual([]);
+    });
+
+    it("still reports a fragment no static id matches when a quoted > is present", async () => {
+      const docsDir = join(tmpDir, "src", "content", "docs");
+      mkdirSync(docsDir, { recursive: true });
+      writeFileSync(join(docsDir, "source.mdx"), "[x](./target.mdx#absent)");
+      writeFileSync(
+        join(docsDir, "target.mdx"),
+        '<h2 title="a > b" id="present">Present</h2>',
+      );
+
+      const anchors = await checkMdxAnchors([docsDir], tmpDir, "/", []);
+      expect(anchors).toHaveLength(1);
+      expect(anchors[0]?.reason).toBe("missing target id");
     });
 
     it("does not mistake prose containing id syntax for a static element id", async () => {

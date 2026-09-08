@@ -195,11 +195,10 @@ function decodeHtmlAttributeValue(value) {
 const HTML_ATTRIBUTE_RUN = /(?:"[^"]*"|'[^']*'|[^>"'])/.source;
 const HTML_ATTRIBUTE_VALUE = /(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`\\]+))/.source;
 
-// Single shared anchor scan. `extractHtmlLinks` and
-// `extractProtocolRelativeHtmlLinks` classify the SAME set of `<a href>`
-// matches into disjoint buckets, so the grammar and the incremental line
-// counting live here once — a fix to the anchor regex must never reach only
-// one of the two callers.
+// Single shared anchor scan. Its one consumer, `classifyHtmlAnchorHrefs`,
+// splits these matches into disjoint buckets, so the grammar and the
+// incremental line counting live here once and every bucket sees a fix to the
+// anchor regex.
 function* iterateHtmlAnchorHrefs(html) {
   const regex = new RegExp(
     `<a(?=\\s)${HTML_ATTRIBUTE_RUN}*?\\shref\\s*=\\s*${HTML_ATTRIBUTE_VALUE}${HTML_ATTRIBUTE_RUN}*>`,
@@ -217,11 +216,20 @@ function* iterateHtmlAnchorHrefs(html) {
   }
 }
 
-export function extractHtmlLinks(html) {
+// One anchor pass, two disjoint buckets: internal links to resolve, and the
+// protocol-relative hrefs that are external for resolution purposes but worth
+// reporting informationally (see #3921/#3930). The dist walk calls this once
+// per page; `extractHtmlLinks` / `extractProtocolRelativeHtmlLinks` below are
+// single-bucket views for callers that want only one of the two.
+export function classifyHtmlAnchorHrefs(html) {
   const links = [];
+  const protocolRelative = [];
   for (const { href, line } of iterateHtmlAnchorHrefs(html)) {
+    if (/^\/\//.test(href)) {
+      protocolRelative.push({ href, line });
+      continue;
+    }
     if (/^https?:\/\//i.test(href)) continue;
-    if (/^\/\//.test(href)) continue;
     if (/^mailto:/i.test(href)) continue;
     if (/^javascript:/i.test(href)) continue;
     if (/^data:/i.test(href)) continue;
@@ -229,19 +237,15 @@ export function extractHtmlLinks(html) {
 
     links.push({ href, line });
   }
-  return links;
+  return { links, protocolRelative };
 }
 
-// Informational counterpart to extractHtmlLinks: same scan, but keeps only the
-// protocol-relative hrefs that extractHtmlLinks classifies as external and
-// skips (see #3921/#3930).
+export function extractHtmlLinks(html) {
+  return classifyHtmlAnchorHrefs(html).links;
+}
+
 export function extractProtocolRelativeHtmlLinks(html) {
-  const links = [];
-  for (const { href, line } of iterateHtmlAnchorHrefs(html)) {
-    if (!/^\/\//.test(href)) continue;
-    links.push({ href, line });
-  }
-  return links;
+  return classifyHtmlAnchorHrefs(html).protocolRelative;
 }
 
 export function extractHtmlIds(html) {
@@ -589,7 +593,15 @@ function extractStaticMdxIds(body) {
   }
 
   const elements = visibleLines.join("\n");
-  const regex = /<[A-Za-z][^>]*\bid\s*=\s*(?:"([^"]+)"|'([^']+)')[^>]*>/gs;
+  // Same tokenising run as the built-HTML scans: a ">" inside a quoted MDX/JSX
+  // attribute value (title="a > b") must not truncate the tag and lose the id
+  // (#4048). The rest of this pattern keeps its own semantics — `\bid` also
+  // accepts `data-id`, and only non-empty quoted values count, unlike the
+  // built-HTML id scan.
+  const regex = new RegExp(
+    `<[A-Za-z]${HTML_ATTRIBUTE_RUN}*?\\bid\\s*=\\s*(?:"([^"]+)"|'([^']+)')${HTML_ATTRIBUTE_RUN}*>`,
+    "gs",
+  );
   let match;
   while ((match = regex.exec(elements)) !== null) {
     ids.add(match[1] ?? match[2]);
@@ -697,8 +709,14 @@ export async function checkMdxAnchors(
 // --- Main Check Functions ---
 
 /**
- * Single-pass dist walker: collects broken links and (optionally) trailing-
- * slash warnings in one read of every HTML file.
+ * Single-pass dist walker: collects broken links, invalid anchors, the
+ * informational protocol-relative notices and (optionally) trailing-slash
+ * warnings in one read of every HTML file.
+ *
+ * Scan budget: exactly ONE anchor pass per page, and at most ONE id extraction
+ * per HTML target some fragment actually references. Ids are deliberately not
+ * extracted eagerly — most pages are never the target of a fragment link, and
+ * scanning them costs a full regex pass for a set nothing reads.
  *
  * When `checkTrailing` is false the trailing-slash warnings array is always
  * empty; callers that don't need it pay no extra cost.
@@ -719,29 +737,28 @@ export async function checkHtmlLinksAndTrailing(
   // Both checks read from the same resolved detail so each href is stat'd once.
   const cache = new Map();
   const idCache = new Map();
-  const pages = [];
   const scanned = { links: 0, ids: 0 };
 
   for (const file of htmlFiles) {
     const content = await readFile(file, "utf-8");
-    const links = extractHtmlLinks(content);
-    const ids = extractHtmlIds(content);
-    scanned.links += links.length;
-    scanned.ids += ids.length;
-    idCache.set(file, new Set(ids));
-    pages.push({ file, links });
-
-    // Informational-only: classified from the content already in memory — no
-    // second read of the file.
-    const relFile = relative(rootDir, file);
-    for (const { href, line } of extractProtocolRelativeHtmlLinks(content)) {
-      protocolRelative.push({ file: relFile, line, href });
-    }
-  }
-
-  for (const { file, links } of pages) {
     const fileDir = dirname(file);
     const relFile = relative(rootDir, file);
+
+    // One anchor pass per page: internal links and the informational
+    // protocol-relative notices are disjoint buckets of the same match set.
+    const { links, protocolRelative: pageProtocolRelative } =
+      classifyHtmlAnchorHrefs(content);
+    scanned.links += links.length;
+
+    // Filtered on the HREF, exactly like every other category below — an
+    // `excludePatterns` entry suppresses `//host/v/1.2/x` because the href
+    // matches, not because the page the href sits on is itself versioned
+    // (#4048). Without this the section had no off switch and consumers
+    // stopped reading it.
+    for (const { href, line } of pageProtocolRelative) {
+      if (excludePatterns.some((p) => p.test(href))) continue;
+      protocolRelative.push({ file: relFile, line, href });
+    }
 
     for (const { href, line } of links) {
       if (excludePatterns.some((p) => p.test(href))) continue;
@@ -779,7 +796,12 @@ export async function checkHtmlLinksAndTrailing(
         ) {
           let ids = idCache.get(detail.targetFile);
           if (ids === undefined) {
-            const targetHtml = await readFile(detail.targetFile, "utf-8");
+            // The page being walked is already in memory; any other target is
+            // re-read here rather than retained, so the walk never holds more
+            // than one page's HTML no matter how large dist/ is.
+            const targetHtml = detail.targetFile === file
+              ? content
+              : await readFile(detail.targetFile, "utf-8");
             const targetIds = extractHtmlIds(targetHtml);
             scanned.ids += targetIds.length;
             ids = new Set(targetIds);
@@ -1051,24 +1073,31 @@ async function main() {
   const realAbsolute = filterOut(mdxWarnings);
   const realAnchors = filterOut(anchorWarnings);
   const realTrailing = filterOut(trailingSlashWarnings);
+  // The one category filtered BEFORE printing. It has no strict gate, so the
+  // allowlist is a consumer's only way to quiet a known-good entry, and
+  // quieting has to reach the section and the count line alike or the section
+  // keeps nagging and stops being read (#4048).
+  const shownProtocolRelative = filterOut(protocolRelative);
 
   console.log(formatReport(
     brokenLinks,
     mdxWarnings,
     trailingSlashWarnings,
     anchorWarnings,
-    protocolRelative,
+    shownProtocolRelative,
   ));
   console.log(
     `\nBuilt HTML scan: ${scanned.links} internal link${scanned.links === 1 ? "" : "s"} and ${scanned.ids} ID attribute${scanned.ids === 1 ? "" : "s"} inspected.`,
   );
-  if (protocolRelative.length > 0) {
+  if (shownProtocolRelative.length > 0) {
     console.log(
-      `Protocol-relative links: ${protocolRelative.length} found (informational only — see "Protocol-Relative Links" section above; not counted as issues).`,
+      `Protocol-relative links: ${shownProtocolRelative.length} found (informational only — see "Protocol-Relative Links" section above; not counted as issues).`,
     );
   }
 
   if (allowlist.size > 0) {
+    // Protocol-relative suppressions are deliberately absent from this tally:
+    // the sentence is about strict-mode counts, and that category has none.
     const skipped =
       (brokenLinks.length - realBroken.length) +
       (mdxWarnings.length - realAbsolute.length) +
