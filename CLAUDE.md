@@ -197,7 +197,7 @@ Since the minimal-scaffold cutover (epic zudolab/zudo-doc#2651), a feature's fie
 **Content typography (`.zd-content`) is NOT per-project — it ships once from
 `packages/zudo-doc/src/content.css`.** Never re-inline `.zd-content` rules into any
 `global.css`. Canonical rules (consumer contract, import order, rebuild duty) are in
-`packages/zudo-doc/CLAUDE.md#shipped-css-artifacts-five`. Note the propagation lag:
+`packages/zudo-doc/CLAUDE.md#shipped-css-artifacts-six`. Note the propagation lag:
 generated projects only pick up a `content.css` change after a new `@takazudo/zudo-doc`
 is published and `create-zudo-doc`'s pinned dependency is bumped (the lockstep release
 handles this).
