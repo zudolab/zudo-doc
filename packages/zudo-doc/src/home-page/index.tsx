@@ -263,7 +263,9 @@ export function createHomePageView<S extends Settings = Settings>(
             ) : null}
             <div class="min-w-0">
               <h1 class="text-heading font-bold mb-vsp-2xs break-words">{settings.siteName}</h1>
-              <p class="text-muted text-small mb-vsp-sm">{settings.siteDescription}</p>
+              <p class="text-muted text-small mb-vsp-sm">
+                {settings.locales[locale]?.description ?? settings.siteDescription}
+              </p>
               <div class="flex flex-wrap items-center justify-center lg:justify-start gap-hsp-md text-small">
                 {rowItems.map((item, index) => (
                   <Fragment key={index}>

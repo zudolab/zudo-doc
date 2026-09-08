@@ -105,6 +105,12 @@ export interface ColorModeConfig {
 export interface LocaleConfig {
   label: string;
   dir: string;
+  /**
+   * Optional home-page hero description for this locale. When omitted, the
+   * home page falls back to `settings.siteDescription`; an empty string is
+   * intentional and renders a blank description.
+   */
+  description?: string;
 }
 
 export interface FooterLinkItem {

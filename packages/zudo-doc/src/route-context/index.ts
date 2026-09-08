@@ -22,7 +22,7 @@ import type {
   TagInfo,
   FactoryI18n,
 } from "../factory-context/index.js";
-import type { Settings } from "../settings.js";
+import type { LocaleConfig, Settings } from "../settings.js";
 import { defaultTranslations } from "../i18n-defaults/index.js";
 import { makeUrlHelpers } from "../url-helpers/index.js";
 import { extractHeadings as extractHeadingsBase } from "../extract-headings/index.js";
@@ -116,10 +116,8 @@ export function createRouteContext<S extends Settings = Settings>(
 
   function getLocaleConfig(
     locale: string,
-  ): { label: string; dir: string } | undefined {
-    return (
-      settings.locales as Record<string, { label: string; dir: string } | undefined>
-    )[locale];
+  ): LocaleConfig | undefined {
+    return (settings.locales as Record<string, LocaleConfig | undefined>)[locale];
   }
 
   function getLocaleLabel(locale: string): string {
