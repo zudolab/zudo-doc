@@ -140,7 +140,9 @@ describe("Breadcrumb", () => {
     const html = serialize(
       <Breadcrumb tree={tree} currentId="guides/advanced/perf" homeHref="/" />,
     );
-    expect(html).toContain('<span class="text-fg">Performance</span>');
+    expect(html).toContain(
+      '<span class="text-fg min-w-0 break-words">Performance</span>',
+    );
   });
 
   it("renders chevron separators (one fewer than item count)", () => {
