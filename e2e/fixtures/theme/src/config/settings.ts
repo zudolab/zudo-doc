@@ -5,6 +5,7 @@ import type {
   ColorModeConfig,
   LocaleConfig,
   MetaTagsConfig,
+  DateFormatSetting,
 } from "@takazudo/zudo-doc/settings";
 import type { ColorScheme } from "@takazudo/zudo-doc/color-scheme-utils";
 import { defaultColorSchemes } from "@takazudo/zudo-doc/color-schemes-defaults";
@@ -50,6 +51,8 @@ export const settings = {
   minifyHtml: true as boolean,
   docsDir: "src/content/docs",
   entryDocSlug: "getting-started",
+  // Mirrors the showcase default — see /docs/guides/configuration.
+  dateFormat: "locale" as DateFormatSetting,
   defaultLocale: "en" as const,
   locales: {} satisfies Record<string, LocaleConfig>,
   mermaid: false,
