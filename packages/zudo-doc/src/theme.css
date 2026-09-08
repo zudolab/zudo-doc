@@ -32,6 +32,17 @@
  * resolves to nothing (the tight-token guardrail below wipes Tailwind's
  * default palette; only `--zd-*`-backed aliases repopulate it).
  *
+ * Namespace contract: zudo-doc reserves the 23 bare `--color-*` alias names
+ * declared in the first block plus the `--color-zd-*` prefix. Every other
+ * `--color-*` name, such as `--color-acme-*`, belongs to the embedder. A
+ * second `@theme` block that defines any reserved bare name in the same
+ * document is unsupported: Tailwind merges every `@theme` block reached from
+ * the entry, last declaration wins, and no error is reported. Embedders must
+ * namespace their own tokens (`--color-<theirs>-*`), import this file before
+ * their own `@theme` block so this reset cannot reach their tokens, or import
+ * `@takazudo/zudo-doc/theme-no-reset.css` (#4055) when import order is outside
+ * their control. Consume zudo-doc colors through `--color-zd-*` / `bg-zd-*`.
+ *
  * Deliberately NOT shipped here: `--color-page-loading-overlay`. That scrim
  * token stays feature-injected by a project's `dynamicPageTransition` wiring
  * (its default depends on `--color-overlay`, which IS defined below) — do
@@ -195,6 +206,55 @@
   --breakpoint-sm: 640px;
   --breakpoint-lg: 1024px;
   --breakpoint-xl: 1280px;
+}
+
+/* ==========================================================================
+ * Tailwind-facing zudo-doc namespace aliases
+ *
+ * zudolab/zudo-doc#4051 needs a collision-free surface for code outside
+ * zudo-doc. An embedder's own components can use `bg-zd-*` / `var(--color-zd-*)`
+ * without touching the bare tier consumed by the package chrome.
+ *
+ * This block is `static` because Tailwind v4 emits a plain `@theme` token into
+ * `:root` only when something in its own scan consumes it. zudo-doc never
+ * scans the code that consumes these aliases, so the variables must always be
+ * emitted. `static` guarantees the variables; `bg-zd-*` utilities are still
+ * generated only when the consumer's own Tailwind scan sees those classes.
+ *
+ * Keep this block after the reset: `--color-*: initial` clears every
+ * `--color-*` declared before it in the merged theme, regardless of the file
+ * that declared it. The package chrome deliberately continues consuming the
+ * bare tier; do not migrate call sites ad hoc.
+ *
+ * The raw tier is prefix-first (`--zd-*`) outside `@theme`; this semantic tier
+ * is category-first (`--color-zd-*`) inside `@theme`. A third ordering that
+ * puts the namespace before the category is disconnected from both tiers and
+ * must never be introduced.
+ * ========================================================================== */
+@theme static {
+  --color-zd-bg: var(--zd-bg);
+  --color-zd-fg: var(--zd-fg);
+  --color-zd-sel-bg: var(--zd-selection-bg);
+  --color-zd-sel-fg: var(--zd-selection-fg);
+  --color-zd-surface: var(--zd-surface);
+  --color-zd-muted: var(--zd-muted);
+  --color-zd-accent: var(--zd-accent);
+  --color-zd-accent-hover: var(--zd-accent-hover);
+  --color-zd-code-bg: var(--zd-code-bg);
+  --color-zd-code-fg: var(--zd-code-fg);
+  --color-zd-success: var(--zd-success);
+  --color-zd-danger: var(--zd-danger);
+  --color-zd-warning: var(--zd-warning);
+  --color-zd-info: var(--zd-info);
+  --color-zd-overlay: #000;
+  --color-zd-image-overlay-bg: var(--zd-image-overlay-bg);
+  --color-zd-image-overlay-fg: var(--zd-image-overlay-fg);
+  --color-zd-chat-user-bg: var(--zd-chat-user-bg);
+  --color-zd-chat-user-text: var(--zd-chat-user-text);
+  --color-zd-chat-assistant-bg: var(--zd-chat-assistant-bg);
+  --color-zd-chat-assistant-text: var(--zd-chat-assistant-text);
+  --color-zd-matched-keyword-bg: var(--zd-matched-keyword-bg);
+  --color-zd-matched-keyword-fg: var(--zd-matched-keyword-fg);
 }
 
 /* ========================================
