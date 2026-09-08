@@ -386,16 +386,29 @@ html[data-theme-pack="brutalist"] .zd-content blockquote a {
   text-underline-offset: 3px;
   font-weight: 500;
 }
-/* Darkened (not the shared --zd-accent token) so a fixed white ink
-   clears the AA text floor in both modes without depending on
-   --zd-bg's light/dark indirection — measured 2.63:1 (rgb(245 245 245)
-   on rgb(255 106 31)) against the prior var(--zd-accent)/var(--zd-bg)
-   pair; color-mix keeps the same hazard-orange hue, just darker. */
+/* Card-style prose links (e.g. the note-tray IndexList rank/label/
+   description spans) put their own color on group-hover: utility
+   classes (group-hover:text-fg / group-hover:text-accent), which beats
+   the anchor's inherited `color` — so the anchor-level color below
+   never reached that text. Measured 2.63:1 (rgb(245 245 245) on
+   rgb(255 106 31), dark) / 4.06:1 (rgb(0 0 0) on rgb(194 65 12), light)
+   against the prior var(--zd-accent)/var(--zd-bg) pair, because the
+   rendered ink was actually --zd-fg (the descendant spans' own
+   resting/hover color), not --zd-bg. Darken the background (same hue,
+   not the shared --zd-accent token) and force white ink on every
+   descendant so the fix reaches those spans too. */
 html[data-theme-pack="brutalist"] .zd-content p a:hover,
 html[data-theme-pack="brutalist"] .zd-content li a:not([aria-label]):hover,
 html[data-theme-pack="brutalist"] .zd-content td a:hover,
 html[data-theme-pack="brutalist"] .zd-content blockquote a:hover {
   background-color: color-mix(in srgb, var(--zd-accent) 70%, black);
+  color: #ffffff;
+  text-decoration-color: #ffffff;
+}
+html[data-theme-pack="brutalist"] .zd-content p a:hover *,
+html[data-theme-pack="brutalist"] .zd-content li a:not([aria-label]):hover *,
+html[data-theme-pack="brutalist"] .zd-content td a:hover *,
+html[data-theme-pack="brutalist"] .zd-content blockquote a:hover * {
   color: #ffffff;
   text-decoration-color: #ffffff;
 }
