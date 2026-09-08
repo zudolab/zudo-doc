@@ -147,6 +147,7 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
             currentSlug={currentSlug}
             rootMenuItems={rootMenuItems}
             backToMenuLabel={backToMenuLabel}
+            locale={lang}
             localeLinks={localeLinks}
             themeDefaultMode={themeDefaultMode}
             dateFormats={dateFormatsFor(lang)}

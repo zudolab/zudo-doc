@@ -97,6 +97,7 @@ export function createSidebarWithDefaults<S extends Settings = Settings>(
           currentSlug={currentSlug}
           rootMenuItems={rootMenuItems}
           backToMenuLabel={backToMenuLabel}
+          locale={lang}
           localeLinks={localeLinks}
           themeDefaultMode={getThemeDefaultMode()}
           dateFormats={dateFormatsFor(lang)}

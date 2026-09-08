@@ -140,6 +140,7 @@ describe("dateFormats reaches the serialized island data-props", () => {
     const html = render(createSiteTreeNavWrapper(deps)({ lang: "ja" }) as VNode);
 
     expect(html).toContain('data-zfb-island="SiteTreeNav"');
+    expect(html).toContain(serializedProp("locale", "ja"));
     expect(html).toContain(serializedProp("full", "YYYY年M月D日"));
   });
 
