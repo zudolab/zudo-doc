@@ -634,58 +634,214 @@ export interface CoverageRequirement {
   group: string;
   /** Minimum matched (visible) elements required in every audited state. */
   min: number;
+  /**
+   * Additionally require at least ONE `hover`-state sample for the group.
+   *
+   * Static counts alone are not enough for the hover-regression surfaces: the
+   * driver counts only non-hover samples toward `groupCounts`, so a group can
+   * satisfy its `min` while its hover measurement was silently never collected
+   * (element off-screen, covered, unhoverable). That is precisely how a broken
+   * hover rule stays invisible — see #4033.
+   */
+  requireHover?: boolean;
 }
 
+/** Page paths the audit renders by default; also the contract's keys. */
+export const PAGE_ADMONITIONS = "/docs/components/admonitions/";
+export const PAGE_GETTING_STARTED = "/docs/getting-started/";
+
 /**
- * Required element groups + minimum match counts, per (pack × mode) state. A
- * required group matching ZERO is a configuration error (the audited page or a
- * selector drifted) — never a silent green.
+ * Required element groups + minimum match counts, **per audited page**, applied
+ * to every (pack × mode) state of that page. A required group matching ZERO is
+ * a configuration error (the page or a selector drifted) — never a silent green.
  *
- * Kept to groups that are unconditional server-rendered markup so the contract
- * never false-fails before #3034's first real-site run. Active/hover/breadcrumb
- * /footer/TOC-active groups are measured-if-present (not required) here; #3034
- * can promote them once the real run confirms their presence on the default
- * page.
+ * PER-PAGE, not global, because the inventory is not uniformly reachable: the
+ * two default pages are structurally complementary and only their union covers
+ * the chrome (#4033).
+ *
+ * - `/docs/components/admonitions/` is a **leaf** page under a **dropdown**
+ *   category → `sidebar-active-leaf` + `header-nav-dropdown-active`, plus the
+ *   TOC / breadcrumb / admonition / code content. Its top-level nav item is a
+ *   dropdown wrapper, so it yields ZERO plain `header-nav-active`.
+ * - `/docs/getting-started/` is a **root category** page under a **plain**
+ *   top-level nav item → the only source of `header-nav-active`. Its active
+ *   sidebar node is a ROOT, which carries `aria-current="page"` WITHOUT
+ *   `data-nav-active`, so `sidebar-active-leaf` is legitimately zero there and
+ *   `sidebar-active-root` is what must be required instead. It has no TOC, no
+ *   breadcrumb, and no admonitions.
+ *
+ * The eight requirements bound to `/docs/components/admonitions/` are the
+ * original page-agnostic contract, carried over at their original minima — a
+ * group required before must never become required nowhere.
  */
-export const COVERAGE_CONTRACT: readonly CoverageRequirement[] = [
-  { group: "header-nav", min: 3 },
-  { group: "sidebar-link", min: 3 },
-  { group: "toc-link", min: 3 },
-  { group: "content-heading", min: 1 },
-  { group: "content-paragraph", min: 1 },
-  { group: "admonition-title", min: 4 },
-  { group: "admonition-body", min: 4 },
-  { group: "pager-link", min: 1 },
-];
+export const COVERAGE_CONTRACT: Readonly<Record<string, readonly CoverageRequirement[]>> = {
+  [PAGE_ADMONITIONS]: [
+    // ── the original (pre-#4033) contract, minima unchanged ──
+    { group: "header-nav", min: 3 },
+    { group: "sidebar-link", min: 3, requireHover: true },
+    { group: "toc-link", min: 3 },
+    { group: "content-heading", min: 1 },
+    { group: "content-paragraph", min: 1 },
+    { group: "admonition-title", min: 4 },
+    { group: "admonition-body", min: 4 },
+    { group: "pager-link", min: 1 },
+    // ── added: the active-state surfaces this page is the only source of ──
+    { group: "header-nav-dropdown-active", min: 1, requireHover: true },
+    { group: "sidebar-active-leaf", min: 1, requireHover: true },
+    { group: "toc-active", min: 1 },
+    { group: "breadcrumb-link", min: 1 },
+    { group: "content-code", min: 1 },
+  ],
+  [PAGE_GETTING_STARTED]: [
+    // `header-nav` min is 2 (not 3) here: one plain top-level item is the
+    // ACTIVE one on this page, so the non-active count is one lower than on
+    // the admonitions page, where the 3-minimum stays asserted.
+    { group: "header-nav", min: 2 },
+    { group: "header-nav-active", min: 1, requireHover: true },
+    { group: "sidebar-link", min: 3, requireHover: true },
+    { group: "sidebar-active-root", min: 1, requireHover: true },
+    { group: "pager-link", min: 1 },
+  ],
+};
+
+/** The declared page universe — every page with a coverage contract. */
+export const AUDIT_PAGES: readonly string[] = Object.keys(COVERAGE_CONTRACT);
 
 export interface CoverageStats {
-  /** Matched (visible) element count per elementKey. */
+  /** Matched (visible) NON-hover element count per elementKey. */
   groupCounts: Record<string, number>;
+  /** Matched (visible) `hover`-state element count per elementKey. */
+  hoverCounts: Record<string, number>;
   /** Total evaluable (non-decorative) elements matched in the state. */
   matched: number;
   /** Elements that evaluated to SKIP (excluding decorative). */
   skipped: number;
 }
 
-/** Coverage errors for one state — zero-match required groups, under-min
- *  groups, and an over-ceiling SKIP share. Empty array = clean. */
-export function evaluateCoverage(state: string, stats: CoverageStats): string[] {
+/** One audited (pack × mode × page) state's coverage input. */
+export interface CoverageScenario {
+  pack: string;
+  mode: string;
+  page: string;
+  stats: CoverageStats;
+}
+
+export interface CoverageOutcome extends CoverageScenario {
+  /** Gating coverage errors for THIS state only. */
+  errors: string[];
+  /** Non-gating honesty notes (e.g. the page has no declared contract). */
+  notes: string[];
+}
+
+function scenarioLabel(s: CoverageScenario): string {
+  return `${s.pack}/${s.mode} ${s.page}`;
+}
+
+/**
+ * Coverage verdict for ONE state — zero-match required groups, under-min
+ * groups, missing required hover samples, and an over-ceiling SKIP share.
+ *
+ * The zero-match check is deliberately SCOPED to the page's declared
+ * requirements rather than swept across the whole inventory: `header-more-toggle`
+ * is viewport-conditional and decorative samples never enter the counts, so a
+ * blanket "every inventory key must appear" rule would false-fail. The
+ * inventory declares each item's expectation explicitly and
+ * `validateInventoryExpectations` (theme-a11y-inventory.ts) keeps the two in sync.
+ */
+export function evaluateCoverage(scenario: CoverageScenario): CoverageOutcome {
+  const { stats, page } = scenario;
+  const label = scenarioLabel(scenario);
   const errors: string[] = [];
-  for (const req of COVERAGE_CONTRACT) {
-    const count = stats.groupCounts[req.group] ?? 0;
-    if (count === 0) {
-      errors.push(`[${state}] required group "${req.group}" matched ZERO elements (configuration error)`);
-    } else if (count < req.min) {
-      errors.push(`[${state}] required group "${req.group}" matched ${count} (< required min ${req.min})`);
+  const notes: string[] = [];
+
+  const requirements = COVERAGE_CONTRACT[page];
+  if (!requirements) {
+    notes.push(
+      `[${label}] page has NO declared coverage contract — zero required groups were asserted (UNAUDITED, not clean)`,
+    );
+  } else {
+    for (const req of requirements) {
+      const count = stats.groupCounts[req.group] ?? 0;
+      if (count === 0) {
+        errors.push(`[${label}] required group "${req.group}" matched ZERO elements (configuration error)`);
+      } else if (count < req.min) {
+        errors.push(`[${label}] required group "${req.group}" matched ${count} (< required min ${req.min})`);
+      }
+      if (req.requireHover && (stats.hoverCounts[req.group] ?? 0) === 0) {
+        errors.push(
+          `[${label}] required group "${req.group}" produced NO hover sample (hover coverage error)`,
+        );
+      }
     }
   }
+
   if (stats.matched > 0 && stats.skipped / stats.matched > MAX_SKIP_RATIO) {
     const pct = Math.round((stats.skipped / stats.matched) * 100);
     errors.push(
-      `[${state}] SKIP share ${pct}% of ${stats.matched} matched exceeds ${Math.round(
+      `[${label}] SKIP share ${pct}% of ${stats.matched} matched exceeds ${Math.round(
         MAX_SKIP_RATIO * 100,
       )}% ceiling — evaluator may be mis-measuring`,
     );
   }
-  return errors;
+  return { ...scenario, errors, notes };
+}
+
+/**
+ * Evaluate every audited state INDEPENDENTLY. Coverage is never aggregated
+ * across packs, modes, or pages: one pack satisfying a group must not mask
+ * another pack where the same group matched zero.
+ */
+export function evaluateCoverageMatrix(scenarios: readonly CoverageScenario[]): CoverageOutcome[] {
+  return scenarios.map(evaluateCoverage);
+}
+
+/**
+ * Honest accounting of what a narrowed run did NOT look at. A partial run
+ * (`--packs` / `--modes` / `--pages`) must report the omitted scenarios as
+ * UNAUDITED rather than let a green summary imply full coverage.
+ */
+export function describeUnauditedScenarios(input: {
+  allPacks: readonly string[];
+  auditedPacks: readonly string[];
+  allModes: readonly string[];
+  auditedModes: readonly string[];
+  auditedPages: readonly string[];
+}): string[] {
+  const notes: string[] = [];
+
+  const omittedPacks = input.allPacks.filter((p) => !input.auditedPacks.includes(p));
+  if (omittedPacks.length > 0) {
+    notes.push(`${omittedPacks.length} pack(s) UNAUDITED: ${omittedPacks.join(", ")}`);
+  }
+
+  const omittedModes = input.allModes.filter((m) => !input.auditedModes.includes(m));
+  if (omittedModes.length > 0) {
+    notes.push(`${omittedModes.length} mode(s) UNAUDITED: ${omittedModes.join(", ")}`);
+  }
+
+  // A group required on an omitted page may still be required on an audited
+  // one (`header-nav`, `sidebar-link`, `pager-link` are required on both), so
+  // name only the groups this run asserted NOWHERE — claiming more would be its
+  // own kind of dishonesty.
+  const assertedElsewhere = new Set(
+    input.auditedPages.flatMap((p) => (COVERAGE_CONTRACT[p] ?? []).map((r) => r.group)),
+  );
+  for (const page of AUDIT_PAGES.filter((p) => !input.auditedPages.includes(p))) {
+    const dropped = (COVERAGE_CONTRACT[page] ?? [])
+      .map((r) => r.group)
+      .filter((g) => !assertedElsewhere.has(g));
+    notes.push(
+      `page ${page} UNAUDITED` +
+        (dropped.length > 0
+          ? ` — group(s) asserted NOWHERE this run: ${dropped.join(", ")}`
+          : " (its required groups are also required on an audited page)"),
+    );
+  }
+
+  const undeclared = input.auditedPages.filter((p) => !AUDIT_PAGES.includes(p));
+  for (const page of undeclared) {
+    notes.push(`page ${page} has no declared coverage contract — no required groups asserted for it`);
+  }
+
+  return notes;
 }

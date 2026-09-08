@@ -344,12 +344,23 @@ jobs rather than duplicated here; both package paths are covered before release.
 ### Theme A11y Audit (`theme-a11y` job — T3 nightly + on-demand dev tool)
 
 `scripts/theme-a11y-audit.ts` (`pnpm theme-a11y:audit`) renders the **built** showcase
-once per (theme pack × light/dark mode) in a real Playwright browser and reads computed
-styles to check WCAG contrast on a fixed chrome + content element inventory. It requires
-a prebuilt `dist/` and a browser, so — like `e2e-full` — it's too slow for pr-checks'
-budget and lives here as a T3 nightly + on-demand job (`theme-a11y`), plus a local dev
-tool for partial runs while iterating on a theme pack (`pnpm theme-a11y:audit --packs
-<name> --modes light`).
+once per (theme pack × light/dark mode × page) in a real Playwright browser and reads
+computed styles to check WCAG contrast on a fixed chrome + content element inventory. It
+requires a prebuilt `dist/` and a browser, so — like `e2e-full` — it's too slow for
+pr-checks' budget and lives here as a T3 nightly + on-demand job (`theme-a11y`), plus a
+local dev tool for partial runs while iterating on a theme pack (`pnpm theme-a11y:audit
+--packs <name> --modes light`).
+
+**The page axis is load-bearing, not a convenience** (#4033). A single-page run reported
+a clean pass over a catalog with real failures, because the two chrome shapes are
+structurally complementary: a leaf page under a dropdown category never renders a plain
+active top-level nav item, and a root category page never renders an active sidebar
+*leaf*. The default run therefore renders both `AUDIT_PAGES`, the coverage contract is
+keyed **per page** (a group required on one page is not asserted on the other), and the
+regression-prone hover states must produce an actual hover sample — a static count alone
+can't tell "measured and fine" from "never measured". Any narrowed run (`--packs` /
+`--modes` / `--pages`) prints its omitted scenarios as UNAUDITED so a partial green never
+reads as full coverage.
 
 **Scope split vs `pnpm contrast:audit`.** These two checks are not redundant:
 
