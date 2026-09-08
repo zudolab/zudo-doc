@@ -11,13 +11,24 @@ import type {
   ResolvedDateFormats,
 } from "../settings.js";
 
-const DATE_FORMAT_ROLE_KEYS = [
-  "full",
-  "monthDay",
-  "year",
-  "yearMonth",
-  "numericMonthDay",
-] as const satisfies readonly (keyof DateFormatRoles)[];
+// Derived from a `Record<keyof DateFormatRoles, true>` rather than written as
+// a literal tuple: a plain `satisfies readonly (keyof DateFormatRoles)[]` only
+// checks that every LISTED key is a real role, not that every real role is
+// listed — so a role added to `DateFormatRoles` and forgotten here would be
+// missing from the returned object while `ResolvedDateFormats`
+// (`Required<DateFormatRoles>`) still claims it is present. The Record makes
+// the omission a compile error.
+const DATE_FORMAT_ROLE_PRESENCE: Record<keyof DateFormatRoles, true> = {
+  full: true,
+  monthDay: true,
+  year: true,
+  yearMonth: true,
+  numericMonthDay: true,
+};
+
+const DATE_FORMAT_ROLE_KEYS = Object.keys(
+  DATE_FORMAT_ROLE_PRESENCE,
+) as (keyof DateFormatRoles)[];
 
 /**
  * Resolve a `dateFormat` setting into every role's pattern for one locale.
