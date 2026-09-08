@@ -90,19 +90,43 @@ type RampRef =
 
 ## Tier 2：セマンティックトークン
 
-23 のセマンティックロールが、コンポーネントが実際に使用するカラーの面です。パッケージの`@takazudo/zudo-doc/theme.css`が、それら（および 4 つの base ロール）を Tailwind 互換トークンにマッピングします。スキャフォールドではこのファイルを独自の`src/styles/global.css`にある`@theme`オーバーライドブロックより前にインポートするため、変更が必要なエイリアスだけを再定義してください：
+パッケージの `@takazudo/zudo-doc/theme.css` は、23 個の名前空間なしのカラーエイリアスと、対応する 23 個の `--color-zd-*` エイリアスを公開します。スキャフォールドでは、独自の `src/styles/global.css` にある `@theme` 上書きブロックより前にこのファイルをインポートするため、変更が必要なプロジェクトのエイリアスだけを再定義してください。以下は、出荷される名前空間なしのトークンと名前空間付きトークンのブロックです。最初のブロックには、色以外のデフォルト値も含まれます。
 
 ```css title="@takazudo/zudo-doc/theme.css"
 @theme {
-  --color-*: initial;  /* reset ALL Tailwind defaults */
+  /* ========================================
+   * Tight-token color reset
+   *
+   * Wipes all Tailwind default color tokens (`--color-*`) so only
+   * project-defined palette and semantic tokens remain. This enforces
+   * zudo-doc's tight-token policy: "NEVER use Tailwind default colors"
+   * (documented per-project in src/CLAUDE.md's Color Rules). Semantic color
+   * tokens (defined below) are added back after this reset.
+   *
+   * The upstream split-import fix (zfb#159 / 9e37551, shipped in f68a9ba)
+   * eliminated the original leak cause (zfb no longer prepends the full
+   * @import "tailwindcss" bundle). The reset is retained as an explicit
+   * design guardrail — it prevents accidental default palette bleed from any
+   * future upstream change and keeps the color surface intentional.
+   *
+   * NOT reset: `--spacing` (the base spacing scale, default 0.25rem).
+   * Tailwind spacing utilities compute as calc(var(--spacing) * N); wiping
+   * `--spacing` collapses them to zero (observed in Wave 4 Sub-7 #1403).
+   * This guardrail resets ONLY the color namespace — never widen it.
+   * ======================================== */
+  --color-*: initial;
 
-  /* Base */
+  /* ========================================
+   * Colors — Three-tier token system
+   * ======================================== */
+
+  /* ── Base ── */
   --color-bg: var(--zd-bg);
   --color-fg: var(--zd-fg);
   --color-sel-bg: var(--zd-selection-bg);
   --color-sel-fg: var(--zd-selection-fg);
 
-  /* Semantic aliases */
+  /* ── Semantic aliases ── */
   --color-surface: var(--zd-surface);
   --color-muted: var(--zd-muted);
   --color-accent: var(--zd-accent);
@@ -113,14 +137,143 @@ type RampRef =
   --color-danger: var(--zd-danger);
   --color-warning: var(--zd-warning);
   --color-info: var(--zd-info);
-
-  /* Search highlight (dedicated, live-editable in Design Token Panel) */
+  /* Overlay is intentionally theme-independent (always dark, not scheme-driven) */
+  --color-overlay: #000;
+  --color-image-overlay-bg: var(--zd-image-overlay-bg);
+  --color-image-overlay-fg: var(--zd-image-overlay-fg);
+  --color-chat-user-bg: var(--zd-chat-user-bg);
+  --color-chat-user-text: var(--zd-chat-user-text);
+  --color-chat-assistant-bg: var(--zd-chat-assistant-bg);
+  --color-chat-assistant-text: var(--zd-chat-assistant-text);
   --color-matched-keyword-bg: var(--zd-matched-keyword-bg);
   --color-matched-keyword-fg: var(--zd-matched-keyword-fg);
+
+  /* ========================================
+   * Spacing — hsp (horizontal) + vsp (vertical)
+   * ======================================== */
+  --spacing-0: 0;
+  --spacing-px: 1px;
+
+  /* Horizontal spacing (7 steps) */
+  --spacing-hsp-2xs: 0.125rem;   /* 2px  — tight inline */
+  --spacing-hsp-xs: 0.375rem;   /* 6px  — compact inline */
+  --spacing-hsp-sm: 0.5rem;     /* 8px  — small padding */
+  --spacing-hsp-md: 0.75rem;    /* 12px — default gaps */
+  --spacing-hsp-lg: 1rem;       /* 16px — standard padding */
+  --spacing-hsp-xl: 1.5rem;     /* 24px — generous padding */
+  --spacing-hsp-2xl: 2rem;      /* 32px — large padding */
+
+  /* Vertical spacing (8 steps) */
+  --spacing-vsp-3xs: 0.25rem;     /* 4px — hairline gap */
+  --spacing-vsp-2xs: 0.4375rem;   /* 7px — tight gap */
+  --spacing-vsp-xs: 0.875rem;    /* 14px — small gap */
+  --spacing-vsp-sm: 1.25rem;     /* 20px — compact gap */
+  --spacing-vsp-md: 1.5rem;      /* 24px — standard gap */
+  --spacing-vsp-lg: 1.75rem;     /* 28px — section gap */
+  --spacing-vsp-xl: 2.5rem;      /* 40px — large section gap */
+  --spacing-vsp-2xl: 3.5rem;     /* 56px — page-level gap */
+
+  /* ========================================
+   * Element sizes — semantic icon dimensions
+   * ======================================== */
+  --spacing-icon-xs: 0.75rem;    /* 12px — inline meta icons, chevrons */
+  --spacing-icon-sm: 1rem;       /* 16px — standard UI icons */
+  --spacing-icon-md: 1.25rem;    /* 20px — medium emphasis icons */
+  --spacing-icon-lg: 1.5rem;     /* 24px — large / mobile icons */
+
+  /* Image overlay button chrome */
+  --spacing-image-overlay-inset: 0.5rem;  /* 8px — overlay button corner inset + internal padding */
+
+  /* ========================================
+   * Elevation — the tight `@import "tailwindcss/utilities"` (no default
+   * @theme) drops Tailwind's default shadow scale, so `shadow-*` utilities
+   * generate nothing. Re-add the one elevation the components use: header
+   * and version-switcher dropdown panels apply `shadow-lg`. Value is
+   * Tailwind v4's default shadow-lg; the black is intentionally
+   * theme-independent (a drop shadow is absence of light, not a themed color).
+   * ======================================== */
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* ========================================
+   * Typography
+   * ======================================== */
+
+  /* ── Tier 2: Semantic font-size tokens (reference Tier 1 scale only) ── */
+  --text-micro:      var(--text-scale-2xs);  /* 12px — compact panel labels, color swatch annotations */
+  --text-caption:    var(--text-scale-xs);   /* labels, timestamps */
+  --text-small:      var(--text-scale-sm);   /* secondary text, nav items */
+  --text-body:       var(--text-scale-md);   /* paragraphs, default */
+  --text-title:      var(--text-scale-lg);   /* card titles, section labels */
+  --text-heading:    var(--text-scale-xl);   /* page headings */
+  --text-display:    var(--text-scale-2xl);  /* hero text */
+
+  /* Font families */
+  --font-sans: system-ui, sans-serif;
+  --font-mono: ui-monospace, monospace;
+
+  /* Font weights (4 steps) */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Line heights (4 steps) */
+  --leading-tight: 1.25;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+
+  /* Letter spacing / tracking (4 steps) */
+  --tracking-tight: -0.025em;   /* headings, display text */
+  --tracking-normal: normal;    /* browser default — resets any inherited tracking */
+  --tracking-wide: 0.05em;      /* labels, UI text */
+  --tracking-wider: 0.1em;      /* small caps, decorative */
+
+  /* ========================================
+   * Border radius (3 steps)
+   * ======================================== */
+  --radius-DEFAULT: 0.25rem;    /* 4px — rounded */
+  --radius-lg: 0.5rem;          /* 8px — rounded-lg */
+  --radius-full: 9999px;        /* rounded-full */
+
+  /* ========================================
+   * Breakpoints (3 steps)
+   * ======================================== */
+  --breakpoint-sm: 640px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+}
+
+@theme static {
+  --color-zd-bg: var(--zd-bg);
+  --color-zd-fg: var(--zd-fg);
+  --color-zd-sel-bg: var(--zd-selection-bg);
+  --color-zd-sel-fg: var(--zd-selection-fg);
+  --color-zd-surface: var(--zd-surface);
+  --color-zd-muted: var(--zd-muted);
+  --color-zd-accent: var(--zd-accent);
+  --color-zd-accent-hover: var(--zd-accent-hover);
+  --color-zd-code-bg: var(--zd-code-bg);
+  --color-zd-code-fg: var(--zd-code-fg);
+  --color-zd-success: var(--zd-success);
+  --color-zd-danger: var(--zd-danger);
+  --color-zd-warning: var(--zd-warning);
+  --color-zd-info: var(--zd-info);
+  --color-zd-overlay: #000;
+  --color-zd-image-overlay-bg: var(--zd-image-overlay-bg);
+  --color-zd-image-overlay-fg: var(--zd-image-overlay-fg);
+  --color-zd-chat-user-bg: var(--zd-chat-user-bg);
+  --color-zd-chat-user-text: var(--zd-chat-user-text);
+  --color-zd-chat-assistant-bg: var(--zd-chat-assistant-bg);
+  --color-zd-chat-assistant-text: var(--zd-chat-assistant-text);
+  --color-zd-matched-keyword-bg: var(--zd-matched-keyword-bg);
+  --color-zd-matched-keyword-fg: var(--zd-matched-keyword-fg);
 }
 ```
 
 `@theme`に登録されると、標準のTailwindユーティリティクラスとして使用できます：`bg-surface`、`text-accent`、`border-muted`など。
+
+名前空間なしのエイリアスはプロジェクトのコード向け、`--color-zd-*` は組み込み先のコード向けです。[別の `@theme` との共存](./design-system.mdx#別の-theme-との共存)を参照してください。
 
 ### セマンティックトークンリファレンス（Default Dark の紐付け）
 
@@ -168,7 +321,7 @@ type RampRef =
 
 ```ts
 const darkMap: ModeMap = {
-  // ...base と semantic のマッピング...
+  // ...base and semantic mappings...
   syntax: {
     syntaxKeyword: { state: "info" },
   },
@@ -212,7 +365,7 @@ const darkMap: ModeMap = {
     danger: "oklch(.655 .170 25)",
     // ...
   },
-  // 任意。すべて継承する場合は syntax 自体を省略できます。
+  // Optional; omit it entirely when all syntax roles should inherit.
   syntax: {},
 };
 ```
@@ -366,7 +519,7 @@ const myMap: ModeMap = {
     ...SEMANTIC_RAMP_DEFAULTS,
     accent: { accent: 1 }, // only override the roles that need to differ
   },
-  syntax: {}, // 任意。syntax 固有の上書きだけをここへ追加します
+  syntax: {}, // optional; add only syntax-specific overrides here
 };
 
 export const colorSchemes: Record<string, ColorScheme> = {

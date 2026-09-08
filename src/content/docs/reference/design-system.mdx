@@ -233,11 +233,63 @@ Colors use a **three-tier strategy**: raw palette values (Tier 1) flow into sema
 
 See the [Color reference](./color.mdx) for full details on the color token system, color schemes, and customization.
 
+## Coexisting with another `@theme`
+
+Tailwind v4 merges every `@theme` block reached from the stylesheet entry into one variable set. When a key appears more than once, the last declaration wins. CSS reports no error for a duplicate or for the resulting overwrite.
+
+zudo-doc **reserves 23 bare `--color-*` alias names and the `--color-zd-*` prefix**. The bare aliases have these suffixes:
+
+`bg`, `fg`, `sel-bg`, `sel-fg`, `surface`, `muted`, `accent`, `accent-hover`, `code-bg`, `code-fg`, `success`, `danger`, `warning`, `info`, `overlay`, `image-overlay-bg`, `image-overlay-fg`, `chat-user-bg`, `chat-user-text`, `chat-assistant-bg`, `chat-assistant-text`, `matched-keyword-bg`, `matched-keyword-fg`.
+
+Other names, such as `--color-acme-*`, are yours. The package chrome consumes the bare aliases through `bg-bg`, `text-fg`, `border-muted`, `var(--color-muted)`, and similar references. A second design system's `@theme` that defines any of these reserved names is **unsupported**: whichever declaration is imported last wins silently. This is separate from intentionally overriding zudo-doc's own theme for your project.
+
+The `--color-*: initial` guardrail clears every `--color-*` declaration **before** it, from any file, not just Tailwind's defaults. **Import `@takazudo/zudo-doc/theme.css` before your own `@theme` block**, as the scaffold already does.
+
+If the host stylesheet cannot be reordered after zudo-doc's import, use `@takazudo/zudo-doc/theme-no-reset.css` in place of `theme.css`. It has identical tokens and rules, with only the color reset removed. Under zfb's split imports (`tailwindcss/preflight` + `tailwindcss/utilities`), the default palette never exists: the variant loses nothing there, and the reset in `theme.css` is a defensive guardrail. A host that imports `tailwindcss/theme` (or uses a non-zfb `@import "tailwindcss"` entry) keeps the whole default palette with the variant; `theme.css` clears that palette when it is declared before the reset.
+
+The `--color-zd-*` aliases provide one namespaced counterpart per bare alias, with the same default value. Another design system can consume zudo-doc colors through `bg-zd-*`, `text-zd-*`, and `border-zd-*` utilities without using the bare tier. The aliases are declared in `@theme static`, so their variables are always present in `:root`, even when your Tailwind scan uses none of them. The utilities themselves are generated only for classes your own scan sees.
+
+For example, give the host design system an `acme` namespace and import its tokens after zudo-doc:
+
+```css title="consumer.css"
+@theme {
+  --color-acme-bg: oklch(0.97 0.01 250);
+  --color-acme-fg: oklch(0.25 0.02 250);
+}
+```
+
+```css title="src/styles/global.css"
+@layer zd-preflight, zd-flow;
+@import "tailwindcss/preflight" layer(zd-preflight);
+@import "tailwindcss/utilities";
+@import "@takazudo/zudo-doc/theme.css";
+@import "./consumer.css";
+@import "@takazudo/zudo-doc/safelist.css";
+@import "@takazudo/zudo-doc/content.css";
+@import "@takazudo/zudo-doc/page-loading.css";
+@import "@takazudo/zudo-doc/features.css";
+```
+
+What you get with this entry:
+
+| Surface | Result |
+| --- | --- |
+| `--color-acme-bg`, `--color-acme-fg` | Survive the reset because they are declared after it |
+| zudo-doc's bare aliases | Stay intact; `acme` defines no reserved names |
+| `bg-zd-accent` | Available to `acme` components when the class is found by your Tailwind scan |
+| Tailwind's default palette | Absent; the entry uses only the split imports |
+
+Keep the two spellings distinct: the raw `--zd-*` tier is **prefix-first**, outside `@theme`, and injected by `ColorSchemeProvider`; the semantic `--color-zd-*` tier is **category-first**, inside `@theme`. Never insert `color-` after the raw `--zd-` prefix: that third spelling connects to neither tier. Check the built CSS as well as the source to confirm that the utilities you use were emitted and reference the intended tokens.
+
+Moving the package chrome to the namespaced tier is explicitly outside this contract. Package and showcase code keep using the bare tier; a host design system that also defines the bare names remains unsupported, including with `theme-no-reset.css`.
+
 ## Usage Rules
 
 <Warning title="Tailwind's default theme is disabled">
 
 The default Tailwind theme is not imported. Project tokens come from `@takazudo/zudo-doc/theme.css`, then the project's `@theme` override block. A token that is not defined produces unstyled markup.
+
+When another design system shares the entry, follow the import order and reserved-name rules in [Coexisting with another `@theme`](#coexisting-with-another-theme).
 
 </Warning>
 
