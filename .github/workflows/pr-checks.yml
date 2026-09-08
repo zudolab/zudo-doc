@@ -923,7 +923,11 @@ jobs:
   # filter stays pending forever and blocks merges (zudolab/zudo-doc#4032).
   #
   # Three lanes, decided by the "Determine audit lane" step:
-  #   full  — a change to shared/chrome CSS, header/**, sidebar-tree-island/**,
+  #   full  — a change to shared/chrome CSS, any package-owned chrome source the
+  #           inventory selectors or the measured tokens depend on (header/**,
+  #           sidebar*/**, toc/**, breadcrumb/**, doc-pager/**, footer/**,
+  #           chrome/**, content-admonition/**, code-syntax/**, theme/**,
+  #           config/** — component-tokens.ts owns a[data-nav-active]),
   #           the audit machinery itself, the two audited pages' content,
   #           showcase styles/settings, package manifests/lockfile, or this
   #           topic's own workflow files: audits the FULL matrix (~14 min for
@@ -941,7 +945,12 @@ jobs:
     name: Theme A11y Audit
     needs: [build-site]
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # 30, not 20: the full lane's own estimate is ~14 min for 124 states, and
+    # checkout (`fetch-depth: 0`) + `pnpm install` (which runs both workspace
+    # packages' `prepare` builds) + the artifact download sit on top of it. The
+    # nightly job budgets 30 min for the same audit; a tighter budget here would
+    # turn a REQUIRED check into a timing flake.
+    timeout-minutes: 30
     container:
       # renovate: datasource=docker depName=mcr.microsoft.com/playwright versioning=docker
       image: mcr.microsoft.com/playwright:v1.58.2-noble
@@ -976,6 +985,22 @@ jobs:
             case "$file" in
               packages/zudo-doc/src/header/*) return 0 ;;
               packages/zudo-doc/src/sidebar-tree-island/*) return 0 ;;
+              # Every other package-owned source the audit's inventory selectors
+              # or its measured tokens depend on. `config/component-tokens.ts`
+              # in particular owns `a[data-nav-active]` and the nav-active
+              # indicator colors — i.e. the exact contrast this job measures —
+              # and would otherwise land in the `skip` lane and report green.
+              packages/zudo-doc/src/config/*) return 0 ;;
+              packages/zudo-doc/src/chrome/*) return 0 ;;
+              packages/zudo-doc/src/toc/*) return 0 ;;
+              packages/zudo-doc/src/breadcrumb/*) return 0 ;;
+              packages/zudo-doc/src/doc-pager/*) return 0 ;;
+              packages/zudo-doc/src/footer/*) return 0 ;;
+              packages/zudo-doc/src/sidebar/*) return 0 ;;
+              packages/zudo-doc/src/sidebar-tree/*) return 0 ;;
+              packages/zudo-doc/src/content-admonition/*) return 0 ;;
+              packages/zudo-doc/src/code-syntax/*) return 0 ;;
+              packages/zudo-doc/src/theme/*) return 0 ;;
               scripts/theme-a11y-*) return 0 ;;
               src/content/docs/getting-started/*) return 0 ;;
               src/content/docs/components/admonitions.mdx) return 0 ;;

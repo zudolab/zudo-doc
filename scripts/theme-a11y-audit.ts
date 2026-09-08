@@ -386,7 +386,14 @@ async function collectHoverSamples(page: Page): Promise<RawSample[]> {
   const samples: RawSample[] = [];
   for (const item of INVENTORY) {
     if (!item.hover) continue;
-    const locator = page.locator(item.selector).first();
+    // `.filter({ visible: true })` before `.first()`, not after: the static
+    // pass counts only VISIBLE matches, so picking the first DOM match here
+    // could aim the pointer at a hidden one (a collapsed sidebar branch, an
+    // overflow-hidden nav item) — `hover()` would then time out and the group
+    // would report NO hover sample even though a visible element exists. With
+    // `requireHover` that is a gating coverage error, so the two passes must
+    // agree on what counts as present.
+    const locator = page.locator(item.selector).filter({ visible: true }).first();
     try {
       if ((await locator.count()) === 0) continue;
       await locator.hover({ timeout: 5_000 });
@@ -692,16 +699,17 @@ async function main(): Promise<void> {
   // gating on it would make partial runs unusable.
   const staleEntries = opts.pagesNarrowed ? [] : detectStaleAllowlistEntries(staleScope, consumedKeys);
 
-  const unaudited = [
-    ...describeUnauditedScenarios({
-      allPacks,
-      auditedPacks: packs,
-      allModes: [...ALL_MODES],
-      auditedModes: opts.modes,
-      auditedPages: opts.pages,
-    }),
-    ...new Set(coverage.flatMap((c) => c.notes)),
-  ];
+  // `describeUnauditedScenarios` already names every undeclared page ONCE.
+  // The per-scenario `notes` say the same thing per (pack × mode), so merging
+  // them here would repeat one fact 62 times in the summary and the report;
+  // they stay attached to their own state and are printed under it instead.
+  const unaudited = describeUnauditedScenarios({
+    allPacks,
+    auditedPacks: packs,
+    allModes: [...ALL_MODES],
+    auditedModes: opts.modes,
+    auditedPages: opts.pages,
+  });
   if (opts.pagesNarrowed && staleScope.length > 0) {
     unaudited.push(
       `allowlist staleness NOT checked (${staleScope.length} in-scope entr(y/ies)) — page-narrowed run`,

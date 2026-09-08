@@ -16,8 +16,16 @@
 // parsing. Exits 2 on a missing/unreadable/unparsable file.
 
 import { readFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 
 const MAX_ROWS = 100;
+/** Per-message cap. A Playwright render error carries a multi-KB stack. */
+const MAX_MESSAGE_CHARS = 400;
+/** Whole-section cap. A GitHub issue body is hard-limited to 65536 chars, and
+ *  `gh issue create` fails with a 422 (filing NO issue at all) if it is
+ *  exceeded — worse than a truncated body. Leave headroom for the caller's
+ *  own heading + run URL. */
+const MAX_BODY_CHARS = 50_000;
 
 function isAuditReport(report) {
   return (
@@ -40,6 +48,11 @@ function resultPage(report, result) {
   if (typeof report.page === "string") return report.page;
   if (Array.isArray(report.pages)) return report.pages.join(", ");
   return "(unspecified page)";
+}
+
+function truncate(value, max) {
+  const text = String(value ?? "");
+  return text.length > max ? `${text.slice(0, max)}… (truncated)` : text;
 }
 
 function formatNumber(value, digits) {
@@ -95,7 +108,7 @@ export function formatAuditReportBody(report) {
     renderTruncated(
       lines,
       stateErrors,
-      (e) => `- **${e.pack}/${e.mode}** \`${e.page}\` — ${e.message}`,
+      (e) => `- **${e.pack}/${e.mode}** \`${e.page}\` — ${truncate(e.message, MAX_MESSAGE_CHARS)}`,
       "error(s)",
     );
     lines.push("");
@@ -106,7 +119,7 @@ export function formatAuditReportBody(report) {
     renderTruncated(
       lines,
       stylesheetErrors,
-      (e) => `- **${e.pack}/${e.mode}** \`${e.page}\` — ${e.message}`,
+      (e) => `- **${e.pack}/${e.mode}** \`${e.page}\` — ${truncate(e.message, MAX_MESSAGE_CHARS)}`,
       "error(s)",
     );
     lines.push("");
@@ -116,7 +129,9 @@ export function formatAuditReportBody(report) {
     lines.push("_Report parsed but no FAIL/coverage/state/stylesheet errors were found — check the run URL._", "");
   }
 
-  return lines.join("\n");
+  const body = lines.join("\n");
+  if (body.length <= MAX_BODY_CHARS) return body;
+  return `${body.slice(0, MAX_BODY_CHARS)}\n\n_…report truncated to fit GitHub's issue-body limit — see the run's uploaded report artifact._`;
 }
 
 function main() {
@@ -147,6 +162,6 @@ function main() {
 }
 
 // Only run as a CLI when invoked directly — importable for tests.
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main();
 }
