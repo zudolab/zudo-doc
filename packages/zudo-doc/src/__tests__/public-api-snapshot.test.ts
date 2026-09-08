@@ -264,6 +264,7 @@ describe("Settings public field set snapshot", () => {
         "minifyHtml",
         "docsDir",
         "entryDocSlug",
+        "dateFormat",
         "defaultLocale",
         "locales",
         "mermaid",
