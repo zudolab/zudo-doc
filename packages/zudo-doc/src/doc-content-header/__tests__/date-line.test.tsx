@@ -18,8 +18,9 @@ function makeEntry(data: Record<string, unknown> = {}): DocPageEntry {
   } as unknown as DocPageEntry;
 }
 
-function makeContext(): ChromeContext {
+function makeContext(settings: Record<string, unknown> = {}): ChromeContext {
   return makeFakeChromeContext({
+    settings,
     overrides: {
       t: (key, locale) => {
         if (key !== "doc.updated") return key;
@@ -29,8 +30,12 @@ function makeContext(): ChromeContext {
   });
 }
 
-function renderHeader(data: Record<string, unknown>, locale = "en"): string {
-  const DocContentHeader = createDocContentHeader(makeContext());
+function renderHeader(
+  data: Record<string, unknown>,
+  locale = "en",
+  settings: Record<string, unknown> = {},
+): string {
+  const DocContentHeader = createDocContentHeader(makeContext(settings));
   return render(
     <DocContentHeader entry={makeEntry(data)} slug="test-page" locale={locale} />,
   );
@@ -71,5 +76,25 @@ describe("createDocContentHeader — authored date line", () => {
     );
 
     expect(html).toContain("2026年8月12日 · 更新 2026年8月15日");
+  });
+
+  it("applies a configured non-default full pattern to both authored dates", () => {
+    const html = renderHeader(
+      { date: "2026-08-12", updated: "2026-08-15" },
+      "en",
+      { dateFormat: "YYYY/MM/DD" },
+    );
+
+    expect(html).toContain("2026/08/12 · Updated 2026/08/15");
+  });
+
+  it("applies a per-locale full override only for that locale", () => {
+    const settings = { dateFormat: { locales: { ja: { full: "YYYY年MM月DD日" } } } };
+
+    const ja = renderHeader({ date: "2026-08-12" }, "ja", settings);
+    expect(ja).toContain("2026年08月12日");
+
+    const en = renderHeader({ date: "2026-08-12" }, "en", settings);
+    expect(en).toContain("Aug 12, 2026");
   });
 });

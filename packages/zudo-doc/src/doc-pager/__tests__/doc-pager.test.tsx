@@ -58,4 +58,20 @@ describe("createDocPager — data-doc-pager hook", () => {
 
     expect(html).not.toContain('<p class="text-caption text-muted">');
   });
+
+  it("applies a configured non-default full pattern to both neighbour dates", () => {
+    const ctx = makeFakeChromeContext({ settings: { dateFormat: "YYYY/MM/DD" } });
+    const DocPager = createDocPager(ctx);
+    const html = render(
+      <DocPager
+        prev={{ href: "/docs/a", label: "A", date: "2026-08-12" }}
+        next={{ href: "/docs/b", label: "B", date: "2026-08-15" }}
+        locale="en"
+      />,
+    );
+
+    expect(html).toContain("2026/08/12");
+    expect(html).toContain("2026/08/15");
+    expect(html).not.toContain("Aug 12, 2026");
+  });
 });
