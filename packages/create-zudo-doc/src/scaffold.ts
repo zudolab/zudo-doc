@@ -920,9 +920,22 @@ function generatePackageJson(
     // four shipped wasm binaries are byte-size identical to 2.15.0 (rebuild
     // noise only), and no public API, export, config default, or engine
     // requirement moves, so a fresh scaffold needs no migration.
-    "@takazudo/zfb": "2.15.1",
-    "@takazudo/zfb-runtime": "2.15.1",
-    "@takazudo/zfb-md-wasm": "2.15.1",
+    // 2.16.0: one upstream bug fix, plus a documentation-only md-wasm change.
+    // zfb's esbuild version-gate spawn (`ensure_binary_verified`) now retries on
+    // `ETXTBSY` through zfb-build's existing retry loop instead of a bare
+    // `.output()`, so a build no longer dies with `Text file busy (os error 26)`
+    // on the first exec of a binary a packaged zfb has only just written to a
+    // tempdir. The fix ships in the five platform binary packages, which roll to
+    // 2.16.0 with the wrapper. zfb-runtime and zfb-adapter-cloudflare have no
+    // package-specific change; md-wasm changes only its README (a digest
+    // disclaimer beside the shipped-size table), keeps every artifact at its
+    // 2.15.1 byte size, and moves all four wasm SHA-256 digests as every release
+    // does — pin by semver, as here, and there is nothing to re-pin. No public
+    // API, export, config default, or engine requirement moves, so a fresh
+    // scaffold needs no migration.
+    "@takazudo/zfb": "2.16.0",
+    "@takazudo/zfb-runtime": "2.16.0",
+    "@takazudo/zfb-md-wasm": "2.16.0",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
@@ -1033,7 +1046,7 @@ function generatePackageJson(
     // `@takazudo/zdtp/styles.css` (see features/design-token-panel.ts). Both are
     // no-ops with the feature off, so an OFF project must not carry the dep
     // (#4009 / #4018 — it was unconditional until then, see the `deps` block).
-    deps["@takazudo/zdtp"] = "0.5.1";
+    deps["@takazudo/zdtp"] = "0.5.2";
   }
 
   if (

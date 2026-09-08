@@ -114,11 +114,11 @@
     }
   },
   "dependencies": {
-    "@takazudo/zdtp": "0.5.1",
-    "@takazudo/zfb": "2.15.1",
-    "@takazudo/zfb-adapter-cloudflare": "2.15.1",
-    "@takazudo/zfb-md-wasm": "2.15.1",
-    "@takazudo/zfb-runtime": "2.15.1",
+    "@takazudo/zdtp": "0.5.2",
+    "@takazudo/zfb": "2.16.0",
+    "@takazudo/zfb-adapter-cloudflare": "2.16.0",
+    "@takazudo/zfb-md-wasm": "2.16.0",
+    "@takazudo/zfb-runtime": "2.16.0",
     "@takazudo/zudo-doc": "workspace:*",
     "diff": "^8.0.3",
     "katex": "^0.16.38",
