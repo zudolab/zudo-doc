@@ -420,8 +420,11 @@ html[data-theme-pack="washi"] .zd-content th {
 
 /* sidebar: indigo hover ink. The active link's background is already
    the indigo seal (--zdc-nav-active-indicator-color) with bg-colored
-   text — exclude it so hover never paints accent-on-accent. */
-html[data-theme-pack="washi"] #desktop-sidebar a:not([data-nav-active]):hover {
+   text — exclude it so hover never paints accent-on-accent.
+   :not([data-nav-active]) was incomplete: an active root/category node
+   carries aria-current="page" without data-nav-active, so hover still
+   repainted it. Guard aria-current="page" instead. */
+html[data-theme-pack="washi"] #desktop-sidebar a:not([aria-current="page"]):hover {
   color: var(--zd-accent);
 }
 

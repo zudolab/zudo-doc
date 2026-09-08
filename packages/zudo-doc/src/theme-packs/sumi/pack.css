@@ -265,7 +265,13 @@ html[data-theme-pack="sumi"] [data-header-logo]::after {
   background: light-dark(#c2242f, #d9333f);
   margin-left: 0.45em;
 }
-html[data-theme-pack="sumi"] [data-nav-item]:hover {
+/* Exclude the current page: it carries the base `bg-fg text-bg` inverted
+   fill — recoloring its text to the accent would sit fg-on-fg. Two DOM
+   shapes exist (header.tsx): a plain `a[data-nav-item]`, and a dropdown
+   whose data-nav-item sits on the wrapper div while aria-current + the
+   colors live on its child anchor — target the anchor in both. */
+html[data-theme-pack="sumi"] a[data-nav-item]:not([aria-current="page"]):hover,
+html[data-theme-pack="sumi"] [data-nav-item-dropdown] > a:not([aria-current="page"]):hover {
   color: var(--zd-accent);
   text-decoration-thickness: 2px;
   text-underline-offset: 3px;

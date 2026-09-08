@@ -165,7 +165,14 @@ html[data-theme-pack="tidepool"] [data-header-logo]::before {
 html[data-theme-pack="tidepool"] [data-nav-item] {
   border-radius: 6px;
 }
-html[data-theme-pack="tidepool"] [data-nav-item]:hover {
+/* Exclude the current page: it carries the base `bg-fg text-bg` inverted
+   fill — the hover background would replace that fill while the inverted
+   ink survives, sitting bg-on-bg. Two DOM shapes exist (header.tsx): a
+   plain `a[data-nav-item]`, and a dropdown whose data-nav-item sits on the
+   wrapper div while aria-current + the colors live on its child anchor —
+   target the anchor in both. */
+html[data-theme-pack="tidepool"] a[data-nav-item]:not([aria-current="page"]):hover,
+html[data-theme-pack="tidepool"] [data-nav-item-dropdown] > a:not([aria-current="page"]):hover {
   text-decoration: none;
   background: color-mix(in srgb, var(--zd-muted) 10%, transparent);
 }

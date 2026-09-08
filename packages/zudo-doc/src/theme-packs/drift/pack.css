@@ -288,7 +288,11 @@ html[data-theme-pack="drift"] #desktop-sidebar a {
 html[data-theme-pack="drift"] #desktop-sidebar a[aria-current="page"]:not([data-nav-active]) {
   border-radius: 0;
 }
-html[data-theme-pack="drift"] #desktop-sidebar a:hover {
+/* Exclude the active item: aria-current="page" carries the base
+   `bg-fg text-bg` inverted fill (or the glow pill below); an
+   unconditional hover background would replace that fill while the
+   inverted ink survives, sitting bg-on-bg. */
+html[data-theme-pack="drift"] #desktop-sidebar a:not([aria-current="page"]):hover {
   text-decoration: none;
   background: color-mix(in oklch, var(--zd-accent) 10%, transparent);
 }
