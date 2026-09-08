@@ -14,7 +14,7 @@ import { SidebarTree } from "../sidebar-tree-island/index.js";
 import type { SidebarNavNode, SidebarRootMenuItem } from "../sidebar/types.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
-import { deriveNavDataPrep } from "../chrome/derive.js";
+import { deriveDateFormats, deriveNavDataPrep } from "../chrome/derive.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 import type { LocaleLink } from "../url-helpers/index.js";
 
@@ -53,6 +53,7 @@ export function createSidebarWithDefaults<S extends Settings = Settings>(
   const t = ctx.t;
   const { buildRootMenuItems, buildLocaleLinksForNav, buildSidebarNodes, getThemeDefaultMode } =
     deriveNavDataPrep(ctx);
+  const dateFormatsFor = deriveDateFormats(ctx);
 
   /**
    * Default-bearing host wrapper that performs sidebar data prep, then wraps
@@ -98,6 +99,7 @@ export function createSidebarWithDefaults<S extends Settings = Settings>(
           backToMenuLabel={backToMenuLabel}
           localeLinks={localeLinks}
           themeDefaultMode={getThemeDefaultMode()}
+          dateFormats={dateFormatsFor(lang)}
         />
       ),
     }) as unknown as JSX.Element;

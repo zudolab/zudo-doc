@@ -7,6 +7,7 @@ import { IndexList } from "./note-tray-index-parts/index-list.js";
 import { Timeline } from "./note-tray-index-parts/timeline.js";
 import type { TagLink, TagNavLabels } from "./types.js";
 import type { NoteTrayOrder } from "../note-tray-model/index.js";
+import type { ResolvedDateFormats } from "../settings.js";
 
 export type NoteTrayIndexStyle = "index" | "cards" | "timeline";
 
@@ -32,6 +33,14 @@ export interface NoteTrayIndexProps {
   dated: boolean;
   order?: NoteTrayOrder;
   tagLabels?: TagNavLabels;
+  /**
+   * Per-role date patterns already resolved for `locale` by the SSR wrapper
+   * (`note-tray-index`). `NoteTrayIndex` spreads its props into the style
+   * parts, so `IndexList` / `CardList` / `Timeline` receive this unchanged.
+   * Optional and absent-safe — omitted means every role behaves as `"locale"`
+   * (#4075).
+   */
+  dateFormats?: ResolvedDateFormats;
 }
 
 export function NoteTrayIndex(props: NoteTrayIndexProps): JSX.Element | null {

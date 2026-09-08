@@ -18,10 +18,27 @@ import { SmartBreak } from "../smart-break/index.js";
 import { History, Close, ArrowLeft } from "../icons/index.js";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
 import { useModalDialog } from "../use-modal-dialog/index.js";
+import { formatDate } from "../format-date/index.js";
+import type { ResolvedDateFormats } from "../settings.js";
 
 interface DocHistoryProps {
   slug: string;
   locale?: string;
+  /**
+   * Display locale for revision dates, e.g. "en", "ja". Distinct from
+   * `locale` above, which is a storage-path parameter used only to build
+   * the fetch URL (see doc-history-area's `effectiveHistoryLocale` /
+   * "omitted for the default locale" comment — do not conflate the two).
+   * Populated from the page locale by doc-history-area (#4073).
+   */
+  displayLocale?: string;
+  /**
+   * Per-role date patterns already resolved for `displayLocale` by
+   * `doc-history-area`. Serialized into the island's `data-props` — this
+   * island has no ambient access to settings. Optional and absent-safe:
+   * omitted means every role behaves as `"locale"` (#4075).
+   */
+  dateFormats?: ResolvedDateFormats;
   basePath?: string;
 }
 
@@ -294,9 +311,13 @@ function DiffViewer({
 function RevisionList({
   entries,
   onSelectDiff,
+  displayLocale,
+  dateFormats,
 }: {
   entries: DocHistoryEntry[];
   onSelectDiff: (selection: DiffSelection) => void;
+  displayLocale?: string;
+  dateFormats?: ResolvedDateFormats;
 }) {
   const [selectedA, setSelectedA] = useState<number>(1); // older (default: second entry)
   const [selectedB, setSelectedB] = useState<number>(0); // newer (default: first entry)
@@ -357,7 +378,17 @@ function RevisionList({
         {entries.map((entry, idx) => {
           const isA = selectedA === idx;
           const isB = selectedB === idx;
-          const dateStr = formatDate(entry.date);
+          // Renders in UTC (via the shared formatter) rather than the
+          // visitor's local time zone — a deliberate correction over the
+          // previous ambient-browser-locale-dependent formatting, not a
+          // regression. A visitor at a negative UTC offset may see the date
+          // shift by one day versus the prior behavior; the wave-6
+          // default-parity gate exempts doc-history on this basis (#4073).
+          const dateStr = formatDate(
+            entry.date,
+            displayLocale ?? "en",
+            dateFormats?.full,
+          );
 
           return (
             <div
@@ -422,24 +453,16 @@ function RevisionList({
 }
 
 /* ────────────────────────────────────────────
- * Date formatter
- * ──────────────────────────────────────────── */
-
-function formatDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
-/* ────────────────────────────────────────────
  * Main DocHistory component
  * ──────────────────────────────────────────── */
 
-export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
+export function DocHistory({
+  slug,
+  locale,
+  basePath = "/",
+  displayLocale,
+  dateFormats,
+}: DocHistoryProps) {
   const [view, setView] = useState<PanelView>("closed");
   const [data, setData] = useState<DocHistoryData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -620,6 +643,8 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
                 <RevisionList
                   entries={data.entries}
                   onSelectDiff={handleSelectDiff}
+                  displayLocale={displayLocale}
+                  dateFormats={dateFormats}
                 />
               </div>
 

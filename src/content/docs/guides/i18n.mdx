@@ -196,6 +196,44 @@ export default defineConfig(
 
 The primary locale is served at `/docs/...`; each additional locale uses its code, such as `/ja/docs/...` or `/de/docs/...`. This comes from `defaultLocale` plus the route split in `pages/` (`pages/docs/[[...slug]].tsx` and `pages/[locale]/docs/[[...slug]].tsx`); there is no `prefixDefaultLocale` option.
 
+## Date Formats Per Locale
+
+`dateFormat` accepts per-locale overrides, and on a multilingual site that is normally the form you want: `Aug 22, 2026` and `2026年8月22日` are both correct for their locale, and no single pattern serves both.
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    defaultLocale: "en",
+    locales: {
+      ja: { label: "JA", dir: "src/content/docs-ja" },
+      de: { label: "DE", dir: "src/content/docs-de" },
+    },
+    dateFormat: {
+      full: "MMM D, YYYY",
+      locales: {
+        ja: { full: "YYYY年M月D日", yearMonth: "YYYY年M月" },
+      },
+    },
+  }),
+);
+```
+
+Each role resolves as `locales[locale][role]` → the top-level `[role]` → `"locale"`. A locale with no entry in `dateFormat.locales` simply uses the top-level roles. See [`dateFormat`](./configuration.mdx#content-and-i18n-dateformat) for the five roles, the token vocabulary, and the rest of the rules.
+
+<Warning title="Month names are localized for three locales only">
+
+Month **names** — the `MMM` and `MMMM` tokens, and the built-in `"locale"` rendering — resolve through a fixed map: `en` → `en-US`, `ja` → `ja-JP`, `de` → `de-DE`. Every other locale code falls back to `en-US`.
+
+So for a locale outside that map, say `fr`:
+
+- A numeric pattern such as `"DD/MM/YYYY"` renders correctly — digits do not depend on the locale.
+- A pattern containing `MMM` or `MMMM` still renders **English** month names.
+- Leaving a role at `"locale"` renders that role in the `en-US` shape.
+
+Give such a locale a numeric pattern. A month-name pattern will not produce its language.
+
+</Warning>
+
 ## Generated Pages and Default-Locale Bodies
 
 Claude/Codex resource generators emit their overview and category-index pages into every configured locale directory. Asset viewer routes likewise exist at `/{locale}/${assetViewerRoutePrefix}/...`. Their title, description, navigation, breadcrumb, header, actions, and other shell labels resolve for the requested locale. The language switcher therefore links equivalent generated routes instead of collapsing to the default locale.

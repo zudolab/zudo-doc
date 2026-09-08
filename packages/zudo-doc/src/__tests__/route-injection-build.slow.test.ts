@@ -942,19 +942,47 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // shipped DOM order (the script is inlined inside <header>, so the content
   // band does not exist at its top-level run — hence the readyState guard and
   // the DOMContentLoaded re-init).
+  // 2026-09-09 re-baseline (zudolab/zudo-doc#4071, epic "Configurable date
+  // format (dateFormat)"): all three pages move because every dated island's
+  // serialized `data-props` gains exactly one field. The epic resolves the new
+  // `dateFormat` setting once at SSR (`deriveDateFormats`) and passes the
+  // already-resolved roles across zfb's `<Island>` boundary, so `SidebarToggle`
+  // (all three pages) and `SidebarTree` (the two docs pages) each gain
+  //   "dateFormats":{"full":"locale","monthDay":"locale","year":"locale",
+  //                  "yearMonth":"locale","numericMonthDay":"locale"}
+  //
+  // Scope proof — the fixture was built at `main` (8b244489e) and at the epic
+  // head, and every island's `data-props` was JSON-parsed and deep-diffed
+  // rather than compared as text. Result: 5 deltas across the three pages, ALL
+  // of them the `dateFormats` key being ADDED at the default `"locale"`. No
+  // existing prop value changed and none was removed; `MobileToc` and `Toc` are
+  // byte-identical. The only other raw diff is the islands bundle filename
+  // (`islands-4ba6e10e.js` -> `islands-62bafea4.js`), which necessarily moves
+  // when island source changes and is excluded by asset-filename normalization.
+  //
+  // No rendered date text and no `<time>` attribute moved anywhere: the epic's
+  // default is `dateFormat: "locale"`, which routes to the untouched `Intl`
+  // path. Corroborated at showcase scale by the epic's own default-parity gate
+  // (#4081) — 673 pages built at both commits, 0 `<time>` diffs, and no date-
+  // text diff outside the guide pages the epic itself edited.
+  //
+  // This gate ran (rather than skipping) because `src/doc-content-header/
+  // index.tsx` is a listed CAN-MOVE-HASHES entry and the epic edits it — though
+  // in the event that header's own markup is unchanged and the movement comes
+  // entirely from the island props above.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"922220f8c51ec19407c70534d5e3220cbb7bfb4b72d2501e0c753f0bc3080513"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"1584d9769e1195eedbac94d95e81495737c5c89ab1d8ad7c2fbc298da62dd418"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"0f3915671abba164fb8112a356064cdae489a7ef91a9256c05eef04efb3dceef"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"23a1362cece1465c37b63ac2eb3241eb5197985d489ba7151fb33140ab593c66"`);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"2b5ef72a59351e19b4e8177a7f2cbcb3a47f08e1747687bc357611f9e721763c"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"6bf28b468839b15a10332112b92c1c7b4b69c92815a4ac77e52bf7b24e52a5c3"`);
   });
 });
 

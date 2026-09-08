@@ -22,7 +22,7 @@
 
 import type { JSX, VNode, ComponentChildren } from "preact";
 import type { ChromeContext, FactoryComponent } from "../factory-context/index.js";
-import type { Settings } from "../settings.js";
+import type { ResolvedDateFormats, Settings } from "../settings.js";
 import type { CategoryMeta } from "../sidebar-tree/types.js";
 
 import { createComposeMetaTitle } from "../compose-meta-title/index.js";
@@ -100,6 +100,10 @@ import {
   getThemeDefaultMode as getThemeDefaultModeBase,
 } from "../nav-data-prep/index.js";
 import { buildSidebarForSection } from "../sidebar-utils/index.js";
+// Relative, not a package subpath: `resolveDateFormats` is deliberately
+// internal (absent from `package.json` exports) — the resolved roles are the
+// public surface, the resolver is not.
+import { resolveDateFormats } from "../date-format-resolve/index.js";
 
 // ---------------------------------------------------------------------------
 // Package-default host-only bindings (the stub defaults — moved verbatim from
@@ -152,7 +156,15 @@ export const DEFAULT_SCHEME: ColorScheme = {
 
 /** Package no-op DocHistory island stub — renders an empty fragment (the
  *  `DocHistoryComponent` contract requires a VNode, not null). */
-function DocHistoryStub(_props: { slug: string; locale?: string; basePath?: string }): VNode {
+function DocHistoryStub(
+  _props: {
+    slug: string;
+    locale?: string;
+    basePath?: string;
+    displayLocale?: string;
+    dateFormats?: ResolvedDateFormats;
+  },
+): VNode {
   return (<></>) as VNode;
 }
 
@@ -164,6 +176,43 @@ function IslandPassthrough(props: {
   children?: ComponentChildren;
 }): ComponentChildren {
   return props.children ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// dateFormat (settings -> resolved roles)
+// ---------------------------------------------------------------------------
+
+/**
+ * Derive the single settings -> resolved-roles seam for the `dateFormat`
+ * setting (#4075).
+ *
+ * `dateFormat` is per-role AND per-locale, so it can only collapse to a
+ * concrete set of patterns once the render locale is known — hence a
+ * `(locale) => ResolvedDateFormats` lookup rather than a plain value. Every
+ * chrome surface that renders a date resolves through THIS helper so the
+ * layering has exactly one implementation.
+ *
+ * It matters most for islands: `virtual:zudo-doc-route-context` is SSR-only,
+ * so an island has no ambient access to settings. The only channel is zfb's
+ * `<Island>` boundary, which JSON-stringifies the wrapper's props into
+ * `data-props`. Resolving here and passing the RESULT keeps the browser free
+ * of a second copy of the precedence rules.
+ *
+ * Results are memoized per locale: a page renders several dated surfaces and
+ * the roles are locale-invariant within one render.
+ */
+export function deriveDateFormats(
+  ctx: ChromeContext,
+): (locale: string) => ResolvedDateFormats {
+  const setting = ctx.settings.dateFormat;
+  const cache = new Map<string, ResolvedDateFormats>();
+  return (locale: string): ResolvedDateFormats => {
+    const cached = cache.get(locale);
+    if (cached) return cached;
+    const resolved = resolveDateFormats(setting, locale);
+    cache.set(locale, resolved);
+    return resolved;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -623,6 +672,7 @@ export function deriveMdxComponents(ctx: ChromeContext) {
       getCategoryOrder: ctx.getCategoryOrder,
       versionedDocsUrl: ctx.versionedDocsUrl,
       categoryIgnore: ctx.settings.siteTreeNavIgnore,
+      dateFormat: ctx.settings.dateFormat,
     }) as unknown as FactoryComponent);
 
   const NoteTrayIndexWrapper = createNoteTrayIndexWrapper({
@@ -644,6 +694,7 @@ export function deriveMdxComponents(ctx: ChromeContext) {
       ),
     t: (key, locale) => ctx.t(key, locale),
     versionedDocsUrl: ctx.versionedDocsUrl,
+    dateFormat: ctx.settings.dateFormat,
   });
 
   const assetComponentContext = {

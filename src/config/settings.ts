@@ -15,6 +15,7 @@ export type {
   TagVocabularyEntry,
   MetaTagsConfig,
   FaviconConfig,
+  DateFormatSetting,
 } from "@takazudo/zudo-doc/settings";
 import type {
   HeaderNavItem,
@@ -31,6 +32,7 @@ import type {
   TagGovernanceMode,
   MetaTagsConfig,
   FaviconConfig,
+  DateFormatSetting,
   Settings,
 } from "@takazudo/zudo-doc/settings";
 
@@ -59,6 +61,9 @@ export const settings = {
   minifyHtml: true as boolean,
   docsDir: "src/content/docs",
   entryDocSlug: "getting-started",
+  // Explicit at the package default — see /docs/guides/configuration for the
+  // token-pattern and per-role/per-locale DateFormatConfig shape.
+  dateFormat: "locale" as DateFormatSetting,
   defaultLocale: "en" as const,
   locales: {
     ja: { label: "JA", dir: "src/content/docs-ja" },

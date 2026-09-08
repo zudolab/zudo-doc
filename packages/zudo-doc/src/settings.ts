@@ -9,6 +9,8 @@
 // Generated projects will import `Settings` from here and use it to
 // type-check their own `settings` object.
 
+import type { DateFormatPattern } from "./format-date/index.js";
+
 /**
  * Tag governance enforcement level.
  *
@@ -206,6 +208,32 @@ export interface HomeConfig {
 
 export type TagPlacement = "after-title" | "before-pager";
 
+/** Per-role date-format patterns. Each key independently opts into a pattern. */
+export interface DateFormatRoles {
+  full?: DateFormatPattern;
+  monthDay?: DateFormatPattern;
+  year?: DateFormatPattern;
+  yearMonth?: DateFormatPattern;
+  numericMonthDay?: DateFormatPattern;
+}
+
+export interface DateFormatConfig extends DateFormatRoles {
+  /** Per-locale overrides. Each locale's roles merge over the top-level roles. */
+  locales?: Record<string, DateFormatRoles>;
+}
+
+/** A bare pattern sets the `full` role only; a `DateFormatConfig` sets roles individually. */
+export type DateFormatSetting = DateFormatPattern | DateFormatConfig;
+
+/**
+ * Every role resolved to a concrete pattern for ONE locale — the shape the
+ * chrome threads into renderers and islands as the optional `dateFormats`
+ * prop. Produced by `resolveDateFormats` at SSR time; islands never see the
+ * raw `DateFormatSetting`, because the per-locale layering is not re-run in
+ * the browser (see `chrome/derive`'s `deriveDateFormats`).
+ */
+export type ResolvedDateFormats = Required<DateFormatRoles>;
+
 export interface VersionConfig {
   /** Version identifier, used in URL path (e.g., "1.0", "v1") */
   slug: string;
@@ -346,6 +374,14 @@ export interface Settings {
    * compiling unchanged; defaults to `"getting-started"` when omitted.
    */
   entryDocSlug?: string;
+  /**
+   * Date-format override — a bare pattern setting the `full` role only, or a
+   * `DateFormatConfig` setting roles (and per-locale overrides) individually.
+   * Optional (recently-added field) so existing complete `Settings` literals
+   * built outside `zudoDoc()` keep compiling unchanged; defaults to `"locale"`
+   * (today's `Intl` behaviour) when omitted.
+   */
+  dateFormat?: DateFormatSetting;
   defaultLocale: string;
   locales: Record<string, LocaleConfig>;
   mermaid: boolean;

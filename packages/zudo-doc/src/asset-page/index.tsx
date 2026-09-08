@@ -3,12 +3,13 @@
 
 import type { ComponentChildren, JSX, VNode } from "preact";
 import { BodyFootUtilArea } from "../body-foot-util/index.js";
-import { deriveBodyEndIslands } from "../chrome/derive.js";
+import { deriveBodyEndIslands, deriveDateFormats } from "../chrome/derive.js";
 import { deriveComposeMetaTitle } from "../chrome/derive.js";
 import { derivePrimaryChromeSlots } from "../chrome/primary-slots.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 import { DocLayoutWithDefaults } from "../doclayout/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
+import type { DateFormatPattern } from "../format-date/index.js";
 import { formatDate } from "../format-date/index.js";
 import { buildGitHubSourceUrl } from "../github-helpers/index.js";
 import { createHeadWithDefaults } from "../head-with-defaults/index.js";
@@ -64,7 +65,7 @@ export function AssetEyebrow({ asset, badge }: { asset: AssetRecord; badge: stri
   );
 }
 
-export function AssetHeader({ asset, locale, badge, updatedLabel, linesLabel }: { asset: AssetRecord; locale: string; badge: string; updatedLabel: string; linesLabel?: string }): VNode {
+export function AssetHeader({ asset, locale, badge, updatedLabel, linesLabel, fullPattern }: { asset: AssetRecord; locale: string; badge: string; updatedLabel: string; linesLabel?: string; fullPattern?: DateFormatPattern }): VNode {
   const facet = facetLabel(asset, linesLabel);
   return (
     <header>
@@ -74,7 +75,7 @@ export function AssetHeader({ asset, locale, badge, updatedLabel, linesLabel }: 
         {asset.dir && <span>{asset.dir}</span>}
         {facet && <span>{facet}</span>}
         <span>{formatAssetBytes(asset.bytes)}</span>
-        {asset.updatedDate && <span>{updatedLabel} {formatDate(asset.updatedDate, locale)}</span>}
+        {asset.updatedDate && <span>{updatedLabel} {formatDate(asset.updatedDate, locale, fullPattern)}</span>}
         {asset.author && <span>{asset.author}</span>}
       </div>
       {asset.description && <p class="mb-vsp-lg text-title text-muted" data-doc-description>{asset.description}</p>}
@@ -263,6 +264,7 @@ export function createAssetPageView<S extends Settings = Settings>(ctx: ChromeCo
   assertChromeContext(ctx, "createAssetPageView");
   const settings = ctx.settings;
   const t = ctx.t;
+  const dateFormatsFor = deriveDateFormats(ctx);
   const composeMetaTitle = deriveComposeMetaTitle(ctx);
   const HeadWithDefaults = createHeadWithDefaults(ctx);
   const { Header: HeaderWithDefaults, Footer: FooterWithDefaults, Breadcrumb: BreadcrumbWithDefaults } = derivePrimaryChromeSlots(ctx);
@@ -330,7 +332,7 @@ export function createAssetPageView<S extends Settings = Settings>(ctx: ChromeCo
       <DocLayoutWithDefaults title={composeMetaTitle(asset.name)} head={<>{railPrepaint}<HeadWithDefaults title={asset.name} description={asset.description} canonical={ctx.absoluteUrl(viewerUrl)} /></>} lang={locale} dataThemePack={dataThemePack} noindex={settings.noindex} hideSidebar hideToc sidebarOverride={false} contentWide breadcrumbOverride={<BreadcrumbWithDefaults items={breadcrumbItems} />} headerOverride={<HeaderWithDefaults lang={locale} currentPath={viewerUrl} hideSidebarToggle />} footerOverride={<FooterWithDefaults lang={locale} />} bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} forceImageEnlarge={asset.kind === "image" && asset.previewable && asset.sniffOk} />} enableClientRouter={settings.dynamicPageTransition}>
         <div class="zd-asset-page" data-zd-asset-page>
           {backLink && <p class="mb-vsp-xs text-caption"><a href={backLink.href} class="text-muted hover:text-accent focus-visible:text-accent hover:underline focus-visible:underline">← {t("asset.backTo", locale)} {backLink.title}</a></p>}
-          <AssetHeader asset={asset} locale={locale} badge={t("asset.badge", locale)} updatedLabel={t("doc.updated", locale)} linesLabel={linesLabel} />
+          <AssetHeader asset={asset} locale={locale} badge={t("asset.badge", locale)} updatedLabel={t("doc.updated", locale)} linesLabel={linesLabel} fullPattern={dateFormatsFor(locale).full} />
           <AssetActions rawUrl={rawUrl} downloadLabel={t("asset.download", locale)} openRawLabel={t("asset.openRaw", locale)} copyLabel={t("asset.copy", locale)} wrapLabel={t("asset.wrap", locale)} code={!isMedia && asset.previewable && asset.sniffOk} />
           {body}
           <AssetActions rawUrl={rawUrl} downloadLabel={t("asset.download", locale)} openRawLabel={t("asset.openRaw", locale)} copyLabel={t("asset.copy", locale)} wrapLabel={t("asset.wrap", locale)} bottom />

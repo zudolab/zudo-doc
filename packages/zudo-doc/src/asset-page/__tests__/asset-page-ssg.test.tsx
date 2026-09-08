@@ -361,6 +361,22 @@ describe("asset page SSG", () => {
     );
   });
 
+  it("applies a configured non-default full pattern to the updated date", () => {
+    const html = page(asset(), { dateFormat: "YYYY/MM/DD" });
+    expect(html).toContain("2026/08/30");
+    expect(html).not.toContain("Aug 30, 2026");
+  });
+
+  it("applies a per-locale full override only for that locale", () => {
+    const settings = { dateFormat: { locales: { ja: { full: "YYYY年MM月DD日" } } } };
+
+    const ja = page(asset(), settings, {}, "ja");
+    expect(ja).toContain("2026年08月30日");
+
+    const en = page(asset(), settings);
+    expect(en).toContain("Aug 30, 2026");
+  });
+
   it("localizes the toggle labels", () => {
     const html = page(asset(), {}, {
       "asset.detailsCollapse": "詳細を隠す",

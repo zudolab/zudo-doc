@@ -39,6 +39,7 @@ import type { DocPageNavNode } from "./doc-page-shell/index.js";
 import type { HeadingItem } from "./toc/index.js";
 import type { ChromeHostBindings } from "./factory-context/index.js";
 import type { HeaderRightComponentRegistry } from "./header/types.js";
+import type { ResolvedDateFormats } from "./settings.js";
 
 // ===========================================================================
 // Per-slot CALL-SIDE prop/arg contracts.
@@ -83,12 +84,16 @@ export interface BodyEndIslandsSlotProps {
  * Props the chrome passes to the `DocHistory` island slot — matches
  * `DocHistoryProps` (`doc-history/index.tsx`) / `DocHistoryComponent`
  * (`doc-history-area`), rendered as
- * `<DocHistory slug=… locale=… basePath=… />`.
+ * `<DocHistory slug=… locale=… basePath=… displayLocale=… dateFormats=… />`.
  */
 export interface DocHistorySlotProps {
   slug: string;
   locale?: string;
   basePath?: string;
+  /** Display locale for revision dates — NOT the storage-path `locale` (#4073). */
+  displayLocale?: string;
+  /** Per-role date patterns resolved for `displayLocale` at SSR (#4075). */
+  dateFormats?: ResolvedDateFormats;
 }
 
 /**

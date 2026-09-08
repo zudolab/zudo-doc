@@ -18,7 +18,7 @@ export function Timeline(props: NoteTrayIndexProps): JSX.Element {
       {groups.map((group) => (
         <section key={group.key}>
           <h2 class="mb-vsp-sm text-small font-medium text-fg">
-            {formatYearMonthLabel(group.key, props.locale)}
+            {formatYearMonthLabel(group.key, props.locale, props.dateFormats?.yearMonth)}
           </h2>
           <ol class="ml-hsp-md border-l border-muted [&_li]:mb-0">
             {group.items.map((item) => (
@@ -38,7 +38,9 @@ export function Timeline(props: NoteTrayIndexProps): JSX.Element {
                   class="absolute top-hsp-2xs -left-[calc(var(--spacing-icon-lg)/2)] grid size-icon-lg place-items-center rounded-full border border-muted bg-bg text-caption leading-none tabular-nums text-muted peer-hover:border-accent peer-hover:text-accent peer-focus-visible:border-accent peer-focus-visible:text-accent"
                 >
                   <span aria-hidden="true">{item.date ? (parseIsoDate(item.date)?.day ?? "") : ""}</span>
-                  <span class="sr-only">{item.date ? formatDate(item.date, props.locale) : ""}</span>
+                  <span class="sr-only">
+                    {item.date ? formatDate(item.date, props.locale, props.dateFormats?.full) : ""}
+                  </span>
                 </time>
                 {item.description && <p class="text-small text-muted">{item.description}</p>}
                 <ItemTags item={item} labels={props.tagLabels} />

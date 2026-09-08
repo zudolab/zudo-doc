@@ -19,6 +19,7 @@ import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
 import { toHistorySlug } from "../slug/index.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
+import { deriveDateFormats } from "../chrome/derive.js";
 import { formatDate } from "../format-date/index.js";
 
 /** Per-entry metadata shape from the doc-history manifest. */
@@ -70,6 +71,7 @@ export function createDocMetainfoArea<S extends Settings = Settings>(
     DocHistoryMetaEntry
   >;
   const t = ctx.t;
+  const dateFormatsFor = deriveDateFormats(ctx);
 
   function DocMetainfoArea({ slug, locale, isFallback }: DocMetainfoAreaProps): VNode | null {
     if (!settings.docMetainfo) return null;
@@ -104,8 +106,8 @@ export function createDocMetainfoArea<S extends Settings = Settings>(
 
     return (
       <DocMetainfo
-        createdAt={meta.createdDate ? formatDate(meta.createdDate, locale) : null}
-        updatedAt={meta.updatedDate ? formatDate(meta.updatedDate, locale) : null}
+        createdAt={meta.createdDate ? formatDate(meta.createdDate, locale, dateFormatsFor(locale).full) : null}
+        updatedAt={meta.updatedDate ? formatDate(meta.updatedDate, locale, dateFormatsFor(locale).full) : null}
         author={meta.author || null}
         createdLabel={t("doc.created", locale)}
         updatedLabel={t("doc.updated", locale)}

@@ -12,6 +12,7 @@ import { ChevronLeft, ChevronRight } from "../icons/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
+import { deriveDateFormats } from "../chrome/derive.js";
 import { formatDate } from "../format-date/index.js";
 
 // NavNode is a superset; we only need the fields the pager uses.
@@ -45,6 +46,7 @@ export function createDocPager<S extends Settings = Settings>(
 ): (props: DocPagerProps) => JSX.Element {
   assertChromeContext(ctx, "createDocPager");
   const t = ctx.t;
+  const dateFormatsFor = deriveDateFormats(ctx);
 
   /**
    * Prev/next pagination nav shared by all four doc-route page components.
@@ -70,7 +72,11 @@ export function createDocPager<S extends Settings = Settings>(
             <p class="text-small font-semibold underline group-hover:text-accent">
               {prev.label}
             </p>
-            {prev.date && <p class="text-caption text-muted">{formatDate(prev.date, locale)}</p>}
+            {prev.date && (
+              <p class="text-caption text-muted">
+                {formatDate(prev.date, locale, dateFormatsFor(locale).full)}
+              </p>
+            )}
           </a>
         ) : (
           <div />
@@ -87,7 +93,11 @@ export function createDocPager<S extends Settings = Settings>(
             <p class="text-small font-semibold underline group-hover:text-accent">
               {next.label}
             </p>
-            {next.date && <p class="text-caption text-muted">{formatDate(next.date, locale)}</p>}
+            {next.date && (
+              <p class="text-caption text-muted">
+                {formatDate(next.date, locale, dateFormatsFor(locale).full)}
+              </p>
+            )}
           </a>
         ) : (
           <div />

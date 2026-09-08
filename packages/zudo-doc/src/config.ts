@@ -92,6 +92,7 @@ import type {
   BodyFootUtilAreaConfig,
   HtmlPreviewConfig,
   FaviconConfig,
+  DateFormatSetting,
 } from "./settings.js";
 
 import { buildDocsSchema as defaultBuildDocsSchema } from "./docs-schema/index.js";
@@ -176,6 +177,7 @@ export const DEFAULT_SETTINGS: Settings = {
   minifyHtml: true,
   docsDir: "src/content/docs",
   entryDocSlug: "getting-started",
+  dateFormat: "locale",
   defaultLocale: "en",
   locales: {},
   mermaid: true,
@@ -343,6 +345,18 @@ export interface ZudoDocConfig {
    * @default "getting-started"
    */
   entryDocSlug?: string;
+  /**
+   * Date-display format. `"locale"` keeps today's `Intl`-based rendering; a
+   * token pattern string (e.g. `"YYYY-MM-DD"`) sets the `full` role only; a
+   * `DateFormatConfig` object sets roles (`full`/`monthDay`/`year`/
+   * `yearMonth`/`numericMonthDay`) — and per-locale overrides — individually.
+   * This is a top-level field, so a supplied object REPLACES the default
+   * wholesale (shallow merge, not deep-merged) — see `zudoDoc()`'s merge note
+   * above; harmless here since the resolver fills every omitted role with
+   * `"locale"`.
+   * @default "locale"
+   */
+  dateFormat?: DateFormatSetting;
   /**
    * Default locale code (unprefixed routes).
    * @default "en"

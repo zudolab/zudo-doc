@@ -9,6 +9,8 @@ import {
   type NoteTrayIndexStyle,
 } from "../nav-indexing/index.js";
 import { findContainingNoteTray, getNoteTrayItems } from "../note-tray-model/index.js";
+import type { DateFormatSetting } from "../settings.js";
+import { resolveDateFormats } from "../date-format-resolve/index.js";
 
 export interface NoteTrayIndexNode extends NoteTrayIndexItem {
   shape?: "note-tray";
@@ -58,6 +60,14 @@ export interface NoteTrayIndexDeps {
   tagHref: (tag: string, locale: string) => string;
   t: (key: string, locale: string) => string;
   versionedDocsUrl: (slug: string, versionSlug: string, lang: string) => string;
+  /**
+   * The raw `dateFormat` setting (`ctx.settings.dateFormat`). Resolved for the
+   * render locale and handed to `<NoteTrayIndex>` as `dateFormats`; the
+   * note-tray parts are plain prop-driven components with no ChromeContext of
+   * their own, so this prop chain is their only route to the setting (#4075).
+   * Optional — omitted means every role resolves to `"locale"`.
+   */
+  dateFormat?: DateFormatSetting;
 }
 
 export function createNoteTrayIndexWrapper(
@@ -111,6 +121,7 @@ export function createNoteTrayIndexWrapper(
           tags: deps.t("doc.tags", lang),
           taggedWith: deps.t("doc.taggedWith", lang),
         }}
+        dateFormats={resolveDateFormats(deps.dateFormat, lang)}
       />
     );
   };

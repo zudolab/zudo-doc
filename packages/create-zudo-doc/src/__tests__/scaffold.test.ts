@@ -2232,6 +2232,7 @@ describe("scaffold — settings-drift guard: generator-known fields must cover e
       siteTreeNavIgnore: "no CLI/prompt surface yet — hand-edit post-scaffold to hide top-level categories from the home grid / <SiteTreeNav />",
       docsDir: "no CLI/prompt surface yet — generator always uses the default",
       entryDocSlug: "no CLI/prompt surface yet — hand-edit post-scaffold",
+      dateFormat: "no CLI/prompt surface yet — hand-edit post-scaffold",
       mermaid: "no CLI/prompt surface yet — package default (on) is correct for all scaffolds",
       transclude: "no CLI/prompt surface yet — hand-edit post-scaffold",
       editUrl: "no CLI/prompt surface yet — hand-edit post-scaffold",

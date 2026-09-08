@@ -23,6 +23,7 @@ import type { Settings } from "../settings.js";
 import { buildGitHubRepoUrl as buildGitHubRepoUrlBase } from "../github-helpers/index.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 import {
+  deriveDateFormats,
   deriveGetUnavailableVersions,
   deriveNavDataPrep,
   deriveSearchWidgetSlot,
@@ -95,6 +96,7 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
 ): (props: HeaderWithDefaultsProps) => JSX.Element {
   assertChromeContext(ctx, "createHeaderWithDefaults");
   const settings = ctx.settings as unknown as HeaderWithDefaultsSettings;
+  const dateFormatsFor = deriveDateFormats(ctx);
   const defaultLocale = ctx.defaultLocale;
   const locales = ctx.locales;
   const t = ctx.t;
@@ -147,6 +149,7 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
             backToMenuLabel={backToMenuLabel}
             localeLinks={localeLinks}
             themeDefaultMode={themeDefaultMode}
+            dateFormats={dateFormatsFor(lang)}
           />
         ),
       }) as unknown as VNode;

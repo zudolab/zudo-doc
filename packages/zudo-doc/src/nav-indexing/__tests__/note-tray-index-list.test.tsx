@@ -40,4 +40,60 @@ describe("NoteTrayIndex index style", () => {
     expect(missing).not.toContain(">00</span>");
     expect(missing).toMatch(/<span[^>]*text-heading[^>]*><\/span>/);
   });
+
+  it("applies the full role pattern from dateFormats, keeping <time datetime> raw", () => {
+    const html = serialize(
+      NoteTrayIndex({
+        ...base,
+        showDate: true,
+        items: [item("one", { rank: 1, date: "2026-08-22" })],
+        dateFormats: {
+          full: "YYYY-MM-DD",
+          monthDay: "locale",
+          year: "locale",
+          yearMonth: "locale",
+          numericMonthDay: "locale",
+        },
+      }),
+    );
+    expect(html).toContain("2026-08-22");
+    expect(html).not.toContain("Aug 22, 2026");
+    expect(html).toContain('datetime="2026-08-22"');
+  });
+
+  it("resolves distinct full-role dateFormats patterns per locale", () => {
+    const en = serialize(
+      NoteTrayIndex({
+        ...base,
+        locale: "en",
+        showDate: true,
+        items: [item("one", { rank: 1, date: "2026-08-22" })],
+        dateFormats: {
+          full: "MM/DD/YYYY",
+          monthDay: "locale",
+          year: "locale",
+          yearMonth: "locale",
+          numericMonthDay: "locale",
+        },
+      }),
+    );
+    const ja = serialize(
+      NoteTrayIndex({
+        ...base,
+        locale: "ja",
+        showDate: true,
+        items: [item("one", { rank: 1, date: "2026-08-22" })],
+        dateFormats: {
+          full: "YYYY.MM.DD",
+          monthDay: "locale",
+          year: "locale",
+          yearMonth: "locale",
+          numericMonthDay: "locale",
+        },
+      }),
+    );
+    expect(en).toContain("08/22/2026");
+    expect(ja).toContain("2026.08.22");
+    expect(ja).not.toContain("2026年8月22日");
+  });
 });

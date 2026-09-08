@@ -45,7 +45,7 @@ import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
 import { createHeadWithDefaults } from "../head-with-defaults/index.js";
 import { resolveThemePackSsrSlug } from "../theme/theme-pack-provider.js";
-import { deriveComposeMetaTitle, deriveBodyEndIslands } from "../chrome/derive.js";
+import { deriveComposeMetaTitle, deriveBodyEndIslands, deriveDateFormats } from "../chrome/derive.js";
 import { derivePrimaryChromeSlots } from "../chrome/primary-slots.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 
@@ -146,6 +146,7 @@ export function createHomePageView<S extends Settings = Settings>(
 ): (props: HomePageViewProps) => JSX.Element {
   assertChromeContext(ctx, "createHomePageView");
   const settings = ctx.settings;
+  const dateFormatsFor = deriveDateFormats(ctx);
   const categoryIgnore = settings.siteTreeNavIgnore ?? [];
   const t = ctx.t;
   const withBase = ctx.withBase;
@@ -285,6 +286,7 @@ export function createHomePageView<S extends Settings = Settings>(
               initiallyCollapsedCategorySlugs={initiallyCollapsedCategorySlugs}
               locale={locale}
               updatedLabel={t("doc.updated", locale)}
+              dateFormats={dateFormatsFor(locale)}
             />
           ),
         }) as unknown as VNode}
