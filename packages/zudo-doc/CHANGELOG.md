@@ -6,7 +6,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
-### Other Changes
+## Other Changes
 
 - Widened the optional `@takazudo/zdtp` peer range to `^0.5.2 || ^0.6.0` and moved the showcase and scaffold pins to 0.6.1. The upstream changes are additive for this consumer: the four panel APIs remain available, and the public constants and shipped panel stylesheet are unchanged. The panel bootstrap, vendored-constants conformance, and optional-peer reachability tests pass against 0.6.1. Projects must explicitly pull the panel stylesheet via `@import "@takazudo/zdtp/styles.css"`, as `create-zudo-doc` has always emitted; check this import if you hand-edited `global.css`. A downstream pnpm `peerDependencyRules.allowedVersions` exception for `@takazudo/zudo-doc>@takazudo/zdtp` can be dropped on this release.
 

@@ -127,14 +127,16 @@ describe("showcase package changelog hierarchy", () => {
 
     expect(zudo?.children.map((child) => child.slug)).toEqual(expectedDesc);
 
-    // Anchor the newest end to the package's own version instead of a pinned string.
+    // Anchor the newest released entry to the package version; an Unreleased
+    // page may lead the lane while changes await the next release.
     // The release script bumps package.json and adds the changelog entry together, so
     // these agree by construction — and this now also catches a release that assigns a
     // non-monotonic sidebar_position, which the old hardcoded check only caught by luck.
     const zudoDocVersion = JSON.parse(
       readFileSync(join(ROOT, "packages/zudo-doc/package.json"), "utf8"),
     ).version as string;
-    expect(zudo?.children[0]?.slug).toBe(`changelog/zudo-doc/${zudoDocVersion}`);
+    const releasedChildren = zudo?.children.filter((child) => child.slug !== "changelog/zudo-doc/unreleased");
+    expect(releasedChildren?.[0]?.slug).toBe(`changelog/zudo-doc/${zudoDocVersion}`);
     expect(zudo?.children.at(-1)?.slug).toBe("changelog/zudo-doc/0.1.0");
   });
 
