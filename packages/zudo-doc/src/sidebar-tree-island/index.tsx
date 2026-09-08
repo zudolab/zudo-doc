@@ -22,6 +22,7 @@ import { findActiveSlug, normalizePath } from "../sidebar-active-slug/index.js";
 import { CURRENT_PATH_DATASET_KEY, readCurrentPath } from "../current-path/index.js";
 import { ensureSidebarScrollPreserve } from "./sidebar-scroll-preserve.js";
 import {
+  formatYearLabel,
   formatYearMonthLabel,
   getNoteTrayItems,
   groupItems,
@@ -219,7 +220,7 @@ function SidebarFooter({ links, themeDefaultMode }: { links?: SidebarLocaleLink[
   );
 }
 
-export function SidebarTree({ nodes, currentSlug, currentPath, rootMenuItems, backToMenuLabel, localeLinks, themeDefaultMode }: SidebarTreeProps) {
+export function SidebarTree({ nodes, currentSlug, currentPath, rootMenuItems, backToMenuLabel, localeLinks, themeDefaultMode, dateFormats }: SidebarTreeProps) {
   const activeSlug = useActiveSlug(nodes, currentSlug, currentPath);
   const [query, setQuery] = useState("");
   const [showingRootMenu, setShowingRootMenu] = useState(false);
@@ -331,6 +332,7 @@ export function SidebarTree({ nodes, currentSlug, currentPath, rootMenuItems, ba
             currentSlug={activeSlug}
             forceOpen={!!query}
             locale={locale}
+            dateFormats={dateFormats}
           />
         )
       ) : (
@@ -353,12 +355,14 @@ function TrayList({
   currentSlug,
   forceOpen,
   locale,
+  dateFormats,
 }: {
   tray: SidebarNavNode;
   itemCount: number;
   currentSlug?: string;
   forceOpen: boolean;
   locale: string;
+  dateFormats?: ResolvedDateFormats;
 }) {
   const items = getNoteTrayItems(tray);
   const sidebarStyle = tray.noteTraySidebar ?? "index";
@@ -375,6 +379,8 @@ function TrayList({
             currentSlug={currentSlug}
             rankDigits={width}
             isLast={index === items.length - 1}
+            locale={locale}
+            dateFormats={dateFormats}
           />
         ))
       ) : (
@@ -385,6 +391,7 @@ function TrayList({
             group={group}
             grouping={sidebarStyle}
             locale={locale}
+            dateFormats={dateFormats}
             currentSlug={currentSlug}
             forceOpen={forceOpen}
             isLast={index === groups.length - 1}
@@ -402,6 +409,8 @@ function TrayItem({
   isLast,
   showDate = false,
   depth = 1,
+  locale,
+  dateFormats,
 }: {
   item: SidebarNavNode;
   currentSlug?: string;
@@ -409,11 +418,17 @@ function TrayItem({
   isLast: boolean;
   showDate?: boolean;
   depth?: number;
+  locale?: string;
+  dateFormats?: ResolvedDateFormats;
 }) {
   if (!item.href) return null;
   const isActive = item.slug === currentSlug;
   const labelHtml = smartBreakToHtml(item.label);
-  const shortDate = item.date ? formatMonthDay(item.date) : undefined;
+  // formatMonthDay takes (iso, pattern, locale) — pattern SECOND, unlike
+  // every other formatter in format-date.
+  const shortDate = item.date
+    ? formatMonthDay(item.date, dateFormats?.numericMonthDay, locale)
+    : undefined;
 
   return (
     <div className={isLast ? "pb-vsp-md" : ""}>
@@ -456,6 +471,7 @@ function TrayGroupNode({
   group,
   grouping,
   locale,
+  dateFormats,
   currentSlug,
   forceOpen,
   isLast,
@@ -464,6 +480,7 @@ function TrayGroupNode({
   group: NoteTrayGroup<SidebarNavNode>;
   grouping: "year" | "month";
   locale: string;
+  dateFormats?: ResolvedDateFormats;
   currentSlug?: string;
   forceOpen: boolean;
   isLast: boolean;
@@ -471,7 +488,10 @@ function TrayGroupNode({
   const containsCurrent = group.items.some((item) => item.slug === currentSlug);
   const [open, setOpen] = useState(containsCurrent);
   const storageKey = noteTrayGroupStorageKey(traySlug, group.key);
-  const label = grouping === "year" ? group.key : formatYearMonthLabel(group.key, locale);
+  const label =
+    grouping === "year"
+      ? formatYearLabel(group.key, locale, dateFormats?.year)
+      : formatYearMonthLabel(group.key, locale, dateFormats?.yearMonth);
 
   useEffect(() => {
     const stored = getOpenSet();
@@ -544,6 +564,8 @@ function TrayGroupNode({
               currentSlug={currentSlug}
               isLast={index === group.items.length - 1}
               showDate
+              locale={locale}
+              dateFormats={dateFormats}
               // Leave one visual indentation step between the group branch
               // and its dated child branch so the hierarchy reads clearly.
               depth={GROUPED_TRAY_ITEM_DEPTH}
