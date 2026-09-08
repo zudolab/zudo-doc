@@ -3,6 +3,7 @@
 
 import type { JSX } from "preact";
 import { formatMonthDayLabel, formatYear } from "../../format-date/index.js";
+import type { ResolvedDateFormats } from "../../settings.js";
 import { CategoryLinkIcon } from "../../tree-nav-shared/index.js";
 import type { NoteTrayIndexProps } from "../note-tray-index.js";
 import { TagNav } from "../tag-nav.js";
@@ -39,7 +40,12 @@ function CardBody({
         </h2>
         {props.showDate && (
           <span class={hasStamp ? "sm:hidden" : undefined}>
-            <DateLine item={item} locale={props.locale} updatedLabel={props.updatedLabel} />
+            <DateLine
+              item={item}
+              locale={props.locale}
+              updatedLabel={props.updatedLabel}
+              dateFormats={props.dateFormats}
+            />
           </span>
         )}
       </div>
@@ -54,12 +60,14 @@ function DateStamp({
   locale,
   updatedLabel,
   positioned,
+  dateFormats,
 }: {
   date: string;
   updated?: string;
   locale: string;
   updatedLabel: string;
   positioned: boolean;
+  dateFormats?: ResolvedDateFormats;
 }): JSX.Element {
   return (
     <time
@@ -71,12 +79,12 @@ function DateStamp({
       }
     >
       <span class="block text-title leading-tight font-medium">
-        {formatMonthDayLabel(date, locale)}
+        {formatMonthDayLabel(date, locale, dateFormats?.monthDay)}
       </span>
-      <span class="block text-caption">{formatYear(date, locale)}</span>
+      <span class="block text-caption">{formatYear(date, locale, dateFormats?.year)}</span>
       {updated && (
         <span class="mt-vsp-3xs block text-micro">
-          {updatedLabel} {formatMonthDayLabel(updated, locale)}
+          {updatedLabel} {formatMonthDayLabel(updated, locale, dateFormats?.monthDay)}
         </span>
       )}
     </time>
@@ -116,6 +124,7 @@ export function CardList(props: NoteTrayIndexProps): JSX.Element {
                       updated={item.updated}
                       locale={props.locale}
                       updatedLabel={props.updatedLabel}
+                      dateFormats={props.dateFormats}
                       positioned
                     />
                   )}
@@ -136,6 +145,7 @@ export function CardList(props: NoteTrayIndexProps): JSX.Element {
                       updated={item.updated}
                       locale={props.locale}
                       updatedLabel={props.updatedLabel}
+                      dateFormats={props.dateFormats}
                       positioned
                     />
                   )}
@@ -162,6 +172,7 @@ export function CardList(props: NoteTrayIndexProps): JSX.Element {
                   updated={item.updated}
                   locale={props.locale}
                   updatedLabel={props.updatedLabel}
+                  dateFormats={props.dateFormats}
                   positioned={false}
                 />
               )}
@@ -180,6 +191,7 @@ export function CardList(props: NoteTrayIndexProps): JSX.Element {
                   updated={item.updated}
                   locale={props.locale}
                   updatedLabel={props.updatedLabel}
+                  dateFormats={props.dateFormats}
                   positioned={false}
                 />
               )}
