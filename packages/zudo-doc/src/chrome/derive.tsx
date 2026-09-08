@@ -152,7 +152,9 @@ export const DEFAULT_SCHEME: ColorScheme = {
 
 /** Package no-op DocHistory island stub — renders an empty fragment (the
  *  `DocHistoryComponent` contract requires a VNode, not null). */
-function DocHistoryStub(_props: { slug: string; locale?: string; basePath?: string }): VNode {
+function DocHistoryStub(
+  _props: { slug: string; locale?: string; basePath?: string; displayLocale?: string },
+): VNode {
   return (<></>) as VNode;
 }
 
