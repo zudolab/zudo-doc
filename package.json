@@ -115,7 +115,7 @@
     }
   },
   "dependencies": {
-    "@takazudo/zdtp": "0.5.2",
+    "@takazudo/zdtp": "0.6.1",
     "@takazudo/zfb": "2.16.0",
     "@takazudo/zfb-adapter-cloudflare": "2.16.0",
     "@takazudo/zfb-md-wasm": "2.16.0",
@@ -141,6 +141,7 @@
     "lefthook": "^2.1.4",
     "picocolors": "^1.1.1",
     "pluralize": "^8.0.0",
+    "semver": "7.8.5",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.2",

@@ -70,6 +70,16 @@
 //      that was considered and rejected (#3469) as diverging from
 //      check-pin-parity.mjs's core-only convention; the goal is removing
 //      the silence, not closing the coverage gap.
+//   5. FIRST-PARTY PEER RANGE FRESHNESS (#4065). The scaffold pin checks above
+//      do not say whether packages/zudo-doc's declared @takazudo/* peer ranges
+//      still admit the registry's current release. The peer check below covers
+//      all five first-party peers explicitly listed in FIRST_PARTY_PEER_SCOPE:
+//      zdtp, zfb, zfb-md-wasm, zfb-runtime, and zudo-doc-history-server. Their
+//      current declarations are stable ranges, so each reads the stable
+//      "latest" dist-tag. A prerelease scaffold pin or range selects "next"
+//      instead, using the same missing-"next" behavior as pin checks.
+//      This uses the semver package for complete range membership, including
+//      prerelease rules; it does not reuse the pin check's core-only compare.
 //
 // Design: the registry lookup is INJECTED (`fetchDistTags`) so
 // checkScaffoldPinFreshness() is pure and the test suite never touches the
@@ -85,6 +95,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, resolve } from "node:path";
+import semver from "semver";
 
 import { PINNED_PACKAGES, readScaffoldPin } from "./check-pin-parity.mjs";
 
@@ -95,11 +106,34 @@ const SCAFFOLD_TS_PATH = resolve(
   ROOT_DIR,
   "packages/create-zudo-doc/src/scaffold.ts",
 );
+const ZUDO_DOC_PKG_PATH = resolve(ROOT_DIR, "packages/zudo-doc/package.json");
 
 /** Per-request timeout (ms) for the real registry lookup — semantics #2. */
 export const DEFAULT_TIMEOUT_MS = 10_000;
 
 const REGISTRY_BASE = "https://registry.npmjs.org";
+
+/**
+ * Explicit scope for the first-party peer-range guard (#4065).
+ *
+ * Keep this list deliberately separate from PINNED_PACKAGES: the scaffold
+ * emits four external pins, while packages/zudo-doc declares five first-party
+ * peers. Every row is in scope, including the optional history-server peer
+ * whose floor intentionally trails the lockstep release (see RELEASE.md's
+ * publish-lag note). `channelSource` records the current stable channel for
+ * each declaration; selectPeerChannel() switches a prerelease range to
+ * `next` without silently narrowing this scope.
+ */
+export const FIRST_PARTY_PEER_SCOPE = [
+  { pkg: "@takazudo/zdtp", channelSource: "latest" },
+  { pkg: "@takazudo/zfb", channelSource: "latest" },
+  { pkg: "@takazudo/zfb-md-wasm", channelSource: "latest" },
+  { pkg: "@takazudo/zfb-runtime", channelSource: "latest" },
+  {
+    pkg: "@takazudo/zudo-doc-history-server",
+    channelSource: "latest",
+  },
+];
 
 /**
  * True when `version` carries a `-prerelease` suffix (e.g. "0.2.0-next.9").
@@ -143,14 +177,331 @@ function compareCore(a, b) {
 }
 
 /**
+ * Read the five scoped peer ranges from packages/zudo-doc/package.json.
+ * The normal CLI supplies both package and scaffold text; unit tests can
+ * inject tiny peer tables (and optional pins) without touching the filesystem.
+ */
+export function readFirstPartyPeerRanges(packageSrc, scaffoldSrc) {
+  let packageJson;
+  try {
+    packageJson =
+      typeof packageSrc === "string" ? JSON.parse(packageSrc) : packageSrc;
+  } catch {
+    packageJson = null;
+  }
+
+  return FIRST_PARTY_PEER_SCOPE.map(({ pkg, channelSource }) => {
+    const pin =
+      typeof scaffoldSrc === "string"
+        ? readScaffoldPin(scaffoldSrc, pkg)
+        : undefined;
+    return {
+      pkg,
+      channelSource,
+      range: packageJson?.peerDependencies?.[pkg],
+      ...(pin === undefined ? {} : { pin }),
+    };
+  });
+}
+
+/**
+ * A valid semver range selects the preview channel when any authored
+ * comparator names a prerelease. `semver.validRange` validates the complete
+ * range; the authored-token check below avoids treating semver's synthetic
+ * prerelease upper bounds as a channel selector.
+ */
+export function isPrereleaseRange(range) {
+  if (typeof range !== "string" || validPeerRange(range) === null) {
+    return false;
+  }
+
+  // Inspect the authored range rather than Range#set: semver expands caret
+  // bounds such as `^0.5.2` to `<0.6.0-0`, and that synthetic `-0` marker is
+  // not an authored prerelease channel selector.
+  return /(?:^|[^\d])\d+\.\d+\.\d+-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*(?=$|[^0-9A-Za-z-])/.test(
+    range,
+  );
+}
+
+function validPeerRange(range) {
+  if (typeof range !== "string" || range.trim() === "") return null;
+  try {
+    return semver.validRange(range);
+  } catch {
+    return null;
+  }
+}
+
+function peerChannel(range, pin) {
+  return isPrereleaseVersion(pin) || isPrereleaseRange(range)
+    ? "next"
+    : "latest";
+}
+
+function registryLookupError(pkg, error, range) {
+  return {
+    kind: "lookup-error",
+    pkg,
+    range,
+    message:
+      `Registry lookup failed for first-party peer ${pkg} — treating as a ` +
+      `gate failure distinct from peer-range exclusion (fail-closed): ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+  };
+}
+
+/**
+ * Evaluate one declared first-party peer range against its channel-appropriate
+ * registry dist-tag. The caller supplies the lookup so tests remain offline.
+ */
+async function evaluateFirstPartyPeerRange({
+  pkg,
+  pin,
+  range,
+  channelSource = "latest",
+  fetchDistTags,
+}) {
+  const normalizedRange = validPeerRange(range);
+  if (normalizedRange === null) {
+    return {
+      kind: "invalid-range",
+      pkg,
+      range,
+      message:
+        `Declared peer range for ${pkg} is invalid or missing (${JSON.stringify(
+          range,
+        )}); fix packages/zudo-doc/package.json before checking registry ${
+          channelSource === "latest" ? '"latest"' : '"next"'
+        }.`,
+    };
+  }
+
+  const prereleaseRange = isPrereleaseRange(range);
+  const prereleasePin = isPrereleaseVersion(pin);
+  const prerelease = prereleasePin || prereleaseRange;
+  let tag = peerChannel(range, pin);
+  let registryVersion;
+  let distTags;
+  try {
+    distTags = await fetchDistTags(pkg);
+  } catch (error) {
+    return registryLookupError(pkg, error, range);
+  }
+
+  if (
+    distTags === null ||
+    typeof distTags !== "object" ||
+    Array.isArray(distTags)
+  ) {
+    return registryLookupError(
+      pkg,
+      new Error("registry response was not a dist-tags object"),
+      range,
+    );
+  }
+
+  registryVersion = distTags[tag];
+
+  // A present channel key with an empty/non-string value is malformed. Check
+  // it before the prerelease fallback so `next: ""` cannot be mistaken for a
+  // legitimately absent next tag when latest is itself a prerelease.
+  if (
+    Object.prototype.hasOwnProperty.call(distTags, tag) &&
+    (typeof registryVersion !== "string" || registryVersion === "")
+  ) {
+    return registryLookupError(
+      pkg,
+      new Error(
+        `registry "${tag}" dist-tag was present but unusable (${JSON.stringify(
+          registryVersion,
+        )})`,
+      ),
+      range,
+    );
+  }
+
+  // Preserve the existing prerelease missing-"next" rule exactly: a
+  // prerelease pin or range may use latest only when latest itself is prerelease;
+  // otherwise freshness is intentionally skipped rather than compared to a
+  // stable line. `channelSource` documents today's stable default but cannot
+  // override this range-driven selection.
+  if (prerelease && !registryVersion && isPrereleaseVersion(distTags?.latest)) {
+    tag = "latest";
+    registryVersion = distTags.latest;
+  }
+
+  if (!registryVersion) {
+    if (prerelease) {
+      const latest = distTags.latest;
+      if (latest === undefined || latest === null || latest === "") {
+        return registryLookupError(
+          pkg,
+          new Error(
+            'registry response had neither a "next" nor a usable "latest" dist-tag',
+          ),
+          range,
+        );
+      }
+      if (
+        typeof latest !== "string" ||
+        semver.valid(latest) === null ||
+        !isPrereleaseVersion(latest)
+      ) {
+        if (typeof latest !== "string" || semver.valid(latest) === null) {
+          return registryLookupError(
+            pkg,
+            new Error(
+              `registry "latest" dist-tag is not a valid semver version (${JSON.stringify(
+                latest,
+              )})`,
+            ),
+            range,
+          );
+        }
+        // A stable latest with no next tag is the established intentional
+        // skip. The pin and range are preview-channel inputs, so comparing
+        // them against this stable line would be a false exclusion.
+        return {
+          kind: "skipped",
+          pkg,
+          pin,
+          range,
+          tag: "next",
+          message:
+            `${pkg} ${prereleasePin ? `scaffold pin ${pin}` : `peer range ${JSON.stringify(range)}`} ` +
+            `selects the prerelease channel, the registry has no "next" ` +
+            `dist-tag, and "latest" is a stable line this input was never ` +
+            `meant to track — skipping (not reported stale).`,
+        };
+      }
+      // A package with no stable line uses latest as its preview channel.
+      registryVersion = latest;
+      tag = "latest";
+    }
+    if (!registryVersion) {
+      return {
+        kind: "lookup-error",
+        pkg,
+        pin,
+        range,
+        message:
+          `Registry response for first-party peer ${pkg} had no "latest" dist-tag ` +
+          `— treating as a gate failure distinct from peer-range exclusion ` +
+          `(fail-closed).`,
+      };
+    }
+  }
+
+  if (typeof registryVersion !== "string" || semver.valid(registryVersion) === null) {
+    return registryLookupError(
+      pkg,
+      new Error(
+        `registry "${tag}" dist-tag is not a valid semver version (${JSON.stringify(
+          registryVersion,
+        )})`,
+      ),
+      range,
+    );
+  }
+
+  let satisfies;
+  try {
+    // Do not set includePrerelease: npm's default semver rule is significant:
+    // a prerelease satisfies only a comparator carrying a matching prerelease
+    // tuple. That is the proper range membership this gate is meant to test.
+    satisfies = semver.satisfies(registryVersion, normalizedRange);
+  } catch (error) {
+    return {
+      kind: "invalid-range",
+      pkg,
+      range,
+      message:
+        `Declared peer range for ${pkg} could not be evaluated (${JSON.stringify(
+          range,
+        )}): ${error instanceof Error ? error.message : String(error)}.`,
+    };
+  }
+
+  if (!satisfies) {
+    return {
+      kind: "peer-range-excludes-latest",
+      pkg,
+      pin,
+      range,
+      registryVersion,
+      tag,
+      message:
+        `${pkg} declared peer range ${JSON.stringify(
+          range,
+        )} EXCLUDES registry "${tag}" ${registryVersion}. Verify that this ` +
+        `channel version is compatible before widening or updating the peer ` +
+        `range in packages/zudo-doc/package.json, then rerun the freshness check.`,
+    };
+  }
+
+  return {
+    kind: "ok",
+    pkg,
+    pin,
+    range,
+    registryVersion,
+    tag,
+    message:
+      `${pkg} peer range ${JSON.stringify(range)} admits registry "${tag}" ` +
+      `${registryVersion}.`,
+  };
+}
+
+/**
+ * Check a supplied set of first-party peer ranges. The default table is the
+ * explicit five-package scope with ranges loaded from this checkout's
+ * packages/zudo-doc/package.json and scaffold pins loaded from scaffold.ts.
+ * Tests should pass a small `peerRanges` table and an injected `fetchDistTags`
+ * function.
+ */
+export async function checkFirstPartyPeerFreshness({
+  peerRanges = readFirstPartyPeerRanges(
+    readFileSync(ZUDO_DOC_PKG_PATH, "utf-8"),
+    readFileSync(SCAFFOLD_TS_PATH, "utf-8"),
+  ),
+  fetchDistTags,
+}) {
+  if (typeof fetchDistTags !== "function") {
+    throw new TypeError(
+      "checkFirstPartyPeerFreshness requires a fetchDistTags(pkgName) function",
+    );
+  }
+
+  const findings = [];
+  for (const peer of peerRanges) {
+    findings.push(
+      await evaluateFirstPartyPeerRange({
+        ...peer,
+        fetchDistTags,
+      }),
+    );
+  }
+  return {
+    ok: findings.every((finding) => finding.kind === "ok" || finding.kind === "skipped"),
+    findings,
+  };
+}
+
+/**
  * Evaluate every package in `packages` for pin staleness against the
  * registry, using the injected `fetchDistTags(pkgName) => Promise<Record<string,string>>`
  * (a dist-tag-name → version map, e.g. `{ latest: "2.7.1", next: "0.2.0-next.9" }`
  * — the shape `GET /-/package/<pkg>/dist-tags` returns).
+ * When `peerRanges` is supplied, append the first-party peer-range findings
+ * from checkFirstPartyPeerFreshness(). It is optional for backwards
+ * compatibility with callers that only exercise scaffold pins; the CLI passes
+ * the explicit five-peer scope.
  *
- * Returns `{ ok, findings }`. `ok` is false when ANY package is "stale" OR
- * ANY lookup failed ("lookup-error" / "unreadable-pin") — fail-closed, see
- * semantics #1 above. Each finding has a `kind` of:
+ * Returns `{ ok, findings }`. `ok` is false when ANY package is "stale", a
+ * first-party peer range is excluded/invalid, OR ANY lookup failed
+ * ("lookup-error" / "unreadable-pin") — fail-closed, see semantics #1 above.
+ * Each finding has a `kind` of:
  *   "stale"          — pin is behind the comparison dist-tag.
  *   "ok"              — pin is current.
  *   "skipped"         — freshness was NOT verified for this pin. Two causes:
@@ -168,10 +519,14 @@ function compareCore(a, b) {
  *                        check-pin-parity.mjs; reported here too so this
  *                        gate never passes on a pin it could not actually
  *                        read).
+ *   "peer-range-excludes-latest" — a first-party peer range excludes the
+ *                        selected registry channel version.
+ *   "invalid-range"    — a first-party peer range is missing or malformed.
  */
 export async function checkScaffoldPinFreshness({
   scaffoldSrc,
   packages = PINNED_PACKAGES,
+  peerRanges,
   fetchDistTags,
 }) {
   if (typeof fetchDistTags !== "function") {
@@ -181,6 +536,18 @@ export async function checkScaffoldPinFreshness({
   }
 
   const findings = [];
+  const distTagsCache = new Map();
+  const fetchDistTagsOnce = (pkgName) => {
+    if (!distTagsCache.has(pkgName)) {
+      // Store the promise, including a rejection, so a package shared by the
+      // scaffold and peer scopes has one bounded lookup per run.
+      distTagsCache.set(
+        pkgName,
+        Promise.resolve().then(() => fetchDistTags(pkgName)),
+      );
+    }
+    return distTagsCache.get(pkgName);
+  };
 
   for (const pkgName of packages) {
     const scaffoldPin = readScaffoldPin(scaffoldSrc, pkgName);
@@ -195,7 +562,7 @@ export async function checkScaffoldPinFreshness({
 
     let distTags;
     try {
-      distTags = await fetchDistTags(pkgName);
+      distTags = await fetchDistTagsOnce(pkgName);
     } catch (error) {
       findings.push({
         kind: "lookup-error",
@@ -332,6 +699,21 @@ export async function checkScaffoldPinFreshness({
     });
   }
 
+  if (peerRanges !== undefined && peerRanges !== null) {
+    const peerResult = await checkFirstPartyPeerFreshness({
+      peerRanges: peerRanges.map((peer) => ({
+        ...peer,
+        pin:
+          peer.pin ??
+          (typeof scaffoldSrc === "string"
+            ? readScaffoldPin(scaffoldSrc, peer.pkg)
+            : undefined),
+      })),
+      fetchDistTags: fetchDistTagsOnce,
+    });
+    findings.push(...peerResult.findings);
+  }
+
   const ok = findings.every((f) => f.kind === "ok" || f.kind === "skipped");
   return { ok, findings };
 }
@@ -366,14 +748,21 @@ function formatFinding(f) {
         ? "SKIP   "
         : f.kind === "stale"
           ? "STALE  "
+          : f.kind === "peer-range-excludes-latest"
+            ? "PEER   "
           : "ERROR  ";
   return `  ${label} ${f.message}`;
 }
 
 async function main() {
   const scaffoldSrc = readFileSync(SCAFFOLD_TS_PATH, "utf-8");
+  const peerRanges = readFirstPartyPeerRanges(
+    readFileSync(ZUDO_DOC_PKG_PATH, "utf-8"),
+    scaffoldSrc,
+  );
   const result = await checkScaffoldPinFreshness({
     scaffoldSrc,
+    peerRanges,
     fetchDistTags: (pkgName) => fetchDistTagsFromRegistry(pkgName),
   });
 
@@ -383,6 +772,12 @@ async function main() {
 
   if (!result.ok) {
     const stale = result.findings.filter((f) => f.kind === "stale");
+    const excludedPeerRanges = result.findings.filter(
+      (f) => f.kind === "peer-range-excludes-latest",
+    );
+    const invalidRanges = result.findings.filter(
+      (f) => f.kind === "invalid-range",
+    );
     const errors = result.findings.filter(
       (f) => f.kind === "lookup-error" || f.kind === "unreadable-pin",
     );
@@ -391,6 +786,16 @@ async function main() {
     if (stale.length > 0) {
       console.error(
         `  ${stale.length} stale pin(s) — bump packages/create-zudo-doc/src/scaffold.ts to the versions named above.`,
+      );
+    }
+    if (excludedPeerRanges.length > 0) {
+      console.error(
+        `  ${excludedPeerRanges.length} first-party peer range(s) exclude the registry channel version — widen/update packages/zudo-doc/package.json as described above.`,
+      );
+    }
+    if (invalidRanges.length > 0) {
+      console.error(
+        `  ${invalidRanges.length} invalid first-party peer range(s) — fix packages/zudo-doc/package.json before rerunning the gate.`,
       );
     }
     if (errors.length > 0) {

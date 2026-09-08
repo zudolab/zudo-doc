@@ -25,8 +25,8 @@ importers:
   .:
     dependencies:
       '@takazudo/zdtp':
-        specifier: 0.5.2
-        version: 0.5.2(preact@10.29.2)
+        specifier: 0.6.1
+        version: 0.6.1(preact@10.29.2)
       '@takazudo/zfb':
         specifier: 2.16.0
         version: 2.16.0(react@19.2.8)
@@ -97,6 +97,9 @@ importers:
       pluralize:
         specifier: ^8.0.0
         version: 8.0.0
+      semver:
+        specifier: 7.8.5
+        version: 7.8.5
       tsx:
         specifier: ^4.21.0
         version: 4.21.0
@@ -187,8 +190,8 @@ importers:
         specifier: ^8.4.2
         version: 8.4.2(@types/node@25.3.5)
       '@takazudo/zdtp':
-        specifier: ^0.5.2
-        version: 0.5.2(preact@10.29.2)
+        specifier: ^0.5.2 || ^0.6.0
+        version: 0.6.1(preact@10.29.2)
       diff:
         specifier: ^8.0.0
         version: 8.0.3
@@ -1086,8 +1089,8 @@ packages:
   '@tailwindcss/browser@4.3.2':
     resolution: {integrity: sha512-R6hewP9HHwLAY88bFkgAYFIQMRGi9bqx6sR1anI3IThTJtwhPlAm4aHIzDKrnJ8Ct4M3d5A9PCsah8Z5+EjLiQ==}
 
-  '@takazudo/zdtp@0.5.2':
-    resolution: {integrity: sha512-B2rc+2iVmlATfIvnATEF7oSDLgAAyQVBgU/TpXgqlJAyqv5ju6pNuaQE1/ZncnpPEyg4yG1yn6Gy9u9jZOj5hA==}
+  '@takazudo/zdtp@0.6.1':
+    resolution: {integrity: sha512-XpM3ogN5pz021hjjimAP1Q+WcUNvsdYZ07CuHJ+Uvk5roHQu2sgmepNKydpMM8t7abXT8DIYW9ISekhLGI0ziQ==}
     engines: {node: '>=22.0.0', pnpm: '>=10.0.0'}
     hasBin: true
     peerDependencies:
@@ -2020,11 +2023,6 @@ packages:
   saxes@6.0.0:
     resolution: {integrity: sha512-xAg7SOnEhrm5zI3puOOKyy1OMcMlIJZYNJY7xLBwSze0UjhPLnWfj2GF2EpT0jmzaJKIWKHLsaSSajf35bcYnA==}
     engines: {node: '>=v12.22.7'}
-
-  semver@7.7.4:
-    resolution: {integrity: sha512-vFKC2IEtQnVhpT78h1Yp8wzwrf8CM+MzKMHGJZfBtzhZNycRFnXsHk6E5TxIkkMsgNS7mdX3AGB7x2QM2di4lA==}
-    engines: {node: '>=10'}
-    hasBin: true
 
   semver@7.8.5:
     resolution: {integrity: sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA==}
@@ -3046,7 +3044,7 @@ snapshots:
 
   '@tailwindcss/browser@4.3.2': {}
 
-  '@takazudo/zdtp@0.5.2(preact@10.29.2)':
+  '@takazudo/zdtp@0.6.1(preact@10.29.2)':
     dependencies:
       '@tailwindcss/browser': 4.3.2
       culori: 4.0.2
@@ -3502,7 +3500,7 @@ snapshots:
       kleur: 4.1.5
       minimist: 1.2.8
       prompts: 2.4.2
-      semver: 7.7.4
+      semver: 7.8.5
     optionalDependencies:
       vitest: 4.1.0(@types/node@25.3.5)(happy-dom@20.10.6)(jsdom@30.0.1(@noble/hashes@2.3.0))(msw@2.12.12(@types/node@25.3.5)(typescript@5.9.3))(vite@7.3.5(@types/node@25.3.5)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.21.0)(yaml@2.9.0))
 
@@ -4158,8 +4156,6 @@ snapshots:
     dependencies:
       xmlchars: 2.2.0
     optional: true
-
-  semver@7.7.4: {}
 
   semver@7.8.5: {}
 

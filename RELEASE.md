@@ -308,6 +308,33 @@ re-run `pnpm check:pin-parity` to confirm the bump kept every pin location in
 agreement (see "Bumping the toolchain" above), and re-run
 `pnpm check:scaffold-pin-freshness` to confirm the gate now passes.
 
+**First-party peer-range freshness (#4065).** This same release-time gate also
+checks whether the `packages/zudo-doc/package.json` declaration still admits the
+registry's current channel version. The scope is deliberately all five
+first-party peers; the optional history-server peer is included even though its
+floor trails the lockstep release by design (see "First-party peer floor
+(publish-lag)"). Each currently has a stable range, so its channel source is
+the stable `latest` dist-tag:
+
+| First-party peer | Channel source today |
+|---|---|
+| `@takazudo/zdtp` | `latest` |
+| `@takazudo/zfb` | `latest` |
+| `@takazudo/zfb-md-wasm` | `latest` |
+| `@takazudo/zfb-runtime` | `latest` |
+| `@takazudo/zudo-doc-history-server` | `latest` |
+
+If a declared range or its scaffold pin carries a prerelease, the check selects
+the `next` dist-tag for that peer, reusing the pin gate's existing rule: a
+missing `next` falls back to a prerelease `latest`, and otherwise reports
+`skipped` when `latest` is stable. Range membership uses npm semver semantics,
+including prerelease rules. A registry version outside a declared range is
+reported as the distinct `peer-range-excludes-latest` finding, naming the range
+and version and directing the release author to verify compatibility before
+widening or updating the peer declaration. An invalid range is reported as
+`invalid-range`; a network or unusable registry response remains the separate
+fail-closed `lookup-error` finding.
+
 **Prerelease pins read the `next` dist-tag, not `latest`.** A pin carrying a
 `-prerelease` suffix (e.g. `0.2.0-next.9`) is compared against the registry's
 `next` dist-tag. As the "dist-tag table" section above documents, `next` and
