@@ -196,6 +196,44 @@ export default defineConfig(
 
 プライマリロケールは`/docs/...`で配信され、追加ロケールは`/ja/docs/...`や`/de/docs/...`のようにコードを使用します。これは`defaultLocale`と`pages/`のルート分割（`pages/docs/[[...slug]].tsx`および`pages/[locale]/docs/[[...slug]].tsx`）から導かれ、`prefixDefaultLocale`オプションはありません。
 
+## ロケールごとの日付形式
+
+`dateFormat` はロケールごとの上書きを受け付けます。多言語サイトでは通常こちらの形式を使うことになります。`Aug 22, 2026` も `2026年8月22日` もそれぞれのロケールでは正しく、1 つのパターンで両方を賄うことはできないからです。
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    defaultLocale: "en",
+    locales: {
+      ja: { label: "JA", dir: "src/content/docs-ja" },
+      de: { label: "DE", dir: "src/content/docs-de" },
+    },
+    dateFormat: {
+      full: "MMM D, YYYY",
+      locales: {
+        ja: { full: "YYYY年M月D日", yearMonth: "YYYY年M月" },
+      },
+    },
+  }),
+);
+```
+
+各ロールは `locales[locale][role]` → トップレベルの `[role]` → `"locale"` の順に解決されます。`dateFormat.locales` にエントリーのないロケールは、トップレベルのロールをそのまま使います。5 つのロール、トークンの語彙、その他の規則は [`dateFormat`](./configuration.mdx#コンテンツと-i18n-dateformat) を参照してください。
+
+<Warning title="月名がローカライズされるのは 3 ロケールのみ">
+
+月**名**、つまり `MMM`・`MMMM` トークンと組み込みの `"locale"` 表示は、`en` → `en-US`、`ja` → `ja-JP`、`de` → `de-DE` という固定のマップを通して解決されます。それ以外のロケールコードはすべて `en-US` にフォールバックします。
+
+そのため、マップにないロケール（たとえば `fr`）では次のようになります。
+
+- `"DD/MM/YYYY"` のような数値だけのパターンは正しく表示されます。数字はロケールに依存しないためです。
+- `MMM` や `MMMM` を含むパターンは、月名が**英語**のままになります。
+- ロールを `"locale"` のままにすると、そのロールは `en-US` の形式で表示されます。
+
+こうしたロケールには数値のパターンを与えてください。月名を含むパターンではその言語の表記になりません。
+
+</Warning>
+
 ## 生成ページとデフォルトロケールの本文
 
 Claude/Codexリソースジェネレーターは、概要ページとカテゴリインデックスを設定済みの各ロケールディレクトリに出力します。アセットビューアーも`/{locale}/${assetViewerRoutePrefix}/...`にルートを生成します。タイトル、説明、ナビゲーション、パンくず、ヘッダー、操作ラベルなどのシェルは要求ロケールで解決されます。そのため言語切り替えはデフォルトロケールだけに縮退せず、対応する生成ルートへリンクします。

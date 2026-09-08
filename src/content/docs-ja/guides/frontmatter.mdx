@@ -214,6 +214,8 @@ category_shape: "note-tray"
 
 ドキュメントの日付を設定します。zfbは引用符の有無にかかわらずスカラー値を文字列として保持するため、引用符は任意です。スキーマが`YYYY-MM-DD`形式を検証し、ビルドが暦上存在しない日付を拒否します。このフィールドを利用する別のYAML 1.1ツール（js-yamlなど）が、引用符のない日付を`Date`オブジェクトに変換する場合に限り、相互運用性のために引用符を付けてください。
 
+`date`と`updated`の**記述**形式は、[`dateFormat`](./configuration.mdx#コンテンツと-i18n-dateformat)の設定にかかわらず常に`YYYY-MM-DD`です。`dateFormat`が変えるのは表示のされ方だけで、スキーマはフロントマターの生の値を`YYYY-MM-DD`として厳密に検証します。
+
 ```mdx
 ---
 title: Project Note
