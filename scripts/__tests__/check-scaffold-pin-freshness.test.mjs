@@ -1,6 +1,6 @@
 // scripts/__tests__/check-scaffold-pin-freshness.test.mjs
 //
-// Unit tests for scripts/check-scaffold-pin-freshness.mjs (#3456). The
+// Unit tests for scripts/check-scaffold-pin-freshness.mjs (#3456, #4065). The
 // registry lookup is always INJECTED via the `fetchDistTags` parameter —
 // these tests never touch the real npm registry. Covers the four
 // acceptance-criteria behaviors from #3456:
@@ -11,6 +11,9 @@
 //   4. A prerelease pin is compared against "next" (not "latest") and is not
 //      falsely reported stale merely because a stable "latest" is numerically
 //      higher.
+//   5. First-party peer ranges use proper semver membership, fail distinctly
+//      on exclusion/invalid ranges/lookup errors, and select "next" for a
+//      prerelease range.
 //
 // File extension note: this test intentionally lives at `.test.mjs` (not the
 // repo's usual `.test.ts` for scripts/__tests__) because the file name is
@@ -22,7 +25,10 @@ import { describe, it, expect } from "vitest";
 
 import {
   checkScaffoldPinFreshness,
+  checkFirstPartyPeerFreshness,
+  FIRST_PARTY_PEER_SCOPE,
   isPrereleaseVersion,
+  isPrereleaseRange,
   DEFAULT_TIMEOUT_MS,
 } from "../check-scaffold-pin-freshness.mjs";
 
@@ -379,6 +385,241 @@ describe("checkScaffoldPinFreshness — unreadable pin", () => {
 
     expect(result.ok).toBe(false);
     expect(result.findings[0].kind).toBe("unreadable-pin");
+  });
+});
+
+describe("checkFirstPartyPeerFreshness — declared range vs registry channel", () => {
+  it("covers all five explicit first-party peers and marks their current source as latest", () => {
+    expect(FIRST_PARTY_PEER_SCOPE).toEqual([
+      { pkg: "@takazudo/zdtp", channelSource: "latest" },
+      { pkg: "@takazudo/zfb", channelSource: "latest" },
+      { pkg: "@takazudo/zfb-md-wasm", channelSource: "latest" },
+      { pkg: "@takazudo/zfb-runtime", channelSource: "latest" },
+      {
+        pkg: "@takazudo/zudo-doc-history-server",
+        channelSource: "latest",
+      },
+    ]);
+  });
+
+  it("keeps the widened zdtp range quiet when latest is 0.6.1 (#4064)", async () => {
+    const result = await checkFirstPartyPeerFreshness({
+      peerRanges: [
+        {
+          pkg: "@takazudo/zdtp",
+          range: "^0.5.2 || ^0.6.0",
+          channelSource: "latest",
+        },
+      ],
+      fetchDistTags: stubRegistry({
+        "@takazudo/zdtp": { latest: "0.6.1" },
+      }),
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      findings: [
+        expect.objectContaining({
+          kind: "ok",
+          pkg: "@takazudo/zdtp",
+          range: "^0.5.2 || ^0.6.0",
+          registryVersion: "0.6.1",
+          tag: "latest",
+        }),
+      ],
+    });
+  });
+
+  it("reports a stable latest release excluded by the declared range", async () => {
+    const result = await checkFirstPartyPeerFreshness({
+      peerRanges: [
+        {
+          pkg: "@takazudo/zdtp",
+          range: "^0.5.2",
+          channelSource: "latest",
+        },
+      ],
+      fetchDistTags: stubRegistry({
+        "@takazudo/zdtp": { latest: "0.6.1" },
+      }),
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.findings[0]).toEqual(
+      expect.objectContaining({
+        kind: "peer-range-excludes-latest",
+        pkg: "@takazudo/zdtp",
+        range: "^0.5.2",
+        registryVersion: "0.6.1",
+        tag: "latest",
+      }),
+    );
+    expect(result.findings[0].message).toContain(
+      "Verify that this channel version is compatible before widening or updating",
+    );
+  });
+
+  it("reports an invalid range distinctly and does not call the registry", async () => {
+    const lookedUp = [];
+    const result = await checkFirstPartyPeerFreshness({
+      peerRanges: [
+        {
+          pkg: "@takazudo/zdtp",
+          range: "",
+          channelSource: "latest",
+        },
+      ],
+      fetchDistTags: async (pkgName) => {
+        lookedUp.push(pkgName);
+        throw new Error("should not look up an invalid range");
+      },
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.findings[0].kind).toBe("invalid-range");
+    expect(result.findings[0].kind).not.toBe("lookup-error");
+    expect(lookedUp).toEqual([]);
+  });
+
+  it("reports an unparseable non-empty range distinctly", async () => {
+    const result = await checkFirstPartyPeerFreshness({
+      peerRanges: [
+        {
+          pkg: "@takazudo/zdtp",
+          range: "^not-a-semver-range",
+          channelSource: "latest",
+        },
+      ],
+      fetchDistTags: async () => {
+        throw new Error("should not look up an invalid range");
+      },
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.findings[0].kind).toBe("invalid-range");
+  });
+
+  it("reports registry failure distinctly from range exclusion", async () => {
+    const result = await checkFirstPartyPeerFreshness({
+      peerRanges: [
+        {
+          pkg: "@takazudo/zdtp",
+          range: "^0.5.2 || ^0.6.0",
+          channelSource: "latest",
+        },
+      ],
+      fetchDistTags: stubRegistry({
+        "@takazudo/zdtp": new Error("ECONNRESET"),
+      }),
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.findings[0].kind).toBe("lookup-error");
+    expect(result.findings[0].kind).not.toBe("peer-range-excludes-latest");
+    expect(result.findings[0].message).toContain("ECONNRESET");
+  });
+
+  it("uses next for a prerelease range instead of stable latest", async () => {
+    expect(isPrereleaseRange("^0.2.0-next.9")).toBe(true);
+
+    const result = await checkFirstPartyPeerFreshness({
+      peerRanges: [
+        {
+          pkg: "@takazudo/zfb",
+          range: "^0.2.0-next.9",
+          channelSource: "latest",
+        },
+      ],
+      fetchDistTags: stubRegistry({
+        "@takazudo/zfb": {
+          latest: "2.7.1",
+          next: "0.2.0-next.10",
+        },
+      }),
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.findings[0]).toEqual(
+      expect.objectContaining({
+        kind: "ok",
+        pkg: "@takazudo/zfb",
+        registryVersion: "0.2.0-next.10",
+        tag: "next",
+      }),
+    );
+  });
+
+  it("uses next for a prerelease scaffold pin even when its peer range is stable", async () => {
+    const result = await checkScaffoldPinFreshness({
+      scaffoldSrc: PRERELEASE_SCAFFOLD_SRC,
+      packages: [],
+      peerRanges: [
+        {
+          pkg: "@takazudo/zfb",
+          range: "^0.2.0",
+          channelSource: "latest",
+        },
+      ],
+      fetchDistTags: stubRegistry({
+        "@takazudo/zfb": {
+          latest: "0.2.0",
+          next: "0.2.0-next.10",
+        },
+      }),
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.findings[0]).toEqual(
+      expect.objectContaining({
+        kind: "peer-range-excludes-latest",
+        pkg: "@takazudo/zfb",
+        pin: "0.2.0-next.9",
+        range: "^0.2.0",
+        registryVersion: "0.2.0-next.10",
+        tag: "next",
+      }),
+    );
+    expect(result.findings[0].message).toContain("Verify that this channel version is compatible");
+  });
+
+  it("preserves the missing-next skip for a prerelease range", async () => {
+    const result = await checkFirstPartyPeerFreshness({
+      peerRanges: [
+        {
+          pkg: "@takazudo/zfb",
+          range: "^0.2.0-next.9",
+          channelSource: "latest",
+        },
+      ],
+      fetchDistTags: stubRegistry({
+        "@takazudo/zfb": { latest: "2.7.1" },
+      }),
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.findings[0].kind).toBe("skipped");
+  });
+
+  it.each([
+    {},
+    null,
+    [],
+    { latest: "2.7.1", next: "" },
+    { latest: "0.3.0-next.1", next: "" },
+  ])("fails closed on a malformed prerelease registry payload (%j)", async (payload) => {
+    const result = await checkFirstPartyPeerFreshness({
+      peerRanges: [
+        {
+          pkg: "@takazudo/zfb",
+          range: "^0.2.0-next.9",
+          channelSource: "latest",
+        },
+      ],
+      fetchDistTags: stubRegistry({ "@takazudo/zfb": payload }),
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.findings[0].kind).toBe("lookup-error");
   });
 });
 
