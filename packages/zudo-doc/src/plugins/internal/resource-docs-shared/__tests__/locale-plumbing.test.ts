@@ -2,6 +2,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { generateClaudeResourcesDocs } from "../../claude-resources/generate.js";
+import { generateCodexResourcesDocs } from "../../codex-resources/generate.js";
 import {
   removeGeneratedIndex,
   resolveLocaleDirs,
@@ -16,6 +18,11 @@ function makeTempDir(): string {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "resource-doc-plumbing-"));
   tempDirs.push(dir);
   return dir;
+}
+
+function writeFixtureFile(filePath: string, content: string): void {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, content);
 }
 
 afterEach(() => {
@@ -216,9 +223,139 @@ describe("writeGeneratedIndex", () => {
 
     expect(() => writeGeneratedIndex(indexPath, "would clobber")).toThrow(indexPath);
     expect(() => writeGeneratedIndex(indexPath, "would clobber")).toThrow(
-      /refusing to overwrite authored locale index.*generated: true.*remove or rename/i,
+      /refusing to overwrite authored locale index.*generated: true.*remove or rename.*defaultLocaleOnlyPrefixes/i,
     );
     expect(fs.readFileSync(indexPath, "utf8")).toContain("Keep me");
+  });
+
+  it("names the overview prefix when Claude refuses an authored locale index", () => {
+    const root = makeTempDir();
+    const docsDir = path.join(root, "docs");
+    const localeDir = path.join(root, "docs-ja");
+    const claudeDir = path.join(root, ".claude");
+    writeFixtureFile(
+      path.join(claudeDir, "commands", "test.md"),
+      "---\ndescription: Test command\n---\n\nRun it.\n",
+    );
+
+    generateClaudeResourcesDocs({
+      claudeDir,
+      projectRoot: root,
+      docsDir,
+      locales: { ja: { dir: localeDir } },
+      defaultLocale: "en",
+    });
+
+    const indexPath = path.join(localeDir, "claude", "index.mdx");
+    const authored = "---\ntitle: Keep this page\n---\n\nBilingual stub.\n";
+    fs.writeFileSync(indexPath, authored);
+
+    expect(() => generateClaudeResourcesDocs({
+      claudeDir,
+      projectRoot: root,
+      docsDir,
+      locales: { ja: { dir: localeDir } },
+      defaultLocale: "en",
+    })).toThrow(
+      /generated: true.*remove or rename.*add "\/docs\/claude\/" to defaultLocaleOnlyPrefixes/i,
+    );
+    expect(fs.readFileSync(indexPath, "utf8")).toBe(authored);
+  });
+
+  it("names the Claude category prefix when refusing an authored locale index", () => {
+    const root = makeTempDir();
+    const docsDir = path.join(root, "docs");
+    const localeDir = path.join(root, "docs-ja");
+    const claudeDir = path.join(root, ".claude");
+    writeFixtureFile(
+      path.join(claudeDir, "commands", "test.md"),
+      "---\ndescription: Test command\n---\n\nRun it.\n",
+    );
+
+    generateClaudeResourcesDocs({
+      claudeDir,
+      projectRoot: root,
+      docsDir,
+      locales: { ja: { dir: localeDir } },
+      defaultLocale: "en",
+    });
+
+    const indexPath = path.join(localeDir, "claude-commands", "index.mdx");
+    const authored = "---\ntitle: Keep this page\n---\n\nBilingual stub.\n";
+    fs.writeFileSync(indexPath, authored);
+
+    expect(() => generateClaudeResourcesDocs({
+      claudeDir,
+      projectRoot: root,
+      docsDir,
+      locales: { ja: { dir: localeDir } },
+      defaultLocale: "en",
+    })).toThrow(
+      /generated: true.*remove or rename.*add "\/docs\/claude-commands\/" to defaultLocaleOnlyPrefixes/i,
+    );
+    expect(fs.readFileSync(indexPath, "utf8")).toBe(authored);
+  });
+
+  it("names the overview prefix when Codex refuses an authored locale index", () => {
+    const root = makeTempDir();
+    const docsDir = path.join(root, "docs");
+    const localeDir = path.join(root, "docs-ja");
+    const codexDir = path.join(root, ".codex");
+    writeFixtureFile(path.join(codexDir, "config.toml"), 'model = "test"\n');
+
+    generateCodexResourcesDocs({
+      codexDir,
+      projectRoot: root,
+      docsDir,
+      locales: { ja: { dir: localeDir } },
+      defaultLocale: "en",
+    });
+
+    const indexPath = path.join(localeDir, "codex", "index.mdx");
+    const authored = "---\ntitle: Keep this page\n---\n\nBilingual stub.\n";
+    fs.writeFileSync(indexPath, authored);
+
+    expect(() => generateCodexResourcesDocs({
+      codexDir,
+      projectRoot: root,
+      docsDir,
+      locales: { ja: { dir: localeDir } },
+      defaultLocale: "en",
+    })).toThrow(
+      /generated: true.*remove or rename.*add "\/docs\/codex\/" to defaultLocaleOnlyPrefixes/i,
+    );
+    expect(fs.readFileSync(indexPath, "utf8")).toBe(authored);
+  });
+
+  it("names the Codex category prefix when refusing an authored locale index", () => {
+    const root = makeTempDir();
+    const docsDir = path.join(root, "docs");
+    const localeDir = path.join(root, "docs-ja");
+    const codexDir = path.join(root, ".codex");
+    writeFixtureFile(path.join(codexDir, "config.toml"), 'model = "test"\n');
+
+    generateCodexResourcesDocs({
+      codexDir,
+      projectRoot: root,
+      docsDir,
+      locales: { ja: { dir: localeDir } },
+      defaultLocale: "en",
+    });
+
+    const indexPath = path.join(localeDir, "codex-config", "index.mdx");
+    const authored = "---\ntitle: Keep this page\n---\n\nBilingual stub.\n";
+    fs.writeFileSync(indexPath, authored);
+
+    expect(() => generateCodexResourcesDocs({
+      codexDir,
+      projectRoot: root,
+      docsDir,
+      locales: { ja: { dir: localeDir } },
+      defaultLocale: "en",
+    })).toThrow(
+      /generated: true.*remove or rename.*add "\/docs\/codex-config\/" to defaultLocaleOnlyPrefixes/i,
+    );
+    expect(fs.readFileSync(indexPath, "utf8")).toBe(authored);
   });
 
   it("removes stale generated indexes but preserves authored indexes", () => {

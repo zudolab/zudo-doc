@@ -54,6 +54,7 @@ export function generateOverview(
       writeGeneratedIndex(
         overviewPath,
         renderOverview(config, locale, slugs),
+        "/docs/codex/",
       );
     } else {
       removeGeneratedIndex(overviewPath);
@@ -129,7 +130,8 @@ function emitLocaleCategoryIndexes(
         fallbackLiteral: fallbackDescription,
       }),
       formatFrontmatterString,
-      writeGeneratedIndex,
+      (absolutePath, content) =>
+        writeGeneratedIndex(absolutePath, content, `/docs/${slug}/`),
     );
   };
 

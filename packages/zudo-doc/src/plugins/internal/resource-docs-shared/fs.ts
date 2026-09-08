@@ -95,7 +95,11 @@ export function cleanDir(dir: string): void {
  * content. A missing file is created; an existing file is only replaced when
  * its frontmatter explicitly carries `generated: true`.
  */
-export function writeGeneratedIndex(absPath: string, mdx: string): void {
+export function writeGeneratedIndex(
+  absPath: string,
+  mdx: string,
+  routePrefix?: string,
+): void {
   if (fs.existsSync(absPath)) {
     let existing: string;
     try {
@@ -108,8 +112,11 @@ export function writeGeneratedIndex(absPath: string, mdx: string): void {
 
     const parsed = parseFrontmatter(existing);
     if (parsed?.data.generated !== true) {
+      const remedy = routePrefix === undefined
+        ? "add this route to defaultLocaleOnlyPrefixes"
+        : `add "${routePrefix}" to defaultLocaleOnlyPrefixes`;
       throw new Error(
-        `resource-docs: refusing to overwrite authored locale index "${absPath}" because its frontmatter does not contain generated: true. Remove or rename the file, then retry.`,
+        `resource-docs: refusing to overwrite authored locale index "${absPath}" because its frontmatter does not contain generated: true. Remove or rename the file, or ${remedy} to keep this locale's file authoritative, then retry.`,
       );
     }
   }
