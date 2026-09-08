@@ -388,6 +388,7 @@ function generateOverviewIndex(
       writeGeneratedIndex(
         overviewPath,
         renderOverviewIndex(config, locale, categorySlugs),
+        "/docs/claude/",
       );
     } else {
       removeGeneratedIndex(overviewPath);
@@ -508,7 +509,8 @@ function writeLocaleCategoryIndex(
     position,
     resourceLabel(config, locale, descriptionKey, fallbackDescription),
     formatClaudeFrontmatterString,
-    writeGeneratedIndex,
+    (absolutePath, content) =>
+      writeGeneratedIndex(absolutePath, content, `/docs/${categoryDir}/`),
   );
 }
 
