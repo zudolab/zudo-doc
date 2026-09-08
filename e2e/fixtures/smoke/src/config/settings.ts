@@ -8,6 +8,7 @@ import type {
   FrontmatterPreviewConfig,
   BodyFootUtilAreaConfig,
   MetaTagsConfig,
+  DateFormatSetting,
 } from "@takazudo/zudo-doc/settings";
 
 export const settings = {
@@ -25,6 +26,8 @@ export const settings = {
   minifyHtml: true as boolean,
   docsDir: "src/content/docs",
   entryDocSlug: "getting-started",
+  // Mirrors the showcase default — see /docs/guides/configuration.
+  dateFormat: "locale" as DateFormatSetting,
   defaultLocale: "en" as const,
   locales: {} satisfies Record<string, LocaleConfig>,
   mermaid: true,
