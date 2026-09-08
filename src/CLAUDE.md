@@ -35,6 +35,7 @@ Each tier only references the tier above it.
 
 ### Color Rules
 
+- `--color-zd-*` exists for embedders; package and showcase code keep using bare tokens (`text-fg`, `bg-surface`, …). Never migrate chrome call sites to `zd-` ad hoc.
 - **NEVER** use Tailwind default colors (`bg-gray-500`, `text-blue-600`) — they are reset to `initial`
 - **NEVER** use hardcoded color values (`rgba()`, `#hex`, `rgb()`) — use semantic tokens or `color-mix()` with tokens
 - **ALWAYS** use project tokens: `text-fg`, `bg-surface`, `border-muted`, `text-accent`, etc. Semantic tokens are the only Tailwind-facing color surface — there is no utility for a raw ramp stop (no `p0`–`p15`-style classes).
