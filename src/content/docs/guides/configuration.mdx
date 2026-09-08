@@ -323,6 +323,139 @@ Route slug of the doc page the [versions page](./versioning.mdx#versions-listing
 
 Default: `"getting-started"`
 
+### dateFormat
+
+Date-display format. `"locale"` keeps the built-in `Intl` rendering; anything else is a token pattern.
+
+Type: `DateFormatSetting` · Default: `"locale"`
+
+zudo-doc renders dates in five distinct **shapes**, so the setting is keyed by shape — called a *role* — rather than by call site. Nobody wants the pager date to differ from the header date, but a compact card stamp genuinely differs from a full date line.
+
+| Role | Default (`en`) | Default (`ja`) | Where it appears |
+|---|---|---|---|
+| `full` | `Aug 22, 2026` | `2026年8月22日` | H1 date line, git metainfo, pager, asset page, revision history, note-tray list and timeline, ungrouped site-tree rows |
+| `monthDay` | `Aug 22` | `8月22日` | Note-tray card grid |
+| `year` | `2026` | `2026年` | Note-tray card grid, year-group headings |
+| `yearMonth` | `2026 August` | `2026年8月` | Note-tray, sidebar and site-tree month-group headings |
+| `numericMonthDay` | `08-22` | `08-22` | Sidebar tray rows, site-tree grouped rows |
+
+`numericMonthDay` is deliberately locale-insensitive at its default: it is a compact sort-aligned stamp, not prose, so it renders `08-22` in every locale. Give it a pattern and it formats like any other role.
+
+<Note title="The `year` role has two surfaces that differ at the default">
+
+Year-group headings in the sidebar and the site tree print the grouping key itself — `2026` in every locale — because a year heading has never gone through a formatter, and routing it through one would silently turn existing Japanese sites into `2026年`. The note-tray card grid does format its year, so a Japanese page shows `2026年` there. Set `year` to a pattern and both surfaces follow it; headings apply the pattern against January 1 of that year, so month or day tokens in a `year` pattern render that boundary date.
+
+</Note>
+
+#### A bare string sets only `full`
+
+This is the setting's one real surprise. A bare pattern is shorthand for `{ full: "…" }`, so it changes the H1 date line, the pager and the other `full` surfaces — and leaves card stamps, month headings and sidebar rows exactly as they were:
+
+```ts
+dateFormat: "YYYY/MM/DD",
+```
+
+To change those too, name their roles.
+
+#### Roles and per-locale overrides
+
+The object form takes the five role keys plus an optional `locales` map keyed by locale code, whose values take the same five keys:
+
+```ts
+dateFormat: {
+  full: "MM/DD/YYYY",
+  yearMonth: "MM/YYYY",
+  locales: {
+    ja: { full: "YYYY年M月D日" },
+  },
+},
+```
+
+Resolution precedence, evaluated **per role**:
+
+1. `locales[locale][role]` — the per-locale override
+2. `[role]` — the top-level role
+3. `"locale"` — the built-in `Intl` rendering
+
+Per-locale overrides are the point of the object form on a multilingual site: `Aug 22, 2026` and `2026年8月22日` are both correct for their locale, and no single pattern serves both. See [Internationalization](./i18n.mdx#date-formats-per-locale).
+
+#### Supported tokens
+
+| Token | Meaning | `2026-08-05` (`en`) |
+|---|---|---|
+| `YYYY` | 4-digit year | `2026` |
+| `YY` | 2-digit year | `26` |
+| `MMMM` | Full month name (locale-aware) | `August` |
+| `MMM` | Short month name (locale-aware) | `Aug` |
+| `MM` | Zero-padded month | `08` |
+| `M` | Month | `8` |
+| `DD` | Zero-padded day | `05` |
+| `D` | Day | `5` |
+| `[…]` | Literal escape — `[at] YYYY` | `at 2026` |
+
+Matching rules worth knowing:
+
+- Anything that is not a token passes through literally, so `/`, `-`, `.`, spaces and `年 月 日` need no escaping.
+- The longest token wins at each position: `YYYY` beats `YY`, and `MMMM` beats `MMM`, `MM` and `M`.
+- A substituted month name is never rescanned, so `March` and `May` keep their `M`.
+- An unrecognized run degrades instead of failing the build: `YYYYY` renders the year followed by a literal `Y`, and `dddd` stays `dddd`.
+- Brackets do not nest — the first `]` closes the escape — and an unmatched `[` is emitted literally while the rest of the pattern still resolves.
+- `MMM` and `MMMM` produce localized month names for `en`, `ja` and `de` only; every other locale falls back to English names. See [Date formats per locale](./i18n.mdx#date-formats-per-locale).
+
+<Warning title="A supported subset, not Day.js">
+
+The token spellings are borrowed from Day.js because they are familiar, but this is a bounded vocabulary, not Day.js compatibility. The eight tokens above and `[…]` escapes are the whole set: there are no weekday, time, quarter, or era tokens and no plugin surface. Everything else is emitted literally.
+
+</Warning>
+
+#### Examples
+
+A bare pattern — the `full` role in every locale. The H1 date line and pager read `2026/08/22`; card stamps, month headings and sidebar rows are untouched:
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    dateFormat: "YYYY/MM/DD",
+  }),
+);
+```
+
+Two roles, every locale. `full` reads `08/22/2026` and `yearMonth` reads `08/2026`; `monthDay`, `year` and `numericMonthDay` stay at `"locale"`:
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    dateFormat: {
+      full: "MM/DD/YYYY",
+      yearMonth: "MM/YYYY",
+    },
+  }),
+);
+```
+
+Per-locale. English pages read `Aug 22, 2026` and Japanese pages `2026年8月22日`; `yearMonth` is overridden on `ja` only, so English keeps its default `2026 August` while Japanese reads `2026年8月`:
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    dateFormat: {
+      full: "MMM D, YYYY",
+      locales: {
+        ja: { full: "YYYY年M月D日", yearMonth: "YYYY年M月" },
+      },
+    },
+  }),
+);
+```
+
+#### An object replaces the default wholesale
+
+`zudoDoc()` merges your fields over the package defaults at the **top level only**, so a supplied `dateFormat` object replaces the default `"locale"` outright rather than being deep-merged into it. That costs nothing here: the resolver fills every role you leave out with `"locale"` anyway, which is exactly what the default meant.
+
+#### What it does not affect
+
+`dateFormat` is a display setting. It does not touch the `YYYY-MM-DD` [frontmatter authoring format](./frontmatter.mdx#fields-date), the machine-readable `datetime` attributes on `<time>` elements, the sitemap's `lastmod` values, or the grouping keys behind year and month headings — all of those stay ISO.
+
 ### defaultLocale
 
 Default locale code (unprefixed routes).
