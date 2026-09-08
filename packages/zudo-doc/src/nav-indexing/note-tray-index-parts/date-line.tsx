@@ -3,6 +3,7 @@
 
 import type { JSX } from "preact";
 import { formatDate } from "../../note-tray-model/index.js";
+import type { ResolvedDateFormats } from "../../settings.js";
 import type { NoteTrayIndexItem } from "../note-tray-index.js";
 import { TagNav } from "../tag-nav.js";
 import type { TagNavLabels } from "../types.js";
@@ -11,19 +12,24 @@ export function DateLine({
   item,
   locale,
   updatedLabel,
+  dateFormats,
 }: {
   item: NoteTrayIndexItem;
   locale: string;
   updatedLabel: string;
+  dateFormats?: ResolvedDateFormats;
 }): JSX.Element | null {
   if (!item.date && !item.updated) return null;
   return (
     <span class="tabular-nums text-caption text-muted">
-      {item.date && <time datetime={item.date}>{formatDate(item.date, locale)}</time>}
+      {item.date && (
+        <time datetime={item.date}>{formatDate(item.date, locale, dateFormats?.full)}</time>
+      )}
       {item.date && item.updated && <span aria-hidden="true"> · </span>}
       {item.updated && (
         <span>
-          {updatedLabel} <time datetime={item.updated}>{formatDate(item.updated, locale)}</time>
+          {updatedLabel}{" "}
+          <time datetime={item.updated}>{formatDate(item.updated, locale, dateFormats?.full)}</time>
         </span>
       )}
     </span>

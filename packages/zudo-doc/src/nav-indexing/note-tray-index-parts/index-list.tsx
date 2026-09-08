@@ -36,7 +36,12 @@ export function IndexList(props: NoteTrayIndexProps): JSX.Element {
               {item.description && <span class={detailClass}>{item.description}</span>}
               {props.showDate && (
                 <span class={dateClass}>
-                  <DateLine item={item} locale={props.locale} updatedLabel={props.updatedLabel} />
+                  <DateLine
+                    item={item}
+                    locale={props.locale}
+                    updatedLabel={props.updatedLabel}
+                    dateFormats={props.dateFormats}
+                  />
                 </span>
               )}
             </span>
