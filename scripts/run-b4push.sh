@@ -57,7 +57,7 @@ set -euo pipefail
 
 START_TIME=$(date +%s)
 FAILURES=()
-TOTAL_STEPS=30
+TOTAL_STEPS=31
 CURRENT_STEP=0
 
 # Per-step elapsed timing (#2538) — makes budget creep in any one step
@@ -286,7 +286,21 @@ else
   fail "Default-lane dist-mutating test guard"
 fi
 
-# ── Step 17: Guard-manifest meta-checks ──────────────
+# ── Step 17: Bash 3.2 compatibility lint (#4049) ─────
+# Static scan of the shipped template shell scripts (setup-doc-skill.sh, both
+# copies) for the two constructs that break on stock macOS bash 3.2: a
+# heredoc opened inside $(...), and an unguarded "${arr[@]}"/"${arr[*]}"
+# expansion. CI runs ubuntu-latest exclusively (bash 5.x), so this cannot be
+# an executed check — see scripts/check-bash32-compat.mjs for the guard's
+# documented reach and its false-negative-over-false-positive posture.
+step "Bash 3.2 compatibility lint (check:bash32-compat)"
+if (cd "$ROOT_DIR" && pnpm check:bash32-compat); then
+  pass "Bash 3.2 compatibility lint passed"
+else
+  fail "Bash 3.2 compatibility lint"
+fi
+
+# ── Step 18: Guard-manifest meta-checks ──────────────
 # Both checks are pure Node and dependency-free. The first verifies that every
 # PR workflow job is classified as required or reasoned-allowlisted; the second
 # verifies every lightweight local guard has corresponding CI coverage.
@@ -299,7 +313,7 @@ fi
 
 # <<< b4push-ci-parity:guards:end
 
-# ── Step 18: Scaffold pin published guard (#3549) ─────
+# ── Step 19: Scaffold pin published guard (#3549) ─────
 # This live npm-registry check belongs outside the parity guard region: the
 # scaffold intentionally points at the in-flight release version before that
 # version is published. Release callers opt out during that window; nightly
@@ -315,7 +329,7 @@ else
   fi
 fi
 
-# ── Step 19: Type checking ─────────────────────────────
+# ── Step 20: Type checking ─────────────────────────────
 # Prefer `zfb check` (the post-cutover entry point). If it fails to
 # start (e.g. binary not yet built), fall back to `tsc --noEmit` so the
 # typecheck still gates pushes.
@@ -348,7 +362,7 @@ else
   fail "Package typechecks"
 fi
 
-# ── Step 20: Worker contract proof ───────────────────
+# ── Step 21: Worker contract proof ───────────────────
 step "Worker contract proof (types + runtime + dry-run)"
 if (cd "$ROOT_DIR" && pnpm verify:worker-contract); then
   pass "Worker contract proof passed"
@@ -356,7 +370,7 @@ else
   fail "Worker contract proof"
 fi
 
-# ── Step 21: Root unit tests ──────────────────────────
+# ── Step 22: Root unit tests ──────────────────────────
 # Root `test:unit` (vitest) guards src/**/__tests__ and scripts/__tests__,
 # which previously ran in no local gate and no CI workflow (#1856). Runs
 # before the expensive site build for fast logic-level feedback.
@@ -380,11 +394,11 @@ else
   fail "Root unit tests"
 fi
 
-# ── Step 22: Slow unit tests ──────────────────────────
+# ── Step 23: Slow unit tests ──────────────────────────
 # The subprocess-heavy root specs and the two retiered create-zudo-doc specs
 # are excluded from their default lanes and remain blocking local gates.
 # Keep both invocations in this existing step so b4push retains its current
-# 29-step shape; the other create-zudo-doc slow specs stay nightly-only.
+# 30-step shape; the other create-zudo-doc slow specs stay nightly-only.
 step "Slow root unit tests (test:unit:slow)"
 if (cd "$ROOT_DIR" && pnpm test:unit:slow); then
   pass "Slow root unit tests passed"
@@ -402,7 +416,7 @@ else
   fail "retiered create-zudo-doc slow tests"
 fi
 
-# ── Step 23: Package tests ────────────────────────────
+# ── Step 24: Package tests ────────────────────────────
 # Runs all workspace package test suites (2,988 tests across 4 packages: search-worker 44,
 # doc-history-server 73, create-zudo-doc 596, zudo-doc 2,275). The 5 retiered
 # create-zudo-doc tests run in the blocking Slow Unit Tests lane. Closes the local/CI
@@ -415,7 +429,7 @@ else
   fail "Package tests + subpath resolution"
 fi
 
-# ── Step 24: Package safelist check ──────────────────
+# ── Step 25: Package safelist check ──────────────────
 # Verifies that the generated dist/safelist.css in packages/zudo-doc/ covers
 # every responsive-variant + arbitrary-value utility class used in
 # packages/zudo-doc/src/**/*.tsx. Catches regressions where gen-safelist.mjs
@@ -428,9 +442,9 @@ else
   fail "Package safelist check"
 fi
 
-# ── Step 25: Build ────────────────────────────────────
+# ── Step 26: Build ────────────────────────────────────
 # --no-strict-content-bridge overrides the zfb.config.ts strictContentBridge
-# gate (#3234) so this build still produces a dist/ for step 25's
+# gate (#3234) so this build still produces a dist/ for the next step's
 # content-fallback check to scan — the two guards can't run on the same build.
 step "Build (zfb build)"
 if (cd "$ROOT_DIR" && pnpm build --no-strict-content-bridge); then
@@ -439,7 +453,7 @@ else
   fail "Build"
 fi
 
-# ── Step 26: Content-fallback check ───────────────────
+# ── Step 27: Content-fallback check ───────────────────
 #
 # zfb only *warns* when it declines to wire a page's compiled MDX through
 # the content bridge, then ships that page's whole body as a single
@@ -457,7 +471,7 @@ else
   fail "Content-fallback check"
 fi
 
-# ── Step 27: Link check ───────────────────────────────
+# ── Step 28: Link check ───────────────────────────────
 #
 # Strict on broken links + absolute MDX-source warnings (real 404s
 # / sub-path bypass). Trailing-slash warnings stay warn-only — they
@@ -477,7 +491,7 @@ else
   fail "Link check"
 fi
 
-# ── Step 28: HTML validation ──────────────────────────
+# ── Step 29: HTML validation ──────────────────────────
 step "HTML validation (html-validate)"
 if [[ "${B4PUSH_SKIP_HTML_VALIDATE:-}" == "1" ]]; then
   skip "HTML validation (B4PUSH_SKIP_HTML_VALIDATE=1)"
@@ -489,7 +503,7 @@ else
   fi
 fi
 
-# ── Step 29: Automated preview smoke (blocking) ──────
+# ── Step 30: Automated preview smoke (blocking) ──────
 step "Preview smoke (automated)"
 if [[ "${B4PUSH_SKIP_PREVIEW_SMOKE:-}" == "1" ]]; then
   skip "Preview smoke (B4PUSH_SKIP_PREVIEW_SMOKE=1)"
@@ -501,7 +515,7 @@ else
   fi
 fi
 
-# ── Step 30: Manual interactive smoke ────────────────
+# ── Step 31: Manual interactive smoke ────────────────
 step "Manual interactive smoke"
 if [[ "${B4PUSH_SKIP_MANUAL_SMOKE:-}" == "1" ]]; then
   skip "Manual smoke (B4PUSH_SKIP_MANUAL_SMOKE=1)"

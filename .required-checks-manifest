@@ -24,6 +24,7 @@ E2E Spec Naming Guard
 Flaky Tracking-Issue Guard
 Wait-Debt Guard
 Component-Tokens Codegen Drift Check
+Bash 3.2 Compatibility Lint
 A2 No-Stub Parity Gate
 Dist-Mutating Test Guard
 Publish Contract Gates
