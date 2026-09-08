@@ -200,6 +200,8 @@ The primary locale is served at `/docs/...`; each additional locale uses its cod
 
 `dateFormat` accepts per-locale overrides, and on a multilingual site that is normally the form you want: `Aug 22, 2026` and `2026年8月22日` are both correct for their locale, and no single pattern serves both.
 
+On every dated surface, the render locale is the page locale, including on single-locale sites; it is no longer derived from whether a locale switcher is present.
+
 ```ts title="zfb.config.ts"
 export default defineConfig(
   zudoDoc({
