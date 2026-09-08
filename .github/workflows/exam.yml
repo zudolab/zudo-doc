@@ -428,6 +428,7 @@ jobs:
         if: failure()
         run: |
           bash scripts/file-exam-issue.sh \
+            --report theme-a11y-audit-out/report.json \
             --run-url "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
             --workflow "Nightly Exam / Theme A11y Audit"
         env:

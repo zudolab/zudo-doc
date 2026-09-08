@@ -80,29 +80,42 @@ if [[ -n "${GH_REPO:-}" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Parse failing spec names from JSON report (if provided)
+# Parse the JSON report (if provided). Two shapes are recognized:
+#   - the theme-a11y-audit report.json (results/coverage/counts/stateErrors/
+#     stylesheetErrors at the top level) — rendered by
+#     format-theme-a11y-report.mjs into AUDIT_REPORT_SECTION.
+#   - Playwright's JSON report ({ suites: [ { suites: [ { specs: [ { ok,
+#     title } ] } ] } ] }) — the pre-existing FAILING_SPECS extraction below.
+# format-theme-a11y-report.mjs exits non-zero with no stdout when the file
+# isn't its shape, so a Playwright report falls through to the legacy parse.
 # ---------------------------------------------------------------------------
+AUDIT_REPORT_SECTION=""
 FAILING_SPECS=""
 if [[ -n "$REPORT_PATH" && -f "$REPORT_PATH" ]]; then
-  echo "Parsing failing specs from $REPORT_PATH..."
-  # Extract test titles from failed tests using node (no jq dependency required).
-  # Playwright JSON report structure: { suites: [ { suites: [ { specs: [ { ok, title } ] } ] } ] }
-  FAILING_SPECS=$(node --eval "
-    const fs = require('fs');
-    const report = JSON.parse(fs.readFileSync(process.argv[1], 'utf8'));
-    const titles = new Set();
-    function walk(obj) {
-      if (obj && typeof obj === 'object') {
-        if (Array.isArray(obj)) { obj.forEach(walk); }
-        else {
-          if ('ok' in obj && 'title' in obj && obj.ok === false) titles.add(obj.title);
-          for (const v of Object.values(obj)) walk(v);
+  echo "Parsing report from $REPORT_PATH..."
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  AUDIT_REPORT_SECTION=$(node "$SCRIPT_DIR/format-theme-a11y-report.mjs" "$REPORT_PATH" 2>/dev/null || true)
+
+  if [[ -z "$AUDIT_REPORT_SECTION" ]]; then
+    # Extract test titles from failed tests using node (no jq dependency required).
+    # Playwright JSON report structure: { suites: [ { suites: [ { specs: [ { ok, title } ] } ] } ] }
+    FAILING_SPECS=$(node --eval "
+      const fs = require('fs');
+      const report = JSON.parse(fs.readFileSync(process.argv[1], 'utf8'));
+      const titles = new Set();
+      function walk(obj) {
+        if (obj && typeof obj === 'object') {
+          if (Array.isArray(obj)) { obj.forEach(walk); }
+          else {
+            if ('ok' in obj && 'title' in obj && obj.ok === false) titles.add(obj.title);
+            for (const v of Object.values(obj)) walk(v);
+          }
         }
       }
-    }
-    walk(report);
-    if (titles.size) process.stdout.write([...titles].join('\n') + '\n');
-  " -- "$REPORT_PATH" 2>/dev/null || true)
+      walk(report);
+      if (titles.size) process.stdout.write([...titles].join('\n') + '\n');
+    " -- "$REPORT_PATH" 2>/dev/null || true)
+  fi
 fi
 
 # ---------------------------------------------------------------------------
@@ -113,7 +126,9 @@ build_failure_body() {
   body="## Exam failure: ${WORKFLOW}"$'\n'$'\n'
   body+="**Run:** ${RUN_URL}"$'\n'$'\n'
 
-  if [[ -n "$FAILING_SPECS" ]]; then
+  if [[ -n "$AUDIT_REPORT_SECTION" ]]; then
+    body+="$AUDIT_REPORT_SECTION"$'\n'
+  elif [[ -n "$FAILING_SPECS" ]]; then
     body+="### Failing tests"$'\n'$'\n'
     while IFS= read -r spec; do
       body+="- ${spec}"$'\n'
