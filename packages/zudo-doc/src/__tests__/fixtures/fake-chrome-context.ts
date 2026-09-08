@@ -11,6 +11,7 @@
 // element types until rendered).
 
 import type { ChromeContext } from "../../factory-context/index.js";
+import type { LocaleConfig } from "../../settings.js";
 
 /** A broad fake settings object (cast to the package `Settings`). Carries every
  *  field read at factory construction time or in the page-view bodies. */
@@ -85,7 +86,7 @@ export function makeFakeChromeContext(opts: FakeChromeContextOptions = {}): Chro
     i18n: { defaultLocale: "en", locales: ["en"], getLocaleLabel: (l: string) => l.toUpperCase() },
     defaultLocale: "en",
     locales: ["en"],
-    getLocaleConfig: () => undefined,
+    getLocaleConfig: (_locale: string): LocaleConfig | undefined => undefined,
     getLocaleLabel: (l: string) => l.toUpperCase(),
     t: (key: string) => key,
     urlHelpers: {},

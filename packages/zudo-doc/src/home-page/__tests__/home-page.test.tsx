@@ -102,6 +102,84 @@ describe("createHomePageView — hero markup", () => {
     expect(html).not.toContain("url(/img/logo.svg)");
   });
 
+  it("renders a configured locale description on that locale's home page", () => {
+    const ctx = makeFakeChromeContext({
+      settings: {
+        siteDescription: "Global description",
+        locales: {
+          ja: {
+            label: "Japanese",
+            dir: "src/content/docs-ja",
+            description: "Japanese description",
+          },
+        },
+      },
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps({ locale: "ja" })} />);
+
+    expect(html).toContain(
+      '<p class="text-muted text-small mb-vsp-sm">Japanese description</p>',
+    );
+  });
+
+  it("falls back to settings.siteDescription when a locale description is absent", () => {
+    const ctx = makeFakeChromeContext({
+      settings: {
+        siteDescription: "Global description",
+        locales: { ja: { label: "Japanese", dir: "src/content/docs-ja" } },
+      },
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps({ locale: "ja" })} />);
+
+    expect(html).toContain(
+      '<p class="text-muted text-small mb-vsp-sm">Global description</p>',
+    );
+  });
+
+  it("keeps settings.siteDescription for the default locale", () => {
+    const ctx = makeFakeChromeContext({
+      settings: {
+        siteDescription: "Global description",
+        locales: {
+          ja: {
+            label: "Japanese",
+            dir: "src/content/docs-ja",
+            description: "Japanese description",
+          },
+        },
+      },
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps({ locale: "en" })} />);
+
+    expect(html).toContain(
+      '<p class="text-muted text-small mb-vsp-sm">Global description</p>',
+    );
+  });
+
+  it("renders an empty locale description as intentionally blank", () => {
+    const ctx = makeFakeChromeContext({
+      settings: {
+        siteDescription: "Global description",
+        locales: {
+          ja: {
+            label: "Japanese",
+            dir: "src/content/docs-ja",
+            description: "",
+          },
+        },
+      },
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps({ locale: "ja" })} />);
+
+    // `??` falls through only for nullish values, so an empty string can
+    // intentionally suppress the site-wide description.
+    expect(html).toContain('<p class="text-muted text-small mb-vsp-sm"></p>');
+  });
+
   it("renders the theme-adaptive mask block when settings.logo is a path", () => {
     const ctx = makeFakeChromeContext({
       settings: { logo: "/img/logo.svg" },
