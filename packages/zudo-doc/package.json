@@ -252,6 +252,7 @@
       "default": "./dist/theme-packs-registry/index.js"
     },
     "./theme.css": "./dist/theme.css",
+    "./theme-no-reset.css": "./dist/theme-no-reset.css",
     "./safelist.css": "./dist/safelist.css",
     "./content.css": "./dist/content.css",
     "./page-loading.css": "./dist/page-loading.css",

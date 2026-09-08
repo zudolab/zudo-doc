@@ -185,6 +185,7 @@ describe("package.json exports keyset snapshot", () => {
         "./tags-audit",
         "./theme",
         "./theme-cli",
+        "./theme-no-reset.css",
         "./theme-packs-registry",
         "./theme-packs/*",
         "./theme-toggle",

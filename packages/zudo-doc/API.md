@@ -18,7 +18,7 @@ New snapshot guards (added in `packages/zudo-doc/src/__tests__/public-api-snapsh
 
 ---
 
-## 1. Subpath Exports (161 total)
+## 1. Subpath Exports (164 total)
 
 The full `package.json#exports` keyset is the contract. Any addition or removal requires a deliberate, reviewed change that will fail the snapshot guard.
 
@@ -335,6 +335,8 @@ project's `ZudoDocConfig` override over each default before threading it into
 
 | Subpath | Description |
 |---|---|
+| `./theme.css` | Default theme tokens and project-agnostic base rules |
+| `./theme-no-reset.css` | `theme.css` variant without the namespace-wide `--color-*: initial` guardrail; use when import order cannot be controlled |
 | `./content.css` | `.zd-content` typography stylesheet (single source of truth) |
 | `./safelist.css` | Generated Tailwind safelist for component classes |
 | `./page-loading.css` | Page-loading overlay stylesheet |
@@ -418,7 +420,8 @@ These fields are the stable contract. The snapshot guard locks this set.
 
 ## 3. `@theme` Design Tokens
 
-Defined in `src/styles/global.css`. Consumers must define these tokens in their own `@theme` block.
+The package's `theme.css` defines the default aliases. Consumers may override
+them in their own `@theme` block after importing the package stylesheet.
 
 **Authoritative drift guard:** `pnpm check:token-lint` (`design-token-lint`).
 
@@ -439,6 +442,7 @@ Defined in `src/styles/global.css`. Consumers must define these tokens in their 
 | `--color-chat-user-bg`, `--color-chat-user-text` | AI chat user message |
 | `--color-chat-assistant-bg`, `--color-chat-assistant-text` | AI chat assistant message |
 | `--color-matched-keyword-bg`, `--color-matched-keyword-fg` | Search keyword highlight |
+| `--color-zd-*` | Namespaced semantic aliases mirroring the 23 bare package color aliases; use these from embedder-owned components to avoid bare-token collisions. |
 
 ### Spacing Tokens
 

@@ -270,9 +270,9 @@ spreads it into `defineConfig` and keeps only the shell fields it still owns
   `tagVocabulary`; everything callable is an importable package subpath; package
   routes use `@takazudo/zfb/content`, not the host `zfb/content` tsconfig alias).
 
-## Shipped CSS artifacts (five static + one compiled)
+## Shipped CSS artifacts (six static + one compiled)
 
-tsup only compiles `.ts/.tsx`. The five static CSS artifacts are produced by
+tsup only compiles `.ts/.tsx`. The six static CSS artifacts are produced by
 the tsup `onSuccess` hook (runs after every build/`--watch`, so a one-shot
 build's `clean` cannot leave `dist/` without them); `compiled.css` is generated
 by that same chain only for one-shot builds. The CSS-relevant prefix of the chain (the full chain in
@@ -312,10 +312,27 @@ onSuccess: "node scripts/copy-theme-css.mjs && node scripts/copy-content-css.mjs
      `gen:z-index`/`check:z-index` codegen is now opt-in — only needed when a
      project overrides a tier (its own `@theme` block, declared after this
      import, simply redefines the specific token it wants to change).
-   - **Editing**: change `src/theme.css`, then rebuild the package so
-     `dist/theme.css` updates. `tsup --watch` does NOT re-copy on a bare
-     `.css` change (it only watches `.ts/.tsx`), so re-run `pnpm build` after
-     editing the stylesheet.
+   - **Namespace contract**: zudo-doc reserves the 23 bare `--color-*` aliases
+     declared in the first `@theme` block and the `--color-zd-*` prefix. The
+     `@theme static` namespaced tier mirrors those aliases for code outside
+     zudo-doc's Tailwind scan; `static` guarantees the variables are emitted,
+     while `bg-zd-*`/`text-zd-*` utilities still require the consumer's scan.
+     The package chrome deliberately consumes the bare aliases. Embedders
+     should namespace their own colors and must not define a reserved bare
+     alias in a second `@theme` block.
+   - **No-reset variant**: `dist/theme-no-reset.css`, exported as
+     `@takazudo/zudo-doc/theme-no-reset.css`, is derived from `src/theme.css`
+     by replacing only the `--color-*: initial` guardrail line. That guardrail
+     clears every `--color-*` declared before the import, including an
+     embedder's tokens (#4051). Import `theme.css` before the embedder's own
+     `@theme` when import order is controllable; use `theme-no-reset.css` when
+     it is not. The derived file must differ by exactly one line, and the
+     prepack guard byte-compares it with the source-derived result.
+   - **Editing**: change `src/theme.css`, then rebuild the package so both
+     `dist/theme.css` and `dist/theme-no-reset.css` update. Never hand-edit
+     either `dist` file. `tsup --watch` does NOT re-copy on a bare `.css`
+     change (it only watches `.ts/.tsx`), so re-run `pnpm build` after editing
+     the stylesheet.
 
 2. **`dist/content.css`** ← copied verbatim from `src/content.css` by
    `scripts/copy-content-css.mjs`. Exported as `@takazudo/zudo-doc/content.css`.
@@ -437,10 +454,10 @@ onSuccess: "node scripts/copy-theme-css.mjs && node scripts/copy-content-css.mjs
      committed file; the package tests additionally verify clean/warm catalog
      exclusion and packed-tarball parity.
 
-`prepack` guards all six (`check-theme-css.mjs && check-safelist.mjs && check-content-css.mjs && check-page-loading-css.mjs && check-features-css.mjs && check-compiled-css.mjs`)
+`prepack` guards all seven CSS artifacts (`check-theme-css.mjs && check-safelist.mjs && check-content-css.mjs && check-page-loading-css.mjs && check-features-css.mjs && check-compiled-css.mjs`); `check-theme-css.mjs` validates both `theme.css` and the derived `theme-no-reset.css`
 so a build that skipped the `onSuccess` step fails loudly instead of publishing a package
-whose `./theme.css` / `./content.css` / `./safelist.css` / `./page-loading.css` /
-`./features.css` / `./compiled.css` export 404s or stale bytes for consumers.
+whose `./theme.css` / `./theme-no-reset.css` / `./content.css` / `./safelist.css` /
+`./page-loading.css` / `./features.css` / `./compiled.css` export 404s or stale bytes for consumers.
 
 ## Theme-pack nav `:hover` guard — pack-author contract (epic #4032)
 
