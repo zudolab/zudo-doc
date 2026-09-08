@@ -348,6 +348,26 @@ jobs:
         run: node packages/zudo-doc/bin/gen-component-tokens.mjs --check
 
   # ---------------------------------------------------------------------------
+  # Job 0.698: Bash 3.2 compatibility lint (#4049, epic #4043)
+  # ---------------------------------------------------------------------------
+  # Static scan of the shipped setup-doc-skill.sh scripts (host + create-zudo-doc
+  # template) for constructs that break on stock macOS bash 3.2 (a heredoc
+  # opened inside $(...), or an unguarded "${arr[@]}"/"${arr[*]}" expansion of
+  # a provably-empty array). This runner is ubuntu-latest (bash 5.x), so the
+  # guard cannot be executed — it must be static. See scripts/check-bash32-compat.mjs
+  # for what it does and does not catch. Pure-Node script — uses preinstalled
+  # Node 22 on the runner image, no pnpm.
+  check-bash32-compat:
+    name: Bash 3.2 Compatibility Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Check bash 3.2 compatibility
+        run: node scripts/check-bash32-compat.mjs
+
+  # ---------------------------------------------------------------------------
   # Job 0.7: Lint gates (tag guards + design token lint)
   # ---------------------------------------------------------------------------
   # Runs the vocabulary audit, the canonical authored/template data guard, and

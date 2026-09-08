@@ -190,7 +190,10 @@ REPO_ROOT="$(git -C "$ROOT_DIR" worktree list | head -1 | awk '{print $1}')"
 PROJECT_PREFIX="$(git -C "$ROOT_DIR" rev-parse --show-prefix)"
 MAIN_PROJECT_DIR="$REPO_ROOT/${PROJECT_PREFIX}"
 MAIN_PROJECT_DIR="${MAIN_PROJECT_DIR%/}"
-REPO_DOCS_DIR="$REPO_ROOT/${PROJECT_PREFIX}src/content/docs"
+# REPO_DOCS_DIR is set below, once the config parse resolves the real
+# (possibly custom) docsDir -- no hardcoded fallback is defined here so a
+# short-circuited parse fails loudly instead of silently reverting to
+# src/content/docs (#4047).
 
 # Read the current locale map from the project's config. The generated config
 # puts `defaultLocale`, `docsDir`, and `locales` directly in `zudoDoc({...})`.
@@ -200,7 +203,16 @@ REPO_DOCS_DIR="$REPO_ROOT/${PROJECT_PREFIX}src/content/docs"
 # This deliberately does NOT walk `src/content/docs-*`: that naming convention
 # also matches version snapshots such as `docs-v1-ja`, which are not current
 # locale roots. The config map is the only source of truth.
-CONFIG_LOCALE_DATA="$(node - "$ROOT_DIR" <<'NODE'
+#
+# The node call is wrapped in a function rather than inlined into the
+# assignment's `$( ... )`: bash 3.2 (stock macOS /bin/bash) does not honour a
+# heredoc opened inside a command substitution -- it scans the heredoc body as
+# shell text, and the JavaScript below contains an odd number of backticks
+# (template literals), so the whole FILE fails to parse. Keeping the heredoc at
+# statement level sidesteps that parser bug while preserving stdin execution,
+# argument indexing, and node's exit status through the assignment.
+read_config_locale_data() {
+  node - "$ROOT_DIR" <<'NODE'
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -445,7 +457,8 @@ if (localeObject) {
   }
 }
 NODE
-)"
+}
+CONFIG_LOCALE_DATA="$(read_config_locale_data)"
 
 DEFAULT_LOCALE="en"
 DOCS_DIR_REL="src/content/docs"
@@ -461,9 +474,13 @@ while IFS=$'\t' read -r record_type record_value record_extra; do
       [ -n "$record_value" ] || continue
       [ "$record_value" = "$DEFAULT_LOCALE" ] && continue
       duplicate="false"
-      for existing_code in "${LOCALE_CODES[@]}"; do
-        [ "$existing_code" = "$record_value" ] && duplicate="true"
-      done
+      # bash 3.2 under `set -u` treats "${arr[@]}" on an EMPTY array as an
+      # unbound variable, so the length guard is required, not cosmetic.
+      if [ "${#LOCALE_CODES[@]}" -gt 0 ]; then
+        for existing_code in "${LOCALE_CODES[@]}"; do
+          [ "$existing_code" = "$record_value" ] && duplicate="true"
+        done
+      fi
       [ "$duplicate" = "true" ] && continue
       LOCALE_CODES+=("$record_value")
       LOCALE_DIR_RELS+=("$record_extra")
@@ -578,12 +595,16 @@ locale_link_name() {
   suffix=2
   while :; do
     collision="false"
-    for existing in "${LOCALE_LINK_NAMES[@]}"; do
-      if [ "$existing" = "$name" ]; then
-        collision="true"
-        break
-      fi
-    done
+    # Length guard: see the LOCALE_CODES loop above -- bash 3.2 under `set -u`
+    # errors on "${arr[@]}" when the array is empty.
+    if [ "${#LOCALE_LINK_NAMES[@]}" -gt 0 ]; then
+      for existing in "${LOCALE_LINK_NAMES[@]}"; do
+        if [ "$existing" = "$name" ]; then
+          collision="true"
+          break
+        fi
+      done
+    fi
     [ "$collision" = "false" ] && break
     name="docs-$code-$suffix"
     suffix=$((suffix + 1))
@@ -606,13 +627,17 @@ locale_starter_note() {
   esac
 }
 
-# Build exact locale-map guidance for the generated skill. These lines come
-# only from configured `locales` entries, never from directory discovery.
+# Build exact locale-map guidance for the generated skill. Entries come from
+# configured `locales`, but only when the directory exists on disk -- gated
+# by the SAME existence check generate_skill uses below before symlinking,
+# so the guidance can never point at a locale link that was never created
+# (#4047).
 LOCALE_GUIDANCE="- \`$DEFAULT_LOCALE\` (default): \`${DOCS_DIR_REL%/}/\` — \`/docs/...\` ($(locale_starter_note "$DEFAULT_LOCALE"))"
 LOCALE_GUIDANCE+=$'\n'
 for locale_index in "${!LOCALE_CODES[@]}"; do
   locale_code="${LOCALE_CODES[$locale_index]}"
   locale_dir="${LOCALE_DIR_RELS[$locale_index]}"
+  [ -d "$ROOT_DIR/$locale_dir" ] || continue
   locale_link="${LOCALE_LINK_NAMES[$locale_index]}"
   locale_note="$(locale_starter_note "$locale_code")"
   LOCALE_GUIDANCE+="- \`$locale_code\`: \`${locale_dir%/}/\` — \`/$locale_code/docs/...\` (${locale_note}); lookup link: \`$locale_link/\`"
@@ -627,6 +652,10 @@ if [ "$DEFAULT_LOCALE" = "ja" ]; then
 else
   for locale_index in "${!LOCALE_CODES[@]}"; do
     if [ "${LOCALE_CODES[$locale_index]}" = "ja" ]; then
+      locale_dir="${LOCALE_DIR_RELS[$locale_index]}"
+      # Same existence check as the LOCALE_GUIDANCE loop above and
+      # generate_skill's symlink step below (#4047).
+      [ -d "$ROOT_DIR/$locale_dir" ] || break
       JA_DOCS_LINK="${LOCALE_LINK_NAMES[$locale_index]}"
       JA_DOCS_PATH="${LOCALE_DIR_RELS[$locale_index]}"
       break

@@ -188,6 +188,129 @@ describe("generated check-links.js — built HTML attributes (#3720)", () => {
   });
 });
 
+// A ">" is legal inside a quoted attribute value. The pre-#4046 [^>] attribute
+// scan could not cross it, so the whole tag was dropped: a lost id is a noisy
+// false STRICT FAIL, while a lost href means the link is never checked at all.
+describe("generated check-links.js — > inside a quoted attribute value (#4046)", () => {
+  it("still checks a broken href preceded by a > in a double-quoted attribute", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken"],
+      files: {
+        "dist/index.html": `<a title="a > b" href="/docs/missing">Missing</a>\n`,
+      },
+    });
+    expect(result.status).toBe(1);
+    expect(`${result.stdout}${result.stderr}`).toContain("dist/index.html:1  /docs/missing");
+    expect(result.stdout).toContain("Built HTML scan: 1 internal link and 0 ID attributes inspected.");
+  });
+
+  it("still checks a broken href preceded by a > in a single-quoted attribute", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken"],
+      files: {
+        "dist/index.html": `<a title='a > b' href='/docs/missing'>Missing</a>\n`,
+      },
+    });
+    expect(result.status).toBe(1);
+    expect(`${result.stdout}${result.stderr}`).toContain("dist/index.html:1  /docs/missing");
+  });
+
+  it("still checks a broken unquoted href preceded by a > in a quoted attribute", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken"],
+      files: {
+        "dist/index.html": `<a title="a > b" href=/docs/missing>Missing</a>\n`,
+      },
+    });
+    expect(result.status).toBe(1);
+    expect(`${result.stdout}${result.stderr}`).toContain("dist/index.html:1  /docs/missing");
+  });
+
+  it("still checks a broken href followed by a > in a later quoted attribute", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken"],
+      files: {
+        "dist/index.html": `<a href="/docs/missing" title="a > b">Missing</a>\n`,
+      },
+    });
+    expect(result.status).toBe(1);
+    expect(`${result.stdout}${result.stderr}`).toContain("dist/index.html:1  /docs/missing");
+  });
+
+  it("reports the correct line when a quoted > spans newlines before the anchor", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken"],
+      files: {
+        "dist/index.html": `<p title="a\n> b">Text</p>\n<a title="c\n> d" href="/docs/missing">Deep</a>\n`,
+      },
+    });
+    expect(result.status).toBe(1);
+    expect(`${result.stdout}${result.stderr}`).toContain("dist/index.html:3  /docs/missing");
+  });
+
+  it("accepts an anchor whose target id follows a > in a quoted attribute", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken", "--strict-anchors"],
+      files: {
+        "dist/index.html": `<a href="/docs/target#tip">Tip</a>\n`,
+        "dist/docs/target/index.html": `<div data-tip="x > y" id="tip">Target</div>\n`,
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Built HTML scan: 1 internal link and 1 ID attribute inspected.");
+  });
+
+  it("accepts an anchor whose target id precedes a > in a later quoted attribute", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken", "--strict-anchors"],
+      files: {
+        "dist/index.html": `<a href="/docs/target#tip">Tip</a>\n`,
+        "dist/docs/target/index.html": `<div id='tip' aria-label='x > y'>Target</div>\n`,
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("Built HTML scan: 1 internal link and 1 ID attribute inspected.");
+  });
+
+  it("ignores href= and id= written as text inside another attribute's quoted value", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken", "--strict-anchors"],
+      files: {
+        "dist/index.html": `<a data-x="href=/docs/decoy">Decoy</a><div title="id=fake"></div>\n`,
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Built HTML scan: 0 internal links and 0 ID attributes inspected.");
+  });
+
+  it("takes the real attribute when a decoy href=/id= sits in an earlier quoted value", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken", "--strict-anchors"],
+      files: {
+        "dist/index.html": `<a data-x="href=/docs/decoy" href="/docs/target#real">Real</a>\n`,
+        "dist/docs/target/index.html": `<div title="id=fake" id="real">Target</div>\n`,
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Built HTML scan: 1 internal link and 1 ID attribute inspected.");
+  });
+
+  it("collects a protocol-relative href preceded by a > in a quoted attribute", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken"],
+      files: {
+        "dist/index.html": `<a title="a > b" href="//example.com/path">External</a>\n`,
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("dist/index.html:1  //example.com/path");
+    expect(result.stdout).toContain("Protocol-relative links: 1 found");
+  });
+});
+
 describe("generated check-links.js — protocol-relative informational notices (#3934)", () => {
   it("lists a protocol-relative href informationally without failing any strict gate", async () => {
     const result = await runFixture({
@@ -233,7 +356,7 @@ describe("generated check-links.js — protocol-relative informational notices (
     expect(result.stdout).not.toContain("←");
   });
 
-  it("an allowlist entry for a protocol-relative href neither hides the notice nor is counted in the allowlist tally", async () => {
+  it("an allowlist entry for a protocol-relative href hides the notice and its count, without joining the allowlist tally", async () => {
     const result = await runFixture({
       args: ["--strict-broken", "--allowlist=.check-links-allowlist"],
       files: {
@@ -242,8 +365,134 @@ describe("generated check-links.js — protocol-relative informational notices (
       },
     });
     expect(result.status).toBe(0);
-    expect(result.stdout).toContain("=== Protocol-Relative Links (informational) ===");
-    expect(result.stdout).toContain("dist/index.html:1  //docs/guide");
+    expect(result.stdout).not.toContain("=== Protocol-Relative Links (informational) ===");
+    expect(result.stdout).not.toContain("//docs/guide");
+    expect(result.stdout).not.toContain("Protocol-relative links:");
+    // The tally sentence is about strict-mode counts; this category has none.
     expect(result.stdout).not.toContain("Allowlist:");
+  });
+
+  it("allowlists one protocol-relative href while leaving the other listed and counted", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken", "--allowlist=.check-links-allowlist"],
+      files: {
+        "dist/index.html": [
+          `<a href="//docs/guide">Typo?</a>`,
+          `<a href="//docs/other">Also?</a>`,
+          "",
+        ].join("\n"),
+        ".check-links-allowlist": "dist/index.html:1://docs/guide\n",
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("=== Protocol-Relative Links (informational) ===");
+    expect(result.stdout).not.toContain("//docs/guide");
+    expect(result.stdout).toContain("dist/index.html:2  //docs/other");
+    expect(result.stdout).toContain("Protocol-relative links: 1 found");
+  });
+
+  it("drops an excludePatterns-matching protocol-relative href from the section and the count", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken"],
+      files: {
+        // Filtering is on the HREF, like every other category: the versioned
+        // segment is in the link, not in the page path.
+        "dist/index.html": [
+          `<a href="//cdn.example.com/v/1.2/lib.js">versioned</a>`,
+          `<a href="//cdn.example.com/latest/lib.js">unversioned</a>`,
+          "",
+        ].join("\n"),
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout).not.toContain("//cdn.example.com/v/1.2/lib.js");
+    expect(result.stdout).toContain("dist/index.html:2  //cdn.example.com/latest/lib.js");
+    expect(result.stdout).toContain("Protocol-relative links: 1 found");
+  });
+});
+
+describe("generated check-links.js — lazy id extraction (#4048)", () => {
+  it("does not extract ids from a page no fragment references", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken", "--strict-anchors"],
+      files: {
+        "dist/index.html": `<a href="/orphan/">no fragment</a>\n`,
+        "dist/orphan/index.html": `<h2 id="a">a</h2><h2 id="b">b</h2>\n`,
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("Built HTML scan: 1 internal link and 0 ID attributes inspected.");
+  });
+
+  it("extracts a referenced target's ids exactly once across several referring links", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken", "--strict-anchors"],
+      files: {
+        "dist/index.html": [
+          `<a href="/target/#a">one</a>`,
+          `<a href="/target/#b">two</a>`,
+          "",
+        ].join("\n"),
+        "dist/other/index.html": `<a href="/target/#a">three</a>\n`,
+        "dist/target/index.html": `<h2 id="a">a</h2><h2 id="b">b</h2>\n`,
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("Built HTML scan: 3 internal links and 2 ID attributes inspected.");
+  });
+
+  it("validates a same-page fragment without re-reading the page it is on", async () => {
+    const result = await runFixture({
+      args: ["--strict-anchors"],
+      files: {
+        "dist/index.html": [
+          `<a href="#here">valid</a>`,
+          `<a href="#gone">invalid</a>`,
+          `<h2 id="here">here</h2>`,
+          "",
+        ].join("\n"),
+      },
+    });
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain("dist/index.html:2  #gone  (fragment: #gone; missing target id)");
+    expect(result.stdout).toContain("Built HTML scan: 2 internal links and 1 ID attribute inspected.");
+  });
+});
+
+describe("generated check-links.js — MDX static id behind a quoted > (#4048)", () => {
+  it("accepts an anchor whose MDX-source id follows a > in a quoted attribute", async () => {
+    const result = await runFixture({
+      args: ["--strict-anchors"],
+      files: {
+        "src/content/docs/index.mdx": `[link](/docs/target#x)\n`,
+        "src/content/docs/target.mdx": `<h2 title="a > b" id="x">Heading</h2>\n`,
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout).not.toContain("missing target id");
+  });
+
+  it("accepts an MDX-source id behind a > in a data attribute", async () => {
+    const result = await runFixture({
+      args: ["--strict-anchors"],
+      files: {
+        "src/content/docs/index.mdx": `[link](/docs/target#head)\n`,
+        "src/content/docs/target.mdx": `<div data-x="p > q" id="head">Block</div>\n`,
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout).not.toContain("missing target id");
+  });
+
+  it("still rejects a fragment that no MDX-source id matches", async () => {
+    const result = await runFixture({
+      args: ["--strict-anchors"],
+      files: {
+        "src/content/docs/index.mdx": `[link](/docs/target#absent)\n`,
+        "src/content/docs/target.mdx": `<h2 title="a > b" id="x">Heading</h2>\n`,
+      },
+    });
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain("missing target id");
   });
 });

@@ -10,6 +10,7 @@ import {
   parseContentDirs,
   extractHtmlLinks,
   extractProtocolRelativeHtmlLinks,
+  classifyHtmlAnchorHrefs,
   extractHtmlIds,
   resolveLinkDetail,
   resolveLink,
@@ -327,6 +328,59 @@ describe("check-links", () => {
     it("does not treat a custom element beginning with a- as an anchor", () => {
       expect(extractHtmlLinks(`<a-card href=/docs/missing>Card</a-card>`)).toEqual([]);
     });
+
+    // A quoted attribute value may legally contain ">" — the pre-#4046 [^>]
+    // scan dropped the whole tag, so the link was silently never checked.
+    it("extracts an href after a > inside an earlier double-quoted attribute", () => {
+      expect(extractHtmlLinks(`<a title="a > b" href="/x">X</a>`)).toEqual([
+        { href: "/x", line: 1 },
+      ]);
+    });
+
+    it("extracts an href after a > inside an earlier single-quoted attribute", () => {
+      expect(extractHtmlLinks(`<a title='a > b' href='/y'>Y</a>`)).toEqual([
+        { href: "/y", line: 1 },
+      ]);
+    });
+
+    it("extracts an unquoted href after a > inside an earlier quoted attribute", () => {
+      expect(extractHtmlLinks(`<a title="a > b" href=/z>Z</a>`)).toEqual([
+        { href: "/z", line: 1 },
+      ]);
+    });
+
+    it("extracts an href followed by a > inside a later quoted attribute", () => {
+      expect(extractHtmlLinks(`<a href="/x" title="a > b">X</a>`)).toEqual([
+        { href: "/x", line: 1 },
+      ]);
+    });
+
+    it("does not treat href= written as text inside another attribute as a link", () => {
+      expect(extractHtmlLinks(`<a data-x="href=/decoy">Decoy</a>`)).toEqual([]);
+    });
+
+    it("skips a decoy href= in a quoted value and takes the real attribute", () => {
+      expect(
+        extractHtmlLinks(`<a data-x="href=/decoy" href="/real">R</a>`),
+      ).toEqual([{ href: "/real", line: 1 }]);
+    });
+
+    it("reports the line of an anchor preceded by a quoted > spanning newlines", () => {
+      const html = ['<p title="a', '> b">Text</p>', '<a title="c', '> d" href="/deep">Deep</a>'].join(
+        "\n",
+      );
+      expect(extractHtmlLinks(html)).toEqual([{ href: "/deep", line: 3 }]);
+    });
+
+    it("keeps line numbers correct for an anchor after a multi-line quoted >", () => {
+      const html = ['<a', '  title="a', '  > b"', '  href="/x">X</a>', '<a href="/second">S</a>'].join(
+        "\n",
+      );
+      expect(extractHtmlLinks(html)).toEqual([
+        { href: "/x", line: 1 },
+        { href: "/second", line: 5 },
+      ]);
+    });
   });
 
   // --- extractProtocolRelativeHtmlLinks ---
@@ -367,6 +421,40 @@ describe("check-links", () => {
         extractProtocolRelativeHtmlLinks(`<a href="./sibling">S</a>`),
       ).toEqual([]);
     });
+
+    it("extracts a protocol-relative href after a > inside a quoted attribute", () => {
+      expect(
+        extractProtocolRelativeHtmlLinks(`<a title="a > b" href="//example.com/p">E</a>`),
+      ).toEqual([{ href: "//example.com/p", line: 1 }]);
+    });
+  });
+
+  // --- classifyHtmlAnchorHrefs ---
+
+  describe("classifyHtmlAnchorHrefs", () => {
+    it("splits one anchor pass into the same two buckets the single-bucket views return", () => {
+      const html = [
+        "<html>",
+        '<a href="/docs/a/">internal</a>',
+        '<a href="//example.com/path">protocol relative</a>',
+        '<a href="https://example.com">external</a>',
+        '<a href="mailto:a@b.com">mail</a>',
+        '<a title="a > b" href="//docs/typo">protocol relative behind a quoted &gt;</a>',
+        '<a href="./sibling">relative</a>',
+      ].join("\n");
+
+      const { links, protocolRelative } = classifyHtmlAnchorHrefs(html);
+      expect(links).toEqual([
+        { href: "/docs/a/", line: 2 },
+        { href: "./sibling", line: 7 },
+      ]);
+      expect(protocolRelative).toEqual([
+        { href: "//example.com/path", line: 3 },
+        { href: "//docs/typo", line: 6 },
+      ]);
+      expect(links).toEqual(extractHtmlLinks(html));
+      expect(protocolRelative).toEqual(extractProtocolRelativeHtmlLinks(html));
+    });
   });
 
   describe("extractHtmlIds", () => {
@@ -382,6 +470,43 @@ describe("check-links", () => {
 
     it("does not treat data-id as an element id", () => {
       expect(extractHtmlIds(`<div data-id=ghost></div>`)).toEqual([]);
+    });
+
+    it("extracts an id after a > inside an earlier double-quoted attribute", () => {
+      expect(extractHtmlIds(`<button title="a > b" id="x"></button>`)).toEqual([
+        "x",
+      ]);
+    });
+
+    it("extracts an id after a > inside an earlier single-quoted attribute", () => {
+      expect(extractHtmlIds(`<div data-tip='x > y' id='tip'></div>`)).toEqual([
+        "tip",
+      ]);
+    });
+
+    it("extracts an unquoted id after a > inside an earlier quoted attribute", () => {
+      expect(extractHtmlIds(`<div title="a > b" id=raw></div>`)).toEqual(["raw"]);
+    });
+
+    it("extracts an id followed by a > inside a later quoted attribute", () => {
+      expect(extractHtmlIds(`<button id="x" aria-label="a > b"></button>`)).toEqual(
+        ["x"],
+      );
+    });
+
+    it("extracts an id after a quoted > spanning newlines", () => {
+      const html = ['<div', '  data-tip="x', '  > y"', '  id="tip"></div>'].join("\n");
+      expect(extractHtmlIds(html)).toEqual(["tip"]);
+    });
+
+    it("does not treat id= written as text inside another attribute as an id", () => {
+      expect(extractHtmlIds(`<div title="id=fake"></div>`)).toEqual([]);
+    });
+
+    it("skips a decoy id= in a quoted value and takes the real attribute", () => {
+      expect(extractHtmlIds(`<div title="id=fake" id="real"></div>`)).toEqual([
+        "real",
+      ]);
     });
   });
 
@@ -1000,6 +1125,113 @@ describe("check-links", () => {
       );
       expect(anchors).toEqual([]);
     });
+
+    // #4048: the protocol-relative list used to bypass excludePatterns
+    // entirely, so a consumer had no way to quiet a known entry.
+    it("drops a protocol-relative href matched by excludePatterns", async () => {
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(distDir, { recursive: true });
+      writeFileSync(
+        join(distDir, "index.html"),
+        [
+          '<a href="//cdn.example.com/v/1.2/lib.js">versioned</a>',
+          '<a href="//cdn.example.com/latest/lib.js">unversioned</a>',
+        ].join("\n"),
+      );
+
+      const { protocolRelative } = await checkHtmlLinksAndTrailing(
+        distDir, tmpDir, "/", [/\/v\/[^/]+\//],
+      );
+      // Filtering is on the HREF, like every other category — the versioned
+      // segment is in the link, not in the path of the page that carries it.
+      expect(protocolRelative).toEqual([
+        {
+          file: "dist/index.html",
+          line: 2,
+          href: "//cdn.example.com/latest/lib.js",
+        },
+      ]);
+    });
+
+    it("keeps every protocol-relative href when no pattern matches", async () => {
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(join(distDir, "v", "1.0"), { recursive: true });
+      // The SOURCE page is versioned while the href is not: href semantics
+      // keep this entry, path semantics would have dropped it.
+      writeFileSync(
+        join(distDir, "v", "1.0", "index.html"),
+        '<a href="//example.com/path">external</a>',
+      );
+
+      const { protocolRelative } = await checkHtmlLinksAndTrailing(
+        distDir, tmpDir, "/", [/\/v\/[^/]+\//],
+      );
+      expect(protocolRelative).toEqual([
+        { file: "dist/v/1.0/index.html", line: 1, href: "//example.com/path" },
+      ]);
+    });
+
+    // #4048: ids used to be extracted eagerly for every page.
+    it("does not extract ids from a page no fragment references", async () => {
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(join(distDir, "orphan"), { recursive: true });
+      writeFileSync(join(distDir, "index.html"), '<a href="/orphan/">plain</a>');
+      writeFileSync(
+        join(distDir, "orphan", "index.html"),
+        '<h2 id="a">a</h2><h2 id="b">b</h2>',
+      );
+
+      const { broken, scanned } = await checkHtmlLinksAndTrailing(distDir, tmpDir);
+      expect(broken).toEqual([]);
+      expect(scanned).toEqual({ links: 1, ids: 0 });
+    });
+
+    it("extracts a referenced target's ids once no matter how many links point at it", async () => {
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(join(distDir, "target"), { recursive: true });
+      mkdirSync(join(distDir, "other"), { recursive: true });
+      writeFileSync(
+        join(distDir, "index.html"),
+        ['<a href="/target/#a">one</a>', '<a href="/target/#b">two</a>'].join("\n"),
+      );
+      writeFileSync(
+        join(distDir, "other", "index.html"),
+        '<a href="/target/#a">three</a>',
+      );
+      writeFileSync(
+        join(distDir, "target", "index.html"),
+        '<h2 id="a">a</h2><h2 id="b">b</h2>',
+      );
+
+      const { anchors, scanned } = await checkHtmlLinksAndTrailing(distDir, tmpDir);
+      expect(anchors).toEqual([]);
+      expect(scanned).toEqual({ links: 3, ids: 2 });
+    });
+
+    it("validates a same-page fragment from the HTML already in memory", async () => {
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(distDir, { recursive: true });
+      writeFileSync(
+        join(distDir, "index.html"),
+        [
+          '<a href="#here">valid</a>',
+          '<a href="#gone">invalid</a>',
+          '<h2 id="here">here</h2>',
+        ].join("\n"),
+      );
+
+      const { anchors, scanned } = await checkHtmlLinksAndTrailing(distDir, tmpDir);
+      expect(anchors).toEqual([
+        {
+          file: "dist/index.html",
+          line: 2,
+          href: "#gone",
+          fragment: "gone",
+          reason: "missing target id",
+        },
+      ]);
+      expect(scanned).toEqual({ links: 2, ids: 1 });
+    });
   });
 
   // --- checkMdxLinks (integration) ---
@@ -1093,6 +1325,46 @@ describe("check-links", () => {
       );
 
       expect(await checkMdxAnchors([docsDir], tmpDir, "/", [])).toEqual([]);
+    });
+
+    // #4048: the MDX-source id extractor carried the same [^>] defect #4046
+    // fixed in the two built-HTML scans — a ">" inside an earlier quoted
+    // attribute truncated the tag and lost the id, failing a valid anchor.
+    it("finds a static id that follows a > inside a quoted attribute", async () => {
+      const docsDir = join(tmpDir, "src", "content", "docs");
+      mkdirSync(docsDir, { recursive: true });
+      writeFileSync(
+        join(docsDir, "source.mdx"),
+        [
+          "[double](./target.mdx#double)",
+          "[single](./target.mdx#single)",
+          "[data](./target.mdx#data)",
+        ].join("\n"),
+      );
+      writeFileSync(
+        join(docsDir, "target.mdx"),
+        [
+          '<h2 title="a > b" id="double">Double</h2>',
+          "<h2 title='a > b' id='single'>Single</h2>",
+          '<h2 data-x="p > q" id="data">Data</h2>',
+        ].join("\n"),
+      );
+
+      expect(await checkMdxAnchors([docsDir], tmpDir, "/", [])).toEqual([]);
+    });
+
+    it("still reports a fragment no static id matches when a quoted > is present", async () => {
+      const docsDir = join(tmpDir, "src", "content", "docs");
+      mkdirSync(docsDir, { recursive: true });
+      writeFileSync(join(docsDir, "source.mdx"), "[x](./target.mdx#absent)");
+      writeFileSync(
+        join(docsDir, "target.mdx"),
+        '<h2 title="a > b" id="present">Present</h2>',
+      );
+
+      const anchors = await checkMdxAnchors([docsDir], tmpDir, "/", []);
+      expect(anchors).toHaveLength(1);
+      expect(anchors[0]?.reason).toBe("missing target id");
     });
 
     it("does not mistake prose containing id syntax for a static element id", async () => {

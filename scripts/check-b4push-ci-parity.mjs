@@ -193,6 +193,16 @@ const REQUIRED_CI_GUARDS = [
     b4pushScript: "check:nav-overflow-drift",
     comment: "Nav-overflow-script commit drift guard (zudolab/zudo-doc#3535)",
   },
+  {
+    // Bash 3.2 compatibility lint: node scripts/check-bash32-compat.mjs
+    // (CI) / pnpm check:bash32-compat (b4push). Static guard against the two
+    // constructs that broke setup-doc-skill.sh on stock macOS bash 3.2 — a
+    // heredoc opened inside $(...), and an unguarded "${arr[@]}"/"${arr[*]}"
+    // expansion of a provably-empty array (#4049, epic #4043).
+    ciNeedle: "check-bash32-compat.mjs",
+    b4pushScript: "check:bash32-compat",
+    comment: "Bash 3.2 compatibility lint (scripts/check-bash32-compat.mjs, #4049)",
+  },
 ];
 
 const ALLOWLIST_PATH = resolve(ROOT, ".b4push-ci-parity-allowlist");

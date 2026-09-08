@@ -690,6 +690,147 @@ export default defineConfig(zudoDoc({ siteName: "example" }));
   });
 });
 
+describe("REPO_DOCS_DIR / locale-guidance existence gating (#4047)", () => {
+  let fixtureRoot: string;
+  let fixtureHome: string;
+  let projectDir: string;
+
+  beforeEach(() => {
+    fixtureRoot = mkdtempSync(join(tmpdir(), "zudo-doc-4047-fixture-"));
+    fixtureHome = mkdtempSync(join(tmpdir(), "zudo-doc-4047-home-"));
+    projectDir = fixtureRoot;
+    execSync("git init -q", { cwd: fixtureRoot });
+    mkdirSync(join(projectDir, "scripts"), { recursive: true });
+    cpSync(SCRIPT_PATH, join(projectDir, "scripts/setup-doc-skill.sh"));
+    writeFileSync(
+      join(projectDir, "package.json"),
+      JSON.stringify({ name: "gating-fixture", scripts: {} }),
+    );
+  });
+
+  afterEach(() => {
+    if (existsSync(fixtureRoot)) rmSync(fixtureRoot, { recursive: true });
+    if (existsSync(fixtureHome)) rmSync(fixtureHome, { recursive: true });
+  });
+
+  function runFixtureScript(): string {
+    return execSync(
+      `bash "${join(projectDir, "scripts/setup-doc-skill.sh")}" --target claude fixture-wisdom`,
+      {
+        cwd: projectDir,
+        encoding: "utf-8",
+        timeout: 30_000,
+        env: scriptEnv(fixtureHome),
+      },
+    );
+  }
+
+  it("resolves the docs symlink to a custom docsDir, not the hardcoded src/content/docs path", () => {
+    // No src/content/docs exists anywhere in this fixture -- only the custom
+    // docsDir does. If REPO_DOCS_DIR ever reverted to the dead hardcoded
+    // "src/content/docs" assignment this guards against, the symlink target
+    // would resolve to a path that doesn't exist.
+    mkdirSync(join(projectDir, "documentation/docs/getting-started"), {
+      recursive: true,
+    });
+    writeFileSync(
+      join(projectDir, "documentation/docs/getting-started/index.mdx"),
+      "---\ntitle: Test\n---\n",
+    );
+    writeFileSync(
+      join(projectDir, "zfb.config.ts"),
+      `import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(zudoDoc({
+  docsDir: "documentation/docs",
+}));
+`,
+    );
+
+    runFixtureScript();
+    const skillDir = join(projectDir, ".claude/skills/fixture-wisdom");
+
+    expect(realpathSync(join(skillDir, "docs"))).toBe(
+      realpathSync(join(projectDir, "documentation/docs")),
+    );
+  });
+
+  it("omits docs-ja guidance and the Japanese Documentation section when the configured locale directory does not exist", () => {
+    // locales.ja is configured but src/content/docs-ja was never created, so
+    // generate_skill's `[ -d ... ]` guard skips the symlink. The guidance
+    // must follow the same check rather than naming a link that was never
+    // made.
+    mkdirSync(join(projectDir, "src/content/docs/getting-started"), {
+      recursive: true,
+    });
+    writeFileSync(
+      join(projectDir, "src/content/docs/getting-started/index.mdx"),
+      "---\ntitle: Test\n---\n",
+    );
+    writeFileSync(
+      join(projectDir, "zfb.config.ts"),
+      `import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(zudoDoc({
+  docsDir: "src/content/docs",
+  defaultLocale: "en",
+  locales: {
+    ja: { label: "JA", dir: "src/content/docs-ja" },
+  },
+}));
+`,
+    );
+
+    const output = runFixtureScript();
+    const skillDir = join(projectDir, ".claude/skills/fixture-wisdom");
+    const skillMd = readFileSync(join(skillDir, "SKILL.md"), "utf-8");
+
+    expect(existsSync(join(skillDir, "docs-ja"))).toBe(false);
+    expect(output).toContain("Skipping ja link");
+    expect(skillMd).not.toContain("docs-ja");
+    expect(skillMd).not.toContain("## Japanese Documentation");
+  });
+
+  it("keeps docs-ja guidance and the Japanese Documentation section once the configured directory exists", () => {
+    mkdirSync(join(projectDir, "src/content/docs/getting-started"), {
+      recursive: true,
+    });
+    mkdirSync(join(projectDir, "src/content/docs-ja/getting-started"), {
+      recursive: true,
+    });
+    writeFileSync(
+      join(projectDir, "src/content/docs/getting-started/index.mdx"),
+      "---\ntitle: Test\n---\n",
+    );
+    writeFileSync(
+      join(projectDir, "zfb.config.ts"),
+      `import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(zudoDoc({
+  docsDir: "src/content/docs",
+  defaultLocale: "en",
+  locales: {
+    ja: { label: "JA", dir: "src/content/docs-ja" },
+  },
+}));
+`,
+    );
+
+    runFixtureScript();
+    const skillDir = join(projectDir, ".claude/skills/fixture-wisdom");
+    const skillMd = readFileSync(join(skillDir, "SKILL.md"), "utf-8");
+
+    expect(realpathSync(join(skillDir, "docs-ja"))).toBe(
+      realpathSync(join(projectDir, "src/content/docs-ja")),
+    );
+    expect(skillMd).toContain("`src/content/docs-ja/`");
+    expect(skillMd).toContain("## Japanese Documentation");
+  });
+});
+
 describe("suffix-aware skill-name derivation (#3154)", () => {
   // Builds a throwaway fixture project (same shape as the nested-subdir
   // fixture above) with a caller-chosen package.json `name`, so the
@@ -1318,6 +1459,161 @@ describe("tracked-skill linking (#3156)", () => {
       expect(existsSync(link)).toBe(true);
       expect(readFileSync(join(link, "SKILL.md"), "utf-8")).toContain("check-docs");
     });
+  });
+});
+
+/**
+ * Locate a genuine bash 3.2 binary. Stock macOS still ships 3.2.57 at
+ * /bin/bash, which is the shell a `pnpm setup:doc-skill` on a fresh Mac
+ * actually runs under. CI is ubuntu-latest and ships bash 5.x, so this
+ * resolves to null there.
+ */
+function findBash32(): string | null {
+  const candidate = "/bin/bash";
+  if (!existsSync(candidate)) return null;
+  const probe = spawnSync(candidate, ["--version"], { encoding: "utf-8" });
+  if (probe.status !== 0 || !/version 3\.2\./.test(probe.stdout ?? "")) {
+    return null;
+  }
+  return candidate;
+}
+
+const BASH_3_2 = findBash32();
+
+describe("bash 3.2 portability (#4044)", () => {
+  const TEMPLATE_SCRIPT_PATH = resolve(
+    PROJECT_ROOT,
+    "packages/create-zudo-doc/templates/base/scripts/setup-doc-skill.sh",
+  );
+
+  // The two failures this block guards only reproduce on bash 3.2: a heredoc
+  // opened inside `$( ... )` is scanned as shell text, and "${arr[@]}" on an
+  // empty array is an unbound-variable error under `set -u`. Neither happens on
+  // bash 4+, so on a bash-5 host (CI) the two behavioural specs below degrade to
+  // a plain smoke test and the parse spec is skipped outright.
+  const BASH = BASH_3_2 ?? "bash";
+
+  let fixtureRoot: string;
+  let fixtureHome: string;
+
+  beforeEach(() => {
+    fixtureRoot = mkdtempSync(join(tmpdir(), "zudo-doc-bash32-fixture-"));
+    fixtureHome = mkdtempSync(join(tmpdir(), "zudo-doc-bash32-home-"));
+    execSync("git init -q", { cwd: fixtureRoot });
+
+    mkdirSync(join(fixtureRoot, "scripts"), { recursive: true });
+    mkdirSync(join(fixtureRoot, "src/content/docs/getting-started"), {
+      recursive: true,
+    });
+    writeFileSync(
+      join(fixtureRoot, "src/content/docs/getting-started/index.mdx"),
+      "---\ntitle: Test\n---\n",
+    );
+    cpSync(SCRIPT_PATH, join(fixtureRoot, "scripts/setup-doc-skill.sh"));
+    writeFileSync(
+      join(fixtureRoot, "package.json"),
+      JSON.stringify({ name: "bash32-fixture", scripts: {} }),
+    );
+  });
+
+  afterEach(() => {
+    if (existsSync(fixtureRoot)) rmSync(fixtureRoot, { recursive: true });
+    if (existsSync(fixtureHome)) rmSync(fixtureHome, { recursive: true });
+  });
+
+  function writeConfig(zudoDocBody: string): void {
+    writeFileSync(
+      join(fixtureRoot, "zfb.config.ts"),
+      `import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(zudoDoc(${zudoDocBody}));
+`,
+    );
+  }
+
+  function runFixture() {
+    return spawnSync(
+      BASH,
+      [
+        join(fixtureRoot, "scripts/setup-doc-skill.sh"),
+        "--target",
+        "claude",
+        "fixture-wisdom",
+      ],
+      {
+        cwd: fixtureRoot,
+        encoding: "utf-8",
+        timeout: 30_000,
+        env: scriptEnv(fixtureHome),
+      },
+    );
+  }
+
+  it.runIf(BASH_3_2)(
+    "both script copies parse under bash 3.2 (heredoc inside `$( ... )` regression)",
+    () => {
+      for (const script of [SCRIPT_PATH, TEMPLATE_SCRIPT_PATH]) {
+        const result = spawnSync(BASH_3_2 as string, ["-n", script], {
+          encoding: "utf-8",
+          timeout: 30_000,
+        });
+        expect(result.stderr).toBe("");
+        expect(result.status).toBe(0);
+      }
+    },
+  );
+
+  it("runs to completion for a project that declares locales", () => {
+    for (const dir of ["src/content/docs-ja", "src/content/docs-de"]) {
+      mkdirSync(join(fixtureRoot, dir), { recursive: true });
+    }
+    writeConfig(`{
+  docsDir: "src/content/docs",
+  defaultLocale: "en",
+  locales: {
+    ja: { label: "JA", dir: "src/content/docs-ja" },
+    de: { label: "DE", dir: "src/content/docs-de" },
+  },
+}`);
+
+    const result = runFixture();
+
+    // The first `locale` record reaches the duplicate scan with LOCALE_CODES
+    // still empty -- the exact expansion that aborted the script on bash 3.2.
+    expect(result.stderr).not.toContain("unbound variable");
+    expect(result.status).toBe(0);
+
+    const skillDir = join(fixtureRoot, ".claude/skills/fixture-wisdom");
+    expect(realpathSync(join(skillDir, "docs-ja"))).toBe(
+      realpathSync(join(fixtureRoot, "src/content/docs-ja")),
+    );
+    expect(realpathSync(join(skillDir, "docs-de"))).toBe(
+      realpathSync(join(fixtureRoot, "src/content/docs-de")),
+    );
+  });
+
+  it("runs to completion for a project that declares no locales", () => {
+    writeConfig(`{
+  docsDir: "src/content/docs",
+  defaultLocale: "en",
+}`);
+
+    const result = runFixture();
+
+    // LOCALE_CODES stays empty here, so every `"${!LOCALE_CODES[@]}"` index
+    // expansion downstream runs against an empty array (safe on 3.2 -- this
+    // spec is what keeps that claim honest).
+    expect(result.stderr).not.toContain("unbound variable");
+    expect(result.status).toBe(0);
+
+    const skillDir = join(fixtureRoot, ".claude/skills/fixture-wisdom");
+    expect(realpathSync(join(skillDir, "docs"))).toBe(
+      realpathSync(join(fixtureRoot, "src/content/docs")),
+    );
+    expect(existsSync(join(skillDir, "docs-ja"))).toBe(false);
+    const skillMd = readFileSync(join(skillDir, "SKILL.md"), "utf-8");
+    expect(skillMd).toContain("- `en` (default): `src/content/docs/`");
   });
 });
 
