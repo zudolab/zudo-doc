@@ -1,11 +1,7 @@
 ---
 title: Unreleased
 description: 次のリリースに向けた変更。
-sidebar_position: 1113
+sidebar_position: 1115
 ---
 
-## その他の変更
-
-- オプションの `@takazudo/zdtp` peer 範囲を `^0.5.2 || ^0.6.0 || ^0.7.0` に広げ、ショーケースと生成プロジェクトの固定バージョンを 0.7.0 に更新しました。この利用方法において上流の変更は移行作業を必要としません。4 つのパネル API と公開定数は維持されています。zdtp 0.7.0 には破壊的変更が 1 つ含まれます。`TokenDashboard` が `mode` から chrome の外観を決めなくなり、明示的な `chrome` prop が必要になりました。ただしこのコンポーネントは本パッケージの利用範囲に含まれません。一方、パネル UI の変更は 2 点ショーケースにも及びます。配布されるパネルのスタイルシートにカラーピッカーの新しい変換ディスクロージャ用のルールが追加され、値が CSS の式または解決できない参照である場合、カラーピッカーは `Edit as literal` ボタンを押すまで直接の編集を無効化するようになりました。いずれも設定やストレージの移行は伴いません。0.7.0 に対するパネルの起動処理、同梱定数の適合性、オプション peer の到達可能性のテストは成功しています。パネルのスタイルシートは `@import "@takazudo/zdtp/styles.css"` で明示的に読み込む必要があります。これは `create-zudo-doc` が従来から出力している設定です。`global.css` を手動で編集したプロジェクトでは、この import を確認してください。このリリース以降、利用側の pnpm 設定にある `@takazudo/zudo-doc>@takazudo/zdtp` 用の `peerDependencyRules.allowedVersions` 例外は削除できます。
-- 非英語サイトでの日付をページのロケールで表示する、意図的かつ受け入れ済みの挙動変更を記録しました。単一ロケールサイトを含め、日付は以前 `en-US` で表示されていた場合でもページのロケールで表示されます（組み込みの月名マップは従来どおり `en`、`ja`、`de` に限られます）。デフォルトの `dateFormat` では、サイドバートレイと `site-tree-nav` の両方の月グループ見出し（`formatYearMonthLabel`: `2026 August` → `2026年8月`）と、`note_tray_sidebar: index` のトレイにある `site-tree-nav` のグループ化されていない `formatDate` 行がそのロケールで表示されるようになりました。`formatYearLabel` はキーをそのまま返し、デフォルトの `formatMonthDay` はロケールに依存しない `MM-DD` のままなので、これらの表示は変わりません。`MMM`/`MMMM` トークンを含む非デフォルトの `dateFormat` では、`numericMonthDay`、`yearMonth`、`full`、`year` パターンでも月名が切り替わります。
-- ロケールごとのホームヒーロー説明文を設定できる、公開オプションの `LocaleConfig.description` を追加しました。省略時はホームヒーローが `settings.siteDescription` にフォールバックするため、既存の設定は後方互換です。この設定が影響するのはホームヒーローのみで、`llms.txt` は引き続きすべてのロケールでグローバルの `siteDescription` を出力します。
+未リリースの変更はありません。

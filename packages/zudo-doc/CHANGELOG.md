@@ -6,11 +6,26 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
-## Other Changes
+No unreleased changes.
 
-- Widened the optional `@takazudo/zdtp` peer range to `^0.5.2 || ^0.6.0 || ^0.7.0` and moved the showcase and scaffold pins to 0.7.0. The upstream changes need no migration in this consumer: the four panel APIs remain available and the public constants are unchanged. zdtp 0.7.0 does carry one documented breaking change — `TokenDashboard` no longer derives its chrome appearance from `mode`, and needs an explicit `chrome` prop — but that component is not part of this consumer's surface. Two panel-UI changes do reach the showcase: the shipped panel stylesheet gains additive rules for the color picker's new conversion disclosure, and the picker now disables direct editing of a value that is a CSS expression or an unresolvable reference until its `Edit as literal` button is used. Neither carries a config or storage migration. The panel bootstrap, vendored-constants conformance, and optional-peer reachability tests pass against 0.7.0. Projects must explicitly pull the panel stylesheet via `@import "@takazudo/zdtp/styles.css"`, as `create-zudo-doc` has always emitted; check this import if you hand-edited `global.css`. A downstream pnpm `peerDependencyRules.allowedVersions` exception for `@takazudo/zudo-doc>@takazudo/zdtp` can be dropped on this release.
-- Recorded a deliberate, accepted behavior change on non-English sites: dates now render in the page's locale, including on single-locale sites where they previously rendered in `en-US` (the built-in month-name map remains limited to `en`, `ja`, and `de`). Under the default `dateFormat`, month-group headings in both the sidebar tray and `site-tree-nav` (`formatYearMonthLabel`: `2026 August` → `2026年8月`) and ungrouped `formatDate` rows in `site-tree-nav` only, for `note_tray_sidebar: index` trays, now use that locale. `formatYearLabel` still returns the key verbatim and the default `formatMonthDay` remains the locale-independent `MM-DD`, so those surfaces do not change. With a non-default `dateFormat` carrying `MMM`/`MMMM` tokens, month names also switch in the `numericMonthDay`, `yearMonth`, `full`, and `year` patterns.
-- Added the public optional `LocaleConfig.description` for locale-specific home hero descriptions. When omitted, the home hero falls back to `settings.siteDescription`, so existing configurations remain backward-compatible. This setting affects the home hero only; `llms.txt` continues to emit the global `siteDescription` for every locale.
+## [5.20.0] - 2026-09-09
+
+### Features
+
+- Added `dateFormat` patterns with per-role and per-locale overrides for page metadata, history, note trays, and navigation. Patterns support `YYYY`, `YY`, `MMMM`, `MMM`, `MM`, `M`, `DD`, `D`, and bracketed literal text; omitted roles retain locale-based formatting. (`2eeb42ce2`, `c126ecf8d`, `1d8ba74fa`, `10d5a90dc`, `3a2dc81fe`)
+- Added optional `LocaleConfig.description` for each non-default locale's home hero. Omitted values use `settings.siteDescription`; an empty string intentionally leaves the description blank. This changes hero text only; `llms.txt` retains the global description. (`0ce449ba0`)
+- Added namespaced `--color-zd-*` aliases and `theme-no-reset.css`, which preserves host color namespaces when stylesheet import order cannot be controlled. (`f3aae4442`, `ecdc23800`)
+
+### Bug Fixes
+
+- Rendered sidebar and site-tree dates in the page locale, including single-locale sites without language-switcher links. Japanese month groups now read `2026年8月` rather than `2026 August`; default numeric month/day and year-only labels retain their existing output. (`47bd00ff4`, `3c6c81c38`)
+- Separated history display locale from its storage path and formatted history timestamps in UTC, preventing browser locale or timezone from changing the displayed revision date. (`30bcf88c8`)
+- Let home hero links wrap without squeezing Japanese labels, and wrapped long terminal breadcrumb titles while preserving the version pill's spacing. (`be7b3de3b`, `173fdb77f`)
+- Corrected theme-pack navigation hover contrast, including active items and text inside brutalist link cards. (`6e561da45`, `791ad2c92`, `c83b8bda5`)
+
+### Other Changes
+
+- Expanded the optional `@takazudo/zdtp` peer range to `^0.5.2 || ^0.6.0 || ^0.7.0`. Existing panel integrations need no configuration or storage migration, and downstream pnpm peer-range exceptions can be removed. Continue importing `@takazudo/zdtp/styles.css` explicitly. (`e0fc27fbd`, `9554dbbea`)
 
 ## [5.19.1] - 2026-09-08
 

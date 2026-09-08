@@ -6,10 +6,18 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
-## Other Changes
+No unreleased changes.
 
-- Updated the `@takazudo/zdtp` pin emitted for the Design Token Panel feature in generated projects from `0.5.2` to `0.6.1`, and then to `0.7.0` (`e0fc27fbd`, `9554dbbea`). Fresh scaffolds now install `0.7.0` for that feature; the upstream change is compatible with the scaffold's panel integration and needs no migration.
-- Hardened the generated-project `templates/base/scripts/check-links.js` and `templates/base/scripts/setup-doc-skill.sh` scripts for stock Bash 3.2, including single-pass HTML scanning, quoted-attribute `id` and link extraction, and safe locale/config handling (`7c0144e51`, `0e52271b9`, `85b603e33`, `f6b699fe0`, `df9c57beb`).
+## [5.20.0] - 2026-09-09
+
+### Bug Fixes
+
+- Made the generated documentation-skill setup script work on stock macOS Bash 3.2 and corrected its locale/config handling, including checking that the documentation symlink exists before emitting locale guidance. (`85b603e33`, `f6b699fe0`)
+- Fixed the generated link checker to recognize IDs and links when quoted attributes contain `>`, and reduced repeated scanning by parsing each page once. (`0e52271b9`, `7c0144e51`)
+
+### Other Changes
+
+- Updated the Design Token Panel feature's emitted `@takazudo/zdtp` pin to `0.7.0`. Fresh scaffolds use the compatible panel integration without a migration. (`e0fc27fbd`, `9554dbbea`)
 
 ## [5.19.1] - 2026-09-08
 
