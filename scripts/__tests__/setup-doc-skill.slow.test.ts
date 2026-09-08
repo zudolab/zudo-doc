@@ -690,6 +690,147 @@ export default defineConfig(zudoDoc({ siteName: "example" }));
   });
 });
 
+describe("REPO_DOCS_DIR / locale-guidance existence gating (#4047)", () => {
+  let fixtureRoot: string;
+  let fixtureHome: string;
+  let projectDir: string;
+
+  beforeEach(() => {
+    fixtureRoot = mkdtempSync(join(tmpdir(), "zudo-doc-4047-fixture-"));
+    fixtureHome = mkdtempSync(join(tmpdir(), "zudo-doc-4047-home-"));
+    projectDir = fixtureRoot;
+    execSync("git init -q", { cwd: fixtureRoot });
+    mkdirSync(join(projectDir, "scripts"), { recursive: true });
+    cpSync(SCRIPT_PATH, join(projectDir, "scripts/setup-doc-skill.sh"));
+    writeFileSync(
+      join(projectDir, "package.json"),
+      JSON.stringify({ name: "gating-fixture", scripts: {} }),
+    );
+  });
+
+  afterEach(() => {
+    if (existsSync(fixtureRoot)) rmSync(fixtureRoot, { recursive: true });
+    if (existsSync(fixtureHome)) rmSync(fixtureHome, { recursive: true });
+  });
+
+  function runFixtureScript(): string {
+    return execSync(
+      `bash "${join(projectDir, "scripts/setup-doc-skill.sh")}" --target claude fixture-wisdom`,
+      {
+        cwd: projectDir,
+        encoding: "utf-8",
+        timeout: 30_000,
+        env: scriptEnv(fixtureHome),
+      },
+    );
+  }
+
+  it("resolves the docs symlink to a custom docsDir, not the hardcoded src/content/docs path", () => {
+    // No src/content/docs exists anywhere in this fixture -- only the custom
+    // docsDir does. If REPO_DOCS_DIR ever reverted to the dead hardcoded
+    // "src/content/docs" assignment this guards against, the symlink target
+    // would resolve to a path that doesn't exist.
+    mkdirSync(join(projectDir, "documentation/docs/getting-started"), {
+      recursive: true,
+    });
+    writeFileSync(
+      join(projectDir, "documentation/docs/getting-started/index.mdx"),
+      "---\ntitle: Test\n---\n",
+    );
+    writeFileSync(
+      join(projectDir, "zfb.config.ts"),
+      `import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(zudoDoc({
+  docsDir: "documentation/docs",
+}));
+`,
+    );
+
+    runFixtureScript();
+    const skillDir = join(projectDir, ".claude/skills/fixture-wisdom");
+
+    expect(realpathSync(join(skillDir, "docs"))).toBe(
+      realpathSync(join(projectDir, "documentation/docs")),
+    );
+  });
+
+  it("omits docs-ja guidance and the Japanese Documentation section when the configured locale directory does not exist", () => {
+    // locales.ja is configured but src/content/docs-ja was never created, so
+    // generate_skill's `[ -d ... ]` guard skips the symlink. The guidance
+    // must follow the same check rather than naming a link that was never
+    // made.
+    mkdirSync(join(projectDir, "src/content/docs/getting-started"), {
+      recursive: true,
+    });
+    writeFileSync(
+      join(projectDir, "src/content/docs/getting-started/index.mdx"),
+      "---\ntitle: Test\n---\n",
+    );
+    writeFileSync(
+      join(projectDir, "zfb.config.ts"),
+      `import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(zudoDoc({
+  docsDir: "src/content/docs",
+  defaultLocale: "en",
+  locales: {
+    ja: { label: "JA", dir: "src/content/docs-ja" },
+  },
+}));
+`,
+    );
+
+    const output = runFixtureScript();
+    const skillDir = join(projectDir, ".claude/skills/fixture-wisdom");
+    const skillMd = readFileSync(join(skillDir, "SKILL.md"), "utf-8");
+
+    expect(existsSync(join(skillDir, "docs-ja"))).toBe(false);
+    expect(output).toContain("Skipping ja link");
+    expect(skillMd).not.toContain("docs-ja");
+    expect(skillMd).not.toContain("## Japanese Documentation");
+  });
+
+  it("keeps docs-ja guidance and the Japanese Documentation section once the configured directory exists", () => {
+    mkdirSync(join(projectDir, "src/content/docs/getting-started"), {
+      recursive: true,
+    });
+    mkdirSync(join(projectDir, "src/content/docs-ja/getting-started"), {
+      recursive: true,
+    });
+    writeFileSync(
+      join(projectDir, "src/content/docs/getting-started/index.mdx"),
+      "---\ntitle: Test\n---\n",
+    );
+    writeFileSync(
+      join(projectDir, "zfb.config.ts"),
+      `import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
+export default defineConfig(zudoDoc({
+  docsDir: "src/content/docs",
+  defaultLocale: "en",
+  locales: {
+    ja: { label: "JA", dir: "src/content/docs-ja" },
+  },
+}));
+`,
+    );
+
+    runFixtureScript();
+    const skillDir = join(projectDir, ".claude/skills/fixture-wisdom");
+    const skillMd = readFileSync(join(skillDir, "SKILL.md"), "utf-8");
+
+    expect(realpathSync(join(skillDir, "docs-ja"))).toBe(
+      realpathSync(join(projectDir, "src/content/docs-ja")),
+    );
+    expect(skillMd).toContain("`src/content/docs-ja/`");
+    expect(skillMd).toContain("## Japanese Documentation");
+  });
+});
+
 describe("suffix-aware skill-name derivation (#3154)", () => {
   // Builds a throwaway fixture project (same shape as the nested-subdir
   // fixture above) with a caller-chosen package.json `name`, so the
