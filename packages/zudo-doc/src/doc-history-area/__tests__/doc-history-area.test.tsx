@@ -101,3 +101,54 @@ describe("createDocHistoryArea source extension contract", () => {
     expect(html).not.toContain(`${GITHUB_URL}/blob/HEAD/`);
   });
 });
+
+// ---------------------------------------------------------------------------
+// displayLocale contract (#4073) — the real `DocHistory` island props ride
+// the Island() marker's `data-props` JSON even in skip-ssr mode (see
+// `@takazudo/zfb`'s `captureSerializableProps`), so we can assert exactly
+// what reaches the island — including the fetch-path-determining `locale` —
+// without needing to hydrate the component.
+// ---------------------------------------------------------------------------
+
+function renderAreaForLocale(locale: string, isFallback?: boolean): string {
+  const ctx = makeFakeChromeContext({
+    settings: { bodyFootUtilArea: false },
+  });
+  const DocHistoryArea = createDocHistoryArea(ctx);
+
+  return render(
+    <DocHistoryArea slug="guide" locale={locale} isFallback={isFallback} />,
+  );
+}
+
+describe("createDocHistoryArea displayLocale / locale prop contract (#4073)", () => {
+  it("default-locale page: fetch-path locale omitted, displayLocale set to the page locale", () => {
+    const html = renderAreaForLocale("en");
+
+    // `locale` is the storage-path parameter — omitted (bare-path fetch) for
+    // the default locale, matching the pre-existing fetch semantics.
+    // (SSR HTML-escapes the data-props JSON, so quotes are &quot; entities.)
+    expect(html).not.toMatch(/&quot;locale&quot;:/);
+    // `displayLocale` is the new, separate display-only prop.
+    expect(html).toContain("&quot;displayLocale&quot;:&quot;en&quot;");
+  });
+
+  it("non-default-locale page: fetch-path locale AND displayLocale both set to the page locale", () => {
+    const html = renderAreaForLocale("ja");
+
+    expect(html).toContain("&quot;locale&quot;:&quot;ja&quot;");
+    expect(html).toContain("&quot;displayLocale&quot;:&quot;ja&quot;");
+  });
+
+  it("EN-fallback JA page: fetch-path locale still omitted (bare-path fetch), but displayLocale stays JA", () => {
+    const html = renderAreaForLocale("ja", true);
+
+    // isFallback swaps the storage-path lookup to defaultLocale, so the
+    // fetch-relevant `locale` prop is omitted exactly like the default-locale
+    // case above — the history JSON lives only at the bare path.
+    expect(html).not.toMatch(/&quot;locale&quot;:/);
+    // The visitor is still reading the JA page — displayLocale must stay
+    // "ja", not silently fall back to "en" like the storage path did.
+    expect(html).toContain("&quot;displayLocale&quot;:&quot;ja&quot;");
+  });
+});

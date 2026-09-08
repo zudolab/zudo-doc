@@ -57,6 +57,7 @@ export type DocHistoryComponent = (props: {
   slug: string;
   locale?: string;
   basePath?: string;
+  displayLocale?: string;
 }) => VNode;
 
 export interface DocHistoryAreaProps {
@@ -175,6 +176,13 @@ export function createDocHistoryArea<S extends Settings = Settings>(
     // Use effectiveHistoryLocale so fallback pages fetch the bare (non-ja/) path.
     const docHistoryLocale = effectiveHistoryLocale === defaultLocale ? undefined : effectiveHistoryLocale;
     const docHistoryBasePath = settings.base ?? "/";
+    // Display-only locale for revision-date formatting — always the PAGE
+    // locale, never effectiveHistoryLocale. Deliberately separate from
+    // docHistoryLocale above: that one is a storage-path parameter (omitted
+    // for the default locale, and swapped to defaultLocale on an EN-fallback
+    // JA page so the fetch hits the bare path); this one must reflect what
+    // the visitor is actually reading, in both of those cases (#4073).
+    const docHistoryDisplayLocale = locale;
 
     // Build the SSR fallback with only the sr-only metadata block so the
     // author marker and Created/Updated labels are present in SSG output
@@ -206,6 +214,7 @@ export function createDocHistoryArea<S extends Settings = Settings>(
           slug={historySlug}
           locale={docHistoryLocale}
           basePath={docHistoryBasePath}
+          displayLocale={docHistoryDisplayLocale}
         />
       ),
     }) as unknown as VNode;
