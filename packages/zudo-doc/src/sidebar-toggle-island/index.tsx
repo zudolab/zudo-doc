@@ -42,6 +42,8 @@ export interface SidebarToggleProps {
   currentSlug?: string;
   rootMenuItems?: SidebarRootMenuItem[];
   backToMenuLabel?: string;
+  /** Display locale forwarded to the hosted SidebarTree. */
+  locale?: string;
   localeLinks?: SidebarLocaleLink[];
   themeDefaultMode?: "light" | "dark";
   /**
@@ -63,6 +65,7 @@ export function SidebarToggle({
   currentSlug,
   rootMenuItems,
   backToMenuLabel,
+  locale,
   localeLinks,
   themeDefaultMode,
   dateFormats,
@@ -186,6 +189,7 @@ export function SidebarToggle({
             currentSlug={currentSlug}
             rootMenuItems={rootMenuItems}
             backToMenuLabel={backToMenuLabel}
+            locale={locale}
             localeLinks={localeLinks}
             themeDefaultMode={themeDefaultMode}
             dateFormats={dateFormats}
