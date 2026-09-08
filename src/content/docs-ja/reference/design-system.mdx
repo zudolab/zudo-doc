@@ -232,11 +232,63 @@ zudo-docではスペーシングを**水平（hsp）**と**垂直（vsp）**の2
 
 カラートークンシステム、カラースキーム、カスタマイズの詳細は[カラーリファレンス](./color.mdx)を参照してください。
 
+## 別の `@theme` との共存
+
+Tailwind v4 は、スタイルシートのエントリーから読み込まれるすべての `@theme` ブロックを、ひとつの変数集合にまとめます。同じキーが複数回現れた場合は、最後の宣言が優先されます。重複や上書きがあっても、CSS はエラーを出しません。
+
+zudo-doc は **23 個の名前空間なしの `--color-*` エイリアス名と、`--color-zd-*` プレフィックスを予約**しています。名前空間なしのエイリアスの接尾辞は次のとおりです。
+
+`bg`, `fg`, `sel-bg`, `sel-fg`, `surface`, `muted`, `accent`, `accent-hover`, `code-bg`, `code-fg`, `success`, `danger`, `warning`, `info`, `overlay`, `image-overlay-bg`, `image-overlay-fg`, `chat-user-bg`, `chat-user-text`, `chat-assistant-bg`, `chat-assistant-text`, `matched-keyword-bg`, `matched-keyword-fg`。
+
+`--color-acme-*` など、それ以外の名前は自由に使えます。パッケージの共通 UI は、`bg-bg`、`text-fg`、`border-muted`、`var(--color-muted)` などを通じて名前空間なしのエイリアスを参照します。別のデザインシステムの `@theme` でこれらの予約名を定義する構成は**サポート対象外**です。最後にインポートされた宣言が、警告なしに優先されます。これは、プロジェクトに合わせて zudo-doc 自体のテーマを意図的に上書きする操作とは別の話です。
+
+`--color-*: initial` は、Tailwind のデフォルト値に限らず、どのファイルから来た宣言でも、その**前**にあるすべての `--color-*` 宣言を消去します。スキャフォールドと同様に、**独自の `@theme` ブロックより前に `@takazudo/zudo-doc/theme.css` をインポートしてください**。
+
+ホストのスタイルシートを zudo-doc のインポートより後に移動できない場合は、`theme.css` の代わりに `@takazudo/zudo-doc/theme-no-reset.css` を使います。カラートークンのリセットを除き、トークンもルールも同一です。zfb の分割インポート（`tailwindcss/preflight` + `tailwindcss/utilities`）では、そもそもデフォルトパレットが存在しません。そのため、この構成ではリセットなしの版を選んでも失うものはなく、`theme.css` のリセットは予防的な保護です。一方、ホストが `tailwindcss/theme` をインポートする場合（または zfb 以外で `@import "tailwindcss"` を使う場合）、リセットなしの版ではデフォルトパレット全体が残ります。`theme.css` では、リセットより前に宣言されたそのパレットが消去されます。
+
+`--color-zd-*` は、名前空間なしの各エイリアスと同じデフォルト値を持つ、1 対 1 の名前空間付きエイリアスです。別のデザインシステムは、名前空間なしの層を使わずに、`bg-zd-*`、`text-zd-*`、`border-zd-*` ユーティリティを通じて zudo-doc の色を参照できます。エイリアスは `@theme static` で宣言されているため、Tailwind のスキャンでひとつも使われていなくても、変数は常に `:root` に出力されます。ただし、ユーティリティ自体が生成されるのは、自分の Tailwind スキャンで検出されたクラスだけです。
+
+たとえば、ホストのデザインシステムに `acme` 名前空間を与え、そのトークンを zudo-doc より後にインポートします。
+
+```css title="consumer.css"
+@theme {
+  --color-acme-bg: oklch(0.97 0.01 250);
+  --color-acme-fg: oklch(0.25 0.02 250);
+}
+```
+
+```css title="src/styles/global.css"
+@layer zd-preflight, zd-flow;
+@import "tailwindcss/preflight" layer(zd-preflight);
+@import "tailwindcss/utilities";
+@import "@takazudo/zudo-doc/theme.css";
+@import "./consumer.css";
+@import "@takazudo/zudo-doc/safelist.css";
+@import "@takazudo/zudo-doc/content.css";
+@import "@takazudo/zudo-doc/page-loading.css";
+@import "@takazudo/zudo-doc/features.css";
+```
+
+このエントリーで得られる結果は次のとおりです。
+
+| 対象 | 結果 |
+| --- | --- |
+| `--color-acme-bg`、`--color-acme-fg` | リセットより後に宣言されるため残る |
+| zudo-doc の名前空間なしのエイリアス | `acme` が予約名を定義しないため、そのまま維持される |
+| `bg-zd-accent` | 自分の Tailwind スキャンでクラスが検出されれば、`acme` コンポーネントで使える |
+| Tailwind のデフォルトパレット | 分割インポートだけを使うため存在しない |
+
+2 つの命名順序を区別してください。生の `--zd-*` 層は**プレフィックスが先**で、`@theme` の外にあり、`ColorSchemeProvider` が注入します。セマンティックな `--color-zd-*` 層は**カテゴリが先**で、`@theme` の中にあります。生の `--zd-` プレフィックスの後ろに `color-` を挿入してはいけません。その第 3 の綴りは、どちらの層にもつながりません。ソースだけでなくビルド後の CSS も確認し、使用するユーティリティが出力され、意図したトークンを参照していることを確かめてください。
+
+パッケージの共通 UI を名前空間付きの層へ移行することは、この契約の対象外です。パッケージとショーケースのコードは、引き続き名前空間なしの層を使います。ホスト側のデザインシステムが同じ名前空間なしの名前を定義する構成は、`theme-no-reset.css` を使ってもサポート対象外です。
+
 ## 使用ルール
 
 <Warning title="Tailwindのデフォルトテーマは無効">
 
 Tailwindのデフォルトテーマはインポートされていません。プロジェクトトークンは `@takazudo/zudo-doc/theme.css` から来て、その後にプロジェクトの `@theme` 上書きブロックが適用されます。定義されていないトークンはスタイルなしのマークアップになります。
+
+別のデザインシステムとエントリーを共有する場合は、[別の `@theme` との共存](#別の-theme-との共存)にあるインポート順と予約名のルールに従ってください。
 
 </Warning>
 

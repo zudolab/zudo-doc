@@ -128,6 +128,8 @@ For per-component rebranding without touching every element that reads a global 
 
 **Limit:** tokens restyle; they do not restructure markup. See [Design System](./design-system.mdx), [Color](./color.mdx), and [Component Tokens](./component-tokens.mdx).
 
+If your project also merges a second design system’s `@theme`, read [Coexisting with another `@theme`](./design-system.mdx#coexisting-with-another-theme).
+
 ## Rung 5 — Ejecting a component
 
 When no token can reach the change — the markup itself is wrong for you — eject a **content-layer** component that your project re-references (for example through `mdxExtras`). Ejection copies its source out of the package into your project and rewrites matching host imports to the local copy:
