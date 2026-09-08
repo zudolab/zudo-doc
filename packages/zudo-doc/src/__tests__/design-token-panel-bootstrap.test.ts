@@ -362,7 +362,7 @@ describe("bootstrapDesignTokenPanel — lazy zdtp load", () => {
 
     bootstrapDesignTokenPanel(builder);
     dispatchToggle(browser.windowTarget);
-    await settle();
+    await vi.waitFor(() => expect(errorSpy).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
 
     expect(zdtp.configurePanel).not.toHaveBeenCalled();
     expect(errorSpy).toHaveBeenCalledOnce();
