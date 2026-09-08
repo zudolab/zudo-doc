@@ -200,7 +200,16 @@ REPO_DOCS_DIR="$REPO_ROOT/${PROJECT_PREFIX}src/content/docs"
 # This deliberately does NOT walk `src/content/docs-*`: that naming convention
 # also matches version snapshots such as `docs-v1-ja`, which are not current
 # locale roots. The config map is the only source of truth.
-CONFIG_LOCALE_DATA="$(node - "$ROOT_DIR" <<'NODE'
+#
+# The node call is wrapped in a function rather than inlined into the
+# assignment's `$( ... )`: bash 3.2 (stock macOS /bin/bash) does not honour a
+# heredoc opened inside a command substitution -- it scans the heredoc body as
+# shell text, and the JavaScript below contains an odd number of backticks
+# (template literals), so the whole FILE fails to parse. Keeping the heredoc at
+# statement level sidesteps that parser bug while preserving stdin execution,
+# argument indexing, and node's exit status through the assignment.
+read_config_locale_data() {
+  node - "$ROOT_DIR" <<'NODE'
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -445,7 +454,8 @@ if (localeObject) {
   }
 }
 NODE
-)"
+}
+CONFIG_LOCALE_DATA="$(read_config_locale_data)"
 
 DEFAULT_LOCALE="en"
 DOCS_DIR_REL="src/content/docs"
@@ -461,9 +471,13 @@ while IFS=$'\t' read -r record_type record_value record_extra; do
       [ -n "$record_value" ] || continue
       [ "$record_value" = "$DEFAULT_LOCALE" ] && continue
       duplicate="false"
-      for existing_code in "${LOCALE_CODES[@]}"; do
-        [ "$existing_code" = "$record_value" ] && duplicate="true"
-      done
+      # bash 3.2 under `set -u` treats "${arr[@]}" on an EMPTY array as an
+      # unbound variable, so the length guard is required, not cosmetic.
+      if [ "${#LOCALE_CODES[@]}" -gt 0 ]; then
+        for existing_code in "${LOCALE_CODES[@]}"; do
+          [ "$existing_code" = "$record_value" ] && duplicate="true"
+        done
+      fi
       [ "$duplicate" = "true" ] && continue
       LOCALE_CODES+=("$record_value")
       LOCALE_DIR_RELS+=("$record_extra")
@@ -578,12 +592,16 @@ locale_link_name() {
   suffix=2
   while :; do
     collision="false"
-    for existing in "${LOCALE_LINK_NAMES[@]}"; do
-      if [ "$existing" = "$name" ]; then
-        collision="true"
-        break
-      fi
-    done
+    # Length guard: see the LOCALE_CODES loop above -- bash 3.2 under `set -u`
+    # errors on "${arr[@]}" when the array is empty.
+    if [ "${#LOCALE_LINK_NAMES[@]}" -gt 0 ]; then
+      for existing in "${LOCALE_LINK_NAMES[@]}"; do
+        if [ "$existing" = "$name" ]; then
+          collision="true"
+          break
+        fi
+      done
+    fi
     [ "$collision" = "false" ] && break
     name="docs-$code-$suffix"
     suffix=$((suffix + 1))
