@@ -275,6 +275,13 @@ export interface ZudoDocJson {
 // All verified parent-relatives go exactly one level up to a sibling top-level
 // dir — the mapping is `../<seg>/<rest>` → `@takazudo/zudo-doc/<seg>`.
 //
+// Parent-relative FILE imports (`../<name>.js`, no directory segment) map the
+// same way, to `@takazudo/zudo-doc/<name>`. `sidebar-tree-island` and the three
+// other dated islands reach `../settings.js` for the `ResolvedDateFormats` prop
+// type (#4075), and `./settings` is a real package subpath. Without this half
+// the specifier survived the copy verbatim and every ejected copy of those
+// components failed to resolve it.
+//
 // Transitions barrel note (C0-flagged ambiguity, resolved):
 //   `../transitions/page-events.js` rewrites to `@takazudo/zudo-doc/transitions`.
 //   The `transitions` barrel (packages/zudo-doc/src/transitions/index.ts) DOES
@@ -289,13 +296,14 @@ export interface ZudoDocJson {
 //   specifier to `@takazudo/zudo-doc/transitions`.
 
 /**
- * Rewrite parent-relative cross-component imports (`../<seg>/<rest>`) to
- * `@takazudo/zudo-doc/<seg>` in-place across all `.ts`/`.tsx` files in `dir`.
+ * Rewrite parent-relative cross-component imports (`../<seg>/<rest>` and the
+ * bare-file `../<seg>.js`) to `@takazudo/zudo-doc/<seg>` in-place across all
+ * `.ts`/`.tsx` files in `dir`.
  */
 async function rewireImports(dir: string): Promise<void> {
-  // Match: from "...<seg>/<rest>.js" where ... is `from "` or `from '`
-  // Capture group 1 = quote char, group 2 = seg
-  const re = /(from\s+)(["'])\.\.\/([\w-]+)\/[^"']+\2/g;
+  // Match: from "../<seg>/<rest>.js" or from "../<seg>.js", where the quote is
+  // either kind. Capture group 2 = quote char, group 3 = seg.
+  const re = /(from\s+)(["'])\.\.\/([\w-]+)(?:\/[^"']+|\.[cm]?[jt]sx?)\2/g;
 
   const entries = await fs.readdir(dir, { withFileTypes: true });
   for (const entry of entries) {

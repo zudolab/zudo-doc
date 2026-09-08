@@ -15,6 +15,7 @@ import { useState, useEffect } from "preact/hooks";
 import { AFTER_NAVIGATE_EVENT, ensureNestedIslandPropsRefresh } from "../transitions/index.js";
 import { SidebarTree } from "../sidebar-tree-island/index.js";
 import type { SidebarNavNode, SidebarRootMenuItem, SidebarLocaleLink } from "../sidebar/types.js";
+import type { ResolvedDateFormats } from "../settings.js";
 
 // This island lives INSIDE the persisted `<header>`, so a same-locale swap
 // lifts it verbatim and would re-mount it from the previous page's serialized
@@ -43,6 +44,18 @@ export interface SidebarToggleProps {
   backToMenuLabel?: string;
   localeLinks?: SidebarLocaleLink[];
   themeDefaultMode?: "light" | "dark";
+  /**
+   * Forwarded verbatim to the hosted `<SidebarTree>`. This island is the one
+   * nested under the persisted `<header>`, so on a same-locale soft navigation
+   * its serialized `data-props` is lifted from the previous page and refreshed
+   * wholesale by `nested-island-props-refresh` — which carries the resolved
+   * patterns along with `nodes`, at no extra cost, because that helper copies
+   * the blob rather than enumerating prop names (#4075). The patterns cannot
+   * actually differ across such a swap (the persist key is `header-${lang}`,
+   * so a locale change is never a persisted swap); what matters is that they
+   * are not LOST from the lifted island.
+   */
+  dateFormats?: ResolvedDateFormats;
 }
 
 export function SidebarToggle({
@@ -52,6 +65,7 @@ export function SidebarToggle({
   backToMenuLabel,
   localeLinks,
   themeDefaultMode,
+  dateFormats,
 }: SidebarToggleProps) {
   // Initial state must match SSR (`open=false`) so the hydration DOM
   // matches the SSG output byte-for-byte. The backdrop and toggle-icon
@@ -174,6 +188,7 @@ export function SidebarToggle({
             backToMenuLabel={backToMenuLabel}
             localeLinks={localeLinks}
             themeDefaultMode={themeDefaultMode}
+            dateFormats={dateFormats}
           />
         </div>
       </aside>

@@ -5,7 +5,11 @@
 // ready to hand to `format-date`'s formatters. Must stay pure, node-free and
 // browser-safe — its output is serialized into island props downstream.
 
-import type { DateFormatRoles, DateFormatSetting } from "../settings.js";
+import type {
+  DateFormatRoles,
+  DateFormatSetting,
+  ResolvedDateFormats,
+} from "../settings.js";
 
 const DATE_FORMAT_ROLE_KEYS = [
   "full",
@@ -26,7 +30,7 @@ const DATE_FORMAT_ROLE_KEYS = [
 export function resolveDateFormats(
   setting: DateFormatSetting | undefined,
   locale: string,
-): Required<DateFormatRoles> {
+): ResolvedDateFormats {
   // A bare pattern is a string; `DateFormatConfig` is always an object, so
   // `typeof` alone tells the two apart (and undefined is handled first).
   const topLevelRoles: DateFormatRoles =
@@ -34,7 +38,7 @@ export function resolveDateFormats(
   const localeRoles: DateFormatRoles | undefined =
     setting !== undefined && typeof setting !== "string" ? setting.locales?.[locale] : undefined;
 
-  const resolved = {} as Required<DateFormatRoles>;
+  const resolved = {} as ResolvedDateFormats;
   for (const role of DATE_FORMAT_ROLE_KEYS) {
     resolved[role] = localeRoles?.[role] ?? topLevelRoles[role] ?? "locale";
   }

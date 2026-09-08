@@ -549,6 +549,39 @@ describe("eject() — import rewiring", () => {
     expect(content).not.toContain(`from "../smart-break/`);
   });
 
+  it("rewrites a parent-relative FILE import (../settings.js) to its subpath", async () => {
+    // The dated islands import `ResolvedDateFormats` from `../settings.js`
+    // (#4075). That specifier has no directory segment, so the original
+    // `../<seg>/<rest>` pattern left it untouched and the ejected copy could
+    // not resolve it. `./settings` is a real package subpath.
+    const projectDir = path.join(tempDir, "project");
+    await fs.ensureDir(projectDir);
+
+    const componentFiles: Record<string, string> = {
+      "index.ts": `export { Header } from "./header.js";\n`,
+      "header.tsx": [
+        `/** @jsxRuntime automatic */`,
+        `import type { ResolvedDateFormats } from "../settings.js";`,
+        `import { ChevronRight } from "../icons/index.js";`,
+        `export function Header(_p: { dateFormats?: ResolvedDateFormats }) { return null; }`,
+      ].join("\n") + "\n",
+    };
+
+    const pkgRoot = await buildFixturePackage(tempDir, "header", componentFiles);
+    await eject("header", {
+      cwd: projectDir,
+      resolvePackageRoot: makeResolver(pkgRoot),
+    });
+
+    const content = await fs.readFile(
+      path.join(projectDir, "src/components/zudo-doc/header/header.tsx"),
+      "utf8",
+    );
+    expect(content).toContain(`from "@takazudo/zudo-doc/settings"`);
+    expect(content).toContain(`from "@takazudo/zudo-doc/icons"`);
+    expect(content).not.toContain(`from "../settings.js"`);
+  });
+
   it("keeps same-dir relatives verbatim", async () => {
     const projectDir = path.join(tempDir, "project");
     await fs.ensureDir(projectDir);
