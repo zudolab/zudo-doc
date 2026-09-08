@@ -52,6 +52,12 @@ describe("note-tray-model", () => {
     expect(formatYearMonthLabel("2026-08", "ja")).toBe("2026年8月");
   });
 
+  it("forwards an optional date-format pattern to the shared formatter", () => {
+    expect(formatYearMonthLabel("2026-08", "en", "locale")).toBe("2026 August");
+    expect(formatYearMonthLabel("2026-08", "en", "YYYY/MM")).toBe("2026/08");
+    expect(formatYearMonthLabel("2026-08", "ja", "YYYY年M月")).toBe("2026年8月");
+  });
+
   it("orders groups chronologically and items by rank in the tray direction", () => {
     expect(groupItems(items, "month", "asc").map((g) => [g.key, g.items.map((i) => i.rank)])).toEqual([
       ["2025-12", [1]],

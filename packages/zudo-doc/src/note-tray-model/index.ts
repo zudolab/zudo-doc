@@ -2,11 +2,12 @@ import {
   formatDate,
   formatYearMonth,
   parseIsoDate,
+  type DateFormatPattern,
   type IsoDateParts,
 } from "../format-date/index.js";
 
 export { formatDate, parseIsoDate };
-export type { IsoDateParts };
+export type { DateFormatPattern, IsoDateParts };
 
 export type NoteTrayOrder = "asc" | "desc";
 export type NoteTrayGrouping = "year" | "month";
@@ -84,8 +85,12 @@ export function yearMonthKey(iso: string): string {
     : "";
 }
 
-export function formatYearMonthLabel(isoOrKey: string, locale: string): string {
-  return formatYearMonth(isoOrKey, locale);
+export function formatYearMonthLabel(
+  isoOrKey: string,
+  locale: string,
+  pattern?: DateFormatPattern,
+): string {
+  return formatYearMonth(isoOrKey, locale, pattern);
 }
 
 /** Group dated items chronologically and keep rank order within each group. */
