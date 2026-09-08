@@ -184,13 +184,27 @@ function decodeHtmlAttributeValue(value) {
   );
 }
 
+// Attribute-scan grammar shared by the anchor and id scans below. A quoted
+// attribute value may legally contain ">" (title="a > b"), so bounding an
+// attribute scan with [^>] silently drops the whole tag: a lost id is a noisy
+// false STRICT FAIL, while a lost href means the link is never checked at all
+// (#4046). This run crosses ">" only inside quotes, and a decoy `href=`/`id=`
+// written as text inside another attribute's value stays unreachable because a
+// quoted span is consumed whole. Each alternative starts with a distinct
+// character, so the repetition backtracks linearly.
+const HTML_ATTRIBUTE_RUN = /(?:"[^"]*"|'[^']*'|[^>"'])/.source;
+const HTML_ATTRIBUTE_VALUE = /(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`\\]+))/.source;
+
 // Single shared anchor scan. `extractHtmlLinks` and
 // `extractProtocolRelativeHtmlLinks` classify the SAME set of `<a href>`
 // matches into disjoint buckets, so the grammar and the incremental line
 // counting live here once — a fix to the anchor regex must never reach only
 // one of the two callers.
 function* iterateHtmlAnchorHrefs(html) {
-  const regex = /<a(?=\s)[^>]*?\shref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`\\]+))[^>]*>/gi;
+  const regex = new RegExp(
+    `<a(?=\\s)${HTML_ATTRIBUTE_RUN}*?\\shref\\s*=\\s*${HTML_ATTRIBUTE_VALUE}${HTML_ATTRIBUTE_RUN}*>`,
+    "gi",
+  );
   let match;
   let lastIndex = 0;
   let currentLine = 1;
@@ -232,7 +246,10 @@ export function extractProtocolRelativeHtmlLinks(html) {
 
 export function extractHtmlIds(html) {
   const ids = [];
-  const regex = /<[A-Za-z][^>]*?\sid\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`\\]+))[^>]*>/gi;
+  const regex = new RegExp(
+    `<[A-Za-z]${HTML_ATTRIBUTE_RUN}*?\\sid\\s*=\\s*${HTML_ATTRIBUTE_VALUE}${HTML_ATTRIBUTE_RUN}*>`,
+    "gi",
+  );
   let match;
   while ((match = regex.exec(html)) !== null) {
     ids.push(decodeHtmlAttributeValue(match[1] ?? match[2] ?? match[3]));

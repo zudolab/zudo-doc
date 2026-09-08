@@ -327,6 +327,59 @@ describe("check-links", () => {
     it("does not treat a custom element beginning with a- as an anchor", () => {
       expect(extractHtmlLinks(`<a-card href=/docs/missing>Card</a-card>`)).toEqual([]);
     });
+
+    // A quoted attribute value may legally contain ">" — the pre-#4046 [^>]
+    // scan dropped the whole tag, so the link was silently never checked.
+    it("extracts an href after a > inside an earlier double-quoted attribute", () => {
+      expect(extractHtmlLinks(`<a title="a > b" href="/x">X</a>`)).toEqual([
+        { href: "/x", line: 1 },
+      ]);
+    });
+
+    it("extracts an href after a > inside an earlier single-quoted attribute", () => {
+      expect(extractHtmlLinks(`<a title='a > b' href='/y'>Y</a>`)).toEqual([
+        { href: "/y", line: 1 },
+      ]);
+    });
+
+    it("extracts an unquoted href after a > inside an earlier quoted attribute", () => {
+      expect(extractHtmlLinks(`<a title="a > b" href=/z>Z</a>`)).toEqual([
+        { href: "/z", line: 1 },
+      ]);
+    });
+
+    it("extracts an href followed by a > inside a later quoted attribute", () => {
+      expect(extractHtmlLinks(`<a href="/x" title="a > b">X</a>`)).toEqual([
+        { href: "/x", line: 1 },
+      ]);
+    });
+
+    it("does not treat href= written as text inside another attribute as a link", () => {
+      expect(extractHtmlLinks(`<a data-x="href=/decoy">Decoy</a>`)).toEqual([]);
+    });
+
+    it("skips a decoy href= in a quoted value and takes the real attribute", () => {
+      expect(
+        extractHtmlLinks(`<a data-x="href=/decoy" href="/real">R</a>`),
+      ).toEqual([{ href: "/real", line: 1 }]);
+    });
+
+    it("reports the line of an anchor preceded by a quoted > spanning newlines", () => {
+      const html = ['<p title="a', '> b">Text</p>', '<a title="c', '> d" href="/deep">Deep</a>'].join(
+        "\n",
+      );
+      expect(extractHtmlLinks(html)).toEqual([{ href: "/deep", line: 3 }]);
+    });
+
+    it("keeps line numbers correct for an anchor after a multi-line quoted >", () => {
+      const html = ['<a', '  title="a', '  > b"', '  href="/x">X</a>', '<a href="/second">S</a>'].join(
+        "\n",
+      );
+      expect(extractHtmlLinks(html)).toEqual([
+        { href: "/x", line: 1 },
+        { href: "/second", line: 5 },
+      ]);
+    });
   });
 
   // --- extractProtocolRelativeHtmlLinks ---
@@ -367,6 +420,12 @@ describe("check-links", () => {
         extractProtocolRelativeHtmlLinks(`<a href="./sibling">S</a>`),
       ).toEqual([]);
     });
+
+    it("extracts a protocol-relative href after a > inside a quoted attribute", () => {
+      expect(
+        extractProtocolRelativeHtmlLinks(`<a title="a > b" href="//example.com/p">E</a>`),
+      ).toEqual([{ href: "//example.com/p", line: 1 }]);
+    });
   });
 
   describe("extractHtmlIds", () => {
@@ -382,6 +441,43 @@ describe("check-links", () => {
 
     it("does not treat data-id as an element id", () => {
       expect(extractHtmlIds(`<div data-id=ghost></div>`)).toEqual([]);
+    });
+
+    it("extracts an id after a > inside an earlier double-quoted attribute", () => {
+      expect(extractHtmlIds(`<button title="a > b" id="x"></button>`)).toEqual([
+        "x",
+      ]);
+    });
+
+    it("extracts an id after a > inside an earlier single-quoted attribute", () => {
+      expect(extractHtmlIds(`<div data-tip='x > y' id='tip'></div>`)).toEqual([
+        "tip",
+      ]);
+    });
+
+    it("extracts an unquoted id after a > inside an earlier quoted attribute", () => {
+      expect(extractHtmlIds(`<div title="a > b" id=raw></div>`)).toEqual(["raw"]);
+    });
+
+    it("extracts an id followed by a > inside a later quoted attribute", () => {
+      expect(extractHtmlIds(`<button id="x" aria-label="a > b"></button>`)).toEqual(
+        ["x"],
+      );
+    });
+
+    it("extracts an id after a quoted > spanning newlines", () => {
+      const html = ['<div', '  data-tip="x', '  > y"', '  id="tip"></div>'].join("\n");
+      expect(extractHtmlIds(html)).toEqual(["tip"]);
+    });
+
+    it("does not treat id= written as text inside another attribute as an id", () => {
+      expect(extractHtmlIds(`<div title="id=fake"></div>`)).toEqual([]);
+    });
+
+    it("skips a decoy id= in a quoted value and takes the real attribute", () => {
+      expect(extractHtmlIds(`<div title="id=fake" id="real"></div>`)).toEqual([
+        "real",
+      ]);
     });
   });
 
