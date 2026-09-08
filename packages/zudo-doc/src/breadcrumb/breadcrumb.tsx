@@ -153,11 +153,16 @@ export function Breadcrumb(props: BreadcrumbProps): VNode | null {
 
   if (items.length === 0) return null;
 
+  // The right-slot column uses items-start, so give the nav a definite
+  // width: break-words does not reduce its intrinsic min-content width.
   const nav = (
-    <nav class="mb-vsp-md text-small" aria-label="Breadcrumb">
+    <nav
+      class={`mb-vsp-md text-small${props.rightSlot !== undefined ? " min-w-0 w-full" : ""}`}
+      aria-label="Breadcrumb"
+    >
       <ol class="flex flex-wrap items-center gap-x-hsp-xs">
         {items.map((item, i) => (
-          <li key={`crumb-${i}`} class="flex items-center gap-x-hsp-xs">
+          <li key={`crumb-${i}`} class="min-w-0 flex items-center gap-x-hsp-xs">
             {i > 0 && <ChevronIcon />}
             {item.href ? (
               <a
@@ -168,7 +173,7 @@ export function Breadcrumb(props: BreadcrumbProps): VNode | null {
                 <SmartLabel label={item.label} />
               </a>
             ) : (
-              <span class="text-fg">
+              <span class="text-fg min-w-0 break-words">
                 <SmartLabel label={item.label} />
               </span>
             )}

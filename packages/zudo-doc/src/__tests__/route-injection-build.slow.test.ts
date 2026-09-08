@@ -970,6 +970,26 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // index.tsx` is a listed CAN-MOVE-HASHES entry and the epic edits it — though
   // in the event that header's own markup is unchanged and the movement comes
   // entirely from the island props above.
+  // 2026-09-09 re-baseline (zudolab/zudo-doc#4100, breadcrumb overflow fix,
+  // dependent on #4099): the current breadcrumb renderer adds `min-w-0` to
+  // each crumb `<li>`, adds `min-w-0 break-words` to the terminal label, and
+  // supplies `min-w-0 w-full` to the right-slot nav where applicable. The two
+  // docs pages therefore move; `/404.html` remains identical after
+  // asset-filename normalization because `packages/zudo-doc/src/routes/404.tsx`
+  // renders no breadcrumb.
+  //
+  // Scope proof — the prior pin (`8d5bae918`) and current head
+  // (`57c07a60a`) were each rebuilt with `pnpm build:workspace`, then the
+  // route-injection fixture was built separately against each package dist/.
+  // Every island's `data-props` was HTML-decoded, JSON-parsed, and deep-diffed:
+  // 1→1 island on `/404.html`, 2→2 on `/docs/getting-started/`, and 4→4 on
+  // `/docs/getting-started/coverage/`, with zero prop deltas on every page.
+  // SSR was diffed independently after asset-filename normalization: all
+  // bytes outside the breadcrumb nav are identical, and the breadcrumb's
+  // non-class markup is identical; the only deltas are the expected class
+  // additions listed above. Detailed JSON, retained fixture HTML, and the
+  // reusable comparison harness are recorded in the #4100 parity evidence
+  // accompanying this re-baseline.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toMatchInlineSnapshot(`"1584d9769e1195eedbac94d95e81495737c5c89ab1d8ad7c2fbc298da62dd418"`);
@@ -977,12 +997,12 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"23a1362cece1465c37b63ac2eb3241eb5197985d489ba7151fb33140ab593c66"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"c8b39bc221a7968cef4aa4b7255be7a89a09be309b1047a3d54c5ce4322aac01"`);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"6bf28b468839b15a10332112b92c1c7b4b69c92815a4ac77e52bf7b24e52a5c3"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"01efe5d322f84446ef6ef892bc61f960bfa0b756befb72a1b33eb5dfbc6a178c"`);
   });
 });
 
