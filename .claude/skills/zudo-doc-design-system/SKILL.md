@@ -83,6 +83,31 @@ See also: `/css-wisdom` for light-mode / dark-mode contrast rules and the broade
 - **Cascade lesson**: CSS link resets that sit above component markup (e.g. the site-nav reset in `packages/zudo-doc/src/content.css`) must be written with `:where()` (zero specificity) so component-emitted utility hovers like `hover:text-accent` can win. A plain descendant selector at 0-2-1 silently defeats utility hover variants (0-2-0).
 - **Focus-parity corollary (NEW-code rule, prospective)**: any `hover:text-accent` on a navigational element should pair with a `focus-visible:text-accent` twin (preferred variant for new code); likewise `hover:border-accent` pairs with `focus-visible:border-accent`. Matching an element's pre-existing `focus:` variant (i.e. adding `focus:text-accent` where the element already used bare `focus:underline`, not `focus-visible:underline`) is a legacy exception — copy the existing variant on that element, not the pattern to reach for on new elements. This does NOT imply every existing surface already complies: several (the site-tree-nav island, footer links, home CTA links, search-result titles) still lack a focus twin and remain out of scope until addressed separately.
 
+### Theme-pack nav `:hover` guard (mandatory, epic #4032)
+
+The "active-state exemption" above is a design rule; this is its CSS contract for
+**theme packs** (`packages/zudo-doc/src/theme-packs/*/pack.css`), where the mistake
+actually shipped 14 times before epic #4032 turned it into a stated rule.
+
+- **Rule**: a pack nav `:hover` rule setting `color` or `background` MUST exclude
+  `[aria-current="page"]`, on the **anchor**, in both header DOM shapes (plain
+  `a[data-nav-item]` and `[data-nav-item-dropdown] > a` — guarding the wrapper `div`
+  does nothing, the colors live on the child anchor). Reference:
+  `theme-packs/phosphor/pack.css:241-251`.
+- **Why**: the active item's base fill (`NAV_TOP_ACTIVE = ["bg-fg","text-bg"]`,
+  `header/nav-class-tokens.ts:28`) is an unlayered pack rule's easiest thing to beat on
+  specificity — an unguarded hover collapses it to as low as 1.00:1.
+- **Use `:not([aria-current="page"])`, never `:not([data-nav-active])`** —
+  `data-nav-active` is absent on every header nav item and on an active
+  root/category sidebar node, so that guard silently does nothing exactly where it's
+  needed most.
+- **Exception**: a rule that sets `color` **and** `background` together (replacing the
+  pill, not tinting it) may skip the guard only while `pnpm theme-a11y:audit` proves it
+  green — the audit decides, not the shape of the rule.
+
+Full rule text, the `data-nav-active` trap, and the descendant-color trap: the
+`color-scheme-a11y` skill §7 and `packages/zudo-doc/CLAUDE.md`.
+
 ### Server-rendered Preact vs client islands
 
 - Default to **server-rendered Preact `.tsx`** (no `client:*` directive) — emits zero JS. See `src/CLAUDE.md` for the canonical rule: "All components are Preact `.tsx` — there are no `.astro` files."
