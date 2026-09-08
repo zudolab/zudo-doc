@@ -222,7 +222,7 @@ export interface DateFormatConfig extends DateFormatRoles {
   locales?: Record<string, DateFormatRoles>;
 }
 
-/** A bare pattern applies to every role; a `DateFormatConfig` sets roles individually. */
+/** A bare pattern sets the `full` role only; a `DateFormatConfig` sets roles individually. */
 export type DateFormatSetting = DateFormatPattern | DateFormatConfig;
 
 /**
@@ -375,7 +375,7 @@ export interface Settings {
    */
   entryDocSlug?: string;
   /**
-   * Date-format override — a bare pattern applied to every role, or a
+   * Date-format override — a bare pattern setting the `full` role only, or a
    * `DateFormatConfig` setting roles (and per-locale overrides) individually.
    * Optional (recently-added field) so existing complete `Settings` literals
    * built outside `zudoDoc()` keep compiling unchanged; defaults to `"locale"`

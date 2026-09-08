@@ -347,7 +347,7 @@ export interface ZudoDocConfig {
   entryDocSlug?: string;
   /**
    * Date-display format. `"locale"` keeps today's `Intl`-based rendering; a
-   * token pattern string (e.g. `"YYYY-MM-DD"`) applies to every role; a
+   * token pattern string (e.g. `"YYYY-MM-DD"`) sets the `full` role only; a
    * `DateFormatConfig` object sets roles (`full`/`monthDay`/`year`/
    * `yearMonth`/`numericMonthDay`) — and per-locale overrides — individually.
    * This is a top-level field, so a supplied object REPLACES the default
