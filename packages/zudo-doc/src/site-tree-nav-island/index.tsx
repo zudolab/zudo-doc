@@ -16,6 +16,7 @@ import {
 import { ChevronRight } from "../icons/index.js";
 import {
   formatDate,
+  formatYearLabel,
   formatYearMonthLabel,
   getNoteTrayItems,
   groupItems,
@@ -76,6 +77,7 @@ export function SiteTreeNav({
   categoryIgnore,
   initiallyCollapsedCategorySlugs,
   locale = "en",
+  dateFormats,
   updatedLabel = "Updated",
 }: SiteTreeNavProps) {
   let processedTree = tree;
@@ -109,6 +111,7 @@ export function SiteTreeNav({
                 isLast={true}
                 initiallyCollapsed={initiallyCollapsed.has(node.slug)}
                 locale={locale}
+                dateFormats={dateFormats}
                 updatedLabel={updatedLabel}
               />
             ) : (
@@ -153,6 +156,7 @@ function CategoryNode({
   isLast,
   initiallyCollapsed = false,
   locale = "en",
+  dateFormats,
   updatedLabel = "Updated",
 }: {
   node: SidebarNavNode;
@@ -160,6 +164,7 @@ function CategoryNode({
   isLast: boolean;
   initiallyCollapsed?: boolean;
   locale?: string;
+  dateFormats?: ResolvedDateFormats;
   updatedLabel?: string;
 }) {
   const [open, setOpen] = useState(() => initialCategoryOpenState(initiallyCollapsed));
@@ -224,7 +229,12 @@ function CategoryNode({
       {open && (
         <div>
           {node.shape === "note-tray" && depth === 0 ? (
-            <NoteTrayNodeList node={node} locale={locale} updatedLabel={updatedLabel} />
+            <NoteTrayNodeList
+              node={node}
+              locale={locale}
+              dateFormats={dateFormats}
+              updatedLabel={updatedLabel}
+            />
           ) : (
             <NodeList nodes={node.children} depth={depth + 1} />
           )}
@@ -237,10 +247,12 @@ function CategoryNode({
 function NoteTrayNodeList({
   node,
   locale,
+  dateFormats,
   updatedLabel,
 }: {
   node: SidebarNavNode;
   locale: string;
+  dateFormats?: ResolvedDateFormats;
   updatedLabel: string;
 }) {
   const items = getNoteTrayItems(node);
@@ -258,14 +270,15 @@ function NoteTrayNodeList({
           <div key={group.key} data-note-tray-group={group.key}>
             <div className="pt-vsp-sm pb-vsp-2xs text-micro tracking-wide uppercase text-muted">
               {grouping === "year"
-                ? group.key
-                : formatYearMonthLabel(group.key, locale)}
+                ? formatYearLabel(group.key, locale, dateFormats?.year)
+                : formatYearMonthLabel(group.key, locale, dateFormats?.yearMonth)}
             </div>
             {group.items.map((item) => (
               <NoteTrayRow
                 key={item.slug}
                 item={item}
                 locale={locale}
+                dateFormats={dateFormats}
                 updatedLabel={updatedLabel}
                 rankWidth={width}
                 showDate={showDate}
@@ -285,6 +298,7 @@ function NoteTrayNodeList({
           key={item.slug}
           item={item}
           locale={locale}
+          dateFormats={dateFormats}
           updatedLabel={updatedLabel}
           rankWidth={width}
           showDate={showDate}
@@ -298,6 +312,7 @@ function NoteTrayNodeList({
 function NoteTrayRow({
   item,
   locale,
+  dateFormats,
   updatedLabel,
   rankWidth: width,
   showDate,
@@ -305,16 +320,19 @@ function NoteTrayRow({
 }: {
   item: SidebarNavNode;
   locale: string;
+  dateFormats?: ResolvedDateFormats;
   updatedLabel: string;
   rankWidth: number;
   showDate: boolean;
   groupedDate: boolean;
 }) {
   if (!item.href) return null;
+  // formatMonthDay is (iso, pattern, locale) — pattern SECOND, unlike
+  // formatDate below; a locale in slot 2 is read as a pattern.
   const dateLabel = showDate && item.date
     ? groupedDate
-      ? formatMonthDay(item.date)
-      : formatDate(item.date, locale)
+      ? formatMonthDay(item.date, dateFormats?.numericMonthDay, locale)
+      : formatDate(item.date, locale, dateFormats?.full)
     : undefined;
 
   return (

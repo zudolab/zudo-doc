@@ -312,10 +312,12 @@ function RevisionList({
   entries,
   onSelectDiff,
   displayLocale,
+  dateFormats,
 }: {
   entries: DocHistoryEntry[];
   onSelectDiff: (selection: DiffSelection) => void;
   displayLocale?: string;
+  dateFormats?: ResolvedDateFormats;
 }) {
   const [selectedA, setSelectedA] = useState<number>(1); // older (default: second entry)
   const [selectedB, setSelectedB] = useState<number>(0); // newer (default: first entry)
@@ -382,7 +384,11 @@ function RevisionList({
           // regression. A visitor at a negative UTC offset may see the date
           // shift by one day versus the prior behavior; the wave-6
           // default-parity gate exempts doc-history on this basis (#4073).
-          const dateStr = formatDate(entry.date, displayLocale ?? "en");
+          const dateStr = formatDate(
+            entry.date,
+            displayLocale ?? "en",
+            dateFormats?.full,
+          );
 
           return (
             <div
@@ -455,6 +461,7 @@ export function DocHistory({
   locale,
   basePath = "/",
   displayLocale,
+  dateFormats,
 }: DocHistoryProps) {
   const [view, setView] = useState<PanelView>("closed");
   const [data, setData] = useState<DocHistoryData | null>(null);
@@ -637,6 +644,7 @@ export function DocHistory({
                   entries={data.entries}
                   onSelectDiff={handleSelectDiff}
                   displayLocale={displayLocale}
+                  dateFormats={dateFormats}
                 />
               </div>
 

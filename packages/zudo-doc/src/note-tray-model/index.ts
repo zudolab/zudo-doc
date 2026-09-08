@@ -1,5 +1,6 @@
 import {
   formatDate,
+  formatYear,
   formatYearMonth,
   parseIsoDate,
   type DateFormatPattern,
@@ -91,6 +92,25 @@ export function formatYearMonthLabel(
   pattern?: DateFormatPattern,
 ): string {
   return formatYearMonth(isoOrKey, locale, pattern);
+}
+
+/**
+ * Format a year-group heading from a `yearKey` ("YYYY") or a full ISO date.
+ *
+ * Without a pattern this returns the key verbatim rather than routing through
+ * `formatYear`: the bare year is what year headings have always rendered, and
+ * the default output must stay byte-identical (a JA `Intl` year would become
+ * "2026年"). A pattern is applied against January 1 of that year, so a
+ * `year` pattern carrying month/day tokens renders that boundary date.
+ */
+export function formatYearLabel(
+  isoOrKey: string,
+  locale: string,
+  pattern?: DateFormatPattern,
+): string {
+  if (pattern === undefined || pattern === "locale") return isoOrKey;
+  const iso = /^\d{4}$/.test(isoOrKey) ? `${isoOrKey}-01-01` : isoOrKey;
+  return formatYear(iso, locale, pattern);
 }
 
 /** Group dated items chronologically and keep rank order within each group. */
