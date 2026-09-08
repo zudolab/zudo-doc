@@ -26,10 +26,10 @@ import { Island } from "@takazudo/zfb";
 import { compileExclude } from "../doc-history-exclude/index.js";
 import { BodyFootUtilArea } from "../body-foot-util/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
-import type { Settings } from "../settings.js";
+import type { ResolvedDateFormats, Settings } from "../settings.js";
 import { toHistorySlug } from "../slug/index.js";
 import { buildGitHubSourceUrl as buildGitHubSourceUrlBase } from "../github-helpers/index.js";
-import { deriveDocHistorySlot } from "../chrome/derive.js";
+import { deriveDateFormats, deriveDocHistorySlot } from "../chrome/derive.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 
 /** Per-entry metadata shape from the doc-history manifest. */
@@ -58,6 +58,7 @@ export type DocHistoryComponent = (props: {
   locale?: string;
   basePath?: string;
   displayLocale?: string;
+  dateFormats?: ResolvedDateFormats;
 }) => VNode;
 
 export interface DocHistoryAreaProps {
@@ -124,6 +125,7 @@ export function createDocHistoryArea<S extends Settings = Settings>(
       entryId,
     );
   const DocHistory = deriveDocHistorySlot(ctx) as unknown as DocHistoryComponent;
+  const dateFormatsFor = deriveDateFormats(ctx);
 
   // Set explicit `displayName` on the named-export DocHistory so zfb's
   // `captureComponentName` produces a stable marker even after the SSR
@@ -183,6 +185,9 @@ export function createDocHistoryArea<S extends Settings = Settings>(
     // JA page so the fetch hits the bare path); this one must reflect what
     // the visitor is actually reading, in both of those cases (#4073).
     const docHistoryDisplayLocale = locale;
+    // Resolved against the DISPLAY locale, matching docHistoryDisplayLocale
+    // above — never effectiveHistoryLocale, which is a storage-path value.
+    const docHistoryDateFormats = dateFormatsFor(docHistoryDisplayLocale);
 
     // Build the SSR fallback with only the sr-only metadata block so the
     // author marker and Created/Updated labels are present in SSG output
@@ -215,6 +220,7 @@ export function createDocHistoryArea<S extends Settings = Settings>(
           locale={docHistoryLocale}
           basePath={docHistoryBasePath}
           displayLocale={docHistoryDisplayLocale}
+          dateFormats={docHistoryDateFormats}
         />
       ),
     }) as unknown as VNode;

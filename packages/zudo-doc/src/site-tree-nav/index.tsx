@@ -29,6 +29,8 @@ import { Island } from "@takazudo/zfb";
 import { SiteTreeNav } from "../site-tree-nav-island/index.js";
 import type { SidebarNavNode } from "../sidebar/types.js";
 import { remapVersionedHrefs } from "../nav-data-prep/index.js";
+import type { DateFormatSetting } from "../settings.js";
+import { resolveDateFormats } from "../date-format-resolve/index.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -121,6 +123,18 @@ export interface SiteTreeNavDeps {
    * package chrome passes `settings.siteTreeNavIgnore`.
    */
   categoryIgnore?: string[];
+  /**
+   * The raw `dateFormat` setting (`ctx.settings.dateFormat`). Resolved to
+   * per-role patterns for the render locale and forwarded to the island as
+   * `dateFormats` — the island cannot read settings itself, and only zfb's
+   * `<Island>` `data-props` crosses the SSR -> hydrate boundary (#4075).
+   *
+   * Optional, like `versionedDocsUrl`/`categoryIgnore` above: `./site-tree-nav`
+   * is a frozen-1.0 public subpath, so a caller that hand-constructs
+   * `SiteTreeNavDeps` must keep compiling. Omitted means every role resolves
+   * to `"locale"` — today's behaviour.
+   */
+  dateFormat?: DateFormatSetting;
 }
 
 /**
@@ -147,6 +161,7 @@ export function createSiteTreeNavWrapper(
     getCategoryOrder,
     versionedDocsUrl,
     categoryIgnore,
+    dateFormat,
   } = deps;
 
   function SiteTreeNavWrapper({
@@ -196,6 +211,7 @@ export function createSiteTreeNavWrapper(
           categoryOrder={categoryOrder}
           categoryIgnore={categoryIgnore}
           ariaLabel={ariaLabel}
+          dateFormats={resolveDateFormats(dateFormat, locale)}
         />
       ),
     }) as unknown as JSX.Element;

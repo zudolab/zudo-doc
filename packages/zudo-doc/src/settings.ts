@@ -225,6 +225,15 @@ export interface DateFormatConfig extends DateFormatRoles {
 /** A bare pattern applies to every role; a `DateFormatConfig` sets roles individually. */
 export type DateFormatSetting = DateFormatPattern | DateFormatConfig;
 
+/**
+ * Every role resolved to a concrete pattern for ONE locale — the shape the
+ * chrome threads into renderers and islands as the optional `dateFormats`
+ * prop. Produced by `resolveDateFormats` at SSR time; islands never see the
+ * raw `DateFormatSetting`, because the per-locale layering is not re-run in
+ * the browser (see `chrome/derive`'s `deriveDateFormats`).
+ */
+export type ResolvedDateFormats = Required<DateFormatRoles>;
+
 export interface VersionConfig {
   /** Version identifier, used in URL path (e.g., "1.0", "v1") */
   slug: string;

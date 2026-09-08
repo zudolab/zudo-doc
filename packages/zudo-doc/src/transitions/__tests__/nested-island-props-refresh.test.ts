@@ -676,6 +676,31 @@ describe("ensureNestedIslandPropsRefresh", () => {
     expect(() => disposeNestedIslandPropsRefresh(document)).not.toThrow();
   });
 
+  it("carries the SSR-resolved `dateFormats` roles across the swap (#4075)", () => {
+    // The mobile drawer's resolved date patterns ride the SAME serialized
+    // `data-props` blob as its nodes (`sidebar-toggle-island` -> `SidebarTree`),
+    // and this helper copies that blob WHOLE — it never enumerates prop names.
+    // Pinning it with a realistic payload is the regression guard: any future
+    // filtering/merging rewrite of the plan would silently drop the roles and
+    // leave a lifted drawer formatting dates with the previous page's patterns.
+    install();
+    const liveProps =
+      '{"nodes":[{"slug":"guides/a"}],"dateFormats":{"full":"MMM D, YYYY","numericMonthDay":"locale"}}';
+    const incomingProps =
+      '{"nodes":[{"slug":"reference/b"}],"dateFormats":{"full":"YYYY/MM/DD","numericMonthDay":"MM-DD"}}';
+    setLiveBody(header("header-en", island("SidebarToggle", liveProps)));
+
+    dispatchBeforeSwap(
+      parseIncoming(header("header-en", island("SidebarToggle", incomingProps))),
+    );
+
+    const refreshed = liveIsland("SidebarToggle").getAttribute(PROPS_ATTR);
+    expect(refreshed).toBe(incomingProps);
+    expect(
+      (JSON.parse(refreshed!) as { dateFormats: Record<string, string> }).dateFormats,
+    ).toEqual({ full: "YYYY/MM/DD", numericMonthDay: "MM-DD" });
+  });
+
   it("is reachable from the transitions barrel", async () => {
     // `sidebar-toggle-island` is ejectable, and eject rewrites its
     // `../transitions/nested-island-props-refresh.js` import to

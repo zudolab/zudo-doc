@@ -7,6 +7,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "preact/hooks";
 import { memo } from "preact/compat";
 import type { SidebarNavNode, SidebarRootMenuItem, SidebarLocaleLink } from "../sidebar/types.js";
+import type { ResolvedDateFormats } from "../settings.js";
 import { INDENT, BASE_PAD, connectorLeft, ConnectorLines, CategoryLinkIcon } from "../tree-nav-shared/index.js";
 import { ChevronRight, ChevronLeft, Search } from "../icons/index.js";
 // BARE ThemeToggle — renders inside the SidebarToggle island, so it must
@@ -180,6 +181,18 @@ export interface SidebarTreeProps {
   backToMenuLabel?: string;
   localeLinks?: SidebarLocaleLink[];
   themeDefaultMode?: "light" | "dark";
+  /**
+   * Per-role date patterns already resolved for this page's locale, serialized
+   * into the island's `data-props` by the SSR wrappers (`sidebar-with-defaults`
+   * for the desktop sidebar, `header-with-defaults` -> `SidebarToggle` for the
+   * mobile drawer). Optional and absent-safe: omitted means every role behaves
+   * as `"locale"` — today's `Intl` output (#4075).
+   *
+   * Deliberately NOT derived from `localeLinks` the way the `locale` local
+   * below is: the patterns are resolved against the real page locale at SSR,
+   * so they stay correct on a single-locale site where `localeLinks` is empty.
+   */
+  dateFormats?: ResolvedDateFormats;
 }
 
 function SidebarFooter({ links, themeDefaultMode }: { links?: SidebarLocaleLink[]; themeDefaultMode?: "light" | "dark" }) {

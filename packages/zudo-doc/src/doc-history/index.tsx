@@ -19,6 +19,7 @@ import { History, Close, ArrowLeft } from "../icons/index.js";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
 import { useModalDialog } from "../use-modal-dialog/index.js";
 import { formatDate } from "../format-date/index.js";
+import type { ResolvedDateFormats } from "../settings.js";
 
 interface DocHistoryProps {
   slug: string;
@@ -31,6 +32,13 @@ interface DocHistoryProps {
    * Populated from the page locale by doc-history-area (#4073).
    */
   displayLocale?: string;
+  /**
+   * Per-role date patterns already resolved for `displayLocale` by
+   * `doc-history-area`. Serialized into the island's `data-props` — this
+   * island has no ambient access to settings. Optional and absent-safe:
+   * omitted means every role behaves as `"locale"` (#4075).
+   */
+  dateFormats?: ResolvedDateFormats;
   basePath?: string;
 }
 

@@ -6,6 +6,7 @@
 // lets us consume React-typed components in this Preact app.
 import { useState } from "preact/hooks";
 import type { SidebarNavNode } from "../sidebar/types.js";
+import type { ResolvedDateFormats } from "../settings.js";
 import {
   INDENT,
   connectorLeft,
@@ -57,6 +58,13 @@ export interface SiteTreeNavProps {
   initiallyCollapsedCategorySlugs?: string[];
   /** Locale used by dated note-tray rows. */
   locale?: string;
+  /**
+   * Per-role date patterns already resolved for this page's locale, serialized
+   * into the island's `data-props` by the SSR wrapper (`site-tree-nav`,
+   * `home-page`). Optional and absent-safe: an omitted value means every role
+   * behaves as `"locale"` — today's `Intl` output (#4075).
+   */
+  dateFormats?: ResolvedDateFormats;
   /** @deprecated — no longer rendered (created date only). */
   updatedLabel?: string;
 }
