@@ -211,6 +211,7 @@ export function createSiteTreeNavWrapper(
           categoryOrder={categoryOrder}
           categoryIgnore={categoryIgnore}
           ariaLabel={ariaLabel}
+          locale={locale}
           dateFormats={resolveDateFormats(dateFormat, locale)}
         />
       ),
