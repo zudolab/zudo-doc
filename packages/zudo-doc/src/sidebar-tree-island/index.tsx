@@ -424,8 +424,8 @@ function TrayItem({
   if (!item.href) return null;
   const isActive = item.slug === currentSlug;
   const labelHtml = smartBreakToHtml(item.label);
-  // formatMonthDay takes (iso, pattern, locale) — pattern SECOND, unlike
-  // every other formatter in format-date.
+  // formatMonthDay is (iso, pattern, locale) — pattern SECOND, unlike every
+  // other format-date entry point; a locale in slot 2 is read as a pattern.
   const shortDate = item.date
     ? formatMonthDay(item.date, dateFormats?.numericMonthDay, locale)
     : undefined;

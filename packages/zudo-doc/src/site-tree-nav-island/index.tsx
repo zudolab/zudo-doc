@@ -327,8 +327,8 @@ function NoteTrayRow({
   groupedDate: boolean;
 }) {
   if (!item.href) return null;
-  // formatMonthDay takes (iso, pattern, locale) — pattern SECOND, unlike
-  // formatDate and the other format-date entry points.
+  // formatMonthDay is (iso, pattern, locale) — pattern SECOND, unlike
+  // formatDate below; a locale in slot 2 is read as a pattern.
   const dateLabel = showDate && item.date
     ? groupedDate
       ? formatMonthDay(item.date, dateFormats?.numericMonthDay, locale)
