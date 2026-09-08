@@ -29,6 +29,9 @@
 #                              the A2 no-stub parity slow-suite subset
 #   Build Site               — full clone, pnpm install; pnpm build + check:links
 #   HTML validate            — needs build-site; pnpm check:html
+#   Theme A11y Audit         — needs build-site; two-lane path-filtered rendered
+#                              WCAG contrast audit (full matrix / changed packs
+#                              only / skip — computed inside the job, #4037)
 #   Build Doc History        — full clone, pnpm install; doc-history-server generate
 #   E2E Tests                — pnpm install (Playwright container); pnpm test:e2e:ci
 #   Preview Deploy           — needs build-site + build-history; wrangler deploy + smoke gates
@@ -908,6 +911,184 @@ jobs:
 
       - name: Run html-validate
         run: pnpm check:html
+
+  # ---------------------------------------------------------------------------
+  # Job 2.5: Theme A11y Audit — two-lane PR gate (zudolab/zudo-doc#4037)
+  # ---------------------------------------------------------------------------
+  # The rendered per-theme-pack WCAG contrast audit (scripts/theme-a11y-audit.ts)
+  # used to run only in the nightly exam.yml, so a PR touching pack.css shipped
+  # with no contrast check at all. Filtering happens INSIDE this job (a step
+  # computes the changed-file set and branches on it) rather than via a
+  # workflow-level `paths:` trigger — a required check skipped by a `paths:`
+  # filter stays pending forever and blocks merges (zudolab/zudo-doc#4032).
+  #
+  # Three lanes, decided by the "Determine audit lane" step:
+  #   full  — a change to shared/chrome CSS, header/**, sidebar-tree-island/**,
+  #           the audit machinery itself, the two audited pages' content,
+  #           showcase styles/settings, package manifests/lockfile, or this
+  #           topic's own workflow files: audits the FULL matrix (~14 min for
+  #           124 states).
+  #   cheap — changes confined to packages/zudo-doc/src/theme-packs/**: audits
+  #           only the changed pack(s), both modes, both pages.
+  #   skip  — nothing audit-relevant changed: the job still runs (and reports
+  #           a normal green status, unlike a `paths:`-skipped required check)
+  #           but does no install/audit work.
+  #
+  # Reuses build-site's site-dist artifact instead of rebuilding — the audit
+  # script self-serves a prebuilt dist/ when no --url is given — and reuses
+  # the exam job's Playwright container.
+  theme-a11y-pr:
+    name: Theme A11y Audit
+    needs: [build-site]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      # renovate: datasource=docker depName=mcr.microsoft.com/playwright versioning=docker
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      options: --user 1001 --ipc=host
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          fetch-depth: 0
+
+      - name: Determine audit lane from changed files
+        id: lane
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+
+          # `*` in a bash [[ glob ]]/case pattern matches "/" too, so
+          # `packages/zudo-doc/src/*.css` would otherwise also match a nested
+          # theme-packs/<pack>/pack.css — guarded explicitly below.
+          is_full_lane_file() {
+            local file="$1"
+            if [[ "$file" == packages/zudo-doc/src/*.css ]]; then
+              local rest="${file#packages/zudo-doc/src/}"
+              [[ "$rest" != */* ]] && return 0
+              return 1
+            fi
+            case "$file" in
+              packages/zudo-doc/src/header/*) return 0 ;;
+              packages/zudo-doc/src/sidebar-tree-island/*) return 0 ;;
+              scripts/theme-a11y-*) return 0 ;;
+              src/content/docs/getting-started/*) return 0 ;;
+              src/content/docs/components/admonitions.mdx) return 0 ;;
+              src/styles/*) return 0 ;;
+              src/config/*) return 0 ;;
+              package.json) return 0 ;;
+              pnpm-lock.yaml) return 0 ;;
+              packages/*/package.json) return 0 ;;
+              .github/workflows/pr-checks.yml) return 0 ;;
+              .github/workflows/exam.yml) return 0 ;;
+            esac
+            return 1
+          }
+
+          is_theme_pack_file() {
+            [[ "$1" == packages/zudo-doc/src/theme-packs/*/* ]]
+          }
+
+          extract_pack_name() {
+            local rest="${1#packages/zudo-doc/src/theme-packs/}"
+            echo "${rest%%/*}"
+          }
+
+          CHANGED_FILES="$(git diff --name-only "$BASE_SHA"...HEAD)"
+          echo "Changed files vs base ($BASE_SHA):"
+          echo "$CHANGED_FILES"
+          echo ""
+
+          FULL_LANE=0
+          declare -A PACKS_SEEN=()
+          CHEAP_PACKS=""
+
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+
+            if is_full_lane_file "$file"; then
+              echo "Full-lane trigger: $file"
+              FULL_LANE=1
+              continue
+            fi
+
+            if is_theme_pack_file "$file"; then
+              pack="$(extract_pack_name "$file")"
+              if [ -n "$pack" ] && [ -z "${PACKS_SEEN[$pack]:-}" ]; then
+                PACKS_SEEN[$pack]=1
+                CHEAP_PACKS="${CHEAP_PACKS:+$CHEAP_PACKS,}$pack"
+                echo "Cheap-lane pack changed: $pack ($file)"
+              fi
+            fi
+          done <<<"$CHANGED_FILES"
+
+          if [ "$FULL_LANE" -eq 1 ]; then
+            LANE="full"
+          elif [ -n "$CHEAP_PACKS" ]; then
+            LANE="cheap"
+          else
+            LANE="skip"
+          fi
+
+          echo ""
+          echo "Lane: $LANE"
+          [ "$LANE" = "cheap" ] && echo "Packs: $CHEAP_PACKS"
+
+          {
+            echo "lane=$LANE"
+            echo "packs=$CHEAP_PACKS"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: No audit-relevant changes
+        if: steps.lane.outputs.lane == 'skip'
+        run: echo "No theme-pack, chrome-CSS, or audit-machinery changes detected — skipping the rendered contrast audit."
+
+      - name: Setup pnpm
+        if: steps.lane.outputs.lane != 'skip'
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+        with:
+          dest: ~/setup-pnpm-${{ github.job }}
+
+      - name: Setup Node.js
+        if: steps.lane.outputs.lane != 'skip'
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install dependencies
+        if: steps.lane.outputs.lane != 'skip'
+        run: pnpm install --frozen-lockfile
+
+      - name: Download site build output (from build-site)
+        if: steps.lane.outputs.lane != 'skip'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: site-dist
+          path: ${{ runner.temp }}
+      - name: Extract site build output
+        if: steps.lane.outputs.lane != 'skip'
+        run: mkdir -p dist && tar -xf "$RUNNER_TEMP/site-dist.tar" -C dist
+
+      - name: Run theme a11y audit — cheap lane (changed packs only)
+        if: steps.lane.outputs.lane == 'cheap'
+        run: pnpm theme-a11y:audit --packs "${{ steps.lane.outputs.packs }}"
+
+      - name: Run theme a11y audit — full matrix
+        if: steps.lane.outputs.lane == 'full'
+        run: pnpm theme-a11y:audit
+
+      - name: Upload theme a11y audit report
+        if: always() && steps.lane.outputs.lane != 'skip'
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: theme-a11y-audit-report
+          path: theme-a11y-audit-out/
+          retention-days: 14
 
   # ---------------------------------------------------------------------------
   # Job 3: Build doc history JSONs (full clone — only this job needs it)
