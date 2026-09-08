@@ -398,7 +398,7 @@ fi
 # The subprocess-heavy root specs and the two retiered create-zudo-doc specs
 # are excluded from their default lanes and remain blocking local gates.
 # Keep both invocations in this existing step so b4push retains its current
-# 30-step shape; the other create-zudo-doc slow specs stay nightly-only.
+# 31-step shape; the other create-zudo-doc slow specs stay nightly-only.
 step "Slow root unit tests (test:unit:slow)"
 if (cd "$ROOT_DIR" && pnpm test:unit:slow); then
   pass "Slow root unit tests passed"

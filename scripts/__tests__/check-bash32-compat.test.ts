@@ -116,6 +116,36 @@ describe("findHeredocInSubshell", () => {
     expect(findHeredocInSubshell(src)).toEqual([]);
   });
 
+  it("does not treat a spaceless here-string (<<<WORD) as a heredoc opener", () => {
+    // `<<<foo` used to match as `<<foo`, putting the scanner into
+    // heredoc-skip mode for the rest of the file and hiding every later
+    // defect from the guard.
+    const src = [
+      `read -r -a A <<<foo`,
+      `X="$(node - <<NODE`,
+      `console.log(1)`,
+      `NODE`,
+      `)"`,
+    ].join("\n");
+    expect(findHeredocInSubshell(src)).toEqual([
+      expect.objectContaining({ line: 2, terminator: "NODE" }),
+    ]);
+  });
+
+  it("ignores an unbalanced $( written inside a whole-line comment", () => {
+    // A comment mentioning `$(` used to raise the depth counter permanently,
+    // making every later statement-level heredoc a false positive.
+    const src = [
+      `#!/usr/bin/env bash`,
+      `# see the assignment's $( ... form described above`,
+      `# and a second prose line mentioning $( on its own`,
+      `cat <<'DOC'`,
+      `hello`,
+      `DOC`,
+    ].join("\n");
+    expect(findHeredocInSubshell(src)).toEqual([]);
+  });
+
   it("does not misparse an arithmetic expansion $((...)) as an open substitution", () => {
     const src = [
       `set -euo pipefail`,
@@ -176,6 +206,18 @@ describe("findUnguardedArrayExpansions", () => {
       `read -r -a TARGETS <<< "$(resolve_targets)"`,
       `for t in "\${TARGETS[@]}"; do echo "$t"; done`,
     ].join("\n");
+    expect(findUnguardedArrayExpansions(src)).toEqual([]);
+  });
+
+  it("flags an UNQUOTED \${arr[@]} expansion too (bash 3.2 errors on it as well)", () => {
+    const src = [`LOCALE_CODES=()`, `for c in \${LOCALE_CODES[@]}; do echo "$c"; done`].join("\n");
+    expect(findUnguardedArrayExpansions(src)).toEqual([
+      expect.objectContaining({ line: 2, name: "LOCALE_CODES", sigil: "@" }),
+    ]);
+  });
+
+  it("does not mistake a \${#arr[@]} length guard for a value expansion", () => {
+    const src = [`LOCALE_CODES=()`, `echo "\${#LOCALE_CODES[@]}"`].join("\n");
     expect(findUnguardedArrayExpansions(src)).toEqual([]);
   });
 

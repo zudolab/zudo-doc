@@ -25,7 +25,7 @@
 //    block, and an unbalanced quote/backtick anywhere in that body (as
 //    happened in the JS heredoc that broke #4041) fails the WHOLE FILE to
 //    parse.
-// 2. A `"${arr[@]}"` / `"${arr[*]}"` expansion of an array that is
+// 2. A `${arr[@]}` / `${arr[*]}` expansion (quoted or not) of an array that is
 //    provably startable-empty (declared via a bare `NAME=()` literal
 //    somewhere in the file) with NO `${#NAME[@]}` length guard anywhere in
 //    the file. bash 3.2 under `set -u` treats that expansion on an empty
@@ -88,10 +88,14 @@ const DEFAULT_TARGETS = [
 ];
 
 // Heredoc-open operator: `<<`, `<<-`, optionally followed by a quoted or bare
-// terminator word. Deliberately excludes `<<<` (the here-string operator,
-// unrelated) — the required word-start char class after the optional quote
-// cannot match `<`, so `<<<foo` never matches this pattern.
-const HEREDOC_OPEN_RE = /<<-?\s*(['"]?)([A-Za-z_][A-Za-z0-9_]*)\1/;
+// terminator word. Both `<` guards are load-bearing and exclude the unrelated
+// `<<<` here-string operator: `(?!<)` rejects a match anchored on the FIRST
+// `<` of `<<<`, and `(?<!<)` rejects the one that would otherwise anchor on
+// the SECOND (`<<<foo` -> `<<foo`). Without the lookbehind a spaceless
+// here-string is read as a heredoc opener and every following line is skipped
+// as its body until a line equal to the word appears — blinding the rest of
+// the file to real defects.
+const HEREDOC_OPEN_RE = /(?<!<)<<(?!<)-?\s*(['"]?)([A-Za-z_][A-Za-z0-9_]*)\1/;
 
 /**
  * Scan `src` for a heredoc opened while a `$(...)` command substitution is
@@ -99,9 +103,14 @@ const HEREDOC_OPEN_RE = /<<-?\s*(['"]?)([A-Za-z_][A-Za-z0-9_]*)\1/;
  *
  * Depth tracking is intentionally crude (see the file header "what this does
  * not catch" section): only literal `$(` sequences increment depth, and any
- * `)` seen while depth > 0 decrements it. This can under-count depth (never
- * over-count), so it can miss a defect nested behind a plain subshell but
- * will never flag a line that isn't really inside a `$(...)`.
+ * `)` seen while depth > 0 decrements it. This can under-count depth, so it
+ * can miss a defect nested behind a plain subshell.
+ *
+ * Whole-line comments are skipped entirely before any depth accounting: an
+ * unbalanced `$(` in prose (these scripts are heavily commented) would
+ * otherwise raise depth for the REST OF THE FILE and flag every later
+ * statement-level heredoc. Depth is still not quote-aware, so a `$(` inside a
+ * single-quoted string on a code line can still over-count.
  */
 export function findHeredocInSubshell(src) {
   const violations = [];
@@ -124,6 +133,10 @@ export function findHeredocInSubshell(src) {
       }
       continue;
     }
+
+    // Whole-line comment: no live shell syntax, so neither its `$(`/`)` nor a
+    // `<<WORD` written in prose may affect depth or heredoc state.
+    if (/^\s*#/.test(line)) continue;
 
     const heredocMatch = HEREDOC_OPEN_RE.exec(line);
     const heredocIndex = heredocMatch ? heredocMatch.index : -1;
@@ -173,11 +186,15 @@ const EMPTY_ARRAY_DECL_RE = /^\s*(?:local\s+)?([A-Za-z_][A-Za-z0-9_]*)=\(\)\s*(?
 // Length-guard reference: `${#NAME[@]}`, with or without surrounding quotes.
 const LENGTH_GUARD_RE = /\$\{#([A-Za-z_][A-Za-z0-9_]*)\[@\]\}/g;
 
-// Value/list expansion of an array subscript, quoted: `"${NAME[@]}"` or
-// `"${NAME[*]}"`. The optional leading `!` is captured so index expansions
-// (`"${!NAME[@]}"`, safe on bash 3.2) can be excluded explicitly rather than
-// relying on the regex to reject them.
-const ARRAY_EXPANSION_RE = /"\$\{(!)?([A-Za-z_][A-Za-z0-9_]*)\[([@*])\]\}"/g;
+// Value/list expansion of an array subscript: `${NAME[@]}` / `${NAME[*]}`,
+// with or without surrounding double quotes. The quotes are OPTIONAL because
+// bash 3.2 under `set -u` errors on the unquoted form too (measured) — making
+// them mandatory would silently pass `for x in ${LOCALE_CODES[@]}`. The
+// leading `#` of a `${#NAME[@]}` length guard is not in the name char class,
+// so guards can never match here. The optional leading `!` is captured so
+// index expansions (`"${!NAME[@]}"`, safe on bash 3.2) are excluded
+// explicitly rather than by relying on the regex to reject them.
+const ARRAY_EXPANSION_RE = /"?\$\{(!)?([A-Za-z_][A-Za-z0-9_]*)\[([@*])\]\}"?/g;
 
 /**
  * Scan `src` for `"${arr[@]}"` / `"${arr[*]}"` expansions of an array that
