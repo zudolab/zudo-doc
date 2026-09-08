@@ -127,13 +127,24 @@ html[data-theme-pack="foundry"] .zd-content code:not(pre code) {
 html[data-theme-pack="foundry"] [data-nav-item] {
   border-radius: 6px;
 }
-html[data-theme-pack="foundry"] [data-nav-item]:hover {
+/* Exclude the current page: it carries the base `bg-fg text-bg` inverted
+   fill — the hover wash would replace that fill (bg-on-bg, ~1:1) since
+   `text-bg` ink survives underneath it. Two shapes exist (header.tsx): a
+   plain `a[data-nav-item]`, and a dropdown whose data-nav-item sits on the
+   wrapper div while aria-current + the colors live on its child anchor —
+   target the anchor in both. */
+html[data-theme-pack="foundry"] a[data-nav-item]:not([aria-current="page"]):hover,
+html[data-theme-pack="foundry"] [data-nav-item-dropdown] > a:not([aria-current="page"]):hover {
   text-decoration: none;
   background: color-mix(in srgb, var(--zd-muted) 8%, transparent);
 }
 
 /* sidebar: gray hover wash; active item = subtle fill + Primer-blue bar */
-html[data-theme-pack="foundry"] #desktop-sidebar a:hover {
+/* Exclude the current page: root/branch current nodes carry
+   aria-current="page" without data-nav-active and keep the base
+   inverted `bg-fg text-bg` fill — the hover wash would replace that
+   fill (bg-on-bg, ~1:1) since `text-bg` ink survives underneath it. */
+html[data-theme-pack="foundry"] #desktop-sidebar a:not([aria-current="page"]):hover {
   text-decoration: none;
   background: color-mix(in srgb, var(--zd-muted) 8%, transparent);
 }
