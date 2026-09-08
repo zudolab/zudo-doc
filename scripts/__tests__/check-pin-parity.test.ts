@@ -182,6 +182,73 @@ describe("evaluateFirstPartyPeer — pinned (exact)", () => {
   });
 });
 
+describe("evaluateFirstPartyPeer — pinned (union-admits-pin)", () => {
+  const evaluate = (actualPeer: string | undefined, sourceValue = "0.6.1") =>
+    evaluateFirstPartyPeer({
+      pkg: "@takazudo/zdtp",
+      sourceKind: "pinned (root dependency)",
+      comparison: "union-admits-pin",
+      sourceValue,
+      actualPeer,
+    });
+
+  it.each([
+    ["^0.5.2 || ^0.6.0", "0.6.1"],
+    [" ^0.6.0 || ^0.5.2 ", "0.6.1"],
+    ["^0.5.2 || ^0.6.0", "0.5.2"],
+    ["^1.2.3 || ^2.0.0", "1.9.0"],
+    ["^0.0.4 || ^0.6.0", "0.0.4"],
+    ["^0.6.0+build.1", "0.6.1+build.2"],
+  ])("admits exact pin %s / %s", (range, pin) => {
+    expect(evaluate(range, pin).ok).toBe(true);
+  });
+
+  it.each([
+    ["^0.5.2 || ^0.7.0", "0.6.1"],
+    ["^0.6.2", "0.6.1"],
+    ["^0.5.2", "0.6.1"],
+    ["^0.0.4", "0.0.5"],
+    ["^0.0.5", "0.0.4"],
+    ["^1.2.3", "2.0.0"],
+    ["^0.6.0", "0.6.1-next.1"],
+    ["^0.6.0", "0.6.0-next.1"],
+  ])("rejects a range excluding the pin %s / %s", (range, pin) => {
+    expect(evaluate(range, pin).ok).toBe(false);
+  });
+
+  it.each([
+    "",
+    "junk",
+    "*",
+    "^0.6",
+    "^0.6.x",
+    "~0.6.0",
+    "0.6.0",
+    ">=0.6.0",
+    "^00.6.0",
+    "^0.6.0-next.1",
+    "^0.6.0+",
+    "^0.6.0 extra",
+    "^0.6.0 | ^0.7.0",
+  ])("rejects unsupported arm %j even beside a matching arm", (arm) => {
+    expect(evaluate(`^0.6.0 || ${arm}`).ok).toBe(false);
+    expect(evaluate(`${arm} || ^0.6.0`).ok).toBe(false);
+  });
+
+  it.each([undefined, "", "^0.6.0 || || ^0.7.0"])(
+    "rejects absent or empty ranges %j",
+    (range) => {
+      expect(evaluate(range).ok).toBe(false);
+    },
+  );
+
+  it.each([
+    "^0.6.1", "~0.6.1", "00.6.1", "0.6.1+", "0.6.1-junk+", "0.6.1\n",
+  ])("rejects malformed exact sources %s", (pin) => {
+    expect(evaluate("^0.6.0", pin).ok).toBe(false);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Sixth guarded surface (#3307): the target-manifest fixture's
 // @takazudo/zudo-doc dependency must equal scaffold.ts's ZUDO_DOC_PIN.

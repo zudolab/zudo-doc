@@ -141,9 +141,12 @@ export function workspaceZfbPeerFloorMatches(rootPin, actualPin) {
 //                 post-publish via the toolchain-bump cycle (see RELEASE.md
 //                 "Bumping the toolchain" and "publish-lag"). Demanding exact `^<root>` here deadlocked the
 //                 release (the in-flight version isn't on npm yet).
-//   "exact"     — floor must equal `^<sourceValue>`. Used for the pinned (not
-//                 lockstep) zdtp peer: it's an external dep that is always
-//                 already published, so there is no bootstrap reason to lag it.
+//   "exact"     — floor must equal `^<sourceValue>`.
+//   "union-admits-pin" — every arm must be a complete, stable caret range,
+//                 and at least one must admit the exact root pin. This
+//                 deliberately relaxes exact-floor parity for zdtp: widening
+//                 support across compatible minors is the point. The surviving
+//                 invariant is admission of the pin, NOT containment of ^<pin>.
 const FIRST_PARTY_PEER_CHECKS = [
   {
     pkg: "@takazudo/zudo-doc-history-server",
@@ -155,7 +158,7 @@ const FIRST_PARTY_PEER_CHECKS = [
   {
     pkg: "@takazudo/zdtp",
     sourceKind: 'pinned (root dependencies["@takazudo/zdtp"])',
-    comparison: "exact",
+    comparison: "union-admits-pin",
     // External dependency pinned in root dependencies — NOT lockstep.
     getSource: (rootPkg) => rootPkg.dependencies?.["@takazudo/zdtp"],
   },
@@ -267,6 +270,45 @@ export function satisfiesCaret(version, caretRange) {
 }
 
 /**
+ * Strict stable versions only: complete triples, no leading zeroes, optional
+ * valid build metadata (which has no effect on precedence). Prereleases are
+ * rejected, never truncated to a stable core as in the lockstep-only mode.
+ */
+function parseStableVersion(value) {
+  if (typeof value !== "string") return null;
+  const match = value.match(
+    /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/,
+  );
+  return match && match[0] === value ? match.slice(1, 4).map(BigInt) : null;
+}
+
+/**
+ * Return null for ANY unsupported arm, even alongside one admitting the pin.
+ * This restricted grammar keeps the release gate dependency-free. A stable
+ * caret cannot admit a prerelease pin, so unsupported source versions fail too.
+ */
+function unionAdmitsPin(version, range) {
+  if (typeof range !== "string") return null;
+  const pin = parseStableVersion(version);
+  const floors = range.split("||").map((arm) => {
+    const trimmed = arm.trim();
+    return trimmed.startsWith("^") ? parseStableVersion(trimmed.slice(1)) : null;
+  });
+  if (!pin || floors.some((floor) => floor === null)) return null;
+  return floors.some((floor) => {
+    const [major, minor, patch] = floor;
+    const atOrAbove =
+      pin[0] > major ||
+      (pin[0] === major &&
+        (pin[1] > minor || (pin[1] === minor && pin[2] >= patch)));
+    if (!atOrAbove || pin[0] !== major) return false;
+    if (major > 0n) return true;
+    if (pin[1] !== minor) return false;
+    return minor > 0n || pin[2] === patch;
+  });
+}
+
+/**
  * @typedef {Object} PeerEvalResult
  * @property {boolean} ok          Whether the floor is acceptable.
  * @property {string}  expected    The canonical/expected floor for messaging.
@@ -284,7 +326,7 @@ export function satisfiesCaret(version, caretRange) {
  * @param {string} args.pkg
  * @param {string} args.sourceKind
  * @param {string} args.sourceValue   Exact version (no leading ^/~).
- * @param {"satisfies"|"exact"} args.comparison
+ * @param {"satisfies"|"exact"|"union-admits-pin"} args.comparison
  * @param {string|undefined|null} args.actualPeer
  * @returns {PeerEvalResult}
  */
@@ -317,6 +359,24 @@ export function evaluateFirstPartyPeer({
       };
     }
     return { ok: true, expected: expectedPeer, actual };
+  }
+
+  if (comparison === "union-admits-pin") {
+    const admitted = unionAdmitsPin(sourceValue, actualPeer);
+    return {
+      ok: admitted === true,
+      expected: sourceValue,
+      actual,
+      ...(admitted === null
+        ? {
+            reason: `Cannot verify ${pkg}: source must be a complete stable version and every peer union arm must be a complete stable caret range (${sourceKind}: ${sourceValue}; peer: ${actual})`,
+          }
+        : admitted === false
+          ? {
+              reason: `First-party peer range stale — ${actual} does NOT admit the exact ${sourceKind} ${sourceValue} (#2381 / #2445)`,
+            }
+          : {}),
+    };
   }
 
   // comparison === "satisfies": the root version must fall within the floor range.
@@ -516,7 +576,7 @@ function main() {
   // EXCLUDES the lockstep root version (e.g. ^1.x left behind on a 2.x major bump).
   // The lockstep peer (history-server) is judged with satisfies-semantics — a
   // benign same-major lag is allowed (see evaluateFirstPartyPeer + RELEASE.md
-  // "publish-lag"); the pinned peer (zdtp) stays exact.
+  // "publish-lag"); the pinned peer (zdtp) must admit the exact root pin.
   const firstPartyAdvisories = [];
   const firstPartyOk = [];
   for (const {
@@ -663,7 +723,7 @@ function main() {
   console.error(`  - ${SCAFFOLD_TS_PATH}`);
   console.error(`  - ${ZUDO_DOC_PKG_PATH}`);
   console.error(
-    `      zfb devDependencies must be exact-equal to root pins; zfb peerDependencies and pinned peer floors must be ^<root pin>; the lockstep peer floor must INCLUDE the root version`,
+    `      zfb devDependencies must be exact-equal to root pins; zfb peerDependencies must be ^<root pin>; the zdtp stable-caret union must admit the exact root pin; the lockstep peer floor must INCLUDE the root version`,
   );
   console.error(`  - ${TARGET_MANIFEST_PKG_PATH}`);
   console.error(

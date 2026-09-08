@@ -115,7 +115,7 @@
     }
   },
   "dependencies": {
-    "@takazudo/zdtp": "0.5.2",
+    "@takazudo/zdtp": "0.6.1",
     "@takazudo/zfb": "2.16.0",
     "@takazudo/zfb-adapter-cloudflare": "2.16.0",
     "@takazudo/zfb-md-wasm": "2.16.0",
