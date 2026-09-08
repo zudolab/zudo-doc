@@ -356,7 +356,7 @@ describe("generated check-links.js — protocol-relative informational notices (
     expect(result.stdout).not.toContain("←");
   });
 
-  it("an allowlist entry for a protocol-relative href neither hides the notice nor is counted in the allowlist tally", async () => {
+  it("an allowlist entry for a protocol-relative href hides the notice and its count, without joining the allowlist tally", async () => {
     const result = await runFixture({
       args: ["--strict-broken", "--allowlist=.check-links-allowlist"],
       files: {
@@ -365,8 +365,134 @@ describe("generated check-links.js — protocol-relative informational notices (
       },
     });
     expect(result.status).toBe(0);
-    expect(result.stdout).toContain("=== Protocol-Relative Links (informational) ===");
-    expect(result.stdout).toContain("dist/index.html:1  //docs/guide");
+    expect(result.stdout).not.toContain("=== Protocol-Relative Links (informational) ===");
+    expect(result.stdout).not.toContain("//docs/guide");
+    expect(result.stdout).not.toContain("Protocol-relative links:");
+    // The tally sentence is about strict-mode counts; this category has none.
     expect(result.stdout).not.toContain("Allowlist:");
+  });
+
+  it("allowlists one protocol-relative href while leaving the other listed and counted", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken", "--allowlist=.check-links-allowlist"],
+      files: {
+        "dist/index.html": [
+          `<a href="//docs/guide">Typo?</a>`,
+          `<a href="//docs/other">Also?</a>`,
+          "",
+        ].join("\n"),
+        ".check-links-allowlist": "dist/index.html:1://docs/guide\n",
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("=== Protocol-Relative Links (informational) ===");
+    expect(result.stdout).not.toContain("//docs/guide");
+    expect(result.stdout).toContain("dist/index.html:2  //docs/other");
+    expect(result.stdout).toContain("Protocol-relative links: 1 found");
+  });
+
+  it("drops an excludePatterns-matching protocol-relative href from the section and the count", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken"],
+      files: {
+        // Filtering is on the HREF, like every other category: the versioned
+        // segment is in the link, not in the page path.
+        "dist/index.html": [
+          `<a href="//cdn.example.com/v/1.2/lib.js">versioned</a>`,
+          `<a href="//cdn.example.com/latest/lib.js">unversioned</a>`,
+          "",
+        ].join("\n"),
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout).not.toContain("//cdn.example.com/v/1.2/lib.js");
+    expect(result.stdout).toContain("dist/index.html:2  //cdn.example.com/latest/lib.js");
+    expect(result.stdout).toContain("Protocol-relative links: 1 found");
+  });
+});
+
+describe("generated check-links.js — lazy id extraction (#4048)", () => {
+  it("does not extract ids from a page no fragment references", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken", "--strict-anchors"],
+      files: {
+        "dist/index.html": `<a href="/orphan/">no fragment</a>\n`,
+        "dist/orphan/index.html": `<h2 id="a">a</h2><h2 id="b">b</h2>\n`,
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("Built HTML scan: 1 internal link and 0 ID attributes inspected.");
+  });
+
+  it("extracts a referenced target's ids exactly once across several referring links", async () => {
+    const result = await runFixture({
+      args: ["--strict-broken", "--strict-anchors"],
+      files: {
+        "dist/index.html": [
+          `<a href="/target/#a">one</a>`,
+          `<a href="/target/#b">two</a>`,
+          "",
+        ].join("\n"),
+        "dist/other/index.html": `<a href="/target/#a">three</a>\n`,
+        "dist/target/index.html": `<h2 id="a">a</h2><h2 id="b">b</h2>\n`,
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("Built HTML scan: 3 internal links and 2 ID attributes inspected.");
+  });
+
+  it("validates a same-page fragment without re-reading the page it is on", async () => {
+    const result = await runFixture({
+      args: ["--strict-anchors"],
+      files: {
+        "dist/index.html": [
+          `<a href="#here">valid</a>`,
+          `<a href="#gone">invalid</a>`,
+          `<h2 id="here">here</h2>`,
+          "",
+        ].join("\n"),
+      },
+    });
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain("dist/index.html:2  #gone  (fragment: #gone; missing target id)");
+    expect(result.stdout).toContain("Built HTML scan: 2 internal links and 1 ID attribute inspected.");
+  });
+});
+
+describe("generated check-links.js — MDX static id behind a quoted > (#4048)", () => {
+  it("accepts an anchor whose MDX-source id follows a > in a quoted attribute", async () => {
+    const result = await runFixture({
+      args: ["--strict-anchors"],
+      files: {
+        "src/content/docs/index.mdx": `[link](/docs/target#x)\n`,
+        "src/content/docs/target.mdx": `<h2 title="a > b" id="x">Heading</h2>\n`,
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout).not.toContain("missing target id");
+  });
+
+  it("accepts an MDX-source id behind a > in a data attribute", async () => {
+    const result = await runFixture({
+      args: ["--strict-anchors"],
+      files: {
+        "src/content/docs/index.mdx": `[link](/docs/target#head)\n`,
+        "src/content/docs/target.mdx": `<div data-x="p > q" id="head">Block</div>\n`,
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout).not.toContain("missing target id");
+  });
+
+  it("still rejects a fragment that no MDX-source id matches", async () => {
+    const result = await runFixture({
+      args: ["--strict-anchors"],
+      files: {
+        "src/content/docs/index.mdx": `[link](/docs/target#absent)\n`,
+        "src/content/docs/target.mdx": `<h2 title="a > b" id="x">Heading</h2>\n`,
+      },
+    });
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain("missing target id");
   });
 });
