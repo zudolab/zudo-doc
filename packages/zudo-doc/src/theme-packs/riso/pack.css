@@ -265,12 +265,15 @@ html[data-theme-pack="riso"] [data-nav-item]:hover {
 html[data-theme-pack="riso"] #desktop-sidebar {
   border-right: 2px solid light-dark(rgb(13 92 148 / 0.35), rgb(88 184 232 / 0.35));
 }
-/* :not([data-nav-active]) is load-bearing, not cosmetic: the bare ID
-   selector would out-rank the active chip below and repaint its blue
-   fill with the pale wash on hover — leaving paper-colored text on a
-   paper-colored wash (invisible). Narrow, single-hook :not — not a
-   broad recolor chain. */
-html[data-theme-pack="riso"] #desktop-sidebar a:hover:not([data-nav-active]) {
+/* The exclusion is load-bearing, not cosmetic: the bare ID selector
+   would out-rank the active chip below and repaint its blue fill with
+   the pale wash on hover — leaving paper-colored text on a paper-
+   colored wash (invisible). Narrow, single-hook :not — not a broad
+   recolor chain. :not([data-nav-active]) was incomplete: an active
+   root/category node carries aria-current="page" without
+   data-nav-active, so hover still repainted it. Guard
+   aria-current="page" instead. */
+html[data-theme-pack="riso"] #desktop-sidebar a:hover:not([aria-current="page"]) {
   text-decoration: none;
   background: light-dark(#e6e7df, #1a3343);
 }

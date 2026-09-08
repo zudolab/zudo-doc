@@ -442,6 +442,77 @@ so a build that skipped the `onSuccess` step fails loudly instead of publishing 
 whose `./theme.css` / `./content.css` / `./safelist.css` / `./page-loading.css` /
 `./features.css` / `./compiled.css` export 404s or stale bytes for consumers.
 
+## Theme-pack nav `:hover` guard — pack-author contract (epic #4032)
+
+**Rule.** A theme pack (`src/theme-packs/*/pack.css`) that authors a nav `:hover` rule
+setting `color` **or** `background` MUST exclude `[aria-current="page"]`, on the
+**anchor**, in **both** header DOM shapes. Until epic #4032 this rule existed only as a
+code comment inside one pack (`blueprint/pack.css`, calling it "the scandi/washi guard
+pattern") — tribal knowledge. The survey that drove the epic found 14 packs violating
+it and four packs that did guard using the wrong attribute (see the trap below).
+
+**Why.** The active nav item carries the base inverted fill —
+`NAV_TOP_ACTIVE = ["bg-fg", "text-bg"]` (`src/header/nav-class-tokens.ts:28`). A pack
+selector like `html[data-theme-pack="x"] [data-nav-item]:hover` is unlayered at
+specificity `(0,3,1)`, which beats the base `@layer utilities` `text-bg` rule at
+`(0,1,0)`. An unguarded hover therefore repaints the active pill's ink or its
+background and collapses the contrast — measured as low as **1.00:1** (identical fg
+and bg, text literally invisible) across the packs that shipped this bug.
+
+**Reference pattern** — `src/theme-packs/phosphor/pack.css:241-251` guards both header
+DOM shapes:
+
+```css
+html[data-theme-pack="phosphor"] a[data-nav-item]:not([aria-current="page"]):hover,
+html[data-theme-pack="phosphor"] [data-nav-item-dropdown] > a:not([aria-current="page"]):hover {
+  text-decoration: none;
+  color: var(--zd-accent);
+  ...
+}
+```
+
+Guarding only the wrapper `[data-nav-item-dropdown]` `div` is **ineffective** — the
+colors live on the child `<a>`, and that same child carries `aria-current`
+(dropdown-item anchor: `src/header/header.tsx:487`; plain top-level item's own anchor:
+`src/header/header.tsx:550`).
+
+**The `data-nav-active` trap.** `:not([data-nav-active])` looks like the same guard
+and is not:
+
+- **Never emitted on header nav items** — `header.tsx:487` and `:550` set only
+  `aria-current`, never `data-nav-active`. `:not([data-nav-active])` on a header
+  selector is a structural no-op; the hover rule runs unguarded regardless of the
+  active state.
+- **Incomplete on the sidebar** — an active root/category node gets
+  `aria-current="page"` at `sidebar-tree-island/index.tsx:766` WITHOUT
+  `data-nav-active` (`:767` sets it only when `!isRoot && isActive`, i.e. never on a
+  root). observatory, washi, riso, and sakura shipped exactly this guard and still
+  failed on an active category row — this exact mistake is why it propagated to four
+  packs.
+
+Guard with `:not([aria-current="page"])`, and only that, on both the header and the
+sidebar.
+
+**Audit-gated exception.** A rule that sets `color` **and** `background` together
+replaces the pill wholesale rather than tinting the existing fill. Several packs
+(sakura, scandi, bauhaus, drift's header rule) do this deliberately, unguarded, and
+measure AA-clean. Do not "fix" these by adding a guard on sight — omitting the guard
+here is correct **only while `pnpm theme-a11y:audit` proves the state green**. The
+audit is the arbiter, not the shape of the rule.
+
+**A second trap: descendant color.** A pack's anchor-level `color` reaches only what
+inherits from it. Card-style links can put their own ink on a `group-hover:text-fg` /
+`group-hover:text-accent` utility class on a descendant `<span>`, which wins over the
+anchor's inherited color — a fix that only recolors the anchor reads correct in a
+static look at the rule and is still wrong on screen. `brutalist/pack.css:389-414` is
+the concrete case: the prose-link hover rule (`:400-407`) needed a companion
+`… a:hover *` rule (`:408-414`) to actually reach the note-tray card spans it shares a
+selector with. This is why `pnpm theme-a11y:audit` renders real pages and reads
+computed styles instead of computing contrast from CSS declarations alone.
+
+See also: the `color-scheme-a11y` skill's "Theme-pack nav `:hover` guard" section and
+`TESTING.md`'s "Theme A11y Audit" section for the verification tooling.
+
 ## Shipped ambient type shims + tsconfig base (#2656, minimal-scaffold epic #2651)
 
 Three files ship from the **package root** (not `dist/`) so a downstream

@@ -147,6 +147,21 @@ unit/package critical paths.
 They remain blocking because they cover release-relevant behavior; the other
 registry-install/full-build slow specs stay in the nightly `slow-create` job.
 
+**Theme A11y PR gate (two-lane, #4037)** adds a conditional `theme-a11y`-scoped job to
+`pr-checks.yml`, alongside the always-on `theme-a11y` **T3 nightly** job described under
+"Theme A11y Audit" below. It filters **inside** the job (not a workflow-level `paths:`
+skip — that would leave a required check pending forever on a PR that never touches a
+pack) into two lanes: a cheap lane (the packs touched by the diff only) for a PR that
+changes pack-only files, and the full `pnpm theme-a11y:audit` matrix — all packs, both
+modes, both `AUDIT_PAGES` — for anything wider (e.g. a shared chrome/token change that
+could regress every pack at once). This closes the gap the epic's root-cause analysis
+identified: before #4037, `theme-a11y` ran only nightly, so a regression like the one in
+epic #4032 could sit on `main` for up to a day before the exam caught it. Gating alone
+would not have caught #4032's bug (the single-page nightly run was green however often
+it ran) — this lane and the page-axis fix in "Theme A11y Audit" below are complementary,
+not alternatives: coverage makes the audit capable of failing on this bug class, and this
+lane makes that failure block the PR instead of waiting for the next nightly run.
+
 **b4push** (`pnpm b4push`) is the bounded local convenience pass — wisdom-tier **T4**, not
 T1 (see the note above the tiers table); it's covered here for workflow ergonomics only. It
 runs a 29-step suite
@@ -344,12 +359,44 @@ jobs rather than duplicated here; both package paths are covered before release.
 ### Theme A11y Audit (`theme-a11y` job — T3 nightly + on-demand dev tool)
 
 `scripts/theme-a11y-audit.ts` (`pnpm theme-a11y:audit`) renders the **built** showcase
-once per (theme pack × light/dark mode) in a real Playwright browser and reads computed
-styles to check WCAG contrast on a fixed chrome + content element inventory. It requires
-a prebuilt `dist/` and a browser, so — like `e2e-full` — it's too slow for pr-checks'
-budget and lives here as a T3 nightly + on-demand job (`theme-a11y`), plus a local dev
-tool for partial runs while iterating on a theme pack (`pnpm theme-a11y:audit --packs
-<name> --modes light`).
+once per (theme pack × light/dark mode × page) in a real Playwright browser and reads
+computed styles to check WCAG contrast on a fixed chrome + content element inventory. It
+requires a prebuilt `dist/` and a browser, so — like `e2e-full` — it's too slow for
+pr-checks' budget and lives here as a T3 nightly + on-demand job (`theme-a11y`), plus a
+local dev tool for partial runs while iterating on a theme pack (`pnpm theme-a11y:audit
+--packs <name> --modes light`).
+
+**The page axis is load-bearing, not a convenience** (#4033). A single-page run reported
+a clean pass over a catalog with real failures, because the two chrome shapes are
+structurally complementary: a leaf page under a dropdown category never renders a plain
+active top-level nav item, and a root category page never renders an active sidebar
+*leaf*. The default run therefore renders both `AUDIT_PAGES`, the coverage contract is
+keyed **per page** (a group required on one page is not asserted on the other), and the
+regression-prone hover states must produce an actual hover sample — a static count alone
+can't tell "measured and fine" from "never measured". Any narrowed run (`--packs` /
+`--modes` / `--pages`) prints its omitted scenarios as UNAUDITED so a partial green never
+reads as full coverage.
+
+The two default `AUDIT_PAGES` are exactly complementary — no single page in this repo's
+corpus covers the inventory, and the union of these two is provably minimal at two
+(measured both directions, epic #4032):
+
+| Inventory group | `/docs/components/admonitions/` | `/docs/getting-started/` |
+| --- | --- | --- |
+| `header-nav-active` (plain top-level) | **ZERO** | yes |
+| `header-nav-dropdown-active` | yes | **ZERO** |
+| `sidebar-active-leaf` | yes | **ZERO** |
+| `toc-link` / `toc-active` | yes | **ZERO** |
+| `breadcrumb-link` | yes | **ZERO** |
+| `admonition-title` / `admonition-body` | yes | **ZERO** |
+| `content-code` | yes | **ZERO** |
+| `pager-link` | yes | yes |
+
+`header-nav-active` is the one group the pre-#4033 default page (admonitions) missed
+entirely — an active top-level item never renders there, because that page's own
+active header entry is a *dropdown* (a different inventory group). Switching the
+default page instead of adding a second one would only trade one blind spot for
+another; see #4033's evidence in epic #4032 for the reverse table.
 
 **Scope split vs `pnpm contrast:audit`.** These two checks are not redundant:
 
@@ -360,7 +407,12 @@ tool for partial runs while iterating on a theme pack (`pnpm theme-a11y:audit --
 - `pnpm theme-a11y:audit` checks every **theme pack**'s rendered CSS in a real browser —
   the only check that can catch pure-cascade theme-pack bugs (e.g. an active-nav chip
   losing contrast under one pack's stylesheet) that are structurally invisible to the
-  static color-scheme check. This is what the `theme-a11y` exam job gates on.
+  static color-scheme check. This is what the `theme-a11y` exam job gates on. That
+  parenthetical example is not hypothetical — it is the literal bug in epic #4032, which
+  the audit's single-page run missed. The gap was the missing **page axis** above, not
+  this check's logic; with both `AUDIT_PAGES` in place, this claim is accurate rather
+  than aspirational. See `packages/zudo-doc/CLAUDE.md`'s "Theme-pack nav `:hover` guard"
+  section for the authoring-side rule this audit enforces.
 
 **Wait-discipline note (self-imposed, not mechanically enforced).**
 `scripts/theme-a11y-audit.ts` is the first standalone Playwright-browser script outside

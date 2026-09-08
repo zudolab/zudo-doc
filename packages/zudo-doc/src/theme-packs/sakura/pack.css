@@ -256,8 +256,12 @@ html[data-theme-pack="sakura"] #desktop-sidebar a[aria-current="page"]:not([data
 html[data-theme-pack="sakura"] aside[data-zd-mobile-sidebar] a[aria-current="page"]:not([data-nav-active]) {
   border-radius: 0;
 }
-html[data-theme-pack="sakura"] #desktop-sidebar a:not([data-nav-active]):hover,
-html[data-theme-pack="sakura"] aside[data-zd-mobile-sidebar] a:not([data-nav-active]):hover {
+/* :not([data-nav-active]) was incomplete: an active root/category node
+   carries aria-current="page" without data-nav-active, so hover could
+   still repaint it. Guard aria-current="page" instead (latent hole —
+   fixed here for consistency with the other packs). */
+html[data-theme-pack="sakura"] #desktop-sidebar a:not([aria-current="page"]):hover,
+html[data-theme-pack="sakura"] aside[data-zd-mobile-sidebar] a:not([aria-current="page"]):hover {
   text-decoration: none;
   color: var(--zd-accent);
   background: color-mix(in srgb, var(--zd-accent) 10%, transparent);

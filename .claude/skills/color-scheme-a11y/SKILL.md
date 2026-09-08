@@ -333,3 +333,55 @@ Before adding a new entry to `colorSchemes` in
   to a static check), use `pnpm theme-a11y:audit` (`scripts/theme-a11y-audit.ts`) — a
   real-browser audit wired into the `theme-a11y` T3 nightly exam job. See TESTING.md's
   "Theme A11y Audit" section (#3036).
+
+## 7. Theme-pack nav `:hover` guard (pack-author contract, epic #4032)
+
+This section is the theme-pack counterpart to §6's "different surface" pointer — the
+concrete rule a pack author must follow, not just the tool that catches a violation.
+
+**Rule.** A theme pack (`packages/zudo-doc/src/theme-packs/*/pack.css`) that authors a
+nav `:hover` rule setting `color` **or** `background` MUST exclude
+`[aria-current="page"]`, on the **anchor**, in **both** header DOM shapes. Before epic
+#4032 this existed only as a code comment inside one pack (`blueprint/pack.css`, "the
+scandi/washi guard pattern"). The survey that drove the epic found 14 packs violating
+it and four packs guarding with the wrong attribute.
+
+**Why.** The active nav item carries the base inverted fill —
+`NAV_TOP_ACTIVE = ["bg-fg", "text-bg"]` (`packages/zudo-doc/src/header/nav-class-tokens.ts:28`).
+An unlayered pack selector like `html[data-theme-pack="x"] [data-nav-item]:hover` sits
+at specificity `(0,3,1)`, which beats the base `@layer utilities` `text-bg` rule at
+`(0,1,0)`. An unguarded hover repaints the active pill's ink or background and
+collapses the contrast — measured as low as **1.00:1** (identical fg/bg, text
+literally invisible).
+
+**Reference pattern** —
+`packages/zudo-doc/src/theme-packs/phosphor/pack.css:241-251` guards both shapes:
+`a[data-nav-item]:not([aria-current="page"]):hover` and
+`[data-nav-item-dropdown] > a:not([aria-current="page"]):hover`. Guarding only the
+wrapper `div` is ineffective — the colors live on the child `<a>`.
+
+**The `data-nav-active` trap.** `:not([data-nav-active])` is not the same guard:
+
+- It is **never emitted on header nav items** — `header.tsx:487` and `:550` set only
+  `aria-current`. `:not([data-nav-active])` on the header is a no-op.
+- It is **incomplete on the sidebar** — an active root/category node gets
+  `aria-current="page"` at `sidebar-tree-island/index.tsx:766` WITHOUT
+  `data-nav-active` (`:767` sets it only when `!isRoot && isActive`). observatory,
+  washi, riso, and sakura shipped exactly this guard and still failed.
+
+Use `:not([aria-current="page"])`, and only that.
+
+**Audit-gated exception.** A rule that sets `color` **and** `background` together
+replaces the pill wholesale rather than tinting it, and several packs (sakura, scandi,
+bauhaus, drift's header rule) do this deliberately, unguarded, and measure AA-clean.
+The guard is optional **only while `pnpm theme-a11y:audit` proves the state green** —
+the audit is the arbiter, not the shape of the rule.
+
+**A second trap the static formula in §4 can't see: descendant color.** A pack's
+`color` on the anchor reaches only what inherits from it. Card-style links can set
+their own ink on a `group-hover:text-fg` / `group-hover:text-accent` utility on a
+descendant `<span>`, which wins over the anchor's inherited color.
+`brutalist/pack.css:389-414` is the concrete case — the prose-link hover rule
+(`:400-407`) needed a companion `… a:hover *` rule (`:408-414`) to actually reach the
+note-tray card spans sharing its selector. This is exactly why `theme-a11y:audit`
+renders real pages and reads computed styles, unlike `contrast:audit` above.

@@ -3,7 +3,7 @@
  * scripts/theme-a11y-audit.ts
  *
  * Rendered, per-theme-pack WCAG contrast audit. Renders the BUILT showcase
- * once per (theme pack × light/dark mode) — ~42 states — reads COMPUTED styles
+ * once per (theme pack × light/dark mode × page), reads COMPUTED styles
  * on a fixed inventory of chrome + content elements (`theme-a11y-inventory.ts`),
  * computes WCAG AA contrast on the truly-rendered colors (alpha compositing +
  * an effective-background ancestor walk), and gates on "surely problematic"
@@ -21,16 +21,27 @@
  * `process.exitCode = 1` on ANY unallowlisted FAIL, coverage/config error,
  * stale allowlist entry, per-state render error, or pack-stylesheet load error.
  *
+ * PAGE AXIS (#4033): auditing a single page reported a clean pass over a
+ * catalog with real failures, because the two chrome shapes are structurally
+ * complementary — a leaf page under a dropdown category never renders a plain
+ * active top-level nav item, and a root category page never renders an active
+ * sidebar LEAF. The default run therefore renders both `AUDIT_PAGES` and the
+ * coverage contract is keyed per page.
+ *
  * Usage:
- *   pnpm theme-a11y:audit                              # build dist/ first, audit all packs × light/dark
+ *   pnpm theme-a11y:audit                              # build dist/ first, audit all packs × light/dark × pages
  *   pnpm theme-a11y:audit --packs washi --modes light  # one pack, one mode (cheap partial run)
  *   pnpm theme-a11y:audit --packs a,b --modes dark
- *   pnpm theme-a11y:audit --page /docs/reference/color/ # override the audited page
+ *   pnpm theme-a11y:audit --pages /docs/guides/,/docs/reference/color/  # override the audited page set
+ *   pnpm theme-a11y:audit --page /docs/reference/color/ # single-page alias for --pages
  *   pnpm theme-a11y:audit --url https://preview.example # audit an already-running server (no local serve)
  *   pnpm theme-a11y:audit --out-dir some/dir            # override the (gitignored) output dir
  *
+ * A narrowed run (`--packs` / `--modes` / `--pages`) reports every omitted
+ * scenario as UNAUDITED — a partial green never reads as full coverage.
+ *
  * Output: `theme-a11y-audit-out/report.json` + a console summary grouped by
- * pack. The out dir is gitignored — not committed.
+ * pack → mode → page. The out dir is gitignored — not committed.
  *
  * Serving: without `--url`, a prebuilt `dist/` is required (fail fast with a
  * "run pnpm build" message) and served by a minimal in-script `node:http`
@@ -56,28 +67,37 @@ import pc from "picocolors";
 
 import { THEME_A11Y_ALLOWLIST } from "./theme-a11y-allowlist";
 import {
+  AUDIT_PAGES,
   COVERAGE_CONTRACT,
   THRESHOLD_LARGE,
   THRESHOLD_NORMAL,
   THRESHOLD_UI,
   WARN_BAND,
   allowlistKey,
+  describeUnauditedScenarios,
   detectStaleAllowlistEntries,
-  evaluateCoverage,
+  evaluateCoverageMatrix,
   evaluateSample,
   findAllowlistEntry,
   validateAllowlist,
+  type CoverageOutcome,
+  type CoverageScenario,
   type CoverageStats,
   type RawSample,
   type Verdict,
 } from "./theme-a11y-evaluator";
-import { INVENTORY, collectSamplesInBrowser, type CollectPayload } from "./theme-a11y-inventory";
+import {
+  INVENTORY,
+  collectSamplesInBrowser,
+  validateInventoryExpectations,
+  type CollectPayload,
+} from "./theme-a11y-inventory";
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-const DEFAULT_PAGE = "/docs/components/admonitions/";
+const DEFAULT_PAGES: readonly string[] = AUDIT_PAGES;
 const DEFAULT_OUT_DIR = "theme-a11y-audit-out";
 const VIEWPORT = { width: 1440, height: 900 } as const;
 const THEME_PACK_STORAGE_KEY = "zudo-doc-theme-pack";
@@ -94,8 +114,23 @@ interface CliOptions {
   packs: string[] | null;
   modes: Mode[];
   url: string | null;
-  page: string;
+  pages: string[];
+  /** True when the audited page set is not the full declared universe. */
+  pagesNarrowed: boolean;
   outDir: string;
+}
+
+/**
+ * Page paths are contract KEYS, so `/docs/getting-started` and
+ * `/docs/getting-started/` must not resolve to different (one of them
+ * contract-less) scenarios. Force a leading slash, and a trailing one on
+ * anything that isn't a file path.
+ */
+function normalizePagePath(raw: string): string {
+  let p = raw.trim();
+  if (!p.startsWith("/")) p = `/${p}`;
+  if (!p.endsWith("/") && extname(p) === "") p = `${p}/`;
+  return p;
 }
 
 function parseList(value: string | undefined): string[] | null {
@@ -114,7 +149,8 @@ function parseCliArgs(argv: string[]): CliOptions {
       packs: { type: "string" },
       modes: { type: "string" },
       url: { type: "string" },
-      page: { type: "string", default: DEFAULT_PAGE },
+      pages: { type: "string" },
+      page: { type: "string" },
       "out-dir": { type: "string", default: DEFAULT_OUT_DIR },
     },
   });
@@ -134,11 +170,20 @@ function parseCliArgs(argv: string[]): CliOptions {
     modes = [...ALL_MODES];
   }
 
+  // `--page` is the single-page alias kept for compatibility; passing both is
+  // ambiguous (which one wins is not something a caller should have to guess).
+  if (values.pages !== undefined && values.page !== undefined) {
+    throw new Error("--page and --pages are mutually exclusive; use --pages for a multi-page run");
+  }
+  const pageList = parseList(values.pages) ?? (values.page ? [String(values.page)] : null);
+  const pages = [...new Set((pageList ?? DEFAULT_PAGES).map(normalizePagePath))];
+
   return {
     packs: parseList(values.packs),
     modes,
     url: values.url ? values.url.replace(/\/+$/, "") : null,
-    page: String(values.page ?? DEFAULT_PAGE),
+    pages,
+    pagesNarrowed: AUDIT_PAGES.some((p) => !pages.includes(p)),
     outDir: String(values["out-dir"] ?? DEFAULT_OUT_DIR),
   };
 }
@@ -253,6 +298,7 @@ function enumeratePacksFromDist(distDir: string): string[] {
 interface ResultRow {
   pack: string;
   mode: Mode;
+  page: string;
   elementKey: string;
   selector: string;
   state: string;
@@ -265,15 +311,12 @@ interface ResultRow {
   text?: string;
 }
 
-interface CoverageRow extends CoverageStats {
-  pack: string;
-  mode: Mode;
-  errors: string[];
-}
+type CoverageRow = CoverageOutcome;
 
 interface StateError {
   pack: string;
   mode: Mode;
+  page: string;
   message: string;
 }
 
@@ -343,7 +386,14 @@ async function collectHoverSamples(page: Page): Promise<RawSample[]> {
   const samples: RawSample[] = [];
   for (const item of INVENTORY) {
     if (!item.hover) continue;
-    const locator = page.locator(item.selector).first();
+    // `.filter({ visible: true })` before `.first()`, not after: the static
+    // pass counts only VISIBLE matches, so picking the first DOM match here
+    // could aim the pointer at a hidden one (a collapsed sidebar branch, an
+    // overflow-hidden nav item) — `hover()` would then time out and the group
+    // would report NO hover sample even though a visible element exists. With
+    // `requireHover` that is a gating coverage error, so the two passes must
+    // agree on what counts as present.
+    const locator = page.locator(item.selector).filter({ visible: true }).first();
     try {
       if ((await locator.count()) === 0) continue;
       await locator.hover({ timeout: 5_000 });
@@ -423,6 +473,17 @@ async function collectTocActiveSamples(page: Page): Promise<RawSample[]> {
 async function main(): Promise<void> {
   const opts = parseCliArgs(process.argv.slice(2));
 
+  // The inventory's declared expectations and the per-page coverage contract
+  // are two halves of one census — a drift between them is a config error, so
+  // catch it before spending a browser launch on it.
+  const inventoryErrors = validateInventoryExpectations();
+  if (inventoryErrors.length > 0) {
+    console.error(pc.red("theme-a11y-audit: inventory/coverage-contract mismatch:"));
+    for (const e of inventoryErrors) console.error(pc.red(`  ${e}`));
+    process.exitCode = 1;
+    return;
+  }
+
   // Resolve base URL + pack universe.
   let server: Server | null = null;
   let baseUrl: string;
@@ -436,11 +497,14 @@ async function main(): Promise<void> {
   } else {
     servingMode = "served";
     const distDir = resolve(process.cwd(), "dist");
-    const pageIndex = resolveStaticFile(distDir, opts.page);
-    if (!existsSync(distDir) || !pageIndex || !existsSync(pageIndex)) {
+    const missing = opts.pages.filter((p) => {
+      const index = resolveStaticFile(distDir, p);
+      return !index || !existsSync(index);
+    });
+    if (!existsSync(distDir) || missing.length > 0) {
       console.error(
         pc.red(
-          `theme-a11y-audit: no built page found at "${opts.page}" under dist/.\n` +
+          `theme-a11y-audit: no built page found at ${missing.map((p) => `"${p}"`).join(", ")} under dist/.\n` +
             `Run \`pnpm build\` first (or pass \`--url <base>\` to audit a running server).`,
         ),
       );
@@ -469,115 +533,142 @@ async function main(): Promise<void> {
     packs = opts.packs;
   }
 
-  const pageUrl = `${baseUrl}${opts.page}`;
   const results: ResultRow[] = [];
-  const coverage: CoverageRow[] = [];
+  const coverageScenarios: CoverageScenario[] = [];
   const stateErrors: StateError[] = [];
   const stylesheetErrors: StateError[] = [];
   const consumedKeys = new Set<string>();
 
   console.log(
     pc.bold(
-      `theme-a11y-audit — ${packs.length} pack(s) × ${opts.modes.length} mode(s) = ${
-        packs.length * opts.modes.length
-      } states\n` + `page: ${opts.page}   source: ${servingMode === "url" ? baseUrl : "local dist/ (served)"}`,
+      `theme-a11y-audit — ${packs.length} pack(s) × ${opts.modes.length} mode(s) × ${
+        opts.pages.length
+      } page(s) = ${packs.length * opts.modes.length * opts.pages.length} states\n` +
+        `pages: ${opts.pages.join(", ")}\n` +
+        `source: ${servingMode === "url" ? baseUrl : "local dist/ (served)"}`,
     ),
   );
 
   try {
-    // A fresh browser PER PACK, not one shared across all ~42 states. A single
+    // A fresh browser PER PACK, not one shared across every state. A single
     // long-lived Chromium accumulates renderer memory context-by-context and, on
     // a constrained host (WSL/CI), dies mid-run — after which every subsequent
     // `newContext()` throws "Target page, context or browser has been closed"
     // and the whole audit crashes with a partial report. Per-pack relaunch
-    // bounds memory to two states and isolates a crash to at most one pack.
+    // bounds memory to one pack's states and isolates a crash to that pack.
     for (const pack of packs) {
       const browser: Browser = await chromium.launch();
       try {
         for (const mode of opts.modes) {
-          let context: BrowserContext | null = null;
-          try {
-            context = await browser.newContext({ viewport: { ...VIEWPORT } });
-            // Watch for pack-stylesheet load failures before navigating.
-            context.on("requestfailed", (req) => {
-              const url = req.url();
-              if (url.includes(`/theme-packs/${pack}/pack.css`)) {
-                stylesheetErrors.push({ pack, mode, message: `requestfailed: ${url}` });
-              }
-            });
-            context.on("response", (res) => {
-              const url = res.url();
-              if (url.includes(`/theme-packs/${pack}/pack.css`) && res.status() >= 400) {
-                stylesheetErrors.push({ pack, mode, message: `HTTP ${res.status()} for ${url}` });
-              }
-            });
-
-            const page = await seedAndGoto(context, pack, mode, pageUrl);
-            await waitForPackApplied(page, pack, mode);
-            // Freeze transitions/animations so computed styles are stable.
-            await page.addStyleTag({
-              content: "*,*::before,*::after{transition:none!important;animation:none!important}",
-            });
-
-            const staticSamples = await collectStaticSamples(page);
-            const hoverSamples = await collectHoverSamples(page);
-            const tocActiveSamples = await collectTocActiveSamples(page);
-            const samples = [...staticSamples, ...hoverSamples, ...tocActiveSamples];
-
-            // Evaluate + accumulate coverage stats for this state.
-            const groupCounts: Record<string, number> = {};
-            let matched = 0;
-            let skipped = 0;
-
-            for (const sample of samples) {
-              const ev = evaluateSample(sample);
-              let verdict: Verdict = ev.verdict;
-              if (verdict === "FAIL") {
-                const entry = findAllowlistEntry(THEME_A11Y_ALLOWLIST, pack, mode, sample.elementKey, sample.state);
-                if (entry) {
-                  verdict = "ALLOW";
-                  consumedKeys.add(allowlistKey(pack, mode, sample.elementKey, sample.state));
+          // A context PER PAGE, not per mode: `collectTocActiveSamples` scrolls
+          // and `collectHoverSamples` moves the pointer, so reusing one context
+          // across pages would carry that state over. A fresh context also keeps
+          // each page's stylesheet listeners and its render error scoped to it.
+          for (const pagePath of opts.pages) {
+            let context: BrowserContext | null = null;
+            try {
+              context = await browser.newContext({ viewport: { ...VIEWPORT } });
+              // Watch for pack-stylesheet load failures before navigating.
+              context.on("requestfailed", (req) => {
+                const url = req.url();
+                if (url.includes(`/theme-packs/${pack}/pack.css`)) {
+                  stylesheetErrors.push({ pack, mode, page: pagePath, message: `requestfailed: ${url}` });
                 }
-              }
-
-              const isDecorative = sample.kind === "decorative";
-              if (!isDecorative) {
-                matched++;
-                // Only INDETERMINATE skips (couldn't measure the backdrop) count
-                // toward the coverage MAX_SKIP_RATIO ceiling. A `straddle` skip is
-                // a determinate "gradient crosses the threshold" result, not a
-                // checker gap, so it must not trip the "evaluator mis-measuring" guard.
-                if (ev.verdict === "SKIP" && ev.skipKind !== "straddle") skipped++;
-                if (sample.state !== "hover") {
-                  groupCounts[sample.elementKey] = (groupCounts[sample.elementKey] ?? 0) + 1;
+              });
+              context.on("response", (res) => {
+                const url = res.url();
+                if (url.includes(`/theme-packs/${pack}/pack.css`) && res.status() >= 400) {
+                  stylesheetErrors.push({
+                    pack,
+                    mode,
+                    page: pagePath,
+                    message: `HTTP ${res.status()} for ${url}`,
+                  });
                 }
+              });
+
+              const page = await seedAndGoto(context, pack, mode, `${baseUrl}${pagePath}`);
+              await waitForPackApplied(page, pack, mode);
+              // Freeze transitions/animations so computed styles are stable.
+              await page.addStyleTag({
+                content: "*,*::before,*::after{transition:none!important;animation:none!important}",
+              });
+
+              const staticSamples = await collectStaticSamples(page);
+              const hoverSamples = await collectHoverSamples(page);
+              const tocActiveSamples = await collectTocActiveSamples(page);
+              const samples = [...staticSamples, ...hoverSamples, ...tocActiveSamples];
+
+              // Evaluate + accumulate coverage stats for this state.
+              const groupCounts: Record<string, number> = {};
+              const hoverCounts: Record<string, number> = {};
+              let matched = 0;
+              let skipped = 0;
+
+              for (const sample of samples) {
+                const ev = evaluateSample(sample);
+                let verdict: Verdict = ev.verdict;
+                if (verdict === "FAIL") {
+                  const entry = findAllowlistEntry(
+                    THEME_A11Y_ALLOWLIST,
+                    pack,
+                    mode,
+                    sample.elementKey,
+                    sample.state,
+                  );
+                  if (entry) {
+                    verdict = "ALLOW";
+                    consumedKeys.add(allowlistKey(pack, mode, sample.elementKey, sample.state));
+                  }
+                }
+
+                const isDecorative = sample.kind === "decorative";
+                if (!isDecorative) {
+                  matched++;
+                  // Only INDETERMINATE skips (couldn't measure the backdrop) count
+                  // toward the coverage MAX_SKIP_RATIO ceiling. A `straddle` skip is
+                  // a determinate "gradient crosses the threshold" result, not a
+                  // checker gap, so it must not trip the "evaluator mis-measuring" guard.
+                  if (ev.verdict === "SKIP" && ev.skipKind !== "straddle") skipped++;
+                  // Hover samples are tallied SEPARATELY, not merged into
+                  // groupCounts: the static minima describe how many elements a
+                  // page renders, while `requireHover` asks a different question
+                  // — did the hover measurement actually happen?
+                  const counts = sample.state === "hover" ? hoverCounts : groupCounts;
+                  counts[sample.elementKey] = (counts[sample.elementKey] ?? 0) + 1;
+                }
+
+                results.push({
+                  pack,
+                  mode,
+                  page: pagePath,
+                  elementKey: sample.elementKey,
+                  selector: sample.selector,
+                  state: sample.state,
+                  fg: ev.fg,
+                  bg: ev.bg,
+                  ratio: ev.ratio,
+                  threshold: ev.threshold,
+                  verdict,
+                  ...(ev.skipReason ? { skipReason: ev.skipReason } : {}),
+                  ...(sample.text ? { text: sample.text } : {}),
+                });
               }
 
-              results.push({
+              const stats: CoverageStats = { groupCounts, hoverCounts, matched, skipped };
+              coverageScenarios.push({ pack, mode, page: pagePath, stats });
+
+              await page.close();
+            } catch (err) {
+              stateErrors.push({
                 pack,
                 mode,
-                elementKey: sample.elementKey,
-                selector: sample.selector,
-                state: sample.state,
-                fg: ev.fg,
-                bg: ev.bg,
-                ratio: ev.ratio,
-                threshold: ev.threshold,
-                verdict,
-                ...(ev.skipReason ? { skipReason: ev.skipReason } : {}),
-                ...(sample.text ? { text: sample.text } : {}),
+                page: pagePath,
+                message: err instanceof Error ? err.message : String(err),
               });
+            } finally {
+              if (context) await context.close().catch(() => {});
             }
-
-            const stats: CoverageStats = { groupCounts, matched, skipped };
-            const covErrors = evaluateCoverage(`${pack}/${mode}`, stats);
-            coverage.push({ pack, mode, ...stats, errors: covErrors });
-
-            await page.close();
-          } catch (err) {
-            stateErrors.push({ pack, mode, message: err instanceof Error ? err.message : String(err) });
-          } finally {
-            if (context) await context.close().catch(() => {});
           }
         }
       } finally {
@@ -592,13 +683,38 @@ async function main(): Promise<void> {
   // Aggregate, report, exit code
   // -------------------------------------------------------------------------
 
+  // Coverage is evaluated per (pack × mode × page) and NEVER merged: one pack
+  // satisfying a group must not mask another pack where it matched zero.
+  const coverage: CoverageRow[] = evaluateCoverageMatrix(coverageScenarios);
+
   const auditedPacks = new Set(packs);
   const auditedModes = new Set<string>(opts.modes);
   const reasonErrors = validateAllowlist(THEME_A11Y_ALLOWLIST);
   const staleScope = THEME_A11Y_ALLOWLIST.filter(
     (e) => auditedPacks.has(e.pack) && auditedModes.has(e.mode),
   );
-  const staleEntries = detectStaleAllowlistEntries(staleScope, consumedKeys);
+  // Staleness means "this entry's FAIL no longer happens". On a page-narrowed
+  // run an entry can go unconsumed simply because its element only exists on a
+  // page we didn't render — that's an unaudited entry, not a stale one, and
+  // gating on it would make partial runs unusable.
+  const staleEntries = opts.pagesNarrowed ? [] : detectStaleAllowlistEntries(staleScope, consumedKeys);
+
+  // `describeUnauditedScenarios` already names every undeclared page ONCE.
+  // The per-scenario `notes` say the same thing per (pack × mode), so merging
+  // them here would repeat one fact 62 times in the summary and the report;
+  // they stay attached to their own state and are printed under it instead.
+  const unaudited = describeUnauditedScenarios({
+    allPacks,
+    auditedPacks: packs,
+    allModes: [...ALL_MODES],
+    auditedModes: opts.modes,
+    auditedPages: opts.pages,
+  });
+  if (opts.pagesNarrowed && staleScope.length > 0) {
+    unaudited.push(
+      `allowlist staleness NOT checked (${staleScope.length} in-scope entr(y/ies)) — page-narrowed run`,
+    );
+  }
 
   const counts: Record<Verdict, number> = { PASS: 0, WARN: 0, FAIL: 0, ALLOW: 0, SKIP: 0 };
   for (const r of results) counts[r.verdict]++;
@@ -608,6 +724,7 @@ async function main(): Promise<void> {
   printConsoleSummary({
     packs,
     modes: opts.modes,
+    pages: opts.pages,
     results,
     coverage,
     counts,
@@ -617,13 +734,14 @@ async function main(): Promise<void> {
     reasonErrors,
     staleEntries,
     coverageErrors,
+    unaudited,
   });
 
   const outDirAbs = resolve(process.cwd(), opts.outDir);
   await mkdir(outDirAbs, { recursive: true });
   const report = {
     generatedAt: new Date().toISOString(),
-    page: opts.page,
+    pages: opts.pages,
     baseUrl,
     servingMode,
     packs,
@@ -632,12 +750,14 @@ async function main(): Promise<void> {
     coverageContract: COVERAGE_CONTRACT,
     counts,
     coverage,
+    unaudited,
     stateErrors,
     stylesheetErrors,
     allowlist: {
       total: THEME_A11Y_ALLOWLIST.length,
       consumed: [...consumedKeys],
       stale: staleEntries,
+      staleCheckSkipped: opts.pagesNarrowed,
       reasonErrors,
     },
     results,
@@ -663,6 +783,7 @@ async function main(): Promise<void> {
 interface SummaryInput {
   packs: string[];
   modes: Mode[];
+  pages: string[];
   results: ResultRow[];
   coverage: CoverageRow[];
   counts: Record<Verdict, number>;
@@ -672,6 +793,7 @@ interface SummaryInput {
   reasonErrors: string[];
   staleEntries: string[];
   coverageErrors: string[];
+  unaudited: string[];
 }
 
 function fmtRatio(r: number | null): string {
@@ -685,28 +807,32 @@ function printConsoleSummary(s: SummaryInput): void {
     console.log(pc.bold(`\n■ ${pack}`));
 
     for (const mode of s.modes) {
-      const rows = packRows.filter((r) => r.mode === mode);
-      const cov = s.coverage.find((c) => c.pack === pack && c.mode === mode);
-      const stErr = s.stateErrors.find((e) => e.pack === pack && e.mode === mode);
-      const c: Record<Verdict, number> = { PASS: 0, WARN: 0, FAIL: 0, ALLOW: 0, SKIP: 0 };
-      for (const r of rows) c[r.verdict]++;
+      console.log(`  ${pc.bold(mode)}`);
+      for (const page of s.pages) {
+        const rows = packRows.filter((r) => r.mode === mode && r.page === page);
+        const cov = s.coverage.find((c) => c.pack === pack && c.mode === mode && c.page === page);
+        const stErr = s.stateErrors.find((e) => e.pack === pack && e.mode === mode && e.page === page);
+        const c: Record<Verdict, number> = { PASS: 0, WARN: 0, FAIL: 0, ALLOW: 0, SKIP: 0 };
+        for (const r of rows) c[r.verdict]++;
 
-      const head = `  ${mode.padEnd(5)}  ${pc.green(`${c.PASS} pass`)}  ${
-        c.WARN ? pc.yellow(`${c.WARN} warn`) : `${c.WARN} warn`
-      }  ${c.FAIL ? pc.red(pc.bold(`${c.FAIL} FAIL`)) : "0 fail"}  ${c.ALLOW} allow  ${c.SKIP} skip` +
-        (cov ? pc.dim(`   (matched ${cov.matched}, skipped ${cov.skipped})`) : "");
-      console.log(stErr ? `${head}  ${pc.red("[render error]")}` : head);
+        const head = `    ${page}  ${pc.green(`${c.PASS} pass`)}  ${
+          c.WARN ? pc.yellow(`${c.WARN} warn`) : `${c.WARN} warn`
+        }  ${c.FAIL ? pc.red(pc.bold(`${c.FAIL} FAIL`)) : "0 fail"}  ${c.ALLOW} allow  ${c.SKIP} skip` +
+          (cov ? pc.dim(`   (matched ${cov.stats.matched}, skipped ${cov.stats.skipped})`) : "");
+        console.log(stErr ? `${head}  ${pc.red("[render error]")}` : head);
 
-      if (stErr) console.log(pc.red(`         render error: ${stErr.message}`));
-      for (const r of rows.filter((x) => x.verdict === "FAIL")) {
-        console.log(
-          pc.red(
-            `         FAIL ${r.elementKey}/${r.state}  ${fmtRatio(r.ratio)} < ${r.threshold}:1  ${r.fg} on ${r.bg}` +
-              (r.text ? pc.dim(`  "${r.text}"`) : ""),
-          ),
-        );
+        if (stErr) console.log(pc.red(`         render error: ${stErr.message}`));
+        for (const r of rows.filter((x) => x.verdict === "FAIL")) {
+          console.log(
+            pc.red(
+              `         FAIL ${r.elementKey}/${r.state}  ${fmtRatio(r.ratio)} < ${r.threshold}:1  ${r.fg} on ${r.bg}` +
+                (r.text ? pc.dim(`  "${r.text}"`) : ""),
+            ),
+          );
+        }
+        for (const e of cov?.errors ?? []) console.log(pc.red(`         coverage: ${e}`));
+        for (const n of cov?.notes ?? []) console.log(pc.yellow(`         unaudited: ${n}`));
       }
-      for (const e of cov?.errors ?? []) console.log(pc.red(`         coverage: ${e}`));
     }
   }
 
@@ -718,7 +844,9 @@ function printConsoleSummary(s: SummaryInput): void {
   );
   if (s.stylesheetErrors.length > 0) {
     console.log(pc.red(`  ${s.stylesheetErrors.length} pack-stylesheet load error(s):`));
-    for (const e of s.stylesheetErrors) console.log(pc.red(`    ${e.pack}/${e.mode}: ${e.message}`));
+    for (const e of s.stylesheetErrors) {
+      console.log(pc.red(`    ${e.pack}/${e.mode} ${e.page}: ${e.message}`));
+    }
   }
   if (s.reasonErrors.length > 0) {
     console.log(pc.red(`  ${s.reasonErrors.length} allowlist reason error(s):`));
@@ -728,6 +856,12 @@ function printConsoleSummary(s: SummaryInput): void {
     console.log(pc.red(`  ${s.staleEntries.length} stale allowlist entr(y/ies) — remove or fix:`));
     for (const e of s.staleEntries) console.log(pc.red(`    ${e}`));
   }
+  // Non-gating, but never silent: a narrowed run's green must not read as
+  // "the catalog is clean".
+  if (s.unaudited.length > 0) {
+    console.log(pc.yellow(`  ${s.unaudited.length} UNAUDITED scenario note(s) — NOT a clean result for them:`));
+    for (const n of s.unaudited) console.log(pc.yellow(`    ${n}`));
+  }
 
   const gating =
     s.counts.FAIL > 0 ||
@@ -736,7 +870,12 @@ function printConsoleSummary(s: SummaryInput): void {
     s.stylesheetErrors.length > 0 ||
     s.reasonErrors.length > 0 ||
     s.staleEntries.length > 0;
-  console.log(gating ? pc.red(pc.bold("\n✖ FAIL — see findings above (exit 1)")) : pc.green(pc.bold("\n✓ PASS — no gating findings")));
+  const partial = s.unaudited.length > 0 ? pc.yellow(" (partial run — see UNAUDITED above)") : "";
+  console.log(
+    gating
+      ? pc.red(pc.bold("\n✖ FAIL — see findings above (exit 1)")) + partial
+      : pc.green(pc.bold("\n✓ PASS — no gating findings")) + partial,
+  );
 }
 
 await main();

@@ -395,7 +395,13 @@ html[data-theme-pack="academia"] [data-nav-item] {
   font-size: 1rem;
   letter-spacing: 0.08em;
 }
-html[data-theme-pack="academia"] [data-nav-item]:hover {
+/* Exclude the current page: it carries the base `bg-fg text-bg` inverted
+   fill — recoloring its text to the accent would sit bright-on-bright.
+   Two shapes exist (header.tsx): a plain `a[data-nav-item]`, and a dropdown
+   whose data-nav-item sits on the wrapper div while aria-current + the
+   colors live on its child anchor — target the anchor in both. */
+html[data-theme-pack="academia"] a[data-nav-item]:not([aria-current="page"]):hover,
+html[data-theme-pack="academia"] [data-nav-item-dropdown] > a:not([aria-current="page"]):hover {
   color: var(--zd-accent);
   text-decoration: none;
 }
@@ -411,7 +417,11 @@ html[data-theme-pack="academia"] aside[data-zd-mobile-sidebar] {
   background-color: var(--zd-bg);
   border-right-color: color-mix(in srgb, var(--zd-fg) 25%, transparent);
 }
-html[data-theme-pack="academia"] #desktop-sidebar a:hover {
+/* Exclude the current page: root/branch current nodes carry
+   aria-current="page" without data-nav-active and keep the base
+   inverted `bg-fg text-bg` fill — recoloring their text to the
+   accent on hover would sit accent-on-fg (~1:1). */
+html[data-theme-pack="academia"] #desktop-sidebar a:not([aria-current="page"]):hover {
   color: var(--zd-accent);
   text-decoration: none;
 }

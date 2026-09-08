@@ -223,7 +223,13 @@ html[data-theme-pack="swissgrid"] [data-nav-item] {
   font-weight: 700;
   letter-spacing: 0.1em;
 }
-html[data-theme-pack="swissgrid"] [data-nav-item]:hover {
+/* Exclude the current page: it carries the base `bg-fg text-bg` inverted
+   fill — recoloring its text would sit fg-on-fg. Two DOM shapes exist
+   (header.tsx): a plain `a[data-nav-item]`, and a dropdown whose
+   data-nav-item sits on the wrapper div while aria-current + the colors
+   live on its child anchor — target the anchor in both. */
+html[data-theme-pack="swissgrid"] a[data-nav-item]:not([aria-current="page"]):hover,
+html[data-theme-pack="swissgrid"] [data-nav-item-dropdown] > a:not([aria-current="page"]):hover {
   color: var(--zd-fg);
   text-decoration-line: underline;
   text-decoration-color: #ff0000;
