@@ -36,32 +36,118 @@ The defaults here are the **package defaults** a fresh `create-zudo-doc` project
 
 ### home
 
-Layout options for the package-owned home page. The default keeps the home
-content band at the standard no-sidebar width.
+Homepage layout and optional Markdown introduction, applied to `/` and locale-prefixed homes such as `/ja/`.
 
-Default: `{ wide: false }`
+Default: `{ wide: false, introMarkdown: "", sitemapHeading: "" }`
 
-Set `wide` to `true` when a larger multi-column category grid benefits from
-using most of the viewport:
+| Field | Type | Purpose |
+|---|---|---|
+| `wide` | `boolean` | Widen the outer page container for a larger category grid; defaults to `false`. |
+| `introMarkdown` | `string` | Optional prose below the logo, title, short tagline and navigation. |
+| `sitemapHeading` | `string` | Plain-text heading above the existing documentation tree. Blank uses the translated default. |
+
+Use `siteDescription` for the short tagline and existing metadata uses; `locales.<code>.description` overrides the tagline. Use `introMarkdown` for longer prose. It does not replace metadata or the tagline. Keep [homeExtras / extras](../reference/host-chrome-bindings.mdx) for inline navigation additions in the slash-separated links row; they are not a prose slot.
+
+#### Markdown-first example
+
+Edit `zfb.config.ts`; the scaffold's root page can keep its one-line package re-export. The introduction and heading are serializable strings, so a configuration editor can store them without callbacks or executable JavaScript. Fresh scaffolds leave the introduction empty; this showcase's example content is not copied into new projects.
 
 ```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
 export default defineConfig(
   zudoDoc({
     siteName: "My Docs",
-    home: { wide: true },
+    siteDescription: "A short guide to our project.",
+    home: {
+      wide: false,
+      introMarkdown: `## Start here
+
+Learn the **essentials**, then explore the reference.
+
+- [Getting started](docs/getting-started/)
+- [Configuration](docs/guides/configuration/)
+
+> [!TIP]
+> Keep the introduction focused on your readers' first steps.`,
+      sitemapHeading: "Browse the guides",
+    },
+    locales: {
+      ja: {
+        label: "JA",
+        dir: "src/content/docs-ja",
+        description: "プロジェクトの使い方をまとめたガイド。",
+        introMarkdown: `## はじめに
+
+**基本的な使い方**を学んでから、リファレンスへ進めます。
+
+- [はじめに](docs/getting-started/)
+- [設定](docs/guides/configuration/)
+
+> [!TIP]
+> 読者が最初に必要とする情報に絞って紹介しましょう。`,
+        sitemapHeading: "ガイドを探す",
+      },
+    },
   }),
 );
 ```
 
-The setting applies to both `/` and locale-prefixed home pages such as `/ja`.
-It works through the package-owned routes, so the scaffolded root route stays
-the locked one-line re-export:
+#### Locale precedence and no-description example
 
-```tsx title="pages/index.tsx"
-export { default } from "@takazudo/zudo-doc/routes/index";
+Each defined `locales.<code>.introMarkdown` or `sitemapHeading` overrides its corresponding `home` field. Omit a locale field to inherit the home value. An explicit empty introduction disables fallback; whitespace-only content also renders nothing. These rules are independent of the locale's short `description`.
+
+A blank resolved `sitemapHeading` restores the translated default: “Explore the documentation” in English and “ドキュメントを探す” in Japanese. It does not hide the heading. A blank locale heading restores that locale's default even when the global heading is customized.
+
+For a home without long description prose, use this configuration. The logo, title, tagline and navigation remain; there is no prose wrapper or upper separator, and exactly one separator appears before the independent sitemap H2. To hide the short tagline too, clear `siteDescription` and any locale `description` separately.
+
+```ts
+home: { introMarkdown: "", sitemapHeading: "" },
+locales: {
+  ja: {
+    label: "JA",
+    dir: "src/content/docs-ja",
+    introMarkdown: "",
+    sitemapHeading: "",
+  },
+},
 ```
 
-Type: `{ wide?: boolean }` · Default: `{ wide: false }`
+#### Supported Markdown and safe restrictions
+
+The introduction uses the standard Markdown/GFM pipeline and shared non-heading typography, with the following field-specific limits. See [Markdown features](../markdown-features/index.mdx) for detail-page examples; executable MDX components shown there are not accepted in this string.
+
+| Content | Homepage introduction behavior |
+|---|---|
+| Paragraphs, emphasis, bold, deletion and line breaks | Supported. |
+| Ordered, unordered, nested and task lists | Supported; task checkboxes retain their checked/disabled state. |
+| Links, reference links and images | Supported with safe URLs; images are responsive. No filesystem dimension lookup or asset-viewer remapping. |
+| Quotes and GitHub alerts | Supported; use `> [!TIP]` and other GitHub alert markers. |
+| Inline and fenced code | Supported with production semantic highlighting; code examples stay inert and wide fences scroll internally. |
+| Tables and thematic breaks | Supported; table alignment is retained and wide tables scroll internally. |
+| Ruby | The non-executable `{base}^{reading}` syntax is supported. |
+| Mermaid | Diagram fences use the existing Mermaid initialization when `mermaid: true`; otherwise they remain ordinary code fences. |
+| Math | Dollar notation stays literal, including with `math: true`; JSX `MathBlock` is unavailable here. |
+| Directives, transclusion and filesystem includes | Rejected even when enabled for document pages; the introduction has no document source path. |
+| Raw HTML, JSX, MDX expressions, import/export and YAML frontmatter | Rejected with diagnostics, never executed. Inline code and fences may display them as examples; ordinary non-MDX braces stay inert text. Initial paragraph import/export statements are reserved. |
+| Code tabs, advanced fence enrichment, heading markers and reading-time/TOC exports | Not enabled; ordinary fences are supported without promising component parity for advanced metadata. |
+
+Invalid source, unsafe URLs or unsupported generated markup fail the build with a `home.introMarkdown` diagnostic. Nonblank introductions require the `@takazudo/zfb-md-wasm` peer used by the server/build renderer; blank introductions do not load it.
+
+#### Links and images
+
+Author homepage URLs, not source-file links: unlike links inside MDX documents, `.md` and `.mdx` extensions are not rewritten. Relative URLs resolve against the active localized homepage with a trailing slash. For example, with base `/manual/` on the Japanese homepage, `docs/getting-started/` resolves to `/manual/ja/docs/getting-started/`, while `/docs/getting-started/` resolves to `/manual/docs/getting-started/`. Root-relative URLs receive the base once and preserve explicit locale prefixes. Use `/img/logo.svg` for a shared root asset; `img/logo.svg` targets the active locale directory.
+
+HTTP and HTTPS links/images are allowed, and links also allow `mailto:` and `tel:`. Fragments stay fragments, spaces in paths are encoded, and `..` follows normal URL resolution and can leave the base. Protocol-relative URLs, `data:`, `javascript:`, `vbscript:`, control characters and backslashes are rejected.
+
+#### Compact layout and headings
+
+Identity and prose share a centered, fixed **60rem maximum width** (960 CSS px at the standard 16px root size), shrinking to the available space and respecting text-size changes. There is no introduction width option. The logo stays 320 CSS px with a 1200:630 aspect ratio and a 100% maximum width. Desktop places the logo left of left-aligned identity text; mobile stacks and centers the identity. Prose stays left-aligned, and long titles, taglines and links wrap.
+
+With an introduction, full content-width separators surround the padded prose, followed by a separate sitemap H2 and the existing documentation tree. The separators follow the outer page container, not the 60rem inner cap. `home.wide: true` still widens that outer container and category grid; its behavior is unchanged.
+
+Compared with detail-page headings, compact headings are plain bold text without borders, gradients or hash decorations. H1 Markdown becomes H2 to retain one page H1, and introduction headings never enter the documentation TOC. H2 uses 1.3rem/1.4, H3 1.125rem, H4 1rem, and H5/H6 0.9375rem; body text uses 1rem/1.75. Normal flow gaps are 1rem and heading-adjacent gaps 0.5rem, with section gaps of 1.75rem for H2, 1.5rem for H3, and 1.25rem below that. The first child has no top gap.
 
 ### siteTreeNavIgnore
 
@@ -464,7 +550,7 @@ Default: `"en"`
 
 ### locales
 
-Additional locales: code → `{ label, dir, description? }`. Each becomes a `/<code>/docs/…` route tree and a `docs-<code>` collection. The map is ordered: the language switcher renders every configured `label` in that order, so labels are not hard-coded to `JP` or `JA`.
+Additional locales: code → `{ label, dir, description?, introMarkdown?, sitemapHeading? }`. Each becomes a `/<code>/docs/…` route tree and a `docs-<code>` collection. The map is ordered: the language switcher renders every configured `label` in that order, so labels are not hard-coded to `JP` or `JA`.
 
 Default: `{}`
 

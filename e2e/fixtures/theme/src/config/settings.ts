@@ -30,6 +30,8 @@ const syntaxVariation = {
 } satisfies ColorScheme;
 
 export const settings = {
+  // Keep fixture homes on the no-introduction package default.
+  home: { wide: false, introMarkdown: "", sitemapHeading: "" },
   colorScheme: "Default Dark",
   colorMode: {
     // Keep the fixture's established SSR default dark. Syntax-highlight tests
