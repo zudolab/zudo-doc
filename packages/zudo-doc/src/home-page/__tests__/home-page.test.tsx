@@ -469,7 +469,9 @@ describe("createHomePageView — homepage introduction", () => {
     expect(html).toContain(">Explore the documentation</h2>");
     expect((html.match(/<h1\b/g) ?? []).length).toBe(1);
     expect((html.match(/<h2\b/g) ?? []).length).toBe(2);
-    expect((html.match(/class="zd-home-inner/g) ?? []).length).toBeGreaterThanOrEqual(3);
+    expect(html).toContain('class="zd-home-inner flex flex-col');
+    expect(html).toContain('<div class="zd-home-inner"><div class="zd-content zd-compact-prose"');
+    expect(html).toContain('<section class="zd-home-sitemap"><h2 class="text-title font-bold mb-vsp-md">');
   });
 
   it("uses the locale payload and localized sitemap default on a locale home", () => {
