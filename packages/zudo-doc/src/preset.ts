@@ -39,6 +39,7 @@ import type {
   AssetViewerIndexingConfig,
   TagVocabularyEntry,
   FaviconConfig,
+  HomeConfig,
 } from "./settings.js";
 import { assertNoCommaInVersionSlugs } from "./version-availability/index.js";
 import {
@@ -58,6 +59,7 @@ import type { DirectiveSpec } from "@takazudo/zfb/config";
 /** A single locale's content directory (`settings.locales[code]`). */
 export interface PresetLocaleConfig {
   dir: string;
+  introMarkdown?: string;
 }
 
 /** A single docs version (`settings.versions[n]`). */
@@ -117,6 +119,8 @@ export interface PresetSettings {
   base: string;
   siteName: string;
   siteDescription: string;
+  /** Serializable home prose requires the preparation virtual module even with host routes. */
+  home?: HomeConfig;
   /**
    * Home-hero logo. `zudoDocPreset()` doesn't otherwise consume this field —
    * rendering happens in `home-page/index.tsx` against the full `Settings`
@@ -486,8 +490,8 @@ function buildResolveMarkdownLinks(settings: PresetSettings): PresetResolveMarkd
 // everything else is a fixed contract for the zudo-doc markdown pipeline.
 // ---------------------------------------------------------------------------
 
-function buildMarkdownFeatures(
-  settings: PresetSettings,
+export function buildMarkdownFeatures(
+  settings: Pick<PresetSettings, "mermaid" | "transclude">,
   directiveVocabulary: DirectiveVocabulary,
 ): Record<string, boolean | Record<string, unknown>> {
   return {
@@ -551,6 +555,8 @@ function buildPlugins(
   // route, even when they retain host-owned document stubs. Keep this
   // projection flat and serializable so the route plugin can consume it
   // without reaching back into the config-evaluation graph.
+  const homeIntro = Boolean(settings.home?.introMarkdown?.trim()) ||
+    Object.values(settings.locales).some(locale => Boolean(locale.introMarkdown?.trim()));
   const assetViewer = settings.assetViewer === true;
   const assetViewerDir = settings.assetViewerDir ?? "assets";
   const assetViewerRoutePrefix = settings.assetViewerRoutePrefix ?? "files";
@@ -627,7 +633,7 @@ function buildPlugins(
     // the route catalog from `settings.locales` / `settings.versions`. Listed
     // FIRST so an injected route is registered before the other plugins'
     // preBuild work runs (ordering is cosmetic — injection happens in `setup`).
-    ...(effectivePackageOwnedRoutes || assetViewer
+    ...(effectivePackageOwnedRoutes || assetViewer || homeIntro
       ? [
           {
             name: "@takazudo/zudo-doc/plugins/routes",

@@ -26,6 +26,7 @@ import type { PresetTranslations } from "../preset.js";
 
 export const defaultTranslations: PresetTranslations = {
   en: {
+    "home.sitemapHeading": "Explore the documentation",
     "nav.gettingStarted": "Getting Started",
     "nav.learn": "Learn",
     "nav.guides": "Guides",
@@ -161,6 +162,7 @@ export const defaultTranslations: PresetTranslations = {
     "version.page.docs": "Docs",
   },
   ja: {
+    "home.sitemapHeading": "ドキュメントを探す",
     "nav.gettingStarted": "はじめに",
     "nav.learn": "学ぶ",
     "nav.guides": "ガイド",

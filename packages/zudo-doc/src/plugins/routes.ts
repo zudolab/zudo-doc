@@ -76,6 +76,7 @@
 // Inline plugin functions are not supported by zfb's plugin runtime — see the
 // sibling `doc-history.ts` for the standalone-module rationale.
 
+import { prepareHomeIntros, type HomeIntroSettings } from "../home-intro/prepare.js";
 import { createRequire } from "node:module";
 import { existsSync, statSync, readFileSync, cpSync, rmSync, mkdirSync } from "node:fs";
 import { dirname, basename, join } from "node:path";
@@ -606,6 +607,7 @@ const plugin = definePlugin({
       async () => {
         beginLoader("context");
         if (assetViewer && !highlightCodeReady) await assetBodiesLoader(false);
+        const homeIntros = await prepareHomeIntros(settings as unknown as HomeIntroSettings);
         const assetManifest = assetViewer ? (await getSnapshot()).manifest : null;
         return (
           `export const routeContext = ${JSON.stringify({
@@ -615,6 +617,7 @@ const plugin = definePlugin({
             colorSchemes,
             themePackRegistry,
             assetManifest,
+            homeIntros,
           })};\n`
         );
       },

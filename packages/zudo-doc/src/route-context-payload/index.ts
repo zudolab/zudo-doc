@@ -87,6 +87,8 @@ export interface CreateRouteContextPayloadInput {
   themePackRegistry?: ThemePackRegistry | null;
   /** Author-facing asset index replacement. `null` forces the feature inert. */
   assetManifest?: AssetManifest | null;
+  /** Trusted output of the async server home-intro/prepare helper. */
+  homeIntros?: import("../home-intro/types.js").PreparedHomeIntros;
 }
 
 function mergeTranslations(
@@ -155,5 +157,6 @@ export function createRouteContextPayload(
         : input.colorSchemes,
     themePackRegistry,
     assetManifest: input.assetManifest ?? null,
+    homeIntros: input.homeIntros ?? {},
   };
 }

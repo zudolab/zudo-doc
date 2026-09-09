@@ -31,6 +31,8 @@ import { capitalize, getLangLabel } from "./utils.js";
 // ---------------------------------------------------------------------------
 
 export const DEFAULT_MIRROR: Record<string, unknown> = {
+  // Hand-edit-only serializable home settings; no additional CLI surface.
+  home: { wide: false, introMarkdown: "", sitemapHeading: "" },
   colorScheme: "Default Dark",
   colorMode: {
     defaultMode: "dark",
@@ -408,6 +410,7 @@ const FIELD_ORDER = [
   "themePackSwitcher",
   "themePacks",
   "siteName",
+  "home",
   "defaultLocale",
   "locales",
   "noindex",

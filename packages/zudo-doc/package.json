@@ -251,6 +251,14 @@
       "types": "./dist/theme-packs-registry/index.d.ts",
       "default": "./dist/theme-packs-registry/index.js"
     },
+    "./home-intro": {
+      "types": "./dist/home-intro/index.d.ts",
+      "default": "./dist/home-intro/index.js"
+    },
+    "./home-intro/prepare": {
+      "types": "./dist/home-intro/prepare.d.ts",
+      "default": "./dist/home-intro/prepare.js"
+    },
     "./theme.css": "./dist/theme.css",
     "./theme-no-reset.css": "./dist/theme-no-reset.css",
     "./safelist.css": "./dist/safelist.css",
@@ -718,6 +726,7 @@
     "esbuild": ">=0.28.1",
     "fs-extra": "^11.3.0",
     "minimist": "^1.2.8",
+    "parse5": "^8.0.1",
     "picocolors": "^1.1.1",
     "pluralize": "^8.0.0",
     "smol-toml": "^1.8.0",

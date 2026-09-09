@@ -292,8 +292,8 @@ describe("zudoDoc() default-merge semantics", () => {
 
   it("defaults the package-owned home layout to narrow", () => {
     const opts = routesOptions(zudoDoc({}));
-    expect(DEFAULT_SETTINGS.home).toEqual({ wide: false });
-    expect(opts?.settings.home).toEqual({ wide: false });
+    expect(DEFAULT_SETTINGS.home).toEqual({ wide: false, introMarkdown: "", sitemapHeading: "" });
+    expect(opts?.settings.home).toEqual({ wide: false, introMarkdown: "", sitemapHeading: "" });
   });
 
   it("serializes the wide home opt-in into the route settings", () => {
@@ -463,4 +463,11 @@ describe("zudoDoc() escape-hatch overrides", () => {
     const schema = JSON.stringify(custom.collections?.[0]?.schema);
     expect(schema).toContain("zzz_marker");
   });
+});
+
+it("registers intro preparation for host routes without enabling package route injection", () => {
+  const options = routesOptions(zudoDoc({ packageOwnedRoutes: false, assetViewer: false, home: { introMarkdown: "Hello" } }));
+  expect(options).toBeDefined();
+  expect(options?.settings.packageOwnedRoutes).toBe(false);
+  expect(routesOptions(zudoDoc({ packageOwnedRoutes: false, assetViewer: false, locales: { ja: { dir: "docs-ja", label: "日本語", introMarkdown: "紹介" } } }))).toBeDefined();
 });

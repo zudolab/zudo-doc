@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { generateZfbConfig, orderDesiredKeys } from "../zfb-config-gen.js";
+import { generateZfbConfig, orderDesiredKeys, DEFAULT_MIRROR } from "../zfb-config-gen.js";
 import type { UserChoices } from "../prompts.js";
 
 // Minimal-scaffold cutover (epic zudolab/zudo-doc#2651, Wave 6 #2660 / Wave 7
@@ -786,5 +786,13 @@ describe("generateZfbConfig — imageEnlarge IS a real zudoDoc() field (not the 
     });
     expect(result).toContain("imageEnlarge: true");
     expect(result).not.toContain("rehypeImageEnlarge");
+  });
+});
+
+describe("hand-edited home configuration census", () => {
+  it("keeps the serializable defaults in the generator mirror without adding CLI output", () => {
+    expect(DEFAULT_MIRROR.home).toEqual({ wide: false, introMarkdown: "", sitemapHeading: "" });
+    expect(orderDesiredKeys(["home", "siteName"])).toEqual(["siteName", "home"]);
+    expect(generateZfbConfig(packageDefaultChoices)).not.toContain("introMarkdown");
   });
 });
