@@ -2745,9 +2745,6 @@ a.text-accent.underline {
 .zd-home-links {
   overflow-wrap: anywhere;
 }
-.zd-home-intro > .zd-home-inner {
-  padding-block: var(--spacing-vsp-lg);
-}
 .zd-home-rule {
   inline-size: 100%;
   margin-block: var(--spacing-vsp-xl);
