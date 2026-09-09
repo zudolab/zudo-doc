@@ -36,32 +36,118 @@ export default defineConfig(
 
 ### home
 
-パッケージ所有のホームページに対するレイアウト設定です。デフォルトでは、
-ホームのコンテンツ帯は標準のサイドバーなし幅になります。
+`/` と `/ja/` などのロケール別ホームに適用するレイアウトと、省略可能な Markdown 紹介文の設定です。
 
-デフォルト: `{ wide: false }`
+デフォルト: `{ wide: false, introMarkdown: "", sitemapHeading: "" }`
 
-大きな複数列のカテゴリグリッドでビューポートの大部分を使いたい場合は、
-`wide` を `true` にします。
+| フィールド | 型 | 用途 |
+|---|---|---|
+| `wide` | `boolean` | カテゴリ一覧用に外側のページコンテナを広げます。デフォルトは `false`。 |
+| `introMarkdown` | `string` | ロゴ、タイトル、短い説明、ナビゲーションの下に表示する紹介文。 |
+| `sitemapHeading` | `string` | 既存のドキュメントツリーの上に表示するプレーンテキストの見出し。空欄なら翻訳済みのデフォルトを使用。 |
+
+短い説明と既存のメタデータ用途には `siteDescription` を使い、ロケール別の短い説明は `locales.<code>.description` で上書きします。長い紹介文には `introMarkdown` を使います。メタデータや短い説明を置き換える設定ではありません。[homeExtras / extras](../reference/host-chrome-bindings.mdx) はスラッシュ区切りのリンク行にナビゲーションを追加するためのもので、紹介文用のスロットではありません。
+
+#### Markdown 中心の例
+
+`zfb.config.ts` を編集します。scaffold のルートページはパッケージを再エクスポートする1行のままで構いません。紹介文と見出しはシリアライズ可能な文字列なので、設定エディターでコールバックや実行可能な JavaScript を使わず保存できます。新規 scaffold の紹介文は空で、このショーケースの例文は新しいプロジェクトにコピーされません。
 
 ```ts title="zfb.config.ts"
+import { defineConfig } from "zfb/config";
+import { zudoDoc } from "@takazudo/zudo-doc/config";
+
 export default defineConfig(
   zudoDoc({
     siteName: "My Docs",
-    home: { wide: true },
+    siteDescription: "A short guide to our project.",
+    home: {
+      wide: false,
+      introMarkdown: `## Start here
+
+Learn the **essentials**, then explore the reference.
+
+- [Getting started](docs/getting-started/)
+- [Configuration](docs/guides/configuration/)
+
+> [!TIP]
+> Keep the introduction focused on your readers' first steps.`,
+      sitemapHeading: "Browse the guides",
+    },
+    locales: {
+      ja: {
+        label: "JA",
+        dir: "src/content/docs-ja",
+        description: "プロジェクトの使い方をまとめたガイド。",
+        introMarkdown: `## はじめに
+
+**基本的な使い方**を学んでから、リファレンスへ進めます。
+
+- [はじめに](docs/getting-started/)
+- [設定](docs/guides/configuration/)
+
+> [!TIP]
+> 読者が最初に必要とする情報に絞って紹介しましょう。`,
+        sitemapHeading: "ガイドを探す",
+      },
+    },
   }),
 );
 ```
 
-この設定は `/` と `/ja` のようなロケール接頭辞付きホームページの両方に
-適用されます。パッケージ所有ルートを通して動作するため、スキャフォールドの
-ルートページはロックされた1行の再エクスポートのままです。
+#### ロケールの優先順位と紹介文なしの例
 
-```tsx title="pages/index.tsx"
-export { default } from "@takazudo/zudo-doc/routes/index";
+`locales.<code>.introMarkdown` と `sitemapHeading` は、定義するとそれぞれ対応する `home` の値を上書きします。ロケールのフィールドを省略すると `home` の値を継承します。紹介文に明示的な空文字列を指定するとフォールバックを無効化し、空白だけの場合も何も表示しません。これらはロケールの短い `description` とは独立しています。
+
+解決後の `sitemapHeading` が空欄なら、英語は「Explore the documentation」、日本語は「ドキュメントを探す」という翻訳済みのデフォルトに戻ります。見出しを非表示にはしません。共通の見出しを変更していても、ロケールの見出しが空欄ならそのロケールのデフォルトに戻ります。
+
+長い紹介文を表示しないホームには次の設定を使います。ロゴ、タイトル、短い説明、ナビゲーションは残り、紹介文のラッパーと上側の区切り線は表示されません。独立したサイトマップ H2 の前には区切り線が1本だけ表示されます。短い説明も非表示にするには、`siteDescription` と各ロケールの `description` を別途空にします。
+
+```ts
+home: { introMarkdown: "", sitemapHeading: "" },
+locales: {
+  ja: {
+    label: "JA",
+    dir: "src/content/docs-ja",
+    introMarkdown: "",
+    sitemapHeading: "",
+  },
+},
 ```
 
-型: `{ wide?: boolean }` · デフォルト: `{ wide: false }`
+#### 対応 Markdown と安全性の制限
+
+紹介文には標準の Markdown/GFM パイプラインと、見出し以外の共通タイポグラフィを使用します。ただし、このフィールドには次の制限があります。詳細ページの例は [Markdown 機能](../markdown-features/index.mdx) を参照してください。そこで紹介する実行可能な MDX コンポーネントは、この文字列では使えません。
+
+| 内容 | ホームページの紹介文での動作 |
+|---|---|
+| 段落、強調、太字、取り消し線、改行 | 対応。 |
+| 番号付き、番号なし、入れ子、タスクリスト | 対応。チェックボックスの checked/disabled 状態を保持。 |
+| リンク、参照リンク、画像 | 安全な URL に対応。画像はレスポンシブ。ファイルからの寸法取得やアセットビューアーへの変換は行いません。 |
+| 引用と GitHub アラート | 対応。`> [!TIP]` などの GitHub アラート記法を使います。 |
+| インラインコードとコードフェンス | 本番のセマンティックハイライトに対応。コード例は実行せず、幅の広いフェンスは内部でスクロール。 |
+| 表と水平線 | 対応。表の文字揃えを保持し、幅の広い表は内部でスクロール。 |
+| ルビ | 実行を伴わない `{base}^{reading}` 記法に対応。 |
+| Mermaid | `mermaid: true` では既存の Mermaid 初期化処理で図を表示し、無効時は通常のコードフェンスになります。 |
+| 数式 | `math: true` でもドル記号の記法はそのまま表示。JSX の `MathBlock` は使えません。 |
+| ディレクティブ、トランスクルージョン、ファイルのインクルード | 文書ページで有効でも拒否。紹介文には文書のソースパスがありません。 |
+| 生 HTML、JSX、MDX 式、import/export、YAML フロントマター | 診断付きで拒否し、実行しません。インラインコードやフェンス内では例として表示可能。通常の非 MDX の波括弧は文字列のままです。最初の段落の import/export 文は予約されています。 |
+| コードタブ、高度なフェンス拡張、見出しマーカー、読了時間/TOC エクスポート | 無効。通常のフェンスは使えますが、高度なメタデータでコンポーネント同等の表示は保証しません。 |
+
+不正なソース、安全でない URL、未対応の生成マークアップは `home.introMarkdown` の診断とともにビルドを失敗させます。空でない紹介文にはサーバー/ビルド側レンダラーの peer 依存 `@takazudo/zfb-md-wasm` が必要です。空の紹介文では読み込みません。
+
+#### リンクと画像
+
+ソースファイルへのリンクではなく、ホームページからの URL を記述します。MDX 文書内のリンクと異なり、`.md` と `.mdx` の拡張子は書き換えません。相対 URL は末尾スラッシュ付きの現在のロケールのホームを基準に解決します。たとえばベースが `/manual/` の日本語ホームでは、`docs/getting-started/` は `/manual/ja/docs/getting-started/`、`/docs/getting-started/` は `/manual/docs/getting-started/` になります。ルート相対 URL にはベースを一度だけ付加し、明示的なロケール接頭辞を維持します。共通のルートアセットには `/img/logo.svg` を使います。`img/logo.svg` は現在のロケールのディレクトリを指します。
+
+HTTP/HTTPS のリンクと画像に対応し、リンクは `mailto:` と `tel:` も使えます。フラグメントは維持し、パス内の空白はエンコードします。`..` は通常の URL 解決に従うため、ベースの外へ移動する場合があります。プロトコル相対 URL、`data:`、`javascript:`、`vbscript:`、制御文字、バックスラッシュは拒否します。
+
+#### コンパクトなレイアウトと見出し
+
+サイトの識別情報と紹介文は、中央揃えの固定 **最大幅 60rem**（標準のルート文字サイズ 16px で 960 CSS px）を共有します。利用可能な幅に収まり、文字サイズの変更にも追従します。紹介文の幅を変える設定はありません。ロゴは 320 CSS px、縦横比 1200:630、最大幅 100% を維持します。デスクトップではロゴの右に左揃えの識別情報を配置し、モバイルでは縦に積んで中央揃えにします。紹介文は左揃えのままで、長いタイトル、短い説明、リンクは折り返します。
+
+紹介文がある場合は、余白付きの文章をコンテンツ全幅の区切り線で挟み、その後に独立したサイトマップ H2 と既存のドキュメントツリーを表示します。区切り線は内側の 60rem 制限ではなく、外側のページコンテナに従います。`home.wide: true` は引き続き外側のコンテナとカテゴリ一覧を広げ、従来の動作を維持します。
+
+詳細ページの見出しと異なり、コンパクトな見出しは枠線、グラデーション、ハッシュ装飾のない太字です。Markdown の H1 は H2 に変換してページの H1 を1つに保ち、紹介文の見出しはドキュメント TOC に入りません。H2 は 1.3rem/1.4、H3 は 1.125rem、H4 は 1rem、H5/H6 は 0.9375rem、本文は 1rem/1.75 です。通常の要素間隔は 1rem、見出しに隣接する間隔は 0.5rem、セクション間隔は H2 が 1.75rem、H3 が 1.5rem、それより下は 1.25rem です。最初の子要素の上側には間隔を設けません。
 
 ### siteTreeNavIgnore
 
@@ -464,7 +550,7 @@ export default defineConfig(
 
 ### locales
 
-追加ロケール: コード → `{ label, dir, description? }`。それぞれが `/<code>/docs/…` ルートツリーと `docs-<code>` コレクションになります。マップの順序が維持され、言語切り替えは設定したすべての `label` をその順序で表示するため、`JP` や `JA` に固定されません。
+追加ロケール: コード → `{ label, dir, description?, introMarkdown?, sitemapHeading? }`。それぞれが `/<code>/docs/…` ルートツリーと `docs-<code>` コレクションになります。マップの順序が維持され、言語切り替えは設定したすべての `label` をその順序で表示するため、`JP` や `JA` に固定されません。
 
 デフォルト: `{}`
 
