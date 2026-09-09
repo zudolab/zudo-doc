@@ -199,4 +199,6 @@ export interface RouteContextPayload<S = Settings> {
   themePackRegistry?: ThemePackRegistry | null;
   /** Asset-viewer index payload. Omitted by older hosts; omission is inert. */
   assetManifest?: AssetManifest | null;
+  /** Safe per-locale homepage content prepared by the server plugin. */
+  homeIntros?: import("../home-intro/types.js").PreparedHomeIntros;
 }

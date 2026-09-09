@@ -63,6 +63,8 @@ function nodeSpecifiersInDiagnostics(text: string): string[] {
 
 const NODE_FREE_MODULES = [
   "slug/index.ts",
+  // Prepared homepage presentation must never reach the server renderer.
+  "home-intro/index.tsx",
   "render-markdown/index.ts",
   "smart-break/index.tsx",
   "use-modal-dialog/index.ts",

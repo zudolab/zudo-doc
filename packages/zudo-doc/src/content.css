@@ -533,3 +533,40 @@ a.text-accent.underline {
 }
 
 /* END --zdc-* component tokens */
+
+/* Compact homepage Markdown uses the same non-heading components and tokens.
+ * Shared width primitive is also available to the home identity group. */
+.zd-home-inner {
+  width: 100%;
+  max-width: 60rem;
+  min-width: 0;
+  margin-inline: auto;
+}
+
+.zd-compact-prose {
+  min-width: 0;
+  text-align: left;
+  font-size: 1rem;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+
+.zd-compact-prose > :where(* + *) {
+  margin-top: var(--flow-space, 1rem);
+}
+
+.zd-compact-prose :where(h2, h3, h4, h5, h6) {
+  font-weight: var(--font-weight-bold, 700);
+  line-height: 1.4;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.zd-compact-prose :where(h2) { font-size: 1.3rem; --flow-space: 1.75rem; }
+.zd-compact-prose :where(h3) { font-size: 1.125rem; --flow-space: 1.5rem; }
+.zd-compact-prose :where(h4) { font-size: 1rem; --flow-space: 1.25rem; }
+.zd-compact-prose :where(h5, h6) { font-size: .9375rem; --flow-space: 1.25rem; }
+.zd-compact-prose > :where(h2, h3, h4, h5, h6) + * { margin-top: .5rem; }
+.zd-compact-prose > :first-child { margin-top: 0; }
+.zd-compact-prose :where(pre) { max-width: 100%; overflow-x: auto; }
+.zd-compact-prose :where(img) { max-width: 100%; height: auto; }

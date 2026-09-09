@@ -221,6 +221,7 @@ export function createRouteContext<S extends Settings = Settings>(
     colorSchemes,
     themePackRegistry,
     assetManifest,
+    homeIntros: payload.homeIntros ?? {},
     i18n,
     defaultLocale,
     locales,

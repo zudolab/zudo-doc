@@ -617,3 +617,17 @@ the updated stable surface.
 
 **Version bump and publish are handled by the B4PUSH wave (#2431).** Do NOT run
 `/l-make-release` here — that step belongs to the B4PUSH merge.
+
+### Serializable homepage introduction
+
+`HomeConfig` accepts `introMarkdown?: string` and `sitemapHeading?: string`
+(default empty), alongside `wide`. `LocaleConfig` accepts the same optional
+fields. Defined locale values win, including empty strings; blank sitemap
+headings restore the translated `home.sitemapHeading` label.
+
+`./home-intro/prepare` exports the async server/build preparation functions;
+`./home-intro` exports the synchronous `CompactProse` view, locale resolver,
+and serializable types. `RouteContextPayload.homeIntros` and
+`RouteContext.homeIntros` carry the prepared result. See the
+[full rendering and URL contract](src/home-intro/CONTRACT.md) for the supported
+Markdown matrix, safety policy and exact adapter instructions.

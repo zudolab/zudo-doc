@@ -111,6 +111,10 @@ export interface LocaleConfig {
    * intentional and renders a blank description.
    */
   description?: string;
+  /** Serializable Markdown introduction. Empty disables the home fallback. @default undefined */
+  introMarkdown?: string;
+  /** Sitemap title override. Blank restores the translated default. @default undefined */
+  sitemapHeading?: string;
 }
 
 export interface FooterLinkItem {
@@ -210,6 +214,10 @@ export interface AssetViewerIndexingConfig {
 export interface HomeConfig {
   /** Widen the home content band for larger multi-column navigation grids. */
   wide?: boolean;
+  /** Optional serializable Markdown below the home identity. @default "" */
+  introMarkdown?: string;
+  /** Sitemap title; blank uses the translated package label. @default "" */
+  sitemapHeading?: string;
 }
 
 export type TagPlacement = "after-title" | "before-pager";
