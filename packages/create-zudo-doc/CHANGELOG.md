@@ -8,6 +8,12 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [5.21.0] - 2026-09-09
+
+### Features
+
+- Generated projects pin `@takazudo/zudo-doc` and `@takazudo/zudo-doc-history-server` at `^5.21.0`, so a fresh scaffold can add a home-page `introMarkdown` / `sitemapHeading` to its `zfb.config.ts` by hand. There is no new CLI flag — the emitted config keeps the package defaults and stays diff-from-defaults. (`77ed96b3f`)
+
 ## [5.20.0] - 2026-09-09
 
 ### Bug Fixes

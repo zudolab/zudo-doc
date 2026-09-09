@@ -8,6 +8,17 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [5.21.0] - 2026-09-09
+
+### Features
+
+- Added compact Markdown introductions to the home pages. `home.introMarkdown` renders serializable Markdown below the home identity on `/`, and each non-default locale can override it with `LocaleConfig.introMarkdown`. Empty values keep the previous layout, so existing sites are unaffected. (`77ed96b3f`, `8e10ecbc1`)
+- Added `home.sitemapHeading` and `LocaleConfig.sitemapHeading` to override the home sitemap section title. A blank value restores the translated package default. (`77ed96b3f`)
+
+### Bug Fixes
+
+- Rendered the home sitemap and tag section headings through one shared component, so both align with the full-width content band instead of the sitemap heading sitting on the narrower inner column. (`849e04a57`)
+
 ## [5.20.0] - 2026-09-09
 
 ### Features
