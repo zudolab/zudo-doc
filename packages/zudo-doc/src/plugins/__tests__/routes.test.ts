@@ -727,3 +727,28 @@ describe("routes plugin — /sitemap.xml injection gate (#3931/#3933)", () => {
     expect(injectedRoutes.map(({ pattern }) => pattern)).toContain("/robots.txt");
   });
 });
+
+describe("home introduction preparation in the virtual loader", () => {
+  it("prepares serializable locale content even for host-owned routes", async () => {
+    const { ctx, virtualModules } = makeCtx(makeProjectRoot(), {
+      base: "/manual/", defaultLocale: "en", mermaid: false, transclude: false,
+      home: { introMarkdown: "# Intro\n\n[Docs](docs/start)" },
+      locales: { ja: { label: "日本語", dir: "docs-ja", introMarkdown: "紹介" } },
+    }, { packageOwnedRoutes: false });
+    await routesPlugin.setup!(ctx as never);
+    const source = await virtualModules.get("virtual:zudo-doc-route-context")!();
+    const payload = JSON.parse(source.slice("export const routeContext = ".length).trim().replace(/;$/, ""));
+    expect(payload.homeIntros.en.nodes[0].tag).toBe("h2");
+    expect(JSON.stringify(payload.homeIntros.en)).toContain("/manual/docs/start");
+    expect(JSON.stringify(payload.homeIntros.ja)).toContain("紹介");
+  });
+
+  it("fails the loader loudly for unsafe Markdown rather than serializing it", async () => {
+    const { ctx, virtualModules } = makeCtx(makeProjectRoot(), {
+      base: "/", defaultLocale: "en", mermaid: false, transclude: false,
+      home: { introMarkdown: "<script>alert(1)</script>" }, locales: {},
+    });
+    await routesPlugin.setup!(ctx as never);
+    await expect(virtualModules.get("virtual:zudo-doc-route-context")!()).rejects.toThrow("unsupported html");
+  });
+});

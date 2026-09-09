@@ -172,7 +172,7 @@ export const DEFAULT_SETTINGS: Settings = {
   favicon: undefined,
   base: "/",
   trailingSlash: false,
-  home: { wide: false },
+  home: { wide: false, introMarkdown: "", sitemapHeading: "" },
   siteTreeNavIgnore: [],
   minifyHtml: true,
   docsDir: "src/content/docs",
@@ -314,7 +314,7 @@ export interface ZudoDocConfig {
   /**
    * Package-owned home-page layout. Set `wide: true` to let the category grid
    * fill most of the viewport on both `/` and locale home routes.
-   * @default { wide: false }
+   * @default { wide: false, introMarkdown: "", sitemapHeading: "" }
    */
   home?: HomeConfig;
   /**

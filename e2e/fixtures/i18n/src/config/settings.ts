@@ -9,6 +9,40 @@ import type {
 } from "@takazudo/zudo-doc/settings";
 
 export const settings = {
+  // Exercise rich fallback prose and explicit locale suppression through host routes.
+  home: {
+    wide: false,
+    introMarkdown: `# Introduction
+
+A compact introduction with [Getting started](docs/getting-started).
+
+## Details
+
+Body with **bold**, *emphasis*, and inline \`code\`.
+
+### Third level
+
+#### Fourth level
+
+##### Fifth level
+
+###### Sixth level
+
+- Parent
+  - Child
+
+> A quotation.
+
+| Column | Value |
+| --- | --- |
+| Content | ${"unbroken-table-value".repeat(20)} |
+
+\`\`\`js
+const veryLongExample = "${"long-example".repeat(30)}";
+\`\`\`
+`,
+    sitemapHeading: "",
+  },
   colorScheme: "Default Dark",
   colorMode: false as ColorModeConfig | false,
   siteName: "i18n Test",
@@ -22,7 +56,7 @@ export const settings = {
   dateFormat: "locale" as DateFormatSetting,
   defaultLocale: "en" as const,
   locales: {
-    ja: { label: "JA", dir: "src/content/docs-ja" },
+    ja: { label: "JA", dir: "src/content/docs-ja", introMarkdown: " \n\t " },
     de: { label: "DE", dir: "src/content/docs-de" },
   } satisfies Record<string, LocaleConfig>,
   mermaid: false,

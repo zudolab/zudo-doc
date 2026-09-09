@@ -10,6 +10,8 @@ import type {
 } from "@takazudo/zudo-doc/settings";
 
 export const settings = {
+  // Keep fixture homes on the no-introduction package default.
+  home: { wide: false, introMarkdown: "", sitemapHeading: "" },
   colorScheme: "Default Dark",
   colorMode: false as ColorModeConfig | false,
   siteName: "Versioning Test",

@@ -57,6 +57,7 @@ export function detectLocaleFromPath(path: string): Locale {
 /** UI string translations */
 export const translations: Record<string, Record<string, string>> = {
   en: {
+    "home.sitemapHeading": "Explore the documentation",
     "search.placeholder": "Type to search...",
     "search.shortcutHint": "to open search from anywhere",
     "nav.gettingStarted": "Getting Started",
@@ -140,6 +141,7 @@ export const translations: Record<string, Record<string, string>> = {
     "version.page.docs": "Docs",
   },
   ja: {
+    "home.sitemapHeading": "ドキュメントを探す",
     "search.placeholder": "検索したい単語を入力",
     "search.shortcutHint": "いつでも検索バーを開ける",
     "nav.gettingStarted": "はじめに",

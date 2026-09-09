@@ -174,6 +174,8 @@ export interface RouteContext<S = Settings>
   themePackRegistry: ThemePackRegistry | null;
   /** Author-facing asset index, or `null` when the viewer is disabled. */
   assetManifest: AssetManifest | null;
+  /** Prepared, serializable homepage introductions. */
+  homeIntros: import("../home-intro/types.js").PreparedHomeIntros;
   /** The reconstructed i18n surface. */
   i18n: FactoryI18n;
   /** Default locale code (un-prefixed `/docs/...`). */

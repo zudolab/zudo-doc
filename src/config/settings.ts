@@ -46,6 +46,18 @@ export const settings = {
   } satisfies ColorModeConfig as ColorModeConfig | false,
   siteName: "zudo-doc",
   siteDescription: "Documentation base framework built with zfb, MDX, and Tailwind CSS v4." as string,
+  // Showcase-only prose; fresh scaffolds keep the package's empty defaults.
+  home: {
+    wide: false,
+    introMarkdown: `## Build your documentation
+
+Start with the **essentials**, then explore the live examples.
+
+- [Getting started](docs/getting-started/)
+- [Configuration](docs/guides/configuration/)
+- [Markdown features](docs/markdown-features/)`,
+    sitemapHeading: "",
+  },
   // Showcase keeps its hand-drawn asset; downstream default is "auto" (generated SVG).
   logo: "/img/logo.svg" as string | false,
   // Explicit object form of the four canonical paths — output byte-identical to the
@@ -70,6 +82,14 @@ export const settings = {
       label: "JA",
       dir: "src/content/docs-ja",
       description: "zfb・MDX・Tailwind CSS v4 を使ったドキュメントフレームワーク。",
+      introMarkdown: `## ドキュメントを作る
+
+**基本的な使い方**を学んでから、実際の表示例を試せます。
+
+- [はじめに](docs/getting-started/)
+- [設定](docs/guides/configuration/)
+- [Markdown 機能](docs/markdown-features/)`,
+      sitemapHeading: "",
     },
   } satisfies Record<string, LocaleConfig>,
   mermaid: true,
