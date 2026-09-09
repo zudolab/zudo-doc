@@ -2155,6 +2155,11 @@
     max-width: 52.5rem;
   }
 }
+.lg\:flex-1 {
+  @media (width >= 1024px) {
+    flex: 1;
+  }
+}
 .lg\:grid-cols-3 {
   @media (width >= 1024px) {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2728,13 +2733,30 @@ a.text-accent.underline {
   border-left-width: var(--zdc-admonition-border-width, 4px);
 }
 .zd-home-inner {
-  width: 100%;
-  max-width: 60rem;
-  min-width: 0;
+  inline-size: 100%;
+  max-inline-size: 60rem;
+  min-inline-size: 0;
   margin-inline: auto;
+  overflow-wrap: anywhere;
+}
+.zd-home-copy, .zd-home-links {
+  min-inline-size: 0;
+}
+.zd-home-links {
+  overflow-wrap: anywhere;
+}
+.zd-home-intro > .zd-home-inner {
+  padding-block: var(--spacing-vsp-lg);
+}
+.zd-home-rule {
+  inline-size: 100%;
+  margin-block: var(--spacing-vsp-xl);
+  margin-inline: 0;
+  border: 0;
+  border-block-start: 1px solid var(--color-muted);
 }
 .zd-compact-prose {
-  min-width: 0;
+  min-inline-size: 0;
   text-align: left;
   font-size: 1rem;
   line-height: 1.75;
@@ -2773,12 +2795,12 @@ a.text-accent.underline {
   margin-top: 0;
 }
 .zd-compact-prose :where(pre) {
-  max-width: 100%;
+  max-inline-size: 100%;
   overflow-x: auto;
 }
 .zd-compact-prose :where(img) {
-  max-width: 100%;
-  height: auto;
+  max-inline-size: 100%;
+  block-size: auto;
 }
 .page-loading-overlay {
   position: fixed;

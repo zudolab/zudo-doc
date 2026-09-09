@@ -29,6 +29,7 @@ import type { HomePageViewProps } from "../index.js";
 import type { DocNavNode } from "../../doc-page-props/index.js";
 import type { ChromeContext } from "../../factory-context/index.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
+import type { PreparedHomeIntro } from "../../home-intro/types.js";
 
 const EMPTY_TREE: DocNavNode[] = [];
 const CHANGELOG_TREE: DocNavNode[] = [
@@ -83,6 +84,13 @@ function makeProps(overrides: Partial<HomePageViewProps> = {}): HomePageViewProp
 const TAG_ITEMS = (locale = "en") => [
   { tag: "alpha", count: 2, href: locale === "en" ? "/docs/tags/alpha" : `/${locale}/docs/tags/alpha` },
 ];
+
+const PREPARED_INTRO: PreparedHomeIntro = {
+  nodes: [
+    { tag: "h2", attrs: { id: "intro" }, children: ["Introduction"] },
+    { tag: "p", attrs: {}, children: ["A prepared homepage introduction."] },
+  ],
+};
 
 describe("createHomePageView — hero markup", () => {
   it("renders the generated auto logo by default, <h1> siteName, and description", () => {
@@ -381,6 +389,109 @@ describe("createHomePageView — SiteTreeNav island", () => {
     )?.[0];
     expect(noteTrayRow).toBeDefined();
     expect(noteTrayRow).not.toContain("更新");
+  });
+});
+
+describe("createHomePageView — homepage introduction", () => {
+  it("uses the shared capped identity with a growing desktop copy column", () => {
+    const HomePageView = createHomePageView(makeFakeChromeContext());
+    const html = render(<HomePageView {...makeProps()} />);
+    expect(html).toContain('class="zd-home-inner flex flex-col');
+    expect(html).toContain('class="zd-home-copy min-w-0 lg:flex-1"');
+    expect(html).toContain("w-[320px] max-w-full aspect-[1200/630]");
+  });
+
+  it("renders prepared prose with logo=false and keeps legacy extras in the links row", () => {
+    const ctx = makeFakeChromeContext({
+      settings: { logo: false },
+      overrides: { homeIntros: { en: PREPARED_INTRO } },
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps()} extras={<a href="/legacy">Legacy link</a>} />);
+    expect(html).not.toContain("data-auto-logo=");
+    expect(html).not.toContain("w-[320px]");
+    expect(html).toContain('href="/legacy"');
+    expect(html.indexOf("Legacy link")).toBeLessThan(html.indexOf('data-home-rule="upper"'));
+    expect(html).toContain("A prepared homepage introduction.");
+    expect((html.match(/<h1\b/g) ?? []).length).toBe(1);
+  });
+
+  it.each([
+    [undefined, "Custom sitemap"],
+    ["地域の目次", "地域の目次"],
+    ["  ", "ドキュメントを探す"],
+  ])("resolves a locale sitemap override of %s", (override, expected) => {
+    const ctx = makeFakeChromeContext({
+      settings: {
+        home: { sitemapHeading: "Custom sitemap" },
+        locales: { ja: { label: "日本語", dir: "docs-ja", sitemapHeading: override } },
+      },
+      overrides: { t: (key: string) => key === "home.sitemapHeading" ? "ドキュメントを探す" : key },
+    });
+    const HomePageView = createHomePageView(ctx);
+    expect(render(<HomePageView {...makeProps({ locale: "ja" })} />)).toContain(`>${expected}</h2>`);
+  });
+
+  it("renders one lower rule and no prose or upper rule when the prepared intro is absent", () => {
+    const ctx = makeFakeChromeContext({
+      overrides: {
+        homeIntros: { en: null },
+        t: (key: string) => (key === "home.sitemapHeading" ? "Explore the documentation" : key),
+      } as Partial<ChromeContext>,
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps()} />);
+
+    expect(html).not.toContain('data-home-rule="upper"');
+    expect(html).toContain('data-home-rule="lower"');
+    expect((html.match(/data-home-rule=/g) ?? []).length).toBe(1);
+    expect(html).not.toContain("zd-compact-prose");
+    expect(html).toContain(">Explore the documentation</h2>");
+    expect((html.match(/<h1\b/g) ?? []).length).toBe(1);
+  });
+
+  it("renders capped prose between full-width rules and keeps the sitemap heading independent", () => {
+    const ctx = makeFakeChromeContext({
+      overrides: {
+        homeIntros: { en: PREPARED_INTRO },
+        t: (key: string) => (key === "home.sitemapHeading" ? "Explore the documentation" : key),
+      } as Partial<ChromeContext>,
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps()} />);
+
+    expect(html).toContain('data-home-rule="upper"');
+    expect(html).toContain('data-home-rule="lower"');
+    expect((html.match(/data-home-rule=/g) ?? []).length).toBe(2);
+    expect(html).toContain('class="zd-content zd-compact-prose"');
+    expect(html).toContain("Introduction");
+    expect(html).toContain("A prepared homepage introduction.");
+    expect(html).toContain(">Explore the documentation</h2>");
+    expect((html.match(/<h1\b/g) ?? []).length).toBe(1);
+    expect((html.match(/<h2\b/g) ?? []).length).toBe(2);
+    expect((html.match(/class="zd-home-inner/g) ?? []).length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("uses the locale payload and localized sitemap default on a locale home", () => {
+    const ctx = makeFakeChromeContext({
+      settings: {
+        defaultLocale: "en",
+        headerNav: [{ label: "Getting Started", path: "/docs/getting-started" }],
+        locales: { ja: { label: "日本語", dir: "src/content/docs-ja" } },
+      },
+      overrides: {
+        defaultLocale: "en",
+        homeIntros: { ja: PREPARED_INTRO },
+        t: (key: string, locale: string) =>
+          key === "home.sitemapHeading" && locale === "ja" ? "ドキュメントを探す" : key,
+      } as Partial<ChromeContext>,
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps({ locale: "ja" })} />);
+
+    expect(html).toContain("ドキュメントを探す");
+    expect(html).toContain("Introduction");
+    expect(html).toContain('href="/ja/docs/getting-started"');
   });
 });
 
