@@ -54,6 +54,10 @@ import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 export { prepareHomeData } from "./prepare-home-data.js";
 export type { PrepareHomeDataOptions, HomeData } from "./prepare-home-data.js";
 
+function HomeSectionHeading({ children }: { children: ComponentChildren }) {
+  return <h2 class="text-title font-bold mb-vsp-md">{children}</h2>;
+}
+
 /**
  * Serialize a URL as a quoted CSS `url()` token. The `logo` setting accepts an
  * arbitrary user-supplied path, and an unquoted `url()` breaks on characters
@@ -302,7 +306,7 @@ export function createHomePageView<S extends Settings = Settings>(
         <hr class="zd-home-rule" data-home-rule="lower" />
 
         <section class="zd-home-sitemap">
-          <h2 class="zd-home-inner text-title font-bold mb-vsp-md">{sitemapHeading}</h2>
+          <HomeSectionHeading>{sitemapHeading}</HomeSectionHeading>
 
           {Island({
             when: "idle",
@@ -324,7 +328,7 @@ export function createHomePageView<S extends Settings = Settings>(
           <section class="mt-vsp-xl">
             {tags && tags.length > 0 ? (
               <>
-                <h2 class="text-title font-bold mb-vsp-md">{t("doc.tags", locale)}</h2>
+                <HomeSectionHeading>{t("doc.tags", locale)}</HomeSectionHeading>
                 <TagNav
                   variant="all"
                   tags={tags.slice(0, tagLimit)}
@@ -353,7 +357,7 @@ export function createHomePageView<S extends Settings = Settings>(
               // reproduce the pre-#3027 single "All Tags" link so existing
               // `@takazudo/zudo-doc/home-page` consumers are unaffected.
               <>
-                <h2 class="text-title font-bold mb-vsp-md">{t("doc.allTags", locale)}</h2>
+                <HomeSectionHeading>{t("doc.allTags", locale)}</HomeSectionHeading>
                 <a
                   href={withBase(`${prefix}/docs/tags`)}
                   class="text-accent underline hover:text-accent-hover"
