@@ -211,7 +211,7 @@ The renderer is called for `entry` doc pages on all four doc routes, **including
 
 `homeExtras` renders extra content INLINE at the end of the home hero's links row, `/`-separated from whatever precedes it (the primary link and/or the GitHub link) — for example, a brand or social link alongside the overview/GitHub links:
 
-For paragraphs, lists or a longer introduction, use [home.introMarkdown](../guides/configuration.mdx#home). It renders a separate compact prose section below the identity; `homeExtras` and `extras` retain their inline navigation semantics.
+For paragraphs, lists or a longer introduction, use [home.introMarkdown](../guides/configuration.mdx#home-page-home). It renders a separate compact prose section below the identity; `homeExtras` and `extras` retain their inline navigation semantics.
 
 ```ts
 homeExtras?: (args: { locale: string }) => unknown;

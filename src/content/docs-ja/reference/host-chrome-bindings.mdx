@@ -200,7 +200,7 @@ export const chromeBindings = defineChromeBindings({
 
 `homeExtras` は、ホームヒーローのリンク行の末尾に、直前の要素（プライマリリンクや GitHub リンク）と `/` 区切りで、追加コンテンツをインラインで描画します — 例えば overview/GitHub のリンクと並べてブランドやソーシャルのリンクを置く用途です。
 
-段落、リスト、長い紹介文には [home.introMarkdown](../guides/configuration.mdx#home) を使います。サイトの識別情報の下に独立したコンパクトな文章領域を表示し、`homeExtras` と `extras` は引き続きインラインのナビゲーション追加に使います。
+段落、リスト、長い紹介文には [home.introMarkdown](../guides/configuration.mdx#ホームページ-home) を使います。サイトの識別情報の下に独立したコンパクトな文章領域を表示し、`homeExtras` と `extras` は引き続きインラインのナビゲーション追加に使います。
 
 ```ts
 homeExtras?: (args: { locale: string }) => unknown;
