@@ -5,7 +5,8 @@
 //
 // The payload is SERIALIZABLE DATA ONLY (ADR Decision 1): `settings`,
 // `translations`, `tagVocabulary`, `colorSchemes`. `_context.ts` narrows it
-// to the concrete `RouteContextPayload` at the seam.
+// to the concrete `RouteContextPayload` at the seam. The route-only loader
+// also carries prepared homepage introductions in `homeIntros`.
 //
 // SINGLE SOURCE OF TRUTH for three shipped copies (#2656) — edit HERE only:
 //   1. This file itself — typechecks the package's own `src/routes/*.tsx`.
@@ -34,6 +35,7 @@ declare module "virtual:zudo-doc-route-context" {
      *  did not thread one. */
     themePackRegistry: Array<Record<string, unknown>> | null;
     assetManifest: import("../route-context-payload/types.js").AssetManifest | null;
+    homeIntros: import("../home-intro/types.js").PreparedHomeIntros;
   };
 }
 

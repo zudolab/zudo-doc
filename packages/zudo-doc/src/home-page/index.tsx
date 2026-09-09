@@ -9,7 +9,8 @@
 // (`routes/index.tsx` / `routes/locale-index.tsx`) AND host pages can call.
 //
 // Body = today's home structure lifted from `routes/index.tsx`: hero (logo
-// mask block, `<h1>` siteName, description, overview + GitHub links row), the
+// mask block, `<h1>` siteName, description, overview + GitHub links row), an
+// optional prepared Markdown introduction, the sitemap heading and
 // `SiteTreeNav` idle Island, and the docTags section. The GitHub link is
 // upgraded to the RICHER showcase version (`pages/index.tsx`) — inline SVG
 // icon instead of plain text — a reviewed, intentional diff for the package
@@ -35,6 +36,7 @@ import type { ComponentChildren, JSX, VNode } from "preact";
 import { Island } from "@takazudo/zfb";
 import { AutoLogo } from "../auto-logo/index.js";
 import { DocLayoutWithDefaults } from "../doclayout/index.js";
+import { CompactProse, resolveHomeIntro } from "../home-intro/index.js";
 import { SiteTreeNav } from "../site-tree-nav-island/index.js";
 import { TagNav } from "../nav-indexing/tag-nav.js";
 import type { TagItem } from "../nav-indexing/types.js";
@@ -157,6 +159,7 @@ export function createHomePageView<S extends Settings = Settings>(
     derivePrimaryChromeSlots(ctx);
   const BodyEndIslands = deriveBodyEndIslands(ctx);
   const homeExtras = ctx.hostBindings.homeExtras;
+  const homeIntros = ctx.homeIntros;
   // SSR `data-theme-pack` html attribute (ADR theme-packs.md Decision 3, #2822).
   const dataThemePack = resolveThemePackSsrSlug(
     ctx.themePackRegistry,
@@ -189,6 +192,13 @@ export function createHomePageView<S extends Settings = Settings>(
     // something without shipping any `/img/logo.svg`.
     const logoSetting = settings.logo ?? "auto";
     const resolvedExtras = extras ?? homeExtras?.({ locale });
+    const intro = homeIntros?.[locale] ?? null;
+    const hasIntro = Boolean(intro?.nodes.length);
+    const sitemapHeading = resolveHomeIntro(
+      settings,
+      locale,
+      t("home.sitemapHeading", locale),
+    ).sitemapHeading;
     // `false`/`true`/`null`/`undefined` all render nothing in Preact (a
     // caller may pass a conditional like `extras={cond && <Link />}`), so
     // exclude them here — otherwise a "/" separator would render for content
@@ -201,7 +211,7 @@ export function createHomePageView<S extends Settings = Settings>(
     const rowItems: ComponentChildren[] = [];
     if (primary) {
       rowItems.push(
-        <a href={primary.href} class="whitespace-nowrap text-fg underline hover:text-accent">
+        <a href={primary.href} class="text-fg underline hover:text-accent">
           {primary.label}
         </a>,
       );
@@ -210,7 +220,7 @@ export function createHomePageView<S extends Settings = Settings>(
       rowItems.push(
         <a
           href={settings.githubUrl as string}
-          class="inline-flex items-center gap-[0.3em] whitespace-nowrap text-fg underline hover:text-accent"
+          class="inline-flex items-center gap-[0.3em] text-fg underline hover:text-accent"
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -244,8 +254,8 @@ export function createHomePageView<S extends Settings = Settings>(
         bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
         enableClientRouter={settings.dynamicPageTransition}
       >
-        <div class="flex justify-center mb-vsp-xl">
-          <div class="flex flex-col items-center text-center gap-hsp-md lg:flex-row lg:text-left lg:gap-hsp-xl">
+        <div class="zd-home-hero mb-vsp-xl">
+          <div class="zd-home-inner flex flex-col items-center justify-center text-center gap-hsp-md lg:flex-row lg:text-left lg:gap-hsp-xl">
             {logoSetting === "auto" ? (
               <AutoLogo
                 seed={settings.siteName}
@@ -261,12 +271,12 @@ export function createHomePageView<S extends Settings = Settings>(
                 aria-hidden="true"
               />
             ) : null}
-            <div class="min-w-0">
+            <div class="zd-home-copy min-w-0 lg:flex-1">
               <h1 class="text-heading font-bold mb-vsp-2xs break-words">{settings.siteName}</h1>
               <p class="text-muted text-small mb-vsp-sm">
                 {settings.locales[locale]?.description ?? settings.siteDescription}
               </p>
-              <div class="flex flex-wrap items-center justify-center lg:justify-start gap-hsp-md text-small">
+              <div class="zd-home-links flex flex-wrap items-center justify-center lg:justify-start gap-hsp-md text-small">
                 {rowItems.map((item, index) => (
                   <Fragment key={index}>
                     {index > 0 && <span class="text-muted">/</span>}
@@ -278,20 +288,37 @@ export function createHomePageView<S extends Settings = Settings>(
           </div>
         </div>
 
-        {Island({
-          when: "idle",
-          children: (
-            <SiteTreeNav
-              tree={tree as unknown as SidebarNavNode[]}
-              categoryOrder={categoryOrder}
-              categoryIgnore={categoryIgnore}
-              initiallyCollapsedCategorySlugs={initiallyCollapsedCategorySlugs}
-              locale={locale}
-              updatedLabel={t("doc.updated", locale)}
-              dateFormats={dateFormatsFor(locale)}
-            />
-          ),
-        }) as unknown as VNode}
+        {hasIntro && (
+          <>
+            <hr class="zd-home-rule" data-home-rule="upper" />
+            <div class="zd-home-intro">
+              <div class="zd-home-inner">
+                <CompactProse intro={intro} />
+              </div>
+            </div>
+          </>
+        )}
+
+        <hr class="zd-home-rule" data-home-rule="lower" />
+
+        <section class="zd-home-sitemap">
+          <h2 class="zd-home-inner text-title font-bold mb-vsp-md">{sitemapHeading}</h2>
+
+          {Island({
+            when: "idle",
+            children: (
+              <SiteTreeNav
+                tree={tree as unknown as SidebarNavNode[]}
+                categoryOrder={categoryOrder}
+                categoryIgnore={categoryIgnore}
+                initiallyCollapsedCategorySlugs={initiallyCollapsedCategorySlugs}
+                locale={locale}
+                updatedLabel={t("doc.updated", locale)}
+                dateFormats={dateFormatsFor(locale)}
+              />
+            ),
+          }) as unknown as VNode}
+        </section>
 
         {settings.docTags && tagCount > 0 && (
           <section class="mt-vsp-xl">

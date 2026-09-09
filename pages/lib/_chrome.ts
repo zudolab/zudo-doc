@@ -39,8 +39,10 @@ const themePackRegistry =
   (virtualRouteContext as unknown as RouteContextPayload).themePackRegistry ?? null;
 const assetManifest =
   (virtualRouteContext as unknown as RouteContextPayload).assetManifest ?? null;
+const homeIntros =
+  (virtualRouteContext as unknown as RouteContextPayload).homeIntros ?? {};
 
 export const { HomePageView } = createChrome(
-  { ...routeContext, themePackRegistry, assetManifest },
+  { ...routeContext, themePackRegistry, assetManifest, homeIntros },
   chromeBindings,
 );
