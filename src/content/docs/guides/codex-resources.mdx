@@ -83,3 +83,11 @@ Skills are discovered in precedence order from `<codexDir>/skills/`, `<projectRo
 To maintain a skill once for both Claude Code and Codex, keep its source in one location and symlink the skill directory into `.claude/skills/` and `.codex/skills/`.
 
 </Tip>
+
+## Repository-Relative Links in Mirrors
+
+In mirrored resource bodies, Markdown links and images targeting repository-relative paths become inline code, since those paths do not identify documentation URLs. The link label or image alt text is displayed. This applies to Claude `CLAUDE.md`, commands, and agents; Codex `AGENTS.md`; and both integrations' skill bodies and sub-pages.
+
+In the main skill body, links into `references/`, `scripts/`, and `assets/` remain links only when the corresponding sub-page is actually generated. Missing targets and files that do not produce pages, such as `.sh` scripts, become inline code. Repository-relative links inside sub-page bodies are downgraded too; the generated-target exception applies to the main skill body.
+
+External URLs, root-relative URLs, and page fragments are retained. Link examples inside inline code or fenced code are unchanged. Ordinary authored MDX continues to follow the [documentation linking rules](../getting-started/writing-docs.mdx).
