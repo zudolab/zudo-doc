@@ -54,7 +54,7 @@ export default defineConfig(
 );
 ```
 
-The preBuild Created/Updated/Author manifest is retained. Displaying metadata still requires passing that manifest to `docHistoryMeta` through `chromeBindingsModule` (see the [configuration reference](./configuration.mdx#docmetainfo)). `["updated"]` shows Updated even when its formatted value matches Created; `[]` renders no metadata block.
+The preBuild Created/Updated/Author manifest is retained. Displaying metadata still requires passing that manifest to `docHistoryMeta` through `chromeBindingsModule` (see the [configuration reference](./configuration.mdx#site-settings-docmetainfo)). `["updated"]` shows Updated even when its formatted value matches Created; `[]` renders no metadata block.
 
 `docHistoryUi: false` suppresses the History button and DocHistory island, the plugin's history JSON generation, and its dev proxy. The view-source link remains available. Neither per-page `doc_history: true` nor `bodyFootUtilArea.docHistory: true` can override this global setting.
 
