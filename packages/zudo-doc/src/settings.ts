@@ -418,6 +418,8 @@ export interface Settings {
   head?: SiteHeadConfig;
   sitemap: boolean;
   docMetainfo: boolean;
+  /** Metadata fields shown in the doc metadata area; omitted uses all three. */
+  docMetainfoFields?: Array<"created" | "updated" | "author">;
   docTags: boolean;
   tagPlacement: TagPlacement;
   tagGovernance: TagGovernanceMode;
@@ -447,6 +449,8 @@ export interface Settings {
   dynamicPageTransition: boolean;
   frontmatterPreview: FrontmatterPreviewConfig | false;
   docHistory: boolean;
+  /** Whether the doc history dropdown UI and related artifacts are enabled. */
+  docHistoryUi?: boolean;
   docHistoryExclude: string[];
   /** Whether package-owned viewer pages are generated for public assets. */
   assetViewer: boolean;
