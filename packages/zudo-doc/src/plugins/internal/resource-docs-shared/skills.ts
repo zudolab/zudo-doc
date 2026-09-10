@@ -2,6 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { escapeForMdx } from "./escape-for-mdx.js";
 import {
+  downgradeRepoRelativeLinks,
+  rewriteMarkdownLinks,
+} from "./links.js";
+import {
   assertNotIndexReserved,
   escapeTitle,
   parseFrontmatter,
@@ -333,12 +337,29 @@ export function generateSkillsCategory({
       }
     }
 
-    // Rewrite references/scripts/assets links in skill body to match doc site URLs
-    let skillBody = parsed.content.trim();
-    skillBody = skillBody
-      .replace(/\]\(references\/([^)]+)\.md\)/g, "](./ref-$1)")
-      .replace(/\]\(scripts\/([^)]+)\.md\)/g, "](./script-$1)")
-      .replace(/\]\(assets\/([^)]+)\.md\)/g, "](./asset-$1)");
+    // Rewrite only links to sub-files that are actually emitted. The rewrite
+    // scan preserves code spans, then the downgrade keeps those generated
+    // sibling targets while flattening every other repo-relative link.
+    const skillLinkRewrites = new Map<string, string>();
+    for (const ref of references) {
+      skillLinkRewrites.set(`references/${ref.name}.md`, `./ref-${ref.name}`);
+    }
+    for (const f of scriptFiles.filter((s) => s.endsWith(".md"))) {
+      const slug = f.replace(/\.md$/, "");
+      skillLinkRewrites.set(`scripts/${f}`, `./script-${slug}`);
+    }
+    for (const f of assetFiles.filter((a) => a.endsWith(".md"))) {
+      const slug = f.replace(/\.md$/, "");
+      skillLinkRewrites.set(`assets/${f}`, `./asset-${slug}`);
+    }
+    const emittedSkillLinks = new Set(skillLinkRewrites.values());
+    const skillBody = downgradeRepoRelativeLinks(
+      rewriteMarkdownLinks(
+        parsed.content.trim(),
+        (url) => skillLinkRewrites.get(url),
+      ),
+      (url) => emittedSkillLinks.has(url),
+    );
 
     const body = [
       extraHeader,
@@ -374,7 +395,7 @@ ${body}`;
       writeUnlistedSubPage(
         path.join(skillDirOut, `ref-${ref.name}.mdx`),
         ref.title,
-        escapeForMdx(ref.content.trim()),
+        escapeForMdx(downgradeRepoRelativeLinks(ref.content.trim())),
         renderFrontmatterString,
       );
     }
@@ -396,7 +417,7 @@ ${body}`;
       writeUnlistedSubPage(
         path.join(skillDirOut, `script-${slug}.mdx`),
         title,
-        escapeForMdx(raw.trim()),
+        escapeForMdx(downgradeRepoRelativeLinks(raw.trim())),
         renderFrontmatterString,
       );
     }
@@ -418,7 +439,7 @@ ${body}`;
       writeUnlistedSubPage(
         path.join(skillDirOut, `asset-${slug}.mdx`),
         title,
-        escapeForMdx(raw.trim()),
+        escapeForMdx(downgradeRepoRelativeLinks(raw.trim())),
         renderFrontmatterString,
       );
     }

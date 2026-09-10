@@ -79,3 +79,11 @@ The `projectRoot` option is useful in monorepo setups where the `.claude/` direc
 Skills with a `references/` subdirectory will have their reference documents included as separate linked pages, making it easy to browse bundled knowledge bases.
 
 </Tip>
+
+## Repository-Relative Links in Mirrors
+
+In mirrored resource bodies, Markdown links and images targeting repository-relative paths become inline code, since those paths do not identify documentation URLs. The link label or image alt text is displayed. This applies to Claude `CLAUDE.md`, commands, and agents; Codex `AGENTS.md`; and both integrations' skill bodies and sub-pages.
+
+In the main skill body, links into `references/`, `scripts/`, and `assets/` remain links only when the corresponding sub-page is actually generated. Missing targets and files that do not produce pages, such as `.sh` scripts, become inline code. Repository-relative links inside sub-page bodies are downgraded too; the generated-target exception applies to the main skill body.
+
+External URLs, root-relative URLs, and page fragments are retained. Link examples inside inline code or fenced code are unchanged. Ordinary authored MDX continues to follow the [documentation linking rules](../getting-started/writing-docs.mdx).

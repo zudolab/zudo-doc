@@ -29,7 +29,11 @@ export {
   writeCategoryIndex,
   writeUnlistedSubPage,
 } from "./mdx.js";
-export { isRepoRelativeLink, downgradeRepoRelativeLinks } from "./links.js";
+export {
+  isRepoRelativeLink,
+  rewriteMarkdownLinks,
+  downgradeRepoRelativeLinks,
+} from "./links.js";
 export {
   escapeMarkdownTableCell,
   renderCodeFence,

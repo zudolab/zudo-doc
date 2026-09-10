@@ -342,6 +342,12 @@ MDX 内のインラインマークダウンリンク（例 `[text](/docs/some-pa
 
 型: `"warn" | "error" | "ignore"` · デフォルト: `"warn"`
 
+この設定は、ビルド後のHTMLにある生の`<img src>`の存在確認にも適用されます。`"error"`は問題を報告してビルドを失敗させ、`"warn"`は警告して続行し、`"ignore"`は検査自体を省略します。
+
+検査対象は`/`で始まるサイト内の絶対パスです。クエリとフラグメントを除去し、URLエンコードを復号して、ビルド出力内のファイルを確認します。`base: "/manual/"`なら`/manual/img/logo.svg`は`dist/img/logo.svg`に対応します。baseの外を指すパス、存在しないファイル、出力ディレクトリの外へ抜けるパスは問題として報告されます。
+
+外部URL、`//`で始まるURL、`data:`などのスキーム付きURL、相対パスは対象外です。コメント、スクリプト内の文字列、エスケープされたコード例も画像として扱いません。`srcset`は検査しません。
+
 ## カラー
 
 ### colorScheme
@@ -808,6 +814,14 @@ body-end islands に `FindInPageInit` アイランド（Cmd/Ctrl+F 検索バー�
 
 [ドキュメント履歴ガイド](./doc-history.mdx)を参照してください。
 
+### docHistoryUi
+
+履歴ボタンとDocHistoryアイランド、postBuildの履歴JSON生成、開発時の履歴プロキシを制御します。`false`でも、`docHistory: true`ならpreBuildのメタデータマニフェストは生成されます。ソース表示リンクも維持されます。
+
+型: `boolean` · デフォルト: `true`
+
+`zfb.config.ts`を手動で編集して設定します。新しいCLIフラグはありません。環境変数との関係やCIジョブの整理については[ドキュメント履歴ガイド](./doc-history.mdx)を参照してください。
+
 ### docMetainfo
 
 ドキュメントページに Created/Updated/Author メタブロックを表示します（ビルド時に git 履歴から抽出）。
@@ -822,6 +836,21 @@ body-end islands に `FindInPageInit` アイランド（Cmd/Ctrl+F 検索バー�
 
 bindingsモジュールは`docHistoryMeta`を提供する必要があります。デフォルトの`{}`データスロットでは、描画するメタデータブロックがありません。組み合わせる`docHistory`設定については[ドキュメント履歴ガイド](./doc-history.mdx)を参照してください。
 
+### docMetainfoFields
+
+メタデータブロックに表示する項目を選びます。`docMetainfo: true`と、データを提供する`docHistoryMeta`バインディングが必要です。
+
+型: `Array<"created" | "updated" | "author">` · デフォルト: `["created", "updated", "author"]`
+
+省略すると全項目が有効です。表示順はCreated、Updated、Authorで、配列の順番では変わりません。Createdも表示する場合、日付書式で整形した表示値がCreatedと同じUpdatedは省略されます（日付書式には時刻も含められます）。`["updated"]`なら表示値が同じでもUpdatedを表示します。`[]`ではメタデータブロックを描画しません。
+
+```ts
+docMetainfo: true,
+docMetainfoFields: ["updated"],
+```
+
+`zfb.config.ts`を手動で編集して設定します。新しいCLIフラグはありません。表示項目を減らしても履歴データの生成は停止しません。
+
 ### bodyFootUtilArea
 
 body-foot ユーティリティエリア（doc-history / view-source）、または無効化するなら `false`。
@@ -830,7 +859,7 @@ body-foot ユーティリティエリア（doc-history / view-source）、また
 
 | プロパティ | 型 | 説明 |
 |----------|------|-------------|
-| `docHistory` | `boolean`（任意） | History ボタンを表示（`docHistory: true` が必要） |
+| `docHistory` | `boolean`（任意） | History ボタンを表示（`docHistory: true`と`docHistoryUi: true`が必要） |
 | `viewSourceLink` | `boolean`（任意） | 生ソースリンクを表示（`githubUrl` が必要） |
 
 ### htmlPreview

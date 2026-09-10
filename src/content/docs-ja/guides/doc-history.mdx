@@ -39,6 +39,41 @@ export default defineConfig(
 
 この機能はビルドを高速に保つため、**デフォルトでは無効**です。
 
+## 日付だけを表示する
+
+履歴ビューアを使わずにgit由来のメタデータを表示するには、`zfb.config.ts`を手動で編集します。`docHistoryUi`と`docMetainfoFields`に新しいCLIフラグはありません。
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    docHistory: true,
+    docHistoryUi: false,
+    docMetainfo: true,
+    docMetainfoFields: ["updated"],
+  }),
+);
+```
+
+preBuildのCreated/Updated/Authorマニフェストは維持されます。メタデータの表示には、従来どおり`chromeBindingsModule`経由で`docHistoryMeta`にマニフェストを渡す必要があります（[設定リファレンス](./configuration.mdx#サイト設定-docmetainfo)）。`["updated"]`は日付書式で整形した表示値がCreatedと同じでもUpdatedを表示し、`[]`はメタデータブロックを描画しません。
+
+`docHistoryUi: false`では履歴ボタンとDocHistoryアイランドを描画せず、プラグインの履歴JSON生成と開発時のプロキシも停止します。ソース表示リンクは維持されます。ページの`doc_history: true`や`bodyFootUtilArea.docHistory: true`でこの全体設定を上書きすることはできません。
+
+ホスト側に独立したCIの`build-history`ジョブがある場合は、そのジョブと成果物のアップロード・ダウンロード・マージ処理を削除してください。単独の生成CLIはサイト設定を読まないため、呼び出せば引き続き生成します。不要になった`dev:history`プロセスもホストの開発スクリプトから外せます。設定変更だけでこれらのスクリプトや既存の出力ファイルが削除されることはありません。
+
+### 環境変数との関係
+
+以下は`docHistory: true`の場合です。上の行が優先されます。「通常」は、利用可能なgit履歴からpreBuildマニフェストを生成することを示します。
+
+| 条件 | preBuildメタデータ | `docHistoryUi: true`のJSON | `docHistoryUi: false`のJSON |
+|---|---|---|---|
+| `SKIP_DOC_HISTORY=1` | 空のマニフェスト | 生成しない | 生成しない |
+| `DOC_HISTORY_SKIP_POSTBUILD=1` | 通常 | 生成しない | 生成しない（指定は不要） |
+| `GEN_DOC_HISTORY=1` | 通常 | 生成する | 生成しない（UI設定が優先） |
+| `CI` / `GITHUB_ACTIONS`が有効 | 通常 | 生成する | 生成しない（UI設定が優先） |
+| 上記以外のローカルビルド | 通常 | 生成しない | 生成しない |
+
+日付を残したい場合は`SKIP_DOC_HISTORY=1`を設定しないでください。`docHistoryUi: false`なら`DOC_HISTORY_SKIP_POSTBUILD=1`は不要です。以下の履歴ビューア・JSON・プロキシの説明は、`docHistoryUi`を有効にした場合に適用されます。
+
 ## ページごとの表示制御
 
 `docHistory`がグローバルに有効化されたあと、各ページは以下の2つのルールで**History**ボタンを表示するかどうかを決定します。
@@ -62,7 +97,7 @@ doc_history: true # opt back in even though this is an index page
 ---
 ```
 
-フロントマターの指定はどちらの方向にも優先されます。
+全体の`docHistory`と`docHistoryUi`が有効な場合、フロントマターの指定はページ種別による既定の表示をどちらの方向にも上書きします。
 
 | ページの種類 | フロントマターなし | `doc_history: true` | `doc_history: false` |
 | --- | --- | --- | --- |
@@ -177,7 +212,7 @@ zudo-docはサーバーサイドランタイムなしの完全な静的サイト
 
 <Tip>
 
-デプロイサイズが懸念される場合は、本番ビルドでは`docHistory`を無効（`docHistory: false`）にし、ローカル開発時のみ使用することを検討してください。開発時はdoc-history-server経由で動的に履歴が配信されるため、事前生成コストがかかりません。
+本番でメタデータだけが必要なら、`docHistory: true`と`docHistoryUi: false`を組み合わせ、ホストの独立した履歴生成ジョブを削除してください。リビジョンJSONを配信せずに日付を維持できます。どちらも不要なら`docHistory: false`にします。
 
 </Tip>
 

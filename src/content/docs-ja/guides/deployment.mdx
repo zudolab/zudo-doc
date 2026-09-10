@@ -116,6 +116,8 @@ KVとcustom-domain routeもコピーしません。liveのAI admissionとrate-li
 
 </Tip>
 
+以下のJSON生成の判定表は、`docHistory: true`かつ`docHistoryUi: true`の場合です。`docHistoryUi: false`なら、環境変数にかかわらずプラグインのJSON生成と開発時のプロキシが停止します。preBuildのマニフェストは維持されますが、`SKIP_DOC_HISTORY=1`を指定すると空になります。`DOC_HISTORY_SKIP_POSTBUILD=1`は不要です。ホストの独立した`build-history`ジョブと成果物の受け渡し処理も削除してください。単独の生成CLIはこの設定では停止しません。[ドキュメント履歴ガイド](./doc-history.mdx)に設定例と環境変数の比較表があります。
+
 ## GEN_DOC_HISTORY
 
 `GEN_DOC_HISTORY=1`（#1986で導入）はdoc-historyプラグインの**postBuild**フックを制御します — `dist/doc-history/`にページごとのリビジョン／差分JSONを書き出し、DocHistoryドロップダウンアイランドに供給するステップです。プラグインの**preBuild**フック（表示される作成日・更新日・著者のメタブロック）はこれに影響されず、`SKIP_DOC_HISTORY`のみで制御されます。postBuildは次の決定表に従います：

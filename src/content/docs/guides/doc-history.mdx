@@ -39,6 +39,41 @@ Fresh scaffolds statically wire the real History island into all generated route
 
 The feature is **disabled by default** to keep builds fast for projects that don't need it.
 
+## Dates-Only Mode
+
+To keep git-based metadata without the history viewer, hand-edit `zfb.config.ts`. There are no new CLI flags for `docHistoryUi` or `docMetainfoFields`.
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    docHistory: true,
+    docHistoryUi: false,
+    docMetainfo: true,
+    docMetainfoFields: ["updated"],
+  }),
+);
+```
+
+The preBuild Created/Updated/Author manifest is retained. Displaying metadata still requires passing that manifest to `docHistoryMeta` through `chromeBindingsModule` (see the [configuration reference](./configuration.mdx#site-settings-docmetainfo)). `["updated"]` shows Updated even when its formatted value matches Created; `[]` renders no metadata block.
+
+`docHistoryUi: false` suppresses the History button and DocHistory island, the plugin's history JSON generation, and its dev proxy. The view-source link remains available. Neither per-page `doc_history: true` nor `bodyFootUtilArea.docHistory: true` can override this global setting.
+
+If your host has a separate CI `build-history` job, remove that job and its artifact upload, download, and merge steps. The standalone generator CLI does not read site settings and still generates whenever invoked. You can also remove the unused `dev:history` process from host development scripts. Changing the setting does not delete these scripts or existing output files.
+
+### Environment-Variable Interactions
+
+This table assumes `docHistory: true`. Earlier rows take precedence. “Normal” means preBuild generates the manifest from the available git history.
+
+| Condition | preBuild metadata | JSON with `docHistoryUi: true` | JSON with `docHistoryUi: false` |
+|---|---|---|---|
+| `SKIP_DOC_HISTORY=1` | Empty manifest | Skipped | Skipped |
+| `DOC_HISTORY_SKIP_POSTBUILD=1` | Normal | Skipped | Skipped (redundant setting) |
+| `GEN_DOC_HISTORY=1` | Normal | Generated | Skipped (UI setting wins) |
+| `CI` / `GITHUB_ACTIONS` active | Normal | Generated | Skipped (UI setting wins) |
+| Otherwise, local build | Normal | Skipped | Skipped |
+
+Leave `SKIP_DOC_HISTORY=1` unset to retain dates. `DOC_HISTORY_SKIP_POSTBUILD=1` is redundant with `docHistoryUi: false`. The viewer, JSON, and proxy sections below describe behavior with `docHistoryUi` enabled.
+
 ## Per-Page Visibility
 
 Once `docHistory` is on globally, each page decides whether to display the **History** button via two rules:
@@ -62,7 +97,7 @@ doc_history: true # opt back in even though this is an index page
 ---
 ```
 
-The frontmatter override wins in both directions:
+When global `docHistory` and `docHistoryUi` are enabled, frontmatter overrides the page-type default in both directions:
 
 | Page type | No frontmatter | `doc_history: true` | `doc_history: false` |
 | --- | --- | --- | --- |
@@ -177,7 +212,7 @@ For a small-to-medium documentation site this is typically negligible. For large
 
 <Tip>
 
-If deployment size is a concern, consider keeping `docHistory` disabled for production builds (`docHistory: false`) and only using it during local development, where history is served dynamically by the doc-history-server with no pre-generation cost.
+If you need metadata but not revision browsing in production, use `docHistory: true` with `docHistoryUi: false` and remove the host's standalone history-generation job. This keeps dates without shipping revision JSON. Set `docHistory: false` when you do not need either feature.
 
 </Tip>
 

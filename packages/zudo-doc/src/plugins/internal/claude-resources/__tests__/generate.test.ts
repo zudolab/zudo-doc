@@ -477,6 +477,101 @@ describe("generateClaudeResourcesDocs", () => {
       expect(skillPage).not.toContain("](references/guide.md)");
     });
 
+    it("downgrades command, agent, skill, and skill sub-page links safely", () => {
+      const body = [
+        "Plain [a](../../../doc/x.md) and [b](../skills/y/SKILL.md).",
+        "Inline `[inline](../../../doc/x.md)`.",
+        "```md",
+        "[fenced](../../../doc/x.md)",
+        "```",
+        "External [https](https://example.com), [site](/docs/x), and [anchor](#x).",
+      ].join("\n");
+      fs.writeFileSync(
+        path.join(claudeDir, "commands", "test-cmd.md"),
+        `---\ndescription: \"A test command\"\n---\n\n${body}`,
+      );
+      fs.writeFileSync(
+        path.join(claudeDir, "agents", "test-agent.md"),
+        `---\nname: test-agent\ndescription: \"A test agent\"\nmodel: sonnet\n---\n\n${body}`,
+      );
+
+      fs.writeFileSync(
+        path.join(claudeDir, "skills", "test-skill", "SKILL.md"),
+        [
+          "---",
+          "name: test-skill",
+          'description: "A test skill"',
+          "---",
+          "",
+          body,
+          "Generated [r](references/guide.md).",
+          "Generated [s](scripts/doc.md) and [asset](assets/template.md).",
+          "Missing [missing](references/missing.md).",
+          "Inline generated `[inline-ref](references/guide.md)`. ",
+          "```md",
+          "[fenced-ref](references/guide.md)",
+          "```",
+        ].join("\n"),
+      );
+      fs.writeFileSync(
+        path.join(claudeDir, "skills", "test-skill", "references", "guide.md"),
+        `# Guide\n\n${body}`,
+      );
+      fs.writeFileSync(
+        path.join(claudeDir, "skills", "test-skill", "assets", "template.md"),
+        `# Template\n\n${body}`,
+      );
+      fs.writeFileSync(
+        path.join(claudeDir, "skills", "test-skill", "scripts", "doc.md"),
+        `# Script\n\n${body}`,
+      );
+
+      generateClaudeResourcesDocs({ claudeDir, projectRoot: tmpDir, docsDir });
+
+      const command = fs.readFileSync(
+        path.join(docsDir, "claude-commands", "test-cmd.mdx"),
+        "utf8",
+      );
+      const agent = fs.readFileSync(
+        path.join(docsDir, "claude-agents", "test-agent.mdx"),
+        "utf8",
+      );
+      for (const page of [command, agent]) {
+        expect(page).toContain("`a`");
+        expect(page).toContain("`b`");
+        expect(page).toContain("`[inline](../../../doc/x.md)`");
+        expect(page).toContain("[fenced](../../../doc/x.md)");
+        expect(page).toContain("](https://example.com)");
+        expect(page).toContain("](/docs/x)");
+        expect(page).toContain("](#x)");
+      }
+
+      const skillPage = fs.readFileSync(
+        path.join(docsDir, "claude-skills", "test-skill", "index.mdx"),
+        "utf8",
+      );
+      expect(skillPage).toContain("`a`");
+      expect(skillPage).toContain("`b`");
+      expect(skillPage).toContain("`missing`");
+      expect(skillPage).toContain("Generated [r](./ref-guide).");
+      expect(skillPage).toContain("Generated [s](./script-doc) and [asset](./asset-template).");
+      expect(skillPage).toContain("`[inline-ref](references/guide.md)`");
+      expect(skillPage).toContain("[fenced-ref](references/guide.md)");
+      expect(skillPage).toContain("- [references/guide.md](./ref-guide)");
+      expect(skillPage).toContain("- [assets/template.md](./asset-template)");
+
+      for (const pageName of ["ref-guide", "script-doc", "asset-template"]) {
+        const page = fs.readFileSync(
+          path.join(docsDir, "claude-skills", "test-skill", `${pageName}.mdx`),
+          "utf8",
+        );
+        expect(page).toContain("`a`");
+        expect(page).toContain("`b`");
+        expect(page).toContain("`[inline](../../../doc/x.md)`");
+        expect(page).toContain("[fenced](../../../doc/x.md)");
+      }
+    });
+
     it("agent page has model badge", () => {
       generateClaudeResourcesDocs({
         claudeDir,

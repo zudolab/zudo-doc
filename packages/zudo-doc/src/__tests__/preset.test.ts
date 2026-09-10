@@ -394,6 +394,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       "@takazudo/zudo-doc/plugins/theme-packs",
       "@takazudo/zudo-doc/plugins/llms-txt",
       "@takazudo/zudo-doc/plugins/changelog",
+      "@takazudo/zudo-doc/plugins/img-src-check",
     ]);
   });
 
@@ -420,6 +421,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       docsDir: "src/content/docs",
       locales: { ja: { dir: "src/content/docs-ja" } },
       base: "/",
+      ui: true,
       exclude: ["drafts/**"],
     });
     expect(byName["@takazudo/zudo-doc/plugins/routes"]).toMatchObject({
@@ -490,6 +492,10 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
         },
       ],
     });
+    expect(byName["@takazudo/zudo-doc/plugins/img-src-check"]).toEqual({
+      base: "/",
+      onBroken: "warn",
+    });
     // copy-public-plugin.mjs was removed in #2358; no project-relative plugin expected.
   });
 
@@ -539,7 +545,41 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
     expect(docHistory?.options?.["exclude"]).toEqual([]);
   });
 
-  it("omits claude-resources / codex-resources / doc-history / llms-txt / changelog when their settings are falsy", () => {
+  it("threads onBrokenMarkdownLinks severity into the raw image-source check", () => {
+    const result = zudoDocPreset({
+      settings: { ...fixtureSettings, onBrokenMarkdownLinks: "error" },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+    const imgSrcCheck = result.plugins.find(
+      (plugin) => plugin.name === "@takazudo/zudo-doc/plugins/img-src-check",
+    );
+    expect(imgSrcCheck?.options).toEqual({ base: "/", onBroken: "error" });
+  });
+
+  it("threads docHistoryUi into the doc-history plugin as ui, defaulting to true", () => {
+    const disabled = zudoDocPreset({
+      settings: { ...fixtureSettings, docHistoryUi: false },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+    const disabledDocHistory = disabled.plugins.find(
+      (plugin) => plugin.name === "@takazudo/zudo-doc/plugins/doc-history",
+    );
+    expect(disabledDocHistory?.options?.["ui"]).toBe(false);
+
+    const omitted = zudoDocPreset({
+      settings: { ...fixtureSettings, docHistoryUi: undefined },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+    const omittedDocHistory = omitted.plugins.find(
+      (plugin) => plugin.name === "@takazudo/zudo-doc/plugins/doc-history",
+    );
+    expect(omittedDocHistory?.options?.["ui"]).toBe(true);
+  });
+
+  it("omits optional resource plugins when their settings are falsy", () => {
     const r = zudoDocPreset({
       settings: { ...fixtureSettings, claudeResources: false, codexResources: false, docHistory: false, llmsTxt: false, changelogs: false, packageOwnedRoutes: false, assetViewer: false },
       buildDocsSchema: buildFixtureSchema,
@@ -548,6 +588,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
     expect(r.plugins.map((p) => p.name)).toEqual([
       "@takazudo/zudo-doc/plugins/search-index",
       "@takazudo/zudo-doc/plugins/theme-packs",
+      "@takazudo/zudo-doc/plugins/img-src-check",
     ]);
   });
 

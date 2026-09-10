@@ -283,6 +283,7 @@ reachable from this subpath — through the bundled JS graph OR the transitive
 | Subpath | Description |
 |---|---|
 | `./plugins/doc-history` | Doc history zfb plugin |
+| `./plugins/img-src-check` | Post-build validation of site-absolute raw image sources; accepts `base` and `onBroken` options |
 | `./plugins/llms-txt` | llms.txt generation zfb plugin |
 | `./plugins/search-index` | Search index zfb plugin |
 | `./plugins/claude-resources` | Claude resources generation zfb plugin |
@@ -378,6 +379,7 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `head?` | `SiteHeadConfig` | Site-wide `<head>` extras injected into every page. Supports `preconnect`, `preload`, `stylesheets`, `alternateLinks`, and `meta` descriptors. Stylesheet entries accept `async: true` for non-render-blocking loading via the `media="print" + onload` pattern with a `<noscript>` fallback. Absent (the default) emits nothing — byte-identical to the pre-2.0.1 baseline. |
 | `sitemap` | `boolean` | Enable sitemap generation |
 | `docMetainfo` | `boolean` | Enable doc metadata area (Created/Updated/Author) |
+| `docMetainfoFields` | `Array<"created" \| "updated" \| "author">` | Metadata fields to show; defaults to all three. `[]` renders nothing; `["updated"]` shows Updated even when its formatted date equals Created. |
 | `docTags` | `boolean` | Enable doc tags display |
 | `tagPlacement` | `TagPlacement` | Tag display position: `"after-title"` or `"before-pager"` |
 | `tagGovernance` | `TagGovernanceMode` | Tag vocabulary enforcement: `"off"`, `"warn"`, or `"strict"` |
@@ -385,7 +387,7 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `llmsTxt` | `boolean` | Enable llms.txt generation |
 | `math` | `boolean` | Enable KaTeX math rendering |
 | `cjkFriendly` | `boolean` | Enable CJK-friendly typography |
-| `onBrokenMarkdownLinks` | `"warn" \| "error" \| "ignore"` | Broken markdown link behavior |
+| `onBrokenMarkdownLinks` | `"warn" \| "error" \| "ignore"` | Severity for broken markdown links and site-absolute raw `<img src>` references: `warn` reports, `error` fails the build, and `ignore` skips checking. `srcset` is not checked. |
 | `aiAssistant` | `boolean` | Enable AI chat assistant |
 | `aiChatDemoMode` | `boolean` | Enable AI chat demo mode (no real API calls) |
 | `aiChatAllowedOrigins` | `string[]` | Allowed origins for AI chat CORS |
@@ -399,7 +401,8 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `imageEnlarge` | `boolean` | Enable image enlarge on click |
 | `dynamicPageTransition` | `boolean` | Enable View Transitions API |
 | `frontmatterPreview` | `FrontmatterPreviewConfig \| false` | Frontmatter preview panel config |
-| `docHistory` | `boolean` | Enable doc history dropdown |
+| `docHistory` | `boolean` | Enable git-based doc metadata generation and, unless `docHistoryUi` is false, the history dropdown |
+| `docHistoryUi` | `boolean` | Enable the doc history dropdown UI, history JSON, and dev proxy while retaining the preBuild dates manifest; defaults to `true`. When `false`, `DOC_HISTORY_SKIP_POSTBUILD` is redundant and a host's separate CI `build-history` job should be removed. |
 | `assetViewerIndexing` | `AssetViewerIndexingConfig \| false` | Independently opt in generated asset-viewer pages to search, llms.txt, or sitemap output; defaults to `false`, and omitted subkeys are off |
 | `bodyFootUtilArea` | `BodyFootUtilAreaConfig \| false` | Body footer utility area config |
 | `htmlPreview` | `HtmlPreviewConfig \| undefined` | HTML preview sandbox config |

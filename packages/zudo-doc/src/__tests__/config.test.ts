@@ -267,6 +267,28 @@ describe("zudoDoc() default-merge semantics", () => {
     expect(zudoDoc({}).markdown?.features?.mermaid).toBe(true);
   });
 
+  it("defaults the host doc controls and carries explicit values into resolved settings", () => {
+    const defaults = routesOptions(zudoDoc({}));
+    expect(DEFAULT_SETTINGS.docMetainfoFields).toEqual([
+      "created",
+      "updated",
+      "author",
+    ]);
+    expect(DEFAULT_SETTINGS.docHistoryUi).toBe(true);
+    expect(defaults?.settings.docMetainfoFields).toEqual([
+      "created",
+      "updated",
+      "author",
+    ]);
+    expect(defaults?.settings.docHistoryUi).toBe(true);
+
+    const override = routesOptions(
+      zudoDoc({ docMetainfoFields: ["updated"], docHistoryUi: false }),
+    );
+    expect(override?.settings.docMetainfoFields).toEqual(["updated"]);
+    expect(override?.settings.docHistoryUi).toBe(false);
+  });
+
   it("explicit `false` wins over a true-default (mermaid)", () => {
     expect(zudoDoc({ mermaid: false }).markdown?.features?.mermaid).toBe(false);
   });

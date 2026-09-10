@@ -143,7 +143,11 @@ export interface PresetSettings {
   onBrokenMarkdownLinks: "warn" | "error" | "ignore";
   llmsTxt?: boolean;
   changelogs?: PresetChangelogConfig[] | false;
+  /** Metadata fields shown in the doc metadata area. */
+  docMetainfoFields?: Array<"created" | "updated" | "author">;
   docHistory?: boolean;
+  /** Whether the doc history dropdown UI and related artifacts are enabled. */
+  docHistoryUi?: boolean;
   docHistoryExclude?: string[];
   /** Generate package-owned viewer pages for files under the configured asset directory. */
   assetViewer?: boolean;
@@ -703,6 +707,7 @@ function buildPlugins(
               docsDir: settings.docsDir,
               locales: localeRecord,
               base: settings.base,
+              ui: settings.docHistoryUi !== false,
               exclude: settings.docHistoryExclude ?? [],
             },
           },
@@ -759,5 +764,16 @@ function buildPlugins(
           },
         ]
       : []),
+    // Raw HTML image sources are checked after the build has emitted every
+    // page. Keep this as a bare descriptor so the node-backed scanner never
+    // enters the config-evaluation graph; its severity intentionally follows
+    // the existing broken-markdown-links setting.
+    {
+      name: "@takazudo/zudo-doc/plugins/img-src-check",
+      options: {
+        base: settings.base,
+        onBroken: settings.onBrokenMarkdownLinks,
+      },
+    },
   ];
 }
