@@ -40,7 +40,7 @@ function setupFixture(severity: "warn" | "error" | "ignore"): string {
   writeFileSync(settingsPath, settings.replace(marker, `onBrokenMarkdownLinks: "${severity}"`));
 
   const contentPath = join(dir, "src/content/docs/getting-started/index.mdx");
-  writeFileSync(contentPath, `${readFileSync(contentPath, "utf8")}\n\n<img src="/missing.png">\n`);
+  writeFileSync(contentPath, `${readFileSync(contentPath, "utf8")}\n\n<img src="/missing.png" />\n`);
   return dir;
 }
 
@@ -75,14 +75,14 @@ describe("img-src-check zfb build integration", () => {
 
   it("succeeds and prints the warning in warn mode", { timeout: 180_000 }, () => {
     const result = buildFixture(setupFixture("warn"));
-    expect(result.status).toBe(0);
+    expect(result.status, result.output).toBe(0);
     expect(result.output).toContain("[img-src-check] Broken image source");
     expect(result.output).toContain("Found 1 broken image source");
   });
 
   it("succeeds without an image warning in ignore mode", { timeout: 180_000 }, () => {
     const result = buildFixture(setupFixture("ignore"));
-    expect(result.status).toBe(0);
+    expect(result.status, result.output).toBe(0);
     expect(result.output).not.toContain("[img-src-check]");
   });
 });
