@@ -13,12 +13,14 @@ function renderArea(
   docHistoryMeta: Record<string, unknown>,
   sourceFileExt?: ".mdx" | ".md",
   docHistoryExclude?: string[],
+  docHistoryUi?: boolean,
 ): string {
   const ctx = makeFakeChromeContext({
     settings: {
       githubUrl: GITHUB_URL,
       bodyFootUtilArea: { viewSourceLink: true },
       docHistoryExclude,
+      docHistoryUi,
     },
     overrides: { hostBindings: { docHistoryMeta } } as Partial<ChromeContext>,
   });
@@ -99,6 +101,45 @@ describe("createDocHistoryArea source extension contract", () => {
     );
 
     expect(html).not.toContain(`${GITHUB_URL}/blob/HEAD/`);
+  });
+});
+
+describe("createDocHistoryArea UI gate", () => {
+  it("suppresses the history island while retaining the view-source link", () => {
+    const html = renderArea({}, ".mdx", undefined, false);
+
+    expect(html).toContain(
+      `href="${GITHUB_URL}/blob/HEAD/src/content/docs/guide.mdx"`,
+    );
+    expect(html).not.toContain('data-zfb-island-skip-ssr="DocHistory"');
+  });
+
+  it("keeps the view-source link for an excluded page in dates-only mode", () => {
+    const html = renderArea({}, ".mdx", ["guide"], false);
+
+    expect(html).toContain(
+      `href="${GITHUB_URL}/blob/HEAD/src/content/docs/guide.mdx"`,
+    );
+    expect(html).not.toContain('data-zfb-island-skip-ssr="DocHistory"');
+  });
+
+  it("returns no utility area when UI is off and the source link is disabled", () => {
+    const ctx = makeFakeChromeContext({
+      settings: { bodyFootUtilArea: false, docHistoryUi: false },
+    });
+    const DocHistoryArea = createDocHistoryArea(ctx);
+
+    expect(
+      render(
+        <DocHistoryArea
+          slug="guide"
+          locale="en"
+          entrySlug="guide"
+          sourceFileExt=".mdx"
+          contentDir="src/content/docs"
+        />,
+      ),
+    ).toBe("");
   });
 });
 

@@ -420,6 +420,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       docsDir: "src/content/docs",
       locales: { ja: { dir: "src/content/docs-ja" } },
       base: "/",
+      ui: true,
       exclude: ["drafts/**"],
     });
     expect(byName["@takazudo/zudo-doc/plugins/routes"]).toMatchObject({
@@ -537,6 +538,28 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
     );
 
     expect(docHistory?.options?.["exclude"]).toEqual([]);
+  });
+
+  it("threads docHistoryUi into the doc-history plugin as ui, defaulting to true", () => {
+    const disabled = zudoDocPreset({
+      settings: { ...fixtureSettings, docHistoryUi: false },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+    const disabledDocHistory = disabled.plugins.find(
+      (plugin) => plugin.name === "@takazudo/zudo-doc/plugins/doc-history",
+    );
+    expect(disabledDocHistory?.options?.["ui"]).toBe(false);
+
+    const omitted = zudoDocPreset({
+      settings: { ...fixtureSettings, docHistoryUi: undefined },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+    const omittedDocHistory = omitted.plugins.find(
+      (plugin) => plugin.name === "@takazudo/zudo-doc/plugins/doc-history",
+    );
+    expect(omittedDocHistory?.options?.["ui"]).toBe(true);
   });
 
   it("omits claude-resources / codex-resources / doc-history / llms-txt / changelog when their settings are falsy", () => {

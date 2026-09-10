@@ -44,6 +44,8 @@ export interface DocHistoryMetaEntry {
 /** Settings subset read by the DocHistoryArea factory. */
 export interface DocHistoryAreaSettings {
   docHistory: boolean;
+  /** Keep the metadata manifest while suppressing the history island. */
+  docHistoryUi?: boolean;
   docHistoryExclude?: string[];
   bodyFootUtilArea: { viewSourceLink?: boolean } | false | undefined;
   base?: string | null;
@@ -152,8 +154,16 @@ export function createDocHistoryArea<S extends Settings = Settings>(
     // collectContentFiles walk in packages/doc-history-server. (#1891)
     const historySlug = toHistorySlug(slug);
 
-    // Suppress the island entirely so excluded pages never request absent JSON.
-    if (isHistoryExcluded(historySlug)) return null;
+    // `docHistoryUi: false` is the dates-only mode. Continue through the
+    // source-link composition below, but do not build an Island marker or
+    // history fallback markup.
+    const showDocHistoryUi = settings.docHistoryUi !== false;
+
+    // Suppress the entire utility area for excluded pages in the default
+    // UI-on mode, preserving the existing exclusion behavior. In dates-only
+    // mode the exclusion removes history data, while the independent
+    // view-source link can still be rendered below.
+    if (isHistoryExcluded(historySlug) && showDocHistoryUi) return null;
 
     // On EN-fallback locale pages the history data exists only at the bare
     // (non-locale-prefixed) path — the prebuild/server writes locale-prefixed
@@ -211,19 +221,27 @@ export function createDocHistoryArea<S extends Settings = Settings>(
     );
 
     // Compose the SSR-skip island with zfb's native `<Island ssrFallback>` API.
-    const docHistoryIsland = Island({
-      when: "idle",
-      ssrFallback: fallback,
-      children: (
-        <DocHistory
-          slug={historySlug}
-          locale={docHistoryLocale}
-          basePath={docHistoryBasePath}
-          displayLocale={docHistoryDisplayLocale}
-          dateFormats={docHistoryDateFormats}
-        />
-      ),
-    }) as unknown as VNode;
+    // In dates-only mode the conditional avoids emitting an island marker;
+    // the source-link composition below remains independent of this value.
+    const docHistoryIsland = showDocHistoryUi
+      ? (Island({
+          when: "idle",
+          ssrFallback: fallback,
+          children: (
+            <DocHistory
+              slug={historySlug}
+              locale={docHistoryLocale}
+              basePath={docHistoryBasePath}
+              displayLocale={docHistoryDisplayLocale}
+              dateFormats={docHistoryDateFormats}
+            />
+          ),
+        }) as unknown as VNode)
+      : null;
+
+    // Suppress TS warning about historyLabel being unused — it is retained
+    // for future use and parity with the original file.
+    void historyLabel;
 
     // Compute the view-source GitHub URL host-side so the v2 BodyFootUtilArea
     // component stays oblivious to project settings. Gate on
@@ -248,10 +266,6 @@ export function createDocHistoryArea<S extends Settings = Settings>(
     // Resolve the i18n label host-side; pass the result so the v2 component
     // stays framework-agnostic.
     const viewSourceLabel = t("doc.viewSource", locale);
-
-    // Suppress TS warning about historyLabel being unused — it is retained
-    // for future use and parity with the original file.
-    void historyLabel;
 
     return (
       <BodyFootUtilArea

@@ -707,6 +707,7 @@ function buildPlugins(
               docsDir: settings.docsDir,
               locales: localeRecord,
               base: settings.base,
+              ui: settings.docHistoryUi !== false,
               exclude: settings.docHistoryExclude ?? [],
             },
           },
