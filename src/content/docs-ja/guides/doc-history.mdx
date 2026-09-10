@@ -54,7 +54,7 @@ export default defineConfig(
 );
 ```
 
-preBuildのCreated/Updated/Authorマニフェストは維持されます。メタデータの表示には、従来どおり`chromeBindingsModule`経由で`docHistoryMeta`にマニフェストを渡す必要があります（[設定リファレンス](./configuration.mdx#site-settings-docmetainfo)）。`["updated"]`は日付書式で整形した表示値がCreatedと同じでもUpdatedを表示し、`[]`はメタデータブロックを描画しません。
+preBuildのCreated/Updated/Authorマニフェストは維持されます。メタデータの表示には、従来どおり`chromeBindingsModule`経由で`docHistoryMeta`にマニフェストを渡す必要があります（[設定リファレンス](./configuration.mdx#サイト設定-docmetainfo)）。`["updated"]`は日付書式で整形した表示値がCreatedと同じでもUpdatedを表示し、`[]`はメタデータブロックを描画しません。
 
 `docHistoryUi: false`では履歴ボタンとDocHistoryアイランドを描画せず、プラグインの履歴JSON生成と開発時のプロキシも停止します。ソース表示リンクは維持されます。ページの`doc_history: true`や`bodyFootUtilArea.docHistory: true`でこの全体設定を上書きすることはできません。
 
