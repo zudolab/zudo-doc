@@ -20,6 +20,7 @@ import searchIndex from "../plugins/search-index.js";
 import claudeResources from "../plugins/claude-resources.js";
 import codexResources from "../plugins/codex-resources.js";
 import changelog from "../plugins/changelog.js";
+import imgSrcCheck from "../plugins/img-src-check.js";
 import { connectToZfbHandler } from "../plugins/connect-adapter.js";
 
 describe("doc-history plugin shape", () => {
@@ -84,6 +85,13 @@ describe("changelog plugin shape", () => {
   it("retains the current changelog plugin", () => {
     expect(changelog.name).toBe("changelog");
     expect(typeof changelog.postBuild).toBe("function");
+  });
+});
+
+describe("img-src-check plugin shape", () => {
+  it("has the public plugin name and a postBuild hook", () => {
+    expect(imgSrcCheck.name).toBe("img-src-check");
+    expect(typeof imgSrcCheck.postBuild).toBe("function");
   });
 });
 
