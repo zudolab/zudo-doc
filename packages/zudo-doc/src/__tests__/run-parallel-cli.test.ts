@@ -21,7 +21,11 @@
 // process is gone rather than inferring it from a file that never appeared.
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { spawnSync, spawn as spawnProc } from "node:child_process";
+import {
+  spawnSync,
+  spawn as spawnProc,
+  type ChildProcess,
+} from "node:child_process";
 import { setTimeout as delay } from "node:timers/promises";
 import fs from "fs-extra";
 import os from "node:os";
@@ -44,6 +48,10 @@ const BOOT_MS = 1200;
 // own during a teardown test, so its appearance always means a survived orphan.
 const LONG_TASK_MS = 4000;
 const DEATH_TIMEOUT_MS = 10_000;
+// Leave enough time for a contended coordinator startup while keeping the
+// observation deadline below the long task's completion marker.
+const READINESS_TIMEOUT_MS = LONG_TASK_MS - 1000;
+const READINESS_POLL_MS = 50;
 
 let dir: string;
 
@@ -84,6 +92,66 @@ const run = (...args: string[]) =>
   });
 
 const exists = (file: string) => fs.pathExists(path.join(dir, file));
+
+/**
+ * Wait for a child-written marker without making startup timing an assumption.
+ * The finite deadline keeps a broken spawn diagnosable and lets the test's
+ * cleanup path run instead of waiting forever.
+ */
+async function waitForMarker(file: string, timeoutMs: number) {
+  const deadline = Date.now() + timeoutMs;
+  while (!(await exists(file))) {
+    if (Date.now() >= deadline) return false;
+    await delay(READINESS_POLL_MS);
+  }
+  return true;
+}
+
+/**
+ * Attach the close observer immediately after spawning so a fast failure cannot
+ * race the listener. The signal-forwarding test awaits this in finally and
+ * therefore never leaves its coordinator running after an assertion fails.
+ */
+function observeClose(child: ChildProcess) {
+  return new Promise<void>((resolve) => {
+    // A failed spawn emits `error` before `close`; consume it here so cleanup
+    // can report the test failure without an unhandled ChildProcess error.
+    child.once("error", () => undefined);
+    child.once("close", () => resolve());
+  });
+}
+
+function isRunning(child: ChildProcess) {
+  return child.exitCode === null && child.signalCode === null;
+}
+
+/**
+ * Reap the coordinator without allowing a broken signal path to consume the
+ * enclosing test timeout. SIGTERM gets a short graceful window; SIGKILL is the
+ * bounded fallback, and the final close wait is bounded as well.
+ */
+async function reapCoordinator(
+  child: ChildProcess,
+  coordinatorClosed: Promise<void>,
+) {
+  if (isRunning(child)) child.kill("SIGTERM");
+
+  const waitForClose = (timeoutMs: number) =>
+    new Promise<boolean>((resolve) => {
+      const timer = setTimeout(() => resolve(false), timeoutMs);
+      coordinatorClosed.then(() => {
+        clearTimeout(timer);
+        resolve(true);
+      });
+    });
+
+  if (await waitForClose(BOOT_MS)) return;
+
+  if (isRunning(child)) child.kill("SIGKILL");
+  if (!(await waitForClose(BOOT_MS))) {
+    throw new Error("coordinator did not close after SIGKILL");
+  }
+}
 
 const isAlive = (pid: number) => {
   try {
@@ -169,14 +237,25 @@ describe("run-parallel", () => {
       cwd: dir,
       stdio: "ignore",
     });
-    // ChildProcess.pid is optional in the type: undefined when the spawn itself
-    // failed, which would make the assertions below vacuously pass.
-    const { pid } = child;
-    if (pid === undefined) throw new Error("coordinator failed to spawn");
+    const coordinatorClosed = observeClose(child);
 
-    await delay(BOOT_MS);
-    process.kill(pid, "SIGTERM");
-    await expectLongTaskKilled();
+    try {
+      // ChildProcess.pid is optional in the type: undefined when the spawn itself
+      // failed, which would make the assertions below vacuously pass.
+      const { pid } = child;
+      if (pid === undefined) throw new Error("coordinator failed to spawn");
+
+      // Waiting for the marker proves the coordinator's child really started;
+      // unlike a fixed delay, this remains correct when the suite is contended.
+      expect(await waitForMarker("long.pid", READINESS_TIMEOUT_MS)).toBe(true);
+      process.kill(pid, "SIGTERM");
+      await expectLongTaskKilled();
+    } finally {
+      // If readiness or an assertion failed before the coordinator's signal
+      // handler ran, terminate it here and wait for close before afterEach
+      // removes the fixture directory.
+      await reapCoordinator(child, coordinatorClosed);
+    }
   });
 
   it("propagates a failure through a nested coordinator (the #3129 two-hop cascade)", async () => {
