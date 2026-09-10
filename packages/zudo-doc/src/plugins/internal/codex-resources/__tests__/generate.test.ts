@@ -436,6 +436,56 @@ describe("generateCodexResourcesDocs", () => {
     expect(console.warn).toHaveBeenCalled();
   });
 
+  it("downgrades links in shared Codex skill bodies while preserving sub-pages", () => {
+    const body = [
+      "Plain [a](../../../doc/x.md) and [b](../skills/y/SKILL.md).",
+      "Inline `[inline](../../../doc/x.md)`. ",
+      "```md",
+      "[fenced](../../../doc/x.md)",
+      "```",
+    ].join("\n");
+    write(
+      path.join(codexDir, "skills", "test-skill", "SKILL.md"),
+      [
+        "---",
+        "name: Test Skill",
+        "description: A test skill",
+        "---",
+        "",
+        body,
+        "Generated [r](references/guide.md).",
+        "Missing [missing](references/missing.md).",
+      ].join("\n"),
+    );
+    write(
+      path.join(codexDir, "skills", "test-skill", "references", "guide.md"),
+      body,
+    );
+
+    generate();
+
+    const page = fs.readFileSync(
+      path.join(docsDir, "codex-skills", "test-skill", "index.mdx"),
+      "utf8",
+    );
+    expect(page).toContain("`a`");
+    expect(page).toContain("`b`");
+    expect(page).toContain("`missing`");
+    expect(page).toContain("Generated [r](./ref-guide).");
+    expect(page).toContain("`[inline](../../../doc/x.md)`");
+    expect(page).toContain("[fenced](../../../doc/x.md)");
+    expect(page).toContain("- [references/guide.md](./ref-guide)");
+
+    const reference = fs.readFileSync(
+      path.join(docsDir, "codex-skills", "test-skill", "ref-guide.mdx"),
+      "utf8",
+    );
+    expect(reference).toContain("`a`");
+    expect(reference).toContain("`b`");
+    expect(reference).toContain("`[inline](../../../doc/x.md)`");
+    expect(reference).toContain("[fenced](../../../doc/x.md)");
+  });
+
   it("warns and falls back for wrong-type skill frontmatter", () => {
     write(
       path.join(codexDir, "skills", "wrong-frontmatter", "SKILL.md"),

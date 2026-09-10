@@ -232,7 +232,7 @@ sidebar_label: "${escapeTitle(name)}"
 generated: true
 ---
 
-${escapeForMdx(parsed.content.trim())}
+${escapeForMdx(downgradeRepoRelativeLinks(parsed.content.trim()))}
 `;
     fs.writeFileSync(path.join(outputDir, `${name}.mdx`), mdx);
   }
@@ -317,7 +317,7 @@ generated: true
 ---
 
 ${modelBadge}
-${escapeForMdx(parsed.content.trim())}
+${escapeForMdx(downgradeRepoRelativeLinks(parsed.content.trim()))}
 `;
     fs.writeFileSync(path.join(outputDir, `${fileSlug}.mdx`), mdx);
   }
