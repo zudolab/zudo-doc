@@ -342,6 +342,12 @@ What to do when a `.md`/`.mdx` link cannot be resolved: `"warn"` logs and contin
 
 Type: `"warn" | "error" | "ignore"` · Default: `"warn"`
 
+This setting also governs the post-build existence check for raw `<img src>` attributes in rendered HTML. `"error"` reports problems and fails the build, `"warn"` reports and continues, and `"ignore"` skips the scan entirely.
+
+The scan checks site-absolute paths beginning with `/`. It strips queries and fragments, decodes URL escapes, and checks for a file in the build output. With `base: "/manual/"`, `/manual/img/logo.svg` maps to `dist/img/logo.svg`. Paths outside that base, missing files, and paths escaping the output directory are reported as broken.
+
+External URLs, protocol-relative `//` URLs, schemes such as `data:`, and relative paths are excluded. Comments, script strings, and escaped code examples are not treated as images. `srcset` is not checked.
+
 ## Color
 
 ### colorScheme
@@ -812,6 +818,14 @@ Fresh scaffolds wire the real scanner-reachable `DocHistory` island into every g
 
 See the [Document History guide](./doc-history.mdx).
 
+### docHistoryUi
+
+Controls the History button and DocHistory island, postBuild history JSON generation, and dev history proxy. Setting it to `false` keeps the preBuild metadata manifest when `docHistory: true`. The view-source link is retained too.
+
+Type: `boolean` · Default: `true`
+
+Set this by hand in `zfb.config.ts`; there is no new CLI flag. See the [Document History guide](./doc-history.mdx) for environment-variable interactions and CI job cleanup.
+
 ### docMetainfo
 
 Show the Created/Updated/Author meta block on doc pages (extracted from git history at build).
@@ -826,6 +840,21 @@ The `docHistoryMeta` slot defaults to `{}`. Point `chromeBindingsModule` at a mo
 
 The binding module must provide `docHistoryMeta`; with the default `{}` data slot, there is no metadata block to render. Follow the [Document History guide](./doc-history.mdx) for the paired `docHistory` setup.
 
+### docMetainfoFields
+
+Select the fields shown in the metadata block. Requires `docMetainfo: true` and a `docHistoryMeta` binding that supplies data.
+
+Type: `Array<"created" | "updated" | "author">` · Default: `["created", "updated", "author"]`
+
+Omitting this enables all fields. Display order stays Created, Updated, Author regardless of array order. When Created is also displayed, Updated is suppressed when its formatted display value equals Created (the configured date format can include a time). With `["updated"]`, Updated appears even when the dates match. An empty array `[]` renders no metadata block.
+
+```ts
+docMetainfo: true,
+docMetainfoFields: ["updated"],
+```
+
+Set this by hand in `zfb.config.ts`; there is no new CLI flag. Selecting fewer fields does not stop history data generation.
+
 ### bodyFootUtilArea
 
 Body-foot utility area (doc-history / view-source), or `false` to disable.
@@ -834,7 +863,7 @@ Type: `BodyFootUtilAreaConfig | false` · Default: `false`
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `docHistory` | `boolean` (optional) | Show the History button (requires `docHistory: true`) |
+| `docHistory` | `boolean` (optional) | Show the History button (requires `docHistory: true` and `docHistoryUi: true`) |
 | `viewSourceLink` | `boolean` (optional) | Show a raw-source link (requires `githubUrl`) |
 
 ### htmlPreview

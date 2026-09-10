@@ -35,6 +35,8 @@ export const settings = {
 bodyFootUtilArea: false,
 ```
 
+トップレベルの`docHistoryUi: false`は、このエリアの履歴ボタンとDocHistoryアイランドを非表示にし、履歴JSON生成と開発時のプロキシも停止します。`bodyFootUtilArea.docHistory: true`で再表示することはできません。git由来のメタデータとソース表示リンクは維持されます。[日付だけを表示する設定](./doc-history.mdx)を参照してください。
+
 ## フィールド
 
 | フィールド | 型 | 説明 |
@@ -74,7 +76,7 @@ URL は特定ブランチではなく `HEAD` に固定されます。`HEAD` は 
 不要な項目だけ `false` にしてください:
 
 ```ts
-// 履歴は出す、ソースリンクは隠す
+// Keep history, hide source link
 bodyFootUtilArea: {
   docHistory: true,
   viewSourceLink: false,
@@ -82,7 +84,7 @@ bodyFootUtilArea: {
 ```
 
 ```ts
-// 履歴を隠す、ソースリンクは出す
+// Hide history, keep source link
 bodyFootUtilArea: {
   docHistory: false,
   viewSourceLink: true,

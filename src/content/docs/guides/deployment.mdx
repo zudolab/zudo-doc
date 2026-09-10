@@ -116,6 +116,8 @@ When `SKIP_DOC_HISTORY=1` is set, the doc-history zfb plugin skips all git histo
 
 </Tip>
 
+The JSON decision table below assumes `docHistory: true` and `docHistoryUi: true`. With `docHistoryUi: false`, the plugin skips JSON generation and the dev proxy regardless of environment variables. The preBuild manifest is retained unless `SKIP_DOC_HISTORY=1` blanks it; `DOC_HISTORY_SKIP_POSTBUILD=1` is redundant. Remove a host’s separate `build-history` job and artifact handoff steps too: the standalone generator CLI is not disabled by this setting. See the [Document History guide](./doc-history.mdx) for configuration and the full interaction table.
+
 ## GEN_DOC_HISTORY
 
 `GEN_DOC_HISTORY=1` (introduced in #1986) gates the doc-history plugin's **postBuild** hook — the step that writes the per-page revision/diff JSON into `dist/doc-history/` feeding the DocHistory dropdown island. The plugin's **preBuild** hook (the visible Created/Updated/Author meta block) is unaffected and is governed by `SKIP_DOC_HISTORY` alone. postBuild now follows this decision table:
