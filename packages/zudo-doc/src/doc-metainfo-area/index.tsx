@@ -33,6 +33,8 @@ export interface DocHistoryMetaEntry {
 /** Settings subset read by the DocMetainfoArea factory. */
 export interface DocMetainfoAreaSettings {
   docMetainfo: boolean;
+  /** Metadata fields shown in the doc metadata area; omitted means all fields. */
+  docMetainfoFields?: Array<"created" | "updated" | "author">;
 }
 
 export interface DocMetainfoAreaProps {
@@ -76,6 +78,18 @@ export function createDocMetainfoArea<S extends Settings = Settings>(
   function DocMetainfoArea({ slug, locale, isFallback }: DocMetainfoAreaProps): VNode | null {
     if (!settings.docMetainfo) return null;
 
+    // Keep the pre-setting behavior for contexts that omit the optional field;
+    // `zudoDoc()` supplies all three by default, while direct factory callers
+    // from before this setting existed still render the complete block.
+    const fields = settings.docMetainfoFields;
+    const showCreated = fields === undefined || fields.includes("created");
+    const showUpdated = fields === undefined || fields.includes("updated");
+    const showAuthor = fields === undefined || fields.includes("author");
+
+    // Avoid looking up history or creating an empty wrapper when every field
+    // was explicitly deselected.
+    if (!showCreated && !showUpdated && !showAuthor) return null;
+
     // Doc-history storage sentinel ("" -> "index"): a root index page has the
     // canonical route slug "" (→ /docs/), but the prebuild keys the root entry
     // under "index" (collectContentFiles keeps the bare root; an empty path
@@ -106,9 +120,17 @@ export function createDocMetainfoArea<S extends Settings = Settings>(
 
     return (
       <DocMetainfo
-        createdAt={meta.createdDate ? formatDate(meta.createdDate, locale, dateFormatsFor(locale).full) : null}
-        updatedAt={meta.updatedDate ? formatDate(meta.updatedDate, locale, dateFormatsFor(locale).full) : null}
-        author={meta.author || null}
+        createdAt={
+          showCreated && meta.createdDate
+            ? formatDate(meta.createdDate, locale, dateFormatsFor(locale).full)
+            : null
+        }
+        updatedAt={
+          showUpdated && meta.updatedDate
+            ? formatDate(meta.updatedDate, locale, dateFormatsFor(locale).full)
+            : null
+        }
+        author={showAuthor ? meta.author || null : null}
         createdLabel={t("doc.created", locale)}
         updatedLabel={t("doc.updated", locale)}
       />
