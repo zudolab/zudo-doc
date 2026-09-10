@@ -16,6 +16,7 @@ const CURRENT_PLUGINS = {
   "@takazudo/zudo-doc/plugins/codex-resources": ["preBuild"],
   "@takazudo/zudo-doc/plugins/changelog": ["postBuild"],
   "@takazudo/zudo-doc/plugins/theme-packs": ["setup", "postBuild", "devMiddleware"],
+  "@takazudo/zudo-doc/plugins/img-src-check": ["postBuild"],
 };
 
 const REMOVED_SUBPATHS = [
@@ -128,6 +129,14 @@ try {
     projectRoot,
     outDir,
     options: { changelogs: [] },
+    logger,
+  });
+
+  const imgSrcCheck = loadedPlugins.get("@takazudo/zudo-doc/plugins/img-src-check");
+  await imgSrcCheck.postBuild({
+    projectRoot,
+    outDir,
+    options: { base: "/", onBroken: "warn" },
     logger,
   });
 

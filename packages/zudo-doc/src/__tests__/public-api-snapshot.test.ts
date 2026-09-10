@@ -132,6 +132,7 @@ describe("package.json exports keyset snapshot", () => {
         "./plugins/claude-resources",
         "./plugins/codex-resources",
         "./plugins/doc-history",
+        "./plugins/img-src-check",
         "./plugins/llms-txt",
         "./plugins/routes",
         "./plugins/search-index",

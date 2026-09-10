@@ -759,5 +759,16 @@ function buildPlugins(
           },
         ]
       : []),
+    // Raw HTML image sources are checked after the build has emitted every
+    // page. Keep this as a bare descriptor so the node-backed scanner never
+    // enters the config-evaluation graph; its severity intentionally follows
+    // the existing broken-markdown-links setting.
+    {
+      name: "@takazudo/zudo-doc/plugins/img-src-check",
+      options: {
+        base: settings.base,
+        onBroken: settings.onBrokenMarkdownLinks,
+      },
+    },
   ];
 }

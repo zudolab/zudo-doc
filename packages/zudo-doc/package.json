@@ -191,6 +191,10 @@
       "types": "./dist/plugins/theme-packs.d.ts",
       "default": "./dist/plugins/theme-packs.js"
     },
+    "./plugins/img-src-check": {
+      "types": "./dist/plugins/img-src-check.d.ts",
+      "default": "./dist/plugins/img-src-check.js"
+    },
     "./content-admonition": {
       "types": "./dist/content-admonition/index.d.ts",
       "default": "./dist/content-admonition/index.js"

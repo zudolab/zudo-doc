@@ -5,7 +5,7 @@
 // that skipped compilation fails loudly instead of publishing a package whose
 // `./plugins/*` exports 404 for consumers.
 //
-// Exit 0 → all 7 current integration plugin files exist and are non-empty.
+// Exit 0 → all 8 current integration plugin files exist and are non-empty.
 // Exit 1 → any file is missing or empty (with a clear diagnostic message).
 //
 // connect-adapter.js is intentionally absent from this list: it is an
@@ -27,6 +27,7 @@ const PLUGIN_FILES = [
   "plugins/codex-resources.js",
   "plugins/changelog.js",
   "plugins/theme-packs.js",
+  "plugins/img-src-check.js",
 ];
 
 let allOk = true;
