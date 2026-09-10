@@ -378,6 +378,7 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `head?` | `SiteHeadConfig` | Site-wide `<head>` extras injected into every page. Supports `preconnect`, `preload`, `stylesheets`, `alternateLinks`, and `meta` descriptors. Stylesheet entries accept `async: true` for non-render-blocking loading via the `media="print" + onload` pattern with a `<noscript>` fallback. Absent (the default) emits nothing — byte-identical to the pre-2.0.1 baseline. |
 | `sitemap` | `boolean` | Enable sitemap generation |
 | `docMetainfo` | `boolean` | Enable doc metadata area (Created/Updated/Author) |
+| `docMetainfoFields` | `Array<"created" \| "updated" \| "author">` | Metadata fields to show; defaults to all three |
 | `docTags` | `boolean` | Enable doc tags display |
 | `tagPlacement` | `TagPlacement` | Tag display position: `"after-title"` or `"before-pager"` |
 | `tagGovernance` | `TagGovernanceMode` | Tag vocabulary enforcement: `"off"`, `"warn"`, or `"strict"` |
@@ -400,6 +401,7 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `dynamicPageTransition` | `boolean` | Enable View Transitions API |
 | `frontmatterPreview` | `FrontmatterPreviewConfig \| false` | Frontmatter preview panel config |
 | `docHistory` | `boolean` | Enable doc history dropdown |
+| `docHistoryUi` | `boolean` | Enable the doc history dropdown UI, history JSON, and dev proxy; defaults to `true` |
 | `assetViewerIndexing` | `AssetViewerIndexingConfig \| false` | Independently opt in generated asset-viewer pages to search, llms.txt, or sitemap output; defaults to `false`, and omitted subkeys are off |
 | `bodyFootUtilArea` | `BodyFootUtilAreaConfig \| false` | Body footer utility area config |
 | `htmlPreview` | `HtmlPreviewConfig \| undefined` | HTML preview sandbox config |

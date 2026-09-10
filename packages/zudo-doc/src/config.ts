@@ -195,6 +195,7 @@ export const DEFAULT_SETTINGS: Settings = {
   },
   sitemap: false,
   docMetainfo: false,
+  docMetainfoFields: ["created", "updated", "author"],
   docTags: false,
   tagPlacement: "after-title",
   tagGovernance: "off",
@@ -221,6 +222,7 @@ export const DEFAULT_SETTINGS: Settings = {
   dynamicPageTransition: false,
   frontmatterPreview: false,
   docHistory: false,
+  docHistoryUi: true,
   docHistoryExclude: [],
   assetViewer: false,
   assetViewerDir: "assets",
@@ -421,6 +423,11 @@ export interface ZudoDocConfig {
    */
   docMetainfo?: boolean;
   /**
+   * Metadata fields to show in the doc metadata area.
+   * @default ["created", "updated", "author"]
+   */
+  docMetainfoFields?: Array<"created" | "updated" | "author">;
+  /**
    * Enable the `/docs/tags` + `/docs/tags/[tag]` tag index routes.
    * @default false
    */
@@ -549,6 +556,12 @@ export interface ZudoDocConfig {
    * @default false
    */
   docHistory?: boolean;
+  /**
+   * Enable the doc history dropdown UI, history JSON generation, and dev
+   * history proxy while retaining the history metadata manifest.
+   * @default true
+   */
+  docHistoryUi?: boolean;
   /**
    * Glob patterns matched against the doc slug (path minus extension, `/index`
    * stripped, root = `index`) that exclude matching pages from git-history

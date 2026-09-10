@@ -143,7 +143,11 @@ export interface PresetSettings {
   onBrokenMarkdownLinks: "warn" | "error" | "ignore";
   llmsTxt?: boolean;
   changelogs?: PresetChangelogConfig[] | false;
+  /** Metadata fields shown in the doc metadata area. */
+  docMetainfoFields?: Array<"created" | "updated" | "author">;
   docHistory?: boolean;
+  /** Whether the doc history dropdown UI and related artifacts are enabled. */
+  docHistoryUi?: boolean;
   docHistoryExclude?: string[];
   /** Generate package-owned viewer pages for files under the configured asset directory. */
   assetViewer?: boolean;
