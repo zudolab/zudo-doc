@@ -8,6 +8,12 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [5.22.0] - 2026-09-11
+
+### Features
+
+- Generated projects pin `@takazudo/zudo-doc` and `@takazudo/zudo-doc-history-server` at `^5.22.0`. Hosts can edit `docMetainfoFields` and `docHistoryUi` in `zfb.config.ts` to select metadata fields and retain dates without the history viewer. The generated config retains package defaults; no new CLI flags were added. (`06044fa30`)
+
 ## [5.21.0] - 2026-09-09
 
 ### Features

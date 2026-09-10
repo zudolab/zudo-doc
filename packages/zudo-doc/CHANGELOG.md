@@ -8,6 +8,18 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [5.22.0] - 2026-09-11
+
+### Features
+
+- Added `docMetainfoFields` to select the metadata fields displayed on documentation pages. It defaults to all fields; an empty array hides them all, and `["updated"]` displays Updated even when Created has the same formatted date. (`06044fa30`, `3832e08af`)
+- Added `docHistoryUi: false` to retain generated git metadata while disabling the history viewer, history JSON generation, and development proxy. Configured view-source links remain available. (`84cd63af5`)
+- Added a post-build check for missing site-absolute `<img src>` files, using the existing `onBrokenMarkdownLinks` severity setting. (`9cc259d65`)
+
+### Bug Fixes
+
+- Mirrored Claude commands and agents and shared Claude/Codex skills now render repository-relative links as labels when their targets are not emitted. Code examples and links to emitted skill-body sub-pages are preserved. (`bb6d0390c`)
+
 ## [5.21.0] - 2026-09-09
 
 ### Features
