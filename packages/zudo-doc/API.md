@@ -401,7 +401,7 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `dynamicPageTransition` | `boolean` | Enable View Transitions API |
 | `frontmatterPreview` | `FrontmatterPreviewConfig \| false` | Frontmatter preview panel config |
 | `docHistory` | `boolean` | Enable doc history dropdown |
-| `docHistoryUi` | `boolean` | Enable the doc history dropdown UI, history JSON, and dev proxy; defaults to `true` |
+| `docHistoryUi` | `boolean` | Enable the doc history dropdown UI, history JSON, and dev proxy while retaining the preBuild dates manifest; defaults to `true`. When `false`, `DOC_HISTORY_SKIP_POSTBUILD` is redundant and a host's separate CI `build-history` job should be removed. |
 | `assetViewerIndexing` | `AssetViewerIndexingConfig \| false` | Independently opt in generated asset-viewer pages to search, llms.txt, or sitemap output; defaults to `false`, and omitted subkeys are off |
 | `bodyFootUtilArea` | `BodyFootUtilAreaConfig \| false` | Body footer utility area config |
 | `htmlPreview` | `HtmlPreviewConfig \| undefined` | HTML preview sandbox config |

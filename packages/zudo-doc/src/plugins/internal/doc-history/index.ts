@@ -23,7 +23,8 @@
 //      postBuild output is redundant with it. A shallow-clone CI variant that
 //      wants to skip ONLY this heavy step while keeping the lightweight
 //      preBuild meta step sets `DOC_HISTORY_SKIP_POSTBUILD=1` instead of
-//      `SKIP_DOC_HISTORY=1` (#2927).
+//      `SKIP_DOC_HISTORY=1` (#2927). The public plugin's `ui: false` option
+//      disables this hook regardless of the environment.
 //   3. **Pre-build metadata** — emits the manifest consumed during SSG.
 
 import { spawn } from "node:child_process";
@@ -61,6 +62,10 @@ export interface DocHistoryOptions {
   locales?: Record<string, DocHistoryLocaleConfig>;
   /** Slug globs excluded from pre-build metadata and post-build history JSON. */
   exclude?: string[];
+  /** Whether the history UI, JSON generation, and dev proxy are enabled. Defaults to `true`. */
+  ui?: boolean;
+  /** Site base path used when registering the dev proxy route. */
+  base?: string;
   /**
    * Port the standalone `@takazudo/zudo-doc-history-server` listens on.
    * Defaults to `4322` to match the server's CLI default. Only used by
@@ -261,7 +266,8 @@ function isCiEnv(env: NodeJS.ProcessEnv): boolean {
  * `@takazudo/zudo-doc-history-server` to write per-page git history JSON
  * files into `<outDir>/doc-history/`.
  *
- * Generation is gated by `shouldGeneratePostBuild` (see its docs): skipped by
+ * Generation is gated by `options.ui` and `shouldGeneratePostBuild` (see its
+ * docs): `ui: false` is always skipped; otherwise generation is skipped by
  * default on local builds (opt in with `GEN_DOC_HISTORY=1`), run in CI and
  * when explicitly opted in, and always suppressed by `SKIP_DOC_HISTORY=1` or
  * `DOC_HISTORY_SKIP_POSTBUILD=1`.
@@ -274,6 +280,11 @@ export async function runDocHistoryPostBuild(
   options: DocHistoryOptions,
   ctx: PostBuildContext,
 ): Promise<void> {
+  // `docHistoryUi: false` keeps the cheap preBuild metadata manifest but
+  // removes the dropdown's static JSON. Check this before the environment
+  // decision table so CI and GEN_DOC_HISTORY cannot re-enable the UI artifact.
+  if (options.ui === false) return;
+
   const { generate, reason } = shouldGeneratePostBuild();
   if (!generate) {
     ctx.logger?.info(`Skipping doc history generation (${reason})`);

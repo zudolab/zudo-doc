@@ -1,6 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   buildGenerateCliArgs,
+  runDocHistoryPostBuild,
   shouldGeneratePostBuild,
   DOC_HISTORY_GEN_ENV,
   DOC_HISTORY_SKIP_POSTBUILD_ENV,
@@ -115,5 +116,31 @@ describe("shouldGeneratePostBuild", () => {
         CI: "true",
       }).generate,
     ).toBe(true); // non-'1' does NOT trigger the skip, so CI still generates
+  });
+});
+
+describe("runDocHistoryPostBuild UI gate", () => {
+  it("does not write history JSON when ui is false, even with generation env vars", async () => {
+    const previousCi = process.env.CI;
+    const previousGenerate = process.env[DOC_HISTORY_GEN_ENV];
+    process.env.CI = "1";
+    process.env[DOC_HISTORY_GEN_ENV] = "1";
+
+    const info = vi.fn();
+    const warn = vi.fn();
+    try {
+      await runDocHistoryPostBuild(
+        { docsDir: "src/content/docs", ui: false },
+        { outDir: "/runtime/out", logger: { info, warn } },
+      );
+    } finally {
+      if (previousCi === undefined) delete process.env.CI;
+      else process.env.CI = previousCi;
+      if (previousGenerate === undefined) delete process.env[DOC_HISTORY_GEN_ENV];
+      else process.env[DOC_HISTORY_GEN_ENV] = previousGenerate;
+    }
+
+    expect(info).not.toHaveBeenCalled();
+    expect(warn).not.toHaveBeenCalled();
   });
 });

@@ -8,10 +8,11 @@
 //               own env check.
 //
 //   postBuild — invokes `runDocHistoryPostBuild` to write
-//               `<outDir>/doc-history/<slug>.json` files. Skipped by default
-//               on local builds (opt in with `GEN_DOC_HISTORY=1`); always runs
-//               in CI; `SKIP_DOC_HISTORY=1` suppresses it everywhere. The
-//               gating lives in `shouldGeneratePostBuild` (#1986).
+//               `<outDir>/doc-history/<slug>.json` files when the `ui` option
+//               is enabled. Skipped by default on local builds (opt in with
+//               `GEN_DOC_HISTORY=1`); always runs in CI; `SKIP_DOC_HISTORY=1`
+//               suppresses it everywhere. The environment gating lives in
+//               `shouldGeneratePostBuild` (#1986).
 //
 //   devMiddleware — reverse-proxies `/doc-history/*` requests to the
 //               standalone `@takazudo/zudo-doc-history-server` on port 4322.
@@ -70,8 +71,14 @@ const plugin: ZfbPlugin = {
   },
 
   async postBuild(ctx: ZfbBuildHookContext) {
+    const options = ctx.options as unknown as DocHistoryOptions;
+    // Keep the preBuild manifest available for doc metadata while disabling
+    // every history UI artifact. This gate intentionally precedes the
+    // environment-based postBuild decision table (CI / GEN_DOC_HISTORY).
+    if (options.ui === false) return;
+
     try {
-      await runDocHistoryPostBuild(ctx.options as unknown as DocHistoryOptions, {
+      await runDocHistoryPostBuild(options, {
         outDir: ctx.outDir,
         logger: ctx.logger,
       });
@@ -89,8 +96,12 @@ const plugin: ZfbPlugin = {
   },
 
   devMiddleware(ctx: ZfbDevMiddlewareContext) {
+    const options = ctx.options as unknown as DocHistoryOptions;
+    // `ui: false` is the dates-only mode: do not mount the proxy at all.
+    if (options.ui === false) return;
+
     const middleware = createDocHistoryDevMiddleware(
-      ctx.options as unknown as DocHistoryOptions,
+      options,
       ctx.logger,
     );
     // zfb's `register(path, handler)` matches against the FULL request
@@ -100,7 +111,7 @@ const plugin: ZfbPlugin = {
     // and the route is `/doc-history` as expected. The v2 middleware
     // itself is base-tolerant (matches via `url.includes("/doc-history/")`)
     // and slices from `/doc-history/` onward when proxying upstream.
-    const basePrefix = getBasePrefix(ctx.options["base"]);
+    const basePrefix = getBasePrefix(options.base);
     ctx.register(`${basePrefix}/doc-history`, connectToZfbHandler(middleware));
   },
 };
