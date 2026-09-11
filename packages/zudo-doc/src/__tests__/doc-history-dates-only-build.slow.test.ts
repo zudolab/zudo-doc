@@ -128,11 +128,17 @@ describe("doc-history dates-only build integration", () => {
     const manifest = JSON.parse(
       readFileSync(join(dir, ".zfb/doc-history-meta.json"), "utf8"),
     ) as Record<string, Record<string, string>>;
+    // The manifest's updatedDate is a producer-normalized ISO instant. The
+    // exact offset token git emits for UTC has changed across git versions
+    // (`+00:00` on older git, `Z` on current git — see #4158), so assert the
+    // parsed instant rather than pinning either spelling as a literal string.
     expect(manifest["getting-started"]).toMatchObject({
       author: "Dates Only Fixture",
-      updatedDate: "2024-06-01T00:00:00+00:00",
       ext: ".mdx",
     });
+    expect(new Date(manifest["getting-started"]?.updatedDate ?? "").getTime()).toBe(
+      new Date("2024-06-01T00:00:00Z").getTime(),
+    );
     expect(html).toContain("Updated Jun 1, 2024");
     expect(html).not.toContain("Created");
     expect(html).not.toContain("Dates Only Fixture");

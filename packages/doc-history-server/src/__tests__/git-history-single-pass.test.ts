@@ -274,6 +274,33 @@ describe("getAllFilesFirstLastMetaAsync — walk-level (#2517)", () => {
     });
   });
 
+  // #4158: current git's `%aI` emits `Z` for a UTC offset; older git emitted
+  // `+00:00`/`-00:00` for the same instant. Both must normalize to the same
+  // `Z` spelling so a consumer never sees producer-version drift.
+  it("normalizes both `+00:00`/`-00:00` and `Z` UTC-offset spellings to `Z` (#4158)", async () => {
+    const mixedOffsetOut = `${NUL}c2\n2024-02-01T00:00:00-00:00\nNewy\n\nM\tsrc/content/docs/page.mdx\n${NUL}c1\n2024-01-01T00:00:00+00:00\nAlice\n\nA\tsrc/content/docs/page.mdx\n`;
+    mocks.spawn.mockImplementation((_cmd: string, _args: string[]) => {
+      const child = new EventEmitter() as EventEmitter & { stdout: EventEmitter };
+      child.stdout = new EventEmitter();
+      queueMicrotask(() => {
+        child.stdout.emit("data", Buffer.from(mixedOffsetOut, "utf-8"));
+        child.emit("close", 0);
+      });
+      return child;
+    });
+
+    const { getAllFilesFirstLastMetaAsync } = await import("../git-history.js");
+    const map = await getAllFilesFirstLastMetaAsync([
+      `${FAKE_REPO_ROOT}/src/content/docs`,
+    ]);
+
+    const key = `${FAKE_REPO_ROOT}/src/content/docs/page.mdx`;
+    expect(map.get(key)).toEqual({
+      oldest: { author: "Alice", date: "2024-01-01T00:00:00Z" },
+      newest: { author: "Newy", date: "2024-02-01T00:00:00Z" },
+    });
+  });
+
   it("converts absolute pathspecs to repo-relative before passing them to git", async () => {
     const { getAllFilesFirstLastMetaAsync } = await import("../git-history.js");
     await getAllFilesFirstLastMetaAsync([`${FAKE_REPO_ROOT}/src/content/docs`]);
