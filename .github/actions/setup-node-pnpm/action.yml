@@ -10,9 +10,14 @@ inputs:
   dest:
     description: >
       pnpm installation directory, forwarded to pnpm/action-setup's `dest`
-      input. Callers pass `~/setup-pnpm-${{ github.job }}` so each job's pnpm
-      install stays isolated (github.job resolves correctly inside a
-      composite action).
+      input. Callers pass a per-job path built from the github.job context so
+      each job's pnpm install stays isolated (that context resolves correctly
+      at the CALL SITE and is passed in here as a plain string).
+
+      Do NOT write a literal expression in this description: GitHub evaluates
+      "${" "{ ... }}" templates inside an action manifest's input metadata too,
+      where the `github` context does not exist, and the whole manifest then
+      fails to load with "Unrecognized named-value: 'github'".
     required: true
   registry-url:
     description: >
