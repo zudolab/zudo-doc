@@ -510,6 +510,26 @@ const WALK_COMMIT_SENTINEL = "\x00";
  */
 const WALK_FORMAT = "%x00%H%n%aI%n%aN";
 
+/**
+ * Normalize a git `%aI` author-date string's UTC-offset spelling.
+ *
+ * `%aI` is strict ISO 8601, but the token git uses for a UTC offset has
+ * changed across git versions: older git wrote `+00:00` (also `-00:00`),
+ * current git (verified on 2.50+) writes `Z` for the same instant. Collapsing
+ * the zero-offset suffix to `Z` here — the single producer both
+ * `pre-build.ts`'s manifest and `asset-viewer/git-meta.ts` consume through
+ * `FirstLastMeta` — fixes the producer-version drift at its one source
+ * instead of leaving every consumer to re-normalize. Non-UTC offsets (e.g.
+ * `+09:00`) pass through unchanged: `formatDate`/`toUtcDate` already render
+ * with `timeZone: "UTC"`, so the displayed value is identical either way and
+ * this stays a minimal, precision-preserving rewrite rather than a full
+ * `Date#toISOString()` round-trip (which would also inject `.000`
+ * milliseconds git never emits).
+ */
+function normalizeGitDate(raw: string): string {
+  return raw.replace(/[+-]00:00$/, "Z");
+}
+
 /** Oldest + newest author/date for a single current-path key. */
 export interface FirstLastMeta {
   /** The file's creation-side commit (author = page author, date = createdDate). */
@@ -770,7 +790,15 @@ export function getAllFilesFirstLastMetaAsync(
       if (buf.length > 0) acc.pushLine(buf); // trailing line without a newline
       const relMap = acc.finish();
       const absMap = new Map<string, FirstLastMeta>();
-      for (const [rel, meta] of relMap) absMap.set(join(repoRoot, rel), meta);
+      // Normalize dates here — the one real production path — rather than in
+      // the accumulator/pure parser, which `parseFirstLastMeta`'s rename-
+      // reconstruction unit tests exercise with exact-string date assertions.
+      for (const [rel, meta] of relMap) {
+        absMap.set(join(repoRoot, rel), {
+          oldest: { author: meta.oldest.author, date: normalizeGitDate(meta.oldest.date) },
+          newest: { author: meta.newest.author, date: normalizeGitDate(meta.newest.date) },
+        });
+      }
       resolvePromise(absMap);
     });
   });

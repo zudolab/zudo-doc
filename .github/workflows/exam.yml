@@ -157,15 +157,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           dest: ~/setup-pnpm-${{ github.job }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -249,18 +244,36 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
 
-      - name: Upload E2E artifacts
+      # report-retry-flakes.mjs (Report retry flakes, above) reads
+      # playwright-report/*.json on every run including green ones, so this
+      # half stays if: always() — retention-days: 7 (down from 14, #4161).
+      - name: Upload E2E report
         if: always()
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: exam-e2e-reports
+          path: playwright-report/
+          retention-days: 7
+
+      # Heavy trace zips + failure screenshots (Playwright's outputDir
+      # default). NOT gated on failure(): the @flaky lane runs with
+      # continue-on-error, so its failures never turn the job red, and
+      # `trace: on-first-retry` also fires on a retry-PASS in the green
+      # CI-safe lane — both are exactly the runs whose traces are worth
+      # keeping. `if-no-files-found: ignore` preserves the #4161 storage
+      # win: a clean no-retry green run writes nothing to either lane dir.
+      - name: Upload E2E traces
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: exam-e2e-traces
           # Playwright clears outputDir on every run, so upload both distinct
           # lane directories to preserve each lane's traces and screenshots.
           path: |
-            playwright-report/
             test-results/ci-safe/
             test-results/flaky/
-          retention-days: 14
+          if-no-files-found: ignore
+          retention-days: 7
 
   # ---------------------------------------------------------------------------
   # Job 4: create-zudo-doc slow integration tests
@@ -276,15 +289,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           dest: ~/setup-pnpm-${{ github.job }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -330,15 +338,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           dest: ~/setup-pnpm-${{ github.job }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -400,15 +403,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           dest: ~/setup-pnpm-${{ github.job }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

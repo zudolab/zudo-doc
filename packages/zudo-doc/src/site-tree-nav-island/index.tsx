@@ -387,8 +387,8 @@ function LeafNode({
         <a
           href={node.href}
           className={isRoot
-            ? "flex items-start gap-hsp-xs py-[calc(var(--spacing-vsp-xs)+0.15rem)] pr-hsp-sm text-small font-semibold text-fg hover:text-accent hover:underline focus:underline"
-            : `block py-vsp-2xs pr-hsp-sm ${isLast ? "pb-vsp-xs" : ""} text-small text-fg hover:text-accent hover:underline focus:underline`
+            ? "flex items-start gap-hsp-xs py-[calc(var(--spacing-vsp-xs)+0.15rem)] pr-hsp-sm text-small font-semibold text-fg break-words hover:text-accent hover:underline focus:underline"
+            : `block py-vsp-2xs pr-hsp-sm ${isLast ? "pb-vsp-xs" : ""} text-small text-fg break-words hover:text-accent hover:underline focus:underline`
           }
           style={{ paddingLeft }}
         >

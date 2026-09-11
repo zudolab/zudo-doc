@@ -98,18 +98,49 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           dest: ~/setup-pnpm-${{ github.job }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version-file: .nvmrc
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      # The single ref-guarded cache writer for the whole repo (#4161, epic
+      # #4156 "the cache design decision"). setup-node-pnpm is restore-only
+      # (composite actions have no post: step), and every job's cache key is
+      # the same lockfile hash, so one writer on refs/heads/main is enough —
+      # this job was picked because it's the first, always-run install.
+      - name: Get pnpm store path
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      # Drop store entries the restore-key prefix fallback dragged in from an
+      # older lockfile. Without this the saved entry is the UNION of every
+      # lockfile ever cached (pnpm's store is content-addressable and never
+      # self-prunes), so the cache this epic exists to shrink would grow
+      # without bound across dependency bumps.
+      - name: Prune pnpm store
+        run: pnpm store prune
+
+      # No `always()` here on purpose: the save must not run when the steps
+      # above failed. `steps.pnpm-store.outputs.path` would then be empty and
+      # actions/cache/save fails on an empty `path`, burying the real failure
+      # under a spurious second red step.
+      - name: Save pnpm store cache
+        if: github.ref == 'refs/heads/main'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: node-cache-${{ runner.os }}-${{ runner.arch }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+        # Two expected behaviours, not bugs — do not "fix" either:
+        #   1. actions/cache/save WARNS (doesn't fail) when the key already
+        #      exists, so an unchanged-lockfile push to main logs that warning
+        #      on every run.
+        #   2. The tag-triggered publish-*.yml workflows are deliberately
+        #      restore-only, so a publish run against a brand-new lockfile is
+        #      a cold install — the accepted cost of never saving from a tag
+        #      ref. Do not widen this guard to tag refs to "fix" that.
 
       - name: Build site
         # strictContentBridge is enabled in zfb.config.ts (#3229/#3234) — this
@@ -150,15 +181,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           dest: ~/setup-pnpm-${{ github.job }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version-file: .nvmrc
 
       - name: Install deps (no scripts)
         run: pnpm install --frozen-lockfile --ignore-scripts
@@ -190,15 +216,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           dest: ~/setup-pnpm-${{ github.job }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
