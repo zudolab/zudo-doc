@@ -159,15 +159,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           dest: ~/setup-pnpm-${{ github.job }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -196,15 +191,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           dest: ~/setup-pnpm-${{ github.job }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -384,15 +374,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           dest: ~/setup-pnpm-${{ github.job }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -421,15 +406,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           dest: ~/setup-pnpm-${{ github.job }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -464,14 +444,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           dest: ~/setup-pnpm-${{ github.job }}
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version-file: .nvmrc
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Download exact site build output
@@ -509,15 +485,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           dest: ~/setup-pnpm-${{ github.job }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -570,15 +541,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           dest: ~/setup-pnpm-${{ github.job }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -607,15 +573,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           dest: ~/setup-pnpm-${{ github.job }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -780,17 +741,11 @@ jobs:
 
           echo "run_parity=true" >> "$GITHUB_OUTPUT"
 
-      - name: Setup pnpm
+      - name: Setup Node.js and pnpm
         if: steps.detect-emitters.outputs.run_parity == 'true'
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+        uses: ./.github/actions/setup-node-pnpm
         with:
           dest: ~/setup-pnpm-${{ github.job }}
-
-      - name: Setup Node.js
-        if: steps.detect-emitters.outputs.run_parity == 'true'
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version-file: .nvmrc
 
       - name: Install dependencies
         if: steps.detect-emitters.outputs.run_parity == 'true'
@@ -860,15 +815,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           dest: ~/setup-pnpm-${{ github.job }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -912,15 +862,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           dest: ~/setup-pnpm-${{ github.job }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version-file: .nvmrc
 
       - name: Install deps (no scripts)
         run: pnpm install --frozen-lockfile --ignore-scripts
@@ -1097,17 +1042,11 @@ jobs:
         if: steps.lane.outputs.lane == 'skip'
         run: echo "No theme-pack, chrome-CSS, or audit-machinery changes detected — skipping the rendered contrast audit."
 
-      - name: Setup pnpm
+      - name: Setup Node.js and pnpm
         if: steps.lane.outputs.lane != 'skip'
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+        uses: ./.github/actions/setup-node-pnpm
         with:
           dest: ~/setup-pnpm-${{ github.job }}
-
-      - name: Setup Node.js
-        if: steps.lane.outputs.lane != 'skip'
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version-file: .nvmrc
 
       - name: Install dependencies
         if: steps.lane.outputs.lane != 'skip'
@@ -1156,15 +1095,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           dest: ~/setup-pnpm-${{ github.job }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -1218,15 +1152,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           dest: ~/setup-pnpm-${{ github.job }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
