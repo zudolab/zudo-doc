@@ -14,6 +14,15 @@ inputs:
       install stays isolated (github.job resolves correctly inside a
       composite action).
     required: true
+  registry-url:
+    description: >
+      Optional registry URL, forwarded to actions/setup-node's `registry-url`
+      input. Only the three publish-*.yml workflows need this (it makes
+      setup-node write a .npmrc wired to NODE_AUTH_TOKEN for `npm publish`);
+      left empty, setup-node writes no auth config, matching every other
+      caller's existing behavior (#4161).
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -27,6 +36,7 @@ runs:
       uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
       with:
         node-version-file: .nvmrc
+        registry-url: ${{ inputs.registry-url }}
         # setup-node's built-in package-manager cache is scoped per ref
         # (refs/pull/N/merge for PRs), so every PR branch wrote its own
         # unreachable ~180 MB entry (zudolab/zudo-doc#4155, epic #4156
