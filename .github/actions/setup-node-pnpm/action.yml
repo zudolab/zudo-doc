@@ -1,0 +1,51 @@
+name: Setup Node.js and pnpm (cache restore)
+description: >
+  Sets up pnpm and Node.js, then restores the pnpm store cache. Restore-only:
+  composite actions have no `post:` step, so a save here would run before
+  `pnpm install` and persist an empty store — see zudolab/zudo-doc#4156 (epic)
+  and #4157. The matching save step lives on a single ref-guarded job in
+  main-deploy.yml (zudolab/zudo-doc#4161).
+
+inputs:
+  dest:
+    description: >
+      pnpm installation directory, forwarded to pnpm/action-setup's `dest`
+      input. Callers pass `~/setup-pnpm-${{ github.job }}` so each job's pnpm
+      install stays isolated (github.job resolves correctly inside a
+      composite action).
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Setup pnpm
+      uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+      with:
+        dest: ${{ inputs.dest }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+      with:
+        node-version-file: .nvmrc
+        # setup-node's built-in package-manager cache is scoped per ref
+        # (refs/pull/N/merge for PRs), so every PR branch wrote its own
+        # unreachable ~180 MB entry (zudolab/zudo-doc#4155, epic #4156
+        # Correction 1). Disabled here in favor of the explicit restore below.
+        package-manager-cache: false
+
+    - name: Get pnpm store path
+      id: pnpm-store
+      shell: bash
+      run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+    - name: Restore pnpm store cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      with:
+        path: ${{ steps.pnpm-store.outputs.path }}
+        key: node-cache-${{ runner.os }}-${{ runner.arch }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+        # Mandatory, not optional: saves are gated to refs/heads/main (see
+        # zudolab/zudo-doc#4156, "the cache design decision"), so any PR that
+        # edits pnpm-lock.yaml misses the exact key until it merges. This
+        # prefix fallback is what keeps that from being a full cold install.
+        restore-keys: |
+          node-cache-${{ runner.os }}-${{ runner.arch }}-pnpm-
