@@ -1173,18 +1173,28 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
 
-      - name: Upload test results
+      # Report retry flakes (above) reads playwright-report/*.json on every
+      # run including green ones, so this half stays if: always() —
+      # retention-days: 7 (down from 14, #4161).
+      - name: Upload test report
         if: always()
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: playwright-report
-          # test-results/ carries the on-first-retry trace zips + failure
-          # screenshots (Playwright's outputDir default); playwright-report/
-          # carries the JSON/HTML report. Neither dir is nested in the other.
-          path: |
-            playwright-report/
-            test-results/
-          retention-days: 14
+          path: playwright-report/
+          retention-days: 7
+
+      # test-results/ carries the on-first-retry trace zips + failure
+      # screenshots (Playwright's outputDir default) — only worth keeping
+      # when there's something to debug, so this half is if: failure() only
+      # (#4161).
+      - name: Upload test traces
+        if: failure()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: playwright-traces
+          path: test-results/
+          retention-days: 7
 
   # ---------------------------------------------------------------------------
   # Job 5: Deploy preview and comment on PR

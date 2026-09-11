@@ -104,18 +104,13 @@ jobs:
           echo "TAG=$TAG" >> "$GITHUB_ENV"
 
       # ── Setup toolchain ────────────────────────────────────────────────────
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
-        with:
-          dest: ~/setup-pnpm-publish
-
       # registry-url is required for setup-node to write the .npmrc that
       # wires NODE_AUTH_TOKEN → npm auth. Without it, `npm publish` ignores
       # the env var and falls back to unauthenticated (or interactive 2FA).
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version-file: .nvmrc
+          dest: ~/setup-pnpm-publish
           registry-url: https://registry.npmjs.org
 
       # ── Safeguard 2/5: package.json version must match the tag ─────────────
