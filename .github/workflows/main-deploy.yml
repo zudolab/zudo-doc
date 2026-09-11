@@ -115,8 +115,20 @@ jobs:
         id: pnpm-store
         run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
 
+      # Drop store entries the restore-key prefix fallback dragged in from an
+      # older lockfile. Without this the saved entry is the UNION of every
+      # lockfile ever cached (pnpm's store is content-addressable and never
+      # self-prunes), so the cache this epic exists to shrink would grow
+      # without bound across dependency bumps.
+      - name: Prune pnpm store
+        run: pnpm store prune
+
+      # No `always()` here on purpose: the save must not run when the steps
+      # above failed. `steps.pnpm-store.outputs.path` would then be empty and
+      # actions/cache/save fails on an empty `path`, burying the real failure
+      # under a spurious second red step.
       - name: Save pnpm store cache
-        if: always() && github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ${{ steps.pnpm-store.outputs.path }}

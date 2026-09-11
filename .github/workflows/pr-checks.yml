@@ -1185,15 +1185,20 @@ jobs:
           retention-days: 7
 
       # test-results/ carries the on-first-retry trace zips + failure
-      # screenshots (Playwright's outputDir default) — only worth keeping
-      # when there's something to debug, so this half is if: failure() only
-      # (#4161).
+      # screenshots (Playwright's outputDir default). This must NOT be gated
+      # on failure(): `trace: on-first-retry` produces its artifact exactly
+      # in the retry-PASS case, where the job is green — that is the case
+      # `report-retry-flakes.mjs` files an issue for, and TESTING.md's #2535
+      # contract promises a debuggable zip for. `if-no-files-found: ignore`
+      # is what keeps the storage win of #4161: a clean no-retry green run
+      # writes nothing here, so nothing is uploaded.
       - name: Upload test traces
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: playwright-traces
           path: test-results/
+          if-no-files-found: ignore
           retention-days: 7
 
   # ---------------------------------------------------------------------------
