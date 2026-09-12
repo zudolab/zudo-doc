@@ -1,4 +1,4 @@
-// VENDORED MIRROR of `@takazudo/zdtp@0.7.0`'s public `/constants` leaf, limited
+// VENDORED MIRROR of `@takazudo/zdtp@0.8.0`'s public `/constants` leaf, limited
 // to the five symbols `design-token-panel-bootstrap.tsx` consumes.
 //
 // WHY IT EXISTS (#4009, implemented by #4018): `@takazudo/zdtp` is declared an
@@ -17,7 +17,7 @@
 // asserts this module against the REAL `@takazudo/zdtp/constants` (installed in
 // this repo) on every default-lane test run — data by value, `matchesKey` and
 // `resolveToggleEventName` behaviourally. Drift anywhere in the `^0.5.2 || ^0.6.0 ||
-// ^0.7.0` peer range fails there. Update this file only together with that test.
+// ^0.7.0 || ^0.8.0` peer range fails there. Update this file only together with that test.
 //
 // This is a MIRROR, not a fork: do not add symbols the bootstrap does not use,
 // and do not "improve" the shapes below — they must stay byte-equal to upstream.
