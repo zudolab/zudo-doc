@@ -4,6 +4,12 @@ All notable changes to `@takazudo/zudo-doc-history-server` are documented in thi
 
 The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.
 
+## [5.22.1] - 2026-09-13
+
+### Bug Fixes
+
+- Normalized Git's alternate zero-UTC-offset spellings so generated document and asset history metadata stays consistent across Git versions. (50338104)
+
 ## [5.22.0] - 2026-09-11
 
 - No package-specific changes.

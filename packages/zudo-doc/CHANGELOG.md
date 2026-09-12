@@ -6,9 +6,17 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
-## Other Changes
+No unreleased changes.
 
-- Expanded the optional `@takazudo/zdtp` peer range to `^0.5.2 || ^0.6.0 || ^0.7.0 || ^0.8.0`. Existing panel integrations need no configuration or storage migration, and downstream pnpm peer-range exceptions for zdtp 0.8 can be removed.
+## [5.22.1] - 2026-09-13
+
+### Bug Fixes
+
+- Prevented long, unbroken home-sitemap labels—including depth-0 flex items—from causing horizontal page overflow at larger font sizes. (fd9ca5d2, 4215ba9b)
+
+### Other Changes
+
+- Expanded the optional `@takazudo/zdtp` peer range to support 0.8.x without requiring configuration or storage migrations. (f744769a)
 
 ## [5.22.0] - 2026-09-11
 
