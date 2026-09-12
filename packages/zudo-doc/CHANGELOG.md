@@ -6,7 +6,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
-### Other Changes
+## Other Changes
 
 - Expanded the optional `@takazudo/zdtp` peer range to `^0.5.2 || ^0.6.0 || ^0.7.0 || ^0.8.0`. Existing panel integrations need no configuration or storage migration, and downstream pnpm peer-range exceptions for zdtp 0.8 can be removed.
 
