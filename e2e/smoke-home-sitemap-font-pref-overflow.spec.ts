@@ -34,6 +34,10 @@ import { test, expect, type Page } from "@playwright/test";
 /** The exact showcase label that overflowed; also this fixture page's title. */
 const LONG_TITLE = "packages/zudo-doc/src/__tests__/fixtures/target-manifest/CLAUDE.md";
 
+/** A path-shaped title on a root-level fixture page (depth-0 sitemap leaf). */
+const ROOT_LONG_TITLE =
+  "packages/zudo-doc/src/__tests__/fixtures/target-manifest/depth-0-CLAUDE.md";
+
 async function setFontPreference(page: Page, px: number): Promise<void> {
   const cdp = await page.context().newCDPSession(page);
   await cdp.send("Page.enable");
@@ -75,6 +79,23 @@ async function measureSitemapContentOverflow(page: Page) {
   });
 }
 
+/** Measure one sitemap link's laid-out content against its own box. */
+async function measureSitemapLinkContentOverflow(page: Page, title: string) {
+  return page.evaluate((expectedTitle) => {
+    const link = [...document.querySelectorAll(".zd-home-sitemap a")].find(
+      (el) => (el.textContent ?? "").trim() === expectedTitle,
+    );
+    if (!link) throw new Error(`sitemap link not found: ${expectedTitle}`);
+    return {
+      overflow: link.scrollWidth - link.clientWidth,
+      scrollWidth: link.scrollWidth,
+      clientWidth: link.clientWidth,
+      label: (link.textContent ?? "").trim(),
+      rootFont: getComputedStyle(document.documentElement).fontSize,
+    };
+  }, title);
+}
+
 /** `SiteTreeNav` is an `when: "idle"` island — wait for the long label to be laid out. */
 async function gotoHomeAndAwaitSitemap(page: Page): Promise<void> {
   await page.goto("/");
@@ -91,6 +112,19 @@ test.describe("home sitemap with 24px browser font preference", () => {
     const m = await measureSitemapContentOverflow(page);
     // Guards a vacuous pass: if the lever were silently inert the page would
     // render at 16px and the overflow assertion below would pass for free.
+    expect(m.rootFont, "font-preference lever must have applied").toBe("24px");
+    expect(
+      m.overflow,
+      `"${m.label}" content is ${m.scrollWidth}px wide in a ${m.clientWidth}px box`,
+    ).toBeLessThanOrEqual(1);
+  });
+
+  test("depth-0 path-shaped leaf stays inside its box at 390px / 24px", async ({ page }) => {
+    await setFontPreference(page, 24);
+    await gotoHomeAndAwaitSitemap(page);
+    await expect(page.locator(".zd-home-sitemap a", { hasText: ROOT_LONG_TITLE })).toBeVisible();
+
+    const m = await measureSitemapLinkContentOverflow(page, ROOT_LONG_TITLE);
     expect(m.rootFont, "font-preference lever must have applied").toBe("24px");
     expect(
       m.overflow,

@@ -210,7 +210,7 @@ function CategoryNode({
             <button
               type="button"
               onClick={toggle}
-              className="flex-1 py-vsp-xs text-left hover:text-accent hover:underline focus:underline"
+              className="flex-1 min-w-0 break-words py-vsp-xs text-left hover:text-accent hover:underline focus:underline"
             >
               {node.label}
             </button>
@@ -356,7 +356,7 @@ function NoteTrayRow({
           {item.rank === undefined ? "" : String(item.rank).padStart(width, "0")}
         </span>
       )}
-      <span className="min-w-0">
+      <span className="min-w-0 break-words">
         <span>{item.label}</span>
       </span>
     </a>
@@ -397,7 +397,7 @@ function LeafNode({
               <CategoryLinkIcon className="w-[18px] 2xl:w-[24px]" />
             </span>
           )}
-          {node.label}
+          {isRoot ? <span className="min-w-0">{node.label}</span> : node.label}
         </a>
       </div>
     </div>
