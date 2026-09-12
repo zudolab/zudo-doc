@@ -6,7 +6,9 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
-No unreleased changes.
+## Other Changes
+
+- Updated generated Design Token Panel projects to pin `@takazudo/zdtp` 0.8.0, exercising the newly supported release without requiring a scaffold migration.
 
 ## [5.22.0] - 2026-09-11
 
