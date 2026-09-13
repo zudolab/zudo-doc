@@ -33,7 +33,8 @@ export function formatFrontmatterString(value: string): string {
   const formatterRequiresQuotes =
     /["']/.test(value) ||
     /^[?:-]/.test(value) ||
-    /^(?:yes|no|on|off|nan|infinity)$/iu.test(value);
+    /^(?:yes|no|on|off)$/iu.test(value) ||
+    /^\+?(?:nan|inf(?:inity)?)$/iu.test(value);
 
   if (!/[\r\n]/.test(value)) {
     try {

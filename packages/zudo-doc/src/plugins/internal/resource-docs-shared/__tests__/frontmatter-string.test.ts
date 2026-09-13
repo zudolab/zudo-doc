@@ -36,11 +36,26 @@ describe("formatFrontmatterString", () => {
     expect(formatFrontmatterString("YES")).toBe('"YES"');
     expect(formatFrontmatterString("OFF")).toBe('"OFF"');
     expect(formatFrontmatterString("NaN")).toBe('"NaN"');
+    expect(formatFrontmatterString("Inf")).toBe('"Inf"');
     expect(formatFrontmatterString("Infinity")).toBe('"Infinity"');
+    expect(formatFrontmatterString("+NaN")).toBe('"+NaN"');
+    expect(formatFrontmatterString("+Inf")).toBe('"+Inf"');
+    expect(formatFrontmatterString("+Infinity")).toBe('"+Infinity"');
   });
 
   it("keeps legacy YAML scalar names stable in the real formatter", async () => {
-    for (const value of ["yes", "YES", "no", "OFF", "NaN", "Infinity"]) {
+    for (const value of [
+      "yes",
+      "YES",
+      "no",
+      "OFF",
+      "NaN",
+      "Inf",
+      "Infinity",
+      "+NaN",
+      "+Inf",
+      "+Infinity",
+    ]) {
       const source = `---\ntitle: ${formatFrontmatterString(value)}\n---\n\nBody\n`;
       expect(await format(source), value).toBe(source);
     }
