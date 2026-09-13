@@ -101,6 +101,11 @@ jobs:
         # `pnpm build` missed) is redundant here and was removed.
         run: pnpm build
 
+      - name: Check images
+        # Strict post-build gate for local image and asset references. Preview
+        # artifacts must pass the same asset check before they are published.
+        run: pnpm run check:images
+
       - name: Archive site build output
         # tar preserves arbitrary route paths (upload-artifact rejects ':' in
         # paths, e.g. dist/docs/tags/type:guide/) and includes dotfiles.

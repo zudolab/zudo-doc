@@ -57,7 +57,7 @@
 // Requires a completed `pnpm build`.
 //
 // Wired into:
-//   - scripts/run-b4push.sh (step 20, after the --no-strict-content-bridge build)
+//   - scripts/run-b4push.sh (step 27, after the --no-strict-content-bridge build)
 //
 // NOT wired into CI (#3234): the three workflows build with the native
 // `strictContentBridge` gate on, which fails them directly.

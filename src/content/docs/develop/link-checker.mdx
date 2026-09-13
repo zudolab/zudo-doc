@@ -4,7 +4,7 @@ description: Post-build broken link checker that validates internal links in bui
 sidebar_position: 3
 ---
 
-# Link Checker
+## Overview
 
 zudo-doc includes a built-in link checker (`scripts/check-links.js`) that runs two types of validation after the site is built.
 
@@ -46,6 +46,59 @@ When a base path is configured (e.g., `/my-docs/`), absolute links starting with
 
 Links inside fenced code blocks are ignored.
 
+## Image Checker
+
+zudo-doc also includes a strict post-build image and asset checker (`zudo-doc check images`). It scans every rendered `.html` file under the build output and checks local references supplied by these elements and attributes:
+
+- HTML `img[src]` and each valid `img[srcset]` candidate
+- HTML `source[src]` and each valid `source[srcset]` candidate (including `<picture>` sources)
+- HTML `video[src]` and `video[poster]`
+- HTML `audio[src]`, `track[src]`, and `input[type="image"][src]`
+- SVG `image[href]` and `image[xlink:href]`
+
+Both site-absolute URLs (`/images/diagram.png`) and relative URLs (`./diagram.png`, `../images/diagram.png`, or `images/diagram.png`) are resolved with URL semantics from the page that contains them. The configured `base` path and the page's `<base href>` are honored. Query strings and fragments do not affect the file lookup. A reference is valid only when it resolves to a file inside the build output; directories and symlinks that point outside the output are reported.
+
+The checker skips external URLs (including URLs with a scheme such as `http:` or `https:`), `data:` URLs, protocol-relative URLs (`//cdn.example/...`), and fragment-only references (`#diagram`).
+
+### Build-time plugin and strict CLI
+
+The package's build-time `img-src-check` plugin runs after the build and uses the existing `onBrokenMarkdownLinks` setting. Its default is `warn`, which reports broken local references without failing the build; `error` fails the build, and `ignore` disables this scan. This setting also controls broken Markdown links, so use the CLI below when the image check itself must be a strict, independent gate.
+
+The strict CLI exits nonzero when any broken local reference remains after allowlisting:
+
+```bash
+pnpm build && pnpm check:images
+```
+
+Its options are:
+
+- `--dist <dir>` — build output directory (default: `dist`)
+- `--base <path>` — public URL base (default: `/`)
+- `--allowlist <file>` — exact broken-reference exceptions
+- `--help` — show the current command help
+
+For example, a site deployed below `/docs/` can pass its base explicitly:
+
+```bash
+pnpm check:images -- --dist dist --base /docs/ --allowlist=.check-images-allowlist
+```
+
+The allowlist contains one exact `<page>:<url>` key per line, where `<page>` is the path relative to the build output and `<url>` is the original URL value. Blank lines and lines beginning with `#` are ignored:
+
+```text
+# A generated page still points at an intentionally absent asset
+docs/generated/index.html:/images/legacy.png
+```
+
+Keep exceptions narrow and remove each line when its underlying asset is fixed. A generated project should add the strict check to CI after its build (and after any link check), so broken local assets cannot be published:
+
+```yaml
+- name: Build site
+  run: pnpm build
+- name: Check images
+  run: pnpm run check:images
+```
+
 ## Running the Link Checker
 
 ### Standalone
@@ -72,19 +125,23 @@ Run `pnpm check:links -- --help` to see the current CLI options.
 
 ### As part of b4push
 
-The link checker runs as step 20 of 23 in the pre-push validation (`pnpm b4push`), right after the build step:
+The link checker runs as step 28 of 32 in the pre-push validation (`pnpm b4push`). The strict image checker follows it as step 29, before HTML validation:
 
 ```
-19. Build
-20. **Link check**
-21. HTML validation
+26. Build
+27. Content-fallback check
+28. **Link check**
+29. **Image check**
+30. HTML validation
+31. Preview smoke
+32. Manual smoke
 ```
 
-The canonical, authoritative b4push step list lives in the header comment of `scripts/run-b4push.sh` — treat that script as the single source of truth for the full 23-step sequence.
+The canonical, authoritative b4push step list lives in the header comment of `scripts/run-b4push.sh` — treat that script as the single source of truth for the full 32-step sequence.
 
 ### In CI
 
-The link checker runs in the `build-site` job of the PR checks workflow (`pr-checks.yml`), immediately after `pnpm build`.
+The link checker runs in the `build-site` job of the PR checks workflow (`pr-checks.yml`), immediately after `pnpm build`; the strict image checker runs immediately after the link checker. The production and preview deployment workflows run the same image gate before archiving their build output.
 
 ## Output
 
