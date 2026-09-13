@@ -26,10 +26,16 @@ export type FrontmatterStringRenderer = (value: string) => string;
 export type MdxFileWriter = (absolutePath: string, content: string) => void;
 
 export function formatFrontmatterString(value: string): string {
+  // mdx-formatter's YAML emitter quotes these characters even when a YAML
+  // parser can round-trip the unquoted scalar. Keep generated frontmatter in
+  // the emitter's canonical form, rather than relying on parse equality alone
+  // (for example, `Claude's Code` is valid plain YAML but is emitted quoted).
+  const formatterRequiresQuotes = /["']/.test(value) || /^[?:-]/.test(value);
+
   if (!/[\r\n]/.test(value)) {
     try {
       const parsed = matter(`---\nvalue: ${value}\n---\n`).data.value;
-      if (parsed === value) return value;
+      if (parsed === value && !formatterRequiresQuotes) return value;
     } catch {
       // Fall through to the JSON-compatible quoted YAML scalar.
     }

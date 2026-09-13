@@ -23,4 +23,14 @@ describe("formatFrontmatterString", () => {
       '"Use when: a command runs"',
     );
   });
+
+  it("matches mdx-formatter's quote policy for otherwise-valid plain scalars", () => {
+    expect(formatFrontmatterString("Claude's Code")).toBe('"Claude\'s Code"');
+    expect(formatFrontmatterString('Use a "quoted" value')).toBe(
+      '"Use a \\"quoted\\" value"',
+    );
+    expect(formatFrontmatterString("-not-a-list")).toBe('"-not-a-list"');
+    expect(formatFrontmatterString("?not-a-key")).toBe('"?not-a-key"');
+    expect(formatFrontmatterString(":not-a-key")).toBe('":not-a-key"');
+  });
 });
