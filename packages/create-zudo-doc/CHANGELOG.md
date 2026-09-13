@@ -8,6 +8,12 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [5.23.0] - 2026-09-13
+
+### Features
+
+- Newly generated projects now include a `check:images` script so broken local image references are caught consistently in local and CI quality gates. (5236acde9)
+
 ## [5.22.1] - 2026-09-13
 
 ### Other Changes

@@ -8,6 +8,18 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [5.23.0] - 2026-09-13
+
+### Features
+
+- Added strict `zudo-doc check images` validation for missing local image and media references in built HTML. (90e513fa8)
+- Expanded asset scanning to relative `src` values, `srcset`, media elements, SVG references, `<base href>`, and containment-safe path resolution. (9f1cf6e31)
+
+### Bug Fixes
+
+- Made generated Claude resource frontmatter stable across the MDX formatter, including legacy YAML scalar aliases. (9165c0547, db90c9685)
+- Covered qualified SVG `xlink:href`, pnpm argument separators, empty base URLs, and literal percent characters in page paths. (48b0aa781, 994e6aec3, c9b772b76)
+
 ## [5.22.1] - 2026-09-13
 
 ### Bug Fixes
