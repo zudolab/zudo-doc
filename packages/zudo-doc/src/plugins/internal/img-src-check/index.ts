@@ -14,8 +14,10 @@ export interface ImgSrcCheckLogger {
 export interface BrokenImgSrc {
   /** HTML page path relative to the build output directory. */
   pagePath: string;
-  /** The decoded attribute value as authored in the rendered HTML. */
+  /** The individual URL value as authored in the rendered HTML. */
   src: string;
+  /** The element and attribute that supplied `src` (for example `img[src]`). */
+  element?: string;
   /** Why the reference was considered broken. */
   reason: string;
 }
@@ -24,7 +26,7 @@ export interface BrokenImgSrc {
 export interface ImgSrcCheckResult {
   /** Number of HTML files visited under `outDir`. */
   htmlFileCount: number;
-  /** Number of site-absolute `src` attributes inspected. */
+  /** Number of local media/asset references inspected. */
   imageCount: number;
   /** Every broken occurrence, including duplicate references. */
   broken: BrokenImgSrc[];
@@ -47,7 +49,12 @@ type HtmlElement = DefaultTreeAdapterMap["element"];
 type HtmlTemplate = DefaultTreeAdapterMap["template"];
 
 const HTML_NAMESPACE = "http://www.w3.org/1999/xhtml";
+const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const SCHEME_RE = /^[A-Za-z][A-Za-z0-9+.-]*:/u;
+// The origin is never exposed to generated HTML. It gives URL the absolute
+// URL context it needs while allowing us to distinguish local from external
+// references after applying a document's <base> element.
+const SCANNER_ORIGIN = "https://zudo-doc-img-src-check.invalid";
 
 /**
  * Parse rendered HTML and return the `src` values on real `<img>` elements.
@@ -99,42 +106,342 @@ function isWithin(root: string, candidate: string): boolean {
   return rel === "" || (rel !== ".." && !rel.startsWith(`..${sep}`) && !rel.startsWith(sep));
 }
 
-function stripQueryAndFragment(src: string): string {
-  const query = src.indexOf("?");
-  const fragment = src.indexOf("#");
-  const end = [query, fragment].filter((index) => index >= 0).sort((a, b) => a - b)[0];
-  return end === undefined ? src : src.slice(0, end);
-}
-
 type ResolvedSrc =
   | { kind: "skip" }
   | { kind: "broken"; reason: string }
   | { kind: "path"; path: string };
+
+interface AssetReference {
+  src: string;
+  element: string;
+}
+
+interface ParsedAssetDocument {
+  references: AssetReference[];
+  baseHrefs: string[];
+}
+
+function attributeValue(element: HtmlElement, name: string): string | undefined {
+  return element.attrs.find((attribute) => attribute.name.toLowerCase() === name)?.value;
+}
+
+function addAssetReference(
+  references: AssetReference[],
+  element: string,
+  attribute: string,
+  value: string | undefined,
+): void {
+  if (value !== undefined) references.push({ src: value, element: `${element}[${attribute}]` });
+}
+
+function isHtmlElement(element: HtmlElement, tagName: string): boolean {
+  return element.namespaceURI === HTML_NAMESPACE && element.tagName.toLowerCase() === tagName;
+}
+
+function isSvgElement(element: HtmlElement, tagName: string): boolean {
+  return element.namespaceURI === SVG_NAMESPACE && element.tagName.toLowerCase() === tagName;
+}
+
+/**
+ * Parse a `srcset` value into its image candidate URLs.
+ *
+ * This follows the HTML image-candidate parser closely. In particular, the
+ * URL token is collected until ASCII whitespace, not by splitting on commas;
+ * commas are therefore retained when they are part of a URL and only trailing
+ * commas (the candidate separator) are removed. Invalid descriptors discard
+ * that candidate, matching browser source-set construction.
+ */
+function parseSrcsetCandidates(value: string): string[] {
+  const candidates: string[] = [];
+  let position = 0;
+
+  const isAsciiWhitespace = (character: string | undefined): boolean =>
+    character === " " || character === "\t" || character === "\n" || character === "\f" || character === "\r";
+
+  const skipSplittingWhitespaceAndCommas = (): void => {
+    while (position < value.length) {
+      const character = value[position];
+      if (!isAsciiWhitespace(character) && character !== ",") break;
+      position += 1;
+    }
+  };
+
+  const parseDescriptors = (descriptors: string[]): boolean => {
+    let width: number | undefined;
+    let density: number | undefined;
+    let futureCompatH = false;
+
+    for (const descriptor of descriptors) {
+      // A valid non-negative integer is an ASCII digit sequence. The width
+      // parser rejects zero after conversion, as required by srcset.
+      if (/^\d+w$/u.test(descriptor)) {
+        if (width !== undefined || density !== undefined) return false;
+        const parsed = Number.parseInt(descriptor.slice(0, -1), 10);
+        if (!Number.isFinite(parsed) || parsed === 0) return false;
+        width = parsed;
+        continue;
+      }
+
+      // HTML's valid floating-point number grammar permits an optional minus,
+      // a decimal point with digits on at least one side, and an optional
+      // exponent. A density below zero is invalid; the current HTML algorithm
+      // intentionally permits 0x.
+      if (/^-?(?:\d+(?:\.\d+)?|\.\d+)(?:[Ee][+-]?\d+)?x$/u.test(descriptor)) {
+        if (width !== undefined || density !== undefined || futureCompatH) return false;
+        const parsed = Number.parseFloat(descriptor.slice(0, -1));
+        if (!Number.isFinite(parsed) || parsed < 0) return false;
+        density = parsed;
+        continue;
+      }
+
+      // The parser reserves an `h` descriptor for future compatibility, but
+      // it is invalid unless paired with a width descriptor. We do not accept
+      // it as a real image candidate because browsers currently discard it.
+      if (/^\d+h$/u.test(descriptor)) {
+        if (futureCompatH || density !== undefined) return false;
+        const parsed = Number.parseInt(descriptor.slice(0, -1), 10);
+        if (!Number.isFinite(parsed) || parsed === 0) return false;
+        futureCompatH = true;
+        continue;
+      }
+
+      return false;
+    }
+
+    return !futureCompatH || width !== undefined;
+  };
+
+  while (position < value.length) {
+    skipSplittingWhitespaceAndCommas();
+    if (position >= value.length) break;
+
+    const urlStart = position;
+    while (position < value.length && !isAsciiWhitespace(value[position])) position += 1;
+    let url = value.slice(urlStart, position);
+    const hadTrailingComma = url.endsWith(",");
+    if (hadTrailingComma) url = url.replace(/,+$/u, "");
+
+    if (url.length === 0) {
+      // A comma-only candidate is a parse error, but the splitting loop can
+      // still recover and inspect the following candidate.
+      continue;
+    }
+
+    const descriptors: string[] = [];
+    if (!hadTrailingComma) {
+      let current = "";
+      let inParens = false;
+      let descriptorDone = false;
+
+      while (!descriptorDone) {
+        const character = value[position];
+        if (inParens) {
+          if (character === undefined) {
+            if (current) descriptors.push(current);
+            descriptorDone = true;
+          } else {
+            current += character;
+            position += 1;
+            if (character === ")") inParens = false;
+          }
+          continue;
+        }
+
+        if (isAsciiWhitespace(character)) {
+          if (current) {
+            descriptors.push(current);
+            current = "";
+          }
+          while (isAsciiWhitespace(value[position])) position += 1;
+          // A non-whitespace token starts another descriptor. A comma or EOF
+          // completes this candidate in the descriptor parser.
+          if (value[position] === "," || position >= value.length) {
+            descriptorDone = true;
+          }
+          continue;
+        }
+        if (character === ",") {
+          position += 1;
+          if (current) descriptors.push(current);
+          descriptorDone = true;
+          continue;
+        }
+        if (character === undefined) {
+          if (current) descriptors.push(current);
+          descriptorDone = true;
+          continue;
+        }
+        current += character;
+        position += 1;
+        if (character === "(") inParens = true;
+      }
+    }
+
+    if (parseDescriptors(descriptors)) candidates.push(url);
+  }
+
+  return candidates;
+}
+
+function extractAssetReferences(document: DefaultTreeAdapterMap["document"]): ParsedAssetDocument {
+  const references: AssetReference[] = [];
+  const baseHrefs: string[] = [];
+
+  const visit = (node: HtmlNode, insideTemplate: boolean): void => {
+    if (!("tagName" in node)) return;
+
+    const element = node as HtmlElement;
+
+    // A <base> in template content is inert; all other supported references
+    // inside a template are still real URLs once the template is activated.
+    if (!insideTemplate && isHtmlElement(element, "base")) {
+      const href = attributeValue(element, "href");
+      if (href !== undefined) baseHrefs.push(href);
+    }
+
+    if (isHtmlElement(element, "img")) {
+      addAssetReference(references, "img", "src", attributeValue(element, "src"));
+      const srcset = attributeValue(element, "srcset");
+      if (srcset !== undefined) {
+        for (const candidate of parseSrcsetCandidates(srcset)) {
+          addAssetReference(references, "img", "srcset", candidate);
+        }
+      }
+    } else if (isHtmlElement(element, "source")) {
+      addAssetReference(references, "source", "src", attributeValue(element, "src"));
+      const srcset = attributeValue(element, "srcset");
+      if (srcset !== undefined) {
+        for (const candidate of parseSrcsetCandidates(srcset)) {
+          addAssetReference(references, "source", "srcset", candidate);
+        }
+      }
+    } else if (isHtmlElement(element, "video")) {
+      addAssetReference(references, "video", "src", attributeValue(element, "src"));
+      addAssetReference(references, "video", "poster", attributeValue(element, "poster"));
+    } else if (isHtmlElement(element, "audio")) {
+      addAssetReference(references, "audio", "src", attributeValue(element, "src"));
+    } else if (isHtmlElement(element, "track")) {
+      addAssetReference(references, "track", "src", attributeValue(element, "src"));
+    } else if (isHtmlElement(element, "input")) {
+      const type = attributeValue(element, "type");
+      if (type?.trim().toLowerCase() === "image") {
+        addAssetReference(references, "input", "src", attributeValue(element, "src"));
+      }
+    } else if (isSvgElement(element, "image")) {
+      addAssetReference(references, "image", "href", attributeValue(element, "href"));
+      addAssetReference(references, "image", "xlink:href", attributeValue(element, "xlink:href"));
+    }
+
+    for (const child of element.childNodes) visit(child, insideTemplate);
+
+    // Template contents are held in a separate document fragment by parse5.
+    if (element.nodeName === "template") {
+      const template = element as HtmlTemplate;
+      for (const child of template.content.childNodes) visit(child, true);
+    }
+  };
+
+  for (const child of document.childNodes) visit(child, false);
+  return { references, baseHrefs };
+}
+
+function makePageUrl(pagePath: string, base: string): URL {
+  const pageName = /(?:^|\/)index\.html$/iu.test(pagePath)
+    ? pagePath.slice(0, -"index.html".length)
+    : pagePath;
+  const pathname = `${base}${pageName}`;
+  const pageUrl = new URL(SCANNER_ORIGIN);
+  // Assigning pathname (rather than concatenating into the URL string) keeps
+  // literal `#`, `?`, and `%` characters in filesystem page names as path data.
+  pageUrl.pathname = pathname.startsWith("/") ? pathname : `/${pathname}`;
+  return pageUrl;
+}
+
+function effectiveDocumentBase(pageUrl: URL, hrefs: string[]): URL {
+  for (const href of hrefs) {
+    const value = href.trim();
+    if (!value) continue;
+    try {
+      return new URL(value, pageUrl);
+    } catch {
+      // Invalid base URLs do not take effect; continue to the next base.
+    }
+  }
+  return pageUrl;
+}
+
+function hasAbsolutePathTraversal(value: string): boolean {
+  if (!value.startsWith("/") || value.startsWith("//")) return false;
+
+  // URL normalisation intentionally removes dot segments. Preserve the
+  // existing output-containment guarantee by checking whether the authored
+  // absolute path would pop above its URL root before handing it to URL.
+  const pathPart = value.split(/[?#]/u, 1)[0] ?? value;
+  let decodedPath: string;
+  try {
+    decodedPath = decodeURIComponent(pathPart);
+  } catch {
+    // The regular URL/path decoder reports malformed escapes separately.
+    return false;
+  }
+
+  const stack: string[] = [];
+  for (const segment of decodedPath.replaceAll("\\", "/").split("/")) {
+    if (!segment || segment === ".") continue;
+    if (segment === "..") {
+      if (stack.length === 0) return true;
+      stack.pop();
+    } else {
+      stack.push(segment);
+    }
+  }
+  return false;
+}
 
 function resolveImgSrc(
   src: string,
   outDir: string,
   base: string,
   canonicalOutDir: string,
+  documentBase: URL,
 ): ResolvedSrc {
   const value = src.trim();
 
-  // Site-absolute URLs are the only references this check owns. Check the
-  // protocol-relative form first because it also starts with a slash.
-  if (!value.startsWith("/") || value.startsWith("//") || SCHEME_RE.test(value)) {
+  // Check the protocol-relative form before URL parsing because it is also a
+  // path beginning with a slash. Fragment-only references never fetch media.
+  if (!value || value.startsWith("#") || value.startsWith("//") || SCHEME_RE.test(value)) {
     return { kind: "skip" };
   }
+  // A non-hierarchical or cross-origin <base> makes every otherwise-relative
+  // reference external. This early check also avoids treating values that
+  // cannot be resolved against `data:`/`mailto:` bases as malformed locals.
+  if (documentBase.origin !== SCANNER_ORIGIN) return { kind: "skip" };
 
-  const pathPart = stripQueryAndFragment(value);
+  let resolvedUrl: URL;
+  try {
+    resolvedUrl = new URL(value, documentBase);
+  } catch {
+    return { kind: "broken", reason: "invalid URL" };
+  }
+  if (resolvedUrl.origin !== SCANNER_ORIGIN) return { kind: "skip" };
+  if (hasAbsolutePathTraversal(value)) {
+    return { kind: "broken", reason: "resolves outside the build output directory" };
+  }
+
   let decodedPath: string;
   try {
-    decodedPath = decodeURIComponent(pathPart);
+    // URL.pathname has already removed query and fragment components. Decode
+    // afterwards so `%3F`/`%23` remain valid literal filename characters.
+    decodedPath = decodeURIComponent(resolvedUrl.pathname);
   } catch {
     return { kind: "broken", reason: "malformed percent escape" };
   }
   if (decodedPath.includes("\0")) {
     return { kind: "broken", reason: "invalid path" };
   }
+  // URL treats backslashes as separators for special (HTTP) URLs. Normalize
+  // them here as well so encoded backslashes cannot bypass POSIX containment.
+  decodedPath = decodedPath.replaceAll("\\", "/");
 
   let relativeUrlPath: string;
   if (base === "/") {
@@ -205,7 +512,7 @@ function listHtmlFiles(outDir: string): string[] {
 }
 
 /**
- * Walk every built HTML file and validate its site-absolute image sources.
+ * Walk every built HTML file and validate its local media/asset references.
  *
  * This is intentionally synchronous: zfb's postBuild hook is async-compatible
  * but the operation is a deterministic local filesystem walk, and a sync
@@ -233,16 +540,19 @@ export function scanImgSrcs(options: ImgSrcCheckOptions): ImgSrcCheckResult {
   for (const htmlFile of htmlFiles) {
     const pagePath = relative(outDir, htmlFile).split(sep).join("/");
     const html = readFileSync(htmlFile, "utf8");
-    // Avoid invoking the full HTML parser for the common page with no image
+    // Avoid invoking the full HTML parser for the common page with no media
     // markup. This is only a positive prefilter; parse5 remains authoritative
-    // whenever a possible `<img>` token occurs, including in comments/scripts.
-    if (!/<img\b/iu.test(html)) continue;
-    for (const src of extractImgSrcs(html)) {
-      const resolved = resolveImgSrc(src, outDir, base, canonicalOutDir);
+    // whenever a possible media token occurs, including in comments/scripts.
+    if (!/<(?:img|source|video|audio|track|input|image)\b/iu.test(html)) continue;
+    const document = parse(html);
+    const parsed = extractAssetReferences(document);
+    const documentBase = effectiveDocumentBase(makePageUrl(pagePath, base), parsed.baseHrefs);
+    for (const reference of parsed.references) {
+      const resolved = resolveImgSrc(reference.src, outDir, base, canonicalOutDir, documentBase);
       if (resolved.kind === "skip") continue;
       imageCount += 1;
       if (resolved.kind === "broken") {
-        broken.push({ pagePath, src, reason: resolved.reason });
+        broken.push({ pagePath, src: reference.src, element: reference.element, reason: resolved.reason });
       }
     }
   }
@@ -252,7 +562,8 @@ export function scanImgSrcs(options: ImgSrcCheckOptions): ImgSrcCheckResult {
 
 /** Format one warning in a stable, page-first form suitable for zfb output. */
 export function formatBrokenImgSrc(reference: BrokenImgSrc): string {
-  return `[img-src-check] Broken image source in ${reference.pagePath}: ${reference.src} (${reference.reason})`;
+  const element = reference.element ? `${reference.element} ` : "";
+  return `[img-src-check] Broken image source in ${reference.pagePath}: ${element}${reference.src} (${reference.reason})`;
 }
 
 /**
