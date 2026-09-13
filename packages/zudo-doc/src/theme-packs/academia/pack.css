@@ -170,6 +170,12 @@ html[data-theme-pack="academia"] .zd-content h1 {
   text-align: center;
   font-variant-caps: small-caps;
 }
+/* the home hero title is not a paper title — keep it on the identity
+   block's own alignment (left on desktop, centered on mobile) like every
+   other pack (zudolab/zudo-doc#4194) */
+html[data-theme-pack="academia"] .zd-content .zd-home-copy h1 {
+  text-align: inherit;
+}
 
 /* ---- the description becomes the abstract: a narrow centered block
         under a small-caps "Abstract" head (both emitters carry the
@@ -376,6 +382,12 @@ html[data-theme-pack="academia"] .zd-content hr {
   max-width: 11rem;
   margin: 2.4rem auto 1.2rem 0;
   border-top: 1px solid color-mix(in srgb, var(--zd-fg) 55%, transparent);
+}
+/* home-page section dividers stay centered like every other pack's;
+   the left-set footnote rule is a document-page move
+   (zudolab/zudo-doc#4194) */
+html[data-theme-pack="academia"] .zd-content hr.zd-home-rule {
+  margin-inline: auto;
 }
 
 /* ---- header: a running head over a hairline rule ---- */
