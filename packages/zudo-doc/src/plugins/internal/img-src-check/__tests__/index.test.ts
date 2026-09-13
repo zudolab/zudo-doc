@@ -364,6 +364,39 @@ describe("scanImgSrcs", () => {
     });
   });
 
+  it("treats an empty first base href as the document URL", () => {
+    const { outDir } = fixture();
+    page(
+      outDir,
+      '<base href=""><base href="https://cdn.example/assets/"><img src="missing.png">',
+      "guide/index.html",
+    );
+
+    expect(scanImgSrcs({ outDir })).toEqual({
+      htmlFileCount: 1,
+      imageCount: 1,
+      broken: [
+        {
+          element: "img[src]",
+          pagePath: "guide/index.html",
+          src: "missing.png",
+          reason: "file does not exist",
+        },
+      ],
+    });
+  });
+
+  it("preserves literal percent characters in page directory names", () => {
+    const { outDir } = fixture();
+    for (const directory of ["100%guide", "guide%20topic"]) {
+      mkdirSync(join(outDir, directory), { recursive: true });
+      writeFileSync(join(outDir, directory, "asset.png"), "image");
+      page(outDir, '<img src="asset.png">', `${directory}/index.html`);
+    }
+
+    expect(scanImgSrcs({ outDir })).toEqual({ htmlFileCount: 2, imageCount: 2, broken: [] });
+  });
+
   it("preserves encoded filename characters while rejecting traversal and symlink escapes", () => {
     const { root, outDir } = fixture();
     writeFileSync(join(outDir, "hash#name.png"), "image");

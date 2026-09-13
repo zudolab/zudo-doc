@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { format } from "@takazudo/mdx-formatter";
 import { formatFrontmatterString } from "../mdx.js";
 
 describe("formatFrontmatterString", () => {
@@ -32,5 +33,16 @@ describe("formatFrontmatterString", () => {
     expect(formatFrontmatterString("-not-a-list")).toBe('"-not-a-list"');
     expect(formatFrontmatterString("?not-a-key")).toBe('"?not-a-key"');
     expect(formatFrontmatterString(":not-a-key")).toBe('":not-a-key"');
+    expect(formatFrontmatterString("YES")).toBe('"YES"');
+    expect(formatFrontmatterString("OFF")).toBe('"OFF"');
+    expect(formatFrontmatterString("NaN")).toBe('"NaN"');
+    expect(formatFrontmatterString("Infinity")).toBe('"Infinity"');
+  });
+
+  it("keeps legacy YAML scalar names stable in the real formatter", async () => {
+    for (const value of ["yes", "YES", "no", "OFF", "NaN", "Infinity"]) {
+      const source = `---\ntitle: ${formatFrontmatterString(value)}\n---\n\nBody\n`;
+      expect(await format(source), value).toBe(source);
+    }
   });
 });

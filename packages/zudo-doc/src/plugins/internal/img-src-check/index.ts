@@ -357,15 +357,20 @@ function makePageUrl(pagePath: string, base: string): URL {
   const pathname = `${base}${pageName}`;
   const pageUrl = new URL(SCANNER_ORIGIN);
   // Assigning pathname (rather than concatenating into the URL string) keeps
-  // literal `#`, `?`, and `%` characters in filesystem page names as path data.
-  pageUrl.pathname = pathname.startsWith("/") ? pathname : `/${pathname}`;
+  // literal `#` and `?` characters in filesystem page names as path data. URL's
+  // pathname setter preserves `%`, so escape it explicitly to keep filesystem
+  // names such as `100%guide` and `guide%20topic` literal through one decode.
+  const filePathname = (pathname.startsWith("/") ? pathname : `/${pathname}`).replaceAll(
+    "%",
+    "%25",
+  );
+  pageUrl.pathname = filePathname;
   return pageUrl;
 }
 
 function effectiveDocumentBase(pageUrl: URL, hrefs: string[]): URL {
   for (const href of hrefs) {
     const value = href.trim();
-    if (!value) continue;
     try {
       return new URL(value, pageUrl);
     } catch {

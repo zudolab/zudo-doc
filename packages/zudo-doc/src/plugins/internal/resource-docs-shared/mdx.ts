@@ -30,7 +30,10 @@ export function formatFrontmatterString(value: string): string {
   // parser can round-trip the unquoted scalar. Keep generated frontmatter in
   // the emitter's canonical form, rather than relying on parse equality alone
   // (for example, `Claude's Code` is valid plain YAML but is emitted quoted).
-  const formatterRequiresQuotes = /["']/.test(value) || /^[?:-]/.test(value);
+  const formatterRequiresQuotes =
+    /["']/.test(value) ||
+    /^[?:-]/.test(value) ||
+    /^(?:yes|no|on|off|nan|infinity)$/iu.test(value);
 
   if (!/[\r\n]/.test(value)) {
     try {
