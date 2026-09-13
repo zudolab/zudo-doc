@@ -28,7 +28,10 @@ The public presentational `@takazudo/zudo-doc/home-intro` export contains
 translatedSitemapHeading)`, and serializable payload types. It carries no
 renderer, WASM or Node import and is synchronous. `intro` is trusted prepared
 data, not arbitrary editor JSON. It reuses `defaultComponents` for non-heading
-Markdown and `makeAdmonition` for alerts; headings are plain native elements.
+Markdown and `makeAdmonition` for alerts; headings are plain native elements, except that
+the H2 carries `HOME_SECTION_HEADING_CLASS` (`zd-home-heading …`) so it matches
+the sitemap and Tags headings and stays free of theme-pack h2 decoration
+(zudolab/zudo-doc#4194).
 No raw HTML sink, eval, MDX compilation or document TOC insertion is involved.
 
 Use `.zd-home-inner` for both identity and prose outer wrappers: 100% available

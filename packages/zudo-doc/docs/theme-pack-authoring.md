@@ -186,6 +186,8 @@ html[data-theme-pack="x"] .zd-content h2 {
 
 The build-time validator allowlists this **by CSS property** (`border-image`), not by selector or heading level — so all three headings already pass. Do not use `!important` for anything else; the validator rejects it.
 
+**Home-page section headings are exempt.** The three h2s on the home page (compact intro, sitemap, Tags) carry `.zd-home-heading`, and `content.css` neutralises every pack's h2 rule / counter / bar there at specificity (0,3,2) — the home page already separates its sections with `.zd-home-rule` dividers, so a pack's h2 top-rule would double up (zudolab/zudo-doc#4194). A pack keeps its h2 font, weight, tracking, colour and case on those headings; it does not need to, and should not, special-case them.
+
 ## (d) Pack-versioning rule
 
 Every `pack.css` change that should reach already-visited browsers **requires a `meta.json` version bump**. `meta.version` drives the `?v=` cache-busting query string on the stylesheet URL — `buildPackCssUrl` in `packages/zudo-doc/src/theme-pack-switcher/theme-pack-sync.ts`:
