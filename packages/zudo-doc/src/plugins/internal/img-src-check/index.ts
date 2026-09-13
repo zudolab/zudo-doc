@@ -122,7 +122,12 @@ interface ParsedAssetDocument {
 }
 
 function attributeValue(element: HtmlElement, name: string): string | undefined {
-  return element.attrs.find((attribute) => attribute.name.toLowerCase() === name)?.value;
+  return element.attrs.find((attribute) => {
+    const qualifiedName = attribute.prefix
+      ? `${attribute.prefix}:${attribute.name}`
+      : attribute.name;
+    return qualifiedName.toLowerCase() === name;
+  })?.value;
 }
 
 function addAssetReference(

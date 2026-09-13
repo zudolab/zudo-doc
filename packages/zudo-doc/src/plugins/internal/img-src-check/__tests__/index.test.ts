@@ -312,7 +312,7 @@ describe("scanImgSrcs", () => {
       ].join(""),
     );
 
-    expect(scanImgSrcs({ outDir })).toEqual({ htmlFileCount: 1, imageCount: 8, broken: [] });
+    expect(scanImgSrcs({ outDir })).toEqual({ htmlFileCount: 1, imageCount: 9, broken: [] });
   });
 
   it("skips external, data, protocol-relative, and fragment-only references for every source type", () => {
