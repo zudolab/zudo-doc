@@ -580,7 +580,10 @@ a.text-accent.underline {
   border: 0;
   background: none;
 }
-.zd-compact-prose :where(h2) { font-size: 1.3rem; --flow-space: 1.75rem; }
+/* The h2 look (size, weight, no decoration) is owned by `.zd-home-heading`
+ * below — shared with the sitemap and Tags headings; only the flow gap lives
+ * here. */
+.zd-compact-prose :where(h2) { --flow-space: 1.75rem; }
 .zd-compact-prose :where(h3) { font-size: 1.125rem; --flow-space: 1.5rem; }
 .zd-compact-prose :where(h4) { font-size: 1rem; --flow-space: 1.25rem; }
 .zd-compact-prose :where(h5, h6) { font-size: .9375rem; --flow-space: 1.25rem; }
@@ -588,3 +591,30 @@ a.text-accent.underline {
 .zd-compact-prose > :first-child { margin-top: 0; }
 .zd-compact-prose :where(pre) { max-inline-size: 100%; overflow-x: auto; }
 .zd-compact-prose :where(img) { max-inline-size: 100%; block-size: auto; }
+
+/* Home-page section headings (#4194). The intro heading (compact prose), the
+ * sitemap heading and the Tags heading share one look: bold, one step above
+ * body size, and NO rule / counter / bar decoration — the home page already
+ * separates its sections with `.zd-home-rule` dividers, so a theme pack's h2
+ * top-rule would double up against them. Theme packs style
+ * `html[data-theme-pack="x"] .zd-content h2` at (0,2,2); the second selector
+ * here is (0,3,2) so it wins without `!important`. A pack's
+ * `border-image … !important` is defeated by the zero border width: a
+ * border-image paints nothing into a zero-width border box. */
+.zd-content h2.zd-home-heading,
+html[data-theme-pack] .zd-content h2.zd-home-heading {
+  font-size: var(--text-title);
+  line-height: var(--leading-tight);
+  padding: 0;
+  border: 0;
+  background: none;
+  position: static;
+  counter-increment: none;
+}
+
+.zd-content h2.zd-home-heading::before,
+.zd-content h2.zd-home-heading::after,
+html[data-theme-pack] .zd-content h2.zd-home-heading::before,
+html[data-theme-pack] .zd-content h2.zd-home-heading::after {
+  content: none;
+}

@@ -471,7 +471,9 @@ describe("createHomePageView — homepage introduction", () => {
     expect((html.match(/<h2\b/g) ?? []).length).toBe(2);
     expect(html).toContain('class="zd-home-inner flex flex-col');
     expect(html).toContain('<div class="zd-home-inner"><div class="zd-content zd-compact-prose"');
-    expect(html).toContain('<section class="zd-home-sitemap"><h2 class="text-title font-bold mb-vsp-md">');
+    expect(html).toContain('<section class="zd-home-sitemap"><h2 class="zd-home-heading text-title font-bold leading-tight mb-vsp-md">');
+    // #4194: the compact intro h2 carries the same class list as the sitemap heading.
+    expect(html).toContain('<h2 id="intro" class="zd-home-heading text-title font-bold leading-tight">Introduction</h2>');
   });
 
   it("uses the locale payload and localized sitemap default on a locale home", () => {
@@ -511,6 +513,23 @@ describe("createHomePageView — docTags gating", () => {
     expect(html).toContain('href="/docs/tags"');
   });
 
+  it("precedes the tags section with its own home rule and styles its heading like the sitemap heading (#4194)", () => {
+    const ctx = makeFakeChromeContext({ settings: { docTags: true } });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps({ tagCount: 1, tags: TAG_ITEMS() })} />);
+
+    expect(html).toMatch(/<hr [^>]*data-home-rule="tags"[^>]*\/>/);
+    expect(html).toMatch(/<hr [^>]*class="zd-home-rule"[^>]*data-home-rule="tags"|<hr [^>]*data-home-rule="tags"[^>]*class="zd-home-rule"/);
+    expect((html.match(/data-home-rule=/g) ?? []).length).toBe(2);
+    const sitemapAt = html.indexOf('class="zd-home-sitemap"');
+    const tagsRuleAt = html.indexOf('data-home-rule="tags"');
+    const tagsSectionAt = html.indexOf('<section class="zd-home-tags">');
+    expect(sitemapAt).toBeLessThan(tagsRuleAt);
+    expect(tagsRuleAt).toBeLessThan(tagsSectionAt);
+    expect(html).toContain('<section class="zd-home-tags"><h2 class="zd-home-heading text-title font-bold leading-tight mb-vsp-md">doc.tags</h2>');
+    expect(html).not.toContain("mt-vsp-xl");
+  });
+
   it("falls back to the legacy single All Tags link when only tagCount is provided (no tag list)", () => {
     const ctx = makeFakeChromeContext({ settings: { docTags: true } });
     const HomePageView = createHomePageView(ctx);
@@ -528,6 +547,7 @@ describe("createHomePageView — docTags gating", () => {
     const HomePageView = createHomePageView(ctx);
     const html = render(<HomePageView {...makeProps({ tagCount: 0, tags: TAG_ITEMS() })} />);
 
+    expect(html).not.toContain('data-home-rule="tags"');
     expect(html).not.toContain("doc.seeAllTags");
     expect(html).not.toContain("doc.allTags");
   });
