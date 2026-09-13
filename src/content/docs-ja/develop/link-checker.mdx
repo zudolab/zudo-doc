@@ -4,7 +4,7 @@ description: ビルド後の内部リンクを検証するリンクチェッカ�
 sidebar_position: 3
 ---
 
-# リンクチェッカー
+## 概要
 
 zudo-docには、サイトビルド後に2種類の検証を行う組み込みリンクチェッカー（`scripts/check-links.js`）が含まれています。
 
@@ -33,11 +33,11 @@ zudo-docには、サイトビルド後に2種類の検証を行う組み込み�
 設定されたコンテンツディレクトリ内のすべての`.mdx`および`.md`ファイルをスキャンし、ベースパスをバイパスする絶対リンクを検出します。以下のようなリンクが対象です：
 
 ```mdx
-<!-- これらはフラグされます — ベースパスをバイパスしています -->
+<!-- These are flagged — they bypass the base path -->
 [guide](/docs/guides/foo)
 <a href="/ja/docs/guides/foo">link</a>
 
-<!-- これらは問題ありません — 相対パスを使用しています -->
+<!-- These are fine — they use relative paths -->
 [guide](./foo.mdx)
 [guide](../other/bar.mdx)
 ```
@@ -45,6 +45,59 @@ zudo-docには、サイトビルド後に2種類の検証を行う組み込み�
 ベースパスが設定されている場合（例：`/my-docs/`）、`/docs/`や`/ja/docs/`で始まる絶対リンクはベースパスのプレフィックスが欠けているため壊れます。MDXソーススキャンは、これらが本番環境で壊れたリンクになる前に検出します。
 
 フェンスドコードブロック内のリンクは無視されます。
+
+## 画像チェッカー
+
+zudo-docには、厳格なビルド後の画像・アセットチェッカー（`zudo-doc check images`）も含まれています。ビルド出力内のすべてのレンダリング済み`.html`ファイルをスキャンし、次の要素と属性から提供されるローカル参照を検査します：
+
+- HTMLの`img[src]`と、各`img[srcset]`候補
+- HTMLの`source[src]`と、各`source[srcset]`候補（`<picture>`内の`source`を含む）
+- HTMLの`video[src]`と`video[poster]`
+- HTMLの`audio[src]`、`track[src]`、`input[type="image"][src]`
+- SVGの`image[href]`と`image[xlink:href]`
+
+サイト絶対URL（`/images/diagram.png`）と相対URL（`./diagram.png`、`../images/diagram.png`、`images/diagram.png`）のどちらも、URLの規則に従って、そのURLを含むページを基準に解決します。設定された`base`パスとページの`<base href>`を考慮します。クエリ文字列とフラグメントはファイル検索に影響しません。ビルド出力内のファイルに解決できる参照だけが有効です。ディレクトリや、出力外を指すシンボリックリンクは報告されます。
+
+外部URL（`http:`や`https:`などスキームを持つURLを含む）、`data:` URL、プロトコル相対URL（`//cdn.example/...`）、フラグメントのみの参照（`#diagram`）はスキップします。
+
+### ビルド時プラグインと厳格CLI
+
+パッケージのビルド時`img-src-check`プラグインはビルド後に実行され、既存の`onBrokenMarkdownLinks`設定を使用します。デフォルトは`warn`で、壊れたローカル参照を報告しますがビルドは失敗させません。`error`ではビルドが失敗し、`ignore`ではこのスキャンを無効にします。この設定は壊れたMarkdownリンクも制御するため、画像チェック自体を独立した厳格ゲートにしたい場合は、次のCLIを使用します。
+
+厳格CLIは、アローリスト後も壊れたローカル参照が残っている場合に終了コードが0以外になります：
+
+```bash
+pnpm build && pnpm check:images
+```
+
+オプションは次のとおりです：
+
+- `--dist <dir>` — ビルド出力ディレクトリ（デフォルト：`dist`）
+- `--base <path>` — 公開URLのベース（デフォルト：`/`）
+- `--allowlist <file>` — 壊れた参照の完全一致による例外
+- `--help` — 現在のコマンドヘルプを表示
+
+例えば、`/docs/`配下で公開するサイトは、ベースを明示できます：
+
+```bash
+pnpm check:images -- --dist dist --base /docs/ --allowlist=.check-images-allowlist
+```
+
+アローリストには、ビルド出力からの相対パスである`<page>`と元のURL値である`<url>`を組み合わせた、正確な`<page>:<url>`キーを1行に1つ記述します。空行と`#`で始まる行は無視されます：
+
+```text
+# A generated page still points at an intentionally absent asset
+docs/generated/index.html:/images/legacy.png
+```
+
+例外は狭く保ち、元のアセットが修正されたら各行を削除してください。生成プロジェクトでは、ローカルアセットの壊れた参照が公開されないよう、ビルド（およびリンクチェック）の後に厳格チェックをCIへ追加することを推奨します：
+
+```yaml
+- name: Build site
+  run: pnpm build
+- name: Check images
+  run: pnpm run check:images
+```
 
 ## リンクチェッカーの実行
 
@@ -72,19 +125,23 @@ pnpm check:links -- --strict-broken --strict-absolute --allowlist=.check-links-a
 
 ### b4pushの一部として
 
-リンクチェッカーはプッシュ前検証（`pnpm b4push`）の23ステップ中ステップ20で、ビルドステップの直後に実行されます：
+リンクチェッカーはプッシュ前検証（`pnpm b4push`）の32ステップ中ステップ28で実行されます。その直後のステップ29で厳格な画像チェッカーが実行され、HTML検証に進みます：
 
 ```
-19. Build
-20. **Link check**
-21. HTML validation
+26. Build
+27. Content-fallback check
+28. **Link check**
+29. **Image check**
+30. HTML validation
+31. Preview smoke
+32. Manual smoke
 ```
 
-b4pushのステップ一覧の正式・権威的な定義は`scripts/run-b4push.sh`の冒頭コメントにあります。このスクリプトを、23ステップ全体の唯一の信頼できる情報源として扱ってください。
+b4pushのステップ一覧の正式・権威的な定義は`scripts/run-b4push.sh`の冒頭コメントにあります。このスクリプトを、32ステップ全体の唯一の信頼できる情報源として扱ってください。
 
 ### CI内での実行
 
-リンクチェッカーはPRチェックワークフロー（`pr-checks.yml`）の`build-site`ジョブで、`pnpm build`の直後に実行されます。
+リンクチェッカーはPRチェックワークフロー（`pr-checks.yml`）の`build-site`ジョブで、`pnpm build`の直後に実行されます。厳格な画像チェッカーはリンクチェッカーの直後に実行されます。本番およびプレビューのデプロイワークフローでも、ビルド出力をアーカイブする前に同じ画像ゲートを実行します。
 
 ## 出力
 

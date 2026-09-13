@@ -738,6 +738,7 @@
     "yaml": "^2.9.0"
   },
   "devDependencies": {
+    "@takazudo/mdx-formatter": "1.3.0-next.4",
     "@takazudo/zfb": "2.16.0",
     "@takazudo/zfb-md-wasm": "2.16.0",
     "@takazudo/zfb-runtime": "2.16.0",

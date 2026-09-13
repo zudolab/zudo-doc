@@ -226,6 +226,9 @@ importers:
         specifier: '>=2.8.3 <3'
         version: 2.9.0
     devDependencies:
+      '@takazudo/mdx-formatter':
+        specifier: 1.3.0-next.4
+        version: 1.3.0-next.4
       '@takazudo/zfb':
         specifier: 2.16.0
         version: 2.16.0(react@19.2.8)
@@ -1092,6 +1095,31 @@ packages:
   '@tailwindcss/browser@4.3.2':
     resolution: {integrity: sha512-R6hewP9HHwLAY88bFkgAYFIQMRGi9bqx6sR1anI3IThTJtwhPlAm4aHIzDKrnJ8Ct4M3d5A9PCsah8Z5+EjLiQ==}
 
+  '@takazudo/mdx-formatter-darwin-arm64@1.3.0-next.4':
+    resolution: {integrity: sha512-huHNILi2DLvBD5LlIF/nbhzUtcmTSi5ItC46T61DKTojPNdVUMKcGO/IfgorKwC3mhjPKqUYVSpY6E58B+bF6A==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@takazudo/mdx-formatter-darwin-x64@1.3.0-next.4':
+    resolution: {integrity: sha512-7eep22peISXJMI3zbEAksQQn6z8eQestll/4k5RdjEX863K3Hpz5nw0TiRbhn37HY9c/nhXsyYwh0/wTp19L8w==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@takazudo/mdx-formatter-linux-x64-gnu@1.3.0-next.4':
+    resolution: {integrity: sha512-Xr0PB53VGsv47XkmV00sVn1Byg1HBwI7kbRRokeft0v5SgmSIxeh6MM45rFW6WNsEKydmOZ6yCtjghTdbiuyaQ==}
+    cpu: [x64]
+    os: [linux]
+
+  '@takazudo/mdx-formatter-win32-x64-msvc@1.3.0-next.4':
+    resolution: {integrity: sha512-VhRuVeH/PGYRr+RXgvaKeW4y4eTIcZaFE6s7YD85NREXQv0sJLydAuU/VW3ayGZRf3eANdj06zi+jVMl+VJ9Vw==}
+    cpu: [x64]
+    os: [win32]
+
+  '@takazudo/mdx-formatter@1.3.0-next.4':
+    resolution: {integrity: sha512-0Oc+dKmrBXSKnYh3pPgcgg8C5hqS+CFQeyBtP1rSwFmcD5pEiUrtYqMVfkJxpBPRN6Kl6yNxJqQn+liOvmyzbg==}
+    engines: {node: '>=18.0.0'}
+    hasBin: true
+
   '@takazudo/zdtp@0.8.0':
     resolution: {integrity: sha512-TbqkxoKCjwqFb1Jk2OURpUqphCm65mniRlFiCcCsrwqjpMBZS1/21wpnZ3SNdzuFQdt826jIhv/cGYlh309wiw==}
     engines: {node: '>=22.0.0', pnpm: '>=10.0.0'}
@@ -1266,6 +1294,9 @@ packages:
   any-promise@1.3.0:
     resolution: {integrity: sha512-7UvmKalWRt1wgjL1RrGxoSJW/0QZFIegpeGvZG9kjp8vrRu55XTHbwnqq2GpXm9uLbcuhxm3IqX9OB4MZR1b2A==}
 
+  argparse@2.0.1:
+    resolution: {integrity: sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==}
+
   assertion-error@2.0.1:
     resolution: {integrity: sha512-Izi8RQcffqCeNVgFigKli1ssklIbpHnCYc6AknXGYoB6grJqyeby7jv12JUQgmTAnIDnbck1uxksT4dzN3PWBA==}
     engines: {node: '>=12'}
@@ -1345,6 +1376,10 @@ packages:
 
   color-name@1.1.4:
     resolution: {integrity: sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==}
+
+  commander@14.0.3:
+    resolution: {integrity: sha512-H+y0Jo/T1RZ9qPP4Eh1pkcQcLRglraJaSLoyOtHxu6AapkjWVCy2Sit1QQ4x3Dng8qDlSsZEet7g5Pq06MvTgw==}
+    engines: {node: '>=20'}
 
   commander@4.1.1:
     resolution: {integrity: sha512-NOKm8xhkzAjzFx8B2v5OAHT+u5pRQc2UCa2Vq9jYL/31o2wi9mxBA7LIFs3sV5VSC49z6pEhfbMULvShKj26WA==}
@@ -1543,6 +1578,10 @@ packages:
     resolution: {integrity: sha512-im9DjEDQ55s9fL4EYzOAv0yMqmMBSZp6G0VvFyTMPKWxiSBHUj9NW/qqLmXUwXrrM7AvqSlTCfvqRb0cM8yYqw==}
     engines: {node: '>=0.10.0'}
 
+  ignore@7.0.9:
+    resolution: {integrity: sha512-brTTsvFRt5C1gGHtPst/281UjPD5t9fBqbgoMPlVWy11ZLTPfu7HxK4ZYqO9H7o/yC9rSTCI85EaQ4OoY12qYw==}
+    engines: {node: '>= 4'}
+
   is-alphabetical@2.0.1:
     resolution: {integrity: sha512-FWyyY60MeTNyeSRpkM2Iry0G9hpr7/9kD40mD/cGQEuilcZYS4okz8SN2Q6rLCJ8gbCt6fN+rC+6tMGS99LaxQ==}
 
@@ -1572,6 +1611,10 @@ packages:
   joycon@3.1.1:
     resolution: {integrity: sha512-34wB/Y7MW7bzjKRjUKTa46I2Z7eV62Rkhva+KkopW7Qvv/OSWBqvkSY7vusOPrNuZcUG3tApvdVgNB8POj3SPw==}
     engines: {node: '>=10'}
+
+  js-yaml@4.3.2:
+    resolution: {integrity: sha512-SFNOvSJ+Dgf/9An904Yx+CgSlIPCkIpao4qo51lpee25TIRejdH3rhR4EZMGoNx3/TP3O+wzWuiTFl4sqbltzA==}
+    hasBin: true
 
   jsdom@30.0.1:
     resolution: {integrity: sha512-52v7mUVUfNQVYYqE1lcdaymWL0njO7lTLUog6ZvW2U5KsbiLk/GnZlVJ+qx0xfNJZ6Gn+KSpPNE52vurbxZwrA==}
@@ -3047,6 +3090,31 @@ snapshots:
 
   '@tailwindcss/browser@4.3.2': {}
 
+  '@takazudo/mdx-formatter-darwin-arm64@1.3.0-next.4':
+    optional: true
+
+  '@takazudo/mdx-formatter-darwin-x64@1.3.0-next.4':
+    optional: true
+
+  '@takazudo/mdx-formatter-linux-x64-gnu@1.3.0-next.4':
+    optional: true
+
+  '@takazudo/mdx-formatter-win32-x64-msvc@1.3.0-next.4':
+    optional: true
+
+  '@takazudo/mdx-formatter@1.3.0-next.4':
+    dependencies:
+      chalk: 5.6.2
+      commander: 14.0.3
+      glob: 13.0.6
+      ignore: 7.0.9
+      js-yaml: 4.3.2
+    optionalDependencies:
+      '@takazudo/mdx-formatter-darwin-arm64': 1.3.0-next.4
+      '@takazudo/mdx-formatter-darwin-x64': 1.3.0-next.4
+      '@takazudo/mdx-formatter-linux-x64-gnu': 1.3.0-next.4
+      '@takazudo/mdx-formatter-win32-x64-msvc': 1.3.0-next.4
+
   '@takazudo/zdtp@0.8.0(preact@10.29.2)':
     dependencies:
       '@tailwindcss/browser': 4.3.2
@@ -3251,6 +3319,8 @@ snapshots:
 
   any-promise@1.3.0: {}
 
+  argparse@2.0.1: {}
+
   assertion-error@2.0.1: {}
 
   balanced-match@4.0.4: {}
@@ -3315,6 +3385,8 @@ snapshots:
 
   color-name@1.1.4:
     optional: true
+
+  commander@14.0.3: {}
 
   commander@4.1.1: {}
 
@@ -3510,6 +3582,8 @@ snapshots:
     dependencies:
       safer-buffer: 2.1.2
 
+  ignore@7.0.9: {}
+
   is-alphabetical@2.0.1: {}
 
   is-alphanumerical@2.0.1:
@@ -3534,6 +3608,10 @@ snapshots:
     optional: true
 
   joycon@3.1.1: {}
+
+  js-yaml@4.3.2:
+    dependencies:
+      argparse: 2.0.1
 
   jsdom@30.0.1(@noble/hashes@2.3.0):
     dependencies:
