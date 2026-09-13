@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { format } from "@takazudo/mdx-formatter";
 import { matter } from "../../../../frontmatter/index.js";
 import { generateClaudeResourcesDocs } from "../generate.js";
 
@@ -61,6 +62,11 @@ function createFixture() {
     path.join(tmpDir, "CLAUDE.md"),
     "# Project\n\nProject instructions",
   );
+}
+
+async function expectFormatterStable(filePath: string): Promise<void> {
+  const source = fs.readFileSync(filePath, "utf8");
+  expect(await format(source), filePath).toBe(source);
 }
 
 function snapshotFiles(root: string): Record<string, string> {
@@ -147,7 +153,7 @@ describe("generateClaudeResourcesDocs", () => {
     expect(fs.readFileSync(
       path.join(localeDir, "claude-skills", "index.mdx"),
       "utf8",
-    )).toContain('title: "スキル"\ndescription: "スキルパッケージ"');
+    )).toContain("title: スキル\ndescription: スキルパッケージ");
     expect(category.data.title).toBe("スキル");
     expect(category.data.description).toBe("スキルパッケージ");
     expect(category.data.category_no_page).toBe(true);
@@ -157,8 +163,8 @@ describe("generateClaudeResourcesDocs", () => {
       path.join(localeDir, "claude", "index.mdx"),
       "utf8",
     );
-    expect(overview).toContain("title: \"Claude\"");
-    expect(overview).toContain("description: \"Claude Code の設定リファレンス。\"");
+    expect(overview).toContain("title: Claude");
+    expect(overview).toContain("description: Claude Code の設定リファレンス。");
     expect(overview).toContain("## リソース");
     expect(overview).not.toContain("resource.");
     expect(fs.existsSync(path.join(localeDir, "claude-skills", "test-skill"))).toBe(false);
@@ -206,7 +212,7 @@ describe("generateClaudeResourcesDocs", () => {
       "utf8",
     );
     expect(defaultOverview).toContain(
-      'title: "Claude"\ndescription: "Claude Code configuration reference."',
+      "title: Claude\ndescription: Claude Code configuration reference.",
     );
   });
 
@@ -584,6 +590,114 @@ describe("generateClaudeResourcesDocs", () => {
         "utf8",
       );
       expect(agentPage).toContain("**Model:** `sonnet`");
+    });
+
+    it("emits formatter-stable MDX for every generated page shape", async () => {
+      const localeDir = path.join(tmpDir, "docs-ja");
+      const agentsDir = path.join(claudeDir, "agents");
+      fs.writeFileSync(
+        path.join(agentsDir, "quoted-agent.md"),
+        [
+          "---",
+          'name: "Agent: quote"',
+          "description: A description with a quote-needing title",
+          "model: sonnet",
+          "---",
+          "",
+          "Quoted agent instructions.",
+        ].join("\n"),
+      );
+
+      generateClaudeResourcesDocs({
+        claudeDir,
+        projectRoot: tmpDir,
+        docsDir,
+        locales: { ja: { dir: localeDir } },
+        defaultLocale: "en",
+        translations: {
+          ja: {
+            "resource.claude.title": "Claude",
+            "resource.claude.description": "Claude Code configuration reference.",
+          },
+        },
+      });
+
+      await Promise.all([
+        // Default-locale overview and all category indexes.
+        expectFormatterStable(path.join(docsDir, "claude", "index.mdx")),
+        expectFormatterStable(path.join(docsDir, "claude-md", "index.mdx")),
+        expectFormatterStable(path.join(docsDir, "claude-commands", "index.mdx")),
+        expectFormatterStable(path.join(docsDir, "claude-skills", "index.mdx")),
+        expectFormatterStable(path.join(docsDir, "claude-agents", "index.mdx")),
+        // Additional-locale overview.
+        expectFormatterStable(path.join(localeDir, "claude", "index.mdx")),
+        // One page from each source shape, including skill sub-pages.
+        expectFormatterStable(path.join(docsDir, "claude-md", "root.mdx")),
+        expectFormatterStable(path.join(docsDir, "claude-commands", "test-cmd.mdx")),
+        expectFormatterStable(
+          path.join(docsDir, "claude-skills", "test-skill", "index.mdx"),
+        ),
+        expectFormatterStable(
+          path.join(docsDir, "claude-skills", "test-skill", "ref-guide.mdx"),
+        ),
+        expectFormatterStable(
+          path.join(docsDir, "claude-skills", "test-skill", "asset-template.mdx"),
+        ),
+        expectFormatterStable(path.join(docsDir, "claude-agents", "test-agent.mdx")),
+        // The title contains `: ` and must use a YAML-safe scalar.
+        expectFormatterStable(path.join(docsDir, "claude-agents", "quoted-agent.mdx")),
+      ]);
+    });
+
+    it("round-trips every generated frontmatter string scalar through YAML", () => {
+      const values = [
+        "",
+        "   ",
+        " leading",
+        "trailing ",
+        "null",
+        "true",
+        "False",
+        "YES",
+        "0",
+        "123",
+        "3.14",
+        "2026-08-20",
+        "-",
+        "?",
+        ": value",
+        "#value",
+        "&anchor",
+        "*alias",
+        "!tag",
+        "'single quotes'",
+        '"double quotes"',
+        "C:\\path\\file",
+        "/AGENTS.md",
+        "first line\nsecond line",
+      ];
+
+      for (const value of values) {
+        generateClaudeResourcesDocs({
+          claudeDir,
+          projectRoot: tmpDir,
+          docsDir,
+          defaultLocale: "en",
+          translations: {
+            en: {
+              "resource.claude.title": value,
+              "resource.claude.description": value,
+            },
+          },
+        });
+        const generated = fs.readFileSync(
+          path.join(docsDir, "claude", "index.mdx"),
+          "utf8",
+        );
+        const parsed = matter(generated);
+        expect(parsed.data.title, JSON.stringify(value)).toBe(value);
+        expect(parsed.data.description, JSON.stringify(value)).toBe(value);
+      }
     });
   });
 

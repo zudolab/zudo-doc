@@ -6,9 +6,8 @@ import {
   downgradeRepoRelativeLinks,
   ensureDir,
   escapeForMdx,
-  escapeTitle,
-  findNamedFiles,
   formatFrontmatterString,
+  findNamedFiles,
   generateSkillsCategory,
   parseFrontmatter,
   removeGeneratedIndex,
@@ -95,16 +94,6 @@ function defaultResourceLabel(
   );
 }
 
-/**
- * Keep Claude's historical quoted frontmatter bytes for ordinary strings,
- * while delegating unsafe scalars (notably multiline/control-character
- * translations) to the shared YAML-safe formatter.
- */
-function formatClaudeFrontmatterString(value: string): string {
-  const formatted = formatFrontmatterString(value);
-  return formatted === value ? JSON.stringify(value) : formatted;
-}
-
 // ---------------------------------------------------------------------------
 // CLAUDE.md generation
 // ---------------------------------------------------------------------------
@@ -166,10 +155,10 @@ function generateClaudemdDocs(
     emittedSlugs.set(item.slug, item.relPath);
     const content = fs.readFileSync(item.absPath, "utf8");
     const mdx = `---
-title: "${escapeTitle(item.displayPath)}"
-description: "CLAUDE.md at ${escapeTitle(item.displayPath)}"
+title: ${formatFrontmatterString(item.displayPath)}
+description: ${formatFrontmatterString(`CLAUDE.md at ${item.displayPath}`)}
 sidebar_position: ${index + 1}
-sidebar_label: "${escapeTitle(item.relPath)}"
+sidebar_label: ${formatFrontmatterString(item.relPath)}
 generated: true
 ---
 
@@ -189,6 +178,7 @@ ${escapeForMdx(downgradeRepoRelativeLinks(content.trim()))}
       "resource.claudeMd.description",
       "Project-specific instructions",
     ),
+    formatFrontmatterString,
   );
   return items;
 }
@@ -226,9 +216,9 @@ function generateCommandsDocs(config: ClaudeResourcesConfig): CommandItem[] {
     items.push({ name, description });
 
     const mdx = `---
-title: "${escapeTitle(name)}"
-description: "${escapeTitle(description)}"
-sidebar_label: "${escapeTitle(name)}"
+title: ${formatFrontmatterString(name)}
+description: ${formatFrontmatterString(description)}
+sidebar_label: ${formatFrontmatterString(name)}
 generated: true
 ---
 
@@ -248,6 +238,7 @@ ${escapeForMdx(downgradeRepoRelativeLinks(parsed.content.trim()))}
       "resource.claudeCommands.description",
       "Custom slash commands",
     ),
+    formatFrontmatterString,
   );
   return items;
 }
@@ -270,6 +261,7 @@ function generateSkillsDocs(
       "Skill packages",
     ),
     sourceLabel: ".claude/skills",
+    renderFrontmatterString: formatFrontmatterString,
   });
 }
 
@@ -310,9 +302,9 @@ function generateAgentsDocs(config: ClaudeResourcesConfig): AgentItem[] {
     const modelBadge = model ? `**Model:** \`${model}\`\n` : "";
 
     const mdx = `---
-title: "${escapeTitle(name)}"
-description: "${escapeTitle(description)}"
-sidebar_label: "${escapeTitle(name)}"
+title: ${formatFrontmatterString(name)}
+description: ${formatFrontmatterString(description)}
+sidebar_label: ${formatFrontmatterString(name)}
 generated: true
 ---
 
@@ -333,6 +325,7 @@ ${escapeForMdx(downgradeRepoRelativeLinks(parsed.content.trim()))}
       "resource.claudeAgents.description",
       "Custom subagents",
     ),
+    formatFrontmatterString,
   );
   return items;
 }
@@ -402,8 +395,8 @@ function renderOverviewIndex(
   categorySlugs: string[],
 ): string {
   return `---
-title: ${formatClaudeFrontmatterString(resourceLabel(config, locale, "resource.claude.title", "Claude"))}
-description: ${formatClaudeFrontmatterString(resourceLabel(
+title: ${formatFrontmatterString(resourceLabel(config, locale, "resource.claude.title", "Claude"))}
+description: ${formatFrontmatterString(resourceLabel(
     config,
     locale,
     "resource.claude.description",
@@ -508,7 +501,7 @@ function writeLocaleCategoryIndex(
     resourceLabel(config, locale, labelKey, fallbackLabel),
     position,
     resourceLabel(config, locale, descriptionKey, fallbackDescription),
-    formatClaudeFrontmatterString,
+    formatFrontmatterString,
     (absolutePath, content) =>
       writeGeneratedIndex(absolutePath, content, `/docs/${categoryDir}/`),
   );
