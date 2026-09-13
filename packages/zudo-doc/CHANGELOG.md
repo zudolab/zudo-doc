@@ -8,6 +8,16 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [5.24.0] - 2026-09-13
+
+### Features
+
+- Home-page h2 headings (compact intro, sitemap, and Tags) now share a unified `zd-home-heading` style that neutralizes theme-pack h2 decoration, and a divider now precedes the Tags section. (9ca2eef7)
+
+### Bug Fixes
+
+- Academia theme pack: the home hero title stays aligned with the identity block and home dividers are centered, instead of inheriting the pack's paper-title centering and left-set footnote rule. (81266a2b)
+
 ## [5.23.0] - 2026-09-13
 
 ### Features
