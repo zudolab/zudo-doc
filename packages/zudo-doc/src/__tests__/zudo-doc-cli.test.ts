@@ -148,4 +148,12 @@ describe("zudo-doc check images", () => {
     expect(nested.status).toBe(0);
     expect(nested.stdout).toContain("Usage: zudo-doc check images [options]");
   });
+
+  it("accepts the pnpm argument separator before command options", () => {
+    const dir = makeFixture('<img src="/assets/ok.png">', { "assets/ok.png": "image" });
+    const result = runCli(["check", "images", "--", "--dist", "dist", "--base", "/"], dir);
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("No broken image references found");
+  });
 });

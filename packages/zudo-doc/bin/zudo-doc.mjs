@@ -35,7 +35,12 @@ import { ejectLogo } from "../dist/eject-logo/index.js";
 import { scanImgSrcs } from "../dist/plugins/internal/img-src-check/index.js";
 import { applyThemePack, formatThemeList, listThemePacks } from "../dist/theme-cli/index.js";
 
-const argv = minimist(process.argv.slice(2), {
+const cliArgs = process.argv.slice(2);
+if (cliArgs[0] === "check" && cliArgs[1] === "images" && cliArgs[2] === "--") {
+  cliArgs.splice(2, 1);
+}
+
+const argv = minimist(cliArgs, {
   string: ["allowlist", "base", "dist", "seed"],
   boolean: ["help", "force"],
   alias: { h: "help" },
