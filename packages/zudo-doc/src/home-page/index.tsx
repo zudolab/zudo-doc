@@ -36,7 +36,7 @@ import type { ComponentChildren, JSX, VNode } from "preact";
 import { Island } from "@takazudo/zfb";
 import { AutoLogo } from "../auto-logo/index.js";
 import { DocLayoutWithDefaults } from "../doclayout/index.js";
-import { CompactProse, resolveHomeIntro } from "../home-intro/index.js";
+import { CompactProse, HOME_SECTION_HEADING_CLASS, resolveHomeIntro } from "../home-intro/index.js";
 import { SiteTreeNav } from "../site-tree-nav-island/index.js";
 import { TagNav } from "../nav-indexing/tag-nav.js";
 import type { TagItem } from "../nav-indexing/types.js";
@@ -54,8 +54,9 @@ import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 export { prepareHomeData } from "./prepare-home-data.js";
 export type { PrepareHomeDataOptions, HomeData } from "./prepare-home-data.js";
 
+/** Sitemap / Tags heading — same look as the compact intro h2 (#4194). */
 function HomeSectionHeading({ children }: { children: ComponentChildren }) {
-  return <h2 class="text-title font-bold mb-vsp-md">{children}</h2>;
+  return <h2 class={`${HOME_SECTION_HEADING_CLASS} mb-vsp-md`}>{children}</h2>;
 }
 
 /**
@@ -325,48 +326,53 @@ export function createHomePageView<S extends Settings = Settings>(
         </section>
 
         {settings.docTags && tagCount > 0 && (
-          <section class="mt-vsp-xl">
-            {tags && tags.length > 0 ? (
-              <>
-                <HomeSectionHeading>{t("doc.tags", locale)}</HomeSectionHeading>
-                <TagNav
-                  variant="all"
-                  tags={tags.slice(0, tagLimit)}
-                  labels={{
-                    tags: t("doc.tags", locale),
-                    taggedWith: t("doc.taggedWith", locale),
-                  }}
-                />
-                {tags.length > tagLimit && (
-                  <div class="mt-vsp-sm text-title text-muted" aria-hidden="true">
-                    …
+          <>
+            {/* The Tags section gets the same divider the sitemap section has,
+                so every home h2 sits below a `.zd-home-rule` (#4194). */}
+            <hr class="zd-home-rule" data-home-rule="tags" />
+            <section class="zd-home-tags">
+              {tags && tags.length > 0 ? (
+                <>
+                  <HomeSectionHeading>{t("doc.tags", locale)}</HomeSectionHeading>
+                  <TagNav
+                    variant="all"
+                    tags={tags.slice(0, tagLimit)}
+                    labels={{
+                      tags: t("doc.tags", locale),
+                      taggedWith: t("doc.taggedWith", locale),
+                    }}
+                  />
+                  {tags.length > tagLimit && (
+                    <div class="mt-vsp-sm text-title text-muted" aria-hidden="true">
+                      …
+                    </div>
+                  )}
+                  <div class="mt-vsp-md">
+                    <a
+                      href={withBase(`${prefix}/docs/tags`)}
+                      class="group inline-flex items-center gap-hsp-xs text-accent hover:underline"
+                    >
+                      <CategoryLinkIcon className="w-icon-sm text-accent" />
+                      <span>{t("doc.seeAllTags", locale)}</span>
+                    </a>
                   </div>
-                )}
-                <div class="mt-vsp-md">
+                </>
+              ) : (
+                // Legacy fallback: caller passed only `tagCount` (no tag list) —
+                // reproduce the pre-#3027 single "All Tags" link so existing
+                // `@takazudo/zudo-doc/home-page` consumers are unaffected.
+                <>
+                  <HomeSectionHeading>{t("doc.allTags", locale)}</HomeSectionHeading>
                   <a
                     href={withBase(`${prefix}/docs/tags`)}
-                    class="group inline-flex items-center gap-hsp-xs text-accent hover:underline"
+                    class="text-accent underline hover:text-accent-hover"
                   >
-                    <CategoryLinkIcon className="w-icon-sm text-accent" />
-                    <span>{t("doc.seeAllTags", locale)}</span>
+                    {t("doc.allTags", locale)}
                   </a>
-                </div>
-              </>
-            ) : (
-              // Legacy fallback: caller passed only `tagCount` (no tag list) —
-              // reproduce the pre-#3027 single "All Tags" link so existing
-              // `@takazudo/zudo-doc/home-page` consumers are unaffected.
-              <>
-                <HomeSectionHeading>{t("doc.allTags", locale)}</HomeSectionHeading>
-                <a
-                  href={withBase(`${prefix}/docs/tags`)}
-                  class="text-accent underline hover:text-accent-hover"
-                >
-                  {t("doc.allTags", locale)}
-                </a>
-              </>
-            )}
-          </section>
+                </>
+              )}
+            </section>
+          </>
         )}
       </DocLayoutWithDefaults>
     );

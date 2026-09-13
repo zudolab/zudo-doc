@@ -43,6 +43,9 @@ describe("home introduction contract", () => {
     expect(output).not.toContain("<h1");
     expect(output).not.toContain("hash-link");
     expect(output).not.toContain("dangerouslySetInnerHTML");
+    // #4194: every compact h2 carries the shared home section-heading class list.
+    expect(output).toMatch(/<h2 [^>]*class="zd-home-heading text-title font-bold leading-tight"/);
+    expect(output).not.toMatch(/<h[3-6] [^>]*zd-home-heading/);
   });
 
   it.each([

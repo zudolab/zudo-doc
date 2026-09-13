@@ -47,7 +47,7 @@ for (const width of [1440, 1024, 768, 390, 320]) {
     await expect(prose).toHaveCSS("text-align", "left");
     await expect(prose).toHaveCSS("font-size", "16px");
     await expect(prose).toHaveCSS("line-height", "28px");
-    for (const [tag, size] of [["h2", "20.8px"], ["h3", "18px"], ["h4", "16px"], ["h5", "15px"], ["h6", "15px"]] as const) {
+    for (const [tag, size] of [["h2", "22.4px"], ["h3", "18px"], ["h4", "16px"], ["h5", "15px"], ["h6", "15px"]] as const) {
       const heading = prose.locator(tag).first();
       await expect(heading).toHaveCSS("font-size", size);
       await expect(heading).toHaveCSS("font-weight", "700");
@@ -55,6 +55,10 @@ for (const width of [1440, 1024, 768, 390, 320]) {
       await expect(heading).toHaveCSS("border-bottom-width", "0px");
       await expect(heading).toHaveCSS("background-image", "none");
     }
+    // #4194: the intro h2 shares the sitemap heading's class list and size.
+    await expect(prose.locator("h2").first()).toHaveClass(/\bzd-home-heading\b/);
+    await expect(page.locator(".zd-home-sitemap > h2")).toHaveClass(/\bzd-home-heading\b/);
+    await expect(page.locator(".zd-home-sitemap > h2")).toHaveCSS("font-size", "22.4px");
     await expect(prose.locator(":scope > :first-child")).toHaveCSS("margin-top", "0px");
     await expect(prose.locator("h2").nth(1)).toHaveCSS("margin-top", "28px");
     await expect(prose.locator("h2 + p").first()).toHaveCSS("margin-top", "8px");

@@ -2770,7 +2770,6 @@ a.text-accent.underline {
   background: none;
 }
 .zd-compact-prose :where(h2) {
-  font-size: 1.3rem;
   --flow-space: 1.75rem;
 }
 .zd-compact-prose :where(h3) {
@@ -2798,6 +2797,18 @@ a.text-accent.underline {
 .zd-compact-prose :where(img) {
   max-inline-size: 100%;
   block-size: auto;
+}
+.zd-content h2.zd-home-heading, html[data-theme-pack] .zd-content h2.zd-home-heading {
+  font-size: var(--text-title);
+  line-height: var(--leading-tight);
+  padding: 0;
+  border: 0;
+  background: none;
+  position: static;
+  counter-increment: none;
+}
+.zd-content h2.zd-home-heading::before, .zd-content h2.zd-home-heading::after, html[data-theme-pack] .zd-content h2.zd-home-heading::before, html[data-theme-pack] .zd-content h2.zd-home-heading::after {
+  content: none;
 }
 .page-loading-overlay {
   position: fixed;
