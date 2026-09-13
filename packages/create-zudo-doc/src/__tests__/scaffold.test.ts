@@ -1826,7 +1826,7 @@ describe("scaffold — CLAUDE.md generation", () => {
 });
 
 describe("scaffold — generated package.json", () => {
-  it("scripts: emits dev/build/preview/check/check:links by default — no check:html, gen:z-index, or check:z-index", async () => {
+  it("scripts: emits dev/build/preview/check/check:links/check:images by default — no check:html, gen:z-index, or check:z-index", async () => {
     await scaffold(baseChoices);
     const pkg = await fs.readJson(projectPath("test-doc", "package.json"));
     expect(pkg.scripts).toEqual({
@@ -1835,6 +1835,7 @@ describe("scaffold — generated package.json", () => {
       preview: "zfb preview",
       check: "zfb check",
       "check:links": "node scripts/check-links.js",
+      "check:images": "zudo-doc check images",
     });
   });
 

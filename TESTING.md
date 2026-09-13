@@ -28,7 +28,7 @@ is a blocking PR lane, and the visual-regression baseline is deliberately skippe
 | L1 | Vitest unit tests | Root fast lane: 903 tests (901 passed, 2 skipped) in `src/**/__tests__/` and `scripts/__tests__/`, via `pnpm test:unit`; package lanes: 2,988 tests (search-worker 44, doc-history-server 73, create-zudo-doc 596, zudo-doc 2,275), via `pnpm test:packages`. Combined `pnpm test` runs these fast lanes only. Separate Slow Unit Tests runs 60 slow root tests via `pnpm test:unit:slow` plus 5 retiered `create-zudo-doc` tests | Root: `pnpm test:unit`; packages: `pnpm test:packages`; combined: `pnpm test` |
 | L1 Worker | Workers-runtime unit/integration tests | Custom entry export graph and SQLite `AiChatDailySpendCap` concurrency using `@cloudflare/vitest-pool-workers` | `pnpm test:worker` |
 | L2 | *Not used* — jsdom/happy-dom + Testing Library DOM component tests | Intentionally skipped in this repo — see "Why L2 is skipped" below | — |
-| L3 | Static dist reads + build-output verification | Read pre-built `dist/` HTML with `readFileSync` (Playwright specs using `makeDistReader(fixture)`); also covers the b4push build-output steps (link check, HTML validation, preview smoke) — see "L3 details" below | `E2E_FIXTURES=<fixture> npx playwright test --project <fixture> e2e/<fixture>-*.spec.ts` (e.g. `E2E_FIXTURES=versioning npx playwright test --project versioning e2e/versioning.spec.ts`) — any spec using `makeDistReader(fixture)` from `e2e/dist-helper.ts` |
+| L3 | Static dist reads + build-output verification | Read pre-built `dist/` HTML with `readFileSync` (Playwright specs using `makeDistReader(fixture)`); also covers the b4push build-output steps (link check, image check, HTML validation, preview smoke) — see "L3 details" below | `E2E_FIXTURES=<fixture> npx playwright test --project <fixture> e2e/<fixture>-*.spec.ts` (e.g. `E2E_FIXTURES=versioning npx playwright test --project versioning e2e/versioning.spec.ts`) — any spec using `makeDistReader(fixture)` from `e2e/dist-helper.ts` |
 | L4 | Playwright E2E | 5-fixture browser suite — interactive, full-build, full-browser; fixtures: sidebar (4500), i18n (4501), theme (4502), smoke (4503), versioning (4504) | `pnpm test:e2e` (local), `pnpm test:e2e:ci` (CI) |
 | L5 | `/verify-ui` | Computed-style verification plus informal screenshot review; no committed screenshot baseline | Invoke the `/verify-ui` skill |
 | L6 | Test-flow skills | Final-resort: full user-journey replay with screen observation | `/test-flow-html-preview-hydration`, `/test-flow-sidebar-width-restore` |
@@ -62,12 +62,13 @@ Playwright `webServer` entry still boots (`zfb preview`) for the documented comm
 the target spec never touches `page` — `playwright.config.ts` boots one `webServer` per
 active fixture regardless of which specs in that fixture's project actually use it.
 
-**Three b4push steps are also L3 in spirit** — they verify the *built* `dist/` rather than
-source, just outside the Playwright/`makeDistReader` pattern: link check (step 25, reads
-`dist/**/*.html` for broken links), HTML validation (step 26, `html-validate
-dist/**/*.html`), and the automated preview smoke (step 27, `scripts/smoke-preview.mjs` —
-boots a real `pnpm preview` server and asserts on live HTTP responses). These run as part of
-`pnpm b4push` and CI's build-site job family, not as `*.spec.ts` files.
+**Four b4push steps are also L3 in spirit** — they verify the *built* `dist/` rather than
+source, just outside the Playwright/`makeDistReader` pattern: link check (step 28, reads
+`dist/**/*.html` for broken links), image check (step 29, validates local media and asset
+references), HTML validation (step 30, `html-validate dist/**/*.html`), and the automated
+preview smoke (step 31, `scripts/smoke-preview.mjs` — boots a real `pnpm preview` server
+and asserts on live HTTP responses). These run as part of `pnpm b4push` and CI's build-site
+job family, not as `*.spec.ts` files.
 
 ### When to use which level
 
@@ -164,13 +165,13 @@ lane makes that failure block the PR instead of waiting for the next nightly run
 
 **b4push** (`pnpm b4push`) is the bounded local convenience pass — wisdom-tier **T4**, not
 T1 (see the note above the tiers table); it's covered here for workflow ergonomics only. It
-runs a 29-step suite
+runs a 32-step suite
 (format → template drift → no-host-alias guard → pin parity → fixture drift → tags/canonical audit →
 current-only compatibility → token lint → component-tokens drift → e2e spec naming guard →
 @flaky tracking-issue guard → wait-debt guard → search-widget-script commit drift → nav-overflow-script commit drift →
 publish contract → dist-mutation guard → required-checks manifest/parity → typecheck → Worker contract proof → root unit tests →
 slow unit tests → package tests → safelist check → build → content-fallback allowlist scan → link check →
-HTML validation → preview smoke → manual smoke). Each step's elapsed time is recorded and printed as a breakdown in the final
+image check → HTML validation → preview smoke → manual smoke). Each step's elapsed time is recorded and printed as a breakdown in the final
 SUMMARY block, so budget creep in any one step is visible instead of only the aggregate run
 duration.
 
@@ -179,10 +180,10 @@ non-allowlisted half (`strictContentBridge: true` in `zfb.config.ts`) fails plai
 `pnpm build`/CI directly and is not a b4push step at all — see the header of
 `scripts/check-content-fallback.mjs` for why both exist.
 
-**b4push/CI parity scope.** The `check:b4push-ci-parity` guard (step 17) only cross-checks
-the lightweight guard steps 1–17 (the `# >>> b4push-ci-parity:guards:begin` / `:end` region).
+**b4push/CI parity scope.** The `check:b4push-ci-parity` guard (step 18) only cross-checks
+the lightweight guard steps 1–18 (the `# >>> b4push-ci-parity:guards:begin` / `:end` region).
 The heavy steps — typecheck, unit tests, package tests, safelist check, build, link check,
-HTML validation, preview smoke — are intentionally outside this region and outside the parity
+image check, HTML validation, preview smoke — are intentionally outside this region and outside the parity
 manifest. They run in CI as separate full-install jobs (not redundant pure-Node scripts), so
 a straightforward ciNeedle match would need a different contract. The asymmetry is intentional:
 b4push runs the heavy steps locally on the developer's machine; CI runs them in isolated
@@ -235,9 +236,9 @@ with a closing comment, so the issue list doesn't accumulate stale entries (#253
 ### T4 — Local heavy lane (`pnpm b4push`)
 
 T4 is a convenience layer, never an enforcement substitute for T1. The structural
-target for `pnpm b4push` is a finite, warm-tree 29-step pass with the full per-step
+target for `pnpm b4push` is a finite, warm-tree 32-step pass with the full per-step
 timing breakdown printed by `scripts/run-b4push.sh` (the timing state is set up in
-`scripts/run-b4push.sh:54-69`, in the `START_TIME`/`TOTAL_STEPS` and `STEP_*` block).
+`scripts/run-b4push.sh:54-72`, in the `START_TIME`/`TOTAL_STEPS` and `STEP_*` block).
 It includes the blocking Slow Unit Tests lane (60 slow root tests plus 5 retiered
 `create-zudo-doc` tests), but deliberately excludes the full five-fixture Playwright run and
 the registry-install/full-build slow-create sweep reserved for T3. A ≤25-minute

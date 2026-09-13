@@ -155,6 +155,12 @@ jobs:
         # false-greened real broken links on main (#1985).
         run: pnpm run check:links -- --strict-broken --strict-absolute --allowlist=.check-links-allowlist
 
+      - name: Check images
+        # Strict post-build gate for local image and asset references. Unlike
+        # the build-time plugin's warn default, this command fails on any
+        # unallowlisted broken reference before the artifact is published.
+        run: pnpm run check:images
+
       - name: Archive site build output
         # tar preserves arbitrary route paths (upload-artifact rejects ':' in
         # paths, e.g. dist/docs/tags/type:guide/) and includes dotfiles.

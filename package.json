@@ -44,6 +44,7 @@
     "test:e2e:ci": "pnpm ensure:workspace-build && bash e2e/setup-fixtures.sh && playwright test --grep-invert \"@flaky|@local-only|@verification\"",
     "test:e2e:ci:json": "pnpm ensure:workspace-build && bash e2e/setup-fixtures.sh && playwright test --grep-invert \"@flaky|@local-only|@verification\" --reporter=list,json",
     "check:links": "node scripts/check-links.js",
+    "check:images": "zudo-doc check images",
     "check:html": "html-validate \"dist/**/*.html\"",
     "check:content-fallback": "node scripts/check-content-fallback.mjs",
     "smoke:preview": "node scripts/smoke-preview.mjs",

@@ -1096,6 +1096,7 @@ function generatePackageJson(
     preview: "zfb preview",
     check: "zfb check",
     "check:links": "node scripts/check-links.js",
+    "check:images": "zudo-doc check images",
   };
 
   if (choices.features.includes("docHistory")) {
