@@ -278,6 +278,89 @@ describe("createHomePageView — hero markup", () => {
   });
 });
 
+describe("createHomePageView — meta description (#4200)", () => {
+  it("emits <meta name=\"description\"> and og:description on the default-locale home, matching siteDescription", () => {
+    const ctx = makeFakeChromeContext({
+      settings: { siteName: "Test Site", siteDescription: "A test description" },
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps()} />);
+
+    expect(html).toContain('<meta name="description" content="A test description"/>');
+    expect(html).toContain('<meta property="og:description" content="A test description"/>');
+  });
+
+  it("emits both tags carrying a locale description override", () => {
+    const ctx = makeFakeChromeContext({
+      settings: {
+        siteDescription: "Global description",
+        locales: {
+          ja: {
+            label: "Japanese",
+            dir: "src/content/docs-ja",
+            description: "Japanese description",
+          },
+        },
+      },
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps({ locale: "ja" })} />);
+
+    expect(html).toContain('<meta name="description" content="Japanese description"/>');
+    expect(html).toContain('<meta property="og:description" content="Japanese description"/>');
+  });
+
+  it("falls back to siteDescription for both tags when the locale has no override", () => {
+    const ctx = makeFakeChromeContext({
+      settings: {
+        siteDescription: "Global description",
+        locales: { ja: { label: "Japanese", dir: "src/content/docs-ja" } },
+      },
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps({ locale: "ja" })} />);
+
+    expect(html).toContain('<meta name="description" content="Global description"/>');
+    expect(html).toContain('<meta property="og:description" content="Global description"/>');
+  });
+
+  it("emits neither tag when metaTags.description is false", () => {
+    const ctx = makeFakeChromeContext({
+      settings: {
+        siteDescription: "A test description",
+        metaTags: { description: false },
+      },
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps()} />);
+
+    expect(html).not.toContain('name="description"');
+    expect(html).not.toContain("og:description");
+  });
+
+  it("emits neither tag when the resolved description is empty", () => {
+    const ctx = makeFakeChromeContext({
+      settings: { siteDescription: "" },
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps()} />);
+
+    expect(html).not.toContain('name="description"');
+    expect(html).not.toContain("og:description");
+  });
+
+  it("emits neither tag when the resolved description is whitespace-only", () => {
+    const ctx = makeFakeChromeContext({
+      settings: { siteDescription: "   " },
+    });
+    const HomePageView = createHomePageView(ctx);
+    const html = render(<HomePageView {...makeProps()} />);
+
+    expect(html).not.toContain('name="description"');
+    expect(html).not.toContain("og:description");
+  });
+});
+
 describe("createHomePageView — SiteTreeNav island", () => {
   it("uses the narrow content band when wide is omitted", () => {
     const HomePageView = createHomePageView(makeFakeChromeContext());
