@@ -933,9 +933,15 @@ function generatePackageJson(
     // does — pin by semver, as here, and there is nothing to re-pin. No public
     // API, export, config default, or engine requirement moves, so a fresh
     // scaffold needs no migration.
-    "@takazudo/zfb": "2.16.0",
-    "@takazudo/zfb-runtime": "2.16.0",
-    "@takazudo/zfb-md-wasm": "2.16.0",
+    // 2.17.0: zfb and md-wasm bump the YAML frontmatter parser to
+    // noyalib-serde-yaml 0.0.43 (upstream reports every YAML corpus case parses
+    // byte-identically), which recompiles the four wasm artifacts at slightly
+    // moved sizes; zfb-runtime and zfb-adapter-cloudflare change only their
+    // README/description. No public API, export, config default, or engine
+    // requirement moves, so a fresh scaffold needs no migration.
+    "@takazudo/zfb": "2.17.0",
+    "@takazudo/zfb-runtime": "2.17.0",
+    "@takazudo/zfb-md-wasm": "2.17.0",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
