@@ -185,6 +185,12 @@ export function createHomePageView<S extends Settings = Settings>(
     wide,
   }: HomePageViewProps): JSX.Element {
     const prefix = locale === defaultLocale ? "" : `/${locale}`;
+    // Same resolution the hero paragraph below reads (locale override falls
+    // back to the site-wide description), normalized so an empty/whitespace
+    // value doesn't emit `content=""` — `OgTags` and `DocLayout` only check
+    // `!== undefined` (#4200, mirrors doc-page-shell/index.tsx ~L340/343).
+    const rawDescription = settings.locales[locale]?.description ?? settings.siteDescription;
+    const description = rawDescription?.trim() ? rawDescription : undefined;
     const ctaNav = settings.headerNav[0] ?? null;
     const primary = heroLink
       ? { href: withBase(`${prefix}${heroLink.path}`), label: t(heroLink.labelKey, locale) }
@@ -246,7 +252,8 @@ export function createHomePageView<S extends Settings = Settings>(
     return (
       <DocLayoutWithDefaults
         title={composeMetaTitle(settings.siteName)}
-        head={<HeadWithDefaults title={settings.siteName} />}
+        description={settings.metaTags.description ? description : undefined}
+        head={<HeadWithDefaults title={settings.siteName} description={description} />}
         lang={locale}
         dataThemePack={dataThemePack}
         noindex={settings.noindex}
@@ -278,9 +285,7 @@ export function createHomePageView<S extends Settings = Settings>(
             ) : null}
             <div class="zd-home-copy min-w-0 lg:flex-1">
               <h1 class="text-heading font-bold mb-vsp-2xs break-words">{settings.siteName}</h1>
-              <p class="text-muted text-small mb-vsp-sm">
-                {settings.locales[locale]?.description ?? settings.siteDescription}
-              </p>
+              <p class="text-muted text-small mb-vsp-sm">{rawDescription}</p>
               <div class="zd-home-links flex flex-wrap items-center justify-center lg:justify-start gap-hsp-md text-small">
                 {rowItems.map((item, index) => (
                   <Fragment key={index}>

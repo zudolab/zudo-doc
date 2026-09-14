@@ -56,7 +56,10 @@ const ALLOWED_UNCONDITIONAL_OPTIONAL_PEERS = new Set([
   // Since #4018 the `/constants` leaf is no longer imported either — those four
   // data constants are vendored in-package (`src/design-token-panel-constants.ts`,
   // conformance-tested against the real leaf), so the ONLY remaining reach is
-  // that rejection-handled dynamic import.
+  // that rejection-handled dynamic import. Since #4201 it goes through the
+  // package-owned `@takazudo/zudo-doc/zdtp-loader` re-export (which the walk
+  // below follows into `src/zdtp-loader.ts`), so that a panel-off build can
+  // alias it to a stub and emit no zdtp chunks.
   //
   // Still allowlisted because this guard's `onResolve` filter is `/.*/` and
   // records dynamic kinds too, so the specifier shows up here — but unlike

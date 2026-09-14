@@ -269,7 +269,9 @@ The panel UI is provided by the `@takazudo/zdtp` (zdtp) npm package. The package
 
 ### Lazy loading
 
-`@takazudo/zdtp` is not part of the initial page bundle. `bootstrapDesignTokenPanel` only registers a small interim click listener at mount; the actual `import("@takazudo/zdtp")` — and the `configurePanel` call that follows it — happens the first time the header trigger dispatches `toggle-design-token-panel`. Clicks that land before the import resolves are queued and coalesced into a single net show/hide once configure finishes, so a rapid double-click never fires it twice.
+`@takazudo/zdtp` is not part of the initial page bundle. `bootstrapDesignTokenPanel` only registers a small interim click listener at mount; the actual dynamic import of zdtp — and the `configurePanel` call that follows it — happens the first time the header trigger dispatches `toggle-design-token-panel`. Clicks that land before the import resolves are queued and coalesced into a single net show/hide once configure finishes, so a rapid double-click never fires it twice.
+
+The bootstrap reaches zdtp only through the package-owned `@takazudo/zudo-doc/zdtp-loader` subpath. When `designTokenPanel` is off, the preset replaces that one specifier with a stub module, so the build emits no zdtp chunks at all. Your own `import "@takazudo/zdtp"` statements are not affected.
 
 A returning visitor with saved state doesn't wait for that click. On mount, the bootstrap probes `localStorage` under the active (pack-scoped) storage prefix and loads zdtp immediately — before any interaction — when any of the following is true:
 

@@ -148,6 +148,8 @@ export interface PresetSettings {
   docHistory?: boolean;
   /** Whether the doc history dropdown UI and related artifacts are enabled. */
   docHistoryUi?: boolean;
+  /** Falsy → the zdtp-loader plugin keeps `@takazudo/zdtp` out of the island build (#4201). */
+  designTokenPanel?: boolean;
   docHistoryExclude?: string[];
   /** Generate package-owned viewer pages for files under the configured asset directory. */
   assetViewer?: boolean;
@@ -775,5 +777,12 @@ function buildPlugins(
         onBroken: settings.onBrokenMarkdownLinks,
       },
     },
+    // Panel OFF → shadow the bootstrap's `@takazudo/zudo-doc/zdtp-loader` lazy
+    // import with a throwing virtual module so the island build emits no zdtp chunks
+    // (#4201). Preset-level rather than inside the routes plugin because the
+    // bootstrap is reachable from chrome even when packageOwnedRoutes is off.
+    ...(settings.designTokenPanel
+      ? []
+      : [{ name: "@takazudo/zudo-doc/plugins/zdtp-loader", options: {} }]),
   ];
 }

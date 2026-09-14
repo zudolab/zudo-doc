@@ -202,6 +202,26 @@ function runZfbBuild(dir: string, outDir = "dist"): string {
   }
 }
 
+/** Literal markers that only zdtp's own lazy chunks carry (#4197 / #4201): the
+ *  main payload's singleton symbol key and the DOM-tweaker chunk's overlay. */
+const ZDTP_CHUNK_MARKERS = ["@takazudo/zdtp:singleton", "data-zdtp-dom-tweaker-overlay"] as const;
+
+/** Relative paths of every file under `dist/` whose text contains any of
+ *  `markers` — scans ALL emitted files, not only `islands*.js`, so a zdtp
+ *  chunk emitted under any name is still caught. */
+function findDistFilesContaining(dir: string, markers: readonly string[]): string[] {
+  const distDir = join(dir, "dist");
+  return (readdirSync(distDir, { recursive: true }) as string[]).filter((rel) => {
+    const full = join(distDir, rel);
+    try {
+      const text = readFileSync(full, "utf-8");
+      return markers.some((m) => text.includes(m));
+    } catch {
+      return false; // directory entry
+    }
+  });
+}
+
 /** Read a built HTML file from the dist/ output and return its content. */
 function readBuiltHtml(dir: string, path: string): string {
   const fullPath = join(dir, "dist", path);
@@ -481,6 +501,15 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
     expect(html).not.toContain('data-zfb-island-skip-ssr="ImageEnlarge"');
     expect(html).not.toContain('data-zfb-island-skip-ssr="MermaidEnlarge"');
     expect(html).not.toContain("AI Assistant");
+  });
+
+  // #4201: this fixture ships designTokenPanel OFF while @takazudo/zdtp IS
+  // installed (workspace node_modules) — the preset's zdtp-loader virtual
+  // module must keep every zdtp lazy chunk out of the artifact. (The packed
+  // OPT-ZDTP case proves the same shadowing from a real node_modules install:
+  // without it, `dist/zdtp-loader.js`'s static re-export fails to resolve.)
+  it("zdtp-off: no emitted file carries a zdtp chunk marker when designTokenPanel is off", () => {
+    expect(findDistFilesContaining(fixtureDir, ZDTP_CHUNK_MARKERS)).toEqual([]);
   });
 
   // ---------------------------------------------------------------------------
@@ -1025,19 +1054,50 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // values with a sentinel, every other normalized byte was identical.
   // Detailed parsed-props and SSR evidence is retained with #4105's parity
   // evidence.
+  //
+  // 2026-09-15 re-baseline (zudolab/zudo-doc#4202, source issues #4200/#4201,
+  // sub-issue of the "Recent Issue Sweep 0915" epic #4198/#4199): run after
+  // #4200 (home meta description, 3246dd1ce) and #4201 (zdtp-loader subpath +
+  // plugin, 768acaa0d) merged into base/recent-issue-sweep-0915. Both landed
+  // between the prior pin (13093105a) and this head.
+  //
+  // Scope proof — the prior pin (`13093105a`) and this head (`c06aa07bc`)
+  // were each rebuilt with `pnpm build:workspace`, then the route-injection
+  // fixture was built separately against each dist/ and every emitted byte
+  // (not just the sha256) was diffed after normalized-asset-filename
+  // replacement. All three pages carry EXACTLY ONE changed line, in the
+  // inline theme-pack-loading FOUC script every page emits in its `<head>`:
+  // the `packs` catalog-version map's `"academia"` entry moves `"1.0.1"` →
+  // `"1.0.2"`. That is the theme-pack version bump from
+  // `81266a2ba` ("fix(theme-packs): keep Academia home hero title left and
+  // home dividers centered", #4194) landing between the pin and this head —
+  // its commit message states the bump exists "so cached stylesheets
+  // refresh". No other byte differs on any of the three pages: neither
+  // #4200 (home-route-only; confirmed absent from `/404.html` and both docs
+  // pages) nor #4201 (zdtp-loader subpath/plugin; this fixture has
+  // `designTokenPanel` off, so no zdtp chunk graph is emitted here) leaves
+  // any trace. `/404.html`
+  // `25f43ef8ebd9dfbeb6c35f274ec15f5ac083d3794c9bb6529f536085027a80db` →
+  // `ec412b0fc0435697216bc29b6865bd66efe7928c3ccac4123865cd68516b18f4`,
+  // `/docs/getting-started/`
+  // `8e62dc6fc4e7988e8181e0551f5ec9650205b28e15a06fa1cefc8358ca8111ad` →
+  // `d0dea44a671b93cafd141d6a6c5961f4eda019550c9d097051f1aedf70ec8dff`, and
+  // `/docs/getting-started/coverage/`
+  // `75e480b2061eead0c58600bf822d08ece3ed481da4088d86161dc9c8cc100f4e` →
+  // `7a33e1a357f875132e773734c2a5a2757f81fb165cbb22c7ec593edcdf53b346`.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"25f43ef8ebd9dfbeb6c35f274ec15f5ac083d3794c9bb6529f536085027a80db"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"ec412b0fc0435697216bc29b6865bd66efe7928c3ccac4123865cd68516b18f4"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"8e62dc6fc4e7988e8181e0551f5ec9650205b28e15a06fa1cefc8358ca8111ad"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"d0dea44a671b93cafd141d6a6c5961f4eda019550c9d097051f1aedf70ec8dff"`);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"75e480b2061eead0c58600bf822d08ece3ed481da4088d86161dc9c8cc100f4e"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"7a33e1a357f875132e773734c2a5a2757f81fb165cbb22c7ec593edcdf53b346"`);
   });
 });
 
@@ -1692,6 +1752,13 @@ describe("DTP design-token-panel: injected doc route registers the configured de
     );
     expect(reachableViaDynamicHop).toBe(true);
   });
+
+  // #4201 counterpart of the A2 "zdtp-off" case: with the panel ON the
+  // zdtp-loader virtual module is not registered, so zdtp's lazy chunk is still emitted
+  // (and the laziness pair above proves it stays behind a dynamic import()).
+  it("zdtp-on: the zdtp singleton chunk is still emitted when designTokenPanel is on", () => {
+    expect(findDistFilesContaining(fixtureDir, ["@takazudo/zdtp:singleton"]).length).toBeGreaterThan(0);
+  });
 });
 
 describe("DTP host body-end override: package derive seam retains exactly one design-token-panel island", () => {
@@ -2214,14 +2281,16 @@ describe("OPT-ZDTP no-zdtp: the published package builds with the optional @taka
 
     // Precondition 2 — the PACKED artifact carries the fix, and only the fix:
     // no static `/constants` edge (#4018 vendored those constants), but the
-    // lazy `import("@takazudo/zdtp")` is still there. Without the second half a
-    // green build would also be satisfied by deleting the panel outright.
+    // lazy zdtp import is still there — since #4201 routed through the
+    // package-owned `@takazudo/zudo-doc/zdtp-loader` re-export. Without the
+    // second half a green build would also be satisfied by deleting the panel
+    // outright.
     const bootstrap = readFileSync(
       join(pkgDest, "dist/design-token-panel-bootstrap.js"),
       "utf-8",
     );
     expect(bootstrap).not.toContain("@takazudo/zdtp/constants");
-    expect(bootstrap).toContain('import("@takazudo/zdtp")');
+    expect(bootstrap).toContain('import("@takazudo/zudo-doc/zdtp-loader")');
   });
 
   it("build: `zfb build` succeeds with zdtp absent from node_modules", { timeout: 180_000 }, () => {

@@ -365,7 +365,8 @@ function clearAppliedTokenOverrides(config: PanelConfig): void {
  * interim toggle listener on both resolved channels (#3315), drains the
  * pre-hydration click queue, and probes localStorage for persisted panel
  * state; the actual
- * `import("@takazudo/zdtp")` + configure happen on the first toggle (or
+ * `import("@takazudo/zudo-doc/zdtp-loader")` (zdtp's package-owned
+ * re-export, #4201) + configure happen on the first toggle (or
  * immediately on a probe hit). The configure body then wires everything the
  * pre-lazy version wired eagerly: `configurePanel` with the pack-scoped
  * mode-config, the `color-scheme-changed` / `theme-pack-changed` rebuild
@@ -404,7 +405,10 @@ export function bootstrapDesignTokenPanel(
 
   function loadZdtp(): Promise<ZdtpModule> {
     if (zdtpImport === null) {
-      zdtpImport = import("@takazudo/zdtp").catch((err: unknown) => {
+      // Via the package-owned subpath, never `@takazudo/zdtp` directly: when
+      // `designTokenPanel` is off, the preset's zdtp-loader plugin shadows this
+      // exact specifier with a throwing stub so no zdtp chunk is emitted (#4201).
+      zdtpImport = import("@takazudo/zudo-doc/zdtp-loader").catch((err: unknown) => {
         // The memo resets ONLY here, on import rejection (see RETRY SCOPE).
         zdtpImport = null;
         throw err;
