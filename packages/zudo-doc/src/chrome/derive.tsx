@@ -63,11 +63,16 @@ import { createDesignTokenPanelIsland } from "../doc-body-end-islands/design-tok
 // consumer (#2668's "accepted permanent contract", broken for real consumers
 // per #4009). Those constants are now vendored at
 // `../design-token-panel-constants.js`, and the only remaining reach is the
-// rejection-handled `import("@takazudo/zdtp")` inside `loadZdtp()` — #4015
-// proved by real build that esbuild tolerates such an import when the package
-// is absent, leaving the bare specifier in the output. So a
-// `designTokenPanel: false` project need not install zdtp; the packed-tarball
-// no-zdtp build case in route-injection-build.slow.test.ts holds that line.
+// rejection-handled `import("@takazudo/zudo-doc/zdtp-loader")` inside
+// `loadZdtp()` — a package-owned re-export of `@takazudo/zdtp` (#4201). With
+// `designTokenPanel` off, the preset's `plugins/zdtp-loader` shadows that exact
+// specifier with a throwing virtual module (a real package subpath, so this
+// import graph still carries no `virtual:` specifier), so the island build
+// emits NO zdtp chunks even when zdtp is installed, and a
+// `designTokenPanel: false` project need not install zdtp at all (the
+// packed-tarball OPT-ZDTP case in route-injection-build.slow.test.ts holds
+// both lines; the A2 "zdtp-off" case proves the workspace shape). The bare
+// `@takazudo/zdtp` is never shadowed.
 import { DesignTokenPanelBootstrap } from "../design-token-panel-bootstrap.js";
 // Island-scanner contract (#2821, ADR theme-packs.md Decision 7): the
 // theme-pack switcher flyout island is injected into the body-end islands the

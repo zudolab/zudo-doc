@@ -26,7 +26,8 @@ const zdtp = vi.hoisted(() => ({
   showDesignTokenPanel: vi.fn(),
 }));
 
-// The mock intercepts the island's DYNAMIC `import("@takazudo/zdtp")` (the
+// The mock intercepts the island's DYNAMIC
+// `import("@takazudo/zudo-doc/zdtp-loader")` — the zdtp re-export (the
 // module carries no top-level value import of zdtp anymore). The factory
 // counts evaluations and can simulate a rejected chunk load. It is armed via
 // `vi.doMock` in beforeEach — NOT a hoisted `vi.mock` — because a hoisted
@@ -58,7 +59,7 @@ import {
 const WAIT_FOR_OPTS = { timeout: 10_000, interval: 50 } as const;
 
 beforeEach(() => {
-  vi.doMock("@takazudo/zdtp", zdtpFactory);
+  vi.doMock("@takazudo/zudo-doc/zdtp-loader", zdtpFactory);
   zdtp.evaluations = 0;
   zdtp.failNextImport = false;
 });
@@ -370,7 +371,7 @@ describe("bootstrapDesignTokenPanel — lazy zdtp load", () => {
     // Browsers do not cache a FAILED dynamic import — the next `import()`
     // re-fetches. Vitest caches the failed evaluation, so re-arm the mock to
     // model the browser behavior for the retry.
-    vi.doMock("@takazudo/zdtp", zdtpFactory);
+    vi.doMock("@takazudo/zudo-doc/zdtp-loader", zdtpFactory);
     dispatchToggle(browser.windowTarget);
     await vi.waitFor(
       () => expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce(),

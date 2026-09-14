@@ -137,6 +137,7 @@ describe("package.json exports keyset snapshot", () => {
         "./plugins/routes",
         "./plugins/search-index",
         "./plugins/theme-packs",
+        "./plugins/zdtp-loader",
         "./preset",
         "./render-markdown",
         "./robots",
@@ -205,6 +206,7 @@ describe("package.json exports keyset snapshot", () => {
         "./versions-page",
         "./virtual-modules.d.ts",
         "./z-index-defaults",
+        "./zdtp-loader",
         "./zfb-config-shim.d.ts",
       ]
     `);

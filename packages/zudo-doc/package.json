@@ -195,6 +195,10 @@
       "types": "./dist/plugins/img-src-check.d.ts",
       "default": "./dist/plugins/img-src-check.js"
     },
+    "./plugins/zdtp-loader": {
+      "types": "./dist/plugins/zdtp-loader.d.ts",
+      "default": "./dist/plugins/zdtp-loader.js"
+    },
     "./content-admonition": {
       "types": "./dist/content-admonition/index.d.ts",
       "default": "./dist/content-admonition/index.js"
@@ -658,6 +662,10 @@
     "./frontmatter": {
       "types": "./dist/frontmatter/index.d.ts",
       "default": "./dist/frontmatter/index.js"
+    },
+    "./zdtp-loader": {
+      "types": "./dist/zdtp-loader.d.ts",
+      "default": "./dist/zdtp-loader.js"
     }
   },
   "bin": {
