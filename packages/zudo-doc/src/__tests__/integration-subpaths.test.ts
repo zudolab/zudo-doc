@@ -17,6 +17,7 @@ describe("current integration subpaths", () => {
         "./plugins/claude-resources",
         "./plugins/codex-resources",
         "./plugins/changelog",
+        "./plugins/zdtp-loader",
       ]),
     );
   });

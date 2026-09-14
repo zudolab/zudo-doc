@@ -395,6 +395,7 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       "@takazudo/zudo-doc/plugins/llms-txt",
       "@takazudo/zudo-doc/plugins/changelog",
       "@takazudo/zudo-doc/plugins/img-src-check",
+      "@takazudo/zudo-doc/plugins/zdtp-loader",
     ]);
   });
 
@@ -589,7 +590,20 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
       "@takazudo/zudo-doc/plugins/search-index",
       "@takazudo/zudo-doc/plugins/theme-packs",
       "@takazudo/zudo-doc/plugins/img-src-check",
+      "@takazudo/zudo-doc/plugins/zdtp-loader",
     ]);
+  });
+
+  // #4201: the zdtp-loader alias plugin is listed exactly when the panel is off.
+  it("lists the zdtp-loader alias plugin only while designTokenPanel is off", () => {
+    const names = (designTokenPanel: boolean) =>
+      zudoDocPreset({
+        settings: { ...fixtureSettings, designTokenPanel },
+        buildDocsSchema: buildFixtureSchema,
+        directiveVocabulary: fixtureDirectives,
+      }).plugins.map((p) => p.name);
+    expect(names(false)).toContain("@takazudo/zudo-doc/plugins/zdtp-loader");
+    expect(names(true)).not.toContain("@takazudo/zudo-doc/plugins/zdtp-loader");
   });
 
   // ── packageOwnedRoutes gate (Package-First Finale #2356, ADR

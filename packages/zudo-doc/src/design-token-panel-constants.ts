@@ -10,8 +10,9 @@
 // `Could not resolve "@takazudo/zdtp/constants"`. Vendoring these four data
 // constants plus one pure function removes that package edge entirely; the
 // panel payload itself stays behind the rejection-handled
-// `import("@takazudo/zdtp")` in `loadZdtp()`, which esbuild tolerates by
-// leaving the bare specifier in the output.
+// `import("@takazudo/zudo-doc/zdtp-loader")` (a zdtp re-export, #4201) in
+// `loadZdtp()`, which esbuild tolerates by leaving the bare specifier in the
+// output — and which the preset shadows with a stub when the panel is off.
 //
 // WHY IT MAY BE TRUSTED: `src/__tests__/design-token-panel-constants-conformance.test.ts`
 // asserts this module against the REAL `@takazudo/zdtp/constants` (installed in
