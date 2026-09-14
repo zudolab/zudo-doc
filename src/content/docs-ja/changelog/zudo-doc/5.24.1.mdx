@@ -1,0 +1,16 @@
+---
+title: 5.24.1
+description: 5.24.1のリリースノート。
+sidebar_position: 1120
+---
+
+リリース日: 2026-09-15
+
+### バグ修正
+
+- ホームページ（`/`と各ロケールのホーム）が`<meta name="description">`と`og:description`を出力するようになりました。値はロケールの説明文が設定されていればそれを、なければ`siteDescription`を使い、`metaTags.description`の設定に従います。空文字や空白のみの説明文ではタグを出力しません (3246dd1ce)
+- `designTokenPanel`を無効にしたサイトで、任意依存の`@takazudo/zdtp`の遅延読み込みチャンクが`dist/`に出力されなくなりました。パネルのローダーはパッケージ所有の`@takazudo/zudo-doc/zdtp-loader`サブパス経由で読み込むようになり、パネルが無効なときはスタブに置き換えられます。ホスト側での`@takazudo/zdtp`の読み込みには影響せず、パネルが有効な場合は従来どおり遅延読み込みされます (768acaa0d)
+
+### その他の変更
+
+- `@takazudo/zfb`、`@takazudo/zfb-runtime`、`@takazudo/zfb-md-wasm`のpeer依存の下限を`^2.17.0`に引き上げました (a30a832b3)

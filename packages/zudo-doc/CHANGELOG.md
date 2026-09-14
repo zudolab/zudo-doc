@@ -8,6 +8,17 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [5.24.1] - 2026-09-15
+
+### Bug Fixes
+
+- Home pages (`/` and every locale home) now emit `<meta name="description">` and `og:description`. The value is the locale description when one is set, otherwise `siteDescription`, and it respects `metaTags.description`. Empty or whitespace-only descriptions emit no tag (3246dd1ce)
+- A site with `designTokenPanel` disabled no longer emits the optional `@takazudo/zdtp` lazy chunks into `dist/`. The panel loader now imports through the package-owned `@takazudo/zudo-doc/zdtp-loader` subpath, which is replaced with a stub when the panel is off. A host's own `@takazudo/zdtp` imports are unaffected, and an enabled panel still lazy-loads as before (768acaa0d)
+
+### Other Changes
+
+- The `@takazudo/zfb`, `@takazudo/zfb-runtime`, and `@takazudo/zfb-md-wasm` peer dependency floors are now `^2.17.0` (a30a832b3)
+
 ## [5.24.0] - 2026-09-13
 
 ### Features

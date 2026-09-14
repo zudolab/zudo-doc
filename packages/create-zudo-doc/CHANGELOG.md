@@ -8,6 +8,12 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [5.24.1] - 2026-09-15
+
+### Other Changes
+
+- Generated projects now pin `@takazudo/zfb`, `@takazudo/zfb-runtime`, and `@takazudo/zfb-md-wasm` to `2.17.0`. That release updates the YAML frontmatter parser and changes no API, so existing projects need no migration (a30a832b3)
+
 ## [5.24.0] - 2026-09-13
 
 - No package-specific changes.
