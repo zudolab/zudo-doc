@@ -117,6 +117,52 @@ behavior change from the previous standalone-line-below-the-row placement,
 #3012). A falsy value (`false`/`true`/`null`/`undefined` — e.g. a caller's own
 `extras={cond && <Link />}`) renders no content and no separator.
 
+### `createHeaderWithDefaults(ctx)` (`./header-with-defaults`) — `sidebarNodes` override (#4219)
+
+`HeaderWithDefaultsProps` accepts an optional `sidebarNodes` prop that overrides
+the mobile-drawer tree the factory would otherwise build and pass to
+`SidebarToggle`. It is resolved fresh on every render, against that render's
+`lang`/`navSection`/`currentVersion` — there is no caching across renders.
+
+```ts
+sidebarNodes?:
+  | SidebarNavNode[]
+  | ((args: {
+      lang: string;
+      navSection: string | undefined;
+      currentVersion: string | undefined;
+      buildDefault: () => SidebarNavNode[];
+    }) => SidebarNavNode[]);
+```
+
+- **Array**: passed to `SidebarToggle` as-is — no default tree is built and no
+  version-href remapping is applied.
+- **Callback**: receives the render's resolved `lang`/`navSection`/
+  `currentVersion` plus a **lazy** `buildDefault()` — calling it reproduces
+  today's default tree (`buildSidebarNodes(lang, navSection, currentVersion)`,
+  including its version-href remapping); the default tree is never built
+  unless `buildDefault()` is actually called.
+- **Omitted**: behavior is unchanged, byte-for-byte, including the empty tree
+  the default builder returns when `navSection` is `undefined`.
+
+```tsx
+// Array override — a fixed tree, independent of lang/navSection/currentVersion.
+<HeaderWithDefaults sidebarNodes={customNodes} />
+
+// Callback override — extend the default tree instead of replacing it.
+<HeaderWithDefaults
+  sidebarNodes={({ buildDefault, navSection }) =>
+    navSection === "guides" ? [...buildDefault(), pinnedNode] : buildDefault()
+  }
+/>
+```
+
+`sidebarNodes` is available on `createHeaderWithDefaults(ctx)` and on
+`createChrome(...).HeaderWithDefaults` (which forwards it through). It is
+**not** part of `HeaderSlotProps` (`./chrome-bindings`'s `Header` replacement
+contract) — a full `Header` replacement via `defineChromeBindings` still owns
+its own sidebar-tree data prep and does not receive this prop.
+
 ### UI Components
 
 | Subpath | Description |
@@ -142,7 +188,7 @@ behavior change from the previous standalone-line-below-the-row placement,
 | `./theme-toggle` | Theme toggle component |
 | `./head` | `<head>` component |
 | `./head-with-defaults` | `<head>` with preset defaults |
-| `./header-with-defaults` | Header with preset defaults |
+| `./header-with-defaults` | Header with preset defaults; `HeaderWithDefaultsProps.sidebarNodes` optionally overrides the mobile-drawer tree — see below |
 | `./footer-with-defaults` | Footer with preset defaults |
 | `./page-loading` | Page-loading overlay component |
 | `./tab-item` | Tab item component |

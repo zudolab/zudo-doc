@@ -496,3 +496,42 @@ describe("generated check-links.js — MDX static id behind a quoted > (#4048)",
     expect(result.stdout).toContain("missing target id");
   });
 });
+
+describe("generated check-links.js — escaped \\< must not hide a later MDX id (#4218)", () => {
+  it("does not let an escaped \\< in prose swallow a later static id", async () => {
+    const result = await runFixture({
+      args: ["--strict-anchors"],
+      files: {
+        "src/content/docs/index.mdx": [
+          "[second](/docs/target#second)",
+          "[third](/docs/target#third)",
+        ].join("\n"),
+        "src/content/docs/target.mdx": [
+          "When a \\<b isn't zero, see the note.",
+          "",
+          '<span id="second">anchor</span>',
+          "",
+          "It's fine.",
+          "",
+          '<span id="third">anchor</span>',
+        ].join("\n"),
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout).not.toContain("missing target id");
+  });
+
+  it("treats an even run of backslashes before < as an active tag, still finding its id", async () => {
+    const result = await runFixture({
+      args: ["--strict-anchors"],
+      files: {
+        "src/content/docs/index.mdx": "[x](/docs/target#x)\n",
+        // Two backslashes: an escaped backslash followed by an active `<`,
+        // so `\\<span id="x">` is a real tag and "x" is found.
+        "src/content/docs/target.mdx": '\\\\<span id="x">two</span>\n',
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout).not.toContain("missing target id");
+  });
+});
