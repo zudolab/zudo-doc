@@ -42,6 +42,17 @@ Each tier only references the tier above it.
 
 Raw `var(--palette-*)` usage, overlays/backdrops, the role-split highlight tokens, and the exact list of acceptable exceptions to the no-hardcoded-color rule live in the `zudo-doc-design-system` skill — invoke `/zudo-doc-design-system` before writing color CSS.
 
+### Link Color Rule
+
+Canonical (epic zudolab/zudo-doc#4235). Every link in package chrome and the showcase falls under exactly one of these:
+
+1. **Prose and inline sentence links** (`ContentLink`, a link inside running text such as a version banner) are `text-accent underline`.
+2. **Inline link rows in tertiary chrome** (the home hero links line incl. showcase `extras`, the footer copyright line) are `text-fg` + static `underline` + `hover:text-accent`.
+3. **Every other link** is `text-fg` (or `text-muted` for tertiary chrome: footer columns, TOC, breadcrumb) with `hover:text-accent` / `focus-visible:text-accent`, and accent or the existing `bg-fg text-bg` / `aria-current` treatment for the current item. Such a link must carry a structural affordance: membership in a visible list, a card box, or a leading glyph (`CategoryLinkIcon`, arrow SVG). Descendant icons follow via `group-hover:text-accent` / `group-focus-visible:text-accent`.
+4. **No static `underline` outside rules 1–2.** Nav lists, cards, chips, pager, breadcrumb use `hover:underline` only.
+
+`--zdc-doc-link-decoration` (selector `a.text-accent.underline`) targets rule 1 only; rule-2 rows are `text-fg` and never match it. A theme pack recoloring a rule-3 card link must also reach the descendant spans — see the "descendant color" trap in `packages/zudo-doc/CLAUDE.md`.
+
 ### Changing Scheme
 
 - Edit `colorScheme` in `src/config/settings.ts`
@@ -114,5 +125,6 @@ The 13 semantic `--z-index-*` tiers ship unconditionally from `@takazudo/zudo-do
 - Tailwind v4: imports `tailwindcss/preflight` + `tailwindcss/utilities` (no default theme)
 - `@theme` has `--color-*: initial;` at the top — project tight-token guardrail: wipes all Tailwind default color tokens so only project-defined tokens are available. The upstream split-import fix (zfb#159 / 9e37551) shipped in f68a9ba and eliminated the original leak cause; the reset is retained as an explicit design rule per the "NEVER use Tailwind default colors" policy. Do NOT remove.
 - Content typography: component-first approach — major HTML elements (h2-h4, p, a, strong, blockquote, ul, ol, table) are overridden via package-owned Preact components (`packages/zudo-doc/src/content/`) registered through the package's own `component-map.ts`, not a host file. Everything else (minor elements, flow-space/heading/hash-link structural rules, admonitions) lives in `.zd-content` in `packages/zudo-doc/src/content.css` — the **single source of truth**; never re-inline it into any `global.css` (#2188). Canonical rules and rebuild duty: `packages/zudo-doc/CLAUDE.md#shipped-css-artifacts-five`. `global.css` keeps only `@theme` tokens, feature styles, and slots.
+- **Link colors**: follow the Link Color Rule above — accent at rest is for prose links only; chrome links are `text-fg` / `text-muted` and turn accent on hover, focus, or as the current item.
 - **Component-first strategy**: always use Tailwind utility classes directly in component markup — never create CSS module files or custom CSS class names. The component itself is the abstraction.
 - **Tight token strategy**: prefer existing spacing (`hsp-*`, `vsp-*`), typography (`text-caption`, `text-small`, etc.), and color tokens. Avoid arbitrary values (`text-[0.8rem]`, `py-[0.35rem]`) when an existing token is close enough.

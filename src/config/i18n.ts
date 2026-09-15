@@ -58,6 +58,7 @@ export function detectLocaleFromPath(path: string): Locale {
 export const translations: Record<string, Record<string, string>> = {
   en: {
     "home.sitemapHeading": "Explore the documentation",
+    "home.secondaryNav": "More categories",
     "search.placeholder": "Type to search...",
     "search.shortcutHint": "to open search from anywhere",
     "nav.gettingStarted": "Getting Started",
@@ -142,6 +143,7 @@ export const translations: Record<string, Record<string, string>> = {
   },
   ja: {
     "home.sitemapHeading": "ドキュメントを探す",
+    "home.secondaryNav": "その他のカテゴリ",
     "search.placeholder": "検索したい単語を入力",
     "search.shortcutHint": "いつでも検索バーを開ける",
     "nav.gettingStarted": "はじめに",
@@ -225,6 +227,7 @@ export const translations: Record<string, Record<string, string>> = {
     "version.page.docs": "ドキュメント",
   },
   de: {
+    "home.secondaryNav": "Weitere Kategorien",
     "nav.gettingStarted": "Erste Schritte",
     "nav.learn": "Lernen",
     "nav.guides": "Anleitungen",

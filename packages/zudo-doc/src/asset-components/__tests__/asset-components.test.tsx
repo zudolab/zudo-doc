@@ -41,6 +41,10 @@ const context = {
   dir: "media",
 };
 
+function anchorClassTokens(html: string): string[][] {
+  return [...html.matchAll(/<a\b[^>]*\bclass="([^"]*)"/g)].map((m) => m[1]!.split(/\s+/));
+}
+
 describe("asset authoring components", () => {
   it("renders metadata and canonical viewer/raw links in the asset card", () => {
     const Asset = createAssetCard(context);
@@ -51,6 +55,27 @@ describe("asset authoring components", () => {
     expect(html).toContain("Manifest description");
     expect(html).toContain('href="/project/view/demo/file.js/"');
     expect(html).toContain('href="/project/media/demo/file.js" download');
+  });
+
+  it("styles the card and excerpt actions as chrome links, not prose links", () => {
+    const Asset = createAssetCard(context);
+    const AssetCode = createAssetCode(context);
+    const anchors = [
+      ...anchorClassTokens(render(<Asset src="/media/demo/file.js" />)),
+      ...anchorClassTokens(render(<AssetCode src="/media/demo/file.js" lines="27-44" />)),
+    ];
+    expect(anchors).toHaveLength(3);
+    for (const tokens of anchors) {
+      expect(tokens).toEqual(expect.arrayContaining([
+        "text-fg",
+        "hover:text-accent",
+        "focus-visible:text-accent",
+        "hover:underline",
+        "focus-visible:underline",
+      ]));
+      expect(tokens).not.toContain("text-accent");
+      expect(tokens).not.toContain("underline");
+    }
   });
 
   it("renders the requested excerpt with real line data and a valid fragment", () => {

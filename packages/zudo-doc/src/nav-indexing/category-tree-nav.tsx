@@ -50,7 +50,7 @@ function NodeItem({ node, depth, maxDepth, index }: NodeItemProps): JSX.Element 
       {node.href ? (
         <a
           href={node.href}
-          class="inline-block py-vsp-3xs text-accent hover:underline"
+          class="inline-block py-vsp-3xs text-fg hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline"
         >
           {node.label}
         </a>

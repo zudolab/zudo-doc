@@ -83,6 +83,12 @@ export const settings = {
   defaultLocaleOnlyPrefixes: [] as string[],
   tocMinDepth: 2 as number,
   tocMaxDepth: 4 as number,
+  // Exercises the home-page secondary category row (epic #4235, #4244): moves
+  // the "changelog" top-level category out of the SiteTreeNav grid and into the
+  // `[data-home-secondary-nav]` row — see smoke-home-secondary-nav.spec.ts.
+  // Not "guides": smoke-home-sitemap-font-pref-overflow.spec.ts needs its
+  // long-title page to stay in the grid.
+  siteTreeNavSecondary: ["changelog"] as string[],
   headerNav: [
     {
       label: "Getting Started",

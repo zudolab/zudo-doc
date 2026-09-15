@@ -79,7 +79,7 @@ export function createAssetCard(context: AssetComponentContext) {
             ) : null}
             <div className="mt-vsp-xs flex gap-x-hsp-lg text-caption">
               <a
-                className="text-accent hover:underline focus-visible:underline"
+                className="text-fg hover:text-accent focus-visible:text-accent hover:underline focus-visible:underline"
                 href={viewerHref}
               >
                 {assetComponentText(
@@ -89,7 +89,7 @@ export function createAssetCard(context: AssetComponentContext) {
                 )} →
               </a>
               <a
-                className="text-accent hover:underline focus-visible:underline"
+                className="text-fg hover:text-accent focus-visible:text-accent hover:underline focus-visible:underline"
                 href={rawHref}
                 download
               >

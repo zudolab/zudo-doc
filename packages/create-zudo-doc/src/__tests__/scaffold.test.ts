@@ -2286,6 +2286,7 @@ describe("scaffold — settings-drift guard: generator-known fields must cover e
       trailingSlash: "no CLI/prompt surface yet — hand-edit post-scaffold",
       home: "no CLI/prompt surface — hand-edit post-scaffold for wide layout, introMarkdown and sitemapHeading (locale overrides live in locales)",
       siteTreeNavIgnore: "no CLI/prompt surface yet — hand-edit post-scaffold to hide top-level categories from the home grid / <SiteTreeNav />",
+      siteTreeNavSecondary: "no CLI/prompt surface yet — hand-edit post-scaffold to move top-level categories from the home grid into the secondary link row",
       docsDir: "no CLI/prompt surface yet — generator always uses the default",
       entryDocSlug: "no CLI/prompt surface yet — hand-edit post-scaffold",
       dateFormat: "no CLI/prompt surface yet — hand-edit post-scaffold",

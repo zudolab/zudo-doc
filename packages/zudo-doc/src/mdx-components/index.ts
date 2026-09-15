@@ -330,7 +330,7 @@ function makeEnlargeableParagraph(
                         type: "a",
                         props: {
                           class:
-                            "text-accent hover:underline focus-visible:underline",
+                            "text-fg hover:text-accent focus-visible:text-accent hover:underline focus-visible:underline",
                           href: assetViewerHref({
                             base: assetOptions.base,
                             routePrefix: assetOptions.routePrefix,

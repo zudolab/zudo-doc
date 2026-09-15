@@ -94,15 +94,10 @@ html[data-theme-pack="foundry"] {
 html[data-theme-pack="foundry"] .zd-content a:hover {
   text-decoration: underline;
 }
-/* footer: quiet links, underline only on intent. footer[data-footer] is the
-   stable hook (footer/footer.tsx) — the sole <footer> inside
-   .zd-sidebar-content-wrapper (doclayout/doc-layout.tsx). */
-html[data-theme-pack="foundry"] footer[data-footer] a {
-  text-decoration: none;
-}
-html[data-theme-pack="foundry"] footer[data-footer] a:hover {
-  text-decoration: underline;
-}
+/* footer: no override. The base footer already keeps column links quiet
+   (hover-only underline); the copyright row's static underline is its only
+   link affordance now that it carries no accent, so it must not be stripped
+   (link-color rule, epic zudolab/zudo-doc#4235). */
 
 /* headings: flat GitHub hairline rules instead of the default gradient bar.
    The h2 rule needs !important to defeat the SSR-inlined

@@ -61,6 +61,18 @@ zudoDoc({
 
 This hides those top-level categories from `/`, locale homes, and `<SiteTreeNav />`; see [Configuration](../guides/configuration.mdx#home-page-sitetreenavignore) for the complete contract, including unaffected header nav, sidebar, search, and sitemap.
 
+### Demoting a Category to the Secondary Row
+
+```ts
+zudoDoc({
+  siteTreeNavSecondary: ["changelog", "claude", "codex"],
+});
+```
+
+Not every top-level category is a primary reading path. System-level categories such as a long changelog or the generated Claude and Codex resource indexes would fill the home grid with large cards that readers rarely start from. This showcase lists them in `siteTreeNavSecondary`, which removes them from the grid and shows them as a compact row of chevron links directly under it, in the array's order. They stay one click away from `/` while the grid keeps its focus on the guides.
+
+If a slug is also in `siteTreeNavIgnore`, the category is hidden instead. The MDX `<SiteTreeNav />` tag ignores this setting. See [Configuration](../guides/configuration.mdx#home-page-sitetreenavsecondary) for the complete contract.
+
 ## Header Navigation Rules
 
 The header navigation is the topmost level. It should contain only the broadest categories that define your site's major sections.

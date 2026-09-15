@@ -334,6 +334,17 @@ describe("zudoDoc() default-merge semantics", () => {
     const opts = routesOptions(zudoDoc({ siteTreeNavIgnore: ["inbox"] }));
     expect(opts?.settings.siteTreeNavIgnore).toEqual(["inbox"]);
   });
+
+  it("defaults siteTreeNavSecondary to an empty list", () => {
+    const opts = routesOptions(zudoDoc({}));
+    expect(DEFAULT_SETTINGS.siteTreeNavSecondary).toEqual([]);
+    expect(opts?.settings.siteTreeNavSecondary).toEqual([]);
+  });
+
+  it("serializes siteTreeNavSecondary into the route settings", () => {
+    const opts = routesOptions(zudoDoc({ siteTreeNavSecondary: ["changelog", "claude"] }));
+    expect(opts?.settings.siteTreeNavSecondary).toEqual(["changelog", "claude"]);
+  });
 });
 
 // ── Serializability split (virtual-module payload carries no functions) ───────

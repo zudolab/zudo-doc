@@ -60,10 +60,19 @@ describe("DocCardGrid", () => {
     expect(html).toContain("mb-8");
   });
 
-  it("renders the arrow SVG with text-accent class", () => {
+  it("renders the arrow SVG with text-muted and group-hover:text-accent classes", () => {
     const items: DocCardItem[] = [{ href: "/a/", title: "A" }];
     const html = serialize(DocCardGrid({ items }));
-    expect(html).toContain("text-accent");
+    expect(html).toContain("text-muted");
+    expect(html).toContain("group-hover:text-accent");
     expect(html).toContain("<svg");
+  });
+
+  it("does not render a bare text-accent class anywhere", () => {
+    const items: DocCardItem[] = [
+      { href: "/a/", title: "A", description: "desc" },
+    ];
+    const html = serialize(DocCardGrid({ items }));
+    expect(html).not.toMatch(/(?<![\w:-])text-accent\b/);
   });
 });

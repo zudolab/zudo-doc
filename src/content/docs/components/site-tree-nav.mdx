@@ -34,7 +34,7 @@ Use the global MDX tag directly in any `.mdx` file — no import needed:
 
 No props are required. It self-fetches the current locale's docs collection, builds the nav tree, and renders the interactive island — the same wrapper used by `SiteTreeNavDemo` above.
 
-Categories hidden from the tree come from [`siteTreeNavIgnore`](../guides/configuration.mdx#home-page-sitetreenavignore) in `zfb.config.ts`.
+Categories hidden from the tree come from [`siteTreeNavIgnore`](../guides/configuration.mdx#home-page-sitetreenavignore) in `zfb.config.ts`. [`siteTreeNavSecondary`](../guides/configuration.mdx#home-page-sitetreenavsecondary) is home-page only and is not applied by this component, so categories listed there still appear in its tree.
 
 ### In a page module
 

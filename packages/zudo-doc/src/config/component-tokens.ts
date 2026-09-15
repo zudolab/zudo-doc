@@ -286,6 +286,8 @@ export const COMPONENT_TOKENS: ComponentToken[] = [
   // utility (0,1,0) and only matches the styled anchor — not block or hash-link
   // variants. Default `underline` is a CSS keyword literal: no text-decoration
   // token exists in the scale (documented exception to the prefer-var-() rule).
+  // Prose links only (Link Color Rule, rule 1 — src/CLAUDE.md): chrome links are
+  // `text-fg`, so the underlined hero/footer-copyright rows (rule 2) never match.
   {
     cssVar: "--zdc-doc-link-decoration",
     selector: "a.text-accent.underline",
@@ -295,7 +297,7 @@ export const COMPONENT_TOKENS: ComponentToken[] = [
     surface: "content",
     category: "typography",
     description:
-      "Text decoration of styled content links (the `text-accent underline` path in ContentLink; excludes block and hash-link variants). Defaults to `underline` (byte-identical to the current utility). Set to `none` to remove underlines from content links.",
+      "Text decoration of prose links only — the `text-accent underline` path in ContentLink (`a.text-accent.underline`); excludes block and hash-link variants and never matches chrome links, including the underlined home hero and footer copyright rows (those are `text-fg`). Defaults to `underline` (byte-identical to the current utility). Set to `none` to remove underlines from prose links.",
   },
   // ── Admonition block ([data-admonition], content-admonition.tsx, #2460) ───
   // The base `[data-admonition]` rule in content.css has:

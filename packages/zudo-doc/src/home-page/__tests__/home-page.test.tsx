@@ -22,7 +22,7 @@
  *     this extraction.
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render } from "preact-render-to-string";
 import { createHomePageView } from "../index.js";
 import type { HomePageViewProps } from "../index.js";
@@ -472,6 +472,153 @@ describe("createHomePageView — SiteTreeNav island", () => {
     )?.[0];
     expect(noteTrayRow).toBeDefined();
     expect(noteTrayRow).not.toContain("更新");
+  });
+});
+
+describe("createHomePageView — siteTreeNavSecondary row (#4236)", () => {
+  function category(slug: string, label: string, href?: string): DocNavNode {
+    return { slug, label, position: 0, ...(href ? { href } : {}), hasPage: href !== undefined, children: [] };
+  }
+  const SECONDARY_TREE: DocNavNode[] = [
+    category("guides", "Guides", "/docs/guides"),
+    category("changelog", "Changelog", "/docs/changelog"),
+    category("claude", "Claude", "/docs/claude"),
+    category("codex", "Codex", "/docs/codex"),
+  ];
+  const ROW_RE = /<nav[^>]*data-home-secondary-nav[^>]*>[\s\S]*?<\/nav>/;
+
+  function renderHome(settings: Record<string, unknown>, props: Partial<HomePageViewProps> = {}, overrides: Partial<ChromeContext> = {}) {
+    const HomePageView = createHomePageView(makeFakeChromeContext({ settings, overrides }));
+    const html = render(<HomePageView {...makeProps({ tree: SECONDARY_TREE, ...props })} />);
+    const row = html.match(ROW_RE)?.[0];
+    const grid = row ? html.replace(row, "") : html;
+    const rowHrefs = row ? [...row.matchAll(/href="([^"]*)"/g)].map((m) => m[1]) : [];
+    return { html, row, grid, rowHrefs };
+  }
+
+  it("renders the listed slugs in the setting's order, with their hrefs and labels, after the grid island", () => {
+    const { html, row, rowHrefs } = renderHome({ siteTreeNavSecondary: ["codex", "changelog", "claude"] });
+
+    expect(row).toBeDefined();
+    expect(rowHrefs).toEqual(["/docs/codex", "/docs/changelog", "/docs/claude"]);
+    expect(row).toContain("<span>Codex</span>");
+    expect(row).toContain("<span>Changelog</span>");
+    expect(row).toContain("<span>Claude</span>");
+    expect(row).toContain('aria-label="home.secondaryNav"');
+    expect(row).toContain('class="mt-vsp-md flex flex-wrap items-center gap-x-hsp-xl gap-y-vsp-xs"');
+    const islandAt = html.indexOf('data-zfb-island="SiteTreeNav"');
+    const rowAt = html.indexOf("data-home-secondary-nav");
+    expect(islandAt).toBeGreaterThan(-1);
+    expect(rowAt).toBeGreaterThan(islandAt);
+    expect(rowAt).toBeLessThan(html.indexOf("</section>", islandAt));
+  });
+
+  it("removes the moved slugs from the grid", () => {
+    const { grid } = renderHome({ siteTreeNavSecondary: ["changelog", "claude", "codex"] });
+
+    expect(grid).toContain('href="/docs/guides"');
+    expect(grid).not.toContain('href="/docs/changelog"');
+    expect(grid).not.toContain('href="/docs/claude"');
+    expect(grid).not.toContain('href="/docs/codex"');
+  });
+
+  it("renders no row when the setting is empty or omitted", () => {
+    expect(renderHome({ siteTreeNavSecondary: [] }).html).not.toContain("data-home-secondary-nav");
+    const { html } = renderHome({});
+    expect(html).not.toContain("data-home-secondary-nav");
+    expect(html).toContain('href="/docs/changelog"');
+  });
+
+  it("hides a slug listed in both siteTreeNavIgnore and siteTreeNavSecondary everywhere", () => {
+    const { html, rowHrefs } = renderHome({
+      siteTreeNavIgnore: ["claude"],
+      siteTreeNavSecondary: ["claude", "codex"],
+    });
+
+    expect(html).not.toContain('href="/docs/claude"');
+    expect(rowHrefs).toEqual(["/docs/codex"]);
+  });
+
+  it("skips slugs absent from the tree", () => {
+    expect(renderHome({ siteTreeNavSecondary: ["missing", "codex"] }).rowHrefs).toEqual(["/docs/codex"]);
+    expect(renderHome({ siteTreeNavSecondary: ["missing"] }).row).toBeUndefined();
+  });
+
+  it("renders a duplicated slug once", () => {
+    expect(renderHome({ siteTreeNavSecondary: ["codex", "codex"] }).rowHrefs).toEqual(["/docs/codex"]);
+  });
+
+  it("leaves a category without a page (no href) in the grid and warns", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const { grid, row } = renderHome(
+        { siteTreeNavSecondary: ["notes"] },
+        { tree: [...SECONDARY_TREE, category("notes", "Notes")] },
+      );
+
+      expect(row).toBeUndefined();
+      expect(grid).toContain("Notes");
+      expect(warn).toHaveBeenCalledWith(
+        '[zudo-doc] siteTreeNavSecondary: category "notes" has no page (href) — left in the grid',
+      );
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("uses the JA labels, localized hrefs and aria-label on a ja locale home", () => {
+    const { row, rowHrefs } = renderHome(
+      { siteTreeNavSecondary: ["changelog", "codex"] },
+      {
+        locale: "ja",
+        tree: [category("changelog", "変更履歴", "/ja/docs/changelog"), category("codex", "Codex", "/ja/docs/codex")],
+      },
+      { t: (key: string, locale: string) => (key === "home.secondaryNav" && locale === "ja" ? "その他のカテゴリ" : key) },
+    );
+
+    expect(rowHrefs).toEqual(["/ja/docs/changelog", "/ja/docs/codex"]);
+    expect(row).toContain("<span>変更履歴</span>");
+    expect(row).toContain('aria-label="その他のカテゴリ"');
+  });
+
+  it("uses the tree's base-prefixed href as-is under a non-root base (no double prefix)", () => {
+    const { html, grid, rowHrefs } = renderHome(
+      { base: "/base", siteTreeNavSecondary: ["codex"] },
+      { tree: [category("guides", "Guides", "/base/docs/guides"), category("codex", "Codex", "/base/docs/codex")] },
+      { withBase: (p: string) => `/base${p}` },
+    );
+
+    expect(rowHrefs).toEqual(["/base/docs/codex"]);
+    expect(grid).toContain('href="/base/docs/guides"');
+    expect(html).not.toContain("/base/base/");
+  });
+});
+
+describe("createHomePageView — home meta links (#4236)", () => {
+  function tagsAnchorClass(html: string): string | undefined {
+    return html.match(/<a[^>]*href="\/docs\/tags"[^>]*>/)?.[0].match(/class="([^"]*)"/)?.[1];
+  }
+
+  it("renders See all tags as the fg + hover-accent meta link, not a bare text-accent link", () => {
+    const HomePageView = createHomePageView(makeFakeChromeContext({ settings: { docTags: true } }));
+    const html = render(<HomePageView {...makeProps({ tagCount: 1, tags: TAG_ITEMS() })} />);
+    const cls = tagsAnchorClass(html);
+
+    expect(cls).toBeDefined();
+    expect(cls!.split(/\s+/)).toContain("text-fg");
+    expect(cls!.split(/\s+/)).toContain("hover:text-accent");
+    expect(cls!.split(/\s+/)).not.toContain("text-accent");
+    expect(html).toContain("w-icon-sm text-muted group-hover:text-accent group-focus-visible:text-accent");
+  });
+
+  it("renders the legacy All Tags fallback through the same meta link", () => {
+    const HomePageView = createHomePageView(makeFakeChromeContext({ settings: { docTags: true } }));
+    const html = render(<HomePageView {...makeProps({ tagCount: 3 })} />);
+    const cls = tagsAnchorClass(html);
+
+    expect(cls!.split(/\s+/)).toContain("text-fg");
+    expect(cls!.split(/\s+/)).not.toContain("underline");
+    expect(cls!.split(/\s+/)).not.toContain("text-accent");
   });
 });
 

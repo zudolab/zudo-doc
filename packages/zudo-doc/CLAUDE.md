@@ -544,6 +544,8 @@ the concrete case: the prose-link hover rule (`:400-407`) needed a companion
 selector with. This is why `pnpm theme-a11y:audit` renders real pages and reads
 computed styles instead of computing contrast from CSS declarations alone.
 
+Which ink those descendants should carry is fixed by the Link Color Rule in `src/CLAUDE.md` (rule 3: card links sit at `text-fg`, descendant icons/spans follow via `group-hover:text-accent` / `group-focus-visible:text-accent`) — a pack override must reach them the same way.
+
 See also: the `color-scheme-a11y` skill's "Theme-pack nav `:hover` guard" section and
 `TESTING.md`'s "Theme A11y Audit" section for the verification tooling.
 

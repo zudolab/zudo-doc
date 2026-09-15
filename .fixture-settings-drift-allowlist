@@ -227,3 +227,13 @@ i18n:siteTreeNavIgnore
 theme:siteTreeNavIgnore
 smoke:siteTreeNavIgnore
 versioning:siteTreeNavIgnore
+
+# ── siteTreeNavSecondary ──────────────────────────────────────────────────────
+# reason: these fixtures have no changelog/, claude/ or codex/ categories and
+#         keep the package default []. The smoke fixture (not listed) exercises
+#         the setting by moving its "changelog" category into the home
+#         secondary-nav row — see e2e/smoke-home-secondary-nav.spec.ts (#4244).
+sidebar:siteTreeNavSecondary
+i18n:siteTreeNavSecondary
+theme:siteTreeNavSecondary
+versioning:siteTreeNavSecondary

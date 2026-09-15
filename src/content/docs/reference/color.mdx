@@ -285,7 +285,7 @@ Both schemes wire all 23 roles; the table below shows Default Dark's `map.semant
 | `fg` | `{ base: 0 }` | Primary text |
 | `surface` | `{ base: 4 }` (= `bg`) | Panel/sidebar surfaces — merged onto `bg`, see [Role-merge philosophy](#role-merge-philosophy) |
 | `muted` | `{ base: 1 }` | Muted text, borders, comments |
-| `accent` | `{ accent: 1 }` | Links, active states, CTA |
+| `accent` | `{ accent: 1 }` | Prose links, active/current states, CTA; hover/focus ink for chrome links |
 | `accentHover` | `{ accent: 0 }` | Hover state for accent |
 | `codeBg` | `{ base: 3 }` | Code block background |
 | `codeFg` | `{ base: 0 }` | Inline code text |
@@ -424,7 +424,6 @@ Use semantic tokens for standard UI patterns:
 <!-- Text -->
 <p class="text-fg">Primary text</p>
 <p class="text-muted">Secondary text</p>
-<a class="text-accent hover:text-accent-hover">Link</a>
 
 <!-- Backgrounds -->
 <div class="bg-bg">Page background</div>
@@ -432,6 +431,22 @@ Use semantic tokens for standard UI patterns:
 
 <!-- Borders -->
 <div class="border border-muted">Bordered element</div>
+```
+
+### Link colors
+
+Links are colored by where they sit, not by the fact that they are links:
+
+- **Prose links** — a link inside running text, such as a Markdown link rendered by `ContentLink` or a link in a version banner — use `text-accent underline`.
+- **Chrome links** — nav lists, cards, chips, the pager — stay `text-fg` (or `text-muted` for tertiary chrome: footer columns, the TOC, the breadcrumb) and turn `accent` only on hover, on focus, or as the current item. They never carry a static underline; instead each one needs a structural affordance: a visible list, a card box, or a leading icon.
+- **Inline link rows in tertiary chrome** — the home hero links line and the footer copyright line — sit between the two: `text-fg` with a static underline, turning `accent` on hover.
+
+```html
+<!-- Prose link -->
+<a class="text-accent underline hover:text-accent-hover">Prose link</a>
+
+<!-- Chrome link -->
+<a class="text-fg hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline">Chrome link</a>
 ```
 
 ### Search & highlight tokens (role-split)

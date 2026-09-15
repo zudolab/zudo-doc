@@ -96,4 +96,14 @@ describe("NoteTrayIndex index style", () => {
     expect(ja).toContain("2026.08.22");
     expect(ja).not.toContain("2026年8月22日");
   });
+
+  it("keeps the linked label's static color on text-fg with no bare text-accent, underline, or decoration token", () => {
+    const html = serialize(
+      NoteTrayIndex({ ...base, items: [item("one", { rank: 1 })] }),
+    );
+    expect(html).not.toMatch(/(^|[\s"])text-accent(?=[\s"])/);
+    expect(html).not.toMatch(/(^|[\s"])underline(?=[\s"])/);
+    expect(html).not.toContain("decoration-");
+    expect(html).toContain("group-hover:text-accent");
+  });
 });

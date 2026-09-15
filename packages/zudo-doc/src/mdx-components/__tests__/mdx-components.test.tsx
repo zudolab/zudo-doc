@@ -73,6 +73,18 @@ describe("manifest image captions", () => {
     expect(html).toContain('src="/project/media/images/diagram.png"');
   });
 
+  it("styles the caption viewer link as a chrome link, not a prose link", () => {
+    const html = renderImageParagraph(manifest, {
+      src: "/media/images/diagram.png",
+      alt: "Architecture diagram",
+    });
+    const classes = [...html.matchAll(/<a\b[^>]*\bclass="([^"]*)"[^>]*>⤢ Open asset page/g)].map((m) => m[1]!);
+    expect(classes).toEqual(["text-fg hover:text-accent focus-visible:text-accent hover:underline focus-visible:underline"]);
+    const tokens = classes[0]!.split(/\s+/);
+    expect(tokens).not.toContain("text-accent");
+    expect(tokens).not.toContain("underline");
+  });
+
   it("preserves the active locale in the image-caption viewer link", () => {
     const components = makeComponents(manifest, true, "ja");
     const Img = components.img as ComponentType<Record<string, unknown>>;

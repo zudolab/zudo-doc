@@ -18,7 +18,7 @@ export function IndexList(props: NoteTrayIndexProps): JSX.Element {
           ? "tabular-nums text-heading leading-none text-muted group-hover:text-fg group-focus-visible:text-fg"
           : "tabular-nums text-heading leading-none text-muted";
         const labelClass = item.href
-          ? "font-medium text-fg underline decoration-muted group-hover:text-accent group-hover:decoration-accent group-focus-visible:text-accent group-focus-visible:decoration-accent"
+          ? "font-medium text-fg group-hover:text-accent group-hover:underline group-focus-visible:text-accent group-focus-visible:underline"
           : "font-medium text-fg";
         const detailClass = item.href
           ? "mt-vsp-2xs block text-small text-muted group-hover:text-accent group-hover:underline group-focus-visible:text-accent group-focus-visible:underline"

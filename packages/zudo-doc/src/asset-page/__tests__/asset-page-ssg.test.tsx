@@ -184,6 +184,19 @@ describe("asset page SSG", () => {
     expect(linkedFromHtml.indexOf('href="/ja/docs/brand/"')).toBeLessThan(linkedFromHtml.indexOf('href="/ja/v/v1/docs/brand/"'));
   });
 
+  it("styles Linked from entries as chrome list links, not prose links", () => {
+    const html = page(asset());
+    const start = html.indexOf(">Linked from</h2>");
+    const linkedFromHtml = html.slice(start, html.indexOf("</section>", start));
+    expect(linkedFromHtml).toContain('<a href="/docs/brand/" class="text-fg hover:text-accent focus-visible:text-accent hover:underline focus-visible:underline">Brand</a>');
+    const anchors = [...linkedFromHtml.matchAll(/<a\b[^>]*\bclass="([^"]*)"/g)].map((m) => m[1]!.split(/\s+/));
+    expect(anchors).toHaveLength(1);
+    for (const tokens of anchors) {
+      expect(tokens).not.toContain("text-accent");
+      expect(tokens).not.toContain("underline");
+    }
+  });
+
   it("falls back to the first reference when a localized page has no same-locale reference", () => {
     const html = page(asset({
       linkedFrom: [
