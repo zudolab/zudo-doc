@@ -272,8 +272,14 @@ spreads it into `defineConfig` and keeps only the shell fields it still owns
   failing the build. A static import or a bare `await import()` reintroduces
   `Could not resolve` for consumers without the peer (#4206 / #4209). The
   packed-tarball OPT-KATEX-DIFF case in `route-injection-build.slow.test.ts`
-  proves it. Do not use the `addVirtualModule` shadow here: zfb skips virtual
-  modules for importers under `node_modules` (see `src/plugins/routes.ts`).
+  proves it. Do not use the `addVirtualModule` shadow here: that channel
+  carries a HOST-supplied callable/path (`chromeBindingsModule` /
+  `designTokenPanelConfigModule` — see `src/plugins/routes.ts`), not a way to
+  make an optional npm peer conditional — a virtual module's loader is plain
+  ESM source, so a `katex`/`diff` import inside it would still resolve (or
+  fail) at build time exactly like a static import does today. The
+  rejection-handled `import("pkg").then(...)` pattern above is the actual
+  mechanism that keeps the peer optional.
 - **Package-owned route injection** (`settings.packageOwnedRoutes`, default
   `true` since #2404) is pinned in `docs/adr/route-injection-seam.md` — the authoritative
   seam spec for the `@takazudo/zudo-doc/plugins/routes` plugin + `routes/*`
