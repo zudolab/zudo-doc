@@ -649,6 +649,9 @@ describe("generateClaudeResourcesDocs", () => {
       ]);
     });
 
+    // https://github.com/zudolab/zudo-doc/issues/4247 — observed 41563ms under
+    // full-suite contention (30 sync fs-heavy generate calls); 90s is headroom
+    // over that, not a new baseline.
     it("round-trips every generated frontmatter string scalar through YAML", () => {
       const values = [
         "",
@@ -698,7 +701,7 @@ describe("generateClaudeResourcesDocs", () => {
         expect(parsed.data.title, JSON.stringify(value)).toBe(value);
         expect(parsed.data.description, JSON.stringify(value)).toBe(value);
       }
-    });
+    }, 90_000);
   });
 
   // ---------------------------------------------------------------------------
