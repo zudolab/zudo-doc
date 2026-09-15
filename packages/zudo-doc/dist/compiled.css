@@ -972,6 +972,9 @@
 .gap-x-hsp-sm {
   column-gap: var(--spacing-hsp-sm);
 }
+.gap-x-hsp-xl {
+  column-gap: var(--spacing-hsp-xl);
+}
 .gap-x-hsp-xs {
   column-gap: var(--spacing-hsp-xs);
 }
@@ -1462,6 +1465,9 @@
 .text-accent {
   color: var(--color-accent);
 }
+.text-accent-hover {
+  color: var(--color-accent-hover);
+}
 .text-bg {
   color: var(--color-bg);
 }
@@ -1658,13 +1664,6 @@
     }
   }
 }
-.group-hover\:text-accent-hover {
-  &:is(:where(.group):hover *) {
-    @media (hover: hover) {
-      color: var(--color-accent-hover);
-    }
-  }
-}
 .group-hover\:text-bg {
   &:is(:where(.group):hover *) {
     @media (hover: hover) {
@@ -1686,21 +1685,9 @@
     }
   }
 }
-.group-hover\:decoration-accent {
-  &:is(:where(.group):hover *) {
-    @media (hover: hover) {
-      text-decoration-color: var(--color-accent);
-    }
-  }
-}
 .group-focus-visible\:text-accent {
   &:is(:where(.group):focus-visible *) {
     color: var(--color-accent);
-  }
-}
-.group-focus-visible\:text-accent-hover {
-  &:is(:where(.group):focus-visible *) {
-    color: var(--color-accent-hover);
   }
 }
 .group-focus-visible\:text-fg {
@@ -1711,11 +1698,6 @@
 .group-focus-visible\:underline {
   &:is(:where(.group):focus-visible *) {
     text-decoration-line: underline;
-  }
-}
-.group-focus-visible\:decoration-accent {
-  &:is(:where(.group):focus-visible *) {
-    text-decoration-color: var(--color-accent);
   }
 }
 .peer-hover\:border-accent {
@@ -1902,13 +1884,6 @@
     }
   }
 }
-.hover\:decoration-accent {
-  &:hover {
-    @media (hover: hover) {
-      text-decoration-color: var(--color-accent);
-    }
-  }
-}
 .focus\:border-accent {
   &:focus {
     border-color: var(--color-accent);
@@ -1951,11 +1926,6 @@
 .focus-visible\:underline {
   &:focus-visible {
     text-decoration-line: underline;
-  }
-}
-.focus-visible\:decoration-accent {
-  &:focus-visible {
-    text-decoration-color: var(--color-accent);
   }
 }
 .focus-visible\:outline-2 {
@@ -2252,14 +2222,19 @@
     pointer-events: auto;
   }
 }
-.\[\&_a\]\:text-accent {
-  & a {
-    color: var(--color-accent);
-  }
-}
 .\[\&_a\]\:underline {
   & a {
     text-decoration-line: underline;
+  }
+}
+.\[\&_a\:focus-visible\]\:text-accent {
+  & a:focus-visible {
+    color: var(--color-accent);
+  }
+}
+.\[\&_a\:hover\]\:text-accent {
+  & a:hover {
+    color: var(--color-accent);
   }
 }
 .\[\&_li\]\:mb-0 {
