@@ -166,6 +166,28 @@ export default defineConfig(
 
 型: `string[]` · デフォルト: `[]`
 
+### siteTreeNavSecondary
+
+`/` や `/ja` のようなロケール接頭辞付きホームページで、パッケージ所有のカテゴリグリッドから外し、その直下のコンパクトなセカンダリ行へ移すトップレベルカテゴリのスラッグです。指定したカテゴリはそれぞれ、ラベル付きの小さなシェブロンリンクとして表示されます。行内の並び順はグリッドのカテゴリ順ではなく、配列の順序に従います。ホームページから辿れるようにはしておきたいものの、主要な読み進めの導線とは競合させたくないシステム系のカテゴリに使います。
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    siteTreeNavSecondary: ["changelog", "claude", "codex"],
+  }),
+);
+```
+
+- どのトップレベルカテゴリにも一致しないスラッグは無視されます。
+- [`siteTreeNavIgnore`](#ホームページ-sitetreenavignore) にも含まれるスラッグは完全に非表示になります。`siteTreeNavIgnore` が優先されます。
+- 自身のページを持たないカテゴリ（[`category_no_page: true`](./frontmatter.mdx#フィールド詳細-category_no_page)）はリンク先がないため、グリッドに残ります。このとき開発時の警告が出力されます。
+- リストが空の場合、セカンダリ行は表示されません。
+
+この設定はホームページにのみ影響します。`<SiteTreeNav />` / `<SiteTreeNavDemo />` MDX タグはこの設定を無視し、ヘッダーナビ、サイドバー、検索、サイトマップも変わりません。
+
+型: `string[]` · デフォルト: `[]`
+
 ## アイデンティティと URL
 
 ### siteName

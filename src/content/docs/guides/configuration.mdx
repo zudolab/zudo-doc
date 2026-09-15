@@ -166,6 +166,28 @@ The package previously hard-coded `["inbox", "develop"]` for this showcase's own
 
 Type: `string[]` · Default: `[]`
 
+### siteTreeNavSecondary
+
+Top-level category slugs to move out of the package-owned home-page category grid on `/` and locale-prefixed home pages such as `/ja`, and into a compact secondary row directly under it. Each listed category renders as a small chevron link with its label, and the row follows the array order rather than the grid's category order. Use it for system-level categories that should stay reachable from the home page without competing with the primary reading paths.
+
+```ts title="zfb.config.ts"
+export default defineConfig(
+  zudoDoc({
+    siteName: "My Docs",
+    siteTreeNavSecondary: ["changelog", "claude", "codex"],
+  }),
+);
+```
+
+- A slug that matches no top-level category is skipped.
+- A slug that is also listed in [`siteTreeNavIgnore`](#home-page-sitetreenavignore) is hidden entirely — `siteTreeNavIgnore` wins.
+- A category without its own page ([`category_no_page: true`](./frontmatter.mdx#fields-category_no_page)) has no link target, so it stays in the grid and a development warning is logged.
+- An empty list renders no secondary row.
+
+This affects only the home page. The `<SiteTreeNav />` / `<SiteTreeNavDemo />` MDX tags ignore it, and header nav, sidebar, search, and sitemap are unchanged.
+
+Type: `string[]` · Default: `[]`
+
 ## Identity and URLs
 
 ### siteName
