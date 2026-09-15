@@ -2087,8 +2087,10 @@ describe("A2 precedence: pages/ stub wins over injected route when both claim th
 // published file set: includes `routes-src/`, EXCLUDES `src/`), and symlinks
 // every OTHER workspace dep (incl. `@takazudo/zfb*`) so the build resolves.
 // It asserts BOTH a plain dynamic route AND a `/[locale]/...` dynamic route
-// render — the latter exercises the `locale-docs-slug` routes-src path and the
-// staging fix for the node_modules virtual-module gap (see plugins/routes.ts).
+// render — the latter exercises the `locale-docs-slug` routes-src path,
+// injected directly from `node_modules/@takazudo/zudo-doc/routes-src/`
+// (zfb >= 0.1.0-next.66 resolves its `virtual:*` imports there via esbuild
+// `--alias`; the old `.zudo-doc/routes-src` staging copy is gone).
 // ---------------------------------------------------------------------------
 
 /** `npm pack` the package → return the absolute tarball path (in a fresh temp
@@ -2199,6 +2201,13 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
     runZfbBuild(fixtureDir);
   });
 
+  it("no staging: build does not create a project-local .zudo-doc/ dir", () => {
+    // The old S1 #2370 workaround staged routes-src/ into
+    // `<projectRoot>/.zudo-doc/routes-src/`; the published route is now
+    // injected directly from node_modules, so no such dir is ever created.
+    expect(existsSync(join(fixtureDir, ".zudo-doc"))).toBe(false);
+  });
+
   it("dynamic: plain /docs/getting-started/ renders from routes-src/docs-slug.tsx", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
     expect(html).toContain("Getting Started");
@@ -2239,7 +2248,8 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
   it("dynamic: locale /ja/docs/getting-started/ renders from routes-src/locale-docs-slug.tsx", () => {
     // The /[locale]/docs/[[...slug]] injected route — only emitted because the
     // i18n fixture configures a `ja` locale. Proves the locale-index routes-src
-    // path AND the staging fix for the node_modules virtual-module gap.
+    // path resolves its `virtual:*` imports directly from
+    // node_modules/@takazudo/zudo-doc/routes-src/ (no staging copy involved).
     const html = readBuiltHtml(fixtureDir, "ja/docs/getting-started/index.html");
     expect(html).toContain("はじめに");
     expect(html).toContain("locale-injected-route-render-proof");
@@ -2409,27 +2419,28 @@ describe("OPT-KATEX-DIFF no-katex-diff: the published package builds with the op
 // collision: "ConfiguredDesignTokenPanelBootstrap"`. Cause: this fixture's
 // `pages/index.tsx` re-exports `@takazudo/zudo-doc/routes/index`, so the
 // compiled `dist/routes/_chrome.js` → `dist/routes/_design-token-panel-bootstrap.js`
-// graph is scanned alongside the staged `routes-src/` copy — the same component
+// graph is scanned alongside the published `node_modules/@takazudo/zudo-doc/
+// routes-src/` file the injected route resolves to — the same component
 // reached zfb's island scanner from two files, and the scanner keyed islands by
 // marker name rather than resolved component identity. It was benign (zfb kept
-// the `routes-src/` copy and the surviving registry entry matched every emitted
-// marker) but unconditional, which is why this fixture could not assert a
-// collision-free build. See "TM group 2b" below for the fuller explanation.
+// the published `routes-src/` file and the surviving registry entry matched
+// every emitted marker) but unconditional, which is why this fixture could not
+// assert a collision-free build. See "TM group 2b" below for the fuller
+// explanation.
 // Decision (tolerate + file upstream) recorded on zudolab/zudo-doc#3418;
 // upstream issue Takazudo/zudo-front-builder#2441, fixed by PR #2442,
 // released in zfb 2.7.1 and adopted here (zudolab/zudo-doc#3433).
 // The setup test of "TM build+check+css" now asserts the warning is absent.
 //
 // The fix dedupes by resolved component identity, and reaches THIS case via a
-// byte-identity branch: the staged copy is compared against the PUBLISHED file
-// the package ships at the same stem under
-// `node_modules/@takazudo/zudo-doc/routes-src/`. So the invariant we owe
-// upstream is narrow — `ensureStaged` (src/plugins/routes.ts) must stay
-// byte-preserving RELATIVE TO WHAT THE PACKAGE SHIPS. A future rewrite inside
-// build-time `scripts/copy-routes-src.mjs` is harmless (it runs pre-publish, so
-// both compared participants are post-rewrite); a rewrite inside `ensureStaged`
-// would break the match and fail the collision-free assertion above. That
-// failure mode is the reason the assertion is worth keeping.
+// byte-identity branch: the compiled `dist/` graph's component is compared
+// against the SAME published file the injected route resolves to at
+// `node_modules/@takazudo/zudo-doc/routes-src/` — since #4224 removed the
+// `.zudo-doc/routes-src` staging copy, the injected entrypoint IS that
+// published file directly (no intermediate copy to keep byte-preserving).
+// So the invariant collapses to "the compiled `dist/routes/*.js` graph and the
+// `routes-src/*.tsx` source it was compiled from describe the same component" —
+// true by construction, not by a copy step.
 //
 // Accepted upstream trade-off: two GENUINELY DIFFERENT components shipped by
 // the SAME package under one marker name are now silently deduped too. Only a
@@ -2690,16 +2701,21 @@ describe("TM build+check+css: the locked manifest builds, typechecks, and ships 
     // nothing. runZfbBuild merges stdout+stderr, so a successful build is
     // never silent.
     expect(buildOutput.length).toBeGreaterThan(0);
-    // This fixture double-scans the same components (dist graph + staged
-    // routes-src/ copy), which zfb ≤2.7.0 reported as a marker-name collision
-    // on every build. zfb 2.7.1 dedupes by resolved component identity, so a
-    // collision-free build is now assertable — and this assertion is the only
-    // end-to-end proof of that fix anywhere: zfb's own coverage stops at the
-    // classifier and never runs a real build. If it fails, report upstream
+    // This fixture double-scans the same components (dist graph + the
+    // published routes-src/ file the injected route resolves to), which zfb
+    // ≤2.7.0 reported as a marker-name collision on every build. zfb 2.7.1
+    // dedupes by resolved component identity, so a collision-free build is
+    // now assertable — and this assertion is the only end-to-end proof of
+    // that fix anywhere: zfb's own coverage stops at the classifier and never
+    // runs a real build. If it fails, report upstream
     // (zudolab/zudo-doc#3433, Takazudo/zudo-front-builder#2441) rather than
     // relaxing it — a genuine collision between two DIFFERENT components must
     // still warn.
     expect(buildOutput).not.toMatch(/island marker name collision/i);
+    // No project-local staging dir either — #4224 removed the
+    // `.zudo-doc/routes-src` copy step; the injected route is the published
+    // `node_modules/@takazudo/zudo-doc/routes-src/` file directly.
+    expect(existsSync(join(fixtureDir, ".zudo-doc"))).toBe(false);
   });
 
   // ---- Group 1 ----
@@ -2807,12 +2823,14 @@ describe("TM build+check+css: the locked manifest builds, typechecks, and ships 
 //     honors a host's `designTokenPanelConfigModule`;
 //   - self-contained stub → `DesignTokenPanelBootstrap`, the package default
 //     bound to the package-default builder.
-// This divergence is FORCED, not incidental: the virtual specifier cannot be
-// imported from a module whose realpath is under node_modules (zfb's bundler
-// does not run the virtual-module resolver there — the S1 #2370 gap), which is
-// why the wrapper must live in the staged `routes-src/` tree and cannot be a
-// public package subpath the stub could import. The two components must also
-// carry distinct names or zfb's island-marker collision diagnostic drops one.
+// This divergence is FORCED, not incidental: importing the virtual specifier
+// directly from `chrome/derive.tsx` would make the whole chrome graph
+// un-bundleable without the routes plugin active (see ADR #3396), which is
+// why the config override lives only in the routes-only wrapper
+// (`routes/_design-token-panel-bootstrap.tsx`, published under
+// `routes-src/`) and cannot be a public package subpath the stub could
+// import. The two components must also carry distinct names or zfb's
+// island-marker collision diagnostic drops one.
 // The builder cannot be handed across as a prop either — it is a function, so
 // it cannot survive the SSR → hydration boundary.
 // The diff below therefore NORMALIZES the panel marker (strict everywhere else)
@@ -2994,13 +3012,14 @@ describe("TM group 2b: designTokenPanelConfigModule — the stub mounts no panel
     // target-manifest build emits one for `ConfiguredDesignTokenPanelBootstrap`,
     // with or without this setting and on every variant — the fixture's
     // `pages/index.tsx` re-exports `@takazudo/zudo-doc/routes/index`, so the
-    // COMPILED `dist/routes/_chrome.js` graph is scanned alongside the staged
-    // `routes-src/` one and the same component reaches the scanner from two
-    // files. zfb keeps the routes-src copy; the two share a name, so the
-    // surviving registry entry still matches every emitted marker. Pre-existing
-    // and unrelated to #3414 — the emptyPages route-injection fixture, which
-    // has no such re-export stub, is where that assertion belongs (and it is
-    // asserted there).
+    // COMPILED `dist/routes/_chrome.js` graph is scanned alongside the
+    // published `node_modules/@takazudo/zudo-doc/routes-src/` file the
+    // injected route resolves to, and the same component reaches the scanner
+    // from two files. zfb dedupes by resolved component identity; the two
+    // share a name, so the surviving registry entry still matches every
+    // emitted marker. Pre-existing and unrelated to #3414 — the emptyPages
+    // route-injection fixture, which has no such re-export stub, is where that
+    // assertion belongs (and it is asserted there).
   });
 });
 
