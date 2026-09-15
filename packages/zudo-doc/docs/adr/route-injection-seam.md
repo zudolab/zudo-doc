@@ -229,13 +229,19 @@ scanner-safe. Every other host slot remains intact.
   behavior is byte-identical to before. Setting present but the resolved file
   missing → the plugin **throws at setup**, naming the resolved absolute path
   and the setting name (never a silent empty fallback).
-- **Staging interaction.** The staged `routes-src/` copy
-  (`<projectRoot>/.zudo-doc/routes-src/`, see the STAGING note in
-  `plugins/routes.ts`) lives outside `node_modules`, so this virtual module
-  resolves from the staged shim the same way
-  `virtual:zudo-doc-route-context` already does. The emitted re-export
-  specifier is an absolute path (forward slashes), so it resolves identically
-  from the workspace, staged, and published shapes.
+- **No staging needed.** An earlier revision of this ADR staged the published
+  `routes-src/` tree into `<projectRoot>/.zudo-doc/routes-src/` (outside
+  `node_modules`) before injecting from it — a workaround (S1 #2370) for zfb's
+  esbuild bundler not running the `addVirtualModule` resolver on importers
+  whose realpath was inside `node_modules`. zfb v0.1.0-next.66 (upstream
+  Takazudo/zudo-front-builder #1258 / #1263) made that staging obsolete: every
+  registered virtual module is now emitted as an esbuild `--alias` for both the
+  SSR page bundler and the islands bundler, so this virtual module — and
+  `virtual:zudo-doc-route-context` — resolve directly from a route file at
+  `node_modules/@takazudo/zudo-doc/routes-src/`, the same as from the
+  workspace shape. The staging step was removed (#4224); the emitted re-export
+  specifier is an absolute path (forward slashes), so it still resolves
+  identically from the workspace and published shapes.
 - **SSR-presentational contract only.** Client islands defined INSIDE the
   bindings module are NOT guaranteed to register on injected routes — scanner
   reachability through the virtual re-export is not part of the contract

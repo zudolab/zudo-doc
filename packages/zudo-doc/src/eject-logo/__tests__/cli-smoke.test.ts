@@ -20,10 +20,11 @@ import os from "os";
 import path from "path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
+import { CLI_SMOKE_SNAPSHOT_PREFIX } from "../../__tests__/in-package-snapshot-prefixes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(__dirname, "../../..");
-const SNAPSHOT_PREFIX = path.join(PACKAGE_ROOT, ".cli-snapshot-");
+const SNAPSHOT_PREFIX = path.join(PACKAGE_ROOT, CLI_SMOKE_SNAPSHOT_PREFIX);
 const REQUIRED_DIST_ENTRYPOINTS = [
   "eject/index.js",
   "eject-logo/index.js",

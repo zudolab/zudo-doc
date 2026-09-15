@@ -26,6 +26,7 @@ import {
 import { tmpdir } from "node:os";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { isInPackageTestSnapshot } from "./in-package-snapshot-prefixes.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(__dirname, "../..");
@@ -69,7 +70,8 @@ function packFileList(): string[] {
   try {
     cpSync(PKG_ROOT, snapshotRoot, {
       recursive: true,
-      filter: (source) => source !== resolve(PKG_ROOT, "node_modules"),
+      filter: (source) =>
+        source !== resolve(PKG_ROOT, "node_modules") && !isInPackageTestSnapshot(source),
     });
     const packageJsonPath = resolve(snapshotRoot, "package.json");
     const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as {

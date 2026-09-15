@@ -78,7 +78,7 @@
 
 import { prepareHomeIntros, type HomeIntroSettings } from "../home-intro/prepare.js";
 import { createRequire } from "node:module";
-import { existsSync, statSync, readFileSync, cpSync, rmSync, mkdirSync } from "node:fs";
+import { existsSync, statSync, readFileSync } from "node:fs";
 import { dirname, basename, join } from "node:path";
 import { definePlugin, type ZfbSetupContext } from "@takazudo/zfb/plugins";
 import { loadThemePackRegistry } from "../theme-packs-registry/load-registry.js";
@@ -807,37 +807,14 @@ const plugin = definePlugin({
     //      so the original `src/routes/X.tsx` is on disk next to `dist/`.
     //      Derive it: `…/dist/routes/X.js` → `…/src/routes/X.tsx`.
     //
-    // STAGING (the node_modules virtual-module gap — S1 #2370):
-    //   zfb's esbuild bundler does NOT run the `addVirtualModule` resolver on
-    //   imports of files whose REALPATH is inside `node_modules` — so a route
-    //   `.tsx` resolved at `node_modules/@takazudo/zudo-doc/routes-src/X.tsx`
-    //   fails with `Could not resolve "virtual:zudo-doc-route-context"` (its
-    //   transitive `./_context` import pulls in the virtual module). Verified
-    //   empirically: the SAME tree builds when its realpath is OUTSIDE
-    //   node_modules. The workspace case never hit this because the symlinked
-    //   package's realpath is `packages/zudo-doc/…` (outside node_modules).
-    //   FIX: when the resolved source lives under node_modules, copy the entire
-    //   `routes-src/` tree ONCE into a project-local cache dir
-    //   (`<projectRoot>/.zudo-doc/routes-src/`, outside node_modules) and point
-    //   every injected route at the staged copy. The same-dir helpers
-    //   (`_context`, `_chrome`, `_docs-helpers`, `_virtual.d.ts`) are co-located
-    //   in that tree; the bare `@takazudo/zudo-doc/*` imports still resolve via
-    //   node from the staged location. The in-repo (workspace) path needs no
-    //   staging — its realpath is already outside node_modules.
+    // A route `.tsx` resolved under `node_modules` (the published-package
+    // case) still resolves its transitive `virtual:*` imports (e.g.
+    // `./_context`) directly — zfb >= 0.1.0-next.66 (upstream #1258 / #1263)
+    // emits every registered virtual module as an esbuild `--alias` for the
+    // SSR page bundler and the islands bundler, regardless of the importer's
+    // realpath. This used to require staging the published `routes-src/` tree
+    // outside `node_modules` first (S1 #2370); that workaround is gone.
     const require = createRequire(import.meta.url);
-
-    /** Lazily-prepared stage dir (set on first node_modules-resolved route). */
-    let stagedRoutesDir: string | undefined;
-    /** Stage `routesSrcDir` → `<projectRoot>/.zudo-doc/routes-src/` once. */
-    const ensureStaged = (routesSrcDir: string): string => {
-      if (stagedRoutesDir) return stagedRoutesDir;
-      const dest = join(ctx.projectRoot, ".zudo-doc", "routes-src");
-      rmSync(dest, { recursive: true, force: true });
-      mkdirSync(dirname(dest), { recursive: true });
-      cpSync(routesSrcDir, dest, { recursive: true });
-      stagedRoutesDir = dest;
-      return dest;
-    };
 
     for (const route of derivedRoutes) {
       let resolvedEntrypoint: string;
@@ -856,12 +833,7 @@ const plugin = definePlugin({
           .replace(/\.js$/, ".tsx");
 
         if (existsSync(routesSrcPath)) {
-          // Published-package source. If it lives under node_modules, stage the
-          // tree outside node_modules so the virtual module resolves.
-          const underNodeModules = /[\\/]node_modules[\\/]/.test(routesSrcPath);
-          resolvedEntrypoint = underNodeModules
-            ? join(ensureStaged(routesSrcDir), tsxName)
-            : routesSrcPath;
+          resolvedEntrypoint = routesSrcPath;
         } else if (existsSync(srcPath)) {
           // Workspace source (realpath already outside node_modules).
           resolvedEntrypoint = srcPath;

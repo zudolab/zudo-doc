@@ -6,7 +6,13 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
-No unreleased changes.
+### Bug Fixes
+
+- The generated `scripts/check-links.js`'s MDX id scan no longer lets an escaped `\<` in prose start a fake tag that swallows a later element's static `id` across a blank line, wrongly reporting a valid anchor as broken. Projects that copied `scripts/check-links.js` from the template can re-copy it to pick up the fix.
+
+### Other Changes
+
+- New scaffolds no longer add a `.zudo-doc/` entry to the generated `.gitignore`. The staging step it was for was removed from `@takazudo/zudo-doc`'s route injection — see that package's changelog.
 
 ## [5.24.2] - 2026-09-15
 

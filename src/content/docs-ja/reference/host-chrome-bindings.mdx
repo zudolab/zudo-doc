@@ -138,6 +138,10 @@ export const chromeBindings = defineChromeBindings({
 
 つまり、`docContentHeaderExtras` のために作成するモジュールは、たとえば以前はホスト所有ルートでしか機能しなかったカスタムフロントマターレンダラーを登録する場所でもあります。
 
+### `sidebarNodes` は `createHeaderWithDefaults` の prop であり、`Header` バインディングのスロットではない
+
+上表の `Header` 行はコンポーネント全体を置き換えるものです。置き換えたコンポーネントは `HeaderSlotProps` を受け取り、モバイルドロワーのツリーを完全に自前で所有します。`sidebarNodes` はこれとは別の、より狭い継ぎ目です — `HeaderWithDefaultsProps` のオプション prop で、ヘッダーの残りを置き換えずに、*パッケージの*ヘッダーファクトリーが `SidebarToggle` に渡すツリーだけを上書きします。この prop は `createHeaderWithDefaults(ctx)` と `createChrome(...).HeaderWithDefaults` で利用できます。**`HeaderSlotProps` には含まれない**ため、`chromeBindingsModule` で設定した `Header` の置き換えコンポーネントはこの prop を受け取りません。完全な契約は `API.md` の `createHeaderWithDefaults(ctx)` を参照してください。
+
 生成されたドキュメントルートとパッケージ所有ドキュメントルートでは、通常のオブジェクト優先順位に1つだけ意図的な例外があります。`docHistory` が有効な場合、静的にインポートされたパッケージ `DocHistory` を設定済みオブジェクトの後から重ねます。これによりクライアントアイランド登録をスキャナーから到達可能に保ち、ほかのすべての binding は維持されます。仮想ホストモジュール内だけで宣言した `DocHistory` は、これらのルートでは置き換えられません。
 
 <Warning>

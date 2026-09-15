@@ -9,9 +9,10 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } fro
 import { spawnSync } from "node:child_process";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
+import { CHECK_IMAGES_CLI_SNAPSHOT_PREFIX } from "./in-package-snapshot-prefixes.js";
 
 const PACKAGE_ROOT = resolve(__dirname, "../..");
-const SNAPSHOT_PREFIX = join(PACKAGE_ROOT, ".check-images-cli-snapshot-");
+const SNAPSHOT_PREFIX = join(PACKAGE_ROOT, CHECK_IMAGES_CLI_SNAPSHOT_PREFIX);
 const TEMP_PREFIX = "zudo-doc-check-images-cli-";
 const tempDirs: string[] = [];
 

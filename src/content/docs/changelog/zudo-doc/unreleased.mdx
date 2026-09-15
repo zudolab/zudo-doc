@@ -4,4 +4,11 @@ description: Changes planned for the next release.
 sidebar_position: 1122
 ---
 
-No unreleased changes.
+## Features
+
+- Added an optional `sidebarNodes` prop to `HeaderWithDefaultsProps`, letting a host override the mobile-drawer sidebar tree per render (as a fixed array or a callback with a lazy `buildDefault()`) without replacing the whole `Header` chrome component.
+- Added zfb-free asset-viewer subpaths — `./asset-page/{body,components,script}`, `./asset-index-page`, and `./asset-index-page/{body,tree,script}` — so `AssetPageBody` / `AssetIndexPageBody` and their `resolveAsset*Labels(t, locale)` helpers can be imported and rendered without a `ChromeContext` or any `@takazudo/zfb*` package. `./asset-page` and `./asset-index-page` remain the zfb-bound factories; neither body provides `DocLayout`, so the caller owns the outer page shell.
+
+## Other Changes
+
+- Removed the `.zudo-doc/routes-src` project-local staging step for package-owned route injection. It was a workaround for zfb not resolving `virtual:*` imports from route files under `node_modules`; zfb `>= 0.1.0-next.66` resolves those imports directly, so the published `routes-src/` file is now injected without a staging copy. If your project has a leftover `<project>/.zudo-doc/` directory, it is now inert and can be deleted.
