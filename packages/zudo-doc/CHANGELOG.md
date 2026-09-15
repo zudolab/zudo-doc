@@ -6,7 +6,9 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
-No unreleased changes.
+## Features
+
+- Added an optional `sidebarNodes` prop to `HeaderWithDefaultsProps`, letting a host override the mobile-drawer sidebar tree per render (as a fixed array or a callback with a lazy `buildDefault()`) without replacing the whole `Header` chrome component.
 
 ## [5.24.2] - 2026-09-15
 
