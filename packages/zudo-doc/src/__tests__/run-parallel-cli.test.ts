@@ -258,6 +258,9 @@ describe("run-parallel", () => {
     }
   });
 
+  // https://github.com/zudolab/zudo-doc/issues/4247 — observed 6525ms under
+  // full-suite contention (two nested subprocess spawns plus a death poll);
+  // 30s is headroom over that, not a new baseline.
   it("propagates a failure through a nested coordinator (the #3129 two-hop cascade)", async () => {
     // Root `pnpm dev` nests one run-parallel inside another; #3129 depends on a
     // fatal exit travelling BOTH hops. Anything that swallowed the inner failure
@@ -267,7 +270,7 @@ describe("run-parallel", () => {
     expect(result.stderr).toContain('ERROR: "fail:three" exited with 3.');
     expect(result.stderr).toContain('ERROR: "nested" exited with');
     await expectLongTaskKilled();
-  });
+  }, 30_000);
 
   it("rejects flags rather than treating them as script names", () => {
     const result = run("--continue-on-error", "ok:a");

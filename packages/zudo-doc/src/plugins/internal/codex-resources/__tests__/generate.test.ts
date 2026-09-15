@@ -345,6 +345,9 @@ describe("generateCodexResourcesDocs", () => {
     );
   });
 
+  // https://github.com/zudolab/zudo-doc/issues/4247 — observed 14009ms under
+  // full-suite contention (fs-heavy fixture + generate); 45s is headroom over
+  // that, not a new baseline.
   it("writes root-first AGENTS pages and preserves both instruction files", () => {
     generate();
     const dir = path.join(docsDir, "codex-agents-md");
@@ -361,8 +364,11 @@ describe("generateCodexResourcesDocs", () => {
     expect(fs.readFileSync(path.join(dir, "app--override.mdx"), "utf8")).toContain(
       "&lt;Foo&gt;",
     );
-  });
+  }, 45_000);
 
+  // https://github.com/zudolab/zudo-doc/issues/4247 — observed 11785ms under
+  // full-suite contention (fs-heavy fixture + generate); 45s is headroom over
+  // that, not a new baseline.
   it("renders config scalars, arrays, exact raw section headers, and safe source", () => {
     generate();
     const page = fs.readFileSync(
@@ -376,7 +382,7 @@ describe("generateCodexResourcesDocs", () => {
     expect(page).toContain("- `[mcp_servers.docs]`");
     expect(page).toContain("- `[[skills.config]]`");
     expect(page).toContain("```toml");
-  });
+  }, 45_000);
 
   it("keeps wrong-type agents, skips malformed TOML, and protects raw fences", () => {
     generate();
