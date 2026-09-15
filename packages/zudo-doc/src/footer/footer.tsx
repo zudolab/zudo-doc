@@ -81,8 +81,8 @@ export function Footer(props: FooterProps): VNode {
   const hasCopyright = copyright.length > 0;
 
   const copyrightClass = hasColumns
-    ? "text-center text-caption text-muted [&_a]:text-accent [&_a]:underline mt-vsp-lg border-t border-muted pt-vsp-md"
-    : "text-center text-caption text-muted [&_a]:text-accent [&_a]:underline";
+    ? "text-center text-caption text-muted [&_a]:underline [&_a:hover]:text-accent [&_a:focus-visible]:text-accent mt-vsp-lg border-t border-muted pt-vsp-md"
+    : "text-center text-caption text-muted [&_a]:underline [&_a:hover]:text-accent [&_a:focus-visible]:text-accent";
 
   return (
     <footer
@@ -114,7 +114,7 @@ export function Footer(props: FooterProps): VNode {
                     >
                       <a
                         href={item.href}
-                        class="text-caption text-muted hover:text-accent hover:underline focus-visible:underline"
+                        class="text-caption text-muted hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline"
                         {...(item.isExternal
                           ? {
                               target: "_blank",
@@ -142,7 +142,7 @@ export function Footer(props: FooterProps): VNode {
                     <li key={`tag-item-${tag}`} class="mb-vsp-2xs">
                       <a
                         href={href}
-                        class="text-caption text-muted hover:text-accent hover:underline focus-visible:underline"
+                        class="text-caption text-muted hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline"
                       >
                         #{tag}
                         <span class="opacity-60" aria-hidden="true">

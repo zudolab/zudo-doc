@@ -74,4 +74,56 @@ describe("createDocPager — data-doc-pager hook", () => {
     expect(html).toContain("2026/08/15");
     expect(html).not.toContain("Aug 12, 2026");
   });
+
+  // Link-color rule (epic #4235, S4 #4239): the neighbour titles carry a
+  // static text-fg color with underline/accent applied only on
+  // group-hover/group-focus-visible; the kicker row's icon + label stay
+  // text-muted with group-hover/group-focus-visible accent. Neither carries
+  // a bare (non-variant) text-accent or underline class token.
+  it("neighbour titles have no bare text-accent or underline token", () => {
+    const ctx = makeFakeChromeContext();
+    const DocPager = createDocPager(ctx);
+    const html = render(
+      <DocPager
+        prev={{ href: "/docs/a", label: "A" }}
+        next={{ href: "/docs/b", label: "B" }}
+        locale="en"
+      />,
+    );
+
+    const titleMatches = [...html.matchAll(/<p class="([^"]*font-semibold[^"]*)"/g)];
+    expect(titleMatches).toHaveLength(2);
+    for (const m of titleMatches) {
+      const tokens = m[1]?.split(/\s+/) ?? [];
+      expect(tokens).not.toContain("text-accent");
+      expect(tokens).not.toContain("underline");
+      expect(tokens).toContain("text-fg");
+      expect(tokens).toContain("group-hover:text-accent");
+      expect(tokens).toContain("group-hover:underline");
+      expect(tokens).toContain("group-focus-visible:text-accent");
+      expect(tokens).toContain("group-focus-visible:underline");
+    }
+  });
+
+  it("kicker rows stay text-muted with no bare text-accent token", () => {
+    const ctx = makeFakeChromeContext();
+    const DocPager = createDocPager(ctx);
+    const html = render(
+      <DocPager
+        prev={{ href: "/docs/a", label: "A" }}
+        next={{ href: "/docs/b", label: "B" }}
+        locale="en"
+      />,
+    );
+
+    const kickerMatches = [...html.matchAll(/<div class="([^"]*text-muted[^"]*)"/g)];
+    expect(kickerMatches).toHaveLength(2);
+    for (const m of kickerMatches) {
+      const tokens = m[1]?.split(/\s+/) ?? [];
+      expect(tokens).not.toContain("text-accent");
+      expect(tokens).toContain("text-muted");
+      expect(tokens).toContain("group-hover:text-accent");
+      expect(tokens).toContain("group-focus-visible:text-accent");
+    }
+  });
 });

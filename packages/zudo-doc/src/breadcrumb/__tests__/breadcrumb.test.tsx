@@ -208,4 +208,25 @@ describe("Breadcrumb", () => {
     expect(html).toContain('href="/docs/guides/"');
     expect(html).toContain('href="/docs/guides/advanced/"');
   });
+
+  // Link-color rule (epic #4235, S4 #4239): ancestor crumbs drop the static
+  // underline and hover:text-fg in favor of hover/focus-visible accent, and
+  // carry no bare (non-variant) text-accent or underline class token.
+  it("ancestor links have no bare text-accent or underline token", () => {
+    const html = serialize(
+      <Breadcrumb tree={tree} currentId="guides/advanced/perf" homeHref="/" />,
+    );
+    const match = html.match(
+      /<a href="\/docs\/guides\/" class="([^"]*)"/,
+    );
+    expect(match).not.toBeNull();
+    const tokens = (match?.[1] ?? "").split(/\s+/);
+    expect(tokens).not.toContain("text-accent");
+    expect(tokens).not.toContain("underline");
+    expect(tokens).not.toContain("text-fg");
+    expect(tokens).toContain("hover:text-accent");
+    expect(tokens).toContain("hover:underline");
+    expect(tokens).toContain("focus-visible:text-accent");
+    expect(tokens).toContain("focus-visible:underline");
+  });
 });
