@@ -376,6 +376,8 @@ export interface Settings {
   home?: HomeConfig;
   /** Top-level category slugs hidden from the package home-page grid and the `<SiteTreeNav />` MDX tag. Nothing hidden when omitted. */
   siteTreeNavIgnore?: string[];
+  /** Top-level category slugs moved from the package home-page grid into the secondary link row under it. Nothing moved when omitted. */
+  siteTreeNavSecondary?: string[];
   /** Minify production HTML output from `zfb build`. Defaults to `true` when omitted. */
   minifyHtml?: boolean;
   docsDir: string;

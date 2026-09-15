@@ -83,7 +83,10 @@ Factory for the shared home-page (site index) body: hero (logo mask block,
 
 The `SiteTreeNav` island's `categoryIgnore` comes from
 `settings.siteTreeNavIgnore` (default `[]`; the package hard-coded
-`["inbox", "develop"]` before #3641).
+`["inbox", "develop"]` before #3641). Top-level slugs listed in
+`settings.siteTreeNavSecondary` (default `[]`) are moved out of the grid into a
+row of small links under it, in the setting's order (`siteTreeNavIgnore` wins;
+a category with no page stays in the grid).
 
 `tagCount` (together with `settings.docTags`) gates the tags section. When
 `tags` (the pre-resolved `TagItem[]` list `prepareHomeData` now also returns) is

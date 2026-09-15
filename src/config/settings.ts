@@ -112,6 +112,7 @@ Start with the **essentials**, then explore the live examples.
   docMetainfo: true,
   docTags: true,
   siteTreeNavIgnore: ["inbox", "develop"] as string[], // hides the showcase's develop/ category from the home grid + <SiteTreeNav /> (#1463/#1480 → setting per #3641)
+  siteTreeNavSecondary: ["changelog", "claude", "codex"] as string[], // moves these categories from the home grid into the small link row under it (#4236)
   // Not yet wired: settings uses "before-pager" but DocTags (v2 package) expects "before-footer" — types must align first (#2140).
   tagPlacement: "after-title" as TagPlacement,
   /**
