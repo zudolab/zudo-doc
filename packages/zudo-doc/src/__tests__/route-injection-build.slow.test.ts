@@ -111,7 +111,7 @@ const devServers: ChildProcess[] = [];
  *  Root wins on collision — pass 2 only fills gaps — so the resolution order a
  *  real consumer sees is preserved. `@takazudo` is skipped in both passes; the
  *  caller links that scope itself. */
-function linkFixtureNodeModules(nm: string): void {
+function linkFixtureNodeModules(nm: string, omitPackages: string[] = []): void {
   const wsNm = join(WORKSPACE_ROOT, "node_modules");
   const pkgNm = join(PKG_ROOT, "node_modules");
 
@@ -119,12 +119,14 @@ function linkFixtureNodeModules(nm: string): void {
   // shell glob, no `dotglob` equivalent needed here.
   for (const entry of readdirSync(wsNm)) {
     if (entry === "@takazudo") continue;
+    if (omitPackages.includes(entry)) continue;
     symlinkSync(join(wsNm, entry), join(nm, entry));
   }
 
   if (!existsSync(pkgNm)) return;
   for (const entry of readdirSync(pkgNm)) {
     if (entry === "@takazudo") continue;
+    if (omitPackages.includes(entry)) continue;
     // Root already provided it — keep the root copy (see "root wins" above).
     if (existsSync(join(nm, entry))) continue;
     symlinkSync(join(pkgNm, entry), join(nm, entry));
@@ -2115,11 +2117,14 @@ function packPackage(): string {
  *  leave OUT of the symlink loop. `linkFixtureNodeModules` skips the
  *  `@takazudo` scope entirely, so this loop is the single point where those
  *  packages enter the fixture — omitting one here makes it genuinely
- *  unresolvable, which is what the optional-peer build case needs (#4009). */
+ *  unresolvable, which is what the optional-peer build case needs (#4009).
+ *  `omitPackages` does the same for unscoped names (e.g. `"katex"`, `"diff"`)
+ *  in the `linkFixtureNodeModules` loops (#4209). */
 function setupNoSrcFixture(
   fixtureSrc: string,
   tarballPath: string,
   omitScopedPackages: string[] = [],
+  omitPackages: string[] = [],
 ): string {
   const dir = mkdtempSync(join(tmpdir(), "zudo-doc-nosrc-"));
   tempDirs.push(dir);
@@ -2131,7 +2136,7 @@ function setupNoSrcFixture(
   // `.bin`, `.pnpm`, preact, zod, yaml, … all needed at build time.
   // yaml comes from the PACKAGE's node_modules under pnpm, not the
   // root — see linkFixtureNodeModules (#3189).
-  linkFixtureNodeModules(nm);
+  linkFixtureNodeModules(nm, omitPackages);
   // @takazudo: real dir; symlink every @takazudo/* EXCEPT zudo-doc (extracted
   // from the tarball below) and anything the caller asked to omit.
   const scopeDir = join(nm, "@takazudo");
@@ -2299,6 +2304,62 @@ describe("OPT-ZDTP no-zdtp: the published package builds with the optional @taka
 
   it("non-vacuous: the zdtp-less build actually rendered a doc page", () => {
     // Guards against a "build succeeded" that emitted nothing.
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    expect(html).toContain("Getting Started");
+    expect(html).toContain("injected-route-render-proof");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Case OPT-KATEX-DIFF — the optional peers `katex` and `diff` must be genuinely
+// optional when `math` and `docHistory` are off (zudolab/zudo-doc#4209, from
+// #4206). Both are reachable from the always-bundled route graph
+// (`mdx-components → math-block`, `_chrome → doc-history`); until #4209 math-block
+// imported katex statically and doc-history used a bare `await import("diff")`,
+// so a consumer without them died with `Could not resolve "katex"/"diff"`.
+// Both now use a rejection-handled `import(...).then(onFulfilled, onRejected)`,
+// which esbuild tolerates when the package is absent (#4015 precedent).
+//
+// Fixture: FIXTURE_I18N_SRC as-is — its settings already set `math: false` and
+// `docHistory: false`. One combined case (each packed build costs ~a minute);
+// the per-peer precondition assertions name which peer regressed.
+// ---------------------------------------------------------------------------
+
+describe("OPT-KATEX-DIFF no-katex-diff: the published package builds with the optional katex + diff peers absent", () => {
+  let tarballPath: string;
+  let fixtureDir: string;
+  let pkgDest: string;
+
+  it("setup: pack + install WITHOUT katex and diff, and confirm the preconditions", { timeout: 180_000 }, () => {
+    tarballPath = packPackage();
+    fixtureDir = setupNoSrcFixture(FIXTURE_I18N_SRC, tarballPath, [], ["katex", "diff"]);
+    pkgDest = join(fixtureDir, "node_modules/@takazudo/zudo-doc");
+
+    // Precondition 1 — both peers genuinely unresolvable from the fixture.
+    expect(existsSync(join(fixtureDir, "node_modules/katex")), "katex must be absent").toBe(false);
+    expect(existsSync(join(fixtureDir, "node_modules/diff")), "diff must be absent").toBe(false);
+    expect(existsSync(join(pkgDest, "node_modules/katex")), "katex must be absent (package-local)").toBe(false);
+    expect(existsSync(join(pkgDest, "node_modules/diff")), "diff must be absent (package-local)").toBe(false);
+
+    // Precondition 2 — the PACKED artifacts carry the rejection-handled shape
+    // (and no static edge), so a green build is attributable to the fix.
+    const mathBlock = readFileSync(join(pkgDest, "dist/math-block/index.js"), "utf-8");
+    expect(mathBlock, "math-block must not import katex statically").not.toMatch(/from\s*["']katex["']/);
+    expect(mathBlock, "math-block must load katex via import(\"katex\").then(ok, onRejected)").toMatch(
+      /import\("katex"\)\.then\(\s*[\s\S]*?,\s*\(\)\s*=>/,
+    );
+    const docHistory = readFileSync(join(pkgDest, "dist/doc-history/index.js"), "utf-8");
+    expect(docHistory, "doc-history must not import diff statically").not.toMatch(/from\s*["']diff["']/);
+    expect(docHistory, "doc-history must load diff via import(\"diff\").then(ok, onRejected)").toMatch(
+      /import\("diff"\)\.then\(\s*[\s\S]*?,\s*\(\)\s*=>/,
+    );
+  });
+
+  it("build: `zfb build` succeeds with katex and diff absent from node_modules", { timeout: 180_000 }, () => {
+    runZfbBuild(fixtureDir);
+  });
+
+  it("non-vacuous: the katex/diff-less build actually rendered a doc page", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
     expect(html).toContain("Getting Started");
     expect(html).toContain("injected-route-render-proof");

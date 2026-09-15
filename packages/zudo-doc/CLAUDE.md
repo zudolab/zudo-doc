@@ -263,6 +263,17 @@ spreads it into `defineConfig` and keeps only the shell fields it still owns
   already supplies zod (it owns `buildDocsSchema`), so a required peer shares
   that single instance — avoiding a dual-zod hazard for `toJSONSchema` and a
   `Cannot find package 'zod'` at config-eval time in generated projects.
+- **`katex` and `diff` are optional peers, and must stay non-build-fatal.**
+  `katex` is needed only when `math: true`, and `diff` only for docHistory's
+  Compare view. Both are reachable from the always-bundled route graph
+  (`mdx-components → math-block`, `_chrome → doc-history`), so each is loaded
+  ONLY through a rejection-handled `import("pkg").then(onFulfilled, onRejected)`.
+  esbuild leaves that shape unresolved when the package is absent instead of
+  failing the build. A static import or a bare `await import()` reintroduces
+  `Could not resolve` for consumers without the peer (#4206 / #4209). The
+  packed-tarball OPT-KATEX-DIFF case in `route-injection-build.slow.test.ts`
+  proves it. Do not use the `addVirtualModule` shadow here: zfb skips virtual
+  modules for importers under `node_modules` (see `src/plugins/routes.ts`).
 - **Package-owned route injection** (`settings.packageOwnedRoutes`, default
   `true` since #2404) is pinned in `docs/adr/route-injection-seam.md` — the authoritative
   seam spec for the `@takazudo/zudo-doc/plugins/routes` plugin + `routes/*`

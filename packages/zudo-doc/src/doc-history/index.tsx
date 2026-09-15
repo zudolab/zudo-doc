@@ -180,8 +180,16 @@ async function getCachedDiff(
     return hit;
   }
   // Lazy-load diff — only needed after History → Compare. This keeps the
-  // module out of the eager islands bundle.
-  const { diffLines } = await import("diff");
+  // module out of the eager islands bundle. `diff` is an optional peer: the
+  // literal `import("diff").then(onFulfilled, onRejected)` shape is what lets
+  // esbuild leave it unresolved when absent instead of failing the build
+  // (#4209). The rejection surfaces through DiffViewer's `.catch()` → diffError.
+  const { diffLines } = await import("diff").then(
+    (m) => m,
+    () => {
+      throw new Error('Compare requires the optional peer "diff": install it to use docHistory');
+    },
+  );
   const changes = diffLines(olderContent, newerContent);
   diffCache.set(key, changes);
   if (diffCache.size > DIFF_CACHE_LIMIT) {
