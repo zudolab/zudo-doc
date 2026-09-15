@@ -226,6 +226,40 @@ Editing an existing asset refreshes its viewer during `pnpm dev`. Adding, removi
 
 Use `pnpm dev:stable` when you are adding or reorganizing files frequently; it uses the build-then-serve development mode.
 
+## Rendering without zfb
+
+`./asset-page` and `./asset-index-page` remain zfb-bound: `createAssetPageView(ctx)` and `createAssetIndexPageView(ctx)` both take a `ChromeContext` and wrap their output in `DocLayoutWithDefaults`, so they only work inside a zfb page.
+
+For a non-zfb host (a different framework, a static export step, a preview tool), import the plain-prop body modules instead. They take no `ChromeContext` and pull in no `@takazudo/zfb*` package:
+
+```tsx title="render-asset-page.tsx"
+import { AssetPageBody, resolveAssetPageLabels, renderAssetDetailsPrepaintScript } from "@takazudo/zudo-doc/asset-page/body";
+import { AssetIndexPageBody, resolveAssetIndexPageLabels } from "@takazudo/zudo-doc/asset-index-page/body";
+
+// Resolve labels ahead of time from your own translator + locale.
+const pageLabels = resolveAssetPageLabels(t, locale);
+const indexLabels = resolveAssetIndexPageLabels(t, locale);
+
+// Render a single asset's viewer body.
+<AssetPageBody entry={asset} locale={locale} rawUrl={rawUrl} labels={pageLabels} showViewSource={false} />;
+
+// Render the directory-tree index body.
+<AssetIndexPageBody entries={entries} labels={indexLabels} base="/" routePrefix="files" dir="assets" />;
+```
+
+Both bodies render only the viewer content — a header, actions, the stage/details grid (or, for the index, the directory tree), and their own inline bootstrap `<script>`. Neither provides `DocLayout`: the caller owns the outer page shell, including the `.zd-content` wrapper that supplies content typography, the `<html>`/`<head>`/`<body>` structure, and any header/sidebar/footer chrome.
+
+`AssetPageBody` also needs one piece of markup placed in the page `<head>`, ahead of the rest of the head content: the details-rail pre-paint script, which restores a persisted collapsed/expanded preference before first paint so a reload never flashes the wrong state. Call `renderAssetDetailsPrepaintScript()` for it — it returns a fresh `<script>` VNode on every call (never reuse one instance across pages):
+
+```tsx
+<head>
+  {renderAssetDetailsPrepaintScript()}
+  {/* the rest of your <head> content */}
+</head>
+```
+
+`AssetPageBody` and `AssetIndexPageBody` each already embed their own bootstrap script inline, so no separate import is needed to wire up their interactive controls (copy/wrap buttons, the details-rail toggle, the index's expand/collapse-all). Import `./asset-page/components` or `./asset-index-page/tree` directly only when composing a custom layout from the individual leaf pieces instead of the full body.
+
 ## Generated-route behavior
 
 Individual asset viewers are leaf pages, while the optional route-prefix page is an asset listing. Both exist in every configured locale and preserve that locale in generated document and index links: for example, a Japanese reference opens `/ja/files/.../`, not `/files/.../`. The routes stay out of the docs sidebar. They also stay out of the search index, `llms.txt`, and sitemap unless the corresponding `assetViewerIndexing` key is explicitly enabled.

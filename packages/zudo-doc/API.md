@@ -18,7 +18,7 @@ New snapshot guards (added in `packages/zudo-doc/src/__tests__/public-api-snapsh
 
 ---
 
-## 1. Subpath Exports (164 total)
+## 1. Subpath Exports (176 total)
 
 The full `package.json#exports` keyset is the contract. Any addition or removal requires a deliberate, reviewed change that will fail the snapshot guard.
 
@@ -340,8 +340,15 @@ reachable from this subpath — through the bundled JS graph OR the transitive
 
 | Subpath | Description |
 |---|---|
-| `./asset-page` | `createAssetPageView(ctx)` and the SSR asset-viewer components for code, image, video, PDF, and download-only files. |
+| `./asset-page` | `createAssetPageView(ctx)` and the SSR asset-viewer components for code, image, video, PDF, and download-only files. zfb-bound (needs a `ChromeContext`) — the plain-prop `./asset-page/*` subpaths below render the same body without one. |
+| `./asset-page/body` | `AssetPageBody` + `resolveAssetPageLabels()` + `renderAssetDetailsPrepaintScript()` — the zfb-free asset-viewer page body (zudolab/zudo-doc#4221). Plain props only, no `ChromeContext`/`@takazudo/zfb*`; does NOT provide `DocLayout` — the caller owns the outer page shell (including the `.zd-content` wrapper). `AssetPageBody` already embeds the `./asset-page/script` bootstrap and composes the `./asset-page/components` leaves internally, so this one import is enough to render a full page body. |
+| `./asset-page/components` | The leaf presentational components `AssetPageBody` composes (`AssetHeader`, `AssetActions`, `AssetDetails`, `AssetImageStage`, `AssetVideoStage`, `AssetPdfStage`, `AssetDownloadPanel`, `AssetCodeBody`, `AssetLinkedFrom`, `AssetBodyLayout`, …) — zfb-free, importable individually to compose a custom layout. |
+| `./asset-page/script` | `ASSET_PAGE_SCRIPT` (inline bootstrap) and `ASSET_DETAILS_PREPAINT_SCRIPT` / `ASSET_DETAILS_STORAGE_KEY` / `ASSET_DETAILS_HIDDEN_ATTR` (head pre-paint script + its storage key/attribute) — zfb-free string constants. |
 | `./asset-path` | Browser-safe canonical asset path validation, segment-wise URL encoding/decoding, viewer/raw href builders, asset-viewer settings validation, and the dependency-free asset exclude-glob matcher. |
+| `./asset-index-page` | `createAssetIndexPageView(ctx)` and the SSR asset directory index page. zfb-bound (needs a `ChromeContext`) — the plain-prop `./asset-index-page/*` subpaths below render the same body without one. |
+| `./asset-index-page/body` | `AssetIndexPageBody` + `resolveAssetIndexPageLabels()` + `AssetTree` + `iconFor()` — the zfb-free asset index page body (zudolab/zudo-doc#4223). Plain props only, no `ChromeContext`/`@takazudo/zfb*`; does NOT provide `DocLayout` — the caller owns the outer page shell. `AssetIndexPageBody` already embeds the `./asset-index-page/script` bootstrap and the `./asset-index-page/tree` builder internally, so this one import is enough to render a full page body. |
+| `./asset-index-page/tree` | Pure, zfb-free asset directory tree builder: `buildAssetTree()`, `AssetTreeNode`, `basename()`, `folderCount()`, `countLabel()`, `freezeTree()`. |
+| `./asset-index-page/script` | `ASSET_INDEX_PAGE_SCRIPT` — inline bootstrap for the index page's expand/collapse-all disclosure controls. zfb-free string constant. |
 | `./content` | MDX content rendering utilities |
 | `./mdx-components` | MDX component map |
 | `./metainfo` | Page metainfo utilities |

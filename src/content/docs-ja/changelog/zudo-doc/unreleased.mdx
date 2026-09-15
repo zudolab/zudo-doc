@@ -7,3 +7,4 @@ sidebar_position: 1122
 ## 機能
 
 - `HeaderWithDefaultsProps` にオプションの `sidebarNodes` prop を追加しました。ホストは（固定配列、または遅延評価の `buildDefault()` を受け取るコールバックとして）レンダーごとにモバイルドロワーのサイドバーツリーを上書きできるようになり、`Header` chrome コンポーネント全体を置き換える必要がなくなりました。
+- zfb を使わないアセットビューアーのサブパスを追加しました — `./asset-page/{body,components,script}`、`./asset-index-page`、`./asset-index-page/{body,tree,script}` です。これにより `AssetPageBody` / `AssetIndexPageBody` とその `resolveAsset*Labels(t, locale)` ヘルパーを、`ChromeContext` や `@takazudo/zfb*` パッケージなしでインポート・レンダーできます。`./asset-page` と `./asset-index-page` は引き続き zfb に依存したファクトリーのままで、どちらのボディも `DocLayout` を提供しないため、外側のページシェルは呼び出し側が用意します。
