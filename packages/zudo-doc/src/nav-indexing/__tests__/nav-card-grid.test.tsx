@@ -69,10 +69,17 @@ describe("NavCardGrid", () => {
     expect(html).toContain("mt-4");
   });
 
-  it("renders arrow SVG with text-accent class", () => {
+  it("renders arrow SVG with text-muted and group-hover:text-accent classes", () => {
     const child = node("X", "/x/");
     const html = serialize(NavCardGrid({ children: [child] }));
-    expect(html).toContain("text-accent");
+    expect(html).toContain("text-muted");
+    expect(html).toContain("group-hover:text-accent");
     expect(html).toContain("<svg");
+  });
+
+  it("does not render a bare text-accent class anywhere", () => {
+    const child = node("X", "/x/", { description: "desc" });
+    const html = serialize(NavCardGrid({ children: [child] }));
+    expect(html).not.toMatch(/(?<![\w:-])text-accent\b/);
   });
 });

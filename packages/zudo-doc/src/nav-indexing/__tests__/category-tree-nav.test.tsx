@@ -76,4 +76,18 @@ describe("CategoryTreeNav", () => {
     const html = serialize(CategoryTreeNav({ children: [node] }));
     expect(html).toContain('href="/docs/guide/"');
   });
+
+  it("renders links with text-fg and hover:text-accent classes", () => {
+    const child = leaf("Introduction", "/docs/intro/");
+    const html = serialize(CategoryTreeNav({ children: [child] }));
+    expect(html).toContain("text-fg");
+    expect(html).toContain("hover:text-accent");
+    expect(html).toContain("focus-visible:text-accent");
+  });
+
+  it("does not render a bare text-accent class anywhere", () => {
+    const child = leaf("Introduction", "/docs/intro/");
+    const html = serialize(CategoryTreeNav({ children: [child] }));
+    expect(html).not.toMatch(/(?<![\w:-])text-accent\b/);
+  });
 });

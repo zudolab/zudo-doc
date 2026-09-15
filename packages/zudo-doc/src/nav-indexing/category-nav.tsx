@@ -74,7 +74,7 @@ export function CategoryNav(props: CategoryNavProps): JSX.Element | null {
           href={child.href}
           class="group block rounded border border-muted bg-surface px-hsp-lg py-vsp-md hover:border-accent"
         >
-          <span class="flex items-start gap-hsp-xs font-medium text-accent underline group-hover:underline">
+          <span class="flex items-start gap-hsp-xs font-medium text-fg group-hover:text-accent group-hover:underline group-focus-visible:text-accent group-focus-visible:underline">
             <span class="flex h-[1lh] items-center">
               <ArrowIcon />
             </span>
