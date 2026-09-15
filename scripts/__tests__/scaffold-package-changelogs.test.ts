@@ -53,6 +53,32 @@ function seedRelease(
   return file;
 }
 
+function frontmatterContent(title: string, position: number): string {
+  return `---\ntitle: ${title}\nsidebar_position: ${position}\n---\n\nbody for ${title}\n`;
+}
+
+function seedReleaseWithPosition(
+  root: string,
+  locale: string,
+  packageSlug: string,
+  version: string,
+  position: number,
+): string {
+  return seedRelease(root, locale, packageSlug, version, frontmatterContent(version, position));
+}
+
+function seedUnreleased(
+  root: string,
+  locale: string,
+  packageSlug: string,
+  position: number,
+): string {
+  const file = resolve(packageDir(root, locale, packageSlug), "unreleased.mdx");
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(file, frontmatterContent("Unreleased", position));
+  return file;
+}
+
 function runHelper(root: string, version = "6.0.0"): string {
   return execFileSync("bash", [HELPER_PATH, root, version], {
     encoding: "utf-8",
@@ -113,24 +139,27 @@ describe("scaffold-package-changelogs.sh", () => {
     );
   });
 
-  it("computes sidebar positions independently in every package/locale directory", () => {
+  it("computes sidebar positions from the max sibling position, not a count, in every package/locale directory", () => {
     const root = makeRoot();
-    seedRelease(root, "docs", "zudo-doc", "5.8.0");
-    seedRelease(root, "docs", "zudo-doc", "5.9.0");
-    seedRelease(root, "docs-ja", "zudo-doc", "5.9.0");
-    seedRelease(root, "docs", "create-zudo-doc", "5.9.0");
+    // Deliberate gaps: if the script were still counting siblings instead of
+    // reading their sidebar_position, docs/zudo-doc would compute 1000 + 2 +
+    // 1 = 1003 instead of max(1005, 1050) + 1 = 1051.
+    seedReleaseWithPosition(root, "docs", "zudo-doc", "5.8.0", 1005);
+    seedReleaseWithPosition(root, "docs", "zudo-doc", "5.9.0", 1050);
+    seedReleaseWithPosition(root, "docs-ja", "zudo-doc", "5.9.0", 1020);
+    seedReleaseWithPosition(root, "docs", "create-zudo-doc", "5.9.0", 1002);
     seedRelease(root, "docs", "create-zudo-doc", "index", "index\n");
 
     runHelper(root);
 
     expect(readTarget(root, "docs", "zudo-doc")).toContain(
-      "sidebar_position: 1003",
+      "sidebar_position: 1051",
     );
     expect(readTarget(root, "docs-ja", "zudo-doc")).toContain(
-      "sidebar_position: 1002",
+      "sidebar_position: 1021",
     );
     expect(readTarget(root, "docs", "create-zudo-doc")).toContain(
-      "sidebar_position: 1002",
+      "sidebar_position: 1003",
     );
     expect(readTarget(root, "docs-ja", "create-zudo-doc")).toContain(
       "sidebar_position: 1001",
@@ -138,6 +167,124 @@ describe("scaffold-package-changelogs.sh", () => {
     expect(readTarget(root, "docs", "doc-history-server")).toContain(
       "sidebar_position: 1001",
     );
+  });
+
+  it("moves a tied unreleased.mdx to the new release position + 1, in both docs and docs-ja", () => {
+    const root = makeRoot();
+    seedReleaseWithPosition(root, "docs", "zudo-doc", "5.9.0", 1005);
+    seedUnreleased(root, "docs", "zudo-doc", 1006); // ties with the position the new release will get
+    seedReleaseWithPosition(root, "docs-ja", "zudo-doc", "5.9.0", 1010);
+    seedUnreleased(root, "docs-ja", "zudo-doc", 1011);
+
+    runHelper(root);
+
+    expect(readTarget(root, "docs", "zudo-doc")).toContain(
+      "sidebar_position: 1006",
+    );
+    expect(
+      readFileSync(
+        resolve(packageDir(root, "docs", "zudo-doc"), "unreleased.mdx"),
+        "utf-8",
+      ),
+    ).toContain("sidebar_position: 1007");
+
+    expect(readTarget(root, "docs-ja", "zudo-doc")).toContain(
+      "sidebar_position: 1011",
+    );
+    expect(
+      readFileSync(
+        resolve(packageDir(root, "docs-ja", "zudo-doc"), "unreleased.mdx"),
+        "utf-8",
+      ),
+    ).toContain("sidebar_position: 1012");
+  });
+
+  it("writes nothing extra in a lane without an unreleased.mdx sibling", () => {
+    const root = makeRoot();
+
+    runHelper(root);
+
+    const files = readdirSync(
+      packageDir(root, "docs", "doc-history-server"),
+    ).sort();
+    expect(files).toEqual(["6.0.0.mdx"]);
+    expect(
+      existsSync(
+        resolve(packageDir(root, "docs", "doc-history-server"), "unreleased.mdx"),
+      ),
+    ).toBe(false);
+  });
+
+  it("repairs a still-tied unreleased.mdx when rerun after an interrupted release (release file exists, unreleased not yet moved)", () => {
+    const root = makeRoot();
+    const releaseFile = seedRelease(
+      root,
+      "docs",
+      "zudo-doc",
+      "6.0.0",
+      frontmatterContent("6.0.0", 1006),
+    );
+    const unreleasedFile = seedUnreleased(root, "docs", "zudo-doc", 1006);
+
+    const stdout = runHelper(root);
+
+    expect(readFileSync(releaseFile, "utf-8")).toContain(
+      "sidebar_position: 1006",
+    );
+    expect(readFileSync(unreleasedFile, "utf-8")).toContain(
+      "sidebar_position: 1007",
+    );
+    expect(stdout).toMatch(/Reconciled .*unreleased\.mdx/);
+  });
+
+  it("is idempotent on an already-reconciled tree, leaving files byte-identical", () => {
+    const root = makeRoot();
+    seedReleaseWithPosition(root, "docs", "zudo-doc", "5.9.0", 1005);
+    seedUnreleased(root, "docs", "zudo-doc", 1006);
+
+    runHelper(root);
+
+    const releasePath = resolve(
+      packageDir(root, "docs", "zudo-doc"),
+      "6.0.0.mdx",
+    );
+    const unreleasedPath = resolve(
+      packageDir(root, "docs", "zudo-doc"),
+      "unreleased.mdx",
+    );
+    const releaseBefore = readFileSync(releasePath, "utf-8");
+    const unreleasedBefore = readFileSync(unreleasedPath, "utf-8");
+
+    runHelper(root);
+
+    expect(readFileSync(releasePath, "utf-8")).toBe(releaseBefore);
+    expect(readFileSync(unreleasedPath, "utf-8")).toBe(unreleasedBefore);
+  });
+
+  it("fails loudly when a release sibling has a malformed sidebar_position", () => {
+    const root = makeRoot();
+    seedRelease(
+      root,
+      "docs",
+      "zudo-doc",
+      "5.9.0",
+      "---\ntitle: 5.9.0\nsidebar_position: not-a-number\n---\n\nbody\n",
+    );
+
+    expect(() => runHelper(root)).toThrow();
+  });
+
+  it("fails loudly when a release sibling is missing sidebar_position", () => {
+    const root = makeRoot();
+    seedRelease(
+      root,
+      "docs",
+      "zudo-doc",
+      "5.9.0",
+      "---\ntitle: 5.9.0\n---\n\nbody\n",
+    );
+
+    expect(() => runHelper(root)).toThrow();
   });
 
   it("is idempotent when rerun", () => {
@@ -219,10 +366,22 @@ describe("scripts/version-bump.sh temp-root integration", () => {
   it("preserves snapshot behavior inside the fixture tree", () => {
     const root = makeRoot();
     installScriptFixture(root);
-    writeFileSync(seedRelease(root, "docs", "zudo-doc", "marker"), "english\n");
+    // This marker.mdx doubles as a release sibling the new position is
+    // computed from, so it needs a real sidebar_position — the assertions
+    // below still check the exact bytes to confirm the snapshot step copies
+    // it verbatim.
+    const englishMarker = frontmatterContent("marker", 1000).replace(
+      "body for marker",
+      "english",
+    );
+    const japaneseMarker = frontmatterContent("marker", 1000).replace(
+      "body for marker",
+      "japanese",
+    );
+    writeFileSync(seedRelease(root, "docs", "zudo-doc", "marker"), englishMarker);
     writeFileSync(
       seedRelease(root, "docs-ja", "zudo-doc", "marker"),
-      "japanese\n",
+      japaneseMarker,
     );
 
     const stdout = execFileSync(
@@ -236,13 +395,13 @@ describe("scripts/version-bump.sh temp-root integration", () => {
         resolve(root, "src/content/docs-v5.9/changelog/zudo-doc/marker.mdx"),
         "utf-8",
       ),
-    ).toBe("english\n");
+    ).toBe(englishMarker);
     expect(
       readFileSync(
         resolve(root, "src/content/docs-v5.9-ja/changelog/zudo-doc/marker.mdx"),
         "utf-8",
       ),
-    ).toBe("japanese\n");
+    ).toBe(japaneseMarker);
     expect(stdout).toContain("Please add the following entry");
   });
 });
