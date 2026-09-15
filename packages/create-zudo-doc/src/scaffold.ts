@@ -982,25 +982,16 @@ function generatePackageJson(
     // compiles. Same pin as host. Caught by W6B (#1735) consumer-build
     // verification.
     "preact-render-to-string": "^6.6.6",
-    // katex — server-side LaTeX renderer used by the always-on
-    // pages/lib/_math-block.tsx (called from pages/_mdx-components.ts
-    // for `$…$` and `$$…$$` math nodes). Caught by W6B (#1735)
-    // consumer-build verification — the import lives in the mirrored
-    // pages, not behind any feature gate. Same pin as host.
-    katex: "^0.16.38",
-    // diff — required at build time by EVERY generated project, not just
-    // docHistory ones. The always-copied host base template
-    // `pages/lib/_doc-history-area.tsx` statically imports the real
-    // `DocHistory` from `@takazudo/zudo-doc/doc-history` (to keep zfb's island
-    // scanner chain page→stub→DocHistory walkable), which pulls
-    // `@takazudo/zudo-doc/dist/doc-history/index.js`'s `await import("diff")`
-    // into the bundle. With packageOwnedRoutes default ON (1.0), a
-    // docHistory-off project still bundles that path, so without `diff` here
-    // `zfb build` fails at esbuild with "Could not resolve 'diff'" (#2342).
-    // `diff` is an *optional* peerDependency of @takazudo/zudo-doc, so a
-    // missing copy produces no `pnpm install` warning — which is why this gap
-    // shipped silently and only surfaced at build time.
-    diff: "^8.0.3",
+    // katex is intentionally ABSENT here. `math` is not a create-zudo-doc
+    // feature (it defaults to `false` in DEFAULT_SETTINGS) and
+    // @takazudo/zudo-doc now loads katex via a rejection-handled dynamic
+    // import that stays non-build-fatal when the package is absent (#4206 /
+    // #4209). A project that turns `math: true` on by hand must
+    // `pnpm add katex` itself — see the math-equations doc.
+    // diff is likewise intentionally ABSENT from this unconditional block —
+    // it is added below, gated on the docHistory feature, for the same
+    // #4206 / #4209 reason: the doc-history route's `import("diff")` is now
+    // rejection-handled instead of build-fatal when docHistory is off.
     // (@takazudo/zdtp is NOT here — it is gated on the designTokenPanel
     // feature, see the block below. It WAS unconditional from #2660 through
     // #4018: `chrome/derive.tsx`'s `deriveBodyEndIslands` statically imports
@@ -1045,6 +1036,18 @@ function generatePackageJson(
   // search-widget script (custom word-match scorer) — no third-party search
   // engine dependency is needed here. Do not re-add minisearch/pagefind.
 
+  if (choices.features.includes("docHistory")) {
+    // diff powers the History dropdown's Compare view
+    // (`@takazudo/zudo-doc/doc-history`'s `await import("diff")`). #4209 made
+    // that import rejection-handled, so a docHistory-OFF project no longer
+    // needs the dep at all — including bodyFootUtil-only projects, since
+    // scaffold() already normalizes bodyFootUtil into docHistory before this
+    // function runs (see the co-enable block near the top of scaffold()).
+    // assetViewer alone does not reach this import and must not carry it
+    // (#4206 / #4209; it was an unconditional base dep before this fix).
+    deps.diff = "^8.0.3";
+  }
+
   if (choices.features.includes("designTokenPanel")) {
     // Only the design-token-panel feature graph reaches @takazudo/zdtp: the
     // panel payload loads through a rejection-handled `import("@takazudo/zdtp")`
@@ -1059,9 +1062,9 @@ function generatePackageJson(
     choices.features.includes("docHistory") ||
     choices.features.includes("assetViewer")
   ) {
-    // (`diff` remains an unconditional base dep — see the `deps` block above:
-    // packageOwnedRoutes always bundles the doc-history-area path, whose
-    // module-scope `diff` import is pulled in regardless of this flag. #2342.)
+    // (`diff` is gated separately, on docHistory alone — see the block just
+    // above this one. assetViewer does not reach the Compare view's
+    // `import("diff")`, so it must not add the dep on its own; #4206 / #4209.)
     //
     // @takazudo/zudo-doc-history-server is gated HERE because docHistory and
     // assetViewer are the only feature graphs that reach it. The doc-history

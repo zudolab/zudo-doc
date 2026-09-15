@@ -4,7 +4,13 @@ description: MathBlock JSXコンポーネントを使用した KaTeX 数式サ�
 sidebar_position: 5
 ---
 
-設定で `math` が有効になっている場合（デフォルト：`true`）、`<MathBlock>` JSX コンポーネントを使用して KaTeX で数式をレンダリングできます。
+設定で `math` が有効になっている場合（デフォルト：`false`）、`<MathBlock>` JSX コンポーネントを使用して KaTeX で数式をレンダリングできます。
+
+<Note>
+
+`math: true` にするにはオプショナルピア `katex` のインストールが必要です（`pnpm add katex`）— `create-zudo-doc` は自動で追加しません。オプショナルピアの契約全体（数式には `katex`、[ドキュメント履歴](../guides/doc-history.mdx)には `diff`）については、[設定 — math](../guides/configuration.mdx#content-and-i18n-math) を参照してください。
+
+</Note>
 
 <Info>
 
@@ -40,7 +46,7 @@ sidebar_position: 5
 export default defineConfig(
   zudoDoc({
     // ...
-    math: true, // デフォルトで有効
+    math: true, // デフォルトでは無効。加えて `pnpm add katex` が必要
   }),
 );
 ```
