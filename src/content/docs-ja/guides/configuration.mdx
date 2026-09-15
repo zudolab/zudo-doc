@@ -629,7 +629,7 @@ KaTeX 数式レンダリング（`$…$`、`$$…$$`、フェンス `math`）を
 
 デフォルト: `false`
 
-`math: true` にはオプショナルピア依存の `katex` のインストールが必要です（`pnpm add katex`）— `create-zudo-doc` は自動で追加せず、新規 scaffold の `package.json` には含まれません。`katex` は `@takazudo/zudo-doc` のオプショナルピアです。インストールしなくてもビルドは通りますが、実行時に `<MathBlock>` のレンダリングが例外を投げます。コンポーネントについては[数式](../components/math-equations.mdx)を参照してください。`docHistory` の Compare ビューも `diff` について同様の契約を持ちます — 下記の[docHistory](#site-settings-dochistory)を参照してください。
+`math: true` にはオプショナルピア依存の `katex` のインストールが必要です（`pnpm add katex`）— `create-zudo-doc` は自動で追加せず、新規 scaffold の `package.json` には含まれません。`katex` は `@takazudo/zudo-doc` のオプショナルピアです。インストールしなくてもビルドは通りますが、実行時に `<MathBlock>` のレンダリングが例外を投げます。コンポーネントについては[数式](../components/math-equations.mdx)を参照してください。`docHistory` の Compare ビューも `diff` について同様の契約を持ちます — 下記の[docHistory](#サイト設定-dochistory)を参照してください。
 
 ### cjkFriendly
 
@@ -814,7 +814,7 @@ body-end islands に `FindInPageInit` アイランド（Cmd/Ctrl+F 検索バー�
 
 </Note>
 
-履歴ドロップダウンの Compare ビューにはオプショナルピア依存の `diff` が必要です。ビルド自体には不要です。`create-zudo-doc` は `docHistory` が選択されたとき — 直接選択された場合と、`docHistory` を強制的に有効化する `bodyFootUtilArea` 経由の場合の両方で — `package.json` に `diff` を自動的に追加します。`diff` は `@takazudo/zudo-doc` のオプショナルピアなので、ジェネレーターを介さず `zfb.config.ts` で手動により `docHistory` を有効化したプロジェクトは、自分で `pnpm add diff` する必要があります。`katex` との対応する契約については上記の[`math`](#content-and-i18n-math)を参照してください。
+履歴ドロップダウンの Compare ビューにはオプショナルピア依存の `diff` が必要です。ビルド自体には不要です。`create-zudo-doc` は `docHistory` が選択されたとき — 直接選択された場合と、`docHistory` を強制的に有効化する `bodyFootUtilArea` 経由の場合の両方で — `package.json` に `diff` を自動的に追加します。`diff` は `@takazudo/zudo-doc` のオプショナルピアなので、ジェネレーターを介さず `zfb.config.ts` で手動により `docHistory` を有効化したプロジェクトは、自分で `pnpm add diff` する必要があります。`katex` との対応する契約については上記の[`math`](#コンテンツと-i18n-math)を参照してください。
 
 [ドキュメント履歴ガイド](./doc-history.mdx)を参照してください。
 
