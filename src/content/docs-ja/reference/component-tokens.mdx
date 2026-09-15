@@ -63,7 +63,7 @@ zudo-docのトークンは3つの層に整理されており、各層は1つ上�
 | `--zdc-doc-h3-weight` | `heading-h3` | `var(--font-weight-bold)` | Font weight of content `<h3>` headings. |
 | `--zdc-doc-h4-weight` | `heading-h4` | `var(--font-weight-semibold)` | Font weight of content `<h4>` headings. |
 | `--zdc-doc-prose-font` | `doc-prose` | `var(--font-sans)` | Font family of the `.zd-content` prose area. Redefine to use a distinct body font for doc content; headings with `--zdc-doc-*-font: inherit` inherit this value. |
-| `--zdc-doc-link-decoration` | `content-link` | `underline` | Text decoration of styled content links (the `text-accent underline` path in ContentLink; excludes block and hash-link variants). Set to `none` to remove underlines from content links. |
+| `--zdc-doc-link-decoration` | `content-link` | `underline` | Text decoration of prose links only — the `text-accent underline` path in ContentLink (`a.text-accent.underline`); excludes block and hash-link variants and never matches chrome links, including the underlined home hero and footer copyright rows (those are `text-fg`). Set to `none` to remove underlines from prose links. |
 | `--zdc-admonition-radius` | `admonition` | `0 var(--radius-DEFAULT) var(--radius-DEFAULT) 0` | Border radius of admonition/callout blocks. Defaults to the current value (0 on the left edges, `--radius-DEFAULT` on the right — the flush-left accent look). |
 | `--zdc-admonition-border-width` | `admonition` | `4px` | Width of the admonition left accent border. |
 
