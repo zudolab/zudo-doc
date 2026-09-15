@@ -130,7 +130,7 @@ export function AssetLinkedFrom({ asset, label }: { asset: AssetRecord; label: s
     <section class="mt-vsp-lg">
       <h2 class="mb-vsp-xs text-title font-bold">{label}</h2>
       <ul class="space-y-vsp-sm">
-        {asset.linkedFrom.map((link) => <li class="border-l border-muted pl-hsp-md"><p class="text-caption text-muted">{link.crumb}</p><a href={link.href} class="text-accent hover:underline focus-visible:underline">{link.title}</a><p class="text-caption italic text-muted">{link.context}</p></li>)}
+        {asset.linkedFrom.map((link) => <li class="border-l border-muted pl-hsp-md"><p class="text-caption text-muted">{link.crumb}</p><a href={link.href} class="text-fg hover:text-accent focus-visible:text-accent hover:underline focus-visible:underline">{link.title}</a><p class="text-caption italic text-muted">{link.context}</p></li>)}
       </ul>
     </section>
   );
