@@ -43,7 +43,13 @@ const repoRoot = resolve(pkgRoot, "../..");
 // accepted, permanent part of the consumer contract. Each needs a reason.
 const ALLOWED_UNCONDITIONAL_OPTIONAL_PEERS = new Set([
   // #2342 — doc-history's diff viewer; the chrome graph always bundles the
-  // doc-history path, so `diff` resolves regardless of the docHistory setting.
+  // doc-history path, so `diff` is reachable regardless of the docHistory
+  // setting. Since #4209 it is reachable WITHOUT being build-fatal: the only
+  // reach is a rejection-handled `import("diff").then(ok, onRejected)`, which
+  // esbuild leaves as a bare specifier when the package is absent (the #4015
+  // precedent below). Still allowlisted because this guard records dynamic
+  // specifiers too; the build-fatality property is proved by the packed-tarball
+  // OPT-KATEX-DIFF case in route-injection-build.slow.test.ts.
   "diff",
   // #2668 — `chrome/derive`'s `deriveBodyEndIslands` statically imports the real
   // `DesignTokenPanelBootstrap` (so the island auto-mounts with zero host
@@ -62,9 +68,8 @@ const ALLOWED_UNCONDITIONAL_OPTIONAL_PEERS = new Set([
   // alias it to a stub and emit no zdtp chunks.
   //
   // Still allowlisted because this guard's `onResolve` filter is `/.*/` and
-  // records dynamic kinds too, so the specifier shows up here — but unlike
-  // `diff` (unguarded `await import()`) and `katex` (static), it is reachable
-  // WITHOUT being build-fatal: #4015 proved by real build that esbuild tolerates
+  // records dynamic kinds too, so the specifier shows up here — but it is
+  // reachable WITHOUT being build-fatal: #4015 proved by real build that esbuild tolerates
   // an `import(...).catch(...)` whose package is absent, leaving the bare
   // specifier in the output. Deleting this entry would therefore fail the first
   // `it` with `unexpected = ["@takazudo/zdtp"]` while proving nothing; the
@@ -76,8 +81,12 @@ const ALLOWED_UNCONDITIONAL_OPTIONAL_PEERS = new Set([
   // design-token-panel-static-graph.test.ts). `diff` above is precedent for a
   // dynamically-imported-only optional peer staying allowlisted.
   "@takazudo/zdtp",
-  // Reached via `mdx-components → math-block`. Math rendering is settings-gated
-  // but the import is static.
+  // Reached via `mdx-components → math-block`. Since #4209 the reach is a
+  // rejection-handled `import("katex").then(ok, onRejected)` (awaited at module
+  // top level), so it is reachable but no longer build-fatal when absent, like
+  // `@takazudo/zdtp` above; rendering a <MathBlock> without katex throws a clear
+  // error instead. Proved by the packed-tarball OPT-KATEX-DIFF case in
+  // route-injection-build.slow.test.ts.
   "katex",
   // Reached via `html-preview-wrapper → highlight-runtime` for browser-time
   // HTML/CSS/JS highlighting.

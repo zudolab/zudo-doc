@@ -385,7 +385,7 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `tagGovernance` | `TagGovernanceMode` | Tag vocabulary enforcement: `"off"`, `"warn"`, or `"strict"` |
 | `tagVocabulary` | `boolean` | Enable tag vocabulary |
 | `llmsTxt` | `boolean` | Enable llms.txt generation |
-| `math` | `boolean` | Enable KaTeX math rendering |
+| `math` | `boolean` | Enable KaTeX math rendering. Requires the optional peer `katex`; without it the build still succeeds, but rendering a `<MathBlock>` throws |
 | `cjkFriendly` | `boolean` | Enable CJK-friendly typography |
 | `onBrokenMarkdownLinks` | `"warn" \| "error" \| "ignore"` | Severity for broken markdown links and site-absolute raw `<img src>` references: `warn` reports, `error` fails the build, and `ignore` skips checking. `srcset` is not checked. |
 | `aiAssistant` | `boolean` | Enable AI chat assistant |
@@ -401,7 +401,7 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `imageEnlarge` | `boolean` | Enable image enlarge on click |
 | `dynamicPageTransition` | `boolean` | Enable View Transitions API |
 | `frontmatterPreview` | `FrontmatterPreviewConfig \| false` | Frontmatter preview panel config |
-| `docHistory` | `boolean` | Enable git-based doc metadata generation and, unless `docHistoryUi` is false, the history dropdown |
+| `docHistory` | `boolean` | Enable git-based doc metadata generation and, unless `docHistoryUi` is false, the history dropdown. The dropdown's Compare view requires the optional peer `diff`; the build does not |
 | `docHistoryUi` | `boolean` | Enable the doc history dropdown UI, history JSON, and dev proxy while retaining the preBuild dates manifest; defaults to `true`. When `false`, `DOC_HISTORY_SKIP_POSTBUILD` is redundant and a host's separate CI `build-history` job should be removed. |
 | `assetViewerIndexing` | `AssetViewerIndexingConfig \| false` | Independently opt in generated asset-viewer pages to search, llms.txt, or sitemap output; defaults to `false`, and omitted subkeys are off |
 | `bodyFootUtilArea` | `BodyFootUtilAreaConfig \| false` | Body footer utility area config |

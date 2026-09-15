@@ -39,6 +39,12 @@ export default defineConfig(
 
 この機能はビルドを高速に保つため、**デフォルトでは無効**です。
 
+<Note>
+
+Compare ビューの行単位 diff 表示にはオプショナルピア依存の `diff` が必要です。`create-zudo-doc` は `docHistory` が選択されたとき — 直接選択された場合と、`docHistory` を強制的に有効化する `bodyFootUtilArea` 経由の場合の両方で — `package.json` に `diff` を自動的に追加します。ジェネレーターを介さず既存プロジェクトで手動により `docHistory` を有効化した場合は、自分で `pnpm add diff` を実行してください。オプショナルピアの契約全体（`math` の `katex` 要件と対応します）については、[設定 — docHistory](./configuration.mdx#サイト設定-dochistory) を参照してください。
+
+</Note>
+
 ## 日付だけを表示する
 
 履歴ビューアを使わずにgit由来のメタデータを表示するには、`zfb.config.ts`を手動で編集します。`docHistoryUi`と`docMetainfoFields`に新しいCLIフラグはありません。

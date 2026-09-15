@@ -4,7 +4,13 @@ description: KaTeX math equation support using the MathBlock JSX component.
 sidebar_position: 5
 ---
 
-When `math` is enabled in settings (default: `true`), you can render mathematical equations using KaTeX via the `<MathBlock>` JSX component.
+When `math` is enabled in settings (default: `false`), you can render mathematical equations using KaTeX via the `<MathBlock>` JSX component.
+
+<Note>
+
+`math: true` requires installing the optional peer `katex` (`pnpm add katex`) — `create-zudo-doc` does not add it for you. See [Configuration — math](../guides/configuration.mdx#content-and-i18n-math) for the full optional-peer contract (`katex` for math, `diff` for [Document History](../guides/doc-history.mdx)).
+
+</Note>
 
 <Info>
 
@@ -40,7 +46,7 @@ Math support is controlled by the `math` field in `zfb.config.ts`:
 export default defineConfig(
   zudoDoc({
     // ...
-    math: true, // enabled by default
+    math: true, // disabled by default; also `pnpm add katex`
   }),
 );
 ```

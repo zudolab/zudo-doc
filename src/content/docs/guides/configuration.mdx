@@ -633,6 +633,8 @@ Enable KaTeX math rendering (`$…$`, `$$…$$`, fenced `math`).
 
 Default: `false`
 
+`math: true` requires installing the optional peer dependency `katex` (`pnpm add katex`) — `create-zudo-doc` does not add it for you, and it is absent from a fresh scaffold's `package.json`. `katex` is an optional peer of `@takazudo/zudo-doc`: the build stays green without it, but rendering a `<MathBlock>` throws at request time. See [Math Equations](../components/math-equations.mdx) for the component. `docHistory`'s Compare view has the matching contract with `diff` — see [docHistory](#site-settings-dochistory) below.
+
 ### cjkFriendly
 
 Enable zfb's CJK-friendly line-break / emphasis handling.
@@ -815,6 +817,8 @@ Default: `false`
 Fresh scaffolds wire the real scanner-reachable `DocHistory` island into every generated document-route shape when this feature is selected. No `chromeBindingsModule` or route edit is required for the history button itself.
 
 </Note>
+
+The history dropdown's Compare view requires the optional peer dependency `diff`; the build itself does not. `create-zudo-doc` adds `diff` to `package.json` automatically whenever `docHistory` is selected — directly, or indirectly through `bodyFootUtilArea`, which forces `docHistory` on. `diff` is an optional peer of `@takazudo/zudo-doc`, so a project that enables `docHistory` by hand in `zfb.config.ts` (without going through the generator) must `pnpm add diff` itself. See [`math`](#content-and-i18n-math) above for the matching contract with `katex`.
 
 See the [Document History guide](./doc-history.mdx).
 
