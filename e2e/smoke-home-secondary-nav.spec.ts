@@ -2,8 +2,8 @@ import { test, expect } from "@playwright/test";
 
 /**
  * Coverage for `siteTreeNavSecondary` (epic zudolab/zudo-doc#4235, integration
- * confirm sub #4244). The smoke fixture sets `siteTreeNavSecondary: ["guides"]`
- * (`e2e/fixtures/smoke/src/config/settings.ts`), which moves the real "guides"
+ * confirm sub #4244). The smoke fixture sets `siteTreeNavSecondary: ["changelog"]`
+ * (`e2e/fixtures/smoke/src/config/settings.ts`), which moves the real "changelog"
  * top-level category out of the home-page `SiteTreeNav` grid and into the
  * `[data-home-secondary-nav]` row (`packages/zudo-doc/src/home-page/index.tsx`).
  *
@@ -18,20 +18,20 @@ test.describe("home secondary nav (siteTreeNavSecondary)", () => {
     const secondaryNav = page.locator("[data-home-secondary-nav]");
     await expect(secondaryNav).toBeVisible();
 
-    const secondaryLink = secondaryNav.getByRole("link", { name: "Guides" });
+    const secondaryLink = secondaryNav.getByRole("link", { name: "Changelog" });
     await expect(secondaryLink).toBeVisible();
     const href = await secondaryLink.getAttribute("href");
     expect(href, "secondary-nav link must carry a real href").toBeTruthy();
-    expect(href).toMatch(/\/docs\/guides\/?$/);
+    expect(href).toMatch(/\/docs\/changelog\/?$/);
 
-    // The grid must no longer list "guides" as a top-level category.
+    // The grid must no longer list "changelog" as a top-level category.
     const grid = page.locator("[data-site-nav]");
     await expect(grid).toBeVisible();
-    await expect(grid.getByRole("link", { name: "Guides", exact: true })).toHaveCount(0);
+    await expect(grid.getByRole("link", { name: "Changelog", exact: true })).toHaveCount(0);
 
     // The link is a real, working navigation, not a dead href.
     await secondaryLink.click();
-    await expect(page).toHaveURL(/\/docs\/guides\/?$/);
-    await expect(page.locator("h1")).toContainText("Guides");
+    await expect(page).toHaveURL(/\/docs\/changelog\/?$/);
+    await expect(page.locator("h1")).toContainText("Changelog");
   });
 });
