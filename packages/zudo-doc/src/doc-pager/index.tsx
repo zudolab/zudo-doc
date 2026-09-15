@@ -69,7 +69,7 @@ export function createDocPager<S extends Settings = Settings>(
               <ChevronLeft className="h-[1.125rem] w-[1.125rem]" />
               <span class="no-underline">{t("nav.previous", locale)}</span>
             </div>
-            <p class="text-small font-semibold underline group-hover:text-accent">
+            <p class="text-small font-semibold text-fg group-hover:text-accent group-hover:underline group-focus-visible:text-accent group-focus-visible:underline">
               {prev.label}
             </p>
             {prev.date && (
@@ -90,7 +90,7 @@ export function createDocPager<S extends Settings = Settings>(
               <span class="no-underline">{t("nav.next", locale)}</span>
               <ChevronRight className="h-[1.125rem] w-[1.125rem]" />
             </div>
-            <p class="text-small font-semibold underline group-hover:text-accent">
+            <p class="text-small font-semibold text-fg group-hover:text-accent group-hover:underline group-focus-visible:text-accent group-focus-visible:underline">
               {next.label}
             </p>
             {next.date && (

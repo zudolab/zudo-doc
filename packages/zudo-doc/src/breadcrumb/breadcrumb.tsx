@@ -167,7 +167,7 @@ export function Breadcrumb(props: BreadcrumbProps): VNode | null {
             {item.href ? (
               <a
                 href={item.href}
-                class="text-muted underline hover:text-fg flex items-center gap-x-hsp-2xs"
+                class="text-muted hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline flex items-center gap-x-hsp-2xs"
               >
                 {i === 0 && <HomeIcon />}
                 <SmartLabel label={item.label} />
