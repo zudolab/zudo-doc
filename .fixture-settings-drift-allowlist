@@ -227,3 +227,12 @@ i18n:siteTreeNavIgnore
 theme:siteTreeNavIgnore
 smoke:siteTreeNavIgnore
 versioning:siteTreeNavIgnore
+
+# ── siteTreeNavSecondary ──────────────────────────────────────────────────────
+# reason: no e2e fixture has changelog/, claude/ or codex/ categories, so the
+#         setting is not exercised; fixtures keep the package default []
+sidebar:siteTreeNavSecondary
+i18n:siteTreeNavSecondary
+theme:siteTreeNavSecondary
+smoke:siteTreeNavSecondary
+versioning:siteTreeNavSecondary

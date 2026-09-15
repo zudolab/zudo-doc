@@ -174,6 +174,7 @@ export const DEFAULT_SETTINGS: Settings = {
   trailingSlash: false,
   home: { wide: false, introMarkdown: "", sitemapHeading: "" },
   siteTreeNavIgnore: [],
+  siteTreeNavSecondary: [],
   minifyHtml: true,
   docsDir: "src/content/docs",
   entryDocSlug: "getting-started",
@@ -328,6 +329,16 @@ export interface ZudoDocConfig {
    * @default []
    */
   siteTreeNavIgnore?: string[];
+  /**
+   * Top-level category slugs moved OUT of the package-owned home-page category
+   * grid on `/` and locale homes and rendered instead as one row of small
+   * links directly under the grid, in this list's order. Home page only — the
+   * `<SiteTreeNav />` MDX tag is unchanged. Slugs absent from the tree are
+   * skipped, `siteTreeNavIgnore` wins over this list, and a category with no
+   * page of its own stays in the grid.
+   * @default []
+   */
+  siteTreeNavSecondary?: string[];
   /**
    * Minify production HTML output from `zfb build`.
    * @default true

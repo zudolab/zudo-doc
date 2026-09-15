@@ -59,6 +59,50 @@ function HomeSectionHeading({ children }: { children: ComponentChildren }) {
   return <h2 class={`${HOME_SECTION_HEADING_CLASS} mb-vsp-md`}>{children}</h2>;
 }
 
+/** Small "double-chevron + label" link shared by the secondary category row
+ *  and the "See all tags" / legacy "All Tags" links (epic #4235). */
+function HomeMetaLink({ href, children }: { href: string; children: ComponentChildren }) {
+  return (
+    <a
+      href={href}
+      class="group inline-flex items-center gap-hsp-xs text-small text-fg hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline"
+    >
+      <CategoryLinkIcon className="w-icon-sm text-muted group-hover:text-accent group-focus-visible:text-accent" />
+      <span>{children}</span>
+    </a>
+  );
+}
+
+/**
+ * Top-level `tree` nodes listed in `siteTreeNavSecondary`, in the setting's
+ * order. Unknown, duplicate, and ignored slugs are skipped; a node without an
+ * `href` (a category with no page of its own) is left in the grid.
+ */
+function selectSecondaryNodes(
+  tree: DocNavNode[],
+  secondary: string[],
+  categoryIgnore: string[],
+): Array<DocNavNode & { href: string }> {
+  const moved: Array<DocNavNode & { href: string }> = [];
+  const seen = new Set<string>(categoryIgnore);
+  for (const slug of secondary) {
+    if (seen.has(slug)) continue;
+    seen.add(slug);
+    const node = tree.find((n) => n.slug === slug);
+    if (!node) continue;
+    if (!node.href) {
+      if (typeof process !== "undefined" && process.env?.NODE_ENV !== "production") {
+        console.warn(
+          `[zudo-doc] siteTreeNavSecondary: category "${slug}" has no page (href) — left in the grid`,
+        );
+      }
+      continue;
+    }
+    moved.push(node as DocNavNode & { href: string });
+  }
+  return moved;
+}
+
 /**
  * Serialize a URL as a quoted CSS `url()` token. The `logo` setting accepts an
  * arbitrary user-supplied path, and an unquoted `url()` breaks on characters
@@ -155,6 +199,7 @@ export function createHomePageView<S extends Settings = Settings>(
   const settings = ctx.settings;
   const dateFormatsFor = deriveDateFormats(ctx);
   const categoryIgnore = settings.siteTreeNavIgnore ?? [];
+  const secondary = settings.siteTreeNavSecondary ?? [];
   const t = ctx.t;
   const withBase = ctx.withBase;
   const defaultLocale = ctx.defaultLocale;
@@ -215,6 +260,7 @@ export function createHomePageView<S extends Settings = Settings>(
     // exclude them here — otherwise a "/" separator would render for content
     // that never actually appears in the row.
     const hasExtras = resolvedExtras != null && typeof resolvedExtras !== "boolean";
+    const movedNodes = selectSecondaryNodes(tree, secondary, categoryIgnore);
     // Row items rendered `/`-separated — building an explicit list (instead
     // of each item hard-coding its own trailing/leading separator) is what
     // keeps the separator count correct regardless of which combination of
@@ -320,7 +366,7 @@ export function createHomePageView<S extends Settings = Settings>(
               <SiteTreeNav
                 tree={tree as unknown as SidebarNavNode[]}
                 categoryOrder={categoryOrder}
-                categoryIgnore={categoryIgnore}
+                categoryIgnore={[...categoryIgnore, ...movedNodes.map((n) => n.slug)]}
                 initiallyCollapsedCategorySlugs={initiallyCollapsedCategorySlugs}
                 locale={locale}
                 updatedLabel={t("doc.updated", locale)}
@@ -328,6 +374,20 @@ export function createHomePageView<S extends Settings = Settings>(
               />
             ),
           }) as unknown as VNode}
+
+          {movedNodes.length > 0 && (
+            <nav
+              aria-label={t("home.secondaryNav", locale)}
+              data-home-secondary-nav
+              class="mt-vsp-md flex flex-wrap items-center gap-x-hsp-xl gap-y-vsp-xs"
+            >
+              {movedNodes.map((n) => (
+                <HomeMetaLink key={n.slug} href={n.href}>
+                  {n.label}
+                </HomeMetaLink>
+              ))}
+            </nav>
+          )}
         </section>
 
         {settings.docTags && tagCount > 0 && (
@@ -353,13 +413,9 @@ export function createHomePageView<S extends Settings = Settings>(
                     </div>
                   )}
                   <div class="mt-vsp-md">
-                    <a
-                      href={withBase(`${prefix}/docs/tags`)}
-                      class="group inline-flex items-center gap-hsp-xs text-accent hover:underline"
-                    >
-                      <CategoryLinkIcon className="w-icon-sm text-accent" />
-                      <span>{t("doc.seeAllTags", locale)}</span>
-                    </a>
+                    <HomeMetaLink href={withBase(`${prefix}/docs/tags`)}>
+                      {t("doc.seeAllTags", locale)}
+                    </HomeMetaLink>
                   </div>
                 </>
               ) : (
@@ -368,12 +424,9 @@ export function createHomePageView<S extends Settings = Settings>(
                 // `@takazudo/zudo-doc/home-page` consumers are unaffected.
                 <>
                   <HomeSectionHeading>{t("doc.allTags", locale)}</HomeSectionHeading>
-                  <a
-                    href={withBase(`${prefix}/docs/tags`)}
-                    class="text-accent underline hover:text-accent-hover"
-                  >
+                  <HomeMetaLink href={withBase(`${prefix}/docs/tags`)}>
                     {t("doc.allTags", locale)}
-                  </a>
+                  </HomeMetaLink>
                 </>
               )}
             </section>
