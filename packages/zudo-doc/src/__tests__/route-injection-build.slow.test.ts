@@ -2346,12 +2346,12 @@ describe("OPT-KATEX-DIFF no-katex-diff: the published package builds with the op
     const mathBlock = readFileSync(join(pkgDest, "dist/math-block/index.js"), "utf-8");
     expect(mathBlock, "math-block must not import katex statically").not.toMatch(/from\s*["']katex["']/);
     expect(mathBlock, "math-block must load katex via import(\"katex\").then(ok, onRejected)").toMatch(
-      /import\("katex"\)\.then\(\s*[\s\S]*?,\s*\(\)\s*=>/,
+      /import\("katex"\)\.then\([^;]*?,\s*\(\)\s*=>/,
     );
     const docHistory = readFileSync(join(pkgDest, "dist/doc-history/index.js"), "utf-8");
     expect(docHistory, "doc-history must not import diff statically").not.toMatch(/from\s*["']diff["']/);
     expect(docHistory, "doc-history must load diff via import(\"diff\").then(ok, onRejected)").toMatch(
-      /import\("diff"\)\.then\(\s*[\s\S]*?,\s*\(\)\s*=>/,
+      /import\("diff"\)\.then\([^;]*?,\s*\(\)\s*=>/,
     );
   });
 
