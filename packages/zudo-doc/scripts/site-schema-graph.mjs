@@ -1,14 +1,19 @@
 // scripts/site-schema-graph.mjs
 //
-// The browser-safety detector shared by the two `site-schema` guards
-// (zudolab/zudo-doc#3395):
+// The browser-safety detector shared by the `site-schema` guards
+// (zudolab/zudo-doc#3395) and, since #4225, by the asset-viewer zfb-free
+// guards (which reuse the same helper with a different forbidden-rule set —
+// see `FORBIDDEN_SPECIFIERS` vs `ASSET_VIEWER_FORBIDDEN_SPECIFIERS` below):
 //   - `scripts/check-site-schema.mjs` (prepack) runs it over `dist/site-schema/index.js`
 //   - `src/__tests__/site-schema.test.ts` runs it over `src/site-schema/index.ts`
+//   - `scripts/check-asset-viewer-exports.mjs` (prepack) runs it over the
+//     built `asset-page`/`asset-index-page` zfb-free subpaths
+//   - `src/__tests__/asset-viewer-zfb-free.test.ts` runs it over their source
 //
 // It bundles the entry with esbuild `platform: "neutral"` — the same mode zfb
 // evaluates config modules in (`loader.rs:277`) and the closest stand-in for a
 // browser bundler — and records every bare specifier reached along the way.
-// Anything matching FORBIDDEN_SPECIFIERS is a violation.
+// Anything matching the caller's forbidden-rule set is a violation.
 //
 // Recording at RESOLVE time (rather than grepping the emitted bundle) is what
 // makes the check total: a forbidden dependency is caught whether it resolves,
@@ -27,9 +32,35 @@ export const FORBIDDEN_SPECIFIERS = [
   { pattern: /\.css$/, label: "stylesheet" },
 ];
 
-/** The forbidden class a specifier belongs to, or `undefined` when it is fine. */
-export function forbiddenLabel(specifier) {
-  return FORBIDDEN_SPECIFIERS.find((rule) => rule.pattern.test(specifier))?.label;
+/**
+ * Specifier classes that must never be reachable from the asset-viewer
+ * zfb-free subpaths (`./asset-page/{body,components,script,shared}`,
+ * `./asset-index-page/{body,tree,script}`) — zudolab/zudo-doc#4225.
+ *
+ * Deliberately narrower than `FORBIDDEN_SPECIFIERS`: `preact` is ALLOWED
+ * (these modules render Preact JSX), and it adds a rule for the two
+ * chrome/layout directories a zfb-free body module must never import
+ * directly (`doclayout/` wraps `<DocLayoutWithDefaults>`; `chrome/` derives
+ * from a `ChromeContext` — both are the zfb-bound factory layer these
+ * modules exist to be usable without).
+ */
+export const ASSET_VIEWER_FORBIDDEN_SPECIFIERS = [
+  { pattern: /^node:/, label: "node builtin" },
+  { pattern: /^@takazudo\/zfb/, label: "zfb engine package" },
+  { pattern: /^virtual:/, label: "zfb virtual module" },
+  { pattern: /(^|\/)doclayout\//, label: "doclayout module" },
+  { pattern: /(^|\/)chrome\//, label: "chrome module" },
+];
+
+/**
+ * The forbidden class a specifier belongs to, or `undefined` when it is fine.
+ *
+ * @param {string} specifier
+ * @param {Array<{ pattern: RegExp, label: string }>} [rules] - defaults to
+ *   `FORBIDDEN_SPECIFIERS` so every pre-#4225 caller is unaffected.
+ */
+export function forbiddenLabel(specifier, rules = FORBIDDEN_SPECIFIERS) {
+  return rules.find((rule) => rule.pattern.test(specifier))?.label;
 }
 
 /** Every `from "..."` specifier in a declaration file. */
@@ -55,9 +86,11 @@ export function resolveDeclaration(fromFile, specifier) {
  * forbidden package/specifier classes using the same rules as the JS guard.
  *
  * @param {string} entry - absolute path to an emitted `.d.ts` file.
+ * @param {Array<{ pattern: RegExp, label: string }>} [rules] - defaults to
+ *   `FORBIDDEN_SPECIFIERS`.
  * @returns {{ violations: Array<{ specifier: string, label: string, importer: string }>, files: string[] }}
  */
-export function analyzeDeclarationGraph(entry) {
+export function analyzeDeclarationGraph(entry, rules = FORBIDDEN_SPECIFIERS) {
   const seen = new Set();
   const violations = [];
   const queue = [entry];
@@ -68,7 +101,7 @@ export function analyzeDeclarationGraph(entry) {
     seen.add(file);
 
     for (const specifier of declarationSpecifiers(readFileSync(file, "utf8"))) {
-      const label = forbiddenLabel(specifier);
+      const label = forbiddenLabel(specifier, rules);
       if (label) {
         violations.push({ specifier, label, importer: file });
         continue;
@@ -109,9 +142,11 @@ export async function loadEsbuild(fromPaths) {
  * @param {object} args
  * @param {string} args.entry - absolute path to the entry module (.ts or .js).
  * @param {string[]} args.resolveFrom - roots used to locate esbuild.
+ * @param {Array<{ pattern: RegExp, label: string }>} [args.rules] - defaults
+ *   to `FORBIDDEN_SPECIFIERS`.
  * @returns {Promise<{ violations: Array<{ specifier: string, label: string, importer: string }>, specifiers: string[] }>}
  */
-export async function analyzeSiteSchemaGraph({ entry, resolveFrom }) {
+export async function analyzeSiteSchemaGraph({ entry, resolveFrom, rules = FORBIDDEN_SPECIFIERS }) {
   const esbuild = await loadEsbuild(resolveFrom);
 
   /** @type {Map<string, { specifier: string, label: string, importer: string }>} */
@@ -124,7 +159,7 @@ export async function analyzeSiteSchemaGraph({ entry, resolveFrom }) {
       build.onResolve({ filter: /.*/ }, (args) => {
         if (args.kind === "entry-point") return null;
         specifiers.add(args.path);
-        const label = forbiddenLabel(args.path);
+        const label = forbiddenLabel(args.path, rules);
         if (!label) return null;
         if (!violations.has(args.path)) {
           violations.set(args.path, { specifier: args.path, label, importer: args.importer });
