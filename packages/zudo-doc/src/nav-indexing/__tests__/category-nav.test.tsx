@@ -78,4 +78,20 @@ describe("CategoryNav", () => {
     const html = serialize(CategoryNav({ children: [child], class: "mt-8" }));
     expect(html).toContain("mt-8");
   });
+
+  it("renders the title with text-fg and group-hover:text-accent classes", () => {
+    const child = makeNode("Getting Started", "/docs/getting-started/");
+    const html = serialize(CategoryNav({ children: [child] }));
+    expect(html).toContain("text-fg");
+    expect(html).toContain("group-hover:text-accent");
+    expect(html).toContain("group-focus-visible:text-accent");
+  });
+
+  it("does not render a bare text-accent class anywhere", () => {
+    const child = makeNode("Guide", "/docs/guide/", {
+      description: "A helpful guide",
+    });
+    const html = serialize(CategoryNav({ children: [child] }));
+    expect(html).not.toMatch(/(?<![\w:-])text-accent\b/);
+  });
 });
