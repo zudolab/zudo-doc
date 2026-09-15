@@ -9,6 +9,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 ## Features
 
 - Added an optional `sidebarNodes` prop to `HeaderWithDefaultsProps`, letting a host override the mobile-drawer sidebar tree per render (as a fixed array or a callback with a lazy `buildDefault()`) without replacing the whole `Header` chrome component.
+- Added zfb-free asset-viewer subpaths — `./asset-page/{body,components,script}`, `./asset-index-page`, and `./asset-index-page/{body,tree,script}` — so `AssetPageBody` / `AssetIndexPageBody` and their `resolveAsset*Labels(t, locale)` helpers can be imported and rendered without a `ChromeContext` or any `@takazudo/zfb*` package. `./asset-page` and `./asset-index-page` remain the zfb-bound factories; neither body provides `DocLayout`, so the caller owns the outer page shell.
 
 ## [5.24.2] - 2026-09-15
 

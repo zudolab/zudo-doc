@@ -226,6 +226,40 @@ export default defineConfig(
 
 ファイルの追加や整理を繰り返す間は、ビルドしてから配信する開発モードの `pnpm dev:stable` を使うこともできます。
 
+## zfb を使わずにレンダリングする
+
+`./asset-page` と `./asset-index-page` は zfb に依存したままです。`createAssetPageView(ctx)` と `createAssetIndexPageView(ctx)` はどちらも `ChromeContext` を受け取り、出力を `DocLayoutWithDefaults` でラップするため、zfb ページの内部でのみ動作します。
+
+zfb に依存しないホスト(別のフレームワーク、静的書き出しステップ、プレビューツールなど)向けには、代わりにプレーンな props を受け取るボディモジュールをインポートしてください。これらは `ChromeContext` を必要とせず、`@takazudo/zfb*` パッケージを一切取り込みません。
+
+```tsx title="render-asset-page.tsx"
+import { AssetPageBody, resolveAssetPageLabels, renderAssetDetailsPrepaintScript } from "@takazudo/zudo-doc/asset-page/body";
+import { AssetIndexPageBody, resolveAssetIndexPageLabels } from "@takazudo/zudo-doc/asset-index-page/body";
+
+// Resolve labels ahead of time from your own translator + locale.
+const pageLabels = resolveAssetPageLabels(t, locale);
+const indexLabels = resolveAssetIndexPageLabels(t, locale);
+
+// Render a single asset's viewer body.
+<AssetPageBody entry={asset} locale={locale} rawUrl={rawUrl} labels={pageLabels} showViewSource={false} />;
+
+// Render the directory-tree index body.
+<AssetIndexPageBody entries={entries} labels={indexLabels} base="/" routePrefix="files" dir="assets" />;
+```
+
+どちらのボディも、ビューアーの内容だけをレンダリングします — ヘッダー、アクション、ステージ/詳細のグリッド(インデックスの場合はディレクトリツリー)、そしてそれぞれ自身のインラインブートストラップ `<script>` です。どちらも `DocLayout` を提供しません。外側のページシェル — コンテンツのタイポグラフィを与える `.zd-content` ラッパー、`<html>`/`<head>`/`<body>` の構造、ヘッダー/サイドバー/フッターなどのクローム — は呼び出し側が用意します。
+
+`AssetPageBody` を使う場合は、もう一つページの `<head>` に配置すべきマークアップがあります。それは詳細サイドレールのプリペイントスクリプトで、保存済みの開閉状態を最初の描画より前に復元し、再読み込み時に一瞬だけ誤った状態が表示されるのを防ぎます。これは `renderAssetDetailsPrepaintScript()` を呼び出して取得します — このヘルパーは呼び出すごとに新しい `<script>` VNode を返すため、同じインスタンスを複数ページで再利用してはいけません。`<head>` の他の内容より前に置いてください。
+
+```tsx
+<head>
+  {renderAssetDetailsPrepaintScript()}
+  {/* the rest of your <head> content */}
+</head>
+```
+
+`AssetPageBody` と `AssetIndexPageBody` はそれぞれ自身のブートストラップスクリプトを内部に埋め込んでいるため、コピー/折り返しボタン、詳細サイドレールのトグル、インデックスの全展開/全折りたたみといった操作を有効にするために別途インポートする必要はありません。個々のリーフ部品を組み合わせて独自レイアウトを構築する場合にのみ、`./asset-page/components` や `./asset-index-page/tree` を直接インポートしてください。
+
 ## 生成ルートの挙動
 
 個別のアセット閲覧ページはリーフページであり、任意で有効にできるルートプレフィックス直下のページはアセット一覧です。どちらも設定済みの各ロケールに存在し、生成されたドキュメントリンクと一覧リンクはそのロケールを保持します。たとえば、日本語ページからは`/files/.../`ではなく`/ja/files/.../`が開きます。これらのルートは、ドキュメントのサイドバーには掲載されません。検索インデックス、`llms.txt`、サイトマップにもデフォルトでは含まれず、対応する `assetViewerIndexing` のキーを明示的に有効化した場合にだけ追加されます。
