@@ -1455,6 +1455,124 @@ describe("check-links", () => {
         await checkMdxAnchors([docsDir], tmpDir, "/", [], [/\/v\/[^/]+\//]),
       ).toEqual([]);
     });
+
+    // #4218: an escaped `\<` in prose (valid MDX) started a fake tag whose
+    // "quoted" attribute run (prose apostrophes) crossed a real `>` and a
+    // blank line, swallowing the next real element's id.
+    it("does not let an escaped \\< swallow a later static id", async () => {
+      const docsDir = join(tmpDir, "src", "content", "docs");
+      mkdirSync(docsDir, { recursive: true });
+      writeFileSync(
+        join(docsDir, "source.mdx"),
+        "[second](./target.mdx#second)\n[third](./target.mdx#third)",
+      );
+      writeFileSync(
+        join(docsDir, "target.mdx"),
+        [
+          "When a \\<b isn't zero, see the note.",
+          "",
+          '<span id="second">anchor</span>',
+          "",
+          "It's fine.",
+          "",
+          '<span id="third">anchor</span>',
+        ].join("\n"),
+      );
+
+      expect(await checkMdxAnchors([docsDir], tmpDir, "/", [])).toEqual([]);
+    });
+
+    it("treats an odd run of backslashes before < as escaped, an even run as active", async () => {
+      const docsDir = join(tmpDir, "src", "content", "docs");
+      mkdirSync(docsDir, { recursive: true });
+      writeFileSync(
+        join(docsDir, "source.mdx"),
+        [
+          "[a](./one.mdx#a)",
+          "[x](./two.mdx#x)",
+          "[b](./three.mdx#b)",
+        ].join("\n"),
+      );
+      // One backslash: escaped, `\<b id="a">` is not a tag, id "a" absent.
+      writeFileSync(join(docsDir, "one.mdx"), '\\<b id="a">one</b>');
+      // Two backslashes: an escaped backslash followed by an active `<`, so
+      // `\\<span id="x">` is a real tag and "x" is found.
+      writeFileSync(join(docsDir, "two.mdx"), '\\\\<span id="x">two</span>');
+      // Three backslashes: odd again, escaped, id "b" absent.
+      writeFileSync(join(docsDir, "three.mdx"), '\\\\\\<b id="b">three</b>');
+
+      const anchors = await checkMdxAnchors([docsDir], tmpDir, "/", []);
+      expect(anchors.map((a) => a.fragment).sort()).toEqual(["a", "b"]);
+    });
+
+    // Decoy: no backslash is involved here at all — `<b` is an ordinary,
+    // unescaped fake tag start, so the escape-parity fix doesn't touch it.
+    // Its stray apostrophe opens a "quoted" run that would otherwise close
+    // on the next apostrophe (in "It's fine."), swallowing the real
+    // <span id="second"> in between; only the blank-line guard stops the
+    // quote from crossing the blank line to reach that closing apostrophe.
+    it("stops an unescaped fake tag's quoted run at a blank line", async () => {
+      const docsDir = join(tmpDir, "src", "content", "docs");
+      mkdirSync(docsDir, { recursive: true });
+      writeFileSync(
+        join(docsDir, "source.mdx"),
+        "[second](./target.mdx#second)\n[third](./target.mdx#third)",
+      );
+      writeFileSync(
+        join(docsDir, "target.mdx"),
+        [
+          "This is a <b sentence that's zero.",
+          "",
+          '<span id="second">anchor</span>',
+          "",
+          "It's fine.",
+          "",
+          '<span id="third">anchor</span>',
+        ].join("\n"),
+      );
+
+      expect(await checkMdxAnchors([docsDir], tmpDir, "/", [])).toEqual([]);
+    });
+
+    it("still finds a real multi-line JSX tag, including a quoted value spanning one newline", async () => {
+      const docsDir = join(tmpDir, "src", "content", "docs");
+      mkdirSync(docsDir, { recursive: true });
+      writeFileSync(
+        join(docsDir, "source.mdx"),
+        "[multiline](./target.mdx#multiline)\n[spans](./target.mdx#spans)",
+      );
+      writeFileSync(
+        join(docsDir, "target.mdx"),
+        [
+          "<span",
+          '  id="multiline"',
+          ">text</span>",
+          "",
+          '<span title="a\nb" id="spans">text</span>',
+        ].join("\n"),
+      );
+
+      expect(await checkMdxAnchors([docsDir], tmpDir, "/", [])).toEqual([]);
+    });
+
+    it("keeps a static id hidden inside fenced and inline code", async () => {
+      const docsDir = join(tmpDir, "src", "content", "docs");
+      mkdirSync(docsDir, { recursive: true });
+      writeFileSync(join(docsDir, "source.mdx"), "[x](./target.mdx#hidden)");
+      writeFileSync(
+        join(docsDir, "target.mdx"),
+        [
+          "`<div id=\"hidden\" />`",
+          "```",
+          '<div id="hidden" />',
+          "```",
+        ].join("\n"),
+      );
+
+      const anchors = await checkMdxAnchors([docsDir], tmpDir, "/", []);
+      expect(anchors).toHaveLength(1);
+      expect(anchors[0]?.reason).toBe("missing target id");
+    });
   });
 
   describe("readAllowlist", () => {

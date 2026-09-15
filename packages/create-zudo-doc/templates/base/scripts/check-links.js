@@ -663,8 +663,27 @@ function extractStaticMdxIds(body) {
   // (#4048). The rest of this pattern keeps its own semantics — `\bid` also
   // accepts `data-id`, and only non-empty quoted values count, unlike the
   // built-HTML id scan.
+  //
+  // Two extra guards, scoped to this MDX scan only (the shared
+  // HTML_ATTRIBUTE_RUN above is untouched — the built-HTML scans still rely on
+  // multi-line quoted attributes):
+  //
+  // - MDX_UNESCAPED_LT_LOOKBEHIND: an escaped `\<` in prose is valid MDX and
+  //   must not start a fake tag. Parity matters, not just "preceded by a
+  //   backslash" — `\\<` is an escaped backslash followed by an active `<`.
+  //   The lookbehind is anchored at the run's start (`(?<!\\)`) so it judges
+  //   the whole contiguous backslash run, not a suffix of it.
+  // - MDX_ID_ATTRIBUTE_RUN: without this, a fake tag opened by an escaped `<`
+  //   can have prose apostrophes read as a `'...'` quoted value that crosses
+  //   a real `>` and swallows a real element's id on a later line (#4218).
+  //   Disallowing a blank line inside a quoted value bounds the damage to a
+  //   single paragraph while still letting a real JSX tag — including a
+  //   quoted value spanning one newline — match.
+  const MDX_UNESCAPED_LT_LOOKBEHIND = /(?<!(?<!\\)(?:\\\\)*\\)/.source;
+  const MDX_ID_ATTRIBUTE_RUN =
+    /(?:"(?:(?!\r?\n[ \t]*\r?\n)[^"])*"|'(?:(?!\r?\n[ \t]*\r?\n)[^'])*'|[^>"'])/.source;
   const regex = new RegExp(
-    `<[A-Za-z]${HTML_ATTRIBUTE_RUN}*?\\bid\\s*=\\s*(?:"([^"]+)"|'([^']+)')${HTML_ATTRIBUTE_RUN}*>`,
+    `${MDX_UNESCAPED_LT_LOOKBEHIND}<[A-Za-z]${MDX_ID_ATTRIBUTE_RUN}*?\\bid\\s*=\\s*(?:"([^"]+)"|'([^']+)')${MDX_ID_ATTRIBUTE_RUN}*>`,
     "gs",
   );
   let match;
