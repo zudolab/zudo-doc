@@ -1087,6 +1087,41 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // `/docs/getting-started/coverage/`
   // `75e480b2061eead0c58600bf822d08ece3ed481da4088d86161dc9c8cc100f4e` →
   // `7a33e1a357f875132e773734c2a5a2757f81fb165cbb22c7ec593edcdf53b346`.
+  //
+  // 2026-09-16 re-baseline (Secondary Nav epic zudolab/zudo-doc#4235,
+  // integration confirm sub #4244): only the two docs pages move;
+  // `/404.html` is unchanged at `ec412b0fc…` because it renders neither a
+  // breadcrumb nor a doc pager. Both moved hashes trace to the epic's
+  // sitewide link-color rule (rule 3 in `src/CLAUDE.md`, "every other link
+  // is `text-fg`/`text-muted` with `hover:text-accent`/
+  // `focus-visible:text-accent`; no static `underline` outside prose/inline
+  // rows"), landed by sub #4239 ("apply link-color rule to footer,
+  // breadcrumb, DocPager"):
+  //   - `breadcrumb.tsx` crumb anchor class:
+  //     `text-muted underline hover:text-fg flex items-center gap-x-hsp-2xs`
+  //     → `text-muted hover:text-accent hover:underline focus-visible:text-accent
+  //     focus-visible:underline flex items-center gap-x-hsp-2xs` (drops the
+  //     static `underline`/`hover:text-fg`, adds `hover:text-accent` +
+  //     focus-visible parity).
+  //   - `doc-pager/index.tsx` prev/next title `<p>`, both directions:
+  //     `text-small font-semibold underline group-hover:text-accent` →
+  //     `text-small font-semibold text-fg group-hover:text-accent
+  //     group-hover:underline group-focus-visible:text-accent
+  //     group-focus-visible:underline` (drops the static `underline`, adds
+  //     explicit `text-fg` rest state + focus-visible parity).
+  // `config/component-tokens.ts`'s `--zdc-doc-link-decoration` entry also
+  // changed in this epic, but only its comment/description text — the
+  // `a.text-accent.underline` selector and default are unchanged, so it
+  // contributes no bytes. No other epic-touched file (home-page,
+  // site-tree-nav-island, nav-indexing card grids/lists, footer, note-tray
+  // parts) renders on `/404.html` or the getting-started docs pages, so
+  // these two class deltas are the complete, accounted-for cause of both
+  // moved hashes. `/docs/getting-started/`
+  // `d0dea44a671b93cafd141d6a6c5961f4eda019550c9d097051f1aedf70ec8dff` →
+  // `f66a5c3e2f8c8ac24f4767f121a0b5dbde0bb58af89baab7451d9ed7136c9e11`, and
+  // `/docs/getting-started/coverage/`
+  // `7a33e1a357f875132e773734c2a5a2757f81fb165cbb22c7ec593edcdf53b346` →
+  // `5b1dcff77cc2e1f58cf531d4299dc702c99e9340c87a47688bc813ce77ceb0b5`.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
     expect(sha256Html(html)).toMatchInlineSnapshot(`"ec412b0fc0435697216bc29b6865bd66efe7928c3ccac4123865cd68516b18f4"`);
@@ -1094,12 +1129,12 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"d0dea44a671b93cafd141d6a6c5961f4eda019550c9d097051f1aedf70ec8dff"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"f66a5c3e2f8c8ac24f4767f121a0b5dbde0bb58af89baab7451d9ed7136c9e11"`);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"7a33e1a357f875132e773734c2a5a2757f81fb165cbb22c7ec593edcdf53b346"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"5b1dcff77cc2e1f58cf531d4299dc702c99e9340c87a47688bc813ce77ceb0b5"`);
   });
 });
 

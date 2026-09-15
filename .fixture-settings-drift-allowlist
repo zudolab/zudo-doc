@@ -230,9 +230,11 @@ versioning:siteTreeNavIgnore
 
 # ── siteTreeNavSecondary ──────────────────────────────────────────────────────
 # reason: no e2e fixture has changelog/, claude/ or codex/ categories, so the
-#         setting is not exercised; fixtures keep the package default []
+#         setting is not exercised; fixtures keep the package default [].
+#         The smoke fixture now DOES exercise it (moves its real "guides"
+#         top-level category into the home secondary-nav row, #4244) —
+#         see smoke-home-secondary-nav.spec.ts.
 sidebar:siteTreeNavSecondary
 i18n:siteTreeNavSecondary
 theme:siteTreeNavSecondary
-smoke:siteTreeNavSecondary
 versioning:siteTreeNavSecondary
