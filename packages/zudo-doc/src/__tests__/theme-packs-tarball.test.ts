@@ -24,7 +24,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { resolve, dirname } from "node:path";
+import { basename, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -69,7 +69,13 @@ function packFileList(): string[] {
   try {
     cpSync(PKG_ROOT, snapshotRoot, {
       recursive: true,
-      filter: (source) => source !== resolve(PKG_ROOT, "node_modules"),
+      // zudo-doc-cli.test.ts keeps its `.check-images-cli-snapshot-*` dirs inside the
+      // package root (its bin must resolve bare deps from this node_modules) and deletes
+      // them concurrently; walking into one mid-delete fails with ENOENT (#4230).
+      // npm pack never ships them (files[]), so skipping them loses nothing.
+      filter: (source) =>
+        source !== resolve(PKG_ROOT, "node_modules") &&
+        !basename(source).startsWith(".check-images-cli-snapshot-"),
     });
     const packageJsonPath = resolve(snapshotRoot, "package.json");
     const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as {
