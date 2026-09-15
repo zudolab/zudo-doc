@@ -114,10 +114,16 @@ export function resolveAssetPageLabels(
  * hard reload of a collapsed page never flashes the expanded rail (#3941
  * D3). Render this ahead of the rest of the page `head` — see
  * `createAssetPageView`'s `head` prop on `DocLayoutWithDefaults`.
+ *
+ * A function, not a shared constant VNode: Preact's diffing mutates
+ * bookkeeping fields onto the vnode objects it renders, so one instance
+ * reused across many independent SSR passes (e.g. every asset page in a
+ * `zfb build` run, all sharing this module) is a latent hazard. Each call
+ * returns a fresh vnode.
  */
-export const ASSET_DETAILS_PREPAINT_HEAD: VNode = (
-  <script dangerouslySetInnerHTML={{ __html: ASSET_DETAILS_PREPAINT_SCRIPT }} />
-);
+export function renderAssetDetailsPrepaintScript(): VNode {
+  return <script dangerouslySetInnerHTML={{ __html: ASSET_DETAILS_PREPAINT_SCRIPT }} />;
+}
 
 export interface AssetPageBodyProps {
   /** The asset record being rendered. */

@@ -14,7 +14,7 @@ import { assetRawHref, assetViewerHref } from "../asset-path/index.js";
 import type { AssetRecord } from "../plugins/internal/asset-viewer/types.js";
 import { resolveThemePackSsrSlug } from "../theme/theme-pack-provider.js";
 import type { Settings } from "../settings.js";
-import { ASSET_DETAILS_PREPAINT_HEAD, AssetPageBody, resolveAssetPageLabels } from "./body.js";
+import { AssetPageBody, renderAssetDetailsPrepaintScript, resolveAssetPageLabels } from "./body.js";
 
 export {
   ASSET_DETAILS_HIDDEN_ATTR,
@@ -85,7 +85,7 @@ export function createAssetPageView<S extends Settings = Settings>(ctx: ChromeCo
     const viewSourceUrl = buildGitHubSourceUrl(settings.githubUrl, `public/${dir}`, asset.path);
     const fullPattern = dateFormatsFor(locale).full;
     return (
-      <DocLayoutWithDefaults title={composeMetaTitle(asset.name)} head={<>{ASSET_DETAILS_PREPAINT_HEAD}<HeadWithDefaults title={asset.name} description={asset.description} canonical={ctx.absoluteUrl(viewerUrl)} /></>} lang={locale} dataThemePack={dataThemePack} noindex={settings.noindex} hideSidebar hideToc sidebarOverride={false} contentWide breadcrumbOverride={<BreadcrumbWithDefaults items={breadcrumbItems} />} headerOverride={<HeaderWithDefaults lang={locale} currentPath={viewerUrl} hideSidebarToggle />} footerOverride={<FooterWithDefaults lang={locale} />} bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} forceImageEnlarge={asset.kind === "image" && asset.previewable && asset.sniffOk} />} enableClientRouter={settings.dynamicPageTransition}>
+      <DocLayoutWithDefaults title={composeMetaTitle(asset.name)} head={<>{renderAssetDetailsPrepaintScript()}<HeadWithDefaults title={asset.name} description={asset.description} canonical={ctx.absoluteUrl(viewerUrl)} /></>} lang={locale} dataThemePack={dataThemePack} noindex={settings.noindex} hideSidebar hideToc sidebarOverride={false} contentWide breadcrumbOverride={<BreadcrumbWithDefaults items={breadcrumbItems} />} headerOverride={<HeaderWithDefaults lang={locale} currentPath={viewerUrl} hideSidebarToggle />} footerOverride={<FooterWithDefaults lang={locale} />} bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} forceImageEnlarge={asset.kind === "image" && asset.previewable && asset.sniffOk} />} enableClientRouter={settings.dynamicPageTransition}>
         <AssetPageBody entry={asset} locale={locale} rawUrl={rawUrl} labels={labels} fullPattern={fullPattern} backLink={backLink} viewSourceUrl={viewSourceUrl} showViewSource={showViewSource} />
       </DocLayoutWithDefaults>
     );
