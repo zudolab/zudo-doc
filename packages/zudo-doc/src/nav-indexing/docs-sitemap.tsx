@@ -60,7 +60,7 @@ function SitemapSection({ node, index }: SitemapSectionProps): JSX.Element {
           &#9654;
         </span>
         {node.href ? (
-          <a href={node.href} class="hover:underline focus:underline">
+          <a href={node.href} class="hover:text-accent hover:underline focus:underline focus-visible:text-accent">
             {node.label}
           </a>
         ) : (
@@ -74,7 +74,7 @@ function SitemapSection({ node, index }: SitemapSectionProps): JSX.Element {
               <li key={`leaf-${index}-${li}`}>
                 <a
                   href={leaf.href}
-                  class="text-accent hover:underline focus:underline"
+                  class="text-fg hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline"
                 >
                   {leaf.label}
                 </a>

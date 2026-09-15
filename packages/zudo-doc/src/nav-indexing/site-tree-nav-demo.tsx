@@ -82,7 +82,7 @@ function Section({ node }: SectionProps): JSX.Element {
           &#9654;
         </span>
         {node.href ? (
-          <a href={node.href} class="hover:underline focus:underline">
+          <a href={node.href} class="hover:text-accent hover:underline focus:underline focus-visible:text-accent">
             {node.label}
           </a>
         ) : (
@@ -96,7 +96,7 @@ function Section({ node }: SectionProps): JSX.Element {
               <li key={`leaf-${i}`}>
                 <a
                   href={leaf.href}
-                  class="text-accent hover:underline focus:underline"
+                  class="text-fg hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline"
                 >
                   {leaf.label}
                 </a>

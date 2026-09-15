@@ -61,7 +61,7 @@ export function VersionsPageContent(
         <p class="text-small text-muted mb-vsp-sm">{labels.latestDescription}</p>
         <a
           href={latestHref}
-          class="inline-flex items-center gap-hsp-xs text-small text-accent underline hover:text-accent-hover"
+          class="inline-flex items-center gap-hsp-xs text-small text-fg hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline"
         >
           {labels.latestLink}
           <ChevronRight className="h-[0.875rem] w-[0.875rem]" />
@@ -112,7 +112,7 @@ export function VersionsPageContent(
                     <td class="px-hsp-lg py-vsp-sm">
                       <a
                         href={v.docsHref}
-                        class="text-accent underline hover:text-accent-hover"
+                        class="text-fg hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline"
                       >
                         {labels.docsCol}
                       </a>

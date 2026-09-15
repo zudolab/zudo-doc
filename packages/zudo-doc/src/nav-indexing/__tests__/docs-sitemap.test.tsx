@@ -88,4 +88,19 @@ describe("DocsSitemap", () => {
     const html = serialize(DocsSitemap({ tree }));
     expect(html).toContain(" open");
   });
+
+  it("keeps leaf and category heading links on text-fg with no bare text-accent or underline token", () => {
+    const tree = [
+      category("Guide", [leaf("Setup", "/docs/guide/setup/")], "/docs/guide/"),
+    ];
+    const html = serialize(DocsSitemap({ tree }));
+    expect(html).not.toMatch(/(^|[\s"])text-accent(?=[\s"])/);
+    expect(html).not.toMatch(/(^|[\s"])underline(?=[\s"])/);
+    expect(html).toContain(
+      'class="hover:text-accent hover:underline focus:underline focus-visible:text-accent"',
+    );
+    expect(html).toContain(
+      'class="text-fg hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline"',
+    );
+  });
 });

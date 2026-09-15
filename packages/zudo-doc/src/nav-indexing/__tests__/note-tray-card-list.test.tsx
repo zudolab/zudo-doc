@@ -160,4 +160,15 @@ describe("NoteTrayIndex card style", () => {
     expect(ja).toContain(">8-22</span>");
     expect(ja).not.toContain(">08/22</span>");
   });
+
+  it("keeps the linked title's static color on text-fg with no bare text-accent or underline token", () => {
+    const shown = serialize(
+      NoteTrayIndex({ ...base, style: "cards", items: [item("card")] }),
+    );
+    expect(shown).toContain("text-fg");
+    expect(shown).not.toMatch(/(^|[\s"])text-accent(?=[\s"])/);
+    expect(shown).not.toMatch(/(^|[\s"])underline(?=[\s"])/);
+    expect(shown).toContain("group-hover:text-accent");
+    expect(shown).toContain("group-hover:underline");
+  });
 });

@@ -25,7 +25,7 @@ export function Timeline(props: NoteTrayIndexProps): JSX.Element {
               <li key={item.slug} class="relative grid gap-vsp-2xs pl-hsp-xl pb-vsp-lg last:pb-0">
                 {item.href ? (
                   <a
-                    class="peer font-medium text-fg underline decoration-muted hover:text-accent hover:decoration-accent focus-visible:text-accent focus-visible:decoration-accent"
+                    class="peer font-medium text-fg hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline"
                     href={item.href}
                   >
                     {item.label}

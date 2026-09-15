@@ -118,4 +118,20 @@ describe("VersionsPageContent", () => {
     expect(html).toContain("Status");
     expect(html).toContain("Docs");
   });
+
+  it("keeps the latest and docs links on text-fg with no bare text-accent or underline token", () => {
+    const versions: VersionPageEntry[] = [
+      { slug: "1.0", label: "1.0.0", docsHref: "/1.0/docs/" },
+    ];
+    const html = serialize(
+      VersionsPageContent({ latestHref: "/docs/getting-started/", versions, labels }),
+    );
+    expect(html).not.toMatch(/(^|[\s"])text-accent(?=[\s"])/);
+    expect(html).not.toMatch(/(^|[\s"])underline(?=[\s"])/);
+    expect(html).not.toContain("text-accent-hover");
+    expect(html).toContain("hover:text-accent");
+    expect(html).toContain("hover:underline");
+    expect(html).toContain("focus-visible:text-accent");
+    expect(html).toContain("focus-visible:underline");
+  });
 });
