@@ -1885,17 +1885,19 @@ describe("scaffold — generated package.json", () => {
     expect(pkg.devDependencies["@types/react"]).toBeUndefined();
   });
 
-  it("includes the required zfb packages and @takazudo/zudo-doc unconditionally, but NOT @takazudo/zdtp", async () => {
-    // `diff` is an unconditional dependency regardless of the docHistory
-    // selection — packageOwnedRoutes always bundles the doc-history-area path,
-    // which imports `diff` at module scope with an unguarded `await import()`
-    // (#2342). @takazudo/zdtp is NOT in that class any more: it was
-    // unconditional under #2668 because the chrome-derive seam's static
-    // DesignTokenPanelBootstrap import reached `@takazudo/zdtp/constants`, but
-    // #4018 vendored those constants into @takazudo/zudo-doc, leaving only a
-    // rejection-handled `import("@takazudo/zdtp")` that builds fine with the
-    // package absent — so the dep is now gated on designTokenPanel (#4009).
-    // See the paired designTokenPanel case below.
+  it("includes the required zfb packages and @takazudo/zudo-doc unconditionally, but NOT @takazudo/zdtp or diff", async () => {
+    // `diff` is gated on docHistory, not unconditional — @takazudo/zudo-doc's
+    // doc-history route now loads it via a rejection-handled `import("diff")`
+    // that stays non-build-fatal with the package absent (#4206 / #4209), so a
+    // barebone project (docHistory off, no bodyFootUtil) must not carry it.
+    // See the docHistory-gating test below for the ON case. @takazudo/zdtp is
+    // NOT in that class any more either: it was unconditional under #2668
+    // because the chrome-derive seam's static DesignTokenPanelBootstrap import
+    // reached `@takazudo/zdtp/constants`, but #4018 vendored those constants
+    // into @takazudo/zudo-doc, leaving only a rejection-handled
+    // `import("@takazudo/zdtp")` that builds fine with the package absent —
+    // so the dep is now gated on designTokenPanel (#4009). See the paired
+    // designTokenPanel case below.
     // @takazudo/zudo-doc-history-server is NOT in this set either — see the
     // metadata-feature gating test below.
     await scaffold(baseChoices);
@@ -1911,11 +1913,50 @@ describe("scaffold — generated package.json", () => {
       ROOT_ZFB_PINS["@takazudo/zfb-md-wasm"],
     );
     expect(pkg.dependencies["@takazudo/zudo-doc"]).toMatch(/^\^\d+\.\d+\.\d+/);
-    expect(pkg.dependencies["diff"]).toBeDefined();
+    expect(pkg.dependencies["diff"]).toBeUndefined();
     expect(pkg.dependencies["@takazudo/zdtp"]).toBeUndefined();
     expect(pkg.dependencies["astro"]).toBeUndefined();
     expect(pkg.dependencies["shiki"]).toBeUndefined();
     expect(pkg.dependencies["@shikijs/transformers"]).toBeUndefined();
+  });
+
+  it("includes diff when docHistory is enabled directly or via bodyFootUtil, but not for assetViewer alone", async () => {
+    // The gated half of the case above (#4206 / #4209). bodyFootUtil forces
+    // docHistory on before generatePackageJson() ever runs (see the
+    // co-enable block near the top of scaffold()), so checking the docHistory
+    // feature alone covers both the direct and indirect selection paths.
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-diff-dochistory",
+      features: ["docHistory"],
+    });
+    const withDocHistory = await fs.readJson(
+      projectPath("test-diff-dochistory", "package.json"),
+    );
+    expect(withDocHistory.dependencies["diff"]).toBe("^8.0.3");
+
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-diff-bodyfootutil",
+      features: ["bodyFootUtil"],
+    });
+    const withBodyFootUtil = await fs.readJson(
+      projectPath("test-diff-bodyfootutil", "package.json"),
+    );
+    expect(withBodyFootUtil.dependencies["diff"]).toBe("^8.0.3");
+
+    // assetViewer reaches @takazudo/zudo-doc-history-server (see the test
+    // below) but not the Compare view's `import("diff")`, so it must not
+    // carry the dep on its own.
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-diff-assetviewer-only",
+      features: ["assetViewer"],
+    });
+    const withAssetViewerOnly = await fs.readJson(
+      projectPath("test-diff-assetviewer-only", "package.json"),
+    );
+    expect(withAssetViewerOnly.dependencies["diff"]).toBeUndefined();
   });
 
   it("includes @takazudo/zdtp when designTokenPanel is selected", async () => {
@@ -1931,12 +1972,17 @@ describe("scaffold — generated package.json", () => {
     expect(pkg.dependencies["@takazudo/zdtp"]).toBeDefined();
   });
 
-  it("includes zod, preact-render-to-string, and katex as always-on runtime deps", async () => {
+  it("includes zod and preact-render-to-string as always-on runtime deps, but never katex by default", async () => {
+    // `math` is not a create-zudo-doc feature — DEFAULT_SETTINGS.math is
+    // `false`, and @takazudo/zudo-doc loads katex via a rejection-handled
+    // dynamic import that stays non-build-fatal without it (#4206 / #4209).
+    // No barebone or all-features scaffold should ever declare katex; a
+    // project that flips `math: true` by hand must `pnpm add katex` itself.
     await scaffold(baseChoices);
     const pkg = await fs.readJson(projectPath("test-doc", "package.json"));
     expect(pkg.dependencies["zod"]).toBe("^4.3.6");
     expect(pkg.dependencies["preact-render-to-string"]).toBeDefined();
-    expect(pkg.dependencies["katex"]).toBeDefined();
+    expect(pkg.dependencies["katex"]).toBeUndefined();
   });
 
   it("adds neither minisearch nor pagefind when search is enabled", async () => {

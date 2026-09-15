@@ -39,6 +39,12 @@ Fresh scaffolds statically wire the real History island into all generated route
 
 The feature is **disabled by default** to keep builds fast for projects that don't need it.
 
+<Note>
+
+The Compare view's line-by-line diff rendering needs the optional peer dependency `diff`. `create-zudo-doc` adds it to `package.json` automatically whenever `docHistory` is selected (directly, or through `bodyFootUtilArea`, which forces `docHistory` on). If you flip `docHistory` on by hand in an existing project instead of through the generator, run `pnpm add diff` yourself — see [Configuration — docHistory](./configuration.mdx#site-settings-dochistory) for the full optional-peer contract, which mirrors `math`'s `katex` requirement.
+
+</Note>
+
 ## Dates-Only Mode
 
 To keep git-based metadata without the history viewer, hand-edit `zfb.config.ts`. There are no new CLI flags for `docHistoryUi` or `docMetainfoFields`.
