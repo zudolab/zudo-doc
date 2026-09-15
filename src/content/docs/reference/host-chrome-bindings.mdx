@@ -144,6 +144,10 @@ The live DOM governs the opt-out; adding the attribute only to the incoming page
 
 So the same module you create for `docContentHeaderExtras` is also where you would, for example, register the custom frontmatter renderers that previously only worked on host-owned routes.
 
+### `sidebarNodes` is a `createHeaderWithDefaults` prop, not a `Header` binding slot
+
+The `Header` row above replaces the whole component: your replacement receives `HeaderSlotProps` and owns its own mobile-drawer tree entirely. `sidebarNodes` is a different, narrower seam — an optional prop on `HeaderWithDefaultsProps` that overrides only the tree the *package's* header factory passes to `SidebarToggle`, without replacing the rest of the header. It is available on `createHeaderWithDefaults(ctx)` and on `createChrome(...).HeaderWithDefaults`; it is **not** part of `HeaderSlotProps`, so a `chromeBindingsModule`-configured `Header` replacement never receives it. See `createHeaderWithDefaults(ctx)` in `API.md` for the full contract.
+
 Generated and package-owned document routes are one deliberate exception to
 normal object precedence: when `docHistory` is enabled, their statically
 imported package `DocHistory` is overlaid after the configured object. That

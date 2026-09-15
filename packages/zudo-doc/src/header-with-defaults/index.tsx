@@ -45,6 +45,27 @@ export interface HeaderWithDefaultsProps {
   navSection?: string;
   /** Omit the mobile sidebar toggle and its drawer landmark. */
   hideSidebarToggle?: boolean;
+  /**
+   * Override the mobile-drawer sidebar tree passed to `SidebarToggle`,
+   * resolved per render against that render's `lang`/`navSection`/
+   * `currentVersion`.
+   *
+   * - An array is passed to `SidebarToggle` as-is — no default build, no
+   *   version-href remapping.
+   * - A callback receives the resolved `lang`/`navSection`/`currentVersion`
+   *   plus a lazy `buildDefault()` that reproduces today's default tree
+   *   (`buildSidebarNodes(lang, navSection, currentVersion)`) only when
+   *   called.
+   * - Omitted: behavior is unchanged from before this prop existed.
+   */
+  sidebarNodes?:
+    | SidebarNavNode[]
+    | ((args: {
+        lang: string;
+        navSection: string | undefined;
+        currentVersion: string | undefined;
+        buildDefault: () => SidebarNavNode[];
+      }) => SidebarNavNode[]);
 }
 
 /** Version config entry subset the factory reads. */
@@ -125,6 +146,7 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
       currentSlug,
       navSection,
       hideSidebarToggle = false,
+      sidebarNodes: sidebarNodesProp,
     } = props;
     const lang = langProp;
 
@@ -132,7 +154,18 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
     const backToMenuLabel = t("nav.backToMenu", lang);
     const localeLinks = buildLocaleLinksForNav(currentPath, lang, locales.length);
     const themeDefaultMode = getThemeDefaultMode();
-    const sidebarNodes = buildSidebarNodes(lang, navSection, currentVersion);
+    const buildDefaultSidebarNodes = () => buildSidebarNodes(lang, navSection, currentVersion);
+    const sidebarNodes =
+      sidebarNodesProp === undefined
+        ? buildDefaultSidebarNodes()
+        : typeof sidebarNodesProp === "function"
+          ? sidebarNodesProp({
+              lang,
+              navSection,
+              currentVersion,
+              buildDefault: buildDefaultSidebarNodes,
+            })
+          : sidebarNodesProp;
 
     // Wrap SidebarToggle in Island so the SSG output carries the full tree
     // HTML AND the data-zfb-island="SidebarToggle" marker for client-side
