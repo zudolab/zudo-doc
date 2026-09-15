@@ -285,7 +285,7 @@ type RampRef =
 | `fg` | `{ base: 0 }` | メインテキスト |
 | `surface` | `{ base: 4 }`（= `bg`） | パネル/サイドバーのサーフェス — `bg`にマージ、[ロールマージの設計思想](#ロールマージの設計思想)を参照 |
 | `muted` | `{ base: 1 }` | ミュートテキスト、ボーダー、コメント |
-| `accent` | `{ accent: 1 }` | リンク、アクティブ状態、CTA |
+| `accent` | `{ accent: 1 }` | 本文中のリンク、アクティブ状態・現在地の表示、CTA、クロームのリンクのホバー・フォーカス時の色 |
 | `accentHover` | `{ accent: 0 }` | accentのホバー状態 |
 | `codeBg` | `{ base: 3 }` | コードブロック背景 |
 | `codeFg` | `{ base: 0 }` | インラインコードテキスト |
@@ -424,7 +424,6 @@ Tier 3のトークンはコンポーネント内部のものです。独自のUI
 <!-- Text -->
 <p class="text-fg">Primary text</p>
 <p class="text-muted">Secondary text</p>
-<a class="text-accent hover:text-accent-hover">Link</a>
 
 <!-- Backgrounds -->
 <div class="bg-bg">Page background</div>
@@ -432,6 +431,22 @@ Tier 3のトークンはコンポーネント内部のものです。独自のUI
 
 <!-- Borders -->
 <div class="border border-muted">Bordered element</div>
+```
+
+### リンクの色
+
+リンクの色は、リンクであること自体ではなく、置かれている場所で決まります：
+
+- **本文中のリンク** — 文章の流れの中にあるリンク（`ContentLink`が描画するMarkdownのリンクや、バージョンバナー内のリンクなど）— は`text-accent underline`を使います。
+- **クロームのリンク** — ナビのリスト、カード、チップ、ページャー — は`text-fg`（フッターの列、目次、パンくずリストといった補助的なクロームでは`text-muted`）のままにし、ホバー時・フォーカス時、または現在地を示すときにだけ`accent`に変わります。常時表示の下線は付けません。その代わり、目に見えるリスト、カードの枠、先頭のアイコンのいずれかで、リンクだと分かる構造を必ず持たせます。
+- **補助的なクロームに並ぶインラインのリンク列** — ホームのヒーロー部分のリンク行と、フッターの著作権表記の行 — はその中間です。`text-fg`に常時の下線を付け、ホバー時に`accent`に変わります。
+
+```html
+<!-- Prose link -->
+<a class="text-accent underline hover:text-accent-hover">Prose link</a>
+
+<!-- Chrome link -->
+<a class="text-fg hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline">Chrome link</a>
 ```
 
 ### 検索とハイライトのトークン（役割を分離）
