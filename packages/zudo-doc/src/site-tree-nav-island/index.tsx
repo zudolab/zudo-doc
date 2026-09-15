@@ -197,7 +197,7 @@ function CategoryNode({
           {node.href ? (
             <a
               href={node.href}
-              className="flex-1 flex items-start gap-hsp-xs py-vsp-xs text-fg hover:text-accent hover:underline focus:underline"
+              className="flex-1 flex items-start gap-hsp-xs py-vsp-xs text-fg hover:text-accent hover:underline focus:underline focus-visible:text-accent"
             >
               {depth === 0 && (
                 <span className="flex h-[1lh] items-center">
@@ -339,7 +339,7 @@ function NoteTrayRow({
     <a
       href={item.href}
       data-note-tray-row
-      className="flex items-start gap-hsp-sm py-vsp-2xs text-small text-fg hover:text-accent hover:underline focus:underline"
+      className="flex items-start gap-hsp-sm py-vsp-2xs text-small text-fg hover:text-accent hover:underline focus:underline focus-visible:text-accent"
     >
       {dateLabel ? (
         <time
@@ -387,8 +387,8 @@ function LeafNode({
         <a
           href={node.href}
           className={isRoot
-            ? "flex items-start gap-hsp-xs py-[calc(var(--spacing-vsp-xs)+0.15rem)] pr-hsp-sm text-small font-semibold text-fg break-words hover:text-accent hover:underline focus:underline"
-            : `block py-vsp-2xs pr-hsp-sm ${isLast ? "pb-vsp-xs" : ""} text-small text-fg break-words hover:text-accent hover:underline focus:underline`
+            ? "flex items-start gap-hsp-xs py-[calc(var(--spacing-vsp-xs)+0.15rem)] pr-hsp-sm text-small font-semibold text-fg break-words hover:text-accent hover:underline focus:underline focus-visible:text-accent"
+            : `block py-vsp-2xs pr-hsp-sm ${isLast ? "pb-vsp-xs" : ""} text-small text-fg break-words hover:text-accent hover:underline focus:underline focus-visible:text-accent`
           }
           style={{ paddingLeft }}
         >

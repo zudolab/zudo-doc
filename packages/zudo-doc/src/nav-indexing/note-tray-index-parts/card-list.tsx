@@ -21,8 +21,8 @@ function CardBody({
   hasStamp: boolean;
 }): JSX.Element {
   const titleClass = linked
-    ? "flex items-start gap-hsp-xs text-accent underline group-hover:text-accent-hover group-focus-visible:text-accent-hover"
-    : "flex items-start gap-hsp-xs text-accent underline";
+    ? "flex items-start gap-hsp-xs text-fg group-hover:text-accent group-hover:underline group-focus-visible:text-accent group-focus-visible:underline"
+    : "flex items-start gap-hsp-xs text-fg";
   const descriptionClass = linked
     ? "mt-vsp-xs text-small text-muted group-hover:text-accent group-hover:underline group-focus-visible:text-accent group-focus-visible:underline"
     : "mt-vsp-xs text-small text-muted";

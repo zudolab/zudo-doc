@@ -106,4 +106,15 @@ describe("NoteTrayIndex timeline style", () => {
     expect(en).toContain("Aug 2026");
     expect(ja).toContain("2026年8月度");
   });
+
+  it("keeps the linked item's static color on text-fg with no bare text-accent, underline, or decoration token", () => {
+    const html = serialize(
+      NoteTrayIndex({ ...base, style: "timeline", items: [item("dated", { date: "2026-08-22" })] }),
+    );
+    expect(html).not.toMatch(/(^|[\s"])text-accent(?=[\s"])/);
+    expect(html).not.toMatch(/(^|[\s"])underline(?=[\s"])/);
+    expect(html).not.toContain("decoration-");
+    expect(html).toContain("hover:text-accent");
+    expect(html).toContain("hover:underline");
+  });
 });
