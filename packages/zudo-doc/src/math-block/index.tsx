@@ -19,11 +19,31 @@
 // `throwOnError: false` keeps a broken formula visible as an error span
 // rather than crashing the page.
 //
-// katex is a required peerDependency of @takazudo/zudo-doc (opt-in — only
-// needed when the consumer registers MathBlock in their MDX components map).
+// katex is an OPTIONAL peerDependency — needed only when `math: true`. This
+// module is always reachable (mdx-components imports it), so katex is loaded
+// through a rejection-handled dynamic import: esbuild leaves an absent
+// `import("katex").then(onFulfilled, onRejected)` as a bare specifier instead
+// of failing the build (#4015 / #4209), and evaluating this module never throws.
 
-import katex from "katex";
 import type { VNode } from "preact";
+
+type KatexLike = typeof import("katex").default;
+
+// katex ships ESM (`default` export) and CJS builds; interop can surface the
+// API on the namespace, on `default`, or doubly wrapped — take whichever has it.
+function pickKatex(m: unknown): KatexLike | null {
+  let cur: unknown = m;
+  for (let i = 0; i < 3 && cur && typeof cur === "object"; i++) {
+    if (typeof (cur as KatexLike).renderToString === "function") return cur as KatexLike;
+    cur = (cur as { default?: unknown }).default;
+  }
+  return null;
+}
+
+const katex: KatexLike | null = await import("katex").then(pickKatex, () => null);
+
+const MISSING_KATEX_MESSAGE =
+  'MathBlock requires the optional peer "katex": install it and set math: true';
 
 export interface MathBlockProps {
   /** Raw LaTeX source string. */
@@ -41,6 +61,7 @@ export interface MathBlockProps {
  * KaTeX stylesheet) still applies.
  */
 export function MathBlock({ latex, block = false }: MathBlockProps): VNode {
+  if (!katex) throw new Error(MISSING_KATEX_MESSAGE);
   const html = katex.renderToString(latex, {
     displayMode: block,
     // Never throw — malformed LaTeX renders a visible error span instead
