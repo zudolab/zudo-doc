@@ -4,4 +4,6 @@ description: Changes planned for the next release.
 sidebar_position: 1028
 ---
 
-No unreleased changes.
+### Bug Fixes
+
+- The generated `scripts/check-links.js`'s MDX id scan no longer lets an escaped `\<` in prose start a fake tag that swallows a later element's static `id` across a blank line, wrongly reporting a valid anchor as broken. Projects that copied `scripts/check-links.js` from the template can re-copy it to pick up the fix.
