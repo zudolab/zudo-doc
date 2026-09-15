@@ -58,7 +58,11 @@ rewrite_sidebar_position() {
   local file="$1"
   local new_position="$2"
   local tmp_file="$file.tmp.$$"
-  sed -E "s/^sidebar_position:[[:space:]]*.*/sidebar_position: $new_position/" "$file" > "$tmp_file"
+  awk -v pos="$new_position" '
+    /^---[[:space:]]*$/ && fences < 2 { fences++; print; next }
+    fences == 1 && /^sidebar_position:/ { print "sidebar_position: " pos; next }
+    { print }
+  ' "$file" > "$tmp_file"
   mv "$tmp_file" "$file"
 }
 
