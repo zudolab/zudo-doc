@@ -16,6 +16,44 @@ const SNAPSHOT_PREFIX = join(PACKAGE_ROOT, CHECK_IMAGES_CLI_SNAPSHOT_PREFIX);
 const TEMP_PREFIX = "zudo-doc-check-images-cli-";
 const tempDirs: string[] = [];
 
+// The exact set of compiled dist/ files reachable from bin/zudo-doc.mjs's four
+// static top-level imports (eject, eject-logo, theme-cli, img-src-check),
+// traced by hand file-by-file (issue #4246: copying the whole dist/ — 9+MB,
+// dominated by 5+MB of bundled theme-pack fonts nothing here touches — blew
+// past vitest's 10s default hook timeout on a loaded machine). Anything the
+// four barrels import only as `import type` was left out: tsup elides those
+// at compile time, so no runtime `import` for them exists in the emitted JS.
+// If bin/zudo-doc.mjs's imports change, this list must be re-traced by hand.
+const DIST_FILES_FOR_CLI = [
+  "eject/index.js",
+  "eject-logo/index.js",
+  "eject-logo/eject.js",
+  "eject-logo/config-rewriter.js",
+  "eject-logo/site-name.js",
+  "eject-logo/config-parse.js",
+  "theme-cli/index.js",
+  "theme-cli/list.js",
+  "theme-cli/apply.js",
+  "theme-cli/registry.js",
+  "theme-cli/config-io.js",
+  "theme-cli/config-rewriter.js",
+  "theme-cli/config-scanner.js",
+  "theme-cli/provenance.js",
+  "theme-packs-registry/index.js",
+  "theme-packs-registry/meta-schema.js",
+  "theme-packs-registry/token-manifest.js",
+  "theme-packs-registry/validator.js",
+  "theme-packs-registry/resolve-enabled-packs.js",
+  "theme-packs-registry/build-registry.js",
+  "theme-packs-registry/load-registry.js",
+  "color-scheme-utils.js",
+  "config/component-tokens.js",
+  "auto-logo/standalone.js",
+  "auto-logo/shapes.js",
+  "auto-logo/render-shape.js",
+  "plugins/internal/img-src-check/index.js",
+];
+
 let snapshotDir: string;
 let binPath: string;
 
@@ -49,7 +87,11 @@ function runCli(args: string[], cwd: string) {
 beforeAll(() => {
   snapshotDir = mkdtempSync(SNAPSHOT_PREFIX);
   cpSync(join(PACKAGE_ROOT, "bin"), join(snapshotDir, "bin"), { recursive: true });
-  cpSync(join(PACKAGE_ROOT, "dist"), join(snapshotDir, "dist"), { recursive: true });
+  for (const relativePath of DIST_FILES_FOR_CLI) {
+    const destPath = join(snapshotDir, "dist", relativePath);
+    mkdirSync(resolve(destPath, ".."), { recursive: true });
+    cpSync(join(PACKAGE_ROOT, "dist", relativePath), destPath);
+  }
   binPath = join(snapshotDir, "bin", "zudo-doc.mjs");
   if (!existsSync(join(snapshotDir, "dist", "plugins/internal/img-src-check/index.js"))) {
     throw new Error("CLI snapshot is missing the compiled image scanner");
