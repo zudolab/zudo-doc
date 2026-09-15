@@ -1,0 +1,11 @@
+---
+title: 5.24.2
+description: 5.24.2のリリースノート。
+sidebar_position: 1121
+---
+
+リリース日: 2026-09-15
+
+### バグ修正
+
+- `katex` と `diff` が実際にオプショナルピアとして機能するようになりました。`math` と `docHistory` を無効にしたサイトは、どちらもインストールせずにビルドできます。`packageOwnedRoutes` 環境で `Could not resolve "katex"` / `Could not resolve "diff"` になっていた静的・無防備なインポートを、失敗を捕捉する動的インポートに置き換えました。`katex` 未インストールで `<MathBlock>` を描画すると、インストールと `math: true` の設定を促す明確なエラーを投げます。(72f36d027)

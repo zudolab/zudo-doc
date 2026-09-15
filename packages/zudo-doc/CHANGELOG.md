@@ -8,6 +8,12 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [5.24.2] - 2026-09-15
+
+### Bug Fixes
+
+- `katex` and `diff` are optional peers again in practice: a site with `math` and `docHistory` off now builds without either installed. Both are loaded through a rejection-handled dynamic import instead of a static or unguarded import that failed with `Could not resolve "katex"` / `Could not resolve "diff"` under `packageOwnedRoutes`. Rendering `` without `katex` installed throws a clear error telling you to install it and set `math: true`. (72f36d027)
+
 ## [5.24.1] - 2026-09-15
 
 ### Bug Fixes

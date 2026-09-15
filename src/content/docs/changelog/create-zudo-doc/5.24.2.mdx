@@ -1,0 +1,11 @@
+---
+title: 5.24.2
+description: Release notes for 5.24.2.
+sidebar_position: 1027
+---
+
+Released: 2026-09-15
+
+### Bug Fixes
+
+- Generated projects list `diff` only when doc history is enabled (directly, or through `bodyFootUtil`), and no longer list `katex` by default. Projects that turn on `math: true` install `katex` themselves (`pnpm add katex`). (c778ca989)
