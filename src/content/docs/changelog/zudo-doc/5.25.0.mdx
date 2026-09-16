@@ -1,0 +1,24 @@
+---
+title: 5.25.0
+description: Release notes for 5.25.0.
+sidebar_position: 1122
+---
+
+Released: 2026-09-16
+
+### Features
+
+- Added a `siteTreeNavSecondary` setting: top-level categories named here move out of the home page's card grid into a compact secondary link row, and the "See all tags" link was restyled to match it. There is no CLI or prompt surface yet — set it by hand in your config after scaffolding. (42bd642c5)
+- Added an optional `sidebarNodes` prop to `HeaderWithDefaultsProps`, letting a host override the mobile-drawer sidebar tree per render (as a fixed array or a callback with a lazy `buildDefault()`) without replacing the whole `Header` chrome component. (01a7d088d)
+- Added zfb-free asset-viewer subpaths — `./asset-page/{body,components,script}`, `./asset-index-page`, and `./asset-index-page/{body,tree,script}` — so `AssetPageBody` / `AssetIndexPageBody` and their `resolveAsset*Labels(t, locale)` helpers can be imported and rendered without a `ChromeContext` or any `@takazudo/zfb*` package. `./asset-page` and `./asset-index-page` remain the zfb-bound factories; neither body provides `DocLayout`, so the caller owns the outer page shell. (558aa58cf)
+- Applied the sitewide link-color rule across package chrome, so link styling is now consistent everywhere instead of varying per component. Prose links stay accent + underline; every other link sits at `text-fg` (or `text-muted` in tertiary chrome) and turns accent on hover and focus, with static underlines removed outside prose and tertiary inline rows. This covers the footer, breadcrumb, and DocPager (ffef68952), nav-indexing lists, note-tray parts, and site-tree-nav focus (4ed4e2f7d), nav-indexing card grids (224232644), and the asset controls and image-caption viewer link (87ee6c1d5). Expect visible link-color and underline changes if you relied on the previous per-component styling.
+
+### Bug Fixes
+
+- The asset page no longer reuses a singleton prepaint-script VNode across SSR passes, which could let one render's prepaint state leak into another. (9bc892343)
+- The `foundry` theme pack keeps its footer copyright underline, which the link-color rule work had removed. (dcec0daeb)
+
+### Other Changes
+
+- Removed the `.zudo-doc/routes-src` project-local staging step for package-owned route injection. It was a workaround for zfb not resolving `virtual:*` imports from route files under `node_modules`; zfb resolves those imports directly now, so the published `routes-src/` file is injected without a staging copy. If your project has a leftover `<project>/.zudo-doc/` directory, it is now inert and can be deleted. (c56b24342)
+- The `@takazudo/zfb`, `@takazudo/zfb-runtime`, and `@takazudo/zfb-md-wasm` peer dependency floors are now `^2.18.0` (e4d4b64b3). That release reworks package-injected routes and plugin virtual modules — the islands scanner resolves plugin virtual modules and is seeded with package-route entrypoints, dev CSS content globs are seeded from injected routes, and injected-route entrypoints are staged as exact files that SSR virtual modules may import. It changes no API, export, or config default, so existing projects need no migration beyond having zfb 2.18.0 installed.
