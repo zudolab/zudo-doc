@@ -13,6 +13,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 ### Other Changes
 
 - New scaffolds no longer add a `.zudo-doc/` entry to the generated `.gitignore`. The staging step it was for was removed from `@takazudo/zudo-doc`'s route injection — see that package's changelog.
+- Generated projects now pin `@takazudo/zfb`, `@takazudo/zfb-runtime`, and `@takazudo/zfb-md-wasm` to `2.18.0` (e4d4b64b3). That release reworks package-injected routes and plugin virtual modules and changes no API, export, or config default, so existing projects need no migration.
 
 ## [5.24.2] - 2026-09-15
 
