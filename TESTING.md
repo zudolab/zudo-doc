@@ -148,6 +148,37 @@ unit/package critical paths.
 They remain blocking because they cover release-relevant behavior; the other
 registry-install/full-build slow specs stay in the nightly `slow-create` job.
 
+**Fast-tier vs. slow-tier contract ownership (#4249, #4253).** Fast-tier unit tests own
+shape contracts; slow-tier specs own "does it actually build". A `*.slow.test.ts` must not
+restate a contract a fast-tier unit test already asserts — generated `package.json`
+dependency shape, config-field shape, and similar. The slow tier's job is the end-to-end
+proof (a real install + `zfb build` succeeding); the fast tier's job is the exhaustive shape
+assertion. Duplicating a shape assertion into the slow tier creates a drift hazard: the
+registry-install/full-build specs above run only in the nightly exam (`exam.yml`), so a
+change that updates the fast-tier assertion and misses its slow-tier twin ships green and
+fails a day later.
+
+Worked example: `diff` was gated on the `docHistory` feature (#4206, #4209). The fast-tier
+`scaffold.test.ts` was updated to the gated contract; the slow-tier
+`packages/create-zudo-doc/src/__tests__/barebone-build.slow.test.ts` still asserted the old
+unconditional presence, and nothing ran that assertion until the next nightly exam caught it
+(#4249). The fix was removal, not a polarity flip — flipping `toBeDefined()` to
+`toBeUndefined()` would only have re-created the same duplication in the other direction. The
+tiers now compose without overlap: `scaffold.test.ts` proves a barebone project carries no
+`diff`; `barebone-build.slow.test.ts` proves such a project still builds end-to-end.
+
+An audit of the other 5 `create-zudo-doc` slow specs (#4255) came back 4 clean —
+`chrome-bindings-build`, `init-git-repo`, `preset-swap`, and `skill-name-parity` (the last is
+intentionally cross-artifact, catching TS-vs-bash drift no single-side unit test can) assert
+nothing a fast-tier test already owns. One known remaining instance was left in place as a
+deliberate call rather than a mechanical fix:
+`three-locale-integration.slow.test.ts:221`'s `expect(pkg.dependencies["@takazudo/zudo-doc-history-server"]).toBeDefined()`
+restates a contract `scaffold.test.ts` already asserts exhaustively. It agrees with the fast
+tier today, so it isn't stale and wasn't trimmed as a drive-by hygiene edit — but it is the
+same duplication shape, and a future change to the `docHistory` dependency-gating contract
+should update `scaffold.test.ts` and either update or delete this line in the same change,
+not leave it to drift.
+
 **Theme A11y PR gate (two-lane, #4037)** adds a conditional `theme-a11y`-scoped job to
 `pr-checks.yml`, alongside the always-on `theme-a11y` **T3 nightly** job described under
 "Theme A11y Audit" below. It filters **inside** the job (not a workflow-level `paths:`
