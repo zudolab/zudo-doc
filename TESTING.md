@@ -172,7 +172,7 @@ An audit of the other 5 `create-zudo-doc` slow specs (#4255) came back 4 clean â
 intentionally cross-artifact, catching TS-vs-bash drift no single-side unit test can) assert
 nothing a fast-tier test already owns. One known remaining instance was left in place as a
 deliberate call rather than a mechanical fix:
-`three-locale-integration.slow.test.ts:221`'s `expect(pkg.dependencies["@takazudo/zudo-doc-history-server"]).toBeDefined()`
+`three-locale-integration.slow.test.ts`'s `expect(pkg.dependencies["@takazudo/zudo-doc-history-server"]).toBeDefined()`
 restates a contract `scaffold.test.ts` already asserts exhaustively. It agrees with the fast
 tier today, so it isn't stale and wasn't trimmed as a drive-by hygiene edit â€” but it is the
 same duplication shape, and a future change to the `docHistory` dependency-gating contract
