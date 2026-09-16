@@ -7,20 +7,27 @@
  *
  * ## Why this exists — do NOT weaken into a plain scaffold snapshot test
  *
- * With `packageOwnedRoutes` defaulting ON (1.0), the always-copied host base
- * template `pages/lib/_doc-history-area.tsx` statically imports the real
- * `DocHistory` from `@takazudo/zudo-doc/doc-history` (to keep zfb's island
- * scanner chain page→stub→DocHistory walkable). That pulls
- * `@takazudo/zudo-doc/dist/doc-history/index.js`'s `await import("diff")` into
- * EVERY generated bundle — even a barebone, docHistory-off project. `diff` is
- * a peerDependency of `@takazudo/zudo-doc`, so the scaffold must add it to the
- * generated `package.json` unconditionally; if it only added `diff` when the
- * docHistory feature was selected, a barebone `zfb build` would fail at esbuild
- * with `Could not resolve "diff"` (the regression this test locks down).
+ * `diff` is gated on the `docHistory` feature, not unconditional
+ * (`c778ca989`, refs #4206 / #4209): `@takazudo/zudo-doc`'s doc-history route
+ * loads it via a rejection-handled `await import("diff")` that is NOT
+ * build-fatal when the package is absent, so a barebone (docHistory-off)
+ * scaffold correctly omits it from the generated `package.json`. The
+ * historical regression this file guards (#2342) was a barebone `zfb build`
+ * failing at esbuild with `Could not resolve "diff"` — that is still the
+ * failure mode to watch for if the dynamic-import gating ever regresses back
+ * to a static import.
  *
- * The real gate is the end-to-end `zfb build` succeeding — a unit assertion
- * that `diff` is in the generated deps would NOT catch the next hidden peer
- * (we add a cheap dep-presence assertion too, but the build is the gate).
+ * Tier split: the fast-tier `packages/create-zudo-doc/src/__tests__/scaffold.test.ts`
+ * owns the dependency-SHAPE contract (which deps appear under which feature
+ * flags — see its `"includes the required zfb packages and @takazudo/zudo-doc
+ * unconditionally, but NOT @takazudo/zdtp or diff"` and `"includes diff when
+ * docHistory is enabled..."` cases). This slow test owns a different question:
+ * does a barebone generated project actually `zfb build` end-to-end. Do NOT
+ * re-add a dependency-presence assertion here — asserting the same
+ * dependency-shape contract in both tiers is exactly what caused #4249 (the
+ * fast tier's gating change left this file's `diff`-must-be-defined assertion
+ * stale, and it broke nightly CI on its own schedule instead of at review
+ * time). If the shape contract needs a new case, add it to `scaffold.test.ts`.
  *
  * ## Minimal-scaffold addendum (epic zudolab/zudo-doc#2651, Wave 7 #2662)
  *
@@ -99,13 +106,6 @@ afterAll(async () => {
 });
 
 describe("barebone (all features off) generated project", () => {
-  it("scaffolds the always-bundled `diff` peer into the generated package.json", async () => {
-    // Cheap pinpoint guard for the specific #2342 regression. NOT a substitute
-    // for the build gate below — it would not catch a different hidden peer.
-    const pkg = await fs.readJson(path.join(projectDir, "package.json"));
-    expect(pkg.dependencies?.diff).toBeDefined();
-  });
-
   it("builds with `zfb build` (no unresolved esbuild imports)", async () => {
     // The build already ran in beforeAll; a failure there would have aborted
     // the suite. Assert the static output was emitted as the success signal.
