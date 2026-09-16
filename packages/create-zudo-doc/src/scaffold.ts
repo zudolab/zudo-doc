@@ -936,9 +936,17 @@ function generatePackageJson(
     // moved sizes; zfb-runtime and zfb-adapter-cloudflare change only their
     // README/description. No public API, export, config default, or engine
     // requirement moves, so a fresh scaffold needs no migration.
-    "@takazudo/zfb": "2.17.0",
-    "@takazudo/zfb-runtime": "2.17.0",
-    "@takazudo/zfb-md-wasm": "2.17.0",
+    // 2.18.0: zfb reworks package-injected routes and plugin virtual modules —
+    // the islands scanner now resolves plugin virtual modules and is seeded with
+    // package-route entrypoints, dev CSS content globs are seeded from injected
+    // routes, injected-route entrypoints and their import closure are staged as
+    // exact files, and SSR virtual modules may import those canonical files while
+    // the hidden-path guard still holds. zfb-runtime, zfb-adapter-cloudflare, and
+    // md-wasm carry no package-specific change. No public API, export, config
+    // default, or engine requirement moves, so a fresh scaffold needs no migration.
+    "@takazudo/zfb": "2.18.0",
+    "@takazudo/zfb-runtime": "2.18.0",
+    "@takazudo/zfb-md-wasm": "2.18.0",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
