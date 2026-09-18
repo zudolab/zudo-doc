@@ -134,13 +134,15 @@ export function workspaceZfbPeerFloorMatches(rootPin, actualPin) {
 // `comparison` selects how the actual floor is judged against the source value:
 //   "satisfies" — the root version must fall WITHIN the declared floor range.
 //                 A floor is only stale when it EXCLUDES the root version. This
-//                 permits a benign same-major lag (^2.0.1 at root 2.1.0), which
-//                 the lockstep release REQUIRES: the showcase resolves this peer
-//                 from the npm registry under --frozen-lockfile, so the floor can
-//                 only point at an already-published version and is bumped
-//                 post-publish via the toolchain-bump cycle (see RELEASE.md
-//                 "Bumping the toolchain" and "publish-lag"). Demanding exact `^<root>` here deadlocked the
-//                 release (the in-flight version isn't on npm yet).
+//                 permits a lag of any size (^5.17.2 at root 5.25.0), which the
+//                 contract REQUIRES: the floor is a minimum-supported-version
+//                 declaration, not a lockstep mirror, and releases and routine
+//                 dependency-bump rounds preserve it UNCHANGED. It moves only for
+//                 a documented compatibility reason, and may never name a version
+//                 not yet published to npm. Contract lives in RELEASE.md
+//                 "First-party peer floor (publish-lag)" — read it there, it is not
+//                 restated here. Demanding exact `^<root>` deadlocked the release
+//                 (the in-flight version isn't on npm yet).
 //   "exact"     — floor must equal `^<sourceValue>`.
 //   "union-admits-pin" — every arm must be a complete, stable caret range,
 //                 and at least one must admit the exact root pin. This
@@ -399,11 +401,12 @@ export function evaluateFirstPartyPeer({
   }
   const result = { ok: true, expected: expectedPeer, actual };
   if (actualPeer !== expectedPeer) {
-    // Informational only — do NOT read this as a TODO. The floor trails the
-    // in-flight version by one release by construction, so raising it and then
-    // releasing simply reproduces this note. See RELEASE.md "First-party peer
-    // floor (publish-lag)".
-    result.advisory = `${pkg} peer floor ${actual} trails the lockstep version ${sourceValue} — expected, and satisfied (root is within range). No action: the floor can only name a published version, so it always lags by one release. It becomes an ERROR here if it ever stops including the root version (cross-major drift).`;
+    // Informational only — do NOT read this as a TODO. The floor is a
+    // minimum-supported-version declaration that releases and bump rounds leave
+    // alone, so the lag is expected and may be arbitrarily large; raising it just
+    // reproduces this note after the next release. See RELEASE.md "First-party
+    // peer floor (publish-lag)" for the contract.
+    result.advisory = `${pkg} peer floor ${actual} lags the lockstep version ${sourceValue} — expected, and satisfied (root is within range). No action: this floor is a minimum-supported-version declaration, not a lockstep mirror, so the lag may be arbitrarily large and is not a defect (see RELEASE.md "First-party peer floor (publish-lag)"). It becomes an ERROR here if it ever stops including the root version (cross-major drift).`;
   }
   return result;
 }

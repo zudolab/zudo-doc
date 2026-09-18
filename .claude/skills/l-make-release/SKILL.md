@@ -268,20 +268,19 @@ B4PUSH_SKIP_PIN_PUBLISHED=1 pnpm b4push
 
 Fix any failures and recommit before proceeding. Do not tag until b4push is fully green.
 
-> **Do NOT bump the `@takazudo/zudo-doc-history-server` peer floor.** The release
-> script intentionally leaves `packages/zudo-doc/package.json`
-> `peerDependencies["@takazudo/zudo-doc-history-server"]` alone. That floor names
-> an **already-published** version (the showcase resolves the peer from the npm
-> registry under `--frozen-lockfile`), so raising it to the in-flight release
-> version makes the lockfile unresolvable and deadlocks CI **and** the publish
-> workflows. The floor lags **permanently and by design** — it can only name an
-> already-published version, so it trails the in-flight one by one release
-> forever. The pin-parity guard uses satisfies-semantics for this peer, so a
-> same-major lag (e.g. floor `^2.0.1` at release `2.1.0`) **passes** and only emits
-> a non-fatal advisory. Do not "fix" that advisory — not here, and not after
-> publishing either: raising the floor just moves the lag to the next release and
-> earns a pointless patch release. See RELEASE.md → "First-party peer floor
-> (publish-lag)".
+> **Do NOT bump the `@takazudo/zudo-doc-history-server` peer floor — not during the
+> release, and not after publishing either.** The release script intentionally leaves
+> `packages/zudo-doc/package.json`
+> `peerDependencies["@takazudo/zudo-doc-history-server"]` alone: that floor is a
+> **minimum-supported-version declaration, not a lockstep mirror**, and a release
+> preserves it unchanged. Raising it to the in-flight version also makes the frozen
+> lockfile unresolvable and deadlocks CI **and** the publish workflows, since the
+> showcase resolves the peer from the npm registry. The pin-parity guard uses
+> satisfies-semantics here, so a lag of any size (e.g. floor `^5.17.2` at release
+> `5.25.0`) **passes** and only emits a non-fatal advisory — the lag is expected and
+> is not a defect. Do not "fix" that advisory. The full contract, including the only
+> reasons the floor may ever move, lives in RELEASE.md → "First-party peer floor
+> (publish-lag)"; it is deliberately not restated here.
 
 ## Step 5 — Commit
 

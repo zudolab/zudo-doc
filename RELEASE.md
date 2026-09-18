@@ -190,29 +190,42 @@ that is a signal something genuinely changed — investigate rather than bumping
 ## First-party peer floor (publish-lag)
 
 `packages/zudo-doc/package.json` declares `@takazudo/zudo-doc-history-server` as a
-**peerDependency** with a caret floor (e.g. `^2.0.1`). The showcase resolves this
-peer from the **npm registry** (not a workspace link), and every install — local,
-CI, and the publish workflows — runs `pnpm install --frozen-lockfile`. So the floor
-can only ever name an **already-published** version.
+**peerDependency** with a caret floor (today `^5.17.2`).
 
-**Do NOT bump this floor to the in-flight release version during a release.** The
-release script (`scripts/release-create-zudo-doc.sh`) deliberately does **not**
-touch it: bumping it to the version being released (not yet on npm) makes the frozen
-lockfile unresolvable and deadlocks both main CI and the publish workflows.
+**This section is the single contract for that floor.** `scripts/check-pin-parity.mjs`
+and `.claude/skills/l-make-release/SKILL.md` reference it rather than restating it — if
+they ever disagree with what follows, this section wins and the other two are the bug.
 
-Instead the floor **lags by design**, permanently. A lagging same-major floor is
-correct: `^2.0.1` is satisfied by a `@takazudo/zudo-doc@2.1.0` install.
+1. The floor is a **minimum-supported-version declaration, not a lockstep mirror** of the
+   root version. It states the oldest `@takazudo/zudo-doc-history-server` this package
+   supports — nothing more.
+2. **Routine dependency-bump rounds and releases preserve it unchanged.** Neither a
+   release, nor a `/dev-bump-zudo-deps` round, nor the non-fatal pin-parity advisory is a
+   reason to move it.
+3. It changes **only for a documented compatibility reason**: a genuine minimum-version
+   requirement (the package began relying on an API that first shipped in that version),
+   or an approaching cross-major staleness that would otherwise make the check error.
+4. It may **never** name a version that is not yet published to npm.
 
-**Do not chase the advisory — the loop does not converge.** Raising the floor to
-match the just-published version clears the note, but the *next* release moves the
-version past it again and the note returns. That is structural, not drift: the
-floor can only ever name an already-published version, so it trails the in-flight
-one by exactly one release forever. (Learned the hard way in 5.1.1, which exists
-mostly because the 5.1.0 advisory was mistaken for a chore.)
+Rule 4 is a hard constraint. The showcase resolves this peer from the **npm registry**
+(not a workspace link), and every install — local, CI, and the publish workflows — runs
+`pnpm install --frozen-lockfile`. Raising the floor to the in-flight release version makes
+the frozen lockfile unresolvable and deadlocks both main CI and the publish workflows. The
+release script (`scripts/release-create-zudo-doc.sh`) deliberately does not touch it.
 
-Raise the floor only when there is a real reason — a genuine minimum-version
-requirement, or approaching cross-major staleness. The check errors on its own
-when the floor stops including the root version; until it does, no action.
+### The lag is expected, unbounded, and not a defect
+
+Because rule 2 holds, the distance between the floor and the root version **grows with
+every release and may be arbitrarily large**. It is `^5.17.2` against root `5.25.0` — eight
+minors — and that is the contract working, not drift. A same-major caret floor keeps
+admitting the root version however far behind it sits: `^5.17.2` is satisfied by a `5.25.0`
+install.
+
+**Do not chase the advisory — the loop does not converge.** Raising the floor to match the
+just-published version clears the note, but the next release moves the version past it again
+and the note returns. (Learned the hard way in 5.1.1, which exists mostly because the 5.1.0
+advisory was mistaken for a chore.) The check errors on its own when the floor stops
+including the root version; until it does, no action.
 
 The pin-parity guard (`scripts/check-pin-parity.mjs`) enforces this with
 **satisfies-semantics** for the lockstep peer: it fails only when the floor would
@@ -242,8 +255,20 @@ went stale. Two things it knows that a generic dependency bumper does not:
   tool that only rewrites `package.json` files leaves it behind. The parity check
   fails loudly when it does — fix `scaffold.ts` to match and re-run.
 - **Leave the first-party peer floor alone** unless the check actually errors —
-  see "First-party peer floor (publish-lag)" above. Its trailing-by-one advisory
-  is the normal steady state, not a chore.
+  see "First-party peer floor (publish-lag)" above. Its lag advisory is the normal
+  steady state, not a chore, however large the lag has grown.
+
+> **`/dev-bump-zudo-deps` will raise this floor if you let it.** The resolver reports
+> `packages/zudo-doc/package.json` `peerDependencies["@takazudo/zudo-doc-history-server"]`
+> as an ordinary `bump` row, and `--write` **applies it** — silently violating rule 2 of the
+> contract above. Either scope the resolver to the packages you actually mean to bump:
+>
+> ```sh
+> node "$HOME/.claude/skills/dev-bump-zudo-deps/scripts/resolve-bumps.mjs" \
+>   @takazudo/zfb @takazudo/zfb-runtime
+> ```
+>
+> or revert that one hunk before installing.
 
 Resolve targets from the **`latest`** dist-tag, never `next` — the two have
 permanently diverged since zfb 1.0.0, and `next` is frozen on an old prerelease, so
