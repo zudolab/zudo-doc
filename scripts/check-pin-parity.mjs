@@ -142,8 +142,10 @@ export function workspaceZfbPeerFloorMatches(rootPin, actualPin) {
 //                 published to npm only in the release commit of a major bump
 //                 (RELEASE.md rule 4). Contract lives in RELEASE.md
 //                 "First-party peer floor (publish-lag)" — read it there, it is not
-//                 restated here. Demanding exact `^<root>` deadlocked the release
-//                 (the in-flight version isn't on npm yet).
+//                 restated here. Demanding exact `^<root>` would force the floor to
+//                 name the in-flight version on EVERY release, which the
+//                 registry-facing freshness gate rejects while it is unpublished
+//                 (not a lockfile problem — see RELEASE.md rule 4's mechanism note).
 //   "exact"     — floor must equal `^<sourceValue>`.
 //   "union-admits-pin" — every arm must be a complete, stable caret range,
 //                 and at least one must admit the exact root pin. This

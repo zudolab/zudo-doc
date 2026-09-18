@@ -223,8 +223,9 @@ they ever disagree with what follows, this section wins and the other two are th
    the `package.json` entry and the baseline **in the same commit**; editing only one fails
    `pnpm check:pin-parity`.
 
-Rule 4's window is safe because the floor is not an install input. The showcase consumes
-`@takazudo/zudo-doc-history-server` as a `workspace:*` link and declares it an **optional**
+Rule 4's window is safe because the floor is not an install input. The showcase root has no
+dependency on `@takazudo/zudo-doc-history-server` at all; `packages/zudo-doc` consumes it as a
+`workspace:*` **devDependency** link and declares it an **optional**
 peer, and a workspace package's `peerDependencies` appear nowhere in `pnpm-lock.yaml`'s
 importers — so no install, local or CI or publish, frozen or not, is affected by the
 floor's value. Measured in #4280 (`docs/findings/4268-peer-floor-major-bump.md`): with a

@@ -492,15 +492,26 @@ describe("major-bump release state (#4279)", () => {
       "utf-8",
     );
 
-    expect(releaseMd).not.toMatch(/unresolvable/);
-    expect(skillMd).not.toMatch(/unresolvable/);
+    // Match the false CLAIM, not the bare word: banning "unresolvable"
+    // file-wide would fail on an unrelated future sentence that legitimately
+    // uses it.
+    expect(releaseMd).not.toMatch(/lockfile unresolvable/);
+    expect(skillMd).not.toMatch(/lockfile unresolvable/);
     expect(parityMjs).not.toMatch(/deadlocks `--frozen-lockfile`/);
+
+    // Anchor to the contract section first — a bare `^4. ` search would latch
+    // onto whichever numbered list happens to come first in the file.
+    const sectionStart = releaseMd.indexOf(
+      "## First-party peer floor (publish-lag)",
+    );
+    expect(sectionStart).toBeGreaterThan(-1);
+    const section = releaseMd.slice(sectionStart);
 
     // Rule 4 wraps across lines, so take the whole list item: from the `4. `
     // marker up to the `5. ` marker that follows it.
-    const start = releaseMd.search(/^4\. /m);
+    const start = section.search(/^4\. /m);
     expect(start).toBeGreaterThan(-1);
-    const rest = releaseMd.slice(start);
+    const rest = section.slice(start);
     const end = rest.search(/^5\. /m);
     expect(end).toBeGreaterThan(-1);
     expect(rest.slice(0, end)).toContain("major bump");
@@ -537,10 +548,20 @@ describe("routine flows preserve the first-party peer declarations (#4264)", () 
         readFileSync(resolve(REPO_ROOT, "package.json"), "utf-8"),
       ).version;
       // Exactly what `resolve-bumps.mjs --write` does: raise the peer floor to
-      // the newest version it resolved for the package.
+      // the newest version it resolved for the package. In the major-bump
+      // release window RELEASE.md rule 4 permits, the floor already IS
+      // `^<root>`, so writing that back would be a no-op edit and would prove
+      // nothing — fall back to one patch above root, the same shape of
+      // unapproved raise.
       const parsed = JSON.parse(original);
-      parsed.peerDependencies["@takazudo/zudo-doc-history-server"] =
-        `^${rootVersion}`;
+      const current =
+        parsed.peerDependencies["@takazudo/zudo-doc-history-server"];
+      const raised =
+        `^${rootVersion}` === current
+          ? `^${String(rootVersion).replace(/(\d+)$/, (n: string) => String(Number(n) + 1))}`
+          : `^${rootVersion}`;
+      expect(raised).not.toBe(current);
+      parsed.peerDependencies["@takazudo/zudo-doc-history-server"] = raised;
       const mutated = `${JSON.stringify(parsed, null, 2)}\n`;
       expect(mutated).not.toBe(original);
       writeFileAtomic(ZUDO_DOC_PKG_PATH, mutated);

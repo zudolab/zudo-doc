@@ -286,7 +286,9 @@ Fix any failures and recommit before proceeding. Do not tag until b4push is full
 > that window it reports the history-server peer as `peer-range-excludes-latest` until
 > the 6a publishes in Step 9 land on npm — contract-sanctioned, and it closes on publish.
 > That gate is not a b4push step, and the publish workflow's Safeguard 4/5 runs after the
-> 6a publishes, so neither goes red.
+> 6a publishes, so neither goes red. One exception: Safeguard 4/5 runs on `dry_run` too, so a
+> manual `publish-create-zudo-doc.yml` dry run fired *inside* the window fails on this
+> finding — dry-run after the 6a publishes, not before.
 >
 > The full contract, including the only reasons the floor may ever move, lives in
 > RELEASE.md → "First-party peer floor (publish-lag)"; it is deliberately not restated
