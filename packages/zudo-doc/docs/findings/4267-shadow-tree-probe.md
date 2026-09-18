@@ -124,7 +124,7 @@ Packed with `npm pack` from this tree: `@takazudo/zudo-doc@5.25.0` (1101 files,
 | 7 | #5 + `adapter: "@takazudo/zfb-adapter-cloudflare"` | green |
 | 8 | **real `pnpm install`** of the tarball, single package | green |
 | 9 | **real `pnpm install` pnpm workspace, consumer at `apps/site`** — the reporter's stated shape | green |
-| 10 | #9 with plain `zfb build` and without `SKIP_DOC_HISTORY` | green |
+| 10 | #9 with plain `zfb build` and no doc-history skip env var set | green |
 | 11 | `node-linker=hoisted` (no project-local `node_modules`; `--preserve-symlinks` branch) | SSR bundle green |
 
 Row 11 failed later at the renderer with a duplicate-preact-instance error
