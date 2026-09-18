@@ -64,6 +64,8 @@ claudeResources: false,
 
 パッケージが同梱する`resource.*`文字列は英語と日本語です。他の対応ロケールコードは、通常どおり要求ロケール → 設定済みデフォルト → 英語 → リテラルの順でフォールバックします。ラベルは`ZudoDocConfig.translations`で上書きできます。保存方針の理由、`llms.txt`と検索の挙動、`defaultLocaleOnlyPrefixes`によるオプトアウトは[国際化](./i18n.mdx#生成ページとデフォルトロケールの本文)を参照してください。
 
+このオプトアウトを使う場合は、セクション全体をまとめて制限してください。`/docs/claude-md/`、`/docs/claude-skills/`、`/docs/claude-agents/`、`/docs/claude-commands/`に加えて、概要プレフィックス`/docs/claude/`も列挙する必要があります。概要プレフィックスがないと、ロケール所有の概要インデックスは設定済みの全ロケールに生成されます。そのロケール側に手書きの`claude/index.mdx`（frontmatterに`generated: true`がないもの）が既にある場合、ビルドは`resource-docs: refusing to overwrite authored locale index`で失敗します。詳しくは[リソースセクションには概要プレフィックスも含まれる](./i18n.mdx#リソースセクションには概要プレフィックスも含まれる)を参照してください。
+
 ## 設定オプション
 
 | オプション | 型 | 説明 |

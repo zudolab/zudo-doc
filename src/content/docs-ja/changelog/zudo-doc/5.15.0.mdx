@@ -23,4 +23,5 @@ sidebar_position: 1101
 
 ### その他の変更
 
+- 移行時の注意：リソースインデックスがロケール所有になったため、リソースセクションをデフォルトロケール限定のままにするには、サブセクションのプレフィックスに加えて**概要プレフィックス**（`/docs/claude/`・`/docs/codex/`）も`defaultLocaleOnlyPrefixes`に列挙する必要があります。概要プレフィックスがないと、概要インデックスは設定済みの全ロケールに生成されます。そのロケールディレクトリに`generated: true`のない手書きの`claude/index.mdx`があると、ビルドは`resource-docs: refusing to overwrite authored locale index`で失敗します。概要プレフィックスを追加するか、手書きのインデックスを削除してタイトル・説明・ラベルを`ZudoDocConfig.translations`へ移してください。 (#3820)
 - zfbピアファミリーを2.14.2へ更新しました。 (`5c5bfd2f`)

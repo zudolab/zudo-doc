@@ -286,3 +286,18 @@ export default defineConfig(
 Any page under one of these prefixes is emitted only in the primary locale. The non-primary route list omits it and the language switcher emits only the current active link. Keep prefixes trailing-slash terminated and narrow enough that they do not hide pages you intend to translate. Documentation routes are rooted at `/docs/`; the asset viewer uses `/${assetViewerRoutePrefix}/` (shown as `/files/` above).
 
 These entries are an opt-out recipe, not package defaults. Add `/${assetViewerRoutePrefix}/` to restore default-locale-only asset pages, and add whichever resource prefixes you want to restrict. Leave the top-level `/docs/claude/` and `/docs/codex/` overviews unrestricted if you still want their localized landing pages.
+
+### A resource section includes its overview prefix
+
+The four sub-section prefixes above are not the whole Claude section. The overview page lives under its own prefix, `/docs/claude/` — `/docs/codex/` for Codex — and a prefix list that omits it leaves the overview localized while the sub-sections are restricted.
+
+That matters at build time, not just in navigation. The overview index is locale-owned: with its prefix unlisted, the generator writes it into every configured locale directory. If an authored `src/content/docs-<locale>/claude/index.mdx` is already sitting at that target and its frontmatter lacks `generated: true`, the build stops with:
+
+```text
+resource-docs: refusing to overwrite authored locale index
+```
+
+Pick one of the two shapes and apply it to the whole section:
+
+- **Default-locale-only** — list the overview prefix alongside the sub-section prefixes, so nothing under `/docs/claude/` is generated for other locales.
+- **Localized** — leave the prefixes unlisted, and remove or rename the authored locale index so the generator can own it. Move its title, description, and labels to `ZudoDocConfig.translations`.

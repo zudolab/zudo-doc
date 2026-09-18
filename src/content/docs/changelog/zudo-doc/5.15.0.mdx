@@ -23,4 +23,5 @@ Released: 2026-09-01
 
 ### Other Changes
 
+- Migration: because the resource indexes are now locale-owned, a resource section only stays default-locale-only when `defaultLocaleOnlyPrefixes` lists its **overview** prefix — `/docs/claude/` or `/docs/codex/` — alongside the sub-section prefixes. With the overview prefix missing, the overview index is generated into every configured locale; if that locale directory already holds an authored `claude/index.mdx` without `generated: true` in its frontmatter, the build fails with `resource-docs: refusing to overwrite authored locale index`. Either add the overview prefix, or remove the authored index and move its title, description, and labels to `ZudoDocConfig.translations`. (#3820)
 - Updated the zfb peer family to 2.14.2. (`5c5bfd2f`)
