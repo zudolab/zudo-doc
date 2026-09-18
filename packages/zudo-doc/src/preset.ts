@@ -44,6 +44,8 @@ import type {
 import { assertNoCommaInVersionSlugs } from "./version-availability/index.js";
 import {
   assertNoEmptyStringFaviconOrLogo,
+  assertZdtpBundlingConsistent,
+  resolvesBundleZdtp,
   warnAmbiguousDropdownCategoryMatch,
 } from "./config-assertions/index.js";
 // Type-only — erased by esbuild before the node-builtin-free eval-graph
@@ -148,8 +150,18 @@ export interface PresetSettings {
   docHistory?: boolean;
   /** Whether the doc history dropdown UI and related artifacts are enabled. */
   docHistoryUi?: boolean;
-  /** Falsy → the zdtp-loader plugin keeps `@takazudo/zdtp` out of the island build (#4201). */
+  /**
+   * Mount the package-owned design token panel and its header trigger. Does
+   * NOT decide bundling on its own — the zdtp-loader plugin follows
+   * `bundleZdtp ?? designTokenPanel` (#4201, #4261).
+   */
   designTokenPanel?: boolean;
+  /**
+   * Bundle `@takazudo/zdtp` into the island build. Omitted → follows
+   * `designTokenPanel`. Full contract: `ZudoDocConfig.bundleZdtp` in
+   * `config.ts`.
+   */
+  bundleZdtp?: boolean;
   docHistoryExclude?: string[];
   /** Generate package-owned viewer pages for files under the configured asset directory. */
   assetViewer?: boolean;
@@ -380,6 +392,12 @@ export function zudoDocPreset({
   // `favicon` before it silently resolves to "the current document" per the
   // HTML spec (#3471, #3474).
   assertNoEmptyStringFaviconOrLogo(settings);
+
+  // Same rationale again: `designTokenPanel: true` + `bundleZdtp: false` mounts
+  // the package panel over a stubbed `zdtp-loader` and can only throw at
+  // runtime. #4261's reporter calls `zudoDocPreset()` directly, so THIS is the
+  // call site that catches them — guarding only `zudoDoc()` would miss it.
+  assertZdtpBundlingConsistent(settings);
 
   // This diagnostic belongs only to the directly-callable preset. `zudoDoc()`
   // delegates here, so a second call site would emit duplicate warnings.
@@ -777,11 +795,15 @@ function buildPlugins(
         onBroken: settings.onBrokenMarkdownLinks,
       },
     },
-    // Panel OFF → shadow the bootstrap's `@takazudo/zudo-doc/zdtp-loader` lazy
-    // import with a throwing virtual module so the island build emits no zdtp chunks
-    // (#4201). Preset-level rather than inside the routes plugin because the
-    // bootstrap is reachable from chrome even when packageOwnedRoutes is off.
-    ...(settings.designTokenPanel
+    // zdtp not bundled → shadow the bootstrap's `@takazudo/zudo-doc/zdtp-loader`
+    // lazy import with a throwing virtual module so the island build emits no
+    // zdtp chunks (#4201). Bundling follows `bundleZdtp ?? designTokenPanel`:
+    // omit `bundleZdtp` and it tracks the panel exactly as before; set it to
+    // `true` with the panel off when the host mounts its own panel through
+    // `design-token-panel-bootstrap` (#4261). Preset-level rather than inside
+    // the routes plugin because the bootstrap is reachable from chrome even
+    // when packageOwnedRoutes is off.
+    ...(resolvesBundleZdtp(settings)
       ? []
       : [{ name: "@takazudo/zudo-doc/plugins/zdtp-loader", options: {} }]),
   ];

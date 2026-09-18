@@ -4,6 +4,10 @@ description: Changes planned for the next release.
 sidebar_position: 1123
 ---
 
+### Bug Fixes
+
+- A host mounting its own design-token panel through `@takazudo/zudo-doc/design-token-panel-bootstrap` with `designTokenPanel` off can now keep the real `@takazudo/zdtp` loader instead of hitting the throwing stub. The 5.24.1 fix (#4201) shadowed `@takazudo/zudo-doc/zdtp-loader` with a stub whenever `designTokenPanel` was off, and its changelog note ("A host's own `@takazudo/zdtp` imports are unaffected") did not cover a host reaching zdtp through the package's own bootstrap subpath — that path stayed shadowed, so a green build could still throw the moment the panel was opened. A new `bundleZdtp?: boolean` setting, resolved as `bundleZdtp ?? designTokenPanel`, decouples bundling from mounting: leave it unset and behavior is unchanged; set `bundleZdtp: true` with `designTokenPanel: false` to keep the real loader for your own panel. The reverse combination — `designTokenPanel: true` with `bundleZdtp: false` — is rejected at config resolution, since a mounted package panel over a stubbed loader is guaranteed to throw. (#4261)
+
 ### Other Changes
 
 - Investigated a build-failure report (#4267, tracked in #4271): three `Could not resolve` esbuild errors on relative `../node_modules/@takazudo/zudo-doc/routes-src/*.tsx` specifiers (`../../` for the route one directory deeper) on `@takazudo/zfb@2.18.0` + `@takazudo/zudo-doc@5.25.0`, for a pnpm-workspace consumer whose `pages/` did not shadow the package-owned injected routes named in those errors. The failure did not reproduce across 11 consumer topologies — including the reporter's exact pnpm-workspace-symlink install shape — documented in `packages/zudo-doc/docs/findings/4267-shadow-tree-probe.md`. No code changed. Because nothing reproduced, no workaround could be verified here: the reporter's own bisect puts `@takazudo/zudo-doc@5.24.2` green on zfb 2.18.0, and shadowing the three named routes with local `pages/` files bypasses the generated shims by construction. If you hit this, please attach the diagnostics requested on #4271.

@@ -305,6 +305,7 @@ describe("Settings public field set snapshot", () => {
         "aiChatAllowedOrigins",
         "aiChatGlobalDailyLimit",
         "designTokenPanel",
+        "bundleZdtp",
         "tocMinDepth",
         "tocMaxDepth",
         "sidebarResizer",

@@ -271,7 +271,7 @@ Layout のうち 3 つは読み取り専用として表示されます: `spacing
 
 `@takazudo/zdtp` は初期ページバンドルには含まれません。`bootstrapDesignTokenPanel` はマウント時に小さな暫定クリックリスナーを登録するだけで、実際の zdtp の動的インポート（とそれに続く `configurePanel` の呼び出し）は、ヘッダーのトリガーが最初に `toggle-design-token-panel` をディスパッチしたときに実行されます。インポートが解決する前に届いたクリックはキューにためられ、configure完了後に正味1回分の表示/非表示にまとめられるため、すばやい連続クリックが二重に発火することはありません。
 
-ブートストラップは、パッケージ所有のサブパス `@takazudo/zudo-doc/zdtp-loader` を経由してのみ zdtp を読み込みます。`designTokenPanel` がオフのときは、プリセットがこの指定子だけをスタブモジュールに差し替えるため、ビルドは zdtp のチャンクを一切出力しません。ホスト側で独自に書いた `import "@takazudo/zdtp"` には影響しません。
+ブートストラップは、パッケージ所有のサブパス `@takazudo/zudo-doc/zdtp-loader` を経由してのみ zdtp を読み込みます。プリセットは、zdtp がバンドルされていない場合 — `bundleZdtp ?? designTokenPanel` として解決されます — にこの指定子だけをスタブモジュールに差し替えます。そのため `bundleZdtp` を一度も設定しないプロジェクトは、これまでどおりの挙動のままです: パネルがオフなら zdtp のチャンクは一切出力されません。`bundleZdtp: true` を設定すれば、パネルがオフのままでも本物のローダーを維持できます — その理由は[自前のパネルをマウントする](#実装-自前のパネルをマウントする)を参照してください。ホスト側で独自に書いた `import "@takazudo/zdtp"` には、どちらの場合も影響しません。
 
 保存済みの状態を持つ再訪ユーザーは、そのクリックを待つ必要がありません。マウント時にブートストラップは、アクティブな（パックスコープの）ストレージプレフィックス配下の `localStorage` を確認し、以下のいずれかが真であれば、操作前に即座に zdtp を読み込みます:
 
@@ -287,11 +287,49 @@ Layout のうち 3 つは読み取り専用として表示されます: `spacing
 
 ヘッダーのトリガーボタンは `window` に `toggle-design-token-panel` カスタムイベントをディスパッチします。zdtpはこのイベントをネイティブに受け取るため、`headerRightItems` フィールドでトリガーをカスタマイズしても追加の配線は必要ありません。
 
+### 自前のパネルをマウントする
+
+`designTokenPanel` と `bundleZdtp` はまったく別のことを制御しており、これを混同したことが zudo-doc#4261 の原因そのものでした。`designTokenPanel` が制御するのは**マウント**（パッケージ所有の `DesignTokenPanelBootstrap` アイランドを描画するかどうか）で、`bundleZdtp` が制御するのは**バンドル**（`@takazudo/zdtp` をビルドに含めるかどうか）です。両者はデフォルトで互いに連動します（[遅延読み込み](#実装-遅延読み込み)を参照）が、パッケージのパネルではなく自前のパネルアイランドをマウントしたいホストは、この2つを独立に設定する必要があります。
+
+パッケージのアイランドが呼んでいるのと同じブートストラップを、自前の `"use client"` アイランドから呼び出します。その際、`bootstrapDesignTokenPanel` を直接呼ぶのではなく `runDesignTokenPanelBootstrapOnce` を経由してください。再レンダリングやソフトナビゲーションで2回目のブートストラップが走るのを防ぐのが、この once ラッチの役割です。2回ブートストラップされると `toggle-design-token-panel` のリスナーが二重に登録され、トリガーを1回クリックしただけでトグル意図が2回分としてカウントされ、パネルが開かなくなります。
+
+```tsx
+"use client";
+
+import { runDesignTokenPanelBootstrapOnce } from "@takazudo/zudo-doc/design-token-panel-bootstrap";
+import { buildDesignTokenPanelConfig } from "@/config/design-token-panel-config";
+
+export function HostPanelBootstrap() {
+  runDesignTokenPanelBootstrapOnce(buildDesignTokenPanelConfig);
+  return null;
+}
+```
+
+このコンポーネントは、自前の `chromeBindings` モジュールの `BodyEndIslands` スロットに `Island({ when: "load" })` でラップして配線します — パッケージ自身のパネルアイランドとまったく同じ形です。描画結果はサーバー・クライアントのどちらでも空で、`bootstrapDesignTokenPanel` は自前の `typeof window === "undefined"` ガードにより SSR 時には何もしません。
+
+これを機能させるには、2つの設定を連動させて変更します:
+
+- `designTokenPanel: false` — パッケージ側は何もマウントしません。パネルを描画するのは自前のアイランドだけになります。
+- `bundleZdtp: true` — ローダーを本物のまま維持します。パネルをオフにしたままこれを未設定にすると、`@takazudo/zudo-doc/zdtp-loader` は例外を投げるスタブに差し替わり、ビルド自体は正常に成功したように見えても、パネルを開いた瞬間に自前のブートストラップの動的インポートが失敗します。
+
+トリガーもホスト側の担当です。`designTokenPanel: false` にすると、`settings.headerRightItems` の組み込み `design-token-panel` トリガーは除外されます（パッケージ側のパネルアイランドが無い状態でイベントだけをディスパッチする「死んだボタン」を描画しないため）。そのため自前のパネルには自前のボタンが必要です — `headerRightComponents` 経由で解決される `headerRightItems` エントリでも、任意の要素でもかまいませんが、`window` に `toggle-design-token-panel` をディスパッチしてください。
+
+`@takazudo/zdtp`（`@takazudo/zudo-doc` のオプショナルなピア依存）自体のインストールと、そのスタイルシートのインポート — 自前の `global.css` に `@import "@takazudo/zdtp/styles.css"` を書くこと — もホスト側の作業です。この行を代わりに書いてくれるものはここにはありません: `create-zudo-doc` がこの行を書き込むのは、`designTokenPanel` をオンにしてスキャフォールドしたときだけです。
+
+`bundleZdtp: true` のまま `@takazudo/zdtp` がインストールされていない場合、`@takazudo/zudo-doc/zdtp-loader` の静的再エクスポートの解決に失敗し、ビルドが失敗します。これは意図的な、サイレントなランタイム障害よりも望ましい失敗のさせ方です。
+
+<Warning title="無効な組み合わせ">
+
+`designTokenPanel: true` と `bundleZdtp: false` の組み合わせは、設定解決の時点で拒否されます。パッケージのパネルがマウントされているのにローダーがスタブ化されていると、開いた瞬間に確実に例外が発生するため、zudo-doc はそれをビルドしてしまう代わりにビルドを失敗させます。
+
+</Warning>
+
 ## 設定リファレンス
 
 | 設定 | 型 | 説明 |
 |---|---|---|
-| `designTokenPanel` | `boolean` | パネルを有効にします。デフォルトは `false`。 |
+| `designTokenPanel` | `boolean` | パッケージ自身のパネルアイランドをマウントします。デフォルトは `false`。 |
+| `bundleZdtp` | `boolean` | `@takazudo/zdtp` をビルドにバンドルします。デフォルトは `undefined`（`designTokenPanel` に追従: `bundleZdtp ?? designTokenPanel`）。`designTokenPanel: false` のまま `true` にすると、パッケージのパネルはマウントせずに zdtp だけをバンドルします — 自前のパネルをマウントするための組み合わせです（[自前のパネルをマウントする](#実装-自前のパネルをマウントする)を参照）。`designTokenPanel: true` のまま `false` にすると設定解決の時点で拒否されます。 |
 | `designTokenPanelConfigModule` | `string` | 完全にカスタムなパネル用に `buildDesignTokenPanelConfig(mode)` をエクスポートするモジュールへの、プロジェクトルート相対パス。デフォルトは `undefined`（パッケージのデフォルトビルダーを使用）。 |
 
 デフォルトのトークンそのもの（スペーシングスケール・フォントスケール・アイコンサイズ・パレットのエイリアス）は`@takazudo/zudo-doc/theme.css`から提供されます。スキャフォールドの後続の`src/styles/global.css`にある`@theme`ブロックはオーバーライドポイントです。カラーランプとマッピングには、パッケージの`@takazudo/zudo-doc/color-schemes-defaults`または自作の`colorSchemes`上書き（[Color](./color.mdx)を参照）を使います。パネルはブラウザ内のコピーを編集するだけで、ソースファイルに書き戻すことはありません。
