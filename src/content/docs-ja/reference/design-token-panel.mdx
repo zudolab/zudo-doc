@@ -291,21 +291,30 @@ Layout のうち 3 つは読み取り専用として表示されます: `spacing
 
 `designTokenPanel` と `bundleZdtp` はまったく別のことを制御しており、これを混同したことが zudo-doc#4261 の原因そのものでした。`designTokenPanel` が制御するのは**マウント**（パッケージ所有の `DesignTokenPanelBootstrap` アイランドを描画するかどうか）で、`bundleZdtp` が制御するのは**バンドル**（`@takazudo/zdtp` をビルドに含めるかどうか）です。両者はデフォルトで互いに連動します（[遅延読み込み](#実装-遅延読み込み)を参照）が、パッケージのパネルではなく自前のパネルアイランドをマウントしたいホストは、この2つを独立に設定する必要があります。
 
-パッケージのアイランドが呼んでいるのと同じブートストラップを、自前のアイランドから呼び出します:
+パッケージのアイランドが呼んでいるのと同じブートストラップを、自前の `"use client"` アイランドから呼び出します。その際、`bootstrapDesignTokenPanel` を直接呼ぶのではなく `runDesignTokenPanelBootstrapOnce` を経由してください。再レンダリングやソフトナビゲーションで2回目のブートストラップが走るのを防ぐのが、この once ラッチの役割です。2回ブートストラップされると `toggle-design-token-panel` のリスナーが二重に登録され、トリガーを1回クリックしただけでトグル意図が2回分としてカウントされ、パネルが開かなくなります。
 
-```ts
-import { bootstrapDesignTokenPanel } from "@takazudo/zudo-doc/design-token-panel-bootstrap";
+```tsx
+"use client";
+
+import { runDesignTokenPanelBootstrapOnce } from "@takazudo/zudo-doc/design-token-panel-bootstrap";
 import { buildDesignTokenPanelConfig } from "@/config/design-token-panel-config";
 
-bootstrapDesignTokenPanel(buildDesignTokenPanelConfig);
+export function HostPanelBootstrap() {
+  runDesignTokenPanelBootstrapOnce(buildDesignTokenPanelConfig);
+  return null;
+}
 ```
+
+このコンポーネントは、自前の `chromeBindings` モジュールの `BodyEndIslands` スロットに `Island({ when: "load" })` でラップして配線します — パッケージ自身のパネルアイランドとまったく同じ形です。描画結果はサーバー・クライアントのどちらでも空で、`bootstrapDesignTokenPanel` は自前の `typeof window === "undefined"` ガードにより SSR 時には何もしません。
 
 これを機能させるには、2つの設定を連動させて変更します:
 
 - `designTokenPanel: false` — パッケージ側は何もマウントしません。パネルを描画するのは自前のアイランドだけになります。
 - `bundleZdtp: true` — ローダーを本物のまま維持します。パネルをオフにしたままこれを未設定にすると、`@takazudo/zudo-doc/zdtp-loader` は例外を投げるスタブに差し替わり、ビルド自体は正常に成功したように見えても、パネルを開いた瞬間に自前のブートストラップの動的インポートが失敗します。
 
-`@takazudo/zdtp`（`@takazudo/zudo-doc` のオプショナルなピア依存）自体のインストールと、そのスタイルシートのインポート — 自前の `global.css` に `@import "@takazudo/zdtp/styles.css"` を書くこと — もホスト側の作業です。パッケージがこれを自動で行うのは、`designTokenPanel` がオンのときだけです。
+トリガーもホスト側の担当です。`designTokenPanel: false` にすると、`settings.headerRightItems` の組み込み `design-token-panel` トリガーは除外されます（パッケージ側のパネルアイランドが無い状態でイベントだけをディスパッチする「死んだボタン」を描画しないため）。そのため自前のパネルには自前のボタンが必要です — `headerRightComponents` 経由で解決される `headerRightItems` エントリでも、任意の要素でもかまいませんが、`window` に `toggle-design-token-panel` をディスパッチしてください。
+
+`@takazudo/zdtp`（`@takazudo/zudo-doc` のオプショナルなピア依存）自体のインストールと、そのスタイルシートのインポート — 自前の `global.css` に `@import "@takazudo/zdtp/styles.css"` を書くこと — もホスト側の作業です。この行を代わりに書いてくれるものはここにはありません: `create-zudo-doc` がこの行を書き込むのは、`designTokenPanel` をオンにしてスキャフォールドしたときだけです。
 
 `bundleZdtp: true` のまま `@takazudo/zdtp` がインストールされていない場合、`@takazudo/zudo-doc/zdtp-loader` の静的再エクスポートの解決に失敗し、ビルドが失敗します。これは意図的な、サイレントなランタイム障害よりも望ましい失敗のさせ方です。
 
@@ -320,7 +329,7 @@ bootstrapDesignTokenPanel(buildDesignTokenPanelConfig);
 | 設定 | 型 | 説明 |
 |---|---|---|
 | `designTokenPanel` | `boolean` | パッケージ自身のパネルアイランドをマウントします。デフォルトは `false`。 |
-| `bundleZdtp` | `boolean` | `@takazudo/zdtp` をビルドにバンドルします。デフォルトは `undefined`（`designTokenPanel` に追従: `bundleZdtp ?? designTokenPanel`）。`designTokenPanel: false` と組み合わせて `true` にすると、自前のパネルをマウントできます（[自前のパネルをマウントする](#実装-自前のパネルをマウントする)を参照）。`designTokenPanel: false` のまま `true` にするとパッケージのパネルはマウントせずに zdtp だけをバンドルし、`designTokenPanel: true` のまま `false` にすると設定解決の時点で拒否されます。 |
+| `bundleZdtp` | `boolean` | `@takazudo/zdtp` をビルドにバンドルします。デフォルトは `undefined`（`designTokenPanel` に追従: `bundleZdtp ?? designTokenPanel`）。`designTokenPanel: false` のまま `true` にすると、パッケージのパネルはマウントせずに zdtp だけをバンドルします — 自前のパネルをマウントするための組み合わせです（[自前のパネルをマウントする](#実装-自前のパネルをマウントする)を参照）。`designTokenPanel: true` のまま `false` にすると設定解決の時点で拒否されます。 |
 | `designTokenPanelConfigModule` | `string` | 完全にカスタムなパネル用に `buildDesignTokenPanelConfig(mode)` をエクスポートするモジュールへの、プロジェクトルート相対パス。デフォルトは `undefined`（パッケージのデフォルトビルダーを使用）。 |
 
 デフォルトのトークンそのもの（スペーシングスケール・フォントスケール・アイコンサイズ・パレットのエイリアス）は`@takazudo/zudo-doc/theme.css`から提供されます。スキャフォールドの後続の`src/styles/global.css`にある`@theme`ブロックはオーバーライドポイントです。カラーランプとマッピングには、パッケージの`@takazudo/zudo-doc/color-schemes-defaults`または自作の`colorSchemes`上書き（[Color](./color.mdx)を参照）を使います。パネルはブラウザ内のコピーを編集するだけで、ソースファイルに書き戻すことはありません。

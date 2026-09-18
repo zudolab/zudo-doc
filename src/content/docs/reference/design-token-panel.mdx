@@ -291,21 +291,30 @@ The header trigger button dispatches the `toggle-design-token-panel` custom even
 
 `designTokenPanel` and `bundleZdtp` control two different things, and conflating them is exactly what caused zudo-doc#4261: `designTokenPanel` controls **mounting** — whether the package's own `DesignTokenPanelBootstrap` island renders; `bundleZdtp` controls **bundling** — whether `@takazudo/zdtp` ships in the build at all. They default to tracking each other (see [Lazy loading](#implementation-lazy-loading)), but a host that wants to mount its own panel island — instead of the package's — needs to set them independently.
 
-Call the same bootstrap the package island calls, from your own island:
+Call the same bootstrap the package island calls, from your own `"use client"` island — and call it through `runDesignTokenPanelBootstrapOnce`, not `bootstrapDesignTokenPanel` directly. The once-latch is what keeps a re-render or a soft navigation from bootstrapping a second time; a second bootstrap binds a second `toggle-design-token-panel` listener, so one trigger click counts as two toggle intents and the panel never opens.
 
-```ts
-import { bootstrapDesignTokenPanel } from "@takazudo/zudo-doc/design-token-panel-bootstrap";
+```tsx
+"use client";
+
+import { runDesignTokenPanelBootstrapOnce } from "@takazudo/zudo-doc/design-token-panel-bootstrap";
 import { buildDesignTokenPanelConfig } from "@/config/design-token-panel-config";
 
-bootstrapDesignTokenPanel(buildDesignTokenPanelConfig);
+export function HostPanelBootstrap() {
+  runDesignTokenPanelBootstrapOnce(buildDesignTokenPanelConfig);
+  return null;
+}
 ```
+
+Wire that component into the `BodyEndIslands` slot of your `chromeBindings` module, wrapped in `Island({ when: "load" })` — the same shape the package's own panel island uses. It renders nothing on either side; `bootstrapDesignTokenPanel` no-ops during SSR through its own `typeof window === "undefined"` guard.
 
 Two settings move together to make this work:
 
 - `designTokenPanel: false` — so the package mounts nothing of its own; only your island renders a panel.
 - `bundleZdtp: true` — so the loader stays real. Leave it unset with the panel off and `@takazudo/zudo-doc/zdtp-loader` shadows to a throwing stub; your bootstrap's dynamic import rejects the moment the panel is opened, even though the build itself went green.
 
-You also install `@takazudo/zdtp` yourself (it's an optional peer dependency of `@takazudo/zudo-doc`) and import its stylesheet — `@import "@takazudo/zdtp/styles.css"` — in your own `global.css`; the package only does this automatically when `designTokenPanel` is on.
+You also own the trigger. `designTokenPanel: false` drops the built-in `design-token-panel` trigger from `settings.headerRightItems` (the package refuses to render a button that would dispatch into a document with no panel island of its own), so a host-mounted panel needs its own button — a `headerRightItems` entry resolved through `headerRightComponents`, or any element of yours — dispatching `toggle-design-token-panel` on `window`.
+
+You also install `@takazudo/zdtp` yourself (it's an optional peer dependency of `@takazudo/zudo-doc`) and import its stylesheet — `@import "@takazudo/zdtp/styles.css"` — in your own `global.css`. Nothing adds that line for you here: `create-zudo-doc` writes it only when you scaffold a project with `designTokenPanel` on.
 
 A missing `@takazudo/zdtp` with `bundleZdtp: true` fails the build resolving `@takazudo/zudo-doc/zdtp-loader`'s static re-export — loud, by design, rather than a silent runtime failure.
 
@@ -320,7 +329,7 @@ A missing `@takazudo/zdtp` with `bundleZdtp: true` fails the build resolving `@t
 | Setting | Type | Description |
 |---|---|---|
 | `designTokenPanel` | `boolean` | Mounts the package's own panel island. Default `false`. |
-| `bundleZdtp` | `boolean` | Bundles `@takazudo/zdtp` into the build. Default `undefined` (follows `designTokenPanel`: `bundleZdtp ?? designTokenPanel`). Set to `true` with `designTokenPanel: false` to mount your own panel (see [Mounting your own panel](#implementation-mounting-your-own-panel)); `true` with `designTokenPanel: false` bundles zdtp without mounting the package panel, `false` with `designTokenPanel: true` is rejected at config resolution. |
+| `bundleZdtp` | `boolean` | Bundles `@takazudo/zdtp` into the build. Default `undefined` (follows `designTokenPanel`: `bundleZdtp ?? designTokenPanel`). `true` with `designTokenPanel: false` bundles zdtp without mounting the package panel — the combination for mounting your own panel (see [Mounting your own panel](#implementation-mounting-your-own-panel)). `false` with `designTokenPanel: true` is rejected at config resolution. |
 | `designTokenPanelConfigModule` | `string` | Project-root-relative path to a module exporting `buildDesignTokenPanelConfig(mode)` for a fully custom panel. Default `undefined` (package-default builder is used). |
 
 The default tokens themselves — spacing scale, font scale, icon sizes, and palette aliases — ship in `@takazudo/zudo-doc/theme.css`. A scaffold's later `src/styles/global.css` `@theme` block is an override point; for color ramps and mappings, use the package's `@takazudo/zudo-doc/color-schemes-defaults` or your own `colorSchemes` override (see [Color](./color.mdx)). The panel only tweaks the in-browser copy of those tokens; it never writes to source files.
