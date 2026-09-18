@@ -9,6 +9,8 @@ import {
   parseSemverCore,
   satisfiesCaret,
   evaluateFirstPartyPeer,
+  evaluateApprovedPeerBaseline,
+  FIRST_PARTY_PEER_CHECKS,
   workspaceZfbDevPinMatches,
   workspaceZfbPeerFloorMatches,
 } from "../check-pin-parity.mjs";
@@ -310,5 +312,178 @@ describe("target-manifest fixture guard (#3307, negative control)", () => {
     });
     expect(stdout).toContain("1 fixture pin");
     expect(stdout).toContain("target-manifest fixture");
+  });
+});
+
+// ── Approved-baseline guard (#4264) ──────────────────────────────────────────
+// The `comparison` modes above are all one-sided: a RAISED declaration still
+// satisfies (or is admitted by) the source value, so `/dev-bump-zudo-deps --write`
+// could rewrite the floor with every semantic check still green. The approved
+// baseline is the only gate that catches that direction.
+describe("evaluateApprovedPeerBaseline (#4264)", () => {
+  const pkg = "@takazudo/zudo-doc-history-server";
+
+  it("PASSES when the declaration equals the approved baseline", () => {
+    const res = evaluateApprovedPeerBaseline({
+      pkg,
+      approvedBaseline: "^5.17.2",
+      actualPeer: "^5.17.2",
+    });
+    expect(res.ok).toBe(true);
+    expect(res.reason).toBeUndefined();
+  });
+
+  it("FAILS on an accidental raise that would still satisfy the root version", () => {
+    const res = evaluateApprovedPeerBaseline({
+      pkg,
+      approvedBaseline: "^5.17.2",
+      actualPeer: "^5.25.0",
+    });
+    expect(res.ok).toBe(false);
+    // Sanity: the semantic check alone would have waved this through.
+    expect(satisfiesCaret("5.25.0", "^5.25.0")).toBe(true);
+  });
+
+  it("FAILS on a lowering too — any unapproved edit is caught", () => {
+    const res = evaluateApprovedPeerBaseline({
+      pkg,
+      approvedBaseline: "^5.17.2",
+      actualPeer: "^5.10.0",
+    });
+    expect(res.ok).toBe(false);
+  });
+
+  it("PASSES when the baseline is updated alongside the declaration (approved change)", () => {
+    const res = evaluateApprovedPeerBaseline({
+      pkg,
+      approvedBaseline: "^5.25.0",
+      actualPeer: "^5.25.0",
+    });
+    expect(res.ok).toBe(true);
+  });
+
+  it("FAILS when the declaration is missing", () => {
+    const res = evaluateApprovedPeerBaseline({
+      pkg,
+      approvedBaseline: "^5.17.2",
+      actualPeer: undefined,
+    });
+    expect(res.ok).toBe(false);
+    expect(res.actual).toBe("(missing)");
+  });
+
+  it("names the contract and points at RELEASE.md", () => {
+    const res = evaluateApprovedPeerBaseline({
+      pkg,
+      approvedBaseline: "^5.17.2",
+      actualPeer: "^5.25.0",
+    });
+    expect(res.reason).toContain("RELEASE.md");
+    expect(res.reason).toContain("First-party peer floor (publish-lag)");
+    expect(res.reason).toContain("UNCHANGED");
+  });
+
+  it("covers the zdtp union range with the same mechanism", () => {
+    const union = "^0.5.2 || ^0.6.0 || ^0.7.0 || ^0.8.0";
+    expect(
+      evaluateApprovedPeerBaseline({
+        pkg: "@takazudo/zdtp",
+        approvedBaseline: union,
+        actualPeer: union,
+      }).ok,
+    ).toBe(true);
+    // A widened union — the shape a bump round would write — is unapproved.
+    expect(
+      evaluateApprovedPeerBaseline({
+        pkg: "@takazudo/zdtp",
+        approvedBaseline: union,
+        actualPeer: `${union} || ^0.9.0`,
+      }).ok,
+    ).toBe(false);
+  });
+
+  it("declares a baseline for every first-party peer check", () => {
+    for (const check of FIRST_PARTY_PEER_CHECKS) {
+      expect(typeof check.approvedBaseline).toBe("string");
+      expect(check.approvedBaseline.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+// Regression net for the two routine flows the contract says must leave the
+// declaration alone (RELEASE.md § "First-party peer floor (publish-lag)", rule 2).
+describe("routine flows preserve the first-party peer declarations (#4264)", () => {
+  const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+  const SCRIPT_PATH = resolve(REPO_ROOT, "scripts/check-pin-parity.mjs");
+  const ZUDO_DOC_PKG_PATH = resolve(
+    REPO_ROOT,
+    "packages/zudo-doc/package.json",
+  );
+  const RELEASE_SH_PATH = resolve(
+    REPO_ROOT,
+    "scripts/release-create-zudo-doc.sh",
+  );
+
+  it("the live tree still matches every approved baseline (no bump round has slipped through)", () => {
+    const pkgJson = JSON.parse(readFileSync(ZUDO_DOC_PKG_PATH, "utf-8"));
+    for (const check of FIRST_PARTY_PEER_CHECKS) {
+      expect(pkgJson.peerDependencies?.[check.pkg]).toBe(
+        check.approvedBaseline,
+      );
+    }
+  });
+
+  it("(a) a dependency-bump round's rewrite is rejected end-to-end", () => {
+    const original = readFileSync(ZUDO_DOC_PKG_PATH, "utf-8");
+    try {
+      const rootVersion = JSON.parse(
+        readFileSync(resolve(REPO_ROOT, "package.json"), "utf-8"),
+      ).version;
+      // Exactly what `resolve-bumps.mjs --write` does: raise the peer floor to
+      // the newest version it resolved for the package.
+      const parsed = JSON.parse(original);
+      parsed.peerDependencies["@takazudo/zudo-doc-history-server"] =
+        `^${rootVersion}`;
+      const mutated = `${JSON.stringify(parsed, null, 2)}\n`;
+      expect(mutated).not.toBe(original);
+      writeFileSync(ZUDO_DOC_PKG_PATH, mutated);
+
+      let status: number | undefined;
+      let stderr = "";
+      try {
+        execFileSync(process.execPath, [SCRIPT_PATH], {
+          encoding: "utf-8",
+          stdio: ["ignore", "pipe", "pipe"],
+        });
+      } catch (error) {
+        const err = error as { status?: number; stderr?: string };
+        status = err.status;
+        stderr = err.stderr ?? "";
+      }
+
+      expect(status).toBe(1);
+      expect(stderr).toContain("approved baseline");
+      expect(stderr).toContain("First-party peer floor (publish-lag)");
+      expect(stderr).toContain(ZUDO_DOC_PKG_PATH);
+    } finally {
+      writeFileSync(ZUDO_DOC_PKG_PATH, original);
+    }
+  });
+
+  it("(b) the release script only rewrites `version` in packages/zudo-doc/package.json", () => {
+    const releaseSh = readFileSync(RELEASE_SH_PATH, "utf-8");
+    // Static half: the release script has no business naming peerDependencies.
+    expect(releaseSh).not.toContain("peerDependencies");
+
+    // Behavioral half: replay the release script's mutation of this file
+    // (parse → set version → re-serialize) and assert the peer block survives.
+    const pkgJson = JSON.parse(readFileSync(ZUDO_DOC_PKG_PATH, "utf-8"));
+    const before = { ...pkgJson.peerDependencies };
+    pkgJson.version = "99.0.0";
+    const after = JSON.parse(JSON.stringify(pkgJson, null, 2)).peerDependencies;
+    expect(after).toEqual(before);
+    for (const check of FIRST_PARTY_PEER_CHECKS) {
+      expect(after[check.pkg]).toBe(check.approvedBaseline);
+    }
   });
 });
