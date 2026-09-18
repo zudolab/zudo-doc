@@ -245,7 +245,12 @@ scanner-safe. Every other host slot remains intact.
   `../node_modules/@takazudo/zudo-doc/routes-src/404.tsx`) rather than writing
   an absolute path; the relative path resolves because the bundler shadow root
   carries an absolute symlink back to the project's real `node_modules`, which
-  the workspace and published shapes both traverse identically. As a hedge:
+  the workspace and published shapes both traverse identically. The emitted
+  specifier is the captured output shape, not a verified derivation: it comes
+  out lexical (`node_modules/@takazudo/zudo-doc/...`) even under pnpm, where the
+  absolute path zudo-doc hands `injectRoute` is a `.pnpm/` realpath from
+  `require.resolve`, and the re-lexicalisation step that bridges the two was not
+  located in the 2.18.0 binary — see §1 of the findings note. As a hedge:
   staging into a first-party directory would sidestep that shadow-root symlink
   entirely, which may be why the reporter's pre-removal (5.24.2) build still
   passed on zfb 2.18.0 — but the planning-time claim that zfb declines to
