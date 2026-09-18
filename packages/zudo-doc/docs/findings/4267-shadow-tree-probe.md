@@ -46,10 +46,17 @@ a relative string** — `packages/zudo-doc/src/plugins/routes.ts` hands
 `ctx.injectRoute` an absolute path; zfb relativises it against the shim's
 position. The epic's inference on this point is now fact, not inference.
 
-Also established: zfb preserves the *lexical* package path. Even when
-`node_modules/@takazudo/zudo-doc` is a pnpm symlink, the emitted specifier is the
-clean `.../node_modules/@takazudo/zudo-doc/routes-src/...` — never a `.pnpm/`
-realpath.
+Observed but **not** explained: the emitted specifier is the clean
+`.../node_modules/@takazudo/zudo-doc/routes-src/...` even when
+`node_modules/@takazudo/zudo-doc` is a pnpm symlink — never a `.pnpm/` realpath.
+That is surprising, because the absolute path zudo-doc hands `injectRoute` is
+derived from `require.resolve()` (`plugins/routes.ts`), which resolves symlinks,
+so under pnpm it *is* a `.pnpm/...` realpath. zfb must therefore re-lexicalise
+the path (or relativise it against something other than the value it was given)
+before writing the shim; that step was not located in the 2.18.0 binary. Treat
+the clean specifier as a captured observation, not as a mechanism this probe
+understands — a consumer whose realpath layout defeats the re-lexicalisation
+would be exactly the missing ingredient §7 asks the reporter for.
 
 ## 2. Established: why it resolves — the shadow root symlinks `node_modules`
 
@@ -149,7 +156,6 @@ echo '{ "name": "repro-ws", "private": true, "version": "0.0.0" }' > package.jso
 
 # 3. fixture body: packageOwnedRoutes on, pages/ holds ONLY a non-shadowing index
 cp -r <repo>/packages/zudo-doc/src/__tests__/fixtures/route-injection-i18n/. apps/site/
-rm -rf apps/site/pages-stubs
 mkdir -p apps/site/pages apps/site/.zfb && echo '{}' > apps/site/.zfb/doc-history-meta.json
 # write apps/site/pages/index.tsx (any trivial page)
 
@@ -178,7 +184,7 @@ To inspect the shims, prefix step 5 with `TMPDIR=/tmp/probe/tmpd` and poll
 
 | | Hypothesis | Verdict |
 |---|---|---|
-| 1 | real dir vs pnpm symlink (the epic's leading hypothesis) | **Refuted.** Rows 2, 3, 8, 9 are all genuine pnpm symlinks and all green. The realpath escaping the project root (rows 3, 9) changes nothing, because zfb emits the lexical path and the shadow root symlinks the whole project `node_modules`. |
+| 1 | real dir vs pnpm symlink (the epic's leading hypothesis) | **Refuted.** Rows 2, 3, 8, 9 are all genuine pnpm symlinks and all green. The realpath escaping the project root (rows 3, 9) changes nothing, because the emitted specifier came out lexical in every run (§1 — observed, not explained) and the shadow root symlinks the whole project `node_modules`. |
 | 2 | workspace sub-package resolving upward to a workspace-root store | **Refuted.** Row 9 is exactly that, built by real pnpm, and green. |
 | 3 | missing `package.json` in the fixture masking the bug | **Refuted.** Rows 5–11 all carry a real `package.json` with a real dependency closure; all green. |
 

@@ -252,7 +252,9 @@ scanner-safe. Every other host slot remains intact.
   materialise non-first-party entrypoints was never observed taking effect in
   any tested topology, so treat that as a hedge, not a confirmed mechanism.
   Validation history: zfb 2.17.0 + zudo-doc 5.25.0 green (#4226); zfb 2.18.0 +
-  zudo-doc 5.25.0 green across 11 consumer topologies in the wave-1 probe for
+  zudo-doc 5.25.0 green across 11 consumer topologies (ten fully green; the
+  eleventh resolved every shim and then failed at render for an unrelated
+  duplicate-preact reason) in the wave-1 probe for
   zudolab/zudo-doc#4271; a report on that same 2.18.0 + 5.25.0 cell (#4267) did
   not reproduce — see `../findings/4267-shadow-tree-probe.md` for the full
   evidence.

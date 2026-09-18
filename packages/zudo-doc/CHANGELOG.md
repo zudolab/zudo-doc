@@ -8,7 +8,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ### Other Changes
 
-- Investigated a build-failure report (#4267, tracked in #4271): three `Could not resolve "../node_modules/@takazudo/zudo-doc/routes-src/*.tsx"` esbuild errors on `@takazudo/zfb@2.18.0` + `@takazudo/zudo-doc@5.25.0`, for a pnpm-workspace consumer whose `pages/` did not shadow any of the three package-owned injected routes. The failure did not reproduce across 11 consumer topologies — including the reporter's exact pnpm-workspace-symlink install shape — documented in `packages/zudo-doc/docs/findings/4267-shadow-tree-probe.md`. No code changed. If you hit this, the verified workaround is to stay on `@takazudo/zudo-doc@5.24.2` (green on zfb 2.18.0) or to shadow the three routes with local `pages/` files, and to attach the diagnostics requested on #4271.
+- Investigated a build-failure report (#4267, tracked in #4271): three `Could not resolve "../node_modules/@takazudo/zudo-doc/routes-src/*.tsx"` esbuild errors on `@takazudo/zfb@2.18.0` + `@takazudo/zudo-doc@5.25.0`, for a pnpm-workspace consumer whose `pages/` did not shadow the package-owned injected routes named in those errors. The failure did not reproduce across 11 consumer topologies — including the reporter's exact pnpm-workspace-symlink install shape — documented in `packages/zudo-doc/docs/findings/4267-shadow-tree-probe.md`. No code changed. Because nothing reproduced, no workaround could be verified here: the reporter's own bisect puts `@takazudo/zudo-doc@5.24.2` green on zfb 2.18.0, and shadowing the three named routes with local `pages/` files bypasses the generated shims by construction. If you hit this, please attach the diagnostics requested on #4271.
 
 ## [5.25.0] - 2026-09-16
 
