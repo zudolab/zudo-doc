@@ -8,7 +8,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ### Other Changes
 
-- Investigated a build-failure report (#4267, tracked in #4271): three `Could not resolve "../node_modules/@takazudo/zudo-doc/routes-src/*.tsx"` esbuild errors on `@takazudo/zfb@2.18.0` + `@takazudo/zudo-doc@5.25.0`, for a pnpm-workspace consumer whose `pages/` did not shadow the package-owned injected routes named in those errors. The failure did not reproduce across 11 consumer topologies — including the reporter's exact pnpm-workspace-symlink install shape — documented in `packages/zudo-doc/docs/findings/4267-shadow-tree-probe.md`. No code changed. Because nothing reproduced, no workaround could be verified here: the reporter's own bisect puts `@takazudo/zudo-doc@5.24.2` green on zfb 2.18.0, and shadowing the three named routes with local `pages/` files bypasses the generated shims by construction. If you hit this, please attach the diagnostics requested on #4271.
+- Investigated a build-failure report (#4267, tracked in #4271): three `Could not resolve` esbuild errors on relative `../node_modules/@takazudo/zudo-doc/routes-src/*.tsx` specifiers (`../../` for the route one directory deeper) on `@takazudo/zfb@2.18.0` + `@takazudo/zudo-doc@5.25.0`, for a pnpm-workspace consumer whose `pages/` did not shadow the package-owned injected routes named in those errors. The failure did not reproduce across 11 consumer topologies — including the reporter's exact pnpm-workspace-symlink install shape — documented in `packages/zudo-doc/docs/findings/4267-shadow-tree-probe.md`. No code changed. Because nothing reproduced, no workaround could be verified here: the reporter's own bisect puts `@takazudo/zudo-doc@5.24.2` green on zfb 2.18.0, and shadowing the three named routes with local `pages/` files bypasses the generated shims by construction. If you hit this, please attach the diagnostics requested on #4271.
 
 ## [5.25.0] - 2026-09-16
 
@@ -257,6 +257,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ### Other Changes
 
+- Migration: because the resource indexes are now locale-owned, a resource section only stays default-locale-only when `defaultLocaleOnlyPrefixes` lists its **overview** prefix — `/docs/claude/` or `/docs/codex/` — alongside the sub-section prefixes. With the overview prefix missing, the overview index is generated into every configured locale; if that locale directory already holds an authored `claude/index.mdx` without `generated: true` in its frontmatter, the build fails with `resource-docs: refusing to overwrite authored locale index`. Either add the overview prefix, or remove the authored index and move its title, description, and labels to `ZudoDocConfig.translations`. (#3820)
 - Updated the zfb peer family to 2.14.2. (`5c5bfd2f`)
 
 ## [5.14.0] - 2026-08-31
@@ -278,7 +279,8 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ### Other Changes
 
-- Enabled Asset Viewer routes now localize automatically for existing multi-locale consumers after a package bump, unless `/${assetViewerRoutePrefix}/` is explicitly present in `defaultLocaleOnlyPrefixes`. Existing apps that already carry the legacy Claude/Codex resource prefixes remain default-locale-only after upgrading; remove the prefixes for resource sections you want generated in every configured locale. (#3820)
+- Enabled Asset Viewer routes now localize automatically for existing multi-locale consumers after a package bump, unless `/${assetViewerRoutePrefix}/` is explicitly present in `defaultLocaleOnlyPrefixes`. A resource section stays default-locale-only only when the prefix list covers the whole section, **including its overview prefix** — `/docs/claude/` or `/docs/codex/`. Listing only the sub-section prefixes (`/docs/claude-md/`, `/docs/claude-skills/`, `/docs/claude-agents/`, `/docs/claude-commands/`, and the Codex equivalents) does not make the section default-locale-only. Remove the prefixes for resource sections you want generated in every configured locale. (#3820)
+- Migration: if your config lists the sub-section resource prefixes but not the overview prefix, add `/docs/claude/` (and `/docs/codex/`) to `defaultLocaleOnlyPrefixes` before upgrading. Otherwise the locale-owned overview index is generated into every configured locale, and an authored `src/content/docs-<locale>/claude/index.mdx` without `generated: true` in its frontmatter fails the build with `resource-docs: refusing to overwrite authored locale index`. The rule and both ways out are in the Internationalization guide, under Default-Locale-Only Prefixes. (#3820)
 - Migration: before building with 5.14.0, remove or rename any authored locale resource overview/category `index.mdx` at a generator target and move custom titles, descriptions, and labels to `ZudoDocConfig.translations`. The generator refuses to overwrite an existing file unless its frontmatter contains `generated: true`. (#3820)
 - Updated the zfb peer family to 2.14.0, `@takazudo/zdtp` to 0.4.14, and the doc-history-server peer floor to 5.13.1. (`dbe8553c7`, `038870c94`, `95a82f15f`)
 

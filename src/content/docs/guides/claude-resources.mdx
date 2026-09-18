@@ -64,6 +64,8 @@ The overview and category-index pages are generated in every configured locale, 
 
 English and Japanese `resource.*` strings ship with the package. Other supported locale codes follow the normal requested locale → configured default → English → literal fallback chain. You can override the labels through `ZudoDocConfig.translations`. See [Internationalization](./i18n.mdx#generated-pages-and-default-locale-bodies) for the storage rationale, `llms.txt` and search behavior, and the `defaultLocaleOnlyPrefixes` opt-out.
 
+If you take that opt-out, restrict the whole section: the overview prefix `/docs/claude/` has to be listed alongside `/docs/claude-md/`, `/docs/claude-skills/`, `/docs/claude-agents/`, and `/docs/claude-commands/`. With the overview prefix missing, the locale-owned overview index is still generated into every configured locale, and an authored locale `claude/index.mdx` without `generated: true` fails the build with `resource-docs: refusing to overwrite authored locale index`. See [A resource section includes its overview prefix](./i18n.mdx#default-locale-only-prefixes-a-resource-section-includes-its-overview-prefix).
+
 ## Configuration Options
 
 | Option | Type | Description |
