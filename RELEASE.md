@@ -206,6 +206,13 @@ they ever disagree with what follows, this section wins and the other two are th
    requirement (the package began relying on an API that first shipped in that version),
    or an approaching cross-major staleness that would otherwise make the check error.
 4. It may **never** name a version that is not yet published to npm.
+5. The declaration is **mirrored as an approved baseline** in
+   `scripts/check-pin-parity.mjs` (`FIRST_PARTY_PEER_CHECKS[].approvedBaseline`), compared
+   by exact string equality. That gate is what makes rule 2 enforceable: every semantic
+   comparison the script performs is one-sided, so a *raised* floor still satisfies the
+   root version and would otherwise pass silently. A rule-3 change therefore edits **both**
+   the `package.json` entry and the baseline **in the same commit**; editing only one fails
+   `pnpm check:pin-parity`.
 
 Rule 4 is a hard constraint. The showcase resolves this peer from the **npm registry**
 (not a workspace link), and every install — local, CI, and the publish workflows — runs
@@ -265,8 +272,12 @@ went stale. Two things it knows that a generic dependency bumper does not:
 >
 > ```sh
 > node "$HOME/.claude/skills/dev-bump-zudo-deps/scripts/resolve-bumps.mjs" \
->   @takazudo/zfb @takazudo/zfb-runtime
+>   @takazudo/zfb @takazudo/zfb-runtime @takazudo/zfb-adapter-cloudflare \
+>   @takazudo/zfb-md-wasm
 > ```
+>
+> Name the **whole** zfb family when you scope it this way — a partial bump leaves the
+> workspace peer floors unsatisfiable (see "Bumping the toolchain" below).
 >
 > or revert that one hunk before installing.
 

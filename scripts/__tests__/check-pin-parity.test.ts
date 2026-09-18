@@ -1,9 +1,22 @@
 import { execFileSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { describe, it, expect } from "vitest";
+
+// Both negative controls below mutate a REAL tracked file in place. vitest runs
+// this project's files in parallel with the `unit` project, and at least one
+// unit spec (src/__tests__/pages-lib/changelog-hierarchy.test.ts) reads
+// packages/zudo-doc/package.json — a plain writeFileSync truncates before it
+// writes, so a concurrent reader can observe a half-written file and blow up in
+// JSON.parse. Write to a sibling temp path and rename(2) instead: the swap is
+// atomic, so a concurrent reader always sees one complete version or the other.
+const writeFileAtomic = (path: string, contents: string) => {
+  const tmp = `${path}.vitest-tmp`;
+  writeFileSync(tmp, contents);
+  renameSync(tmp, path);
+};
 
 import {
   parseSemverCore,
@@ -283,7 +296,7 @@ describe("target-manifest fixture guard (#3307, negative control)", () => {
       // Guards against a regex that silently fails to match: without this,
       // the test would "pass" on an unmutated (still-correct) fixture.
       expect(mutated).not.toBe(original);
-      writeFileSync(FIXTURE_PKG_PATH, mutated);
+      writeFileAtomic(FIXTURE_PKG_PATH, mutated);
 
       let status: number | undefined;
       let stderr = "";
@@ -302,7 +315,7 @@ describe("target-manifest fixture guard (#3307, negative control)", () => {
       expect(stderr).toContain(FIXTURE_PKG_PATH);
       expect(stderr).toMatch(/Fixture pin drift/);
     } finally {
-      writeFileSync(FIXTURE_PKG_PATH, original);
+      writeFileAtomic(FIXTURE_PKG_PATH, original);
     }
   });
 
@@ -446,7 +459,7 @@ describe("routine flows preserve the first-party peer declarations (#4264)", () 
         `^${rootVersion}`;
       const mutated = `${JSON.stringify(parsed, null, 2)}\n`;
       expect(mutated).not.toBe(original);
-      writeFileSync(ZUDO_DOC_PKG_PATH, mutated);
+      writeFileAtomic(ZUDO_DOC_PKG_PATH, mutated);
 
       let status: number | undefined;
       let stderr = "";
@@ -466,24 +479,31 @@ describe("routine flows preserve the first-party peer declarations (#4264)", () 
       expect(stderr).toContain("First-party peer floor (publish-lag)");
       expect(stderr).toContain(ZUDO_DOC_PKG_PATH);
     } finally {
-      writeFileSync(ZUDO_DOC_PKG_PATH, original);
+      writeFileAtomic(ZUDO_DOC_PKG_PATH, original);
     }
   });
 
   it("(b) the release script only rewrites `version` in packages/zudo-doc/package.json", () => {
     const releaseSh = readFileSync(RELEASE_SH_PATH, "utf-8");
-    // Static half: the release script has no business naming peerDependencies.
+    // Repo-wide: the release script has no business naming peerDependencies at all.
     expect(releaseSh).not.toContain("peerDependencies");
 
-    // Behavioral half: replay the release script's mutation of this file
-    // (parse → set version → re-serialize) and assert the peer block survives.
-    const pkgJson = JSON.parse(readFileSync(ZUDO_DOC_PKG_PATH, "utf-8"));
-    const before = { ...pkgJson.peerDependencies };
-    pkgJson.version = "99.0.0";
-    const after = JSON.parse(JSON.stringify(pkgJson, null, 2)).peerDependencies;
-    expect(after).toEqual(before);
-    for (const check of FIRST_PARTY_PEER_CHECKS) {
-      expect(after[check.pkg]).toBe(check.approvedBaseline);
+    // Scoped: inspect the `node -e "..."` block(s) that actually rewrite this
+    // file and assert `version` is the ONLY field assigned on the parsed object.
+    // (An in-memory parse → assign → stringify replay would be vacuous — a JSON
+    // round-trip preserves every field by construction and can never fail.)
+    const blocks = [
+      ...releaseSh.matchAll(/node -e "([\s\S]*?)\n"/g),
+    ]
+      .map((match) => match[1] ?? "")
+      .filter((body) => body.includes("$ZUDO_DOC_PKG_JSON"));
+    expect(blocks.length).toBeGreaterThan(0);
+
+    for (const body of blocks) {
+      const assigned = [...body.matchAll(/\bpkg\.([A-Za-z0-9_$]+)\s*(?:\[[^\]]*\])?\s*=/g)].map(
+        (match) => match[1],
+      );
+      expect(assigned).toEqual(["version"]);
     }
   });
 });
