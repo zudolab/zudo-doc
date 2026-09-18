@@ -205,7 +205,16 @@ they ever disagree with what follows, this section wins and the other two are th
 3. It changes **only for a documented compatibility reason**: a genuine minimum-version
    requirement (the package began relying on an API that first shipped in that version),
    or an approaching cross-major staleness that would otherwise make the check error.
-4. It may **never** name a version that is not yet published to npm.
+4. It may name a version that is not yet published to npm in **exactly one case: the
+   release commit of a major bump**, where it is raised to `^<new major>.0.0` together
+   with the root version (rule 3's cross-major clause) and the approved baseline (rule
+   5). That is the same in-flight-version window `scaffold.ts` already occupies on every
+   release (`scripts/run-b4push.sh` step 19, `B4PUSH_SKIP_PIN_PUBLISHED`). The window
+   closes when the 6a publishes (`zudo-doc-history-server`, `zudo-doc`) land on npm, and
+   the publish order guarantees it closes before the only gate that compares the floor
+   against the registry — `publish-create-zudo-doc.yml` Safeguard 4/5 — runs. Outside a
+   major bump the floor never names an unpublished version. The raise is a hand edit in
+   the release commit; the release script never touches it.
 5. The declaration is **mirrored as an approved baseline** in
    `scripts/check-pin-parity.mjs` (`FIRST_PARTY_PEER_CHECKS[].approvedBaseline`), compared
    by exact string equality. That gate is what makes rule 2 enforceable: every semantic
@@ -214,11 +223,20 @@ they ever disagree with what follows, this section wins and the other two are th
    the `package.json` entry and the baseline **in the same commit**; editing only one fails
    `pnpm check:pin-parity`.
 
-Rule 4 is a hard constraint. The showcase resolves this peer from the **npm registry**
-(not a workspace link), and every install — local, CI, and the publish workflows — runs
-`pnpm install --frozen-lockfile`. Raising the floor to the in-flight release version makes
-the frozen lockfile unresolvable and deadlocks both main CI and the publish workflows. The
-release script (`scripts/release-create-zudo-doc.sh`) deliberately does not touch it.
+Rule 4's window is safe because the floor is not an install input. The showcase consumes
+`@takazudo/zudo-doc-history-server` as a `workspace:*` link and declares it an **optional**
+peer, and a workspace package's `peerDependencies` appear nowhere in `pnpm-lock.yaml`'s
+importers — so no install, local or CI or publish, frozen or not, is affected by the
+floor's value. Measured in #4280 (`docs/findings/4268-peer-floor-major-bump.md`): with a
+release fully prepped at root `6.0.0`, floor `^6.0.0`, `approvedBaseline` `^6.0.0` and no
+`6.x` on npm, `pnpm install`, `pnpm check:pin-parity`, main CI and all three publish
+workflows pass. The real constraint is a different gate: `check:scaffold-pin-freshness`'s
+first-party peer-range rule (#4065) is red while the floor names a version the registry's
+`latest` does not satisfy. It runs in the release script's pre-bump preflight — where the
+floor it sees is still the old one — and in `publish-create-zudo-doc.yml` Safeguard 4/5,
+which by the mandated publish order runs after the 6a publishes have landed. Neither ever
+looks inside the window. The release script (`scripts/release-create-zudo-doc.sh`)
+deliberately does not touch the floor.
 
 ### The lag is expected, unbounded, and not a defect
 
@@ -238,7 +256,15 @@ The pin-parity guard (`scripts/check-pin-parity.mjs`) enforces this with
 **satisfies-semantics** for the lockstep peer: it fails only when the floor would
 **exclude** the root version (a cross-major drift like `^1.x` at root `2.x`, or a
 floor above root like `^2.2.0` at root `2.1.0`), and prints a non-fatal advisory
-when a valid floor lags. A clean linear release therefore needs no interleaving:
+when a valid floor lags.
+
+At a **major** bump the check errors on the old floor (`^5.x` at root `6.x`) — that is the
+rule-3 cross-major case, and the remedy is the rule-4 raise: edit the floor and the
+approved baseline to `^<new major>.0.0` in the release commit, before `pnpm b4push`. The
+linear release below is unchanged; the raise rides in the same commit as the version bump,
+exactly as v3.0.0, v4.0.0 and v5.0.0 did.
+
+A clean linear release therefore needs no interleaving:
 
 > bump versions + scaffold pins → `pnpm b4push` → commit → push → main CI green →
 > tag → publish all three in publish-order.
@@ -370,6 +396,13 @@ and version and directing the release author to verify compatibility before
 widening or updating the peer declaration. An invalid range is reported as
 `invalid-range`; a network or unusable registry response remains the separate
 fail-closed `lookup-error` finding.
+
+At a major bump the history-server range is raised to the in-flight major in the release
+commit (see "First-party peer floor (publish-lag)", rule 4) and is therefore
+`peer-range-excludes-latest` until `@takazudo/zudo-doc-history-server@<new major>` is on
+`latest`. Safeguard 4/5 runs after that publish by the mandated order, so it passes; if it
+fails with this finding on a major, the 6a publishes have not landed yet — publish them
+and re-run, do not touch the range.
 
 **Prerelease pins read the `next` dist-tag, not `latest`.** A pin carrying a
 `-prerelease` suffix (e.g. `0.2.0-next.9`) is compared against the registry's

@@ -268,19 +268,29 @@ B4PUSH_SKIP_PIN_PUBLISHED=1 pnpm b4push
 
 Fix any failures and recommit before proceeding. Do not tag until b4push is fully green.
 
-> **Do NOT bump the `@takazudo/zudo-doc-history-server` peer floor — not during the
-> release, and not after publishing either.** The release script intentionally leaves
-> `packages/zudo-doc/package.json`
+> **Do NOT bump the `@takazudo/zudo-doc-history-server` peer floor during a minor or
+> patch release — and not after publishing either.** The release script intentionally
+> leaves `packages/zudo-doc/package.json`
 > `peerDependencies["@takazudo/zudo-doc-history-server"]` alone: that floor is a
-> **minimum-supported-version declaration, not a lockstep mirror**, and a release
-> preserves it unchanged. Raising it to the in-flight version also makes the frozen
-> lockfile unresolvable and deadlocks CI **and** the publish workflows, since the
-> showcase resolves the peer from the npm registry. The pin-parity guard uses
-> satisfies-semantics here, so a lag of any size (e.g. floor `^5.17.2` at release
-> `5.25.0`) **passes** and only emits a non-fatal advisory — the lag is expected and
-> is not a defect. Do not "fix" that advisory. The full contract, including the only
-> reasons the floor may ever move, lives in RELEASE.md → "First-party peer floor
-> (publish-lag)"; it is deliberately not restated here.
+> **minimum-supported-version declaration, not a lockstep mirror**, and a minor or patch
+> release preserves it unchanged. The pin-parity guard uses satisfies-semantics here, so
+> a lag of any size (e.g. floor `^5.17.2` at release `5.25.0`) **passes** and only emits
+> a non-fatal advisory — the lag is expected and is not a defect. Do not "fix" that
+> advisory.
+>
+> **A major release is the one exception.** At a major bump the old floor no longer
+> includes the root version, so `pnpm check:pin-parity` **errors** on it. Raise the floor
+> **and** its `approvedBaseline` in `scripts/check-pin-parity.mjs` by hand to
+> `^<new major>.0.0` — after Step 2's script run, before this step's `pnpm b4push`, in
+> the same release commit. If you run `pnpm check:scaffold-pin-freshness` by hand during
+> that window it reports the history-server peer as `peer-range-excludes-latest` until
+> the 6a publishes in Step 9 land on npm — contract-sanctioned, and it closes on publish.
+> That gate is not a b4push step, and the publish workflow's Safeguard 4/5 runs after the
+> 6a publishes, so neither goes red.
+>
+> The full contract, including the only reasons the floor may ever move, lives in
+> RELEASE.md → "First-party peer floor (publish-lag)"; it is deliberately not restated
+> here.
 
 ## Step 5 — Commit
 
