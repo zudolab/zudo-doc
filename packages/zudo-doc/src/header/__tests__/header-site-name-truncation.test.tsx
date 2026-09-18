@@ -5,9 +5,16 @@
  *
  * At 390px with a 24px browser font preference the header row used to push
  * its right-control cluster past the viewport edge, because every item in it
- * was unshrinkable. The site-name anchor is now the single shrinkable item,
- * and the mobile toggle must stay unshrinkable so the deficit lands on the
- * name rather than squashing the hamburger icon.
+ * was unshrinkable. The site-name anchor is now the one item that can give
+ * ground, so the deficit lands there as an ellipsis.
+ *
+ * The last case guards the toggle's own no-shrink pin. Note what it does NOT
+ * prove: `header-with-defaults` hands the header an `Island(...)` wrapper —
+ * an unclassed `<div>` — so in the package's own rendering the button is not
+ * a flex item of the header row and its shrink pin is inert there; the
+ * wrapper's min-content floor is what keeps the hamburger intact. The pin
+ * binds only when a host renders `<SidebarToggle>` straight into the
+ * `sidebarToggle` slot, which is the case this test covers.
  */
 
 import { describe, expect, it } from "vitest";
@@ -76,7 +83,7 @@ describe("header site-name truncation", () => {
     expect(html).toContain(`>${LONG_SITE_NAME}</a>`);
   });
 
-  it("keeps the mobile toggle unshrinkable so the name absorbs the deficit", () => {
+  it("pins the mobile toggle against shrinking when a host slots it in directly", () => {
     const html = render(<SidebarToggle nodes={[]} />);
     const match = /<button[^>]*aria-label="Open sidebar"[^>]*>/.exec(html);
 

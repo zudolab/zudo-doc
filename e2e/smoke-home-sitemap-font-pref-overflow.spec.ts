@@ -28,10 +28,9 @@ import { test, expect, type Page } from "@playwright/test";
  * reproduced on `/docs/getting-started` with no sitemap on the page and was
  * tracked as #4163, deliberately out of scope for #4160 (a header/design
  * decision it forbade bundling in). #4287/#4288 made that decision — the
- * anchor is now `min-w-0 truncate` and the mobile hamburger carries
- * `shrink-0` too, so the anchor is the row's only flexible item and absorbs
- * a width deficit as an ellipsis instead of pushing the cluster past the
- * viewport edge. The document-level 390/24 assertion this note used to
+ * anchor is now `min-w-0 truncate`, so it is the one item in the row that can
+ * give ground and absorbs a width deficit as an ellipsis instead of pushing
+ * the cluster past the viewport edge. The document-level 390/24 assertion this note used to
  * forbid is now enforced in full below, alongside 390/16 and 1600/24. The
  * header-specific gate (right-cluster edge, ellipsis, per-control
  * visibility/clickability) lives in

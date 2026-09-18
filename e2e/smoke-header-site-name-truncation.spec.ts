@@ -9,9 +9,13 @@ import { test, expect, type Page } from "@playwright/test";
  * mobile-toggle + `whitespace-nowrap` site-name anchor (`flex: 0 0 auto`) +
  * `shrink-0` control cluster, and nothing in it could shrink. #4288 made the
  * anchor `min-w-0 truncate` (with a `title` attribute carrying the full
- * name) and gave the mobile hamburger `shrink-0` so it can no longer absorb
- * the deficit either — the anchor is now the row's only flexible item, and a
- * width deficit is absorbed there as an ellipsis instead of an overflow.
+ * name), so the anchor is now the one item in the row that can give ground
+ * and a width deficit is absorbed there as an ellipsis instead of an
+ * overflow. The same change pinned the mobile hamburger against shrinking;
+ * that pin is belt-and-braces for a host that slots `<SidebarToggle>` in
+ * directly — in the package's own rendering the button sits inside an
+ * unclassed `Island(...)` `<div>`, whose min-content floor already kept it
+ * intact.
  *
  * The smoke fixture's `siteName` was deliberately lengthened to "Smoke Test
  * Guide" (`e2e/fixtures/smoke/src/config/settings.ts`) so this is a genuine
@@ -94,8 +98,9 @@ test.describe("header site-name truncation at 390px", () => {
     ).toBeLessThanOrEqual(m.innerWidth);
 
     // The fix mechanism: the anchor is genuinely clipped (not just narrower
-    // by coincidence) and carries the full name in `title` as the a11y/UX
-    // fallback for the truncated text.
+    // by coincidence) and carries the full name in `title`. The `title` is a
+    // pointer/hover affordance only — CSS clipping never edits the DOM text,
+    // so the anchor's accessible name is the full site name either way.
     expect(
       m.anchorScrollWidth,
       `anchor content (${m.anchorScrollWidth}px) must exceed its box (${m.anchorClientWidth}px) — ` +
