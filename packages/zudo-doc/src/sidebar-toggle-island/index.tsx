@@ -108,7 +108,7 @@ export function SidebarToggle({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="lg:hidden px-hsp-sm py-vsp-xs -ml-hsp-sm mr-hsp-sm text-muted hover:text-fg"
+        className="lg:hidden shrink-0 px-hsp-sm py-vsp-xs -ml-hsp-sm mr-hsp-sm text-muted hover:text-fg"
         aria-label={open ? "Close sidebar" : "Open sidebar"}
         aria-expanded={open}
       >
