@@ -27,7 +27,7 @@ import { test, expect, type Page } from "@playwright/test";
  * "Smoke Test Documentation", was tried first and rejected: it also
  * overflowed the UNRELATED home-hero heading (`zd-home-copy`/`<h1>`) at
  * 390px/24px, a pre-existing responsive gap that has nothing to do with the
- * header fix — tracked separately as #4300 rather than folded into this gate.
+ * header fix — tracked separately as #4297 rather than folded into this gate.
  *
  * The lever is CDP `Page.setFontSizes` — the browser's own font preference,
  * not zoom and not injected CSS — same technique as

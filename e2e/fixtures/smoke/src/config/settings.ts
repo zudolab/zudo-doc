@@ -28,7 +28,7 @@ export const settings = {
   // "Smoke Test" literal in smoke-llms-txt.spec.ts and smoke-seo.spec.ts
   // must stay in lockstep. Kept short of "Smoke Test Documentation": that
   // longer string also overflowed the UNRELATED home-hero heading at
-  // 390px/24px (zudolab/zudo-doc#4300, out of scope for this epic).
+  // 390px/24px (zudolab/zudo-doc#4297, out of scope for this epic).
   siteName: "Smoke Test Guide",
   siteDescription: "Test fixture for smoke E2E tests" as string,
   logo: "auto" as string | false,

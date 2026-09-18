@@ -172,7 +172,7 @@ test.describe("home sitemap overflow controls", () => {
   // page the retired note cited as the header bug's reproduction (a page with
   // no sitemap on it), rather than the home page: the home page carries an
   // unrelated hero-heading overflow at this viewport/font combination
-  // (zudolab/zudo-doc#4300) that has nothing to do with the header fix this
+  // (zudolab/zudo-doc#4297) that has nothing to do with the header fix this
   // test gates. The header-specific gate (right-cluster edge, ellipsis,
   // per-control visibility) lives in smoke-header-site-name-truncation.spec.ts.
   test("no document overflow at 390px / 24px (docs page, no sitemap)", async ({ page }) => {
