@@ -257,6 +257,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ### Other Changes
 
+- Migration: because the resource indexes are now locale-owned, a resource section only stays default-locale-only when `defaultLocaleOnlyPrefixes` lists its **overview** prefix — `/docs/claude/` or `/docs/codex/` — alongside the sub-section prefixes. With the overview prefix missing, the overview index is generated into every configured locale; if that locale directory already holds an authored `claude/index.mdx` without `generated: true` in its frontmatter, the build fails with `resource-docs: refusing to overwrite authored locale index`. Either add the overview prefix, or remove the authored index and move its title, description, and labels to `ZudoDocConfig.translations`. (#3820)
 - Updated the zfb peer family to 2.14.2. (`5c5bfd2f`)
 
 ## [5.14.0] - 2026-08-31
@@ -278,7 +279,8 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ### Other Changes
 
-- Enabled Asset Viewer routes now localize automatically for existing multi-locale consumers after a package bump, unless `/${assetViewerRoutePrefix}/` is explicitly present in `defaultLocaleOnlyPrefixes`. Existing apps that already carry the legacy Claude/Codex resource prefixes remain default-locale-only after upgrading; remove the prefixes for resource sections you want generated in every configured locale. (#3820)
+- Enabled Asset Viewer routes now localize automatically for existing multi-locale consumers after a package bump, unless `/${assetViewerRoutePrefix}/` is explicitly present in `defaultLocaleOnlyPrefixes`. A resource section stays default-locale-only only when the prefix list covers the whole section, **including its overview prefix** — `/docs/claude/` or `/docs/codex/`. Listing only the sub-section prefixes (`/docs/claude-md/`, `/docs/claude-skills/`, `/docs/claude-agents/`, `/docs/claude-commands/`, and the Codex equivalents) does not make the section default-locale-only. Remove the prefixes for resource sections you want generated in every configured locale. (#3820)
+- Migration: if your config lists the sub-section resource prefixes but not the overview prefix, add `/docs/claude/` (and `/docs/codex/`) to `defaultLocaleOnlyPrefixes` before upgrading. Otherwise the locale-owned overview index is generated into every configured locale, and an authored `src/content/docs-<locale>/claude/index.mdx` without `generated: true` in its frontmatter fails the build with `resource-docs: refusing to overwrite authored locale index`. The rule and both ways out are in the Internationalization guide, under Default-Locale-Only Prefixes. (#3820)
 - Migration: before building with 5.14.0, remove or rename any authored locale resource overview/category `index.mdx` at a generator target and move custom titles, descriptions, and labels to `ZudoDocConfig.translations`. The generator refuses to overwrite an existing file unless its frontmatter contains `generated: true`. (#3820)
 - Updated the zfb peer family to 2.14.0, `@takazudo/zdtp` to 0.4.14, and the doc-history-server peer floor to 5.13.1. (`dbe8553c7`, `038870c94`, `95a82f15f`)
 
