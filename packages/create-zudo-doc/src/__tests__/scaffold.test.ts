@@ -1379,6 +1379,10 @@ describe("scaffold — zfb.config.ts content shape (integration with generateZfb
     expect(config).not.toContain("sidebarResizer");
     expect(config).not.toContain("sidebarToggle");
     expect(config).not.toContain("designTokenPanel");
+    // #4286: `bundleZdtp` has no CLI flag and no `DEFAULT_MIRROR` entry — a
+    // barebone scaffold must never emit it (same diff-from-default reasoning
+    // as `designTokenPanel` above).
+    expect(config).not.toContain("bundleZdtp");
   });
 
   it("emits the codexResources field and Codex header navigation when selected", async () => {
@@ -1979,6 +1983,27 @@ describe("scaffold — generated package.json", () => {
     });
     const pkg = await fs.readJson(projectPath("test-doc-dtp", "package.json"));
     expect(pkg.dependencies["@takazudo/zdtp"]).toBeDefined();
+  });
+
+  // #4286: `bundleZdtp` (the sibling that decouples zdtp BUNDLING from
+  // `designTokenPanel` MOUNTING, #4285) never leaks into a generated
+  // `zfb.config.ts` — it has no CLI flag, no `DEFAULT_MIRROR` entry, and no
+  // `buildDesiredConfig()` mapping (decision #4284: the derived default
+  // `bundleZdtp ?? designTokenPanel` covers every generator scaffold, so the
+  // generator has nothing to emit even with the panel ON). A host that mounts
+  // its own panel hand-adds the field per the reference docs.
+  it("does NOT emit bundleZdtp in zfb.config.ts even when designTokenPanel is selected (the derived default covers it)", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-doc-dtp-no-bundle-zdtp",
+      features: ["designTokenPanel"],
+    });
+    const config = await fs.readFile(
+      projectPath("test-doc-dtp-no-bundle-zdtp", "zfb.config.ts"),
+      "utf-8",
+    );
+    expect(config).toContain("designTokenPanel: true");
+    expect(config).not.toContain("bundleZdtp");
   });
 
   it("includes zod and preact-render-to-string as always-on runtime deps, but never katex by default", async () => {

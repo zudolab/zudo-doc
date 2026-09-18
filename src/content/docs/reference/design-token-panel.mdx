@@ -271,7 +271,7 @@ The panel UI is provided by the `@takazudo/zdtp` (zdtp) npm package. The package
 
 `@takazudo/zdtp` is not part of the initial page bundle. `bootstrapDesignTokenPanel` only registers a small interim click listener at mount; the actual dynamic import of zdtp — and the `configurePanel` call that follows it — happens the first time the header trigger dispatches `toggle-design-token-panel`. Clicks that land before the import resolves are queued and coalesced into a single net show/hide once configure finishes, so a rapid double-click never fires it twice.
 
-The bootstrap reaches zdtp only through the package-owned `@takazudo/zudo-doc/zdtp-loader` subpath. When `designTokenPanel` is off, the preset replaces that one specifier with a stub module, so the build emits no zdtp chunks at all. Your own `import "@takazudo/zdtp"` statements are not affected.
+The bootstrap reaches zdtp only through the package-owned `@takazudo/zudo-doc/zdtp-loader` subpath. The preset installs a throwing stub for that one specifier whenever zdtp is not bundled — resolved as `bundleZdtp ?? designTokenPanel` — so a project that never sets `bundleZdtp` keeps exactly today's behavior: panel off means no zdtp chunks at all. Setting `bundleZdtp: true` keeps the real loader even with the panel off; see [Mounting your own panel](#implementation-mounting-your-own-panel) for why you'd want that. Your own `import "@takazudo/zdtp"` statements are not affected either way.
 
 A returning visitor with saved state doesn't wait for that click. On mount, the bootstrap probes `localStorage` under the active (pack-scoped) storage prefix and loads zdtp immediately — before any interaction — when any of the following is true:
 
@@ -287,11 +287,40 @@ On every `color-scheme-changed` event (dispatched by the theme toggle), the boot
 
 The header trigger button dispatches the `toggle-design-token-panel` custom event on `window`. zdtp listens for this event natively, so no additional wiring is needed when the trigger is customised through `settings.headerRightItems`.
 
+### Mounting your own panel
+
+`designTokenPanel` and `bundleZdtp` control two different things, and conflating them is exactly what caused zudo-doc#4261: `designTokenPanel` controls **mounting** — whether the package's own `DesignTokenPanelBootstrap` island renders; `bundleZdtp` controls **bundling** — whether `@takazudo/zdtp` ships in the build at all. They default to tracking each other (see [Lazy loading](#implementation-lazy-loading)), but a host that wants to mount its own panel island — instead of the package's — needs to set them independently.
+
+Call the same bootstrap the package island calls, from your own island:
+
+```ts
+import { bootstrapDesignTokenPanel } from "@takazudo/zudo-doc/design-token-panel-bootstrap";
+import { buildDesignTokenPanelConfig } from "@/config/design-token-panel-config";
+
+bootstrapDesignTokenPanel(buildDesignTokenPanelConfig);
+```
+
+Two settings move together to make this work:
+
+- `designTokenPanel: false` — so the package mounts nothing of its own; only your island renders a panel.
+- `bundleZdtp: true` — so the loader stays real. Leave it unset with the panel off and `@takazudo/zudo-doc/zdtp-loader` shadows to a throwing stub; your bootstrap's dynamic import rejects the moment the panel is opened, even though the build itself went green.
+
+You also install `@takazudo/zdtp` yourself (it's an optional peer dependency of `@takazudo/zudo-doc`) and import its stylesheet — `@import "@takazudo/zdtp/styles.css"` — in your own `global.css`; the package only does this automatically when `designTokenPanel` is on.
+
+A missing `@takazudo/zdtp` with `bundleZdtp: true` fails the build resolving `@takazudo/zudo-doc/zdtp-loader`'s static re-export — loud, by design, rather than a silent runtime failure.
+
+<Warning title="Invalid combination">
+
+`designTokenPanel: true` together with `bundleZdtp: false` is rejected at config resolution: a mounted package panel with a stubbed loader is guaranteed to throw the moment it's opened, so zudo-doc fails the build instead of shipping it.
+
+</Warning>
+
 ## Settings Reference
 
 | Setting | Type | Description |
 |---|---|---|
-| `designTokenPanel` | `boolean` | Enables the panel. Default `false`. |
+| `designTokenPanel` | `boolean` | Mounts the package's own panel island. Default `false`. |
+| `bundleZdtp` | `boolean` | Bundles `@takazudo/zdtp` into the build. Default `undefined` (follows `designTokenPanel`: `bundleZdtp ?? designTokenPanel`). Set to `true` with `designTokenPanel: false` to mount your own panel (see [Mounting your own panel](#implementation-mounting-your-own-panel)); `true` with `designTokenPanel: false` bundles zdtp without mounting the package panel, `false` with `designTokenPanel: true` is rejected at config resolution. |
 | `designTokenPanelConfigModule` | `string` | Project-root-relative path to a module exporting `buildDesignTokenPanelConfig(mode)` for a fully custom panel. Default `undefined` (package-default builder is used). |
 
 The default tokens themselves — spacing scale, font scale, icon sizes, and palette aliases — ship in `@takazudo/zudo-doc/theme.css`. A scaffold's later `src/styles/global.css` `@theme` block is an override point; for color ramps and mappings, use the package's `@takazudo/zudo-doc/color-schemes-defaults` or your own `colorSchemes` override (see [Color](./color.mdx)). The panel only tweaks the in-browser copy of those tokens; it never writes to source files.

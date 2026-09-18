@@ -1699,6 +1699,34 @@ function enableMissingDesignTokenPanelConfigModule(dir: string): void {
   writeFileSync(settingsPath, src);
 }
 
+// ---------------------------------------------------------------------------
+// Case DTP-HOST — host-mounted design-token panel with the package panel off
+// (#4286, epic #4283 wave 3). Mirrors `enableChromeBindingsModule` (Case CB,
+// `:1401-1414`) but points at the SECOND fixture bindings module
+// (`src/chrome-bindings-host-panel.tsx`) whose `BodyEndIslands` mounts a
+// "use client" island calling `bootstrapDesignTokenPanel` from the PUBLIC
+// `@takazudo/zudo-doc/design-token-panel-bootstrap` subpath — the reported
+// #4261 scenario. `designTokenPanel` stays at the fixture's default `false`
+// (the package panel must stay off); only `bundleZdtp: true` is added.
+// ---------------------------------------------------------------------------
+
+/** Point `chromeBindingsModule` at the fixture's committed
+ *  `src/chrome-bindings-host-panel.tsx` AND set `bundleZdtp: true`, leaving
+ *  `designTokenPanel` at its fixture default (`false`). The red half of this
+ *  mutation (same `chromeBindingsModule`, `bundleZdtp` stripped) was run by
+ *  hand to demonstrate the describe block below fails without the fix — see
+ *  the recorded output in the commit body — rather than kept as a second
+ *  permanent case, to avoid doubling the packed-build cost of this already
+ *  slow file. */
+function enableHostPanelBindings(dir: string): void {
+  const settingsPath = join(dir, "src/config/settings.ts");
+  const src = readFileSync(settingsPath, "utf-8").replace(
+    /packageOwnedRoutes:\s*true,/,
+    'packageOwnedRoutes: true,\n  chromeBindingsModule: "./src/chrome-bindings-host-panel.tsx",\n  bundleZdtp: true,',
+  );
+  writeFileSync(settingsPath, src);
+}
+
 describe("DTP design-token-panel: injected doc route registers the configured design-token-panel island (packageOwnedRoutes + designTokenPanel)", () => {
   let fixtureDir: string;
   let buildOutput: string;
@@ -1917,6 +1945,102 @@ describe("DTP off: designTokenPanel false emits no island marker on the page (HA
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
     expect(html).not.toContain("__zdtpToggleShimInstalled");
     expect(html).not.toContain("toggle-design-token-panel");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// DTP host-owned — #4286 (epic #4283 wave 3), closing the coverage gap #4261
+// reported: no test exercised a HOST mounting its OWN design-token panel
+// through `@takazudo/zudo-doc/design-token-panel-bootstrap` while the package
+// panel stayed off. Every OFF-case test above (the #4201 "zdtp-off" gate,
+// "DTP off" just above) asserts the ABSENCE of zdtp bytes; none proved a
+// host-mounted panel still works. `designTokenPanel: false` + `bundleZdtp:
+// true` (#4285) is the fix — this proves it holds for the actual reported
+// shape, not just the config-resolution unit tests in `preset.test.ts` /
+// `config.test.ts`.
+//
+// SCOPE, STATED HONESTLY: this is a packed-build, MODULE-GRAPH proof that the
+// emitted host chunk resolves the real zdtp loader and never the throwing
+// stub — it does not click the panel open in a browser. The runtime
+// "toggle → panel appears" half (a resolving loader actually mounting zdtp)
+// is covered by the mocked harness in `design-token-panel-bootstrap.test.ts`
+// (see that file's `:29-40` for why the mock stands in for the real
+// `@takazudo/zdtp` import there). A live-browser probe was assessed as
+// out of scope for this wave (no existing cheap fixture toggles a
+// `designTokenPanel: false` panel mounted through a host `chromeBindingsModule`
+// — `e2e/smoke-design-token-panel-probe.spec.ts` only exercises the PACKAGE
+// panel, `designTokenPanel: true`); tracked as a follow-up (#4295) rather than
+// widening this wave.
+// ---------------------------------------------------------------------------
+
+describe("DTP host-owned: designTokenPanel false + bundleZdtp true keeps the real loader for a host-mounted panel", () => {
+  let fixtureDir: string;
+
+  it("setup: fixture builds with designTokenPanel left off + chromeBindingsModule host panel + bundleZdtp true", { timeout: 180_000 }, () => {
+    fixtureDir = setupFixture({ emptyPages: true });
+    enableHostPanelBindings(fixtureDir);
+    runZfbBuild(fixtureDir);
+  });
+
+  // Assertion 1 (#4201 counterpart, inverted): with the package panel off but
+  // `bundleZdtp: true`, zdtp's lazy chunk IS emitted — the real loader, not
+  // shadowed. Without `bundleZdtp` this is `[]` (see the "zdtp-off" gate
+  // above and the red-proof recorded in the commit body for this file).
+  it("bundled: at least one emitted file carries a zdtp chunk marker (the real loader, not the stub)", () => {
+    expect(findDistFilesContaining(fixtureDir, ZDTP_CHUNK_MARKERS)).not.toEqual([]);
+  });
+
+  // Assertion 2: no emitted file carries the throwing stub's own source text
+  // (`plugins/zdtp-loader.ts`'s `DISABLED_LOADER_SOURCE`, the literal #4261
+  // symptom — a green build shipping a chunk that throws the moment it's
+  // opened).
+  it("not shadowed: no emitted file contains the throwing stub's \"is not bundled\" text", () => {
+    expect(findDistFilesContaining(fixtureDir, ["is not bundled"])).toEqual([]);
+  });
+
+  // Assertion 3: module-graph laziness proof, same technique as the existing
+  // DTP laziness pair (`:1757-1790`) — but started from the HOST's own island
+  // chunk (found by its marker) rather than the package's entry, since the
+  // component under test here is the host's, not the package's.
+  it("reachable: a dynamic import() edge from the host panel's own chunk reaches the zdtp payload chunk", () => {
+    const hostChunk = findIslandsFileContaining(fixtureDir, "HostPanelBootstrap");
+    expect(hostChunk).toBeDefined();
+
+    const zdtpMarkerFile = findIslandsFileContaining(fixtureDir, "tokenpanel-shell");
+    expect(zdtpMarkerFile).toBeDefined();
+
+    const graph = buildIslandsImportGraph(fixtureDir);
+    const staticClosure = closureOver(hostChunk as string, graph.static);
+    // Same "not statically reachable, but one dynamic hop away" shape the
+    // package laziness pair proves — the host's own `loadZdtp()` call
+    // (`design-token-panel-bootstrap.tsx`'s `import("@takazudo/zudo-doc/zdtp-loader")`)
+    // is what creates this edge; it must resolve the real loader, which is
+    // only possible when the chunk it points at is truly present (assertion 1).
+    expect(staticClosure.has(zdtpMarkerFile as string)).toBe(false);
+    const dynamicTargets = new Set<string>();
+    for (const file of staticClosure) {
+      for (const target of graph.dynamic.get(file) ?? []) dynamicTargets.add(target);
+    }
+    expect(dynamicTargets.size).toBeGreaterThan(0);
+    const reachableViaDynamicHop = [...dynamicTargets].some((target) =>
+      closureOver(target, graph.static).has(zdtpMarkerFile as string),
+    );
+    expect(reachableViaDynamicHop).toBe(true);
+  });
+
+  // Assertion 4: the package panel did not mount (neither island name, no
+  // shim script — same absence the "DTP off" describe above proves), while
+  // the HOST's own island marker IS present, and its client bundle registers
+  // it (marker <-> registry match, same structural proof Case DH/DTP use).
+  it("host-only: the package panel does not mount, but the host island does — marker present, no shim, registered", () => {
+    const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
+    expect(html).not.toMatch(htmlAttrPattern("data-zfb-island", INJECTED_DTP_ISLAND));
+    expect(html).not.toMatch(htmlAttrPattern("data-zfb-island", DEFAULT_DTP_ISLAND));
+    expect(html).not.toContain("__zdtpToggleShimInstalled");
+    expect(html).not.toContain("toggle-design-token-panel");
+
+    expectHtmlAttr(html, "data-zfb-island", "HostPanelBootstrap");
+    expect(readIslandsBundles(fixtureDir)).toContain("HostPanelBootstrap");
   });
 });
 

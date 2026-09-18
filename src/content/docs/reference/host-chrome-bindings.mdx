@@ -137,7 +137,7 @@ The live DOM governs the opt-out; adding the attribute only to the incoming page
 | `tagVocabulary` | `[]` — no footer tag vocabulary |
 | `BodyEndIslands` | Package island subset derived from settings |
 | `DocHistory` | No-op stub — renders nothing |
-| `DesignTokenPanelBootstrap` | Real package bootstrap; it mounts when `designTokenPanel: true`, with no host wiring |
+| `DesignTokenPanelBootstrap` | Real package bootstrap; it mounts when `designTokenPanel: true`, with no host wiring. This slot only replaces which builder mounts while the package panel is ON — it stays unmounted with `designTokenPanel: false` regardless of what you pass here. To mount your OWN panel with the package panel off, call `bootstrapDesignTokenPanel` from your own island (e.g. wired through the `BodyEndIslands` slot below) and set `bundleZdtp: true`, or the real loader stays shadowed by a throwing stub. See [Mounting your own panel](./design-token-panel.mdx#implementation-mounting-your-own-panel). |
 | `mdxExtras` | Package SSR components (`Details`, `HtmlPreview`, `Island`) plus a no-op `PresetGenerator` |
 | `docContentHeaderExtras` | Absent — nothing renders |
 | `homeExtras` | Absent — nothing renders |
