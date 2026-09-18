@@ -4,4 +4,6 @@ description: 次のリリースに向けた変更。
 sidebar_position: 1123
 ---
 
-未リリースの変更はありません。
+### その他の変更
+
+- ビルド失敗の報告（#4267、#4271 で追跡）を調査しました。`@takazudo/zfb@2.18.0` ＋ `@takazudo/zudo-doc@5.25.0` の組み合わせで、pnpm ワークスペース配下の consumer（`pages/` がパッケージ注入の3ルートのいずれも上書きしていない構成）において、`Could not resolve "../node_modules/@takazudo/zudo-doc/routes-src/*.tsx"` という esbuild エラーが3件発生するというものです。報告者の pnpm ワークスペース・シンボリックリンク構成を含む11通りの consumer 構成で再現せず、詳細は `packages/zudo-doc/docs/findings/4267-shadow-tree-probe.md` にまとめています。コードの変更はありません。この事象に遭遇した場合の検証済みの回避策は、`@takazudo/zudo-doc@5.24.2`（zfb 2.18.0 でも問題なし）に留まるか、該当する3ルートをローカルの `pages/` ファイルで上書きすることです。あわせて #4271 に記載の診断情報の添付にご協力ください。
