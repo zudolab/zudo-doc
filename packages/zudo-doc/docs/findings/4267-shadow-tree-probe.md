@@ -63,8 +63,9 @@ In the ordinary single-root case the bundler shadow root contains:
 
 So `../node_modules/@takazudo/zudo-doc/routes-src/404.tsx` from
 `<shadow>/pages/404.tsx` lands on the real project `node_modules`, traverses the
-pnpm symlink through the OS, and resolves. The `routes-src/` tree is **never**
-materialised into an isolation root — it is reached in place.
+pnpm symlink through the OS, and resolves. In every run observed here the
+`routes-src/` tree was reached in place — it was never copied into an
+exact-node-modules isolation root.
 
 `--preserve-symlinks` was **not** passed for the SSR/page bundle in any
 single-root run. zfb's own docblock (extracted from the 2.18.0 binary) states it
@@ -97,7 +98,7 @@ wave-3 gate:
   esbuild `0.25.12`; a different version fails the *islands* pass, but the SSR
   argv and the shadow snapshot are captured before that.
 
-## 4. Reproduction attempts — all green
+## 4. Reproduction attempts — none reproduced the failure
 
 Packed with `npm pack` from this tree: `@takazudo/zudo-doc@5.25.0` (1101 files,
 `routes-src/` present, `src/` absent). Fixture body:
