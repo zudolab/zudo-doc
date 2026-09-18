@@ -138,8 +138,9 @@ export function workspaceZfbPeerFloorMatches(rootPin, actualPin) {
 //                 contract REQUIRES: the floor is a minimum-supported-version
 //                 declaration, not a lockstep mirror, and releases and routine
 //                 dependency-bump rounds preserve it UNCHANGED. It moves only for
-//                 a documented compatibility reason, and may never name a version
-//                 not yet published to npm. Contract lives in RELEASE.md
+//                 a documented compatibility reason, and names a version not yet
+//                 published to npm only in the release commit of a major bump
+//                 (RELEASE.md rule 4). Contract lives in RELEASE.md
 //                 "First-party peer floor (publish-lag)" — read it there, it is not
 //                 restated here. Demanding exact `^<root>` deadlocked the release
 //                 (the in-flight version isn't on npm yet).
@@ -156,8 +157,7 @@ export function workspaceZfbPeerFloorMatches(rootPin, actualPin) {
 // root version, so `/dev-bump-zudo-deps`'s `--write` can silently rewrite
 // `^5.17.2 → ^5.25.0` with every semantic check still green — the lag advisory
 // merely goes quiet. That violates rule 2 of the contract (releases and routine
-// bump rounds preserve this declaration UNCHANGED) and, once a raised floor names
-// a not-yet-published version, deadlocks `--frozen-lockfile` at publish time.
+// bump rounds preserve this declaration UNCHANGED).
 //
 // Changing a declaration therefore means editing BOTH the package.json entry and
 // the baseline here, in one commit, carrying the documented compatibility reason
@@ -464,9 +464,9 @@ export function evaluateApprovedPeerBaseline({
       `routine dependency-bump rounds and releases preserve this declaration ` +
       `UNCHANGED. If the change is NOT intended (almost always a ` +
       `\`/dev-bump-zudo-deps\` --write round rewriting the floor), revert it. If it ` +
-      `IS intended, it needs the documented compatibility reason of rule 3, must ` +
-      `not name a version unpublished on npm (rule 4), and the approved baseline ` +
-      `must be updated in the same commit.`,
+      `IS intended, it needs the documented compatibility reason of rule 3, may ` +
+      `name an unpublished version only in a major-bump release commit (rule 4), ` +
+      `and the approved baseline must be updated in the same commit.`,
   };
 }
 

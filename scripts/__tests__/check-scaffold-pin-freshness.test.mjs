@@ -600,6 +600,38 @@ describe("checkFirstPartyPeerFreshness — declared range vs registry channel", 
     expect(result.findings[0].kind).toBe("skipped");
   });
 
+  it("an in-flight major floor is excluded until the lockstep publish lands, then admitted (#4279)", async () => {
+    // The boundary of RELEASE.md rule 4's window. Safeguard 4/5 runs after the
+    // 6a publishes, so the second half is what a real major-bump publish sees.
+    // The first half is what a 6b-before-6a publish sees, and that failure is
+    // the gate enforcing the publish order.
+    const peerRanges = [
+      {
+        pkg: "@takazudo/zudo-doc-history-server",
+        range: "^6.0.0",
+        channelSource: "latest",
+      },
+    ];
+
+    const beforePublish = await checkFirstPartyPeerFreshness({
+      peerRanges,
+      fetchDistTags: stubRegistry({
+        "@takazudo/zudo-doc-history-server": { latest: "5.25.0" },
+      }),
+    });
+    expect(beforePublish.ok).toBe(false);
+    expect(beforePublish.findings[0].kind).toBe("peer-range-excludes-latest");
+
+    const afterPublish = await checkFirstPartyPeerFreshness({
+      peerRanges,
+      fetchDistTags: stubRegistry({
+        "@takazudo/zudo-doc-history-server": { latest: "6.0.0" },
+      }),
+    });
+    expect(afterPublish.ok).toBe(true);
+    expect(afterPublish.findings[0].kind).toBe("ok");
+  });
+
   it.each([
     {},
     null,
