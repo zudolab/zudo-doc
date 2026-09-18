@@ -131,7 +131,7 @@ export const chromeBindings = defineChromeBindings({
 | `tagVocabulary` | `[]` — フッターのタグ語彙なし |
 | `BodyEndIslands` | settings から導出されるパッケージのアイランド群 |
 | `DocHistory` | 何も描画しない no-op スタブ |
-| `DesignTokenPanelBootstrap` | 実際のパッケージ bootstrap。ホスト配線なしで `designTokenPanel: true` のときにマウントされる |
+| `DesignTokenPanelBootstrap` | 実際のパッケージ bootstrap。ホスト配線なしで `designTokenPanel: true` のときにマウントされる。このスロットは、パッケージのパネルがオンの間に、どのビルダーをマウントするかを差し替えるだけです — ここに何を渡しても `designTokenPanel: false` のままではマウントされません。パッケージのパネルをオフにしたまま自前のパネルをマウントしたい場合は、自前のアイランド（たとえば下の `BodyEndIslands` スロット経由で配線）から `bootstrapDesignTokenPanel` を呼び出し、`bundleZdtp: true` を設定してください。設定しないと、本物のローダーは例外を投げるスタブのままです。[自前のパネルをマウントする](./design-token-panel.mdx#実装-自前のパネルをマウントする)を参照してください。 |
 | `mdxExtras` | パッケージの SSR コンポーネント（`Details`、`HtmlPreview`、`Island`）と no-op の `PresetGenerator` |
 | `docContentHeaderExtras` | 未指定 — 何も描画されない |
 | `homeExtras` | 未指定 — 何も描画されない |
