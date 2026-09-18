@@ -134,24 +134,46 @@ export function workspaceZfbPeerFloorMatches(rootPin, actualPin) {
 // `comparison` selects how the actual floor is judged against the source value:
 //   "satisfies" — the root version must fall WITHIN the declared floor range.
 //                 A floor is only stale when it EXCLUDES the root version. This
-//                 permits a benign same-major lag (^2.0.1 at root 2.1.0), which
-//                 the lockstep release REQUIRES: the showcase resolves this peer
-//                 from the npm registry under --frozen-lockfile, so the floor can
-//                 only point at an already-published version and is bumped
-//                 post-publish via the toolchain-bump cycle (see RELEASE.md
-//                 "Bumping the toolchain" and "publish-lag"). Demanding exact `^<root>` here deadlocked the
-//                 release (the in-flight version isn't on npm yet).
+//                 permits a lag of any size (^5.17.2 at root 5.25.0), which the
+//                 contract REQUIRES: the floor is a minimum-supported-version
+//                 declaration, not a lockstep mirror, and releases and routine
+//                 dependency-bump rounds preserve it UNCHANGED. It moves only for
+//                 a documented compatibility reason, and may never name a version
+//                 not yet published to npm. Contract lives in RELEASE.md
+//                 "First-party peer floor (publish-lag)" — read it there, it is not
+//                 restated here. Demanding exact `^<root>` deadlocked the release
+//                 (the in-flight version isn't on npm yet).
 //   "exact"     — floor must equal `^<sourceValue>`.
 //   "union-admits-pin" — every arm must be a complete, stable caret range,
 //                 and at least one must admit the exact root pin. This
 //                 deliberately relaxes exact-floor parity for zdtp: widening
 //                 support across compatible minors is the point. The surviving
 //                 invariant is admission of the pin, NOT containment of ^<pin>.
-const FIRST_PARTY_PEER_CHECKS = [
+//
+// `approvedBaseline` is the EXPLICITLY APPROVED declaration string for the peer
+// range, compared by exact string equality (#4264). It exists because every
+// `comparison` mode above is one-sided: a RAISED floor still satisfies/admits the
+// root version, so `/dev-bump-zudo-deps`'s `--write` can silently rewrite
+// `^5.17.2 → ^5.25.0` with every semantic check still green — the lag advisory
+// merely goes quiet. That violates rule 2 of the contract (releases and routine
+// bump rounds preserve this declaration UNCHANGED) and, once a raised floor names
+// a not-yet-published version, deadlocks `--frozen-lockfile` at publish time.
+//
+// Changing a declaration therefore means editing BOTH the package.json entry and
+// the baseline here, in one commit, carrying the documented compatibility reason
+// the contract requires (RELEASE.md "First-party peer floor (publish-lag)",
+// rule 3). A machine rewrite touches only the package.json entry, so it fails.
+//
+// Deliberately NOT implemented as "the floor must be strictly below the root
+// version": `floor == root` is a legal state, root is not always unpublished, the
+// contract permits a justified raise, and the union ranges zdtp uses have no
+// well-defined ordering against a single version.
+export const FIRST_PARTY_PEER_CHECKS = [
   {
     pkg: "@takazudo/zudo-doc-history-server",
     sourceKind: "lockstep (root version)",
     comparison: "satisfies",
+    approvedBaseline: "^5.17.2",
     // Released at the same lockstep version as the root package.
     getSource: (rootPkg) => rootPkg.version,
   },
@@ -159,6 +181,7 @@ const FIRST_PARTY_PEER_CHECKS = [
     pkg: "@takazudo/zdtp",
     sourceKind: 'pinned (root dependencies["@takazudo/zdtp"])',
     comparison: "union-admits-pin",
+    approvedBaseline: "^0.5.2 || ^0.6.0 || ^0.7.0 || ^0.8.0",
     // External dependency pinned in root dependencies — NOT lockstep.
     getSource: (rootPkg) => rootPkg.dependencies?.["@takazudo/zdtp"],
   },
@@ -399,13 +422,52 @@ export function evaluateFirstPartyPeer({
   }
   const result = { ok: true, expected: expectedPeer, actual };
   if (actualPeer !== expectedPeer) {
-    // Informational only — do NOT read this as a TODO. The floor trails the
-    // in-flight version by one release by construction, so raising it and then
-    // releasing simply reproduces this note. See RELEASE.md "First-party peer
-    // floor (publish-lag)".
-    result.advisory = `${pkg} peer floor ${actual} trails the lockstep version ${sourceValue} — expected, and satisfied (root is within range). No action: the floor can only name a published version, so it always lags by one release. It becomes an ERROR here if it ever stops including the root version (cross-major drift).`;
+    // Informational only — do NOT read this as a TODO. The floor is a
+    // minimum-supported-version declaration that releases and bump rounds leave
+    // alone, so the lag is expected and may be arbitrarily large; raising it just
+    // reproduces this note after the next release. See RELEASE.md "First-party
+    // peer floor (publish-lag)" for the contract.
+    result.advisory = `${pkg} peer floor ${actual} lags the lockstep version ${sourceValue} — expected, and satisfied (root is within range). No action: this floor is a minimum-supported-version declaration, not a lockstep mirror, so the lag may be arbitrarily large and is not a defect (see RELEASE.md "First-party peer floor (publish-lag)"). It becomes an ERROR here if it ever stops including the root version (cross-major drift).`;
   }
   return result;
+}
+
+/**
+ * Compare a first-party peer declaration against its explicitly approved
+ * baseline (#4264). Exact string equality — this is a "has a human approved this
+ * exact string?" gate, not a semantic range comparison, which is precisely what
+ * makes it catch an accidental raise that still satisfies the root version.
+ *
+ * @param {Object} args
+ * @param {string} args.pkg
+ * @param {string} args.approvedBaseline
+ * @param {string|undefined|null} args.actualPeer
+ * @returns {{ok: boolean, expected: string, actual: string, reason?: string}}
+ */
+export function evaluateApprovedPeerBaseline({
+  pkg,
+  approvedBaseline,
+  actualPeer,
+}) {
+  const actual = actualPeer ?? "(missing)";
+  if (actual === approvedBaseline) {
+    return { ok: true, expected: approvedBaseline, actual };
+  }
+  return {
+    ok: false,
+    expected: approvedBaseline,
+    actual,
+    reason:
+      `First-party peer declaration for ${pkg} differs from the approved baseline ` +
+      `in scripts/check-pin-parity.mjs (FIRST_PARTY_PEER_CHECKS.approvedBaseline). ` +
+      `Contract: RELEASE.md § "First-party peer floor (publish-lag)" — rule 2, ` +
+      `routine dependency-bump rounds and releases preserve this declaration ` +
+      `UNCHANGED. If the change is NOT intended (almost always a ` +
+      `\`/dev-bump-zudo-deps\` --write round rewriting the floor), revert it. If it ` +
+      `IS intended, it needs the documented compatibility reason of rule 3, must ` +
+      `not name a version unpublished on npm (rule 4), and the approved baseline ` +
+      `must be updated in the same commit.`,
+  };
 }
 
 function main() {
@@ -584,7 +646,28 @@ function main() {
     sourceKind,
     getSource,
     comparison,
+    approvedBaseline,
   } of FIRST_PARTY_PEER_CHECKS) {
+    // Approved-baseline gate first (#4264): it is the only check here that can
+    // catch a RAISED declaration, which every semantic mode below would accept.
+    const baselineRes = evaluateApprovedPeerBaseline({
+      pkg,
+      approvedBaseline,
+      actualPeer: zudoDocPkg.peerDependencies?.[pkg],
+    });
+    if (!baselineRes.ok) {
+      mismatches.push({
+        pkg,
+        reason: baselineRes.reason,
+        expected: baselineRes.expected,
+        actual: baselineRes.actual,
+        file: ZUDO_DOC_PKG_PATH,
+        field: "peerDependencies",
+        kind: "first-party-peer",
+      });
+      continue;
+    }
+
     const sourceValue = getSource(rootPkg);
 
     if (!sourceValue) {
@@ -723,7 +806,7 @@ function main() {
   console.error(`  - ${SCAFFOLD_TS_PATH}`);
   console.error(`  - ${ZUDO_DOC_PKG_PATH}`);
   console.error(
-    `      zfb devDependencies must be exact-equal to root pins; zfb peerDependencies must be ^<root pin>; the zdtp stable-caret union must admit the exact root pin; the lockstep peer floor must INCLUDE the root version`,
+    `      zfb devDependencies must be exact-equal to root pins; zfb peerDependencies must be ^<root pin>; the zdtp stable-caret union must admit the exact root pin; the lockstep peer floor must INCLUDE the root version; first-party peer declarations must equal their approved baseline in this script (see RELEASE.md "First-party peer floor (publish-lag)")`,
   );
   console.error(`  - ${TARGET_MANIFEST_PKG_PATH}`);
   console.error(
