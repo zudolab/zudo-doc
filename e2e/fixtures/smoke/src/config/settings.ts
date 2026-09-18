@@ -21,7 +21,15 @@ export const settings = {
     darkScheme: "Default Dark",
     respectPrefersColorScheme: true,
   } satisfies ColorModeConfig as ColorModeConfig | false,
-  siteName: "Smoke Test",
+  // Long enough to genuinely overflow the mobile header at 390px/24px before
+  // truncation, while still fitting at the default 16px preference
+  // (zudolab/zudo-doc#4287/#4289) — see
+  // smoke-header-site-name-truncation.spec.ts, which measures both. Every
+  // "Smoke Test" literal in smoke-llms-txt.spec.ts and smoke-seo.spec.ts
+  // must stay in lockstep. Kept short of "Smoke Test Documentation": that
+  // longer string also overflowed the UNRELATED home-hero heading at
+  // 390px/24px (zudolab/zudo-doc#4300, out of scope for this epic).
+  siteName: "Smoke Test Guide",
   siteDescription: "Test fixture for smoke E2E tests" as string,
   logo: "auto" as string | false,
   base: "/",
