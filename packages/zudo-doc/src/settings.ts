@@ -436,6 +436,13 @@ export interface Settings {
   aiChatAllowedOrigins: string[];
   aiChatGlobalDailyLimit: number | false;
   designTokenPanel: boolean;
+  /**
+   * Bundle `@takazudo/zdtp` into the island build, independently of whether
+   * the package panel mounts. Optional with no `DEFAULT_SETTINGS` key — it is
+   * resolved at the read site as `bundleZdtp ?? designTokenPanel`. Full
+   * contract: `ZudoDocConfig.bundleZdtp` in `config.ts`.
+   */
+  bundleZdtp?: boolean;
   tocMinDepth: number;
   tocMaxDepth: number;
   sidebarResizer: boolean;

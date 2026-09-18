@@ -100,7 +100,10 @@ import { defaultDirectiveVocabulary } from "./directive-vocabulary-defaults/inde
 import { defaultTranslations } from "./i18n-defaults/index.js";
 import { defaultColorSchemes } from "./color-schemes-defaults/index.js";
 import { assertNoCommaInVersionSlugs } from "./version-availability/index.js";
-import { assertNoEmptyStringFaviconOrLogo } from "./config-assertions/index.js";
+import {
+  assertNoEmptyStringFaviconOrLogo,
+  assertZdtpBundlingConsistent,
+} from "./config-assertions/index.js";
 import { validateAssetViewerSettings } from "./asset-path/index.js";
 
 /** Merge project translation additions without discarding package UI strings. */
@@ -515,6 +518,24 @@ export interface ZudoDocConfig {
    */
   designTokenPanel?: boolean;
   /**
+   * Bundle `@takazudo/zdtp` into the island build. Controls ONLY whether
+   * `@takazudo/zudo-doc/zdtp-loader` resolves to the real zdtp re-export or to
+   * a throwing stub — it never mounts the package panel or its header trigger
+   * (that stays `designTokenPanel`'s job).
+   *
+   * Set it to `true` when the host mounts its OWN panel through
+   * `@takazudo/zudo-doc/design-token-panel-bootstrap` while leaving
+   * `designTokenPanel` off (#4261); otherwise the bootstrap's `loadZdtp()`
+   * hits the stub and rejects at runtime. The host must then have
+   * `@takazudo/zdtp` installed — it is an optional peer, and the build fails
+   * resolving `zdtp-loader` if it is missing.
+   *
+   * `designTokenPanel: true` with `bundleZdtp: false` is rejected at config
+   * resolution: a mounted package panel with a stubbed loader can only throw.
+   * @default undefined (follows designTokenPanel)
+   */
+  bundleZdtp?: boolean;
+  /**
    * Minimum heading depth included in the TOC (2–4).
    * @default 2
    */
@@ -840,6 +861,12 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
   // `zudoDocPreset()` itself (see that call below) since the preset is
   // separately callable as documented public API.
   assertNoEmptyStringFaviconOrLogo(settings);
+
+  // `designTokenPanel: true` + `bundleZdtp: false` mounts the package panel on
+  // top of a stubbed `zdtp-loader` — a guaranteed runtime throw (#4261). Also
+  // enforced inside `zudoDocPreset()` itself (see that call below) since the
+  // preset is separately callable as documented public API.
+  assertZdtpBundlingConsistent(settings);
 
   const fragment = zudoDocPreset({
     settings,

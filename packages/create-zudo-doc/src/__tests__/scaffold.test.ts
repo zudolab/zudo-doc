@@ -2277,6 +2277,8 @@ describe("scaffold — settings-drift guard: generator-known fields must cover e
       chromeBindingsModule:
         "shell passthrough — host-callables module path is hand-authored after scaffold; generated doc routes consume it automatically",
       designTokenPanelConfigModule: "shell passthrough — mirrors chromeBindingsModule's contract exactly (module-path wiring, hand-authored after scaffold)",
+      bundleZdtp:
+        "hand-authored post-scaffold — only a host mounting its own panel through design-token-panel-bootstrap sets it; the scaffold never wires a host panel (#4261)",
       // Fields with no CLI/prompt surface (yet) — hand-edit zfb.config.ts
       // after scaffold, or covered by a future sub-issue.
       siteDescription: "no CLI/prompt surface yet — hand-edit post-scaffold",
