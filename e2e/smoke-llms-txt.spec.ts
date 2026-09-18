@@ -25,7 +25,7 @@ test.describe("llms.txt: static emission", () => {
 
   test("llms.txt starts with the site header (siteName + siteDescription)", () => {
     const content = readDistFile("llms.txt");
-    expect(content).toContain("# Smoke Test");
+    expect(content).toContain("# Smoke Test Guide");
     expect(content).toContain("> Test fixture for smoke E2E tests");
     expect(content).toContain("## Docs");
   });
@@ -39,7 +39,7 @@ test.describe("llms.txt: static emission", () => {
 
   test("llms-full.txt concatenates full page content with Source: links", () => {
     const content = readDistFile("llms-full.txt");
-    expect(content).toContain("# Smoke Test");
+    expect(content).toContain("# Smoke Test Guide");
     expect(content).toContain("> Source:");
     expect(content).toContain("# Getting Started");
   });

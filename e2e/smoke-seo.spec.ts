@@ -5,14 +5,14 @@ import { readDistFile } from "./smoke-dist-helper";
 test.describe("SEO: meta tags render correctly", () => {
   test("page title contains expected text", () => {
     const html = readDistFile("docs/guides/page-1/index.html");
-    expect(html).toContain("<title>Writing Docs | Smoke Test</title>");
+    expect(html).toContain("<title>Writing Docs | Smoke Test Guide</title>");
   });
 
   test("og:title meta tag is present with correct content", () => {
     const html = readDistFile("docs/guides/page-1/index.html");
     expectHtmlTagWithAttrs(html, "meta", [
       ["property", "og:title"],
-      ["content", "Writing Docs | Smoke Test"],
+      ["content", "Writing Docs | Smoke Test Guide"],
     ]);
   });
 
@@ -46,7 +46,7 @@ test.describe("SEO: meta tags render correctly", () => {
     const html = readDistFile("docs/guides/page-1/index.html");
     expectHtmlTagWithAttrs(html, "meta", [
       ["property", "og:site_name"],
-      ["content", "Smoke Test"],
+      ["content", "Smoke Test Guide"],
     ]);
   });
 });
