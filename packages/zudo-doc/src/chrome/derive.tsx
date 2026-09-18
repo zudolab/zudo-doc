@@ -64,12 +64,13 @@ import { createDesignTokenPanelIsland } from "../doc-body-end-islands/design-tok
 // per #4009). Those constants are now vendored at
 // `../design-token-panel-constants.js`, and the only remaining reach is the
 // rejection-handled `import("@takazudo/zudo-doc/zdtp-loader")` inside
-// `loadZdtp()` — a package-owned re-export of `@takazudo/zdtp` (#4201). With
-// `designTokenPanel` off, the preset's `plugins/zdtp-loader` shadows that exact
-// specifier with a throwing virtual module (a real package subpath, so this
-// import graph still carries no `virtual:` specifier), so the island build
-// emits NO zdtp chunks even when zdtp is installed, and a
-// `designTokenPanel: false` project need not install zdtp at all (the
+// `loadZdtp()` — a package-owned re-export of `@takazudo/zdtp` (#4201). When
+// zdtp is not bundled (`bundleZdtp ?? designTokenPanel` is false), the preset's
+// `plugins/zdtp-loader` shadows that exact specifier with a throwing virtual
+// module (a real package subpath, so this import graph still carries no
+// `virtual:` specifier), so the island build emits NO zdtp chunks even when
+// zdtp is installed, and a `designTokenPanel: false` project that leaves
+// `bundleZdtp` unset need not install zdtp at all (the
 // packed-tarball OPT-ZDTP case in route-injection-build.slow.test.ts holds
 // both lines; the A2 "zdtp-off" case proves the workspace shape). The bare
 // `@takazudo/zdtp` is never shadowed.

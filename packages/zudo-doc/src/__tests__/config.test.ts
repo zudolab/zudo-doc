@@ -138,6 +138,29 @@ describe("zudoDoc() default-merge semantics", () => {
     ).not.toThrow();
   });
 
+  // #4261: mounting the package panel while shadowing `zdtp-loader` with the
+  // throwing stub is a green build that breaks in the browser. Reject the pair
+  // at config resolution, in `zudoDoc()` as well as `zudoDocPreset()`.
+  it("rejects designTokenPanel: true with bundleZdtp: false", () => {
+    expect(() => zudoDoc({ designTokenPanel: true, bundleZdtp: false })).toThrow(
+      /bundleZdtp/,
+    );
+  });
+
+  // #4261: the point of the new field — a host that mounts its own panel via
+  // `@takazudo/zudo-doc/design-token-panel-bootstrap` keeps the package panel
+  // off but still needs the real loader, so the shadowing plugin must drop out.
+  it("omits the zdtp-loader plugin for designTokenPanel: false with bundleZdtp: true", () => {
+    const names = (zudoDoc({ designTokenPanel: false, bundleZdtp: true }).plugins ?? []).map(
+      (p) => p.name,
+    );
+    expect(names).not.toContain("@takazudo/zudo-doc/plugins/zdtp-loader");
+
+    // Derived default unchanged: omitting `bundleZdtp` still shadows it.
+    const defaultNames = (zudoDoc({ designTokenPanel: false }).plugins ?? []).map((p) => p.name);
+    expect(defaultNames).toContain("@takazudo/zudo-doc/plugins/zdtp-loader");
+  });
+
   describe("asset viewer path settings", () => {
     it("uses the documented asset viewer defaults", () => {
       const options = routesOptions(zudoDoc({}));

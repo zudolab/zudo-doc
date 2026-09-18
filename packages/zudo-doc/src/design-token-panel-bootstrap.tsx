@@ -405,9 +405,11 @@ export function bootstrapDesignTokenPanel(
 
   function loadZdtp(): Promise<ZdtpModule> {
     if (zdtpImport === null) {
-      // Via the package-owned subpath, never `@takazudo/zdtp` directly: when
-      // `designTokenPanel` is off, the preset's zdtp-loader plugin shadows this
-      // exact specifier with a throwing stub so no zdtp chunk is emitted (#4201).
+      // Via the package-owned subpath, never `@takazudo/zdtp` directly: when zdtp
+      // is not bundled (`bundleZdtp ?? designTokenPanel` is false), the preset's
+      // zdtp-loader plugin shadows this exact specifier with a throwing stub so
+      // no zdtp chunk is emitted (#4201). A host mounting its own panel with the
+      // package panel off sets `bundleZdtp: true` to get the real module (#4261).
       zdtpImport = import("@takazudo/zudo-doc/zdtp-loader").catch((err: unknown) => {
         // The memo resets ONLY here, on import rejection (see RETRY SCOPE).
         zdtpImport = null;

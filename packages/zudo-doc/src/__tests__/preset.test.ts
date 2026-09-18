@@ -594,16 +594,47 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
     ]);
   });
 
-  // #4201: the zdtp-loader alias plugin is listed exactly when the panel is off.
-  it("lists the zdtp-loader alias plugin only while designTokenPanel is off", () => {
-    const names = (designTokenPanel: boolean) =>
+  // #4201 + #4261. This case used to assert the plugin list straight off
+  // `designTokenPanel`, which hard-coded the conflation #4261 reported: a host
+  // mounting its OWN panel through `design-token-panel-bootstrap` had no way to
+  // ask for the real loader without also mounting the package panel. Bundling
+  // now follows `bundleZdtp ?? designTokenPanel` — omitting `bundleZdtp`
+  // reproduces the old two-way behaviour exactly, which is why the #4201
+  // regression gates in `route-injection-build.slow.test.ts` are untouched.
+  it("lists the zdtp-loader alias plugin exactly when zdtp is not bundled", () => {
+    const names = (overrides: { designTokenPanel: boolean; bundleZdtp?: boolean }) =>
       zudoDocPreset({
-        settings: { ...fixtureSettings, designTokenPanel },
+        settings: { ...fixtureSettings, ...overrides },
         buildDocsSchema: buildFixtureSchema,
         directiveVocabulary: fixtureDirectives,
       }).plugins.map((p) => p.name);
-    expect(names(false)).toContain("@takazudo/zudo-doc/plugins/zdtp-loader");
-    expect(names(true)).not.toContain("@takazudo/zudo-doc/plugins/zdtp-loader");
+
+    const ZDTP_LOADER = "@takazudo/zudo-doc/plugins/zdtp-loader";
+
+    // Derived default: `bundleZdtp` omitted → follows `designTokenPanel`.
+    expect(names({ designTokenPanel: false })).toContain(ZDTP_LOADER);
+    expect(names({ designTokenPanel: true })).not.toContain(ZDTP_LOADER);
+
+    // Explicit, agreeing with the derived default.
+    expect(names({ designTokenPanel: false, bundleZdtp: false })).toContain(ZDTP_LOADER);
+    expect(names({ designTokenPanel: true, bundleZdtp: true })).not.toContain(ZDTP_LOADER);
+
+    // #4261's case: package panel off, real loader wanted.
+    expect(names({ designTokenPanel: false, bundleZdtp: true })).not.toContain(ZDTP_LOADER);
+  });
+
+  // #4261: the fourth row of the matrix is incoherent rather than a plugin-list
+  // shape — a mounted package panel over a stubbed loader can only throw in the
+  // browser. The guard lives in `zudoDocPreset()` (not only `zudoDoc()`) because
+  // #4261's reporter spreads the preset into `defineConfig` directly.
+  it("throws for designTokenPanel: true with bundleZdtp: false", () => {
+    expect(() =>
+      zudoDocPreset({
+        settings: { ...fixtureSettings, designTokenPanel: true, bundleZdtp: false },
+        buildDocsSchema: buildFixtureSchema,
+        directiveVocabulary: fixtureDirectives,
+      }),
+    ).toThrow(/bundleZdtp/);
   });
 
   // ── packageOwnedRoutes gate (Package-First Finale #2356, ADR

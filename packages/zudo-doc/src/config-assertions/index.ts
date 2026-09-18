@@ -82,6 +82,48 @@ export function assertNoEmptyStringFaviconOrLogo(settings: EmptyStringFaviconOrL
   }
 }
 
+/** Structural subset of `Settings` the zdtp-bundling helpers read. */
+export interface ZdtpBundlingSubject {
+  designTokenPanel?: boolean;
+  bundleZdtp?: boolean;
+}
+
+/**
+ * Resolve whether `@takazudo/zdtp` is bundled into the island build.
+ *
+ * `bundleZdtp` is optional and carries NO `DEFAULT_SETTINGS` key — its default
+ * is derived here, at the read site, from `designTokenPanel`. So a project
+ * that never heard of `bundleZdtp` keeps exactly today's behaviour (#4201):
+ * panel off → zdtp shadowed, panel on → zdtp bundled. Setting `bundleZdtp`
+ * explicitly decouples the two, which is the whole point (#4261): a host that
+ * mounts its own panel through `@takazudo/zudo-doc/design-token-panel-bootstrap`
+ * needs the real loader while the package panel stays off.
+ */
+export function resolvesBundleZdtp(settings: ZdtpBundlingSubject): boolean {
+  return settings.bundleZdtp ?? settings.designTokenPanel === true;
+}
+
+/**
+ * Reject `designTokenPanel: true` together with `bundleZdtp: false`.
+ *
+ * That pair mounts the package-owned panel while shadowing
+ * `@takazudo/zudo-doc/zdtp-loader` with a throwing stub, so the panel's
+ * `loadZdtp()` is guaranteed to reject at runtime — a green build that breaks
+ * in the browser. Fail loudly at config resolution instead (#4261).
+ */
+export function assertZdtpBundlingConsistent(settings: ZdtpBundlingSubject): void {
+  if (settings.designTokenPanel === true && settings.bundleZdtp === false) {
+    throw new TypeError(
+      "Invalid combination: designTokenPanel: true with bundleZdtp: false. " +
+        "The package-owned design token panel needs @takazudo/zdtp in the build, " +
+        "but bundleZdtp: false shadows @takazudo/zudo-doc/zdtp-loader with a throwing " +
+        "stub, so the panel would fail to load at runtime. Drop bundleZdtp (it follows " +
+        "designTokenPanel by default), or set designTokenPanel: false if you only meant " +
+        "to keep zdtp out of the build.",
+    );
+  }
+}
+
 /**
  * Warn about `categoryMatch` values that cannot express the intended
  * dropdown grouping.
