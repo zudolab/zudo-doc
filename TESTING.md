@@ -102,7 +102,7 @@ a stated archetype delta, not an oversight.
 | Tier | Description | What runs | Command |
 |------|-------------|-----------|---------|
 | T0 | Local fast pass | L1 unit + typecheck + single-fixture e2e | `pnpm test`, `pnpm check`, `E2E_FIXTURES=<fixture> npx playwright test --project <fixture>` |
-| T1 | CI gates (authoritative) | pr-checks: guard jobs + typecheck + unit/package tests + build + full 6-fixture e2e (`pnpm test:e2e:ci`, historical job-level median 242s; final sample 190s) | `pr-checks.yml` on every PR |
+| T1 | CI gates (authoritative) | pr-checks: guard jobs + typecheck + unit/package tests + build + full 6-fixture e2e (`pnpm test:e2e:ci`, historical job-level median 242s; final sample 190s — both measured pre-`hostpanel`, see T2 below) | `pr-checks.yml` on every PR |
 | T2 | Full-e2e split | *Not used* — see "Why T2 is unused" below | — |
 | T3 | Nightly exam | Full suite + quarantine lane + slow integration tests | Auto: `exam.yml` on schedule; on-demand: `gh workflow run exam.yml --ref <branch>` |
 
@@ -234,7 +234,10 @@ Playwright for two reasons:
 The wisdom framework's trigger for T2 is T1 exceeding its ~10 minute budget. This repo's
 full 6-fixture Playwright suite (`pnpm test:e2e:ci`, pr-checks' `E2E Tests` job) has a
 historical job-level median of 242s and a final optimized sample of 190s, comfortably
-inside that budget, so there is nothing to split out. Revisit if the suite's runtime grows
+inside that budget, so there is nothing to split out. **Both numbers were measured on the
+FIVE-fixture suite, before `hostpanel` (#4310) added a sixth build + preview server** —
+treat them as a floor, not a current reading, and re-measure before leaning on the margin.
+Revisit if the suite's runtime grows
 enough to approach the ~10 minute mark. The timing protocol is documented below; do not
 substitute workflow-level queue-inclusive timestamps.
 

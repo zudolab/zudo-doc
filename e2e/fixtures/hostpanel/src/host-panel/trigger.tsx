@@ -7,6 +7,11 @@
 // SSR markup with NO client JS of its own — the click handler is attached by
 // `./bootstrap-island.tsx` once the bootstrap has run, which is also what makes
 // the fixture's readiness observable (see that file's ready marker).
+//
+// Deliberately carries NO `aria-label`: the visible text is the accessible
+// name. An override that does not contain the visible string breaks WCAG 2.5.3
+// (Label in Name) — a voice-control user saying "Tokens" could not activate it.
+// The longer description lives in `title` instead.
 
 import type { JSX } from "preact";
 
@@ -19,7 +24,7 @@ export function HostTokenTrigger(): JSX.Element {
       id={HOST_TOKEN_TRIGGER_ID}
       type="button"
       class="flex items-center justify-center text-muted transition-colors hover:text-fg"
-      aria-label="Toggle host design token panel"
+      title="Toggle host design token panel"
     >
       Tokens
     </button>
