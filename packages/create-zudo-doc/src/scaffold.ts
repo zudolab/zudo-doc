@@ -944,11 +944,13 @@ function generatePackageJson(
     // the hidden-path guard still holds. zfb-runtime, zfb-adapter-cloudflare, and
     // md-wasm carry no package-specific change. No public API, export, config
     // default, or engine requirement moves, so a fresh scaffold needs no migration.
-    // 2.19.0: zfb adds the opt-in `ZFB_KEEP_BUILD_SHADOW=1` diagnostic flag;
-    // zfb-runtime and zfb-adapter-cloudflare have no package-specific change.
-    // md-wasm rebuilds its four artifacts after a YAML parser patch, changing
-    // byte sizes and digests without changing exports or public APIs. A fresh
-    // scaffold needs no config migration.
+    // 2.19.0: zfb adds the opt-in `ZFB_KEEP_BUILD_SHADOW=1` diagnostic flag and
+    // moves its YAML parser to noyalib-serde-yaml 0.0.44, which upstream verified
+    // as equivalent across all 18 baseline cases. zfb-runtime and
+    // zfb-adapter-cloudflare have no package-specific change. md-wasm rebuilds
+    // its four artifacts with that parser patch, changing byte sizes and digests
+    // without changing exports or public APIs. A fresh scaffold needs no config
+    // migration.
     "@takazudo/zfb": "2.19.0",
     "@takazudo/zfb-runtime": "2.19.0",
     "@takazudo/zfb-md-wasm": "2.19.0",
