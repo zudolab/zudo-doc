@@ -8,6 +8,9 @@
 #
 # Format: one entry per line —
 #   <fixture>|<exact trimmed root line>|<exact trimmed replacement line> # reason: <why>
+# In a data field, write a literal pipe as \|; only unescaped pipes separate
+# fields. Every other backslash is literal; there is no \\ escape. Therefore a
+# field value containing the literal two-character sequence \| is inexpressible.
 # Comments: lines starting with # are ignored. Blank lines are ignored.
 # Exact-match only (no globs, no wildcards). Every entry needs a # reason:.
 
