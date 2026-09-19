@@ -7,6 +7,7 @@ import type {
   MetaTagsConfig,
   DateFormatSetting,
 } from "@takazudo/zudo-doc/settings";
+import type { ZudoDocConfig } from "@takazudo/zudo-doc/config";
 
 export const settings = {
   // Keep fixture homes on the no-introduction package default.
@@ -84,4 +85,4 @@ export const settings = {
     { type: "component", component: "host-token-trigger" },
   ] satisfies HeaderRightItem[] as HeaderRightItem[],
   packageOwnedRoutes: true,
-};
+} satisfies ZudoDocConfig;

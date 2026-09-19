@@ -63,6 +63,19 @@ to stay inside the fixture root.
 - **Fixture-specific** (kept in git per fixture): `src/config/settings.ts`, `src/content/`, optionally `public/<fixture-only-files>/`
 - **Seed file**: `.zfb/doc-history-meta.json` is created as `{}` so the bundler's static `#doc-history-meta` import resolves on the first run; the doc-history plugin's preBuild hook overwrites it on subsequent builds.
 
+The materialized `e2e/fixtures/*/tsconfig.json` is a gitignored byte-copy of the root
+`tsconfig.json` and a **zfb build input** — its `paths` block is what resolves `@/*` and
+`#doc-history-meta` inside the fixture bundle, and `zfb build` fails without it. It is NOT
+a typecheck target: `tsc -p` against it is expected to be red because it checks the copied
+showcase tree against a deliberately minimal `settings.ts` (18 errors in `hostpanel` at
+2026-09-19, all of that one class). The fixture typecheck is `pnpm check:e2e` →
+`e2e/tsconfig.fixtures.json`, which covers only the tracked fixture-owned sources and works
+on a clean checkout via `rootDirs`; fixture `settings.ts` files carry `satisfies
+ZudoDocConfig`. Local-only quirk: once a fixture is materialized, `rootDirs` resolves the
+override's `../pages/lib/*` to the fixture's own (byte-identical, refreshed on every setup
+run) copy first, so a stale materialized `pages/` can make a local run differ from CI —
+rerun `setup-fixtures.sh` or delete `e2e/fixtures/hostpanel/pages/`.
+
 Fixture freshness markers hash the current bytes of all fixture-local `src/content/`,
 `src/config/settings.ts`, and `public/` files, the shared `packages/zudo-doc/` and
 `packages/doc-history-server/` sources, and both packages' built `dist/` trees,
