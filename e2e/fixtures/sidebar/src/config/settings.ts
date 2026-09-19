@@ -6,6 +6,7 @@ import type {
   MetaTagsConfig,
   DateFormatSetting,
 } from "@takazudo/zudo-doc/settings";
+import type { ZudoDocConfig } from "@takazudo/zudo-doc/config";
 
 export const settings = {
   // Keep fixture homes on the no-introduction package default.
@@ -87,4 +88,4 @@ export const settings = {
     },
   ] satisfies HeaderNavItem[] as HeaderNavItem[],
   packageOwnedRoutes: true,
-};
+} satisfies ZudoDocConfig;

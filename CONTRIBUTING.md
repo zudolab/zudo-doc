@@ -32,7 +32,7 @@ Run `pnpm install` to wire the link, do your work, then remove the override and 
 
 ## Before you push
 
-Run `pnpm b4push` (the 24-step pre-push validation suite). See `TESTING.md` for
+Run `pnpm b4push` (the 34-step pre-push validation suite). See `TESTING.md` for
 the full testing strategy and which tiers run where.
 
 ## Conventions

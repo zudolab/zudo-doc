@@ -125,19 +125,19 @@ Run `pnpm check:links -- --help` to see the current CLI options.
 
 ### As part of b4push
 
-The link checker runs as step 28 of 32 in the pre-push validation (`pnpm b4push`). The strict image checker follows it as step 29, before HTML validation:
+The link checker runs as step 30 of 34 in the pre-push validation (`pnpm b4push`). The strict image checker follows it as step 31, before HTML validation:
 
 ```
-26. Build
-27. Content-fallback check
-28. **Link check**
-29. **Image check**
-30. HTML validation
-31. Preview smoke
-32. Manual smoke
+28. Build
+29. Content-fallback check
+30. **Link check**
+31. **Image check**
+32. HTML validation
+33. Preview smoke
+34. Manual smoke
 ```
 
-The canonical, authoritative b4push step list lives in the header comment of `scripts/run-b4push.sh` — treat that script as the single source of truth for the full 32-step sequence.
+The canonical, authoritative b4push step list lives in the header comment of `scripts/run-b4push.sh` — treat that script as the single source of truth for the full 34-step sequence.
 
 ### In CI
 

@@ -9,6 +9,7 @@
 #   No-Host-Alias Guard      — pure-Node, no install; scripts/check-no-host-alias-in-package.mjs
 #   Pin Parity Check         — pure-Node, no install; scripts/check-pin-parity.mjs
 #   Fixture Settings Drift   — pure-Node, no install; scripts/check-fixture-settings-drift.mjs
+#   Chrome Bindings Fixture Drift — pure-Node, no install; scripts/check-chrome-bindings-fixture-drift.mjs
 #   Package Safelist Check   — pnpm install + package build; scripts/check-package-safelist.mjs
 #   Publish Contract Gates   — pnpm install + zudo-doc contract + npm pack dry-run
 #   Required Checks Manifest Guard — pure-Node, no install; file-only job-name coverage
@@ -139,6 +140,26 @@ jobs:
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Check fixture settings drift
         run: node scripts/check-fixture-settings-drift.mjs
+
+  # ---------------------------------------------------------------------------
+  # Job 0.61: Chrome-bindings fixture drift check (lightweight, no pnpm install needed)
+  # ---------------------------------------------------------------------------
+  # Verifies that e2e/fixtures/hostpanel/src/chrome-bindings.fixture.tsx
+  # preserves every normalized line of root src/chrome-bindings.tsx (ordered
+  # subsequence match; the fixture may add lines freely). Closes the gap
+  # where every ChromeBindingsInput slot is optional, so a root change the
+  # fixture copy misses fails no build — hostpanel e2e just silently tests
+  # stale chrome (#4321).
+  # Pure-Node script — uses preinstalled Node 22 on the runner image, no pnpm.
+  check-chrome-bindings-fixture-drift:
+    name: Chrome Bindings Fixture Drift Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Check chrome-bindings fixture drift
+        run: node scripts/check-chrome-bindings-fixture-drift.mjs
 
   # ---------------------------------------------------------------------------
   # Job 0.63: Package safelist drift check (#1982, updated #1994)
@@ -417,12 +438,20 @@ jobs:
       - name: Run type checking
         run: pnpm check
 
-      # pages/ typecheck: root tsconfig excludes pages/ by design (zfb injects
-      # its own page-runner types at build time). tsconfig.pages.json provides
-      # the needed zfb/* path mappings so the ~50 page files that had zero
-      # typecheck coverage are now gated in CI (#2018).
+      # pages/ typecheck: root tsconfig.json already includes pages/, but `zfb
+      # check` (the command `pnpm check` runs) doesn't type-check it.
+      # tsconfig.pages.json exists to give pages/ files the zfb/* path
+      # mappings they need, so the ~50 page files that had zero typecheck
+      # coverage are gated in CI (#2018).
       - name: Run pages/ type checking
         run: pnpm check:pages
+
+      # e2e/ typecheck: tsc --noEmit against e2e/tsconfig.json (spec sources)
+      # plus e2e/tsconfig.fixtures.json (fixture-owned tracked sources).
+      # Closes the local/CI asymmetry where e2e/**/*.ts had no typecheck
+      # coverage in CI (#4322, #4324).
+      - name: Run e2e/ type checking
+        run: pnpm check:e2e
 
       # Workspace package typechecks: `pnpm check` (root tsconfig) excludes
       # packages/ so a broken package typecheck was previously invisible in CI.
