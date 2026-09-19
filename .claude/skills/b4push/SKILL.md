@@ -15,32 +15,12 @@ Run `pnpm b4push` from the project root. This executes `scripts/run-b4push.sh`, 
 the single source of truth for the step list — consult it directly rather than this summary
 if the two ever appear to disagree.
 
-## Steps (cheap → expensive) — 24-step suite
+## Steps (cheap → expensive)
 
-1. **Format check (mdx)** — `pnpm format:check:mdx`
-2. **Template drift check** — `bash scripts/check-template-drift.sh` (host ↔ generator template parity)
-3. **No-host-alias-in-package guard** (#2344) — `pnpm check:no-host-alias-in-package` (`packages/zudo-doc/src/**` must not import the host `@/` alias)
-4. **Pin parity check** (W4A #1732) — `pnpm check:pin-parity` (root package.json zfb pins ↔ scaffold.ts literals)
-5. **Fixture settings drift check** — `pnpm check:fixture-settings-drift` (e2e fixtures ↔ root settings.ts)
-6. **Tags audit** — `pnpm tags:audit --ci` (validates tag vocabulary)
-7. **Current-only compatibility contract check** — `pnpm check:compatibility-contract`
-8. **Design token lint** — `pnpm lint:tokens`
-9. **Component-tokens codegen drift check** (#2448) — `pnpm check:component-tokens`
-10. **E2E spec naming guard** (#2095) — `pnpm check:e2e-spec-naming`
-11. **@flaky/@local-only tracking-issue guard** (#2292) — `pnpm check:flaky-tracking-issue`
-12. **Wait-debt guard** (#2538) — `pnpm check:wait-debt` (zero-tolerance `waitForTimeout` annotation check)
-13. **B4push/CI parity check** (#1967) — `pnpm check:b4push-ci-parity` (guard manifest meta-check)
-14. **Type checking** — `pnpm check` (zfb check) + `pnpm check:pages` + workspace package typechecks
-15. **Worker contract proof** — `pnpm verify:worker-contract` (types + runtime + dry-run)
-16. **Root unit tests** — `pnpm --filter @takazudo/zudo-doc build && pnpm test:unit` (builds dist/ first; required for import resolution)
-17. **Package tests** — `pnpm test:packages` (dist/ already built by step 16)
-18. **Package safelist check** (#1994) — `pnpm check:package-safelist` (requires dist/safelist.css from step 16)
-19. **Build** — `pnpm build` (zfb build → static HTML export to dist/)
-20. **Content-fallback check** — `pnpm check:content-fallback`
-21. **Link check** — `pnpm check:links -- --strict-broken --strict-absolute --allowlist=.check-links-allowlist`
-22. **HTML validation** — `pnpm check:html` (html-validate dist/\*\*/\*.html)
-23. **Automated preview smoke** — `pnpm smoke:preview` (blocking)
-24. **Manual interactive smoke** — operator-driven (theme toggle, mobile menu, search, etc.)
+The step list, its exact count, and step numbers all drift too often to hand-keep here.
+Read the numbered header comment at the top of `scripts/run-b4push.sh` for the current,
+authoritative step order — that file is the single source of truth; this skill only
+summarizes the workflow around it.
 
 Each step's elapsed time is recorded and printed as a breakdown in the final SUMMARY block.
 Playwright E2E runs in CI (pr-checks e2e job); b4push intentionally excludes it for
@@ -49,9 +29,9 @@ time-budget reasons — see `TESTING.md` at repo root for the full tier rational
 ## Env overrides (skip expensive steps in non-interactive use)
 
 ```bash
-B4PUSH_SKIP_HTML_VALIDATE=1 pnpm b4push   # skip step 22
-B4PUSH_SKIP_PREVIEW_SMOKE=1 pnpm b4push   # skip step 23
-B4PUSH_SKIP_MANUAL_SMOKE=1  pnpm b4push   # skip step 24
+B4PUSH_SKIP_HTML_VALIDATE=1 pnpm b4push   # skip HTML validation
+B4PUSH_SKIP_PREVIEW_SMOKE=1 pnpm b4push   # skip the automated preview smoke
+B4PUSH_SKIP_MANUAL_SMOKE=1  pnpm b4push   # skip the manual interactive smoke
 ```
 
 Combine as needed, e.g. `B4PUSH_SKIP_PREVIEW_SMOKE=1 B4PUSH_SKIP_MANUAL_SMOKE=1 pnpm b4push`.

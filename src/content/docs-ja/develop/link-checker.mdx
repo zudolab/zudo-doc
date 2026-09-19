@@ -125,19 +125,19 @@ pnpm check:links -- --strict-broken --strict-absolute --allowlist=.check-links-a
 
 ### b4pushの一部として
 
-リンクチェッカーはプッシュ前検証（`pnpm b4push`）の32ステップ中ステップ28で実行されます。その直後のステップ29で厳格な画像チェッカーが実行され、HTML検証に進みます：
+リンクチェッカーはプッシュ前検証（`pnpm b4push`）の34ステップ中ステップ30で実行されます。その直後のステップ31で厳格な画像チェッカーが実行され、HTML検証に進みます：
 
 ```
-26. Build
-27. Content-fallback check
-28. **Link check**
-29. **Image check**
-30. HTML validation
-31. Preview smoke
-32. Manual smoke
+28. Build
+29. Content-fallback check
+30. **Link check**
+31. **Image check**
+32. HTML validation
+33. Preview smoke
+34. Manual smoke
 ```
 
-b4pushのステップ一覧の正式・権威的な定義は`scripts/run-b4push.sh`の冒頭コメントにあります。このスクリプトを、32ステップ全体の唯一の信頼できる情報源として扱ってください。
+b4pushのステップ一覧の正式・権威的な定義は`scripts/run-b4push.sh`の冒頭コメントにあります。このスクリプトを、34ステップ全体の唯一の信頼できる情報源として扱ってください。
 
 ### CI内での実行
 

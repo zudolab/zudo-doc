@@ -196,11 +196,13 @@ lane makes that failure block the PR instead of waiting for the next nightly run
 
 **b4push** (`pnpm b4push`) is the bounded local convenience pass — wisdom-tier **T4**, not
 T1 (see the note above the tiers table); it's covered here for workflow ergonomics only. It
-runs a 32-step suite
-(format → template drift → no-host-alias guard → pin parity → fixture drift → tags/canonical audit →
+runs a 34-step suite
+(format → template drift → no-host-alias guard → pin parity → fixture drift → chrome-bindings fixture drift →
+tags/canonical audit →
 current-only compatibility → token lint → component-tokens drift → e2e spec naming guard →
 @flaky tracking-issue guard → wait-debt guard → search-widget-script commit drift → nav-overflow-script commit drift →
-publish contract → dist-mutation guard → required-checks manifest/parity → typecheck → Worker contract proof → root unit tests →
+publish contract → dist-mutation guard → required-checks manifest/parity → typecheck → e2e/ type checking →
+Worker contract proof → root unit tests →
 slow unit tests → package tests → safelist check → build → content-fallback allowlist scan → link check →
 image check → HTML validation → preview smoke → manual smoke). Each step's elapsed time is recorded and printed as a breakdown in the final
 SUMMARY block, so budget creep in any one step is visible instead of only the aggregate run
@@ -211,8 +213,8 @@ non-allowlisted half (`strictContentBridge: true` in `zfb.config.ts`) fails plai
 `pnpm build`/CI directly and is not a b4push step at all — see the header of
 `scripts/check-content-fallback.mjs` for why both exist.
 
-**b4push/CI parity scope.** The `check:b4push-ci-parity` guard (step 18) only cross-checks
-the lightweight guard steps 1–18 (the `# >>> b4push-ci-parity:guards:begin` / `:end` region).
+**b4push/CI parity scope.** The `check:b4push-ci-parity` guard (step 19) only cross-checks
+the lightweight guard steps 1–19 (the `# >>> b4push-ci-parity:guards:begin` / `:end` region).
 The heavy steps — typecheck, unit tests, package tests, safelist check, build, link check,
 image check, HTML validation, preview smoke — are intentionally outside this region and outside the parity
 manifest. They run in CI as separate full-install jobs (not redundant pure-Node scripts), so
@@ -270,9 +272,9 @@ with a closing comment, so the issue list doesn't accumulate stale entries (#253
 ### T4 — Local heavy lane (`pnpm b4push`)
 
 T4 is a convenience layer, never an enforcement substitute for T1. The structural
-target for `pnpm b4push` is a finite, warm-tree 32-step pass with the full per-step
+target for `pnpm b4push` is a finite, warm-tree 34-step pass with the full per-step
 timing breakdown printed by `scripts/run-b4push.sh` (the timing state is set up in
-`scripts/run-b4push.sh:54-72`, in the `START_TIME`/`TOTAL_STEPS` and `STEP_*` block).
+`scripts/run-b4push.sh:62-77`, in the `START_TIME`/`TOTAL_STEPS` and `STEP_*` block).
 It includes the blocking Slow Unit Tests lane (60 slow root tests plus 5 retiered
 `create-zudo-doc` tests), but deliberately excludes the full five-fixture Playwright run and
 the registry-install/full-build slow-create sweep reserved for T3. A ≤25-minute

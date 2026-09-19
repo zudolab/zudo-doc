@@ -32,7 +32,9 @@
 // Exit 0 = no unallowlisted drift. Exit 1 = drift detected.
 //
 // Wired into:
-//   (wired by the gate-wiring sub-issue)
+//   - scripts/run-b4push.sh (step 6, inside the guard-region markers)
+//   - .github/workflows/pr-checks.yml (check-chrome-bindings-fixture-drift —
+//     own pure-Node job, "Chrome Bindings Fixture Drift Check")
 
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
