@@ -213,11 +213,19 @@ non-allowlisted half (`strictContentBridge: true` in `zfb.config.ts`) fails plai
 `pnpm build`/CI directly and is not a b4push step at all — see the header of
 `scripts/check-content-fallback.mjs` for why both exist.
 
-**b4push/CI parity scope.** The `check:b4push-ci-parity` guard (step 19) only cross-checks
-the lightweight guard steps 1–19 (the `# >>> b4push-ci-parity:guards:begin` / `:end` region).
+**b4push/CI parity scope.** The `check:b4push-ci-parity` guard (step 19) checks three
+directions: every manifest entry has CI coverage; every `pnpm` guard invocation in the
+lightweight `# >>> b4push-ci-parity:guards:begin` / `:end` region is represented in the
+manifest; and every manifest entry with a `b4pushScript` still invokes that script
+somewhere in `scripts/run-b4push.sh`. The last direction intentionally scans the whole
+script because required guards such as package safelist and plugin resolution run after
+the lightweight region. Its scan is lexical: full-line shell comments are ignored, but
+inline comments and quoted strings count as matches.
+
 The heavy steps — typecheck, unit tests, package tests, safelist check, build, link check,
-image check, HTML validation, preview smoke — are intentionally outside this region and outside the parity
-manifest. They run in CI as separate full-install jobs (not redundant pure-Node scripts), so
+image check, HTML validation, preview smoke — are intentionally outside the lightweight
+region and outside the parity manifest unless they also have a specifically listed guard
+entry. They run in CI as separate full-install jobs (not redundant pure-Node scripts), so
 a straightforward ciNeedle match would need a different contract. The asymmetry is intentional:
 b4push runs the heavy steps locally on the developer's machine; CI runs them in isolated
 clean-runner jobs. Both paths cover the same behaviors, just orchestrated differently.

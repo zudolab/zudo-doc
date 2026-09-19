@@ -59,14 +59,6 @@ class GithubSlugAllocator {
   }
 }
 
-/**
- * Walk every ATX heading (`#` through `######`, outside fenced code) in a
- * markdown body, in document order, returning each heading's raw text (an
- * optional closing `#`-sequence stripped). The text is intentionally left
- * otherwise unprocessed — `githubSlugify`'s character filter already strips
- * markdown punctuation (backticks, emphasis markers, brackets) the same way
- * GitHub's own renderer does when it computes an anchor from a heading.
- */
 function stripInlineLinkSyntax(text: string): string {
   // GitHub slugs a heading from its RENDERED text, so a link's destination
   // never contributes. Reducing `[label](dest)` / `![alt](dest)` to the label
@@ -75,15 +67,34 @@ function stripInlineLinkSyntax(text: string): string {
   return text.replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1");
 }
 
-function extractAtxHeadingTexts(content: string): string[] {
+function isSetextParagraphLine(line: string): boolean {
+  const text = line.trim();
+  return /^ {0,3}\S/.test(line)
+    && !/^#{1,6}(?:[ \t]|$)/.test(text)
+    && !/^(?:[-+*]|\d{1,9}[.)])(?:[ \t]|$)/.test(text)
+    && !text.startsWith(">")
+    && !text.includes("|")
+    && !/^(?:(?:\*[ \t]*){3,}|(?:_[ \t]*){3,}|(?:-[ \t]*){3,})$/.test(text);
+}
+
+/**
+ * Walk ATX and setext headings outside fenced code in document order.
+ * Remove ATX closing hashes and link destinations; `githubSlugify` filters
+ * the remaining inline punctuation when allocating each heading's slug.
+ */
+function extractHeadingTexts(content: string): string[] {
   const headings: string[] = [];
   let fenceChar: string | null = null;
   let fenceLen = 0;
+  // Conservative setext support: single-line paragraphs only, not multiline ones.
+  let paragraphLineCount = 0;
+  let paragraphLine = "";
 
   for (const line of content.split("\n")) {
     const trimmed = line.trimStart();
     const fenceMatch = /^([`~]{3,})/.exec(trimmed);
     if (fenceMatch) {
+      paragraphLineCount = 0;
       const fence = fenceMatch[1];
       if (fence === undefined) continue;
       if (fenceChar === null) {
@@ -97,11 +108,29 @@ function extractAtxHeadingTexts(content: string): string[] {
     if (fenceChar !== null) continue;
 
     const headingMatch = /^(#{1,6})[ \t]+(.+)$/.exec(line.trim());
-    if (!headingMatch) continue;
-    const rawText = headingMatch[2];
-    if (rawText === undefined) continue;
-    const text = stripInlineLinkSyntax(rawText.trim().replace(/\s+#+\s*$/, ""));
-    headings.push(text);
+    if (headingMatch) {
+      paragraphLineCount = 0;
+      const rawText = headingMatch[2];
+      if (rawText === undefined) continue;
+      const text = stripInlineLinkSyntax(rawText.trim().replace(/\s+#+\s*$/, ""));
+      headings.push(text);
+      continue;
+    }
+
+    if (/^ {0,3}(=+|-+)[ \t]*$/.test(line)) {
+      if (paragraphLineCount === 1) {
+        headings.push(stripInlineLinkSyntax(paragraphLine));
+      }
+      paragraphLineCount = 0;
+      continue;
+    }
+
+    if (isSetextParagraphLine(line)) {
+      paragraphLine = line.trim();
+      paragraphLineCount += 1;
+    } else {
+      paragraphLineCount = 0;
+    }
   }
 
   return headings;
@@ -111,7 +140,7 @@ function extractAtxHeadingTexts(content: string): string[] {
  * Build the anchor map (exact source filename -> in-file anchor) for a full
  * generated changelog document. Anchors must reflect the WHOLE document's
  * heading order, not just the version headings: the `# <title>` line and any
- * `###` headings inside entry bodies consume slugs too, and an earlier
+ * ATX or setext headings inside entry bodies consume slugs too, and an earlier
  * entry's body heading can shift a later entry's anchor via GitHub's `-1`,
  * `-2`, … de-duplication.
  */
@@ -126,7 +155,7 @@ export function buildChangelogAnchorMap(
   for (const entry of entries) {
     const anchor = allocator.allocate(formatChangelogEntryHeadingText(entry));
     anchors.set(basename(entry.sourcePath), anchor);
-    for (const headingText of extractAtxHeadingTexts(entry.content)) {
+    for (const headingText of extractHeadingTexts(entry.content)) {
       allocator.allocate(headingText);
     }
   }
@@ -240,7 +269,7 @@ interface LinkMatch {
   end: number;
   label: string;
   dest: string;
-  /** The authored title INCLUDING its surrounding quote characters. */
+  /** The authored title INCLUDING its surrounding quotes or parentheses. */
   title?: string;
   isImage: boolean;
 }
@@ -286,13 +315,16 @@ function parseLinkInner(inner: string): { dest: string; title?: string } | null 
     }
   }
 
-  // `title` keeps its surrounding quotes verbatim so it can be re-emitted
+  // `title` keeps its surrounding delimiters verbatim so it can be re-emitted
   // byte-identically. Re-quoting it ourselves would corrupt a single-quoted
-  // title containing a double quote. The backreference also rejects mismatched
-  // delimiters, leaving such a link untouched instead of rewriting it wrong.
+  // title containing a double quote. Reject mismatched quotes or unbalanced
+  // parentheses, leaving such a link untouched instead of rewriting it wrong.
   let title: string | undefined;
   if (rest !== "") {
-    if (!/^(["'])[\s\S]*\1$/.test(rest)) return null;
+    const quotedTitle = /^(["'])[\s\S]*\1$/.test(rest);
+    const parenthesizedTitle = rest.startsWith("(")
+      && findMatchingDelimiter(rest, 1, "(", ")") === rest.length - 1;
+    if (!quotedTitle && !parenthesizedTitle) return null;
     title = rest;
   }
   return { dest, title };
@@ -390,6 +422,7 @@ export function rewriteChangelogEntryLinks(
       continue;
     }
 
+    // Filename lookup is deliberately case-sensitive, even for .MD/.MDX extensions.
     const anchor = parsed.sameDir ? anchorByFilename.get(parsed.filename) : undefined;
     if (anchor === undefined) {
       rewritten += match.label; // unlink: unknown target, or not same-directory

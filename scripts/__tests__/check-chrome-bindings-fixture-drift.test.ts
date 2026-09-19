@@ -60,6 +60,201 @@ describe("stripCommentsAndBlanks", () => {
       { text: "const a = 1;", lineNumber: 1 },
     ]);
   });
+
+  it("strips a block comment that opens after code and spans lines", () => {
+    const content = [
+      "const x = 1; /* explanatory",
+      "   comment spanning lines */",
+      "const y = 2;",
+    ].join("\n");
+    expect(stripCommentsAndBlanks(content)).toEqual([
+      { text: "const x = 1;", lineNumber: 1 },
+      { text: "const y = 2;", lineNumber: 3 },
+    ]);
+  });
+
+  it("keeps code after a mid-line block comment closes", () => {
+    const content = [
+      "const x = 1; /* explanatory",
+      "   still a comment */ const y = 2; /* another */",
+    ].join("\n");
+    expect(stripCommentsAndBlanks(content)).toEqual([
+      { text: "const x = 1;", lineNumber: 1 },
+      { text: "const y = 2;", lineNumber: 2 },
+    ]);
+  });
+
+  it("strips several block comments on the same line", () => {
+    expect(
+      stripCommentsAndBlanks("const/* first */ x =/* second */ 1;"),
+    ).toEqual([{ text: "const x = 1;", lineNumber: 1 }]);
+  });
+
+  it.each([
+    ["single-line", "{/* comment */}"],
+    ["multi-line", "{/* comment\n * spanning lines\n */}"],
+    ["separate braces", "{\n  /* comment */\n}"],
+    ["several comments", "{ /* first */\n /* second */ /* third */ }"],
+  ])("drops the complete %s JSX comment expression", (_name, comment) => {
+    const content = ["<div>", comment, "</div>"].join("\n");
+    expect(stripCommentsAndBlanks(content)).toEqual([
+      { text: "<div>", lineNumber: 1 },
+      { text: "</div>", lineNumber: content.split("\n").length },
+    ]);
+    expect(
+      findDrift(
+        stripCommentsAndBlanks(content),
+        stripCommentsAndBlanks("<div>\n</div>"),
+      ),
+    ).toBeNull();
+  });
+
+  it("keeps the code surrounding embedded JSX comment expressions", () => {
+    expect(
+      stripCommentsAndBlanks("<div>before{/* note */}after</div>"),
+    ).toEqual([{ text: "<div>beforeafter</div>", lineNumber: 1 }]);
+    expect(
+      stripCommentsAndBlanks("<div>before{/* note\n */}after</div>"),
+    ).toEqual([
+      { text: "<div>before", lineNumber: 1 },
+      { text: "after</div>", lineNumber: 2 },
+    ]);
+  });
+
+  it("removes adjacent JSX comments without swallowing a code expression", () => {
+    expect(
+      stripCommentsAndBlanks(
+        "<div>{/* first */}{value}{ /* second */ }</div>",
+      ),
+    ).toEqual([{ text: "<div>{value}</div>", lineNumber: 1 }]);
+  });
+
+  it("ignores quote and brace delimiters inside block comments", () => {
+    const content = [
+      "<div>{/* ignore ' \" ` { }",
+      " // still inside the block",
+      " */}after</div>",
+    ].join("\n");
+    expect(stripCommentsAndBlanks(content)).toEqual([
+      { text: "<div>", lineNumber: 1 },
+      { text: "after</div>", lineNumber: 3 },
+    ]);
+  });
+
+  it("keeps braces without block comments and braces around real code", () => {
+    const content = [
+      "<div>{ }{ /* note */ value }</div>",
+      "const settings = { /* note */ enabled: true };",
+      "{",
+      "  /* note */ value",
+      "}",
+    ].join("\n");
+    expect(stripCommentsAndBlanks(content)).toEqual([
+      { text: "<div>{ }{  value }</div>", lineNumber: 1 },
+      { text: "const settings = {  enabled: true };", lineNumber: 2 },
+      { text: "{", lineNumber: 3 },
+      { text: "value", lineNumber: 4 },
+      { text: "}", lineNumber: 5 },
+    ]);
+    expect(stripCommentsAndBlanks("{\n\n}")).toEqual([
+      { text: "{", lineNumber: 1 },
+      { text: "}", lineNumber: 3 },
+    ]);
+  });
+
+  it.each(["'", '"', "`"])(
+    "keeps comment markers inside %s literals",
+    (quote) => {
+      const content = "const text = " + quote + "{/* literal */}" + quote + ";";
+      expect(stripCommentsAndBlanks(content)).toEqual([
+        { text: content, lineNumber: 1 },
+      ]);
+    },
+  );
+
+  it.each(["'", '"', "`"])(
+    "honours escaped %s delimiters inside literals",
+    (quote) => {
+      const content =
+        "const text = " +
+        quote +
+        "escaped\\" +
+        quote +
+        "/* literal */" +
+        quote +
+        ";";
+      expect(stripCommentsAndBlanks(content)).toEqual([
+        { text: content, lineNumber: 1 },
+      ]);
+    },
+  );
+
+  it.each(["'", '"', "`"])(
+    "strips comments after %s literals ending in an escaped backslash",
+    (quote) => {
+      const code = "const text = " + quote + "text\\\\" + quote + ";";
+      expect(
+        stripCommentsAndBlanks(code + " /* remove */ const next = 1;"),
+      ).toEqual([{ text: code + "  const next = 1;", lineNumber: 1 }]);
+    },
+  );
+
+  it.each(["'", '"'])(
+    "ends an unterminated %s literal at the end of the line",
+    (quote) => {
+      const firstLine = "const text = " + quote + "unterminated\\";
+      const content = [firstLine, "/* remove */ const next = 1;"].join("\n");
+      expect(stripCommentsAndBlanks(content)).toEqual([
+        { text: firstLine, lineNumber: 1 },
+        { text: "const next = 1;", lineNumber: 2 },
+      ]);
+    },
+  );
+
+  it("keeps multi-line templates opaque, including interpolation text", () => {
+    const content = [
+      "const text = `first",
+      "  // literal line",
+      "  {/* literal block */}",
+      "  ${ /* literal interpolation */ value }",
+      "  last\\",
+      "`; /* remove */ const next = 1;",
+    ].join("\n");
+    expect(stripCommentsAndBlanks(content)).toEqual([
+      { text: "const text = `first", lineNumber: 1 },
+      { text: "// literal line", lineNumber: 2 },
+      { text: "{/* literal block */}", lineNumber: 3 },
+      { text: "${ /* literal interpolation */ value }", lineNumber: 4 },
+      { text: "last\\", lineNumber: 5 },
+      { text: "`;  const next = 1;", lineNumber: 6 },
+    ]);
+  });
+
+  it("keeps trailing // text and JSX URLs without leaking comment state", () => {
+    const content = [
+      "const x = 1; // /* and ` are comment text",
+      "<div>http://example.com/path</div>",
+      "/* remove */ const y = 2;",
+    ].join("\n");
+    expect(stripCommentsAndBlanks(content)).toEqual([
+      { text: "const x = 1; // /* and ` are comment text", lineNumber: 1 },
+      { text: "<div>http://example.com/path</div>", lineNumber: 2 },
+      { text: "const y = 2;", lineNumber: 3 },
+    ]);
+  });
+
+  it("still drops // comments immediately after a leading block comment", () => {
+    const content = [
+      "/* note */ // ignore /* and `",
+      "const x = 1; /* spans",
+      " lines */ // ignore this too",
+      "const y = 2; /* note */ // keep this trailing text",
+    ].join("\n");
+    expect(stripCommentsAndBlanks(content)).toEqual([
+      { text: "const x = 1;", lineNumber: 2 },
+      { text: "const y = 2;  // keep this trailing text", lineNumber: 4 },
+    ]);
+  });
 });
 
 describe("findDrift", () => {
@@ -94,6 +289,25 @@ describe("findDrift", () => {
       ["import { A } from 'a';", "import { A, B } from 'a';"],
     ]);
     expect(findDrift(root, fixture, replacementMap)).toBeNull();
+  });
+
+  it("passes with an allowlisted root line containing a pipe", () => {
+    const parsed = parseAllowlistLine(
+      "hostpanel|type T = A \\| B;|type T = A \\| C; # reason: fixture narrows the union",
+    );
+    expect(parsed).toEqual({
+      fixture: "hostpanel",
+      rootLine: "type T = A | B;",
+      replacementLine: "type T = A | C;",
+      reason: "fixture narrows the union",
+    });
+    if (!parsed || parsed.error) throw new Error("expected a valid entry");
+
+    const root = lines("type T = A | B;");
+    const fixture = lines("type T = A | C;");
+    expect(
+      findDrift(root, fixture, new Map([[parsed.rootLine, parsed.replacementLine]])),
+    ).toBeNull();
   });
 
   it("fails when the allowlisted replacement line is itself missing from the fixture", () => {
@@ -139,6 +353,52 @@ describe("parseAllowlistLine", () => {
       replacementLine: "import a, { b } from 'a';",
       reason: "needs b too",
     });
+  });
+
+  it("unescapes a pipe in a root field", () => {
+    expect(
+      parseAllowlistLine(
+        "hostpanel|type T = A \\| B;|type T = A \\| C; # reason: union replacement",
+      ),
+    ).toEqual({
+      fixture: "hostpanel",
+      rootLine: "type T = A | B;",
+      replacementLine: "type T = A | C;",
+      reason: "union replacement",
+    });
+  });
+
+  it("unescapes adjacent escaped pipes", () => {
+    expect(
+      parseAllowlistLine(
+        "hostpanel|const value = a \\|\\| b;|const value = a \\|\\| c; # reason: boolean replacement",
+      ),
+    ).toEqual({
+      fixture: "hostpanel",
+      rootLine: "const value = a || b;",
+      replacementLine: "const value = a || c;",
+      reason: "boolean replacement",
+    });
+  });
+
+  it("keeps a lone backslash literal", () => {
+    expect(
+      parseAllowlistLine(
+        "hostpanel|const value = \\q;|const value = \\r; # reason: literal backslashes",
+      ),
+    ).toEqual({
+      fixture: "hostpanel",
+      rootLine: "const value = \\q;",
+      replacementLine: "const value = \\r;",
+      reason: "literal backslashes",
+    });
+  });
+
+  it("still rejects an unescaped pipe inside a field", () => {
+    const result = parseAllowlistLine(
+      "hostpanel|type T = A | B;|type T = C; # reason: missing escape",
+    );
+    expect(result!.error).toMatch(/3 "\|"-separated fields.*got 4/);
   });
 
   it("errors when the # reason: marker is missing", () => {
