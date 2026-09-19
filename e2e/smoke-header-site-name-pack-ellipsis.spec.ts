@@ -54,6 +54,10 @@ const LONG_SITE_NAME = "Smoke Test Guide";
  *  if only one of the two actually did. */
 const KNOWN_OVERFLOWING_PACKS = ["swissgrid", "riso"] as const;
 
+/** The browser font preference this sweep runs at, via CDP
+ *  `Page.setFontSizes` — the browser's own setting, not zoom, not CSS. */
+const FONT_PREFERENCE_PX = 24;
+
 async function setFontPreference(page: Page, px: number): Promise<void> {
   const cdp = await page.context().newCDPSession(page);
   await cdp.send("Page.enable");
@@ -129,7 +133,7 @@ test.describe("header site-name ellipsis across every theme pack at 390px / 24px
   }) => {
     test.slow();
 
-    await setFontPreference(page, 24);
+    await setFontPreference(page, FONT_PREFERENCE_PX);
     await page.goto(PAGE_PATH, { waitUntil: "domcontentloaded" });
 
     const packSlugs = await enabledPackSlugs(page);
@@ -155,9 +159,23 @@ test.describe("header site-name ellipsis across every theme pack at 390px / 24px
       // 1. Re-check the font-preference lever after every pack switch — a
       //    pack reload that silently lost the 24px override would make every
       //    assertion below pass for a reason unrelated to truncation.
-      if (m.rootFont !== "24px") {
-        failures.push(`${packSlug}: font-preference lever did not apply (root font is ${m.rootFont})`);
-        continue;
+      //
+      //    A pack may legitimately scale the whole rem system up on the root
+      //    element (`beacon` sets `font-size: 112.5%`, landing the 24px
+      //    preference at 27px), so the lever is proven by the root font being
+      //    AT LEAST the requested 24px, not exactly it — the un-levered
+      //    baseline is 16px (18px under beacon's scale), far below either. A
+      //    pack that scaled the rem system DOWN would trip this and needs an
+      //    explicit per-pack baseline here rather than a loosened threshold.
+      //
+      //    Recorded but NOT `continue`d: skipping the pack on a lever anomaly
+      //    would silently drop it from a sweep whose entire purpose is to
+      //    cover every pack. The failure below still fails the test.
+      const rootFontPx = Number.parseFloat(m.rootFont);
+      if (!Number.isFinite(rootFontPx) || rootFontPx < FONT_PREFERENCE_PX) {
+        failures.push(
+          `${packSlug}: font-preference lever did not apply (root font is ${m.rootFont}, expected >= ${FONT_PREFERENCE_PX}px)`,
+        );
       }
 
       // 2. The right-hand control cluster (and the document as a whole)
