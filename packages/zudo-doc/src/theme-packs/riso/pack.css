@@ -235,20 +235,22 @@ html[data-theme-pack="riso"] header[data-header] {
   border-bottom: 3px solid var(--zd-accent);
 }
 html[data-theme-pack="riso"] [data-header-logo] {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
   font-family: var(--font-display);
   font-weight: 400;
   letter-spacing: 0.01em;
 }
 html[data-theme-pack="riso"] [data-header-logo]::before {
   content: "";
+  display: inline-block;
   width: 0.7em;
   height: 0.7em;
-  flex-shrink: 0;
   background: var(--zd-accent);
   box-shadow: 0.16em 0.16em 0 0 light-dark(#ff5b41, #ff7a5f);
+  margin-right: 0.55rem;
+  /* -0.03em: measured against the marker's pre-#4306 flex-centered
+     position — pixel-identical at 1280px and at 390px/24px. The display
+     font's baseline differs from swissgrid's, so the offsets differ. */
+  vertical-align: -0.03em;
 }
 html[data-theme-pack="riso"] [data-nav-item]:hover {
   text-decoration-line: underline;

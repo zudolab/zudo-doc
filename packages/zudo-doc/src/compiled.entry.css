@@ -9,3 +9,9 @@
 @import "@takazudo/zudo-doc/features.css";
 
 @source not "./dist/catalog.js";
+
+/* Test files are not shipped markup, but the Tailwind scan is text-based, so a
+   bare class-shaped string literal in a spec emits a real utility into this
+   published stylesheet (e.g. "flow-root" in the theme-pack header-logo guard,
+   "flex-shrink" in a prose comment in route-injection-build.slow.test.ts). */
+@source not "./src/**/__tests__/**";

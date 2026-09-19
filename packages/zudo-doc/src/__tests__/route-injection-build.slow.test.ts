@@ -1995,12 +1995,10 @@ describe("DTP off: designTokenPanel false emits no island marker on the page (HA
 // "toggle → panel appears" half (a resolving loader actually mounting zdtp)
 // is covered by the mocked harness in `design-token-panel-bootstrap.test.ts`
 // (see that file's `:29-40` for why the mock stands in for the real
-// `@takazudo/zdtp` import there). A live-browser probe was assessed as
-// out of scope for this wave (no existing cheap fixture toggles a
-// `designTokenPanel: false` panel mounted through a host `chromeBindingsModule`
-// — `e2e/smoke-design-token-panel-probe.spec.ts` only exercises the PACKAGE
-// panel, `designTokenPanel: true`); tracked as a follow-up (#4295) rather than
-// widening this wave.
+// `@takazudo/zdtp` import there). The live-browser probe (#4295) landed as
+// the `hostpanel` fixture + `e2e/hostpanel-design-token-panel.spec.ts` —
+// see that spec for the click-to-open assertion this file's module-graph
+// proof does not make.
 // ---------------------------------------------------------------------------
 
 describe("DTP host-owned: designTokenPanel false + bundleZdtp true keeps the real loader for a host-mounted panel", () => {
@@ -2210,8 +2208,8 @@ describe("HOME home-page: createHomePageView adoption on the injected /[locale] 
 
   it("hero <h1>/description unchanged; hero logo renders the logo:\"auto\" AutoLogo default (#3074)", () => {
     const html = readBuiltHtml(fixtureDir, "ja/index.html");
-    // Mirrors the hero <h1> assertion in home-page.test.tsx:96 — keep both in sync.
-    expect(html).toContain('<h1 class="text-heading font-bold mb-vsp-2xs break-words">Route Injection i18n Proof</h1>');
+    // Mirrors the hero <h1> assertion in home-page.test.tsx:106 — keep both in sync.
+    expect(html).toContain('<h1 class="text-heading font-bold mb-vsp-2xs wrap-anywhere">Route Injection i18n Proof</h1>');
     // logo:"auto" (default, commit a2ba5188a) renders the generated AutoLogo
     // SVG branch, not the masked bg-fg div — mirrors the assertion
     // convention in home-page.test.tsx:69 (semantic data-auto-logo= marker
