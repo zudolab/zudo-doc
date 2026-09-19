@@ -204,18 +204,17 @@ html[data-theme-pack="swissgrid"] header[data-header] {
   border-bottom: 3px solid var(--zd-fg);
 }
 html[data-theme-pack="swissgrid"] [data-header-logo] {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
   font-weight: 900;
   letter-spacing: -0.03em;
 }
 html[data-theme-pack="swissgrid"] [data-header-logo]::before {
   content: "";
+  display: inline-block;
   width: 0.72em;
   height: 0.72em;
-  flex-shrink: 0;
   background: #ff0000;
+  margin-right: 0.55rem;
+  vertical-align: -0.06em;
 }
 html[data-theme-pack="swissgrid"] [data-nav-item] {
   text-transform: uppercase;
