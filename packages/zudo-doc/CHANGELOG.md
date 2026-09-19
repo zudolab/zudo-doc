@@ -286,7 +286,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ### Other Changes
 
-- Locale-owned Claude/Codex resource indexes and automatically localized Asset Viewer routes ship in [5.15.0](./5.15.0.mdx), not in this release. Before moving on to 5.15.0, add `/docs/claude/` and `/docs/codex/` to `defaultLocaleOnlyPrefixes` if those sections should stay default-locale-only — or remove any authored locale resource `index.mdx` and move its title, description, and labels to `ZudoDocConfig.translations`. The 5.15.0 entry has the full migration. (#3820)
+- Locale-owned Claude/Codex resource indexes and automatically localized Asset Viewer routes ship in [5.15.0](#5150---2026-09-01), not in this release. Before moving on to 5.15.0, add `/docs/claude/` and `/docs/codex/` to `defaultLocaleOnlyPrefixes` if those sections should stay default-locale-only — or remove any authored locale resource `index.mdx` and move its title, description, and labels to `ZudoDocConfig.translations`. The 5.15.0 entry has the full migration. (#3820)
 - Updated the zfb peer family to 2.14.0, `@takazudo/zdtp` to 0.4.14, and the doc-history-server peer floor to 5.13.1. (`dbe8553c7`, `038870c94`, `95a82f15f`)
 
 ## [5.13.1] - 2026-08-28
