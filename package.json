@@ -70,6 +70,7 @@
     "check:nav-overflow-drift": "bash scripts/check-nav-overflow-script-drift.sh",
     "check:template-drift": "bash scripts/check-template-drift.sh",
     "check:fixture-settings-drift": "node scripts/check-fixture-settings-drift.mjs",
+    "check:chrome-bindings-fixture-drift": "node scripts/check-chrome-bindings-fixture-drift.mjs",
     "check:pin-parity": "node scripts/check-pin-parity.mjs",
     "check:scaffold-pin-freshness": "node scripts/check-scaffold-pin-freshness.mjs",
     "check:scaffold-pin-published": "node scripts/check-scaffold-pin-published.mjs",

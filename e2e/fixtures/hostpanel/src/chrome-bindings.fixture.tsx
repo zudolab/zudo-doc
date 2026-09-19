@@ -13,7 +13,9 @@
 //   2. `headerRightComponents["host-token-trigger"]` renders the host's own
 //      trigger button, since `designTokenPanel: false` drops the package's.
 //
-// Keep the rest in lockstep with the repo-root file when that one changes.
+// The rest is kept in lockstep with the repo-root file by
+// scripts/check-chrome-bindings-fixture-drift.mjs (`pnpm check:chrome-bindings-fixture-drift`),
+// which fails if a root change goes unported here.
 
 import type { ComponentChildren, JSX, VNode } from "preact";
 import { Island } from "@takazudo/zfb";
