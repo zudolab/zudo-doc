@@ -1,3 +1,8 @@
+import {
+  buildChangelogAnchorMap,
+  formatChangelogEntryHeadingText,
+  rewriteChangelogEntryLinks,
+} from "./links.js";
 import type { ChangelogEntry, ChangelogGenerateOptions } from "./types.js";
 
 export function generateChangelogMarkdown(
@@ -15,12 +20,17 @@ export function generateChangelogMarkdown(
   lines.push("");
   lines.push("The format is based on Keep a Changelog, and release notes are generated from the changelog MDX pages.");
 
+  // Built up-front from the full entry list (and the title/body headings
+  // that precede each entry in the document), so a same-directory .md/.mdx
+  // link anywhere in the corpus can be rewritten to the right in-file anchor.
+  const anchorsByFilename = buildChangelogAnchorMap(title, entries);
+
   for (const entry of entries) {
     lines.push("");
-    lines.push(entry.date ? `## [${entry.version}] - ${entry.date}` : `## [${entry.version}]`);
+    lines.push(`## ${formatChangelogEntryHeadingText(entry)}`);
     if (entry.content) {
       lines.push("");
-      lines.push(entry.content);
+      lines.push(rewriteChangelogEntryLinks(entry.content, anchorsByFilename));
     }
   }
 
