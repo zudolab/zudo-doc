@@ -258,6 +258,20 @@ describe("changelog link rewrite", () => {
     expect(markdown).not.toContain("](./index.mdx)");
   });
 
+  it("unlinks uppercase extensions instead of resolving filenames case-insensitively", () => {
+    const markdown = generateChangelogMarkdown([
+      {
+        version: "Referencer",
+        content: "[Uppercase](./5.15.0.MDX)\n[Lowercase](./5.15.0.mdx)",
+        sourcePath: "/tmp/referencer.mdx",
+      },
+      { version: "5.15.0", content: "", sourcePath: "/tmp/5.15.0.mdx" },
+    ]);
+
+    expect(markdown).toContain("Uppercase\n[Lowercase](#5150)");
+    expect(markdown).not.toContain("./5.15.0.MDX");
+  });
+
   it("leaves absolute, protocol-relative, root-absolute, fragment, image, non-md, and reference-style links byte-unchanged", () => {
     const lines = [
       "[Absolute](https://example.com/some.mdx)",
@@ -295,6 +309,56 @@ describe("changelog link rewrite", () => {
 
     expect(markdown).toContain("[FragTest](#5150---2026-09-01)");
     expect(markdown).toContain('[TitleTest](#5150---2026-09-01 "cool title")');
+  });
+
+  it.each([
+    "(cool title)",
+    "()",
+    "(keep \\(escaped\\) parens)",
+    "(closing \\) paren)",
+    "(opening \\( paren)",
+  ])("preserves a parenthesized title verbatim when rewriting: %s", (title) => {
+    const markdown = generateChangelogMarkdown([
+      {
+        version: "Referencer",
+        content: `[Target](./5.15.0.mdx#fixes ${title})\n[Angle](<./5.15.0.mdx> ${title})`,
+        sourcePath: "/tmp/referencer.mdx",
+      },
+      { version: "5.15.0", content: "", sourcePath: "/tmp/5.15.0.mdx" },
+    ]);
+
+    expect(markdown).toContain(`[Target](#5150 ${title})`);
+    expect(markdown).toContain(`[Angle](#5150 ${title})`);
+  });
+
+  it("drops parenthesized titles when unlinking relative links to non-entries", () => {
+    const markdown = generateChangelogMarkdown([
+      {
+        version: "Referencer",
+        content:
+          "[Unknown](./nope.mdx (unknown title))\n[Parent](../pkg/index.mdx (parent title))\n[Index](./index.mdx (index title))",
+        sourcePath: "/tmp/referencer.mdx",
+      },
+    ]);
+
+    expect(markdown).toContain("Unknown\nParent\nIndex");
+    expect(markdown).not.toContain(" title)");
+    expect(markdown).not.toContain(".mdx");
+  });
+
+  it.each([
+    "[Target](./5.15.0.mdx (unclosed)",
+    "[Target](./5.15.0.mdx (title) extra)",
+    "[Target](./5.15.0.mdx (first) (second))",
+    "[Target](./5.15.0.mdx (unbalanced (nested))",
+    "[Target](./5.15.0.mdx (escaped close\\))",
+  ])("leaves a malformed parenthesized title untouched: %s", (content) => {
+    const markdown = generateChangelogMarkdown([
+      { version: "Referencer", content, sourcePath: "/tmp/referencer.mdx" },
+      { version: "5.15.0", content: "", sourcePath: "/tmp/5.15.0.mdx" },
+    ]);
+
+    expect(markdown).toContain(content);
   });
 
   it("does not rewrite link-shaped text inside fenced or inline code", () => {
@@ -390,4 +454,91 @@ describe("changelog link rewrite", () => {
     expect(markdown).toContain("## [Steal Me]");
     expect(markdown).toContain("[Link to B](#steal-me-1)");
   });
+
+  it.each(["=", "---", "   === \t", "   -\t "])(
+    "counts setext and ATX headings before later duplicate version anchors: %j",
+    (underline) => {
+      const markdown = generateChangelogMarkdown([
+        {
+          version: "Alpha",
+          content: [
+            "### [Steal Me]",
+            "",
+            "  [Steal Me](https://example.com/release)  ",
+            underline,
+            "",
+            "[Steal Me]",
+            underline,
+          ].join("\n"),
+          sourcePath: "/tmp/alpha.mdx",
+        },
+        { version: "Steal Me", content: "", sourcePath: "/tmp/first.mdx" },
+        { version: "Steal Me", content: "", sourcePath: "/tmp/second.mdx" },
+        {
+          version: "Referencer",
+          content: "[First](./first.mdx)\n[Second](./second.mdx)",
+          sourcePath: "/tmp/referencer.mdx",
+        },
+      ]);
+
+      expect(markdown).toContain("[First](#steal-me-3)");
+      expect(markdown).toContain("[Second](#steal-me-4)");
+    },
+  );
+
+  it.each([
+    { name: "blank line before a thematic break", content: "[Steal Me]\n\n---", version: "Steal Me", anchor: "steal-me" },
+    { name: "whitespace before a thematic break", content: "[Steal Me]\n \t\n---", version: "Steal Me", anchor: "steal-me" },
+    { name: "consecutive thematic breaks", content: "---\n---", version: "---", anchor: "---" },
+    { name: "consumed setext underline", content: "Other\n---\n---", version: "---", anchor: "---" },
+    { name: "ATX heading", content: "### [Steal Me]\n---", version: "Steal Me", anchor: "steal-me-1" },
+    { name: "dash list item", content: "- [Steal Me]\n---", version: "--Steal Me", anchor: "--steal-me" },
+    { name: "plus list item", content: "+ [Steal Me]\n---", version: " Steal Me", anchor: "-steal-me" },
+    { name: "star list item", content: "* [Steal Me]\n---", version: " Steal Me", anchor: "-steal-me" },
+    { name: "numbered list item", content: "1. [Steal Me]\n---", version: "1 Steal Me", anchor: "1-steal-me" },
+    { name: "parenthesized list marker", content: "1) [Steal Me]\n---", version: "1 Steal Me", anchor: "1-steal-me" },
+    { name: "blockquote", content: "> [Steal Me]\n---", version: " Steal Me", anchor: "-steal-me" },
+    { name: "table row", content: "| [Steal Me] |\n---", version: " Steal Me ", anchor: "-steal-me-" },
+    { name: "table row without outer pipes", content: "Steal | Me\n---", version: "Steal  Me", anchor: "steal--me" },
+    { name: "star thematic break", content: "* * *\n---", version: "--", anchor: "--" },
+    { name: "underscore thematic break", content: "___\n---", version: "___", anchor: "___" },
+    { name: "indented code", content: "    [Steal Me]\n---", version: "Steal Me", anchor: "steal-me" },
+    { name: "tab-indented code", content: "\t[Steal Me]\n---", version: "Steal Me", anchor: "steal-me" },
+    { name: "indented underline", content: "[Steal Me]\n    ---", version: "Steal Me", anchor: "steal-me" },
+    { name: "spaced underline", content: "[Steal Me]\n- - -", version: "Steal Me", anchor: "steal-me" },
+    { name: "multiline paragraph", content: "Earlier line\n[Steal Me]\n---", version: "Steal Me", anchor: "steal-me" },
+  ])("does not invent a setext slug from a $name", ({ content, version, anchor }) => {
+    const markdown = generateChangelogMarkdown([
+      { version: "Alpha", content, sourcePath: "/tmp/alpha.mdx" },
+      { version, content: "", sourcePath: "/tmp/target.mdx" },
+      {
+        version: "Referencer",
+        content: "[Target](./target.mdx)",
+        sourcePath: "/tmp/referencer.mdx",
+      },
+    ]);
+
+    expect(markdown).toContain(`[Target](#${anchor})`);
+  });
+
+  it.each(["```", "````", "~~~"])(
+    "does not allocate setext slugs inside or across a %s fence",
+    (fence) => {
+      const markdown = generateChangelogMarkdown([
+        {
+          version: "Alpha",
+          content: `[Steal Me]\n${fence}\n[Steal Me]\n---\n${fence}\n===`,
+          sourcePath: "/tmp/alpha.mdx",
+        },
+        { version: "Steal Me", content: "", sourcePath: "/tmp/target.mdx" },
+        {
+          version: "Referencer",
+          content: "[Target](./target.mdx)",
+          sourcePath: "/tmp/referencer.mdx",
+        },
+      ]);
+
+      expect(markdown).toContain("[Target](#steal-me)");
+    },
+  );
 });
