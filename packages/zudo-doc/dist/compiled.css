@@ -537,6 +537,9 @@
 .flex {
   display: flex;
 }
+.flow-root {
+  display: flow-root;
+}
 .grid {
   display: grid;
 }
