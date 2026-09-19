@@ -808,6 +808,9 @@
 .flex-1 {
   flex: 1;
 }
+.flex-shrink {
+  flex-shrink: 1;
+}
 .shrink {
   flex-shrink: 1;
 }
@@ -1458,6 +1461,9 @@
 }
 .break-words {
   overflow-wrap: break-word;
+}
+.wrap-anywhere {
+  overflow-wrap: anywhere;
 }
 .whitespace-nowrap {
   white-space: nowrap;

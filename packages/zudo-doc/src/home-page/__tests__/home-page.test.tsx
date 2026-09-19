@@ -100,8 +100,11 @@ describe("createHomePageView — hero markup", () => {
     const HomePageView = createHomePageView(ctx);
     const html = render(<HomePageView {...makeProps()} />);
 
-    // Mirrors the hero <h1> assertion in route-injection-build.slow.test.ts:1789 — keep both in sync.
-    expect(html).toContain('<h1 class="text-heading font-bold mb-vsp-2xs break-words">Test Site</h1>');
+    // Mirrors the hero <h1> assertion in route-injection-build.slow.test.ts:2214 — keep both in sync.
+    // wrap-anywhere (not break-words) so a long unbreakable word (e.g. a long
+    // siteName) can wrap inside the hero at narrow viewports (#4297/#4302).
+    expect(html).toContain('<h1 class="text-heading font-bold mb-vsp-2xs wrap-anywhere">Test Site</h1>');
+    expect(html).not.toContain("break-words");
     expect(html).toContain(
       '<p class="text-muted text-small mb-vsp-sm">A test description</p>',
     );
