@@ -27,6 +27,9 @@
 // An entry is valid only if the root line still exists in root AND the
 // replacement line exists in the fixture file; the replacement then stands
 // in for the root line at that point in the ordered-subsequence walk.
+// The first field names a FIXTURE, not one pair, so when a fixture owns
+// several `.fixture.*` files an entry applies to whichever of that fixture's
+// pairs carries its root line; it is reported stale only if no pair does.
 //
 // Usage: node scripts/check-chrome-bindings-fixture-drift.mjs
 // Exit 0 = no unallowlisted drift. Exit 1 = drift detected.
@@ -239,6 +242,13 @@ function main() {
     }
   }
 
+  const entryStatus = new Map(
+    entries.map((entry) => [
+      entry,
+      { matchedRoot: false, satisfied: false, lastError: null },
+    ]),
+  );
+
   for (const pair of pairs) {
     let rootContent;
     try {
@@ -250,24 +260,37 @@ function main() {
       anyError = true;
       continue;
     }
-    const fixtureContent = readFileSync(resolve(ROOT, pair.fixturePath), "utf8");
+    let fixtureContent;
+    try {
+      fixtureContent = readFileSync(resolve(ROOT, pair.fixturePath), "utf8");
+    } catch {
+      console.error(
+        `[chrome-bindings-fixture-drift] ${pair.fixturePath}: tracked in git but missing on disk`,
+      );
+      anyError = true;
+      continue;
+    }
 
     const rootLines = stripCommentsAndBlanks(rootContent);
     const fixtureLines = stripCommentsAndBlanks(fixtureContent);
     const rootLineTexts = new Set(rootLines.map((l) => l.text));
     const fixtureLineTexts = new Set(fixtureLines.map((l) => l.text));
 
+    // An entry names a fixture, not an individual pair, so it applies to
+    // whichever of that fixture's pairs actually carries its root line. It is
+    // only reported as stale/unsatisfied once every pair has been walked.
     const replacementMap = new Map();
     for (const entry of entries) {
       if (entry.fixture !== pair.fixtureDir) continue;
+      if (!rootLineTexts.has(entry.rootLine)) continue;
+      const status = entryStatus.get(entry);
+      status.matchedRoot = true;
       const err = validateAllowlistEntry(entry, rootLineTexts, fixtureLineTexts);
       if (err) {
-        console.error(
-          `[chrome-bindings-fixture-drift] allowlist entry for ${entry.fixture}: ${err}`,
-        );
-        anyError = true;
+        status.lastError = err;
         continue;
       }
+      status.satisfied = true;
       replacementMap.set(entry.rootLine, entry.replacementLine);
     }
 
@@ -282,6 +305,19 @@ function main() {
         "  remedy: port the root change into the fixture copy, or add a replacement entry with a reason to .chrome-bindings-fixture-drift-allowlist",
       );
     }
+  }
+
+  for (const [entry, status] of entryStatus) {
+    if (status.satisfied) continue;
+    if (!knownFixtureDirs.has(entry.fixture)) continue; // already reported above
+    const err =
+      status.matchedRoot && status.lastError
+        ? status.lastError
+        : `stale entry (root line no longer exists): ${entry.rootLine}`;
+    console.error(
+      `[chrome-bindings-fixture-drift] allowlist entry for ${entry.fixture}: ${err}`,
+    );
+    anyError = true;
   }
 
   if (anyError) {
