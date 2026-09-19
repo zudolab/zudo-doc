@@ -5,7 +5,7 @@ anti-gaming rules, wait-pattern rules) see **`TESTING.md`** at repo root.
 
 ## Architecture
 
-5 Playwright fixtures, each with its own port, build, and `settings.ts`:
+6 Playwright fixtures, each with its own port, build, and `settings.ts`:
 
 | Fixture | Port | Purpose |
 |---|---|---|
@@ -14,6 +14,7 @@ anti-gaming rules, wait-pattern rules) see **`TESTING.md`** at repo root.
 | theme | 4502 | Light/dark toggle, hydration |
 | smoke | 4503 | General features (search, TOC, code blocks, mermaid, doc history, etc.) |
 | versioning | 4504 | Version switcher, banners |
+| hostpanel | 4505 | Host-mounted design token panel (`designTokenPanel: false`, package panel off) |
 
 Configured in `playwright.config.ts`. Each fixture's webServer entry runs `zfb preview` against the pre-built `dist/` produced by `setup-fixtures.sh`.
 
@@ -58,6 +59,7 @@ to stay inside the fixture root.
 - **Symlinked at fixture root**: `packages/`, `node_modules/`
 - **Copied under `src/`**: `components/`, `lib/`, `styles/`, `types/`, `utils/`
 - **Copied files** (relative imports): `zfb.config.ts`, `tsconfig.json`, `src/chrome-bindings.tsx`, and every `src/config/*.ts | *.tsx` *except* `settings.ts`
+- **Fixture-owned override** (optional, kept in git): a fixture that tracks `src/chrome-bindings.fixture.tsx` gets that file materialized as `src/chrome-bindings.tsx` *instead of* the repo-root one; helper modules it imports live in fixture-owned `src/` subdirectories (`FIXTURE_OWNED_SRC_DIRS` in `setup-fixtures.sh`), which setup never overwrites. Only `hostpanel` uses this today — `src/chrome-bindings.fixture.tsx` plus `src/host-panel/` — because it needs a `BodyEndIslands` slot and a `headerRightComponents` trigger for its own design-token-panel island, neither of which belongs in the showcase's real bindings. Both the override file and its owned dirs are hashed into `.build-marker.sha256`, so editing either forces a rebuild.
 - **Fixture-specific** (kept in git per fixture): `src/config/settings.ts`, `src/content/`, optionally `public/<fixture-only-files>/`
 - **Seed file**: `.zfb/doc-history-meta.json` is created as `{}` so the bundler's static `#doc-history-meta` import resolves on the first run; the doc-history plugin's preBuild hook overwrites it on subsequent builds.
 

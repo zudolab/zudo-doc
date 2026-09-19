@@ -29,7 +29,7 @@ is a blocking PR lane, and the visual-regression baseline is deliberately skippe
 | L1 Worker | Workers-runtime unit/integration tests | Custom entry export graph and SQLite `AiChatDailySpendCap` concurrency using `@cloudflare/vitest-pool-workers` | `pnpm test:worker` |
 | L2 | *Not used* — jsdom/happy-dom + Testing Library DOM component tests | Intentionally skipped in this repo — see "Why L2 is skipped" below | — |
 | L3 | Static dist reads + build-output verification | Read pre-built `dist/` HTML with `readFileSync` (Playwright specs using `makeDistReader(fixture)`); also covers the b4push build-output steps (link check, image check, HTML validation, preview smoke) — see "L3 details" below | `E2E_FIXTURES=<fixture> npx playwright test --project <fixture> e2e/<fixture>-*.spec.ts` (e.g. `E2E_FIXTURES=versioning npx playwright test --project versioning e2e/versioning.spec.ts`) — any spec using `makeDistReader(fixture)` from `e2e/dist-helper.ts` |
-| L4 | Playwright E2E | 5-fixture browser suite — interactive, full-build, full-browser; fixtures: sidebar (4500), i18n (4501), theme (4502), smoke (4503), versioning (4504) | `pnpm test:e2e` (local), `pnpm test:e2e:ci` (CI) |
+| L4 | Playwright E2E | 6-fixture browser suite — interactive, full-build, full-browser; fixtures: sidebar (4500), i18n (4501), theme (4502), smoke (4503), versioning (4504), hostpanel (4505) | `pnpm test:e2e` (local), `pnpm test:e2e:ci` (CI) |
 | L5 | `/verify-ui` | Computed-style verification plus informal screenshot review; no committed screenshot baseline | Invoke the `/verify-ui` skill |
 | L6 | Test-flow skills | Final-resort: full user-journey replay with screen observation | `/test-flow-html-preview-hydration`, `/test-flow-sidebar-width-restore` |
 
@@ -102,7 +102,7 @@ a stated archetype delta, not an oversight.
 | Tier | Description | What runs | Command |
 |------|-------------|-----------|---------|
 | T0 | Local fast pass | L1 unit + typecheck + single-fixture e2e | `pnpm test`, `pnpm check`, `E2E_FIXTURES=<fixture> npx playwright test --project <fixture>` |
-| T1 | CI gates (authoritative) | pr-checks: guard jobs + typecheck + unit/package tests + build + full 5-fixture e2e (`pnpm test:e2e:ci`, historical job-level median 242s; final sample 190s) | `pr-checks.yml` on every PR |
+| T1 | CI gates (authoritative) | pr-checks: guard jobs + typecheck + unit/package tests + build + full 6-fixture e2e (`pnpm test:e2e:ci`, historical job-level median 242s; final sample 190s — both measured pre-`hostpanel`, see T2 below) | `pr-checks.yml` on every PR |
 | T2 | Full-e2e split | *Not used* — see "Why T2 is unused" below | — |
 | T3 | Nightly exam | Full suite + quarantine lane + slow integration tests | Auto: `exam.yml` on schedule; on-demand: `gh workflow run exam.yml --ref <branch>` |
 
@@ -138,7 +138,7 @@ its Playwright webServer. Repeated runs skip the build when inputs are unchanged
 ### T1 — CI gates (authoritative)
 
 **pr-checks e2e** is the authoritative pass/fail gate for E2E. It runs the full
-5-fixture suite with `pnpm test:e2e:ci` (excluding `@flaky`, `@local-only`, and
+6-fixture suite with `pnpm test:e2e:ci` (excluding `@flaky`, `@local-only`, and
 `@verification` tests — see Tag Taxonomy below).
 
 **Slow Unit Tests** (#3492, #3493) is also a required PR lane, not a nightly lane. It runs 60
@@ -223,7 +223,7 @@ clean-runner jobs. Both paths cover the same behaviors, just orchestrated differ
 **E2E is CI-enforced, not local-gated.** `pnpm b4push` intentionally excludes
 Playwright for two reasons:
 
-1. **Time budget** — the full 5-fixture suite (build + browser) takes several minutes.
+1. **Time budget** — the full 6-fixture suite (build + browser) takes several minutes.
    b4push must stay fast enough to run before every push.
 2. **Bypassability** — local runs are developer-controlled. The required PR
    contexts are the authoritative merge signal, subject to the deliberate solo-
@@ -232,9 +232,12 @@ Playwright for two reasons:
 ### T2 — Full-e2e split (not used)
 
 The wisdom framework's trigger for T2 is T1 exceeding its ~10 minute budget. This repo's
-full 5-fixture Playwright suite (`pnpm test:e2e:ci`, pr-checks' `E2E Tests` job) has a
+full 6-fixture Playwright suite (`pnpm test:e2e:ci`, pr-checks' `E2E Tests` job) has a
 historical job-level median of 242s and a final optimized sample of 190s, comfortably
-inside that budget, so there is nothing to split out. Revisit if the suite's runtime grows
+inside that budget, so there is nothing to split out. **Both numbers were measured on the
+FIVE-fixture suite, before `hostpanel` (#4310) added a sixth build + preview server** —
+treat them as a floor, not a current reading, and re-measure before leaning on the margin.
+Revisit if the suite's runtime grows
 enough to approach the ~10 minute mark. The timing protocol is documented below; do not
 substitute workflow-level queue-inclusive timestamps.
 

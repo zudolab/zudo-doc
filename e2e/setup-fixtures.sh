@@ -54,9 +54,18 @@
 #                             follow symlinks)
 #     .zfb/doc-history-meta.json   (always-empty — preBuild contract)
 #     src/
-#       chrome-bindings.tsx  (copied — the `chromeBindingsModule` target;
+#       chrome-bindings.tsx  (MATERIALIZED — the `chromeBindingsModule` target;
 #                             relative imports of `../pages/lib/*` resolve
-#                             against the fixture's own copied `pages/`)
+#                             against the fixture's own copied `pages/`. Source
+#                             is the fixture's OWN `src/chrome-bindings.fixture.tsx`
+#                             when it tracks one, else the repo-root file — #4310)
+#       chrome-bindings.fixture.tsx  (OPTIONAL, fixture-specific, kept in git —
+#                             the override above; only the `hostpanel` fixture
+#                             has one today)
+#       host-panel/          (fixture-specific, kept in git — helper modules the
+#                             override imports; see FIXTURE_OWNED_SRC_DIRS.
+#                             Never replaced by setup, and hashed into the
+#                             build marker)
 #       config/
 #         settings.ts        (fixture-specific, kept in git; types import
 #                             from `@takazudo/zudo-doc/settings` directly)
@@ -85,7 +94,7 @@
 #   E2E_FIXTURES=smoke ./e2e/setup-fixtures.sh  — set up and build only the
 #   smoke fixture. Combine with the same var in playwright.config.ts to boot
 #   only that fixture's webServer (zero stagger, one port). Default (unset)
-#   keeps all 5.
+#   keeps all 6.
 #
 # Skip-rebuild-when-fresh:
 #   Each fixture stores a hash marker at <fixture>/.build-marker.sha256
@@ -98,13 +107,13 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-ALL_FIXTURES=(sidebar i18n theme smoke versioning)
+ALL_FIXTURES=(sidebar i18n theme smoke versioning hostpanel)
 
 # ---------------------------------------------------------------------------
 # Resolve which fixtures to operate on (E2E_FIXTURES scoping).
 # ---------------------------------------------------------------------------
 # E2E_FIXTURES=smoke,i18n  — operate on those fixtures only.
-# Default (unset or empty)  — operate on all 5.
+# Default (unset or empty)  — operate on all 6.
 if [ -n "${E2E_FIXTURES:-}" ]; then
   IFS=',' read -ra REQUESTED <<< "$E2E_FIXTURES"
   FIXTURES=()
@@ -159,6 +168,22 @@ ROOT_COPIED_FILES=(
 # fixture's own settings + the shared dirs above.
 SRC_SINGLE_FILES=(
   chrome-bindings.tsx
+)
+
+# A fixture may OWN one of the SRC_SINGLE_FILES above (#4310): when
+# `<fixture>/src/<name>.fixture.<ext>` is present it is materialized as
+# `<fixture>/src/<name>.<ext>` INSTEAD of the repo-root file. Only the
+# `hostpanel` fixture uses this today — it needs a `BodyEndIslands` slot that
+# mounts its own design-token-panel island and a `headerRightComponents` entry
+# for its own trigger, neither of which belongs in the showcase's bindings.
+#
+# Helper modules such an override imports live in fixture-owned src/
+# subdirectories listed here. Setup NEVER replaces them (unlike SRC_SHARED_DIRS
+# above, which are wiped and re-copied from the repo root on every run), and
+# compute_build_hash() hashes both the override and these directories so
+# editing either invalidates `.build-marker.sha256`.
+FIXTURE_OWNED_SRC_DIRS=(
+  host-panel
 )
 
 # Project-root first-party directories copied into each fixture. zfb's
@@ -233,6 +258,21 @@ compute_build_hash() {
       # the marker while a bare touch does not.
       find "$fixture_dir/public" -type f | sort | xargs shasum 2>/dev/null || true
     fi
+    # Fixture-owned chrome-bindings override + the helper dirs it imports
+    # (#4310). The shared `git ls-files` block below hashes only the REPO-ROOT
+    # `src/chrome-bindings.tsx`, so without this an edit to a fixture's own
+    # override (or to `src/host-panel/`) would leave the marker "fresh" and the
+    # stale dist/ would be served. `find`, not `git ls-files`: a not-yet-committed
+    # override must invalidate the marker too.
+    for owned in "$fixture_dir"/src/*.fixture.*; do
+      [ -f "$owned" ] || continue
+      shasum "$owned" 2>/dev/null || true
+    done
+    for owned_dir in "${FIXTURE_OWNED_SRC_DIRS[@]}"; do
+      [ -d "$fixture_dir/src/$owned_dir" ] || continue
+      find "$fixture_dir/src/$owned_dir" -type f | sort | xargs shasum 2>/dev/null || true
+    done
+
     if [ "$fixture" = "smoke" ] && [ -d "$REPO_ROOT/e2e/browser-embed" ]; then
       find "$REPO_ROOT/e2e/browser-embed" -type f | sort | xargs shasum 2>/dev/null || true
       shasum "$REPO_ROOT/e2e/browser-embed.vite.config.ts" 2>/dev/null || true
@@ -392,6 +432,14 @@ setup_fixture() {
   # symlinked) alongside the config files above, same relative-import
   # reasoning.
   for file in "${SRC_SINGLE_FILES[@]}"; do
+    # Fixture-owned override wins (#4310): `<name>.fixture.<ext>` tracked in
+    # THIS fixture's src/ is materialized as `<name>.<ext>` instead of the
+    # repo-root file. Every other fixture keeps the repo-root copy verbatim.
+    local override="$fixture_dir/src/${file%.*}.fixture.${file##*.}"
+    if [ -f "$override" ]; then
+      cp -f "$override" "$fixture_dir/src/$file"
+      continue
+    fi
     [ -e "$REPO_ROOT/src/$file" ] || continue
     cp -f "$REPO_ROOT/src/$file" "$fixture_dir/src/$file"
   done

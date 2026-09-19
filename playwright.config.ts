@@ -7,11 +7,12 @@ const ALL_FIXTURES = [
   "theme",
   "smoke",
   "versioning",
+  "hostpanel",
 ] as const;
 type Fixture = (typeof ALL_FIXTURES)[number];
 
 // E2E_FIXTURES=smoke,i18n limits which fixture servers are booted and which
-// projects are registered. Default (unset) keeps all 5 fixture servers.
+// projects are registered. Default (unset) keeps all 6 fixture servers.
 const activeFixtures: readonly Fixture[] = (() => {
   const env = process.env.E2E_FIXTURES;
   if (!env) return ALL_FIXTURES;
@@ -53,7 +54,7 @@ export default defineConfig({
     // (zudolab/zudo-doc#2084) is handled by the fixture wrangler.toml:
     // `zfb preview` hands off to `wrangler dev` (Workers mode, zfb >= next.74),
     // and every workerd instance opens a devtools inspector socket. Booting all
-    // five simultaneously used to make several instances race the same inspector
+    // six simultaneously used to make several instances race the same inspector
     // port — losers died with "Address already in use (127.0.0.1:92xx)" and the
     // webServer wait timed out. The primary fix now lives in the fixture
     // wrangler.toml (`[dev] inspector_port = 0` → a random free port per
