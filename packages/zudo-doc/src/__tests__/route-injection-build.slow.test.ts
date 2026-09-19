@@ -1122,19 +1122,49 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // `/docs/getting-started/coverage/`
   // `7a33e1a357f875132e773734c2a5a2757f81fb165cbb22c7ec593edcdf53b346` →
   // `5b1dcff77cc2e1f58cf531d4299dc702c99e9340c87a47688bc813ce77ceb0b5`.
+  //
+  // 2026-09-19 re-baseline (Header Site Name Truncation epic
+  // zudolab/zudo-doc#4287, sub #4288): all three pages move, because the
+  // header renders on every one of them. The epic's complete set of
+  // rendering-capable changes under `packages/zudo-doc/src/` (outside
+  // `__tests__/`) is two files carrying three markup deltas, and they are
+  // the entire, accounted-for cause of all three moved hashes:
+  //   - `header/header.tsx` site-name anchor class:
+  //     `whitespace-nowrap text-title font-bold text-fg hover:underline
+  //     focus:underline shrink-0` → `min-w-0 truncate text-title font-bold
+  //     text-fg hover:underline focus:underline` (drops `shrink-0` so the
+  //     anchor can absorb the deficit; `truncate` re-declares
+  //     `whitespace-nowrap`).
+  //   - the same anchor gains `title={siteName}`, a pointer-hover
+  //     affordance for the truncated text.
+  //   - `sidebar-toggle-island/index.tsx` button class gains `shrink-0`.
+  //     NOTE this one is inert in the package's own rendering —
+  //     `header-with-defaults` wraps the toggle in `Island(...)`, which
+  //     emits an unclassed `<div>`, so the button is not a flex item and
+  //     `flex-shrink` never applies; it binds only for a host that slots
+  //     `<SidebarToggle>` in directly. It still contributes bytes here.
+  // `/404.html`
+  // `ec412b0fc0435697216bc29b6865bd66efe7928c3ccac4123865cd68516b18f4` →
+  // `fb43323cfb68ec845a2881590b824409d837d748d87a9e875bd9b753d061b122`,
+  // `/docs/getting-started/`
+  // `f66a5c3e2f8c8ac24f4767f121a0b5dbde0bb58af89baab7451d9ed7136c9e11` →
+  // `8c028ed49044ec0445c30434f1e2bf86113a2cfefa10f0b3d7172c20b833a79b`, and
+  // `/docs/getting-started/coverage/`
+  // `5b1dcff77cc2e1f58cf531d4299dc702c99e9340c87a47688bc813ce77ceb0b5` →
+  // `d821fd3ef9ca8eccd08ec5b1e9777ce8383e4de3ab7a69f9caac1a7feb26fd8c`.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"ec412b0fc0435697216bc29b6865bd66efe7928c3ccac4123865cd68516b18f4"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"fb43323cfb68ec845a2881590b824409d837d748d87a9e875bd9b753d061b122"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"f66a5c3e2f8c8ac24f4767f121a0b5dbde0bb58af89baab7451d9ed7136c9e11"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"8c028ed49044ec0445c30434f1e2bf86113a2cfefa10f0b3d7172c20b833a79b"`);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"5b1dcff77cc2e1f58cf531d4299dc702c99e9340c87a47688bc813ce77ceb0b5"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"d821fd3ef9ca8eccd08ec5b1e9777ce8383e4de3ab7a69f9caac1a7feb26fd8c"`);
   });
 });
 
