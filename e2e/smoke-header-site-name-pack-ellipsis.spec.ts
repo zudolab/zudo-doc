@@ -30,10 +30,10 @@ import { THEME_PACK_STORAGE_KEY, waitForActivePack } from "./theme-pack-helpers"
  * across CI runners, which would make a pixel-level assertion flaky for
  * reasons unrelated to the mechanism under test.
  *
- * This spec is written to run against the CURRENT header CSS, before #4306
- * lands: it is EXPECTED to fail for `swissgrid` and `riso` until that fix
- * merges — that is the point of writing it in wave 1, ahead of the CSS fix.
- * Do not weaken the assertions to make it pass early.
+ * Written in wave 1, ahead of the CSS fix: it failed for `swissgrid` and
+ * `riso` until #4306 landed. #4306 is now in, so this spec must pass for
+ * EVERY pack — a `swissgrid`/`riso` failure here is a regression, not the
+ * expected pre-fix state. Do not weaken the assertions to make it pass.
  *
  * Same CDP `Page.setFontSizes` lever as the truncation spec — the browser's
  * own font preference, not zoom, not injected CSS.
@@ -83,8 +83,17 @@ async function activatePack(page: Page, packSlug: string): Promise<void> {
     ({ key, value }) => localStorage.setItem(key, value),
     { key: THEME_PACK_STORAGE_KEY, value: packSlug },
   );
-  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.reload({ waitUntil: "load" });
   await waitForActivePack(page, packSlug);
+  await waitForFonts(page);
+}
+
+/** Packs override `--font-sans` with self-hosted faces, and fallback glyph
+ *  metrics change whether the anchor overflows at all — measuring before the
+ *  pack's fonts are in would make every width below (and the
+ *  KNOWN_OVERFLOWING_PACKS guard in particular) depend on load timing. */
+async function waitForFonts(page: Page): Promise<void> {
+  await page.evaluate(() => document.fonts.ready.then(() => undefined));
 }
 
 interface PackMeasurement {
@@ -134,7 +143,8 @@ test.describe("header site-name ellipsis across every theme pack at 390px / 24px
     test.slow();
 
     await setFontPreference(page, FONT_PREFERENCE_PX);
-    await page.goto(PAGE_PATH, { waitUntil: "domcontentloaded" });
+    await page.goto(PAGE_PATH, { waitUntil: "load" });
+    await waitForFonts(page);
 
     const packSlugs = await enabledPackSlugs(page);
     // Vacuous-pass guard: must genuinely enumerate every shipped pack, not a

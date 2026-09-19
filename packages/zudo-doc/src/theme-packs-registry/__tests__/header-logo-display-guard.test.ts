@@ -20,7 +20,15 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const THEME_PACKS_DIR = resolve(__dirname, "../../theme-packs");
 
 const ALLOWED_DISPLAY_VALUES = new Set(["block", "inline", "inline-block", "flow-root"]);
-const FORBIDDEN_PROPERTIES = new Set(["overflow", "white-space", "text-overflow"]);
+const FORBIDDEN_PROPERTIES = new Set([
+  "overflow",
+  // overflow-x/-y defeat the ellipsis exactly like the shorthand does, so
+  // the guard has to name the longhands too.
+  "overflow-x",
+  "overflow-y",
+  "white-space",
+  "text-overflow",
+]);
 
 interface CssRule {
   selector: string;
@@ -115,11 +123,27 @@ function stripNotGroups(compound: string): string {
   return result;
 }
 
+/** Remove balanced `(...)` groups so a functional pseudo-class argument
+ *  (`:is(a, b)`, `:has(> svg)`) can't be mistaken for a combinator. */
+function stripParenGroups(selector: string): string {
+  let result = "";
+  let depth = 0;
+  for (const ch of selector) {
+    if (ch === "(") depth++;
+    else if (ch === ")") depth = Math.max(0, depth - 1);
+    else if (depth === 0) result += ch;
+  }
+  return result;
+}
+
 /**
- * True when this single compound selector (no top-level commas) targets the
- * `[data-header-logo]` ELEMENT itself — i.e. it contains the attribute
- * selector outside any `:not(...)`, and that occurrence is not immediately
- * followed by a `::before`/`::after` pseudo-element.
+ * True when this complex selector (no top-level commas) targets the
+ * `[data-header-logo]` ELEMENT itself — i.e. the attribute selector appears
+ * outside any `:not(...)`, is not immediately followed by a
+ * `::before`/`::after` pseudo-element, and is in the selector's SUBJECT
+ * (last) compound. The subject check matters: `[data-header-logo] svg` and
+ * `[data-header-logo] > span` style a DESCENDANT, so a pack legitimately
+ * flexing a child of the anchor must not be reported as flexing the anchor.
  */
 function targetsHeaderLogoElement(compound: string): boolean {
   const cleaned = stripNotGroups(compound);
@@ -129,9 +153,12 @@ function targetsHeaderLogoElement(compound: string): boolean {
     const idx = cleaned.indexOf(marker, searchFrom);
     if (idx === -1) return false;
     const after = cleaned.slice(idx + marker.length);
-    const isPseudoElement = /^::(before|after)\b/.test(after);
-    if (!isPseudoElement) return true;
     searchFrom = idx + marker.length;
+    if (/^::(before|after)\b/.test(after)) continue;
+    // A combinator after the marker means the rule's subject is some other
+    // element, not the anchor.
+    if (/[\s>+~]/.test(stripParenGroups(after))) continue;
+    return true;
   }
 }
 
@@ -249,6 +276,27 @@ html[data-theme-pack="fixture"] header a:not([data-header-logo]) {
 }
 `;
       expect(() => assertHeaderLogoStaysFlow("fixture", css)).not.toThrow();
+    });
+
+    it("does not flag display on a DESCENDANT of the anchor", () => {
+      const css = `
+html[data-theme-pack="fixture"] [data-header-logo] svg {
+  display: flex;
+}
+html[data-theme-pack="fixture"] [data-header-logo] > span {
+  overflow: visible;
+}
+`;
+      expect(() => assertHeaderLogoStaysFlow("fixture", css)).not.toThrow();
+    });
+
+    it("flags an overflow-x longhand override on the element rule", () => {
+      const css = `
+html[data-theme-pack="fixture"] [data-header-logo] {
+  overflow-x: visible;
+}
+`;
+      expect(() => assertHeaderLogoStaysFlow("fixture", css)).toThrow(/"overflow-x"/);
     });
 
     it("does not flag display on the ::before marker", () => {

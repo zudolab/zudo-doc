@@ -214,8 +214,10 @@ html[data-theme-pack="swissgrid"] [data-header-logo]::before {
   height: 0.72em;
   background: #ff0000;
   margin-right: 0.55rem;
-  /* baseline: measured to reproduce the marker's pre-#4306 flex-centered
-     position to within half a pixel at 1280px and at 390px/24px. */
+  /* `baseline` is also the initial value — stated explicitly because it was
+     the measured outcome: it reproduces the marker's pre-#4306 flex-centered
+     position to within half a pixel at 1280px and at 390px/24px. Do not read
+     it as a tuned offset (riso needs one; this pack does not). */
   vertical-align: baseline;
 }
 html[data-theme-pack="swissgrid"] [data-nav-item] {
