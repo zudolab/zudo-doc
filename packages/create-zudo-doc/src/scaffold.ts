@@ -944,9 +944,14 @@ function generatePackageJson(
     // the hidden-path guard still holds. zfb-runtime, zfb-adapter-cloudflare, and
     // md-wasm carry no package-specific change. No public API, export, config
     // default, or engine requirement moves, so a fresh scaffold needs no migration.
-    "@takazudo/zfb": "2.18.0",
-    "@takazudo/zfb-runtime": "2.18.0",
-    "@takazudo/zfb-md-wasm": "2.18.0",
+    // 2.19.0: zfb adds the opt-in `ZFB_KEEP_BUILD_SHADOW=1` diagnostic flag;
+    // zfb-runtime and zfb-adapter-cloudflare have no package-specific change.
+    // md-wasm rebuilds its four artifacts after a YAML parser patch, changing
+    // byte sizes and digests without changing exports or public APIs. A fresh
+    // scaffold needs no config migration.
+    "@takazudo/zfb": "2.19.0",
+    "@takazudo/zfb-runtime": "2.19.0",
+    "@takazudo/zfb-md-wasm": "2.19.0",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
