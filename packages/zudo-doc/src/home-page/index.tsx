@@ -330,7 +330,7 @@ export function createHomePageView<S extends Settings = Settings>(
               />
             ) : null}
             <div class="zd-home-copy min-w-0 lg:flex-1">
-              <h1 class="text-heading font-bold mb-vsp-2xs break-words">{settings.siteName}</h1>
+              <h1 class="text-heading font-bold mb-vsp-2xs wrap-anywhere">{settings.siteName}</h1>
               <p class="text-muted text-small mb-vsp-sm">{rawDescription}</p>
               <div class="zd-home-links flex flex-wrap items-center justify-center lg:justify-start gap-hsp-md text-small">
                 {rowItems.map((item, index) => (
