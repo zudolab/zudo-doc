@@ -67,6 +67,14 @@ class GithubSlugAllocator {
  * markdown punctuation (backticks, emphasis markers, brackets) the same way
  * GitHub's own renderer does when it computes an anchor from a heading.
  */
+function stripInlineLinkSyntax(text: string): string {
+  // GitHub slugs a heading from its RENDERED text, so a link's destination
+  // never contributes. Reducing `[label](dest)` / `![alt](dest)` to the label
+  // here also keeps the slug stable across this module's own rewrite, which
+  // changes only the destination.
+  return text.replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1");
+}
+
 function extractAtxHeadingTexts(content: string): string[] {
   const headings: string[] = [];
   let fenceChar: string | null = null;
@@ -92,7 +100,7 @@ function extractAtxHeadingTexts(content: string): string[] {
     if (!headingMatch) continue;
     const rawText = headingMatch[2];
     if (rawText === undefined) continue;
-    const text = rawText.trim().replace(/\s+#+\s*$/, "");
+    const text = stripInlineLinkSyntax(rawText.trim().replace(/\s+#+\s*$/, ""));
     headings.push(text);
   }
 
@@ -180,10 +188,13 @@ function protectCode(content: string): { text: string; restore: (s: string) => s
     }
   }
   if (fenceChar !== null) {
-    // Unterminated fence: treat the rest of the document as code, matching
-    // how the fence would render (best-effort — should not occur in
-    // already-sanitized changelog content).
-    outLines.push(stash(FENCE_PLACEHOLDER_PREFIX, fenceBuf.join("\n")));
+    // Unterminated fence: the opener was almost certainly literal text rather
+    // than a real fence (e.g. a ``` line sitting inside a 4-space indented
+    // code block, which CommonMark renders verbatim). Emit the buffered lines
+    // unprotected instead of stashing them — stashing would silently disable
+    // link rewriting for the whole remainder of the entry, shipping every
+    // relative doc link after that point dead.
+    outLines.push(...fenceBuf);
   }
 
   let text = outLines.join("\n");
@@ -192,7 +203,11 @@ function protectCode(content: string): { text: string; restore: (s: string) => s
   // fences. Greedy opener + backreferenced closer + a "not followed by
   // another backtick" guard is the standard way to match CommonMark code
   // spans without a full parser.
-  text = text.replace(/(`+)([\s\S]*?)\1(?!`)/g, (whole) =>
+  // The body may not cross a blank line: a CommonMark code span never does,
+  // so without this guard a single unpaired backtick in prose swallows
+  // everything up to the next backtick — including real links, which then
+  // ship unrewritten.
+  text = text.replace(/(`+)((?:(?!\n[ \t]*\n)[\s\S])*?)\1(?!`)/g, (whole) =>
     stash(INLINE_CODE_PLACEHOLDER_PREFIX, whole),
   );
 
@@ -225,6 +240,7 @@ interface LinkMatch {
   end: number;
   label: string;
   dest: string;
+  /** The authored title INCLUDING its surrounding quote characters. */
   title?: string;
   isImage: boolean;
 }
@@ -270,11 +286,14 @@ function parseLinkInner(inner: string): { dest: string; title?: string } | null 
     }
   }
 
+  // `title` keeps its surrounding quotes verbatim so it can be re-emitted
+  // byte-identically. Re-quoting it ourselves would corrupt a single-quoted
+  // title containing a double quote. The backreference also rejects mismatched
+  // delimiters, leaving such a link untouched instead of rewriting it wrong.
   let title: string | undefined;
   if (rest !== "") {
-    const titleMatch = /^["']([\s\S]*)["']$/.exec(rest);
-    if (!titleMatch) return null;
-    title = titleMatch[1];
+    if (!/^(["'])[\s\S]*\1$/.test(rest)) return null;
+    title = rest;
   }
   return { dest, title };
 }
@@ -375,7 +394,7 @@ export function rewriteChangelogEntryLinks(
     if (anchor === undefined) {
       rewritten += match.label; // unlink: unknown target, or not same-directory
     } else {
-      const titlePart = match.title !== undefined ? ` "${match.title}"` : "";
+      const titlePart = match.title !== undefined ? ` ${match.title}` : "";
       rewritten += `[${match.label}](#${anchor}${titlePart})`;
     }
     cursor = match.end;
