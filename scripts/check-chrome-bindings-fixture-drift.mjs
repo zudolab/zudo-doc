@@ -17,8 +17,9 @@
 // nothing in root was LOST — it does not police what the fixture adds, and a
 // line deleted from root lingers in the fixture undetected. That is accepted.
 //
-// Normalization drops blank lines and comment-only lines (`//...`, and lines
-// wholly inside `/* ... */` blocks) and trims the rest.
+// Normalization removes block-comment spans outside string/template literals
+// and the braces around comment-only JSX expressions, drops blank/comment-only
+// lines, and trims the rest. Trailing `//` text on a code line stays intact.
 //
 // Replacement allowlist (.chrome-bindings-fixture-drift-allowlist) covers
 // root lines the fixture legitimately replaces instead of copying verbatim.
@@ -60,38 +61,85 @@ const REASON_MARKER = "# reason:";
  */
 export function stripCommentsAndBlanks(content) {
   const rawLines = content.split("\n");
-  const result = [];
+  const strippedLines = rawLines.map(() => "");
   let inBlockComment = false;
+  let quote = null;
+  let pendingExpression = null;
+  // Regex literals containing `/*` are out of scope.
   for (let i = 0; i < rawLines.length; i++) {
-    const lineNumber = i + 1;
-    const trimmed = rawLines[i].trim();
-    if (inBlockComment) {
-      const closeIdx = trimmed.indexOf("*/");
-      if (closeIdx === -1) continue;
-      inBlockComment = false;
-      const after = trimmed.slice(closeIdx + 2).trim();
-      if (after !== "" && !after.startsWith("//")) {
-        result.push({ text: after, lineNumber });
+    const line = rawLines[i];
+    for (let j = 0; j < line.length; j++) {
+      const char = line[j];
+      const next = line[j + 1];
+      if (inBlockComment) {
+        if (char === "*" && next === "/") {
+          inBlockComment = false;
+          j++;
+        }
+        continue;
       }
-      continue;
-    }
-    if (trimmed === "") continue;
-    if (trimmed.startsWith("//")) continue;
-    if (trimmed.startsWith("/*")) {
-      const closeIdx = trimmed.indexOf("*/", 2);
-      if (closeIdx === -1) {
+
+      if (quote !== null) {
+        strippedLines[i] += char;
+        if (char === "\\" && next !== undefined) {
+          strippedLines[i] += next;
+          j++;
+        } else if (char === quote) {
+          quote = null;
+        }
+        continue;
+      }
+
+      if (char === "/" && next === "/") {
+        // Keep trailing text (including JSX URLs) verbatim, without letting
+        // its quotes or comment markers change the following line's state.
+        if (strippedLines[i].trim() !== "") {
+          strippedLines[i] += line.slice(j);
+        }
+        pendingExpression = null;
+        break;
+      }
+      if (char === "/" && next === "*") {
         inBlockComment = true;
-      } else {
-        const after = trimmed.slice(closeIdx + 2).trim();
-        if (after !== "" && !after.startsWith("//")) {
-          result.push({ text: after, lineNumber });
+        if (pendingExpression !== null) pendingExpression.hasComment = true;
+        j++;
+        continue;
+      }
+
+      if (char === "{") {
+        // Defer deciding whether these braces belong to a comment-only
+        // expression until its closing brace, even when it is on a later line.
+        // A nested opening brace invalidates the previous candidate.
+        pendingExpression = {
+          lineIndex: i,
+          offset: strippedLines[i].length,
+          hasComment: false,
+        };
+      } else if (char === "}" && pendingExpression?.hasComment) {
+        const { lineIndex, offset } = pendingExpression;
+        strippedLines[lineIndex] = strippedLines[lineIndex].slice(0, offset);
+        for (let k = lineIndex + 1; k <= i; k++) strippedLines[k] = "";
+        pendingExpression = null;
+        continue;
+      } else if (/\S/.test(char)) {
+        // Any code, including a string literal, prevents the containing
+        // expression from being comment-only.
+        pendingExpression = null;
+        if (char === "'" || char === '"' || char === "`") {
+          quote = char;
         }
       }
-      continue;
+      strippedLines[i] += char;
     }
-    result.push({ text: trimmed, lineNumber });
+
+    // Only templates can carry literal state across source lines; their
+    // interpolation text is deliberately opaque until the closing backtick.
+    if (quote !== "`") quote = null;
   }
-  return result;
+
+  return strippedLines
+    .map((line, i) => ({ text: line.trim(), lineNumber: i + 1 }))
+    .filter(({ text }) => text !== "");
 }
 
 /**
