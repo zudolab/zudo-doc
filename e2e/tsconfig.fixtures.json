@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  // Typechecks the fixture-OWNED tracked sources only (the six settings.ts,
+  // hostpanel's chrome-bindings.fixture.tsx + src/host-panel/). Runs on a
+  // clean checkout — no setup-fixtures.sh. The materialized
+  // e2e/fixtures/*/tsconfig.json is a zfb BUILD INPUT, not a typecheck
+  // target; see e2e/CLAUDE.md. Spec: zudolab/zudo-doc#4324 (decision #4323).
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    // Virtual overlay of repo root + fixture dir so the override's relative
+    // `../pages/lib/*` imports resolve to the root `pages/` when the fixture
+    // has no materialized copy (`paths` cannot remap relative specifiers).
+    // Entries are relative to e2e/. A future fixture that gains owned
+    // sources with relative imports into copied trees adds its dir here.
+    "rootDirs": ["..", "fixtures/hostpanel"]
+  },
+  // Mirrors the tracked set: the `.gitignore` negation
+  // `!e2e/fixtures/*/src/config/settings.ts`, the `*.fixture.tsx` override,
+  // and FIXTURE_OWNED_SRC_DIRS in setup-fixtures.sh. Materialized copies are
+  // deliberately not roots. `../src/types` supplies the ambient
+  // `declare module "#doc-history-meta"` (no .zfb/ on a clean checkout).
+  "include": [
+    "fixtures/*/src/config/settings.ts",
+    "fixtures/*/src/chrome-bindings.fixture.tsx",
+    "fixtures/*/src/host-panel/**/*",
+    "../src/types/**/*"
+  ]
+}

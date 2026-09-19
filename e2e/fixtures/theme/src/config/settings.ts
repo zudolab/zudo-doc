@@ -9,6 +9,7 @@ import type {
 } from "@takazudo/zudo-doc/settings";
 import type { ColorScheme } from "@takazudo/zudo-doc/color-scheme-utils";
 import { defaultColorSchemes } from "@takazudo/zudo-doc/color-schemes-defaults";
+import type { ZudoDocConfig } from "@takazudo/zudo-doc/config";
 
 const defaultDark = defaultColorSchemes["Default Dark"]!;
 const syntaxVariation = {
@@ -148,4 +149,4 @@ export const settings = {
     { type: "component", component: "theme-toggle" },
   ] satisfies HeaderRightItem[] as HeaderRightItem[],
   packageOwnedRoutes: true,
-};
+} satisfies ZudoDocConfig;
