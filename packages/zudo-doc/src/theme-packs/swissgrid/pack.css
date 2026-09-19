@@ -214,7 +214,9 @@ html[data-theme-pack="swissgrid"] [data-header-logo]::before {
   height: 0.72em;
   background: #ff0000;
   margin-right: 0.55rem;
-  vertical-align: -0.06em;
+  /* baseline: measured to reproduce the marker's pre-#4306 flex-centered
+     position to within half a pixel at 1280px and at 390px/24px. */
+  vertical-align: baseline;
 }
 html[data-theme-pack="swissgrid"] [data-nav-item] {
   text-transform: uppercase;
