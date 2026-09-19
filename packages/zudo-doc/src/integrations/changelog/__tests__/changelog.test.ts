@@ -176,3 +176,218 @@ describe("changelog integration", () => {
     ).toThrow(/ENOENT/);
   });
 });
+
+describe("changelog link rewrite", () => {
+  it("computes dated, dateless, and prerelease anchors and rewrites same-directory links to them", () => {
+    const markdown = generateChangelogMarkdown([
+      {
+        version: "Referencer",
+        content:
+          "- See [5.15.0](./5.15.0.mdx)\n- See [Unreleased](./unreleased.mdx)\n- See [prerelease](./0.2.0-next.5.mdx)",
+        sourcePath: "/tmp/referencer.mdx",
+      },
+      {
+        version: "5.15.0",
+        date: "2026-09-01",
+        content: "Dated release.",
+        sourcePath: "/tmp/5.15.0.mdx",
+      },
+      { version: "Unreleased", content: "Dateless release.", sourcePath: "/tmp/unreleased.mdx" },
+      {
+        version: "0.2.0-next.5",
+        content: "Prerelease.",
+        sourcePath: "/tmp/0.2.0-next.5.mdx",
+      },
+    ]);
+
+    expect(markdown).toContain("## [5.15.0] - 2026-09-01");
+    expect(markdown).toContain("[5.15.0](#5150---2026-09-01)");
+    expect(markdown).toContain("## [Unreleased]");
+    expect(markdown).toContain("[Unreleased](#unreleased)");
+    expect(markdown).toContain("## [0.2.0-next.5]");
+    expect(markdown).toContain("[prerelease](#020-next5)");
+  });
+
+  it("resolves a link by filename even when the target entry's title differs from its filename", () => {
+    const markdown = generateChangelogMarkdown([
+      {
+        version: "Referencer",
+        content: "[Actual File](./actual-file.mdx)",
+        sourcePath: "/tmp/referencer.mdx",
+      },
+      {
+        version: "CustomTitle",
+        date: "2026-01-01",
+        content: "Body.",
+        sourcePath: "/tmp/actual-file.mdx",
+      },
+    ]);
+
+    expect(markdown).toContain("## [CustomTitle] - 2026-01-01");
+    expect(markdown).toContain("[Actual File](#customtitle---2026-01-01)");
+  });
+
+  it("resolves ./foo.mdx and ./foo.md to their own entries when both are emitted", () => {
+    const markdown = generateChangelogMarkdown([
+      {
+        version: "Referencer",
+        content: "- [md link](./foo.md)\n- [mdx link](./foo.mdx)",
+        sourcePath: "/tmp/referencer.mdx",
+      },
+      { version: "FooMd", date: "2026-02-01", content: "md entry.", sourcePath: "/tmp/foo.md" },
+      { version: "FooMdx", date: "2026-02-02", content: "mdx entry.", sourcePath: "/tmp/foo.mdx" },
+    ]);
+
+    expect(markdown).toContain("[md link](#foomd---2026-02-01)");
+    expect(markdown).toContain("[mdx link](#foomdx---2026-02-02)");
+  });
+
+  it("unlinks unknown targets, parent-directory links, and index files", () => {
+    const markdown = generateChangelogMarkdown([
+      {
+        version: "Referencer",
+        content:
+          "[Unknown](./nope.mdx)\n[Parent](../pkg/index.mdx)\n[Index](./index.mdx)",
+        sourcePath: "/tmp/referencer.mdx",
+      },
+    ]);
+
+    expect(markdown).toContain("Unknown\nParent\nIndex");
+    expect(markdown).not.toContain("](./nope.mdx)");
+    expect(markdown).not.toContain("](../pkg/index.mdx)");
+    expect(markdown).not.toContain("](./index.mdx)");
+  });
+
+  it("leaves absolute, protocol-relative, root-absolute, fragment, image, non-md, and reference-style links byte-unchanged", () => {
+    const lines = [
+      "[Absolute](https://example.com/some.mdx)",
+      "[ProtoRel](//example.com/some.mdx)",
+      "[RootAbs](/docs/some.mdx)",
+      "[Frag](#frag)",
+      "![Image](./whatever.mdx)",
+      "[Png](./pic.png)",
+      "[Ref][refid]",
+    ];
+    const markdown = generateChangelogMarkdown([
+      { version: "Referencer", content: lines.join("\n"), sourcePath: "/tmp/referencer.mdx" },
+    ]);
+
+    for (const line of lines) {
+      expect(markdown).toContain(line);
+    }
+  });
+
+  it("drops an original fragment and keeps a link title", () => {
+    const markdown = generateChangelogMarkdown([
+      {
+        version: "Referencer",
+        content:
+          '- [FragTest](./5.15.0.mdx#bug-fixes)\n- [TitleTest](./5.15.0.mdx "cool title")',
+        sourcePath: "/tmp/referencer.mdx",
+      },
+      {
+        version: "5.15.0",
+        date: "2026-09-01",
+        content: "Dated release.",
+        sourcePath: "/tmp/5.15.0.mdx",
+      },
+    ]);
+
+    expect(markdown).toContain("[FragTest](#5150---2026-09-01)");
+    expect(markdown).toContain('[TitleTest](#5150---2026-09-01 "cool title")');
+  });
+
+  it("does not rewrite link-shaped text inside fenced or inline code", () => {
+    const content = [
+      "Text before.",
+      "",
+      "```js",
+      'const link = "[Foo](./5.15.0.mdx)";',
+      "```",
+      "",
+      "````",
+      "[Bar](./5.15.0.mdx) inside a 4-backtick fence",
+      "````",
+      "",
+      "~~~",
+      "[Baz](./5.15.0.mdx) inside a tilde fence",
+      "~~~",
+      "",
+      "Inline: `[Qux](./5.15.0.mdx)` and ``[Quux](./5.15.0.mdx)`` should stay.",
+    ].join("\n");
+
+    const markdown = generateChangelogMarkdown([
+      { version: "Referencer", content, sourcePath: "/tmp/referencer.mdx" },
+      {
+        version: "5.15.0",
+        date: "2026-09-01",
+        content: "Dated release.",
+        sourcePath: "/tmp/5.15.0.mdx",
+      },
+    ]);
+
+    expect(markdown).toContain('const link = "[Foo](./5.15.0.mdx)";');
+    expect(markdown).toContain("[Bar](./5.15.0.mdx) inside a 4-backtick fence");
+    expect(markdown).toContain("[Baz](./5.15.0.mdx) inside a tilde fence");
+    expect(markdown).toContain(
+      "Inline: `[Qux](./5.15.0.mdx)` and ``[Quux](./5.15.0.mdx)`` should stay.",
+    );
+  });
+
+  it("preserves nested brackets and inline code in a link label", () => {
+    const markdown = generateChangelogMarkdown([
+      {
+        version: "Referencer",
+        content: "[Label [nested] text](./nope.mdx)\n\n[`5.15.0`](./5.15.0.mdx)",
+        sourcePath: "/tmp/referencer.mdx",
+      },
+      {
+        version: "5.15.0",
+        date: "2026-09-01",
+        content: "Dated release.",
+        sourcePath: "/tmp/5.15.0.mdx",
+      },
+    ]);
+
+    expect(markdown).toContain("Label [nested] text");
+    expect(markdown).not.toContain("](./nope.mdx)");
+    expect(markdown).toContain("[`5.15.0`](#5150---2026-09-01)");
+  });
+
+  it("de-duplicates identical headings and keeps distinct anchors for the same version at different dates", () => {
+    const markdown = generateChangelogMarkdown([
+      { version: "1.0.0", date: "2026-01-01", content: "First.", sourcePath: "/tmp/a.mdx" },
+      { version: "1.0.0", date: "2026-01-01", content: "Second.", sourcePath: "/tmp/b.mdx" },
+      { version: "1.0.0", date: "2026-02-01", content: "Third.", sourcePath: "/tmp/c.mdx" },
+      {
+        version: "Referencer",
+        content: "[A](./a.mdx)\n[B](./b.mdx)\n[C](./c.mdx)",
+        sourcePath: "/tmp/referencer.mdx",
+      },
+    ]);
+
+    expect(markdown).toContain("[A](#100---2026-01-01)");
+    expect(markdown).toContain("[B](#100---2026-01-01-1)");
+    expect(markdown).toContain("[C](#100---2026-02-01)");
+  });
+
+  it("lets an entry-body heading earlier in the document consume a slug a later version heading would otherwise use", () => {
+    const markdown = generateChangelogMarkdown([
+      {
+        version: "Alpha",
+        content: "### [Steal Me]\n\nBody text.",
+        sourcePath: "/tmp/alpha.mdx",
+      },
+      { version: "Steal Me", content: "", sourcePath: "/tmp/steal-me.mdx" },
+      {
+        version: "Referencer",
+        content: "[Link to B](./steal-me.mdx)",
+        sourcePath: "/tmp/referencer.mdx",
+      },
+    ]);
+
+    expect(markdown).toContain("### [Steal Me]");
+    expect(markdown).toContain("## [Steal Me]");
+    expect(markdown).toContain("[Link to B](#steal-me-1)");
+  });
+});
