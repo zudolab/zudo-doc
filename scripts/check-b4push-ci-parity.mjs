@@ -2,14 +2,16 @@
 // scripts/check-b4push-ci-parity.mjs
 //
 // Guard-manifest meta-check: ensures that every lightweight guard gate in
-// scripts/run-b4push.sh also has a corresponding job in CI (pr-checks.yml).
+// scripts/run-b4push.sh also has a corresponding job in CI (pr-checks.yml),
+// and that every manifest entry still invokes its local b4push script.
 //
 // MAINTENANCE CONTRACT
 // ====================
 // Adding a guard gate to scripts/run-b4push.sh means:
 //   1. Add its b4push pnpm script name to REQUIRED_CI_GUARDS (b4pushScript).
 //   2. Add a CI job (or step) running it, named with its ciNeedle string.
-//   3. This script will then confirm both are wired.
+//   3. This script will then confirm the manifest→CI, b4push-region→manifest,
+//      and manifest→b4push directions are all wired.
 //
 // If a guard is intentionally CI-exempt (e.g. enforced by a pre-commit hook
 // instead), add its b4push pnpm script name to .b4push-ci-parity-allowlist
@@ -21,6 +23,10 @@
 // Wired into:
 //   - scripts/run-b4push.sh (guard step — inside marker region)
 //   - .github/workflows/pr-checks.yml (own lightweight pure-Node job)
+//
+// The manifest→b4push scan is lexical: it ignores full-line shell comments,
+// but an inline `# pnpm check:x` tail or a quoted `echo "pnpm check:x"` still
+// counts as an invocation. It deliberately does not attempt shell parsing.
 
 import { readFileSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
@@ -35,8 +41,8 @@ const ROOT = resolve(__dirname, "..");
 //   ciNeedle     — substring searched in .github/workflows/pr-checks.yml
 //                  (matches the `run:` line or script reference as it appears
 //                  in YAML: file paths, hyphenated names, pnpm script tokens).
-//   b4pushScript — exact pnpm script name as `pnpm <b4pushScript>` in the
-//                  run-b4push.sh guard region (colon-delimited pnpm names).
+//   b4pushScript — exact pnpm script name expected as `pnpm <b4pushScript>`
+//                  somewhere in run-b4push.sh (colon-delimited pnpm names).
 //                  Set to null when the b4push step is a raw bash invocation
 //                  (e.g. `bash scripts/...`) so the region parser never emits
 //                  a token for it — a no-op miss, never a false alarm.
@@ -45,7 +51,7 @@ const ROOT = resolve(__dirname, "..");
 // paths while b4push invokes colon-delimited pnpm scripts. A single string
 // would fail to match one direction on the clean tree.
 
-const REQUIRED_CI_GUARDS = [
+export const REQUIRED_CI_GUARDS = [
   {
     // Template drift: bash scripts/check-template-drift.sh in b4push; same in CI
     ciNeedle: "check-template-drift",
@@ -242,7 +248,7 @@ function readAllowlist() {
  * Returns an array of pnpm script names (strings after `pnpm ` / `pnpm run `).
  * Ignores lines outside the markers; never throws on parse failure (returns []).
  */
-function extractB4pushGuardRegion(src) {
+export function extractB4pushGuardRegion(src) {
   const lines = src.split("\n");
   let inRegion = false;
   const tokens = [];
@@ -271,30 +277,69 @@ function extractB4pushGuardRegion(src) {
 }
 
 /**
- * Strip YAML comment lines so ciNeedle substring checks only match
- * actual step definitions (run:, name:, etc.), not comment text.
- * Lines where the first non-whitespace character is '#' are removed.
+ * Remove full-line shell comments before scanning run-b4push.sh. Inline
+ * comments intentionally remain: this check is lexical, not shell-semantic.
  */
-function stripYamlComments(src) {
+export function stripShellCommentLines(src) {
   return src
     .split("\n")
     .filter((line) => !/^\s*#/.test(line))
     .join("\n");
 }
 
-function main() {
-  const workflowSrc = stripYamlComments(readFileSync(WORKFLOW_PATH, "utf8"));
-  const b4pushSrc = readFileSync(B4PUSH_PATH, "utf8");
-  const allowlist = readAllowlist();
+// Match the accepted b4push forms and capture the exact pnpm script token:
+//   pnpm <script>
+//   pnpm run <script>
+//   pnpm --filter <package> <script>
+// `run` after a filter is accepted as well because pnpm permits that spelling.
+// The token character class and trailing boundary keep check:foo from matching
+// check:foo-bar. The global flag is load-bearing: one shell line has two calls.
+const PNPM_SCRIPT_INVOCATION_RE =
+  /\bpnpm(?:\s+--filter\s+\S+)?(?:\s+run)?\s+([A-Za-z0-9:_-]+)(?![A-Za-z0-9:_-])/g;
 
+/** Extract every pnpm script token from a b4push source file. */
+export function extractB4pushInvocations(src) {
+  return stripShellCommentLines(src)
+    .split("\n")
+    .flatMap((line) =>
+      [...line.matchAll(PNPM_SCRIPT_INVOCATION_RE)].map((match) => match[1]),
+    );
+}
+
+/**
+ * Strip YAML comment lines so ciNeedle substring checks only match
+ * actual step definitions (run:, name:, etc.), not comment text.
+ * Lines where the first non-whitespace character is '#' are removed.
+ */
+export function stripYamlComments(src) {
+  return src
+    .split("\n")
+    .filter((line) => !/^\s*#/.test(line))
+    .join("\n");
+}
+
+/**
+ * Check all three parity directions against supplied source fixtures.
+ *
+ * `workflowSrc` and `b4pushSrc` are raw file contents. `allowlist` may be a
+ * Set (the CLI form) or any Set-like object exposing `has`; `guards` defaults
+ * to the production manifest so tests can provide a small fixture manifest.
+ */
+export function checkParity({
+  workflowSrc,
+  b4pushSrc,
+  allowlist = new Set(),
+  guards = REQUIRED_CI_GUARDS,
+}) {
+  const normalizedWorkflowSrc = stripYamlComments(workflowSrc);
   const errors = [];
 
   // ── Direction 1: manifest → CI ────────────────────────────────────────────
   // Assert each required guard's ciNeedle appears in a non-comment workflow line.
   // Comments are stripped first so a guard removed from CI but still mentioned
   // in a header comment does NOT produce a false "present" result.
-  for (const guard of REQUIRED_CI_GUARDS) {
-    if (!workflowSrc.includes(guard.ciNeedle)) {
+  for (const guard of guards) {
+    if (!normalizedWorkflowSrc.includes(guard.ciNeedle)) {
       errors.push(
         `[manifest→CI] Guard "${guard.comment}" must run in CI but is absent from pr-checks.yml\n` +
           `  Missing string: "${guard.ciNeedle}"\n` +
@@ -307,18 +352,9 @@ function main() {
   // ── Direction 2: b4push region → manifest ────────────────────────────────
   // Extract pnpm tokens from the marker region and assert each is tracked.
   const knownB4pushScripts = new Set(
-    REQUIRED_CI_GUARDS.map((g) => g.b4pushScript).filter(Boolean),
+    guards.map((g) => g.b4pushScript).filter(Boolean),
   );
   const regionTokens = extractB4pushGuardRegion(b4pushSrc);
-
-  if (regionTokens.length === 0) {
-    // No markers found or region is empty — warn but do not error.
-    // The manifest→CI check is the load-bearing path; region parse is a helper.
-    console.warn(
-      `WARN: no pnpm tokens found in the ${REGION_OPEN_MARKER} region of run-b4push.sh.\n` +
-        `  Check that the markers "# >>> ${REGION_OPEN_MARKER}" and "# <<< ${REGION_CLOSE_MARKER}" are present.`,
-    );
-  }
 
   for (const token of regionTokens) {
     if (!knownB4pushScripts.has(token) && !allowlist.has(token)) {
@@ -330,10 +366,55 @@ function main() {
     }
   }
 
+  // ── Direction 3: manifest → b4push ───────────────────────────────────────
+  // A manifest entry with a b4pushScript must still invoke that script
+  // somewhere in run-b4push.sh. This is intentionally a whole-file scan:
+  // required guards such as package safelist and plugin resolution run after
+  // the lightweight guard region. Full-line comments are ignored by the
+  // scanner; inline comments and quoted strings remain lexical matches.
+  const b4pushInvocations = new Set(extractB4pushInvocations(b4pushSrc));
+
+  for (const guard of guards) {
+    if (
+      guard.b4pushScript !== null &&
+      guard.b4pushScript !== undefined &&
+      !b4pushInvocations.has(guard.b4pushScript)
+    ) {
+      errors.push(
+        `[manifest→b4push] Guard "${guard.comment}" is listed in REQUIRED_CI_GUARDS but has no live pnpm ${guard.b4pushScript} invocation anywhere in scripts/run-b4push.sh.\n` +
+          `  Fix: restore the b4push step, or remove the "${guard.b4pushScript}" manifest entry together with its CI job.`,
+      );
+    }
+  }
+
+  return { errors };
+}
+
+function main() {
+  const workflowSrc = readFileSync(WORKFLOW_PATH, "utf8");
+  const b4pushSrc = readFileSync(B4PUSH_PATH, "utf8");
+  const allowlist = readAllowlist();
+  const { errors } = checkParity({
+    workflowSrc,
+    b4pushSrc,
+    allowlist,
+    guards: REQUIRED_CI_GUARDS,
+  });
+  const regionTokens = extractB4pushGuardRegion(b4pushSrc);
+
+  if (regionTokens.length === 0) {
+    // No markers found or region is empty — warn but do not error.
+    // The manifest→CI check is the load-bearing path; region parse is a helper.
+    console.warn(
+      `WARN: no pnpm tokens found in the ${REGION_OPEN_MARKER} region of run-b4push.sh.\n` +
+        `  Check that the markers "# >>> ${REGION_OPEN_MARKER}" and "# <<< ${REGION_CLOSE_MARKER}" are present.`,
+    );
+  }
+
   if (errors.length > 0) {
     console.error("");
     console.error(
-      "B4push/CI parity check FAILED — guard gate(s) not tracked in manifest or absent from CI:",
+      "B4push/CI parity check FAILED — guard gate(s) not tracked in manifest, absent from CI, or absent from b4push:",
     );
     console.error("");
     for (const err of errors) {
@@ -344,7 +425,7 @@ function main() {
       "MAINTENANCE CONTRACT: adding a guard gate to scripts/run-b4push.sh means adding it to",
     );
     console.error(
-      "  REQUIRED_CI_GUARDS in scripts/check-b4push-ci-parity.mjs AND to .github/workflows/pr-checks.yml.",
+      "  REQUIRED_CI_GUARDS in scripts/check-b4push-ci-parity.mjs, .github/workflows/pr-checks.yml, and scripts/run-b4push.sh.",
     );
     return 1;
   }
@@ -357,7 +438,15 @@ function main() {
       `     Region cross-check: ${regionTokens.length} pnpm token(s) in run-b4push.sh guard region all tracked.`,
     );
   }
+  console.log(
+    `     Reverse cross-check: ${REQUIRED_CI_GUARDS.filter((guard) => guard.b4pushScript !== null && guard.b4pushScript !== undefined).length} manifest guard(s) all invoked in run-b4push.sh.`,
+  );
   return 0;
 }
 
-process.exit(main());
+if (
+  process.argv[1] &&
+  resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
+  process.exit(main());
+}
