@@ -23,5 +23,7 @@ sidebar_position: 1101
 
 ### その他の変更
 
-- 移行時の注意：リソースインデックスがロケール所有になったため、リソースセクションをデフォルトロケール限定のままにするには、サブセクションのプレフィックスに加えて**概要プレフィックス**（`/docs/claude/`・`/docs/codex/`）も`defaultLocaleOnlyPrefixes`に列挙する必要があります。概要プレフィックスがないと、概要インデックスは設定済みの全ロケールに生成されます。そのロケールディレクトリに`generated: true`のない手書きの`claude/index.mdx`があると、ビルドは`resource-docs: refusing to overwrite authored locale index`で失敗します。概要プレフィックスを追加するか、手書きのインデックスを削除してタイトル・説明・ラベルを`ZudoDocConfig.translations`へ移してください。 (#3820)
+- 有効なアセットビューアールートは、`defaultLocaleOnlyPrefixes`に`/${assetViewerRoutePrefix}/`を明示してオプトアウトしない限り、既存の複数ロケール利用者でもパッケージ更新後に自動でローカライズされます。 (#3820)
+- 移行時の注意：リソースインデックスがロケール所有になったため、リソースセクションをデフォルトロケール限定のままにするには、サブセクションのプレフィックス（`/docs/claude-md/`、`/docs/claude-skills/`、`/docs/claude-agents/`、`/docs/claude-commands/`とCodex側の対応プレフィックス）に加えて、**概要プレフィックス**（`/docs/claude/`・`/docs/codex/`）も`defaultLocaleOnlyPrefixes`に列挙する必要があります。サブセクションのプレフィックスだけを列挙しても、そのセクションはデフォルトロケール限定になりません。概要プレフィックスがないと、概要インデックスは設定済みの全ロケールに生成されます。そのロケールディレクトリに`generated: true`のない手書きの`claude/index.mdx`があると、ビルドは`resource-docs: refusing to overwrite authored locale index`で失敗します。概要プレフィックスを追加するか、手書きのインデックスを削除してタイトル・説明・ラベルを`ZudoDocConfig.translations`へ移してください。すべての設定済みロケールに生成したいリソースセクションについては、プレフィックスを削除してください。このルールと2通りの対処方法は、国際化ガイドの「デフォルトロケール専用プレフィックス」にまとめてあります。 (#3820)
+- 移行時の注意：5.15.0でビルドする前に、ジェネレーターの生成先にある手書きのロケールリソース概要／カテゴリ`index.mdx`を削除または名前変更し、独自のタイトル、説明、ラベルは`ZudoDocConfig.translations`で表現してください。frontmatterに`generated: true`がない既存ファイルは、ジェネレーターが上書きを拒否します。 (#3820)
 - zfbピアファミリーを2.14.2へ更新しました。 (`5c5bfd2f`)

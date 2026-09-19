@@ -169,10 +169,13 @@ test.describe("home sitemap overflow controls", () => {
   // truncation made a document-level pass possible at 390/24 — see this file's
   // header comment. Deliberately reuses `/docs/getting-started`, the exact
   // page the retired note cited as the header bug's reproduction (a page with
-  // no sitemap on it), rather than the home page: the home page carries an
+  // no sitemap on it), rather than the home page: the home page carried an
   // unrelated hero-heading overflow at this viewport/font combination
-  // (zudolab/zudo-doc#4297) that has nothing to do with the header fix this
-  // test gates. The header-specific gate (right-cluster edge, ellipsis,
+  // (zudolab/zudo-doc#4297) that had nothing to do with the header fix this
+  // test gates. #4302 has since fixed that hero overflow and
+  // smoke-home-hero-font-pref-overflow.spec.ts now gates the home page at
+  // 390/24 in full; this case stays on a sitemap-free docs page so it keeps
+  // isolating the header. The header-specific gate (right-cluster edge, ellipsis,
   // per-control visibility) lives in smoke-header-site-name-truncation.spec.ts.
   test("no document overflow at 390px / 24px (docs page, no sitemap)", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 1000 });
