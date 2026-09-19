@@ -8,7 +8,7 @@
 #     whose absence is genuinely intentional (feature not exercised by fixture).
 #   - NEW KEYS: when src/config/settings.ts gains a new key, the gate fires
 #     for any fixture that lacks it.  To resolve: either (a) add the key to
-#     all five fixtures in the same commit, OR (b) add one entry per fixture
+#     all six fixtures in the same commit, OR (b) add one entry per fixture
 #     here with a "# reason: ..." comment in the preceding line.
 #   - NO SILENT EXTENSIONS: every new allowlist entry needs a # reason: comment.
 #
@@ -24,6 +24,7 @@ i18n:trailingSlash
 theme:trailingSlash
 smoke:trailingSlash
 versioning:trailingSlash
+hostpanel:trailingSlash
 
 # ── githubUrl ─────────────────────────────────────────────────────────────────
 # reason: github-link component is only tested in the smoke fixture
@@ -31,6 +32,7 @@ sidebar:githubUrl
 i18n:githubUrl
 theme:githubUrl
 versioning:githubUrl
+hostpanel:githubUrl
 
 # ── tagPlacement ──────────────────────────────────────────────────────────────
 # reason: tag UI is not exercised in any fixture (docTags: false everywhere)
@@ -39,6 +41,7 @@ i18n:tagPlacement
 theme:tagPlacement
 smoke:tagPlacement
 versioning:tagPlacement
+hostpanel:tagPlacement
 
 # ── tagGovernance ─────────────────────────────────────────────────────────────
 # reason: tag governance enforcement is not tested in fixtures
@@ -47,6 +50,7 @@ i18n:tagGovernance
 theme:tagGovernance
 smoke:tagGovernance
 versioning:tagGovernance
+hostpanel:tagGovernance
 
 # ── tagVocabulary ─────────────────────────────────────────────────────────────
 # reason: tag vocabulary lookup is not tested in fixtures
@@ -55,6 +59,7 @@ i18n:tagVocabulary
 theme:tagVocabulary
 smoke:tagVocabulary
 versioning:tagVocabulary
+hostpanel:tagVocabulary
 
 # ── llmsTxt ───────────────────────────────────────────────────────────────────
 # reason: llms.txt generation is not exercised in these fixtures; the smoke
@@ -75,6 +80,7 @@ i18n:cjkFriendly
 theme:cjkFriendly
 smoke:cjkFriendly
 versioning:cjkFriendly
+hostpanel:cjkFriendly
 
 # ── onBrokenMarkdownLinks ─────────────────────────────────────────────────────
 # reason: broken-link reporting mode is a build-time setting not observable in E2E
@@ -83,6 +89,7 @@ i18n:onBrokenMarkdownLinks
 theme:onBrokenMarkdownLinks
 smoke:onBrokenMarkdownLinks
 versioning:onBrokenMarkdownLinks
+hostpanel:onBrokenMarkdownLinks
 
 # ── aiAssistant ───────────────────────────────────────────────────────────────
 # reason: AI chat modal is only tested in the smoke fixture
@@ -90,6 +97,7 @@ sidebar:aiAssistant
 i18n:aiAssistant
 theme:aiAssistant
 versioning:aiAssistant
+hostpanel:aiAssistant
 
 # ── aiChatDemoMode ────────────────────────────────────────────────────────────
 # reason: AI chat endpoint (and its demo-mode short-circuit) is only exercised
@@ -98,6 +106,7 @@ sidebar:aiChatDemoMode
 i18n:aiChatDemoMode
 theme:aiChatDemoMode
 versioning:aiChatDemoMode
+hostpanel:aiChatDemoMode
 
 # ── designTokenPanel ──────────────────────────────────────────────────────────
 # reason: the design token panel is only exercised in the theme and smoke
@@ -114,6 +123,7 @@ i18n:sidebarResizer
 theme:sidebarResizer
 smoke:sidebarResizer
 versioning:sidebarResizer
+hostpanel:sidebarResizer
 
 # ── sidebarToggle ─────────────────────────────────────────────────────────────
 # reason: the desktop sidebar-toggle island (+ pre-paint script) is now exercised
@@ -123,6 +133,7 @@ i18n:sidebarToggle
 theme:sidebarToggle
 smoke:sidebarToggle
 versioning:sidebarToggle
+hostpanel:sidebarToggle
 
 # ── tocToggle ─────────────────────────────────────────────────────────────────
 # reason: the toggle island + pre-paint script are exercised in the sidebar
@@ -131,6 +142,7 @@ i18n:tocToggle
 theme:tocToggle
 smoke:tocToggle
 versioning:tocToggle
+hostpanel:tocToggle
 
 # ── imageEnlarge ──────────────────────────────────────────────────────────────
 # reason: image enlarge feature is only tested in the smoke fixture
@@ -138,6 +150,7 @@ sidebar:imageEnlarge
 i18n:imageEnlarge
 theme:imageEnlarge
 versioning:imageEnlarge
+hostpanel:imageEnlarge
 
 # ── frontmatterPreview ────────────────────────────────────────────────────────
 # reason: frontmatter preview panel is only tested in the smoke fixture
@@ -145,6 +158,7 @@ sidebar:frontmatterPreview
 i18n:frontmatterPreview
 theme:frontmatterPreview
 versioning:frontmatterPreview
+hostpanel:frontmatterPreview
 
 # ── bodyFootUtilArea ──────────────────────────────────────────────────────────
 # reason: body-foot utility area (doc history link, view-source link) is only
@@ -153,6 +167,7 @@ sidebar:bodyFootUtilArea
 i18n:bodyFootUtilArea
 theme:bodyFootUtilArea
 versioning:bodyFootUtilArea
+hostpanel:bodyFootUtilArea
 
 # ── htmlPreview ───────────────────────────────────────────────────────────────
 # reason: HTML preview component is only tested in the smoke fixture
@@ -160,6 +175,7 @@ sidebar:htmlPreview
 i18n:htmlPreview
 theme:htmlPreview
 versioning:htmlPreview
+hostpanel:htmlPreview
 
 # ── versions ──────────────────────────────────────────────────────────────────
 # reason: version switcher is only tested in the versioning fixture
@@ -167,6 +183,7 @@ sidebar:versions
 i18n:versions
 theme:versions
 smoke:versions
+hostpanel:versions
 
 # ── footer ────────────────────────────────────────────────────────────────────
 # reason: footer content is not exercised in any fixture
@@ -175,6 +192,7 @@ i18n:footer
 theme:footer
 smoke:footer
 versioning:footer
+hostpanel:footer
 
 # ── headerRightItems ──────────────────────────────────────────────────────────
 # reason: header-right slot (version switcher, theme toggle, etc.) is not tested
@@ -189,6 +207,7 @@ sidebar:aiChatAllowedOrigins
 i18n:aiChatAllowedOrigins
 theme:aiChatAllowedOrigins
 versioning:aiChatAllowedOrigins
+hostpanel:aiChatAllowedOrigins
 
 # ── aiChatGlobalDailyLimit ────────────────────────────────────────────────────
 # reason: global daily ceiling only applies when aiChatDemoMode is false; these
@@ -197,6 +216,7 @@ sidebar:aiChatGlobalDailyLimit
 i18n:aiChatGlobalDailyLimit
 theme:aiChatGlobalDailyLimit
 versioning:aiChatGlobalDailyLimit
+hostpanel:aiChatGlobalDailyLimit
 
 # ── themePackSwitcher ─────────────────────────────────────────────────────────
 # reason: the theme-pack switcher flyout (+ browse-all dialog) is only
@@ -209,6 +229,7 @@ sidebar:themePackSwitcher
 i18n:themePackSwitcher
 smoke:themePackSwitcher
 versioning:themePackSwitcher
+hostpanel:themePackSwitcher
 
 # ── favicon ────────────────────────────────────────────────────────────────────
 # reason: favicon is demonstrated host-only (explicit object form ≡ omitted default);
@@ -218,6 +239,7 @@ i18n:favicon
 theme:favicon
 smoke:favicon
 versioning:favicon
+hostpanel:favicon
 
 # ── siteTreeNavIgnore ─────────────────────────────────────────────────────────
 # reason: no e2e fixture has an inbox/ or develop/ category, so the setting is
@@ -227,6 +249,7 @@ i18n:siteTreeNavIgnore
 theme:siteTreeNavIgnore
 smoke:siteTreeNavIgnore
 versioning:siteTreeNavIgnore
+hostpanel:siteTreeNavIgnore
 
 # ── siteTreeNavSecondary ──────────────────────────────────────────────────────
 # reason: these fixtures have no changelog/, claude/ or codex/ categories and
@@ -237,3 +260,4 @@ sidebar:siteTreeNavSecondary
 i18n:siteTreeNavSecondary
 theme:siteTreeNavSecondary
 versioning:siteTreeNavSecondary
+hostpanel:siteTreeNavSecondary

@@ -38,7 +38,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
 
-const FIXTURES = ["sidebar", "i18n", "theme", "smoke", "versioning"];
+const FIXTURES = ["sidebar", "i18n", "theme", "smoke", "versioning", "hostpanel"];
 const CANONICAL_PATH = "src/config/settings.ts";
 const ALLOWLIST_PATH = ".fixture-settings-drift-allowlist";
 
@@ -135,7 +135,7 @@ for (const fixture of FIXTURES) {
 
 if (anyDrift) {
   console.error(
-    "\nDrift detected. Add missing keys to all five fixtures, OR add an allowlist"
+    "\nDrift detected. Add missing keys to all six fixtures, OR add an allowlist"
   );
   console.error(
     "entry to .fixture-settings-drift-allowlist (with # reason: comment)."
