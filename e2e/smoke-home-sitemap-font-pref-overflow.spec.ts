@@ -19,16 +19,22 @@ import { test, expect, type Page } from "@playwright/test";
  * Untagged on purpose: this spec IS the CI gate, and `test:e2e:ci` filters out
  * `@flaky` / `@local-only` / `@verification`.
  *
- * SCOPE — the 24px/390 case is asserted against the sitemap, not the document.
- * A *document*-level assertion at 24px/390 cannot pass on this fixture for a
- * reason unrelated to this island: the header's right control cluster
- * (`div.ml-auto.flex.shrink-0`) sits at right edge 400.2 inside a 390px header,
- * because the row is a `whitespace-nowrap` site-name anchor (`flex: 0 0 auto`,
- * 180.2px at a 24px root) plus a `shrink-0` cluster (136px), neither of which can
- * compress. That reproduces on `/docs/getting-started` with no sitemap on the
- * page. It is tracked as #4163 and deliberately out of scope here — fixing it
- * needs a header/design decision that #4160 forbids bundling in. The remaining
- * document-level assertions (390/16 and 1600/24) are enforced in full below.
+ * SCOPE — history. Until zudolab/zudo-doc#4288 landed, the 24px/390 case
+ * could only be asserted against the sitemap, not the document: the header's
+ * right control cluster (`div.ml-auto.flex.shrink-0`) sat at right edge
+ * 400.2 inside a 390px header, because the row was a `whitespace-nowrap`
+ * site-name anchor (`flex: 0 0 auto`, 180.2px at a 24px root) plus a
+ * `shrink-0` cluster (136px), neither of which could compress. That
+ * reproduced on `/docs/getting-started` with no sitemap on the page and was
+ * tracked as #4163, deliberately out of scope for #4160 (a header/design
+ * decision it forbade bundling in). #4287/#4288 made that decision — the
+ * anchor is now `min-w-0 truncate`, so it is the one item in the row that can
+ * give ground and absorbs a width deficit as an ellipsis instead of pushing
+ * the cluster past the viewport edge. The document-level 390/24 assertion this note used to
+ * forbid is now enforced in full below, alongside 390/16 and 1600/24. The
+ * header-specific gate (right-cluster edge, ellipsis, per-control
+ * visibility/clickability) lives in
+ * smoke-header-site-name-truncation.spec.ts.
  */
 
 /** The exact showcase label that overflowed; also this fixture page's title. */
@@ -150,6 +156,28 @@ test.describe("home sitemap overflow controls", () => {
     await page.setViewportSize({ width: 1600, height: 1000 });
     await setFontPreference(page, 24);
     await gotoHomeAndAwaitSitemap(page);
+
+    const m = await measure(page);
+    expect(m.rootFont, "font-preference lever must have applied").toBe("24px");
+    expect(
+      m.scrollWidth,
+      `scrollWidth ${m.scrollWidth} > innerWidth ${m.innerWidth}`,
+    ).toBeLessThanOrEqual(m.innerWidth);
+  });
+
+  // Promoted from a sitemap-only assertion once zudolab/zudo-doc#4288's header
+  // truncation made a document-level pass possible at 390/24 — see this file's
+  // header comment. Deliberately reuses `/docs/getting-started`, the exact
+  // page the retired note cited as the header bug's reproduction (a page with
+  // no sitemap on it), rather than the home page: the home page carries an
+  // unrelated hero-heading overflow at this viewport/font combination
+  // (zudolab/zudo-doc#4297) that has nothing to do with the header fix this
+  // test gates. The header-specific gate (right-cluster edge, ellipsis,
+  // per-control visibility) lives in smoke-header-site-name-truncation.spec.ts.
+  test("no document overflow at 390px / 24px (docs page, no sitemap)", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 1000 });
+    await setFontPreference(page, 24);
+    await page.goto("/docs/getting-started", { waitUntil: "domcontentloaded" });
 
     const m = await measure(page);
     expect(m.rootFont, "font-preference lever must have applied").toBe("24px");

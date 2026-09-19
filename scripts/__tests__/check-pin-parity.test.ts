@@ -423,6 +423,101 @@ describe("evaluateApprovedPeerBaseline (#4264)", () => {
   });
 });
 
+// RELEASE.md rule 4 permits exactly one unpublished-version state: the release
+// commit of a major bump, where the floor and the approved baseline are raised to
+// `^<new major>.0.0` alongside the root version. Nothing below relaxes a
+// comparator — these lock the permitted state in and the forbidden one out.
+describe("major-bump release state (#4279)", () => {
+  const pkg = "@takazudo/zudo-doc-history-server";
+  const base = {
+    pkg,
+    sourceKind: "lockstep (root version)",
+    comparison: "satisfies" as const,
+  };
+
+  it("(i) the permitted state passes both gates", () => {
+    // The state rule 4 now permits: a rule-5 compliant raise made in the release
+    // commit, before 6.0.0 is on npm.
+    const peer = evaluateFirstPartyPeer({
+      ...base,
+      sourceValue: "6.0.0",
+      actualPeer: "^6.0.0",
+    });
+    expect(peer.ok).toBe(true);
+    expect(peer.advisory).toBeUndefined();
+
+    const baseline = evaluateApprovedPeerBaseline({
+      pkg,
+      approvedBaseline: "^6.0.0",
+      actualPeer: "^6.0.0",
+    });
+    expect(baseline.ok).toBe(true);
+  });
+
+  it("(ii) the founding case is still caught", () => {
+    // #2381 / #2445 — a floor left behind at a major is an error, not an
+    // advisory. This epic did not relax it.
+    const res = evaluateFirstPartyPeer({
+      ...base,
+      sourceValue: "6.0.0",
+      actualPeer: "^5.17.2",
+    });
+    expect(res.ok).toBe(false);
+    expect(res.reason).toContain("does NOT include");
+  });
+
+  it("(iii) the reason string names the exception", () => {
+    const res = evaluateApprovedPeerBaseline({
+      pkg,
+      approvedBaseline: "^5.17.2",
+      actualPeer: "^6.0.0",
+    });
+    expect(res.reason).toContain("major-bump");
+    expect(res.reason).toContain("rule 4");
+  });
+
+  it("(iv) the three mirrors no longer carry the false rationale", () => {
+    // #4279: the whole point of #4269 was that the contract, its mirror and its
+    // enforcement stopped contradicting each other. The lockfile claim they all
+    // carried was shown false in #4280 — a workspace package's peerDependencies
+    // are not a lockfile input, so the floor can never make an install fail.
+    const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+    const releaseMd = readFileSync(resolve(REPO_ROOT, "RELEASE.md"), "utf-8");
+    const skillMd = readFileSync(
+      resolve(REPO_ROOT, ".claude/skills/l-make-release/SKILL.md"),
+      "utf-8",
+    );
+    const parityMjs = readFileSync(
+      resolve(REPO_ROOT, "scripts/check-pin-parity.mjs"),
+      "utf-8",
+    );
+
+    // Match the false CLAIM, not the bare word: banning "unresolvable"
+    // file-wide would fail on an unrelated future sentence that legitimately
+    // uses it.
+    expect(releaseMd).not.toMatch(/lockfile unresolvable/);
+    expect(skillMd).not.toMatch(/lockfile unresolvable/);
+    expect(parityMjs).not.toMatch(/deadlocks `--frozen-lockfile`/);
+
+    // Anchor to the contract section first — a bare `^4. ` search would latch
+    // onto whichever numbered list happens to come first in the file.
+    const sectionStart = releaseMd.indexOf(
+      "## First-party peer floor (publish-lag)",
+    );
+    expect(sectionStart).toBeGreaterThan(-1);
+    const section = releaseMd.slice(sectionStart);
+
+    // Rule 4 wraps across lines, so take the whole list item: from the `4. `
+    // marker up to the `5. ` marker that follows it.
+    const start = section.search(/^4\. /m);
+    expect(start).toBeGreaterThan(-1);
+    const rest = section.slice(start);
+    const end = rest.search(/^5\. /m);
+    expect(end).toBeGreaterThan(-1);
+    expect(rest.slice(0, end)).toContain("major bump");
+  });
+});
+
 // Regression net for the two routine flows the contract says must leave the
 // declaration alone (RELEASE.md § "First-party peer floor (publish-lag)", rule 2).
 describe("routine flows preserve the first-party peer declarations (#4264)", () => {
@@ -453,10 +548,20 @@ describe("routine flows preserve the first-party peer declarations (#4264)", () 
         readFileSync(resolve(REPO_ROOT, "package.json"), "utf-8"),
       ).version;
       // Exactly what `resolve-bumps.mjs --write` does: raise the peer floor to
-      // the newest version it resolved for the package.
+      // the newest version it resolved for the package. In the major-bump
+      // release window RELEASE.md rule 4 permits, the floor already IS
+      // `^<root>`, so writing that back would be a no-op edit and would prove
+      // nothing — fall back to one patch above root, the same shape of
+      // unapproved raise.
       const parsed = JSON.parse(original);
-      parsed.peerDependencies["@takazudo/zudo-doc-history-server"] =
-        `^${rootVersion}`;
+      const current =
+        parsed.peerDependencies["@takazudo/zudo-doc-history-server"];
+      const raised =
+        `^${rootVersion}` === current
+          ? `^${String(rootVersion).replace(/(\d+)$/, (n: string) => String(Number(n) + 1))}`
+          : `^${rootVersion}`;
+      expect(raised).not.toBe(current);
+      parsed.peerDependencies["@takazudo/zudo-doc-history-server"] = raised;
       const mutated = `${JSON.stringify(parsed, null, 2)}\n`;
       expect(mutated).not.toBe(original);
       writeFileAtomic(ZUDO_DOC_PKG_PATH, mutated);

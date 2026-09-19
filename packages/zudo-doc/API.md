@@ -448,7 +448,8 @@ These fields are the stable contract. The snapshot guard locks this set.
 | `aiChatDemoMode` | `boolean` | Enable AI chat demo mode (no real API calls) |
 | `aiChatAllowedOrigins` | `string[]` | Allowed origins for AI chat CORS |
 | `aiChatGlobalDailyLimit` | `number \| false` | Exact Anthropic fetch-admission cap per UTC day; `false` disables the exact cap |
-| `designTokenPanel` | `boolean` | Enable the design token panel |
+| `designTokenPanel` | `boolean` | Mount the package's own design token panel island |
+| `bundleZdtp` | `boolean` | Bundle `@takazudo/zdtp` into the build. Default follows `designTokenPanel` (`bundleZdtp ?? designTokenPanel`); set `true` with `designTokenPanel: false` to keep the real `@takazudo/zudo-doc/zdtp-loader` for a host-mounted panel. `false` with `designTokenPanel: true` throws at config resolution. |
 | `tocMinDepth` | `number` | Minimum heading depth for TOC |
 | `tocMaxDepth` | `number` | Maximum heading depth for TOC |
 | `sidebarResizer` | `boolean` | Enable sidebar resizer handle |

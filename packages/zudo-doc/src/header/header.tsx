@@ -352,7 +352,17 @@ export function Header(props: HeaderProps): JSX.Element {
 
       <a
         href={urlHelpers.withBase(isNonDefaultLocale ? `/${lang}/` : "/")}
-        class="whitespace-nowrap text-title font-bold text-fg hover:underline focus:underline shrink-0"
+        // The site name is the row's only item that can actually give ground:
+        // the right cluster is pinned against shrinking, the mobile-toggle
+        // slot cannot go below its button's min-content width, and the nav's
+        // zero flex basis zeroes its scaled shrink factor. So a width deficit
+        // is absorbed here as an ellipsis instead of pushing the right
+        // controls past the viewport edge (zudolab/zudo-doc#4287).
+        // Do not name Tailwind utilities in prose here — the content scanner
+        // reads them as class candidates; use the `safelist-ok:` marker if a
+        // future note must (see scripts/check-package-safelist.mjs).
+        class="min-w-0 truncate text-title font-bold text-fg hover:underline focus:underline"
+        title={siteName}
         data-header-logo
       >
         {siteName}

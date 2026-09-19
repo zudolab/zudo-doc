@@ -239,9 +239,30 @@ scanner-safe. Every other host slot remains intact.
   SSR page bundler and the islands bundler, so this virtual module — and
   `virtual:zudo-doc-route-context` — resolve directly from a route file at
   `node_modules/@takazudo/zudo-doc/routes-src/`, the same as from the
-  workspace shape. The staging step was removed (#4224); the emitted re-export
-  specifier is an absolute path (forward slashes), so it still resolves
-  identically from the workspace and published shapes.
+  workspace shape. The staging step was removed (#4224). zfb, not zudo-doc,
+  emits the re-export specifier, and it relativises the entrypoint against the
+  generated shim's position in its shadow `pages/` tree (e.g.
+  `../node_modules/@takazudo/zudo-doc/routes-src/404.tsx`) rather than writing
+  an absolute path; the relative path resolves because the bundler shadow root
+  carries an absolute symlink back to the project's real `node_modules`, which
+  the workspace and published shapes both traverse identically. The emitted
+  specifier is the captured output shape, not a verified derivation: it comes
+  out lexical (`node_modules/@takazudo/zudo-doc/...`) even under pnpm, where the
+  absolute path zudo-doc hands `injectRoute` is a `.pnpm/` realpath from
+  `require.resolve`, and the re-lexicalisation step that bridges the two was not
+  located in the 2.18.0 binary — see §1 of the findings note. As a hedge:
+  staging into a first-party directory would sidestep that shadow-root symlink
+  entirely, which may be why the reporter's pre-removal (5.24.2) build still
+  passed on zfb 2.18.0 — but the planning-time claim that zfb declines to
+  materialise non-first-party entrypoints was never observed taking effect in
+  any tested topology, so treat that as a hedge, not a confirmed mechanism.
+  Validation history: zfb 2.17.0 + zudo-doc 5.25.0 green (#4226); zfb 2.18.0 +
+  zudo-doc 5.25.0 green across 11 consumer topologies (ten fully green; the
+  eleventh resolved every shim and then failed at render for an unrelated
+  duplicate-preact reason) in the wave-1 probe for
+  zudolab/zudo-doc#4271; a report on that same 2.18.0 + 5.25.0 cell (#4267) did
+  not reproduce — see `../findings/4267-shadow-tree-probe.md` for the full
+  evidence.
 - **SSR-presentational contract only.** Client islands defined INSIDE the
   bindings module are NOT guaranteed to register on injected routes — scanner
   reachability through the virtual re-export is not part of the contract
