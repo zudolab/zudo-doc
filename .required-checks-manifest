@@ -7,6 +7,7 @@
 Package Unit Tests
 Pin Parity Check
 Fixture Settings Drift Check
+Chrome Bindings Fixture Drift Check
 Lint Gates
 B4push/CI Parity Check
 E2E Tests

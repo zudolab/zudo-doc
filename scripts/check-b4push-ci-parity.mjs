@@ -203,6 +203,15 @@ const REQUIRED_CI_GUARDS = [
     b4pushScript: "check:bash32-compat",
     comment: "Bash 3.2 compatibility lint (scripts/check-bash32-compat.mjs, #4049)",
   },
+  {
+    // Chrome-bindings fixture drift: node scripts/check-chrome-bindings-fixture-drift.mjs
+    // (CI, own pure-Node job) / pnpm check:chrome-bindings-fixture-drift
+    // (b4push). Verifies e2e/fixtures/hostpanel/src/chrome-bindings.fixture.tsx
+    // preserves every normalized line of root src/chrome-bindings.tsx (#4321).
+    ciNeedle: "check-chrome-bindings-fixture-drift.mjs",
+    b4pushScript: "check:chrome-bindings-fixture-drift",
+    comment: "Chrome-bindings fixture drift check (scripts/check-chrome-bindings-fixture-drift.mjs, #4321)",
+  },
 ];
 
 const ALLOWLIST_PATH = resolve(ROOT, ".b4push-ci-parity-allowlist");

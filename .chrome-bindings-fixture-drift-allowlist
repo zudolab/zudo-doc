@@ -1,0 +1,29 @@
+# .chrome-bindings-fixture-drift-allowlist
+#
+# Replacement entries for scripts/check-chrome-bindings-fixture-drift.mjs.
+# The guard's invariant is root-line PRESERVATION (ordered subsequence): every
+# normalized src/<name>.<ext> line must still appear, in order, in the paired
+# e2e/fixtures/<fixture>/src/<name>.fixture.<ext> file. An entry here covers a
+# root line the fixture legitimately REPLACES instead of copying verbatim.
+#
+# Format: one entry per line —
+#   <fixture>|<exact trimmed root line>|<exact trimmed replacement line> # reason: <why>
+# Comments: lines starting with # are ignored. Blank lines are ignored.
+# Exact-match only (no globs, no wildcards). Every entry needs a # reason:.
+
+# hostpanel/src/chrome-bindings.fixture.tsx widens the `preact` type import to
+# also pull in JSX and VNode, needed by its extra BodyEndIslandsWithHostPanel
+# wrapper (#4310).
+hostpanel|import type { ComponentChildren } from "preact";|import type { ComponentChildren, JSX, VNode } from "preact"; # reason: fixture's BodyEndIslandsWithHostPanel wrapper needs JSX + VNode alongside ComponentChildren
+
+# hostpanel/src/chrome-bindings.fixture.tsx expands the single-line
+# _body-end-islands import into a multi-line import that also pulls in the
+# BodyEndIslandsProps type used by its BodyEndIslandsWithHostPanel wrapper
+# (#4310); the named BodyEndIslands import itself still appears verbatim as
+# one line of that multi-line statement.
+hostpanel|import { BodyEndIslands as BodyEndIslandsSeam } from "../pages/lib/_body-end-islands";|BodyEndIslands as BodyEndIslandsSeam, # reason: fixture splits this into a multi-line import to also pull in the BodyEndIslandsProps type
+
+# hostpanel/src/chrome-bindings.fixture.tsx wires its own
+# BodyEndIslandsWithHostPanel wrapper (which mounts the host design-token-panel
+# island) in place of the plain seam re-export (#4310).
+hostpanel|BodyEndIslands: BodyEndIslandsSeam,|BodyEndIslands: BodyEndIslandsWithHostPanel, # reason: fixture mounts the host-owned design-token-panel island via its own wrapper

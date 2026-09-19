@@ -7,6 +7,7 @@ import type {
   MetaTagsConfig,
   DateFormatSetting,
 } from "@takazudo/zudo-doc/settings";
+import type { ZudoDocConfig } from "@takazudo/zudo-doc/config";
 
 export const settings = {
   // Exercise rich fallback prose and explicit locale suppression through host routes.
@@ -134,4 +135,4 @@ const veryLongExample = "${"long-example".repeat(30)}";
     { type: "component", component: "language-switcher" },
   ] satisfies HeaderRightItem[] as HeaderRightItem[],
   packageOwnedRoutes: true,
-};
+} satisfies ZudoDocConfig;
