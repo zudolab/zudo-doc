@@ -1,0 +1,22 @@
+---
+title: 5.26.0
+description: Release notes for 5.26.0.
+sidebar_position: 1123
+---
+
+Released: 2026-09-20
+
+### Features
+
+- Added a `bundleZdtp` setting so hosts can keep the real `@takazudo/zdtp` loader while mounting their own panel with `designTokenPanel: false`. The setting defaults to `designTokenPanel`, preserving existing behavior; the invalid `designTokenPanel: true` plus `bundleZdtp: false` combination is rejected before it can ship a mounted panel backed by the throwing stub. (28bb8e8e4)
+
+### Bug Fixes
+
+- `gen:changelog` now rewrites relative `.md`/`.mdx` links to emitted entries as in-file anchors and unlinks other relative document links, keeping published package changelogs free of source-tree-only URLs. It also preserves parenthesized link titles, accounts for Setext headings when suffixing duplicate anchors, and retains case-sensitive filename matching. (267b27d12, 290fb0214)
+- Long site names no longer push the mobile header's right-side controls outside a narrow viewport at increased browser font sizes. The site-name link truncates with an ellipsis while its `title` preserves the full text, and the hamburger button no longer shrinks. Swissgrid and Riso also retain their flat truncation treatment with corrected marker baselines. (cc3a3b053, 104841612, 44fd94899)
+- Home-page hero headings now wrap long unbroken words instead of overflowing their container. (c7e058f68)
+
+### Other Changes
+
+- The `@takazudo/zfb`, `@takazudo/zfb-runtime`, and `@takazudo/zfb-md-wasm` peer dependency floors are now `^2.19.0`. zfb 2.19 adds an opt-in build-shadow diagnostic mode and a parser dependency patch verified equivalent across all 18 upstream baseline cases; it requires no zudo-doc config migration. (4c2048528)
+- Investigated a reported package-route resolution failure on zfb 2.18.0 across 11 consumer topologies, including the reporter's pnpm-workspace symlink shape, without reproducing it. No runtime code or workaround changed; the diagnostic findings remain documented for affected users. (0bd27b8e9)

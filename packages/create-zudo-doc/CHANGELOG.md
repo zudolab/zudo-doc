@@ -8,6 +8,12 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [5.26.0] - 2026-09-20
+
+### Other Changes
+
+- Generated projects now pin `@takazudo/zfb`, `@takazudo/zfb-runtime`, and `@takazudo/zfb-md-wasm` to `2.19.0`. zfb 2.19 adds the opt-in `ZFB_KEEP_BUILD_SHADOW=1` build-diagnostics mode and adopts a YAML parser patch verified equivalent across all 18 upstream baseline cases. The runtime has no package-specific behavior change; md-wasm rebuilds its artifacts without changing exports or public APIs. Existing projects need no config migration. (4c2048528)
+
 ## [5.25.0] - 2026-09-16
 
 ### Bug Fixes

@@ -6,16 +6,24 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [5.26.0] - 2026-09-20
+
+### Features
+
+- Added a `bundleZdtp` setting so hosts can keep the real `@takazudo/zdtp` loader while mounting their own panel with `designTokenPanel: false`. The setting defaults to `designTokenPanel`, preserving existing behavior; the invalid `designTokenPanel: true` plus `bundleZdtp: false` combination is rejected before it can ship a mounted panel backed by the throwing stub. (28bb8e8e4)
+
 ### Bug Fixes
 
-- `gen:changelog` now preserves parenthesized link titles when rewriting links to emitted entries and removes those titles when unlinking other relative doc links. Single-line setext headings in entry bodies now count toward GitHub anchor suffixes, keeping links to later duplicate version headings accurate. Filename matching remains case-sensitive, so a `.MDX` link does not resolve to a `.mdx` entry. (#4338)
-- The header's site-name no longer pushes the mobile right-control cluster (search, AI assistant, design-token panel, GitHub link) past the viewport edge on narrow screens with a long site name and the browser font preference raised — for example 390px width at 24px. The site-name anchor now truncates with an ellipsis (and carries the full name in its `title` attribute) instead of refusing to shrink; the mobile hamburger button is also pinned against shrinking, so a custom header that places it in the row directly cannot be squashed in the anchor's place. Unaffected at the default font size or with typical shorter site names — the row still shows the full name unclipped. (#4287, #4288, #4289)
-- A host mounting its own design-token panel through `@takazudo/zudo-doc/design-token-panel-bootstrap` with `designTokenPanel` off can now keep the real `@takazudo/zdtp` loader instead of hitting the throwing stub. The 5.24.1 fix (#4201) shadowed `@takazudo/zudo-doc/zdtp-loader` with a stub whenever `designTokenPanel` was off, and its changelog note ("A host's own `@takazudo/zdtp` imports are unaffected") did not cover a host reaching zdtp through the package's own bootstrap subpath — that path stayed shadowed, so a green build could still throw the moment the panel was opened. A new `bundleZdtp?: boolean` setting, resolved as `bundleZdtp ?? designTokenPanel`, decouples bundling from mounting: leave it unset and behavior is unchanged; set `bundleZdtp: true` with `designTokenPanel: false` to keep the real loader for your own panel. The reverse combination — `designTokenPanel: true` with `bundleZdtp: false` — is rejected at config resolution, since a mounted package panel over a stubbed loader is guaranteed to throw. (#4261)
-- `gen:changelog` no longer copies a relative `.md`/`.mdx` link verbatim into the published package `CHANGELOG.md`. A same-directory link to another emitted entry's source file is now rewritten to an in-file anchor at emit time, dropping any `#fragment` on it (sub-heading text repeats across versions); any other relative `.md`/`.mdx` link that doesn't resolve to an emitted entry is unlinked instead, keeping the label text and dropping the href. The MDX corpus is unchanged — authors keep writing doc-site-correct relative links, and only the generated artifact is rewritten. (#4312)
+- `gen:changelog` now rewrites relative `.md`/`.mdx` links to emitted entries as in-file anchors and unlinks other relative document links, keeping published package changelogs free of source-tree-only URLs. It also preserves parenthesized link titles, accounts for Setext headings when suffixing duplicate anchors, and retains case-sensitive filename matching. (267b27d12, 290fb0214)
+- Long site names no longer push the mobile header's right-side controls outside a narrow viewport at increased browser font sizes. The site-name link truncates with an ellipsis while its `title` preserves the full text, and the hamburger button no longer shrinks. Swissgrid and Riso also retain their flat truncation treatment with corrected marker baselines. (cc3a3b053, 104841612, 44fd94899)
+- Home-page hero headings now wrap long unbroken words instead of overflowing their container. (c7e058f68)
 
 ### Other Changes
 
-- Investigated a build-failure report (#4267, tracked in #4271): three `Could not resolve` esbuild errors on relative `../node_modules/@takazudo/zudo-doc/routes-src/*.tsx` specifiers (`../../` for the route one directory deeper) on `@takazudo/zfb@2.18.0` + `@takazudo/zudo-doc@5.25.0`, for a pnpm-workspace consumer whose `pages/` did not shadow the package-owned injected routes named in those errors. The failure did not reproduce across 11 consumer topologies — including the reporter's exact pnpm-workspace-symlink install shape — documented in `packages/zudo-doc/docs/findings/4267-shadow-tree-probe.md`. No code changed. Because nothing reproduced, no workaround could be verified here: the reporter's own bisect puts `@takazudo/zudo-doc@5.24.2` green on zfb 2.18.0, and shadowing the three named routes with local `pages/` files bypasses the generated shims by construction. If you hit this, please attach the diagnostics requested on #4271.
+- The `@takazudo/zfb`, `@takazudo/zfb-runtime`, and `@takazudo/zfb-md-wasm` peer dependency floors are now `^2.19.0`. zfb 2.19 adds an opt-in build-shadow diagnostic mode and a parser dependency patch verified equivalent across all 18 upstream baseline cases; it requires no zudo-doc config migration. (4c2048528)
+- Investigated a reported package-route resolution failure on zfb 2.18.0 across 11 consumer topologies, including the reporter's pnpm-workspace symlink shape, without reproducing it. No runtime code or workaround changed; the diagnostic findings remain documented for affected users. (0bd27b8e9)
 
 ## [5.25.0] - 2026-09-16
 
