@@ -291,6 +291,25 @@ describe("findDrift", () => {
     expect(findDrift(root, fixture, replacementMap)).toBeNull();
   });
 
+  it("passes with an allowlisted root line containing a pipe", () => {
+    const parsed = parseAllowlistLine(
+      "hostpanel|type T = A \\| B;|type T = A \\| C; # reason: fixture narrows the union",
+    );
+    expect(parsed).toEqual({
+      fixture: "hostpanel",
+      rootLine: "type T = A | B;",
+      replacementLine: "type T = A | C;",
+      reason: "fixture narrows the union",
+    });
+    if (!parsed || parsed.error) throw new Error("expected a valid entry");
+
+    const root = lines("type T = A | B;");
+    const fixture = lines("type T = A | C;");
+    expect(
+      findDrift(root, fixture, new Map([[parsed.rootLine, parsed.replacementLine]])),
+    ).toBeNull();
+  });
+
   it("fails when the allowlisted replacement line is itself missing from the fixture", () => {
     const root = lines("import { A } from 'a';", "const x = 1;");
     const fixture = lines("const x = 1;");
@@ -334,6 +353,52 @@ describe("parseAllowlistLine", () => {
       replacementLine: "import a, { b } from 'a';",
       reason: "needs b too",
     });
+  });
+
+  it("unescapes a pipe in a root field", () => {
+    expect(
+      parseAllowlistLine(
+        "hostpanel|type T = A \\| B;|type T = A \\| C; # reason: union replacement",
+      ),
+    ).toEqual({
+      fixture: "hostpanel",
+      rootLine: "type T = A | B;",
+      replacementLine: "type T = A | C;",
+      reason: "union replacement",
+    });
+  });
+
+  it("unescapes adjacent escaped pipes", () => {
+    expect(
+      parseAllowlistLine(
+        "hostpanel|const value = a \\|\\| b;|const value = a \\|\\| c; # reason: boolean replacement",
+      ),
+    ).toEqual({
+      fixture: "hostpanel",
+      rootLine: "const value = a || b;",
+      replacementLine: "const value = a || c;",
+      reason: "boolean replacement",
+    });
+  });
+
+  it("keeps a lone backslash literal", () => {
+    expect(
+      parseAllowlistLine(
+        "hostpanel|const value = \\q;|const value = \\r; # reason: literal backslashes",
+      ),
+    ).toEqual({
+      fixture: "hostpanel",
+      rootLine: "const value = \\q;",
+      replacementLine: "const value = \\r;",
+      reason: "literal backslashes",
+    });
+  });
+
+  it("still rejects an unescaped pipe inside a field", () => {
+    const result = parseAllowlistLine(
+      "hostpanel|type T = A | B;|type T = C; # reason: missing escape",
+    );
+    expect(result!.error).toMatch(/3 "\|"-separated fields.*got 4/);
   });
 
   it("errors when the # reason: marker is missing", () => {

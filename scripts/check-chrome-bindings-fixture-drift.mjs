@@ -163,7 +163,22 @@ export function parseAllowlistLine(rawLine) {
     return { error: `empty reason: ${trimmed}` };
   }
 
-  const parts = dataPart.split("|");
+  const parts = [];
+  let field = "";
+  for (let i = 0; i < dataPart.length; i++) {
+    const char = dataPart[i];
+    const next = dataPart[i + 1];
+    if (char === "\\" && next === "|") {
+      field += "|";
+      i++;
+    } else if (char === "|") {
+      parts.push(field);
+      field = "";
+    } else {
+      field += char;
+    }
+  }
+  parts.push(field);
   if (parts.length !== 3) {
     return {
       error: `expected 3 "|"-separated fields (fixture|rootLine|replacementLine), got ${parts.length}: ${trimmed}`,
