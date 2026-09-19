@@ -204,18 +204,21 @@ html[data-theme-pack="swissgrid"] header[data-header] {
   border-bottom: 3px solid var(--zd-fg);
 }
 html[data-theme-pack="swissgrid"] [data-header-logo] {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
   font-weight: 900;
   letter-spacing: -0.03em;
 }
 html[data-theme-pack="swissgrid"] [data-header-logo]::before {
   content: "";
+  display: inline-block;
   width: 0.72em;
   height: 0.72em;
-  flex-shrink: 0;
   background: #ff0000;
+  margin-right: 0.55rem;
+  /* `baseline` is also the initial value — stated explicitly because it was
+     the measured outcome: it reproduces the marker's pre-#4306 flex-centered
+     position to within half a pixel at 1280px and at 390px/24px. Do not read
+     it as a tuned offset (riso needs one; this pack does not). */
+  vertical-align: baseline;
 }
 html[data-theme-pack="swissgrid"] [data-nav-item] {
   text-transform: uppercase;
