@@ -30,6 +30,7 @@
     "// ── Quality ──────────────────────────────────────": "",
     "check": "pnpm ensure:workspace-build && zfb check",
     "check:pages": "pnpm ensure:workspace-build && tsc --noEmit -p tsconfig.pages.json",
+    "check:e2e": "pnpm ensure:workspace-build && tsc --noEmit -p e2e/tsconfig.json",
     "check:worker": "tsc --noEmit -p tsconfig.worker.json",
     "test": "pnpm build:workspace && pnpm test:unit && pnpm test:packages",
     "test:unit": "pnpm ensure:workspace-build && vitest run",

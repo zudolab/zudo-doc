@@ -23,7 +23,9 @@ function extractCategoryNavHtml(html: string): string {
  * return every match instead of the first. */
 function extractHrefs(html: string): string[] {
   const pattern = /\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/g;
-  return [...html.matchAll(pattern)].map((m) => m[1] ?? m[2] ?? m[3]);
+  return [...html.matchAll(pattern)]
+    .map((m) => m[1] ?? m[2] ?? m[3])
+    .filter((href): href is string => href !== undefined);
 }
 
 /**

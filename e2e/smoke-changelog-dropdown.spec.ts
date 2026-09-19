@@ -69,7 +69,7 @@ function expectActiveChangelogChild(
   );
 
   expect(active).toHaveLength(1);
-  expect(getAttrValue(active[0][0], "href")).toContain(packagePath);
+  expect(getAttrValue(active[0]![0], "href")).toContain(packagePath);
 }
 
 test.describe("Nested Changelog navigation (static)", () => {
