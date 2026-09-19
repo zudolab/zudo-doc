@@ -28,7 +28,11 @@ export const settings = {
   // "Smoke Test" literal in smoke-llms-txt.spec.ts and smoke-seo.spec.ts
   // must stay in lockstep. Kept short of "Smoke Test Documentation": that
   // longer string also overflowed the UNRELATED home-hero heading at
-  // 390px/24px (zudolab/zudo-doc#4297, out of scope for this epic).
+  // 390px/24px (zudolab/zudo-doc#4297, out of scope for that epic; fixed by
+  // #4302). The value stays "Smoke Test Guide" because this header gate
+  // depends on that exact string — the hero regression is now covered by
+  // smoke-home-hero-font-pref-overflow.spec.ts, which substitutes a longer
+  // heading at runtime instead of changing this setting.
   siteName: "Smoke Test Guide",
   siteDescription: "Test fixture for smoke E2E tests" as string,
   logo: "auto" as string | false,

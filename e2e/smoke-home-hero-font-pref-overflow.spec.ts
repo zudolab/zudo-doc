@@ -73,6 +73,12 @@ test.describe("home hero heading with a long word at 390px / 24px", () => {
     test(`hero heading wraps instead of overflowing for "${longSiteName}"`, async ({ page }) => {
       await setFontPreference(page, 24);
       await page.goto("/", { waitUntil: "domcontentloaded" });
+      // The home sitemap is a `when: "idle"` island rendered client-side from
+      // `data-props` — at `domcontentloaded` that section is still empty, and
+      // it holds the page's widest content (path-shaped leaf labels). Measuring
+      // `documentElement.scrollWidth` before it lays out would make the
+      // document-level assertion below both racy and partly vacuous.
+      await expect(page.locator(".zd-home-sitemap a").first()).toBeVisible();
       await setHeroHeadingText(page, longSiteName);
 
       const m = await measureHero(page);
