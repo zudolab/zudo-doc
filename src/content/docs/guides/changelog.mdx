@@ -103,6 +103,16 @@ overwritten from those pages and should not be edited by hand. zudo-doc strips
 frontmatter, imports, exports, JSX tags/components, and MDX comments so the
 output stays readable as CommonMark in `node_modules`.
 
+Relative links inside entry bodies are also rewritten at emit time, so the
+published artifact never carries a dead href. A same-directory link to
+another entry's source file (for example, `[5.15.0](./5.15.0.mdx)`) becomes
+an in-file anchor in the generated `CHANGELOG.md`, and any `#fragment` on
+that link is dropped, since sub-heading text repeats across versions. Any
+other relative `.md`/`.mdx` link — one that doesn't resolve to an emitted
+entry — is unlinked instead: the label text stays, the href is removed.
+Authors keep writing doc-site-correct relative links in MDX; nothing changes
+on the docs site itself.
+
 Multiple outputs can be configured by adding more items to the array. This is
 useful when a monorepo wants separate package changelogs, each generated from
 its own changelog source directory.
