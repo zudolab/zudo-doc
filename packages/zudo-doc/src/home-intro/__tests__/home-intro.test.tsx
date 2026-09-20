@@ -49,11 +49,29 @@ describe("home introduction contract", () => {
   });
 
   it.each([
+    "Open 09:30 daily", "Contrast ratio 3:1", "see word:word here",
+    "Open 09:30:15 daily", "日本語の比率3:1", "🕘 Open 09:30 daily",
+    "café:menu", "cafe\u0301:menu", "key_name:value",
+  ])("preserves ordinary inline colon prose: %s", async source => {
+    expect(await html(source)).toContain(`>${source}</p>`);
+  });
+
+  it("preserves colon prose inside Markdown formatting and across lines", async () => {
+    const output = await html("**Open 09:30 daily**\r\n\r\n> Contrast ratio 3:1\r\n\r\n[see word:word here](docs/start)");
+    expect(output).toMatch(/<strong\b[^>]*>Open 09:30 daily<\/strong>/u);
+    expect(output).toContain("Contrast ratio 3:1</p>");
+    expect(output).toContain(">see word:word here</a>");
+  });
+
+  it.each([
     '<script>alert(1)</script>', '<img src="x" onerror="alert(1)">', '<Widget />',
     'import Foo from "foo"', 'export const foo = 1', '{globalThis.alert(1)}',
     '[x](javascript:alert%281%29)', '[x](java&#x73;cript:alert%281%29)',
     '![x](data:image/svg+xml,bad)', '[x](vbscript:bad)', '[x](//evil.test)',
     ':::note\nText\n:::', ':::include{file="./secret.md"}', '---\ntitle: Nope\n---\nBody',
+    ':note', 'before :note after', '::note', ':note[Text]', ':note{.class}',
+    'word:note[Text]', 'word:note[]', 'word:note{}', 'word:note{.class}',
+    'Open 09:30 daily\n\n:::note\nText\n:::', 'Open 09:30 <script>alert(1)</script>',
   ])("diagnoses unsafe or unsupported input: %s", async source => {
     await expect(html(source)).rejects.toThrow(/home.introMarkdown/);
   });

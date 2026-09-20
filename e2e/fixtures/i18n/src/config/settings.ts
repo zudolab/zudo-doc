@@ -17,6 +17,8 @@ export const settings = {
 
 A compact introduction with [Getting started](docs/getting-started).
 
+Open 09:30 daily. Contrast ratio 3:1. See word:word here.
+
 ## Details
 
 Body with **bold**, *emphasis*, and inline \`code\`.
