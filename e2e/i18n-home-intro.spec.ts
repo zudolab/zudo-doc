@@ -8,6 +8,7 @@ for (const width of [1440, 1024, 768, 390, 320]) {
     await page.goto("/");
     const prose = page.locator(".zd-compact-prose");
     await expect(prose).toBeVisible();
+    await expect(prose.getByText("Open 09:30 daily. Contrast ratio 3:1. See word:word here.", { exact: true })).toBeVisible();
     await expect(page.locator("h1")).toHaveCount(1);
     await expect(page.locator("[data-home-rule]")).toHaveCount(2);
     await expect(prose.locator(".hash-link")).toHaveCount(0);
@@ -100,6 +101,7 @@ test("localized whitespace suppresses fallback prose and its upper separator", a
 test("a locale without an override inherits prose with localized links", async ({ page }) => {
   await page.goto("/de/");
   await expect(page.locator(".zd-compact-prose")).toBeVisible();
+  await expect(page.locator(".zd-compact-prose").getByText("Open 09:30 daily. Contrast ratio 3:1. See word:word here.", { exact: true })).toBeVisible();
   await expect(page.locator(".zd-compact-prose").getByRole("link", { name: "Getting started" }))
     .toHaveAttribute("href", "/de/docs/getting-started");
 });

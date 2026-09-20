@@ -33,6 +33,11 @@ export function resolveIntroUrl(value: string, settings: Pick<HomeIntroSettings,
 }
 
 function inspect(node: MdastNode, settings: HomeIntroSettings, locale: string, source = ""): void {
+  // The raw directive parser also claims bare suffixes in prose such as 09:30.
+  // Compare source spans so empty directive labels/attributes still get rejected.
+  if (node.type === "textDirective"
+    && source.slice(node.position.start.offset, node.position.end.offset) === `:${node.name}`
+    && /[\p{L}\p{N}\p{M}_]$/u.test(source.slice(0, node.position.start.offset))) return;
   // Ruby is a supported non-executable visitor, although MDX parses each
   // brace-delimited half as an expression. Recognize adjacency on AST spans.
   if (node.type === "mdxTextExpression" && (source.slice(node.position.end.offset, node.position.end.offset + 2) === "^{" || source[node.position.start.offset - 1] === "^")) return;
@@ -82,7 +87,7 @@ export async function prepareHomeIntro(source: string, settings: HomeIntroSettin
   });
   const parsed = await parseToAst(source, { dialect: "markdown", directives: true, frontmatter: "node" });
   if (!parsed.ast) throw new Error(`home.introMarkdown: ${parsed.diagnostics.map(d => d.message).join("; ")}`);
-  inspect(parsed.ast, settings, locale);
+  inspect(parsed.ast, settings, locale, source);
   // Markdown treats ESM and expressions as text. The MDX parser diagnoses those
   // when they form valid MDX; a failed MDX parse never invalidates plain Markdown.
   const mdx = await parseToAst(source, { dialect: "mdx", frontmatter: "none" });
