@@ -8,6 +8,10 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [5.26.2] - 2026-09-20
+
+- No package-specific changes.
+
 ## [5.26.1] - 2026-09-20
 
 ### Other Changes

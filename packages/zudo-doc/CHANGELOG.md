@@ -6,9 +6,13 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [5.26.2] - 2026-09-20
+
 ### Bug Fixes
 
-- Homepage introductions now accept ordinary inline colon tokens such as `09:30`, `3:1`, and `word:word` without escaping. Actual directives and other unsupported Markdown constructs remain rejected.
+- Homepage introductions now accept ordinary inline colon tokens such as `09:30`, `3:1`, and `word:word` without escaping. Actual directives and other unsupported Markdown constructs remain rejected. (1106bd884)
 
 ## [5.26.1] - 2026-09-20
 
