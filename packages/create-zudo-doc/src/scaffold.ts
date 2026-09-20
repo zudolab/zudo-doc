@@ -951,9 +951,15 @@ function generatePackageJson(
     // its four artifacts with that parser patch, changing byte sizes and digests
     // without changing exports or public APIs. A fresh scaffold needs no config
     // migration.
-    "@takazudo/zfb": "2.19.0",
-    "@takazudo/zfb-runtime": "2.19.0",
-    "@takazudo/zfb-md-wasm": "2.19.0",
+    // 2.20.0: zfb narrows `allocate_build_tempdir` error context while keeping
+    // bundler error text byte-for-byte unchanged. zfb-runtime and
+    // zfb-adapter-cloudflare have no package-specific change. md-wasm moves its
+    // over-ceiling opt-in from an environment variable to
+    // `--allow-over-ceiling`; artifact sizes stay unchanged while digests move
+    // as in every release. A fresh scaffold needs no config migration.
+    "@takazudo/zfb": "2.20.0",
+    "@takazudo/zfb-runtime": "2.20.0",
+    "@takazudo/zfb-md-wasm": "2.20.0",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's

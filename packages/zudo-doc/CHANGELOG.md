@@ -6,7 +6,9 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
-No unreleased changes.
+### Other Changes
+
+- The `@takazudo/zfb`, `@takazudo/zfb-runtime`, and `@takazudo/zfb-md-wasm` peer dependency floors are now `^2.20.0`. zfb 2.20 narrows `allocate_build_tempdir` error context while preserving bundler error text byte-for-byte; the runtime has no package-specific change, and md-wasm moves its over-ceiling build opt-in from an environment variable to `--allow-over-ceiling` without changing artifact sizes. No zudo-doc config migration is required.
 
 ## [5.26.0] - 2026-09-20
 
