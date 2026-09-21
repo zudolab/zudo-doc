@@ -59,6 +59,16 @@ set -euo pipefail
 #   B4PUSH_SKIP_PREVIEW_SMOKE=1  — skip the automated preview smoke (step 33)
 #   B4PUSH_SKIP_MANUAL_SMOKE=1   — skip the manual interactive smoke (step 34)
 
+# Machine-wide queue for heavy steps, shared by every agent session on this machine
+# (owner's ~/.claude or ~/.codex). Absent on CI and on other machines → runs directly.
+heavy() {
+  local g="${HEAVY_GUARD:-}"
+  [ -n "$g" ] || for c in "$HOME/.claude/scripts/heavy-guard.sh" "$HOME/.codex/scripts/heavy-guard.sh"; do
+    [ -x "$c" ] && { g="$c"; break; }
+  done
+  if [ -n "$g" ] && [ -z "${CI:-}" ]; then "$g" -- "$@"; else "$@"; fi
+}
+
 START_TIME=$(date +%s)
 FAILURES=()
 TOTAL_STEPS=34
@@ -111,7 +121,7 @@ ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 # @takazudo/zudo-doc, so it needs that package's compiled dist/ as much as the
 # later steps do (zudolab/zudo-doc#3053). Deliberately placed outside the
 # parity markers so check-b4push-ci-parity.mjs never sees it as a guard gate.
-if ! (cd "$ROOT_DIR" && pnpm ensure:workspace-build); then
+if ! (cd "$ROOT_DIR" && heavy pnpm ensure:workspace-build); then
   echo "❌ Workspace package build failed — cannot run b4push"
   exit 1
 fi
@@ -416,7 +426,7 @@ fi
 step "Root unit tests (test:unit)"
 # --maxWorkers=4 caps vitest parallelism for reliability under host CPU
 # contention over wall-clock, not speed (issue #2563).
-if (cd "$ROOT_DIR" && pnpm build:workspace && pnpm test:unit --maxWorkers=4); then
+if (cd "$ROOT_DIR" && heavy pnpm build:workspace && heavy pnpm test:unit --maxWorkers=4); then
   pass "Root unit tests passed"
 else
   fail "Root unit tests"
@@ -428,14 +438,14 @@ fi
 # Keep both invocations in this existing step so b4push retains its current
 # 34-step shape; the other create-zudo-doc slow specs stay nightly-only.
 step "Slow root unit tests (test:unit:slow)"
-if (cd "$ROOT_DIR" && pnpm test:unit:slow); then
+if (cd "$ROOT_DIR" && heavy pnpm test:unit:slow); then
   pass "Slow root unit tests passed"
 else
   fail "Slow root unit tests"
 fi
 if (
   cd "$ROOT_DIR/packages/create-zudo-doc" &&
-  pnpm exec vitest run --config vitest.slow.config.ts \
+  heavy pnpm exec vitest run --config vitest.slow.config.ts \
     src/__tests__/skill-name-parity.slow.test.ts \
     src/__tests__/init-git-repo.slow.test.ts
 ); then
@@ -451,7 +461,7 @@ fi
 # asymmetry where package tests ran in CI but not in b4push (#1851/#1856).
 # dist/ is already built by step 24 — no extra prep needed.
 step "Package tests + subpath resolution"
-if (cd "$ROOT_DIR" && pnpm test:packages && pnpm --filter @takazudo/zudo-doc test:plugin-resolution); then
+if (cd "$ROOT_DIR" && heavy pnpm test:packages && heavy pnpm --filter @takazudo/zudo-doc test:plugin-resolution); then
   pass "Package tests + subpath resolution passed"
 else
   fail "Package tests + subpath resolution"
@@ -475,7 +485,7 @@ fi
 # gate (#3234) so this build still produces a dist/ for the next step's
 # content-fallback check to scan — the two guards can't run on the same build.
 step "Build (zfb build)"
-if (cd "$ROOT_DIR" && pnpm build --no-strict-content-bridge); then
+if (cd "$ROOT_DIR" && heavy pnpm build --no-strict-content-bridge); then
   pass "Build passed"
 else
   fail "Build"

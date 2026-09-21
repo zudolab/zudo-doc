@@ -48,3 +48,15 @@ b4push accumulates failures across all steps and reports a summary at the end �
    - Unit/package test failures: investigate and fix the test or the underlying code
 3. Re-run `pnpm b4push` to confirm all checks pass
 4. Report the final status
+
+### ENV_SUSPECT — a red heavy step with no code-level cause
+
+Heavy steps (workspace builds, unit/package/slow tests, the build) route through a
+machine-wide `heavy()` guard so concurrent agent sessions on one machine don't exhaust
+memory and go red for non-code reasons (browser launch failures, timeouts, exit 137).
+If a heavy step fails with no assertion, type, or lint error attached to it:
+
+1. Rerun that step once (or the whole suite, if isolating one step isn't practical).
+2. Still red, and still no assertion/type/lint error in the output — treat it as
+   `ENV_SUSPECT`, not a real failure. Defer that step to CI under a
+   `deferred-verification` issue and report it as **deferred**, never as passed.
