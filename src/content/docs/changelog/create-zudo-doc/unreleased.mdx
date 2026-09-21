@@ -4,4 +4,6 @@ description: Changes planned for the next release.
 sidebar_position: 1032
 ---
 
-No unreleased changes.
+### Other Changes
+
+- Generated projects now pin `@takazudo/zfb`, `@takazudo/zfb-runtime`, and `@takazudo/zfb-md-wasm` to `2.20.1`. The 2.20.1 release is lockstep metadata only — no upstream package reports a package-specific change, and the published-tarball delta is limited to each package's own version field plus its platform-binary pins. Existing projects need no config migration.
