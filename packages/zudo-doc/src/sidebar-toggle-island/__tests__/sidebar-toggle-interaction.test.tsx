@@ -114,3 +114,35 @@ describe("SidebarToggle — Escape-to-close", () => {
     decoy.remove();
   });
 });
+
+// zudolab/zudo-doc#4369: while open, the toggle renders the X and IS the close
+// control, so it must be lifted out from under `z-modal-backdrop` (50). The
+// elevation has to be conditional on `open` — SSR renders `open=false`, so a
+// class present in the closed state would move this directory's A2 no-stub
+// parity hashes and break hydration byte-stability.
+describe("SidebarToggle — toggle elevation above the backdrop", () => {
+  const toggle = (container: HTMLDivElement) =>
+    container.querySelector<HTMLButtonElement>("button[aria-expanded]")!;
+
+  it("adds `relative z-modal` only while the drawer is open", () => {
+    const container = mount(PROPS);
+    const button = toggle(container);
+
+    const closedClasses = button.className;
+    expect(closedClasses).not.toContain("z-modal");
+    expect(closedClasses.split(/\s+/)).not.toContain("relative");
+
+    act(() => {
+      button.click();
+    });
+    expect(button.getAttribute("aria-expanded")).toBe("true");
+    expect(button.className.split(/\s+/)).toContain("relative");
+    expect(button.className.split(/\s+/)).toContain("z-modal");
+
+    // Closing must restore the closed-state class list exactly — the elevation
+    // is transient, not a one-way upgrade.
+    pressEscape();
+    expect(button.getAttribute("aria-expanded")).toBe("false");
+    expect(button.className).toBe(closedClasses);
+  });
+});
