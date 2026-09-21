@@ -63,10 +63,12 @@ export async function openMobileDrawer(page: Page): Promise<void> {
  *
  * `z-modal-backdrop` (50) sits ABOVE the header's `z-toolbar` (20) by design
  * (`sidebar-toggle-island/index.tsx`'s backdrop comment) — the open drawer
- * is a modal surface that dims the whole viewport, hamburger included. A
- * real pointer click therefore cannot land on the "Close sidebar" button
- * while the drawer is open, so the close is dispatched directly on the
- * backdrop.
+ * is a modal surface that dims the whole viewport. Since zudolab/zudo-doc#4369
+ * the toggle itself is lifted to `z-modal` while open and IS clickable, but
+ * this helper deliberately keeps using the backdrop: it is the shared
+ * "just get the drawer shut" helper, and the backdrop path stays valid no
+ * matter what the toggle does. The toggle-click path has its own dedicated
+ * assertion in `smoke-mobile-sidebar.spec.ts`.
  */
 export async function closeMobileDrawer(page: Page): Promise<void> {
   // Precondition, not a wait: the backdrop element is always in the DOM (only
