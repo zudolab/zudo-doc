@@ -4,7 +4,7 @@
 /** @jsxImportSource preact */
 // Use preact hook entrypoints directly — the "react" → "preact/compat" alias
 // lets us consume React-typed components in this Preact app.
-import { useState, useEffect } from "preact/hooks";
+import { useState, useEffect, useRef } from "preact/hooks";
 // After zudolab/zudo-doc#1335 the host components pull lifecycle event names
 // from the v2 transitions module rather than hard-coding `astro:*` literals.
 // `ensureNestedIslandPropsRefresh` is imported through the barrel (not the
@@ -87,6 +87,9 @@ export function SidebarToggle({
   // same shape regardless of `open`, preventing Preact from re-mounting
   // the subtree (which can drop click handlers on the hamburger button).
   const [open, setOpen] = useState(false);
+  // Focus-restore target for the Escape handler below. A `ref` does not
+  // serialise, so SSR/hydration markup is unaffected (zudolab/zudo-doc#4366).
+  const hamburgerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (open) {
@@ -108,6 +111,29 @@ export function SidebarToggle({
     return () => document.removeEventListener(AFTER_NAVIGATE_EVENT, handleSwap);
   }, []);
 
+  // Escape-to-close (zudolab/zudo-doc#4366). Deliberately inlined rather than
+  // reusing `connectEscapeToClose` from theme-pack-switcher/switcher-state.js
+  // — this island is ejectable and eject's `rewireImports` would rewrite that
+  // relative import to `@takazudo/zudo-doc/theme-pack-switcher`, a subpath
+  // absent from the package's `exports` map, shipping a broken ejected copy.
+  // The listener is registered only while `open` is true: a closed drawer
+  // must never swallow an Escape meant for another document-level listener
+  // (language switcher, find bar, theme-pack flyout). Focus is restored to
+  // the hamburger synchronously in the handler — the `<aside>` goes `inert`
+  // on close, so without this, focus left inside the drawer would strand on
+  // `<body>` and defeat the point of the fix for keyboard/AT users.
+  useEffect(() => {
+    if (!open) return;
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+        hamburgerRef.current?.focus();
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [open]);
+
   return (
     <>
       {/* Hamburger button - visible only on mobile.
@@ -117,6 +143,7 @@ export function SidebarToggle({
           Preact's hydration walk sees byte-stable markup and keeps the
           click handler attached. */}
       <button
+        ref={hamburgerRef}
         type="button"
         onClick={() => setOpen(!open)}
         className="lg:hidden shrink-0 px-hsp-sm py-vsp-xs -ml-hsp-sm mr-hsp-sm text-muted hover:text-fg"
