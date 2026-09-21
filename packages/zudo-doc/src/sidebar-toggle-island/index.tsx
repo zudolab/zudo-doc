@@ -125,6 +125,12 @@ export function SidebarToggle({
   useEffect(() => {
     if (!open) return;
     function handleKeyDown(event: KeyboardEvent) {
+      // An Escape that ends an IME composition belongs to the composition, not
+      // to the drawer: cancelling a Japanese conversion in the drawer's own
+      // "Filter navigation" input would otherwise dismiss the whole drawer and
+      // yank focus to the hamburger. Same guard the sibling document-level
+      // shortcut in `sidebar-tree-island/index.tsx` already uses.
+      if (event.isComposing) return;
       if (event.key === "Escape") {
         setOpen(false);
         hamburgerRef.current?.focus();

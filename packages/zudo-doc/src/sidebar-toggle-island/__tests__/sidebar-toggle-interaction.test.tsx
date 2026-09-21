@@ -41,9 +41,11 @@ function mount(props: SidebarToggleProps): HTMLDivElement {
   return container;
 }
 
-function pressEscape(): void {
+function pressEscape(init: KeyboardEventInit = {}): void {
   act(() => {
-    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Escape", bubbles: true, ...init }),
+    );
   });
 }
 
@@ -112,6 +114,27 @@ describe("SidebarToggle — Escape-to-close", () => {
 
     expect(document.activeElement).toBe(decoy);
     decoy.remove();
+  });
+
+  // The drawer hosts a text filter input ("Filter navigation", rendered by
+  // SidebarTree). On the JA locale, Escape is how a user cancels an in-flight
+  // IME conversion there — that keydown carries `isComposing: true` and must
+  // not also dismiss the drawer.
+  it("ignores an Escape that ends an IME composition", () => {
+    const container = mount(PROPS);
+    const hamburger = container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Open sidebar"]',
+    );
+
+    act(() => {
+      hamburger!.click();
+    });
+
+    pressEscape({ isComposing: true });
+
+    expect(
+      container.querySelector<HTMLButtonElement>('button[aria-label="Close sidebar"]'),
+    ).not.toBeNull();
   });
 });
 

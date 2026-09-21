@@ -78,6 +78,16 @@ test.describe("Mobile sidebar", () => {
     // dropped (see e2e/mobile-drawer-helpers.ts).
     await openMobileDrawer(page);
 
+    // Move focus INSIDE the drawer before pressing Escape. Without this the
+    // focus assertion below is vacuous: openMobileDrawer() issues a real
+    // pointer click, which already leaves focus on the toggle, so the test
+    // would stay green with the handler's focus-restore line deleted. The
+    // regression being guarded is focus stranding on <body> when the panel
+    // goes `inert` again with focus still inside it.
+    const drawerFilter = page.locator('header aside input[aria-label="Filter navigation"]');
+    await drawerFilter.focus();
+    await expect(drawerFilter).toBeFocused();
+
     // Keyboard dismissal is the path under test here; the pointer path is
     // covered by the click-to-close test below (zudolab/zudo-doc#4369).
     await page.keyboard.press("Escape");

@@ -61,12 +61,33 @@ set -euo pipefail
 
 # Machine-wide queue for heavy steps, shared by every agent session on this machine
 # (owner's ~/.claude or ~/.codex). Absent on CI and on other machines → runs directly.
+#
+# heavy-guard exits 75 (EX_TEMPFAIL) when it could not get a slot or memory
+# headroom within HEAVY_GUARD_WAIT. That is machine contention — the wrapped
+# command never ran — and must never be reported as a failing check. Every call
+# site lives inside an `if ( … )` subshell whose only channel back is the exit
+# status, so the step would otherwise land in FAILURES indistinguishable from a
+# real red. Record the contended command in a marker file (a file outlives the
+# subshell) and let the SUMMARY call it out as contention.
+HEAVY_CONTENTION_MARKER="${TMPDIR:-/tmp}/b4push-heavy-contention.$$"
+rm -f "$HEAVY_CONTENTION_MARKER"
+trap 'rm -f "$HEAVY_CONTENTION_MARKER"' EXIT
+
 heavy() {
   local g="${HEAVY_GUARD:-}"
   [ -n "$g" ] || for c in "$HOME/.claude/scripts/heavy-guard.sh" "$HOME/.codex/scripts/heavy-guard.sh"; do
     [ -x "$c" ] && { g="$c"; break; }
   done
-  if [ -n "$g" ] && [ -z "${CI:-}" ]; then "$g" -- "$@"; else "$@"; fi
+  if [ -z "$g" ] || [ -n "${CI:-}" ]; then
+    "$@"
+    return
+  fi
+  local rc=0
+  "$g" -- "$@" || rc=$?
+  if [ "$rc" -eq 75 ]; then
+    echo "$*" >>"$HEAVY_CONTENTION_MARKER"
+  fi
+  return "$rc"
 }
 
 START_TIME=$(date +%s)
@@ -426,7 +447,11 @@ fi
 step "Root unit tests (test:unit)"
 # --maxWorkers=4 caps vitest parallelism for reliability under host CPU
 # contention over wall-clock, not speed (issue #2563).
-if (cd "$ROOT_DIR" && heavy pnpm build:workspace && heavy pnpm test:unit --maxWorkers=4); then
+# One `heavy` acquisition covers both commands: with HEAVY_GUARD_SLOTS=1 two
+# calls would release the slot in between, letting another session take it and
+# leaving the tests to re-queue (or time out at 75) after the rebuild already
+# ran. heavy-guard exports HEAVY_GUARD_HELD=1, so nothing nested re-acquires.
+if (cd "$ROOT_DIR" && heavy bash -c 'pnpm build:workspace && pnpm test:unit --maxWorkers=4'); then
   pass "Root unit tests passed"
 else
   fail "Root unit tests"
@@ -461,7 +486,8 @@ fi
 # asymmetry where package tests ran in CI but not in b4push (#1851/#1856).
 # dist/ is already built by step 24 — no extra prep needed.
 step "Package tests + subpath resolution"
-if (cd "$ROOT_DIR" && heavy pnpm test:packages && heavy pnpm --filter @takazudo/zudo-doc test:plugin-resolution); then
+# Single acquisition for both commands — see the note on the unit-test step.
+if (cd "$ROOT_DIR" && heavy bash -c 'pnpm test:packages && pnpm --filter @takazudo/zudo-doc test:plugin-resolution'); then
   pass "Package tests + subpath resolution passed"
 else
   fail "Package tests + subpath resolution"
@@ -605,6 +631,18 @@ echo "  Per-step timing breakdown:"
 for t in "${STEP_TIMINGS[@]}"; do
   echo "   $t"
 done
+
+if [ -s "$HEAVY_CONTENTION_MARKER" ]; then
+  echo ""
+  echo "⚠️  heavy-guard returned 75 (EX_TEMPFAIL) for:"
+  while IFS= read -r contended; do
+    echo "   - $contended"
+  done <"$HEAVY_CONTENTION_MARKER"
+  echo "   No slot / memory headroom within HEAVY_GUARD_WAIT — the command never"
+  echo "   ran. This is machine contention, NOT a failing check: any step listed"
+  echo "   below that maps to one of these is unverified, not red. Re-run b4push"
+  echo "   when the machine is quiet; never bypass the guard to get past it."
+fi
 
 if [ ${#FAILURES[@]} -eq 0 ]; then
   echo "✅ All $TOTAL_STEPS checks passed (or skipped). Safe to push."
