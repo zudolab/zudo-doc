@@ -27,6 +27,17 @@ ensureNestedIslandPropsRefresh();
 const cx = (...classes: Array<string | false | null | undefined>) =>
   classes.filter(Boolean).join(" ");
 
+// Icon visibility deliberately does NOT ride on Tailwind's `.hidden` utility.
+// `.hidden` is emitted inside `@layer utilities`, and a consumer component pack
+// that ships an UNLAYERED media reset — `img, svg, video, … { display: block }`
+// — outranks every layered rule by cascade-layer precedence, no matter the
+// source order. Both icons then computed to `display: block`, stacked, and made
+// the mobile toggle 48px tall (zudolab/zudo-doc#4355). An inline declaration
+// sits above all author rules, layered or not, so the state holds against any
+// consumer stylesheet. It is a plain string so SSR and the initial client
+// render serialise byte-identically for hydration.
+const HIDDEN_ICON_STYLE = "display:none";
+
 // Mobile drawer hosts the SidebarTree directly (rather than receiving it as
 // JSX children) so the tree's data props ride across the SSR → hydrate
 // boundary inside the Island marker's `data-props` attribute. zfb's
@@ -101,10 +112,10 @@ export function SidebarToggle({
     <>
       {/* Hamburger button - visible only on mobile.
           Both icons are always rendered so the SSR output has the same
-          DOM shape as the post-hydration tree. The closed-state icon is
-          hidden via `hidden` when open=true, and vice versa, so Preact's
-          hydration walk sees byte-stable markup and keeps the click
-          handler attached. */}
+          DOM shape as the post-hydration tree. The inactive one is hidden
+          via an inline `display:none` (see HIDDEN_ICON_STYLE above), so
+          Preact's hydration walk sees byte-stable markup and keeps the
+          click handler attached. */}
       <button
         type="button"
         onClick={() => setOpen(!open)}
@@ -115,7 +126,8 @@ export function SidebarToggle({
         {/* X icon — visible only when open */}
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className={cx("h-icon-lg w-icon-lg", !open && "hidden")}
+          className="h-icon-lg w-icon-lg"
+          style={open ? undefined : HIDDEN_ICON_STYLE}
           aria-hidden="true"
           fill="none"
           viewBox="0 0 24 24"
@@ -131,7 +143,8 @@ export function SidebarToggle({
         {/* Hamburger icon — visible only when closed */}
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className={cx("h-icon-lg w-icon-lg", open && "hidden")}
+          className="h-icon-lg w-icon-lg"
+          style={open ? HIDDEN_ICON_STYLE : undefined}
           aria-hidden="true"
           fill="none"
           viewBox="0 0 24 24"

@@ -101,3 +101,29 @@ describe("SidebarToggle — call-site Island marker", () => {
     expect(html).toContain('data-zfb-island="SidebarToggle"');
   });
 });
+
+// zudolab/zudo-doc#4355: the inactive toggle icon used to be hidden with
+// Tailwind's `.hidden` utility, which lives in `@layer utilities`. A consumer
+// component pack shipping an UNLAYERED `img, svg, … { display: block }` reset
+// outranks any layered rule, so both icons rendered and the toggle grew to
+// 48px. The hidden state is now an inline declaration, which no author rule —
+// layered or not — can outrank. These assertions pin that: an icon's hidden
+// state must never come back as a class.
+describe("SidebarToggle — icon hidden state survives consumer cascade layers", () => {
+  const iconTags = (html: string) =>
+    html.match(/<svg[^>]*h-icon-lg[^>]*>/g) ?? [];
+
+  it("hides exactly one of the two icons inline in the SSR (closed) state", () => {
+    const icons = iconTags(render(<SidebarToggle nodes={SAMPLE_NODES} />));
+    expect(icons).toHaveLength(2);
+    // SSR always renders open=false: the X icon is hidden, the hamburger shows.
+    expect(icons[0]).toContain('style="display:none"');
+    expect(icons[1]).not.toContain("display:none");
+  });
+
+  it("never expresses an icon's hidden state as a class", () => {
+    for (const icon of iconTags(render(<SidebarToggle nodes={SAMPLE_NODES} />))) {
+      expect(icon).not.toMatch(/class="[^"]*\bhidden\b/);
+    }
+  });
+});

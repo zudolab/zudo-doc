@@ -1152,19 +1152,43 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // `/docs/getting-started/coverage/`
   // `5b1dcff77cc2e1f58cf531d4299dc702c99e9340c87a47688bc813ce77ceb0b5` →
   // `d821fd3ef9ca8eccd08ec5b1e9777ce8383e4de3ab7a69f9caac1a7feb26fd8c`.
+  //
+  // 2026-09-21 re-baseline (zudolab/zudo-doc#4355): all three pages move,
+  // because the mobile sidebar toggle renders inside the header on every one
+  // of them. One file carries the only markup delta, and it is the entire,
+  // accounted-for cause:
+  //   - `sidebar-toggle-island/index.tsx` hides the inactive toggle icon with
+  //     an inline `style="display:none"` instead of the `hidden` class. Both
+  //     `<svg>` elements move: the X icon loses ` hidden` from its class and
+  //     gains the inline declaration (SSR always renders `open=false`), and
+  //     the hamburger's class attribute is re-serialised without the
+  //     conditional. Tailwind's `.hidden` ships inside `@layer utilities`, so
+  //     an unlayered consumer media reset outranked it and both icons
+  //     rendered; the inline declaration cannot be outranked.
+  // No other file under `packages/zudo-doc/src/` changed in this PR outside
+  // `__tests__/` and the e2e spec, neither of which renders.
+  // `/404.html`
+  // `fb43323cfb68ec845a2881590b824409d837d748d87a9e875bd9b753d061b122` →
+  // `1b133c1331cefebb923c1d4013e0243b9d3b3f6b37db9314838f42738aa029a4`,
+  // `/docs/getting-started/`
+  // `8c028ed49044ec0445c30434f1e2bf86113a2cfefa10f0b3d7172c20b833a79b` →
+  // `a3f7e6e58d3b80a7c5750369963754b12aeba12282d15f7a3935e9cbf462cf21`, and
+  // `/docs/getting-started/coverage/`
+  // `d821fd3ef9ca8eccd08ec5b1e9777ce8383e4de3ab7a69f9caac1a7feb26fd8c` →
+  // `f0cff20357cf2c92bb554590e93d1dfe2b6a6f69a27b1944624a9c57991933de`.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"fb43323cfb68ec845a2881590b824409d837d748d87a9e875bd9b753d061b122"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"1b133c1331cefebb923c1d4013e0243b9d3b3f6b37db9314838f42738aa029a4"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"8c028ed49044ec0445c30434f1e2bf86113a2cfefa10f0b3d7172c20b833a79b"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"a3f7e6e58d3b80a7c5750369963754b12aeba12282d15f7a3935e9cbf462cf21"`);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"d821fd3ef9ca8eccd08ec5b1e9777ce8383e4de3ab7a69f9caac1a7feb26fd8c"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"f0cff20357cf2c92bb554590e93d1dfe2b6a6f69a27b1944624a9c57991933de"`);
   });
 });
 
