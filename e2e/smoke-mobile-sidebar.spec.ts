@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { openMobileDrawer } from "./mobile-drawer-helpers";
 
 /**
  * E2E tests for the mobile sidebar (SidebarToggle React island).
@@ -64,6 +65,27 @@ test.describe("Mobile sidebar", () => {
 
     // Sidebar should close -- hamburger label reverts to "Open sidebar"
     await expect(page.locator('button[aria-label="Open sidebar"]')).toBeVisible();
+  });
+
+  test("pressing Escape closes the sidebar and restores focus to the hamburger", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto(DOCS_PAGE, { waitUntil: "load" });
+
+    // openMobileDrawer() retries the click as a unit -- the island is
+    // Island({ when: "visible" }) and a pre-hydration click is silently
+    // dropped (see e2e/mobile-drawer-helpers.ts).
+    await openMobileDrawer(page);
+
+    // Dismiss via keyboard, not by clicking the toggle -- the backdrop
+    // (z-modal-backdrop 50) covers the hamburger (z-toolbar 20) while the
+    // drawer is open, so a pointer click on it cannot land.
+    await page.keyboard.press("Escape");
+
+    const hamburger = page.locator('button[aria-label="Open sidebar"]');
+    await expect(hamburger).toBeVisible();
+    await expect(hamburger).toBeFocused();
   });
 
   test("body scroll is locked when sidebar is open", async ({ page }) => {
