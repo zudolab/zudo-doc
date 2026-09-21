@@ -146,7 +146,20 @@ export function SidebarToggle({
         ref={hamburgerRef}
         type="button"
         onClick={() => setOpen(!open)}
-        className="lg:hidden shrink-0 px-hsp-sm py-vsp-xs -ml-hsp-sm mr-hsp-sm text-muted hover:text-fg"
+        className={cx(
+          "lg:hidden shrink-0 px-hsp-sm py-vsp-xs -ml-hsp-sm mr-hsp-sm text-muted hover:text-fg",
+          // While open, the button IS the close control (it shows the X), so it
+          // has to sit in the drawer's own tier rather than under the backdrop —
+          // `z-modal-backdrop` (50) otherwise intercepts every pointer event at
+          // the button's own centre and the X is unclickable
+          // (zudolab/zudo-doc#4369). `relative` is required: a bare `z-index`
+          // has no effect on a statically-positioned element.
+          // Conditioning on `open` is load-bearing, not cosmetic: SSR always
+          // renders `open=false`, so the closed-state markup stays
+          // byte-identical (hydration-stable, and the A2 no-stub parity hashes
+          // for this directory do not move).
+          open && "relative z-modal",
+        )}
         aria-label={open ? "Close sidebar" : "Open sidebar"}
         aria-expanded={open}
       >
@@ -192,9 +205,13 @@ export function SidebarToggle({
           mount/unmount across the hydration boundary).
           `z-modal-backdrop` (50) intentionally sits ABOVE the header
           (`z-toolbar`, 20): the open mobile drawer is a modal surface that
-          dims the whole viewport, header included. Closing is via tapping the
-          backdrop (onClick below), so the header hamburger being dimmed under
-          it is fine. */}
+          dims the whole viewport, header included. The toggle button is the
+          one exception — while open it renders the X and advertises itself as
+          the close control, so it is lifted to `z-modal` (60) for exactly as
+          long as the drawer is open (see its className above). Everything else
+          in the header stays dimmed and non-interactive underneath.
+          Backdrop tapping (onClick below) remains a valid dismissal, as does
+          Escape (zudolab/zudo-doc#4366). */}
       <div
         className={cx("fixed inset-0 z-modal-backdrop bg-overlay/30 lg:hidden", !open && "hidden")}
         aria-hidden={!open}
