@@ -50,7 +50,14 @@ async function layerSiteStylesheets(page: import("@playwright/test").Page) {
       document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'),
     );
     for (const link of links) {
-      const css = await (await fetch(link.href)).text();
+      const res = await fetch(link.href);
+      // Without this the error page's HTML would be injected as CSS and the
+      // emulation would silently run against an unstyled page — surfacing as
+      // a confusing height mismatch instead of "the stylesheet did not load".
+      if (!res.ok) {
+        throw new Error(`Stylesheet fetch failed (${res.status}): ${link.href}`);
+      }
+      const css = await res.text();
       const style = document.createElement("style");
       style.textContent = `@layer zd-consumer-utilities{${css}}`;
       link.after(style);
