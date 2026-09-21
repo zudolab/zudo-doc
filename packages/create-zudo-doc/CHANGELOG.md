@@ -8,6 +8,13 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [5.26.4] - 2026-09-22
+
+### Other Changes
+
+- Generated projects now pin `@takazudo/zudo-doc` to `^5.26.4`, so a fresh scaffold picks up this release's two mobile-drawer dismissal fixes: the drawer closes on Escape with focus restored to the toggle, and the toggle's X is clickable while the drawer is open instead of being covered by the backdrop.
+- Generated projects that enable the design token panel now pin `@takazudo/zdtp` to `0.8.2`. That release is dependency housekeeping only — its published tarball differs from `0.8.1` in `package.json` and `CHANGELOG.md` alone, with no shipped code change — so existing projects need no config migration.
+
 ## [5.26.3] - 2026-09-21
 
 ### Other Changes

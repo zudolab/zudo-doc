@@ -60,7 +60,7 @@ export function deriveDocSkillName(projectName: string): string {
  *
  * Bumped in lockstep by scripts/release-create-zudo-doc.sh.
  */
-export const ZUDO_DOC_PIN = "^5.26.3";
+export const ZUDO_DOC_PIN = "^5.26.4";
 
 /**
  * Files in `templates/base/**` that must not be copied by the unconditional
@@ -1078,7 +1078,7 @@ function generatePackageJson(
     // `@takazudo/zdtp/styles.css` (see features/design-token-panel.ts). Both are
     // no-ops with the feature off, so an OFF project must not carry the dep
     // (#4009 / #4018 — it was unconditional until then, see the `deps` block).
-    deps["@takazudo/zdtp"] = "0.8.1";
+    deps["@takazudo/zdtp"] = "0.8.2";
   }
 
   if (
@@ -1104,7 +1104,7 @@ function generatePackageJson(
     // `/exclude` at module scope from the always-bundled chrome graph; #3110
     // moved compileExclude into @takazudo/zudo-doc, so projects with both
     // docHistory and assetViewer off no longer need the package at all.
-    deps["@takazudo/zudo-doc-history-server"] = "^5.26.3";
+    deps["@takazudo/zudo-doc-history-server"] = "^5.26.4";
     // tsx is no longer needed here: the relocated package plugin imports the
     // runner directly (no `tsx -e` spawn) since the package ships compiled
     // dist/ — package-first migration #2321 (#2337).
