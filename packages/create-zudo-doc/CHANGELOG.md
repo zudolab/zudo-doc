@@ -6,9 +6,14 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [5.26.3] - 2026-09-21
+
 ### Other Changes
 
-- Generated projects now pin `@takazudo/zfb`, `@takazudo/zfb-runtime`, and `@takazudo/zfb-md-wasm` to `2.20.1`. The 2.20.1 release is lockstep metadata only — no upstream package reports a package-specific change, and the published-tarball delta is limited to each package's own version field plus its platform-binary pins. Existing projects need no config migration.
+- Generated projects now pin `@takazudo/zfb`, `@takazudo/zfb-runtime`, and `@takazudo/zfb-md-wasm` to `2.20.1`. The 2.20.1 release is lockstep metadata only — no upstream package reports a package-specific change, and the published-tarball delta is limited to each package's own version field plus its platform-binary pins. Existing projects need no config migration. (07d700356)
+- Generated projects that enable the design token panel now pin `@takazudo/zdtp` to `0.8.1`. The 0.8.1 release makes token-manifest `modes` rows independently editable per side (committing the pair as `light-dark()`), keeps `readonly` rows display-only in the Palette Check view, and prefers a stored override equal to `item.default` over the manifest pair. The `@takazudo/zudo-doc` peer range already admitted it, so existing projects need no config migration.
 
 ## [5.26.2] - 2026-09-20
 

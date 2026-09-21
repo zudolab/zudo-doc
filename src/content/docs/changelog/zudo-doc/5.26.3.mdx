@@ -1,0 +1,15 @@
+---
+title: 5.26.3
+description: Release notes for 5.26.3.
+sidebar_position: 1126
+---
+
+Released: 2026-09-21
+
+### Bug Fixes
+
+- The mobile sidebar toggle no longer renders both of its icons at once in a project whose global CSS contains an unlayered media reset such as `img, svg, video, canvas, audio, iframe, embed, object { display: block }`. The inactive icon used to be hidden with Tailwind's `.hidden` utility, which ships inside `@layer utilities` — an unlayered author rule outranks every layered rule by cascade-layer precedence regardless of source order, so both icons computed to `display: block`, stacked vertically, and made the toggle a 48px control showing the X and the hamburger together. The inactive icon is now hidden with an inline declaration, which no consumer stylesheet can outrank. (30d6625e8)
+
+### Other Changes
+
+- The `@takazudo/zfb`, `@takazudo/zfb-runtime`, and `@takazudo/zfb-md-wasm` peer dependency floors are now `^2.20.1`. The 2.20.1 release is lockstep metadata only — no upstream package reports a package-specific change, and the published-tarball delta is limited to each package's own version field plus its platform-binary pins. No zudo-doc config migration is required. (07d700356)

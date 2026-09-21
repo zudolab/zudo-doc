@@ -25,8 +25,8 @@ importers:
   .:
     dependencies:
       '@takazudo/zdtp':
-        specifier: 0.8.0
-        version: 0.8.0(preact@10.29.2)
+        specifier: 0.8.1
+        version: 0.8.1(preact@10.29.2)
       '@takazudo/zfb':
         specifier: 2.20.1
         version: 2.20.1(react@19.2.8)
@@ -1122,6 +1122,13 @@ packages:
 
   '@takazudo/zdtp@0.8.0':
     resolution: {integrity: sha512-TbqkxoKCjwqFb1Jk2OURpUqphCm65mniRlFiCcCsrwqjpMBZS1/21wpnZ3SNdzuFQdt826jIhv/cGYlh309wiw==}
+    engines: {node: '>=22.0.0', pnpm: '>=10.0.0'}
+    hasBin: true
+    peerDependencies:
+      preact: 10.29.2
+
+  '@takazudo/zdtp@0.8.1':
+    resolution: {integrity: sha512-9qTGG93rMhVwUpghC2fY/FGhRtZmCuFbyKjHILq/iLKhsl69+Ew3m4GLGJWMbp/NooyxYXgI2VUKFemdhSi7Yw==}
     engines: {node: '>=22.0.0', pnpm: '>=10.0.0'}
     hasBin: true
     peerDependencies:
@@ -3116,6 +3123,13 @@ snapshots:
       '@takazudo/mdx-formatter-win32-x64-msvc': 1.3.0-next.4
 
   '@takazudo/zdtp@0.8.0(preact@10.29.2)':
+    dependencies:
+      '@tailwindcss/browser': 4.3.2
+      culori: 4.0.2
+      preact: 10.29.2
+      tailwind-merge: 3.6.0
+
+  '@takazudo/zdtp@0.8.1(preact@10.29.2)':
     dependencies:
       '@tailwindcss/browser': 4.3.2
       culori: 4.0.2
