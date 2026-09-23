@@ -8,6 +8,12 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [5.26.5] - 2026-09-23
+
+### Bug Fixes
+
+- Fixed package-owned route injection in nested pnpm workspace consumers. Published route sources are staged under the project root so the build shadow can resolve the generated 404, robots, and docs routes (848264b9c).
+
 ## [5.26.4] - 2026-09-22
 
 ### Bug Fixes
