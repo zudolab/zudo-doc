@@ -144,9 +144,7 @@ test("Color choices restore independently by mode while every global tab survive
 }) => {
   // Seed only the host's documented theme preference; the context has fresh
   // panel storage. The fixture's custom dark scheme retains Default Dark bg.
-  await page.addInitScript(() =>
-    localStorage.setItem(THEME_STORAGE_KEY, "light"),
-  );
+  await page.addInitScript((key) => localStorage.setItem(key, "light"), THEME_STORAGE_KEY);
   await page.goto("/", { waitUntil: "load" });
   await waitForThemePreference(page, "light");
   await page.locator("#design-token-trigger").click();

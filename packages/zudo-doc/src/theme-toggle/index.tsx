@@ -103,12 +103,19 @@ export function ThemeToggle({
 
   useEffect(() => {
     if (!open) return;
+    // A portaled menu still sits below the third-party token panel's very high
+    // stacking tier. The native popover top layer keeps it actionable while
+    // that panel is open, without competing with the host's z-index scale.
+    const menu = menuRef.current;
+    menu?.showPopover?.();
     const position = () => {
       const rect = triggerRef.current?.getBoundingClientRect();
       if (!rect) return;
       const gap = 8;
       const width = Math.min(260, window.innerWidth - gap * 2);
-      const desiredHeight = 242;
+      // Measure after the popover enters the top layer. A fixed guess clips
+      // the System helper once the option rows meet the 44px touch target.
+      const desiredHeight = menu?.scrollHeight ?? 280;
       const roomBelow = window.innerHeight - rect.bottom - gap * 2;
       const roomAbove = rect.top - gap * 2;
       const above = roomBelow < desiredHeight && roomAbove > roomBelow;
@@ -133,6 +140,7 @@ export function ThemeToggle({
     window.addEventListener("scroll", position, true);
     document.addEventListener(AFTER_NAVIGATE_EVENT, onNavigate);
     return () => {
+      if (menu?.hidePopover && menu.matches(":popover-open")) menu.hidePopover();
       document.removeEventListener("pointerdown", onPointerDown);
       window.removeEventListener("resize", position);
       window.removeEventListener("scroll", position, true);
@@ -202,9 +210,10 @@ export function ThemeToggle({
         className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center text-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
       ><PreferenceIcon preference={preference} /></button>
       {open && createPortal(<div ref={menuRef} id={menuId.current} role="menu" aria-label={labels.appearance}
+        popover={typeof HTMLElement !== "undefined" && "showPopover" in HTMLElement.prototype ? "manual" : undefined}
         onKeyDown={onMenuKeyDown}
         className="fixed z-tooltip overflow-y-auto rounded-lg border border-muted bg-surface p-hsp-xs text-fg shadow-lg"
-        style={placement ? { left: placement.left, top: placement.top, width: placement.width, maxHeight: placement.maxHeight } : { visibility: "hidden" }}>
+        style={placement ? { left: placement.left, top: placement.top, right: "auto", bottom: "auto", margin: 0, width: placement.width, maxHeight: placement.maxHeight } : { visibility: "hidden", left: 0, top: 0, right: "auto", bottom: "auto", margin: 0, width: Math.min(260, window.innerWidth - 16) }}>
         <div className="px-hsp-sm py-vsp-xs text-small font-semibold" aria-hidden="true">{labels.appearance}</div>
         {preferences.map((option, index) => (
           <button key={option} ref={(node) => { itemRefs.current[index] = node; }} type="button"
