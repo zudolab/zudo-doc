@@ -73,7 +73,7 @@ export function SearchWidget(props: SearchWidgetProps): JSX.Element {
         <button
           data-open-search
           type="button"
-          class="flex items-center justify-center text-muted transition-colors hover:text-fg"
+          class="flex h-[44px] w-[44px] shrink-0 items-center justify-center text-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
           aria-label={searchLabel}
         >
           <svg
