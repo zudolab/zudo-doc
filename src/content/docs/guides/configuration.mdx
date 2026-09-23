@@ -386,10 +386,14 @@ Default: `{ defaultMode: "dark", lightScheme: "Default Light", darkScheme: "Defa
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `defaultMode` | `"light" \| "dark"` | Initial mode before any user preference |
+| `defaultMode` | `"light" \| "dark"` | Light/dark fallback when system following is disabled and no choice is saved |
 | `lightScheme` | `string` | Scheme used in light mode |
 | `darkScheme` | `string` | Scheme used in dark mode |
-| `respectPrefersColorScheme` | `boolean` | Match the OS-level light/dark preference |
+| `respectPrefersColorScheme` | `boolean` | Use System as the first-visit choice when no preference is saved |
+
+With the default `respectPrefersColorScheme: true`, a first visit with no saved choice starts in **System** and follows the device's light/dark preference. The compact header appearance menu offers **Light**, **Dark**, and **System**; its icon shows the selected preference (sun for Light, moon for Dark, monitor for System), not the next action. The preference is saved in `localStorage` under `zudo-doc-theme` and remains selected after reload.
+
+`defaultMode` remains a two-value light/dark fallback. If you set `respectPrefersColorScheme: false`, a first visit with no saved choice uses `defaultMode`; a visitor can still explicitly select System, which continues to follow the device. `colorMode: false` keeps a single fixed scheme and has no appearance menu.
 
 ```ts
 colorMode: false, // single fixed scheme (colorScheme only)
@@ -399,7 +403,7 @@ See the [Color reference](../reference/color.mdx) for the ramp-native model and 
 
 ## Theme packs
 
-Theme packs are installable design bundles layered **on top of** the color-scheme system above — every pack defines both its light and dark values, so the mode toggle keeps working on any pack. See the [Theme Packs reference](../reference/theme-packs.mdx) for the switcher UI, the theme CLI, and pack authoring.
+Theme packs are installable design bundles layered **on top of** the color-scheme system above — every pack defines both its light and dark values, so the appearance menu keeps working on any pack. See the [Theme Packs reference](../reference/theme-packs.mdx) for the switcher UI, the theme CLI, and pack authoring.
 
 ### themePack
 
@@ -948,7 +952,7 @@ Default: `[{ type: "component", component: "theme-toggle" }]`
 
 | `type` | Extra fields | Description |
 |--------|--------------|-------------|
-| `"component"` | `component` — `"theme-toggle"`, `"language-switcher"`, `"version-switcher"`, `"github-link"`, `"search"` | Built-in header component |
+| `"component"` | `component` — `"theme-toggle"` (the Light / Dark / System appearance menu), `"language-switcher"`, `"version-switcher"`, `"github-link"`, `"search"` | Built-in header component |
 | `"trigger"` | `trigger` — `"design-token-panel"`, `"ai-chat"` | Opens a panel (requires the feature) |
 | `"link"` | `href`, `label?`, `ariaLabel?`, `icon?` | Custom link |
 | `"html"` | `html` | Raw HTML |

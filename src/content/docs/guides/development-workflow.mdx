@@ -77,7 +77,7 @@ By default, every `.tsx` component renders to HTML at build time and ships zero 
 
 When a component needs interactivity — local state, event handlers, animations — wrap it with zfb's `Island()` helper at its render site. Server-rendered output is reused; only the interactive part hydrates.
 
-The standard chrome islands — including the table of contents, mobile TOC, sidebar tree and toggles, theme toggle, and doc history — are implemented by `@takazudo/zudo-doc`. A fresh scaffold consumes those package components; it does not contain copies of their source files.
+The standard chrome islands — including the table of contents, mobile TOC, sidebar tree and toggles, appearance menu, and doc history — are implemented by `@takazudo/zudo-doc`. A fresh scaffold consumes those package components; it does not contain copies of their source files.
 
 This showcase retains a couple of project-specific integrations: `client-router-bootstrap` and the `preset-generator` island. The Design Token Panel bootstrap is package-owned and reaches the island scanner through the static package route → chrome → derive import chain. These are showcase implementation details, not a starter inventory for new projects.
 

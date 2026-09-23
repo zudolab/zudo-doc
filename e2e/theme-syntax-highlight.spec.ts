@@ -1,11 +1,14 @@
 import type { Page } from "@playwright/test";
 import { test, expect } from "./fixtures";
+import {
+  THEME_STORAGE_KEY,
+  selectThemePreference,
+  waitForThemePreference,
+} from "./theme-helpers";
 
 const PAGE = "/docs/getting-started/";
-const THEME_STORAGE_KEY = "zudo-doc-theme";
 const PRE_SELECTOR = "main pre.hi-root";
 const TOKEN_SELECTOR = `${PRE_SELECTOR} span.hi-kw`;
-const DESKTOP_TOGGLE_SELECTOR = 'header .ml-auto button[aria-label*="Switch to"]';
 const PANEL_TRIGGER = "#design-token-trigger";
 const PANEL_SHELL = ".tokenpanel-shell";
 
@@ -177,9 +180,7 @@ test.describe("Syntax highlighting semantic token bridge", () => {
     const token = page.locator(TOKEN_SELECTOR).first();
     await expect(pre).toHaveAttribute("data-enhanced", "true");
     await expect(token).toBeVisible();
-    await expect(
-      page.locator(DESKTOP_TOGGLE_SELECTOR),
-    ).toHaveAttribute("aria-label", "Switch to dark mode");
+    await waitForThemePreference(page, "light");
 
     const before = await startHighlightedDomGuard(page);
     expect(before.theme).toBe("light");
@@ -189,7 +190,7 @@ test.describe("Syntax highlighting semantic token bridge", () => {
     expect(before.preInlineStyle).toBeNull();
     expect(before.tokenInlineStyle).toBeNull();
 
-    await page.locator(DESKTOP_TOGGLE_SELECTOR).click();
+    await selectThemePreference(page, "dark");
     await waitForThemeSyntaxBridge(page, "dark");
 
     const namedVariation = await readHighlightedDomGuard(page, false);
@@ -295,7 +296,7 @@ test.describe("Syntax highlighting semantic token bridge", () => {
     expect(edited.sameTokenClass).toBe(true);
     expect(edited.mutationCount).toBe(0);
 
-    await page.locator(DESKTOP_TOGGLE_SELECTOR).click();
+    await selectThemePreference(page, "light");
     await waitForThemeSyntaxBridge(page, "light");
 
     const lightAfterEdit = await readHighlightedDomGuard(page, true);

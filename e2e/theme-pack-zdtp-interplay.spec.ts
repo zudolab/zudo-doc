@@ -1,6 +1,11 @@
 import type { Locator, Page } from "@playwright/test";
 import { test, expect } from "./fixtures";
 import {
+  THEME_STORAGE_KEY,
+  selectThemePreference,
+  waitForThemePreference,
+} from "./theme-helpers";
+import {
   closeFlyout,
   nextPackButton,
   openFlyout,
@@ -15,8 +20,8 @@ import {
  *
  *   (a) NOT be visible after switching to pack B,
  *   (b) be restored VERBATIM after switching back to A, and
- *   (c) survive light/dark toggles within a pack (and the toggle itself must
- *       keep working in both directions on every pack).
+ *   (c) survive Light/Dark selections within a pack (and the appearance menu
+ *       must keep working in both directions on every pack).
  *
  * "The panel stays open across a pack switch" is NOT sufficient proof of any
  * of these — every assertion below reads the actual applied override value
@@ -275,13 +280,11 @@ test.describe("zdtp per-pack namespaced tweaks (ADR theme-packs.md Decision 4)",
     await expect(accentRefSelect(page)).toHaveValue(accentASelectValue);
   });
 
-  test("(c) an override survives light/dark toggles within a pack, and the toggle itself keeps working in both directions on every pack", async ({
+  test("(c) an override survives Light/Dark selections within a pack, and the appearance menu keeps working in both directions on every pack", async ({
     page,
   }) => {
-    const DESKTOP_TOGGLE_SELECTOR = 'header .ml-auto button[aria-label*="Switch to"]';
-
-    async function toggleAndWaitForMode(target: "light" | "dark") {
-      await page.locator(DESKTOP_TOGGLE_SELECTOR).click();
+    async function selectAppearanceAndWaitForMode(target: "light" | "dark") {
+      await selectThemePreference(page, target);
       await expect(page.locator("html")).toHaveAttribute("data-theme", target, { timeout: 5000 });
       await expect
         .poll(
@@ -289,11 +292,12 @@ test.describe("zdtp per-pack namespaced tweaks (ADR theme-packs.md Decision 4)",
           { timeout: 5000 },
         )
         .toBe(target);
-      // `data-theme`/`style.colorScheme` are set SYNCHRONOUSLY by the toggle's
-      // own click handler — the panel bootstrap's `color-scheme-changed`
-      // listener reacts afterward and coalesces its destroy->reconfigure onto
+      // `data-theme`/`style.colorScheme` are set SYNCHRONOUSLY by the
+      // preference selection handler. The panel bootstrap's
+      // `color-scheme-changed` listener reacts afterward and coalesces its
+      // destroy->reconfigure onto
       // a separate `setTimeout(fn, 0)`. Without this flush, the very next line
-      // could read the CSS var (or fire the reverse toggle, coalescing this
+      // could read the CSS var (or make the reverse selection, coalescing this
       // pending reconfigure away entirely) before that mode-scoped rebuild —
       // the thing this test claims to exercise — ever ran.
       await flushPendingReconfigure(page);
@@ -301,14 +305,10 @@ test.describe("zdtp per-pack namespaced tweaks (ADR theme-packs.md Decision 4)",
 
     await page.addInitScript(
       ({ key, value }) => localStorage.setItem(key, value),
-      { key: "zudo-doc-theme", value: "light" },
+      { key: THEME_STORAGE_KEY, value: "light" },
     );
     await page.goto(HOME, { waitUntil: "load" });
-    await expect(page.locator(DESKTOP_TOGGLE_SELECTOR)).toHaveAttribute(
-      "aria-label",
-      "Switch to dark mode",
-      { timeout: 5000 },
-    );
+    await waitForThemePreference(page, "light");
     await waitForActivePack(page, "default");
 
     await openPanel(page);
@@ -318,14 +318,14 @@ test.describe("zdtp per-pack namespaced tweaks (ADR theme-packs.md Decision 4)",
     // dark -> the override must still be applied, and data-theme must flip
     // (the OLD light/dark vocabulary stays fully independent of the pack
     // layer — ADR "Naming rule (hard)").
-    await toggleAndWaitForMode("dark");
+    await selectAppearanceAndWaitForMode("dark");
     expect(await readCssVar(page, SPACING_CSS_VAR)).toBe(SPACING_OVERRIDE_VALUE);
 
     // light -> same, the other direction.
-    await toggleAndWaitForMode("light");
+    await selectAppearanceAndWaitForMode("light");
     expect(await readCssVar(page, SPACING_CSS_VAR)).toBe(SPACING_OVERRIDE_VALUE);
 
-    // The toggle must keep working on a NON-default pack too, with its own
+    // The appearance menu must keep working on a NON-default pack too, with its own
     // fresh override surviving the same way.
     await closePanel(page);
     await switchPackViaFlyout(page, "next", "foundry");
@@ -342,9 +342,9 @@ test.describe("zdtp per-pack namespaced tweaks (ADR theme-packs.md Decision 4)",
     await setSpacingOverride(page, "5");
     expect(await readCssVar(page, SPACING_CSS_VAR)).toBe("5rem");
 
-    await toggleAndWaitForMode("dark");
+    await selectAppearanceAndWaitForMode("dark");
     expect(await readCssVar(page, SPACING_CSS_VAR)).toBe("5rem");
-    await toggleAndWaitForMode("light");
+    await selectAppearanceAndWaitForMode("light");
     expect(await readCssVar(page, SPACING_CSS_VAR)).toBe("5rem");
   });
 });

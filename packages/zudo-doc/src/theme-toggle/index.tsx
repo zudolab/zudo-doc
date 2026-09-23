@@ -199,7 +199,7 @@ export function ThemeToggle({
             event.preventDefault(); setPlacement(null); ensureMenuId(); setActiveIndex(event.key === "ArrowDown" ? 0 : 2); setOpen(true);
           } else if (event.key === "Escape" && open) { event.preventDefault(); close(true); }
         }}
-        className="inline-flex min-h-11 min-w-11 items-center justify-center text-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
+        className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center text-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
       ><PreferenceIcon preference={preference} /></button>
       {open && createPortal(<div ref={menuRef} id={menuId.current} role="menu" aria-label={labels.appearance}
         onKeyDown={onMenuKeyDown}
@@ -210,7 +210,8 @@ export function ThemeToggle({
           <button key={option} ref={(node) => { itemRefs.current[index] = node; }} type="button"
             role="menuitemradio" aria-checked={preference === option}
             onFocus={() => setActiveIndex(index)} onClick={() => select(option)}
-            className="flex min-h-11 w-full items-center gap-hsp-sm rounded px-hsp-sm text-left text-small hover:bg-accent/10 focus-visible:bg-accent/10 focus-visible:outline-2 focus-visible:outline-accent">
+            className={`flex min-h-[44px] w-full items-center gap-hsp-sm rounded px-hsp-sm text-left text-small ${preference === option ? "bg-accent/10" : ""} hover:bg-accent/10 focus-visible:bg-accent/10 focus-visible:outline-2 focus-visible:outline-accent`}
+          >
             <PreferenceIcon preference={option} />
             <span className="flex-1">{labels[option]}</span>
             <span aria-hidden="true" className="text-accent">{preference === option ? "✓" : ""}</span>

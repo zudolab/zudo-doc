@@ -6,7 +6,7 @@ tags:
   - customization
 ---
 
-ヘッダーの右側 — 検索、テーマ切替、言語スイッチャー、バージョンスイッチャー、GitHub リンク、Design Token / AI Chat トリガー — は `headerRightItems` という 1 つの配列フィールドからレンダリングされます。各エントリは discriminated union で、配列の順番どおりに描画されます。
+ヘッダーの右側 — 検索、外観メニュー、言語スイッチャー、バージョンスイッチャー、GitHub リンク、Design Token / AI Chat トリガー — は `headerRightItems` という 1 つの配列フィールドからレンダリングされます。各エントリは discriminated union で、配列の順番どおりに描画されます。
 
 <Note>
 
@@ -145,7 +145,7 @@ headerRightItems: [
 
 登録済み island の props が現在のページではなくブラウザーセッションに属する場合は、遷移前から存在する island 自体か、persist されたヘッダー内の祖先要素に `data-zd-props-preserve` を付けます。オプトアウトは遷移前から存在する DOM を基準に判定され、対象 island のシリアライズ済み props は置き換えられず、remount 対象にもなりません。persist されたヘッダー自体に属性を付けると配下の全 island がオプトアウトされるため、遷移先ページの props を受け取るべき island には付けないでください。
 
-## テーマ切替のカスタマイズ
+## 外観メニューのカスタマイズ
 
 組み込みの `theme-toggle` コンポーネントでたいていのサイトは事足ります。それでも、トグルを独自の場所に配置したい、自前の island ラッパーに組み込みたい、あるいは `@takazudo/zudo-doc/theme` バレル(React 解決の落とし穴があります — 後述)を避けたいといった理由で、プロジェクト内に **自前の** `ThemeToggle` を持ち続ける場合があります。いずれの場合も、ローカルにコンポーネントを手でコピーするのではなく、**専用の `@takazudo/zudo-doc/theme-toggle` サブパスから `ThemeToggle` をインポート**してください。
 
@@ -153,7 +153,7 @@ headerRightItems: [
 import { ThemeToggle } from "@takazudo/zudo-doc/theme-toggle";
 ```
 
-エクスポートされる `ThemeToggle` は、自前の `<button>` と組み込みの太陽/月アイコンを描画し、受け取るプロップは `defaultMode`(`"light"` または `"dark"`)の 1 つだけです。好きな場所に配置してその周りに UI を組み合わせることはできますが、ボタンのマークアップとアイコンは固定です — インポートはパッケージのトグルを再利用する(そして後述の衝突を避ける)ためのものであって、見た目を変えるためのものではありません。本当に異なるトグルのマークアップやアイコンが必要な場合は、自前のコンポーネントを作り、パッケージの island マーカーを主張しないように `ThemeToggle` **以外の**名前を付けてください。
+エクスポートされる `ThemeToggle` は、コンパクトな `<button>` と Light / Dark / System のメニューを描画します。太陽、月、モニターのアイコンは選択中の設定を表します。System が選択されている場合、デバイス設定でページの実効ライト/ダーク表示が変わっても、モニターアイコンのままです。`defaultMode` は引き続きライト/ダークのフォールバックで、`respectPrefersColorScheme` は初回訪問時に System を選ぶかどうかを制御します。メニューとアクセシビリティ用の文字列は `labels` プロップでローカライズできます。好きな場所に配置してその周りに UI を組み合わせることはできますが、ボタンのマークアップとアイコンは固定です — インポートはパッケージの外観メニューを再利用する(そして後述の衝突を避ける)ためのものであって、見た目を変更するためのものではありません。異なるメニューのマークアップやアイコンが必要な場合は、自前のコンポーネントを作り、パッケージの island マーカーを主張しないように `ThemeToggle` **以外の**名前を付けてください。
 
 ### なぜパッケージの island をインポートするのか
 
@@ -175,7 +175,7 @@ keeping <consumer>/src/components/theme-toggle.tsx and dropping
 
 <Note title="スキーム変更時に tweak 状態はクリアされない">
 
-パッケージの `applyColorScheme`(`theme-toggle/color-scheme-sync.ts` 内)は、カラースキームの変更時に Design Token Panel の状態を意図的に **クリアしません** — ストレージのライフサイクルは `@takazudo/zdtp` が管理します。Palette・Spacing・Font・Size の編集はライト/ダークの切り替えをまたいでそのまま保持され、Color タブの ref/literal のデフォルトは切り替え先のモードに合わせて設定されます。保存された Color のオーバーライドはスキームとモードごとに管理されます。ライトで編集したマッピングがダークのデフォルトや保存済みマッピングを上書きすることはなく、各モードに戻るとそのモードで保存した設定が復元されます。パッケージ標準のビルダーは、`panelSettings.colorMode` に `Default Light` と `Default Dark` をそれぞれ別の識別名として指定しています。詳しいセマンティクスは[モードスコープの編集モデル](../reference/design-token-panel.mdx#タブ構成-color-モードスコープの編集モデル)を参照してください。
+パッケージの `applyColorScheme`(`theme-toggle/color-scheme-sync.ts` 内)は、実効カラースキームの変更時に Design Token Panel の状態を意図的に **クリアしません** — ストレージのライフサイクルは `@takazudo/zdtp` が管理します。デバイス設定が現在の外観と一致しているときに System を選んでも、保存される設定だけが変わり、パネルは再構築されません。その後デバイス設定が変わると、アクティブなモードが更新されます。Palette・Spacing・Font・Size の編集は外観の変更をまたいでそのまま保持され、Color タブの ref/literal のデフォルトはアクティブなモードに合わせて設定されます。保存された Color のオーバーライドはスキームとモードごとに管理されます。ライトで編集したマッピングがダークのデフォルトや保存済みマッピングを上書きすることはなく、各モードに戻るとそのモードで保存した設定が復元されます。パッケージ標準のビルダーは、`panelSettings.colorMode` に `Default Light` と `Default Dark` をそれぞれ別の識別名として指定しています。詳しいセマンティクスは[モードスコープの編集モデル](../reference/design-token-panel.mdx#タブ構成-color-モードスコープの編集モデル)を参照してください。
 
 </Note>
 

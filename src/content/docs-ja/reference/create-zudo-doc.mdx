@@ -111,6 +111,8 @@ zudo-doc が同梱するカラースキームは `Default Light` と `Default Da
 | `--default-mode <mode>` | `light` または `dark`（light-dark モード） | `dark` |
 | `--[no-]respect-system-preference` | OS のカラースキーム設定を尊重 | `true` |
 
+デフォルトで有効な `--respect-system-preference` では、保存済みの選択がない初回訪問時に System が選ばれ、デバイス設定に従います。System に従わない場合も、`defaultMode` はライト/ダークのフォールバックとして維持されます。選択の保存方法と外観メニューについては [Color リファレンス](./color.mdx) を参照してください。
+
 ### テーマパック
 
 | フラグ | 説明 | デフォルト |

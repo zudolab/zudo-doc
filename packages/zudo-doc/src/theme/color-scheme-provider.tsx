@@ -1,7 +1,7 @@
 // Layout-level JSX port of src/components/color-scheme-provider.
 //
 // Renders the palette CSS custom properties on `:root` and the bootstrap
-// inline script that applies the persisted theme (light/dark) before the
+// inline script that applies the persisted preference (light/dark/system) before the
 // page paints. The component is intentionally server-rendered with no
 // hydration: it just emits a <style> + <script> pair the engine streams
 // into the document head. The Astro version used `set:text` and
@@ -55,7 +55,7 @@ export interface ColorSchemeProviderProps {
   children?: ComponentChildren;
 }
 
-/** Bootstrap script for the light/dark mode (settings.colorMode set). */
+/** Bootstrap script for the light/dark/system preference (settings.colorMode set). */
 function buildColorModeBootstrap(
   defaultMode: "light" | "dark",
   respectPrefersColorScheme: boolean,

@@ -6,7 +6,7 @@ tags:
   - customization
 ---
 
-The right side of the header — search, theme toggle, language switcher, version switcher, GitHub link, and the Design Token / AI Chat triggers — is rendered from a single array: the `headerRightItems` field. Each entry is a discriminated-union item rendered in order.
+The right side of the header — search, the appearance menu, language switcher, version switcher, GitHub link, and the Design Token / AI Chat triggers — is rendered from a single array: the `headerRightItems` field. Each entry is a discriminated-union item rendered in order.
 
 <Note>
 
@@ -145,7 +145,7 @@ Project-owned component names are resolved through `chromeBindings.headerRightCo
 
 For a registered island whose props belong to the browser session rather than the current page, add `data-zd-props-preserve` to the live island or an ancestor inside the persisted header. The live DOM governs this opt-out: navigation neither replaces that island's serialized props nor marks it for remount. Putting the attribute on the persisted header opts out every nested island, so leave it off page-derived islands that should receive the incoming page's props.
 
-## Customizing the theme toggle
+## Customizing the appearance menu
 
 The built-in `theme-toggle` component is enough for most sites. Some consumers still keep their **own** `ThemeToggle` in their project — to place it in a custom spot, compose it into their own island wrapper, or because they were avoiding the `@takazudo/zudo-doc/theme` barrel (which has a React-resolution hazard — see below). In all of these cases, **import `ThemeToggle` from the dedicated `@takazudo/zudo-doc/theme-toggle` subpath** instead of hand-copying a local component.
 
@@ -153,7 +153,7 @@ The built-in `theme-toggle` component is enough for most sites. Some consumers s
 import { ThemeToggle } from "@takazudo/zudo-doc/theme-toggle";
 ```
 
-The exported `ThemeToggle` renders its own `<button>` with built-in sun/moon icons and accepts a single prop, `defaultMode` (`"light"` or `"dark"`). You can place it anywhere and compose UI around it, but its button markup and icons are fixed — importing it is about reusing the package's toggle (and avoiding the collision below), not restyling it. If you need genuinely different toggle markup or icons, build your own component and give it a name **other than** `ThemeToggle`, so it doesn't claim the package's island marker.
+The exported `ThemeToggle` renders its own compact `<button>` and a Light / Dark / System menu. Its sun, moon, or monitor icon shows the selected preference; when System is selected, it remains a monitor even as the device changes the page's resolved light/dark appearance. `defaultMode` remains a light/dark fallback, and `respectPrefersColorScheme` controls whether System is the first-visit choice. Use its `labels` prop to provide localized menu and accessibility text. You can place it anywhere and compose UI around it, but its button markup and icons are fixed — importing it reuses the package appearance menu (and avoids the collision below), rather than restyling it. If you need different menu markup or icons, build your own component and give it a name **other than** `ThemeToggle`, so it doesn't claim the package's island marker.
 
 ### Why import the package island
 
@@ -175,7 +175,7 @@ Pull the toggle from the dedicated `@takazudo/zudo-doc/theme-toggle` subpath spe
 
 <Note title="Tweak-state is not cleared on scheme change">
 
-The package's `applyColorScheme` (in `theme-toggle/color-scheme-sync.ts`) deliberately does **not** clear design-token panel state when the color scheme changes — `@takazudo/zdtp` owns its storage lifecycle. Palette, Spacing, Font, and Size tweaks survive a light/dark toggle untouched, and the Color tab's ref/literal defaults re-seed to the active mode. Saved Color overrides are scheme- and mode-scoped: a mapping edited in light does not replace dark's default or saved mapping, and each mode restores its own saved choice when you return to it. The package-default builder declares separate `Default Light` and `Default Dark` identities in `panelSettings.colorMode`. See [Mode-scoped editing model](../reference/design-token-panel.mdx#the-tab-strip-color-mode-scoped-editing-model) for the full semantics.
+The package's `applyColorScheme` (in `theme-toggle/color-scheme-sync.ts`) deliberately does **not** clear design-token panel state when the resolved color scheme changes — `@takazudo/zdtp` owns its storage lifecycle. Selecting System while the device already matches the current appearance changes the saved preference without rebuilding the panel; a later device appearance change updates the active mode. Palette, Spacing, Font, and Size tweaks survive appearance changes untouched, and the Color tab's ref/literal defaults re-seed to the active mode. Saved Color overrides are scheme- and mode-scoped: a mapping edited in light does not replace dark's default or saved mapping, and each mode restores its own saved choice when you return to it. The package-default builder declares separate `Default Light` and `Default Dark` identities in `panelSettings.colorMode`. See [Mode-scoped editing model](../reference/design-token-panel.mdx#the-tab-strip-color-mode-scoped-editing-model) for the full semantics.
 
 </Note>
 

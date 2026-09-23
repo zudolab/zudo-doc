@@ -2,6 +2,11 @@ import type { Page } from "@playwright/test";
 import { test, expect } from "./fixtures";
 import { spaClick } from "./nav-helpers";
 import {
+  THEME_STORAGE_KEY,
+  selectThemePreference,
+  waitForThemePreference,
+} from "./theme-helpers";
+import {
   THEME_PACK_LINK_SELECTOR,
   THEME_PACK_LINK_LOADING_SELECTOR,
   browseAllButton,
@@ -45,8 +50,6 @@ import {
  */
 
 const HOME = "/";
-const THEME_STORAGE_KEY = "zudo-doc-theme";
-const DESKTOP_TOGGLE_SELECTOR = 'header .ml-auto button[aria-label*="Switch to"]';
 
 /**
  * Mirrors the `theme` fixture's pinned `themePacks` order (this fixture's own
@@ -97,17 +100,12 @@ async function preseedTheme(page: Page, mode: "light" | "dark") {
   );
 }
 
-async function waitForToggleHydrated(page: Page, activeMode: "light" | "dark") {
-  const other = activeMode === "light" ? "dark" : "light";
-  await expect(page.locator(DESKTOP_TOGGLE_SELECTOR)).toHaveAttribute(
-    "aria-label",
-    `Switch to ${other} mode`,
-    { timeout: 5000 },
-  );
+async function waitForAppearanceHydrated(page: Page, preference: "light" | "dark") {
+  await waitForThemePreference(page, preference);
 }
 
-async function toggleAndWaitForMode(page: Page, target: "light" | "dark") {
-  await page.locator(DESKTOP_TOGGLE_SELECTOR).click();
+async function selectModeAndWait(page: Page, target: "light" | "dark") {
+  await selectThemePreference(page, target);
   await expect(page.locator("html")).toHaveAttribute("data-theme", target, { timeout: 5000 });
 }
 
@@ -164,16 +162,16 @@ async function descriptionLineCount(page: Page): Promise<number> {
   });
 }
 
-/** (c)-adjacent: the mode toggle must never move the active pack or its
+/** (c)-adjacent: changing appearance must never move the active pack or its
  *  storage key, in either direction, on whichever pack is currently active. */
-async function assertToggleIndependentOfPack(page: Page, expectedPack: string) {
+async function assertAppearanceIndependentOfPack(page: Page, expectedPack: string) {
   const storedBefore = await readStoredPack(page);
 
-  await toggleAndWaitForMode(page, "dark");
+  await selectModeAndWait(page, "dark");
   expect(await readActivePack(page)).toBe(expectedPack);
   expect(await readStoredPack(page)).toBe(storedBefore);
 
-  await toggleAndWaitForMode(page, "light");
+  await selectModeAndWait(page, "light");
   expect(await readActivePack(page)).toBe(expectedPack);
   expect(await readStoredPack(page)).toBe(storedBefore);
 }
@@ -371,17 +369,17 @@ test.describe("Theme pack switcher", () => {
     expect(await readStoredPack(page)).toBe("foundry");
   });
 
-  test("light/dark toggle is independent of the active theme pack, in both directions, on every pack", async ({
+  test("Light and Dark selection is independent of the active theme pack, in both directions, on every pack", async ({
     page,
   }) => {
     await preseedTheme(page, "light");
     await page.goto(HOME, { waitUntil: "load" });
-    await waitForToggleHydrated(page, "light");
+    await waitForAppearanceHydrated(page, "light");
     await waitForActivePack(page, "default");
 
-    // No pack has been switched yet — a mode toggle must not write the
+    // No pack has been switched yet — changing appearance must not write the
     // theme-pack storage key at all.
-    await assertToggleIndependentOfPack(page, "default");
+    await assertAppearanceIndependentOfPack(page, "default");
     expect(await readStoredPack(page)).toBeNull();
 
     await openFlyout(page);
@@ -389,7 +387,7 @@ test.describe("Theme pack switcher", () => {
     await waitForActivePack(page, "foundry");
     await closeFlyout(page);
 
-    await assertToggleIndependentOfPack(page, "foundry");
+    await assertAppearanceIndependentOfPack(page, "foundry");
     expect(await readStoredPack(page)).toBe("foundry");
   });
 
