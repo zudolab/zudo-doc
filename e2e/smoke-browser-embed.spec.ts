@@ -2,8 +2,8 @@ import { expect, test } from "@playwright/test";
 
 const EMBED_URL = "/browser-embed/";
 const HOME_URL = "/";
-const DESKTOP_THEME_TOGGLE =
-  'header [data-zfb-island="ThemeToggle"] button[aria-label*="Switch to"]';
+const DESKTOP_APPEARANCE_TRIGGER =
+  'header [data-zfb-island="ThemeToggle"] [data-zd-theme-menu] > button[aria-haspopup="menu"]';
 
 test("browser bundle renders md-wasm content through route context and real chrome CSS", async ({
   page,
@@ -92,7 +92,8 @@ test("Chromium page.route holds /assets/islands*.js through the real pending win
   try {
     await expect.poll(() => requested).toBe(true);
     const island = page.locator('[data-zfb-island="ThemeToggle"]');
-    const toggle = page.locator(DESKTOP_THEME_TOGGLE);
+    const toggle = page.locator(DESKTOP_APPEARANCE_TRIGGER);
+    const menu = page.getByRole("menu", { name: "Appearance" });
     await expect(island).not.toHaveAttribute("data-zfb-island-mounted", "");
     await expect(toggle).toHaveAttribute("data-zd-pending", "");
     await expect(toggle).toHaveAttribute("aria-disabled", "true");
@@ -107,6 +108,7 @@ test("Chromium page.route holds /assets/islands*.js through the real pending win
     await page.keyboard.press("Enter");
     await page.keyboard.press("Space");
     await expect(page.locator("html")).toHaveAttribute("data-theme", initialTheme!);
+    await expect(menu).toHaveCount(0);
 
     release();
     await navigation;
@@ -118,10 +120,15 @@ test("Chromium page.route holds /assets/islands*.js through the real pending win
 
     await toggle.focus();
     await page.keyboard.press("Enter");
-    await expect(page.locator("html")).not.toHaveAttribute("data-theme", initialTheme!);
-    const keyboardTheme = await page.locator("html").getAttribute("data-theme");
+    await expect(menu).toBeVisible();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", initialTheme!);
+    const nextMode = initialTheme === "light" ? "Dark" : "Light";
+    await menu.getByRole("menuitemradio", { name: nextMode }).click();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", nextMode.toLowerCase());
     await toggle.click();
-    await expect(page.locator("html")).not.toHaveAttribute("data-theme", keyboardTheme!);
+    await expect(menu).toBeVisible();
+    await menu.getByRole("menuitemradio", { name: initialTheme === "light" ? "Light" : "Dark" }).click();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", initialTheme!);
   } finally {
     release();
     await navigation.catch(() => undefined);
