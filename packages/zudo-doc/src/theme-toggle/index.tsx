@@ -2,127 +2,225 @@
 
 /** @jsxRuntime automatic */
 /** @jsxImportSource preact */
-// BARE (non-island-wrapped) theme toggle — the single ThemeToggle
-// implementation (#2012 E2). Published as the dedicated
-// `@takazudo/zudo-doc/theme-toggle` subpath so hosts can compose it
-// into their own `<Island>` wrappers (or nest it inside another island,
-// e.g. the mobile sidebar footer) without inheriting an extra island
-// layer. The island-wrapped variant for the `./theme` barrel lives in
-// `../theme/theme-toggle.tsx`, which wraps this component.
-//
-// Use the preact hook entrypoints directly — zfb's esbuild step does
-// not alias "react" to "preact/compat", so importing from "react" here
-// would fail to resolve.
-import { useState, useEffect } from "preact/hooks";
+import { useState, useEffect, useRef } from "preact/hooks";
+import { createPortal } from "preact/compat";
 import { useHydrationPending } from "../hydration-pending.js";
+import { AFTER_NAVIGATE_EVENT } from "../transitions/index.js";
 import {
-  applyColorScheme,
+  applyThemePreference,
   readColorSchemeFromDom,
+  readThemePreference,
   subscribeColorSchemeChanged,
+  subscribeThemePreferenceChanged,
   type ColorSchemeMode,
+  type ThemePreference,
 } from "./color-scheme-sync.js";
 
-function SunIcon() {
+const preferences: ThemePreference[] = ["light", "dark", "system"];
+let menuSequence = 0;
+
+function PreferenceIcon({ preference }: { preference: ThemePreference }) {
   return (
-    <svg
-      aria-hidden="true"
-      xmlns="http://www.w3.org/2000/svg"
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="5" />
-      <line x1="12" y1="1" x2="12" y2="3" />
-      <line x1="12" y1="21" x2="12" y2="23" />
-      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-      <line x1="1" y1="12" x2="3" y2="12" />
-      <line x1="21" y1="12" x2="23" y2="12" />
-      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+      viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2"
+      strokeLinecap="square" strokeLinejoin="miter">
+      {preference === "light" ? (
+        <><circle cx="12" cy="12" r="3.6" /><path d="M12 2.5V6M12 18V21.5M2.5 12H6M18 12H21.5M5.3 5.3L7.8 7.8M16.2 16.2L18.7 18.7M5.3 18.7L7.8 16.2M16.2 7.8L18.7 5.3" /></>
+      ) : preference === "dark" ? (
+        <path d="M10.2 2.9C5.7 3.9 2.6 7.9 3 12.6C3.4 17.7 7.9 21.5 13 21.1C16.9 20.7 20.1 17.9 21 14.1C18.6 15.7 15.6 15.8 13.2 14.3C9.3 12 8 6.8 10.2 2.9Z" />
+      ) : (
+        <path d="M2.5 3.5H21.5V16.5H2.5ZM12 16.5V20.5M7.5 20.5H16.5" />
+      )}
     </svg>
   );
 }
 
-function MoonIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      xmlns="http://www.w3.org/2000/svg"
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-    </svg>
-  );
+export interface ThemeToggleLabels {
+  appearance: string;
+  light: string;
+  dark: string;
+  system: string;
+  systemHelper: string;
 }
+
+const englishLabels: ThemeToggleLabels = {
+  appearance: "Appearance",
+  light: "Light",
+  dark: "Dark",
+  system: "System",
+  systemHelper: "Follows device · currently {mode}",
+};
 
 export interface ThemeToggleProps {
   defaultMode?: ColorSchemeMode;
+  respectPrefersColorScheme?: boolean;
+  labels?: ThemeToggleLabels;
   /** Keep activation pending until the first successful mount. @default true */
   pendingUntilHydrated?: boolean;
 }
 
-// NAMED export (not default) on purpose: tsup compiles a default export
-// to `export { ThemeToggle as default }`, an alias shape zfb's island
-// scanner does not recognize — the island then never registers and the
-// header toggle ships dead (zero hydration). Named exports compile to
-// `export { ThemeToggle }`, which the scanner handles (same pattern as
-// the package's MobileToc island).
+// Keep the named export: zfb's island scanner keys on the ThemeToggle name.
 export function ThemeToggle({
   defaultMode = "dark",
+  respectPrefersColorScheme = true,
+  labels = englishLabels,
   pendingUntilHydrated = true,
 }: ThemeToggleProps) {
   const pending = useHydrationPending(pendingUntilHydrated);
-  // Initial state must match server render to avoid hydration mismatch.
-  // Actual theme is synced from DOM in useEffect below.
-  const [mode, setMode] = useState<ColorSchemeMode>(defaultMode);
+  // The menu exists only after a client interaction; allocate across island roots.
+  const menuId = useRef("");
+  const ensureMenuId = () => {
+    if (!menuId.current) menuId.current = `zd-appearance-${++menuSequence}`;
+  };
+  const rootRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const [preference, setPreference] = useState<ThemePreference>(
+    respectPrefersColorScheme ? "system" : defaultMode,
+  );
+  const [resolved, setResolved] = useState<ColorSchemeMode>(defaultMode);
+  const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [placement, setPlacement] = useState<{ left: number; top: number; width: number; maxHeight: number } | null>(null);
 
   useEffect(() => {
-    const sync = () => setMode(readColorSchemeFromDom(defaultMode));
+    const sync = () => {
+      setPreference(readThemePreference(defaultMode, respectPrefersColorScheme));
+      setResolved(readColorSchemeFromDom(defaultMode));
+    };
     sync();
-    // Cross-instance sync (#2012 E3): every mounted toggle re-reads the
-    // DOM whenever any instance (or the zdtp panel) applies a scheme,
-    // so the header toggle and the sidebar-footer toggle never disagree.
-    return subscribeColorSchemeChanged(sync);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    const unsubscribePreference = subscribeThemePreferenceChanged(() => {
+      sync();
+      setOpen(false);
+    });
+    const unsubscribeScheme = subscribeColorSchemeChanged(sync);
+    return () => {
+      unsubscribePreference();
+      unsubscribeScheme();
+    };
+  }, [defaultMode, respectPrefersColorScheme]);
 
-  function toggle() {
-    if (pending) return;
-    const next = mode === "dark" ? "light" : "dark";
-    setMode(next);
-    applyColorScheme(next);
-  }
+  useEffect(() => {
+    if (!open) return;
+    const position = () => {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const gap = 8;
+      const width = Math.min(260, window.innerWidth - gap * 2);
+      const desiredHeight = 242;
+      const roomBelow = window.innerHeight - rect.bottom - gap * 2;
+      const roomAbove = rect.top - gap * 2;
+      const above = roomBelow < desiredHeight && roomAbove > roomBelow;
+      const maxHeight = Math.max(80, Math.min(desiredHeight, above ? roomAbove : roomBelow));
+      setPlacement({
+        left: Math.max(gap, Math.min(rect.right - width, window.innerWidth - width - gap)),
+        top: above ? Math.max(gap, rect.top - gap - maxHeight) : rect.bottom + gap,
+        width,
+        maxHeight,
+      });
+    };
+    const onPointerDown = (event: PointerEvent) => {
+      if (
+        !rootRef.current?.contains(event.target as Node) &&
+        !menuRef.current?.contains(event.target as Node)
+      ) setOpen(false);
+    };
+    const onNavigate = () => setOpen(false);
+    position();
+    document.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("resize", position);
+    window.addEventListener("scroll", position, true);
+    document.addEventListener(AFTER_NAVIGATE_EVENT, onNavigate);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("resize", position);
+      window.removeEventListener("scroll", position, true);
+      document.removeEventListener(AFTER_NAVIGATE_EVENT, onNavigate);
+    };
+  }, [open]); // activeIndex is set before opening; arrow movement focuses directly.
 
-  const nextMode = mode === "dark" ? "light" : "dark";
+  useEffect(() => {
+    if (open && placement) itemRefs.current[activeIndex]?.focus();
+  }, [open, placement]); // Focus once the portaled menu is visible.
+
+  const close = (restoreFocus = false) => {
+    setOpen(false);
+    if (restoreFocus) triggerRef.current?.focus();
+  };
+  const select = (next: ThemePreference) => {
+    applyThemePreference(next);
+    setPreference(next);
+    setResolved(readColorSchemeFromDom(defaultMode));
+    close(true);
+  };
+  const move = (index: number) => {
+    const next = (index + preferences.length) % preferences.length;
+    setActiveIndex(next);
+    itemRefs.current[next]?.focus();
+  };
+  const onMenuKeyDown = (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      close(true);
+    } else if (event.key === "Tab") {
+      // Let the browser move focus before unmounting the focused menu item.
+      window.setTimeout(() => close(), 0);
+    } else if (event.key === "ArrowDown") {
+      event.preventDefault();
+      move(activeIndex + 1);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      move(activeIndex - 1);
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      move(0);
+    } else if (event.key === "End") {
+      event.preventDefault();
+      move(2);
+    }
+  };
 
   return (
-    <button
-      onClick={toggle}
-      aria-label={`Switch to ${nextMode} mode`}
-      aria-disabled={pending ? "true" : undefined}
-      data-zd-pending={pending ? "" : undefined}
-      className="text-muted hover:text-fg transition-colors p-hsp-sm focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
-    >
-      {mode === "dark" ? <SunIcon /> : <MoonIcon />}
-    </button>
+    <div ref={rootRef} className="relative inline-flex" data-zd-theme-menu="">
+      <button ref={triggerRef} type="button" aria-haspopup="menu" aria-expanded={open}
+        aria-controls={open ? menuId.current : undefined}
+        aria-label={`${labels.appearance}: ${labels[preference]}`}
+        aria-disabled={pending ? "true" : undefined}
+        data-zd-pending={pending ? "" : undefined}
+        onClick={() => {
+          if (pending) return;
+          if (open) close(true);
+          else { setPlacement(null); ensureMenuId(); setActiveIndex(preferences.indexOf(preference)); setOpen(true); }
+        }}
+        onKeyDown={(event) => {
+          if (pending) { if (event.key === "Enter" || event.key === " ") event.preventDefault(); return; }
+          if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+            event.preventDefault(); setPlacement(null); ensureMenuId(); setActiveIndex(event.key === "ArrowDown" ? 0 : 2); setOpen(true);
+          } else if (event.key === "Escape" && open) { event.preventDefault(); close(true); }
+        }}
+        className="inline-flex min-h-11 min-w-11 items-center justify-center text-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
+      ><PreferenceIcon preference={preference} /></button>
+      {open && createPortal(<div ref={menuRef} id={menuId.current} role="menu" aria-label={labels.appearance}
+        onKeyDown={onMenuKeyDown}
+        className="fixed z-tooltip overflow-y-auto rounded-lg border border-muted bg-surface p-hsp-xs text-fg shadow-lg"
+        style={placement ? { left: placement.left, top: placement.top, width: placement.width, maxHeight: placement.maxHeight } : { visibility: "hidden" }}>
+        <div className="px-hsp-sm py-vsp-xs text-small font-semibold" aria-hidden="true">{labels.appearance}</div>
+        {preferences.map((option, index) => (
+          <button key={option} ref={(node) => { itemRefs.current[index] = node; }} type="button"
+            role="menuitemradio" aria-checked={preference === option}
+            onFocus={() => setActiveIndex(index)} onClick={() => select(option)}
+            className="flex min-h-11 w-full items-center gap-hsp-sm rounded px-hsp-sm text-left text-small hover:bg-accent/10 focus-visible:bg-accent/10 focus-visible:outline-2 focus-visible:outline-accent">
+            <PreferenceIcon preference={option} />
+            <span className="flex-1">{labels[option]}</span>
+            <span aria-hidden="true" className="text-accent">{preference === option ? "✓" : ""}</span>
+          </button>
+        ))}
+        <div className="px-hsp-sm py-vsp-xs text-small text-muted">
+          {labels.systemHelper.replace("{mode}", labels[resolved])}
+        </div>
+      </div>, document.body)}
+    </div>
   );
 }
-// Pin the island marker name to "ThemeToggle" regardless of bundler
-// identifier mangling: zfb's Island() derives the SSR marker via
-// `displayName ?? name`, and esbuild may rename the function when
-// another binding shares the name in the same bundle. Setting
-// displayName explicitly keeps the emitted marker aligned with the
-// island-manifest entry. zudolab/zudo-doc#1446.
 ThemeToggle.displayName = "ThemeToggle";

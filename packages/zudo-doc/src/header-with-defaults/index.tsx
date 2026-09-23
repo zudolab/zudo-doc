@@ -17,6 +17,7 @@ import {
   type VersionSwitcherLabels,
 } from "../i18n-version/index.js";
 import { ThemeToggle } from "../theme-toggle/index.js";
+import { themeToggleLabels } from "../theme-toggle/labels.js";
 import { SidebarToggle } from "../sidebar-toggle-island/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
@@ -154,6 +155,7 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
     const backToMenuLabel = t("nav.backToMenu", lang);
     const localeLinks = buildLocaleLinksForNav(currentPath, lang, locales.length);
     const themeDefaultMode = getThemeDefaultMode();
+    const themeRespectSystem = (ctx.settings.colorMode && ctx.settings.colorMode.respectPrefersColorScheme) ?? true;
     const buildDefaultSidebarNodes = () => buildSidebarNodes(lang, navSection, currentVersion);
     const sidebarNodes =
       sidebarNodesProp === undefined
@@ -183,6 +185,8 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
             locale={lang}
             localeLinks={localeLinks}
             themeDefaultMode={themeDefaultMode}
+            themeLabels={themeToggleLabels(t, lang)}
+            themeRespectSystem={themeRespectSystem}
             dateFormats={dateFormatsFor(lang)}
           />
         ),
@@ -190,7 +194,7 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
 
     const themeToggle = Island({
       when: "load",
-      children: <ThemeToggle defaultMode={themeDefaultMode} pendingUntilHydrated={true} />,
+      children: <ThemeToggle defaultMode={themeDefaultMode} labels={themeToggleLabels(t, lang)} respectPrefersColorScheme={themeRespectSystem} pendingUntilHydrated={true} />,
     }) as unknown as VNode;
 
     const searchWidget = (

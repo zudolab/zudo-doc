@@ -17,7 +17,7 @@ import {
 } from "../theme-toggle/index.js";
 
 /**
- * Default-export click-toggle for color scheme. Wraps the bare
+ * Default-export appearance menu for theme preference. Wraps the bare
  * `<ThemeToggle>` in `<Island when="load">` so the SSG renderer emits a
  * `data-zfb-island="ThemeToggle"` marker the hydration runtime can
  * find at boot time. Call sites that already sit inside an island (or
