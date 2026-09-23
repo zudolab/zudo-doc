@@ -229,33 +229,15 @@ scanner-safe. Every other host slot remains intact.
   behavior is byte-identical to before. Setting present but the resolved file
   missing → the plugin **throws at setup**, naming the resolved absolute path
   and the setting name (never a silent empty fallback).
-- **No staging needed.** An earlier revision of this ADR staged the published
-  `routes-src/` tree into `<projectRoot>/.zudo-doc/routes-src/` (outside
-  `node_modules`) before injecting from it — a workaround (S1 #2370) for zfb's
-  esbuild bundler not running the `addVirtualModule` resolver on importers
-  whose realpath was inside `node_modules`. zfb v0.1.0-next.66 (upstream
-  Takazudo/zudo-front-builder #1258 / #1263) made that staging obsolete: every
-  registered virtual module is now emitted as an esbuild `--alias` for both the
-  SSR page bundler and the islands bundler, so this virtual module — and
-  `virtual:zudo-doc-route-context` — resolve directly from a route file at
-  `node_modules/@takazudo/zudo-doc/routes-src/`, the same as from the
-  workspace shape. The staging step was removed (#4224). zfb, not zudo-doc,
-  emits the re-export specifier, and it relativises the entrypoint against the
-  generated shim's position in its shadow `pages/` tree (e.g.
-  `../node_modules/@takazudo/zudo-doc/routes-src/404.tsx`) rather than writing
-  an absolute path; the relative path resolves because the bundler shadow root
-  carries an absolute symlink back to the project's real `node_modules`, which
-  the workspace and published shapes both traverse identically. The emitted
-  specifier is the captured output shape, not a verified derivation: it comes
-  out lexical (`node_modules/@takazudo/zudo-doc/...`) even under pnpm, where the
-  absolute path zudo-doc hands `injectRoute` is a `.pnpm/` realpath from
-  `require.resolve`, and the re-lexicalisation step that bridges the two was not
-  located in the 2.18.0 binary — see §1 of the findings note. As a hedge:
-  staging into a first-party directory would sidestep that shadow-root symlink
-  entirely, which may be why the reporter's pre-removal (5.24.2) build still
-  passed on zfb 2.18.0 — but the planning-time claim that zfb declines to
-  materialise non-first-party entrypoints was never observed taking effect in
-  any tested topology, so treat that as a hedge, not a confirmed mechanism.
+- **Published route sources are staged.** zfb's virtual-module aliases resolve
+  imports from `routes-src/` in `node_modules`, but its generated route shims
+  use relative imports in a build shadow. In a nested workspace package whose
+  own `node_modules` lacks `@takazudo/zudo-doc`, those relative imports fail
+  even though Node can find the package through an ancestor. The plugin copies
+  the published source tree to `<projectRoot>/.zudo-doc/routes-src/` and injects
+  those first-party paths. Workspace source outside `node_modules` uses its
+  original path. This restores the path-provenance benefit lost in #4224 while
+  retaining zfb's virtual-module alias support; see #4267.
   Validation history: zfb 2.17.0 + zudo-doc 5.25.0 green (#4226); zfb 2.18.0 +
   zudo-doc 5.25.0 green across 11 consumer topologies (ten fully green; the
   eleventh resolved every shim and then failed at render for an unrelated

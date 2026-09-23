@@ -34,7 +34,7 @@
 
 import { describe, it, expect, afterAll } from "vitest";
 import { execSync, spawn, type ExecSyncOptions, type ChildProcess } from "node:child_process";
-import { mkdtempSync, mkdirSync, cpSync, symlinkSync, existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, cpSync, symlinkSync, existsSync, readFileSync, readdirSync, rmSync, writeFileSync, renameSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -177,7 +177,7 @@ function setupFixture(
  * version that rejects `injectRoute` during builds; the local binary
  * (0.1.0-next.62+) supports build-time route injection.
  */
-function runZfbBuild(dir: string, outDir = "dist"): string {
+function runZfbBuild(dir: string, outDir = "dist", zfbBin = "./node_modules/.bin/zfb"): string {
   const opts: ExecSyncOptions = {
     cwd: dir,
     env: {
@@ -195,7 +195,7 @@ function runZfbBuild(dir: string, outDir = "dist"): string {
     // assert on build diagnostics (the docHistory registration case) need stderr
     // too — plain execSync would drop it on success. Existing callers ignore the
     // return value, so widening void→string is backward-compatible.
-    return execSync(`./node_modules/.bin/zfb build --outdir ${outDir} 2>&1`, opts) as string;
+    return execSync(`"${zfbBin}" build --outdir ${outDir} 2>&1`, opts) as string;
   } catch (err) {
     const e = err as { stdout?: string; stderr?: string; message?: string };
     throw new Error(
@@ -2299,9 +2299,7 @@ describe("A2 precedence: pages/ stub wins over injected route when both claim th
 // every OTHER workspace dep (incl. `@takazudo/zfb*`) so the build resolves.
 // It asserts BOTH a plain dynamic route AND a `/[locale]/...` dynamic route
 // render — the latter exercises the `locale-docs-slug` routes-src path,
-// injected directly from `node_modules/@takazudo/zudo-doc/routes-src/`
-// (zfb >= 0.1.0-next.66 resolves its `virtual:*` imports there via esbuild
-// `--alias`; the old `.zudo-doc/routes-src` staging copy is gone).
+// staged from `node_modules/@takazudo/zudo-doc/routes-src/` into the project.
 // ---------------------------------------------------------------------------
 
 /** `npm pack` the package → return the absolute tarball path (in a fresh temp
@@ -2412,11 +2410,8 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
     runZfbBuild(fixtureDir);
   });
 
-  it("no staging: build does not create a project-local .zudo-doc/ dir", () => {
-    // The old S1 #2370 workaround staged routes-src/ into
-    // `<projectRoot>/.zudo-doc/routes-src/`; the published route is now
-    // injected directly from node_modules, so no such dir is ever created.
-    expect(existsSync(join(fixtureDir, ".zudo-doc"))).toBe(false);
+  it("stages published route sources inside the project", () => {
+    expect(existsSync(join(fixtureDir, ".zudo-doc/routes-src/404.tsx"))).toBe(true);
   });
 
   it("dynamic: plain /docs/getting-started/ renders from routes-src/docs-slug.tsx", () => {
@@ -2460,11 +2455,45 @@ describe("S1 no-src: published package (routes-src/, no src/) renders injected r
     // The /[locale]/docs/[[...slug]] injected route — only emitted because the
     // i18n fixture configures a `ja` locale. Proves the locale-index routes-src
     // path resolves its `virtual:*` imports directly from
-    // node_modules/@takazudo/zudo-doc/routes-src/ (no staging copy involved).
+    // the published routes-src tree staged into the project.
     const html = readBuiltHtml(fixtureDir, "ja/docs/getting-started/index.html");
     expect(html).toContain("はじめに");
     expect(html).toContain("locale-injected-route-render-proof");
   });
+});
+
+it("builds injected routes from a nested workspace package with pnpm-style package symlink (#4267)", { timeout: 180_000 }, () => {
+  const root = setupNoSrcFixture(FIXTURE_I18N_SRC, packPackage());
+  const rootNm = join(root, "node_modules");
+  const packageLink = join(rootNm, "@takazudo/zudo-doc");
+  const storePackage = join(rootNm, ".fixture-pnpm/zudo-doc/node_modules/@takazudo/zudo-doc");
+  mkdirSync(join(rootNm, ".fixture-pnpm/zudo-doc/node_modules/@takazudo"), { recursive: true });
+  renameSync(packageLink, storePackage);
+  symlinkSync(storePackage, packageLink);
+
+  const project = join(root, "packages/catalog");
+  mkdirSync(project, { recursive: true });
+  for (const entry of readdirSync(root)) {
+    if (entry === "node_modules" || entry === "packages") continue;
+    renameSync(join(root, entry), join(project, entry));
+  }
+  // The nested package has its own node_modules but no zudo-doc entry there.
+  const projectNm = join(project, "node_modules");
+  mkdirSync(projectNm, { recursive: true });
+  linkFixtureNodeModules(projectNm);
+  mkdirSync(join(projectNm, "@takazudo"), { recursive: true });
+  for (const entry of readdirSync(join(rootNm, "@takazudo"))) {
+    if (entry === "zudo-doc") continue;
+    symlinkSync(join(rootNm, "@takazudo", entry), join(projectNm, "@takazudo", entry));
+  }
+  mkdirSync(join(projectNm, "@workspace/design-system"), { recursive: true });
+  writeFileSync(join(project, "node_modules/@workspace/design-system/package.json"), '{"name":"@workspace/design-system","version":"1.0.0"}');
+
+  expect(existsSync(join(projectNm, "@takazudo/zudo-doc"))).toBe(false);
+  runZfbBuild(project, "dist", join(rootNm, ".bin/zfb"));
+  expect(readBuiltHtml(project, "404.html")).toContain("Page Not Found");
+  expect(readBuiltHtml(project, "docs/getting-started/index.html")).toContain("Getting Started");
+  expect(existsSync(join(project, ".zudo-doc/routes-src/docs-slug.tsx"))).toBe(true);
 });
 
 // ---------------------------------------------------------------------------
@@ -2923,10 +2952,7 @@ describe("TM build+check+css: the locked manifest builds, typechecks, and ships 
     // relaxing it — a genuine collision between two DIFFERENT components must
     // still warn.
     expect(buildOutput).not.toMatch(/island marker name collision/i);
-    // No project-local staging dir either — #4224 removed the
-    // `.zudo-doc/routes-src` copy step; the injected route is the published
-    // `node_modules/@takazudo/zudo-doc/routes-src/` file directly.
-    expect(existsSync(join(fixtureDir, ".zudo-doc"))).toBe(false);
+    expect(existsSync(join(fixtureDir, ".zudo-doc/routes-src/404.tsx"))).toBe(true);
   });
 
   // ---- Group 1 ----

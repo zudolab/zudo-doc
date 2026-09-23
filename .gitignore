@@ -24,6 +24,7 @@ packages/zudo-doc/.cli-snapshot-*/
 !packages/create-zudo-doc/templates/base/.zfb/
 !packages/create-zudo-doc/templates/base/.zfb/doc-history-meta.json
 .zfb-build/
+.zudo-doc/
 worktrees/
 __inbox/
 .env
