@@ -386,10 +386,14 @@ MDX 内のインラインマークダウンリンク（例 `[text](/docs/some-pa
 
 | プロパティ | 型 | 説明 |
 |----------|------|-------------|
-| `defaultMode` | `"light" \| "dark"` | ユーザー設定適用前の初期モード |
+| `defaultMode` | `"light" \| "dark"` | System に従わず、保存済みの選択がない場合に使うライト/ダークのフォールバック |
 | `lightScheme` | `string` | ライトモードで使うスキーム |
 | `darkScheme` | `string` | ダークモードで使うスキーム |
-| `respectPrefersColorScheme` | `boolean` | OS レベルのライト/ダーク設定に合わせる |
+| `respectPrefersColorScheme` | `boolean` | 保存済み設定がない初回訪問で System を選ぶ |
+
+デフォルトの `respectPrefersColorScheme: true` では、保存済みの選択がない初回訪問時に **System** が選ばれ、デバイスのライト/ダーク設定に従います。コンパクトなヘッダーの外観メニューでは **Light**、**Dark**、**System** を選べます。アイコンは次に選ばれる設定ではなく、現在選択されている設定を表します（Light は太陽、Dark は月、System はモニター）。選択は `localStorage` の `zudo-doc-theme` に保存され、再読み込み後も維持されます。
+
+`defaultMode` は引き続きライト/ダークの2値フォールバックです。`respectPrefersColorScheme: false` にすると、保存済みの選択がない初回訪問時は `defaultMode` が使われます。利用者はメニューから System を明示的に選ぶこともでき、その場合は引き続きデバイス設定に従います。`colorMode: false` は単一の固定スキームを保ち、外観メニューは表示しません。
 
 ```ts
 colorMode: false, // single fixed scheme (colorScheme only)
@@ -399,7 +403,7 @@ colorMode: false, // single fixed scheme (colorScheme only)
 
 ## テーマパック
 
-テーマパックは、上記のカラースキームシステムの**上に重なる**インストール可能なデザインバンドルです — すべてのパックがライト/ダーク両方の値を定義するため、モードトグルはどのパックでもそのまま機能します。スイッチャー UI、theme CLI、パックの作り方は[テーマパックリファレンス](../reference/theme-packs.mdx)を参照してください。
+テーマパックは、上記のカラースキームシステムの**上に重なる**インストール可能なデザインバンドルです — すべてのパックがライト/ダーク両方の値を定義するため、外観メニューはどのパックでもそのまま機能します。スイッチャー UI、theme CLI、パックの作り方は[テーマパックリファレンス](../reference/theme-packs.mdx)を参照してください。
 
 ### themePack
 
@@ -944,7 +948,7 @@ headerNav: [
 
 | `type` | 追加フィールド | 説明 |
 |--------|--------------|-------------|
-| `"component"` | `component` — `"theme-toggle"`, `"language-switcher"`, `"version-switcher"`, `"github-link"`, `"search"` | 組み込みヘッダーコンポーネント |
+| `"component"` | `component` — `"theme-toggle"`（Light / Dark / System の外観メニュー）, `"language-switcher"`, `"version-switcher"`, `"github-link"`, `"search"` | 組み込みヘッダーコンポーネント |
 | `"trigger"` | `trigger` — `"design-token-panel"`, `"ai-chat"` | パネルを開く（機能が必要） |
 | `"link"` | `href`, `label?`, `ariaLabel?`, `icon?` | カスタムリンク |
 | `"html"` | `html` | 生 HTML |

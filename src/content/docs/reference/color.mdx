@@ -480,7 +480,13 @@ export default defineConfig(
 );
 ```
 
-To use one fixed scheme with no light/dark toggle, set `colorMode: false`; in that case `colorScheme` chooses the scheme:
+### Appearance preference
+
+The header menu's **Light**, **Dark**, and **System** choices are saved preferences; the page still resolves to a light or dark color scheme. With the default `respectPrefersColorScheme: true`, a first visit with no saved preference selects System and follows the device. Selecting Light or Dark pins that appearance until the visitor chooses System again. The selected preference is stored in `localStorage` under `zudo-doc-theme`.
+
+The compact menu icon always identifies the selected preference: sun for Light, moon for Dark, and monitor for System. If the device changes from light to dark while System is selected, the page changes color scheme and the monitor remains selected. `defaultMode` stays a `"light" | "dark"` fallback; setting `respectPrefersColorScheme: false` makes that fallback the first-visit choice when there is no saved preference. A visitor may still explicitly select System, which follows the device.
+
+To use one fixed scheme with no light/dark appearance menu, set `colorMode: false`; in that case `colorScheme` chooses the scheme:
 
 ```ts title="zfb.config.ts"
 export default defineConfig(

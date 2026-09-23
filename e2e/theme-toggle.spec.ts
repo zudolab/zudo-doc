@@ -1,133 +1,167 @@
 import { test, expect } from "./fixtures";
-/**
- * E2E tests for theme toggle hydration and persistence.
- *
- * The ThemeToggle is a React island that must not cause hydration
- * mismatches when the user's stored theme preference differs from
- * the SSR default. An inline script in color-scheme-provider.tsx (server-emitted, pre-paint)
- * sets data-theme from localStorage before React hydrates — the
- * React component must use the SSR default for initial state and
- * sync from the DOM in useEffect.
- */
+import {
+  THEME_STORAGE_KEY,
+  appearanceMenu,
+  appearanceOption,
+  appearanceTrigger,
+  appearanceTriggers,
+  openAppearanceMenu,
+  selectThemePreference,
+  waitForAllThemePreferences,
+  waitForStoredThemePreference,
+  waitForThemePreference,
+} from "./theme-helpers";
 
 const HOME = "/";
-const STORAGE_KEY = "zudo-doc-theme";
 
-// Selector for the desktop-visible theme toggle button (as opposed to the
-// one inside the mobile header sidebar panel).
-const DESKTOP_TOGGLE_SELECTOR = 'header .ml-auto button[aria-label*="Switch to"]';
-
-test.describe("Theme toggle", () => {
-  // NOTE: these tests use the default `page` fixture — NOT browser.newContext()
-  // — because the shared consoleErrors fixture attaches its console/pageerror
-  // listeners to `page`. Driving a separately-created context.newPage() would
-  // leave the collector watching an unused page, so assertNoConsoleErrors()
-  // would always see an empty list. Playwright gives each test a fresh context
-  // anyway, and page.addInitScript() runs before the first goto(), so a fresh
-  // `page` covers the "pre-seed localStorage before navigation" need.
-
-  test("no hydration error when stored theme is light (differs from SSR default)", async ({
+test.describe("Appearance menu", () => {
+  // Use the shared `page` fixture so assertNoConsoleErrors() observes the
+  // same browser page. addInitScript runs before the first navigation.
+  test("hydrates an explicit Light preference even when the device prefers Dark", async ({
     page,
     assertNoConsoleErrors,
   }) => {
-    // Pre-set light theme in localStorage (SSR default is "dark")
+    await page.emulateMedia({ colorScheme: "dark" });
     await page.addInitScript((key) => {
       localStorage.setItem(key, "light");
-    }, STORAGE_KEY);
+    }, THEME_STORAGE_KEY);
 
     await page.goto(HOME, { waitUntil: "load" });
 
-    // Wait for the toggle to reflect the stored light theme (offer to switch to
-    // dark). This confirms the ThemeToggle island has hydrated and synced from
-    // the DOM — replaces the old fixed waitForTimeout(1000) sleep.
-    const toggle = page.locator(DESKTOP_TOGGLE_SELECTOR);
-    await expect(toggle).toHaveAttribute("aria-label", "Switch to dark mode", { timeout: 5000 });
+    await waitForAllThemePreferences(page, "light");
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    await expect(appearanceTrigger(page)).toHaveAttribute("aria-label", "Appearance: Light");
 
     assertNoConsoleErrors();
   });
 
-  test("no hydration error when stored theme is dark (matches SSR default)", async ({
+  test("hydrates an explicit Dark preference when it matches the device", async ({
     page,
     assertNoConsoleErrors,
   }) => {
+    await page.emulateMedia({ colorScheme: "dark" });
     await page.addInitScript((key) => {
       localStorage.setItem(key, "dark");
-    }, STORAGE_KEY);
+    }, THEME_STORAGE_KEY);
 
     await page.goto(HOME, { waitUntil: "load" });
 
-    // Wait for the toggle to reflect the stored dark theme (offer to switch to
-    // light). Hydration is complete once the aria-label is stable.
-    const toggle = page.locator(DESKTOP_TOGGLE_SELECTOR);
-    await expect(toggle).toHaveAttribute("aria-label", "Switch to light mode", { timeout: 5000 });
+    await waitForAllThemePreferences(page, "dark");
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 
     assertNoConsoleErrors();
   });
 
-  test("no hydration error with no stored theme (first visit)", async ({
+  test("defaults to System, follows live device changes and synchronizes both menu instances", async ({
     page,
     assertNoConsoleErrors,
   }) => {
+    await page.emulateMedia({ colorScheme: "dark" });
     await page.goto(HOME, { waitUntil: "load" });
 
-    // Wait for the toggle to be present — any aria-label value is acceptable
-    // on a first visit (whichever is the SSR default). Hydration is implied by
-    // the toggle being interactive.
-    const toggle = page.locator(DESKTOP_TOGGLE_SELECTOR);
-    await expect(toggle).toBeVisible({ timeout: 5000 });
+    const trigger = appearanceTrigger(page);
+    await waitForAllThemePreferences(page, "system");
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 
+    await openAppearanceMenu(page, trigger);
+    const selectedSystemOption = appearanceOption(page, "system");
+    await expect(selectedSystemOption).toHaveAttribute("aria-checked", "true");
+    await expect(selectedSystemOption).toHaveClass(/bg-accent\/10/);
+    const triggerBox = await trigger.boundingBox();
+    const optionBox = await selectedSystemOption.boundingBox();
+    expect(triggerBox).not.toBeNull();
+    expect(optionBox).not.toBeNull();
+    expect(triggerBox!.width).toBeGreaterThanOrEqual(44);
+    expect(triggerBox!.height).toBeGreaterThanOrEqual(44);
+    expect(optionBox!.height).toBeGreaterThanOrEqual(44);
+    await expect(appearanceMenu(page)).toContainText("Follows device · currently Dark");
+    await page.keyboard.press("Escape");
+    await expect(appearanceMenu(page)).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    await page.emulateMedia({ colorScheme: "light" });
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    await waitForAllThemePreferences(page, "system");
+    await expect(appearanceTriggers(page)).toHaveCount(2);
     assertNoConsoleErrors();
   });
 
-  test("toggle click switches theme and persists to localStorage", async ({
-    page,
-  }) => {
+  test("selects and persists Light, Dark and System preferences", async ({ page }) => {
+    await page.emulateMedia({ colorScheme: "light" });
     await page.goto(HOME, { waitUntil: "load" });
+    await waitForThemePreference(page, "system");
 
-    // Target the desktop-visible toggle; mobile sidebar also has one inside <header>
-    const toggle = page.locator(DESKTOP_TOGGLE_SELECTOR);
-    await expect(toggle).toBeVisible({ timeout: 5000 });
-    const initialLabel = await toggle.getAttribute("aria-label");
+    await selectThemePreference(page, "light");
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    await waitForStoredThemePreference(page, "light");
+    await waitForAllThemePreferences(page, "light");
 
-    // Click the toggle
-    await toggle.click();
+    await page.reload({ waitUntil: "load" });
+    await waitForAllThemePreferences(page, "light");
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 
-    // aria-label should flip
-    const newLabel = await toggle.getAttribute("aria-label");
-    expect(newLabel).not.toBe(initialLabel);
+    await selectThemePreference(page, "dark");
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    await waitForStoredThemePreference(page, "dark");
+    await waitForAllThemePreferences(page, "dark");
 
-    // localStorage should be updated
-    const stored = await page.evaluate((key) => localStorage.getItem(key), STORAGE_KEY);
-    expect(stored).toBeTruthy();
-    expect(["light", "dark"]).toContain(stored);
+    await page.reload({ waitUntil: "load" });
+    await waitForAllThemePreferences(page, "dark");
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+
+    await selectThemePreference(page, "system");
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    await waitForStoredThemePreference(page, "system");
+    await waitForAllThemePreferences(page, "system");
+
+    await page.emulateMedia({ colorScheme: "dark" });
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    await waitForAllThemePreferences(page, "system");
+    await page.reload({ waitUntil: "load" });
+    await waitForAllThemePreferences(page, "system");
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   });
 
-  test("theme persists across View Transition navigation", async ({
+  test("opens, selects and restores focus by keyboard", async ({ page }) => {
+    await page.goto(HOME, { waitUntil: "load" });
+    await waitForThemePreference(page, "system");
+
+    const trigger = appearanceTrigger(page);
+    await trigger.focus();
+    await page.keyboard.press("Enter");
+    await expect(appearanceMenu(page)).toBeVisible();
+    await expect(appearanceOption(page, "system")).toBeFocused();
+
+    await page.keyboard.press("Home");
+    await expect(appearanceOption(page, "light")).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(appearanceMenu(page)).toBeHidden();
+    await waitForAllThemePreferences(page, "light");
+    await waitForStoredThemePreference(page, "light");
+
+    await page.keyboard.press("Enter");
+    await expect(appearanceMenu(page)).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(appearanceMenu(page)).toBeHidden();
+    await expect(trigger).toBeFocused();
+  });
+
+  test("keeps the selected preference across View Transition navigation", async ({
     page,
     assertNoConsoleErrors,
   }) => {
-    // Pre-set light theme
     await page.addInitScript((key) => {
       localStorage.setItem(key, "light");
-    }, STORAGE_KEY);
+    }, THEME_STORAGE_KEY);
 
-    // Visit home page
     await page.goto(HOME, { waitUntil: "load" });
+    await waitForAllThemePreferences(page, "light");
 
-    // Wait for toggle to reflect stored light theme before navigating.
-    const toggle = page.locator(DESKTOP_TOGGLE_SELECTOR);
-    await expect(toggle).toHaveAttribute("aria-label", "Switch to dark mode", { timeout: 5000 });
-
-    // Navigate to a doc page via sidebar link (View Transition)
     await page.getByRole("link", { name: "Getting Started" }).first().click();
     await page.waitForURL(/getting-started/);
 
-    // Theme should still be light after navigation.
-    // Poll until the toggle settles on the expected label — confirms hydration
-    // completed on the new page without resorting to a fixed waitForTimeout(1000).
-    const toggleAfterNav = page.locator(DESKTOP_TOGGLE_SELECTOR);
-    await expect(toggleAfterNav).toHaveAttribute("aria-label", "Switch to dark mode", { timeout: 5000 });
-
+    await waitForAllThemePreferences(page, "light");
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
     assertNoConsoleErrors();
   });
 });
