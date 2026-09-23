@@ -808,10 +808,10 @@ const plugin = definePlugin({
     //      Derive it: `…/dist/routes/X.js` → `…/src/routes/X.tsx`.
     //
     // zfb creates a build shadow and rewrites injected entrypoints as relative
-    // imports from its generated pages. A nested workspace package may have a
-    // real node_modules directory without zudo-doc even though Node can find
-    // the package through an ancestor. Stage published route sources under the
-    // project root so the shadow copies them beside the generated pages.
+    // imports from its generated pages. Stage published route sources under the
+    // consumer's project root so the shadow copies them beside those pages.
+    // A nested workspace consumer still needs its declared package-local
+    // zudo-doc dependency link for bare imports inside the staged sources.
     const require = createRequire(import.meta.url);
     let stagedRoutesDir: string | undefined;
     const stageRoutes = (routesSrcDir: string): string => {

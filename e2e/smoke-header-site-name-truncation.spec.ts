@@ -24,14 +24,11 @@ import { test, expect, type Page } from "@playwright/test";
  * exact string and were updated in lockstep: smoke-llms-txt.spec.ts:28,42 and
  * smoke-seo.spec.ts:8,15,49.
  *
- * The name was tuned (measured empirically, not guessed) to overflow the
- * header's available anchor box at 390px/24px (269px content in a 146px box
- * — 123px of margin, not borderline) while comfortably fitting at the
- * default 390px/16px (179px content in a 179px box). A longer candidate,
- * "Smoke Test Documentation", was tried first and rejected: it also
- * overflowed the UNRELATED home-hero heading (`zd-home-copy`/`<h1>`) at
- * 390px/24px, a pre-existing responsive gap that has nothing to do with the
- * header fix — tracked separately as #4297 rather than folded into this gate.
+ * The name overflows at 390px with raised or default font preferences
+ * after #4381 gives every icon control a 44px target. The default-font
+ * control case expands to 560px and proves the same name renders in full
+ * once enough space exists. "Smoke Test Documentation" was rejected because
+ * it also overflowed the unrelated home hero at 390px/24px (#4297).
  *
  * The lever is CDP `Page.setFontSizes` — the browser's own font preference,
  * not zoom and not injected CSS — same technique as
@@ -71,7 +68,7 @@ async function measureAnchor(page: Page) {
   });
 }
 
-test.describe("header site-name truncation at 390px", () => {
+test.describe("header site-name truncation", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test("long site name truncates so the right cluster and all four mobile controls fit at 390px / 24px", async ({
@@ -79,6 +76,7 @@ test.describe("header site-name truncation at 390px", () => {
   }) => {
     await setFontPreference(page, 24);
     await page.goto("/docs/getting-started", { waitUntil: "domcontentloaded" });
+    await page.evaluate(() => document.fonts.ready);
 
     const m = await measureAnchor(page);
     // Guards a vacuous pass: if the lever were silently inert the page would
@@ -123,6 +121,13 @@ test.describe("header site-name truncation at 390px", () => {
     await expect(githubLink).toBeVisible();
     await expect(searchTrigger).toBeVisible();
 
+    for (const control of [designTokenTrigger, aiChatTrigger, githubLink, searchTrigger]) {
+      const rect = await control.boundingBox();
+      expect(rect).not.toBeNull();
+      expect(rect!.width).toBeCloseTo(44, 1);
+      expect(rect!.height).toBeCloseTo(44, 1);
+    }
+
     // `trial: true` runs Playwright's actionability checks (visible, stable,
     // receives pointer events, enabled) without dispatching the click —
     // proves "clickable" for the trigger/link controls without opening an
@@ -139,26 +144,31 @@ test.describe("header site-name truncation at 390px", () => {
     await expect(page.locator("[data-search-dialog]")).not.toBeVisible();
   });
 
-  test("long site name shows no ellipsis and no layout change at the default 16px font preference", async ({
+  test("long site name truncates only while space is insufficient at the default 16px font preference", async ({
     page,
   }) => {
-    // No CDP call — the default (unmodified) browser font preference, i.e.
-    // ordinary browsing. Proves the truncation CSS is overflow-safety, not a
-    // forced clip: the same long name that must truncate at 24px renders in
-    // full at the default size, so the common case is visually unchanged.
+    // Equal 44px targets intentionally reserve more room for controls. At
+    // 390px the long name yields; at 560px it must regain its natural width.
     await page.goto("/docs/getting-started", { waitUntil: "domcontentloaded" });
+    await page.evaluate(() => document.fonts.ready);
 
     const m = await measureAnchor(page);
     expect(m.rootFont, "must run at the default preference").toBe("16px");
     expect(m.anchorText).toBe(LONG_SITE_NAME);
+    expect(m.anchorScrollWidth).toBeGreaterThan(m.anchorClientWidth);
+    expect(m.anchorTitle).toBe(LONG_SITE_NAME);
+    expect(m.clusterRight).toBeLessThanOrEqual(390);
+    expect(m.docScrollWidth).toBeLessThanOrEqual(m.innerWidth);
+
+    await page.setViewportSize({ width: 560, height: 844 });
+    const roomy = await measureAnchor(page);
+    expect(roomy.anchorText).toBe(LONG_SITE_NAME);
     expect(
-      m.anchorScrollWidth,
-      `anchor content (${m.anchorScrollWidth}px) must fit its box (${m.anchorClientWidth}px) — ` +
+      roomy.anchorScrollWidth,
+      `anchor content (${roomy.anchorScrollWidth}px) must fit its box (${roomy.anchorClientWidth}px) — ` +
         `an ellipsis here would mean truncation fires even when there is room`,
-    ).toBeLessThanOrEqual(m.anchorClientWidth);
-    expect(
-      m.clusterRight,
-      `[data-header-right] right edge is ${m.clusterRight}px in a 390px viewport`,
-    ).toBeLessThanOrEqual(390);
+    ).toBeLessThanOrEqual(roomy.anchorClientWidth);
+    expect(roomy.clusterRight).toBeLessThanOrEqual(560);
+    expect(roomy.docScrollWidth).toBeLessThanOrEqual(roomy.innerWidth);
   });
 });
