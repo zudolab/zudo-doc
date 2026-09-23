@@ -573,6 +573,7 @@ export async function scaffold(choices: UserChoices): Promise<void> {
     "dist",
     ".zfb",
     ".zfb-build/",
+    ".zudo-doc/",
     "",
     "# macOS",
     ".DS_Store",

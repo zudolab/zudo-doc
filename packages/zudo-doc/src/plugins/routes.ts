@@ -78,7 +78,7 @@
 
 import { prepareHomeIntros, type HomeIntroSettings } from "../home-intro/prepare.js";
 import { createRequire } from "node:module";
-import { existsSync, statSync, readFileSync } from "node:fs";
+import { existsSync, statSync, readFileSync, cpSync, mkdirSync, rmSync } from "node:fs";
 import { dirname, basename, join } from "node:path";
 import { definePlugin, type ZfbSetupContext } from "@takazudo/zfb/plugins";
 import { loadThemePackRegistry } from "../theme-packs-registry/load-registry.js";
@@ -807,14 +807,22 @@ const plugin = definePlugin({
     //      so the original `src/routes/X.tsx` is on disk next to `dist/`.
     //      Derive it: `…/dist/routes/X.js` → `…/src/routes/X.tsx`.
     //
-    // A route `.tsx` resolved under `node_modules` (the published-package
-    // case) still resolves its transitive `virtual:*` imports (e.g.
-    // `./_context`) directly — zfb >= 0.1.0-next.66 (upstream #1258 / #1263)
-    // emits every registered virtual module as an esbuild `--alias` for the
-    // SSR page bundler and the islands bundler, regardless of the importer's
-    // realpath. This used to require staging the published `routes-src/` tree
-    // outside `node_modules` first (S1 #2370); that workaround is gone.
+    // zfb creates a build shadow and rewrites injected entrypoints as relative
+    // imports from its generated pages. A nested workspace package may have a
+    // real node_modules directory without zudo-doc even though Node can find
+    // the package through an ancestor. Stage published route sources under the
+    // project root so the shadow copies them beside the generated pages.
     const require = createRequire(import.meta.url);
+    let stagedRoutesDir: string | undefined;
+    const stageRoutes = (routesSrcDir: string): string => {
+      if (stagedRoutesDir) return stagedRoutesDir;
+      const dest = join(ctx.projectRoot, ".zudo-doc", "routes-src");
+      rmSync(dest, { recursive: true, force: true });
+      mkdirSync(dirname(dest), { recursive: true });
+      cpSync(routesSrcDir, dest, { recursive: true });
+      stagedRoutesDir = dest;
+      return dest;
+    };
 
     for (const route of derivedRoutes) {
       let resolvedEntrypoint: string;
@@ -833,7 +841,9 @@ const plugin = definePlugin({
           .replace(/\.js$/, ".tsx");
 
         if (existsSync(routesSrcPath)) {
-          resolvedEntrypoint = routesSrcPath;
+          resolvedEntrypoint = /[\\/]node_modules[\\/]/.test(routesSrcPath)
+            ? join(stageRoutes(routesSrcDir), tsxName)
+            : routesSrcPath;
         } else if (existsSync(srcPath)) {
           // Workspace source (realpath already outside node_modules).
           resolvedEntrypoint = srcPath;

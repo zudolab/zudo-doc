@@ -1448,14 +1448,14 @@ describe("scaffold — .gitignore base blocks", () => {
     }
   });
 
-  it("never adds a .zudo-doc/ ignore entry (#4224 — the routes-src staging it existed for is gone)", async () => {
+  it("ignores the generated route-source staging directory", async () => {
     await scaffold(baseChoices);
     const gitignore = await fs.readFile(projectPath("test-doc", ".gitignore"), "utf-8");
     // Exact-line check, not a substring — `.zudo-doc.json` (the committed
     // eject/theme-cli provenance marker) legitimately contains `.zudo-doc` and
     // must never be confused with the retired `.zudo-doc/` build-artifact entry.
     const lines = gitignore.split("\n").map((line) => line.trim());
-    expect(lines).not.toContain(".zudo-doc/");
+    expect(lines).toContain(".zudo-doc/");
   });
 
   it("tauri appends src-tauri/target and src-tauri/gen", async () => {
