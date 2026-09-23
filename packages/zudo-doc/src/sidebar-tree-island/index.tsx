@@ -12,7 +12,7 @@ import { INDENT, BASE_PAD, connectorLeft, ConnectorLines, CategoryLinkIcon } fro
 import { ChevronRight, ChevronLeft, Search } from "../icons/index.js";
 // BARE ThemeToggle — renders inside the SidebarToggle island, so it must
 // NOT bring its own island wrapper.
-import { ThemeToggle } from "../theme-toggle/index.js";
+import { ThemeToggle, type ThemeToggleLabels } from "../theme-toggle/index.js";
 import { smartBreakToHtml } from "../smart-break/index.js";
 // After zudolab/zudo-doc#1335 the host components also pull lifecycle event
 // names from the v2 transitions module rather than hard-coding literals.
@@ -184,6 +184,8 @@ export interface SidebarTreeProps {
   locale?: string;
   localeLinks?: SidebarLocaleLink[];
   themeDefaultMode?: "light" | "dark";
+  themeLabels?: ThemeToggleLabels;
+  themeRespectSystem?: boolean;
   /**
    * Per-role date patterns already resolved for this page's locale, serialized
    * into the island's `data-props` by the SSR wrappers (`sidebar-with-defaults`
@@ -197,13 +199,13 @@ export interface SidebarTreeProps {
   dateFormats?: ResolvedDateFormats;
 }
 
-function SidebarFooter({ links, themeDefaultMode }: { links?: SidebarLocaleLink[]; themeDefaultMode?: "light" | "dark" }) {
+function SidebarFooter({ links, themeDefaultMode, themeLabels, themeRespectSystem }: { links?: SidebarLocaleLink[]; themeDefaultMode?: "light" | "dark"; themeLabels?: ThemeToggleLabels; themeRespectSystem?: boolean }) {
   if (!links && !themeDefaultMode) return null;
   return (
     // pb-[50vh] provides scroll room so the footer doesn't sit at the very bottom of the viewport
     <div className="lg:hidden flex items-center gap-hsp-md border-t border-muted px-hsp-sm py-vsp-xs pb-[50vh] text-small">
       {themeDefaultMode && (
-        <ThemeToggle defaultMode={themeDefaultMode} pendingUntilHydrated={true} />
+        <ThemeToggle defaultMode={themeDefaultMode} labels={themeLabels} respectPrefersColorScheme={themeRespectSystem} pendingUntilHydrated={true} />
       )}
       {links && links.map((link, i) => (
         <span key={link.href} className="flex items-center gap-hsp-xs">
@@ -221,7 +223,7 @@ function SidebarFooter({ links, themeDefaultMode }: { links?: SidebarLocaleLink[
   );
 }
 
-export function SidebarTree({ nodes, currentSlug, currentPath, rootMenuItems, backToMenuLabel, locale: localeProp, localeLinks, themeDefaultMode, dateFormats }: SidebarTreeProps) {
+export function SidebarTree({ nodes, currentSlug, currentPath, rootMenuItems, backToMenuLabel, locale: localeProp, localeLinks, themeDefaultMode, themeLabels, themeRespectSystem, dateFormats }: SidebarTreeProps) {
   const activeSlug = useActiveSlug(nodes, currentSlug, currentPath);
   const [query, setQuery] = useState("");
   const [showingRootMenu, setShowingRootMenu] = useState(false);
@@ -257,8 +259,8 @@ export function SidebarTree({ nodes, currentSlug, currentPath, rootMenuItems, ba
   );
 
   const footer = useMemo(
-    () => (localeLinks || themeDefaultMode) ? <SidebarFooter links={localeLinks} themeDefaultMode={themeDefaultMode} /> : null,
-    [localeLinks, themeDefaultMode],
+    () => (localeLinks || themeDefaultMode) ? <SidebarFooter links={localeLinks} themeDefaultMode={themeDefaultMode} themeLabels={themeLabels} themeRespectSystem={themeRespectSystem} /> : null,
+    [localeLinks, themeDefaultMode, themeLabels, themeRespectSystem],
   );
 
   const noteTrayRoot = nodes.length === 1 && nodes[0]?.shape === "note-tray" ? nodes[0] : undefined;

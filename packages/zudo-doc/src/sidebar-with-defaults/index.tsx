@@ -14,6 +14,7 @@ import { SidebarTree } from "../sidebar-tree-island/index.js";
 import type { SidebarNavNode, SidebarRootMenuItem } from "../sidebar/types.js";
 import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
+import { themeToggleLabels } from "../theme-toggle/labels.js";
 import { deriveDateFormats, deriveNavDataPrep } from "../chrome/derive.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 import type { LocaleLink } from "../url-helpers/index.js";
@@ -100,6 +101,8 @@ export function createSidebarWithDefaults<S extends Settings = Settings>(
           locale={lang}
           localeLinks={localeLinks}
           themeDefaultMode={getThemeDefaultMode()}
+          themeLabels={themeToggleLabels(t, lang)}
+          themeRespectSystem={(ctx.settings.colorMode && ctx.settings.colorMode.respectPrefersColorScheme) ?? true}
           dateFormats={dateFormatsFor(lang)}
         />
       ),

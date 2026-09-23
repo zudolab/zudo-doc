@@ -387,6 +387,9 @@
 .z-toolbar {
   z-index: 20;
 }
+.z-tooltip {
+  z-index: 80;
+}
 .col-span-full {
   grid-column: 1 / -1;
 }
@@ -1232,6 +1235,9 @@
 }
 .p-hsp-xl {
   padding: var(--spacing-hsp-xl);
+}
+.p-hsp-xs {
+  padding: var(--spacing-hsp-xs);
 }
 .px-hsp-2xl {
   padding-inline: var(--spacing-hsp-2xl);
