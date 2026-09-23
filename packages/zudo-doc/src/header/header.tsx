@@ -409,7 +409,7 @@ export function Header(props: HeaderProps): JSX.Element {
       </nav>
 
       <div
-        class="ml-auto flex shrink-0 items-center gap-x-hsp-md"
+        class="ml-auto flex shrink-0 items-center gap-x-hsp-xs"
         data-header-right
       >
         {headerRightItems.map((item, i) => renderRightItem(
@@ -620,7 +620,7 @@ function TriggerButton({
       key={`right-${index}`}
       id={id}
       type="button"
-      class="flex items-center justify-center text-muted transition-colors hover:text-fg"
+      class="flex h-[44px] w-[44px] shrink-0 items-center justify-center text-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
       aria-label={ariaLabel}
       {...inlineOnclick}
     >
@@ -730,7 +730,7 @@ const BASE_RIGHT_ITEM_DISPATCH: Readonly<Record<string, RightItemHandler>> = {
         href={ctx.githubRepoUrl}
         target="_blank"
         rel="noopener noreferrer"
-        class="flex items-center justify-center text-muted transition-colors hover:text-fg"
+        class="flex h-[44px] w-[44px] shrink-0 items-center justify-center text-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
         aria-label={ctx.githubLabel}
         title={ctx.githubLabel}
       >
@@ -782,7 +782,9 @@ const BASE_RIGHT_ITEM_DISPATCH: Readonly<Record<string, RightItemHandler>> = {
         href={item.href}
         target={isExternal ? "_blank" : undefined}
         rel={isExternal ? "noopener noreferrer" : undefined}
-        class="flex items-center justify-center text-muted transition-colors hover:text-fg"
+        class={item.icon === "github"
+          ? "flex h-[44px] w-[44px] shrink-0 items-center justify-center text-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
+          : "flex items-center justify-center text-muted transition-colors hover:text-fg"}
         aria-label={item.ariaLabel}
         title={label}
       >
