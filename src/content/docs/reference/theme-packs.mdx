@@ -13,10 +13,10 @@ A **theme pack** is an installable design bundle — a stylesheet, a metadata fi
 
 zudo-doc has two theming layers, and they are independent by contract:
 
-- **Color schemes** are the ramp-native **light/dark palettes** — the `colorScheme`/`colorMode` config fields, the header mode toggle, and `light-dark()` resolution. They decide what "light" and "dark" mean on your site. See [Color](./color.mdx).
-- **Theme packs** are **installable design bundles layered on top**. A pack overrides design tokens, swaps font stacks, and may restyle components — and it defines **both** its light and dark values via `light-dark()`, so the existing mode toggle keeps working on every pack.
+- **Color schemes** are the ramp-native **light/dark palettes** — the `colorScheme`/`colorMode` config fields, the header appearance menu (Light / Dark / System), and `light-dark()` resolution. They decide what "light" and "dark" mean on your site. See [Color](./color.mdx).
+- **Theme packs** are **installable design bundles layered on top**. A pack overrides design tokens, swaps font stacks, and may restyle components — and it defines **both** its light and dark values via `light-dark()`, so every appearance choice continues to work on every pack.
 
-Switching packs never touches the light/dark state, and toggling the mode never touches the active pack.
+Switching packs never touches the selected appearance preference, and choosing an appearance never touches the active pack. System follows the device independently of the selected pack.
 
 |                 | Color schemes (mode system)      | Theme packs                                 |
 | --------------- | -------------------------------- | ------------------------------------------- |
@@ -121,7 +121,7 @@ pnpm create zudo-doc my-docs --theme-pack foundry --theme-pack-switcher
 
 ## Light/dark and the Design Token Panel
 
-- A pack's **Light/Dark badge** is its designed-primary mode — a hint about which mode the pack was designed around, not a capability flag. Every pack defines both modes, and the header mode toggle works identically on all of them.
+- A pack's **Light/Dark badge** is its designed-primary mode — a hint about which mode the pack was designed around, not a capability flag. Every pack defines both modes, and the header appearance menu works identically on all of them.
 - [Design Token Panel](./design-token-panel.mdx) tweaks are **per-pack**: an override you save while pack A is active is stored against pack A, hidden while another pack is active, and restored verbatim when you switch back. On the `default` pack the panel keeps using its original storage, so tweaks saved before theme packs existed survive an upgrade untouched.
 
 ## Emitting the pack stylesheet yourself

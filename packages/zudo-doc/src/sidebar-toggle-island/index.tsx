@@ -14,6 +14,7 @@ import { useState, useEffect, useRef } from "preact/hooks";
 // collapse into duplicate import statements in an ejected copy.
 import { AFTER_NAVIGATE_EVENT, ensureNestedIslandPropsRefresh } from "../transitions/index.js";
 import { SidebarTree } from "../sidebar-tree-island/index.js";
+import type { ThemeToggleLabels } from "../theme-toggle/index.js";
 import type { SidebarNavNode, SidebarRootMenuItem, SidebarLocaleLink } from "../sidebar/types.js";
 import type { ResolvedDateFormats } from "../settings.js";
 
@@ -57,6 +58,8 @@ export interface SidebarToggleProps {
   locale?: string;
   localeLinks?: SidebarLocaleLink[];
   themeDefaultMode?: "light" | "dark";
+  themeLabels?: ThemeToggleLabels;
+  themeRespectSystem?: boolean;
   /**
    * Forwarded verbatim to the hosted `<SidebarTree>`. This island is the one
    * nested under the persisted `<header>`, so on a same-locale soft navigation
@@ -79,6 +82,8 @@ export function SidebarToggle({
   locale,
   localeLinks,
   themeDefaultMode,
+  themeLabels,
+  themeRespectSystem,
   dateFormats,
 }: SidebarToggleProps) {
   // Initial state must match SSR (`open=false`) so the hydration DOM
@@ -255,6 +260,8 @@ export function SidebarToggle({
             locale={locale}
             localeLinks={localeLinks}
             themeDefaultMode={themeDefaultMode}
+            themeLabels={themeLabels}
+            themeRespectSystem={themeRespectSystem}
             dateFormats={dateFormats}
           />
         </div>

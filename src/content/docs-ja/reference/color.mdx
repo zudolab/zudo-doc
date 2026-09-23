@@ -480,7 +480,13 @@ export default defineConfig(
 );
 ```
 
-ライト／ダーク切り替えなしで1つの固定スキームを使うには、`colorMode: false`を設定します。この場合は`colorScheme`がスキームを選びます：
+### 外観の選択
+
+ヘッダーのメニューで選ぶ **Light**、**Dark**、**System** は保存される設定です。ページで解決されるカラースキームはライトまたはダークのままです。デフォルトの `respectPrefersColorScheme: true` では、保存済みの設定がない初回訪問時に System が選ばれ、デバイスに従います。Light または Dark を選ぶと、利用者が再び System を選ぶまでその外観が固定されます。選択中の設定は `localStorage` の `zudo-doc-theme` に保存されます。
+
+コンパクトメニューのアイコンは常に選択中の設定を表します。Light は太陽、Dark は月、System はモニターです。System を選んだ状態でデバイス設定がライトからダークに変わると、ページのカラースキームは変わりますが、選択アイコンはモニターのままです。`defaultMode` は `"light" | "dark"` のフォールバックです。`respectPrefersColorScheme: false` にすると、保存済みの選択がない初回訪問時にこの値が使われます。利用者は System を明示的に選ぶこともでき、その場合はデバイス設定に従います。
+
+ライト／ダークの外観メニューなしで1つの固定スキームを使うには、`colorMode: false`を設定します。この場合は`colorScheme`がスキームを選びます：
 
 ```ts title="zfb.config.ts"
 export default defineConfig(

@@ -1,11 +1,17 @@
 import type { Page } from "@playwright/test";
 import { test, expect } from "./fixtures";
+import {
+  THEME_STORAGE_KEY,
+  selectThemePreference,
+  waitForAllThemePreferences,
+  waitForStoredThemePreference,
+  waitForThemePreference,
+} from "./theme-helpers";
 
 // #3980 / #3985: Color overrides belong to the active scheme identity;
 // Palette, Spacing, Font and Size overrides are shared within the current pack.
 // Exercise the UI only: never seed or inspect zdtp's private storage envelope.
 const SHELL = ".tokenpanel-shell";
-const TOGGLE = 'header .ml-auto button[aria-label*="Switch to"]';
 const PALETTE_VAR = "--palette-state-info";
 const GLOBAL_EDITS = [
   {
@@ -92,7 +98,7 @@ async function assertBackgroundSelection(page: Page, stop: number) {
 async function switchMode(page: Page, target: "light" | "dark") {
   const oldShell = await page.locator(SHELL).elementHandle();
   expect(oldShell).not.toBeNull();
-  await page.locator(TOGGLE).click();
+  await selectThemePreference(page, target);
   await expect(page.locator("html")).toHaveAttribute("data-theme", target);
   // data-theme changes before the bootstrap's coalesced rebuild. Wait for
   // that actual rebuild, so unchanged global values cannot false-pass early.
@@ -101,10 +107,7 @@ async function switchMode(page: Page, target: "light" | "dark") {
     .toBe(false);
   await oldShell!.dispose();
   await expect(page.locator(SHELL)).toBeVisible();
-  await expect(page.locator(TOGGLE)).toHaveAttribute(
-    "aria-label",
-    `Switch to ${target === "light" ? "dark" : "light"} mode`,
-  );
+  await waitForThemePreference(page, target);
 }
 
 async function showPaletteStep(page: Page) {
@@ -141,14 +144,9 @@ test("Color choices restore independently by mode while every global tab survive
 }) => {
   // Seed only the host's documented theme preference; the context has fresh
   // panel storage. The fixture's custom dark scheme retains Default Dark bg.
-  await page.addInitScript(() =>
-    localStorage.setItem("zudo-doc-theme", "light"),
-  );
+  await page.addInitScript((key) => localStorage.setItem(key, "light"), THEME_STORAGE_KEY);
   await page.goto("/", { waitUntil: "load" });
-  await expect(page.locator(TOGGLE)).toHaveAttribute(
-    "aria-label",
-    "Switch to dark mode",
-  );
+  await waitForThemePreference(page, "light");
   await page.locator("#design-token-trigger").click();
   await expect(page.locator(SHELL)).toBeVisible();
   await assertBackground(page, 0);
@@ -213,4 +211,48 @@ test("Color choices restore independently by mode while every global tab survive
   await switchMode(page, "dark");
   await assertBackground(page, 3);
   await assertGlobals(page, paletteCss, paletteLabel!);
+});
+
+test("Light to System keeps an unchanged-mode panel live, then follows an OS change without losing overrides", async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.addInitScript((key) => localStorage.setItem(key, "light"), THEME_STORAGE_KEY);
+  await page.goto("/", { waitUntil: "load" });
+  await waitForAllThemePreferences(page, "light");
+
+  await page.locator("#design-token-trigger").click();
+  await expect(page.locator(SHELL)).toBeVisible();
+  const spacing = GLOBAL_EDITS[0];
+  await openTab(page, spacing.tab);
+  await page
+    .getByTestId(`tier-item-${spacing.id}`)
+    .getByLabel(`${spacing.cssVar} value`, { exact: true })
+    .fill(spacing.input);
+  await expect.poll(() => readCssVar(page, spacing.cssVar)).toBe(spacing.css);
+
+  const lightPanel = await page.locator(SHELL).elementHandle();
+  expect(lightPanel).not.toBeNull();
+  await selectThemePreference(page, "system");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await waitForStoredThemePreference(page, "system");
+  await waitForAllThemePreferences(page, "system");
+  await expect.poll(() => lightPanel!.evaluate((element) => element.isConnected)).toBe(true);
+  await expect.poll(() => readCssVar(page, spacing.cssVar)).toBe(spacing.css);
+
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await waitForAllThemePreferences(page, "system");
+  await expect
+    .poll(() => lightPanel!.evaluate((element) => element.isConnected))
+    .toBe(false);
+  await lightPanel!.dispose();
+  await expect(page.locator(SHELL)).toBeVisible();
+  await expect.poll(() => readCssVar(page, spacing.cssVar)).toBe(spacing.css);
+  await openTab(page, spacing.tab);
+  await expect(
+    page
+      .getByTestId(`tier-item-${spacing.id}`)
+      .getByLabel(`${spacing.cssVar} value`, { exact: true }),
+  ).toHaveValue(spacing.input);
 });

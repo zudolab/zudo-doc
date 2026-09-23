@@ -102,9 +102,9 @@ Two semantic color tokens drive how matched keywords are highlighted, rendered a
 
 The Color tab always edits the wiring for whichever mode — light or dark — is currently active, seeded from that mode's `ColorScheme.map` in the package's `@takazudo/zudo-doc/color-schemes-defaults` (or your own `colorSchemes` override, if set — see [Color](./color.mdx)).
 
-- **Toggling light/dark re-seeds the tab's ref/literal defaults** to the new mode's wiring (e.g. `bg` flips `base-0` ↔ `base-4`) — see [Implementation](#implementation) for the destroy+reconfigure mechanism behind this.
-- **Palette, Spacing, Font, and Size tweaks carry over the toggle untouched.** Those tabs are mode-independent, so a ramp-curve edit or a spacing change survives light↔dark exactly as before.
-- **A saved Color-tab override is scheme- and mode-scoped.** The package-default builder pairs `Default Light` and `Default Dark` in `panelSettings.colorMode`, so a saved Color override is restored only for its active scheme identity. An override made in one mode does not repaint the other; the Palette, Spacing, Font, and Size tabs remain shared across the toggle.
+- **A resolved light/dark appearance change re-seeds the tab's ref/literal defaults** to the new mode's wiring (e.g. `bg` flips `base-0` ↔ `base-4`) — this includes an OS change while System is selected. See [Implementation](#implementation) for the destroy+reconfigure mechanism behind this.
+- **Palette, Spacing, Font, and Size tweaks carry over appearance changes untouched.** Those tabs are mode-independent, so a ramp-curve edit or a spacing change survives light↔dark exactly as before.
+- **A saved Color-tab override is scheme- and mode-scoped.** The package-default builder pairs `Default Light` and `Default Dark` in `panelSettings.colorMode`, so a saved Color override is restored only for its active scheme identity. An override made in one mode does not repaint the other; the Palette, Spacing, Font, and Size tabs remain shared across appearance changes.
 
 <Note title="Known limitation">
 
@@ -255,7 +255,7 @@ Everything the panel remembers hangs off one storage prefix, `zudo-doc-tweak`, f
 
 **Revert all** clears every changed token across every tab, and the Font, Spacing, and Size tabs each have a **Reset** action of their own; both restore the configured defaults. The installed `@takazudo/zdtp` package owns the storage format and lifecycle; zudo-doc does not parse or rewrite persisted envelopes itself.
 
-Switching the light/dark theme does **not** delete your saved tweaks, and an open panel stays open across the toggle. The theme toggle dispatches a `color-scheme-changed` event; the host destroys and reconfigures the panel for the new mode (see [Implementation](#implementation)) rather than patching it in place, so the Color tab's ref/literal *defaults* follow the newly active mode and any saved Color override is restored for that mode's scheme identity. Palette, Spacing, Font, and Size tweaks carry over untouched. See [Mode-scoped editing model](#the-tab-strip-color-mode-scoped-editing-model).
+Changing the resolved light/dark appearance does **not** delete your saved tweaks, and an open panel stays open across the change. The appearance menu dispatches `color-scheme-changed` only when the resolved appearance changes; the host destroys and reconfigures the panel for the new mode (see [Implementation](#implementation)) rather than patching it in place, so the Color tab's ref/literal *defaults* follow the newly active mode and any saved Color override is restored for that mode's scheme identity. Choosing System while the device already matches the current appearance changes the saved preference without rebuilding the panel. Palette, Spacing, Font, and Size tweaks carry over untouched. See [Mode-scoped editing model](#the-tab-strip-color-mode-scoped-editing-model).
 
 <Note title="Storage prefix continuity guarantee">
 
@@ -283,7 +283,7 @@ The `${prefix}-open` and owner-mode checks are exact-key lookups; only the `${pr
 
 Until zdtp has loaded, by either path, `window.zdtp` (the console API zdtp installs once it configures) does not exist. Once loaded it stays loaded — its own listener takes over the toggle event directly — for the rest of the page's life; only a full page load returns to this lazy state.
 
-On every `color-scheme-changed` event (dispatched by the theme toggle), the bootstrap reads the new mode and coalesces rapid toggles onto a single macrotask, then calls `handle.destroy()` followed by `configurePanel(buildDesignTokenPanelConfig(mode))` — zdtp's `configurePanel` throws if re-run in place with a structurally different config, so destroy-then-reconfigure is the only supported way to swap the Color tab's mode-scoped defaults. If the panel was open, it's re-mounted open.
+On every `color-scheme-changed` event (dispatched when the resolved appearance changes, including an OS change while System is selected), the bootstrap reads the new mode and coalesces rapid changes onto a single macrotask, then calls `handle.destroy()` followed by `configurePanel(buildDesignTokenPanelConfig(mode))` — zdtp's `configurePanel` throws if re-run in place with a structurally different config, so destroy-then-reconfigure is the only supported way to swap the Color tab's mode-scoped defaults. A preference change that leaves the resolved appearance unchanged uses `theme-preference-changed` and does not rebuild the panel. If the panel was open, it's re-mounted open.
 
 The header trigger button dispatches the `toggle-design-token-panel` custom event on `window`. zdtp listens for this event natively, so no additional wiring is needed when the trigger is customised through `settings.headerRightItems`.
 

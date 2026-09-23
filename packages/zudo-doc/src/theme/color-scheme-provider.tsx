@@ -1,7 +1,7 @@
 // Layout-level JSX port of src/components/color-scheme-provider.
 //
 // Renders the palette CSS custom properties on `:root` and the bootstrap
-// inline script that applies the persisted theme (light/dark) before the
+// inline script that applies the persisted preference (light/dark/system) before the
 // page paints. The component is intentionally server-rendered with no
 // hydration: it just emits a <style> + <script> pair the engine streams
 // into the document head. The Astro version used `set:text` and
@@ -19,6 +19,14 @@
 
 import type { ComponentChildren } from "preact";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
+import {
+  COLOR_SCHEME_CHANGED_EVENT,
+  COLOR_SCHEME_RUNTIME_GLOBAL,
+  COLOR_SCHEME_STORAGE_KEY,
+  normalizeThemePreference,
+  resolveColorScheme,
+  resolveThemePreference,
+} from "../theme-toggle/color-scheme-sync.js";
 
 /**
  * Subset of the host's `ColorModeConfig` that the v2 provider actually
@@ -47,7 +55,7 @@ export interface ColorSchemeProviderProps {
   children?: ComponentChildren;
 }
 
-/** Bootstrap script for the light/dark mode (settings.colorMode set). */
+/** Bootstrap script for the light/dark/system preference (settings.colorMode set). */
 function buildColorModeBootstrap(
   defaultMode: "light" | "dark",
   respectPrefersColorScheme: boolean,
@@ -60,17 +68,39 @@ function buildColorModeBootstrap(
   const dm = JSON.stringify(defaultMode);
   const rp = JSON.stringify(Boolean(respectPrefersColorScheme));
   const afterNav = JSON.stringify(AFTER_NAVIGATE_EVENT);
+  const globalName = JSON.stringify(COLOR_SCHEME_RUNTIME_GLOBAL);
+  const storageKey = JSON.stringify(COLOR_SCHEME_STORAGE_KEY);
+  const modeEvent = JSON.stringify(COLOR_SCHEME_CHANGED_EVENT);
   return `(function(){
-var defaultMode=${dm};
-var respectPrefersColorScheme=${rp};
-var STORAGE_KEY="zudo-doc-theme";
-function getSystemMode(){return window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}
-function applyTheme(mode){document.documentElement.setAttribute("data-theme",mode);document.documentElement.style.colorScheme=mode;}
-function getEffectiveMode(choice){if(choice==="light"||choice==="dark")return choice;return respectPrefersColorScheme?getSystemMode():defaultMode;}
-var stored=null;try{stored=localStorage.getItem(STORAGE_KEY);}catch(e){}
-applyTheme(getEffectiveMode(stored));
-document.addEventListener(${afterNav},function(){var s=null;try{s=localStorage.getItem(STORAGE_KEY);}catch(e){}applyTheme(getEffectiveMode(s));});
-if(respectPrefersColorScheme){window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",function(){var s=null;try{s=localStorage.getItem(STORAGE_KEY);}catch(e){}if(!s)applyTheme(getSystemMode());});}
+var defaultMode=${dm},respectPrefersColorScheme=${rp};
+var STORAGE_KEY=${storageKey};
+var normalizeThemePreference=${normalizeThemePreference.toString()};
+var resolveThemePreference=${resolveThemePreference.toString()};
+var resolveColorScheme=${resolveColorScheme.toString()};
+var existing=window[${globalName}];
+var state=existing||{choice:null,defaultMode:defaultMode,respectPrefersColorScheme:respectPrefersColorScheme};
+if(existing&&existing.cleanup)existing.cleanup();
+if(!existing){try{state.choice=normalizeThemePreference(localStorage.getItem(STORAGE_KEY));}catch(e){}}
+state.defaultMode=defaultMode;
+state.respectPrefersColorScheme=respectPrefersColorScheme;
+window[${globalName}]=state;
+var media=window.matchMedia("(prefers-color-scheme: dark)");
+function applyTheme(){
+  var preference=resolveThemePreference(state.choice,state.defaultMode,state.respectPrefersColorScheme);
+  var mode=resolveColorScheme(preference,media.matches);
+  var root=document.documentElement;
+  var changed=(state.lastMode||root.getAttribute("data-theme"))!==mode;
+  root.setAttribute("data-theme",mode);
+  root.style.colorScheme=mode;
+  state.lastMode=mode;
+  if(changed)window.dispatchEvent(new CustomEvent(${modeEvent}));
+}
+function onNavigate(){applyTheme();}
+function onMediaChange(){applyTheme();}
+applyTheme();
+document.addEventListener(${afterNav},onNavigate);
+media.addEventListener("change",onMediaChange);
+state.cleanup=function(){document.removeEventListener(${afterNav},onNavigate);media.removeEventListener("change",onMediaChange);};
 })();`;
 }
 

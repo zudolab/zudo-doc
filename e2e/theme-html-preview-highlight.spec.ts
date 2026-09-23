@@ -1,11 +1,13 @@
 import type { Locator, Page } from "@playwright/test";
 import { test, expect } from "./fixtures";
+import {
+  THEME_STORAGE_KEY,
+  appearanceTrigger,
+  selectThemePreference,
+} from "./theme-helpers";
 
 const PAGE = "/docs/getting-started/";
-const THEME_STORAGE_KEY = "zudo-doc-theme";
 const ISLAND_SELECTOR = '[data-zfb-island="HtmlPreviewWrapperInner"]';
-const DESKTOP_TOGGLE_SELECTOR =
-  'header .ml-auto button[aria-label*="Switch to"]';
 const PANEL_TRIGGER = "#design-token-trigger";
 const PANEL_SHELL = ".tokenpanel-shell";
 
@@ -295,14 +297,13 @@ test.describe("HtmlPreview semantic syntax tokens", () => {
     const namedVariation = await test.step(
       "apply the named dark theme",
       async () => {
-        const desktopToggle = page.locator(DESKTOP_TOGGLE_SELECTOR);
-        // zudolab/zudo-doc#3828: the toggle swallows clicks while pending; a
-        // swallowed first click plus the old unbounded color guard explains the
-        // recorded one-off timeout.
-        await expect(desktopToggle).not.toHaveAttribute("data-zd-pending", "", {
+        const appearanceButton = appearanceTrigger(page);
+        // zudolab/zudo-doc#3828: the pending menu trigger intentionally ignores
+        // activation until hydration finishes.
+        await expect(appearanceButton).not.toHaveAttribute("data-zd-pending", "", {
           timeout: NETWORK_ASSERTION_TIMEOUT_MS,
         });
-        await desktopToggle.click({ timeout: INTERACTION_TIMEOUT_MS });
+        await selectThemePreference(page, "dark", appearanceButton);
         await waitForGuardColor(
           page,
           "named dark theme",
@@ -400,13 +401,13 @@ test.describe("HtmlPreview semantic syntax tokens", () => {
     await test.step(
       "return the edited preview to light theme",
       async () => {
-        const desktopToggle = page.locator(DESKTOP_TOGGLE_SELECTOR);
-        // zudolab/zudo-doc#3828: every theme click must wait until hydration
-        // pending clears because pending clicks are intentionally swallowed.
-        await expect(desktopToggle).not.toHaveAttribute("data-zd-pending", "", {
+        const appearanceButton = appearanceTrigger(page);
+        // zudolab/zudo-doc#3828: every theme selection must wait until
+        // hydration pending clears because pending activations are swallowed.
+        await expect(appearanceButton).not.toHaveAttribute("data-zd-pending", "", {
           timeout: NETWORK_ASSERTION_TIMEOUT_MS,
         });
-        await desktopToggle.click({ timeout: INTERACTION_TIMEOUT_MS });
+        await selectThemePreference(page, "light", appearanceButton);
         await waitForGuardColor(
           page,
           "light theme after live edit",
