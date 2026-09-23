@@ -12,6 +12,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   COLOR_SCHEME_CHANGED_EVENT,
+  THEME_PREFERENCE_CHANGED_EVENT,
+  applyThemePreference,
+  readThemePreference,
+  resolveThemePreference,
+  resolveColorScheme,
   applyColorScheme,
   readColorSchemeFromDom,
   subscribeColorSchemeChanged,
@@ -49,7 +54,9 @@ let fakeStorage: ReturnType<typeof makeFakeStorage>;
 beforeEach(() => {
   fakeDocument = makeFakeDocument();
   fakeStorage = makeFakeStorage();
-  vi.stubGlobal("window", new EventTarget());
+  const fakeWindow = new EventTarget() as EventTarget & { matchMedia: () => { matches: boolean } };
+  fakeWindow.matchMedia = () => ({ matches: false });
+  vi.stubGlobal("window", fakeWindow);
   vi.stubGlobal("document", fakeDocument);
   vi.stubGlobal("localStorage", fakeStorage);
 });
@@ -144,5 +151,43 @@ describe("cross-instance sync (subscribeColorSchemeChanged)", () => {
     applyColorScheme("dark");
 
     expect(listener).toHaveBeenCalledTimes(1);
+  });
+});
+
+
+describe("preference and effective appearance", () => {
+  it("resolves first visits, explicit System, legacy choices, and invalid storage", () => {
+    expect(resolveThemePreference(null, "dark", true)).toBe("system");
+    expect(resolveThemePreference(null, "dark", false)).toBe("dark");
+    expect(resolveThemePreference("system", "dark", false)).toBe("system");
+    expect(resolveColorScheme("system", true)).toBe("dark");
+    expect(resolveColorScheme("system", false)).toBe("light");
+    fakeStorage.setItem("zudo-doc-theme", "light");
+    expect(readThemePreference()).toBe("light");
+    fakeStorage.setItem("zudo-doc-theme", "invalid");
+    expect(readThemePreference("dark", true)).toBe("system");
+  });
+
+  it("notifies preference-only changes without rebuilding effective-mode consumers", () => {
+    fakeDocument.documentElement.setAttribute("data-theme", "light");
+    fakeStorage.setItem("zudo-doc-tweak-state-v3", "saved overrides");
+    const modeListener = vi.fn();
+    const preferenceListener = vi.fn();
+    window.addEventListener(COLOR_SCHEME_CHANGED_EVENT, modeListener);
+    window.addEventListener(THEME_PREFERENCE_CHANGED_EVENT, preferenceListener);
+    applyThemePreference("light");
+    applyThemePreference("system");
+    expect(readThemePreference()).toBe("system");
+    expect(fakeStorage.getItem("zudo-doc-theme")).toBe("system");
+    expect(fakeStorage.getItem("zudo-doc-tweak-state-v3")).toBe("saved overrides");
+    expect(modeListener).not.toHaveBeenCalled();
+    expect(preferenceListener).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps the live preference when storage writes fail", () => {
+    fakeStorage.setItem = () => { throw new Error("storage blocked"); };
+    applyThemePreference("system");
+    expect(readThemePreference()).toBe("system");
+    expect(fakeDocument.documentElement.getAttribute("data-theme")).toBe("light");
   });
 });

@@ -1,81 +1,126 @@
-// Shared color-scheme state helpers for ThemeToggle (#2012 E3).
-//
-// Two ThemeToggle instances can be mounted at once (header + mobile
-// sidebar footer). Each instance holds its own `mode` state, so a
-// toggle in one used to leave the other's icon stale — the instances
-// only read the DOM at mount. These helpers centralise the write path
-// (`applyColorScheme`) and give every instance a subscription point
-// (`subscribeColorSchemeChanged`) keyed on the `color-scheme-changed`
-// window event, which `applyColorScheme` dispatches after mutating the
-// DOM. The same event is already consumed by the zdtp design-token
-// panel, so the event name is a cross-package contract — do not rename.
-//
-// This module is intentionally NOT marked "use client": zfb's island
-// scanner registers every exported binding of a "use client" file as an
-// island, and these helpers are plain functions, not components. They
-// run in the browser only (called from the ThemeToggle island and
-// unit tests).
-
+// Browser color-scheme state shared by the pre-paint bootstrap and client islands.
+// The selected preference is distinct from the effective light/dark appearance.
 export type ColorSchemeMode = "light" | "dark";
+export type ThemePreference = ColorSchemeMode | "system";
 
 export const COLOR_SCHEME_CHANGED_EVENT = "color-scheme-changed";
+export const THEME_PREFERENCE_CHANGED_EVENT = "theme-preference-changed";
+export const COLOR_SCHEME_RUNTIME_GLOBAL = "__zudoDocColorScheme";
+export const COLOR_SCHEME_STORAGE_KEY = "zudo-doc-theme";
 
-const STORAGE_KEY = "zudo-doc-theme";
+export interface ColorSchemeRuntime {
+  // null means no valid persisted or live explicit choice.
+  choice: ThemePreference | null;
+  defaultMode: ColorSchemeMode;
+  respectPrefersColorScheme: boolean;
+  lastMode?: ColorSchemeMode;
+  cleanup?: () => void;
+}
 
-/**
- * Read the active color scheme from `<html data-theme>`. Falls back to
- * `defaultMode` when the attribute is missing or holds an unexpected
- * value (e.g. before the ColorSchemeProvider bootstrap script ran).
- */
-export function readColorSchemeFromDom(
+// Keep these pure functions self-contained: the provider serializes their JS
+// bodies into the inline pre-paint script, so both paths use identical rules.
+export function normalizeThemePreference(value: unknown): ThemePreference | null {
+  return value === "light" || value === "dark" || value === "system"
+    ? value
+    : null;
+}
+
+export function resolveThemePreference(
+  choice: ThemePreference | null,
   defaultMode: ColorSchemeMode,
+  respectPrefersColorScheme: boolean,
+): ThemePreference {
+  return choice ?? (respectPrefersColorScheme ? "system" : defaultMode);
+}
+
+export function resolveColorScheme(
+  preference: ThemePreference,
+  systemIsDark: boolean,
 ): ColorSchemeMode {
+  return preference === "system" ? (systemIsDark ? "dark" : "light") : preference;
+}
+
+function runtime(): ColorSchemeRuntime | null {
+  return ((window as unknown as Record<string, unknown>)[COLOR_SCHEME_RUNTIME_GLOBAL] ??
+    null) as ColorSchemeRuntime | null;
+}
+
+function readStorage(): ThemePreference | null {
+  try {
+    return normalizeThemePreference(localStorage.getItem(COLOR_SCHEME_STORAGE_KEY));
+  } catch {
+    return null;
+  }
+}
+
+function getRuntime(): ColorSchemeRuntime {
+  const existing = runtime();
+  if (existing) return existing;
+  const initial: ColorSchemeRuntime = {
+    choice: readStorage(),
+    defaultMode: "dark",
+    respectPrefersColorScheme: true,
+  };
+  (window as unknown as Record<string, unknown>)[COLOR_SCHEME_RUNTIME_GLOBAL] = initial;
+  return initial;
+}
+
+export function readThemePreference(
+  defaultMode: ColorSchemeMode = "dark",
+  respectPrefersColorScheme = true,
+): ThemePreference {
+  const state = runtime();
+  return resolveThemePreference(
+    state ? state.choice : readStorage(),
+    state?.defaultMode ?? defaultMode,
+    state?.respectPrefersColorScheme ?? respectPrefersColorScheme,
+  );
+}
+
+export function readColorSchemeFromDom(defaultMode: ColorSchemeMode): ColorSchemeMode {
   const actual = document.documentElement.getAttribute("data-theme");
   return actual === "light" || actual === "dark" ? actual : defaultMode;
 }
 
-/**
- * Apply `next` as the active color scheme: mutate the DOM, persist the
- * preference, and notify every subscriber (including other mounted
- * ThemeToggle instances and the zdtp design-token panel) via the
- * `color-scheme-changed` window event.
- *
- * Tweak-state reconciliation is intentionally NOT done here (#2037). The zdtp
- * panel owns its own storage lifecycle and current persisted-state contract;
- * its own `color-scheme-changed` listener clears applied inline
- * styles and re-seeds the color slice from the newly active scheme. An
- * earlier version of this function deleted `zudo-doc-tweak-state` + `-v2` on
- * every toggle, which (a) targeted stale keys after zdtp moved to v3 — so it
- * no longer did anything — and (b) when it did fire, wiped the whole envelope
- * including scheme-independent spacing/typography/size tweaks, contradicting
- * the documented carry-over guarantee. So the host no longer touches zdtp's
- * private storage keys.
- *
- * The design-token-panel bootstrap ALSO listens for this event and, on toggle,
- * destroys + reconfigures the panel with the new mode's mode-scoped semantic
- * DEFAULTS (see `design-token-panel-bootstrap.ts` + the host's
- * `buildDesignTokenPanelConfig`, #2610). That keeps the panel's per-mode
- * defaults faithful. Saved Color overrides are scheme- and mode-scoped:
- * the package-default builder declares separate Default Light / Default Dark
- * identities in panelSettings.colorMode, so an edit made in one mode does not
- * replace the other mode's default or saved mapping. Returning to a mode
- * restores that identity's saved choice. Palette, Spacing, Font, and Size
- * overrides remain shared across light/dark within the active theme pack.
- * The browser contract lives in e2e/theme-panel-persistence.spec.ts (#3980).
- * See zudo-doc#2037 / #2610.
- */
-export function applyColorScheme(next: ColorSchemeMode): void {
-  document.documentElement.setAttribute("data-theme", next);
-  document.documentElement.style.colorScheme = next;
-  localStorage.setItem(STORAGE_KEY, next);
-  window.dispatchEvent(new CustomEvent(COLOR_SCHEME_CHANGED_EVENT));
+/** Select a preference. Storage is best effort; the live choice survives errors. */
+export function applyThemePreference(next: ThemePreference): void {
+  const state = getRuntime();
+  const previousPreference = resolveThemePreference(
+    state.choice,
+    state.defaultMode,
+    state.respectPrefersColorScheme,
+  );
+  const previousMode = state.lastMode ?? document.documentElement.getAttribute("data-theme");
+  state.choice = next;
+  try {
+    localStorage.setItem(COLOR_SCHEME_STORAGE_KEY, next);
+  } catch {
+    // Private browsing or disabled storage must not block theme changes.
+  }
+  const systemIsDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
+  const mode = resolveColorScheme(next, systemIsDark);
+  document.documentElement.setAttribute("data-theme", mode);
+  document.documentElement.style.colorScheme = mode;
+  state.lastMode = mode;
+  if (previousMode !== mode) {
+    window.dispatchEvent(new CustomEvent(COLOR_SCHEME_CHANGED_EVENT));
+  }
+  if (previousPreference !== next) {
+    window.dispatchEvent(new CustomEvent(THEME_PREFERENCE_CHANGED_EVENT));
+  }
 }
 
-/**
- * Subscribe to color-scheme changes. Returns an unsubscribe function
- * (suitable as a `useEffect` cleanup).
- */
+/** Existing light/dark callers explicitly select the corresponding preference. */
+export function applyColorScheme(next: ColorSchemeMode): void {
+  applyThemePreference(next);
+}
+
 export function subscribeColorSchemeChanged(listener: () => void): () => void {
   window.addEventListener(COLOR_SCHEME_CHANGED_EVENT, listener);
   return () => window.removeEventListener(COLOR_SCHEME_CHANGED_EVENT, listener);
+}
+
+export function subscribeThemePreferenceChanged(listener: () => void): () => void {
+  window.addEventListener(THEME_PREFERENCE_CHANGED_EVENT, listener);
+  return () => window.removeEventListener(THEME_PREFERENCE_CHANGED_EVENT, listener);
 }
