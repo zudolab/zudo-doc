@@ -1204,19 +1204,27 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // `/docs/getting-started/coverage/`
   // `f0cff20357cf2c92bb554590e93d1dfe2b6a6f69a27b1944624a9c57991933de` →
   // `2b22f0512bd38d32efc09d5dcff884ea7ec2655b312964acbb47e787f74e979a`.
+  //
+  // 2026-09-24 re-baseline (header geometry, zudolab/zudo-doc#4381):
+  // all three pages change only the header-right cluster class from
+  // gap-x-hsp-md to gap-x-hsp-xs. This fixture has no icon controls, so
+  // their target-size classes do not contribute. Reversing that single
+  // class replacement in each newly built page exactly reproduces its
+  // prior normalized SHA-256; the new hashes also match PR CI. Route and
+  // content assertions remain unchanged.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"065642fa3f30c9675939bce40e15a1ca63e0e3194c17cf544a158a1d2aa72e25"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"f8b654ee42623ef0cd0ca7faccc65daf6048e4e04a0c00c604593bf10a58771f"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"452bf4b1ef86ab6286810e6e0969aecc9d6a450392f4ba64a97b185393077fa6"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"eb9c46babfff07a1bbf6ff1fecbb517936a273a7e1ef7de1400c64746081330a"`);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"2b22f0512bd38d32efc09d5dcff884ea7ec2655b312964acbb47e787f74e979a"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"5a99fed6552e67869c6b3a93265d815da70f6a67e7554c58bb973c179fc873f0"`);
   });
 });
 
