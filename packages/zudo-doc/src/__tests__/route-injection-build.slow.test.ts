@@ -1176,19 +1176,36 @@ describe("A2 no-stub: injected routes render correct HTML (packageOwnedRoutes:tr
   // `/docs/getting-started/coverage/`
   // `d821fd3ef9ca8eccd08ec5b1e9777ce8383e4de3ab7a69f9caac1a7feb26fd8c` →
   // `f0cff20357cf2c92bb554590e93d1dfe2b6a6f69a27b1944624a9c57991933de`.
+  //
+  // 2026-09-24 re-baseline (Compact theme epic zudolab/zudo-doc#4373): all
+  // three pages move because the shared head bootstrap now resolves a
+  // Light/Dark/System preference before paint, and the header/mobile sidebar
+  // render the accessible appearance-menu trigger instead of the two-state
+  // toggle. These are intentional every-page script and SSR markup changes;
+  // the route/content assertions above remain unchanged. Local A2 hashes
+  // matched the PR CI run's received values before this update.
+  // `/404.html`
+  // `1b133c1331cefebb923c1d4013e0243b9d3b3f6b37db9314838f42738aa029a4` →
+  // `065642fa3f30c9675939bce40e15a1ca63e0e3194c17cf544a158a1d2aa72e25`,
+  // `/docs/getting-started/`
+  // `a3f7e6e58d3b80a7c5750369963754b12aeba12282d15f7a3935e9cbf462cf21` →
+  // `452bf4b1ef86ab6286810e6e0969aecc9d6a450392f4ba64a97b185393077fa6`, and
+  // `/docs/getting-started/coverage/`
+  // `f0cff20357cf2c92bb554590e93d1dfe2b6a6f69a27b1944624a9c57991933de` →
+  // `2b22f0512bd38d32efc09d5dcff884ea7ec2655b312964acbb47e787f74e979a`.
   it("parity: /404.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "404.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"1b133c1331cefebb923c1d4013e0243b9d3b3f6b37db9314838f42738aa029a4"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"065642fa3f30c9675939bce40e15a1ca63e0e3194c17cf544a158a1d2aa72e25"`);
   });
 
   it("parity: /docs/getting-started/index.html normalized-HTML sha256 is stable (stub-defaults path)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"a3f7e6e58d3b80a7c5750369963754b12aeba12282d15f7a3935e9cbf462cf21"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"452bf4b1ef86ab6286810e6e0969aecc9d6a450392f4ba64a97b185393077fa6"`);
   });
 
   it("parity: /docs/getting-started/coverage/index.html normalized-HTML sha256 is stable (new page, #3179)", () => {
     const html = readBuiltHtml(fixtureDir, "docs/getting-started/coverage/index.html");
-    expect(sha256Html(html)).toMatchInlineSnapshot(`"f0cff20357cf2c92bb554590e93d1dfe2b6a6f69a27b1944624a9c57991933de"`);
+    expect(sha256Html(html)).toMatchInlineSnapshot(`"2b22f0512bd38d32efc09d5dcff884ea7ec2655b312964acbb47e787f74e979a"`);
   });
 });
 
