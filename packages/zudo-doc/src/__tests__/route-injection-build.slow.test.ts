@@ -34,7 +34,7 @@
 
 import { describe, it, expect, afterAll } from "vitest";
 import { execSync, spawn, type ExecSyncOptions, type ChildProcess } from "node:child_process";
-import { mkdtempSync, mkdirSync, cpSync, symlinkSync, existsSync, readFileSync, readdirSync, rmSync, writeFileSync, renameSync, realpathSync } from "node:fs";
+import { mkdtempSync, mkdirSync, cpSync, symlinkSync, existsSync, readFileSync, readdirSync, rmSync, writeFileSync, renameSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -177,7 +177,7 @@ function setupFixture(
  * version that rejects `injectRoute` during builds; the local binary
  * (0.1.0-next.62+) supports build-time route injection.
  */
-function runZfbBuild(dir: string, outDir = "dist"): string {
+function runZfbBuild(dir: string, outDir = "dist", zfbBin = "./node_modules/.bin/zfb"): string {
   const opts: ExecSyncOptions = {
     cwd: dir,
     env: {
@@ -195,7 +195,7 @@ function runZfbBuild(dir: string, outDir = "dist"): string {
     // assert on build diagnostics (the docHistory registration case) need stderr
     // too — plain execSync would drop it on success. Existing callers ignore the
     // return value, so widening void→string is backward-compatible.
-    return execSync(`./node_modules/.bin/zfb build --outdir ${outDir} 2>&1`, opts) as string;
+    return execSync(`"${zfbBin}" build --outdir ${outDir} 2>&1`, opts) as string;
   } catch (err) {
     const e = err as { stdout?: string; stderr?: string; message?: string };
     throw new Error(
@@ -2466,8 +2466,8 @@ it("builds injected routes from a nested workspace package with pnpm-style packa
   const root = setupNoSrcFixture(FIXTURE_I18N_SRC, packPackage());
   const rootNm = join(root, "node_modules");
   const packageLink = join(rootNm, "@takazudo/zudo-doc");
-  const storePackage = join(rootNm, ".pnpm/zudo-doc/node_modules/@takazudo/zudo-doc");
-  mkdirSync(join(rootNm, ".pnpm/zudo-doc/node_modules/@takazudo"), { recursive: true });
+  const storePackage = join(rootNm, ".fixture-pnpm/zudo-doc/node_modules/@takazudo/zudo-doc");
+  mkdirSync(join(rootNm, ".fixture-pnpm/zudo-doc/node_modules/@takazudo"), { recursive: true });
   renameSync(packageLink, storePackage);
   symlinkSync(storePackage, packageLink);
 
@@ -2477,14 +2477,20 @@ it("builds injected routes from a nested workspace package with pnpm-style packa
     if (entry === "node_modules" || entry === "packages") continue;
     renameSync(join(root, entry), join(project, entry));
   }
-  // The consumer's package-level node_modules exists, but has no @takazudo
-  // entry. zfb's shadow preserves that topology when generating route shims.
-  mkdirSync(join(project, "node_modules/.bin"), { recursive: true });
-  symlinkSync(realpathSync(join(rootNm, ".bin/zfb")), join(project, "node_modules/.bin/zfb"));
-  mkdirSync(join(project, "node_modules/@workspace/design-system"), { recursive: true });
+  // The nested package has its own node_modules but no zudo-doc entry there.
+  const projectNm = join(project, "node_modules");
+  mkdirSync(projectNm, { recursive: true });
+  linkFixtureNodeModules(projectNm);
+  mkdirSync(join(projectNm, "@takazudo"), { recursive: true });
+  for (const entry of readdirSync(join(rootNm, "@takazudo"))) {
+    if (entry === "zudo-doc") continue;
+    symlinkSync(join(rootNm, "@takazudo", entry), join(projectNm, "@takazudo", entry));
+  }
+  mkdirSync(join(projectNm, "@workspace/design-system"), { recursive: true });
   writeFileSync(join(project, "node_modules/@workspace/design-system/package.json"), '{"name":"@workspace/design-system","version":"1.0.0"}');
 
-  runZfbBuild(project);
+  expect(existsSync(join(projectNm, "@takazudo/zudo-doc"))).toBe(false);
+  runZfbBuild(project, "dist", join(rootNm, ".bin/zfb"));
   expect(readBuiltHtml(project, "404.html")).toContain("Page Not Found");
   expect(readBuiltHtml(project, "docs/getting-started/index.html")).toContain("Getting Started");
   expect(existsSync(join(project, ".zudo-doc/routes-src/docs-slug.tsx"))).toBe(true);
