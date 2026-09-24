@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect } from "vitest";
+import { renderHtml } from "@takazudo/zfb-md-wasm/render";
 import { extractHeadings, slugify } from "../../../pages/lib/_extract-headings";
 
 /**
@@ -98,6 +99,50 @@ describe("extractHeadings — slug fidelity", () => {
     const [heading] = extractHeadings(body);
     expect(heading?.text).toBe("Enable fast mode");
     expect(heading?.slug).toBe("enable-fast-mode");
+  });
+});
+
+describe("extractHeadings — Markdown escape parity with zfb 2.20.2", () => {
+  const cases = [
+    ["escaped underscore", "## Facts: ABSOLUTE\\_MAXIMUM", "Facts: ABSOLUTE_MAXIMUM"],
+    ["escaped underscore beside emphasis", "## A \\__x__ Z", "A _x_ Z"],
+    ["escaped asterisk", "## Use \\*fast* mode", "Use *fast* mode"],
+    ["escaped brackets", "## Use \\[literal](url)", "Use [literal](url)"],
+    ["escaped closing bracket", "## Use \\[literal\\]", "Use [literal]"],
+    ["escaped punctuation", "## A \\!wow", "A !wow"],
+    ["escaped backtick", "## A \\`raw` value", "A `raw` value"],
+    ["escaped backslash", "## A \\\\_id", "A \\_id"],
+    ["odd backslash run", "## A \\\\\\_id", "A \\_id"],
+    ["non-punctuation escape", "## A \\q value", "A \\q value"],
+    ["code span keeps backslash", "## Code `A\\_B`", "Code A\\_B"],
+    ["mixed link and emphasis", "## [A\\_B](https://example.com) and *fast*", "A_B and fast"],
+    ["intraword identifier", "## SKIP_DOC_HISTORY", "SKIP_DOC_HISTORY"],
+  ] as const;
+
+  it.each(cases)("matches the renderer for %s", async (_name, source, visible) => {
+    const rendered = await renderHtml(source, {
+      filename: "heading.md",
+      pipeline: { features: { headingIds: { strategy: "hierarchical" } } },
+    });
+    expect(rendered.diagnostics).toEqual([]);
+    const renderedId = /<h2 id="([^"]+)">/.exec(rendered.html ?? "")?.[1];
+    expect(renderedId).toBeTruthy();
+    const [heading] = extractHeadings(source);
+    expect(heading?.text).toBe(visible);
+    expect(heading?.slug).toBe(renderedId);
+  });
+
+  it("keeps escaped duplicates and nested depths in the renderer's allocation order", async () => {
+    const source = "## Facts: ABSOLUTE\\_MAXIMUM\n### Child\n## Facts: ABSOLUTE\\_MAXIMUM\n##### Deep\n#### Deep";
+    const rendered = await renderHtml(source, {
+      filename: "heading.md",
+      pipeline: { features: { headingIds: { strategy: "hierarchical" } } },
+    });
+    expect(rendered.diagnostics).toEqual([]);
+    const renderedIds = [...(rendered.html ?? "").matchAll(/<h[2-6] id="([^"]+)">/g)].map((match) => match[1]);
+    expect(extractHeadings(source).map((heading) => heading.slug)).toEqual([
+      renderedIds[0], renderedIds[1], renderedIds[2], renderedIds[4],
+    ]);
   });
 });
 

@@ -11,8 +11,7 @@ import { readFile, readdir, access, stat } from "node:fs/promises";
 import { join, extname, resolve, relative, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  extractHeadings,
-  slugify,
+  extractAllHeadingIds,
 } from "@takazudo/zudo-doc/extract-headings";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -522,54 +521,9 @@ export function extractMdxFragmentLinks(content) {
   return links;
 }
 
-function headingText(raw) {
-  return raw
-    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
-    .replace(/`([^`]+)`/g, "$1")
-    .replace(/\*\*([^*]+)\*\*/g, "$1")
-    .replace(/(?<![\w])__([^_]+)__(?![\w])/g, "$1")
-    .replace(/\*([^*]+)\*/g, "$1")
-    .replace(/(?<![\w])_([^_]+)_(?![\w])/g, "$1")
-    .trim();
-}
-
-/** All-depth mirror of the renderer's hierarchical SlugAllocator. */
+/** Include h5/h6 targets and use the same text extraction as rendered TOC IDs. */
 function allHierarchicalHeadingIds(body) {
-  const ids = new Set(extractHeadings(body).map((heading) => heading.slug));
-  const seen = new Map();
-  const stack = [];
-  let codeFenceOpener = null;
-
-  for (const line of body.split("\n")) {
-    const fence = /^([`~]{3,})/.exec(line.trimStart())?.[1];
-    if (fence !== undefined) {
-      if (codeFenceOpener === null) codeFenceOpener = fence;
-      else if (
-        fence[0] === codeFenceOpener[0] &&
-        fence.length >= codeFenceOpener.length
-      ) {
-        codeFenceOpener = null;
-      }
-      continue;
-    }
-    if (codeFenceOpener !== null) continue;
-
-    const match = /^(#{2,6})[ \t]+(.+)$/.exec(line.trim());
-    if (match === null) continue;
-    const depth = match[1].length;
-    const base = slugify(headingText(match[2]));
-    if (base === "") continue;
-
-    while ((stack.at(-1)?.depth ?? -1) >= depth) stack.pop();
-    const parent = stack.at(-1);
-    const candidate = parent === undefined ? base : `${parent.id}-${base}`;
-    const count = seen.get(candidate) ?? 0;
-    seen.set(candidate, count + 1);
-    const id = count === 0 ? candidate : `${candidate}-${count}`;
-    stack.push({ depth, id });
-    ids.add(id);
-  }
-  return ids;
+  return new Set(extractAllHeadingIds(body));
 }
 
 function extractStaticMdxIds(body) {
