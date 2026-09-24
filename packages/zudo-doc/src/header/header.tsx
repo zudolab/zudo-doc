@@ -294,6 +294,49 @@ export function Header(props: HeaderProps): JSX.Element {
 
   const activeNavPath = computeActiveNavPath(headerNav, matchPath);
   const rightItemDispatch = createRightItemDispatch(headerRightComponents);
+  const rightItems = headerRightItems
+    .map((item, i) => ({
+      item,
+      node: renderRightItem(
+        item,
+        i,
+        {
+          lang,
+          githubRepoUrl,
+          githubLabel,
+          themeToggle,
+          languageSwitcher,
+          versionSwitcher,
+          search,
+          colorModeEnabled,
+          hasLocales,
+        },
+        rightItemDispatch,
+      ),
+    }))
+    .filter((entry): entry is typeof entry & { node: VNode } => entry.node !== null);
+  const rightGroups: VNode[] = [];
+  let iconGroup: VNode[] = [];
+
+  const flushIconGroup = () => {
+    if (iconGroup.length === 0) return;
+    rightGroups.push(
+      <div class="flex items-center" data-header-icon-group>
+        {iconGroup}
+      </div>,
+    );
+    iconGroup = [];
+  };
+
+  for (const { item, node } of rightItems) {
+    if (isHeaderIconItem(item)) {
+      iconGroup.push(node);
+    } else {
+      flushIconGroup();
+      rightGroups.push(node);
+    }
+  }
+  flushIconGroup();
 
   return (
     <header
@@ -409,25 +452,10 @@ export function Header(props: HeaderProps): JSX.Element {
       </nav>
 
       <div
-        class="ml-auto flex shrink-0 items-center gap-x-hsp-xs"
+        class="ml-auto flex shrink-0 items-center gap-x-hsp-md"
         data-header-right
       >
-        {headerRightItems.map((item, i) => renderRightItem(
-          item,
-          i,
-          {
-            lang,
-            githubRepoUrl,
-            githubLabel,
-            themeToggle,
-            languageSwitcher,
-            versionSwitcher,
-            search,
-            colorModeEnabled,
-            hasLocales,
-          },
-          rightItemDispatch,
-        ))}
+        {rightGroups}
       </div>
 
       <script dangerouslySetInnerHTML={{ __html: NAV_OVERFLOW_SCRIPT }} />
@@ -592,6 +620,13 @@ function stripCurrentVersionPrefix(path: string, currentVersion?: string): strin
 
 type RightItemContext = Omit<HeaderRightComponentProps, "item" | "index">;
 
+function isHeaderIconItem(item: HeaderRightItem): boolean {
+  if (item.type === "trigger") return true;
+  if (item.type === "link") return item.icon === "github";
+  if (item.type !== "component") return false;
+  return ["github-link", "theme-toggle", "search"].includes(item.component);
+}
+
 /**
  * Shared trigger-button shell for header-right items that dispatch a
  * CustomEvent on click. The legacy template used an inline `onclick`
@@ -620,7 +655,7 @@ function TriggerButton({
       key={`right-${index}`}
       id={id}
       type="button"
-      class="flex h-[44px] w-[44px] shrink-0 items-center justify-center text-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
+      class="flex h-[40px] w-[40px] shrink-0 items-center justify-center text-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
       aria-label={ariaLabel}
       {...inlineOnclick}
     >
@@ -730,7 +765,7 @@ const BASE_RIGHT_ITEM_DISPATCH: Readonly<Record<string, RightItemHandler>> = {
         href={ctx.githubRepoUrl}
         target="_blank"
         rel="noopener noreferrer"
-        class="flex h-[44px] w-[44px] shrink-0 items-center justify-center text-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
+        class="flex h-[40px] w-[40px] shrink-0 items-center justify-center text-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
         aria-label={ctx.githubLabel}
         title={ctx.githubLabel}
       >
@@ -783,7 +818,7 @@ const BASE_RIGHT_ITEM_DISPATCH: Readonly<Record<string, RightItemHandler>> = {
         target={isExternal ? "_blank" : undefined}
         rel={isExternal ? "noopener noreferrer" : undefined}
         class={item.icon === "github"
-          ? "flex h-[44px] w-[44px] shrink-0 items-center justify-center text-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
+          ? "flex h-[40px] w-[40px] shrink-0 items-center justify-center text-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
           : "flex items-center justify-center text-muted transition-colors hover:text-fg"}
         aria-label={item.ariaLabel}
         title={label}

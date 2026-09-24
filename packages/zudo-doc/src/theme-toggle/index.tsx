@@ -207,7 +207,7 @@ export function ThemeToggle({
             event.preventDefault(); setPlacement(null); ensureMenuId(); setActiveIndex(event.key === "ArrowDown" ? 0 : 2); setOpen(true);
           } else if (event.key === "Escape" && open) { event.preventDefault(); close(true); }
         }}
-        className="inline-flex h-[44px] w-[44px] shrink-0 items-center justify-center text-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
+        className="inline-flex h-[40px] w-[40px] shrink-0 items-center justify-center text-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
       ><PreferenceIcon preference={preference} /></button>
       {open && createPortal(<div ref={menuRef} id={menuId.current} role="menu" aria-label={labels.appearance}
         popover={typeof HTMLElement !== "undefined" && "showPopover" in HTMLElement.prototype ? "manual" : undefined}
