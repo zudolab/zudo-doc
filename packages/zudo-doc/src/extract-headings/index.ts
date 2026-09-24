@@ -143,6 +143,10 @@ class SlugAllocator {
  * Strip inline markdown markup from a heading line to obtain the plain visible
  * text that `rehype-heading-links` sees after MDX → HTML conversion.
  *
+ * Protects code spans and Markdown backslash escapes before stripping markup.
+ * An escaped delimiter must remain literal, while a backslash inside code is
+ * literal content. Only ASCII punctuation is escapable in CommonMark.
+ *
  * Strips (in order):
  *   - Inline links: `[text](url)` → `text`
  *   - Inline code spans: `` `code` `` → `code`
@@ -157,19 +161,52 @@ class SlugAllocator {
  * appear in identifiers and CommonMark does allow intraword `*`.
  */
 function stripInlineMarkdown(raw: string): string {
+  const protectedText: string[] = [];
+  const protect = (value: string): string => {
+    const index = protectedText.push(value) - 1;
+    return `\uE000${index}\uE001`;
+  };
+  let masked = "";
+  for (let i = 0; i < raw.length;) {
+    if (raw[i] === "\\" && i + 1 < raw.length && /[!-/:-@[-`{-~]/.test(raw[i + 1] ?? "")) {
+      masked += protect(raw[i + 1] ?? "");
+      i += 2;
+      continue;
+    }
+    if (raw[i] === "`") {
+      const opener = /^`+/.exec(raw.slice(i))?.[0] ?? "`";
+      const closer = /`+/g;
+      closer.lastIndex = i + opener.length;
+      let match: RegExpExecArray | null;
+      while ((match = closer.exec(raw)) !== null && match[0].length !== opener.length) {
+        // A code span closes only with a run of the same length.
+      }
+      if (match !== null) {
+        let code = raw.slice(i + opener.length, match.index).replace(/\n/g, " ");
+        if (code.startsWith(" ") && code.endsWith(" ") && /[^ ]/.test(code)) {
+          code = code.slice(1, -1);
+        }
+        masked += protect(code);
+        i = match.index + opener.length;
+        continue;
+      }
+    }
+    masked += raw[i];
+    i++;
+  }
+
   return (
-    raw
+    masked
       // Inline links [text](url) — replace with link text only.
       // Must run before bold/italic to avoid mismatching `*` inside URLs.
       .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
-      // Inline code spans `code` — replace with code text.
-      .replace(/`([^`]+)`/g, "$1")
       // Bold **text** or __text__ (underscore form only at word boundaries)
       .replace(/\*\*([^*]+)\*\*/g, "$1")
-      .replace(/(?<![\w])__([^_]+)__(?![\w])/g, "$1")
+      .replace(/(?<![A-Za-z0-9])__([^_]+)__(?![A-Za-z0-9])/g, "$1")
       // Italic *text* or _text_ (underscore form only at word boundaries)
       .replace(/\*([^*]+)\*/g, "$1")
-      .replace(/(?<![\w])_([^_]+)_(?![\w])/g, "$1")
+      .replace(/(?<![A-Za-z0-9])_([^_]+)_(?![A-Za-z0-9])/g, "$1")
+      .replace(/\uE000(\d+)\uE001/g, (_match, index: string) => protectedText[Number(index)] ?? "")
       .trim()
   );
 }
@@ -229,6 +266,15 @@ export function extractHeadings(
     opts?.tocMaxDepth ?? 4,
   );
 
+  return collectHeadings(body, lo, hi);
+}
+
+/** All rendered h2–h6 IDs, including headings below the TOC depth window. */
+export function extractAllHeadingIds(body: string): string[] {
+  return collectHeadings(body, 2, 6).map((heading) => heading.slug).filter(Boolean);
+}
+
+function collectHeadings(body: string, lo: number, hi: number): HeadingItem[] {
   const allocator = new SlugAllocator();
   const headings: HeadingItem[] = [];
 
