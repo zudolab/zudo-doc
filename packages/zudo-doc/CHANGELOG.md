@@ -8,6 +8,22 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [5.27.0] - 2026-09-24
+
+### Features
+
+- Added an accessible Appearance menu with Light, Dark, and System choices. System follows device changes, and the selected preference persists across navigation (5bb3d2175, d2146b6e0).
+
+### Bug Fixes
+
+- Grouped header icons into 40 px controls with no internal gap and 12 px boundaries beside other controls; the Appearance menu also returns keyboard focus to its trigger after closing (4c718aa02).
+- Kept the Appearance menu above the design token panel and within the available viewport (1773a3a21).
+- Corrected heading IDs and table-of-contents links when headings contain escaped punctuation or code spans (59d47f68a).
+
+### Other Changes
+
+- Raised the minimum supported zfb toolchain peer version to 2.20.2 (e22acafdf).
+
 ## [5.26.5] - 2026-09-23
 
 ### Bug Fixes

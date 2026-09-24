@@ -8,6 +8,17 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [5.27.0] - 2026-09-24
+
+### Bug Fixes
+
+- Generated projects now check links to headings with escaped punctuation or code spans correctly (59d47f68a).
+- New projects use the zfb 2.20.2 toolchain, which fixes injected-route dependency staging in workspace packages (e22acafdf).
+
+### Other Changes
+
+- Generated projects now pin `@takazudo/zudo-doc` and `@takazudo/zudo-doc-history-server` to `^5.27.0`.
+
 ## [5.26.5] - 2026-09-23
 
 ### Bug Fixes
