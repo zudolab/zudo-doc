@@ -963,9 +963,14 @@ function generatePackageJson(
     // limited to each package's own version field plus the five platform-binary
     // `optionalDependencies` pins. No public API, export, config default, or
     // engine requirement moves, so a fresh scaffold needs no config migration.
-    "@takazudo/zfb": "2.20.1",
-    "@takazudo/zfb-runtime": "2.20.1",
-    "@takazudo/zfb-md-wasm": "2.20.1",
+    // 2.20.2: zfb fixes injected-route dependency staging for npm/pnpm workspace
+    // packages and preserves explicit symlink resolution. The companion
+    // package changelogs report no package-specific changes; md-wasm's tarball
+    // also changes its four published WASM artifacts. No scaffold config
+    // migration is required.
+    "@takazudo/zfb": "2.20.2",
+    "@takazudo/zfb-runtime": "2.20.2",
+    "@takazudo/zfb-md-wasm": "2.20.2",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
