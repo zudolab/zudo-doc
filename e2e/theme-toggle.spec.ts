@@ -71,8 +71,8 @@ test.describe("Appearance menu", () => {
     const optionBox = await selectedSystemOption.boundingBox();
     expect(triggerBox).not.toBeNull();
     expect(optionBox).not.toBeNull();
-    expect(triggerBox!.width).toBeGreaterThanOrEqual(44);
-    expect(triggerBox!.height).toBeGreaterThanOrEqual(44);
+    expect(triggerBox!.width).toBe(40);
+    expect(triggerBox!.height).toBe(40);
     expect(optionBox!.height).toBeGreaterThanOrEqual(44);
     await expect(appearanceMenu(page)).toContainText("Follows device · currently Dark");
     await page.keyboard.press("Escape");
