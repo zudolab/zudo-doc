@@ -4,6 +4,8 @@ import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { renderHtml } from "@takazudo/zfb-md-wasm/render";
+import { extractHeadings } from "@takazudo/zudo-doc/extract-headings";
 import {
   parseBasePath,
   parseTrailingSlash,
@@ -970,6 +972,27 @@ describe("check-links", () => {
       expect(scanned).toEqual({ links: 1, ids: 1 });
     });
 
+    it("resolves desktop and mobile TOC hrefs against rendered escaped heading IDs", async () => {
+      const source = "## Facts: ABSOLUTE\\_MAXIMUM\n### Child\\_ID";
+      const rendered = await renderHtml(source, {
+        filename: "target.md",
+        pipeline: { features: { headingIds: { strategy: "hierarchical" } } },
+      });
+      expect(rendered.diagnostics).toEqual([]);
+      const toc = extractHeadings(source);
+      const distDir = join(tmpDir, "dist");
+      mkdirSync(join(distDir, "docs", "target"), { recursive: true });
+      const tocLinks = toc.flatMap(({ slug }) => ["desktop", "mobile"].map((view) =>
+        `<nav class="${view}"><a href="/docs/target#${slug}">Heading</a></nav>`));
+      writeFileSync(join(distDir, "index.html"), tocLinks.join("\n"));
+      writeFileSync(join(distDir, "docs", "target", "index.html"), rendered.html ?? "");
+
+      const result = await checkHtmlLinksAndTrailing(distDir, tmpDir);
+      expect(result.broken).toEqual([]);
+      expect(result.anchors).toEqual([]);
+      expect(result.scanned.links).toBe(toc.length * 2 + toc.length);
+    });
+
     it("collects protocol-relative hrefs as informational notices without affecting broken/anchors", async () => {
       const distDir = join(tmpDir, "dist");
       mkdirSync(distDir, { recursive: true });
@@ -1308,6 +1331,19 @@ describe("check-links", () => {
   });
 
   describe("checkMdxAnchors", () => {
+    it("accepts escaped heading anchors at TOC and h5 depths", async () => {
+      const docsDir = join(tmpDir, "src", "content", "docs");
+      mkdirSync(docsDir, { recursive: true });
+      writeFileSync(join(docsDir, "source.mdx"), [
+        "[TOC](./target.mdx#facts-absolute_maximum)",
+        "[Deep](./target.mdx#facts-absolute_maximum-deep_id)",
+      ].join("\n"));
+      writeFileSync(join(docsDir, "target.mdx"),
+        "## Facts: ABSOLUTE\\_MAXIMUM\n##### Deep\\_ID");
+
+      expect(await checkMdxAnchors([docsDir], tmpDir, "/", [])).toEqual([]);
+    });
+
     it("validates hierarchical h5/h6 and explicit static ids in relative targets", async () => {
       const docsDir = join(tmpDir, "src", "content", "docs");
       mkdirSync(docsDir, { recursive: true });

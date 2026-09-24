@@ -4,6 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
+import { renderHtml } from "@takazudo/zfb-md-wasm/render";
+import { extractHeadings } from "@takazudo/zudo-doc/extract-headings";
 
 const TEMP_PREFIX = "create-zudo-doc-check-links-test-";
 const TEMPLATE_SCRIPT = path.resolve(
@@ -54,6 +56,29 @@ describe("generated check-links.js — source anchors without dist (#3552)", () 
       files: {
         "src/content/docs/source.mdx": "[child](/docs/target#parent-child)\n",
         "src/content/docs/target.mdx": "## Parent\n### Child\n",
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe("");
+  });
+
+  it("accepts escaped source anchors and both TOC views against rendered IDs", async () => {
+    const source = "## Facts: ABSOLUTE\\_MAXIMUM\n##### Deep\\_ID";
+    const rendered = await renderHtml(source, {
+      filename: "target.md",
+      pipeline: { features: { headingIds: { strategy: "hierarchical" } } },
+    });
+    expect(rendered.diagnostics).toEqual([]);
+    const slug = extractHeadings(source)[0]?.slug;
+    expect(slug).toBe("facts-absolute_maximum");
+    const result = await runFixture({
+      args: ["--strict-broken", "--strict-anchors"],
+      files: {
+        "src/content/docs/source.mdx": "[deep](/docs/target#facts-absolute_maximum-deep_id)\n",
+        "src/content/docs/target.mdx": source,
+        "dist/index.html": ["desktop", "mobile"].map((view) =>
+          `<nav class="${view}"><a href="/docs/target#${slug}">Heading</a></nav>`).join("\n"),
+        "dist/docs/target/index.html": rendered.html ?? "",
       },
     });
     expect(result.status).toBe(0);
