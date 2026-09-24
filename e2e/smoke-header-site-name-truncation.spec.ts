@@ -25,7 +25,7 @@ import { test, expect, type Page } from "@playwright/test";
  * smoke-seo.spec.ts:8,15,49.
  *
  * The name overflows at 390px with raised or default font preferences
- * after #4381 gives every icon control a 44px target. The default-font
+ * with the grouped 40px icon controls. The default-font
  * control case expands to 560px and proves the same name renders in full
  * once enough space exists. "Smoke Test Documentation" was rejected because
  * it also overflowed the unrelated home hero at 390px/24px (#4297).
@@ -124,8 +124,8 @@ test.describe("header site-name truncation", () => {
     for (const control of [designTokenTrigger, aiChatTrigger, githubLink, searchTrigger]) {
       const rect = await control.boundingBox();
       expect(rect).not.toBeNull();
-      expect(rect!.width).toBeCloseTo(44, 1);
-      expect(rect!.height).toBeCloseTo(44, 1);
+      expect(rect!.width).toBeCloseTo(40, 1);
+      expect(rect!.height).toBeCloseTo(40, 1);
     }
 
     // `trial: true` runs Playwright's actionability checks (visible, stable,
@@ -147,7 +147,7 @@ test.describe("header site-name truncation", () => {
   test("long site name truncates only while space is insufficient at the default 16px font preference", async ({
     page,
   }) => {
-    // Equal 44px targets intentionally reserve more room for controls. At
+    // Equal 40px targets reserve room for controls. At
     // 390px the long name yields; at 560px it must regain its natural width.
     await page.goto("/docs/getting-started", { waitUntil: "domcontentloaded" });
     await page.evaluate(() => document.fonts.ready);

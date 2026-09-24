@@ -47,6 +47,45 @@ function makeHeaderProps(
 }
 
 describe("named header-right component registry", () => {
+  it("groups consecutive icon controls while preserving the configured order", () => {
+    const html = render(
+      <Header
+        {...makeHeaderProps({
+          headerRightItems: [
+            { type: "component", component: "version-switcher" },
+            { type: "trigger", trigger: "design-token-panel" },
+            { type: "trigger", trigger: "ai-chat" },
+            { type: "component", component: "github-link" },
+            { type: "component", component: "theme-toggle" },
+            { type: "component", component: "search" },
+            { type: "component", component: "language-switcher" },
+          ],
+        })}
+      />,
+    );
+
+    const group = html.slice(
+      html.indexOf("data-header-icon-group"),
+      html.indexOf("data-language"),
+    );
+    expect(html.match(/data-header-icon-group/g)).toHaveLength(1);
+    for (const marker of [
+      "design-token-trigger",
+      "ai-chat-trigger",
+      "github.com/example/docs",
+      "data-theme",
+      "data-search",
+    ]) {
+      expect(group).toContain(marker);
+    }
+    expect(group).not.toContain("data-version");
+    expect(group).not.toContain("data-language");
+    expect(html.indexOf("data-version")).toBeLessThan(html.indexOf("data-header-icon-group"));
+    expect(html.indexOf("data-language")).toBeGreaterThan(html.indexOf("data-header-icon-group"));
+    expect(html).toContain("gap-x-hsp-md");
+    expect(group).toContain("h-[40px] w-[40px]");
+  });
+
   it("renders a custom component in its declared position with the exact renderer props", () => {
     let received: HeaderRightComponentProps | undefined;
     const props = makeHeaderProps({

@@ -72,7 +72,7 @@ describe("ThemeToggle appearance menu", () => {
     expect(document.activeElement).toBe(items(first)[2]);
     press(items(first)[2]!, "Escape");
     expect(menu(first)).toBeNull();
-    expect(document.activeElement).toBe(trigger(first));
+    await vi.waitFor(() => expect(document.activeElement).toBe(trigger(first)));
     open(first);
     press(items(first)[2]!, "Tab");
     await new Promise((resolve) => setTimeout(resolve, 0));
