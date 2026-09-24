@@ -76,6 +76,7 @@ export function ThemeToggle({
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const restoreFocusRef = useRef(false);
   const [preference, setPreference] = useState<ThemePreference>(
     respectPrefersColorScheme ? "system" : defaultMode,
   );
@@ -152,15 +153,21 @@ export function ThemeToggle({
     if (open && placement) itemRefs.current[activeIndex]?.focus();
   }, [open, placement]); // Focus once the portaled menu is visible.
 
+  useEffect(() => {
+    if (open || !restoreFocusRef.current) return;
+    restoreFocusRef.current = false;
+    requestAnimationFrame(() => triggerRef.current?.focus());
+  }, [open]);
+
   const close = (restoreFocus = false) => {
+    restoreFocusRef.current = restoreFocus;
     setOpen(false);
-    if (restoreFocus) triggerRef.current?.focus();
   };
   const select = (next: ThemePreference) => {
+    close(true);
     applyThemePreference(next);
     setPreference(next);
     setResolved(readColorSchemeFromDom(defaultMode));
-    close(true);
   };
   const move = (index: number) => {
     const next = (index + preferences.length) % preferences.length;
