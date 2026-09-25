@@ -6,7 +6,9 @@
  */
 
 import { describe, it, expect } from "vitest";
+import { compile } from "@takazudo/zfb-md-wasm";
 import { renderHtml } from "@takazudo/zfb-md-wasm/render";
+import { extractAllHeadingIds } from "@takazudo/zudo-doc/extract-headings";
 import { extractHeadings, slugify } from "../../../pages/lib/_extract-headings";
 
 /**
@@ -143,6 +145,83 @@ describe("extractHeadings — Markdown escape parity with zfb 2.20.2", () => {
     expect(extractHeadings(source).map((heading) => heading.slug)).toEqual([
       renderedIds[0], renderedIds[1], renderedIds[2], renderedIds[4],
     ]);
+  });
+});
+
+// zfb's real build path. `renderHtml` in MDX mode omits ids for headings in
+// JSX children, so `compile()` — not `renderHtml` — is the oracle here.
+async function compiledHeadingIds(source: string): Promise<string[]> {
+  const result = await compile(source, {
+    filename: "page.mdx",
+    pipeline: { features: { headingIds: { strategy: "hierarchical" } } },
+  });
+  expect(result.diagnostics).toEqual([]);
+  return [...(result.code ?? "").matchAll(/id: ?"([^"]*)"/g)].map((match) => match[1] ?? "");
+}
+
+describe("extractHeadings — MDX JSX parity with zfb compile() (#4396)", () => {
+  it("ignores `##` lines inside a template-literal JSX prop (issue repro)", async () => {
+    const body = "Intro\n\n<HtmlPreview displayJs={`\nconst doc = \\`# Demo\n\n## Features\n\\`;\n`} />\n\n## Real\n";
+    expect(await compiledHeadingIds(body)).toEqual(["real"]);
+    expect(extractHeadings(body).map((heading) => heading.slug)).toEqual(["real"]);
+    expect(extractAllHeadingIds(body)).toEqual(["real"]);
+  });
+
+  const cases = [
+    ["multi-line JSX comment", "{/*\n## Hidden\n*/}\n\n## Real\n"],
+    ["multi-line flow expression", "{`\n## Hidden\n`}\n\n## Real\n"],
+    ["multi-line double-quoted attribute", '<Foo t="x\n## Hidden\n" />\n\n## Real\n'],
+    ["multi-line single-quoted attribute", "<Foo t='x\n## Hidden\n' />\n\n## Real\n"],
+    ["blank line inside a quoted attribute", '<Foo t="x\n\n## Hidden\n" />\n\n## Real\n'],
+    ["`>` inside an earlier quoted attribute", '<Foo a="1 > 2"\n  b="x\n## Hidden\n" />\n\n## Real\n'],
+    ["template literal in a spread attribute", "<Foo {...{ a: `\n## Hidden\n` }} />\n\n## Real\n"],
+    ["escaped backticks in a template literal", "<Foo a={`\n\\`\n## Hidden\n\\`\n`} />\n\n## Real\n"],
+    ["nested ${} in a template literal", "<Foo a={`\n${ { b: `\n## Hidden\n` } }\n`} />\n\n## Real\n"],
+    ["JSX tag inside a template literal", "<Foo a={`\n<b>\n## Hidden\n`} />\n\n## Real\n"],
+    ["apostrophe in JSX text inside an expression", "<Foo render={() => (\n  <p>It's</p>\n)} />\n\n## Real\n\nlast' quote\n\n## After\n"],
+    ["headings in JSX children", "<Bar>\n\n## Inside\n\n</Bar>\n\n## Real\n"],
+    ["headings in JSX children without blank lines", "<Bar>\n## Inside\n</Bar>\n\n## Real\n"],
+    ["headings in a fragment", "<>\n\n## Inside\n\n</>\n\n## Real\n"],
+    ["children of a tag with a multi-line attribute expression", "<Foo\n  a={{\n    b: 1,\n  }}\n>\n\n## Inside\n\n</Foo>\n\n## Real\n"],
+    ["single-line expression", "{1 + 1}\n\n## A\n\n## Real\n"],
+    ["brace in an inline code span", "Text `{` and `<Foo` more\n\n## A\n\n## Real\n"],
+    ["braces and backticks in a fenced code block", "```js\nconst a = {\n`\n```\n\n## A\n\n## Real\n"],
+    ["escaped brace in prose", "Text \\{ brace\n\n## A\n\n## Real\n"],
+    ["less-than in prose", "a < b\n\n## A\n\n## Real\n"],
+    ["heading right after the literal closes", "<Foo a={`\nx\n`} />\n## Right\n"],
+    ["heading right after a multi-line tag closes", '<Foo\n  a="1"\n/>\n## Right\n'],
+  ] as const;
+
+  it.each(cases)("matches compile() ids for %s", async (_name, body) => {
+    const expected = await compiledHeadingIds(body);
+    expect(extractAllHeadingIds(body)).toEqual(expected);
+    expect(extractHeadings(body).map((heading) => heading.slug)).toEqual(expected);
+  });
+
+  it("fails open: an expression never closed before EOF hides no headings", () => {
+    // The renderer rejects this document (unexpected EOF); the extractor falls
+    // back to reading the stray `{` as literal text rather than dropping
+    // everything after it.
+    expect(extractAllHeadingIds("Text { brace\n\n## A\n\n## Real\n")).toEqual(["a", "real"]);
+    expect(extractAllHeadingIds("{`\n## A\n\n## Real\n")).toEqual(["a", "real"]);
+  });
+
+  it("fails open: an unclosed quoted attribute hides no headings", () => {
+    expect(extractAllHeadingIds('<Foo t="x\n## A\n\n## Real\n')).toEqual(["a", "real"]);
+  });
+
+  it("fails open: a closed construct before an unclosed one keeps its suppression", () => {
+    expect(extractAllHeadingIds("{`\n## Hidden\n`}\n\n## A\n\nText {\n\n## B\n")).toEqual(["a", "b"]);
+  });
+
+  it("abandons a bare open tag at a heading line", () => {
+    expect(extractAllHeadingIds("<Foo\n\n## A\n\n## Real\n")).toEqual(["a", "real"]);
+    expect(extractAllHeadingIds("x <b\n\n## A\n\n## Real\n")).toEqual(["a", "real"]);
+  });
+
+  it("does not toggle fence state from a fence line inside an expression", () => {
+    const body = "<Foo code={`\n```js\n## Hidden\n`} />\n\n## Real\n\n## Also\n";
+    expect(extractAllHeadingIds(body)).toEqual(["real", "also"]);
   });
 });
 
