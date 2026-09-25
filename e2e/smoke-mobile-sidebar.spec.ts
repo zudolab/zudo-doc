@@ -97,6 +97,67 @@ test.describe("Mobile sidebar", () => {
     await expect(hamburger).toBeFocused();
   });
 
+  // zudolab/zudo-doc#4393 / zudolab/zudo-doc#4403: layered Escape ownership
+  // between the drawer and its nested Appearance menu (rendered in the
+  // drawer's footer — see sidebar-tree-island's SidebarFooter). The menu is
+  // portaled to `document.body`, so this exercises the real bubble path
+  // rather than a stubbed handler.
+  test("Escape closes the Appearance menu first, then the drawer, in two presses", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto(DOCS_PAGE, { waitUntil: "load" });
+
+    await openMobileDrawer(page);
+
+    const appearanceTrigger = page.locator(
+      '[data-zd-mobile-sidebar] [data-zd-theme-menu] > button[aria-haspopup="menu"]',
+    );
+    const menu = page.getByRole("menu", { name: "Appearance" });
+
+    await appearanceTrigger.click();
+    await expect(menu).toBeVisible();
+
+    // Escape #1: consumed by the menu. The drawer must stay open (not
+    // `inert` again) and focus returns to the Appearance trigger.
+    await page.keyboard.press("Escape");
+    await expect(menu).toHaveCount(0);
+    await expect(page.locator('button[aria-label="Close sidebar"]')).toBeVisible();
+    await expect(page.locator("header aside")).not.toHaveAttribute("inert", "");
+    await expect(appearanceTrigger).toBeFocused();
+
+    // Escape #2: unconsumed by the now-closed menu, so it reaches the
+    // drawer's own document-level listener.
+    await page.keyboard.press("Escape");
+    const hamburger = page.locator('button[aria-label="Open sidebar"]');
+    await expect(hamburger).toBeVisible();
+    await expect(hamburger).toBeFocused();
+  });
+
+  test("Escape on the Appearance trigger itself (menu open) behaves the same as from a menu item", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto(DOCS_PAGE, { waitUntil: "load" });
+
+    await openMobileDrawer(page);
+
+    const appearanceTrigger = page.locator(
+      '[data-zd-mobile-sidebar] [data-zd-theme-menu] > button[aria-haspopup="menu"]',
+    );
+    const menu = page.getByRole("menu", { name: "Appearance" });
+
+    await appearanceTrigger.click();
+    await expect(menu).toBeVisible();
+    await appearanceTrigger.focus();
+
+    await page.keyboard.press("Escape");
+
+    await expect(menu).toHaveCount(0);
+    await expect(page.locator('button[aria-label="Close sidebar"]')).toBeVisible();
+    await expect(appearanceTrigger).toBeFocused();
+  });
+
   // zudolab/zudo-doc#4369: the open drawer's toggle shows the X and is the
   // discoverable close control, so it must sit in the drawer's own tier
   // (z-modal 60) instead of under the backdrop (z-modal-backdrop 50). Asserts
