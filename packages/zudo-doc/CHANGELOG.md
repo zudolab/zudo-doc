@@ -9,6 +9,7 @@ The format is based on Keep a Changelog, and release notes are generated from th
 ### Bug Fixes
 
 - Heading extraction (the TOC and the `check:links` anchor scan, via `@takazudo/zudo-doc/extract-headings`) no longer treats `##` lines inside a multi-line JSX expression, a template-literal prop such as `HtmlPreview`'s `displayJs`, a JSX comment, or a multi-line quoted attribute value as headings. The extractor now delimits JSX the way zfb's MDX parser does, so it matches the rendered heading ids; headings inside JSX children are still extracted, and a construct left unclosed at end of file hides no headings (#4396).
+- Fixed the mobile drawer's Appearance menu so Escape closes only the menu and returns focus to its trigger; a second Escape then closes the drawer and focuses the hamburger (#4393).
 
 ### Other Changes
 

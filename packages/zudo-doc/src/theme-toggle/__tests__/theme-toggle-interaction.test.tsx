@@ -116,6 +116,31 @@ describe("ThemeToggle appearance menu", () => {
     expect(items(container)[1]?.getAttribute("aria-checked")).toBe("true");
   });
 
+  // zudolab/zudo-doc#4393 / zudolab/zudo-doc#4403: the menu is portaled to
+  // `document.body`, so an unstopped Escape would bubble to a document-level
+  // listener owned by an ancestor (e.g. the mobile drawer's Escape-to-close
+  // handler in sidebar-toggle-island/index.tsx) and close it too. Both the
+  // menu's own Escape branch and the trigger button's Escape branch (reached
+  // when the trigger itself is focused while the menu is open) must consume
+  // the event so a document-level listener never sees it.
+  it("stops Escape from reaching a document-level listener, from a menu item and from the trigger", () => {
+    const container = mount();
+    const onDocumentKeyDown = vi.fn();
+    document.addEventListener("keydown", onDocumentKeyDown);
+
+    open(container);
+    press(items(container)[0]!, "Escape");
+    expect(menu(container)).toBeNull();
+    expect(onDocumentKeyDown).not.toHaveBeenCalled();
+
+    open(container);
+    press(trigger(container), "Escape");
+    expect(menu(container)).toBeNull();
+    expect(onDocumentKeyDown).not.toHaveBeenCalled();
+
+    document.removeEventListener("keydown", onDocumentKeyDown);
+  });
+
   it("uses Japanese labels and can activate without a pending state", () => {
     const container = mount({ pendingUntilHydrated: false, labels: {
       appearance: "外観", light: "ライト", dark: "ダーク", system: "システム",
