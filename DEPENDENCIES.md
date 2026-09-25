@@ -22,7 +22,7 @@ that all remaining duplicate versions have been eliminated.
 
 Root formatting scripts and the pre-commit hook previously ran
 `pnpm dlx @takazudo/mdx-formatter`. They now use `pnpm exec mdx-formatter`,
-with an exact root dev dependency of `1.3.0-next.4`. The old command and the
+with an exact root dev dependency of `1.3.0`. The old command and the
 workspace-installed binary both reported that version during the audit.
 
 The same pin intentionally remains in `packages/zudo-doc`: its tests import
