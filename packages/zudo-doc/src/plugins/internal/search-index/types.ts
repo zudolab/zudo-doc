@@ -19,7 +19,13 @@ export interface SearchIndexEntry {
   id: string;
   /** Frontmatter title, falling back to the slug when missing. */
   title: string;
-  /** Plain-text body excerpt, capped at MAX_BODY_LENGTH characters. */
+  /**
+   * Plain-text body, capped at MAX_BODY_LENGTH characters (configurable via
+   * `searchMaxBodyLength`). This is a match-depth cap — how much of the page
+   * is available for the widget's `indexOf` search to match against — not a
+   * display cap; the widget already renders only a short match-centred
+   * excerpt of whichever field it shows.
+   */
   body: string;
   /** Site-relative URL (respecting `base`). */
   url: string;
@@ -45,10 +51,26 @@ export interface SearchIndexConfig {
   projectRoot?: string;
   /** Shared asset-viewer projection; consumed by the asset indexing wave. */
   assetScan?: AssetScanProjection;
+  /**
+   * Match-depth cap for indexed body text, in characters (`searchMaxBodyLength`
+   * in `ZudoDocConfig`). Applies to both doc bodies and text-asset excerpts.
+   * Falls back to {@link MAX_BODY_LENGTH} when omitted (e.g. a direct
+   * `collectSearchEntries()` call outside `zudoDoc()`). Must be a positive
+   * integer — validated by `assertValidSearchMaxBodyLength` in `collect.ts`.
+   */
+  maxBodyLength?: number;
 }
 
-/** Maximum body text stored per entry (display excerpt cap). */
-export const MAX_BODY_LENGTH = 300;
+/**
+ * Default match-depth cap for indexed body text (characters) — how much of a
+ * page or text asset is available for the search widget's `indexOf` matching,
+ * NOT a display-excerpt cap (the widget already renders only a short
+ * match-centred window regardless of this value). Overridable per-site via
+ * `searchMaxBodyLength` (zudolab/zudo-doc#4407); the exported name stays
+ * `MAX_BODY_LENGTH` for backward compatibility even though it is now a
+ * default rather than a fixed constant.
+ */
+export const MAX_BODY_LENGTH = 3000;
 
 /** Public route the dev middleware and build emitter agree on. */
 export const SEARCH_INDEX_ROUTE = "/search-index.json";

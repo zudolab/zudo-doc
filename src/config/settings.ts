@@ -245,6 +245,11 @@ Start with the **essentials**, then explore the live examples.
    * back to the default of 4.
    */
   tocMaxDepth: 4 as number,
+  // How many characters of each page body are indexed for search matching
+  // (display excerpts stay a short match-centred window regardless). Kept at
+  // the package default here so the showcase demonstrates the documented
+  // value (zudolab/zudo-doc#4407).
+  searchMaxBodyLength: 3000 as number,
   sidebarResizer: true as boolean,
   sidebarToggle: true as boolean,
   tocToggle: true as boolean,

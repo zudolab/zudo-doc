@@ -96,6 +96,7 @@ export const settings = {
   defaultLocaleOnlyPrefixes: [] as string[],
   tocMinDepth: 2 as number,
   tocMaxDepth: 4 as number,
+  searchMaxBodyLength: 3000 as number,
   // Exercises the home-page secondary category row (epic #4235, #4244): moves
   // the "changelog" top-level category out of the SiteTreeNav grid and into the
   // `[data-home-secondary-nav]` row — see smoke-home-secondary-nav.spec.ts.

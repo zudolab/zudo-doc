@@ -308,6 +308,7 @@ describe("Settings public field set snapshot", () => {
         "bundleZdtp",
         "tocMinDepth",
         "tocMaxDepth",
+        "searchMaxBodyLength",
         "sidebarResizer",
         "sidebarToggle",
         "tocToggle",

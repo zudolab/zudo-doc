@@ -109,6 +109,7 @@ const veryLongExample = "${"long-example".repeat(30)}";
   defaultLocaleOnlyPrefixes: ["/docs/default-only/"] as string[],
   tocMinDepth: 2 as number,
   tocMaxDepth: 4 as number,
+  searchMaxBodyLength: 3000 as number,
   headerNav: [
     {
       label: "Getting Started",

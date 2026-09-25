@@ -445,6 +445,7 @@ export interface Settings {
   bundleZdtp?: boolean;
   tocMinDepth: number;
   tocMaxDepth: number;
+  searchMaxBodyLength: number;
   sidebarResizer: boolean;
   sidebarToggle: boolean;
   tocToggle: boolean;
