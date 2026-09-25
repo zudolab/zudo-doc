@@ -2337,6 +2337,7 @@ describe("scaffold — settings-drift guard: generator-known fields must cover e
       aiChatGlobalDailyLimit: "no CLI/prompt surface yet — companion to aiAssistant",
       tocMinDepth: "no CLI/prompt surface yet — package default is correct for all scaffolds",
       tocMaxDepth: "no CLI/prompt surface yet — package default is correct for all scaffolds",
+      searchMaxBodyLength: "no CLI/prompt surface yet — package default is correct for all scaffolds",
       frontmatterPreview: "no CLI/prompt surface yet — hand-edit post-scaffold",
       assetViewerIndexing: "no CLI/prompt surface yet — hand-edit post-scaffold; each output is independently opt-in",
       htmlPreview: "no CLI/prompt surface yet — hand-edit post-scaffold",

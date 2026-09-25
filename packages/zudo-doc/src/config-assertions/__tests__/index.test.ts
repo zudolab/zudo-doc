@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { warnAmbiguousDropdownCategoryMatch } from "../index.js";
+import {
+  assertValidSearchMaxBodyLength,
+  warnAmbiguousDropdownCategoryMatch,
+} from "../index.js";
 
 function warningCollector(): { warnings: string[]; logger: { warn(message: string): void } } {
   const warnings: string[] = [];
@@ -79,5 +82,24 @@ describe("warnAmbiguousDropdownCategoryMatch", () => {
     );
 
     expect(warnings).toEqual([]);
+  });
+});
+
+describe("assertValidSearchMaxBodyLength", () => {
+  it("no-ops for undefined (the field is optional)", () => {
+    expect(() => assertValidSearchMaxBodyLength(undefined)).not.toThrow();
+  });
+
+  it("accepts a positive integer", () => {
+    expect(() => assertValidSearchMaxBodyLength(3000)).not.toThrow();
+    expect(() => assertValidSearchMaxBodyLength(1)).not.toThrow();
+  });
+
+  it.each([0, -1, -3000])("throws for %s (not positive)", (value) => {
+    expect(() => assertValidSearchMaxBodyLength(value)).toThrow(/searchMaxBodyLength/);
+  });
+
+  it.each([3.5, 0.1, -2.5])("throws for %s (not an integer)", (value) => {
+    expect(() => assertValidSearchMaxBodyLength(value)).toThrow(/searchMaxBodyLength/);
   });
 });

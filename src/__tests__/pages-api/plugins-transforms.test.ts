@@ -24,7 +24,8 @@
  *
  * @takazudo/zudo-doc/plugins/search-index
  *   Pure transforms: `stripMarkdown` (strips markdown from body text) and the
- *   body-truncation logic (MAX_BODY_LENGTH=300). Tested below.
+ *   body-truncation logic (MAX_BODY_LENGTH=3000 by default, configurable via
+ *   `searchMaxBodyLength`). Tested below.
  *
  * @takazudo/zudo-doc/plugins/llms-txt
  *   Pure transforms: `generateLlmsTxt` and `generateLlmsFullTxt` (format llms.txt

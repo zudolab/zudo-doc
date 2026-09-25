@@ -50,6 +50,7 @@ export const settings = {
   designTokenPanel: false,
   tocMinDepth: 2,
   tocMaxDepth: 4,
+  searchMaxBodyLength: 3000,
   sidebarResizer: false,
   sidebarToggle: false,
   tocToggle: false,

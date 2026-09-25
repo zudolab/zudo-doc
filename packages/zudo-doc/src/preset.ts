@@ -45,6 +45,7 @@ import { assertNoCommaInVersionSlugs } from "./version-availability/index.js";
 import {
   assertNoEmptyStringFaviconOrLogo,
   assertZdtpBundlingConsistent,
+  assertValidSearchMaxBodyLength,
   resolvesBundleZdtp,
   warnAmbiguousDropdownCategoryMatch,
 } from "./config-assertions/index.js";
@@ -228,6 +229,14 @@ export interface PresetSettings {
   themePacks?: string[];
   /** Header navigation, used for non-throwing dropdown category diagnostics. */
   headerNav?: PresetHeaderNavItem[];
+  /**
+   * Match-depth cap (characters) for the search index's per-page/asset body
+   * text. Threaded into the `@takazudo/zudo-doc/plugins/search-index`
+   * descriptor's `maxBodyLength` option and validated by
+   * `assertValidSearchMaxBodyLength` (`config-assertions/index.ts`). Full
+   * contract: `ZudoDocConfig.searchMaxBodyLength` in `config.ts`.
+   */
+  searchMaxBodyLength?: number;
 }
 
 /**
@@ -398,6 +407,12 @@ export function zudoDocPreset({
   // runtime. #4261's reporter calls `zudoDocPreset()` directly, so THIS is the
   // call site that catches them — guarding only `zudoDoc()` would miss it.
   assertZdtpBundlingConsistent(settings);
+
+  // Same rationale again: `zudoDoc()` (`../config.ts`) already runs this
+  // check, but #4407's reporter (or any other direct `zudoDocPreset()`
+  // caller) must still hit it before the search-index plugin options are
+  // built below.
+  assertValidSearchMaxBodyLength(settings.searchMaxBodyLength);
 
   // This diagnostic belongs only to the directly-callable preset. `zudoDoc()`
   // delegates here, so a second call site would emit duplicate warnings.
@@ -740,6 +755,7 @@ function buildPlugins(
         locales: localeRecord,
         base: settings.base,
         assetScan,
+        maxBodyLength: settings.searchMaxBodyLength,
       },
     },
     // Theme packs (ADR docs/adr/theme-packs.md, Decision 2, #2820) — a

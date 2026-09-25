@@ -6,6 +6,10 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+### Features
+
+- Long pages are now searchable beyond their opening paragraphs: the search index's body cap is raised from 300 to 3000 characters by default, and is configurable via the new `searchMaxBodyLength` setting (#4407).
+
 ### Bug Fixes
 
 - Heading extraction (the TOC and the `check:links` anchor scan, via `@takazudo/zudo-doc/extract-headings`) no longer treats `##` lines inside a multi-line JSX expression, a template-literal prop such as `HtmlPreview`'s `displayJs`, a JSX comment, or a multi-line quoted attribute value as headings. The extractor now delimits JSX the way zfb's MDX parser does, so it matches the rendered heading ids; headings inside JSX children are still extracted, and a construct left unclosed at end of file hides no headings (#4396).

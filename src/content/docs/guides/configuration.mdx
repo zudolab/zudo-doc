@@ -711,6 +711,16 @@ Maximum heading depth included in the TOC (2–4).
 
 Default: `4`
 
+## Search
+
+### searchMaxBodyLength
+
+Maximum number of characters of each page's body indexed for search matching.
+
+Type: `number` · Default: `3000`
+
+This controls how deep into a page a search query can match, not how much of a result is displayed — results always show a compact snippet centered on the match; see [Site Search](./search.mdx). Raising the cap grows `search-index.json` accordingly: for example, raising it from the previous 300-character default to 3,000 grew this showcase's index about 3.4× (roughly 410 KB to 1.4 MB). Invalid values (non-integer or `<= 0`) throw at config time.
+
 ## Site Settings
 
 ### designTokenPanel
