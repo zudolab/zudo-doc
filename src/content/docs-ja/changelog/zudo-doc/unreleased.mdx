@@ -4,4 +4,6 @@ description: 次のリリースに向けた変更。
 sidebar_position: 1130
 ---
 
-未リリースの変更はありません。
+### その他の変更
+
+- `@takazudo/zfb`、`@takazudo/zfb-runtime`、`@takazudo/zfb-md-wasm` の peer dependency 下限を `^2.21.0` に更新しました。2.20.3 のシングル Preact ランタイム SSR 修正と、バンドラーのコレクションシードを各コレクションの `include` フィルターに限定する変更が含まれます。`zfb-runtime` と `zfb-adapter-cloudflare` はバージョン更新のみで、`zfb-md-wasm` は WASM 成果物を再ビルドしています。zudo-doc の設定移行は不要です。

@@ -6,7 +6,9 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
-No unreleased changes.
+### Other Changes
+
+- Generated projects now pin `@takazudo/zfb`, `@takazudo/zfb-runtime`, and `@takazudo/zfb-md-wasm` to `2.21.0` and `@takazudo/zdtp` to `0.8.3`. The zfb 2.21.0 range includes 2.20.3's single-Preact-runtime SSR fix and scopes bundler collection seeds to each collection's `include` filter; zdtp 0.8.3 recovers panel mounts from orphaned SPA roots. Existing projects need no config migration.
 
 ## [5.27.0] - 2026-09-24
 
