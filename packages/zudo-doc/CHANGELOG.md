@@ -6,6 +6,10 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+### Bug Fixes
+
+- Heading extraction (the TOC and the `check:links` anchor scan, via `@takazudo/zudo-doc/extract-headings`) no longer treats `##` lines inside a multi-line JSX expression, a template-literal prop such as `HtmlPreview`'s `displayJs`, a JSX comment, or a multi-line quoted attribute value as headings. The extractor now delimits JSX the way zfb's MDX parser does, so it matches the rendered heading ids; headings inside JSX children are still extracted, and a construct left unclosed at end of file hides no headings (#4396).
+
 ### Other Changes
 
 - The `@takazudo/zfb`, `@takazudo/zfb-runtime`, and `@takazudo/zfb-md-wasm` peer dependency floors are now `^2.21.0`. The range includes 2.20.3's single-Preact-runtime SSR fix and scopes bundler collection seeds to each collection's `include` filter; `zfb-runtime` and `zfb-adapter-cloudflare` are version bumps only, and `zfb-md-wasm` ships rebuilt WASM artifacts. No zudo-doc config migration is required.
