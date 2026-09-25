@@ -136,6 +136,13 @@ export function SidebarToggle({
       // yank focus to the hamburger. Same guard the sibling document-level
       // shortcut in `sidebar-tree-island/index.tsx` already uses.
       if (event.isComposing) return;
+      // A nested popover (the Appearance menu, or its trigger button) that
+      // owns this Escape already called preventDefault() + stopPropagation()
+      // to consume it for itself — see theme-toggle/index.tsx. Respecting
+      // defaultPrevented here establishes layered Escape ownership: the first
+      // Escape closes only the nested layer, and only a second, unconsumed
+      // Escape reaches the drawer (zudolab/zudo-doc#4393).
+      if (event.defaultPrevented) return;
       if (event.key === "Escape") {
         setOpen(false);
         hamburgerRef.current?.focus();

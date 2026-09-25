@@ -968,9 +968,14 @@ function generatePackageJson(
     // package changelogs report no package-specific changes; md-wasm's tarball
     // also changes its four published WASM artifacts. No scaffold config
     // migration is required.
-    "@takazudo/zfb": "2.20.2",
-    "@takazudo/zfb-runtime": "2.20.2",
-    "@takazudo/zfb-md-wasm": "2.20.2",
+    // 2.21.0: includes 2.20.3's single-Preact-runtime SSR fix and scopes
+    // bundler collection seeds to each collection's `include` filter, plus a
+    // node_modules import-scan memoization perf improvement. The companion
+    // packages have no package-specific changes; md-wasm rebuilt its WASM
+    // artifacts. No scaffold config migration is required.
+    "@takazudo/zfb": "2.21.0",
+    "@takazudo/zfb-runtime": "2.21.0",
+    "@takazudo/zfb-md-wasm": "2.21.0",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
@@ -1084,7 +1089,7 @@ function generatePackageJson(
     // `@takazudo/zdtp/styles.css` (see features/design-token-panel.ts). Both are
     // no-ops with the feature off, so an OFF project must not carry the dep
     // (#4009 / #4018 — it was unconditional until then, see the `deps` block).
-    deps["@takazudo/zdtp"] = "0.8.2";
+    deps["@takazudo/zdtp"] = "0.8.3";
   }
 
   if (

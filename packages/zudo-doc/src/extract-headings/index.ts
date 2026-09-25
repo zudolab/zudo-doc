@@ -27,9 +27,26 @@
 //      `tocMaxDepth` in opts (restriction-only: min 2, max 4).
 //
 // Caveats:
-//   - This is a regex walk over raw text, not an AST parse. MDX JSX expressions
-//     that contain `##` on their own line may be matched. In practice this is
-//     rare.
+//   - This is a line walk over raw text, not an AST parse. A small scanner
+//     (`classifyLines`) mirrors how zfb's MDX parser (markdown-rs) delimits JSX
+//     so that `##` lines inside a multi-line JSX expression (`{…}`, a template
+//     literal in an attribute, a `{/* … */}` comment) or inside a multi-line
+//     quoted attribute value are not headings (#4396). Headings in JSX
+//     *children* stay headings — the renderer assigns them ids too.
+//   - Expression braces are counted naively, exactly like markdown-rs: it does
+//     not look inside JS strings, template literals or comments when finding the
+//     closing `}` (a `}` inside `"…"` closes the expression and fails the
+//     compile). A string-aware count would diverge from the renderer on valid
+//     documents — `render={() => <p>It's</p>}` would open a phantom `'` string
+//     and swallow every heading after it.
+//   - `.md` files are scanned the same way: zfb's `compile()` build path parses
+//     `.md` content as MDX too (a `{` in `.md` prose opens an expression there).
+//   - Fail-open: a construct still open at end of document (the renderer rejects
+//     such a document with an unexpected-EOF error) is re-read as literal text,
+//     so the headings after it are restored instead of silently dropped. A bare
+//     open tag (`<Foo` with no quote or `{` pending) is abandoned as soon as a
+//     character that cannot continue a JSX tag appears — such as the `#` of a
+//     heading line — so a stray `a <b` in prose never hides a heading either.
 //   - Lines inside code fences (``` … ``` or ~~~ … ~~~) are skipped to avoid
 //     treating literal `## code` examples as real headings. Fence detection
 //     uses `line.trimStart()` to handle indented fences correctly.
@@ -277,36 +294,11 @@ export function extractAllHeadingIds(body: string): string[] {
 function collectHeadings(body: string, lo: number, hi: number): HeadingItem[] {
   const allocator = new SlugAllocator();
   const headings: HeadingItem[] = [];
+  const lines = body.split("\n");
+  const candidate = classifyLines(lines);
 
-  // Track the opening fence character and length so we correctly match the
-  // closing fence. Markdown allows backtick and tilde fences (``` or ~~~),
-  // and longer fences to nest shorter same-character ones.
-  let codeFenceOpener: string | null = null;
-  for (const line of body.split("\n")) {
-    // Detect code fence open/close. A fence is 3+ backticks OR 3+ tildes,
-    // optionally followed by a language specifier. The closing fence must use
-    // the same character and match or exceed the opener's length.
-    // Use trimStart() so indented fences (e.g. inside lists) are also detected.
-    const trimmed = line.trimStart();
-    const fenceMatch = /^([`~]{3,})/.exec(trimmed);
-    if (fenceMatch) {
-      const fence = fenceMatch[1];
-      if (fence === undefined) continue;
-      if (codeFenceOpener === null) {
-        // Opening fence: record character + length.
-        codeFenceOpener = fence;
-      } else if (
-        fence[0] === codeFenceOpener[0] &&
-        fence.length >= codeFenceOpener.length
-      ) {
-        // Closing fence: must match opener's character and be at least as long.
-        codeFenceOpener = null;
-      }
-      // Whether opening, closing, or a mismatched-character line (content inside
-      // a fence), always skip — do not try to parse as a heading.
-      continue;
-    }
-    if (codeFenceOpener !== null) continue;
+  for (const [index, line] of lines.entries()) {
+    if (candidate[index] !== true) continue;
 
     // Match ATX headings at depth h2–h6. The renderer's heading-links plugin
     // slugs h2–h6 only (h1 is never assigned an id — the frontmatter title is
@@ -335,4 +327,179 @@ function collectHeadings(body: string, lo: number, hi: number): HeadingItem[] {
   }
 
   return headings;
+}
+
+// Characters that may continue a JSX open/close tag outside a quoted value or
+// attribute expression: names (incl. member `.` / namespace `:` / `-`),
+// whitespace, `=`, `/`, `>`, a quote, or `{`.
+const JSX_TAG_CHAR = /[\p{ID_Continue}$\-.:=/>"'{\s]/u;
+const JSX_TAG_START = /[\p{ID_Start}$_/>]/u;
+const ASCII_PUNCTUATION = /[!-/:-@[-`{-~]/;
+const ATX_HEADING = /^#{1,6}(?:[ \t]|$)/;
+
+/**
+ * Find where a code span opened on an earlier line closes: the first backtick
+ * run of `runLength` before the paragraph ends (blank line, ATX heading or code
+ * fence). Returns the position just past the closer, or null when unmatched.
+ */
+function findCodeSpanEnd(
+  lines: readonly string[],
+  from: number,
+  runLength: number,
+): { line: number; col: number } | null {
+  for (let lineIndex = from; lineIndex < lines.length; lineIndex++) {
+    const line = lines[lineIndex] ?? "";
+    const trimmed = line.trimStart();
+    if (trimmed.trim() === "" || ATX_HEADING.test(trimmed) || /^(?:`{3,}|~{3,})/.test(trimmed)) {
+      return null;
+    }
+    for (const match of line.matchAll(/`+/g)) {
+      if (match[0].length === runLength) {
+        return { line: lineIndex, col: match.index + runLength };
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Mark each line as a heading candidate (`true`) or not. A line is a candidate
+ * only when it starts at top-level Markdown: outside a code fence, a JSX
+ * expression, and a multi-line JSX tag. See the file header for the rules and
+ * the fail-open behaviour; `ignoredOpeners` holds the positions of constructs
+ * that were never closed, which a re-scan treats as literal text.
+ */
+function classifyLines(lines: readonly string[]): boolean[] {
+  const ignoredOpeners = new Set<string>();
+  for (;;) {
+    const result = scanLines(lines, ignoredOpeners);
+    if (result.unclosedOpener === null) return result.candidate;
+    ignoredOpeners.add(result.unclosedOpener);
+  }
+}
+
+function scanLines(
+  lines: readonly string[],
+  ignoredOpeners: ReadonlySet<string>,
+): { candidate: boolean[]; unclosedOpener: string | null } {
+  const candidate: boolean[] = [];
+  // Track the opening fence character and length so we correctly match the
+  // closing fence. Markdown allows backtick and tilde fences (``` or ~~~),
+  // and longer fences to nest shorter same-character ones.
+  let codeFenceOpener: string | null = null;
+  // JSX state. `exprDepth > 0` = inside `{…}` (naive brace count); `tag` =
+  // inside `<Name …` before its `>`, with `quote` set inside a quoted value.
+  let exprDepth = 0;
+  let tag: { quote: string | null } | null = null;
+  // Where the outermost open construct began, for the fail-open re-scan.
+  let opener: string | null = null;
+  // Resume point after a code span that closes on a later line of the same
+  // paragraph; lines it covers are paragraph text, never headings.
+  let codeSpanEnd: { line: number; col: number } | null = null;
+
+  for (const [lineIndex, line] of lines.entries()) {
+    let start = 0;
+    if (codeSpanEnd !== null) {
+      candidate.push(false);
+      if (lineIndex < codeSpanEnd.line) continue;
+      start = codeSpanEnd.col;
+      codeSpanEnd = null;
+    }
+    const trimmed = line.trimStart();
+    if (start === 0 && tag !== null && tag.quote === null && exprDepth === 0) {
+      const first = trimmed[0];
+      if (first !== undefined && !JSX_TAG_CHAR.test(first)) tag = null;
+    }
+    if (start > 0) {
+      // The tail of a multi-line code span's closing line: scan it as Markdown.
+    } else if (exprDepth > 0 || tag !== null) {
+      candidate.push(false);
+    } else {
+      // Detect code fence open/close. A fence is 3+ backticks OR 3+ tildes,
+      // optionally followed by a language specifier. The closing fence must use
+      // the same character and match or exceed the opener's length.
+      // Use trimStart() so indented fences (e.g. inside lists) are also detected.
+      const fence = /^([`~]{3,})/.exec(trimmed)?.[1];
+      if (fence !== undefined) {
+        if (codeFenceOpener === null) {
+          codeFenceOpener = fence;
+        } else if (
+          fence[0] === codeFenceOpener[0] &&
+          fence.length >= codeFenceOpener.length
+        ) {
+          codeFenceOpener = null;
+        }
+        // Whether opening, closing, or a mismatched-character line (content
+        // inside a fence), never treat a fence line as a heading.
+        candidate.push(false);
+        continue;
+      }
+      candidate.push(codeFenceOpener === null);
+      if (codeFenceOpener !== null) continue;
+    }
+
+    for (let i = start; i < line.length; i++) {
+      const ch = line[i] ?? "";
+      if (exprDepth > 0) {
+        if (ch === "{") exprDepth++;
+        else if (ch === "}") exprDepth--;
+        continue;
+      }
+      if (tag !== null) {
+        if (tag.quote !== null) {
+          // JSX attribute strings have no escapes: the next same quote ends it.
+          if (ch === tag.quote) tag.quote = null;
+        } else if (ch === '"' || ch === "'") {
+          tag.quote = ch;
+        } else if (ch === "{") {
+          exprDepth = 1;
+        } else if (ch === ">") {
+          tag = null;
+        } else if (!JSX_TAG_CHAR.test(ch)) {
+          // Not a tag after all: re-read this character as Markdown.
+          tag = null;
+          i--;
+        }
+        continue;
+      }
+
+      // Top-level Markdown.
+      if (ch === "\\" && ASCII_PUNCTUATION.test(line[i + 1] ?? "")) {
+        i++;
+        continue;
+      }
+      if (ch === "`") {
+        // Skip a same-line code span; an unmatched run is literal backticks.
+        const run = /^`+/.exec(line.slice(i))?.[0] ?? "`";
+        const closer = /`+/g;
+        closer.lastIndex = i + run.length;
+        let match: RegExpExecArray | null;
+        while ((match = closer.exec(line)) !== null && match[0].length !== run.length) {
+          // A code span closes only with a run of the same length.
+        }
+        if (match === null && !ATX_HEADING.test(trimmed)) {
+          // A code span may continue onto later lines of the same paragraph.
+          codeSpanEnd = findCodeSpanEnd(lines, lineIndex + 1, run.length);
+          if (codeSpanEnd !== null) break;
+        }
+        i = (match === null ? i : match.index) + run.length - 1;
+        continue;
+      }
+      const position = `${lineIndex}:${i}`;
+      if (ignoredOpeners.has(position)) continue;
+      if (ch === "{") {
+        exprDepth = 1;
+        opener = position;
+      } else if (ch === "<" && JSX_TAG_START.test(line[i + 1] ?? "")) {
+        tag = { quote: null };
+        opener = position;
+      }
+    }
+    if (exprDepth === 0 && tag === null) opener = null;
+  }
+
+  return {
+    candidate,
+    unclosedOpener: exprDepth > 0 || tag !== null ? opener : null,
+  };
 }

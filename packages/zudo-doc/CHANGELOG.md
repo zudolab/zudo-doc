@@ -6,7 +6,18 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
-No unreleased changes.
+### Features
+
+- Long pages are now searchable beyond their opening paragraphs: the search index's body cap is raised from 300 to 3000 characters by default, and is configurable via the new `searchMaxBodyLength` setting (#4407).
+
+### Bug Fixes
+
+- Heading extraction (the TOC and the `check:links` anchor scan, via `@takazudo/zudo-doc/extract-headings`) no longer treats `##` lines inside a multi-line JSX expression, a template-literal prop such as `HtmlPreview`'s `displayJs`, a JSX comment, or a multi-line quoted attribute value as headings. The extractor now delimits JSX the way zfb's MDX parser does, so it matches the rendered heading ids; headings inside JSX children are still extracted, and a construct left unclosed at end of file hides no headings (#4396).
+- Fixed the mobile drawer's Appearance menu so Escape closes only the menu and returns focus to its trigger; a second Escape then closes the drawer and focuses the hamburger (#4393).
+
+### Other Changes
+
+- The `@takazudo/zfb`, `@takazudo/zfb-runtime`, and `@takazudo/zfb-md-wasm` peer dependency floors are now `^2.21.0`. The range includes 2.20.3's single-Preact-runtime SSR fix and scopes bundler collection seeds to each collection's `include` filter; `zfb-runtime` and `zfb-adapter-cloudflare` are version bumps only, and `zfb-md-wasm` ships rebuilt WASM artifacts. No zudo-doc config migration is required.
 
 ## [5.27.0] - 2026-09-24
 
@@ -28,7 +39,7 @@ No unreleased changes.
 
 ### Bug Fixes
 
-- Fixed package-owned route injection in nested pnpm workspace consumers. Published route sources are staged under the project root so the build shadow can resolve the generated 404, robots, and docs routes (848264b9c).
+- Fixed package-owned route injection in nested pnpm workspace consumers. Published route sources are staged under the project root so the build shadow can resolve the generated 404, robots, and docs routes (848264b9c). Projects scaffolded on 5.26.4 or earlier should add `.zudo-doc/` to their `.gitignore`: the build now writes the staged route sources to `.zudo-doc/routes-src/`, and without the ignore entry `git status` will show it as an untracked directory. New scaffolds already ignore it; see the `create-zudo-doc` changelog.
 
 ## [5.26.4] - 2026-09-22
 

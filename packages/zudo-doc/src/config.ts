@@ -103,6 +103,7 @@ import { assertNoCommaInVersionSlugs } from "./version-availability/index.js";
 import {
   assertNoEmptyStringFaviconOrLogo,
   assertZdtpBundlingConsistent,
+  assertValidSearchMaxBodyLength,
 } from "./config-assertions/index.js";
 import { validateAssetViewerSettings } from "./asset-path/index.js";
 
@@ -218,6 +219,7 @@ export const DEFAULT_SETTINGS: Settings = {
   designTokenPanel: false,
   tocMinDepth: 2,
   tocMaxDepth: 4,
+  searchMaxBodyLength: 3000,
   sidebarResizer: false,
   sidebarToggle: false,
   tocToggle: false,
@@ -546,6 +548,20 @@ export interface ZudoDocConfig {
    */
   tocMaxDepth?: number;
   /**
+   * How many characters of each page's plain-text body are indexed for
+   * search *matching* (`search-index.json`'s per-entry `body` field). This is
+   * a match-depth cap, not a display cap — the search widget already renders
+   * only a short match-centred window (`truncate(text, query, 200)`), so
+   * raising this value makes long pages searchable past their opening
+   * paragraphs without changing what a result snippet shows. Also caps how
+   * many bytes are read from a public text asset for its search excerpt (the
+   * asset-viewer indexing path in `plugins/internal/search-index/collect.ts`).
+   * Must be a positive integer — a non-integer or ≤ 0 value throws at config
+   * resolution.
+   * @default 3000
+   */
+  searchMaxBodyLength?: number;
+  /**
    * Enable the draggable sidebar resizer.
    * @default false
    */
@@ -867,6 +883,13 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
   // enforced inside `zudoDocPreset()` itself (see that call below) since the
   // preset is separately callable as documented public API.
   assertZdtpBundlingConsistent(settings);
+
+  // A non-integer or ≤ 0 `searchMaxBodyLength` would silently produce a
+  // wrongly-sized (or infinitely-looping, for ≤ 0) search index rather than
+  // failing at config resolution. Also enforced inside `zudoDocPreset()`
+  // itself (see that call below) since the preset is separately callable as
+  // documented public API (zudolab/zudo-doc#4407).
+  assertValidSearchMaxBodyLength(settings.searchMaxBodyLength);
 
   const fragment = zudoDocPreset({
     settings,

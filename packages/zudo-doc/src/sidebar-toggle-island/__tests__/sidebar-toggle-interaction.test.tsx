@@ -10,7 +10,7 @@
 // registers the `document` keydown listener only flushes inside `act`,
 // otherwise the dispatched "Escape" below would hit no listener at all.
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { SidebarToggle, type SidebarToggleProps } from "../index.js";
@@ -167,5 +167,110 @@ describe("SidebarToggle — toggle elevation above the backdrop", () => {
     pressEscape();
     expect(button.getAttribute("aria-expanded")).toBe("false");
     expect(button.className).toBe(closedClasses);
+  });
+});
+
+// zudolab/zudo-doc#4393 / zudolab/zudo-doc#4403: with the drawer open and its
+// Appearance menu open, Escape must close only the menu (layer 1) on the
+// first press, and only an unconsumed Escape reaches the drawer (layer 2) on
+// a second press. The menu is portaled to `document.body` (theme-toggle's
+// `createPortal`), so this exercises the real bubble path from the portaled
+// menu / its in-drawer trigger up through `document`, not a stubbed handler.
+describe("SidebarToggle + ThemeToggle — layered Escape ownership", () => {
+  function mountWithTheme(): HTMLDivElement {
+    return mount({ ...PROPS, themeDefaultMode: "dark" });
+  }
+  function appearanceTrigger(container: HTMLElement) {
+    return container.querySelector<HTMLButtonElement>('button[aria-haspopup="menu"]')!;
+  }
+  function appearanceMenu(container: HTMLElement) {
+    const id = appearanceTrigger(container).getAttribute("aria-controls");
+    return id ? document.getElementById(id) : null;
+  }
+  function appearanceMenuItems(container: HTMLElement) {
+    return [
+      ...(appearanceMenu(container)?.querySelectorAll<HTMLButtonElement>(
+        '[role="menuitemradio"]',
+      ) ?? []),
+    ];
+  }
+  function openDrawerAndMenu(container: HTMLElement): void {
+    const hamburger = container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Open sidebar"]',
+    )!;
+    act(() => hamburger.click());
+    act(() => appearanceTrigger(container).click());
+  }
+  function pressEscapeOn(target: EventTarget, init: KeyboardEventInit = {}): void {
+    act(() => {
+      target.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Escape", bubbles: true, ...init }),
+      );
+    });
+  }
+
+  it("first Escape from a menu item closes only the menu, keeps the drawer open, and restores focus to the trigger", async () => {
+    const container = mountWithTheme();
+    openDrawerAndMenu(container);
+    const trigger = appearanceTrigger(container);
+    const items = appearanceMenuItems(container);
+    expect(items.length).toBeGreaterThan(0);
+
+    pressEscapeOn(items[0]!);
+
+    expect(appearanceMenu(container)).toBeNull();
+    expect(
+      container.querySelector<HTMLButtonElement>('button[aria-label="Close sidebar"]'),
+    ).not.toBeNull();
+    expect(container.querySelector("aside")!.hasAttribute("inert")).toBe(false);
+    await vi.waitFor(() => expect(document.activeElement).toBe(trigger));
+  });
+
+  it("second, unconsumed Escape closes the drawer and focuses the hamburger", async () => {
+    const container = mountWithTheme();
+    openDrawerAndMenu(container);
+    const trigger = appearanceTrigger(container);
+    pressEscapeOn(appearanceMenuItems(container)[0]!);
+    await vi.waitFor(() => expect(document.activeElement).toBe(trigger));
+
+    pressEscapeOn(trigger);
+
+    const hamburger = container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Open sidebar"]',
+    );
+    expect(hamburger).not.toBeNull();
+    expect(document.activeElement).toBe(hamburger);
+  });
+
+  it("Escape on the trigger button with the menu open behaves like Escape from a menu item", async () => {
+    const container = mountWithTheme();
+    openDrawerAndMenu(container);
+    const trigger = appearanceTrigger(container);
+    trigger.focus();
+
+    pressEscapeOn(trigger);
+
+    expect(appearanceMenu(container)).toBeNull();
+    expect(
+      container.querySelector<HTMLButtonElement>('button[aria-label="Close sidebar"]'),
+    ).not.toBeNull();
+    await vi.waitFor(() => expect(document.activeElement).toBe(trigger));
+  });
+
+  it("an Escape that ends an IME composition closes neither layer while both are open", () => {
+    const container = mountWithTheme();
+    openDrawerAndMenu(container);
+
+    // Dispatched at `document` (not through the menu or its trigger), matching
+    // the sibling composition-guard test above: this is the drawer's own
+    // document-level listener seeing a composing Escape meant for an
+    // unrelated input (e.g. the drawer's filter field), while the Appearance
+    // menu happens to be open at the same time.
+    pressEscapeOn(document, { isComposing: true });
+
+    expect(appearanceMenu(container)).not.toBeNull();
+    expect(
+      container.querySelector<HTMLButtonElement>('button[aria-label="Close sidebar"]'),
+    ).not.toBeNull();
   });
 });
