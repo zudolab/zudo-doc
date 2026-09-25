@@ -14,24 +14,25 @@ import {
   stripMarkdown,
 } from "../../../md-utils/index.js";
 import { collectAssetPageDescriptors } from "../asset-viewer/asset-pages.js";
+import { assertValidSearchMaxBodyLength } from "../../../config-assertions/index.js";
 import {
   MAX_BODY_LENGTH,
   type SearchIndexConfig,
   type SearchIndexEntry,
 } from "./types.js";
 
-function truncateBody(text: string): string {
-  return text.length > MAX_BODY_LENGTH
-    ? text.substring(0, MAX_BODY_LENGTH)
+function truncateBody(text: string, maxBodyLength: number): string {
+  return text.length > maxBodyLength
+    ? text.substring(0, maxBodyLength)
     : text;
 }
 
-/** Read enough UTF-8 bytes to produce the frozen 300-code-unit excerpt. */
-function readAssetExcerpt(filePath: string): string {
+/** Read enough UTF-8 bytes to produce the configured character-cap excerpt. */
+function readAssetExcerpt(filePath: string, maxBodyLength: number): string {
   // A Unicode scalar needs at most four UTF-8 bytes. Reading four bytes per
   // output code unit keeps this bounded even for very large public text files,
   // while leaving enough complete input before any partial trailing sequence.
-  const sample = Buffer.allocUnsafe(MAX_BODY_LENGTH * 4);
+  const sample = Buffer.allocUnsafe(maxBodyLength * 4);
   const fd = openSync(filePath, "r");
   try {
     let offset = 0;
@@ -46,7 +47,7 @@ function readAssetExcerpt(filePath: string): string {
       if (bytesRead === 0) break;
       offset += bytesRead;
     }
-    return truncateBody(sample.subarray(0, offset).toString("utf8"));
+    return truncateBody(sample.subarray(0, offset).toString("utf8"), maxBodyLength);
   } finally {
     closeSync(fd);
   }
@@ -57,6 +58,7 @@ function buildEntries(
   contentDir: string,
   locale: string | null,
   base: string,
+  maxBodyLength: number,
 ): SearchIndexEntry[] {
   const absDir = resolve(contentDir);
   const files = collectMdFiles(absDir);
@@ -77,7 +79,7 @@ function buildEntries(
     entries.push({
       id,
       title: data.title ?? slug,
-      body: truncateBody(stripMarkdown(content)),
+      body: truncateBody(stripMarkdown(content), maxBodyLength),
       url: slugToUrl(slug, locale, base),
       description: data.description ?? "",
     });
@@ -87,7 +89,10 @@ function buildEntries(
 }
 
 /** Build search entries for the asset-viewer pages that actually exist. */
-function buildAssetEntries(config: SearchIndexConfig): SearchIndexEntry[] {
+function buildAssetEntries(
+  config: SearchIndexConfig,
+  maxBodyLength: number,
+): SearchIndexEntry[] {
   const { assetScan, projectRoot } = config;
   if (assetScan === undefined || projectRoot === undefined) return [];
 
@@ -101,7 +106,7 @@ function buildAssetEntries(config: SearchIndexConfig): SearchIndexEntry[] {
   return descriptors.map((descriptor) => {
     const localePrefix = descriptor.locale === undefined ? "" : `${descriptor.locale}/`;
     const body = descriptor.isText
-      ? readAssetExcerpt(resolve(assetRoot, descriptor.path))
+      ? readAssetExcerpt(resolve(assetRoot, descriptor.path), maxBodyLength)
       : "";
 
     return {
@@ -124,18 +129,25 @@ function buildAssetEntries(config: SearchIndexConfig): SearchIndexEntry[] {
 export function collectSearchEntries(
   config: SearchIndexConfig,
 ): SearchIndexEntry[] {
+  // Fails loudly here too (not just at `zudoDoc()`/`zudoDocPreset()` config
+  // resolution) since this function is directly callable — a bad value would
+  // otherwise silently clamp to nothing (≤ 0) or produce a wrongly-sized
+  // index (non-integer) instead of erroring (zudolab/zudo-doc#4407).
+  assertValidSearchMaxBodyLength(config.maxBodyLength);
+  const maxBodyLength = config.maxBodyLength ?? MAX_BODY_LENGTH;
+
   const base = config.base ?? "";
   const entries: SearchIndexEntry[] = [];
 
-  entries.push(...buildEntries(config.docsDir, null, base));
+  entries.push(...buildEntries(config.docsDir, null, base, maxBodyLength));
 
   if (config.locales) {
     for (const [code, locale] of Object.entries(config.locales)) {
-      entries.push(...buildEntries(locale.dir, code, base));
+      entries.push(...buildEntries(locale.dir, code, base, maxBodyLength));
     }
   }
 
-  entries.push(...buildAssetEntries(config));
+  entries.push(...buildAssetEntries(config, maxBodyLength));
 
   return entries;
 }

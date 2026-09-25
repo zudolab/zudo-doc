@@ -739,6 +739,7 @@ describe("generateZfbConfig — never emits escape-hatch / shell / package-only 
       "aiChatGlobalDailyLimit",
       "tocMinDepth",
       "tocMaxDepth",
+      "searchMaxBodyLength",
       "headingIdStrategy",
       "frontmatterPreview",
       "htmlPreview",

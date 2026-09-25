@@ -125,6 +125,27 @@ export function assertZdtpBundlingConsistent(settings: ZdtpBundlingSubject): voi
 }
 
 /**
+ * Reject a `searchMaxBodyLength` that is not a positive integer.
+ *
+ * `undefined` no-ops (the field is optional at this layer — the search-index
+ * collector applies its own `MAX_BODY_LENGTH` default). Shared between
+ * `zudoDoc()` (`../config.ts`) and `zudoDocPreset()` (same rationale as the
+ * other guards above) AND the search-index collector itself
+ * (`../plugins/internal/search-index/collect.ts`), which is also reachable
+ * directly (tests, or a consumer calling `collectSearchEntries()` outside
+ * `zudoDoc()`) — clamping silently there would hide a config typo behind a
+ * quietly-wrong index instead of failing loudly (zudolab/zudo-doc#4407).
+ */
+export function assertValidSearchMaxBodyLength(searchMaxBodyLength: number | undefined): void {
+  if (searchMaxBodyLength === undefined) return;
+  if (!Number.isInteger(searchMaxBodyLength) || searchMaxBodyLength <= 0) {
+    throw new TypeError(
+      `Invalid searchMaxBodyLength ${JSON.stringify(searchMaxBodyLength)}: must be a positive integer (e.g. 3000).`,
+    );
+  }
+}
+
+/**
  * Warn about `categoryMatch` values that cannot express the intended
  * dropdown grouping.
  *
