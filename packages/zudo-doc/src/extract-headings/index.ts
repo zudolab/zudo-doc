@@ -335,6 +335,32 @@ function collectHeadings(body: string, lo: number, hi: number): HeadingItem[] {
 const JSX_TAG_CHAR = /[\p{ID_Continue}$\-.:=/>"'{\s]/u;
 const JSX_TAG_START = /[\p{ID_Start}$_/>]/u;
 const ASCII_PUNCTUATION = /[!-/:-@[-`{-~]/;
+const ATX_HEADING = /^#{1,6}(?:[ \t]|$)/;
+
+/**
+ * Find where a code span opened on an earlier line closes: the first backtick
+ * run of `runLength` before the paragraph ends (blank line, ATX heading or code
+ * fence). Returns the position just past the closer, or null when unmatched.
+ */
+function findCodeSpanEnd(
+  lines: readonly string[],
+  from: number,
+  runLength: number,
+): { line: number; col: number } | null {
+  for (let lineIndex = from; lineIndex < lines.length; lineIndex++) {
+    const line = lines[lineIndex] ?? "";
+    const trimmed = line.trimStart();
+    if (trimmed.trim() === "" || ATX_HEADING.test(trimmed) || /^(?:`{3,}|~{3,})/.test(trimmed)) {
+      return null;
+    }
+    for (const match of line.matchAll(/`+/g)) {
+      if (match[0].length === runLength) {
+        return { line: lineIndex, col: match.index + runLength };
+      }
+    }
+  }
+  return null;
+}
 
 /**
  * Mark each line as a heading candidate (`true`) or not. A line is a candidate
@@ -367,14 +393,26 @@ function scanLines(
   let tag: { quote: string | null } | null = null;
   // Where the outermost open construct began, for the fail-open re-scan.
   let opener: string | null = null;
+  // Resume point after a code span that closes on a later line of the same
+  // paragraph; lines it covers are paragraph text, never headings.
+  let codeSpanEnd: { line: number; col: number } | null = null;
 
   for (const [lineIndex, line] of lines.entries()) {
+    let start = 0;
+    if (codeSpanEnd !== null) {
+      candidate.push(false);
+      if (lineIndex < codeSpanEnd.line) continue;
+      start = codeSpanEnd.col;
+      codeSpanEnd = null;
+    }
     const trimmed = line.trimStart();
-    if (tag !== null && tag.quote === null && exprDepth === 0) {
+    if (start === 0 && tag !== null && tag.quote === null && exprDepth === 0) {
       const first = trimmed[0];
       if (first !== undefined && !JSX_TAG_CHAR.test(first)) tag = null;
     }
-    if (exprDepth > 0 || tag !== null) {
+    if (start > 0) {
+      // The tail of a multi-line code span's closing line: scan it as Markdown.
+    } else if (exprDepth > 0 || tag !== null) {
       candidate.push(false);
     } else {
       // Detect code fence open/close. A fence is 3+ backticks OR 3+ tildes,
@@ -400,7 +438,7 @@ function scanLines(
       if (codeFenceOpener !== null) continue;
     }
 
-    for (let i = 0; i < line.length; i++) {
+    for (let i = start; i < line.length; i++) {
       const ch = line[i] ?? "";
       if (exprDepth > 0) {
         if (ch === "{") exprDepth++;
@@ -438,6 +476,11 @@ function scanLines(
         let match: RegExpExecArray | null;
         while ((match = closer.exec(line)) !== null && match[0].length !== run.length) {
           // A code span closes only with a run of the same length.
+        }
+        if (match === null && !ATX_HEADING.test(trimmed)) {
+          // A code span may continue onto later lines of the same paragraph.
+          codeSpanEnd = findCodeSpanEnd(lines, lineIndex + 1, run.length);
+          if (codeSpanEnd !== null) break;
         }
         i = (match === null ? i : match.index) + run.length - 1;
         continue;

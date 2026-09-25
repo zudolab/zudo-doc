@@ -185,6 +185,7 @@ describe("extractHeadings — MDX JSX parity with zfb compile() (#4396)", () => 
     ["children of a tag with a multi-line attribute expression", "<Foo\n  a={{\n    b: 1,\n  }}\n>\n\n## Inside\n\n</Foo>\n\n## Real\n"],
     ["single-line expression", "{1 + 1}\n\n## A\n\n## Real\n"],
     ["brace in an inline code span", "Text `{` and `<Foo` more\n\n## A\n\n## Real\n"],
+    ["brace in a multi-line inline code span", "Use `{\nfoo` here\n\n## A\n\nlater } x\n\n## Real\n"],
     ["braces and backticks in a fenced code block", "```js\nconst a = {\n`\n```\n\n## A\n\n## Real\n"],
     ["escaped brace in prose", "Text \\{ brace\n\n## A\n\n## Real\n"],
     ["less-than in prose", "a < b\n\n## A\n\n## Real\n"],
