@@ -177,6 +177,12 @@ export function ThemeToggle({
   const onMenuKeyDown = (event: KeyboardEvent) => {
     if (event.key === "Escape") {
       event.preventDefault();
+      // The menu is portaled to document.body (see createPortal below), so this
+      // keydown bubbles all the way to `document` — where the mobile drawer's own
+      // Escape-to-close listener lives (sidebar-toggle-island/index.tsx). Without
+      // stopPropagation, closing just the menu would also close the drawer
+      // (zudolab/zudo-doc#4393).
+      event.stopPropagation();
       close(true);
     } else if (event.key === "Tab") {
       // Let the browser move focus before unmounting the focused menu item.
@@ -212,7 +218,14 @@ export function ThemeToggle({
           if (pending) { if (event.key === "Enter" || event.key === " ") event.preventDefault(); return; }
           if (event.key === "ArrowDown" || event.key === "ArrowUp") {
             event.preventDefault(); setPlacement(null); ensureMenuId(); setActiveIndex(event.key === "ArrowDown" ? 0 : 2); setOpen(true);
-          } else if (event.key === "Escape" && open) { event.preventDefault(); close(true); }
+          } else if (event.key === "Escape" && open) {
+            // Same layered-ownership fix as onMenuKeyDown above: the trigger sits
+            // inside the mobile drawer (unlike the portaled menu), so its keydown
+            // bubbles straight to the drawer's document-level Escape listener.
+            event.preventDefault();
+            event.stopPropagation();
+            close(true);
+          }
         }}
         className="inline-flex h-[40px] w-[40px] shrink-0 items-center justify-center text-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
       ><PreferenceIcon preference={preference} /></button>

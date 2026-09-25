@@ -6,6 +6,10 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+### Bug Fixes
+
+- Fixed the mobile drawer's Appearance menu so Escape closes only the menu and returns focus to its trigger; a second Escape then closes the drawer and focuses the hamburger.
+
 ### Other Changes
 
 - The `@takazudo/zfb`, `@takazudo/zfb-runtime`, and `@takazudo/zfb-md-wasm` peer dependency floors are now `^2.21.0`. The range includes 2.20.3's single-Preact-runtime SSR fix and scopes bundler collection seeds to each collection's `include` filter; `zfb-runtime` and `zfb-adapter-cloudflare` are version bumps only, and `zfb-md-wasm` ships rebuilt WASM artifacts. No zudo-doc config migration is required.
