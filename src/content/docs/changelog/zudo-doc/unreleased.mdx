@@ -1,18 +1,7 @@
 ---
 title: Unreleased
 description: Changes planned for the next release.
-sidebar_position: 1130
+sidebar_position: 1131
 ---
 
-### Features
-
-- Long pages are now searchable beyond their opening paragraphs: the search index's body cap is raised from 300 to 3000 characters by default, and is configurable via the new `searchMaxBodyLength` setting (#4407).
-
-### Bug Fixes
-
-- Heading extraction (the TOC and the `check:links` anchor scan, via `@takazudo/zudo-doc/extract-headings`) no longer treats `##` lines inside a multi-line JSX expression, a template-literal prop such as `HtmlPreview`'s `displayJs`, a JSX comment, or a multi-line quoted attribute value as headings. The extractor now delimits JSX the way zfb's MDX parser does, so it matches the rendered heading ids; headings inside JSX children are still extracted, and a construct left unclosed at end of file hides no headings (#4396).
-- Fixed the mobile drawer's Appearance menu so Escape closes only the menu and returns focus to its trigger; a second Escape then closes the drawer and focuses the hamburger (#4393).
-
-### Other Changes
-
-- The `@takazudo/zfb`, `@takazudo/zfb-runtime`, and `@takazudo/zfb-md-wasm` peer dependency floors are now `^2.21.1`. The range includes 2.20.3's single-Preact-runtime SSR fix, scopes bundler collection seeds to each collection's `include` filter, and picks up 2.21.1's bug fixes (faster `zfb dev` / `zfb build` start, workspace-package staging that keeps manifest-declared dirs, and SSR reloads for edited workspace-package files); `zfb-runtime` and `zfb-adapter-cloudflare` are version bumps only, and `zfb-md-wasm` ships rebuilt WASM artifacts. No zudo-doc config migration is required.
+No unreleased changes.

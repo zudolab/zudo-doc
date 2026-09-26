@@ -1,0 +1,20 @@
+---
+title: 5.28.0
+description: Release notes for 5.28.0.
+sidebar_position: 1130
+---
+
+Released: 2026-09-27
+
+### Features
+
+- Search now indexes up to 3000 characters per page instead of 300, making longer pages searchable beyond their opening paragraphs. Set `searchMaxBodyLength` to a positive integer to adjust the limit; result snippets retain their existing display length. (332a6184b)
+
+### Bug Fixes
+
+- Heading extraction for the table of contents and link checks ignores heading-like text inside multiline JSX expressions, comments, quoted attributes, and template-literal props, while preserving headings in JSX children. Multiline inline-code spans no longer confuse JSX detection. (b85fe3469, 99ad4252b)
+- Escape closes the mobile drawer's Appearance menu and returns focus to its trigger; a second Escape closes the drawer and focuses the hamburger button. (66359d27c)
+
+### Other Changes
+
+- Raise the zfb, zfb-runtime, and zfb-md-wasm peer floors to `^2.21.1`, bringing single-Preact-runtime SSR fixes, collection include-filter handling, faster startup, and workspace-package staging and reload fixes. No configuration migration is required. (6686f2da6, e82e57551)

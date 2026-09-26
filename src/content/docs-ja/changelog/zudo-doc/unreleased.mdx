@@ -1,18 +1,7 @@
 ---
 title: Unreleased
 description: 次のリリースに向けた変更。
-sidebar_position: 1130
+sidebar_position: 1131
 ---
 
-### 機能
-
-- 長いページの本文冒頭以降もページ内検索で見つかるようになりました。検索インデックスの本文の文字数上限がデフォルトで 300 文字から 3000 文字に引き上げられ、新しい `searchMaxBodyLength` 設定で変更できます（#4407）。
-
-### バグ修正
-
-- 見出し抽出（`@takazudo/zudo-doc/extract-headings` を使う TOC と `check:links` のアンカー検査）が、複数行の JSX 式、`HtmlPreview` の `displayJs` のようなテンプレートリテラルの prop、JSX コメント、複数行の引用符付き属性値の中にある `##` 行を見出しとして扱わなくなりました。抽出処理は zfb の MDX パーサーと同じ方法で JSX の範囲を判定するため、レンダリングされた見出し ID と一致します。JSX の子要素内の見出しは引き続き抽出され、ファイル末尾まで閉じられていない構文があっても見出しは失われません（#4396）。
-- モバイルドロワーの Appearance メニューを修正し、Escape キーでメニューのみを閉じてトリガーにフォーカスを戻すようにしました。続けて Escape キーを押すとドロワーが閉じ、ハンバーガーボタンにフォーカスが移ります（#4393）。
-
-### その他の変更
-
-- `@takazudo/zfb`、`@takazudo/zfb-runtime`、`@takazudo/zfb-md-wasm` の peer dependency 下限を `^2.21.1` に更新しました。2.20.3 のシングル Preact ランタイム SSR 修正、バンドラーのコレクションシードを各コレクションの `include` フィルターに限定する変更、そして 2.21.1 のバグ修正（`zfb dev` / `zfb build` の起動高速化、マニフェストで宣言されたディレクトリを保持するワークスペースパッケージのステージング、編集されたワークスペースパッケージファイルでの SSR リロード）が含まれます。`zfb-runtime` と `zfb-adapter-cloudflare` はバージョン更新のみで、`zfb-md-wasm` は WASM 成果物を再ビルドしています。zudo-doc の設定移行は不要です。
+未リリースの変更はありません。

@@ -6,18 +6,22 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [5.28.0] - 2026-09-27
+
 ### Features
 
-- Long pages are now searchable beyond their opening paragraphs: the search index's body cap is raised from 300 to 3000 characters by default, and is configurable via the new `searchMaxBodyLength` setting (#4407).
+- Search now indexes up to 3000 characters per page instead of 300, making longer pages searchable beyond their opening paragraphs. Set `searchMaxBodyLength` to a positive integer to adjust the limit; result snippets retain their existing display length. (332a6184b)
 
 ### Bug Fixes
 
-- Heading extraction (the TOC and the `check:links` anchor scan, via `@takazudo/zudo-doc/extract-headings`) no longer treats `##` lines inside a multi-line JSX expression, a template-literal prop such as `HtmlPreview`'s `displayJs`, a JSX comment, or a multi-line quoted attribute value as headings. The extractor now delimits JSX the way zfb's MDX parser does, so it matches the rendered heading ids; headings inside JSX children are still extracted, and a construct left unclosed at end of file hides no headings (#4396).
-- Fixed the mobile drawer's Appearance menu so Escape closes only the menu and returns focus to its trigger; a second Escape then closes the drawer and focuses the hamburger (#4393).
+- Heading extraction for the table of contents and link checks ignores heading-like text inside multiline JSX expressions, comments, quoted attributes, and template-literal props, while preserving headings in JSX children. Multiline inline-code spans no longer confuse JSX detection. (b85fe3469, 99ad4252b)
+- Escape closes the mobile drawer's Appearance menu and returns focus to its trigger; a second Escape closes the drawer and focuses the hamburger button. (66359d27c)
 
 ### Other Changes
 
-- The `@takazudo/zfb`, `@takazudo/zfb-runtime`, and `@takazudo/zfb-md-wasm` peer dependency floors are now `^2.21.1`. The range includes 2.20.3's single-Preact-runtime SSR fix, scopes bundler collection seeds to each collection's `include` filter, and picks up 2.21.1's bug fixes (faster `zfb dev` / `zfb build` start, workspace-package staging that keeps manifest-declared dirs, and SSR reloads for edited workspace-package files); `zfb-runtime` and `zfb-adapter-cloudflare` are version bumps only, and `zfb-md-wasm` ships rebuilt WASM artifacts. No zudo-doc config migration is required.
+- Raise the zfb, zfb-runtime, and zfb-md-wasm peer floors to `^2.21.1`, bringing single-Preact-runtime SSR fixes, collection include-filter handling, faster startup, and workspace-package staging and reload fixes. No configuration migration is required. (6686f2da6, e82e57551)
 
 ## [5.27.0] - 2026-09-24
 
