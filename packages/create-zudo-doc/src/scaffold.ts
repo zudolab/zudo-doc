@@ -1095,7 +1095,7 @@ function generatePackageJson(
     // `@takazudo/zdtp/styles.css` (see features/design-token-panel.ts). Both are
     // no-ops with the feature off, so an OFF project must not carry the dep
     // (#4009 / #4018 — it was unconditional until then, see the `deps` block).
-    deps["@takazudo/zdtp"] = "0.8.3";
+    deps["@takazudo/zdtp"] = "0.8.5";
   }
 
   if (
