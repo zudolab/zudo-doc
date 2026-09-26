@@ -973,9 +973,15 @@ function generatePackageJson(
     // node_modules import-scan memoization perf improvement. The companion
     // packages have no package-specific changes; md-wasm rebuilt its WASM
     // artifacts. No scaffold config migration is required.
-    "@takazudo/zfb": "2.21.0",
-    "@takazudo/zfb-runtime": "2.21.0",
-    "@takazudo/zfb-md-wasm": "2.21.0",
+    // 2.21.1: bug fixes only — `zfb dev` / `zfb build` start faster (the
+    // embedded Tailwind hash is stamped at build time), workspace-package
+    // staging keeps manifest-declared dirs, and `zfb dev` watches SSR module
+    // deps outside the watch roots. The companion packages have no
+    // package-specific changes; md-wasm rebuilt its WASM artifacts. No
+    // scaffold config migration is required.
+    "@takazudo/zfb": "2.21.1",
+    "@takazudo/zfb-runtime": "2.21.1",
+    "@takazudo/zfb-md-wasm": "2.21.1",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's
