@@ -137,7 +137,7 @@ describe("@takazudo/zfb-md-wasm release contract", () => {
       version: string;
       exports: {
         ".": { browser: string; default: string; types: string };
-        "./highlight": { browser: string; default: string; types: string; workerd: string };
+        "./highlight": { browser: string; default: string; types: string };
       };
     };
     const browserEntryPath = resolve(
@@ -177,7 +177,7 @@ describe("@takazudo/zfb-md-wasm release contract", () => {
       version: string;
       exports: {
         ".": { browser: string; default: string; types: string };
-        "./highlight": { browser: string; default: string; types: string };
+        "./highlight": { browser: string; default: string; types: string; workerd: string };
       };
     };
     const browserEntryPath = resolve(
