@@ -8,6 +8,12 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [5.28.2] - 2026-09-28
+
+### Bug Fixes
+
+- Update the supported zfb family to 2.22.1, bringing fixes for development live reload stalls, lazy startup rendering, and content invalidation at startup. Development reverse proxies must forward WebSocket upgrades for live reload. (8f85de3d5)
+
 ## [5.28.1] - 2026-09-27
 
 ### Bug Fixes
