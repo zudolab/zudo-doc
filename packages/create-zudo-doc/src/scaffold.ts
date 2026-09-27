@@ -979,6 +979,9 @@ function generatePackageJson(
     // deps outside the watch roots. The companion packages have no
     // package-specific changes; md-wasm rebuilt its WASM artifacts. No
     // scaffold config migration is required.
+    // 2.22.0: zfb fixes workspace staging and dev watching; md-wasm adds
+    // workerd-specific parse/highlight exports while retaining browser paths.
+    // No scaffold config migration is required.
     "@takazudo/zfb": "2.22.0",
     "@takazudo/zfb-runtime": "2.22.0",
     "@takazudo/zfb-md-wasm": "2.22.0",
