@@ -8,6 +8,12 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [5.28.1] - 2026-09-27
+
+### Other Changes
+
+- New projects pin the zfb family at 2.22.0, including the md-wasm workerd entries and fixes for workspace staging and development watching. No scaffold configuration change is required. (8083a1329)
+
 ## [5.28.0] - 2026-09-27
 
 ### Other Changes

@@ -1,0 +1,15 @@
+---
+title: 5.28.1
+description: Release notes for 5.28.1.
+sidebar_position: 1131
+---
+
+Released: 2026-09-27
+
+### Bug Fixes
+
+- `Settings.searchMaxBodyLength` is optional again, so hosts using `satisfies Settings` can upgrade without adding the field. Omission still uses the 3000-character default. (e180761a0)
+
+### Other Changes
+
+- Update the supported zfb family to 2.22.0, which adds workerd-compatible md-wasm parse and highlight entries while retaining browser exports. (8083a1329)

@@ -1,0 +1,15 @@
+---
+title: 5.28.1
+description: 5.28.1のリリースノート。
+sidebar_position: 1131
+---
+
+リリース日: 2026-09-27
+
+### バグ修正
+
+- `Settings.searchMaxBodyLength` を再び省略可能にしました。`satisfies Settings` を使うホストは、この設定を追加せずに更新できます。省略時のデフォルト値は引き続き3000文字です。(e180761a0)
+
+### その他の変更
+
+- 対応する zfb ファミリーを 2.22.0 に更新しました。md-wasm に workerd 向けの parse / highlight エントリが追加され、ブラウザー向けのエクスポートも維持されます。(8083a1329)

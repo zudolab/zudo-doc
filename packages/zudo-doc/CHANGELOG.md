@@ -8,6 +8,16 @@ The format is based on Keep a Changelog, and release notes are generated from th
 
 No unreleased changes.
 
+## [5.28.1] - 2026-09-27
+
+### Bug Fixes
+
+- `Settings.searchMaxBodyLength` is optional again, so hosts using `satisfies Settings` can upgrade without adding the field. Omission still uses the 3000-character default. (e180761a0)
+
+### Other Changes
+
+- Update the supported zfb family to 2.22.0, which adds workerd-compatible md-wasm parse and highlight entries while retaining browser exports. (8083a1329)
+
 ## [5.28.0] - 2026-09-27
 
 ### Features
