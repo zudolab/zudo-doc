@@ -979,9 +979,12 @@ function generatePackageJson(
     // deps outside the watch roots. The companion packages have no
     // package-specific changes; md-wasm rebuilt its WASM artifacts. No
     // scaffold config migration is required.
-    "@takazudo/zfb": "2.21.1",
-    "@takazudo/zfb-runtime": "2.21.1",
-    "@takazudo/zfb-md-wasm": "2.21.1",
+    // 2.22.0: zfb fixes workspace staging and dev watching; md-wasm adds
+    // workerd-specific parse/highlight exports while retaining browser paths.
+    // No scaffold config migration is required.
+    "@takazudo/zfb": "2.22.0",
+    "@takazudo/zfb-runtime": "2.22.0",
+    "@takazudo/zfb-md-wasm": "2.22.0",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's

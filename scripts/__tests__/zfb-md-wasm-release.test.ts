@@ -177,7 +177,7 @@ describe("@takazudo/zfb-md-wasm release contract", () => {
       version: string;
       exports: {
         ".": { browser: string; default: string; types: string };
-        "./highlight": { browser: string; default: string; types: string };
+        "./highlight": { browser: string; default: string; types: string; workerd: string };
       };
     };
     const browserEntryPath = resolve(
@@ -197,9 +197,13 @@ describe("@takazudo/zfb-md-wasm release contract", () => {
     expect(packageJson.version).toBe(rootPin);
     expect(packageJson.exports["./highlight"]).toEqual({
       types: "./dist/highlight.d.ts",
+      workerd: "./dist/highlight-workerd.js",
       browser: "./dist/highlight-browser.js",
       default: "./dist/highlight.js",
     });
+    expect(
+      statSync(resolve(packageRoot, packageJson.exports["./highlight"].workerd)).size,
+    ).toBeGreaterThan(0);
     expect(browserEntry).toContain(
       'import glueHref from "./wasm-highlight/zfb_md_wasm_highlight_glue.zfb-resource.mjs?url";',
     );
