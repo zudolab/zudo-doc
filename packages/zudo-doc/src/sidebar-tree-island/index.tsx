@@ -130,11 +130,11 @@ function RootMenuItemEntry({ item }: { item: SidebarRootMenuItem }) {
   const hasChildren = item.children && item.children.length > 0;
 
   return (
-    <div class="border-t border-muted">
-      <div class="flex items-center">
+    <div className="border-t border-muted">
+      <div className="flex items-center">
         <a
           href={item.href}
-          class="flex flex-1 items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-small font-semibold text-fg hover:text-accent hover:underline break-words"
+          className="flex flex-1 items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-small font-semibold text-fg hover:text-accent hover:underline break-words"
         >
           <CategoryLinkIcon className="w-[14px]" />
           <span dangerouslySetInnerHTML={{ __html: smartBreakToHtml(item.label) }} />
@@ -143,7 +143,7 @@ function RootMenuItemEntry({ item }: { item: SidebarRootMenuItem }) {
           <button
             type="button"
             onClick={() => setExpanded((prev) => !prev)}
-            class="flex items-center justify-center px-hsp-sm py-vsp-xs text-muted hover:text-fg"
+            className="flex items-center justify-center px-hsp-sm py-vsp-xs text-muted hover:text-fg"
             aria-expanded={expanded}
             aria-label={expanded ? `Collapse ${item.label}` : `Expand ${item.label}`}
           >
@@ -152,12 +152,12 @@ function RootMenuItemEntry({ item }: { item: SidebarRootMenuItem }) {
         )}
       </div>
       {hasChildren && expanded && (
-        <div class="pb-vsp-xs">
+        <div className="pb-vsp-xs">
           {item.children!.map((child) => (
             <a
               key={child.href}
               href={child.href}
-              class="block pl-hsp-xl pr-hsp-sm py-vsp-2xs text-small text-muted hover:text-accent hover:underline break-words"
+              className="block pl-hsp-xl pr-hsp-sm py-vsp-2xs text-small text-muted hover:text-accent hover:underline break-words"
             >
               <span dangerouslySetInnerHTML={{ __html: smartBreakToHtml(child.label) }} />
             </a>
@@ -203,17 +203,17 @@ function SidebarFooter({ links, themeDefaultMode, themeLabels, themeRespectSyste
   if (!links && !themeDefaultMode) return null;
   return (
     // pb-[50vh] provides scroll room so the footer doesn't sit at the very bottom of the viewport
-    <div class="lg:hidden flex items-center gap-hsp-md border-t border-muted px-hsp-sm py-vsp-xs pb-[50vh] text-small">
+    <div className="lg:hidden flex items-center gap-hsp-md border-t border-muted px-hsp-sm py-vsp-xs pb-[50vh] text-small">
       {themeDefaultMode && (
         <ThemeToggle defaultMode={themeDefaultMode} labels={themeLabels} respectPrefersColorScheme={themeRespectSystem} pendingUntilHydrated={true} />
       )}
       {links && links.map((link, i) => (
-        <span key={link.href} class="flex items-center gap-hsp-xs">
-          {i > 0 && <span class="text-muted">/</span>}
+        <span key={link.href} className="flex items-center gap-hsp-xs">
+          {i > 0 && <span className="text-muted">/</span>}
           {link.active ? (
-            <span aria-current="true" class="font-medium text-fg">{link.label}</span>
+            <span aria-current="true" className="font-medium text-fg">{link.label}</span>
           ) : (
-            <a href={link.href} lang={link.code} class="text-muted hover:text-fg">
+            <a href={link.href} lang={link.code} className="text-muted hover:text-fg">
               {link.label}
             </a>
           )}
@@ -276,7 +276,7 @@ export function SidebarTree({ nodes, currentSlug, currentPath, rootMenuItems, ba
         <button
           type="button"
           onClick={() => setShowingRootMenu(false)}
-          class="flex w-full items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-left text-small text-muted hover:text-fg border-b border-muted"
+          className="flex w-full items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-left text-small text-muted hover:text-fg border-b border-muted"
         >
           <ChevronRight className="h-icon-sm w-icon-sm shrink-0" />
           {backToMenuLabel ?? "Back to main menu"}
@@ -307,14 +307,14 @@ export function SidebarTree({ nodes, currentSlug, currentPath, rootMenuItems, ba
         <button
           type="button"
           onClick={() => setShowingRootMenu(true)}
-          class="lg:hidden flex w-full items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-left text-small text-muted hover:text-fg border-b border-muted"
+          className="lg:hidden flex w-full items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-left text-small text-muted hover:text-fg border-b border-muted"
         >
           <ChevronLeft className="h-icon-sm w-icon-sm shrink-0" />
           {backToMenuLabel ?? "Back to main menu"}
         </button>
       )}
-      <div class="px-hsp-sm py-vsp-xs">
-        <div class="flex items-center gap-hsp-xs bg-surface rounded px-hsp-sm py-vsp-2xs">
+      <div className="px-hsp-sm py-vsp-xs">
+        <div className="flex items-center gap-hsp-xs bg-surface rounded px-hsp-sm py-vsp-2xs">
           <Search className="h-[14px] w-[14px] text-muted shrink-0" />
           <input
             ref={filterRef}
@@ -323,7 +323,7 @@ export function SidebarTree({ nodes, currentSlug, currentPath, rootMenuItems, ba
             placeholder={filterPlaceholder}
             value={query}
             onInput={(e) => setQuery(e.currentTarget.value)}
-            class="bg-transparent text-small outline-none w-full text-fg placeholder:text-muted"
+            className="bg-transparent text-small outline-none w-full text-fg placeholder:text-muted"
           />
         </div>
       </div>
@@ -434,14 +434,14 @@ function TrayItem({
     : undefined;
 
   return (
-    <div class={isLast ? "pb-vsp-md" : ""}>
-      <div class="relative">
+    <div className={isLast ? "pb-vsp-md" : ""}>
+      <div className="relative">
         <ConnectorLines depth={depth} isLast={isLast} topPad="var(--spacing-vsp-2xs)" />
         <a
           href={item.href}
           aria-current={isActive ? "page" : undefined}
           data-nav-active={isActive ? "" : undefined}
-          class={`flex items-start gap-hsp-xs py-vsp-2xs pr-hsp-xs lg:pr-hsp-sm text-small break-words ${
+          className={`flex items-start gap-hsp-xs py-vsp-2xs pr-hsp-xs lg:pr-hsp-sm text-small break-words ${
             isActive
               ? "bg-fg font-medium text-bg"
               : "text-muted hover:text-accent hover:underline focus:underline focus:text-accent"
@@ -449,13 +449,13 @@ function TrayItem({
           style={{ "padding-left": padLeft(depth, false) }}
         >
           {rankDigits !== undefined && (
-            <span class={`shrink-0 tabular-nums${isActive ? "" : " text-muted"}`}>
+            <span className={`shrink-0 tabular-nums${isActive ? "" : " text-muted"}`}>
               {item.rank === undefined ? "" : String(item.rank).padStart(rankDigits, "0")}
             </span>
           )}
-          <span class="min-w-0 flex-1" dangerouslySetInnerHTML={{ __html: labelHtml }} />
+          <span className="min-w-0 flex-1" dangerouslySetInnerHTML={{ __html: labelHtml }} />
           {showDate && shortDate && (
-            <span class={`shrink-0 tabular-nums${isActive ? "" : " text-muted"}`}>
+            <span className={`shrink-0 tabular-nums${isActive ? "" : " text-muted"}`}>
               {shortDate}
             </span>
           )}
@@ -534,25 +534,25 @@ function TrayGroupNode({
   const isExpanded = forceOpen || open;
 
   return (
-    <div class={!isLast && isExpanded ? "relative" : ""}>
+    <div className={!isLast && isExpanded ? "relative" : ""}>
       {!isLast && isExpanded && (
         <div
-          class="absolute border-l border-solid border-muted z-local-1"
+          className="absolute border-l border-solid border-muted z-local-1"
           style={{ left: connectorLeft(1), top: "0px", bottom: "0px" }}
         />
       )}
-      <div class="relative">
+      <div className="relative">
         <ConnectorLines depth={1} isLast={isLast} topPad="var(--spacing-vsp-xs)" />
         <button
           type="button"
           onClick={toggle}
-          class="flex w-full items-center gap-hsp-md py-vsp-xs text-left text-small font-semibold text-fg hover:text-accent hover:underline focus:underline focus:text-accent break-words"
+          className="flex w-full items-center gap-hsp-md py-vsp-xs text-left text-small font-semibold text-fg hover:text-accent hover:underline focus:underline focus:text-accent break-words"
           style={{ "padding-left": padLeft(1, true) }}
           aria-expanded={isExpanded}
           aria-label={isExpanded ? `Collapse ${label}` : `Expand ${label}`}
           data-zd-sidebar-open-key={storageKey}
         >
-          <span class="aspect-square flex items-center justify-center w-[1.5rem] shrink-0 border border-muted">
+          <span className="aspect-square flex items-center justify-center w-[1.5rem] shrink-0 border border-muted">
             <ToggleChevron isExpanded={isExpanded} className="text-muted" />
           </span>
           <span>{label}</span>
@@ -696,10 +696,10 @@ const CategoryNode = memo(function CategoryNode({
   const paddingLeft = padLeft(depth, true);
 
   return (
-    <div class={`${depth === 0 ? "border-t border-muted" : ""} ${depth >= 1 && !isLast ? "relative" : ""}`}>
+    <div className={`${depth === 0 ? "border-t border-muted" : ""} ${depth >= 1 && !isLast ? "relative" : ""}`}>
       {depth >= 1 && !isLast && isExpanded && (
         <div
-          class="absolute border-l border-solid border-muted z-local-1"
+          className="absolute border-l border-solid border-muted z-local-1"
           style={{
             left: connectorLeft(depth),
             top: "0px",
@@ -707,20 +707,20 @@ const CategoryNode = memo(function CategoryNode({
           }}
         />
       )}
-      <div class="relative">
+      <div className="relative">
         <ConnectorLines depth={depth} isLast={isLast} topPad="calc(0.15rem + var(--spacing-vsp-xs))" />
         {node.href ? (
           <div
-            class={`flex w-full items-center text-small font-semibold pt-[0.15rem] ${isActive ? "bg-fg text-bg" : "text-fg"}`}
+            className={`flex w-full items-center text-small font-semibold pt-[0.15rem] ${isActive ? "bg-fg text-bg" : "text-fg"}`}
           >
             <a
               href={node.href}
               aria-current={isActive ? "page" : undefined}
-              class={`flex-1 flex items-start gap-hsp-xs py-vsp-xs hover:underline focus:underline break-words ${isActive ? "text-bg" : "text-fg hover:text-accent focus:text-accent"}`}
+              className={`flex-1 flex items-start gap-hsp-xs py-vsp-xs hover:underline focus:underline break-words ${isActive ? "text-bg" : "text-fg hover:text-accent focus:text-accent"}`}
               style={{ paddingLeft }}
             >
               {depth === 0 && (
-                <span class="flex h-[1lh] items-center">
+                <span className="flex h-[1lh] items-center">
                   <CategoryLinkIcon className={`w-[14px] ${isActive ? "text-bg" : ""}`} />
                 </span>
               )}
@@ -729,7 +729,7 @@ const CategoryNode = memo(function CategoryNode({
             <button
               type="button"
               onClick={toggle}
-              class={`aspect-square flex items-center justify-center w-[1.5rem] border-y border-l hover:underline focus:underline ${isActive ? "border-bg/30" : "border-muted"}`}
+              className={`aspect-square flex items-center justify-center w-[1.5rem] border-y border-l hover:underline focus:underline ${isActive ? "border-bg/30" : "border-muted"}`}
               aria-expanded={isExpanded}
               aria-label={isExpanded ? `Collapse ${node.label}` : `Expand ${node.label}`}
             >
@@ -740,12 +740,12 @@ const CategoryNode = memo(function CategoryNode({
           <button
             type="button"
             onClick={toggle}
-            class={`flex w-full items-center gap-hsp-md text-left text-small font-semibold py-vsp-xs text-fg hover:text-accent hover:underline focus:underline focus:text-accent break-words`}
+            className={`flex w-full items-center gap-hsp-md text-left text-small font-semibold py-vsp-xs text-fg hover:text-accent hover:underline focus:underline focus:text-accent break-words`}
             style={{ paddingLeft }}
             aria-expanded={isExpanded}
             aria-label={isExpanded ? `Collapse ${node.label}` : `Expand ${node.label}`}
           >
-            <span class="aspect-square flex items-center justify-center w-[1.5rem] shrink-0 border border-muted">
+            <span className="aspect-square flex items-center justify-center w-[1.5rem] shrink-0 border border-muted">
               <ToggleChevron isExpanded={isExpanded} className="text-muted" />
             </span>
             <span dangerouslySetInnerHTML={{ __html: labelHtml }} />
@@ -796,14 +796,14 @@ const LeafNode = memo(function LeafNode({
     : "var(--spacing-vsp-2xs)";
 
   return (
-    <div class={outerClass}>
-      <div class="relative">
+    <div className={outerClass}>
+      <div className="relative">
         <ConnectorLines depth={depth} isLast={isLast} topPad={topPad} />
         <a
           href={node.href}
           aria-current={isActive ? "page" : undefined}
           data-nav-active={!isRoot && isActive ? "" : undefined}
-          class={isRoot
+          className={isRoot
             ? `flex items-start gap-hsp-xs py-[calc(var(--spacing-vsp-xs)+0.15rem)] pr-hsp-xs lg:pr-hsp-sm text-small font-semibold break-words ${
                 isActive ? "bg-fg text-bg" : "text-fg hover:text-accent hover:underline focus:underline focus:text-accent"
               }`
@@ -816,7 +816,7 @@ const LeafNode = memo(function LeafNode({
           style={{ paddingLeft }}
         >
           {isRoot && (
-            <span class="flex h-[1lh] items-center">
+            <span className="flex h-[1lh] items-center">
               <CategoryLinkIcon className={`w-[14px] ${isActive ? "text-bg" : ""}`} />
             </span>
           )}

@@ -164,7 +164,7 @@ export function SidebarToggle({
         ref={hamburgerRef}
         type="button"
         onClick={() => setOpen(!open)}
-        class={cx(
+        className={cx(
           "lg:hidden shrink-0 px-hsp-sm py-vsp-xs -ml-hsp-sm mr-hsp-sm text-muted hover:text-fg",
           // While open, the button IS the close control (it shows the X), so it
           // has to sit in the drawer's own tier rather than under the backdrop —
@@ -183,7 +183,7 @@ export function SidebarToggle({
       >
         {/* X icon — visible only when open */}
         <svg
-          class="h-icon-lg w-icon-lg"
+          className="h-icon-lg w-icon-lg"
           style={open ? undefined : HIDDEN_ICON_STYLE}
           aria-hidden="true"
           fill="none"
@@ -199,7 +199,7 @@ export function SidebarToggle({
         </svg>
         {/* Hamburger icon — visible only when closed */}
         <svg
-          class="h-icon-lg w-icon-lg"
+          className="h-icon-lg w-icon-lg"
           style={open ? HIDDEN_ICON_STYLE : undefined}
           aria-hidden="true"
           fill="none"
@@ -229,7 +229,7 @@ export function SidebarToggle({
           Backdrop tapping (onClick below) remains a valid dismissal, as does
           Escape (zudolab/zudo-doc#4366). */}
       <div
-        class={cx("fixed inset-0 z-modal-backdrop bg-overlay/30 lg:hidden", !open && "hidden")}
+        className={cx("fixed inset-0 z-modal-backdrop bg-overlay/30 lg:hidden", !open && "hidden")}
         aria-hidden={!open}
         onClick={() => setOpen(false)}
       />
@@ -249,14 +249,14 @@ export function SidebarToggle({
       <aside
         inert={!open}
         data-zd-mobile-sidebar
-        class={`
+        className={`
           fixed top-[3.5rem] left-0 z-modal h-[calc(100vh-3.5rem)] w-[16rem] flex flex-col
           border-r border-muted bg-bg transition-transform duration-200
           lg:hidden
           ${open ? "translate-x-0" : "-translate-x-full"}
         `}
       >
-        <div class="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto">
           <SidebarTree
             nodes={nodes}
             currentSlug={currentSlug}

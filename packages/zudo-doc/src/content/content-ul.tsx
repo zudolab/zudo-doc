@@ -10,7 +10,7 @@ export function ContentUl({ children, className, ...rest }: Props) {
   return (
     <ul
       {...rest}
-      class={className || undefined}
+      className={className || undefined}
       style={{ "padding-left": "2em", "list-style-type": "disc" }}
     >
       {children}

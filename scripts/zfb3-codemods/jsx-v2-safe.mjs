@@ -16,7 +16,7 @@ const files = roots.flatMap((root) => {
   return execFileSync("rg", ["--files", root, "-g", "*.tsx"], { encoding: "utf8" })
     .trim().split("\n").filter(Boolean);
 });
-const rename = new Map([["className", "class"], ["htmlFor", "for"], ["charSet", "charset"], ["tabIndex", "tabindex"], ["readOnly", "readonly"]]);
+const rename = new Map([["htmlFor", "for"], ["charSet", "charset"], ["tabIndex", "tabindex"], ["readOnly", "readonly"]]);
 const svgRename = new Map([["strokeWidth", "stroke-width"], ["strokeLinecap", "stroke-linecap"], ["strokeLinejoin", "stroke-linejoin"], ["fillRule", "fill-rule"], ["clipRule", "clip-rule"], ["strokeDasharray", "stroke-dasharray"], ["strokeDashoffset", "stroke-dashoffset"], ["strokeMiterlimit", "stroke-miterlimit"]]);
 const lengthKeys = new Set(["width", "height", "minWidth", "minHeight", "maxWidth", "maxHeight", "top", "right", "bottom", "left", "margin", "marginTop", "marginRight", "marginBottom", "marginLeft", "padding", "paddingTop", "paddingRight", "paddingBottom", "paddingLeft", "borderWidth", "borderRadius", "fontSize", "letterSpacing"]);
 let changedFiles = 0;

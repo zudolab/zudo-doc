@@ -33,7 +33,7 @@ const pillColorClass: Record<PillColor, string> = {
 function Pill({ children, color }: { children: ReactNode; color: PillColor }) {
   return (
     <span
-      class={`inline-block px-hsp-sm py-vsp-2xs text-caption rounded-full ${pillColorClass[color]}`}
+      className={`inline-block px-hsp-sm py-vsp-2xs text-caption rounded-full ${pillColorClass[color]}`}
     >
       {children}
     </span>

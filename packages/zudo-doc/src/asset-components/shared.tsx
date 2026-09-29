@@ -98,7 +98,7 @@ export function AssetFileIcon({
 }): JSX.Element {
   return (
     <svg
-      class={className}
+      className={className}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -120,7 +120,7 @@ export function MissingAssetWarning({
 }): JSX.Element {
   return (
     <div
-      class="rounded border border-warning/30 bg-warning/5 px-hsp-lg py-vsp-xs text-small text-warning"
+      className="rounded border border-warning/30 bg-warning/5 px-hsp-lg py-vsp-xs text-small text-warning"
       role="status"
     >
       {children}

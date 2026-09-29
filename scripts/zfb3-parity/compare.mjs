@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { readdir, readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join, relative, resolve, dirname } from 'node:path';
-import { normalizePage, cssInventory, canonical } from './normalize.mjs';
+import { normalizePage, allowlistedRemovedSvgAttrs, cssInventory, canonical } from './normalize.mjs';
 
 const DEFAULT_BASE = join(process.env.HOME ?? '', '.cache/zudo-doc-zfb3-parity/v2-337b9f110/dist');
 const args = process.argv.slice(2);
@@ -70,7 +70,7 @@ try {
     const a = normalizePage(await readFile(join(base, left.routeFiles[route]), 'utf8'));
     const b = normalizePage(await readFile(join(current, right.routeFiles[route]), 'utf8'));
     compare('islands', route, a.islands, b.islands);
-    compare('dom', route, a.dom, b.dom);
+    compare('dom', route, allowlistedRemovedSvgAttrs(a.dom, b.dom), b.dom);
     // Paths follow the full DOM, so a moved element is reported at the correct route.
     const normalizeClasses = (entries, rename) => entries.map((entry) => ({
       ...entry,

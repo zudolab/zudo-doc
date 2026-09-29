@@ -8,7 +8,7 @@ type Props = JSX.IntrinsicElements["strong"];
 export function ContentStrong({ children, className, ...rest }: Props) {
   return (
     <strong
-      class={`font-bold text-fg${className ? ` ${className}` : ""}`}
+      className={`font-bold text-fg${className ? ` ${className}` : ""}`}
       {...rest}
     >
       {children}

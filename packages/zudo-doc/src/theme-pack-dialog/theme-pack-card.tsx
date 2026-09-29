@@ -49,29 +49,29 @@ export function ThemePackCard({ meta, mode, isActive, onSelect }: ThemePackCardP
       onClick={onSelect}
       aria-pressed={isActive}
       aria-label={`Apply ${meta.name} theme pack — ${meta.mode === "dark" ? "Dark" : "Light"}. ${meta.description}`}
-      class={`flex flex-col gap-vsp-2xs rounded-lg border p-hsp-sm text-left transition-colors focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 ${
+      className={`flex flex-col gap-vsp-2xs rounded-lg border p-hsp-sm text-left transition-colors focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 ${
         isActive ? "border-accent ring-2 ring-accent" : "border-muted hover:border-accent"
       }`}
     >
       <div
         aria-hidden="true"
-        class="flex flex-col gap-vsp-3xs rounded-md border p-hsp-sm"
+        className="flex flex-col gap-vsp-3xs rounded-md border p-hsp-sm"
         style={{
           "background-color": swatches.bg,
           color: swatches.fg,
           "border-color": `color-mix(in oklch, ${swatches.fg} 15%, transparent)`,
         }}
       >
-        <p class="text-title font-bold">Aa Heading</p>
-        <p class="text-small">
+        <p className="text-title font-bold">Aa Heading</p>
+        <p className="text-small">
           The quick brown fox jumps over{" "}
-          <span class="underline" style={{ color: swatches.accent }}>
+          <span className="underline" style={{ color: swatches.accent }}>
             the lazy dog
           </span>
           .
         </p>
         <p
-          class="rounded px-hsp-2xs py-hsp-3xs font-mono text-caption"
+          className="rounded px-hsp-2xs py-hsp-3xs font-mono text-caption"
           style={{ "background-color": `color-mix(in oklch, ${swatches.fg} 8%, transparent)` }}
         >
           <span style={{ color: swatches.syntax.keyword }}>const</span>{" "}
@@ -80,14 +80,14 @@ export function ThemePackCard({ meta, mode, isActive, onSelect }: ThemePackCardP
           <span style={{ color: swatches.syntax.comment }}>// {meta.mode}</span>
         </p>
       </div>
-      <div class="flex items-center justify-between gap-hsp-sm">
-        <span class="min-w-0 truncate text-body font-bold text-fg">{meta.name}</span>
-        <span class="shrink-0 rounded-full border border-muted px-hsp-sm text-micro tracking-wide text-muted uppercase">
+      <div className="flex items-center justify-between gap-hsp-sm">
+        <span className="min-w-0 truncate text-body font-bold text-fg">{meta.name}</span>
+        <span className="shrink-0 rounded-full border border-muted px-hsp-sm text-micro tracking-wide text-muted uppercase">
           {meta.mode === "dark" ? "Dark" : "Light"}
         </span>
       </div>
-      <p class="text-caption text-muted">{meta.description}</p>
-      <p class="text-micro text-muted">{fontCaption}</p>
+      <p className="text-caption text-muted">{meta.description}</p>
+      <p className="text-micro text-muted">{fontCaption}</p>
     </button>
   );
 }

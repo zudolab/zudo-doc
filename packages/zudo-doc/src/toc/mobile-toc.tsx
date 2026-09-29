@@ -62,7 +62,7 @@ export function MobileToc({
   // aria-hidden prevents screen readers from announcing the invisible label.
   if (filtered.length === 0) {
     return (
-      <div class="hidden" aria-hidden="true">
+      <div className="hidden" aria-hidden="true">
         {title}
       </div>
     );
@@ -77,17 +77,17 @@ export function MobileToc({
   // branch is a `display:none` placeholder carrying only the locale label, so
   // there is nothing for a pack to style.
   return (
-    <div data-zd-mobile-toc class="xl:hidden border border-muted mb-vsp-lg">
+    <div data-zd-mobile-toc className="xl:hidden border border-muted mb-vsp-lg">
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
-        class="flex w-full items-center justify-between px-hsp-lg py-vsp-xs text-small font-medium text-fg"
+        className="flex w-full items-center justify-between px-hsp-lg py-vsp-xs text-small font-medium text-fg"
       >
         <span>{title}</span>
         <svg
           aria-hidden="true"
-          class={cx(
+          className={cx(
             "h-icon-sm w-icon-sm text-muted transition-transform duration-150",
             open && "rotate-180",
           )}
@@ -109,7 +109,7 @@ export function MobileToc({
           elements remain in the static markup, satisfying the a11y requirement
           for keyboard accessibility after hydration. */}
       <ul
-        class={cx(
+        className={cx(
           "border-t border-muted px-hsp-lg py-vsp-xs space-y-vsp-2xs",
           !open && "hidden",
         )}
@@ -118,7 +118,7 @@ export function MobileToc({
         {filtered.map((heading, index) => (
           <li
             key={`${heading.slug}-${index}`}
-            class={cx(
+            className={cx(
               heading.depth === 3 && "ml-hsp-lg",
               heading.depth === 4 && "ml-hsp-2xl",
             )}
@@ -126,7 +126,7 @@ export function MobileToc({
             <a
               href={`#${heading.slug}`}
               onClick={() => setOpen(false)}
-              class="block py-vsp-2xs text-small text-muted hover:text-fg hover:underline focus-visible:underline"
+              className="block py-vsp-2xs text-small text-muted hover:text-fg hover:underline focus-visible:underline"
             >
               <SmartBreak>{heading.text}</SmartBreak>
             </a>

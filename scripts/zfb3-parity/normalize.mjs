@@ -46,6 +46,25 @@ export function normalizePage(html) {
   return { dom: walk(parse(html)), islands, classes };
 }
 
+// #4433: v2-safe JSX removes only these inert SVG attributes. Apply the
+// exception to the baseline side only when the current SVG omits the exact
+// attribute; changed values, additions, and non-SVG namespaces still differ.
+export function allowlistedRemovedSvgAttrs(expected, actual) {
+  if (!expected || !actual || typeof expected !== 'object' || typeof actual !== 'object') return expected;
+  if (Array.isArray(expected)) return expected.map((item, index) => allowlistedRemovedSvgAttrs(item, actual[index]));
+  const result = { ...expected };
+  if (expected.tag === 'svg' && actual.tag === 'svg' && Array.isArray(expected.attrs) && Array.isArray(actual.attrs)) {
+    result.attrs = expected.attrs.filter(([name, value]) => {
+      if (actual.attrs.some(([currentName]) => currentName === name)) return true;
+      return !((name === 'xmlns' && value === 'http://www.w3.org/2000/svg') || (name === 'focusable' && value === 'false'));
+    });
+  }
+  if (Array.isArray(expected.children) && Array.isArray(actual.children)) {
+    result.children = expected.children.map((child, index) => allowlistedRemovedSvgAttrs(child, actual.children[index]));
+  }
+  return result;
+}
+
 // CSS inventory is intentionally lexical. It records rules without interpreting values or
 // expanding Tailwind output; declaration changes belong to the computed-style layer.
 export function cssInventory(css) {

@@ -23,7 +23,7 @@ export function CategoryLinkIcon({ className }: { className?: string }) {
       fill="currentColor"
       viewBox="0 0 103.395 107.049"
       aria-hidden="true"
-      class={`shrink-0 ${className ?? ""}`}
+      className={`shrink-0 ${className ?? ""}`}
     >
       <path d={CATEGORY_LINK_PATH} />
     </svg>
@@ -54,7 +54,7 @@ export function ConnectorLines({
   return (
     <>
       <div
-        class="absolute border-l border-dashed border-muted"
+        className="absolute border-l border-dashed border-muted"
         style={{
           left,
           top: "0px",
@@ -62,7 +62,7 @@ export function ConnectorLines({
         }}
       />
       <div
-        class="absolute border-t border-dashed border-muted"
+        className="absolute border-t border-dashed border-muted"
         style={{
           left,
           width,

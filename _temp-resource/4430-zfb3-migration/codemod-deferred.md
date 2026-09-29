@@ -2,6 +2,7 @@
 
 | Candidate | Decision on v2 | Reason / next owner |
 | --- | --- | --- |
+| Intrinsic `className` → `class` | Deferred to #4437 | Full v2 parity found different spread precedence in `ContentLink` and new Tailwind candidates: 626 route class differences plus 124 CSS selectors, 12 custom properties and 3 media rules. The mechanical rename is unsafe on v2 even though the type gate passed. Keep original `className` until the v3 cutover. |
 | `readOnly` → `readonly` | No source occurrence | Codemod supports the spelling; #4437 should handle any new occurrence after the v3 port. |
 | Other SVG presentation attributes | Deferred | The measured source uses `strokeWidth`, `strokeLinecap`, and `strokeLinejoin`, which the codemod converts. No other camelCase presentation attribute was present in scoped JSX; #4437 should cover newly introduced SVG markup. |
 | Dynamic style objects outside inline JSX | Deferred | The syntax-aware pass changes literal `style={{ ... }}` keys and numeric lengths only. Calculated style objects and style props crossing a component boundary need the v3 renderer and type gate in #4437. |

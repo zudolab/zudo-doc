@@ -11,7 +11,7 @@ export function ContentOl({ children, className, ...rest }: Props) {
   return (
     <ol
       {...rest}
-      class={className || undefined}
+      className={className || undefined}
       style={{ "padding-left": "2em", "list-style-type": "decimal" }}
     >
       {children}

@@ -35,14 +35,14 @@ export function ContentCode({ children, className, ...rest }: Props) {
 
   if (textFromChildren === null) {
     return (
-      <code class={className} {...rest}>
+      <code className={className} {...rest}>
         {children}
       </code>
     );
   }
 
   return (
-    <code class={className} {...rest}>
+    <code className={className} {...rest}>
       <SmartBreak>{textFromChildren}</SmartBreak>
     </code>
   );
