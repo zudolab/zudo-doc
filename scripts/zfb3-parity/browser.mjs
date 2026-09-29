@@ -52,7 +52,12 @@ async function capture(page, route, viewport, scheme, state = 'default') {
   }, { selectors, properties });
   const actualTheme = await page.locator('html').getAttribute('data-theme');
   const key = `${route.replaceAll('/', '_') || 'home'}-${viewport}-${scheme}-${state}`;
-  await page.screenshot({ path: join(output, `${key}.png`), fullPage: true });
+  await page.screenshot({
+    path: join(output, `${key}.png`),
+    fullPage: state === 'default',
+    animations: 'disabled',
+    timeout: 60_000,
+  });
   report.states.push({ route, viewport, scheme, actualTheme, state, styles, screenshot: `${key}.png` });
 }
 try {
