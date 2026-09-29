@@ -168,7 +168,7 @@ function PresetModal({
         top: "50%",
         left: "50%",
         transform: "translate(-50%, -50%)",
-        userSelect: "text",
+        "user-select": "text",
       }}
     >
       <div className="mb-vsp-sm text-title font-bold text-fg">
@@ -332,7 +332,7 @@ export default function PresetGenerator() {
         <SectionHeading>Languages</SectionHeading>
         <div className="flex flex-col gap-y-vsp-xs">
           <label
-            htmlFor="preset-default-language"
+            for="preset-default-language"
             className="text-caption text-muted"
           >
             Default language
@@ -353,7 +353,7 @@ export default function PresetGenerator() {
             ))}
           </select>
           <label
-            htmlFor="preset-additional-languages"
+            for="preset-additional-languages"
             className="text-caption text-muted"
           >
             Additional language codes

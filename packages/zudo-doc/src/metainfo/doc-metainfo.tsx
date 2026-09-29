@@ -38,7 +38,6 @@ export const DEFAULT_UPDATED_LABEL = "Updated";
 function ClockIcon(): VNode {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class="h-icon-xs w-icon-xs"
       fill="none"
       viewBox="0 0 24 24"
@@ -58,7 +57,6 @@ function ClockIcon(): VNode {
 function RefreshIcon(): VNode {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class="h-icon-xs w-icon-xs"
       fill="none"
       viewBox="0 0 24 24"
@@ -78,7 +76,6 @@ function RefreshIcon(): VNode {
 function UserIcon(): VNode {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class="h-icon-xs w-icon-xs"
       fill="none"
       viewBox="0 0 24 24"

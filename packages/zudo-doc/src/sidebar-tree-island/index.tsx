@@ -446,7 +446,7 @@ function TrayItem({
               ? "bg-fg font-medium text-bg"
               : "text-muted hover:text-accent hover:underline focus:underline focus:text-accent"
           }`}
-          style={{ paddingLeft: padLeft(depth, false) }}
+          style={{ "padding-left": padLeft(depth, false) }}
         >
           {rankDigits !== undefined && (
             <span className={`shrink-0 tabular-nums${isActive ? "" : " text-muted"}`}>
@@ -538,7 +538,7 @@ function TrayGroupNode({
       {!isLast && isExpanded && (
         <div
           className="absolute border-l border-solid border-muted z-local-1"
-          style={{ left: connectorLeft(1), top: 0, bottom: 0 }}
+          style={{ left: connectorLeft(1), top: "0px", bottom: "0px" }}
         />
       )}
       <div className="relative">
@@ -547,7 +547,7 @@ function TrayGroupNode({
           type="button"
           onClick={toggle}
           className="flex w-full items-center gap-hsp-md py-vsp-xs text-left text-small font-semibold text-fg hover:text-accent hover:underline focus:underline focus:text-accent break-words"
-          style={{ paddingLeft: padLeft(1, true) }}
+          style={{ "padding-left": padLeft(1, true) }}
           aria-expanded={isExpanded}
           aria-label={isExpanded ? `Collapse ${label}` : `Expand ${label}`}
           data-zd-sidebar-open-key={storageKey}
@@ -702,8 +702,8 @@ const CategoryNode = memo(function CategoryNode({
           className="absolute border-l border-solid border-muted z-local-1"
           style={{
             left: connectorLeft(depth),
-            top: 0,
-            bottom: 0,
+            top: "0px",
+            bottom: "0px",
           }}
         />
       )}

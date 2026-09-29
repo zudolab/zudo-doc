@@ -1,38 +1,16 @@
-# Cutover spine B: repo-wide mechanical v3 codemod (pragmas, imports, types, rawHtml, event names, remaining dialect)
+# Mechanical v2-safe codemod matrix (#4433)
 
-Owner: [#4437](https://github.com/zudolab/zudo-doc/issues/4437). Status: **pending port**. [Index and column meanings](README.md). [Binding decisions](../../../_temp-resource/4430-zfb3-migration/conventions.md).
+| Surface | Status and v2 result | Spec anchor | Test / evidence | Trust and deliberate differences |
+| --- | --- | --- | --- | --- |
+| Intrinsic JSX spelling | Kept `htmlFor` → `for` (2), `charSet` → `charset` (2), `tabIndex` → `tabindex` (2). Deferred intrinsic `className` → `class` (315 occurrences) after a full v2 parity probe showed 626 route class differences, including `ContentLink` spread precedence. Component `className` props stay intact. | Preact JSX and zfb 3 JSX dialect; issue #4433 | Root and package type gates and 146 focused render tests passed. CI-faithful pre-codemod base → topic comparison reports 0 hard/0 advisory differences. | No rawHtml involved. The v3 cutover owner #4437 must revisit `className` with matching spread precedence. |
+| SVG and inert attributes | `strokeWidth` (9), `strokeLinecap` (9), `strokeLinejoin` (7) use SVG attribute spelling. Removed inline `<svg xmlns>` (41) and `focusable` (5), plus one literal SVG string's `focusable`. | Upstream #3359 | Type gate and focused SiteTreeNav SSG snapshot passed after its only mapped `xmlns` removal. Parity normalizer regression test permits only exact removed SVG `xmlns`/`focusable` values and rejects changed/added attributes or a non-SVG namespace. | The literal SVG string is trusted package-authored markup; only inert `focusable` was removed. Sitemap `<urlset xmlns>` remains required XML namespace. |
+| Inline styles and attribute values | 15 camelCase inline style keys use CSS spelling; 9 numeric length values use explicit `px`; 3 boolean `download` values become empty strings; one false `spellcheck` becomes runtime string `false` through a narrow v2 type assertion. | Upstream #3375; issue #4433 | Root and package type gates, focused render tests, and pre-codemod base → topic static parity pass. | No rawHtml change. Remove the spellcheck type assertion at #4437. |
+| Nav and island props | Nav nodes and root menu omit undefined fields; sidebar sort positions live in a WeakMap. Optional props at SidebarToggle, SidebarTree, SiteTreeNav, DocHistory and HtmlPreview boundaries are omitted when absent. | Upstream #3376 | Strict JSON test passes real builder output and rejects undefined, hidden keys, non-plain objects. 146 focused tests and static island-props parity pass. | The serializer's JSON value remains the same; own-key changes are intentional. |
 
-Seed evidence: exploration maps `server-jsx.md`, `islands-nav.md`, `islands-content.md`, `css-wind.md`, `pkg-build.md`, `tests-ci.md`, `deps-docs.md` at the migration planning baseline; file/symbol inventory refreshed from prerequisite base `4026c213`. This inventory is a review checklist, not authority to edit files outside the issue Files section. Historical v2 constructs remain listed after mechanical prep so the final mapping is auditable.
+Codemod: `node scripts/zfb3-codemods/jsx-v2-safe.mjs [--dry-run] [paths...]`. It uses the TypeScript compiler API, prints a per-file count, and is idempotent. `codemod-deferred.md` records remaining candidates.
 
-## Files and symbols
+The #4431 comparator's narrow SVG attribute exception in `scripts/zfb3-parity/normalize.mjs` and `compare.mjs` is an explicit #4433 ownership extension. It changes only expected baseline SVG nodes when the current node omits the exact inert attribute; class, CSS, island and unrelated DOM comparisons remain strict.
 
-| File | Symbol | v2 construct → required v3 review | Status / spec / evidence |
-| --- | --- | --- | --- |
-| Owner test/tool files listed below or in issue Files | test/harness contract | Replace Preact execution with owned SSR→hydrate/mount→flush | pending; R-HYDRATE |
+## Verified v2 parity contract
 
-## Raw HTML sites to review
-
-| File and baseline line | Payload/context review | Trust, parser context, cleanup and test |
-| --- | --- | --- |
-| No direct site in initial source scan | Check imported helpers and newly introduced rawHtml | pending confirmation; add each new site explicitly |
-
-## Utility/token and authored rewrite rows
-
-| File | Original utility or CSS construct | Required disposition / review | Status and test |
-| --- | --- | --- | --- |
-| Owned source set | No mapped gap in planning TSV | Confirm generated candidate or matching shipped authored selector; unknown ordinary class is not proof | pending scan confirmation |
-
-## Tests and completion evidence
-
-No colocated test file in the initial selected-source inventory. Use the issue acceptance tests and add a focused test only for the relevant behavior.
-
-Run the exact source-resolution and port-check commands from the conventions with this topic’s paths. Record command, result, version and remaining diagnostics. Required behavioral coverage: initial SSR, active updates, cleanup/disposal, relevant navigation and parser/prop failures. CSS changes require computed-style evidence from the verification owner; a green build is insufficient.
-
-| Completion field | Owner must fill |
-| --- | --- |
-| Port-check / unit evidence | pending |
-| RawHtml review verdict per site | pending (or verified none) |
-| Deliberate DOM/class/behavior differences and cause | pending (or verified none) |
-| Upstream issue/shim and removal version | pending (or verified none) |
-| Browser/visual cases handed to #4468/#4475 | pending |
-| Final commit / reviewer / date | pending |
+The manager built both pre-codemod base `cef8782c2920d067ba710d3219ea7e8779937267` and topic `28422f629f1c66a56a370bfbe10c7c1ce205152d` with CI-faithful `scripts/parity-build.sh` under the heavy guard: both passed with 789 pages. The comparator reports **0 hard and 0 advisory differences** from base to topic across routes, islands, DOM, classes, and CSS inventory. The original frozen reference `337b9f110793dccb4759bddd5273eab38cd9d2f0` has three CSS inventory differences versus both trees, with exact identical difference objects. These additions predate #4433; no CSS exception was added. Evidence: `$HOME/.cache/zudo-doc-zfb3-parity/4433-v2-codemod/{original-to-parent,parent-to-codemod,static-revised}.{json,md}`.

@@ -183,35 +183,33 @@ export function SidebarToggle({
       >
         {/* X icon — visible only when open */}
         <svg
-          xmlns="http://www.w3.org/2000/svg"
           className="h-icon-lg w-icon-lg"
           style={open ? undefined : HIDDEN_ICON_STYLE}
           aria-hidden="true"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
-          strokeWidth={2}
+          stroke-width={2}
         >
           <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
+            stroke-linecap="round"
+            stroke-linejoin="round"
             d="M6 18L18 6M6 6l12 12"
           />
         </svg>
         {/* Hamburger icon — visible only when closed */}
         <svg
-          xmlns="http://www.w3.org/2000/svg"
           className="h-icon-lg w-icon-lg"
           style={open ? HIDDEN_ICON_STYLE : undefined}
           aria-hidden="true"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
-          strokeWidth={2}
+          stroke-width={2}
         >
           <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
+            stroke-linecap="round"
+            stroke-linejoin="round"
             d="M4 6h16M4 12h16M4 18h16"
           />
         </svg>

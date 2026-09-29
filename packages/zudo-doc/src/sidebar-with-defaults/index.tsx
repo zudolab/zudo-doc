@@ -89,18 +89,19 @@ export function createSidebarWithDefaults<S extends Settings = Settings>(
     const nodes = buildSidebarNodes(lang, navSection, currentVersion, false);
 
     const localeLinks = buildLocaleLinksForNav(currentPath, lang, localeCount);
+    const themeDefaultMode = getThemeDefaultMode();
 
     return Island({
       when: "load",
       children: (
         <SidebarTree
           nodes={nodes}
-          currentSlug={currentSlug}
+          {...(currentSlug !== undefined ? { currentSlug } : {})}
           rootMenuItems={rootMenuItems}
-          backToMenuLabel={backToMenuLabel}
+          {...(backToMenuLabel !== undefined ? { backToMenuLabel } : {})}
           locale={lang}
-          localeLinks={localeLinks}
-          themeDefaultMode={getThemeDefaultMode()}
+          {...(localeLinks !== undefined ? { localeLinks } : {})}
+          {...(themeDefaultMode !== undefined ? { themeDefaultMode } : {})}
           themeLabels={themeToggleLabels(t, lang)}
           themeRespectSystem={(ctx.settings.colorMode && ctx.settings.colorMode.respectPrefersColorScheme) ?? true}
           dateFormats={dateFormatsFor(lang)}

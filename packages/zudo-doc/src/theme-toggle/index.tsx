@@ -21,9 +21,9 @@ let menuSequence = 0;
 
 function PreferenceIcon({ preference }: { preference: ThemePreference }) {
   return (
-    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-      viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2"
-      strokeLinecap="square" strokeLinejoin="miter">
+    <svg aria-hidden="true" width="20" height="20"
+      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"
+      stroke-linecap="square" stroke-linejoin="miter">
       {preference === "light" ? (
         <><circle cx="12" cy="12" r="3.6" /><path d="M12 2.5V6M12 18V21.5M2.5 12H6M18 12H21.5M5.3 5.3L7.8 7.8M16.2 16.2L18.7 18.7M5.3 18.7L7.8 16.2M16.2 7.8L18.7 5.3" /></>
       ) : preference === "dark" ? (

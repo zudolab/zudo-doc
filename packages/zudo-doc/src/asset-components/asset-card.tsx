@@ -91,7 +91,7 @@ export function createAssetCard(context: AssetComponentContext) {
               <a
                 className="text-fg hover:text-accent focus-visible:text-accent hover:underline focus-visible:underline"
                 href={rawHref}
-                download
+                download=""
               >
                 {assetComponentText(
                   context,

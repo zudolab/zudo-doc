@@ -32,7 +32,7 @@ const ARROW_PAN_STEP = 40;
 
 function PlusIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" focusable="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
       <line x1="12" y1="5" x2="12" y2="19" />
       <line x1="5" y1="12" x2="19" y2="12" />
     </svg>
@@ -41,7 +41,7 @@ function PlusIcon() {
 
 function MinusIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" focusable="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
       <line x1="5" y1="12" x2="19" y2="12" />
     </svg>
   );
@@ -49,7 +49,7 @@ function MinusIcon() {
 
 function PanIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" focusable="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">
       <path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11" />
       <path d="M12 11V4.5a1.5 1.5 0 0 1 3 0V11" />
       <path d="M15 11V6a1.5 1.5 0 0 1 3 0v6.5a6.5 6.5 0 0 1-6.5 6.5h-1a6 6 0 0 1-4.6-2.16l-2.2-2.86a1.5 1.5 0 0 1 2.3-1.92L9 13" />
@@ -106,7 +106,7 @@ export function MermaidEnlarge() {
       btn.className = "zd-enlarge-btn";
       btn.setAttribute("aria-label", "Enlarge diagram");
       btn.innerHTML =
-        '<svg viewBox="0 0 38.99 38.99" fill="currentColor" focusable="false" aria-hidden="true">' +
+        '<svg viewBox="0 0 38.99 38.99" fill="currentColor" aria-hidden="true">' +
         '<polygon points="16.2 13.74 5.92 3.47 11.2 3.47 11.2 0 3.47 0 0 0 0 3.47 0 11.2 3.47 11.2 3.47 5.92 13.74 16.2 16.2 13.74" />' +
         '<polygon points="25.24 16.2 35.52 5.92 35.52 11.2 38.99 11.2 38.99 3.47 38.99 0 35.52 0 27.79 0 27.79 3.47 33.07 3.47 22.79 13.74 25.24 16.2" />' +
         '<polygon points="22.79 25.24 33.07 35.52 27.79 35.52 27.79 38.99 35.52 38.99 38.99 38.99 38.99 35.52 38.99 27.79 35.52 27.79 35.52 33.07 25.24 22.79 22.79 25.24" />' +
@@ -290,7 +290,7 @@ export function MermaidEnlarge() {
         <>
           <div
             className="zd-mermaid-viewport"
-            tabIndex={0}
+            tabindex={0}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
@@ -303,7 +303,7 @@ export function MermaidEnlarge() {
               className="zd-mermaid-transform"
               style={{
                 transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
-                transformOrigin: "center",
+                "transform-origin": "center",
               }}
               dangerouslySetInnerHTML={{ __html: open.svgHtml }}
             />
@@ -346,7 +346,7 @@ export function MermaidEnlarge() {
             className="zd-enlarge-dialog-close"
             aria-label="Close enlarged diagram"
           >
-            <svg viewBox="0 0 161.03 161.03" fill="currentColor" aria-hidden="true" focusable="false">
+            <svg viewBox="0 0 161.03 161.03" fill="currentColor" aria-hidden="true">
               <polygon points="161.03 10.27 150.76 0 80.51 70.24 10.27 0 0 10.27 70.24 80.51 0 150.76 10.27 161.03 80.51 90.78 150.76 161.03 161.03 150.76 90.78 80.51 161.03 10.27" />
             </svg>
           </button>

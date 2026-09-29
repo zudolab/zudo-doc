@@ -77,7 +77,6 @@ export function BodyFootUtilArea(props: BodyFootUtilAreaProps): VNode | null {
             class="inline-flex items-center gap-hsp-2xs text-small text-muted hover:text-accent"
           >
             <svg
-              xmlns="http://www.w3.org/2000/svg"
               class="h-[0.875rem] w-[0.875rem]"
               fill="none"
               viewBox="0 0 24 24"

@@ -166,15 +166,14 @@ export function AiChatModal({ basePath }: AiChatModalProps) {
             aria-label="Close"
           >
             <svg
-              xmlns="http://www.w3.org/2000/svg"
               width="20"
               height="20"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
               aria-hidden="true"
             >
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -250,15 +249,14 @@ export function AiChatModal({ basePath }: AiChatModalProps) {
               aria-label="Send message"
             >
               <svg
-                xmlns="http://www.w3.org/2000/svg"
                 width="16"
                 height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
                 aria-hidden="true"
               >
                 <line x1="22" y1="2" x2="11" y2="13" />

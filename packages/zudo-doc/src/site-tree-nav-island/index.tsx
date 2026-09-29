@@ -95,7 +95,7 @@ export function SiteTreeNav({
       data-site-nav
       className="grid gap-vsp-md"
       style={{
-        gridTemplateColumns: "repeat(auto-fill, minmax(min(18rem, 100%), 1fr))",
+        "grid-template-columns": "repeat(auto-fill, minmax(min(18rem, 100%), 1fr))",
       }}
     >
       {processedTree.map((node) => {
@@ -178,8 +178,8 @@ function CategoryNode({
           className="absolute border-l border-dashed border-muted z-local-1"
           style={{
             left: connectorLeft(depth),
-            top: 0,
-            bottom: 0,
+            top: "0px",
+            bottom: "0px",
           }}
         />
       )}

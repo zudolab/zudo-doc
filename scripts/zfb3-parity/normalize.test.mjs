@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { normalizePage, islandMarkers, cssInventory } from './normalize.mjs';
+import { normalizePage, allowlistedRemovedSvgAttrs, islandMarkers, cssInventory } from './normalize.mjs';
 
 test('island marker extraction accepts unquoted, single, and double quoted values', () => {
   assert.deepEqual(islandMarkers('<div data-zfb-island=One></div><div data-zfb-island="Two"></div><div data-zfb-island=\'Three\'></div>'), ['One', 'Two', 'Three']);
@@ -33,4 +33,16 @@ test('v3 protocol and range markers normalize to v2 island shape', () => {
 test('skip-SSR island inventory includes its scheduling mode and props', () => {
   const page = normalizePage('<div data-zfb-island-skip-ssr="MediaProbe" data-when="media" data-media="(max-width: 640px)" data-props=\'{"enabled":true}\'></div>');
   assert.deepEqual(page.islands[0], { path: '/0/1/0', name: 'MediaProbe', skipSsr: true, props: { enabled: true } });
+});
+test('#4433 permits only exact removed inert SVG attrs', () => {
+  const before = normalizePage('<svg xmlns="http://www.w3.org/2000/svg" focusable="false" viewBox="0 0 2 2"><path d="M0 0"/></svg>');
+  const after = normalizePage('<svg viewBox="0 0 2 2"><path d="M0 0"/></svg>');
+  assert.deepEqual(allowlistedRemovedSvgAttrs(before.dom, after.dom), after.dom);
+  const changed = normalizePage('<svg xmlns="https://wrong.example" focusable="true" viewBox="0 0 2 2"><path d="M0 0"/></svg>');
+  assert.notDeepEqual(allowlistedRemovedSvgAttrs(changed.dom, after.dom), after.dom);
+  const otherElement = normalizePage('<urlset xmlns="http://www.w3.org/2000/svg"></urlset>');
+  const missing = normalizePage('<urlset></urlset>');
+  assert.notDeepEqual(allowlistedRemovedSvgAttrs(otherElement.dom, missing.dom), missing.dom);
+  const added = normalizePage('<svg viewBox="0 0 2 2" xmlns="http://www.w3.org/2000/svg"></svg>');
+  assert.notDeepEqual(allowlistedRemovedSvgAttrs(after.dom, added.dom), added.dom);
 });

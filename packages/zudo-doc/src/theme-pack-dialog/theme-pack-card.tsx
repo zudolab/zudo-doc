@@ -57,9 +57,9 @@ export function ThemePackCard({ meta, mode, isActive, onSelect }: ThemePackCardP
         aria-hidden="true"
         className="flex flex-col gap-vsp-3xs rounded-md border p-hsp-sm"
         style={{
-          backgroundColor: swatches.bg,
+          "background-color": swatches.bg,
           color: swatches.fg,
-          borderColor: `color-mix(in oklch, ${swatches.fg} 15%, transparent)`,
+          "border-color": `color-mix(in oklch, ${swatches.fg} 15%, transparent)`,
         }}
       >
         <p className="text-title font-bold">Aa Heading</p>
@@ -72,7 +72,7 @@ export function ThemePackCard({ meta, mode, isActive, onSelect }: ThemePackCardP
         </p>
         <p
           className="rounded px-hsp-2xs py-hsp-3xs font-mono text-caption"
-          style={{ backgroundColor: `color-mix(in oklch, ${swatches.fg} 8%, transparent)` }}
+          style={{ "background-color": `color-mix(in oklch, ${swatches.fg} 8%, transparent)` }}
         >
           <span style={{ color: swatches.syntax.keyword }}>const</span>{" "}
           <span style={{ color: swatches.syntax.callable }}>theme</span> ={" "}

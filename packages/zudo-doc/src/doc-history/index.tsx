@@ -59,10 +59,10 @@ function Spinner() {
       <span
         className="inline-block box-border rounded-full animate-spin"
         style={{
-          width: 48,
-          height: 48,
+          width: "48px",
+          height: "48px",
           border: "5px solid var(--color-fg, #fff)",
-          borderBottomColor: "transparent",
+          "border-bottom-color": "transparent",
         }}
       />
     </div>
@@ -264,7 +264,7 @@ function DiffViewer({
       )}
       {!changes && !diffError && <Spinner />}
       <div className={`flex-1 overflow-auto${!changes ? " hidden" : ""}`}>
-        <table className="w-full border-collapse" style={{ tableLayout: "fixed" }}>
+        <table className="w-full border-collapse" style={{ "table-layout": "fixed" }}>
           <colgroup>
             <col style={{ width: "2.5rem" }} />
             <col />

@@ -302,7 +302,6 @@ export const VERSION_SWITCHER_VISIBILITY_STYLE =
 function ChevronDownIcon(): VNode {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class="h-[0.875rem] w-[0.875rem]"
       fill="none"
       viewBox="0 0 24 24"

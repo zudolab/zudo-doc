@@ -77,7 +77,6 @@ export function SearchWidget(props: SearchWidgetProps): JSX.Element {
           aria-label={searchLabel}
         >
           <svg
-            xmlns="http://www.w3.org/2000/svg"
             width="22"
             height="22"
             viewBox="0 0 24 24"
@@ -115,7 +114,6 @@ export function SearchWidget(props: SearchWidgetProps): JSX.Element {
             <div class="flex items-center gap-hsp-sm border-b border-muted px-hsp-lg py-vsp-sm">
               {/* Small search icon inside the input area */}
               <svg
-                xmlns="http://www.w3.org/2000/svg"
                 width="16"
                 height="16"
                 viewBox="0 0 24 24"
@@ -136,7 +134,7 @@ export function SearchWidget(props: SearchWidgetProps): JSX.Element {
                 placeholder={placeholderText}
                 class="w-full bg-transparent text-body text-fg outline-none placeholder:text-muted"
                 autocomplete="off"
-                spellcheck={false}
+                spellcheck={"false" as unknown as boolean}
               />
               {/* Wide-viewport hit count (hidden until results arrive) */}
               <span
@@ -151,7 +149,6 @@ export function SearchWidget(props: SearchWidgetProps): JSX.Element {
                 aria-label="Close search"
               >
                 <svg
-                  xmlns="http://www.w3.org/2000/svg"
                   width="20"
                   height="20"
                   viewBox="0 0 24 24"

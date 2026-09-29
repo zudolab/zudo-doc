@@ -20,7 +20,6 @@ const CATEGORY_LINK_PATH =
 export function CategoryLinkIcon({ className }: { className?: string }) {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       fill="currentColor"
       viewBox="0 0 103.395 107.049"
       aria-hidden="true"
@@ -58,7 +57,7 @@ export function ConnectorLines({
         className="absolute border-l border-dashed border-muted"
         style={{
           left,
-          top: 0,
+          top: "0px",
           bottom: isLast ? `calc(100% - ${firstLineMid})` : 0,
         }}
       />

@@ -43,7 +43,7 @@ export function AssetHeader({ asset, locale, badge, updatedLabel, linesLabel, fu
 export function AssetActions({ rawUrl, downloadLabel, openRawLabel, copyLabel, wrapLabel, code = false, bottom = false }: { rawUrl: string; downloadLabel: string; openRawLabel: string; copyLabel: string; wrapLabel: string; code?: boolean; bottom?: boolean }): VNode {
   return (
     <div class={`${bottom ? "mt-vsp-lg border-t border-muted pt-vsp-md" : "mb-vsp-md"} flex flex-wrap gap-hsp-sm`} data-zd-asset-actions>
-      <a download href={rawUrl} class={`${actionClass(true)} hover:underline focus-visible:underline`}>{downloadLabel}</a>
+      <a download="" href={rawUrl} class={`${actionClass(true)} hover:underline focus-visible:underline`}>{downloadLabel}</a>
       <a href={rawUrl} data-zfb-reload target="_blank" rel="noopener" class={`${actionClass()} hover:underline focus-visible:underline`}>{openRawLabel}</a>
       {code && <button type="button" disabled data-zd-asset-action="copy" class={actionClass()}>{copyLabel}</button>}
       {code && <button type="button" disabled data-zd-asset-action="wrap" class={actionClass()}>{wrapLabel}</button>}
@@ -117,7 +117,7 @@ export function AssetDownloadPanel({ asset, rawUrl, noPreview, downloadLabel, co
       <p class="mb-vsp-sm text-caption text-muted">{kindLabel(asset)} · {formatAssetBytes(asset.bytes)}</p>
       <p class="mb-vsp-md text-small text-muted">{noPreview}</p>
       <div class="flex flex-wrap justify-center gap-hsp-sm">
-        <a download href={rawUrl} class={`${actionClass(true)} hover:underline focus-visible:underline`}>{downloadLabel}</a>
+        <a download="" href={rawUrl} class={`${actionClass(true)} hover:underline focus-visible:underline`}>{downloadLabel}</a>
         <button type="button" data-zd-asset-action="copy-url" data-zd-copy-url={rawUrl} class={actionClass()}>{copyLabel}</button>
       </div>
     </section>
