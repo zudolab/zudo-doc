@@ -59,7 +59,7 @@ try {
   await mkdir(output, { recursive: true });
   for (const route of routes) {
     const response = await fetch(baseUrl + route);
-    if (!response.ok && route !== '/does-not-exist/') continue;
+    if (!response.ok && route !== '/does-not-exist/') throw new Error(`Curated route ${route} returned ${response.status}`);
     report.routes.push(route);
     for (const width of [375, 1280]) for (const scheme of ['light', 'dark']) {
       const page = await browser.newPage({ viewport: { width, height: 900 }, colorScheme: scheme });
