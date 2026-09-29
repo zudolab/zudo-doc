@@ -8,7 +8,7 @@ title are given so a reader can find each entry in the source.
 
 - **2026-05-06 — Backside migration: replicate, do not redesign.** Agents silently rebuilt working components as
   generic look-alikes. Preserve the rendered HTML, CSS and behaviour of every component. A deviation needs a named
-  technical cause (a zudo-wind or zudo-react output difference) and goes in the engine-exceptions ledger. The
+  technical cause (a zudo-wind or zudo-react output difference) and goes in the migration matrix (`docs/findings/4430-zfb3-migration/<topic>.md`). The
   hooks → setup-once rewrite is where "creative" output will creep in.
 - **2026-05-01 — zfb is a WIP builder, not a finished framework.** Treating zfb as fixed produced ~200
   comparator/host patches, while a single zfb gap flagged 167 of 219 routes. Triage every diff cluster as

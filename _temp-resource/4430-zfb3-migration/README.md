@@ -11,7 +11,7 @@ production code or permanent docs.
 
 | Path | What it is | Who uses it |
 | --- | --- | --- |
-| `v3-contract.md` | Authoritative zfb v3 cheat-sheet: wind config/tokens/grammar/catalog/cascade/diagnostics/manifests/CLI; zudo-react API, dialect, islands, router; the hooks→zudo-react table; probe results against the published 3.0.0 packages | Every topic |
+| `v3-contract.md` | Derived zfb v3 cheat-sheet (normative: `research/3242-zudo-wind-v1-spec.md` + `research/3242-zudo-react-v1-contract.md` in zfb at the pinned tag): wind config/tokens/grammar/catalog/cascade/diagnostics/manifests/CLI; zudo-react API, dialect, islands, router; the hooks→zudo-react table; probe results against the published 3.0.0 packages | Every topic |
 | `explore/islands-nav.md`, `explore/islands-content.md` | Per-island inventories: hooks, effects, Show/For needs, form controls, raw-HTML sites, blockers, difficulty | Island ports |
 | `explore/server-jsx.md` | Server-rendered layer: dialect counts, raw-HTML sites, public API exposure, MDX pipeline, renderer probe | Server ports, public types |
 | `explore/css-wind.md` | Tailwind → zudo-wind: directive inventory, token namespaces, utility census, build-breaking and silently-dropped candidates, draft wind config, reset, cascade-flip risk | CSS topics |
@@ -24,7 +24,7 @@ production code or permanent docs.
 | `upstream-issues.md` | zfb/zdtp issues filed during planning (label `zudo-doc-v3-dogfood`) | Everyone |
 | `spike/` | Written by the spike topic | Decision topic |
 | `conventions.md` | Written by the decision topic: **binding** porting conventions | All port topics |
-| `ledger/<topic>.md` | One engine-exceptions ledger per topic (deliberate DOM/class/behaviour differences with their engine cause) | Parity triage, migration guide |
+| _(permanent, not here)_ `docs/findings/4430-zfb3-migration/` | The migration matrix / gap table: per-topic files with constructs, rawHtml review, engine exceptions, tests; a page-by-page section. It replaces per-topic ledgers and outlives this directory | Every topic, the migration guide, the dogfood report |
 | `parity/` | Parity and behaviour reports from the confirm topics | Final confirm, dogfood report |
 
 Numbers in the maps are measurements: each one comes with the command that produced it. Re-measure before relying
