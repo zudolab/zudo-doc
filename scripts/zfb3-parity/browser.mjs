@@ -105,11 +105,10 @@ try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
     await page.goto(baseUrl + route, { waitUntil: 'load' });
     const button = page.locator(selector).first();
-    if (await button.count()) {
-      await button.click();
-      await page.locator('dialog[open]').first().waitFor({ state: 'visible' });
-      await capture(page, route, 1280, 'light', state);
-    }
+    await button.waitFor({ state: 'visible', timeout: state === 'mermaid-enlarge' ? 30_000 : 10_000 });
+    await button.click();
+    await page.locator('dialog[open]').first().waitFor({ state: 'visible' });
+    await capture(page, route, 1280, 'light', state);
     await page.close();
   }
   const packPage = await browser.newPage({ viewport: { width: 1280, height: 900 } });
