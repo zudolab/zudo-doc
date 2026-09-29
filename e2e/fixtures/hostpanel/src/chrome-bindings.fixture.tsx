@@ -53,6 +53,7 @@ import docHistoryMeta from "#doc-history-meta";
 // dynamic or type-only import silently kills island registration.
 import { HostPanelBootstrap } from "./host-panel/bootstrap-island.js";
 import { HostTokenTrigger } from "./host-panel/trigger.js";
+import { MediaProbe } from "./host-panel/media-probe-island.js";
 
 // ---------------------------------------------------------------------------
 // Frontmatter-preview entry builder (moved verbatim from the former
@@ -145,6 +146,13 @@ function BodyEndIslandsWithHostPanel(props: BodyEndIslandsProps): JSX.Element {
   return (
     <>
       <BodyEndIslandsSeam {...props} />
+      {
+        Island({
+          when: "media",
+          media: "(max-width: 640px)",
+          children: <MediaProbe />,
+        }) as unknown as VNode
+      }
       {
         Island({
           when: "load",

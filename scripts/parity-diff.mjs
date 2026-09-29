@@ -23,6 +23,7 @@ import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readdir, readFile, stat } from "node:fs/promises";
 import { normalizeHtml, sha256 } from "./parity-html-normalize.mjs";
+import { normalizePage } from "./zfb3-parity/normalize.mjs";
 
 const __dir = fileURLToPath(new URL(".", import.meta.url));
 const REPO_ROOT = join(__dir, "..");
@@ -103,10 +104,9 @@ async function buildHtmlManifests(distDir) {
     const content = readFileSync(f, "utf8");
     const routeKey = "/" + relative(distDir, f).replace(/index\.html$/, "").replace(/\.html$/, "");
 
-    // Collect island names
-    for (const m of content.matchAll(/data-zfb-island="([^"]+)"/g)) {
-      islands.add(m[1]);
-    }
+    // Parse attributes rather than scanning raw text: docs include literal
+    // `data-zfb-island=...` examples, and v2 emits unquoted marker values.
+    for (const island of normalizePage(content).islands) islands.add(island.name);
 
     const norm = normalizeHtml(content);
     normalized[routeKey] = sha256(norm);
