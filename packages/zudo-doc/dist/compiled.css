@@ -3592,7 +3592,9 @@ html[data-asset-details-hidden] .zd-asset-details-toggle [data-zd-asset-details-
 }
 .zd-preview-shadow {
   box-shadow: 0 1px 3px var(--color-fg);
-  @supports (color: color-mix(in lab, red, red)) {
+}
+@supports (color: color-mix(in lab, red, red)) {
+  .zd-preview-shadow {
     box-shadow: 0 1px 3px color-mix(in srgb, var(--color-fg) 8%, transparent);
   }
 }
