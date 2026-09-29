@@ -143,6 +143,7 @@
     "culori": "^4.0.2",
     "html-validate": "^10.15.0",
     "lefthook": "^2.1.4",
+    "parse5": "^8.0.1",
     "picocolors": "^1.1.1",
     "pluralize": "^8.0.0",
     "semver": "7.8.5",
