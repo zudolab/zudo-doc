@@ -210,7 +210,7 @@ describe("ThemePackSwitcher — real-DOM interaction", () => {
     expect(card!.className).toContain("w-[360px]");
     expect(card!.className).not.toMatch(/(?:^|\s)w-72(?:\s|$)/);
     // The viewport-safety cap from #2825 is untouched by this fix.
-    expect(card!.className).toContain("max-w-[calc(100vw-2rem)]");
+    expect(card!.className).toContain("max-w-[calc(100vw_-_2rem)]");
 
     const description = Array.from(card!.querySelectorAll("p")).find(
       (p) => p.textContent === longDescription,

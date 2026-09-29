@@ -81,8 +81,8 @@ export function Footer(props: FooterProps): VNode {
   const hasCopyright = copyright.length > 0;
 
   const copyrightClass = hasColumns
-    ? "text-center text-caption text-muted [&_a]:underline [&_a:hover]:text-accent [&_a:focus-visible]:text-accent mt-vsp-lg border-t border-muted pt-vsp-md"
-    : "text-center text-caption text-muted [&_a]:underline [&_a:hover]:text-accent [&_a:focus-visible]:text-accent";
+    ? "text-center text-caption text-muted zd-footer-copyright-links mt-vsp-lg border-t border-muted pt-vsp-md"
+    : "text-center text-caption text-muted zd-footer-copyright-links";
 
   return (
     <footer

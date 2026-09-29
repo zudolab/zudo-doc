@@ -122,9 +122,10 @@ export interface BreadcrumbProps {
    * breadcrumb + version-switcher row:
    *
    *   class="mb-vsp-sm flex flex-col items-start gap-vsp-xs
-   *          sm:flex-row sm:items-center sm:justify-between [&_nav]:mb-0"
+   *          sm:flex-row sm:items-center sm:justify-between zd-breadcrumb-nav-no-margin"
    *
-   * The `[&_nav]:mb-0` rule strips the nav's own `mb-vsp-md` so the
+   * The `zd-breadcrumb-nav-no-margin` rule strips the nav's own
+   * `mb-vsp-md` so the
    * wrapper margin controls spacing instead. Use this to place the
    * VersionSwitcher pill inline at the right of the breadcrumb row,
    * matching the reference site's layout on category index pages.
@@ -186,11 +187,12 @@ export function Breadcrumb(props: BreadcrumbProps): VNode | null {
 
   // When a rightSlot is provided, wrap both elements in a flex row that
   // matches the original Astro doc-layout's breadcrumb + version-switcher
-  // row. The `[&_nav]:mb-0` rule cancels the nav's own bottom margin so
+  // row. The `zd-breadcrumb-nav-no-margin` rule cancels the nav's own bottom
+  // margin so
   // the wrapper margin controls spacing instead (matching the Astro
   // reference which used `mb-vsp-sm` on the outer div).
   return (
-    <div class="mb-vsp-sm flex flex-col items-start gap-vsp-xs sm:flex-row sm:items-center sm:justify-between [&_nav]:mb-0">
+    <div class="mb-vsp-sm flex flex-col items-start gap-vsp-xs sm:flex-row sm:items-center sm:justify-between zd-breadcrumb-nav-no-margin">
       {nav}
       {props.rightSlot}
     </div>

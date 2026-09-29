@@ -76,7 +76,7 @@ export function Toc({ headings, title = "On this page" }: TocProps): VNode {
         "w-[280px] shrink-0",
         "sticky top-[3.5rem] self-start z-sidebar",
         "pt-vsp-xl lg:pt-vsp-2xl",
-        "h-[calc(100vh-3.5rem)]",
+        "h-[calc(100vh_-_3.5rem)]",
       )}
     >
       {filtered.length > 0 && (

@@ -250,7 +250,7 @@ export function SidebarToggle({
         inert={!open}
         data-zd-mobile-sidebar
         className={`
-          fixed top-[3.5rem] left-0 z-modal h-[calc(100vh-3.5rem)] w-[16rem] flex flex-col
+          fixed top-[3.5rem] left-0 z-modal h-[calc(100vh_-_3.5rem)] w-[16rem] flex flex-col
           border-r border-muted bg-bg transition-transform duration-200
           lg:hidden
           ${open ? "translate-x-0" : "-translate-x-full"}

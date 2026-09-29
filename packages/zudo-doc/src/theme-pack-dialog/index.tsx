@@ -168,7 +168,7 @@ export function ThemePackDialog({ open, onClose, order, active, base }: ThemePac
       ref={dialogRef}
       onClick={handleBackdropClick}
       aria-labelledby="zd-theme-pack-dialog-title"
-      className="z-modal m-auto max-h-[85vh] w-[calc(100vw-2rem)] max-w-[64rem] rounded-lg border border-muted bg-surface p-0 text-fg backdrop:z-modal-backdrop backdrop:bg-bg/80"
+      className="z-modal m-auto max-h-[85vh] w-[calc(100vw_-_2rem)] max-w-[64rem] rounded-lg border border-muted bg-surface p-0 text-fg backdrop:z-modal-backdrop backdrop:bg-bg/80"
     >
       <div className="flex max-h-[85vh] flex-col">
         <div className="flex shrink-0 items-center justify-between gap-hsp-sm border-b border-muted px-hsp-lg py-vsp-sm">
@@ -195,7 +195,7 @@ export function ThemePackDialog({ open, onClose, order, active, base }: ThemePac
               {registryState === "error" && (
                 <div
                   role="alert"
-                  className="mx-auto flex max-w-sm flex-col items-center gap-vsp-xs rounded-[0.75rem] border border-danger bg-bg px-hsp-lg py-vsp-lg text-center text-small text-danger"
+                  className="mx-auto flex flex-col items-center gap-vsp-xs rounded-[0.75rem] border border-danger bg-bg px-hsp-lg py-vsp-lg text-center text-small text-danger"
                 >
                   <p>Could not load theme previews.</p>
                   <button
@@ -219,7 +219,7 @@ export function ThemePackDialog({ open, onClose, order, active, base }: ThemePac
                     {order.map((entry) => (
                       <div
                         key={entry.slug}
-                        className="h-[10rem] animate-pulse rounded-lg border border-muted bg-surface/50"
+                        className="h-[10rem] rounded-lg border border-muted bg-surface/50"
                       />
                     ))}
                   </div>

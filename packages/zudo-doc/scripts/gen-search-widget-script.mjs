@@ -641,7 +641,7 @@ export function buildSearchWidgetScript() {
       if (text) {
         var excerpt = document.createElement("p");
         excerpt.className =
-          "mt-vsp-2xs text-caption text-muted leading-relaxed group-hover:underline group-focus-visible:underline decoration-muted";
+          "mt-vsp-2xs text-caption text-muted leading-relaxed group-hover:underline group-focus-visible:underline zd-search-excerpt-decoration";
         var truncated = truncate(text, this._currentQuery, 200);
         excerpt.innerHTML = highlightTerms(truncated, terms);
         link.appendChild(excerpt);

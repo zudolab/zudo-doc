@@ -201,7 +201,7 @@ function CategoryNode({
             >
               {depth === 0 && (
                 <span className="flex h-[1lh] items-center">
-                  <CategoryLinkIcon className="w-[18px] 2xl:w-[24px]" />
+                  <CategoryLinkIcon className="w-[18px]" />
                 </span>
               )}
               {node.label}
@@ -387,14 +387,14 @@ function LeafNode({
         <a
           href={node.href}
           className={isRoot
-            ? "flex items-start gap-hsp-xs py-[calc(var(--spacing-vsp-xs)+0.15rem)] pr-hsp-sm text-small font-semibold text-fg break-words hover:text-accent hover:underline focus:underline focus-visible:text-accent"
+            ? "flex items-start gap-hsp-xs py-[calc(var(--spacing-vsp-xs)_+_0.15rem)] pr-hsp-sm text-small font-semibold text-fg break-words hover:text-accent hover:underline focus:underline focus-visible:text-accent"
             : `block py-vsp-2xs pr-hsp-sm ${isLast ? "pb-vsp-xs" : ""} text-small text-fg break-words hover:text-accent hover:underline focus:underline focus-visible:text-accent`
           }
           style={{ paddingLeft }}
         >
           {isRoot && (
             <span className="flex h-[1lh] items-center">
-              <CategoryLinkIcon className="w-[18px] 2xl:w-[24px]" />
+              <CategoryLinkIcon className="w-[18px]" />
             </span>
           )}
           {isRoot ? <span className="min-w-0">{node.label}</span> : node.label}

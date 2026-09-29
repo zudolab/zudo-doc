@@ -57,7 +57,7 @@ function Spinner() {
   return (
     <div className="flex items-center justify-center py-vsp-xl">
       <span
-        className="inline-block box-border rounded-full animate-spin"
+        className="inline-block box-border rounded-full"
         style={{
           width: "48px",
           height: "48px",
@@ -628,7 +628,7 @@ export function DocHistory({
         </div>
 
         {/* Panel body */}
-        <div className="h-[calc(100%-3rem)] overflow-hidden">
+        <div className="h-[calc(100%_-_3rem)] overflow-hidden">
           {loading && <Spinner />}
 
           {error && (
