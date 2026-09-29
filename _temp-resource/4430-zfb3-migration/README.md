@@ -21,7 +21,7 @@ production code or permanent docs.
 | `explore/deps-docs.md` | zdtp strategy (opaque Preact bundle, probe-proven), md-wasm/adapter/worker impact, docs and agent-instruction inventory | DTP topic, docs topics |
 | `explore/artifacts/**` | Scanners, probe scripts and raw TSV/JSON outputs referenced by the maps (paths inside the maps point at `<planning-scratch>/explore/...`, which corresponds to `explore/artifacts/...` here) | As needed |
 | `lessons-digest.md` | Project lessons distilled for this migration | Everyone |
-| `upstream-issues.md` | zfb/zdtp issues filed during planning (label `zudo-doc-v3-dogfood`) | Everyone |
+| `upstream-issues.md` | zfb issues filed during planning (label `zudo-doc-v3-dogfood`), the zdtp companion issue, and other open v3 issues relevant to this migration | Everyone |
 | `spike/` | Written by the spike topic | Decision topic |
 | `conventions.md` | Written by the decision topic: **binding** porting conventions | All port topics |
 | _(permanent, not here)_ `docs/findings/4430-zfb3-migration/` | The migration matrix / gap table: per-topic files with constructs, rawHtml review, engine exceptions, tests; a page-by-page section. It replaces per-topic ledgers and outlives this directory | Every topic, the migration guide, the dogfood report |

@@ -1,6 +1,6 @@
 # Upstream issues filed while planning the zfb 3 migration
 
-Filed 2026-09-30 by the planning session; label `zudo-doc-v3-dogfood` on Takazudo/zudo-front-builder. Upstream follow-up that defines the migration: https://github.com/Takazudo/zudo-front-builder/issues/3328. Other open v3 follow-ups: #3329 (docs host re-pin), #3331 (published-preset identity fixture), #3330 (IME check) — all on Takazudo/zudo-front-builder.
+Filed 2026-09-30 by the planning session. The zfb issues (Z01–Z26) carry the label `zudo-doc-v3-dogfood` on Takazudo/zudo-front-builder. D01 is on the zdtp repo, which has no such label. Upstream follow-up that defines the migration: https://github.com/Takazudo/zudo-front-builder/issues/3328. Other open v3 follow-ups: #3329 (docs host re-pin), #3331 (published-preset identity fixture), #3330 (IME check) — all on Takazudo/zudo-front-builder.
 
 | Key | Issue | Title |
 | --- | --- | --- |
@@ -38,3 +38,32 @@ Notes from the filing pass (re-probed on 3.0.0):
 - Z22: a leftover `@jsxImportSource preact` pragma fails the build with a location-less `ZR_CHILD` error while `preact` is installed (zudo-doc keeps it for zdtp).
 - Z24: two same-named helper exports across client modules fail the whole build on 3.0.0 (`ambiguous owned island marker`).
 - Z04: from code reading only; browser confirmation pending (spike Q3).
+
+## Other open v3 issues relevant to this migration
+
+These were filed by the parallel zfb-recipes dogfood session and the owner's review on 2026-09-29. All are on Takazudo/zudo-front-builder.
+
+- #3382 — lists what `owned-v1` does not carry over from Tailwind v4 preflight. Use it for the reset patch.
+- #3383 — the islands client bundle is about 2.2× the Preact-era size. Record the size delta in parity.
+- #3388 — the Worker bundle `_zfb_inner.mjs` is not reproducible across checkout paths. Compare Worker bundles structurally, not by hash.
+- #3389 — authored class names that start with a utility root (`text-link`, `bg-panel`) fail with ZW006.
+- #3390 — `<style>`/`<script>` text children throw `ZR_RAW_HTML`. Use a static-string `rawHtml` instead.
+- #3391 — `on:*` listener props are typed `Listener<Event>`.
+- #3392 — `zfb preview` in adapter mode leaves wrangler running after SIGTERM. Free the port after a preview.
+
+The owner's consolidated v3 review on #3328 (2026-09-29T19:10Z) names #3359, #3361, #3362 and #3364 as the release-unblocking focus. It lists these traps:
+
+- `onActivate` must be synchronous.
+- Dynamic imports can resolve after disposal.
+- `Show` does not rebuild while its boolean is unchanged.
+- Normalize props once, so the SSR value and the serialized value agree.
+- Keep island identity and name-preservation mechanisms intact.
+
+It also lists the closure evidence to post on #3328:
+
+- the exact published versions;
+- the actual binary version;
+- that no zfb shim remains;
+- the package-export, MDX and CSS checks;
+- production hydration and navigation results;
+- the gap-table link.
