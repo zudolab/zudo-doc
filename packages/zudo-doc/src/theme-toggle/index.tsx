@@ -21,9 +21,9 @@ let menuSequence = 0;
 
 function PreferenceIcon({ preference }: { preference: ThemePreference }) {
   return (
-    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-      viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2"
-      strokeLinecap="square" strokeLinejoin="miter">
+    <svg aria-hidden="true" width="20" height="20"
+      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"
+      stroke-linecap="square" stroke-linejoin="miter">
       {preference === "light" ? (
         <><circle cx="12" cy="12" r="3.6" /><path d="M12 2.5V6M12 18V21.5M2.5 12H6M18 12H21.5M5.3 5.3L7.8 7.8M16.2 16.2L18.7 18.7M5.3 18.7L7.8 16.2M16.2 7.8L18.7 5.3" /></>
       ) : preference === "dark" ? (
@@ -203,7 +203,7 @@ export function ThemeToggle({
   };
 
   return (
-    <div ref={rootRef} className="relative inline-flex" data-zd-theme-menu="">
+    <div ref={rootRef} class="relative inline-flex" data-zd-theme-menu="">
       <button ref={triggerRef} type="button" aria-haspopup="menu" aria-expanded={open}
         aria-controls={open ? menuId.current : undefined}
         aria-label={`${labels.appearance}: ${labels[preference]}`}
@@ -227,26 +227,26 @@ export function ThemeToggle({
             close(true);
           }
         }}
-        className="inline-flex h-[40px] w-[40px] shrink-0 items-center justify-center text-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
+        class="inline-flex h-[40px] w-[40px] shrink-0 items-center justify-center text-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
       ><PreferenceIcon preference={preference} /></button>
       {open && createPortal(<div ref={menuRef} id={menuId.current} role="menu" aria-label={labels.appearance}
         popover={typeof HTMLElement !== "undefined" && "showPopover" in HTMLElement.prototype ? "manual" : undefined}
         onKeyDown={onMenuKeyDown}
-        className="fixed z-tooltip overflow-y-auto rounded-lg border border-muted bg-surface p-hsp-xs text-fg shadow-lg"
+        class="fixed z-tooltip overflow-y-auto rounded-lg border border-muted bg-surface p-hsp-xs text-fg shadow-lg"
         style={placement ? { left: placement.left, top: placement.top, right: "auto", bottom: "auto", margin: 0, width: placement.width, maxHeight: placement.maxHeight } : { visibility: "hidden", left: 0, top: 0, right: "auto", bottom: "auto", margin: 0, width: Math.min(260, window.innerWidth - 16) }}>
-        <div className="px-hsp-sm py-vsp-xs text-small font-semibold" aria-hidden="true">{labels.appearance}</div>
+        <div class="px-hsp-sm py-vsp-xs text-small font-semibold" aria-hidden="true">{labels.appearance}</div>
         {preferences.map((option, index) => (
           <button key={option} ref={(node) => { itemRefs.current[index] = node; }} type="button"
             role="menuitemradio" aria-checked={preference === option}
             onFocus={() => setActiveIndex(index)} onClick={() => select(option)}
-            className={`flex min-h-[44px] w-full items-center gap-hsp-sm rounded px-hsp-sm text-left text-small ${preference === option ? "bg-accent/10" : ""} hover:bg-accent/10 focus-visible:bg-accent/10 focus-visible:outline-2 focus-visible:outline-accent`}
+            class={`flex min-h-[44px] w-full items-center gap-hsp-sm rounded px-hsp-sm text-left text-small ${preference === option ? "bg-accent/10" : ""} hover:bg-accent/10 focus-visible:bg-accent/10 focus-visible:outline-2 focus-visible:outline-accent`}
           >
             <PreferenceIcon preference={option} />
-            <span className="flex-1">{labels[option]}</span>
-            <span aria-hidden="true" className="text-accent">{preference === option ? "✓" : ""}</span>
+            <span class="flex-1">{labels[option]}</span>
+            <span aria-hidden="true" class="text-accent">{preference === option ? "✓" : ""}</span>
           </button>
         ))}
-        <div className="px-hsp-sm py-vsp-xs text-small text-muted">
+        <div class="px-hsp-sm py-vsp-xs text-small text-muted">
           {labels.systemHelper.replace("{mode}", labels[resolved])}
         </div>
       </div>, document.body)}

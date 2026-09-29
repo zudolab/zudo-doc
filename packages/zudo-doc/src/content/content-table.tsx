@@ -7,9 +7,9 @@ type Props = JSX.IntrinsicElements["table"];
 
 export function ContentTable({ children, className, ...rest }: Props) {
   return (
-    <div className="overflow-x-auto">
+    <div class="overflow-x-auto">
       <table
-        className={`w-full border-collapse text-small${className ? ` ${className}` : ""}`}
+        class={`w-full border-collapse text-small${className ? ` ${className}` : ""}`}
         {...rest}
       >
         {children}

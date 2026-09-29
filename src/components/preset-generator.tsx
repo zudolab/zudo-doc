@@ -61,19 +61,19 @@ function HeaderRightItemRow({
   const isAiChat = spec.name === "ai-chat";
   return (
     <li
-      className={`flex items-center gap-x-hsp-xs text-small ${checked ? "text-fg" : "text-muted"}`}
+      class={`flex items-center gap-x-hsp-xs text-small ${checked ? "text-fg" : "text-muted"}`}
     >
       <input
         type="checkbox"
         checked={checked}
         onChange={onToggle}
         aria-label={`Include ${label}`}
-        className="accent-accent"
+        class="accent-accent"
       />
-      <span className="flex-1">
+      <span class="flex-1">
         {label}
         {isAiChat && (
-          <span className="ml-hsp-xs text-caption text-muted">
+          <span class="ml-hsp-xs text-caption text-muted">
             (requires aiAssistant — disabled in scaffold)
           </span>
         )}
@@ -161,44 +161,44 @@ function PresetModal({
     <dialog
       ref={dialogRef}
       onClick={onDialogClick}
-      className="mx-auto max-h-[80vh] w-full max-w-[40rem] overflow-y-auto border border-muted bg-surface p-hsp-xl backdrop:bg-bg/80"
+      class="mx-auto max-h-[80vh] w-full max-w-[40rem] overflow-y-auto border border-muted bg-surface p-hsp-xl backdrop:bg-bg/80"
       style={{
         color: "var(--color-fg)",
         position: "fixed",
         top: "50%",
         left: "50%",
         transform: "translate(-50%, -50%)",
-        userSelect: "text",
+        "user-select": "text",
       }}
     >
-      <div className="mb-vsp-sm text-title font-bold text-fg">
+      <div class="mb-vsp-sm text-title font-bold text-fg">
         Generated Preset
       </div>
 
-      <label className="mb-vsp-sm flex items-center gap-x-hsp-sm text-small text-fg">
+      <label class="mb-vsp-sm flex items-center gap-x-hsp-sm text-small text-fg">
         <input
           type="checkbox"
           checked={showCli}
           onChange={(e) => setShowCli((e.target as HTMLInputElement).checked)}
-          className="accent-accent"
+          class="accent-accent"
         />
         as CLI command
       </label>
 
-      <pre className="overflow-x-auto border border-muted bg-code-bg p-hsp-lg text-small text-code-fg whitespace-pre-wrap break-all">
+      <pre class="overflow-x-auto border border-muted bg-code-bg p-hsp-lg text-small text-code-fg whitespace-pre-wrap break-all">
         <code>{output}</code>
       </pre>
 
-      <div className="mt-vsp-sm flex items-center gap-x-hsp-md">
+      <div class="mt-vsp-sm flex items-center gap-x-hsp-md">
         <button
           onClick={handleCopy}
-          className="border border-muted bg-surface px-hsp-lg py-vsp-2xs text-small text-fg transition-colors hover:border-accent hover:text-accent"
+          class="border border-muted bg-surface px-hsp-lg py-vsp-2xs text-small text-fg transition-colors hover:border-accent hover:text-accent"
         >
           {copyLabel}
         </button>
         <button
           onClick={() => dialogRef.current?.close()}
-          className="border border-muted bg-surface px-hsp-lg py-vsp-2xs text-small text-muted transition-colors hover:border-fg hover:text-fg"
+          class="border border-muted bg-surface px-hsp-lg py-vsp-2xs text-small text-muted transition-colors hover:border-fg hover:text-fg"
         >
           Close
         </button>
@@ -311,7 +311,7 @@ export default function PresetGenerator() {
   }, [state.headerRightItems]);
 
   return (
-    <div className="zd-preset-gen flex flex-col gap-y-vsp-xl">
+    <div class="zd-preset-gen flex flex-col gap-y-vsp-xl">
       {/* Project Name */}
       <section>
         <SectionHeading>Project Name</SectionHeading>
@@ -323,17 +323,17 @@ export default function PresetGenerator() {
           onChange={(e) =>
             update("projectName", (e.target as HTMLInputElement).value)
           }
-          className={inputClass}
+          class={inputClass}
         />
       </section>
 
       {/* Languages */}
       <section>
         <SectionHeading>Languages</SectionHeading>
-        <div className="flex flex-col gap-y-vsp-xs">
+        <div class="flex flex-col gap-y-vsp-xs">
           <label
-            htmlFor="preset-default-language"
-            className="text-caption text-muted"
+            for="preset-default-language"
+            class="text-caption text-muted"
           >
             Default language
           </label>
@@ -344,7 +344,7 @@ export default function PresetGenerator() {
             onChange={(e) =>
               update("defaultLang", (e.target as HTMLSelectElement).value)
             }
-            className={inputClass}
+            class={inputClass}
           >
             {SUPPORTED_LANGS.map((lang) => (
               <option key={lang.value} value={lang.value}>
@@ -353,8 +353,8 @@ export default function PresetGenerator() {
             ))}
           </select>
           <label
-            htmlFor="preset-additional-languages"
-            className="text-caption text-muted"
+            for="preset-additional-languages"
+            class="text-caption text-muted"
           >
             Additional language codes
           </label>
@@ -374,16 +374,16 @@ export default function PresetGenerator() {
                 (e.target as HTMLInputElement).value,
               )
             }
-            className={inputClass}
+            class={inputClass}
           />
-          <p className="text-caption text-muted">
+          <p class="text-caption text-muted">
             Comma-separated additional locale codes (for example, ja, de).
           </p>
           {additionalLangsError && (
             <p
               id="additional-langs-error"
               role="alert"
-              className="text-caption text-danger"
+              class="text-caption text-danger"
             >
               {additionalLangsError}
             </p>
@@ -394,26 +394,26 @@ export default function PresetGenerator() {
       {/* Color Scheme Mode */}
       <section>
         <SectionHeading>Color Scheme Mode</SectionHeading>
-        <div className="flex gap-x-hsp-lg">
-          <label className="flex items-center gap-x-hsp-xs text-small text-fg">
+        <div class="flex gap-x-hsp-lg">
+          <label class="flex items-center gap-x-hsp-xs text-small text-fg">
             <input
               type="radio"
               name="colorSchemeMode"
               value="single"
               checked={state.colorSchemeMode === "single"}
               onChange={() => update("colorSchemeMode", "single")}
-              className="accent-accent"
+              class="accent-accent"
             />
             Single scheme
           </label>
-          <label className="flex items-center gap-x-hsp-xs text-small text-fg">
+          <label class="flex items-center gap-x-hsp-xs text-small text-fg">
             <input
               type="radio"
               name="colorSchemeMode"
               value="light-dark"
               checked={state.colorSchemeMode === "light-dark"}
               onChange={() => update("colorSchemeMode", "light-dark")}
-              className="accent-accent"
+              class="accent-accent"
             />
             Light &amp; Dark (toggle)
           </label>
@@ -430,7 +430,7 @@ export default function PresetGenerator() {
             onChange={(e) =>
               update("singleScheme", (e.target as HTMLSelectElement).value)
             }
-            className={inputClass}
+            class={inputClass}
           >
             {SINGLE_SCHEMES.map((s) => (
               <option key={s} value={s}>
@@ -439,38 +439,38 @@ export default function PresetGenerator() {
             ))}
           </select>
         ) : (
-          <div className="flex flex-col gap-y-vsp-xs">
-            <div className="flex flex-wrap gap-x-hsp-lg gap-y-vsp-2xs">
+          <div class="flex flex-col gap-y-vsp-xs">
+            <div class="flex flex-wrap gap-x-hsp-lg gap-y-vsp-2xs">
               <div>
-                <label className="mb-vsp-2xs block text-caption text-muted">
+                <label class="mb-vsp-2xs block text-caption text-muted">
                   Default mode
                 </label>
-                <div className="flex gap-x-hsp-md">
-                  <label className="flex items-center gap-x-hsp-xs text-small text-fg">
+                <div class="flex gap-x-hsp-md">
+                  <label class="flex items-center gap-x-hsp-xs text-small text-fg">
                     <input
                       type="radio"
                       name="defaultMode"
                       value="light"
                       checked={state.defaultMode === "light"}
                       onChange={() => update("defaultMode", "light")}
-                      className="accent-accent"
+                      class="accent-accent"
                     />
                     Light
                   </label>
-                  <label className="flex items-center gap-x-hsp-xs text-small text-fg">
+                  <label class="flex items-center gap-x-hsp-xs text-small text-fg">
                     <input
                       type="radio"
                       name="defaultMode"
                       value="dark"
                       checked={state.defaultMode === "dark"}
                       onChange={() => update("defaultMode", "dark")}
-                      className="accent-accent"
+                      class="accent-accent"
                     />
                     Dark
                   </label>
                 </div>
               </div>
-              <label className="flex items-center gap-x-hsp-xs text-small text-fg self-end">
+              <label class="flex items-center gap-x-hsp-xs text-small text-fg self-end">
                 <input
                   type="checkbox"
                   checked={state.respectPrefersColorScheme}
@@ -480,7 +480,7 @@ export default function PresetGenerator() {
                       (e.target as HTMLInputElement).checked,
                     )
                   }
-                  className="accent-accent"
+                  class="accent-accent"
                 />
                 Respect system preference
               </label>
@@ -498,7 +498,7 @@ export default function PresetGenerator() {
           onChange={(e) =>
             update("themePack", (e.target as HTMLSelectElement).value)
           }
-          className={inputClass}
+          class={inputClass}
         >
           {THEME_PACKS.map((t) => (
             <option key={t.slug} value={t.slug}>
@@ -506,7 +506,7 @@ export default function PresetGenerator() {
             </option>
           ))}
         </select>
-        <p className="mt-vsp-2xs text-caption text-muted">
+        <p class="mt-vsp-2xs text-caption text-muted">
           {THEME_PACKS.find((t) => t.slug === state.themePack)?.hint}
         </p>
       </section>
@@ -514,19 +514,19 @@ export default function PresetGenerator() {
       {/* Features */}
       <section>
         <SectionHeading>Features</SectionHeading>
-        <div className="flex flex-col gap-y-vsp-xs">
+        <div class="flex flex-col gap-y-vsp-xs">
           {(VISIBLE_FEATURES as readonly FeatureEntry[]).map((feat) => (
             <label
               key={feat.value}
-              className="flex items-center gap-x-hsp-xs text-small text-fg"
+              class="flex items-center gap-x-hsp-xs text-small text-fg"
             >
               <input
                 type="checkbox"
                 checked={state.features.includes(feat.value)}
                 onChange={() => toggleFeature(feat.value)}
-                className="accent-accent"
+                class="accent-accent"
               />
-              <span className="flex items-center gap-x-hsp-xs">
+              <span class="flex items-center gap-x-hsp-xs">
                 {feat.label}
                 {feat.docPath && (
                   <a
@@ -535,7 +535,7 @@ export default function PresetGenerator() {
                     rel="noopener"
                     aria-label={`${feat.label} documentation`}
                     onClick={(e) => e.stopPropagation()}
-                    className="text-caption text-muted hover:text-accent"
+                    class="text-caption text-muted hover:text-accent"
                   >
                     docs ↗
                   </a>
@@ -543,11 +543,11 @@ export default function PresetGenerator() {
               </span>
             </label>
           ))}
-          <label className="flex items-center gap-x-hsp-xs text-small text-muted cursor-not-allowed opacity-50">
+          <label class="flex items-center gap-x-hsp-xs text-small text-muted cursor-not-allowed opacity-50">
             <input
               type="checkbox"
               disabled
-              className="accent-accent"
+              class="accent-accent"
             />
             AI Assistant (under development)
           </label>
@@ -557,7 +557,7 @@ export default function PresetGenerator() {
       {/* Header right items */}
       <section>
         <SectionHeading>Header right items</SectionHeading>
-        <p className="mb-vsp-xs text-caption text-muted">
+        <p class="mb-vsp-xs text-caption text-muted">
           Choose which items appear in the header right cluster and in what
           order. Disabled items are dropped from the preset entirely. The
           ai-chat trigger is shown for forward-compatibility but the scaffold
@@ -565,7 +565,7 @@ export default function PresetGenerator() {
         </p>
         {/* Show items in current state order first, then any default items
             that the user has removed (so they can be re-enabled). */}
-        <ul className="flex flex-col gap-y-vsp-2xs">
+        <ul class="flex flex-col gap-y-vsp-2xs">
           {orderedItems.map(({ spec, index }) => {
             const label = HEADER_RIGHT_LABELS[spec.name] ?? spec.name;
             return (
@@ -581,7 +581,7 @@ export default function PresetGenerator() {
                       onClick={() => moveHeaderRightItem(index, -1)}
                       disabled={index === 0}
                       aria-label={`Move ${label} up`}
-                      className="border border-muted bg-surface px-hsp-xs py-vsp-2xs text-caption text-fg transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
+                      class="border border-muted bg-surface px-hsp-xs py-vsp-2xs text-caption text-fg transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       ↑
                     </button>
@@ -590,7 +590,7 @@ export default function PresetGenerator() {
                       onClick={() => moveHeaderRightItem(index, 1)}
                       disabled={index === orderedItems.length - 1}
                       aria-label={`Move ${label} down`}
-                      className="border border-muted bg-surface px-hsp-xs py-vsp-2xs text-caption text-fg transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
+                      class="border border-muted bg-surface px-hsp-xs py-vsp-2xs text-caption text-fg transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       ↓
                     </button>
@@ -608,11 +608,11 @@ export default function PresetGenerator() {
             />
           ))}
         </ul>
-        <div className="mt-vsp-xs">
+        <div class="mt-vsp-xs">
           <button
             type="button"
             onClick={resetHeaderRightItems}
-            className="border border-muted bg-surface px-hsp-md py-vsp-2xs text-small text-muted transition-colors hover:border-fg hover:text-fg"
+            class="border border-muted bg-surface px-hsp-md py-vsp-2xs text-small text-muted transition-colors hover:border-fg hover:text-fg"
           >
             Reset to default
           </button>
@@ -622,14 +622,14 @@ export default function PresetGenerator() {
       {/* Meta tags */}
       <section>
         <SectionHeading>Meta tags</SectionHeading>
-        <p className="mb-vsp-xs text-caption text-muted">
+        <p class="mb-vsp-xs text-caption text-muted">
           Configure which meta tags are emitted in the document head.
           og:title is always emitted (DocHead contract) and is not listed here.
         </p>
-        <ul className="flex flex-col gap-y-vsp-xs">
+        <ul class="flex flex-col gap-y-vsp-xs">
           {/* description */}
-          <li className={`text-small ${state.metaTags.description ? "text-fg" : "text-muted"}`}>
-            <label className="flex items-center gap-x-hsp-xs">
+          <li class={`text-small ${state.metaTags.description ? "text-fg" : "text-muted"}`}>
+            <label class="flex items-center gap-x-hsp-xs">
               <input
                 type="checkbox"
                 checked={state.metaTags.description}
@@ -639,14 +639,14 @@ export default function PresetGenerator() {
                     metaTags: { ...prev.metaTags, description: (e.target as HTMLInputElement).checked },
                   }))
                 }
-                className="accent-accent"
+                class="accent-accent"
               />
               SEO description meta
             </label>
           </li>
           {/* keywords */}
-          <li className={`text-small ${state.metaTags.keywordsEnabled ? "text-fg" : "text-muted"}`}>
-            <label className="flex items-center gap-x-hsp-xs">
+          <li class={`text-small ${state.metaTags.keywordsEnabled ? "text-fg" : "text-muted"}`}>
+            <label class="flex items-center gap-x-hsp-xs">
               <input
                 type="checkbox"
                 checked={state.metaTags.keywordsEnabled}
@@ -656,7 +656,7 @@ export default function PresetGenerator() {
                     metaTags: { ...prev.metaTags, keywordsEnabled: (e.target as HTMLInputElement).checked },
                   }))
                 }
-                className="accent-accent"
+                class="accent-accent"
               />
               Keywords (comma-separated)
             </label>
@@ -672,13 +672,13 @@ export default function PresetGenerator() {
                     metaTags: { ...prev.metaTags, keywords: (e.target as HTMLInputElement).value },
                   }))
                 }
-                className={`mt-vsp-2xs ${inputClass}`}
+                class={`mt-vsp-2xs ${inputClass}`}
               />
             )}
           </li>
           {/* og:image */}
-          <li className={`text-small ${state.metaTags.ogImageEnabled ? "text-fg" : "text-muted"}`}>
-            <label className="flex items-center gap-x-hsp-xs">
+          <li class={`text-small ${state.metaTags.ogImageEnabled ? "text-fg" : "text-muted"}`}>
+            <label class="flex items-center gap-x-hsp-xs">
               <input
                 type="checkbox"
                 checked={state.metaTags.ogImageEnabled}
@@ -688,7 +688,7 @@ export default function PresetGenerator() {
                     metaTags: { ...prev.metaTags, ogImageEnabled: (e.target as HTMLInputElement).checked },
                   }))
                 }
-                className="accent-accent"
+                class="accent-accent"
               />
               OGP image (og:image)
             </label>
@@ -704,13 +704,13 @@ export default function PresetGenerator() {
                     metaTags: { ...prev.metaTags, ogImage: (e.target as HTMLInputElement).value },
                   }))
                 }
-                className={`mt-vsp-2xs ${inputClass}`}
+                class={`mt-vsp-2xs ${inputClass}`}
               />
             )}
           </li>
           {/* og:site_name */}
-          <li className={`text-small ${state.metaTags.ogSiteName ? "text-fg" : "text-muted"}`}>
-            <label className="flex items-center gap-x-hsp-xs">
+          <li class={`text-small ${state.metaTags.ogSiteName ? "text-fg" : "text-muted"}`}>
+            <label class="flex items-center gap-x-hsp-xs">
               <input
                 type="checkbox"
                 checked={state.metaTags.ogSiteName}
@@ -720,14 +720,14 @@ export default function PresetGenerator() {
                     metaTags: { ...prev.metaTags, ogSiteName: (e.target as HTMLInputElement).checked },
                   }))
                 }
-                className="accent-accent"
+                class="accent-accent"
               />
               og:site_name
             </label>
           </li>
           {/* Twitter card */}
-          <li className={`text-small ${state.metaTags.twitterCardEnabled ? "text-fg" : "text-muted"}`}>
-            <label className="flex items-center gap-x-hsp-xs">
+          <li class={`text-small ${state.metaTags.twitterCardEnabled ? "text-fg" : "text-muted"}`}>
+            <label class="flex items-center gap-x-hsp-xs">
               <input
                 type="checkbox"
                 checked={state.metaTags.twitterCardEnabled}
@@ -737,12 +737,12 @@ export default function PresetGenerator() {
                     metaTags: { ...prev.metaTags, twitterCardEnabled: (e.target as HTMLInputElement).checked },
                   }))
                 }
-                className="accent-accent"
+                class="accent-accent"
               />
               Twitter card
             </label>
             {state.metaTags.twitterCardEnabled && (
-              <div className="mt-vsp-2xs flex flex-col gap-y-vsp-2xs">
+              <div class="mt-vsp-2xs flex flex-col gap-y-vsp-2xs">
                 <select
                   value={state.metaTags.twitterCard}
                   aria-label="Twitter card type"
@@ -755,7 +755,7 @@ export default function PresetGenerator() {
                       },
                     }))
                   }
-                  className={inputClass}
+                  class={inputClass}
                 >
                   <option value="summary">summary</option>
                   <option value="summary_large_image">summary_large_image</option>
@@ -771,7 +771,7 @@ export default function PresetGenerator() {
                       metaTags: { ...prev.metaTags, twitterSite: (e.target as HTMLInputElement).value },
                     }))
                   }
-                  className={inputClass}
+                  class={inputClass}
                 />
                 <input
                   type="text"
@@ -784,7 +784,7 @@ export default function PresetGenerator() {
                       metaTags: { ...prev.metaTags, twitterCreator: (e.target as HTMLInputElement).value },
                     }))
                   }
-                  className={inputClass}
+                  class={inputClass}
                 />
               </div>
             )}
@@ -795,14 +795,14 @@ export default function PresetGenerator() {
       {/* CJK Friendly */}
       <section>
         <SectionHeading>Markdown Options</SectionHeading>
-        <label className="flex items-center gap-x-hsp-xs text-small text-fg">
+        <label class="flex items-center gap-x-hsp-xs text-small text-fg">
           <input
             type="checkbox"
             checked={state.cjkFriendly}
             onChange={(e) =>
               update("cjkFriendly", (e.target as HTMLInputElement).checked)
             }
-            className="accent-accent"
+            class="accent-accent"
           />
           CJK-friendly bold/italic (for Japanese, Chinese, Korean content)
         </label>
@@ -817,7 +817,7 @@ export default function PresetGenerator() {
           onChange={(e) =>
             update("packageManager", (e.target as HTMLSelectElement).value)
           }
-          className={inputClass}
+          class={inputClass}
         >
           {PACKAGE_MANAGERS.map((pm) => (
             <option key={pm} value={pm}>
@@ -828,14 +828,14 @@ export default function PresetGenerator() {
       </section>
 
       {/* Generate Button */}
-      <div className="mt-vsp-xs">
+      <div class="mt-vsp-xs">
         <button
           disabled={additionalLangsError !== null}
           onClick={() => {
             if (additionalLangsError !== null) return;
             setModalState({ ...state });
           }}
-          className="border border-accent bg-surface px-hsp-xl py-vsp-2xs text-small font-semibold text-accent transition-colors hover:bg-bg hover:text-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+          class="border border-accent bg-surface px-hsp-xl py-vsp-2xs text-small font-semibold text-accent transition-colors hover:bg-bg hover:text-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           Generate Preset
         </button>

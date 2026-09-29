@@ -33,7 +33,6 @@ export interface CategoryNavProps {
 function ArrowIcon(): JSX.Element {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       fill="currentColor"
       viewBox="0 0 103.395 107.049"
       aria-hidden="true"

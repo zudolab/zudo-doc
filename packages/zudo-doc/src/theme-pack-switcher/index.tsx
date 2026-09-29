@@ -110,7 +110,6 @@ const ThemePackDialogSlot: ThemePackDialogComponent | null = ThemePackDialog;
 function GridIcon({ className }: { className?: string }): VNode {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"
@@ -130,7 +129,6 @@ function GridIcon({ className }: { className?: string }): VNode {
 function PaletteIcon({ className }: { className?: string }): VNode {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"
@@ -227,7 +225,7 @@ export function ThemePackSwitcher({
       {open ? (
         <div
           ref={cardRef}
-          tabIndex={-1}
+          tabindex={-1}
           role="dialog"
           aria-label="Theme pack switcher"
           data-switcher-card

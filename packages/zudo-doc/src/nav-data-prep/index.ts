@@ -120,12 +120,14 @@ export function buildRootMenuItems(
       ? t(item.labelKey, lang)
       : item.label,
     href: navHref(item.path, lang, currentVersion, item.versioned),
-    children: item.children?.map((child) => ({
-      label: child.labelKey
-        ? t(child.labelKey, lang)
-        : child.label,
-      href: navHref(child.path, lang, currentVersion, child.versioned),
-    })),
+    ...(item.children !== undefined ? {
+      children: item.children.map((child) => ({
+        label: child.labelKey
+          ? t(child.labelKey, lang)
+          : child.label,
+        href: navHref(child.path, lang, currentVersion, child.versioned),
+      })),
+    } : {}),
   }));
 }
 

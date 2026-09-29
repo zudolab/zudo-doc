@@ -91,19 +91,19 @@ export function createAssetCode(context: AssetComponentContext) {
           : `lines ${requested.start}–${requested.end}`;
 
     return (
-      <section className="overflow-hidden rounded-lg border border-muted bg-surface">
-        <header className="flex items-center justify-between gap-x-hsp-md border-b border-muted px-hsp-lg py-vsp-2xs text-caption">
-          <span className="flex min-w-0 items-center gap-x-hsp-xs font-mono text-fg">
+      <section class="overflow-hidden rounded-lg border border-muted bg-surface">
+        <header class="flex items-center justify-between gap-x-hsp-md border-b border-muted px-hsp-lg py-vsp-2xs text-caption">
+          <span class="flex min-w-0 items-center gap-x-hsp-xs font-mono text-fg">
             <AssetFileIcon className="h-icon-sm w-icon-sm shrink-0" />
             <span>{title ?? resolved.path}</span>
           </span>
-          <span className="shrink-0 text-muted">{rangeLabel}</span>
+          <span class="shrink-0 text-muted">{rangeLabel}</span>
         </header>
         <div
-          className="overflow-x-auto bg-code-bg text-code-fg text-caption"
+          class="overflow-x-auto bg-code-bg text-code-fg text-caption"
           dangerouslySetInnerHTML={{ __html: excerpt.html }}
         />
-        <footer className="flex flex-wrap items-center justify-between gap-x-hsp-md gap-y-vsp-3xs border-t border-muted px-hsp-lg py-vsp-2xs text-caption text-muted">
+        <footer class="flex flex-wrap items-center justify-between gap-x-hsp-md gap-y-vsp-3xs border-t border-muted px-hsp-lg py-vsp-2xs text-caption text-muted">
           <span>
             {assetComponentText(
               context,
@@ -113,7 +113,7 @@ export function createAssetCode(context: AssetComponentContext) {
             )}
           </span>
           <a
-            className="text-fg hover:text-accent focus-visible:text-accent hover:underline focus-visible:underline"
+            class="text-fg hover:text-accent focus-visible:text-accent hover:underline focus-visible:underline"
             href={viewerHref}
           >
             {assetComponentText(

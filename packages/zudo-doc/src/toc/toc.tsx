@@ -71,7 +71,7 @@ export function Toc({ headings, title = "On this page" }: TocProps): VNode {
     <nav
       aria-label="Table of contents"
       data-zd-toc
-      className={cx(
+      class={cx(
         "hidden xl:flex flex-col",
         "w-[280px] shrink-0",
         "sticky top-[3.5rem] self-start z-sidebar",
@@ -80,13 +80,13 @@ export function Toc({ headings, title = "On this page" }: TocProps): VNode {
       )}
     >
       {filtered.length > 0 && (
-        <ul className="border-l border-muted pl-hsp-lg overflow-y-auto">
+        <ul class="border-l border-muted pl-hsp-lg overflow-y-auto">
           {filtered.map((heading, index) => {
             const isActive = heading.slug === activeId;
             return (
               <li
                 key={`${heading.slug}-${index}`}
-                className={cx(
+                class={cx(
                   heading.depth === 3 && "ml-hsp-lg",
                   heading.depth === 4 && "ml-hsp-2xl",
                 )}
@@ -95,7 +95,7 @@ export function Toc({ headings, title = "On this page" }: TocProps): VNode {
                   href={`#${heading.slug}`}
                   onClick={() => activate(heading.slug)}
                   aria-current={isActive ? "true" : undefined}
-                  className={cx(
+                  class={cx(
                     "block py-vsp-2xs text-small leading-snug transition-colors",
                     isActive
                       ? "bg-fg text-bg font-medium"

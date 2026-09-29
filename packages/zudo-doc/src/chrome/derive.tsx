@@ -748,6 +748,9 @@ export function deriveMdxComponents(ctx: ChromeContext) {
      * serializable setting in the route-context payload. */
     function HtmlPreviewBound(props: HtmlPreviewWrapperProps): JSX.Element {
       const labels = props.labels;
+      const definedProps = Object.fromEntries(
+        Object.entries(props).filter(([, value]) => value !== undefined),
+      ) as HtmlPreviewWrapperProps;
       // The document metadata language is independent from the route locale:
       // an author may opt into an arbitrary BCP-47 tag for the iframe document
       // while its controls remain localized to the surrounding route. Keep
@@ -760,7 +763,7 @@ export function deriveMdxComponents(ctx: ChromeContext) {
           : "en";
       return HtmlPreviewWrapper({
         globalConfig: ctx.settings.htmlPreview ?? null,
-        ...props,
+        ...definedProps,
         lang: effectiveLang,
         labels: {
           mobile: labels?.mobile ?? localizedHtmlPreviewLabels.mobile,

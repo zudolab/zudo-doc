@@ -28,7 +28,6 @@ export interface IconProps {
 export function ChevronRight({ className }: IconProps): VNode {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"
@@ -48,7 +47,6 @@ export function ChevronRight({ className }: IconProps): VNode {
 export function ChevronLeft({ className }: IconProps): VNode {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"
@@ -68,7 +66,6 @@ export function ChevronLeft({ className }: IconProps): VNode {
 export function Search({ className }: IconProps): VNode {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"
@@ -88,7 +85,6 @@ export function Search({ className }: IconProps): VNode {
 export function History({ className }: IconProps): VNode {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       viewBox="0 0 24 24"
       fill="none"
@@ -111,7 +107,6 @@ export function History({ className }: IconProps): VNode {
 export function Close({ className }: IconProps): VNode {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       viewBox="0 0 24 24"
       fill="none"
@@ -133,7 +128,6 @@ export function Close({ className }: IconProps): VNode {
 export function ArrowLeft({ className }: IconProps): VNode {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       viewBox="0 0 24 24"
       fill="none"
@@ -157,7 +151,6 @@ export function ArrowLeft({ className }: IconProps): VNode {
 export function GitHub({ className }: IconProps): VNode {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       width="20"
       height="20"
       viewBox="0 0 24 24"
@@ -177,7 +170,6 @@ export function GitHub({ className }: IconProps): VNode {
 export function Folder({ className }: IconProps): VNode {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"
@@ -201,7 +193,6 @@ export function Folder({ className }: IconProps): VNode {
 export function FolderOpen({ className }: IconProps): VNode {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"
@@ -230,7 +221,6 @@ export function FolderOpen({ className }: IconProps): VNode {
 export function FileGeneric({ className }: IconProps): VNode {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"
@@ -255,7 +245,6 @@ export function FileGeneric({ className }: IconProps): VNode {
 export function FileCode({ className }: IconProps): VNode {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"
@@ -282,7 +271,6 @@ export function FileCode({ className }: IconProps): VNode {
 export function FileText({ className }: IconProps): VNode {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"
@@ -309,7 +297,6 @@ export function FileText({ className }: IconProps): VNode {
 export function FileImage({ className }: IconProps): VNode {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"
@@ -331,7 +318,6 @@ export function FileImage({ className }: IconProps): VNode {
 export function FileVideo({ className }: IconProps): VNode {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"
@@ -352,7 +338,6 @@ export function FileVideo({ className }: IconProps): VNode {
 export function FilePdf({ className }: IconProps): VNode {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"
@@ -387,7 +372,6 @@ export function FilePdf({ className }: IconProps): VNode {
 export function FileArchive({ className }: IconProps): VNode {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class={className || undefined}
       fill="none"
       viewBox="0 0 24 24"

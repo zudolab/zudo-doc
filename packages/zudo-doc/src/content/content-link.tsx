@@ -21,7 +21,7 @@ export function ContentLink({ href, className, children, ...rest }: Props) {
   const classes = typeof className === "string" ? className.split(" ") : [];
   if (classes.includes("block") || classes.includes("hash-link")) {
     return (
-      <a href={href} className={className} {...rest}>
+      <a href={href} class={className} {...rest}>
         {children}
       </a>
     );
@@ -41,7 +41,7 @@ export function ContentLink({ href, className, children, ...rest }: Props) {
   return (
     <a
       href={href}
-      className={`text-accent underline hover:text-accent-hover${className ? ` ${className}` : ""}`}
+      class={`text-accent underline hover:text-accent-hover${className ? ` ${className}` : ""}`}
       {...rest}
     >
       {content}
@@ -107,10 +107,10 @@ export function createContentLink({
           fragment: decoded.fragment,
         })}
       >
-        <span className="inline-flex items-baseline gap-x-hsp-xs font-mono">
+        <span class="inline-flex items-baseline gap-x-hsp-xs font-mono">
           <AssetFileIcon className="h-icon-sm w-icon-sm shrink-0" />
           <span>{children}</span>
-          <span className="text-caption text-muted">({formatAssetBytes(entry.bytes)})</span>
+          <span class="text-caption text-muted">({formatAssetBytes(entry.bytes)})</span>
         </span>
       </ContentLink>
     );

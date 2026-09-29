@@ -230,7 +230,7 @@ export function createDocHistoryArea<S extends Settings = Settings>(
           children: (
             <DocHistory
               slug={historySlug}
-              locale={docHistoryLocale}
+              {...(docHistoryLocale !== undefined ? { locale: docHistoryLocale } : {})}
               basePath={docHistoryBasePath}
               displayLocale={docHistoryDisplayLocale}
               dateFormats={docHistoryDateFormats}

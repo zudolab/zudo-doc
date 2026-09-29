@@ -36,18 +36,18 @@ function toNavNode(node: SidebarNode): DocNavNode {
   return {
     slug: node.id,
     label: node.label,
-    description: node.description,
+    ...(node.description !== undefined ? { description: node.description } : {}),
     position: node.sidebar_position ?? 999,
-    href: node.href,
+    ...(node.href !== undefined ? { href: node.href } : {}),
     hasPage: node.hasPage,
     children: node.children.map(toNavNode),
     sortOrder: node.sortOrder ?? "asc",
-    shape: node.shape,
-    noteTrayDated: node.noteTrayDated,
-    noteTraySidebar: node.noteTraySidebar,
-    date: node.date,
-    updated: node.updated,
-    rank: node.rank,
+    ...(node.shape !== undefined ? { shape: node.shape } : {}),
+    ...(node.noteTrayDated !== undefined ? { noteTrayDated: node.noteTrayDated } : {}),
+    ...(node.noteTraySidebar !== undefined ? { noteTraySidebar: node.noteTraySidebar } : {}),
+    ...(node.date !== undefined ? { date: node.date } : {}),
+    ...(node.updated !== undefined ? { updated: node.updated } : {}),
+    ...(node.rank !== undefined ? { rank: node.rank } : {}),
   };
 }
 
@@ -79,17 +79,19 @@ function toRootNavNode(
       doc.data.title ??
       meta?.label ??
       "",
-    description: doc.data.description ?? meta?.description,
+    ...((doc.data.description ?? meta?.description) !== undefined
+      ? { description: doc.data.description ?? meta?.description }
+      : {}),
     position: (doc.data.sidebar_position as number | undefined) ?? meta?.position ?? 999,
-    href: noPage ? undefined : buildHref("", locale),
+    ...(noPage ? {} : { href: buildHref("", locale) }),
     hasPage: noPage !== true,
     children: [],
     sortOrder,
-    shape: doc.data.category_shape,
-    noteTrayDated: doc.data.note_tray_dated,
-    noteTraySidebar: doc.data.note_tray_sidebar,
-    date: doc.data.date,
-    updated: doc.data.updated,
+    ...(doc.data.category_shape !== undefined ? { shape: doc.data.category_shape } : {}),
+    ...(doc.data.note_tray_dated !== undefined ? { noteTrayDated: doc.data.note_tray_dated } : {}),
+    ...(doc.data.note_tray_sidebar !== undefined ? { noteTraySidebar: doc.data.note_tray_sidebar } : {}),
+    ...(doc.data.date !== undefined ? { date: doc.data.date } : {}),
+    ...(doc.data.updated !== undefined ? { updated: doc.data.updated } : {}),
     rank: 1,
   };
 }

@@ -90,7 +90,6 @@ function ChevronIcon(): VNode {
 function HomeIcon(): VNode {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       class="h-[1.575rem] w-[1.575rem] shrink-0"
       fill="none"
       viewBox="0 0 24 24"

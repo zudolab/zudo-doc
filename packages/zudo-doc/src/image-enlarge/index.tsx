@@ -170,27 +170,27 @@ export function ImageEnlarge() {
     <dialog
       ref={dialogRef}
       onClick={handleBackdropClick}
-      className={IMAGE_ENLARGE_DIALOG_CLASS}
+      class={IMAGE_ENLARGE_DIALOG_CLASS}
       style={ENLARGE_DIALOG_STYLE}
     >
       {imgData && (
         <>
-          <div className="relative">
+          <div class="relative">
             <img
               src={imgData.currentSrc || imgData.src}
               srcSet={imgData.srcset}
               sizes={imgData.srcset ? "85vw" : undefined}
               alt={imgData.alt}
-              className="block max-h-[85vh] max-w-[85vw] object-contain"
+              class="block max-h-[85vh] max-w-[85vw] object-contain"
             />
           </div>
           <button
             type="button"
             onClick={() => dialogRef.current?.close()}
-            className="zd-enlarge-dialog-close"
+            class="zd-enlarge-dialog-close"
             aria-label="Close enlarged image"
           >
-            <svg viewBox="0 0 161.03 161.03" fill="currentColor" aria-hidden="true" focusable="false">
+            <svg viewBox="0 0 161.03 161.03" fill="currentColor" aria-hidden="true">
               <polygon points="161.03 10.27 150.76 0 80.51 70.24 10.27 0 0 10.27 70.24 80.51 0 150.76 10.27 161.03 80.51 90.78 150.76 161.03 161.03 150.76 90.78 80.51 161.03 10.27" />
             </svg>
           </button>
@@ -212,7 +212,7 @@ ImageEnlarge.displayName = "ImageEnlarge";
 export function ImageEnlargeSsrFallback() {
   return (
     <dialog
-      className={IMAGE_ENLARGE_DIALOG_CLASS}
+      class={IMAGE_ENLARGE_DIALOG_CLASS}
       style={ENLARGE_DIALOG_STYLE}
     />
   );

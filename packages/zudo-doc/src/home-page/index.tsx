@@ -323,7 +323,7 @@ export function createHomePageView<S extends Settings = Settings>(
               <div
                 class="w-[320px] max-w-full aspect-[1200/630] bg-fg shrink-0"
                 style={{
-                  WebkitMask: `${cssUrl(withBase(logoSetting))} center/contain no-repeat`,
+                  "-webkit-mask": `${cssUrl(withBase(logoSetting))} center/contain no-repeat`,
                   mask: `${cssUrl(withBase(logoSetting))} center/contain no-repeat`,
                 }}
                 aria-hidden="true"
@@ -367,7 +367,7 @@ export function createHomePageView<S extends Settings = Settings>(
                 tree={tree as unknown as SidebarNavNode[]}
                 categoryOrder={categoryOrder}
                 categoryIgnore={[...categoryIgnore, ...movedNodes.map((n) => n.slug)]}
-                initiallyCollapsedCategorySlugs={initiallyCollapsedCategorySlugs}
+                {...(initiallyCollapsedCategorySlugs !== undefined ? { initiallyCollapsedCategorySlugs } : {})}
                 locale={locale}
                 updatedLabel={t("doc.updated", locale)}
                 dateFormats={dateFormatsFor(locale)}

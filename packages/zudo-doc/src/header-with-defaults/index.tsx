@@ -179,12 +179,12 @@ export function createHeaderWithDefaults<S extends Settings = Settings>(
         children: (
           <SidebarToggle
             nodes={sidebarNodes}
-            currentSlug={currentSlug}
+            {...(currentSlug !== undefined ? { currentSlug } : {})}
             rootMenuItems={rootMenuItems}
-            backToMenuLabel={backToMenuLabel}
+            {...(backToMenuLabel !== undefined ? { backToMenuLabel } : {})}
             locale={lang}
-            localeLinks={localeLinks}
-            themeDefaultMode={themeDefaultMode}
+            {...(localeLinks !== undefined ? { localeLinks } : {})}
+            {...(themeDefaultMode !== undefined ? { themeDefaultMode } : {})}
             themeLabels={themeToggleLabels(t, lang)}
             themeRespectSystem={themeRespectSystem}
             dateFormats={dateFormatsFor(lang)}

@@ -93,9 +93,9 @@ export function SiteTreeNav({
     <nav
       aria-label={ariaLabel}
       data-site-nav
-      className="grid gap-vsp-md"
+      class="grid gap-vsp-md"
       style={{
-        gridTemplateColumns: "repeat(auto-fill, minmax(min(18rem, 100%), 1fr))",
+        "grid-template-columns": "repeat(auto-fill, minmax(min(18rem, 100%), 1fr))",
       }}
     >
       {processedTree.map((node) => {
@@ -103,7 +103,7 @@ export function SiteTreeNav({
           return null;
         }
         return (
-          <div key={node.slug} className="min-w-0 border border-muted pl-hsp-sm py-vsp-2xs">
+          <div key={node.slug} class="min-w-0 border border-muted pl-hsp-sm py-vsp-2xs">
             {node.children.length > 0 ? (
               <CategoryNode
                 node={node}
@@ -172,18 +172,18 @@ function CategoryNode({
   const paddingLeft = padLeft(depth);
 
   return (
-    <div className={`${depth >= 1 && !isLast ? "relative" : ""}`}>
+    <div class={`${depth >= 1 && !isLast ? "relative" : ""}`}>
       {depth >= 1 && !isLast && open && (
         <div
-          className="absolute border-l border-dashed border-muted z-local-1"
+          class="absolute border-l border-dashed border-muted z-local-1"
           style={{
             left: connectorLeft(depth),
-            top: 0,
-            bottom: 0,
+            top: "0px",
+            bottom: "0px",
           }}
         />
       )}
-      <div className="relative">
+      <div class="relative">
         <ConnectorLines
           depth={depth}
           isLast={isLast}
@@ -191,16 +191,16 @@ function CategoryNode({
           topPad="calc(0.15rem + var(--spacing-vsp-xs))"
         />
         <div
-          className="flex w-full items-center justify-between text-small font-semibold pt-[0.15rem] text-fg"
+          class="flex w-full items-center justify-between text-small font-semibold pt-[0.15rem] text-fg"
           style={{ paddingLeft }}
         >
           {node.href ? (
             <a
               href={node.href}
-              className="flex-1 flex items-start gap-hsp-xs py-vsp-xs text-fg hover:text-accent hover:underline focus:underline focus-visible:text-accent"
+              class="flex-1 flex items-start gap-hsp-xs py-vsp-xs text-fg hover:text-accent hover:underline focus:underline focus-visible:text-accent"
             >
               {depth === 0 && (
-                <span className="flex h-[1lh] items-center">
+                <span class="flex h-[1lh] items-center">
                   <CategoryLinkIcon className="w-[18px] 2xl:w-[24px]" />
                 </span>
               )}
@@ -210,7 +210,7 @@ function CategoryNode({
             <button
               type="button"
               onClick={toggle}
-              className="flex-1 min-w-0 break-words py-vsp-xs text-left hover:text-accent hover:underline focus:underline"
+              class="flex-1 min-w-0 break-words py-vsp-xs text-left hover:text-accent hover:underline focus:underline"
             >
               {node.label}
             </button>
@@ -218,7 +218,7 @@ function CategoryNode({
           <button
             type="button"
             onClick={toggle}
-            className="aspect-square flex items-center justify-center w-[1.75rem] border-y border-l border-muted hover:underline focus:underline"
+            class="aspect-square flex items-center justify-center w-[1.75rem] border-y border-l border-muted hover:underline focus:underline"
             aria-expanded={open}
             aria-label={open ? `Collapse ${node.label}` : `Expand ${node.label}`}
           >
@@ -265,10 +265,10 @@ function NoteTrayNodeList({
 
   if (grouping === "year" || grouping === "month") {
     return (
-      <div className="pl-hsp-md pr-hsp-sm">
+      <div class="pl-hsp-md pr-hsp-sm">
         {groupItems(items, grouping, node.sortOrder ?? "asc").map((group) => (
           <div key={group.key} data-note-tray-group={group.key}>
-            <div className="pt-vsp-sm pb-vsp-2xs text-micro tracking-wide uppercase text-muted">
+            <div class="pt-vsp-sm pb-vsp-2xs text-micro tracking-wide uppercase text-muted">
               {grouping === "year"
                 ? formatYearLabel(group.key, locale, dateFormats?.year)
                 : formatYearMonthLabel(group.key, locale, dateFormats?.yearMonth)}
@@ -292,7 +292,7 @@ function NoteTrayNodeList({
   }
 
   return (
-    <div className="pl-hsp-md pr-hsp-sm">
+    <div class="pl-hsp-md pr-hsp-sm">
       {items.map((item) => (
         <NoteTrayRow
           key={item.slug}
@@ -339,24 +339,24 @@ function NoteTrayRow({
     <a
       href={item.href}
       data-note-tray-row
-      className="flex items-start gap-hsp-sm py-vsp-2xs text-small text-fg hover:text-accent hover:underline focus:underline focus-visible:text-accent"
+      class="flex items-start gap-hsp-sm py-vsp-2xs text-small text-fg hover:text-accent hover:underline focus:underline focus-visible:text-accent"
     >
       {dateLabel ? (
         <time
           dateTime={item.date}
-          className="shrink-0 font-mono tabular-nums text-caption text-muted"
+          class="shrink-0 font-mono tabular-nums text-caption text-muted"
         >
           {dateLabel}
         </time>
       ) : (
         <span
-          className="shrink-0 font-mono tabular-nums text-caption text-muted"
+          class="shrink-0 font-mono tabular-nums text-caption text-muted"
           style={{ width: `${width}ch` }}
         >
           {item.rank === undefined ? "" : String(item.rank).padStart(width, "0")}
         </span>
       )}
-      <span className="min-w-0 break-words">
+      <span class="min-w-0 break-words">
         <span>{item.label}</span>
       </span>
     </a>
@@ -382,22 +382,22 @@ function LeafNode({
 
   return (
     <div>
-      <div className="relative">
+      <div class="relative">
         <ConnectorLines depth={depth} isLast={isLast} widthScale={2} topPad={topPad} />
         <a
           href={node.href}
-          className={isRoot
+          class={isRoot
             ? "flex items-start gap-hsp-xs py-[calc(var(--spacing-vsp-xs)+0.15rem)] pr-hsp-sm text-small font-semibold text-fg break-words hover:text-accent hover:underline focus:underline focus-visible:text-accent"
             : `block py-vsp-2xs pr-hsp-sm ${isLast ? "pb-vsp-xs" : ""} text-small text-fg break-words hover:text-accent hover:underline focus:underline focus-visible:text-accent`
           }
           style={{ paddingLeft }}
         >
           {isRoot && (
-            <span className="flex h-[1lh] items-center">
+            <span class="flex h-[1lh] items-center">
               <CategoryLinkIcon className="w-[18px] 2xl:w-[24px]" />
             </span>
           )}
-          {isRoot ? <span className="min-w-0">{node.label}</span> : node.label}
+          {isRoot ? <span class="min-w-0">{node.label}</span> : node.label}
         </a>
       </div>
     </div>

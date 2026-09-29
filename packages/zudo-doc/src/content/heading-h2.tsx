@@ -9,7 +9,7 @@ export function HeadingH2({ id, children, className, ...rest }: Props) {
   return (
     <h2
       id={id}
-      className={`text-title font-bold leading-tight pt-vsp-sm border-t-[3px] border-transparent${className ? ` ${className}` : ""}`}
+      class={`text-title font-bold leading-tight pt-vsp-sm border-t-[3px] border-transparent${className ? ` ${className}` : ""}`}
       style={
         {
           borderImage:

@@ -62,7 +62,7 @@ export function MobileToc({
   // aria-hidden prevents screen readers from announcing the invisible label.
   if (filtered.length === 0) {
     return (
-      <div className="hidden" aria-hidden="true">
+      <div class="hidden" aria-hidden="true">
         {title}
       </div>
     );
@@ -77,29 +77,28 @@ export function MobileToc({
   // branch is a `display:none` placeholder carrying only the locale label, so
   // there is nothing for a pack to style.
   return (
-    <div data-zd-mobile-toc className="xl:hidden border border-muted mb-vsp-lg">
+    <div data-zd-mobile-toc class="xl:hidden border border-muted mb-vsp-lg">
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
-        className="flex w-full items-center justify-between px-hsp-lg py-vsp-xs text-small font-medium text-fg"
+        class="flex w-full items-center justify-between px-hsp-lg py-vsp-xs text-small font-medium text-fg"
       >
         <span>{title}</span>
         <svg
-          xmlns="http://www.w3.org/2000/svg"
           aria-hidden="true"
-          className={cx(
+          class={cx(
             "h-icon-sm w-icon-sm text-muted transition-transform duration-150",
             open && "rotate-180",
           )}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
-          strokeWidth={2}
+          stroke-width={2}
         >
           <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
+            stroke-linecap="round"
+            stroke-linejoin="round"
             d="M19 9l-7 7-7-7"
           />
         </svg>
@@ -110,7 +109,7 @@ export function MobileToc({
           elements remain in the static markup, satisfying the a11y requirement
           for keyboard accessibility after hydration. */}
       <ul
-        className={cx(
+        class={cx(
           "border-t border-muted px-hsp-lg py-vsp-xs space-y-vsp-2xs",
           !open && "hidden",
         )}
@@ -119,7 +118,7 @@ export function MobileToc({
         {filtered.map((heading, index) => (
           <li
             key={`${heading.slug}-${index}`}
-            className={cx(
+            class={cx(
               heading.depth === 3 && "ml-hsp-lg",
               heading.depth === 4 && "ml-hsp-2xl",
             )}
@@ -127,7 +126,7 @@ export function MobileToc({
             <a
               href={`#${heading.slug}`}
               onClick={() => setOpen(false)}
-              className="block py-vsp-2xs text-small text-muted hover:text-fg hover:underline focus-visible:underline"
+              class="block py-vsp-2xs text-small text-muted hover:text-fg hover:underline focus-visible:underline"
             >
               <SmartBreak>{heading.text}</SmartBreak>
             </a>

@@ -34,16 +34,16 @@ function isAiChatResponse(data: unknown): data is Record<string, unknown> {
 const ChatMessageRow = memo(function ChatMessageRow({ msg }: { msg: ChatMessage }) {
   return (
     <div
-      className={`mb-vsp-xs flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+      class={`mb-vsp-xs flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
     >
-      <span className="sr-only">{msg.role === "user" ? "You: " : "Assistant: "}</span>
+      <span class="sr-only">{msg.role === "user" ? "You: " : "Assistant: "}</span>
       {msg.role === "user" ? (
-        <div className="max-w-[85%] rounded-t-[1rem] rounded-bl-[1rem] rounded-br-[0.25rem] bg-chat-user-bg px-hsp-md py-vsp-2xs text-small leading-relaxed text-chat-user-text">
+        <div class="max-w-[85%] rounded-t-[1rem] rounded-bl-[1rem] rounded-br-[0.25rem] bg-chat-user-bg px-hsp-md py-vsp-2xs text-small leading-relaxed text-chat-user-text">
           <SmartBreak>{msg.content}</SmartBreak>
         </div>
       ) : (
         <div
-          className="ai-chat-md max-w-[85%] rounded-t-[1rem] rounded-br-[1rem] rounded-bl-[0.25rem] bg-chat-assistant-bg px-hsp-md py-vsp-2xs text-small leading-relaxed text-chat-assistant-text"
+          class="ai-chat-md max-w-[85%] rounded-t-[1rem] rounded-br-[1rem] rounded-bl-[0.25rem] bg-chat-assistant-bg px-hsp-md py-vsp-2xs text-small leading-relaxed text-chat-assistant-text"
           dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
         />
       )}
@@ -154,27 +154,26 @@ export function AiChatModal({ basePath }: AiChatModalProps) {
     <dialog
       ref={dialogRef}
       onClick={handleBackdropClick}
-      className="z-modal m-0 h-dvh max-h-none w-dvw max-w-none border-none bg-surface p-0 text-fg backdrop:z-modal-backdrop backdrop:bg-bg/80 lg:m-auto lg:h-[90vh] lg:max-h-[90vh] lg:w-[90vw] lg:max-w-[52.5rem] lg:border-solid lg:border lg:border-fg"
+      class="z-modal m-0 h-dvh max-h-none w-dvw max-w-none border-none bg-surface p-0 text-fg backdrop:z-modal-backdrop backdrop:bg-bg/80 lg:m-auto lg:h-[90vh] lg:max-h-[90vh] lg:w-[90vw] lg:max-w-[52.5rem] lg:border-solid lg:border lg:border-fg"
     >
-      <div className="flex h-full flex-col">
-        <div className="flex shrink-0 items-center justify-between border-b border-muted px-hsp-lg py-vsp-xs">
-          <h2 className="text-title font-bold text-fg">AI Assistant</h2>
+      <div class="flex h-full flex-col">
+        <div class="flex shrink-0 items-center justify-between border-b border-muted px-hsp-lg py-vsp-xs">
+          <h2 class="text-title font-bold text-fg">AI Assistant</h2>
           <button
             type="button"
             onClick={() => dialogRef.current?.close()}
-            className="flex items-center justify-center text-muted transition-colors hover:text-fg"
+            class="flex items-center justify-center text-muted transition-colors hover:text-fg"
             aria-label="Close"
           >
             <svg
-              xmlns="http://www.w3.org/2000/svg"
               width="20"
               height="20"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
               aria-hidden="true"
             >
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -183,9 +182,9 @@ export function AiChatModal({ basePath }: AiChatModalProps) {
           </button>
         </div>
 
-        <div role="log" aria-label="Chat messages" className="flex-1 overflow-y-auto px-hsp-lg py-vsp-sm">
+        <div role="log" aria-label="Chat messages" class="flex-1 overflow-y-auto px-hsp-lg py-vsp-sm">
           {messages.length === 0 && !loading && (
-            <p className="py-vsp-xl text-center text-small text-muted">
+            <p class="py-vsp-xl text-center text-small text-muted">
               Ask a question about the documentation.
             </p>
           )}
@@ -195,7 +194,7 @@ export function AiChatModal({ basePath }: AiChatModalProps) {
           <div
             aria-live="polite"
             aria-atomic="true"
-            className="sr-only"
+            class="sr-only"
           >
             {(() => {
               // findLast is not in current tsconfig lib target; loop from end.
@@ -207,10 +206,10 @@ export function AiChatModal({ basePath }: AiChatModalProps) {
             })()}
           </div>
           {loading && (
-            <div className="mb-vsp-xs flex justify-start">
+            <div class="mb-vsp-xs flex justify-start">
               <div
                 role="status"
-                className="rounded-t-[1rem] rounded-br-[1rem] rounded-bl-[0.25rem] bg-chat-assistant-bg px-hsp-md py-vsp-2xs text-small text-muted"
+                class="rounded-t-[1rem] rounded-br-[1rem] rounded-bl-[0.25rem] bg-chat-assistant-bg px-hsp-md py-vsp-2xs text-small text-muted"
               >
                 Thinking...
               </div>
@@ -219,7 +218,7 @@ export function AiChatModal({ basePath }: AiChatModalProps) {
           {error && (
             <div
               role="alert"
-              className="mb-vsp-xs rounded-[0.75rem] border border-danger bg-bg px-hsp-md py-vsp-2xs text-small text-danger"
+              class="mb-vsp-xs rounded-[0.75rem] border border-danger bg-bg px-hsp-md py-vsp-2xs text-small text-danger"
             >
               {error}
             </div>
@@ -227,8 +226,8 @@ export function AiChatModal({ basePath }: AiChatModalProps) {
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="shrink-0 border-t border-muted px-hsp-lg py-vsp-xs">
-          <div className="flex items-center gap-x-hsp-sm">
+        <div class="shrink-0 border-t border-muted px-hsp-lg py-vsp-xs">
+          <div class="flex items-center gap-x-hsp-sm">
             <input
               ref={inputRef}
               type="text"
@@ -239,26 +238,25 @@ export function AiChatModal({ basePath }: AiChatModalProps) {
               aria-label="Type your message"
               aria-busy={loading}
               placeholder="Type your message..."
-              className="flex-1 rounded-full border border-muted bg-bg px-hsp-lg py-vsp-2xs text-small text-fg placeholder:text-muted focus:border-accent focus:outline-none disabled:opacity-50"
+              class="flex-1 rounded-full border border-muted bg-bg px-hsp-lg py-vsp-2xs text-small text-fg placeholder:text-muted focus:border-accent focus:outline-none disabled:opacity-50"
             />
             <button
               type="button"
               onClick={sendMessage}
               disabled={loading || !input.trim()}
               aria-busy={loading}
-              className="flex h-[2rem] w-[2rem] shrink-0 items-center justify-center rounded-full bg-accent text-bg transition-colors hover:bg-accent-hover disabled:opacity-50"
+              class="flex h-[2rem] w-[2rem] shrink-0 items-center justify-center rounded-full bg-accent text-bg transition-colors hover:bg-accent-hover disabled:opacity-50"
               aria-label="Send message"
             >
               <svg
-                xmlns="http://www.w3.org/2000/svg"
                 width="16"
                 height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
                 aria-hidden="true"
               >
                 <line x1="22" y1="2" x2="11" y2="13" />
