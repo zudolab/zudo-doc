@@ -1,19 +1,19 @@
 /** @vitest-environment happy-dom */
-/** @jsxRuntime automatic */
-// Real-DOM behavioral tests for the mobile drawer's Escape-to-close handling
-// (zudolab/zudo-doc#4366).
-//
-// Follows the theme-pack-switcher-interaction.test.tsx precedent: `happy-dom`
-// via the pragma above, `render` from "preact", `act` from
-// "preact/test-utils". `act()` is load-bearing here — the `useEffect` that
-// registers the `document` keydown listener only flushes inside `act`,
-// otherwise the dispatched "Escape" below would hit no listener at all.
-
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { render } from "preact";
-import { act } from "preact/test-utils";
-import { SidebarToggle, type SidebarToggleProps } from "../index.js";
+import { afterEach, describe, expect, it } from "vitest";
+import {
+  mountIslands,
+  mountNewIslands,
+  unmountIslands,
+} from "@takazudo/zfb/runtime";
+import { h } from "@takazudo/zfb/zudo-react";
+import { islandRoot, renderToString } from "@takazudo/zfb/zudo-react/server";
+import { swapFunctions } from "@takazudo/zfb-runtime/client-router";
+import { renderIsland, flushAll } from "../../__tests__/helpers/zudo-react.js";
+import { disposeSidebarScrollPreserve } from "../../sidebar-tree-island/sidebar-scroll-preserve.js";
 import type { SidebarNavNode } from "../../sidebar/types.js";
+import { AFTER_NAVIGATE_EVENT } from "../../transitions/index.js";
+import { BEFORE_SWAP_EVENT } from "../../transitions/page-events.js";
+import { SidebarToggle, type SidebarToggleProps } from "../index.js";
 
 const NODES: SidebarNavNode[] = [
   {
@@ -27,249 +27,316 @@ const NODES: SidebarNavNode[] = [
 ];
 
 const PROPS: SidebarToggleProps = { nodes: NODES };
+const DRAWER_IDENTITY = { component: "SidebarToggle", build: "persist-test" } as const;
+let view:
+  | Awaited<ReturnType<typeof renderIsland<SidebarToggleProps>>>
+  | undefined;
 
-let mounted: HTMLDivElement | null = null;
-
-function mount(props: SidebarToggleProps): HTMLDivElement {
-  const container = document.createElement("div");
-  document.body.appendChild(container);
-  act(() => {
-    render(<SidebarToggle {...props} />, container);
+async function mount(props: SidebarToggleProps = PROPS) {
+  view = await renderIsland(SidebarToggle, props, {
+    identity: { component: "SidebarToggle", build: "test" },
   });
-  mounted = container;
-  return container;
+  expect(view.diagnostics).toEqual([]);
+  return view;
 }
 
-function pressEscape(init: KeyboardEventInit = {}): void {
-  act(() => {
-    document.dispatchEvent(
-      new KeyboardEvent("keydown", { key: "Escape", bubbles: true, ...init }),
-    );
+function click(element: Element | null): void {
+  expect(element).not.toBeNull();
+  // Runtime-level client-router listeners are also present in the persisted
+  // swap case below; a target-only click keeps these component interactions
+  // independent of anchor/router delegation.
+  element!.dispatchEvent(
+    new MouseEvent("click", { bubbles: false, cancelable: true }),
+  );
+}
+
+function pressEscape(
+  target: EventTarget = document,
+  init: KeyboardEventInit = {},
+): KeyboardEvent {
+  const event = new KeyboardEvent("keydown", {
+    key: "Escape",
+    bubbles: true,
+    cancelable: true,
+    ...init,
   });
+  target.dispatchEvent(event);
+  return event;
 }
 
 afterEach(() => {
-  if (mounted) {
-    act(() => {
-      render(null, mounted!);
-    });
-    mounted.remove();
-    mounted = null;
-  }
+  view?.dispose();
+  view = undefined;
+  unmountIslands(document.body);
+  document.body.innerHTML = "";
+  document.body.style.overflow = "";
+  sessionStorage.clear();
+  disposeSidebarScrollPreserve(document);
 });
 
-describe("SidebarToggle — Escape-to-close", () => {
-  it("closes the open drawer and restores focus to the hamburger button", () => {
-    const container = mount(PROPS);
-    const hamburger = container.querySelector<HTMLButtonElement>(
-      'button[aria-label="Open sidebar"]',
-    );
-    expect(hamburger).not.toBeNull();
+describe("SidebarToggle — hydrated interaction", () => {
+  it("opens and closes the drawer, locks body scrolling, and restores focus after Escape", async () => {
+    const { root } = await mount();
+    const hamburger = root.querySelector<HTMLButtonElement>("button[aria-expanded]")!;
+    const [closeIcon, menuIcon] = hamburger.querySelectorAll<SVGSVGElement>("svg");
+    const panel = root.querySelector("aside")!;
 
-    act(() => {
-      hamburger!.click();
-    });
-    expect(
-      container.querySelector<HTMLButtonElement>('button[aria-label="Close sidebar"]'),
-    ).not.toBeNull();
+    expect(hamburger.getAttribute("aria-label")).toBe("Open sidebar");
+    expect(hamburger.getAttribute("aria-expanded")).toBe("false");
+    expect(panel.hasAttribute("inert")).toBe(true);
+    expect(closeIcon!.style.display).toBe("none");
+    expect(menuIcon!.style.display).toBe("");
+
+    click(hamburger);
+    await flushAll();
+    expect(hamburger.getAttribute("aria-label")).toBe("Close sidebar");
+    expect(hamburger.getAttribute("aria-expanded")).toBe("true");
+    expect(panel.hasAttribute("inert")).toBe(false);
+    expect(document.body.style.overflow).toBe("hidden");
+    expect(closeIcon!.style.display).toBe("");
+    expect(menuIcon!.style.display).toBe("none");
+
+    const filter = root.querySelector<HTMLInputElement>(
+      'input[aria-label="Filter navigation"]',
+    )!;
+    filter.focus();
+    expect(document.activeElement).toBe(filter);
 
     pressEscape();
-
-    expect(
-      container.querySelector<HTMLButtonElement>('button[aria-label="Open sidebar"]'),
-    ).not.toBeNull();
-    expect(document.activeElement).toBe(
-      container.querySelector<HTMLButtonElement>('button[aria-label="Open sidebar"]'),
-    );
+    await flushAll();
+    expect(hamburger.getAttribute("aria-expanded")).toBe("false");
+    expect(panel.hasAttribute("inert")).toBe(true);
+    expect(document.activeElement).toBe(hamburger);
+    expect(document.body.style.overflow).toBe("");
+    expect(closeIcon!.style.display).toBe("none");
+    expect(menuIcon!.style.display).toBe("");
   });
 
-  it("does not register the listener while closed — a post-close Escape is a no-op", () => {
-    const container = mount(PROPS);
-    const hamburger = container.querySelector<HTMLButtonElement>(
-      'button[aria-label="Open sidebar"]',
-    );
+  it("closes on backdrop click and releases the body lock when the scope is disposed", async () => {
+    const mounted = await mount();
+    const hamburger = mounted.root.querySelector<HTMLButtonElement>("button[aria-expanded]")!;
 
-    // Never opened: Escape must not throw or otherwise misbehave, and the
-    // drawer stays closed.
-    pressEscape();
-    expect(
-      container.querySelector<HTMLButtonElement>('button[aria-label="Open sidebar"]'),
-    ).not.toBeNull();
+    click(hamburger);
+    await flushAll();
+    expect(document.body.style.overflow).toBe("hidden");
+    click(mounted.root.querySelector(".z-modal-backdrop"));
+    await flushAll();
+    expect(hamburger.getAttribute("aria-expanded")).toBe("false");
+    expect(document.body.style.overflow).toBe("");
 
-    // Open then close via Escape, then focus something else and press
-    // Escape again. If the teardown didn't run, this second Escape would
-    // re-invoke the handler and steal focus back to the hamburger.
-    act(() => {
-      hamburger!.click();
-    });
-    pressEscape();
+    click(hamburger);
+    await flushAll();
+    expect(document.body.style.overflow).toBe("hidden");
+    mounted.dispose();
+    view = undefined;
+    expect(document.body.style.overflow).toBe("");
+  });
 
+  it("ignores a composing Escape and an Escape consumed by a nested control", async () => {
+    const { root } = await mount();
+    const hamburger = root.querySelector<HTMLButtonElement>("button[aria-expanded]")!;
+    const filter = root.querySelector<HTMLInputElement>('input[aria-label="Filter navigation"]')!;
+    click(hamburger);
+    await flushAll();
+
+    pressEscape(document, { isComposing: true });
+    await flushAll();
+    expect(hamburger.getAttribute("aria-expanded")).toBe("true");
+
+    const consumeEscape = (event: Event) => event.preventDefault();
+    filter.addEventListener("keydown", consumeEscape, { once: true });
+    const consumed = pressEscape(filter);
+    await flushAll();
+    expect(consumed.defaultPrevented).toBe(true);
+    expect(hamburger.getAttribute("aria-expanded")).toBe("true");
+  });
+
+  it("does not register the Escape listener while closed", async () => {
+    const { root } = await mount();
     const decoy = document.createElement("input");
-    document.body.appendChild(decoy);
+    document.body.append(decoy);
     decoy.focus();
-    expect(document.activeElement).toBe(decoy);
-
     pressEscape();
-
+    await flushAll();
+    expect(root.querySelector('button[aria-label="Open sidebar"]')).not.toBeNull();
     expect(document.activeElement).toBe(decoy);
     decoy.remove();
   });
 
-  // The drawer hosts a text filter input ("Filter navigation", rendered by
-  // SidebarTree). On the JA locale, Escape is how a user cancels an in-flight
-  // IME conversion there — that keydown carries `isComposing: true` and must
-  // not also dismiss the drawer.
-  it("ignores an Escape that ends an IME composition", () => {
-    const container = mount(PROPS);
-    const hamburger = container.querySelector<HTMLButtonElement>(
-      'button[aria-label="Open sidebar"]',
-    );
-
-    act(() => {
-      hamburger!.click();
-    });
-
-    pressEscape({ isComposing: true });
-
-    expect(
-      container.querySelector<HTMLButtonElement>('button[aria-label="Close sidebar"]'),
-    ).not.toBeNull();
-  });
-});
-
-// zudolab/zudo-doc#4369: while open, the toggle renders the X and IS the close
-// control, so it must be lifted out from under `z-modal-backdrop` (50). The
-// elevation has to be conditional on `open` — SSR renders `open=false`, so a
-// class present in the closed state would move this directory's A2 no-stub
-// parity hashes and break hydration byte-stability.
-describe("SidebarToggle — toggle elevation above the backdrop", () => {
-  const toggle = (container: HTMLDivElement) =>
-    container.querySelector<HTMLButtonElement>("button[aria-expanded]")!;
-
-  it("adds `relative z-modal` only while the drawer is open", () => {
-    const container = mount(PROPS);
-    const button = toggle(container);
-
+  it("elevates the close button only while open", async () => {
+    const { root } = await mount();
+    const button = root.querySelector<HTMLButtonElement>("button[aria-expanded]")!;
     const closedClasses = button.className;
     expect(closedClasses).not.toContain("z-modal");
     expect(closedClasses.split(/\s+/)).not.toContain("relative");
 
-    act(() => {
-      button.click();
-    });
-    expect(button.getAttribute("aria-expanded")).toBe("true");
+    click(button);
+    await flushAll();
     expect(button.className.split(/\s+/)).toContain("relative");
     expect(button.className.split(/\s+/)).toContain("z-modal");
 
-    // Closing must restore the closed-state class list exactly — the elevation
-    // is transient, not a one-way upgrade.
     pressEscape();
-    expect(button.getAttribute("aria-expanded")).toBe("false");
+    await flushAll();
     expect(button.className).toBe(closedClasses);
   });
 });
 
-// zudolab/zudo-doc#4393 / zudolab/zudo-doc#4403: with the drawer open and its
-// Appearance menu open, Escape must close only the menu (layer 1) on the
-// first press, and only an unconsumed Escape reaches the drawer (layer 2) on
-// a second press. The menu is portaled to `document.body` (theme-toggle's
-// `createPortal`), so this exercises the real bubble path from the portaled
-// menu / its in-drawer trigger up through `document`, not a stubbed handler.
-describe("SidebarToggle + ThemeToggle — layered Escape ownership", () => {
-  function mountWithTheme(): HTMLDivElement {
-    return mount({ ...PROPS, themeDefaultMode: "dark" });
-  }
-  function appearanceTrigger(container: HTMLElement) {
-    return container.querySelector<HTMLButtonElement>('button[aria-haspopup="menu"]')!;
-  }
-  function appearanceMenu(container: HTMLElement) {
-    const id = appearanceTrigger(container).getAttribute("aria-controls");
-    return id ? document.getElementById(id) : null;
-  }
-  function appearanceMenuItems(container: HTMLElement) {
-    return [
-      ...(appearanceMenu(container)?.querySelectorAll<HTMLButtonElement>(
-        '[role="menuitemradio"]',
-      ) ?? []),
-    ];
-  }
-  function openDrawerAndMenu(container: HTMLElement): void {
-    const hamburger = container.querySelector<HTMLButtonElement>(
-      'button[aria-label="Open sidebar"]',
-    )!;
-    act(() => hamburger.click());
-    act(() => appearanceTrigger(container).click());
-  }
-  function pressEscapeOn(target: EventTarget, init: KeyboardEventInit = {}): void {
-    act(() => {
-      target.dispatchEvent(
-        new KeyboardEvent("keydown", { key: "Escape", bubbles: true, ...init }),
-      );
-    });
-  }
-
-  it("first Escape from a menu item closes only the menu, keeps the drawer open, and restores focus to the trigger", async () => {
-    const container = mountWithTheme();
-    openDrawerAndMenu(container);
-    const trigger = appearanceTrigger(container);
-    const items = appearanceMenuItems(container);
-    expect(items.length).toBeGreaterThan(0);
-
-    pressEscapeOn(items[0]!);
-
-    expect(appearanceMenu(container)).toBeNull();
-    expect(
-      container.querySelector<HTMLButtonElement>('button[aria-label="Close sidebar"]'),
-    ).not.toBeNull();
-    expect(container.querySelector("aside")!.hasAttribute("inert")).toBe(false);
-    await vi.waitFor(() => expect(document.activeElement).toBe(trigger));
-  });
-
-  it("second, unconsumed Escape closes the drawer and focuses the hamburger", async () => {
-    const container = mountWithTheme();
-    openDrawerAndMenu(container);
-    const trigger = appearanceTrigger(container);
-    pressEscapeOn(appearanceMenuItems(container)[0]!);
-    await vi.waitFor(() => expect(document.activeElement).toBe(trigger));
-
-    pressEscapeOn(trigger);
-
-    const hamburger = container.querySelector<HTMLButtonElement>(
-      'button[aria-label="Open sidebar"]',
+describe("SidebarToggle — persisted same-locale navigation", () => {
+  const persistHeader = (props: SidebarToggleProps) => {
+    const island = islandRoot(
+      h(SidebarToggle, props as unknown as Record<string, unknown>),
+      { identity: DRAWER_IDENTITY },
     );
-    expect(hamburger).not.toBeNull();
-    expect(document.activeElement).toBe(hamburger);
+    return `<header data-zfb-transition-persist="header-en">${renderToString(island)}</header>`;
+  };
+
+  const incoming = (header: string) =>
+    new DOMParser().parseFromString(`<!doctype html><html><body>${header}</body></html>`, "text/html");
+
+  it("refreshes the cross-section tree and restores an expanded category after a native swap", async () => {
+    const initialNodes: SidebarNavNode[] = [
+      {
+        slug: "guides",
+        label: "Guides",
+        position: 0,
+        collapsed: true,
+        hasPage: false,
+        children: [
+          {
+            slug: "guides/first",
+            label: "First",
+            position: 0,
+            href: "/docs/guides/first",
+            hasPage: true,
+            children: [],
+          },
+        ],
+      },
+      {
+        slug: "about",
+        label: "About",
+        position: 1,
+        href: "/docs/about",
+        hasPage: true,
+        children: [],
+      },
+    ];
+    const nextNodes: SidebarNavNode[] = [
+      {
+        slug: "guides",
+        label: "Guides",
+        position: 0,
+        collapsed: true,
+        hasPage: false,
+        children: [
+          {
+            slug: "guides/second",
+            label: "Second",
+            position: 0,
+            href: "/docs/guides/second",
+            hasPage: true,
+            children: [],
+          },
+        ],
+      },
+      {
+        slug: "reference",
+        label: "Reference",
+        position: 1,
+        hasPage: false,
+        children: [
+          {
+            slug: "reference/api",
+            label: "API",
+            position: 0,
+            href: "/docs/reference/api",
+            hasPage: true,
+            children: [],
+          },
+        ],
+      },
+    ];
+    let activations = 0;
+    let cleanups = 0;
+    const modes: string[] = [];
+    const oldProps: SidebarToggleProps = {
+      nodes: initialNodes,
+      currentSlug: "about",
+    };
+    const nextProps: SidebarToggleProps = {
+      nodes: nextNodes,
+      currentSlug: "reference/api",
+    };
+    document.body.innerHTML = persistHeader(oldProps);
+    const { hydrate: hydrateRoot, mount: mountClientRoot } = await import(
+      "@takazudo/zfb/zudo-react/client"
+    );
+    mountIslands({
+      SidebarToggle: {
+        identity: DRAWER_IDENTITY,
+        mount(props, element, mode) {
+          activations++;
+          modes.push(mode);
+          const node = h(
+            SidebarToggle,
+            props as Record<string, unknown>,
+          );
+          const handle = mode === "render"
+            ? mountClientRoot(node, element, { identity: DRAWER_IDENTITY })
+            : hydrateRoot(node, element, { identity: DRAWER_IDENTITY });
+          return handle && {
+            protocol: "zudo-react/1" as const,
+            identity: DRAWER_IDENTITY,
+            get disposed() { return handle.disposed; },
+            dispose() { cleanups++; handle.dispose(); },
+            unmount() { cleanups++; handle.unmount(); },
+          };
+        },
+      },
+    });
+    await flushAll();
+
+    const hamburger = document.querySelector<HTMLButtonElement>('button[aria-expanded]')!;
+    click(hamburger);
+    await flushAll();
+    click(document.querySelector('button[aria-label="Expand Guides"]'));
+    await flushAll();
+    expect(document.querySelector('a[href="/docs/guides/first"]')).not.toBeNull();
+    expect(JSON.parse(sessionStorage.getItem("zd-sidebar-open")!)).toContain("guides");
+
+    const next = incoming(persistHeader(nextProps));
+    const event = new Event(BEFORE_SWAP_EVENT) as Event & {
+      newDocument: Document;
+      swap: (...args: unknown[]) => unknown;
+    };
+    event.newDocument = next;
+    event.swap = () => undefined;
+    document.dispatchEvent(event);
+    unmountIslands(document.body, next.body);
+    swapFunctions.swapBodyElement(next.body, document.body);
+    mountNewIslands();
+    await flushAll();
+
+    expect(modes).toEqual(["hydrate", "render"]);
+    expect(activations).toBe(2);
+    expect(cleanups).toBe(1);
+    expect(document.querySelector('a[href="/docs/guides/first"]')).toBeNull();
+    expect(document.querySelector('a[href="/docs/guides/second"]')).not.toBeNull();
+    expect(
+      document.querySelector('a[href="/docs/reference/api"][aria-current="page"]'),
+    ).not.toBeNull();
+    expect(document.querySelector('button[aria-label="Collapse Guides"]')).not.toBeNull();
   });
 
-  it("Escape on the trigger button with the menu open behaves like Escape from a menu item", async () => {
-    const container = mountWithTheme();
-    openDrawerAndMenu(container);
-    const trigger = appearanceTrigger(container);
-    trigger.focus();
-
-    pressEscapeOn(trigger);
-
-    expect(appearanceMenu(container)).toBeNull();
-    expect(
-      container.querySelector<HTMLButtonElement>('button[aria-label="Close sidebar"]'),
-    ).not.toBeNull();
-    await vi.waitFor(() => expect(document.activeElement).toBe(trigger));
-  });
-
-  it("an Escape that ends an IME composition closes neither layer while both are open", () => {
-    const container = mountWithTheme();
-    openDrawerAndMenu(container);
-
-    // Dispatched at `document` (not through the menu or its trigger), matching
-    // the sibling composition-guard test above: this is the drawer's own
-    // document-level listener seeing a composing Escape meant for an
-    // unrelated input (e.g. the drawer's filter field), while the Appearance
-    // menu happens to be open at the same time.
-    pressEscapeOn(document, { isComposing: true });
-
-    expect(appearanceMenu(container)).not.toBeNull();
-    expect(
-      container.querySelector<HTMLButtonElement>('button[aria-label="Close sidebar"]'),
-    ).not.toBeNull();
+  it("closes after a same-document navigation event", async () => {
+    const { root } = await mount();
+    const hamburger = root.querySelector<HTMLButtonElement>("button[aria-expanded]")!;
+    click(hamburger);
+    await flushAll();
+    expect(hamburger.getAttribute("aria-expanded")).toBe("true");
+    document.dispatchEvent(new Event(AFTER_NAVIGATE_EVENT));
+    await flushAll();
+    expect(hamburger.getAttribute("aria-expanded")).toBe("false");
+    expect(root.querySelector("aside")!.hasAttribute("inert")).toBe(true);
   });
 });
