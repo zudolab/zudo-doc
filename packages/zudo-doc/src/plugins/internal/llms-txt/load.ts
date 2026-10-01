@@ -18,8 +18,16 @@ import {
   slugToUrl,
   stripMarkdown,
 } from "../../../md-utils/index.js";
+import { agentPageKey } from "../../../agent-docs/identity.js";
 import { stripImportsAndJsx } from "./strip.js";
 import type { LlmsDocEntry, LlmsTxtLoadOptions } from "./types.js";
+
+/** Resolve an artifact path with the same base/site URL rules as agent-export. */
+export function withLlmsBase(path: string, base: string, siteUrl?: string): string {
+  const basePrefix = base === "/" ? "" : `/${base.replace(/^\/+|\/+$/g, "")}`;
+  const pathname = `${basePrefix}/${path.replace(/^\/+/, "")}`;
+  return siteUrl ? `${siteUrl.replace(/\/$/, "")}${pathname}` : pathname;
+}
 
 export {
   collectMdFiles,
@@ -37,7 +45,7 @@ export {
  * traversal order — same as the legacy emitter).
  */
 export function loadDocEntries(options: LlmsTxtLoadOptions): LlmsDocEntry[] {
-  const { contentDir, locale, base, siteUrl } = options;
+  const { contentDir, locale, base, siteUrl, agentExportLocale } = options;
   const absDir = resolve(contentDir);
   const files = collectMdFiles(absDir);
   const entries: LlmsDocEntry[] = [];
@@ -60,13 +68,22 @@ export function loadDocEntries(options: LlmsTxtLoadOptions): LlmsDocEntry[] {
       description = stripped.split("\n").find((l) => l.trim().length > 0) ?? "";
     }
 
-    entries.push({
+    const entry: LlmsDocEntry = {
       title: data.title ?? slug,
       description,
       url: slugToUrl(slug, locale, base, siteUrl),
       content: stripImportsAndJsx(content),
       sidebarPosition: data.sidebar_position,
-    });
+    };
+    if (agentExportLocale !== undefined) {
+      const pageId = agentPageKey(agentExportLocale, slug);
+      entry.agentMarkdownUrl = withLlmsBase(
+        `/agent/v1/pages/${pageId}.md`,
+        base,
+        siteUrl,
+      );
+    }
+    entries.push(entry);
   }
 
   entries.sort((a, b) => {

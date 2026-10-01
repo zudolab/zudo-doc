@@ -45,6 +45,8 @@ export interface LlmsDocEntry {
   content: string;
   /** `frontmatter.sidebar_position`, undefined when not declared. */
   sidebarPosition: number | undefined;
+  /** Base-aware Markdown artifact URL; present only when agent export is enabled. */
+  agentMarkdownUrl?: string;
 }
 
 /**
@@ -109,6 +111,8 @@ export interface LlmsTxtLoadOptions {
    * empty, URLs are returned path-only for projects that omit `siteUrl`.
    */
   siteUrl?: string;
+  /** Actual locale code used by the agent export page identity, including for the default locale. */
+  agentExportLocale?: string;
 }
 
 /**
@@ -122,6 +126,12 @@ export interface LlmsTxtEmitOptions extends LlmsTxtSiteMeta {
   base: string;
   /** Optional absolute site URL; see {@link LlmsTxtLoadOptions}. */
   siteUrl?: string;
+  /** Actual default locale code; needed to match agent-export page IDs. */
+  defaultLocale?: string;
+  /** Link slim-index docs to agent-export Markdown artifacts when enabled. */
+  agentExport?: boolean;
+  /** Include the stateless read-only endpoint in the slim index when enabled. */
+  mcp?: boolean;
   /**
    * Default-locale content directory. Emitted at `outDir/llms.txt` and
    * `outDir/llms-full.txt`.

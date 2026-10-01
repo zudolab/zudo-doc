@@ -12,6 +12,7 @@ import { tmpdir } from "node:os";
 import { createLlmsTxtDevMiddleware } from "../dev-middleware.js";
 import { emitLlmsTxt } from "../emit.js";
 import type { AssetScanProjection } from "../../asset-viewer/asset-pages.js";
+import { agentPageKey } from "../../../../agent-docs/identity.js";
 
 const roots: string[] = [];
 
@@ -123,6 +124,40 @@ describe("llms dev middleware asset parity", () => {
     );
     expect(await request(middleware, "/site/llms.txt")).toContain(
       "[read me.txt](https://example.com/site/files/read%20me.txt/)",
+    );
+  });
+
+  it("keeps opt-in Markdown and MCP links in sync with emitted files", async () => {
+    const data = fixture();
+    const buildOptions = {
+      projectRoot: data.root,
+      base: "/site/",
+      siteName: "Example Docs",
+      siteDescription: "Example description",
+      defaultLocaleDir: data.docsDir,
+      defaultLocale: "en",
+      siteUrl: "https://example.com/",
+      locales: [{ code: "ja", dir: data.jaDir }],
+      assetScan: data.assetScan,
+      agentExport: true,
+      mcp: true,
+    };
+    emitLlmsTxt({ outDir: data.outDir, ...buildOptions });
+
+    const middleware = createLlmsTxtDevMiddleware(buildOptions);
+    const defaultIndex = await request(middleware, "/site/llms.txt");
+    const jaIndex = await request(middleware, "/site/ja/llms.txt");
+
+    expect(defaultIndex).toBe(readFileSync(join(data.outDir, "llms.txt"), "utf8"));
+    expect(jaIndex).toBe(readFileSync(join(data.outDir, "ja/llms.txt"), "utf8"));
+    expect(defaultIndex).toContain(
+      `https://example.com/site/agent/v1/pages/${agentPageKey("en", "intro")}.md`,
+    );
+    expect(jaIndex).toContain(
+      `https://example.com/site/agent/v1/pages/${agentPageKey("ja", "intro")}.md`,
+    );
+    expect(defaultIndex).toContain(
+      "- [Read-only MCP endpoint](https://example.com/site/mcp)",
     );
   });
 });
