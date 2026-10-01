@@ -90,9 +90,9 @@ export function formatAssetLanguage(language: string | undefined): string {
 }
 
 export function AssetFileIcon({
-  className,
+  class: className,
 }: {
-  className?: string;
+  class?: string;
 }): JSX.Element {
   return (
     <svg

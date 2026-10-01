@@ -5,7 +5,7 @@
 // still owns resolving these props (settings, i18n, URLs) and wraps
 // `<AssetIndexPageBody>` inside `DocLayoutWithDefaults`.
 
-import type { Component, Description } from "@takazudo/zfb/zudo-react";
+import type { Child, Component } from "@takazudo/zfb/zudo-react";
 import { formatAssetBytes } from "../asset-components/index.js";
 import { assetViewerHref } from "../asset-path/index.js";
 import { facetLabel, kindLabel } from "../asset-page/shared.js";
@@ -86,10 +86,10 @@ export function resolveAssetIndexPageLabels(
   };
 }
 
-export function iconFor(asset: AssetIndexEntry): Component<{ className?: string }> {
+export function iconFor(asset: AssetIndexEntry): Component<{ class?: string }> {
   const extension = basename(asset.path).split(".").at(-1)?.toLowerCase();
   if (asset.kind === "other" && extension && ARCHIVE_EXTENSIONS.has(extension)) return FileArchive;
-  const icons: Record<AssetKind, Component<{ className?: string }>> = {
+  const icons: Record<AssetKind, Component<{ class?: string }>> = {
     code: FileCode,
     text: FileText,
     image: FileImage,
@@ -100,16 +100,16 @@ export function iconFor(asset: AssetIndexEntry): Component<{ className?: string 
   return icons[asset.kind];
 }
 
-export function AssetTree({ node, base, routePrefix, locale, fileCountLabel, fileCountSingleLabel, linesLabel, root = false }: { node: AssetTreeNode; base: string; routePrefix: string; locale?: string; fileCountLabel: string; fileCountSingleLabel: string; linesLabel: string; root?: boolean }): Description {
+export function AssetTree({ node, base, routePrefix, locale, fileCountLabel, fileCountSingleLabel, linesLabel, root = false }: { node: AssetTreeNode; base: string; routePrefix: string; locale?: string; fileCountLabel: string; fileCountSingleLabel: string; linesLabel: string; root?: boolean }): Child {
   return (
     <ul data-zd-asset-tree={root ? true : undefined}>
       {node.dirs.map((dir) => (
         <li>
           <details open>
             <summary class="flex cursor-pointer items-center gap-hsp-xs rounded px-hsp-sm py-vsp-3xs text-small hover:bg-accent/10 focus-visible:bg-accent/10">
-              <ChevronRight className="h-icon-xs w-icon-xs shrink-0 text-muted transition-transform" />
-              <Folder className="h-icon-sm w-icon-sm shrink-0 text-muted" />
-              <FolderOpen className="h-icon-sm w-icon-sm shrink-0 text-muted" />
+              <ChevronRight class="h-icon-xs w-icon-xs shrink-0 text-muted transition-transform" />
+              <Folder class="h-icon-sm w-icon-sm shrink-0 text-muted" />
+              <FolderOpen class="h-icon-sm w-icon-sm shrink-0 text-muted" />
               <span class="min-w-0 truncate font-mono text-fg">{dir.name}/</span>
               <span class="ml-auto hidden whitespace-nowrap pl-hsp-lg text-caption text-muted sm:block">
                 {countLabel(dir.fileCount, fileCountLabel, fileCountSingleLabel)} · {formatAssetBytes(dir.bytes)}
@@ -126,7 +126,7 @@ export function AssetTree({ node, base, routePrefix, locale, fileCountLabel, fil
         return (
           <li>
             <a href={assetViewerHref({ base, routePrefix, path: asset.path, locale })} title={asset.name} class="flex min-w-0 items-center gap-hsp-xs rounded px-hsp-sm py-vsp-3xs text-small text-fg hover:bg-accent/10 hover:text-accent hover:underline focus-visible:bg-accent/10 focus-visible:text-accent focus-visible:underline">
-              <Icon className="h-icon-sm w-icon-sm shrink-0 text-muted" />
+              <Icon class="h-icon-sm w-icon-sm shrink-0 text-muted" />
               <span class="min-w-0 truncate font-mono">{basename(asset.path)}</span>
               <span class="ml-auto hidden whitespace-nowrap pl-hsp-lg text-caption text-muted sm:block">{meta}</span>
             </a>
@@ -159,7 +159,7 @@ export interface AssetIndexPageBodyProps {
  * `DocLayoutWithDefaults`'s children before the #4223 split. Plain props
  * only, no `ChromeContext`.
  */
-export function AssetIndexPageBody({ entries, labels, base, routePrefix, dir, locale }: AssetIndexPageBodyProps): Description {
+export function AssetIndexPageBody({ entries, labels, base, routePrefix, dir, locale }: AssetIndexPageBodyProps): Child {
   const tree = buildAssetTree(entries);
   const folders = folderCount(tree);
   return (

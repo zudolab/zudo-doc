@@ -8,10 +8,10 @@
 // single owner of publishing, guarding, and documenting that split.
 //
 // Modeled on `src/__tests__/site-schema.test.ts` (~:454-500) — same shared
-// `scripts/site-schema-graph.mjs` detector, but with `preact` ALLOWED (these
-// modules render Preact JSX) via the narrower
-// `ASSET_VIEWER_FORBIDDEN_SPECIFIERS` rule set that module exports alongside
-// the site-schema default.
+// `scripts/site-schema-graph.mjs` detector, allowing only the public
+// zudo-react core and `jsx-runtime` subpaths via
+// `ASSET_VIEWER_FORBIDDEN_SPECIFIERS`. Preact and every other zfb path remain
+// forbidden.
 //
 // Three things are pinned here:
 //   1. every new subpath exists in package.json#exports, pointing at the
@@ -26,8 +26,9 @@
 //      (rather than being dead code that never fires).
 
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
-import { resolve, dirname } from "node:path";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { resolve, dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -130,7 +131,7 @@ describe("asset-viewer subpath exports", () => {
 });
 
 // ---------------------------------------------------------------------------
-// (2) Browser safety — bundled source graph (preact ALLOWED)
+// (2) Browser safety — bundled source graph (zudo-react runtime only)
 // ---------------------------------------------------------------------------
 
 describe("asset-viewer zfb-free modules stay zfb-free", () => {
@@ -165,11 +166,26 @@ describe("asset-viewer zfb-free modules stay zfb-free", () => {
     }
   });
 
-  it("ALLOWS preact, unlike the site-schema rule set", async () => {
+  it("allows only the public zudo-react runtime subpaths and rejects Preact", async () => {
     const { forbiddenLabel, ASSET_VIEWER_FORBIDDEN_SPECIFIERS } = await loadGraphHelper();
-    expect(forbiddenLabel("preact", ASSET_VIEWER_FORBIDDEN_SPECIFIERS)).toBeUndefined();
-    expect(forbiddenLabel("preact/hooks", ASSET_VIEWER_FORBIDDEN_SPECIFIERS)).toBeUndefined();
-    expect(forbiddenLabel("preact/jsx-runtime", ASSET_VIEWER_FORBIDDEN_SPECIFIERS)).toBeUndefined();
+    for (const specifier of [
+      "@takazudo/zfb/zudo-react",
+      "@takazudo/zfb/zudo-react/jsx-runtime",
+    ]) {
+      expect(forbiddenLabel(specifier, ASSET_VIEWER_FORBIDDEN_SPECIFIERS)).toBeUndefined();
+    }
+    for (const specifier of ["preact", "preact/hooks", "preact/jsx-runtime"]) {
+      expect(forbiddenLabel(specifier, ASSET_VIEWER_FORBIDDEN_SPECIFIERS)).toBe("preact");
+    }
+    for (const specifier of [
+      "@takazudo/zfb",
+      "@takazudo/zfb-runtime",
+      "@takazudo/zfb/zudo-react/hydration",
+      "@takazudo/zfb/zudo-react/client",
+      "@takazudo/zfb/zudo-react/server",
+    ]) {
+      expect(forbiddenLabel(specifier, ASSET_VIEWER_FORBIDDEN_SPECIFIERS)).toBe("zfb engine package");
+    }
   });
 
   it("DETECTS a forbidden specifier (guard is not dead code)", async () => {
@@ -212,25 +228,30 @@ describe("asset-viewer zfb-free modules stay zfb-free", () => {
     },
   );
 
-  // Second half of the self-test: `../doclayout/index.js` itself imports
-  // `@takazudo/zfb`/`@takazudo/zfb-runtime` directly (see
-  // `src/doclayout/doc-layout-with-defaults.tsx` and `doc-layout.tsx`) — so
-  // the "doclayout → @takazudo/zfb" path the module comment above promises
-  // is real, not just an assumption. Checked with a reduced rule set (no
-  // doclayout/chrome rule) so the walk isn't stopped at the doclayout
-  // boundary before it can reach zfb.
+  // Second half of the self-test: prove that the doclayout import is the
+  // expected reason this boundary exists, then exercise the detector with a
+  // minimal synthetic entry. Bundling the full doclayout graph also pulls in
+  // unrelated red-window modules while #4441 ports the rest of the package.
   it("SELF-TEST: doclayout itself reaches @takazudo/zfb (the path the doclayout/chrome rule exists to pre-empt)", async () => {
     const { analyzeSiteSchemaGraph, ASSET_VIEWER_FORBIDDEN_SPECIFIERS } = await loadGraphHelper();
     const zfbOnlyRules = ASSET_VIEWER_FORBIDDEN_SPECIFIERS.filter(
       (rule) => rule.label !== "doclayout module" && rule.label !== "chrome module",
     );
-    for (const relPath of FACTORY_ENTRIES) {
+    const doclayoutSource = readFileSync(resolve(PKG_ROOT, "src/doclayout/doc-layout-with-defaults.tsx"), "utf8");
+    expect(doclayoutSource).toMatch(/from\s*["']@takazudo\/zfb["']/);
+
+    const tempDir = mkdtempSync(join(tmpdir(), "zudo-doc-asset-viewer-zfb-guard-"));
+    const entry = join(tempDir, "probe.ts");
+    try {
+      writeFileSync(entry, 'import "@takazudo/zfb";\n');
       const { violations } = await analyzeSiteSchemaGraph({
-        entry: resolve(PKG_ROOT, relPath),
+        entry,
         resolveFrom: [PKG_ROOT, REPO_ROOT, __dirname],
         rules: zfbOnlyRules,
       });
       expect(violations.some((v) => v.label === "zfb engine package")).toBe(true);
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
     }
   });
 });

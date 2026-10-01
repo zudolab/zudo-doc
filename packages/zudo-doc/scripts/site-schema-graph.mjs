@@ -37,16 +37,18 @@ export const FORBIDDEN_SPECIFIERS = [
  * zfb-free subpaths (`./asset-page/{body,components,script,shared}`,
  * `./asset-index-page/{body,tree,script}`) — zudolab/zudo-doc#4225.
  *
- * Deliberately narrower than `FORBIDDEN_SPECIFIERS`: `preact` is ALLOWED
- * (these modules render Preact JSX), and it adds a rule for the two
- * chrome/layout directories a zfb-free body module must never import
+ * The only allowed zfb imports are the public zudo-react core and
+ * `jsx-runtime` subpaths required by the source and its declarations. Preact
+ * and every other zfb path remain forbidden. This also adds rules for the
+ * two chrome/layout directories a zfb-free body module must never import
  * directly (`doclayout/` wraps `<DocLayoutWithDefaults>`; `chrome/` derives
  * from a `ChromeContext` — both are the zfb-bound factory layer these
  * modules exist to be usable without).
  */
 export const ASSET_VIEWER_FORBIDDEN_SPECIFIERS = [
   { pattern: /^node:/, label: "node builtin" },
-  { pattern: /^@takazudo\/zfb/, label: "zfb engine package" },
+  { pattern: /^preact(\/|$)/, label: "preact" },
+  { pattern: /^@takazudo\/zfb(?!\/zudo-react(?:\/jsx-runtime)?$)/, label: "zfb engine package" },
   { pattern: /^virtual:/, label: "zfb virtual module" },
   { pattern: /(^|\/)doclayout\//, label: "doclayout module" },
   { pattern: /(^|\/)chrome\//, label: "chrome module" },

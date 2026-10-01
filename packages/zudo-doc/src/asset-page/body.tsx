@@ -5,7 +5,7 @@
 // resolving these props (settings, i18n, URLs) and wraps `<AssetPageBody>`
 // inside `DocLayoutWithDefaults`.
 
-import type { Child, Description } from "@takazudo/zfb/zudo-react";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import { BodyFootUtilArea } from "../body-foot-util/index.js";
 import type { DateFormatPattern } from "../format-date/index.js";
 import type { AssetRecord } from "../plugins/internal/asset-viewer/types.js";
@@ -113,13 +113,10 @@ export function resolveAssetPageLabels(
  * D3). Render this ahead of the rest of the page `head` — see
  * `createAssetPageView`'s `head` prop on `DocLayoutWithDefaults`.
  *
- * A function, not a shared constant VNode: Preact's diffing mutates
- * bookkeeping fields onto the vnode objects it renders, so one instance
- * reused across many independent SSR passes (e.g. every asset page in a
- * `zfb build` run, all sharing this module) is a latent hazard. Each call
- * returns a fresh vnode.
+ * A function so each page composition receives its own child description;
+ * the executable payload itself is the static literal from `script.ts`.
  */
-export function renderAssetDetailsPrepaintScript(): Description {
+export function renderAssetDetailsPrepaintScript(): Child {
   return <script rawHtml={ASSET_DETAILS_PREPAINT_SCRIPT} />;
 }
 
@@ -163,7 +160,7 @@ export function AssetPageBody({
   backLink,
   viewSourceUrl,
   showViewSource,
-}: AssetPageBodyProps): Description {
+}: AssetPageBodyProps): Child {
   const linesLabel = labels.linesTemplate.replace("{count}", String(asset.lines ?? 0));
   const linked = <AssetLinkedFrom asset={asset} label={labels.linkedFrom} />;
   const detailsLabels: AssetDetailsLabels = {

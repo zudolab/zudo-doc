@@ -17,8 +17,11 @@
 // Two things are asserted:
 //   1. every export target below (JS + `.d.ts`) exists on disk;
 //   2. for the six zfb-free targets, nothing reachable from the shipped JS OR
-//      the shipped `.d.ts` is a `node:*` builtin, a `virtual:*` module, an
-//      `@takazudo/zfb*` package, or a direct `doclayout/`/`chrome/` import.
+//      the shipped `.d.ts` is a `node:*` builtin, a `virtual:*` module,
+//      Preact or a non-runtime `@takazudo/zfb*` package, or a direct
+//      `doclayout/`/`chrome/` import. Only the public zudo-react core and
+//      jsx-runtime subpaths are allowed; client, server, and every other
+//      zfb runtime subpath remain forbidden.
 //      `./asset-index-page` itself is the zfb-BOUND factory (like
 //      `./asset-page`) and is exempt from rule (2) — only existence is
 //      checked for it.

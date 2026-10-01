@@ -1,9 +1,48 @@
 /** @jsxRuntime automatic */
-import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 import type { AssetRecord } from "../../plugins/internal/asset-viewer/types.js";
 import { createAssetPageView } from "../index.js";
+
+const { layoutProps, headProps } = vi.hoisted(() => ({
+  layoutProps: [] as Array<Record<string, unknown>>,
+  headProps: [] as Array<Record<string, unknown>>,
+}));
+
+// The shared shell owns head serialization and page chrome. Keep this leaf
+// suite focused on asset route composition/body while #4458 ports the zfb 3.1
+// head contract that currently rejects standard Open Graph `property` attrs.
+vi.mock("../../doclayout/index.js", () => ({
+  DocLayoutWithDefaults: (props: Record<string, unknown>) => {
+    layoutProps.push(props);
+    return [<div data-zd-test-head>{props.head as Child}</div>, props.children as Child];
+  },
+}));
+vi.mock("../../head-with-defaults/index.js", () => ({
+  createHeadWithDefaults: () => (props: Record<string, unknown>) => {
+    headProps.push(props);
+    return null;
+  },
+}));
+
+beforeEach(() => {
+  layoutProps.length = 0;
+  headProps.length = 0;
+});
+
+function latestLayout(): Record<string, unknown> {
+  return layoutProps.at(-1) ?? {};
+}
+
+function latestHead(): Record<string, unknown> {
+  return headProps.at(-1) ?? {};
+}
+
+function propsOf(value: unknown): Record<string, unknown> {
+  return (value as { props?: Record<string, unknown> } | null)?.props ?? {};
+}
 
 /** The rail's opening tag: the id + stable hook the collapse toggle targets, then the layout class. */
 const CARD_OPEN = '<div class="rounded border border-muted p-hsp-lg">';
@@ -80,20 +119,17 @@ function codePage(): string {
 describe("asset page SSG", () => {
   it("renders the wide chrome, naming, header, actions, backlink, metadata and body foot", () => {
     const html = page(asset());
-    expect(html).toContain("data-zd-wide");
-    expect(html).toContain("data-zd-nosidebar");
-    expect(html).not.toContain('aria-label="Table of contents"');
-    expect(html).not.toContain("<aside");
+    expect(latestLayout()).toMatchObject({ contentWide: true, hideSidebar: true, hideToc: true, lang: "en" });
+    expect(latestLayout().headerOverride).toBeDefined();
+    expect(latestLayout().breadcrumbOverride).toBeDefined();
     expect(html).toContain(">Asset</span>");
-    expect(html).toContain(">Assets</span>");
-    expect(html).toContain(
-      '<span class="text-fg min-w-0 break-words">Assets</span>',
-    );
-    expect(html).not.toMatch(/<a href="\/files\/"[^>]*>Assets<\/a>/);
+    const breadcrumbItems = propsOf(latestLayout().breadcrumbOverride).items as Array<{ label: string; href?: string }>;
+    expect(breadcrumbItems[1]).toMatchObject({ label: "Assets" });
+    expect(breadcrumbItems[1]?.href).toBeUndefined();
     expect(html).toContain("← Back to Brand");
     expect(html).toContain("data-doc-description");
     expect(html).toContain("data-doc-metainfo");
-    expect(html).toContain('download href="/assets/img/logo.svg"');
+    expect(html).toContain('download="" href="/assets/img/logo.svg"');
     expect(html).toContain('data-zfb-reload');
     expect(html).toContain("The current logo.");
     expect(html).toContain("Guide › Brand");
@@ -103,20 +139,17 @@ describe("asset page SSG", () => {
 
   it("links the Assets crumb only when the index is enabled", () => {
     const disabled = page(asset(), { assetViewerIndex: false });
-    expect(disabled).toContain(
-      '<span class="text-fg min-w-0 break-words">Assets</span>',
-    );
-    expect(disabled).not.toMatch(/<a href="\/files\/"[^>]*>Assets<\/a>/);
+    expect((propsOf(latestLayout().breadcrumbOverride).items as Array<{ label: string; href?: string }>)[1]?.href).toBeUndefined();
 
     const enabled = page(asset(), { assetViewerIndex: true });
-    expect(enabled).toMatch(/<a href="\/files\/"[^>]*>Assets<\/a>/);
+    expect((propsOf(latestLayout().breadcrumbOverride).items as Array<{ label: string; href?: string }>)[1]?.href).toBe("/files/");
 
     const custom = page(asset(), {
       assetViewerIndex: true,
       base: "/pj/x/",
       assetViewerRoutePrefix: "media/view",
     });
-    expect(custom).toMatch(/<a href="\/pj\/x\/media\/view\/"[^>]*>Assets<\/a>/);
+    expect((propsOf(latestLayout().breadcrumbOverride).items as Array<{ label: string; href?: string }>)[1]?.href).toBe("/pj/x/media/view/");
     expect(custom).not.toContain("/pj/x/pj/x/");
   });
 
@@ -125,14 +158,14 @@ describe("asset page SSG", () => {
     expect(html).toContain('<figure class="zd-enlargeable zd-asset-stage');
     expect(html).toContain('<img src="/assets/img/logo.svg"');
     expect(html).not.toContain("<svg xmlns=\"http://www.w3.org/2000/svg\"><svg");
-    expect(html.match(/data-zfb-island-skip-ssr="ImageEnlarge"/g)).toHaveLength(1);
+    expect(propsOf(latestLayout().bodyEndComponents).forceImageEnlarge).toBe(true);
     expect(html).toContain("zd-asset-media-grid");
   });
 
   it("applies a configured base exactly once to viewer and raw URLs", () => {
     const html = page(asset(), { base: "/project" });
     expect(html).toContain('src="/project/assets/img/logo.svg"');
-    expect(html).toContain('href="https://docs.example/project/files/img/logo.svg/"');
+    expect(latestHead().canonical).toBe("https://docs.example/project/files/img/logo.svg/");
     expect(html).not.toContain("/project/project/");
   });
 
@@ -155,15 +188,15 @@ describe("asset page SSG", () => {
       "asset.detailsExpand": "詳細を表示",
       "doc.updated": "更新日",
     }, "ja");
-    expect(html).toContain('lang="ja"');
-    expect(html).toContain('href="https://docs.example/ja/files/img/logo.svg/"');
+    expect(latestLayout().lang).toBe("ja");
+    expect(latestHead().canonical).toBe("https://docs.example/ja/files/img/logo.svg/");
     expect(html).toContain("← 戻る Brand");
     expect(html).toContain(">詳細</h2>");
     expect(html).toContain(">種類</dt>");
     expect(html).toContain(">全体表示</button>");
     expect(html).toContain(">チェッカー</button>");
     expect(html).toContain('aria-label="画像を拡大"');
-    expect(html).not.toContain('href="https://docs.example/files/img/logo.svg/"');
+    expect(latestHead().canonical).not.toBe("https://docs.example/files/img/logo.svg/");
   });
 
   it("prefers the latest same-locale reference for a localized Back to link", () => {
@@ -241,7 +274,7 @@ describe("asset page SSG", () => {
     expect(html).toContain('id="L2"');
     expect(html).not.toContain('<pre class="hi-root zd-asset-code" data-lang="html"><pre');
     expect(html).toContain("Preview truncated.");
-    expect(html).toContain("code-btn-copy");
+    expect(html).toContain(".code-btn-'");
     expect(html).not.toContain("<iframe");
   });
 
@@ -283,11 +316,15 @@ describe("asset page SSG", () => {
 
   it("renders video and sniff-approved PDF in the media grid", () => {
     const video = page(asset({ path: "movie.mp4", name: "movie.mp4", dir: "", kind: "video", mime: "video/mp4", durationSec: 2.5, width: 1280, height: 720 }));
-    expect(video).toContain('<video controls preload="metadata" src="/assets/movie.mp4"');
+    expect(video).toContain('<video controls="" preload="metadata" src="/assets/movie.mp4" width="1280" height="720" class="max-w-full"></video>');
     expect(video).toContain("zd-asset-media-grid");
+    const videoWithoutDimensions = page(asset({ path: "movie.mp4", name: "movie.mp4", dir: "", kind: "video", mime: "video/mp4", width: undefined, height: undefined }));
+    expect(videoWithoutDimensions).toContain('<video controls="" preload="metadata" src="/assets/movie.mp4" class="max-w-full"></video>');
+    expect(videoWithoutDimensions).not.toContain('width="undefined"');
     const pdf = page(asset({ path: "guide.pdf", name: "guide.pdf", dir: "", kind: "pdf", mime: "application/pdf", width: undefined, height: undefined }));
     expect(pdf).toContain('<iframe title="guide.pdf" src="/assets/guide.pdf#view=FitH"');
     expect(pdf).not.toContain("sandbox=");
+    expect(pdf).toContain("data-zd-asset-pdf");
     expect(pdf).toContain("zd-asset-media-grid");
   });
 
@@ -370,8 +407,10 @@ describe("asset page SSG", () => {
     const html = codePage();
     const scriptStart = html.indexOf("zudo-doc-asset-details-visible");
     expect(scriptStart).toBeGreaterThan(-1);
-    expect(scriptStart).toBeLessThan(html.indexOf("</head>"));
-    expect(html.slice(0, html.indexOf("</head>"))).toContain(
+    const headSlotEnd = html.indexOf("</div>");
+    expect(html).toContain('data-zd-test-head');
+    expect(scriptStart).toBeLessThan(headSlotEnd);
+    expect(html.slice(0, headSlotEnd)).toContain(
       "document.documentElement.setAttribute(\"data-asset-details-hidden\",'')",
     );
   });
