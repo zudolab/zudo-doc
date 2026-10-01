@@ -40,7 +40,7 @@ Run the exact source-resolution and port-check commands from the conventions wit
 | Deliberate DOM/class/behavior differences and cause | Behavior: native Preact `onChange` (change, generally after blur/commit) is replaced by locked `modelValue`/native `input`, so find-as-you-type updates before blur/change; required by #4480's #4449 lock and verified in the interaction test. Escape/Enter shortcuts also honor composing and `defaultPrevented` events per the lock. No markup/class changes. |
 | Upstream issue/shim and removal version | No new upstream issue or shim. The port uses zfb 3.1.0's published model and lifecycle APIs. |
 | Browser/visual cases handed to #4468/#4475 | Tauri shortcut visibility, focus/selection, find bar positioning, and actual browser IME composition remain visual/browser parity cases for #4468/#4475; this topic ran only the happy-dom harness. |
-| Final commit / reviewer / date | Pending final topic commit; foreground self-review by owning agent, 2026-10-02. |
+| Final commit / reviewer / date | Source/test commit `af21642de0cdcc579ec84f75c99659edc48057d4`; this matrix evidence is finalized in the following topic commit. Foreground self-review by owning agent, 2026-10-02. |
 
 ## Preact runtime import census after #4449
 
