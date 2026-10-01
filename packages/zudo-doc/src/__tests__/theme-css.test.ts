@@ -6,7 +6,7 @@ import { packageWindConfig } from "../wind/index.js";
 
 const dir = dirname(fileURLToPath(import.meta.url));
 const css = readFileSync(resolve(dir, "../theme.css"), "utf8");
-const declarations = new Map([...css.matchAll(/^\s*(--[a-zA-Z0-9-]+):\s*([^;]+);/gm)].map((m) => [m[1], m[2]]));
+const declarations = new Map<string, string>([...css.matchAll(/^\s*(--[a-zA-Z0-9-]+):\s*([^;]+);/gm)].map((m): [string, string] => [m[1]!, m[2]!]));
 
 describe("shipped theme and wind tokens", () => {
   it("ships authored properties without Tailwind directives", () => {
