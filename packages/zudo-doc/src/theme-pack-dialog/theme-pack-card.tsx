@@ -8,12 +8,12 @@
 //
 // Kept in its own file WITHOUT "use client" (the `switcher-state.ts`
 // convention in the sibling `theme-pack-switcher/` directory) so
-// `preact-render-to-string` fixture tests can render it directly, and so it
+// zudo-react SSR fixture tests can render it directly, and so it
 // stays a plain reachable component in the parent island's static-import
 // graph rather than a second scanner-registered island (zfb's island scanner
 // registers every exported binding of a "use client" file as an island).
 
-import type { Description } from "@takazudo/zfb/zudo-react";
+import { computed, type Child, type ReadonlySignal } from "@takazudo/zfb/zudo-react";
 import type { ThemePackMeta } from "../theme-packs-registry/index.js";
 
 export interface ThemePackCardProps {
@@ -24,7 +24,7 @@ export interface ThemePackCardProps {
    *  badge shown alongside the name). */
   mode: "light" | "dark";
   /** Whether this card's pack is the currently active one (selected ring). */
-  isActive: boolean;
+  isActive: boolean | ReadonlySignal<boolean>;
   /** Apply this pack — the caller wires this to `applyThemePack(meta.slug)`;
    *  this component stays a plain presentational click forwarder. */
   onSelect: () => void;
@@ -37,19 +37,18 @@ export interface ThemePackCardProps {
  * — ADR Decision 7 — so the selected ring is driven by `isActive`, not by
  * the click itself).
  */
-export function ThemePackCard({ meta, mode, isActive, onSelect }: ThemePackCardProps): Description {
+export function ThemePackCard({ meta, mode, isActive, onSelect }: ThemePackCardProps): Child {
   const swatches = meta.preview[mode];
+  const selected = computed(() => typeof isActive === "boolean" ? isActive : isActive.value);
   const fontCaption = meta.fonts.display ?? meta.fonts.sans;
 
   return (
     <button
       type="button"
       on:click={onSelect}
-      aria-pressed={isActive}
+      aria-pressed={selected}
       aria-label={`Apply ${meta.name} theme pack — ${meta.mode === "dark" ? "Dark" : "Light"}. ${meta.description}`}
-      class={`flex flex-col gap-vsp-2xs rounded-lg border p-hsp-sm text-left transition-colors focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 ${
-        isActive ? "border-accent zd-theme-pack-active-ring" : "border-muted hover:border-accent"
-      }`}
+      class={computed(() => `flex flex-col gap-vsp-2xs rounded-lg border p-hsp-sm text-left transition-colors focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 ${selected.value ? "border-accent zd-theme-pack-active-ring" : "border-muted hover:border-accent"}`)}
     >
       <div
         aria-hidden="true"

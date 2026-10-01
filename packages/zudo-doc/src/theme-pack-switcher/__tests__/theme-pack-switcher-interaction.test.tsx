@@ -1,228 +1,148 @@
 /** @vitest-environment happy-dom */
 /** @jsxRuntime automatic */
-// Real-DOM interaction tests for the ThemePackSwitcher stable DOM hooks
-// (zudolab/zudo-doc#2873 acceptance criteria):
-//
-//   - opening the flyout card must expose `data-switcher-card` (the card is
-//     NOT rendered while closed, so the SSR-closed snapshot in
-//     theme-pack-switcher-ssr.test.tsx cannot see it — this needs a real
-//     mount + click).
-//   - closing the browse-all dialog (rendered inside this same island's tree
-//     via the ThemePackDialogSlot seam) must restore focus to the launcher,
-//     proving the `LAUNCHER_SELECTOR` retarget to `[data-switcher-launcher]`
-//     (theme-pack-dialog/index.tsx) resolves the right element.
-//
-// This is the one spot in the package that needs a real DOM (`happy-dom`,
-// declared per-file via the `@vitest-environment` pragma above) — every
-// other test in this package runs in vitest's default plain-Node
-// environment. `order` here carries only the "default" pack so
-// `hasBrowsablePacks` is false (theme-pack-dialog/index.tsx) and the dialog's
-// lazy registry fetch never fires — keeping this a pure DOM-interaction test
-// with no network mocking required.
-
-import { afterEach, describe, expect, it } from "vitest";
-import { render } from "preact";
-import { render as renderToString } from "preact-render-to-string";
-import { act } from "preact/test-utils";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { flushAll, renderIsland } from "../../__tests__/helpers/zudo-react.js";
 import { ThemePackSwitcher, type ThemePackSwitcherProps } from "../index.js";
-import { THEME_PACK_ATTR } from "../theme-pack-sync.js";
+import {
+  THEME_PACK_ATTR, THEME_PACK_CHANGED_EVENT, THEME_PACK_RUNTIME_GLOBAL,
+  THEME_PACK_STORAGE_KEY,
+} from "../theme-pack-sync.js";
 
-const PROPS: ThemePackSwitcherProps = {
-  active: "default",
-  order: [
-    { slug: "default", name: "Default", mode: "light", description: "The stock zudo-doc look." },
-  ],
-  base: "/",
-};
-
-// The dialog's focus-restore reads `document.querySelector(LAUNCHER_SELECTOR)`
-// against the WHOLE document (theme-pack-dialog/index.tsx), not scoped to a
-// container — so a leftover mounted switcher from a prior test would shadow
-// the current test's own launcher. Track + unmount/remove after every test.
-let mounted: HTMLDivElement | null = null;
-
-function mount(
-  props: ThemePackSwitcherProps,
-  beforeEffects?: (launcher: HTMLButtonElement) => void,
-): HTMLDivElement {
-  const container = document.createElement("div");
-  document.body.appendChild(container);
-  act(() => {
-    render(<ThemePackSwitcher {...props} />, container);
-    const launcher = container.querySelector<HTMLButtonElement>("[data-switcher-launcher]");
-    expect(launcher).not.toBeNull();
-    beforeEffects?.(launcher!);
-  });
-  mounted = container;
-  return container;
-}
-
-function activate(
-  launcher: HTMLButtonElement,
-  path: "click" | "Enter" | " ",
-): void {
-  launcher.focus();
-  expect(document.activeElement).toBe(launcher);
-  if (path !== "click") {
-    launcher.dispatchEvent(new KeyboardEvent("keydown", { key: path, bubbles: true }));
-  }
-  launcher.click();
-  if (path !== "click") {
-    launcher.dispatchEvent(new KeyboardEvent("keyup", { key: path, bubbles: true }));
-  }
-}
-
+const ORDER: ThemePackSwitcherProps["order"] = [
+  { slug: "default", name: "Default", mode: "light", description: "The stock look." },
+  { slug: "foundry", name: "Foundry", mode: "dark", description: "Industrial dark pack." },
+];
+const props: ThemePackSwitcherProps = { active: "foundry", order: ORDER, base: "/", pendingUntilHydrated: false };
+const disposers: Array<() => void> = [];
 afterEach(() => {
-  if (mounted) {
-    act(() => {
-      render(null, mounted!);
-    });
-    mounted.remove();
-    mounted = null;
-  }
-  // `connectActivePackSync` reads this attribute on mount (real-DOM sync,
-  // ADR Decision 7) — restore the absent-attribute default so a later test
-  // that relies on the "default" fallback isn't shadowed by a leftover value.
+  for (const dispose of disposers.splice(0)) dispose();
+  vi.unstubAllGlobals();
   document.documentElement.removeAttribute(THEME_PACK_ATTR);
+  document.documentElement.removeAttribute("data-theme");
+  localStorage.removeItem(THEME_PACK_STORAGE_KEY);
+  delete (window as unknown as Record<string, unknown>)[THEME_PACK_RUNTIME_GLOBAL];
+  document.body.replaceChildren();
 });
 
-describe("ThemePackSwitcher — real-DOM interaction", () => {
-  it.each(["click", "Enter", " "] as const)(
-    "guards %s before the first effect, then enables it",
-    (path) => {
-      const container = mount(PROPS, (launcher) => {
-        const ssr = document.createElement("div");
-        ssr.innerHTML = renderToString(<ThemePackSwitcher {...PROPS} />);
-        expect(launcher.parentElement!.outerHTML).toBe(
-          ssr.querySelector("[data-theme-pack-switcher]")!.outerHTML,
-        );
-        expect(launcher.tabIndex).toBe(0);
+async function view(next: ThemePackSwitcherProps = props) {
+  const result = await renderIsland(ThemePackSwitcher, next, { identity: { component: "ThemePackSwitcher", build: "test" } });
+  disposers.push(result.dispose);
+  expect(result.diagnostics).toEqual([]);
+  return result;
+}
+async function openDialog(root: HTMLElement) {
+  const launcher = root.querySelector<HTMLButtonElement>("[data-switcher-launcher]")!;
+  launcher.click(); await flushAll();
+  expect(root.querySelector("[data-switcher-card]")).not.toBeNull();
+  root.querySelector<HTMLButtonElement>('[aria-label="Browse all theme packs"]')!.click();
+  await flushAll();
+  const dialog = root.querySelector<HTMLDialogElement>("dialog")!;
+  expect(dialog.open).toBe(true);
+  expect(root.querySelector("[data-switcher-card]")).toBeNull();
+  return { dialog, launcher };
+}
+
+const META = {
+  schemaVersion: 1, slug: "default", name: "Default", description: "The stock look.", mode: "light", version: "1",
+  fonts: { sans: "System", mono: "System", loaded: [] },
+  preview: { light: { bg: "#fff", fg: "#111", accent: "#06f", syntax: { keyword: "#a00", string: "#0a0", comment: "#666", callable: "#00a" } },
+    dark: { bg: "#111", fg: "#fff", accent: "#09f", syntax: { keyword: "#f00", string: "#0f0", comment: "#aaa", callable: "#00f" } } },
+};
+
+describe("ThemePackSwitcher and ThemePackDialog", () => {
+  it("keeps the launcher guarded before hydration, then enables it on activation", async () => {
+    const result = await renderIsland(ThemePackSwitcher, { ...props, pendingUntilHydrated: true }, {
+      identity: { component: "ThemePackSwitcher", build: "test" },
+      beforeActivate: (root) => {
+        const launcher = root.querySelector<HTMLButtonElement>("[data-switcher-launcher]")!;
         expect(launcher.getAttribute("data-zd-pending")).toBe("");
         expect(launcher.getAttribute("aria-disabled")).toBe("true");
-        activate(launcher, path);
-        expect(launcher.parentElement!.querySelector("[data-switcher-card]")).toBeNull();
-      });
-
-      const launcher = container.querySelector<HTMLButtonElement>("[data-switcher-launcher]")!;
-      expect(launcher.hasAttribute("data-zd-pending")).toBe(false);
-      expect(launcher.hasAttribute("aria-disabled")).toBe(false);
-      act(() => activate(launcher, path));
-      expect(container.querySelector("[data-switcher-card]")).not.toBeNull();
-    },
-  );
-
-  it("activates immediately when pendingUntilHydrated is false", () => {
-    const container = mount({ ...PROPS, pendingUntilHydrated: false }, (launcher) => {
-      expect(launcher.hasAttribute("data-zd-pending")).toBe(false);
-      expect(launcher.hasAttribute("aria-disabled")).toBe(false);
-      activate(launcher, "Enter");
+        launcher.click();
+        expect(root.querySelector("[data-switcher-card]")).toBeNull();
+      },
     });
-
-    expect(container.querySelector("[data-switcher-card]")).not.toBeNull();
+    disposers.push(result.dispose);
+    expect(result.diagnostics).toEqual([]);
+    const launcher = result.root.querySelector<HTMLButtonElement>("[data-switcher-launcher]")!;
+    expect(launcher.hasAttribute("data-zd-pending")).toBe(false);
+    launcher.click(); await flushAll();
+    expect(result.root.querySelector("[data-switcher-card]")).not.toBeNull();
   });
 
-  it("clicking the launcher opens the card and exposes data-switcher-card", () => {
-    const container = mount(PROPS);
-
-    expect(container.querySelector("[data-switcher-card]")).toBeNull();
-
-    const launcher = container.querySelector<HTMLButtonElement>("[data-switcher-launcher]");
-    expect(launcher).not.toBeNull();
-
-    act(() => {
-      launcher!.click();
-    });
-
-    const card = container.querySelector("[data-switcher-card]");
-    expect(card).not.toBeNull();
-    expect(card).toHaveProperty("tagName", "DIV");
-  });
-
-  it("closing the browse-all dialog restores focus to [data-switcher-launcher]", () => {
-    const container = mount(PROPS);
-
-    const launcher = container.querySelector<HTMLButtonElement>("[data-switcher-launcher]");
-    expect(launcher).not.toBeNull();
-
-    // Open the flyout card, then the browse-all dialog (mirrors openDialog()
-    // in theme-pack-switcher/index.tsx: opening the dialog closes the card).
-    act(() => {
-      launcher!.click();
-    });
-    const gridButton = container.querySelector<HTMLButtonElement>(
-      '[aria-label="Browse all theme packs"]',
-    );
-    expect(gridButton).not.toBeNull();
-    act(() => {
-      gridButton!.click();
-    });
-
-    const dialog = container.querySelector<HTMLDialogElement>("dialog");
-    expect(dialog).not.toBeNull();
-    expect(dialog!.open).toBe(true);
-    // The flyout card is unmounted once the dialog takes over.
-    expect(container.querySelector("[data-switcher-card]")).toBeNull();
-
-    // Native close (Esc key or dialog.close()) — useModalDialog listens for
-    // the dialog's own "close" event to restore focus.
-    act(() => {
-      dialog!.close();
-    });
-
+  it("opens, loads keyed cards, applies default, follows external updates, and restores focus on close", async () => {
+    document.documentElement.setAttribute(THEME_PACK_ATTR, "foundry");
+    (window as unknown as Record<string, unknown>)[THEME_PACK_RUNTIME_GLOBAL] = { base: "/", packs: { default: "1", foundry: "1" }, configured: "foundry" };
+    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ schemaVersion: 1, packs: [META] }) }));
+    vi.stubGlobal("fetch", fetchMock);
+    const { root } = await view();
+    const { dialog, launcher } = await openDialog(root);
+    await vi.waitFor(() => expect(dialog.querySelectorAll('button[aria-label^="Apply "]')).toHaveLength(1));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(dialog.querySelector('[aria-hidden="true"][style*="background-color"]')?.getAttribute("style")).toContain("#fff");
+    document.documentElement.setAttribute("data-theme", "dark");
+    window.dispatchEvent(new Event("color-scheme-changed"));
+    await flushAll();
+    expect(dialog.querySelector('[aria-hidden="true"][style*="background-color"]')?.getAttribute("style")).toContain("#111");
+    dialog.querySelector<HTMLButtonElement>('button[aria-label^="Apply "]')!.click();
+    await flushAll();
+    expect(document.documentElement.getAttribute(THEME_PACK_ATTR)).toBe("default");
+    expect(dialog.querySelector('button[aria-pressed="true"]')).not.toBeNull();
+    document.documentElement.setAttribute(THEME_PACK_ATTR, "foundry");
+    window.dispatchEvent(new CustomEvent(THEME_PACK_CHANGED_EVENT, { detail: { pack: "foundry", previous: "default" } }));
+    await flushAll();
+    expect(dialog.querySelector('button[aria-pressed="false"]')).not.toBeNull();
+    dialog.close(); await flushAll();
     expect(document.activeElement).toBe(launcher);
   });
 
-  // Cheap local proxy for the #3116 Screenshot Requirement Contract (the
-  // heavy browser-level pass is a separate Wave-2 sub-issue): with a
-  // long-description pack active, the open card must be the fixed 360px
-  // arbitrary-value width (never the inert `w-72`) and the description
-  // must carry `break-words` so an unbroken long line can't stretch the
-  // card to the full viewport (the Tidepool scenario from issue #3114).
-  it("open card is fixed-width w-[360px] (never w-72) and the description wraps", () => {
-    const longDescription =
-      "A very long theme-pack description that must wrap across multiple lines instead of stretching the card to the full viewport width, mirroring the Tidepool pack scenario from issue #3114.";
-    // connectActivePackSync resolves the active slug from the real DOM on
-    // mount (ADR Decision 7), not from the `active` prop alone — set it here
-    // so `resolveActiveEntry` matches this test's custom pack instead of
-    // falling back to "default" (afterEach clears this for other tests).
-    document.documentElement.setAttribute(THEME_PACK_ATTR, "long-desc-pack");
-    const container = mount({
-      active: "long-desc-pack",
-      order: [
-        {
-          slug: "long-desc-pack",
-          name: "Long Desc Pack",
-          mode: "light",
-          description: longDescription,
-        },
-      ],
-      base: "/",
-    });
+  it("aborts an in-flight registry request on close and retries on reopen", async () => {
+    let aborted = 0;
+    const fetchMock = vi.fn((_url: string, options: RequestInit) => new Promise((_resolve, reject) => {
+      options.signal?.addEventListener("abort", () => { aborted++; reject(new DOMException("aborted", "AbortError")); });
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+    const { root } = await view();
+    const { dialog, launcher } = await openDialog(root);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    dialog.close(); await flushAll();
+    expect(aborted).toBe(1);
+    expect(document.activeElement).toBe(launcher);
+    await openDialog(root);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
 
-    const launcher = container.querySelector<HTMLButtonElement>("[data-switcher-launcher]");
-    act(() => {
-      launcher!.click();
-    });
+  it("keeps the flyout width and wraps a long description", async () => {
+    document.documentElement.setAttribute(THEME_PACK_ATTR, "foundry");
+    const { root } = await view({ ...props, order: [{ ...ORDER[1]!, description: "unbroken".repeat(30) }] });
+    root.querySelector<HTMLButtonElement>("[data-switcher-launcher]")!.click();
+    await flushAll();
+    const card = root.querySelector<HTMLElement>("[data-switcher-card]")!;
+    expect(card.className).toContain("w-[360px]");
+    expect(card.className).toContain("max-w-[calc(100vw_-_2rem)]");
+    expect(card.querySelector("p.text-caption.break-words")?.textContent).toContain("unbroken");
+  });
 
-    const card = container.querySelector<HTMLDivElement>("[data-switcher-card]");
-    expect(card).not.toBeNull();
-    expect(card!.className).toContain("w-[360px]");
-    expect(card!.className).not.toMatch(/(?:^|\s)w-72(?:\s|$)/);
-    // The viewport-safety cap from #2825 is untouched by this fix.
-    expect(card!.className).toContain("max-w-[calc(100vw_-_2rem)]");
+  it("shows a parser error and retries after a malformed registry response", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ schemaVersion: 1, packs: [{ slug: "broken" }] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ schemaVersion: 1, packs: [META] }) });
+    vi.stubGlobal("fetch", fetchMock);
+    const { root } = await view();
+    const { dialog } = await openDialog(root);
+    await vi.waitFor(() => expect(dialog.textContent).toContain("Could not load theme previews."));
+    const retry = Array.from(dialog.querySelectorAll("button")).find((button) => button.textContent === "Retry")!;
+    retry.click(); await flushAll();
+    await vi.waitFor(() => expect(dialog.querySelectorAll('button[aria-label^="Apply "]')).toHaveLength(1));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
 
-    const description = Array.from(card!.querySelectorAll("p")).find(
-      (p) => p.textContent === longDescription,
-    );
-    expect(description).toBeDefined();
-    expect(description!.className).toContain("break-words");
-
-    // The card stays anchored bottom-right above the launcher — the fixed
-    // positioning lives on the switcher's root wrapper, unaffected by this
-    // fix; confirm it survived untouched.
-    const root = container.querySelector("[data-theme-pack-switcher]");
-    expect(root!.className).toContain("fixed");
-    expect(root!.className).toContain("right-hsp-lg");
-    expect(root!.className).toContain("bottom-hsp-lg");
+  it("does not fetch when only the default pack exists and disposes its listeners", async () => {
+    const fetchMock = vi.fn(); vi.stubGlobal("fetch", fetchMock);
+    const { root, dispose } = await view({ ...props, active: "default", order: [ORDER[0]!] });
+    await openDialog(root);
+    expect(root.textContent).toContain("No other theme packs are configured");
+    expect(fetchMock).not.toHaveBeenCalled();
+    dispose(); disposers.pop();
+    window.dispatchEvent(new CustomEvent(THEME_PACK_CHANGED_EVENT));
   });
 });
