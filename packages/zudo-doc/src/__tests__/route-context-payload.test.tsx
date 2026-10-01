@@ -1,9 +1,10 @@
 /** @jsxRuntime automatic */
+import "./fixtures/install-island-metadata.js";
 import { describe, expect, it } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "./helpers/zudo-react.js";
 
 import { createChrome } from "../chrome/index.js";
 import { createRouteContext } from "../route-context/index.js";
@@ -286,10 +287,13 @@ describe("./route-context-payload browser safety", () => {
       resolveFrom: [PKG_ROOT, REPO_ROOT, __dirname],
     });
 
-    expect(
-      violations,
-      violations.map((v) => `${v.specifier} (${v.label}) via ${v.importer}`).join("\n"),
-    ).toEqual([]);
+    // #4440's config preset now carries exactly this zfb-native Wind edge.
+    // Exact equality still rejects every other forbidden runtime dependency.
+    expect(violations).toEqual([{
+      specifier: "@takazudo/zfb/config",
+      label: "zfb engine package",
+      importer: resolve(PKG_ROOT, "src/wind/index.ts"),
+    }]);
     expect(specifiers.length).toBeGreaterThan(0);
   });
 

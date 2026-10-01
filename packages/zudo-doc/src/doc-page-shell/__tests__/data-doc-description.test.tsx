@@ -1,4 +1,5 @@
 /** @jsxRuntime automatic */
+import "../../__tests__/fixtures/install-island-metadata.js";
 /**
  * Stable DOM hook regression test (zudolab/zudo-doc#2873).
  *
@@ -10,7 +11,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { createDocPageShell } from "../index.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 

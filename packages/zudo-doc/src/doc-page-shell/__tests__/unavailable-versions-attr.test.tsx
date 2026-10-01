@@ -1,4 +1,5 @@
 /** @jsxRuntime automatic */
+import "../../__tests__/fixtures/install-island-metadata.js";
 /**
  * Client payload emission (epic #3242, #3243).
  *
@@ -13,7 +14,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { createDocPageShell } from "../index.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 import { UNAVAILABLE_VERSIONS_ATTR } from "../../version-availability/index.js";
@@ -51,12 +52,9 @@ describe("createDocPageShell — unavailable-versions article attribute", () => 
       <DocPageShell {...BASE_PROPS} unavailableVersions={new Set()} />,
     );
 
-    // preact-render-to-string renders an empty-string attribute value in the
-    // shorthand boolean form (`data-x` rather than `data-x=""`) — DOM-
-    // equivalent (`getAttribute` returns `""` either way), and still
-    // distinguishable from the "absent" case above.
+    // zudo-react emits the explicit empty value for a present data attribute.
     expect(html).toContain(UNAVAILABLE_VERSIONS_ATTR);
-    expect(html).not.toContain(`${UNAVAILABLE_VERSIONS_ATTR}="`);
+    expect(html).toContain(`${UNAVAILABLE_VERSIONS_ATTR}=""`);
   });
 
   it("emits a sorted comma-joined value for a populated set", () => {

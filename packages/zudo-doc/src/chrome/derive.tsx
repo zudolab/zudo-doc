@@ -19,7 +19,7 @@
 // This module is NOT in the preset eval graph (preset.ts never imports it), so
 // its host/runtime dependency graph never touches the node-free config surface.
 
-import type { Description, Child } from "@takazudo/zfb/zudo-react";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import type { ChromeContext, FactoryComponent } from "../factory-context/index.js";
 import type { ResolvedDateFormats, Settings } from "../settings.js";
@@ -111,6 +111,9 @@ import { buildSidebarForSection } from "../sidebar-utils/index.js";
 // public surface, the resolver is not.
 import { resolveDateFormats } from "../date-format-resolve/index.js";
 
+import { normalizeIslandData } from "./island-data.js";
+export { normalizeIslandData } from "./island-data.js";
+
 // ---------------------------------------------------------------------------
 // Package-default host-only bindings (the stub defaults — moved verbatim from
 // the pre-collapse `routes/_chrome.tsx`).
@@ -170,8 +173,8 @@ function DocHistoryStub(
     displayLocale?: string;
     dateFormats?: ResolvedDateFormats;
   },
-): Description {
-  return (<></>) as Description;
+): Child {
+  return <></>;
 }
 
 /** Island MDX binding (package default) — an SSR pass-through that renders its
@@ -287,18 +290,22 @@ export function deriveColorSchemeGenerators(ctx: ChromeContext): {
  *  builder reads `ctx.hostBindings.sidebarsConfig` (default `{}`). */
 export function deriveNavDataPrep(ctx: ChromeContext) {
   function buildRootMenuItems(lang: string, currentVersion: string | undefined) {
-    return buildRootMenuItemsBase(
-      lang,
-      currentVersion,
-      ctx.settings.headerNav,
-      (key, l) => ctx.t(key, l),
-      (path, l, v, versioned) => ctx.navHref(path, l, v, versioned),
+    return normalizeIslandData(
+      buildRootMenuItemsBase(
+        lang,
+        currentVersion,
+        ctx.settings.headerNav,
+        (key, l) => ctx.t(key, l),
+        (path, l, v, versioned) => ctx.navHref(path, l, v, versioned),
+      ),
     );
   }
 
   function buildLocaleLinksForNav(currentPath: string, lang: string, localeCount: number) {
-    return buildLocaleLinksForNavBase(currentPath, lang, localeCount, (path, l) =>
-      ctx.buildLocaleLinks(path, l),
+    return normalizeIslandData(
+      buildLocaleLinksForNavBase(currentPath, lang, localeCount, (path, l) =>
+        ctx.buildLocaleLinks(path, l),
+      ),
     );
   }
 
@@ -328,11 +335,13 @@ export function deriveNavDataPrep(ctx: ChromeContext) {
         ) as never[],
       explicitPrefixes,
     );
-    return currentVersion
-      ? remapVersionedHrefs(rawNodes, currentVersion, lang, (slug, v, l) =>
-          ctx.versionedDocsUrl(slug, v, l),
-        )
-      : rawNodes;
+    return normalizeIslandData(
+      currentVersion
+        ? remapVersionedHrefs(rawNodes, currentVersion, lang, (slug, v, l) =>
+            ctx.versionedDocsUrl(slug, v, l),
+          )
+        : rawNodes,
+    );
   }
 
   function getThemeDefaultMode() {
@@ -747,22 +756,20 @@ export function deriveMdxComponents(ctx: ChromeContext) {
     /** HtmlPreview MDX binding (package default) — `settings.htmlPreview` is a
      * serializable setting in the route-context payload. */
     function HtmlPreviewBound(props: HtmlPreviewWrapperProps): JSX.Element {
-      const labels = props.labels;
-      const definedProps = Object.fromEntries(
-        Object.entries(props).filter(([, value]) => value !== undefined),
-      ) as HtmlPreviewWrapperProps;
+      const definedProps = normalizeIslandData(props);
+      const labels = definedProps.labels;
       // The document metadata language is independent from the route locale:
       // an author may opt into an arbitrary BCP-47 tag for the iframe document
       // while its controls remain localized to the surrounding route. Keep
       // the original bytes after the nonblank check so authored whitespace is
       // not normalized in the generated srcdoc.
-      const effectiveLang = props.lang?.trim()
-        ? props.lang
+      const effectiveLang = definedProps.lang?.trim()
+        ? definedProps.lang
         : lang.trim()
           ? lang
           : "en";
       return HtmlPreviewWrapper({
-        globalConfig: ctx.settings.htmlPreview ?? null,
+        globalConfig: normalizeIslandData(ctx.settings.htmlPreview ?? null),
         ...definedProps,
         lang: effectiveLang,
         labels: {

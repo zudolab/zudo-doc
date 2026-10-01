@@ -17,7 +17,7 @@
 //     back to the nav node's own docsUrl, doc history rendered for listed
 //     entries via `docHistoryContentDir`.
 
-import type { Description } from "@takazudo/zfb/zudo-react";
+import type { Child, Description } from "@takazudo/zfb/zudo-react";
 import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import type { DocPageBaseProps, DocNavNode, DocPageEntry } from "../doc-page-props/index.js";
 import type { VersionBannerLabels } from "../i18n-version/index.js";
@@ -135,10 +135,10 @@ export interface DocPageRendererDeps {
     versionBannerLabels?: VersionBannerLabels;
     autoIndexLabel?: string;
     autoIndexChildren?: DocNavNode[];
-    metainfoSlot?: Description | null;
-    contentHeaderSlot?: Description;
-    contentSlot?: Description;
-    docHistorySlot?: Description | null;
+    metainfoSlot?: Child;
+    contentHeaderSlot?: Child;
+    contentSlot?: Child;
+    docHistorySlot?: Child;
   }) => JSX.Element;
   /**
    * The `DocContentHeader` component (host-side factory result).

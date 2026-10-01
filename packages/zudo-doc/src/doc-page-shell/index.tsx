@@ -13,7 +13,7 @@
 // slots. The base EN route (shipped in every scaffold) can depend on it
 // without dragging in the versioning/i18n feature surface.
 
-import type { Child, Description } from "@takazudo/zfb/zudo-react";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { Island } from "@takazudo/zfb";
 import { DocLayoutWithDefaults } from "../doclayout/index.js";
@@ -35,6 +35,7 @@ import { createHeadWithDefaults } from "../head-with-defaults/index.js";
 import { resolveThemePackSsrSlug } from "../theme/theme-pack-provider.js";
 import { createDocBodyEnd } from "../doc-body-end/index.js";
 import { deriveComposeMetaTitle } from "../chrome/derive.js";
+import { normalizeIslandData } from "../chrome/island-data.js";
 import { derivePrimaryChromeSlots } from "../chrome/primary-slots.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 
@@ -136,20 +137,20 @@ export interface DocPageShellProps {
    * Auto-index branch slot: the build-time date block (DocMetainfoArea), or
    * null to omit it.
    */
-  metainfoSlot?: Description | null;
+  metainfoSlot?: Child;
 
   /**
    * Entry branch slot: the content header (h1 + meta + tags + description +
    * frontmatter preview), built per route (carries isFallback).
    */
-  contentHeaderSlot?: Description;
+  contentHeaderSlot?: Child;
   /** Entry branch slot: the rendered MDX `<Content />`. */
-  contentSlot?: Description;
+  contentSlot?: Child;
   /**
    * Entry branch slot: the document-utilities area (DocHistoryArea), or null
    * to omit it.
    */
-  docHistorySlot?: Description | null;
+  docHistorySlot?: Child;
 }
 
 /** Settings subset read by {@link createDocPageShell}. */
@@ -284,6 +285,7 @@ export function createDocPageShell<S extends Settings = Settings>(
     // `shouldRenderDefaultToc` exactly so an undefined override never silently
     // falls back to the package default with a different title.
     const tocTitle = getTocTitle(locale);
+    const transportHeadings = normalizeIslandData(headings);
     const shouldRenderToc = !hideToc && headings.length > 0;
     // Gate shared with the toc-prepaint factories (head script + afterSidebar
     // toggle island): true only when the page renders the package's OWN
@@ -295,7 +297,7 @@ export function createDocPageShell<S extends Settings = Settings>(
     // receives an Island hydration wrapper.
     const tocOverride = shouldRenderToc
       ? customTocIsPresent
-        ? <Toc headings={headings} title={tocTitle} />
+        ? <Toc headings={transportHeadings} title={tocTitle} />
         : // The zfb <Island> wrapper renders a bare <div> with no class, so
           // below xl (where <Toc> itself is `hidden xl:flex`) it would remain
           // an in-flow, zero-width flex child of the content band and reserve a
@@ -322,16 +324,16 @@ export function createDocPageShell<S extends Settings = Settings>(
             <div class="zd-toc-col hidden xl:flex">
               {Island({
                 when: "load",
-                children: <Toc headings={headings} title={tocTitle} />,
-              }) as unknown as Description}
+                children: <Toc headings={transportHeadings} title={tocTitle} />,
+              })}
             </div>
           )
       : undefined;
     const mobileTocOverride = shouldRenderToc
       ? (Island({
           when: "load",
-          children: <MobileToc headings={headings} title={tocTitle} />,
-        }) as unknown as Description)
+          children: <MobileToc headings={transportHeadings} title={tocTitle} />,
+        }))
       : undefined;
 
     return (

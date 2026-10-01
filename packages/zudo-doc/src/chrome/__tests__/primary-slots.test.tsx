@@ -1,7 +1,8 @@
 /** @jsxRuntime automatic */
+import "../../__tests__/fixtures/install-island-metadata.js";
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
-import type { Child, Description } from "@takazudo/zfb/zudo-react";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { defineChromeBindings } from "../../chrome-bindings.js";
 import type {
@@ -28,7 +29,7 @@ export function _createChromeDeclarationAssertions(
 ): void {
   const header: (props: HeaderWithDefaultsProps) => JSX.Element =
     chrome.HeaderWithDefaults;
-  const footer: (props: { lang?: string }) => Description = chrome.FooterWithDefaults;
+  const footer: (props: { lang?: string }) => Child = chrome.FooterWithDefaults;
   const sidebar: (props: SidebarWithDefaultsProps) => JSX.Element =
     chrome.SidebarWithDefaults;
   void [header, footer, sidebar];

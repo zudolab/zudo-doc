@@ -15,6 +15,7 @@ import type { ChromeContext } from "../factory-context/index.js";
 import type { Settings } from "../settings.js";
 import { themeToggleLabels } from "../theme-toggle/labels.js";
 import { deriveDateFormats, deriveNavDataPrep } from "../chrome/derive.js";
+import { normalizeIslandData } from "../chrome/island-data.js";
 import { assertChromeContext } from "../chrome/assert-chrome-context.js";
 import type { LocaleLink } from "../url-helpers/index.js";
 
@@ -90,23 +91,23 @@ export function createSidebarWithDefaults<S extends Settings = Settings>(
     const localeLinks = buildLocaleLinksForNav(currentPath, lang, localeCount);
     const themeDefaultMode = getThemeDefaultMode();
 
+    const treeProps = normalizeIslandData({
+      nodes,
+      ...(currentSlug !== undefined ? { currentSlug } : {}),
+      rootMenuItems,
+      ...(backToMenuLabel !== undefined ? { backToMenuLabel } : {}),
+      locale: lang,
+      ...(localeLinks !== undefined ? { localeLinks } : {}),
+      ...(themeDefaultMode !== undefined ? { themeDefaultMode } : {}),
+      themeLabels: themeToggleLabels(t, lang),
+      themeRespectSystem: (ctx.settings.colorMode && ctx.settings.colorMode.respectPrefersColorScheme) ?? true,
+      dateFormats: dateFormatsFor(lang),
+    });
+
     return Island({
       when: "load",
-      children: (
-        <SidebarTree
-          nodes={nodes}
-          {...(currentSlug !== undefined ? { currentSlug } : {})}
-          rootMenuItems={rootMenuItems}
-          {...(backToMenuLabel !== undefined ? { backToMenuLabel } : {})}
-          locale={lang}
-          {...(localeLinks !== undefined ? { localeLinks } : {})}
-          {...(themeDefaultMode !== undefined ? { themeDefaultMode } : {})}
-          themeLabels={themeToggleLabels(t, lang)}
-          themeRespectSystem={(ctx.settings.colorMode && ctx.settings.colorMode.respectPrefersColorScheme) ?? true}
-          dateFormats={dateFormatsFor(lang)}
-        />
-      ),
-    }) as unknown as JSX.Element;
+      children: <SidebarTree {...treeProps} />,
+    });
   }
 
   return SidebarWithDefaults;

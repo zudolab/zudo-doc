@@ -23,7 +23,6 @@
 //
 // Every other `ChromeHostBindings` slot is left at its package-default stub.
 
-import type { Description } from "@takazudo/zfb/zudo-react";
 import { Island } from "@takazudo/zfb";
 import type { ChromeHostBindings } from "@takazudo/zudo-doc/factory-context";
 import { HostPanelBootstrap } from "./host-panel-bootstrap-island.js";
@@ -33,5 +32,5 @@ export const chromeBindings: ChromeHostBindings = {
     Island({
       when: "load",
       children: <HostPanelBootstrap />,
-    }) as unknown as Description,
+    }),
 };

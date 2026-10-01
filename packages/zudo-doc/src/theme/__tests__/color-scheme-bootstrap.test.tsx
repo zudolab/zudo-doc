@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { runInNewContext } from "node:vm";
 import ColorSchemeProvider from "../color-scheme-provider.js";
 import { applyThemePreference, readThemePreference } from "../../theme-toggle/color-scheme-sync.js";

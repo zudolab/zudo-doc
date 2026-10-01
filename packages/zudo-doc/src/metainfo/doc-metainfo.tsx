@@ -1,5 +1,5 @@
 /** @jsxRuntime automatic */
-import type { Description } from "@takazudo/zfb/zudo-react";
+import type { Child } from "@takazudo/zfb/zudo-react";
 
 export interface DocMetainfoProps {
   /**
@@ -33,7 +33,7 @@ export interface DocMetainfoProps {
 export const DEFAULT_CREATED_LABEL = "Created";
 export const DEFAULT_UPDATED_LABEL = "Updated";
 
-function ClockIcon(): Description {
+function ClockIcon(): Child {
   return (
     <svg
       class="h-icon-xs w-icon-xs"
@@ -52,7 +52,7 @@ function ClockIcon(): Description {
   );
 }
 
-function RefreshIcon(): Description {
+function RefreshIcon(): Child {
   return (
     <svg
       class="h-icon-xs w-icon-xs"
@@ -71,7 +71,7 @@ function RefreshIcon(): Description {
   );
 }
 
-function UserIcon(): Description {
+function UserIcon(): Child {
   return (
     <svg
       class="h-icon-xs w-icon-xs"
@@ -102,7 +102,7 @@ function UserIcon(): Description {
  * Returns `null` when no displayable field is provided, mirroring the
  * original `hasInfo && (...)` guard.
  */
-export function DocMetainfo(props: DocMetainfoProps): Description | null {
+export function DocMetainfo(props: DocMetainfoProps): Child {
   const {
     createdAt,
     updatedAt,

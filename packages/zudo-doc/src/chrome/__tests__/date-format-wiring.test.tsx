@@ -1,4 +1,5 @@
 /** @jsxRuntime automatic */
+import "../../__tests__/fixtures/install-island-metadata.js";
 /**
  * The settings -> props wiring seam for `dateFormat` (#4075).
  *
@@ -22,7 +23,7 @@
 
 import { describe, expect, it } from "vitest";
 import type { Description } from "@takazudo/zfb/zudo-react";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 import { deriveDateFormats } from "../derive.js";
 import { createDocHistoryArea } from "../../doc-history-area/index.js";

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { h } from "preact";
+import { h } from "@takazudo/zfb/zudo-react";
 import type { Component } from "@takazudo/zfb/zudo-react";
-import render from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import type { ChromeContext } from "../../factory-context/index.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
 import { deriveMdxComponents } from "../derive.js";

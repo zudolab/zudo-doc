@@ -39,9 +39,7 @@ const directiveVocabulary: DirectiveVocabulary = {
 const preset = zudoDocPreset({ settings, buildDocsSchema, directiveVocabulary });
 
 export default defineConfig({
-  framework: "preact",
   port: 4350,
-  tailwind: { enabled: true },
   base: settings.base,
   // No adapter — static output only (no SSR routes needed for this proof).
   // A2 #3179 — coverage.mdx's task list and footnote exercise the preset's

@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic */
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { createDocContentHeader } from "../index.js";
 import type { DocPageEntry } from "../../doc-page-props/index.js";
 import type { ChromeContext } from "../../factory-context/index.js";
