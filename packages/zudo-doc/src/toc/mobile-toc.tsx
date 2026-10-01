@@ -1,8 +1,8 @@
 "use client";
 
 /** @jsxRuntime automatic */
-import type { Description } from "@takazudo/zfb/zudo-react";
-import { useMemo, useState } from "preact/hooks";
+import { computed, signal } from "@takazudo/zfb/zudo-react";
+import type { Child } from "@takazudo/zfb/zudo-react";
 
 import type { HeadingItem } from "./types.js";
 import { SmartBreak } from "../smart-break/index.js";
@@ -14,7 +14,7 @@ export interface MobileTocProps {
 }
 
 /**
- * Collapsible TOC for narrow viewports (`xl:hidden`) — a Preact island
+ * Collapsible TOC for narrow viewports (`xl:hidden`) — a zudo-react island
  * component. Closed by default; tapping the header toggles, and tapping
  * any entry closes the panel after navigation.
  *
@@ -46,12 +46,17 @@ export interface MobileTocProps {
 export function MobileToc({
   headings,
   title = "On this page",
-}: MobileTocProps): Description {
-  const filtered = useMemo(
-    () => headings.filter((h) => h.depth >= 2 && h.depth <= 4),
-    [headings],
-  );
-  const [open, setOpen] = useState(false);
+}: MobileTocProps): Child {
+  const filtered = headings.filter((h) => h.depth >= 2 && h.depth <= 4);
+  const open = signal(false);
+  const chevronClass = computed(() => cx(
+    "h-icon-sm w-icon-sm text-muted transition-transform duration-150",
+    open.value && "rotate-180",
+  ));
+  const itemsClass = computed(() => cx(
+    "border-t border-muted px-hsp-lg py-vsp-xs space-y-vsp-2xs",
+    !open.value && "hidden",
+  ));
 
   // No qualifying headings: emit a CSS-hidden container that still carries
   // the locale title text. The `hidden` class sets display:none visually,
@@ -78,17 +83,14 @@ export function MobileToc({
     <div data-zd-mobile-toc class="xl:hidden border border-muted mb-vsp-lg">
       <button
         type="button"
-        on:click={() => setOpen((prev) => !prev)}
+        on:click={() => { open.value = !open.value; }}
         aria-expanded={open}
         class="flex w-full items-center justify-between px-hsp-lg py-vsp-xs text-small font-medium text-fg"
       >
         <span>{title}</span>
         <svg
           aria-hidden="true"
-          class={cx(
-            "h-icon-sm w-icon-sm text-muted transition-transform duration-150",
-            open && "rotate-180",
-          )}
+          class={chevronClass}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -107,11 +109,8 @@ export function MobileToc({
           elements remain in the static markup, satisfying the a11y requirement
           for keyboard accessibility after hydration. */}
       <ul
-        class={cx(
-          "border-t border-muted px-hsp-lg py-vsp-xs space-y-vsp-2xs",
-          !open && "hidden",
-        )}
-        aria-hidden={!open}
+        class={itemsClass}
+        aria-hidden={computed(() => !open.value)}
       >
         {filtered.map((heading, index) => (
           <li
@@ -123,7 +122,7 @@ export function MobileToc({
           >
             <a
               href={`#${heading.slug}`}
-              on:click={() => setOpen(false)}
+              on:click={() => { open.value = false; }}
               class="block py-vsp-2xs text-small text-muted hover:text-fg hover:underline focus-visible:underline"
             >
               <SmartBreak>{heading.text}</SmartBreak>
