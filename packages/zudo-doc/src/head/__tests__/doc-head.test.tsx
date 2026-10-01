@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { render } from "preact-render-to-string";
+import { serializeStaticHead as render } from "../serialize-static-head.js";
 import { DocHead } from "../doc-head.js";
 import type { HeadProps } from "../types.js";
 
@@ -9,21 +9,18 @@ import type { HeadProps } from "../types.js";
  * These tests pin the exact output of DocHead for a range of fixtures so
  * any silent reordering or attribute-shape regression trips the suite.
  *
- * The reference snapshots use the preact-render-to-string serialisation
- * (self-closing void tags). When DocHead is consumed inside a real host
- * layout the host serialises through its own HTML5 emitter, which drops the
- * "/" — both sides go through the same serialiser, so the runtime byte
- * comparison stays valid.
+ * The bounded static-head serializer uses HTML5 void-tag syntax and preserves
+ * configured field order while escaping all text and attribute values.
  */
 describe("DocHead — byte-parity fixtures", () => {
   it("emits the minimum required head when only title is supplied", () => {
     const props: HeadProps = { title: "Hello | Smoke Test" };
     expect(render(<DocHead {...props} />)).toBe(
       [
-        '<meta charset="utf-8"/>',
-        '<meta name="viewport" content="width=device-width, initial-scale=1"/>',
+        '<meta charset="utf-8">',
+        '<meta name="viewport" content="width=device-width, initial-scale=1">',
         "<title>Hello | Smoke Test</title>",
-        '<meta property="og:title" content="Hello | Smoke Test"/>',
+        '<meta property="og:title" content="Hello | Smoke Test">',
       ].join(""),
     );
   });
@@ -35,12 +32,12 @@ describe("DocHead — byte-parity fixtures", () => {
     };
     expect(render(<DocHead {...props} />)).toBe(
       [
-        '<meta charset="utf-8"/>',
-        '<meta name="viewport" content="width=device-width, initial-scale=1"/>',
+        '<meta charset="utf-8">',
+        '<meta name="viewport" content="width=device-width, initial-scale=1">',
         "<title>Writing Docs | Smoke Test</title>",
-        '<meta name="description" content="How to write docs."/>',
-        '<meta property="og:title" content="Writing Docs | Smoke Test"/>',
-        '<meta property="og:description" content="How to write docs."/>',
+        '<meta name="description" content="How to write docs.">',
+        '<meta property="og:title" content="Writing Docs | Smoke Test">',
+        '<meta property="og:description" content="How to write docs.">',
       ].join(""),
     );
   });
@@ -53,9 +50,9 @@ describe("DocHead — byte-parity fixtures", () => {
       unlisted: true,
     };
     const out = render(<DocHead {...props} />);
-    expect(out).toContain('<meta name="robots" content="noindex, nofollow"/>');
+    expect(out).toContain('<meta name="robots" content="noindex, nofollow">');
     // Page-level noindex must NOT also be emitted alongside the sitewide one.
-    expect(out).not.toContain('<meta name="robots" content="noindex"/>');
+    expect(out).not.toContain('<meta name="robots" content="noindex">');
   });
 
   it("emits noindex (page-level) when only unlisted is set", () => {
@@ -64,7 +61,7 @@ describe("DocHead — byte-parity fixtures", () => {
       unlisted: true,
     };
     expect(render(<DocHead {...props} />)).toContain(
-      '<meta name="robots" content="noindex"/>',
+      '<meta name="robots" content="noindex">',
     );
   });
 
@@ -78,7 +75,7 @@ describe("DocHead — byte-parity fixtures", () => {
   it("falls through og:title to title when ogTitle is unset", () => {
     const props: HeadProps = { title: "Hello | Smoke Test" };
     expect(render(<DocHead {...props} />)).toContain(
-      '<meta property="og:title" content="Hello | Smoke Test"/>',
+      '<meta property="og:title" content="Hello | Smoke Test">',
     );
   });
 
@@ -88,7 +85,7 @@ describe("DocHead — byte-parity fixtures", () => {
       ogTitle: "Custom OG Title",
     };
     expect(render(<DocHead {...props} />)).toContain(
-      '<meta property="og:title" content="Custom OG Title"/>',
+      '<meta property="og:title" content="Custom OG Title">',
     );
   });
 
@@ -100,7 +97,7 @@ describe("DocHead — byte-parity fixtures", () => {
       />,
     );
     expect(out).toContain(
-      '<link rel="canonical" href="https://example.com/docs/page-1/"/>',
+      '<link rel="canonical" href="https://example.com/docs/page-1/">',
     );
     expect(
       render(<DocHead title="Hello | Smoke Test" />),
@@ -110,7 +107,7 @@ describe("DocHead — byte-parity fixtures", () => {
   it("emits theme-color only when supplied", () => {
     expect(
       render(<DocHead title="Hello | Smoke Test" themeColor="#ffffff" />),
-    ).toContain('<meta name="theme-color" content="#ffffff"/>');
+    ).toContain('<meta name="theme-color" content="#ffffff">');
     expect(
       render(<DocHead title="Hello | Smoke Test" />),
     ).not.toContain('name="theme-color"');
@@ -135,22 +132,22 @@ describe("DocHead — byte-parity fixtures", () => {
     );
     expect(out).toBe(
       [
-        '<meta charset="utf-8"/>',
-        '<meta name="viewport" content="width=device-width, initial-scale=1"/>',
+        '<meta charset="utf-8">',
+        '<meta name="viewport" content="width=device-width, initial-scale=1">',
         "<title>Hello | Smoke Test</title>",
-        '<meta name="description" content="Desc."/>',
-        '<meta property="og:title" content="Hello | Smoke Test"/>',
-        '<meta property="og:description" content="Desc."/>',
-        '<meta property="og:type" content="article"/>',
-        '<meta property="og:url" content="https://example.com/x/"/>',
-        '<meta property="og:image" content="https://example.com/x.png"/>',
-        '<meta property="og:site_name" content="Smoke Test"/>',
-        '<meta name="twitter:card" content="summary_large_image"/>',
-        '<meta name="twitter:site" content="@example"/>',
-        '<meta name="twitter:creator" content="@author"/>',
-        '<meta name="twitter:title" content="Hello"/>',
-        '<meta name="twitter:description" content="Desc."/>',
-        '<meta name="twitter:image" content="https://example.com/x.png"/>',
+        '<meta name="description" content="Desc.">',
+        '<meta property="og:title" content="Hello | Smoke Test">',
+        '<meta property="og:description" content="Desc.">',
+        '<meta property="og:type" content="article">',
+        '<meta property="og:url" content="https://example.com/x/">',
+        '<meta property="og:image" content="https://example.com/x.png">',
+        '<meta property="og:site_name" content="Smoke Test">',
+        '<meta name="twitter:card" content="summary_large_image">',
+        '<meta name="twitter:site" content="@example">',
+        '<meta name="twitter:creator" content="@author">',
+        '<meta name="twitter:title" content="Hello">',
+        '<meta name="twitter:description" content="Desc.">',
+        '<meta name="twitter:image" content="https://example.com/x.png">',
       ].join(""),
     );
   });
@@ -170,7 +167,7 @@ describe("DocHead — byte-parity fixtures", () => {
       />,
     );
     expect(out).toContain(
-      '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.38/dist/katex.min.css" integrity="sha384-/L6i+LN3dyoaK2jYG5ZLh5u13cjdsPDcFOSNJeFBFa/KgVXR5kOfTdiN3ft1uMAq" crossorigin="anonymous"/>',
+      '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.38/dist/katex.min.css" integrity="sha384-/L6i+LN3dyoaK2jYG5ZLh5u13cjdsPDcFOSNJeFBFa/KgVXR5kOfTdiN3ft1uMAq" crossorigin="anonymous">',
     );
   });
 
@@ -195,10 +192,10 @@ describe("DocHead — byte-parity fixtures", () => {
       />,
     );
     expect(out).toContain(
-      '<link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt"/>',
+      '<link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt">',
     );
     expect(out).toContain(
-      '<link rel="alternate" type="text/plain" href="/llms-full.txt" title="llms-full.txt"/>',
+      '<link rel="alternate" type="text/plain" href="/llms-full.txt" title="llms-full.txt">',
     );
     // Order-sensitive — llms.txt must come before llms-full.txt.
     const i1 = out.indexOf("/llms.txt");
@@ -222,7 +219,7 @@ describe("DocHead — byte-parity fixtures", () => {
       />,
     );
     expect(out).toContain(
-      '<link rel="preload" as="font" href="/fonts/foo.woff2" type="font/woff2" crossorigin="anonymous"/>',
+      '<link rel="preload" as="font" href="/fonts/foo.woff2" type="font/woff2" crossorigin="anonymous">',
     );
   });
 

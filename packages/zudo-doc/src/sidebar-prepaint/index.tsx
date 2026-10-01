@@ -28,10 +28,8 @@
 import type { Description } from "@takazudo/zfb/zudo-react";
 import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { Island } from "@takazudo/zfb";
-import {
-  DesktopSidebarToggle,
-  SIDEBAR_STORAGE_KEY,
-} from "../desktop-sidebar-toggle-island/index.js";
+import { DesktopSidebarToggle } from "../desktop-sidebar-toggle-island/index.js";
+import { SIDEBAR_STORAGE_KEY } from "../desktop-sidebar-toggle-island/storage.js";
 
 export interface SidebarPrepaintProps {
   /**

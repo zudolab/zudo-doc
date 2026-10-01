@@ -9,7 +9,7 @@
 //
 // Both call `Object.assign(handle.style, { ... left, width, ... })` with the
 // exact same `left`/`width` values, but one is real TypeScript and the other
-// is a minified single-line script string embedded via `dangerouslySetInnerHTML`
+// is a minified single-line script string emitted via `rawHtml`
 // — their surrounding syntax can never be made textually identical the way
 // e.g. doc-history-exclude/__tests__/parity.test.ts compares whole function
 // bodies. So this guard extracts just the two geometry values from each file's

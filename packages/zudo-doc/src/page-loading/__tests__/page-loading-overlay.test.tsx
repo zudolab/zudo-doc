@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic */
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import {
   AFTER_NAVIGATE_EVENT,
   BEFORE_NAVIGATE_EVENT,
@@ -27,6 +27,13 @@ describe("buildPageLoadingOverlayBootstrap", () => {
     // raw quote isn't present unescaped in the body.
     expect(script).not.toMatch(/var id="id"; alert\(1\)/);
     expect(script).toContain(JSON.stringify('id"; alert(1); //'));
+  });
+
+  it("escapes script terminators in caller-supplied ids", () => {
+    const script = buildPageLoadingOverlayBootstrap("</script><script>alert(1)</script>");
+    expect(script.toLowerCase()).not.toContain("</script");
+    expect(script).toContain('var id="\\u003c/script>\\u003cscript>alert(1)\\u003c/script>";');
+    expect(() => new Function(script)).not.toThrow();
   });
 
   it("contains data-zd-nav-pending marker logic with removeAttribute cleanup", () => {

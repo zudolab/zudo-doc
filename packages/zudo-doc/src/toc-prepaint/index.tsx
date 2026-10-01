@@ -29,10 +29,8 @@
 import type { Description } from "@takazudo/zfb/zudo-react";
 import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { Island } from "@takazudo/zfb";
-import {
-  DesktopTocToggle,
-  TOC_STORAGE_KEY,
-} from "../desktop-toc-toggle-island/index.js";
+import { DesktopTocToggle } from "../desktop-toc-toggle-island/index.js";
+import { TOC_STORAGE_KEY } from "../desktop-toc-toggle-island/storage.js";
 
 export interface TocPrepaintProps {
   /**

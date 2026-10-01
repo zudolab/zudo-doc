@@ -8,10 +8,23 @@
 //     root-attribute swap re-applies the live (user-persisted) value instead
 //     of resetting to the incoming document's configured default.
 
-import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { DocLayout } from "../doc-layout.js";
 import { DocLayoutWithDefaults } from "../doc-layout-with-defaults.js";
+
+const testGlobal = globalThis as unknown as { __zfb?: Record<string, unknown> };
+const previousZfb = testGlobal.__zfb;
+beforeEach(() => {
+  testGlobal.__zfb = {
+    ...previousZfb,
+    zudoReactBuild: "4458-test",
+    zudoReactIslands: ["ThemeToggle"],
+  };
+});
+afterEach(() => {
+  testGlobal.__zfb = previousZfb;
+});
 
 describe("DocLayout — theme-pack DOM contract", () => {
   it("renders data-theme-pack on <html> when dataThemePack is passed", () => {
@@ -36,13 +49,13 @@ describe("DocLayout — theme-pack DOM contract", () => {
       <DocLayout title="T" header={<header />} main={<p>body</p>} />,
     );
     expect(html).toContain(
-      '<meta name="zfb-preserve-html-attrs" content="data-sidebar-hidden data-theme data-theme-pack style data-toc-hidden data-asset-details-hidden"/>',
+      '<meta name="zfb-preserve-html-attrs" content="data-sidebar-hidden data-theme data-theme-pack style data-toc-hidden data-asset-details-hidden">',
     );
   });
 
   it("forwards dataThemePack through DocLayoutWithDefaults", () => {
     const html = render(
-      <DocLayoutWithDefaults title="T" dataThemePack="foundry">
+      <DocLayoutWithDefaults title="T" dataThemePack="foundry" headerOverride={<header />} sidebarOverride={false}>
         <p>body</p>
       </DocLayoutWithDefaults>,
     );
