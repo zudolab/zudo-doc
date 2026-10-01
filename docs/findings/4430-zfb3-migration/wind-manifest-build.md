@@ -1,6 +1,6 @@
 # CSS cutover B: wind candidate manifest, compiled.css pipeline, showcase global.css, and the lockstep safelist-gate rename
 
-Owner: [#4440](https://github.com/zudolab/zudo-doc/issues/4440). Status: **pipeline implemented; authored-class gate blocked by leaf-owned source classes**. [Index and column meanings](README.md). [Binding decisions](../../../_temp-resource/4430-zfb3-migration/conventions.md).
+Owner: [#4440](https://github.com/zudolab/zudo-doc/issues/4440). Status: **pipeline and authored-class gate passing after leaf integrations; browser parity pending**. [Index and column meanings](README.md). [Binding decisions](../../../_temp-resource/4430-zfb3-migration/conventions.md).
 
 Seed evidence: exploration maps `server-jsx.md`, `islands-nav.md`, `islands-content.md`, `css-wind.md`, `pkg-build.md`, `tests-ci.md`, `deps-docs.md` at the migration planning baseline; file/symbol inventory refreshed from prerequisite base `4026c213`. This inventory is a review checklist, not authority to edit files outside the issue Files section. Historical v2 constructs remain listed after mechanical prep so the final mapping is auditable.
 
@@ -68,7 +68,7 @@ The public `wind.json` export replaces `safelist.css`; `theme-no-reset.css` is a
 
 A comment-stripped scan of 36 shipped and showcase source CSS files found zero uncommented Tailwind directives/functions from the #4440 acceptance list. The one test fixture under `packages/zudo-doc/src/__tests__` retains historical Tailwind input and is excluded from the shipped/showcase claim. There are no `rawHtml` sites in #4440 source changes and no deliberate DOM or behavior changes. The cascade and token choices follow the locked conventions, plus the [cascade layers](https://github.com/takazudo/zudo-css-wisdom/blob/main/src/content/docs/architecture/cascade-layers.mdx) and [theming recipes](https://github.com/takazudo/zudo-css-wisdom/blob/main/src/content/docs/custom-properties/theming-recipes.mdx) references.
 
-### Authored-class coverage blocker
+### Authored-class coverage blocker found before leaf integrations
 
 The new normal package test checks class expressions, conditional literals and markup against `wind.json`, then checks registered authored classes against actual shipped CSS selectors. Its selector registry check passes. Its exhaustive source check intentionally fails on these **18 complete class tokens**. None is in the manifest or a matching shipped selector. These source files are owned by later topics, so #4440 did not mutate them or add no-op rules:
 
@@ -80,4 +80,10 @@ The new normal package test checks class expressions, conditional literals and m
 | #4459 | `i18n-version/version-switcher.tsx:366` | `version-switcher`: data marker already exists; no shipped selector. |
 | #4461 | `asset-page/components.tsx:104,195`; `home-page/index.tsx:315,332,350,360,398` | `zd-asset-pdf`, `rounded-l`, `zd-home-hero`, `zd-home-copy`, `zd-home-intro`, `zd-home-sitemap`, `zd-home-tags`: markers without shipped selectors and one unsupported radius utility. |
 
-`rounded-l`/`rounded-r` cannot be registered as authored classes under ZW006's utility-root collision rule. The leaf owners or #4467 integration floor must clear this list and rerun `authored-class-coverage.test.ts`. Browser verification remains for #4468/#4475: check package and showcase import/cascade order, computed border radii on the three toggles, theme pack/token changes, content typography, responsive visibility, and packed-consumer public CSS imports with sibling relative assets. A standalone `zfb css` run does not prove the packed asset resolution case.
+`rounded-l`/`rounded-r` cannot be registered as authored classes under ZW006's utility-root collision rule. The leaf owners subsequently cleared this list; see the resolution below. Browser verification remains for #4468/#4475: check package and showcase import/cascade order, computed border radii on the three toggles, theme pack/token changes, content typography, responsive visibility, and packed-consumer public CSS imports with sibling relative assets. A standalone `zfb css` run does not prove the packed asset resolution case.
+
+### Coverage resolution after leaf integrations (2026-10-02)
+
+After merging the current base through #4459 and #4461, the source coverage check found only `zd-home-copy`. It has a substantive shipped rule in `dist/content.css` (source `content.css:547`) and a theme-pack override in `theme-packs/academia/pack.css:176`; #4440 registered it as authored. The registry selector check was corrected to accept a comma after a class selector, and the TypeScript JSX attribute name was narrowed before reading `.text`. `zd-wrap-anywhere` remains registered against the existing shipped `features.css:1311` rule. No marker-only CSS was added.
+
+The guarded one-shot tsup pipeline passed on the merged base: 482 valid candidates from 2,749 scanner tokens and a byte-identical 88,816-byte compiled stylesheet. Focused package tests passed **74/74**, including both authored-class coverage assertions; root gate tests passed **15/15**. Manifest, compiled-CSS, b4push/CI parity and required-check gates passed. The port check reported **zero owned** diagnostics (304 unrelated red-window diagnostics). `zfb wind audit --project-root . --fail-on error` exited 0, with two host `zd-preset-gen*` unrecognized classes and audit-info diagnostics still present. A comment-stripped scan of 37 shipped/showcase/compiled CSS files found zero Tailwind directive/function hits. Computed-style, responsive, packed-consumer and browser visual evidence remains assigned to #4468/#4475.

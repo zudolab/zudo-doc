@@ -58,7 +58,7 @@ function sourceClasses(path: string): Set<string> {
   const source = ts.createSourceFile(path, readFileSync(path, "utf8"), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   const classes = new Set<string>();
   function visit(node: ts.Node) {
-    const isClassAttr = ts.isJsxAttribute(node) && /^(class|className)$/.test(node.name.text);
+    const isClassAttr = ts.isJsxAttribute(node) && ts.isIdentifier(node.name) && /^(class|className)$/.test(node.name.text);
     const isClassProperty = ts.isPropertyAssignment(node) && /^(class|className|classes)$/.test(node.name.getText(source).replace(/["']/g, ""));
     const isClassVariable = ts.isVariableDeclaration(node) && /(?:^|[A-Z_])(?:class|classes|Class|Classes|className|ClassName)$/.test(node.name.getText(source));
     if (isClassAttr || isClassProperty || isClassVariable) classTokens(node, classes);
@@ -73,7 +73,7 @@ describe("package authored class coverage", () => {
     for (const className of AUTHORED_CLASSES) {
       expect(className, className).not.toMatch(/^(?:bg|border|bottom|cursor|display|flex|font|gap|grid|h|inset|justify|leading|left|m|opacity|overflow|p|position|right|rounded|shadow|text|top|translate|w|z)-/);
       const escaped = className.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      expect(new RegExp(`\\.${escaped}(?=[\\s:{.#>+~\\[]|$)`).test(css), `Missing shipped selector for ${className}`).toBe(true);
+      expect(new RegExp(`\\.${escaped}(?=[\\s,:{.#>+~\\[]|$)`).test(css), `Missing shipped selector for ${className}`).toBe(true);
     }
   });
 

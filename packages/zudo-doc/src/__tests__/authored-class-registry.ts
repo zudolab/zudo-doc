@@ -32,6 +32,7 @@ export const AUTHORED_CLASSES = new Set([
   "zd-enlarge-dialog-close",
   "zd-enlargeable",
   "zd-hide-details-marker",
+  "zd-home-copy",
   "zd-home-inner",
   "zd-home-links",
   "zd-home-rule",
