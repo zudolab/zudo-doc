@@ -1,164 +1,42 @@
-# Port the content typography and MDX component layer (content/*, mdx-components, code groups, tabs, details, math, smart-break, home-intro)
+# Content typography and MDX component port (#4457)
 
-Owner: [#4457](https://github.com/zudolab/zudo-doc/issues/4457). Status: **pending port**. [Index and column meanings](README.md). [Binding decisions](../../../_temp-resource/4430-zfb3-migration/conventions.md).
+Status: **ported in the #4457 topic branch** against packed zfb 3.1.0. This is an interim leaf-port verdict; integrated browser, build, and visual parity belong to #4467/#4468/#4475. [Index and column meanings](README.md). Binding decisions: [conventions](../../../_temp-resource/4430-zfb3-migration/conventions.md), [round-2 evidence](../../../_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md).
 
-Seed evidence: exploration maps `server-jsx.md`, `islands-nav.md`, `islands-content.md`, `css-wind.md`, `pkg-build.md`, `tests-ci.md`, `deps-docs.md` at the migration planning baseline; file/symbol inventory refreshed from prerequisite base `4026c213`. This inventory is a review checklist, not authority to edit files outside the issue Files section. Historical v2 constructs remain listed after mechanical prep so the final mapping is auditable.
+## v2 → v3 gap table
 
-## Round-2 locked spec (3.1.0)
-
-Decision [#4480](https://github.com/zudolab/zudo-doc/issues/4480), based on [#4479 packed evidence](../../../_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md). Planned contract only; implementation and browser evidence remain pending. This overrides the named round-1 deviations.
-
-Void the earlier prohibition on forwarding `start` and the round-1 rawHtml `<ol>` serializer/display-contents wrapper. `ContentOl` uses native `<ol start={start}>` and normal children. #4479 Z02 proves declarations, actual MDX SSR and hydration at 3.1.0. Test start-at-3, resumed/default/task lists, class/attribute forwarding and child composition without extra wrappers or CSS counters.
-
-Use native `<pre>` leading-LF protection (#4479 Z25); do not manually double/strip LF or add an opaque pre workaround. Keep precise SSR/hydrate text tests and hand real-browser parser/code-copy checks to #4468/#4475; the happy-dom probe simulated HTML-parser LF removal. Other typography/rawHtml trust reviews remain; #3359 is still unresolved for any relevant native attrs. Table restrictions remain the published contract despite corrected #3377 documentation.
-
-## Files and symbols
-
-| File | Symbol | v2 construct → required v3 review | Status / spec / evidence |
-| --- | --- | --- | --- |
-| `packages/zudo-doc/src/code-group/index.tsx` | `toArray` | Preact child types → Child/Description; map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/code-group/index.tsx` | `CodeGroup` | Preact child types → Child/Description; map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/code-syntax/code-block-enhancer-script.ts` | `HIGHLIGHTED_CODE_BLOCK_SELECTOR` | raw injection → reviewed rawHtml; className → intrinsic class; preserve custom props except locked exceptions | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/code-syntax/code-block-enhancer-script.ts` | `CODE_BLOCK_ENHANCER_SELECTOR` | raw injection → reviewed rawHtml; className → intrinsic class; preserve custom props except locked exceptions | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/code-syntax/code-block-enhancer-script.ts` | `CODE_WRAP_STORAGE_KEY` | raw injection → reviewed rawHtml; className → intrinsic class; preserve custom props except locked exceptions | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/code-syntax/code-block-enhancer-script.ts` | `CODE_BLOCK_ENHANCER_SCRIPT` | raw injection → reviewed rawHtml; className → intrinsic class; preserve custom props except locked exceptions | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/code-syntax/code-block-enhancer.tsx` | `CodeBlockEnhancer` | raw injection → reviewed rawHtml | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/code-syntax/index.ts` | `module / template` | Retain pure logic/markup; audit reachable dialect and API | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/code-syntax/mermaid-init-script.ts` | `MERMAID_CDN_MODULE_URL` | raw injection → reviewed rawHtml; map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/code-syntax/mermaid-init-script.ts` | `buildMermaidInitScript` | raw injection → reviewed rawHtml; map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/code-syntax/mermaid-init.tsx` | `MermaidInitProps` | raw injection → reviewed rawHtml | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/code-syntax/mermaid-init.tsx` | `MermaidInit` | raw injection → reviewed rawHtml | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/code-syntax/tabs-init-script.ts` | `TABS_INIT_SCRIPT` | className → intrinsic class; preserve custom props except locked exceptions | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/code-syntax/tabs-init.tsx` | `TabsInit` | raw injection → reviewed rawHtml | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/code-syntax/tabs.tsx` | `TabsProps` | Preact child types → Child/Description; map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/code-syntax/tabs.tsx` | `Tabs` | Preact child types → Child/Description; map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/content-admonition/index.tsx` | `AdmonitionVariant` | Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/content-admonition/index.tsx` | `AdmonitionProps` | Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/content-admonition/index.tsx` | `makeAdmonition` | Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/content/component-map.ts` | `defaultComponents` | Retain pure logic/markup; audit reachable dialect and API | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/content/content-blockquote.tsx` | `ContentBlockquote` | className → intrinsic class; preserve custom props except locked exceptions | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/content/content-code.tsx` | `ContentCode` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/content/content-code.tsx` | `extractText` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/content/content-code.tsx` | `looksLikeHtmlMarkup` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/content/content-code.tsx` | `decodeEntities` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/content/content-link.tsx` | `ContentLink` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/content/content-link.tsx` | `CreateContentLinkOptions` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/content/content-link.tsx` | `createContentLink` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/content/content-link.tsx` | `extractText` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/content/content-link.tsx` | `decodeEntities` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/content/content-ol.tsx` | `ContentOl` | className → intrinsic class; preserve custom props except locked exceptions; style → CSS spelling/explicit units | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/content/content-paragraph.tsx` | `ContentParagraph` | Retain pure logic/markup; audit reachable dialect and API | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/content/content-strong.tsx` | `ContentStrong` | className → intrinsic class; preserve custom props except locked exceptions | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/content/content-table.tsx` | `ContentTable` | className → intrinsic class; preserve custom props except locked exceptions | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/content/content-ul.tsx` | `ContentUl` | className → intrinsic class; preserve custom props except locked exceptions; style → CSS spelling/explicit units | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/content/heading-h2.tsx` | `HeadingH2` | className → intrinsic class; preserve custom props except locked exceptions; style → CSS spelling/explicit units | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/content/heading-h3.tsx` | `HeadingH3` | className → intrinsic class; preserve custom props except locked exceptions; style → CSS spelling/explicit units | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/content/heading-h4.tsx` | `HeadingH4` | className → intrinsic class; preserve custom props except locked exceptions; style → CSS spelling/explicit units | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/content/index.ts` | `module / template` | Retain pure logic/markup; audit reachable dialect and API | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/details/details.tsx` | `DetailsProps` | Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/details/details.tsx` | `Details` | Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/details/index.ts` | `module / template` | Retain pure logic/markup; audit reachable dialect and API | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/home-intro/CONTRACT.md` | `module / template` | Retain pure logic/markup; audit reachable dialect and API | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/home-intro/index.tsx` | `HOME_SECTION_HEADING_CLASS` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description; map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/home-intro/index.tsx` | `renderNode` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description; map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/home-intro/index.tsx` | `CompactProse` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description; map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/home-intro/prepare.ts` | `HomeIntroSettings` | className → intrinsic class; preserve custom props except locked exceptions; map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/home-intro/prepare.ts` | `resolveIntroUrl` | className → intrinsic class; preserve custom props except locked exceptions; map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/home-intro/prepare.ts` | `inspect` | className → intrinsic class; preserve custom props except locked exceptions; map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/home-intro/prepare.ts` | `prepareNode` | className → intrinsic class; preserve custom props except locked exceptions; map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/home-intro/prepare.ts` | `prepareHomeIntro` | className → intrinsic class; preserve custom props except locked exceptions; map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/home-intro/prepare.ts` | `prepareHomeIntros` | className → intrinsic class; preserve custom props except locked exceptions; map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/home-intro/resolve.ts` | `resolveHomeIntro` | Retain pure logic/markup; audit reachable dialect and API | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/home-intro/types.ts` | `IntroNode` | Retain pure logic/markup; audit reachable dialect and API | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/home-intro/types.ts` | `PreparedHomeIntro` | Retain pure logic/markup; audit reachable dialect and API | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/home-intro/types.ts` | `PreparedHomeIntros` | Retain pure logic/markup; audit reachable dialect and API | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/math-block/index.tsx` | `pickKatex` | raw injection → reviewed rawHtml; event/callback → native listener or stable component prop; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/math-block/index.tsx` | `MathBlockProps` | raw injection → reviewed rawHtml; event/callback → native listener or stable component prop; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/math-block/index.tsx` | `MathBlock` | raw injection → reviewed rawHtml; event/callback → native listener or stable component prop; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/mdx-components/index.ts` | `MdxNavData` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/mdx-components/index.ts` | `CreateMdxComponentsOptions` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/mdx-components/index.ts` | `makeContentImg` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/mdx-components/index.ts` | `makeEnlargeableParagraph` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/mdx-components/index.ts` | `createMdxComponents` | className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/smart-break/index.tsx` | `isPathLike` | raw injection → reviewed rawHtml; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/smart-break/index.tsx` | `htmlEscape` | raw injection → reviewed rawHtml; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/smart-break/index.tsx` | `smartBreak` | raw injection → reviewed rawHtml; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/smart-break/index.tsx` | `SmartBreak` | raw injection → reviewed rawHtml; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/smart-break/index.tsx` | `escapeAndInjectWbr` | raw injection → reviewed rawHtml; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/smart-break/index.tsx` | `smartBreakToHtml` | raw injection → reviewed rawHtml; Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/tab-item/index.ts` | `module / template` | Retain pure logic/markup; audit reachable dialect and API | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/tab-item/tab-item.tsx` | `TabItemProps` | Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `packages/zudo-doc/src/tab-item/tab-item.tsx` | `TabItem` | Preact child types → Child/Description | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-
-## Raw HTML sites to review
-
-| File and baseline line | Payload/context review | Trust, parser context, cleanup and test |
+| Owned file / symbols | v2 construct → v3 form | Status, spec anchor and proof |
 | --- | --- | --- |
-| `packages/zudo-doc/src/code-syntax/code-block-enhancer-script.ts:3` | `// Converted from the TypeScript <script> block in` | pending per-site review; R-RAW; identify producer/trust and disposal |
-| `packages/zudo-doc/src/code-syntax/code-block-enhancer-script.ts:5` | `// so the string can be emitted via \`dangerouslySetInnerHTML\` and parsed` | pending per-site review; R-RAW; identify producer/trust and disposal |
-| `packages/zudo-doc/src/code-syntax/code-block-enhancer.tsx:9` | `//   2. A <script> tag that self-initializes the copy/wrap button enhancer.` | pending per-site review; R-RAW; identify producer/trust and disposal |
-| `packages/zudo-doc/src/code-syntax/code-block-enhancer.tsx:11` | `// This JSX version renders the same markup via \`dangerouslySetInnerHTML\` so` | pending per-site review; R-RAW; identify producer/trust and disposal |
-| `packages/zudo-doc/src/code-syntax/code-block-enhancer.tsx:22` | `* and emits the code-block enhancer init script via \`dangerouslySetInnerHTML\`.` | pending per-site review; R-RAW; identify producer/trust and disposal |
-| `packages/zudo-doc/src/code-syntax/code-block-enhancer.tsx:39` | `<script dangerouslySetInnerHTML={{ __html: CODE_BLOCK_ENHANCER_SCRIPT }} />` | pending per-site review; R-RAW; identify producer/trust and disposal |
-| `packages/zudo-doc/src/code-syntax/index.ts:13` | `//                       URL because the inline \`<script>\` reaches the` | pending per-site review; R-RAW; identify producer/trust and disposal |
-| `packages/zudo-doc/src/code-syntax/mermaid-init-script.ts:3` | `// Converted from the TypeScript <script> block in` | pending per-site review; R-RAW; identify producer/trust and disposal |
-| `packages/zudo-doc/src/code-syntax/mermaid-init-script.ts:5` | `// so the string can be emitted via \`dangerouslySetInnerHTML\` and parsed` | pending per-site review; R-RAW; identify producer/trust and disposal |
-| `packages/zudo-doc/src/code-syntax/mermaid-init-script.ts:74` | `* (or to their own \`<script dangerouslySetInnerHTML>\` site).` | pending per-site review; R-RAW; identify producer/trust and disposal |
-| `packages/zudo-doc/src/code-syntax/mermaid-init-script.ts:80` | `// <script> tag prematurely and start parsing the rest as HTML.` | pending per-site review; R-RAW; identify producer/trust and disposal |
-| `packages/zudo-doc/src/code-syntax/mermaid-init-script.ts:300` | `// public ESM CDN URL because the inline <script> reaches the` | pending per-site review; R-RAW; identify producer/trust and disposal |
-| `packages/zudo-doc/src/code-syntax/mermaid-init.tsx:6` | `// The original component rendered a single <script> tag that:` | pending per-site review; R-RAW; identify producer/trust and disposal |
-| `packages/zudo-doc/src/code-syntax/mermaid-init.tsx:16` | `// This JSX version emits the identical script via \`dangerouslySetInnerHTML\`.` | pending per-site review; R-RAW; identify producer/trust and disposal |
-| `packages/zudo-doc/src/code-syntax/mermaid-init.tsx:21` | `// ESM CDN URL so the inline \`<script>\` (no bundler in the path) can` | pending per-site review; R-RAW; identify producer/trust and disposal |
-| `packages/zudo-doc/src/code-syntax/mermaid-init.tsx:66` | `* \`dangerouslySetInnerHTML\`. The script lazily imports mermaid only when` | pending per-site review; R-RAW; identify producer/trust and disposal |
-| `packages/zudo-doc/src/code-syntax/mermaid-init.tsx:79` | `return <script dangerouslySetInnerHTML={{ __html: script }} />;` | pending per-site review; R-RAW; identify producer/trust and disposal |
-| `packages/zudo-doc/src/code-syntax/tabs-init.tsx:6` | `// The original component rendered a <script> tag that created nav` | pending per-site review; R-RAW; identify producer/trust and disposal |
-| `packages/zudo-doc/src/code-syntax/tabs-init.tsx:21` | `* tabs interactivity script via \`dangerouslySetInnerHTML\`.` | pending per-site review; R-RAW; identify producer/trust and disposal |
-| `packages/zudo-doc/src/code-syntax/tabs-init.tsx:34` | `return <script dangerouslySetInnerHTML={{ __html: TABS_INIT_SCRIPT }} />;` | pending per-site review; R-RAW; identify producer/trust and disposal |
-| `packages/zudo-doc/src/math-block/index.tsx:77` | `dangerouslySetInnerHTML={{ __html: html }}` | pending per-site review; R-RAW; identify producer/trust and disposal |
-| `packages/zudo-doc/src/math-block/index.tsx:86` | `dangerouslySetInnerHTML={{ __html: html }}` | pending per-site review; R-RAW; identify producer/trust and disposal |
-| `packages/zudo-doc/src/smart-break/index.tsx:115` | `* an HTML string for \`set:html\` / dangerouslySetInnerHTML).` | pending per-site review; R-RAW; identify producer/trust and disposal |
+| `content/heading-h2.tsx`, `heading-h3.tsx`, `heading-h4.tsx`; `HeadingH2/3/4` | Intrinsic props now read `class`; CSS-spelled `border-image` style replaces camelCase `borderImage` and cast. | Done; R-JSX/R-PROPS. `content.test.tsx` heading SSR. |
+| `content/content-blockquote.tsx`, `content-strong.tsx`, `content-table.tsx`, `content-ul.tsx`, `content-ol.tsx`; corresponding `Content*` | MDX's `class` is merged with authored classes or forwarded to native list. Intrinsic `JSX.IntrinsicElements` prop types stay owned. Table's scroll wrapper and list inline styles remain. | Done; R-JSX/R-PROPS, #3381. `content.test.tsx` and `mdx-components.test.tsx`. |
+| `content/content-ol.tsx`; `ContentOl` | Native `<ol start={start}>` with normal children, no opaque serializer, flow wrapper, or CSS counter. | Done; round-2 #3360/#4479 Z02. SSR tests cover start 3, default list, attributes, composed children and task-list sibling. Real MDX emitter/hydration and browser parser checks remain #4468/#4475. |
+| `content/content-code.tsx`; `ContentCode` | Language detection reads `class`; ordinary inline text uses `SmartBreak`, language blocks pass through. Legacy StaticHtml handling retained for compatibility. | Done; R-JSX/R-PROPS. `content.test.tsx` inline/path/language tests. Native `<pre>` leading-LF SSR test is exact; browser parse/code-copy check remains #4468/#4475 (#3385/#4479 Z25). |
+| `content/content-link.tsx`; `ContentLink`, `createContentLink` | `class` used for block/hash bypass; no Preact description cast for SmartBreak. Asset manifest link decoration and locale rules preserved. | Done; R-JSX/R-PROPS. `content.test.tsx` link, asset and locale cases. |
+| `mdx-components/index.ts`; `ContentImg`, `ENLARGE_SVG`, `makeEnlargeableParagraph` | Hand-built `{ type, props, key, constructor }` descriptions → `h`; `toChildArray` → `flattenChildren`; SVG drops redundant `focusable`. Child image, caption, button and viewer href stay in original order. | Done; R-JSX/R-PROPS, #3381. `mdx-components.test.tsx` image, caption and component-map fixture SSR. Full zfb MDX build remains #4467. |
+| `mdx-components/index.ts`; `createMdxComponents` | Locale-bound nav and extras precedence unchanged. `ContentImg` still strips `title=no-enlarge`. | Done; `mdx-components.test.tsx`. |
+| `code-group/index.tsx`; `CodeGroup` | Preact-style one-level child normalization → zudo-react `flattenChildren`; static `<TabItem>` map retained for server-only content. | Done; R-JSX. Tabs SSR tests cover panels and child composition. |
+| `code-syntax/tabs.tsx`; `Tabs` | `toChildArray` → `flattenChildren`; `cloneElement` → fresh `h(node.type, copied props/default/key)`. Marker-only `tabs-container`, `tabs-nav`, `tabs-content` classes → existing `data-tabs` plus `data-tabs-nav`/`data-tabs-content`; styled utility classes remain. | Done; R-JSX/W-CATALOG. `tabs.test.tsx` selection, panels, attributes and script contract. No selector or shipped CSS depended on removed classes. |
+| `code-syntax/{tabs-init,code-block-enhancer,mermaid-init}.tsx`; init components | Native `<script rawHtml={static string}/>` retained, with closing-script guard for caller-supplied Mermaid body. | Done; raw HTML review below. Three script SSR suites. |
+| `tab-item/tab-item.tsx`; `TabItem` | Native server-rendered panel and hidden/default attributes retained. | Done; `tab-item.test.tsx`, `tabs.test.tsx`. |
+| `details/details.tsx`; `Details` | Returned JSX typed as `Child` rather than assuming every JSX expression is `Description`; native details/summary remain. | Done; `details.test.tsx` via owned `renderSsr`. |
+| `math-block/index.tsx`; `MathBlock` | KaTeX `renderToString` → trusted `rawHtml` in div/span; marker-only `math`, `math-display`, `math-inline` classes → `data-math`. KaTeX generated classes still own styling. | Done; R-RAW/W-CATALOG. `math-block.test.tsx` and optional-KaTeX test. |
+| `smart-break/index.tsx`; `smartBreak`, `SmartBreak` | `Child` accepts zudo-react JSX without Preact VNode casts. Text escaping and delimiter break logic unchanged. | Done; `smart-break.test.ts`, `content.test.tsx`. |
+| `content-admonition/index.tsx`; `makeAdmonition` | `Child` return type; marker-only base `admonition` class removed. `data-admonition` and styled variant/title/body classes remain. | Done; R-JSX/W-CATALOG. Home-intro alert SSR and MDX map test. |
+| `home-intro/index.tsx`, `prepare.ts`, `types.ts`; `CompactProse`, `renderNode`, `IntroNode` | `h` from zudo-react, `class` attrs, no children on void tags. `align` on table cells/headings becomes validated CSS `text-align` style. Parsed ruby `rb/rp` children use a bounded escaped raw HTML subtree because #3359 still rejects those intrinsic tags. Serializable `IntroNode.attrs` remains string/boolean with CSS style strings. | Done; R-JSX/R-RAW/#3359. `home-intro.test.tsx` Markdown/GFM, table alignment, escaping, ruby and rejected executable input. |
+| Owned test files | Preact renderer and hand-written serializers → #4438 `renderSsr` harness in source-resolution mode. | Done; 13 files, 228 tests green. |
 
-Round 2 removes the planned #3360 opaque-list site: native ContentOl/MDX start is required. Enumerate existing rawHtml trust sites normally; no list serializer or display-contents wrapper is authorized. #3359 remains unresolved only where a relevant unsupported attribute actually occurs.
+## Raw HTML site review
 
-## Utility/token and authored rewrite rows
+| Exact site, parent and producer | Trust, parser and lifecycle verdict | Test / browser follow-up |
+| --- | --- | --- |
+| `math-block/index.tsx` `MathBlock` display `div` and inline `span`: `katex.renderToString(latex)` | KaTeX generates markup from authored LaTeX with `throwOnError:false`. Its renderer escapes author input. `rawHtml` is exclusive of children; both wrappers are ordinary HTML and static SSR output, without nested islands or protocol markers. KaTeX output is opaque and never updated client-side. | `math-block.test.tsx` and optional-KaTeX test; visual formulas in #4468. |
+| `code-syntax/tabs-init.tsx` `TabsInit`, `code-block-enhancer.tsx` `CodeBlockEnhancer`: `script` parents, package-owned static JS constants | Static strings only; no user-controlled bytes, children or reactive regions. They contain no closing script sequence, protocol markers or island wrappers. Scripts are parsed at page load and rebind on the page event; SSR/hydration sees the same bytes. | `tabs.test.tsx`, `code-block-enhancer.test.tsx`; SPA navigation and copy/wrap browser cases in #4468. |
+| `code-syntax/mermaid-init.tsx` `MermaidInit`: `script` parent, static builder output or explicitly trusted host `script` prop | Builder JSON-escapes URL and rewrites `</script`; component rejects a closing-script sequence even for trusted overrides. No children, reactive payload, markers or nested islands. Same script string in SSR/hydration; runtime script owns its observer cleanup/reinit. | `mermaid-init.test.tsx` custom closing-tag rejection and script behavior; browser Mermaid theme/navigation in #4468. |
+| `home-intro/index.tsx` `renderNode` ruby parent: `serializeRubyChild` from `prepareHomeIntro` parsed/whitelisted nodes | Only prepared Markdown tags/attrs can reach this path; `prepareNode` rejects executable input and unsafe URL schemes. Serializer escapes text and quoted attrs, includes no script/style/iframe or island wrapper, and supplies no JSX children with `rawHtml`. Static SSR only. This is a #3359 workaround and release blocker until native `rb/rp` support is verified. | `home-intro.test.tsx` ruby and injection cases; browser ruby layout in #4468. |
+| `smart-break/index.tsx` `smartBreakToHtml` / `escapeAndInjectWbr` | These return escaped HTML strings but are not `rawHtml` sinks in this owned code. Callers choose their own sink. Only literal `<wbr>` is injected after escaped text. | `smart-break.test.ts`; caller sink review belongs to its owner. |
 
-| File | Original utility or CSS construct | Required disposition / review | Status and test |
-| --- | --- | --- | --- |
-| Owned source set | No mapped gap in planning TSV | Confirm generated candidate or matching shipped authored selector; unknown ordinary class is not proof | pending scan confirmation |
+## Deliberate differences and remaining checks
 
-## Tests and completion evidence
-
-Existing candidate test files (ownership exceptions in the issue still apply):
-
-- `packages/zudo-doc/src/code-syntax/__tests__/code-block-enhancer.test.tsx` — pending port/run result.
-- `packages/zudo-doc/src/code-syntax/__tests__/code-block-wrap-persistence.test.ts` — pending port/run result.
-- `packages/zudo-doc/src/code-syntax/__tests__/mermaid-init.test.tsx` — pending port/run result.
-- `packages/zudo-doc/src/code-syntax/__tests__/tabs.test.tsx` — pending port/run result.
-- `packages/zudo-doc/src/content/__tests__/content.test.tsx` — pending port/run result.
-- `packages/zudo-doc/src/details/__tests__/details.test.tsx` — pending port/run result.
-- `packages/zudo-doc/src/home-intro/__tests__/home-intro.test.tsx` — pending port/run result.
-- `packages/zudo-doc/src/math-block/__tests__/math-block-optional-katex.test.tsx` — pending port/run result.
-- `packages/zudo-doc/src/math-block/__tests__/math-block.test.tsx` — pending port/run result.
-- `packages/zudo-doc/src/mdx-components/__tests__/mdx-components.test.tsx` — pending port/run result.
-- `packages/zudo-doc/src/smart-break/__tests__/smart-break.test.ts` — pending port/run result.
-- `packages/zudo-doc/src/tab-item/__tests__/tab-item.test.tsx` — pending port/run result.
-
-Run the exact source-resolution and port-check commands from the conventions with this topic’s paths. Record command, result, version and remaining diagnostics. Required behavioral coverage: initial SSR, active updates, cleanup/disposal, relevant navigation and parser/prop failures. CSS changes require computed-style evidence from the verification owner; a green build is insufficient.
-
-| Completion field | Owner must fill |
-| --- | --- |
-| Port-check / unit evidence | pending |
-| RawHtml review verdict per site | pending (or verified none) |
-| Deliberate DOM/class/behavior differences and cause | pending (or verified none) |
-| Upstream issue/shim and removal version | pending (or verified none) |
-| Browser/visual cases handed to #4468/#4475 | pending |
-| Final commit / reviewer / date | pending |
-
-## Remaining Preact runtime imports after #4437
-
-The following files still import Preact runtime APIs for their assigned semantic port. The mechanical codemod removed Preact type imports and JSX pragmas.
-
-- `packages/zudo-doc/src/code-syntax/tabs.tsx`
-- `packages/zudo-doc/src/home-intro/index.tsx`
-- `packages/zudo-doc/src/mdx-components/__tests__/mdx-components.test.tsx`
-- `packages/zudo-doc/src/mdx-components/index.ts`
+- Marker-only classes in tabs, math and admonitions became data attributes or were removed. Their original class names had no shipped CSS rules; variant, utility and KaTeX classes with styling remain. No visual style difference is intended. #4440 authored-class coverage should validate this disposition.
+- The decorative enlarge SVG omits redundant `focusable`; `aria-hidden` remains. `h()` descriptions replace Preact VNode shapes without an intended visible difference.
+- Ruby is temporarily opaque HTML under #3359. No other owned MDX child subtree uses raw HTML; native ordered lists and native `<pre>` are the round-2 paths.
+- Real browser HTML parsing of leading LF and code-copy text, actual MDX compilation/hydration, ruby presentation, tables/task lists, and scripted tabs are delegated to #4468/#4475. This leaf ran no browser, full build or e2e suite by issue instruction.

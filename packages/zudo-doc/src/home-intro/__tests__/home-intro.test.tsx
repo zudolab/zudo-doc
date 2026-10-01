@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic */
 import { describe, expect, it } from "vitest";
-import { renderToString } from "preact-render-to-string";
+import { renderSsr as renderToString } from "../../__tests__/helpers/zudo-react.js";
 import { CompactProse, resolveHomeIntro } from "../index.js";
 import { prepareHomeIntro, prepareHomeIntros, resolveIntroUrl } from "../prepare.js";
 import { DEFAULT_SETTINGS, zudoDoc } from "../../config.js";
@@ -82,6 +82,24 @@ describe("home introduction contract", () => {
     expect(await html('```mermaid\ngraph TD; A-->B\n```')).toContain('data-mermaid');
     expect(await html('```mermaid\ngraph TD; A-->B\n```', { ...settings, mermaid: false })).not.toContain("data-mermaid");
     expect(await html('$$x^2$$')).toContain('$$x^2$$');
+  });
+
+  it("keeps right aligned table headings through CSS style text", async () => {
+    const output = await html("| Left | Right |\n| :--- | ---: |\n| a | b |");
+    expect(output).toContain('style="text-align: right"');
+    expect(output).not.toContain(' align=');
+  });
+
+  it("escapes prepared ruby text inside its bounded raw HTML subtree", () => {
+    const output = renderToString(<CompactProse intro={{ nodes: [{
+      tag: "ruby", attrs: {}, children: [
+        { tag: "rb", attrs: {}, children: ["<script>bad</script>"] },
+        { tag: "rt", attrs: {}, children: ["& reading"] },
+      ],
+    }] }} />);
+    expect(output).toContain('<rb>&lt;script&gt;bad&lt;/script&gt;</rb>');
+    expect(output).toContain('<rt>&amp; reading</rt>');
+    expect(output).not.toContain('<script>');
   });
 });
 

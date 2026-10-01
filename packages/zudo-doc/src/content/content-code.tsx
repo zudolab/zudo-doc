@@ -1,13 +1,8 @@
 /** @jsxRuntime automatic */
-import type { Description } from "@takazudo/zfb/zudo-react";
 import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { SmartBreak as SmartBreakImpl } from "../smart-break/index.js";
 
-// Preact VNode vs JSX.IntrinsicElements["code"].children type mismatch under compat mode;
-// cast so the content override type-checks. Runtime is fine since the preact/compat alias is in effect.
-const SmartBreak = SmartBreakImpl as unknown as (props: {
-  children?: unknown;
-}) => Description;
+const SmartBreak = SmartBreakImpl;
 
 type Props = JSX.IntrinsicElements["code"];
 
@@ -21,34 +16,34 @@ type Props = JSX.IntrinsicElements["code"];
  * nodes (not a plain string). We detect those and render untouched so
  * syntax highlighting is never disturbed.
  *
- * Astro 6 passes pure-text MDX children wrapped in a `StaticHtml` Preact
+ * Legacy MDX may pass pure-text children wrapped in a `StaticHtml`
  * component whose text lives in `props.value`, not as a string child.
  * `extractText` unwraps that so the heuristic works regardless of MDX's
  * internal wrapping.
  */
-export function ContentCode({ children, className, ...rest }: Props) {
+export function ContentCode({ children, class: klass, ...rest }: Props) {
   const isShikiBlock =
-    typeof className === "string" && /(^|\s)language-/.test(className);
+    typeof klass === "string" && /(^|\s)language-/.test(klass);
 
   const textFromChildren = isShikiBlock ? null : extractText(children);
 
   if (textFromChildren === null) {
     return (
-      <code class={className} {...rest}>
+      <code class={klass} {...rest}>
         {children}
       </code>
     );
   }
 
   return (
-    <code class={className} {...rest}>
+    <code class={klass} {...rest}>
       <SmartBreak>{textFromChildren}</SmartBreak>
     </code>
   );
 }
 
 /**
- * Walk a React/Preact children value and return a concatenated plain
+ * Walk a children value and return a concatenated plain
  * string when the entire subtree is text-only. Returns null if any
  * non-text node (other than the StaticHtml wrapper Astro uses for pure
  * text MDX content) is found — that signals inline markup inside the

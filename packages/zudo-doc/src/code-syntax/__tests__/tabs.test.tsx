@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic */
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { Tabs } from "../tabs.js";
 import { TabsInit } from "../tabs-init.js";
 import { TABS_INIT_SCRIPT } from "../tabs-init-script.js";
@@ -15,7 +15,7 @@ describe("<Tabs />", () => {
       </Tabs>,
     );
     expect(html).toContain("data-tabs");
-    expect(html).toContain("tabs-container");
+    expect(html).toContain("data-tabs");
   });
 
   it("renders a tabs-nav role=tablist", () => {
@@ -25,7 +25,7 @@ describe("<Tabs />", () => {
       </Tabs>,
     );
     expect(html).toContain('role="tablist"');
-    expect(html).toContain("tabs-nav");
+    expect(html).toContain("data-tabs-nav");
   });
 
   it("renders one nav button per TabItem with the correct label", () => {
@@ -110,7 +110,7 @@ describe("<Tabs />", () => {
         <TabItem label="A">content A</TabItem>
       </Tabs>,
     );
-    expect(html).toContain("tabs-content");
+    expect(html).toContain("data-tabs-content");
     expect(html).toContain("content A");
     // Single TabItem becomes the implicit default → panel paints
     // immediately, no `hidden` attribute on the only panel.

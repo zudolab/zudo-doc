@@ -24,7 +24,7 @@
 // `import("katex").then(onFulfilled, onRejected)` as a bare specifier instead
 // of failing the build (#4015 / #4209), and evaluating this module never throws.
 
-import type { Description } from "@takazudo/zfb/zudo-react";
+import type { Child } from "@takazudo/zfb/zudo-react";
 
 type KatexLike = typeof import("katex").default;
 
@@ -54,12 +54,10 @@ export interface MathBlockProps {
 /**
  * Server-rendered KaTeX math component.
  *
- * Block mode wraps the output in `<div class="math math-display">`;
- * inline mode uses `<span class="math math-inline">`. The class names
- * match the standard rehype-katex output so existing CSS (e.g. the
- * KaTeX stylesheet) still applies.
+ * Block mode wraps the output in `<div data-math="display">`; inline mode
+ * uses `<span data-math="inline">`. KaTeX owns the styled inner classes.
  */
-export function MathBlock({ latex, block = false }: MathBlockProps): Description {
+export function MathBlock({ latex, block = false }: MathBlockProps): Child {
   if (!katex) throw new Error(MISSING_KATEX_MESSAGE);
   const html = katex.renderToString(latex, {
     displayMode: block,
@@ -71,7 +69,7 @@ export function MathBlock({ latex, block = false }: MathBlockProps): Description
   if (block) {
     return (
       <div
-        class="math math-display"
+        data-math="display"
         // eslint-disable-next-line react/no-danger
         rawHtml={html}
       />
@@ -80,7 +78,7 @@ export function MathBlock({ latex, block = false }: MathBlockProps): Description
 
   return (
     <span
-      class="math math-inline"
+      data-math="inline"
       // eslint-disable-next-line react/no-danger
       rawHtml={html}
     />

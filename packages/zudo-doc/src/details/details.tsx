@@ -1,5 +1,5 @@
 /** @jsxRuntime automatic */
-import type { Child, Description } from "@takazudo/zfb/zudo-react";
+import type { Child } from "@takazudo/zfb/zudo-react";
 
 export interface DetailsProps {
   /**
@@ -20,7 +20,7 @@ export interface DetailsProps {
  * The legacy component used Astro's `<slot />`; v2 accepts standard
  * Preact `children`.
  */
-export function Details({ title = "Details", children }: DetailsProps): Description {
+export function Details({ title = "Details", children }: DetailsProps): Child {
   return (
     <details class="my-vsp-md border border-muted rounded-lg overflow-hidden">
       <summary class="cursor-pointer px-hsp-lg py-vsp-sm bg-surface font-medium text-fg select-none hover:text-accent">
