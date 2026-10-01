@@ -4,7 +4,7 @@
  * Ported from the `create-zudo-doc` base template's
  * `src/config/z-index-tokens.ts` `Z_INDEX_TIERS` export (epic
  * zudolab/zudo-doc#2651, S4 #2654). Consumed by the theme-CSS default
- * (#2655) for the shipped `@theme` z-index block; a project's own
+ * (#2655) for the shipped `:root` z-index block; a project's own
  * `gen-z-index` codegen (from `@takazudo/zudo-doc`'s `gen-z-index` bin)
  * becomes opt-in customization on top of this default rather than the only
  * source.
@@ -16,9 +16,9 @@
  * Strategy (from zudolab/zudo-css-wisdom z-index-strategy): semantic single-
  * namespace tokens — names describe ROLES, never magnitudes. One flat ordered
  * list. Values are deliberately gapped but otherwise arbitrary: renaming and
- * reordering is cheap, which is the whole point. Tailwind v4 reads the
- * `--z-index-<name>` theme key and generates a `z-<name>` utility, so e.g.
- * `@theme { --z-index-toolbar: 20 }` produces `.z-toolbar { z-index: 20 }`.
+ * reordering is cheap, which is the whole point. zudo-wind reads the
+ * `--z-index-<name>` token and generates a `z-<name>` utility, so e.g.
+ * `:root { --z-index-toolbar: 20 }` produces `.z-toolbar { z-index: 20 }`.
  *
  * `local-1`/`local-2`/`local-3` ("local" kind in the template) are anonymous
  * reusable helpers for promoting a child WITHIN a parent stacking context
