@@ -4,10 +4,10 @@
  * `zudoDocPreset()` returns the zfb config fragment that every zudo-doc
  * project previously hand-wrote in its `zfb.config.ts` (collections loop,
  * markdown.features, class-mode codeHighlight, resolveMarkdownLinks,
- * stripMdExt, trailingSlash, minifyHtml, and the integration plugins array). The host
- * config spreads this fragment into `defineConfig` and supplies only the
- * project-specific shell fields it still owns (`framework`, `port`,
- * `tailwind`, `bundle`, `base`, `adapter`).
+ * stripMdExt, trailingSlash, minifyHtml, integration plugins, and the
+ * package-owned wind preset). The host config spreads this fragment into
+ * `defineConfig` and supplies project-specific shell fields (`port`, `bundle`,
+ * `base`, `adapter`, and an optional top-level `wind` override).
  *
  * ──────────────────────────────────────────────────────────────────────────
  * NODE-BUILTIN-FREE EVAL GRAPH (non-negotiable — guarded by a unit test)
@@ -29,11 +29,13 @@
  *     specifier and dispatches lifecycle hooks against it; importing the
  *     plugin modules here would pull their `node:fs` / `node:path` graph into
  *     the config eval.
- *   - The only runtime dependency is `zod` (for `z.toJSONSchema`), which
- *     bundles cleanly under `--platform=neutral` (verified: zero `node:*`).
+ *   - Runtime dependencies are `zod` (for `z.toJSONSchema`) and zfb's
+ *     `definePreset` helper (for the package-owned wind fragment). Both bundle
+ *     cleanly under `--platform=neutral` (verified: zero `node:*`).
  */
 
 import { z } from "zod";
+import type { DirectiveSpec, ZfbConfig } from "@takazudo/zfb/config";
 import type { ColorScheme } from "./color-scheme-utils.js";
 import type {
   AssetViewerIndexingConfig,
@@ -49,9 +51,7 @@ import {
   resolvesBundleZdtp,
   warnAmbiguousDropdownCategoryMatch,
 } from "./config-assertions/index.js";
-// Type-only — erased by esbuild before the node-builtin-free eval-graph
-// bundle runs (mirrors config.ts's `@takazudo/zfb/config` type-only import).
-import type { DirectiveSpec } from "@takazudo/zfb/config";
+import { zudoDocWindPreset } from "./wind/index.js";
 
 // ---------------------------------------------------------------------------
 // Input contract — structurally typed so the preset is portable to every
@@ -349,6 +349,7 @@ export interface PresetCodeHighlight {
 
 /** The config fragment returned by {@link zudoDocPreset}. */
 export interface ZudoDocPresetResult {
+  presets: Partial<ZfbConfig>[];
   collections: PresetCollection[];
   plugins: PresetPlugin[];
   markdown: PresetMarkdown;
@@ -370,9 +371,7 @@ export interface ZudoDocPresetResult {
  *
  * ```ts
  * export default defineConfig({
- *   framework: "preact",
  *   port: 4321,
- *   tailwind: { enabled: true },
  *   bundle: { exclude: [...] },
  *   base: settings.base,
  *   adapter: "@takazudo/zfb-adapter-cloudflare",
@@ -424,6 +423,7 @@ export function zudoDocPreset({
   const docsSchemaJson = z.toJSONSchema(buildDocsSchema()) as Record<string, unknown>;
 
   return {
+    presets: [zudoDocWindPreset],
     collections: buildCollections(settings, docsSchemaJson),
     plugins: buildPlugins(settings, { translations, tagVocabulary, colorSchemes }),
     markdown: {

@@ -15,8 +15,9 @@
  * }));
  * ```
  *
- * `zudoDoc()` SHALLOW-merges the user's fields over {@link DEFAULT_SETTINGS} —
- * top-level fields only (`{ ...DEFAULT_SETTINGS, ...user }`). A supplied nested
+ * `zudoDoc()` SHALLOW-merges the user's serializable settings fields over
+ * {@link DEFAULT_SETTINGS} — top-level fields only
+ * (`{ ...DEFAULT_SETTINGS, ...settingsOverrides }`). A supplied nested
  * object (e.g. `colorMode`, `metaTags`) REPLACES the default wholesale; it is
  * NOT deep-merged key-by-key. Nested config types that intentionally expose
  * optional keys (such as `FrontmatterPreviewConfig` and
@@ -31,12 +32,12 @@
  * host spreads nothing.
  *
  * ──────────────────────────────────────────────────────────────────────────
- * COMPOSITION MECHANISM (locked, #2653): JS object composition — NOT zfb-native
- * `presets:`. `zudoDoc()` builds the full `ZfbConfig` in JS and returns it
- * complete; the returned object carries **no `presets` field**. `zudoDocPreset()`
- * stays the internal fragment builder this calls (still exported at
- * `@takazudo/zudo-doc/preset` as an advanced escape hatch); its
- * collections/plugins/markdown logic is NOT reimplemented here.
+ * COMPOSITION MECHANISM (locked, #2653; wind exception locked by #4480):
+ * `zudoDoc()` builds the full `ZfbConfig` in JS. `zudoDocPreset()` stays the
+ * fragment builder for collections/plugins/markdown. Package wind defaults
+ * use one zfb-native `presets` entry so zfb can deep-merge a user's top-level
+ * `wind` override over the package fragment. No other config surface is
+ * delegated to native presets.
  *
  * ──────────────────────────────────────────────────────────────────────────
  * NODE-BUILTIN-FREE EVAL GRAPH (non-negotiable — guarded by a unit test)
@@ -45,10 +46,11 @@
  * (mirrors zfb's `loader.rs:277`); a transitive `node:*` import fails the load.
  * `zudoDoc()` is the new central node in that eval graph — it transitively pulls
  * in `preset.ts` plus every #2654 default module — so this module and all of
- * them MUST stay free of `node:*` builtins. `zod` is the only allowed runtime
- * dependency on this path (a required peer). The `ZfbConfig`/`BundleConfig`
- * imports from `@takazudo/zfb/config` are **type-only** (erased before esbuild
- * resolution), so they add nothing to the eval graph. The guard lives in
+ * them MUST stay free of `node:*` builtins. Runtime dependencies on this path
+ * are `zod` and zfb's `definePreset` helper (used by `wind/index.ts`); both
+ * are required peers with node-free config entry points. The `ZfbConfig`,
+ * `BundleConfig`, and `WindConfig` imports from `@takazudo/zfb/config` here are
+ * **type-only** (erased before esbuild resolution). The guard lives in
  * `src/__tests__/foundation-eval-graph.test.ts` (`config.ts` is in
  * `NODE_FREE_MODULES`).
  *
@@ -56,15 +58,16 @@
  * SERIALIZABILITY SPLIT
  * ──────────────────────────────────────────────────────────────────────────
  * The non-serializable / data overrides (`buildDocsSchema` fn, `colorSchemes`,
- * `translations`, `directives`, `tagVocabularyEntries`) and the shell fields
- * (`port`/`adapter`/`bundle`) are peeled off `user` up front so they never leak
+ * `translations`, `directives`, `tagVocabularyEntries`) and config passthrough
+ * fields (`port`/`adapter`/`bundle`/`wind`/`strictContentBridge`) are peeled
+ * off `user` up front so they never leak
  * into the merged `settings` object — only clean, JSON-serializable settings
  * ride into the routes plugin's virtual-module payload (exactly as
  * `zudoDocPreset()` does today). The function-valued/data overrides travel the
  * import-graph side (passed as `zudoDocPreset()` arguments, not serialized).
  */
 
-import type { ZfbConfig, BundleConfig } from "@takazudo/zfb/config";
+import type { ZfbConfig, BundleConfig, WindConfig } from "@takazudo/zfb/config";
 import type { ZodType } from "zod";
 
 import { zudoDocPreset } from "./preset.js";
@@ -792,6 +795,13 @@ export interface ZudoDocConfig {
    */
   bundle?: BundleConfig;
   /**
+   * zudo-wind configuration override. Package defaults are supplied through
+   * a zfb preset and zfb recursively merges this user value over them; `false`
+   * disables wind generation.
+   * @default undefined (the zudo-doc preset defaults apply)
+   */
+  wind?: WindConfig | false;
+  /**
    * Build-only gate that fails `zfb build` when a collection entry falls
    * back to `<pre data-zfb-content-fallback>` (mirrors zfb's
    * `Config::strict_content_bridge`, zfb 2.0.0). Omit to leave zfb's own
@@ -838,6 +848,7 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
     port,
     adapter,
     bundle,
+    wind,
     strictContentBridge,
     buildDocsSchema: userBuildDocsSchema,
     colorSchemes: userColorSchemes,
@@ -908,12 +919,11 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
 
   return {
     // ── Host-owned shell fields ──────────────────────────────────────────
-    framework: "preact",
     port: port ?? 4321,
-    tailwind: { enabled: true },
     base: settings.base,
     ...(adapter ? { adapter } : {}),
     ...(bundle ? { bundle } : {}),
+    ...(wind !== undefined ? { wind } : {}),
     ...(strictContentBridge !== undefined ? { strictContentBridge } : {}),
 
     // ── Preset-owned fields (collections, plugins, markdown, …) ──────────

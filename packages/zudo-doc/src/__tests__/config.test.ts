@@ -6,6 +6,7 @@ import { buildDocsSchema as defaultBuildDocsSchema } from "../docs-schema/index.
 import { defaultDirectiveVocabulary } from "../directive-vocabulary-defaults/index.js";
 import { defaultTranslations } from "../i18n-defaults/index.js";
 import { defaultColorSchemes } from "../color-schemes-defaults/index.js";
+import { packageWindConfig, zudoDocWindPreset } from "../wind/index.js";
 
 const invalidHeadingIdConfig: Parameters<typeof zudoDoc>[0] = {
   // @ts-expect-error The removed strategy setting is rejected by the config type.
@@ -49,16 +50,39 @@ function assertNoFunctions(node: unknown, path = "root"): void {
 
 // ── Complete ZfbConfig shell ─────────────────────────────────────────────────
 describe("zudoDoc() returns a complete ZfbConfig", () => {
-  it("emits the host-owned shell fields (framework, port, tailwind, base)", () => {
+  it("emits the v3 shell fields (port and base), without framework or Tailwind", () => {
     const config = zudoDoc({ siteName: "My Docs" });
-    expect(config.framework).toBe("preact");
     expect(config.port).toBe(4321);
-    expect(config.tailwind).toEqual({ enabled: true });
     expect(config.base).toBe("/");
+    expect(config).not.toHaveProperty("framework");
+    expect(config).not.toHaveProperty("tailwind");
   });
 
-  it("carries NO `presets` field (JS composition, not zfb-native presets — #2653)", () => {
-    expect(zudoDoc({ siteName: "X" })).not.toHaveProperty("presets");
+  it("omits user wind by default and keeps package defaults in a zfb preset", () => {
+    const config = zudoDoc({ siteName: "X" });
+
+    expect(config).not.toHaveProperty("wind");
+    expect(config.presets).toEqual([zudoDocWindPreset]);
+    expect(config.presets?.[0]?.wind).toEqual(packageWindConfig);
+  });
+
+  it("keeps a partial user color override top-level beside package wind defaults", () => {
+    const wind = { tokens: { colors: { accent: "var(--zd-accent)" } } };
+    const config = zudoDoc({ wind });
+
+    // zfb recursively merges this top-level override over the unchanged
+    // package preset. The user object is not shallow-merged into Settings.
+    expect(config.presets).toEqual([zudoDocWindPreset]);
+    expect(config.presets?.[0]?.wind).toEqual(packageWindConfig);
+    expect(config.wind).toEqual(wind);
+    expect(routesOptions(config)?.settings).not.toHaveProperty("wind");
+  });
+
+  it("passes wind:false at top level so zfb disables generation over defaults", () => {
+    const config = zudoDoc({ wind: false });
+
+    expect(config.presets).toEqual([zudoDocWindPreset]);
+    expect(config.wind).toBe(false);
   });
 
   it("includes the preset-owned fields (collections/plugins/markdown/…)", () => {
