@@ -33,7 +33,7 @@ describe("defaultZIndexTiers", () => {
   });
 });
 
-// The shipped `@theme` z-index block in theme.css is documented as "mirrors
+// The shipped `:root` z-index block in theme.css is documented as "mirrors
 // defaultZIndexTiers" but that mirror was never machine-enforced (#2651 review
 // fix). Parse the `--z-index-<name>: <value>;` declarations out of theme.css
 // and assert they match this module 1:1 — same names, same values, same order.
@@ -52,7 +52,7 @@ describe("theme.css --z-index-* block mirrors defaultZIndexTiers", () => {
     .map((m) => ({ name: m[1]!, value: Number(m[2]!) }));
 
   it("marks the z-index theme inline so utilities emit literal values", () => {
-    expect(themeCss).toMatch(/@theme inline\s*\{\s*--z-index-content:/);
+    expect(themeCss).toMatch(/:root\s*\{\s*--z-index-content:/);
   });
 
   it("parsed a non-trivial number of declarations from theme.css", () => {

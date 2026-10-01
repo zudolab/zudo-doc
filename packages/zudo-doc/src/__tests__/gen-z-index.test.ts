@@ -107,13 +107,13 @@ function tokensSrcFromTiers(
 }
 
 // The exact legacy header + block text for DEFAULT_TIER_DATA at conventional
-// paths with the @theme wrapper — this is the byte-identity golden value.
+// paths with the :root wrapper — this is the byte-identity golden value.
 const GOLDEN_DEFAULT_BLOCK = [
   `  /* ${BEGIN_MARKER}`,
   `   * GENERATED:Z_INDEX — do not hand-edit; run pnpm gen:z-index.`,
-  `   * Source of truth: src/config/z-index-tokens.ts. Tailwind v4 reads the`,
-  `   * --z-index-<name> theme key and generates a z-<name> utility. */`,
-  `  @theme {`,
+  `   * Source of truth: src/config/z-index-tokens.ts. zudo-wind reads the`,
+  `   * --z-index-<name> custom property and generates a z-<name> utility. */`,
+  `  :root {`,
   ...DEFAULT_TIER_DATA.map((t) => `    --z-index-${t.name}: ${t.value};`),
   `  }`,
   `  /* ${END_MARKER} */`,
@@ -1073,7 +1073,7 @@ describe("buildBlock", () => {
     expect(block).toContain('--tokens "my tokens/z-index-tokens.ts"');
   });
 
-  it("--no-theme-wrapper: drops the @theme wrapper and emits bare declarations at 2-space indent", () => {
+  it("--no-theme-wrapper: drops the :root wrapper and emits bare declarations at 2-space indent", () => {
     const block = buildBlock(
       [
         { name: "content", value: 0 },
@@ -1081,13 +1081,13 @@ describe("buildBlock", () => {
       ],
       { themeWrapper: false },
     );
-    expect(block).not.toContain("@theme {");
+    expect(block).not.toContain(":root {");
     expect(block).not.toContain("  }\n");
     const expected = [
       `  /* ${BEGIN_MARKER}`,
       `   * GENERATED:Z_INDEX — do not hand-edit; run pnpm exec gen-z-index --no-theme-wrapper.`,
-      `   * Source of truth: ${DEFAULT_TOKENS_PATH}. Tailwind v4 reads the`,
-      `   * --z-index-<name> theme key and generates a z-<name> utility. */`,
+      `   * Source of truth: ${DEFAULT_TOKENS_PATH}. zudo-wind reads the`,
+      `   * --z-index-<name> custom property and generates a z-<name> utility. */`,
       `  --z-index-content: 0;`,
       `  --z-index-modal: 50;`,
       `  /* ${END_MARKER} */`,
@@ -1095,7 +1095,7 @@ describe("buildBlock", () => {
     expect(block).toBe(expected);
   });
 
-  it("wraps declarations at 4-space indent inside @theme when themeWrapper is true (default)", () => {
+  it("wraps declarations at 4-space indent inside :root when themeWrapper is true (default)", () => {
     const block = buildBlock([{ name: "content", value: 0 }]);
     expect(block).toContain("    --z-index-content: 0;");
   });
@@ -1115,7 +1115,7 @@ describe("buildBlock", () => {
 
 describe("replaceBlock", () => {
   it("replaces the block between BEGIN and END markers", () => {
-    const existing = wrapInCss(seededBlock("  @theme {\n    --z-index-content: 0;\n  }"));
+    const existing = wrapInCss(seededBlock("  :root {\n    --z-index-content: 0;\n  }"));
     const next = replaceBlock(existing, buildBlock([{ name: "content", value: 1 }]));
     expect(next).toContain("--z-index-content: 1;");
     expect(next).not.toContain("old comment");
@@ -1124,7 +1124,7 @@ describe("replaceBlock", () => {
   it("preserves surrounding content outside the block", () => {
     const prefix = "/* prefix content */\n\n";
     const suffix = "\n/* suffix content */\n";
-    const css = `${prefix}${seededBlock("  @theme {\n    --z-index-content: 0;\n  }")}${suffix}`;
+    const css = `${prefix}${seededBlock("  :root {\n    --z-index-content: 0;\n  }")}${suffix}`;
     const next = replaceBlock(css, buildBlock([{ name: "content", value: 1 }]));
     expect(next.startsWith(prefix)).toBe(true);
     expect(next).toContain(suffix);
@@ -1170,7 +1170,7 @@ describe("replaceBlock", () => {
   it("does not confuse the CSS markers with the md-table markers when both are present", () => {
     const altBegin = "{/* GENERATED:Z_INDEX_TABLE_BEGIN */}";
     const altEnd = "{/* GENERATED:Z_INDEX_TABLE_END */}";
-    const source = `${seededBlock("  @theme {\n  }")}\n${altBegin}\nold table\n${altEnd}\n`;
+    const source = `${seededBlock("  :root {\n  }")}\n${altBegin}\nold table\n${altEnd}\n`;
     // Replacing the CSS region must not touch the md-table region below it.
     const next = replaceBlock(source, buildBlock([{ name: "content", value: 0 }]));
     expect(next).toContain(altBegin);
@@ -1179,7 +1179,7 @@ describe("replaceBlock", () => {
 
   it("a prose mention of the marker plus one real marker pair replaces correctly (does not throw duplicate)", () => {
     const prose = `see ${BEGIN_MARKER} for details\n\n`;
-    const source = `${prose}${seededBlock("  @theme {\n    --z-index-content: 0;\n  }")}`;
+    const source = `${prose}${seededBlock("  :root {\n    --z-index-content: 0;\n  }")}`;
     const next = replaceBlock(source, buildBlock([{ name: "content", value: 1 }]));
     expect(next).toContain(prose);
     expect(next).toContain("--z-index-content: 1;");
@@ -1191,7 +1191,7 @@ describe("replaceBlock", () => {
     // (which comes first in the file) and corrupt the splice by cutting the
     // prose line in half instead of replacing the real comment block.
     const prose = `Note: search for ${BEGIN_MARKER} to find the block.\n`;
-    const source = `${prose}${seededBlock("  @theme {\n    --z-index-content: 0;\n  }")}\n`;
+    const source = `${prose}${seededBlock("  :root {\n    --z-index-content: 0;\n  }")}\n`;
     const next = replaceBlock(source, buildBlock([{ name: "content", value: 1 }]));
     expect(next.startsWith(prose)).toBe(true);
     expect(next).toContain("--z-index-content: 1;");
@@ -1205,7 +1205,7 @@ describe("replaceBlock", () => {
     // stray leftover text instead of being replaced — silent corruption,
     // not a loud error.
     const prose = `mentions ${END_MARKER} in passing`;
-    const inner = `  @theme {\n    --z-index-content: 0;\n  }\n${prose}`;
+    const inner = `  :root {\n    --z-index-content: 0;\n  }\n${prose}`;
     const source = wrapInCss(seededBlock(inner));
     const next = replaceBlock(source, buildBlock([{ name: "content", value: 1 }]));
 
@@ -1391,7 +1391,7 @@ describe("replaceBlock with excludeFencedCode", () => {
         `  /* ${BEGIN_MARKER}`,
         `  /* ${END_MARKER} */`,
         "```",
-        seededBlock("  @theme {\n  }"),
+        seededBlock("  :root {\n  }"),
       ].join("\n"),
     );
     expect(() => replaceBlock(source, buildBlock([{ name: "content", value: 0 }]))).toThrow(
@@ -1400,7 +1400,7 @@ describe("replaceBlock with excludeFencedCode", () => {
   });
 
   it("produces byte-identical CSS output for the default tiers", () => {
-    const initial = wrapInCss(seededBlock("  @theme {\n  }"));
+    const initial = wrapInCss(seededBlock("  :root {\n  }"));
     expect(replaceBlock(initial, buildBlock(DEFAULT_TIER_DATA))).toBe(
       `/* preamble */\n\n${GOLDEN_DEFAULT_BLOCK}\n`,
     );
@@ -1541,7 +1541,7 @@ describe("buildMdTable", () => {
 
 describe("Idempotency", () => {
   it("running buildBlock + replaceBlock twice produces no diff", () => {
-    const initial = wrapInCss(seededBlock("  @theme {\n    --z-index-content: 0;\n  }"));
+    const initial = wrapInCss(seededBlock("  :root {\n    --z-index-content: 0;\n  }"));
     const first = replaceBlock(initial, buildBlock(DEFAULT_TIER_DATA));
     const second = replaceBlock(first, buildBlock(DEFAULT_TIER_DATA));
     expect(second).toBe(first);
@@ -1608,7 +1608,7 @@ describe("main()", () => {
     );
     writeFileSync(
       join(tmpDir, "web/app/styles/theme.css"),
-      wrapInCss(seededBlock("  @theme {\n  }")),
+      wrapInCss(seededBlock("  :root {\n  }")),
     );
 
     const code = main([
@@ -1638,7 +1638,7 @@ describe("main()", () => {
     );
     writeFileSync(
       join(tmpDir, "custom/theme.css"),
-      wrapInCss(seededBlock("  @theme {\n    --z-index-content: 999;\n  }")),
+      wrapInCss(seededBlock("  :root {\n    --z-index-content: 999;\n  }")),
     );
 
     const code = main(["--check", "--tokens", "custom/tokens.ts", "--css", "custom/theme.css"]);
@@ -1669,11 +1669,11 @@ describe("main()", () => {
       join(tmpDir, DEFAULT_TOKENS_PATH),
       tokensSrcFromTiers([{ name: "content", value: 0 }]),
     );
-    writeFileSync(join(tmpDir, DEFAULT_CSS_PATH), wrapInCss(seededBlock("  @theme {\n  }")));
+    writeFileSync(join(tmpDir, DEFAULT_CSS_PATH), wrapInCss(seededBlock("  :root {\n  }")));
 
     main(["--no-theme-wrapper"]);
     const written = readFileSync(join(tmpDir, DEFAULT_CSS_PATH), "utf8");
-    expect(written).not.toContain("@theme {");
+    expect(written).not.toContain(":root {");
     expect(written).toContain("  --z-index-content: 0;");
   });
 
@@ -1681,7 +1681,7 @@ describe("main()", () => {
     mkdirSync(join(tmpDir, "src/config"), { recursive: true });
     mkdirSync(join(tmpDir, "src/styles"), { recursive: true });
     writeFileSync(join(tmpDir, DEFAULT_TOKENS_PATH), `export const Z_INDEX_TIERS = [];`);
-    writeFileSync(join(tmpDir, DEFAULT_CSS_PATH), wrapInCss(seededBlock("  @theme {\n  }")));
+    writeFileSync(join(tmpDir, DEFAULT_CSS_PATH), wrapInCss(seededBlock("  :root {\n  }")));
 
     expect(() => main([])).toThrow(
       new RegExp(`${DEFAULT_TOKENS_PATH.replace(/\//g, "\\/")} parsed to an empty list`),
@@ -1695,7 +1695,7 @@ describe("main()", () => {
     mkdirSync(join(tmpDir, "src/styles"), { recursive: true });
     mkdirSync(join(tmpDir, "docs"), { recursive: true });
     writeFileSync(join(tmpDir, DEFAULT_TOKENS_PATH), tokensSrcFromTiers(DEFAULT_TIER_DATA));
-    writeFileSync(join(tmpDir, DEFAULT_CSS_PATH), wrapInCss(seededBlock("  @theme {\n  }")));
+    writeFileSync(join(tmpDir, DEFAULT_CSS_PATH), wrapInCss(seededBlock("  :root {\n  }")));
     writeFileSync(join(tmpDir, "docs/z-index.mdx"), wrapInMd(seededMdBlock("old table")));
 
     const code = main(["--md-table", "docs/z-index.mdx"]);
@@ -1717,7 +1717,7 @@ describe("main()", () => {
     mkdirSync(join(tmpDir, "src/styles"), { recursive: true });
     mkdirSync(join(tmpDir, "docs"), { recursive: true });
     writeFileSync(join(tmpDir, DEFAULT_TOKENS_PATH), tokensSrcFromTiers(DEFAULT_TIER_DATA));
-    writeFileSync(join(tmpDir, DEFAULT_CSS_PATH), wrapInCss(seededBlock("  @theme {\n  }")));
+    writeFileSync(join(tmpDir, DEFAULT_CSS_PATH), wrapInCss(seededBlock("  :root {\n  }")));
     // A doc page explaining the generator reproduces the marker pair verbatim
     // inside a fence, then carries the real region below it.
     const quoted = [
@@ -1748,7 +1748,7 @@ describe("main()", () => {
     mkdirSync(join(tmpDir, "src/styles"), { recursive: true });
     mkdirSync(join(tmpDir, "docs"), { recursive: true });
     writeFileSync(join(tmpDir, DEFAULT_TOKENS_PATH), tokensSrcFromTiers(DEFAULT_TIER_DATA));
-    writeFileSync(join(tmpDir, DEFAULT_CSS_PATH), wrapInCss(seededBlock("  @theme {\n  }")));
+    writeFileSync(join(tmpDir, DEFAULT_CSS_PATH), wrapInCss(seededBlock("  :root {\n  }")));
     writeFileSync(join(tmpDir, "docs/z-index.mdx"), wrapInMd(seededMdBlock("old table")));
 
     main(["--md-table", "docs/z-index.mdx"]);
@@ -1782,7 +1782,7 @@ describe("main()", () => {
         },
       ]),
     );
-    writeFileSync(join(tmpDir, DEFAULT_CSS_PATH), wrapInCss(seededBlock("  @theme {\n  }")));
+    writeFileSync(join(tmpDir, DEFAULT_CSS_PATH), wrapInCss(seededBlock("  :root {\n  }")));
     writeFileSync(join(tmpDir, "docs/z-index.mdx"), wrapInMd(seededMdBlock("old table")));
 
     expect(main(["--md-table", "docs/z-index.mdx"])).toBe(0);
@@ -1811,7 +1811,7 @@ describe("main()", () => {
     const code = main(["--check", "--md-table", "docs/z-index.mdx"]);
     expect(code).toBe(0);
     expect(logSpy.mock.calls.flat().join("\n")).toContain(
-      "z-index @theme block and md table are up to date (13 tiers).",
+      "z-index :root block and md table are up to date (13 tiers).",
     );
   });
 
@@ -1823,7 +1823,7 @@ describe("main()", () => {
     // CSS block is stale (wrong value) — md table is already correct.
     writeFileSync(
       join(tmpDir, DEFAULT_CSS_PATH),
-      wrapInCss(seededBlock("  @theme {\n    --z-index-content: 999;\n  }")),
+      wrapInCss(seededBlock("  :root {\n    --z-index-content: 999;\n  }")),
     );
     writeFileSync(
       join(tmpDir, "docs/z-index.mdx"),
@@ -2011,7 +2011,7 @@ describe("CLI (spawned node process) — exit codes", () => {
     writeFileSync(join(tmpDir, DEFAULT_TOKENS_PATH), tokensSrcFromTiers(DEFAULT_TIER_DATA));
     writeFileSync(
       join(tmpDir, DEFAULT_CSS_PATH),
-      wrapInCss(seededBlock("  @theme {\n    --z-index-content: 999;\n  }")),
+      wrapInCss(seededBlock("  :root {\n    --z-index-content: 999;\n  }")),
     );
     seedCleanMdTable();
 
@@ -2042,7 +2042,7 @@ describe("CLI (spawned node process) — exit codes", () => {
 
   it("a normal (non-check) run exits 0 and writes both regions", () => {
     writeFileSync(join(tmpDir, DEFAULT_TOKENS_PATH), tokensSrcFromTiers(DEFAULT_TIER_DATA));
-    writeFileSync(join(tmpDir, DEFAULT_CSS_PATH), wrapInCss(seededBlock("  @theme {\n  }")));
+    writeFileSync(join(tmpDir, DEFAULT_CSS_PATH), wrapInCss(seededBlock("  :root {\n  }")));
     writeFileSync(join(tmpDir, "docs/z-index.mdx"), wrapInMd(seededMdBlock("stale table")));
 
     const { status } = runCli(["--md-table", "docs/z-index.mdx"], tmpDir);

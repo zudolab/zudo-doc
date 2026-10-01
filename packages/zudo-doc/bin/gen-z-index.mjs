@@ -10,10 +10,10 @@
 //   - CSS:    src/styles/global.css (override with --css <path>)
 //
 // Usage (after pnpm install, via scripts in package.json):
-//   gen-z-index                               # rewrite the @theme block (conventional paths)
+//   gen-z-index                               # rewrite the :root block (conventional paths)
 //   gen-z-index --check                       # verify committed block is up to date (exit 1 on drift)
 //   gen-z-index --tokens <path> --css <path>  # use non-conventional source/destination paths
-//   gen-z-index --no-theme-wrapper            # emit bare --z-index-<name> declarations, no @theme wrapper
+//   gen-z-index --no-theme-wrapper            # emit bare --z-index-<name> declarations, no :root wrapper
 //   gen-z-index --md-table <path>             # also generate/verify a Z_INDEX_TABLE region in a
 //                                              # markdown/MDX file (opt-in, no conventional default path)
 //
@@ -27,11 +27,11 @@
 // this repo's own b4push or CI; that integration was retired in
 // zudolab/zudo-doc#2661.
 //
-// The block is a Tailwind v4 `@theme { --z-index-<name>: <value>; }` for every
-// tier, so Tailwind generates `z-<name>` utilities and raw CSS can reference
-// `z-index: var(--z-index-<name>)`. `--no-theme-wrapper` drops the `@theme`
+// The block is an authored `:root { --z-index-<name>: <value>; }` for every
+// tier. Matching wind tokens generate `z-<name>` utilities and raw CSS can reference
+// `z-index: var(--z-index-<name>)`. `--no-theme-wrapper` drops the `:root`
 // wrapper and emits bare `--z-index-<name>: <value>;` declarations instead,
-// for projects that want to compose the block into their own `@theme` block.
+// for projects that want to compose the block into their own `:root` block.
 //
 // `--md-table <path>` additionally generates/verifies a second, independent
 // `GENERATED:Z_INDEX_TABLE` region — a `| Token | Kind | Role |` table, one
@@ -660,7 +660,7 @@ function buildRerunCommand({ tokensPath, cssPath, themeWrapper, mdTablePath }) {
 
 /**
  * Build the full generated block (markers included). Two leading spaces of
- * indentation match the surrounding `@theme` style in global.css.
+ * indentation match the surrounding `:root` style in global.css.
  *
  * `options.tokensPath`/`options.cssPath` feed the "Source of truth:" and
  * rerun-guidance lines in the header comment — pass the SAME path strings
@@ -670,9 +670,9 @@ function buildRerunCommand({ tokensPath, cssPath, themeWrapper, mdTablePath }) {
  * its default, the header is byte-identical to the pre-flag generator.
  *
  * `options.themeWrapper` (default `true`) wraps the declarations in an
- * `@theme { ... }` block; `false` (the `--no-theme-wrapper` CLI flag) emits
+ * `:root { ... }` block; `false` (the `--no-theme-wrapper` CLI flag) emits
  * bare `--z-index-<name>: <value>;` declarations at 2-space indent instead,
- * for projects composing the block into their own `@theme` block.
+ * for projects composing the block into their own `:root` block.
  *
  * Deliberately does NOT accept `mdTablePath`: the CSS block's own content
  * must depend only on the CSS-region flags (--tokens/--css/--no-theme-
@@ -696,12 +696,12 @@ export function buildBlock(tiers, options = {}) {
   lines.push(
     `   * GENERATED:Z_INDEX — do not hand-edit; run ${buildRerunCommand({ tokensPath, cssPath, themeWrapper })}.`,
   );
-  lines.push(`   * Source of truth: ${tokensPath}. Tailwind v4 reads the`);
+  lines.push(`   * Source of truth: ${tokensPath}. zudo-wind reads the`);
   lines.push(
-    `   * --z-index-<name> theme key and generates a z-<name> utility. */`,
+    `   * --z-index-<name> custom property and generates a z-<name> utility. */`,
   );
   if (themeWrapper) {
-    lines.push(`  @theme {`);
+    lines.push(`  :root {`);
     for (const tier of tiers) {
       lines.push(`    --z-index-${tier.name}: ${tier.value};`);
     }
@@ -867,7 +867,7 @@ export function scanMarkerLines(source, marker, options = {}) {
  * error for each failure mode: missing (the block must be seeded once by
  * hand), duplicated, or inverted markers.
  *
- * `beginMarker`/`endMarker` default to the CSS `@theme` block's markers so
+ * `beginMarker`/`endMarker` default to the CSS `:root` block's markers so
  * existing call sites (the CSS region) are unaffected; the `--md-table`
  * region passes `MD_TABLE_BEGIN_MARKER`/`MD_TABLE_END_MARKER` instead — same
  * function, parameterized, mirroring how gen-component-tokens.mjs reuses one
@@ -1053,7 +1053,7 @@ function readNamedFile(absPath, asGivenPath, label) {
  * message and into the generated header — never the resolved absolute path —
  * so the committed CSS/md file never embeds a machine-specific path.
  *
- * The CSS `@theme` region is always generated/verified. The `--md-table`
+ * The CSS `:root` region is always generated/verified. The `--md-table`
  * region is entirely opt-in: when `--md-table <path>` isn't passed, no md
  * file is read, built, or written, and `--check` only covers the CSS region
  * (unchanged from pre-`--md-table` behavior). When it IS passed, `--check`
@@ -1114,19 +1114,19 @@ export function main(argv = process.argv.slice(2)) {
     }
     console.log(
       mdTablePath !== undefined
-        ? `OK — z-index @theme block and md table are up to date (${tiers.length} tiers).`
-        : `OK — z-index @theme block is up to date (${tiers.length} tiers).`,
+        ? `OK — z-index :root block and md table are up to date (${tiers.length} tiers).`
+        : `OK — z-index :root block is up to date (${tiers.length} tiers).`,
     );
     return 0;
   }
 
   if (nextCss === css) {
     console.log(
-      `z-index @theme block already up to date (${tiers.length} tiers); no change.`,
+      `z-index :root block already up to date (${tiers.length} tiers); no change.`,
     );
   } else {
     writeFileSync(cssAbsPath, nextCss);
-    console.log(`Wrote z-index @theme block to ${cssPath} (${tiers.length} tiers).`);
+    console.log(`Wrote z-index :root block to ${cssPath} (${tiers.length} tiers).`);
   }
 
   if (mdTablePath !== undefined) {
