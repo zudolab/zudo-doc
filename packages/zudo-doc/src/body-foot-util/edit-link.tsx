@@ -1,5 +1,5 @@
 /** @jsxRuntime automatic */
-import type { Description } from "@takazudo/zfb/zudo-react";
+import type { Child } from "@takazudo/zfb/zudo-react";
 
 /**
  * Default label used when the consumer doesn't pass one. The legacy
@@ -40,7 +40,7 @@ export interface EditLinkProps {
  * are pre-resolved by the caller. This matches the breadcrumb subpath
  * pattern of "no settings/i18n imports inside the v2 package".
  */
-export function EditLink(props: EditLinkProps): Description | null {
+export function EditLink(props: EditLinkProps): Child {
   const { editUrl, label = DEFAULT_EDIT_LINK_LABEL } = props;
   if (!editUrl) return null;
 

@@ -4,7 +4,7 @@
 // relying on the `<footer>` tag/structure alone).
 
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { Footer } from "../footer.js";
 
 describe("Footer — data-footer hook", () => {

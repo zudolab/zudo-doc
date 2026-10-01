@@ -44,14 +44,14 @@ interface SmartLabelProps {
  * v2 package — the legacy smart-break util lives in the host project's
  * src/utils/, which v2 must not reach into.
  *
- * Inserts a Preact <wbr/> after each delimiter character when the label
+ * Inserts a zudo-react <wbr/> after each delimiter character when the label
  * looks "path-like" (URLs, slash-separated paths, etc.). Prose labels
  * pass through unchanged.
  */
-function SmartLabel({ label }: SmartLabelProps): Description | string {
+function SmartLabel({ label }: SmartLabelProps): Child {
   if (!isPathLike(label)) return label;
   const parts = label.split(DELIM_SPLIT);
-  const nodes: (string | Description)[] = [];
+  const nodes: Child[] = [];
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i];
     if (!part) continue;
@@ -81,11 +81,11 @@ function isPathLike(text: string): boolean {
   return false;
 }
 
-function ChevronIcon(): Description {
-  return <ChevronRight className="h-icon-xs w-icon-xs text-muted shrink-0" />;
+function ChevronIcon(): Child {
+  return <ChevronRight class="h-icon-xs w-icon-xs text-muted shrink-0" />;
 }
 
-function HomeIcon(): Description {
+function HomeIcon(): Child {
   return (
     <svg
       class="h-[1.575rem] w-[1.575rem] shrink-0"
@@ -142,7 +142,7 @@ export interface BreadcrumbProps {
  * Returns null when no items resolve, matching the documented
  * `items.length > 0 &&` guard.
  */
-export function Breadcrumb(props: BreadcrumbProps): Description | null {
+export function Breadcrumb(props: BreadcrumbProps): Child {
   const items =
     props.items ??
     (props.tree && props.currentId !== undefined

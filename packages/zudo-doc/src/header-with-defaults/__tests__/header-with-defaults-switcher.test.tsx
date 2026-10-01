@@ -20,6 +20,7 @@
  */
 
 import { describe, expect, it } from "vitest";
+import "./island-metadata.js";
 import type { Description } from "@takazudo/zfb/zudo-react";
 import { createHeaderWithDefaults } from "../index.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";

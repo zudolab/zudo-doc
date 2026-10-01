@@ -61,7 +61,7 @@
 //   - `create-zudo-doc` scaffolds it into the generated `src/styles/global.css`
 //     template so freshly-scaffolded projects get it without action.
 
-import type { Description } from "@takazudo/zfb/zudo-react";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import type { VersionEntry, VersionSwitcherLabels } from "./types.js";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
 import { CURRENT_PATH_SCRIPT_PRELUDE } from "../current-path/index.js";
@@ -297,7 +297,7 @@ function cls(...parts: (string | false | null | undefined)[]): string {
 export const VERSION_SWITCHER_VISIBILITY_STYLE =
   "@media (min-width:64rem){.hidden:has(> [data-version-switcher]){display:block}}";
 
-function ChevronDownIcon(): Description {
+function ChevronDownIcon(): Child {
   return (
     <svg
       class="h-[0.875rem] w-[0.875rem]"
@@ -322,7 +322,7 @@ function ChevronDownIcon(): Description {
  * `VERSION_SWITCHER_INIT_SCRIPT` — mount it once at body-end on any
  * page that includes a `<VersionSwitcher>`.
  */
-export function VersionSwitcher(props: VersionSwitcherProps): Description {
+export function VersionSwitcher(props: VersionSwitcherProps): Child {
   const {
     versions,
     currentVersion,
@@ -363,7 +363,7 @@ export function VersionSwitcher(props: VersionSwitcherProps): Description {
     : {};
 
   return (
-    <div class="version-switcher relative" data-version-switcher {...rewireAttrs}>
+    <div class="relative" data-version-switcher {...rewireAttrs}>
       <button
         type="button"
         class="flex items-center gap-hsp-2xs border border-muted rounded px-hsp-sm py-vsp-3xs text-small text-muted hover:border-accent hover:text-accent transition-colors cursor-pointer whitespace-nowrap"

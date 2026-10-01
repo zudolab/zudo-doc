@@ -13,7 +13,7 @@
 // at script-eval time — instead of `simulateSwap`'s already-parsed setup.
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import {
   VersionSwitcher,
   VERSION_SWITCHER_REWIRE_SCRIPT,

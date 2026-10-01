@@ -1,68 +1,8 @@
 /** @jsxRuntime automatic */
 import { describe, expect, it } from "vitest";
-import type { Child, Description } from "@takazudo/zfb/zudo-react";
+import { renderSsr as serialize } from "../../__tests__/helpers/zudo-react.js";
 import { Breadcrumb, buildBreadcrumbItems } from "../breadcrumb.js";
 import type { BreadcrumbNode } from "../types.js";
-
-/**
- * Minimal VNode → HTML serializer. Walks the Preact VNode tree and
- * emits HTML markup for assertions. Function components are invoked
- * with their props (sufficient for our pure, hook-less components).
- *
- * This avoids pulling in preact-render-to-string, which is only
- * available transitively in the workspace and is not directly resolvable
- * from a vitest run rooted at the worktree.
- */
-type AnyVNode = Description;
-
-function isVNode(v: unknown): v is AnyVNode {
-  return (
-    typeof v === "object" &&
-    v !== null &&
-    Object.prototype.hasOwnProperty.call(v, "type") &&
-    Object.prototype.hasOwnProperty.call(v, "props")
-  );
-}
-
-function escapeAttr(s: string): string {
-  return s.replace(/"/g, "&quot;");
-}
-
-function serialize(node: Child): string {
-  if (node == null || typeof node === "boolean") return "";
-  if (typeof node === "string") return node;
-  if (typeof node === "number" || typeof node === "bigint") return String(node);
-  if (Array.isArray(node)) return node.map(serialize).join("");
-  if (!isVNode(node)) return "";
-  const { type, props } = node;
-  const { children, ...rest } = (props ?? {}) as {
-    children?: Child;
-    [key: string]: unknown;
-  };
-
-  if (typeof type === "function") {
-    const fn = type as (p: typeof props) => Child;
-    return serialize(fn(props));
-  }
-  if (type == null || (typeof type === "string" && type === "")) {
-    // Fragment
-    return serialize(children);
-  }
-  if (typeof type !== "string") return serialize(children);
-
-  const attrs = Object.entries(rest)
-    .filter(([, v]) => v !== undefined && v !== null && v !== false)
-    .map(([k, v]) => {
-      if (k === "key") return "";
-      if (v === true) return ` ${k}`;
-      return ` ${k}="${escapeAttr(String(v))}"`;
-    })
-    .join("");
-
-  const voidEls = new Set(["br", "hr", "img", "input", "wbr", "meta", "link"]);
-  if (voidEls.has(type)) return `<${type}${attrs}/>`;
-  return `<${type}${attrs}>${serialize(children)}</${type}>`;
-}
 
 const tree: BreadcrumbNode[] = [
   {
@@ -177,7 +117,8 @@ describe("Breadcrumb", () => {
         ]}
       />,
     );
-    expect(html).toContain("<wbr/>");
+    // zudo-react serializes HTML void elements without a self-closing slash.
+    expect(html).toContain("<wbr>");
   });
 
   it("does not insert <wbr> for prose labels", () => {

@@ -8,7 +8,7 @@
 // as arguments so the logic lives in the package while the host stub keeps
 // the singleton imports.
 
-import type { Description } from "@takazudo/zfb/zudo-react";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import { Footer } from "../footer/index.js";
 import type { FooterLinkColumn, FooterTagColumn } from "../footer/index.js";
 import type { ChromeContext } from "../factory-context/index.js";
@@ -68,7 +68,7 @@ export interface FooterWithDefaultsSettings {
  */
 export function createFooterWithDefaults<S extends Settings = Settings>(
   ctx: ChromeContext<S>,
-): (props: { lang?: string }) => Description {
+): (props: { lang?: string }) => Child {
   assertChromeContext(ctx, "createFooterWithDefaults");
   const settings = ctx.settings as unknown as FooterWithDefaultsSettings;
   const defaultLocale = ctx.defaultLocale;
@@ -115,7 +115,7 @@ export function createFooterWithDefaults<S extends Settings = Settings>(
     lang = defaultLocale,
   }: {
     lang?: string;
-  }): Description {
+  }): Child {
     const footer = settings.footer;
 
     const persistKey = `footer-${lang}`;

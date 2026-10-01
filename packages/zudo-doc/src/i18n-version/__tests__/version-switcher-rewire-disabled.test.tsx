@@ -16,7 +16,7 @@
 // a real DOM (`happy-dom`, declared via the file-scoped pragma above).
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import {
   VersionSwitcher,
   VERSION_SWITCHER_REWIRE_SCRIPT,
