@@ -14,71 +14,73 @@
 //
 // Behavior is unchanged: it self-gates on `window.__TAURI_INTERNALS__` so it
 // stays a no-op outside a Tauri shell even when `findInPage` is on — Cmd/Ctrl+F
-// interception only makes sense where the OS/browser doesn't already own that
-// shortcut. A non-Tauri host that sets `findInPage: true` ships the island's
-// (tiny) code with no visible effect.
-import { useState, useEffect, useRef } from "preact/compat";
+// interception only makes sense where the OS/browser doesn't already own
+// that shortcut.
+import { computed, getScope, Show, signal } from "@takazudo/zfb/zudo-react";
 import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { FindBar } from "./find-bar.js";
 import { createFindInPage } from "./find-in-page.js";
 
 const CONTENT_SELECTOR = "article.zd-content";
+const BEFORE_PREPARATION_EVENT = "zfb:before-preparation";
 
-/**
- * `displayName` pinned explicitly (matching
- * `AiChatModal`/`ImageEnlarge`/`MermaidEnlarge`/`DesignTokenPanelBootstrap`)
- * so zfb's `captureComponentName` emits a stable
- * `data-zfb-island="FindInPageInit"` marker independent of minification.
- */
-export function FindInPageInit(): JSX.Element | null {
-  const [isTauri, setIsTauri] = useState(false);
-  const [visible, setVisible] = useState(false);
-  const findInPageRef = useRef(createFindInPage());
+export function FindInPageInit(): JSX.Element {
+  const isTauri = signal(false);
+  const visible = signal(false);
+  const findInPage = createFindInPage();
+  const scope = getScope();
 
-  // Detect Tauri environment
-  useEffect(() => {
-    if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
-      setIsTauri(true);
+  // Browser globals and document listeners belong to the activated island,
+  // never to setup/SSR. The activation cleanup owns both Tauri's shortcut and
+  // zfb's SPA-navigation event listener.
+  scope.onActivate(() => {
+    if (typeof window === "undefined" || !("__TAURI_INTERNALS__" in window)) {
+      return;
     }
-  }, []);
 
-  // Intercept Cmd/Ctrl+F only in Tauri
-  useEffect(() => {
-    if (!isTauri) return;
+    isTauri.value = true;
 
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "f") {
-        e.preventDefault();
-        setVisible((prev) => !prev);
+    const handleKeyDown = (event: Event) => {
+      const keyboard = event as KeyboardEvent;
+      if (
+        keyboard.isComposing ||
+        event.defaultPrevented ||
+        !(keyboard.metaKey || keyboard.ctrlKey) ||
+        keyboard.key !== "f"
+      ) {
+        return;
       }
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [isTauri]);
 
-  // Clear search on zfb page navigation. zfb navigates via SPA body swap and
-  // fires "zfb:before-preparation" on document before nav — it never fires the
-  // native "pagehide" (full-unload) event. The literal is inlined because
-  // downstream scaffolds do not depend on @takazudo/zudo-doc as a runtime dep
-  // (same reason as the designTokenPanel bootstrap).
-  useEffect(() => {
-    const handler = () => {
-      findInPageRef.current.stop();
-      setVisible(false);
+      event.preventDefault();
+      visible.value = !visible.value;
     };
-    document.addEventListener("zfb:before-preparation", handler);
-    return () => document.removeEventListener("zfb:before-preparation", handler);
-  }, []);
 
-  if (!isTauri) return null;
+    const handleBeforePreparation = () => {
+      findInPage.stop();
+      visible.value = false;
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener(BEFORE_PREPARATION_EVENT, handleBeforePreparation);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener(BEFORE_PREPARATION_EVENT, handleBeforePreparation);
+    };
+  });
 
   return (
-    <FindBar
-      visible={visible}
-      onClose={() => setVisible(false)}
-      findInPage={findInPageRef.current}
-      containerSelector={CONTENT_SELECTOR}
-    />
+    <Show when={computed(() => isTauri.value)}>
+      {() => (
+        <FindBar
+          visible={visible}
+          onClose={() => {
+            visible.value = false;
+          }}
+          findInPage={findInPage}
+          containerSelector={CONTENT_SELECTOR}
+        />
+      )}
+    </Show>
   );
 }
 FindInPageInit.displayName = "FindInPageInit";
