@@ -1,4 +1,4 @@
-// Page navigation lifecycle events for the v2 transitions module.
+// Page navigation lifecycle events for the zfb 3.1 transitions module.
 //
 // Background
 // ----------
@@ -52,12 +52,9 @@
 export const BEFORE_NAVIGATE_EVENT = "zfb:before-preparation";
 
 /**
- * Event name fired once the new page's `<body>` has been swapped in.
- * Today resolves to `"zfb:after-swap"` — dispatched by zfb's
- * client-router after a Strategy B SPA navigation completes (and on
- * the initial page load, so consumers register one listener and get
- * both first-paint and post-swap behavior). Direct successor to
- * Astro's `astro:page-load`.
+ * Event name fired after a SPA body swap. Today resolves to
+ * `"zfb:after-swap"`. The initial page load uses `zfb:page-load` instead;
+ * callers needing both paths initialize on first paint as well.
  */
 export const AFTER_NAVIGATE_EVENT = "zfb:after-swap";
 
@@ -67,15 +64,14 @@ export const AFTER_NAVIGATE_EVENT = "zfb:after-swap";
  * dispatched by zfb's client-router with a mutable `event.newDocument`
  * carrying the incoming document that is about to replace the live one
  * (zudolab/zudo-doc#3136 / #3137). Consumers that need to influence the
- * incoming document BEFORE zfb's head-swap persistence logic runs (e.g.
+ * incoming document BEFORE zfb's island teardown and head/body swap run (e.g.
  * injecting a `<link>` so an href-matching stylesheet survives the swap
  * instead of being removed and re-fetched) must mutate `event.newDocument`
  * synchronously from a handler registered on this event — by the time
  * `AFTER_NAVIGATE_EVENT` fires the swap has already completed. This module
  * does not export a subscribe helper for it (unlike `onBeforeNavigate` /
- * `onAfterNavigate`) because the one current consumer
- * (`theme-pack-provider.tsx`) needs the raw event object's `newDocument`,
- * not just a bare notification.
+ * `onAfterNavigate`) because its consumers need the raw event object's
+ * `newDocument`, not just a bare notification.
  */
 export const BEFORE_SWAP_EVENT = "zfb:before-swap";
 
@@ -97,9 +93,8 @@ export function onBeforeNavigate(handler: () => void): () => void {
 
 /**
  * Subscribe to "navigation end" — runs `handler` after each page-body
- * swap. Mirrors Astro's `astro:page-load`: fires once on first load,
- * and again on every SPA navigation (zfb's Strategy B client-router
- * dispatches `zfb:after-swap` on the document for both cases).
+ * swap. The first page load is signaled separately by `zfb:page-load`;
+ * callers that need initial setup must also initialize on first paint.
  *
  * Returns an unsubscribe function. SSR-safe: returns a no-op when
  * called outside a browser.
