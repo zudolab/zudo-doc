@@ -46,7 +46,24 @@ export function projectAgentCorpus(options: AgentExportOptions): { manifest: Age
     const normalized = normalizeAgentMarkdown(parsed.content, url);
     const title = parsed.data.title ?? slug;
     const description = parsed.data.description ?? stripMarkdown(parsed.content).split("\n").find(Boolean) ?? "";
-    return [{ id, key: id, locale: root.code, slug, title, description, url, text: normalized.text, unsupportedDynamicContent: normalized.unsupportedDynamicContent, parts: chunkAgentText(normalized.text, title, url) }];
+    const metadata = {
+      locale: root.code,
+      pageId: id,
+      ...(description ? { description } : {}),
+      ...(normalized.unsupportedDynamicContent ? { unsupportedDynamicContent: true } : {}),
+    };
+    return [{
+      id,
+      key: id,
+      locale: root.code,
+      slug,
+      title,
+      description,
+      url,
+      text: normalized.text,
+      unsupportedDynamicContent: normalized.unsupportedDynamicContent,
+      parts: chunkAgentText(normalized.text, title, url, metadata),
+    }];
   })).sort((a, b) => order(a.locale, b.locale) || order(a.slug, b.slug));
   const site = { name: options.siteName, url: options.siteUrl ?? "", base: options.base };
   const locales = roots.map(({ code }) => code);

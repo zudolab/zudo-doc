@@ -16,9 +16,14 @@ import path from "node:path";
 const dist = path.resolve("dist");
 function findManifests(dir, found = []) {
   const candidate = path.join(dir, "agent", "v1", "manifest.json");
-  if (existsSync(candidate)) found.push(candidate);
+  const hasManifest = existsSync(candidate);
+  if (hasManifest) found.push(candidate);
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (entry.isDirectory() && entry.name !== "agent") findManifests(path.join(dir, entry.name), found);
+    // Skip only the owned artifact directory after finding its manifest here.
+    // A consumer's configured base may itself contain an agent segment.
+    if (entry.isDirectory() && !(hasManifest && entry.name === "agent")) {
+      findManifests(path.join(dir, entry.name), found);
+    }
   }
   return found;
 }

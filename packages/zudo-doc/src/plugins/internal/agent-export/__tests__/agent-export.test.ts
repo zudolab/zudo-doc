@@ -29,6 +29,27 @@ describe("agent export", () => {
     }
   });
 
+  it("fails the build when one Unicode code point cannot fit the real item envelope", () => {
+    const pageId = "p-0123456789abcdef";
+    const baseMetadata = { locale: "ja", pageId };
+    const tooLong = "x".repeat(70_000);
+    const cases = [
+      { title: tooLong, url: "https://example.test/docs/", metadata: baseMetadata },
+      { title: "Title", url: `https://example.test/${tooLong}`, metadata: baseMetadata },
+      {
+        title: "Title",
+        url: "https://example.test/docs/",
+        metadata: { ...baseMetadata, description: tooLong },
+      },
+    ];
+
+    for (const item of cases) {
+      expect(() => chunkAgentText("🚀", item.title, item.url, item.metadata)).toThrow(
+        "Agent item cannot fit within the MCP tool response byte limit, even with one Unicode code point.",
+      );
+    }
+  });
+
   it("emits deterministic locale-aware artifacts and removes stale documents", () => {
     const root = mkdtempSync(join(tmpdir(), "agent-export-"));
     const en = join(root, "en"); const ja = join(root, "ja"); const outDir = join(root, "dist");
