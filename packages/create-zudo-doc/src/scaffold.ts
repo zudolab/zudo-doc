@@ -982,9 +982,9 @@ function generatePackageJson(
     // 2.22.1: zfb fixes dev live reload and lazy boot; md-wasm retains
     // workerd-specific parse/highlight exports while retaining browser paths.
     // No scaffold config migration is required.
-    "@takazudo/zfb": "2.22.1",
-    "@takazudo/zfb-runtime": "2.22.1",
-    "@takazudo/zfb-md-wasm": "2.22.1",
+    "@takazudo/zfb": "3.1.0",
+    "@takazudo/zfb-runtime": "3.1.0",
+    "@takazudo/zfb-md-wasm": "3.1.0",
     // @takazudo/zudo-doc — published from this monorepo via
     // .github/workflows/publish-zudo-doc.yml. The pin here is bumped in
     // lockstep by scripts/release-create-zudo-doc.sh whenever zudo-doc's

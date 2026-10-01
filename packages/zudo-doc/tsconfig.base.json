@@ -14,7 +14,7 @@
     "skipLibCheck": true,
     "allowJs": true,
     "jsx": "react-jsx",
-    "jsxImportSource": "preact",
+    "jsxImportSource": "@takazudo/zfb/zudo-react",
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,

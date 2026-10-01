@@ -14,15 +14,12 @@
     "skipLibCheck": true,
     "allowJs": true,
     "jsx": "react-jsx",
-    "jsxImportSource": "preact",
+    "jsxImportSource": "@takazudo/zfb/zudo-react",
     "strict": true,
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "#doc-history-meta": [".zfb/doc-history-meta.json"],
-      "react": ["./node_modules/preact/compat/"],
-      "react/jsx-runtime": ["./node_modules/preact/jsx-runtime"],
-      "react-dom": ["./node_modules/preact/compat/"]
+      "#doc-history-meta": [".zfb/doc-history-meta.json"]
     }
   }
 }

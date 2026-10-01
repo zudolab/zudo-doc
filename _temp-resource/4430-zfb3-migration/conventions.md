@@ -8,6 +8,10 @@ Read the [permanent matrix](../../docs/findings/4430-zfb3-migration/README.md), 
 
 Install with `pnpm install --ignore-scripts`. Until #4467, the complete package need not build: use the #4438 source-resolution lane below. Do not use stale v2 `dist/` to certify a v3 port. Keep exact zfb-family pins aligned (root/dev/scaffold 3.1.0, package peer floor `^3.1.0`); #4467 owns the final recheck and re-pin. `preact` remains installed only for zdtp 0.8.5's opaque bundle and declarations; transitional old test dependencies are removed by #4467. No aliases from React/Preact to zudo-react.
 
+### Worktree setup during the red window
+
+The red window begins when #4436 lands and lasts until #4467 restores the integration floor. During it, `@takazudo/zudo-doc` may fail its `prepare` build because ports are still in progress. Every worktree must use `pnpm install --ignore-scripts`; a pre-existing `packages/zudo-doc/dist/` may contain v2 output and is never evidence of a v3 build. Use the #4438 source-resolution test lane and its port-check helper for owned source. Rebuild a workspace package only when a check needs its generated JS, keep that output local, and report package-build diagnostics as expected migration-window failures until #4467.
+
 ## Runtime, lifecycle and types
 
 | v2 construct | Locked v3 form | Rationale / rejected alternative | PR review target |

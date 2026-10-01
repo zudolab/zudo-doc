@@ -36,7 +36,7 @@ consumer relationship. This adds no unique formatter package to the lockfile.
 | `@types/minimist` in `packages/zudo-doc` | Only `bin/zudo-doc.mjs` imports minimist, outside the checked TS files. Keep for editor typing of that live JS CLI; the scaffold's TS CLI also retains its own declaration, so removal would save zero packages. |
 | `minimist`, `fs-extra`, `picocolors` | Live CLI, scaffolding, eject, theme, and audit consumers. No handwritten replacements attempted. |
 | `diff`, `katex`, `@takazudo/zdtp`, `@takazudo/zfb-md-wasm` | Framework peer contracts enable history comparison, math, design-token controls, and browser highlighting. Imports alone are not a sufficient removal oracle. |
-| `preact`, `zod`, zfb packages | Required runtime/schema/engine contracts; the Cloudflare adapter also has a direct import in `pages/api/ai-chat.tsx`. |
+| `preact`, `zod`, zfb packages | Preact remains installed for `@takazudo/zdtp`'s peer and opaque bundle; zod is the runtime schema contract; zfb packages are engine contracts, and the Cloudflare adapter also has a direct import in `pages/api/ai-chat.tsx`. |
 | `preact-render-to-string`, `vite` | Direct browser-embed fixture imports. These are not obsolete renderer/build dependencies. |
 | `pluralize`, `@types/pluralize`, `culori`, `@types/culori` | Tag tests and contrast tooling import these directly. Retention elsewhere does not replace a direct declaration. |
 | `@takazudo/zudo-design-token-lint`, `html-validate`, `wrangler` | Depcheck false positives: binary names and script/CI consumers differ from import usage. |
