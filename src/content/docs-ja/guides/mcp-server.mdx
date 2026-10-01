@@ -1,0 +1,57 @@
+---
+title: 読み取り専用MCPサーバー
+description: 自分のCloudflareデプロイでドキュメントの検索・取得ツールを公開します。
+sidebar_position: 21
+---
+
+## 概要
+
+任意のMCPサーバーは、[エージェント向けエクスポート](./agent-export.mdx)を使う2つの読み取り専用ツールを提供します。新規プロジェクトにはCloudflare Workers向けのデプロイ設定が生成されます。サイトとエンドポイントは**自分のCloudflareアカウント**にデプロイします。静的エクスポートだけならWorkerは不要です。共用ゲートウェイ、AIプロバイダーの認証情報、Durable Object、検索データベースも不要です。
+
+## プロジェクトの作成とデプロイ
+
+イニシャライザーで「MCP」を選ぶか、オプションを指定します。
+
+```bash
+pnpm create zudo-doc my-docs --mcp --mcp-deploy cloudflare --yes
+cd my-docs
+pnpm install
+pnpm build
+pnpm preview:worker
+```
+
+MCPを選んで`agentExport`を省略すると、自動的に有効になります。`mcpDeploy`の省略時は`"cloudflare"`が選ばれます。生成される`zfb.config.ts`には`agentExport: true`、`mcp: true`、Cloudflareアダプターが入ります。`wrangler.jsonc`、`preview:worker`と`deploy`のスクリプト、任意のMCP SDKとデプロイ用依存パッケージも追加されます。Wranglerの`main`は`./dist/_worker.js`を指します。ルートとSDK対応のバンドル解決はパッケージが提供します。ホスト側のWorkerラッパーや共用サービスは生成されません。通常の`--yes`生成では、これらの機能は有効になりません。
+
+安定した引用URLのために、`zfb.config.ts`の`siteUrl`を公開サイトのオリジンに設定します。生成されたWrangler設定を確認し、自分のWorker名とルート・ドメインを選んでください。ローカルで検証した後、所有者がデプロイします。
+
+```bash
+wrangler login
+pnpm deploy
+```
+
+`pnpm deploy`はビルドしてから`wrangler deploy`を実行します。ChatGPTへの接続登録は行いません。Cloudflareアカウント設定、公開ドメイン、プロバイダーの利用には費用がかかる場合があります。公開エンドポイントにはCloudflare標準のレート制限と不正利用対策を利用してください。
+
+## 検証とクライアント接続
+
+`pnpm preview:worker`の実行中に、`<base>/agent/v1/manifest.json`が読めることを確認し、MCPクライアントから`<base>/mcp`に接続します。エンドポイントはセッションを持たないStreamable HTTP POSTを使います。本番環境のGET/HEADは`Allow: POST, OPTIONS`付きの405を返します。ショーケースのプレビューではGET/HEADが静的アセットの404になる場合があります。OPTIONSはCORSプリフライトに応答します。サーバー間クライアントでは`Origin`なしを受け入れ、許可されていない`Origin`がある場合は拒否します。
+
+ChatGPTなどのリモートMCPクライアントには、デプロイ済みのHTTPS URLをカスタムMCP連携として追加します。たとえば`https://docs.example.com/mcp`、`base`が`/manual`なら`https://docs.example.com/manual/mcp`です。接続画面はクライアントごとに異なります。接続後にツールを検出し、具体的な語句で`search`を呼び、返されたIDを`fetch`に渡して、回答が人が読むページのURLを引用することを確認します。実際のChatGPTアカウントでの接続はリポジトリのローカルテストでは未検証です。デプロイ後に確認してください。検証済みの旧プロトコルは2024-11-05のメッセージをセッションなしのPOSTで送る方式です。SSEから始めるクライアントや再開可能なセッションには対応しません。
+
+| ツール | 入力 | 結果 |
+| --- | --- | --- |
+| `search` | `{query: string}` | 順位付きの`{id,title,url}`を最大10件。該当なしなら`[]` |
+| `fetch` | 現在の検索結果から得た`{id: string}` | 選択した項目の`{id,title,text,url,metadata}`全体。存在しなければ明確なnot-found結果 |
+
+人が読むページの`url`は引用に利用できます。長いページには複数の項目IDがあります。関係する各部分を取得するか、ページ全体のMarkdownを開いてください。ツールは構造化データと同内容のJSONテキストを返し、読み取り専用、冪等、非破壊であると宣言します。AIへの質問、書き込み、履歴、公開用のツールはありません。検索対象はエージェント向けコーパスの全文で、ブラウザー検索の既定の3,000文字を超える部分や日本語も含みます。
+
+## 既存プロジェクトへの追加・削除
+
+既存の生成済みプロジェクトでは、まず[静的エクスポート](./agent-export.mdx)の`agentExport: true`を設定します。MCPを追加するには、`@modelcontextprotocol/sdk@1.31.0`とプロジェクトのzfbバージョンに合うCloudflareアダプターをインストールし、`zudoDoc({ ... })`に`mcp: true`と`adapter: "@takazudo/zfb-adapter-cloudflare"`を追加します。開発依存にはWrangler `4.111.0`を追加します。現在のイニシャライザーと同じ構成の`wrangler.jsonc`を使い、`main: "./dist/_worker.js"`、`./dist`への`ASSETS`バインディング、`nodejs_compat`、パッケージが対応する互換日付を設定します。`preview:worker`を`wrangler dev`、`deploy`を利用するパッケージマネージャーでのビルド後の`wrangler deploy`とします。既存のバンドル設定は保持します。MCPが有効なとき、パッケージはSDKに必要な`module`と`main`の解決フィールドを加えます。ローカルでビルド・検証してからデプロイしてください。
+
+MCPを削除するには、`mcp: false`にするかフィールドとアダプターを削除し、再ビルド・再デプロイします。他の機能で使っていなければ、`wrangler.jsonc`、デプロイスクリプト、MCP専用の依存パッケージも削除します。移植可能なMarkdown成果物を残したい場合は`agentExport: true`を維持できます。公開コーパス自体が不要なら、別途無効にします。静的エクスポートだけのサイトはどの静的ホストにも公開できます。
+
+## 上限と公開時の安全性
+
+検索クエリの上限はUTF-16コード単位で500、空のクエリは無効です。各項目の本文は最大8,000 UTF-16コード単位で、サロゲートペアの途中では分割しません。最終JSON-RPC応答は131,072 UTF-8バイト、POST本文は65,536バイトが上限です。マニフェストは8 MiB、エージェント検索インデックスは16 MiBおよび10,000項目が上限です。超過時は本文を黙って切らず、明示的に失敗します。サーバーは現在のマニフェストの項目IDと成果物ハッシュを検証し、異なるビルドの混在を防ぎます。
+
+エンドポイントと静的ファイルは**公開ドキュメント**を提供します。`robots.txt`、`noindex`、`unlisted`、`search_exclude`は認証ではありません。保護された資料にコーパスを有効化しないでください。将来の非公開モードでは、`/mcp`と静的成果物の両方を保護する必要があります。取得した文書は信頼できないデータであり、コマンド実行や追加権限の根拠にはなりません。MCPが不要なら、ブラウザークライアントにサイトURLと[llms.txt](./llms-txt.mdx)、または生成されたMarkdown URLを明示的に渡してください。ホームページURLだけでは、クライアントが`llms.txt`を読むとは限りません。

@@ -112,6 +112,12 @@ search_exclude: true
 
 これは、サイトが`/my-docs/`のような`base`パスを使用している場合に機能しない可能性がある、標準的なパスベースの検出（ドメインルートの`/llms.txt`）を補完します。
 
+## エージェント向けエクスポートとMCPのリンク
+
+`agentExport: true`を有効にすると、簡潔な`llms.txt`インデックスは各ページのクリーンなMarkdown代替ファイル`/agent/v1/pages/<page-key>.md`へリンクします。無効な場合、従来のページリンクは変わりません。全文ファイルには人が読むページの正規URLが残ります。`mcp: true`も有効なら、インデックスは別の`<base>/mcp`エンドポイントを案内します。生成されるMarkdownとMCPエンドポイントは[エージェント向けエクスポート](./agent-export.mdx)と[MCPサーバー](./mcp-server.mdx)で説明しています。
+
+ホームページのURLを渡しただけで、エージェントが必ず`llms.txt`を読むわけではありません。ブラウザーだけで使う場合は、`llms.txt`のURLか生成されたMarkdownページのURLを明示的に渡してください。イニシャライザーでは`llmsTxt`はデフォルトで有効ですが、`zudoDoc`を直接設定する場合のパッケージ既定値は`false`です。
+
 ## 開発モード
 
 生成されるファイルはzfbのdevMiddleware経由で開発中も利用可能です。`pnpm dev`実行時、`/llms.txt`と`/llms-full.txt`へのリクエストは動的に処理されます — ビルドステップは不要です。

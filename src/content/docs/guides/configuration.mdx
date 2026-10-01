@@ -1011,6 +1011,22 @@ Default: `false`
 
 See [llms.txt](./llms-txt.mdx).
 
+### agentExport
+
+Publish a versioned, read-only static corpus at `<base>/agent/v1/` for documentation clients. It includes a manifest, a complete agent search index, fetchable item JSON, and per-page Markdown. This works on any static host.
+
+Default: `false`
+
+See [Agent-readable export](./agent-export.mdx).
+
+### mcp
+
+Add the read-only `search` and `fetch` MCP endpoint at `<base>/mcp`. Requires `agentExport: true` and a request-time deployment adapter. The initializer's `mcpDeploy: "cloudflare"` option generates the Cloudflare adapter and deployment files; `mcpDeploy` is not a `zudoDoc` setting.
+
+Default: `false`
+
+See [MCP server](./mcp-server.mdx).
+
 ### changelogs
 
 Changelog generation config(s), or `false` to disable.
