@@ -1,16 +1,12 @@
 /** @jsxRuntime automatic */
 // Server-rendered, zero-hydration full-page loading overlay.
 //
-// Renders three things into the document:
+// Renders the overlay and its bootstrap into the document:
 //
 //   1. A fixed-position overlay `<div>` with a centered spinner. Hidden
 //      by default (`opacity: 0; pointer-events: none;`) and made
 //      visible by adding `data-visible` to it.
-//   2. A `<style>` block that owns the overlay + spinner CSS plus the
-//      `prefers-reduced-motion` fallback. Inlined via
-//      `dangerouslySetInnerHTML` (matching the ColorSchemeProvider
-//      pattern) so no separate stylesheet has to be wired up.
-//   3. A small `<script>` that toggles the `data-visible` attribute on
+//   2. A small `<script>` that toggles the `data-visible` attribute on
 //      navigation lifecycle events. The event names come from the
 //      `@takazudo/zudo-doc/transitions` module — this component does
 //      not reach for the underlying browser event names directly. Under
@@ -19,9 +15,8 @@
 //      `zfb:after-swap` (AFTER_NAVIGATE_EVENT); see
 //      `transitions/page-events.ts` for rationale.
 //
-// The component is intentionally not hydrated. Hydrating Preact just to
-// attach two listeners would be wasteful given the original Astro file
-// shipped a tiny imperative script — this port keeps that profile.
+// Its CSS stays in the host's global stylesheet, and the component is not
+// hydrated: the static script owns its navigation listeners.
 
 import {
   AFTER_NAVIGATE_EVENT,
@@ -50,7 +45,9 @@ export function buildPageLoadingOverlayBootstrap(overlayId: string): string {
   // (see ColorSchemeProvider). Event names come from the transitions
   // module's exported constants — no raw `astro:*` strings live in
   // this file.
-  const id = JSON.stringify(overlayId);
+  // JSON quoting protects JavaScript syntax, and escaping `<` additionally
+  // prevents a caller-controlled id from terminating the HTML script element.
+  const id = JSON.stringify(overlayId).replaceAll("<", "\\u003c");
   const before = JSON.stringify(BEFORE_NAVIGATE_EVENT);
   const after = JSON.stringify(AFTER_NAVIGATE_EVENT);
   return `(function(){

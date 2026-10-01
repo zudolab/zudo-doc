@@ -1,7 +1,7 @@
 // Inline script component for sidebar resizer initialization.
 //
 // Mirrors the pattern used by CodeBlockEnhancer / TabsInit / MermaidInit:
-// a JSX component that emits the full init logic as a dangerouslySetInnerHTML
+// a JSX component that emits the full init logic as a static rawHtml
 // <script> so the body-end script slot gets self-contained browser code that
 // does NOT depend on module resolution at runtime.
 //
@@ -44,7 +44,7 @@ import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
 import { AFTER_NAVIGATE_EVENT } from "../transitions/page-events.js";
 
 // The full initSidebarResizer implementation embedded as a browser script
-// string so it can be injected via dangerouslySetInnerHTML.
+// string so it can be emitted as rawHtml.
 // This avoids a dynamic import at runtime and matches the self-contained
 // script pattern used by CodeBlockEnhancer, TabsInit, and MermaidInit.
 export const SIDEBAR_RESIZER_INIT_SCRIPT = `(function(){
@@ -193,7 +193,7 @@ export const SIDEBAR_RESIZER_INIT_SCRIPT = `(function(){
  *
  * Include once in the layout (gated on `settings.sidebarResizer`). Emits
  * the full `initSidebarResizer` implementation as an inline
- * `dangerouslySetInnerHTML` script so it runs without a module import.
+ * static rawHtml script so it runs without a module import.
  *
  * - Calls `initSidebarResizer()` once on first paint.
  * - Re-runs on `AFTER_NAVIGATE_EVENT` (`zfb:after-swap`) for

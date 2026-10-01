@@ -3,16 +3,16 @@
 //
 // Mirrors the exact-string assertion style of src/head/__tests__/doc-head.test.tsx.
 // Each test builds a ChromeContext via makeFakeChromeContext, constructs the
-// HeadWithDefaults component, renders it with preact-render-to-string, and
-// asserts the emitted HTML string.
+// HeadWithDefaults component, serializes its pure head descriptions through
+// the bounded head serializer, and asserts the emitted HTML string.
 //
 // Key coverage:
 //   - Each descriptor type (preconnect, preload, stylesheet, alternateLinks, meta)
-//   - async:true stylesheet → literal `onload="this.media='all'"` + media="print" + <noscript>
+//   - async:true stylesheet → literal `onload="this.media=&#39;all&#39;"` + media="print" + <noscript>
 //   - Absent settings.head → head-extras fragment not emitted (byte-parity baseline)
 
 import { describe, it, expect } from "vitest";
-import { render } from "preact-render-to-string";
+import { serializeStaticHead as render } from "../../head/serialize-static-head.js";
 import { createHeadWithDefaults } from "../index.js";
 import { renderAutoLogoIconSvg } from "../../auto-logo/icon.js";
 import { pickGlyphName } from "../../auto-logo/shapes.js";
@@ -43,7 +43,7 @@ describe("HeadWithDefaults — SiteHeadConfig head extras", () => {
     const HeadWithDefaults = createHeadWithDefaults(ctx);
     const out = render(<HeadWithDefaults title="Test" />);
     expect(out).toContain(
-      '<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin="anonymous"/>',
+      '<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin="anonymous">',
     );
   });
 
@@ -57,7 +57,7 @@ describe("HeadWithDefaults — SiteHeadConfig head extras", () => {
     });
     const HeadWithDefaults = createHeadWithDefaults(ctx);
     const out = render(<HeadWithDefaults title="Test" />);
-    expect(out).toContain('<link rel="preconnect" href="https://cdn.example.com"/>');
+    expect(out).toContain('<link rel="preconnect" href="https://cdn.example.com">');
     expect(out).not.toContain("crossorigin");
   });
 
@@ -79,7 +79,7 @@ describe("HeadWithDefaults — SiteHeadConfig head extras", () => {
     const HeadWithDefaults = createHeadWithDefaults(ctx);
     const out = render(<HeadWithDefaults title="Test" />);
     expect(out).toContain(
-      '<link rel="preload" as="font" href="/fonts/myfont.woff2" type="font/woff2" crossorigin="anonymous"/>',
+      '<link rel="preload" as="font" href="/fonts/myfont.woff2" type="font/woff2" crossorigin="anonymous">',
     );
   });
 
@@ -93,7 +93,7 @@ describe("HeadWithDefaults — SiteHeadConfig head extras", () => {
     });
     const HeadWithDefaults = createHeadWithDefaults(ctx);
     const out = render(<HeadWithDefaults title="Test" />);
-    expect(out).toContain('<link rel="preload" as="image" href="/img/hero.png"/>');
+    expect(out).toContain('<link rel="preload" as="image" href="/img/hero.png">');
   });
 
   it("stylesheet (plain): emits <link rel='stylesheet'> with media and crossorigin", () => {
@@ -113,18 +113,16 @@ describe("HeadWithDefaults — SiteHeadConfig head extras", () => {
     const HeadWithDefaults = createHeadWithDefaults(ctx);
     const out = render(<HeadWithDefaults title="Test" />);
     expect(out).toContain(
-      '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css" media="print" crossorigin="anonymous"/>',
+      '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css" media="print" crossorigin="anonymous">',
     );
     // Plain stylesheet must NOT emit a noscript fallback.
     expect(out).not.toContain("<noscript>");
   });
 
   it("stylesheet (async:true): emits media='print' + literal onload + <noscript> fallback", () => {
-    // This test pins the EXACT SSR string for the async stylesheet pattern.
-    // preact-render-to-string emits string-valued on* props as literal HTML
-    // attributes (only function-valued event handlers are stripped), so the
-    // `onload` workaround (spreading { onload: "this.media='all'" } as any)
-    // must produce a literal `onload="this.media='all'"` attribute.
+    // The static-head serializer keeps this bounded media swap handler and
+    // escapes apostrophes for the double-quoted HTML attribute. The browser
+    // decodes those entities before running the handler.
     const ctx = makeFakeChromeContext({
       settings: {
         head: {
@@ -141,7 +139,7 @@ describe("HeadWithDefaults — SiteHeadConfig head extras", () => {
     const out = render(<HeadWithDefaults title="Test" />);
     // The <link> must carry media="print" and the literal onload attribute.
     expect(out).toContain(
-      '<link rel="stylesheet" href="https://cdn.example.com/style.css" media="print" onload="this.media=\'all\'"/>',
+      '<link rel="stylesheet" href="https://cdn.example.com/style.css" media="print" onload="this.media=&#39;all&#39;">',
     );
     // The <noscript> fallback must follow with a plain (non-self-closing) inner link.
     expect(out).toContain(
@@ -166,7 +164,7 @@ describe("HeadWithDefaults — SiteHeadConfig head extras", () => {
     const HeadWithDefaults = createHeadWithDefaults(ctx);
     const out = render(<HeadWithDefaults title="Test" />);
     expect(out).toContain(
-      '<link rel="stylesheet" href="https://cdn.example.com/style.css" crossorigin="anonymous" media="print" onload="this.media=\'all\'"/>',
+      '<link rel="stylesheet" href="https://cdn.example.com/style.css" crossorigin="anonymous" media="print" onload="this.media=&#39;all&#39;">',
     );
     expect(out).toContain(
       '<noscript><link rel="stylesheet" href="https://cdn.example.com/style.css" crossorigin="anonymous"></noscript>',
@@ -195,7 +193,7 @@ describe("HeadWithDefaults — SiteHeadConfig head extras", () => {
     // Initial media stays "print" (the non-render-blocking trick); onload swaps
     // to the configured media ("print"), NOT "all".
     expect(out).toContain(
-      '<link rel="stylesheet" href="https://cdn.example.com/print.css" media="print" onload="this.media=\'print\'"/>',
+      '<link rel="stylesheet" href="https://cdn.example.com/print.css" media="print" onload="this.media=&#39;print&#39;">',
     );
     // The <noscript> fallback must include the configured media.
     expect(out).toContain(
@@ -221,7 +219,7 @@ describe("HeadWithDefaults — SiteHeadConfig head extras", () => {
     const HeadWithDefaults = createHeadWithDefaults(ctx);
     const out = render(<HeadWithDefaults title="Test" />);
     expect(out).toContain(
-      '<link rel="alternate" href="/rss.xml" type="application/rss+xml" title="RSS Feed"/>',
+      '<link rel="alternate" href="/rss.xml" type="application/rss+xml" title="RSS Feed">',
     );
   });
 
@@ -235,7 +233,7 @@ describe("HeadWithDefaults — SiteHeadConfig head extras", () => {
     });
     const HeadWithDefaults = createHeadWithDefaults(ctx);
     const out = render(<HeadWithDefaults title="Test" />);
-    expect(out).toContain('<meta name="theme-color" content="#ffffff"/>');
+    expect(out).toContain('<meta name="theme-color" content="#ffffff">');
   });
 
   it("meta: emits <meta property content> (Open Graph style)", () => {
@@ -248,7 +246,7 @@ describe("HeadWithDefaults — SiteHeadConfig head extras", () => {
     });
     const HeadWithDefaults = createHeadWithDefaults(ctx);
     const out = render(<HeadWithDefaults title="Test" />);
-    expect(out).toContain('<meta property="og:locale:alternate" content="ja_JP"/>');
+    expect(out).toContain('<meta property="og:locale:alternate" content="ja_JP">');
   });
 
   it("emit order: preconnect → preload → stylesheets → alternateLinks → meta", () => {
@@ -305,13 +303,13 @@ describe("HeadWithDefaults — favicon set", () => {
     const ctx = makeFakeChromeContext({});
     const HeadWithDefaults = createHeadWithDefaults(ctx);
     const out = render(<HeadWithDefaults title="Test" />);
-    expect(out).toContain('<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>');
-    expect(out).toContain('<link rel="icon" href="/favicon.ico" sizes="any"/>');
+    expect(out).toContain('<link rel="icon" type="image/svg+xml" href="/favicon.svg">');
+    expect(out).toContain('<link rel="icon" href="/favicon.ico" sizes="any">');
     expect(out).toContain(
-      '<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"/>',
+      '<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">',
     );
     expect(out).toContain(
-      '<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"/>',
+      '<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">',
     );
     // svg entry must be first in the favicon set.
     const svgIdx = out.indexOf('type="image/svg+xml"');
@@ -332,13 +330,13 @@ describe("HeadWithDefaults — favicon set", () => {
     });
     const HeadWithDefaults = createHeadWithDefaults(ctx);
     const out = render(<HeadWithDefaults title="Test" />);
-    expect(out).toContain('<link rel="icon" type="image/svg+xml" href="/sub/favicon.svg"/>');
-    expect(out).toContain('<link rel="icon" href="/sub/favicon.ico" sizes="any"/>');
+    expect(out).toContain('<link rel="icon" type="image/svg+xml" href="/sub/favicon.svg">');
+    expect(out).toContain('<link rel="icon" href="/sub/favicon.ico" sizes="any">');
     expect(out).toContain(
-      '<link rel="icon" type="image/png" sizes="32x32" href="/sub/favicon-32x32.png"/>',
+      '<link rel="icon" type="image/png" sizes="32x32" href="/sub/favicon-32x32.png">',
     );
     expect(out).toContain(
-      '<link rel="icon" type="image/png" sizes="16x16" href="/sub/favicon-16x16.png"/>',
+      '<link rel="icon" type="image/png" sizes="16x16" href="/sub/favicon-16x16.png">',
     );
   });
 });
@@ -351,7 +349,7 @@ describe("HeadWithDefaults — settings.favicon", () => {
   /** The emitted `<link rel="icon">` tags, so assertions can't be satisfied
    *  (or broken) by unrelated head markup. */
   function iconLinks(html: string): string[] {
-    return html.match(/<link rel="icon"[^>]*\/>/g) ?? [];
+    return html.match(/<link rel="icon"[^>]*\>/g) ?? [];
   }
 
   // The equivalence #3461 leans on: the showcase can adopt the explicit object
@@ -383,8 +381,8 @@ describe("HeadWithDefaults — settings.favicon", () => {
     // Only the two supplied slots, in the declared order (not the object's own
     // key order) — and no `ico` link, which is the #3440 404 fix.
     expect(iconLinks(render(<HeadWithDefaults title="Test" />))).toEqual([
-      '<link rel="icon" type="image/svg+xml" href="/icon.svg"/>',
-      '<link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png"/>',
+      '<link rel="icon" type="image/svg+xml" href="/icon.svg">',
+      '<link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png">',
     ]);
   });
 
@@ -396,8 +394,8 @@ describe("HeadWithDefaults — settings.favicon", () => {
     });
     const HeadWithDefaults = createHeadWithDefaults(ctx);
     expect(iconLinks(render(<HeadWithDefaults title="Test" />))).toEqual([
-      '<link rel="icon" type="image/png" href="/icon.png"/>',
-      '<link rel="icon" type="image/webp" sizes="32x32" href="/icon-32.webp"/>',
+      '<link rel="icon" type="image/png" href="/icon.png">',
+      '<link rel="icon" type="image/webp" sizes="32x32" href="/icon-32.webp">',
     ]);
   });
 
@@ -406,7 +404,7 @@ describe("HeadWithDefaults — settings.favicon", () => {
       makeFakeChromeContext({ settings: { favicon: { png16: "/icon-16" } } }),
     );
     expect(iconLinks(render(<HeadWithDefaults title="Test" />))).toEqual([
-      '<link rel="icon" type="image/png" sizes="16x16" href="/icon-16"/>',
+      '<link rel="icon" type="image/png" sizes="16x16" href="/icon-16">',
     ]);
   });
 
@@ -430,7 +428,7 @@ describe("HeadWithDefaults — settings.favicon", () => {
     const HeadWithDefaults = createHeadWithDefaults(ctx);
     // One link, no `sizes`, and none of the default four survives.
     expect(iconLinks(render(<HeadWithDefaults title="Test" />))).toEqual([
-      '<link rel="icon" type="image/png" href="/sub/assets/my-icon.png"/>',
+      '<link rel="icon" type="image/png" href="/sub/assets/my-icon.png">',
     ]);
   });
 
@@ -439,7 +437,7 @@ describe("HeadWithDefaults — settings.favicon", () => {
       makeFakeChromeContext({ settings: { favicon: "/icon.bmpx" } }),
     );
     expect(iconLinks(render(<HeadWithDefaults title="Test" />))).toEqual([
-      '<link rel="icon" href="/icon.bmpx"/>',
+      '<link rel="icon" href="/icon.bmpx">',
     ]);
   });
 
@@ -448,7 +446,7 @@ describe("HeadWithDefaults — settings.favicon", () => {
       makeFakeChromeContext({ settings: { favicon: "/icon.svg?v=2" } }),
     );
     expect(iconLinks(render(<HeadWithDefaults title="Test" />))).toEqual([
-      '<link rel="icon" type="image/svg+xml" href="/icon.svg?v=2"/>',
+      '<link rel="icon" type="image/svg+xml" href="/icon.svg?v=2">',
     ]);
   });
 
@@ -460,7 +458,7 @@ describe("HeadWithDefaults — settings.favicon", () => {
       }),
     );
     expect(iconLinks(render(<HeadWithDefaults title="Test" />))).toEqual([
-      '<link rel="icon" type="image/png" href="https://cdn.example.com/icon.png"/>',
+      '<link rel="icon" type="image/png" href="https://cdn.example.com/icon.png">',
     ]);
   });
 
@@ -476,7 +474,7 @@ describe("HeadWithDefaults — settings.favicon", () => {
       const links = iconLinks(out);
       expect(links, `expected exactly one favicon link, got: ${out}`).toHaveLength(1);
       const m = links[0]!.match(
-        /^<link rel="icon" type="image\/svg\+xml" href="(data:image\/svg\+xml,[^"]*)"\/>$/,
+        /^<link rel="icon" type="image\/svg\+xml" href="(data:image\/svg\+xml,[^"]*)">$/,
       );
       expect(m, `expected an SVG data-URL favicon link, got: ${links[0]}`).not.toBeNull();
       return m![1]!;

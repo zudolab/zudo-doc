@@ -5,9 +5,8 @@
 // page paints. The component is intentionally server-rendered with no
 // hydration: it just emits a <style> + <script> pair the engine streams
 // into the document head. The Astro version used `set:text` and
-// `define:vars`; the JSX equivalent is `dangerouslySetInnerHTML` with the
-// runtime values interpolated as a JSON literal so the script can read
-// them without re-fetching settings.
+// `define:vars`; this port supplies guarded static rawHtml payloads, with
+// runtime values interpolated as JSON literals into the bootstrap script.
 //
 // W3B (#1730 — Generator Pages Migration): the consumer-side palette
 // resolution and the host `settings.colorMode` lookup were lifted out of

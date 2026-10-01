@@ -17,9 +17,9 @@
  *      pre-paint script is no longer duplicated there.
  */
 
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Description } from "@takazudo/zfb/zudo-react";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import {
   createSidebarPrepaint,
   createSidebarVisibilityPrepaint,
@@ -27,6 +27,19 @@ import {
 import { DocLayout } from "../../doclayout/doc-layout.js";
 import { createRenderDocPage } from "../../doc-page-renderer/index.js";
 import { makeFakeChromeContext } from "../../__tests__/fixtures/fake-chrome-context.js";
+
+const testGlobal = globalThis as unknown as { __zfb?: Record<string, unknown> };
+const previousZfb = testGlobal.__zfb;
+beforeEach(() => {
+  testGlobal.__zfb = {
+    ...previousZfb,
+    zudoReactBuild: "4458-test",
+    zudoReactIslands: ["ThemeToggle", "SidebarToggle", "DesktopSidebarToggle"],
+  };
+});
+afterEach(() => {
+  testGlobal.__zfb = previousZfb;
+});
 
 // Distinctive substrings of the pre-paint script body.
 const SCRIPT_STORAGE_READ = `localStorage.getItem("zudo-doc-sidebar-visible")`;
@@ -102,7 +115,16 @@ describe("doc-page-shell wiring — visibility script actually reaches <head>", 
   // in. This renders the REAL shell (via createRenderDocPage + a fake ChromeContext
   // with sidebarToggle on), so a regression that dropped <SidebarVisibilityPrepaint>
   // from doc-page-shell's head slot (the actual #2571 fix site) is caught.
-  const ctx = makeFakeChromeContext({ settings: { sidebarToggle: true } });
+  const ctx = makeFakeChromeContext({
+    settings: { sidebarToggle: true },
+    overrides: {
+      hostBindings: {
+        Header: () => <header>Header</header>,
+        Sidebar: () => <nav>Sidebar</nav>,
+        Footer: () => <footer>Footer</footer>,
+      },
+    },
+  });
   const renderDocPage = createRenderDocPage(ctx);
 
   it("emits the pre-paint script inside <head>, before the <aside> desktop sidebar", () => {

@@ -11,6 +11,7 @@
 // Pure SSR — no client-only imports.
 
 import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
+import { h } from "@takazudo/zfb/zudo-react";
 import { OgTags, TwitterCard } from "../head/index.js";
 import type { HeadProps } from "../head/types.js";
 import { SIDEBAR_RESIZER_RESTORE_SCRIPT } from "../sidebar-resizer/index.js";
@@ -279,9 +280,9 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
             the companion tags don't dangle when og:image itself was suppressed. */}
         {ogImageUrl !== undefined && (
           <>
-            <meta property="og:image:width" content="1200" />
-            <meta property="og:image:height" content="630" />
-            <meta property="og:image:alt" content={composeMetaTitle(title)} />
+            {h("meta", { property: "og:image:width", content: "1200" })}
+            {h("meta", { property: "og:image:height", content: "630" })}
+            {h("meta", { property: "og:image:alt", content: composeMetaTitle(title) })}
           </>
         )}
         {metaTags.twitterCard !== false && metaTags.twitterCard !== undefined && (
@@ -337,27 +338,24 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
                 {...(p.crossorigin ? { crossorigin: p.crossorigin } : {})}
               />
             ))}
-            {ctx.settings.head.preload?.map((p, i) => (
-              <link
-                key={i}
-                rel="preload"
-                as={p.as}
-                href={p.href}
-                {...(p.type ? { type: p.type } : {})}
-                {...(p.crossorigin ? { crossorigin: p.crossorigin } : {})}
-              />
-            ))}
+            {ctx.settings.head.preload?.map((p, i) =>
+              h("link", {
+                key: i,
+                rel: "preload",
+                as: p.as,
+                href: p.href,
+                ...(p.type ? { type: p.type } : {}),
+                ...(p.crossorigin ? { crossorigin: p.crossorigin } : {}),
+              }),
+            )}
             {ctx.settings.head.stylesheets?.map((s, i) =>
               s.async ? (
                 // Non-render-blocking async stylesheet:
                 //   <link rel="stylesheet" href media="print" onload="this.media='all'">
                 //   <noscript><link rel="stylesheet" href></noscript>
                 //
-                // SSR note: preact-render-to-string emits string-valued on* props as
-                // literal HTML attributes (only function-valued event handlers are
-                // stripped). We use `as any` to bypass Preact's JSX types, which
-                // expect a function for onload. The new unit test pins the exact
-                // emitted string to guard this contract.
+                // The static-head serializer allows this bounded media swap
+                // handler and escapes it as an HTML attribute value.
                 <>
                   <link
                     key={`${i}-link`}
@@ -365,14 +363,16 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
                     href={s.href}
                     {...(s.crossorigin ? { crossorigin: s.crossorigin } : {})}
                     media="print"
-                    // Swap to the configured media (default "all") once loaded.
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    {...({ onload: `this.media='${s.media ?? "all"}'` } as any)}
+                    onload={`this.media='${s.media ?? "all"}'`}
                   />
-                  <noscript
-                    key={`${i}-noscript`}
-                    rawHtml={`<link rel="stylesheet" href="${s.href.replace(/"/g, "&quot;")}"${s.media ? ` media="${s.media}"` : ""}${s.crossorigin ? ` crossorigin="${s.crossorigin}"` : ""}>`}
-                  />
+                  <noscript key={`${i}-noscript`}>
+                    <link
+                      rel="stylesheet"
+                      href={s.href}
+                      {...(s.media ? { media: s.media } : {})}
+                      {...(s.crossorigin ? { crossorigin: s.crossorigin } : {})}
+                    />
+                  </noscript>
                 </>
               ) : (
                 <link
@@ -393,14 +393,14 @@ export function createHeadWithDefaults<S extends Settings = Settings>(
                 {...(a.title ? { title: a.title } : {})}
               />
             ))}
-            {ctx.settings.head.meta?.map((m, i) => (
-              <meta
-                key={i}
-                {...(m.name ? { name: m.name } : {})}
-                {...(m.property ? { property: m.property } : {})}
-                content={m.content}
-              />
-            ))}
+            {ctx.settings.head.meta?.map((m, i) =>
+              h("meta", {
+                key: i,
+                ...(m.name ? { name: m.name } : {}),
+                ...(m.property ? { property: m.property } : {}),
+                content: m.content,
+              }),
+            )}
           </>
         )}
       </>
