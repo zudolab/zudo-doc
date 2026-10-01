@@ -102,10 +102,10 @@ export const REQUIRED_CI_GUARDS = [
     comment: "Current and retired package subpath resolution (#2772)",
   },
   {
-    // Package safelist: node scripts/check-package-safelist.mjs (CI) / pnpm check:package-safelist (b4push)
-    ciNeedle: "check-package-safelist.mjs",
-    b4pushScript: "check:package-safelist",
-    comment: "Package safelist drift check (#1982)",
+    // Package wind manifest: node scripts/check-package-wind-manifest.mjs (CI) / pnpm check:package-wind-manifest (b4push)
+    ciNeedle: "check-package-wind-manifest.mjs",
+    b4pushScript: "check:package-wind-manifest",
+    comment: "Package wind manifest drift check (#1982)",
   },
   {
     // No-host-alias-in-package: node scripts/check-no-host-alias-in-package.mjs
@@ -369,7 +369,7 @@ export function checkParity({
   // ── Direction 3: manifest → b4push ───────────────────────────────────────
   // A manifest entry with a b4pushScript must still invoke that script
   // somewhere in run-b4push.sh. This is intentionally a whole-file scan:
-  // required guards such as package safelist and plugin resolution run after
+  // required guards such as package wind manifest and plugin resolution run after
   // the lightweight guard region. Full-line comments are ignored by the
   // scanner; inline comments and quoted strings remain lexical matches.
   const b4pushInvocations = new Set(extractB4pushInvocations(b4pushSrc));

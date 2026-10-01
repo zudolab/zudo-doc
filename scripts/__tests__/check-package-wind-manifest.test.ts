@@ -8,8 +8,8 @@ import { fileURLToPath } from "node:url";
 // of the file), so importing it here does not trigger `main()` / process.exit.
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const { extractClasses, parseSafelist } = await import(
-  resolve(__dirname, "../check-package-safelist.mjs")
+const { extractClasses, parseWindManifest } = await import(
+  resolve(__dirname, "../check-package-wind-manifest.mjs")
 );
 
 // ── extractClasses ──────────────────────────────────────────────────────────
@@ -62,18 +62,18 @@ describe("extractClasses", () => {
   });
 });
 
-// ── parseSafelist ────────────────────────────────────────────────────────────
+// ── parseWindManifest ────────────────────────────────────────────────────────────
 
-describe("parseSafelist", () => {
-  it("parses the whitespace-delimited token set out of @source inline()", () => {
-    const css = `@source inline("flex hidden xl:flex top-[3.5rem]");`;
-    const result = parseSafelist(css);
+describe("parseWindManifest", () => {
+  it("parses the strict candidate manifest", () => {
+    const css = JSON.stringify({ schemaVersion: 1, specVersion: 1, producer: "zudo-doc", candidates: ["flex", "hidden", "xl:flex", "top-[3.5rem]"] });
+    const result = parseWindManifest(css);
     expect(result.has("flex")).toBe(true);
     expect(result.has("xl:flex")).toBe(true);
     expect(result.has("top-[3.5rem]")).toBe(true);
   });
 
-  it("throws when no @source inline() block is present", () => {
-    expect(() => parseSafelist("body { color: red; }")).toThrow();
+  it("throws when the v1 manifest schema is absent", () => {
+    expect(() => parseWindManifest("body { color: red; }")).toThrow();
   });
 });

@@ -76,12 +76,12 @@ export default defineConfig((options) => ({
   // at runtime.
   // After every compilation (build, prepare, and --watch): copy the static
   // content stylesheets into dist/ (shipped as the package CSS exports), then
-  // regenerate dist/safelist.css. Both must run AFTER tsup because a one-shot
-  // build's clean wipes dist/ first; gen-safelist only scans dist/*.js so the
+  // regenerate dist/wind.json. Both must run AFTER tsup because a one-shot
+  // build's clean wipes dist/ first; gen-wind-manifest only scans dist/*.js so the
   // copied .css does not affect it. A one-shot build then runs
   // gen-compiled-css.mjs, which invokes the standalone `zfb css` command with
-  // the package entry and explicit src/dist sources. It must stay after the
-  // copied stylesheets and safelist, and is deliberately excluded from watch
+  // the package entry and a temp project config pointing at the strict manifest. It must stay after the
+  // copied stylesheets and manifest, and is deliberately excluded from watch
   // mode because it is a heavyweight whole-package scan.
   //
   // gen-search-widget-script.mjs (zudolab/zudo-doc#3412) and
@@ -103,7 +103,7 @@ export default defineConfig((options) => ({
     "node scripts/copy-content-css.mjs",
     "node scripts/copy-page-loading-css.mjs",
     "node scripts/copy-features-css.mjs",
-    "node scripts/gen-safelist.mjs",
+    "node scripts/gen-wind-manifest.mjs",
     ...(!options.watch ? ["node scripts/gen-compiled-css.mjs"] : []),
     "node scripts/gen-nav-overflow-script.mjs",
     "node scripts/copy-eject-sources.mjs",

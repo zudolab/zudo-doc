@@ -26,12 +26,12 @@ const SRC_DIR = resolve(__dirname, "..");
 const repoRoot = resolve(__dirname, "../../../..");
 
 // Reuse the exact candidate-extraction + class-shape-validation logic
-// gen-safelist.mjs uses to scan compiled dist/**/*.js for Tailwind class
+// gen-wind-manifest.mjs uses to scan compiled dist/**/*.js for Tailwind class
 // candidates (see that file's own header comment for the lexer design),
 // rather than a hand-rolled class-shape regex.
-const { extractTokens } = await import(resolve(PACKAGE_ROOT, "scripts/gen-safelist.mjs"));
+const { extractTokens } = await import(resolve(PACKAGE_ROOT, "scripts/gen-wind-manifest.mjs"));
 
-// gen-safelist.mjs's lexer only ever scans COMPILED dist/**/*.js (JSX already
+// gen-wind-manifest.mjs's lexer only ever scans COMPILED dist/**/*.js (JSX already
 // transformed away by tsup/esbuild). Feeding it raw .tsx source instead
 // breaks it: the lexer's regex-vs-division heuristic treats the `/` in a JSX
 // closing tag (e.g. `</div>`) as the start of a regex literal — `<` is a

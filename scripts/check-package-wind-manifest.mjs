@@ -1,23 +1,23 @@
 #!/usr/bin/env node
-// scripts/check-package-safelist.mjs
+// scripts/check-package-wind-manifest.mjs
 //
-// Guard check: ensures the generated dist/safelist.css in
+// Guard check: ensures the generated dist/wind.json in
 // packages/zudo-doc/ covers every responsive-variant + arbitrary-value
 // utility class found in packages/zudo-doc/src/**/*.tsx (excluding __tests__).
 //
 // Background (#1971, #1982, #1993, #1994): consumers scaffolded via
 // create-zudo-doc previously relied on a hand-maintained @source inline()
 // in the template global.css — prone to silent drift when new bracket or
-// responsive utilities were added to the package. The template now imports
-// the package-generated dist/safelist.css instead (zudolab/zudo-doc#1994).
-// This guard validates the generated artifact: if gen-safelist.mjs (#1993)
+// responsive utilities were added to the package. The v3 package now publishes
+// a strict wind manifest consumed by its preset (zudolab/zudo-doc#4440).
+// This guard validates the generated artifact: if gen-wind-manifest.mjs (#1993)
 // misses a utility from src/**/*.tsx, this check catches it before it lands.
 //
 // Escape hatch (#3204, #3211): extraction scans raw source text (see the
 // "Class extraction" section below), so a class name written in PROSE —
 // e.g. a comment contrasting one Tailwind class with another — is
 // indistinguishable from a live class attribute and gets demanded of the
-// generated safelist even though nothing emits it. A line carrying a
+// generated manifest even though nothing emits it. A line carrying a
 // trailing `// safelist-ok: <reason>` marker is excluded from extraction,
 // modeled on scripts/check-wait-debt.mjs's `// wait-ok:` convention. This is
 // the ONLY line-aware step — general comment-stripping was considered and
@@ -26,10 +26,10 @@
 // comment in packages/zudo-doc/src/doc-page-shell/index.tsx for a live
 // example.
 //
-// Usage: node scripts/check-package-safelist.mjs
-// Exit 0 = generated safelist covers all source utilities. Exit 1 = drift detected.
+// Usage: node scripts/check-package-wind-manifest.mjs
+// Exit 0 = generated manifest covers all source utilities. Exit 1 = drift detected.
 //
-// Requires packages/zudo-doc/dist/safelist.css to exist.
+// Requires packages/zudo-doc/dist/wind.json to exist.
 // Run `pnpm --filter @takazudo/zudo-doc build` first if missing.
 //
 // Wired into:
@@ -44,9 +44,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
 
 const PKG_SRC_DIR = resolve(ROOT, "packages/zudo-doc/src");
-const GENERATED_SAFELIST_CSS = resolve(
+const GENERATED_WIND_JSON = resolve(
   ROOT,
-  "packages/zudo-doc/dist/safelist.css",
+  "packages/zudo-doc/dist/wind.json",
 );
 
 // The marker itself — deliberately a plain substring (not a regex group) so
@@ -148,32 +148,28 @@ export function extractClasses(src) {
   return classes;
 }
 
-// ── Safelist parser ────────────────────────────────────────────────────────
+// ── Manifest parser ────────────────────────────────────────────────────────
 
 /**
- * Parse the @source inline("…") block from the generated dist/safelist.css.
- * Returns a Set of all whitespace-delimited tokens in the inline block.
+ * Parse the generated dist/wind.json.
+ * Returns the strict candidate set.
  */
-export function parseSafelist(cssSrc) {
-  const match = cssSrc.match(/@source\s+inline\s*\(\s*"([\s\S]*?)"\s*\)/);
-  if (!match) {
-    throw new Error(
-      'Could not locate @source inline("…") in generated safelist.\n' +
-        "Expected a single @source inline() block in:\n" +
-        GENERATED_SAFELIST_CSS,
-    );
+export function parseWindManifest(jsonSrc) {
+  const manifest = JSON.parse(jsonSrc);
+  if (manifest.schemaVersion !== 1 || manifest.specVersion !== 1 || manifest.producer !== "zudo-doc" || !Array.isArray(manifest.candidates)) {
+    throw new Error("Expected a zudo-doc v1 candidate manifest");
   }
-  return new Set(match[1].trim().split(/\s+/).filter(Boolean));
+  return new Set(manifest.candidates);
 }
 
 // ── Main ───────────────────────────────────────────────────────────────────
 
 function main() {
   // Require the generated artifact to exist — it is produced by the package build.
-  if (!existsSync(GENERATED_SAFELIST_CSS)) {
+  if (!existsSync(GENERATED_WIND_JSON)) {
     console.error("");
     console.error(
-      "ERROR: packages/zudo-doc/dist/safelist.css does not exist.",
+      "ERROR: packages/zudo-doc/dist/wind.json does not exist.",
     );
     console.error(
       "Run `pnpm --filter @takazudo/zudo-doc build` first to generate it.",
@@ -197,39 +193,39 @@ function main() {
     }
   }
 
-  // Parse generated safelist
-  const generatedCss = readFileSync(GENERATED_SAFELIST_CSS, "utf8");
-  const safelist = parseSafelist(generatedCss);
+  // Parse generated manifest
+  const generatedJson = readFileSync(GENERATED_WIND_JSON, "utf8");
+  const manifest = parseWindManifest(generatedJson);
 
-  // Direction: source → generated safelist (critical — missing = drift that hurts consumers)
-  const missingFromSafelist = [...sourceClasses]
-    .filter((c) => !safelist.has(c))
+  // Direction: source → generated manifest (critical — missing = drift that hurts consumers)
+  const missingFromManifest = [...sourceClasses]
+    .filter((c) => !manifest.has(c))
     .sort();
 
-  if (missingFromSafelist.length === 0) {
+  if (missingFromManifest.length === 0) {
     console.log(
-      `OK — package safelist check passed. ${sourceClasses.size} source utilities all present in generated dist/safelist.css.`,
+      `OK — package wind manifest check passed. ${sourceClasses.size} source utilities all present in generated dist/wind.json.`,
     );
     return 0;
   }
 
   console.error("");
   console.error(
-    "Package safelist check FAILED — the following utilities exist in",
+    "Package wind manifest check FAILED — the following utilities exist in",
   );
   console.error(
     `packages/zudo-doc/src/**/*.tsx but are MISSING from the generated\n` +
-      `@source inline() in packages/zudo-doc/dist/safelist.css:`,
+      `packages/zudo-doc/dist/wind.json:`,
   );
   console.error("");
-  for (const c of missingFromSafelist) {
+  for (const c of missingFromManifest) {
     console.error(`  ${c}`);
   }
   console.error("");
   console.error("This has two possible causes:");
   console.error("");
   console.error(
-    "  1. A REAL utility class that packages/zudo-doc/scripts/gen-safelist.mjs\n" +
+    "  1. A REAL utility class that packages/zudo-doc/scripts/gen-wind-manifest.mjs\n" +
       "     failed to capture from the compiled dist/**/*.js. Fix the extraction\n" +
       "     logic there, then rebuild:\n" +
       "       pnpm --filter @takazudo/zudo-doc build",
@@ -238,7 +234,7 @@ function main() {
   console.error(
     "  2. A class name mentioned in PROSE — e.g. a comment naming a class to\n" +
       "     contrast it with the one actually used. Nothing emits it, so it will\n" +
-      "     never appear in the generated safelist. Append a trailing\n" +
+      "     never appear in the generated manifest. Append a trailing\n" +
       "     `// safelist-ok: <reason>` comment on that SAME line to exempt it from\n" +
       "     extraction (mirrors scripts/check-wait-debt.mjs's `wait-ok:` marker;\n" +
       "     see the TOC wrapper comment in\n" +
@@ -246,14 +242,14 @@ function main() {
   );
   console.error("");
   console.error(
-    "Re-run `pnpm check:package-safelist` after fixing to verify.",
+    "Re-run `pnpm check:package-wind-manifest` after fixing to verify.",
   );
   return 1;
 }
 
-// Run the CLI only when executed directly (node scripts/check-package-safelist.mjs),
-// NOT when imported. Mirrors packages/zudo-doc/scripts/gen-safelist.mjs's guard:
-// the unit test dynamically imports this module for extractClasses/parseSafelist,
+// Run the CLI only when executed directly (node scripts/check-package-wind-manifest.mjs),
+// NOT when imported. Mirrors packages/zudo-doc/scripts/gen-wind-manifest.mjs's guard:
+// the unit test dynamically imports this module for extractClasses/parseWindManifest,
 // and without this guard the import would run main() (and process.exit) as a
 // side effect, killing the Vitest process.
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {

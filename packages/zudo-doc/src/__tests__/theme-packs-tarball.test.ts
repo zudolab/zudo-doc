@@ -39,7 +39,7 @@ interface NpmPackDryRunEntry {
 }
 
 const LIFECYCLE_OUTPUT_RE =
-  /(?:^> .*\b(?:prepare|prepack)\b|\[(?:copy-theme-css|copy-content-css|copy-page-loading-css|copy-features-css|copy-eject-sources|copy-routes-src|copy-virtual-modules|copy-theme-packs|gen-catalog|gen-search-widget-script)\]|^gen-safelist:)/m;
+  /(?:^> .*\b(?:prepare|prepack)\b|\[(?:copy-theme-css|copy-content-css|copy-page-loading-css|copy-features-css|copy-eject-sources|copy-routes-src|copy-virtual-modules|copy-theme-packs|gen-catalog|gen-search-widget-script)\]|^gen-wind-manifest:)/m;
 
 /**
  * Extract the JSON array from `npm pack --json` stdout. npm 10 can run

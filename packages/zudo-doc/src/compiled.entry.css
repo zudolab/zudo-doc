@@ -1,17 +1,5 @@
-@layer zd-preflight, zd-flow;
-@import "tailwindcss/preflight" layer(zd-preflight);
-@import "tailwindcss/utilities";
-
-@import "@takazudo/zudo-doc/theme.css";
-@import "@takazudo/zudo-doc/safelist.css";
-@import "@takazudo/zudo-doc/content.css";
-@import "@takazudo/zudo-doc/page-loading.css";
-@import "@takazudo/zudo-doc/features.css";
-
-@source not "./dist/catalog.js";
-
-/* Test files are not shipped markup, but the Tailwind scan is text-based, so a
-   bare class-shaped string literal in a spec emits a real utility into this
-   published stylesheet (e.g. "flow-root" in the theme-pack header-logo guard,
-   "flex-shrink" in a prose comment in route-injection-build.slow.test.ts). */
-@source not "./src/**/__tests__/**";
+@layer zw-reset, zd-flow;
+@import "./theme.css";
+@import "./content.css";
+@import "./page-loading.css";
+@import "./features.css";

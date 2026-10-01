@@ -6,6 +6,7 @@ export const packageWindConfig: WindConfig = {
   spec: 1,
   reset: "owned-v1",
   dark: false,
+  manifests: { "zudo-doc": { path: "@takazudo/zudo-doc/wind.json" } },
   tokens: {
     "colors": {
       "bg": "var(--color-bg)",

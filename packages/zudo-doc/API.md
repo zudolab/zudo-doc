@@ -393,9 +393,8 @@ project's `ZudoDocConfig` override over each default before threading it into
 | Subpath | Description |
 |---|---|
 | `./theme.css` | Default theme tokens and project-agnostic base rules |
-| `./theme-no-reset.css` | `theme.css` variant without the namespace-wide `--color-*: initial` guardrail; use when import order cannot be controlled |
 | `./content.css` | `.zd-content` typography stylesheet (single source of truth) |
-| `./safelist.css` | Generated Tailwind safelist for component classes |
+| `./wind.json` | Generated strict wind candidate manifest for package classes |
 | `./page-loading.css` | Page-loading overlay stylesheet |
 | `./features.css` | Feature CSS (code blocks, dual-theme, KaTeX, etc.) |
 

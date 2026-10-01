@@ -34,7 +34,7 @@ set -euo pipefail
 #      5 retiered create-zudo-doc tests; blocking
 #  26. Package tests (test:packages) — 2,988 suite tests across 4 workspace packages
 #      (44/73/596/2,275; 5 retiered create-zudo-doc tests run in Slow Unit Tests)
-#  27. Package safelist check (#1994) — requires dist/safelist.css from step 24
+#  27. Package wind manifest check (#1994) — requires dist/wind.json from step 24
 #  28. Build (zfb build)
 #  29. Content-fallback check (#3134) — no page may ship a <pre data-zfb-content-fallback> body
 #  30. Link check
@@ -439,7 +439,7 @@ fi
 # rather than whatever dist/ happened to be lying around (the preflight above
 # only repairs a MISSING dist/, it never refreshes a stale one). CI's package
 # and root test jobs build for the same reason. Building here also leaves
-# dist/safelist.css ready for the safelist check in step 27.
+# dist/wind.json ready for the safelist check in step 27.
 #
 # `build:workspace` — not `pnpm --filter @takazudo/zudo-doc build` — because
 # that package's own tsc pass needs @takazudo/zudo-doc-history-server's
@@ -493,17 +493,17 @@ else
   fail "Package tests + subpath resolution"
 fi
 
-# ── Step 27: Package safelist check ──────────────────
-# Verifies that the generated dist/safelist.css in packages/zudo-doc/ covers
+# ── Step 27: Package wind manifest check ──────────────────
+# Verifies that the generated dist/wind.json in packages/zudo-doc/ covers
 # every responsive-variant + arbitrary-value utility class used in
-# packages/zudo-doc/src/**/*.tsx. Catches regressions where gen-safelist.mjs
+# packages/zudo-doc/src/**/*.tsx. Catches regressions where gen-wind-manifest.mjs
 # misses a new utility class before it reaches consumers (#1994).
-# Requires dist/safelist.css — produced by the package build in step 24.
-step "Package safelist check (check:package-safelist)"
-if (cd "$ROOT_DIR" && pnpm check:package-safelist); then
-  pass "Package safelist check passed"
+# Requires dist/wind.json — produced by the package build in step 24.
+step "Package wind manifest check (check:package-wind-manifest)"
+if (cd "$ROOT_DIR" && pnpm check:package-wind-manifest); then
+  pass "Package wind manifest check passed"
 else
-  fail "Package safelist check"
+  fail "Package wind manifest check"
 fi
 
 # ── Step 28: Build ────────────────────────────────────
