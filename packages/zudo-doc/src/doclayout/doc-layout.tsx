@@ -405,7 +405,7 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
             // landmark is still present (matches the Astro layout's mobile
             // SidebarToggle aside that was always in the DOM).
             class={showSidebar
-              ? "hidden lg:block fixed top-[3.5rem] left-0 z-sidebar w-[var(--zd-sidebar-w)] h-[calc(100vh-3.5rem)] overflow-y-auto bg-bg border-r border-muted pb-vsp-xl"
+              ? "hidden lg:block fixed top-[3.5rem] left-0 z-sidebar w-[var(--zd-sidebar-w)] h-[calc(100vh_-_3.5rem)] overflow-y-auto bg-bg border-r border-muted pb-vsp-xl"
               : "sr-only"
             }
             // Strategy B persist: data-zfb-transition-persist is set only when
@@ -437,7 +437,7 @@ export function DocLayout(props: DocLayoutProps): JSX.Element {
             showSidebar ? " lg:ml-[var(--zd-sidebar-w)]" : ""
           }`}
         >
-          <div class="flex min-h-[calc(100vh-3.5rem)] justify-center">
+          <div class="flex min-h-[calc(100vh_-_3.5rem)] justify-center">
             {/*
               The inter-column `gap` is unconditional so ANY visible `toc` slot
               (including a custom always-visible override) is separated from

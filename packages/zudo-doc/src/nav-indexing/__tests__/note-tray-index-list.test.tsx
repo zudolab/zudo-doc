@@ -21,7 +21,7 @@ describe("NoteTrayIndex index style", () => {
     expect(html).toContain("Aug 22, 2026");
     expect(html).toContain("Updated <time");
     expect(html).toMatch(/<li[^>]*><a [^>]*href="\/docs\/one"/);
-    expect(html).toMatch(/<ol[^>]*\[&_li\]:mb-0[^>]*>/);
+    expect(html).toMatch(/<ol[^>]*zd-list-items-no-margin[^>]*>/);
     expect(html).not.toMatch(/<ol[^>]*border-t/);
     expect(html).toMatch(/<li[^>]*border-y border-muted[^>]*>/);
   });

@@ -229,7 +229,7 @@ export function ThemePackSwitcher({
           role="dialog"
           aria-label="Theme pack switcher"
           data-switcher-card
-          class="flex w-[360px] max-w-[calc(100vw-2rem)] flex-col gap-vsp-2xs rounded-lg border border-muted bg-surface p-hsp-lg shadow-lg focus-visible:outline-2 focus-visible:outline-accent"
+          class="flex w-[360px] max-w-[calc(100vw_-_2rem)] flex-col gap-vsp-2xs rounded-lg border border-muted bg-surface p-hsp-lg shadow-lg focus-visible:outline-2 focus-visible:outline-accent"
         >
           <div class="flex items-start justify-between gap-hsp-sm">
             {/* min-w-0 + break-words: a flex child's min-width:auto would let a

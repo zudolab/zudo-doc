@@ -136,7 +136,7 @@ describe("ThemePackCard — rendering from meta fixtures", () => {
     );
     expect(html).toContain('aria-pressed="true"');
     expect(html).toContain("border-accent");
-    expect(html).toContain("ring-accent");
+    expect(html).toContain("zd-theme-pack-active-ring");
   });
 
   it("does not mark an inactive card with the selected ring", () => {
@@ -144,7 +144,7 @@ describe("ThemePackCard — rendering from meta fixtures", () => {
       <ThemePackCard meta={FOUNDRY} mode="light" isActive={false} onSelect={() => {}} />,
     );
     expect(html).toContain('aria-pressed="false"');
-    expect(html).not.toContain("ring-accent");
+    expect(html).not.toContain("zd-theme-pack-active-ring");
   });
 
   it("never references a pack stylesheet, webfont, or <link> — paints from swatches only", () => {

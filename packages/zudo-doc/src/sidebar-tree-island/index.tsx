@@ -804,7 +804,7 @@ const LeafNode = memo(function LeafNode({
           aria-current={isActive ? "page" : undefined}
           data-nav-active={!isRoot && isActive ? "" : undefined}
           className={isRoot
-            ? `flex items-start gap-hsp-xs py-[calc(var(--spacing-vsp-xs)+0.15rem)] pr-hsp-xs lg:pr-hsp-sm text-small font-semibold break-words ${
+            ? `flex items-start gap-hsp-xs py-[calc(var(--spacing-vsp-xs)_+_0.15rem)] pr-hsp-xs lg:pr-hsp-sm text-small font-semibold break-words ${
                 isActive ? "bg-fg text-bg" : "text-fg hover:text-accent hover:underline focus:underline focus:text-accent"
               }`
             : `block py-vsp-2xs pr-hsp-xs lg:pr-hsp-sm text-small break-words ${

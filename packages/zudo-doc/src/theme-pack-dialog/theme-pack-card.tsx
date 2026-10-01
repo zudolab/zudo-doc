@@ -50,12 +50,12 @@ export function ThemePackCard({ meta, mode, isActive, onSelect }: ThemePackCardP
       aria-pressed={isActive}
       aria-label={`Apply ${meta.name} theme pack — ${meta.mode === "dark" ? "Dark" : "Light"}. ${meta.description}`}
       className={`flex flex-col gap-vsp-2xs rounded-lg border p-hsp-sm text-left transition-colors focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 ${
-        isActive ? "border-accent ring-2 ring-accent" : "border-muted hover:border-accent"
+        isActive ? "border-accent zd-theme-pack-active-ring" : "border-muted hover:border-accent"
       }`}
     >
       <div
         aria-hidden="true"
-        className="flex flex-col gap-vsp-3xs rounded-md border p-hsp-sm"
+        className="flex flex-col gap-vsp-3xs border p-hsp-sm"
         style={{
           "background-color": swatches.bg,
           color: swatches.fg,
@@ -71,7 +71,7 @@ export function ThemePackCard({ meta, mode, isActive, onSelect }: ThemePackCardP
           .
         </p>
         <p
-          className="rounded px-hsp-2xs py-hsp-3xs font-mono text-caption"
+          className="rounded px-hsp-2xs font-mono text-caption"
           style={{ "background-color": `color-mix(in oklch, ${swatches.fg} 8%, transparent)` }}
         >
           <span style={{ color: swatches.syntax.keyword }}>const</span>{" "}

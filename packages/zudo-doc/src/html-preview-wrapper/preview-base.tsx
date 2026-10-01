@@ -207,7 +207,7 @@ export function PreviewBase({
           {/* Intentional: white canvas regardless of site theme — matches standard browser context */}
           <iframe
             ref={iframeRef}
-            class="block w-full border-none bg-[#fff] rounded shadow-[0_1px_3px_color-mix(in_srgb,var(--color-fg)_8%,transparent)]"
+            class="block w-full border-none bg-[#fff] rounded zd-preview-shadow"
             srcDoc={srcdoc}
             sandbox={sandbox}
             style={{ height: height ?? iframeHeight }}

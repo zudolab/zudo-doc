@@ -1284,3 +1284,59 @@ html[data-asset-details-hidden]
 [data-zd-asset-tree] details[open] > summary > svg:nth-child(2) {
   display: none;
 }
+
+/* zfb 3 wind does not compile these relation selectors or effect families.
+ * Keep the component-owned rules unlayered, alongside Tailwind v4 utilities. */
+.zd-footer-copyright-links a {
+  text-decoration-line: underline;
+}
+.zd-footer-copyright-links a:hover,
+.zd-footer-copyright-links a:focus-visible {
+  color: var(--color-accent);
+}
+
+.zd-hide-details-marker::-webkit-details-marker {
+  display: none;
+}
+
+.zd-list-items-no-margin li,
+.zd-breadcrumb-nav-no-margin nav {
+  margin-bottom: 0;
+}
+
+.zd-card-links-interactive a {
+  pointer-events: auto;
+}
+
+.zd-wrap-anywhere {
+  overflow-wrap: anywhere;
+}
+
+.zd-search-excerpt-decoration {
+  text-decoration-color: var(--color-muted);
+}
+
+.zd-preview-shadow {
+  /* Preserve Tailwind's four transparent shadow layers in computed styles. */
+  box-shadow:
+    0 0 #0000,
+    0 0 #0000,
+    0 0 #0000,
+    0 0 #0000,
+    0 1px 3px var(--color-fg);
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .zd-preview-shadow {
+    box-shadow:
+      0 0 #0000,
+      0 0 #0000,
+      0 0 #0000,
+      0 0 #0000,
+      0 1px 3px color-mix(in srgb, var(--color-fg) 8%, transparent);
+  }
+}
+
+.zd-theme-pack-active-ring {
+  box-shadow: 0 0 0 2px var(--color-accent);
+}

@@ -9,7 +9,7 @@ import { DateLine } from "./date-line.js";
 export function IndexList(props: NoteTrayIndexProps): JSX.Element {
   const width = rankWidth(props.items);
   return (
-    <ol class="[&_li]:mb-0">
+    <ol class="zd-list-items-no-margin">
       {props.items.map((item) => {
         const rowClass = item.href
           ? "relative -mt-px first:mt-0 border-y border-muted hover:z-local-1 hover:border-accent focus-within:z-local-1 focus-within:border-accent"
