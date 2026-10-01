@@ -33,9 +33,19 @@ test.describe("i18n generated pages: static locale coverage", () => {
 
   test("keeps fallback resource bodies out of JA llms and search", () => {
     const jaLlms = readDistFile("ja/llms.txt");
-    expect(jaLlms).toMatch(/^\s*- \[Claude\]\(\/ja\/docs\/claude\):/m);
+    const agentManifest = JSON.parse(readDistFile("agent/v1/manifest.json")) as {
+      documents: Array<{ locale: string; url: string; markdownUrl: string }>;
+    };
+    const claude = agentManifest.documents.find(
+      ({ locale, url }) => locale === "ja" && url === "/ja/docs/claude",
+    );
+    expect(claude).toBeDefined();
+    expect(jaLlms).toContain(`- [Claude](${claude!.markdownUrl}):`);
     expect(jaLlms).not.toMatch(
       /\/ja\/docs\/claude-skills\/localized-shell(?:\/|\b)/,
+    );
+    expect(agentManifest.documents.map(({ url }) => url)).not.toContain(
+      GENERATED_SKILL_ROUTE,
     );
 
     const searchEntries = JSON.parse(
