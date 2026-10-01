@@ -1,5 +1,5 @@
 /**
- * Public entry for the nav-indexing v2 primitives.
+ * Public entry for the server-rendered navigation components.
  *
  * Consumers import from `@takazudo/zudo-doc/nav-indexing`:
  *

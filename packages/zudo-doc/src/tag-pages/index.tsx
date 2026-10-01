@@ -238,18 +238,20 @@ export function createTagPages<S extends Settings = Settings>(
     const cardItems = tagInfo.docs.map((doc) => ({
       href: docsUrl(doc.slug, locale),
       title: doc.title,
-      description: doc.description,
+      ...(doc.description !== undefined
+        ? { description: doc.description }
+        : {}),
     }));
 
     return (
       <DocLayoutWithDefaults
         title={composeMetaTitle(pageTitle)}
         head={<HeadWithDefaults title={pageTitle} />}
-        // The original default-locale page omitted `lang` entirely; passing
-        // undefined relies on Preact treating an undefined prop as absent.
-        lang={isDefault ? undefined : locale}
-        dataThemePack={dataThemePack}
-        noindex={settings.noindex}
+        // Keep `lang` absent on the default-locale page, matching its original
+        // output and avoiding an own undefined prop on the description.
+        {...(isDefault ? {} : { lang: locale })}
+        {...(dataThemePack !== undefined ? { dataThemePack } : {})}
+        {...(settings.noindex !== undefined ? { noindex: settings.noindex } : {})}
         hideSidebar={true}
         hideToc={true}
         // Empty fragment suppresses DocLayoutWithDefaults' empty-data default
@@ -263,7 +265,9 @@ export function createTagPages<S extends Settings = Settings>(
         breadcrumbOverride={<Breadcrumb items={breadcrumbItems} />}
         footerOverride={<FooterWithDefaults lang={locale} />}
         bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
-        enableClientRouter={settings.dynamicPageTransition}
+        {...(settings.dynamicPageTransition !== undefined
+          ? { enableClientRouter: settings.dynamicPageTransition }
+          : {})}
       >
         <h1 class="text-heading font-bold mb-vsp-xs break-words">{pageTitle}</h1>
         <p class="text-muted mb-vsp-lg">{countText}</p>
@@ -306,10 +310,10 @@ export function createTagPages<S extends Settings = Settings>(
       <DocLayoutWithDefaults
         title={composeMetaTitle(pageTitle)}
         head={<HeadWithDefaults title={pageTitle} />}
-        // Same undefined-≡-absent reliance as TagDetailPageView above.
-        lang={isDefault ? undefined : locale}
-        dataThemePack={dataThemePack}
-        noindex={settings.noindex}
+        // Keep `lang` absent on the default-locale page, as above.
+        {...(isDefault ? {} : { lang: locale })}
+        {...(dataThemePack !== undefined ? { dataThemePack } : {})}
+        {...(settings.noindex !== undefined ? { noindex: settings.noindex } : {})}
         hideSidebar={true}
         hideToc={true}
         // Empty fragment suppresses DocLayoutWithDefaults' empty-data default
@@ -321,7 +325,9 @@ export function createTagPages<S extends Settings = Settings>(
         breadcrumbOverride={<Breadcrumb items={breadcrumbItems} />}
         footerOverride={<FooterWithDefaults lang={locale} />}
         bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
-        enableClientRouter={settings.dynamicPageTransition}
+        {...(settings.dynamicPageTransition !== undefined
+          ? { enableClientRouter: settings.dynamicPageTransition }
+          : {})}
       >
         <h1 class="text-heading font-bold mb-vsp-lg break-words">{pageTitle}</h1>
         {!settings.docTags || tags.length === 0 ? (

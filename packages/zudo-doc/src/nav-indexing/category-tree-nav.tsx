@@ -5,7 +5,7 @@
 // found the target category node, and rendered its children as a hierarchical
 // disc-bulleted list up to three levels deep.
 //
-// This v2 port accepts the already-resolved children directly. The tree
+// This package renderer accepts the already-resolved children directly. The tree
 // rendering is recursive so it naturally supports any depth, not just three
 // levels. The host passes the immediate children of the desired category.
 //
@@ -78,7 +78,7 @@ function NodeItem({ node, depth, maxDepth, index }: NodeItemProps): JSX.Element 
 }
 
 /**
- * CategoryTreeNav — JSX port of `src/components/category-tree-nav`.
+ * CategoryTreeNav — server renderer for the category tree list.
  *
  * Renders the children of a category as a recursive disc-bulleted list. Links
  * are rendered for nodes that have a page; plain text for structural nodes.

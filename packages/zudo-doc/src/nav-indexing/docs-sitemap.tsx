@@ -6,7 +6,7 @@
 // category. Within each section it flattened the children (depth-first,
 // hasPage only) and listed them as links.
 //
-// This v2 port accepts the already-built tree directly. The host calls
+// This renderer accepts the already-built tree directly. The host calls
 // buildNavTree (or buildSidebarTree from @takazudo/zudo-doc/sidebar-tree)
 // before rendering this component.
 //
@@ -91,7 +91,7 @@ function SitemapSection({ node, index }: SitemapSectionProps): JSX.Element {
 }
 
 /**
- * DocsSitemap — JSX port of `src/components/docs-sitemap`.
+ * DocsSitemap — server renderer for collapsible documentation sections.
  *
  * Renders the full documentation tree as a series of collapsible
  * `<details>` sections. Each top-level node becomes one section; its

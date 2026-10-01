@@ -5,7 +5,7 @@
 // from @/utils/base, called the host's t() i18n function, and rendered a
 // two-section versions page (latest + past versions table).
 //
-// This v2 port accepts all strings and data as props so it stays decoupled
+// This renderer accepts all strings and data as props so it stays decoupled
 // from the host's settings, URL builders, and i18n system. The consumer
 // resolves translation strings for the active locale and passes them via
 // the `labels` bag.
@@ -33,7 +33,7 @@ export interface VersionsPageContentProps {
 }
 
 /**
- * VersionsPageContent — JSX port of `src/components/versions-page-content`.
+ * VersionsPageContent — server renderer for the documentation versions page.
  *
  * Renders the full documentation versions page:
  *   - An `<h1>` heading (from `labels.pageTitle`).
@@ -62,7 +62,7 @@ export function VersionsPageContent(
           class="inline-flex items-center gap-hsp-xs text-small text-fg hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline"
         >
           {labels.latestLink}
-          <ChevronRight className="h-[0.875rem] w-[0.875rem]" />
+          <ChevronRight class="h-[0.875rem] w-[0.875rem]" />
         </a>
       </section>
 

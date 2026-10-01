@@ -7,7 +7,7 @@
 // (which itself read `settings.tagVocabulary/tagGovernance` at module scope).
 // This factory receives all these as injected dependencies.
 
-import type { Description } from "@takazudo/zfb/zudo-react";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import { DocTags } from "../metainfo/index.js";
 import type { TagVocabularyEntry, TagGovernanceMode, Settings } from "../settings.js";
 import { resolvePageTags } from "../tag-helpers/index.js";
@@ -40,7 +40,7 @@ export interface DocTagsAreaProps {
  */
 export function createDocTagsArea<S extends Settings = Settings>(
   ctx: ChromeContext<S>,
-): (props: DocTagsAreaProps) => Description | null {
+): (props: DocTagsAreaProps) => Child {
   assertChromeContext(ctx, "createDocTagsArea");
   const settings = ctx.settings as unknown as DocTagsAreaSettings;
   const defaultLocale = ctx.defaultLocale;
@@ -57,7 +57,7 @@ export function createDocTagsArea<S extends Settings = Settings>(
   };
   const t = ctx.t;
 
-  function DocTagsArea({ locale, tags }: DocTagsAreaProps): Description | null {
+  function DocTagsArea({ locale, tags }: DocTagsAreaProps): Child {
     if (!settings.docTags) return null;
 
     const rawTags = tags ?? [];

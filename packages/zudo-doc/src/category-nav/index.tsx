@@ -7,20 +7,20 @@
 // directly. This factory receives those as injected dependencies so the logic
 // lives in the package while the host stub keeps the singleton imports.
 //
-// Data-resolution steps performed before forwarding to the v2 CategoryNav component:
+// Data-resolution steps performed before forwarding to the package-owned CategoryNav component:
 //   1. Load docs for the active locale (or defaultLocale when not passed).
 //   2. Build the nav tree with buildNavTree().
 //   3. Find the target category node via findNode().
 //   4. Filter to children with hasPage === true.
-//   5. Forward the resolved children to the v2 CategoryNav component.
+//   5. Forward the resolved children to the CategoryNav renderer.
 //
 // All data access is synchronous (ADR-004 zfb content snapshot contract).
 // The `lang` prop is injected by createMdxComponents() in
 // pages/_mdx-components.ts so locale routes get locale-aware nav data.
 
 import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
-import { CategoryNav as CategoryNavV2 } from "../nav-indexing/index.js";
-import type { NavNode as V2NavNode } from "../nav-indexing/types.js";
+import { CategoryNav as CategoryNavView } from "../nav-indexing/index.js";
+import type { NavNode } from "../nav-indexing/types.js";
 import { remapVersionedHrefs } from "../nav-data-prep/index.js";
 
 // ---------------------------------------------------------------------------
@@ -189,7 +189,7 @@ export function createCategoryNavWrapper(
       }
     }
 
-    let children: V2NavNode[];
+    let children: NavNode[];
 
     if (categories !== undefined) {
       // Explicit slug list mode: resolve each slug to its nav node and build a
@@ -198,30 +198,37 @@ export function createCategoryNavWrapper(
       // first routed descendant page; categories with no reachable page are
       // skipped rather than emitting a dead link.
       children = categories
-        .map((slug): V2NavNode | null => {
+        .map((slug): NavNode | null => {
           const node = findNode(tree, slug);
           if (!node) return null;
           const href = node.href ?? firstRoutedHref(node);
           if (!href) return null;
           return {
             label: node.label,
-            description: node.description,
             href,
             hasPage: true,
             children: [],
+            ...(node.description !== undefined
+              ? { description: node.description }
+              : {}),
           };
         })
-        .filter((n): n is V2NavNode => n !== null);
+        .filter((n): n is NavNode => n !== null);
     } else if (category !== undefined) {
       const categoryNode = findNode(tree, category);
-      children = (categoryNode?.children.filter((c) => c.hasPage) ?? []) as V2NavNode[];
+      children = (categoryNode?.children.filter((c) => c.hasPage) ?? []) as NavNode[];
     } else {
       return null;
     }
 
     if (children.length === 0) return null;
 
-    return <CategoryNavV2 children={children} class={className} />;
+    return (
+      <CategoryNavView
+        children={children}
+        {...(className !== undefined ? { class: className } : {})}
+      />
+    );
   }
 
   return CategoryNavWrapper;

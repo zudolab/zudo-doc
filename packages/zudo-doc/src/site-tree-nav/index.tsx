@@ -30,6 +30,7 @@ import type { SidebarNavNode } from "../sidebar/types.js";
 import { remapVersionedHrefs } from "../nav-data-prep/index.js";
 import type { DateFormatSetting } from "../settings.js";
 import { resolveDateFormats } from "../date-format-resolve/index.js";
+import { normalizeSiteTreeNavProps } from "./normalize-island-props.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -54,7 +55,7 @@ export interface SiteTreeNavWrapperProps {
   lang?: string;
   /**
    * Optional aria-label for the wrapping <nav> element.
-   * Forwarded to the v2 SiteTreeNavDemo component.
+   * Forwarded to the interactive SiteTreeNav island.
    */
   ariaLabel?: string;
   /**
@@ -200,20 +201,23 @@ export function createSiteTreeNavWrapper(
 
     if (tree.length === 0) return null;
 
+    // Island props cross the SSR→hydrate boundary as JSON. Copy the nav tree
+    // through its declared field allowlist so absent optional node fields are
+    // omitted rather than transported as own properties with `undefined`.
+    const islandProps = normalizeSiteTreeNavProps({
+      tree,
+      categoryOrder,
+      ...(categoryIgnore !== undefined ? { categoryIgnore } : {}),
+      ...(ariaLabel !== undefined ? { ariaLabel } : {}),
+      locale,
+      dateFormats: resolveDateFormats(dateFormat, locale),
+    });
+
     // IMPORTANT: Island({when:"idle"}) is preserved — not "load". This ensures
     // the SiteTreeNav mounts after the page is idle for performance (refs #1453).
     return Island({
       when: "idle",
-      children: (
-        <SiteTreeNav
-          tree={tree}
-          categoryOrder={categoryOrder}
-          categoryIgnore={categoryIgnore}
-          {...(ariaLabel !== undefined ? { ariaLabel } : {})}
-          locale={locale}
-          dateFormats={resolveDateFormats(dateFormat, locale)}
-        />
-      ),
+      children: <SiteTreeNav {...islandProps} />,
     }) as unknown as JSX.Element;
   }
 

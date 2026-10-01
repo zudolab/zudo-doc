@@ -48,7 +48,7 @@ function ArrowIcon(): JSX.Element {
 }
 
 /**
- * DocCardGrid — JSX port of `src/components/doc-card-grid`.
+ * DocCardGrid — server renderer for a flat list of documentation cards.
  *
  * Renders a flat list of `{ href, title, description? }` items as a two-column
  * card grid. Each card shows an arrow icon, the doc title, and an optional
