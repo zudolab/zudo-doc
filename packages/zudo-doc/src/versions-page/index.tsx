@@ -143,7 +143,9 @@ export function createVersionsPageView<S extends Settings = Settings>(
           // Version prefix comes BEFORE the locale — the only routed shape is
           // pages/v/[version]/{locale}/docs/...; /{locale}/v/... has no route.
           docsHref: withBase(`/v/${v.slug}${entryDocPrefix}/docs/${entryDocSlug}/`),
-          banner: v.banner as "unmaintained" | "unreleased" | undefined,
+          ...(v.banner !== undefined
+            ? { banner: v.banner as "unmaintained" | "unreleased" }
+            : {}),
         }))
       : [];
 
@@ -152,8 +154,8 @@ export function createVersionsPageView<S extends Settings = Settings>(
         title={composeMetaTitle(pageTitle)}
         head={<HeadWithDefaults title={pageTitle} />}
         lang={locale}
-        dataThemePack={dataThemePack}
-        noindex={settings.noindex}
+        {...(dataThemePack !== undefined ? { dataThemePack } : {})}
+        {...(settings.noindex !== undefined ? { noindex: settings.noindex } : {})}
         hideSidebar={true}
         hideToc={true}
         // Empty fragment suppresses DocLayoutWithDefaults' empty-data default
@@ -164,7 +166,9 @@ export function createVersionsPageView<S extends Settings = Settings>(
         headerOverride={<HeaderWithDefaults lang={locale} currentPath={withBase(`${prefix}/docs/versions`)} />}
         footerOverride={<FooterWithDefaults lang={locale} />}
         bodyEndComponents={<BodyEndIslands basePath={settings.base ?? "/"} />}
-        enableClientRouter={settings.dynamicPageTransition}
+        {...(settings.dynamicPageTransition !== undefined
+          ? { enableClientRouter: settings.dynamicPageTransition }
+          : {})}
       >
         <VersionsPageContent
           latestHref={latestHref}

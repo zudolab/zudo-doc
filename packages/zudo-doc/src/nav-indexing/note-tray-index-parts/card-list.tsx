@@ -31,13 +31,13 @@ function CardBody({
         <h2 class="text-title font-medium leading-tight">
           <span class={titleClass}>
             <span class="flex h-[1lh] items-center">
-              <CategoryLinkIcon className="w-icon-sm" />
+              <CategoryLinkIcon class="w-icon-sm" />
             </span>
             {item.label}
           </span>
         </h2>
         {props.showDate && (
-          <span class={hasStamp ? "sm:hidden" : undefined}>
+          <span {...(hasStamp ? { class: "sm:hidden" } : {})}>
             <DateLine
               item={item}
               locale={props.locale}

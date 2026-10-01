@@ -1,7 +1,8 @@
+/** @vitest-environment happy-dom */
 /** @jsxRuntime automatic */
 import { describe, expect, it } from "vitest";
 import { NoteTrayIndex } from "../note-tray-index.js";
-import { serialize } from "./helpers.js";
+import { hasClass, renderNav } from "./helpers.js";
 import { base, item } from "./note-tray-test-helpers.js";
 
 describe("NoteTrayIndex card style", () => {
@@ -10,163 +11,129 @@ describe("NoteTrayIndex card style", () => {
       date: "2026-08-22",
       tagLinks: [{ tag: "preact", href: "/docs/tags/preact" }],
     });
-    const shown = serialize(
-      NoteTrayIndex({ ...base, style: "cards", showDate: true, items: [tagged] }),
-    );
-    const hidden = serialize(NoteTrayIndex({ ...base, style: "cards", items: [tagged] }));
-    expect(shown).toContain("<h2");
-    expect(shown).toContain("About card");
-    expect(shown).toContain("#preact");
-    expect(shown).toContain("Aug 22, 2026");
-    expect(shown).toContain(">Aug 22</span>");
-    expect(hidden).not.toContain("Aug 22, 2026");
-    expect(shown).toContain(
-      '<a href="/docs/card" class="group col-span-full row-start-1 row-span-2',
-    );
-    expect(shown).toContain("border border-muted");
-    expect(shown).toContain("grid-rows-subgrid");
-    expect(shown.indexOf('<a href="/docs/tags/preact"')).toBeGreaterThan(
-      shown.indexOf("</a>"),
-    );
+    const shown = renderNav(NoteTrayIndex({ ...base, style: "cards", showDate: true, items: [tagged] }));
+    const hidden = renderNav(NoteTrayIndex({ ...base, style: "cards", items: [tagged] }));
+    const card = shown.querySelector('a[href="/docs/card"]');
+    expect(card?.querySelector("h2")).not.toBeNull();
+    expect(shown.textContent).toContain("About card");
+    expect(shown.querySelector('a[href="/docs/tags/preact"]')?.textContent).toContain("#preact");
+    expect(shown.textContent).toContain("Aug 22, 2026");
+    expect(shown.querySelector("time")?.textContent).toContain("Aug 22");
+    expect(hidden.textContent).not.toContain("Aug 22, 2026");
+    expect(card?.classList.contains("grid-rows-subgrid")).toBe(true);
+    expect(card?.classList.contains("border-muted")).toBe(true);
+    expect(hasClass(shown, "zd-card-links-interactive")).toBe(true);
+    expect(hasClass(shown, "ml-[calc(var(--spacing-hsp-xl)_+_1px)]")).toBe(true);
+    expect(hasClass(shown, "mr-[calc(var(--spacing-hsp-xl)_+_1px)]")).toBe(true);
+    const tagLink = shown.querySelector('a[href="/docs/tags/preact"]');
+    expect(card).not.toBeNull();
+    expect(tagLink).not.toBeNull();
+    expect(card!.compareDocumentPosition(tagLink!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("does not create subgrid rows when the item has no tags", () => {
-    const shown = serialize(
-      NoteTrayIndex({
-        ...base,
-        style: "cards",
-        showDate: true,
-        items: [item("plain", { date: "2026-08-22" })],
-      }),
-    );
-    expect(shown).not.toContain("grid-rows-subgrid");
-    expect(shown).toContain("Aug 22, 2026");
+    const root = renderNav(NoteTrayIndex({
+      ...base,
+      style: "cards",
+      showDate: true,
+      items: [item("plain", { date: "2026-08-22" })],
+    }));
+    expect(hasClass(root, "grid-rows-subgrid")).toBe(false);
+    expect(root.textContent).toContain("Aug 22, 2026");
   });
 
   it("renders updated dates in narrow and wide representations", () => {
-    const shown = serialize(
-      NoteTrayIndex({
-        ...base,
-        style: "cards",
-        showDate: true,
-        items: [item("updated", { date: "2026-08-22", updated: "2026-08-23" })],
-      }),
-    );
-    expect(shown).toContain("Updated <time");
-    expect(shown).toContain("Updated Aug 23");
+    const root = renderNav(NoteTrayIndex({
+      ...base,
+      style: "cards",
+      showDate: true,
+      items: [item("updated", { date: "2026-08-22", updated: "2026-08-23" })],
+    }));
+    expect(root.textContent).toContain("Updated Aug 23");
+    expect(root.querySelector('time[datetime="2026-08-23"]')).not.toBeNull();
   });
 
   it("shows an updated-only DateLine at all widths without a date stamp", () => {
-    const shown = serialize(
-      NoteTrayIndex({
-        ...base,
-        style: "cards",
-        showDate: true,
-        items: [item("updated-only", { updated: "2026-08-23" })],
-      }),
-    );
-    expect(shown).toContain("Updated <time");
-    expect(shown).not.toContain("sm:hidden");
-    expect(shown).not.toContain('class="hidden sm:flex');
+    const root = renderNav(NoteTrayIndex({
+      ...base,
+      style: "cards",
+      showDate: true,
+      items: [item("updated-only", { updated: "2026-08-23" })],
+    }));
+    expect(root.textContent).toContain("Updated Aug 23");
+    expect(root.querySelector('time[datetime="2026-08-23"]')?.parentElement?.classList.contains("sm:hidden")).toBe(false);
+    expect(root.querySelector("time")?.parentElement?.classList.contains("hidden")).toBe(false);
   });
 
   it("renders a non-link frame without link interaction styles", () => {
-    const shown = serialize(
-      NoteTrayIndex({
-        ...base,
-        style: "cards",
-        items: [
-          item("heading", {
-            href: undefined,
-            tagLinks: [{ tag: "preact", href: "/docs/tags/preact" }],
-          }),
-        ],
-      }),
-    );
-    expect(shown).toContain("<h2");
-    expect(shown).toContain('<a href="/docs/tags/preact"');
-    expect(shown).not.toContain('href="/docs/heading"');
-    expect(shown).not.toContain("hover:border-accent");
-    expect(shown).not.toContain("group-hover:text-accent");
+    const root = renderNav(NoteTrayIndex({
+      ...base,
+      style: "cards",
+      items: [item("heading", {
+        href: undefined,
+        tagLinks: [{ tag: "preact", href: "/docs/tags/preact" }],
+      })],
+    }));
+    expect(root.querySelector("h2")).not.toBeNull();
+    expect(root.querySelector('a[href="/docs/tags/preact"]')).not.toBeNull();
+    expect(root.querySelector('a[href="/docs/heading"]')).toBeNull();
+    expect(hasClass(root, "hover:border-accent")).toBe(false);
+    expect(hasClass(root, "group-hover:text-accent")).toBe(false);
   });
 
   it("applies the monthDay, year, and full role patterns from dateFormats", () => {
-    const shown = serialize(
-      NoteTrayIndex({
-        ...base,
-        style: "cards",
-        showDate: true,
-        items: [item("card", { date: "2026-08-22", updated: "2026-08-23" })],
-        dateFormats: {
-          full: "YYYY/MM/DD",
-          monthDay: "MM-DD",
-          year: "[FY]YYYY",
-          yearMonth: "locale",
-          numericMonthDay: "locale",
-        },
-      }),
-    );
-    // DateStamp (wide stamp): monthDay + year roles.
-    expect(shown).toContain(">08-22</span>");
-    expect(shown).toContain(">FY2026<");
-    expect(shown).toContain("Updated 08-23");
-    expect(shown).not.toContain("Aug 22");
-    expect(shown).not.toContain(">2026<");
-    // DateLine (narrow line): full role.
-    expect(shown).toContain("2026/08/22");
-    expect(shown).not.toContain("Aug 22, 2026");
-    // <time datetime> stays raw ISO regardless of the pattern.
-    expect(shown).toContain('datetime="2026-08-22"');
-    expect(shown).toContain('datetime="2026-08-23"');
+    const root = renderNav(NoteTrayIndex({
+      ...base,
+      style: "cards",
+      showDate: true,
+      items: [item("card", { date: "2026-08-22", updated: "2026-08-23" })],
+      dateFormats: {
+        full: "YYYY/MM/DD",
+        monthDay: "MM-DD",
+        year: "[FY]YYYY",
+        yearMonth: "locale",
+        numericMonthDay: "locale",
+      },
+    }));
+    expect(Array.from(root.querySelectorAll(".text-title")).some((node) => node.textContent === "08-22")).toBe(true);
+    expect(Array.from(root.querySelectorAll(".text-caption")).some((node) => node.textContent === "FY2026")).toBe(true);
+    expect(root.textContent).toContain("Updated 08-23");
+    expect(root.textContent).not.toContain("Aug 22");
+    expect(root.textContent).toContain("2026/08/22");
+    expect(root.textContent).not.toContain("Aug 22, 2026");
+    expect(root.querySelector('time[datetime="2026-08-22"]')).not.toBeNull();
+    expect(root.querySelector('time[datetime="2026-08-23"]')).not.toBeNull();
   });
 
   it("resolves distinct dateFormats patterns per locale", () => {
     const tagged = item("card", { date: "2026-08-22" });
-    const en = serialize(
-      NoteTrayIndex({
-        ...base,
-        locale: "en",
-        style: "cards",
-        showDate: true,
-        items: [tagged],
-        dateFormats: {
-          full: "locale",
-          monthDay: "MM/DD",
-          year: "locale",
-          yearMonth: "locale",
-          numericMonthDay: "locale",
-        },
-      }),
-    );
-    const ja = serialize(
-      NoteTrayIndex({
-        ...base,
-        locale: "ja",
-        style: "cards",
-        showDate: true,
-        items: [tagged],
-        dateFormats: {
-          full: "locale",
-          monthDay: "M-D",
-          year: "locale",
-          yearMonth: "locale",
-          numericMonthDay: "locale",
-        },
-      }),
-    );
-    expect(en).toContain(">08/22</span>");
-    expect(ja).toContain(">8-22</span>");
-    expect(ja).not.toContain(">08/22</span>");
+    const en = renderNav(NoteTrayIndex({
+      ...base,
+      locale: "en",
+      style: "cards",
+      showDate: true,
+      items: [tagged],
+      dateFormats: { full: "locale", monthDay: "MM/DD", year: "locale", yearMonth: "locale", numericMonthDay: "locale" },
+    }));
+    const ja = renderNav(NoteTrayIndex({
+      ...base,
+      locale: "ja",
+      style: "cards",
+      showDate: true,
+      items: [tagged],
+      dateFormats: { full: "locale", monthDay: "M-D", year: "locale", yearMonth: "locale", numericMonthDay: "locale" },
+    }));
+    expect(Array.from(en.querySelectorAll(".text-title")).some((node) => node.textContent === "08/22")).toBe(true);
+    expect(Array.from(ja.querySelectorAll(".text-title")).some((node) => node.textContent === "8-22")).toBe(true);
+    expect(Array.from(ja.querySelectorAll(".text-title")).some((node) => node.textContent === "08/22")).toBe(false);
   });
 
   it("keeps the linked title's static color on text-fg with no bare text-accent or underline token", () => {
-    const shown = serialize(
-      NoteTrayIndex({ ...base, style: "cards", items: [item("card")] }),
-    );
-    expect(shown).toContain("text-fg");
-    expect(shown).not.toMatch(/(^|[\s"])text-accent(?=[\s"])/);
-    expect(shown).not.toMatch(/(^|[\s"])underline(?=[\s"])/);
-    expect(shown).toContain("group-hover:text-accent");
-    expect(shown).toContain("group-hover:underline");
+    const root = renderNav(NoteTrayIndex({ ...base, style: "cards", items: [item("card")] }));
+    expect(hasClass(root, "text-fg")).toBe(true);
+    expect(hasClass(root, "text-accent")).toBe(false);
+    expect(hasClass(root, "underline")).toBe(false);
+    expect(hasClass(root, "group-hover:text-accent")).toBe(true);
+    expect(hasClass(root, "group-hover:underline")).toBe(true);
   });
 });

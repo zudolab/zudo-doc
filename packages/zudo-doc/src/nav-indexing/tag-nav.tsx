@@ -8,7 +8,7 @@
 //            a full tag cloud (pointed-chip style) with counts.
 //   "page" — renders a small inline chip row for the tags on the current page.
 //
-// Because v2 must not call getCollection() or import the host's collectTags /
+// Because package-owned navigation must not call getCollection() or import the host's collectTags /
 // settings helpers, both variants now accept pre-resolved data as props.
 // The host builds the tag list upstream and passes it in.
 //

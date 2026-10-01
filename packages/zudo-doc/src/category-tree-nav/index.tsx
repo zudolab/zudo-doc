@@ -7,20 +7,20 @@
 // directly. This factory receives those as injected dependencies so the logic
 // lives in the package while the host stub keeps the singleton imports.
 //
-// Data-resolution steps performed before forwarding to the v2 CategoryTreeNav component:
+// Data-resolution steps performed before forwarding to the package-owned CategoryTreeNav component:
 //   1. Load docs for the active locale (defaultLocale when not passed).
 //   2. Build the full nav tree with buildNavTree() + groupSatelliteNodes()
 //      (category slug is passed as the grouping prefix list).
 //   3. Find the target category node via findNode().
 //   4. Filter to children with hasPage === true or children.length > 0.
-//   5. Forward the resolved children to the v2 CategoryTreeNav component.
+//   5. Forward the resolved children to the CategoryTreeNav renderer.
 //
 // All data access is synchronous (ADR-004 zfb content snapshot contract).
 // The `lang` prop is injected by createMdxComponents() in
 // pages/_mdx-components.ts so locale routes get locale-aware nav data.
 
 import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
-import { CategoryTreeNav as CategoryTreeNavV2 } from "../nav-indexing/index.js";
+import { CategoryTreeNav as CategoryTreeNavView } from "../nav-indexing/index.js";
 import { remapVersionedHrefs } from "../nav-data-prep/index.js";
 
 // ---------------------------------------------------------------------------
@@ -177,7 +177,7 @@ export function createCategoryTreeNavWrapper(
 
     if (children.length === 0) return null;
 
-    return <CategoryTreeNavV2 children={children} />;
+    return <CategoryTreeNavView children={children} />;
   }
 
   return CategoryTreeNavWrapper;

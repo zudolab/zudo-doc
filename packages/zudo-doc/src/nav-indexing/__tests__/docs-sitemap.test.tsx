@@ -1,11 +1,12 @@
+/** @vitest-environment happy-dom */
 /** @jsxRuntime automatic */
 import { describe, it, expect } from "vitest";
 import { DocsSitemap } from "../docs-sitemap.js";
-import { serialize } from "./helpers.js";
+import { hasClass, renderNav } from "./helpers.js";
 import type { NavNode } from "../types.js";
 
-function leaf(label: string, href: string, desc?: string): NavNode {
-  return { label, href, hasPage: true, children: [], description: desc };
+function leaf(label: string, href: string, description?: string): NavNode {
+  return { label, href, hasPage: true, children: [], description };
 }
 
 function category(label: string, children: NavNode[], href?: string): NavNode {
@@ -18,87 +19,60 @@ describe("DocsSitemap", () => {
   });
 
   it("renders a details/summary for each top-level node", () => {
-    const tree = [
+    const root = renderNav(DocsSitemap({ tree: [
       category("Guide", [leaf("Intro", "/docs/guide/intro/")]),
       category("Reference", [leaf("API", "/docs/ref/api/")]),
-    ];
-    const html = serialize(DocsSitemap({ tree }));
-    expect(html).toContain("<details");
-    expect(html).toContain("<summary");
-    // Two top-level sections
-    const detailsCount = (html.match(/<details/g) || []).length;
-    expect(detailsCount).toBe(2);
+    ] }));
+    expect(root.querySelectorAll("details")).toHaveLength(2);
+    expect(root.querySelectorAll("summary")).toHaveLength(2);
+    expect(root.querySelectorAll("details[open]")).toHaveLength(2);
   });
 
   it("renders flat leaf links inside each section", () => {
-    const tree = [
-      category("Guide", [
-        leaf("Setup", "/docs/guide/setup/"),
-        leaf("Config", "/docs/guide/config/"),
-      ]),
-    ];
-    const html = serialize(DocsSitemap({ tree }));
-    expect(html).toContain('href="/docs/guide/setup/"');
-    expect(html).toContain('href="/docs/guide/config/"');
-    expect(html).toContain("Setup");
-    expect(html).toContain("Config");
+    const root = renderNav(DocsSitemap({ tree: [category("Guide", [
+      leaf("Setup", "/docs/guide/setup/"),
+      leaf("Config", "/docs/guide/config/"),
+    ])] }));
+    expect(root.querySelector('a[href="/docs/guide/setup/"]')?.textContent).toBe("Setup");
+    expect(root.querySelector('a[href="/docs/guide/config/"]')?.textContent).toBe("Config");
   });
 
   it("flattens nested leaves depth-first", () => {
-    const tree = [
-      category("Guide", [
-        category("Advanced", [
-          leaf("Deep", "/docs/guide/advanced/deep/"),
-        ]),
-        leaf("Simple", "/docs/guide/simple/"),
-      ]),
-    ];
-    const html = serialize(DocsSitemap({ tree }));
-    expect(html).toContain("Deep");
-    expect(html).toContain("Simple");
+    const root = renderNav(DocsSitemap({ tree: [category("Guide", [
+      category("Advanced", [leaf("Deep", "/docs/guide/advanced/deep/")]),
+      leaf("Simple", "/docs/guide/simple/"),
+    ])] }));
+    const links = Array.from(root.querySelectorAll("details a[href]")).map((link) => link.textContent);
+    expect(links).toEqual(["Deep", "Simple"]);
   });
 
   it("renders category heading as a link when href is set", () => {
-    const tree = [
-      category("Guide", [leaf("X", "/docs/guide/x/")], "/docs/guide/"),
-    ];
-    const html = serialize(DocsSitemap({ tree }));
-    expect(html).toContain('href="/docs/guide/"');
+    const root = renderNav(DocsSitemap({ tree: [category("Guide", [leaf("X", "/docs/guide/x/")], "/docs/guide/")] }));
+    expect(root.querySelector('summary a[href="/docs/guide/"]')?.textContent).toBe("Guide");
   });
 
   it("renders category heading as plain text when href is absent", () => {
-    const tree = [category("Reference", [leaf("API", "/docs/ref/api/")])];
-    const html = serialize(DocsSitemap({ tree }));
-    expect(html).toContain("<span>Reference</span>");
-    expect(html).not.toContain('"Reference"');
+    const root = renderNav(DocsSitemap({ tree: [category("Reference", [leaf("API", "/docs/ref/api/")])] }));
+    expect(root.querySelector("summary > span:last-child")?.textContent).toBe("Reference");
+    expect(root.querySelector('summary a[href]')).toBeNull();
   });
 
   it("shows leaf description when present", () => {
-    const tree = [
-      category("G", [leaf("X", "/x/", "A helpful page")]),
-    ];
-    const html = serialize(DocsSitemap({ tree }));
-    expect(html).toContain("A helpful page");
-  });
-
-  it("renders with open attribute on details", () => {
-    const tree = [category("G", [leaf("X", "/x/")])];
-    const html = serialize(DocsSitemap({ tree }));
-    expect(html).toContain(" open");
+    const root = renderNav(DocsSitemap({ tree: [category("G", [leaf("X", "/x/", "A helpful page")])] }));
+    expect(root.textContent).toContain("A helpful page");
   });
 
   it("keeps leaf and category heading links on text-fg with no bare text-accent or underline token", () => {
-    const tree = [
-      category("Guide", [leaf("Setup", "/docs/guide/setup/")], "/docs/guide/"),
-    ];
-    const html = serialize(DocsSitemap({ tree }));
-    expect(html).not.toMatch(/(^|[\s"])text-accent(?=[\s"])/);
-    expect(html).not.toMatch(/(^|[\s"])underline(?=[\s"])/);
-    expect(html).toContain(
-      'class="hover:text-accent hover:underline focus:underline focus-visible:text-accent"',
-    );
-    expect(html).toContain(
-      'class="text-fg hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline"',
-    );
+    const root = renderNav(DocsSitemap({ tree: [category("Guide", [leaf("Setup", "/docs/guide/setup/")], "/docs/guide/")] }));
+    expect(hasClass(root, "text-accent")).toBe(false);
+    expect(hasClass(root, "underline")).toBe(false);
+    expect(hasClass(root, "hover:text-accent")).toBe(true);
+    expect(hasClass(root, "hover:underline")).toBe(true);
+    expect(hasClass(root, "focus:underline")).toBe(true);
+    expect(hasClass(root, "focus-visible:text-accent")).toBe(true);
+    expect(hasClass(root, "focus-visible:underline")).toBe(true);
+    expect(hasClass(root, "zd-hide-details-marker")).toBe(true);
+    expect(root.querySelector("summary a")?.className).toContain("hover:text-accent");
+    expect(root.querySelector("details li a")?.className).toContain("focus-visible:underline");
   });
 });

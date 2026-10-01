@@ -1,7 +1,8 @@
+/** @vitest-environment happy-dom */
 /** @jsxRuntime automatic */
 import { describe, it, expect } from "vitest";
 import { DocCardGrid } from "../doc-card-grid.js";
-import { serialize } from "./helpers.js";
+import { hasClass, renderNav } from "./helpers.js";
 import type { DocCardItem } from "../doc-card-grid.js";
 
 describe("DocCardGrid", () => {
@@ -10,15 +11,13 @@ describe("DocCardGrid", () => {
   });
 
   it("renders a nav element with default aria-label", () => {
-    const items: DocCardItem[] = [{ href: "/docs/a/", title: "Alpha" }];
-    const html = serialize(DocCardGrid({ items }));
-    expect(html).toContain('<nav aria-label="Child pages"');
+    const root = renderNav(DocCardGrid({ items: [{ href: "/docs/a/", title: "Alpha" }] }));
+    expect(root.querySelector('nav[aria-label="Child pages"]')).not.toBeNull();
   });
 
   it("uses a custom ariaLabel when provided", () => {
-    const items: DocCardItem[] = [{ href: "/docs/a/", title: "A" }];
-    const html = serialize(DocCardGrid({ items, ariaLabel: "Related docs" }));
-    expect(html).toContain('aria-label="Related docs"');
+    const root = renderNav(DocCardGrid({ items: [{ href: "/docs/a/", title: "A" }], ariaLabel: "Related docs" }));
+    expect(root.querySelector('nav[aria-label="Related docs"]')).not.toBeNull();
   });
 
   it("renders one link per item", () => {
@@ -26,51 +25,36 @@ describe("DocCardGrid", () => {
       { href: "/docs/a/", title: "Alpha" },
       { href: "/docs/b/", title: "Beta" },
     ];
-    const html = serialize(DocCardGrid({ items }));
-    expect(html).toContain('href="/docs/a/"');
-    expect(html).toContain('href="/docs/b/"');
-    expect(html).toContain("Alpha");
-    expect(html).toContain("Beta");
+    const root = renderNav(DocCardGrid({ items }));
+    expect(root.querySelector('a[href="/docs/a/"]')?.textContent).toContain("Alpha");
+    expect(root.querySelector('a[href="/docs/b/"]')?.textContent).toContain("Beta");
+    expect(root.querySelectorAll("nav > a")).toHaveLength(2);
   });
 
   it("renders descriptions when present", () => {
-    const items: DocCardItem[] = [
-      {
-        href: "/docs/a/",
-        title: "Alpha",
-        description: "The first letter",
-      },
-    ];
-    const html = serialize(DocCardGrid({ items }));
-    expect(html).toContain("The first letter");
+    const root = renderNav(DocCardGrid({ items: [{ href: "/docs/a/", title: "Alpha", description: "The first letter" }] }));
+    expect(root.textContent).toContain("The first letter");
   });
 
   it("does not render description span when absent", () => {
-    const items: DocCardItem[] = [{ href: "/docs/a/", title: "Alpha" }];
-    const html = serialize(DocCardGrid({ items }));
-    // description span uses text-muted class
-    expect(html).not.toContain("text-small text-muted");
+    const root = renderNav(DocCardGrid({ items: [{ href: "/docs/a/", title: "Alpha" }] }));
+    expect(root.querySelector(".text-small.text-muted")).toBeNull();
   });
 
   it("appends extra CSS class to nav element", () => {
-    const items: DocCardItem[] = [{ href: "/a/", title: "A" }];
-    const html = serialize(DocCardGrid({ items, class: "mb-8" }));
-    expect(html).toContain("mb-8");
+    const root = renderNav(DocCardGrid({ items: [{ href: "/a/", title: "A" }], class: "mb-8" }));
+    expect(root.querySelector("nav")?.classList.contains("mb-8")).toBe(true);
   });
 
   it("renders the arrow SVG with text-muted and group-hover:text-accent classes", () => {
-    const items: DocCardItem[] = [{ href: "/a/", title: "A" }];
-    const html = serialize(DocCardGrid({ items }));
-    expect(html).toContain("text-muted");
-    expect(html).toContain("group-hover:text-accent");
-    expect(html).toContain("<svg");
+    const root = renderNav(DocCardGrid({ items: [{ href: "/a/", title: "A" }] }));
+    expect(root.querySelector("svg")).not.toBeNull();
+    expect(hasClass(root, "text-muted")).toBe(true);
+    expect(hasClass(root, "group-hover:text-accent")).toBe(true);
   });
 
   it("does not render a bare text-accent class anywhere", () => {
-    const items: DocCardItem[] = [
-      { href: "/a/", title: "A", description: "desc" },
-    ];
-    const html = serialize(DocCardGrid({ items }));
-    expect(html).not.toMatch(/(?<![\w:-])text-accent\b/);
+    const root = renderNav(DocCardGrid({ items: [{ href: "/a/", title: "A", description: "desc" }] }));
+    expect(hasClass(root, "text-accent")).toBe(false);
   });
 });

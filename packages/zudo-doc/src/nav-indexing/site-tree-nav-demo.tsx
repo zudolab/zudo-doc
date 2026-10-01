@@ -3,7 +3,7 @@
 //
 // The original Astro template loaded the full doc collection, built the nav
 // tree with groupSatelliteNodes, and rendered the interactive SiteTreeNav
-// Preact island (client:visible). Because v2 is decoupled from host helpers
+// client island. Because this renderer is decoupled from host helpers
 // and collection queries, this port:
 //
 //   1. Accepts the already-processed tree as a prop.
@@ -113,7 +113,7 @@ function Section({ node }: SectionProps): JSX.Element {
 }
 
 /**
- * SiteTreeNavDemo — JSX port of `src/components/site-tree-nav-demo`.
+ * SiteTreeNavDemo — static server renderer for the site navigation tree.
  *
  * Renders the full site tree as a static collapsible section-by-section view.
  * Each top-level category becomes a `<details>` block; leaves within each

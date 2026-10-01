@@ -1,3 +1,4 @@
+/** @vitest-environment happy-dom */
 /** @jsxRuntime automatic */
 /**
  * Factory tests for createCategoryTreeNavWrapper — version threading (#3218).
@@ -16,8 +17,10 @@
  */
 
 import { describe, expect, it, vi } from "vitest";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import { createCategoryTreeNavWrapper } from "../index.js";
 import type { CategoryTreeNavDeps, CategoryTreeNavNode } from "../index.js";
+import { renderNav } from "../../nav-indexing/__tests__/helpers.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -53,9 +56,10 @@ function makeDeps(overrides: Partial<CategoryTreeNavDeps> = {}): CategoryTreeNav
   };
 }
 
-function childHrefsOf(result: unknown): (string | undefined)[] {
-  const el = result as { props: { children: CategoryTreeNavNode[] } };
-  return el.props.children.map((c) => c.href);
+function childHrefsOf(result: Child): (string | null)[] {
+  const root = renderNav(result);
+  return Array.from(root.querySelectorAll("nav > ul > li > a[href]"))
+    .map((link) => link.getAttribute("href"));
 }
 
 // ---------------------------------------------------------------------------

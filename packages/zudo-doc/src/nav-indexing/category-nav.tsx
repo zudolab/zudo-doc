@@ -3,7 +3,7 @@
 //
 // The original Astro template built the nav tree, found a category node by
 // slug, and rendered the immediate children as a two-column card grid. This
-// v2 port accepts the already-resolved children directly so the host keeps
+// Package renderer accepts the already-resolved children directly so the host keeps
 // full control of data preparation.
 //
 // Behaviour parity notes:
@@ -42,7 +42,7 @@ function ArrowIcon(): JSX.Element {
 }
 
 /**
- * CategoryNav — JSX port of `src/components/category-nav`.
+ * CategoryNav — server renderer for the category card list.
  *
  * Renders direct children of a category as a two-column grid of card links.
  * Each card shows the node's label (with an arrow icon) and an optional
