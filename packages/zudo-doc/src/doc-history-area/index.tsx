@@ -17,7 +17,7 @@
 // resolves only in the host project's tsconfig. The factory receives the parsed
 // manifest as a plain object.
 
-import type { Description } from "@takazudo/zfb/zudo-react";
+import type { Child, Description } from "@takazudo/zfb/zudo-react";
 import { Island } from "@takazudo/zfb";
 // Relative, NOT `@takazudo/zudo-doc-history-server/exclude` — that package is an
 // OPTIONAL peer and this module is in the always-bundled chrome graph, so the
@@ -109,7 +109,7 @@ export interface DocHistoryAreaProps {
  */
 export function createDocHistoryArea<S extends Settings = Settings>(
   ctx: ChromeContext<S>,
-): (props: DocHistoryAreaProps) => Description | null {
+): (props: DocHistoryAreaProps) => Child {
   assertChromeContext(ctx, "createDocHistoryArea");
   const settings = ctx.settings as unknown as DocHistoryAreaSettings;
   const isHistoryExcluded = compileExclude(settings.docHistoryExclude ?? []);
@@ -128,11 +128,6 @@ export function createDocHistoryArea<S extends Settings = Settings>(
   const DocHistory = deriveDocHistorySlot(ctx) as unknown as DocHistoryComponent;
   const dateFormatsFor = deriveDateFormats(ctx);
 
-  // Set explicit `displayName` on the named-export DocHistory so zfb's
-  // `captureComponentName` produces a stable marker even after the SSR
-  // pipeline runs the component through a function-name-rewriting layer.
-  (DocHistory as { displayName?: string }).displayName = "DocHistory";
-
   function DocHistoryArea({
     slug,
     locale,
@@ -140,7 +135,7 @@ export function createDocHistoryArea<S extends Settings = Settings>(
     sourceFileExt,
     contentDir,
     isFallback,
-  }: DocHistoryAreaProps): Description | null {
+  }: DocHistoryAreaProps): Child {
     if (!settings.docHistory) return null;
 
     // Doc-history storage sentinel ("" -> "index"): a root index page has the
@@ -242,7 +237,7 @@ export function createDocHistoryArea<S extends Settings = Settings>(
     // for future use and parity with the original file.
     void historyLabel;
 
-    // Compute the view-source GitHub URL host-side so the v2 BodyFootUtilArea
+    // Compute the view-source GitHub URL host-side so BodyFootUtilArea
     // component stays oblivious to project settings. Gate on
     // bodyFootUtilArea.viewSourceLink, and require both entrySlug and contentDir
     // (auto-index pages pass neither). The real source extension comes from the
@@ -262,7 +257,7 @@ export function createDocHistoryArea<S extends Settings = Settings>(
         ? buildGitHubSourceUrl(contentDir, entrySlug + sourceExt)
         : null;
 
-    // Resolve the i18n label host-side; pass the result so the v2 component
+    // Resolve the i18n label host-side; pass the result so the component
     // stays framework-agnostic.
     const viewSourceLabel = t("doc.viewSource", locale);
 

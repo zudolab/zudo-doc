@@ -16,13 +16,12 @@
  */
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render } from "preact";
-import { act } from "preact/test-utils";
+import { renderIsland, flushAll } from "../../__tests__/helpers/zudo-react.js";
 import type { DocHistoryData } from "../../island-types/index.js";
 import type { ResolvedDateFormats } from "../../settings.js";
 import { DocHistory } from "../index.js";
 
-let mounted: HTMLDivElement | null = null;
+let dispose: (() => void) | null = null;
 
 // Distinct per role: only `full` may ever reach a revision date.
 const FORMATS: ResolvedDateFormats = {
@@ -56,35 +55,25 @@ function mockFetchOnce(data: DocHistoryData): void {
 
 async function mountAndOpen(
   props: Parameters<typeof DocHistory>[0],
-): Promise<HTMLDivElement> {
-  const container = document.createElement("div");
-  document.body.appendChild(container);
-  mounted = container;
-
-  act(() => {
-    render(<DocHistory {...props} />, container);
+): Promise<HTMLElement> {
+  const view = await renderIsland(DocHistory, props, {
+    identity: { component: "DocHistory", build: "test" }, mode: "mount",
   });
-
-  const trigger = container.querySelector<HTMLButtonElement>(
-    ".doc-history-trigger",
-  );
+  dispose = view.dispose;
+  expect(view.diagnostics).toEqual([]);
+  const trigger = view.root.querySelector<HTMLButtonElement>("[data-doc-history-trigger]");
   expect(trigger).not.toBeNull();
-
-  await act(async () => {
-    trigger!.click();
-    await Promise.resolve();
-    await Promise.resolve();
-  });
-
-  return container;
+  trigger!.click();
+  await flushAll();
+  await Promise.resolve();
+  await flushAll();
+  return view.root;
 }
 
 afterEach(() => {
-  if (mounted) {
-    act(() => render(null, mounted!));
-    mounted.remove();
-    mounted = null;
-  }
+  dispose?.();
+  dispose = null;
+  document.body.replaceChildren();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
