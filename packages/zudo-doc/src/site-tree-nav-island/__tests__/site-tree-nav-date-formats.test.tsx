@@ -9,7 +9,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import type { ResolvedDateFormats } from "../../settings.js";
 import type { SidebarNavNode } from "../../sidebar/types.js";
 import { SiteTreeNav } from "../index.js";

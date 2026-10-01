@@ -3,14 +3,14 @@
  * SSG HTML-presence test for the SiteTreeNav island component.
  *
  * Verifies that the site navigation grid appears in the serialized HTML
- * produced by `preact-render-to-string`. The static markup must contain
+ * produced by zudo-react. The static markup must contain
  * the nav structure so crawlers and JS-off users can discover all sections.
  */
 
 import { describe, expect, it } from "vitest";
-import type { Description } from "@takazudo/zfb/zudo-react";
-import { render } from "preact-render-to-string";
-import { Island } from "@takazudo/zfb";
+import { h } from "@takazudo/zfb/zudo-react";
+import { islandRoot } from "@takazudo/zfb/zudo-react/server";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { SiteTreeNav } from "../index.js";
 import type { SidebarNavNode } from "../../sidebar/types.js";
 
@@ -58,10 +58,10 @@ const SAMPLE_TREE: SidebarNavNode[] = [
   },
 ];
 
-const TREE_BLOCK_HTML = '<nav aria-label="Site index" data-site-nav="true" class="grid gap-vsp-md" style="grid-template-columns:repeat(auto-fill, minmax(min(18rem, 100%), 1fr));"><div class="min-w-0 border border-muted pl-hsp-sm py-vsp-2xs"><div class><div class="relative"><div class="flex w-full items-center justify-between text-small font-semibold pt-[0.15rem] text-fg" style="padding-left:clamp(0.5rem, 0.8vw, 1rem);"><button type="button" class="flex-1 min-w-0 break-words py-vsp-xs text-left hover:text-accent hover:underline focus:underline">Guides</button><button type="button" class="aspect-square flex items-center justify-center w-[1.75rem] border-y border-l border-muted hover:underline focus:underline" aria-expanded="true" aria-label="Collapse Guides"><svg class="h-icon-xs w-icon-xs transition-transform duration-150 rotate-90 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg></button></div></div><div><div><div class="relative"><div class="absolute border-l border-dashed border-muted" style="left:calc(1 * clamp(0.8rem, 1.2vw, 1.625rem) + clamp(0.2rem, 0.3vw, 0.5rem));top:0px;bottom:calc(100% - calc(var(--spacing-vsp-2xs) + 0.5lh));"></div><div class="absolute border-t border-dashed border-muted" style="left:calc(1 * clamp(0.8rem, 1.2vw, 1.625rem) + clamp(0.2rem, 0.3vw, 0.5rem));width:calc(clamp(0.4rem, 0.6vw, 1rem) * 2);top:calc(var(--spacing-vsp-2xs) + 0.5lh);"></div><a href="/docs/guides/getting-started" class="block py-vsp-2xs pr-hsp-sm pb-vsp-xs text-small text-fg break-words hover:text-accent hover:underline focus:underline focus-visible:text-accent" style="padding-left:calc(1 * clamp(0.8rem, 1.2vw, 1.625rem) + 1.25rem + 5px);">Getting Started</a></div></div></div></div></div></nav>';
+const TREE_BLOCK_HTML = '<nav aria-label="Site index" data-site-nav="true" class="grid gap-vsp-md" style="grid-template-columns:repeat(auto-fill, minmax(min(18rem, 100%), 1fr));"><div class="min-w-0 border border-muted pl-hsp-sm py-vsp-2xs"><div class=""><div class="relative"><div class="flex w-full items-center justify-between text-small font-semibold pt-[0.15rem] text-fg" style="padding-left:clamp(0.5rem, 0.8vw, 1rem);"><button type="button" class="flex-1 min-w-0 break-words py-vsp-xs text-left hover:text-accent hover:underline focus:underline">Guides</button><button type="button" class="aspect-square flex items-center justify-center w-[1.75rem] border-y border-l border-muted hover:underline focus:underline" aria-expanded="true" aria-label="Collapse Guides"><span class="inline-flex transition-transform duration-150" style="transform:rotate(90deg)"><svg class="h-icon-xs w-icon-xs text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg></span></button></div></div><div><div><div class="relative"><div class="absolute border-l border-dashed border-muted" style="left:calc(1 * clamp(0.8rem, 1.2vw, 1.625rem) + clamp(0.2rem, 0.3vw, 0.5rem));top:0px;bottom:calc(100% - calc(var(--spacing-vsp-2xs) + 0.5lh));"></div><div class="absolute border-t border-dashed border-muted" style="left:calc(1 * clamp(0.8rem, 1.2vw, 1.625rem) + clamp(0.2rem, 0.3vw, 0.5rem));width:calc(clamp(0.4rem, 0.6vw, 1rem) * 2);top:calc(var(--spacing-vsp-2xs) + 0.5lh);"></div><a href="/docs/guides/getting-started" class="block py-vsp-2xs pr-hsp-sm pb-vsp-xs text-small text-fg break-words hover:text-accent hover:underline focus:underline focus-visible:text-accent" style="padding-left:calc(1 * clamp(0.8rem, 1.2vw, 1.625rem) + 1.25rem + 5px);">Getting Started</a></div></div></div></div></div></nav>';
 
 describe("SiteTreeNav — SSG HTML presence", () => {
-  it("keeps the existing tree-block markup byte-stable", () => {
+  it("keeps the zudo-react tree-block markup deterministic", () => {
     const html = render(<SiteTreeNav tree={[SAMPLE_TREE[0]!]} />);
     expect(html).toBe(TREE_BLOCK_HTML);
   });
@@ -86,6 +86,15 @@ describe("SiteTreeNav — SSG HTML presence", () => {
   it("renders child node href in static HTML", () => {
     const html = render(<SiteTreeNav tree={SAMPLE_TREE} />);
     expect(html).toContain('href="/docs/guides/getting-started"');
+  });
+
+  it("keeps the #4435 calc spelling and omits the measured inert 2xl icon utility", () => {
+    const html = render(<SiteTreeNav tree={SAMPLE_TREE} />);
+    expect(html).toContain(
+      "py-[calc(var(--spacing-vsp-xs)_+_0.15rem)]",
+    );
+    expect(html).toContain('class="shrink-0 w-[18px]"');
+    expect(html).not.toContain("2xl:w-[24px]");
   });
 
   it("starts only explicitly selected root-category slugs collapsed", () => {
@@ -118,6 +127,14 @@ describe("SiteTreeNav — SSG HTML presence", () => {
     const html = render(<SiteTreeNav tree={SAMPLE_TREE} categoryIgnore={["guides"]} />);
     expect(html).not.toContain("Getting Started");
     expect(html).toContain("Reference");
+  });
+
+  it("orders requested root categories before unmatched roots", () => {
+    const html = render(
+      <SiteTreeNav tree={SAMPLE_TREE} categoryOrder={["reference", "guides"]} />,
+    );
+    expect(html.indexOf("Reference")).toBeLessThan(html.indexOf("Guides"));
+    expect(html.indexOf("Guides")).toBeLessThan(html.indexOf("Release notes"));
   });
 
   it("renders empty nav when all nodes are ignored", () => {
@@ -328,15 +345,14 @@ describe("SiteTreeNav — displayName pin", () => {
 });
 
 describe("SiteTreeNav — call-site Island marker", () => {
-  it("emits data-zfb-island=SiteTreeNav in SSG output when wrapped with Island(when:idle)", () => {
+  it("keeps the site nav idle and emits its v3 island boundary in SSG output", () => {
     const html = render(
-      // Island() returns the public IslandElement shape ({ type, props, key });
-      // it is a real Preact VNode at runtime, so re-view it as VNode for render().
-      Island({
+      islandRoot(h(SiteTreeNav, { tree: SAMPLE_TREE }), {
+        identity: { component: "SiteTreeNav", build: "test" },
         when: "idle",
-        children: <SiteTreeNav tree={SAMPLE_TREE} />,
-      }) as unknown as Description,
+      }),
     );
     expect(html).toContain('data-zfb-island="SiteTreeNav"');
+    expect(html).toContain('data-when="idle"');
   });
 });
