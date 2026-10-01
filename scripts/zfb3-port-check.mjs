@@ -41,8 +41,12 @@ export function run(paths, { command = process.execPath } = {}) {
       const config = join(dir, `${project === resolve(pkg, "tsconfig.json") ? "package" : "host"}.json`);
       writeFileSync(config, JSON.stringify({
         extends: project,
-        // The package base lists generated declaration shims absent in the red window.
-        files: [],
+        // Keep the host's virtual-module declarations when a local package
+        // artifact build has generated them. Earlier leaf worktrees may not
+        // have that artifact yet, so the port check must still run without it.
+        files: project === resolve(repo, "tsconfig.json") && existsSync(resolve(pkg, "virtual-modules.d.ts"))
+          ? [resolve(pkg, "virtual-modules.d.ts")]
+          : [],
         compilerOptions: {
           baseUrl: repo,
           typeRoots: [resolve(repo, "node_modules/@types"), resolve(pkg, "node_modules/@types")],
