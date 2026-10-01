@@ -70,6 +70,7 @@ Read these from the zfb clone with `git show v3.1.0:research/<file>`. The older 
 - [#4464: doc-composition](doc-composition.md)
 - [#4465: routes-public-types](routes-public-types.md)
 - [#4466: showcase-host](showcase-host.md)
+- [#4481: scratch-dir inventory (verified no-op)](round2-scratch-dir.md)
 
 ## Page-by-page coverage
 
