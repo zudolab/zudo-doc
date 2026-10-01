@@ -24,6 +24,9 @@ importers:
 
   .:
     dependencies:
+      '@modelcontextprotocol/sdk':
+        specifier: 1.31.0
+        version: 1.31.0(zod@4.3.6)
       '@takazudo/zdtp':
         specifier: 0.8.5
         version: 0.8.5(preact@10.29.2)
