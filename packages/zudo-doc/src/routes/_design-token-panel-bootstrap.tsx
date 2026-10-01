@@ -32,8 +32,8 @@
 // callers), so both components are in the scanned graph and a shared name
 // would trip zfb's "island marker name collision" warning and drop one of them.
 
-import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
-import { runDesignTokenPanelBootstrapOnce } from "../design-token-panel-bootstrap.js";
+import { getScope } from "@takazudo/zfb/zudo-react";
+import { runDesignTokenPanelBootstrapOnce } from "../design-token-panel-bootstrap-controller.js";
 // Host-callables channel, third virtual module (#2658, mirrors #2501's
 // chromeBindingsModule): absent `settings.designTokenPanelConfigModule` →
 // re-exports the package default (`@takazudo/zudo-doc/design-token-panel-config`);
@@ -54,8 +54,15 @@ import { buildDesignTokenPanelConfig } from "virtual:zudo-doc-design-token-panel
  * effect of `bootstrapDesignTokenPanel`), matching the package default's
  * non-`ssrFallback` `Island({ when: "load" })` shape.
  */
-export function ConfiguredDesignTokenPanelBootstrap(): JSX.Element | null {
-  runDesignTokenPanelBootstrapOnce(buildDesignTokenPanelConfig, "configured");
+export function ConfiguredDesignTokenPanelBootstrap(): null {
+  const scope = getScope();
+  scope.onActivate(() => {
+    runDesignTokenPanelBootstrapOnce(
+      buildDesignTokenPanelConfig,
+      "configured",
+      scope.abortSignal,
+    );
+  });
   return null;
 }
 ConfiguredDesignTokenPanelBootstrap.displayName = "ConfiguredDesignTokenPanelBootstrap";

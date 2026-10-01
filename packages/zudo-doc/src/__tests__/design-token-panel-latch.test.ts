@@ -18,11 +18,10 @@
  * `bootstrapDesignTokenPanel` directly and never touches the latch or either
  * island. These cases pin both orderings, in both configurations.
  *
- * The two islands are invoked as plain functions rather than rendered: each is
- * a no-prop component whose entire body is the `runDesignTokenPanelBootstrapOnce`
- * call plus `return null`, so a call IS its render. The SSR/marker side of the
- * pair is covered by `doc-body-end-islands/__tests__/body-end-islands.test.tsx`
- * and the route-injection slow suite.
+ * Each island is set up inside a zudo-react scope and activated explicitly,
+ * matching the setup → onActivate boundary while keeping this virtual-module
+ * probe in the node test environment. SSR/hydration is covered separately by
+ * `design-token-panel-bootstrap-island.test.tsx`.
  *
  * Each scenario runs on a FRESH module registry (`vi.resetModules()`), since
  * the latch is module-scoped state — that reset is what stands in for "a new
@@ -44,6 +43,32 @@ import type { PanelConfigBuilder } from "../design-token-panel-bootstrap.js";
 /** The builder the routes-only wrapper's virtual module currently exports.
  *  `vi.hoisted` so the `vi.mock` factory below may close over it. */
 const virtualModule = vi.hoisted(() => ({ builder: null as unknown }));
+const scopeHarness = vi.hoisted(() => ({
+  current: null as {
+    component: string;
+    abortSignal: AbortSignal;
+    activations: Array<() => void | (() => void)>;
+  } | null,
+}));
+
+vi.mock("@takazudo/zfb/zudo-react", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@takazudo/zfb/zudo-react")>();
+  return {
+    ...actual,
+    getScope: () => {
+      const current = scopeHarness.current;
+      if (!current) throw new Error("test scope is not active");
+      return {
+        abortSignal: current.abortSignal,
+        onActivate: (callback: () => void | (() => void)) => {
+          current.activations.push(callback);
+        },
+        onCleanup: () => {},
+        effect: () => {},
+      };
+    },
+  };
+});
 
 // `virtual:zudo-doc-design-token-panel-config` is registered by the routes
 // plugin at build time and has no on-disk source, so it must be mocked rather
@@ -114,9 +139,32 @@ async function startSession(
   virtualModule.builder = pick(packageBuilder);
   const bootstrap = await import("../design-token-panel-bootstrap.js");
   const routes = await import("../routes/_design-token-panel-bootstrap.js");
+  function activate(Component: () => unknown, component: string): unknown {
+    const controller = new AbortController();
+    const scope = {
+      component,
+      abortSignal: controller.signal,
+      activations: [] as Array<() => void | (() => void)>,
+    };
+    scopeHarness.current = scope;
+    const result = Component();
+    scopeHarness.current = null;
+    const cleanups: Array<() => void> = [];
+    for (const callback of scope.activations) {
+      const cleanup = callback();
+      if (typeof cleanup === "function") cleanups.push(cleanup);
+    }
+    activeScopes.push({
+      dispose() {
+        controller.abort();
+        for (const cleanup of cleanups.reverse()) cleanup();
+      },
+    });
+    return result;
+  }
   return {
-    DefaultIsland: bootstrap.DesignTokenPanelBootstrap,
-    ConfiguredIsland: routes.ConfiguredDesignTokenPanelBootstrap,
+    DefaultIsland: () => activate(bootstrap.DesignTokenPanelBootstrap, "DesignTokenPanelBootstrap"),
+    ConfiguredIsland: () => activate(routes.ConfiguredDesignTokenPanelBootstrap, "ConfiguredDesignTokenPanelBootstrap"),
   };
 }
 
@@ -141,6 +189,7 @@ function installBrowser(): void {
 }
 
 let warn: ReturnType<typeof vi.spyOn>;
+const activeScopes: Array<{ dispose: () => void }> = [];
 
 beforeEach(() => {
   installBrowser();
@@ -148,6 +197,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  for (const scope of activeScopes.splice(0).reverse()) scope.dispose();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
   vi.resetModules();
