@@ -24,6 +24,8 @@ import {
   evaluateFirstPartyPeer,
   evaluateApprovedPeerBaseline,
   FIRST_PARTY_PEER_CHECKS,
+  PINNED_PACKAGES,
+  readScaffoldPin,
   workspaceZfbDevPinMatches,
   workspaceZfbPeerFloorMatches,
 } from "../check-pin-parity.mjs";
@@ -40,6 +42,48 @@ describe("workspace zfb pin policy", () => {
     expect(workspaceZfbPeerFloorMatches(rootPin, `^${rootPin}`)).toBe(true);
     expect(workspaceZfbPeerFloorMatches(rootPin, rootPin)).toBe(false);
     expect(workspaceZfbPeerFloorMatches(rootPin, "^0.1.0-next.80")).toBe(false);
+  });
+});
+
+describe("conditional Cloudflare MCP scaffold pins", () => {
+  const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+  const rootPkg = JSON.parse(
+    readFileSync(resolve(REPO_ROOT, "package.json"), "utf-8"),
+  );
+  const zudoDocPkg = JSON.parse(
+    readFileSync(
+      resolve(REPO_ROOT, "packages/zudo-doc/package.json"),
+      "utf-8",
+    ),
+  );
+  const scaffoldSrc = readFileSync(
+    resolve(REPO_ROOT, "packages/create-zudo-doc/src/scaffold.ts"),
+    "utf-8",
+  );
+
+  it("covers the adapter, SDK, and Wrangler in the pin-parity gate", () => {
+    expect(PINNED_PACKAGES).toEqual(
+      expect.arrayContaining([
+        "@takazudo/zfb-adapter-cloudflare",
+        "@modelcontextprotocol/sdk",
+        "wrangler",
+      ]),
+    );
+  });
+
+  it("matches conditional scaffold literals to the owning package pin sources", () => {
+    expect(readScaffoldPin(scaffoldSrc, "@takazudo/zfb-adapter-cloudflare")).toBe(
+      rootPkg.dependencies["@takazudo/zfb-adapter-cloudflare"],
+    );
+    expect(rootPkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
+      rootPkg.dependencies["@takazudo/zfb"],
+    );
+    expect(readScaffoldPin(scaffoldSrc, "@modelcontextprotocol/sdk")).toBe(
+      zudoDocPkg.peerDependencies["@modelcontextprotocol/sdk"],
+    );
+    expect(readScaffoldPin(scaffoldSrc, "wrangler")).toBe(
+      rootPkg.devDependencies.wrangler,
+    );
   });
 });
 

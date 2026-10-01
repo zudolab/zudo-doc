@@ -160,7 +160,10 @@ const BAREBONE_MANIFEST = [
   "zfb.config.ts",
 ].sort();
 
-/** All 29 feature values wired to a real (non-pseudo, non-scaffold.ts-only) module. */
+/**
+ * All feature toggles used in the all-on scaffold, including the explicit
+ * Cloudflare MCP preset.
+ */
 const ALL_FEATURES = [
   "i18n",
   "search",
@@ -178,6 +181,8 @@ const ALL_FEATURES = [
   "docHistory",
   "bodyFootUtil",
   "llmsTxt",
+  "agentExport",
+  "mcp",
   "skillSymlinker",
   "tauri",
   "tauriDev",
@@ -512,6 +517,7 @@ describe("scaffold — absence assertions (deleted legacy files never resurrecte
       ...baseChoices,
       projectName: "abs-allon",
       features: ALL_FEATURES.filter((f) => !["tauri", "tauriDev"].includes(f)),
+      mcpDeploy: "cloudflare",
     });
     process.chdir(cwdBefore);
     barebone = path.join(dir, "abs-barebone");
@@ -560,6 +566,7 @@ describe("scaffold — .zudo-doc.json is never seeded (lazy-create, locked decis
       ...baseChoices,
       projectName: "test-doc-full",
       features: ALL_FEATURES,
+      mcpDeploy: "cloudflare",
     });
     expect(
       await fs.pathExists(projectPath("test-doc-full", ".zudo-doc.json")),
@@ -1090,7 +1097,10 @@ describe("scaffold — changelog feature", () => {
       path.join(project, "src/content/docs/changelog/123/index.mdx"),
       "utf-8",
     );
-    const config = await fs.readFile(path.join(project, "zfb.config.ts"), "utf-8");
+    const config = await fs.readFile(
+      path.join(project, "zfb.config.ts"),
+      "utf-8",
+    );
     const claude = await fs.readFile(path.join(project, "CLAUDE.md"), "utf-8");
 
     expect(landing).toContain("description: Release notes for each package.");
@@ -1219,11 +1229,12 @@ describe("scaffold — changelog feature", () => {
 });
 
 describe("scaffold — every-feature manifest is exactly base + the documented per-feature deltas", () => {
-  it("all-on scaffold emits exactly the expected 46-file set", async () => {
+  it("all-on scaffold emits exactly the expected 48-file set", async () => {
     await scaffold({
       ...baseChoices,
       projectName: "test-all-on",
       features: ALL_FEATURES,
+      mcpDeploy: "cloudflare",
     });
     const files = await listFiles(projectPath("test-all-on"));
     const expected = [
@@ -1239,6 +1250,7 @@ describe("scaffold — every-feature manifest is exactly base + the documented p
       "pages/docs/[[...slug]].tsx",
       "pages/index.tsx",
       "pnpm-workspace.yaml",
+      "README.md",
       "public/favicon-16x16.png",
       "public/favicon-32x32.png",
       "public/favicon.ico",
@@ -1273,6 +1285,7 @@ describe("scaffold — every-feature manifest is exactly base + the documented p
       "src/styles/global.css",
       "tsconfig.json",
       "zfb.config.ts",
+      "wrangler.jsonc",
     ].sort();
     expect(files).toEqual(expected);
     const config = await fs.readFile(
@@ -1354,7 +1367,12 @@ describe("scaffold — zfb.config.ts content shape (integration with generateZfb
   });
 
   it("does NOT emit inline plugins, collections, or zod (all delegated to the package)", async () => {
-    await scaffold({ ...baseChoices, projectName: "test-no-inline", features: ALL_FEATURES });
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-no-inline",
+      features: ALL_FEATURES,
+      mcpDeploy: "cloudflare",
+    });
     const config = await fs.readFile(
       projectPath("test-no-inline", "zfb.config.ts"),
       "utf-8",
@@ -1722,6 +1740,7 @@ describe("scaffold — CLAUDE.md generation", () => {
       ...baseChoices,
       projectName: "test-claudemd-2",
       features: ALL_FEATURES,
+      mcpDeploy: "cloudflare",
     });
     const content = await fs.readFile(
       projectPath("test-claudemd-2", "CLAUDE.md"),
@@ -1922,6 +1941,8 @@ describe("scaffold — generated package.json", () => {
     // The default scaffold is pure static and emits no Worker-only routes or
     // adapter config. Consumers add a deploy-target adapter when they opt in.
     expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBeUndefined();
+    expect(pkg.dependencies["@modelcontextprotocol/sdk"]).toBeUndefined();
+    expect(pkg.devDependencies.wrangler).toBeUndefined();
     expect(pkg.dependencies["@takazudo/zfb-md-wasm"]).toBe(
       ROOT_ZFB_PINS["@takazudo/zfb-md-wasm"],
     );
@@ -1931,6 +1952,177 @@ describe("scaffold — generated package.json", () => {
     expect(pkg.dependencies["astro"]).toBeUndefined();
     expect(pkg.dependencies["shiki"]).toBeUndefined();
     expect(pkg.dependencies["@shikijs/transformers"]).toBeUndefined();
+  });
+
+  it("keeps static agent export independent of Cloudflare and MCP runtime dependencies", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-agent-export-only",
+      features: ["agentExport"],
+    });
+    const project = projectPath("test-agent-export-only");
+    const pkg = await fs.readJson(path.join(project, "package.json"));
+    const config = await fs.readFile(
+      path.join(project, "zfb.config.ts"),
+      "utf-8",
+    );
+    const files = await listFiles(project);
+
+    expect(config).toContain("agentExport: true");
+    expect(config).not.toContain("mcp:");
+    expect(config).not.toContain("adapter:");
+    expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBeUndefined();
+    expect(pkg.dependencies["@modelcontextprotocol/sdk"]).toBeUndefined();
+    expect(pkg.devDependencies.wrangler).toBeUndefined();
+    expect(pkg.scripts["preview:worker"]).toBeUndefined();
+    expect(pkg.scripts.deploy).toBeUndefined();
+    expect(files).not.toContain("wrangler.jsonc");
+    expect(files).not.toContain("README.md");
+  });
+
+  it("emits the locked Cloudflare Worker preset only when MCP is enabled", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-mcp-base",
+    });
+    await scaffold({
+      ...baseChoices,
+      projectName: "test-mcp-cloudflare",
+      features: ["agentExport", "mcp"],
+      mcpDeploy: "cloudflare",
+    });
+    const project = projectPath("test-mcp-cloudflare");
+    const pkg = await fs.readJson(path.join(project, "package.json"));
+    const basePkg = await fs.readJson(
+      projectPath("test-mcp-base", "package.json"),
+    );
+    const config = await fs.readFile(path.join(project, "zfb.config.ts"), "utf-8");
+    const wrangler = JSON.parse(
+      await fs.readFile(path.join(project, "wrangler.jsonc"), "utf-8"),
+    );
+    const readme = await fs.readFile(
+      path.join(project, "README.md"),
+      "utf-8",
+    );
+    const claude = await fs.readFile(
+      path.join(project, "CLAUDE.md"),
+      "utf-8",
+    );
+    const gitignore = await fs.readFile(
+      path.join(project, ".gitignore"),
+      "utf-8",
+    );
+    const files = await listFiles(project);
+    const baseFiles = await listFiles(projectPath("test-mcp-base"));
+
+    expect(config).toContain(
+      'adapter: "@takazudo/zfb-adapter-cloudflare"',
+    );
+    expect(config).toContain("agentExport: true");
+    expect(config).toContain("mcp: true");
+    expect(pkg.dependencies["@takazudo/zfb-adapter-cloudflare"]).toBe(
+      ROOT_ZFB_PINS["@takazudo/zfb-adapter-cloudflare"],
+    );
+    expect(pkg.dependencies["@modelcontextprotocol/sdk"]).toBe("1.31.0");
+    expect(pkg.devDependencies.wrangler).toBe("4.111.0");
+    expect(pkg.scripts["preview:worker"]).toBe("wrangler dev");
+    expect(pkg.scripts.deploy).toBe("pnpm build && wrangler deploy");
+    expect(
+      Object.keys(pkg.dependencies)
+        .filter((name) => basePkg.dependencies[name] === undefined)
+        .sort(),
+    ).toEqual([
+      "@modelcontextprotocol/sdk",
+      "@takazudo/zfb-adapter-cloudflare",
+    ]);
+    expect(
+      Object.keys(pkg.devDependencies)
+        .filter((name) => basePkg.devDependencies[name] === undefined)
+        .sort(),
+    ).toEqual(["wrangler"]);
+    expect(
+      Object.keys(pkg.scripts)
+        .filter((name) => basePkg.scripts[name] === undefined)
+        .sort(),
+    ).toEqual(["deploy", "preview:worker"]);
+    expect(files.filter((file) => !baseFiles.includes(file))).toEqual([
+      "README.md",
+      "wrangler.jsonc",
+    ]);
+    expect(wrangler).toEqual({
+      $schema: "./node_modules/wrangler/config-schema.json",
+      name: "test-mcp-cloudflare",
+      main: "./dist/_worker.js",
+      compatibility_date: "2024-12-01",
+      compatibility_flags: ["nodejs_compat"],
+      assets: {
+        directory: "./dist",
+        binding: "ASSETS",
+        not_found_handling: "404-page",
+        run_worker_first: false,
+      },
+    });
+    expect(gitignore).toContain(".wrangler/");
+    expect(claude).toContain("preview:worker");
+    expect(claude).toContain("deploy");
+    expect(readme).toContain("siteUrl: \"https://docs.example.com\"");
+    expect(readme).toContain("<siteUrl><base>/mcp");
+    expect(readme).toContain("robots.txt");
+    expect(readme).toContain("not authentication");
+    expect(readme).not.toContain("takazudomodular");
+    expect(readme).not.toContain("account_id");
+    expect(readme).not.toContain("kv_namespaces");
+    expect(readme).not.toContain("durable_objects");
+    const workflowOrder = [
+      readme.indexOf("pnpm install"),
+      readme.indexOf("pnpm build"),
+      readme.indexOf("pnpm preview:worker"),
+      readme.indexOf("wrangler login"),
+      readme.indexOf("pnpm deploy"),
+      readme.indexOf("### Connect an MCP client"),
+    ];
+    expect(workflowOrder.every((index) => index >= 0)).toBe(true);
+    expect(workflowOrder).toEqual([...workflowOrder].sort((a, b) => a - b));
+    const generatedText = await Promise.all(
+      files
+        .filter((file) => !/\.(?:png|ico)$/.test(file))
+        .map((file) => fs.readFile(path.join(project, file), "utf-8")),
+    );
+    expect(generatedText.join("\n")).not.toMatch(
+      /takazudomodular|account_id|kv_namespaces|durable_objects/i,
+    );
+  });
+
+  it("derives Wrangler names that satisfy Cloudflare Worker name limits", async () => {
+    await scaffold({
+      ...baseChoices,
+      projectName: "some_project.docs",
+      features: ["mcp"],
+      mcpDeploy: "cloudflare",
+    });
+    await scaffold({
+      ...baseChoices,
+      projectName: "a" + "b".repeat(69),
+      features: ["mcp"],
+      mcpDeploy: "cloudflare",
+    });
+    const ordinary = JSON.parse(
+      await fs.readFile(
+        projectPath("some_project.docs", "wrangler.jsonc"),
+        "utf-8",
+      ),
+    );
+    const long = JSON.parse(
+      await fs.readFile(
+        projectPath("a" + "b".repeat(69), "wrangler.jsonc"),
+        "utf-8",
+      ),
+    );
+
+    expect(ordinary.name).toBe("some-project-docs");
+    expect(long.name).toHaveLength(63);
+    expect(long.name).toMatch(/^[a-z0-9-]+$/);
+    expect(long.name).not.toMatch(/^-|-$|--/);
   });
 
   it("includes diff when docHistory is enabled directly or via bodyFootUtil, but not for assetViewer alone", async () => {

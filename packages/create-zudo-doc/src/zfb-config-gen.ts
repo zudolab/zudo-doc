@@ -254,6 +254,11 @@ function buildDesiredConfig(
   desired.llmsTxt = choices.features.includes("llmsTxt");
   desired.agentExport = choices.features.includes("agentExport");
   desired.mcp = choices.features.includes("mcp");
+  if (choices.features.includes("mcp")) {
+    // MCP currently has one supported remote deployment preset, Cloudflare
+    // Workers. Keep the adapter opt-in alongside the MCP setting.
+    desired.adapter = "@takazudo/zfb-adapter-cloudflare";
+  }
 
   // ── Feature toggles ───────────────────────────────────────────────────
   desired.designTokenPanel = choices.features.includes("designTokenPanel");
@@ -450,6 +455,7 @@ const FIELD_ORDER = [
   "headerNav",
   "headerRightItems",
   "minifyHtml",
+  "adapter",
 ];
 
 /**

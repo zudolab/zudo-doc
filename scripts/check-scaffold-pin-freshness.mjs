@@ -117,11 +117,12 @@ const REGISTRY_BASE = "https://registry.npmjs.org";
  * Explicit scope for the first-party peer-range guard (#4065).
  *
  * Keep this list deliberately separate from PINNED_PACKAGES: the scaffold
- * emits four external pins, while packages/zudo-doc declares five first-party
- * peers. Every row is in scope, including the optional history-server peer
- * whose floor intentionally trails the lockstep release (see RELEASE.md's
- * publish-lag note). `channelSource` records the current stable channel for
- * each declaration; selectPeerChannel() switches a prerelease range to
+ * emits seven external pins (four existing pins, some feature-gated, and
+ * three Cloudflare MCP-only), while packages/zudo-doc declares five
+ * first-party peers. Every row is in scope, including the optional
+ * history-server peer whose floor intentionally trails the lockstep release
+ * (see RELEASE.md's publish-lag note). `channelSource` records the current
+ * stable channel for each declaration; selectPeerChannel() switches a prerelease range to
  * `next` without silently narrowing this scope.
  */
 export const FIRST_PARTY_PEER_SCOPE = [

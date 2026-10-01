@@ -293,6 +293,24 @@ describe("generateZfbConfig — simple boolean feature fields", () => {
   }
 });
 
+describe("generateZfbConfig — Cloudflare adapter is MCP-only", () => {
+  it("emits the adapter for the Cloudflare MCP preset", () => {
+    const result = generateZfbConfig({
+      ...baseChoices,
+      features: ["agentExport", "mcp"],
+      mcpDeploy: "cloudflare",
+    });
+    expect(result).toContain('adapter: "@takazudo/zfb-adapter-cloudflare"');
+  });
+
+  it("does not add an adapter to static agent-export or barebone config", () => {
+    expect(
+      generateZfbConfig({ ...baseChoices, features: ["agentExport"] }),
+    ).not.toContain("adapter:");
+    expect(generateZfbConfig(baseChoices)).not.toContain("adapter:");
+  });
+});
+
 describe("generateZfbConfig — findInPage rides the tauri feature (#2690)", () => {
   // findInPage has no CLI flag/prompt of its own — it is set whenever the
   // tauri feature is selected (the Cmd/Ctrl+F find bar only makes sense

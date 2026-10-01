@@ -269,7 +269,21 @@ async function main() {
   console.log();
   console.log(`  ${pc.bold("Next steps:")}`);
   console.log(`  cd ${cdTarget}`);
-  console.log(`  ${pmRunCommand(choices.packageManager, "dev")}`);
+  if (choices.features.includes("mcp")) {
+    const pm = choices.packageManager;
+    console.log(`  ${pm} install`);
+    console.log(`  ${pmRunCommand(pm, "build")}`);
+    console.log(`  ${pmRunCommand(pm, "preview:worker")}  # verify locally`);
+    console.log(
+      `  Set siteUrl in zfb.config.ts, then run "wrangler login" and "${pmRunCommand(pm, "deploy")}" to deploy to your Cloudflare account.`,
+    );
+    console.log(
+      `  Connect your MCP client to <siteUrl><base>/mcp (for example, https://docs.example.com/mcp).`,
+    );
+    console.log(`  See README.md for setup details and the public-docs-only warning.`);
+  } else {
+    console.log(`  ${pmRunCommand(choices.packageManager, "dev")}`);
+  }
   console.log();
 }
 
