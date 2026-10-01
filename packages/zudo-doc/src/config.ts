@@ -104,6 +104,7 @@ import {
   assertNoEmptyStringFaviconOrLogo,
   assertZdtpBundlingConsistent,
   assertValidSearchMaxBodyLength,
+  assertAgentDocsConsistent,
 } from "./config-assertions/index.js";
 import { validateAssetViewerSettings } from "./asset-path/index.js";
 
@@ -142,6 +143,22 @@ function assertValidAssetViewerSettings(dir: string, routePrefix: string): void 
         .replace("must be different", "must differ")}`,
     );
   }
+}
+
+/** Add the package-required MCP resolution fields without reordering host fields. */
+function withMcpMainFields(
+  bundle: BundleConfig | undefined,
+  presetBundle: Pick<BundleConfig, "mainFields"> | undefined,
+): BundleConfig {
+  const mainFields = [...(bundle?.mainFields ?? presetBundle?.mainFields ?? [])];
+  if (!mainFields.includes("module")) mainFields.push("module");
+  if (!mainFields.includes("main")) mainFields.push("main");
+
+  return {
+    ...presetBundle,
+    ...bundle,
+    mainFields,
+  };
 }
 
 /** The `settings.claudeResources` block (or `false` when disabled). */
@@ -206,6 +223,8 @@ export const DEFAULT_SETTINGS: Settings = {
   tagGovernance: "off",
   tagVocabulary: false,
   llmsTxt: false,
+  agentExport: false,
+  mcp: false,
   changelogs: false,
   math: false,
   cjkFriendly: false,
@@ -470,6 +489,16 @@ export interface ZudoDocConfig {
    * @default false
    */
   llmsTxt?: boolean;
+  /**
+   * Generate the package-owned static agent documentation feed.
+   * @default false
+   */
+  agentExport?: boolean;
+  /**
+   * Enable the stateless read-only MCP endpoint. Requires `agentExport: true`.
+   * @default false
+   */
+  mcp?: boolean;
   /**
    * Changelog generation config(s), or `false` to disable.
    * @default false
@@ -891,6 +920,10 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
   // documented public API (zudolab/zudo-doc#4407).
   assertValidSearchMaxBodyLength(settings.searchMaxBodyLength);
 
+  // Guard JavaScript callers as well as typed config users; the preset checks
+  // again because it is also a public, directly-callable entry point.
+  assertAgentDocsConsistent(settings);
+
   const fragment = zudoDocPreset({
     settings,
     buildDocsSchema:
@@ -906,6 +939,14 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
     tagVocabulary: userTagVocabularyEntries ?? [],
   });
 
+  const { bundle: presetBundle, ...presetConfig } = fragment;
+  // MCP needs explicit main fields for the SDK's CJS-only AJV imports. Keep
+  // this MCP-only: default/static configs retain the exact caller bundle shape.
+  const resolvedBundle =
+    settings.mcp === true
+      ? withMcpMainFields(bundle, presetBundle)
+      : bundle;
+
   return {
     // ── Host-owned shell fields ──────────────────────────────────────────
     framework: "preact",
@@ -913,17 +954,17 @@ export function zudoDoc(user: ZudoDocConfig = {}): ZfbConfig {
     tailwind: { enabled: true },
     base: settings.base,
     ...(adapter ? { adapter } : {}),
-    ...(bundle ? { bundle } : {}),
+    ...(resolvedBundle ? { bundle: resolvedBundle } : {}),
     ...(strictContentBridge !== undefined ? { strictContentBridge } : {}),
 
     // ── Preset-owned fields (collections, plugins, markdown, …) ──────────
-    ...fragment,
+    ...presetConfig,
     // The preset's `markdown.features` intentionally uses the loose Record
     // shape (the exact shape zfb's config shim binds against); the engine's
     // strict `MarkdownFeaturesConfig` is a structural subset of it. Every
     // other preset field type-checks against `ZfbConfig` directly, so only
     // `markdown` needs this single documented bridge — `satisfies ZfbConfig`
     // below keeps full strict checking on all the rest.
-    markdown: fragment.markdown as ZfbConfig["markdown"],
+    markdown: presetConfig.markdown as ZfbConfig["markdown"],
   } satisfies ZfbConfig;
 }

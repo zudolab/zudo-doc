@@ -296,6 +296,8 @@ describe("Settings public field set snapshot", () => {
         "tagGovernance",
         "tagVocabulary",
         "llmsTxt",
+        "agentExport",
+        "mcp",
         "changelogs",
         "math",
         "cjkFriendly",
