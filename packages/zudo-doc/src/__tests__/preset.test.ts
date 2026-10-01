@@ -699,6 +699,16 @@ describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
     });
   });
 
+  it("keeps the routes plugin for MCP when ordinary package routes are disabled", () => {
+    const result = zudoDocPreset({
+      settings: { ...fixtureSettings, packageOwnedRoutes: false, assetViewer: false, agentExport: true, mcp: true },
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+    expect(result.plugins.find(plugin => plugin.name === "@takazudo/zudo-doc/plugins/routes")?.options)
+      .toMatchObject({ packageOwnedRoutes: false, settings: { mcp: true } });
+  });
+
   it("omits the routes plugin when packageOwnedRoutes is false and assetViewer is omitted", () => {
     const { assetViewer: _assetViewer, ...settingsWithoutAssetViewer } = fixtureSettings;
     const r = zudoDocPreset({
