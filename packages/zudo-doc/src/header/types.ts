@@ -1,21 +1,20 @@
-// Boundary types for the v2 `<Header />` shell.
+// Boundary types for the package-owned `<Header />` shell.
 //
 // The host project (`src/config/settings-types.ts`) owns the canonical
-// shapes for these structures. We copy them here so v2 has its own
+// shapes for these structures. We copy them here so the package has its own
 // self-contained type surface — consumers import `HeaderNavItem` /
 // `HeaderRightItem` from `@takazudo/zudo-doc/header` and don't reach
 // into the host's `@/config` alias.
 //
-// Structural-only: the v2 copies are intentionally simple and broad. If
-// the host extends a field (e.g. adds a new `HeaderRightTriggerName`),
-// downstream consumers may continue to use the v2 types until the v2
-// package itself widens them. Changes here are v2 breaking changes.
+// Structural-only: these package types stay independent of host config
+// aliases. They preserve the serialized header-data contract while using
+// zfb's `Component` and `Child` types for render callbacks and slots.
 
-import type { Child } from "@takazudo/zfb/zudo-react";
+import type { Child, Component } from "@takazudo/zfb/zudo-react";
 
 /**
  * Locale code as seen by the header. Widened from the host's literal
- * union (`"en" | "ja" | …`) to plain `string` at the v2 boundary so the
+ * union (`"en" | "ja" | …`) to plain `string` at the package boundary so the
  * package can render for any project's locale set without a generic
  * parameter (super-epic #1724, sub-issue #1729).
  */
@@ -86,7 +85,7 @@ export interface HeaderRightComponentProps {
 /** A callable-only host registry keyed by serialized component name. */
 export type HeaderRightComponentRegistry = Record<
   string,
-  (props: HeaderRightComponentProps) => Child
+  Component<HeaderRightComponentProps>
 >;
 
 export interface HeaderRightTriggerItem {

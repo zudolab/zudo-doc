@@ -1,9 +1,9 @@
 /**
  * @takazudo/zudo-doc — framework primitives that sit on top of zfb's engine.
  *
- * **Use the subpath exports for actual imports.** This root barrel deliberately
- * stays empty so consumers don't drag in the entire framework when they only
- * need one piece. Each topic area publishes its own subpath (declared in
+ * **Use the subpath exports for runtime imports.** This root barrel exposes
+ * shared public types only, so consumers do not drag in runtime code when they
+ * need type contracts. Each topic area publishes its own subpath (declared in
  * `package.json#exports`):
  *
  *   import { buildSidebarTree, type SidebarNode } from "@takazudo/zudo-doc/sidebar-tree";
@@ -24,4 +24,62 @@
  * See packages/zudo-doc/README.md for the topic map.
  */
 
-export {};
+export type {
+  ChromeContext,
+  ChromeHostBindings,
+  FactoryComponent,
+  FactoryComponents,
+  FactoryContext,
+  FactoryI18n,
+  NavSource,
+  RouteContext,
+  RouteContextPayload,
+  RouteHrefBuilder,
+  TagInfo,
+} from "./factory-context/index.js";
+export type {
+  BodyEndIslandsSlotProps,
+  BreadcrumbSlotProps,
+  ChromeBindingsInput,
+  DesignTokenPanelBootstrapSlotProps,
+  DocHistorySlotProps,
+  DocPagerSlotProps,
+  FooterSlotProps,
+  FooterTagEntry,
+  FrontmatterRendererSlotProps,
+  HeaderSlotProps,
+  SearchWidgetSlotProps,
+  SidebarSlotProps,
+  TocSlotProps,
+} from "./chrome-bindings.js";
+export type {
+  HeaderNavChildItem,
+  HeaderNavItem,
+  HeaderRightBuiltinComponentName,
+  HeaderRightComponentItem,
+  HeaderRightComponentName,
+  HeaderRightComponentProps,
+  HeaderRightComponentRegistry,
+  HeaderRightHtmlItem,
+  HeaderRightItem,
+  HeaderRightLinkItem,
+  HeaderRightTriggerItem,
+  HeaderRightTriggerName,
+  Locale,
+} from "./header/types.js";
+export type { HeaderRightItemFlags } from "./header/right-items.js";
+export type {
+  FrontmatterCellRenderer,
+  FrontmatterCellRendererProps,
+} from "./metainfo/frontmatter-preview.js";
+export type {
+  ThemePackDialogComponent,
+  ThemePackDialogProps,
+} from "./theme-pack-switcher/index.js";
+export type { ModalDialogOptions, ModalDialogResult } from "./use-modal-dialog/index.js";
+export type {
+  ChatMessage,
+  DocHistoryData,
+  DocHistoryEntry,
+  EnlargeDialogProps,
+} from "./island-types/index.js";

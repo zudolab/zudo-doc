@@ -3,7 +3,7 @@
 // pages/[locale]/docs/tags/index.tsx (A1 #2361). One route per non-default
 // locale; the tag map is computed at render time (locale-first + base merge).
 
-import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import { settings } from "./_context.js";
 import { TagsIndexPageView } from "./_chrome.js";
 
@@ -17,6 +17,6 @@ interface PageProps {
   params: { locale: string };
 }
 
-export default function LocaleTagsIndexPage({ params }: PageProps): JSX.Element {
+export default function LocaleTagsIndexPage({ params }: PageProps): Child {
   return <TagsIndexPageView locale={params.locale} />;
 }

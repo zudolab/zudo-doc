@@ -6,7 +6,7 @@
 // injected ONCE; `paths()` enumerates one route per (non-default locale, slug)
 // with the locale-first + base-EN-fallback merge — reconstructed via `_context`.
 
-import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import type { DocPageEntryProps, DocPageAutoIndexProps } from "../doc-page-props/index.js";
 import { settings, getLocaleConfig, resolveNavSource, buildDocRouteEntries } from "./_context.js";
 import { renderDocPage } from "./_chrome.js";
@@ -59,7 +59,7 @@ export function paths(): Array<{
 
 type PageArgs = DocPageProps & { params: { locale: string; slug: string[] } };
 
-export default function LocaleDocsPage(props: PageArgs): JSX.Element {
+export default function LocaleDocsPage(props: PageArgs): Child {
   return renderDocPage(props, {
     locale: props.params.locale,
     isFallback: props.isFallback,

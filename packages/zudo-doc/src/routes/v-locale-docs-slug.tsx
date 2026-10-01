@@ -7,7 +7,7 @@
 // patterns are injected ONCE; `paths()` cross-products versions × non-default
 // locales with a locale-first merge over the version's EN base.
 
-import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import type { VersionConfig } from "../settings.js";
 import type { DocPageEntryProps, DocPageAutoIndexProps } from "../doc-page-props/index.js";
 import { settings, resolveVersionedLocaleSource, versionedDocsUrl, buildDocRouteEntries } from "./_context.js";
@@ -74,7 +74,7 @@ type PageArgs = DocPageProps & {
   params: { version: string; locale: string; slug: string[] };
 };
 
-export default function VersionedLocaleDocsPage(props: PageArgs): JSX.Element {
+export default function VersionedLocaleDocsPage(props: PageArgs): Child {
   return renderDocPage(props, {
     locale: props.params.locale,
     version: props.version,

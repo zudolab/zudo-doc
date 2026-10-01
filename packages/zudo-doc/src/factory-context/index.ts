@@ -15,6 +15,7 @@
 // This module is **types only** — no runtime values, no node builtins — so it
 // stays importable from the config eval graph and from client islands alike.
 
+import type { Child, Component } from "@takazudo/zfb/zudo-react";
 import type { LocaleConfig, Settings } from "../settings.js";
 // Type-only imports (erased at build — they never enter the runtime/eval graph,
 // so this module stays node-free; the foundation-eval-graph guard covers it).
@@ -70,9 +71,10 @@ export interface FactoryI18n {
  * reason and a CLAUDE.md entry. All slots are optional so a factory takes only
  * the ones it needs.
  *
- * Components are typed as the structural `FactoryComponent` (a function
- * returning Preact-renderable output) rather than a concrete signature, so the
- * type stays node-free and Preact-version-agnostic at the boundary.
+ * Components are typed as the structural `FactoryComponent` (a
+ * `Component<Record<string, unknown>>`) rather than a concrete signature, so
+ * the type stays node-free at the boundary while using zfb's component and
+ * child contract.
  */
 export interface FactoryComponents {
   /** Locale-aware category nav wrapper (reads the project's content collection). */
@@ -91,8 +93,8 @@ export interface FactoryComponents {
   PresetGenerator?: FactoryComponent;
 }
 
-/** Any Preact-renderable component — a function returning a VNode/children. */
-export type FactoryComponent = (props: Record<string, unknown>) => unknown;
+/** A component receiving the broad props shape used by chrome factories. */
+export type FactoryComponent = Component<Record<string, unknown>>;
 
 /**
  * Opaque per-locale nav-source handle. The host owns the actual content-loader
@@ -315,7 +317,7 @@ export interface ChromeHostBindings {
     locale: string;
     isFallback?: boolean;
     version?: string;
-  }) => unknown;
+  }) => Child;
   /**
    * Extra content rendered in the home hero. A RENDERER (not a component).
    * Default: absent → renders nothing. The `/` home route is never injected
@@ -323,7 +325,7 @@ export interface ChromeHostBindings {
    * `/[locale]` homes and on any host that threads it through `createChrome`.
    * A `HomePageView` `extras` prop (added in a later task) takes precedence.
    */
-  homeExtras?: (args: { locale: string }) => unknown;
+  homeExtras?: (args: { locale: string }) => Child;
 }
 
 /**

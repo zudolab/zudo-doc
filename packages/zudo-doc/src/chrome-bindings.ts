@@ -6,12 +6,12 @@
 //
 // `ChromeHostBindings` (in `./factory-context`) types every host slot with the
 // WIDE structural shapes the chrome's own call sites need to compile:
-// `FactoryComponent = (props: Record<string, unknown>) => unknown`,
+// `FactoryComponent = Component<Record<string, unknown>>`,
 // `(...args: unknown[]) => unknown[]`, `Record<string, unknown>`. Those wide
 // types make a plain assignment of a REAL host binding fail under
 // `strictFunctionTypes`: a concrete `DocHistory` component is
-// `(props: { slug: string; … }) => VNode`, and by parameter contravariance a
-// function requiring `{ slug }` is NOT assignable to one that will be called
+// `(props: { slug: string; … }) => Child`, and by parameter contravariance a
+// function requiring `{ slug }` is not assignable to one that will be called
 // with an arbitrary `Record<string, unknown>`. The showcase absorbed that today
 // with a wall of `as` / `as unknown as` casts (`src/chrome-bindings.tsx`) —
 // which ALSO erases the one check that matters: whether each provided value
@@ -33,7 +33,7 @@
 // `@takazudo/zudo-doc/chrome-bindings` (NOT folded into `./chrome`, which would
 // drag the whole `createChrome` tree into hosts that only want the helper).
 
-import type { Child } from "@takazudo/zfb/zudo-react";
+import type { Child, Component } from "@takazudo/zfb/zudo-react";
 import type { BreadcrumbItem } from "./breadcrumb/index.js";
 import type { DocPageNavNode } from "./doc-page-shell/index.js";
 import type { HeadingItem } from "./toc/index.js";
@@ -207,30 +207,30 @@ export interface DocPagerSlotProps {
  */
 export interface ChromeBindingsInput {
   /** Primary header replacement — see {@link HeaderSlotProps}. */
-  Header?: (props: HeaderSlotProps) => unknown;
+  Header?: Component<HeaderSlotProps>;
   /** Primary footer replacement — see {@link FooterSlotProps}. */
-  Footer?: (props: FooterSlotProps) => unknown;
+  Footer?: Component<FooterSlotProps>;
   /** Primary doc-sidebar replacement — see {@link SidebarSlotProps}. */
-  Sidebar?: (props: SidebarSlotProps) => unknown;
+  Sidebar?: Component<SidebarSlotProps>;
   /** Primary desktop TOC replacement — see {@link TocSlotProps}. */
-  Toc?: (props: TocSlotProps) => unknown;
+  Toc?: Component<TocSlotProps>;
   /** Primary breadcrumb replacement — see {@link BreadcrumbSlotProps}. */
-  Breadcrumb?: (props: BreadcrumbSlotProps) => unknown;
+  Breadcrumb?: Component<BreadcrumbSlotProps>;
   /** Primary previous/next pager replacement — see {@link DocPagerSlotProps}. */
-  DocPager?: (props: DocPagerSlotProps) => unknown;
+  DocPager?: Component<DocPagerSlotProps>;
   /** Header search widget — see {@link SearchWidgetSlotProps}. */
-  SearchWidget?: (props: SearchWidgetSlotProps) => unknown;
+  SearchWidget?: Component<SearchWidgetSlotProps>;
   /**
    * Named header-right renderers. Values are callable-only and receive the
    * exact `HeaderRightComponentProps` used by the header renderer.
    */
   headerRightComponents?: HeaderRightComponentRegistry;
   /** Body-end bootstrap islands — see {@link BodyEndIslandsSlotProps}. */
-  BodyEndIslands?: (props: BodyEndIslandsSlotProps) => unknown;
+  BodyEndIslands?: Component<BodyEndIslandsSlotProps>;
   /** DocHistory island — see {@link DocHistorySlotProps}. */
-  DocHistory?: (props: DocHistorySlotProps) => unknown;
+  DocHistory?: Component<DocHistorySlotProps>;
   /** Design-token-panel bootstrap island — see {@link DesignTokenPanelBootstrapSlotProps}. */
-  DesignTokenPanelBootstrap?: (props: DesignTokenPanelBootstrapSlotProps) => unknown;
+  DesignTokenPanelBootstrap?: Component<DesignTokenPanelBootstrapSlotProps>;
   /**
    * Per-page git-history meta manifest (data slot). Read as
    * `Record<string, DocHistoryMetaEntry>` inside `doc-metainfo-area` /
@@ -256,14 +256,15 @@ export interface ChromeBindingsInput {
    */
   frontmatterRenderers?: Record<
     string,
-    (props: FrontmatterRendererSlotProps) => unknown
+    Component<FrontmatterRendererSlotProps>
   >;
   /**
-   * MDX content-component overrides (renderer record). Same loose value type as
-   * `frontmatterRenderers`; the showcase's `MdxStub = (_props: unknown) => null`
-   * is accepted deliberately (`unknown` props are a safe supertype).
+   * MDX content-component overrides (renderer record). Component props are a
+   * broad record because each MDX component has its own authored prop shape;
+   * the showcase's `MdxStub = (_props: unknown) => null` is accepted because
+   * `unknown` safely accepts that record.
    */
-  mdxExtras?: Record<string, unknown>;
+  mdxExtras?: Record<string, Component<Record<string, unknown>>>;
   /**
    * Frontmatter preview entry builder. `doc-content-header` calls it with the
    * page `data` (`Record<string, unknown>`) and spreads the result into
