@@ -14,12 +14,13 @@
 // (#2826).
 
 import { describe, expect, it } from "vitest";
-import { render } from "preact-render-to-string";
+import { renderSsr as render } from "../../__tests__/helpers/zudo-react.js";
 import { ThemePackDialog } from "../index.js";
+import { signal } from "@takazudo/zfb/zudo-react";
 import type { ThemePackDialogProps } from "../../theme-pack-switcher/index.js";
 
 const PROPS: ThemePackDialogProps = {
-  open: false,
+  open: signal(false),
   onClose: () => {},
   order: [
     { slug: "default", name: "Default", mode: "light", description: "The stock zudo-doc look." },
@@ -74,7 +75,7 @@ describe("ThemePackDialog — default-only configuration (no CSS-bearing pack)",
   // 404. This must be detected from the SSR order prop and short-circuited,
   // never attempted as a fetch that can only fail (codex-review finding).
   const DEFAULT_ONLY_PROPS: ThemePackDialogProps = {
-    open: false,
+    open: signal(false),
     onClose: () => {},
     order: [{ slug: "default", name: "Default", mode: "light", description: "The stock zudo-doc look." }],
     active: "default",
