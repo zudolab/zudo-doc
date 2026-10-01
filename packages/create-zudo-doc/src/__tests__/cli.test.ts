@@ -82,6 +82,10 @@ describe("parseArgs", () => {
       ).toEqual(["core", "cli"]);
     });
 
+    it("--mcp-deploy", () => {
+      expect(parseArgs(["--mcp-deploy", "cloudflare"]).mcpDeploy).toBe("cloudflare");
+    });
+
     it("--additional-langs parses once and preserves empty entries", () => {
       expect(
         parseArgs(["--additional-langs", " JA ,de-DE,"]).additionalLangs,
@@ -240,6 +244,34 @@ describe("validateArgs — changelog packages", () => {
     expect(validateArgs({ changelogPackages: [] })).toMatch(
       /must contain at least one package/,
     );
+  });
+});
+
+describe("validateArgs — agent export and MCP", () => {
+  it("accepts MCP with omitted export and deployment target", () => {
+    expect(validateArgs({ mcp: true })).toBeNull();
+  });
+
+  it("rejects MCP with an explicitly disabled agent export", () => {
+    expect(validateArgs({ mcp: true, agentExport: false })).toBe(
+      "MCP requires agentExport: true. Remove the explicit agent export disable or disable MCP.",
+    );
+  });
+
+  it("rejects unsupported deployment targets even when MCP is disabled", () => {
+    expect(validateArgs({ mcp: false, mcpDeploy: "netlify" })).toBe(
+      "Unsupported mcpDeploy value. Supported value: cloudflare.",
+    );
+  });
+
+  it("rejects a deployment target without MCP", () => {
+    expect(validateArgs({ mcpDeploy: "cloudflare" })).toBe(
+      "mcpDeploy requires mcp: true. Enable MCP or remove mcpDeploy.",
+    );
+  });
+
+  it("defers a target relationship when a preset may enable MCP", () => {
+    expect(validateArgs({ preset: "preset.json", mcpDeploy: "cloudflare" })).toBeNull();
   });
 });
 

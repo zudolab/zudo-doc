@@ -29,6 +29,12 @@ describe("FEATURES drift detection", () => {
     expect(uiDefaults).toEqual(cliDefaults);
   });
 
+  it("keeps the new agent features opt-in and llms.txt enabled by default", () => {
+    expect(CLI_FEATURES.find((f) => f.value === "agentExport")?.default).toBe(false);
+    expect(CLI_FEATURES.find((f) => f.value === "mcp")?.default).toBe(false);
+    expect(CLI_FEATURES.find((f) => f.value === "llmsTxt")?.default).toBe(true);
+  });
+
   it("same cliFlag fields", () => {
     const uiFlags = UI_FEATURES.map((f) => ({ value: f.value, cliFlag: f.cliFlag }));
     const cliFlags = CLI_FEATURES.map((f) => ({ value: f.value, cliFlag: f.cliFlag }));
