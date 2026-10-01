@@ -661,7 +661,13 @@ export async function scaffold(choices: UserChoices): Promise<void> {
   if (!hasAncestorPnpmWorkspace(targetDir)) {
     await fs.outputFile(
       path.join(targetDir, "pnpm-workspace.yaml"),
-      "# pnpm 11 defaults minimumReleaseAge to 1440min; its exclude matcher can't match this project's peer-nested lockfile keys (upstream pnpm bug), so disable the gate outright.\nminimumReleaseAge: 0\n",
+      "# pnpm 11 defaults minimumReleaseAge to 1440min; its exclude matcher can't match this project's peer-nested lockfile keys (upstream pnpm bug), so disable the gate outright.\n" +
+        "minimumReleaseAge: 0\n" +
+        "# pnpm 10 uses onlyBuiltDependencies; pnpm 11 uses allowBuilds.\n" +
+        "onlyBuiltDependencies:\n  - esbuild\n" +
+        (choices.features.includes("mcp") ? "  - workerd\n  - sharp\n" : "") +
+        "allowBuilds:\n  esbuild: true\n" +
+        (choices.features.includes("mcp") ? "  workerd: true\n  sharp: true\n" : ""),
     );
   } else {
     // Ancestor already has a pnpm-workspace.yaml: we deliberately do NOT write
@@ -1237,6 +1243,7 @@ function generatePackageJson(
 
   if (choices.features.includes("mcp")) {
     scripts["preview:worker"] = "wrangler dev";
+    scripts.build += " && node scripts/stage-cloudflare-base.mjs";
     scripts.deploy = `${pmRunCommand(pm, "build")} && wrangler deploy`;
   }
 

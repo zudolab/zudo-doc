@@ -82,13 +82,14 @@ function isTransientInstallError(err: unknown): boolean {
  * immediately rather than wasting retries. See zudolab/zudo-doc#2123 / #2270
  * for why 5 attempts and the broad transient-error heuristic.
  */
-export function installScaffoldedDeps(cwd: string): void {
+export function installScaffoldedDeps(cwd: string, ignoreWorkspace = false): void {
+  const workspaceFlag = ignoreWorkspace ? " --ignore-workspace" : "";
   const attempts = [
-    "pnpm install --prefer-offline --ignore-workspace",
-    "pnpm install --ignore-workspace",
-    "pnpm install --ignore-workspace",
-    "pnpm install --ignore-workspace",
-    "pnpm install --ignore-workspace",
+    `pnpm install --prefer-offline${workspaceFlag}`,
+    `pnpm install${workspaceFlag}`,
+    `pnpm install${workspaceFlag}`,
+    `pnpm install${workspaceFlag}`,
+    `pnpm install${workspaceFlag}`,
   ];
   let lastErr: unknown;
   for (const [i, cmd] of attempts.entries()) {
@@ -150,7 +151,7 @@ const ZUDO_DOC_PKG_ROOT = path.resolve(
  * `pnpm test:slow` / CI nightly-exam job runs `pnpm --filter @takazudo/zudo-doc
  * build` first — see the package's own `CLAUDE.md`).
  */
-export function overrideWithLocalZudoDoc(cwd: string): void {
+export function overrideWithLocalZudoDoc(cwd: string, ignoreWorkspace = false): void {
   const packOutDir = fs.mkdtempSync(
     path.join(os.tmpdir(), "create-zudo-doc-local-pack-"),
   );
@@ -171,7 +172,7 @@ export function overrideWithLocalZudoDoc(cwd: string): void {
       );
     }
     const tarballPath = path.join(packOutDir, produced[0]!);
-    runOrThrow(`pnpm add "${tarballPath}" --ignore-workspace`, cwd);
+    runOrThrow(`pnpm add "${tarballPath}"${ignoreWorkspace ? " --ignore-workspace" : ""}`, cwd);
   } finally {
     fs.rmSync(packOutDir, { recursive: true, force: true });
   }
