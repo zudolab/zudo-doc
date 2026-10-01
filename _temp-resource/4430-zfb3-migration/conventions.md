@@ -111,33 +111,15 @@ Choice (c) is allowed by spike Q4 **only after an actual upstream fix exists**, 
 
 ## Persisted chrome and router events
 
-Retain these #4442 exports in `transitions/nested-island-props-refresh.ts`:
+`#4442` keeps `installNestedIslandPropsRefresh({ document, reportError? }): () => void`, `ensureNestedIslandPropsRefresh(options?): void`, and `disposeNestedIslandPropsRefresh(document): void` in `transitions/nested-island-props-refresh.ts`. The eager ClientRouterBootstrap client entry (#4443) installs the document singleton; lazy SidebarToggle may call `ensure` again. SSR import is harmless.
 
-```ts
-installNestedIslandPropsRefresh(options: {
-  document: Document;
-  reportError?: (error: unknown) => void;
-}): () => void;
-ensureNestedIslandPropsRefresh(options?: {
-  document: Document;
-  reportError?: (error: unknown) => void;
-}): void;
-disposeNestedIslandPropsRefresh(document: Document): void;
-```
+The adapter runs on `zfb:before-swap`. It reads live DOM but writes **only** `event.newDocument`, which is detached. Packed zfb 3.1 calls `unmountIslands(oldBody, incomingBody)` before `event.swap`, so post-swap props writes cannot influence native identity/props reconciliation. Any composed `swap` delegates exactly once with its receiver, arguments, return value, and thrown error. An aborted navigation leaves live DOM and handles untouched.
 
-Install the idempotent document singleton from the eagerly loaded ClientRouterBootstrap client entry (#4443); lazy SidebarToggle may call ensure again. Keep SSR import harmless. The helper now adapts zudo-doc's existing host policy, not the fixed #3362 lifecycle bug. Do not set `data-zfb-island-remount` for every retained root or reimplement the native identity/props comparison. Unchanged effective identity and exact props retain the same DOM, handle and scope-local state; changed effective identity/props must recreate through native **render**, never hydrate mutated DOM.
+Pair unique persisted ancestor keys and unique owned island names. A live island or its ancestor inside that persisted root carrying `data-zd-props-preserve` makes the adapter copy exact old `data-props` to the incoming wrapper (including removal when absent), **only if** marker kind, component, transport, protocol, and build match. Identity changes remain visible to native reconciliation. The native `data-zfb-transition-persist-props` root switch is separate and is not renamed. No unconditional `data-zfb-island-remount`, post-teardown metadata copier, custom island root, or package patch.
 
-Pair only unique persisted ancestor keys and unique descendant names; never rely on the runtime's ordinal fallback for an ambiguous host layout. Preserve the existing live `data-zd-props-preserve` opt-out on an island or ancestor only while component/root kind/transport/protocol/build identity agrees. It must not mask identity changes. The native `data-zfb-transition-persist-props` root switch is a separate contract; do not silently rename or discard the host opt-out.
+For duplicate keys/names, added or removed islands, changed chrome element topology, or `data-when`/`data-media` changes including removal, remove the affected **incoming ancestor's** persistence marker before teardown. Native lifecycle then discards the old subtree and mounts fresh incoming roots. Normal header, footer, and aside structure retains the live ancestor. Changed exact props or identity uses native render recreation; unchanged identity and props retain the same DOM, handle, and scope-local state (#4479 Z04). #4458 applies this policy to aside#desktop-sidebar; #4459 keeps header/footer keys. #4468/#4475 own real-browser same-document navigation, focus, and nonzero-scroll evidence. A failing native case is an upstream release blocker, not grounds for restoring blanket remount.
 
-**Timing correction:** packed 3.1.0 calls `unmountIslands(oldBody, incomingBody)` before the composed `event.swap`. Round 1's post-teardown metadata rewriting is therefore too late to influence native retention. During BEFORE_SWAP, read live state without mutation and prepare only the detached incoming document: preserve the exact old props for the host opt-out with matching identity, or opt the affected incoming ancestor out of persistence when its structure/unique pairing cannot safely be retained. Native teardown and swap then see the effective incoming document. Cancelled preparation must leave all live DOM/handles/props untouched. If a swap callback is still composed, delegate exactly once with original receiver/arguments/return/throw behavior; it must not force remounts or undo native metadata.
-
-Normal header/footer/aside structure retains its ancestor DOM. Added/removed roots, ambiguous names/keys, changed chrome structure, or scheduling metadata (`data-when`/`data-media`) not safely handled by native reconciliation use the bounded incoming-ancestor replacement policy; test disposal, incoming roots, and metadata removal. This is deliberate structure refresh, not permission to reset an unchanged subtree. #4442 must exercise the packed runtime through the #4438 harness, including changed identity/props, preserve policy, normal/skip-SSR scheduling, delayed imports and abort/delegate errors. If native behavior fails a required case, record and file it under Rule 6 and keep release BLOCKED rather than silently restore the blanket shim.
-
-#4458 applies this policy to aside#desktop-sidebar; #4459 keeps header/footer persist keys. Sidebar scroll restoration runs after native swap/recreation as appropriate. #4468/#4475 prove a mutated unchanged island retains its live state through real same-document navigation, with one activation/no cleanup, plus changed-props refresh, nonzero scroll and focus. #4479's happy-dom runtime probe does not discharge these browser gates.
-
-#4443 removes inner-button data-zfb-transition-persist from DesktopSidebarToggle and DesktopTocToggle. The runtime owns their complete roots; localStorage plus prepaint and onActivate reconciles visible state without transplanting an owned button. Keep `ClientRouterBootstrap` and its side-effect import `@takazudo/zfb-runtime/client-router`: Q2 proves ClientRouter in a package layout alone does not activate navigation. Sidebar with nodes=[] returns null without an island wrapper.
-
-Use `transitions/page-events.ts` constants and transition helpers for zfb:before-preparation, zfb:before-swap, zfb:after-swap and zfb:page-load. Page-load means initial plus completed navigation; after-swap alone does not initialize the first page. Register/remove listeners with activation cleanup or the explicit document singleton; no duplicate global listeners after navigation. Re-sync scripts are static rawHtml and idempotent. Q6 did not prove callback timing, so #4442/#4458/#4468 must verify ordering in a browser.
+Use `transitions/page-events.ts` constants for `zfb:before-preparation`, `zfb:before-swap`, `zfb:after-swap`, and `zfb:page-load`. Page-load includes initial load and completed navigation; after-swap does not initialize the first page. Register/remove listeners through activation cleanup or the explicit document singleton. #4443 removes inner-button persistence from DesktopSidebarToggle and DesktopTocToggle; zfb owns their complete roots.
 
 ## Remaining per-island decisions
 

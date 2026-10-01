@@ -1,714 +1,234 @@
 /** @vitest-environment happy-dom */
-
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { h, signal, flush } from "@takazudo/zfb/zudo-react";
+import { islandRoot, renderToString } from "@takazudo/zfb/zudo-react/server";
+import { mountIslands, unmountIslands, mountNewIslands, cancelPendingIslands } from "@takazudo/zfb/runtime";
+import { swapFunctions } from "@takazudo/zfb-runtime/client-router";
 import { BEFORE_SWAP_EVENT } from "../page-events.js";
-import {
-  disposeNestedIslandPropsRefresh,
-  ensureNestedIslandPropsRefresh,
-  installNestedIslandPropsRefresh,
-} from "../nested-island-props-refresh.js";
+import { installNestedIslandPropsRefresh, ensureNestedIslandPropsRefresh, disposeNestedIslandPropsRefresh } from "../nested-island-props-refresh.js";
 
-const PERSIST_ATTR = "data-zfb-transition-persist";
-const ISLAND_ATTR = "data-zfb-island";
-const PROPS_ATTR = "data-props";
-const PROPS_PRESERVE_ATTR = "data-zd-props-preserve";
-const REMOUNT_ATTR = "data-zfb-island-remount";
-
-/** Props serialization is opaque to the helper, so any stable string will do. */
-const oldTree = '{"nodes":[{"slug":"guides/a"}]}';
-const newTree = '{"nodes":[{"slug":"reference/b"}]}';
-
-function setLiveBody(html: string): void {
-  document.body.innerHTML = html;
-}
-
-/** Mirror the router: the incoming side is a separately parsed Document. */
-function parseIncoming(bodyHtml: string): Document {
-  return new DOMParser().parseFromString(
-    `<!doctype html><html><head></head><body>${bodyHtml}</body></html>`,
-    "text/html",
-  );
-}
-
-interface DispatchBeforeSwapOptions {
-  invokeSwap?: boolean;
-  swap?: unknown;
-  receiver?: unknown;
-  args?: unknown[];
-}
-
-/** Dispatch the REAL writable `zfb:before-swap` shape, then commit by default. */
-function dispatchBeforeSwap(
-  newDocument: unknown,
-  options: DispatchBeforeSwapOptions = {},
-): Event & { newDocument: unknown; swap?: unknown } {
-  const event = new Event(BEFORE_SWAP_EVENT);
-  Object.assign(event, {
-    newDocument,
-    swap: Object.prototype.hasOwnProperty.call(options, "swap")
-      ? options.swap
-      : vi.fn(),
-  });
+const PERSIST = "data-zfb-transition-persist";
+const ROOT = 'data-zfb-island="Counter" data-zfb-transport="json/1" data-zfb-protocol="zudo-react/1" data-zfb-build="test"';
+const oldProps = '{"value":"old"}';
+const newProps = '{"value":"new"}';
+const island = (props = oldProps, extra = "") => `<div ${ROOT} data-props='${props}' ${extra}><button>old</button></div>`;
+const header = (body: string, attrs = "") => `<header ${PERSIST}="header" ${attrs}>${body}</header>`;
+const aside = (body: string) => `<aside id="desktop-sidebar" ${PERSIST}="aside">${body}</aside>`;
+const incoming = (body: string) => new DOMParser().parseFromString(`<!doctype html><html><body>${body}</body></html>`, "text/html");
+const root = (doc: Document = document) => doc.querySelector('[data-zfb-island="Counter"]')!;
+const disposers: Array<() => void> = [];
+function install() { disposers.push(installNestedIslandPropsRefresh({ document })); }
+function prepare(next: Document, delegate: (...args: unknown[]) => unknown = () => undefined) {
+  const event = new Event(BEFORE_SWAP_EVENT) as Event & { newDocument: Document; swap: (...args: unknown[]) => unknown };
+  event.newDocument = next;
+  event.swap = delegate;
   document.dispatchEvent(event);
-  const swapEvent = event as Event & { newDocument: unknown; swap?: unknown };
-  if (options.invokeSwap !== false && typeof swapEvent.swap === "function") {
-    Reflect.apply(
-      swapEvent.swap as (...args: unknown[]) => unknown,
-      options.receiver ?? swapEvent,
-      options.args ?? [],
-    );
-  }
-  return swapEvent;
+  return event;
 }
-
-function island(name: string, props?: string): string {
-  const propsAttr = props === undefined ? "" : ` ${PROPS_ATTR}='${props}'`;
-  return `<div ${ISLAND_ATTR}="${name}"${propsAttr}></div>`;
-}
-
-function header(persistKey: string, inner: string): string {
-  return `<header ${PERSIST_ATTR}="${persistKey}">${inner}</header>`;
-}
-
-function liveIsland(name: string): Element {
-  const element = document.querySelector(`[${ISLAND_ATTR}="${name}"]`);
-  if (!element) throw new Error(`No live island named ${name}`);
-  return element;
-}
-
-// The module-level singleton registry and the happy-dom `document` both outlive
-// a single test, so every direct install has to be torn down or its listener
-// leaks into the next case and quietly refreshes what that case asserts stays
-// stale.
-const pendingDisposers: Array<() => void> = [];
-
-function install(reportError?: (error: unknown) => void): () => void {
-  const dispose = installNestedIslandPropsRefresh({ document, reportError });
-  pendingDisposers.push(dispose);
-  return dispose;
-}
-
 afterEach(() => {
-  while (pendingDisposers.length > 0) pendingDisposers.pop()?.();
+  disposers.splice(0).forEach((dispose) => dispose());
   disposeNestedIslandPropsRefresh(document);
+  unmountIslands(document.body);
   document.body.innerHTML = "";
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
-describe("nested-island props refresh on zfb:before-swap", () => {
-  it("does not mutate live props or remount state until the swap callback commits", () => {
-    install();
-    setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
-    const target = liveIsland("SidebarToggle");
-    const beforeDispatchOuterHtml = target.outerHTML;
-
-    const event = dispatchBeforeSwap(
-      parseIncoming(header("header-en", island("SidebarToggle", newTree))),
-      { invokeSwap: false },
-    );
-
-    expect(target.getAttribute(PROPS_ATTR)).toBe(oldTree);
-    expect(target.hasAttribute(REMOUNT_ATTR)).toBe(false);
-    expect(target.outerHTML).toBe(beforeDispatchOuterHtml);
-
-    Reflect.apply(event.swap as () => unknown, event, []);
-    expect(target.getAttribute(PROPS_ATTR)).toBe(newTree);
-    expect(target.getAttribute(REMOUNT_ATTR)).toBe("");
-  });
-
-  it("captures an immutable incoming-props snapshot during dispatch", () => {
-    install();
-    setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
-    const incoming = parseIncoming(
-      header("header-en", island("SidebarToggle", newTree)),
-    );
-
-    const event = dispatchBeforeSwap(incoming, { invokeSwap: false });
-    incoming
-      .querySelector(`[${ISLAND_ATTR}="SidebarToggle"]`)
-      ?.setAttribute(PROPS_ATTR, '{"changed":"after-dispatch"}');
-    Reflect.apply(event.swap as () => unknown, event, []);
-
-    expect(liveIsland("SidebarToggle").getAttribute(PROPS_ATTR)).toBe(newTree);
-  });
-
-  it("applies a committed plan and delegates exactly once", () => {
-    install();
-    setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
-    const delegate = vi.fn(() => "committed");
-
-    const event = dispatchBeforeSwap(
-      parseIncoming(header("header-en", island("SidebarToggle", newTree))),
-      { invokeSwap: false, swap: delegate },
-    );
-    const first = Reflect.apply(event.swap as () => unknown, event, []);
-    const second = Reflect.apply(event.swap as () => unknown, event, []);
-
-    expect(first).toBe("committed");
-    expect(second).toBe("committed");
+describe("zfb 3.1 persisted chrome preparation", () => {
+  it("leaves live DOM untouched on cancellation and preserves original swap receiver, args, result and throw", () => {
+    install(); document.body.innerHTML = header(island());
+    const live = root();
+    const next = incoming(header(island(newProps)));
+    const receiver = { value: 1 };
+    const delegate = vi.fn(function (this: unknown, arg: unknown) { return { receiver: this, arg }; });
+    const event = prepare(next, delegate);
+    expect(root()).toBe(live);
+    expect(live.getAttribute("data-props")).toBe(oldProps);
+    const result = Reflect.apply(event.swap, receiver, [42]);
+    expect(result).toEqual({ receiver, arg: 42 });
+    expect(Reflect.apply(event.swap, receiver, [99])).toBe(result);
     expect(delegate).toHaveBeenCalledOnce();
-    expect(liveIsland("SidebarToggle").getAttribute(PROPS_ATTR)).toBe(newTree);
+    const error = new Error("delegate");
+    const failing = prepare(incoming(header(island())), () => { throw error; });
+    expect(() => failing.swap()).toThrow(error);
+    expect(() => failing.swap()).toThrow(error);
   });
 
-  it("composes a pre-existing swap override with its receiver, arguments, and return value", () => {
-    install();
-    setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
-    const receiver = { kind: "router" };
-    const delegate = vi.fn(function (this: unknown, value: string) {
-      return { receiver: this, value };
-    });
-
-    const event = dispatchBeforeSwap(
-      parseIncoming(header("header-en", island("SidebarToggle", newTree))),
-      { invokeSwap: false, swap: delegate },
-    );
-    const result = Reflect.apply(
-      event.swap as (value: string) => unknown,
-      receiver,
-      ["sentinel"],
-    );
-
-    expect(delegate).toHaveBeenCalledOnce();
-    expect(result).toEqual({ receiver, value: "sentinel" });
+  it("copies host-preserved exact props only into a detached incoming root with identical identity", () => {
+    install(); document.body.innerHTML = header(island(oldProps, "data-zd-props-preserve"));
+    const next = incoming(header(island(newProps)));
+    prepare(next);
+    expect(root(next).getAttribute("data-props")).toBe(oldProps);
+    expect(root().getAttribute("data-props")).toBe(oldProps);
+    expect(root().hasAttribute("data-zfb-island-remount")).toBe(false);
+    const changed = incoming(header(island(newProps).replace('data-zfb-build="test"', 'data-zfb-build="other"')));
+    prepare(changed);
+    expect(root(changed).getAttribute("data-props")).toBe(newProps);
   });
 
-  it("reports a refresh-write failure but still delegates exactly once", () => {
-    const reportError = vi.fn();
-    install(reportError);
-    setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
-    const target = liveIsland("SidebarToggle");
-    const writeError = new Error("injected props write failure");
-    vi.spyOn(target, "setAttribute").mockImplementation((name, value) => {
-      if (name === PROPS_ATTR) throw writeError;
-      Element.prototype.setAttribute.call(target, name, value);
-    });
-    const delegate = vi.fn(() => "router-committed");
-
-    const event = dispatchBeforeSwap(
-      parseIncoming(header("header-en", island("SidebarToggle", newTree))),
-      { invokeSwap: false, swap: delegate },
-    );
-    const result = Reflect.apply(event.swap as () => unknown, event, []);
-
-    expect(result).toBe("router-committed");
-    expect(delegate).toHaveBeenCalledOnce();
-    expect(reportError).toHaveBeenCalledOnce();
-    expect(reportError).toHaveBeenCalledWith(writeError);
-    expect(target.getAttribute(PROPS_ATTR)).toBe(oldTree);
+  it("honors preserve on header and aside ancestors, including absent props", () => {
+    install(); document.body.innerHTML = header(island(), "data-zd-props-preserve") + aside(island());
+    root().removeAttribute("data-props");
+    document.querySelector("aside")!.setAttribute("data-zd-props-preserve", "");
+    const next = incoming(header(island(newProps)) + aside(island(newProps)));
+    prepare(next);
+    expect(next.querySelector("header [data-zfb-island]")!.hasAttribute("data-props")).toBe(false);
+    expect(next.querySelector("aside [data-zfb-island]")!.getAttribute("data-props")).toBe(oldProps);
   });
 
-  it("refreshes a nested island inside a persisted root paired by exact key", () => {
-    install();
-    setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
-
-    dispatchBeforeSwap(
-      parseIncoming(header("header-en", island("SidebarToggle", newTree))),
-    );
-
-    expect(liveIsland("SidebarToggle").getAttribute(PROPS_ATTR)).toBe(newTree);
-  });
-
-  it("flags a refreshed island for remount so an in-flight import re-reads props", () => {
-    // zfb's `fire()` snapshots `data-props` BEFORE its dynamic import starts;
-    // on resolve it uses that pre-navigation snapshot UNLESS
-    // `data-zfb-island-remount` is present. Without the flag, an import in
-    // flight across the swap mounts the OLD tree while the DOM attribute looks
-    // correct — #3525 reproduces invisibly.
-    install();
-    setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
-
-    dispatchBeforeSwap(
-      parseIncoming(header("header-en", island("SidebarToggle", newTree))),
-    );
-
-    expect(liveIsland("SidebarToggle").getAttribute(REMOUNT_ATTR)).toBe("");
-  });
-
-  it("does not flag an island whose props are unchanged", () => {
-    install();
-    setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
-
-    dispatchBeforeSwap(
-      parseIncoming(header("header-en", island("SidebarToggle", oldTree))),
-    );
-
-    expect(liveIsland("SidebarToggle").hasAttribute(REMOUNT_ATTR)).toBe(false);
-  });
-
-  it("pairs roots by key, not by document position", () => {
-    install();
-    setLiveBody(
-      header("header-en", island("SidebarToggle", oldTree)) +
-        header("footer-en", island("FooterNav", oldTree)),
-    );
-
-    // Incoming emits the same two keys in the OPPOSITE order. Positional
-    // matching would cross-assign the footer's props onto the header island.
-    dispatchBeforeSwap(
-      parseIncoming(
-        header("footer-en", island("FooterNav", '{"footer":true}')) +
-          header("header-en", island("SidebarToggle", newTree)),
-      ),
-    );
-
-    expect(liveIsland("SidebarToggle").getAttribute(PROPS_ATTR)).toBe(newTree);
-    expect(liveIsland("FooterNav").getAttribute(PROPS_ATTR)).toBe('{"footer":true}');
-  });
-
-  it("does not refresh across different locale keys", () => {
-    install();
-    setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
-
-    // A cross-locale hop: zfb replaces the header outright because the keys
-    // differ, so there is nothing for this helper to pair.
-    dispatchBeforeSwap(
-      parseIncoming(header("header-ja", island("SidebarToggle", newTree))),
-    );
-
-    expect(liveIsland("SidebarToggle").getAttribute(PROPS_ATTR)).toBe(oldTree);
-  });
-
-  it("skips a live persisted key with no incoming counterpart", () => {
-    install();
-    setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
-
-    dispatchBeforeSwap(parseIncoming(island("SidebarToggle", newTree)));
-
-    expect(liveIsland("SidebarToggle").getAttribute(PROPS_ATTR)).toBe(oldTree);
-  });
-
-  it("skips a persist key duplicated in the live document", () => {
-    install();
-    setLiveBody(
-      header("header-en", island("SidebarToggle", oldTree)) +
-        header("header-en", island("ThemeToggle", oldTree)),
-    );
-
-    dispatchBeforeSwap(
-      parseIncoming(header("header-en", island("SidebarToggle", newTree))),
-    );
-
-    expect(liveIsland("SidebarToggle").getAttribute(PROPS_ATTR)).toBe(oldTree);
-  });
-
-  it("skips a persist key duplicated in the incoming document", () => {
-    install();
-    setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
-
-    dispatchBeforeSwap(
-      parseIncoming(
-        header("header-en", island("SidebarToggle", newTree)) +
-          header("header-en", island("SidebarToggle", '{"third":true}')),
-      ),
-    );
-
-    expect(liveIsland("SidebarToggle").getAttribute(PROPS_ATTR)).toBe(oldTree);
-  });
-
-  it("skips a name that appears twice inside one persisted root", () => {
-    install();
-    setLiveBody(
-      header(
-        "header-en",
-        island("SidebarToggle", oldTree) +
-          island("SidebarToggle", oldTree) +
-          island("ThemeToggle", '{"mode":"light"}'),
-      ),
-    );
-
-    // Incoming carries the same duplicate pair in the reverse order, plus a
-    // uniquely-named sibling that must still be refreshed.
-    dispatchBeforeSwap(
-      parseIncoming(
-        header(
-          "header-en",
-          island("SidebarToggle", '{"second":true}') +
-            island("SidebarToggle", newTree) +
-            island("ThemeToggle", '{"mode":"dark"}'),
-        ),
-      ),
-    );
-
-    const duplicates = document.querySelectorAll(
-      `[${ISLAND_ATTR}="SidebarToggle"]`,
-    );
-    for (const element of duplicates) {
-      expect(element.getAttribute(PROPS_ATTR)).toBe(oldTree);
+  it("opts unsafe incoming ancestors out of persistence for duplicate keys/names, additions, removals and structure changes", () => {
+    install(); document.body.innerHTML = header(island());
+    const bodies = [
+      header(island() + island()),
+      header("<p>new</p>" + island()),
+      header(""),
+      header(island()) + header(island()),
+    ];
+    for (const body of bodies) {
+      const next = incoming(body);
+      prepare(next);
+      expect(next.querySelector("header")!.hasAttribute(PERSIST)).toBe(false);
     }
-    expect(liveIsland("ThemeToggle").getAttribute(PROPS_ATTR)).toBe('{"mode":"dark"}');
+    const added = incoming(header(island() + '<div data-zfb-island="Extra"></div>'));
+    prepare(added);
+    expect(added.querySelector("header")!.hasAttribute(PERSIST)).toBe(false);
   });
 
-  it("excludes an island that carries its own persist attribute", () => {
-    install();
-    setLiveBody(
-      `<header ${PERSIST_ATTR}="header-en">` +
-        `<div ${ISLAND_ATTR}="SearchWidget" ${PERSIST_ATTR}="search" ${PROPS_ATTR}='${oldTree}'></div>` +
-        island("SidebarToggle", oldTree) +
-        `</header>`,
-    );
-
-    dispatchBeforeSwap(
-      parseIncoming(
-        `<header ${PERSIST_ATTR}="header-en">` +
-          `<div ${ISLAND_ATTR}="SearchWidget" ${PERSIST_ATTR}="search" ${PROPS_ATTR}='${newTree}'></div>` +
-          island("SidebarToggle", newTree) +
-          `</header>`,
-      ),
-    );
-
-    // zfb's own persisted-island props/remount path owns SearchWidget.
-    expect(liveIsland("SearchWidget").getAttribute(PROPS_ATTR)).toBe(oldTree);
-    expect(liveIsland("SidebarToggle").getAttribute(PROPS_ATTR)).toBe(newTree);
-  });
-
-  it("excludes an island owned by a nested persisted boundary", () => {
-    install();
-    setLiveBody(
-      `<header ${PERSIST_ATTR}="header-en">` +
-        island("SidebarToggle", oldTree) +
-        `<div ${PERSIST_ATTR}="inner-widget">${island("ThemeToggle", oldTree)}</div>` +
-        `</header>`,
-    );
-
-    dispatchBeforeSwap(
-      parseIncoming(
-        `<header ${PERSIST_ATTR}="header-en">` +
-          island("SidebarToggle", newTree) +
-          `<div ${PERSIST_ATTR}="inner-widget">${island("ThemeToggle", newTree)}</div>` +
-          `</header>`,
-      ),
-    );
-
-    expect(liveIsland("SidebarToggle").getAttribute(PROPS_ATTR)).toBe(newTree);
-    // ThemeToggle is unreachable from both directions: the outer root's group
-    // stops at the inner boundary, and the inner boundary is itself dropped as
-    // a refresh root because it sits inside another persisted element.
-    expect(liveIsland("ThemeToggle").getAttribute(PROPS_ATTR)).toBe(oldTree);
-  });
-
-  it("preserves an island carrying data-zd-props-preserve", () => {
-    install();
-    setLiveBody(
-      header(
-        "header-en",
-        `<div ${ISLAND_ATTR}="SearchWidget" ${PROPS_PRESERVE_ATTR} ${PROPS_ATTR}='${oldTree}'></div>`,
-      ),
-    );
-
-    dispatchBeforeSwap(
-      parseIncoming(
-        header(
-          "header-en",
-          `<div ${ISLAND_ATTR}="SearchWidget" ${PROPS_ATTR}='${newTree}'></div>`,
-        ),
-      ),
-    );
-
-    const preserved = liveIsland("SearchWidget");
-    expect(preserved.getAttribute(PROPS_ATTR)).toBe(oldTree);
-    expect(preserved.hasAttribute(REMOUNT_ATTR)).toBe(false);
-  });
-
-  it("preserves an island under a data-zd-props-preserve ancestor within the root", () => {
-    install();
-    setLiveBody(
-      header(
-        "header-en",
-        `<div ${PROPS_PRESERVE_ATTR}><div ${ISLAND_ATTR}="SearchWidget" ${PROPS_ATTR}='${oldTree}'></div></div>`,
-      ),
-    );
-
-    dispatchBeforeSwap(
-      parseIncoming(
-        header(
-          "header-en",
-          `<div ${PROPS_PRESERVE_ATTR}><div ${ISLAND_ATTR}="SearchWidget" ${PROPS_ATTR}='${newTree}'></div></div>`,
-        ),
-      ),
-    );
-
-    const preserved = liveIsland("SearchWidget");
-    expect(preserved.getAttribute(PROPS_ATTR)).toBe(oldTree);
-    expect(preserved.hasAttribute(REMOUNT_ATTR)).toBe(false);
-  });
-
-  it("preserves every island when the persisted root carries data-zd-props-preserve", () => {
-    install();
-    setLiveBody(
-      `<header ${PERSIST_ATTR}="header-en" ${PROPS_PRESERVE_ATTR}>` +
-        island("SearchWidget", oldTree) +
-        island("SidebarToggle", oldTree) +
-        `</header>`,
-    );
-
-    dispatchBeforeSwap(
-      parseIncoming(
-        `<header ${PERSIST_ATTR}="header-en" ${PROPS_PRESERVE_ATTR}>` +
-          island("SearchWidget", newTree) +
-          island("SidebarToggle", newTree) +
-          `</header>`,
-      ),
-    );
-
-    for (const name of ["SearchWidget", "SidebarToggle"]) {
-      const preserved = liveIsland(name);
-      expect(preserved.getAttribute(PROPS_ATTR)).toBe(oldTree);
-      expect(preserved.hasAttribute(REMOUNT_ATTR)).toBe(false);
+  it("opts out when scheduling metadata is added, changed or removed, including skip SSR", () => {
+    install(); document.body.innerHTML = header(island(oldProps, 'data-when="visible" data-media="screen"'));
+    for (const extra of ['', 'data-when="idle" data-media="screen"', 'data-when="visible"']) {
+      const next = incoming(header(island(newProps, extra)));
+      prepare(next);
+      expect(next.querySelector("header")!.hasAttribute(PERSIST)).toBe(false);
     }
+    document.body.innerHTML = header('<div data-zfb-island-skip-ssr="Counter" data-when="visible"></div>');
+    const next = incoming(header('<div data-zfb-island-skip-ssr="Counter" data-when="visible"></div>'));
+    prepare(next);
+    expect(next.querySelector("header")!.hasAttribute(PERSIST)).toBe(true);
   });
 
-  it("refreshes an island when only an ancestor outside the persisted root is preserved", () => {
+  it("keeps a mutated unchanged live handle and scope state through packed native teardown and swap", async () => {
     install();
-    setLiveBody(
-      `<div ${PROPS_PRESERVE_ATTR}>${header("header-en", island("SearchWidget", oldTree))}</div>`,
-    );
-
-    dispatchBeforeSwap(
-      parseIncoming(
-        `<div ${PROPS_PRESERVE_ATTR}>${header("header-en", island("SearchWidget", newTree))}</div>`,
-      ),
-    );
-
-    expect(liveIsland("SearchWidget").getAttribute(PROPS_ATTR)).toBe(newTree);
-    expect(liveIsland("SearchWidget").getAttribute(REMOUNT_ATTR)).toBe("");
+    const identity = { component: "Counter", build: "test" };
+    let count: ReturnType<typeof signal<number>> | undefined;
+    let activations = 0;
+    let cleanups = 0;
+    function Counter() {
+      count = signal(0);
+      return h("button", { "on:click": () => { count!.value++; } }, count);
+    }
+    const node = h(Counter, {});
+    const html = renderToString(islandRoot(node, { identity }));
+    document.body.innerHTML = header(html);
+    const { hydrate, mount } = await import("@takazudo/zfb/zudo-react/client");
+    mountIslands({ Counter: { identity, mount(_props, element, mode) {
+      activations++;
+      const handle = mode === "render" ? mount(node, element, { identity }) : hydrate(node, element, { identity });
+      return handle && { protocol: "zudo-react/1" as const, identity, get disposed() { return handle.disposed; }, dispose() { cleanups++; handle.dispose(); }, unmount() { cleanups++; handle.unmount(); } };
+    } } });
+    const button = document.querySelector("button")!;
+    button.dispatchEvent(new Event("click")); await flush();
+    expect(button.textContent).toBe("1");
+    const next = incoming(header(html));
+    prepare(next);
+    unmountIslands(document.body, next.body);
+    swapFunctions.swapBodyElement(next.body, document.body);
+    mountNewIslands();
+    expect(document.querySelector("button")).toBe(button);
+    expect(activations).toBe(1);
+    expect(cleanups).toBe(0);
+    button.dispatchEvent(new Event("click")); await flush();
+    expect(button.textContent).toBe("2");
   });
 
-  it("refreshes sibling islands without data-zd-props-preserve", () => {
-    install();
-    setLiveBody(
-      header(
-        "header-en",
-        `<div ${ISLAND_ATTR}="SearchWidget" ${PROPS_PRESERVE_ATTR} ${PROPS_ATTR}='${oldTree}'></div>` +
-          island("SidebarToggle", oldTree),
-      ),
-    );
-
-    dispatchBeforeSwap(
-      parseIncoming(
-        header(
-          "header-en",
-          `<div ${ISLAND_ATTR}="SearchWidget" ${PROPS_PRESERVE_ATTR} ${PROPS_ATTR}='${newTree}'></div>` +
-            island("SidebarToggle", newTree),
-        ),
-      ),
-    );
-
-    expect(liveIsland("SearchWidget").getAttribute(PROPS_ATTR)).toBe(oldTree);
-    expect(liveIsland("SearchWidget").hasAttribute(REMOUNT_ATTR)).toBe(false);
-    expect(liveIsland("SidebarToggle").getAttribute(PROPS_ATTR)).toBe(newTree);
-    expect(liveIsland("SidebarToggle").getAttribute(REMOUNT_ATTR)).toBe("");
-  });
-
-  it("refreshes normally when data-zd-props-preserve exists only on the incoming side", () => {
-    install();
-    setLiveBody(header("header-en", island("SearchWidget", oldTree)));
-
-    dispatchBeforeSwap(
-      parseIncoming(
-        header(
-          "header-en",
-          `<div ${ISLAND_ATTR}="SearchWidget" ${PROPS_PRESERVE_ATTR} ${PROPS_ATTR}='${newTree}'></div>`,
-        ),
-      ),
-    );
-
-    expect(liveIsland("SearchWidget").getAttribute(PROPS_ATTR)).toBe(newTree);
-    expect(liveIsland("SearchWidget").getAttribute(REMOUNT_ATTR)).toBe("");
-  });
-
-  it("removes data-props when the incoming island has none", () => {
-    install();
-    setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
-
-    dispatchBeforeSwap(
-      parseIncoming(header("header-en", island("SidebarToggle"))),
-    );
-
-    expect(liveIsland("SidebarToggle").hasAttribute(PROPS_ATTR)).toBe(false);
-  });
-
-  it("does not touch the attribute when the props are unchanged", () => {
-    install();
-    const themeProps = '{"defaultMode":"light"}';
-    setLiveBody(
-      header(
-        "header-en",
-        island("SidebarToggle", oldTree) + island("ThemeToggle", themeProps),
-      ),
-    );
-
-    // ThemeToggle's props are page-independent, so a swap re-serializes the
-    // identical string — that must not produce an attribute write.
-    const themeToggle = liveIsland("ThemeToggle");
-    const setAttribute = vi.spyOn(themeToggle, "setAttribute");
-    const removeAttribute = vi.spyOn(themeToggle, "removeAttribute");
-
-    dispatchBeforeSwap(
-      parseIncoming(
-        header(
-          "header-en",
-          island("SidebarToggle", newTree) + island("ThemeToggle", themeProps),
-        ),
-      ),
-    );
-
-    expect(setAttribute).not.toHaveBeenCalled();
-    expect(removeAttribute).not.toHaveBeenCalled();
-    expect(themeToggle.getAttribute(PROPS_ATTR)).toBe(themeProps);
-    expect(liveIsland("SidebarToggle").getAttribute(PROPS_ATTR)).toBe(newTree);
-  });
-
-  it("ignores an event whose newDocument is missing, foreign, or the live document", () => {
-    install();
-    setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
-
-    dispatchBeforeSwap(undefined);
-    dispatchBeforeSwap(null);
-    dispatchBeforeSwap({ querySelectorAll: () => [] });
-    dispatchBeforeSwap(document);
-
-    expect(liveIsland("SidebarToggle").getAttribute(PROPS_ATTR)).toBe(oldTree);
-  });
-
-  it("ignores an event whose swap callback is missing or not a function", () => {
-    install();
-    setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
-    const incoming = parseIncoming(
-      header("header-en", island("SidebarToggle", newTree)),
-    );
-
-    dispatchBeforeSwap(incoming, { swap: undefined });
-    dispatchBeforeSwap(incoming, { swap: "not-a-function" });
-
-    const target = liveIsland("SidebarToggle");
-    expect(target.getAttribute(PROPS_ATTR)).toBe(oldTree);
-    expect(target.hasAttribute(REMOUNT_ATTR)).toBe(false);
-  });
-
-  it("leaves a function-valued but non-writable swap event untouched", () => {
-    install();
-    setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
-    const delegate = vi.fn();
-    const event = new Event(BEFORE_SWAP_EVENT) as Event & {
-      newDocument: Document;
-      swap: () => void;
-    };
-    Object.defineProperties(event, {
-      newDocument: {
-        value: parseIncoming(
-          header("header-en", island("SidebarToggle", newTree)),
-        ),
-      },
-      swap: { value: delegate, writable: false },
-    });
-
-    document.dispatchEvent(event);
-
-    expect(event.swap).toBe(delegate);
-    expect(delegate).not.toHaveBeenCalled();
-    const target = liveIsland("SidebarToggle");
-    expect(target.getAttribute(PROPS_ATTR)).toBe(oldTree);
-    expect(target.hasAttribute(REMOUNT_ATTR)).toBe(false);
-  });
-
-  it("stops refreshing after the installer's disposer runs", () => {
-    const dispose = install();
-    setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
-
-    dispose();
-    dispatchBeforeSwap(
-      parseIncoming(header("header-en", island("SidebarToggle", newTree))),
-    );
-
-    expect(liveIsland("SidebarToggle").getAttribute(PROPS_ATTR)).toBe(oldTree);
+  it("provides an idempotent eager document singleton", () => {
+    const spy = vi.spyOn(document, "addEventListener");
+    ensureNestedIslandPropsRefresh({ document });
+    ensureNestedIslandPropsRefresh({ document });
+    expect(spy.mock.calls.filter(([name]) => name === BEFORE_SWAP_EVENT)).toHaveLength(1);
   });
 });
 
-describe("ensureNestedIslandPropsRefresh", () => {
-  it("installs exactly one listener however many times it is called", () => {
-    const addEventListener = vi.spyOn(document, "addEventListener");
-
-    ensureNestedIslandPropsRefresh({ document });
-    ensureNestedIslandPropsRefresh({ document });
-    ensureNestedIslandPropsRefresh({ document });
-
-    const registrations = addEventListener.mock.calls.filter(
-      ([type]) => type === BEFORE_SWAP_EVENT,
-    );
-    expect(registrations).toHaveLength(1);
-  });
-
-  it("still refreshes after repeated installation, and only once per island", () => {
-    ensureNestedIslandPropsRefresh({ document });
-    ensureNestedIslandPropsRefresh({ document });
-    setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
-
-    const target = liveIsland("SidebarToggle");
-    const setAttribute = vi.spyOn(target, "setAttribute");
-
-    dispatchBeforeSwap(
-      parseIncoming(header("header-en", island("SidebarToggle", newTree))),
-    );
-
-    const propsWrites = setAttribute.mock.calls.filter(([name]) => name === PROPS_ATTR);
-    expect(propsWrites).toHaveLength(1);
-    expect(target.getAttribute(PROPS_ATTR)).toBe(newTree);
-  });
-
-  it("can be disposed and re-installed", () => {
-    ensureNestedIslandPropsRefresh({ document });
-    setLiveBody(header("header-en", island("SidebarToggle", oldTree)));
-
-    disposeNestedIslandPropsRefresh(document);
-    dispatchBeforeSwap(
-      parseIncoming(header("header-en", island("SidebarToggle", newTree))),
-    );
-    expect(liveIsland("SidebarToggle").getAttribute(PROPS_ATTR)).toBe(oldTree);
-
-    ensureNestedIslandPropsRefresh({ document });
-    dispatchBeforeSwap(
-      parseIncoming(header("header-en", island("SidebarToggle", newTree))),
-    );
-    expect(liveIsland("SidebarToggle").getAttribute(PROPS_ATTR)).toBe(newTree);
-  });
-
-  it("disposing a document that was never installed is a no-op", () => {
-    expect(() => disposeNestedIslandPropsRefresh(document)).not.toThrow();
-  });
-
-  it("carries the SSR-resolved `dateFormats` roles across the swap (#4075)", () => {
-    // The mobile drawer's resolved date patterns ride the SAME serialized
-    // `data-props` blob as its nodes (`sidebar-toggle-island` -> `SidebarTree`),
-    // and this helper copies that blob WHOLE — it never enumerates prop names.
-    // Pinning it with a realistic payload is the regression guard: any future
-    // filtering/merging rewrite of the plan would silently drop the roles and
-    // leave a lifted drawer formatting dates with the previous page's patterns.
+describe("packed native changed-root lifecycle", () => {
+  it("recreates changed props with render and disposes the old scope", async () => {
     install();
-    const liveProps =
-      '{"nodes":[{"slug":"guides/a"}],"dateFormats":{"full":"MMM D, YYYY","numericMonthDay":"locale"}}';
-    const incomingProps =
-      '{"nodes":[{"slug":"reference/b"}],"dateFormats":{"full":"YYYY/MM/DD","numericMonthDay":"MM-DD"}}';
-    setLiveBody(header("header-en", island("SidebarToggle", liveProps)));
-
-    dispatchBeforeSwap(
-      parseIncoming(header("header-en", island("SidebarToggle", incomingProps))),
-    );
-
-    const refreshed = liveIsland("SidebarToggle").getAttribute(PROPS_ATTR);
-    expect(refreshed).toBe(incomingProps);
-    expect(
-      (JSON.parse(refreshed!) as { dateFormats: Record<string, string> }).dateFormats,
-    ).toEqual({ full: "YYYY/MM/DD", numericMonthDay: "MM-DD" });
+    const identity = { component: "Counter", build: "props-case" };
+    let activations = 0;
+    let cleanups = 0;
+    const modes: string[] = [];
+    function Counter({ value }: { value: string }) { return h("button", {}, value); }
+    const ssr = (value: string) => renderToString(islandRoot(h(Counter, { value }), { identity }));
+    document.body.innerHTML = header(ssr("old"));
+    const { hydrate, mount } = await import("@takazudo/zfb/zudo-react/client");
+    mountIslands({ Counter: { identity, mount(props, element, mode) {
+      activations++; modes.push(mode);
+      const node = h(Counter, { value: props.value as string });
+      const handle = mode === "render" ? mount(node, element, { identity }) : hydrate(node, element, { identity });
+      return handle && { protocol: "zudo-react/1" as const, identity, get disposed() { return handle.disposed; }, dispose() { cleanups++; handle.dispose(); }, unmount() { cleanups++; handle.unmount(); } };
+    } } });
+    const oldButton = document.querySelector("button")!;
+    const next = incoming(header(ssr("new")));
+    prepare(next);
+    unmountIslands(document.body, next.body);
+    swapFunctions.swapBodyElement(next.body, document.body);
+    mountNewIslands(); await flush();
+    expect(document.querySelector("button")!.textContent).toBe("new");
+    expect(document.querySelector("button")).not.toBe(oldButton);
+    expect(modes).toEqual(["hydrate", "render"]);
+    expect(activations).toBe(2);
+    expect(cleanups).toBe(1);
   });
+});
 
-  it("is reachable from the transitions barrel", async () => {
-    // `sidebar-toggle-island` is ejectable, and eject rewrites its
-    // `../transitions/nested-island-props-refresh.js` import to
-    // `@takazudo/zudo-doc/transitions`. If the barrel stops re-exporting this,
-    // every ejected project's drawer silently loses the refresh.
-    const barrel = await import("../index.js");
-    expect(barrel.ensureNestedIslandPropsRefresh).toBe(
-      ensureNestedIslandPropsRefresh,
-    );
+
+describe("deferred native mount across a swap", () => {
+  it("cancels an old idle mount and reads the incoming exact props when the new schedule fires", async () => {
+    vi.useFakeTimers();
+    install();
+    const identity = { component: "Counter", build: "deferred-case" };
+    const seen: string[] = [];
+    function Counter({ value }: { value: string }) { return h("span", {}, value); }
+    const ssr = (value: string) => renderToString(islandRoot(h(Counter, { value }), { identity }));
+    document.body.innerHTML = header(ssr("old").replace("data-zfb-island=", 'data-when="idle" data-zfb-island='));
+    mountIslands({ Counter: { identity, mount(props) {
+      seen.push(String(props.value));
+      return { protocol: "zudo-react/1" as const, identity, disposed: false, dispose() {}, unmount() {} };
+    } } });
+    const next = incoming(header(ssr("new").replace("data-zfb-island=", 'data-when="idle" data-zfb-island=')));
+    prepare(next);
+    const old = root();
+    cancelPendingIslands();
+    unmountIslands(document.body, next.body);
+    swapFunctions.swapBodyElement(next.body, document.body);
+    mountNewIslands();
+    await vi.runAllTimersAsync();
+    expect(root()).toBe(old);
+    // The new wrapper's serialized props are the source of truth after cancel.
+    expect(seen).toEqual(["new"]);
+  });
+});
+
+describe("packed marker-kind change", () => {
+  it("recreates a normal root as skip SSR in render mode", async () => {
+    install();
+    const identity = { component: "Counter", build: "kind-case" };
+    const modes: string[] = [];
+    function Counter() { return h("strong", {}, "mounted"); }
+    const node = h(Counter, {});
+    const html = renderToString(islandRoot(node, { identity }));
+    document.body.innerHTML = header(html);
+    const { hydrate, mount } = await import("@takazudo/zfb/zudo-react/client");
+    mountIslands({ Counter: { identity, mount(_props, element, mode) {
+      modes.push(mode);
+      return mode === "render" ? mount(node, element, { identity }) : hydrate(node, element, { identity });
+    } } });
+    const next = incoming(header(html.replace('data-zfb-island="Counter"', 'data-zfb-island-skip-ssr="Counter"')));
+    prepare(next);
+    unmountIslands(document.body, next.body);
+    swapFunctions.swapBodyElement(next.body, document.body);
+    mountNewIslands(); await flush();
+    expect(modes).toEqual(["hydrate", "render"]);
+    expect(document.querySelector("strong")?.textContent).toBe("mounted");
+    expect(document.querySelector("header")!.hasAttribute(PERSIST)).toBe(true);
   });
 });
