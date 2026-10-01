@@ -1,74 +1,27 @@
-# Port the PresetGenerator host island completely (state, form sections, header-right lists, modal, fallback stub)
+# PresetGenerator host island — #4455
 
-Owner: [#4455](https://github.com/zudolab/zudo-doc/issues/4455). Status: **pending port**. [Index and column meanings](README.md). [Binding decisions](../../../_temp-resource/4430-zfb3-migration/conventions.md).
+Status: **ported and locally verified** against zfb 3.1.0. Binding decision: [#4434/#4480 conventions](../../../_temp-resource/4430-zfb3-migration/conventions.md); implementation issue: [#4455](https://github.com/zudolab/zudo-doc/issues/4455).
 
-Seed evidence: exploration maps `server-jsx.md`, `islands-nav.md`, `islands-content.md`, `css-wind.md`, `pkg-build.md`, `tests-ci.md`, `deps-docs.md` at the migration planning baseline; file/symbol inventory refreshed from prerequisite base `4026c213`. This inventory is a review checklist, not authority to edit files outside the issue Files section. Historical v2 constructs remain listed after mechanical prep so the final mapping is auditable.
-
-## Files and symbols
-
-| File | Symbol | v2 construct → required v3 review | Status / spec / evidence |
-| --- | --- | --- | --- |
-| `pages/lib/_preset-generator.tsx` | `PresetGeneratorFallback` | Preact child types → Child/Description; Island → strict props + v3 identity; map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/components/preset-generator.tsx` | `headerRightItemKey` | useState → signal; useEffect → activation/effect; useRef → Ref; memo/callback → computed/closure; event/callback → native listener or stable component prop; className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description; style → CSS spelling/explicit units; map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/components/preset-generator.tsx` | `SectionHeading` | useState → signal; useEffect → activation/effect; useRef → Ref; memo/callback → computed/closure; event/callback → native listener or stable component prop; className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description; style → CSS spelling/explicit units; map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/components/preset-generator.tsx` | `HeaderRightItemRow` | useState → signal; useEffect → activation/effect; useRef → Ref; memo/callback → computed/closure; event/callback → native listener or stable component prop; className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description; style → CSS spelling/explicit units; map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/components/preset-generator.tsx` | `PresetModal` | useState → signal; useEffect → activation/effect; useRef → Ref; memo/callback → computed/closure; event/callback → native listener or stable component prop; className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description; style → CSS spelling/explicit units; map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/components/preset-generator.tsx` | `PresetGenerator` | useState → signal; useEffect → activation/effect; useRef → Ref; memo/callback → computed/closure; event/callback → native listener or stable component prop; className → intrinsic class; preserve custom props except locked exceptions; Preact child types → Child/Description; style → CSS spelling/explicit units; map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/lib/preset-generator-logic.ts` | `SupportedLang` | map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/lib/preset-generator-logic.ts` | `SINGLE_SCHEMES` | map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/lib/preset-generator-logic.ts` | `LIGHT_SCHEMES` | map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/lib/preset-generator-logic.ts` | `ThemePackOption` | map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/lib/preset-generator-logic.ts` | `THEME_PACKS` | map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/lib/preset-generator-logic.ts` | `SUPPORTED_LANGS` | map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/lib/preset-generator-logic.ts` | `HEADER_RIGHT_LABELS` | map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/lib/preset-generator-logic.ts` | `HeaderRightItemSpec` | map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/lib/preset-generator-logic.ts` | `DEFAULT_HEADER_RIGHT_ITEMS` | map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/lib/preset-generator-logic.ts` | `INITIAL_HEADER_RIGHT_ITEMS` | map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/lib/preset-generator-logic.ts` | `specToHeaderRightItem` | map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/lib/preset-generator-logic.ts` | `FEATURES` | map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/lib/preset-generator-logic.ts` | `FeatureEntry` | map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/lib/preset-generator-logic.ts` | `ColorSchemeMode` | map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/lib/preset-generator-logic.ts` | `MetaTagsFormState` | map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/lib/preset-generator-logic.ts` | `DEFAULT_META_TAGS` | map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/lib/preset-generator-logic.ts` | `PresetLocalePlan` | map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/lib/preset-generator-logic.ts` | `normalizeLocale` | map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/lib/preset-generator-logic.ts` | `resolvePresetLocalePlan` | map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/lib/preset-generator-logic.ts` | `validateAdditionalLangs` | map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/lib/preset-generator-logic.ts` | `normalizeAdditionalLangs` | map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/lib/preset-generator-logic.ts` | `resolveFeatures` | map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/lib/preset-generator-logic.ts` | `FormState` | map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/lib/preset-generator-logic.ts` | `buildJson` | map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-| `src/lib/preset-generator-logic.ts` | `buildCliCommand` | map → static intrinsic rows or keyed For as needed | pending; R-JSX/R-SCOPE/R-PROPS or W-TOKENS/W-CATALOG as applicable; owner supplies exact anchor/test |
-
-## Raw HTML sites to review
-
-| File and baseline line | Payload/context review | Trust, parser context, cleanup and test |
+| Owned file / v2 construct | v3 form and status | Evidence |
 | --- | --- | --- |
-| No direct site in initial source scan | Check imported helpers and newly introduced rawHtml | pending confirmation; add each new site explicitly |
+| `src/components/preset-generator.tsx` `useState(FormState)` | Per-field writable `signal`s (including each meta field); `computed` form snapshot, JSON output and locale error. Complete. | `preset-generator.test.ts`: successive outputs, validation, all conditional controls; 0 owned port diagnostics. |
+| Same file, `useMemo`, `useCallback`, `useRef`, `useEffect` | `computed`, ordinary closures, scoped modal helper and `scope.onCleanup`. Complete. | Copy/disposal and two output snapshots in interaction test. |
+| Text and select `value` plus `on:change` | Writable `modelValue`; text updates on native input (intentional v2 change), selects on native change. Complete. | Project, locale, theme, package manager, scheme, keywords, OGP and Twitter interaction cases. |
+| Radio `checked`/`on:change` | Shared `modelValue` signals with static unique radio values/names. Complete. | Both mode groups in successive output case. |
+| Boolean `checked`/`on:change` | Writable `modelChecked` signals. Complete. | System preference, CJK, meta and modal output switch cases. |
+| Feature array derived `checked` | Per-row writable boolean model; `on:change` reads `currentTarget.checked` and immutably changes canonical array; activation reconciles DOM-winning value first, then effect reconciles later canonical writes with equality guard. Complete. | Dirty hydration and search toggle interaction cases. |
+| Header-right `.map`, static checked and index snapshots | Two keyed `For` lists (`kind:name`), writable per-row checked model with activation/effect reconciliation, computed index disabled states, immutable move/remove/reinsert/reset. Complete. | Header reorder/remove/reinsert/reset case. |
+| Conditional scheme, meta input and modal JSX | `Show` factories; `PresetModal` owns `modalDialog` in its child scope, async clipboard continuations check disposal, timer and fallback textarea clean up. Complete. | Scheme switching, conditional meta inputs, copy primary/fallback, close/disposal cases. |
+| `pages/lib/_preset-generator.tsx` displayName pin | Removed redundant pin; static fallback heading list now matches the ten real sections, including Languages and Meta tags. Complete. | Port check; source comparison. |
+| `src/lib/preset-generator-logic.ts` | Pure data/normalization/output functions retained; no v2 runtime constructs or JSX to migrate. Complete. | Existing 243 logic/roundtrip/list parity tests; port check. |
 
-## Utility/token and authored rewrite rows
+## Raw HTML and style review
 
-| File | Original utility or CSS construct | Required disposition / review | Status and test |
-| --- | --- | --- | --- |
-| Owned source set | No mapped gap in planning TSV | Confirm generated candidate or matching shipped authored selector; unknown ordinary class is not proof | pending scan confirmation |
+No direct or imported `rawHtml` payload is produced by the owned files. The `pre > code` output is escaped scalar text; user text cannot become markup. No script/style parser context, protocol markers, nested island wrappers or raw subtree cleanup applies. Existing classes and style declarations remain unchanged except reactive class bindings for enabled meta/header rows; every class string is the same as v2. No new utility or authored CSS selector was introduced. The native text model's input event and corrected fallback heading count are the deliberate behavior/markup differences, required by the locked model convention and accurate SSR fallback respectively. The modal is now scoped under `Show`; visible dialog structure/classes are retained.
 
-## Tests and completion evidence
+## Verification and handoff
 
-No colocated test file in the initial selected-source inventory. Use the issue acceptance tests and add a focused test only for the relevant behavior.
-
-Run the exact source-resolution and port-check commands from the conventions with this topic’s paths. Record command, result, version and remaining diagnostics. Required behavioral coverage: initial SSR, active updates, cleanup/disposal, relevant navigation and parser/prop failures. CSS changes require computed-style evidence from the verification owner; a green build is insufficient.
-
-| Completion field | Owner must fill |
-| --- | --- |
-| Port-check / unit evidence | pending |
-| RawHtml review verdict per site | pending (or verified none) |
-| Deliberate DOM/class/behavior differences and cause | pending (or verified none) |
-| Upstream issue/shim and removal version | pending (or verified none) |
-| Browser/visual cases handed to #4468/#4475 | pending |
-| Final commit / reviewer / date | pending |
-
-## Remaining Preact runtime imports after #4437
-
-The following files still import Preact runtime APIs for their assigned semantic port. The mechanical codemod removed Preact type imports and JSX pragmas.
-
-- `src/components/preset-generator.tsx`
+- `node scripts/zfb3-port-check.mjs src/components/preset-generator.tsx src/components/__tests__/preset-generator.test.ts src/lib/preset-generator-logic.ts pages/lib/_preset-generator.tsx`: **0 owned diagnostics**, 301 unrelated migration-window diagnostics.
+- `ZFB3_SOURCE_RESOLVE=1 pnpm exec vitest run --config vitest.config.ts src/components/__tests__/preset-generator.test.ts src/__tests__/preset-generator-logic.test.ts src/__tests__/preset-generator-roundtrip.test.ts src/__tests__/preset-generator-lists-sync.test.ts src/__tests__/preset-generator-features-sync.test.ts`: **5 files, 248 tests passed**.
+- No source workaround or upstream issue needed for this topic. No file outside ownership changed.
+- Browser/visual parity remains for #4468/#4475: compare hydrated and no-JS fallback headings, all conditional inputs and responsive layout, header row focus during reorder/reset, native dialog focus/backdrop, clipboard fallback and repeated SPA navigation. No local browser/e2e or full build was run under the leaf-topic restriction.
