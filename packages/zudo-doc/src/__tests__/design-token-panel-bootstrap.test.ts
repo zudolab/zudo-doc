@@ -21,6 +21,7 @@ const zdtp = vi.hoisted(() => ({
   /** When true, the next factory evaluation throws → `import()` rejects. */
   failNextImport: false,
   configurePanel: vi.fn(),
+  configurePanelIfActive: vi.fn(),
   reapplyPersistedOverrides: vi.fn(),
   setLifecycleAdapter: vi.fn(),
   showDesignTokenPanel: vi.fn(),
@@ -62,6 +63,12 @@ beforeEach(() => {
   vi.doMock("@takazudo/zudo-doc/zdtp-loader", zdtpFactory);
   zdtp.evaluations = 0;
   zdtp.failNextImport = false;
+  zdtp.configurePanelIfActive.mockImplementation(
+    (signal: AbortSignal | undefined, config: PanelConfig) => {
+      if (signal?.aborted) return null;
+      return zdtp.configurePanel(config);
+    },
+  );
 });
 
 afterEach(() => {
@@ -85,11 +92,24 @@ function installBrowser(
   const readyClicks = vi.fn();
   windowTarget.__zdtpReadyClicks = readyClicks;
 
-  const removeProperty = vi.fn();
+  const styleValues = new Map<string, string>();
+  const removeProperty = vi.fn((name: string) => {
+    const previous = styleValues.get(name) ?? "";
+    styleValues.delete(name);
+    return previous;
+  });
+  const setProperty = vi.fn((name: string, value: string) => {
+    styleValues.set(name, value);
+  });
+  const getPropertyValue = vi.fn((name: string) => styleValues.get(name) ?? "");
   const documentTarget = new EventTarget() as EventTarget & {
     documentElement: {
       getAttribute: (name: string) => string | null;
-      style: { removeProperty: (name: string) => void };
+      style: {
+        removeProperty: (name: string) => string;
+        setProperty: (name: string, value: string) => void;
+        getPropertyValue: (name: string) => string;
+      };
     };
   };
   documentTarget.documentElement = {
@@ -99,7 +119,7 @@ function installBrowser(
         : name === "data-theme-pack"
           ? currentPack
           : null,
-    style: { removeProperty },
+    style: { removeProperty, setProperty, getPropertyValue },
   };
 
   const values = new Map<string, string>();
@@ -123,6 +143,9 @@ function installBrowser(
     storage,
     values,
     removeProperty,
+    styleValues,
+    setProperty,
+    getPropertyValue,
     setMode(nextMode: "light" | "dark") {
       currentMode = nextMode;
     },
@@ -1387,14 +1410,15 @@ describe("bootstrapDesignTokenPanel — theme-pack interplay", () => {
     );
   });
 
-  it("runs the ADR switch sequence: wasOpen → destroy → config-driven clear → pack-scoped reconfigure → reopen", async () => {
+  it("runs the ADR switch sequence and reapplies the incoming pack's CSS-variable spacing", async () => {
     const browser = installBrowser("dark", "default");
     const destroy = vi.fn();
     const builder = vi.fn<PanelConfigBuilder>(() => makeTokenConfig("zudo-doc-tweak"));
-    zdtp.configurePanel.mockImplementation((cfg: PanelConfig) => ({
-      instanceId: cfg.storagePrefix,
-      destroy,
-    }));
+    zdtp.configurePanel.mockImplementation((cfg: PanelConfig) => {
+      const spacing = cfg.storagePrefix?.endsWith("--foundry") ? "2rem" : "1rem";
+      browser.setProperty("--spacing-hsp-md", spacing);
+      return { instanceId: cfg.storagePrefix, destroy };
+    });
     // The panel is open under the OUTGOING (default-pack) instance's key —
     // this also probe-activates the lazy load at mount, with no show() (the
     // reopen on a fresh boot is zdtp's parked hook's job).
@@ -1402,6 +1426,7 @@ describe("bootstrapDesignTokenPanel — theme-pack interplay", () => {
 
     bootstrapDesignTokenPanel(builder);
     await vi.waitFor(() => expect(zdtp.configurePanel).toHaveBeenCalledOnce(), WAIT_FOR_OPTS);
+    expect(browser.getPropertyValue("--spacing-hsp-md")).toBe("1rem");
 
     vi.useFakeTimers();
     browser.setPack("foundry");
@@ -1439,6 +1464,7 @@ describe("bootstrapDesignTokenPanel — theme-pack interplay", () => {
     ).toBeGreaterThan(lastConfigureOrder);
     // Open state restored.
     expect(zdtp.showDesignTokenPanel).toHaveBeenCalledOnce();
+    expect(browser.getPropertyValue("--spacing-hsp-md")).toBe("2rem");
   });
 
   it("routes the pack-switch clear through the config's applySink when one is configured", async () => {
