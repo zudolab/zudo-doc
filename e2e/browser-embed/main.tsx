@@ -1,7 +1,7 @@
 /** @jsxRuntime automatic */
-import { Fragment, h } from "preact";
+import { Fragment, h } from "@takazudo/zfb/zudo-react";
 import type { Component, Description } from "@takazudo/zfb/zudo-react";
-import { render as renderToString } from "preact-render-to-string";
+import { renderToString } from "@takazudo/zfb/zudo-react/server";
 import { renderHtml } from "@takazudo/zfb-md-wasm/render";
 import { createRouteContextPayload } from "@takazudo/zudo-doc/route-context-payload";
 import { createRouteContext } from "@takazudo/zudo-doc/route-context";
@@ -28,7 +28,7 @@ const DIRECTIVES = {
   caution: "Caution",
 };
 
-function htmlToPreact(html: string, components: Record<string, unknown>): Description {
+function htmlToDescription(html: string, components: Record<string, unknown>): Description {
   const document = new DOMParser().parseFromString(`<body>${html}</body>`, "text/html");
   const componentByTag = new Map(
     Object.entries(components).map(([name, component]) => [name.toLowerCase(), component]),
@@ -39,10 +39,7 @@ function htmlToPreact(html: string, components: Record<string, unknown>): Descri
     if (!(node instanceof Element)) return null;
 
     const props = Object.fromEntries(
-      Array.from(node.attributes).map(({ name, value }) => [
-        name === "class" ? "className" : name,
-        value,
-      ]),
+      Array.from(node.attributes).map(({ name, value }) => [name, value]),
     );
     const component = componentByTag.get(node.localName) as Component | undefined;
     const children = Array.from(node.childNodes).map(convert);
@@ -86,7 +83,7 @@ async function main() {
       description: "Rendered entirely in a browser bundle",
     },
     Content: ({ components }: { components: Record<string, unknown> }) =>
-      htmlToPreact(mdWasmHtml, components),
+      htmlToDescription(mdWasmHtml, components),
   } as unknown as DocPageEntry;
 
   const payload = createRouteContextPayload({
