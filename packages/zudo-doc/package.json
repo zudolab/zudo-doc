@@ -167,6 +167,10 @@
       "types": "./dist/plugins/llms-txt.d.ts",
       "default": "./dist/plugins/llms-txt.js"
     },
+    "./plugins/agent-export": {
+      "types": "./dist/plugins/agent-export.d.ts",
+      "default": "./dist/plugins/agent-export.js"
+    },
     "./plugins/changelog": {
       "types": "./dist/plugins/changelog.d.ts",
       "default": "./dist/plugins/changelog.js"

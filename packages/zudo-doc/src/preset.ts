@@ -809,6 +809,19 @@ function buildPlugins(
           },
         ]
       : []),
+    ...(settings.agentExport
+      ? [{
+          name: "@takazudo/zudo-doc/plugins/agent-export",
+          options: {
+            siteName: settings.siteName,
+            siteUrl: settings.siteUrl,
+            base: settings.base,
+            defaultLocale: settings.defaultLocale ?? "en",
+            defaultLocaleDir: settings.docsDir,
+            locales: localeArray,
+          },
+        }]
+      : []),
     ...(Array.isArray(settings.changelogs) && settings.changelogs.length > 0
       ? [
           {

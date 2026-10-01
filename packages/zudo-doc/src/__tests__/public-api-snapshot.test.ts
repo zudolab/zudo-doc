@@ -135,6 +135,7 @@ describe("package.json exports keyset snapshot", () => {
         "./note-tray-model",
         "./page-loading",
         "./page-loading.css",
+        "./plugins/agent-export",
         "./plugins/changelog",
         "./plugins/claude-resources",
         "./plugins/codex-resources",
