@@ -691,7 +691,7 @@ function buildPlugins(
     // the route catalog from `settings.locales` / `settings.versions`. Listed
     // FIRST so an injected route is registered before the other plugins'
     // preBuild work runs (ordering is cosmetic — injection happens in `setup`).
-    ...(effectivePackageOwnedRoutes || assetViewer || homeIntro
+    ...(effectivePackageOwnedRoutes || assetViewer || homeIntro || settings.mcp === true
       ? [
           {
             name: "@takazudo/zudo-doc/plugins/routes",
