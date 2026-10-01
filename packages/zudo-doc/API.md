@@ -26,12 +26,12 @@ The full `package.json#exports` keyset is the contract. Any addition or removal 
 
 | Subpath | Description |
 |---|---|
-| `.` | Root re-exports barrel |
+| `.` | Type-only root barrel for shared public contracts; runtime imports use the topic subpaths below |
 | `./config` | `zudoDoc(userConfig?)` — the single-entry config API. Merges user fields over documented defaults for every settings field, auto-supplies the Wave-3 package defaults, and returns a complete `ZfbConfig`. Also exports `ZudoDocConfig` (the JSDoc-documented user-facing settings reference) + `DEFAULT_SETTINGS`. THE documented config API (epic #2651, Wave 4 #2657) — `zudoDocPreset()` remains the internal fragment builder it calls |
 | `./preset` | `zudoDocPreset()` — zfb config preset factory (internal fragment builder; `./config` is the documented API) |
 | `./settings` | `Settings` / `PresetSettings` type definitions |
 | `./factory-context` | `FactoryContext` / `ChromeContext` / `RouteContext` / `ChromeHostBindings` — the full shared type surface for package factories and chrome wiring (types only, node-free) |
-| `./chrome-bindings` | `defineChromeBindings(input)` — compile-time-checked widening adapter that builds a host's `ChromeHostBindings` object from the narrower, call-site-precise `ChromeBindingsInput` type; exports exact props for every component slot, including `HeaderSlotProps`, `FooterSlotProps`, `SidebarSlotProps`, `TocSlotProps`, `BreadcrumbSlotProps`, and `DocPagerSlotProps`; use it instead of a raw object literal or an `as`/`as unknown as` cast on `ChromeHostBindings` (drift detection, #2674) |
+| `./chrome-bindings` | `defineChromeBindings(input)` — compile-time-checked widening adapter that builds a host's `ChromeHostBindings` object from the narrower, call-site-precise `ChromeBindingsInput` type; component callbacks use zfb `Component<P>` and renderable slot values use `Child`; exports exact props for every component slot, including `HeaderSlotProps`, `FooterSlotProps`, `SidebarSlotProps`, `TocSlotProps`, `BreadcrumbSlotProps`, and `DocPagerSlotProps`; use it instead of a raw object literal or an `as`/`as unknown as` cast on `ChromeHostBindings` (drift detection, #2674) |
 | `./route-context` | `createRouteContext(payload, options?)` — reconstructs the full `RouteContext` callable surface from the serializable `RouteContextPayload`; also re-exports `RouteContext` / `RouteContextPayload` / `TagInfo` / `ContentBridge` types |
 | `./chrome` | `createChrome(context, hostBindings?)` — assembles a `ChromeContext` from a `RouteContext` + `ChromeHostBindings` (stub defaults) and wires all page-chrome factories; returns the `Chrome` surface |
 | `./eject` | `EJECTABLE` map + `eject()` function + `ZudoDocJson` type — ejectable component registry for the `zudo-doc eject` CLI |
@@ -361,7 +361,7 @@ reachable from this subpath — through the bundled JS graph OR the transitive
 | `./render-markdown` | Safe markdown→HTML renderer |
 | `./slug` | Canonical slug utilities |
 | `./smart-break` | Smart line break utilities |
-| `./use-modal-dialog` | Shared modal dialog hook |
+| `./use-modal-dialog` | `modalDialog(scope, options)` setup helper plus `ModalDialogOptions` and `ModalDialogResult` types |
 | `./island-types` | Shared island prop types |
 | `./robots` | Robots.txt generation utilities |
 | `./tags-audit` | Tag audit utilities |
@@ -397,6 +397,71 @@ project's `ZudoDocConfig` override over each default before threading it into
 | `./wind.json` | Generated strict wind candidate manifest for package classes |
 | `./page-loading.css` | Page-loading overlay stylesheet |
 | `./features.css` | Feature CSS (code blocks, dual-theme, KaTeX, etc.) |
+| `./compiled.css` | Browser-ready compiled package stylesheet |
+
+### 6.0 consumer-facing type contract
+
+The package uses the JSX and component types exported by zfb. These imports are
+the supported public dialect for slots, component callbacks and intrinsic
+element props:
+
+```ts
+import type { Child, Component, Description } from "@takazudo/zfb/zudo-react";
+import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
+
+type ButtonProps = JSX.IntrinsicElements["button"];
+type CustomRenderer = Component<{ label: string }>;
+```
+
+Use `Child` for component returns and render slots, `Description` when a value
+specifically represents a zfb element description, and `Component<P>` for
+component callbacks. Header right component registrations use
+`Component<HeaderRightComponentProps>`. `BreadcrumbSlotProps.rightSlot` accepts
+`Child`. The root `@takazudo/zudo-doc` export is type-only; import runtime
+values from their topic subpaths.
+
+`FrontmatterCellRenderer` remains the public domain name for a
+`Component<FrontmatterCellRendererProps>`. `ThemePackDialogComponent` remains
+the public domain name for `Component<ThemePackDialogProps>`; its `open` prop
+is a `ReadonlySignal<boolean>` used only within the dialog's component tree.
+`FrontmatterCellRenderer` is available from `./metainfo` and the root type
+barrel; `ThemePackDialogComponent` is available from the root type barrel.
+`EnlargeDialogProps` retains its name, uses `class`, and carries a CSS string
+in `style`.
+
+The modal helper keeps its existing subpath and exports this setup-only API:
+
+```ts
+import type { Listener, ReadonlySignal, Ref, Scope } from "@takazudo/zfb/zudo-react";
+
+interface ModalDialogOptions {
+  isOpen: ReadonlySignal<boolean>;
+  onClose: () => void;
+  navigateEvent?: string;
+  backdropClickClose?: boolean;
+  manageFocus?: boolean;
+  restoreFocusOnly?: boolean;
+  returnFocusRef?: Ref<HTMLElement>;
+}
+
+interface ModalDialogResult {
+  dialogRef: Ref<HTMLDialogElement>;
+  handleBackdropClick: Listener<Event>;
+}
+
+declare function modalDialog(scope: Scope, options: ModalDialogOptions): ModalDialogResult;
+```
+
+Import the helper and its types from the existing subpath:
+
+```ts
+import { modalDialog } from "@takazudo/zudo-doc/use-modal-dialog";
+import type { ModalDialogOptions, ModalDialogResult } from "@takazudo/zudo-doc/use-modal-dialog";
+```
+
+The former `useModalDialog` name is removed. `ThemeToggle` keeps its existing
+props; no Preact `VNode`/`ReactNode` types or React/Preact compatibility path
+aliases are part of the 6.0 type surface.
 
 ---
 

@@ -579,9 +579,12 @@ describe("routes plugin — design-token-panel-config specifier is routes-only (
     expect(importers).toEqual(["routes/_design-token-panel-bootstrap.tsx"]);
   });
 
-  it("the generic bootstrap module binds the package-default builder instead", () => {
+  it("the generic bootstrap facade exports its controller and client entry", () => {
     const source = readFileSync(join(SRC_ROOT, "design-token-panel-bootstrap.tsx"), "utf8");
-    expect(source).toContain('from "./design-token-panel-config/index.js"');
+    expect(source).toContain('export * from "./design-token-panel-bootstrap-controller.js"');
+    expect(source).toContain(
+      'export { DesignTokenPanelBootstrap } from "./design-token-panel-bootstrap-island.js"',
+    );
     expect(source).not.toContain(`from "${DTP_CONFIG_SPECIFIER}"`);
   });
 });
@@ -725,6 +728,82 @@ describe("routes plugin — /sitemap.xml injection gate (#3931/#3933)", () => {
 
     expect(injectedRoutes.map(({ pattern }) => pattern)).not.toContain("/sitemap.xml");
     expect(injectedRoutes.map(({ pattern }) => pattern)).toContain("/robots.txt");
+  });
+});
+
+describe("routes plugin — package route families stay within the catalog", () => {
+  it("keeps the default route set free of locale, version, tags, and home injection", async () => {
+    const projectRoot = makeProjectRoot();
+    const { ctx, injectedRoutes } = makeCtx(projectRoot, {
+      locales: {},
+      versions: false,
+      docTags: false,
+      aiAssistant: false,
+      sitemap: false,
+    });
+    await routesPlugin.setup!(ctx as never);
+
+    expect(injectedRoutes.map(({ pattern }) => pattern)).toEqual([
+      "/404",
+      "/robots.txt",
+      "/docs/[[...slug]]",
+    ]);
+  });
+
+  it("adds only configured locale/version families without fabricating sibling routes", async () => {
+    const projectRoot = makeProjectRoot();
+    const { ctx, injectedRoutes } = makeCtx(
+      projectRoot,
+      {
+        locales: { ja: { label: "日本語", dir: "src/content/docs-ja" } },
+        versions: [{ slug: "v1", docsDir: "src/content/docs-v1", locales: { ja: { dir: "src/content/docs-v1-ja" } } }],
+        docTags: true,
+        aiAssistant: true,
+        sitemap: true,
+      },
+      {
+        packageOwnedRoutes: true,
+        assetViewer: true,
+        assetViewerRoutePrefix: "files",
+      },
+    );
+    await routesPlugin.setup!(ctx as never);
+
+    const patterns = injectedRoutes.map(({ pattern }) => pattern);
+    expect(patterns).toEqual([
+      "/404",
+      "/sitemap.xml",
+      "/robots.txt",
+      "/docs/[[...slug]]",
+      "/docs/tags",
+      "/docs/tags/[tag]",
+      "/api/ai-chat",
+      "/docs/versions",
+      "/v/[version]/docs/[[...slug]]",
+      "/v/[version]/[locale]/docs/[[...slug]]",
+      "/[locale]",
+      "/[locale]/docs/[[...slug]]",
+      "/[locale]/docs/tags",
+      "/[locale]/docs/tags/[tag]",
+      "/[locale]/docs/versions",
+      "/[locale]/files/[[...path]]",
+      "/files/[[...path]]",
+    ]);
+
+    for (const absent of [
+      "/",
+      "/[locale]/404",
+      "/v/[version]",
+      "/v/[version]/docs/tags",
+      "/v/[version]/docs/versions",
+      "/v/[version]/files/[[...path]]",
+      "/v/[version]/[locale]",
+      "/v/[version]/[locale]/docs/tags",
+      "/v/[version]/[locale]/docs/versions",
+      "/v/[version]/[locale]/files/[[...path]]",
+    ]) {
+      expect(patterns).not.toContain(absent);
+    }
   });
 });
 

@@ -56,16 +56,16 @@ describe("tsconfig.base.json (#2656)", () => {
     expect(base.compilerOptions.alwaysStrict).toBe(true);
   });
 
-  it("carries the bundler/module flag set matching the pre-package-first template", () => {
+  it("carries the bundler/module flag set for zfb's owned JSX runtime", () => {
     expect(base.compilerOptions.target).toBe("ESNext");
     expect(base.compilerOptions.module).toBe("ESNext");
     expect(base.compilerOptions.moduleResolution).toBe("Bundler");
     expect(base.compilerOptions.jsx).toBe("react-jsx");
-    expect(base.compilerOptions.jsxImportSource).toBe("preact");
+    expect(base.compilerOptions.jsxImportSource).toBe("@takazudo/zfb/zudo-react");
     expect(base.compilerOptions.baseUrl).toBe(".");
   });
 
-  it("does NOT carry the react/react-dom/@/* paths block (GOTCHA resolution: base-relative paths would resolve inside node_modules, not the consumer project root — paths stay in the PROJECT tsconfig, see packages/zudo-doc/CLAUDE.md)", () => {
+  it("does NOT carry compatibility or project-alias paths", () => {
     expect(base.compilerOptions.paths).toBeUndefined();
   });
 

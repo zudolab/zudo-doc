@@ -9,14 +9,14 @@
 // `prepareHomeData` factory (#2519) for the data-prep sequence, then handing
 // the result to the shared home body factory.
 
-import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import { defaultLocale, routeCtx, settings } from "./_context.js";
 import { prepareHomeData } from "../home-page/prepare-home-data.js";
 import { HomePageView } from "./_chrome.js";
 
 export const frontmatter = { title: "Home" };
 
-export default function IndexPage(): JSX.Element {
+export default function IndexPage(): Child {
   const locale = defaultLocale;
 
   const { tree, categoryOrder, tagCount, tags } = prepareHomeData(routeCtx, locale);

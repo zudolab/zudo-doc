@@ -11,7 +11,7 @@
 // guard. The prepared tree / tag count are handed to the shared home body
 // factory, same as the default-locale route.
 
-import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import { settings, routeCtx } from "./_context.js";
 import { prepareHomeData } from "../home-page/prepare-home-data.js";
 import { HomePageView } from "./_chrome.js";
@@ -30,7 +30,7 @@ interface PageArgs {
   props: { locale: string };
 }
 
-export default function LocaleIndexPage({ params }: PageArgs): JSX.Element {
+export default function LocaleIndexPage({ params }: PageArgs): Child {
   const locale = params.locale;
 
   const { tree, categoryOrder, tagCount, tags } = prepareHomeData(routeCtx, locale);

@@ -1,5 +1,5 @@
 /** @jsxRuntime automatic */
-import type { JSX } from "@takazudo/zfb/zudo-react/jsx-runtime";
+import type { Child } from "@takazudo/zfb/zudo-react";
 import recordsValue from "virtual:zudo-doc-asset-bodies";
 import type { AssetRecords } from "../plugins/internal/asset-viewer/types.js";
 import type { AssetIndexEntry } from "../route-context-payload/types.js";
@@ -26,7 +26,7 @@ export function paths(): Array<{
     : assetPaths;
 }
 
-export default function FilesPathPage(props: FilesPathProps): JSX.Element {
+export default function FilesPathPage(props: FilesPathProps): Child {
   if (props.kind === "index") return <AssetIndexPageView entries={props.entries} />;
   const { entry } = props;
   const records = recordsValue as AssetRecords;
