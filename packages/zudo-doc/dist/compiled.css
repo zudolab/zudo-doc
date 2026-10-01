@@ -3591,11 +3591,11 @@ html[data-asset-details-hidden] .zd-asset-details-toggle [data-zd-asset-details-
   text-decoration-color: var(--color-muted);
 }
 .zd-preview-shadow {
-  box-shadow: 0 1px 3px var(--color-fg);
+  box-shadow: 0 0 #0000, 0 0 #0000, 0 0 #0000, 0 0 #0000, 0 1px 3px var(--color-fg);
 }
 @supports (color: color-mix(in lab, red, red)) {
   .zd-preview-shadow {
-    box-shadow: 0 1px 3px color-mix(in srgb, var(--color-fg) 8%, transparent);
+    box-shadow: 0 0 #0000, 0 0 #0000, 0 0 #0000, 0 0 #0000, 0 1px 3px color-mix(in srgb, var(--color-fg) 8%, transparent);
   }
 }
 .zd-theme-pack-active-ring {
