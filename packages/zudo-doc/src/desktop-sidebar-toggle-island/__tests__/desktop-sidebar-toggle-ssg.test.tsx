@@ -1,157 +1,79 @@
+/** @vitest-environment happy-dom */
 /** @jsxRuntime automatic */
-/**
- * SSG HTML-presence test for the DesktopSidebarToggle island component.
- *
- * Verifies that the toggle button appears in the serialized HTML produced
- * by `preact-render-to-string`. The button renders in both visible and
- * hidden states with the correct aria attributes.
- */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Description } from "@takazudo/zfb/zudo-react";
-import { render } from "preact-render-to-string";
-import { Island } from "@takazudo/zfb";
+import { afterEach, describe, expect, it } from "vitest";
+import { renderSsr, renderIsland, flushAll } from "../../__tests__/helpers/zudo-react.js";
 import {
   DesktopSidebarToggle,
   SIDEBAR_STORAGE_KEY,
-  readState,
-  setDataAttribute,
 } from "../index.js";
+import { AFTER_NAVIGATE_EVENT } from "../../transitions/index.js";
 
-describe("DesktopSidebarToggle — SSG HTML presence", () => {
-  it("renders a button element in static HTML", () => {
-    const html = render(<DesktopSidebarToggle />);
+const mounted: Array<() => void> = [];
+
+afterEach(() => {
+  for (const dispose of mounted.splice(0)) dispose();
+  document.documentElement.removeAttribute("data-sidebar-hidden");
+  localStorage.clear();
+});
+
+describe("DesktopSidebarToggle — SSR markup", () => {
+  it("renders the visible button and left chevron", () => {
+    const html = renderSsr(<DesktopSidebarToggle />);
     expect(html).toContain("<button");
-  });
-
-  it("renders in visible (default) state with correct aria-label", () => {
-    const html = render(<DesktopSidebarToggle />);
-    // SSR defaults to visible=true
     expect(html).toContain('aria-label="Hide sidebar"');
     expect(html).toContain('aria-pressed="true"');
-  });
-
-  it("renders the zd-desktop-sidebar-toggle class in static HTML", () => {
-    const html = render(<DesktopSidebarToggle />);
     expect(html).toContain("zd-desktop-sidebar-toggle");
-  });
-
-  it("renders the transition-persist data attribute", () => {
-    const html = render(<DesktopSidebarToggle />);
-    expect(html).toContain('data-zfb-transition-persist="desktop-sidebar-toggle"');
+    expect(html).toContain('style="border-radius:0 var(--radius-DEFAULT) var(--radius-DEFAULT) 0"');
+    expect(html).not.toContain("data-zfb-transition-persist");
+    expect(html).toContain('d="M15 19l-7-7 7-7"');
   });
 });
 
-// Reconcile-helper contract (bug zudolab/zudo-doc#2571). The island's mount
-// effect reconciles the persisted preference on initial load via exactly two
-// helpers: `readState()` (reads localStorage → the `visible` value) and
-// `setDataAttribute(visible)` (applies/removes `<html data-sidebar-hidden>`).
-// These tests pin that helper contract — the units the mount effect composes.
-//
-// SCOPE NOTE (honest about what this does NOT cover): the package vitest runs
-// in a plain Node env (no jsdom/happy-dom), so these exercise the helpers
-// DIRECTLY — they do NOT mount the component or run its `useEffect`, and would
-// still pass if the mount effect itself were deleted. The load-bearing #2571
-// fix (the pre-paint `<script>` hoisted into `<head>` before `<aside>`) is
-// guarded end-to-end by `sidebar-prepaint/__tests__/sidebar-prepaint-ssg.test`;
-// the mount effect's actual firing is a browser-only behaviour outside this
-// node test env's reach.
-function makeFakeDocument() {
-  const attrs = new Map<string, string>();
-  return {
-    documentElement: {
-      getAttribute: (name: string) => attrs.get(name) ?? null,
-      hasAttribute: (name: string) => attrs.has(name),
-      setAttribute: (name: string, value: string) => {
-        attrs.set(name, value);
-      },
-      removeAttribute: (name: string) => {
-        attrs.delete(name);
-      },
-    },
-  };
-}
+describe("DesktopSidebarToggle — hydration and persistence", () => {
+  it("hydrates the SSR default, reconciles storage, and persists toggles", async () => {
+    localStorage.setItem(SIDEBAR_STORAGE_KEY, "false");
+    const view = await renderIsland(DesktopSidebarToggle, {}, {
+      identity: { component: "DesktopSidebarToggle", build: "test" },
+    });
+    mounted.push(view.dispose);
 
-function makeFakeStorage() {
-  const store = new Map<string, string>();
-  return {
-    getItem: (key: string) => store.get(key) ?? null,
-    setItem: (key: string, value: string) => {
-      store.set(key, value);
-    },
-    removeItem: (key: string) => {
-      store.delete(key);
-    },
-  };
-}
+    expect(view.diagnostics).toEqual([]);
+    const button = view.root.querySelector<HTMLButtonElement>("button")!;
+    expect(button.getAttribute("aria-pressed")).toBe("false");
+    expect(button.getAttribute("aria-label")).toBe("Show sidebar");
+    expect(view.root.querySelector("svg path")?.getAttribute("d")).toBe("M9 5l7 7-7 7");
+    expect(document.documentElement.hasAttribute("data-sidebar-hidden")).toBe(true);
 
-describe("DesktopSidebarToggle — reconcile helpers (readState / setDataAttribute)", () => {
-  let fakeDocument: ReturnType<typeof makeFakeDocument>;
-  let fakeStorage: ReturnType<typeof makeFakeStorage>;
+    button.click();
+    await flushAll();
+    expect(button.getAttribute("aria-pressed")).toBe("true");
+    expect(localStorage.getItem(SIDEBAR_STORAGE_KEY)).toBe("true");
+    expect(document.documentElement.hasAttribute("data-sidebar-hidden")).toBe(false);
 
-  beforeEach(() => {
-    fakeDocument = makeFakeDocument();
-    fakeStorage = makeFakeStorage();
-    // `window` must be defined for readState() to consult localStorage
-    // (it short-circuits to `true` when window is undefined, i.e. during SSR).
-    vi.stubGlobal("window", new EventTarget());
-    vi.stubGlobal("document", fakeDocument);
-    vi.stubGlobal("localStorage", fakeStorage);
+    button.click();
+    await flushAll();
+    expect(button.getAttribute("aria-pressed")).toBe("false");
+    expect(localStorage.getItem(SIDEBAR_STORAGE_KEY)).toBe("false");
+    expect(document.documentElement.hasAttribute("data-sidebar-hidden")).toBe(true);
   });
 
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
+  it("reconciles after a swap and removes its listener on disposal", async () => {
+    const view = await renderIsland(DesktopSidebarToggle, {}, {
+      identity: { component: "DesktopSidebarToggle", build: "test" },
+    });
+    mounted.push(view.dispose);
+    localStorage.setItem(SIDEBAR_STORAGE_KEY, "false");
+    document.documentElement.removeAttribute("data-sidebar-hidden");
 
-  it("reconciles to hidden when localStorage says 'false'", () => {
-    fakeStorage.setItem(SIDEBAR_STORAGE_KEY, "false");
+    document.dispatchEvent(new Event(AFTER_NAVIGATE_EVENT));
+    await flushAll();
+    expect(document.documentElement.hasAttribute("data-sidebar-hidden")).toBe(true);
 
-    // This is exactly what the island's mount effect computes on initial load.
-    const visible = readState();
-    expect(visible).toBe(false);
-
-    // ...and applies to <html> via setDataAttribute — no SPA nav involved.
-    setDataAttribute(visible);
-    expect(fakeDocument.documentElement.hasAttribute("data-sidebar-hidden")).toBe(
-      true,
-    );
-    expect(fakeDocument.documentElement.getAttribute("data-sidebar-hidden")).toBe(
-      "",
-    );
-  });
-
-  it("reconciles to visible (attribute removed) when no preference is stored", () => {
-    const visible = readState();
-    expect(visible).toBe(true);
-
-    setDataAttribute(visible);
-    expect(fakeDocument.documentElement.hasAttribute("data-sidebar-hidden")).toBe(
-      false,
-    );
-  });
-
-  it("treats an explicit 'true' preference as visible", () => {
-    fakeStorage.setItem(SIDEBAR_STORAGE_KEY, "true");
-    expect(readState()).toBe(true);
-  });
-});
-
-describe("DesktopSidebarToggle — displayName pin", () => {
-  it("has displayName set to DesktopSidebarToggle", () => {
-    expect(DesktopSidebarToggle.displayName).toBe("DesktopSidebarToggle");
-  });
-});
-
-describe("DesktopSidebarToggle — call-site Island marker", () => {
-  it("emits data-zfb-island=DesktopSidebarToggle in SSG output", () => {
-    const html = render(
-      // Island() returns the public IslandElement shape ({ type, props, key });
-      // it is a real Preact VNode at runtime, so re-view it as VNode for render().
-      Island({
-        when: "load",
-        children: <DesktopSidebarToggle />,
-      }) as unknown as Description,
-    );
-    expect(html).toContain('data-zfb-island="DesktopSidebarToggle"');
+    view.dispose();
+    mounted.pop();
+    document.documentElement.removeAttribute("data-sidebar-hidden");
+    document.dispatchEvent(new Event(AFTER_NAVIGATE_EVENT));
+    expect(document.documentElement.hasAttribute("data-sidebar-hidden")).toBe(false);
   });
 });
