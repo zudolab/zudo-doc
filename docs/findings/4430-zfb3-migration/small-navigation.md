@@ -4,6 +4,12 @@ Owner: [#4443](https://github.com/zudolab/zudo-doc/issues/4443). Status: **pendi
 
 Seed evidence: exploration maps `server-jsx.md`, `islands-nav.md`, `islands-content.md`, `css-wind.md`, `pkg-build.md`, `tests-ci.md`, `deps-docs.md` at the migration planning baseline; file/symbol inventory refreshed from prerequisite base `4026c213`. This inventory is a review checklist, not authority to edit files outside the issue Files section. Historical v2 constructs remain listed after mechanical prep so the final mapping is auditable.
 
+## Round-2 locked spec (3.1.0)
+
+Decision [#4480](https://github.com/zudolab/zudo-doc/issues/4480), based on [#4479 packed evidence](../../../_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md). Planned contract only; implementation and browser evidence remain pending. This overrides the named round-1 deviations.
+
+Void use of #4442 as an unconditional remount controller. Keep ClientRouterBootstrap and `@takazudo/zfb-runtime/client-router`; its eager singleton installs the simplified round-2 incoming-document/host-policy adapter. Storage/prepaint/activation, removal of inner-button persist, ordinary helper modules and empty Sidebar behavior remain required because #3363/#3384 are not fixed. Tests distinguish native preservation of a root retained by an ancestor from fresh mount of a replaced root; no new SDK persist prop or reset of unchanged state.
+
 ## Files and symbols
 
 | File | Symbol | v2 construct → required v3 review | Status / spec / evidence |

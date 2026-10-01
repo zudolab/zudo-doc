@@ -4,6 +4,14 @@ Owner: [#4458](https://github.com/zudolab/zudo-doc/issues/4458). Status: **pendi
 
 Seed evidence: exploration maps `server-jsx.md`, `islands-nav.md`, `islands-content.md`, `css-wind.md`, `pkg-build.md`, `tests-ci.md`, `deps-docs.md` at the migration planning baseline; file/symbol inventory refreshed from prerequisite base `4026c213`. This inventory is a review checklist, not authority to edit files outside the issue Files section. Historical v2 constructs remain listed after mechanical prep so the final mapping is auditable.
 
+## Round-2 locked spec (3.1.0)
+
+Decision [#4480](https://github.com/zudolab/zudo-doc/issues/4480), based on [#4479 packed evidence](../../../_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md). Planned contract only; implementation and browser evidence remain pending. This overrides the named round-1 deviations.
+
+Void applying #4442's round-1 post-teardown metadata rewrite/unconditional remount to aside#desktop-sidebar. Use its round-2 native lifecycle and incoming-document policy; retain unchanged SidebarTree handle/state, refresh changed props safely, and preserve actual nonzero scroll. Test callback ordering and request the browser proof. Keep existing ancestor persistence and avoid fabricated root wrappers.
+
+The #3359 full-head serializer remains a tracked release-blocking source workaround; 3.1.0 still rejects standard attrs in declarations/SSR. Preserve its escaping, head-slot, ClientRouter and no-JS/prepaint tests. The fixed list/CSS/persistence defects do not justify deleting this head workaround.
+
 ## Files and symbols
 
 | File | Symbol | v2 construct → required v3 review | Status / spec / evidence |
@@ -134,7 +142,7 @@ Seed evidence: exploration maps `server-jsx.md`, `islands-nav.md`, `islands-cont
 | `packages/zudo-doc/src/toc-prepaint/index.tsx:107` | `dangerouslySetInnerHTML={{ __html: TOC_VISIBILITY_PREPAINT_SCRIPT }}` | pending per-site review; R-RAW; identify producer/trust and disposal |
 | `packages/zudo-doc/src/toc-prepaint/index.tsx:129` | `* \`undefined\` otherwise. The pre-paint visibility-restore \`<script>\` is NOT` | pending per-site review; R-RAW; identify producer/trust and disposal |
 
-The locked #3359/#3360 workaround introduces additional opaque markup; enumerate its serializer and call sites here, including escaping tests and the removal gate.
+The retained #3359 head workaround introduces additional opaque markup; enumerate its serializer and call sites here, including escaping tests and the removal gate.
 
 ## Utility/token and authored rewrite rows
 

@@ -4,6 +4,12 @@ Owner: [#4462](https://github.com/zudolab/zudo-doc/issues/4462). Status: **pendi
 
 Seed evidence: exploration maps `server-jsx.md`, `islands-nav.md`, `islands-content.md`, `css-wind.md`, `pkg-build.md`, `tests-ci.md`, `deps-docs.md` at the migration planning baseline; file/symbol inventory refreshed from prerequisite base `4026c213`. This inventory is a review checklist, not authority to edit files outside the issue Files section. Historical v2 constructs remain listed after mechanical prep so the final mapping is auditable.
 
+## Round-2 locked spec (3.1.0)
+
+Decision [#4480](https://github.com/zudolab/zudo-doc/issues/4480), based on [#4479 packed evidence](../../../_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md). Planned contract only; implementation and browser evidence remain pending. This overrides the named round-1 deviations.
+
+Void the round-1 accepted #3362 remount/local-state reset limitation. Use #4442's simplified singleton idempotently, preserving body-overflow cleanup, Escape IME/defaultPrevented guards and focus return. Mutated unchanged nested state survives same-document navigation through native preservation; changed effective page props refresh through native recreation. Test cross-section tree refresh and same-locale expanded state, and hand nonzero-scroll/focus/browser proof to #4468/#4475. No nested Island wrappers or inner-button persistence.
+
 ## Files and symbols
 
 | File | Symbol | v2 construct → required v3 review | Status / spec / evidence |

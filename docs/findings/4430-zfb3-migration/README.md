@@ -1,8 +1,8 @@
 # zudo-doc 6 / zfb 3 migration matrix
 
-Decision owner: [#4434](https://github.com/zudolab/zudo-doc/issues/4434); epic [#4430](https://github.com/zudolab/zudo-doc/issues/4430). This permanent gap table implements upstream [#3328](https://github.com/Takazudo/zudo-front-builder/issues/3328). It survives deletion of temporary planning resources. All implementation and route verdicts start **pending**; #4476 copies measured parity verdicts and final released versions here.
+Decision owners: round 1 [#4434](https://github.com/zudolab/zudo-doc/issues/4434), round 2 [#4480](https://github.com/zudolab/zudo-doc/issues/4480); epic [#4430](https://github.com/zudolab/zudo-doc/issues/4430). This permanent gap table implements upstream [#3328](https://github.com/Takazudo/zudo-front-builder/issues/3328). It survives deletion of temporary planning resources. All implementation and route verdicts start **pending**; #4476 copies measured parity verdicts and final released versions here.
 
-Baseline: zudo-doc 5.28.2, `main@337b9f110`, zfb 2.22.1. Decision target: npm zfb 3.0.0, checked 2026-09-30 JST. Normative tag commit: `8219310917c4e697a5c9eb292bd68b4ae7a7cefc`. Prerequisite source inventory: `4026c213d0115bbf533319a2969b615e3758805c`. [Binding conventions](../../../_temp-resource/4430-zfb3-migration/conventions.md) and [upstream status census](upstream-status.md). Before #4476 deletes temporary resources, copy the final conventions and necessary proof summaries into this directory and update these links.
+Baseline: zudo-doc 5.28.2, `main@337b9f110`, zfb 2.22.1. Round-2 target: all four zfb family packages exactly **3.1.0**, package peer floor **`^3.1.0`**; npm latest rechecked 2026-10-01 (`pnpm view @takazudo/zfb version` → `3.1.0`). Normative `v3.1.0` tag commit: `baac44eac12d300d68fd8742c585567ea24e6aa9`. Prerequisite source inventory: `4026c213d0115bbf533319a2969b615e3758805c`. [Binding conventions](../../../_temp-resource/4430-zfb3-migration/conventions.md) and [upstream status census](upstream-status.md). Before #4476 deletes temporary resources, copy the final conventions and necessary proof summaries into this directory and update these links.
 
 ## Column meanings and completion rule
 
@@ -14,25 +14,25 @@ The mechanical codemod owner #4437 records its starting owned/full TypeScript di
 
 ## Normative references
 
-Read these from the zfb clone with `git show v3.0.0:research/<file>`. The older handoff and derived cheat-sheet do not override them.
+Read these from the zfb clone with `git show v3.1.0:research/<file>`. The older handoff and derived cheat-sheet do not override them. Tag and both files were fetched with `gh api` at `ref=v3.1.0`; all linked section headings were checked. SHA-256 of the fetched research files: react `5838e038c86497ab6851a2c5c13e0b1c62634d005cac69c2e00211822f257392`; wind `25f65ee1c2d5193b77e20e50e23ea3e320ad062fee0dea9723d57cd093202fd0`.
 
 | Matrix reference | Pinned normative section |
 | --- | --- |
-| R-API | [Public API and exports](https://github.com/Takazudo/zudo-front-builder/blob/v3.0.0/research/3242-zudo-react-v1-contract.md#public-api-and-exports) |
-| R-JSX | [JSX descriptions and prop dialect](https://github.com/Takazudo/zudo-front-builder/blob/v3.0.0/research/3242-zudo-react-v1-contract.md#jsx-descriptions-and-prop-dialect) |
-| R-SCOPE | [Reactivity and scopes](https://github.com/Takazudo/zudo-front-builder/blob/v3.0.0/research/3242-zudo-react-v1-contract.md#reactivity-and-scopes) |
-| R-RAW | [Trusted raw HTML and parser contexts](https://github.com/Takazudo/zudo-front-builder/blob/v3.0.0/research/3242-zudo-react-v1-contract.md#trusted-raw-html-and-parser-contexts) |
-| R-HYDRATE | [Hydration, mismatch, and minification](https://github.com/Takazudo/zudo-front-builder/blob/v3.0.0/research/3242-zudo-react-v1-contract.md#hydration-mismatch-and-minification) |
-| R-FORMS | [Forms](https://github.com/Takazudo/zudo-front-builder/blob/v3.0.0/research/3242-zudo-react-v1-contract.md#forms) |
-| R-REGIONS | [Conditional regions and keyed lists](https://github.com/Takazudo/zudo-front-builder/blob/v3.0.0/research/3242-zudo-react-v1-contract.md#conditional-regions-and-keyed-lists) |
-| R-PROPS | [Island boundary and props transport](https://github.com/Takazudo/zudo-front-builder/blob/v3.0.0/research/3242-zudo-react-v1-contract.md#island-boundary-and-props-transport) |
-| R-LIFETIME | [Lifecycle and isolation](https://github.com/Takazudo/zudo-front-builder/blob/v3.0.0/research/3242-zudo-react-v1-contract.md#lifecycle-and-isolation) |
-| W-GRAMMAR | [Grammar and rejection contract](https://github.com/Takazudo/zudo-front-builder/blob/v3.0.0/research/3242-zudo-wind-v1-spec.md#grammar-and-rejection-contract) |
-| W-VARIANTS | [Variants and canonical order](https://github.com/Takazudo/zudo-front-builder/blob/v3.0.0/research/3242-zudo-wind-v1-spec.md#variants-and-canonical-order) |
-| W-TOKENS | [Tokens and configuration](https://github.com/Takazudo/zudo-front-builder/blob/v3.0.0/research/3242-zudo-wind-v1-spec.md#tokens-and-configuration) |
-| W-CASCADE | [Cascade, layers, reset and output](https://github.com/Takazudo/zudo-front-builder/blob/v3.0.0/research/3242-zudo-wind-v1-spec.md#cascade-layers-reset-and-output) |
-| W-CATALOG | [Utility catalog by family and batch](https://github.com/Takazudo/zudo-front-builder/blob/v3.0.0/research/3242-zudo-wind-v1-spec.md#utility-catalog-by-family-and-batch) |
-| W-MANIFEST | [Sources, safelist and package manifests](https://github.com/Takazudo/zudo-front-builder/blob/v3.0.0/research/3242-zudo-wind-v1-spec.md#sources-safelist-and-package-manifests) |
+| R-API | [Public API and exports](https://github.com/Takazudo/zudo-front-builder/blob/v3.1.0/research/3242-zudo-react-v1-contract.md#public-api-and-exports) |
+| R-JSX | [JSX descriptions and prop dialect](https://github.com/Takazudo/zudo-front-builder/blob/v3.1.0/research/3242-zudo-react-v1-contract.md#jsx-descriptions-and-prop-dialect) |
+| R-SCOPE | [Reactivity and scopes](https://github.com/Takazudo/zudo-front-builder/blob/v3.1.0/research/3242-zudo-react-v1-contract.md#reactivity-and-scopes) |
+| R-RAW | [Trusted raw HTML and parser contexts](https://github.com/Takazudo/zudo-front-builder/blob/v3.1.0/research/3242-zudo-react-v1-contract.md#trusted-raw-html-and-parser-contexts) |
+| R-HYDRATE | [Hydration, mismatch, and minification](https://github.com/Takazudo/zudo-front-builder/blob/v3.1.0/research/3242-zudo-react-v1-contract.md#hydration-mismatch-and-minification) |
+| R-FORMS | [Forms](https://github.com/Takazudo/zudo-front-builder/blob/v3.1.0/research/3242-zudo-react-v1-contract.md#forms) |
+| R-REGIONS | [Conditional regions and keyed lists](https://github.com/Takazudo/zudo-front-builder/blob/v3.1.0/research/3242-zudo-react-v1-contract.md#conditional-regions-and-keyed-lists) |
+| R-PROPS | [Island boundary and props transport](https://github.com/Takazudo/zudo-front-builder/blob/v3.1.0/research/3242-zudo-react-v1-contract.md#island-boundary-and-props-transport) |
+| R-LIFETIME | [Lifecycle and isolation](https://github.com/Takazudo/zudo-front-builder/blob/v3.1.0/research/3242-zudo-react-v1-contract.md#lifecycle-and-isolation) |
+| W-GRAMMAR | [Grammar and rejection contract](https://github.com/Takazudo/zudo-front-builder/blob/v3.1.0/research/3242-zudo-wind-v1-spec.md#grammar-and-rejection-contract) |
+| W-VARIANTS | [Variants and canonical order](https://github.com/Takazudo/zudo-front-builder/blob/v3.1.0/research/3242-zudo-wind-v1-spec.md#variants-and-canonical-order) |
+| W-TOKENS | [Tokens and configuration](https://github.com/Takazudo/zudo-front-builder/blob/v3.1.0/research/3242-zudo-wind-v1-spec.md#tokens-and-configuration) |
+| W-CASCADE | [Cascade, layers, reset and output](https://github.com/Takazudo/zudo-front-builder/blob/v3.1.0/research/3242-zudo-wind-v1-spec.md#cascade-layers-reset-and-output) |
+| W-CATALOG | [Utility catalog by family and batch](https://github.com/Takazudo/zudo-front-builder/blob/v3.1.0/research/3242-zudo-wind-v1-spec.md#utility-catalog-by-family-and-batch) |
+| W-MANIFEST | [Sources, safelist and package manifests](https://github.com/Takazudo/zudo-front-builder/blob/v3.1.0/research/3242-zudo-wind-v1-spec.md#sources-safelist-and-package-manifests) |
 
 [Downstream locked issue audit](issue-locks.md).
 
@@ -103,4 +103,17 @@ Shared **shell** means DocLayout, DocHead/HeadWithDefaults, ColorSchemeProvider/
 
 For every applicable family capture default + nondefault locale, configured versions and deployment base, mobile/desktop and breakpoint boundaries, light/dark/system/theme packs, keyboard focus, open appearance menu/drawer/modal, selected theme card, DocHistory revision changes, HtmlPreview visible/eager and auto-height, PresetGenerator model changes, client navigation and back/forward. Exercise a mutated persisted island before navigating and nonzero sidebar scroll. Record no-console-error hydration proof and final rendered head/MDX/CSS proof. Browser suite ownership is #4468/#4475; leaf owners request verification rather than run heavy suites.
 
-The release ledger must explicitly clear source workarounds for upstream #3359, #3360, #3361, #3362, #3364, #3375 and #3376 with the published resolution and a no-shim survivor scan. Strict props and explicit units may remain as the verified published contract, but ad hoc serializers, wrapper markup, physical CSS paths and remount shims cannot silently become final APIs. The current decision snapshot certifies no final visual parity and no release readiness.
+## Remaining shims and contract gates
+
+The authoritative round-2 release list follows [#4479 packed evidence](../../../_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md), merged at `64b6f3bf30fc37a33e9834e18274565955731403`. #4475 starts **BLOCKED** on these unresolved families; this decision does not certify implementation or browser parity.
+
+| Remaining family | Owner / exact surviving workaround or contract check | Release removal/resolution gate |
+| --- | --- | --- |
+| #3359 standard attrs/elements | #4458 static-head serializer; #4446 imperative popover attr; #4441/#4437 redundant SVG-attr omission; #4461 bounded media shell if required | Published declaration/SSR/client support, remove issue-specific adapters and prove native metadata/accessible/media behavior. Semantically redundant attr omission need not be reversed. |
+| #3361 iframe in island | #4453 imperative iframe host, srcdoc/load/height and cleanup; composed by #4464 | Published native iframe support, remove host workaround and prove eager/visible SSR, hydrate, interaction and disposal. |
+| #3375 style typing | #4441/#4446/#4452/#4453/#4461 issue-specific CSS-string/property fallbacks for rejected object keys | Published typing/runtime parity or explicit published contract resolution and live-style proof; remove only issue-specific adapters. Explicit CSS units and the locked public string type remain valid permanent practice. |
+| #3376 props contract | #4464/#4452/#4459/#4465 strict optional-key construction; unresolved published omission/rejection contract check | Verify a published fix or explicit published contract resolution with own-key-sensitive SSR/hydration evidence. Strict prop construction is permanent, not a shim to delete or count as an automatic survivor failure. |
+
+Actual temporary shim families are #3359, #3361 and #3375; #3376 is a separate unresolved contract gate. All four still need release evidence. Native #3360 lists, #3364 public CSS imports and #3362 unchanged-root preservation replace the obsolete round-1 list/physical-import/blanket-remount shims. Their integration regressions still gate release; if a shim reappears, it is a blocker even for a closed upstream issue. Native #3385 leading-LF behavior also needs real-browser parser confirmation. #3363's absent SDK persist prop is handled by the established ancestor persistence arrangement; no hand-authored root/persist shim is authorized. Other unresolved wind/tooling gaps retain their manifest, authored-CSS, naming and parity checks; they are not silently classified as fixed.
+
+#4467 rechecks newest published 3.x and actual binary, aligns exact pins and peer floors, and repeats changed native-path proofs before adopting a later version. #4475 records a no-shim source/packed-output survivor scan and all contract, browser, Worker and required-check verdicts. A green build with remaining shims or unresolved gates is not PASS. Under DD9, a BLOCKED #4475 prevents both the root merge and #4476 temporary-resource deletion. #4477 merges only after #4475 PASS, #4476 completion and green checks on the final commit; owner publication remains outside this chain.

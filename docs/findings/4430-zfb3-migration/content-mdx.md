@@ -4,6 +4,14 @@ Owner: [#4457](https://github.com/zudolab/zudo-doc/issues/4457). Status: **pendi
 
 Seed evidence: exploration maps `server-jsx.md`, `islands-nav.md`, `islands-content.md`, `css-wind.md`, `pkg-build.md`, `tests-ci.md`, `deps-docs.md` at the migration planning baseline; file/symbol inventory refreshed from prerequisite base `4026c213`. This inventory is a review checklist, not authority to edit files outside the issue Files section. Historical v2 constructs remain listed after mechanical prep so the final mapping is auditable.
 
+## Round-2 locked spec (3.1.0)
+
+Decision [#4480](https://github.com/zudolab/zudo-doc/issues/4480), based on [#4479 packed evidence](../../../_temp-resource/4430-zfb3-migration/spike/round2-3.1.0.md). Planned contract only; implementation and browser evidence remain pending. This overrides the named round-1 deviations.
+
+Void the earlier prohibition on forwarding `start` and the round-1 rawHtml `<ol>` serializer/display-contents wrapper. `ContentOl` uses native `<ol start={start}>` and normal children. #4479 Z02 proves declarations, actual MDX SSR and hydration at 3.1.0. Test start-at-3, resumed/default/task lists, class/attribute forwarding and child composition without extra wrappers or CSS counters.
+
+Use native `<pre>` leading-LF protection (#4479 Z25); do not manually double/strip LF or add an opaque pre workaround. Keep precise SSR/hydrate text tests and hand real-browser parser/code-copy checks to #4468/#4475; the happy-dom probe simulated HTML-parser LF removal. Other typography/rawHtml trust reviews remain; #3359 is still unresolved for any relevant native attrs. Table restrictions remain the published contract despite corrected #3377 documentation.
+
 ## Files and symbols
 
 | File | Symbol | v2 construct → required v3 review | Status / spec / evidence |
@@ -110,7 +118,7 @@ Seed evidence: exploration maps `server-jsx.md`, `islands-nav.md`, `islands-cont
 | `packages/zudo-doc/src/math-block/index.tsx:86` | `dangerouslySetInnerHTML={{ __html: html }}` | pending per-site review; R-RAW; identify producer/trust and disposal |
 | `packages/zudo-doc/src/smart-break/index.tsx:115` | `* an HTML string for \`set:html\` / dangerouslySetInnerHTML).` | pending per-site review; R-RAW; identify producer/trust and disposal |
 
-The locked #3359/#3360 workaround introduces additional opaque markup; enumerate its serializer and call sites here, including escaping tests and the removal gate.
+Round 2 removes the planned #3360 opaque-list site: native ContentOl/MDX start is required. Enumerate existing rawHtml trust sites normally; no list serializer or display-contents wrapper is authorized. #3359 remains unresolved only where a relevant unsupported attribute actually occurs.
 
 ## Utility/token and authored rewrite rows
 
