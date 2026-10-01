@@ -1,8 +1,34 @@
 import { describe, expect, it } from "vitest";
 import {
+  assertAgentDocsConsistent,
   assertValidSearchMaxBodyLength,
   warnAmbiguousDropdownCategoryMatch,
 } from "../index.js";
+
+describe("assertAgentDocsConsistent", () => {
+  it("accepts omitted and boolean fields when MCP's dependency is satisfied", () => {
+    expect(() => assertAgentDocsConsistent({})).not.toThrow();
+    expect(() => assertAgentDocsConsistent({ agentExport: false, mcp: false })).not.toThrow();
+    expect(() => assertAgentDocsConsistent({ agentExport: true, mcp: false })).not.toThrow();
+    expect(() => assertAgentDocsConsistent({ agentExport: true, mcp: true })).not.toThrow();
+  });
+
+  it("rejects unsupported runtime values with the locked type-guard messages", () => {
+    expect(() => assertAgentDocsConsistent({ agentExport: "yes" })).toThrow(
+      "agentExport must be a boolean.",
+    );
+    expect(() => assertAgentDocsConsistent({ mcp: 1 })).toThrow("mcp must be a boolean.");
+  });
+
+  it("rejects MCP unless agent export is explicitly enabled", () => {
+    expect(() => assertAgentDocsConsistent({ mcp: true })).toThrow(
+      "MCP requires agentExport: true. Remove the explicit agent export disable or disable MCP.",
+    );
+    expect(() => assertAgentDocsConsistent({ agentExport: false, mcp: true })).toThrow(
+      "MCP requires agentExport: true. Remove the explicit agent export disable or disable MCP.",
+    );
+  });
+});
 
 function warningCollector(): { warnings: string[]; logger: { warn(message: string): void } } {
   const warnings: string[] = [];

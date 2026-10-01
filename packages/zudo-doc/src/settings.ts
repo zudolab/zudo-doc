@@ -427,6 +427,10 @@ export interface Settings {
   tagGovernance: TagGovernanceMode;
   tagVocabulary: boolean;
   llmsTxt: boolean;
+  /** Generate the package-owned static agent documentation feed. */
+  agentExport?: boolean;
+  /** Add the stateless read-only MCP endpoint; requires agentExport. */
+  mcp?: boolean;
   changelogs?: ChangelogConfig[] | false;
   math: boolean;
   cjkFriendly: boolean;

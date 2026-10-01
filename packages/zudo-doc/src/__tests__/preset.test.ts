@@ -382,6 +382,41 @@ describe("zudoDocPreset collections", () => {
   });
 });
 
+describe("zudoDocPreset agent documentation config", () => {
+  const callPreset = (settings: PresetSettings) =>
+    zudoDocPreset({
+      settings,
+      buildDocsSchema: buildFixtureSchema,
+      directiveVocabulary: fixtureDirectives,
+    });
+
+  it("does not add bundle settings when MCP is disabled", () => {
+    expect(callPreset(fixtureSettings)).not.toHaveProperty("bundle");
+    expect(callPreset({ ...fixtureSettings, agentExport: true })).not.toHaveProperty("bundle");
+  });
+
+  it("adds the required main fields when MCP is enabled", () => {
+    expect(callPreset({ ...fixtureSettings, agentExport: true, mcp: true }).bundle).toEqual({
+      mainFields: ["module", "main"],
+    });
+  });
+
+  it("rejects MCP without agent export using the locked message", () => {
+    expect(() => callPreset({ ...fixtureSettings, mcp: true })).toThrow(
+      "MCP requires agentExport: true. Remove the explicit agent export disable or disable MCP.",
+    );
+  });
+
+  it("rejects unsupported runtime values through the direct preset API", () => {
+    expect(() =>
+      callPreset({ ...fixtureSettings, mcp: "yes" } as unknown as PresetSettings),
+    ).toThrow("mcp must be a boolean.");
+    expect(() =>
+      callPreset({ ...fixtureSettings, agentExport: "yes" } as unknown as PresetSettings),
+    ).toThrow("agentExport must be a boolean.");
+  });
+});
+
 describe("zudoDocPreset plugins (bare-specifier descriptors)", () => {
   it("emits the package plugin specifiers in order (no project-relative copy-public since #2358)", () => {
     const { plugins } = preset();
