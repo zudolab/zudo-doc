@@ -2,7 +2,7 @@
 
 Owner: [#4466](https://github.com/zudolab/zudo-doc/issues/4466). Status: **port implemented; focused checks verified**. [Index and column meanings](README.md). [Binding decisions](../../../_temp-resource/4430-zfb3-migration/conventions.md).
 
-This ledger reflects the locked zfb 3.1.0 spec from #4480 and the base after #4464/#4465. It covers pages/** except pages/lib/_preset-generator.tsx, the host chrome/frontmatter bindings, owned utility tests, and the browser embed harness. The excluded preset-generator shim remains with #4455.
+This ledger reflects the locked zfb 3.1.0 spec from #4480 and the base after #4464/#4465. It covers all pages source except pages/lib/_preset-generator.tsx, the host chrome/frontmatter bindings, owned utility tests, and the browser embed harness. The excluded preset-generator shim remains with #4455.
 
 ## Files and symbols
 
@@ -14,7 +14,7 @@ This ledger reflects the locked zfb 3.1.0 spec from #4480 and the base after #44
 | pages/lib/_details.tsx — DetailsWrapperProps, DetailsWrapper | Preact child contract → zudo-react Child; wrapper returns the package component as a Child. | Verified; R-JSX. Host source-resolution check. |
 | pages/lib/_search-widget.tsx — SearchWidget | Automatic zudo-react JSX around the package component; the base path stays a plain string. | Verified; R-JSX/R-PROPS. Host source-resolution check. |
 | pages/lib/_chrome.ts, _route-context.ts, _extract-headings.ts, _nav-source-cache.ts, _nav-source-docs.ts, pages/_data.ts | Plain server-side TypeScript factories and data helpers; no Preact/React runtime, hook, or client boundary to migrate. | Verified unchanged; R-API not applicable to these helpers. Host source-resolution check. |
-| pages/api/** | Request/response handlers and helper types remain plain server TypeScript; no JSX, Preact runtime, or island boundary. | Verified unchanged; R-API. Host source-resolution check. |
+| pages/api files | Request/response handlers and helper types remain plain server TypeScript; no JSX, Preact runtime, or island boundary. | Verified unchanged; R-API. Host source-resolution check. |
 | src/chrome-bindings.tsx — IslandWrapper, chromeBindings | The MDX Island pass-through accepts/returns zudo-react Child; empty host stubs return null. | Verified; R-JSX. Host source-resolution check. |
 | src/config/frontmatter-preview-renderers.tsx — Pill, frontmatterRenderers | React ReactNode → zudo-react Child; intrinsic class stays class. | Verified; R-JSX. Host source-resolution check. |
 | e2e/browser-embed/main.tsx — htmlToDescription | Preact h/Fragment → zudo-react h/Fragment; DOM attributes, including class, become owned descriptions without React prop renaming. | Verified; R-JSX. The input is generated from this fixture's constant Markdown through zfb-md-wasm; it is parsed into nodes rather than inserted as raw HTML. Browser embed Vite build passes. |
@@ -36,7 +36,8 @@ No Tailwind class values, CSS rules, tokens, or shipped CSS files changed. The c
 - pnpm check:fixture-settings-drift — **passed**.
 - pnpm check:chrome-bindings-fixture-drift — **passed**.
 - Guarded package tsup generated the current packages/zudo-doc/virtual-modules.d.ts and package JS exports: **PASS** (heavy-guard verdict, 3 seconds). Its generated compiled.css change was discarded; no CSS artifact is part of this topic.
-- All-owned scripts/zfb3-port-check.mjs rerun after merging manager commit 3910d36f4 — **pending**.
+- All-owned scripts/zfb3-port-check.mjs after merging manager commit 3910d36f4 — **passed: 0 owned diagnostics, 9 unrelated diagnostics**. The unrelated set is two package chrome-bindings test type errors, the package content-link className error, three missing zudo-doc-history-server subpaths in package code/tests, one package version-availability cast, and the host zfb.config.ts zfb/config resolution error.
+- Temporary source-alias TypeScript check for e2e/browser-embed/main.tsx — **0 diagnostics in the owned entry**; the command exited on package-source type errors and Node process types in its temporary config, outside this topic's ownership. The Vite bundle above is the required browser-embed build proof.
 
 The smart-break test now uses the shared zudo-react renderSsr helper instead of manually walking VNodes; assertions remain the same, and the runtime isDescription check names the actual v3 contract.
 
