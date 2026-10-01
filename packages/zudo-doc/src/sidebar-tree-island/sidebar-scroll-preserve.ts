@@ -1,4 +1,7 @@
-import { AFTER_NAVIGATE_EVENT, BEFORE_NAVIGATE_EVENT } from "../transitions/index.js";
+import {
+  AFTER_NAVIGATE_EVENT,
+  BEFORE_NAVIGATE_EVENT,
+} from "../transitions/index.js";
 
 interface SidebarScrollPreserveOptions {
   document: Document;
@@ -42,6 +45,8 @@ export function installSidebarScrollPreserve({
     restoreFrame = requestAnimationFrame(() => {
       restoreFrame = undefined;
       const current = document.querySelector<HTMLElement>("#desktop-sidebar");
+      // Only the persisted aside keeps its scroll identity across a body swap.
+      // A replacement aside belongs to a different section and starts fresh.
       if (current === saved.element) current.scrollTop = saved.scrollTop;
     });
   };
@@ -73,7 +78,8 @@ export function ensureSidebarScrollPreserve(
 }
 
 function resolveBrowserOptions(): SidebarScrollPreserveOptions | undefined {
-  if (typeof document === "undefined" || typeof window === "undefined") return undefined;
+  if (typeof document === "undefined" || typeof window === "undefined")
+    return undefined;
   return {
     document,
     requestAnimationFrame: window.requestAnimationFrame.bind(window),
