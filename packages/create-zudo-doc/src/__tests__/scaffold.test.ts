@@ -2642,6 +2642,51 @@ describe("createZudoDoc() — CreateOptions preset parity (#2922)", () => {
     expect(config).toContain('path: "/docs/changelog/cli"');
   });
 
+  it("createZudoDoc() normalizes MCP to agent export and emits both package fields", async () => {
+    const targetDir = await createZudoDoc({
+      projectName: "agent-mcp-normalization-test",
+      colorSchemeMode: "single",
+      singleScheme: "Default Dark",
+      features: ["mcp"],
+      packageManager: "pnpm",
+    });
+    const config = await fs.readFile(path.join(targetDir, "zfb.config.ts"), "utf-8");
+    expect(config).toContain("agentExport: true");
+    expect(config).toContain("mcp: true");
+  });
+
+  it("createZudoDoc() and validatePreset() reject the same unsupported MCP deployment", async () => {
+    const options = {
+      projectName: "unsupported-mcp-deployment-test",
+      colorSchemeMode: "single" as const,
+      singleScheme: "Default Dark",
+      features: ["mcp"],
+      mcpDeploy: "netlify" as "cloudflare",
+      packageManager: "pnpm" as const,
+    };
+    const expected = "Unsupported mcpDeploy value. Supported value: cloudflare.";
+    await expect(createZudoDoc(options)).rejects.toThrow(expected);
+    expect(
+      validatePreset({ features: ["mcp"], mcpDeploy: "netlify" }),
+    ).toBe(expected);
+    expect(await fs.pathExists(projectPath(options.projectName))).toBe(false);
+  });
+
+  it("createZudoDoc() and validatePreset() reject a deployment target without MCP", async () => {
+    const options = {
+      projectName: "mcp-deployment-without-mcp-test",
+      colorSchemeMode: "single" as const,
+      singleScheme: "Default Dark",
+      features: [],
+      mcpDeploy: "cloudflare" as const,
+      packageManager: "pnpm" as const,
+    };
+    const expected = "mcpDeploy requires mcp: true. Enable MCP or remove mcpDeploy.";
+    await expect(createZudoDoc(options)).rejects.toThrow(expected);
+    expect(validatePreset({ mcpDeploy: "cloudflare" })).toBe(expected);
+    expect(await fs.pathExists(projectPath(options.projectName))).toBe(false);
+  });
+
   it("createZudoDoc() and validatePreset() reject the same invalid changelog slug", async () => {
     const invalidPackages = ["core_lib"];
     const expected = /Invalid changelog package slug "core_lib"/;

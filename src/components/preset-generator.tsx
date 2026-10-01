@@ -247,6 +247,9 @@ export default function PresetGenerator() {
       const features = prev.features.includes(value)
         ? prev.features.filter((f) => f !== value)
         : [...prev.features, value];
+      if (value === "mcp" && features.includes("mcp") && !features.includes("agentExport")) {
+        features.splice(features.indexOf("mcp"), 0, "agentExport");
+      }
       return { ...prev, features };
     });
   }, []);
@@ -514,6 +517,10 @@ export default function PresetGenerator() {
       {/* Features */}
       <section>
         <SectionHeading>Features</SectionHeading>
+        <p className="mb-vsp-xs text-caption text-muted">
+          The read-only MCP option uses Cloudflare Workers, enables the static
+          agent-readable export, and adds the deployment preset to the output.
+        </p>
         <div className="flex flex-col gap-y-vsp-xs">
           {(VISIBLE_FEATURES as readonly FeatureEntry[]).map((feat) => (
             <label
@@ -524,6 +531,7 @@ export default function PresetGenerator() {
                 type="checkbox"
                 checked={state.features.includes(feat.value)}
                 onChange={() => toggleFeature(feat.value)}
+                disabled={feat.value === "agentExport" && state.features.includes("mcp")}
                 className="accent-accent"
               />
               <span className="flex items-center gap-x-hsp-xs">

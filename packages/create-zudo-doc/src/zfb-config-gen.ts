@@ -60,6 +60,8 @@ export const DEFAULT_MIRROR: Record<string, unknown> = {
   tagGovernance: "off",
   tagVocabulary: false,
   llmsTxt: false,
+  agentExport: false,
+  mcp: false,
   cjkFriendly: false,
   designTokenPanel: false,
   sidebarResizer: false,
@@ -250,6 +252,8 @@ function buildDesiredConfig(
   }
 
   desired.llmsTxt = choices.features.includes("llmsTxt");
+  desired.agentExport = choices.features.includes("agentExport");
+  desired.mcp = choices.features.includes("mcp");
 
   // ── Feature toggles ───────────────────────────────────────────────────
   desired.designTokenPanel = choices.features.includes("designTokenPanel");
@@ -421,6 +425,8 @@ const FIELD_ORDER = [
   "tagVocabulary",
   "tagVocabularyEntries",
   "llmsTxt",
+  "agentExport",
+  "mcp",
   "cjkFriendly",
   "designTokenPanel",
   "sidebarResizer",

@@ -2,6 +2,7 @@ import minimist from "minimist";
 import pc from "picocolors";
 import { FEATURES, SINGLE_SCHEMES, SUPPORTED_LANGS, THEME_PACKS } from "./constants.js";
 import {
+  normalizeAgentMcpChoices,
   parseChangelogPackages,
   validateChangelogPackages,
 } from "./preset.js";
@@ -46,6 +47,8 @@ export interface CliArgs {
   claudeSkillsWriting?: boolean;
   docHistory?: boolean;
   llmsTxt?: boolean;
+  agentExport?: boolean;
+  mcp?: boolean;
   skillSymlinker?: boolean;
   tauri?: boolean;
   tauriDev?: boolean;
@@ -54,6 +57,7 @@ export interface CliArgs {
   footerCopyright?: boolean;
   changelog?: boolean;
   changelogPackages?: string[];
+  mcpDeploy?: string;
   tagGovernance?: boolean;
   footerTaglist?: boolean;
   bodyFootUtil?: boolean;
@@ -89,6 +93,7 @@ export function parseArgs(argv: string[] = process.argv.slice(2)): CliArgs {
       "default-mode",
       "theme-pack",
       "changelog-packages",
+      "mcp-deploy",
       "github-url",
       "preset",
       "pm",
@@ -138,6 +143,9 @@ export function parseArgs(argv: string[] = process.argv.slice(2)): CliArgs {
         ? raw["changelog-packages"]
         : String(raw["changelog-packages"] ?? ""),
     );
+  }
+  if (raw["mcp-deploy"] !== undefined) {
+    args.mcpDeploy = String(raw["mcp-deploy"]);
   }
   if (raw.preset) args.preset = raw.preset;
   if (raw.pm) args.pm = raw.pm;
@@ -193,6 +201,7 @@ ${pc.bold("Options:")}
                                Default: default
 ${featureHelp}
   --changelog-packages <a,b>  Per-package changelog pages (implies changelog)
+  --mcp-deploy <target>       MCP deployment preset (cloudflare)
   --github-url <url>           GitHub repository URL (drives header link + source link)
   --preset <path>              Load settings from a JSON preset file (use "-" for stdin)
   --pm <manager>               pnpm | npm | yarn | bun
@@ -217,10 +226,21 @@ ${pc.bold("Examples:")}
 
   ${pc.dim("# Per-package changelog pages")}
   create-zudo-doc my-docs --changelog-packages core,cli --yes
+
+  ${pc.dim("# Cloudflare-hosted MCP plus static agent-readable export")}
+  create-zudo-doc my-docs --mcp --mcp-deploy cloudflare --yes
 `);
 }
 
 export function validateArgs(args: CliArgs): string | null {
+  const agentMcp = normalizeAgentMcpChoices({
+    agentExport: args.agentExport,
+    mcp: args.mcp,
+    mcpDeploy: args.mcpDeploy,
+    deferMcpRequirement: args.preset !== undefined,
+  });
+  if (agentMcp.error) return agentMcp.error;
+
   if (args.lang) {
     const validLangs = SUPPORTED_LANGS.map((l) => l.value);
     if (!validLangs.includes(args.lang)) {
